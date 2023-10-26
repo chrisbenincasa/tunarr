@@ -12,7 +12,7 @@
     "compile": "babel index.js -d dist && babel src -d dist/src",
     "package": "sh ./make_dist.sh",
     "clean": "del-cli --force ./bin ./dist ./.dizquetv ./web/public/bundle.js",
-    "dev": "nodemon -e ts --watch src -e .json,.ts,.yml,.yaml -x ts-node -r tsconfig-paths/register --files --project tsconfig.json index.js"
+    "dev": "nodemon -e ts --watch src index.ts -e .json,.ts,.yml,.yaml,.js -x ts-node -r tsconfig-paths/register --files --project tsconfig.json index.ts"
   },
   "author": "vexorian",
   "license": "Zlib",
@@ -32,6 +32,7 @@
     "node-ssdp": "^4.0.0",
     "random-js": "2.1.0",
     "request": "^2.88.2",
+    "tslib": "^2.6.2",
     "uuid": "^8.0.0",
     "winston": "^3.11.0",
     "winston-daily-rotate-file": "^4.7.1",
@@ -45,6 +46,7 @@
     "@babel/preset-env": "^7.9.5",
     "@types/axios": "^0.14.0",
     "@types/express": "^4.17.20",
+    "@types/express-fileupload": "^1.4.3",
     "@types/node": "^20.8.9",
     "@types/winston": "^2.4.4",
     "browserify": "^16.5.1",
