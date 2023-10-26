@@ -11,21 +11,22 @@
     "dev-server": "nodemon index.js --ignore ./web/ --ignore ./db/ --ignore ./xmltv.xml",
     "compile": "babel index.js -d dist && babel src -d dist/src",
     "package": "sh ./make_dist.sh",
-    "clean": "del-cli --force ./bin ./dist ./.dizquetv ./web/public/bundle.js"
+    "clean": "del-cli --force ./bin ./dist ./.dizquetv ./web/public/bundle.js",
+    "dev": "nodemon -e ts --watch src -e .json,.ts,.yml,.yaml -x ts-node -r tsconfig-paths/register --files --project tsconfig.json index.js"
   },
   "author": "vexorian",
   "license": "Zlib",
   "dependencies": {
-    "JSONStream": "1.0.5",
     "angular": "^1.8.0",
     "angular-router-browserify": "0.0.2",
     "angular-vs-repeat": "2.0.13",
     "axios": "^0.21.1",
     "body-parser": "^1.19.0",
-    "merge" : "2.1.1",
     "diskdb": "0.1.17",
     "express": "^4.17.1",
     "express-fileupload": "^1.2.1",
+    "JSONStream": "1.0.5",
+    "merge": "2.1.1",
     "node-graceful-shutdown": "1.1.0",
     "node-ssdp": "^4.0.0",
     "random-js": "2.1.0",
@@ -39,12 +40,18 @@
     "@babel/core": "^7.9.0",
     "@babel/plugin-proposal-class-properties": "^7.8.3",
     "@babel/preset-env": "^7.9.5",
+    "@types/axios": "^0.14.0",
+    "@types/express": "^4.17.20",
+    "@types/node": "^20.8.9",
     "browserify": "^16.5.1",
     "copyfiles": "^2.2.0",
     "del-cli": "^3.0.0",
-    "nodemon": "^2.0.3",
-    "watchify": "^3.11.1",
-    "nexe": "^3.3.7"
+    "nexe": "^3.3.7",
+    "nodemon": "^2.0.22",
+    "ts-node": "^10.9.1",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.2.2",
+    "watchify": "^3.11.1"
   },
   "babel": {
     "plugins": [
