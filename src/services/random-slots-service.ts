@@ -2,6 +2,7 @@ import constants from '../constants';
 import getShowDataFunc from './get-show-data';
 import { random } from '../helperFuncs';
 import throttle from './throttle';
+import { isUndefined } from 'lodash';
 
 const getShowData = getShowDataFunc();
 
@@ -23,7 +24,7 @@ function getShow(program) {
 }
 
 function shuffle(array, lo, hi) {
-  if (typeof lo === 'undefined') {
+  if (isUndefined(lo)) {
     lo = 0;
     hi = array.length;
   }
@@ -42,11 +43,11 @@ function shuffle(array, lo, hi) {
 
 function getProgramId(program) {
   let s = program.serverKey;
-  if (typeof s === 'undefined') {
+  if (isUndefined(s)) {
     s = 'unknown';
   }
   let p = program.key;
-  if (typeof p === 'undefined') {
+  if (isUndefined(p)) {
     p = 'unknown';
   }
   return s + '|' + p;
@@ -65,7 +66,7 @@ function addProgramToShow(show, program) {
 }
 
 function getShowOrderer(show) {
-  if (typeof show.orderer === 'undefined') {
+  if (isUndefined(show.orderer)) {
     let sortedPrograms = JSON.parse(JSON.stringify(show.programs));
     sortedPrograms.sort((a, b) => {
       let showA = getShowData(a);
@@ -96,8 +97,8 @@ function getShowOrderer(show) {
 }
 
 function getShowShuffler(show) {
-  if (typeof show.shuffler === 'undefined') {
-    if (typeof show.programs === 'undefined') {
+  if (isUndefined(show.shuffler)) {
+    if (isUndefined(show.programs)) {
       throw Error(show.id + ' has no programs?');
     }
 
@@ -129,21 +130,21 @@ export default async (programs, schedule) => {
   if (!Array.isArray(programs)) {
     return { userError: 'Expected a programs array' };
   }
-  if (typeof schedule === 'undefined') {
+  if (isUndefined(schedule)) {
     return { userError: 'Expected a schedule' };
   }
   //verify that the schedule is in the correct format
   if (!Array.isArray(schedule.slots)) {
     return { userError: 'Expected a "slots" array in schedule' };
   }
-  if (typeof schedule.period === 'undefined') {
+  if (isUndefined(schedule.period)) {
     schedule.period = DAY;
   }
   for (let i = 0; i < schedule.slots.length; i++) {
-    if (typeof schedule.slots[i].duration === 'undefined') {
+    if (isUndefined(schedule.slots[i].duration)) {
       return { userError: 'Each slot should have a duration' };
     }
-    if (typeof schedule.slots[i].showId === 'undefined') {
+    if (isUndefined(schedule.slots[i].showId)) {
       return { userError: 'Each slot should have a showId' };
     }
     if (
@@ -162,16 +163,16 @@ export default async (programs, schedule) => {
       schedule.slots[i].weight = 1;
     }
   }
-  if (typeof schedule.pad === 'undefined') {
+  if (isUndefined(schedule.pad)) {
     return { userError: 'Expected schedule.pad' };
   }
   if (typeof schedule.maxDays == 'undefined') {
     return { userError: 'schedule.maxDays must be defined.' };
   }
-  if (typeof schedule.flexPreference === 'undefined') {
+  if (isUndefined(schedule.flexPreference)) {
     schedule.flexPreference = 'distribute';
   }
-  if (typeof schedule.padStyle === 'undefined') {
+  if (isUndefined(schedule.padStyle)) {
     schedule.padStyle = 'slot';
   }
   if (schedule.padStyle !== 'slot' && schedule.padStyle !== 'episode') {
@@ -246,7 +247,7 @@ export default async (programs, schedule) => {
     let p = programs[i];
     let show = getShow(p);
     if (show != null) {
-      if (typeof showsById[show.id] === 'undefined') {
+      if (isUndefined(showsById[show.id])) {
         showsById[show.id] = shows.length;
         // What's going on here....
         shows.push({ ...show, founder: p, programs: [] });

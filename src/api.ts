@@ -13,12 +13,13 @@ import timeSlotsService from './services/time-slots-service';
 import randomSlotsService from './services/random-slots-service';
 import throttle from './services/throttle';
 import fileUpload from 'express-fileupload';
+import { isUndefined } from 'lodash';
 
 function safeString(object, ...args: any[]) {
   let o = object;
   for (let i = 0; i < args.length; i++) {
     o = o[arguments[i]];
-    if (typeof o === 'undefined') {
+    if (isUndefined(o)) {
       return 'missing';
     }
   }
@@ -126,7 +127,7 @@ export function makeApi(
     let name = 'unknown';
     try {
       name = req.body.name;
-      if (typeof name === 'undefined') {
+      if (isUndefined(name)) {
         res.status(400).send('Missing name');
       }
       let report = await plexServerDB.deleteServer(name);
@@ -278,7 +279,7 @@ export function makeApi(
       if (channel.length == 1) {
         channel = channel[0];
         let programs = channel.programs;
-        if (typeof programs === 'undefined') {
+        if (isUndefined(programs)) {
           res.status(404).send("Channel doesn't have programs?");
         }
         res.writeHead(200, {
@@ -414,7 +415,7 @@ export function makeApi(
   router.get('/api/filler/:id', async (req, res) => {
     try {
       let id = req.params.id;
-      if (typeof id === 'undefined') {
+      if (isUndefined(id)) {
         res.status(400).send('Missing id');
       }
       let filler = await fillerDB.getFiller(id);
@@ -430,7 +431,7 @@ export function makeApi(
   router.post('/api/filler/:id', async (req, res) => {
     try {
       let id = req.params.id;
-      if (typeof id === 'undefined') {
+      if (isUndefined(id)) {
         res.status(400).send('Missing id');
       }
       await fillerDB.saveFiller(id, req.body);
@@ -452,7 +453,7 @@ export function makeApi(
   router.delete('/api/filler/:id', async (req, res) => {
     try {
       let id = req.params.id;
-      if (typeof id === 'undefined') {
+      if (isUndefined(id)) {
         res.status(400).send('Missing id');
       }
       await fillerDB.deleteFiller(id);
@@ -466,7 +467,7 @@ export function makeApi(
   router.get('/api/filler/:id/channels', async (req, res) => {
     try {
       let id = req.params.id;
-      if (typeof id === 'undefined') {
+      if (isUndefined(id)) {
         res.status(400).send('Missing id');
       }
       let channels = await fillerDB.getFillerChannels(id);
@@ -493,7 +494,7 @@ export function makeApi(
   router.get('/api/show/:id', async (req, res) => {
     try {
       let id = req.params.id;
-      if (typeof id === 'undefined') {
+      if (isUndefined(id)) {
         res.status(400).send('Missing id');
       }
       let filler = await customShowDB.getShow(id);
@@ -509,7 +510,7 @@ export function makeApi(
   router.post('/api/show/:id', async (req, res) => {
     try {
       let id = req.params.id;
-      if (typeof id === 'undefined') {
+      if (isUndefined(id)) {
         res.status(400).send('Missing id');
       }
       await customShowDB.saveShow(id, req.body);
@@ -531,7 +532,7 @@ export function makeApi(
   router.delete('/api/show/:id', async (req, res) => {
     try {
       let id = req.params.id;
-      if (typeof id === 'undefined') {
+      if (isUndefined(id)) {
         res.status(400).send('Missing id');
       }
       await customShowDB.deleteShow(id);
@@ -615,7 +616,7 @@ export function makeApi(
   });
 
   function fixupFFMPEGSettings(ffmpeg): string | undefined {
-    if (typeof ffmpeg.maxFPS === 'undefined') {
+    if (isUndefined(ffmpeg.maxFPS)) {
       ffmpeg.maxFPS = 60;
     } else if (isNaN(ffmpeg.maxFPS)) {
       return 'maxFPS should be a number';
@@ -1004,7 +1005,7 @@ export function makeApi(
     delete program.streams;
     delete program.durationStr;
     delete program.commercials;
-    if (typeof program.duration === 'undefined' || program.duration <= 0) {
+    if (isUndefined(program.duration) || program.duration <= 0) {
       console.error(
         `Input contained a program with invalid duration: ${program.duration}. This program has been deleted`,
       );
@@ -1020,10 +1021,7 @@ export function makeApi(
   }
 
   function cleanUpChannel(channel) {
-    if (
-      typeof channel.groupTitle === 'undefined' ||
-      channel.groupTitle === ''
-    ) {
+    if (isUndefined(channel.groupTitle) || channel.groupTitle === '') {
       channel.groupTitle = 'dizqueTV';
     }
     channel.programs = channel.programs.flatMap(cleanUpProgram);

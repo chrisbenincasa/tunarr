@@ -1,4 +1,5 @@
 import fs from 'fs';
+import { isUndefined } from 'lodash';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -39,14 +40,14 @@ export class FillerDB {
   }
 
   async getFiller(id) {
-    if (typeof this.cache[id] === 'undefined') {
+    if (isUndefined(this.cache[id])) {
       this.cache[id] = await this.$loadFiller(id);
     }
     return this.cache[id];
   }
 
   async saveFiller(id, json) {
-    if (typeof id === 'undefined') {
+    if (isUndefined(id)) {
       throw Error('Mising filler id');
     }
     let f = path.join(this.folder, `${id}.json`);
@@ -196,10 +197,10 @@ export class FillerDB {
 }
 
 function fixup(json) {
-  if (typeof json.content === 'undefined') {
+  if (isUndefined(json.content)) {
     json.content = [];
   }
-  if (typeof json.name === 'undefined') {
+  if (isUndefined(json.name)) {
     json.name = 'Unnamed Filler';
   }
 }

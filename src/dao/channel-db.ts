@@ -1,5 +1,6 @@
-import path from 'path';
 import fs from 'fs';
+import { isUndefined } from 'lodash';
+import path from 'path';
 
 export class ChannelDB {
   private folder: string;
@@ -58,7 +59,7 @@ export class ChannelDB {
 
   validateChannelJson(number, json) {
     json.number = number;
-    if (typeof json.number === 'undefined') {
+    if (isUndefined(json.number)) {
       throw Error('Expected a channel.number');
     }
     if (typeof json.number === 'string') {

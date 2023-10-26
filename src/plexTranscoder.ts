@@ -1,6 +1,7 @@
 import axios from 'axios';
 import fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
+import { isUndefined } from 'lodash';
 
 type PlexStream = {
   directPlay: boolean;
@@ -363,23 +364,25 @@ lang=en`;
             ret.videoFramerate = Math.round(stream['frameRate']);
             // Rounding framerate avoids scenarios where
             // 29.9999999 & 30 don't match.
-            ret.videoDecision =
-              typeof stream.decision === 'undefined' ? 'copy' : stream.decision;
+            ret.videoDecision = isUndefined(stream.decision)
+              ? 'copy'
+              : stream.decision;
             ret.videoScanType = stream.scanType;
           }
           // Audio. Only look at stream being used
           if (stream['streamType'] == '2' && stream['selected'] == '1') {
             ret.audioChannels = stream['channels'];
             ret.audioCodec = stream['codec'];
-            ret.audioDecision =
-              typeof stream.decision === 'undefined' ? 'copy' : stream.decision;
+            ret.audioDecision = isUndefined(stream.decision)
+              ? 'copy'
+              : stream.decision;
           }
         }.bind(this),
       );
     } catch (e) {
       console.error('Error at decision:', e);
     }
-    if (typeof ret.videoCodec === 'undefined') {
+    if (isUndefined(ret.videoCodec)) {
       ret.audioOnly = true;
       ret.placeholderImage =
         this.albumArt.path != null
@@ -450,7 +453,7 @@ lang=en`;
     }
 
     let transcodeDecisionCode = res.data.MediaContainer.transcodeDecisionCode;
-    if (typeof transcodeDecisionCode === 'undefined') {
+    if (isUndefined(transcodeDecisionCode)) {
       this.decisionJson.MediaContainer.transcodeDecisionCode = 'novideo';
       this.log('Strange case, attempt direct play');
     } else if (!(directPlay || transcodeDecisionCode == '1001')) {
@@ -478,7 +481,7 @@ lang=en`;
 
         let media = getOneOrUndefined(metadata, 'Media');
         if (typeof media !== 'undefined') {
-          if (typeof media.videoCodec === 'undefined') {
+          if (isUndefined(media.videoCodec)) {
             this.log('Audio-only file detected');
             this.mediaHasNoVideo = true;
           }
@@ -576,10 +579,10 @@ function parsePixelAspectRatio(s) {
 }
 
 function getOneOrUndefined(object, field) {
-  if (typeof object === 'undefined') {
+  if (isUndefined(object)) {
     return undefined;
   }
-  if (typeof object[field] === 'undefined') {
+  if (isUndefined(object[field])) {
     return undefined;
   }
   let x = object[field];

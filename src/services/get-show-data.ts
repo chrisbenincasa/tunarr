@@ -1,3 +1,5 @@
+import { isUndefined } from 'lodash';
+
 //This is an exact copy of the file with the same now in the web project
 //one of these days, we'll figure out how to share the code.
 export default function () {
@@ -26,7 +28,7 @@ export default function () {
       };
     } else if (program.type === 'movie') {
       let key = program.serverKey + '|' + program.key;
-      if (typeof movieTitleOrder[key] === 'undefined') {
+      if (isUndefined(movieTitleOrder[key])) {
         movieTitleOrder[key] = movieTitleOrderNumber++;
       }
       return {

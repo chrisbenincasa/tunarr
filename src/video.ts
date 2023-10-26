@@ -1,11 +1,12 @@
 import express from 'express';
-import * as helperFuncs from './helperFuncs';
+import fs from 'fs';
+import { isUndefined } from 'lodash';
+import * as channelCache from './channel-cache';
+import constants from './constants';
 import { FFMPEG } from './ffmpeg';
 import { FFMPEG_TEXT } from './ffmpegText';
-import constants from './constants';
-import fs from 'fs';
+import * as helperFuncs from './helperFuncs';
 import { ProgramPlayer } from './program-player';
-import * as channelCache from './channel-cache';
 import { wereThereTooManyAttempts } from './throttler';
 
 let StreamCount = 0;
@@ -56,7 +57,7 @@ export function video(channelDB, fillerDB, db) {
   // Continuously stream video to client. Leverage ffmpeg concat for piecing together videos
   let concat = async (req, res, audioOnly) => {
     // Check if channel queried is valid
-    if (typeof req.query.channel === 'undefined') {
+    if (isUndefined(req.query.channel)) {
       res.status(500).send('No Channel Specified');
       return;
     }
@@ -146,7 +147,7 @@ export function video(channelDB, fillerDB, db) {
     res.on('error', (e) => {
       console.error('There was an unexpected error in stream.', e);
     });
-    if (typeof req.query.channel === 'undefined') {
+    if (isUndefined(req.query.channel)) {
       res.status(400).send('No Channel Specified');
       return;
     }
@@ -285,7 +286,7 @@ export function video(channelDB, fillerDB, db) {
       }
       if (
         prog == null ||
-        typeof prog === 'undefined' ||
+        isUndefined(prog) ||
         prog.program == null ||
         typeof prog.program == 'undefined'
       ) {
@@ -326,11 +327,11 @@ export function video(channelDB, fillerDB, db) {
     console.log('=========================================================');
     console.log('! Start playback');
     console.log(`! Channel: ${channel.name} (${channel.number})`);
-    if (typeof lineupItem.title === 'undefined') {
+    if (isUndefined(lineupItem.title)) {
       lineupItem.title = 'Unknown';
     }
     console.log(`! Title: ${lineupItem.title}`);
-    if (typeof lineupItem.streamDuration === 'undefined') {
+    if (isUndefined(lineupItem.streamDuration)) {
       console.log(`! From : ${lineupItem.start}`);
     } else {
       console.log(
@@ -419,7 +420,7 @@ export function video(channelDB, fillerDB, db) {
     res.type('application/x-mpegURL');
 
     // Check if channel queried is valid
-    if (typeof req.query.channel === 'undefined') {
+    if (isUndefined(req.query.channel)) {
       res.status(500).send('No Channel Specified');
       return;
     }
@@ -470,7 +471,7 @@ export function video(channelDB, fillerDB, db) {
     res.type('text');
 
     // Check if channel queried is valid
-    if (typeof req.query.channel === 'undefined') {
+    if (isUndefined(req.query.channel)) {
       res.status(500).send('No Channel Specified');
       return;
     }

@@ -1,5 +1,7 @@
 import events from 'events';
 import child_process from 'child_process';
+import { isUndefined } from 'lodash';
+
 const spawn = child_process.spawn;
 
 const MAXIMUM_ERROR_DURATION_MS = 60000;
@@ -127,7 +129,7 @@ export class FFMPEG extends events.EventEmitter {
       });
       return;
     }
-    if (typeof duration === 'undefined') {
+    if (isUndefined(duration)) {
       //set a place-holder duration
       console.log('No duration found for error stream, using placeholder');
       duration = MAXIMUM_ERROR_DURATION_MS;
@@ -194,7 +196,7 @@ export class FFMPEG extends events.EventEmitter {
 
     if (
       limitRead === true &&
-      (this.audioOnly !== true || typeof streamUrl.errorTitle === 'undefined')
+      (this.audioOnly !== true || isUndefined(streamUrl.errorTitle))
     ) {
       ffmpegArgs.push(`-re`);
     }
@@ -212,8 +214,9 @@ export class FFMPEG extends events.EventEmitter {
       );
 
     // Map correct audio index. '?' so doesn't fail if no stream available.
-    let audioIndex =
-      typeof streamStats === 'undefined' ? 'a' : `${streamStats.audioIndex}`;
+    let audioIndex = isUndefined(streamStats)
+      ? 'a'
+      : `${streamStats.audioIndex}`;
 
     //TODO: Do something about missing audio stream
     if (!isConcatPlaylist) {
@@ -221,7 +224,7 @@ export class FFMPEG extends events.EventEmitter {
       let audioFile = -1;
       let videoFile = -1;
       let overlayFile = -1;
-      if (typeof streamUrl.errorTitle === 'undefined') {
+      if (isUndefined(streamUrl.errorTitle)) {
         ffmpegArgs.push(`-i`, streamUrl);
         videoFile = inputFiles++;
         audioFile = videoFile;
@@ -230,7 +233,7 @@ export class FFMPEG extends events.EventEmitter {
       // When we have an individual stream, there is a pipeline of possible
       // filters to apply.
       //
-      var doOverlay = typeof watermark === 'undefined' || watermark != null;
+      var doOverlay = isUndefined(watermark) || watermark != null;
       var iW = streamStats.videoWidth;
       var iH = streamStats.videoHeight;
 
@@ -286,10 +289,7 @@ export class FFMPEG extends events.EventEmitter {
           let pic = null;
 
           //does an image to play exist?
-          if (
-            typeof streamUrl.errorTitle === 'undefined' &&
-            streamStats.audioOnly
-          ) {
+          if (isUndefined(streamUrl.errorTitle) && streamStats.audioOnly) {
             pic = streamStats.placeholderImage;
           } else if (streamUrl.errorTitle == 'offline') {
             pic = `${this.channel.offlinePicture}`;
@@ -300,7 +300,7 @@ export class FFMPEG extends events.EventEmitter {
           if (pic != null) {
             ffmpegArgs.push('-i', pic);
             if (
-              typeof duration === 'undefined' &&
+              isUndefined(duration) &&
               typeof streamStats.duration !== 'undefined'
             ) {
               //add 150 milliseconds just in case, exact duration seems to cut out the last bits of music some times.
@@ -467,7 +467,7 @@ export class FFMPEG extends events.EventEmitter {
           waterVideo = '[icn]';
         }
         let p = posAry[watermark.position];
-        if (typeof p === 'undefined') {
+        if (isUndefined(p)) {
           throw Error('Invalid watermark position: ' + watermark.position);
         }
         let overlayShortest = '';

@@ -1,4 +1,5 @@
 import fs from 'fs';
+import { isUndefined } from 'lodash';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -37,7 +38,7 @@ export class CustomShowDB {
   }
 
   async saveShow(id, json) {
-    if (typeof id === 'undefined') {
+    if (isUndefined(id)) {
       throw Error('Mising custom show id');
     }
     let f = path.join(this.folder, `${id}.json`);
@@ -118,10 +119,10 @@ export class CustomShowDB {
 }
 
 function fixup(json) {
-  if (typeof json.content === 'undefined') {
+  if (isUndefined(json.content)) {
     json.content = [];
   }
-  if (typeof json.name === 'undefined') {
+  if (isUndefined(json.name)) {
     json.name = 'Unnamed Show';
   }
 }

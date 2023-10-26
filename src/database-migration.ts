@@ -17,8 +17,9 @@
  * but with time it will be worth it, really.
  *
  ***/
-const path = require('path');
-var fs = require('fs');
+import path from 'path';
+import fs from 'fs';
+import { isUndefined } from 'lodash';
 
 const TARGET_VERSION = 803;
 
@@ -45,7 +46,7 @@ const STEPS: [number, number, (db, channels, dir) => any][] = [
   [802, 803, () => fixNonIntegerDurations()],
 ];
 
-const { v4: uuidv4 } = require('uuid');
+import { v4 as uuidv4 } from 'uuid';
 
 function createDeviceId(db) {
   let deviceId = db['client-id'].find();
@@ -117,10 +118,7 @@ function basicDB(db) {
   let newPlexServers = {};
   for (let i = 0; i < plexServers.length; i++) {
     let plex = plexServers[i];
-    if (
-      typeof plex.connections === 'undefined' ||
-      plex.connections.length == 0
-    ) {
+    if (isUndefined(plex.connections) || plex.connections.length == 0) {
       let newPlex = attemptMigratePlexFrom51(plex);
       newPlexServers[plex.name] = newPlex;
       db['plex-servers'].update({ _id: plex._id }, newPlex);
@@ -153,7 +151,7 @@ function migrateChannelsFrom51(db, newPlexServers) {
   );
   let channels = db['channels'].find();
   function fix(program) {
-    if (typeof program.plexFile === 'undefined') {
+    if (isUndefined(program.plexFile)) {
       let file = program.file;
       program.plexFile = file.slice(program.server.uri.length);
       let i = 0;
@@ -171,10 +169,9 @@ function migrateChannelsFrom51(db, newPlexServers) {
     for (let j = 0; j < programs.length; j++) {
       let program = programs[j];
       if (
-        typeof program.server === 'undefined' ||
-        typeof program.server.name === 'undefined' ||
-        (typeof program.plexFile === 'undefined' &&
-          typeof program.file === 'undefined')
+        isUndefined(program.server) ||
+        isUndefined(program.server.name) ||
+        (isUndefined(program.plexFile) && isUndefined(program.file))
       ) {
         let duration = program.duration;
         if (typeof duration !== 'undefined') {
@@ -205,17 +202,16 @@ function migrateChannelsFrom51(db, newPlexServers) {
         }
         let commercials = program.commercials;
         fix(program);
-        if (typeof commercials === 'undefined' || commercials.length == 0) {
+        if (isUndefined(commercials) || commercials.length == 0) {
           commercials = [];
         }
         let newCommercials = [];
         for (let k = 0; k < commercials.length; k++) {
           let commercial = commercials[k];
           if (
-            typeof commercial.server === 'undefined' ||
-            typeof commercial.server.name === 'undefined' ||
-            (typeof commercial.plexFile === 'undefined' &&
-              typeof commercial.file === 'undefined')
+            isUndefined(commercial.server) ||
+            isUndefined(commercial.server.name) ||
+            (isUndefined(commercial.plexFile) && isUndefined(commercial.file))
           ) {
             console.log(
               `A commercial in channel ${channel.number} has invalid server/plex file information and has been removed.`,
@@ -296,7 +292,7 @@ function attemptMigratePlexFrom51(plex) {
 function commercialsRemover(db) {
   let getKey = (program) => {
     let key = program.key;
-    return typeof key === 'undefined' ? '?' : key;
+    return isUndefined(key) ? '?' : key;
   };
 
   let channels = db['channels'].find();
@@ -304,7 +300,7 @@ function commercialsRemover(db) {
     let channel = channels[i];
     let fixedPrograms = [];
     let fixedFiller = channel.fillerContent;
-    if (typeof fixedFiller === 'undefined') {
+    if (isUndefined(fixedFiller)) {
       fixedFiller = [];
     }
     let addedFlex = false;
@@ -320,7 +316,7 @@ function commercialsRemover(db) {
       }
       delete fixedProgram.commercials;
       for (let k = 0; k < commercials.length; k++) {
-        if (typeof seenPrograms[getKey(commercials[k])] === 'undefined') {
+        if (isUndefined(seenPrograms[getKey(commercials[k])])) {
           seenPrograms[getKey(commercials[k])] = true;
           fixedFiller.push(commercials[k]);
         }
@@ -342,10 +338,10 @@ function commercialsRemover(db) {
     //TODO: maybe remove duplicates?
     if (addedFlex) {
       //fill up some flex settings just in case
-      if (typeof channel.fillerRepeatCooldown === 'undefined') {
+      if (isUndefined(channel.fillerRepeatCooldown)) {
         channel.fillerRepeatCooldown = 10 * 60 * 1000;
       }
-      if (typeof channel.offlineMode === 'undefined') {
+      if (isUndefined(channel.offlineMode)) {
         console.log(
           'Added provisional fallback to channel #' +
             channel.number +
@@ -358,7 +354,7 @@ function commercialsRemover(db) {
         channel.offlinePicture = `http://localhost:${process.env.PORT}/images/generic-offline-screen.png`;
         channel.offlineSoundtrack = '';
       }
-      if (typeof channel.disableFillerOverlay === 'undefined') {
+      if (isUndefined(channel.disableFillerOverlay)) {
         channel.disableFillerOverlay = true;
       }
     }
@@ -367,11 +363,11 @@ function commercialsRemover(db) {
 }
 
 export function initDB(db, channelDB, dir) {
-  if (typeof channelDB === 'undefined') {
+  if (isUndefined(channelDB)) {
     throw Error('???');
   }
   let dbVersion = db['db-version'].find()[0];
-  if (typeof dbVersion === 'undefined') {
+  if (isUndefined(dbVersion)) {
     dbVersion = { version: 0 };
   }
   while (dbVersion.version != TARGET_VERSION) {
@@ -388,7 +384,7 @@ export function initDB(db, channelDB, dir) {
         );
         try {
           STEPS[i][2](db, channelDB, dir);
-          if (typeof dbVersion._id === 'undefined') {
+          if (isUndefined(dbVersion._id)) {
             db['db-version'].save({ version: STEPS[i][1] });
           } else {
             db['db-version'].update(
@@ -462,7 +458,7 @@ function repairFFmpeg0(existingConfigs) {
     _id = currentConfig._id;
   }
   if (
-    typeof currentConfig.configVersion === 'undefined' ||
+    isUndefined(currentConfig.configVersion) ||
     currentConfig.configVersion < 3
   ) {
     hasBeenRepaired = true;
@@ -513,10 +509,7 @@ function splitServersSingleChannels(db, channelDB) {
   };
 
   let getNewName = (name) => {
-    if (
-      typeof name === 'undefined' ||
-      typeof serverNames[name] !== 'undefined'
-    ) {
+    if (isUndefined(name) || typeof serverNames[name] !== 'undefined') {
       //recurse because what if some genius actually named their server plex#3 ?
       name = getNewName('plex#' + (Object.keys(serverNames).length + 1));
     }
@@ -525,17 +518,17 @@ function splitServersSingleChannels(db, channelDB) {
   };
 
   let saveServer = (name, uri, accessToken, arGuide, arChannels) => {
-    if (typeof arGuide === 'undefined') {
+    if (isUndefined(arGuide)) {
       arGuide = false;
     }
-    if (typeof arChannels === 'undefined') {
+    if (isUndefined(arChannels)) {
       arChannels = false;
     }
     if (uri.endsWith('/')) {
       uri = uri.slice(0, -1);
     }
     let key = getServerKey(uri, accessToken);
-    if (typeof serverCache[key] === 'undefined') {
+    if (isUndefined(serverCache[key])) {
       serverCache[key] = getNewName(name);
       console.log(
         `for key=${key} found server with name=${serverCache[key]}, uri=${uri}, accessToken=${accessToken}`,
@@ -589,7 +582,7 @@ function splitServersSingleChannels(db, channelDB) {
         undefined,
         undefined,
       );
-      if (typeof name === 'undefined') {
+      if (isUndefined(name)) {
         throw Error('Unable to find server name');
       }
       //console.log(newProgram.title + " : " + name);
@@ -616,13 +609,13 @@ function splitServersSingleChannels(db, channelDB) {
     for (let i = 0; i < channel.programs.length; i++) {
       channel.duration += channel.programs[i].duration;
     }
-    if (typeof channel.fallback === 'undefined') {
+    if (isUndefined(channel.fallback)) {
       channel.fallback = [];
     }
     for (let i = 0; i < channel.fallback.length; i++) {
       channel.fallback[i] = fixProgram(channel.fallback[i]);
     }
-    if (typeof channel.fillerContent === 'undefined') {
+    if (isUndefined(channel.fillerContent)) {
       channel.fillerContent = [];
     }
     for (let i = 0; i < channel.fillerContent.length; i++) {
@@ -662,7 +655,7 @@ function fixCorruptedServer(db) {
   let badFound = false;
   for (let i = 0; i < arr.length; i++) {
     let server = arr[i];
-    if (typeof server.name === 'undefined' && server.length == 0) {
+    if (isUndefined(server.name) && server.length == 0) {
       badFound = true;
       console.log(
         "Found a corrupted plex server. And that's why 63 is a bad version. BAD",

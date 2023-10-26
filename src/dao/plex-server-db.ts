@@ -1,3 +1,5 @@
+import { isUndefined } from 'lodash';
+
 //hmnn this is more of a "PlexServerService"...
 const ICON_REGEX =
   /https?:\/\/.*(\/library\/metadata\/\d+\/thumb\/\d+).X-Plex-Token=.*/;
@@ -104,7 +106,7 @@ export class PlexServerDB {
   }
 
   removeOffline(progs) {
-    if (typeof progs === 'undefined') {
+    if (isUndefined(progs)) {
       return progs;
     }
     return progs.filter((p) => {
@@ -139,7 +141,7 @@ export class PlexServerDB {
 
   async updateServer(server) {
     let name = server.name;
-    if (typeof name === 'undefined') {
+    if (isUndefined(name)) {
       throw Error('Missing server name from request');
     }
     let s = this.db['plex-servers'].find({ name: name });
@@ -148,11 +150,11 @@ export class PlexServerDB {
     }
     s = s[0];
     let arGuide = server.arGuide;
-    if (typeof arGuide === 'undefined') {
+    if (isUndefined(arGuide)) {
       arGuide = false;
     }
     let arChannels = server.arChannels;
-    if (typeof arChannels === 'undefined') {
+    if (isUndefined(arChannels)) {
       arChannels = false;
     }
     let newServer = {
@@ -173,7 +175,7 @@ export class PlexServerDB {
 
   async addServer(server) {
     let name = server.name;
-    if (typeof name === 'undefined') {
+    if (isUndefined(name)) {
       name = 'plex';
     }
     let i = 2;
@@ -185,11 +187,11 @@ export class PlexServerDB {
     }
     name = resultName;
     let arGuide = server.arGuide;
-    if (typeof arGuide === 'undefined') {
+    if (isUndefined(arGuide)) {
       arGuide = false;
     }
     let arChannels = server.arGuide;
-    if (typeof arChannels === 'undefined') {
+    if (isUndefined(arChannels)) {
       arChannels = false;
     }
     let index = this.db['plex-servers'].find({}).length;

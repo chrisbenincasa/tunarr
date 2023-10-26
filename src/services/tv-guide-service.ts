@@ -1,5 +1,7 @@
 import constants from '../constants';
 import throttle from './throttle';
+import { isUndefined } from 'lodash';
+
 const FALLBACK_ICON =
   'https://raw.githubusercontent.com/vexorain/dizquetv/main/resources/dizquetv.png';
 
@@ -89,7 +91,7 @@ export class TVGuideService {
   }
 
   async makeAccumulated(channel) {
-    if (typeof channel.programs === 'undefined') {
+    if (isUndefined(channel.programs)) {
       throw Error(JSON.stringify(channel).slice(0, 200));
     }
     let n = channel.programs.length;
@@ -116,7 +118,7 @@ export class TVGuideService {
       };
     } else {
       let accumulate = this.accumulateTable[channel.number];
-      if (typeof accumulate === 'undefined') {
+      if (isUndefined(accumulate)) {
         throw Error(channel.number + " wasn't preprocesed correctly???!?");
       }
       let hi = channel.programs.length;
@@ -163,7 +165,7 @@ export class TVGuideService {
     } else {
       playing = await this.getCurrentPlayingIndex(channel, t);
     }
-    if (playing.program == null || typeof playing === 'undefined') {
+    if (playing.program == null || isUndefined(playing)) {
       console.log(
         'There is a weird issue with the TV guide generation. A placeholder program is placed to prevent further issues. Please report this.',
       );
@@ -186,7 +188,7 @@ export class TVGuideService {
       } else {
         depth.push(channel.number);
         let channel2 = this.channelsByNumber[ch2];
-        if (typeof channel2 === 'undefined') {
+        if (isUndefined(channel2)) {
           console.error(
             'Redirrect to an unknown channel found! Involved channels = ' +
               JSON.stringify(depth),
@@ -217,7 +219,7 @@ export class TVGuideService {
   }
 
   async getChannelPrograms(t0, t1, channel) {
-    if (typeof channel === 'undefined') {
+    if (isUndefined(channel)) {
       throw Error("Couldn't find channel?");
     }
     let result: Record<string, any> = {
@@ -527,7 +529,7 @@ function makeEntry(channel, x) {
       };
     }
   }
-  if (typeof title === 'undefined') {
+  if (isUndefined(title)) {
     title = '.';
   }
   //what data is needed here?

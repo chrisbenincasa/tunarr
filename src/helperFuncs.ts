@@ -1,6 +1,7 @@
 import constants from './constants';
 import * as channelCache from './channel-cache';
 import * as randomJS from 'random-js';
+import { isUndefined } from 'lodash';
 
 const SLACK = constants.SLACK;
 const Random = randomJS.Random;
@@ -204,7 +205,7 @@ function pickRandomWithMaxDuration(channel, fillers, maxDuration) {
   let minimumWait = 1000000000;
   const D = 7 * 24 * 60 * 60 * 1000;
   const E = 5 * 60 * 60 * 1000;
-  if (typeof channel.fillerRepeatCooldown === 'undefined') {
+  if (isUndefined(channel.fillerRepeatCooldown)) {
     channel.fillerRepeatCooldown = 30 * 60 * 1000;
   }
   let listM = 0;
@@ -302,7 +303,7 @@ export function getWatermark(ffmpegSettings, channel, type) {
     return null;
   }
   let d = channel.disableFillerOverlay;
-  if (typeof d === 'undefined') {
+  if (isUndefined(d)) {
     d = true;
   }
   if (typeof type !== `undefined` && type == 'commercial' && d) {
@@ -319,9 +320,9 @@ export function getWatermark(ffmpegSettings, channel, type) {
   if (!e) {
     return null;
   }
-  if (typeof icon === 'undefined' || icon === '') {
+  if (isUndefined(icon) || icon === '') {
     icon = channel.icon;
-    if (typeof icon === 'undefined' || icon === '') {
+    if (isUndefined(icon) || icon === '') {
       return null;
     }
   }

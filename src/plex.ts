@@ -1,5 +1,5 @@
 import request from 'request';
-
+import { isUndefined } from 'lodash';
 export class Plex {
   private _accessToken: string;
   private _server: any;
@@ -39,7 +39,7 @@ export class Plex {
 
   SignIn(username, password) {
     return new Promise((resolve, reject) => {
-      if (typeof username === 'undefined' || typeof password === 'undefined')
+      if (isUndefined(username === 'undefined' || typeof password))
         reject(
           "Plex 'SignIn' Error - No Username or Password was provided to sign in.",
         );
@@ -159,7 +159,7 @@ export class Plex {
     try {
       var result = await this.Get('/livetv/dvrs');
       var dvrs = result.Dvr;
-      dvrs = typeof dvrs === 'undefined' ? [] : dvrs;
+      dvrs = isUndefined(dvrs) ? [] : dvrs;
       return dvrs;
     } catch (err) {
       throw Error('GET /livetv/drs failed: ' + err.message);

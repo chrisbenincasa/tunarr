@@ -1,3 +1,5 @@
+import { isUndefined } from 'lodash';
+
 const SLACK = require('./constants').SLACK;
 
 let cache = {};
@@ -9,7 +11,7 @@ let numbers = null;
 export async function getChannelConfig(channelDB, channelId) {
   //with lazy-loading
 
-  if (typeof configCache[channelId] === 'undefined') {
+  if (isUndefined(configCache[channelId])) {
     let channel = await channelDB.getChannel(channelId);
     if (channel == null) {
       configCache[channelId] = [];
@@ -44,7 +46,7 @@ export function saveChannelConfig(number, channel) {
 }
 
 export function getCurrentLineupItem(channelId, t1) {
-  if (typeof cache[channelId] === 'undefined') {
+  if (isUndefined(cache[channelId])) {
     return null;
   }
   let recorded = cache[channelId];
@@ -58,7 +60,7 @@ export function getCurrentLineupItem(channelId, t1) {
     //closed the stream and opened it again let's not lose seconds for
     //no reason
     let originalT0 = recorded.lineupItem.originalT0;
-    if (typeof originalT0 === 'undefined') {
+    if (isUndefined(originalT0)) {
       originalT0 = recorded.t0;
     }
     if (t1 - originalT0 <= SLACK) {
@@ -115,7 +117,7 @@ function recordProgramPlayTime(channelId, lineupItem, t0) {
 
 export function getProgramLastPlayTime(channelId, program) {
   let v = programPlayTimeCache[getKey(channelId, program)];
-  if (typeof v === 'undefined') {
+  if (isUndefined(v)) {
     return 0;
   } else {
     return v;
@@ -124,7 +126,7 @@ export function getProgramLastPlayTime(channelId, program) {
 
 export function getFillerLastPlayTime(channelId, fillerId) {
   let v = fillerPlayTimeCache[getFillerKey(channelId, fillerId)];
-  if (typeof v === 'undefined') {
+  if (isUndefined(v)) {
     return 0;
   } else {
     return v;
