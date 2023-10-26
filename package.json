@@ -17,12 +17,12 @@
   "author": "vexorian",
   "license": "Zlib",
   "dependencies": {
-    "angular": "^1.8.0",
+    "angular": "^1.6.10",
     "angular-router-browserify": "0.0.2",
     "angular-vs-repeat": "2.0.13",
     "axios": "^0.21.1",
     "body-parser": "^1.19.0",
-    "diskdb": "0.1.17",
+    "diskdb": "^0.1.1",
     "express": "^4.17.1",
     "express-fileupload": "^1.2.1",
     "JSONStream": "1.0.5",
@@ -32,6 +32,8 @@
     "random-js": "2.1.0",
     "request": "^2.88.2",
     "uuid": "^8.0.0",
+    "winston": "^3.11.0",
+    "winston-daily-rotate-file": "^4.7.1",
     "xml-writer": "^1.7.0"
   },
   "bin": "dist/index.js",
@@ -43,16 +45,17 @@
     "@types/axios": "^0.14.0",
     "@types/express": "^4.17.20",
     "@types/node": "^20.8.9",
+    "@types/winston": "^2.4.4",
     "browserify": "^16.5.1",
     "copyfiles": "^2.2.0",
     "del-cli": "^3.0.0",
-    "nexe": "^3.3.7",
-    "nodemon": "^2.0.22",
+    "nexe": "^4.0.0-rc.2",
+    "nodemon": "^3.0.1",
     "prettier": "^3.0.3",
     "ts-node": "^10.9.1",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.2.2",
-    "watchify": "^3.11.1"
+    "watchify": "^4.0.0"
   },
   "babel": {
     "plugins": [
