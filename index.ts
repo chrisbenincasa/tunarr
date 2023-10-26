@@ -12,9 +12,9 @@ import { hdhr } from './src/hdhr';
 import FileCacheService from './src/services/file-cache-service';
 import CacheImageService from './src/services/cache-image-service';
 
-import xmltv from './src/xmltv';
+import * as xmltv from './src/xmltv';
 import Plex from './src/plex';
-import channelCache from './src/channel-cache';
+import * as channelCache from './src/channel-cache';
 import constants from './src/constants';
 import { ChannelDB } from './src/dao/channel-db';
 import M3uService from './src/services/m3u-service';
@@ -228,6 +228,8 @@ xmltvInterval.startInterval();
 
 let hdhrService = hdhr(db, channelDB);
 let app = express();
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 eventService.setup(app);
 
 app.use(

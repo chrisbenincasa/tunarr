@@ -12,7 +12,7 @@
     "compile": "babel index.js -d dist && babel src -d dist/src",
     "package": "sh ./make_dist.sh",
     "clean": "del-cli --force ./bin ./dist ./.dizquetv ./web/public/bundle.js",
-    "dev": "nodemon -e ts --watch src index.ts -e .json,.ts,.yml,.yaml,.js -x ts-node -r tsconfig-paths/register --files --project tsconfig.json index.ts"
+    "dev": "nodemon -e ts --watch src --watch index.ts -e .json,.ts,.yml,.yaml,.js -x ts-node -r tsconfig-paths/register --files --project tsconfig.json index.ts"
   },
   "author": "vexorian",
   "license": "Zlib",
@@ -52,6 +52,7 @@
     "@types/fluent-ffmpeg": "^2.1.23",
     "@types/lodash": "^4.14.200",
     "@types/node": "^20.8.9",
+    "@types/random-js": "^2.0.0",
     "@types/winston": "^2.4.4",
     "browserify": "^16.5.1",
     "copyfiles": "^2.2.0",
