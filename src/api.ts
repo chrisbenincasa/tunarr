@@ -1,12 +1,12 @@
 import express from 'express';
 import path from 'path';
 import fs from 'fs';
-import databaseMigration from './database-migration';
+import * as databaseMigration from './database-migration';
 import * as channelCache from './channel-cache';
 import constants from './constants';
 import JSONStream from 'JSONStream';
 import { FFMPEGInfo } from './ffmpeg-info';
-import PlexServerDB from './dao/plex-server-db';
+import { PlexServerDB } from './dao/plex-server-db';
 import { Plex } from './plex';
 
 import timeSlotsService from './services/time-slots-service';
@@ -586,7 +586,7 @@ export function makeApi(
   router.post('/api/ffmpeg-settings', (req, res) => {
     // RESET
     try {
-      let ffmpeg = databaseMigration.defaultFFMPEG();
+      let ffmpeg = databaseMigration.ffmpeg();
       ffmpeg.ffmpegPath = req.body.ffmpegPath;
       db['ffmpeg-settings'].update({ _id: req.body._id }, ffmpeg);
       ffmpeg = db['ffmpeg-settings'].find()[0];

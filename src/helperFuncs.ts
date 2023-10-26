@@ -4,7 +4,7 @@ import * as randomJS from 'random-js';
 
 const SLACK = constants.SLACK;
 const Random = randomJS.Random;
-const random = new Random(randomJS.MersenneTwister19937.autoSeed());
+export const random = new Random(randomJS.MersenneTwister19937.autoSeed());
 
 const CHANNEL_CONTEXT_KEYS = [
   'disableFillerOverlay',
@@ -16,8 +16,6 @@ const CHANNEL_CONTEXT_KEYS = [
   'transcoding',
   'number',
 ];
-
-module.exports.random = random;
 
 export function getCurrentProgramAndTimeElapsed(date, channel) {
   let channelStartTime = new Date(channel.startTime).getTime();

@@ -1,9 +1,25 @@
-const constants = require('../constants');
+import constants from '../constants';
+import throttle from './throttle';
 const FALLBACK_ICON =
   'https://raw.githubusercontent.com/vexorain/dizquetv/main/resources/dizquetv.png';
-const throttle = require('./throttle');
 
-class TVGuideService {
+export class TVGuideService {
+  cached: any;
+  lastUpdate: number;
+  lastBackoff: number;
+  updateTime: number;
+  currentUpdate: number;
+  currentLimit: number;
+  currentChannels: any;
+  xmltv: any;
+  db: any;
+  cacheImageService: any;
+  eventService: any;
+  _throttle: any;
+  updateLimit: any;
+  updateChannels: any[];
+  accumulateTable: any;
+  channelsByNumber: any;
   /****
    *
    **/
@@ -86,7 +102,7 @@ class TVGuideService {
     return arr;
   }
 
-  async getCurrentPlayingIndex(channel, t) {
+  async getCurrentPlayingIndex(channel, t): Promise<any> {
     let s = new Date(channel.startTime).getTime();
     if (t < s) {
       //it's flex time
@@ -128,11 +144,8 @@ class TVGuideService {
     }
   }
 
-  async getChannelPlaying(channel, previousKnown, t, depth) {
-    if (typeof depth === 'undefined') {
-      depth = [];
-    }
-    let playing = {};
+  async getChannelPlaying(channel, previousKnown, t, depth = []): Promise<any> {
+    let playing: Record<string, any> = {};
     if (
       typeof previousKnown !== 'undefined' &&
       previousKnown.index !== -1 &&
@@ -207,7 +220,7 @@ class TVGuideService {
     if (typeof channel === 'undefined') {
       throw Error("Couldn't find channel?");
     }
-    let result = {
+    let result: Record<string, any> = {
       channel: makeChannelEntry(channel),
     };
     let programs = [];
@@ -406,7 +419,7 @@ class TVGuideService {
     await this.get();
     let channels = [];
 
-    Object.keys(this.cached).forEach((k, index) => channels.push(k));
+    Object.keys(this.cached).forEach((k) => channels.push(k));
 
     return {
       lastUpdate: new Date(this.lastUpdate).toISOString(),
@@ -536,5 +549,3 @@ function formatDateYYYYMMDD(date) {
   var day = (date.getDate() + 100).toString().substring(1);
   return year + '-' + month + '-' + day;
 }
-
-module.exports = TVGuideService;
