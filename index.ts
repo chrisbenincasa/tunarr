@@ -8,7 +8,7 @@ import fileUpload from 'express-fileupload';
 import api from './src/api';
 import dbMigration from './src/database-migration';
 import video from './src/video';
-import HDHR from './src/hdhr';
+import { hdhr } from './src/hdhr';
 import FileCacheService from './src/services/file-cache-service';
 import CacheImageService from './src/services/cache-image-service';
 
@@ -226,7 +226,7 @@ let xmltvInterval = {
 xmltvInterval.updateXML();
 xmltvInterval.startInterval();
 
-let hdhr = HDHR(db, channelDB);
+let hdhrService = hdhr(db, channelDB);
 let app = express();
 eventService.setup(app);
 
@@ -287,11 +287,11 @@ app.use(
 app.use('/api/cache/images', cacheImageService.apiRouters());
 
 app.use(video.router(channelDB, fillerDB, db));
-app.use(hdhr.router);
+app.use(hdhrService.router);
 app.listen(process.env.PORT, () => {
   console.log(`HTTP server running on port: http://*:${process.env.PORT}`);
   let hdhrSettings = db['hdhr-settings'].find()[0];
-  if (hdhrSettings.autoDiscovery === true) hdhr.ssdp.start();
+  if (hdhrSettings.autoDiscovery === true) hdhrService.ssdp.start();
 });
 
 function initDB(db, channelDB) {

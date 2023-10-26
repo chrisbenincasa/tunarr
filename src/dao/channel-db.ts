@@ -106,7 +106,7 @@ export class ChannelDB {
     });
   }
 
-  async getAllChannels() {
+  async getAllChannels(): Promise<any[]> {
     let numbers = await this.getAllChannelNumbers();
     return await Promise.all(numbers.map(async (c) => this.getChannel(c)));
   }
