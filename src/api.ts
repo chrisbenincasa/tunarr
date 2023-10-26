@@ -1,19 +1,21 @@
+import JSONStream from 'JSONStream';
 import express from 'express';
-import path from 'path';
 import fs from 'fs';
-import * as databaseMigration from './database-migration';
+import path from 'path';
 import * as channelCache from './channel-cache';
 import constants from './constants';
-import JSONStream from 'JSONStream';
-import { FFMPEGInfo } from './ffmpeg-info';
 import { PlexServerDB } from './dao/plex-server-db';
+import * as databaseMigration from './database-migration';
+import { FFMPEGInfo } from './ffmpeg-info';
 import { Plex } from './plex';
-
-import timeSlotsService from './services/time-slots-service';
-import randomSlotsService from './services/random-slots-service';
-import throttle from './services/throttle';
 import fileUpload from 'express-fileupload';
 import { isUndefined } from 'lodash';
+import randomSlotsService from './services/random-slots-service';
+import throttle from './services/throttle';
+import timeSlotsService from './services/time-slots-service';
+import createLogger from './logger';
+
+const logger = createLogger(module);
 
 function safeString(object, ...args: any[]) {
   let o = object;
@@ -56,7 +58,7 @@ export function makeApi(
         nodejs: process.version,
       });
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('error');
     }
   });
@@ -70,7 +72,7 @@ export function makeApi(
       });
       res.send(servers);
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('error');
     }
   });
@@ -97,7 +99,7 @@ export function makeApi(
         status: s,
       });
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('error');
     }
   });
@@ -119,7 +121,7 @@ export function makeApi(
         status: s,
       });
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('error');
     }
   });
@@ -142,7 +144,7 @@ export function makeApi(
         level: 'warn',
       });
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('error');
       eventService.push('settings-update', {
         message: 'Error deleting plex server.',
@@ -176,7 +178,7 @@ export function makeApi(
         level: 'warning',
       });
     } catch (err) {
-      console.error('Could not update plex server.', err);
+      logger.error('Could not update plex server.', err);
       res.status(400).send('Could not add plex server.');
       eventService.push('settings-update', {
         message: 'Error updating plex server.',
@@ -204,7 +206,7 @@ export function makeApi(
         level: 'info',
       });
     } catch (err) {
-      console.error('Could not add plex server.', err);
+      logger.error('Could not add plex server.', err);
       res.status(400).send('Could not add plex server.');
       eventService.push('settings-update', {
         message: 'Error adding plex server.',
@@ -228,7 +230,7 @@ export function makeApi(
       });
       res.send(channels);
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('error');
     }
   });
@@ -244,7 +246,7 @@ export function makeApi(
         res.status(404).send('Channel not found');
       }
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('error');
     }
   });
@@ -266,7 +268,7 @@ export function makeApi(
         res.status(404).send('Channel not found');
       }
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('error');
     }
   });
@@ -298,7 +300,7 @@ export function makeApi(
         res.status(404).send('Channel not found');
       }
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('error');
     }
   });
@@ -318,7 +320,7 @@ export function makeApi(
         res.status(404).send('Channel not found');
       }
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('error');
     }
   });
@@ -330,7 +332,7 @@ export function makeApi(
       });
       res.send(channels);
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('error');
     }
   });
@@ -343,7 +345,7 @@ export function makeApi(
       res.send({ number: req.body.number });
       updateXmltv();
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('error');
     }
   });
@@ -356,7 +358,7 @@ export function makeApi(
       res.send({ number: req.body.number });
       updateXmltv();
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('error');
     }
   });
@@ -368,7 +370,7 @@ export function makeApi(
       res.send({ number: req.body.number });
       updateXmltv();
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('error');
     }
   });
@@ -408,7 +410,7 @@ export function makeApi(
       let fillers = await fillerDB.getAllFillersInfo();
       res.send(fillers);
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('error');
     }
   });
@@ -424,7 +426,7 @@ export function makeApi(
       }
       res.send(filler);
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('error');
     }
   });
@@ -437,7 +439,7 @@ export function makeApi(
       await fillerDB.saveFiller(id, req.body);
       res.status(204).send({});
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('error');
     }
   });
@@ -446,7 +448,7 @@ export function makeApi(
       let uuid = await fillerDB.createFiller(req.body);
       res.status(201).send({ id: uuid });
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('error');
     }
   });
@@ -459,7 +461,7 @@ export function makeApi(
       await fillerDB.deleteFiller(id);
       res.status(204).send({});
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('error');
     }
   });
@@ -476,7 +478,7 @@ export function makeApi(
       }
       res.send(channels);
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('error');
     }
   });
@@ -487,7 +489,7 @@ export function makeApi(
       let fillers = await customShowDB.getAllShowsInfo();
       res.send(fillers);
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('error');
     }
   });
@@ -503,7 +505,7 @@ export function makeApi(
       }
       res.send(filler);
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('error');
     }
   });
@@ -516,7 +518,7 @@ export function makeApi(
       await customShowDB.saveShow(id, req.body);
       res.status(204).send({});
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('error');
     }
   });
@@ -525,7 +527,7 @@ export function makeApi(
       let uuid = await customShowDB.createShow(req.body);
       res.status(201).send({ id: uuid });
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('error');
     }
   });
@@ -538,7 +540,7 @@ export function makeApi(
       await customShowDB.deleteShow(id);
       res.status(204).send({});
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('error');
     }
   });
@@ -549,7 +551,7 @@ export function makeApi(
       let ffmpeg = db['ffmpeg-settings'].find()[0];
       res.send(ffmpeg);
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('error');
     }
   });
@@ -571,7 +573,7 @@ export function makeApi(
       });
       res.send(ffmpeg);
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('error');
       eventService.push('settings-update', {
         message: 'Error updating FFMPEG configuration.',
@@ -601,7 +603,7 @@ export function makeApi(
       });
       res.send(ffmpeg);
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('error');
       eventService.push('settings-update', {
         message: 'Error reseting FFMPEG configuration.',
@@ -630,7 +632,7 @@ export function makeApi(
       let plex = db['plex-settings'].find()[0];
       res.send(plex);
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('error');
     }
   });
@@ -648,7 +650,7 @@ export function makeApi(
         level: 'info',
       });
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('error');
       eventService.push('settings-update', {
         message: 'Error updating Plex configuration',
@@ -699,7 +701,7 @@ export function makeApi(
         level: 'warning',
       });
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('error');
 
       eventService.push('settings-update', {
@@ -718,7 +720,7 @@ export function makeApi(
     try {
       res.send(JSON.stringify({ value: xmltvInterval.lastUpdated.valueOf() }));
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('error');
     }
   });
@@ -729,7 +731,7 @@ export function makeApi(
       let xmltv = db['xmltv-settings'].find()[0];
       res.send(xmltv);
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('error');
     }
   });
@@ -758,7 +760,7 @@ export function makeApi(
       });
       updateXmltv();
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('error');
 
       eventService.push('settings-update', {
@@ -796,7 +798,7 @@ export function makeApi(
 
       updateXmltv();
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('error');
       eventService.push('settings-update', {
         message: 'Error reseting xmltv configuration',
@@ -815,7 +817,7 @@ export function makeApi(
       let s = await guideService.getStatus();
       res.send(s);
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('error');
     }
   });
@@ -825,7 +827,7 @@ export function makeApi(
       let s = await guideService.get();
       res.send(s);
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('error');
     }
   });
@@ -841,7 +843,7 @@ export function makeApi(
         dateTo,
       );
       if (lineup == null) {
-        console.log(
+        logger.info(
           `GET /api/guide/channels/${req.params.number} : 404 Not Found`,
         );
         res.status(404).send('Channel not found in TV guide');
@@ -849,7 +851,7 @@ export function makeApi(
         res.send(lineup);
       }
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('error');
     }
   });
@@ -860,7 +862,7 @@ export function makeApi(
       let hdhr = db['hdhr-settings'].find()[0];
       res.send(hdhr);
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('error');
     }
   });
@@ -878,7 +880,7 @@ export function makeApi(
         level: 'info',
       });
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('error');
       eventService.push('settings-update', {
         message: 'Error updating HDHR configuration',
@@ -912,7 +914,7 @@ export function makeApi(
         level: 'warning',
       });
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('error');
       eventService.push('settings-update', {
         message: 'Error reseting HDHR configuration',
@@ -939,7 +941,7 @@ export function makeApi(
       const fileFinal = fileContent.replace(/\{\{host\}\}/g, host);
       res.send(fileFinal);
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('error');
     }
   });
@@ -952,12 +954,12 @@ export function makeApi(
         req.body.schedule,
       );
       if (typeof toolRes.userError !== 'undefined') {
-        console.error('time slots error: ' + toolRes.userError);
+        logger.error('time slots error: ' + toolRes.userError);
         res.status(400).send(toolRes.userError);
       }
       await streamToolResult(toolRes, res);
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('Internal error');
     }
   });
@@ -969,12 +971,12 @@ export function makeApi(
         req.body.schedule,
       );
       if (typeof toolRes.userError !== 'undefined') {
-        console.error('random slots error: ' + toolRes.userError);
+        logger.error('random slots error: ' + toolRes.userError);
         res.status(400).send(toolRes.userError);
       }
       await streamToolResult(toolRes, res);
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('Internal error');
     }
   });
@@ -989,7 +991,7 @@ export function makeApi(
 
       res.send(data);
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('error');
     }
   });
@@ -1006,13 +1008,13 @@ export function makeApi(
     delete program.durationStr;
     delete program.commercials;
     if (isUndefined(program.duration) || program.duration <= 0) {
-      console.error(
+      logger.error(
         `Input contained a program with invalid duration: ${program.duration}. This program has been deleted`,
       );
       return [];
     }
     if (!Number.isInteger(program.duration)) {
-      console.error(
+      logger.error(
         `Input contained a program with invalid duration: ${program.duration}. Duration got fixed to be integer.`,
       );
       program.duration = Math.ceil(program.duration);
@@ -1039,7 +1041,7 @@ export function makeApi(
     delete toolRes.programs;
     let s = JSON.stringify(toolRes);
     s = s.slice(0, -1);
-    console.log(JSON.stringify(toolRes));
+    logger.info(JSON.stringify(toolRes));
 
     res.writeHead(200, {
       'Content-Type': 'application/json',

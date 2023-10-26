@@ -16,37 +16,34 @@ export function hdhr(db: any, channelDB: ChannelDB) {
   server.addUSN('upnp:rootdevice');
   server.addUSN('urn:schemas-upnp-org:device:MediaServer:1');
 
-  var router = express.Router();
+  const router = express.Router();
 
   router.get('/device.xml', (req, res) => {
-    var device = getDevice(db, req.protocol + '://' + req.get('host'));
+    let device = getDevice(db, req.protocol + '://' + req.get('host'));
+    let data = device.getXml();
     res.header('Content-Type', 'application/xml');
-    var data = device.getXml();
     res.send(data);
   });
 
   router.get('/discover.json', (req, res) => {
-    var device = getDevice(db, req.protocol + '://' + req.get('host'));
-    res.header('Content-Type', 'application/json');
-    res.send(JSON.stringify(device));
+    const device = getDevice(db, req.protocol + '://' + req.get('host'));
+    res.json(device);
   });
 
   router.get('/lineup_status.json', (_, res) => {
-    res.header('Content-Type', 'application/json');
-    var data = {
+    res.json({
       ScanInProgress: 0,
       ScanPossible: 1,
       Source: 'Cable',
       SourceList: ['Cable'],
-    };
-    res.send(JSON.stringify(data));
+    });
   });
+
   router.get('/lineup.json', async (req, res) => {
-    res.header('Content-Type', 'application/json');
-    var lineup = [];
-    var channels = await channelDB.getAllChannels();
+    let lineup = [];
+    let channels = await channelDB.getAllChannels();
     for (let i = 0, l = channels.length; i < l; i++) {
-      if (channels[i].stealth !== true) {
+      if (!channels[i].stealth) {
         lineup.push({
           GuideNumber: channels[i].number.toString(),
           GuideName: channels[i].name,
@@ -62,7 +59,8 @@ export function hdhr(db: any, channelDB: ChannelDB) {
         GuideName: 'dizqueTV',
         URL: `${req.protocol}://${req.get('host')}/setup`,
       });
-    res.send(JSON.stringify(lineup));
+
+    res.json(lineup);
   });
 
   return { router: router, ssdp: server };
@@ -73,7 +71,7 @@ function getDevice(db, host) {
   var device = {
     FriendlyName: 'dizqueTV',
     Manufacturer: 'dizqueTV - Silicondust',
-    ManufacturerURL: 'https://github.com/vexorian/dizquetv',
+    ManufacturerURL: 'https://github.com/chrisbenincasa/dizquetv',
     ModelNumber: 'HDTC-2US',
     FirmwareName: 'hdhomeruntc_atsc',
     TunerCount: hdhrSettings.tunerCount,
