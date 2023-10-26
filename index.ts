@@ -16,7 +16,7 @@ import xmltv from './src/xmltv';
 import Plex from './src/plex';
 import channelCache from './src/channel-cache';
 import constants from './src/constants';
-import ChannelDB from './src/dao/channel-db';
+import { ChannelDB } from './src/dao/channel-db';
 import M3uService from './src/services/m3u-service';
 import FillerDB from './src/dao/filler-db';
 import CustomShowDB from './src/dao/custom-show-db';

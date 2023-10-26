@@ -392,7 +392,7 @@ class TVGuideService {
       this.cacheImageService,
     );
     let t = '' + new Date();
-    eventService.push('xmltv', {
+    this.eventService.push('xmltv', {
       message: `XMLTV updated at server time = ${t}`,
       module: 'xmltv',
       detail: {
