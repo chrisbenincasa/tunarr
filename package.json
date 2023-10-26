@@ -28,6 +28,7 @@
     "JSONStream": "1.0.5",
     "merge": "2.1.1",
     "node-graceful-shutdown": "1.1.0",
+    "node-schedule": "^2.1.1",
     "node-ssdp": "^4.0.0",
     "random-js": "2.1.0",
     "request": "^2.88.2",
