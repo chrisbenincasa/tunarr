@@ -48,6 +48,7 @@
     "del-cli": "^3.0.0",
     "nexe": "^3.3.7",
     "nodemon": "^2.0.22",
+    "prettier": "^3.0.3",
     "ts-node": "^10.9.1",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.2.2",
