@@ -1,6 +1,7 @@
 import { createWriteStream, promises as fs } from 'fs';
 import express from 'express';
 import request from 'request';
+import { FileCacheService } from './file-cache-service';
 
 /**
  * Manager a cache in disk for external images.
@@ -8,11 +9,11 @@ import request from 'request';
  * @class CacheImageService
  */
 export class CacheImageService {
-  cacheService: any;
+  private cacheService: FileCacheService;
   imageCacheFolder: string;
   db: any;
 
-  constructor(db, fileCacheService) {
+  constructor(db, fileCacheService: FileCacheService) {
     this.cacheService = fileCacheService;
     this.imageCacheFolder = 'images';
     this.db = db['cache-images'];

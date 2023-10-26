@@ -1,20 +1,16 @@
 import path from 'path';
 import { createWriteStream, promises as fs } from 'fs';
 
-// // const open = promisify(fs.open);
-// const unlink = promisify(fs.unlink);
-// const readFile = promisify(fs.readFile);
-
 /**
  * Store files in cache
  *
  * @class FileCacheService
  */
 export class FileCacheService {
-  cachePath: any;
-  cache: {};
+  cachePath: string;
+  cache: Record<string, string>;
 
-  constructor(cachePath) {
+  constructor(cachePath: string) {
     this.cachePath = cachePath;
     this.cache = {};
   }
@@ -22,7 +18,7 @@ export class FileCacheService {
   /**
    * `save` a file on cache folder
    */
-  async setCache(fullFilePath: string, data: any): Promise<any> {
+  async setCache(fullFilePath: string, data: any): Promise<boolean> {
     const file = createWriteStream(path.join(this.cachePath, fullFilePath));
 
     return new Promise((resolve, reject) => {
@@ -40,7 +36,7 @@ export class FileCacheService {
   /**
    * `get` a File from cache folder
    */
-  async getCache(fullFilePath: string): Promise<any> {
+  async getCache(fullFilePath: string): Promise<string | undefined> {
     try {
       if (fullFilePath in this.cache) {
         return this.cache[fullFilePath];
@@ -55,7 +51,7 @@ export class FileCacheService {
   /**
    * `delete` a File from cache folder
    */
-  async deleteCache(fullFilePath: string): Promise<any> {
+  async deleteCache(fullFilePath: string): Promise<boolean> {
     let thePath = path.join(this.cachePath, fullFilePath);
     try {
       await fs.open(thePath);

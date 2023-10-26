@@ -28,6 +28,7 @@
     "fluent-ffmpeg": "^2.1.2",
     "JSONStream": "1.0.5",
     "lodash": "^4.17.21",
+    "lowdb": "^6.1.1",
     "merge": "2.1.1",
     "node-graceful-shutdown": "1.1.0",
     "node-schedule": "^2.1.1",
@@ -37,7 +38,8 @@
     "tslib": "^2.6.2",
     "winston": "^3.11.0",
     "winston-daily-rotate-file": "^4.7.1",
-    "xml-writer": "^1.7.0"
+    "xml-writer": "^1.7.0",
+    "yargs": "^17.7.2"
   },
   "bin": "dist/index.js",
   "devDependencies": {
@@ -55,6 +57,7 @@
     "@types/request": "^2.48.11",
     "@types/uuid": "^9.0.6",
     "@types/winston": "^2.4.4",
+    "@types/yargs": "^17.0.29",
     "browserify": "^16.5.1",
     "copyfiles": "^2.2.0",
     "del-cli": "^3.0.0",

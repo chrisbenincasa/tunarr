@@ -6,4 +6,6 @@ export default {
   TOO_FREQUENT: 100,
 
   VERSION_NAME: '1.4.5',
+
+  DEFAULT_DATA_DIR: '.dizquetv',
 };

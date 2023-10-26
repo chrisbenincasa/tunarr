@@ -2,7 +2,7 @@ node_modules/
 dist/
 bin/
 .pseudotv/
-.dizquetv/
+.dizquetv*/
 web/public/bundle.js
 *.orig
 package-lock.json

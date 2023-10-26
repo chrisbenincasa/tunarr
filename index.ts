@@ -1,27 +1,26 @@
+import bodyParser from 'body-parser';
 import db from 'diskdb';
+import express from 'express';
+import fileUpload from 'express-fileupload';
 import fs from 'fs';
 import path from 'path';
-import express from 'express';
-import bodyParser from 'body-parser';
-import fileUpload from 'express-fileupload';
-
 import { makeApi } from './src/api';
-import * as dbMigration from './src/database-migration';
-import { video } from './src/video';
-import { hdhr } from './src/hdhr';
-import { FileCacheService } from './src/services/file-cache-service';
-import { CacheImageService } from './src/services/cache-image-service';
-
-import * as xmltv from './src/xmltv';
-import { Plex } from './src/plex';
 import * as channelCache from './src/channel-cache';
 import constants from './src/constants';
 import { ChannelDB } from './src/dao/channel-db';
-import { M3uService } from './src/services/m3u-service';
-import { FillerDB } from './src/dao/filler-db';
 import { CustomShowDB } from './src/dao/custom-show-db';
-import { TVGuideService } from './src/services/tv-guide-service';
+import { FillerDB } from './src/dao/filler-db';
+import * as dbMigration from './src/database-migration';
+import { hdhr } from './src/hdhr';
+import { Plex } from './src/plex';
+import { CacheImageService } from './src/services/cache-image-service';
 import { EventService } from './src/services/event-service';
+import { FileCacheService } from './src/services/file-cache-service';
+import { M3uService } from './src/services/m3u-service';
+import { TVGuideService } from './src/services/tv-guide-service';
+import { video } from './src/video';
+import * as xmltv from './src/xmltv';
+
 const onShutdown = require('node-graceful-shutdown').onShutdown;
 
 console.log(
@@ -53,7 +52,8 @@ for (let i = 0, l = process.argv.length; i < l; i++) {
     process.env.DATABASE = process.argv[i + 1];
 }
 
-process.env.DATABASE = process.env.DATABASE || path.join('.', '.dizquetv');
+process.env.DATABASE =
+  process.env.DATABASE || path.join('.', constants.DEFAULT_DATA_DIR);
 process.env.PORT = process.env.PORT || '8000';
 
 if (!fs.existsSync(process.env.DATABASE)) {
