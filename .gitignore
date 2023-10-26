@@ -6,3 +6,5 @@ bin/
 web/public/bundle.js
 *.orig
 package-lock.json
+
+config/
