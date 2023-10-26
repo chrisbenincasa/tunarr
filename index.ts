@@ -5,15 +5,15 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import fileUpload from 'express-fileupload';
 
-import api from './src/api';
+import { makeApi } from './src/api';
 import dbMigration from './src/database-migration';
-import video from './src/video';
+import { video } from './src/video';
 import { hdhr } from './src/hdhr';
 import FileCacheService from './src/services/file-cache-service';
 import CacheImageService from './src/services/cache-image-service';
 
 import * as xmltv from './src/xmltv';
-import Plex from './src/plex';
+import { Plex } from './src/plex';
 import * as channelCache from './src/channel-cache';
 import constants from './src/constants';
 import { ChannelDB } from './src/dao/channel-db';
@@ -275,7 +275,7 @@ app.use(
 
 // API Routers
 app.use(
-  api.router(
+  makeApi(
     db,
     channelDB,
     fillerDB,
@@ -288,7 +288,7 @@ app.use(
 );
 app.use('/api/cache/images', cacheImageService.apiRouters());
 
-app.use(video.router(channelDB, fillerDB, db));
+app.use(video(channelDB, fillerDB, db));
 app.use(hdhrService.router);
 app.listen(process.env.PORT, () => {
   console.log(`HTTP server running on port: http://*:${process.env.PORT}`);

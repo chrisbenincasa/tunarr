@@ -35,7 +35,6 @@
     "random-js": "2.1.0",
     "request": "^2.88.2",
     "tslib": "^2.6.2",
-    "uuid": "^8.0.0",
     "winston": "^3.11.0",
     "winston-daily-rotate-file": "^4.7.1",
     "xml-writer": "^1.7.0"
@@ -53,6 +52,8 @@
     "@types/lodash": "^4.14.200",
     "@types/node": "^20.8.9",
     "@types/random-js": "^2.0.0",
+    "@types/request": "^2.48.11",
+    "@types/uuid": "^9.0.6",
     "@types/winston": "^2.4.4",
     "browserify": "^16.5.1",
     "copyfiles": "^2.2.0",
@@ -63,6 +64,7 @@
     "ts-node": "^10.9.1",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.2.2",
+    "uuid": "^9.0.1",
     "watchify": "^4.0.0"
   },
   "babel": {

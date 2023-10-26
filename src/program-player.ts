@@ -23,7 +23,7 @@ let PlexPlayer = require('./plex-player');
 import EventEmitter from 'events';
 import * as helperFuncs from './helperFuncs';
 
-class ProgramPlayer {
+export class ProgramPlayer {
   private context: any;
   private delegate: any;
 
@@ -120,5 +120,3 @@ class ProgramPlayer {
     }
   }
 }
-
-module.exports = ProgramPlayer;
