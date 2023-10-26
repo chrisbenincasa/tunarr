@@ -1,5 +1,9 @@
 import path from 'path';
-import fs from 'fs';
+import { createWriteStream, promises as fs } from 'fs';
+
+// // const open = promisify(fs.open);
+// const unlink = promisify(fs.unlink);
+// const readFile = promisify(fs.readFile);
 
 /**
  * Store files in cache
@@ -17,88 +21,56 @@ export class FileCacheService {
 
   /**
    * `save` a file on cache folder
-   *
-   * @param {string} fullFilePath
-   * @param {*} data
-   * @returns {promise}
-   * @memberof CacheService
    */
-  setCache(fullFilePath, data) {
+  async setCache(fullFilePath: string, data: any): Promise<any> {
+    const file = createWriteStream(path.join(this.cachePath, fullFilePath));
+
     return new Promise((resolve, reject) => {
-      try {
-        const file = fs.createWriteStream(
-          path.join(this.cachePath, fullFilePath),
-        );
-        file.write(data, (err) => {
-          if (err) {
-            throw Error("Can't save file: ", err);
-          } else {
-            this.cache[fullFilePath] = data;
-            resolve(true);
-          }
-        });
-      } catch (err) {
-        reject(err);
-      }
+      file.write(data, (err) => {
+        if (err) {
+          reject(Error("Can't save file: ", err));
+        } else {
+          this.cache[fullFilePath] = data;
+          resolve(true);
+        }
+      });
     });
   }
 
   /**
    * `get` a File from cache folder
-   *
-   * @param {string} fullFilePath
-   * @returns {promise} `Resolve` with file content, `Reject` with false
-   * @memberof CacheService
    */
-  getCache(fullFilePath) {
-    return new Promise((resolve, _reject) => {
-      try {
-        if (fullFilePath in this.cache) {
-          resolve(this.cache[fullFilePath]);
-        } else {
-          fs.readFile(
-            path.join(this.cachePath, fullFilePath),
-            'utf8',
-            function (err, data) {
-              if (err) {
-                resolve(false);
-              }
-              resolve(data);
-            },
-          );
-        }
-      } catch (error) {
-        resolve(false);
-        throw Error("Can't get file", error);
+  async getCache(fullFilePath: string): Promise<any> {
+    try {
+      if (fullFilePath in this.cache) {
+        return this.cache[fullFilePath];
+      } else {
+        return fs.readFile(path.join(this.cachePath, fullFilePath), 'utf8');
       }
-    });
+    } catch (error) {
+      throw Error("Can't get file", error);
+    }
   }
 
   /**
    * `delete` a File from cache folder
-   *
-   * @param {string} fullFilePath
-   * @returns {promise}
-   * @memberof CacheService
    */
-  deleteCache(fullFilePath) {
-    return new Promise((resolve, reject) => {
-      try {
-        let thePath = path.join(this.cachePath, fullFilePath);
-        if (!fs.existsSync(thePath)) {
-          return resolve(true);
-        }
-        fs.unlink(thePath, (err) => {
-          if (err) {
-            throw Error("Can't save file: ", err);
-          } else {
-            delete this.cache[fullFilePath];
-            resolve(true);
-          }
-        });
-      } catch (err) {
-        reject(err);
+  async deleteCache(fullFilePath: string): Promise<any> {
+    let thePath = path.join(this.cachePath, fullFilePath);
+    try {
+      await fs.open(thePath);
+    } catch (err) {
+      if (err == 'ENOENT') {
+        return true;
       }
-    });
+    }
+
+    try {
+      await fs.unlink(thePath);
+      delete this.cache[fullFilePath];
+      return true;
+    } catch (err) {
+      throw err;
+    }
   }
 }

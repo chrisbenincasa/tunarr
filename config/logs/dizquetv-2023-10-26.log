@@ -1,0 +1,50 @@
+2023-10-26T20:04:42.105Z [info] services/event-service.ts: Open event channel. 
+2023-10-26T20:05:15.664Z [info] services/event-service.ts: Push event: Started building tv-guide at = Thu Oct 26 2023 16:05:15 GMT-0400 (Eastern Daylight Time) 
+2023-10-26T20:05:15.686Z [info] services/event-service.ts: Push event: XMLTV updated at server time = Thu Oct 26 2023 16:05:15 GMT-0400 (Eastern Daylight Time) 
+2023-10-26T20:05:16.969Z [info] services/event-service.ts: Open event channel. 
+2023-10-26T20:05:18.945Z [info] services/event-service.ts: Remove event channel. 
+2023-10-26T20:05:18.950Z [info] services/event-service.ts: Open event channel. 
+2023-10-26T20:07:03.583Z [info] services/event-service.ts: Push event: Started building tv-guide at = Thu Oct 26 2023 16:07:03 GMT-0400 (Eastern Daylight Time) 
+2023-10-26T20:07:03.599Z [info] services/event-service.ts: Push event: XMLTV updated at server time = Thu Oct 26 2023 16:07:03 GMT-0400 (Eastern Daylight Time) 
+2023-10-26T20:07:03.995Z [info] services/event-service.ts: Open event channel. 
+2023-10-26T20:07:15.952Z [info] services/event-service.ts: Remove event channel. 
+2023-10-26T20:07:15.962Z [info] services/event-service.ts: Open event channel. 
+2023-10-26T20:07:23.578Z [info] services/event-service.ts: Push event: Server Started 
+2023-10-26T20:08:15.941Z [info] services/event-service.ts: Remove event channel. 
+2023-10-26T20:08:15.950Z [info] services/event-service.ts: Open event channel. 
+2023-10-26T20:08:51.719Z [info] services/event-service.ts: Push event: Started building tv-guide at = Thu Oct 26 2023 16:08:51 GMT-0400 (Eastern Daylight Time) 
+2023-10-26T20:08:51.736Z [info] services/event-service.ts: Push event: XMLTV updated at server time = Thu Oct 26 2023 16:08:51 GMT-0400 (Eastern Daylight Time) 
+2023-10-26T20:08:52.449Z [info] services/event-service.ts: Open event channel. 
+2023-10-26T20:09:11.714Z [info] services/event-service.ts: Push event: Server Started 
+2023-10-26T20:11:18.469Z [info] services/event-service.ts: Push event: Started building tv-guide at = Thu Oct 26 2023 16:11:18 GMT-0400 (Eastern Daylight Time) 
+2023-10-26T20:11:18.484Z [info] services/event-service.ts: Push event: XMLTV updated at server time = Thu Oct 26 2023 16:11:18 GMT-0400 (Eastern Daylight Time) 
+2023-10-26T20:11:20.965Z [info] services/event-service.ts: Open event channel. 
+2023-10-26T20:11:22.951Z [info] services/event-service.ts: Remove event channel. 
+2023-10-26T20:11:22.955Z [info] services/event-service.ts: Open event channel. 
+2023-10-26T20:11:38.463Z [info] services/event-service.ts: Push event: Server Started 
+2023-10-26T20:13:16.642Z [info] services/event-service.ts: Push event: Started building tv-guide at = Thu Oct 26 2023 16:13:16 GMT-0400 (Eastern Daylight Time) 
+2023-10-26T20:13:16.658Z [info] services/event-service.ts: Push event: XMLTV updated at server time = Thu Oct 26 2023 16:13:16 GMT-0400 (Eastern Daylight Time) 
+2023-10-26T20:13:18.967Z [info] services/event-service.ts: Open event channel. 
+2023-10-26T20:13:36.638Z [info] services/event-service.ts: Push event: Server Started 
+2023-10-26T20:13:48.718Z [info] services/event-service.ts: Push event: Started building tv-guide at = Thu Oct 26 2023 16:13:48 GMT-0400 (Eastern Daylight Time) 
+2023-10-26T20:13:48.735Z [info] services/event-service.ts: Push event: XMLTV updated at server time = Thu Oct 26 2023 16:13:48 GMT-0400 (Eastern Daylight Time) 
+2023-10-26T20:13:51.286Z [info] services/event-service.ts: Open event channel. 
+2023-10-26T20:13:51.939Z [info] services/event-service.ts: Remove event channel. 
+2023-10-26T20:13:51.945Z [info] services/event-service.ts: Open event channel. 
+2023-10-26T20:14:08.713Z [info] services/event-service.ts: Push event: Server Started 
+2023-10-26T20:14:18.371Z [info] services/event-service.ts: Push event: Started building tv-guide at = Thu Oct 26 2023 16:14:18 GMT-0400 (Eastern Daylight Time) 
+2023-10-26T20:14:18.387Z [info] services/event-service.ts: Push event: XMLTV updated at server time = Thu Oct 26 2023 16:14:18 GMT-0400 (Eastern Daylight Time) 
+2023-10-26T20:14:20.864Z [info] services/event-service.ts: Open event channel. 
+2023-10-26T20:14:38.367Z [info] services/event-service.ts: Push event: Server Started 
+2023-10-26T20:15:15.570Z [info] services/event-service.ts: Push event: Started building tv-guide at = Thu Oct 26 2023 16:15:15 GMT-0400 (Eastern Daylight Time) 
+2023-10-26T20:15:15.588Z [info] services/event-service.ts: Push event: XMLTV updated at server time = Thu Oct 26 2023 16:15:15 GMT-0400 (Eastern Daylight Time) 
+2023-10-26T20:15:18.247Z [info] services/event-service.ts: Open event channel. 
+2023-10-26T20:15:18.944Z [info] services/event-service.ts: Remove event channel. 
+2023-10-26T20:15:18.948Z [info] services/event-service.ts: Open event channel. 
+2023-10-26T20:15:24.309Z [info] services/event-service.ts: Push event: Started building tv-guide at = Thu Oct 26 2023 16:15:24 GMT-0400 (Eastern Daylight Time) 
+2023-10-26T20:15:24.327Z [info] services/event-service.ts: Push event: XMLTV updated at server time = Thu Oct 26 2023 16:15:24 GMT-0400 (Eastern Daylight Time) 
+2023-10-26T20:15:24.912Z [info] services/event-service.ts: Open event channel. 
+2023-10-26T20:15:44.302Z [info] services/event-service.ts: Push event: Server Started 
+2023-10-26T20:24:54.649Z [info] services/event-service.ts: Push event: Started building tv-guide at = Thu Oct 26 2023 16:24:54 GMT-0400 (Eastern Daylight Time) 
+2023-10-26T20:24:54.665Z [info] services/event-service.ts: Push event: XMLTV updated at server time = Thu Oct 26 2023 16:24:54 GMT-0400 (Eastern Daylight Time) 
+2023-10-26T20:24:54.979Z [info] services/event-service.ts: Open event channel. 

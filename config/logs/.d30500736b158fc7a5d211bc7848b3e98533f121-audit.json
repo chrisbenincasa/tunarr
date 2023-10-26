@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 7
+    },
+    "auditLog": "/home/christian/code/dizquetv/config/logs/.d30500736b158fc7a5d211bc7848b3e98533f121-audit.json",
+    "files": [
+        {
+            "date": 1698350679452,
+            "name": "/home/christian/code/dizquetv/config/logs/dizquetv-2023-10-26.log",
+            "hash": "c1053b2bf4435715b54b389ffdd6c816b06a6d055540adad00e151211b946950"
+        }
+    ],
+    "hashType": "sha256"
+}

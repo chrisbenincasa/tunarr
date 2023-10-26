@@ -1,48 +1,49 @@
 import EventEmitter from 'events';
+import createLogger from '../logger';
+
+const logger = createLogger(module);
 
 export class EventService {
-  stream: EventEmitter;
+  private stream: EventEmitter;
+  private _heartbeat: NodeJS.Timeout;
 
   constructor() {
     this.stream = new EventEmitter();
-    let that = this;
-    let fun = () => {
-      that.push('heartbeat', '{}');
-      setTimeout(fun, 5000);
-    };
-    fun();
+    this._heartbeat = setInterval(() => {
+      this.push('heartbeat', {});
+    }, 5000);
+    this.stream.on('close', () => {
+      clearInterval(this._heartbeat);
+    });
   }
 
   setup(app) {
     app.get('/api/events', (_request, response) => {
-      console.log('Open event channel.');
+      logger.info('Open event channel.');
       response.writeHead(200, {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
         connection: 'keep-alive',
       });
-      let listener = (event, data) => {
-        //console.log( String(event) + " " + JSON.stringify(data) );
+
+      const listener = (event: string, data: Record<string, any>) => {
         response.write(
-          'event: ' +
-            String(event) +
-            '\ndata: ' +
-            JSON.stringify(data) +
-            '\nretry: 5000\n\n',
+          `event: ${event}\ndata: ${JSON.stringify(data)}\n retry: 5000\n\n`,
         );
       };
 
       this.stream.on('push', listener);
+
       response.on('close', () => {
-        console.log('Remove event channel.');
+        logger.info('Remove event channel.');
         this.stream.removeListener('push', listener);
       });
     });
   }
 
-  push(event, data) {
+  push(event: string, data: Record<string, any>) {
     if (typeof data.message !== 'undefined') {
-      console.log('Push event: ' + data.message);
+      logger.info('Push event: ' + data.message);
     }
     this.stream.emit('push', event, data);
   }

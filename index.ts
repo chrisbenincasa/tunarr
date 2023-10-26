@@ -35,7 +35,7 @@ console.log(
 `,
 );
 
-const NODE = parseInt(process.version.match(/^[^0-9]*(\d+)\..*$/)[1]);
+const NODE = parseInt(process.version!.match(/^[^0-9]*(\d+)\..*$/)![1]);
 
 if (NODE < 12) {
   console.error(
