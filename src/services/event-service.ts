@@ -1,7 +1,7 @@
 import EventEmitter from 'events';
-import createLogger from '../logger';
+import createLogger from '../logger.js';
 
-const logger = createLogger(module);
+const logger = createLogger(import.meta);
 
 export class EventService {
   private stream: EventEmitter;

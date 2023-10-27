@@ -1,9 +1,12 @@
-import { Plex } from './plex';
-import { serverContext } from './server-context';
-import * as channelCache from './channel-cache';
+import { Plex } from './plex.js';
+import { serverContext } from './server-context.js';
+import * as channelCache from './channel-cache.js';
+import createLogger from './logger.js';
+
+const logger = createLogger(import.meta);
 
 const updateXML = async () => {
-  const ctx = serverContext();
+  const ctx = await serverContext();
 
   let getChannelsCached = async () => {
     let channelNumbers = await ctx.channelDB.getAllChannelNumbers();
@@ -27,12 +30,11 @@ const updateXML = async () => {
 
     await ctx.guideService.refresh(t);
     xmltvInterval.lastRefresh = new Date();
-    console.log(
-      'XMLTV Updated at ',
-      xmltvInterval.lastRefresh.toLocaleString(),
+    logger.info(
+      'XMLTV Updated at ' + xmltvInterval.lastRefresh.toLocaleString(),
     );
   } catch (err) {
-    console.error('Unable to update TV guide?', err);
+    logger.error('Unable to update TV guide?', err);
     return;
   }
   channels = await getChannelsCached();
@@ -48,7 +50,7 @@ const updateXML = async () => {
     try {
       dvrs = await plex.GetDVRS(); // Refresh guide and channel mappings
     } catch (err) {
-      console.error(
+      logger.error(
         `Couldn't get DVRS list from ${plexServers[i].name}. This error will prevent 'refresh guide' or 'refresh channels' from working for this Plex server. But it is NOT related to playback issues.`,
         err,
       );
@@ -58,7 +60,7 @@ const updateXML = async () => {
       try {
         await plex.RefreshGuide(dvrs);
       } catch (err) {
-        console.error(
+        logger.error(
           `Couldn't tell Plex ${plexServers[i].name} to refresh guide for some reason. This error will prevent 'refresh guide' from working for this Plex server. But it is NOT related to playback issues.`,
           err,
         );
@@ -68,7 +70,7 @@ const updateXML = async () => {
       try {
         await plex.RefreshChannels(channels, dvrs);
       } catch (err) {
-        console.error(
+        logger.error(
           `Couldn't tell Plex ${plexServers[i].name} to refresh channels for some reason. This error will prevent 'refresh channels' from working for this Plex server. But it is NOT related to playback issues.`,
           err,
         );
@@ -81,8 +83,8 @@ export const xmltvInterval = {
   interval: null as NodeJS.Timeout | null,
   lastRefresh: null as Date | null,
   updateXML,
-  startInterval: () => {
-    const ctx = serverContext();
+  startInterval: async () => {
+    const ctx = await serverContext();
     let xmltvSettings = ctx.db['xmltv-settings'].find()[0];
     if (xmltvSettings.refresh !== 0) {
       xmltvInterval.interval = setInterval(
@@ -90,7 +92,7 @@ export const xmltvInterval = {
           try {
             await xmltvInterval.updateXML();
           } catch (err) {
-            console.error('update XMLTV error', err);
+            logger.error('update XMLTV error', err);
           }
         },
         xmltvSettings.refresh * 60 * 60 * 1000,

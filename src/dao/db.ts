@@ -1,3 +1,7 @@
+import { once } from 'lodash-es';
+import { argv } from '../args';
+import path from 'path';
+
 export type Program = {};
 
 export type Watermark = {};
@@ -48,4 +52,16 @@ export type Schema = {
   channels: Channel[];
 };
 
+const defaultData: Schema = {
+  channels: [],
+};
+
 export class Database {}
+
+export const getDB = once(async () => {
+  const { JSONPreset } = await import('lowdb/node');
+  return JSONPreset<Schema>(
+    path.resolve(argv.database, 'db.json'),
+    defaultData,
+  );
+});

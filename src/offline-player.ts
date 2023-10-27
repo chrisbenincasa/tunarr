@@ -7,9 +7,10 @@
  * can be used to play the program.
  **/
 import EventEmitter from 'events';
-import { FFMPEG } from './ffmpeg';
+import { FFMPEG } from './ffmpeg.js';
+import { argv } from './args.js';
 
-class OfflinePlayer {
+export class OfflinePlayer {
   private context: any;
   private error: any;
   private ffmpeg: FFMPEG;
@@ -19,7 +20,7 @@ class OfflinePlayer {
     this.error = error;
     if (context.isLoading === true) {
       context.channel = JSON.parse(JSON.stringify(context.channel));
-      context.channel.offlinePicture = `http://localhost:${process.env.PORT}/images/loading-screen.png`;
+      context.channel.offlinePicture = `http://localhost:${argv.port}/images/loading-screen.png`;
       context.channel.offlineSoundtrack = undefined;
     }
     this.ffmpeg = new FFMPEG(context.ffmpegSettings, context.channel);
@@ -97,5 +98,3 @@ class OfflinePlayer {
     }
   }
 }
-
-module.exports = OfflinePlayer;

@@ -1,91 +1,67 @@
 import db from 'diskdb';
-import { once } from 'lodash';
-import { argv } from './args';
-import * as channelCache from './channel-cache';
-import { ChannelDB } from './dao/channel-db';
+import fs, { promises as fsPromises } from 'fs';
+import { once } from 'lodash-es';
 import path from 'path';
-import { FillerDB } from './dao/filler-db';
-import { CacheImageService } from './services/cache-image-service';
-import { FileCacheService } from './services/file-cache-service';
-import { M3uService } from './services/m3u-service';
-import * as dbMigration from './database-migration';
-import fs from 'fs';
-import { TVGuideService } from './services/tv-guide-service';
-import * as xmltv from './xmltv';
-import { EventService } from './services/event-service';
-import { hdhr } from './hdhr';
+import { argv } from './args.js';
+import * as channelCache from './channel-cache.js';
+import { ChannelDB } from './dao/channel-db.js';
+import { CustomShowDB } from './dao/custom-show-db.js';
+import { FillerDB } from './dao/filler-db.js';
+import * as dbMigration from './database-migration.js';
+import { hdhr } from './hdhr.js';
+import { CacheImageService } from './services/cache-image-service.js';
+import { EventService } from './services/event-service.js';
+import { FileCacheService } from './services/file-cache-service.js';
+import { M3uService } from './services/m3u-service.js';
+import { TVGuideService } from './services/tv-guide-service.js';
+import * as xmltv from './xmltv.js';
 
-function initDB(db, channelDB) {
-  if (!fs.existsSync(process.env.DATABASE + '/images/dizquetv.png')) {
-    let data = fs.readFileSync(
-      path.resolve(path.join(__dirname, 'resources/dizquetv.png')),
+// Temp
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+async function copyIfMissingFromDatabase(
+  targetPath: string,
+  resourcePath: string,
+): Promise<void> {
+  if (!fs.existsSync(path.join(argv.database, targetPath))) {
+    await fsPromises.copyFile(
+      new URL('../' + resourcePath, import.meta.url),
+      path.join(argv.database, targetPath),
     );
-    fs.writeFileSync(process.env.DATABASE + '/images/dizquetv.png', data);
-  }
-  dbMigration.initDB(db, channelDB, __dirname);
-  if (!fs.existsSync(process.env.DATABASE + '/font.ttf')) {
-    let data = fs.readFileSync(
-      path.resolve(path.join(__dirname, 'resources/font.ttf')),
-    );
-    fs.writeFileSync(process.env.DATABASE + '/font.ttf', data);
-  }
-  if (!fs.existsSync(process.env.DATABASE + '/images/dizquetv.png')) {
-    let data = fs.readFileSync(
-      path.resolve(path.join(__dirname, 'resources/dizquetv.png')),
-    );
-    fs.writeFileSync(process.env.DATABASE + '/images/dizquetv.png', data);
-  }
-  if (
-    !fs.existsSync(process.env.DATABASE + '/images/generic-error-screen.png')
-  ) {
-    let data = fs.readFileSync(
-      path.resolve(path.join(__dirname, 'resources/generic-error-screen.png')),
-    );
-    fs.writeFileSync(
-      process.env.DATABASE + '/images/generic-error-screen.png',
-      data,
-    );
-  }
-  if (
-    !fs.existsSync(process.env.DATABASE + '/images/generic-offline-screen.png')
-  ) {
-    let data = fs.readFileSync(
-      path.resolve(
-        path.join(__dirname, 'resources/generic-offline-screen.png'),
-      ),
-    );
-    fs.writeFileSync(
-      process.env.DATABASE + '/images/generic-offline-screen.png',
-      data,
-    );
-  }
-  if (
-    !fs.existsSync(process.env.DATABASE + '/images/generic-music-screen.png')
-  ) {
-    let data = fs.readFileSync(
-      path.resolve(path.join(__dirname, 'resources/generic-music-screen.png')),
-    );
-    fs.writeFileSync(
-      process.env.DATABASE + '/images/generic-music-screen.png',
-      data,
-    );
-  }
-  if (!fs.existsSync(process.env.DATABASE + '/images/loading-screen.png')) {
-    let data = fs.readFileSync(
-      path.resolve(path.join(__dirname, 'resources/loading-screen.png')),
-    );
-    fs.writeFileSync(process.env.DATABASE + '/images/loading-screen.png', data);
-  }
-  if (!fs.existsSync(path.join(process.env.DATABASE || '', 'custom.css'))) {
-    let data = fs.readFileSync(
-      path.resolve(path.join(__dirname, 'resources', 'default-custom.css')),
-    );
-    fs.writeFileSync(path.join(process.env.DATABASE || '', 'custom.css'), data);
   }
 }
 
-export const serverContext = once(() => {
-  db.connect(process.env.DATABASE, [
+async function initDB(db: any, channelDB: ChannelDB) {
+  dbMigration.initDB(db, channelDB, __dirname);
+  await Promise.all([
+    copyIfMissingFromDatabase('images/dizquetv.png', 'resources/dizquetv.png'),
+    copyIfMissingFromDatabase('font.ttf', 'resources/font.ttf'),
+    copyIfMissingFromDatabase(
+      'images/generic-error-screen.png',
+      'resources/generic-error-screen.png',
+    ),
+    copyIfMissingFromDatabase(
+      'images/generic-offline-screen.png',
+      'resources/generic-offline-screen.png',
+    ),
+    copyIfMissingFromDatabase(
+      'images/generic-music-screen.png',
+      'resources/generic-music-screen.png',
+    ),
+    copyIfMissingFromDatabase(
+      'images/loading-screen.png',
+      'resources/loading-screen.png',
+    ),
+    copyIfMissingFromDatabase('custom.css', 'resources/default-custom.css'),
+  ]);
+}
+
+export const serverContext = once(async () => {
+  db.connect(argv.database, [
     'channels',
     'plex-servers',
     'ffmpeg-settings',
@@ -109,7 +85,7 @@ export const serverContext = once(() => {
   const m3uService = new M3uService(channelDB, fileCache, channelCache);
   const eventService = new EventService();
 
-  initDB(db, channelDB);
+  await initDB(db, channelDB);
 
   const guideService = new TVGuideService(
     xmltv,
@@ -128,5 +104,6 @@ export const serverContext = once(() => {
     eventService,
     guideService,
     hdhrService: hdhr(db, channelDB),
+    customShowDB: new CustomShowDB(path.join(argv.database, 'custom-shows')),
   };
 });

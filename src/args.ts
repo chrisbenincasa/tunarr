@@ -1,9 +1,10 @@
 import yargs from 'yargs/yargs';
 import { hideBin } from 'yargs/helpers';
 import path from 'path';
-import constants from './constants';
+import constants from './constants.js';
 
 export const argv = yargs(hideBin(process.argv))
+  .scriptName('dizquetv')
   .option('port', {
     alias: 'p',
     type: 'number',
@@ -15,5 +16,7 @@ export const argv = yargs(hideBin(process.argv))
     type: 'string',
     desc: 'Path to the database directory',
     default: path.join('.', constants.DEFAULT_DATA_DIR),
+    normalize: true,
   })
+  // .coerce('database', path.resolve)
   .parseSync();

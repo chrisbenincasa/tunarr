@@ -1,7 +1,7 @@
 import { createWriteStream, promises as fs } from 'fs';
 import express from 'express';
 import request from 'request';
-import { FileCacheService } from './file-cache-service';
+import { FileCacheService } from './file-cache-service.js';
 
 /**
  * Manager a cache in disk for external images.

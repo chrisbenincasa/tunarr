@@ -1,5 +1,6 @@
 import { ChildProcessWithoutNullStreams, spawn } from 'child_process';
 import events from 'events';
+import { argv } from './args.js';
 
 export class FFMPEG_TEXT extends events.EventEmitter {
   private args: string[];
@@ -22,7 +23,7 @@ export class FFMPEG_TEXT extends events.EventEmitter {
       '-i',
       'anullsrc',
       '-vf',
-      `drawtext=fontfile=${process.env.DATABASE}/font.ttf:fontsize=30:fontcolor=white:x=(w-text_w)/2:y=(h-text_h)/2:text='${title}',drawtext=fontfile=${process.env.DATABASE}/font.ttf:fontsize=20:fontcolor=white:x=(w-text_w)/2:y=(h+text_h+20)/2:text='${subtitle}'`,
+      `drawtext=fontfile=${argv.database}/font.ttf:fontsize=30:fontcolor=white:x=(w-text_w)/2:y=(h-text_h)/2:text='${title}',drawtext=fontfile=${argv.database}/font.ttf:fontsize=20:fontcolor=white:x=(w-text_w)/2:y=(h+text_h+20)/2:text='${subtitle}'`,
       '-c:v',
       opts.videoEncoder,
       '-c:a',

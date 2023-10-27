@@ -1,8 +1,8 @@
-import constants from '../constants';
-import { isUndefined } from 'lodash';
-import getShowDataFunc from './get-show-data';
-import throttle from './throttle';
-const random = require('../helperFuncs').random;
+import { isUndefined } from 'lodash-es';
+import constants from '../constants.js';
+import { random } from '../helperFuncs.js';
+import getShowDataFunc from './get-show-data.js';
+import throttle from './throttle.js';
 
 const getShowData = getShowDataFunc();
 

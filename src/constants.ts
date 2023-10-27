@@ -1,4 +1,4 @@
-export default {
+const constants = {
   SLACK: 9999,
   TVGUIDE_MAXIMUM_PADDING_LENGTH_MS: 30 * 60 * 1000,
   DEFAULT_GUIDE_STEALTH_DURATION: 5 * 60 * 1000,
@@ -9,3 +9,5 @@ export default {
 
   DEFAULT_DATA_DIR: '.dizquetv',
 };
+
+export default constants;

@@ -1,6 +1,7 @@
-import { isUndefined } from 'lodash';
+import { isUndefined } from 'lodash-es';
+import constants from './constants.js';
 
-const SLACK = require('./constants').SLACK;
+const SLACK = constants.SLACK;
 
 let cache = {};
 let programPlayTimeCache = {};

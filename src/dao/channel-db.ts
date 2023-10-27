@@ -1,5 +1,5 @@
 import fs from 'fs';
-import { isUndefined } from 'lodash';
+import { isUndefined } from 'lodash-es';
 import path from 'path';
 
 export class ChannelDB {

@@ -18,10 +18,10 @@
  * deal with the thrown error.
  **/
 
-let OfflinePlayer = require('./offline-player');
-let PlexPlayer = require('./plex-player');
+import { OfflinePlayer } from './offline-player.js';
+import { PlexPlayer } from './plex-player.js';
 import EventEmitter from 'events';
-import * as helperFuncs from './helperFuncs';
+import * as helperFuncs from './helperFuncs.js';
 
 export class ProgramPlayer {
   private context: any;

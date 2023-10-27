@@ -1,4 +1,7 @@
-import { isUndefined } from 'lodash';
+import { isUndefined } from 'lodash-es';
+import { ChannelDB } from './channel-db.js';
+import { FillerDB } from './filler-db.js';
+import { argv } from '../args.js';
 
 //hmnn this is more of a "PlexServerService"...
 const ICON_REGEX =
@@ -12,7 +15,13 @@ export class PlexServerDB {
   channelCache: any;
   fillerDB: any;
   showDB: any;
-  constructor(channelDB, channelCache, fillerDB, showDB, db) {
+  constructor(
+    channelDB: ChannelDB,
+    channelCache,
+    fillerDB: FillerDB,
+    showDB,
+    db,
+  ) {
     this.channelDB = channelDB;
     this.db = db;
     this.channelCache = channelCache;
@@ -46,7 +55,7 @@ export class PlexServerDB {
           channel.fallback = [];
           if (channel.offlineMode != 'pic') {
             channel.offlineMode = 'pic';
-            channel.offlinePicture = `http://localhost:${process.env.PORT}/images/generic-offline-screen.png`;
+            channel.offlinePicture = `http://localhost:${argv.port}/images/generic-offline-screen.png`;
           }
         }
         this.fixupProgramArray(

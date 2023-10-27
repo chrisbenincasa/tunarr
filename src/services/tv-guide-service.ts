@@ -1,6 +1,9 @@
-import constants from '../constants';
-import throttle from './throttle';
-import { isUndefined } from 'lodash';
+import { isUndefined } from 'lodash-es';
+import constants from '../constants.js';
+import createLogger from '../logger.js';
+import throttle from './throttle.js';
+
+const logger = createLogger(import.meta);
 
 const FALLBACK_ICON =
   'https://raw.githubusercontent.com/vexorain/dizquetv/main/resources/dizquetv.png';
@@ -58,7 +61,7 @@ export class TVGuideService {
       if (typeof inputChannels[i] !== 'undefined') {
         channels.push(inputChannels[i]);
       } else {
-        console.error(
+        logger.error(
           `There is an issue with one of the channels provided to TV-guide service, it will be ignored: ${i}`,
         );
       }
@@ -166,7 +169,7 @@ export class TVGuideService {
       playing = await this.getCurrentPlayingIndex(channel, t);
     }
     if (playing.program == null || isUndefined(playing)) {
-      console.log(
+      logger.warn(
         'There is a weird issue with the TV guide generation. A placeholder program is placed to prevent further issues. Please report this.',
       );
       playing = {
@@ -182,14 +185,14 @@ export class TVGuideService {
       let ch2 = playing.program.channel;
 
       if (depth.indexOf(ch2) != -1) {
-        console.error(
+        logger.error(
           'Redirrect loop found! Involved channels = ' + JSON.stringify(depth),
         );
       } else {
         depth.push(channel.number);
         let channel2 = this.channelsByNumber[ch2];
         if (isUndefined(channel2)) {
-          console.error(
+          logger.error(
             'Redirrect to an unknown channel found! Involved channels = ' +
               JSON.stringify(depth),
           );
@@ -288,7 +291,7 @@ export class TVGuideService {
         x.program.duration -= d;
       }
       if (x.program.duration == 0) {
-        console.error("There's a program with duration 0?");
+        logger.error("There's a program with duration 0?");
       }
     }
     result.programs = [];
@@ -380,17 +383,17 @@ export class TVGuideService {
   async buildIt() {
     try {
       this.cached = await this.buildItManaged();
-      console.log(
+      logger.info(
         'Internal TV Guide data refreshed at ' + new Date().toLocaleString(),
       );
       await this.refreshXML();
       this.lastBackoff = 100;
     } catch (err) {
-      console.error('Unable to update internal guide data', err);
+      logger.error('Unable to update internal guide data', err);
       let w = Math.min(this.lastBackoff * 2, 300000);
       await _wait(w);
       this.lastBackoff = w;
-      console.error(`Retrying TV guide after ${w} milliseconds wait...`);
+      logger.error(`Retrying TV guide after ${w} milliseconds wait...`);
       await this.buildIt();
     } finally {
       this.lastUpdate = this.currentUpdate;

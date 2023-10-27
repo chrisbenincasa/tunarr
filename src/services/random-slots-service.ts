@@ -1,8 +1,8 @@
-import constants from '../constants';
-import getShowDataFunc from './get-show-data';
-import { random } from '../helperFuncs';
-import throttle from './throttle';
-import { isUndefined } from 'lodash';
+import constants from '../constants.js';
+import getShowDataFunc from './get-show-data.js';
+import { random } from '../helperFuncs.js';
+import throttle from './throttle.js';
+import { isUndefined } from 'lodash-es';
 
 const getShowData = getShowDataFunc();
 

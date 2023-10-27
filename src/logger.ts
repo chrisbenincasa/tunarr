@@ -1,14 +1,19 @@
-import Module from 'module';
 import path from 'path';
 import * as winston from 'winston';
 import 'winston-daily-rotate-file';
 
-const getLabel = (callingModule: Module) => {
-  const parts = callingModule.filename.split(path.sep);
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const getLabel = (callingModule: ImportMeta) => {
+  const parts = callingModule.url.split(path.sep);
   return path.join(parts[parts.length - 2], parts.pop() ?? '');
 };
 
-const hformat = (module: Module) =>
+const hformat = (module: ImportMeta) =>
   winston.format.printf(({ level, label, message, timestamp, ...metadata }) => {
     let msg = `${timestamp} [${level}] ${getLabel(module)}${
       label ? `[${label}]` : ''
@@ -19,7 +24,7 @@ const hformat = (module: Module) =>
     return msg;
   });
 
-const createLogger = (module: Module) => {
+const createLogger = (module: ImportMeta) => {
   const logger = winston.createLogger({
     level: process.env.LOG_LEVEL?.toLowerCase() || 'debug',
     format: winston.format.combine(

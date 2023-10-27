@@ -5,14 +5,14 @@
  *   it rejects the promise and the error is an Error() class.
  * * Otherwise it returns a stream.
  **/
-import { PlexTranscoder } from './plexTranscoder';
 import EventEmitter from 'events';
-import { FFMPEG } from './ffmpeg';
-import constants from './constants';
+import constants from './constants.js';
+import { FFMPEG } from './ffmpeg.js';
+import { PlexTranscoder } from './plexTranscoder.js';
 
 let USED_CLIENTS = {};
 
-class PlexPlayer {
+export class PlexPlayer {
   private context: any;
   private ffmpeg: FFMPEG | null;
   private plexTranscoder: any;
@@ -154,5 +154,3 @@ class PlexPlayer {
     }
   }
 }
-
-module.exports = PlexPlayer;

@@ -1,5 +1,5 @@
 import request from 'request';
-import { isUndefined } from 'lodash';
+import { isUndefined } from 'lodash-es';
 export class Plex {
   private _accessToken: string;
   private _server: any;

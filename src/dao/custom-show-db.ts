@@ -1,5 +1,5 @@
 import fs from 'fs';
-import { isUndefined } from 'lodash';
+import { isUndefined } from 'lodash-es';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 

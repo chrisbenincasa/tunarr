@@ -1,4 +1,4 @@
-import { isUndefined } from 'lodash';
+import { isUndefined } from 'lodash-es';
 
 //This is an exact copy of the file with the same now in the web project
 //one of these days, we'll figure out how to share the code.

@@ -1,7 +1,8 @@
 import axios from 'axios';
 import fs from 'fs';
+import { isUndefined } from 'lodash-es';
 import { v4 as uuidv4 } from 'uuid';
-import { isUndefined } from 'lodash';
+import { argv } from './args.js';
 
 type PlexStream = {
   directPlay: boolean;
@@ -387,7 +388,7 @@ lang=en`;
       ret.placeholderImage =
         this.albumArt.path != null
           ? (ret.placeholderImage = this.albumArt.path)
-          : (ret.placeholderImage = `http://localhost:${process.env.PORT}/images/generic-music-screen.png`);
+          : (ret.placeholderImage = `http://localhost:${argv.port}/images/generic-music-screen.png`);
     }
 
     this.log('Current video stats:');

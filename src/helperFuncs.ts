@@ -1,7 +1,7 @@
-import constants from './constants';
-import * as channelCache from './channel-cache';
+import { isUndefined } from 'lodash-es';
 import * as randomJS from 'random-js';
-import { isUndefined } from 'lodash';
+import * as channelCache from './channel-cache.js';
+import constants from './constants.js';
 
 const SLACK = constants.SLACK;
 const Random = randomJS.Random;

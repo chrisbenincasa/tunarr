@@ -1,5 +1,5 @@
-let constants = require('./constants');
-import { isUndefined } from 'lodash';
+import constants from './constants.js';
+import { isUndefined } from 'lodash-es';
 
 let cache = {};
 let previous;

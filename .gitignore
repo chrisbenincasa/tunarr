@@ -8,3 +8,4 @@ web/public/bundle.js
 package-lock.json
 
 config/
+.vscode/

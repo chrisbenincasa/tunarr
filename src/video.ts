@@ -1,13 +1,14 @@
 import express from 'express';
 import fs from 'fs';
-import { isUndefined } from 'lodash';
-import * as channelCache from './channel-cache';
-import constants from './constants';
-import { FFMPEG } from './ffmpeg';
-import { FFMPEG_TEXT } from './ffmpegText';
-import * as helperFuncs from './helperFuncs';
-import { ProgramPlayer } from './program-player';
-import { wereThereTooManyAttempts } from './throttler';
+import { isUndefined } from 'lodash-es';
+import * as channelCache from './channel-cache.js';
+import constants from './constants.js';
+import { FFMPEG } from './ffmpeg.js';
+import { FFMPEG_TEXT } from './ffmpegText.js';
+import * as helperFuncs from './helperFuncs.js';
+import { ProgramPlayer } from './program-player.js';
+import { wereThereTooManyAttempts } from './throttler.js';
+import { argv } from './args.js';
 
 let StreamCount = 0;
 
@@ -130,7 +131,7 @@ export function video(channelDB, fillerDB, db) {
 
     let channelNum = parseInt(req.query.channel, 10);
     let ff = await ffmpeg.spawnConcat(
-      `http://localhost:${process.env.PORT}/playlist?channel=${channelNum}&audioOnly=${audioOnly}`,
+      `http://localhost:${argv.port}/playlist?channel=${channelNum}&audioOnly=${audioOnly}`,
     );
     ff.pipe(res);
   };
@@ -504,11 +505,11 @@ export function video(channelDB, fillerDB, db) {
         true /* loading screen is pointless in audio mode (also for some reason it makes it fail when codec is aac, and I can't figure out why) */
     ) {
       //loading screen
-      data += `file 'http://localhost:${process.env.PORT}/stream?channel=${channelNum}&first=0&session=${sessionId}&audioOnly=${audioOnly}'\n`;
+      data += `file 'http://localhost:${argv.port}/stream?channel=${channelNum}&first=0&session=${sessionId}&audioOnly=${audioOnly}'\n`;
     }
-    data += `file 'http://localhost:${process.env.PORT}/stream?channel=${channelNum}&first=1&session=${sessionId}&audioOnly=${audioOnly}'\n`;
+    data += `file 'http://localhost:${argv.port}/stream?channel=${channelNum}&first=1&session=${sessionId}&audioOnly=${audioOnly}'\n`;
     for (var i = 0; i < maxStreamsToPlayInARow - 1; i++) {
-      data += `file 'http://localhost:${process.env.PORT}/stream?channel=${channelNum}&session=${sessionId}&audioOnly=${audioOnly}'\n`;
+      data += `file 'http://localhost:${argv.port}/stream?channel=${channelNum}&session=${sessionId}&audioOnly=${audioOnly}'\n`;
     }
 
     res.send(data);

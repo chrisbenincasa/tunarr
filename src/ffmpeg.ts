@@ -1,6 +1,7 @@
+import { argv } from './args.js';
 import events from 'events';
 import child_process from 'child_process';
-import { isUndefined } from 'lodash';
+import { isUndefined } from 'lodash-es';
 
 const spawn = child_process.spawn;
 
@@ -30,7 +31,7 @@ export class FFMPEG extends events.EventEmitter {
   constructor(opts, channel) {
     super();
     this.opts = opts;
-    this.errorPicturePath = `http://localhost:${process.env.PORT}/images/generic-error-screen.png`;
+    this.errorPicturePath = `http://localhost:${argv.port}/images/generic-error-screen.png`;
     this.ffmpegName = 'unnamed ffmpeg';
     if (!this.opts.enableFFMPEGTranscoding) {
       //this ensures transcoding is completely disabled even if
@@ -330,7 +331,7 @@ export class FFMPEG extends events.EventEmitter {
             ffmpegArgs.push('-f', 'lavfi', '-i', `color=c=black:s=${iW}x${iH}`);
             inputFiles++;
 
-            videoComplex = `;drawtext=fontfile=${process.env.DATABASE}/font.ttf:fontsize=${sz1}:fontcolor=white:x=(w-text_w)/2:y=(h-text_h)/2:text='${streamUrl.errorTitle}',drawtext=fontfile=${process.env.DATABASE}/font.ttf:fontsize=${sz2}:fontcolor=white:x=(w-text_w)/2:y=(h+text_h+${sz3})/2:text='${streamUrl.subtitle}'[videoy];[videoy]realtime[videox]`;
+            videoComplex = `;drawtext=fontfile=${argv.database}/font.ttf:fontsize=${sz1}:fontcolor=white:x=(w-text_w)/2:y=(h-text_h)/2:text='${streamUrl.errorTitle}',drawtext=fontfile=${argv.database}/font.ttf:fontsize=${sz2}:fontcolor=white:x=(w-text_w)/2:y=(h+text_h+${sz3})/2:text='${streamUrl.subtitle}'[videoy];[videoy]realtime[videox]`;
           } else {
             //blank
             ffmpegArgs.push('-f', 'lavfi', '-i', `color=c=black:s=${iW}x${iH}`);

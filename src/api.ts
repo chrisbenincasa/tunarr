@@ -1,21 +1,22 @@
 import JSONStream from 'JSONStream';
 import express from 'express';
-import fs from 'fs';
-import path from 'path';
-import * as channelCache from './channel-cache';
-import constants from './constants';
-import { PlexServerDB } from './dao/plex-server-db';
-import * as databaseMigration from './database-migration';
-import { FFMPEGInfo } from './ffmpeg-info';
-import { Plex } from './plex';
 import fileUpload from 'express-fileupload';
-import { isUndefined } from 'lodash';
-import randomSlotsService from './services/random-slots-service';
-import throttle from './services/throttle';
-import timeSlotsService from './services/time-slots-service';
-import createLogger from './logger';
+import fs from 'fs';
+import { isUndefined } from 'lodash-es';
+import path from 'path';
+import * as channelCache from './channel-cache.js';
+import constants from './constants.js';
+import { PlexServerDB } from './dao/plex-server-db.js';
+import * as databaseMigration from './database-migration.js';
+import { FFMPEGInfo } from './ffmpeg-info.js';
+import createLogger from './logger.js';
+import { Plex } from './plex.js';
+import randomSlotsService from './services/random-slots-service.js';
+import throttle from './services/throttle.js';
+import timeSlotsService from './services/time-slots-service.js';
+import { argv } from './args.js';
 
-const logger = createLogger(module);
+const logger = createLogger(import.meta);
 
 function safeString(object, ...args: any[]) {
   let o = object;
@@ -384,7 +385,7 @@ export function makeApi(
         });
       } else {
         const logo = req.files.image as fileUpload.UploadedFile;
-        logo.mv(path.join(process.env.DATABASE, '/images/uploads/', logo.name));
+        logo.mv(path.join(argv.database, '/images/uploads/', logo.name));
 
         res.send({
           status: true,
@@ -782,7 +783,7 @@ export function makeApi(
           _id: req.body._id,
           cache: 12,
           refresh: 4,
-          file: process.env.DATABASE + '/xmltv.xml',
+          file: argv.database + '/xmltv.xml',
         },
       );
       var xmltv = db['xmltv-settings'].find()[0];

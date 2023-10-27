@@ -1,23 +1,27 @@
-const argv = require('./src/args').argv;
+import { argv } from './src/args.js'; // keep this as first import to make sure args get parsed
 
 import bodyParser from 'body-parser';
-import db from 'diskdb';
 import express from 'express';
 import fileUpload from 'express-fileupload';
 import fs from 'fs';
 import path from 'path';
-import { makeApi } from './src/api';
-import * as channelCache from './src/channel-cache';
-import constants from './src/constants';
-import { ChannelDB } from './src/dao/channel-db';
-import { CustomShowDB } from './src/dao/custom-show-db';
-import { FillerDB } from './src/dao/filler-db';
-import { serverContext } from './src/server-context';
-import { video } from './src/video';
-import * as xmltv from './src/xmltv';
-import { xmltvInterval } from './src/xmltv-generator';
+import { makeApi } from './src/api.js';
+import constants from './src/constants.js';
+import createLogger from './src/logger.js';
+import { serverContext } from './src/server-context.js';
+import { video } from './src/video.js';
+import * as xmltv from './src/xmltv.js';
+import { xmltvInterval } from './src/xmltv-generator.js';
+import { onShutdown } from 'node-graceful-shutdown';
 
-const onShutdown = require('node-graceful-shutdown').onShutdown;
+const logger = createLogger(import.meta);
+
+// Temporary
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 console.log(
   `         \\
@@ -33,7 +37,7 @@ console.log(
 const NODE = parseInt(process.version!.match(/^[^0-9]*(\d+)\..*$/)![1]);
 
 if (NODE < 12) {
-  console.error(
+  logger.error(
     `WARNING: Your nodejs version ${process.version} is lower than supported. dizqueTV has been tested best on nodejs 12.16.`,
   );
 }
@@ -41,9 +45,9 @@ if (NODE < 12) {
 if (!fs.existsSync(argv.database)) {
   if (fs.existsSync(path.join('.', '.pseudotv'))) {
     throw Error(
-      process.env.DATABASE +
+      argv.database +
         ' folder not found but ./.pseudotv has been found. Please rename this folder or create an empty ' +
-        process.env.DATABASE +
+        argv.database +
         ' folder so that the program is not confused about.',
     );
   }
@@ -69,33 +73,11 @@ if (!fs.existsSync(path.join(argv.database, 'cache', 'images'))) {
   fs.mkdirSync(path.join(argv.database, 'cache', 'images'));
 }
 
-const channelDB = new ChannelDB(path.join(argv.database, 'channels'));
-const fillerDB = new FillerDB(
-  path.join(argv.database, 'filler'),
-  channelDB,
-  channelCache,
-);
-
-const customShowDB = new CustomShowDB(path.join(argv.database, 'custom-shows'));
-
-db.connect(process.env.DATABASE, [
-  'channels',
-  'plex-servers',
-  'ffmpeg-settings',
-  'plex-settings',
-  'xmltv-settings',
-  'hdhr-settings',
-  'db-version',
-  'client-id',
-  'cache-images',
-  'settings',
-]);
-
 async function initServer() {
-  const ctx = serverContext();
+  const ctx = await serverContext();
 
   xmltvInterval.updateXML();
-  xmltvInterval.startInterval();
+  await xmltvInterval.startInterval();
 
   const app = express();
   app.use(express.json());
@@ -146,10 +128,10 @@ async function initServer() {
   // API Routers
   app.use(
     makeApi(
-      db,
-      channelDB,
-      fillerDB,
-      customShowDB,
+      ctx.db,
+      ctx.channelDB,
+      ctx.fillerDB,
+      ctx.customShowDB,
       xmltvInterval,
       ctx.guideService,
       ctx.m3uService,
@@ -158,25 +140,25 @@ async function initServer() {
   );
   app.use('/api/cache/images', ctx.cacheImageService.apiRouters());
 
-  app.use(video(channelDB, fillerDB, db));
+  app.use(video(ctx.channelDB, ctx.fillerDB, ctx.db));
   app.use(ctx.hdhrService.router);
   app.listen(argv.port, () => {
-    console.log(`HTTP server running on port: http://*:${argv.port}`);
-    let hdhrSettings = db['hdhr-settings'].find()[0];
+    logger.info(`HTTP server running on port: http://*:${argv.port}`);
+    let hdhrSettings = ctx.db['hdhr-settings'].find()[0];
     if (hdhrSettings.autoDiscovery === true) ctx.hdhrService.ssdp.start();
   });
 }
 
 initServer();
 
-function _wait(t) {
+function _wait(t: number) {
   return new Promise((resolve) => {
     setTimeout(resolve, t);
   });
 }
 
 async function sendEventAfterTime() {
-  const ctx = serverContext();
+  const ctx = await serverContext();
   let t = new Date().getTime();
   await _wait(20000);
   ctx.eventService.push('lifecycle', {
@@ -190,7 +172,7 @@ async function sendEventAfterTime() {
 sendEventAfterTime();
 
 onShutdown('log', [], async () => {
-  const ctx = serverContext();
+  const ctx = await serverContext();
   let t = new Date().getTime();
   ctx.eventService.push('lifecycle', {
     message: `Initiated Server Shutdown`,
@@ -200,7 +182,7 @@ onShutdown('log', [], async () => {
     level: 'warning',
   });
 
-  console.log('Received exit signal, attempting graceful shutdonw...');
+  logger.info('Received exit signal, attempting graceful shutdonw...');
   await _wait(2000);
 });
 onShutdown('xmltv-writer', [], async () => {
