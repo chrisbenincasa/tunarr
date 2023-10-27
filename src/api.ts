@@ -6,15 +6,16 @@ import { isUndefined } from 'lodash-es';
 import path from 'path';
 import * as channelCache from './channel-cache.js';
 import constants from './constants.js';
+import { getDB } from './dao/db.js';
 import { PlexServerDB } from './dao/plex-server-db.js';
 import * as databaseMigration from './database-migration.js';
 import { FFMPEGInfo } from './ffmpeg-info.js';
+import { serverOptions } from './globals.js';
 import createLogger from './logger.js';
 import { Plex } from './plex.js';
 import randomSlotsService from './services/random-slots-service.js';
 import throttle from './services/throttle.js';
 import timeSlotsService from './services/time-slots-service.js';
-import { serverOptions } from './globals.js';
 
 const logger = createLogger(import.meta);
 
@@ -65,18 +66,16 @@ export function makeApi(
   });
 
   // Plex Servers
-  router.get('/api/plex-servers', (_, res) => {
+  router.get('/api/plex-servers', async (_, res) => {
     try {
-      let servers = db['plex-servers'].find();
-      servers.sort((a, b) => {
-        return a.index - b.index;
-      });
-      res.send(servers);
+      const db = await getDB();
+      res.json(db.plexServers());
     } catch (err) {
       logger.error(err);
       res.status(500).send('error');
     }
   });
+
   router.post('/api/plex-servers/status', async (req, res) => {
     try {
       let servers = db['plex-servers'].find({
@@ -729,16 +728,16 @@ export function makeApi(
   });
 
   // XMLTV SETTINGS
-  router.get('/api/xmltv-settings', (_req, res) => {
+  router.get('/api/xmltv-settings', async (_req, res) => {
     try {
-      let xmltv = db['xmltv-settings'].find()[0];
-      res.send(xmltv);
+      const db = await getDB();
+      res.json(db.xmlTvSettings());
     } catch (err) {
       logger.error(err);
       res.status(500).send('error');
     }
   });
-  router.put('/api/xmltv-settings', (req, res) => {
+  router.put('/api/xmltv-settings', async (req, res) => {
     try {
       let xmltv = db['xmltv-settings'].find()[0];
       db['xmltv-settings'].update(

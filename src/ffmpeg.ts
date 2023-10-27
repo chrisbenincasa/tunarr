@@ -2,8 +2,11 @@ import events from 'events';
 import child_process from 'child_process';
 import { isUndefined } from 'lodash-es';
 import { serverOptions } from './globals.js';
+import createLogger from './logger.js';
 
 const spawn = child_process.spawn;
+
+const logger = createLogger(import.meta);
 
 const MAXIMUM_ERROR_DURATION_MS = 60000;
 const REALLY_RIDICULOUSLY_HIGH_FPS_FOR_DIZQUETVS_USECASE = 120;
@@ -134,7 +137,7 @@ export class FFMPEG extends events.EventEmitter {
     }
     if (isUndefined(duration)) {
       //set a place-holder duration
-      console.log('No duration found for error stream, using placeholder');
+      logger.info('No duration found for error stream, using placeholder');
       duration = MAXIMUM_ERROR_DURATION_MS;
     }
     duration = Math.min(MAXIMUM_ERROR_DURATION_MS, duration);
@@ -156,7 +159,7 @@ export class FFMPEG extends events.EventEmitter {
   }
   async spawnOffline(duration) {
     if (!this.opts.enableFFMPEGTranscoding) {
-      console.log(
+      logger.info(
         'The channel has an offline period scheduled for this time slot. FFMPEG transcoding is disabled, so it is not possible to render an offline screen. Ending the stream instead',
       );
       this.emit('end', { code: -1, cmd: `offline stream disabled.` });
@@ -425,7 +428,7 @@ export class FFMPEG extends events.EventEmitter {
         currentVideo = 'scaled';
         resizeMsg = `Stretch to ${cw} x ${ch}. To fit target resolution of ${this.wantedW} x ${this.wantedH}.`;
         if (this.ensureResolution) {
-          console.log(
+          logger.info(
             `First stretch to ${cw} x ${ch}. Then add padding to make it ${this.wantedW} x ${this.wantedH} `,
           );
         } else if (cw % 2 == 1 || ch % 2 == 1) {
@@ -519,7 +522,7 @@ export class FFMPEG extends events.EventEmitter {
         // and resolution normalization is off
         currentVideo = beforeSizeChange;
       } else {
-        console.log(resizeMsg);
+        logger.info(resizeMsg);
       }
       if (this.audioOnly !== true) {
         if (currentVideo != '[video]') {
@@ -589,17 +592,17 @@ export class FFMPEG extends events.EventEmitter {
         }
       }
       if (transcodeAudio && transcodeVideo) {
-        console.log('Video and Audio are being transcoded by ffmpeg');
+        logger.info('Video and Audio are being transcoded by ffmpeg');
       } else if (transcodeVideo) {
-        console.log(
+        logger.info(
           'Video is being transcoded by ffmpeg. Audio is being copied.',
         );
       } else if (transcodeAudio) {
-        console.log(
+        logger.info(
           'Audio is being transcoded by ffmpeg. Video is being copied.',
         );
       } else {
-        console.log(
+        logger.info(
           'Video and Audio are being copied. ffmpeg is not transcoding.',
         );
       }
@@ -655,7 +658,7 @@ export class FFMPEG extends events.EventEmitter {
       stdio: ['ignore', 'pipe', doLogs ? process.stderr : 'ignore'],
     });
     if (this.hasBeenKilled) {
-      console.log('Send SIGKILL to ffmpeg');
+      logger.info('Send SIGKILL to ffmpeg');
       this.ffmpeg.kill('SIGKILL');
       return;
     }
@@ -663,26 +666,26 @@ export class FFMPEG extends events.EventEmitter {
     this.ffmpegName = isConcatPlaylist ? 'Concat FFMPEG' : 'Stream FFMPEG';
 
     this.ffmpeg.on('error', (code, signal) => {
-      console.log(
+      logger.info(
         `${this.ffmpegName} received error event: ${code}, ${signal}`,
       );
     });
     this.ffmpeg.on('exit', (code, signal) => {
       if (code === null) {
         if (!this.hasBeenKilled) {
-          console.log(`${this.ffmpegName} exited due to signal: ${signal}`);
+          logger.info(`${this.ffmpegName} exited due to signal: ${signal}`);
         } else {
-          console.log(
+          logger.info(
             `${this.ffmpegName} exited due to signal: ${signal} as expected.`,
           );
         }
         this.emit('close', code);
       } else if (code === 0) {
-        console.log(`${this.ffmpegName} exited normally.`);
+        logger.info(`${this.ffmpegName} exited normally.`);
         this.emit('end');
       } else if (code === 255) {
         if (this.hasBeenKilled) {
-          console.log(`${this.ffmpegName} finished with code 255.`);
+          logger.info(`${this.ffmpegName} finished with code 255.`);
           this.emit('close', code);
           return;
         }
@@ -692,10 +695,10 @@ export class FFMPEG extends events.EventEmitter {
             cmd: `${this.opts.ffmpegPath} ${ffmpegArgs.join(' ')}`,
           });
         }
-        console.log(`${this.ffmpegName} exited with code 255.`);
+        logger.info(`${this.ffmpegName} exited with code 255.`);
         this.emit('close', code);
       } else {
-        console.log(`${this.ffmpegName} exited with code ${code}.`);
+        logger.info(`${this.ffmpegName} exited with code ${code}.`);
         this.emit('error', {
           code: code,
           cmd: `${this.opts.ffmpegPath} ${ffmpegArgs.join(' ')}`,
@@ -706,10 +709,10 @@ export class FFMPEG extends events.EventEmitter {
     return this.ffmpeg.stdout;
   }
   kill() {
-    console.log(`${this.ffmpegName} RECEIVED kill() command`);
+    logger.info(`${this.ffmpegName} RECEIVED kill() command`);
     this.hasBeenKilled = true;
     if (typeof this.ffmpeg != 'undefined') {
-      console.log(`${this.ffmpegName} this.ffmpeg.kill()`);
+      logger.info(`${this.ffmpegName} this.ffmpeg.kill()`);
       this.ffmpeg.kill('SIGKILL');
     }
   }
