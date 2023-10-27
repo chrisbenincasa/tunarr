@@ -1,7 +1,7 @@
 import { isUndefined } from 'lodash-es';
 import { ChannelDB } from './channel-db.js';
 import { FillerDB } from './filler-db.js';
-import { argv } from '../args.js';
+import { serverOptions } from '../globals.js';
 
 //hmnn this is more of a "PlexServerService"...
 const ICON_REGEX =
@@ -55,7 +55,9 @@ export class PlexServerDB {
           channel.fallback = [];
           if (channel.offlineMode != 'pic') {
             channel.offlineMode = 'pic';
-            channel.offlinePicture = `http://localhost:${argv.port}/images/generic-offline-screen.png`;
+            channel.offlinePicture = `http://localhost:${
+              serverOptions().port
+            }/images/generic-offline-screen.png`;
           }
         }
         this.fixupProgramArray(

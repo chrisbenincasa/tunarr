@@ -2,7 +2,6 @@ import db from 'diskdb';
 import fs, { promises as fsPromises } from 'fs';
 import { once } from 'lodash-es';
 import path from 'path';
-import { argv } from './args.js';
 import * as channelCache from './channel-cache.js';
 import { ChannelDB } from './dao/channel-db.js';
 import { CustomShowDB } from './dao/custom-show-db.js';
@@ -19,6 +18,8 @@ import * as xmltv from './xmltv.js';
 // Temp
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { getDB } from './dao/db.js';
+import { serverOptions } from './globals.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -27,15 +28,18 @@ async function copyIfMissingFromDatabase(
   targetPath: string,
   resourcePath: string,
 ): Promise<void> {
-  if (!fs.existsSync(path.join(argv.database, targetPath))) {
+  const opts = serverOptions();
+  if (!fs.existsSync(path.join(opts.database, targetPath))) {
     await fsPromises.copyFile(
       new URL('../' + resourcePath, import.meta.url),
-      path.join(argv.database, targetPath),
+      path.join(opts.database, targetPath),
     );
   }
 }
 
 async function initDB(db: any, channelDB: ChannelDB) {
+  getDB();
+
   dbMigration.initDB(db, channelDB, __dirname);
   await Promise.all([
     copyIfMissingFromDatabase('images/dizquetv.png', 'resources/dizquetv.png'),
@@ -61,7 +65,9 @@ async function initDB(db: any, channelDB: ChannelDB) {
 }
 
 export const serverContext = once(async () => {
-  db.connect(argv.database, [
+  const opts = serverOptions();
+
+  db.connect(opts.database, [
     'channels',
     'plex-servers',
     'ffmpeg-settings',
@@ -74,13 +80,13 @@ export const serverContext = once(async () => {
     'settings',
   ]);
 
-  const channelDB = new ChannelDB(path.join(argv.database, 'channels'));
+  const channelDB = new ChannelDB(path.join(opts.database, 'channels'));
   const fillerDB = new FillerDB(
-    path.join(argv.database, 'filler'),
+    path.join(opts.database, 'filler'),
     channelDB,
     channelCache,
   );
-  const fileCache = new FileCacheService(path.join(argv.database, 'cache'));
+  const fileCache = new FileCacheService(path.join(opts.database, 'cache'));
   const cacheImageService = new CacheImageService(db, fileCache);
   const m3uService = new M3uService(channelDB, fileCache, channelCache);
   const eventService = new EventService();
@@ -104,6 +110,6 @@ export const serverContext = once(async () => {
     eventService,
     guideService,
     hdhrService: hdhr(db, channelDB),
-    customShowDB: new CustomShowDB(path.join(argv.database, 'custom-shows')),
+    customShowDB: new CustomShowDB(path.join(opts.database, 'custom-shows')),
   };
 });

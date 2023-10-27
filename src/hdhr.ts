@@ -1,12 +1,12 @@
 import express from 'express';
 import { Server as SSDP } from 'node-ssdp';
 import { ChannelDB } from './dao/channel-db.js';
-import { argv } from './args.js';
+import { serverOptions } from './globals.js';
 
 export function hdhr(db: any, channelDB: ChannelDB) {
   const server = new SSDP({
     location: {
-      port: argv.port,
+      port: serverOptions().port,
       path: '/device.xml',
     },
     udn: `uuid:2020-03-S3LA-BG3LIA:2`,

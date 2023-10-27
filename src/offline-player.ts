@@ -8,7 +8,7 @@
  **/
 import EventEmitter from 'events';
 import { FFMPEG } from './ffmpeg.js';
-import { argv } from './args.js';
+import { serverOptions } from './globals.js';
 
 export class OfflinePlayer {
   private context: any;
@@ -20,7 +20,9 @@ export class OfflinePlayer {
     this.error = error;
     if (context.isLoading === true) {
       context.channel = JSON.parse(JSON.stringify(context.channel));
-      context.channel.offlinePicture = `http://localhost:${argv.port}/images/loading-screen.png`;
+      context.channel.offlinePicture = `http://localhost:${
+        serverOptions().port
+      }/images/loading-screen.png`;
       context.channel.offlineSoundtrack = undefined;
     }
     this.ffmpeg = new FFMPEG(context.ffmpegSettings, context.channel);

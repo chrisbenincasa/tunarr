@@ -14,7 +14,7 @@ import { Plex } from './plex.js';
 import randomSlotsService from './services/random-slots-service.js';
 import throttle from './services/throttle.js';
 import timeSlotsService from './services/time-slots-service.js';
-import { argv } from './args.js';
+import { serverOptions } from './globals.js';
 
 const logger = createLogger(import.meta);
 
@@ -385,7 +385,9 @@ export function makeApi(
         });
       } else {
         const logo = req.files.image as fileUpload.UploadedFile;
-        logo.mv(path.join(argv.database, '/images/uploads/', logo.name));
+        logo.mv(
+          path.join(serverOptions().database, '/images/uploads/', logo.name),
+        );
 
         res.send({
           status: true,
@@ -783,7 +785,7 @@ export function makeApi(
           _id: req.body._id,
           cache: 12,
           refresh: 4,
-          file: argv.database + '/xmltv.xml',
+          file: serverOptions().database + '/xmltv.xml',
         },
       );
       var xmltv = db['xmltv-settings'].find()[0];
