@@ -5,12 +5,13 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js",
-    "build": "browserify ./web/app.js -p [ tsify ] -o ./web/public/bundle.js",
-    "dev-client": "watchify ./web/app.js -o ./web/public/bundle.js",
+    "build": "browserify ./web/app.js -p tsify -p esmify -o ./web/public/bundle.js",
+    "dev-client": "watchify ./web/app.js -p tsify -p esmify -o ./web/public/bundle.js",
     "dev-server": "nodemon index.js --ignore ./web/ --ignore ./db/ --ignore ./xmltv.xml",
     "compile": "babel index.js -d dist && babel src -d dist/src",
     "package": "sh ./make_dist.sh",
     "clean": "del-cli --force ./bin ./dist ./.dizquetv ./web/public/bundle.js",
+    "build-server": "tsc -p tsconfig.json",
     "dev": "nodemon -e ts --watch src --watch index.ts -e .json,.ts,.yml,.yaml,.js -x ts-node-esm -r tsconfig-paths/register --files --project tsconfig.json index.ts"
   },
   "type": "module",
@@ -60,6 +61,7 @@
     "browserify": "^16.5.1",
     "copyfiles": "^2.2.0",
     "del-cli": "^3.0.0",
+    "esmify": "^2.1.1",
     "nexe": "^4.0.0-rc.2",
     "nodemon": "^3.0.1",
     "prettier": "^3.0.3",

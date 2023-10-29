@@ -1,5 +1,6 @@
 import XMLWriter from 'xml-writer';
 import fs from 'fs';
+import { Channel } from './dao/db.js';
 
 let isShutdown = false;
 let isWorking = false;
@@ -38,7 +39,7 @@ function writePromise(json, xmlSettings, throttle, cacheImageService) {
     });
     _writeDocStart(xw);
     async function middle() {
-      let channelNumbers = [];
+      let channelNumbers: any[] = [];
       Object.keys(json).forEach((key) => channelNumbers.push(key));
       let channels = channelNumbers.map((number) => json[number].channel);
       _writeChannels(xw, channels);
@@ -75,7 +76,7 @@ function _writeDocEnd(xw, _) {
   xw.endDocument();
 }
 
-function _writeChannels(xw, channels) {
+function _writeChannels(xw, channels: Channel[]) {
   for (let i = 0; i < channels.length; i++) {
     xw.startElement('channel');
     xw.writeAttribute('id', channels[i].number);
@@ -85,7 +86,7 @@ function _writeChannels(xw, channels) {
     xw.endElement();
     if (channels[i].icon) {
       xw.startElement('icon');
-      xw.writeAttribute('src', channels[i].icon);
+      xw.writeAttribute('src', channels[i].icon.path);
       xw.endElement();
     }
     xw.endElement();

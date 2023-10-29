@@ -292,7 +292,7 @@ export class FFMPEG extends events.EventEmitter {
 
         if (this.audioOnly !== true) {
           ffmpegArgs.push('-r', '24');
-          let pic = null;
+          let pic: any;
 
           //does an image to play exist?
           if (isUndefined(streamUrl.errorTitle) && streamStats.audioOnly) {

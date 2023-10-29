@@ -1,155 +1,170 @@
 import { isUndefined } from 'lodash-es';
 import constants from './constants.js';
+import { ChannelDB } from './dao/channel-db.js';
 
 const SLACK = constants.SLACK;
 
-let cache = {};
-let programPlayTimeCache = {};
-let fillerPlayTimeCache = {};
-let configCache = {};
-let numbers = null;
+// let cache = {};
+// let programPlayTimeCache = {};
+// let fillerPlayTimeCache = {};
+// let configCache = {};
+// let numbers = null;
 
-export async function getChannelConfig(channelDB, channelId) {
-  //with lazy-loading
+export class ChannelCache {
+  private cache = {};
+  private configCache = {};
+  private fillerPlayTimeCache = {};
+  private programPlayTimeCache = {};
+  private channelNumbers: any;
+  private channelDb: ChannelDB;
 
-  if (isUndefined(configCache[channelId])) {
-    let channel = await channelDB.getChannel(channelId);
-    if (channel == null) {
-      configCache[channelId] = [];
-    } else {
-      //console.log("channel=" + JSON.stringify(channel) );
-      configCache[channelId] = [channel];
+  constructor(channelDb: ChannelDB) {
+    this.channelDb = channelDb;
+  }
+
+  async getChannelConfig(channelId) {
+    //with lazy-loading
+
+    if (isUndefined(this.configCache[channelId])) {
+      let channel = await this.channelDb.getChannel(channelId);
+      if (channel == null) {
+        this.configCache[channelId] = [];
+      } else {
+        //console.log("channel=" + JSON.stringify(channel) );
+        this.configCache[channelId] = [channel];
+      }
     }
+    //console.log("channel=" + JSON.stringify(configCache[channelId]).slice(0,200) );
+    return this.configCache[channelId];
   }
-  //console.log("channel=" + JSON.stringify(configCache[channelId]).slice(0,200) );
-  return configCache[channelId];
-}
 
-export async function getAllNumbers(channelDB) {
-  if (numbers === null) {
-    let n = channelDB.getAllChannelNumbers();
-    numbers = n;
+  async getAllChannels() {
+    let channelNumbers = await this.getAllNumbers();
+    return await Promise.all(
+      channelNumbers.map(async (x) => {
+        return (await this.getChannelConfig(x))[0];
+      }),
+    );
   }
-  return numbers;
-}
 
-export async function getAllChannels(channelDB) {
-  let channelNumbers = await getAllNumbers(channelDB);
-  return await Promise.all(
-    channelNumbers.map(async (x) => {
-      return (await getChannelConfig(channelDB, x))[0];
-    }),
-  );
-}
-
-export function saveChannelConfig(number, channel) {
-  configCache[number] = [channel];
-}
-
-export function getCurrentLineupItem(channelId, t1) {
-  if (isUndefined(cache[channelId])) {
-    return null;
-  }
-  let recorded = cache[channelId];
-  let lineupItem = JSON.parse(JSON.stringify(recorded.lineupItem));
-  let diff = t1 - recorded.t0;
-  let rem = lineupItem.duration - lineupItem.start;
-  if (typeof lineupItem.streamDuration !== 'undefined') {
-    rem = Math.min(rem, lineupItem.streamDuration);
-  }
-  if (diff <= SLACK && diff + SLACK < rem) {
-    //closed the stream and opened it again let's not lose seconds for
-    //no reason
-    let originalT0 = recorded.lineupItem.originalT0;
-    if (isUndefined(originalT0)) {
-      originalT0 = recorded.t0;
+  async getAllNumbers() {
+    if (this.channelNumbers === null) {
+      this.channelNumbers = this.channelDb.getAllChannelNumbers();
     }
-    if (t1 - originalT0 <= SLACK) {
-      lineupItem.originalT0 = originalT0;
-      return lineupItem;
-    }
+    return this.channelNumbers;
   }
 
-  lineupItem.start += diff;
-  if (typeof lineupItem.streamDuration !== 'undefined') {
-    lineupItem.streamDuration -= diff;
-    if (lineupItem.streamDuration < SLACK) {
-      //let's not waste time playing some loose seconds
+  getCurrentLineupItem(channelId, t1) {
+    if (isUndefined(this.cache[channelId])) {
       return null;
     }
-  }
-  if (lineupItem.start + SLACK > lineupItem.duration) {
-    return null;
-  }
-  return lineupItem;
-}
+    let recorded = this.cache[channelId];
+    let lineupItem = JSON.parse(JSON.stringify(recorded.lineupItem));
+    let diff = t1 - recorded.t0;
+    let rem = lineupItem.duration - lineupItem.start;
+    if (typeof lineupItem.streamDuration !== 'undefined') {
+      rem = Math.min(rem, lineupItem.streamDuration);
+    }
+    if (diff <= SLACK && diff + SLACK < rem) {
+      //closed the stream and opened it again let's not lose seconds for
+      //no reason
+      let originalT0 = recorded.lineupItem.originalT0;
+      if (isUndefined(originalT0)) {
+        originalT0 = recorded.t0;
+      }
+      if (t1 - originalT0 <= SLACK) {
+        lineupItem.originalT0 = originalT0;
+        return lineupItem;
+      }
+    }
 
-function getKey(channelId, program) {
-  let serverKey = '!unknown!';
-  if (typeof program.serverKey !== 'undefined') {
+    lineupItem.start += diff;
+    if (typeof lineupItem.streamDuration !== 'undefined') {
+      lineupItem.streamDuration -= diff;
+      if (lineupItem.streamDuration < SLACK) {
+        //let's not waste time playing some loose seconds
+        return null;
+      }
+    }
+    if (lineupItem.start + SLACK > lineupItem.duration) {
+      return null;
+    }
+    return lineupItem;
+  }
+
+  saveChannelConfig(number, channel) {
+    this.configCache[number] = [channel];
+  }
+
+  getKey(channelId, program) {
+    let serverKey = '!unknown!';
     if (typeof program.serverKey !== 'undefined') {
-      serverKey = 'plex|' + program.serverKey;
+      if (typeof program.serverKey !== 'undefined') {
+        serverKey = 'plex|' + program.serverKey;
+      }
+    }
+    let programKey = '!unknownProgram!';
+    if (typeof program.key !== 'undefined') {
+      programKey = program.key;
+    }
+    return channelId + '|' + serverKey + '|' + programKey;
+  }
+
+  private getFillerKey(channelId, fillerId) {
+    return channelId + '|' + fillerId;
+  }
+
+  private recordProgramPlayTime(channelId, lineupItem, t0) {
+    let remaining;
+    if (typeof lineupItem.streamDuration !== 'undefined') {
+      remaining = lineupItem.streamDuration;
+    } else {
+      remaining = lineupItem.duration - lineupItem.start;
+    }
+    this.programPlayTimeCache[this.getKey(channelId, lineupItem)] =
+      t0 + remaining;
+    if (typeof lineupItem.fillerId !== 'undefined') {
+      this.fillerPlayTimeCache[
+        this.getFillerKey(channelId, lineupItem.fillerId)
+      ] = t0 + remaining;
     }
   }
-  let programKey = '!unknownProgram!';
-  if (typeof program.key !== 'undefined') {
-    programKey = program.key;
+
+  getProgramLastPlayTime(channelId, program) {
+    let v = this.programPlayTimeCache[this.getKey(channelId, program)];
+    if (isUndefined(v)) {
+      return 0;
+    } else {
+      return v;
+    }
   }
-  return channelId + '|' + serverKey + '|' + programKey;
-}
 
-function getFillerKey(channelId, fillerId) {
-  return channelId + '|' + fillerId;
-}
-
-function recordProgramPlayTime(channelId, lineupItem, t0) {
-  let remaining;
-  if (typeof lineupItem.streamDuration !== 'undefined') {
-    remaining = lineupItem.streamDuration;
-  } else {
-    remaining = lineupItem.duration - lineupItem.start;
+  getFillerLastPlayTime(channelId, fillerId) {
+    let v = this.fillerPlayTimeCache[this.getFillerKey(channelId, fillerId)];
+    if (isUndefined(v)) {
+      return 0;
+    } else {
+      return v;
+    }
   }
-  programPlayTimeCache[getKey(channelId, lineupItem)] = t0 + remaining;
-  if (typeof lineupItem.fillerId !== 'undefined') {
-    fillerPlayTimeCache[getFillerKey(channelId, lineupItem.fillerId)] =
-      t0 + remaining;
+
+  recordPlayback(channelId, t0, lineupItem) {
+    this.recordProgramPlayTime(channelId, lineupItem, t0);
+
+    this.cache[channelId] = {
+      t0: t0,
+      lineupItem: lineupItem,
+    };
   }
-}
 
-export function getProgramLastPlayTime(channelId, program) {
-  let v = programPlayTimeCache[getKey(channelId, program)];
-  if (isUndefined(v)) {
-    return 0;
-  } else {
-    return v;
+  clearPlayback(channelId) {
+    delete this.cache[channelId];
   }
-}
 
-export function getFillerLastPlayTime(channelId, fillerId) {
-  let v = fillerPlayTimeCache[getFillerKey(channelId, fillerId)];
-  if (isUndefined(v)) {
-    return 0;
-  } else {
-    return v;
+  clear() {
+    //it's not necessary to clear the playback cache and it may be undesirable
+    this.configCache = {};
+    this.cache = {};
+    this.channelNumbers = null;
   }
-}
-
-export function recordPlayback(channelId, t0, lineupItem) {
-  recordProgramPlayTime(channelId, lineupItem, t0);
-
-  cache[channelId] = {
-    t0: t0,
-    lineupItem: lineupItem,
-  };
-}
-
-export function clearPlayback(channelId) {
-  delete cache[channelId];
-}
-
-export function clear() {
-  //it's not necessary to clear the playback cache and it may be undesirable
-  configCache = {};
-  cache = {};
-  numbers = null;
 }

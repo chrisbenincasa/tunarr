@@ -41,7 +41,7 @@ export function hdhr(db: any, channelDB: ChannelDB) {
   });
 
   router.get('/lineup.json', async (req, res) => {
-    let lineup = [];
+    let lineup: any = [];
     let channels = await channelDB.getAllChannels();
     for (let i = 0, l = channels.length; i < l; i++) {
       if (!channels[i].stealth) {

@@ -1,6 +1,6 @@
-const Plex = require('../../src/plex').Plex;
+import { Plex } from '../../build/src/plex.js';
 
-module.exports = function ($http, $window, $interval) {
+export default function ($http, $window, $interval) {
   let exported = {
     login: async () => {
       const headers = {
@@ -365,7 +365,7 @@ module.exports = function ($http, $window, $interval) {
     },
   };
   return exported;
-};
+}
 
 function msToTime(duration) {
   var milliseconds = parseInt((duration % 1000) / 100),

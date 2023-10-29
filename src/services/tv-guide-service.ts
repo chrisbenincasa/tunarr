@@ -2,6 +2,8 @@ import { isUndefined } from 'lodash-es';
 import constants from '../constants.js';
 import createLogger from '../logger.js';
 import throttle from './throttle.js';
+import { CacheImageService } from './cache-image-service.js';
+import { EventService } from './event-service.js';
 
 const logger = createLogger(import.meta);
 
@@ -28,7 +30,12 @@ export class TVGuideService {
   /****
    *
    **/
-  constructor(xmltv, db, cacheImageService, eventService) {
+  constructor(
+    xmltv,
+    db,
+    cacheImageService: CacheImageService,
+    eventService: EventService,
+  ) {
     this.cached = null;
     this.lastUpdate = 0;
     this.lastBackoff = 100;
@@ -56,7 +63,7 @@ export class TVGuideService {
     this.updateTime = t;
     this.updateLimit = t + limit;
 
-    let channels = [];
+    let channels: any = [];
     for (let i = 0; i < inputChannels.length; i++) {
       if (typeof inputChannels[i] !== 'undefined') {
         channels.push(inputChannels[i]);
@@ -149,7 +156,12 @@ export class TVGuideService {
     }
   }
 
-  async getChannelPlaying(channel, previousKnown, t, depth = []): Promise<any> {
+  async getChannelPlaying(
+    channel,
+    previousKnown,
+    t,
+    depth: any[] = [],
+  ): Promise<any> {
     let playing: Record<string, any> = {};
     if (
       typeof previousKnown !== 'undefined' &&
@@ -228,7 +240,7 @@ export class TVGuideService {
     let result: Record<string, any> = {
       channel: makeChannelEntry(channel),
     };
-    let programs = [];
+    let programs: any[] = [];
     let x = await this.getChannelPlaying(channel, undefined, t0);
     if (x.program.duration == 0)
       throw Error('A ' + channel.name + ' ' + JSON.stringify(x));
@@ -422,7 +434,7 @@ export class TVGuideService {
 
   async getStatus() {
     await this.get();
-    let channels = [];
+    let channels: any[] = [];
 
     Object.keys(this.cached).forEach((k) => channels.push(k));
 
@@ -445,7 +457,7 @@ export class TVGuideService {
       icon: channel.channel.icon,
       name: channel.channel.name,
       number: channel.channel.number,
-      programs: [],
+      programs: [] as any[],
     };
     for (let i = 0; i < programs.length; i++) {
       let program = programs[i];
@@ -506,9 +518,9 @@ function makeChannelEntry(channel) {
 }
 
 function makeEntry(channel, x) {
-  let title = undefined;
-  let icon = undefined;
-  let sub = undefined;
+  let title: any = undefined;
+  let icon: any = undefined;
+  let sub: any = undefined;
   if (isProgramFlex(x.program, channel)) {
     if (
       typeof channel.guideFlexPlaceholder === 'string' &&

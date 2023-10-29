@@ -1,52 +1,24 @@
 import fs from 'fs';
 import { isUndefined } from 'lodash-es';
 import path from 'path';
+import { Channel, DbAccess } from './db.js';
 
 export class ChannelDB {
+  private db: DbAccess;
   private folder: string;
 
-  constructor(folder: string) {
-    this.folder = folder;
+  constructor(db: DbAccess) {
+    this.db = db;
   }
 
-  async getChannel(number) {
-    let f = path.join(this.folder, `${number}.json`);
-    try {
-      return await new Promise((resolve, reject) => {
-        fs.readFile(f, (err, data) => {
-          if (err) {
-            return reject(err);
-          }
-          try {
-            resolve(JSON.parse(data.toString('utf-8')));
-          } catch (err) {
-            reject(err);
-          }
-        });
-      });
-    } catch (err) {
-      console.error(err);
-      return null;
-    }
+  async getChannel(channelNumber: number) {
+    return this.db
+      .channels()
+      .find((channel) => channel.number === channelNumber);
   }
 
-  async saveChannel(number, json) {
-    this.validateChannelJson(number, json);
-    let f = path.join(this.folder, `${json.number}.json`);
-    return await new Promise((resolve, reject) => {
-      let data = undefined;
-      try {
-        data = JSON.stringify(json);
-      } catch (err) {
-        return reject(err);
-      }
-      fs.writeFile(f, data, (err) => {
-        if (err) {
-          return reject(err);
-        }
-        resolve(void 0);
-      });
-    });
+  async saveChannel(channel: Channel) {
+    return this.db.upsertChannel(channel);
   }
 
   saveChannelSync(number, json) {
@@ -74,37 +46,15 @@ export class ChannelDB {
     }
   }
 
-  async deleteChannel(number) {
-    let f = path.join(this.folder, `${number}.json`);
-    await new Promise((resolve, reject) => {
-      fs.unlink(f, function (err) {
-        if (err) {
-          return reject(err);
-        }
-        resolve(void 0);
-      });
-    });
+  async deleteChannel(channelNumber: number) {
+    return this.db.deleteChannel(channelNumber);
   }
 
-  async getAllChannelNumbers(): Promise<any[]> {
-    return await new Promise((resolve, reject) => {
-      fs.readdir(this.folder, function (err, items) {
-        if (err) {
-          return reject(err);
-        }
-        let channelNumbers = [];
-        for (let i = 0; i < items.length; i++) {
-          let name = path.basename(items[i]);
-          if (path.extname(name) === '.json') {
-            let numberStr = name.slice(0, -5);
-            if (!isNaN(parseInt(numberStr))) {
-              channelNumbers.push(parseInt(numberStr));
-            }
-          }
-        }
-        resolve(channelNumbers);
-      });
-    });
+  async getAllChannelNumbers(): Promise<number[]> {
+    return this.db
+      .channels()
+      .map((channel) => channel.number)
+      .sort();
   }
 
   async getAllChannels(): Promise<any[]> {

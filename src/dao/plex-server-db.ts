@@ -2,6 +2,7 @@ import { isUndefined } from 'lodash-es';
 import { ChannelDB } from './channel-db.js';
 import { FillerDB } from './filler-db.js';
 import { serverOptions } from '../globals.js';
+import { ChannelCache } from '../channel-cache.js';
 
 //hmnn this is more of a "PlexServerService"...
 const ICON_REGEX =
@@ -12,12 +13,12 @@ const ICON_FIELDS = ['icon', 'showIcon', 'seasonIcon', 'episodeIcon'];
 export class PlexServerDB {
   channelDB: any;
   db: any;
-  channelCache: any;
+  channelCache: ChannelCache;
   fillerDB: any;
   showDB: any;
   constructor(
     channelDB: ChannelDB,
-    channelCache,
+    channelCache: ChannelCache,
     fillerDB: FillerDB,
     showDB,
     db,
@@ -131,7 +132,7 @@ export class PlexServerDB {
       this.fixupAllFillers(serverName, newServer),
       this.fixupAllShows(serverName, newServer),
     ]);
-    let report = [];
+    let report: any[] = [];
     reports.forEach((r) =>
       r.forEach((r2) => {
         report.push(r2);

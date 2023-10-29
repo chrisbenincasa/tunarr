@@ -85,7 +85,10 @@ export class CacheImageService {
    * @returns {promise} `Resolve` when can download imagem and store on cache folder, `Reject` when file are inaccessible over network or can't write on directory
    * @memberof CacheImageService
    */
-  async requestImageAndStore(url: any, dbFile: any): Promise<string> {
+  async requestImageAndStore(
+    url: any,
+    dbFile: any,
+  ): Promise<string | undefined> {
     return new Promise(async (resolve, reject) => {
       const requestConfiguration = {
         method: 'get',

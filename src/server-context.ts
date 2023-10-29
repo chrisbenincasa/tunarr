@@ -2,7 +2,6 @@ import db from 'diskdb';
 import fs, { promises as fsPromises } from 'fs';
 import { once } from 'lodash-es';
 import path from 'path';
-import * as channelCache from './channel-cache.js';
 import { ChannelDB } from './dao/channel-db.js';
 import { CustomShowDB } from './dao/custom-show-db.js';
 import { FillerDB } from './dao/filler-db.js';
@@ -20,6 +19,7 @@ import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getDB } from './dao/db.js';
 import { serverOptions } from './globals.js';
+import { ChannelCache } from './channel-cache.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -80,7 +80,10 @@ export const serverContext = once(async () => {
     'settings',
   ]);
 
-  const channelDB = new ChannelDB(path.join(opts.database, 'channels'));
+  const dbAccess = await getDB();
+
+  const channelDB = new ChannelDB(dbAccess);
+  const channelCache = new ChannelCache(channelDB);
   const fillerDB = new FillerDB(
     path.join(opts.database, 'filler'),
     channelDB,
@@ -111,5 +114,6 @@ export const serverContext = once(async () => {
     guideService,
     hdhrService: hdhr(db, channelDB),
     customShowDB: new CustomShowDB(path.join(opts.database, 'custom-shows')),
+    channelCache,
   };
 });

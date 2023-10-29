@@ -143,11 +143,12 @@ export async function initServer(opts: ServerOptions) {
       ctx.guideService,
       ctx.m3uService,
       ctx.eventService,
+      ctx.channelCache,
     ),
   );
   app.use('/api/cache/images', ctx.cacheImageService.apiRouters());
 
-  app.use(video(ctx.channelDB, ctx.fillerDB, ctx.db));
+  app.use(video(ctx.fillerDB, ctx.db));
   app.use(ctx.hdhrService.router);
   app.listen(opts.port, () => {
     logger.info(`HTTP server running on port: http://*:${opts.port}`);

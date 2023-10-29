@@ -1,5 +1,5 @@
 import constants from '../constants.js';
-import getShowDataFunc from './get-show-data.js';
+import getShowDataFunc, { ShowData } from './get-show-data.js';
 import { random } from '../helperFuncs.js';
 import throttle from './throttle.js';
 import { isUndefined } from 'lodash-es';
@@ -10,16 +10,21 @@ const MINUTE = 60 * 1000;
 const DAY = 24 * 60 * MINUTE;
 const LIMIT = 40000;
 
-function getShow(program) {
+type ShowDataWithExtras = Required<ShowData> & {
+  id: string;
+  description: string;
+};
+
+function getShow(program): ShowDataWithExtras | null {
   let d = getShowData(program);
   if (!d.hasShow) {
     return null;
   } else {
     return {
       ...d,
-      description: d.showDisplayName,
-      id: d.showId,
-    };
+      description: d.showDisplayName!,
+      id: d.showId!,
+    } as ShowDataWithExtras;
   }
 }
 
@@ -71,7 +76,7 @@ function getShowOrderer(show) {
     sortedPrograms.sort((a, b) => {
       let showA = getShowData(a);
       let showB = getShowData(b);
-      return showA.order - showB.order;
+      return (showA.order ?? 0) - (showB.order ?? 0);
     });
 
     let position = 0;
@@ -185,8 +190,8 @@ export default async (programs, schedule) => {
   // throttle so that the stream is not affected negatively
   // let steps = 0;
 
-  let showsById = {};
-  let shows = [];
+  let showsById: object = {};
+  let shows: any[] = [];
 
   function getNextForSlot(slot, remaining) {
     //remaining doesn't restrict what next show is picked. It is only used
@@ -264,7 +269,7 @@ export default async (programs, schedule) => {
   let ts = new Date().getTime();
 
   let t0 = ts;
-  let p = [];
+  let p: any[] = [];
   let t = t0;
 
   let hardLimit = t0 + schedule.maxDays * DAY;
@@ -311,8 +316,8 @@ export default async (programs, schedule) => {
     }
 
     let slot = null;
-    let slotIndex = null;
-    let remaining = null;
+    let slotIndex: number;
+    let remaining: number;
 
     let n = 0;
     let minNextTime = t + 24 * DAY;
@@ -336,19 +341,19 @@ export default async (programs, schedule) => {
       pushFlex(minNextTime - t);
       continue;
     }
-    let item = getNextForSlot(slot, remaining);
+    let item = getNextForSlot(slot, remaining!);
 
     if (item.isOffline) {
       //flex or redirect. We can just use the whole duration
-      item.duration = remaining;
+      item.duration = remaining!;
       pushProgram(item);
-      slotLastPlayed[slotIndex] = t;
+      slotLastPlayed[slotIndex!] = t;
       continue;
     }
-    if (item.duration > remaining) {
+    if (item.duration > remaining!) {
       // Slide
       pushProgram(item);
-      slotLastPlayed[slotIndex] = t;
+      slotLastPlayed[slotIndex!] = t;
       advanceSlot(slot);
       continue;
     }
@@ -360,7 +365,7 @@ export default async (programs, schedule) => {
 
     while (true) {
       let item2 = getNextForSlot(slot, undefined);
-      if (total + item2.duration > remaining) {
+      if (total + item2.duration > remaining!) {
         break;
       }
       let padded2 = makePadded(item2);
@@ -418,7 +423,7 @@ export default async (programs, schedule) => {
     // now unroll them all
     for (let i = 0; i < pads.length; i++) {
       pushProgram(pads[i].item);
-      slotLastPlayed[slotIndex] = t;
+      slotLastPlayed[slotIndex!] = t;
       pushFlex(pads[i].pad);
     }
   }

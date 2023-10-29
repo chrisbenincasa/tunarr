@@ -44,7 +44,7 @@ export class CustomShowDB {
     let f = path.join(this.folder, `${id}.json`);
 
     await new Promise((resolve, reject) => {
-      let data = undefined;
+      let data: any = undefined;
       try {
         //id is determined by the file name, not the contents
         fixup(json);
@@ -87,7 +87,7 @@ export class CustomShowDB {
         if (err) {
           return reject(err);
         }
-        let fillerIds = [];
+        let fillerIds: string[] = [];
         for (let i = 0; i < items.length; i++) {
           let name = path.basename(items[i]);
           if (path.extname(name) === '.json') {

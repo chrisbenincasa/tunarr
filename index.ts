@@ -3,7 +3,7 @@ import path from 'path';
 import { hideBin } from 'yargs/helpers';
 import yargs from 'yargs/yargs';
 import constants from './src/constants.js';
-import { getDBRaw, migrateFromLegacyDb } from './src/dao/db.js';
+import { getDB, getDBRaw } from './src/dao/db.js';
 import createLogger from './src/logger.js';
 import { inspect } from 'util';
 import { ArgumentsCamelCase } from 'yargs';
@@ -25,6 +25,7 @@ export const argv = await yargs(hideBin(process.argv))
   .option('force_migration', {
     type: 'boolean',
     desc: 'Forces a migration from a legacy dizque database. Useful for development and debugging. NOTE: This WILL override any settings you have!',
+    default: false,
   })
   .middleware(setGlobalOptions)
   .command(
@@ -62,7 +63,7 @@ export const argv = await yargs(hideBin(process.argv))
           return;
         case 'migrate':
           logger.info('Migrating DB from legacy schema...');
-          return migrateFromLegacyDb(await getDBRaw());
+          return await getDB().then((db) => db.migrateFromLegacyDb());
       }
     },
   )

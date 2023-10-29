@@ -1,7 +1,7 @@
 import { isUndefined } from 'lodash-es';
 import constants from '../constants.js';
 import { random } from '../helperFuncs.js';
-import getShowDataFunc from './get-show-data.js';
+import getShowDataFunc, { ShowData } from './get-show-data.js';
 import throttle from './throttle.js';
 
 const getShowData = getShowDataFunc();
@@ -10,7 +10,12 @@ const MINUTE = 60 * 1000;
 const DAY = 24 * 60 * MINUTE;
 const LIMIT = 40000;
 
-function getShow(program) {
+type ShowDataWithExtras = Required<ShowData> & {
+  id: string;
+  description: string;
+};
+
+function getShow(program): ShowDataWithExtras | null {
   let d = getShowData(program);
   if (!d.hasShow) {
     return null;
@@ -19,7 +24,7 @@ function getShow(program) {
       ...d,
       description: d.showDisplayName,
       id: d.showId,
-    };
+    } as ShowDataWithExtras;
   }
 }
 
@@ -71,7 +76,7 @@ function getShowOrderer(show) {
     sortedPrograms.sort((a, b) => {
       let showA = getShowData(a);
       let showB = getShowData(b);
-      return showA.order - showB.order;
+      return (showA.order ?? 0) - (showB.order ?? 0);
     });
 
     let position = 0;
@@ -200,8 +205,8 @@ export default async (programs, schedule) => {
   // throttle so that the stream is not affected negatively
   //   let steps = 0;
 
-  let showsById = {};
-  let shows = [];
+  let showsById: object = {};
+  let shows: any[] = [];
 
   function getNextForSlot(slot, remaining) {
     //remaining doesn't restrict what next show is picked. It is only used
@@ -257,7 +262,11 @@ export default async (programs, schedule) => {
   // load the programs
   for (let i = 0; i < programs.length; i++) {
     let p = programs[i];
-    let show = { ...getShow(p), founder: p, programs: [] };
+    let show = {
+      ...(getShow(p) as ShowDataWithExtras),
+      founder: p,
+      programs: [],
+    };
     if (show != null) {
       if (isUndefined(showsById[show.id])) {
         showsById[show.id] = shows.length;
@@ -275,7 +284,7 @@ export default async (programs, schedule) => {
   let ts = new Date().getTime();
   let curr = ts - (ts % schedule.period);
   let t0 = curr + s[0].time;
-  let p = [];
+  let p: any = [];
   let t = t0;
   //   let wantedFinish = t % schedule.period;
   let hardLimit = t0 + schedule.maxDays * DAY;
@@ -324,8 +333,8 @@ export default async (programs, schedule) => {
 
     let dayTime = t % schedule.period;
     let slot = null;
-    let remaining = null;
-    let late = null;
+    let remaining: number | null = null;
+    let late: number | null = null;
     for (let i = 0; i < s.length; i++) {
       let endTime;
       if (i == s.length - 1) {
@@ -358,7 +367,8 @@ export default async (programs, schedule) => {
     }
     let item = getNextForSlot(slot, remaining);
 
-    if (late >= schedule.lateness + constants.SLACK) {
+    // So much potential nullness here, we will fix it...
+    if (late! >= schedule.lateness + constants.SLACK) {
       //it's late.
       item = {
         isOffline: true,
@@ -372,7 +382,7 @@ export default async (programs, schedule) => {
       pushProgram(item);
       continue;
     }
-    if (item.duration > remaining) {
+    if (item.duration > remaining!) {
       // Slide
       pushProgram(item);
       advanceSlot(slot);
@@ -386,7 +396,7 @@ export default async (programs, schedule) => {
 
     while (true) {
       let item2 = getNextForSlot(slot, remaining);
-      if (total + item2.duration > remaining) {
+      if (total + item2.duration > remaining!) {
         break;
       }
       let padded2 = makePadded(item2);
@@ -394,7 +404,7 @@ export default async (programs, schedule) => {
       advanceSlot(slot);
       total += padded2.totalDuration;
     }
-    let rem = Math.max(0, remaining - total);
+    let rem = Math.max(0, remaining! - total);
 
     if (flexBetween) {
       let div = Math.floor(rem / schedule.pad);

@@ -1,6 +1,5 @@
 import { Plex } from './plex.js';
 import { serverContext } from './server-context.js';
-import * as channelCache from './channel-cache.js';
 import createLogger from './logger.js';
 
 const logger = createLogger(import.meta);
@@ -12,7 +11,7 @@ const updateXML = async () => {
     let channelNumbers = await ctx.channelDB.getAllChannelNumbers();
     return await Promise.all(
       channelNumbers.map(async (x) => {
-        return (await channelCache.getChannelConfig(ctx.channelDB, x))[0];
+        return (await ctx.channelCache.getChannelConfig(x))[0];
       }),
     );
   };

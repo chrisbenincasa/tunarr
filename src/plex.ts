@@ -177,7 +177,7 @@ export class Plex {
   }
   async RefreshChannels(channels, _dvrs) {
     var dvrs = typeof _dvrs !== 'undefined' ? _dvrs : await this.GetDVRS();
-    var _channels = [];
+    var _channels: any[] = [];
     let qs: Record<string, string> = {};
     for (var i = 0; i < channels.length; i++) {
       _channels.push(channels[i].number);

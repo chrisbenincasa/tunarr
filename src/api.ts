@@ -4,9 +4,8 @@ import fileUpload from 'express-fileupload';
 import fs from 'fs';
 import { isUndefined } from 'lodash-es';
 import path from 'path';
-import * as channelCache from './channel-cache.js';
 import constants from './constants.js';
-import { getDB } from './dao/db.js';
+import { Channel, getDB } from './dao/db.js';
 import { PlexServerDB } from './dao/plex-server-db.js';
 import * as databaseMigration from './database-migration.js';
 import { FFMPEGInfo } from './ffmpeg-info.js';
@@ -16,6 +15,14 @@ import { Plex } from './plex.js';
 import randomSlotsService from './services/random-slots-service.js';
 import throttle from './services/throttle.js';
 import timeSlotsService from './services/time-slots-service.js';
+import { serverContext } from './server-context.js';
+import { ChannelDB } from './dao/channel-db.js';
+import { TVGuideService } from './services/tv-guide-service.js';
+import { M3uService } from './services/m3u-service.js';
+import { EventService } from './services/event-service.js';
+import { ChannelCache } from './channel-cache.js';
+import { CustomShowDB } from './dao/custom-show-db.js';
+import { FillerDB } from './dao/filler-db.js';
 
 const logger = createLogger(import.meta);
 
@@ -32,13 +39,14 @@ function safeString(object, ...args: any[]) {
 
 export function makeApi(
   db,
-  channelDB,
-  fillerDB,
-  customShowDB,
+  channelDB: ChannelDB,
+  fillerDB: FillerDB,
+  customShowDB: CustomShowDB,
   xmltvInterval,
-  guideService,
-  _m3uService,
-  eventService,
+  guideService: TVGuideService,
+  _m3uService: M3uService,
+  eventService: EventService,
+  channelCache: ChannelCache,
 ) {
   let m3uService = _m3uService;
   const router = express.Router();
@@ -236,8 +244,9 @@ export function makeApi(
   });
   router.get('/api/channel/:number', async (req, res) => {
     try {
+      const ctx = await serverContext();
       let number = parseInt(req.params.number, 10);
-      let channel = await channelCache.getChannelConfig(channelDB, number);
+      let channel = await ctx.channelCache.getChannelConfig(number);
 
       if (channel.length == 1) {
         channel = channel[0];
@@ -252,8 +261,9 @@ export function makeApi(
   });
   router.get('/api/channel/programless/:number', async (req, res) => {
     try {
+      const ctx = await serverContext();
       let number = parseInt(req.params.number, 10);
-      let channel = await channelCache.getChannelConfig(channelDB, number);
+      let channel = await ctx.channelCache.getChannelConfig(number);
 
       if (channel.length == 1) {
         channel = channel[0];
@@ -275,8 +285,9 @@ export function makeApi(
 
   router.get('/api/channel/programs/:number', async (req, res) => {
     try {
+      const ctx = await serverContext();
       let number = parseInt(req.params.number, 10);
-      let channel = await channelCache.getChannelConfig(channelDB, number);
+      let channel = await ctx.channelCache.getChannelConfig(number);
 
       if (channel.length == 1) {
         channel = channel[0];
@@ -306,8 +317,9 @@ export function makeApi(
   });
   router.get('/api/channel/description/:number', async (req, res) => {
     try {
+      const ctx = await serverContext();
       let number = parseInt(req.params.number, 10);
-      let channel = await channelCache.getChannelConfig(channelDB, number);
+      let channel = await ctx.channelCache.getChannelConfig(number);
       if (channel.length == 1) {
         channel = channel[0];
         res.send({
@@ -327,9 +339,6 @@ export function makeApi(
   router.get('/api/channelNumbers', async (_req, res) => {
     try {
       let channels = await channelDB.getAllChannelNumbers();
-      channels.sort((a, b) => {
-        return parseInt(a) - parseInt(b);
-      });
       res.send(channels);
     } catch (err) {
       logger.error(err);
@@ -338,10 +347,11 @@ export function makeApi(
   });
   router.post('/api/channel', async (req, res) => {
     try {
+      const ctx = await serverContext();
       await m3uService.clearCache();
       cleanUpChannel(req.body);
-      await channelDB.saveChannel(req.body.number, req.body);
-      channelCache.clear();
+      await channelDB.saveChannel(req.body as Channel);
+      ctx.channelCache.clear();
       res.send({ number: req.body.number });
       updateXmltv();
     } catch (err) {
@@ -351,10 +361,11 @@ export function makeApi(
   });
   router.put('/api/channel', async (req, res) => {
     try {
+      const ctx = await serverContext();
       await m3uService.clearCache();
       cleanUpChannel(req.body);
-      await channelDB.saveChannel(req.body.number, req.body);
-      channelCache.clear();
+      await channelDB.saveChannel(req.body as Channel);
+      ctx.channelCache.clear();
       res.send({ number: req.body.number });
       updateXmltv();
     } catch (err) {
@@ -364,9 +375,10 @@ export function makeApi(
   });
   router.delete('/api/channel', async (req, res) => {
     try {
+      const ctx = await serverContext();
       await m3uService.clearCache();
       await channelDB.deleteChannel(req.body.number);
-      channelCache.clear();
+      ctx.channelCache.clear();
       res.send({ number: req.body.number });
       updateXmltv();
     } catch (err) {

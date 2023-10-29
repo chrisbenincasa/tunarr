@@ -1,3 +1,5 @@
+import { ChannelCache } from '../channel-cache.js';
+
 /**
  * Manager and Generate M3U content
  *
@@ -6,10 +8,10 @@
 export class M3uService {
   dataBase: any;
   cacheService: any;
-  channelCache: any;
+  channelCache: ChannelCache;
   cacheReady: boolean;
 
-  constructor(dataBase, fileCacheService, channelCache) {
+  constructor(dataBase, fileCacheService, channelCache: ChannelCache) {
     this.dataBase = dataBase;
     this.cacheService = fileCacheService;
     this.channelCache = channelCache;
@@ -42,7 +44,7 @@ export class M3uService {
         return this.replaceHostOnM3u(host, cachedM3U);
       }
     }
-    let channels = await this.channelCache.getAllChannels(this.dataBase);
+    let channels = await this.channelCache.getAllChannels();
 
     channels.sort((a, b) => {
       return parseInt(a.number) < parseInt(b.number) ? -1 : 1;

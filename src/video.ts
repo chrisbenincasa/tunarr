@@ -1,7 +1,6 @@
 import express from 'express';
 import fs from 'fs';
 import { isUndefined } from 'lodash-es';
-import * as channelCache from './channel-cache.js';
 import constants from './constants.js';
 import { FFMPEG } from './ffmpeg.js';
 import { FFMPEG_TEXT } from './ffmpegText.js';
@@ -9,10 +8,11 @@ import { serverOptions } from './globals.js';
 import * as helperFuncs from './helperFuncs.js';
 import { ProgramPlayer } from './program-player.js';
 import { wereThereTooManyAttempts } from './throttler.js';
+import { serverContext } from './server-context.js';
 
 let StreamCount = 0;
 
-export function video(channelDB, fillerDB, db) {
+export function video(fillerDB, db) {
   var router = express.Router();
 
   router.get('/setup', (_, res) => {
@@ -57,13 +57,14 @@ export function video(channelDB, fillerDB, db) {
   });
   // Continuously stream video to client. Leverage ffmpeg concat for piecing together videos
   let concat = async (req, res, audioOnly) => {
+    const ctx = await serverContext();
     // Check if channel queried is valid
     if (isUndefined(req.query.channel)) {
       res.status(500).send('No Channel Specified');
       return;
     }
     let number = parseInt(req.query.channel, 10);
-    let channel = await channelCache.getChannelConfig(channelDB, number);
+    let channel = await ctx.channelCache.getChannelConfig(number);
     if (channel.length === 0) {
       res.status(500).send("Channel doesn't exist");
       return;
@@ -146,6 +147,7 @@ export function video(channelDB, fillerDB, db) {
 
   // Stream individual video to ffmpeg concat above. This is used by the server, NOT the client
   let streamFunction = async (req, res, t0, allowSkip) => {
+    const ctx = await serverContext();
     // Check if channel queried is valid
     res.on('error', (e) => {
       console.error('There was an unexpected error in stream.', e);
@@ -160,7 +162,7 @@ export function video(channelDB, fillerDB, db) {
     let session = parseInt(req.query.session);
     let m3u8 = req.query.m3u8 === '1';
     let number = parseInt(req.query.channel);
-    let channel = await channelCache.getChannelConfig(channelDB, number);
+    let channel = await ctx.channelCache.getChannelConfig(number);
 
     if (channel.length === 0) {
       res.status(404).send("Channel doesn't exist");
@@ -191,11 +193,11 @@ export function video(channelDB, fillerDB, db) {
     }
 
     // Get video lineup (array of video urls with calculated start times and durations.)
-    let lineupItem = channelCache.getCurrentLineupItem(channel.number, t0);
-    let prog = null;
+    let lineupItem = ctx.channelCache.getCurrentLineupItem(channel.number, t0);
+    let prog: any;
     let brandChannel = channel;
-    let redirectChannels = [];
-    let upperBounds = [];
+    let redirectChannels: any[] = [];
+    let upperBounds: any[] = [];
 
     if (isLoading) {
       lineupItem = {
@@ -214,7 +216,7 @@ export function video(channelDB, fillerDB, db) {
         if (!prog.program.isOffline || prog.program.type != 'redirect') {
           break;
         }
-        channelCache.recordPlayback(brandChannel.number, t0, {
+        ctx.channelCache.recordPlayback(brandChannel.number, t0, {
           /*type: 'offline',*/
           title: 'Error',
           err: Error('Recursive channel redirect found'),
@@ -223,10 +225,8 @@ export function video(channelDB, fillerDB, db) {
         });
 
         let newChannelNumber = prog.program.channel;
-        let newChannel = await channelCache.getChannelConfig(
-          channelDB,
-          newChannelNumber,
-        );
+        let newChannel =
+          await ctx.channelCache.getChannelConfig(newChannelNumber);
 
         if (newChannel.length == 0) {
           let err = Error("Invalid redirect to a channel that doesn't exist");
@@ -243,7 +243,10 @@ export function video(channelDB, fillerDB, db) {
         }
         newChannel = newChannel[0];
         brandChannel = newChannel;
-        lineupItem = channelCache.getCurrentLineupItem(newChannel.number, t0);
+        lineupItem = ctx.channelCache.getCurrentLineupItem(
+          newChannel.number,
+          t0,
+        );
         if (lineupItem != null) {
           lineupItem = JSON.parse(JSON.stringify(lineupItem));
           break;
@@ -280,7 +283,7 @@ export function video(channelDB, fillerDB, db) {
         //skip to the next program
         let dt = prog.program.duration - prog.timeElapsed;
         for (let i = 0; i < redirectChannels.length; i++) {
-          channelCache.clearPlayback(redirectChannels[i].number);
+          ctx.channelCache.clearPlayback(redirectChannels[i].number);
         }
         console.log(
           'Too litlle time before the filler ends, skip to next slot',
@@ -297,6 +300,7 @@ export function video(channelDB, fillerDB, db) {
       }
       let fillers = await fillerDB.getFillersFromChannel(brandChannel);
       let lineup = helperFuncs.createLineup(
+        ctx.channelCache,
         prog,
         brandChannel,
         fillers,
@@ -323,7 +327,11 @@ export function video(channelDB, fillerDB, db) {
           lineupItem.streamDuration = Math.min(u2, u);
           upperBound = lineupItem.streamDuration;
         }
-        channelCache.recordPlayback(redirectChannels[i].number, t0, lineupItem);
+        ctx.channelCache.recordPlayback(
+          redirectChannels[i].number,
+          t0,
+          lineupItem,
+        );
       }
     }
 
@@ -346,7 +354,7 @@ export function video(channelDB, fillerDB, db) {
     console.log('=========================================================');
 
     if (!isLoading) {
-      channelCache.recordPlayback(channel.number, t0, lineupItem);
+      ctx.channelCache.recordPlayback(channel.number, t0, lineupItem);
     }
     if (wereThereTooManyAttempts(session, lineupItem)) {
       lineupItem = {
@@ -370,17 +378,17 @@ export function video(channelDB, fillerDB, db) {
       audioOnly: audioOnly,
     };
 
-    let player = new ProgramPlayer(playerContext);
+    let player: ProgramPlayer | null = new ProgramPlayer(playerContext);
     let stopped = false;
     let stop = () => {
       if (!stopped) {
         stopped = true;
-        player.cleanUp();
+        player?.cleanUp();
         player = null;
         res.end();
       }
     };
-    var playerObj = null;
+    var playerObj: any = null;
     res.writeHead(200, {
       'Content-Type': 'video/mp2t',
     });
@@ -417,6 +425,7 @@ export function video(channelDB, fillerDB, db) {
   });
 
   router.get('/m3u8', async (req, res) => {
+    const ctx = await serverContext();
     let sessionId = StreamCount++;
 
     //res.type('application/vnd.apple.mpegurl')
@@ -429,7 +438,7 @@ export function video(channelDB, fillerDB, db) {
     }
 
     let channelNum = parseInt(req.query.channel as string, 10);
-    let channel = await channelCache.getChannelConfig(channelDB, channelNum);
+    let channel = await ctx.channelCache.getChannelConfig(channelNum);
     if (channel.length === 0) {
       res.status(500).send("Channel doesn't exist");
       return;
@@ -471,6 +480,7 @@ export function video(channelDB, fillerDB, db) {
     res.send(data);
   });
   router.get('/playlist', async (req, res) => {
+    const ctx = await serverContext();
     res.type('text');
 
     // Check if channel queried is valid
@@ -480,7 +490,7 @@ export function video(channelDB, fillerDB, db) {
     }
 
     let channelNum = parseInt(req.query.channel as string, 10);
-    let channel = await channelCache.getChannelConfig(channelDB, channelNum);
+    let channel = await ctx.channelCache.getChannelConfig(channelNum);
     if (channel.length === 0) {
       res.status(500).send("Channel doesn't exist");
       return;
@@ -524,7 +534,8 @@ export function video(channelDB, fillerDB, db) {
   });
 
   let mediaPlayer = async (channelNum, path, req, res) => {
-    let channel = await channelCache.getChannelConfig(channelDB, channelNum);
+    const ctx = await serverContext();
+    let channel = await ctx.channelCache.getChannelConfig(channelNum);
     if (channel.length === 0) {
       res.status(404).send('Channel not found.');
       return;

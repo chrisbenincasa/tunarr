@@ -166,7 +166,7 @@ function migrateChannelsFrom51(db, newPlexServers) {
   for (let i = 0; i < channels.length; i++) {
     let channel = channels[i];
     let programs = channel.programs;
-    let newPrograms = [];
+    let newPrograms: any[] = [];
     for (let j = 0; j < programs.length; j++) {
       let program = programs[j];
       if (
@@ -206,7 +206,7 @@ function migrateChannelsFrom51(db, newPlexServers) {
         if (isUndefined(commercials) || commercials.length == 0) {
           commercials = [];
         }
-        let newCommercials = [];
+        let newCommercials: any[] = [];
         for (let k = 0; k < commercials.length; k++) {
           let commercial = commercials[k];
           if (
@@ -299,7 +299,7 @@ function commercialsRemover(db) {
   let channels = db['channels'].find();
   for (let i = 0; i < channels.length; i++) {
     let channel = channels[i];
-    let fixedPrograms = [];
+    let fixedPrograms: any[] = [];
     let fixedFiller = channel.fillerContent;
     if (isUndefined(fixedFiller)) {
       fixedFiller = [];
@@ -502,7 +502,7 @@ function splitServersSingleChannels(db, channelDB) {
   let servers = db['plex-servers'].find();
   let serverCache = {};
   let serverNames = {};
-  let newServers = [];
+  let newServers: any[] = [];
 
   let getServerKey = (uri, accessToken) => {
     return uri + '|' + accessToken;
@@ -651,7 +651,7 @@ function splitServersSingleChannels(db, channelDB) {
 
 function fixCorruptedServer(db) {
   let arr = db['plex-servers'].find();
-  let servers = [];
+  let servers: any[] = [];
   let badFound = false;
   for (let i = 0; i < arr.length; i++) {
     let server = arr[i];
@@ -705,7 +705,7 @@ function extractFillersFromChannels() {
       console.log('Migrating filler in channel : ' + channelFiles[i] + '...');
       let channelPath = path.join(channels, channelFiles[i]);
       let channel = JSON.parse(fs.readFileSync(channelPath, 'utf-8'));
-      let fillerId = null;
+      let fillerId: string | null = null;
       if (
         typeof channel.fillerContent !== 'undefined' &&
         channel.fillerContent.length != 0

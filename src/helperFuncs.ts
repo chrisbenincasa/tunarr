@@ -1,7 +1,7 @@
 import { isUndefined } from 'lodash-es';
 import * as randomJS from 'random-js';
-import * as channelCache from './channel-cache.js';
 import constants from './constants.js';
+import { ChannelCache } from './channel-cache.js';
 
 const SLACK = constants.SLACK;
 const Random = randomJS.Random;
@@ -64,7 +64,13 @@ export function getCurrentProgramAndTimeElapsed(date, channel) {
   };
 }
 
-export function createLineup(obj, channel, fillers, isFirst) {
+export function createLineup(
+  channelCache: ChannelCache,
+  obj,
+  channel,
+  fillers,
+  isFirst,
+) {
   let timeElapsed = obj.timeElapsed;
   // Start time of a file is never consistent unless 0. Run time of an episode can vary.
   // When within 30 seconds of start time, just make the time 0 to smooth things out
@@ -72,7 +78,7 @@ export function createLineup(obj, channel, fillers, isFirst) {
   let activeProgram = obj.program;
   let beginningOffset = 0;
 
-  let lineup = [];
+  let lineup: any[] = [];
 
   if (typeof activeProgram.err !== 'undefined') {
     let remaining = activeProgram.duration - timeElapsed;
@@ -92,13 +98,14 @@ export function createLineup(obj, channel, fillers, isFirst) {
     //offline case
     let remaining = activeProgram.duration - timeElapsed;
     //look for a random filler to play
-    let filler = null;
+    let filler: any = null;
     let special = null;
 
     if (channel.offlineMode === 'clip' && channel.fallback.length != 0) {
       special = JSON.parse(JSON.stringify(channel.fallback[0]));
     }
     let randomResult = pickRandomWithMaxDuration(
+      channelCache,
       channel,
       fillers,
       remaining + (isFirst ? 7 * 24 * 60 * 60 * 1000 : 0),
@@ -194,12 +201,17 @@ function weighedPick(a, total) {
   return random.bool(a, total);
 }
 
-function pickRandomWithMaxDuration(channel, fillers, maxDuration) {
+function pickRandomWithMaxDuration(
+  channelCache: ChannelCache,
+  channel,
+  fillers,
+  maxDuration,
+) {
   let list = [];
   for (let i = 0; i < fillers.length; i++) {
     list = list.concat(fillers[i].content);
   }
-  let pick1 = null;
+  let pick1: any = null;
 
   let t0 = new Date().getTime();
   let minimumWait = 1000000000;
@@ -216,7 +228,7 @@ function pickRandomWithMaxDuration(channel, fillers, maxDuration) {
     let n = 0;
 
     for (let i = 0; i < list.length; i++) {
-      let clip = list[i];
+      let clip: any = list[i];
       // a few extra milliseconds won't hurt anyone, would it? dun dun dun
       if (clip.duration <= maxDuration + SLACK) {
         let t1 = channelCache.getProgramLastPlayTime(channel.number, clip);

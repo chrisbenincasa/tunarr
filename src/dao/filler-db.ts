@@ -2,14 +2,16 @@ import fs from 'fs';
 import { isUndefined } from 'lodash-es';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
+import { ChannelCache } from '../channel-cache.js';
+import { ChannelDB } from './channel-db.js';
 
 export class FillerDB {
   private folder: string;
   private cache: Record<string, any>;
-  private channelDB: any;
-  private channelCache: any;
+  private channelDB: ChannelDB;
+  private channelCache: ChannelCache;
 
-  constructor(folder, channelDB, channelCache) {
+  constructor(folder, channelDB, channelCache: ChannelCache) {
     this.folder = folder;
     this.cache = {};
     this.channelDB = channelDB;
@@ -53,7 +55,7 @@ export class FillerDB {
     let f = path.join(this.folder, `${id}.json`);
     try {
       await new Promise((resolve, reject) => {
-        let data = undefined;
+        let data: any = undefined;
         try {
           //id is determined by the file name, not the contents
           fixup(json);
@@ -83,12 +85,12 @@ export class FillerDB {
 
   async getFillerChannels(id) {
     let numbers = await this.channelDB.getAllChannelNumbers();
-    let channels = [];
+    let channels: any = [];
     await Promise.all(
       numbers.map(async (number) => {
         let ch = await this.channelDB.getChannel(number);
-        let name = ch.name;
-        let fillerCollections = ch.fillerCollections;
+        let name = ch!.name;
+        let fillerCollections = ch!.fillerCollections ?? [];
         for (let i = 0; i < fillerCollections.length; i++) {
           if (fillerCollections[i].id === id) {
             channels.push({
@@ -98,7 +100,7 @@ export class FillerDB {
             break;
           }
         }
-        ch = null;
+        // ch = null;
       }),
     );
     return channels;
@@ -113,10 +115,14 @@ export class FillerDB {
             `Updating channel ${channel.number} , remove filler: ${id}`,
           );
           let json = await this.channelDB.getChannel(channel.number);
-          json.fillerCollections = json.fillerCollections.filter((col) => {
-            return col.id != id;
-          });
-          await this.channelDB.saveChannel(channel.number, json);
+          if (json?.fillerCollections) {
+            json.fillerCollections = json?.fillerCollections?.filter((col) => {
+              return col.id != id;
+            });
+          }
+          if (json) {
+            await this.channelDB.saveChannel(json);
+          }
         }),
       );
       this.channelCache.clear();
@@ -140,7 +146,7 @@ export class FillerDB {
         if (err) {
           return reject(err);
         }
-        let fillerIds = [];
+        let fillerIds: string[] = [];
         for (let i = 0; i < items.length; i++) {
           let name = path.basename(items[i]);
           if (path.extname(name) === '.json') {
