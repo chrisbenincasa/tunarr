@@ -118,7 +118,7 @@ module.exports = function ($http, $window, $interval, dizquetv) {
     },
 
     getLibrary: async (server) => {
-      const res = await $http({
+      const { data: res } = await $http({
         method: 'GET',
         url: '/api/plex',
         params: {
@@ -140,9 +140,14 @@ module.exports = function ($http, $window, $interval, dizquetv) {
         ) {
           var genres = [];
           if (res.Directory[i].type === 'movie') {
-            const genresRes = await client.Get(
-              `/library/sections/${res.Directory[i].key}/genre`,
-            );
+            const { data: genresRes } = await $http({
+              method: 'GET',
+              url: '/api/plex',
+              params: {
+                path: `/library/sections/${res.Directory[i].key}/genre`,
+                name: server.name,
+              },
+            });
             for (
               let q = 0,
                 k =
@@ -173,7 +178,7 @@ module.exports = function ($http, $window, $interval, dizquetv) {
       return sections;
     },
     getPlaylists: async (server) => {
-      const res = await $http({
+      const { data: res } = await $http({
         method: 'GET',
         url: '/api/plex',
         params: {
@@ -202,7 +207,7 @@ module.exports = function ($http, $window, $interval, dizquetv) {
       return playlists;
     },
     getStreams: async (server, key) => {
-      const res = await $http({
+      const { data: res } = await $http({
         method: 'GET',
         url: '/api/plex',
         params: {
@@ -222,7 +227,7 @@ module.exports = function ($http, $window, $interval, dizquetv) {
     },
     getNested: async (server, lib, includeCollections, errors) => {
       const key = lib.key;
-      const res = await $http({
+      const { data: res } = await $http({
         method: 'GET',
         url: '/api/plex',
         params: {
@@ -251,7 +256,14 @@ module.exports = function ($http, $window, $interval, dizquetv) {
       await Promise.all(
         albumKeys.map(async (albumKey) => {
           try {
-            let album = await client.Get(albumKey);
+            const { data: album } = await $http({
+              method: 'GET',
+              url: '/api/plex',
+              params: {
+                path: albumKey,
+                name: server.name,
+              },
+            });
             if (typeof album !== 'undefined' && album.size == 1) {
               album = album.Metadata[0];
             }
@@ -364,7 +376,14 @@ module.exports = function ($http, $window, $interval, dizquetv) {
         let k = res.librarySectionID;
 
         k = `/library/sections/${k}/collections`;
-        let collections = await client.Get(k);
+        let { data: collections } = await $http({
+          method: 'GET',
+          url: '/api/plex',
+          params: {
+            path: k,
+            name: server.name,
+          },
+        });
         if (typeof collections.Metadata === 'undefined') {
           collections.Metadata = [];
         }

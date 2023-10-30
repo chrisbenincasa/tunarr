@@ -366,6 +366,7 @@ module.exports = function ($http, $q) {
      * Channel Tool Services
      */
     calculateTimeSlots: async (programs, schedule) => {
+      console.log(programs, schedule);
       let d = await $http({
         method: 'POST',
         url: '/api/channel-tools/time-slots',
