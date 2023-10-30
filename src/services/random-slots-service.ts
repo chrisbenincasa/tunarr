@@ -3,6 +3,10 @@ import getShowDataFunc, { ShowData } from './get-show-data.js';
 import { random } from '../helperFuncs.js';
 import throttle from './throttle.js';
 import { isUndefined } from 'lodash-es';
+import { Program } from '../dao/db.js';
+import createLogger from '../logger.js';
+
+const logger = createLogger(import.meta);
 
 const getShowData = getShowDataFunc();
 
@@ -15,9 +19,34 @@ type ShowDataWithExtras = Required<ShowData> & {
   description: string;
 };
 
+type RandomSlot = {
+  order: string;
+  showId: string;
+  time: number; // Offset from midnight in millis
+  cooldown: number;
+  period: number;
+  duration: number;
+  weight: number;
+  weightPercentage: string;
+};
+
+// This is used on the frontend too, we will move common
+// types eventually.
+type RandomSlotSchedule = {
+  flexPreference: string; // distribute or end
+  maxDays: number; // days
+  pad: number; // Pad time in millis
+  padStyle: string;
+  slots: RandomSlot[];
+  timeZoneOffset?: number; // tz offset in...minutes, i think?
+  randomDistribution: string;
+  period: number;
+};
+
 function getShow(program): ShowDataWithExtras | null {
   let d = getShowData(program);
   if (!d.hasShow) {
+    logger.warn('Program returned hasShow = false', program, d);
     return null;
   } else {
     return {
@@ -64,6 +93,7 @@ function addProgramToShow(show, program) {
     return;
   }
   let id = getProgramId(program);
+  console.log(show, id);
   if (show.programs[id] !== true) {
     show.programs.push(program);
     show.programs[id] = true;
@@ -131,7 +161,7 @@ function getShowShuffler(show) {
   return show.shuffler;
 }
 
-export default async (programs, schedule) => {
+export default async (programs: Program[], schedule: RandomSlotSchedule) => {
   if (!Array.isArray(programs)) {
     return { userError: 'Expected a programs array' };
   }
@@ -315,7 +345,7 @@ export default async (programs, schedule) => {
       continue;
     }
 
-    let slot = null;
+    let slot: RandomSlot | undefined;
     let slotIndex: number;
     let remaining: number;
 

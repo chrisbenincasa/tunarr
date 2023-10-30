@@ -980,7 +980,7 @@ export function makeApi(
       }
       await streamToolResult(toolRes, res);
     } catch (err) {
-      logger.error(err);
+      logger.error('Error', err);
       res.status(500).send('Internal error');
     }
   });
