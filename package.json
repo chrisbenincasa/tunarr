@@ -74,5 +74,8 @@
     "plugins": [
       "@babel/plugin-proposal-class-properties"
     ]
-  }
+  },
+  "workspaces": [
+    "web2"
+  ]
 }
