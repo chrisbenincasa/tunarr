@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "description": "Create LiveTV channels from your Plex media",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "preinstall": "npx only-allow pnpm",
+    "test": "vitest",
     "start": "node index.js",
     "build": "browserify ./web/app.js -o ./web/public/bundle.js",
     "dev-client": "watchify ./web/app.js -o ./web/public/bundle.js",
@@ -20,6 +21,7 @@
   "author": "vexorian",
   "license": "Zlib",
   "dependencies": {
+    "JSONStream": "1.0.5",
     "angular": "^1.6.10",
     "angular-router-browserify": "0.0.2",
     "angular-vs-repeat": "2.0.13",
@@ -29,7 +31,6 @@
     "express": "^4.17.1",
     "express-fileupload": "^1.2.1",
     "fluent-ffmpeg": "^2.1.2",
-    "JSONStream": "1.0.5",
     "lodash-es": "^4.17.21",
     "lowdb": "^6.1.1",
     "merge": "2.1.1",
@@ -70,6 +71,7 @@
     "tsify": "^5.0.4",
     "typescript": "^5.2.2",
     "uuid": "^9.0.1",
+    "vitest": "^0.34.6",
     "watchify": "^4.0.0"
   },
   "babel": {

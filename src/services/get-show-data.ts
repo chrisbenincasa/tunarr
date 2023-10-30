@@ -12,11 +12,18 @@ export type ShowData = {
 
 //This is an exact copy of the file with the same now in the web project
 //one of these days, we'll figure out how to share the code.
+
+// What is the minimal data we need here?
+type ShowDataProgram = Omit<
+  Program,
+  'summary' | 'icon' | 'plexFile' | 'episodeIcon' | 'ratingKey'
+>;
+
 export default function () {
   let movieTitleOrder = {};
   let movieTitleOrderNumber = 0;
 
-  return (program: Program): ShowData => {
+  return (program: ShowDataProgram): ShowData => {
     if (typeof program.customShowId !== 'undefined') {
       return {
         hasShow: true,
