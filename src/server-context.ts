@@ -12,7 +12,6 @@ import { EventService } from './services/event-service.js';
 import { FileCacheService } from './services/file-cache-service.js';
 import { M3uService } from './services/m3u-service.js';
 import { TVGuideService } from './services/tv-guide-service.js';
-import * as xmltv from './xmltv.js';
 
 // Temp
 import { dirname } from 'node:path';
@@ -20,6 +19,7 @@ import { fileURLToPath } from 'node:url';
 import { getDB } from './dao/db.js';
 import { serverOptions } from './globals.js';
 import { ChannelCache } from './channel-cache.js';
+import { XmlTvWriter } from './xmltv.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -93,12 +93,12 @@ export const serverContext = once(async () => {
   const cacheImageService = new CacheImageService(db, fileCache);
   const m3uService = new M3uService(channelDB, fileCache, channelCache);
   const eventService = new EventService();
+  const xmltv = new XmlTvWriter();
 
   await initDB(db, channelDB);
 
   const guideService = new TVGuideService(
     xmltv,
-    db,
     cacheImageService,
     eventService,
   );
@@ -115,5 +115,6 @@ export const serverContext = once(async () => {
     hdhrService: hdhr(db, channelDB),
     customShowDB: new CustomShowDB(path.join(opts.database, 'custom-shows')),
     channelCache,
+    xmltv,
   };
 });

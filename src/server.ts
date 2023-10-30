@@ -8,7 +8,6 @@ import constants from './constants.js';
 import createLogger from './logger.js';
 import { serverContext } from './server-context.js';
 import { video } from './video.js';
-import * as xmltv from './xmltv.js';
 import { xmltvInterval } from './xmltv-generator.js';
 import { onShutdown } from 'node-graceful-shutdown';
 
@@ -192,5 +191,6 @@ onShutdown('log', [], async () => {
   await _wait(2000);
 });
 onShutdown('xmltv-writer', [], async () => {
-  await xmltv.shutdown();
+  const ctx = await serverContext();
+  await ctx.xmltv.shutdown();
 });

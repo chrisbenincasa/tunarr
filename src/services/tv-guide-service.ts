@@ -4,6 +4,8 @@ import createLogger from '../logger.js';
 import throttle from './throttle.js';
 import { CacheImageService } from './cache-image-service.js';
 import { EventService } from './event-service.js';
+import { Channel, getDB } from '../dao/db.js';
+import { XmlTvWriter } from '../xmltv.js';
 
 const logger = createLogger(import.meta);
 
@@ -11,32 +13,30 @@ const FALLBACK_ICON =
   'https://raw.githubusercontent.com/vexorain/dizquetv/main/resources/dizquetv.png';
 
 export class TVGuideService {
-  cached: any;
+  cached: Record<number, any>;
   lastUpdate: number;
   lastBackoff: number;
   updateTime: number;
   currentUpdate: number;
   currentLimit: number;
   currentChannels: any;
-  xmltv: any;
-  db: any;
+  xmltv: XmlTvWriter;
   cacheImageService: any;
-  eventService: any;
-  _throttle: any;
+  eventService: EventService;
+  _throttle: () => Promise<void>;
   updateLimit: any;
   updateChannels: any[];
   accumulateTable: any;
-  channelsByNumber: any;
+  channelsByNumber: Record<number, Channel>;
   /****
    *
    **/
   constructor(
-    xmltv,
-    db,
+    xmltv: XmlTvWriter,
     cacheImageService: CacheImageService,
     eventService: EventService,
   ) {
-    this.cached = null;
+    this.cached = {};
     this.lastUpdate = 0;
     this.lastBackoff = 100;
     this.updateTime = 0;
@@ -44,7 +44,6 @@ export class TVGuideService {
     this.currentLimit = -1;
     this.currentChannels = null;
     this.xmltv = xmltv;
-    this.db = db;
     this.cacheImageService = cacheImageService;
     this.eventService = eventService;
     this._throttle = throttle;
@@ -100,7 +99,7 @@ export class TVGuideService {
     return await this.get();
   }
 
-  async makeAccumulated(channel) {
+  async makeAccumulated(channel: Channel) {
     if (isUndefined(channel.programs)) {
       throw Error(JSON.stringify(channel).slice(0, 200));
     }
@@ -114,8 +113,8 @@ export class TVGuideService {
     return arr;
   }
 
-  async getCurrentPlayingIndex(channel, t): Promise<any> {
-    let s = new Date(channel.startTime).getTime();
+  async getCurrentPlayingIndex(channel: Channel, t): Promise<any> {
+    let s = new Date(channel.startTimeEpoch).getTime();
     if (t < s) {
       //it's flex time
       return {
@@ -157,14 +156,14 @@ export class TVGuideService {
   }
 
   async getChannelPlaying(
-    channel,
+    channel: Channel,
     previousKnown,
-    t,
+    t: number,
     depth: any[] = [],
   ): Promise<any> {
     let playing: Record<string, any> = {};
     if (
-      typeof previousKnown !== 'undefined' &&
+      !isUndefined(previousKnown) &&
       previousKnown.index !== -1 &&
       previousKnown.program.duration ==
         channel.programs[previousKnown.index].duration &&
@@ -233,7 +232,7 @@ export class TVGuideService {
     return playing;
   }
 
-  async getChannelPrograms(t0, t1, channel) {
+  async getChannelPrograms(t0: number, t1: number, channel: Channel) {
     if (isUndefined(channel)) {
       throw Error("Couldn't find channel?");
     }
@@ -414,7 +413,7 @@ export class TVGuideService {
   }
 
   async refreshXML() {
-    let xmltvSettings = this.db['xmltv-settings'].find()[0];
+    let xmltvSettings = (await getDB()).xmlTvSettings();
     await this.xmltv.WriteXMLTV(
       this.cached,
       xmltvSettings,

@@ -138,9 +138,7 @@ function convertProgram(program: JSONObject): Program {
     plexFile: program['plexFile'] as string,
     ratingKey: program['ratingKey'] as string,
     serverKey: program['serverKey'] as string,
-    showTitle: !isMovie
-      ? (program['showTitle'] as string | undefined)
-      : undefined,
+    showTitle: program['showTitle'] as string | undefined,
     summary: program['summary'] as string,
     title: program['title'] as string,
     type: program['type'] as string,

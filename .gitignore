@@ -10,3 +10,4 @@ package-lock.json
 config/
 .vscode/
 build/
+log.txt

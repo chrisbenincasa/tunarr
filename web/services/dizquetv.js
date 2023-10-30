@@ -159,7 +159,6 @@ module.exports = function ($http, $q) {
     },
     getChannels: () => {
       return $http.get('/api/channels').then((d) => {
-        console.log(d);
         return d.data;
       });
     },

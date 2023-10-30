@@ -66,7 +66,7 @@ export type Channel = {
   number: number;
   watermark?: Watermark;
   fillerCollections?: FillerCollection[];
-  programs?: Program[];
+  programs: Program[];
   icon: ChannelIcon;
   guideMinimumDurationSeconds: number;
   groupTitle: string;

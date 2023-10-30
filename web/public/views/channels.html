@@ -25,7 +25,7 @@
                 <span ng-show="!x.pending">{{x.number}}</span>
             </td>
             <td style="padding: 0" class="text-center">
-                <img ng-if="x.icon !== ''" ng-src="{{x.icon}}" alt="{{x.name}}" style="max-height: 40px;"></img>
+                <img ng-if="x.icon !== ''" ng-src="{{x.icon.path}}" alt="{{x.name}}" style="max-height: 40px;"></img>
                 <div ng-if="x.icon === ''" style="padding-top: 14px;"><small>{{x.name}}</small></div>
             </td>
             <td>{{x.name}} <span ng-if='x.stealth===true' class='text-muted'>(Stealth)</span></td>

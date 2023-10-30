@@ -1,6 +1,4 @@
-import { Plex } from '../../build/src/plex.js';
-
-export default function ($http, $window, $interval) {
+module.exports = function ($http, $window, $interval, dizquetv) {
   let exported = {
     login: async () => {
       const headers = {
@@ -103,9 +101,15 @@ export default function ($http, $window, $interval) {
     },
 
     check: async (server) => {
-      let client = new Plex(server);
       try {
-        const res = await client.Get('/');
+        await $http({
+          method: 'GET',
+          url: '/api/plex',
+          params: {
+            path: '/',
+            name: server.name,
+          },
+        });
         return 1;
       } catch (err) {
         console.error(err);
@@ -114,8 +118,14 @@ export default function ($http, $window, $interval) {
     },
 
     getLibrary: async (server) => {
-      var client = new Plex(server);
-      const res = await client.Get('/library/sections');
+      const res = await $http({
+        method: 'GET',
+        url: '/api/plex',
+        params: {
+          path: '/library/sections',
+          name: server.name,
+        },
+      });
       var sections = [];
       for (
         let i = 0,
@@ -163,8 +173,14 @@ export default function ($http, $window, $interval) {
       return sections;
     },
     getPlaylists: async (server) => {
-      var client = new Plex(server);
-      const res = await client.Get('/playlists');
+      const res = await $http({
+        method: 'GET',
+        url: '/api/plex',
+        params: {
+          path: '/playlists',
+          name: server.name,
+        },
+      });
       var playlists = [];
       for (
         let i = 0,
@@ -186,23 +202,34 @@ export default function ($http, $window, $interval) {
       return playlists;
     },
     getStreams: async (server, key) => {
-      var client = new Plex(server);
-      return client.Get(key).then((res) => {
-        let streams = res.Metadata[0].Media[0].Part[0].Stream;
-        for (let i = 0, l = streams.length; i < l; i++) {
-          if (typeof streams[i].key !== 'undefined') {
-            streams[
-              i
-            ].key = `${server.uri}${streams[i].key}?X-Plex-Token=${server.accessToken}`;
-          }
-        }
-        return streams;
+      const res = await $http({
+        method: 'GET',
+        url: '/api/plex',
+        params: {
+          path: key,
+          name: server.name,
+        },
       });
+      let streams = res.Metadata[0].Media[0].Part[0].Stream;
+      for (let i = 0, l = streams.length; i < l; i++) {
+        if (typeof streams[i].key !== 'undefined') {
+          streams[
+            i
+          ].key = `${server.uri}${streams[i].key}?X-Plex-Token=${server.accessToken}`;
+        }
+      }
+      return streams;
     },
     getNested: async (server, lib, includeCollections, errors) => {
-      var client = new Plex(server);
       const key = lib.key;
-      const res = await client.Get(key);
+      const res = await $http({
+        method: 'GET',
+        url: '/api/plex',
+        params: {
+          path: key,
+          name: server.name,
+        },
+      });
 
       const size =
         typeof res.Metadata !== 'undefined' ? res.Metadata.length : 0;
@@ -365,7 +392,7 @@ export default function ($http, $window, $interval) {
     },
   };
   return exported;
-}
+};
 
 function msToTime(duration) {
   var milliseconds = parseInt((duration % 1000) / 100),

@@ -1,11 +1,12 @@
 import request from 'request';
 import { isUndefined } from 'lodash-es';
+import { PlexServerSettings } from './dao/db.js';
 export class Plex {
   private _accessToken: string;
   private _server: any;
   private _headers: object;
 
-  constructor(opts) {
+  constructor(opts: Partial<PlexServerSettings>) {
     this._accessToken =
       typeof opts.accessToken !== 'undefined' ? opts.accessToken : '';
     let uri = 'http://127.0.0.1:32400';
@@ -17,9 +18,6 @@ export class Plex {
     }
     this._server = {
       uri: uri,
-      host: typeof opts.host !== 'undefined' ? opts.host : '127.0.0.1',
-      port: typeof opts.port !== 'undefined' ? opts.port : '32400',
-      protocol: typeof opts.protocol !== 'undefined' ? opts.protocol : 'http',
     };
     this._headers = {
       Accept: 'application/json',
@@ -83,6 +81,7 @@ export class Plex {
   }
 
   async Get(path, optionalHeaders = {}) {
+    console.log(path);
     let req = {
       method: 'get',
       url: `${this.URL}${path}`,

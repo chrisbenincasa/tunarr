@@ -1,6 +1,7 @@
 import { Plex } from './plex.js';
 import { serverContext } from './server-context.js';
 import createLogger from './logger.js';
+import { getDB } from './dao/db.js';
 
 const logger = createLogger(import.meta);
 
@@ -20,10 +21,10 @@ const updateXML = async () => {
 
   try {
     channels = await getChannelsCached();
-    let xmltvSettings = ctx.db['xmltv-settings'].find()[0];
+    let xmltvSettings = (await getDB()).xmlTvSettings();
     let t = ctx.guideService.prepareRefresh(
       channels,
-      xmltvSettings.cache * 60 * 60 * 1000,
+      xmltvSettings.refreshHours * 60 * 60 * 1000,
     );
     channels = [];
 

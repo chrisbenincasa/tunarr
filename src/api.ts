@@ -2,7 +2,7 @@ import JSONStream from 'JSONStream';
 import express from 'express';
 import fileUpload from 'express-fileupload';
 import fs from 'fs';
-import { isUndefined } from 'lodash-es';
+import { find, isUndefined } from 'lodash-es';
 import path from 'path';
 import constants from './constants.js';
 import { Channel, getDB } from './dao/db.js';
@@ -1008,6 +1008,20 @@ export function makeApi(
       logger.error(err);
       res.status(500).send('error');
     }
+  });
+
+  router.get('/api/plex', async (req, res) => {
+    const db = await getDB();
+    const servers = db.plexServers();
+    const server = find(servers, { name: req.query['name'] as string });
+    if (isUndefined(server)) {
+      return res
+        .status(404)
+        .json({ error: 'No server found with name: ' + req.query.name });
+    }
+
+    const plex = new Plex(server);
+    return res.json(await plex.Get(req.query['path']));
   });
 
   function updateXmltv() {

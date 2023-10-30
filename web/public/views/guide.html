@@ -38,7 +38,7 @@
                 </div>
             </td>
             <td title='{{channels[channelNumber].altTitle}}' class='even channel-icon' colspan="{{channelIconColspan}}" >
-                <img src='{{channels[channelNumber].icon}}' alt='{{channels[channelNumber].name}}' ng-click='channels[channelNumber].mouse=true'  ></img>
+                <img src='{{channels[channelNumber].icon.path}}' alt='{{channels[channelNumber].name}}' ng-click='channels[channelNumber].mouse=true'  ></img>
             </td>
 
             <td class='odd program' colspan="{{totalSpan}}" ng-if="channels[channelNumber].loading">
