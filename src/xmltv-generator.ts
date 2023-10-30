@@ -1,7 +1,8 @@
 import { Plex } from './plex.js';
 import { serverContext } from './server-context.js';
 import createLogger from './logger.js';
-import { getDB } from './dao/db.js';
+import { Channel, getDB } from './dao/db.js';
+import { compact } from 'lodash-es';
 
 const logger = createLogger(import.meta);
 
@@ -10,17 +11,19 @@ const updateXML = async () => {
 
   let getChannelsCached = async () => {
     let channelNumbers = await ctx.channelDB.getAllChannelNumbers();
-    return await Promise.all(
-      channelNumbers.map(async (x) => {
-        return (await ctx.channelCache.getChannelConfig(x))[0];
-      }),
+    return compact(
+      await Promise.all(
+        channelNumbers.map(async (x) => {
+          return ctx.channelCache.getChannelConfig(x);
+        }),
+      ),
     );
   };
 
-  let channels: any[] = [];
+  let channels: Channel[] = [];
 
   try {
-    channels = await getChannelsCached();
+    channels = await ctx.channelCache.getAllChannels();
     let xmltvSettings = (await getDB()).xmlTvSettings();
     let t = ctx.guideService.prepareRefresh(
       channels,

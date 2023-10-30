@@ -2,6 +2,7 @@ import path from 'path';
 import * as winston from 'winston';
 import 'winston-daily-rotate-file';
 
+import { join } from 'lodash-es';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -18,8 +19,19 @@ const hformat = (module: ImportMeta) =>
     let msg = `${timestamp} [${level}] ${getLabel(module)}${
       label ? `[${label}]` : ''
     }: ${message} `;
-    if (Object.keys(metadata).length > 0) {
-      msg += JSON.stringify(metadata);
+    for (let key of Object.keys(metadata)) {
+      if (key === 'stack') {
+        msg += metadata.message;
+        if (metadata.stack) {
+          msg += '\n';
+          msg += join(
+            metadata.stack.split('\n').map((line) => '\t' + line),
+            '\n',
+          );
+        }
+      } else {
+        msg += JSON.stringify(metadata);
+      }
     }
     return msg;
   });

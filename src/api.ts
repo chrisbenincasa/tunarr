@@ -2,7 +2,7 @@ import JSONStream from 'JSONStream';
 import express from 'express';
 import fileUpload from 'express-fileupload';
 import fs from 'fs';
-import { find, isUndefined } from 'lodash-es';
+import { find, isUndefined, omit } from 'lodash-es';
 import path from 'path';
 import constants from './constants.js';
 import { Channel, getDB } from './dao/db.js';
@@ -248,9 +248,8 @@ export function makeApi(
       let number = parseInt(req.params.number, 10);
       let channel = await ctx.channelCache.getChannelConfig(number);
 
-      if (channel.length == 1) {
-        channel = channel[0];
-        res.send(channel);
+      if (!isUndefined(channel)) {
+        res.json(channel);
       } else {
         res.status(404).send('Channel not found');
       }
@@ -265,15 +264,8 @@ export function makeApi(
       let number = parseInt(req.params.number, 10);
       let channel = await ctx.channelCache.getChannelConfig(number);
 
-      if (channel.length == 1) {
-        channel = channel[0];
-        let copy = {};
-        Object.keys(channel).forEach((key) => {
-          if (key != 'programs') {
-            copy[key] = channel[key];
-          }
-        });
-        res.send(copy);
+      if (!isUndefined(channel)) {
+        res.json(omit({ ...channel }, 'programs'));
       } else {
         res.status(404).send('Channel not found');
       }
@@ -289,8 +281,7 @@ export function makeApi(
       let number = parseInt(req.params.number, 10);
       let channel = await ctx.channelCache.getChannelConfig(number);
 
-      if (channel.length == 1) {
-        channel = channel[0];
+      if (!isUndefined(channel)) {
         let programs = channel.programs;
         if (isUndefined(programs)) {
           res.status(404).send("Channel doesn't have programs?");
@@ -320,8 +311,7 @@ export function makeApi(
       const ctx = await serverContext();
       let number = parseInt(req.params.number, 10);
       let channel = await ctx.channelCache.getChannelConfig(number);
-      if (channel.length == 1) {
-        channel = channel[0];
+      if (!isUndefined(channel)) {
         res.send({
           number: channel.number,
           icon: channel.icon,
@@ -852,7 +842,7 @@ export function makeApi(
       let dateFrom = new Date(req.query.dateFrom as string);
       let dateTo = new Date(req.query.dateTo as string);
       let lineup = await guideService.getChannelLineup(
-        req.params.number,
+        parseInt(req.params.number),
         dateFrom,
         dateTo,
       );

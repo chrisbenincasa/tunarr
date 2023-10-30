@@ -65,11 +65,10 @@ export function video(fillerDB, db) {
     }
     let number = parseInt(req.query.channel, 10);
     let channel = await ctx.channelCache.getChannelConfig(number);
-    if (channel.length === 0) {
+    if (isUndefined(channel)) {
       res.status(500).send("Channel doesn't exist");
       return;
     }
-    channel = channel[0];
 
     let ffmpegSettings = db['ffmpeg-settings'].find()[0];
 
@@ -118,7 +117,7 @@ export function video(fillerDB, db) {
     res.on('close', () => {
       // on HTTP close, kill ffmpeg
       console.log(
-        `\r\nStream ended. Channel: ${channel.number} (${channel.name})`,
+        `\r\nStream ended. Channel: ${channel?.number} (${channel?.name})`,
       );
       stop();
     });
@@ -164,7 +163,7 @@ export function video(fillerDB, db) {
     let number = parseInt(req.query.channel);
     let channel = await ctx.channelCache.getChannelConfig(number);
 
-    if (channel.length === 0) {
+    if (isUndefined(channel)) {
       res.status(404).send("Channel doesn't exist");
       return;
     }
@@ -177,7 +176,6 @@ export function video(fillerDB, db) {
     if (typeof req.query.first !== 'undefined' && req.query.first == '1') {
       isFirst = true;
     }
-    channel = channel[0];
 
     let ffmpegSettings = db['ffmpeg-settings'].find()[0];
 
@@ -228,7 +226,7 @@ export function video(fillerDB, db) {
         let newChannel =
           await ctx.channelCache.getChannelConfig(newChannelNumber);
 
-        if (newChannel.length == 0) {
+        if (isUndefined(newChannel)) {
           let err = Error("Invalid redirect to a channel that doesn't exist");
           console.error("Invalid redirect to channel that doesn't exist.", err);
           prog = {
@@ -241,7 +239,6 @@ export function video(fillerDB, db) {
           };
           continue;
         }
-        newChannel = newChannel[0];
         brandChannel = newChannel;
         lineupItem = ctx.channelCache.getCurrentLineupItem(
           newChannel.number,
@@ -439,7 +436,7 @@ export function video(fillerDB, db) {
 
     let channelNum = parseInt(req.query.channel as string, 10);
     let channel = await ctx.channelCache.getChannelConfig(channelNum);
-    if (channel.length === 0) {
+    if (isUndefined(channel)) {
       res.status(500).send("Channel doesn't exist");
       return;
     }
@@ -491,7 +488,7 @@ export function video(fillerDB, db) {
 
     let channelNum = parseInt(req.query.channel as string, 10);
     let channel = await ctx.channelCache.getChannelConfig(channelNum);
-    if (channel.length === 0) {
+    if (isUndefined(channel)) {
       res.status(500).send("Channel doesn't exist");
       return;
     }
@@ -536,7 +533,7 @@ export function video(fillerDB, db) {
   let mediaPlayer = async (channelNum, path, req, res) => {
     const ctx = await serverContext();
     let channel = await ctx.channelCache.getChannelConfig(channelNum);
-    if (channel.length === 0) {
+    if (isUndefined(channel)) {
       res.status(404).send('Channel not found.');
       return;
     }

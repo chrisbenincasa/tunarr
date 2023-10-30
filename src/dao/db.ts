@@ -1,4 +1,5 @@
 import { filter, findIndex, once, sortBy } from 'lodash-es';
+import { v4 as uuidv4 } from 'uuid';
 import { Low } from 'lowdb';
 import { JSONPreset } from 'lowdb/node';
 import path from 'path';
@@ -28,6 +29,8 @@ export type Program = {
   rating?: string;
   date?: string;
   year?: number;
+  channel?: number; // Redirect
+  isOffline: boolean; // Flex
 };
 
 export type Watermark = {
@@ -84,6 +87,8 @@ export type Channel = {
   transcoding?: ChannelTranscodingOptions;
   duration: number;
   fallback: Program[];
+  stealth: boolean;
+  guideFlexPlaceholder?: string;
 };
 
 export type FfmpegSettings = {
@@ -190,6 +195,7 @@ const defaultXmlTvSettings: XmlTvSettings = {
 };
 
 export type Settings = {
+  clientId: string;
   hdhr: HdhrSettings;
   xmltv: XmlTvSettings;
   plexStream: PlexStreamSettings;
@@ -214,6 +220,7 @@ const defaultData: Schema = {
   },
   channels: [],
   settings: {
+    clientId: uuidv4(),
     hdhr: defaultHdhrSettings,
     xmltv: defaultXmlTvSettings,
     plexStream: defaultPlexStreamSettings,

@@ -1,3 +1,4 @@
+import { sortBy } from 'lodash-es';
 import { ChannelCache } from '../channel-cache.js';
 
 /**
@@ -44,11 +45,7 @@ export class M3uService {
         return this.replaceHostOnM3u(host, cachedM3U);
       }
     }
-    let channels = await this.channelCache.getAllChannels();
-
-    channels.sort((a, b) => {
-      return parseInt(a.number) < parseInt(b.number) ? -1 : 1;
-    });
+    let channels = sortBy(await this.channelCache.getAllChannels(), 'number');
 
     const tvg = `{{host}}/api/xmltv.xml`;
 

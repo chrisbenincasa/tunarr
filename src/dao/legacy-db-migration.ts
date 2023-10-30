@@ -152,6 +152,8 @@ function convertProgram(program: JSONObject): Program {
     date: program['date'] as string,
     rating: program['rating'] as string,
     year: program['year'] as number,
+    channel: program['channel'] as number,
+    isOffline: (program['isOffline'] as boolean | undefined) ?? false,
   };
 }
 
@@ -215,6 +217,8 @@ async function migrateChannels(db: Low<Schema>) {
         verticalMargin: parsed['watermark']['verticalMargin'],
         horizontalMargin: parsed['watermark']['horizontalMargin'],
       },
+      stealth: parsed['stealth'],
+      guideFlexPlaceholder: parsed['guideFlexPlaceholder'],
     };
   }
 
@@ -351,6 +355,17 @@ export async function migrateFromLegacyDb(db: Low<Schema>) {
     };
   } catch (e) {
     logger.error('Unable to migrate Plex server settings', e);
+  }
+
+  try {
+    logger.debug('Migrating client ID');
+    const clientId = await readOldDbFile('client-id');
+    settings = {
+      ...settings,
+      clientId: clientId['clientId'],
+    };
+  } catch (e) {
+    logger.error('Unable to migrate client ID', e);
   }
 
   try {

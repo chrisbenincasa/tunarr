@@ -1,6 +1,8 @@
-import { isUndefined } from 'lodash-es';
+import { compact, isUndefined } from 'lodash-es';
 import constants from './constants.js';
 import { ChannelDB } from './dao/channel-db.js';
+import { Channel } from './dao/db.js';
+import { Maybe } from './types.js';
 
 const SLACK = constants.SLACK;
 
@@ -12,44 +14,40 @@ const SLACK = constants.SLACK;
 
 export class ChannelCache {
   private cache = {};
-  private configCache = {};
+  private configCache: Record<number, Channel> = {};
   private fillerPlayTimeCache = {};
   private programPlayTimeCache = {};
-  private channelNumbers: any;
+  private channelNumbers: Maybe<number[]>;
   private channelDb: ChannelDB;
 
   constructor(channelDb: ChannelDB) {
     this.channelDb = channelDb;
   }
 
-  async getChannelConfig(channelId) {
+  async getChannelConfig(channelId: number): Promise<Maybe<Channel>> {
     //with lazy-loading
-
     if (isUndefined(this.configCache[channelId])) {
       let channel = await this.channelDb.getChannel(channelId);
-      if (channel == null) {
-        this.configCache[channelId] = [];
-      } else {
-        //console.log("channel=" + JSON.stringify(channel) );
-        this.configCache[channelId] = [channel];
+      if (!isUndefined(channel)) {
+        this.configCache[channelId] = channel;
       }
     }
-    //console.log("channel=" + JSON.stringify(configCache[channelId]).slice(0,200) );
     return this.configCache[channelId];
   }
 
   async getAllChannels() {
-    let channelNumbers = await this.getAllNumbers();
-    return await Promise.all(
+    const channelNumbers = await this.getAllNumbers();
+    const allChannels = await Promise.all(
       channelNumbers.map(async (x) => {
-        return (await this.getChannelConfig(x))[0];
+        return this.getChannelConfig(x);
       }),
     );
+    return compact(allChannels);
   }
 
   async getAllNumbers() {
-    if (this.channelNumbers === null) {
-      this.channelNumbers = this.channelDb.getAllChannelNumbers();
+    if (isUndefined(this.channelNumbers)) {
+      this.channelNumbers = await this.channelDb.getAllChannelNumbers();
     }
     return this.channelNumbers;
   }
@@ -92,8 +90,8 @@ export class ChannelCache {
     return lineupItem;
   }
 
-  saveChannelConfig(number, channel) {
-    this.configCache[number] = [channel];
+  saveChannelConfig(number: number, channel: Channel) {
+    this.configCache[number] = channel;
   }
 
   getKey(channelId, program) {
@@ -165,6 +163,6 @@ export class ChannelCache {
     //it's not necessary to clear the playback cache and it may be undesirable
     this.configCache = {};
     this.cache = {};
-    this.channelNumbers = null;
+    this.channelNumbers = undefined;
   }
 }

@@ -6,3 +6,5 @@ export type GlobalOptions = {
 export type ServerOptions = GlobalOptions & {
   port: number;
 };
+
+export type Maybe<T> = T | undefined;
