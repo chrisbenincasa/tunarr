@@ -12,7 +12,8 @@
     "package": "sh ./make_dist.sh",
     "clean": "del-cli --force ./bin ./dist ./.dizquetv ./web/public/bundle.js",
     "build-server": "tsc -p tsconfig.json",
-    "dev": "nodemon -e ts --watch src --watch index.ts -e .json,.ts,.yml,.yaml,.js -x ts-node-esm -r tsconfig-paths/register --files --project tsconfig.json index.ts"
+    "dev": "nodemon -e ts --watch src --watch index.ts -e .json,.ts,.yml,.yaml,.js -x ts-node-esm -r tsconfig-paths/register --files --project tsconfig.json index.ts",
+    "watch-server-builder": "nodemon -e ts --watch src --watch index.ts -e .json,.ts,.yml,.yaml,.js -x tsc --project tsconfig.json"
   },
   "type": "module",
   "main": "index.ts",

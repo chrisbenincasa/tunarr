@@ -1,6 +1,8 @@
-import { isUndefined } from 'lodash-es';
+import { isUndefined, shuffle as lodashShuffle } from 'lodash-es';
 import constants from '../constants.js';
+import { Program } from '../dao/db.js';
 import { random } from '../helperFuncs.js';
+import { Maybe } from '../types.js';
 import getShowDataFunc, { ShowData } from './get-show-data.js';
 import throttle from './throttle.js';
 
@@ -15,7 +17,38 @@ type ShowDataWithExtras = Required<ShowData> & {
   description: string;
 };
 
-function getShow(program): ShowDataWithExtras | null {
+type TimeSlot = {
+  order: string;
+  showId: string;
+  time: number; // Offset from midnight in millis
+};
+
+// This is used on the frontend too, we will move common
+// types eventually.
+type TimeSlotSchedule = {
+  flexPreference: string; // distribute or end
+  lateness: number; // max lateness in millis
+  maxDays: number; // days
+  pad: number; // Pad time in millis
+  period: number;
+  slots: TimeSlot[];
+  timeZoneOffset: number; // tz offset in...minutes, i think?
+};
+
+// Hmmm...
+type Iterator = {
+  current: () => any;
+  next: () => void;
+};
+
+type SlotShow = ShowDataWithExtras & {
+  founder?: Program; // The originating program?
+  programs?: Program[];
+  shuffler?: Iterator;
+  orderer?: Iterator;
+};
+
+function getShow(program: Program): ShowDataWithExtras | null {
   let d = getShowData(program);
   if (!d.hasShow) {
     return null;
@@ -28,7 +61,7 @@ function getShow(program): ShowDataWithExtras | null {
   }
 }
 
-function shuffle(array, lo, hi) {
+function shuffle<T>(array: T[], lo: number | undefined, hi: number) {
   if (isUndefined(lo)) {
     lo = 0;
     hi = array.length;
@@ -46,7 +79,7 @@ function shuffle(array, lo, hi) {
   return array;
 }
 
-function getProgramId(program) {
+function getProgramId(program: Program) {
   let s = program.serverKey;
   if (isUndefined(s)) {
     s = 'unknown';
@@ -58,19 +91,24 @@ function getProgramId(program) {
   return s + '|' + p;
 }
 
-function addProgramToShow(show, program) {
+function addProgramToShow(show: SlotShow, program: Program) {
   if (show.id == 'flex.' || show.id.startsWith('redirect.')) {
     //nothing to do
     return;
   }
   let id = getProgramId(program);
+  if (isUndefined(show.programs)) {
+    show.programs = [];
+  }
+
+  // WTF?
   if (show.programs[id] !== true) {
     show.programs.push(program);
     show.programs[id] = true;
   }
 }
 
-function getShowOrderer(show) {
+function getShowOrderer(show: SlotShow) {
   if (isUndefined(show.orderer)) {
     let sortedPrograms = JSON.parse(JSON.stringify(show.programs));
     sortedPrograms.sort((a, b) => {
@@ -82,7 +120,7 @@ function getShowOrderer(show) {
     let position = 0;
     while (
       position + 1 < sortedPrograms.length &&
-      getShowData(show.founder).order !==
+      getShowData(show.founder!).order !==
         getShowData(sortedPrograms[position]).order
     ) {
       position++;
@@ -101,15 +139,17 @@ function getShowOrderer(show) {
   return show.orderer;
 }
 
-function getShowShuffler(show) {
+function getShowShuffler(show: SlotShow) {
   if (isUndefined(show.shuffler)) {
     if (isUndefined(show.programs)) {
       throw Error(show.id + ' has no programs?');
     }
 
-    let randomPrograms = JSON.parse(JSON.stringify(show.programs));
-    let n = randomPrograms.length;
-    shuffle(randomPrograms, 0, n);
+    // Weird state holding here - fix.
+    // Also testing _.shuffle...
+    let randomPrograms = lodashShuffle([...show.programs]);
+    let numPrograms = randomPrograms.length;
+    // shuffle(randomPrograms, 0, n);
     let position = 0;
 
     show.shuffler = {
@@ -119,10 +159,10 @@ function getShowShuffler(show) {
 
       next: () => {
         position++;
-        if (position == n) {
-          let a = Math.floor(n / 2);
+        if (position == numPrograms) {
+          let a = Math.floor(numPrograms / 2);
           shuffle(randomPrograms, 0, a);
-          shuffle(randomPrograms, a, n);
+          shuffle(randomPrograms, a, numPrograms);
           position = 0;
         }
       },
@@ -131,7 +171,7 @@ function getShowShuffler(show) {
   return show.shuffler;
 }
 
-export default async (programs, schedule) => {
+export default async (programs: Program[], schedule: TimeSlotSchedule) => {
   if (!Array.isArray(programs)) {
     return { userError: 'Expected a programs array' };
   }
@@ -205,10 +245,10 @@ export default async (programs, schedule) => {
   // throttle so that the stream is not affected negatively
   //   let steps = 0;
 
-  let showsById: object = {};
-  let shows: any[] = [];
+  let showsById: Record<string, number> = {};
+  let shows: SlotShow[] = [];
 
-  function getNextForSlot(slot, remaining) {
+  function getNextForSlot(slot: TimeSlot, remaining?: number) {
     //remaining doesn't restrict what next show is picked. It is only used
     //for shows with flexible length (flex and redirects)
     if (slot.showId === 'flex.') {
@@ -233,7 +273,7 @@ export default async (programs, schedule) => {
     }
   }
 
-  function advanceSlot(slot) {
+  function advanceSlot(slot: TimeSlot) {
     if (slot.showId === 'flex.' || slot.showId.startsWith('redirect.')) {
       return;
     }
@@ -262,7 +302,7 @@ export default async (programs, schedule) => {
   // load the programs
   for (let i = 0; i < programs.length; i++) {
     let p = programs[i];
-    let show = {
+    let show: SlotShow = {
       ...(getShow(p) as ShowDataWithExtras),
       founder: p,
       programs: [],
@@ -284,12 +324,12 @@ export default async (programs, schedule) => {
   let ts = new Date().getTime();
   let curr = ts - (ts % schedule.period);
   let t0 = curr + s[0].time;
-  let p: any = [];
+  let p: Partial<Program>[] = [];
   let t = t0;
   //   let wantedFinish = t % schedule.period;
   let hardLimit = t0 + schedule.maxDays * DAY;
 
-  let pushFlex = (d) => {
+  let pushFlex = (d: number) => {
     if (d > 0) {
       t += d;
       if (
@@ -297,7 +337,8 @@ export default async (programs, schedule) => {
         p[p.length - 1].isOffline &&
         p[p.length - 1].type != 'redirect'
       ) {
-        p[p.length - 1].duration += d;
+        const currDuration = p[p.length - 1].duration ?? 0;
+        p[p.length - 1].duration = currDuration + d;
       } else {
         p.push({
           duration: d,
@@ -307,7 +348,7 @@ export default async (programs, schedule) => {
     }
   };
 
-  let pushProgram = (item) => {
+  let pushProgram = (item: Program) => {
     if (item.isOffline && item.type !== 'redirect') {
       pushFlex(item.duration);
     } else {
@@ -332,11 +373,11 @@ export default async (programs, schedule) => {
     }
 
     let dayTime = t % schedule.period;
-    let slot = null;
-    let remaining: number | null = null;
-    let late: number | null = null;
+    let slot: Maybe<TimeSlot>;
+    let remaining: Maybe<number>;
+    let late: Maybe<number>;
     for (let i = 0; i < s.length; i++) {
-      let endTime;
+      let endTime: number;
       if (i == s.length - 1) {
         endTime = s[0].time + schedule.period;
       } else {
@@ -360,11 +401,13 @@ export default async (programs, schedule) => {
         break;
       }
     }
+
     if (slot == null) {
       throw Error(
         'Unexpected. Unable to find slot for time of day ' + t + ' ' + dayTime,
       );
     }
+
     let item = getNextForSlot(slot, remaining);
 
     // So much potential nullness here, we will fix it...
@@ -442,7 +485,7 @@ export default async (programs, schedule) => {
     }
   }
   while (t > hardLimit || p.length >= LIMIT) {
-    t -= p.pop().duration;
+    t -= p.pop()?.duration ?? 0;
   }
   let m = (t - t0) % schedule.period;
   if (m > 0) {

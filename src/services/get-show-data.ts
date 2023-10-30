@@ -1,4 +1,5 @@
 import { isUndefined } from 'lodash-es';
+import { Program } from '../dao/db.js';
 
 // Temporary type until we sort this out...
 export type ShowData = {
@@ -15,7 +16,7 @@ export default function () {
   let movieTitleOrder = {};
   let movieTitleOrderNumber = 0;
 
-  return (program): ShowData => {
+  return (program: Program): ShowData => {
     if (typeof program.customShowId !== 'undefined') {
       return {
         hasShow: true,

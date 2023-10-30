@@ -19,11 +19,13 @@ import {
   PlexServerSettings,
   PlexStreamSettings,
   Program,
+  ProgramType,
   Resolution,
   Schema,
   Settings,
   defaultPlexStreamSettings,
 } from './db.js';
+import { Maybe } from '../types.js';
 
 type LegacyPlexSettings = {
   streamPath: string;
@@ -131,29 +133,30 @@ function convertProgram(program: JSONObject): Program {
   const isMovie = (program['type'] as string) === 'movie';
   return {
     duration: program['duration'] as number,
-    episodeIcon: program['episodeIcon'] as string | undefined,
+    episodeIcon: program['episodeIcon'] as Maybe<string>,
     file: program['file'] as string,
     icon: program['icon'] as string,
     key: program['key'] as string,
     plexFile: program['plexFile'] as string,
     ratingKey: program['ratingKey'] as string,
     serverKey: program['serverKey'] as string,
-    showTitle: program['showTitle'] as string | undefined,
+    showTitle: program['showTitle'] as Maybe<string>,
     summary: program['summary'] as string,
     title: program['title'] as string,
-    type: program['type'] as string,
-    episode: isMovie ? undefined : (program['episode'] as number | undefined),
-    season: isMovie ? undefined : (program['season'] as number | undefined),
-    seasonIcon: isMovie
-      ? undefined
-      : (program['seasonIcon'] as string | undefined),
+    type: program['type'] as ProgramType,
+    episode: isMovie ? undefined : (program['episode'] as Maybe<number>),
+    season: isMovie ? undefined : (program['season'] as Maybe<number>),
+    seasonIcon: isMovie ? undefined : (program['seasonIcon'] as Maybe<string>),
     // showId: program['showId'] as string,
-    showIcon: isMovie ? undefined : (program['showIcon'] as string | undefined),
+    showIcon: isMovie ? undefined : (program['showIcon'] as Maybe<string>),
     date: program['date'] as string,
     rating: program['rating'] as string,
     year: program['year'] as number,
     channel: program['channel'] as number,
-    isOffline: (program['isOffline'] as boolean | undefined) ?? false,
+    isOffline: (program['isOffline'] as Maybe<boolean>) ?? false,
+    customOrder: program['customOrder'] as Maybe<number>,
+    customShowId: program['customShowId'] as Maybe<string>,
+    customShowName: program['customShowName'] as Maybe<string>,
   };
 }
 

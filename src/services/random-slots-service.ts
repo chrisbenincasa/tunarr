@@ -28,14 +28,14 @@ function getShow(program): ShowDataWithExtras | null {
   }
 }
 
-function shuffle(array, lo, hi) {
+function shuffle<T>(array: T[], lo: number | undefined, hi: number) {
   if (isUndefined(lo)) {
     lo = 0;
     hi = array.length;
   }
   let currentIndex = hi,
-    temporaryValue,
-    randomIndex;
+    temporaryValue: T,
+    randomIndex: number;
   while (lo !== currentIndex) {
     randomIndex = random.integer(lo, currentIndex - 1);
     currentIndex -= 1;

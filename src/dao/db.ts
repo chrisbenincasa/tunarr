@@ -9,12 +9,20 @@ import { migrateFromLegacyDb } from './legacy-db-migration.js';
 
 const CURRENT_VERSION = 1;
 
+export type ProgramType =
+  | 'movie'
+  | 'episode'
+  | 'track'
+  | 'redirect'
+  | 'custom'
+  | 'flex';
+
 export type Program = {
   title: string;
   key: string;
   ratingKey: string;
   icon: string;
-  type: string;
+  type: ProgramType;
   duration: number;
   summary: string;
   plexFile: string;
@@ -31,6 +39,9 @@ export type Program = {
   year?: number;
   channel?: number; // Redirect
   isOffline: boolean; // Flex
+  customShowId?: string;
+  customShowName?: string;
+  customOrder?: number;
 };
 
 export type Watermark = {
