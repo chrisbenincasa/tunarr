@@ -1,108 +1,74 @@
-import fs from 'fs';
-import { isUndefined } from 'lodash-es';
-import path from 'path';
+import { find, findIndex, isUndefined, map } from 'lodash-es';
+import { MarkOptional } from 'ts-essentials';
 import { v4 as uuidv4 } from 'uuid';
+import { Maybe } from '../types.js';
+import { CustomShow, DbAccess } from './db.js';
 
 export class CustomShowDB {
-  private folder: string;
+  private db: DbAccess;
 
-  constructor(folder) {
-    this.folder = folder;
+  constructor(db: DbAccess) {
+    this.db = db;
   }
 
-  async $loadShow(id) {
-    let f = path.join(this.folder, `${id}.json`);
-    try {
-      return await new Promise((resolve, reject) => {
-        fs.readFile(f, (err, data) => {
-          if (err) {
-            return reject(err);
-          }
-          try {
-            let j = JSON.parse(data.toString('utf-8'));
-            j.id = id;
-            resolve(j);
-          } catch (err) {
-            reject(err);
-          }
-        });
-      });
-    } catch (err) {
-      console.error(err);
-      return null;
-    }
+  async getShow(id: string): Promise<Maybe<CustomShow>> {
+    return find(this.db.rawDb.data.customShows, { id });
   }
 
-  async getShow(id): Promise<any> {
-    return await this.$loadShow(id);
-  }
-
-  async saveShow(id, json) {
+  async saveShow(
+    id: Maybe<string>,
+    customShow: MarkOptional<CustomShow, 'content'>,
+  ) {
     if (isUndefined(id)) {
       throw Error('Mising custom show id');
     }
-    let f = path.join(this.folder, `${id}.json`);
 
-    await new Promise((resolve, reject) => {
-      let data: any = undefined;
-      try {
-        //id is determined by the file name, not the contents
-        fixup(json);
-        delete json.id;
-        data = JSON.stringify(json);
-      } catch (err) {
-        return reject(err);
-      }
-      fs.writeFile(f, data, (err) => {
-        if (err) {
-          return reject(err);
-        }
-        resolve(void 0);
-      });
-    });
+    const existingShowIdx = findIndex(this.db.rawDb.data.customShows, { id });
+    if (isUndefined(customShow.content)) {
+      customShow.content = [];
+    }
+    customShow.id = id;
+
+    if (existingShowIdx === -1) {
+      this.db.rawDb.data.customShows.push(customShow as Required<CustomShow>);
+    } else {
+      this.db.rawDb.data.customShows[existingShowIdx] =
+        customShow as Required<CustomShow>;
+    }
+
+    return this.db.rawDb.write;
   }
 
-  async createShow(json) {
+  async createShow(customShow: MarkOptional<CustomShow, 'id' | 'content'>) {
     let id = uuidv4();
-    fixup(json);
-    await this.saveShow(id, json);
+    await this.saveShow(id, {
+      ...customShow,
+      id,
+      content: customShow.content ?? [],
+    });
     return id;
   }
 
-  async deleteShow(id) {
-    let f = path.join(this.folder, `${id}.json`);
-    await new Promise((resolve, reject) => {
-      fs.unlink(f, function (err) {
-        if (err) {
-          return reject(err);
-        }
-        resolve(void 0);
-      });
-    });
+  async deleteShow(id: string) {
+    const idx = findIndex(this.db.rawDb.data.customShows, { id });
+    if (idx === -1) {
+      return false;
+    }
+
+    this.db.rawDb.data.customShows = this.db.rawDb.data.customShows.splice(
+      idx,
+      1,
+    );
+    return this.db.rawDb.write().then(() => true);
   }
 
-  async getAllShowIds(): Promise<any[]> {
-    return await new Promise((resolve, reject) => {
-      fs.readdir(this.folder, function (err, items) {
-        if (err) {
-          return reject(err);
-        }
-        let fillerIds: string[] = [];
-        for (let i = 0; i < items.length; i++) {
-          let name = path.basename(items[i]);
-          if (path.extname(name) === '.json') {
-            let id = name.slice(0, -5);
-            fillerIds.push(id);
-          }
-        }
-        resolve(fillerIds);
-      });
-    });
+  async getAllShowIds(): Promise<string[]> {
+    return map(this.db.rawDb.data.customShows, 'id');
   }
 
   async getAllShows() {
-    let ids = await this.getAllShowIds();
-    return await Promise.all(ids.map(async (c) => this.getShow(c)));
+    const ids = await this.getAllShowIds();
+    return (await Promise.all(ids.map(this.getShow))).map((x) => x!);
   }
 
   async getAllShowsInfo() {
@@ -115,14 +81,5 @@ export class CustomShowDB {
         count: f.content.length,
       };
     });
-  }
-}
-
-function fixup(json) {
-  if (isUndefined(json.content)) {
-    json.content = [];
-  }
-  if (isUndefined(json.name)) {
-    json.name = 'Unnamed Show';
   }
 }

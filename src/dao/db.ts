@@ -44,6 +44,23 @@ export type Program = {
   customOrder?: number;
 };
 
+// Should this really be separate?
+export type CustomProgram = Program;
+
+export type CustomShow = {
+  id: string;
+  name: string;
+  content: CustomProgram[];
+};
+
+export type FillerProgram = Program;
+
+export type FillerList = {
+  id: string;
+  name: string;
+  content: FillerProgram[];
+};
+
 export type Watermark = {
   enabled: boolean;
   position: string;
@@ -145,6 +162,7 @@ export type PlexStreamSettings = {
 };
 
 export type PlexServerSettings = {
+  id?: string;
   name: string;
   uri: string;
   accessToken: string;
@@ -222,6 +240,8 @@ export type Schema = {
   migration: MigrationState;
   channels: Channel[];
   settings: Settings;
+  customShows: CustomShow[];
+  fillerLists: FillerList[];
 };
 
 const defaultData: Schema = {
@@ -230,6 +250,8 @@ const defaultData: Schema = {
     legacyMigration: false,
   },
   channels: [],
+  customShows: [],
+  fillerLists: [],
   settings: {
     clientId: uuidv4(),
     hdhr: defaultHdhrSettings,
@@ -246,6 +268,10 @@ export class DbAccess {
 
   constructor(db: Low<Schema>) {
     this.db = db;
+  }
+
+  get rawDb() {
+    return this.db;
   }
 
   needsLegacyMigration() {

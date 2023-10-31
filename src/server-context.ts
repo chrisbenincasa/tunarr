@@ -91,7 +91,7 @@ export const serverContext = once(async () => {
   );
   const fileCache = new FileCacheService(path.join(opts.database, 'cache'));
   const cacheImageService = new CacheImageService(db, fileCache);
-  const m3uService = new M3uService(channelDB, fileCache, channelCache);
+  const m3uService = new M3uService(fileCache, channelCache);
   const eventService = new EventService();
   const xmltv = new XmlTvWriter();
 
@@ -112,8 +112,8 @@ export const serverContext = once(async () => {
     m3uService,
     eventService,
     guideService,
-    hdhrService: hdhr(db, channelDB),
-    customShowDB: new CustomShowDB(path.join(opts.database, 'custom-shows')),
+    hdhrService: hdhr(dbAccess, channelDB),
+    customShowDB: new CustomShowDB(dbAccess),
     channelCache,
     xmltv,
   };

@@ -67,6 +67,7 @@
     "nexe": "^4.0.0-rc.2",
     "nodemon": "^3.0.1",
     "prettier": "^3.0.3",
+    "ts-essentials": "^9.4.1",
     "ts-node": "^10.9.1",
     "tsconfig-paths": "^4.2.0",
     "tsify": "^5.0.4",

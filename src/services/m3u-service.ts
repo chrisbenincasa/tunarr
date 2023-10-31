@@ -1,5 +1,6 @@
 import { sortBy } from 'lodash-es';
 import { ChannelCache } from '../channel-cache.js';
+import { FileCacheService } from './file-cache-service.js';
 
 /**
  * Manager and Generate M3U content
@@ -7,14 +8,12 @@ import { ChannelCache } from '../channel-cache.js';
  * @class M3uService
  */
 export class M3uService {
-  dataBase: any;
-  cacheService: any;
+  fileCacheService: FileCacheService;
   channelCache: ChannelCache;
   cacheReady: boolean;
 
-  constructor(dataBase, fileCacheService, channelCache: ChannelCache) {
-    this.dataBase = dataBase;
-    this.cacheService = fileCacheService;
+  constructor(fileCacheService: FileCacheService, channelCache: ChannelCache) {
+    this.fileCacheService = fileCacheService;
     this.channelCache = channelCache;
     this.cacheReady = false;
   }
@@ -26,7 +25,7 @@ export class M3uService {
    * @returns {promise} Return a Promise with HLS or M3U file content
    * @memberof M3uService
    */
-  getChannelList(host) {
+  getChannelList(host: string) {
     return this.buildM3uList(host);
   }
 
@@ -38,9 +37,9 @@ export class M3uService {
    * @memberof M3uService
    */
 
-  async buildM3uList(host) {
+  async buildM3uList(host: string): Promise<string> {
     if (this.cacheReady) {
-      const cachedM3U = await this.cacheService.getCache('channels.m3u');
+      const cachedM3U = await this.fileCacheService.getCache('channels.m3u');
       if (cachedM3U) {
         return this.replaceHostOnM3u(host, cachedM3U);
       }
@@ -63,7 +62,7 @@ export class M3uService {
     }
     let saveCacheThread = async () => {
       try {
-        await this.cacheService.setCache('channels.m3u', data);
+        await this.fileCacheService.setCache('channels.m3u', data);
         this.cacheReady = true;
       } catch (err) {
         console.error(err);
@@ -81,7 +80,7 @@ export class M3uService {
    * @returns
    * @memberof M3uService
    */
-  replaceHostOnM3u(host, data) {
+  replaceHostOnM3u(host: string, data: string) {
     return data.replace(/\{\{host\}\}/g, host);
   }
 

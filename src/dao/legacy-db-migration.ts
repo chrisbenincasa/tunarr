@@ -16,6 +16,7 @@ import { globalOptions } from '../globals.js';
 import createLogger from '../logger.js';
 import {
   Channel,
+  CustomShow,
   PlexServerSettings,
   PlexStreamSettings,
   Program,
@@ -236,6 +237,36 @@ async function migrateChannels(db: Low<Schema>) {
   return db.write();
 }
 
+async function migrateCustomShows(db: Low<Schema>) {
+  const channelFiles = await fsPromises.readdir(
+    path.resolve(globalOptions().database, 'custom-shows'),
+  );
+
+  const newCustomShows = await channelFiles.reduce(
+    async (prev, file) => {
+      {
+      }
+      const id = file.replace('.json', '');
+      logger.debug('Migrating custom show: ' + file);
+      const channel = await fsPromises.readFile(
+        path.join(path.resolve(globalOptions().database, 'custom-shows'), file),
+      );
+      const parsed: JSONObject = JSON.parse(channel.toString('utf-8'));
+
+      const show: CustomShow = {
+        id,
+        name: parsed['name'] as string,
+        content: (parsed['content'] as JSONArray).map(convertProgram),
+      };
+      return [...(await prev), show];
+    },
+    Promise.resolve([] as CustomShow[]),
+  );
+
+  db.data.customShows = newCustomShows;
+  return db.write();
+}
+
 export async function migrateFromLegacyDb(db: Low<Schema>) {
   let settings: Partial<Settings> = {};
   try {
@@ -342,6 +373,7 @@ export async function migrateFromLegacyDb(db: Low<Schema>) {
     const migratedServers: PlexServerSettings[] = sortBy(
       map(servers, (server) => {
         return {
+          id: server['id'],
           name: server['name'],
           uri: server['uri'],
           accessToken: server['accessToken'],
@@ -376,6 +408,13 @@ export async function migrateFromLegacyDb(db: Low<Schema>) {
     await migrateChannels(db);
   } catch (e) {
     logger.error('Unable to migrate channels', e);
+  }
+
+  try {
+    logger.debug('Migrating custom shows');
+    await migrateCustomShows(db);
+  } catch (e) {
+    logger.error('Unable to migrate all custom shows', e);
   }
 
   db.data.settings = settings as Required<Settings>;

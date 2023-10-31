@@ -1,54 +1,54 @@
 import fs from 'fs';
-import { isUndefined } from 'lodash-es';
+import { find, isUndefined, map } from 'lodash-es';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { ChannelCache } from '../channel-cache.js';
 import { ChannelDB } from './channel-db.js';
+import {
+  Channel,
+  DbAccess,
+  FillerCollection,
+  FillerList,
+  FillerProgram,
+  Program,
+} from './db.js';
+import { Maybe } from '../types.js';
+import createLogger from '../logger.js';
 
+const logger = createLogger(import.meta);
 export class FillerDB {
   private folder: string;
-  private cache: Record<string, any>;
+  private cache: Record<string, Maybe<FillerList>>;
   private channelDB: ChannelDB;
   private channelCache: ChannelCache;
+  private dbAccess: DbAccess;
 
-  constructor(folder, channelDB, channelCache: ChannelCache) {
+  constructor(
+    folder,
+    channelDB: ChannelDB,
+    channelCache: ChannelCache,
+    dbAccess: DbAccess,
+  ) {
     this.folder = folder;
     this.cache = {};
     this.channelDB = channelDB;
     this.channelCache = channelCache;
+    this.dbAccess = dbAccess;
   }
 
-  async $loadFiller(id) {
-    let f = path.join(this.folder, `${id}.json`);
-    try {
-      return await new Promise((resolve, reject) => {
-        fs.readFile(f, (err, data) => {
-          if (err) {
-            return reject(err);
-          }
-          try {
-            let j = JSON.parse(data.toString('utf-8'));
-            j.id = id;
-            resolve(j);
-          } catch (err) {
-            reject(err);
-          }
-        });
-      });
-    } catch (err) {
-      console.error(err);
-      return null;
-    }
+  private async getFillerInternal(id: string): Promise<Maybe<FillerList>> {
+    return find(this.dbAccess.rawDb.data.fillerLists, { id });
   }
 
-  async getFiller(id) {
+  // TODO Is cache necessary if we always have the DB in memory?
+  async getFiller(id: string) {
     if (isUndefined(this.cache[id])) {
-      this.cache[id] = await this.$loadFiller(id);
+      this.cache[id] = await this.getFillerInternal(id);
     }
     return this.cache[id];
   }
 
-  async saveFiller(id, json) {
+  async saveFiller(id: string, json) {
     if (isUndefined(id)) {
       throw Error('Mising filler id');
     }
@@ -83,7 +83,7 @@ export class FillerDB {
     return id;
   }
 
-  async getFillerChannels(id) {
+  async getFillerChannels(id: string) {
     let numbers = await this.channelDB.getAllChannelNumbers();
     let channels: any = [];
     await Promise.all(
@@ -106,7 +106,7 @@ export class FillerDB {
     return channels;
   }
 
-  async deleteFiller(id) {
+  async deleteFiller(id: string) {
     try {
       let channels = await this.getFillerChannels(id);
       await Promise.all(
@@ -140,28 +140,13 @@ export class FillerDB {
     }
   }
 
-  async getAllFillerIds(): Promise<any[]> {
-    return await new Promise((resolve, reject) => {
-      fs.readdir(this.folder, function (err, items) {
-        if (err) {
-          return reject(err);
-        }
-        let fillerIds: string[] = [];
-        for (let i = 0; i < items.length; i++) {
-          let name = path.basename(items[i]);
-          if (path.extname(name) === '.json') {
-            let id = name.slice(0, -5);
-            fillerIds.push(id);
-          }
-        }
-        resolve(fillerIds);
-      });
-    });
+  async getAllFillerIds(): Promise<string[]> {
+    return map(this.dbAccess.rawDb.data.fillerLists, 'id');
   }
 
   async getAllFillers() {
     let ids = await this.getAllFillerIds();
-    return await Promise.all(ids.map(async (c) => this.getFiller(c)));
+    return (await Promise.all(ids.map(this.getFiller))).map((x) => x!);
   }
 
   async getAllFillersInfo() {
@@ -176,29 +161,31 @@ export class FillerDB {
     });
   }
 
-  async getFillersFromChannel(channel) {
-    // let f = [];
-    // if (typeof channel.fillerCollections !== 'undefined') {
-    //   f = channel.fillerContent;
-    // }
-    let loadChannelFiller = async (fillerEntry) => {
-      let content = [];
+  async getFillersFromChannel(
+    channel: Channel,
+  ): Promise<(FillerCollection & { content: Program[] })[]> {
+    // TODO nasty return type, fix.
+    let loadChannelFiller = async (fillerEntry: FillerCollection) => {
+      let content: FillerProgram[] = [];
       try {
         let filler = await this.getFiller(fillerEntry.id);
-        content = filler.content;
+        content = filler?.content ?? [];
       } catch (e) {
-        console.error(
+        logger.error(
           `Channel #${channel.number} - ${channel.name} references an unattainable filler id: ${fillerEntry.id}`,
+          e,
         );
       }
       return {
         id: fillerEntry.id,
         content: content,
         weight: fillerEntry.weight,
-        cooldown: fillerEntry.cooldown,
+        cooldownSeconds: fillerEntry.cooldownSeconds,
       };
     };
-    return await Promise.all(channel.fillerCollections.map(loadChannelFiller));
+    return await Promise.all(
+      (channel.fillerCollections ?? []).map(loadChannelFiller),
+    );
   }
 }
 

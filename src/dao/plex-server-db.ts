@@ -1,8 +1,11 @@
-import { isUndefined } from 'lodash-es';
+import { find, isUndefined } from 'lodash-es';
 import { ChannelDB } from './channel-db.js';
 import { FillerDB } from './filler-db.js';
 import { serverOptions } from '../globals.js';
 import { ChannelCache } from '../channel-cache.js';
+import { CustomShowDB } from './custom-show-db.js';
+import { PlexServerSettings, Program, getDB } from './db.js';
+import type { MarkOptional } from 'ts-essentials';
 
 //hmnn this is more of a "PlexServerService"...
 const ICON_REGEX =
@@ -11,16 +14,17 @@ const ICON_REGEX =
 const ICON_FIELDS = ['icon', 'showIcon', 'seasonIcon', 'episodeIcon'];
 
 export class PlexServerDB {
-  channelDB: any;
+  channelDB: ChannelDB;
   db: any;
   channelCache: ChannelCache;
-  fillerDB: any;
-  showDB: any;
+  fillerDB: FillerDB;
+  showDB: CustomShowDB;
+
   constructor(
     channelDB: ChannelDB,
     channelCache: ChannelCache,
     fillerDB: FillerDB,
-    showDB,
+    showDB: CustomShowDB,
     db,
   ) {
     this.channelDB = channelDB;
@@ -30,11 +34,11 @@ export class PlexServerDB {
     this.showDB = showDB;
   }
 
-  async fixupAllChannels(name, newServer) {
+  async fixupAllChannels(name: string, newServer?: PlexServerSettings) {
     let channelNumbers = await this.channelDB.getAllChannelNumbers();
     let report = await Promise.all(
       channelNumbers.map(async (i) => {
-        let channel = await this.channelDB.getChannel(i);
+        let channel = (await this.channelDB.getChannel(i))!;
         let channelReport = {
           channelNumber: channel.number,
           channelName: channel.name,
@@ -54,9 +58,9 @@ export class PlexServerDB {
           channel.fallback[0].isOffline
         ) {
           channel.fallback = [];
-          if (channel.offlineMode != 'pic') {
-            channel.offlineMode = 'pic';
-            channel.offlinePicture = `http://localhost:${
+          if (channel.offline.mode != 'pic') {
+            channel.offline.mode = 'pic';
+            channel.offline.picture = `http://localhost:${
               serverOptions().port
             }/images/generic-offline-screen.png`;
           }
@@ -67,7 +71,7 @@ export class PlexServerDB {
           newServer,
           channelReport,
         );
-        await this.channelDB.saveChannel(i, channel);
+        await this.channelDB.saveChannel(channel);
         return channelReport;
       }),
     );
@@ -75,7 +79,7 @@ export class PlexServerDB {
     return report;
   }
 
-  async fixupAllFillers(name, newServer) {
+  async fixupAllFillers(name: string, newServer?: PlexServerSettings) {
     let fillers = await this.fillerDB.getAllFillers();
     let report = await Promise.all(
       fillers.map(async (filler) => {
@@ -96,7 +100,7 @@ export class PlexServerDB {
     return report;
   }
 
-  async fixupAllShows(name, newServer) {
+  async fixupAllShows(name: string, newServer?: PlexServerSettings) {
     let shows = await this.showDB.getAllShows();
     let report = await Promise.all(
       shows.map(async (show) => {
@@ -126,7 +130,10 @@ export class PlexServerDB {
     });
   }
 
-  async fixupEveryProgramHolders(serverName, newServer) {
+  async fixupEveryProgramHolders(
+    serverName: string,
+    newServer?: PlexServerSettings,
+  ) {
     let reports = await Promise.all([
       this.fixupAllChannels(serverName, newServer),
       this.fixupAllFillers(serverName, newServer),
@@ -141,87 +148,95 @@ export class PlexServerDB {
     return report;
   }
 
-  async deleteServer(name) {
-    let report = await this.fixupEveryProgramHolders(name, null);
+  async deleteServer(name: string) {
+    let report = await this.fixupEveryProgramHolders(name);
     this.db['plex-servers'].remove({ name: name });
     return report;
   }
 
-  doesNameExist(name) {
-    return this.db['plex-servers'].find({ name: name }).length > 0;
+  async doesNameExist(name: string) {
+    return !isUndefined(find((await getDB()).plexServers(), { name }));
   }
 
-  async updateServer(server) {
+  async updateServer(
+    server: MarkOptional<
+      PlexServerSettings,
+      'sendChannelUpdates' | 'sendGuideUpdates' | 'id'
+    >,
+  ) {
     let name = server.name;
     if (isUndefined(name)) {
       throw Error('Missing server name from request');
     }
-    let s = this.db['plex-servers'].find({ name: name });
-    if (s.length != 1) {
+
+    let s = find((await getDB()).plexServers(), { name });
+
+    if (isUndefined(s)) {
       throw Error("Server doesn't exist.");
     }
-    s = s[0];
-    let arGuide = server.arGuide;
-    if (isUndefined(arGuide)) {
-      arGuide = false;
-    }
-    let arChannels = server.arChannels;
-    if (isUndefined(arChannels)) {
-      arChannels = false;
-    }
-    let newServer = {
+
+    const sendGuideUpdates = server.sendGuideUpdates ?? false;
+    const sendChannelUpdates = server.sendChannelUpdates ?? false;
+
+    let newServer: PlexServerSettings = {
+      ...server,
       name: s.name,
       uri: server.uri,
       accessToken: server.accessToken,
-      arGuide: arGuide,
-      arChannels: arChannels,
+      sendGuideUpdates,
+      sendChannelUpdates,
       index: s.index,
     };
+
     this.normalizeServer(newServer);
 
     let report = await this.fixupEveryProgramHolders(name, newServer);
 
-    this.db['plex-servers'].update({ _id: s._id }, newServer);
+    this.db['plex-servers'].update({ id: s.id }, newServer);
     return report;
   }
 
-  async addServer(server) {
-    let name = server.name;
-    if (isUndefined(name)) {
-      name = 'plex';
-    }
+  async addServer(
+    server: MarkOptional<
+      PlexServerSettings,
+      'sendChannelUpdates' | 'sendGuideUpdates'
+    >,
+  ) {
+    let name = isUndefined(server.name) ? 'plex' : server.name;
     let i = 2;
     let prefix = name;
     let resultName = name;
-    while (this.doesNameExist(resultName)) {
+    while (await this.doesNameExist(resultName)) {
       resultName = `${prefix}${i}`;
       i += 1;
     }
     name = resultName;
-    let arGuide = server.arGuide;
-    if (isUndefined(arGuide)) {
-      arGuide = false;
-    }
-    let arChannels = server.arGuide;
-    if (isUndefined(arChannels)) {
-      arChannels = false;
-    }
-    let index = this.db['plex-servers'].find({}).length;
 
-    let newServer = {
+    const sendGuideUpdates = server.sendGuideUpdates ?? false;
+    const sendChannelUpdates = server.sendChannelUpdates ?? false;
+
+    let index = (await getDB()).plexServers.length;
+
+    let newServer: PlexServerSettings = {
       name: name,
       uri: server.uri,
       accessToken: server.accessToken,
-      arGuide: arGuide,
-      arChannels: arChannels,
+      sendGuideUpdates,
+      sendChannelUpdates,
       index: index,
     };
     this.normalizeServer(newServer);
+    await getDB();
     this.db['plex-servers'].save(newServer);
   }
 
-  fixupProgramArray(arr, serverName, newServer, channelReport) {
-    if (typeof arr !== 'undefined') {
+  fixupProgramArray(
+    arr: Program[],
+    serverName: string,
+    newServer: PlexServerSettings | undefined,
+    channelReport,
+  ) {
+    if (!isUndefined(arr)) {
       for (let i = 0; i < arr.length; i++) {
         arr[i] = this.fixupProgram(
           arr[i],
@@ -232,14 +247,20 @@ export class PlexServerDB {
       }
     }
   }
-  fixupProgram(program, serverName, newServer, channelReport) {
-    if (program.serverKey === serverName && newServer == null) {
+
+  fixupProgram(
+    program,
+    serverName: string,
+    newServer: PlexServerSettings | undefined,
+    channelReport,
+  ) {
+    if (program.serverKey === serverName && isUndefined(newServer)) {
       channelReport.destroyedPrograms += 1;
       return {
         isOffline: true,
         duration: program.duration,
       };
-    } else if (program.serverKey === serverName) {
+    } else if (program.serverKey === serverName && !isUndefined(newServer)) {
       let modified = false;
       ICON_FIELDS.forEach((field) => {
         if (
@@ -263,7 +284,7 @@ export class PlexServerDB {
     return program;
   }
 
-  normalizeServer(server) {
+  normalizeServer(server: PlexServerSettings) {
     while (server.uri.endsWith('/')) {
       server.uri = server.uri.slice(0, -1);
     }

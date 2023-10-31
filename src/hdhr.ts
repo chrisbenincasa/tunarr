@@ -2,8 +2,9 @@ import express from 'express';
 import { Server as SSDP } from 'node-ssdp';
 import { ChannelDB } from './dao/channel-db.js';
 import { serverOptions } from './globals.js';
+import { DbAccess } from './dao/db.js';
 
-export function hdhr(db: any, channelDB: ChannelDB) {
+export function hdhr(db: DbAccess, channelDB: ChannelDB) {
   const server = new SSDP({
     location: {
       port: serverOptions().port,
@@ -67,8 +68,8 @@ export function hdhr(db: any, channelDB: ChannelDB) {
   return { router: router, ssdp: server };
 }
 
-function getDevice(db, host) {
-  let hdhrSettings = db['hdhr-settings'].find()[0];
+function getDevice(db: DbAccess, host: string) {
+  const hdhrSettings = db.rawDb.data.settings.hdhr;
   var device = {
     FriendlyName: 'dizqueTV',
     Manufacturer: 'dizqueTV - Silicondust',

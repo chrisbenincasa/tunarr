@@ -21,6 +21,7 @@ export class ChannelDB {
     return this.db.upsertChannel(channel);
   }
 
+  // TODO: delete this once db-migration is obsolete
   saveChannelSync(number, json) {
     this.validateChannelJson(number, json);
 
