@@ -1,17 +1,28 @@
 import { find, isUndefined } from 'lodash-es';
-import { ChannelDB } from './channel-db.js';
-import { FillerDB } from './filler-db.js';
-import { serverOptions } from '../globals.js';
+import type { DeepReadonly, MarkOptional, Writable } from 'ts-essentials';
 import { ChannelCache } from '../channel-cache.js';
+import { serverOptions } from '../globals.js';
+import { ChannelDB } from './channel-db.js';
 import { CustomShowDB } from './custom-show-db.js';
-import { PlexServerSettings, Program, getDB } from './db.js';
-import type { MarkOptional } from 'ts-essentials';
+import {
+  Channel,
+  PlexServerSettings,
+  Program,
+  getDB,
+  offlineProgram,
+} from './db.js';
+import { FillerDB } from './filler-db.js';
 
 //hmnn this is more of a "PlexServerService"...
 const ICON_REGEX =
   /https?:\/\/.*(\/library\/metadata\/\d+\/thumb\/\d+).X-Plex-Token=.*/;
 
-const ICON_FIELDS = ['icon', 'showIcon', 'seasonIcon', 'episodeIcon'];
+type Report = {
+  channelNumber: number;
+  channelName: string;
+  destroyedPrograms: number;
+  modifiedPrograms: number;
+};
 
 export class PlexServerDB {
   channelDB: ChannelDB;
@@ -35,64 +46,85 @@ export class PlexServerDB {
   }
 
   async fixupAllChannels(name: string, newServer?: PlexServerSettings) {
-    let channelNumbers = await this.channelDB.getAllChannelNumbers();
+    let channelNumbers = this.channelDB.getAllChannelNumbers();
     let report = await Promise.all(
       channelNumbers.map(async (i) => {
-        let channel = (await this.channelDB.getChannel(i))!;
-        let channelReport = {
+        let channel = this.channelDB.getChannel(i)!;
+
+        let channelReport: Report = {
           channelNumber: channel.number,
           channelName: channel.name,
           destroyedPrograms: 0,
           modifiedPrograms: 0,
         };
-        this.fixupProgramArray(
+
+        const newPrograms = this.fixupProgramArray(
           channel.programs,
           name,
           newServer,
           channelReport,
         );
-        //if fallback became offline, remove it
+
+        let newChannel: Channel = {
+          ...(channel as Writable<Channel>),
+          programs: newPrograms,
+        };
+
         if (
-          typeof channel.fallback !== 'undefined' &&
+          !isUndefined(channel.fallback) &&
           channel.fallback.length > 0 &&
           channel.fallback[0].isOffline
         ) {
-          channel.fallback = [];
+          newChannel.fallback = [];
           if (channel.offline.mode != 'pic') {
-            channel.offline.mode = 'pic';
-            channel.offline.picture = `http://localhost:${
+            newChannel.offline.mode = 'pic';
+            newChannel.offline.picture = `http://localhost:${
               serverOptions().port
             }/images/generic-offline-screen.png`;
           }
         }
-        this.fixupProgramArray(
+        newChannel.fallback = this.fixupProgramArray(
           channel.fallback,
           name,
           newServer,
           channelReport,
         );
-        await this.channelDB.saveChannel(channel);
+
+        await this.channelDB.saveChannel(newChannel);
+
         return channelReport;
       }),
     );
+
     this.channelCache.clear();
+
     return report;
   }
 
   async fixupAllFillers(name: string, newServer?: PlexServerSettings) {
-    let fillers = await this.fillerDB.getAllFillers();
+    let fillers = this.fillerDB.getAllFillers();
     let report = await Promise.all(
       fillers.map(async (filler) => {
-        let fillerReport = {
-          channelNumber: '--',
+        let fillerReport: Report = {
+          channelNumber: -1,
           channelName: filler.name + ' (filler)',
           destroyedPrograms: 0,
           modifiedPrograms: 0,
         };
-        this.fixupProgramArray(filler.content, name, newServer, fillerReport);
-        filler.content = this.removeOffline(filler.content);
 
-        await this.fillerDB.saveFiller(filler.id, filler);
+        const newFiller = {
+          ...filler,
+          content: this.removeOffline(
+            this.fixupProgramArray(
+              filler.content,
+              name,
+              newServer,
+              fillerReport,
+            ),
+          ),
+        };
+
+        await this.fillerDB.saveFiller(filler.id, newFiller);
 
         return fillerReport;
       }),
@@ -101,19 +133,24 @@ export class PlexServerDB {
   }
 
   async fixupAllShows(name: string, newServer?: PlexServerSettings) {
-    let shows = await this.showDB.getAllShows();
+    let shows = this.showDB.getAllShows();
     let report = await Promise.all(
       shows.map(async (show) => {
-        let showReport = {
-          channelNumber: '--',
+        let showReport: Report = {
+          channelNumber: -1,
           channelName: show.name + ' (custom show)',
           destroyedPrograms: 0,
           modifiedPrograms: 0,
         };
-        this.fixupProgramArray(show.content, name, newServer, showReport);
-        show.content = this.removeOffline(show.content);
 
-        await this.showDB.saveShow(show.id, show);
+        const newShow = {
+          ...show,
+          content: this.removeOffline(
+            this.fixupProgramArray(show.content, name, newServer, showReport),
+          ),
+        };
+
+        await this.showDB.saveShow(show.id, newShow);
 
         return showReport;
       }),
@@ -231,56 +268,63 @@ export class PlexServerDB {
   }
 
   fixupProgramArray(
-    arr: Program[],
+    arr: DeepReadonly<Program[]>,
     serverName: string,
     newServer: PlexServerSettings | undefined,
-    channelReport,
+    channelReport: Report,
   ) {
-    if (!isUndefined(arr)) {
-      for (let i = 0; i < arr.length; i++) {
-        arr[i] = this.fixupProgram(
-          arr[i],
-          serverName,
-          newServer,
-          channelReport,
-        );
-      }
+    if (isUndefined(arr)) {
+      return [];
     }
+
+    return arr.map((program) => {
+      return this.fixupProgram(program, serverName, newServer, channelReport);
+    });
   }
 
   fixupProgram(
-    program,
+    program: DeepReadonly<Program>,
     serverName: string,
     newServer: PlexServerSettings | undefined,
-    channelReport,
-  ) {
+    channelReport: Report,
+  ): Program {
     if (program.serverKey === serverName && isUndefined(newServer)) {
       channelReport.destroyedPrograms += 1;
-      return {
-        isOffline: true,
-        duration: program.duration,
-      };
+      return offlineProgram(program.duration);
     } else if (program.serverKey === serverName && !isUndefined(newServer)) {
       let modified = false;
-      ICON_FIELDS.forEach((field) => {
+      const fixIcon = (icon: string | undefined) => {
         if (
-          typeof program[field] === 'string' &&
-          program[field].includes('/library/metadata') &&
-          program[field].includes('X-Plex-Token')
+          !isUndefined(icon) &&
+          icon.includes('/library/metadata') &&
+          icon.includes('X-Plex-Token')
         ) {
-          let m = program[field].match(ICON_REGEX);
-          if (m.length == 2) {
+          let m = icon.match(ICON_REGEX);
+          if (m?.length == 2) {
             let lib = m[1];
             let newUri = `${newServer.uri}${lib}?X-Plex-Token=${newServer.accessToken}`;
-            program[field] = newUri;
             modified = true;
+            return newUri;
           }
         }
-      });
+        return icon;
+      };
+
+      let newProgram: Program = {
+        ...program,
+        icon: fixIcon(program.icon) as string, // This will always be defined
+        showIcon: fixIcon(program.showIcon),
+        episodeIcon: fixIcon(program.episodeIcon),
+        seasonIcon: fixIcon(program.seasonIcon),
+      };
+
       if (modified) {
         channelReport.modifiedPrograms += 1;
       }
+
+      return newProgram;
     }
+
     return program;
   }
 

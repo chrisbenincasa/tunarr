@@ -1,20 +1,14 @@
 import { compact, isUndefined } from 'lodash-es';
 import constants from './constants.js';
 import { ChannelDB } from './dao/channel-db.js';
-import { Channel } from './dao/db.js';
+import { Channel, ImmutableChannel } from './dao/db.js';
 import { Maybe } from './types.js';
 
 const SLACK = constants.SLACK;
 
-// let cache = {};
-// let programPlayTimeCache = {};
-// let fillerPlayTimeCache = {};
-// let configCache = {};
-// let numbers = null;
-
 export class ChannelCache {
   private cache = {};
-  private configCache: Record<number, Channel> = {};
+  private configCache: Record<number, ImmutableChannel> = {};
   private fillerPlayTimeCache = {};
   private programPlayTimeCache = {};
   private channelNumbers: Maybe<number[]>;
@@ -24,10 +18,10 @@ export class ChannelCache {
     this.channelDb = channelDb;
   }
 
-  async getChannelConfig(channelId: number): Promise<Maybe<Channel>> {
+  async getChannelConfig(channelId: number): Promise<Maybe<ImmutableChannel>> {
     //with lazy-loading
     if (isUndefined(this.configCache[channelId])) {
-      let channel = await this.channelDb.getChannel(channelId);
+      let channel = this.channelDb.getChannel(channelId);
       if (!isUndefined(channel)) {
         this.configCache[channelId] = channel;
       }
@@ -47,7 +41,7 @@ export class ChannelCache {
 
   async getAllNumbers() {
     if (isUndefined(this.channelNumbers)) {
-      this.channelNumbers = await this.channelDb.getAllChannelNumbers();
+      this.channelNumbers = this.channelDb.getAllChannelNumbers();
     }
     return this.channelNumbers;
   }

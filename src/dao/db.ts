@@ -1,10 +1,12 @@
-import { filter, findIndex, once, sortBy } from 'lodash-es';
-import { v4 as uuidv4 } from 'uuid';
+import { find, findIndex, isUndefined, once, sortBy } from 'lodash-es';
 import { Low } from 'lowdb';
 import { JSONPreset } from 'lowdb/node';
 import path from 'path';
+import { DeepReadonly } from 'ts-essentials';
+import { v4 as uuidv4 } from 'uuid';
 import constants from '../constants.js';
 import { globalOptions } from '../globals.js';
+import { Maybe } from '../types.js';
 import { migrateFromLegacyDb } from './legacy-db-migration.js';
 
 const CURRENT_VERSION = 1;
@@ -42,6 +44,25 @@ export type Program = {
   customShowId?: string;
   customShowName?: string;
   customOrder?: number;
+};
+
+// Temporary until we figure out how to properly represent the Program
+// type in an extensible and accurate way
+export const offlineProgram = (duration: number): Program => {
+  return {
+    isOffline: true,
+    duration,
+    // Bogus fields...
+    title: 'Offline',
+    key: '',
+    ratingKey: '',
+    icon: '',
+    type: 'flex',
+    summary: '',
+    plexFile: '',
+    file: '',
+    serverKey: '',
+  };
 };
 
 // Should this really be separate?
@@ -118,6 +139,8 @@ export type Channel = {
   stealth: boolean;
   guideFlexPlaceholder?: string;
 };
+
+export type ImmutableChannel = DeepReadonly<Channel>;
 
 export type FfmpegSettings = {
   configVersion: number;
@@ -261,17 +284,102 @@ const defaultData: Schema = {
   },
 };
 
-export class Database {}
+abstract class IdBasedCollection<T, IdType extends string | number = string> {
+  private name: string;
+  protected db: Low<Schema>;
+
+  constructor(name: string, db: Low<Schema>) {
+    this.name = name;
+    this.db = db;
+  }
+
+  getAll(): DeepReadonly<T[]> {
+    return [...this.getAllMutable().map((x) => x as DeepReadonly<T>)];
+  }
+
+  protected abstract getAllMutable(): T[];
+
+  protected abstract getId(item: T | DeepReadonly<T>): IdType;
+
+  getById(id: IdType): Maybe<DeepReadonly<T>> {
+    return find(this.getAll(), (x) => this.getId(x) === id);
+  }
+
+  async insertOrUpdate(item: T) {
+    const all = this.getAllMutable();
+    const idx = findIndex(all, (x) => this.getId(x) === this.getId(item));
+    if (isUndefined(idx) || idx < 0 || idx >= all.length) {
+      all.push(item);
+    } else {
+      all[idx] = item;
+    }
+    return this.db.write();
+  }
+
+  async delete(id: IdType) {
+    const all = this.getAllMutable();
+    const idx = findIndex(all, (x) => this.getId(x) === id);
+
+    if (idx === -1) {
+      console.warn(
+        `${this.name} Collection with ID = ${id} missing when attempting delete`,
+      );
+      return void 0;
+    }
+
+    all.splice(idx, 1);
+
+    return this.db.write();
+  }
+}
+
+export class FillerListCollection extends IdBasedCollection<FillerList> {
+  constructor(db: Low<Schema>) {
+    super('FillerList', db);
+  }
+
+  protected getAllMutable(): FillerList[] {
+    return this.db.data.fillerLists;
+  }
+
+  protected getId(item: FillerList | DeepReadonly<FillerList>): string {
+    return item.id;
+  }
+}
+
+export class CustomShowCollection extends IdBasedCollection<CustomShow> {
+  constructor(db: Low<Schema>) {
+    super('CustomShow', db);
+  }
+
+  protected getAllMutable(): CustomShow[] {
+    return this.db.data.customShows;
+  }
+
+  protected getId(item: CustomShow | DeepReadonly<CustomShow>): string {
+    return item.id;
+  }
+}
+
+export class ChannelCollection extends IdBasedCollection<Channel, number> {
+  constructor(db: Low<Schema>) {
+    super('Channel', db);
+  }
+
+  protected getAllMutable(): Channel[] {
+    return this.db.data.channels;
+  }
+
+  protected getId(item: Channel | DeepReadonly<Channel>): number {
+    return item.number;
+  }
+}
 
 export class DbAccess {
   private db: Low<Schema>;
 
   constructor(db: Low<Schema>) {
     this.db = db;
-  }
-
-  get rawDb() {
-    return this.db;
   }
 
   needsLegacyMigration() {
@@ -282,38 +390,28 @@ export class DbAccess {
     return migrateFromLegacyDb(this.db);
   }
 
-  plexServers() {
+  plexServers(): DeepReadonly<PlexServerSettings[]> {
     return sortBy(this.db.data.settings.plexServers, 'index');
   }
 
-  xmlTvSettings() {
+  xmlTvSettings(): DeepReadonly<XmlTvSettings> {
     return this.db.data.settings.xmltv;
   }
 
-  channels() {
-    return this.db.data.channels;
+  channels(): ChannelCollection {
+    return new ChannelCollection(this.db);
   }
 
-  upsertChannel(newChannel: Channel) {
-    const idx = findIndex(this.db.data.channels, {
-      number: newChannel.number,
-    });
-
-    if (idx === -1) {
-      this.db.data.channels.push(newChannel);
-    } else {
-      this.db.data.channels[idx] = newChannel;
-    }
-
-    return this.db.write();
+  fillerLists(): FillerListCollection {
+    return new FillerListCollection(this.db);
   }
 
-  deleteChannel(channelNumber: number) {
-    this.db.data.channels = filter(
-      this.db.data.channels,
-      (channel) => channel.number !== channelNumber,
-    );
-    return this.db.write();
+  customShows(): CustomShowCollection {
+    return new CustomShowCollection(this.db);
+  }
+
+  hdhrSettings(): HdhrSettings {
+    return this.db.data.settings.hdhr;
   }
 }
 

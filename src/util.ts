@@ -1,13 +1,23 @@
 import { reduce } from 'lodash-es';
 
-type IsStringOrNumberValue<T, K extends keyof T> = T[K] extends
+declare global {
+  interface Array<T> {
+    // async
+    sequentialPromises<U>(
+      fn: (item: T) => Promise<U>,
+      ms?: number,
+    ): Promise<Array<U>>;
+  }
+}
+
+export type IsStringOrNumberValue<T, K extends keyof T> = T[K] extends
   | string
   | number
   | symbol
   ? T[K]
   : never;
 
-type KeysOfType<T> = keyof {
+export type KeysOfType<T> = keyof {
   [Key in keyof T as T[Key] extends string | number ? Key : never]: T[Key];
 };
 
@@ -46,3 +56,37 @@ export function groupByUniqAndMap<
     {} as Record<Key, Value>,
   );
 }
+
+export async function sequentialPromises<T, U>(
+  seq: T[],
+  ms: number | undefined,
+  itemFn: (item: T) => Promise<U>,
+): Promise<U[]> {
+  let all = await seq.reduce(
+    async (prev, item) => {
+      let last = await prev;
+
+      let result = await itemFn(item);
+
+      if (ms) {
+        await wait(ms);
+      }
+
+      return [...last, result];
+    },
+    Promise.resolve([] as U[]),
+  );
+
+  return Promise.all(all);
+}
+
+export const wait: (ms: number) => Promise<void> = (ms: number) => {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+};
+
+Array.prototype.sequentialPromises = async function <T, U>(
+  itemFn: (item: T) => Promise<U>,
+  ms: number | undefined,
+) {
+  return sequentialPromises(this, ms, itemFn);
+};

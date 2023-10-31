@@ -1,6 +1,12 @@
 import { compact, isEmpty, isString, isUndefined, keys, map } from 'lodash-es';
 import constants from '../constants.js';
-import { Channel, ChannelIcon, Program, getDB } from '../dao/db.js';
+import {
+  Channel,
+  ChannelIcon,
+  ImmutableChannel,
+  Program,
+  getDB,
+} from '../dao/db.js';
 import createLogger from '../logger.js';
 import { Maybe } from '../types.js';
 import { groupByUniq, groupByUniqAndMap } from '../util.js';
@@ -94,7 +100,7 @@ export class TVGuideService {
     return this.cached;
   }
 
-  prepareRefresh(inputChannels: Channel[], limit: number) {
+  prepareRefresh(inputChannels: ImmutableChannel[], limit: number) {
     let t = new Date().getTime();
     this.updateTime = t;
     this.updateLimit = t + limit;

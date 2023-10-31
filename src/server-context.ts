@@ -38,7 +38,7 @@ async function copyIfMissingFromDatabase(
 }
 
 async function initDB(db: any, channelDB: ChannelDB) {
-  getDB();
+  await getDB();
 
   dbMigration.initDB(db, channelDB, __dirname);
   await Promise.all([
@@ -84,11 +84,7 @@ export const serverContext = once(async () => {
 
   const channelDB = new ChannelDB(dbAccess);
   const channelCache = new ChannelCache(channelDB);
-  const fillerDB = new FillerDB(
-    path.join(opts.database, 'filler'),
-    channelDB,
-    channelCache,
-  );
+  const fillerDB = new FillerDB(channelDB, channelCache, dbAccess);
   const fileCache = new FileCacheService(path.join(opts.database, 'cache'));
   const cacheImageService = new CacheImageService(db, fileCache);
   const m3uService = new M3uService(fileCache, channelCache);

@@ -1,7 +1,9 @@
 import fs from 'fs';
 import { isUndefined } from 'lodash-es';
 import path from 'path';
-import { Channel, DbAccess } from './db.js';
+import { DeepReadonly } from 'ts-essentials';
+import { Maybe } from '../types.js';
+import { Channel, DbAccess, ImmutableChannel } from './db.js';
 
 export class ChannelDB {
   private db: DbAccess;
@@ -11,14 +13,12 @@ export class ChannelDB {
     this.db = db;
   }
 
-  async getChannel(channelNumber: number) {
-    return this.db
-      .channels()
-      .find((channel) => channel.number === channelNumber);
+  getChannel(channelNumber: number): DeepReadonly<Maybe<Channel>> {
+    return this.db.channels().getById(channelNumber);
   }
 
   async saveChannel(channel: Channel) {
-    return this.db.upsertChannel(channel);
+    return this.db.channels().insertOrUpdate(channel);
   }
 
   // TODO: delete this once db-migration is obsolete
@@ -48,18 +48,18 @@ export class ChannelDB {
   }
 
   async deleteChannel(channelNumber: number) {
-    return this.db.deleteChannel(channelNumber);
+    return this.db.channels().delete(channelNumber);
   }
 
-  async getAllChannelNumbers(): Promise<number[]> {
+  getAllChannelNumbers(): number[] {
     return this.db
       .channels()
+      .getAll()
       .map((channel) => channel.number)
       .sort();
   }
 
-  async getAllChannels(): Promise<any[]> {
-    let numbers = await this.getAllChannelNumbers();
-    return await Promise.all(numbers.map(async (c) => this.getChannel(c)));
+  getAllChannels(): ReadonlyArray<ImmutableChannel> {
+    return [...this.db.channels().getAll()];
   }
 }

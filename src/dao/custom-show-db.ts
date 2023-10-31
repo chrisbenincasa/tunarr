@@ -1,18 +1,18 @@
-import { find, findIndex, isUndefined, map } from 'lodash-es';
-import { MarkOptional } from 'ts-essentials';
+import { isUndefined, map } from 'lodash-es';
+import { DeepReadonly, MarkOptional } from 'ts-essentials';
 import { v4 as uuidv4 } from 'uuid';
 import { Maybe } from '../types.js';
-import { CustomShow, DbAccess } from './db.js';
+import { CustomShow, CustomShowCollection, DbAccess } from './db.js';
 
 export class CustomShowDB {
-  private db: DbAccess;
+  private collection: CustomShowCollection;
 
   constructor(db: DbAccess) {
-    this.db = db;
+    this.collection = db.customShows();
   }
 
-  async getShow(id: string): Promise<Maybe<CustomShow>> {
-    return find(this.db.rawDb.data.customShows, { id });
+  getShow(id: string): Maybe<DeepReadonly<CustomShow>> {
+    return this.collection.getById(id);
   }
 
   async saveShow(
@@ -23,20 +23,13 @@ export class CustomShowDB {
       throw Error('Mising custom show id');
     }
 
-    const existingShowIdx = findIndex(this.db.rawDb.data.customShows, { id });
-    if (isUndefined(customShow.content)) {
-      customShow.content = [];
-    }
-    customShow.id = id;
+    const showToSave: CustomShow = {
+      ...customShow,
+      content: customShow.content ?? [],
+      id,
+    };
 
-    if (existingShowIdx === -1) {
-      this.db.rawDb.data.customShows.push(customShow as Required<CustomShow>);
-    } else {
-      this.db.rawDb.data.customShows[existingShowIdx] =
-        customShow as Required<CustomShow>;
-    }
-
-    return this.db.rawDb.write;
+    return this.collection.insertOrUpdate(showToSave);
   }
 
   async createShow(customShow: MarkOptional<CustomShow, 'id' | 'content'>) {
@@ -50,30 +43,20 @@ export class CustomShowDB {
   }
 
   async deleteShow(id: string) {
-    const idx = findIndex(this.db.rawDb.data.customShows, { id });
-    if (idx === -1) {
-      return false;
-    }
-
-    this.db.rawDb.data.customShows = this.db.rawDb.data.customShows.splice(
-      idx,
-      1,
-    );
-    return this.db.rawDb.write().then(() => true);
+    return this.collection.delete(id);
   }
 
-  async getAllShowIds(): Promise<string[]> {
-    return map(this.db.rawDb.data.customShows, 'id');
+  getAllShowIds(): string[] {
+    return map(this.getAllShows(), 'id');
   }
 
-  async getAllShows() {
-    const ids = await this.getAllShowIds();
-    return (await Promise.all(ids.map(this.getShow))).map((x) => x!);
+  getAllShows(): DeepReadonly<CustomShow[]> {
+    return this.collection.getAll();
   }
 
-  async getAllShowsInfo() {
+  getAllShowsInfo() {
     //returns just name and id
-    let shows = await this.getAllShows();
+    let shows = this.getAllShows();
     return shows.map((f) => {
       return {
         id: f.id,

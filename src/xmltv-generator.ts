@@ -1,8 +1,8 @@
+import { compact } from 'lodash-es';
+import { ImmutableChannel, getDB } from './dao/db.js';
+import createLogger from './logger.js';
 import { Plex } from './plex.js';
 import { serverContext } from './server-context.js';
-import createLogger from './logger.js';
-import { Channel, getDB } from './dao/db.js';
-import { compact } from 'lodash-es';
 
 const logger = createLogger(import.meta);
 
@@ -20,7 +20,7 @@ const updateXML = async () => {
     );
   };
 
-  let channels: Channel[] = [];
+  let channels: ImmutableChannel[] = [];
 
   try {
     channels = await ctx.channelCache.getAllChannels();

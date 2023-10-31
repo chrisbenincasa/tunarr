@@ -2,7 +2,7 @@ import JSONStream from 'JSONStream';
 import express from 'express';
 import fileUpload from 'express-fileupload';
 import fs from 'fs';
-import { find, isUndefined, omit } from 'lodash-es';
+import { find, isUndefined, omit, sortBy } from 'lodash-es';
 import path from 'path';
 import constants from './constants.js';
 import { Channel, getDB } from './dao/db.js';
@@ -232,10 +232,7 @@ export function makeApi(
   // Channels
   router.get('/api/channels', async (_req, res) => {
     try {
-      let channels = await channelDB.getAllChannels();
-      channels.sort((a, b) => {
-        return a.number < b.number ? -1 : 1;
-      });
+      let channels = sortBy(channelDB.getAllChannels(), 'number');
       res.send(channels);
     } catch (err) {
       logger.error(err);
