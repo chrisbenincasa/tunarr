@@ -6,6 +6,7 @@ import {
   isObject,
   isUndefined,
   map,
+  merge,
   mergeWith,
   parseInt,
   sortBy,
@@ -17,6 +18,7 @@ import createLogger from '../logger.js';
 import {
   Channel,
   CustomShow,
+  FfmpegSettings,
   PlexServerSettings,
   PlexStreamSettings,
   Program,
@@ -24,6 +26,7 @@ import {
   Resolution,
   Schema,
   Settings,
+  defaultFfmpegSettings,
   defaultPlexStreamSettings,
 } from './db.js';
 import { Maybe } from '../types.js';
@@ -66,13 +69,13 @@ async function readAllOldDbFile(file: string): Promise<object[] | object> {
   }
 }
 
-async function readOldDbFile(file: string): Promise<object> {
+async function readOldDbFile(file: string): Promise<JSONObject> {
   try {
     const data = await readAllOldDbFile(file);
     if (isArray(data)) {
-      return data[0] as object;
+      return data[0] as JSONObject;
     } else {
-      return data as object;
+      return data as JSONObject;
     }
   } catch (e) {
     logger.error(e);
@@ -275,8 +278,9 @@ export async function migrateFromLegacyDb(db: Low<Schema>) {
     settings = {
       ...settings,
       hdhr: {
-        autoDiscoveryEnabled: hdhrSettings['autoDiscovery'] ?? true,
-        tunerCount: hdhrSettings['tunerCount'] ?? 2,
+        autoDiscoveryEnabled:
+          (hdhrSettings['autoDiscovery'] as Maybe<boolean>) ?? true,
+        tunerCount: (hdhrSettings['tunerCount'] as Maybe<number>) ?? 2,
       },
     };
   } catch (e) {
@@ -289,10 +293,10 @@ export async function migrateFromLegacyDb(db: Low<Schema>) {
     settings = {
       ...settings,
       xmltv: {
-        enableImageCache: xmltvSettings['enableImageCache'],
-        outputPath: xmltvSettings['file'],
-        programmingHours: xmltvSettings['cache'],
-        refreshHours: xmltvSettings['refresh'],
+        enableImageCache: xmltvSettings['enableImageCache'] as boolean,
+        outputPath: xmltvSettings['file'] as string,
+        programmingHours: xmltvSettings['cache'] as number,
+        refreshHours: xmltvSettings['refresh'] as number,
       },
     };
   } catch (e) {
@@ -393,11 +397,59 @@ export async function migrateFromLegacyDb(db: Low<Schema>) {
   }
 
   try {
+    const ffmpegSettings = readOldDbFile('ffmpeg-settings');
+    logger.debug('Migrating ffmpeg settings', ffmpegSettings);
+    settings = {
+      ...settings,
+      ffmpeg: merge<FfmpegSettings, FfmpegSettings>(
+        {
+          configVersion: ffmpegSettings['configVersion'] as number,
+          ffmpegExecutablePath: ffmpegSettings['ffmpegPath'] as string,
+          numThreads: ffmpegSettings['threads'] as number,
+          concatMuxDelay: ffmpegSettings['concatMuxDelay'] as string,
+          enableLogging: ffmpegSettings['logFfmpeg'] as boolean,
+          enableTranscoding: ffmpegSettings[
+            'enableFFMPEGTranscoding'
+          ] as boolean,
+          audioVolumePercent: ffmpegSettings['audioVolumePercent'] as number,
+          videoEncoder: ffmpegSettings['videoEncoder'] as string,
+          audioEncoder: ffmpegSettings['audioEncoder'] as string,
+          targetResolution:
+            tryParseResolution(ffmpegSettings['targetResolution'] as string) ??
+            defaultFfmpegSettings.targetResolution,
+          videoBitrate: ffmpegSettings['videoBitrate'] as number,
+          videoBufferSize: ffmpegSettings['videoBufSize'] as number,
+          audioBitrate: ffmpegSettings['audioBitrate'] as number,
+          audioBufferSize: ffmpegSettings['audioBufSize'] as number,
+          audioSampleRate: ffmpegSettings['audioSampleRate'] as number,
+          audioChannels: ffmpegSettings['audioChannels'] as number,
+          errorScreen: ffmpegSettings['errorScreen'] as string,
+          errorAudio: ffmpegSettings['errorAudio'] as string,
+          normalizeVideoCodec: ffmpegSettings['normalizeVideoCodec'] as boolean,
+          normalizeAudioCodec: ffmpegSettings['normalizeAudioCodec'] as boolean,
+          normalizeResolution: ffmpegSettings['normalizeResolution'] as boolean,
+          normalizeAudio: ffmpegSettings['normalizeAudio'] as boolean,
+          maxFPS: ffmpegSettings['maxFPS'] as number,
+          scalingAlgorithm: ffmpegSettings[
+            'scalingAlgorithm'
+          ] as (typeof defaultFfmpegSettings)['scalingAlgorithm'],
+          deinterlaceFilter: ffmpegSettings[
+            'deinterlaceFilter'
+          ] as (typeof defaultFfmpegSettings)['deinterlaceFilter'],
+        },
+        defaultFfmpegSettings,
+      ),
+    };
+  } catch (e) {
+    logger.error('Unable to migrate ffmpeg settings', e);
+  }
+
+  try {
     logger.debug('Migrating client ID');
     const clientId = await readOldDbFile('client-id');
     settings = {
       ...settings,
-      clientId: clientId['clientId'],
+      clientId: clientId['clientId'] as string,
     };
   } catch (e) {
     logger.error('Unable to migrate client ID', e);

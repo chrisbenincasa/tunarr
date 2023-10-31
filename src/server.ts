@@ -1,25 +1,33 @@
 import express, { Request } from 'express';
 import fileUpload from 'express-fileupload';
 import fs from 'fs';
+import morgan from 'morgan';
 import { onShutdown } from 'node-graceful-shutdown';
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import path from 'path';
-import { makeApi } from './api.js';
+import { miscRouter } from './api.js';
+import { channelToolRouter } from './api/channel-tools-api.js';
+import { channelsRouter } from './api/channels-api.js';
+import { customShowRouter } from './api/custom-show-api.js';
+import { ffmpegSettingsRouter } from './api/ffmpeg-settings-api.js';
+import { fillerRouter } from './api/filler-api.js';
+import { guideRouter } from './api/guide-api.js';
+import { hdhrSettingsRouter } from './api/hdhr-settings-api.js';
+import { plexServersRouter } from './api/plex-servers-api.js';
+import { plexSettingsRouter } from './api/plex-settings-api.js';
+import { xmlTvSettingsRouter } from './api/xmltv-settings-api.js';
 import constants from './constants.js';
+import { serverOptions } from './globals.js';
 import createLogger from './logger.js';
 import { serverContext } from './server-context.js';
+import { ServerOptions } from './types.js';
 import { video } from './video.js';
 import { xmltvInterval } from './xmltv-generator.js';
 
 const logger = createLogger(import.meta);
 
 // Temporary
-import { dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { serverOptions } from './globals.js';
-import { ServerOptions } from './types.js';
-import { plexServersRouter } from './api/plex-servers.js';
-import morgan from 'morgan';
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -145,18 +153,16 @@ export async function initServer(opts: ServerOptions) {
 
   // API Routers
   app.use(plexServersRouter);
-  app.use(
-    makeApi(
-      ctx.db,
-      ctx.channelDB,
-      ctx.fillerDB,
-      ctx.customShowDB,
-      xmltvInterval,
-      ctx.guideService,
-      ctx.m3uService,
-      ctx.eventService,
-    ),
-  );
+  app.use(channelsRouter);
+  app.use(fillerRouter);
+  app.use(customShowRouter);
+  app.use(ffmpegSettingsRouter);
+  app.use(plexSettingsRouter);
+  app.use(xmlTvSettingsRouter);
+  app.use(hdhrSettingsRouter);
+  app.use(channelToolRouter);
+  app.use(guideRouter);
+  app.use(miscRouter);
   app.use('/api/cache/images', ctx.cacheImageService.apiRouters());
 
   app.use(video(ctx.fillerDB, ctx.db));
