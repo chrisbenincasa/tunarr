@@ -13,7 +13,7 @@ const DAY = 24 * 60 * MINUTE;
 const LIMIT = 40000;
 
 // Use this to derive the minimum data we need for this service
-type ShuffeProgram = Omit<
+type ShuffleProgram = Omit<
   Program,
   'summary' | 'icon' | 'rating' | 'ratingKey' | 'date' | 'year' | 'plexFile'
 >;
@@ -48,13 +48,13 @@ type Iterator = {
 };
 
 type SlotShow = ShowDataWithExtras & {
-  founder?: ShuffeProgram; // The originating program?
-  programs?: ShuffeProgram[];
+  founder?: ShuffleProgram; // The originating program?
+  programs?: ShuffleProgram[];
   shuffler?: Iterator;
   orderer?: Iterator;
 };
 
-function getShow(program: ShuffeProgram): ShowDataWithExtras | null {
+function getShow(program: ShuffleProgram): ShowDataWithExtras | null {
   let d = getShowData(program);
   if (!d.hasShow) {
     return null;
@@ -85,7 +85,7 @@ function shuffle<T>(array: T[], lo: number | undefined, hi: number) {
   return array;
 }
 
-function getProgramId(program: ShuffeProgram) {
+function getProgramId(program: ShuffleProgram) {
   let s = program.serverKey;
   if (isUndefined(s)) {
     s = 'unknown';
@@ -97,7 +97,7 @@ function getProgramId(program: ShuffeProgram) {
   return s + '|' + p;
 }
 
-function addProgramToShow(show: SlotShow, program: ShuffeProgram) {
+function addProgramToShow(show: SlotShow, program: ShuffleProgram) {
   if (show.id == 'flex.' || show.id.startsWith('redirect.')) {
     //nothing to do
     return;
@@ -178,7 +178,7 @@ function getShowShuffler(show: SlotShow) {
 }
 
 export default async (
-  programs: ShuffeProgram[],
+  programs: ShuffleProgram[],
   schedule: TimeSlotSchedule,
 ) => {
   if (!Array.isArray(programs)) {
