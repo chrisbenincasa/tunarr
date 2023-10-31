@@ -1,4 +1,4 @@
-import { reduce } from 'lodash-es';
+import { isEmpty, isUndefined, reduce } from 'lodash-es';
 
 declare global {
   interface Array<T> {
@@ -83,6 +83,20 @@ export async function sequentialPromises<T, U>(
 export const wait: (ms: number) => Promise<void> = (ms: number) => {
   return new Promise((resolve) => setTimeout(resolve, ms));
 };
+
+export function firstDefined(obj: object, ...args: string[]) {
+  if (isEmpty(args)) {
+    return new String(obj);
+  }
+
+  for (let arg of args) {
+    if (!isUndefined(obj[arg])) {
+      return new String(obj[arg]);
+    }
+  }
+
+  return 'missing';
+}
 
 Array.prototype.sequentialPromises = async function <T, U>(
   itemFn: (item: T) => Promise<U>,

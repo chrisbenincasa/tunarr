@@ -1,5 +1,5 @@
 import JSONStream from 'JSONStream';
-import express, { Request } from 'express';
+import express from 'express';
 import fileUpload from 'express-fileupload';
 import fs from 'fs';
 import { find, isUndefined, omit, sortBy } from 'lodash-es';
@@ -42,10 +42,9 @@ export function makeApi(
   customShowDB: CustomShowDB,
   xmltvInterval,
   guideService: TVGuideService,
-  _m3uService: M3uService,
+  m3uService: M3uService,
   eventService: EventService,
 ) {
-  let m3uService = _m3uService;
   const router = express.Router();
 
   router.get('/api/version', async (_, res) => {
@@ -60,164 +59,6 @@ export function makeApi(
     } catch (err) {
       logger.error(err);
       res.status(500).send('error');
-    }
-  });
-
-  // Plex Servers
-  router.get('/api/plex-servers', async (req: Request, res) => {
-    try {
-      res.json(req.ctx.dbAccess.plexServers().getAll());
-    } catch (err) {
-      logger.error(err);
-      res.status(500).send('error');
-    }
-  });
-
-  router.post('/api/plex-servers/status', async (req, res) => {
-    try {
-      let servers = db['plex-servers'].find({
-        name: req.body.name,
-      });
-      if (servers.length != 1) {
-        res.status(404).send('Plex server not found.');
-      }
-      let plex = new Plex(servers[0]);
-      let s = await Promise.race([
-        (async () => {
-          return await plex.checkServerStatus();
-        })(),
-        new Promise((resolve, _) => {
-          setTimeout(() => {
-            resolve(-1);
-          }, 60000);
-        }),
-      ]);
-      res.send({
-        status: s,
-      });
-    } catch (err) {
-      logger.error(err);
-      res.status(500).send('error');
-    }
-  });
-  router.post('/api/plex-servers/foreignstatus', async (req, res) => {
-    try {
-      let server = req.body;
-      let plex = new Plex(server);
-      let s = await Promise.race([
-        (async () => {
-          return await plex.checkServerStatus();
-        })(),
-        new Promise((resolve, _reject) => {
-          setTimeout(() => {
-            resolve(-1);
-          }, 60000);
-        }),
-      ]);
-      res.send({
-        status: s,
-      });
-    } catch (err) {
-      logger.error(err);
-      res.status(500).send('error');
-    }
-  });
-  router.delete('/api/plex-servers', async (req, res) => {
-    let name = 'unknown';
-    try {
-      name = req.body.name;
-      if (isUndefined(name)) {
-        res.status(400).send('Missing name');
-      }
-      const ctx = await serverContext();
-      let report = await ctx.plexServerDB.deleteServer(name);
-      res.send(report);
-      eventService.push('settings-update', {
-        message: `Plex server ${name} removed.`,
-        module: 'plex-server',
-        detail: {
-          serverName: name,
-          action: 'delete',
-        },
-        level: 'warn',
-      });
-    } catch (err) {
-      logger.error(err);
-      res.status(500).send('error');
-      eventService.push('settings-update', {
-        message: 'Error deleting plex server.',
-        module: 'plex-server',
-        detail: {
-          action: 'delete',
-          serverName: name,
-          error: safeString(err, 'message'),
-        },
-        level: 'danger',
-      });
-    }
-  });
-  router.post('/api/plex-servers', async (req, res) => {
-    try {
-      const ctx = await serverContext();
-      let report = await ctx.plexServerDB.updateServer(req.body);
-      let modifiedPrograms = 0;
-      let destroyedPrograms = 0;
-      report.forEach((r) => {
-        modifiedPrograms += r.modifiedPrograms;
-        destroyedPrograms += r.destroyedPrograms;
-      });
-      res.status(204).send('Plex server updated.');
-      eventService.push('settings-update', {
-        message: `Plex server ${req.body.name} updated. ${modifiedPrograms} programs modified, ${destroyedPrograms} programs deleted`,
-        module: 'plex-server',
-        detail: {
-          serverName: req.body.name,
-          action: 'update',
-        },
-        level: 'warning',
-      });
-    } catch (err) {
-      logger.error('Could not update plex server.', err);
-      res.status(400).send('Could not add plex server.');
-      eventService.push('settings-update', {
-        message: 'Error updating plex server.',
-        module: 'plex-server',
-        detail: {
-          action: 'update',
-          serverName: safeString(req, 'body', 'name'),
-          error: safeString(err, 'message'),
-        },
-        level: 'danger',
-      });
-    }
-  });
-  router.put('/api/plex-servers', async (req, res) => {
-    try {
-      const ctx = await serverContext();
-      await ctx.plexServerDB.addServer(req.body);
-      res.status(201).send('Plex server added.');
-      eventService.push('settings-update', {
-        message: `Plex server ${req.body.name} added.`,
-        module: 'plex-server',
-        detail: {
-          serverName: req.body.name,
-          action: 'add',
-        },
-        level: 'info',
-      });
-    } catch (err) {
-      logger.error('Could not add plex server.', err);
-      res.status(400).send('Could not add plex server.');
-      eventService.push('settings-update', {
-        message: 'Error adding plex server.',
-        module: 'plex-server',
-        detail: {
-          action: 'add',
-          serverName: safeString(req, 'body', 'name'),
-          error: safeString(err, 'message'),
-        },
-        level: 'danger',
-      });
     }
   });
 

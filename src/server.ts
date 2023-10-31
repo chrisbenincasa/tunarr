@@ -17,6 +17,8 @@ import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { serverOptions } from './globals.js';
 import { ServerOptions } from './types.js';
+import { plexServersRouter } from './api/plex-servers.js';
+import morgan from 'morgan';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -97,6 +99,14 @@ export async function initServer(opts: ServerOptions) {
     }),
   );
 
+  app.use(
+    morgan(':method :url :status :res[content-length] - :response-time ms', {
+      stream: {
+        write: (message) => logger.http(message.trim()),
+      },
+    }),
+  );
+
   app.get('/version.js', (_, res) => {
     res.writeHead(200, {
       'Content-Type': 'application/javascript',
@@ -134,6 +144,7 @@ export async function initServer(opts: ServerOptions) {
   );
 
   // API Routers
+  app.use(plexServersRouter);
   app.use(
     makeApi(
       ctx.db,
