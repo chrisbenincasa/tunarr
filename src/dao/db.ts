@@ -375,6 +375,22 @@ export class ChannelCollection extends IdBasedCollection<Channel, number> {
   }
 }
 
+export class PlexServerSettingsCollection extends IdBasedCollection<PlexServerSettings> {
+  constructor(db: Low<Schema>) {
+    super('PlexServer', db);
+  }
+
+  protected getAllMutable(): PlexServerSettings[] {
+    return sortBy(this.db.data.settings.plexServers, 'index');
+  }
+
+  protected getId(
+    item: PlexServerSettings | DeepReadonly<PlexServerSettings>,
+  ): string {
+    return item.name; // Is this right?
+  }
+}
+
 export class DbAccess {
   private db: Low<Schema>;
 
@@ -390,8 +406,8 @@ export class DbAccess {
     return migrateFromLegacyDb(this.db);
   }
 
-  plexServers(): DeepReadonly<PlexServerSettings[]> {
-    return sortBy(this.db.data.settings.plexServers, 'index');
+  plexServers(): PlexServerSettingsCollection {
+    return new PlexServerSettingsCollection(this.db);
   }
 
   xmlTvSettings(): DeepReadonly<XmlTvSettings> {

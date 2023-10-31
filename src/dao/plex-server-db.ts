@@ -1,4 +1,4 @@
-import { find, isUndefined } from 'lodash-es';
+import { isUndefined } from 'lodash-es';
 import type { DeepReadonly, MarkOptional, Writable } from 'ts-essentials';
 import { ChannelCache } from '../channel-cache.js';
 import { serverOptions } from '../globals.js';
@@ -6,9 +6,9 @@ import { ChannelDB } from './channel-db.js';
 import { CustomShowDB } from './custom-show-db.js';
 import {
   Channel,
+  DbAccess,
   PlexServerSettings,
   Program,
-  getDB,
   offlineProgram,
 } from './db.js';
 import { FillerDB } from './filler-db.js';
@@ -25,24 +25,24 @@ type Report = {
 };
 
 export class PlexServerDB {
-  channelDB: ChannelDB;
-  db: any;
-  channelCache: ChannelCache;
-  fillerDB: FillerDB;
-  showDB: CustomShowDB;
+  private channelDB: ChannelDB;
+  private channelCache: ChannelCache;
+  private fillerDB: FillerDB;
+  private showDB: CustomShowDB;
+  private dbAccess: DbAccess;
 
   constructor(
     channelDB: ChannelDB,
     channelCache: ChannelCache,
     fillerDB: FillerDB,
     showDB: CustomShowDB,
-    db,
+    dbAccess: DbAccess,
   ) {
     this.channelDB = channelDB;
-    this.db = db;
     this.channelCache = channelCache;
     this.fillerDB = fillerDB;
     this.showDB = showDB;
+    this.dbAccess = dbAccess;
   }
 
   async fixupAllChannels(name: string, newServer?: PlexServerSettings) {
@@ -187,12 +187,12 @@ export class PlexServerDB {
 
   async deleteServer(name: string) {
     let report = await this.fixupEveryProgramHolders(name);
-    this.db['plex-servers'].remove({ name: name });
+    await this.dbAccess.plexServers().delete(name);
     return report;
   }
 
   async doesNameExist(name: string) {
-    return !isUndefined(find((await getDB()).plexServers(), { name }));
+    return !isUndefined(this.dbAccess.plexServers().getById(name));
   }
 
   async updateServer(
@@ -206,7 +206,7 @@ export class PlexServerDB {
       throw Error('Missing server name from request');
     }
 
-    let s = find((await getDB()).plexServers(), { name });
+    let s = this.dbAccess.plexServers().getById(name);
 
     if (isUndefined(s)) {
       throw Error("Server doesn't exist.");
@@ -229,7 +229,9 @@ export class PlexServerDB {
 
     let report = await this.fixupEveryProgramHolders(name, newServer);
 
-    this.db['plex-servers'].update({ id: s.id }, newServer);
+    await this.dbAccess
+      .plexServers()
+      .insertOrUpdate({ ...newServer, id: s.id });
     return report;
   }
 
@@ -252,7 +254,7 @@ export class PlexServerDB {
     const sendGuideUpdates = server.sendGuideUpdates ?? false;
     const sendChannelUpdates = server.sendChannelUpdates ?? false;
 
-    let index = (await getDB()).plexServers.length;
+    let index = this.dbAccess.plexServers().getAll().length;
 
     let newServer: PlexServerSettings = {
       name: name,
@@ -263,8 +265,8 @@ export class PlexServerDB {
       index: index,
     };
     this.normalizeServer(newServer);
-    await getDB();
-    this.db['plex-servers'].save(newServer);
+
+    return this.dbAccess.plexServers().insertOrUpdate(newServer);
   }
 
   fixupProgramArray(

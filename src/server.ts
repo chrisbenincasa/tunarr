@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request } from 'express';
 import fileUpload from 'express-fileupload';
 import fs from 'fs';
 import { onShutdown } from 'node-graceful-shutdown';
@@ -85,6 +85,10 @@ export async function initServer(opts: ServerOptions) {
   const app = express();
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ extended: true }));
+  app.use(async (req: Request, _res, next) => {
+    req.ctx = await serverContext();
+    next();
+  });
   ctx.eventService.setup(app);
 
   app.use(
@@ -140,7 +144,6 @@ export async function initServer(opts: ServerOptions) {
       ctx.guideService,
       ctx.m3uService,
       ctx.eventService,
-      ctx.channelCache,
     ),
   );
   app.use('/api/cache/images', ctx.cacheImageService.apiRouters());

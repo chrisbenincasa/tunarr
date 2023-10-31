@@ -16,10 +16,11 @@ import { TVGuideService } from './services/tv-guide-service.js';
 // Temp
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { getDB } from './dao/db.js';
+import { DbAccess, getDB } from './dao/db.js';
 import { serverOptions } from './globals.js';
 import { ChannelCache } from './channel-cache.js';
 import { XmlTvWriter } from './xmltv.js';
+import { PlexServerDB } from './dao/plex-server-db.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -64,7 +65,24 @@ async function initDB(db: any, channelDB: ChannelDB) {
   ]);
 }
 
-export const serverContext = once(async () => {
+export type ServerContext = {
+  db: any;
+  channelDB: ChannelDB;
+  fillerDB: FillerDB;
+  fileCache: FileCacheService;
+  cacheImageService: CacheImageService;
+  m3uService: M3uService;
+  eventService: EventService;
+  guideService: TVGuideService;
+  hdhrService: any;
+  customShowDB: CustomShowDB;
+  channelCache: ChannelCache;
+  xmltv: XmlTvWriter;
+  plexServerDB: PlexServerDB;
+  dbAccess: DbAccess;
+};
+
+export const serverContext: () => Promise<ServerContext> = once(async () => {
   const opts = serverOptions();
 
   db.connect(opts.database, [
@@ -99,6 +117,8 @@ export const serverContext = once(async () => {
     eventService,
   );
 
+  const customShowDB = new CustomShowDB(dbAccess);
+
   return {
     db,
     channelDB,
@@ -109,8 +129,16 @@ export const serverContext = once(async () => {
     eventService,
     guideService,
     hdhrService: hdhr(dbAccess, channelDB),
-    customShowDB: new CustomShowDB(dbAccess),
+    customShowDB,
     channelCache,
     xmltv,
+    plexServerDB: new PlexServerDB(
+      channelDB,
+      channelCache,
+      fillerDB,
+      customShowDB,
+      dbAccess,
+    ),
+    dbAccess,
   };
 });

@@ -1,28 +1,26 @@
 import JSONStream from 'JSONStream';
-import express from 'express';
+import express, { Request } from 'express';
 import fileUpload from 'express-fileupload';
 import fs from 'fs';
 import { find, isUndefined, omit, sortBy } from 'lodash-es';
 import path from 'path';
 import constants from './constants.js';
+import { ChannelDB } from './dao/channel-db.js';
+import { CustomShowDB } from './dao/custom-show-db.js';
 import { Channel, getDB } from './dao/db.js';
-import { PlexServerDB } from './dao/plex-server-db.js';
+import { FillerDB } from './dao/filler-db.js';
 import * as databaseMigration from './database-migration.js';
 import { FFMPEGInfo } from './ffmpeg-info.js';
 import { serverOptions } from './globals.js';
 import createLogger from './logger.js';
 import { Plex } from './plex.js';
+import { serverContext } from './server-context.js';
+import { EventService } from './services/event-service.js';
+import { M3uService } from './services/m3u-service.js';
 import randomSlotsService from './services/random-slots-service.js';
 import throttle from './services/throttle.js';
 import timeSlotsService from './services/time-slots-service.js';
-import { serverContext } from './server-context.js';
-import { ChannelDB } from './dao/channel-db.js';
 import { TVGuideService } from './services/tv-guide-service.js';
-import { M3uService } from './services/m3u-service.js';
-import { EventService } from './services/event-service.js';
-import { ChannelCache } from './channel-cache.js';
-import { CustomShowDB } from './dao/custom-show-db.js';
-import { FillerDB } from './dao/filler-db.js';
 
 const logger = createLogger(import.meta);
 
@@ -46,17 +44,9 @@ export function makeApi(
   guideService: TVGuideService,
   _m3uService: M3uService,
   eventService: EventService,
-  channelCache: ChannelCache,
 ) {
   let m3uService = _m3uService;
   const router = express.Router();
-  const plexServerDB = new PlexServerDB(
-    channelDB,
-    channelCache,
-    fillerDB,
-    customShowDB,
-    db,
-  );
 
   router.get('/api/version', async (_, res) => {
     try {
@@ -74,10 +64,9 @@ export function makeApi(
   });
 
   // Plex Servers
-  router.get('/api/plex-servers', async (_, res) => {
+  router.get('/api/plex-servers', async (req: Request, res) => {
     try {
-      const db = await getDB();
-      res.json(db.plexServers());
+      res.json(req.ctx.dbAccess.plexServers().getAll());
     } catch (err) {
       logger.error(err);
       res.status(500).send('error');
@@ -140,7 +129,8 @@ export function makeApi(
       if (isUndefined(name)) {
         res.status(400).send('Missing name');
       }
-      let report = await plexServerDB.deleteServer(name);
+      const ctx = await serverContext();
+      let report = await ctx.plexServerDB.deleteServer(name);
       res.send(report);
       eventService.push('settings-update', {
         message: `Plex server ${name} removed.`,
@@ -168,7 +158,8 @@ export function makeApi(
   });
   router.post('/api/plex-servers', async (req, res) => {
     try {
-      let report = await plexServerDB.updateServer(req.body);
+      const ctx = await serverContext();
+      let report = await ctx.plexServerDB.updateServer(req.body);
       let modifiedPrograms = 0;
       let destroyedPrograms = 0;
       report.forEach((r) => {
@@ -202,7 +193,8 @@ export function makeApi(
   });
   router.put('/api/plex-servers', async (req, res) => {
     try {
-      await plexServerDB.addServer(req.body);
+      const ctx = await serverContext();
+      await ctx.plexServerDB.addServer(req.body);
       res.status(201).send('Plex server added.');
       eventService.push('settings-update', {
         message: `Plex server ${req.body.name} added.`,
@@ -999,7 +991,7 @@ export function makeApi(
 
   router.get('/api/plex', async (req, res) => {
     const db = await getDB();
-    const servers = db.plexServers();
+    const servers = db.plexServers().getAll();
     const server = find(servers, { name: req.query['name'] as string });
     if (isUndefined(server)) {
       return res
