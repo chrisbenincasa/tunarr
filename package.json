@@ -27,7 +27,6 @@
     "angular-vs-repeat": "2.0.13",
     "axios": "^1.6.0",
     "body-parser": "^1.19.0",
-    "diskdb": "^0.1.17",
     "express": "^4.17.1",
     "express-fileupload": "^1.2.1",
     "fluent-ffmpeg": "^2.1.2",

@@ -14,7 +14,7 @@ import { ImmutableChannel, offlineProgram } from './dao/db.js';
 
 let StreamCount = 0;
 
-export function video(fillerDB, db) {
+export function video(fillerDB) {
   var router = express.Router();
 
   router.get('/setup', (req, res) => {
@@ -376,7 +376,6 @@ export function video(fillerDB, db) {
       lineupItem: lineupItem,
       ffmpegSettings: ffmpegSettings,
       channel: combinedChannel,
-      db: db,
       m3u8: m3u8,
       audioOnly: audioOnly,
       dbAccess: req.ctx.dbAccess,

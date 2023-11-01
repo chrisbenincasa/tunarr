@@ -1,29 +1,20 @@
-import db from 'diskdb';
 import fs, { promises as fsPromises } from 'fs';
 import { once } from 'lodash-es';
 import path from 'path';
+import { ChannelCache } from './channel-cache.js';
 import { ChannelDB } from './dao/channel-db.js';
 import { CustomShowDB } from './dao/custom-show-db.js';
+import { DbAccess, getDB } from './dao/db.js';
 import { FillerDB } from './dao/filler-db.js';
-import * as dbMigration from './database-migration.js';
+import { PlexServerDB } from './dao/plex-server-db.js';
+import { serverOptions } from './globals.js';
 import { hdhr } from './hdhr.js';
 import { CacheImageService } from './services/cache-image-service.js';
 import { EventService } from './services/event-service.js';
 import { FileCacheService } from './services/file-cache-service.js';
 import { M3uService } from './services/m3u-service.js';
 import { TVGuideService } from './services/tv-guide-service.js';
-
-// Temp
-import { dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { DbAccess, getDB } from './dao/db.js';
-import { serverOptions } from './globals.js';
-import { ChannelCache } from './channel-cache.js';
 import { XmlTvWriter } from './xmltv.js';
-import { PlexServerDB } from './dao/plex-server-db.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 async function copyIfMissingFromDatabase(
   targetPath: string,
@@ -38,11 +29,8 @@ async function copyIfMissingFromDatabase(
   }
 }
 
-async function initDB(db: any, channelDB: ChannelDB) {
-  await getDB();
-
-  dbMigration.initDB(db, channelDB, __dirname);
-  await Promise.all([
+function initDBDirectory() {
+  return Promise.all([
     copyIfMissingFromDatabase('images/dizquetv.png', 'resources/dizquetv.png'),
     copyIfMissingFromDatabase('font.ttf', 'resources/font.ttf'),
     copyIfMissingFromDatabase(
@@ -66,7 +54,6 @@ async function initDB(db: any, channelDB: ChannelDB) {
 }
 
 export type ServerContext = {
-  db: any;
   channelDB: ChannelDB;
   fillerDB: FillerDB;
   fileCache: FileCacheService;
@@ -85,19 +72,7 @@ export type ServerContext = {
 export const serverContext: () => Promise<ServerContext> = once(async () => {
   const opts = serverOptions();
 
-  db.connect(opts.database, [
-    'channels',
-    'plex-servers',
-    'ffmpeg-settings',
-    'plex-settings',
-    'xmltv-settings',
-    'hdhr-settings',
-    'db-version',
-    'client-id',
-    'cache-images',
-    'settings',
-  ]);
-
+  // Also initializes the DB
   const dbAccess = await getDB();
 
   const channelDB = new ChannelDB(dbAccess);
@@ -109,7 +84,7 @@ export const serverContext: () => Promise<ServerContext> = once(async () => {
   const eventService = new EventService();
   const xmltv = new XmlTvWriter();
 
-  await initDB(db, channelDB);
+  await initDBDirectory();
 
   const guideService = new TVGuideService(
     xmltv,
@@ -120,7 +95,6 @@ export const serverContext: () => Promise<ServerContext> = once(async () => {
   const customShowDB = new CustomShowDB(dbAccess);
 
   return {
-    db,
     channelDB,
     fillerDB,
     fileCache,

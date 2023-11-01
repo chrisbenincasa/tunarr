@@ -15,7 +15,6 @@ export type PlayerContext = {
   lineupItem: any;
   ffmpegSettings: FfmpegSettings;
   channel: any;
-  db: any;
   m3u8: boolean;
   audioOnly: boolean;
   isLoading?: boolean;
