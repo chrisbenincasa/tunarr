@@ -289,7 +289,7 @@ export type XmlTvSettings = {
   enableImageCache: boolean;
 };
 
-const defaultXmlTvSettings: XmlTvSettings = {
+export const defaultXmlTvSettings: XmlTvSettings = {
   programmingHours: 12,
   refreshHours: 4,
   outputPath: path.resolve(constants.DEFAULT_DATA_DIR, 'xmltv.xml'),
@@ -309,6 +309,12 @@ type MigrationState = {
   legacyMigration: boolean;
 };
 
+export type CachedImage = {
+  hash: string;
+  mimeType: string;
+  url: string;
+};
+
 export type Schema = {
   version: number;
   migration: MigrationState;
@@ -316,6 +322,7 @@ export type Schema = {
   settings: Settings;
   customShows: CustomShow[];
   fillerLists: FillerList[];
+  cachedImages: CachedImage[];
 };
 
 const defaultData: Schema = {
@@ -334,6 +341,7 @@ const defaultData: Schema = {
     plexServers: [],
     ffmpeg: defaultFfmpegSettings,
   },
+  cachedImages: [],
 };
 
 abstract class IdBasedCollection<T, IdType extends string | number = string> {
@@ -443,6 +451,20 @@ export class PlexServerSettingsCollection extends IdBasedCollection<PlexServerSe
   }
 }
 
+export class CachedImageCollection extends IdBasedCollection<CachedImage> {
+  constructor(db: Low<Schema>) {
+    super('CachedImages', db);
+  }
+
+  protected getAllMutable(): CachedImage[] {
+    return this.db.data.cachedImages;
+  }
+
+  protected getId(item: CachedImage | DeepReadonly<CachedImage>): string {
+    return item.hash;
+  }
+}
+
 export class DbAccess {
   private db: Low<Schema>;
 
@@ -478,8 +500,29 @@ export class DbAccess {
     return new CustomShowCollection(this.db);
   }
 
-  hdhrSettings(): HdhrSettings {
+  cachedImages(): CachedImageCollection {
+    return new CachedImageCollection(this.db);
+  }
+
+  hdhrSettings(): DeepReadonly<HdhrSettings> {
     return this.db.data.settings.hdhr;
+  }
+
+  plexSettings(): DeepReadonly<PlexStreamSettings> {
+    return this.db.data.settings.plexStream;
+  }
+
+  ffmpegSettings(): DeepReadonly<FfmpegSettings> {
+    return this.db.data.settings.ffmpeg;
+  }
+
+  updateFfmpegSettings(ffmpegSettings: FfmpegSettings) {
+    return this.updateSettings('ffmpeg', { ...ffmpegSettings });
+  }
+
+  updateSettings<K extends keyof Settings>(key: K, settings: Settings[K]) {
+    this.db.data.settings[key] = settings;
+    return this.db.write();
   }
 }
 

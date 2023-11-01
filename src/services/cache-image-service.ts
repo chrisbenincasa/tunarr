@@ -10,8 +10,8 @@ import { FileCacheService } from './file-cache-service.js';
  */
 export class CacheImageService {
   private cacheService: FileCacheService;
-  imageCacheFolder: string;
-  db: any;
+  private imageCacheFolder: string;
+  private db: any;
 
   constructor(db, fileCacheService: FileCacheService) {
     this.cacheService = fileCacheService;

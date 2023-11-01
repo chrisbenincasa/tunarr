@@ -17,9 +17,13 @@ export type IsStringOrNumberValue<T, K extends keyof T> = T[K] extends
   ? T[K]
   : never;
 
-export type KeysOfType<T> = keyof {
-  [Key in keyof T as T[Key] extends string | number ? Key : never]: T[Key];
+export type KeysOfType<T, X = string | number> = keyof {
+  [Key in keyof T as T[Key] extends X ? Key : never]: T[Key];
 };
+
+// export type KeyOfType<T, Key extends keyof T, Target> = keyof {
+//   [K in Key as T[K] extends Target ? K : never]: T[K];
+// };
 
 export function groupByUniq<
   T,

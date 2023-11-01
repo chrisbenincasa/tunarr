@@ -8,7 +8,7 @@ export const hdhrSettingsRouter = express.Router();
 
 hdhrSettingsRouter.get('/api/hdhr-settings', (req, res) => {
   try {
-    let hdhr = req.ctx.db['hdhr-settings'].find()[0];
+    let hdhr = req.ctx.dbAccess.hdhrSettings();
     res.send(hdhr);
   } catch (err) {
     logger.error(err);
@@ -16,10 +16,10 @@ hdhrSettingsRouter.get('/api/hdhr-settings', (req, res) => {
   }
 });
 
-hdhrSettingsRouter.put('/api/hdhr-settings', (req, res) => {
+hdhrSettingsRouter.put('/api/hdhr-settings', async (req, res) => {
   try {
-    req.ctx.db['hdhr-settings'].update({ _id: req.body._id }, req.body);
-    let hdhr = req.ctx.db['hdhr-settings'].find()[0];
+    await req.ctx.dbAccess.updateSettings('hdhr', req.body);
+    let hdhr = req.ctx.dbAccess.hdhrSettings();
     res.send(hdhr);
     req.ctx.eventService.push('settings-update', {
       message: 'HDHR configuration updated.',
@@ -44,17 +44,14 @@ hdhrSettingsRouter.put('/api/hdhr-settings', (req, res) => {
   }
 });
 
-hdhrSettingsRouter.post('/api/hdhr-settings', (req, res) => {
+hdhrSettingsRouter.post('/api/hdhr-settings', async (req, res) => {
   try {
-    req.ctx.db['hdhr-settings'].update(
-      { _id: req.body._id },
-      {
-        _id: req.body._id,
-        tunerCount: 1,
-        autoDiscovery: true,
-      },
-    );
-    var hdhr = req.ctx.db['hdhr-settings'].find()[0];
+    await req.ctx.dbAccess.updateSettings('hdhr', {
+      // _id: req.body._id,
+      tunerCount: 1,
+      autoDiscoveryEnabled: true,
+    });
+    var hdhr = req.ctx.dbAccess.hdhrSettings();
     res.send(hdhr);
     req.ctx.eventService.push('settings-update', {
       message: 'HDHR configuration reset.',

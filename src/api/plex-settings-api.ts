@@ -1,6 +1,7 @@
 import express from 'express';
 import createLogger from '../logger.js';
 import { firstDefined } from '../util.js';
+import { defaultPlexStreamSettings } from '../dao/db.js';
 
 const logger = createLogger(import.meta);
 
@@ -8,17 +9,17 @@ export const plexSettingsRouter = express.Router();
 
 plexSettingsRouter.get('/api/plex-settings', (req, res) => {
   try {
-    let plex = req.ctx.db['plex-settings'].find()[0];
+    let plex = req.ctx.dbAccess.plexSettings();
     res.send(plex);
   } catch (err) {
     logger.error(err);
     res.status(500).send('error');
   }
 });
-plexSettingsRouter.put('/api/plex-settings', (req, res) => {
+plexSettingsRouter.put('/api/plex-settings', async (req, res) => {
   try {
-    req.ctx.db['plex-settings'].update({ _id: req.body._id }, req.body);
-    let plex = req.ctx.db['plex-settings'].find()[0];
+    await req.ctx.dbAccess.updateSettings('plexStream', req.body);
+    let plex = req.ctx.dbAccess.plexSettings();
     res.send(plex);
     req.ctx.eventService.push('settings-update', {
       message: 'Plex configuration updated.',
@@ -42,34 +43,14 @@ plexSettingsRouter.put('/api/plex-settings', (req, res) => {
     });
   }
 });
-plexSettingsRouter.post('/api/plex-settings', (req, res) => {
+plexSettingsRouter.post('/api/plex-settings', async (req, res) => {
   // RESET
   try {
-    req.ctx.db['plex-settings'].update(
-      { _id: req.body._id },
-      {
-        streamPath: 'plex',
-        debugLogging: true,
-        directStreamBitrate: '20000',
-        transcodeBitrate: '2000',
-        mediaBufferSize: 1000,
-        transcodeMediaBufferSize: 20000,
-        maxPlayableResolution: '1920x1080',
-        maxTranscodeResolution: '1920x1080',
-        videoCodecs: 'h264,hevc,mpeg2video,av1',
-        audioCodecs: 'ac3',
-        maxAudioChannels: '2',
-        audioBoost: '100',
-        enableSubtitles: false,
-        subtitleSize: '100',
-        updatePlayStatus: false,
-        streamProtocol: 'http',
-        forceDirectPlay: false,
-        pathReplace: '',
-        pathReplaceWith: '',
-      },
+    await req.ctx.dbAccess.updateSettings(
+      'plexStream',
+      defaultPlexStreamSettings,
     );
-    let plex = req.ctx.db['plex-settings'].find()[0];
+    let plex = req.ctx.dbAccess.plexSettings();
     res.send(plex);
     req.ctx.eventService.push('settings-update', {
       message: 'Plex configuration reset.',

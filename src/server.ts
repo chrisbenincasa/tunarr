@@ -169,8 +169,10 @@ export async function initServer(opts: ServerOptions) {
   app.use(ctx.hdhrService.router);
   app.listen(opts.port, () => {
     logger.info(`HTTP server running on port: http://*:${opts.port}`);
-    let hdhrSettings = ctx.db['hdhr-settings'].find()[0];
-    if (hdhrSettings.autoDiscovery === true) ctx.hdhrService.ssdp.start();
+    let hdhrSettings = ctx.dbAccess.hdhrSettings();
+    if (hdhrSettings.autoDiscoveryEnabled) {
+      ctx.hdhrService.ssdp.start();
+    }
   });
 }
 

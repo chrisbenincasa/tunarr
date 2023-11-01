@@ -1,8 +1,8 @@
 import express from 'express';
+import { isUndefined } from 'lodash-es';
+import { defaultFfmpegSettings } from '../dao/db.js';
 import createLogger from '../logger.js';
 import { firstDefined } from '../util.js';
-import * as databaseMigration from '../database-migration.js';
-import { isUndefined } from 'lodash-es';
 
 const logger = createLogger(import.meta);
 
@@ -10,17 +10,17 @@ export const ffmpegSettingsRouter = express.Router();
 
 ffmpegSettingsRouter.get('/api/ffmpeg-settings', (req, res) => {
   try {
-    let ffmpeg = req.ctx.db['ffmpeg-settings'].find()[0];
+    let ffmpeg = req.ctx.dbAccess.ffmpegSettings();
     res.send(ffmpeg);
   } catch (err) {
     logger.error(err);
     res.status(500).send('error');
   }
 });
-ffmpegSettingsRouter.put('/api/ffmpeg-settings', (req, res) => {
+ffmpegSettingsRouter.put('/api/ffmpeg-settings', async (req, res) => {
   try {
-    req.ctx.db['ffmpeg-settings'].update({ _id: req.body._id }, req.body);
-    let ffmpeg = req.ctx.db['ffmpeg-settings'].find()[0];
+    await req.ctx.dbAccess.updateSettings('ffmpeg', req.body);
+    let ffmpeg = req.ctx.dbAccess.ffmpegSettings();
     let err = fixupFFMPEGSettings(ffmpeg);
     if (typeof err !== 'undefined') {
       res.status(400).send(err);
@@ -48,13 +48,14 @@ ffmpegSettingsRouter.put('/api/ffmpeg-settings', (req, res) => {
     });
   }
 });
-ffmpegSettingsRouter.post('/api/ffmpeg-settings', (req, res) => {
+
+ffmpegSettingsRouter.post('/api/ffmpeg-settings', async (req, res) => {
   // RESET
   try {
-    let ffmpeg = databaseMigration.ffmpeg();
-    ffmpeg.ffmpegPath = req.body.ffmpegPath;
-    req.ctx.db['ffmpeg-settings'].update({ _id: req.body._id }, ffmpeg);
-    ffmpeg = req.ctx.db['ffmpeg-settings'].find()[0];
+    let ffmpeg = { ...defaultFfmpegSettings };
+    ffmpeg.ffmpegExecutablePath = req.body.ffmpegPath;
+    await req.ctx.dbAccess.updateFfmpegSettings(ffmpeg);
+    ffmpeg = req.ctx.dbAccess.ffmpegSettings();
     req.ctx.eventService.push('settings-update', {
       message: 'FFMPEG configuration reset.',
       module: 'ffmpeg',

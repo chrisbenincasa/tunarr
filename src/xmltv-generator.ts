@@ -42,12 +42,15 @@ const updateXML = async () => {
   }
   channels = await getChannelsCached();
 
-  let plexServers = ctx.db['plex-servers'].find();
+  let plexServers = ctx.dbAccess.plexServers().getAll();
   for (let i = 0, l = plexServers.length; i < l; i++) {
     // Foreach plex server
     let plex = new Plex(plexServers[i]);
     let dvrs;
-    if (!plexServers[i].arGuide && !plexServers[i].arChannels) {
+    if (
+      !plexServers[i].sendGuideUpdates &&
+      !plexServers[i].sendChannelUpdates
+    ) {
       continue;
     }
     try {
@@ -59,7 +62,7 @@ const updateXML = async () => {
       );
       continue;
     }
-    if (plexServers[i].arGuide) {
+    if (plexServers[i].sendGuideUpdates) {
       try {
         await plex.RefreshGuide(dvrs);
       } catch (err) {
@@ -69,7 +72,7 @@ const updateXML = async () => {
         );
       }
     }
-    if (plexServers[i].arChannels && channels.length !== 0) {
+    if (plexServers[i].sendChannelUpdates && channels.length !== 0) {
       try {
         await plex.RefreshChannels(channels, dvrs);
       } catch (err) {
@@ -88,8 +91,8 @@ export const xmltvInterval = {
   updateXML,
   startInterval: async () => {
     const ctx = await serverContext();
-    let xmltvSettings = ctx.db['xmltv-settings'].find()[0];
-    if (xmltvSettings.refresh !== 0) {
+    let xmltvSettings = ctx.dbAccess.xmlTvSettings();
+    if (xmltvSettings.refreshHours !== 0) {
       xmltvInterval.interval = setInterval(
         async () => {
           try {
@@ -98,7 +101,7 @@ export const xmltvInterval = {
             logger.error('update XMLTV error', err);
           }
         },
-        xmltvSettings.refresh * 60 * 60 * 1000,
+        xmltvSettings.refreshHours * 60 * 60 * 1000,
       );
     }
   },

@@ -1,6 +1,6 @@
 import express from 'express';
+import { defaultXmlTvSettings } from '../dao/db.js';
 import createLogger from '../logger.js';
-import { serverOptions } from '../globals.js';
 import { firstDefined } from '../util.js';
 import { xmltvInterval } from '../xmltv-generator.js';
 
@@ -19,18 +19,14 @@ xmlTvSettingsRouter.get('/api/xmltv-settings', async (req, res) => {
 
 xmlTvSettingsRouter.put('/api/xmltv-settings', async (req, res) => {
   try {
-    let xmltv = req.ctx.db['xmltv-settings'].find()[0];
-    req.ctx.db['xmltv-settings'].update(
-      { _id: req.body._id },
-      {
-        _id: req.body._id,
-        cache: req.body.cache,
-        refresh: req.body.refresh,
-        enableImageCache: req.body.enableImageCache === true,
-        file: xmltv.file,
-      },
-    );
-    xmltv = req.ctx.db['xmltv-settings'].find()[0];
+    let xmltv = req.ctx.dbAccess.xmlTvSettings();
+    await req.ctx.dbAccess.updateSettings('xmltv', {
+      refreshHours: req.body.refresh,
+      enableImageCache: req.body.enableImageCache === true,
+      outputPath: xmltv.outputPath,
+      programmingHours: req.body.cache,
+    });
+    xmltv = req.ctx.dbAccess.xmlTvSettings();
     res.send(xmltv);
     req.ctx.eventService.push('settings-update', {
       message: 'xmltv settings updated.',
@@ -57,18 +53,10 @@ xmlTvSettingsRouter.put('/api/xmltv-settings', async (req, res) => {
   }
 });
 
-xmlTvSettingsRouter.post('/api/xmltv-settings', (req, res) => {
+xmlTvSettingsRouter.post('/api/xmltv-settings', async (req, res) => {
   try {
-    req.ctx.db['xmltv-settings'].update(
-      { _id: req.body._id },
-      {
-        _id: req.body._id,
-        cache: 12,
-        refresh: 4,
-        file: serverOptions().database + '/xmltv.xml',
-      },
-    );
-    var xmltv = req.ctx.db['xmltv-settings'].find()[0];
+    await req.ctx.dbAccess.updateSettings('xmltv', defaultXmlTvSettings);
+    var xmltv = req.ctx.dbAccess.xmlTvSettings();
     res.send(xmltv);
     req.ctx.eventService.push('settings-update', {
       message: 'xmltv settings reset.',

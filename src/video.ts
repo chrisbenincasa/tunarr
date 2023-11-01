@@ -15,10 +15,10 @@ let StreamCount = 0;
 export function video(fillerDB, db) {
   var router = express.Router();
 
-  router.get('/setup', (_, res) => {
-    let ffmpegSettings = db['ffmpeg-settings'].find()[0];
+  router.get('/setup', (req, res) => {
+    let ffmpegSettings = req.ctx.dbAccess.ffmpegSettings();
     // Check if ffmpeg path is valid
-    if (!fs.existsSync(ffmpegSettings.ffmpegPath)) {
+    if (!fs.existsSync(ffmpegSettings.ffmpegExecutablePath)) {
       res
         .status(500)
         .send("FFMPEG path is invalid. The file (executable) doesn't exist.");
@@ -70,7 +70,7 @@ export function video(fillerDB, db) {
       return;
     }
 
-    let ffmpegSettings = db['ffmpeg-settings'].find()[0];
+    let ffmpegSettings = req.ctx.dbAccess.ffmpegSettings();
 
     // Check if ffmpeg path is valid
     if (!fs.existsSync(ffmpegSettings.ffmpegPath)) {
@@ -177,7 +177,7 @@ export function video(fillerDB, db) {
       isFirst = true;
     }
 
-    let ffmpegSettings = db['ffmpeg-settings'].find()[0];
+    let ffmpegSettings = req.ctx.dbAccess.ffmpegSettings();
 
     // Check if ffmpeg path is valid
     if (!fs.existsSync(ffmpegSettings.ffmpegPath)) {
@@ -453,11 +453,11 @@ export function video(fillerDB, db) {
         #EXT-X-TARGETDURATION:60
         #EXT-X-PLAYLIST-TYPE:VOD\n`;
 
-    let ffmpegSettings = db['ffmpeg-settings'].find()[0];
+    let ffmpegSettings = req.ctx.dbAccess.ffmpegSettings();
 
     // let cur = '59.0';
 
-    if (ffmpegSettings.enableFFMPEGTranscoding === true) {
+    if (ffmpegSettings.enableTranscoding) {
       //data += `#EXTINF:${cur},\n`;
       data += `${req.protocol}://${req.get(
         'host',
@@ -499,13 +499,13 @@ export function video(fillerDB, db) {
 
     var data = 'ffconcat version 1.0\n';
 
-    let ffmpegSettings = db['ffmpeg-settings'].find()[0];
+    let ffmpegSettings = req.ctx.dbAccess.ffmpegSettings();
 
     let sessionId = StreamCount++;
     let audioOnly = 'true' == req.query.audioOnly;
 
     if (
-      ffmpegSettings.enableFFMPEGTranscoding === true &&
+      ffmpegSettings.enableTranscoding === true &&
       ffmpegSettings.normalizeVideoCodec === true &&
       ffmpegSettings.normalizeAudioCodec === true &&
       ffmpegSettings.normalizeResolution === true &&

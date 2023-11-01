@@ -7,12 +7,16 @@ import { createWriteStream, promises as fs } from 'fs';
  * @class FileCacheService
  */
 export class FileCacheService {
-  cachePath: string;
-  cache: Record<string, string>;
+  private _cachePath: string;
+  private cache: Record<string, string>;
 
   constructor(cachePath: string) {
-    this.cachePath = cachePath;
+    this._cachePath = cachePath;
     this.cache = {};
+  }
+
+  get cachePath(): string {
+    return this._cachePath;
   }
 
   /**

@@ -1,9 +1,10 @@
 import { exec } from 'child_process';
+import { FfmpegSettings } from './dao/db.js';
 
 export class FFMPEGInfo {
   private ffmpegPath: string;
-  constructor(opts) {
-    this.ffmpegPath = opts.ffmpegPath;
+  constructor(opts: FfmpegSettings) {
+    this.ffmpegPath = opts.ffmpegExecutablePath;
   }
   async getVersion() {
     try {
