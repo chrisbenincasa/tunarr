@@ -7,8 +7,8 @@
     "test": "vitest",
     "package": "sh ./make_dist.sh",
     "build": "tsc -p tsconfig.json",
-    "dev": "nodemon -e ts --watch src --watch index.ts -e .json,.ts,.yml,.yaml,.js -x ts-node-esm -r tsconfig-paths/register --files --project tsconfig.json index.ts",
-    "buildw": "nodemon -e ts --watch src --watch index.ts -e .json,.ts,.yml,.yaml,.js -x tsc --project tsconfig.json"
+    "dev": "nodemon -e ts --watch . --watch index.ts -e .json,.ts,.yml,.yaml,.js -x ts-node-esm -r tsconfig-paths/register --files --project tsconfig.json index.ts",
+    "buildw": "nodemon -e ts --watch . --watch index.ts -e .json,.ts,.yml,.yaml,.js -x tsc --project tsconfig.json"
   },
   "type": "module",
   "main": "index.ts",

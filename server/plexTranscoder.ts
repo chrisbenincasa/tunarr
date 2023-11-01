@@ -3,6 +3,8 @@ import fs from 'fs';
 import { isUndefined } from 'lodash-es';
 import { v4 as uuidv4 } from 'uuid';
 import { serverOptions } from './globals.js';
+import { PlexStreamSettings } from './dao/db.js';
+import { DeepReadonly } from 'ts-essentials';
 
 type PlexStream = {
   directPlay: boolean;
@@ -35,7 +37,7 @@ export class PlexTranscoder {
   private deviceName: string;
   private clientIdentifier: any;
   private product: string;
-  private settings: any;
+  private settings: DeepReadonly<PlexStreamSettings>;
   private key: any;
   private metadataPath: string;
   private plexFile: string;
@@ -98,7 +100,7 @@ export class PlexTranscoder {
     };
   }
 
-  async getStream(deinterlace) {
+  async getStream(deinterlace: boolean) {
     let stream: PlexStream = { directPlay: false };
 
     this.log('Getting stream');
@@ -114,7 +116,7 @@ export class PlexTranscoder {
     ) {
       if (this.settings.enableSubtitles) {
         this.log('Direct play is forced, so subtitles are forcibly disabled.');
-        this.settings.enableSubtitles = false;
+        this.settings = { ...this.settings, enableSubtitles: false };
       }
       stream = { directPlay: true };
     } else {
@@ -221,30 +223,40 @@ export class PlexTranscoder {
     let videoQuality = `100`; // Not sure how this applies, maybe this works if maxVideoBitrate is not set
     let profileName = `Generic`; // Blank profile, everything is specified through X-Plex-Client-Profile-Extra
 
-    let resolutionArr = resolution.split('x');
-
-    let vc = this.settings.videoCodecs;
+    let vc = [...this.settings.videoCodecs];
     //This codec is not currently supported by plex so requesting it to transcode will always
     // cause an error. If Plex ever supports av1, remove this. I guess.
-    if (vc != '') {
-      vc += ',av1';
+    if (vc.length > 0) {
+      vc.push('av1');
     } else {
-      vc = 'av1';
+      vc = ['av1'];
     }
 
     let clientProfile = '';
     if (!audioOnly) {
-      clientProfile = `add-transcode-target(type=videoProfile&protocol=${this.settings.streamProtocol}&container=${streamContainer}&videoCodec=${vc}&audioCodec=${this.settings.audioCodecs}&subtitleCodec=&context=streaming&replace=true)+\
-add-transcode-target-settings(type=videoProfile&context=streaming&protocol=${this.settings.streamProtocol}&CopyMatroskaAttachments=true)+\
-add-transcode-target-settings(type=videoProfile&context=streaming&protocol=${this.settings.streamProtocol}&BreakNonKeyframes=true)+\
-add-limitation(scope=videoCodec&scopeName=*&type=upperBound&name=video.width&value=${resolutionArr[0]})+\
-add-limitation(scope=videoCodec&scopeName=*&type=upperBound&name=video.height&value=${resolutionArr[1]})`;
+      clientProfile = `add-transcode-target(type=videoProfile&protocol=${
+        this.settings.streamProtocol
+      }&container=${streamContainer}&videoCodec=${vc.join(',')}&audioCodec=${
+        this.settings.audioCodecs
+      }&subtitleCodec=&context=streaming&replace=true)+\
+add-transcode-target-settings(type=videoProfile&context=streaming&protocol=${
+        this.settings.streamProtocol
+      }&CopyMatroskaAttachments=true)+\
+add-transcode-target-settings(type=videoProfile&context=streaming&protocol=${
+        this.settings.streamProtocol
+      }&BreakNonKeyframes=true)+\
+add-limitation(scope=videoCodec&scopeName=*&type=upperBound&name=video.width&value=${
+        resolution.widthPx
+      })+\
+add-limitation(scope=videoCodec&scopeName=*&type=upperBound&name=video.height&value=${
+        resolution.heightPx
+      })`;
     } else {
       clientProfile = `add-transcode-target(type=musicProfile&protocol=${this.settings.streamProtocol}&container=${streamContainer}&audioCodec=${this.settings.audioCodecs}&subtitleCodec=&context=streaming&replace=true)`;
     }
     // Set transcode settings per audio codec
-    this.settings.audioCodecs.split(',').forEach(
-      function (codec) {
+    this.settings.audioCodecs.forEach(
+      function (codec: string) {
         clientProfile += `+add-transcode-target-audio-codec(type=videoProfile&context=streaming&protocol=${this.settings.streamProtocol}&audioCodec=${codec})`;
         if (codec == 'mp3') {
           clientProfile += `+add-limitation(scope=videoAudioCodec&scopeName=${codec}&type=upperBound&name=audio.channels&value=2)`;
@@ -567,7 +579,7 @@ X-Plex-Token=${this.server.accessToken}`;
   }
 
   log(message) {
-    if (this.settings.debugLogging) {
+    if (this.settings.enableDebugLogging) {
       console.log(message);
     }
   }

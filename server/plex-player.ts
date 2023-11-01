@@ -114,6 +114,10 @@ export class PlexPlayer {
         watermark,
         lineupItem.type,
       ); // Spawn the ffmpeg process
+      if (isUndefined(ff)) {
+        throw new Error('Unable to spawn ffmpeg');
+      }
+
       ff.pipe(outStream, { end: false });
       //}, 100);
       plexTranscoder.startUpdatingPlex();
@@ -126,7 +130,7 @@ export class PlexPlayer {
       });
       ffmpeg.on('error', async (err) => {
         console.log('Replacing failed stream with error stream');
-        ff.unpipe(outStream);
+        ff!.unpipe(outStream);
         ffmpeg.removeAllListeners('data');
         ffmpeg.removeAllListeners('end');
         ffmpeg.removeAllListeners('error');
@@ -148,13 +152,16 @@ export class PlexPlayer {
           'oops',
           Math.min(streamStats.duration, 60000),
         );
+        if (isUndefined(ff)) {
+          throw new Error('Unable to spawn ffmpeg...what is going on here');
+        }
         ff.pipe(outStream);
 
         emitter.emit('error', err);
       });
       return emitter;
     } catch (err) {
-      return Error('Error when playing plex program: ' + JSON.stringify(err));
+      throw err;
     }
   }
 }

@@ -1,8 +1,11 @@
+import child_process, { ChildProcessByStdio } from 'child_process';
 import events from 'events';
-import child_process from 'child_process';
 import { isUndefined } from 'lodash-es';
+import { DeepReadonly } from 'ts-essentials';
+import { FfmpegSettings, ImmutableChannel } from './dao/db.js';
 import { serverOptions } from './globals.js';
 import createLogger from './logger.js';
+import { Readable } from 'stream';
 
 const spawn = child_process.spawn;
 
@@ -12,7 +15,7 @@ const MAXIMUM_ERROR_DURATION_MS = 60000;
 const REALLY_RIDICULOUSLY_HIGH_FPS_FOR_DIZQUETVS_USECASE = 120;
 
 export class FFMPEG extends events.EventEmitter {
-  private opts: any;
+  private opts: DeepReadonly<FfmpegSettings>;
   private errorPicturePath: string;
   private ffmpegName: string;
   private channel: any;
@@ -29,60 +32,67 @@ export class FFMPEG extends events.EventEmitter {
   private audioOnly: boolean;
   private alignAudio: boolean;
 
-  private ffmpeg: any;
+  private ffmpeg: ChildProcessByStdio<null, Readable, null>;
 
-  constructor(opts, channel) {
+  constructor(opts: DeepReadonly<FfmpegSettings>, channel: ImmutableChannel) {
     super();
     this.opts = opts;
     this.errorPicturePath = `http://localhost:${
       serverOptions().port
     }/images/generic-error-screen.png`;
     this.ffmpegName = 'unnamed ffmpeg';
-    if (!this.opts.enableFFMPEGTranscoding) {
+    if (!this.opts.enableTranscoding) {
       //this ensures transcoding is completely disabled even if
       // some settings are true
-      this.opts.normalizeAudio = false;
-      this.opts.normalizeAudioCodec = false;
-      this.opts.normalizeVideoCodec = false;
-      this.opts.errorScreen = 'kill';
-      this.opts.normalizeResolution = false;
-      this.opts.audioVolumePercent = 100;
-      this.opts.maxFPS = REALLY_RIDICULOUSLY_HIGH_FPS_FOR_DIZQUETVS_USECASE;
+      this.opts = {
+        ...this.opts,
+        normalizeAudio: false,
+        normalizeAudioCodec: false,
+        normalizeVideoCodec: false,
+        errorScreen: 'kill',
+        normalizeResolution: false,
+        audioVolumePercent: 100,
+        maxFPS: REALLY_RIDICULOUSLY_HIGH_FPS_FOR_DIZQUETVS_USECASE,
+      };
     }
     this.channel = channel;
-    this.ffmpegPath = opts.ffmpegPath;
+    this.ffmpegPath = opts.ffmpegExecutablePath;
 
-    let resString = opts.targetResolution;
+    let targetResolution = opts.targetResolution;
     if (
       typeof channel.transcoding !== 'undefined' &&
       channel.transcoding.targetResolution != null &&
-      typeof channel.transcoding.targetResolution != 'undefined' &&
-      channel.transcoding.targetResolution != ''
+      typeof channel.transcoding.targetResolution != 'undefined'
     ) {
-      resString = channel.transcoding.targetResolution;
+      targetResolution = channel.transcoding.targetResolution;
+    }
+
+    if (
+      !isUndefined(channel.transcoding) &&
+      !isUndefined(channel.transcoding.videoBitrate) &&
+      !isUndefined(channel.transcoding.videoBitrate) &&
+      channel.transcoding.videoBitrate !== 0
+    ) {
+      this.opts = {
+        ...this.opts,
+        videoBitrate: channel.transcoding.videoBitrate,
+      };
     }
 
     if (
       typeof channel.transcoding !== 'undefined' &&
-      channel.transcoding.videoBitrate != null &&
-      typeof channel.transcoding.videoBitrate != 'undefined' &&
-      channel.transcoding.videoBitrate != 0
+      channel.transcoding.videoBufferSize != null &&
+      typeof channel.transcoding.videoBufferSize != 'undefined' &&
+      channel.transcoding.videoBufferSize != 0
     ) {
-      opts.videoBitrate = channel.transcoding.videoBitrate;
+      this.opts = {
+        ...this.opts,
+        videoBufferSize: channel.transcoding.videoBufferSize,
+      };
     }
 
-    if (
-      typeof channel.transcoding !== 'undefined' &&
-      channel.transcoding.videoBufSize != null &&
-      typeof channel.transcoding.videoBufSize != 'undefined' &&
-      channel.transcoding.videoBufSize != 0
-    ) {
-      opts.videoBufSize = channel.transcoding.videoBufSize;
-    }
-
-    let parsed = parseResolutionString(resString);
-    this.wantedW = parsed.w;
-    this.wantedH = parsed.h;
+    this.wantedW = targetResolution.widthPx;
+    this.wantedH = targetResolution.heightPx;
 
     this.sentData = false;
     this.apad = this.opts.normalizeAudio;
@@ -127,7 +137,7 @@ export class FFMPEG extends events.EventEmitter {
     );
   }
   async spawnError(title, subtitle?: any, duration?: any) {
-    if (!this.opts.enableFFMPEGTranscoding || this.opts.errorScreen == 'kill') {
+    if (!this.opts.enableTranscoding || this.opts.errorScreen == 'kill') {
       console.error('error: ' + title + ' ; ' + subtitle);
       this.emit('error', {
         code: -1,
@@ -158,7 +168,7 @@ export class FFMPEG extends events.EventEmitter {
     );
   }
   async spawnOffline(duration) {
-    if (!this.opts.enableFFMPEGTranscoding) {
+    if (!this.opts.enableTranscoding) {
       logger.info(
         'The channel has an offline period scheduled for this time slot. FFMPEG transcoding is disabled, so it is not possible to render an offline screen. Ending the stream instead',
       );
@@ -182,6 +192,7 @@ export class FFMPEG extends events.EventEmitter {
       false,
     );
   }
+
   async spawn(
     streamUrl,
     streamStats,
@@ -192,9 +203,9 @@ export class FFMPEG extends events.EventEmitter {
     _,
     isConcatPlaylist,
   ) {
-    let ffmpegArgs = [
+    let ffmpegArgs: string[] = [
       `-threads`,
-      isConcatPlaylist ? 1 : this.opts.threads,
+      isConcatPlaylist ? '1' : this.opts.numThreads.toString(),
       `-fflags`,
       `+genpts+discardcorrupt+igndts`,
     ];
@@ -569,7 +580,7 @@ export class FFMPEG extends events.EventEmitter {
           `-maxrate:v`,
           `${this.opts.videoBitrate}k`,
           `-bufsize:v`,
-          `${this.opts.videoBufSize}k`,
+          `${this.opts.videoBufferSize}k`,
         );
       }
       if (transcodeAudio) {
@@ -580,7 +591,7 @@ export class FFMPEG extends events.EventEmitter {
           `-maxrate:a`,
           `${this.opts.audioBitrate}k`,
           `-bufsize:a`,
-          `${this.opts.videoBufSize}k`,
+          `${this.opts.videoBufferSize}k`,
         );
         if (this.audioChannelsSampleRate) {
           ffmpegArgs.push(
@@ -620,7 +631,7 @@ export class FFMPEG extends events.EventEmitter {
       );
     } else {
       //Concat stream is simpler and should always copy the codec
-      ffmpegArgs.push(`-probesize`, 32 /*`100000000`*/, `-i`, streamUrl);
+      ffmpegArgs.push(`-probesize`, '32' /*`100000000`*/, `-i`, streamUrl);
       if (this.audioOnly !== true) {
         ffmpegArgs.push(`-map`, `0:v`);
       }
@@ -650,7 +661,7 @@ export class FFMPEG extends events.EventEmitter {
 
     ffmpegArgs.push(`-f`, `mpegts`, `pipe:1`);
 
-    let doLogs = this.opts.logFfmpeg && !isConcatPlaylist;
+    let doLogs = this.opts.enableLogging && !isConcatPlaylist;
     if (this.hasBeenKilled) {
       return;
     }
@@ -692,7 +703,7 @@ export class FFMPEG extends events.EventEmitter {
         if (!this.sentData) {
           this.emit('error', {
             code: code,
-            cmd: `${this.opts.ffmpegPath} ${ffmpegArgs.join(' ')}`,
+            cmd: `${this.opts.ffmpegExecutablePath} ${ffmpegArgs.join(' ')}`,
           });
         }
         logger.info(`${this.ffmpegName} exited with code 255.`);
@@ -701,7 +712,7 @@ export class FFMPEG extends events.EventEmitter {
         logger.info(`${this.ffmpegName} exited with code ${code}.`);
         this.emit('error', {
           code: code,
-          cmd: `${this.opts.ffmpegPath} ${ffmpegArgs.join(' ')}`,
+          cmd: `${this.opts.ffmpegExecutablePath} ${ffmpegArgs.join(' ')}`,
         });
       }
     });
@@ -746,20 +757,6 @@ function isDifferentAudioCodec(codec, encoder) {
 
 function isLargerResolution(w1, h1, w2, h2) {
   return w1 > w2 || h1 > h2 || w1 % 2 == 1 || h1 % 2 == 1;
-}
-
-function parseResolutionString(s) {
-  var i = s.indexOf('x');
-  if (i == -1) {
-    i = s.indexOf('×');
-    if (i == -1) {
-      return { w: 1920, h: 1080 };
-    }
-  }
-  return {
-    w: parseInt(s.substring(0, i), 10),
-    h: parseInt(s.substring(i + 1), 10),
-  };
 }
 
 function gcd(a, b) {

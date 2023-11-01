@@ -23,6 +23,7 @@ import { PlexPlayer } from './plex-player.js';
 import EventEmitter from 'events';
 import * as helperFuncs from './helperFuncs.js';
 import { PlayerContext } from './types.js';
+import { Response } from 'express';
 
 export class ProgramPlayer {
   private context: any;
@@ -64,7 +65,7 @@ export class ProgramPlayer {
     this.delegate.cleanUp();
   }
 
-  async playDelegate(outStream) {
+  async playDelegate(outStream: Response) {
     return await new Promise(async (accept, reject) => {
       try {
         let stream = await this.delegate.play(outStream);
@@ -91,7 +92,7 @@ export class ProgramPlayer {
       }
     });
   }
-  async play(outStream) {
+  async play(outStream: Response) {
     try {
       return await this.playDelegate(outStream);
     } catch (err) {

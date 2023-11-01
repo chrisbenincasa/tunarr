@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express';
 import fs from 'fs';
-import { isUndefined } from 'lodash-es';
+import { functions, isUndefined } from 'lodash-es';
 import constants from './constants.js';
 import { FFMPEG } from './ffmpeg.js';
 import { FFMPEG_TEXT } from './ffmpegText.js';
@@ -11,6 +11,9 @@ import { wereThereTooManyAttempts } from './throttler.js';
 import { serverContext } from './server-context.js';
 import { PlayerContext } from './types.js';
 import { ImmutableChannel, offlineProgram } from './dao/db.js';
+import createLogger from './logger.js';
+
+const logger = createLogger(import.meta);
 
 let StreamCount = 0;
 
@@ -23,14 +26,16 @@ export function video(fillerDB) {
     if (!fs.existsSync(ffmpegSettings.ffmpegExecutablePath)) {
       res
         .status(500)
-        .send("FFMPEG path is invalid. The file (executable) doesn't exist.");
-      console.error(
-        'The FFMPEG Path is invalid. Please check your configuration.',
+        .send(
+          `FFMPEG path (${ffmpegSettings.ffmpegExecutablePath}) is invalid. The file (executable) doesn't exist.`,
+        );
+      logger.error(
+        `FFMPEG path (${ffmpegSettings.ffmpegExecutablePath}) is invalid. The file (executable) doesn't exist.`,
       );
       return;
     }
 
-    console.log(`\r\nStream starting. Channel: 1 (dizqueTV)`);
+    logger.info(`\r\nStream starting. Channel: 1 (dizqueTV)`);
 
     let ffmpeg = new FFMPEG_TEXT(
       ffmpegSettings,
@@ -43,7 +48,7 @@ export function video(fillerDB) {
     });
 
     ffmpeg.on('error', (err) => {
-      console.error('FFMPEG ERROR', err);
+      logger.error('FFMPEG ERROR', err);
       res.status(500).send('FFMPEG ERROR');
       return;
     });
@@ -54,18 +59,18 @@ export function video(fillerDB) {
     res.on('close', () => {
       // on HTTP close, kill ffmpeg
       ffmpeg.kill();
-      console.log(`\r\nStream ended. Channel: 1 (dizqueTV)`);
+      logger.info(`\r\nStream ended. Channel: 1 (dizqueTV)`);
     });
   });
   // Continuously stream video to client. Leverage ffmpeg concat for piecing together videos
-  let concat = async (req, res, audioOnly) => {
+  let concat = async (req: Request, res, audioOnly) => {
     const ctx = await serverContext();
     // Check if channel queried is valid
     if (isUndefined(req.query.channel)) {
       res.status(500).send('No Channel Specified');
       return;
     }
-    let number = parseInt(req.query.channel, 10);
+    let number = parseInt(req.query.channel as string, 10);
     let channel = await ctx.channelCache.getChannelConfig(number);
     if (isUndefined(channel)) {
       res.status(500).send("Channel doesn't exist");
@@ -75,12 +80,14 @@ export function video(fillerDB) {
     let ffmpegSettings = req.ctx.dbAccess.ffmpegSettings();
 
     // Check if ffmpeg path is valid
-    if (!fs.existsSync(ffmpegSettings.ffmpegPath)) {
+    if (!fs.existsSync(ffmpegSettings.ffmpegExecutablePath)) {
       res
         .status(500)
-        .send("FFMPEG path is invalid. The file (executable) doesn't exist.");
-      console.error(
-        'The FFMPEG Path is invalid. Please check your configuration.',
+        .send(
+          `FFMPEG path (${ffmpegSettings.ffmpegExecutablePath}) is invalid. The file (executable) doesn't exist.`,
+        );
+      logger.error(
+        `FFMPEG path (${ffmpegSettings.ffmpegExecutablePath}) is invalid. The file (executable) doesn't exist.`,
       );
       return;
     }
@@ -89,7 +96,7 @@ export function video(fillerDB) {
       'Content-Type': 'video/mp2t',
     });
 
-    console.log(
+    logger.info(
       `\r\nStream starting. Channel: ${channel.number} (${channel.name})`,
     );
 
@@ -108,7 +115,7 @@ export function video(fillerDB) {
     }
 
     ffmpeg.on('error', (err) => {
-      console.error('FFMPEG ERROR', err);
+      logger.error('FFMPEG ERROR', err);
       //status was already sent
       stop();
       return;
@@ -118,26 +125,26 @@ export function video(fillerDB) {
 
     res.on('close', () => {
       // on HTTP close, kill ffmpeg
-      console.log(
+      logger.info(
         `\r\nStream ended. Channel: ${channel?.number} (${channel?.name})`,
       );
       stop();
     });
 
     ffmpeg.on('end', () => {
-      console.log(
+      logger.info(
         'Video queue exhausted. Either you played 100 different clips in a row or there were technical issues that made all of the possible 100 attempts fail.',
       );
       stop();
     });
 
-    let channelNum = parseInt(req.query.channel, 10);
+    let channelNum = parseInt(req.query.channel as string, 10);
     let ff = await ffmpeg.spawnConcat(
       `http://localhost:${
         serverOptions().port
       }/playlist?channel=${channelNum}&audioOnly=${audioOnly}`,
     );
-    ff.pipe(res);
+    ff?.pipe(res);
   };
   router.get('/video', async (req, res) => {
     return await concat(req, res, false);
@@ -156,7 +163,7 @@ export function video(fillerDB) {
     const ctx = await serverContext();
     // Check if channel queried is valid
     res.on('error', (e) => {
-      console.error('There was an unexpected error in stream.', e);
+      logger.error('There was an unexpected error in stream.', e);
     });
     if (isUndefined(req.query.channel)) {
       res.status(400).send('No Channel Specified');
@@ -164,7 +171,7 @@ export function video(fillerDB) {
     }
 
     let audioOnly = 'true' == req.query.audioOnly;
-    console.log(`/stream audioOnly=${audioOnly}`);
+    logger.info(`/stream audioOnly=${audioOnly}`);
     let session = parseInt(req.query.session as string);
     let m3u8 = req.query.m3u8 === '1';
     let number = parseInt(req.query.channel as string);
@@ -190,9 +197,11 @@ export function video(fillerDB) {
     if (!fs.existsSync(ffmpegSettings.ffmpegExecutablePath)) {
       res
         .status(500)
-        .send("FFMPEG path is invalid. The file (executable) doesn't exist.");
-      console.error(
-        'The FFMPEG Path is invalid. Please check your configuration.',
+        .send(
+          `FFMPEG path (${ffmpegSettings.ffmpegExecutablePath}) is invalid. The file (executable) doesn't exist.`,
+        );
+      logger.error(
+        `FFMPEG path (${ffmpegSettings.ffmpegExecutablePath}) is invalid. The file (executable) doesn't exist.`,
       );
       return;
     }
@@ -235,7 +244,7 @@ export function video(fillerDB) {
 
         if (isUndefined(newChannel)) {
           let err = Error("Invalid redirect to a channel that doesn't exist");
-          console.error("Invalid redirect to channel that doesn't exist.", err);
+          logger.error("Invalid redirect to channel that doesn't exist.", err);
           prog = {
             program: offlineProgram(60000),
             // program: {
@@ -288,7 +297,7 @@ export function video(fillerDB) {
         for (let i = 0; i < redirectChannels.length; i++) {
           ctx.channelCache.clearPlayback(redirectChannels[i].number);
         }
-        console.log(
+        logger.info(
           'Too litlle time before the filler ends, skip to next slot',
         );
         return await streamFunction(req, res, t0 + dt + 1, false);
@@ -338,23 +347,23 @@ export function video(fillerDB) {
       }
     }
 
-    console.log('=========================================================');
-    console.log('! Start playback');
-    console.log(`! Channel: ${channel.name} (${channel.number})`);
+    logger.info('=========================================================');
+    logger.info('! Start playback');
+    logger.info(`! Channel: ${channel.name} (${channel.number})`);
     if (isUndefined(lineupItem.title)) {
       lineupItem.title = 'Unknown';
     }
-    console.log(`! Title: ${lineupItem.title}`);
+    logger.info(`! Title: ${lineupItem.title}`);
     if (isUndefined(lineupItem.streamDuration)) {
-      console.log(`! From : ${lineupItem.start}`);
+      logger.info(`! From : ${lineupItem.start}`);
     } else {
-      console.log(
+      logger.info(
         `! From : ${lineupItem.start} to: ${
           lineupItem.start + lineupItem.streamDuration
         }`,
       );
     }
-    console.log('=========================================================');
+    logger.info('=========================================================');
 
     if (!isLoading) {
       ctx.channelCache.recordPlayback(channel.number, t0, lineupItem);
@@ -399,25 +408,26 @@ export function video(fillerDB) {
     try {
       playerObj = await player.play(res);
     } catch (err) {
-      console.log('Error when attempting to play video: ' + err.stack);
+      logger.info('Error when attempting to play video: ' + err.stack);
       try {
         res.status(500).send('Unable to start playing video.').end();
       } catch (err2) {
-        console.log(err2.stack);
+        logger.info(err2.stack);
       }
       stop();
       return;
     }
 
     let stream = playerObj;
+    console.log('stream is', stream, functions(stream));
 
-    //res.write(playerObj.data);
+    // res.write(playerObj.data);
 
     stream.on('end', () => {
       stop();
     });
     res.on('close', () => {
-      console.log('Client Closed');
+      logger.info('Client Closed');
       stop();
     });
   };
@@ -562,7 +572,7 @@ export function video(fillerDB) {
       }
       return await mediaPlayer(channelNum, path, req, res);
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('There was an error.');
     }
   });
@@ -573,7 +583,7 @@ export function video(fillerDB) {
       let path = 'm3u8';
       return await mediaPlayer(channelNum, path, req, res);
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('There was an error.');
     }
   });
@@ -584,7 +594,7 @@ export function video(fillerDB) {
       let path = 'radio';
       return await mediaPlayer(channelNum, path, req, res);
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send('There was an error.');
     }
   });

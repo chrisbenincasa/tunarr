@@ -99,6 +99,8 @@ export type FillerCollection = {
 
 export type ChannelTranscodingOptions = {
   targetResolution: Resolution;
+  videoBitrate?: number;
+  videoBufferSize?: number;
 };
 
 export type ChannelOffline = {
