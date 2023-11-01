@@ -22,12 +22,13 @@ import { OfflinePlayer } from './offline-player.js';
 import { PlexPlayer } from './plex-player.js';
 import EventEmitter from 'events';
 import * as helperFuncs from './helperFuncs.js';
+import { PlayerContext } from './types.js';
 
 export class ProgramPlayer {
   private context: any;
   private delegate: any;
 
-  constructor(context) {
+  constructor(context: PlayerContext) {
     this.context = context;
     let program = context.lineupItem;
     if (context.m3u8) {

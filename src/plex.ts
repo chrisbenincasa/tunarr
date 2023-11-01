@@ -1,6 +1,9 @@
 import request from 'request';
 import { isUndefined } from 'lodash-es';
 import { PlexServerSettings } from './dao/db.js';
+import createLogger from './logger.js';
+
+const logger = createLogger(import.meta);
 export class Plex {
   private _accessToken: string;
   private _server: any;
@@ -161,7 +164,8 @@ export class Plex {
       dvrs = isUndefined(dvrs) ? [] : dvrs;
       return dvrs;
     } catch (err) {
-      throw Error('GET /livetv/drs failed: ' + err.message);
+      logger.error('GET /livetv/drs failed: ' + err.message);
+      throw err;
     }
   }
   async RefreshGuide(_dvrs) {

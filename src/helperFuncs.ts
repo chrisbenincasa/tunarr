@@ -2,6 +2,8 @@ import { isUndefined } from 'lodash-es';
 import * as randomJS from 'random-js';
 import constants from './constants.js';
 import { ChannelCache } from './channel-cache.js';
+import { ImmutableChannel, Program, offlineProgram } from './dao/db.js';
+import { DeepReadonly } from 'ts-essentials';
 
 const SLACK = constants.SLACK;
 const Random = randomJS.Random;
@@ -18,8 +20,17 @@ const CHANNEL_CONTEXT_KEYS = [
   'number',
 ];
 
-export function getCurrentProgramAndTimeElapsed(date, channel) {
-  let channelStartTime = new Date(channel.startTime).getTime();
+export type ProgramAndTimeElapsed = {
+  program: DeepReadonly<Program>;
+  timeElapsed: number;
+  programIndex: number;
+};
+
+export function getCurrentProgramAndTimeElapsed(
+  date: number,
+  channel: ImmutableChannel,
+): ProgramAndTimeElapsed {
+  let channelStartTime = new Date(channel.startTimeEpoch).getTime();
   if (channelStartTime > date) {
     let t0 = date;
     let t1 = channelStartTime;
@@ -27,10 +38,7 @@ export function getCurrentProgramAndTimeElapsed(date, channel) {
       'Channel start time is above the given date. Flex time is picked till that.',
     );
     return {
-      program: {
-        isOffline: true,
-        duration: t1 - t0,
-      },
+      program: offlineProgram(t1 - t0),
       timeElapsed: 0,
       programIndex: -1,
     };

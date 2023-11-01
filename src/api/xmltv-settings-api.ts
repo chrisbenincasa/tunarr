@@ -17,6 +17,10 @@ xmlTvSettingsRouter.get('/api/xmltv-settings', async (req, res) => {
   }
 });
 
+// const xmltvSchema = z.object({
+//   refreshHours: z.number().gte(1)
+// })
+
 xmlTvSettingsRouter.put('/api/xmltv-settings', async (req, res) => {
   try {
     let xmltv = req.ctx.dbAccess.xmlTvSettings();

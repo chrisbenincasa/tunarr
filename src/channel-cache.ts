@@ -7,7 +7,7 @@ import { Maybe } from './types.js';
 const SLACK = constants.SLACK;
 
 export class ChannelCache {
-  private cache = {};
+  private cache: Record<number, { t0: number; lineupItem: any }> = {};
   private configCache: Record<number, ImmutableChannel> = {};
   private fillerPlayTimeCache = {};
   private programPlayTimeCache = {};
@@ -46,7 +46,7 @@ export class ChannelCache {
     return this.channelNumbers;
   }
 
-  getCurrentLineupItem(channelId, t1) {
+  getCurrentLineupItem(channelId: number, t1: number) {
     if (isUndefined(this.cache[channelId])) {
       return null;
     }

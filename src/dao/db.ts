@@ -48,7 +48,7 @@ export type Program = {
 
 // Temporary until we figure out how to properly represent the Program
 // type in an extensible and accurate way
-export const offlineProgram = (duration: number): Program => {
+export const offlineProgram = (duration: number): DeepReadonly<Program> => {
   return {
     isOffline: true,
     duration,

@@ -9,17 +9,18 @@ import EventEmitter from 'events';
 import constants from './constants.js';
 import { FFMPEG } from './ffmpeg.js';
 import { PlexTranscoder } from './plexTranscoder.js';
+import { PlayerContext } from './types.js';
 
 let USED_CLIENTS = {};
 
 export class PlexPlayer {
-  private context: any;
+  private context: PlayerContext;
   private ffmpeg: FFMPEG | null;
   private plexTranscoder: any;
   private killed: boolean;
   private clientId: string;
 
-  constructor(context) {
+  constructor(context: PlayerContext) {
     this.context = context;
     this.ffmpeg = null;
     this.plexTranscoder = null;
@@ -85,7 +86,7 @@ export class PlexPlayer {
           streamDuration = lineupItem.streamDuration / 1000;
         }
       }
-      let deinterlace = ffmpegSettings.enableFFMPEGTranscoding; //for now it will always deinterlace when transcoding is enabled but this is sub-optimal
+      let deinterlace = ffmpegSettings.enableTranscoding; //for now it will always deinterlace when transcoding is enabled but this is sub-optimal
 
       let stream = await plexTranscoder.getStream(deinterlace);
       if (this.killed) {

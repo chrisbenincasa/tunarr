@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import fs from 'fs';
 import { isUndefined } from 'lodash-es';
 import constants from './constants.js';
@@ -9,6 +9,8 @@ import * as helperFuncs from './helperFuncs.js';
 import { ProgramPlayer } from './program-player.js';
 import { wereThereTooManyAttempts } from './throttler.js';
 import { serverContext } from './server-context.js';
+import { PlayerContext } from './types.js';
+import { ImmutableChannel, offlineProgram } from './dao/db.js';
 
 let StreamCount = 0;
 
@@ -145,7 +147,12 @@ export function video(fillerDB, db) {
   });
 
   // Stream individual video to ffmpeg concat above. This is used by the server, NOT the client
-  let streamFunction = async (req, res, t0, allowSkip) => {
+  let streamFunction = async (
+    req: Request,
+    res: Response,
+    t0: number,
+    allowSkip: boolean,
+  ) => {
     const ctx = await serverContext();
     // Check if channel queried is valid
     res.on('error', (e) => {
@@ -158,9 +165,9 @@ export function video(fillerDB, db) {
 
     let audioOnly = 'true' == req.query.audioOnly;
     console.log(`/stream audioOnly=${audioOnly}`);
-    let session = parseInt(req.query.session);
+    let session = parseInt(req.query.session as string);
     let m3u8 = req.query.m3u8 === '1';
-    let number = parseInt(req.query.channel);
+    let number = parseInt(req.query.channel as string);
     let channel = await ctx.channelCache.getChannelConfig(number);
 
     if (isUndefined(channel)) {
@@ -180,7 +187,7 @@ export function video(fillerDB, db) {
     let ffmpegSettings = req.ctx.dbAccess.ffmpegSettings();
 
     // Check if ffmpeg path is valid
-    if (!fs.existsSync(ffmpegSettings.ffmpegPath)) {
+    if (!fs.existsSync(ffmpegSettings.ffmpegExecutablePath)) {
       res
         .status(500)
         .send("FFMPEG path is invalid. The file (executable) doesn't exist.");
@@ -192,10 +199,10 @@ export function video(fillerDB, db) {
 
     // Get video lineup (array of video urls with calculated start times and durations.)
     let lineupItem = ctx.channelCache.getCurrentLineupItem(channel.number, t0);
-    let prog: any;
+    let prog: helperFuncs.ProgramAndTimeElapsed | undefined;
     let brandChannel = channel;
-    let redirectChannels: any[] = [];
-    let upperBounds: any[] = [];
+    let redirectChannels: ImmutableChannel[] = [];
+    let upperBounds: number[] = [];
 
     if (isLoading) {
       lineupItem = {
@@ -209,9 +216,9 @@ export function video(fillerDB, db) {
 
       while (true) {
         redirectChannels.push(brandChannel);
-        upperBounds.push(prog.program.duration - prog.timeElapsed);
+        upperBounds.push(prog!.program.duration - prog!.timeElapsed);
 
-        if (!prog.program.isOffline || prog.program.type != 'redirect') {
+        if (!prog!.program.isOffline || prog!.program.type != 'redirect') {
           break;
         }
         ctx.channelCache.recordPlayback(brandChannel.number, t0, {
@@ -222,7 +229,7 @@ export function video(fillerDB, db) {
           start: 0,
         });
 
-        let newChannelNumber = prog.program.channel;
+        let newChannelNumber = prog!.program.channel!;
         let newChannel =
           await ctx.channelCache.getChannelConfig(newChannelNumber);
 
@@ -230,12 +237,14 @@ export function video(fillerDB, db) {
           let err = Error("Invalid redirect to a channel that doesn't exist");
           console.error("Invalid redirect to channel that doesn't exist.", err);
           prog = {
-            program: {
-              isOffline: true,
-              err: err,
-              duration: 60000,
-            },
+            program: offlineProgram(60000),
+            // program: {
+            //   isOffline: true,
+            //   err: err,
+            //   duration: 60000,
+            // },
             timeElapsed: 0,
+            programIndex: -1,
           };
           continue;
         }
@@ -267,10 +276,7 @@ export function video(fillerDB, db) {
         //and it's best to give it a long duration to ensure there's always
         //filler to play (if any)
         let t = 365 * 24 * 60 * 60 * 1000;
-        prog.program = {
-          duration: t,
-          isOffline: true,
-        };
+        prog.program = offlineProgram(t);
       } else if (
         allowSkip &&
         prog.program.isOffline &&
@@ -366,7 +372,7 @@ export function video(fillerDB, db) {
       transcoding: channel.transcoding,
     };
 
-    let playerContext = {
+    let playerContext: PlayerContext = {
       lineupItem: lineupItem,
       ffmpegSettings: ffmpegSettings,
       channel: combinedChannel,

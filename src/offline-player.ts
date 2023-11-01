@@ -9,13 +9,14 @@
 import EventEmitter from 'events';
 import { FFMPEG } from './ffmpeg.js';
 import { serverOptions } from './globals.js';
+import { PlayerContext } from './types.js';
 
 export class OfflinePlayer {
   private context: any;
   private error: any;
   private ffmpeg: FFMPEG;
 
-  constructor(error, context) {
+  constructor(error, context: PlayerContext) {
     this.context = context;
     this.error = error;
     if (context.isLoading === true) {
