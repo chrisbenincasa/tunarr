@@ -12,7 +12,7 @@ import { setGlobalOptions, setServerOptions } from './globals.js';
 
 const logger = createLogger(import.meta);
 
-export const argv = await yargs(hideBin(process.argv))
+yargs(hideBin(process.argv))
   .scriptName('dizquetv')
   .option('database', {
     alias: 'd',

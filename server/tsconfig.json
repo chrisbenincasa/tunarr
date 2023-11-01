@@ -22,7 +22,7 @@
         "strictNullChecks": true
     },
     "include": [
-        "./**/*",
+        "./**/*.ts",
         "__tests__/**/*"
     ],
     "exclude": [

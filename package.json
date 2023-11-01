@@ -7,6 +7,11 @@
   "license": "Zlib",
   "scripts": {
     "preinstall": "npx only-allow pnpm",
-    "clean": "del-cli --force ./bin ./dist ./.dizquetv ./web/public/bundle.js"
+    "clean": "del-cli --force ./bin ./dist ./.dizquetv ./web/public/bundle.js",
+    "dist": "./make_dist.sh"
+  },
+  "devDependencies": {
+    "esbuild": "^0.19.5",
+    "ts-node-esm": "^0.0.6"
   }
 }
