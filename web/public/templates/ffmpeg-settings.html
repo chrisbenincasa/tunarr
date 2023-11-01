@@ -9,7 +9,7 @@
         </button>
     </h5>
     <h6>FFMPEG Executable Path (eg: C:\ffmpeg\bin\ffmpeg.exe || /usr/bin/ffmpeg)</h6>
-    <input type="text" class="form-control form-control-sm" ria-describedby="ffmpegHelp" ng-model="settings.ffmpegPath"></input>
+    <input type="text" class="form-control form-control-sm" ria-describedby="ffmpegHelp" ng-model="settings.ffmpegExecutablePath"></input>
     <small id="ffmpegHelp" class="form-text text-muted">FFMPEG version 4.2+ required. Check by opening the version tab</small>
     <hr></hr>
     <h6>Miscellaneous Options</h6>
@@ -18,7 +18,7 @@
             <div class="form-group">
                 <div class="form-group">
                     <label>Threads</label>
-                    <input type="number" class="form-control form-control-sm" ng-model="settings.threads"></input>
+                    <input type="number" class="form-control form-control-sm" ng-model="settings.numThreads"></input>
                 </div>
             </div>
         </div>
@@ -26,7 +26,7 @@
             <div class="form-group">
                 <label>Logging</label>
                 <br>
-                <input id="logFfmpeg" type="checkbox" ng-model="settings.logFfmpeg"></input>
+                <input id="logFfmpeg" type="checkbox" ng-model="settings.enableLogging"></input>
                 <label for="logFfmpeg">Log FFMPEG to console</label>
             </div>
         </div>
@@ -45,7 +45,7 @@
     <h6>Transcoding Features</h6>
     <div class="row">
         <div class="col-sm-9">
-            <input id=enableFFMPEGTranscoding" type="checkbox" ng-model="settings.enableFFMPEGTranscoding"  ></input>
+            <input id="enableFFMPEGTranscoding" type="checkbox" ng-model="settings.enableTranscoding"  ></input>
             <label for="enableFFMPEGTranscoding">Enable FFMPEG Transcoding</label>
             <small class="form-text text-muted">Transcoding is required for some features like channel overlay and measures to prevent issues when switching episodes. The trade-off is quality loss and additional computing resource requirements.
             </small>
@@ -58,7 +58,7 @@
         <div class="row">
             <div class="col-sm-9">
                 <label>Preferred Resolution</label>
-                <select ng-model="settings.targetResolution" ria-describedby="concatMuxDelayHelp" ng-options="o.id as o.description for o in resolutionOptions" ></select>
+                <select ng-model="resolutionString" aria-describedby="concatMuxDelayHelp" ng-options="o.id as o.description for o in resolutionOptions" ></select>
             </div>
         </div>
         <div class="row">
@@ -90,7 +90,7 @@
             <input type="number" class="form-control form-control-sm" ng-model="settings.videoBitrate"></input>
             <br ></br>
             <label>Video Buffer Size (k)</label>
-            <input type="number" class="form-control form-control-sm" ng-model="settings.videoBufSize"></input>
+            <input type="number" class="form-control form-control-sm" ng-model="settings.videoBufferSize"></input>
             <br ></br>
             <label>Max Frame Rate</label>
             <select class='form-control custom-select'  ng-model="settings.maxFPS" ria-describedby="fpsHelp"
@@ -115,7 +115,7 @@
             <input type="number" class="form-control form-control-sm" ng-model="settings.audioBitrate"></input>
             <br ></br>
             <label>Audio Buffer Size (k)</label>
-            <input type="number" class="form-control form-control-sm" ng-model="settings.audioBufSize"></input>
+            <input type="number" class="form-control form-control-sm" ng-model="settings.audioBufferSize"></input>
             <br ></br>
             <label>Audio Volume (%)</label>
             <input type="number" ria-describedby="volumeHelp" class="form-control form-control-sm" ng-model="settings.audioVolumePercent"></input>

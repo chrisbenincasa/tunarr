@@ -187,8 +187,8 @@ export const defaultFfmpegSettings: FfmpegSettings = {
   videoEncoder: 'mpeg2video',
   audioEncoder: 'ac3',
   targetResolution: {
-    heightPx: 1920,
-    widthPx: 1080,
+    widthPx: 1920,
+    heightPx: 1080,
   },
   videoBitrate: 2000,
   videoBufferSize: 2000,

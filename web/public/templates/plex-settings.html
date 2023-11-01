@@ -112,12 +112,12 @@
         </div>
         <div class="form-group">
             <label>Max Playable Resolution</label>
-            <select ng-model="settings.maxPlayableResolution" 
+            <select ng-model="maxPlayableResString" 
                 ng-options="o.id as o.description for o in resolutionOptions" ></select>
         </div>
         <div class="form-group">
             <label>Max Transcode Resolution</label>
-            <select ng-model="settings.maxTranscodeResolution" 
+            <select ng-model="maxTranscodeResString" 
                 ng-options="o.id as o.description for o in resolutionOptions "></select>
         </div>
     </div>
