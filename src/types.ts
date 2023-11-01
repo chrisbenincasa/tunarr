@@ -1,4 +1,4 @@
-import { FfmpegSettings } from './dao/db.js';
+import { DbAccess, FfmpegSettings } from './dao/db.js';
 
 export type GlobalOptions = {
   database: string;
@@ -19,4 +19,6 @@ export type PlayerContext = {
   m3u8: boolean;
   audioOnly: boolean;
   isLoading?: boolean;
+  watermark?: boolean;
+  dbAccess: DbAccess;
 };

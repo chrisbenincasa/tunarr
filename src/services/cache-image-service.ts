@@ -2,6 +2,11 @@ import { createWriteStream, promises as fs } from 'fs';
 import express from 'express';
 import request from 'request';
 import { FileCacheService } from './file-cache-service.js';
+import { CachedImage, DbAccess } from '../dao/db.js';
+import { isUndefined } from 'lodash-es';
+import createLogger from '../logger.js';
+
+const logger = createLogger(import.meta);
 
 /**
  * Manager a cache in disk for external images.
@@ -11,12 +16,12 @@ import { FileCacheService } from './file-cache-service.js';
 export class CacheImageService {
   private cacheService: FileCacheService;
   private imageCacheFolder: string;
-  private db: any;
+  private dbAccess: DbAccess;
 
-  constructor(db, fileCacheService: FileCacheService) {
+  constructor(dbAccess: DbAccess, fileCacheService: FileCacheService) {
     this.cacheService = fileCacheService;
     this.imageCacheFolder = 'images';
-    this.db = db['cache-images'];
+    this.dbAccess = dbAccess;
   }
 
   /**
@@ -34,14 +39,11 @@ export class CacheImageService {
     router.get('/:hash', async (req, res, next) => {
       try {
         const hash = req.params.hash;
-        const imgItem = this.db.find({ url: hash })[0];
+        const imgItem = this.dbAccess.cachedImages().getById(hash);
         if (imgItem) {
-          const file = await this.getImageFromCache(imgItem.url);
-          if (!file.length) {
-            const fileMimeType = await this.requestImageAndStore(
-              Buffer.from(imgItem.url, 'base64').toString('ascii'),
-              imgItem,
-            );
+          const file = await this.getImageFromCache(imgItem.hash);
+          if (isUndefined(file) || !file.length) {
+            const fileMimeType = await this.requestImageAndStore(imgItem);
             res.set('content-type', fileMimeType);
             next();
           } else {
@@ -71,7 +73,7 @@ export class CacheImageService {
         await this.clearCache();
         res.status(200).send({ msg: 'Cache Image are Cleared' });
       } catch (error) {
-        console.error(error);
+        logger.error('Error deleting cached images', error);
         res.status(500).send('error');
       }
     });
@@ -79,32 +81,29 @@ export class CacheImageService {
     return router;
   }
 
-  /**
-   * @param {*} url External URL to get file/image
-   * @param {*} dbFile register of file from db
-   * @returns {promise} `Resolve` when can download imagem and store on cache folder, `Reject` when file are inaccessible over network or can't write on directory
-   * @memberof CacheImageService
-   */
   async requestImageAndStore(
-    url: any,
-    dbFile: any,
+    cachedImage: CachedImage,
   ): Promise<string | undefined> {
     return new Promise(async (resolve, reject) => {
       const requestConfiguration = {
         method: 'get',
-        url,
+        url: cachedImage.url,
       };
 
-      request(requestConfiguration, (err, res) => {
+      logger.debug('Requesting original image file for caching');
+      request(requestConfiguration, async (err, res) => {
         if (err) {
           reject(err);
         } else {
           const mimeType = res.headers['content-type'];
-          this.db.update({ _id: dbFile._id }, { url: dbFile.url, mimeType });
+          logger.debug('Got image file with mimeType ' + mimeType);
+          await this.dbAccess
+            .cachedImages()
+            .insertOrUpdate({ ...cachedImage, mimeType });
           request(requestConfiguration)
             .pipe(
               createWriteStream(
-                `${this.cacheService.cachePath}/${this.imageCacheFolder}/${dbFile.url}`,
+                `${this.cacheService.cachePath}/${this.imageCacheFolder}/${cachedImage.hash}`,
               ),
             )
             .on('close', () => {
@@ -118,8 +117,13 @@ export class CacheImageService {
   /**
    * Get image from cache using an filename
    */
-  getImageFromCache(fileName: string): Promise<any> {
-    return this.cacheService.getCache(`${this.imageCacheFolder}/${fileName}`);
+  getImageFromCache(fileName: string): Promise<string | undefined> {
+    try {
+      return this.cacheService.getCache(`${this.imageCacheFolder}/${fileName}`);
+    } catch (e) {
+      logger.debug(`Image ${fileName} not found in cache.`);
+      return Promise.resolve(undefined);
+    }
   }
 
   /**
@@ -131,12 +135,11 @@ export class CacheImageService {
     await fs.mkdir(cachePath);
   }
 
-  registerImageOnDatabase(imageUrl) {
-    const url = Buffer.from(imageUrl).toString('base64');
-    const dbQuery = { url };
-    if (!this.db.find(dbQuery)[0]) {
-      this.db.save(dbQuery);
-    }
-    return url;
+  async registerImageOnDatabase(imageUrl: string) {
+    const encodedUrl = Buffer.from(imageUrl).toString('base64');
+    await this.dbAccess
+      .cachedImages()
+      .insertOrUpdate({ hash: encodedUrl, url: imageUrl });
+    return encodedUrl;
   }
 }

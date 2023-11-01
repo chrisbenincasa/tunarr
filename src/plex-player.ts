@@ -10,6 +10,7 @@ import constants from './constants.js';
 import { FFMPEG } from './ffmpeg.js';
 import { PlexTranscoder } from './plexTranscoder.js';
 import { PlayerContext } from './types.js';
+import { isUndefined } from 'lodash-es';
 
 let USED_CLIENTS = {};
 
@@ -25,7 +26,7 @@ export class PlexPlayer {
     this.ffmpeg = null;
     this.plexTranscoder = null;
     this.killed = false;
-    let coreClientId = this.context.db['client-id'].find()[0].clientId;
+    const coreClientId = this.context.dbAccess.clientId();
     let i = 0;
     while (USED_CLIENTS[coreClientId + '-' + i] === true) {
       i++;
@@ -50,21 +51,23 @@ export class PlexPlayer {
   async play(outStream) {
     let lineupItem = this.context.lineupItem;
     let ffmpegSettings = this.context.ffmpegSettings;
-    let db = this.context.db;
+    let db = this.context.dbAccess;
     let channel = this.context.channel;
-    let server = db['plex-servers'].find({ name: lineupItem.serverKey });
-    if (server.length == 0) {
+    let server = db.plexServers().getById(lineupItem.serverKey);
+    if (isUndefined(server)) {
       throw Error(
         `Unable to find server "${lineupItem.serverKey}" specified by program.`,
       );
     }
-    server = server[0];
     if (server.uri.endsWith('/')) {
-      server.uri = server.uri.slice(0, server.uri.length - 1);
+      server = {
+        ...server,
+        uri: server.uri.slice(0, server.uri.length - 1),
+      };
     }
 
     try {
-      let plexSettings = db['plex-settings'].find()[0];
+      let plexSettings = db.plexSettings();
       let plexTranscoder = new PlexTranscoder(
         this.clientId,
         server,

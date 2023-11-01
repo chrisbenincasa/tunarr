@@ -311,7 +311,7 @@ type MigrationState = {
 
 export type CachedImage = {
   hash: string;
-  mimeType: string;
+  mimeType?: string;
   url: string;
 };
 
@@ -478,6 +478,10 @@ export class DbAccess {
 
   async migrateFromLegacyDb() {
     return migrateFromLegacyDb(this.db);
+  }
+
+  clientId(): string {
+    return this.db.data.settings.clientId;
   }
 
   plexServers(): PlexServerSettingsCollection {

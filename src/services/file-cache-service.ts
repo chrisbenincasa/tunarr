@@ -48,7 +48,7 @@ export class FileCacheService {
         return fs.readFile(path.join(this.cachePath, fullFilePath), 'utf8');
       }
     } catch (error) {
-      throw Error("Can't get file", error);
+      return undefined;
     }
   }
 

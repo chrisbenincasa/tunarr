@@ -16,6 +16,7 @@ import path from 'path';
 import { globalOptions } from '../globals.js';
 import createLogger from '../logger.js';
 import {
+  CachedImage,
   Channel,
   CustomShow,
   FfmpegSettings,
@@ -247,8 +248,6 @@ async function migrateCustomShows(db: Low<Schema>) {
 
   const newCustomShows = await channelFiles.reduce(
     async (prev, file) => {
-      {
-      }
       const id = file.replace('.json', '');
       logger.debug('Migrating custom show: ' + file);
       const channel = await fsPromises.readFile(
@@ -267,6 +266,20 @@ async function migrateCustomShows(db: Low<Schema>) {
   );
 
   db.data.customShows = newCustomShows;
+  return db.write();
+}
+
+async function migrateCachedImages(db: Low<Schema>) {
+  const cacheImages = (await readAllOldDbFile('cache-images')) as object[];
+  let newCacheImages: CachedImage[] = [];
+  for (let cacheImage of cacheImages) {
+    // Extract the original URL
+    const url = Buffer.from(cacheImage['url'], 'base64').toString('utf-8');
+    const hash = cacheImage['url'];
+    const mimeType = cacheImage['mimeType'];
+    newCacheImages.push({ url, hash, mimeType });
+  }
+  db.data.cachedImages = newCacheImages;
   return db.write();
 }
 
@@ -467,6 +480,13 @@ export async function migrateFromLegacyDb(db: Low<Schema>) {
     await migrateCustomShows(db);
   } catch (e) {
     logger.error('Unable to migrate all custom shows', e);
+  }
+
+  try {
+    logger.debug('Migrating cached images');
+    await migrateCachedImages(db);
+  } catch (e) {
+    logger.error('Unable to migrate cached images', e);
   }
 
   db.data.settings = settings as Required<Settings>;

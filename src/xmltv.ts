@@ -123,7 +123,13 @@ export class XmlTvWriter {
     }
   }
 
-  async _writeProgramme(channel, program, xw, xmlSettings, cacheImageService) {
+  async _writeProgramme(
+    channel,
+    program,
+    xw,
+    xmlSettings,
+    cacheImageService: CacheImageService,
+  ) {
     // Programme
     xw.startElement('programme');
     xw.writeAttribute('start', this._createXMLTVDate(program.start));
@@ -160,7 +166,7 @@ export class XmlTvWriter {
       xw.startElement('icon');
       let icon = program.icon;
       if (xmlSettings.enableImageCache === true) {
-        const imgUrl = cacheImageService.registerImageOnDatabase(icon);
+        const imgUrl = await cacheImageService.registerImageOnDatabase(icon);
         icon = `{{host}}/cache/images/${imgUrl}`;
       }
       xw.writeAttribute('src', icon);

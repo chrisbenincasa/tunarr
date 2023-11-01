@@ -379,6 +379,7 @@ export function video(fillerDB, db) {
       db: db,
       m3u8: m3u8,
       audioOnly: audioOnly,
+      dbAccess: req.ctx.dbAccess,
     };
 
     let player: ProgramPlayer | null = new ProgramPlayer(playerContext);

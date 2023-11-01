@@ -1,5 +1,5 @@
 import express from 'express';
-import { defaultXmlTvSettings } from '../dao/db.js';
+import { XmlTvSettings, defaultXmlTvSettings } from '../dao/db.js';
 import createLogger from '../logger.js';
 import { firstDefined } from '../util.js';
 import { xmltvInterval } from '../xmltv-generator.js';
@@ -10,6 +10,7 @@ export const xmlTvSettingsRouter = express.Router();
 
 xmlTvSettingsRouter.get('/api/xmltv-settings', async (req, res) => {
   try {
+    console.log(req.ctx.dbAccess.xmlTvSettings());
     res.json(req.ctx.dbAccess.xmlTvSettings());
   } catch (err) {
     logger.error(err);
@@ -23,12 +24,14 @@ xmlTvSettingsRouter.get('/api/xmltv-settings', async (req, res) => {
 
 xmlTvSettingsRouter.put('/api/xmltv-settings', async (req, res) => {
   try {
+    const settings = req.body as Partial<XmlTvSettings>;
     let xmltv = req.ctx.dbAccess.xmlTvSettings();
     await req.ctx.dbAccess.updateSettings('xmltv', {
-      refreshHours: req.body.refresh,
-      enableImageCache: req.body.enableImageCache === true,
+      refreshHours:
+        (settings.refreshHours ?? 0) < 1 ? 1 : settings.refreshHours!,
+      enableImageCache: settings.enableImageCache === true,
       outputPath: xmltv.outputPath,
-      programmingHours: req.body.cache,
+      programmingHours: settings.programmingHours ?? 12,
     });
     xmltv = req.ctx.dbAccess.xmlTvSettings();
     res.send(xmltv);
