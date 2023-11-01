@@ -2,13 +2,13 @@ import { fileURLToPath } from 'node:url';
 import path from 'path';
 import { hideBin } from 'yargs/helpers';
 import yargs from 'yargs/yargs';
-import constants from './src/constants.js';
-import { getDB, getDBRaw } from './src/dao/db.js';
-import createLogger from './src/logger.js';
+import constants from './constants.js';
+import { getDB, getDBRaw } from './dao/db.js';
+import createLogger from './logger.js';
 import { inspect } from 'util';
 import { ArgumentsCamelCase } from 'yargs';
-import { ServerOptions } from './src/types.js';
-import { setGlobalOptions, setServerOptions } from './src/globals.js';
+import { ServerOptions } from './types.js';
+import { setGlobalOptions, setServerOptions } from './globals.js';
 
 const logger = createLogger(import.meta);
 
@@ -42,7 +42,7 @@ export const argv = await yargs(hideBin(process.argv))
         .middleware(setServerOptions);
     },
     async (args: ArgumentsCamelCase<ServerOptions>) => {
-      return (await import('./src/server.js')).initServer(args);
+      return (await import('./server.js')).initServer(args);
     },
   )
   .command(

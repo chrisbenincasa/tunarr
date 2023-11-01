@@ -1,0 +1,28 @@
+{
+  "name": "web",
+  "private": true,
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "browserify ./app.js -o ./public/bundle.js",
+    "dev": "watchify ./app.js -o ./public/bundle.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "Zlib",
+  "dependencies": {
+    "angular": "^1.6.10",
+    "angular-router-browserify": "0.0.2",
+    "angular-vs-repeat": "2.0.13"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.8.4",
+    "@babel/core": "^7.9.0",
+    "@babel/plugin-proposal-class-properties": "^7.8.3",
+    "@babel/preset-env": "^7.9.5",
+    "browserify": "^16.5.1",
+    "watchify": "^4.0.0"
+  }
+}
