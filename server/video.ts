@@ -9,7 +9,7 @@ import * as helperFuncs from './helperFuncs.js';
 import { ProgramPlayer } from './program-player.js';
 import { wereThereTooManyAttempts } from './throttler.js';
 import { serverContext } from './server-context.js';
-import { PlayerContext } from './types.js';
+import { LineupItem, Maybe, PlayerContext } from './types.js';
 import { ImmutableChannel, offlineProgram } from './dao/db.js';
 import createLogger from './logger.js';
 
@@ -207,7 +207,10 @@ export function video(fillerDB) {
     }
 
     // Get video lineup (array of video urls with calculated start times and durations.)
-    let lineupItem = ctx.channelCache.getCurrentLineupItem(channel.number, t0);
+    let lineupItem: Maybe<LineupItem> = ctx.channelCache.getCurrentLineupItem(
+      channel.number,
+      t0,
+    );
     let prog: helperFuncs.ProgramAndTimeElapsed | undefined;
     let brandChannel = channel;
     let redirectChannels: ImmutableChannel[] = [];
@@ -231,7 +234,7 @@ export function video(fillerDB) {
           break;
         }
         ctx.channelCache.recordPlayback(brandChannel.number, t0, {
-          /*type: 'offline',*/
+          type: 'offline',
           title: 'Error',
           err: Error('Recursive channel redirect found'),
           duration: 60000,
@@ -324,12 +327,12 @@ export function video(fillerDB) {
     if (!isLoading && lineupItem != null) {
       let upperBound = 1000000000;
       let beginningOffset = 0;
-      if (typeof lineupItem.beginningOffset !== 'undefined') {
+      if (!isUndefined(lineupItem?.beginningOffset)) {
         beginningOffset = lineupItem.beginningOffset;
       }
       //adjust upper bounds and record playbacks
       for (let i = redirectChannels.length - 1; i >= 0; i--) {
-        lineupItem = JSON.parse(JSON.stringify(lineupItem));
+        lineupItem = { ...lineupItem };
         let u = upperBounds[i] + beginningOffset;
         if (typeof u !== 'undefined') {
           let u2 = upperBound;
@@ -350,29 +353,31 @@ export function video(fillerDB) {
     logger.info('=========================================================');
     logger.info('! Start playback');
     logger.info(`! Channel: ${channel.name} (${channel.number})`);
-    if (isUndefined(lineupItem.title)) {
-      lineupItem.title = 'Unknown';
+    if (!isUndefined(lineupItem?.title)) {
+      lineupItem!.title = 'Unknown';
     }
-    logger.info(`! Title: ${lineupItem.title}`);
-    if (isUndefined(lineupItem.streamDuration)) {
-      logger.info(`! From : ${lineupItem.start}`);
+    logger.info(`! Title: ${lineupItem?.title}`);
+    if (isUndefined(lineupItem?.streamDuration)) {
+      logger.info(`! From : ${lineupItem?.start}`);
     } else {
       logger.info(
-        `! From : ${lineupItem.start} to: ${
-          lineupItem.start + lineupItem.streamDuration
+        `! From : ${lineupItem?.start} to: ${
+          (lineupItem?.start ?? 0) + (lineupItem?.streamDuration ?? 0)
         }`,
       );
     }
     logger.info('=========================================================');
 
     if (!isLoading) {
-      ctx.channelCache.recordPlayback(channel.number, t0, lineupItem);
+      ctx.channelCache.recordPlayback(channel.number, t0, lineupItem!);
     }
     if (wereThereTooManyAttempts(session, lineupItem)) {
       lineupItem = {
-        isOffline: true,
+        type: 'offline',
+        // isOffline: true,
         err: Error('Too many attempts, throttling..'),
         duration: 60000,
+        start: 0,
       };
     }
 

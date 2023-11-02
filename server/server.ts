@@ -24,6 +24,7 @@ import { serverContext } from './server-context.js';
 import { ServerOptions } from './types.js';
 import { video } from './video.js';
 import { xmltvInterval } from './xmltv-generator.js';
+import cors from 'cors';
 
 const logger = createLogger(import.meta);
 
@@ -93,6 +94,7 @@ export async function initServer(opts: ServerOptions) {
   await xmltvInterval.startInterval();
 
   const app = express();
+  app.use(cors());
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ extended: true }));
   app.use(async (req: Request, _res, next) => {

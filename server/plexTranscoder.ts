@@ -3,7 +3,7 @@ import fs from 'fs';
 import { isUndefined } from 'lodash-es';
 import { v4 as uuidv4 } from 'uuid';
 import { serverOptions } from './globals.js';
-import { PlexStreamSettings } from './dao/db.js';
+import { PlexServerSettings, PlexStreamSettings } from './dao/db.js';
 import { DeepReadonly } from 'ts-essentials';
 
 type PlexStream = {
@@ -58,7 +58,13 @@ export class PlexTranscoder {
   //   private directInfo?: any;
   //   private videoIsDirect: boolean = false;
 
-  constructor(clientId, server, settings, channel, lineupItem) {
+  constructor(
+    clientId: string,
+    server: DeepReadonly<PlexServerSettings>,
+    settings: DeepReadonly<PlexStreamSettings>,
+    channel,
+    lineupItem,
+  ) {
     this.session = uuidv4();
 
     this.device = 'channel-' + channel.number;

@@ -2,12 +2,12 @@ import { compact, isUndefined } from 'lodash-es';
 import constants from './constants.js';
 import { ChannelDB } from './dao/channel-db.js';
 import { Channel, ImmutableChannel } from './dao/db.js';
-import { Maybe } from './types.js';
+import { LineupItem, Maybe } from './types.js';
 
 const SLACK = constants.SLACK;
 
 export class ChannelCache {
-  private cache: Record<number, { t0: number; lineupItem: any }> = {};
+  private cache: Record<number, { t0: number; lineupItem: LineupItem }> = {};
   private configCache: Record<number, ImmutableChannel> = {};
   private fillerPlayTimeCache = {};
   private programPlayTimeCache = {};
@@ -46,17 +46,18 @@ export class ChannelCache {
     return this.channelNumbers;
   }
 
-  getCurrentLineupItem(channelId: number, t1: number) {
+  getCurrentLineupItem(channelId: number, t1: number): LineupItem | undefined {
     if (isUndefined(this.cache[channelId])) {
-      return null;
+      return;
     }
     let recorded = this.cache[channelId];
-    let lineupItem = JSON.parse(JSON.stringify(recorded.lineupItem));
+    let lineupItem = { ...recorded.lineupItem };
     let diff = t1 - recorded.t0;
     let rem = lineupItem.duration - lineupItem.start;
-    if (typeof lineupItem.streamDuration !== 'undefined') {
+    if (!isUndefined(lineupItem.streamDuration)) {
       rem = Math.min(rem, lineupItem.streamDuration);
     }
+
     if (diff <= SLACK && diff + SLACK < rem) {
       //closed the stream and opened it again let's not lose seconds for
       //no reason
@@ -75,11 +76,11 @@ export class ChannelCache {
       lineupItem.streamDuration -= diff;
       if (lineupItem.streamDuration < SLACK) {
         //let's not waste time playing some loose seconds
-        return null;
+        return;
       }
     }
     if (lineupItem.start + SLACK > lineupItem.duration) {
-      return null;
+      return;
     }
     return lineupItem;
   }
@@ -88,7 +89,7 @@ export class ChannelCache {
     this.configCache[number] = channel;
   }
 
-  getKey(channelId, program) {
+  getKey(channelId: number, program) {
     let serverKey = '!unknown!';
     if (typeof program.serverKey !== 'undefined') {
       if (typeof program.serverKey !== 'undefined') {
@@ -102,11 +103,11 @@ export class ChannelCache {
     return channelId + '|' + serverKey + '|' + programKey;
   }
 
-  private getFillerKey(channelId, fillerId) {
+  private getFillerKey(channelId: number, fillerId: string) {
     return channelId + '|' + fillerId;
   }
 
-  private recordProgramPlayTime(channelId, lineupItem, t0) {
+  private recordProgramPlayTime(channelId: number, lineupItem, t0: number) {
     let remaining;
     if (typeof lineupItem.streamDuration !== 'undefined') {
       remaining = lineupItem.streamDuration;
@@ -122,7 +123,7 @@ export class ChannelCache {
     }
   }
 
-  getProgramLastPlayTime(channelId, program) {
+  getProgramLastPlayTime(channelId: number, program) {
     let v = this.programPlayTimeCache[this.getKey(channelId, program)];
     if (isUndefined(v)) {
       return 0;
@@ -131,7 +132,7 @@ export class ChannelCache {
     }
   }
 
-  getFillerLastPlayTime(channelId, fillerId) {
+  getFillerLastPlayTime(channelId: number, fillerId) {
     let v = this.fillerPlayTimeCache[this.getFillerKey(channelId, fillerId)];
     if (isUndefined(v)) {
       return 0;
@@ -140,7 +141,7 @@ export class ChannelCache {
     }
   }
 
-  recordPlayback(channelId, t0, lineupItem) {
+  recordPlayback(channelId: number, t0: number, lineupItem: LineupItem) {
     this.recordProgramPlayTime(channelId, lineupItem, t0);
 
     this.cache[channelId] = {

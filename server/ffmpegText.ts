@@ -1,23 +1,25 @@
 import { ChildProcessWithoutNullStreams, spawn } from 'child_process';
 import events from 'events';
 import { globalOptions } from './globals.js';
+import { DeepReadonly } from 'ts-essentials';
+import { FfmpegSettings } from './dao/db.js';
 
 export class FFMPEG_TEXT extends events.EventEmitter {
   private args: string[];
   private ffmpeg: ChildProcessWithoutNullStreams;
 
-  constructor(opts, title, subtitle) {
+  constructor(opts: DeepReadonly<FfmpegSettings>, title, subtitle) {
     super();
     this.args = [
       '-threads',
-      opts.threads,
+      opts.numThreads.toString(),
       '-f',
       'lavfi',
       '-re',
       '-stream_loop',
       '-1',
       '-i',
-      `color=c=black:s=${opts.videoResolution}`,
+      `color=c=black:s=${opts.targetResolution}`, // this is wrong, figure out the param
       '-f',
       'lavfi',
       '-i',
@@ -37,13 +39,13 @@ export class FFMPEG_TEXT extends events.EventEmitter {
       'pipe:1',
     ];
 
-    this.ffmpeg = spawn(opts.ffmpegPath, this.args);
+    this.ffmpeg = spawn(opts.ffmpegExecutablePath, this.args);
 
     this.ffmpeg.stdout.on('data', (chunk) => {
       this.emit('data', chunk);
     });
 
-    if (opts.logFfmpeg) {
+    if (opts.enableLogging) {
       this.ffmpeg.stderr.on('data', (chunk) => {
         process.stderr.write(chunk);
       });
@@ -56,7 +58,7 @@ export class FFMPEG_TEXT extends events.EventEmitter {
       else
         this.emit('error', {
           code: code,
-          cmd: `${opts.ffmpegPath} ${this.args.join(' ')}`,
+          cmd: `${opts.ffmpegExecutablePath} ${this.args.join(' ')}`,
         });
     });
   }

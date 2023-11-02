@@ -4,6 +4,7 @@ import constants from './constants.js';
 import { ChannelCache } from './channel-cache.js';
 import { ImmutableChannel, Program, offlineProgram } from './dao/db.js';
 import { DeepReadonly } from 'ts-essentials';
+import { LineupItem } from './types.js';
 
 const SLACK = constants.SLACK;
 const Random = randomJS.Random;
@@ -21,7 +22,7 @@ const CHANNEL_CONTEXT_KEYS = [
 ];
 
 export type ProgramAndTimeElapsed = {
-  program: DeepReadonly<Program>;
+  program: DeepReadonly<Program> & { err?: Error };
   timeElapsed: number;
   programIndex: number;
 };
@@ -74,11 +75,11 @@ export function getCurrentProgramAndTimeElapsed(
 
 export function createLineup(
   channelCache: ChannelCache,
-  obj,
+  obj: ProgramAndTimeElapsed,
   channel,
   fillers,
   isFirst,
-) {
+): LineupItem[] {
   let timeElapsed = obj.timeElapsed;
   // Start time of a file is never consistent unless 0. Run time of an episode can vary.
   // When within 30 seconds of start time, just make the time 0 to smooth things out
@@ -86,9 +87,9 @@ export function createLineup(
   let activeProgram = obj.program;
   let beginningOffset = 0;
 
-  let lineup: any[] = [];
+  let lineup: LineupItem[] = [];
 
-  if (typeof activeProgram.err !== 'undefined') {
+  if (!isUndefined(activeProgram.err)) {
     let remaining = activeProgram.duration - timeElapsed;
     lineup.push({
       type: 'offline',
