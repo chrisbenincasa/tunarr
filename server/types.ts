@@ -12,7 +12,7 @@ export type ServerOptions = GlobalOptions & {
 export type Maybe<T> = T | undefined;
 
 export type PlayerContext = {
-  lineupItem: any;
+  lineupItem: LineupItem;
   ffmpegSettings: FfmpegSettings;
   channel: any;
   m3u8: boolean;
@@ -35,6 +35,30 @@ export type LineupItem =
   | ProgramLineupItem
   | CommercialLineupItem
   | LoadingLineupItem;
+
+export function isOfflineLineupItem(
+  item: LineupItem,
+): item is OfflineLineupItem {
+  return item.type === 'offline';
+}
+
+export function isCommercialLineupItem(
+  item: LineupItem,
+): item is CommercialLineupItem {
+  return item.type === 'commercial';
+}
+
+export function isProgramLineupItem(
+  item: LineupItem,
+): item is ProgramLineupItem {
+  return item.type === 'program';
+}
+
+export function isPlexBackedLineupItem(
+  item: LineupItem,
+): item is CommercialLineupItem | ProgramLineupItem {
+  return isCommercialLineupItem(item) || isProgramLineupItem(item);
+}
 
 type OfflineLineupItem = BaseLineupItem & {
   type: 'offline';

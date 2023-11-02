@@ -117,5 +117,5 @@ miscRouter.get('/api/plex', async (req, res) => {
   }
 
   const plex = new Plex(server);
-  return res.json(await plex.Get(req.query['path']));
+  return res.json(await plex.Get(req.query['path'] as string));
 });

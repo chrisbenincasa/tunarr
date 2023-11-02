@@ -1,14 +1,19 @@
-import axios from 'axios';
 import fs from 'fs';
-import { isUndefined } from 'lodash-es';
+import { isPlainObject, isUndefined } from 'lodash-es';
 import { v4 as uuidv4 } from 'uuid';
 import { serverOptions } from './globals.js';
 import { PlexServerSettings, PlexStreamSettings } from './dao/db.js';
 import { DeepReadonly } from 'ts-essentials';
+import { Maybe } from './types.js';
+import { Plex } from './plex.js';
+import createLogger from './logger.js';
+import { inspect } from 'util';
+
+const logger = createLogger(import.meta);
 
 type PlexStream = {
   directPlay: boolean;
-  streamUrl?: string;
+  streamUrl: string;
   separateVideoStream?: string;
   streamStats?: any;
 };
@@ -29,6 +34,7 @@ type VideoStats = {
   audioChannels?: number;
   audioCodec?: string;
   placeholderImage?: string;
+  audioIndex?: string;
 };
 
 export class PlexTranscoder {
@@ -55,8 +61,9 @@ export class PlexTranscoder {
   private playState: string;
   private mediaHasNoVideo: boolean;
   private albumArt: any;
-  //   private directInfo?: any;
-  //   private videoIsDirect: boolean = false;
+  private plex: Plex;
+  private directInfo?: any;
+  private videoIsDirect: boolean = false;
 
   constructor(
     clientId: string,
@@ -78,7 +85,8 @@ export class PlexTranscoder {
     this.log('Debug logging enabled');
 
     this.key = lineupItem.key;
-    this.metadataPath = `${server.uri}${lineupItem.key}?X-Plex-Token=${server.accessToken}`;
+    this.plex = new Plex(server);
+    this.metadataPath = `/${lineupItem.key}?X-Plex-Token=${server.accessToken}`;
     this.plexFile = `${server.uri}${lineupItem.plexFile}?X-Plex-Token=${server.accessToken}`;
     if (typeof lineupItem.file !== 'undefined') {
       this.file = lineupItem.file.replace(
@@ -106,14 +114,17 @@ export class PlexTranscoder {
     };
   }
 
-  async getStream(deinterlace: boolean) {
-    let stream: PlexStream = { directPlay: false };
+  async getStream(deinterlace: boolean): Promise<PlexStream> {
+    // let stream: PlexStream = { directPlay: false };
+    let directPlay: boolean = false;
+    let streamUrl: string;
+    let separateVideoStream: Maybe<string>;
 
     this.log('Getting stream');
     this.log(`  deinterlace:     ${deinterlace}`);
     this.log(`  streamPath:      ${this.settings.streamPath}`);
 
-    this.setTranscodingArgs(stream.directPlay, true, false, false);
+    this.setTranscodingArgs(directPlay, true, false, false);
     await this.tryToDetectAudioOnly();
 
     if (
@@ -124,46 +135,42 @@ export class PlexTranscoder {
         this.log('Direct play is forced, so subtitles are forcibly disabled.');
         this.settings = { ...this.settings, enableSubtitles: false };
       }
-      stream = { directPlay: true };
+      directPlay = true;
+      // stream = { directPlay: true };
     } else {
       try {
         this.log('Setting transcoding parameters');
         this.setTranscodingArgs(
-          stream.directPlay,
+          directPlay,
           true,
           deinterlace,
           this.mediaHasNoVideo,
         );
-        await this.getDecision(stream.directPlay);
+        await this.getDecision(directPlay);
         if (this.isDirectPlay()) {
-          stream.directPlay = true;
-          stream.streamUrl = this.plexFile;
+          directPlay = true;
+          streamUrl = this.plexFile;
         }
       } catch (err) {
         console.error(
           "Error when getting decision. 1. Check Plex connection. 2. This might also be a sign that plex direct play and transcode settings are too strict and it can't find any allowed action for the selected video.",
           err,
         );
-        stream.directPlay = true;
+        directPlay = true;
       }
     }
-    if (stream.directPlay || this.isAV1()) {
-      if (!stream.directPlay) {
+    if (directPlay || this.isAV1()) {
+      if (!directPlay) {
         this.log(
           "Plex doesn't support av1, so we are forcing direct play, including for audio because otherwise plex breaks the stream.",
         );
       }
       this.log('Direct play forced or native paths enabled');
-      stream.directPlay = true;
-      this.setTranscodingArgs(
-        stream.directPlay,
-        true,
-        false,
-        this.mediaHasNoVideo,
-      );
+      directPlay = true;
+      this.setTranscodingArgs(directPlay, true, false, this.mediaHasNoVideo);
       // Update transcode decision for session
-      await this.getDecision(stream.directPlay);
-      stream.streamUrl =
+      await this.getDecision(directPlay);
+      streamUrl =
         this.settings.streamPath === 'direct' ? this.file : this.plexFile;
       if (this.settings.streamPath === 'direct') {
         fs.access(this.file, fs.constants.F_OK, (err) => {
@@ -173,7 +180,7 @@ export class PlexTranscoder {
           }
         });
       }
-      if (typeof stream.streamUrl == 'undefined') {
+      if (isUndefined(streamUrl)) {
         throw Error(
           'Direct path playback is not possible for this program because it was registered at a time when the direct path settings were not set. To fix this, you must either revert the direct path setting or rebuild this channel.',
         );
@@ -182,36 +189,47 @@ export class PlexTranscoder {
       this.log('Decision: Should transcode');
       // Change transcoding arguments to be the user chosen transcode parameters
       this.setTranscodingArgs(
-        stream.directPlay,
+        directPlay,
         false,
         deinterlace,
         this.mediaHasNoVideo,
       );
       // Update transcode decision for session
-      await this.getDecision(stream.directPlay);
-      stream.streamUrl = `${this.transcodeUrlBase}${this.transcodingArgs}`;
+      await this.getDecision(directPlay);
+      streamUrl = `${this.transcodeUrlBase}${this.transcodingArgs}`;
     } else {
       //This case sounds complex. Apparently plex is sending us just the audio, so we would need to get the video in a separate stream.
       this.log('Decision: Direct stream. Audio is being transcoded');
-      stream.separateVideoStream =
+      separateVideoStream =
         this.settings.streamPath === 'direct' ? this.file : this.plexFile;
-      stream.streamUrl = `${this.transcodeUrlBase}${this.transcodingArgs}`;
-      await this.getDirectInfo();
-      //   this.videoIsDirect = true;
+      streamUrl = `${this.transcodeUrlBase}${this.transcodingArgs}`;
+      this.directInfo = await this.getDirectInfo();
+      this.videoIsDirect = true;
     }
-    stream.streamStats = this.getVideoStats();
+
+    let streamStats = this.getVideoStats();
 
     // use correct audio stream if direct play
-    stream.streamStats.audioIndex = stream.directPlay
-      ? await this.getAudioIndex()
-      : 'a';
+    streamStats.audioIndex = directPlay ? await this.getAudioIndex() : 'a';
+
+    const stream: PlexStream = {
+      directPlay,
+      streamUrl,
+      separateVideoStream,
+      streamStats,
+    };
 
     this.log(stream);
 
     return stream;
   }
 
-  setTranscodingArgs(directPlay, directStream, deinterlace, audioOnly) {
+  setTranscodingArgs(
+    directPlay: boolean,
+    directStream: boolean,
+    deinterlace: boolean,
+    audioOnly: boolean,
+  ) {
     let resolution = directStream
       ? this.settings.maxPlayableResolution
       : this.settings.maxTranscodeResolution;
@@ -346,58 +364,55 @@ lang=en`;
   getVideoStats() {
     let ret: VideoStats = {};
     try {
-      let streams =
-        this.decisionJson.MediaContainer.Metadata[0].Media[0].Part[0].Stream;
+      let streams: any[] =
+        this.decisionJson.Metadata[0].Media[0].Part[0].Stream;
       ret.duration = parseFloat(
-        this.decisionJson.MediaContainer.Metadata[0].Media[0].Part[0].duration,
+        this.decisionJson.Metadata[0].Media[0].Part[0].duration,
       );
-      streams.forEach(
-        function (_stream, $index) {
-          // Video
-          let stream = _stream;
-          if (stream['streamType'] == '1') {
-            if (
-              this.videoIsDirect === true &&
-              typeof this.directInfo !== 'undefined'
-            ) {
-              stream =
-                this.directInfo.MediaContainer.Metadata[0].Media[0].Part[0]
-                  .Stream[$index];
-            }
-            ret.anamorphic =
-              stream.anamorphic === '1' || stream.anamorphic === true;
-            if (ret.anamorphic) {
-              let parsed = parsePixelAspectRatio(stream.pixelAspectRatio);
-              if (isNaN(parsed.p) || isNaN(parsed.q)) {
-                throw Error('isNaN');
-              }
-              ret.pixelP = parsed.p;
-              ret.pixelQ = parsed.q;
-            } else {
-              ret.pixelP = 1;
-              ret.pixelQ = 1;
-            }
-            ret.videoCodec = stream.codec;
-            ret.videoWidth = stream.width;
-            ret.videoHeight = stream.height;
-            ret.videoFramerate = Math.round(stream['frameRate']);
-            // Rounding framerate avoids scenarios where
-            // 29.9999999 & 30 don't match.
-            ret.videoDecision = isUndefined(stream.decision)
-              ? 'copy'
-              : stream.decision;
-            ret.videoScanType = stream.scanType;
+      streams.forEach((_stream, $index) => {
+        // Video
+        let stream = _stream;
+        if (stream['streamType'] == '1') {
+          if (
+            this.videoIsDirect === true &&
+            typeof this.directInfo !== 'undefined'
+          ) {
+            stream =
+              this.directInfo.Metadata[0].Media[0].Part[0].Stream[$index];
           }
-          // Audio. Only look at stream being used
-          if (stream['streamType'] == '2' && stream['selected'] == '1') {
-            ret.audioChannels = stream['channels'];
-            ret.audioCodec = stream['codec'];
-            ret.audioDecision = isUndefined(stream.decision)
-              ? 'copy'
-              : stream.decision;
+          ret.anamorphic =
+            stream.anamorphic === '1' || stream.anamorphic === true;
+          if (ret.anamorphic) {
+            let parsed = parsePixelAspectRatio(stream.pixelAspectRatio);
+            if (isNaN(parsed.p) || isNaN(parsed.q)) {
+              throw Error('isNaN');
+            }
+            ret.pixelP = parsed.p;
+            ret.pixelQ = parsed.q;
+          } else {
+            ret.pixelP = 1;
+            ret.pixelQ = 1;
           }
-        }.bind(this),
-      );
+          ret.videoCodec = stream.codec;
+          ret.videoWidth = stream.width;
+          ret.videoHeight = stream.height;
+          ret.videoFramerate = Math.round(stream['frameRate']);
+          // Rounding framerate avoids scenarios where
+          // 29.9999999 & 30 don't match.
+          ret.videoDecision = isUndefined(stream.decision)
+            ? 'copy'
+            : stream.decision;
+          ret.videoScanType = stream.scanType;
+        }
+        // Audio. Only look at stream being used
+        if (stream['streamType'] == '2' && stream['selected'] == '1') {
+          ret.audioChannels = stream['channels'];
+          ret.audioCodec = stream['codec'];
+          ret.audioDecision = isUndefined(stream.decision)
+            ? 'copy'
+            : stream.decision;
+        }
+      });
     } catch (e) {
       console.error('Error at decision:', e);
     }
@@ -419,33 +434,20 @@ lang=en`;
 
   async getAudioIndex() {
     let index = 'a';
+    const response = await this.plex.Get(this.key);
+    this.log(response);
+    try {
+      let streams = response.Metadata[0].Media[0].Part[0].Stream;
 
-    await axios
-      .get(
-        `${this.server.uri}${this.key}?X-Plex-Token=${this.server.accessToken}`,
-        {
-          headers: { Accept: 'application/json' },
-        },
-      )
-      .then((res) => {
-        this.log(res.data);
-        try {
-          let streams =
-            res.data.MediaContainer.Metadata[0].Media[0].Part[0].Stream;
-
-          streams.forEach(function (stream) {
-            // Audio. Only look at stream being used
-            if (stream['streamType'] == '2' && stream['selected'] == '1') {
-              index = stream.index;
-            }
-          });
-        } catch (e) {
-          console.error('Error at get media info:' + e);
+      streams.forEach(function (stream) {
+        // Audio. Only look at stream being used
+        if (stream['streamType'] == '2' && stream['selected'] == '1') {
+          index = stream.index;
         }
-      })
-      .catch((err) => {
-        console.error('Error getting audio index', err);
       });
+    } catch (e) {
+      console.error('Error at get media info:' + e);
+    }
 
     this.log(`Found audio index: ${index}`);
 
@@ -453,49 +455,44 @@ lang=en`;
   }
 
   async getDirectInfo() {
-    return (await axios.get(this.metadataPath)).data;
+    return this.plex.Get(this.metadataPath);
+    // return (await axios.get(this.metadataPath)).data;
   }
 
-  async getDecisionUnmanaged(directPlay) {
-    let url = `${this.server.uri}/video/:/transcode/universal/decision?${this.transcodingArgs}`;
-    let res = await axios.get(url, {
-      headers: { Accept: 'application/json' },
-    });
-    this.decisionJson = res.data;
+  async getDecisionUnmanaged(directPlay: boolean) {
+    const response = await this.plex.Get(
+      `/video/:/transcode/universal/decision?${this.transcodingArgs}`,
+    );
+    this.decisionJson = { ...response };
 
     this.log('Received transcode decision:');
-    this.log(res.data);
+    this.log(response);
 
     // Print error message if transcode not possible
     // TODO: handle failure better
-    if (res.data.MediaContainer.mdeDecisionCode === 1000) {
+    if (response.mdeDecisionCode === 1000) {
       this.log("mde decision code 1000, so it's all right?");
       return;
     }
 
-    let transcodeDecisionCode = res.data.MediaContainer.transcodeDecisionCode;
+    let transcodeDecisionCode = response.transcodeDecisionCode;
     if (isUndefined(transcodeDecisionCode)) {
-      this.decisionJson.MediaContainer.transcodeDecisionCode = 'novideo';
+      this.decisionJson.transcodeDecisionCode = 'novideo';
       this.log('Strange case, attempt direct play');
     } else if (!(directPlay || transcodeDecisionCode == '1001')) {
       this.log(
         `IMPORTANT: Recieved transcode decision code ${transcodeDecisionCode}! Expected code 1001.`,
       );
-      this.log(
-        `Error message: '${res.data.MediaContainer.transcodeDecisionText}'`,
-      );
+      this.log(`Error message: '${response.transcodeDecisionText}'`);
     }
   }
 
   async tryToDetectAudioOnly() {
     try {
       this.log('Try to detect audio only:');
-      let url = `${this.server.uri}${this.key}?${this.transcodingArgs}`;
-      let res = await axios.get(url, {
-        headers: { Accept: 'application/json' },
-      });
-
-      let mediaContainer = res.data.MediaContainer;
+      const mediaContainer = await this.plex.Get(
+        `${this.key}?${this.transcodingArgs}`,
+      );
       let metadata = getOneOrUndefined(mediaContainer, 'Metadata');
       if (typeof metadata !== 'undefined') {
         this.albumArt.path = `${this.server.uri}${metadata.thumb}?X-Plex-Token=${this.server.accessToken}`;
@@ -527,7 +524,7 @@ lang=en`;
     let containerKey = `/video/:/transcode/universal/decision?${this.transcodingArgs}`;
     let containerKey_enc = encodeURIComponent(containerKey);
 
-    let statusUrl = `${this.server.uri}/:/timeline?\
+    return `/:/timeline?\
 containerKey=${containerKey_enc}&\
 ratingKey=${this.ratingKey}&\
 state=${this.playState}&\
@@ -543,8 +540,6 @@ X-Plex-Device=${this.device}&\
 X-Plex-Client-Identifier=${this.clientIdentifier}&\
 X-Plex-Platform=${profileName}&\
 X-Plex-Token=${this.server.accessToken}`;
-
-    return statusUrl;
   }
 
   startUpdatingPlex() {
@@ -570,7 +565,7 @@ X-Plex-Token=${this.server.accessToken}`;
     this.log('Updating plex status');
     const statusUrl = this.getStatusUrl();
     try {
-      axios.post(statusUrl);
+      this.plex.Post(statusUrl);
     } catch (error) {
       this.log(`Problem updating Plex status using status URL ${statusUrl}:`);
       this.log(error);
@@ -584,9 +579,10 @@ X-Plex-Token=${this.server.accessToken}`;
     return true;
   }
 
-  log(message) {
+  log(message: any) {
     if (this.settings.enableDebugLogging) {
-      console.log(message);
+      const msg = isPlainObject(message) ? inspect(message) : message;
+      logger.info(msg);
     }
   }
 }

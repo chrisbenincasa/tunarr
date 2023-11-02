@@ -1,17 +1,17 @@
 import express, { Request, Response } from 'express';
 import fs from 'fs';
-import { functions, isUndefined } from 'lodash-es';
+import { isUndefined } from 'lodash-es';
 import constants from './constants.js';
+import { ImmutableChannel, offlineProgram } from './dao/db.js';
 import { FFMPEG } from './ffmpeg.js';
 import { FFMPEG_TEXT } from './ffmpegText.js';
 import { serverOptions } from './globals.js';
 import * as helperFuncs from './helperFuncs.js';
-import { ProgramPlayer } from './program-player.js';
-import { wereThereTooManyAttempts } from './throttler.js';
-import { serverContext } from './server-context.js';
-import { LineupItem, Maybe, PlayerContext } from './types.js';
-import { ImmutableChannel, offlineProgram } from './dao/db.js';
 import createLogger from './logger.js';
+import { ProgramPlayer } from './program-player.js';
+import { serverContext } from './server-context.js';
+import { wereThereTooManyAttempts } from './throttler.js';
+import { LineupItem, Maybe, PlayerContext } from './types.js';
 
 const logger = createLogger(import.meta);
 
@@ -223,7 +223,7 @@ export function video(fillerDB) {
         duration: 40,
         start: 0,
       };
-    } else if (lineupItem == null) {
+    } else if (isUndefined(lineupItem)) {
       prog = helperFuncs.getCurrentProgramAndTimeElapsed(t0, channel);
 
       while (true) {
@@ -265,15 +265,15 @@ export function video(fillerDB) {
           newChannel.number,
           t0,
         );
-        if (lineupItem != null) {
-          lineupItem = JSON.parse(JSON.stringify(lineupItem));
+        if (!isUndefined(lineupItem)) {
+          lineupItem = { ...lineupItem }; // Not perfect, but better than the stringify hack
           break;
         } else {
           prog = helperFuncs.getCurrentProgramAndTimeElapsed(t0, newChannel);
         }
       }
     }
-    if (lineupItem == null) {
+    if (isUndefined(lineupItem)) {
       if (prog == null) {
         res.status(500).send('server error');
         throw Error("Shouldn't prog be non-null?");
@@ -324,7 +324,7 @@ export function video(fillerDB) {
       lineupItem = lineup.shift();
     }
 
-    if (!isLoading && lineupItem != null) {
+    if (!isLoading && !isUndefined(lineupItem)) {
       let upperBound = 1000000000;
       let beginningOffset = 0;
       if (!isUndefined(lineupItem?.beginningOffset)) {
@@ -387,7 +387,7 @@ export function video(fillerDB) {
     };
 
     let playerContext: PlayerContext = {
-      lineupItem: lineupItem,
+      lineupItem: lineupItem!,
       ffmpegSettings: ffmpegSettings,
       channel: combinedChannel,
       m3u8: m3u8,
@@ -424,7 +424,6 @@ export function video(fillerDB) {
     }
 
     let stream = playerObj;
-    console.log('stream is', stream, functions(stream));
 
     // res.write(playerObj.data);
 

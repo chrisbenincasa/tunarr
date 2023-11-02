@@ -1,10 +1,17 @@
-import request from 'request';
+import axios, {
+  AxiosInstance,
+  AxiosRequestConfig,
+  RawAxiosRequestHeaders,
+  isAxiosError,
+} from 'axios';
 import { isUndefined } from 'lodash-es';
+import querystring from 'querystring';
 import { PlexServerSettings } from './dao/db.js';
 import createLogger from './logger.js';
 
 const logger = createLogger(import.meta);
 export class Plex {
+  private axiosInstance: AxiosInstance;
   private _accessToken: string;
   private _server: any;
   private _headers: object;
@@ -31,122 +38,135 @@ export class Plex {
       'X-Plex-Client-Identifier': 'rg14zekk3pa5zp4safjwaa8z',
       'X-Plex-Platform': 'Chrome',
       'X-Plex-Platform-Version': '80.0',
+      'X-Plex-Token': this._accessToken,
     };
+
+    this.axiosInstance = axios.create({
+      baseURL: uri,
+      headers: this._headers,
+    });
+
+    this.axiosInstance.interceptors.request.use((req) => {
+      const query = req.params ? `?${querystring.stringify(req.params)}` : '';
+      logger.debug(
+        `[Axios Request]: ${req.method?.toUpperCase()} ${req.baseURL}${
+          req.url
+        }${query}`,
+      );
+      return req;
+    });
   }
 
   get URL() {
     return `${this._server.uri}`;
   }
 
-  SignIn(username, password) {
-    return new Promise((resolve, reject) => {
-      if (isUndefined(username === 'undefined' || typeof password))
-        reject(
-          "Plex 'SignIn' Error - No Username or Password was provided to sign in.",
-        );
-      var req = {
-        method: 'post',
-        url: 'https://plex.tv/users/sign_in.json',
-        headers: this._headers,
-        form: {
-          user: {
-            login: username,
-            password: password,
-          },
-        },
-        jar: false,
-      };
-      request(req, (err, res, body) => {
-        if (err || res.statusCode !== 201)
-          reject(
-            "Plex 'SignIn' Error - Username/Email and Password is incorrect!.",
-          );
-        else {
-          this._accessToken = JSON.parse(body).user.authToken;
-          resolve({ accessToken: this._accessToken });
-        }
-      });
-    });
-  }
-
-  doRequest(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      request(req, (err, res) => {
-        if (err) {
-          reject(err);
-        } else if (res.statusCode < 200 || res.statusCode >= 300) {
-          reject(Error(`Request returned status code ${res.statusCode}`));
-        } else {
-          resolve(res);
-        }
-      });
-    });
-  }
-
-  async Get(path, optionalHeaders = {}) {
-    let req = {
-      method: 'get',
-      url: `${this.URL}${path}`,
-      headers: this._headers,
-      jar: false,
+  async SignIn(username: string, password: string) {
+    if (isUndefined(username === 'undefined' || typeof password))
+      throw new Error(
+        "Plex 'SignIn' Error - No Username or Password was provided to sign in.",
+      );
+    const req: AxiosRequestConfig = {
+      method: 'post',
+      url: 'https://plex.tv/users/sign_in.json',
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded',
+      },
+      data: querystring.stringify({
+        'user.login': username,
+        'user.password': password,
+      }),
     };
-    Object.assign(req, optionalHeaders);
-    req.headers['X-Plex-Token'] = this._accessToken;
+
+    const res = await axios.request(req);
+    this._accessToken = res.data.user.authToken;
+    return this._accessToken;
+  }
+
+  private async doRequest(req: AxiosRequestConfig): Promise<any> {
+    try {
+      const response = await this.axiosInstance.request(req);
+      return response.data;
+    } catch (error) {
+      if (isAxiosError(error)) {
+        if (error.response?.status === 404) {
+          logger.warn(
+            `Not found: ${this.axiosInstance.defaults.baseURL}${req.url}`,
+          );
+        }
+        if (error.response) {
+          // The request was made and the server responded with a status code
+          // that falls out of the range of 2xx
+          logger.warn(error.response?.data);
+          logger.warn(error.response?.status);
+          logger.warn(error.response?.headers);
+        } else if (error.request) {
+          logger.error('Error requesting Plex', error.request, error);
+        } else {
+          logger.error('Error requesting Plex', error);
+        }
+      }
+    }
+  }
+
+  async Get(path: string, optionalHeaders: RawAxiosRequestHeaders = {}) {
+    const req: AxiosRequestConfig = {
+      method: 'get',
+      url: path,
+      headers: optionalHeaders,
+    };
+
     if (this._accessToken === '') {
       throw Error(
         'No Plex token provided. Please use the SignIn method or provide a X-Plex-Token in the Plex constructor.',
       );
-    } else {
-      let res = await this.doRequest(req);
-      return JSON.parse(res.body).MediaContainer;
     }
+
+    let res = await this.doRequest(req);
+    return res.MediaContainer;
   }
-  async Put(path, query = {}, optionalHeaders = {}) {
-    var req = {
+  Put(
+    path: string,
+    query: any = {},
+    optionalHeaders: RawAxiosRequestHeaders = {},
+  ) {
+    const req: AxiosRequestConfig = {
       method: 'put',
-      url: `${this.URL}${path}`,
-      headers: this._headers,
-      qs: query,
-      jar: false,
+      url: path,
+      params: query,
+      headers: optionalHeaders,
     };
-    Object.assign(req, optionalHeaders);
-    req.headers['X-Plex-Token'] = this._accessToken;
-    await new Promise((resolve, reject) => {
-      if (this._accessToken === '')
-        reject(
-          'No Plex token provided. Please use the SignIn method or provide a X-Plex-Token in the Plex constructor.',
-        );
-      else
-        request(req, (err, res) => {
-          if (err || res.statusCode !== 200)
-            reject(`Plex 'Put' request failed. URL: ${this.URL}${path}`);
-          else resolve(res.body);
-        });
-    });
+
+    if (this._accessToken === '') {
+      throw Error(
+        'No Plex token provided. Please use the SignIn method or provide a X-Plex-Token in the Plex constructor.',
+      );
+    }
+
+    return this.doRequest(req);
   }
-  Post(path: string, query = {}, optionalHeaders = {}) {
-    var req = {
+
+  Post(
+    path: string,
+    query: any = {},
+    optionalHeaders: RawAxiosRequestHeaders = {},
+  ) {
+    var req: AxiosRequestConfig = {
       method: 'post',
-      url: `${this.URL}${path}`,
-      headers: this._headers,
-      qs: query,
-      jar: false,
+      url: path,
+      headers: optionalHeaders,
+      params: query,
     };
-    Object.assign(req, optionalHeaders);
-    req.headers['X-Plex-Token'] = this._accessToken;
-    return new Promise((resolve, reject) => {
-      if (this._accessToken === '')
-        reject(
-          'No Plex token provided. Please use the SignIn method or provide a X-Plex-Token in the Plex constructor.',
-        );
-      else
-        request(req, (err, res) => {
-          if (err || res.statusCode !== 200)
-            reject(`Plex 'Post' request failed. URL: ${this.URL}${path}`);
-          else resolve(res.body);
-        });
-    });
+
+    if (this._accessToken === '') {
+      throw Error(
+        'No Plex token provided. Please use the SignIn method or provide a X-Plex-Token in the Plex constructor.',
+      );
+    }
+
+    return this.doRequest(req);
   }
+
   async checkServerStatus() {
     try {
       await this.Get('/');
@@ -156,6 +176,7 @@ export class Plex {
       return -1;
     }
   }
+
   async GetDVRS() {
     try {
       var result = await this.Get('/livetv/dvrs');
@@ -167,6 +188,7 @@ export class Plex {
       throw err;
     }
   }
+
   async RefreshGuide(_dvrs) {
     try {
       var dvrs = typeof _dvrs !== 'undefined' ? _dvrs : await this.GetDVRS();
@@ -177,6 +199,7 @@ export class Plex {
       throw Error('Zort', err);
     }
   }
+
   async RefreshChannels(channels, _dvrs) {
     var dvrs = typeof _dvrs !== 'undefined' ? _dvrs : await this.GetDVRS();
     var _channels: any[] = [];

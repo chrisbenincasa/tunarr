@@ -1,10 +1,11 @@
-import { createWriteStream, promises as fs } from 'fs';
+import axios, { AxiosRequestConfig } from 'axios';
 import express from 'express';
-import request from 'request';
-import { FileCacheService } from './file-cache-service.js';
+import { createWriteStream, promises as fs } from 'fs';
+import { isString, isUndefined } from 'lodash-es';
+import stream from 'stream';
 import { CachedImage, DbAccess } from '../dao/db.js';
-import { isUndefined } from 'lodash-es';
 import createLogger from '../logger.js';
+import { FileCacheService } from './file-cache-service.js';
 
 const logger = createLogger(import.meta);
 
@@ -84,33 +85,32 @@ export class CacheImageService {
   async requestImageAndStore(
     cachedImage: CachedImage,
   ): Promise<string | undefined> {
-    return new Promise(async (resolve, reject) => {
-      const requestConfiguration = {
-        method: 'get',
-        url: cachedImage.url,
-      };
+    const requestConfiguration: AxiosRequestConfig = {
+      method: 'get',
+      url: cachedImage.url,
+      responseType: 'stream',
+    };
 
-      logger.debug('Requesting original image file for caching');
-      request(requestConfiguration, async (err, res) => {
-        if (err) {
-          reject(err);
-        } else {
-          const mimeType = res.headers['content-type'];
-          logger.debug('Got image file with mimeType ' + mimeType);
-          await this.dbAccess
-            .cachedImages()
-            .insertOrUpdate({ ...cachedImage, mimeType });
-          request(requestConfiguration)
-            .pipe(
-              createWriteStream(
-                `${this.cacheService.cachePath}/${this.imageCacheFolder}/${cachedImage.hash}`,
-              ),
-            )
-            .on('close', () => {
-              resolve(mimeType);
-            });
-        }
-      });
+    logger.debug('Requesting original image file for caching');
+
+    const response = await axios.request<stream.Readable>(requestConfiguration);
+    const mimeType = response.headers['Content-Type'];
+    if (!isUndefined(mimeType) && isString(mimeType)) {
+      logger.debug('Got image file with mimeType ' + mimeType);
+      await this.dbAccess
+        .cachedImages()
+        .insertOrUpdate({ ...cachedImage, mimeType });
+    }
+
+    return new Promise((resolve, reject) => {
+      response.data
+        .pipe(
+          createWriteStream(
+            `${this.cacheService.cachePath}/${this.imageCacheFolder}/${cachedImage.hash}`,
+          ),
+        )
+        .on('close', () => resolve(mimeType as string))
+        .on('error', reject);
     });
   }
 

@@ -23,13 +23,13 @@ export class FFMPEG extends events.EventEmitter {
 
   private wantedW: number;
   private wantedH: number;
-  private sentData: boolean;
+  private sentData: boolean = false;
   private apad: boolean;
   private audioChannelsSampleRate: any;
   private ensureResolution: any;
   private volumePercent: any;
-  private hasBeenKilled: any;
-  private audioOnly: boolean;
+  private hasBeenKilled: boolean = false;
+  private audioOnly: boolean = false;
   private alignAudio: boolean;
 
   private ffmpeg: ChildProcessByStdio<null, Readable, null>;
@@ -86,17 +86,16 @@ export class FFMPEG extends events.EventEmitter {
     this.wantedW = targetResolution.widthPx;
     this.wantedH = targetResolution.heightPx;
 
-    this.sentData = false;
     this.apad = this.opts.normalizeAudio;
     this.audioChannelsSampleRate = this.opts.normalizeAudio;
     this.ensureResolution = this.opts.normalizeResolution;
     this.volumePercent = this.opts.audioVolumePercent;
-    this.hasBeenKilled = false;
-    this.audioOnly = false;
   }
+
   setAudioOnly(audioOnly: boolean) {
     this.audioOnly = audioOnly;
   }
+
   async spawnConcat(streamUrl: string) {
     return await this.spawn(
       streamUrl,
@@ -109,8 +108,9 @@ export class FFMPEG extends events.EventEmitter {
       true,
     );
   }
+
   async spawnStream(
-    streamUrl,
+    streamUrl: string,
     streamStats,
     startTime,
     duration,
