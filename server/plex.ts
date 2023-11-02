@@ -84,7 +84,6 @@ export class Plex {
   }
 
   async Get(path, optionalHeaders = {}) {
-    console.log(path);
     let req = {
       method: 'get',
       url: `${this.URL}${path}`,
@@ -125,7 +124,7 @@ export class Plex {
         });
     });
   }
-  Post(path, query = {}, optionalHeaders = {}) {
+  Post(path: string, query = {}, optionalHeaders = {}) {
     var req = {
       method: 'post',
       url: `${this.URL}${path}`,

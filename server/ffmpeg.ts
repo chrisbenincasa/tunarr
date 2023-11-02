@@ -59,35 +59,27 @@ export class FFMPEG extends events.EventEmitter {
     this.ffmpegPath = opts.ffmpegExecutablePath;
 
     let targetResolution = opts.targetResolution;
-    if (
-      typeof channel.transcoding !== 'undefined' &&
-      channel.transcoding.targetResolution != null &&
-      typeof channel.transcoding.targetResolution != 'undefined'
-    ) {
-      targetResolution = channel.transcoding.targetResolution;
+    if (!isUndefined(channel.transcoding?.targetResolution)) {
+      targetResolution = channel.transcoding!.targetResolution;
     }
 
     if (
-      !isUndefined(channel.transcoding) &&
-      !isUndefined(channel.transcoding.videoBitrate) &&
-      !isUndefined(channel.transcoding.videoBitrate) &&
-      channel.transcoding.videoBitrate !== 0
+      !isUndefined(channel.transcoding?.videoBitrate) &&
+      channel.transcoding!.videoBitrate !== 0
     ) {
       this.opts = {
         ...this.opts,
-        videoBitrate: channel.transcoding.videoBitrate,
+        videoBitrate: channel.transcoding!.videoBitrate,
       };
     }
 
     if (
-      typeof channel.transcoding !== 'undefined' &&
-      channel.transcoding.videoBufferSize != null &&
-      typeof channel.transcoding.videoBufferSize != 'undefined' &&
-      channel.transcoding.videoBufferSize != 0
+      !isUndefined(channel.transcoding?.videoBufferSize) &&
+      channel.transcoding!.videoBufferSize !== 0
     ) {
       this.opts = {
         ...this.opts,
-        videoBufferSize: channel.transcoding.videoBufferSize,
+        videoBufferSize: channel.transcoding!.videoBufferSize,
       };
     }
 
@@ -102,10 +94,10 @@ export class FFMPEG extends events.EventEmitter {
     this.hasBeenKilled = false;
     this.audioOnly = false;
   }
-  setAudioOnly(audioOnly) {
+  setAudioOnly(audioOnly: boolean) {
     this.audioOnly = audioOnly;
   }
-  async spawnConcat(streamUrl) {
+  async spawnConcat(streamUrl: string) {
     return await this.spawn(
       streamUrl,
       undefined,
