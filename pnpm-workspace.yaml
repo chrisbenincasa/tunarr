@@ -1,3 +1,4 @@
 packages:
   - "server/**"
   - "web/**"
+  - "web2/**"
