@@ -7,14 +7,20 @@
  **/
 import EventEmitter from 'events';
 import constants from './constants.js';
-import { FFMPEG } from './ffmpeg.js';
+import { FFMPEG, FfmpegEvents } from './ffmpeg.js';
 import { PlexTranscoder } from './plexTranscoder.js';
-import { PlayerContext, isPlexBackedLineupItem } from './types.js';
+import {
+  PlayerContext,
+  TypedEventEmitter,
+  isPlexBackedLineupItem,
+} from './types.js';
 import { isUndefined } from 'lodash-es';
+import { Player } from './player.js';
+import { Writable } from 'stream';
 
 let USED_CLIENTS = {};
 
-export class PlexPlayer {
+export class PlexPlayer extends Player {
   private context: PlayerContext;
   private ffmpeg: FFMPEG | null;
   private plexTranscoder: any;
@@ -22,6 +28,7 @@ export class PlexPlayer {
   private clientId: string;
 
   constructor(context: PlayerContext) {
+    super();
     this.context = context;
     this.ffmpeg = null;
     this.plexTranscoder = null;
@@ -36,6 +43,7 @@ export class PlexPlayer {
   }
 
   cleanUp() {
+    super.cleanUp();
     USED_CLIENTS[this.clientId] = false;
     this.killed = true;
     if (this.plexTranscoder != null) {
@@ -48,7 +56,7 @@ export class PlexPlayer {
     }
   }
 
-  async play(outStream) {
+  async play(outStream: Writable) {
     let lineupItem = this.context.lineupItem;
     if (!isPlexBackedLineupItem(lineupItem)) {
       throw new Error(
@@ -97,7 +105,7 @@ export class PlexPlayer {
 
       let stream = await plexTranscoder.getStream(deinterlace);
       if (this.killed) {
-        return null;
+        return;
       }
 
       //let streamStart = (stream.directPlay) ? plexTranscoder.currTimeS : undefined;
@@ -108,7 +116,7 @@ export class PlexPlayer {
       let streamStats = stream.streamStats;
       streamStats.duration = lineupItem.streamDuration;
 
-      let emitter = new EventEmitter();
+      let emitter = new EventEmitter() as TypedEventEmitter<FfmpegEvents>;
       //setTimeout( () => {
       let ff = await ffmpeg.spawnStream(
         stream.streamUrl,
@@ -135,7 +143,7 @@ export class PlexPlayer {
       ffmpeg.on('error', async (err) => {
         console.log('Replacing failed stream with error stream');
         ff!.unpipe(outStream);
-        ffmpeg.removeAllListeners('data');
+        // ffmpeg.removeAllListeners('data'); Type inference says this doesnt ever exist
         ffmpeg.removeAllListeners('end');
         ffmpeg.removeAllListeners('error');
         ffmpeg.removeAllListeners('close');

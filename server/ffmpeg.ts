@@ -1,11 +1,12 @@
 import child_process, { ChildProcessByStdio } from 'child_process';
 import events from 'events';
 import { isUndefined } from 'lodash-es';
+import { Readable } from 'stream';
 import { DeepReadonly } from 'ts-essentials';
-import { FfmpegSettings, ImmutableChannel } from './dao/db.js';
+import { FfmpegSettings, Watermark } from './dao/db.js';
 import { serverOptions } from './globals.js';
 import createLogger from './logger.js';
-import { Readable } from 'stream';
+import { ContextChannel, Maybe, TypedEventEmitter } from './types.js';
 
 const spawn = child_process.spawn;
 
@@ -14,7 +15,13 @@ const logger = createLogger(import.meta);
 const MAXIMUM_ERROR_DURATION_MS = 60000;
 const REALLY_RIDICULOUSLY_HIGH_FPS_FOR_DIZQUETVS_USECASE = 120;
 
-export class FFMPEG extends events.EventEmitter {
+export type FfmpegEvents = {
+  end: (obj?: { code: number; cmd: string }) => void;
+  error: (obj?: { code: number; cmd: string }) => void;
+  close: (code?: number) => void;
+};
+
+export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<FfmpegEvents>) {
   private opts: DeepReadonly<FfmpegSettings>;
   private errorPicturePath: string;
   private ffmpegName: string;
@@ -34,7 +41,7 @@ export class FFMPEG extends events.EventEmitter {
 
   private ffmpeg: ChildProcessByStdio<null, Readable, null>;
 
-  constructor(opts: DeepReadonly<FfmpegSettings>, channel: ImmutableChannel) {
+  constructor(opts: DeepReadonly<FfmpegSettings>, channel: ContextChannel) {
     super();
     this.opts = opts;
     this.errorPicturePath = `http://localhost:${
@@ -103,7 +110,7 @@ export class FFMPEG extends events.EventEmitter {
       undefined,
       undefined,
       true,
-      false,
+      /*watermark=*/ undefined,
       undefined,
       true,
     );
@@ -114,7 +121,7 @@ export class FFMPEG extends events.EventEmitter {
     streamStats,
     startTime,
     duration,
-    enableIcon,
+    enableIcon: Maybe<Watermark>,
     type,
   ) {
     return await this.spawn(
@@ -154,7 +161,7 @@ export class FFMPEG extends events.EventEmitter {
       undefined,
       `${streamStats.duration}ms`,
       true,
-      false,
+      /*watermark=*/ undefined,
       'error',
       false,
     );
@@ -179,7 +186,7 @@ export class FFMPEG extends events.EventEmitter {
       undefined,
       `${duration}ms`,
       true,
-      false,
+      undefined,
       'offline',
       false,
     );
@@ -191,7 +198,7 @@ export class FFMPEG extends events.EventEmitter {
     startTime,
     duration,
     limitRead,
-    watermark,
+    watermark: Maybe<Watermark>,
     _,
     isConcatPlaylist,
   ) {
@@ -242,7 +249,7 @@ export class FFMPEG extends events.EventEmitter {
       // When we have an individual stream, there is a pipeline of possible
       // filters to apply.
       //
-      var doOverlay = isUndefined(watermark) || watermark != null;
+      var doOverlay = !isUndefined(watermark);
       var iW = streamStats.videoWidth;
       var iH = streamStats.videoHeight;
 
@@ -388,10 +395,10 @@ export class FFMPEG extends events.EventEmitter {
         currentVideo = '[videox]';
       }
       if (doOverlay) {
-        if (watermark.animated === true) {
+        if (watermark?.animated) {
           ffmpegArgs.push('-ignore_loop', '0');
         }
-        ffmpegArgs.push(`-i`, `${watermark.url}`);
+        ffmpegArgs.push(`-i`, `${watermark!.url}`);
         overlayFile = inputFiles++;
         this.ensureResolution = true;
       }
@@ -461,10 +468,10 @@ export class FFMPEG extends events.EventEmitter {
 
       // Channel watermark:
       if (doOverlay && this.audioOnly !== true) {
-        var pW = watermark.width;
+        var pW = watermark!.width;
         var w = Math.round((pW * iW) / 100.0);
-        var mpHorz = watermark.horizontalMargin;
-        var mpVert = watermark.verticalMargin;
+        var mpHorz = watermark!.horizontalMargin;
+        var mpVert = watermark!.verticalMargin;
         var horz = Math.round((mpHorz * iW) / 100.0);
         var vert = Math.round((mpVert * iH) / 100.0);
 
@@ -475,20 +482,20 @@ export class FFMPEG extends events.EventEmitter {
           'bottom-right': `x=W-w-${horz}:y=H-h-${vert}`,
         };
         let icnDur = '';
-        if (watermark.duration > 0) {
-          icnDur = `:enable='between(t,0,${watermark.duration})'`;
+        if (watermark!.duration > 0) {
+          icnDur = `:enable='between(t,0,${watermark!.duration})'`;
         }
         let waterVideo = `[${overlayFile}:v]`;
-        if (!watermark.fixedSize) {
+        if (!watermark!.fixedSize) {
           videoComplex += `;${waterVideo}scale=${w}:-1[icn]`;
           waterVideo = '[icn]';
         }
-        let p = posAry[watermark.position];
+        let p = posAry[watermark!.position];
         if (isUndefined(p)) {
-          throw Error('Invalid watermark position: ' + watermark.position);
+          throw Error('Invalid watermark position: ' + watermark!.position);
         }
         let overlayShortest = '';
-        if (watermark.animated) {
+        if (watermark!.animated) {
           overlayShortest = 'shortest=1:';
         }
         videoComplex += `;${currentVideo}${waterVideo}overlay=${overlayShortest}${p}${icnDur}[comb]`;
@@ -673,7 +680,7 @@ export class FFMPEG extends events.EventEmitter {
         `${this.ffmpegName} received error event: ${code}, ${signal}`,
       );
     });
-    this.ffmpeg.on('exit', (code, signal) => {
+    this.ffmpeg.on('exit', (code: number, signal) => {
       if (code === null) {
         if (!this.hasBeenKilled) {
           logger.info(`${this.ffmpegName} exited due to signal: ${signal}`);

@@ -1,25 +1,26 @@
-import { isUndefined } from 'lodash-es';
+import { isUndefined, pick } from 'lodash-es';
 import * as randomJS from 'random-js';
 import constants from './constants.js';
 import { ChannelCache } from './channel-cache.js';
-import { ImmutableChannel, Program, offlineProgram } from './dao/db.js';
+import {
+  ChannelIcon,
+  FfmpegSettings,
+  ImmutableChannel,
+  Program,
+  Watermark,
+  offlineProgram,
+} from './dao/db.js';
 import { DeepReadonly } from 'ts-essentials';
-import { LineupItem } from './types.js';
+import {
+  CHANNEL_CONTEXT_KEYS,
+  ContextChannel,
+  LineupItem,
+  Maybe,
+} from './types.js';
 
 const SLACK = constants.SLACK;
 const Random = randomJS.Random;
 export const random = new Random(randomJS.MersenneTwister19937.autoSeed());
-
-const CHANNEL_CONTEXT_KEYS = [
-  'disableFillerOverlay',
-  'watermark',
-  'icon',
-  'offlinePicture',
-  'offlineSoundtrack',
-  'name',
-  'transcoding',
-  'number',
-];
 
 export type ProgramAndTimeElapsed = {
   program: DeepReadonly<Program> & { err?: Error };
@@ -316,58 +317,64 @@ function norm_s(x) {
 }
 
 // any channel thing used here should be added to channel context
-export function getWatermark(ffmpegSettings, channel, type) {
+export function getWatermark(
+  ffmpegSettings: FfmpegSettings,
+  channel: ContextChannel,
+  type: string,
+): Maybe<Watermark> {
   if (
-    !ffmpegSettings.enableFFMPEGTranscoding ||
+    !ffmpegSettings.enableTranscoding ||
     ffmpegSettings.disableChannelOverlay
   ) {
-    return null;
+    return;
   }
-  let d = channel.disableFillerOverlay;
-  if (isUndefined(d)) {
-    d = true;
+
+  let disableFillerOverlay = channel.disableFillerOverlay;
+  if (isUndefined(disableFillerOverlay)) {
+    disableFillerOverlay = true;
   }
-  if (typeof type !== `undefined` && type == 'commercial' && d) {
-    return null;
+
+  if (type == 'commercial' && disableFillerOverlay) {
+    return;
   }
-  let e = false;
-  let icon = undefined;
-  let watermark: any = {};
-  if (typeof channel.watermark !== 'undefined') {
-    watermark = channel.watermark;
-    e = watermark.enabled === true;
-    icon = watermark.url;
-  }
-  if (!e) {
-    return null;
-  }
-  if (isUndefined(icon) || icon === '') {
-    icon = channel.icon;
-    if (isUndefined(icon) || icon === '') {
-      return null;
+
+  let icon: Maybe<ChannelIcon>;
+  let watermark: Maybe<Watermark>;
+  if (!isUndefined(channel.watermark)) {
+    watermark = { ...channel.watermark };
+    if (!watermark.enabled) {
+      return;
     }
+
+    icon = watermark.url;
+    if (isUndefined(icon) || icon.path === '') {
+      icon = channel.icon;
+      if (isUndefined(icon) || icon.path === '') {
+        return;
+      }
+    }
+
+    return {
+      enabled: true,
+      url: icon,
+      width: watermark.width,
+      verticalMargin: watermark.verticalMargin,
+      horizontalMargin: watermark.horizontalMargin,
+      duration: watermark.duration,
+      position: watermark.position,
+      fixedSize: watermark.fixedSize === true,
+      animated: watermark.animated === true,
+    };
   }
-  let result = {
-    url: icon,
-    width: watermark.width,
-    verticalMargin: watermark.verticalMargin,
-    horizontalMargin: watermark.horizontalMargin,
-    duration: watermark.duration,
-    position: watermark.position,
-    fixedSize: watermark.fixedSize === true,
-    animated: watermark.animated === true,
-  };
-  return result;
+
+  return;
 }
 
-export function generateChannelContext(channel) {
-  let channelContext = {};
-  for (let i = 0; i < CHANNEL_CONTEXT_KEYS.length; i++) {
-    let key = CHANNEL_CONTEXT_KEYS[i];
-
-    if (typeof channel[key] !== 'undefined') {
-      channelContext[key] = JSON.parse(JSON.stringify(channel[key]));
-    }
-  }
-  return channelContext;
+export function generateChannelContext(
+  channel: ImmutableChannel,
+): ContextChannel {
+  return pick(
+    channel,
+    CHANNEL_CONTEXT_KEYS as ReadonlyArray<keyof ImmutableChannel>,
+  );
 }

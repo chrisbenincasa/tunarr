@@ -101,9 +101,9 @@ export class Plex {
           logger.warn(error.response?.status);
           logger.warn(error.response?.headers);
         } else if (error.request) {
-          logger.error('Error requesting Plex', error.request, error);
+          logger.error('Error requesting Plex ' + error.message);
         } else {
-          logger.error('Error requesting Plex', error);
+          logger.error('Error requesting Plex' + error.message);
         }
       }
     }
@@ -123,6 +123,9 @@ export class Plex {
     }
 
     let res = await this.doRequest(req);
+    if (!res.MediaContainer) {
+      console.error('Expected MediaContainer, got ' + JSON.stringify(res.data));
+    }
     return res.MediaContainer;
   }
   Put(

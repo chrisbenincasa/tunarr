@@ -224,6 +224,9 @@ async function migrateChannels(db: Low<Schema>) {
         width: parsed['watermark']['width'],
         verticalMargin: parsed['watermark']['verticalMargin'],
         horizontalMargin: parsed['watermark']['horizontalMargin'],
+        url: parsed['watermark']['url'],
+        animated: parsed['watermark']['animated'],
+        fixedSize: parsed['watermark']['fixedSize'],
       },
       stealth: parsed['stealth'],
       guideFlexPlaceholder: parsed['guideFlexPlaceholder'],
@@ -449,6 +452,9 @@ export async function migrateFromLegacyDb(db: Low<Schema>) {
           deinterlaceFilter: ffmpegSettings[
             'deinterlaceFilter'
           ] as (typeof defaultFfmpegSettings)['deinterlaceFilter'],
+          disableChannelOverlay: ffmpegSettings[
+            'disableChannelOverlay'
+          ] as (typeof defaultFfmpegSettings)['disableChannelOverlay'],
         },
         defaultFfmpegSettings,
       ),

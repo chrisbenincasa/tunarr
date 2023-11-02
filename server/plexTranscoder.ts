@@ -1,13 +1,13 @@
 import fs from 'fs';
 import { isPlainObject, isUndefined } from 'lodash-es';
-import { v4 as uuidv4 } from 'uuid';
-import { serverOptions } from './globals.js';
-import { PlexServerSettings, PlexStreamSettings } from './dao/db.js';
 import { DeepReadonly } from 'ts-essentials';
-import { Maybe } from './types.js';
-import { Plex } from './plex.js';
-import createLogger from './logger.js';
 import { inspect } from 'util';
+import { v4 as uuidv4 } from 'uuid';
+import { PlexServerSettings, PlexStreamSettings } from './dao/db.js';
+import { serverOptions } from './globals.js';
+import createLogger from './logger.js';
+import { Plex } from './plex.js';
+import { ContextChannel, Maybe, PlexBackedLineupItem } from './types.js';
 
 const logger = createLogger(import.meta);
 
@@ -45,7 +45,7 @@ export class PlexTranscoder {
   private product: string;
   private settings: DeepReadonly<PlexStreamSettings>;
   private key: any;
-  private metadataPath: string;
+  // private metadataPath: string;
   private plexFile: string;
   private file: any;
   private transcodeUrlBase: string;
@@ -69,8 +69,8 @@ export class PlexTranscoder {
     clientId: string,
     server: DeepReadonly<PlexServerSettings>,
     settings: DeepReadonly<PlexStreamSettings>,
-    channel,
-    lineupItem,
+    channel: ContextChannel,
+    lineupItem: PlexBackedLineupItem,
   ) {
     this.session = uuidv4();
 
@@ -86,9 +86,9 @@ export class PlexTranscoder {
 
     this.key = lineupItem.key;
     this.plex = new Plex(server);
-    this.metadataPath = `/${lineupItem.key}?X-Plex-Token=${server.accessToken}`;
+    // this.metadataPath = `${lineupItem.key}?X-Plex-Token=${server.accessToken}`;
     this.plexFile = `${server.uri}${lineupItem.plexFile}?X-Plex-Token=${server.accessToken}`;
-    if (typeof lineupItem.file !== 'undefined') {
+    if (!isUndefined(lineupItem.file)) {
       this.file = lineupItem.file.replace(
         settings.pathReplace,
         settings.pathReplaceWith,
@@ -455,7 +455,7 @@ lang=en`;
   }
 
   async getDirectInfo() {
-    return this.plex.Get(this.metadataPath);
+    return this.plex.Get(this.key);
     // return (await axios.get(this.metadataPath)).data;
   }
 

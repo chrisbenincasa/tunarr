@@ -61,6 +61,7 @@
     "ts-node": "^10.9.1",
     "tsconfig-paths": "^4.2.0",
     "tsify": "^5.0.4",
+    "typed-emitter": "^2.1.0",
     "typescript": "^5.2.2",
     "uuid": "^9.0.1",
     "vitest": "^0.34.6"

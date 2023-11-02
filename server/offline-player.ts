@@ -7,46 +7,52 @@
  * can be used to play the program.
  **/
 import EventEmitter from 'events';
-import { FFMPEG } from './ffmpeg.js';
+import { FFMPEG, FfmpegEvents } from './ffmpeg.js';
 import { serverOptions } from './globals.js';
-import { PlayerContext } from './types.js';
+import { Maybe, PlayerContext, TypedEventEmitter } from './types.js';
+import { Player } from './player.js';
+import { Readable, Writable } from 'stream';
 
-export class OfflinePlayer {
-  private context: any;
-  private error: any;
+export class OfflinePlayer extends Player {
+  private context: PlayerContext;
+  private error: boolean;
   private ffmpeg: FFMPEG;
 
-  constructor(error, context: PlayerContext) {
+  constructor(error: boolean, context: PlayerContext) {
+    super();
     this.context = context;
     this.error = error;
     if (context.isLoading === true) {
-      context.channel = JSON.parse(JSON.stringify(context.channel));
-      context.channel.offlinePicture = `http://localhost:${
-        serverOptions().port
-      }/images/loading-screen.png`;
-      context.channel.offlineSoundtrack = undefined;
+      context.channel = {
+        ...context.channel,
+        offlinePicture: `http://localhost:${
+          serverOptions().port
+        }/images/loading-screen.png`,
+        offlineSoundtrack: undefined,
+      };
     }
     this.ffmpeg = new FFMPEG(context.ffmpegSettings, context.channel);
     this.ffmpeg.setAudioOnly(this.context.audioOnly);
   }
 
   cleanUp() {
+    super.cleanUp();
     this.ffmpeg.kill();
   }
 
-  async play(outStream) {
+  async play(outStream: Writable) {
     try {
-      let emitter = new EventEmitter();
+      let emitter = new EventEmitter() as TypedEventEmitter<FfmpegEvents>;
       let ffmpeg = this.ffmpeg;
       let lineupItem = this.context.lineupItem;
-      let duration = lineupItem.streamDuration - lineupItem.start;
-      let ff;
+      let duration = lineupItem.streamDuration ?? 0 - lineupItem.start;
+      let ff: Maybe<Readable>;
       if (this.error) {
         ff = await ffmpeg.spawnError(duration);
       } else {
         ff = await ffmpeg.spawnOffline(duration);
       }
-      ff.pipe(outStream, { end: false });
+      ff?.pipe(outStream, { end: false });
 
       ffmpeg.on('end', () => {
         emitter.emit('end');
@@ -58,8 +64,8 @@ export class OfflinePlayer {
         //wish this code wasn't repeated.
         if (!this.error) {
           console.log('Replacing failed stream with error stream');
-          ff.unpipe(outStream);
-          ffmpeg.removeAllListeners('data');
+          ff?.unpipe(outStream);
+          // ffmpeg.removeAllListeners('data'); Type inference says this is never actually used...
           ffmpeg.removeAllListeners('end');
           ffmpeg.removeAllListeners('error');
           ffmpeg.removeAllListeners('close');
@@ -83,7 +89,7 @@ export class OfflinePlayer {
             'oops',
             Math.min(duration, 60000),
           );
-          ff.pipe(outStream);
+          ff?.pipe(outStream);
         } else {
           emitter.emit('error', err);
         }

@@ -83,12 +83,26 @@ export type FillerList = {
 };
 
 export type Watermark = {
+  url?: ChannelIcon;
   enabled: boolean;
   position: string;
   width: number;
   verticalMargin: number;
   horizontalMargin: number;
   duration: number;
+  fixedSize: boolean;
+  animated: boolean;
+};
+
+export const defaultWatermark: Watermark = {
+  enabled: false,
+  position: 'bottom-right',
+  width: 10.0,
+  verticalMargin: 0.0,
+  horizontalMargin: 0.0,
+  duration: 0,
+  animated: false,
+  fixedSize: true,
 };
 
 export type FillerCollection = {
@@ -176,6 +190,7 @@ export type FfmpegSettings = {
     | 'w3fdif'
     | 'yadif=0'
     | 'yadif=1';
+  disableChannelOverlay: boolean;
 };
 
 export const defaultFfmpegSettings: FfmpegSettings = {
@@ -207,6 +222,7 @@ export const defaultFfmpegSettings: FfmpegSettings = {
   maxFPS: 60,
   scalingAlgorithm: 'bicubic',
   deinterlaceFilter: 'none',
+  disableChannelOverlay: true,
 };
 
 export type Resolution = {

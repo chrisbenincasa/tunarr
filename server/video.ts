@@ -11,7 +11,7 @@ import createLogger from './logger.js';
 import { ProgramPlayer } from './program-player.js';
 import { serverContext } from './server-context.js';
 import { wereThereTooManyAttempts } from './throttler.js';
-import { LineupItem, Maybe, PlayerContext } from './types.js';
+import { ContextChannel, LineupItem, Maybe, PlayerContext } from './types.js';
 
 const logger = createLogger(import.meta);
 
@@ -381,7 +381,7 @@ export function video(fillerDB) {
       };
     }
 
-    let combinedChannel = {
+    let combinedChannel: ContextChannel = {
       ...helperFuncs.generateChannelContext(brandChannel),
       transcoding: channel.transcoding,
     };

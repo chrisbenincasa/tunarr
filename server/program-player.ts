@@ -18,18 +18,23 @@
  * deal with the thrown error.
  **/
 
-import { OfflinePlayer } from './offline-player.js';
-import { PlexPlayer } from './plex-player.js';
 import EventEmitter from 'events';
-import * as helperFuncs from './helperFuncs.js';
-import { PlayerContext } from './types.js';
 import { Response } from 'express';
+import * as helperFuncs from './helperFuncs.js';
+import { OfflinePlayer } from './offline-player.js';
+import { Player } from './player.js';
+import { PlexPlayer } from './plex-player.js';
+import { PlayerContext } from './types.js';
+import createLogger from './logger.js';
 
-export class ProgramPlayer {
-  private context: any;
-  private delegate: any;
+const logger = createLogger(import.meta);
+
+export class ProgramPlayer extends Player {
+  private context: PlayerContext;
+  private delegate: Player;
 
   constructor(context: PlayerContext) {
+    super();
     this.context = context;
     let program = context.lineupItem;
     if (context.m3u8) {
@@ -38,19 +43,19 @@ export class ProgramPlayer {
       context.ffmpegSettings.normalizeResolution = false;
     }
     if (typeof program.err !== 'undefined') {
-      console.log('About to play error stream');
+      logger.info('About to play error stream');
       this.delegate = new OfflinePlayer(true, context);
     } else if (program.type === 'loading') {
-      console.log('About to play loading stream');
+      logger.info('About to play loading stream');
       /* loading */
       context.isLoading = true;
       this.delegate = new OfflinePlayer(false, context);
     } else if (program.type === 'offline') {
-      console.log('About to play offline stream');
+      logger.info('About to play offline stream');
       /* offline */
       this.delegate = new OfflinePlayer(false, context);
     } else {
-      console.log('About to play plex stream');
+      logger.info('About to play plex stream');
       /* plex */
       this.delegate = new PlexPlayer(context);
     }
@@ -65,28 +70,29 @@ export class ProgramPlayer {
     this.delegate.cleanUp();
   }
 
-  async playDelegate(outStream: Response) {
-    return await new Promise(async (accept, reject) => {
+  private async playDelegate(outStream: Response) {
+    return await new Promise(async (resolve, reject) => {
       try {
+        // This code makes no sense.
         let stream = await this.delegate.play(outStream);
-        accept(stream);
+        resolve(stream);
         let emitter = new EventEmitter();
         function end() {
           reject(Error('Stream ended with no data'));
-          stream.removeAllListeners('data');
-          stream.removeAllListeners('end');
-          stream.removeAllListeners('close');
-          stream.removeAllListeners('error');
+          // stream.removeAllListeners('data');
+          stream?.removeAllListeners('end');
+          stream?.removeAllListeners('close');
+          stream?.removeAllListeners('error');
           emitter.emit('end');
         }
-        stream.on('error', (err) => {
+        stream?.on('error', (err) => {
           reject(
             Error('Stream ended in error with no data. ' + JSON.stringify(err)),
           );
           end();
         });
-        stream.on('end', end);
-        stream.on('close', end);
+        stream?.on('end', end);
+        stream?.on('close', end);
       } catch (err) {
         reject(err);
       }
@@ -103,18 +109,20 @@ export class ProgramPlayer {
         );
       }
       if (this.context.lineupItem.err instanceof Error) {
-        console.log(err.stack);
+        logger.info(err.stack);
         throw Error('Additional error when attempting to play error stream.');
       }
-      console.log(
+      logger.info(
         'Error when attempting to play video. Fallback to error stream: ' +
           err.stack,
       );
       //Retry once with an error stream:
       this.context.lineupItem = {
+        type: 'offline',
         err: err,
         start: this.context.lineupItem.start,
         streamDuration: this.context.lineupItem.streamDuration,
+        duration: this.context.lineupItem.duration,
       };
       this.delegate.cleanUp();
       this.delegate = new OfflinePlayer(true, this.context);
