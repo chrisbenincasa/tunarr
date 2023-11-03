@@ -1,11 +1,11 @@
 import { isEmpty, isUndefined, map, remove, some } from 'lodash-es';
 import { DeepReadonly, MarkOptional, Writable } from 'ts-essentials';
 import { v4 as uuidv4 } from 'uuid';
-import { ChannelCache } from '../channel-cache.js';
+import { ChannelCache } from '../channelCache.js';
 import createLogger from '../logger.js';
 import { Maybe } from '../types.js';
 import { sequentialPromises } from '../util.js';
-import { ChannelDB } from './channel-db.js';
+import { ChannelDB } from './channelDb.js';
 import {
   Channel,
   DbAccess,

@@ -1,7 +1,7 @@
 import { isUndefined, pick } from 'lodash-es';
 import * as randomJS from 'random-js';
 import constants from './constants.js';
-import { ChannelCache } from './channel-cache.js';
+import { ChannelCache } from './channelCache.js';
 import {
   ChannelIcon,
   FfmpegSettings,

@@ -7,7 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 import constants from '../constants.js';
 import { globalOptions } from '../globals.js';
 import { Maybe } from '../types.js';
-import { migrateFromLegacyDb } from './legacy-db-migration.js';
+import { migrateFromLegacyDb } from './legacyDbMigration.js';
 
 const CURRENT_VERSION = 1;
 

@@ -1,5 +1,5 @@
 import { test } from 'vitest';
-import randomSlotsService from './random-slots-service.js';
+import randomSlotsService from './randomSlotsService.js';
 
 test('adds 1+ 2 to equal 3', async () => {
   console.log(

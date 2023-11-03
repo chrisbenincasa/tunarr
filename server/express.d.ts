@@ -1,4 +1,4 @@
-import { ServerContext } from './server-context.js';
+import { ServerContext } from './serverContext.ts';
 
 export {};
 

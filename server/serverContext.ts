@@ -1,19 +1,19 @@
 import fs, { promises as fsPromises } from 'fs';
 import { once } from 'lodash-es';
 import path from 'path';
-import { ChannelCache } from './channel-cache.js';
-import { ChannelDB } from './dao/channel-db.js';
-import { CustomShowDB } from './dao/custom-show-db.js';
+import { ChannelCache } from './channelCache.js';
+import { ChannelDB } from './dao/channelDb.js';
+import { CustomShowDB } from './dao/customShowDb.js';
 import { DbAccess, getDB } from './dao/db.js';
 import { FillerDB } from './dao/filler-db.js';
 import { PlexServerDB } from './dao/plex-server-db.js';
 import { serverOptions } from './globals.js';
 import { hdhr } from './hdhr.js';
-import { CacheImageService } from './services/cache-image-service.js';
-import { EventService } from './services/event-service.js';
-import { FileCacheService } from './services/file-cache-service.js';
-import { M3uService } from './services/m3u-service.js';
-import { TVGuideService } from './services/tv-guide-service.js';
+import { CacheImageService } from './services/cacheImageService.js';
+import { EventService } from './services/eventService.js';
+import { FileCacheService } from './services/fileCacheService.js';
+import { M3uService } from './services/m3uService.js';
+import { TVGuideService } from './services/tvGuideService.js';
 import { XmlTvWriter } from './xmltv.js';
 
 async function copyIfMissingFromDatabase(

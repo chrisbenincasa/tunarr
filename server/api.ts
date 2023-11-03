@@ -5,11 +5,11 @@ import { find, isUndefined } from 'lodash-es';
 import path from 'path';
 import constants from './constants.js';
 import { getDB } from './dao/db.js';
-import { FFMPEGInfo } from './ffmpeg-info.js';
+import { FFMPEGInfo } from './ffmpegInfo.js';
 import { serverOptions } from './globals.js';
 import createLogger from './logger.js';
 import { Plex } from './plex.js';
-import { xmltvInterval } from './xmltv-generator.js';
+import { xmltvInterval } from './xmltvGenerator.js';
 
 const logger = createLogger(import.meta);
 

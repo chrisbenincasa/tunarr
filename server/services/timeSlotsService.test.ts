@@ -1,5 +1,5 @@
 import { test } from 'vitest';
-import timeSlotsService from './time-slots-service.js';
+import timeSlotsService from './timeSlotsService.js';
 
 test('adds 1+ 2 to equal 3', async () => {
   console.log(

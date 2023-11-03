@@ -1,6 +1,6 @@
 import express from 'express';
 import { Server as SSDP } from 'node-ssdp';
-import { ChannelDB } from './dao/channel-db.js';
+import { ChannelDB } from './dao/channelDb.js';
 import { DbAccess } from './dao/db.js';
 import { serverOptions } from './globals.js';
 

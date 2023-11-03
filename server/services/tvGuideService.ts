@@ -11,8 +11,8 @@ import createLogger from '../logger.js';
 import { Maybe } from '../types.js';
 import { groupByUniq, groupByUniqAndMap } from '../util.js';
 import { XmlTvWriter } from '../xmltv.js';
-import { CacheImageService } from './cache-image-service.js';
-import { EventService } from './event-service.js';
+import { CacheImageService } from './cacheImageService.js';
+import { EventService } from './eventService.js';
 import throttle from './throttle.js';
 
 const logger = createLogger(import.meta);

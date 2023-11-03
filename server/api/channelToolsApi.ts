@@ -1,8 +1,8 @@
 import JSONStream from 'JSONStream';
 import express from 'express';
 import createLogger from '../logger.js';
-import timeSlotsService from '../services/time-slots-service.js';
-import randomSlotsService from '../services/random-slots-service.js';
+import timeSlotsService from '../services/timeSlotsService.js';
+import randomSlotsService from '../services/randomSlotsService.js';
 import throttle from '../services/throttle.js';
 
 const logger = createLogger(import.meta);

@@ -4,12 +4,12 @@ import { isUndefined } from 'lodash-es';
 import constants from './constants.js';
 import { ImmutableChannel, offlineProgram } from './dao/db.js';
 import { FFMPEG } from './ffmpeg.js';
-import { FFMPEG_TEXT } from './ffmpegText.js';
+import { FfmpegText } from './ffmpegText.js';
 import { serverOptions } from './globals.js';
 import * as helperFuncs from './helperFuncs.js';
 import createLogger from './logger.js';
-import { ProgramPlayer } from './program-player.js';
-import { serverContext } from './server-context.js';
+import { ProgramPlayer } from './programPlayer.js';
+import { serverContext } from './serverContext.js';
 import { wereThereTooManyAttempts } from './throttler.js';
 import { ContextChannel, LineupItem, Maybe, PlayerContext } from './types.js';
 
@@ -37,7 +37,7 @@ export function video(fillerDB) {
 
     logger.info(`\r\nStream starting. Channel: 1 (dizqueTV)`);
 
-    let ffmpeg = new FFMPEG_TEXT(
+    let ffmpeg = new FfmpegText(
       ffmpegSettings,
       'dizqueTV (No Channels Configured)',
       'Configure your channels using the dizqueTV Web UI',

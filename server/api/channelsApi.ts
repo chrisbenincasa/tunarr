@@ -3,7 +3,7 @@ import express from 'express';
 import createLogger from '../logger.js';
 import { isUndefined, omit, sortBy } from 'lodash-es';
 import { Channel } from '../dao/db.js';
-import { xmltvInterval } from '../xmltv-generator.js';
+import { xmltvInterval } from '../xmltvGenerator.js';
 import throttle from '../services/throttle.js';
 
 const logger = createLogger(import.meta);

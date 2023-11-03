@@ -1,6 +1,6 @@
 import { compact, isUndefined } from 'lodash-es';
 import constants from './constants.js';
-import { ChannelDB } from './dao/channel-db.js';
+import { ChannelDB } from './dao/channelDb.js';
 import { Channel, ImmutableChannel } from './dao/db.js';
 import { LineupItem, Maybe } from './types.js';
 

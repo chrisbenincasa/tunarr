@@ -2,7 +2,7 @@ import { compact } from 'lodash-es';
 import { ImmutableChannel, getDB } from './dao/db.js';
 import createLogger from './logger.js';
 import { Plex } from './plex.js';
-import { serverContext } from './server-context.js';
+import { serverContext } from './serverContext.js';
 
 const logger = createLogger(import.meta);
 

@@ -4,7 +4,7 @@ import { globalOptions } from './globals.js';
 import { DeepReadonly } from 'ts-essentials';
 import { FfmpegSettings } from './dao/db.js';
 
-export class FFMPEG_TEXT extends events.EventEmitter {
+export class FfmpegText extends events.EventEmitter {
   private args: string[];
   private ffmpeg: ChildProcessWithoutNullStreams;
 

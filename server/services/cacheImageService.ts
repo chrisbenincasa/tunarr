@@ -5,7 +5,7 @@ import { isString, isUndefined } from 'lodash-es';
 import stream from 'stream';
 import { CachedImage, DbAccess } from '../dao/db.js';
 import createLogger from '../logger.js';
-import { FileCacheService } from './file-cache-service.js';
+import { FileCacheService } from './fileCacheService.js';
 
 const logger = createLogger(import.meta);
 

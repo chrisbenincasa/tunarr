@@ -1,7 +1,7 @@
 import XMLWriter from 'xml-writer';
 import fs from 'fs';
 import { Channel, XmlTvSettings } from './dao/db.js';
-import { CacheImageService } from './services/cache-image-service.js';
+import { CacheImageService } from './services/cacheImageService.js';
 
 let isShutdown = false;
 let isWorking = false;

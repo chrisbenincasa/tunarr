@@ -23,7 +23,7 @@ import { Response } from 'express';
 import * as helperFuncs from './helperFuncs.js';
 import { OfflinePlayer } from './offline-player.js';
 import { Player } from './player.js';
-import { PlexPlayer } from './plex-player.js';
+import { PlexPlayer } from './plexPlayer.js';
 import { PlayerContext } from './types.js';
 import createLogger from './logger.js';
 

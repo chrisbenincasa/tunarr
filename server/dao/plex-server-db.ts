@@ -1,9 +1,9 @@
 import { isUndefined } from 'lodash-es';
 import type { DeepReadonly, MarkOptional, Writable } from 'ts-essentials';
-import { ChannelCache } from '../channel-cache.js';
+import { ChannelCache } from '../channelCache.js';
 import { serverOptions } from '../globals.js';
-import { ChannelDB } from './channel-db.js';
-import { CustomShowDB } from './custom-show-db.js';
+import { ChannelDB } from './channelDb.js';
+import { CustomShowDB } from './customShowDb.js';
 import {
   Channel,
   DbAccess,

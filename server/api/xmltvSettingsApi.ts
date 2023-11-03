@@ -2,7 +2,7 @@ import express from 'express';
 import { XmlTvSettings, defaultXmlTvSettings } from '../dao/db.js';
 import createLogger from '../logger.js';
 import { firstDefined } from '../util.js';
-import { xmltvInterval } from '../xmltv-generator.js';
+import { xmltvInterval } from '../xmltvGenerator.js';
 
 const logger = createLogger(import.meta);
 

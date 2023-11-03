@@ -1,6 +1,6 @@
 import { sortBy } from 'lodash-es';
-import { ChannelCache } from '../channel-cache.js';
-import { FileCacheService } from './file-cache-service.js';
+import { ChannelCache } from '../channelCache.js';
+import { FileCacheService } from './fileCacheService.js';
 
 /**
  * Manager and Generate M3U content
