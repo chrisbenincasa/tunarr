@@ -11,7 +11,7 @@ import {
   Program,
   offlineProgram,
 } from './db.js';
-import { FillerDB } from './filler-db.js';
+import { FillerDB } from './fillerDb.js';
 
 //hmnn this is more of a "PlexServerService"...
 const ICON_REGEX =
