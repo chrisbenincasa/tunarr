@@ -1,85 +1,104 @@
-import express from 'express';
+import { FastifyPluginCallback } from 'fastify';
 import { isUndefined } from 'lodash-es';
+import { FillerCreate, FillerUpdate } from '../dao/fillerDb.js';
 import createLogger from '../logger.js';
 
 const logger = createLogger(import.meta);
 
-export const fillerRouter = express.Router();
+export const fillerRouter: FastifyPluginCallback = (fastify, _opts, done) => {
+  fastify.get('/api/fillers', async (req, res) => {
+    try {
+      const fillers = req.serverCtx.fillerDB.getAllFillersInfo();
+      return res.send(fillers);
+    } catch (err) {
+      logger.error(err);
+      return res.status(500).send('error');
+    }
+  });
 
-fillerRouter.get('/api/fillers', async (req, res) => {
-  try {
-    let fillers = await req.ctx.fillerDB.getAllFillersInfo();
-    res.send(fillers);
-  } catch (err) {
-    logger.error(err);
-    res.status(500).send('error');
-  }
-});
-fillerRouter.get('/api/filler/:id', async (req, res) => {
-  try {
-    let id = req.params.id;
-    if (isUndefined(id)) {
-      res.status(400).send('Missing id');
-    }
-    let filler = await req.ctx.fillerDB.getFiller(id);
-    if (filler == null) {
-      res.status(404).send('Filler not found');
-    }
-    res.send(filler);
-  } catch (err) {
-    logger.error(err);
-    res.status(500).send('error');
-  }
-});
-fillerRouter.post('/api/filler/:id', async (req, res) => {
-  try {
-    let id = req.params.id;
-    if (isUndefined(id)) {
-      res.status(400).send('Missing id');
-    }
-    await req.ctx.fillerDB.saveFiller(id, req.body);
-    res.status(204).send({});
-  } catch (err) {
-    logger.error(err);
-    res.status(500).send('error');
-  }
-});
-fillerRouter.put('/api/filler', async (req, res) => {
-  try {
-    let uuid = await req.ctx.fillerDB.createFiller(req.body);
-    res.status(201).send({ id: uuid });
-  } catch (err) {
-    logger.error(err);
-    res.status(500).send('error');
-  }
-});
-fillerRouter.delete('/api/filler/:id', async (req, res) => {
-  try {
-    let id = req.params.id;
-    if (isUndefined(id)) {
-      res.status(400).send('Missing id');
-    }
-    await req.ctx.fillerDB.deleteFiller(id);
-    res.status(204).send({});
-  } catch (err) {
-    logger.error(err);
-    res.status(500).send('error');
-  }
-});
+  fastify.get<{ Params: { id: string } }>(
+    '/api/filler/:id',
+    async (req, res) => {
+      try {
+        const id = req.params.id;
+        if (isUndefined(id)) {
+          return res.status(400).send('Missing id');
+        }
+        const filler = req.serverCtx.fillerDB.getFiller(id);
+        if (filler == null) {
+          return res.status(404).send('Filler not found');
+        }
+        return res.send(filler);
+      } catch (err) {
+        logger.error(err);
+        return res.status(500).send('error');
+      }
+    },
+  );
 
-fillerRouter.get('/api/filler/:id/channels', async (req, res) => {
-  try {
-    let id = req.params.id;
-    if (isUndefined(id)) {
-      res.status(400).send('Missing id');
+  fastify.post<{ Params: { id: string }; Body: FillerUpdate }>(
+    '/api/filler/:id',
+    async (req, res) => {
+      try {
+        const id = req.params.id;
+        if (isUndefined(id)) {
+          return res.status(400).send('Missing id');
+        }
+        await req.serverCtx.fillerDB.saveFiller(id, req.body);
+        return res.status(204).send({});
+      } catch (err) {
+        logger.error(err);
+        return res.status(500).send('error');
+      }
+    },
+  );
+
+  fastify.put<{ Body: FillerCreate }>('/api/filler', async (req, res) => {
+    try {
+      const uuid = await req.serverCtx.fillerDB.createFiller(req.body);
+      return res.status(201).send({ id: uuid });
+    } catch (err) {
+      logger.error(err);
+      return res.status(500).send('error');
     }
-    let channels = await req.ctx.fillerDB.getFillerChannels(id);
-    if (channels == null) {
-      res.status(404).send('Filler not found');
-    }
-    res.send(channels);
-  } catch (err) {
-    logger.error(err);
-    res.status(500).send('error');
-  }
-});
+  });
+
+  fastify.delete<{ Params: { id: string } }>(
+    '/api/filler/:id',
+    async (req, res) => {
+      try {
+        const id = req.params.id;
+        if (isUndefined(id)) {
+          return res.status(400).send('Missing id');
+        }
+        await req.serverCtx.fillerDB.deleteFiller(id);
+        return res.status(204).send({});
+      } catch (err) {
+        logger.error(err);
+        return res.status(500).send('error');
+      }
+    },
+  );
+
+  fastify.get<{ Params: { id: string } }>(
+    '/api/filler/:id/channels',
+    async (req, res) => {
+      try {
+        const id = req.params.id;
+        if (isUndefined(id)) {
+          return res.status(400).send('Missing id');
+        }
+        const channels = req.serverCtx.fillerDB.getFillerChannels(id);
+        if (channels == null) {
+          return res.status(404).send('Filler not found');
+        }
+        return res.send(channels);
+      } catch (err) {
+        logger.error(err);
+        return res.status(500).send('error');
+      }
+    },
+  );
+
+  done();
+};

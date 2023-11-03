@@ -1,72 +1,86 @@
-import express from 'express';
-import createLogger from '../logger.js';
+import { FastifyPluginCallback } from 'fastify';
 import { isUndefined } from 'lodash-es';
+import { CustomShowInsert, CustomShowUpdate } from '../dao/customShowDb.js';
+import createLogger from '../logger.js';
 
 const logger = createLogger(import.meta);
 
-export const customShowRouter = express.Router();
+type CustomShowIdParams = {
+  Params: { id: string };
+};
 
-customShowRouter.get('/api/shows', async (req, res) => {
-  try {
-    let fillers = await req.ctx.customShowDB.getAllShowsInfo();
-    res.send(fillers);
-  } catch (err) {
-    logger.error(err);
-    res.status(500).send('error');
-  }
-});
-
-customShowRouter.get('/api/show/:id', async (req, res) => {
-  try {
-    let id = req.params.id;
-    if (isUndefined(id)) {
-      res.status(400).send('Missing id');
+export const customShowRouter: FastifyPluginCallback = (
+  fastify,
+  _opts,
+  done,
+) => {
+  fastify.get('/api/shows', (req, res) => {
+    try {
+      const fillers = req.serverCtx.customShowDB.getAllShowsInfo();
+      return res.send(fillers);
+    } catch (err) {
+      logger.error(err);
+      return res.status(500).send('error');
     }
-    let filler = await req.ctx.customShowDB.getShow(id);
-    if (filler == null) {
-      res.status(404).send('Custom show not found');
-    }
-    res.send(filler);
-  } catch (err) {
-    logger.error(err);
-    res.status(500).send('error');
-  }
-});
+  });
 
-customShowRouter.post('/api/show/:id', async (req, res) => {
-  try {
-    let id = req.params.id;
-    if (isUndefined(id)) {
-      res.status(400).send('Missing id');
+  fastify.get<CustomShowIdParams>('/api/show/:id', async (req, res) => {
+    try {
+      const id = req.params.id;
+      if (isUndefined(id)) {
+        return res.status(400).send('Missing id');
+      }
+      const filler = req.serverCtx.customShowDB.getShow(id);
+      if (filler == null) {
+        return res.status(404).send('Custom show not found');
+      }
+      return res.send(filler);
+    } catch (err) {
+      logger.error(err);
+      return res.status(500).send('error');
     }
-    await req.ctx.customShowDB.saveShow(id, req.body);
-    res.status(204).send({});
-  } catch (err) {
-    logger.error(err);
-    res.status(500).send('error');
-  }
-});
+  });
 
-customShowRouter.put('/api/show', async (req, res) => {
-  try {
-    let uuid = await req.ctx.customShowDB.createShow(req.body);
-    res.status(201).send({ id: uuid });
-  } catch (err) {
-    logger.error(err);
-    res.status(500).send('error');
-  }
-});
+  fastify.post<CustomShowIdParams & { Body: CustomShowUpdate }>(
+    '/api/show/:id',
+    async (req, res) => {
+      try {
+        const id = req.params.id;
+        if (isUndefined(id)) {
+          return res.status(400).send('Missing id');
+        }
+        await req.serverCtx.customShowDB.saveShow(id, req.body);
+        return res.status(204).send({});
+      } catch (err) {
+        logger.error(err);
+        return res.status(500).send('error');
+      }
+    },
+  );
 
-customShowRouter.delete('/api/show/:id', async (req, res) => {
-  try {
-    let id = req.params.id;
-    if (isUndefined(id)) {
-      res.status(400).send('Missing id');
+  fastify.put<{ Body: CustomShowInsert }>('/api/show', async (req, res) => {
+    try {
+      const uuid = await req.serverCtx.customShowDB.createShow(req.body);
+      return res.status(201).send({ id: uuid });
+    } catch (err) {
+      logger.error(err);
+      return res.status(500).send('error');
     }
-    await req.ctx.customShowDB.deleteShow(id);
-    res.status(204).send({});
-  } catch (err) {
-    logger.error(err);
-    res.status(500).send('error');
-  }
-});
+  });
+
+  fastify.delete<CustomShowIdParams>('/api/show/:id', async (req, res) => {
+    try {
+      const id = req.params.id;
+      if (isUndefined(id)) {
+        return res.status(400).send('Missing id');
+      }
+      await req.serverCtx.customShowDB.deleteShow(id);
+      return res.status(204).send({});
+    } catch (err) {
+      logger.error(err);
+      return res.status(500).send('error');
+    }
+  });
+
+  done();
+};

@@ -16,6 +16,13 @@ import {
 } from './db.js';
 
 const logger = createLogger(import.meta);
+
+export type FillerUpdate = MarkOptional<FillerList, 'content'>;
+export type FillerCreate = MarkOptional<
+  Omit<FillerList, 'id'>,
+  'content' | 'name'
+>;
+
 export class FillerDB {
   private cache: Record<string, Maybe<DeepReadonly<FillerList>>>;
   private channelDB: ChannelDB;
@@ -41,10 +48,7 @@ export class FillerDB {
     return this.cache[id];
   }
 
-  async saveFiller(
-    id: Maybe<string>,
-    fillerList: MarkOptional<FillerList, 'content'>,
-  ): Promise<void> {
+  async saveFiller(id: Maybe<string>, fillerList: FillerUpdate): Promise<void> {
     if (isUndefined(id)) {
       throw Error('Mising filler id');
     }
@@ -62,10 +66,8 @@ export class FillerDB {
     }
   }
 
-  async createFiller(
-    fillerList: MarkOptional<Omit<FillerList, 'id'>, 'content' | 'name'>,
-  ): Promise<string> {
-    let id = uuidv4();
+  async createFiller(fillerList: FillerCreate): Promise<string> {
+    const id = uuidv4();
 
     const actualFiller: FillerList = {
       id,
@@ -80,7 +82,7 @@ export class FillerDB {
 
   // Returns all channels a given filler list is a part of
   getFillerChannels(id: string): { name: string; number: number }[] {
-    let fillerChannels: { name: string; number: number }[] = [];
+    const fillerChannels: { name: string; number: number }[] = [];
     this.channelDB.getAllChannels().forEach((channel) => {
       if (some(channel.fillerCollections ?? [], { id })) {
         fillerChannels.push({ number: channel.number, name: channel.name });
@@ -127,7 +129,7 @@ export class FillerDB {
 
   getAllFillersInfo() {
     //returns just name and id
-    let fillers = this.getAllFillers();
+    const fillers = this.getAllFillers();
     return fillers.map((f) => {
       return {
         id: f.id,
@@ -141,10 +143,10 @@ export class FillerDB {
     channel: Channel,
   ): (FillerCollection & { content: Program[] })[] {
     // TODO nasty return type, fix.
-    let loadChannelFiller = (fillerEntry: FillerCollection) => {
+    const loadChannelFiller = (fillerEntry: FillerCollection) => {
       let content: FillerProgram[] = [];
       try {
-        let filler = this.getFiller(fillerEntry.id);
+        const filler = this.getFiller(fillerEntry.id);
         content = [...(filler?.content ?? [])];
       } catch (e) {
         logger.error(

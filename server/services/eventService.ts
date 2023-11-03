@@ -1,5 +1,7 @@
 import EventEmitter from 'events';
 import createLogger from '../logger.js';
+import { FastifyInstance } from 'fastify';
+import { Readable } from 'stream';
 
 const logger = createLogger(import.meta);
 
@@ -17,27 +19,32 @@ export class EventService {
     });
   }
 
-  setup(app) {
-    app.get('/api/events', (_request, response) => {
+  setup(app: FastifyInstance) {
+    app.get('/api/events', (request, response) => {
       logger.info('Open event channel.');
-      response.writeHead(200, {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        connection: 'keep-alive',
-      });
+      const outStream = new Readable();
+      outStream._read = () => {};
 
-      const listener = (event: string, data: Record<string, any>) => {
-        response.write(
+      const listener = (event: string, data: object) => {
+        outStream.push(
           `event: ${event}\ndata: ${JSON.stringify(data)}\n retry: 5000\n\n`,
         );
       };
 
       this.stream.on('push', listener);
 
-      response.on('close', () => {
+      request.socket.on('close', () => {
         logger.info('Remove event channel.');
         this.stream.removeListener('push', listener);
       });
+
+      return response
+        .headers({
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          Connection: 'keey-alive',
+        })
+        .send(outStream);
     });
   }
 

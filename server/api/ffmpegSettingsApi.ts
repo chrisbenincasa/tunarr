@@ -1,86 +1,98 @@
-import express from 'express';
-import { isUndefined } from 'lodash-es';
-import { defaultFfmpegSettings } from '../dao/db.js';
+import { isError, isUndefined } from 'lodash-es';
+import { FfmpegSettings, defaultFfmpegSettings } from '../dao/db.js';
 import createLogger from '../logger.js';
 import { firstDefined } from '../util.js';
+import { FastifyPluginCallback } from 'fastify';
 
 const logger = createLogger(import.meta);
 
-export const ffmpegSettingsRouter = express.Router();
-
-ffmpegSettingsRouter.get('/api/ffmpeg-settings', (req, res) => {
-  try {
-    let ffmpeg = req.ctx.dbAccess.ffmpegSettings();
-    res.send(ffmpeg);
-  } catch (err) {
-    logger.error(err);
-    res.status(500).send('error');
-  }
-});
-ffmpegSettingsRouter.put('/api/ffmpeg-settings', async (req, res) => {
-  try {
-    await req.ctx.dbAccess.updateSettings('ffmpeg', req.body);
-    let ffmpeg = req.ctx.dbAccess.ffmpegSettings();
-    let err = fixupFFMPEGSettings(ffmpeg);
-    if (typeof err !== 'undefined') {
-      res.status(400).send(err);
+export const ffmpegSettingsRouter: FastifyPluginCallback = (
+  fastify,
+  _opts,
+  done,
+) => {
+  fastify.get('/api/ffmpeg-settings', (req, res) => {
+    try {
+      const ffmpeg = req.serverCtx.dbAccess.ffmpegSettings();
+      return res.send(ffmpeg);
+    } catch (err) {
+      logger.error(err);
+      return res.status(500).send('error');
     }
-    req.ctx.eventService.push('settings-update', {
-      message: 'FFMPEG configuration updated.',
-      module: 'ffmpeg',
-      detail: {
-        action: 'update',
-      },
-      level: 'info',
-    });
-    res.send(ffmpeg);
-  } catch (err) {
-    logger.error(err);
-    res.status(500).send('error');
-    req.ctx.eventService.push('settings-update', {
-      message: 'Error updating FFMPEG configuration.',
-      module: 'ffmpeg',
-      detail: {
-        action: 'update',
-        error: firstDefined(err, 'message'),
-      },
-      level: 'danger',
-    });
-  }
-});
+  });
+  fastify.put<{ Body: FfmpegSettings }>(
+    '/api/ffmpeg-settings',
+    async (req, res) => {
+      try {
+        await req.serverCtx.dbAccess.updateSettings('ffmpeg', req.body);
+        const ffmpeg = req.serverCtx.dbAccess.ffmpegSettings();
+        const err = fixupFFMPEGSettings(ffmpeg);
+        if (typeof err !== 'undefined') {
+          return res.status(400).send(err);
+        }
+        req.serverCtx.eventService.push('settings-update', {
+          message: 'FFMPEG configuration updated.',
+          module: 'ffmpeg',
+          detail: {
+            action: 'update',
+          },
+          level: 'info',
+        });
+        return res.send(ffmpeg);
+      } catch (err) {
+        logger.error(err);
+        await res.status(500).send('error');
+        req.serverCtx.eventService.push('settings-update', {
+          message: 'Error updating FFMPEG configuration.',
+          module: 'ffmpeg',
+          detail: {
+            action: 'update',
+            error: isError(err) ? firstDefined(err, 'message') : 'unknown',
+          },
+          level: 'danger',
+        });
+      }
+    },
+  );
 
-ffmpegSettingsRouter.post('/api/ffmpeg-settings', async (req, res) => {
-  // RESET
-  try {
-    let ffmpeg = { ...defaultFfmpegSettings };
-    ffmpeg.ffmpegExecutablePath = req.body.ffmpegPath;
-    await req.ctx.dbAccess.updateFfmpegSettings(ffmpeg);
-    ffmpeg = req.ctx.dbAccess.ffmpegSettings();
-    req.ctx.eventService.push('settings-update', {
-      message: 'FFMPEG configuration reset.',
-      module: 'ffmpeg',
-      detail: {
-        action: 'reset',
-      },
-      level: 'warning',
-    });
-    res.send(ffmpeg);
-  } catch (err) {
-    logger.error(err);
-    res.status(500).send('error');
-    req.ctx.eventService.push('settings-update', {
-      message: 'Error reseting FFMPEG configuration.',
-      module: 'ffmpeg',
-      detail: {
-        action: 'reset',
-        error: firstDefined(err, 'message'),
-      },
-      level: 'danger',
-    });
-  }
-});
+  fastify.post<{ Body: { ffmpegPath: string } }>(
+    '/api/ffmpeg-settings',
+    async (req, res) => {
+      // RESET
+      try {
+        let ffmpeg = { ...defaultFfmpegSettings };
+        ffmpeg.ffmpegExecutablePath = req.body.ffmpegPath;
+        await req.serverCtx.dbAccess.updateFfmpegSettings(ffmpeg);
+        ffmpeg = req.serverCtx.dbAccess.ffmpegSettings();
+        req.serverCtx.eventService.push('settings-update', {
+          message: 'FFMPEG configuration reset.',
+          module: 'ffmpeg',
+          detail: {
+            action: 'reset',
+          },
+          level: 'warning',
+        });
+        return res.send(ffmpeg);
+      } catch (err) {
+        logger.error(err);
+        await res.status(500).send('error');
+        req.serverCtx.eventService.push('settings-update', {
+          message: 'Error reseting FFMPEG configuration.',
+          module: 'ffmpeg',
+          detail: {
+            action: 'reset',
+            error: isError(err) ? firstDefined(err, 'message') : 'unknown',
+          },
+          level: 'danger',
+        });
+      }
+    },
+  );
 
-function fixupFFMPEGSettings(ffmpeg): string | undefined {
+  done();
+};
+
+function fixupFFMPEGSettings(ffmpeg: FfmpegSettings): string | undefined {
   if (isUndefined(ffmpeg.maxFPS)) {
     ffmpeg.maxFPS = 60;
   } else if (isNaN(ffmpeg.maxFPS)) {

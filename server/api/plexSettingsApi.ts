@@ -1,77 +1,89 @@
-import express from 'express';
+import { FastifyPluginCallback } from 'fastify';
+import { isError } from 'lodash-es';
+import { PlexStreamSettings, defaultPlexStreamSettings } from '../dao/db.js';
 import createLogger from '../logger.js';
 import { firstDefined } from '../util.js';
-import { defaultPlexStreamSettings } from '../dao/db.js';
 
 const logger = createLogger(import.meta);
 
-export const plexSettingsRouter = express.Router();
+export const plexSettingsRouter: FastifyPluginCallback = (
+  fastify,
+  _opts,
+  done,
+) => {
+  fastify.get('/api/plex-settings', (req, res) => {
+    try {
+      const plex = req.serverCtx.dbAccess.plexSettings();
+      return res.send(plex);
+    } catch (err) {
+      logger.error(err);
+      return res.status(500).send('error');
+    }
+  });
 
-plexSettingsRouter.get('/api/plex-settings', (req, res) => {
-  try {
-    let plex = req.ctx.dbAccess.plexSettings();
-    res.send(plex);
-  } catch (err) {
-    logger.error(err);
-    res.status(500).send('error');
-  }
-});
-plexSettingsRouter.put('/api/plex-settings', async (req, res) => {
-  try {
-    await req.ctx.dbAccess.updateSettings('plexStream', req.body);
-    let plex = req.ctx.dbAccess.plexSettings();
-    res.send(plex);
-    req.ctx.eventService.push('settings-update', {
-      message: 'Plex configuration updated.',
-      module: 'plex',
-      detail: {
-        action: 'update',
-      },
-      level: 'info',
-    });
-  } catch (err) {
-    logger.error(err);
-    res.status(500).send('error');
-    req.ctx.eventService.push('settings-update', {
-      message: 'Error updating Plex configuration',
-      module: 'plex',
-      detail: {
-        action: 'update',
-        error: firstDefined(err, 'message'),
-      },
-      level: 'danger',
-    });
-  }
-});
-plexSettingsRouter.post('/api/plex-settings', async (req, res) => {
-  // RESET
-  try {
-    await req.ctx.dbAccess.updateSettings(
-      'plexStream',
-      defaultPlexStreamSettings,
-    );
-    let plex = req.ctx.dbAccess.plexSettings();
-    res.send(plex);
-    req.ctx.eventService.push('settings-update', {
-      message: 'Plex configuration reset.',
-      module: 'plex',
-      detail: {
-        action: 'reset',
-      },
-      level: 'warning',
-    });
-  } catch (err) {
-    logger.error(err);
-    res.status(500).send('error');
+  fastify.put<{ Body: PlexStreamSettings }>(
+    '/api/plex-settings',
+    async (req, res) => {
+      try {
+        await req.serverCtx.dbAccess.updateSettings('plexStream', req.body);
+        const plex = req.serverCtx.dbAccess.plexSettings();
+        await res.send(plex);
+        req.serverCtx.eventService.push('settings-update', {
+          message: 'Plex configuration updated.',
+          module: 'plex',
+          detail: {
+            action: 'update',
+          },
+          level: 'info',
+        });
+      } catch (err) {
+        logger.error(err);
+        await res.status(500).send('error');
+        req.serverCtx.eventService.push('settings-update', {
+          message: 'Error updating Plex configuration',
+          module: 'plex',
+          detail: {
+            action: 'update',
+            error: isError(err) ? firstDefined(err, 'message') : 'unknown',
+          },
+          level: 'danger',
+        });
+      }
+    },
+  );
 
-    req.ctx.eventService.push('settings-update', {
-      message: 'Error reseting Plex configuration',
-      module: 'plex',
-      detail: {
-        action: 'reset',
-        error: firstDefined(err, 'message'),
-      },
-      level: 'danger',
-    });
-  }
-});
+  fastify.post('/api/plex-settings', async (req, res) => {
+    // RESET
+    try {
+      await req.serverCtx.dbAccess.updateSettings(
+        'plexStream',
+        defaultPlexStreamSettings,
+      );
+      const plex = req.serverCtx.dbAccess.plexSettings();
+      await res.send(plex);
+      req.serverCtx.eventService.push('settings-update', {
+        message: 'Plex configuration reset.',
+        module: 'plex',
+        detail: {
+          action: 'reset',
+        },
+        level: 'warning',
+      });
+    } catch (err) {
+      logger.error(err);
+      await res.status(500).send('error');
+
+      req.serverCtx.eventService.push('settings-update', {
+        message: 'Error reseting Plex configuration',
+        module: 'plex',
+        detail: {
+          action: 'reset',
+          error: isError(err) ? firstDefined(err, 'message') : 'unknown',
+        },
+        level: 'danger',
+      });
+    }
+  });
+
+  done();
+};

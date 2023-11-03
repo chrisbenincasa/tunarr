@@ -24,6 +24,16 @@ type Report = {
   modifiedPrograms: number;
 };
 
+export type PlexServerSettingsInsert = MarkOptional<
+  PlexServerSettings,
+  'sendChannelUpdates' | 'sendGuideUpdates'
+>;
+
+export type PlexServerSettingsUpdate = MarkOptional<
+  PlexServerSettings,
+  'sendChannelUpdates' | 'sendGuideUpdates' | 'id'
+>;
+
 export class PlexServerDB {
   private channelDB: ChannelDB;
   private channelCache: ChannelCache;
@@ -46,12 +56,12 @@ export class PlexServerDB {
   }
 
   async fixupAllChannels(name: string, newServer?: PlexServerSettings) {
-    let channelNumbers = this.channelDB.getAllChannelNumbers();
-    let report = await Promise.all(
+    const channelNumbers = this.channelDB.getAllChannelNumbers();
+    const report = await Promise.all(
       channelNumbers.map(async (i) => {
-        let channel = this.channelDB.getChannel(i)!;
+        const channel = this.channelDB.getChannel(i)!;
 
-        let channelReport: Report = {
+        const channelReport: Report = {
           channelNumber: channel.number,
           channelName: channel.name,
           destroyedPrograms: 0,
@@ -65,7 +75,7 @@ export class PlexServerDB {
           channelReport,
         );
 
-        let newChannel: Channel = {
+        const newChannel: Channel = {
           ...(channel as Writable<Channel>),
           programs: newPrograms,
         };
@@ -102,10 +112,10 @@ export class PlexServerDB {
   }
 
   async fixupAllFillers(name: string, newServer?: PlexServerSettings) {
-    let fillers = this.fillerDB.getAllFillers();
-    let report = await Promise.all(
+    const fillers = this.fillerDB.getAllFillers();
+    const report = await Promise.all(
       fillers.map(async (filler) => {
-        let fillerReport: Report = {
+        const fillerReport: Report = {
           channelNumber: -1,
           channelName: filler.name + ' (filler)',
           destroyedPrograms: 0,
@@ -133,10 +143,10 @@ export class PlexServerDB {
   }
 
   async fixupAllShows(name: string, newServer?: PlexServerSettings) {
-    let shows = this.showDB.getAllShows();
-    let report = await Promise.all(
+    const shows = this.showDB.getAllShows();
+    const report = await Promise.all(
       shows.map(async (show) => {
-        let showReport: Report = {
+        const showReport: Report = {
           channelNumber: -1,
           channelName: show.name + ' (custom show)',
           destroyedPrograms: 0,
@@ -171,12 +181,12 @@ export class PlexServerDB {
     serverName: string,
     newServer?: PlexServerSettings,
   ) {
-    let reports = await Promise.all([
+    const reports = await Promise.all([
       this.fixupAllChannels(serverName, newServer),
       this.fixupAllFillers(serverName, newServer),
       this.fixupAllShows(serverName, newServer),
     ]);
-    let report: any[] = [];
+    const report: any[] = [];
     reports.forEach((r) =>
       r.forEach((r2) => {
         report.push(r2);
@@ -186,7 +196,7 @@ export class PlexServerDB {
   }
 
   async deleteServer(name: string) {
-    let report = await this.fixupEveryProgramHolders(name);
+    const report = await this.fixupEveryProgramHolders(name);
     await this.dbAccess.plexServers().delete(name);
     return report;
   }
@@ -195,18 +205,13 @@ export class PlexServerDB {
     return !isUndefined(this.dbAccess.plexServers().getById(name));
   }
 
-  async updateServer(
-    server: MarkOptional<
-      PlexServerSettings,
-      'sendChannelUpdates' | 'sendGuideUpdates' | 'id'
-    >,
-  ) {
-    let name = server.name;
+  async updateServer(server: PlexServerSettingsUpdate) {
+    const name = server.name;
     if (isUndefined(name)) {
       throw Error('Missing server name from request');
     }
 
-    let s = this.dbAccess.plexServers().getById(name);
+    const s = this.dbAccess.plexServers().getById(name);
 
     if (isUndefined(s)) {
       throw Error("Server doesn't exist.");
@@ -215,7 +220,7 @@ export class PlexServerDB {
     const sendGuideUpdates = server.sendGuideUpdates ?? false;
     const sendChannelUpdates = server.sendChannelUpdates ?? false;
 
-    let newServer: PlexServerSettings = {
+    const newServer: PlexServerSettings = {
       ...server,
       name: s.name,
       uri: server.uri,
@@ -227,7 +232,7 @@ export class PlexServerDB {
 
     this.normalizeServer(newServer);
 
-    let report = await this.fixupEveryProgramHolders(name, newServer);
+    const report = await this.fixupEveryProgramHolders(name, newServer);
 
     await this.dbAccess
       .plexServers()
@@ -243,7 +248,7 @@ export class PlexServerDB {
   ) {
     let name = isUndefined(server.name) ? 'plex' : server.name;
     let i = 2;
-    let prefix = name;
+    const prefix = name;
     let resultName = name;
     while (await this.doesNameExist(resultName)) {
       resultName = `${prefix}${i}`;
@@ -254,9 +259,9 @@ export class PlexServerDB {
     const sendGuideUpdates = server.sendGuideUpdates ?? false;
     const sendChannelUpdates = server.sendChannelUpdates ?? false;
 
-    let index = this.dbAccess.plexServers().getAll().length;
+    const index = this.dbAccess.plexServers().getAll().length;
 
-    let newServer: PlexServerSettings = {
+    const newServer: PlexServerSettings = {
       name: name,
       uri: server.uri,
       accessToken: server.accessToken,
@@ -301,10 +306,10 @@ export class PlexServerDB {
           icon.includes('/library/metadata') &&
           icon.includes('X-Plex-Token')
         ) {
-          let m = icon.match(ICON_REGEX);
+          const m = icon.match(ICON_REGEX);
           if (m?.length == 2) {
-            let lib = m[1];
-            let newUri = `${newServer.uri}${lib}?X-Plex-Token=${newServer.accessToken}`;
+            const lib = m[1];
+            const newUri = `${newServer.uri}${lib}?X-Plex-Token=${newServer.accessToken}`;
             modified = true;
             return newUri;
           }
@@ -312,7 +317,7 @@ export class PlexServerDB {
         return icon;
       };
 
-      let newProgram: Program = {
+      const newProgram: Program = {
         ...program,
         icon: fixIcon(program.icon) as string, // This will always be defined
         showIcon: fixIcon(program.showIcon),

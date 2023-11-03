@@ -4,7 +4,12 @@ import { ChannelDB } from './dao/channelDb.js';
 import { DbAccess } from './dao/db.js';
 import { serverOptions } from './globals.js';
 
-export function hdhr(db: DbAccess, channelDB: ChannelDB) {
+export type HdhrService = {
+  router: express.Router;
+  ssdp: unknown;
+};
+
+export function hdhr(db: DbAccess, channelDB: ChannelDB): HdhrService {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
   const server = new SSDP({
     location: {
@@ -68,12 +73,13 @@ export function hdhr(db: DbAccess, channelDB: ChannelDB) {
     res.json(lineup);
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   return { router: router, ssdp: server };
 }
 
 function getDevice(db: DbAccess, host: string) {
   const hdhrSettings = db.hdhrSettings();
-  var device = {
+  return {
     FriendlyName: 'dizqueTV',
     Manufacturer: 'dizqueTV - Silicondust',
     ManufacturerURL: 'https://github.com/chrisbenincasa/dizquetv',
@@ -87,7 +93,7 @@ function getDevice(db: DbAccess, host: string) {
     LineupURL: `${host}/lineup.json`,
     getXml: () => {
       return `<root xmlns="urn:schemas-upnp-org:device-1-0">
-        <URLBase>${device.BaseURL}</URLBase>
+        <URLBase>${host}</URLBase>
         <specVersion>
         <major>1</major>
         <minor>0</minor>
@@ -104,5 +110,4 @@ function getDevice(db: DbAccess, host: string) {
         </root>`;
     },
   };
-  return device;
 }

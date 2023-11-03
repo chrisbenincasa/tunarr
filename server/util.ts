@@ -1,4 +1,5 @@
 import { isEmpty, isUndefined, reduce } from 'lodash-es';
+import { isPromise } from 'node:util/types';
 
 declare global {
   interface Array<T> {
@@ -108,3 +109,19 @@ Array.prototype.sequentialPromises = async function <T, U>(
 ) {
   return sequentialPromises(this, ms, itemFn);
 };
+
+export function time<T>(
+  key: string,
+  f: () => T | PromiseLike<T>,
+): T | PromiseLike<T> {
+  console.time(key);
+  const retOrPromise = f();
+  if (isPromise(retOrPromise)) {
+    return (retOrPromise as Promise<T>).finally(() => {
+      console.timeEnd(key);
+    });
+  } else {
+    console.timeEnd(key);
+    return retOrPromise;
+  }
+}

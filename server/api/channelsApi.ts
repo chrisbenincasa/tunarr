@@ -1,176 +1,201 @@
 import JSONStream from 'JSONStream';
-import express from 'express';
-import createLogger from '../logger.js';
+import { FastifyPluginCallback, RequestGenericInterface } from 'fastify';
 import { isUndefined, omit, sortBy } from 'lodash-es';
-import { Channel } from '../dao/db.js';
-import { xmltvInterval } from '../xmltvGenerator.js';
+import { Writable } from 'stream';
+import { Channel, Program } from '../dao/db.js';
+import createLogger from '../logger.js';
 import throttle from '../services/throttle.js';
+import { xmltvInterval } from '../xmltvGenerator.js';
 
 const logger = createLogger(import.meta);
 
-export const channelsRouter = express.Router();
-
-channelsRouter.get('/api(/v1)?/channels', async (req, res) => {
-  try {
-    let channels = sortBy(req.ctx.channelDB.getAllChannels(), 'number');
-    res.send(channels);
-  } catch (err) {
-    logger.error(err);
-    res.status(500).send('error');
-  }
-});
-
-channelsRouter.get('/api(/v1)?/channel/:number', async (req, res) => {
-  try {
-    let number = parseInt(req.params.number, 10);
-    let channel = await req.ctx.channelCache.getChannelConfig(number);
-
-    if (!isUndefined(channel)) {
-      res.json(channel);
-    } else {
-      res.status(404).send('Channel not found');
-    }
-  } catch (err) {
-    logger.error(err);
-    res.status(500).send('error');
-  }
-});
-
-channelsRouter.get(
-  '/api(/v1)?/channel/programless/:number',
-  async (req, res) => {
-    try {
-      let number = parseInt(req.params.number, 10);
-      let channel = await req.ctx.channelCache.getChannelConfig(number);
-
-      if (!isUndefined(channel)) {
-        res.json(omit({ ...channel }, 'programs'));
-      } else {
-        res.status(404).send('Channel not found');
-      }
-    } catch (err) {
-      logger.error(err);
-      res.status(500).send('error');
-    }
-  },
-);
-
-channelsRouter.get('/api(/v1)?/channel/programs/:number', async (req, res) => {
-  try {
-    let number = parseInt(req.params.number, 10);
-    let channel = await req.ctx.channelCache.getChannelConfig(number);
-
-    if (!isUndefined(channel)) {
-      let programs = channel.programs;
-      if (isUndefined(programs)) {
-        res.status(404).send("Channel doesn't have programs?");
-      }
-      res.writeHead(200, {
-        'Content-Type': 'application/json',
-      });
-
-      let transformStream = JSONStream.stringify();
-      transformStream.pipe(res);
-
-      for (let i = 0; i < programs.length; i++) {
-        transformStream.write(programs[i]);
-        await throttle();
-      }
-      transformStream.end();
-    } else {
-      res.status(404).send('Channel not found');
-    }
-  } catch (err) {
-    logger.error(err);
-    res.status(500).send('error');
-  }
-});
-
-channelsRouter.get(
-  '/api(/v1)?/channel/description/:number',
-  async (req, res) => {
-    try {
-      let number = parseInt(req.params.number, 10);
-      let channel = await req.ctx.channelCache.getChannelConfig(number);
-      if (!isUndefined(channel)) {
-        res.send({
-          number: channel.number,
-          icon: channel.icon,
-          name: channel.name,
-          stealth: channel.stealth,
-        });
-      } else {
-        res.status(404).send('Channel not found');
-      }
-    } catch (err) {
-      logger.error(err);
-      res.status(500).send('error');
-    }
-  },
-);
-
-channelsRouter.get('/api(/v1)?/channelNumbers', async (req, res) => {
-  try {
-    let channels = req.ctx.channelDB.getAllChannelNumbers();
-    res.send(channels);
-  } catch (err) {
-    logger.error(err);
-    res.status(500).send('error');
-  }
-});
-
-channelsRouter.post('/api(/v1)?/channel', async (req, res) => {
-  try {
-    await req.ctx.m3uService.clearCache();
-    cleanUpChannel(req.body);
-    await req.ctx.channelDB.saveChannel(req.body as Channel);
-    req.ctx.channelCache.clear();
-    res.send({ number: req.body.number });
-    updateXmltv();
-  } catch (err) {
-    logger.error(err);
-    res.status(500).send('error');
-  }
-});
-
-channelsRouter.put('/api(/v1)?/channel', async (req, res) => {
-  try {
-    await req.ctx.m3uService.clearCache();
-    cleanUpChannel(req.body);
-    await req.ctx.channelDB.saveChannel(req.body as Channel);
-    req.ctx.channelCache.clear();
-    res.send({ number: req.body.number });
-    updateXmltv();
-  } catch (err) {
-    logger.error(err);
-    res.status(500).send('error');
-  }
-});
-channelsRouter.delete('/api(/v1)?/channel', async (req, res) => {
-  try {
-    await req.ctx.m3uService.clearCache();
-    await req.ctx.channelDB.deleteChannel(req.body.number);
-    req.ctx.channelCache.clear();
-    res.send({ number: req.body.number });
-    updateXmltv();
-  } catch (err) {
-    logger.error(err);
-    res.status(500).send('error');
-  }
-});
-
-function updateXmltv() {
-  xmltvInterval.updateXML();
-  xmltvInterval.restartInterval();
+interface ChannelNumberParams extends RequestGenericInterface {
+  Params: { number: number };
 }
 
-function cleanUpChannel(channel) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const channelsRouter: FastifyPluginCallback = (fastify, _opts, done) => {
+  fastify.get('/api/channels', async (req, res) => {
+    try {
+      const channels = sortBy(
+        req.serverCtx.channelDB.getAllChannels(),
+        'number',
+      );
+      return res.send(channels);
+    } catch (err) {
+      logger.error(err);
+      return res.status(500).send('error');
+    }
+  });
+
+  fastify.get<ChannelNumberParams>('/api/channel/:number', async (req, res) => {
+    try {
+      const channel = req.serverCtx.channelCache.getChannelConfig(
+        req.params.number,
+      );
+
+      if (!isUndefined(channel)) {
+        return res.send(channel);
+      } else {
+        return res.status(404).send('Channel not found');
+      }
+    } catch (err) {
+      logger.error(err);
+      return res.status(500).send('error');
+    }
+  });
+
+  fastify.get<ChannelNumberParams>(
+    '/api/channel/programless/:number',
+    async (req, res) => {
+      try {
+        const channel = req.serverCtx.channelCache.getChannelConfig(
+          req.params.number,
+        );
+
+        if (!isUndefined(channel)) {
+          return res.send(omit({ ...channel }, 'programs'));
+        } else {
+          return res.status(404).send('Channel not found');
+        }
+      } catch (err) {
+        logger.error(err);
+        return res.status(500).send('error');
+      }
+    },
+  );
+
+  fastify.get<ChannelNumberParams>(
+    '/api/channel/programs/:number',
+    async (req, res) => {
+      try {
+        const channel = req.serverCtx.channelCache.getChannelConfig(
+          req.params.number,
+        );
+
+        if (!isUndefined(channel)) {
+          const programs = channel.programs;
+          if (isUndefined(programs)) {
+            return res.status(404).send("Channel doesn't have programs?");
+          }
+
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+          const transformStream: Writable = JSONStream.stringify();
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+          transformStream.pipe(res.raw);
+
+          for (let i = 0; i < programs.length; i++) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+            transformStream.write(programs[i]);
+            await throttle();
+          }
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+          transformStream.end();
+
+          return res.header('Content-Type', 'application/json');
+        } else {
+          return res.status(404).send('Channel not found');
+        }
+      } catch (err) {
+        logger.error(req.routeOptions.url, err);
+        return res.status(500).send('error');
+      }
+    },
+  );
+
+  fastify.get<ChannelNumberParams>(
+    '/api/channel/description/:number',
+    async (req, res) => {
+      try {
+        const channel = req.serverCtx.channelCache.getChannelConfig(
+          req.params.number,
+        );
+        if (!isUndefined(channel)) {
+          return res.send({
+            number: channel.number,
+            icon: channel.icon,
+            name: channel.name,
+            stealth: channel.stealth,
+          });
+        } else {
+          return res.status(404).send('Channel not found');
+        }
+      } catch (err) {
+        logger.error(err);
+        return res.status(500).send('error');
+      }
+    },
+  );
+
+  fastify.get('/api/channelNumbers', async (req, res) => {
+    try {
+      const channels = req.serverCtx.channelDB.getAllChannelNumbers();
+      return res.send(channels);
+    } catch (err) {
+      logger.error(err);
+      return res.status(500).send('error');
+    }
+  });
+
+  fastify.post<{ Body: Channel }>('/api/channel', async (req, res) => {
+    try {
+      await req.serverCtx.m3uService.clearCache();
+      cleanUpChannel(req.body);
+      await req.serverCtx.channelDB.saveChannel(req.body);
+      req.serverCtx.channelCache.clear();
+      await res.send({ number: req.body.number });
+      await updateXmltv();
+    } catch (err) {
+      logger.error(err);
+      return res.status(500).send('error');
+    }
+  });
+
+  fastify.put<{ Body: Channel }>('/api/channel', async (req, res) => {
+    try {
+      await req.serverCtx.m3uService.clearCache();
+      cleanUpChannel(req.body);
+      await req.serverCtx.channelDB.saveChannel(req.body);
+      req.serverCtx.channelCache.clear();
+      await res.send({ number: req.body.number });
+      await updateXmltv();
+    } catch (err) {
+      logger.error(err);
+      await res.status(500).send('error');
+    }
+  });
+
+  fastify.delete<{ Body: { number: number } }>(
+    '/api/channel',
+    async (req, res) => {
+      try {
+        await req.serverCtx.m3uService.clearCache();
+        await req.serverCtx.channelDB.deleteChannel(req.body.number);
+        req.serverCtx.channelCache.clear();
+        await res.send({ number: req.body.number });
+        await updateXmltv();
+      } catch (err) {
+        logger.error(err);
+        return res.status(500).send('error');
+      }
+    },
+  );
+
+  done();
+};
+
+async function updateXmltv() {
+  await xmltvInterval.updateXML();
+  await xmltvInterval.restartInterval();
+}
+
+function cleanUpChannel(channel: Channel) {
   if (isUndefined(channel.groupTitle) || channel.groupTitle === '') {
     channel.groupTitle = 'dizqueTV';
   }
   channel.programs = channel.programs.flatMap(cleanUpProgram);
-  delete channel.fillerContent;
-  delete channel.filler;
+  // delete channel.fillerContent;
+  // delete channel.filler;
   channel.fallback = channel.fallback.flatMap(cleanUpProgram);
   channel.duration = 0;
   for (let i = 0; i < channel.programs.length; i++) {
@@ -178,12 +203,12 @@ function cleanUpChannel(channel) {
   }
 }
 
-function cleanUpProgram(program) {
-  delete program.start;
-  delete program.stop;
-  delete program.streams;
-  delete program.durationStr;
-  delete program.commercials;
+function cleanUpProgram(program: Program) {
+  // delete program.start;
+  // delete program.stop;
+  // delete program.streams;
+  // delete program.durationStr;
+  // delete program.commercials;
   if (isUndefined(program.duration) || program.duration <= 0) {
     logger.error(
       `Input contained a program with invalid duration: ${program.duration}. This program has been deleted`,

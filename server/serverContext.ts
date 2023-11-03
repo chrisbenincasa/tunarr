@@ -8,7 +8,7 @@ import { DbAccess, getDB } from './dao/db.js';
 import { FillerDB } from './dao/fillerDb.js';
 import { PlexServerDB } from './dao/plexServerDb.js';
 import { serverOptions } from './globals.js';
-import { hdhr } from './hdhr.js';
+import { HdhrService, hdhr } from './hdhr.js';
 import { CacheImageService } from './services/cacheImageService.js';
 import { EventService } from './services/eventService.js';
 import { FileCacheService } from './services/fileCacheService.js';
@@ -61,7 +61,7 @@ export type ServerContext = {
   m3uService: M3uService;
   eventService: EventService;
   guideService: TVGuideService;
-  hdhrService: any;
+  hdhrService: HdhrService;
   customShowDB: CustomShowDB;
   channelCache: ChannelCache;
   xmltv: XmlTvWriter;

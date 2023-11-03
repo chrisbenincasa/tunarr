@@ -27,7 +27,7 @@ type Iterator = {
 };
 
 // Use this to derive the minimum data we need for this service
-type ShuffleProgram = Omit<
+export type ShuffleProgram = Omit<
   Program,
   'summary' | 'icon' | 'rating' | 'ratingKey' | 'date' | 'year' | 'plexFile'
 >;
@@ -52,7 +52,7 @@ type RandomSlot = {
 
 // This is used on the frontend too, we will move common
 // types eventually.
-type RandomSlotSchedule = {
+export type RandomSlotSchedule = {
   flexPreference: string; // distribute or end
   maxDays: number; // days
   pad: number; // Pad time in millis
@@ -64,7 +64,7 @@ type RandomSlotSchedule = {
 };
 
 function getShow(program): ShowDataWithExtras | null {
-  let d = getShowData(program);
+  const d = getShowData(program);
   if (!d.hasShow) {
     logger.warn('Program returned hasShow = false', program, d);
     return null;
@@ -113,7 +113,7 @@ function addProgramToShow(show: SlotShow, program: ShuffleProgram) {
     return;
   }
 
-  let id = getProgramId(program);
+  const id = getProgramId(program);
 
   if (isUndefined(show.programs)) {
     show.programs = [];
@@ -127,10 +127,10 @@ function addProgramToShow(show: SlotShow, program: ShuffleProgram) {
 
 function getShowOrderer(show: SlotShow) {
   if (isUndefined(show.orderer)) {
-    let sortedPrograms = JSON.parse(JSON.stringify(show.programs));
+    const sortedPrograms = JSON.parse(JSON.stringify(show.programs));
     sortedPrograms.sort((a, b) => {
-      let showA = getShowData(a);
-      let showB = getShowData(b);
+      const showA = getShowData(a);
+      const showB = getShowData(b);
       return (showA.order ?? 0) - (showB.order ?? 0);
     });
 
@@ -162,10 +162,10 @@ function getShowShuffler(show: SlotShow) {
       throw Error(show.id + ' has no programs?');
     }
 
-    let randomPrograms: ShuffleProgram[] = JSON.parse(
+    const randomPrograms: ShuffleProgram[] = JSON.parse(
       JSON.stringify(show.programs),
     );
-    let n = randomPrograms.length;
+    const n = randomPrograms.length;
     shuffle(randomPrograms, 0, n);
     let position = 0;
 
@@ -177,7 +177,7 @@ function getShowShuffler(show: SlotShow) {
       next: () => {
         position++;
         if (position == n) {
-          let a = Math.floor(n / 2);
+          const a = Math.floor(n / 2);
           shuffle(randomPrograms, 0, a);
           shuffle(randomPrograms, a, n);
           position = 0;
@@ -245,13 +245,13 @@ export default async (
       userError: `Invalid schedule.padStyle value: "${schedule.padStyle}"`,
     };
   }
-  let flexBetween = schedule.flexPreference !== 'end';
+  const flexBetween = schedule.flexPreference !== 'end';
 
   // throttle so that the stream is not affected negatively
   // let steps = 0;
 
-  let showsById: Record<string, number> = {};
-  let shows: SlotShow[] = [];
+  const showsById: Record<string, number> = {};
+  const shows: SlotShow[] = [];
 
   function getNextForSlot(
     slot: RandomSlot,
@@ -265,7 +265,7 @@ export default async (
         duration: remaining,
       };
     }
-    let show = shows[showsById[slot.showId]];
+    const show = shows[showsById[slot.showId]];
     if (slot.showId.startsWith('redirect.')) {
       return {
         isOffline: true,
@@ -286,7 +286,7 @@ export default async (
     if (slot.showId === 'flex.' || slot.showId.startsWith('redirect')) {
       return;
     }
-    let show = shows[showsById[slot.showId]];
+    const show = shows[showsById[slot.showId]];
     if (slot.order === 'shuffle') {
       return getShowShuffler(show).next();
     } else if (slot.order === 'next') {
@@ -299,8 +299,8 @@ export default async (
     if (schedule.padStyle === 'slot') {
       padOption = 1;
     }
-    let x = item?.duration ?? 0;
-    let m = x % padOption;
+    const x = item?.duration ?? 0;
+    const m = x % padOption;
     let f = 0;
     if (m > constants.SLACK && padOption - m > constants.SLACK) {
       f = padOption - m;
@@ -314,7 +314,7 @@ export default async (
 
   // load the programs
   for (let i = 0; i < programs.length; i++) {
-    let p = programs[i];
+    const p = programs[i];
     let show = getShow(p);
     if (show != null) {
       if (isUndefined(showsById[show.id])) {
@@ -327,16 +327,16 @@ export default async (
     }
   }
 
-  let s = schedule.slots;
-  let ts = new Date().getTime();
+  const s = schedule.slots;
+  const ts = new Date().getTime();
 
-  let t0 = ts;
-  let p: any[] = [];
+  const t0 = ts;
+  const p: any[] = [];
   let t = t0;
 
-  let hardLimit = t0 + schedule.maxDays * DAY;
+  const hardLimit = t0 + schedule.maxDays * DAY;
 
-  let pushFlex = (duration: number) => {
+  const pushFlex = (duration: number) => {
     if (duration > 0) {
       t += duration;
       if (
@@ -354,7 +354,7 @@ export default async (
     }
   };
 
-  let pushProgram = (item: Partial<Program>) => {
+  const pushProgram = (item: Partial<Program>) => {
     if (item.isOffline && item.type !== 'redirect') {
       pushFlex(item.duration ?? 0);
     } else {
@@ -363,12 +363,12 @@ export default async (
     }
   };
 
-  let slotLastPlayed: Record<number, number> = {};
+  const slotLastPlayed: Record<number, number> = {};
 
   while (t < hardLimit && p.length < LIMIT) {
     await throttle();
     //ensure t is padded
-    let m = t % schedule.pad;
+    const m = t % schedule.pad;
     if (
       t % schedule.pad > constants.SLACK &&
       schedule.pad - m > constants.SLACK
@@ -385,7 +385,7 @@ export default async (
     let minNextTime = t + 24 * DAY;
     for (let i = 0; i < s.length; i++) {
       if (typeof slotLastPlayed[i] !== undefined) {
-        let lastt = slotLastPlayed[i];
+        const lastt = slotLastPlayed[i];
         minNextTime = Math.min(minNextTime, lastt + s[i].cooldown);
         if (t - lastt < s[i].cooldown - constants.SLACK) {
           continue;
@@ -403,7 +403,7 @@ export default async (
       pushFlex(minNextTime - t);
       continue;
     }
-    let item = getNextForSlot(slot, remaining!);
+    const item = getNextForSlot(slot, remaining!);
 
     if (item?.isOffline) {
       //flex or redirect. We can just use the whole duration
@@ -420,22 +420,22 @@ export default async (
       continue;
     }
 
-    let padded = makePadded(item);
+    const padded = makePadded(item);
     let total = padded.totalDuration;
     advanceSlot(slot);
-    let pads = [padded];
+    const pads = [padded];
 
     while (true) {
-      let item2 = getNextForSlot(slot, undefined);
+      const item2 = getNextForSlot(slot, undefined);
       if (total + (item2?.duration ?? 0) > remaining!) {
         break;
       }
-      let padded2 = makePadded(item2);
+      const padded2 = makePadded(item2);
       pads.push(padded2);
       advanceSlot(slot);
       total += padded2.totalDuration;
     }
-    let temt = t + total;
+    const temt = t + total;
     let rem = 0;
     if (
       temt % schedule.pad >= constants.SLACK &&
@@ -445,13 +445,13 @@ export default async (
     }
 
     if (flexBetween && schedule.padStyle === 'episode') {
-      let div = Math.floor(rem / schedule.pad);
-      let mod = rem % schedule.pad;
+      const div = Math.floor(rem / schedule.pad);
+      const mod = rem % schedule.pad;
       // add mod to the latest item
       pads[pads.length - 1].pad += mod;
       pads[pads.length - 1].totalDuration += mod;
 
-      let sortedPads = pads.map((p, $index) => {
+      const sortedPads = pads.map((p, $index) => {
         return {
           pad: p.pad,
           index: $index,
@@ -465,12 +465,12 @@ export default async (
         if (i < div % pads.length) {
           q++;
         }
-        let j = sortedPads[i].index;
+        const j = sortedPads[i].index;
         pads[j].pad += q * schedule.pad;
       }
     } else if (flexBetween) {
       //just distribute it equitatively
-      let div = Math.floor(rem / pads.length);
+      const div = Math.floor(rem / pads.length);
       let totalAdded = 0;
       for (let i = 0; i < pads.length; i++) {
         pads[i].pad += div;
@@ -492,7 +492,7 @@ export default async (
   while (t > hardLimit || p.length >= LIMIT) {
     t -= p.pop().duration;
   }
-  let m = (t - t0) % schedule.period;
+  const m = (t - t0) % schedule.period;
   if (m != 0) {
     //ensure the schedule is a multiple of period
     pushFlex(schedule.period - m);

@@ -1,11 +1,14 @@
-import express, { Request } from 'express';
-import fileUpload from 'express-fileupload';
+// import express, { Request } from 'express';
+import cors from '@fastify/cors';
+import middie from '@fastify/middie';
+import fastify from 'fastify';
 import fs from 'fs';
 import morgan from 'morgan';
 import { onShutdown } from 'node-graceful-shutdown';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import path from 'path';
+import serveStatic from 'serve-static';
 import { miscRouter } from './api.js';
 import { channelToolRouter } from './api/channelToolsApi.js';
 import { channelsRouter } from './api/channelsApi.js';
@@ -24,7 +27,9 @@ import { serverContext } from './serverContext.js';
 import { ServerOptions } from './types.js';
 import { video } from './video.js';
 import { xmltvInterval } from './xmltvGenerator.js';
-import cors from 'cors';
+import { time } from './util.js';
+import fp from 'fastify-plugin';
+// import fastifyPrintRoutes from 'fastify-print-routes';
 
 const logger = createLogger(import.meta);
 
@@ -85,31 +90,38 @@ function initDbDirectories() {
   }
 }
 
+// type AppContext = {
+//   serverCtx: ServerContext;
+// };
+
 export async function initServer(opts: ServerOptions) {
-  initDbDirectories();
+  await time('initDbDirectories', () => initDbDirectories);
 
-  const ctx = await serverContext();
+  const ctx = await time('generateServerContext', () => serverContext());
 
-  await xmltvInterval.updateXML();
-  await xmltvInterval.startInterval();
+  const updateXMLPromise = time<Promise<void>>('xmltv.update', () =>
+    xmltvInterval.updateXML(),
+  ).then(() => xmltvInterval.startInterval());
 
-  const app = express();
-  app.use(cors());
-  app.use(express.json({ limit: '50mb' }));
-  app.use(express.urlencoded({ extended: true }));
-  app.use(async (req: Request, _res, next) => {
-    req.ctx = await serverContext();
-    next();
-  });
+  const app = fastify({ logger: false, bodyLimit: 50 * 1024 });
+  await app
+    .register(middie)
+    .register(cors)
+    // .register(fastifyPrintRoutes)
+    .register(
+      fp((f, _, done) => {
+        f.decorateRequest('serverCtx', null);
+        f.addHook('onRequest', async (req) => {
+          console.log('hook time baby');
+          req.serverCtx = await serverContext();
+        });
+        done();
+      }),
+    );
+
   ctx.eventService.setup(app);
 
-  app.use(
-    fileUpload({
-      createParentPath: true,
-    }),
-  );
-
-  app.use(
+  await app.use(
     morgan(':method :url :status :res[content-length] - :response-time ms', {
       stream: {
         write: (message) => logger.http(message.trim()),
@@ -117,12 +129,9 @@ export async function initServer(opts: ServerOptions) {
     }),
   );
 
-  app.get('/version.js', (_, res) => {
-    res.writeHead(200, {
-      'Content-Type': 'application/javascript',
-    });
-
-    res.write(`
+  app.get('/version.js', async (_, res) => {
+    return res.header('content-type', 'application/javascript').status(200)
+      .send(`
         function setUIVersionNow() {
             setTimeout( setUIVersionNow, 1000);
             var element = document.getElementById("uiversion");
@@ -132,50 +141,65 @@ export async function initServer(opts: ServerOptions) {
         }
         setTimeout( setUIVersionNow, 1000);
     `);
-    res.end();
   });
-  app.use('/images', express.static(path.join(opts.database, 'images')));
-  app.use(
-    express.static(fileURLToPath(new URL('../web/public', import.meta.url))),
-  );
-  app.use('/images', express.static(path.join(opts.database, 'images')));
-  app.use('/cache/images', ctx.cacheImageService.routerInterceptor());
-  app.use(
-    '/cache/images',
-    express.static(path.join(opts.database, 'cache', 'images')),
-  );
-  app.use(
-    '/favicon.svg',
-    express.static(path.join(__dirname, 'resources', 'favicon.svg')),
-  );
-  app.use(
-    '/custom.css',
-    express.static(path.join(opts.database, 'custom.css')),
-  );
+
+  await app
+    .use('/images', serveStatic(path.join(opts.database, 'images')))
+    .use(serveStatic(fileURLToPath(new URL('../web/public', import.meta.url))))
+    .use('/images', serveStatic(path.join(opts.database, 'images')))
+    .use('/cache/images', ctx.cacheImageService.routerInterceptor())
+    .use(
+      '/cache/images',
+      serveStatic(path.join(opts.database, 'cache', 'images')),
+    )
+    .use(
+      '/favicon.svg',
+      serveStatic(path.join(__dirname, 'resources', 'favicon.svg')),
+    )
+    .use('/custom.css', serveStatic(path.join(opts.database, 'custom.css')));
 
   // API Routers
-  app.use(plexServersRouter);
-  app.use(channelsRouter);
-  app.use(fillerRouter);
-  app.use(customShowRouter);
-  app.use(ffmpegSettingsRouter);
-  app.use(plexSettingsRouter);
-  app.use(xmlTvSettingsRouter);
-  app.use(hdhrSettingsRouter);
-  app.use(channelToolRouter);
-  app.use(guideRouter);
-  app.use(miscRouter);
-  app.use('/api/cache/images', ctx.cacheImageService.apiRouters());
+  await app
+    .register(plexServersRouter)
+    .register(fp(channelsRouter))
+    .register(fillerRouter)
+    .register(customShowRouter)
+    .register(ffmpegSettingsRouter)
+    .register(plexSettingsRouter)
+    .register(xmlTvSettingsRouter)
+    .register(hdhrSettingsRouter)
+    .register(channelToolRouter)
+    .register(guideRouter)
+    .register(miscRouter);
 
-  app.use(video(ctx.fillerDB));
-  app.use(ctx.hdhrService.router);
-  app.listen(opts.port, () => {
-    logger.info(`HTTP server running on port: http://*:${opts.port}`);
-    const hdhrSettings = ctx.dbAccess.hdhrSettings();
-    if (hdhrSettings.autoDiscoveryEnabled) {
-      ctx.hdhrService.ssdp.start();
-    }
-  });
+  await app
+    .use('/api/cache/images', ctx.cacheImageService.apiRouters())
+    .use(video(ctx.fillerDB))
+    .use(ctx.hdhrService.router);
+
+  await updateXMLPromise;
+
+  app.listen(
+    {
+      port: opts.port,
+    },
+    () => {
+      logger.info(`HTTP server running on port: http://*:${opts.port}`);
+      const hdhrSettings = ctx.dbAccess.hdhrSettings();
+      if (hdhrSettings.autoDiscoveryEnabled) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+        (ctx.hdhrService.ssdp as any).start();
+      }
+
+      ctx.eventService.push('lifecycle', {
+        message: `Server Started`,
+        detail: {
+          time: new Date().getTime(),
+        },
+        level: 'success',
+      });
+    },
+  );
 }
 
 function _wait(t: number) {
@@ -183,20 +207,6 @@ function _wait(t: number) {
     setTimeout(resolve, t);
   });
 }
-
-async function sendEventAfterTime() {
-  const ctx = await serverContext();
-  const t = new Date().getTime();
-  await _wait(20000);
-  ctx.eventService.push('lifecycle', {
-    message: `Server Started`,
-    detail: {
-      time: t,
-    },
-    level: 'success',
-  });
-}
-sendEventAfterTime();
 
 onShutdown('log', [], async () => {
   const ctx = await serverContext();

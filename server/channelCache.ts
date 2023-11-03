@@ -2,7 +2,7 @@ import { compact, isUndefined } from 'lodash-es';
 import constants from './constants.js';
 import { ChannelDB } from './dao/channelDb.js';
 import { Channel, ImmutableChannel } from './dao/db.js';
-import { LineupItem, Maybe } from './types.js';
+import { LineupItem, Maybe, isCommercialLineupItem } from './types.js';
 
 const SLACK = constants.SLACK;
 
@@ -10,7 +10,7 @@ export class ChannelCache {
   private cache: Record<number, { t0: number; lineupItem: LineupItem }> = {};
   private configCache: Record<number, ImmutableChannel> = {};
   private fillerPlayTimeCache = {};
-  private programPlayTimeCache = {};
+  private programPlayTimeCache: Record<string, number> = {};
   private channelNumbers: Maybe<number[]>;
   private channelDb: ChannelDB;
 
@@ -120,7 +120,7 @@ export class ChannelCache {
     }
     this.programPlayTimeCache[this.getKey(channelId, lineupItem)] =
       t0 + remaining;
-    if (typeof lineupItem.fillerId !== 'undefined') {
+    if (isCommercialLineupItem(lineupItem)) {
       this.fillerPlayTimeCache[
         this.getFillerKey(channelId, lineupItem.fillerId)
       ] = t0 + remaining;

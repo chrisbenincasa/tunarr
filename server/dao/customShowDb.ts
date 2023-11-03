@@ -4,6 +4,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { Maybe } from '../types.js';
 import { CustomShow, CustomShowCollection, DbAccess } from './db.js';
 
+export type CustomShowUpdate = MarkOptional<CustomShow, 'content'>;
+export type CustomShowInsert = MarkOptional<CustomShow, 'id' | 'content'>;
 export class CustomShowDB {
   private collection: CustomShowCollection;
 
@@ -15,10 +17,7 @@ export class CustomShowDB {
     return this.collection.getById(id);
   }
 
-  async saveShow(
-    id: Maybe<string>,
-    customShow: MarkOptional<CustomShow, 'content'>,
-  ) {
+  async saveShow(id: Maybe<string>, customShow: CustomShowUpdate) {
     if (isUndefined(id)) {
       throw Error('Mising custom show id');
     }
@@ -32,8 +31,8 @@ export class CustomShowDB {
     return this.collection.insertOrUpdate(showToSave);
   }
 
-  async createShow(customShow: MarkOptional<CustomShow, 'id' | 'content'>) {
-    let id = uuidv4();
+  async createShow(customShow: CustomShowInsert) {
+    const id = uuidv4();
     await this.saveShow(id, {
       ...customShow,
       id,
@@ -56,7 +55,7 @@ export class CustomShowDB {
 
   getAllShowsInfo() {
     //returns just name and id
-    let shows = this.getAllShows();
+    const shows = this.getAllShows();
     return shows.map((f) => {
       return {
         id: f.id,

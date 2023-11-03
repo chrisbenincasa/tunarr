@@ -1,7 +1,7 @@
-import express from 'express';
 import fileUpload from 'express-fileupload';
+import { FastifyPluginCallback } from 'fastify';
 import { promises as fsPromises } from 'fs';
-import { find, isUndefined } from 'lodash-es';
+import { find, isNil, isUndefined } from 'lodash-es';
 import path from 'path';
 import constants from './constants.js';
 import { getDB } from './dao/db.js';
@@ -13,109 +13,127 @@ import { xmltvInterval } from './xmltvGenerator.js';
 
 const logger = createLogger(import.meta);
 
-export const miscRouter = express.Router();
-
-miscRouter.get('/api/version', async (req, res) => {
-  try {
-    const ffmpegSettings = req.ctx.dbAccess.ffmpegSettings();
-    const v = await new FFMPEGInfo(ffmpegSettings).getVersion();
-    res.send({
-      dizquetv: constants.VERSION_NAME,
-      ffmpeg: v,
-      nodejs: process.version,
-    });
-  } catch (err) {
-    logger.error(err);
-    res.status(500).send('error');
+declare module 'fastify' {
+  interface FastifyRequest {
+    files: fileUpload.FileArray | null | undefined;
   }
-});
+}
 
-miscRouter.post('/api/upload/image', async (req, res) => {
-  try {
-    if (!req.files) {
-      res.send({
-        status: false,
-        message: 'No file uploaded',
+export const miscRouter: FastifyPluginCallback = (fastify, _opts, done) => {
+  fastify.use(
+    fileUpload({
+      createParentPath: true,
+    }),
+  );
+
+  fastify.get('/api/version', async (req, res) => {
+    try {
+      const ffmpegSettings = req.serverCtx.dbAccess.ffmpegSettings();
+      const v = await new FFMPEGInfo(ffmpegSettings).getVersion();
+      return res.send({
+        dizquetv: constants.VERSION_NAME,
+        ffmpeg: v,
+        nodejs: process.version,
       });
-    } else {
+    } catch (err) {
+      logger.error(err);
+      return res.status(500).send('error');
+    }
+  });
+
+  fastify.post('/api/upload/image', async (req, res) => {
+    try {
+      if (isNil(req.files)) {
+        return res.send({
+          status: false,
+          message: 'No file uploaded',
+        });
+      }
+
       const logo = req.files.image as fileUpload.UploadedFile;
-      logo.mv(
+      await logo.mv(
         path.join(serverOptions().database, '/images/uploads/', logo.name),
       );
 
-      res.send({
+      return res.send({
         status: true,
         message: 'File is uploaded',
         data: {
           name: logo.name,
           mimetype: logo.mimetype,
           size: logo.size,
-          fileUrl: `${req.protocol}://${req.get('host')}/images/uploads/${
-            logo.name
-          }`,
+          fileUrl: `${req.protocol}://${req.hostname}/images/uploads/${logo.name}`,
         },
       });
+    } catch (err) {
+      return res.status(500).send(err);
     }
-  } catch (err) {
-    res.status(500).send(err);
-  }
-});
+  });
 
-miscRouter.get('/api/xmltv-last-refresh', (_req, res) => {
-  try {
-    res.send(JSON.stringify({ value: xmltvInterval.lastRefresh?.valueOf() }));
-  } catch (err) {
-    logger.error(err);
-    res.status(500).send('error');
-  }
-});
+  fastify.get('/api/xmltv-last-refresh', (_req, res) => {
+    try {
+      return res.send(
+        JSON.stringify({ value: xmltvInterval.lastRefresh?.valueOf() }),
+      );
+    } catch (err) {
+      logger.error(err);
+      return res.status(500).send('error');
+    }
+  });
 
-// XMLTV.XML Download
-miscRouter.get('/api/xmltv.xml', async (req, res) => {
-  try {
-    const host = `${req.protocol}://${req.get('host')}`;
+  // XMLTV.XML Download
+  fastify.get('/api/xmltv.xml', async (req, res) => {
+    try {
+      const host = `${req.protocol}://${req.hostname}`;
 
-    res.set('Cache-Control', 'no-store');
-    res.type('application/xml');
+      await res
+        .header('Cache-Control', 'no-store')
+        .header('Content-Type', 'application/xml');
 
-    const xmltvSettings = req.ctx.dbAccess.xmlTvSettings();
-    const fileContent = await fsPromises.readFile(
-      xmltvSettings.outputPath,
-      'utf8',
-    );
-    const fileFinal = fileContent.replace(/\{\{host\}\}/g, host);
-    res.send(fileFinal);
-  } catch (err) {
-    logger.error(err);
-    res.status(500).send('error');
-  }
-});
+      const xmltvSettings = req.serverCtx.dbAccess.xmlTvSettings();
+      const fileContent = await fsPromises.readFile(
+        xmltvSettings.outputPath,
+        'utf8',
+      );
+      const fileFinal = fileContent.replace(/\{\{host\}\}/g, host);
+      return res.send(fileFinal);
+    } catch (err) {
+      logger.error(err);
+      return res.status(500).send('error');
+    }
+  });
 
-// CHANNELS.M3U Download
-miscRouter.get('/api/channels.m3u', async (req, res) => {
-  try {
-    res.type('text');
+  // CHANNELS.M3U Download
+  fastify.get('/api/channels.m3u', async (req, res) => {
+    try {
+      await res.type('text');
 
-    const host = `${req.protocol}://${req.get('host')}`;
-    const data = await req.ctx.m3uService.getChannelList(host);
+      const host = `${req.protocol}://${req.hostname}`;
+      const data = await req.serverCtx.m3uService.getChannelList(host);
 
-    res.send(data);
-  } catch (err) {
-    logger.error(err);
-    res.status(500).send('error');
-  }
-});
+      return res.send(data);
+    } catch (err) {
+      logger.error(err);
+      return res.status(500).send('error');
+    }
+  });
 
-miscRouter.get('/api/plex', async (req, res) => {
-  const db = await getDB();
-  const servers = db.plexServers().getAll();
-  const server = find(servers, { name: req.query['name'] as string });
-  if (isUndefined(server)) {
-    return res
-      .status(404)
-      .json({ error: 'No server found with name: ' + req.query.name });
-  }
+  fastify.get<{ Querystring: { name: string; path: string } }>(
+    '/api/plex',
+    async (req, res) => {
+      const db = await getDB();
+      const servers = db.plexServers().getAll();
+      const server = find(servers, { name: req.query.name });
+      if (isUndefined(server)) {
+        return res
+          .status(404)
+          .send({ error: 'No server found with name: ' + req.query.name });
+      }
 
-  const plex = new Plex(server);
-  return res.json(await plex.Get(req.query['path'] as string));
-});
+      const plex = new Plex(server);
+      return res.send(await plex.Get(req.query.path));
+    },
+  );
+
+  done();
+};
