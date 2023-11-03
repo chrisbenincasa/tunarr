@@ -17,9 +17,6 @@
   "dependencies": {
     "@types/cors": "^2.8.15",
     "JSONStream": "1.0.5",
-    "angular": "^1.6.10",
-    "angular-router-browserify": "0.0.2",
-    "angular-vs-repeat": "2.0.13",
     "axios": "^1.6.0",
     "body-parser": "^1.19.0",
     "cors": "^2.8.5",
@@ -28,7 +25,6 @@
     "fluent-ffmpeg": "^2.1.2",
     "lodash-es": "^4.17.21",
     "lowdb": "^6.1.1",
-    "merge": "2.1.1",
     "morgan": "^1.10.0",
     "node-graceful-shutdown": "1.1.0",
     "node-schedule": "^2.1.1",

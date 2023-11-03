@@ -43,7 +43,7 @@ console.log(
 `,
 );
 
-const NODE = parseInt(process.version!.match(/^[^0-9]*(\d+)\..*$/)![1]);
+const NODE = parseInt(process.version.match(/^[^0-9]*(\d+)\..*$/)![1]);
 
 if (NODE < 12) {
   logger.error(
@@ -90,7 +90,7 @@ export async function initServer(opts: ServerOptions) {
 
   const ctx = await serverContext();
 
-  xmltvInterval.updateXML();
+  await xmltvInterval.updateXML();
   await xmltvInterval.startInterval();
 
   const app = express();
@@ -171,7 +171,7 @@ export async function initServer(opts: ServerOptions) {
   app.use(ctx.hdhrService.router);
   app.listen(opts.port, () => {
     logger.info(`HTTP server running on port: http://*:${opts.port}`);
-    let hdhrSettings = ctx.dbAccess.hdhrSettings();
+    const hdhrSettings = ctx.dbAccess.hdhrSettings();
     if (hdhrSettings.autoDiscoveryEnabled) {
       ctx.hdhrService.ssdp.start();
     }
@@ -186,7 +186,7 @@ function _wait(t: number) {
 
 async function sendEventAfterTime() {
   const ctx = await serverContext();
-  let t = new Date().getTime();
+  const t = new Date().getTime();
   await _wait(20000);
   ctx.eventService.push('lifecycle', {
     message: `Server Started`,
@@ -200,7 +200,7 @@ sendEventAfterTime();
 
 onShutdown('log', [], async () => {
   const ctx = await serverContext();
-  let t = new Date().getTime();
+  const t = new Date().getTime();
   ctx.eventService.push('lifecycle', {
     message: `Initiated Server Shutdown`,
     detail: {

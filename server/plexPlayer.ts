@@ -18,7 +18,7 @@ import { isUndefined } from 'lodash-es';
 import { Player } from './player.js';
 import { Writable } from 'stream';
 
-let USED_CLIENTS = {};
+const USED_CLIENTS: Record<string, boolean> = {};
 
 export class PlexPlayer extends Player {
   private context: PlayerContext;
@@ -57,15 +57,15 @@ export class PlexPlayer extends Player {
   }
 
   async play(outStream: Writable) {
-    let lineupItem = this.context.lineupItem;
+    const lineupItem = this.context.lineupItem;
     if (!isPlexBackedLineupItem(lineupItem)) {
       throw new Error(
         'Lineup item is not backed by Plex: ' + JSON.stringify(lineupItem),
       );
     }
-    let ffmpegSettings = this.context.ffmpegSettings;
-    let db = this.context.dbAccess;
-    let channel = this.context.channel;
+    const ffmpegSettings = this.context.ffmpegSettings;
+    const db = this.context.dbAccess;
+    const channel = this.context.channel;
     let server = db.plexServers().getById(lineupItem.serverKey);
     if (isUndefined(server)) {
       throw Error(
@@ -80,8 +80,8 @@ export class PlexPlayer extends Player {
     }
 
     try {
-      let plexSettings = db.plexSettings();
-      let plexTranscoder = new PlexTranscoder(
+      const plexSettings = db.plexSettings();
+      const plexTranscoder = new PlexTranscoder(
         this.clientId,
         server,
         plexSettings,
@@ -89,7 +89,7 @@ export class PlexPlayer extends Player {
         lineupItem,
       );
       this.plexTranscoder = plexTranscoder;
-      let watermark = this.context.watermark;
+      const watermark = this.context.watermark;
       let ffmpeg = new FFMPEG(ffmpegSettings, channel); // Set the transcoder options
       ffmpeg.setAudioOnly(this.context.audioOnly);
       this.ffmpeg = ffmpeg;
@@ -101,22 +101,22 @@ export class PlexPlayer extends Player {
       ) {
         streamDuration = lineupItem.streamDuration / 1000;
       }
-      let deinterlace = ffmpegSettings.enableTranscoding; //for now it will always deinterlace when transcoding is enabled but this is sub-optimal
+      const deinterlace = ffmpegSettings.enableTranscoding; //for now it will always deinterlace when transcoding is enabled but this is sub-optimal
 
-      let stream = await plexTranscoder.getStream(deinterlace);
+      const stream = await plexTranscoder.getStream(deinterlace);
       if (this.killed) {
         return;
       }
 
       //let streamStart = (stream.directPlay) ? plexTranscoder.currTimeS : undefined;
       //let streamStart = (stream.directPlay) ? plexTranscoder.currTimeS : lineupItem.start;
-      let streamStart = stream.directPlay
+      const streamStart = stream.directPlay
         ? plexTranscoder.currTimeS
         : undefined;
-      let streamStats = stream.streamStats;
+      const streamStats = stream.streamStats;
       streamStats.duration = lineupItem.streamDuration;
 
-      let emitter = new EventEmitter() as TypedEventEmitter<FfmpegEvents>;
+      const emitter = new EventEmitter() as TypedEventEmitter<FfmpegEvents>;
       //setTimeout( () => {
       let ff = await ffmpeg.spawnStream(
         stream.streamUrl,

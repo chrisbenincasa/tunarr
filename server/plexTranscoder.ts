@@ -53,11 +53,11 @@ export class PlexTranscoder {
   private currTimeMs: any;
   public currTimeS: any;
   private duration: any;
-  private server: any;
+  private server: PlexServerSettings;
   private transcodingArgs: any;
   private decisionJson: any;
   private updateInterval: number;
-  private updatingPlex: any;
+  private updatingPlex: NodeJS.Timeout | undefined;
   private playState: string;
   private mediaHasNoVideo: boolean;
   private albumArt: any;
@@ -207,7 +207,7 @@ export class PlexTranscoder {
       this.videoIsDirect = true;
     }
 
-    let streamStats = this.getVideoStats();
+    const streamStats = this.getVideoStats();
 
     // use correct audio stream if direct play
     streamStats.audioIndex = directPlay ? await this.getAudioIndex() : 'a';
@@ -230,22 +230,22 @@ export class PlexTranscoder {
     deinterlace: boolean,
     audioOnly: boolean,
   ) {
-    let resolution = directStream
+    const resolution = directStream
       ? this.settings.maxPlayableResolution
       : this.settings.maxTranscodeResolution;
-    let bitrate = directStream
+    const bitrate = directStream
       ? this.settings.directStreamBitrate
       : this.settings.transcodeBitrate;
-    let mediaBufferSize = directStream
+    const mediaBufferSize = directStream
       ? this.settings.mediaBufferSize
       : this.settings.transcodeMediaBufferSize;
-    let subtitles = this.settings.enableSubtitles ? 'burn' : 'none'; // subtitle options: burn, none, embedded, sidecar
-    let streamContainer = 'mpegts'; // Other option is mkv, mkv has the option of copying it's subs for later processing
-    let isDirectPlay = directPlay ? '1' : '0';
-    let hasMDE = '1';
+    const subtitles = this.settings.enableSubtitles ? 'burn' : 'none'; // subtitle options: burn, none, embedded, sidecar
+    const streamContainer = 'mpegts'; // Other option is mkv, mkv has the option of copying it's subs for later processing
+    const isDirectPlay = directPlay ? '1' : '0';
+    const hasMDE = '1';
 
-    let videoQuality = `100`; // Not sure how this applies, maybe this works if maxVideoBitrate is not set
-    let profileName = `Generic`; // Blank profile, everything is specified through X-Plex-Client-Profile-Extra
+    const videoQuality = `100`; // Not sure how this applies, maybe this works if maxVideoBitrate is not set
+    const profileName = `Generic`; // Blank profile, everything is specified through X-Plex-Client-Profile-Extra
 
     let vc = [...this.settings.videoCodecs];
     //This codec is not currently supported by plex so requesting it to transcode will always
@@ -295,7 +295,7 @@ add-limitation(scope=videoCodec&scopeName=*&type=upperBound&name=video.height&va
       clientProfile += `+add-limitation(scope=videoCodec&scopeName=*&type=notMatch&name=video.scanType&value=interlaced)`;
     }
 
-    let clientProfile_enc = encodeURIComponent(clientProfile);
+    const clientProfile_enc = encodeURIComponent(clientProfile);
     this.transcodingArgs = `X-Plex-Platform=${profileName}&\
 X-Plex-Product=${this.product}&\
 X-Plex-Client-Platform=${profileName}&\
@@ -362,9 +362,9 @@ lang=en`;
   }
 
   getVideoStats() {
-    let ret: VideoStats = {};
+    const ret: VideoStats = {};
     try {
-      let streams: any[] =
+      const streams: any[] =
         this.decisionJson.Metadata[0].Media[0].Part[0].Stream;
       ret.duration = parseFloat(
         this.decisionJson.Metadata[0].Media[0].Part[0].duration,
@@ -383,7 +383,7 @@ lang=en`;
           ret.anamorphic =
             stream.anamorphic === '1' || stream.anamorphic === true;
           if (ret.anamorphic) {
-            let parsed = parsePixelAspectRatio(stream.pixelAspectRatio);
+            const parsed = parsePixelAspectRatio(stream.pixelAspectRatio);
             if (isNaN(parsed.p) || isNaN(parsed.q)) {
               throw Error('isNaN');
             }
@@ -437,7 +437,7 @@ lang=en`;
     const response = await this.plex.Get(this.key);
     this.log(response);
     try {
-      let streams = response.Metadata[0].Media[0].Part[0].Stream;
+      const streams = response.Metadata[0].Media[0].Part[0].Stream;
 
       streams.forEach(function (stream) {
         // Audio. Only look at stream being used
@@ -475,7 +475,7 @@ lang=en`;
       return;
     }
 
-    let transcodeDecisionCode = response.transcodeDecisionCode;
+    const transcodeDecisionCode = response.transcodeDecisionCode;
     if (isUndefined(transcodeDecisionCode)) {
       this.decisionJson.transcodeDecisionCode = 'novideo';
       this.log('Strange case, attempt direct play');
@@ -493,11 +493,11 @@ lang=en`;
       const mediaContainer = await this.plex.Get(
         `${this.key}?${this.transcodingArgs}`,
       );
-      let metadata = getOneOrUndefined(mediaContainer, 'Metadata');
+      const metadata = getOneOrUndefined(mediaContainer, 'Metadata');
       if (typeof metadata !== 'undefined') {
         this.albumArt.path = `${this.server.uri}${metadata.thumb}?X-Plex-Token=${this.server.accessToken}`;
 
-        let media = getOneOrUndefined(metadata, 'Media');
+        const media = getOneOrUndefined(metadata, 'Media');
         if (typeof media !== 'undefined') {
           if (isUndefined(media.videoCodec)) {
             this.log('Audio-only file detected');
@@ -519,10 +519,10 @@ lang=en`;
   }
 
   getStatusUrl() {
-    let profileName = `Generic`;
+    const profileName = `Generic`;
 
-    let containerKey = `/video/:/transcode/universal/decision?${this.transcodingArgs}`;
-    let containerKey_enc = encodeURIComponent(containerKey);
+    const containerKey = `/video/:/transcode/universal/decision?${this.transcodingArgs}`;
+    const containerKey_enc = encodeURIComponent(containerKey);
 
     return `/:/timeline?\
 containerKey=${containerKey_enc}&\
@@ -547,7 +547,7 @@ X-Plex-Token=${this.server.accessToken}`;
       this.playState = 'playing';
       this.updatePlex(); // do initial update
       this.updatingPlex = setInterval(
-        this.updatePlex.bind(this),
+        () => this.updatePlex(),
         this.updateInterval,
       );
     }
@@ -588,7 +588,7 @@ X-Plex-Token=${this.server.accessToken}`;
 }
 
 function parsePixelAspectRatio(s) {
-  let x = s.split(':');
+  const x = s.split(':');
   return {
     p: parseInt(x[0], 10),
     q: parseInt(x[1], 10),
@@ -602,7 +602,7 @@ function getOneOrUndefined(object, field) {
   if (isUndefined(object[field])) {
     return undefined;
   }
-  let x = object[field];
+  const x = object[field];
   if (x.length < 1) {
     return undefined;
   }

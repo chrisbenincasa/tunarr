@@ -18,10 +18,10 @@ export class ChannelCache {
     this.channelDb = channelDb;
   }
 
-  async getChannelConfig(channelId: number): Promise<Maybe<ImmutableChannel>> {
+  getChannelConfig(channelId: number): Maybe<ImmutableChannel> {
     //with lazy-loading
     if (isUndefined(this.configCache[channelId])) {
-      let channel = this.channelDb.getChannel(channelId);
+      const channel = this.channelDb.getChannel(channelId);
       if (!isUndefined(channel)) {
         this.configCache[channelId] = channel;
       }
@@ -30,16 +30,16 @@ export class ChannelCache {
   }
 
   async getAllChannels() {
-    const channelNumbers = await this.getAllNumbers();
+    const channelNumbers = this.getAllNumbers();
     const allChannels = await Promise.all(
-      channelNumbers.map(async (x) => {
+      channelNumbers.map((x) => {
         return this.getChannelConfig(x);
       }),
     );
     return compact(allChannels);
   }
 
-  async getAllNumbers() {
+  getAllNumbers() {
     if (isUndefined(this.channelNumbers)) {
       this.channelNumbers = this.channelDb.getAllChannelNumbers();
     }
@@ -50,9 +50,9 @@ export class ChannelCache {
     if (isUndefined(this.cache[channelId])) {
       return;
     }
-    let recorded = this.cache[channelId];
-    let lineupItem = { ...recorded.lineupItem };
-    let diff = t1 - recorded.t0;
+    const recorded = this.cache[channelId];
+    const lineupItem = { ...recorded.lineupItem };
+    const diff = t1 - recorded.t0;
     let rem = lineupItem.duration - lineupItem.start;
     if (!isUndefined(lineupItem.streamDuration)) {
       rem = Math.min(rem, lineupItem.streamDuration);
@@ -107,7 +107,11 @@ export class ChannelCache {
     return channelId + '|' + fillerId;
   }
 
-  private recordProgramPlayTime(channelId: number, lineupItem, t0: number) {
+  private recordProgramPlayTime(
+    channelId: number,
+    lineupItem: LineupItem,
+    t0: number,
+  ) {
     let remaining;
     if (typeof lineupItem.streamDuration !== 'undefined') {
       remaining = lineupItem.streamDuration;
@@ -124,7 +128,7 @@ export class ChannelCache {
   }
 
   getProgramLastPlayTime(channelId: number, program) {
-    let v = this.programPlayTimeCache[this.getKey(channelId, program)];
+    const v = this.programPlayTimeCache[this.getKey(channelId, program)];
     if (isUndefined(v)) {
       return 0;
     } else {
@@ -133,7 +137,7 @@ export class ChannelCache {
   }
 
   getFillerLastPlayTime(channelId: number, fillerId) {
-    let v = this.fillerPlayTimeCache[this.getFillerKey(channelId, fillerId)];
+    const v = this.fillerPlayTimeCache[this.getFillerKey(channelId, fillerId)];
     if (isUndefined(v)) {
       return 0;
     } else {

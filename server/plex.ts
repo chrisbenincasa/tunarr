@@ -13,7 +13,6 @@ const logger = createLogger(import.meta);
 export class Plex {
   private axiosInstance: AxiosInstance;
   private _accessToken: string;
-  private _server: any;
   private _headers: object;
 
   constructor(opts: Partial<PlexServerSettings>) {
@@ -26,9 +25,7 @@ export class Plex {
         uri = uri.slice(0, uri.length - 1);
       }
     }
-    this._server = {
-      uri: uri,
-    };
+
     this._headers = {
       Accept: 'application/json',
       'X-Plex-Device': 'dizqueTV',
@@ -55,10 +52,6 @@ export class Plex {
       );
       return req;
     });
-  }
-
-  get URL() {
-    return `${this._server.uri}`;
   }
 
   async SignIn(username: string, password: string) {
@@ -122,7 +115,7 @@ export class Plex {
       );
     }
 
-    let res = await this.doRequest(req);
+    const res = await this.doRequest(req);
     if (!res.MediaContainer) {
       console.error('Expected MediaContainer, got ' + JSON.stringify(res.data));
     }
@@ -154,7 +147,7 @@ export class Plex {
     query: any = {},
     optionalHeaders: RawAxiosRequestHeaders = {},
   ) {
-    var req: AxiosRequestConfig = {
+    const req: AxiosRequestConfig = {
       method: 'post',
       url: path,
       headers: optionalHeaders,
@@ -182,8 +175,8 @@ export class Plex {
 
   async GetDVRS() {
     try {
-      var result = await this.Get('/livetv/dvrs');
-      var dvrs = result.Dvr;
+      const result = await this.Get('/livetv/dvrs');
+      let dvrs = result.Dvr;
       dvrs = isUndefined(dvrs) ? [] : dvrs;
       return dvrs;
     } catch (err) {
@@ -194,8 +187,8 @@ export class Plex {
 
   async RefreshGuide(_dvrs) {
     try {
-      var dvrs = typeof _dvrs !== 'undefined' ? _dvrs : await this.GetDVRS();
-      for (var i = 0; i < dvrs.length; i++) {
+      const dvrs = typeof _dvrs !== 'undefined' ? _dvrs : await this.GetDVRS();
+      for (let i = 0; i < dvrs.length; i++) {
         await this.Post(`/livetv/dvrs/${dvrs[i].key}/reloadGuide`);
       }
     } catch (err) {
@@ -204,9 +197,9 @@ export class Plex {
   }
 
   async RefreshChannels(channels, _dvrs) {
-    var dvrs = typeof _dvrs !== 'undefined' ? _dvrs : await this.GetDVRS();
-    var _channels: any[] = [];
-    let qs: Record<string, string> = {};
+    const dvrs = typeof _dvrs !== 'undefined' ? _dvrs : await this.GetDVRS();
+    const _channels: any[] = [];
+    const qs: Record<string, string> = {};
     for (var i = 0; i < channels.length; i++) {
       _channels.push(channels[i].number);
     }
@@ -216,7 +209,7 @@ export class Plex {
       qs[`channelMappingByKey[${_channels[i]}]`] = _channels[i];
     }
     for (var i = 0; i < dvrs.length; i++) {
-      for (var y = 0; y < dvrs[i].Device.length; y++) {
+      for (let y = 0; y < dvrs[i].Device.length; y++) {
         await this.Put(
           `/media/grabbers/devices/${dvrs[i].Device[y].key}/channelmap`,
           qs,

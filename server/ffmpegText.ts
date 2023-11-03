@@ -19,7 +19,7 @@ export class FfmpegText extends events.EventEmitter {
       '-stream_loop',
       '-1',
       '-i',
-      `color=c=black:s=${opts.targetResolution}`, // this is wrong, figure out the param
+      `color=c=black:s=${opts.targetResolution.widthPx}x${opts.targetResolution.heightPx}`, // this is wrong, figure out the param
       '-f',
       'lavfi',
       '-i',

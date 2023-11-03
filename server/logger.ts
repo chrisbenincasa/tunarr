@@ -19,7 +19,7 @@ const hformat = (module: ImportMeta) =>
     let msg = `${timestamp} [${level}] ${getLabel(module)}${
       label ? `[${label}]` : ''
     }: ${message} `;
-    for (let key of Object.keys(metadata)) {
+    for (const key of Object.keys(metadata)) {
       if (key === 'stack') {
         msg += metadata.message;
         if (metadata.stack) {

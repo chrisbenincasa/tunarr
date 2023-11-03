@@ -150,7 +150,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       duration = MAXIMUM_ERROR_DURATION_MS;
     }
     duration = Math.min(MAXIMUM_ERROR_DURATION_MS, duration);
-    let streamStats = {
+    const streamStats = {
       videoWidth: this.wantedW,
       videoHeight: this.wantedH,
       duration: duration,
@@ -175,7 +175,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       return;
     }
 
-    let streamStats = {
+    const streamStats = {
       videoWidth: this.wantedW,
       videoHeight: this.wantedH,
       duration: duration,
@@ -202,7 +202,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     _,
     isConcatPlaylist,
   ) {
-    let ffmpegArgs: string[] = [
+    const ffmpegArgs: string[] = [
       `-threads`,
       isConcatPlaylist ? '1' : this.opts.numThreads.toString(),
       `-fflags`,
@@ -230,7 +230,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       );
 
     // Map correct audio index. '?' so doesn't fail if no stream available.
-    let audioIndex = isUndefined(streamStats)
+    const audioIndex = isUndefined(streamStats)
       ? 'a'
       : `${streamStats.audioIndex}`;
 
@@ -249,19 +249,19 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       // When we have an individual stream, there is a pipeline of possible
       // filters to apply.
       //
-      var doOverlay = !isUndefined(watermark);
-      var iW = streamStats.videoWidth;
-      var iH = streamStats.videoHeight;
+      let doOverlay = !isUndefined(watermark);
+      let iW = streamStats.videoWidth;
+      let iH = streamStats.videoHeight;
 
       // (explanation is the same for the video and audio streams)
       // The initial stream is called '[video]'
-      var currentVideo = '[video]';
-      var currentAudio = '[audio]';
+      let currentVideo = '[video]';
+      let currentAudio = '[audio]';
       // Initially, videoComplex does nothing besides assigning the label
       // to the input stream
-      var videoIndex = 'v';
-      var audioComplex = `;[${audioFile}:${audioIndex}]anull[audio]`;
-      var videoComplex = `;[${videoFile}:${videoIndex}]null[video]`;
+      const videoIndex = 'v';
+      let audioComplex = `;[${audioFile}:${audioIndex}]anull[audio]`;
+      let videoComplex = `;[${videoFile}:${videoIndex}]null[video]`;
       // Depending on the options we will apply multiple filters
       // each filter modifies the current video stream. Adds a filter to
       // the videoComplex variable. The result of the filter becomes the
@@ -339,9 +339,9 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
             videoComplex = `;realtime[videox]`;
             inputFiles++;
           } else if (this.opts.errorScreen == 'text') {
-            var sz2 = Math.ceil(iH / 33.0);
-            var sz1 = Math.ceil((sz2 * 3) / 2);
-            var sz3 = 2 * sz2;
+            const sz2 = Math.ceil(iH / 33.0);
+            const sz1 = Math.ceil((sz2 * 3) / 2);
+            const sz3 = 2 * sz2;
 
             ffmpegArgs.push('-f', 'lavfi', '-i', `color=c=black:s=${iW}x${iH}`);
             inputFiles++;
@@ -362,7 +362,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
             videoComplex = `;realtime[videox]`;
           }
         }
-        let durstr = `duration=${streamStats.duration}ms`;
+        const durstr = `duration=${streamStats.duration}ms`;
         if (typeof streamUrl.errorTitle !== 'undefined') {
           //silent
           audioComplex = `;aevalsrc=0:${durstr}[audioy]`;
@@ -404,8 +404,8 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       }
 
       // Resolution fix: Add scale filter, current stream becomes [siz]
-      let beforeSizeChange = currentVideo;
-      let algo = this.opts.scalingAlgorithm;
+      const beforeSizeChange = currentVideo;
+      const algo = this.opts.scalingAlgorithm;
       let resizeMsg = '';
       if (
         !streamStats.audioOnly &&
@@ -419,13 +419,13 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
         // calculate wanted aspect ratio
         let p = iW * streamStats.pixelP;
         let q = iH * streamStats.pixelQ;
-        let g = gcd(q, p); // and people kept telling me programming contests knowledge had no use real programming!
+        const g = gcd(q, p); // and people kept telling me programming contests knowledge had no use real programming!
         p = Math.floor(p / g);
         q = Math.floor(q / g);
-        let hypotheticalW1 = this.wantedW;
-        let hypotheticalH1 = Math.floor((hypotheticalW1 * q) / p);
-        let hypotheticalH2 = this.wantedH;
-        let hypotheticalW2 = Math.floor((this.wantedH * p) / q);
+        const hypotheticalW1 = this.wantedW;
+        const hypotheticalH1 = Math.floor((hypotheticalW1 * q) / p);
+        const hypotheticalH2 = this.wantedH;
+        const hypotheticalW2 = Math.floor((this.wantedH * p) / q);
         let cw, ch;
         if (hypotheticalH1 <= this.wantedH) {
           cw = hypotheticalW1;
@@ -443,8 +443,8 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
           );
         } else if (cw % 2 == 1 || ch % 2 == 1) {
           //we need to add padding so that the video dimensions are even
-          let xw = cw + (cw % 2);
-          let xh = ch + (ch % 2);
+          const xw = cw + (cw % 2);
+          const xh = ch + (ch % 2);
           resizeMsg = `Stretch to ${cw} x ${ch}. To fit target resolution of ${this.wantedW} x ${this.wantedH}. Then add 1 pixel of padding so that dimensions are not odd numbers, because they are frowned upon. The final resolution will be ${xw} x ${xh}`;
           this.wantedW = xw;
           this.wantedH = xh;
@@ -468,14 +468,14 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
 
       // Channel watermark:
       if (doOverlay && this.audioOnly !== true) {
-        var pW = watermark!.width;
-        var w = Math.round((pW * iW) / 100.0);
-        var mpHorz = watermark!.horizontalMargin;
-        var mpVert = watermark!.verticalMargin;
-        var horz = Math.round((mpHorz * iW) / 100.0);
-        var vert = Math.round((mpVert * iH) / 100.0);
+        const pW = watermark!.width;
+        const w = Math.round((pW * iW) / 100.0);
+        const mpHorz = watermark!.horizontalMargin;
+        const mpVert = watermark!.verticalMargin;
+        const horz = Math.round((mpHorz * iW) / 100.0);
+        const vert = Math.round((mpVert * iH) / 100.0);
 
-        let posAry = {
+        const posAry = {
           'top-left': `x=${horz}:y=${vert}`,
           'top-right': `x=W-w-${horz}:y=${vert}`,
           'bottom-left': `x=${horz}:y=H-h-${vert}`,
@@ -490,7 +490,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
           videoComplex += `;${waterVideo}scale=${w}:-1[icn]`;
           waterVideo = '[icn]';
         }
-        let p = posAry[watermark!.position];
+        const p = posAry[watermark!.position];
         if (isUndefined(p)) {
           throw Error('Invalid watermark position: ' + watermark!.position);
         }
@@ -503,7 +503,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       }
 
       if (this.volumePercent != 100) {
-        var f = this.volumePercent / 100.0;
+        const f = this.volumePercent / 100.0;
         audioComplex += `;${currentAudio}volume=${f}[boosted]`;
         currentAudio = '[boosted]';
       }
@@ -520,13 +520,13 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       // If no filters have been applied, then the stream will still be
       // [video] , in that case, we do not actually add the video stuff to
       // filter_complex and this allows us to avoid transcoding.
-      var transcodeVideo =
+      let transcodeVideo =
         this.opts.normalizeVideoCodec &&
         isDifferentVideoCodec(streamStats.videoCodec, this.opts.videoEncoder);
       var transcodeAudio =
         this.opts.normalizeAudioCodec &&
         isDifferentAudioCodec(streamStats.audioCodec, this.opts.audioEncoder);
-      var filterComplex = '';
+      let filterComplex = '';
       if (!transcodeVideo && currentVideo == '[minsiz]') {
         //do not change resolution if no other transcoding will be done
         // and resolution normalization is off
@@ -660,7 +660,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
 
     ffmpegArgs.push(`-f`, `mpegts`, `pipe:1`);
 
-    let doLogs = this.opts.enableLogging && !isConcatPlaylist;
+    const doLogs = this.opts.enableLogging && !isConcatPlaylist;
     if (this.hasBeenKilled) {
       return;
     }
@@ -760,7 +760,7 @@ function isLargerResolution(w1, h1, w2, h2) {
 
 function gcd(a, b) {
   while (b != 0) {
-    let c = b;
+    const c = b;
     b = a % b;
     a = c;
   }

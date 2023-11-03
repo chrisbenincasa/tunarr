@@ -17,8 +17,8 @@ export const miscRouter = express.Router();
 
 miscRouter.get('/api/version', async (req, res) => {
   try {
-    let ffmpegSettings = req.ctx.dbAccess.ffmpegSettings();
-    let v = await new FFMPEGInfo(ffmpegSettings).getVersion();
+    const ffmpegSettings = req.ctx.dbAccess.ffmpegSettings();
+    const v = await new FFMPEGInfo(ffmpegSettings).getVersion();
     res.send({
       dizquetv: constants.VERSION_NAME,
       ffmpeg: v,
@@ -78,7 +78,7 @@ miscRouter.get('/api/xmltv.xml', async (req, res) => {
     res.set('Cache-Control', 'no-store');
     res.type('application/xml');
 
-    let xmltvSettings = req.ctx.dbAccess.xmlTvSettings();
+    const xmltvSettings = req.ctx.dbAccess.xmlTvSettings();
     const fileContent = await fsPromises.readFile(
       xmltvSettings.outputPath,
       'utf8',

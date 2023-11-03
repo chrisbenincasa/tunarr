@@ -66,11 +66,11 @@ export async function sequentialPromises<T, U>(
   ms: number | undefined,
   itemFn: (item: T) => Promise<U>,
 ): Promise<U[]> {
-  let all = await seq.reduce(
+  const all = await seq.reduce(
     async (prev, item) => {
-      let last = await prev;
+      const last = await prev;
 
-      let result = await itemFn(item);
+      const result = await itemFn(item);
 
       if (ms) {
         await wait(ms);
@@ -93,7 +93,7 @@ export function firstDefined(obj: object, ...args: string[]) {
     return new String(obj);
   }
 
-  for (let arg of args) {
+  for (const arg of args) {
     if (!isUndefined(obj[arg])) {
       return new String(obj[arg]);
     }

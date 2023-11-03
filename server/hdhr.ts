@@ -21,8 +21,8 @@ export function hdhr(db: DbAccess, channelDB: ChannelDB) {
   const router = express.Router();
 
   router.get('/device.xml', (req, res) => {
-    let device = getDevice(db, req.protocol + '://' + req.get('host'));
-    let data = device.getXml();
+    const device = getDevice(db, req.protocol + '://' + req.get('host'));
+    const data = device.getXml();
     res.header('Content-Type', 'application/xml');
     res.send(data);
   });
@@ -42,8 +42,8 @@ export function hdhr(db: DbAccess, channelDB: ChannelDB) {
   });
 
   router.get('/lineup.json', async (req, res) => {
-    let lineup: any = [];
-    let channels = await channelDB.getAllChannels();
+    const lineup: any = [];
+    const channels = await channelDB.getAllChannels();
     for (let i = 0, l = channels.length; i < l; i++) {
       if (!channels[i].stealth) {
         lineup.push({

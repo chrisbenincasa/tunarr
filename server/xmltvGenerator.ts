@@ -9,8 +9,8 @@ const logger = createLogger(import.meta);
 const updateXML = async () => {
   const ctx = await serverContext();
 
-  let getChannelsCached = async () => {
-    let channelNumbers = await ctx.channelDB.getAllChannelNumbers();
+  const getChannelsCached = async () => {
+    const channelNumbers = ctx.channelDB.getAllChannelNumbers();
     return compact(
       await Promise.all(
         channelNumbers.map(async (x) => {
@@ -24,8 +24,8 @@ const updateXML = async () => {
 
   try {
     channels = await ctx.channelCache.getAllChannels();
-    let xmltvSettings = (await getDB()).xmlTvSettings();
-    let t = ctx.guideService.prepareRefresh(
+    const xmltvSettings = (await getDB()).xmlTvSettings();
+    const t = ctx.guideService.prepareRefresh(
       channels,
       xmltvSettings.refreshHours * 60 * 60 * 1000,
     );
@@ -42,10 +42,10 @@ const updateXML = async () => {
   }
   channels = await getChannelsCached();
 
-  let plexServers = ctx.dbAccess.plexServers().getAll();
+  const plexServers = ctx.dbAccess.plexServers().getAll();
   for (let i = 0, l = plexServers.length; i < l; i++) {
     // Foreach plex server
-    let plex = new Plex(plexServers[i]);
+    const plex = new Plex(plexServers[i]);
     let dvrs;
     if (
       !plexServers[i].sendGuideUpdates &&
@@ -54,6 +54,7 @@ const updateXML = async () => {
       continue;
     }
     try {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       dvrs = await plex.GetDVRS(); // Refresh guide and channel mappings
     } catch (err) {
       logger.error(
@@ -91,7 +92,7 @@ export const xmltvInterval = {
   updateXML,
   startInterval: async () => {
     const ctx = await serverContext();
-    let xmltvSettings = ctx.dbAccess.xmlTvSettings();
+    const xmltvSettings = ctx.dbAccess.xmlTvSettings();
     if (xmltvSettings.refreshHours !== 0) {
       xmltvInterval.interval = setInterval(
         async () => {
@@ -105,8 +106,8 @@ export const xmltvInterval = {
       );
     }
   },
-  restartInterval: () => {
+  restartInterval: async () => {
     if (xmltvInterval.interval !== null) clearInterval(xmltvInterval.interval);
-    xmltvInterval.startInterval();
+    await xmltvInterval.startInterval();
   },
 };

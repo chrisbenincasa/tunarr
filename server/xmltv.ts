@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import XMLWriter from 'xml-writer';
 import fs from 'fs';
 import { Channel, XmlTvSettings } from './dao/db.js';
@@ -35,9 +37,9 @@ export class XmlTvWriter {
     throttle: () => Promise<void>,
     cacheImageService: CacheImageService,
   ) {
-    return new Promise((resolve, reject) => {
-      let ws = fs.createWriteStream(xmlSettings.outputPath);
-      let xw = new XMLWriter(true, (str, enc) => ws.write(str, enc));
+    return new Promise(async (resolve, reject) => {
+      const ws = fs.createWriteStream(xmlSettings.outputPath);
+      const xw = new XMLWriter(true, (str, enc) => ws.write(str, enc));
       ws.on('close', () => {
         resolve(void 0);
       });
@@ -46,12 +48,12 @@ export class XmlTvWriter {
       });
       this._writeDocStart(xw);
       const middle = async () => {
-        let channelNumbers: any[] = [];
+        const channelNumbers: any[] = [];
         Object.keys(json).forEach((key) => channelNumbers.push(key));
-        let channels = channelNumbers.map((number) => json[number].channel);
+        const channels = channelNumbers.map((number) => json[number].channel);
         this._writeChannels(xw, channels);
         for (let i = 0; i < channelNumbers.length; i++) {
-          let number = channelNumbers[i];
+          const number = channelNumbers[i];
           await this._writePrograms(
             xw,
             json[number].channel,
@@ -62,7 +64,7 @@ export class XmlTvWriter {
           );
         }
       };
-      middle()
+      await middle()
         .then(() => {
           this._writeDocEnd(xw, ws);
         })

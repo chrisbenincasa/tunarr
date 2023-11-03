@@ -18,10 +18,10 @@ const logger = createLogger(import.meta);
 let StreamCount = 0;
 
 export function video(fillerDB) {
-  var router = express.Router();
+  const router = express.Router();
 
   router.get('/setup', (req, res) => {
-    let ffmpegSettings = req.ctx.dbAccess.ffmpegSettings();
+    const ffmpegSettings = req.ctx.dbAccess.ffmpegSettings();
     // Check if ffmpeg path is valid
     if (!fs.existsSync(ffmpegSettings.ffmpegExecutablePath)) {
       res
@@ -37,7 +37,7 @@ export function video(fillerDB) {
 
     logger.info(`\r\nStream starting. Channel: 1 (dizqueTV)`);
 
-    let ffmpeg = new FfmpegText(
+    const ffmpeg = new FfmpegText(
       ffmpegSettings,
       'dizqueTV (No Channels Configured)',
       'Configure your channels using the dizqueTV Web UI',
@@ -63,21 +63,21 @@ export function video(fillerDB) {
     });
   });
   // Continuously stream video to client. Leverage ffmpeg concat for piecing together videos
-  let concat = async (req: Request, res, audioOnly) => {
+  const concat = async (req: Request, res, audioOnly) => {
     const ctx = await serverContext();
     // Check if channel queried is valid
     if (isUndefined(req.query.channel)) {
       res.status(500).send('No Channel Specified');
       return;
     }
-    let number = parseInt(req.query.channel as string, 10);
-    let channel = await ctx.channelCache.getChannelConfig(number);
+    const number = parseInt(req.query.channel as string, 10);
+    const channel = await ctx.channelCache.getChannelConfig(number);
     if (isUndefined(channel)) {
       res.status(500).send("Channel doesn't exist");
       return;
     }
 
-    let ffmpegSettings = req.ctx.dbAccess.ffmpegSettings();
+    const ffmpegSettings = req.ctx.dbAccess.ffmpegSettings();
 
     // Check if ffmpeg path is valid
     if (!fs.existsSync(ffmpegSettings.ffmpegExecutablePath)) {
@@ -100,7 +100,7 @@ export function video(fillerDB) {
       `\r\nStream starting. Channel: ${channel.number} (${channel.name})`,
     );
 
-    let ffmpeg = new FFMPEG(ffmpegSettings, channel); // Set the transcoder options
+    const ffmpeg = new FFMPEG(ffmpegSettings, channel); // Set the transcoder options
     ffmpeg.setAudioOnly(audioOnly);
     let stopped = false;
 
@@ -138,8 +138,8 @@ export function video(fillerDB) {
       stop();
     });
 
-    let channelNum = parseInt(req.query.channel as string, 10);
-    let ff = await ffmpeg.spawnConcat(
+    const channelNum = parseInt(req.query.channel as string, 10);
+    const ff = await ffmpeg.spawnConcat(
       `http://localhost:${
         serverOptions().port
       }/playlist?channel=${channelNum}&audioOnly=${audioOnly}`,
@@ -154,7 +154,7 @@ export function video(fillerDB) {
   });
 
   // Stream individual video to ffmpeg concat above. This is used by the server, NOT the client
-  let streamFunction = async (
+  const streamFunction = async (
     req: Request,
     res: Response,
     t0: number,
@@ -170,12 +170,12 @@ export function video(fillerDB) {
       return;
     }
 
-    let audioOnly = 'true' == req.query.audioOnly;
+    const audioOnly = 'true' == req.query.audioOnly;
     logger.info(`/stream audioOnly=${audioOnly}`);
-    let session = parseInt(req.query.session as string);
-    let m3u8 = req.query.m3u8 === '1';
-    let number = parseInt(req.query.channel as string);
-    let channel = await ctx.channelCache.getChannelConfig(number);
+    const session = parseInt(req.query.session as string);
+    const m3u8 = req.query.m3u8 === '1';
+    const number = parseInt(req.query.channel as string);
+    const channel = await ctx.channelCache.getChannelConfig(number);
 
     if (isUndefined(channel)) {
       res.status(404).send("Channel doesn't exist");
@@ -191,7 +191,7 @@ export function video(fillerDB) {
       isFirst = true;
     }
 
-    let ffmpegSettings = req.ctx.dbAccess.ffmpegSettings();
+    const ffmpegSettings = req.ctx.dbAccess.ffmpegSettings();
 
     // Check if ffmpeg path is valid
     if (!fs.existsSync(ffmpegSettings.ffmpegExecutablePath)) {
@@ -213,8 +213,8 @@ export function video(fillerDB) {
     );
     let prog: helperFuncs.ProgramAndTimeElapsed | undefined;
     let brandChannel = channel;
-    let redirectChannels: ImmutableChannel[] = [];
-    let upperBounds: number[] = [];
+    const redirectChannels: ImmutableChannel[] = [];
+    const upperBounds: number[] = [];
 
     if (isLoading) {
       lineupItem = {
@@ -228,9 +228,9 @@ export function video(fillerDB) {
 
       while (true) {
         redirectChannels.push(brandChannel);
-        upperBounds.push(prog!.program.duration - prog!.timeElapsed);
+        upperBounds.push(prog.program.duration - prog.timeElapsed);
 
-        if (!prog!.program.isOffline || prog!.program.type != 'redirect') {
+        if (!prog.program.isOffline || prog.program.type != 'redirect') {
           break;
         }
         ctx.channelCache.recordPlayback(brandChannel.number, t0, {
@@ -241,12 +241,12 @@ export function video(fillerDB) {
           start: 0,
         });
 
-        let newChannelNumber = prog!.program.channel!;
-        let newChannel =
+        const newChannelNumber = prog.program.channel!;
+        const newChannel =
           await ctx.channelCache.getChannelConfig(newChannelNumber);
 
         if (isUndefined(newChannel)) {
-          let err = Error("Invalid redirect to a channel that doesn't exist");
+          const err = Error("Invalid redirect to a channel that doesn't exist");
           logger.error("Invalid redirect to channel that doesn't exist.", err);
           prog = {
             program: offlineProgram(60000),
@@ -287,7 +287,7 @@ export function video(fillerDB) {
         //permanently offline, it doesn't matter what duration was set
         //and it's best to give it a long duration to ensure there's always
         //filler to play (if any)
-        let t = 365 * 24 * 60 * 60 * 1000;
+        const t = 365 * 24 * 60 * 60 * 1000;
         prog.program = offlineProgram(t);
       } else if (
         allowSkip &&
@@ -296,7 +296,7 @@ export function video(fillerDB) {
       ) {
         //it's pointless to show the offline screen for such a short time, might as well
         //skip to the next program
-        let dt = prog.program.duration - prog.timeElapsed;
+        const dt = prog.program.duration - prog.timeElapsed;
         for (let i = 0; i < redirectChannels.length; i++) {
           ctx.channelCache.clearPlayback(redirectChannels[i].number);
         }
@@ -313,8 +313,8 @@ export function video(fillerDB) {
       ) {
         throw "No video to play, this means there's a serious unexpected bug or the channel db is corrupted.";
       }
-      let fillers = await fillerDB.getFillersFromChannel(brandChannel);
-      let lineup = helperFuncs.createLineup(
+      const fillers = await fillerDB.getFillersFromChannel(brandChannel);
+      const lineup = helperFuncs.createLineup(
         ctx.channelCache,
         prog,
         brandChannel,
@@ -333,7 +333,7 @@ export function video(fillerDB) {
       //adjust upper bounds and record playbacks
       for (let i = redirectChannels.length - 1; i >= 0; i--) {
         lineupItem = { ...lineupItem };
-        let u = upperBounds[i] + beginningOffset;
+        const u = upperBounds[i] + beginningOffset;
         if (typeof u !== 'undefined') {
           let u2 = upperBound;
           if (typeof lineupItem.streamDuration !== 'undefined') {
@@ -381,12 +381,12 @@ export function video(fillerDB) {
       };
     }
 
-    let combinedChannel: ContextChannel = {
+    const combinedChannel: ContextChannel = {
       ...helperFuncs.generateChannelContext(brandChannel),
       transcoding: channel.transcoding,
     };
 
-    let playerContext: PlayerContext = {
+    const playerContext: PlayerContext = {
       lineupItem: lineupItem!,
       ffmpegSettings: ffmpegSettings,
       channel: combinedChannel,
@@ -397,7 +397,7 @@ export function video(fillerDB) {
 
     let player: ProgramPlayer | null = new ProgramPlayer(playerContext);
     let stopped = false;
-    let stop = () => {
+    const stop = () => {
       if (!stopped) {
         stopped = true;
         player?.cleanUp();
@@ -405,7 +405,7 @@ export function video(fillerDB) {
         res.end();
       }
     };
-    var playerObj: any = null;
+    let playerObj: any = null;
     res.writeHead(200, {
       'Content-Type': 'video/mp2t',
     });
@@ -423,7 +423,7 @@ export function video(fillerDB) {
       return;
     }
 
-    let stream = playerObj;
+    const stream = playerObj;
 
     // res.write(playerObj.data);
 
@@ -437,13 +437,13 @@ export function video(fillerDB) {
   };
 
   router.get('/stream', async (req, res) => {
-    let t0 = new Date().getTime();
+    const t0 = new Date().getTime();
     return await streamFunction(req, res, t0, true);
   });
 
   router.get('/m3u8', async (req, res) => {
     const ctx = await serverContext();
-    let sessionId = StreamCount++;
+    const sessionId = StreamCount++;
 
     //res.type('application/vnd.apple.mpegurl')
     res.type('application/x-mpegURL');
@@ -454,8 +454,8 @@ export function video(fillerDB) {
       return;
     }
 
-    let channelNum = parseInt(req.query.channel as string, 10);
-    let channel = await ctx.channelCache.getChannelConfig(channelNum);
+    const channelNum = parseInt(req.query.channel as string, 10);
+    const channel = await ctx.channelCache.getChannelConfig(channelNum);
     if (isUndefined(channel)) {
       res.status(500).send("Channel doesn't exist");
       return;
@@ -463,9 +463,9 @@ export function video(fillerDB) {
 
     // Maximum number of streams to concatinate beyond channel starting
     // If someone passes this number then they probably watch too much television
-    let maxStreamsToPlayInARow = 100;
+    const maxStreamsToPlayInARow = 100;
 
-    var data = '#EXTM3U\n';
+    let data = '#EXTM3U\n';
 
     data += `#EXT-X-VERSION:3
         #EXT-X-MEDIA-SEQUENCE:0
@@ -473,7 +473,7 @@ export function video(fillerDB) {
         #EXT-X-TARGETDURATION:60
         #EXT-X-PLAYLIST-TYPE:VOD\n`;
 
-    let ffmpegSettings = req.ctx.dbAccess.ffmpegSettings();
+    const ffmpegSettings = req.ctx.dbAccess.ffmpegSettings();
 
     // let cur = '59.0';
 
@@ -487,7 +487,7 @@ export function video(fillerDB) {
     data += `${req.protocol}://${req.get(
       'host',
     )}/stream?channel=${channelNum}&first=1&m3u8=1&session=${sessionId}\n`;
-    for (var i = 0; i < maxStreamsToPlayInARow - 1; i++) {
+    for (let i = 0; i < maxStreamsToPlayInARow - 1; i++) {
       //data += `#EXTINF:${cur},\n`;
       data += `${req.protocol}://${req.get(
         'host',
@@ -506,8 +506,8 @@ export function video(fillerDB) {
       return;
     }
 
-    let channelNum = parseInt(req.query.channel as string, 10);
-    let channel = await ctx.channelCache.getChannelConfig(channelNum);
+    const channelNum = parseInt(req.query.channel as string, 10);
+    const channel = await ctx.channelCache.getChannelConfig(channelNum);
     if (isUndefined(channel)) {
       res.status(500).send("Channel doesn't exist");
       return;
@@ -515,14 +515,14 @@ export function video(fillerDB) {
 
     // Maximum number of streams to concatinate beyond channel starting
     // If someone passes this number then they probably watch too much television
-    let maxStreamsToPlayInARow = 100;
+    const maxStreamsToPlayInARow = 100;
 
-    var data = 'ffconcat version 1.0\n';
+    let data = 'ffconcat version 1.0\n';
 
-    let ffmpegSettings = req.ctx.dbAccess.ffmpegSettings();
+    const ffmpegSettings = req.ctx.dbAccess.ffmpegSettings();
 
-    let sessionId = StreamCount++;
-    let audioOnly = 'true' == req.query.audioOnly;
+    const sessionId = StreamCount++;
+    const audioOnly = 'true' == req.query.audioOnly;
 
     if (
       ffmpegSettings.enableTranscoding === true &&
@@ -541,7 +541,7 @@ export function video(fillerDB) {
     data += `file 'http://localhost:${
       serverOptions().port
     }/stream?channel=${channelNum}&first=1&session=${sessionId}&audioOnly=${audioOnly}'\n`;
-    for (var i = 0; i < maxStreamsToPlayInARow - 1; i++) {
+    for (let i = 0; i < maxStreamsToPlayInARow - 1; i++) {
       data += `file 'http://localhost:${
         serverOptions().port
       }/stream?channel=${channelNum}&session=${sessionId}&audioOnly=${audioOnly}'\n`;
@@ -550,9 +550,9 @@ export function video(fillerDB) {
     res.send(data);
   });
 
-  let mediaPlayer = async (channelNum, path, req, res) => {
+  const mediaPlayer = async (channelNum, path, req, res) => {
     const ctx = await serverContext();
-    let channel = await ctx.channelCache.getChannelConfig(channelNum);
+    const channel = await ctx.channelCache.getChannelConfig(channelNum);
     if (isUndefined(channel)) {
       res.status(404).send('Channel not found.');
       return;
@@ -569,7 +569,7 @@ export function video(fillerDB) {
 
   router.get('/media-player/:number.m3u', async (req, res) => {
     try {
-      let channelNum = parseInt(req.params.number, 10);
+      const channelNum = parseInt(req.params.number, 10);
       let path = 'video';
       if (req.query.fast === '1') {
         path = 'm3u8';
@@ -583,8 +583,8 @@ export function video(fillerDB) {
 
   router.get('/media-player/fast/:number.m3u', async (req, res) => {
     try {
-      let channelNum = parseInt(req.params.number, 10);
-      let path = 'm3u8';
+      const channelNum = parseInt(req.params.number, 10);
+      const path = 'm3u8';
       return await mediaPlayer(channelNum, path, req, res);
     } catch (err) {
       logger.error(err);
@@ -594,8 +594,8 @@ export function video(fillerDB) {
 
   router.get('/media-player/radio/:number.m3u', async (req, res) => {
     try {
-      let channelNum = parseInt(req.params.number, 10);
-      let path = 'radio';
+      const channelNum = parseInt(req.params.number, 10);
+      const path = 'radio';
       return await mediaPlayer(channelNum, path, req, res);
     } catch (err) {
       logger.error(err);

@@ -8,9 +8,21 @@ importers:
 
   .:
     devDependencies:
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^6.0.0
+        version: 6.0.0(@typescript-eslint/parser@6.0.0)(eslint@8.45.0)(typescript@5.2.2)
+      '@typescript-eslint/parser':
+        specifier: ^6.0.0
+        version: 6.0.0(eslint@8.45.0)(typescript@5.2.2)
       esbuild:
         specifier: ^0.19.5
         version: 0.19.5
+      eslint:
+        specifier: ^8.45.0
+        version: 8.45.0
+      typescript:
+        specifier: ^5.2.2
+        version: 5.2.2
 
   server:
     dependencies:
@@ -20,15 +32,6 @@ importers:
       JSONStream:
         specifier: 1.0.5
         version: 1.0.5
-      angular:
-        specifier: ^1.6.10
-        version: 1.6.10
-      angular-router-browserify:
-        specifier: 0.0.2
-        version: 0.0.2
-      angular-vs-repeat:
-        specifier: 2.0.13
-        version: 2.0.13
       axios:
         specifier: ^1.6.0
         version: 1.6.0
@@ -53,9 +56,6 @@ importers:
       lowdb:
         specifier: ^6.1.1
         version: 6.1.1
-      merge:
-        specifier: 2.1.1
-        version: 2.1.1
       morgan:
         specifier: ^1.10.0
         version: 1.10.0
@@ -5525,10 +5525,6 @@ packages:
     resolution: {integrity: sha512-8q7VEgMJW4J8tcfVPy8g09NcQwZdbwFEqhe/WZkoIzjn/3TGDwtOCYtXGxA3O8tPzpczCCDgv+P2P5y00ZJOOg==}
     engines: {node: '>= 8'}
     dev: true
-
-  /merge@2.1.1:
-    resolution: {integrity: sha512-jz+Cfrg9GWOZbQAnDQ4hlVnQky+341Yk5ru8bZSe6sIDTCIg8n9i/u7hSQGSVOF3C7lH6mGtqjkiT9G4wFLL0w==}
-    dev: false
 
   /meriyah@4.3.7:
     resolution: {integrity: sha512-JAlSOUqFU/rmLy2CEdZO5hN5E5dyUj1f4AlRR4GCQMjfobvd5lcm9JLkrqq0MgVaLQ/Zur590A+0RyUZhj0b5A==}

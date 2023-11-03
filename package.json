@@ -11,6 +11,10 @@
     "dist": "./make_dist.sh"
   },
   "devDependencies": {
-    "esbuild": "^0.19.5"
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "esbuild": "^0.19.5",
+    "eslint": "^8.45.0",
+    "typescript": "^5.2.2"
   }
 }

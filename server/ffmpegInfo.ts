@@ -8,7 +8,7 @@ export class FFMPEGInfo {
   }
   async getVersion() {
     try {
-      let s: string = await new Promise((resolve, reject) => {
+      const s: string = await new Promise((resolve, reject) => {
         exec(`"${this.ffmpegPath}" -version`, function (error, stdout) {
           if (error !== null) {
             reject(error);
@@ -17,7 +17,7 @@ export class FFMPEGInfo {
           }
         });
       });
-      var m = s.match(/version\s+([^\s]+)\s+.*Copyright/);
+      const m = s.match(/version\s+([^\s]+)\s+.*Copyright/);
       if (m == null) {
         console.error(
           'ffmpeg -version command output not in the expected format: ' + s,
