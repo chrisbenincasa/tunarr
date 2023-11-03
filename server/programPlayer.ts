@@ -21,7 +21,7 @@
 import EventEmitter from 'events';
 import { Response } from 'express';
 import * as helperFuncs from './helperFuncs.js';
-import { OfflinePlayer } from './offline-player.js';
+import { OfflinePlayer } from './offlinePlayer.js';
 import { Player } from './player.js';
 import { PlexPlayer } from './plexPlayer.js';
 import { PlayerContext } from './types.js';
