@@ -48,7 +48,7 @@
                         <label for="channelIcon" class="small">Channel Icon</label>
 
                         <div class="input-group mb-1">
-                            <input name="channelIcon" id="channelIcon" class="form-control form-control-sm" type="url" ng-model="channel.icon"></input>
+                            <input name="channelIcon" id="channelIcon" class="form-control form-control-sm" type="url" ng-model="channel.icon.path"></input>
                             <div class="input-group-append">
                                 <input type="file"
                                 accept="image/*"
@@ -63,8 +63,8 @@
                         <br></br>
                         <div>
                             <h6>Preview</h6>
-                            <img ng-if="channel.icon !== ''" ng-src="{{channel.icon}}" alt="{{channel.name}}" style="max-height: 120px;"></img>
-                            <span ng-if="channel.icon === ''">{{channel.name}}</span>
+                            <img ng-if="channel.icon && channel.icon.path !== ''" ng-src="{{channel.icon.path}}" alt="{{channel.name}}" style="max-height: 120px;"></img>
+                            <span ng-if="!channel.icon || channel.icons.path === ''">{{channel.name}}</span>
                         </div>
                     </div>
                 </div>

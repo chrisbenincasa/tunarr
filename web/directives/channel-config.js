@@ -59,12 +59,12 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions, get
                 scope.channel.fallback = [];
                 scope.channel.guideMinimumDurationSeconds = 5 * 60;
                 scope.isNewChannel = true
-                scope.channel.icon = `${$location.protocol()}://${location.host}/images/dizquetv.png`
+                scope.channel.icon.path = `${$location.protocol()}://${location.host}/images/dizquetv.png`
                 scope.channel.groupTitle = "dizqueTV";
                 scope.channel.disableFillerOverlay = true;
-                scope.channel.iconWidth = 120
-                scope.channel.iconDuration = 60
-                scope.channel.iconPosition = "2"
+                scope.channel.icon.width = 120
+                scope.channel.icon.duration = 60
+                scope.channel.icon.position = "2"
                 scope.channel.startTime = new Date()
                 scope.channel.startTime.setMilliseconds(0)
                 scope.channel.startTime.setSeconds(0)
@@ -139,7 +139,7 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions, get
                     || (typeof(scope.channel.transcoding.targetResolution) === 'undefined')
                     || (scope.channel.transcoding.targetResolution === '')
                 ) {
-                    scope.channel.transcoding.targetResolution = "";
+                    scope.channel.transcoding.targetResolution = undefined;
                 }
 
                 
@@ -971,10 +971,10 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions, get
                     } else if (typeof channel.name === "undefined" || channel.name === null || channel.name === "") {
                         scope.error.name = "Enter a channel name."
                         scope.error.tab = "basic";
-                    } else if (channel.icon !== "" && !validURL(channel.icon)) {
+                    } else if (channel.icon.path !== "" && !validURL(channel.icon.path)) {
                         scope.error.icon = "Please enter a valid image URL. Or leave blank."
                         scope.error.tab = "basic";
-                    } else if (channel.overlayIcon && !validURL(channel.icon)) {
+                    } else if (channel.overlayIcon && !validURL(channel.icon.path)) {
                         scope.error.icon = "Please enter a valid image URL. Cant overlay an invalid image."
                         scope.error.tab = "basic";
                     } else if (now < channel.startTime) {
@@ -1433,20 +1433,20 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions, get
 
                
                 try {
-                    let ffmpegSettings = await dizquetv.getFfmpegSettings()
+                    let ffmpegSettings = await dizquetv.getFfmpegSettings();
+                    console.log(ffmpegSettings)
                     if (
                         (ffmpegSettings.targetResolution != null)
-                        && (typeof(ffmpegSettings.targetResolution) !== 'undefined')
-                        && (typeof(ffmpegSettings.targetResolution) !== '')
+                        && typeof(ffmpegSettings.targetResolution) !== 'undefined'
                     ) {
-                        let p = parseResolutionString( ffmpegSettings.targetResolution );
+                        let {widthPx, heightPx} = ffmpegSettings.targetResolution;
+                        console.log(widthPx, heightPx)
                         scope.resolutionOptions[0] = {
                             id: "",
                             description: `Use global setting (${ffmpegSettings.targetResolution})`,
                         }
-                        ffmpegSettings.targetResolution
-                        scope.screenW = p.w;
-                        scope.screenH = p.h;
+                        scope.screenW = widthPx;
+                        scope.screenH = heightPx;
                         scope.videoRateDefault = `global setting=${ffmpegSettings.videoBitrate}`;
                         scope.videoBufSizeDefault = `global setting=${ffmpegSettings.videoBufSize}`;
            
@@ -1477,8 +1477,12 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions, get
             }
 
             scope.getCurrentWH = () => {
-                if (scope.channel.transcoding.targetResolution !== '') {
-                    return parseResolutionString( scope.channel.transcoding.targetResolution );
+                console.log('scope', scope)
+                if (scope.channel.transcoding !== undefined && scope.channel.transcoding.targetResolution !== undefined) {
+                    return {
+                        w: scope.channel.transcoding.targetResolution.widthPx,
+                        h: scope.channel.transcoding.targetResolution.heightPx
+                    }
                 }
                 return {
                     w: scope.screenW,
@@ -1490,6 +1494,7 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions, get
                 let resolutionW = tm.w;
                 let resolutionH = tm.h;
                 let width = 100;
+                console.log(resolutionW, resolutionH)
                 let height = width / ( resolutionW / resolutionH );
 
 
@@ -1546,7 +1551,7 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions, get
             scope.getWatermarkSrc = () => {
                 let url = scope.channel.watermark.url;
                 if ( url == null || typeof(url) == 'undefined' || url == '') {
-                    url = scope.channel.icon;
+                    url = scope.channel.icon.path;
                 }
                 return url;
             }
@@ -1640,7 +1645,7 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions, get
                 const formData = new FormData();
                 formData.append('image', event.target.files[0]);
                 dizquetv.uploadImage(formData).then((response) => {
-                    scope.channel.icon = response.data.fileUrl;
+                    scope.channel.icon.path = response.data.fileUrl;
                 })
             }
 
