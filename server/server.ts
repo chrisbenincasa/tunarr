@@ -143,11 +143,19 @@ export async function initServer(opts: ServerOptions) {
     `);
   });
 
-  await app
+  app
     .use('/images', serveStatic(path.join(opts.database, 'images')))
     .use(serveStatic(fileURLToPath(new URL('../web/public', import.meta.url))))
     .use('/images', serveStatic(path.join(opts.database, 'images')))
-    .use('/cache/images', ctx.cacheImageService.routerInterceptor())
+    // .use('/cache/images', ctx.cacheImageService.routerInterceptor())
+    .get<{ Params: { hash: string } }>(
+      '/cache/images/:hash',
+      {
+        onRequest: (req, res) =>
+          ctx.cacheImageService.routerInterceptor(req, res),
+      },
+      (req, res) => {},
+    )
     .use(
       '/cache/images',
       serveStatic(path.join(opts.database, 'cache', 'images')),
@@ -173,7 +181,9 @@ export async function initServer(opts: ServerOptions) {
     .register(miscRouter);
 
   await app
-    .use('/api/cache/images', ctx.cacheImageService.apiRouters())
+    .register(ctx.cacheImageService.apiRouters(), {
+      prefix: '/api/cache/images',
+    })
     .use(video(ctx.fillerDB))
     .use(ctx.hdhrService.router);
 

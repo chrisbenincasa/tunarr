@@ -6,6 +6,13 @@ import stream from 'stream';
 import { CachedImage, DbAccess } from '../dao/db.js';
 import createLogger from '../logger.js';
 import { FileCacheService } from './fileCacheService.js';
+import {
+  FastifyInstance,
+  FastifyPluginCallback,
+  FastifyReply,
+  FastifyRequest,
+  HookHandlerDoneFunction,
+} from 'fastify';
 
 const logger = createLogger(import.meta);
 
@@ -34,30 +41,27 @@ export class CacheImageService {
    * @returns
    * @memberof CacheImageService
    */
-  routerInterceptor(): express.Router {
-    const router = express.Router();
-
-    router.get('/:hash', async (req, res, next) => {
-      try {
-        const hash = req.params.hash;
-        const imgItem = this.dbAccess.cachedImages().getById(hash);
-        if (imgItem) {
-          const file = await this.getImageFromCache(imgItem.hash);
-          if (isUndefined(file) || !file.length) {
-            const fileMimeType = await this.requestImageAndStore(imgItem);
-            res.set('content-type', fileMimeType);
-            next();
-          } else {
-            res.set('content-type', imgItem.mimeType);
-            next();
-          }
+  async routerInterceptor(
+    req: FastifyRequest<{ Params: { hash: string } }>,
+    res: FastifyReply,
+  ): Promise<unknown> {
+    try {
+      const hash = req.params.hash;
+      const imgItem = this.dbAccess.cachedImages().getById(hash);
+      if (imgItem) {
+        const file = await this.getImageFromCache(imgItem.hash);
+        if (isUndefined(file) || !file.length) {
+          const fileMimeType = await this.requestImageAndStore(imgItem);
+          await res.header('content-type', fileMimeType);
+        } else {
+          await res.header('content-type', imgItem.mimeType);
         }
-      } catch (err) {
-        console.error(err);
-        res.status(500).send('error');
+        return void 0;
       }
-    });
-    return router;
+    } catch (err) {
+      console.error(err);
+      return res.status(500).send('error');
+    }
   }
 
   /**
@@ -66,20 +70,20 @@ export class CacheImageService {
    *
    * `DELETE /` - Clear all files on .dizquetv/cache/images
    */
-  apiRouters(): express.Router {
-    const router = express.Router();
+  apiRouters(): FastifyPluginCallback {
+    return (fastify, _, done) => {
+      fastify.delete('/', async (_req, res) => {
+        try {
+          await this.clearCache();
+          return res.status(200).send({ msg: 'Cache Image are Cleared' });
+        } catch (error) {
+          logger.error('Error deleting cached images', error);
+          return res.status(500).send('error');
+        }
+      });
 
-    router.delete('/', async (_req, res) => {
-      try {
-        await this.clearCache();
-        res.status(200).send({ msg: 'Cache Image are Cleared' });
-      } catch (error) {
-        logger.error('Error deleting cached images', error);
-        res.status(500).send('error');
-      }
-    });
-
-    return router;
+      done();
+    };
   }
 
   async requestImageAndStore(
