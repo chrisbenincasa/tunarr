@@ -5,6 +5,7 @@ import { DbAccess } from './dao/db.js';
 import { serverOptions } from './globals.js';
 
 export function hdhr(db: DbAccess, channelDB: ChannelDB) {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
   const server = new SSDP({
     location: {
       port: serverOptions().port,
@@ -15,7 +16,9 @@ export function hdhr(db: DbAccess, channelDB: ChannelDB) {
     ssdpSig: 'PsuedoTV/0.1 UPnP/1.0',
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
   server.addUSN('upnp:rootdevice');
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
   server.addUSN('urn:schemas-upnp-org:device:MediaServer:1');
 
   const router = express.Router();
