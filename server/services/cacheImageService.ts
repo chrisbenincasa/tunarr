@@ -1,18 +1,12 @@
-import axios, { AxiosRequestConfig } from 'axios';
-import express from 'express';
+import axios, { AxiosHeaders, AxiosRequestConfig } from 'axios';
+import crypto from 'crypto';
+import { FastifyPluginCallback, FastifyReply, FastifyRequest } from 'fastify';
 import { createWriteStream, promises as fs } from 'fs';
 import { isString, isUndefined } from 'lodash-es';
 import stream from 'stream';
 import { CachedImage, DbAccess } from '../dao/db.js';
 import createLogger from '../logger.js';
 import { FileCacheService } from './fileCacheService.js';
-import {
-  FastifyInstance,
-  FastifyPluginCallback,
-  FastifyReply,
-  FastifyRequest,
-  HookHandlerDoneFunction,
-} from 'fastify';
 
 const logger = createLogger(import.meta);
 
@@ -44,7 +38,7 @@ export class CacheImageService {
   async routerInterceptor(
     req: FastifyRequest<{ Params: { hash: string } }>,
     res: FastifyReply,
-  ): Promise<unknown> {
+  ) {
     try {
       const hash = req.params.hash;
       const imgItem = this.dbAccess.cachedImages().getById(hash);
@@ -52,14 +46,12 @@ export class CacheImageService {
         const file = await this.getImageFromCache(imgItem.hash);
         if (isUndefined(file) || !file.length) {
           const fileMimeType = await this.requestImageAndStore(imgItem);
-          await res.header('content-type', fileMimeType);
+          void res.header('content-type', fileMimeType);
         } else {
-          await res.header('content-type', imgItem.mimeType);
+          void res.header('content-type', imgItem.mimeType);
         }
-        return void 0;
       }
     } catch (err) {
-      console.error(err);
       return res.status(500).send('error');
     }
   }
@@ -98,7 +90,8 @@ export class CacheImageService {
     logger.debug('Requesting original image file for caching');
 
     const response = await axios.request<stream.Readable>(requestConfiguration);
-    const mimeType = response.headers['Content-Type'];
+
+    const mimeType = (response.headers as AxiosHeaders).get('content-type');
     if (!isUndefined(mimeType) && isString(mimeType)) {
       logger.debug('Got image file with mimeType ' + mimeType);
       await this.dbAccess
@@ -123,7 +116,9 @@ export class CacheImageService {
    */
   getImageFromCache(fileName: string): Promise<string | undefined> {
     try {
-      return this.cacheService.getCache(`${this.imageCacheFolder}/${fileName}`);
+      return this.cacheService
+        .getCache(`${this.imageCacheFolder}/${fileName}`)
+        .catch(() => void 0);
     } catch (e) {
       logger.debug(`Image ${fileName} not found in cache.`);
       return Promise.resolve(undefined);
@@ -140,7 +135,11 @@ export class CacheImageService {
   }
 
   async registerImageOnDatabase(imageUrl: string) {
-    const encodedUrl = Buffer.from(imageUrl).toString('base64');
+    const encodedUrl = crypto
+      .createHash('md5')
+      .update(imageUrl)
+      .digest('base64');
+    // const encodedUrl = Buffer.from(imageUrl).toString('base64');
     await this.dbAccess
       .cachedImages()
       .insertOrUpdate({ hash: encodedUrl, url: imageUrl });

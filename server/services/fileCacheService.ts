@@ -1,5 +1,8 @@
 import path from 'path';
 import { createWriteStream, promises as fs } from 'fs';
+// import createLogger from '../logger.js';
+
+// const logger = createLogger(import.meta);
 
 /**
  * Store files in cache
@@ -45,7 +48,9 @@ export class FileCacheService {
       if (fullFilePath in this.cache) {
         return this.cache[fullFilePath];
       } else {
-        return fs.readFile(path.join(this.cachePath, fullFilePath), 'utf8');
+        return fs
+          .readFile(path.join(this.cachePath, fullFilePath), 'utf8')
+          .catch(() => void 0);
       }
     } catch (error) {
       return undefined;
@@ -56,7 +61,7 @@ export class FileCacheService {
    * `delete` a File from cache folder
    */
   async deleteCache(fullFilePath: string): Promise<boolean> {
-    let thePath = path.join(this.cachePath, fullFilePath);
+    const thePath = path.join(this.cachePath, fullFilePath);
     try {
       await fs.open(thePath);
     } catch (err) {

@@ -1,80 +1,89 @@
-import express from 'express';
+import { FastifyPluginCallback } from 'fastify';
 import { Server as SSDP } from 'node-ssdp';
 import { ChannelDB } from './dao/channelDb.js';
 import { DbAccess } from './dao/db.js';
 import { serverOptions } from './globals.js';
 
-export type HdhrService = {
-  router: express.Router;
-  ssdp: unknown;
-};
+export class HdhrService {
+  private db: DbAccess;
+  private channelDB: ChannelDB;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private server: any;
 
-export function hdhr(db: DbAccess, channelDB: ChannelDB): HdhrService {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
-  const server = new SSDP({
-    location: {
-      port: serverOptions().port,
-      path: '/device.xml',
-    },
-    udn: `uuid:2020-03-S3LA-BG3LIA:2`,
-    allowWildcards: true,
-    ssdpSig: 'PsuedoTV/0.1 UPnP/1.0',
-  });
-
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-  server.addUSN('upnp:rootdevice');
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-  server.addUSN('urn:schemas-upnp-org:device:MediaServer:1');
-
-  const router = express.Router();
-
-  router.get('/device.xml', (req, res) => {
-    const device = getDevice(db, req.protocol + '://' + req.get('host'));
-    const data = device.getXml();
-    res.header('Content-Type', 'application/xml');
-    res.send(data);
-  });
-
-  router.get('/discover.json', (req, res) => {
-    const device = getDevice(db, req.protocol + '://' + req.get('host'));
-    res.json(device);
-  });
-
-  router.get('/lineup_status.json', (_, res) => {
-    res.json({
-      ScanInProgress: 0,
-      ScanPossible: 1,
-      Source: 'Cable',
-      SourceList: ['Cable'],
+  constructor(db: DbAccess, channelDB: ChannelDB) {
+    this.db = db;
+    this.channelDB = channelDB;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+    this.server = new SSDP({
+      location: {
+        port: serverOptions().port,
+        path: '/device.xml',
+      },
+      udn: `uuid:2020-03-S3LA-BG3LIA:2`,
+      allowWildcards: true,
+      ssdpSig: 'PsuedoTV/0.1 UPnP/1.0',
     });
-  });
 
-  router.get('/lineup.json', async (req, res) => {
-    const lineup: any = [];
-    const channels = await channelDB.getAllChannels();
-    for (let i = 0, l = channels.length; i < l; i++) {
-      if (!channels[i].stealth) {
-        lineup.push({
-          GuideNumber: channels[i].number.toString(),
-          GuideName: channels[i].name,
-          URL: `${req.protocol}://${req.get('host')}/video?channel=${
-            channels[i].number
-          }`,
-        });
-      }
-    }
-    if (lineup.length === 0)
-      lineup.push({
-        GuideNumber: '1',
-        GuideName: 'dizqueTV',
-        URL: `${req.protocol}://${req.get('host')}/setup`,
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+    this.server.addUSN('upnp:rootdevice');
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+    this.server.addUSN('urn:schemas-upnp-org:device:MediaServer:1');
+  }
+
+  get ssdp(): unknown {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return this.server;
+  }
+
+  createRouter(): FastifyPluginCallback {
+    return (fastify) => {
+      fastify.get('/device.xml', (req, res) => {
+        const device = getDevice(this.db, req.protocol + '://' + req.hostname);
+        const data = device.getXml();
+        return res.header('Content-Type', 'application/xml').send(data);
       });
 
-    res.json(lineup);
-  });
+      fastify.get('/discover.json', (req, res) => {
+        const device = getDevice(this.db, req.protocol + '://' + req.hostname);
+        return res.send(device);
+      });
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  return { router: router, ssdp: server };
+      fastify.get('/lineup_status.json', (_, res) => {
+        return res.send({
+          ScanInProgress: 0,
+          ScanPossible: 1,
+          Source: 'Cable',
+          SourceList: ['Cable'],
+        });
+      });
+
+      fastify.get('/lineup.json', async (req, res) => {
+        const lineup: {
+          GuideNumber: string;
+          GuideName: string;
+          URL: string;
+        }[] = [];
+        const channels = this.channelDB.getAllChannels();
+        for (let i = 0, l = channels.length; i < l; i++) {
+          if (!channels[i].stealth) {
+            lineup.push({
+              GuideNumber: channels[i].number.toString(),
+              GuideName: channels[i].name,
+              URL: `${req.protocol}://${req.hostname}/video?channel=${channels[i].number}`,
+            });
+          }
+        }
+        if (lineup.length === 0)
+          lineup.push({
+            GuideNumber: '1',
+            GuideName: 'dizqueTV',
+            URL: `${req.protocol}://${req.hostname}/setup`,
+          });
+
+        return res.send(lineup);
+      });
+    };
+  }
 }
 
 function getDevice(db: DbAccess, host: string) {

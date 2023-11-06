@@ -26,6 +26,7 @@ import { Player } from './player.js';
 import { PlexPlayer } from './plexPlayer.js';
 import { PlayerContext } from './types.js';
 import createLogger from './logger.js';
+import { isError } from 'lodash-es';
 
 const logger = createLogger(import.meta);
 
@@ -36,7 +37,7 @@ export class ProgramPlayer extends Player {
   constructor(context: PlayerContext) {
     super();
     this.context = context;
-    let program = context.lineupItem;
+    const program = context.lineupItem;
     if (context.m3u8) {
       context.ffmpegSettings.normalizeAudio = false;
       // people might want the codec normalization to stay because of player support
@@ -70,13 +71,13 @@ export class ProgramPlayer extends Player {
     this.delegate.cleanUp();
   }
 
-  private async playDelegate(outStream: Response) {
+  private async playDelegate(outStream: Response): Promise<Response> {
     return await new Promise(async (resolve, reject) => {
       try {
         // This code makes no sense.
-        let stream = await this.delegate.play(outStream);
+        const stream = await this.delegate.play(outStream);
         resolve(stream);
-        let emitter = new EventEmitter();
+        const emitter = new EventEmitter();
         function end() {
           reject(Error('Stream ended with no data'));
           // stream.removeAllListeners('data');
@@ -102,24 +103,27 @@ export class ProgramPlayer extends Player {
     try {
       return await this.playDelegate(outStream);
     } catch (err) {
-      if (!(err instanceof Error)) {
-        err = Error(
+      let actualError: Error;
+      if (!isError(err)) {
+        actualError = Error(
           'Program player had an error before receiving any data. ' +
             JSON.stringify(err),
         );
+      } else {
+        actualError = err;
       }
       if (this.context.lineupItem.err instanceof Error) {
-        logger.info(err.stack);
+        // logger.error(actualError.stack);
         throw Error('Additional error when attempting to play error stream.');
       }
-      logger.info(
+      logger.error(
         'Error when attempting to play video. Fallback to error stream: ' +
-          err.stack,
+          actualError.stack,
       );
       //Retry once with an error stream:
       this.context.lineupItem = {
         type: 'offline',
-        err: err,
+        err: actualError,
         start: this.context.lineupItem.start,
         streamDuration: this.context.lineupItem.streamDuration,
         duration: this.context.lineupItem.duration,

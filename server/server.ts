@@ -29,7 +29,8 @@ import { video } from './video.js';
 import { xmltvInterval } from './xmltvGenerator.js';
 import { time } from './util.js';
 import fp from 'fastify-plugin';
-// import fastifyPrintRoutes from 'fastify-print-routes';
+import fpStatic from '@fastify/static';
+import fastifyPrintRoutes from 'fastify-print-routes';
 
 const logger = createLogger(import.meta);
 
@@ -107,19 +108,16 @@ export async function initServer(opts: ServerOptions) {
   await app
     .register(middie)
     .register(cors)
-    // .register(fastifyPrintRoutes)
+    .register(fastifyPrintRoutes)
     .register(
       fp((f, _, done) => {
         f.decorateRequest('serverCtx', null);
         f.addHook('onRequest', async (req) => {
-          console.log('hook time baby');
           req.serverCtx = await serverContext();
         });
         done();
       }),
     );
-
-  ctx.eventService.setup(app);
 
   await app.use(
     morgan(':method :url :status :res[content-length] - :response-time ms', {
@@ -128,6 +126,8 @@ export async function initServer(opts: ServerOptions) {
       },
     }),
   );
+
+  ctx.eventService.setup(app);
 
   app.get('/version.js', async (_, res) => {
     return res.header('content-type', 'application/javascript').status(200)
@@ -143,23 +143,27 @@ export async function initServer(opts: ServerOptions) {
     `);
   });
 
-  app
+  await app
     .use('/images', serveStatic(path.join(opts.database, 'images')))
     .use(serveStatic(fileURLToPath(new URL('../web/public', import.meta.url))))
     .use('/images', serveStatic(path.join(opts.database, 'images')))
     // .use('/cache/images', ctx.cacheImageService.routerInterceptor())
-    .get<{ Params: { hash: string } }>(
-      '/cache/images/:hash',
-      {
-        onRequest: (req, res) =>
-          ctx.cacheImageService.routerInterceptor(req, res),
-      },
-      (req, res) => {},
-    )
-    .use(
-      '/cache/images',
-      serveStatic(path.join(opts.database, 'cache', 'images')),
-    )
+    // .get<{ Params: { hash: string } }>(
+    //   '/cache/images/:hash',
+    //   {
+    //     // Workaround for https://github.com/fastify/fastify/issues/4859
+    //     // eslint-disable-next-line @typescript-eslint/no-misused-promises
+    //     onRequest: (req, res) =>
+    //       ctx.cacheImageService.routerInterceptor(req, res),
+    //   },
+    //   (req, res) => {
+
+    //   },
+    // )
+    // .use(
+    //   '/cache/images',
+    //   serveStatic(path.join(opts.database, 'cache', 'images')),
+    // )
     .use(
       '/favicon.svg',
       serveStatic(path.join(__dirname, 'resources', 'favicon.svg')),
@@ -168,8 +172,27 @@ export async function initServer(opts: ServerOptions) {
 
   // API Routers
   await app
+    .register(async (f) => {
+      await f.register(fpStatic, {
+        root: path.join(opts.database, 'cache', 'images'),
+      });
+      // f.addHook('onRequest', async (req, res) => ctx.cacheImageService.routerInterceptor(req, res));
+      f.get<{ Params: { hash: string } }>(
+        '/cache/images/:hash',
+        {
+          // Workaround for https://github.com/fastify/fastify/issues/4859
+          // eslint-disable-next-line @typescript-eslint/no-misused-promises
+          onRequest: (req, res) => {
+            return ctx.cacheImageService.routerInterceptor(req, res);
+          },
+        },
+        async (req, res) => {
+          return res.sendFile(req.params.hash);
+        },
+      );
+    })
     .register(plexServersRouter)
-    .register(fp(channelsRouter))
+    .register(channelsRouter)
     .register(fillerRouter)
     .register(customShowRouter)
     .register(ffmpegSettingsRouter)
@@ -185,7 +208,7 @@ export async function initServer(opts: ServerOptions) {
       prefix: '/api/cache/images',
     })
     .use(video(ctx.fillerDB))
-    .use(ctx.hdhrService.router);
+    .register(ctx.hdhrService.createRouter());
 
   await updateXMLPromise;
 

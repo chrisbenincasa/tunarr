@@ -475,6 +475,9 @@ export class CachedImageCollection extends IdBasedCollection<CachedImage> {
   }
 
   protected getAllMutable(): CachedImage[] {
+    if (isUndefined(this.db.data.cachedImages)) {
+      this.db.data.cachedImages = [];
+    }
     return this.db.data.cachedImages;
   }
 

@@ -86,17 +86,16 @@ export const miscRouter: FastifyPluginCallback = (fastify, _opts, done) => {
     try {
       const host = `${req.protocol}://${req.hostname}`;
 
-      await res
-        .header('Cache-Control', 'no-store')
-        .header('Content-Type', 'application/xml');
-
       const xmltvSettings = req.serverCtx.dbAccess.xmlTvSettings();
       const fileContent = await fsPromises.readFile(
         xmltvSettings.outputPath,
         'utf8',
       );
       const fileFinal = fileContent.replace(/\{\{host\}\}/g, host);
-      return res.send(fileFinal);
+      return res
+        .header('Cache-Control', 'no-store')
+        .header('Content-Type', 'application/xml')
+        .send(fileFinal);
     } catch (err) {
       logger.error(err);
       return res.status(500).send('error');

@@ -8,7 +8,7 @@ import { DbAccess, getDB } from './dao/db.js';
 import { FillerDB } from './dao/fillerDb.js';
 import { PlexServerDB } from './dao/plexServerDb.js';
 import { serverOptions } from './globals.js';
-import { HdhrService, hdhr } from './hdhr.js';
+import { HdhrService } from './hdhr.js';
 import { CacheImageService } from './services/cacheImageService.js';
 import { EventService } from './services/eventService.js';
 import { FileCacheService } from './services/fileCacheService.js';
@@ -102,7 +102,7 @@ export const serverContext: () => Promise<ServerContext> = once(async () => {
     m3uService,
     eventService,
     guideService,
-    hdhrService: hdhr(dbAccess, channelDB),
+    hdhrService: new HdhrService(dbAccess, channelDB),
     customShowDB,
     channelCache,
     xmltv,
