@@ -105,6 +105,7 @@ type ProgramLineupItem = BaseLineupItem & {
   beginningOffset: number;
   duration: number;
   serverKey: string;
+  title: string;
 };
 
 type TupleToUnion<T extends unknown[]> = T[number];

@@ -36,7 +36,7 @@ export class HdhrService {
   }
 
   createRouter(): FastifyPluginCallback {
-    return (fastify) => {
+    return (fastify, _opts, done) => {
       fastify.get('/device.xml', (req, res) => {
         const device = getDevice(this.db, req.protocol + '://' + req.hostname);
         const data = device.getXml();
@@ -82,6 +82,8 @@ export class HdhrService {
 
         return res.send(lineup);
       });
+
+      done();
     };
   }
 }

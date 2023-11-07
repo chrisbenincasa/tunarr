@@ -1,7 +1,10 @@
 // import express, { Request } from 'express';
 import cors from '@fastify/cors';
 import middie from '@fastify/middie';
+import fpStatic from '@fastify/static';
 import fastify from 'fastify';
+import fp from 'fastify-plugin';
+import fastifyPrintRoutes from 'fastify-print-routes';
 import fs from 'fs';
 import morgan from 'morgan';
 import { onShutdown } from 'node-graceful-shutdown';
@@ -25,12 +28,9 @@ import { serverOptions } from './globals.js';
 import createLogger from './logger.js';
 import { serverContext } from './serverContext.js';
 import { ServerOptions } from './types.js';
-import { video } from './video.js';
-import { xmltvInterval } from './xmltvGenerator.js';
 import { time } from './util.js';
-import fp from 'fastify-plugin';
-import fpStatic from '@fastify/static';
-import fastifyPrintRoutes from 'fastify-print-routes';
+import { videoRouter } from './video2.js';
+import { xmltvInterval } from './xmltvGenerator.js';
 
 const logger = createLogger(import.meta);
 
@@ -207,7 +207,7 @@ export async function initServer(opts: ServerOptions) {
     .register(ctx.cacheImageService.apiRouters(), {
       prefix: '/api/cache/images',
     })
-    .use(video(ctx.fillerDB))
+    .register(videoRouter)
     .register(ctx.hdhrService.createRouter());
 
   await updateXMLPromise;

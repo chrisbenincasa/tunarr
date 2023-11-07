@@ -17,13 +17,14 @@ import {
 import { isUndefined } from 'lodash-es';
 import { Player } from './player.js';
 import { Writable } from 'stream';
+import createLogger from './logger.js';
 
 const USED_CLIENTS: Record<string, boolean> = {};
-
+const logger = createLogger(import.meta);
 export class PlexPlayer extends Player {
   private context: PlayerContext;
   private ffmpeg: FFMPEG | null;
-  private plexTranscoder: any;
+  private plexTranscoder: PlexTranscoder | null;
   private killed: boolean;
   private clientId: string;
 
@@ -79,101 +80,109 @@ export class PlexPlayer extends Player {
       };
     }
 
-    try {
-      const plexSettings = db.plexSettings();
-      const plexTranscoder = new PlexTranscoder(
-        this.clientId,
-        server,
-        plexSettings,
-        channel,
-        lineupItem,
-      );
-      this.plexTranscoder = plexTranscoder;
-      const watermark = this.context.watermark;
-      let ffmpeg = new FFMPEG(ffmpegSettings, channel); // Set the transcoder options
-      ffmpeg.setAudioOnly(this.context.audioOnly);
-      this.ffmpeg = ffmpeg;
-      let streamDuration: number | undefined;
-      if (
-        !isUndefined(lineupItem.streamDuration) &&
-        lineupItem.start + lineupItem.streamDuration + constants.SLACK <
-          lineupItem.duration
-      ) {
-        streamDuration = lineupItem.streamDuration / 1000;
-      }
-      const deinterlace = ffmpegSettings.enableTranscoding; //for now it will always deinterlace when transcoding is enabled but this is sub-optimal
+    const plexSettings = db.plexSettings();
+    const plexTranscoder = new PlexTranscoder(
+      this.clientId,
+      server,
+      plexSettings,
+      channel,
+      lineupItem,
+    );
+    this.plexTranscoder = plexTranscoder;
+    const watermark = this.context.watermark;
+    let ffmpeg = new FFMPEG(ffmpegSettings, channel); // Set the transcoder options
+    ffmpeg.setAudioOnly(this.context.audioOnly);
+    this.ffmpeg = ffmpeg;
+    let streamDuration: number | undefined;
+    if (
+      !isUndefined(lineupItem.streamDuration) &&
+      lineupItem.start + lineupItem.streamDuration + constants.SLACK <
+        lineupItem.duration
+    ) {
+      streamDuration = lineupItem.streamDuration / 1000;
+    }
+    const deinterlace = ffmpegSettings.enableTranscoding; //for now it will always deinterlace when transcoding is enabled but this is sub-optimal
 
-      const stream = await plexTranscoder.getStream(deinterlace);
-      if (this.killed) {
-        return;
-      }
+    const stream = await plexTranscoder.getStream(deinterlace);
+    if (this.killed) {
+      return;
+    }
 
-      //let streamStart = (stream.directPlay) ? plexTranscoder.currTimeS : undefined;
-      //let streamStart = (stream.directPlay) ? plexTranscoder.currTimeS : lineupItem.start;
-      const streamStart = stream.directPlay
-        ? plexTranscoder.currTimeS
-        : undefined;
-      const streamStats = stream.streamStats;
+    //let streamStart = (stream.directPlay) ? plexTranscoder.currTimeS : undefined;
+    //let streamStart = (stream.directPlay) ? plexTranscoder.currTimeS : lineupItem.start;
+    const streamStart = stream.directPlay
+      ? plexTranscoder.currTimeS
+      : undefined;
+    const streamStats = stream.streamStats;
+    if (streamStats) {
       streamStats.duration = lineupItem.streamDuration;
+    }
 
-      const emitter = new EventEmitter() as TypedEventEmitter<FfmpegEvents>;
-      //setTimeout( () => {
-      let ff = await ffmpeg.spawnStream(
-        stream.streamUrl,
-        stream.streamStats,
-        streamStart,
-        streamDuration,
-        watermark,
-        lineupItem.type,
-      ); // Spawn the ffmpeg process
-      if (isUndefined(ff)) {
-        throw new Error('Unable to spawn ffmpeg');
-      }
+    const emitter = new EventEmitter() as TypedEventEmitter<FfmpegEvents>;
+    //setTimeout( () => {
+    let ff = await ffmpeg.spawnStream(
+      stream.streamUrl,
+      stream.streamStats,
+      streamStart,
+      streamDuration,
+      watermark,
+      lineupItem.type,
+    ); // Spawn the ffmpeg process
 
-      ff.pipe(outStream, { end: false });
-      //}, 100);
-      plexTranscoder.startUpdatingPlex();
+    if (isUndefined(ff)) {
+      throw new Error('Unable to spawn ffmpeg');
+    }
 
-      ffmpeg.on('end', () => {
-        emitter.emit('end');
-      });
+    ff.pipe(outStream, { end: false });
+    //}, 100);
+    plexTranscoder.startUpdatingPlex();
+
+    ffmpeg.on('end', () => {
+      logger.info('ffmpeg end');
+      emitter.emit('end');
+    });
+
+    ffmpeg.on('close', () => {
+      logger.info('ffmpeg close');
+      emitter.emit('close');
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
+    ffmpeg.on('error', async (err) => {
+      console.log('Replacing failed stream with error stream');
+      ff!.unpipe(outStream);
+      // ffmpeg.removeAllListeners('data'); Type inference says this doesnt ever exist
+      ffmpeg.removeAllListeners('end');
+      ffmpeg.removeAllListeners('error');
+      ffmpeg.removeAllListeners('close');
+      ffmpeg = new FFMPEG(ffmpegSettings, channel); // Set the transcoder options
+      ffmpeg.setAudioOnly(this.context.audioOnly);
       ffmpeg.on('close', () => {
         emitter.emit('close');
       });
-      ffmpeg.on('error', async (err) => {
-        console.log('Replacing failed stream with error stream');
-        ff!.unpipe(outStream);
-        // ffmpeg.removeAllListeners('data'); Type inference says this doesnt ever exist
-        ffmpeg.removeAllListeners('end');
-        ffmpeg.removeAllListeners('error');
-        ffmpeg.removeAllListeners('close');
-        ffmpeg = new FFMPEG(ffmpegSettings, channel); // Set the transcoder options
-        ffmpeg.setAudioOnly(this.context.audioOnly);
-        ffmpeg.on('close', () => {
-          emitter.emit('close');
-        });
-        ffmpeg.on('end', () => {
-          emitter.emit('end');
-        });
-        ffmpeg.on('error', (err) => {
-          emitter.emit('error', err);
-        });
+      ffmpeg.on('end', () => {
+        emitter.emit('end');
+      });
+      ffmpeg.on('error', (err) => {
+        emitter.emit('error', err);
+      });
 
+      try {
         ff = await ffmpeg.spawnError(
           'oops',
           'oops',
-          Math.min(streamStats.duration, 60000),
+          Math.min(streamStats?.duration ?? 30000, 60000),
         );
         if (isUndefined(ff)) {
           throw new Error('Unable to spawn ffmpeg...what is going on here');
         }
         ff.pipe(outStream);
+      } catch (err) {
+        console.error('Err while trying to spawn error stream! YIKES', err);
+      }
 
-        emitter.emit('error', err);
-      });
-      return emitter;
-    } catch (err) {
-      throw err;
-    }
+      emitter.emit('error', err);
+    });
+    return emitter;
   }
 }

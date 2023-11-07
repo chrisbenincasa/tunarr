@@ -15,7 +15,7 @@ type PlexStream = {
   directPlay: boolean;
   streamUrl: string;
   separateVideoStream?: string;
-  streamStats?: any;
+  streamStats?: VideoStats;
 };
 
 type VideoStats = {
@@ -41,20 +41,20 @@ export class PlexTranscoder {
   private session: string;
   private device: string;
   private deviceName: string;
-  private clientIdentifier: any;
+  private clientIdentifier: string;
   private product: string;
   private settings: DeepReadonly<PlexStreamSettings>;
-  private key: any;
+  private key: string;
   // private metadataPath: string;
   private plexFile: string;
   private file: any;
   private transcodeUrlBase: string;
-  private ratingKey: any;
-  private currTimeMs: any;
-  public currTimeS: any;
-  private duration: any;
+  private ratingKey: string;
+  private currTimeMs: number;
+  public currTimeS: number;
+  private duration: number;
   private server: PlexServerSettings;
-  private transcodingArgs: any;
+  private transcodingArgs: string | undefined;
   private decisionJson: any;
   private updateInterval: number;
   private updatingPlex: NodeJS.Timeout | undefined;

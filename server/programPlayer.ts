@@ -18,15 +18,15 @@
  * deal with the thrown error.
  **/
 
-import EventEmitter from 'events';
-import { Response } from 'express';
+import { isError } from 'lodash-es';
+import { Writable } from 'stream';
+import { FfmpegEvents } from './ffmpeg.js';
 import * as helperFuncs from './helperFuncs.js';
+import createLogger from './logger.js';
 import { OfflinePlayer } from './offlinePlayer.js';
 import { Player } from './player.js';
 import { PlexPlayer } from './plexPlayer.js';
-import { PlayerContext } from './types.js';
-import createLogger from './logger.js';
-import { isError } from 'lodash-es';
+import { Maybe, PlayerContext, TypedEventEmitter } from './types.js';
 
 const logger = createLogger(import.meta);
 
@@ -71,38 +71,50 @@ export class ProgramPlayer extends Player {
     this.delegate.cleanUp();
   }
 
-  private async playDelegate(outStream: Response): Promise<Response> {
-    return await new Promise(async (resolve, reject) => {
+  private playDelegate(
+    outStream: Writable,
+  ): Promise<Maybe<TypedEventEmitter<FfmpegEvents>>> {
+    return new Promise((resolve, reject) => {
       try {
         // This code makes no sense.
-        const stream = await this.delegate.play(outStream);
-        resolve(stream);
-        const emitter = new EventEmitter();
-        function end() {
-          reject(Error('Stream ended with no data'));
-          // stream.removeAllListeners('data');
-          stream?.removeAllListeners('end');
-          stream?.removeAllListeners('close');
-          stream?.removeAllListeners('error');
-          emitter.emit('end');
-        }
-        stream?.on('error', (err) => {
-          reject(
-            Error('Stream ended in error with no data. ' + JSON.stringify(err)),
-          );
-          end();
-        });
-        stream?.on('end', end);
-        stream?.on('close', end);
+        this.delegate
+          .play(outStream)
+          .then((stream) => {
+            resolve(stream);
+            // const emitter = new EventEmitter();
+            // function end() {
+            //   reject(Error('Stream ended with no data'));
+            //   // stream.removeAllListeners('data');
+            //   stream?.removeAllListeners('end');
+            //   stream?.removeAllListeners('close');
+            //   stream?.removeAllListeners('error');
+            //   emitter.emit('end');
+            // }
+            // stream?.on('error', (err) => {
+            //   reject(
+            //     Error(
+            //       'Stream ended in error with no data. ' + JSON.stringify(err),
+            //     ),
+            //   );
+            //   end();
+            // });
+            // stream?.on('end', end);
+            // stream?.on('close', end);
+          })
+          .catch(reject);
       } catch (err) {
         reject(err);
       }
     });
   }
-  async play(outStream: Response) {
+
+  async play(
+    outStream: Writable,
+  ): Promise<Maybe<TypedEventEmitter<FfmpegEvents>>> {
     try {
       return await this.playDelegate(outStream);
     } catch (err) {
+      console.log('program player err', err);
       let actualError: Error;
       if (!isError(err)) {
         actualError = Error(

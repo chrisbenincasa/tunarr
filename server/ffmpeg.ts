@@ -662,6 +662,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
 
     const doLogs = this.opts.enableLogging && !isConcatPlaylist;
     if (this.hasBeenKilled) {
+      logger.info('ffmpeg preemptively killed');
       return;
     }
     this.ffmpeg = spawn(this.ffmpegPath, ffmpegArgs, {

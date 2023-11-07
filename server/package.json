@@ -7,7 +7,7 @@
     "test": "vitest",
     "package": "sh ./make_dist.sh",
     "build": "tsc -p tsconfig.json",
-    "dev": "nodemon -e ts --watch . --watch index.ts --ignore build/ -e .json,.ts,.yml,.yaml,.js -x ts-node-esm -r tsconfig-paths/register --files --project tsconfig.json index.ts",
+    "dev": "nodemon -e ts --watch . --watch index.ts --ignore build/ -e .json,.ts,.yml,.yaml,.js -x ts-node-esm -r tsconfig-paths/register --files --project tsconfig.json index.ts --inspect",
     "buildw": "nodemon -e ts --watch . --watch index.ts --ignore build/ -e .json,.ts,.yml,.yaml,.js -x tsc --project tsconfig.json"
   },
   "type": "module",

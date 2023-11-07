@@ -42,10 +42,10 @@ export class OfflinePlayer extends Player {
 
   async play(outStream: Writable) {
     try {
-      let emitter = new EventEmitter() as TypedEventEmitter<FfmpegEvents>;
+      const emitter = new EventEmitter() as TypedEventEmitter<FfmpegEvents>;
       let ffmpeg = this.ffmpeg;
-      let lineupItem = this.context.lineupItem;
-      let duration = lineupItem.streamDuration ?? 0 - lineupItem.start;
+      const lineupItem = this.context.lineupItem;
+      const duration = lineupItem.streamDuration ?? 0 - lineupItem.start;
       let ff: Maybe<Readable>;
       if (this.error) {
         ff = await ffmpeg.spawnError(duration);
@@ -55,12 +55,17 @@ export class OfflinePlayer extends Player {
       ff?.pipe(outStream, { end: false });
 
       ffmpeg.on('end', () => {
+        console.log('offline player end');
         emitter.emit('end');
       });
       ffmpeg.on('close', () => {
+        console.log('offline player close');
+
         emitter.emit('close');
       });
       ffmpeg.on('error', async (err) => {
+        console.log('offline player error', err);
+
         //wish this code wasn't repeated.
         if (!this.error) {
           console.log('Replacing failed stream with error stream');

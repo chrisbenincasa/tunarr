@@ -12,6 +12,7 @@ import {
   FillerCollection,
   FillerList,
   FillerProgram,
+  ImmutableChannel,
   Program,
 } from './db.js';
 
@@ -140,7 +141,7 @@ export class FillerDB {
   }
 
   getFillersFromChannel(
-    channel: Channel,
+    channel: ImmutableChannel,
   ): (FillerCollection & { content: Program[] })[] {
     // TODO nasty return type, fix.
     const loadChannelFiller = (fillerEntry: FillerCollection) => {
