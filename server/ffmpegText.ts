@@ -46,7 +46,7 @@ export class FfmpegText extends events.EventEmitter {
     });
 
     if (opts.enableLogging) {
-      this.ffmpeg.stderr.on('data', (chunk) => {
+      this.ffmpeg.stderr.on('data', (chunk: Buffer) => {
         process.stderr.write(chunk);
       });
     }

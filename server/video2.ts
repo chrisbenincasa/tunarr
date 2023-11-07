@@ -79,6 +79,8 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
       ffmpeg.kill();
       logger.info(`\r\nStream ended. Channel: 1 (dizqueTV)`);
     });
+
+    return res.send(buffer);
   });
 
   const concat = async (
@@ -86,6 +88,7 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
     res: FastifyReply,
     audioOnly: boolean,
   ) => {
+    void res.hijack();
     const ctx = await serverContext();
     // Check if channel queried is valid
     if (isUndefined(req.query.channel)) {
@@ -144,14 +147,14 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
       logger.warn('CONCAT - FFMPEG CLOSE');
     });
 
-    // res.raw.on('close', () => {
-    //   logger.warn('RESPONSE CLOSE - FFMPEG CLOSE');
-    //   // on HTTP close, kill ffmpeg
-    //   logger.info(
-    //     `\r\nStream ended. Channel: ${channel?.number} (${channel?.name})`,
-    //   );
-    //   stop();
-    // });
+    res.raw.on('close', () => {
+      logger.warn('RESPONSE CLOSE - FFMPEG CLOSE');
+      // on HTTP close, kill ffmpeg
+      logger.info(
+        `\r\nStream ended. Channel: ${channel?.number} (${channel?.name})`,
+      );
+      stop();
+    });
 
     ffmpeg.on('end', () => {
       logger.warn('FFMPEG END - FFMPEG CLOSE');
@@ -171,7 +174,9 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
       return res.status(500).send('Could not start concat stream');
     }
 
-    return res.send(ff);
+    ff.pipe(res.raw, { end: false });
+
+    // return res.send(ff);
   };
 
   fastify.get<{ Querystring: { channel?: number } }>(
@@ -196,6 +201,7 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
     t0: number,
     allowSkip: boolean,
   ): Promise<void> => {
+    void res.hijack();
     // Check if channel queried is valid
     // res.on('error', (e) => {
     //   logger.error('There was an unexpected error in stream.', e);
@@ -483,10 +489,10 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
       stop();
     });
 
-    // req.raw.on('close', () => {
-    //   logger.info('Client Closed');
-    //   stop();
-    // });
+    req.raw.on('close', () => {
+      logger.info('Client Closed');
+      stop();
+    });
   };
 
   fastify.get<{ Querystring: StreamQueryString }>(

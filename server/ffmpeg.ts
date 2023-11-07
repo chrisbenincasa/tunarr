@@ -255,8 +255,8 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       // filters to apply.
       //
       let doOverlay = !isUndefined(watermark);
-      let iW = streamStats?.videoWidth;
-      let iH = streamStats?.videoHeight;
+      let iW = streamStats!.videoWidth;
+      let iH = streamStats!.videoHeight;
 
       // (explanation is the same for the video and audio streams)
       // The initial stream is called '[video]'
@@ -419,8 +419,8 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       ) {
         //scaler stuff, need to change the size of the video and also add bars
         // calculate wanted aspect ratio
-        let p = iW! * streamStats!.pixelP!;
-        let q = iH! * streamStats!.pixelQ!;
+        let p = iW * streamStats!.pixelP!;
+        let q = iH * streamStats!.pixelQ!;
         const g = gcd(q, p); // and people kept telling me programming contests knowledge had no use real programming!
         p = Math.floor(p / g);
         q = Math.floor(q / g);
@@ -471,11 +471,11 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       // Channel watermark:
       if (doOverlay && this.audioOnly !== true) {
         const pW = watermark!.width;
-        const w = Math.round((pW * iW!) / 100.0);
+        const w = Math.round((pW * iW) / 100.0);
         const mpHorz = watermark!.horizontalMargin;
         const mpVert = watermark!.verticalMargin;
-        const horz = Math.round((mpHorz * iW!) / 100.0);
-        const vert = Math.round((mpVert * iH!) / 100.0);
+        const horz = Math.round((mpHorz * iW) / 100.0);
+        const vert = Math.round((mpVert * iH) / 100.0);
 
         const posAry: object = {
           'top-left': `x=${horz}:y=${vert}`,
@@ -528,10 +528,10 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       // filter_complex and this allows us to avoid transcoding.
       let transcodeVideo =
         this.opts.normalizeVideoCodec &&
-        isDifferentVideoCodec(streamStats!.videoCodec!, this.opts.videoEncoder);
+        isDifferentVideoCodec(streamStats?.videoCodec, this.opts.videoEncoder);
       transcodeAudio =
         this.opts.normalizeAudioCodec &&
-        isDifferentAudioCodec(streamStats!.audioCodec!, this.opts.audioEncoder);
+        isDifferentAudioCodec(streamStats?.audioCodec, this.opts.audioEncoder);
       let filterComplex = '';
       if (!transcodeVideo && currentVideo == '[minsiz]') {
         //do not change resolution if no other transcoding will be done
@@ -691,10 +691,6 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
 
     this.ffmpegName = isConcatPlaylist ? 'Concat FFMPEG' : 'Stream FFMPEG';
 
-    this.ffmpeg.stdout.on('data', () => {
-      logger.info(`Got message from ffmpeg!`);
-    });
-
     this.ffmpeg.on('error', (code, signal) => {
       logger.info(
         `${this.ffmpegName} received error event: ${code}, ${signal}`,
@@ -751,7 +747,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
   }
 }
 
-function isDifferentVideoCodec(codec: string, encoder: string) {
+function isDifferentVideoCodec(codec: Maybe<string>, encoder: string) {
   if (codec == 'mpeg2video') {
     return !encoder.includes('mpeg2');
   } else if (codec == 'h264') {
@@ -763,7 +759,7 @@ function isDifferentVideoCodec(codec: string, encoder: string) {
   return true;
 }
 
-function isDifferentAudioCodec(codec: string, encoder: string) {
+function isDifferentAudioCodec(codec: Maybe<string>, encoder: string) {
   if (codec == 'mp3') {
     return !(encoder.includes('mp3') || encoder.includes('lame'));
   } else if (codec == 'aac') {

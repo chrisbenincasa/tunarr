@@ -24,8 +24,8 @@ export type VideoStats = {
   pixelP?: number;
   pixelQ?: number;
   videoCodec?: string;
-  videoWidth?: number;
-  videoHeight?: number;
+  videoWidth: number;
+  videoHeight: number;
   videoFramerate?: number;
   videoDecision?: string;
   audioDecision?: string;
@@ -361,8 +361,9 @@ lang=en`;
     }
   }
 
-  getVideoStats() {
-    const ret: VideoStats = {};
+  getVideoStats(): VideoStats {
+    const ret: Partial<VideoStats> = {};
+
     try {
       const streams: any[] =
         this.decisionJson.Metadata[0].Media[0].Part[0].Stream;
@@ -417,6 +418,7 @@ lang=en`;
     } catch (e) {
       console.error('Error at decision:', e);
     }
+
     if (isUndefined(ret.videoCodec)) {
       ret.audioOnly = true;
       ret.placeholderImage =
@@ -430,7 +432,7 @@ lang=en`;
     this.log('Current video stats:');
     this.log(ret);
 
-    return ret;
+    return ret as Required<VideoStats>; // This isn't technically right, but this is how the current code treats this
   }
 
   async getAudioIndex() {
