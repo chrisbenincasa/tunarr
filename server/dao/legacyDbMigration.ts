@@ -56,14 +56,15 @@ type LegacyPlexSettings = {
 
 const logger = createLogger(import.meta);
 
-async function readAllOldDbFile(file: string): Promise<object[] | object> {
+async function readAllOldDbFile(file: string): Promise<JSONArray | JSONObject> {
   try {
     const data = await fsPromises.readFile(
       path.resolve(globalOptions().database, file + '.json'),
     );
     const str = data.toString('utf-8');
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const parsed = JSON.parse(str);
-    return isArray(parsed) ? (parsed as object[]) : (parsed as object);
+    return isArray(parsed) ? (parsed as JSONArray) : (parsed as JSONObject);
   } catch (e) {
     logger.error(e);
     throw e;
@@ -76,7 +77,7 @@ async function readOldDbFile(file: string): Promise<JSONObject> {
     if (isArray(data)) {
       return data[0] as JSONObject;
     } else {
-      return data as JSONObject;
+      return data;
     }
   } catch (e) {
     logger.error(e);
@@ -175,31 +176,44 @@ async function migrateChannels(db: Low<Schema>) {
     const channel = await fsPromises.readFile(
       path.join(path.resolve(globalOptions().database, 'channels'), file),
     );
-    const parsed = JSON.parse(channel.toString('utf-8'));
+    const parsed = JSON.parse(channel.toString('utf-8')) as JSONObject;
 
-    const transcodingOptions = get(parsed, 'transcoding.targetResolution');
+    const transcodingOptions = get(
+      parsed,
+      'transcoding.targetResolution',
+    ) as string;
     const hasTranscodingOptions = !isUndefined(
       emptyStringToUndefined(transcodingOptions),
     );
 
+    const watermark = parsed['watermark'] as JSONObject;
+
+    // const toIcon(obj: JSONObject)
+
     return {
-      disableFillerOverlay: parsed['disableFillerOverlay'],
-      duration: parsed['duration'],
-      fallback: parsed['fallback'],
-      groupTitle: parsed['groupTitle'],
-      guideMinimumDurationSeconds: parsed['guideMinimumDurationSeconds'],
+      disableFillerOverlay: parsed['disableFillerOverlay'] as boolean,
+      duration: parsed['duration'] as number,
+      fallback: ((parsed['fallback'] as Maybe<JSONArray>) ?? []).map(
+        convertProgram,
+      ),
+      groupTitle: parsed['groupTitle'] as string,
+      guideMinimumDurationSeconds: parsed[
+        'guideMinimumDurationSeconds'
+      ] as number,
       icon: {
-        path: parsed['icon'],
-        duration: parsed['iconDuration'],
-        position: parsed['iconPosition'],
-        width: parsed['iconWidth'],
+        path: parsed['icon'] as string,
+        duration: parsed['iconDuration'] as number,
+        position: parsed['iconPosition'] as string,
+        width: parsed['iconWidth'] as number,
       },
-      startTimeEpoch: new Date(parsed['startTime']).getTime(),
-      name: parsed['name'],
+      startTimeEpoch: new Date(parsed['startTime'] as string).getTime(),
+      name: parsed['name'] as string,
       offline: {
-        picture: parsed['offlinePicture'],
-        soundtrack: emptyStringToUndefined(parsed['offlineSoundtrack']),
-        mode: parsed['offlineMode'],
+        picture: parsed['offlinePicture'] as string,
+        soundtrack: emptyStringToUndefined(
+          parsed['offlineSoundtrack'] as string,
+        ),
+        mode: parsed['offlineMode'] as 'clip' | 'pic',
       },
       transcoding:
         hasTranscodingOptions &&
@@ -208,28 +222,38 @@ async function migrateChannels(db: Low<Schema>) {
               targetResolution: tryParseResolution(transcodingOptions)!,
             }
           : undefined,
-      programs: (parsed['programs'] ?? []).map(convertProgram),
-      number: parsed['number'],
-      fillerCollections: (parsed['fillerCollections'] ?? []).map((fc) => {
-        return {
-          id: fc['id'],
-          weight: fc['weight'],
-          cooldownSeconds: fc['cooldown'] / 1000,
-        };
-      }),
-      watermark: {
-        enabled: parsed['watermark']['enabled'],
-        duration: parsed['watermark']['duration'],
-        position: parsed['watermark']['position'],
-        width: parsed['watermark']['width'],
-        verticalMargin: parsed['watermark']['verticalMargin'],
-        horizontalMargin: parsed['watermark']['horizontalMargin'],
-        url: parsed['watermark']['url'],
-        animated: parsed['watermark']['animated'],
-        fixedSize: parsed['watermark']['fixedSize'],
-      },
-      stealth: parsed['stealth'],
-      guideFlexPlaceholder: parsed['guideFlexPlaceholder'],
+      programs: ((parsed['programs'] as JSONArray) ?? []).map(convertProgram),
+      number: parsed['number'] as number,
+      fillerCollections: ((parsed['fillerCollections'] as JSONArray) ?? []).map(
+        (fc) => {
+          return {
+            id: fc!['id'] as string,
+            weight: fc!['weight'] as number,
+            cooldownSeconds: fc!['cooldown'] / 1000,
+          };
+        },
+      ),
+      watermark: !isUndefined(watermark)
+        ? {
+            enabled: watermark['enabled'] as boolean,
+            duration: watermark['duration'] as number,
+            position: watermark['position'] as string,
+            width: watermark['width'] as number,
+            verticalMargin: watermark['verticalMargin'] as number,
+            horizontalMargin: watermark['horizontalMargin'] as number,
+            url: watermark['url'] as Maybe<string>,
+            animated: isUndefined(watermark['animated'])
+              ? false
+              : (watermark['animated'] as boolean),
+            fixedSize: watermark['fixedSize'] as boolean,
+          }
+        : undefined,
+      stealth: isUndefined(parsed['stealth'])
+        ? false
+        : (parsed['stealth'] as boolean),
+      guideFlexPlaceholder: emptyStringToUndefined(
+        parsed['guideFlexPlaceholder'] as string,
+      ),
     };
   }
 
@@ -256,7 +280,7 @@ async function migrateCustomShows(db: Low<Schema>) {
       const channel = await fsPromises.readFile(
         path.join(path.resolve(globalOptions().database, 'custom-shows'), file),
       );
-      const parsed: JSONObject = JSON.parse(channel.toString('utf-8'));
+      const parsed = JSON.parse(channel.toString('utf-8')) as JSONObject;
 
       const show: CustomShow = {
         id,
@@ -273,13 +297,15 @@ async function migrateCustomShows(db: Low<Schema>) {
 }
 
 async function migrateCachedImages(db: Low<Schema>) {
-  const cacheImages = (await readAllOldDbFile('cache-images')) as object[];
-  let newCacheImages: CachedImage[] = [];
-  for (let cacheImage of cacheImages) {
+  const cacheImages = (await readAllOldDbFile('cache-images')) as JSONObject[];
+  const newCacheImages: CachedImage[] = [];
+  for (const cacheImage of cacheImages) {
     // Extract the original URL
-    const url = Buffer.from(cacheImage['url'], 'base64').toString('utf-8');
-    const hash = cacheImage['url'];
-    const mimeType = cacheImage['mimeType'];
+    const url = Buffer.from(cacheImage['url'] as string, 'base64').toString(
+      'utf-8',
+    );
+    const hash = cacheImage['url'] as string;
+    const mimeType = cacheImage['mimeType'] as string;
     newCacheImages.push({ url, hash, mimeType });
   }
   db.data.cachedImages = newCacheImages;
@@ -372,6 +398,7 @@ export async function migrateFromLegacyDb(db: Low<Schema>) {
         defaultPlexStreamSettings,
         (legacyObjValue, defaultObjValue) => {
           if (isUndefined(legacyObjValue)) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-return
             return defaultObjValue;
           }
         },
@@ -384,9 +411,9 @@ export async function migrateFromLegacyDb(db: Low<Schema>) {
   try {
     const plexServers = await readAllOldDbFile('plex-servers');
     logger.info('Migrating Plex servers', plexServers);
-    let servers: object[] = [];
+    let servers: JSONObject[] = [];
     if (isArray(plexServers)) {
-      servers = [...plexServers];
+      servers = [...plexServers] as JSONObject[];
     } else if (isObject(plexServers)) {
       servers = [plexServers];
     }

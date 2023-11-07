@@ -1,26 +1,36 @@
-import { isUndefined, pick } from 'lodash-es';
+import { isNil, isUndefined, pick } from 'lodash-es';
 import * as randomJS from 'random-js';
-import constants from './constants.js';
+import { DeepReadonly } from 'ts-essentials';
 import { ChannelCache } from './channelCache.js';
+import constants from './constants.js';
 import {
-  ChannelIcon,
   FfmpegSettings,
+  FillerCollection,
   ImmutableChannel,
   Program,
   Watermark,
   offlineProgram,
 } from './dao/db.js';
-import { DeepReadonly } from 'ts-essentials';
 import {
   CHANNEL_CONTEXT_KEYS,
+  CommercialLineupItem,
   ContextChannel,
+  Intersection,
   LineupItem,
   Maybe,
+  programToCommercial,
 } from './types.js';
 
 const SLACK = constants.SLACK;
 const Random = randomJS.Random;
 export const random = new Random(randomJS.MersenneTwister19937.autoSeed());
+
+// Figure out this type later...
+type PartialCommercialType = Omit<
+  Intersection<CommercialLineupItem, Program> &
+    Pick<CommercialLineupItem, 'fillerId'>,
+  'duration'
+> & { duration: number };
 
 export type ProgramAndTimeElapsed = {
   program: DeepReadonly<Program> & { err?: Error };
@@ -32,10 +42,10 @@ export function getCurrentProgramAndTimeElapsed(
   date: number,
   channel: ImmutableChannel,
 ): ProgramAndTimeElapsed {
-  let channelStartTime = new Date(channel.startTimeEpoch).getTime();
+  const channelStartTime = new Date(channel.startTimeEpoch).getTime();
   if (channelStartTime > date) {
-    let t0 = date;
-    let t1 = channelStartTime;
+    const t0 = date;
+    const t1 = channelStartTime;
     console.log(
       'Channel start time is above the given date. Flex time is picked till that.',
     );
@@ -48,7 +58,7 @@ export function getCurrentProgramAndTimeElapsed(
   let timeElapsed = (date - channelStartTime) % channel.duration;
   let currentProgramIndex = -1;
   for (let y = 0, l2 = channel.programs.length; y < l2; y++) {
-    let program = channel.programs[y];
+    const program = channel.programs[y];
     if (timeElapsed - program.duration < 0) {
       currentProgramIndex = y;
       if (
@@ -77,21 +87,21 @@ export function getCurrentProgramAndTimeElapsed(
 export function createLineup(
   channelCache: ChannelCache,
   obj: ProgramAndTimeElapsed,
-  channel,
-  fillers,
-  isFirst,
+  channel: ImmutableChannel,
+  fillers: (FillerCollection & { content: Program[] })[],
+  isFirst: boolean,
 ): LineupItem[] {
   let timeElapsed = obj.timeElapsed;
   // Start time of a file is never consistent unless 0. Run time of an episode can vary.
   // When within 30 seconds of start time, just make the time 0 to smooth things out
   // Helps prevents loosing first few seconds of an episode upon lineup change
-  let activeProgram = obj.program;
+  const activeProgram = obj.program;
   let beginningOffset = 0;
 
-  let lineup: LineupItem[] = [];
+  const lineup: LineupItem[] = [];
 
   if (!isUndefined(activeProgram.err)) {
-    let remaining = activeProgram.duration - timeElapsed;
+    const remaining = activeProgram.duration - timeElapsed;
     lineup.push({
       type: 'offline',
       title: 'Error',
@@ -108,13 +118,13 @@ export function createLineup(
     //offline case
     let remaining = activeProgram.duration - timeElapsed;
     //look for a random filler to play
-    let filler: any = null;
-    let special = null;
+    let filler: Maybe<Program | PartialCommercialType>;
+    let special: Maybe<Program>;
 
-    if (channel.offlineMode === 'clip' && channel.fallback.length != 0) {
-      special = JSON.parse(JSON.stringify(channel.fallback[0]));
+    if (channel.offline.mode === 'clip' && channel.fallback.length != 0) {
+      special = { ...channel.fallback[0] };
     }
-    let randomResult = pickRandomWithMaxDuration(
+    const randomResult = pickRandomWithMaxDuration(
       channelCache,
       channel,
       fillers,
@@ -122,23 +132,23 @@ export function createLineup(
     );
     filler = randomResult.filler;
     if (
-      filler == null &&
-      typeof randomResult.minimumWait !== undefined &&
+      isNil(filler) &&
+      // typeof randomResult.minimumWait !== undefined &&
       remaining > randomResult.minimumWait
     ) {
       remaining = randomResult.minimumWait;
     }
 
     let isSpecial = false;
-    if (filler == null) {
+    if (isNil(filler)) {
       filler = special;
       isSpecial = true;
     }
-    if (filler != null) {
+    if (!isNil(filler)) {
       let fillerstart = 0;
       if (isSpecial) {
-        if (filler.duration > remaining) {
-          fillerstart = filler.duration - remaining;
+        if ((filler as Program).duration > remaining) {
+          fillerstart = (filler as Program).duration - remaining;
         } else {
           fillerstart = 0;
         }
@@ -146,9 +156,10 @@ export function createLineup(
         fillerstart = Math.max(0, filler.duration - remaining);
         //it's boring and odd to tune into a channel and it's always
         //the start of a commercial.
-        let more = Math.max(0, filler.duration - fillerstart - 15000 - SLACK);
+        const more = Math.max(0, filler.duration - fillerstart - 15000 - SLACK);
         fillerstart += random.integer(0, more);
       }
+
       lineup.push({
         // just add the video, starting at 0, playing the entire duration
         type: 'commercial',
@@ -163,7 +174,7 @@ export function createLineup(
           Math.min(filler.duration - fillerstart, remaining),
         ),
         duration: filler.duration,
-        fillerId: filler.fillerId,
+        fillerId: filler.type === 'commercial' ? filler.fillerId : '', // Is this used...
         beginningOffset: beginningOffset,
         serverKey: filler.serverKey,
       });
@@ -184,7 +195,7 @@ export function createLineup(
     });
     return lineup;
   }
-  let originalTimeElapsed = timeElapsed;
+  const originalTimeElapsed = timeElapsed;
   if (timeElapsed < 30000) {
     timeElapsed = 0;
   }
@@ -207,57 +218,59 @@ export function createLineup(
   ];
 }
 
-function weighedPick(a, total) {
+function weighedPick(a: number, total: number) {
   return random.bool(a, total);
 }
 
 function pickRandomWithMaxDuration(
   channelCache: ChannelCache,
-  channel,
-  fillers,
-  maxDuration,
-) {
-  let list = [];
+  channel: ImmutableChannel,
+  fillers: (FillerCollection & { content: Program[] })[],
+  maxDuration: number,
+): { filler: Maybe<PartialCommercialType>; minimumWait: number } {
+  let list: Program[] = [];
   for (let i = 0; i < fillers.length; i++) {
     list = list.concat(fillers[i].content);
   }
-  let pick1: any = null;
 
-  let t0 = new Date().getTime();
+  let pick1: Maybe<Program>;
+  const t0 = new Date().getTime();
   let minimumWait = 1000000000;
   const D = 7 * 24 * 60 * 60 * 1000;
   const E = 5 * 60 * 60 * 1000;
+  let fillerRepeatCooldownMs = 0;
   if (isUndefined(channel.fillerRepeatCooldown)) {
-    channel.fillerRepeatCooldown = 30 * 60 * 1000;
+    fillerRepeatCooldownMs = 30 * 60 * 1000;
   }
+
   let listM = 0;
-  let fillerId = undefined;
+  let fillerId: Maybe<string> = undefined;
   for (let j = 0; j < fillers.length; j++) {
     list = fillers[j].content;
     let pickedList = false;
     let n = 0;
 
     for (let i = 0; i < list.length; i++) {
-      let clip: any = list[i];
+      const clip: Program = list[i];
       // a few extra milliseconds won't hurt anyone, would it? dun dun dun
       if (clip.duration <= maxDuration + SLACK) {
-        let t1 = channelCache.getProgramLastPlayTime(channel.number, clip);
+        const t1 = channelCache.getProgramLastPlayTime(channel.number, clip);
         let timeSince = t1 == 0 ? D : t0 - t1;
 
-        if (timeSince < channel.fillerRepeatCooldown - SLACK) {
-          let w = channel.fillerRepeatCooldown - timeSince;
+        if (timeSince < fillerRepeatCooldownMs - SLACK) {
+          const w = fillerRepeatCooldownMs - timeSince;
           if (clip.duration + w <= maxDuration + SLACK) {
             minimumWait = Math.min(minimumWait, w);
           }
           timeSince = 0;
           //30 minutes is too little, don't repeat it at all
         } else if (!pickedList) {
-          let t1 = channelCache.getFillerLastPlayTime(
+          const t1 = channelCache.getFillerLastPlayTime(
             channel.number,
             fillers[j].id,
           );
-          let timeSince = t1 == 0 ? D : t0 - t1;
-          if (timeSince + SLACK >= fillers[j].cooldown) {
+          const timeSince = t1 == 0 ? D : t0 - t1;
+          if (timeSince + SLACK >= fillers[j].cooldownSeconds) {
             //should we pick this list?
             listM += fillers[j].weight;
             if (weighedPick(fillers[j].weight, listM)) {
@@ -268,7 +281,7 @@ function pickRandomWithMaxDuration(
               break;
             }
           } else {
-            let w = fillers[j].cooldown - timeSince;
+            const w = fillers[j].cooldownSeconds - timeSince;
             if (clip.duration + w <= maxDuration + SLACK) {
               minimumWait = Math.min(minimumWait, w);
             }
@@ -279,9 +292,9 @@ function pickRandomWithMaxDuration(
         if (timeSince <= 0) {
           continue;
         }
-        let s = norm_s(timeSince >= E ? E : timeSince);
-        let d = norm_d(clip.duration);
-        let w = s + d;
+        const s = norm_s(timeSince >= E ? E : timeSince);
+        const d = norm_d(clip.duration);
+        const w = s + d;
         n += w;
         if (weighedPick(w, n)) {
           pick1 = clip;
@@ -289,10 +302,14 @@ function pickRandomWithMaxDuration(
       }
     }
   }
-  let pick = pick1;
-  if (pick != null) {
-    pick = JSON.parse(JSON.stringify(pick));
-    pick.fillerId = fillerId;
+
+  let pick: Maybe<PartialCommercialType>;
+  if (!isNil(pick1)) {
+    pick = {
+      ...programToCommercial(pick1),
+      fillerId: fillerId!,
+      duration: pick1.duration,
+    };
   }
 
   return {
@@ -301,12 +318,12 @@ function pickRandomWithMaxDuration(
   };
 }
 
-function norm_d(x) {
+function norm_d(x: number) {
   x /= 60 * 1000;
   if (x >= 3.0) {
     x = 3.0 + Math.log(x);
   }
-  let y = 10000 * (Math.ceil(x * 1000) + 1);
+  const y = 10000 * (Math.ceil(x * 1000) + 1);
   return Math.ceil(y / 1000000) + 1;
 }
 
@@ -338,7 +355,7 @@ export function getWatermark(
     return;
   }
 
-  let icon: Maybe<ChannelIcon>;
+  let icon: Maybe<string>;
   let watermark: Maybe<Watermark>;
   if (!isUndefined(channel.watermark)) {
     watermark = { ...channel.watermark };
@@ -347,9 +364,9 @@ export function getWatermark(
     }
 
     icon = watermark.url;
-    if (isUndefined(icon) || icon.path === '') {
-      icon = channel.icon;
-      if (isUndefined(icon) || icon.path === '') {
+    if (isUndefined(icon) || icon === '') {
+      icon = channel.icon?.path;
+      if (isUndefined(icon) || icon === '') {
         return;
       }
     }

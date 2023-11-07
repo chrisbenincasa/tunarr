@@ -83,7 +83,7 @@ export type FillerList = {
 };
 
 export type Watermark = {
-  url?: ChannelIcon;
+  url?: string;
   enabled: boolean;
   position: string;
   width: number;
@@ -154,6 +154,7 @@ export type Channel = {
   fallback: Program[];
   stealth: boolean;
   guideFlexPlaceholder?: string;
+  fillerRepeatCooldown?: number;
 };
 
 export type ImmutableChannel = DeepReadonly<Channel>;

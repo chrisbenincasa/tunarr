@@ -18,14 +18,14 @@ type PlexStream = {
   streamStats?: VideoStats;
 };
 
-type VideoStats = {
+export type VideoStats = {
   duration?: number;
   anamorphic?: boolean;
   pixelP?: number;
   pixelQ?: number;
   videoCodec?: string;
-  videoWidth?: string;
-  videoHeight?: string;
+  videoWidth?: number;
+  videoHeight?: number;
   videoFramerate?: number;
   videoDecision?: string;
   audioDecision?: string;
@@ -366,6 +366,7 @@ lang=en`;
     try {
       const streams: any[] =
         this.decisionJson.Metadata[0].Media[0].Part[0].Stream;
+      console.log(streams);
       ret.duration = parseFloat(
         this.decisionJson.Metadata[0].Media[0].Part[0].duration,
       );

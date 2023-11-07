@@ -161,7 +161,7 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
       stop();
     });
 
-    const ff = await ffmpeg.spawnConcat(
+    const ff = ffmpeg.spawnConcat(
       `http://localhost:${serverOptions().port}/playlist?channel=${
         req.query.channel
       }&audioOnly=${audioOnly}`,
@@ -393,15 +393,15 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
     logger.info('=========================================================');
     logger.info('! Start playback');
     logger.info(`! Channel: ${channel.name} (${channel.number})`);
-    if (!isUndefined(lineupItem?.title)) {
+    if (isUndefined(lineupItem?.title)) {
       lineupItem!.title = 'Unknown';
     }
     logger.info(`! Title: ${lineupItem?.title}`);
     if (isUndefined(lineupItem?.streamDuration)) {
-      logger.info(`! From : ${lineupItem?.start}`);
+      logger.info(`! From: ${lineupItem?.start}`);
     } else {
       logger.info(
-        `! From : ${lineupItem?.start} to: ${
+        `! From: ${lineupItem?.start} to: ${
           (lineupItem?.start ?? 0) + (lineupItem?.streamDuration ?? 0)
         }`,
       );

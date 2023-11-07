@@ -48,10 +48,13 @@ export class OfflinePlayer extends Player {
       const duration = lineupItem.streamDuration ?? 0 - lineupItem.start;
       let ff: Maybe<Readable>;
       if (this.error) {
-        ff = await ffmpeg.spawnError(duration);
+        ff = ffmpeg.spawnError('Error', undefined, duration);
       } else {
-        ff = await ffmpeg.spawnOffline(duration);
+        ff = ffmpeg.spawnOffline(duration);
       }
+      ff?.on('data', () => {
+        console.log('got data!!');
+      });
       ff?.pipe(outStream, { end: false });
 
       ffmpeg.on('end', () => {
@@ -60,7 +63,6 @@ export class OfflinePlayer extends Player {
       });
       ffmpeg.on('close', () => {
         console.log('offline player close');
-
         emitter.emit('close');
       });
       ffmpeg.on('error', async (err) => {

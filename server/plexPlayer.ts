@@ -120,11 +120,11 @@ export class PlexPlayer extends Player {
 
     const emitter = new EventEmitter() as TypedEventEmitter<FfmpegEvents>;
     //setTimeout( () => {
-    let ff = await ffmpeg.spawnStream(
+    let ff = ffmpeg.spawnStream(
       stream.streamUrl,
       stream.streamStats,
       streamStart,
-      streamDuration,
+      streamDuration?.toString(),
       watermark,
       lineupItem.type,
     ); // Spawn the ffmpeg process
@@ -168,7 +168,7 @@ export class PlexPlayer extends Player {
       });
 
       try {
-        ff = await ffmpeg.spawnError(
+        ff = ffmpeg.spawnError(
           'oops',
           'oops',
           Math.min(streamStats?.duration ?? 30000, 60000),

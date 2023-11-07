@@ -31,6 +31,7 @@ import { ServerOptions } from './types.js';
 import { time } from './util.js';
 import { videoRouter } from './video2.js';
 import { xmltvInterval } from './xmltvGenerator.js';
+import { debugRouter } from './api/debugApi.js';
 
 const logger = createLogger(import.meta);
 
@@ -201,7 +202,8 @@ export async function initServer(opts: ServerOptions) {
     .register(hdhrSettingsRouter)
     .register(channelToolRouter)
     .register(guideRouter)
-    .register(miscRouter);
+    .register(miscRouter)
+    .register(debugRouter);
 
   await app
     .register(ctx.cacheImageService.apiRouters(), {

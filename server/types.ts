@@ -2,6 +2,7 @@ import {
   DbAccess,
   FfmpegSettings,
   ImmutableChannel,
+  Program,
   Watermark,
 } from './dao/db.js';
 
@@ -80,7 +81,7 @@ type LoadingLineupItem = BaseLineupItem & {
   start: number;
 };
 
-type CommercialLineupItem = BaseLineupItem & {
+export type CommercialLineupItem = BaseLineupItem & {
   type: 'commercial';
   key: string;
   plexFile: string;
@@ -106,6 +107,25 @@ type ProgramLineupItem = BaseLineupItem & {
   duration: number;
   serverKey: string;
   title: string;
+};
+
+export const programToCommercial = (
+  program: Program,
+): Intersection<CommercialLineupItem, Program> => {
+  return {
+    type: 'commercial',
+    key: program.key,
+    plexFile: program.plexFile,
+    file: program.file,
+    ratingKey: program.ratingKey,
+    // start: program.st
+    // streamDuration: program.
+    // beginningOffset
+    duration: program.duration,
+    serverKey: program.serverKey,
+    title: program.title,
+    // fillerId:
+  };
 };
 
 type TupleToUnion<T extends unknown[]> = T[number];
@@ -188,4 +208,8 @@ export type TypedEventEmitter<Events extends EventMap> = {
 
   getMaxListeners(): number;
   setMaxListeners(maxListeners: number): TypedEventEmitter<Events>;
+};
+
+export type Intersection<X, Y> = {
+  [PropX in keyof X & keyof Y]: X[PropX];
 };
