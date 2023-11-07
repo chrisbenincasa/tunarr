@@ -671,7 +671,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
 
     ffmpegArgs.push(`-f`, `mpegts`, `pipe:1`);
 
-    const doLogs = true; //this.opts.enableLogging && !isConcatPlaylist;
+    const doLogs = this.opts.enableLogging && !isConcatPlaylist;
     if (this.hasBeenKilled) {
       logger.info('ffmpeg preemptively killed');
       return;

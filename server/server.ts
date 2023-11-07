@@ -1,4 +1,3 @@
-// import express, { Request } from 'express';
 import cors from '@fastify/cors';
 import middie from '@fastify/middie';
 import fpStatic from '@fastify/static';
@@ -29,7 +28,7 @@ import createLogger from './logger.js';
 import { serverContext } from './serverContext.js';
 import { ServerOptions } from './types.js';
 import { time } from './util.js';
-import { videoRouter } from './video2.js';
+import { videoRouter } from './video.js';
 import { xmltvInterval } from './xmltvGenerator.js';
 import { debugRouter } from './api/debugApi.js';
 
