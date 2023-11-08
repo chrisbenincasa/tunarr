@@ -4,8 +4,8 @@ import { isUndefined, omit, sortBy } from 'lodash-es';
 import { Writable } from 'stream';
 import { Channel, Program } from '../dao/db.js';
 import createLogger from '../logger.js';
+import { scheduledJobsById } from '../services/scheduler.js';
 import throttle from '../services/throttle.js';
-import { xmltvInterval } from '../xmltvGenerator.js';
 
 const logger = createLogger(import.meta);
 
@@ -185,8 +185,7 @@ export const channelsRouter: FastifyPluginCallback = (fastify, _opts, done) => {
 };
 
 async function updateXmltv() {
-  await xmltvInterval.updateXML();
-  await xmltvInterval.restartInterval();
+  await scheduledJobsById['update-xmltv']?.runNow();
 }
 
 function cleanUpChannel(channel: Channel) {

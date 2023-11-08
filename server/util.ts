@@ -63,7 +63,7 @@ export function groupByUniqAndMap<
 }
 
 export async function sequentialPromises<T, U>(
-  seq: T[],
+  seq: ReadonlyArray<T>,
   ms: number | undefined,
   itemFn: (item: T) => Promise<U>,
 ): Promise<U[]> {

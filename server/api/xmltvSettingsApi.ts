@@ -2,8 +2,8 @@ import { FastifyPluginCallback } from 'fastify';
 import { isError } from 'lodash-es';
 import { XmlTvSettings, defaultXmlTvSettings } from '../dao/db.js';
 import createLogger from '../logger.js';
+import { scheduledJobsById } from '../services/scheduler.js';
 import { firstDefined } from '../util.js';
-import { xmltvInterval } from '../xmltvGenerator.js';
 
 const logger = createLogger(import.meta);
 
@@ -101,6 +101,5 @@ export const xmlTvSettingsRouter: FastifyPluginCallback = (
 };
 
 async function updateXmltv() {
-  await xmltvInterval.updateXML();
-  await xmltvInterval.restartInterval();
+  await scheduledJobsById['update-xmltv']?.runNow();
 }

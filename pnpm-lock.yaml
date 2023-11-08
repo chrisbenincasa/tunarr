@@ -132,6 +132,9 @@ importers:
       '@types/node':
         specifier: ^20.8.9
         version: 20.8.9
+      '@types/node-schedule':
+        specifier: ^2.1.3
+        version: 2.1.3
       '@types/serve-static':
         specifier: ^1.15.4
         version: 1.15.4
@@ -2100,6 +2103,12 @@ packages:
 
   /@types/morgan@1.9.7:
     resolution: {integrity: sha512-4sJFBUBrIZkP5EvMm1L6VCXp3SQe8dnXqlVpe1jsmTjS1JQVmSjnpMNs8DosQd6omBi/K7BSKJ6z/Mc3ki0K9g==}
+    dependencies:
+      '@types/node': 20.8.9
+    dev: true
+
+  /@types/node-schedule@2.1.3:
+    resolution: {integrity: sha512-sTWHBCD+17XjHRuxkLwoC0VdxAx/TVNny+1DUxv8RTPJNZGuokEKiSiGag+v9XdrnJ/c36ObWi4HA3JiokvOQw==}
     dependencies:
       '@types/node': 20.8.9
     dev: true

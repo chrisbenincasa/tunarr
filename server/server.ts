@@ -3,7 +3,7 @@ import middie from '@fastify/middie';
 import fpStatic from '@fastify/static';
 import fastify from 'fastify';
 import fp from 'fastify-plugin';
-import fastifyPrintRoutes from 'fastify-print-routes';
+// import fastifyPrintRoutes from 'fastify-print-routes';
 import fs from 'fs';
 import morgan from 'morgan';
 import { onShutdown } from 'node-graceful-shutdown';
@@ -29,13 +29,15 @@ import { serverContext } from './serverContext.js';
 import { ServerOptions } from './types.js';
 import { time } from './util.js';
 import { videoRouter } from './video.js';
-import { xmltvInterval } from './xmltvGenerator.js';
 import { debugRouter } from './api/debugApi.js';
 import {
   ZodTypeProvider,
   serializerCompiler,
   validatorCompiler,
 } from 'fastify-type-provider-zod';
+import { UpdateXmlTvTask } from './tasks/updateXmlTvTask.js';
+import { schedulerRouter } from './api/schedulerApi.js';
+import { scheduleJobs } from './services/scheduler.js';
 
 const logger = createLogger(import.meta);
 
@@ -96,18 +98,17 @@ function initDbDirectories() {
   }
 }
 
-// type AppContext = {
-//   serverCtx: ServerContext;
-// };
-
 export async function initServer(opts: ServerOptions) {
   await time('initDbDirectories', () => initDbDirectories);
 
   const ctx = await time('generateServerContext', () => serverContext());
 
-  const updateXMLPromise = time<Promise<void>>('xmltv.update', () =>
-    xmltvInterval.updateXML(),
-  ).then(() => xmltvInterval.startInterval());
+  // const updateXMLPromise = time<Promise<void>>('xmltv.update', () =>
+  //   xmltvInterval.updateXML(),
+  // ).then(() => xmltvInterval.startInterval());
+  const updateXMLPromise = UpdateXmlTvTask.create(ctx).run();
+
+  scheduleJobs(ctx);
 
   const app = fastify({ logger: false, bodyLimit: 50 * 1024 });
   await app
@@ -116,7 +117,7 @@ export async function initServer(opts: ServerOptions) {
     .withTypeProvider<ZodTypeProvider>()
     .register(middie)
     .register(cors)
-    .register(fastifyPrintRoutes)
+    // .register(fastifyPrintRoutes)
     .register(
       fp((f, _, done) => {
         f.decorateRequest('serverCtx', null);
@@ -210,6 +211,7 @@ export async function initServer(opts: ServerOptions) {
     .register(channelToolRouter)
     .register(guideRouter)
     .register(miscRouter)
+    .register(schedulerRouter)
     .register(debugRouter);
 
   await app

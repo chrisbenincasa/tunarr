@@ -9,7 +9,7 @@ import { FFMPEGInfo } from './ffmpegInfo.js';
 import { serverOptions } from './globals.js';
 import createLogger from './logger.js';
 import { Plex } from './plex.js';
-import { xmltvInterval } from './xmltvGenerator.js';
+import { scheduledJobsById } from './services/scheduler.js';
 
 const logger = createLogger(import.meta);
 
@@ -72,9 +72,9 @@ export const miscRouter: FastifyPluginCallback = (fastify, _opts, done) => {
 
   fastify.get('/api/xmltv-last-refresh', (_req, res) => {
     try {
-      return res.send(
-        JSON.stringify({ value: xmltvInterval.lastRefresh?.valueOf() }),
-      );
+      return res.send({
+        value: scheduledJobsById['update-xmltv']?.lastExecution?.valueOf(),
+      });
     } catch (err) {
       logger.error(err);
       return res.status(500).send('error');
