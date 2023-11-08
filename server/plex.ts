@@ -44,6 +44,7 @@ export class Plex {
     });
 
     this.axiosInstance.interceptors.request.use((req) => {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const query = req.params ? `?${querystring.stringify(req.params)}` : '';
       logger.debug(
         `[Axios Request]: ${req.method?.toUpperCase()} ${req.baseURL}${

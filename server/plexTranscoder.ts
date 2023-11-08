@@ -48,7 +48,7 @@ export class PlexTranscoder {
   private key: string;
   // private metadataPath: string;
   private plexFile: string;
-  private file: any;
+  private file: string;
   private transcodeUrlBase: string;
   private ratingKey: string;
   private currTimeMs: number;
@@ -256,9 +256,11 @@ export class PlexTranscoder {
     if (!audioOnly) {
       clientProfile = `add-transcode-target(type=videoProfile&protocol=${
         this.settings.streamProtocol
-      }&container=${streamContainer}&videoCodec=${vc.join(',')}&audioCodec=${
-        this.settings.audioCodecs
-      }&subtitleCodec=&context=streaming&replace=true)+\
+      }&container=${streamContainer}&videoCodec=${vc.join(
+        ',',
+      )}&audioCodec=${this.settings.audioCodecs.join(
+        ',',
+      )}&subtitleCodec=&context=streaming&replace=true)+\
 add-transcode-target-settings(type=videoProfile&context=streaming&protocol=${
         this.settings.streamProtocol
       }&CopyMatroskaAttachments=true)+\
@@ -272,19 +274,21 @@ add-limitation(scope=videoCodec&scopeName=*&type=upperBound&name=video.height&va
         resolution.heightPx
       })`;
     } else {
-      clientProfile = `add-transcode-target(type=musicProfile&protocol=${this.settings.streamProtocol}&container=${streamContainer}&audioCodec=${this.settings.audioCodecs}&subtitleCodec=&context=streaming&replace=true)`;
+      clientProfile = `add-transcode-target(type=musicProfile&protocol=${
+        this.settings.streamProtocol
+      }&container=${streamContainer}&audioCodec=${this.settings.audioCodecs.join(
+        ',',
+      )}&subtitleCodec=&context=streaming&replace=true)`;
     }
     // Set transcode settings per audio codec
-    this.settings.audioCodecs.forEach(
-      function (codec: string) {
-        clientProfile += `+add-transcode-target-audio-codec(type=videoProfile&context=streaming&protocol=${this.settings.streamProtocol}&audioCodec=${codec})`;
-        if (codec == 'mp3') {
-          clientProfile += `+add-limitation(scope=videoAudioCodec&scopeName=${codec}&type=upperBound&name=audio.channels&value=2)`;
-        } else {
-          clientProfile += `+add-limitation(scope=videoAudioCodec&scopeName=${codec}&type=upperBound&name=audio.channels&value=${this.settings.maxAudioChannels})`;
-        }
-      }.bind(this),
-    );
+    this.settings.audioCodecs.forEach((codec) => {
+      clientProfile += `+add-transcode-target-audio-codec(type=videoProfile&context=streaming&protocol=${this.settings.streamProtocol}&audioCodec=${codec})`;
+      if (codec == 'mp3') {
+        clientProfile += `+add-limitation(scope=videoAudioCodec&scopeName=${codec}&type=upperBound&name=audio.channels&value=2)`;
+      } else {
+        clientProfile += `+add-limitation(scope=videoAudioCodec&scopeName=${codec}&type=upperBound&name=audio.channels&value=${this.settings.maxAudioChannels})`;
+      }
+    });
 
     // deinterlace video if specified, only useful if overlaying channel logo later
     if (deinterlace == true) {
@@ -321,7 +325,7 @@ subtitles=${subtitles}&\
 subtitleSize=${this.settings.subtitleSize}&\
 maxVideoBitrate=${bitrate}&\
 videoQuality=${videoQuality}&\
-videoResolution=${resolution}&\
+videoResolution=${resolution.widthPx}x${resolution.heightPx}&\
 lang=en`;
   }
 
@@ -361,6 +365,10 @@ lang=en`;
     const ret: Partial<VideoStats> = {};
 
     try {
+      console.log(
+        'decisionJson!',
+        inspect(this.decisionJson, false, undefined),
+      );
       const streams: any[] =
         this.decisionJson.Metadata[0].Media[0].Part[0].Stream;
       console.log(streams);
