@@ -1,6 +1,6 @@
 import { FastifyPluginCallback, FastifyReply, FastifyRequest } from 'fastify';
-import fs from 'fs';
-import { isError, isUndefined } from 'lodash-es';
+import * as fs from 'node:fs';
+import { isError, isNil, isUndefined, once } from 'lodash-es';
 import { Readable } from 'stream';
 import constants from './constants.js';
 import { ImmutableChannel, offlineProgram } from './dao/db.js';
@@ -122,20 +122,15 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
 
     const ffmpeg = new FFMPEG(ffmpegSettings, channel); // Set the transcoder options
     ffmpeg.setAudioOnly(audioOnly);
-    let stopped = false;
 
-    function stop() {
-      logger.warn('Raw stop hit');
-      if (!stopped) {
-        stopped = true;
-        try {
-          res.raw.end();
-        } catch (err) {
-          logger.error('error ending request', err);
-        }
-        ffmpeg.kill();
+    const stop = once(() => {
+      try {
+        res.raw.end();
+      } catch (err) {
+        logger.error('error ending request', err);
       }
-    }
+      ffmpeg.kill();
+    });
 
     ffmpeg.on('error', (err) => {
       logger.error('CONCAT - FFMPEG ERROR', err);
@@ -251,12 +246,12 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
     // Get video lineup (array of video urls with calculated start times and durations.)
     let lineupItem: Maybe<LineupItem> =
       req.serverCtx.channelCache.getCurrentLineupItem(channel.number, t0);
-    logger.info('lineupItem = ', lineupItem);
-    let prog: helperFuncs.ProgramAndTimeElapsed | undefined;
-    let brandChannel = channel;
+    let currentProgram: helperFuncs.ProgramAndTimeElapsed | undefined;
+    let channelContext = channel;
     const redirectChannels: ImmutableChannel[] = [];
     const upperBounds: number[] = [];
 
+    // Insert 40ms of loading time in front of the stream (let's look into this one later)
     if (isLoading) {
       lineupItem = {
         type: 'loading',
@@ -265,16 +260,22 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
         start: 0,
       };
     } else if (isUndefined(lineupItem)) {
-      prog = helperFuncs.getCurrentProgramAndTimeElapsed(t0, channel);
+      currentProgram = helperFuncs.getCurrentProgramAndTimeElapsed(t0, channel);
 
       for (;;) {
-        redirectChannels.push(brandChannel);
-        upperBounds.push(prog.program.duration - prog.timeElapsed);
+        redirectChannels.push(channelContext);
+        upperBounds.push(
+          currentProgram.program.duration - currentProgram.timeElapsed,
+        );
 
-        if (!prog.program.isOffline || prog.program.type != 'redirect') {
+        if (
+          !currentProgram.program.isOffline ||
+          currentProgram.program.type != 'redirect'
+        ) {
           break;
         }
-        req.serverCtx.channelCache.recordPlayback(brandChannel.number, t0, {
+
+        req.serverCtx.channelCache.recordPlayback(channelContext.number, t0, {
           type: 'offline',
           title: 'Error',
           err: Error('Recursive channel redirect found'),
@@ -282,66 +283,66 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
           start: 0,
         });
 
-        const newChannelNumber = prog.program.channel!;
+        const newChannelNumber = currentProgram.program.channel!;
         const newChannel =
           req.serverCtx.channelCache.getChannelConfig(newChannelNumber);
 
         if (isUndefined(newChannel)) {
-          const err = Error("Invalid redirect to a channel that doesn't exist");
+          const err = new Error(
+            "Invalid redirect to a channel that doesn't exist",
+          );
           logger.error("Invalid redirect to channel that doesn't exist.", err);
-          prog = {
+          currentProgram = {
             program: offlineProgram(60000),
-            // program: {
-            //   isOffline: true,
-            //   err: err,
-            //   duration: 60000,
-            // },
             timeElapsed: 0,
             programIndex: -1,
           };
           continue;
         }
-        brandChannel = newChannel;
+
+        channelContext = newChannel;
         lineupItem = req.serverCtx.channelCache.getCurrentLineupItem(
           newChannel.number,
           t0,
         );
+
         if (!isUndefined(lineupItem)) {
           lineupItem = { ...lineupItem }; // Not perfect, but better than the stringify hack
           break;
         } else {
-          prog = helperFuncs.getCurrentProgramAndTimeElapsed(t0, newChannel);
+          currentProgram = helperFuncs.getCurrentProgramAndTimeElapsed(
+            t0,
+            newChannel,
+          );
         }
       }
     }
 
-    console.log(308, lineupItem);
-
     if (isUndefined(lineupItem)) {
-      console.log(311, lineupItem, prog);
-      if (prog == null) {
+      if (isNil(currentProgram)) {
         return res.status(500).send('server error');
-        // throw Error("Shouldn't prog be non-null?");
       }
+
       if (
-        prog.program.isOffline &&
-        channel.programs.length == 1 &&
-        prog.programIndex != -1
+        currentProgram.program.isOffline &&
+        channel.programs.length === 1 &&
+        currentProgram.programIndex !== -1
       ) {
         //there's only one program and it's offline. So really, the channel is
         //permanently offline, it doesn't matter what duration was set
         //and it's best to give it a long duration to ensure there's always
         //filler to play (if any)
         const t = 365 * 24 * 60 * 60 * 1000;
-        prog.program = offlineProgram(t);
+        currentProgram.program = offlineProgram(t);
       } else if (
         allowSkip &&
-        prog.program.isOffline &&
-        prog.program.duration - prog.timeElapsed <= constants.SLACK + 1
+        currentProgram.program.isOffline &&
+        currentProgram.program.duration - currentProgram.timeElapsed <=
+          constants.SLACK + 1
       ) {
         //it's pointless to show the offline screen for such a short time, might as well
         //skip to the next program
-        const dt = prog.program.duration - prog.timeElapsed;
+        const dt = currentProgram.program.duration - currentProgram.timeElapsed;
         for (let i = 0; i < redirectChannels.length; i++) {
           req.serverCtx.channelCache.clearPlayback(redirectChannels[i].number);
         }
@@ -350,20 +351,15 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
         );
         return await streamFunction(req, res, t0 + dt + 1, false);
       }
-      if (
-        prog == null ||
-        isUndefined(prog) ||
-        prog.program == null ||
-        typeof prog.program == 'undefined'
-      ) {
+      if (isNil(currentProgram) || isNil(currentProgram.program)) {
         throw "No video to play, this means there's a serious unexpected bug or the channel db is corrupted.";
       }
       const fillers =
-        req.serverCtx.fillerDB.getFillersFromChannel(brandChannel);
+        req.serverCtx.fillerDB.getFillersFromChannel(channelContext);
       const lineup = helperFuncs.createLineup(
         req.serverCtx.channelCache,
-        prog,
-        brandChannel,
+        currentProgram,
+        channelContext,
         fillers,
         isFirst,
       );
@@ -371,7 +367,7 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
     }
 
     if (!isLoading && !isUndefined(lineupItem)) {
-      let upperBound = 1000000000;
+      let upperBound = Number.MAX_SAFE_INTEGER;
       let beginningOffset = 0;
       if (!isUndefined(lineupItem?.beginningOffset)) {
         beginningOffset = lineupItem.beginningOffset;
@@ -380,9 +376,9 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
       for (let i = redirectChannels.length - 1; i >= 0; i--) {
         lineupItem = { ...lineupItem };
         const u = upperBounds[i] + beginningOffset;
-        if (typeof u !== 'undefined') {
+        if (!isNil(u)) {
           let u2 = upperBound;
-          if (typeof lineupItem.streamDuration !== 'undefined') {
+          if (!isNil(lineupItem.streamDuration)) {
             u2 = Math.min(u2, lineupItem.streamDuration);
           }
           lineupItem.streamDuration = Math.min(u2, u);
@@ -396,24 +392,19 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
       }
     }
 
-    logger.info('=========================================================');
-    logger.info('! Start playback');
-    logger.info(`! Channel: ${channel.name} (${channel.number})`);
-    if (isUndefined(lineupItem?.title)) {
-      lineupItem!.title = 'Unknown';
-    }
-    logger.info(`! Title: ${lineupItem?.title}`);
-    if (isUndefined(lineupItem?.streamDuration)) {
-      logger.info(`! From: ${lineupItem?.start}`);
-    } else {
-      logger.info(
-        `! From: ${lineupItem?.start} to: ${
-          (lineupItem?.start ?? 0) + (lineupItem?.streamDuration ?? 0)
-        }`,
-      );
-    }
-    logger.info(`! Type: ${lineupItem?.type}`);
-    logger.info('=========================================================');
+    [
+      '=========================================================',
+      '! Start playback',
+      `! Channel: ${channel.name} (${channel.number})`,
+      `! Title: ${lineupItem?.title ?? 'Unknown'}`,
+      isUndefined(lineupItem?.streamDuration)
+        ? `! From: ${lineupItem?.start}`
+        : `! From: ${lineupItem?.start} to: ${
+            (lineupItem?.start ?? 0) + (lineupItem?.streamDuration ?? 0)
+          }`,
+      `! Type: ${lineupItem?.type}`,
+      '=========================================================',
+    ].forEach((line) => logger.info(line));
 
     if (!isLoading) {
       req.serverCtx.channelCache.recordPlayback(
@@ -433,7 +424,7 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
     }
 
     const combinedChannel: ContextChannel = {
-      ...helperFuncs.generateChannelContext(brandChannel),
+      ...helperFuncs.generateChannelContext(channelContext),
       transcoding: channel.transcoding,
     };
 
@@ -574,6 +565,7 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
 
       // Maximum number of streams to concatinate beyond channel starting
       // If someone passes this number then they probably watch too much television
+      // TODO: Make this an option - who cares how much TV people watch :)
       const maxStreamsToPlayInARow = 100;
 
       let data = 'ffconcat version 1.0\n';
@@ -583,14 +575,14 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
       const sessionId = StreamCount++;
       const audioOnly = req.query.audioOnly;
 
+      // loading screen is pointless in audio mode (also for some reason it makes it fail when codec is aac, and I can't figure out why)
       if (
-        ffmpegSettings.enableTranscoding === true &&
-        ffmpegSettings.normalizeVideoCodec === true &&
-        ffmpegSettings.normalizeAudioCodec === true &&
-        ffmpegSettings.normalizeResolution === true &&
-        ffmpegSettings.normalizeAudio === true &&
-        audioOnly !==
-          true /* loading screen is pointless in audio mode (also for some reason it makes it fail when codec is aac, and I can't figure out why) */
+        ffmpegSettings.enableTranscoding &&
+        ffmpegSettings.normalizeVideoCodec &&
+        ffmpegSettings.normalizeAudioCodec &&
+        ffmpegSettings.normalizeResolution &&
+        ffmpegSettings.normalizeAudio &&
+        !audioOnly
       ) {
         //loading screen
         data += `file 'http://localhost:${
@@ -599,9 +591,11 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
           req.query.channel
         }&first=0&session=${sessionId}&audioOnly=${audioOnly}'\n`;
       }
+
       data += `file 'http://localhost:${serverOptions().port}/stream?channel=${
         req.query.channel
       }&first=1&session=${sessionId}&audioOnly=${audioOnly}'\n`;
+
       for (let i = 0; i < maxStreamsToPlayInARow - 1; i++) {
         data += `file 'http://localhost:${
           serverOptions().port

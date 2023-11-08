@@ -1,4 +1,4 @@
-import fs from 'fs';
+import * as fs from 'fs';
 import { isUndefined } from 'lodash-es';
 import path from 'path';
 import { DeepReadonly } from 'ts-essentials';
@@ -25,8 +25,8 @@ export class ChannelDB {
   saveChannelSync(number, json) {
     this.validateChannelJson(number, json);
 
-    let data = JSON.stringify(json);
-    let f = path.join(this.folder, `${json.number}.json`);
+    const data = JSON.stringify(json);
+    const f = path.join(this.folder, `${json.number}.json`);
     fs.writeFileSync(f, data);
   }
 

@@ -21,6 +21,9 @@
         "noImplicitThis": false,
         "strictNullChecks": true
     },
+    "files": [
+        "./types/fastify.d.ts"
+    ],
     "include": [
         "./**/*.ts",
         "__tests__/**/*"

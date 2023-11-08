@@ -1,4 +1,4 @@
-import { ServerContext } from './serverContext.ts';
+import { ServerContext } from '../serverContext.ts';
 
 declare module 'fastify' {
   interface FastifyRequest {

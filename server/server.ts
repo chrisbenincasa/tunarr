@@ -31,6 +31,11 @@ import { time } from './util.js';
 import { videoRouter } from './video.js';
 import { xmltvInterval } from './xmltvGenerator.js';
 import { debugRouter } from './api/debugApi.js';
+import {
+  ZodTypeProvider,
+  serializerCompiler,
+  validatorCompiler,
+} from 'fastify-type-provider-zod';
 
 const logger = createLogger(import.meta);
 
@@ -106,6 +111,9 @@ export async function initServer(opts: ServerOptions) {
 
   const app = fastify({ logger: false, bodyLimit: 50 * 1024 });
   await app
+    .setValidatorCompiler(validatorCompiler)
+    .setSerializerCompiler(serializerCompiler)
+    .withTypeProvider<ZodTypeProvider>()
     .register(middie)
     .register(cors)
     .register(fastifyPrintRoutes)

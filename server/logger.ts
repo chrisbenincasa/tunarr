@@ -2,9 +2,10 @@ import path from 'path';
 import * as winston from 'winston';
 import 'winston-daily-rotate-file';
 
-import { join } from 'lodash-es';
+import { isUndefined, join } from 'lodash-es';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import chalk from 'chalk';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -29,8 +30,8 @@ const hformat = (module: ImportMeta) =>
             '\n',
           );
         }
-      } else {
-        msg += JSON.stringify(metadata);
+      } else if (isUndefined(metadata)) {
+        msg += chalk.gray('undefined');
       }
     }
     return msg;

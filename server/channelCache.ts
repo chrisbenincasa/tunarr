@@ -1,4 +1,4 @@
-import { compact, isUndefined } from 'lodash-es';
+import { compact, isNil, isUndefined } from 'lodash-es';
 import constants from './constants.js';
 import { ChannelDB } from './dao/channelDb.js';
 import { Channel, ImmutableChannel, Program } from './dao/db.js';
@@ -51,34 +51,37 @@ export class ChannelCache {
     return this.channelNumbers;
   }
 
-  getCurrentLineupItem(channelId: number, t1: number): LineupItem | undefined {
+  getCurrentLineupItem(
+    channelId: number,
+    timeNow: number,
+  ): LineupItem | undefined {
     if (isUndefined(this.cache[channelId])) {
       return;
     }
     const recorded = this.cache[channelId];
     const lineupItem = { ...recorded.lineupItem };
-    const diff = t1 - recorded.t0;
-    let rem = lineupItem.duration - lineupItem.start;
+    const timeSinceRecorded = timeNow - recorded.t0;
+    let remainingTime = lineupItem.duration - lineupItem.start;
     if (!isUndefined(lineupItem.streamDuration)) {
-      rem = Math.min(rem, lineupItem.streamDuration);
+      remainingTime = Math.min(remainingTime, lineupItem.streamDuration);
     }
 
-    if (diff <= SLACK && diff + SLACK < rem) {
+    if (
+      timeSinceRecorded <= SLACK &&
+      timeSinceRecorded + SLACK < remainingTime
+    ) {
       //closed the stream and opened it again let's not lose seconds for
       //no reason
-      let originalT0 = recorded.lineupItem.originalT0;
-      if (isUndefined(originalT0)) {
-        originalT0 = recorded.t0;
-      }
-      if (t1 - originalT0 <= SLACK) {
+      const originalT0 = recorded.lineupItem.originalT0 ?? recorded.t0;
+      if (timeNow - originalT0 <= SLACK) {
         lineupItem.originalT0 = originalT0;
         return lineupItem;
       }
     }
 
-    lineupItem.start += diff;
-    if (typeof lineupItem.streamDuration !== 'undefined') {
-      lineupItem.streamDuration -= diff;
+    lineupItem.start += timeSinceRecorded;
+    if (!isNil(lineupItem.streamDuration)) {
+      lineupItem.streamDuration -= timeSinceRecorded;
       if (lineupItem.streamDuration < SLACK) {
         //let's not waste time playing some loose seconds
         return;

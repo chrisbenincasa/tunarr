@@ -39,13 +39,12 @@ export type ProgramAndTimeElapsed = {
 };
 
 export function getCurrentProgramAndTimeElapsed(
-  date: number,
+  time: number,
   channel: ImmutableChannel,
 ): ProgramAndTimeElapsed {
-  const channelStartTime = new Date(channel.startTimeEpoch).getTime();
-  if (channelStartTime > date) {
-    const t0 = date;
-    const t1 = channelStartTime;
+  if (channel.startTimeEpoch > time) {
+    const t0 = time;
+    const t1 = channel.startTimeEpoch;
     console.log(
       'Channel start time is above the given date. Flex time is picked till that.',
     );
@@ -55,12 +54,14 @@ export function getCurrentProgramAndTimeElapsed(
       programIndex: -1,
     };
   }
-  let timeElapsed = (date - channelStartTime) % channel.duration;
+  let timeElapsed = (time - channel.startTimeEpoch) % channel.duration;
   let currentProgramIndex = -1;
   for (let y = 0, l2 = channel.programs.length; y < l2; y++) {
     const program = channel.programs[y];
     if (timeElapsed - program.duration < 0) {
       currentProgramIndex = y;
+      // I'm pretty sure this allows for a little skew in
+      // the start time of the next show
       if (
         program.duration > 2 * SLACK &&
         timeElapsed > program.duration - SLACK
@@ -74,8 +75,9 @@ export function getCurrentProgramAndTimeElapsed(
     }
   }
 
-  if (currentProgramIndex === -1)
+  if (currentProgramIndex === -1) {
     throw new Error('No program found; find algorithm fucked up');
+  }
 
   return {
     program: channel.programs[currentProgramIndex],
@@ -84,6 +86,12 @@ export function getCurrentProgramAndTimeElapsed(
   };
 }
 
+// TODO: This only ever returns a single-element array - fix the return type to simplify things
+// The naming is also kinda terrible - maybe it changed over time? This function seems to do one of:
+// 1. If the current item is an error item, return it with the time remaining until next up
+// 2. If the current program is "offline" type, try to pick best fitting content among fillter
+// 2b. If no fillter content is found, then pad with more offline time
+// 3. Return the currently playing "real" program
 export function createLineup(
   channelCache: ChannelCache,
   obj: ProgramAndTimeElapsed,
@@ -94,7 +102,7 @@ export function createLineup(
   let timeElapsed = obj.timeElapsed;
   // Start time of a file is never consistent unless 0. Run time of an episode can vary.
   // When within 30 seconds of start time, just make the time 0 to smooth things out
-  // Helps prevents loosing first few seconds of an episode upon lineup change
+  // Helps prevents losing first few seconds of an episode upon lineup change
   const activeProgram = obj.program;
   let beginningOffset = 0;
 
@@ -222,15 +230,16 @@ function weighedPick(a: number, total: number) {
   return random.bool(a, total);
 }
 
-function pickRandomWithMaxDuration(
+// Exported for debugging purposes only
+export function pickRandomWithMaxDuration(
   channelCache: ChannelCache,
   channel: ImmutableChannel,
   fillers: (FillerCollection & { content: Program[] })[],
   maxDuration: number,
 ): { filler: Maybe<PartialCommercialType>; minimumWait: number } {
-  let list: Program[] = [];
+  let fillerPrograms: Program[] = [];
   for (let i = 0; i < fillers.length; i++) {
-    list = list.concat(fillers[i].content);
+    fillerPrograms = fillerPrograms.concat(fillers[i].content);
   }
 
   let pick1: Maybe<Program>;
@@ -246,12 +255,12 @@ function pickRandomWithMaxDuration(
   let listM = 0;
   let fillerId: Maybe<string> = undefined;
   for (let j = 0; j < fillers.length; j++) {
-    list = fillers[j].content;
+    fillerPrograms = fillers[j].content;
     let pickedList = false;
     let n = 0;
 
-    for (let i = 0; i < list.length; i++) {
-      const clip: Program = list[i];
+    for (let i = 0; i < fillerPrograms.length; i++) {
+      const clip: Program = fillerPrograms[i];
       // a few extra milliseconds won't hurt anyone, would it? dun dun dun
       if (clip.duration <= maxDuration + SLACK) {
         const t1 = channelCache.getProgramLastPlayTime(channel.number, clip);
@@ -327,7 +336,7 @@ function norm_d(x: number) {
   return Math.ceil(y / 1000000) + 1;
 }
 
-function norm_s(x) {
+function norm_s(x: number) {
   let y = Math.ceil(x / 600) + 1;
   y = y * y;
   return Math.ceil(y / 1000000) + 1;

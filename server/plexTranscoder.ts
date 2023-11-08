@@ -1,4 +1,5 @@
-import fs from 'fs';
+import * as fs from 'node:fs/promises';
+import { constants as fsConstants } from 'node:fs';
 import { isPlainObject, isUndefined } from 'lodash-es';
 import { DeepReadonly } from 'ts-essentials';
 import { inspect } from 'util';
@@ -173,12 +174,7 @@ export class PlexTranscoder {
       streamUrl =
         this.settings.streamPath === 'direct' ? this.file : this.plexFile;
       if (this.settings.streamPath === 'direct') {
-        fs.access(this.file, fs.constants.F_OK, (err) => {
-          if (err) {
-            throw Error("Can't access this file", err);
-            return;
-          }
-        });
+        await fs.access(this.file, fsConstants.F_OK);
       }
       if (isUndefined(streamUrl)) {
         throw Error(
