@@ -13,6 +13,7 @@ import {
   PlexItemMetadata,
   PlexMediaContainer,
   TranscodeDecision,
+  TranscodeDecisionMediaPartStream,
 } from './types/plexApiTypes.js';
 
 const logger = createLogger(import.meta);
@@ -370,24 +371,21 @@ lang=en`;
     const ret: Partial<VideoStats> = {};
 
     try {
-      console.log('decisionJson!', inspect(this.decisionJson, false, null));
-      const streams: any[] =
-        this.decisionJson.Metadata[0].Media[0].Part[0].Stream;
-      console.log(streams);
-      ret.duration = parseFloat(
-        this.decisionJson.Metadata[0].Media[0].Part[0].duration,
-      );
-      streams.forEach((_stream, $index) => {
+      const streams: TranscodeDecisionMediaPartStream[] =
+        this.decisionJson?.Metadata[0].Media[0].Part[0].Stream ?? [];
+      ret.duration = this.decisionJson?.Metadata[0].Media[0].Part[0].duration;
+      streams.forEach((stream) => {
         // Video
-        let stream = _stream;
-        if (stream['streamType'] == '1') {
-          if (
-            this.videoIsDirect === true &&
-            typeof this.directInfo !== 'undefined'
-          ) {
-            stream =
-              this.directInfo.Metadata[0].Media[0].Part[0].Stream[$index];
-          }
+        if (stream.streamType === 1) {
+          // Dont understand this...we're iterating the stream, isnt this already
+          // set tot Stream[$index]
+          // if (
+          //   this.videoIsDirect === true &&
+          //   typeof this.directInfo !== 'undefined'
+          // ) {
+          //   stream =
+          //     this.directInfo.Metadata[0].Media[0].Part[0].Stream[$index];
+          // }
           ret.anamorphic =
             stream.anamorphic === '1' || stream.anamorphic === true;
           if (ret.anamorphic) {

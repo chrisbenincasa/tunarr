@@ -91,6 +91,7 @@ export type TranscodeDecisionMediaPartStream = {
   extendedDisplayTitle: string;
   frameRate: number;
   height: number;
+  width: number;
   id: string;
   language: string;
   languageCode: string;
