@@ -128,12 +128,14 @@ export const programToCommercial = (
   };
 };
 
-type TupleToUnion<T extends unknown[]> = T[number];
+type TupleToUnion<T extends ReadonlyArray<unknown>> = T[number];
 
 // Typescript is wild... define a static tuple and also
 // derive a union type, so we can use the tuple for actually picking
 // the keys to keep from Channel in a typesafe way!
-export const CHANNEL_CONTEXT_KEYS: [
+// type InferArray
+
+export const CHANNEL_CONTEXT_KEYS = [
   'disableFillerOverlay',
   'watermark',
   'icon',
@@ -142,73 +144,12 @@ export const CHANNEL_CONTEXT_KEYS: [
   'name',
   'transcoding',
   'number',
-] = [
-  'disableFillerOverlay',
-  'watermark',
-  'icon',
-  'offlinePicture',
-  'offlineSoundtrack',
-  'name',
-  'transcoding',
-  'number',
-];
+] as const;
 
 export type ContextChannel = Pick<
   ImmutableChannel & { offlinePicture?: string; offlineSoundtrack?: string },
   TupleToUnion<typeof CHANNEL_CONTEXT_KEYS>
 >;
-
-export type EventMap = {
-  [key: string]: (...args: any[]) => void;
-};
-
-export type TypedEventEmitter<Events extends EventMap> = {
-  addListener<E extends keyof Events>(
-    event: E,
-    listener: Events[E],
-  ): TypedEventEmitter<Events>;
-  on<E extends keyof Events>(
-    event: E,
-    listener: Events[E],
-  ): TypedEventEmitter<Events>;
-  once<E extends keyof Events>(
-    event: E,
-    listener: Events[E],
-  ): TypedEventEmitter<Events>;
-  prependListener<E extends keyof Events>(
-    event: E,
-    listener: Events[E],
-  ): TypedEventEmitter<Events>;
-  prependOnceListener<E extends keyof Events>(
-    event: E,
-    listener: Events[E],
-  ): TypedEventEmitter<Events>;
-
-  off<E extends keyof Events>(
-    event: E,
-    listener: Events[E],
-  ): TypedEventEmitter<Events>;
-  removeAllListeners<E extends keyof Events>(
-    event?: E,
-  ): TypedEventEmitter<Events>;
-  removeListener<E extends keyof Events>(
-    event: E,
-    listener: Events[E],
-  ): TypedEventEmitter<Events>;
-
-  emit<E extends keyof Events>(
-    event: E,
-    ...args: Parameters<Events[E]>
-  ): boolean;
-  // The sloppy `eventNames()` return type is to mitigate type incompatibilities - see #5
-  eventNames(): (keyof Events | string | symbol)[];
-  rawListeners<E extends keyof Events>(event: E): Events[E][];
-  listeners<E extends keyof Events>(event: E): Events[E][];
-  listenerCount<E extends keyof Events>(event: E): number;
-
-  getMaxListeners(): number;
-  setMaxListeners(maxListeners: number): TypedEventEmitter<Events>;
-};
 
 export type Intersection<X, Y> = {
   [PropX in keyof X & keyof Y]: X[PropX];

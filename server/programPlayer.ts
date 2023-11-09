@@ -26,7 +26,8 @@ import createLogger from './logger.js';
 import { OfflinePlayer } from './offlinePlayer.js';
 import { Player } from './player.js';
 import { PlexPlayer } from './plexPlayer.js';
-import { Maybe, PlayerContext, TypedEventEmitter } from './types.js';
+import { Maybe, PlayerContext } from './types.js';
+import { TypedEventEmitter } from './types/eventEmitter.js';
 
 const logger = createLogger(import.meta);
 

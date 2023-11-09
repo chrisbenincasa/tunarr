@@ -1,12 +1,20 @@
-import { FastifyPluginCallback } from 'fastify';
+import { FastifyPluginCallback, FastifyRequest } from 'fastify';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import z from 'zod';
 import { ChannelCache } from '../channelCache.js';
 import * as helperFuncs from '../helperFuncs.js';
 import createLogger from '../logger.js';
 import { PlexPlayer } from '../plexPlayer.js';
-import { ContextChannel, LineupItem, Maybe, PlayerContext } from '../types.js';
-import { isNil } from 'lodash-es';
+import {
+  ContextChannel,
+  LineupItem,
+  Maybe,
+  PlayerContext,
+  isPlexBackedLineupItem,
+} from '../types.js';
+import { isNil, isUndefined } from 'lodash-es';
+import { ImmutableChannel } from '../dao/db.js';
+import { PlexTranscoder } from '../plexTranscoder.js';
 
 const logger = createLogger(import.meta);
 
@@ -33,32 +41,14 @@ export const debugRouter: FastifyPluginCallback = (fastify, _opts, done) => {
         return res.status(404).send('No channel found');
       }
 
-      let lineupItem: Maybe<LineupItem> =
-        req.serverCtx.channelCache.getCurrentLineupItem(channel.number, t0);
-
-      logger.info('lineupItem: %O', lineupItem);
-
       const combinedChannel: ContextChannel = {
         ...helperFuncs.generateChannelContext(channel),
         transcoding: channel?.transcoding,
       };
-
-      if (isNil(lineupItem)) {
-        lineupItem = helperFuncs
-          .createLineup(
-            req.serverCtx.channelCache,
-            helperFuncs.getCurrentProgramAndTimeElapsed(
-              new Date().getTime(),
-              channel,
-            ),
-            channel,
-            req.serverCtx.fillerDB.getFillersFromChannel(channel),
-            false,
-          )
-          .shift();
-      }
-
       logger.info('combinedChannel: %O', combinedChannel);
+
+      const lineupItem = getLineupItemForDebug(req, channel, t0);
+      logger.info('lineupItem: %O', lineupItem);
 
       const playerContext: PlayerContext = {
         lineupItem: lineupItem!,
@@ -80,6 +70,88 @@ export const debugRouter: FastifyPluginCallback = (fastify, _opts, done) => {
       }
     },
   );
+
+  typeCheckedFastify.get(
+    '/api/v1/debug/plex-transcoder/video-stats',
+    { schema: ChannelQuerySchema },
+    async (req, res) => {
+      const channel = req.serverCtx.channelCache.getChannelConfig(
+        req.query.channel,
+      );
+
+      if (!channel) {
+        return res.status(404).send('No channel found');
+      }
+
+      const lineupItem = getLineupItemForDebug(
+        req,
+        channel,
+        new Date().getTime(),
+      );
+
+      if (isUndefined(lineupItem)) {
+        return res
+          .status(500)
+          .send('Couldnt get a lineup item for this channel');
+      }
+
+      if (!isPlexBackedLineupItem(lineupItem)) {
+        return res
+          .status(500)
+          .send(
+            `Needed lineup item of type commercial or program, but got "${lineupItem.type}"`,
+          );
+      }
+
+      const plexServer = req.serverCtx.dbAccess.plexServers().getAll()[0];
+      const plexSettings = req.serverCtx.dbAccess.plexSettings();
+
+      const combinedChannel: ContextChannel = {
+        ...helperFuncs.generateChannelContext(channel),
+        transcoding: channel?.transcoding,
+      };
+
+      const transcoder = new PlexTranscoder(
+        `debug-${new Date().getTime()}`,
+        plexServer,
+        plexSettings,
+        combinedChannel,
+        lineupItem,
+      );
+
+      transcoder.setTranscodingArgs(false, true, false, false);
+      await transcoder.getDecision(false);
+
+      return res.send(transcoder.getVideoStats());
+    },
+  );
+
+  function getLineupItemForDebug(
+    req: FastifyRequest,
+    channel: ImmutableChannel,
+    now: number,
+  ) {
+    let lineupItem: Maybe<LineupItem> =
+      req.serverCtx.channelCache.getCurrentLineupItem(channel.number, now);
+
+    logger.info('lineupItem: %O', lineupItem);
+
+    if (isNil(lineupItem)) {
+      lineupItem = helperFuncs
+        .createLineup(
+          req.serverCtx.channelCache,
+          helperFuncs.getCurrentProgramAndTimeElapsed(
+            new Date().getTime(),
+            channel,
+          ),
+          channel,
+          req.serverCtx.fillerDB.getFillersFromChannel(channel),
+          false,
+        )
+        .shift();
+    }
+    return lineupItem;
+  }
 
   typeCheckedFastify.get(
     '/api/v1/debug/helpers/current_program',

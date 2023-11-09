@@ -12,13 +12,8 @@ import createLogger from './logger.js';
 import { ProgramPlayer } from './programPlayer.js';
 import { serverContext } from './serverContext.js';
 import { wereThereTooManyAttempts } from './throttler.js';
-import {
-  ContextChannel,
-  LineupItem,
-  Maybe,
-  PlayerContext,
-  TypedEventEmitter,
-} from './types.js';
+import { ContextChannel, LineupItem, Maybe, PlayerContext } from './types.js';
+import { TypedEventEmitter } from './types/eventEmitter.js';
 
 const logger = createLogger(import.meta);
 

@@ -1,6 +1,6 @@
 import * as fs from 'node:fs/promises';
 import { constants as fsConstants } from 'node:fs';
-import { isPlainObject, isUndefined } from 'lodash-es';
+import { first, isNil, isPlainObject, isUndefined } from 'lodash-es';
 import { DeepReadonly } from 'ts-essentials';
 import { inspect } from 'util';
 import { v4 as uuidv4 } from 'uuid';
@@ -9,6 +9,11 @@ import { serverOptions } from './globals.js';
 import createLogger from './logger.js';
 import { Plex } from './plex.js';
 import { ContextChannel, Maybe, PlexBackedLineupItem } from './types.js';
+import {
+  PlexItemMetadata,
+  PlexMediaContainer,
+  TranscodeDecision,
+} from './types/plexApiTypes.js';
 
 const logger = createLogger(import.meta);
 
@@ -56,12 +61,12 @@ export class PlexTranscoder {
   private duration: number;
   private server: PlexServerSettings;
   private transcodingArgs: string | undefined;
-  private decisionJson: any;
+  private decisionJson: Maybe<PlexMediaContainer<TranscodeDecision>>;
   private updateInterval: number;
   private updatingPlex: NodeJS.Timeout | undefined;
   private playState: string;
   private mediaHasNoVideo: boolean;
-  private albumArt: any;
+  private albumArt: Maybe<{ path?: string }>;
   private plex: Plex;
   private directInfo?: any;
   private videoIsDirect: boolean = false;
@@ -365,10 +370,7 @@ lang=en`;
     const ret: Partial<VideoStats> = {};
 
     try {
-      console.log(
-        'decisionJson!',
-        inspect(this.decisionJson, false, undefined),
-      );
+      console.log('decisionJson!', inspect(this.decisionJson, false, null));
       const streams: any[] =
         this.decisionJson.Metadata[0].Media[0].Part[0].Stream;
       console.log(streams);
@@ -425,12 +427,11 @@ lang=en`;
 
     if (isUndefined(ret.videoCodec)) {
       ret.audioOnly = true;
-      ret.placeholderImage =
-        this.albumArt.path != null
-          ? (ret.placeholderImage = this.albumArt.path)
-          : (ret.placeholderImage = `http://localhost:${
-              serverOptions().port
-            }/images/generic-music-screen.png`);
+      ret.placeholderImage = !isNil(this.albumArt?.path)
+        ? (ret.placeholderImage = this.albumArt.path)
+        : (ret.placeholderImage = `http://localhost:${
+            serverOptions().port
+          }/images/generic-music-screen.png`);
     }
 
     this.log('Current video stats:');
@@ -467,45 +468,50 @@ lang=en`;
   }
 
   async getDecisionUnmanaged(directPlay: boolean) {
-    const response = await this.plex.Get(
+    this.decisionJson = await this.plex.Get<TranscodeDecision>(
       `/video/:/transcode/universal/decision?${this.transcodingArgs}`,
     );
-    this.decisionJson = { ...response };
+
+    if (isUndefined(this.decisionJson)) {
+      throw new Error('Got unexpected undefined response from Plex');
+    }
 
     this.log('Received transcode decision:');
-    this.log(response);
+    this.log(this.decisionJson);
 
     // Print error message if transcode not possible
     // TODO: handle failure better
-    if (response.mdeDecisionCode === 1000) {
-      this.log("mde decision code 1000, so it's all right?");
-      return;
-    }
+    // mdeDecisionCode doesn't seem to exist on later Plex versions...
+    // if (response.mdeDecisionCode === 1000) {
+    //   this.log("mde decision code 1000, so it's all right?");
+    //   return;
+    // }
 
-    const transcodeDecisionCode = response.transcodeDecisionCode;
+    const transcodeDecisionCode = this.decisionJson.transcodeDecisionCode;
     if (isUndefined(transcodeDecisionCode)) {
-      this.decisionJson.transcodeDecisionCode = 'novideo';
       this.log('Strange case, attempt direct play');
-    } else if (!(directPlay || transcodeDecisionCode == '1001')) {
+    } else if (!(directPlay || transcodeDecisionCode == 1001)) {
       this.log(
         `IMPORTANT: Recieved transcode decision code ${transcodeDecisionCode}! Expected code 1001.`,
       );
-      this.log(`Error message: '${response.transcodeDecisionText}'`);
+      this.log(`Error message: '${this.decisionJson.transcodeDecisionText}'`);
     }
   }
 
   async tryToDetectAudioOnly() {
     try {
       this.log('Try to detect audio only:');
-      const mediaContainer = await this.plex.Get(
+      const mediaContainer = await this.plex.Get<PlexItemMetadata>(
         `${this.key}?${this.transcodingArgs}`,
       );
-      const metadata = getOneOrUndefined(mediaContainer, 'Metadata');
-      if (typeof metadata !== 'undefined') {
+
+      const metadata = first(mediaContainer?.Metadata);
+      if (!isUndefined(metadata)) {
+        this.albumArt = this.albumArt || {};
         this.albumArt.path = `${this.server.uri}${metadata.thumb}?X-Plex-Token=${this.server.accessToken}`;
 
-        const media = getOneOrUndefined(metadata, 'Media');
-        if (typeof media !== 'undefined') {
+        const media = first(metadata.Media);
+        if (!isUndefined(media)) {
           if (isUndefined(media.videoCodec)) {
             this.log('Audio-only file detected');
             this.mediaHasNoVideo = true;
@@ -517,7 +523,7 @@ lang=en`;
     }
   }
 
-  async getDecision(directPlay) {
+  async getDecision(directPlay: boolean) {
     try {
       await this.getDecisionUnmanaged(directPlay);
     } catch (err) {

@@ -9,11 +9,8 @@ import EventEmitter from 'events';
 import constants from './constants.js';
 import { FFMPEG, FfmpegEvents } from './ffmpeg.js';
 import { PlexTranscoder } from './plexTranscoder.js';
-import {
-  PlayerContext,
-  TypedEventEmitter,
-  isPlexBackedLineupItem,
-} from './types.js';
+import { PlayerContext, isPlexBackedLineupItem } from './types.js';
+import { TypedEventEmitter } from './types/eventEmitter.js';
 import { isUndefined } from 'lodash-es';
 import { Player } from './player.js';
 import { Writable } from 'stream';
@@ -148,7 +145,7 @@ export class PlexPlayer extends Player {
     });
 
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
-    ffmpeg.on('error', async (err) => {
+    ffmpeg.on('error', (err) => {
       console.log('Replacing failed stream with error stream');
       ff!.unpipe(outStream);
       // ffmpeg.removeAllListeners('data'); Type inference says this doesnt ever exist

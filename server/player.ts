@@ -1,5 +1,6 @@
 import { Writable } from 'stream';
-import { Maybe, TypedEventEmitter } from './types.js';
+import { Maybe } from './types.js';
+import { TypedEventEmitter } from './types/eventEmitter.js';
 import { FfmpegEvents } from './ffmpeg.js';
 
 export abstract class Player {

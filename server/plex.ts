@@ -8,6 +8,11 @@ import { isUndefined } from 'lodash-es';
 import querystring from 'querystring';
 import { PlexServerSettings } from './dao/db.js';
 import createLogger from './logger.js';
+import { Maybe } from './types.js';
+import {
+  PlexMediaContainer,
+  PlexMediaContainerResponse,
+} from './types/plexApiTypes.js';
 
 const logger = createLogger(import.meta);
 export class Plex {
@@ -77,9 +82,9 @@ export class Plex {
     return this._accessToken;
   }
 
-  private async doRequest(req: AxiosRequestConfig): Promise<any> {
+  private async doRequest<T>(req: AxiosRequestConfig): Promise<Maybe<T>> {
     try {
-      const response = await this.axiosInstance.request(req);
+      const response = await this.axiosInstance.request<T>(req);
       return response.data;
     } catch (error) {
       if (isAxiosError(error)) {
@@ -100,10 +105,14 @@ export class Plex {
           logger.error('Error requesting Plex' + error.message);
         }
       }
+      return;
     }
   }
 
-  async Get(path: string, optionalHeaders: RawAxiosRequestHeaders = {}) {
+  async Get<T>(
+    path: string,
+    optionalHeaders: RawAxiosRequestHeaders = {},
+  ): Promise<Maybe<PlexMediaContainer<T>>> {
     const req: AxiosRequestConfig = {
       method: 'get',
       url: path,
@@ -116,12 +125,13 @@ export class Plex {
       );
     }
 
-    const res = await this.doRequest(req);
-    if (!res.MediaContainer) {
-      console.error('Expected MediaContainer, got ' + JSON.stringify(res.data));
+    const res = await this.doRequest<PlexMediaContainerResponse<T>>(req);
+    if (!res?.MediaContainer) {
+      logger.error('Expected MediaContainer, got %O', res);
     }
-    return res.MediaContainer;
+    return res?.MediaContainer;
   }
+
   Put(
     path: string,
     query: any = {},
@@ -181,7 +191,7 @@ export class Plex {
       dvrs = isUndefined(dvrs) ? [] : dvrs;
       return dvrs;
     } catch (err) {
-      logger.error('GET /livetv/drs failed: ' + err.message);
+      logger.error('GET /livetv/drs failed: ', err);
       throw err;
     }
   }

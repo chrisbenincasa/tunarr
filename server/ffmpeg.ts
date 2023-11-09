@@ -6,7 +6,8 @@ import { DeepReadonly } from 'ts-essentials';
 import { FfmpegSettings, Watermark } from './dao/db.js';
 import { serverOptions } from './globals.js';
 import createLogger from './logger.js';
-import { ContextChannel, Maybe, TypedEventEmitter } from './types.js';
+import { ContextChannel, Maybe } from './types.js';
+import { TypedEventEmitter } from './types/eventEmitter.js';
 import { VideoStats } from './plexTranscoder.js';
 
 const spawn = child_process.spawn;

@@ -9,7 +9,8 @@
 import EventEmitter from 'events';
 import { FFMPEG, FfmpegEvents } from './ffmpeg.js';
 import { serverOptions } from './globals.js';
-import { Maybe, PlayerContext, TypedEventEmitter } from './types.js';
+import { Maybe, PlayerContext } from './types.js';
+import { TypedEventEmitter } from './types/eventEmitter.js';
 import { Player } from './player.js';
 import { Readable, Writable } from 'stream';
 
