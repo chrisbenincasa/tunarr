@@ -1,8 +1,8 @@
-import * as fs from 'node:fs/promises';
+import { first, isNil, isUndefined, pick } from 'lodash-es';
 import { constants as fsConstants } from 'node:fs';
-import { first, isNil, isPlainObject, isUndefined } from 'lodash-es';
+import * as fs from 'node:fs/promises';
+import { stringify } from 'node:querystring';
 import { DeepReadonly } from 'ts-essentials';
-import { inspect } from 'util';
 import { v4 as uuidv4 } from 'uuid';
 import { PlexServerSettings, PlexStreamSettings } from './dao/db.js';
 import { serverOptions } from './globals.js';
@@ -12,8 +12,10 @@ import { ContextChannel, Maybe, PlexBackedLineupItem } from './types.js';
 import {
   PlexItemMetadata,
   PlexMediaContainer,
+  PlexMediaVideoStream,
   TranscodeDecision,
-  TranscodeDecisionMediaPartStream,
+  TranscodeDecisionMediaStream,
+  isPlexVideoStream,
 } from './types/plexApiTypes.js';
 
 const logger = createLogger(import.meta);
@@ -67,10 +69,11 @@ export class PlexTranscoder {
   private updatingPlex: NodeJS.Timeout | undefined;
   private playState: string;
   private mediaHasNoVideo: boolean;
-  private albumArt: Maybe<{ path?: string }>;
+  private albumArt: { path?: string; attempted: boolean };
   private plex: Plex;
-  private directInfo?: any;
+  private directInfo?: PlexItemMetadata;
   private videoIsDirect: boolean = false;
+  private cachedItemMetadata: Maybe<PlexItemMetadata>;
 
   constructor(
     clientId: string,
@@ -117,7 +120,6 @@ export class PlexTranscoder {
     this.mediaHasNoVideo = false;
     this.albumArt = {
       attempted: false,
-      path: null,
     };
   }
 
@@ -221,7 +223,7 @@ export class PlexTranscoder {
       streamStats,
     };
 
-    this.log(stream);
+    this.log('PlexStream: %O', stream);
 
     return stream;
   }
@@ -249,59 +251,112 @@ export class PlexTranscoder {
     const videoQuality = `100`; // Not sure how this applies, maybe this works if maxVideoBitrate is not set
     const profileName = `Generic`; // Blank profile, everything is specified through X-Plex-Client-Profile-Extra
 
-    let vc = [...this.settings.videoCodecs];
+    const vc = [...this.settings.videoCodecs];
     //This codec is not currently supported by plex so requesting it to transcode will always
     // cause an error. If Plex ever supports av1, remove this. I guess.
-    if (vc.length > 0) {
-      vc.push('av1');
+    // UPDATE: Plex 1.30.1 added AV1 playback support - experimentally removing this clause here.
+    // if (vc.length > 0) {
+    //   vc.push('av1');
+    // } else {
+    //   vc = ['av1'];
+    // }
+
+    // let clientProfile = '';
+    const clientProfileParts: string[] = [];
+    if (!audioOnly) {
+      clientProfileParts.push(
+        transcodeTarget({
+          type: 'videoProfile',
+          protocol: this.settings.streamProtocol,
+          container: streamContainer,
+          videoCodecs: vc,
+          audioCodecs: this.settings.audioCodecs,
+          subtitleCodecs: [],
+        }),
+        transcodeTargetSettings({
+          type: 'videoProfile',
+          protocol: this.settings.streamProtocol,
+          settings: {
+            CopyMatroskaAttachments: true,
+          },
+        }),
+        transcodeTargetSettings({
+          type: 'videoProfile',
+          protocol: this.settings.streamProtocol,
+          settings: { BreakNonKeyframes: true },
+        }),
+        transcodeLimitation({
+          scope: 'videoCodec',
+          scopeName: '*',
+          type: 'upperBound',
+          name: 'video.width',
+          value: resolution.widthPx,
+        }),
+        transcodeLimitation({
+          scope: 'videoCodec',
+          scopeName: '*',
+          type: 'upperBound',
+          name: 'video.height',
+          value: resolution.heightPx,
+        }),
+      );
     } else {
-      vc = ['av1'];
+      clientProfileParts.push(
+        transcodeTarget({
+          type: 'musicProfile',
+          protocol: this.settings.streamProtocol,
+          container: streamContainer,
+          audioCodecs: this.settings.audioCodecs,
+        }),
+      );
     }
 
-    let clientProfile = '';
-    if (!audioOnly) {
-      clientProfile = `add-transcode-target(type=videoProfile&protocol=${
-        this.settings.streamProtocol
-      }&container=${streamContainer}&videoCodec=${vc.join(
-        ',',
-      )}&audioCodec=${this.settings.audioCodecs.join(
-        ',',
-      )}&subtitleCodec=&context=streaming&replace=true)+\
-add-transcode-target-settings(type=videoProfile&context=streaming&protocol=${
-        this.settings.streamProtocol
-      }&CopyMatroskaAttachments=true)+\
-add-transcode-target-settings(type=videoProfile&context=streaming&protocol=${
-        this.settings.streamProtocol
-      }&BreakNonKeyframes=true)+\
-add-limitation(scope=videoCodec&scopeName=*&type=upperBound&name=video.width&value=${
-        resolution.widthPx
-      })+\
-add-limitation(scope=videoCodec&scopeName=*&type=upperBound&name=video.height&value=${
-        resolution.heightPx
-      })`;
-    } else {
-      clientProfile = `add-transcode-target(type=musicProfile&protocol=${
-        this.settings.streamProtocol
-      }&container=${streamContainer}&audioCodec=${this.settings.audioCodecs.join(
-        ',',
-      )}&subtitleCodec=&context=streaming&replace=true)`;
-    }
     // Set transcode settings per audio codec
     this.settings.audioCodecs.forEach((codec) => {
-      clientProfile += `+add-transcode-target-audio-codec(type=videoProfile&context=streaming&protocol=${this.settings.streamProtocol}&audioCodec=${codec})`;
+      clientProfileParts.push(
+        transcodeAudioTarget({
+          type: 'videoProfile',
+          protocol: this.settings.streamProtocol,
+          audioCodec: codec,
+        }),
+      );
       if (codec == 'mp3') {
-        clientProfile += `+add-limitation(scope=videoAudioCodec&scopeName=${codec}&type=upperBound&name=audio.channels&value=2)`;
+        clientProfileParts.push(
+          transcodeLimitation({
+            scope: 'videoAudioCodec',
+            scopeName: codec,
+            type: 'upperBound',
+            name: 'audio.channels',
+            value: 2,
+          }),
+        );
       } else {
-        clientProfile += `+add-limitation(scope=videoAudioCodec&scopeName=${codec}&type=upperBound&name=audio.channels&value=${this.settings.maxAudioChannels})`;
+        clientProfileParts.push(
+          transcodeLimitation({
+            scope: 'videoAudioCodec',
+            scopeName: codec,
+            type: 'upperBound',
+            name: 'audio.channels',
+            value: this.settings.maxAudioChannels,
+          }),
+        );
       }
     });
 
     // deinterlace video if specified, only useful if overlaying channel logo later
     if (deinterlace == true) {
-      clientProfile += `+add-limitation(scope=videoCodec&scopeName=*&type=notMatch&name=video.scanType&value=interlaced)`;
+      clientProfileParts.push(
+        transcodeLimitation({
+          scope: 'videoCodec',
+          scopeName: '*',
+          type: 'notMatch',
+          name: 'video.scanType',
+          value: 'interlaced',
+        }),
+      );
     }
 
-    const clientProfile_enc = encodeURIComponent(clientProfile);
+    const clientProfile_enc = encodeURIComponent(clientProfileParts.join('+'));
     this.transcodingArgs = `X-Plex-Platform=${profileName}&\
 X-Plex-Product=${this.product}&\
 X-Plex-Client-Platform=${profileName}&\
@@ -354,12 +409,13 @@ lang=en`;
 
   isDirectPlay() {
     try {
-      if (this.getVideoStats().audioOnly) {
-        return this.getVideoStats().audioDecision === 'copy';
+      const videoStats = this.getVideoStats();
+      if (videoStats.audioOnly) {
+        return videoStats.audioDecision === 'copy';
       }
       return (
-        this.getVideoStats().videoDecision === 'copy' &&
-        this.getVideoStats().audioDecision === 'copy'
+        videoStats.videoDecision === 'copy' &&
+        videoStats.audioDecision === 'copy'
       );
     } catch (e) {
       console.error('Error at decision:', e);
@@ -367,31 +423,34 @@ lang=en`;
     }
   }
 
+  // TODO - cache this somehow so we only update VideoStats if decisionJson or directInfo change
   getVideoStats(): VideoStats {
     const ret: Partial<VideoStats> = {};
 
     try {
-      const streams: TranscodeDecisionMediaPartStream[] =
+      const streams: TranscodeDecisionMediaStream[] =
         this.decisionJson?.Metadata[0].Media[0].Part[0].Stream ?? [];
       ret.duration = this.decisionJson?.Metadata[0].Media[0].Part[0].duration;
-      streams.forEach((stream) => {
+      streams.forEach((_stream, idx) => {
         // Video
-        if (stream.streamType === 1) {
-          // Dont understand this...we're iterating the stream, isnt this already
-          // set tot Stream[$index]
-          // if (
-          //   this.videoIsDirect === true &&
-          //   typeof this.directInfo !== 'undefined'
-          // ) {
-          //   stream =
-          //     this.directInfo.Metadata[0].Media[0].Part[0].Stream[$index];
-          // }
+        if (_stream.streamType === 1) {
+          let stream: TranscodeDecisionMediaStream | PlexMediaVideoStream =
+            _stream;
+          if (this.videoIsDirect && !isNil(this.directInfo)) {
+            const directStream =
+              this.directInfo.Metadata[0].Media[0].Part[0].Stream[idx];
+            if (isPlexVideoStream(directStream)) {
+              stream = directStream;
+            }
+          }
           ret.anamorphic =
             stream.anamorphic === '1' || stream.anamorphic === true;
           if (ret.anamorphic) {
             const parsed = parsePixelAspectRatio(stream.pixelAspectRatio);
-            if (isNaN(parsed.p) || isNaN(parsed.q)) {
-              throw Error('isNaN');
+            if (isUndefined(parsed)) {
+              throw Error(
+                'Unable to parse pixelAspectRatio: ' + stream.pixelAspectRatio,
+              );
             }
             ret.pixelP = parsed.p;
             ret.pixelQ = parsed.q;
@@ -402,21 +461,22 @@ lang=en`;
           ret.videoCodec = stream.codec;
           ret.videoWidth = stream.width;
           ret.videoHeight = stream.height;
-          ret.videoFramerate = Math.round(stream['frameRate']);
+          ret.videoFramerate = Math.round(stream.frameRate);
           // Rounding framerate avoids scenarios where
           // 29.9999999 & 30 don't match.
-          ret.videoDecision = isUndefined(stream.decision)
+          ret.videoDecision = isUndefined(stream['decision'] as Maybe<string>)
             ? 'copy'
-            : stream.decision;
+            : (stream['decision'] as string);
           ret.videoScanType = stream.scanType;
         }
+
         // Audio. Only look at stream being used
-        if (stream['streamType'] == '2' && stream['selected'] == '1') {
-          ret.audioChannels = stream['channels'];
-          ret.audioCodec = stream['codec'];
-          ret.audioDecision = isUndefined(stream.decision)
+        if (_stream.streamType === 2 && _stream.selected) {
+          ret.audioChannels = _stream.channels;
+          ret.audioCodec = _stream.codec;
+          ret.audioDecision = isUndefined(_stream.decision)
             ? 'copy'
-            : stream.decision;
+            : _stream.decision;
         }
       });
     } catch (e) {
@@ -432,22 +492,27 @@ lang=en`;
           }/images/generic-music-screen.png`);
     }
 
-    this.log('Current video stats:');
-    this.log(ret);
+    this.log('Current video stats: %O', ret);
 
     return ret as Required<VideoStats>; // This isn't technically right, but this is how the current code treats this
   }
 
-  async getAudioIndex() {
-    let index = 'a';
-    const response = await this.plex.Get(this.key);
-    this.log(response);
+  private async getAudioIndex() {
+    let index: string | number = 'a';
+    // Duplicate call to API here ... we should try to keep a cache.
+    const response = await this.getPlexItemMetadata();
+    this.log('Got Plex item metadata response: %O', response);
+
+    if (isUndefined(response)) {
+      return index;
+    }
+
     try {
       const streams = response.Metadata[0].Media[0].Part[0].Stream;
 
       streams.forEach(function (stream) {
         // Audio. Only look at stream being used
-        if (stream['streamType'] == '2' && stream['selected'] == '1') {
+        if (stream.streamType === 2 && stream.selected) {
           index = stream.index;
         }
       });
@@ -461,8 +526,29 @@ lang=en`;
   }
 
   async getDirectInfo() {
-    return this.plex.Get(this.key);
-    // return (await axios.get(this.metadataPath)).data;
+    return this.getPlexItemMetadata();
+  }
+  async tryToDetectAudioOnly() {
+    try {
+      this.log('Try to detect audio only:');
+      const mediaContainer = await this.getPlexItemMetadata();
+
+      const metadata = first(mediaContainer?.Metadata);
+      if (!isUndefined(metadata)) {
+        this.albumArt = this.albumArt || {};
+        this.albumArt.path = `${this.server.uri}${metadata.thumb}?X-Plex-Token=${this.server.accessToken}`;
+
+        const media = first(metadata.Media);
+        if (!isUndefined(media)) {
+          if (isUndefined(media.videoCodec)) {
+            this.log('Audio-only file detected');
+            this.mediaHasNoVideo = true;
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error when getting album art', err);
+    }
   }
 
   async getDecisionUnmanaged(directPlay: boolean) {
@@ -474,8 +560,7 @@ lang=en`;
       throw new Error('Got unexpected undefined response from Plex');
     }
 
-    this.log('Received transcode decision:');
-    this.log(this.decisionJson);
+    this.log('Received transcode decision: %O', this.decisionJson);
 
     // Print error message if transcode not possible
     // TODO: handle failure better
@@ -496,31 +581,6 @@ lang=en`;
     }
   }
 
-  async tryToDetectAudioOnly() {
-    try {
-      this.log('Try to detect audio only:');
-      const mediaContainer = await this.plex.Get<PlexItemMetadata>(
-        `${this.key}?${this.transcodingArgs}`,
-      );
-
-      const metadata = first(mediaContainer?.Metadata);
-      if (!isUndefined(metadata)) {
-        this.albumArt = this.albumArt || {};
-        this.albumArt.path = `${this.server.uri}${metadata.thumb}?X-Plex-Token=${this.server.accessToken}`;
-
-        const media = first(metadata.Media);
-        if (!isUndefined(media)) {
-          if (isUndefined(media.videoCodec)) {
-            this.log('Audio-only file detected');
-            this.mediaHasNoVideo = true;
-          }
-        }
-      }
-    } catch (err) {
-      console.error('Error when getting album art', err);
-    }
-  }
-
   async getDecision(directPlay: boolean) {
     try {
       await this.getDecisionUnmanaged(directPlay);
@@ -529,57 +589,76 @@ lang=en`;
     }
   }
 
-  getStatusUrl() {
+  private getStatusUrl(): {
+    path: string;
+    params: Record<string, string | number>;
+  } {
     const profileName = `Generic`;
 
     const containerKey = `/video/:/transcode/universal/decision?${this.transcodingArgs}`;
     const containerKey_enc = encodeURIComponent(containerKey);
 
-    return `/:/timeline?\
-containerKey=${containerKey_enc}&\
-ratingKey=${this.ratingKey}&\
-state=${this.playState}&\
-key=${this.key}&\
-time=${this.currTimeMs}&\
-duration=${this.duration}&\
-X-Plex-Product=${this.product}&\
-X-Plex-Platform=${profileName}&\
-X-Plex-Client-Platform=${profileName}&\
-X-Plex-Client-Profile-Name=${profileName}&\
-X-Plex-Device-Name=${this.deviceName}&\
-X-Plex-Device=${this.device}&\
-X-Plex-Client-Identifier=${this.clientIdentifier}&\
-X-Plex-Platform=${profileName}&\
-X-Plex-Token=${this.server.accessToken}`;
+    return {
+      path: '/:/timeline',
+      params: {
+        containerKey: containerKey_enc,
+        ratingKey: this.ratingKey,
+        state: this.playState,
+        key: this.key,
+        time: this.currTimeMs,
+        duration: this.duration,
+        'X-Plex-Product': this.product,
+        'X-Plex-Platform': profileName,
+        'X-Plex-Client-Platform': profileName,
+        'X-Plex-Client-Profile-Name': profileName,
+        'X-Plex-Device-Name': this.deviceName,
+        'X-Plex-Device': this.device,
+        'X-Plex-Client-Identifier': this.clientIdentifier,
+        'X-Plex-Token': this.server.accessToken,
+      },
+    };
   }
 
-  startUpdatingPlex() {
+  private async getPlexItemMetadata(force: boolean = false) {
+    if (!force && !isUndefined(this.cachedItemMetadata)) {
+      this.log('Using cached response from Plex for metadata');
+      return this.cachedItemMetadata;
+    }
+
+    this.cachedItemMetadata = await this.plex.Get<PlexItemMetadata>(this.key);
+    return this.cachedItemMetadata;
+  }
+
+  async startUpdatingPlex() {
     if (this.settings.updatePlayStatus == true) {
       this.playState = 'playing';
-      this.updatePlex(); // do initial update
+      await this.updatePlex(); // do initial update
       this.updatingPlex = setInterval(
-        () => this.updatePlex(),
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises
+        async () => await this.updatePlex(),
         this.updateInterval,
       );
     }
   }
 
-  stopUpdatingPlex() {
+  async stopUpdatingPlex() {
     if (this.settings.updatePlayStatus == true) {
       clearInterval(this.updatingPlex);
       this.playState = 'stopped';
-      this.updatePlex();
+      await this.updatePlex();
     }
   }
 
-  updatePlex() {
+  private async updatePlex() {
     this.log('Updating plex status');
-    const statusUrl = this.getStatusUrl();
+    const { path: statusUrl, params } = this.getStatusUrl();
     try {
-      this.plex.Post(statusUrl);
+      await this.plex.Post(statusUrl, params);
     } catch (error) {
-      this.log(`Problem updating Plex status using status URL ${statusUrl}:`);
-      this.log(error);
+      this.log(
+        `Problem updating Plex status using status URL ${statusUrl}: `,
+        error,
+      );
       return false;
     }
     this.currTimeMs += this.updateInterval;
@@ -590,15 +669,15 @@ X-Plex-Token=${this.server.accessToken}`;
     return true;
   }
 
-  log(message: any) {
+  private log(msg: string, ...rest: unknown[]) {
     if (this.settings.enableDebugLogging) {
-      const msg = isPlainObject(message) ? inspect(message) : message;
-      logger.info(msg);
+      logger.debug(msg, ...rest);
     }
   }
 }
 
-function parsePixelAspectRatio(s) {
+function parsePixelAspectRatio(s: Maybe<string>) {
+  if (isUndefined(s)) return;
   const x = s.split(':');
   return {
     p: parseInt(x[0], 10),
@@ -606,16 +685,65 @@ function parsePixelAspectRatio(s) {
   };
 }
 
-function getOneOrUndefined(object, field) {
-  if (isUndefined(object)) {
-    return undefined;
+function transcodeTarget(opts: {
+  type: 'videoProfile' | 'musicProfile';
+  protocol: string;
+  container: string;
+  videoCodecs?: ReadonlyArray<string>;
+  audioCodecs?: ReadonlyArray<string>;
+  subtitleCodecs?: ReadonlyArray<string>;
+}) {
+  const parts = {
+    ...pick(opts, ['type', 'protocol', 'container']),
+    subtitleCodec: (opts.subtitleCodecs ?? []).join(','),
+    context: 'streaming',
+    replace: true,
+  };
+
+  if (opts.videoCodecs) {
+    parts['videoCodec'] = opts.videoCodecs.join(',');
   }
-  if (isUndefined(object[field])) {
-    return undefined;
+
+  if (opts.audioCodecs) {
+    parts['audioCodec'] = opts.audioCodecs.join(',');
   }
-  const x = object[field];
-  if (x.length < 1) {
-    return undefined;
-  }
-  return x[0];
+
+  return `add-transcode-target(${stringify(parts)})`;
+}
+
+function transcodeTargetSettings(opts: {
+  type: string;
+  protocol: string;
+  settings: Record<string, string | boolean | number>;
+}) {
+  const parts = {
+    ...pick(opts, ['type', 'protocol']),
+    ...opts.settings,
+    context: 'streaming',
+  };
+
+  return `add-transcode-target-settings(${stringify(parts)})`;
+}
+
+function transcodeLimitation(opts: {
+  scope: string;
+  scopeName: string;
+  type: string;
+  name: string;
+  value: string | number;
+}) {
+  return `add-limitation(${stringify(opts)})`;
+}
+
+function transcodeAudioTarget(opts: {
+  type: 'videoProfile';
+  protocol: string;
+  audioCodec: string;
+}) {
+  const parts = {
+    ...opts,
+    context: 'streaming',
+  };
+
+  return `add-transcode-target-audio-codec(${stringify(parts)})`;
 }

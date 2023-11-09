@@ -186,8 +186,9 @@ export class Plex {
 
   async GetDVRS() {
     try {
-      const result = await this.Get('/livetv/dvrs');
-      let dvrs = result.Dvr;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await this.Get<any>('/livetv/dvrs');
+      let dvrs = result?.Dvr;
       dvrs = isUndefined(dvrs) ? [] : dvrs;
       return dvrs;
     } catch (err) {

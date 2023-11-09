@@ -39,7 +39,7 @@ export type PlexTranscodeMedia = {
   videoResolution: string;
   width: number;
   selected: boolean;
-  Part: TranscodeDecisionMetadataMediaPart[];
+  Part: TranscodeDecisionMediaPart[];
 };
 
 export type PlexMediaMetadata<T> = {
@@ -71,7 +71,7 @@ export type PlexMediaMetadata<T> = {
   Media: T[];
 };
 
-export type TranscodeDecisionMetadataMediaPart = {
+export type TranscodeDecisionMediaPart = {
   id: number;
   key: string;
   duration: number;
@@ -80,10 +80,10 @@ export type TranscodeDecisionMetadataMediaPart = {
   audioProfile: string;
   container: string;
   videoProfile: string;
-  Stream: TranscodeDecisionMediaPartStream[];
+  Stream: TranscodeDecisionMediaStream[];
 };
 
-export type TranscodeDecisionMediaPartStream = {
+export type TranscodeDecisionMediaStream = {
   bitrate: number;
   codec: string;
   default: boolean;
@@ -101,6 +101,12 @@ export type TranscodeDecisionMediaPartStream = {
   streamType: number;
   decision: string;
   location: string;
+  channels?: number;
+  scanType?: string;
+  // Haven't been able to get Plex to return this type, so
+  // we're going very permissive.
+  anamorphic?: ('1' | '0') | boolean;
+  pixelAspectRatio?: string;
 };
 
 // http://{plexUrl}/{serverKey}
@@ -124,5 +130,92 @@ export type PlexMedia = {
   videoFrameRate: string;
   audioProfile: string;
   videoProfile: string;
-  Part: TranscodeDecisionMetadataMediaPart[];
+  Part: PlexMediaPart[];
+};
+
+export type PlexMediaPart = {
+  Stream: PlexMediaStream[];
+};
+
+export function isPlexVideoStream(
+  stream: PlexMediaStream,
+): stream is PlexMediaVideoStream {
+  return stream.streamType === 1;
+}
+
+export function isPlexAudioStream(
+  stream: PlexMediaStream,
+): stream is PlexMediaAudioStream {
+  return stream.streamType === 2;
+}
+
+export type PlexMediaBaseStream = {
+  id: number;
+  streamType: number;
+  default: boolean;
+  codec: string;
+  index: number;
+  displayTitle: string;
+  extendedDisplayTitle: string;
+  language: string;
+  languageCode: string;
+  languageTag: string;
+  title: string;
+  selected?: boolean;
+};
+
+export type PlexMediaVideoStream = PlexMediaBaseStream & {
+  // Haven't been able to get Plex to return this type, so
+  // we're going very permissive.
+  anamorphic?: ('1' | '0') | boolean;
+  bitrate: number;
+  bitDepth: number;
+  chromaLocation: string;
+  chromaSubsampling: string;
+  codedHeight: number;
+  codedWidth: number;
+  frameRate: number;
+  hasScalingMatrix: boolean;
+  height: number;
+  level: number;
+  profile: string;
+  refFrames: number;
+  scanType: string;
+  width: number;
+  // Unclear if this exists on direct streams, but we add it
+  // here for parity
+  pixelAspectRatio?: string;
+};
+
+export type PlexMediaAudioStream = PlexMediaBaseStream & {
+  audioChannelLayout: string;
+  channels: number;
+  bitrate: number;
+  samplingRate: number;
+};
+
+export type PlexMediaSubtitleStream = PlexMediaBaseStream & {
+  bitrate: number;
+};
+
+export type PlexMediaStream =
+  | PlexMediaVideoStream
+  | PlexMediaAudioStream
+  | PlexMediaSubtitleStream;
+
+export type PlexStatusResponse = {
+  size: number;
+  playbackState: string;
+  skipCount: number;
+  viewCount: number;
+  viewOffset: number;
+  Bandwidths: {
+    Bandwidth: PlexStatusBandwidth;
+  }[];
+};
+
+export type PlexStatusBandwidth = {
+  time: number;
+  bandwidth: number;
+  resolution: string;
 };
