@@ -145,7 +145,6 @@ export class PlexTranscoder {
         this.settings = { ...this.settings, enableSubtitles: false };
       }
       directPlay = true;
-      // stream = { directPlay: true };
     } else {
       try {
         this.log('Setting transcoding parameters');
@@ -189,7 +188,7 @@ export class PlexTranscoder {
           'Direct path playback is not possible for this program because it was registered at a time when the direct path settings were not set. To fix this, you must either revert the direct path setting or rebuild this channel.',
         );
       }
-    } else if (this.isVideoDirectStream() === false) {
+    } else if (!this.isVideoDirectStream()) {
       this.log('Decision: Should transcode');
       // Change transcoding arguments to be the user chosen transcode parameters
       this.setTranscodingArgs(

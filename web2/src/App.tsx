@@ -1,35 +1,84 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import MenuIcon from '@mui/icons-material/Menu';
+import {
+  AppBar,
+  Box,
+  IconButton,
+  Link,
+  Toolbar,
+  Typography,
+} from '@mui/material';
+import Container from '@mui/material/Container';
+import CssBaseline from '@mui/material/CssBaseline';
+import { useQuery } from '@tanstack/react-query';
+import { Outlet, Link as RouteLink } from '@tanstack/react-router';
+import { useState } from 'react';
+import './App.css';
+import LinkRouter from './components/LinkRouter.tsx';
 
-function App() {
-  const [count, setCount] = useState(0)
-
+export function Root() {
   return (
     <>
       <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+        <LinkRouter to={'/'}>Home</LinkRouter>
+        <LinkRouter to="/channels">Channels</LinkRouter>
+        <Outlet />
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
     </>
-  )
+  );
 }
 
-export default App
+function App() {
+  const [_, setOpen] = useState(true);
+  const toggleDrawer = () => {
+    setOpen(!true);
+  };
+  const { isPending, error, data } = useQuery({
+    queryKey: ['test'],
+    queryFn: () =>
+      fetch('http://localhost:8000/api/channels').then((res) => res.json()),
+  });
+
+  if (isPending) return 'Loading...';
+
+  if (error) return 'An error occurred!: ' + error.message;
+
+  console.log(data);
+
+  return (
+    <>
+      <Box sx={{ display: 'flex' }}>
+        <CssBaseline />
+
+        <AppBar position="absolute">
+          <Toolbar>
+            <IconButton
+              size="large"
+              edge="start"
+              color="inherit"
+              sx={{ mr: 2 }}
+              onClick={toggleDrawer}
+            >
+              <MenuIcon />
+            </IconButton>
+            <Typography
+              variant="h6"
+              component="h1"
+              noWrap
+              color="inherit"
+              sx={{ flexGrow: 1 }}
+            >
+              DizqueTV
+            </Typography>
+          </Toolbar>
+        </AppBar>
+        <Container>
+          <Link component={RouteLink} to={'/channels'}>
+            Test
+          </Link>
+        </Container>
+      </Box>
+    </>
+  );
+}
+
+export default App;
