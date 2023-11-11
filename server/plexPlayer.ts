@@ -45,7 +45,9 @@ export class PlexPlayer extends Player {
     USED_CLIENTS[this.clientId] = false;
     this.killed = true;
     if (this.plexTranscoder != null) {
-      this.plexTranscoder.stopUpdatingPlex();
+      this.plexTranscoder.stopUpdatingPlex().catch((e) => {
+        logger.error('Error stopping Plex status updates', e);
+      });
       this.plexTranscoder = null;
     }
     if (this.ffmpeg != null) {
@@ -116,7 +118,6 @@ export class PlexPlayer extends Player {
     }
 
     const emitter = new EventEmitter() as TypedEventEmitter<FfmpegEvents>;
-    //setTimeout( () => {
     let ff = ffmpeg.spawnStream(
       stream.streamUrl,
       stream.streamStats,
@@ -131,8 +132,9 @@ export class PlexPlayer extends Player {
     }
 
     ff.pipe(outStream, { end: false });
-    //}, 100);
-    plexTranscoder.startUpdatingPlex();
+    plexTranscoder.startUpdatingPlex().catch((e) => {
+      logger.error('Error starting Plex status updates', e);
+    });
 
     ffmpeg.on('end', () => {
       logger.info('ffmpeg end');

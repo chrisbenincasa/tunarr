@@ -9,6 +9,7 @@ export default function Video() {
     if (videoRef.current) {
       console.log('callback initiated HLS');
       const hls = new Hls({
+        progressive: true,
         fragLoadingTimeOut: 30000,
         xhrSetup: (xhr) => {
           xhr.setRequestHeader(

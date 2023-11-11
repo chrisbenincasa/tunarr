@@ -101,7 +101,7 @@ export class TVGuideService {
   }
 
   prepareRefresh(inputChannels: ImmutableChannel[], limit: number) {
-    let t = new Date().getTime();
+    const t = new Date().getTime();
     this.updateTime = t;
     this.updateLimit = t + limit;
 
@@ -141,8 +141,8 @@ export class TVGuideService {
     if (isUndefined(channel.programs)) {
       throw Error(JSON.stringify(channel).slice(0, 200));
     }
-    let n = channel.programs.length;
-    let arr = new Array(channel.programs.length + 1);
+    const n = channel.programs.length;
+    const arr = new Array(channel.programs.length + 1);
     arr[0] = 0;
     for (let i = 0; i < n; i++) {
       arr[i + 1] = arr[i] + channel.programs[i].duration;
@@ -155,7 +155,7 @@ export class TVGuideService {
     channel: Channel,
     currentUpdateTimeMs: number,
   ): Promise<CurrentPlayingProgram> {
-    let channelStartTime = new Date(channel.startTimeEpoch).getTime();
+    const channelStartTime = new Date(channel.startTimeEpoch).getTime();
     if (currentUpdateTimeMs < channelStartTime) {
       //it's flex time
       return {
@@ -167,19 +167,19 @@ export class TVGuideService {
         },
       };
     } else {
-      let accumulate = this.accumulateTable[channel.number];
+      const accumulate = this.accumulateTable[channel.number];
       if (isUndefined(accumulate)) {
         throw Error(channel.number + " wasn't preprocesed correctly???!?");
       }
       let hi = channel.programs.length;
       let lo = 0;
-      let d =
+      const d =
         (currentUpdateTimeMs - channelStartTime) %
         accumulate[channel.programs.length];
-      let epoch = currentUpdateTimeMs - d;
+      const epoch = currentUpdateTimeMs - d;
       // Binary search for the currently playing program
       while (lo + 1 < hi) {
-        let ha = Math.floor((lo + hi) / 2);
+        const ha = Math.floor((lo + hi) / 2);
         if (accumulate[ha] > d) {
           hi = ha;
         } else {
@@ -216,7 +216,7 @@ export class TVGuideService {
         currentUpdateTimeMs
     ) {
       //turns out we know the index.
-      let index = (previousKnown.programIndex + 1) % channel.programs.length;
+      const index = (previousKnown.programIndex + 1) % channel.programs.length;
       playing = {
         programIndex: index,
         program: channel.programs[index],
@@ -243,7 +243,7 @@ export class TVGuideService {
       playing.program.type === 'redirect' &&
       !isUndefined(playing.program.channel)
     ) {
-      let ch2 = playing.program.channel;
+      const ch2 = playing.program.channel;
 
       if (depth.indexOf(ch2) != -1) {
         logger.error(
@@ -251,27 +251,27 @@ export class TVGuideService {
         );
       } else {
         depth.push(channel.number);
-        let channel2 = this.channelsByNumber[ch2];
+        const channel2 = this.channelsByNumber[ch2];
         if (isUndefined(channel2)) {
           logger.error(
             'Redirrect to an unknown channel found! Involved channels = ' +
               JSON.stringify(depth),
           );
         } else {
-          let otherPlaying = await this.getChannelPlaying(
+          const otherPlaying = await this.getChannelPlaying(
             channel2,
             undefined,
             currentUpdateTimeMs,
             depth,
           );
-          let start = Math.max(playing.startTimeMs, otherPlaying.startTimeMs);
-          let duration = Math.min(
+          const start = Math.max(playing.startTimeMs, otherPlaying.startTimeMs);
+          const duration = Math.min(
             playing.startTimeMs + playing.program.duration! - start,
             otherPlaying.startTimeMs +
               (otherPlaying.program.duration ?? 0) -
               start,
           );
-          let program2 = clone(otherPlaying.program);
+          const program2 = clone(otherPlaying.program);
           program2.duration = duration;
           playing = {
             programIndex: playing.programIndex,
@@ -292,12 +292,12 @@ export class TVGuideService {
     if (isUndefined(channel)) {
       throw Error("Couldn't find channel?");
     }
-    let result: ChannelPrograms = {
+    const result: ChannelPrograms = {
       channel: makeChannelEntry(channel),
       programs: [],
     };
 
-    let programs: CurrentPlayingProgram[] = [];
+    const programs: CurrentPlayingProgram[] = [];
 
     let x = await this.getChannelPlaying(
       channel,
@@ -311,7 +311,7 @@ export class TVGuideService {
 
     let melded = 0;
 
-    let push = async (x: CurrentPlayingProgram) => {
+    const push = async (x: CurrentPlayingProgram) => {
       await this._throttle();
       if (
         programs.length > 0 &&
@@ -321,7 +321,7 @@ export class TVGuideService {
           isProgramFlex(programs[programs.length - 1].program, channel))
       ) {
         //meld with previous
-        let y = clone(programs[programs.length - 1]);
+        const y = clone(programs[programs.length - 1]);
         y.program.duration += x.program.duration;
         melded += x.program.duration ?? 0;
         if (
@@ -359,10 +359,10 @@ export class TVGuideService {
     };
     while (x.startTimeMs < currentEndTimeMs) {
       await push(x);
-      let t2 = x.startTimeMs + (x.program.duration ?? 0);
+      const t2 = x.startTimeMs + (x.program.duration ?? 0);
       x = await this.getChannelPlaying(channel, x, t2);
       if (x.startTimeMs < t2) {
-        let d = t2 - x.startTimeMs;
+        const d = t2 - x.startTimeMs;
         x.startTimeMs = t2;
         x.program = clone(x.program);
         if (x.program.duration) {
@@ -381,7 +381,7 @@ export class TVGuideService {
         let duration = programs[i].program.duration ?? 0;
         if (start <= currentUpdateTimeMs) {
           const M = 5 * 60 * 1000;
-          let newStart = currentUpdateTimeMs - (currentUpdateTimeMs % M);
+          const newStart = currentUpdateTimeMs - (currentUpdateTimeMs % M);
           if (start < newStart) {
             duration -= newStart - start;
             start = newStart;
@@ -395,7 +395,7 @@ export class TVGuideService {
           ) {
             d = duration;
           }
-          let x: CurrentPlayingProgram = {
+          const x: CurrentPlayingProgram = {
             startTimeMs: start,
             program: {
               isOffline: true,
@@ -415,23 +415,23 @@ export class TVGuideService {
   }
 
   async buildItManaged() {
-    let currentUpdateTimeMs = this.currentUpdate;
-    let currentEndTimeMs = this.currentLimit;
-    let channels = this.currentChannels;
+    const currentUpdateTimeMs = this.currentUpdate;
+    const currentEndTimeMs = this.currentLimit;
+    const channels = this.currentChannels;
     this.channelsByNumber = groupByUniq(channels, 'number');
-    let accumulateTablePromises = groupByUniqAndMap(
+    const accumulateTablePromises = groupByUniqAndMap(
       channels,
       'number',
       async (channel) => await this.makeAccumulated(channel),
     );
-    for (let channelId in accumulateTablePromises) {
+    for (const channelId in accumulateTablePromises) {
       this.accumulateTable[channelId] =
         await accumulateTablePromises[channelId];
     }
 
-    let result = {};
+    const result = {};
     if (channels.length == 0) {
-      let channel: Partial<Channel> = {
+      const channel: Partial<Channel> = {
         name: 'dizqueTV',
         icon: {
           path: FALLBACK_ICON,
@@ -459,7 +459,7 @@ export class TVGuideService {
     } else {
       for (let i = 0; i < channels.length; i++) {
         if (!channels[i].stealth) {
-          let programs = await this.getChannelPrograms(
+          const programs = await this.getChannelPrograms(
             currentUpdateTimeMs,
             currentEndTimeMs,
             channels[i],
@@ -481,7 +481,7 @@ export class TVGuideService {
       this.lastBackoff = 100;
     } catch (err) {
       logger.error('Unable to update internal guide data', err);
-      let w = Math.min(this.lastBackoff * 2, 300000);
+      const w = Math.min(this.lastBackoff * 2, 300000);
       await _wait(w);
       this.lastBackoff = w;
       logger.error(`Retrying TV guide after ${w} milliseconds wait...`);
@@ -493,7 +493,7 @@ export class TVGuideService {
   }
 
   async refreshXML() {
-    let xmltvSettings = (await getDB()).xmlTvSettings();
+    const xmltvSettings = (await getDB()).xmlTvSettings();
     await this.xmltv.WriteXMLTV(
       this.cached,
       xmltvSettings,
@@ -512,7 +512,7 @@ export class TVGuideService {
 
   async getStatus() {
     await this.get();
-    let channels = map(keys(this.cached), parseInt);
+    const channels = map(keys(this.cached), parseInt);
 
     return {
       lastUpdate: new Date(this.lastUpdate).toISOString(),
@@ -526,21 +526,21 @@ export class TVGuideService {
     dateTo: Date,
   ): Promise<Maybe<ChannelLineup>> {
     await this.get();
-    let beginningTimeMs = dateFrom.toISOString();
-    let endTimeMs = dateTo.toISOString();
-    let channel = this.cached[channelNumber];
-    if (typeof channel === undefined) {
+    const beginningTimeMs = dateFrom.toISOString();
+    const endTimeMs = dateTo.toISOString();
+    const channel = this.cached[channelNumber];
+    if (typeof channel === 'undefined') {
       return;
     }
-    let programs = channel.programs;
-    let result: ChannelLineup = {
+    const programs = channel.programs;
+    const result: ChannelLineup = {
       icon: channel.channel.icon,
       name: channel.channel.name,
       number: channel.channel.number,
       programs: [],
     };
     for (let i = 0; i < programs.length; i++) {
-      let program = programs[i];
+      const program = programs[i];
       let a: string;
       if (program.start > beginningTimeMs) {
         a = program.start;
@@ -645,8 +645,8 @@ function makeEntry(
 }
 
 function formatDateYYYYMMDD(date) {
-  var year = date.getFullYear().toString();
-  var month = (date.getMonth() + 101).toString().substring(1);
-  var day = (date.getDate() + 100).toString().substring(1);
+  const year = date.getFullYear().toString();
+  const month = (date.getMonth() + 101).toString().substring(1);
+  const day = (date.getDate() + 100).toString().substring(1);
   return year + '-' + month + '-' + day;
 }

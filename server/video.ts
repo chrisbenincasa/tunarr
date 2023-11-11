@@ -164,6 +164,11 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
       return res.status(500).send('Could not start concat stream');
     }
 
+    res.raw.writeHead(200, {
+      'content-type': 'video/mp2t',
+      'Access-Control-Allow-Origin': '*',
+    });
+
     ff.pipe(res.raw, { end: false });
 
     // return res.send(ff);
@@ -622,12 +627,20 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
       return res.status(404).send('Channel not found.');
     }
 
+    const content = [
+      '#EXTM3U',
+      '#EXT-X-VERSION:3',
+      '#EXT-X-MEDIA-SEQUENCE:0',
+      '#EXT-X-ALLOW-CACHE:YES',
+      '#EXT-X-TARGETDURATION:60',
+      '#EXT-X-PLAYLIST-TYPE:VOD',
+      `${req.protocol}://${req.hostname}/${path}?channel=${channelNum}`,
+    ];
+
     return res
       .type('video/x-mpegurl')
       .status(200)
-      .send(
-        `#EXTM3U\n${req.protocol}://${req.hostname}/${path}?channel=${channelNum}\n\n`,
-      );
+      .send(content.join('\n') + '\n');
   };
 
   fastify.get<{ Params: { number: number }; Querystring: { fast?: string } }>(
