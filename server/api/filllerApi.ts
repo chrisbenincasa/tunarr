@@ -11,7 +11,7 @@ export const fillerRouter: FastifyPluginCallback = (fastify, _opts, done) => {
       const fillers = req.serverCtx.fillerDB.getAllFillersInfo();
       return res.send(fillers);
     } catch (err) {
-      logger.error(err);
+      logger.error(req.routeConfig.url, err);
       return res.status(500).send('error');
     }
   });
@@ -30,7 +30,7 @@ export const fillerRouter: FastifyPluginCallback = (fastify, _opts, done) => {
         }
         return res.send(filler);
       } catch (err) {
-        logger.error(err);
+        logger.error(req.routeConfig.url, err);
         return res.status(500).send('error');
       }
     },
@@ -47,7 +47,7 @@ export const fillerRouter: FastifyPluginCallback = (fastify, _opts, done) => {
         await req.serverCtx.fillerDB.saveFiller(id, req.body);
         return res.status(204).send({});
       } catch (err) {
-        logger.error(err);
+        logger.error(req.routeConfig.url, err);
         return res.status(500).send('error');
       }
     },
@@ -58,7 +58,7 @@ export const fillerRouter: FastifyPluginCallback = (fastify, _opts, done) => {
       const uuid = await req.serverCtx.fillerDB.createFiller(req.body);
       return res.status(201).send({ id: uuid });
     } catch (err) {
-      logger.error(err);
+      logger.error(req.routeConfig.url, err);
       return res.status(500).send('error');
     }
   });
@@ -74,7 +74,7 @@ export const fillerRouter: FastifyPluginCallback = (fastify, _opts, done) => {
         await req.serverCtx.fillerDB.deleteFiller(id);
         return res.status(204).send({});
       } catch (err) {
-        logger.error(err);
+        logger.error(req.routeConfig.url, err);
         return res.status(500).send('error');
       }
     },
@@ -94,7 +94,7 @@ export const fillerRouter: FastifyPluginCallback = (fastify, _opts, done) => {
         }
         return res.send(channels);
       } catch (err) {
-        logger.error(err);
+        logger.error(req.routeConfig.url, err);
         return res.status(500).send('error');
       }
     },

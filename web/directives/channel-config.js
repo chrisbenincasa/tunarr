@@ -78,17 +78,24 @@ module.exports = function (
           scope.channel.icon.width = 120;
           scope.channel.icon.duration = 60;
           scope.channel.icon.position = '2';
-          scope.channel.startTime = new Date();
-          scope.channel.startTime.setMilliseconds(0);
-          scope.channel.startTime.setSeconds(0);
+          const startTime = new Date();
+          startTime.setMilliseconds(0);
+          startTime.setSeconds(0);
+          scope.channel.startTimeEpoch = startTime.getTime();
           scope.channel.offlinePicture = `${$location.protocol()}://${
             location.host
           }/images/generic-offline-screen.png`;
           scope.channel.offlineSoundtrack = '';
           scope.channel.offlineMode = 'pic';
-          if (scope.channel.startTime.getMinutes() < 30)
-            scope.channel.startTime.setMinutes(0);
-          else scope.channel.startTime.setMinutes(30);
+          if (new Date(scope.channel.startTimeEpoch).getMinutes() < 30) {
+            const d = new Date(scope.channel.startTimeEpoch);
+            d.setMinutes(0);
+            scope.channel.startTimeEpoch = d.getTime();
+          } else {
+            const d = new Date(scope.channel.startTimeEpoch);
+            d.setMinutes(30);
+            scope.channel.startTimeEpoch = d.getTime();
+          }
           if (scope.channels.length > 0) {
             scope.channel.number =
               scope.channels[scope.channels.length - 1].number + 1;
@@ -182,7 +189,7 @@ module.exports = function (
 
         function adjustStartTimeToCurrentProgram() {
           let t = Date.now();
-          let originalStart = scope.channel.startTime.getTime();
+          let originalStart = scope.channel.startTimeEpoch;
           let n = scope.channel.programs.length;
           //scope.channel.totalDuration might not have been initialized
           let totalDuration = 0;
@@ -211,7 +218,7 @@ module.exports = function (
           scope.channel.programs = scope.channel.programs
             .slice(runningProgram)
             .concat(scope.channel.programs.slice(0, runningProgram));
-          scope.channel.startTime = new Date(t - offset);
+          scope.channel.startTimeEpoch = new Date(t - offset).getTime();
         }
 
         let addMinuteVersionsOfFields = () => {
@@ -322,7 +329,8 @@ module.exports = function (
           updateChannelDuration();
         };
 
-        scope.$watch('channel.startTime', () => {
+        scope.$watch('channel.startTimeEpoch', () => {
+          scope.startTime = new Date(scope.channel.startTimeEpoch);
           updateChannelDuration();
         });
         scope.sortShows = () => {
@@ -332,7 +340,12 @@ module.exports = function (
           );
           updateChannelDuration();
         };
-        scope.dateForGuide = (date) => {
+        scope.dateForGuide = (dateOrNum) => {
+          // HACK... just to make things work for now.
+          let date = dateOrNum;
+          if (typeof date === 'number' || typeof date === 'string') {
+            date = new Date(dateOrNum);
+          }
           let t = date.toLocaleTimeString(undefined, {
             hour: '2-digit',
             minute: '2-digit',
@@ -359,7 +372,7 @@ module.exports = function (
           updateChannelDuration();
         };
         scope.slideAllPrograms = (offset) => {
-          let t0 = scope.channel.startTime.getTime();
+          let t0 = scope.channel.startTimeEpoch;
           let t1 = t0 - offset;
           let t = new Date().getTime();
           let total = scope.channel.duration;
@@ -367,7 +380,7 @@ module.exports = function (
             //TODO: Replace with division
             t1 -= total;
           }
-          scope.channel.startTime = new Date(t1);
+          scope.channel.startTimeEpoch = new Date(t1).getTime();
           adjustStartTimeToCurrentProgram();
           updateChannelDuration();
         };
@@ -504,11 +517,11 @@ module.exports = function (
           if (currentBlockSize != 0) {
             addBlock();
           }
-          scope.channel.startTime = new Date(
-            scope.channel.startTime.getTime() -
-              (scope.channel.startTime % (24 * 60 * 60 * 1000)) +
+          scope.channel.startTimeEpoch = new Date(
+            scope.channel.startTimeEpoch -
+              (scope.channel.startTimeEpoch % (24 * 60 * 60 * 1000)) +
               start,
-          );
+          ).getTime();
           scope.channel.programs = programs;
           scope.updateChannelDuration();
         };
@@ -523,7 +536,7 @@ module.exports = function (
           }
           b -= a;
           let progs = [];
-          let t = scope.channel.startTime.getTime();
+          let t = scope.channel.startTimeEpoch;
           function pos(x) {
             if (x % m < a) {
               return m + (x % m) - a;
@@ -532,7 +545,7 @@ module.exports = function (
             }
           }
           t -= pos(t);
-          scope.channel.startTime = new Date(t);
+          scope.channel.startTimeEpoch = new Date(t).getTime();
           for (let i = 0, l = scope.channel.programs.length; i < l; i++) {
             let p = pos(t);
             if (p != 0 && p + scope.channel.programs[i].duration > b) {
@@ -707,9 +720,9 @@ module.exports = function (
           }
           scope.removeOffline();
           let progs = [];
-          let t = scope.channel.startTime.getTime();
+          let t = scope.channel.startTimeEpoch;
           t = t - (t % mod);
-          scope.channel.startTime = new Date(t);
+          scope.channel.startTimeEpoch = new Date(t).getTime();
           function addPad(force) {
             let m = t % mod;
             let r = (mod - (t % mod)) % mod;
@@ -968,14 +981,14 @@ module.exports = function (
           scope.hasFlex = false;
 
           for (let i = 0, l = scope.channel.programs.length; i < l; i++) {
-            scope.channel.programs[i].start = new Date(
-              scope.channel.startTime.valueOf() + scope.channel.duration,
-            );
+            scope.channel.programs[i].startTimeMs = new Date(
+              scope.channel.startTimeEpoch + scope.channel.duration,
+            ).getTime();
             scope.channel.programs[i].$index = i;
             scope.channel.duration += scope.channel.programs[i].duration;
-            scope.channel.programs[i].stop = new Date(
-              scope.channel.startTime.valueOf() + scope.channel.duration,
-            );
+            scope.channel.programs[i].stopTimeMs = new Date(
+              scope.channel.startTimeEpoch + scope.channel.duration,
+            ).getTime();
             if (scope.channel.programs[i].isOffline) {
               scope.hasFlex = true;
             }
@@ -988,8 +1001,9 @@ module.exports = function (
             0,
             scope.maxSize - scope.channel.programs.length,
           );
+          scope.startTime = new Date(scope.channel.startTimeEpoch);
           scope.endTime = new Date(
-            scope.channel.startTime.valueOf() + scope.channel.duration,
+            scope.channel.startTimeEpoch + scope.channel.duration,
           );
         }
         scope.error = {};
@@ -1050,7 +1064,7 @@ module.exports = function (
               scope.error.icon =
                 'Please enter a valid image URL. Cant overlay an invalid image.';
               scope.error.tab = 'basic';
-            } else if (now < channel.startTime) {
+            } else if (now.getTime() < channel.startTimeEpoch) {
               scope.error.startTime =
                 'Start time must not be set in the future.';
               scope.error.tab = 'programming';
@@ -1728,7 +1742,7 @@ module.exports = function (
             //TODO: Replace with division
             t1 -= total;
           }
-          scope.channel.startTime = new Date(t1);
+          scope.channel.startTimeEpoch = new Date(t1).getTime();
           adjustStartTimeToCurrentProgram();
           updateChannelDuration();
         };

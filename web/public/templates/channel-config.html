@@ -75,7 +75,7 @@
                     <div class='form-group row' >
                         <label for="channelStartTime" class="small col-form-label col-md-auto">Programming Start:</label>
                         <div class='col-md-auto'>
-                            <input id="channelStartTime" class="form-control form-control-sm col-md-auto" type="datetime-local" ng-model="channel.startTime" aria-describedby="startTimeHelp"></input>
+                            <input id="channelStartTime" class="form-control form-control-sm col-md-auto" type="datetime-local" ng-model="startTime" aria-describedby="startTimeHelp"></input>
                             <small class="text-danger" id='startTimeHelp'>{{error.startTime}}</small>
                         </div>
                         <label for="channelEndTime" class="small col-form-label col-md-auto">Programming End:</label>
@@ -176,7 +176,7 @@
                                 class="list-group-item flex-container program-row" dnd-draggable="x" dnd-moved="" dnd-effect-allowed="move"
                             >
                                 <div class="program-start">
-                                    {{ dateForGuide(x.start) }}
+                                    {{ dateForGuide(x.startTimeMs) }}
                                 </div>
                                 <div ng-style="programSquareStyle(x)"></div>
 
