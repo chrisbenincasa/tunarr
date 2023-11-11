@@ -116,7 +116,9 @@ export async function initServer(opts: ServerOptions) {
     .setSerializerCompiler(serializerCompiler)
     .withTypeProvider<ZodTypeProvider>()
     .register(middie)
-    .register(cors)
+    .register(cors, {
+      origin: '*', // Testing
+    })
     // .register(fastifyPrintRoutes)
     .register(
       fp((f, _, done) => {

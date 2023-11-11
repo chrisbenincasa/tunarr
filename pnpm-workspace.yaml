@@ -1,4 +1,5 @@
 packages:
-  - "server/**"
-  - "web/**"
-  - "web2/**"
+  - "server/"
+  - "web/"
+  - "web2/"
+  - "types/"

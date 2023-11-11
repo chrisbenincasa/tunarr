@@ -6,7 +6,7 @@ import {
   RegisteredRouter,
 } from '@tanstack/react-router';
 
-import router from '../router.ts';
+import { router } from '../router.ts';
 
 declare module '@tanstack/react-router' {
   interface Register {
@@ -14,7 +14,7 @@ declare module '@tanstack/react-router' {
   }
 }
 
-type LinkRouterProps<
+export type LinkRouterProps<
   TRouteTree extends AnyRoute = RegisteredRouter['routeTree'],
   TTo extends string = '',
 > = MakeLinkOptions<TRouteTree, '/', TTo> & LinkProps;

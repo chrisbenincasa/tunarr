@@ -10,12 +10,15 @@ import {
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { Channel } from 'dizquetv-types';
 
 export default function ChannelsPage() {
   const { isPending, error, data } = useQuery({
     queryKey: ['test'],
     queryFn: () =>
-      fetch('http://localhost:8000/api/channels').then((res) => res.json()),
+      fetch('http://localhost:8000/api/channels').then(
+        (res) => res.json() as Promise<Channel[]>,
+      ),
   });
 
   if (isPending) return 'Loading...';
@@ -23,7 +26,7 @@ export default function ChannelsPage() {
   if (error) return 'An error occurred!: ' + error.message;
 
   // TODO properly define types from API
-  const getDataTableRow = (channel) => {
+  const getDataTableRow = (channel: Channel) => {
     return (
       <TableRow key={channel.number}>
         <TableCell width="10%">{channel.number}</TableCell>
@@ -54,7 +57,7 @@ export default function ChannelsPage() {
         </TableRow>
       );
     } else {
-      return data.map(getDataTableRow);
+      return data?.map(getDataTableRow);
     }
   };
 

@@ -191,6 +191,7 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
     t0: number,
     allowSkip: boolean,
   ): Promise<void> => {
+    void res.header('Access-Control-Allow-Origin', '*');
     void res.hijack();
     // Check if channel queried is valid
     // res.on('error', (e) => {
@@ -448,6 +449,11 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
     let playerObj: Maybe<TypedEventEmitter<FfmpegEvents>>;
     void res.header('Content-Type', 'video/mp2t');
 
+    res.raw.writeHead(200, {
+      'content-type': 'video/mp2t',
+      'Access-Control-Allow-Origin': '*',
+    });
+
     try {
       logger.info('About to play stream...');
       playerObj = await player.play(res.raw);
@@ -485,7 +491,6 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
     '/stream',
     async (req, res) => {
       const t0 = new Date().getTime();
-      void res.header('keep-alive', 'timeout=10000');
       return await streamFunction(req, res, t0, true);
     },
   );
@@ -514,30 +519,33 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
       // If someone passes this number then they probably watch too much television
       const maxStreamsToPlayInARow = 100;
 
-      let data = '#EXTM3U\n';
-
-      data += `#EXT-X-VERSION:3
-        #EXT-X-MEDIA-SEQUENCE:0
-        #EXT-X-ALLOW-CACHE:YES
-        #EXT-X-TARGETDURATION:60
-        #EXT-X-PLAYLIST-TYPE:VOD\n`;
+      const lines: string[] = [
+        '#EXTM3U',
+        '#EXT-X-VERSION:3',
+        '#EXT-X-MEDIA-SEQUENCE:0',
+        '#EXT-X-ALLOW-CACHE:YES',
+        '#EXT-X-TARGETDURATION:60',
+        '#EXT-X-PLAYLIST-TYPE:VOD',
+        // `#EXT-X-STREAM-INF:BANDWIDTH=1123000`,
+      ];
 
       const ffmpegSettings = req.serverCtx.dbAccess.ffmpegSettings();
 
-      // let cur = '59.0';
-
       if (ffmpegSettings.enableTranscoding) {
-        //data += `#EXTINF:${cur},\n`;
-        data += `${req.protocol}://${req.hostname}/stream?channel=${req.query.channel}&first=0&m3u8=1&session=${sessionId}\n`;
+        lines.push(
+          `${req.protocol}://${req.hostname}/stream?channel=${req.query.channel}&first=0&m3u8=1&session=${sessionId}`,
+        );
       }
-      //data += `#EXTINF:${cur},\n`;
-      data += `${req.protocol}://${req.hostname}/stream?channel=${req.query.channel}&first=1&m3u8=1&session=${sessionId}\n`;
+      lines.push(
+        `${req.protocol}://${req.hostname}/stream?channel=${req.query.channel}&first=1&m3u8=1&session=${sessionId}`,
+      );
       for (let i = 0; i < maxStreamsToPlayInARow - 1; i++) {
-        //data += `#EXTINF:${cur},\n`;
-        data += `${req.protocol}://${req.hostname}/stream?channel=${req.query.channel}&m3u8=1&session=${sessionId}\n`;
+        lines.push(
+          `${req.protocol}://${req.hostname}/stream?channel=${req.query.channel}&m3u8=1&session=${sessionId}`,
+        );
       }
 
-      return res.send(data);
+      return res.send(lines.join('\n'));
     },
   );
 
