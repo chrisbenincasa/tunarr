@@ -1,11 +1,12 @@
 import JSONStream from 'JSONStream';
-import { FastifyPluginCallback, RequestGenericInterface } from 'fastify';
+import { RequestGenericInterface } from 'fastify';
 import { isUndefined, omit, sortBy } from 'lodash-es';
 import { Writable } from 'stream';
 import { Channel, Program } from '../dao/db.js';
 import createLogger from '../logger.js';
 import { scheduledJobsById } from '../services/scheduler.js';
 import throttle from '../services/throttle.js';
+import { RouterPluginCallback } from '../types/serverType.js';
 
 const logger = createLogger(import.meta);
 
@@ -14,7 +15,7 @@ interface ChannelNumberParams extends RequestGenericInterface {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const channelsRouter: FastifyPluginCallback = (fastify, _opts, done) => {
+export const channelsRouter: RouterPluginCallback = (fastify, _opts, done) => {
   fastify.get('/api/channels', async (req, res) => {
     try {
       const channels = sortBy(

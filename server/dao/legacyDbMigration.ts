@@ -29,6 +29,7 @@ import {
   Settings,
   defaultFfmpegSettings,
   defaultPlexStreamSettings,
+  defaultSchema,
 } from './db.js';
 import { Maybe } from '../types.js';
 
@@ -313,6 +314,10 @@ async function migrateCachedImages(db: Low<Schema>) {
 }
 
 export async function migrateFromLegacyDb(db: Low<Schema>) {
+  // First initialize the default schema:
+  db.data = { ...defaultSchema };
+  await db.write();
+
   let settings: Partial<Settings> = {};
   try {
     const hdhrSettings = await readOldDbFile('hdhr-settings');
@@ -521,6 +526,8 @@ export async function migrateFromLegacyDb(db: Low<Schema>) {
   } catch (e) {
     logger.error('Unable to migrate cached images', e);
   }
+
+  // TODO migrate fillerLists
 
   db.data.settings = settings as Required<Settings>;
   db.data.migration.legacyMigration = true;

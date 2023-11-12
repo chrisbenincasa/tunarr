@@ -110,8 +110,7 @@ export async function initServer(opts: ServerOptions) {
 
   scheduleJobs(ctx);
 
-  const app = fastify({ logger: false, bodyLimit: 50 * 1024 });
-  await app
+  const app = fastify({ logger: false, bodyLimit: 50 * 1024 })
     .setValidatorCompiler(validatorCompiler)
     .setSerializerCompiler(serializerCompiler)
     .withTypeProvider<ZodTypeProvider>()

@@ -344,7 +344,7 @@ export type Schema = {
   cachedImages: CachedImage[];
 };
 
-const defaultData: Schema = {
+export const defaultSchema: Schema = {
   version: 1,
   migration: {
     legacyMigration: false,
@@ -555,7 +555,7 @@ export class DbAccess {
 export const getDBRaw = () => {
   return JSONPreset<Schema>(
     path.resolve(globalOptions().database, 'db.json'),
-    defaultData,
+    defaultSchema,
   );
 };
 
