@@ -24,7 +24,7 @@ export const useFfmpegSettings = () =>
   useSettings<FfmpegSettings>('ffmpeg', 'ffmpeg-settings');
 
 export const usePlexServerSettings = () =>
-  useSettings<PlexServerSettings>('plex-servers', 'plex-servers');
+  useSettings<PlexServerSettings[]>('plex-servers', 'plex-servers');
 
 export const usePlexStreamSettings = () =>
   useSettings<PlexStreamSettings>('plex', 'plex-settings');
@@ -32,13 +32,16 @@ export const usePlexStreamSettings = () =>
 export const usePlexSettings = () =>
   useQueries({
     queries: [
-      getQuerySettings<PlexServerSettings>('plex-servers', 'plex-servers'),
+      getQuerySettings<PlexServerSettings[]>('plex-servers', 'plex-servers'),
       getQuerySettings<PlexStreamSettings>('plex', 'plex-settings'),
     ],
     combine: (result) => {
       const [serversResult, streamResult] = result;
       if (serversResult.error || streamResult.error) {
-        return { error: serversResult.error ?? streamResult.error };
+        return {
+          error: serversResult.error ?? streamResult.error,
+          isPending: false,
+        };
       }
       if (serversResult.isPending || streamResult.isPending) {
         return { isPending: true };
@@ -46,6 +49,8 @@ export const usePlexSettings = () =>
       return {
         servers: serversResult.data,
         streamSettings: streamResult.data,
+        isPending: false,
+        error: undefined,
       };
     },
   });

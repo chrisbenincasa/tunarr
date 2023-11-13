@@ -1,4 +1,4 @@
-import { Box, Tab, Tabs } from '@mui/material';
+import { Box, Tab, Tabs, Typography } from '@mui/material';
 import { isNil } from 'lodash-es';
 import {
   Link,
@@ -31,31 +31,35 @@ export default function SettingsLayout() {
   const currentTab = routeMatch?.pattern?.path;
 
   return (
-    <div>
-      <h1>Settings</h1>
-      <Tabs value={currentTab}>
-        <Tab
-          label="XMLTV"
-          value="/settings/xmltv"
-          to="/settings/xmltv"
-          component={Link}
-        />
-        <Tab
-          label="FFMPEG"
-          value="/settings/ffmpeg"
-          to="/settings/ffmpeg"
-          component={Link}
-        />
-        <Tab
-          label="Plex"
-          value="/settings/plex"
-          to="/settings/plex"
-          component={Link}
-        />
-      </Tabs>
+    <Box>
+      <Typography variant="h3" mb={2}>
+        Settings
+      </Typography>
+      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+        <Tabs value={currentTab}>
+          <Tab
+            label="XMLTV"
+            value="/settings/xmltv"
+            to="/settings/xmltv"
+            component={Link}
+          />
+          <Tab
+            label="FFMPEG"
+            value="/settings/ffmpeg"
+            to="/settings/ffmpeg"
+            component={Link}
+          />
+          <Tab
+            label="Plex"
+            value="/settings/plex"
+            to="/settings/plex"
+            component={Link}
+          />
+        </Tabs>
+      </Box>
       <Box sx={{ p: 3 }}>
         <Outlet />
       </Box>
-    </div>
+    </Box>
   );
 }
