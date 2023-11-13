@@ -5,7 +5,7 @@ import axios, {
   isAxiosError,
 } from 'axios';
 import { isUndefined } from 'lodash-es';
-import querystring from 'querystring';
+import querystring, { ParsedUrlQueryInput } from 'querystring';
 import { PlexServerSettings } from './dao/db.js';
 import createLogger from './logger.js';
 import { Maybe } from './types.js';
@@ -134,7 +134,7 @@ export class Plex {
 
   Put(
     path: string,
-    query: any = {},
+    query: ParsedUrlQueryInput | URLSearchParams = {},
     optionalHeaders: RawAxiosRequestHeaders = {},
   ) {
     const req: AxiosRequestConfig = {
@@ -155,7 +155,7 @@ export class Plex {
 
   Post(
     path: string,
-    query: any = {},
+    query: ParsedUrlQueryInput | URLSearchParams = {},
     optionalHeaders: RawAxiosRequestHeaders = {},
   ) {
     const req: AxiosRequestConfig = {

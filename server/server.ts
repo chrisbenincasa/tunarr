@@ -4,6 +4,11 @@ import fpStatic from '@fastify/static';
 import fastify from 'fastify';
 import fp from 'fastify-plugin';
 // import fastifyPrintRoutes from 'fastify-print-routes';
+import {
+  ZodTypeProvider,
+  serializerCompiler,
+  validatorCompiler,
+} from 'fastify-type-provider-zod';
 import fs from 'fs';
 import morgan from 'morgan';
 import { onShutdown } from 'node-graceful-shutdown';
@@ -15,29 +20,24 @@ import { miscRouter } from './api.js';
 import { channelToolRouter } from './api/channelToolsApi.js';
 import { channelsRouter } from './api/channelsApi.js';
 import { customShowRouter } from './api/customShowApi.js';
+import { debugRouter } from './api/debugApi.js';
 import { ffmpegSettingsRouter } from './api/ffmpegSettingsApi.js';
 import { fillerRouter } from './api/filllerApi.js';
 import { guideRouter } from './api/guideApi.js';
 import { hdhrSettingsRouter } from './api/hdhrSettingsApi.js';
 import { plexServersRouter } from './api/plexServersApi.js';
 import { plexSettingsRouter } from './api/plexSettingsApi.js';
+import { schedulerRouter } from './api/schedulerApi.js';
 import { xmlTvSettingsRouter } from './api/xmltvSettingsApi.js';
 import constants from './constants.js';
 import { serverOptions } from './globals.js';
 import createLogger from './logger.js';
 import { serverContext } from './serverContext.js';
+import { scheduleJobs } from './services/scheduler.js';
+import { UpdateXmlTvTask } from './tasks/updateXmlTvTask.js';
 import { ServerOptions } from './types.js';
 import { time } from './util.js';
 import { videoRouter } from './video.js';
-import { debugRouter } from './api/debugApi.js';
-import {
-  ZodTypeProvider,
-  serializerCompiler,
-  validatorCompiler,
-} from 'fastify-type-provider-zod';
-import { UpdateXmlTvTask } from './tasks/updateXmlTvTask.js';
-import { schedulerRouter } from './api/schedulerApi.js';
-import { scheduleJobs } from './services/scheduler.js';
 
 const logger = createLogger(import.meta);
 
@@ -110,7 +110,8 @@ export async function initServer(opts: ServerOptions) {
 
   scheduleJobs(ctx);
 
-  const app = fastify({ logger: false, bodyLimit: 50 * 1024 })
+  const app = fastify({ logger: false, bodyLimit: 50 * 1024 });
+  await app
     .setValidatorCompiler(validatorCompiler)
     .setSerializerCompiler(serializerCompiler)
     .withTypeProvider<ZodTypeProvider>()
@@ -157,23 +158,6 @@ export async function initServer(opts: ServerOptions) {
     .use('/images', serveStatic(path.join(opts.database, 'images')))
     .use(serveStatic(fileURLToPath(new URL('../web/public', import.meta.url))))
     .use('/images', serveStatic(path.join(opts.database, 'images')))
-    // .use('/cache/images', ctx.cacheImageService.routerInterceptor())
-    // .get<{ Params: { hash: string } }>(
-    //   '/cache/images/:hash',
-    //   {
-    //     // Workaround for https://github.com/fastify/fastify/issues/4859
-    //     // eslint-disable-next-line @typescript-eslint/no-misused-promises
-    //     onRequest: (req, res) =>
-    //       ctx.cacheImageService.routerInterceptor(req, res),
-    //   },
-    //   (req, res) => {
-
-    //   },
-    // )
-    // .use(
-    //   '/cache/images',
-    //   serveStatic(path.join(opts.database, 'cache', 'images')),
-    // )
     .use(
       '/favicon.svg',
       serveStatic(path.join(__dirname, 'resources', 'favicon.svg')),

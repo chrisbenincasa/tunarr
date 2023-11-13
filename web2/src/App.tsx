@@ -1,4 +1,6 @@
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import MenuIcon from '@mui/icons-material/Menu';
+import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import {
   AppBar,
   Box,
@@ -6,8 +8,8 @@ import {
   Divider,
   Drawer,
   IconButton,
+  Link,
   List,
-  ListItem,
   ListItemButton,
   ListItemText,
   Toolbar,
@@ -15,12 +17,16 @@ import {
 } from '@mui/material';
 import Container from '@mui/material/Container';
 import CssBaseline from '@mui/material/CssBaseline';
-import { Outlet } from '@tanstack/react-router';
 import { useState } from 'react';
+import { Outlet, Link as RouterLink } from 'react-router-dom';
 import './App.css';
-import LinkRouter from './components/LinkRouter';
-import TextSnippetIcon from '@mui/icons-material/TextSnippet';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+
+const navItems = [
+  { name: 'Guide', path: '/guide', visible: true },
+  { name: 'Channels', path: '/channels', visible: true },
+  { name: 'Watch', path: '/watch', visible: false },
+  { name: 'Settings', path: '/settings/xmltv', visible: true },
+];
 
 export function Root() {
   const [open, setOpen] = useState(false);
@@ -85,22 +91,18 @@ export function Root() {
             </Toolbar>
             <Divider />
             <List component="nav">
-              <ListItemButton
-                onClick={toggleDrawer}
-                component={LinkRouter}
-                to="/channels"
-                key="Channels"
-              >
-                <ListItemText primary="Channels" />
-              </ListItemButton>
-              <ListItemButton
-                onClick={toggleDrawer}
-                component={LinkRouter}
-                to="/watch"
-                key="Watch"
-              >
-                <ListItemText primary="Watch" />
-              </ListItemButton>
+              {navItems
+                .filter((item) => item.visible)
+                .map((item) => (
+                  <ListItemButton
+                    to={item.path}
+                    key={item.name}
+                    onClick={toggleDrawer}
+                    component={RouterLink}
+                  >
+                    <ListItemText primary={item.name} />
+                  </ListItemButton>
+                ))}
               <Divider sx={{ my: 1 }} />
               {/* {secondaryListItems} */}
             </List>
@@ -129,7 +131,13 @@ export function Root() {
 }
 
 function App() {
-  return <LinkRouter to="/channels">Channels</LinkRouter>;
+  return (
+    <>
+      <Link to={'/channels'} component={RouterLink}>
+        Channels
+      </Link>
+    </>
+  );
 }
 
 export default App;

@@ -15,11 +15,15 @@
     "@mui/icons-material": "^5.14.16",
     "@mui/material": "^5.14.17",
     "@tanstack/react-query": "^5.8.1",
-    "@tanstack/react-router": "0.0.1-beta.209",
     "dizquetv-types": "workspace:*",
     "hls.js": "^1.4.12",
+    "immer": "^10.0.3",
+    "localforage": "^1.10.0",
+    "match-sorter": "^6.3.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-router-dom": "^6.18.0",
+    "sort-by": "^1.2.0",
     "zustand": "^4.4.6"
   },
   "devDependencies": {

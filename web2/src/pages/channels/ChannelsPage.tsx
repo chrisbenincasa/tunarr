@@ -1,3 +1,4 @@
+import DeleteIcon from '@mui/icons-material/Delete';
 import {
   IconButton,
   Paper,
@@ -9,17 +10,23 @@ import {
   TableRow,
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import DeleteIcon from '@mui/icons-material/Delete';
 import { Channel } from 'dizquetv-types';
 
 export default function ChannelsPage() {
+  // const channels = useStore((state) => state.channels);
   const { isPending, error, data } = useQuery({
-    queryKey: ['test'],
+    queryKey: ['channels'],
     queryFn: () =>
       fetch('http://localhost:8000/api/channels').then(
         (res) => res.json() as Promise<Channel[]>,
       ),
   });
+
+  // useEffect(() => {
+  //   if (data) {
+  //     setChannels(data);
+  //   }
+  // }, [data]);
 
   if (isPending) return 'Loading...';
 

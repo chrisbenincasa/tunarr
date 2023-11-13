@@ -168,7 +168,7 @@ export class PlexServerDB {
     return report;
   }
 
-  removeOffline(progs) {
+  removeOffline(progs: Program[]) {
     if (isUndefined(progs)) {
       return progs;
     }
@@ -186,7 +186,7 @@ export class PlexServerDB {
       this.fixupAllFillers(serverName, newServer),
       this.fixupAllShows(serverName, newServer),
     ]);
-    const report: any[] = [];
+    const report: Report[] = [];
     reports.forEach((r) =>
       r.forEach((r2) => {
         report.push(r2);
@@ -201,7 +201,7 @@ export class PlexServerDB {
     return report;
   }
 
-  async doesNameExist(name: string) {
+  doesNameExist(name: string) {
     return !isUndefined(this.dbAccess.plexServers().getById(name));
   }
 
@@ -250,7 +250,7 @@ export class PlexServerDB {
     let i = 2;
     const prefix = name;
     let resultName = name;
-    while (await this.doesNameExist(resultName)) {
+    while (this.doesNameExist(resultName)) {
       resultName = `${prefix}${i}`;
       i += 1;
     }

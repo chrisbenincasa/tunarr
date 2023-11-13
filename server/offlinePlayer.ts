@@ -41,7 +41,7 @@ export class OfflinePlayer extends Player {
     this.ffmpeg.kill();
   }
 
-  async play(outStream: Writable) {
+  play(outStream: Writable): Promise<Maybe<TypedEventEmitter<FfmpegEvents>>> {
     try {
       const emitter = new EventEmitter() as TypedEventEmitter<FfmpegEvents>;
       let ffmpeg = this.ffmpeg;
@@ -102,7 +102,7 @@ export class OfflinePlayer extends Player {
           emitter.emit('error', err);
         }
       });
-      return emitter;
+      return Promise.resolve(emitter);
     } catch (err) {
       if (err instanceof Error) {
         throw err;
