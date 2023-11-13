@@ -1,9 +1,12 @@
-import { FastifyPluginCallback } from 'fastify';
+import { isError, isNumber, keys, map } from 'lodash-es';
 import createLogger from '../logger.js';
+import { RouterPluginCallback } from '../types/serverType.js';
+import { AllChannelsGuideSchema } from './schemas/guideSchemas.js';
+import { ChannelLineup } from 'dizquetv-types';
 
 const logger = createLogger(import.meta);
 
-export const guideRouter: FastifyPluginCallback = (fastify, _opts, done) => {
+export const guideRouter: RouterPluginCallback = (fastify, _opts, done) => {
   fastify.get('/api/guide/status', async (req, res) => {
     try {
       const s = await req.serverCtx.guideService.getStatus();
@@ -23,6 +26,48 @@ export const guideRouter: FastifyPluginCallback = (fastify, _opts, done) => {
       return res.status(500).send('error');
     }
   });
+
+  fastify.get(
+    '/api/guide/channels',
+    {
+      schema: AllChannelsGuideSchema,
+    },
+    async (req, res) => {
+      const allChannelNumbers = map(
+        req.serverCtx.channelDB.getAllChannels(),
+        'number',
+      );
+
+      const allLineups = await allChannelNumbers.reduce(
+        async (prev, curr) => {
+          console.log(isNumber(curr));
+          const res = await req.serverCtx.guideService.getChannelLineup(
+            curr,
+            req.query.dateFrom,
+            req.query.dateTo,
+          );
+          if (res) {
+            return { ...(await prev), [curr]: res };
+          } else {
+            return prev;
+          }
+        },
+        Promise.resolve({} as Record<string, ChannelLineup>),
+      );
+
+      console.log(keys(allLineups));
+
+      try {
+        AllChannelsGuideSchema.response[200].parse(allLineups);
+      } catch (e) {
+        if (isError(e)) {
+          logger.error('Error parsing schema of result', e);
+        }
+      }
+
+      return res.send(allLineups);
+    },
+  );
 
   fastify.get<{
     Params: { number: number };

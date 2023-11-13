@@ -50,6 +50,9 @@ importers:
       cors:
         specifier: ^2.8.5
         version: 2.8.5
+      dizquetv-types:
+        specifier: workspace:*
+        version: link:../types
       express-fileupload:
         specifier: ^1.2.1
         version: 1.2.1
@@ -185,6 +188,10 @@ importers:
         version: 0.34.6
 
   types:
+    dependencies:
+      zod:
+        specifier: ^3.22.4
+        version: 3.22.4
     devDependencies:
       '@typescript-eslint/eslint-plugin':
         specifier: 6.0.0
@@ -247,6 +254,9 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.8.1
         version: 5.8.1(react-dom@18.2.0)(react@18.2.0)
+      dayjs:
+        specifier: ^1.11.10
+        version: 1.11.10
       dizquetv-types:
         specifier: workspace:*
         version: link:../types
@@ -259,6 +269,9 @@ importers:
       localforage:
         specifier: ^1.10.0
         version: 1.10.0
+      lodash-es:
+        specifier: ^4.17.21
+        version: 4.17.21
       match-sorter:
         specifier: ^6.3.1
         version: 6.3.1
@@ -268,6 +281,9 @@ importers:
       react-dom:
         specifier: ^18.2.0
         version: 18.2.0(react@18.2.0)
+      react-hook-form:
+        specifier: ^7.48.2
+        version: 7.48.2(react@18.2.0)
       react-router-dom:
         specifier: ^6.18.0
         version: 6.18.0(react-dom@18.2.0)(react@18.2.0)
@@ -278,6 +294,12 @@ importers:
         specifier: ^4.4.6
         version: 4.4.6(@types/react@18.2.15)(immer@10.0.3)(react@18.2.0)
     devDependencies:
+      '@types/lodash':
+        specifier: ^4.14.200
+        version: 4.14.200
+      '@types/lodash-es':
+        specifier: ^4.17.10
+        version: 4.17.10
       '@types/react':
         specifier: ^18.2.15
         version: 18.2.15
@@ -4015,6 +4037,10 @@ packages:
     resolution: {integrity: sha512-Vy4dx7gquTeMcQR/hDkYLGUnwVil6vk4FOOct+djUnHOUWt+zJPJAaRIXaAFkPXtJjvlY7o3rfRu0/3hpnwoUA==}
     dev: true
 
+  /dayjs@1.11.10:
+    resolution: {integrity: sha512-vjAczensTgRcqDERK0SR2XMwsF/tSvnvlv6VcF2GIhg6Sx4yOIt/irsr1RDJsKiIyBzJDpCoXiWWq28MqH2cnQ==}
+    dev: false
+
   /debug@2.6.9:
     resolution: {integrity: sha512-bC7ElrdJaJnPbAP+1EotYvqZsb3ecl5wi6Bfi6BJTUcNowp6cvspg0jXznRTKDjm/E7AdgFBVeAPVMNcKGsHMA==}
     peerDependencies:
@@ -7243,6 +7269,15 @@ packages:
       loose-envify: 1.4.0
       react: 18.2.0
       scheduler: 0.23.0
+    dev: false
+
+  /react-hook-form@7.48.2(react@18.2.0):
+    resolution: {integrity: sha512-H0T2InFQb1hX7qKtDIZmvpU1Xfn/bdahWBN1fH19gSe4bBEqTfmlr7H3XWTaVtiK4/tpPaI1F3355GPMZYge+A==}
+    engines: {node: '>=12.22.0'}
+    peerDependencies:
+      react: ^16.8.0 || ^17 || ^18
+    dependencies:
+      react: 18.2.0
     dev: false
 
   /react-is@16.13.1:

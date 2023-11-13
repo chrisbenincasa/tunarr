@@ -19,6 +19,7 @@
     "@fastify/cors": "^8.4.1",
     "@fastify/middie": "^8.3.0",
     "@fastify/static": "^6.12.0",
+    "dizquetv-types": "workspace:*",
     "JSONStream": "1.0.5",
     "axios": "^1.6.0",
     "body-parser": "^1.19.0",

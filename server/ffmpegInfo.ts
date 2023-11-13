@@ -1,5 +1,5 @@
 import { exec } from 'child_process';
-import { FfmpegSettings } from './dao/db.js';
+import { FfmpegSettings } from 'dizquetv-types';
 
 export class FFMPEGInfo {
   private ffmpegPath: string;

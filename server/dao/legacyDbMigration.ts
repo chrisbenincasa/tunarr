@@ -1,3 +1,4 @@
+import { FfmpegSettings, defaultFfmpegSettings } from 'dizquetv-types';
 import { promises as fsPromises } from 'fs';
 import {
   get,
@@ -15,11 +16,11 @@ import { Low } from 'lowdb';
 import path from 'path';
 import { globalOptions } from '../globals.js';
 import createLogger from '../logger.js';
+import { Maybe } from '../types.js';
 import {
   CachedImage,
   Channel,
   CustomShow,
-  FfmpegSettings,
   PlexServerSettings,
   PlexStreamSettings,
   Program,
@@ -27,11 +28,9 @@ import {
   Resolution,
   Schema,
   Settings,
-  defaultFfmpegSettings,
   defaultPlexStreamSettings,
   defaultSchema,
 } from './db.js';
-import { Maybe } from '../types.js';
 
 type LegacyPlexSettings = {
   streamPath: string;
@@ -454,7 +453,7 @@ export async function migrateFromLegacyDb(db: Low<Schema>) {
           configVersion: ffmpegSettings['configVersion'] as number,
           ffmpegExecutablePath: ffmpegSettings['ffmpegPath'] as string,
           numThreads: ffmpegSettings['threads'] as number,
-          concatMuxDelay: ffmpegSettings['concatMuxDelay'] as string,
+          concatMuxDelay: ffmpegSettings['concatMuxDelay'] as number,
           enableLogging: ffmpegSettings['logFfmpeg'] as boolean,
           enableTranscoding: ffmpegSettings[
             'enableFFMPEGTranscoding'

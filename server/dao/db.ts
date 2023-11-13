@@ -8,6 +8,9 @@ import constants from '../constants.js';
 import { globalOptions } from '../globals.js';
 import { Maybe } from '../types.js';
 import { migrateFromLegacyDb } from './legacyDbMigration.js';
+import z from 'zod';
+import { FfmpegSettings } from 'dizquetv-types';
+import { FfmpegSettingsSchema } from 'dizquetv-types/schemas';
 
 const CURRENT_VERSION = 1;
 
@@ -123,12 +126,14 @@ export type ChannelOffline = {
   mode: string;
 };
 
-export type ChannelIcon = {
-  path: string;
-  width: number;
-  duration: number;
-  position: string;
-};
+export const ChannelIconSchema = z.object({
+  path: z.string(),
+  width: z.number(),
+  duration: z.number(),
+  position: z.string(),
+});
+
+export type ChannelIcon = z.infer<typeof ChannelIconSchema>;
 
 export type Channel = {
   number: number;
@@ -158,73 +163,6 @@ export type Channel = {
 };
 
 export type ImmutableChannel = DeepReadonly<Channel>;
-
-export type FfmpegSettings = {
-  configVersion: number;
-  ffmpegExecutablePath: string;
-  numThreads: number;
-  concatMuxDelay: string;
-  enableLogging: boolean;
-  enableTranscoding: boolean;
-  audioVolumePercent: number;
-  videoEncoder: string;
-  audioEncoder: string;
-  targetResolution: Resolution;
-  videoBitrate: number;
-  videoBufferSize: number;
-  audioBitrate: number;
-  audioBufferSize: number;
-  audioSampleRate: number;
-  audioChannels: number;
-  errorScreen: string;
-  errorAudio: string;
-  normalizeVideoCodec: boolean;
-  normalizeAudioCodec: boolean;
-  normalizeResolution: boolean;
-  normalizeAudio: boolean;
-  maxFPS: number;
-  scalingAlgorithm: 'bicubic' | 'fast_bilinear' | 'lanczos' | 'spline';
-  deinterlaceFilter:
-    | 'none'
-    | 'bwdif=0'
-    | 'bwdif=1'
-    | 'w3fdif'
-    | 'yadif=0'
-    | 'yadif=1';
-  disableChannelOverlay: boolean;
-};
-
-export const defaultFfmpegSettings: FfmpegSettings = {
-  configVersion: 5,
-  ffmpegExecutablePath: '/usr/bin/ffmpeg',
-  numThreads: 4,
-  concatMuxDelay: '0',
-  enableLogging: false,
-  enableTranscoding: true,
-  audioVolumePercent: 100,
-  videoEncoder: 'mpeg2video',
-  audioEncoder: 'ac3',
-  targetResolution: {
-    widthPx: 1920,
-    heightPx: 1080,
-  },
-  videoBitrate: 2000,
-  videoBufferSize: 2000,
-  audioBitrate: 192,
-  audioBufferSize: 50,
-  audioSampleRate: 48,
-  audioChannels: 2,
-  errorScreen: 'pic',
-  errorAudio: 'silent',
-  normalizeVideoCodec: true,
-  normalizeAudioCodec: true,
-  normalizeResolution: true,
-  normalizeAudio: true,
-  maxFPS: 60,
-  scalingAlgorithm: 'bicubic',
-  deinterlaceFilter: 'none',
-  disableChannelOverlay: true,
-};
 
 export type Resolution = {
   widthPx: number;
@@ -358,7 +296,7 @@ export const defaultSchema: Schema = {
     xmltv: defaultXmlTvSettings,
     plexStream: defaultPlexStreamSettings,
     plexServers: [],
-    ffmpeg: defaultFfmpegSettings,
+    ffmpeg: FfmpegSettingsSchema.parse(undefined), // Defaults
   },
   cachedImages: [],
 };

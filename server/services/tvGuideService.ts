@@ -1,9 +1,11 @@
+import { ChannelLineup } from 'dizquetv-types';
 import { compact, isEmpty, isString, isUndefined, keys } from 'lodash-es';
 import { MarkRequired } from 'ts-essentials';
+import z from 'zod';
 import constants from '../constants.js';
 import {
   Channel,
-  ChannelIcon,
+  ChannelIconSchema,
   ImmutableChannel,
   Program,
   getDB,
@@ -27,11 +29,24 @@ type CurrentPlayingProgram = {
   program: Partial<Program>;
 };
 
-type TvGuideProgramSubtitle = {
-  season?: number;
-  episode?: number;
-  title?: string;
-};
+const TvGuideProgramSubtitleSchema = z.object({
+  season: z.number().optional(),
+  episode: z.number().optional(),
+  title: z.string().optional(),
+});
+
+type TvGuideProgramSubtitle = z.infer<typeof TvGuideProgramSubtitleSchema>;
+
+const TvGuideProgramSchema = z.object({
+  start: z.string(),
+  stop: z.string(),
+  summary: z.string().optional(),
+  date: z.string().optional(),
+  rating: z.string().optional(),
+  icon: z.string().optional(),
+  title: z.string(),
+  sub: TvGuideProgramSubtitleSchema.optional(),
+});
 
 type TvGuideProgram = {
   start: string;
@@ -49,12 +64,12 @@ type ChannelPrograms = {
   programs: TvGuideProgram[];
 };
 
-export type ChannelLineup = {
-  icon?: ChannelIcon;
-  name?: string;
-  number?: number;
-  programs: TvGuideProgram[];
-};
+export const ChannelLineupSchema = z.object({
+  icon: ChannelIconSchema.optional(),
+  name: z.string().optional(),
+  number: z.number().optional(),
+  programs: z.array(TvGuideProgramSchema),
+});
 
 export class TVGuideService {
   cached: Record<number, ChannelPrograms>;
@@ -306,8 +321,6 @@ export class TVGuideService {
       currentUpdateTimeMs,
     );
 
-    console.log(x);
-
     if (x.program.duration == 0) {
       throw Error('A ' + channel.name + ' ' + JSON.stringify(x));
     }
@@ -466,7 +479,6 @@ export class TVGuideService {
             currentEndTimeMs,
             channels[i],
           );
-          console.log(channels[i].number, programs);
           result[channels[i].number] = programs;
         }
       }
@@ -477,7 +489,6 @@ export class TVGuideService {
   async buildIt() {
     try {
       this.cached = await this.buildItManaged();
-      console.log(keys(this.cached));
       logger.info(
         'Internal TV Guide data refreshed at ' + new Date().toLocaleString(),
       );
@@ -536,7 +547,6 @@ export class TVGuideService {
       return;
     }
     const programs = channel.programs;
-    console.log(channel.programs);
     const result: ChannelLineup = {
       icon: channel.channel.icon,
       name: channel.channel.name,

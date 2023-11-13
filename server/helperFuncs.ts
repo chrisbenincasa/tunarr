@@ -4,7 +4,6 @@ import { DeepReadonly } from 'ts-essentials';
 import { ChannelCache } from './channelCache.js';
 import constants from './constants.js';
 import {
-  FfmpegSettings,
   FillerCollection,
   ImmutableChannel,
   Program,
@@ -20,6 +19,7 @@ import {
   Maybe,
   programToCommercial,
 } from './types.js';
+import { FfmpegSettings } from 'dizquetv-types';
 
 const SLACK = constants.SLACK;
 const Random = randomJS.Random;

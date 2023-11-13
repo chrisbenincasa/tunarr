@@ -1,5 +1,3 @@
-import { EventMap } from './eventEmitter.js';
-
 export type TypedEventEmitter<Events extends EventMap> = {
   addListener<E extends keyof Events>(
     event: E,

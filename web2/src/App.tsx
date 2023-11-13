@@ -1,5 +1,3 @@
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import MenuIcon from '@mui/icons-material/Menu';
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import {
   AppBar,
@@ -7,7 +5,6 @@ import {
   Button,
   Divider,
   Drawer,
-  IconButton,
   Link,
   List,
   ListItemButton,
@@ -28,6 +25,8 @@ const navItems = [
   { name: 'Settings', path: '/settings/xmltv', visible: true },
 ];
 
+const drawerWidth = 240;
+
 export function Root() {
   const [open, setOpen] = useState(false);
   const toggleDrawer = () => {
@@ -38,27 +37,15 @@ export function Root() {
     <div>
       <Box sx={{ display: 'flex' }}>
         <CssBaseline />
-
-        <AppBar position="absolute">
+        <AppBar
+          position="absolute"
+          sx={{
+            width: `calc(100% - ${drawerWidth}px)`,
+            ml: `${drawerWidth}px`,
+          }}
+        >
           <Toolbar>
-            <IconButton
-              size="large"
-              edge="start"
-              color="inherit"
-              sx={{ mr: 2 }}
-              onClick={toggleDrawer}
-            >
-              <MenuIcon />
-            </IconButton>
-            <Typography
-              variant="h6"
-              component="h1"
-              noWrap
-              color="inherit"
-              sx={{ flexGrow: 1 }}
-            >
-              DizqueTV
-            </Typography>
+            <Box flexGrow={1}></Box>
             <Button
               href="/api/xmltv.xml"
               color="inherit"
@@ -75,38 +62,53 @@ export function Root() {
             </Button>
           </Toolbar>
         </AppBar>
-        <Drawer open={open}>
-          <Box sx={{ width: 250 }} role="presentation">
-            <Toolbar
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'flex-end',
-                px: [1],
-              }}
+        <Drawer
+          sx={{
+            width: drawerWidth,
+            flexShrink: 0,
+            '& .MuiDrawer-paper': {
+              width: drawerWidth,
+              boxSizing: 'border-box',
+            },
+          }}
+          variant="permanent"
+          anchor="left"
+        >
+          <Toolbar
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+              px: [1],
+            }}
+          >
+            <img style={{ width: '2rem', height: '2rem' }} src="dizquetv.png" />
+            <Typography
+              variant="h6"
+              component="h1"
+              noWrap
+              color="inherit"
+              sx={{ flexGrow: 1 }}
             >
-              <IconButton onClick={toggleDrawer}>
-                <ChevronLeftIcon />
-              </IconButton>
-            </Toolbar>
-            <Divider />
-            <List component="nav">
-              {navItems
-                .filter((item) => item.visible)
-                .map((item) => (
-                  <ListItemButton
-                    to={item.path}
-                    key={item.name}
-                    onClick={toggleDrawer}
-                    component={RouterLink}
-                  >
-                    <ListItemText primary={item.name} />
-                  </ListItemButton>
-                ))}
-              <Divider sx={{ my: 1 }} />
-              {/* {secondaryListItems} */}
-            </List>
-          </Box>
+              DizqueTV
+            </Typography>
+          </Toolbar>
+          <Divider />
+          <List component="nav">
+            {navItems
+              .filter((item) => item.visible)
+              .map((item) => (
+                <ListItemButton
+                  to={item.path}
+                  key={item.name}
+                  onClick={toggleDrawer}
+                  component={RouterLink}
+                >
+                  <ListItemText primary={item.name} />
+                </ListItemButton>
+              ))}
+            <Divider sx={{ my: 1 }} />
+          </List>
         </Drawer>
         <Box
           component="main"

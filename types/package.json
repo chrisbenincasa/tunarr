@@ -15,5 +15,16 @@
     "@typescript-eslint/parser": "6.0.0",
     "eslint": "8.45.0",
     "typescript": "5.2.2"
+  },
+  "dependencies": {
+    "zod": "^3.22.4"
+  },
+  "exports": {
+    ".": {
+      "import": "./index.js"
+    },
+    "./schemas": {
+      "import": "./src/schemas/index.js"
+    }
   }
 }

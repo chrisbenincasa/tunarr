@@ -1,9 +1,7 @@
 import { Program } from './Program.js';
-
-export type Resolution = {
-  widthPx: number;
-  heightPx: number;
-};
+import { Resolution } from './misc.js';
+import { ChannelIconSchema } from './schemas/channelSchema.js';
+import z from 'zod';
 
 export type Watermark = {
   url?: string;
@@ -35,12 +33,7 @@ export type ChannelOffline = {
   mode: string;
 };
 
-export type ChannelIcon = {
-  path: string;
-  width: number;
-  duration: number;
-  position: string;
-};
+export type ChannelIcon = z.infer<typeof ChannelIconSchema>;
 
 export type Channel = {
   number: number;

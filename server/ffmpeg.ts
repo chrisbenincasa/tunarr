@@ -3,12 +3,13 @@ import events from 'events';
 import { isNil, isString, isUndefined } from 'lodash-es';
 import { Readable } from 'stream';
 import { DeepReadonly } from 'ts-essentials';
-import { FfmpegSettings, Watermark } from './dao/db.js';
+import { Watermark } from './dao/db.js';
 import { serverOptions } from './globals.js';
 import createLogger from './logger.js';
 import { ContextChannel, Maybe } from './types.js';
 import { TypedEventEmitter } from './types/eventEmitter.js';
 import { VideoStats } from './plexTranscoder.js';
+import { FfmpegSettings } from 'dizquetv-types';
 
 const spawn = child_process.spawn;
 
@@ -652,9 +653,9 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
         `-c`,
         `copy`,
         `-muxdelay`,
-        this.opts.concatMuxDelay,
+        this.opts.concatMuxDelay.toString(),
         `-muxpreload`,
-        this.opts.concatMuxDelay,
+        this.opts.concatMuxDelay.toString(),
       );
     }
 

@@ -1,10 +1,5 @@
-import {
-  DbAccess,
-  FfmpegSettings,
-  ImmutableChannel,
-  Program,
-  Watermark,
-} from './dao/db.js';
+import { FfmpegSettings } from 'dizquetv-types';
+import { DbAccess, ImmutableChannel, Program, Watermark } from './dao/db.js';
 
 export type GlobalOptions = {
   database: string;

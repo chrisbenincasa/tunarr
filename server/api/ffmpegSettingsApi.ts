@@ -1,8 +1,8 @@
 import { isError, isUndefined } from 'lodash-es';
-import { FfmpegSettings, defaultFfmpegSettings } from '../dao/db.js';
 import createLogger from '../logger.js';
 import { firstDefined } from '../util.js';
 import { FastifyPluginCallback } from 'fastify';
+import { FfmpegSettings, defaultFfmpegSettings } from 'dizquetv-types';
 
 const logger = createLogger(import.meta);
 

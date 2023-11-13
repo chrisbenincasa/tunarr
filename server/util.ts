@@ -107,7 +107,7 @@ Array.prototype.sequentialPromises = async function <T, U>(
   itemFn: (item: T) => Promise<U>,
   ms: number | undefined,
 ) {
-  return sequentialPromises(this, ms, itemFn);
+  return sequentialPromises(this as ReadonlyArray<T>, ms, itemFn);
 };
 
 export function time<T>(

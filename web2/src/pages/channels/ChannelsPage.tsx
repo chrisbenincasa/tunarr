@@ -9,18 +9,12 @@ import {
   TableHead,
   TableRow,
 } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
 import { Channel } from 'dizquetv-types';
+import { useChannels } from '../../hooks/useChannels.ts';
 
 export default function ChannelsPage() {
   // const channels = useStore((state) => state.channels);
-  const { isPending, error, data } = useQuery({
-    queryKey: ['channels'],
-    queryFn: () =>
-      fetch('http://localhost:8000/api/channels').then(
-        (res) => res.json() as Promise<Channel[]>,
-      ),
-  });
+  const { isPending, error, data } = useChannels();
 
   // useEffect(() => {
   //   if (data) {
