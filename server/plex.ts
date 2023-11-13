@@ -6,13 +6,13 @@ import axios, {
 } from 'axios';
 import { isUndefined } from 'lodash-es';
 import querystring, { ParsedUrlQueryInput } from 'querystring';
-import { PlexServerSettings } from './dao/db.js';
 import createLogger from './logger.js';
 import { Maybe } from './types.js';
 import {
   PlexMediaContainer,
   PlexMediaContainerResponse,
 } from './types/plexApiTypes.js';
+import { PlexServerSettings } from 'dizquetv-types';
 
 const logger = createLogger(import.meta);
 export class Plex {

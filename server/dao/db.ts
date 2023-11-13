@@ -1,16 +1,20 @@
+import {
+  FfmpegSettings,
+  PlexServerSettings,
+  defaultFfmpegSettings,
+  defaultPlexStreamSettings,
+} from 'dizquetv-types';
 import { find, findIndex, isUndefined, once, sortBy } from 'lodash-es';
 import { Low } from 'lowdb';
 import { JSONPreset } from 'lowdb/node';
 import path from 'path';
 import { DeepReadonly } from 'ts-essentials';
 import { v4 as uuidv4 } from 'uuid';
+import z from 'zod';
 import constants from '../constants.js';
 import { globalOptions } from '../globals.js';
 import { Maybe } from '../types.js';
 import { migrateFromLegacyDb } from './legacyDbMigration.js';
-import z from 'zod';
-import { FfmpegSettings } from 'dizquetv-types';
-import { FfmpegSettingsSchema } from 'dizquetv-types/schemas';
 
 const CURRENT_VERSION = 1;
 
@@ -191,44 +195,6 @@ export type PlexStreamSettings = {
   pathReplaceWith: string;
 };
 
-export type PlexServerSettings = {
-  id?: string;
-  name: string;
-  uri: string;
-  accessToken: string;
-  sendGuideUpdates: boolean;
-  sendChannelUpdates: boolean;
-  index: number;
-};
-
-export const defaultPlexStreamSettings: PlexStreamSettings = {
-  streamPath: 'plex',
-  enableDebugLogging: true,
-  directStreamBitrate: 20000, // These were previously numnbers in dizque DB - migrate!
-  transcodeBitrate: 2000,
-  mediaBufferSize: 1000,
-  transcodeMediaBufferSize: 20000,
-  maxPlayableResolution: {
-    widthPx: 1920,
-    heightPx: 1080,
-  },
-  maxTranscodeResolution: {
-    widthPx: 1920,
-    heightPx: 1080,
-  },
-  videoCodecs: ['h264', 'hevc', 'mpeg2video', 'av1'],
-  audioCodecs: ['ac3'],
-  maxAudioChannels: 2,
-  audioBoost: 100,
-  enableSubtitles: false,
-  subtitleSize: 100,
-  updatePlayStatus: false,
-  streamProtocol: 'http',
-  forceDirectPlay: false,
-  pathReplace: '',
-  pathReplaceWith: '',
-};
-
 export type HdhrSettings = {
   autoDiscoveryEnabled: boolean;
   tunerCount: number;
@@ -296,7 +262,7 @@ export const defaultSchema: Schema = {
     xmltv: defaultXmlTvSettings,
     plexStream: defaultPlexStreamSettings,
     plexServers: [],
-    ffmpeg: FfmpegSettingsSchema.parse(undefined), // Defaults
+    ffmpeg: defaultFfmpegSettings,
   },
   cachedImages: [],
 };

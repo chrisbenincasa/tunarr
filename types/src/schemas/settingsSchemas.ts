@@ -52,3 +52,43 @@ export const FfmpegSettingsSchema = z.object({
     .default('none'),
   disableChannelOverlay: z.boolean().default(true),
 });
+
+export const PlexServerSettingsSchema = z.object({
+  id: z.string().optional(),
+  name: z.string(),
+  uri: z.string(),
+  accessToken: z.string(),
+  sendGuideUpdates: z.boolean(),
+  sendChannelUpdates: z.boolean(),
+  index: z.number(),
+});
+
+export const PlexStreamSettingsSchema = z.object({
+  streamPath: z.union([z.literal('plex'), z.literal('direct')]).default('plex'),
+  enableDebugLogging: z.boolean().default(false),
+  directStreamBitrate: z.number().default(20000),
+  transcodeBitrate: z.number().default(2000),
+  mediaBufferSize: z.number().default(1000),
+  transcodeMediaBufferSize: z.number().default(20000),
+  maxPlayableResolution: ResolutionSchema.default({
+    widthPx: 1920,
+    heightPx: 1080,
+  }),
+  maxTranscodeResolution: ResolutionSchema.default({
+    widthPx: 1920,
+    heightPx: 1080,
+  }),
+  videoCodecs: z
+    .array(z.string())
+    .default(['h264', 'hevc', 'mpeg2video', 'av1']),
+  audioCodecs: z.array(z.string()).default(['ac3']),
+  maxAudioChannels: z.number().default(2),
+  audioBoost: z.number().default(100),
+  enableSubtitles: z.boolean().default(false),
+  subtitleSize: z.number().default(100),
+  updatePlayStatus: z.boolean().default(false),
+  streamProtocol: z.string().default('http'),
+  forceDirectPlay: z.boolean().default(false),
+  pathReplace: z.string().default(''),
+  pathReplaceWith: z.string().default(''),
+});

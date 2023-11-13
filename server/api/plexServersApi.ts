@@ -1,29 +1,42 @@
-import { FastifyPluginCallback } from 'fastify';
+import { PlexServerSettingsSchema } from 'dizquetv-types/schemas';
 import { isError, isObject, isUndefined } from 'lodash-es';
-import { PlexServerSettings } from '../dao/db.js';
+import z from 'zod';
 import {
   PlexServerSettingsInsert,
   PlexServerSettingsUpdate,
 } from '../dao/plexServerDb.js';
 import createLogger from '../logger.js';
 import { Plex } from '../plex.js';
+import { RouterPluginCallback } from '../types/serverType.js';
 import { firstDefined } from '../util.js';
+import { PlexServerSettings } from 'dizquetv-types';
 
 const logger = createLogger(import.meta);
 
-export const plexServersRouter: FastifyPluginCallback = (
+export const plexServersRouter: RouterPluginCallback = (
   fastify,
   _opts,
   done,
 ) => {
-  fastify.get('/api/plex-servers', async (req, res) => {
-    try {
-      return res.send(req.serverCtx.dbAccess.plexServers().getAll());
-    } catch (err) {
-      logger.error(err);
-      return res.status(500).send('error');
-    }
-  });
+  fastify.get(
+    '/api/plex-servers',
+    {
+      schema: {
+        response: {
+          200: z.array(PlexServerSettingsSchema.readonly()).readonly(),
+          500: z.string(),
+        },
+      },
+    },
+    async (req, res) => {
+      try {
+        return res.send(req.serverCtx.dbAccess.plexServers().getAll());
+      } catch (err) {
+        logger.error(err);
+        return res.status(500).send('error');
+      }
+    },
+  );
 
   fastify.post<{ Body: { name: string } }>(
     '/api/plex-servers/status',

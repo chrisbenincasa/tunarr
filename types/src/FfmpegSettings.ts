@@ -3,4 +3,4 @@ import z from 'zod';
 
 export type FfmpegSettings = z.infer<typeof FfmpegSettingsSchema>;
 
-export const defaultFfmpegSettings = FfmpegSettingsSchema.parse(undefined);
+export const defaultFfmpegSettings = FfmpegSettingsSchema.parse({});

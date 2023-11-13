@@ -23,7 +23,11 @@ const useRouteMatch = (
 };
 
 export default function SettingsLayout() {
-  const routeMatch = useRouteMatch(['/settings/xmltv', '/settings/ffmpeg']);
+  const routeMatch = useRouteMatch([
+    '/settings/xmltv',
+    '/settings/ffmpeg',
+    '/settings/plex',
+  ]);
   const currentTab = routeMatch?.pattern?.path;
 
   return (
@@ -40,6 +44,12 @@ export default function SettingsLayout() {
           label="FFMPEG"
           value="/settings/ffmpeg"
           to="/settings/ffmpeg"
+          component={Link}
+        />
+        <Tab
+          label="Plex"
+          value="/settings/plex"
+          to="/settings/plex"
           component={Link}
         />
       </Tabs>

@@ -1,8 +1,8 @@
-import { FormControl, TextField } from '@mui/material';
-import { useFfmpegSettings } from '../../hooks/settingsHooks.ts';
+import { FormControl } from '@mui/material';
+import { usePlexSettings } from '../../hooks/settingsHooks.ts';
 
 export default function PlexSettingsPage() {
-  const { data, isPending, error } = useFfmpegSettings();
+  const { servers, streamSettings, isPending, error } = usePlexSettings();
 
   if (isPending) {
     return <h1>XML: Loading...</h1>;
@@ -10,16 +10,7 @@ export default function PlexSettingsPage() {
     return <h1>XML: {error.message}</h1>;
   }
 
-  return (
-    <FormControl fullWidth>
-      <TextField
-        id="executable-path"
-        label="Executable Path"
-        defaultValue={data.ffmpegExecutablePath}
-        helperText={
-          'FFMPEG version 4.2+ required. Check by opening the version tab'
-        }
-      />
-    </FormControl>
-  );
+  console.log(servers, streamSettings);
+
+  return <FormControl fullWidth></FormControl>;
 }

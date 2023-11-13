@@ -1,4 +1,9 @@
-import { FfmpegSettings, defaultFfmpegSettings } from 'dizquetv-types';
+import {
+  FfmpegSettings,
+  PlexServerSettings,
+  defaultFfmpegSettings,
+  defaultPlexStreamSettings,
+} from 'dizquetv-types';
 import { promises as fsPromises } from 'fs';
 import {
   get,
@@ -21,14 +26,12 @@ import {
   CachedImage,
   Channel,
   CustomShow,
-  PlexServerSettings,
   PlexStreamSettings,
   Program,
   ProgramType,
   Resolution,
   Schema,
   Settings,
-  defaultPlexStreamSettings,
   defaultSchema,
 } from './db.js';
 
@@ -424,13 +427,13 @@ export async function migrateFromLegacyDb(db: Low<Schema>) {
     const migratedServers: PlexServerSettings[] = sortBy(
       map(servers, (server) => {
         return {
-          id: server['id'],
-          name: server['name'],
-          uri: server['uri'],
-          accessToken: server['accessToken'],
-          sendChannelUpdates: server['arChannels'],
-          sendGuideUpdates: server['arGuide'],
-          index: server['index'],
+          id: server['id'] as string | undefined,
+          name: server['name'] as string,
+          uri: server['uri'] as string,
+          accessToken: server['accessToken'] as string,
+          sendChannelUpdates: server['arChannels'] as boolean,
+          sendGuideUpdates: server['arGuide'] as boolean,
+          index: server['index'] as number,
         } as PlexServerSettings;
       }),
       'index',
