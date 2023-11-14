@@ -4,10 +4,8 @@ import { useFfmpegSettings } from '../../hooks/settingsHooks.ts';
 export default function FfmpegSettingsPage() {
   const { data, isPending, error } = useFfmpegSettings();
 
-  if (isPending) {
-    return <h1>XML: Loading...</h1>;
-  } else if (error) {
-    return <h1>XML: {error.message}</h1>;
+  if (isPending || error) {
+    return <div></div>;
   }
 
   return (

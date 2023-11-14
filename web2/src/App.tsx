@@ -82,7 +82,10 @@ export function Root() {
               px: [1],
             }}
           >
-            <img style={{ width: '2rem', height: '2rem' }} src="dizquetv.png" />
+            <img
+              style={{ width: '2rem', height: '2rem' }}
+              src="/dizquetv.png"
+            />
             <Typography
               variant="h6"
               component="h1"
