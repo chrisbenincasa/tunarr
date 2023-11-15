@@ -102,6 +102,12 @@ export const miscRouter: FastifyPluginCallback = (fastify, _opts, done) => {
     }
   });
 
+  // Force an XMLTV refresh
+  fastify.post('/api/xmltv/refresh', async (_, res) => {
+    await scheduledJobsById['update-xmltv']?.runNow();
+    return res.status(200);
+  });
+
   // CHANNELS.M3U Download
   fastify.get('/api/channels.m3u', async (req, res) => {
     try {

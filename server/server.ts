@@ -38,6 +38,7 @@ import { UpdateXmlTvTask } from './tasks/updateXmlTvTask.js';
 import { ServerOptions } from './types.js';
 import { time } from './util.js';
 import { videoRouter } from './video.js';
+import registerV2Routes from './api/v2/index.js';
 
 const logger = createLogger(import.meta);
 
@@ -197,7 +198,8 @@ export async function initServer(opts: ServerOptions) {
     .register(guideRouter)
     .register(miscRouter)
     .register(schedulerRouter)
-    .register(debugRouter);
+    .register(debugRouter)
+    .register(registerV2Routes, { prefix: '/api/v2' });
 
   await app
     .register(ctx.cacheImageService.apiRouters(), {

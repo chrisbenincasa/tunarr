@@ -1,8 +1,8 @@
-import { isError, isNumber, keys, map } from 'lodash-es';
+import { ChannelLineup } from 'dizquetv-types';
+import { isError, map } from 'lodash-es';
 import createLogger from '../logger.js';
 import { RouterPluginCallback } from '../types/serverType.js';
 import { AllChannelsGuideSchema } from './schemas/guideSchemas.js';
-import { ChannelLineup } from 'dizquetv-types';
 
 const logger = createLogger(import.meta);
 
@@ -40,7 +40,6 @@ export const guideRouter: RouterPluginCallback = (fastify, _opts, done) => {
 
       const allLineups = await allChannelNumbers.reduce(
         async (prev, curr) => {
-          console.log(isNumber(curr));
           const res = await req.serverCtx.guideService.getChannelLineup(
             curr,
             req.query.dateFrom,
@@ -54,8 +53,6 @@ export const guideRouter: RouterPluginCallback = (fastify, _opts, done) => {
         },
         Promise.resolve({} as Record<string, ChannelLineup>),
       );
-
-      console.log(keys(allLineups));
 
       try {
         AllChannelsGuideSchema.response[200].parse(allLineups);

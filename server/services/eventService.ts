@@ -1,9 +1,12 @@
 import EventEmitter from 'events';
-import createLogger from '../logger.js';
 import { FastifyInstance } from 'fastify';
+import { isString } from 'lodash-es';
 import { Readable } from 'stream';
+import createLogger from '../logger.js';
 
 const logger = createLogger(import.meta);
+
+type Event = 'heartbeat' | 'lifecycle' | 'xmltv' | 'settings-update';
 
 export class EventService {
   private stream: EventEmitter;
@@ -42,14 +45,14 @@ export class EventService {
         .headers({
           'Content-Type': 'text/event-stream',
           'Cache-Control': 'no-cache',
-          Connection: 'keey-alive',
+          Connection: 'keep-alive',
         })
         .send(outStream);
     });
   }
 
-  push(event: string, data: Record<string, any>) {
-    if (typeof data.message !== 'undefined') {
+  push(event: Event, data: Record<string, unknown>) {
+    if (isString(data['message'])) {
       logger.info('Push event: ' + data.message);
     }
     this.stream.emit('push', event, data);

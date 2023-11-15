@@ -1,5 +1,7 @@
 import DeleteIcon from '@mui/icons-material/Delete';
 import {
+  Box,
+  Button,
   IconButton,
   Paper,
   Table,
@@ -8,19 +10,14 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Typography,
 } from '@mui/material';
 import { Channel } from 'dizquetv-types';
 import { useChannels } from '../../hooks/useChannels.ts';
+import AddCircleIcon from '@mui/icons-material/AddCircle';
 
 export default function ChannelsPage() {
-  // const channels = useStore((state) => state.channels);
   const { isPending, error, data } = useChannels();
-
-  // useEffect(() => {
-  //   if (data) {
-  //     setChannels(data);
-  //   }
-  // }, [data]);
 
   if (isPending) return 'Loading...';
 
@@ -64,6 +61,14 @@ export default function ChannelsPage() {
 
   return (
     <div>
+      <Box display="flex" mb={2}>
+        <Typography flexGrow={1} variant="h4">
+          Channels
+        </Typography>
+        <Button variant="contained" startIcon={<AddCircleIcon />}>
+          New
+        </Button>
+      </Box>
       <TableContainer component={Paper}>
         <Table>
           <TableHead>

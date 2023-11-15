@@ -25,6 +25,7 @@ import {
   usePlexStreamSettings,
 } from '../../hooks/settingsHooks.ts';
 import { Resolution } from 'dizquetv-types';
+import { fill } from 'lodash-es';
 
 const toStringResolution = (res: Resolution) =>
   `${res.widthPx}x${res.heightPx}` as const;
@@ -83,7 +84,7 @@ export default function PlexSettingsPage() {
   };
 
   const getSkeletonTableRows = (numRows: number) => {
-    return [...Array(numRows)].map((row, index) => (
+    return [...fill(Array(numRows), null)].map((_, index) => (
       <TableRow key={index}>
         <TableCell component="th" scope="row">
           <Skeleton animation="wave" variant="text" />

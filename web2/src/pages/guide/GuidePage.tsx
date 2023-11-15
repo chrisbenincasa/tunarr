@@ -2,9 +2,10 @@ import { Box, Typography } from '@mui/material';
 import { useTvGuide } from '../../hooks/useTvGuide.ts';
 import { useState } from 'react';
 import { TvGuideProgram } from 'dizquetv-types';
+import { useInterval } from 'usehooks-ts';
+import dayjs, { Dayjs } from 'dayjs';
 
 const renderProgram = (program: TvGuideProgram) => {
-  console.log(program.start, program.stop);
   const key = `${program.title}_${program.start}_${program.stop}`;
   return (
     <Box sx={{ border: '1px solid black' }} key={key}>
@@ -13,23 +14,44 @@ const renderProgram = (program: TvGuideProgram) => {
   );
 };
 
-export default function GuidePage() {
-  const [now] = useState(() => {
-    const now = new Date();
-    now.setMinutes(0);
-    now.setMilliseconds(0);
-    now.setSeconds(0);
-    return now;
-  });
+const calcProgress = (start: Dayjs, end: Dayjs): number => {
+  const total = end.unix() - start.unix();
+  const p = dayjs().unix() - start.unix();
+  return Math.round(100 * (p / total));
+};
 
-  const oneDay = new Date(now);
-  oneDay.setHours(oneDay.getHours() + 3);
+const roundNearestMultiple = (num: number, multiple: number): number => {
+  if (multiple <= 0) return 0;
+
+  return Math.floor(num / multiple) * multiple;
+};
+
+export default function GuidePage() {
+  const now = dayjs();
+  const [start] = useState(
+    dayjs()
+      .minute(roundNearestMultiple(now.minute(), 15))
+      .second(0)
+      .millisecond(0),
+  );
+  const end = start.add(1, 'hours');
+  const [progress, setProgress] = useState(() => {
+    return calcProgress(start, end);
+  });
 
   const {
     isPending,
     error,
     data: channelLineup,
-  } = useTvGuide({ from: now, to: oneDay });
+  } = useTvGuide({ from: start, to: end });
+
+  useInterval(() => {
+    setProgress(calcProgress(start, end));
+  }, 60000);
+
+  // useInterval(() => {
+
+  // })
 
   if (isPending) return 'Loading...';
 
@@ -54,11 +76,21 @@ export default function GuidePage() {
   return (
     <>
       <p>
-        {now.toISOString()} to {oneDay.toISOString()}
+        {start.toISOString()} to {end.toISOString()}
       </p>
       <Typography component="h1">
-        <Box display="flex" flexDirection="column">
+        <Box display="flex" position="relative" flexDirection="column">
           {channels}
+          <Box
+            sx={{
+              position: 'absolute',
+              width: '2px',
+              background: 'rgba(0, 0, 0, 0.5)',
+              zIndex: 10,
+              height: '100%',
+              left: `${progress}%`,
+            }}
+          ></Box>
         </Box>
       </Typography>
     </>

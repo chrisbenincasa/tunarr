@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
+import { Dayjs } from 'dayjs';
 import { ChannelLineup } from 'dizquetv-types';
 
-export const useTvGuide = (params: { from: Date; to: Date }) =>
+export const useTvGuide = (params: { from: Dayjs; to: Dayjs }) =>
   useQuery({
     queryKey: ['channels', 'guide', params] as const,
     queryFn: async ({ queryKey }) => {

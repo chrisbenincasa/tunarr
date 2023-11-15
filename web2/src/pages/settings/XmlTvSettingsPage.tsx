@@ -1,4 +1,4 @@
-import { TextField } from '@mui/material';
+import { Box, TextField } from '@mui/material';
 import { useXmlTvSettings } from '../../hooks/settingsHooks.ts';
 
 export default function XmlTvSettingsPage() {
@@ -11,20 +11,22 @@ export default function XmlTvSettingsPage() {
   }
 
   return (
-    <>
+    <Box>
       <TextField
         fullWidth
         id="output-path"
         label="Output Path"
         defaultValue={data.outputPath}
         InputProps={{ readOnly: true }}
+        variant="filled"
         sx={{ mt: 2, mb: 2 }}
       />
       <TextField
         fullWidth
         label="Refresh Hours"
+        variant="filled"
         defaultValue={data.refreshHours}
       />
-    </>
+    </Box>
   );
 }

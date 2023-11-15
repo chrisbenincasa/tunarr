@@ -17,6 +17,8 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { useState } from 'react';
 import { Outlet, Link as RouterLink } from 'react-router-dom';
 import './App.css';
+import VersionFooter from './components/VersionFooter.tsx';
+import ServerEvents from './components/ServerEvents.tsx';
 
 const navItems = [
   { name: 'Guide', path: '/guide', visible: true },
@@ -35,6 +37,7 @@ export function Root() {
 
   return (
     <div>
+      <ServerEvents />
       <Box sx={{ display: 'flex' }}>
         <CssBaseline />
         <AppBar
@@ -97,7 +100,7 @@ export function Root() {
             </Typography>
           </Toolbar>
           <Divider />
-          <List component="nav">
+          <List component="nav" sx={{ flex: '1 1 0%' }}>
             {navItems
               .filter((item) => item.visible)
               .map((item) => (
@@ -112,6 +115,7 @@ export function Root() {
               ))}
             <Divider sx={{ my: 1 }} />
           </List>
+          <VersionFooter />
         </Drawer>
         <Box
           component="main"
