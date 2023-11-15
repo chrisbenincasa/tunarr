@@ -6,6 +6,8 @@ import XmlTvSettingsPage from './pages/settings/XmlTvSettingsPage.tsx';
 import GuidePage from './pages/guide/GuidePage.tsx';
 import FfmpegSettingsPage from './pages/settings/FfmpegSettingsPage.tsx';
 import PlexSettingsPage from './pages/settings/PlexSettingsPage.tsx';
+import FillerListsPage from './pages/filler/FillerListsPage.tsx';
+import CustomShowsPage from './pages/custom-shows/CustomShowsPage.tsx';
 
 export const router = createBrowserRouter([
   {
@@ -28,10 +30,6 @@ export const router = createBrowserRouter([
         path: '/settings',
         element: <SettingsLayout />,
         children: [
-          // {
-          //   element: <XmlTvSettingsPage />,
-          //   index: true,
-          // },
           {
             path: '/settings/xmltv',
             element: <XmlTvSettingsPage />,
@@ -43,6 +41,19 @@ export const router = createBrowserRouter([
           {
             path: '/settings/plex',
             element: <PlexSettingsPage />,
+          },
+        ],
+      },
+      {
+        path: '/library',
+        children: [
+          {
+            path: '/library/filler',
+            element: <FillerListsPage />,
+          },
+          {
+            path: '/library/custom-shows',
+            element: <CustomShowsPage />,
           },
         ],
       },

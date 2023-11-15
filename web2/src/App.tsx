@@ -1,4 +1,5 @@
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
+import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
 import {
   AppBar,
   Box,
@@ -8,23 +9,68 @@ import {
   Link,
   List,
   ListItemButton,
+  ListItemIcon,
   ListItemText,
   Toolbar,
   Typography,
 } from '@mui/material';
 import Container from '@mui/material/Container';
 import CssBaseline from '@mui/material/CssBaseline';
-import { useState } from 'react';
+import { ReactNode, useState } from 'react';
 import { Outlet, Link as RouterLink } from 'react-router-dom';
 import './App.css';
-import VersionFooter from './components/VersionFooter.tsx';
 import ServerEvents from './components/ServerEvents.tsx';
+import VersionFooter from './components/VersionFooter.tsx';
+import SettingsIcon from '@mui/icons-material/Settings';
+import LiveTvIcon from '@mui/icons-material/LiveTv';
+import SettingsRemoteIcon from '@mui/icons-material/SettingsRemote';
+import TvIcon from '@mui/icons-material/Tv';
+import PreviewIcon from '@mui/icons-material/Preview';
+import TheatersIcon from '@mui/icons-material/Theaters';
 
-const navItems = [
-  { name: 'Guide', path: '/guide', visible: true },
-  { name: 'Channels', path: '/channels', visible: true },
-  { name: 'Watch', path: '/watch', visible: false },
-  { name: 'Settings', path: '/settings/xmltv', visible: true },
+interface NavItem {
+  name: string;
+  path: string;
+  visible: boolean;
+  children?: NavItem[];
+  icon?: ReactNode;
+}
+
+const navItems: NavItem[] = [
+  { name: 'Guide', path: '/guide', visible: true, icon: <TvIcon /> },
+  {
+    name: 'Channels',
+    path: '/channels',
+    visible: true,
+    icon: <SettingsRemoteIcon />,
+  },
+  { name: 'Watch', path: '/watch', visible: false, icon: <LiveTvIcon /> },
+  {
+    name: 'Library',
+    path: '/library',
+    visible: true,
+    icon: <VideoLibraryIcon />,
+    children: [
+      {
+        name: 'Filler Lists',
+        path: '/library/filler',
+        visible: true,
+        icon: <PreviewIcon />,
+      },
+      {
+        name: 'Custom Shows',
+        path: '/library/custom-shows',
+        visible: true,
+        icon: <TheatersIcon />,
+      },
+    ],
+  },
+  {
+    name: 'Settings',
+    path: '/settings/xmltv',
+    visible: true,
+    icon: <SettingsIcon />,
+  },
 ];
 
 const drawerWidth = 240;
@@ -96,7 +142,14 @@ export function Root() {
               color="inherit"
               sx={{ flexGrow: 1 }}
             >
-              DizqueTV
+              <Link
+                underline="none"
+                color="inherit"
+                to="/guide"
+                component={RouterLink}
+              >
+                DizqueTV
+              </Link>
             </Typography>
           </Toolbar>
           <Divider />
@@ -104,14 +157,35 @@ export function Root() {
             {navItems
               .filter((item) => item.visible)
               .map((item) => (
-                <ListItemButton
-                  to={item.path}
-                  key={item.name}
-                  onClick={toggleDrawer}
-                  component={RouterLink}
-                >
-                  <ListItemText primary={item.name} />
-                </ListItemButton>
+                <>
+                  <ListItemButton
+                    to={item.path}
+                    key={item.name}
+                    onClick={toggleDrawer}
+                    component={RouterLink}
+                  >
+                    {item.icon && <ListItemIcon>{item.icon}</ListItemIcon>}
+                    <ListItemText primary={item.name} />
+                  </ListItemButton>
+                  {item.children ? (
+                    <List component="div" disablePadding>
+                      {item.children.map((child) => (
+                        <ListItemButton
+                          key={child.name}
+                          to={child.path}
+                          sx={{ pl: 4 }}
+                          onClick={toggleDrawer}
+                          component={RouterLink}
+                        >
+                          {child.icon && (
+                            <ListItemIcon>{child.icon}</ListItemIcon>
+                          )}
+                          <ListItemText primary={child.name} />
+                        </ListItemButton>
+                      ))}
+                    </List>
+                  ) : null}
+                </>
               ))}
             <Divider sx={{ my: 1 }} />
           </List>

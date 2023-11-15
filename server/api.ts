@@ -33,7 +33,7 @@ export const miscRouter: FastifyPluginCallback = (fastify, _opts, done) => {
       return res.send({
         dizquetv: constants.VERSION_NAME,
         ffmpeg: v,
-        nodejs: process.version,
+        nodejs: process.version.replace('v', ''),
       });
     } catch (err) {
       logger.error(err);

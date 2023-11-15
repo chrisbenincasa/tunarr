@@ -15,8 +15,11 @@ import {
 import { Channel } from 'dizquetv-types';
 import { useChannels } from '../../hooks/useChannels.ts';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
+import CreateChannelModal from '../../components/CreateChannelModal.tsx';
+import { useState } from 'react';
 
 export default function ChannelsPage() {
+  const [createModalOpen, setCreateModalOpen] = useState(false);
   const { isPending, error, data } = useChannels();
 
   if (isPending) return 'Loading...';
@@ -65,7 +68,11 @@ export default function ChannelsPage() {
         <Typography flexGrow={1} variant="h4">
           Channels
         </Typography>
-        <Button variant="contained" startIcon={<AddCircleIcon />}>
+        <Button
+          onClick={() => setCreateModalOpen(true)}
+          variant="contained"
+          startIcon={<AddCircleIcon />}
+        >
           New
         </Button>
       </Box>
@@ -82,6 +89,7 @@ export default function ChannelsPage() {
           <TableBody>{getTableRows()}</TableBody>
         </Table>
       </TableContainer>
+      <CreateChannelModal open={createModalOpen} />
     </div>
   );
 }
