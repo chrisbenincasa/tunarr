@@ -8,7 +8,7 @@ import dayjs, { Dayjs } from 'dayjs';
 const renderProgram = (program: TvGuideProgram) => {
   const key = `${program.title}_${program.start}_${program.stop}`;
   return (
-    <Box sx={{ border: '1px solid black' }} key={key}>
+    <Box sx={{ height: '3rem' }} key={key}>
       {program.title}
     </Box>
   );
@@ -65,9 +65,8 @@ export default function GuidePage() {
         flex={1}
         key={channel}
         component="section"
-        sx={{ p: 2, border: '1px dashed grey' }}
+        sx={{ border: '1px dashed grey' }}
       >
-        {channel}
         {lineup.programs.map(renderProgram)}
       </Box>
     );

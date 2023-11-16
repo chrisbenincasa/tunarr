@@ -2,6 +2,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import {
   Box,
   Button,
+  ClickAwayListener,
   IconButton,
   Paper,
   Table,
@@ -89,7 +90,10 @@ export default function ChannelsPage() {
           <TableBody>{getTableRows()}</TableBody>
         </Table>
       </TableContainer>
-      <CreateChannelModal open={createModalOpen} />
+      <CreateChannelModal
+        open={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+      />
     </div>
   );
 }
