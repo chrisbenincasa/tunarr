@@ -13,6 +13,8 @@ export function ChannelProgrammingConfig() {
       <Dialog
         open={programmingModalOpen}
         onClose={() => setProgrammingModalOpen(false)}
+        maxWidth="md"
+        fullWidth
       >
         <ProgrammingSelector />
       </Dialog>

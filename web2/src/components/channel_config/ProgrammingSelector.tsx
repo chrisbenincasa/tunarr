@@ -1,15 +1,37 @@
+import { ExpandLess, ExpandMore } from '@mui/icons-material';
 import {
+  Collapse,
   DialogContent,
   DialogTitle,
   List,
   ListItem,
+  ListItemButton,
   ListItemText,
 } from '@mui/material';
 import { PlexServerSettings } from 'dizquetv-types';
-import { isUndefined, isEmpty } from 'lodash-es';
-import { useState, useEffect } from 'react';
+import { PlexLibrarySection } from 'dizquetv-types/plex';
+import { isEmpty, isUndefined } from 'lodash-es';
+import { useEffect, useState } from 'react';
 import { usePlexServerSettings } from '../../hooks/settingsHooks.ts';
 import { usePlex } from '../../hooks/usePlex.ts';
+
+function PlexDirectoryListItem(props: { item: PlexLibrarySection }) {
+  const [open, setOpen] = useState(false);
+
+  const handleClick = () => {
+    setOpen(!open);
+  };
+
+  return (
+    <>
+      <ListItemButton onClick={handleClick}>
+        <ListItemText primary={props.item.title} />
+        {open ? <ExpandLess /> : <ExpandMore />}
+      </ListItemButton>
+      <Collapse in={open} timeout="auto" unmountOnExit></Collapse>
+    </>
+  );
+}
 
 export default function ProgrammingSelector() {
   const { data: plexServers } = usePlexServerSettings();
@@ -41,8 +63,8 @@ export default function ProgrammingSelector() {
       <DialogContent>
         <List>
           {plexResponse?.Directory?.map((dir) => (
-            <ListItem>
-              <ListItemText>{dir.title}</ListItemText>
+            <ListItem disablePadding>
+              <PlexDirectoryListItem key={dir.uuid} item={dir} />
             </ListItem>
           ))}
         </List>
