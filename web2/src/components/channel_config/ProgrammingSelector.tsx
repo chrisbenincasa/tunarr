@@ -1,5 +1,7 @@
 import { ExpandLess, ExpandMore } from '@mui/icons-material';
 import {
+  Box,
+  Button,
   Collapse,
   DialogContent,
   DialogTitle,
@@ -7,28 +9,79 @@ import {
   ListItem,
   ListItemButton,
   ListItemText,
+  Skeleton,
 } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
 import { PlexServerSettings } from 'dizquetv-types';
-import { PlexLibrarySection } from 'dizquetv-types/plex';
+import { PlexLibraryMovies, PlexLibrarySection } from 'dizquetv-types/plex';
 import { isEmpty, isUndefined } from 'lodash-es';
 import { useEffect, useState } from 'react';
+import { FixedSizeList, ListChildComponentProps } from 'react-window';
 import { usePlexServerSettings } from '../../hooks/settingsHooks.ts';
 import { usePlex } from '../../hooks/usePlex.ts';
 
-function PlexDirectoryListItem(props: { item: PlexLibrarySection }) {
+function PlexDirectoryListItem(props: {
+  server: PlexServerSettings;
+  item: PlexLibrarySection;
+  onItemAdd: (item: any) => void;
+}) {
   const [open, setOpen] = useState(false);
+  const { isPending, data } = useQuery({
+    queryKey: [props.server.name, 'plex', 'sections', 'all', props.item.key],
+    queryFn: async () => {
+      const path = `/library/sections/${props.item.key}/all`;
+      const res = await fetch(
+        new URL(
+          `http://localhost:8000/api/plex?name=${props.server.name}&path=${path}`,
+        ),
+      );
+      return res.json() as Promise<PlexLibraryMovies>;
+    },
+    enabled: open,
+  });
 
   const handleClick = () => {
     setOpen(!open);
   };
 
+  const renderCollectionRow = (props: ListChildComponentProps) => {
+    const { index, style } = props;
+    const metadata = data!.Metadata[index];
+    return (
+      <ListItem style={style} key={index} component="div" disablePadding>
+        <ListItemText primary={metadata.title} />
+        <Button>Add</Button>
+      </ListItem>
+    );
+  };
+
   return (
     <>
-      <ListItemButton onClick={handleClick}>
-        <ListItemText primary={props.item.title} />
-        {open ? <ExpandLess /> : <ExpandMore />}
-      </ListItemButton>
-      <Collapse in={open} timeout="auto" unmountOnExit></Collapse>
+      <ListItem component="div" disablePadding>
+        <ListItemButton selected={open} onClick={handleClick}>
+          <ListItemText primary={props.item.title} />
+          {open ? <ExpandLess /> : <ExpandMore />}
+        </ListItemButton>
+      </ListItem>
+      <Collapse in={open} timeout="auto" unmountOnExit>
+        {isPending ? (
+          <Skeleton>
+            <Box sx={{ width: '100%', height: 400, pl: 4 }} />
+          </Skeleton>
+        ) : (
+          <Box sx={{ width: '100%', height: 400, pl: 4 }}>
+            <FixedSizeList
+              height={400}
+              itemCount={data?.Metadata?.length || 0}
+              itemSize={46}
+              width="100%"
+              overscanCount={5}
+            >
+              {renderCollectionRow}
+            </FixedSizeList>
+          </Box>
+        )}
+      </Collapse>
     </>
   );
 }
@@ -49,23 +102,24 @@ export default function ProgrammingSelector() {
     setSelectedServer(server);
   }, [plexServers]);
 
-  const { data: plexResponse, isPending } = usePlex(
+  const { data: plexResponse } = usePlex(
     selectedServer?.name ?? '',
     '/library/sections',
     !isUndefined(selectedServer),
   );
 
-  console.log(plexServers, selectedServer, plexResponse, isPending);
-
   return (
     <>
-      <DialogTitle>Title</DialogTitle>
+      <DialogTitle>Add Programming</DialogTitle>
       <DialogContent>
-        <List>
+        <List component="nav" sx={{ width: '100%' }}>
           {plexResponse?.Directory?.map((dir) => (
-            <ListItem disablePadding>
-              <PlexDirectoryListItem key={dir.uuid} item={dir} />
-            </ListItem>
+            <PlexDirectoryListItem
+              server={selectedServer!}
+              key={dir.uuid}
+              item={dir}
+              onItemAdd={() => {}}
+            />
           ))}
         </List>
       </DialogContent>

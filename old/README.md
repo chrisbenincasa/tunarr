@@ -1,14 +1,8 @@
-# dizqueTV next (name pending?)
+# dizqueTV
 
 Create live TV channel streams from media on your Plex servers.
 
-This is a fork of [**dizqueTV**](https://github.com/vexorian/dizquetv) (which in itself was a fork of other projects!). We have the following goals:
-
-- Modernize the stack, both backend and frontend
-- Provide an migration path for existing users
-- Modernize and "prettify" the Web UI
-- Minimize breaking changes
-- **Add great new features**
+**dizqueTV** ( _dis·keˈtiːˈvi_ ) is a fork of the project previously-known as [pseudotv-plex](https://gitlab.com/DEFENDORe/pseudotv-plex) or [pseudotv](https://github.com/DEFENDORe/pseudotv). New repository because of lack of activity from the main repository and the name change is because projects with the old name already existed and were created long before this approach and it was causing confusion. You can migrate from pseudoTV 0.0.51 to dizqueTV by renaming the .pseudotv folder to .dizquetv and running the new executable (or doing a similar trick with the volumes used by the docker containers).
 
 <img src="https://raw.githubusercontent.com/vexorian/dizquetv/main/resources/dizquetv.png" width="200">
 
@@ -41,29 +35,45 @@ EPG (Guide Information) data is stored to `.dizquetv/xmltv.xml`
 
 ## Releases
 
-- https://github.com/chrisbenincasa/dizquetv/releases
+- https://github.com/vexorian/dizquetv/releases
 
 ## Wiki
 
 - For setup instructions, check [the wiki](https://github.com/vexorian/dizquetv/wiki)
 
+## App Preview
+
+<img src="https://raw.githubusercontent.com/vexorian/dizquetv/main/docs/channels.png" width="500">
+<br/>
+<img src="https://raw.githubusercontent.com/vexorian/dizquetv/main/docs/channel-config.png" width="500">
+<br/>
+<img src="https://raw.githubusercontent.com/vexorian/dizquetv/main/docs/plex-guide.png" width="500">
+<br/>
+<img src="https://raw.githubusercontent.com/vexorian/dizquetv/main/docs/plex-stream.png" width="500">
+
 ## Development
 
-[pnpm](https://pnpm.io/) is used for package management and development
-
-### Start dev servers
-
-Run from the root of the project:
+Building/Packaging Binaries: (uses `browserify`, `babel` and `pkg`)
 
 ```
-pnpm run --parallel dev
+npm run build
+npm run compile
+npm run package
+```
+
+Live Development: (using `nodemon` and `watchify`)
+
+```
+npm run dev-client
+npm run dev-server
 ```
 
 ## Contribute
 
 - Pull requests welcome but please read the [Code of Conduct](CODE_OF_CONDUCT.md) and the [Pull Request Template](pull_request_template.md) first.
-<!-- - Tip Jar: https://buymeacoffee.com/vexorian -->
+- Tip Jar: https://buymeacoffee.com/vexorian
 
 ## License
 
-- The original dizqueTV is released under zlib license (c) 2020 Victor Hugo Soliz Kuncar: we've kept this
+- Original pseudotv-Plex code was released under [MIT license (c) 2020 Dan Ferguson](https://github.com/DEFENDORe/pseudotv/blob/665e71e24ee5e93d9c9c90545addb53fdc235ff6/LICENSE)
+- dizqueTV's improvements are released under zlib license (c) 2020 Victor Hugo Soliz Kuncar
