@@ -1,8 +1,8 @@
+import AddCircleIcon from '@mui/icons-material/AddCircle';
 import DeleteIcon from '@mui/icons-material/Delete';
 import {
   Box,
   Button,
-  ClickAwayListener,
   IconButton,
   Paper,
   Table,
@@ -14,23 +14,44 @@ import {
   Typography,
 } from '@mui/material';
 import { Channel } from 'dizquetv-types';
-import { useChannels } from '../../hooks/useChannels.ts';
-import AddCircleIcon from '@mui/icons-material/AddCircle';
-import CreateChannelModal from '../../components/CreateChannelModal.tsx';
 import { useState } from 'react';
+import CreateChannelModal from '../../components/EditChannelModal.tsx';
+import { useChannels } from '../../hooks/useChannels.ts';
+import { isUndefined, maxBy } from 'lodash-es';
 
 export default function ChannelsPage() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
-  const { isPending, error, data } = useChannels();
+  const [channelModalConfig, setChannelModalConfig] = useState<
+    { channelNumber: number; isNew: boolean } | undefined
+  >(undefined);
+  const {
+    isPending: channelsLoading,
+    error: channelsError,
+    data: channels,
+  } = useChannels();
 
-  if (isPending) return 'Loading...';
+  if (channelsLoading) return 'Loading...';
 
-  if (error) return 'An error occurred!: ' + error.message;
+  if (channelsError) return 'An error occurred!: ' + channelsError.message;
+
+  const openModal = (channelNumber?: number) => {
+    setChannelModalConfig({
+      channelNumber:
+        channelNumber ??
+        (channels.length === 0 ? 1 : maxBy(channels, 'number')!.number + 1),
+      isNew: isUndefined(channelNumber),
+    });
+    setCreateModalOpen(true);
+  };
 
   // TODO properly define types from API
   const getDataTableRow = (channel: Channel) => {
     return (
-      <TableRow key={channel.number}>
+      <TableRow
+        sx={{ cursor: 'pointer' }}
+        onClick={() => openModal(channel.number)}
+        key={channel.number}
+      >
         <TableCell width="10%">{channel.number}</TableCell>
         <TableCell width="10%">
           <img style={{ maxHeight: '40px' }} src={channel.icon.path} />
@@ -46,20 +67,20 @@ export default function ChannelsPage() {
   };
 
   const getTableRows = () => {
-    if (isPending) {
+    if (channelsLoading) {
       return (
         <TableRow key="pending">
           <TableCell colSpan={4}>Loading....</TableCell>
         </TableRow>
       );
-    } else if (error) {
+    } else if (channelsError) {
       return (
         <TableRow key="pending">
           <TableCell colSpan={4}>Error</TableCell>
         </TableRow>
       );
     } else {
-      return data?.map(getDataTableRow);
+      return channels?.map(getDataTableRow);
     }
   };
 
@@ -70,7 +91,7 @@ export default function ChannelsPage() {
           Channels
         </Typography>
         <Button
-          onClick={() => setCreateModalOpen(true)}
+          onClick={() => openModal()}
           variant="contained"
           startIcon={<AddCircleIcon />}
         >
@@ -91,8 +112,10 @@ export default function ChannelsPage() {
         </Table>
       </TableContainer>
       <CreateChannelModal
+        channelNumber={channelModalConfig?.channelNumber ?? -1}
         open={createModalOpen}
         onClose={() => setCreateModalOpen(false)}
+        isNew={channelModalConfig?.isNew ?? true}
       />
     </div>
   );

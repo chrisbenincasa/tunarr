@@ -1,5 +1,12 @@
 import { ChannelLineup } from 'dizquetv-types';
-import { compact, isEmpty, isString, isUndefined, keys } from 'lodash-es';
+import {
+  compact,
+  isEmpty,
+  isNil,
+  isString,
+  isUndefined,
+  keys,
+} from 'lodash-es';
 import { MarkRequired } from 'ts-essentials';
 import z from 'zod';
 import constants from '../constants.js';
@@ -46,18 +53,10 @@ const TvGuideProgramSchema = z.object({
   icon: z.string().optional(),
   title: z.string(),
   sub: TvGuideProgramSubtitleSchema.optional(),
+  programDuration: z.number().optional(),
 });
 
-type TvGuideProgram = {
-  start: string;
-  stop: string;
-  summary?: string;
-  date?: string;
-  rating?: string;
-  icon?: string;
-  title: string;
-  sub?: TvGuideProgramSubtitle;
-};
+type TvGuideProgram = z.infer<typeof TvGuideProgramSchema>;
 
 type ChannelPrograms = {
   channel: Partial<Channel>;
@@ -315,31 +314,31 @@ export class TVGuideService {
 
     const programs: CurrentPlayingProgram[] = [];
 
-    let x = await this.getChannelPlaying(
+    let currentProgram = await this.getChannelPlaying(
       channel,
       undefined,
       currentUpdateTimeMs,
     );
 
-    if (x.program.duration == 0) {
-      throw Error('A ' + channel.name + ' ' + JSON.stringify(x));
+    if (currentProgram.program.duration == 0) {
+      throw Error('A ' + channel.name + ' ' + JSON.stringify(currentProgram));
     }
 
     let melded = 0;
 
-    const push = async (x: CurrentPlayingProgram) => {
+    const push = async (program: CurrentPlayingProgram) => {
       await this._throttle();
       if (
         programs.length > 0 &&
-        isProgramFlex(x.program, channel) &&
-        ((x.program.duration ?? 0) <=
+        isProgramFlex(program.program, channel) &&
+        ((program.program.duration ?? 0) <=
           constants.TVGUIDE_MAXIMUM_PADDING_LENGTH_MS ||
           isProgramFlex(programs[programs.length - 1].program, channel))
       ) {
         //meld with previous
         const y = clone(programs[programs.length - 1]);
-        y.program.duration! += x.program.duration;
-        melded += x.program.duration ?? 0;
+        y.program.duration! += program.program.duration;
+        melded += program.program.duration ?? 0;
         if (
           melded > constants.TVGUIDE_MAXIMUM_PADDING_LENGTH_MS &&
           !isProgramFlex(programs[programs.length - 1].program, channel)
@@ -359,36 +358,43 @@ export class TVGuideService {
         } else {
           programs[programs.length - 1] = y;
         }
-      } else if (isProgramFlex(x.program, channel)) {
+      } else if (isProgramFlex(program.program, channel)) {
         melded = 0;
         programs.push({
-          startTimeMs: x.startTimeMs,
+          startTimeMs: program.startTimeMs,
           program: {
             isOffline: true,
-            duration: x.program.duration,
+            duration: program.program.duration,
           },
         });
       } else {
         melded = 0;
-        programs.push(x);
+        programs.push(program);
       }
     };
-    while (x.startTimeMs < currentEndTimeMs) {
-      await push(x);
-      const t2 = x.startTimeMs + (x.program.duration ?? 0);
-      x = await this.getChannelPlaying(channel, x, t2);
-      if (x.startTimeMs < t2) {
-        const d = t2 - x.startTimeMs;
-        x.startTimeMs = t2;
-        x.program = clone(x.program);
-        if (x.program.duration) {
-          x.program.duration -= d;
+
+    while (currentProgram.startTimeMs < currentEndTimeMs) {
+      await push(currentProgram);
+      const t2 =
+        currentProgram.startTimeMs + (currentProgram.program.duration ?? 0);
+      currentProgram = await this.getChannelPlaying(
+        channel,
+        currentProgram,
+        t2,
+      );
+      if (currentProgram.startTimeMs < t2) {
+        const d = t2 - currentProgram.startTimeMs;
+        currentProgram.startTimeMs = t2;
+        currentProgram.program = clone(currentProgram.program);
+        if (currentProgram.program.duration) {
+          currentProgram.program.duration -= d;
         }
       }
-      if (x.program.duration == 0) {
+      if (currentProgram.program.duration == 0) {
         logger.error("There's a program with duration 0?");
       }
     }
+
     result.programs = [];
     for (let i = 0; i < programs.length; i++) {
       await this._throttle();
@@ -543,7 +549,7 @@ export class TVGuideService {
     const beginningTimeMs = dateFrom.toISOString();
     const endTimeMs = dateTo.toISOString();
     const channel = this.cached[channelNumber];
-    if (typeof channel === 'undefined') {
+    if (isNil(channel)) {
       return;
     }
     const programs = channel.programs;
@@ -618,12 +624,12 @@ function makeChannelEntry(channel: ImmutableChannel) {
 
 function makeEntry(
   channel: Partial<ImmutableChannel>,
-  x: CurrentPlayingProgram,
+  currentProgram: CurrentPlayingProgram,
 ): TvGuideProgram {
   let title: string | undefined;
   let icon: string | undefined;
   let sub: TvGuideProgramSubtitle | undefined;
-  if (isProgramFlex(x.program, channel)) {
+  if (isProgramFlex(currentProgram.program, channel)) {
     if (
       isString(channel.guideFlexPlaceholder) &&
       !isEmpty(channel.guideFlexPlaceholder)
@@ -634,31 +640,35 @@ function makeEntry(
     }
     icon = channel.icon?.path;
   } else {
-    title = x.program.showTitle;
-    if (typeof x.program.icon !== 'undefined') {
-      icon = x.program.icon;
+    title = currentProgram.program.showTitle;
+    if (typeof currentProgram.program.icon !== 'undefined') {
+      icon = currentProgram.program.icon;
     }
-    if (x.program.type === 'episode') {
+    if (currentProgram.program.type === 'episode') {
       sub = {
-        season: x.program.season,
-        episode: x.program.episode,
-        title: x.program.title,
+        season: currentProgram.program.season,
+        episode: currentProgram.program.episode,
+        title: currentProgram.program.title,
       };
     }
   }
   if (isUndefined(title)) {
     title = '.';
   }
+  console.log(currentProgram.program?.duration);
   //what data is needed here?
   return {
-    start: new Date(x.startTimeMs).toISOString(),
-    stop: new Date(x.startTimeMs + (x.program.duration ?? 0)).toISOString(),
-    summary: x.program.summary,
-    date: x.program.date,
-    rating: x.program.rating,
+    start: new Date(currentProgram.startTimeMs).toISOString(),
+    stop: new Date(
+      currentProgram.startTimeMs + (currentProgram.program.duration ?? 0),
+    ).toISOString(),
+    summary: currentProgram.program.summary,
+    date: currentProgram.program.date,
+    rating: currentProgram.program.rating,
     icon: icon,
     title: title,
     sub: sub,
+    programDuration: currentProgram.program?.duration,
   };
 }
 

@@ -16,6 +16,7 @@ export const TvGuideProgramSchema = z.object({
   icon: z.string().optional(),
   title: z.string(),
   sub: TvGuideProgramSubtitleSchema.optional(),
+  programDuration: z.number().optional(),
 });
 
 export const ChannelLineupSchema = z.object({

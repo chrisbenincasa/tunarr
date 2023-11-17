@@ -33,7 +33,7 @@ import constants from './constants.js';
 import { serverOptions } from './globals.js';
 import createLogger from './logger.js';
 import { serverContext } from './serverContext.js';
-import { scheduleJobs } from './services/scheduler.js';
+import { scheduleJobs, scheduledJobsById } from './services/scheduler.js';
 import { UpdateXmlTvTask } from './tasks/updateXmlTvTask.js';
 import { ServerOptions } from './types.js';
 import { time } from './util.js';
@@ -107,9 +107,11 @@ export async function initServer(opts: ServerOptions) {
   // const updateXMLPromise = time<Promise<void>>('xmltv.update', () =>
   //   xmltvInterval.updateXML(),
   // ).then(() => xmltvInterval.startInterval());
-  const updateXMLPromise = UpdateXmlTvTask.create(ctx).run();
+  // const updateXMLPromise = UpdateXmlTvTask.create(ctx).run();
 
   scheduleJobs(ctx);
+
+  const updateXMLPromise = scheduledJobsById[UpdateXmlTvTask.ID]?.runNow();
 
   const app = fastify({ logger: false, bodyLimit: 50 * 1024 });
   await app

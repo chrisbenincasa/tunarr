@@ -1,18 +1,14 @@
-import { Box, Typography } from '@mui/material';
+import { Box, IconButton, Typography, useTheme } from '@mui/material';
 import { useTvGuide } from '../../hooks/useTvGuide.ts';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { TvGuideProgram } from 'dizquetv-types';
 import { useInterval } from 'usehooks-ts';
 import dayjs, { Dayjs } from 'dayjs';
+import duration from 'dayjs/plugin/duration';
+import ZoomOutIcon from '@mui/icons-material/ZoomOut';
+import ZoomInIcon from '@mui/icons-material/ZoomIn';
 
-const renderProgram = (program: TvGuideProgram) => {
-  const key = `${program.title}_${program.start}_${program.stop}`;
-  return (
-    <Box sx={{ height: '3rem' }} key={key}>
-      {program.title}
-    </Box>
-  );
-};
+dayjs.extend(duration);
 
 const calcProgress = (start: Dayjs, end: Dayjs): number => {
   const total = end.unix() - start.unix();
@@ -34,10 +30,16 @@ export default function GuidePage() {
       .second(0)
       .millisecond(0),
   );
-  const end = start.add(1, 'hours');
+  const [end, setEnd] = useState(start.add(2, 'hours'));
   const [progress, setProgress] = useState(() => {
     return calcProgress(start, end);
   });
+  const theme = useTheme();
+
+  const timelineDuration = dayjs.duration(end.diff(start));
+  const intervalArray = Array.from(
+    Array(timelineDuration.asMinutes() / 30).keys(),
+  );
 
   const {
     isPending,
@@ -49,24 +51,57 @@ export default function GuidePage() {
     setProgress(calcProgress(start, end));
   }, 60000);
 
-  // useInterval(() => {
+  const zoomOut = useCallback(() => {
+    setEnd((last) => last.add(1, 'hours'));
+  }, [setEnd]);
 
-  // })
+  const zoomIn = useCallback(() => {
+    setEnd((last) => last.subtract(1, 'hours'));
+  }, [setEnd]);
 
   if (isPending) return 'Loading...';
 
   if (error) return 'An error occurred!: ' + error.message;
 
+  const renderProgram = (program: TvGuideProgram, index: number) => {
+    const key = `${program.title}_${program.start}_${program.stop}`;
+    const start = dayjs(program.start);
+    const end = dayjs(program.stop);
+    const duration = dayjs.duration(end.diff(start));
+
+    const pct = Math.round(
+      (duration.asMilliseconds() / timelineDuration.asMilliseconds()) * 100.0,
+    );
+
+    const grey = index % 2 === 0 ? 200 : 300;
+
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          backgroundColor: theme.palette.grey[grey],
+          borderCollapse: 'collapse',
+          border: '1px solid',
+          height: '3rem',
+          width: `${pct}%`,
+          borderColor: 'divider',
+          transition: 'width 0.5s ease-in',
+          overflow: 'hidden',
+          whiteSpace: 'nowrap',
+          textOverflow: 'ellipsis',
+        }}
+        key={key}
+      >
+        {program.title}
+      </Box>
+    );
+  };
+
   const channels = Object.keys(channelLineup).map((channel) => {
     const lineup = channelLineup[channel];
     return (
-      <Box
-        display="flex"
-        flex={1}
-        key={channel}
-        component="section"
-        sx={{ border: '1px dashed grey' }}
-      >
+      <Box display="flex" flex={1} key={channel} component="section">
         {lineup.programs.map(renderProgram)}
       </Box>
     );
@@ -77,8 +112,21 @@ export default function GuidePage() {
       <p>
         {start.toISOString()} to {end.toISOString()}
       </p>
+      <IconButton onClick={zoomIn}>
+        <ZoomInIcon />
+      </IconButton>
+      <IconButton onClick={zoomOut}>
+        <ZoomOutIcon />
+      </IconButton>
       <Typography component="h1">
         <Box display="flex" position="relative" flexDirection="column">
+          <Box display="flex" flex={1}>
+            {intervalArray.map((slot) => (
+              <Box sx={{ width: `${100 / intervalArray.length}%` }} key={slot}>
+                {start.add(slot * 30, 'minutes').format('hh:mm:ss')}
+              </Box>
+            ))}
+          </Box>
           {channels}
           <Box
             sx={{
@@ -88,6 +136,7 @@ export default function GuidePage() {
               zIndex: 10,
               height: '100%',
               left: `${progress}%`,
+              transition: 'left 0.5s linear',
             }}
           ></Box>
         </Box>

@@ -25,6 +25,9 @@
     },
     "./schemas": {
       "import": "./src/schemas/index.js"
+    },
+    "./plex": {
+      "import": "./src/plex/index.js"
     }
   }
 }
