@@ -8,7 +8,7 @@ export const PlexLibrarySectionSchema = z.object({
   refreshing: z.boolean(),
   thumb: z.string(),
   key: z.string(),
-  type: z.string(),
+  type: z.union([z.literal('movie'), z.literal('show'), z.literal('artist')]),
   title: z.string(),
   agent: z.string(),
   scanner: z.string(),
@@ -60,7 +60,6 @@ export const PlexLibraryCollectionSchema = z.object({
 export type PlexLibraryCollection = z.infer<typeof PlexLibraryCollectionSchema>;
 
 const basePlexLibraryCollectionsSchema = z.object({
-  size: z.number(),
   allowSync: z.boolean(),
   art: z.string(),
   identifier: z.string(),
@@ -70,9 +69,11 @@ const basePlexLibraryCollectionsSchema = z.object({
   mediaTagPrefix: z.string(),
   mediaTagVersion: z.number(),
   nocache: z.boolean().optional(),
+  size: z.number(),
   thumb: z.string(),
   title1: z.string(),
   title2: z.string(),
+  type: z.union([z.literal('movie'), z.literal('show'), z.literal('artist')]),
   viewGroup: z.string(),
   viewMode: z.number(),
 });
@@ -223,7 +224,7 @@ export const PlexTvSeasonSchema = z.object({
   updatedAt: z.number(),
 });
 
-export type PlexTvSeason = z.infer<typeof PlexTvShowSchema>;
+export type PlexTvSeason = z.infer<typeof PlexTvSeasonSchema>;
 
 // /library/section/{id}/all for a Movie Library
 
@@ -235,13 +236,16 @@ export type PlexLibraryMovies = z.infer<typeof PlexLibraryMoviesSchema>;
 
 // /library/sections/{id}/all for a TV library
 
-export const PlexTvAllResponseSchema =
-  makePlexLibraryCollectionsSchema(PlexTvShowSchema);
+export const PlexLibraryShowsSchema = makePlexLibraryCollectionsSchema(
+  PlexTvShowSchema,
+).extend({
+  Metadata: z.array(PlexTvShowSchema),
+});
 
-export type PlexTvAllResponse = z.infer<typeof PlexTvAllResponseSchema>;
+export type PlexLibraryShows = z.infer<typeof PlexLibraryShowsSchema>;
 
 // /library/metadata/{id}/children where ID is a TV show
-export const PlexSeasonViewSchema = z.object({
+export const PlexSeasonSchema = z.object({
   size: z.number(),
   allowSync: z.boolean(),
   art: z.string(),
@@ -266,7 +270,7 @@ export const PlexSeasonViewSchema = z.object({
   Metadata: z.array(PlexTvSeasonSchema),
 });
 
-export type PlexSeasonView = z.infer<typeof PlexSeasonViewSchema>;
+export type PlexSeason = z.infer<typeof PlexSeasonSchema>;
 
 // /library/metadata/{id}/children where ID is a TV show season
 
@@ -339,3 +343,28 @@ export const PlexEpisodeViewSchema = z.object({
 });
 
 export type PlexEpisodeView = z.infer<typeof PlexEpisodeViewSchema>;
+
+export type PlexLibraryListing = PlexLibraryMovies | PlexLibraryShows;
+
+export function isPlexMoviesLibrary(
+  lib: PlexLibraryListing,
+): lib is PlexLibraryMovies {
+  return lib.viewGroup === 'movie';
+}
+
+export function isPlexShowLibrary(
+  lib: PlexLibraryListing,
+): lib is PlexLibraryShows {
+  return lib.viewGroup === 'show';
+}
+
+export type PlexMedia = PlexMovie | PlexTvShow | PlexTvSeason;
+
+export function isPlexMediaType<T extends PlexMedia>(discrim: string) {
+  return (media: PlexMedia): media is T => {
+    return media.type === discrim;
+  };
+}
+
+export const isPlexMovie = isPlexMediaType<PlexMovie>('movie');
+export const isPlexShow = isPlexMediaType<PlexTvShow>('show');

@@ -20,3 +20,19 @@ export const usePlex = <T extends keyof PlexPathMappings>(
     },
     enabled,
   });
+
+export const usePlexTyped = <T>(
+  serverName: string,
+  path: string,
+  enabled: boolean = true,
+) =>
+  useQuery({
+    queryKey: ['plex', serverName, path],
+    queryFn: async () => {
+      const res = await fetch(
+        `http://localhost:8000/api/plex?name=${serverName}&path=${path}`,
+      );
+      return res.json() as Promise<T>;
+    },
+    enabled,
+  });

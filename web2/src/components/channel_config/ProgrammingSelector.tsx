@@ -5,20 +5,55 @@ import {
   Collapse,
   DialogContent,
   DialogTitle,
+  Divider,
+  FormControl,
   List,
   ListItem,
   ListItemButton,
+  ListItemIcon,
   ListItemText,
+  MenuItem,
+  Select,
   Skeleton,
 } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
 import { PlexServerSettings } from 'dizquetv-types';
-import { PlexLibraryMovies, PlexLibrarySection } from 'dizquetv-types/plex';
+import {
+  PlexLibraryMovies,
+  PlexLibrarySection,
+  PlexLibraryShows,
+  PlexMovie,
+  PlexTvShow,
+  isPlexShow,
+} from 'dizquetv-types/plex';
 import { isEmpty, isUndefined } from 'lodash-es';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
+import { usePlex, usePlexTyped } from '../../hooks/plexHooks.ts';
 import { usePlexServerSettings } from '../../hooks/settingsHooks.ts';
-import { usePlex } from '../../hooks/usePlex.ts';
+
+function PlexShowListItem() {
+  return <div>Hi I am a show</div>;
+}
+
+function PlexMediaListItem(props: {
+  item: PlexMovie | PlexTvShow;
+  style: React.CSSProperties;
+  index: number;
+}) {
+  const { style, item, index } = props;
+
+  return (
+    <ListItem style={style} key={index} component="div" disablePadding>
+      {isPlexShow(item) && (
+        <ListItemIcon>
+          <ExpandMore />
+        </ListItemIcon>
+      )}
+      <ListItemText primary={item.title} />
+      <Button>Add</Button>
+    </ListItem>
+  );
+}
 
 function PlexDirectoryListItem(props: {
   server: PlexServerSettings;
@@ -26,19 +61,9 @@ function PlexDirectoryListItem(props: {
   onItemAdd: (item: any) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const { isPending, data } = useQuery({
-    queryKey: [props.server.name, 'plex', 'sections', 'all', props.item.key],
-    queryFn: async () => {
-      const path = `/library/sections/${props.item.key}/all`;
-      const res = await fetch(
-        new URL(
-          `http://localhost:8000/api/plex?name=${props.server.name}&path=${path}`,
-        ),
-      );
-      return res.json() as Promise<PlexLibraryMovies>;
-    },
-    enabled: open,
-  });
+  const { isPending, data } = usePlexTyped<
+    PlexLibraryMovies | PlexLibraryShows
+  >(props.server.name, `/library/sections/${props.item.key}/all`, open);
 
   const handleClick = () => {
     setOpen(!open);
@@ -47,20 +72,17 @@ function PlexDirectoryListItem(props: {
   const renderCollectionRow = (props: ListChildComponentProps) => {
     const { index, style } = props;
     const metadata = data!.Metadata[index];
-    return (
-      <ListItem style={style} key={index} component="div" disablePadding>
-        <ListItemText primary={metadata.title} />
-        <Button>Add</Button>
-      </ListItem>
-    );
+
+    return <PlexMediaListItem item={metadata} style={style} index={index} />;
   };
 
   return (
     <>
       <ListItem component="div" disablePadding>
         <ListItemButton selected={open} onClick={handleClick}>
+          <ListItemIcon>{open ? <ExpandLess /> : <ExpandMore />}</ListItemIcon>
           <ListItemText primary={props.item.title} />
-          {open ? <ExpandLess /> : <ExpandMore />}
+          <Button>Add All</Button>
         </ListItemButton>
       </ListItem>
       <Collapse in={open} timeout="auto" unmountOnExit>
@@ -82,6 +104,7 @@ function PlexDirectoryListItem(props: {
           </Box>
         )}
       </Collapse>
+      <Divider variant="fullWidth" />
     </>
   );
 }
@@ -112,6 +135,13 @@ export default function ProgrammingSelector() {
     <>
       <DialogTitle>Add Programming</DialogTitle>
       <DialogContent>
+        <FormControl fullWidth size="small">
+          <Select value={selectedServer?.name}>
+            {plexServers?.map((server) => (
+              <MenuItem value={server.name}>{server.name}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
         <List component="nav" sx={{ width: '100%' }}>
           {plexResponse?.Directory?.map((dir) => (
             <PlexDirectoryListItem
