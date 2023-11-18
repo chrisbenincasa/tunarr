@@ -15,14 +15,17 @@ import {
   MenuItem,
   Select,
   Skeleton,
+  Typography,
 } from '@mui/material';
 import { PlexServerSettings } from 'dizquetv-types';
 import {
   PlexLibraryMovies,
   PlexLibrarySection,
   PlexLibraryShows,
+  PlexMedia,
   PlexMovie,
   PlexTvShow,
+  isPlexMovie,
   isPlexShow,
 } from 'dizquetv-types/plex';
 import { isEmpty, isUndefined } from 'lodash-es';
@@ -31,15 +34,59 @@ import { FixedSizeList, ListChildComponentProps } from 'react-window';
 import { usePlex, usePlexTyped } from '../../hooks/plexHooks.ts';
 import { usePlexServerSettings } from '../../hooks/settingsHooks.ts';
 
-function PlexShowListItem() {
-  return <div>Hi I am a show</div>;
-}
-
-function PlexMediaListItem(props: {
-  item: PlexMovie | PlexTvShow;
+interface PlexListItemProps<T extends PlexMedia> {
+  item: T;
   style: React.CSSProperties;
   index: number;
-}) {
+}
+
+function PlexShowListItem(props: PlexListItemProps<PlexTvShow>) {
+  const [open, setOpen] = useState(false);
+  const { style, item, index } = props;
+
+  const handleClick = () => {
+    setOpen(!open);
+  };
+
+  return (
+    <>
+      <ListItem style={style} key={index} component="div" disablePadding>
+        <ListItemIcon onClick={handleClick}>
+          <ExpandMore />
+        </ListItemIcon>
+        <ListItemText primary={item.title} />
+        <Button>Add</Button>
+      </ListItem>
+      ;
+      <Collapse in={open} timeout="auto" unmountOnExit>
+        <List>
+          <ListItem>
+            <ListItemText primary="test" />
+          </ListItem>
+          <ListItem>
+            <ListItemText primary="test" />
+          </ListItem>
+          <ListItem>
+            <ListItemText primary="test" />
+          </ListItem>
+        </List>
+      </Collapse>
+    </>
+  );
+}
+
+function PlexMovieListItem(props: PlexListItemProps<PlexMovie>) {
+  const { style, item, index } = props;
+
+  return (
+    <ListItem style={style} key={index} component="div" disablePadding>
+      <ListItemText primary={item.title} />
+      <Button>Add</Button>
+    </ListItem>
+  );
+}
+
+function PlexMediaListItem(props: PlexListItemProps<PlexMedia>) {
   const { style, item, index } = props;
 
   return (
@@ -73,7 +120,13 @@ function PlexDirectoryListItem(props: {
     const { index, style } = props;
     const metadata = data!.Metadata[index];
 
-    return <PlexMediaListItem item={metadata} style={style} index={index} />;
+    if (isPlexShow(metadata)) {
+      return <PlexShowListItem item={metadata} style={style} index={index} />;
+    } else if (isPlexMovie(metadata)) {
+      return <PlexMovieListItem item={metadata} style={style} index={index} />;
+    } else {
+      return null;
+    }
   };
 
   return (
@@ -136,11 +189,15 @@ export default function ProgrammingSelector() {
       <DialogTitle>Add Programming</DialogTitle>
       <DialogContent>
         <FormControl fullWidth size="small">
-          <Select value={selectedServer?.name}>
-            {plexServers?.map((server) => (
-              <MenuItem value={server.name}>{server.name}</MenuItem>
-            ))}
-          </Select>
+          {selectedServer && (
+            <Select value={selectedServer?.name}>
+              {plexServers?.map((server) => (
+                <MenuItem key={server.name} value={server.name}>
+                  {server.name}
+                </MenuItem>
+              ))}
+            </Select>
+          )}
         </FormControl>
         <List component="nav" sx={{ width: '100%' }}>
           {plexResponse?.Directory?.map((dir) => (
@@ -152,6 +209,7 @@ export default function ProgrammingSelector() {
             />
           ))}
         </List>
+        <Typography>Selected Items</Typography>
       </DialogContent>
     </>
   );
