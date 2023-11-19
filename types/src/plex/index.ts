@@ -245,7 +245,7 @@ export const PlexLibraryShowsSchema = makePlexLibraryCollectionsSchema(
 export type PlexLibraryShows = z.infer<typeof PlexLibraryShowsSchema>;
 
 // /library/metadata/{id}/children where ID is a TV show
-export const PlexSeasonSchema = z.object({
+export const PlexSeasonViewSchema = z.object({
   size: z.number(),
   allowSync: z.boolean(),
   art: z.string(),
@@ -270,7 +270,7 @@ export const PlexSeasonSchema = z.object({
   Metadata: z.array(PlexTvSeasonSchema),
 });
 
-export type PlexSeason = z.infer<typeof PlexSeasonSchema>;
+export type PlexSeasonView = z.infer<typeof PlexSeasonViewSchema>;
 
 // /library/metadata/{id}/children where ID is a TV show season
 

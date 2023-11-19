@@ -20,10 +20,10 @@ import {
 import { PlexServerSettings } from 'dizquetv-types';
 import {
   PlexLibraryMovies,
-  PlexLibrarySection,
   PlexLibraryShows,
   PlexMedia,
   PlexMovie,
+  PlexSeasonView,
   PlexTvShow,
   isPlexMovie,
   isPlexShow,
@@ -33,20 +33,37 @@ import React, { useEffect, useState } from 'react';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
 import { usePlex, usePlexTyped } from '../../hooks/plexHooks.ts';
 import { usePlexServerSettings } from '../../hooks/settingsHooks.ts';
+import useStore, {
+  ProgrammingDirectory,
+  ProgrammingListing,
+  addKnownMediaForServer,
+  setProgrammingDirectory,
+  setProgrammingDirectoryListings,
+  setProgrammingListingServer,
+} from '../../store/index.ts';
 
 interface PlexListItemProps<T extends PlexMedia> {
   item: T;
-  style: React.CSSProperties;
-  index: number;
+  listing: ProgrammingListing;
+  style?: React.CSSProperties;
+  index?: number;
 }
 
 function PlexShowListItem(props: PlexListItemProps<PlexTvShow>) {
+  const server = useStore((s) => s.currentServer!); // We have to have a server at this point
   const [open, setOpen] = useState(false);
   const { style, item, index } = props;
+  const { isPending, data } = usePlexTyped<PlexSeasonView>(
+    server.name,
+    `/library/metadata/${props.item.ratingKey}/children`,
+    open,
+  );
 
   const handleClick = () => {
     setOpen(!open);
   };
+
+  useEffect(() => {}, []);
 
   return (
     <>
@@ -57,19 +74,18 @@ function PlexShowListItem(props: PlexListItemProps<PlexTvShow>) {
         <ListItemText primary={item.title} />
         <Button>Add</Button>
       </ListItem>
-      ;
       <Collapse in={open} timeout="auto" unmountOnExit>
-        <List>
-          <ListItem>
-            <ListItemText primary="test" />
-          </ListItem>
-          <ListItem>
-            <ListItemText primary="test" />
-          </ListItem>
-          <ListItem>
-            <ListItemText primary="test" />
-          </ListItem>
-        </List>
+        {isPending ? (
+          <Skeleton />
+        ) : (
+          <List>
+            {data?.Metadata.map((season) => (
+              <ListItem key={season.guid}>
+                <ListItemText primary={season.title} />
+              </ListItem>
+            ))}
+          </List>
+        )}
       </Collapse>
     </>
   );
@@ -86,44 +102,77 @@ function PlexMovieListItem(props: PlexListItemProps<PlexMovie>) {
   );
 }
 
-function PlexMediaListItem(props: PlexListItemProps<PlexMedia>) {
-  const { style, item, index } = props;
-
-  return (
-    <ListItem style={style} key={index} component="div" disablePadding>
-      {isPlexShow(item) && (
-        <ListItemIcon>
-          <ExpandMore />
-        </ListItemIcon>
-      )}
-      <ListItemText primary={item.title} />
-      <Button>Add</Button>
-    </ListItem>
-  );
-}
-
 function PlexDirectoryListItem(props: {
   server: PlexServerSettings;
-  item: PlexLibrarySection;
-  onItemAdd: (item: any) => void;
+  item: ProgrammingDirectory;
 }) {
+  const { server, item } = props;
   const [open, setOpen] = useState(false);
   const { isPending, data } = usePlexTyped<
     PlexLibraryMovies | PlexLibraryShows
-  >(props.server.name, `/library/sections/${props.item.key}/all`, open);
+  >(props.server.name, `/library/sections/${item.dir.key}/all`, open);
+  const listings = useStore((s) => s.knownMediaByServer[server.name]);
+
+  useEffect(() => {
+    if (data) {
+      addKnownMediaForServer(server.name, data.Metadata);
+      setProgrammingDirectoryListings(server.name, item.dir.key, data.Metadata);
+    }
+  }, [item.dir.key, server.name, data]);
 
   const handleClick = () => {
     setOpen(!open);
   };
 
-  const renderCollectionRow = (props: ListChildComponentProps) => {
-    const { index, style } = props;
-    const metadata = data!.Metadata[index];
+  // const renderCollectionRow = (props: ListChildComponentProps) => {
+  //   const { index, style } = props;
 
-    if (isPlexShow(metadata)) {
-      return <PlexShowListItem item={metadata} style={style} index={index} />;
-    } else if (isPlexMovie(metadata)) {
-      return <PlexMovieListItem item={metadata} style={style} index={index} />;
+  //   const listing = item.children[index];
+  //   const media = listings[listing.guid];
+
+  //   if (isPlexShow(media)) {
+  //     return (
+  //       <PlexShowListItem
+  //         item={media}
+  //         listing={listing}
+  //         style={style}
+  //         index={index}
+  //       />
+  //     );
+  //   } else if (isPlexMovie(media)) {
+  //     return (
+  //       <PlexMovieListItem
+  //         item={media}
+  //         listing={listing}
+  //         style={style}
+  //         index={index}
+  //       />
+  //     );
+  //   } else {
+  //     return null;
+  //   }
+  // };
+
+  const renderCollectionRow2 = (listing: ProgrammingListing) => {
+    const media = listings[listing.guid];
+    if (isPlexShow(media)) {
+      return (
+        <PlexShowListItem
+          item={media}
+          listing={listing}
+          // style={style}
+          // index={index}
+        />
+      );
+    } else if (isPlexMovie(media)) {
+      return (
+        <PlexMovieListItem
+          item={media}
+          listing={listing}
+          // style={style}
+          // index={index}
+        />
+      );
     } else {
       return null;
     }
@@ -134,7 +183,7 @@ function PlexDirectoryListItem(props: {
       <ListItem component="div" disablePadding>
         <ListItemButton selected={open} onClick={handleClick}>
           <ListItemIcon>{open ? <ExpandLess /> : <ExpandMore />}</ListItemIcon>
-          <ListItemText primary={props.item.title} />
+          <ListItemText primary={item.dir.title} />
           <Button>Add All</Button>
         </ListItemButton>
       </ListItem>
@@ -144,16 +193,17 @@ function PlexDirectoryListItem(props: {
             <Box sx={{ width: '100%', height: 400, pl: 4 }} />
           </Skeleton>
         ) : (
-          <Box sx={{ width: '100%', height: 400, pl: 4 }}>
-            <FixedSizeList
+          <Box sx={{ width: '100%', height: 400, pl: 4, overflowY: 'scroll' }}>
+            {/* <FixedSizeList
               height={400}
-              itemCount={data?.Metadata?.length || 0}
+              itemCount={item.children.length || 0}
               itemSize={46}
               width="100%"
               overscanCount={5}
             >
               {renderCollectionRow}
-            </FixedSizeList>
+            </FixedSizeList> */}
+            {item.children.map(renderCollectionRow2)}
           </Box>
         )}
       </Collapse>
@@ -164,10 +214,8 @@ function PlexDirectoryListItem(props: {
 
 export default function ProgrammingSelector() {
   const { data: plexServers } = usePlexServerSettings();
-
-  const [selectedServer, setSelectedServer] = useState<
-    PlexServerSettings | undefined
-  >(undefined);
+  const selectedServer = useStore((s) => s.currentServer);
+  const listingsByServer = useStore((s) => s.listingsByServer);
 
   useEffect(() => {
     const server =
@@ -175,7 +223,7 @@ export default function ProgrammingSelector() {
         ? plexServers[0]
         : undefined;
 
-    setSelectedServer(server);
+    setProgrammingListingServer(server);
   }, [plexServers]);
 
   const { data: plexResponse } = usePlex(
@@ -183,6 +231,14 @@ export default function ProgrammingSelector() {
     '/library/sections',
     !isUndefined(selectedServer),
   );
+
+  useEffect(() => {
+    if (plexResponse) {
+      setProgrammingDirectory(selectedServer!.name, [
+        ...plexResponse.Directory,
+      ]);
+    }
+  }, [selectedServer, plexResponse]);
 
   return (
     <>
@@ -200,14 +256,14 @@ export default function ProgrammingSelector() {
           )}
         </FormControl>
         <List component="nav" sx={{ width: '100%' }}>
-          {plexResponse?.Directory?.map((dir) => (
-            <PlexDirectoryListItem
-              server={selectedServer!}
-              key={dir.uuid}
-              item={dir}
-              onItemAdd={() => {}}
-            />
-          ))}
+          {selectedServer &&
+            (listingsByServer[selectedServer.name] ?? []).map((listing) => (
+              <PlexDirectoryListItem
+                server={selectedServer}
+                key={listing.dir.uuid}
+                item={listing}
+              />
+            ))}
         </List>
         <Typography>Selected Items</Typography>
       </DialogContent>
