@@ -1,13 +1,14 @@
 import { compact, isNil, isUndefined } from 'lodash-es';
 import constants from './constants.js';
 import { ChannelDB } from './dao/channelDb.js';
-import { Channel, ImmutableChannel, Program } from './dao/db.js';
+import { ImmutableChannel, Program } from './dao/db.js';
 import {
   LineupItem,
   Maybe,
   isCommercialLineupItem,
   isPlexBackedLineupItem,
 } from './types.js';
+import { Channel } from 'dizquetv-types';
 
 const SLACK = constants.SLACK;
 

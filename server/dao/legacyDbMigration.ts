@@ -1,4 +1,5 @@
 import {
+  Channel,
   FfmpegSettings,
   PlexServerSettings,
   defaultFfmpegSettings,
@@ -24,7 +25,6 @@ import createLogger from '../logger.js';
 import { Maybe } from '../types.js';
 import {
   CachedImage,
-  Channel,
   CustomShow,
   PlexStreamSettings,
   Program,

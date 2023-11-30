@@ -1,34 +1,10 @@
-export type ProgramType =
-  | 'movie'
-  | 'episode'
-  | 'track'
-  | 'redirect'
-  | 'custom'
-  | 'flex';
+import z from 'zod';
+import { ProgramTypeSchema } from './schemas/programmingSchema.js';
+import { ProgramSchema } from './schemas/programmingSchema.js';
 
-export type Program = {
-  title: string;
-  key: string;
-  ratingKey: string;
-  icon: string;
-  type: ProgramType;
-  duration: number;
-  summary: string;
-  plexFile: string;
-  file: string;
-  showTitle?: string; // Unclear if this is necessary
-  episode?: number;
-  season?: number;
-  episodeIcon?: string;
-  seasonIcon?: string;
-  showIcon?: string;
-  serverKey: string;
-  rating?: string;
-  date?: string;
-  year?: number;
-  channel?: number; // Redirect
-  isOffline: boolean; // Flex
-  customShowId?: string;
-  customShowName?: string;
-  customOrder?: number;
-};
+// This helps with VS Code type preview
+type Alias<t> = t & { _: never };
+
+export type ProgramType = z.infer<typeof ProgramTypeSchema>;
+
+export type Program = Alias<z.infer<typeof ProgramSchema>>;

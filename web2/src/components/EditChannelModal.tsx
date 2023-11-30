@@ -9,7 +9,6 @@ import {
   Tab,
   Tabs,
   TextField,
-  Typography,
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { Channel } from 'dizquetv-types';
@@ -117,7 +116,7 @@ export default function CreateChannelModal(props: CreateChannelModalProps) {
             <TextField fullWidth label="Channel Name" value={channel?.name} />
           </TabPanel>
           <TabPanel value="programming" currentValue={currentTab}>
-            <ChannelProgrammingConfig />
+            <ChannelProgrammingConfig channel={props.channelNumber} />
           </TabPanel>
           <TabPanel value="flex" currentValue={currentTab}>
             Flex

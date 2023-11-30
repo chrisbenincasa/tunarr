@@ -1,63 +1,20 @@
-import { Program } from './Program.js';
-import { Resolution } from './misc.js';
-import { ChannelIconSchema } from './schemas/channelSchema.js';
 import z from 'zod';
+import {
+  ChannelIconSchema,
+  ChannelOfflineSchema,
+  ChannelSchema,
+  FillerCollectionSchema,
+  WatermarkSchema,
+} from './schemas/channelSchema.js';
 
-export type Watermark = {
-  url?: string;
-  enabled: boolean;
-  position: string;
-  width: number;
-  verticalMargin: number;
-  horizontalMargin: number;
-  duration: number;
-  fixedSize: boolean;
-  animated: boolean;
-};
+type Alias<t> = t & { _?: never };
 
-export type FillerCollection = {
-  id: string;
-  weight: number;
-  cooldownSeconds: number;
-};
+export type Watermark = Alias<z.infer<typeof WatermarkSchema>>;
 
-export type ChannelTranscodingOptions = {
-  targetResolution: Resolution;
-  videoBitrate?: number;
-  videoBufferSize?: number;
-};
+export type FillerCollection = Alias<z.infer<typeof FillerCollectionSchema>>;
 
-export type ChannelOffline = {
-  picture?: string;
-  soundtrack?: string;
-  mode: string;
-};
+export type ChannelOffline = Alias<z.infer<typeof ChannelOfflineSchema>>;
 
-export type ChannelIcon = z.infer<typeof ChannelIconSchema>;
+export type ChannelIcon = Alias<z.infer<typeof ChannelIconSchema>>;
 
-export type Channel = {
-  number: number;
-  watermark?: Watermark;
-  fillerCollections?: FillerCollection[];
-  programs: Program[];
-  icon: ChannelIcon;
-  guideMinimumDurationSeconds: number;
-  groupTitle: string;
-  disableFillerOverlay: boolean;
-  // iconWidth: number;
-  // iconDuration: number;
-  // iconPosition: string;
-  // startTime: Date;
-  startTimeEpoch: number;
-  offline: ChannelOffline;
-  // offlinePicture: string;
-  // offlineSoundtrack: string;
-  // offlineMode: string;
-  name: string;
-  transcoding?: ChannelTranscodingOptions;
-  duration: number;
-  fallback: Program[];
-  stealth: boolean;
-  guideFlexPlaceholder?: string;
-  fillerRepeatCooldown?: number;
-};
+export type Channel = Alias<z.infer<typeof ChannelSchema>>;

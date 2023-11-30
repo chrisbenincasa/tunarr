@@ -1,4 +1,4 @@
-import { ChannelLineup } from 'dizquetv-types';
+import { Channel, ChannelLineup } from 'dizquetv-types';
 import {
   compact,
   isEmpty,
@@ -11,7 +11,6 @@ import { MarkRequired } from 'ts-essentials';
 import z from 'zod';
 import constants from '../constants.js';
 import {
-  Channel,
   ChannelIconSchema,
   ImmutableChannel,
   Program,
@@ -56,9 +55,9 @@ const TvGuideProgramSchema = z.object({
   programDuration: z.number().optional(),
 });
 
-type TvGuideProgram = z.infer<typeof TvGuideProgramSchema>;
+export type TvGuideProgram = z.infer<typeof TvGuideProgramSchema>;
 
-type ChannelPrograms = {
+export type ChannelPrograms = {
   channel: Partial<Channel>;
   programs: TvGuideProgram[];
 };

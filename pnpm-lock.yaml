@@ -56,6 +56,9 @@ importers:
       express-fileupload:
         specifier: ^1.2.1
         version: 1.2.1
+      fast-json-stringify:
+        specifier: ^5.9.1
+        version: 5.9.1
       fastify:
         specifier: ^4.24.3
         version: 4.24.3

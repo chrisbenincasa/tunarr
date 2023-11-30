@@ -1,6 +1,7 @@
 import { DeepReadonly } from 'ts-essentials';
 import { Maybe } from '../types.js';
-import { Channel, DbAccess, ImmutableChannel } from './db.js';
+import { DbAccess, ImmutableChannel } from './db.js';
+import { Channel } from 'dizquetv-types';
 
 export class ChannelDB {
   private db: DbAccess;

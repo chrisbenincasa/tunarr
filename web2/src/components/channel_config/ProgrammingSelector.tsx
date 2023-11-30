@@ -7,6 +7,7 @@ import {
   DialogTitle,
   Divider,
   FormControl,
+  IconButton,
   List,
   ListItem,
   ListItemButton,
@@ -17,6 +18,7 @@ import {
   Skeleton,
   Typography,
 } from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { PlexServerSettings } from 'dizquetv-types';
 import {
   PlexLibraryMovies,
@@ -28,19 +30,24 @@ import {
   isPlexMovie,
   isPlexShow,
 } from 'dizquetv-types/plex';
-import { isEmpty, isUndefined } from 'lodash-es';
-import React, { useEffect, useState } from 'react';
-import { FixedSizeList, ListChildComponentProps } from 'react-window';
+import { isEmpty, isUndefined, take } from 'lodash-es';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { usePlex, usePlexTyped } from '../../hooks/plexHooks.ts';
 import { usePlexServerSettings } from '../../hooks/settingsHooks.ts';
-import useStore, {
-  ProgrammingDirectory,
-  ProgrammingListing,
+import useStore from '../../store/index.ts';
+import {
   addKnownMediaForServer,
-  setProgrammingDirectory,
   setProgrammingDirectoryListings,
   setProgrammingListingServer,
-} from '../../store/index.ts';
+  setProgrammingDirectory,
+  addSelectedMedia,
+  removeSelectedMedia,
+} from '../../store/programmingSelector/actions.ts';
+import {
+  ProgrammingListing,
+  ProgrammingDirectory,
+  SelectedMedia,
+} from '../../store/programmingSelector/store.ts';
 
 interface PlexListItemProps<T extends PlexMedia> {
   item: T;
@@ -52,7 +59,7 @@ interface PlexListItemProps<T extends PlexMedia> {
 function PlexShowListItem(props: PlexListItemProps<PlexTvShow>) {
   const server = useStore((s) => s.currentServer!); // We have to have a server at this point
   const [open, setOpen] = useState(false);
-  const { style, item, index } = props;
+  const { item } = props;
   const { isPending, data } = usePlexTyped<PlexSeasonView>(
     server.name,
     `/library/metadata/${props.item.ratingKey}/children`,
@@ -66,10 +73,10 @@ function PlexShowListItem(props: PlexListItemProps<PlexTvShow>) {
   useEffect(() => {}, []);
 
   return (
-    <>
-      <ListItem style={style} key={index} component="div" disablePadding>
+    <React.Fragment key={item.guid}>
+      <ListItem dense>
         <ListItemIcon onClick={handleClick}>
-          <ExpandMore />
+          {open ? <ExpandLess /> : <ExpandMore />}
         </ListItemIcon>
         <ListItemText primary={item.title} />
         <Button>Add</Button>
@@ -78,26 +85,45 @@ function PlexShowListItem(props: PlexListItemProps<PlexTvShow>) {
         {isPending ? (
           <Skeleton />
         ) : (
-          <List>
-            {data?.Metadata.map((season) => (
-              <ListItem key={season.guid}>
-                <ListItemText primary={season.title} />
-              </ListItem>
-            ))}
-          </List>
+          <Box
+            sx={{ width: '100%', maxHeight: 400, pl: 4, overflowY: 'scroll' }}
+          >
+            <List>
+              {data?.Metadata.map((season, idx, arr) => (
+                <React.Fragment key={season.guid}>
+                  <ListItem dense divider={idx < arr.length - 1}>
+                    <ListItemIcon>
+                      <ExpandMore />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={`${season.title} (${season.leafCount} episodes)`}
+                    />
+                    <Button>Add</Button>
+                  </ListItem>
+                  {/* <Divider variant="fullWidth" /> */}
+                </React.Fragment>
+              ))}
+            </List>
+          </Box>
         )}
       </Collapse>
-    </>
+      <Divider variant="fullWidth" />
+    </React.Fragment>
   );
 }
 
 function PlexMovieListItem(props: PlexListItemProps<PlexMovie>) {
-  const { style, item, index } = props;
+  const { item, index } = props;
+  const selectedServer = useStore((s) => s.currentServer);
+
+  const addItem = () => {
+    addSelectedMedia(selectedServer!.name, [item]);
+  };
 
   return (
-    <ListItem style={style} key={index} component="div" disablePadding>
+    <ListItem key={index} component="div" disablePadding>
       <ListItemText primary={item.title} />
-      <Button>Add</Button>
+      <Button onClick={addItem}>Add</Button>
     </ListItem>
   );
 }
@@ -113,14 +139,40 @@ function PlexDirectoryListItem(props: {
   >(props.server.name, `/library/sections/${item.dir.key}/all`, open);
   const listings = useStore((s) => s.knownMediaByServer[server.name]);
 
+  const observerTarget = useRef(null);
+  const [limit, setLimit] = useState(Math.min(item.children.length, 20));
+
+  useEffect(() => {
+    const curr = observerTarget.current;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && limit < item.children.length) {
+          setLimit((s) => s + 10);
+        }
+      },
+      { threshold: 0.5 },
+    );
+
+    if (curr) {
+      observer.observe(curr);
+    }
+
+    return () => {
+      if (curr) {
+        observer.unobserve(curr);
+      }
+    };
+  }, [observerTarget, limit, item.children, setLimit]);
+
   useEffect(() => {
     if (data) {
       addKnownMediaForServer(server.name, data.Metadata);
       setProgrammingDirectoryListings(server.name, item.dir.key, data.Metadata);
     }
-  }, [item.dir.key, server.name, data]);
+  }, [item.dir.title, item.dir.key, server.name, data]);
 
   const handleClick = () => {
+    setLimit(Math.min(item.children.length, 20));
     setOpen(!open);
   };
 
@@ -158,6 +210,7 @@ function PlexDirectoryListItem(props: {
     if (isPlexShow(media)) {
       return (
         <PlexShowListItem
+          key={media.guid}
           item={media}
           listing={listing}
           // style={style}
@@ -167,6 +220,7 @@ function PlexDirectoryListItem(props: {
     } else if (isPlexMovie(media)) {
       return (
         <PlexMovieListItem
+          key={media.guid}
           item={media}
           listing={listing}
           // style={style}
@@ -203,7 +257,8 @@ function PlexDirectoryListItem(props: {
             >
               {renderCollectionRow}
             </FixedSizeList> */}
-            {item.children.map(renderCollectionRow2)}
+            {take(item.children, limit).map(renderCollectionRow2)}
+            <div style={{ height: 40 }} ref={observerTarget}></div>
           </Box>
         )}
       </Collapse>
@@ -216,6 +271,8 @@ export default function ProgrammingSelector() {
   const { data: plexServers } = usePlexServerSettings();
   const selectedServer = useStore((s) => s.currentServer);
   const listingsByServer = useStore((s) => s.listingsByServer);
+  const knownMedia = useStore((s) => s.knownMediaByServer);
+  const selectedMedia = useStore((s) => s.selectedMedia);
 
   useEffect(() => {
     const server =
@@ -239,6 +296,27 @@ export default function ProgrammingSelector() {
       ]);
     }
   }, [selectedServer, plexResponse]);
+
+  const removeSelectedItem = useCallback((selectedMedia: SelectedMedia) => {
+    removeSelectedMedia(selectedMedia.server, [selectedMedia.guid]);
+  }, []);
+
+  const renderSelectedItems = () => {
+    const items = selectedMedia.map((selected) => {
+      const media = knownMedia[selected.server][selected.guid];
+      return (
+        <ListItem key={selected.guid}>
+          <ListItemText primary={media.title} />
+          <ListItemIcon>
+            <IconButton onClick={() => removeSelectedItem(selected)}>
+              <DeleteIcon color="error" />
+            </IconButton>
+          </ListItemIcon>
+        </ListItem>
+      );
+    });
+    return <List>{items}</List>;
+  };
 
   return (
     <>
@@ -266,6 +344,7 @@ export default function ProgrammingSelector() {
             ))}
         </List>
         <Typography>Selected Items</Typography>
+        {selectedMedia.length > 0 && renderSelectedItems()}
       </DialogContent>
     </>
   );

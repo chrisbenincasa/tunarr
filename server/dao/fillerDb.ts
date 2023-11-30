@@ -7,7 +7,6 @@ import { Maybe } from '../types.js';
 import { sequentialPromises } from '../util.js';
 import { ChannelDB } from './channelDb.js';
 import {
-  Channel,
   DbAccess,
   FillerCollection,
   FillerList,
@@ -15,6 +14,7 @@ import {
   ImmutableChannel,
   Program,
 } from './db.js';
+import { Channel } from 'dizquetv-types';
 
 const logger = createLogger(import.meta);
 

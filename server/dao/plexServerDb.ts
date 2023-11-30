@@ -4,9 +4,9 @@ import { ChannelCache } from '../channelCache.js';
 import { serverOptions } from '../globals.js';
 import { ChannelDB } from './channelDb.js';
 import { CustomShowDB } from './customShowDb.js';
-import { Channel, DbAccess, Program, offlineProgram } from './db.js';
+import { DbAccess, Program, offlineProgram } from './db.js';
 import { FillerDB } from './fillerDb.js';
-import { PlexServerSettings } from 'dizquetv-types';
+import { Channel, PlexServerSettings } from 'dizquetv-types';
 
 //hmnn this is more of a "PlexServerService"...
 const ICON_REGEX =
@@ -89,7 +89,7 @@ export class PlexServerDB {
           }
         }
         newChannel.fallback = this.fixupProgramArray(
-          channel.fallback,
+          channel.fallback ?? [],
           name,
           newServer,
           channelReport,

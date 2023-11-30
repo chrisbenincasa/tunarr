@@ -2,11 +2,14 @@ import JSONStream from 'JSONStream';
 import { RequestGenericInterface } from 'fastify';
 import { isUndefined, omit, sortBy } from 'lodash-es';
 import { Writable } from 'stream';
-import { Channel, Program } from '../dao/db.js';
+import { Program } from '../dao/db.js';
 import createLogger from '../logger.js';
 import { scheduledJobsById } from '../services/scheduler.js';
 import throttle from '../services/throttle.js';
 import { RouterPluginCallback } from '../types/serverType.js';
+import z from 'zod';
+import { Channel } from 'dizquetv-types';
+import { ProgramSchema } from 'dizquetv-types/schemas';
 
 const logger = createLogger(import.meta);
 
@@ -68,7 +71,15 @@ export const channelsRouter: RouterPluginCallback = (fastify, _opts, done) => {
 
   fastify.get<ChannelNumberParams>(
     '/api/channel/programs/:number',
+    {
+      schema: {
+        response: {
+          200: z.array(ProgramSchema),
+        },
+      },
+    },
     async (req, res) => {
+      void res.hijack();
       try {
         const channel = req.serverCtx.channelCache.getChannelConfig(
           req.params.number,
@@ -79,6 +90,11 @@ export const channelsRouter: RouterPluginCallback = (fastify, _opts, done) => {
           if (isUndefined(programs)) {
             return res.status(404).send("Channel doesn't have programs?");
           }
+
+          res.raw.writeHead(200, {
+            'content-type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+          });
 
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
           const transformStream: Writable = JSONStream.stringify();
@@ -92,8 +108,7 @@ export const channelsRouter: RouterPluginCallback = (fastify, _opts, done) => {
           }
           // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
           transformStream.end();
-
-          return res.header('Content-Type', 'application/json');
+          // return res.header('Content-Type', 'application/json');
         } else {
           return res.status(404).send('Channel not found');
         }
@@ -196,7 +211,7 @@ function cleanUpChannel(channel: Channel) {
   channel.programs = channel.programs.flatMap(cleanUpProgram);
   // delete channel.fillerContent;
   // delete channel.filler;
-  channel.fallback = channel.fallback.flatMap(cleanUpProgram);
+  channel.fallback = channel.fallback?.flatMap(cleanUpProgram);
   channel.duration = 0;
   for (let i = 0; i < channel.programs.length; i++) {
     channel.duration += channel.programs[i].duration;

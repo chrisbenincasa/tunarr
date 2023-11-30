@@ -1,4 +1,4 @@
-import { isNil, isUndefined, pick } from 'lodash-es';
+import { first, isNil, isUndefined, pick } from 'lodash-es';
 import * as randomJS from 'random-js';
 import { DeepReadonly } from 'ts-essentials';
 import { ChannelCache } from './channelCache.js';
@@ -129,8 +129,8 @@ export function createLineup(
     let filler: Maybe<Program | PartialCommercialType>;
     let special: Maybe<Program>;
 
-    if (channel.offline.mode === 'clip' && channel.fallback.length != 0) {
-      special = { ...channel.fallback[0] };
+    if (channel.offline.mode === 'clip' && channel.fallback?.length != 0) {
+      special = { ...first(channel.fallback)! };
     }
     const randomResult = pickRandomWithMaxDuration(
       channelCache,

@@ -1,4 +1,11 @@
-import { isEmpty, isUndefined, reduce } from 'lodash-es';
+import {
+  chain,
+  isArray,
+  isEmpty,
+  isPlainObject,
+  isUndefined,
+  reduce,
+} from 'lodash-es';
 import { isPromise } from 'node:util/types';
 
 declare global {
@@ -124,4 +131,32 @@ export function time<T>(
     console.timeEnd(key);
     return retOrPromise;
   }
+}
+
+export function deepCopyArray<T>(value: T[]): T[] {
+  const n = Array<T>(value.length);
+  for (let index = 0; index < value.length; index++) {
+    const element = value[index];
+    n[index] = deepCopy(element);
+  }
+  return n;
+}
+
+export function deepCopy<T>(value: T): T {
+  if (!isPlainObject(value)) {
+    return value;
+  }
+
+  return chain(value)
+    .keys()
+    .reduce((prev, key) => {
+      return {
+        ...prev,
+        [key]: isArray(value[key])
+          ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            deepCopyArray(value[key] as any[])
+          : deepCopy(value),
+      };
+    }, {} as T)
+    .value() as T;
 }

@@ -2,18 +2,21 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import XMLWriter from 'xml-writer';
 import fs from 'fs';
-import { Channel, XmlTvSettings } from './dao/db.js';
+import { XmlTvSettings } from './dao/db.js';
 import { CacheImageService } from './services/cacheImageService.js';
+import { Channel, TvGuideProgram } from 'dizquetv-types';
+import { ChannelPrograms } from './services/tvGuideService.js';
+import { map } from 'lodash-es';
 
 let isShutdown = false;
 let isWorking = false;
 
 export class XmlTvWriter {
   async WriteXMLTV(
-    json,
+    json: Record<number, ChannelPrograms>,
     xmlSettings: XmlTvSettings,
     throttle: () => Promise<void>,
-    cacheImageService,
+    cacheImageService: CacheImageService,
   ) {
     if (isShutdown) {
       return;
@@ -32,11 +35,12 @@ export class XmlTvWriter {
   }
 
   private writePromise(
-    json,
+    json: Record<number, ChannelPrograms>,
     xmlSettings: XmlTvSettings,
     throttle: () => Promise<void>,
     cacheImageService: CacheImageService,
   ) {
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
     return new Promise(async (resolve, reject) => {
       const ws = fs.createWriteStream(xmlSettings.outputPath);
       const xw = new XMLWriter(true, (str, enc) => ws.write(str, enc));
@@ -48,10 +52,11 @@ export class XmlTvWriter {
       });
       this._writeDocStart(xw);
       const middle = async () => {
-        const channelNumbers: any[] = [];
-        Object.keys(json).forEach((key) => channelNumbers.push(key));
-        const channels = channelNumbers.map((number) => json[number].channel);
-        this._writeChannels(xw, channels);
+        const channelNumbers: string[] = [];
+        this._writeChannels(
+          xw,
+          map(json, (obj) => obj.channel),
+        );
         for (let i = 0; i < channelNumbers.length; i++) {
           const number = channelNumbers[i];
           await this._writePrograms(
@@ -86,7 +91,7 @@ export class XmlTvWriter {
     xw.endDocument();
   }
 
-  private _writeChannels(xw, channels: Channel[]) {
+  private _writeChannels(xw, channels: Partial<Channel>[]) {
     for (let i = 0; i < channels.length; i++) {
       xw.startElement('channel');
       xw.writeAttribute('id', channels[i].number);
@@ -96,7 +101,7 @@ export class XmlTvWriter {
       xw.endElement();
       if (channels[i].icon) {
         xw.startElement('icon');
-        xw.writeAttribute('src', channels[i].icon.path);
+        xw.writeAttribute('src', channels[i].icon?.path);
         xw.endElement();
       }
       xw.endElement();
@@ -104,12 +109,12 @@ export class XmlTvWriter {
   }
 
   async _writePrograms(
-    xw,
-    channel,
-    programs,
-    throttle,
-    xmlSettings,
-    cacheImageService,
+    xw: unknown,
+    channel: Partial<Channel>,
+    programs: TvGuideProgram[],
+    throttle: () => Promise<void>,
+    xmlSettings: XmlTvSettings,
+    cacheImageService: CacheImageService,
   ) {
     for (let i = 0; i < programs.length; i++) {
       if (!isShutdown) {
@@ -126,8 +131,8 @@ export class XmlTvWriter {
   }
 
   async _writeProgramme(
-    channel,
-    program,
+    channel: Partial<Channel>,
+    program: TvGuideProgram,
     xw,
     xmlSettings,
     cacheImageService: CacheImageService,
@@ -159,7 +164,11 @@ export class XmlTvWriter {
       xw.startElement('episode-num');
       xw.writeAttribute('system', 'xmltv_ns');
       xw.text(
-        program.sub.season - 1 + '.' + (program.sub.episode - 1) + '.0/1',
+        (program.sub.season ?? 1) -
+          1 +
+          '.' +
+          ((program.sub.episode ?? 1) - 1) +
+          '.0/1',
       );
       xw.endElement();
     }
@@ -215,7 +224,7 @@ export class XmlTvWriter {
   }
 }
 
-function wait(x) {
+function wait(x: number) {
   return new Promise((resolve) => {
     setTimeout(resolve, x);
   });

@@ -1,4 +1,5 @@
 import {
+  Channel,
   FfmpegSettings,
   PlexServerSettings,
   defaultFfmpegSettings,
@@ -138,33 +139,6 @@ export const ChannelIconSchema = z.object({
 });
 
 export type ChannelIcon = z.infer<typeof ChannelIconSchema>;
-
-export type Channel = {
-  number: number;
-  watermark?: Watermark;
-  fillerCollections?: FillerCollection[];
-  programs: Program[];
-  icon: ChannelIcon;
-  guideMinimumDurationSeconds: number;
-  groupTitle: string;
-  disableFillerOverlay: boolean;
-  // iconWidth: number;
-  // iconDuration: number;
-  // iconPosition: string;
-  // startTime: Date;
-  startTimeEpoch: number;
-  offline: ChannelOffline;
-  // offlinePicture: string;
-  // offlineSoundtrack: string;
-  // offlineMode: string;
-  name: string;
-  transcoding?: ChannelTranscodingOptions;
-  duration: number;
-  fallback: Program[];
-  stealth: boolean;
-  guideFlexPlaceholder?: string;
-  fillerRepeatCooldown?: number;
-};
 
 export type ImmutableChannel = DeepReadonly<Channel>;
 
