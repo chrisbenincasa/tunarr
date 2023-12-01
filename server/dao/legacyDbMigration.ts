@@ -2,6 +2,7 @@ import {
   Channel,
   FfmpegSettings,
   PlexServerSettings,
+  Program,
   defaultFfmpegSettings,
   defaultPlexStreamSettings,
 } from 'dizquetv-types';
@@ -23,11 +24,11 @@ import path from 'path';
 import { globalOptions } from '../globals.js';
 import createLogger from '../logger.js';
 import { Maybe } from '../types.js';
+import { isNodeError } from '../util.js';
 import {
   CachedImage,
   CustomShow,
   PlexStreamSettings,
-  Program,
   ProgramType,
   Resolution,
   Schema,
@@ -170,24 +171,45 @@ function convertProgram(program: JSONObject): Program {
 }
 
 async function migrateChannels(db: Low<Schema>) {
+  const channelsBackupPath = path.resolve(
+    globalOptions().database,
+    'channels-backup',
+  );
+
+  let backupExists = false;
+
+  try {
+    await fsPromises.mkdir(channelsBackupPath);
+  } catch (e) {
+    if (isNodeError(e) && e.code !== 'EEXIST') {
+      console.error(e);
+      return;
+    } else {
+      backupExists = (await fsPromises.readdir(channelsBackupPath)).length > 0;
+    }
+  }
+
+  const channelPath = path.resolve(globalOptions().database, 'channels');
+
   async function migrateChannel(file: string): Promise<Channel> {
     logger.debug('Migrating channel: ' + file);
-    const channelPath = path.join(
-      path.resolve(globalOptions().database, 'channels'),
-      file,
-    );
-    const channel = await fsPromises.readFile(channelPath);
-    console.log(channel);
+    const channel = await fsPromises.readFile(path.join(channelPath, file));
 
     // Create a backup of the channel file
-    await fsPromises.copyFile(channelPath, channelPath + '.bak');
+    if (!backupExists) {
+      logger.info('Creating channel backup...');
+      await fsPromises.copyFile(
+        path.join(channelPath, file),
+        path.join(channelsBackupPath, file + '.bak'),
+      );
+    }
 
     const parsed = JSON.parse(channel.toString('utf-8')) as JSONObject;
 
     const transcodingOptions = get(
       parsed,
       'transcoding.targetResolution',
-    ) as string;
+    ) as Maybe<string>;
     const hasTranscodingOptions = !isUndefined(
       emptyStringToUndefined(transcodingOptions),
     );
@@ -263,9 +285,19 @@ async function migrateChannels(db: Low<Schema>) {
     };
   }
 
-  const channelFiles = await fsPromises.readdir(
-    path.resolve(globalOptions().database, 'channels'),
-  );
+  logger.debug(`Using channel directory: ${channelPath}`);
+
+  const channelFiles = await fsPromises.readdir(channelPath);
+
+  logger.debug(`Found channels: ${channelFiles.join(', ')}`);
+
+  // return sequentialPromises(channelFiles, undefined, async (file) => {
+  //   const newChannel = await migrateChannel(file);
+  //   await fsPromises.writeFile(
+  //     path.join(channelPath, file),
+  //     JSON.stringify(newChannel),
+  //   );
+  // });
 
   const newChannels = await channelFiles.reduce(
     async (prev, file) => {

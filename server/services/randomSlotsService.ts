@@ -3,9 +3,9 @@ import getShowDataFunc, { ShowData } from './getShowData.js';
 import { random } from '../helperFuncs.js';
 import throttle from './throttle.js';
 import { isUndefined } from 'lodash-es';
-import { Program } from '../dao/db.js';
 import createLogger from '../logger.js';
 import { Maybe } from '../types.js';
+import { Program } from 'dizquetv-types';
 
 const logger = createLogger(import.meta);
 
@@ -63,7 +63,7 @@ export type RandomSlotSchedule = {
   period?: number;
 };
 
-function getShow(program): ShowDataWithExtras | null {
+function getShow(program: ShuffleProgram): ShowDataWithExtras | null {
   const d = getShowData(program);
   if (!d.hasShow) {
     logger.warn('Program returned hasShow = false', program, d);
@@ -95,7 +95,7 @@ function shuffle<T>(array: T[], lo: number | undefined, hi: number) {
   return array;
 }
 
-function getProgramId(program) {
+function getProgramId(program: ShuffleProgram) {
   let s = program.serverKey;
   if (isUndefined(s)) {
     s = 'unknown';
@@ -255,7 +255,7 @@ export default async (
 
   function getNextForSlot(
     slot: RandomSlot,
-    remaining,
+    remaining: number | undefined,
   ): Maybe<Partial<Program>> {
     //remaining doesn't restrict what next show is picked. It is only used
     //for shows with flexible length (flex and redirects)

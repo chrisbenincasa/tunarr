@@ -25,7 +25,7 @@ export const ProgramSchema = z.object({
   episodeIcon: z.string().optional(),
   seasonIcon: z.string().optional(),
   showIcon: z.string().optional(),
-  serverKey: z.string(),
+  serverKey: z.string().optional(),
   rating: z.string().optional(),
   date: z.string().optional(),
   year: z.number().optional(),

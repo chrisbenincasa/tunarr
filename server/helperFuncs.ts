@@ -6,7 +6,6 @@ import constants from './constants.js';
 import {
   FillerCollection,
   ImmutableChannel,
-  Program,
   Watermark,
   offlineProgram,
 } from './dao/db.js';
@@ -19,7 +18,7 @@ import {
   Maybe,
   programToCommercial,
 } from './types.js';
-import { FfmpegSettings } from 'dizquetv-types';
+import { FfmpegSettings, Program } from 'dizquetv-types';
 
 const SLACK = constants.SLACK;
 const Random = randomJS.Random;
@@ -172,10 +171,10 @@ export function createLineup(
         // just add the video, starting at 0, playing the entire duration
         type: 'commercial',
         title: filler.title,
-        key: filler.key,
-        plexFile: filler.plexFile,
-        file: filler.file,
-        ratingKey: filler.ratingKey,
+        key: filler.key!,
+        plexFile: filler.plexFile!,
+        file: filler.file!,
+        ratingKey: filler.ratingKey!,
         start: fillerstart,
         streamDuration: Math.max(
           1,
@@ -184,7 +183,7 @@ export function createLineup(
         duration: filler.duration,
         fillerId: filler.type === 'commercial' ? filler.fillerId : '', // Is this used...
         beginningOffset: beginningOffset,
-        serverKey: filler.serverKey,
+        serverKey: filler.serverKey!,
       });
       return lineup;
     }
@@ -212,16 +211,16 @@ export function createLineup(
   return [
     {
       type: 'program',
-      title: activeProgram.title,
-      key: activeProgram.key,
-      plexFile: activeProgram.plexFile,
-      file: activeProgram.file,
-      ratingKey: activeProgram.ratingKey,
+      title: activeProgram.title!,
+      key: activeProgram.key!,
+      plexFile: activeProgram.plexFile!,
+      file: activeProgram.file!,
+      ratingKey: activeProgram.ratingKey!,
       start: timeElapsed,
       streamDuration: activeProgram.duration - timeElapsed,
       beginningOffset: beginningOffset,
       duration: activeProgram.duration,
-      serverKey: activeProgram.serverKey,
+      serverKey: activeProgram.serverKey!,
     },
   ];
 }

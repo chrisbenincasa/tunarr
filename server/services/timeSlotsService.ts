@@ -1,10 +1,10 @@
 import { isUndefined, shuffle as lodashShuffle } from 'lodash-es';
 import constants from '../constants.js';
-import { Program } from '../dao/db.js';
 import { random } from '../helperFuncs.js';
 import { Maybe } from '../types.js';
 import getShowDataFunc, { ShowData } from './getShowData.js';
 import throttle from './throttle.js';
+import { Program } from 'dizquetv-types';
 
 const getShowData = getShowDataFunc();
 

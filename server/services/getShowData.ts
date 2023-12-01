@@ -1,5 +1,5 @@
+import { Program } from 'dizquetv-types';
 import { isUndefined } from 'lodash-es';
-import { Program } from '../dao/db.js';
 
 // Temporary type until we sort this out...
 export type ShowData = {
@@ -20,7 +20,7 @@ type ShowDataProgram = Omit<
 >;
 
 export default function () {
-  let movieTitleOrder = {};
+  const movieTitleOrder: Record<string, number> = {};
   let movieTitleOrderNumber = 0;
 
   return (program: ShowDataProgram): ShowData => {
@@ -44,7 +44,7 @@ export default function () {
         hasShow: false,
       };
     } else if (program.type === 'movie') {
-      let key = program.serverKey + '|' + program.key;
+      const key = program.serverKey + '|' + program.key;
       if (isUndefined(movieTitleOrder[key])) {
         movieTitleOrder[key] = movieTitleOrderNumber++;
       }

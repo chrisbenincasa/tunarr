@@ -4,9 +4,9 @@ import { ChannelCache } from '../channelCache.js';
 import { serverOptions } from '../globals.js';
 import { ChannelDB } from './channelDb.js';
 import { CustomShowDB } from './customShowDb.js';
-import { DbAccess, Program, offlineProgram } from './db.js';
+import { DbAccess, offlineProgram } from './db.js';
 import { FillerDB } from './fillerDb.js';
-import { Channel, PlexServerSettings } from 'dizquetv-types';
+import { Channel, PlexServerSettings, Program } from 'dizquetv-types';
 
 //hmnn this is more of a "PlexServerService"...
 const ICON_REGEX =

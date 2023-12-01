@@ -12,9 +12,8 @@ import {
   FillerList,
   FillerProgram,
   ImmutableChannel,
-  Program,
 } from './db.js';
-import { Channel } from 'dizquetv-types';
+import { Channel, Program } from 'dizquetv-types';
 
 const logger = createLogger(import.meta);
 

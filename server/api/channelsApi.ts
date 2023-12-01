@@ -2,13 +2,12 @@ import JSONStream from 'JSONStream';
 import { RequestGenericInterface } from 'fastify';
 import { isUndefined, omit, sortBy } from 'lodash-es';
 import { Writable } from 'stream';
-import { Program } from '../dao/db.js';
 import createLogger from '../logger.js';
 import { scheduledJobsById } from '../services/scheduler.js';
 import throttle from '../services/throttle.js';
 import { RouterPluginCallback } from '../types/serverType.js';
 import z from 'zod';
-import { Channel } from 'dizquetv-types';
+import { Channel, Program } from 'dizquetv-types';
 import { ProgramSchema } from 'dizquetv-types/schemas';
 
 const logger = createLogger(import.meta);

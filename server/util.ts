@@ -160,3 +160,7 @@ export function deepCopy<T>(value: T): T {
     }, {} as T)
     .value() as T;
 }
+
+export function isNodeError(error: unknown): error is NodeJS.ErrnoException {
+  return error instanceof Error;
+}

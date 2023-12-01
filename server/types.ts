@@ -1,5 +1,5 @@
-import { FfmpegSettings } from 'dizquetv-types';
-import { DbAccess, ImmutableChannel, Program, Watermark } from './dao/db.js';
+import { FfmpegSettings, Program } from 'dizquetv-types';
+import { DbAccess, ImmutableChannel, Watermark } from './dao/db.js';
 
 export type GlobalOptions = {
   database: string;
@@ -109,15 +109,15 @@ export const programToCommercial = (
 ): Intersection<CommercialLineupItem, Program> => {
   return {
     type: 'commercial',
-    key: program.key,
-    plexFile: program.plexFile,
-    file: program.file,
-    ratingKey: program.ratingKey,
+    key: program.key!,
+    plexFile: program.plexFile!,
+    file: program.file!,
+    ratingKey: program.ratingKey!,
     // start: program.st
     // streamDuration: program.
     // beginningOffset
     duration: program.duration,
-    serverKey: program.serverKey,
+    serverKey: program.serverKey!,
     title: program.title,
     // fillerId:
   };

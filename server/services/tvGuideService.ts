@@ -1,4 +1,4 @@
-import { Channel, ChannelLineup } from 'dizquetv-types';
+import { Channel, ChannelLineup, Program } from 'dizquetv-types';
 import {
   compact,
   isEmpty,
@@ -10,12 +10,7 @@ import {
 import { MarkRequired } from 'ts-essentials';
 import z from 'zod';
 import constants from '../constants.js';
-import {
-  ChannelIconSchema,
-  ImmutableChannel,
-  Program,
-  getDB,
-} from '../dao/db.js';
+import { ChannelIconSchema, ImmutableChannel, getDB } from '../dao/db.js';
 import createLogger from '../logger.js';
 import { Maybe } from '../types.js';
 import { groupByUniq, groupByUniqAndMap } from '../util.js';
