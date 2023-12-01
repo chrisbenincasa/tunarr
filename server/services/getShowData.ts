@@ -1,5 +1,6 @@
 import { Program } from 'dizquetv-types';
 import { isUndefined } from 'lodash-es';
+import { MarkOptional } from 'ts-essentials';
 
 // Temporary type until we sort this out...
 export type ShowData = {
@@ -14,9 +15,9 @@ export type ShowData = {
 //one of these days, we'll figure out how to share the code.
 
 // What is the minimal data we need here?
-type ShowDataProgram = Omit<
-  Program,
-  'summary' | 'icon' | 'plexFile' | 'episodeIcon' | 'ratingKey'
+type ShowDataProgram = MarkOptional<
+  Omit<Program, 'summary' | 'icon' | 'plexFile' | 'episodeIcon' | 'ratingKey'>,
+  'duration'
 >;
 
 export default function () {

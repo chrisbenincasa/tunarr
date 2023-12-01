@@ -5,6 +5,8 @@ import { Maybe } from '../types.js';
 import getShowDataFunc, { ShowData } from './getShowData.js';
 import throttle from './throttle.js';
 import { Program } from 'dizquetv-types';
+import { deepCopyArray } from '../util.js';
+import { AssertionError } from 'assert';
 
 const getShowData = getShowDataFunc();
 
@@ -24,7 +26,7 @@ type ShowDataWithExtras = Required<ShowData> & {
 };
 
 type TimeSlot = {
-  order: string;
+  order: 'next' | 'shuffle';
   showId: string;
   time: number; // Offset from midnight in millis
 };
@@ -42,16 +44,16 @@ export type TimeSlotSchedule = {
 };
 
 // Hmmm...
-type Iterator = {
-  current: () => any;
+type Iterator<T> = {
+  current: () => T;
   next: () => void;
 };
 
 type SlotShow = ShowDataWithExtras & {
   founder?: ShuffleProgram; // The originating program?
   programs?: ShuffleProgram[];
-  shuffler?: Iterator;
-  orderer?: Iterator;
+  shuffler?: Iterator<ShuffleProgram>;
+  orderer?: Iterator<ShuffleProgram>;
 };
 
 function getShow(program: ShuffleProgram): ShowDataWithExtras | null {
@@ -73,8 +75,8 @@ function shuffle<T>(array: T[], lo: number | undefined, hi: number) {
     hi = array.length;
   }
   let currentIndex = hi,
-    temporaryValue,
-    randomIndex;
+    temporaryValue: T,
+    randomIndex: number;
   while (lo !== currentIndex) {
     randomIndex = random.integer(lo, currentIndex - 1);
     currentIndex -= 1;
@@ -116,7 +118,7 @@ function addProgramToShow(show: SlotShow, program: ShuffleProgram) {
 
 function getShowOrderer(show: SlotShow) {
   if (isUndefined(show.orderer)) {
-    const sortedPrograms = JSON.parse(JSON.stringify(show.programs));
+    const sortedPrograms = deepCopyArray(show.programs) ?? [];
     sortedPrograms.sort((a, b) => {
       const showA = getShowData(a);
       const showB = getShowData(b);
@@ -275,10 +277,13 @@ export default async (
         duration: remaining,
         channel: show.channel,
       };
-    } else if (slot.order === 'shuffle') {
-      return getShowShuffler(show).current();
-    } else if (slot.order === 'next') {
-      return getShowOrderer(show).current();
+    }
+
+    switch (slot.order) {
+      case 'shuffle':
+        return getShowShuffler(show).current();
+      case 'next':
+        return getShowOrderer(show).current();
     }
   }
 
@@ -287,10 +292,12 @@ export default async (
       return;
     }
     const show = shows[showsById[slot.showId]];
-    if (slot.order === 'shuffle') {
-      return getShowShuffler(show).next();
-    } else if (slot.order === 'next') {
-      return getShowOrderer(show).next();
+
+    switch (slot.order) {
+      case 'shuffle':
+        return getShowShuffler(show).next();
+      case 'next':
+        return getShowOrderer(show).next();
     }
   }
 

@@ -133,7 +133,10 @@ export function time<T>(
   }
 }
 
-export function deepCopyArray<T>(value: T[]): T[] {
+export function deepCopyArray<T>(value: T[] | undefined): T[] | undefined {
+  if (isUndefined(value)) {
+    return value;
+  }
   const n = Array<T>(value.length);
   for (let index = 0; index < value.length; index++) {
     const element = value[index];
@@ -145,17 +148,24 @@ export function deepCopyArray<T>(value: T[]): T[] {
 export function deepCopy<T>(value: T): T {
   if (!isPlainObject(value)) {
     return value;
+  } else if (
+    (typeof value !== 'object' && typeof value !== 'function') ||
+    value === null
+  ) {
+    return value;
   }
 
   return chain(value)
     .keys()
     .reduce((prev, key) => {
+      console.log(key, value[key]);
       return {
         ...prev,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         [key]: isArray(value[key])
           ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
             deepCopyArray(value[key] as any[])
-          : deepCopy(value),
+          : deepCopy(value[key]),
       };
     }, {} as T)
     .value() as T;

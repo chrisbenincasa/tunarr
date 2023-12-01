@@ -19,16 +19,16 @@
         "noUnusedParameters": true,
         "noImplicitAny": false,
         "noImplicitThis": false,
-        "strictNullChecks": true
+        "strictNullChecks": true,
+        "types": [
+            "vitest/globals"
+        ]
     },
     "files": [
         "./types/fastify.d.ts"
     ],
     "include": [
         "./**/*.ts",
-        "__tests__/**/*"
+        "__tests__/**/*",
     ],
-    "exclude": [
-        "./**/*.test.ts"
-    ]
 }
