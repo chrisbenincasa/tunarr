@@ -14,6 +14,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Channel } from 'dizquetv-types';
 import React, { useState } from 'react';
 import { ChannelProgrammingConfig } from './channel_config/ChannelProgrammingConfig.tsx';
+import dayjs from 'dayjs';
 
 interface CreateChannelModalProps {
   open: boolean;
@@ -47,9 +48,26 @@ function TabPanel(props: TabPanelProps) {
 
 type TabValues = 'properties' | 'programming' | 'flex' | 'epg' | 'ffmpeg';
 
-function defaultNewChannel(num: number): Partial<Channel> {
+function defaultNewChannel(num: number): Channel {
   return {
     name: `Channel ${num}`,
+    number: num,
+    startTimeEpoch: dayjs().unix(),
+    duration: 0,
+    programs: [],
+    icon: {
+      duration: 0,
+      path: '',
+      position: 'bottom',
+      width: 0,
+    },
+    guideMinimumDurationSeconds: 300,
+    groupTitle: 'tv',
+    stealth: false,
+    disableFillerOverlay: false,
+    offline: {
+      mode: 'pic',
+    },
   };
 }
 
@@ -116,7 +134,7 @@ export default function CreateChannelModal(props: CreateChannelModalProps) {
             <TextField fullWidth label="Channel Name" value={channel?.name} />
           </TabPanel>
           <TabPanel value="programming" currentValue={currentTab}>
-            <ChannelProgrammingConfig channel={props.channelNumber} />
+            <ChannelProgrammingConfig channel={channel!} />
           </TabPanel>
           <TabPanel value="flex" currentValue={currentTab}>
             Flex

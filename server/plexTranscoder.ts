@@ -168,12 +168,12 @@ export class PlexTranscoder {
         directPlay = true;
       }
     }
-    if (directPlay || this.isAV1()) {
-      if (!directPlay) {
-        this.log(
-          "Plex doesn't support av1, so we are forcing direct play, including for audio because otherwise plex breaks the stream.",
-        );
-      }
+    if (directPlay /* || this.isAV1()*/) {
+      // if (!directPlay) {
+      //   this.log(
+      //     "Plex doesn't support av1, so we are forcing direct play, including for audio because otherwise plex breaks the stream.",
+      //   );
+      // }
       this.log('Direct play forced or native paths enabled');
       directPlay = true;
       this.setTranscodingArgs(directPlay, true, false, this.mediaHasNoVideo);

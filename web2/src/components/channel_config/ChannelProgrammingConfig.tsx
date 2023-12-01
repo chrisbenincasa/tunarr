@@ -12,19 +12,20 @@ import {
 import { useState } from 'react';
 import ProgrammingSelector from './ProgrammingSelector.tsx';
 import { useQuery } from '@tanstack/react-query';
-import { Program } from 'dizquetv-types';
+import { Channel, Program } from 'dizquetv-types';
+import dayjs from 'dayjs';
 
 interface ChannelProgrammingConfigProps {
-  channel: number;
+  channel: Channel;
 }
 
 export function ChannelProgrammingConfig(props: ChannelProgrammingConfigProps) {
   const [programmingModalOpen, setProgrammingModalOpen] = useState(false);
   const { isPending, data: programs } = useQuery({
-    queryKey: ['channels', 'programming', props.channel],
+    queryKey: ['channels', 'programming', props.channel.number],
     queryFn: async () => {
       const res = await fetch(
-        `http://localhost:8000/api/v2/channels/${props.channel}/programs`,
+        `http://localhost:8000/api/v2/channels/${props.channel.number}/programs`,
       );
       return res.json() as Promise<Program[]>;
     },
@@ -38,10 +39,13 @@ export function ChannelProgrammingConfig(props: ChannelProgrammingConfigProps) {
     ));
   };
 
+  // HACK
+  const dt = dayjs(props.channel.startTimeEpoch).toISOString().replace('Z', '');
+
   return (
     <Box>
       <FormControl>
-        <Input type="date" />
+        <Input type="datetime-local" value={dt} />
       </FormControl>
 
       <Button variant="contained" onClick={() => setProgrammingModalOpen(true)}>

@@ -170,15 +170,18 @@ function convertProgram(program: JSONObject): Program {
 }
 
 async function migrateChannels(db: Low<Schema>) {
-  const channelFiles = await fsPromises.readdir(
-    path.resolve(globalOptions().database, 'channels'),
-  );
-
   async function migrateChannel(file: string): Promise<Channel> {
     logger.debug('Migrating channel: ' + file);
-    const channel = await fsPromises.readFile(
-      path.join(path.resolve(globalOptions().database, 'channels'), file),
+    const channelPath = path.join(
+      path.resolve(globalOptions().database, 'channels'),
+      file,
     );
+    const channel = await fsPromises.readFile(channelPath);
+    console.log(channel);
+
+    // Create a backup of the channel file
+    await fsPromises.copyFile(channelPath, channelPath + '.bak');
+
     const parsed = JSON.parse(channel.toString('utf-8')) as JSONObject;
 
     const transcodingOptions = get(
@@ -259,6 +262,10 @@ async function migrateChannels(db: Low<Schema>) {
       ),
     };
   }
+
+  const channelFiles = await fsPromises.readdir(
+    path.resolve(globalOptions().database, 'channels'),
+  );
 
   const newChannels = await channelFiles.reduce(
     async (prev, file) => {

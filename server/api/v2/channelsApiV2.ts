@@ -1,11 +1,10 @@
+import { Channel } from 'dizquetv-types';
+import { ChannelSchema, ProgramSchema } from 'dizquetv-types/schemas';
 import { isUndefined, omit, sortBy } from 'lodash-es';
-import { Readable } from 'node:stream';
+import { Writable } from 'ts-essentials';
 import z from 'zod';
 import createLogger from '../../logger.js';
 import { RouterPluginAsyncCallback } from '../../types/serverType.js';
-import { ChannelSchema } from 'dizquetv-types/schemas';
-import { Channel } from 'dizquetv-types';
-import { Writable } from 'ts-essentials';
 
 const logger = createLogger(import.meta);
 
@@ -94,6 +93,9 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
     {
       schema: {
         params: ChannelNumberParamSchema,
+        response: {
+          200: z.array(ProgramSchema).readonly(),
+        },
       },
     },
     async (req, res) => {
@@ -103,33 +105,35 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
         );
 
         if (!isUndefined(channel)) {
-          const readableStream = new Readable();
-          readableStream._read = () => {};
+          z.array(ProgramSchema).readonly().parse(channel.programs);
+          return res.send(channel.programs);
+          // const readableStream = new Readable();
+          // readableStream._read = () => {};
 
-          void res
-            .header('content-type', 'application/json')
-            .send(readableStream);
+          // void res
+          //   .header('content-type', 'application/json')
+          //   .send(readableStream);
 
-          // This is preserving previous behavior that it's unclear is even
-          // necessary
-          setTimeout(() => {
-            readableStream.push('[');
-            channel.programs.forEach((program, idx) => {
-              readableStream.push(JSON.stringify(program)); // Look into other stringify methods
-              if (idx < channel.programs.length - 1) {
-                readableStream.push(',');
-              }
-            });
-            readableStream.push(']');
-            readableStream.push(null);
-          });
+          // // This is preserving previous behavior that it's unclear is even
+          // // necessary
+          // setTimeout(() => {
+          //   readableStream.push('[');
+          //   channel.programs.forEach((program, idx) => {
+          //     readableStream.push(JSON.stringify(program)); // Look into other stringify methods
+          //     if (idx < channel.programs.length - 1) {
+          //       readableStream.push(',');
+          //     }
+          //   });
+          //   readableStream.push(']');
+          //   readableStream.push(null);
+          // });
 
-          return res;
+          // return res;
         } else {
           return res.status(404);
         }
       } catch (err) {
-        logger.error(req.routeConfig.url, err);
+        logger.error(req.routeOptions.url, err);
         return res.status(500);
       }
     },

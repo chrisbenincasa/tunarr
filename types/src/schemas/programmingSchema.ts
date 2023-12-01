@@ -10,15 +10,15 @@ export const ProgramTypeSchema = z.union([
 ]);
 
 export const ProgramSchema = z.object({
-  title: z.string(),
-  key: z.string(),
-  ratingKey: z.string(),
-  icon: z.string(),
-  type: ProgramTypeSchema,
+  title: z.string().optional(),
+  key: z.string().optional(),
+  ratingKey: z.string().optional(), // Not present on offline type
+  icon: z.string().optional(),
+  type: ProgramTypeSchema.optional(),
   duration: z.number(),
-  summary: z.string(),
-  plexFile: z.string(),
-  file: z.string(),
+  summary: z.string().optional(), // Not present on offline type
+  plexFile: z.string().optional(), // Not present on offline type
+  file: z.string().optional(),
   showTitle: z.string().optional(), // Unclear if this is necessary
   episode: z.number().optional(),
   season: z.number().optional(),

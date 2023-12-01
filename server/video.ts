@@ -83,6 +83,7 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
     res: FastifyReply,
     audioOnly: boolean,
   ) => {
+    console.time('TOFB');
     void res.hijack();
     const ctx = await serverContext();
     // Check if channel queried is valid
@@ -168,6 +169,13 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
       'content-type': 'video/mp2t',
       'Access-Control-Allow-Origin': '*',
     });
+
+    const onceListener = once(() => {
+      console.timeEnd('TOFB');
+      ff.removeListener('data', onceListener);
+    });
+
+    ff.on('data', onceListener);
 
     ff.pipe(res.raw, { end: false });
 

@@ -1,6 +1,7 @@
 import axios, {
   AxiosInstance,
   AxiosRequestConfig,
+  InternalAxiosRequestConfig,
   RawAxiosRequestHeaders,
   isAxiosError,
 } from 'axios';
@@ -13,6 +14,12 @@ import {
   PlexMediaContainerResponse,
 } from './types/plexApiTypes.js';
 import { PlexServerSettings } from 'dizquetv-types';
+
+type AxiosConfigWithMetadata = InternalAxiosRequestConfig & {
+  metadata: {
+    startTime: number;
+  };
+};
 
 const logger = createLogger(import.meta);
 export class Plex {
@@ -50,14 +57,37 @@ export class Plex {
 
     this.axiosInstance.interceptors.request.use((req) => {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      const query = req.params ? `?${querystring.stringify(req.params)}` : '';
+      (req as AxiosConfigWithMetadata).metadata = {
+        startTime: new Date().getTime(),
+      };
+      return req;
+    });
+
+    const logAxiosRequest = (req: AxiosConfigWithMetadata) => {
+      const query = req.params
+        ? // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+          `?${querystring.stringify(req.params)}`
+        : '';
+      const elapsedTime = new Date().getTime() - req.metadata.startTime;
       logger.debug(
         `[Axios Request]: ${req.method?.toUpperCase()} ${req.baseURL}${
           req.url
-        }${query}`,
+        }${query} - ${elapsedTime}ms`,
       );
-      return req;
-    });
+    };
+
+    this.axiosInstance.interceptors.response.use(
+      (resp) => {
+        logAxiosRequest(resp.config as AxiosConfigWithMetadata);
+        return resp;
+      },
+      (err) => {
+        if (isAxiosError(err) && err.config) {
+          logAxiosRequest(err.config as AxiosConfigWithMetadata);
+        }
+        throw err;
+      },
+    );
   }
 
   async SignIn(username: string, password: string) {

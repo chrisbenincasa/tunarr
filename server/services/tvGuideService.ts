@@ -654,7 +654,6 @@ function makeEntry(
   if (isUndefined(title)) {
     title = '.';
   }
-  console.log(currentProgram.program?.duration);
   //what data is needed here?
   return {
     start: new Date(currentProgram.startTimeMs).toISOString(),
