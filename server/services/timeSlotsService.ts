@@ -1,12 +1,11 @@
+import { Program } from 'dizquetv-types';
 import { isUndefined, shuffle as lodashShuffle } from 'lodash-es';
 import constants from '../constants.js';
 import { random } from '../helperFuncs.js';
 import { Maybe } from '../types.js';
+import { deepCopyArray } from '../util.js';
 import getShowDataFunc, { ShowData } from './getShowData.js';
 import throttle from './throttle.js';
-import { Program } from 'dizquetv-types';
-import { deepCopyArray } from '../util.js';
-import { AssertionError } from 'assert';
 
 const getShowData = getShowDataFunc();
 
@@ -266,7 +265,7 @@ export default async (
       return {
         isOffline: true,
         duration: remaining,
-      };
+      } as ShuffleProgram;
     }
     const show = shows[showsById[slot.showId]];
 
@@ -276,7 +275,7 @@ export default async (
         type: 'redirect',
         duration: remaining,
         channel: show.channel,
-      };
+      } as ShuffleProgram;
     }
 
     switch (slot.order) {
@@ -301,7 +300,7 @@ export default async (
     }
   }
 
-  function makePadded(item) {
+  function makePadded(item: ShuffleProgram) {
     const x = item.duration;
     const m = x % schedule.pad;
     let f = 0;
@@ -364,7 +363,7 @@ export default async (
     }
   };
 
-  const pushProgram = (item: Program) => {
+  const pushProgram = (item: ShuffleProgram) => {
     if (item.isOffline && item.type !== 'redirect') {
       pushFlex(item.duration);
     } else {
@@ -431,13 +430,13 @@ export default async (
       //it's late.
       item = {
         isOffline: true,
-        duration: remaining,
+        duration: remaining!,
       };
     }
 
     if (item.isOffline) {
       //flex or redirect. We can just use the whole duration
-      item.duration = remaining;
+      item.duration = remaining!;
       pushProgram(item);
       continue;
     }
@@ -453,7 +452,7 @@ export default async (
     advanceSlot(slot);
     const pads = [padded];
 
-    while (true) {
+    for (;;) {
       const item2 = getNextForSlot(slot, remaining);
       if (total + item2.duration > remaining!) {
         break;

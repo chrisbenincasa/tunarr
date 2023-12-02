@@ -39,6 +39,8 @@ import { ServerOptions } from './types.js';
 import { time } from './util.js';
 import { videoRouter } from './video.js';
 import registerV2Routes from './api/v2/index.js';
+import dataSource from './dao/dataSource.js';
+import initDb from './dao/dataSource.js';
 
 const logger = createLogger(import.meta);
 

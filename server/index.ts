@@ -1,15 +1,16 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
 import { fileURLToPath } from 'node:url';
 import path from 'path';
+import { inspect } from 'util';
+import { ArgumentsCamelCase } from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import yargs from 'yargs/yargs';
 import constants from './constants.js';
 import { getDB, getDBRaw } from './dao/db.js';
-import createLogger from './logger.js';
-import { inspect } from 'util';
-import { ArgumentsCamelCase } from 'yargs';
-import { ServerOptions } from './types.js';
+import { migrateToLatest, resetDb } from './dao/migrator.js';
 import { setGlobalOptions, setServerOptions } from './globals.js';
+import createLogger from './logger.js';
+import { ServerOptions } from './types.js';
 import { time } from './util.js';
 
 const logger = createLogger(import.meta);
@@ -53,7 +54,7 @@ time('parse', () =>
       'Perform operations on the DB',
       (yargs) => {
         return yargs.positional('command', {
-          choices: ['print', 'migrate'] as const,
+          choices: ['print', 'migrate', 'legacy-migrate', 'reset'] as const,
           demandOption: true,
         });
       },
@@ -63,9 +64,13 @@ time('parse', () =>
             logger.info('Printing DB contents.');
             console.log(inspect((await getDBRaw()).data, undefined, null));
             return;
-          case 'migrate':
+          case 'legacy-migrate':
             logger.info('Migrating DB from legacy schema...');
             return await getDB().then((db) => db.migrateFromLegacyDb());
+          case 'migrate':
+            return migrateToLatest();
+          case 'reset':
+            return resetDb();
         }
       },
     )
