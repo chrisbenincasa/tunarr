@@ -1,7 +1,15 @@
-import { Generated, Selectable } from 'kysely';
+import { ColumnType, Selectable } from 'kysely';
 
 export interface PlexServerSettingsTable {
-  id: Generated<number>;
+  id: string;
+  name: string;
+  uri: string;
+  access_token: string;
+  send_guide_updates: boolean;
+  send_channel_updates: boolean;
+  index: number;
+  created_at: ColumnType<Date, string | undefined, never>;
+  // updated_at: ColumnType<Date,
 }
 
 export type PlexServerSettings = Selectable<PlexServerSettingsTable>;

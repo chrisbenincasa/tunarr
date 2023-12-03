@@ -11,3 +11,4 @@ config/
 .vscode/
 build/
 log.txt
+*.db

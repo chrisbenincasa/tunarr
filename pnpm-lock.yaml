@@ -59,6 +59,9 @@ importers:
       cors:
         specifier: ^2.8.5
         version: 2.8.5
+      dayjs:
+        specifier: ^1.11.10
+        version: 1.11.10
       dizquetv-types:
         specifier: workspace:*
         version: link:../types
