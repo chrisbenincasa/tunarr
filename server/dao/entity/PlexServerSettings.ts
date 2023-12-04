@@ -1,4 +1,4 @@
-import { ColumnType, Selectable } from 'kysely';
+import { ColumnType, Insertable, Selectable } from 'kysely';
 
 export interface PlexServerSettingsTable {
   id: string;
@@ -13,3 +13,4 @@ export interface PlexServerSettingsTable {
 }
 
 export type PlexServerSettings = Selectable<PlexServerSettingsTable>;
+export type NewPlexServerSettings = Insertable<PlexServerSettingsTable>;

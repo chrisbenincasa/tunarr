@@ -7,6 +7,7 @@ import {
   defaultPlexStreamSettings,
 } from 'dizquetv-types';
 import { promises as fsPromises } from 'fs';
+import { db as sqldb } from './dataSource.js';
 import {
   get,
   isArray,
@@ -481,6 +482,24 @@ export async function migrateFromLegacyDb(db: Low<Schema>) {
       ...settings,
       plexServers: migratedServers,
     };
+    console.log(
+      sqldb()
+        .insertInto('plexServerSettings')
+        .values(
+          migratedServers.map((server) => ({
+            id: server.id ?? '?',
+            name: server.name,
+            uri: server.uri,
+            access_token: server.accessToken,
+            send_channel_updates: server.sendChannelUpdates,
+            send_guide_updates: server.sendGuideUpdates,
+            index: server.index,
+          })),
+        )
+        .returningAll()
+        .compile(),
+    );
+    // .execute();
   } catch (e) {
     logger.error('Unable to migrate Plex server settings', e);
   }
