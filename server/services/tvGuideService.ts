@@ -10,7 +10,7 @@ import {
 import { MarkRequired } from 'ts-essentials';
 import z from 'zod';
 import constants from '../constants.js';
-import { ChannelIconSchema, ImmutableChannel, getDB } from '../dao/db.js';
+import { ChannelIconSchema, ImmutableChannel, getSettings } from '../dao/db.js';
 import createLogger from '../logger.js';
 import { Maybe } from '../types.js';
 import { groupByUniq, groupByUniqAndMap } from '../util.js';
@@ -508,7 +508,7 @@ export class TVGuideService {
   }
 
   async refreshXML() {
-    const xmltvSettings = (await getDB()).xmlTvSettings();
+    const xmltvSettings = (await getSettings()).xmlTvSettings();
     await this.xmltv.WriteXMLTV(
       this.cached,
       xmltvSettings,

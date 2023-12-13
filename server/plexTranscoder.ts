@@ -1,4 +1,3 @@
-import { PlexServerSettings } from 'dizquetv-types';
 import { first, isNil, isUndefined, pick } from 'lodash-es';
 import { constants as fsConstants } from 'node:fs';
 import * as fs from 'node:fs/promises';
@@ -18,6 +17,7 @@ import {
   TranscodeDecisionMediaStream,
   isPlexVideoStream,
 } from './types/plexApiTypes.js';
+import { PlexServerSettings } from './dao/entities/PlexServerSettings.js';
 
 const logger = createLogger(import.meta);
 

@@ -13,7 +13,7 @@ export const ffmpegSettingsRouter: FastifyPluginCallback = (
 ) => {
   fastify.get('/api/ffmpeg-settings', (req, res) => {
     try {
-      const ffmpeg = req.serverCtx.dbAccess.ffmpegSettings();
+      const ffmpeg = req.serverCtx.settings.ffmpegSettings();
       return res.send(ffmpeg);
     } catch (err) {
       logger.error(err);
@@ -24,8 +24,8 @@ export const ffmpegSettingsRouter: FastifyPluginCallback = (
     '/api/ffmpeg-settings',
     async (req, res) => {
       try {
-        await req.serverCtx.dbAccess.updateSettings('ffmpeg', req.body);
-        const ffmpeg = req.serverCtx.dbAccess.ffmpegSettings();
+        await req.serverCtx.settings.updateSettings('ffmpeg', req.body);
+        const ffmpeg = req.serverCtx.settings.ffmpegSettings();
         const err = fixupFFMPEGSettings(ffmpeg);
         if (typeof err !== 'undefined') {
           return res.status(400).send(err);
@@ -62,8 +62,8 @@ export const ffmpegSettingsRouter: FastifyPluginCallback = (
       try {
         let ffmpeg = { ...defaultFfmpegSettings };
         ffmpeg.ffmpegExecutablePath = req.body.ffmpegPath;
-        await req.serverCtx.dbAccess.updateFfmpegSettings(ffmpeg);
-        ffmpeg = req.serverCtx.dbAccess.ffmpegSettings();
+        await req.serverCtx.settings.updateFfmpegSettings(ffmpeg);
+        ffmpeg = req.serverCtx.settings.ffmpegSettings();
         req.serverCtx.eventService.push('settings-update', {
           message: 'FFMPEG configuration reset.',
           module: 'ffmpeg',

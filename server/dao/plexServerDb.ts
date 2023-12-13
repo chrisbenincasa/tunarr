@@ -1,27 +1,27 @@
-import { isUndefined } from 'lodash-es';
-import type { DeepReadonly, MarkOptional, Writable } from 'ts-essentials';
-import { ChannelCache } from '../channelCache.js';
-import { serverOptions } from '../globals.js';
-import { ChannelDB } from './channelDb.js';
-import { CustomShowDB } from './customShowDb.js';
-import { DbAccess, offlineProgram } from './db.js';
-import { FillerDB } from './fillerDb.js';
-import { Channel, PlexServerSettings, Program } from 'dizquetv-types';
+import { PlexServerSettings } from 'dizquetv-types';
+import { isNil, isUndefined, map, mapValues } from 'lodash-es';
+import type { MarkOptional } from 'ts-essentials';
+import { groupByUniq } from '../util.js';
+import { getEm } from './dataSource.js';
+import { PlexServerSettings as PlexServerSettingsEntity } from './entities/PlexServerSettings.js';
+import { Program, ProgramSourceType } from './entities/Program.js';
 
 //hmnn this is more of a "PlexServerService"...
 const ICON_REGEX =
   /https?:\/\/.*(\/library\/metadata\/\d+\/thumb\/\d+).X-Plex-Token=.*/;
 
 type Report = {
-  channelNumber: number;
-  channelName: string;
+  type: 'channel' | 'custom-show' | 'filler';
+  id: string;
+  channelNumber?: number;
+  channelName?: string;
   destroyedPrograms: number;
   modifiedPrograms: number;
 };
 
 export type PlexServerSettingsInsert = MarkOptional<
   PlexServerSettings,
-  'sendChannelUpdates' | 'sendGuideUpdates'
+  'sendChannelUpdates' | 'sendGuideUpdates' | 'id'
 >;
 
 export type PlexServerSettingsUpdate = MarkOptional<
@@ -30,193 +30,33 @@ export type PlexServerSettingsUpdate = MarkOptional<
 >;
 
 export class PlexServerDB {
-  private channelDB: ChannelDB;
-  private channelCache: ChannelCache;
-  private fillerDB: FillerDB;
-  private showDB: CustomShowDB;
-  private dbAccess: DbAccess;
-
-  constructor(
-    channelDB: ChannelDB,
-    channelCache: ChannelCache,
-    fillerDB: FillerDB,
-    showDB: CustomShowDB,
-    dbAccess: DbAccess,
-  ) {
-    this.channelDB = channelDB;
-    this.channelCache = channelCache;
-    this.fillerDB = fillerDB;
-    this.showDB = showDB;
-    this.dbAccess = dbAccess;
-  }
-
-  async fixupAllChannels(name: string, newServer?: PlexServerSettings) {
-    const channelNumbers = this.channelDB.getAllChannelNumbers();
-    const report = await Promise.all(
-      channelNumbers.map(async (i) => {
-        const channel = this.channelDB.getChannel(i)!;
-
-        const channelReport: Report = {
-          channelNumber: channel.number,
-          channelName: channel.name,
-          destroyedPrograms: 0,
-          modifiedPrograms: 0,
-        };
-
-        const newPrograms = this.fixupProgramArray(
-          channel.programs,
-          name,
-          newServer,
-          channelReport,
-        );
-
-        const newChannel: Channel = {
-          ...(channel as Writable<Channel>),
-          programs: newPrograms,
-        };
-
-        if (
-          !isUndefined(channel.fallback) &&
-          channel.fallback.length > 0 &&
-          channel.fallback[0].isOffline
-        ) {
-          newChannel.fallback = [];
-          if (channel.offline.mode != 'pic') {
-            newChannel.offline.mode = 'pic';
-            newChannel.offline.picture = `http://localhost:${
-              serverOptions().port
-            }/images/generic-offline-screen.png`;
-          }
-        }
-        newChannel.fallback = this.fixupProgramArray(
-          channel.fallback ?? [],
-          name,
-          newServer,
-          channelReport,
-        );
-
-        await this.channelDB.saveChannel(newChannel);
-
-        return channelReport;
-      }),
-    );
-
-    this.channelCache.clear();
-
+  async deleteServer(id: string) {
+    const em = getEm();
+    const report = await this.fixupProgramReferences(id);
+    await em.remove(em.getReference(PlexServerSettingsEntity, id)).flush();
     return report;
-  }
-
-  async fixupAllFillers(name: string, newServer?: PlexServerSettings) {
-    const fillers = this.fillerDB.getAllFillers();
-    const report = await Promise.all(
-      fillers.map(async (filler) => {
-        const fillerReport: Report = {
-          channelNumber: -1,
-          channelName: filler.name + ' (filler)',
-          destroyedPrograms: 0,
-          modifiedPrograms: 0,
-        };
-
-        const newFiller = {
-          ...filler,
-          content: this.removeOffline(
-            this.fixupProgramArray(
-              filler.content,
-              name,
-              newServer,
-              fillerReport,
-            ),
-          ),
-        };
-
-        await this.fillerDB.saveFiller(filler.id, newFiller);
-
-        return fillerReport;
-      }),
-    );
-    return report;
-  }
-
-  async fixupAllShows(name: string, newServer?: PlexServerSettings) {
-    const shows = this.showDB.getAllShows();
-    const report = await Promise.all(
-      shows.map(async (show) => {
-        const showReport: Report = {
-          channelNumber: -1,
-          channelName: show.name + ' (custom show)',
-          destroyedPrograms: 0,
-          modifiedPrograms: 0,
-        };
-
-        const newShow = {
-          ...show,
-          content: this.removeOffline(
-            this.fixupProgramArray(show.content, name, newServer, showReport),
-          ),
-        };
-
-        await this.showDB.saveShow(show.id, newShow);
-
-        return showReport;
-      }),
-    );
-    return report;
-  }
-
-  removeOffline(progs: Program[]) {
-    if (isUndefined(progs)) {
-      return progs;
-    }
-    return progs.filter((p) => {
-      return true !== p.isOffline;
-    });
-  }
-
-  async fixupEveryProgramHolders(
-    serverName: string,
-    newServer?: PlexServerSettings,
-  ) {
-    const reports = await Promise.all([
-      this.fixupAllChannels(serverName, newServer),
-      this.fixupAllFillers(serverName, newServer),
-      this.fixupAllShows(serverName, newServer),
-    ]);
-    const report: Report[] = [];
-    reports.forEach((r) =>
-      r.forEach((r2) => {
-        report.push(r2);
-      }),
-    );
-    return report;
-  }
-
-  async deleteServer(name: string) {
-    const report = await this.fixupEveryProgramHolders(name);
-    await this.dbAccess.plexServers().delete(name);
-    return report;
-  }
-
-  doesNameExist(name: string) {
-    return !isUndefined(this.dbAccess.plexServers().getById(name));
   }
 
   async updateServer(server: PlexServerSettingsUpdate) {
-    const name = server.name;
-    if (isUndefined(name)) {
-      throw Error('Missing server name from request');
+    const repo = getEm().repo(PlexServerSettingsEntity);
+    const id = server.id;
+
+    if (isNil(id)) {
+      throw Error('Missing server id from request');
     }
 
-    const s = this.dbAccess.plexServers().getById(name);
+    const s = await repo.findOne(id);
 
-    if (isUndefined(s)) {
+    if (isNil(s)) {
       throw Error("Server doesn't exist.");
     }
 
     const sendGuideUpdates = server.sendGuideUpdates ?? false;
     const sendChannelUpdates = server.sendChannelUpdates ?? false;
 
-    const newServer: PlexServerSettings = {
+    const newServer: PlexServerSettingsEntity = {
       ...server,
+      uuid: id,
       name: s.name,
       uri: server.uri,
       accessToken: server.accessToken,
@@ -227,110 +67,179 @@ export class PlexServerDB {
 
     this.normalizeServer(newServer);
 
-    const report = await this.fixupEveryProgramHolders(name, newServer);
+    const report = await this.fixupProgramReferences(id, newServer);
 
-    await this.dbAccess
-      .plexServers()
-      .insertOrUpdate({ ...newServer, id: s.id });
+    await repo.upsert(newServer);
+    await getEm().flush();
+
     return report;
   }
 
-  async addServer(
-    server: MarkOptional<
-      PlexServerSettings,
-      'sendChannelUpdates' | 'sendGuideUpdates'
-    >,
-  ) {
-    let name = isUndefined(server.name) ? 'plex' : server.name;
-    let i = 2;
-    const prefix = name;
-    let resultName = name;
-    while (this.doesNameExist(resultName)) {
-      resultName = `${prefix}${i}`;
-      i += 1;
-    }
-    name = resultName;
+  async addServer(server: PlexServerSettingsInsert) {
+    const em = getEm();
+    const repo = em.repo(PlexServerSettingsEntity);
+    const name = isUndefined(server.name) ? 'plex' : server.name;
+    // let i = 2;
+    // const prefix = name;
+    // let resultName = name;
+    // while (this.doesNameExist(resultName)) {
+    //   resultName = `${prefix}${i}`;
+    //   i += 1;
+    // }
+    // name = resultName;
 
     const sendGuideUpdates = server.sendGuideUpdates ?? false;
     const sendChannelUpdates = server.sendChannelUpdates ?? false;
 
-    const index = this.dbAccess.plexServers().getAll().length;
+    const index = await repo.count();
 
-    const newServer: PlexServerSettings = {
+    const newServer = new PlexServerSettingsEntity();
+    newServer.name = name;
+    newServer.uri = server.uri;
+    newServer.accessToken = server.accessToken;
+    newServer.sendGuideUpdates = sendGuideUpdates;
+    newServer.sendChannelUpdates = sendChannelUpdates;
+    newServer.index = index;
+
+    this.normalizeServer(newServer);
+
+    await em.insert(PlexServerSettingsEntity, {
       name: name,
       uri: server.uri,
       accessToken: server.accessToken,
       sendGuideUpdates,
       sendChannelUpdates,
       index: index,
-    };
-    this.normalizeServer(newServer);
-
-    return this.dbAccess.plexServers().insertOrUpdate(newServer);
-  }
-
-  fixupProgramArray(
-    arr: DeepReadonly<Program[]>,
-    serverName: string,
-    newServer: PlexServerSettings | undefined,
-    channelReport: Report,
-  ) {
-    if (isUndefined(arr)) {
-      return [];
-    }
-
-    return arr.map((program) => {
-      return this.fixupProgram(program, serverName, newServer, channelReport);
     });
   }
 
-  fixupProgram(
-    program: DeepReadonly<Program>,
-    serverName: string,
-    newServer: PlexServerSettings | undefined,
-    channelReport: Report,
-  ): Program {
-    if (program.serverKey === serverName && isUndefined(newServer)) {
-      channelReport.destroyedPrograms += 1;
-      return offlineProgram(program.duration);
-    } else if (program.serverKey === serverName && !isUndefined(newServer)) {
-      let modified = false;
-      const fixIcon = (icon: string | undefined) => {
-        if (
-          !isUndefined(icon) &&
-          icon.includes('/library/metadata') &&
-          icon.includes('X-Plex-Token')
-        ) {
-          const m = icon.match(ICON_REGEX);
-          if (m?.length == 2) {
-            const lib = m[1];
-            const newUri = `${newServer.uri}${lib}?X-Plex-Token=${newServer.accessToken}`;
-            modified = true;
-            return newUri;
-          }
-        }
-        return icon;
-      };
+  private async fixupProgramReferences(
+    serverId: string,
+    newServer?: PlexServerSettingsEntity,
+  ) {
+    const em = getEm();
+    const allPrograms = await em
+      .repo(Program)
+      .find(
+        { sourceType: ProgramSourceType.PLEX, externalSourceId: serverId },
+        { populate: ['fillerShows', 'channels', 'customShows'] },
+      );
 
-      const newProgram: Program = {
-        ...program,
-        icon: fixIcon(program.icon) as string, // This will always be defined
-        showIcon: fixIcon(program.showIcon),
-        episodeIcon: fixIcon(program.episodeIcon),
-        seasonIcon: fixIcon(program.seasonIcon),
-      };
+    const channelById = groupByUniq(
+      allPrograms.flatMap((p) => p.channels.toArray()),
+      'uuid',
+    );
 
-      if (modified) {
-        channelReport.modifiedPrograms += 1;
-      }
+    const customShowById = groupByUniq(
+      allPrograms.flatMap((p) => p.customShows.toArray()),
+      'uuid',
+    );
 
-      return newProgram;
+    const fillersById = groupByUniq(
+      allPrograms.flatMap((p) => p.fillerShows.toArray()),
+      'uuid',
+    );
+
+    const channelToProgramCount = mapValues(
+      channelById,
+      ({ uuid }) =>
+        allPrograms.filter((p) => p.channels.exists((f) => f.uuid === uuid))
+          .length,
+    );
+
+    const customShowToProgramCount = mapValues(
+      customShowById,
+      ({ uuid }) =>
+        allPrograms.filter((p) => p.customShows.exists((f) => f.uuid === uuid))
+          .length,
+    );
+
+    const fillerToProgramCount = mapValues(
+      fillersById,
+      ({ uuid }) =>
+        allPrograms.filter((p) => p.fillerShows.exists((f) => f.uuid === uuid))
+          .length,
+    );
+
+    const isUpdate = newServer && newServer.uuid !== serverId;
+    if (isUpdate) {
+      // const modifiedPrograms = chain(allPrograms)
+      //   .map((program) => this.fixupProgram(program, newServer))
+      //   .sum()
+      //   .value();
+      await em.flush();
+    } else {
+      allPrograms.forEach((program) => {
+        // Remove all associations of this program
+        program.channels.removeAll();
+        program.fillerShows.removeAll();
+        program.customShows.removeAll();
+      });
+
+      em.remove(allPrograms);
+      // TODO we have to redo the schedules of these.
+      await em.flush();
     }
 
-    return program;
+    const channelReports: Report[] = map(
+      channelById,
+      ({ number, name }, id) => {
+        return {
+          type: 'channel',
+          id,
+          channelNumber: number,
+          channelName: name,
+          destroyedPrograms: isUpdate ? 0 : channelToProgramCount[id] ?? 0,
+          modifiedPrograms: isUpdate ? channelToProgramCount[id] ?? 0 : 0,
+        } as Report;
+      },
+    );
+
+    const fillerReports: Report[] = map(fillersById, ({ uuid }) => ({
+      type: 'filler',
+      id: uuid,
+      destroyedPrograms: isUpdate ? 0 : fillerToProgramCount[uuid] ?? 0,
+      modifiedPrograms: isUpdate ? fillerToProgramCount[uuid] ?? 0 : 0,
+    }));
+
+    const customShowReports: Report[] = map(customShowById, ({ uuid }) => ({
+      type: 'custom-show',
+      id: uuid,
+      destroyedPrograms: isUpdate ? 0 : customShowToProgramCount[uuid] ?? 0,
+      modifiedPrograms: isUpdate ? customShowToProgramCount[uuid] ?? 0 : 0,
+    }));
+
+    return [...channelReports, ...fillerReports, ...customShowReports];
   }
 
-  normalizeServer(server: PlexServerSettings) {
+  private fixupProgram(program: Program, newServer: PlexServerSettingsEntity) {
+    let modified = false;
+    const fixIcon = (icon: string | undefined) => {
+      if (
+        !isUndefined(icon) &&
+        icon.includes('/library/metadata') &&
+        icon.includes('X-Plex-Token')
+      ) {
+        const m = icon.match(ICON_REGEX);
+        if (m?.length == 2) {
+          const lib = m[1];
+          const newUri = `${newServer.uri}${lib}?X-Plex-Token=${newServer.accessToken}`;
+          modified = true;
+          return newUri;
+        }
+      }
+      return icon;
+    };
+
+    program.icon = fixIcon(program.icon);
+    program.showIcon = fixIcon(program.showIcon);
+    program.episodeIcon = fixIcon(program.episodeIcon);
+    program.seasonIcon = fixIcon(program.seasonIcon);
+
+    return modified;
+  }
+
+  private normalizeServer(server: PlexServerSettingsEntity) {
     while (server.uri.endsWith('/')) {
       server.uri = server.uri.slice(0, -1);
     }

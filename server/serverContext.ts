@@ -4,7 +4,7 @@ import path from 'path';
 import { ChannelCache } from './channelCache.js';
 import { ChannelDB } from './dao/channelDb.js';
 import { CustomShowDB } from './dao/customShowDb.js';
-import { DbAccess, getDB } from './dao/db.js';
+import { Settings, getSettings } from './dao/db.js';
 import { FillerDB } from './dao/fillerDb.js';
 import { PlexServerDB } from './dao/plexServerDb.js';
 import { serverOptions } from './globals.js';
@@ -66,20 +66,19 @@ export type ServerContext = {
   channelCache: ChannelCache;
   xmltv: XmlTvWriter;
   plexServerDB: PlexServerDB;
-  dbAccess: DbAccess;
+  settings: Settings;
 };
 
 export const serverContext: () => Promise<ServerContext> = once(async () => {
   const opts = serverOptions();
 
-  // Also initializes the DB
-  const dbAccess = await getDB();
+  const settings = await getSettings();
 
-  const channelDB = new ChannelDB(dbAccess);
+  const channelDB = new ChannelDB();
   const channelCache = new ChannelCache(channelDB);
-  const fillerDB = new FillerDB(channelDB, channelCache, dbAccess);
+  const fillerDB = new FillerDB(channelDB, channelCache, settings);
   const fileCache = new FileCacheService(path.join(opts.database, 'cache'));
-  const cacheImageService = new CacheImageService(dbAccess, fileCache);
+  const cacheImageService = new CacheImageService(fileCache);
   const m3uService = new M3uService(fileCache, channelCache);
   const eventService = new EventService();
   const xmltv = new XmlTvWriter();
@@ -92,7 +91,7 @@ export const serverContext: () => Promise<ServerContext> = once(async () => {
     eventService,
   );
 
-  const customShowDB = new CustomShowDB(dbAccess);
+  const customShowDB = new CustomShowDB(settings);
 
   return {
     channelDB,
@@ -102,7 +101,7 @@ export const serverContext: () => Promise<ServerContext> = once(async () => {
     m3uService,
     eventService,
     guideService,
-    hdhrService: new HdhrService(dbAccess, channelDB),
+    hdhrService: new HdhrService(settings, channelDB),
     customShowDB,
     channelCache,
     xmltv,
@@ -111,8 +110,8 @@ export const serverContext: () => Promise<ServerContext> = once(async () => {
       channelCache,
       fillerDB,
       customShowDB,
-      dbAccess,
+      settings,
     ),
-    dbAccess,
+    settings,
   };
 });

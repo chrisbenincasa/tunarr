@@ -1,16 +1,16 @@
-import { FastifyPluginCallback } from 'fastify';
+import { FastifyPluginAsync } from 'fastify';
 import { Server as SSDP } from 'node-ssdp';
 import { ChannelDB } from './dao/channelDb.js';
-import { DbAccess } from './dao/db.js';
+import { Settings } from './dao/db.js';
 import { serverOptions } from './globals.js';
 
 export class HdhrService {
-  private db: DbAccess;
+  private db: Settings;
   private channelDB: ChannelDB;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private server: any;
 
-  constructor(db: DbAccess, channelDB: ChannelDB) {
+  constructor(db: Settings, channelDB: ChannelDB) {
     this.db = db;
     this.channelDB = channelDB;
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
@@ -35,8 +35,9 @@ export class HdhrService {
     return this.server;
   }
 
-  createRouter(): FastifyPluginCallback {
-    return (fastify, _opts, done) => {
+  createRouter(): FastifyPluginAsync {
+    // eslint-disable-next-line @typescript-eslint/require-await
+    return async (fastify) => {
       fastify.get('/device.xml', (req, res) => {
         const device = getDevice(this.db, req.protocol + '://' + req.hostname);
         const data = device.getXml();
@@ -63,7 +64,7 @@ export class HdhrService {
           GuideName: string;
           URL: string;
         }[] = [];
-        const channels = this.channelDB.getAllChannels();
+        const channels = await this.channelDB.getAllChannels();
         for (let i = 0, l = channels.length; i < l; i++) {
           if (!channels[i].stealth) {
             lineup.push({
@@ -82,13 +83,11 @@ export class HdhrService {
 
         return res.send(lineup);
       });
-
-      done();
     };
   }
 }
 
-function getDevice(db: DbAccess, host: string) {
+function getDevice(db: Settings, host: string) {
   const hdhrSettings = db.hdhrSettings();
   return {
     FriendlyName: 'dizqueTV',

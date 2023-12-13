@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import {
   Channel,
   FfmpegSettings,
@@ -6,11 +7,12 @@ import {
   defaultFfmpegSettings,
   defaultPlexStreamSettings,
 } from 'dizquetv-types';
-import { promises as fsPromises } from 'fs';
-import { db as sqldb } from './dataSource.js';
+import fs from 'fs/promises';
 import {
+  chain,
   get,
   isArray,
+  isError,
   isNaN,
   isObject,
   isUndefined,
@@ -22,20 +24,45 @@ import {
 } from 'lodash-es';
 import { Low } from 'lowdb';
 import path from 'path';
+import { v4 } from 'uuid';
 import { globalOptions } from '../globals.js';
 import createLogger from '../logger.js';
 import { Maybe } from '../types.js';
-import { isNodeError } from '../util.js';
 import {
-  CachedImage,
+  attempt,
+  createDirectoryIfNotExists,
+  groupByUniq,
+  isNodeError,
+  sequentialPromises,
+} from '../util.js';
+import { EntityManager, getEm, initOrm, withDb } from './dataSource.js';
+import {
   CustomShow,
   PlexStreamSettings,
   ProgramType,
   Resolution,
   Schema,
-  Settings,
+  SettingsSchema,
   defaultSchema,
 } from './db.js';
+import {
+  ContentItem,
+  Lineup,
+  LineupItem,
+  OfflineItem,
+  RedirectItem,
+} from './derived_types/Lineup.js';
+import { CachedImage } from './entities/CachedImage.js';
+import { Channel as ChannelEntity } from './entities/Channel.js';
+import { ChannelFillerShow } from './entities/ChannelFillerShow.js';
+import { CustomShow as CustomShowEntity } from './entities/CustomShow.js';
+import { FillerShow } from './entities/FillerShow.js';
+import { PlexServerSettings as PlexServerSettingsEntity } from './entities/PlexServerSettings.js';
+import {
+  Program as ProgramEntity,
+  ProgramSourceType,
+  programTypeFromString,
+} from './entities/Program.js';
 
 type LegacyPlexSettings = {
   streamPath: string;
@@ -63,7 +90,7 @@ const logger = createLogger(import.meta);
 
 async function readAllOldDbFile(file: string): Promise<JSONArray | JSONObject> {
   try {
-    const data = await fsPromises.readFile(
+    const data = await fs.readFile(
       path.resolve(globalOptions().database, file + '.json'),
     );
     const str = data.toString('utf-8');
@@ -134,15 +161,59 @@ function emptyStringToUndefined(s: string | undefined): string | undefined {
   return s.length === 0 ? undefined : s;
 }
 
+function uniqueProgramId(program: Program): string {
+  return `${program.serverKey!}|${program.key!}`;
+}
+
 interface JSONArray extends Array<JSONValue> {}
 
 type JSONValue = string | number | undefined | boolean | JSONObject | JSONArray;
 
 interface JSONObject extends Record<string, JSONValue> {}
 
+async function persistProgram(program: Program) {
+  return withDb(async (em) => {
+    if (['movie', 'episode', 'track'].includes(program.type ?? '')) {
+      const dbProgram = new ProgramEntity();
+      dbProgram.durationMs = dayjs.duration({
+        milliseconds: program.duration,
+      });
+      dbProgram.sourceType = ProgramSourceType.PLEX;
+      dbProgram.episode = program.episode;
+      dbProgram.filePath = program.file;
+      dbProgram.icon = program.icon;
+      dbProgram.externalKey = program.key!;
+      dbProgram.plexRatingKey = program.ratingKey!;
+      dbProgram.externalSourceId = program.serverKey!;
+      dbProgram.showTitle = program.showTitle;
+      dbProgram.summary = program.summary;
+      dbProgram.title = program.title!;
+      // This is checked above
+      dbProgram.type = programTypeFromString(program.type!)!;
+      dbProgram.episode = program.episode;
+      dbProgram.season = program.season;
+      dbProgram.seasonIcon = program.seasonIcon;
+      dbProgram.showIcon = program.showIcon;
+      dbProgram.originalAirDate = program.date;
+      dbProgram.rating = program.rating;
+      dbProgram.year = program.year;
+
+      return em.upsert(ProgramEntity, dbProgram, {
+        onConflictFields: ['sourceType', 'externalSourceId', 'externalKey'],
+        onConflictAction: 'merge',
+        onConflictExcludeFields: ['uuid'],
+      });
+    }
+
+    return;
+  });
+}
+
 function convertProgram(program: JSONObject): Program {
-  const isMovie = (program['type'] as string) === 'movie';
-  return {
+  const programType = program['type'] as string | undefined;
+  const isMovie = programType === 'movie';
+  const outProgram: Program = {
+    id: v4(),
     duration: program['duration'] as number,
     episodeIcon: program['episodeIcon'] as Maybe<string>,
     file: program['file'] as string,
@@ -169,9 +240,56 @@ function convertProgram(program: JSONObject): Program {
     customShowId: program['customShowId'] as Maybe<string>,
     customShowName: program['customShowName'] as Maybe<string>,
   };
+
+  return outProgram;
 }
 
-async function migrateChannels(db: Low<Schema>) {
+function createLineup(
+  rawPrograms: Program[],
+  dbProgramById: Record<string, ProgramEntity>,
+): Lineup {
+  const lineupItems: LineupItem[] = chain(rawPrograms)
+    .map((program) => {
+      if (
+        program.type &&
+        ['movie', 'episode', 'track'].includes(program.type)
+      ) {
+        // Content type
+        return {
+          type: 'content',
+          id: dbProgramById[uniqueProgramId(program)].uuid,
+          durationMs: program.duration,
+        } as ContentItem;
+      } else if (program.type === 'redirect') {
+        return {
+          type: 'redirect',
+          channel: program.channel!,
+          durationMs: program.duration,
+        } as RedirectItem;
+      } else if (program.isOffline) {
+        return {
+          type: 'offline',
+          durationMs: program.duration,
+        } as OfflineItem;
+      }
+
+      return;
+    })
+    .compact()
+    .value();
+
+  return {
+    items: lineupItems,
+  };
+}
+
+async function migrateChannels() {
+  const channelLineupsPath = path.resolve(
+    globalOptions().database,
+    'channel-lineups',
+  );
+  await createDirectoryIfNotExists(channelLineupsPath);
+
   const channelsBackupPath = path.resolve(
     globalOptions().database,
     'channels-backup',
@@ -180,32 +298,38 @@ async function migrateChannels(db: Low<Schema>) {
   let backupExists = false;
 
   try {
-    await fsPromises.mkdir(channelsBackupPath);
+    await fs.mkdir(channelsBackupPath);
   } catch (e) {
     if (isNodeError(e) && e.code !== 'EEXIST') {
-      console.error(e);
+      logger.error('Error', e);
       return;
     } else {
-      backupExists = (await fsPromises.readdir(channelsBackupPath)).length > 0;
+      backupExists = (await fs.readdir(channelsBackupPath)).length > 0;
     }
   }
 
   const channelPath = path.resolve(globalOptions().database, 'channels');
 
-  async function migrateChannel(file: string): Promise<Channel> {
-    logger.debug('Migrating channel: ' + file);
-    const channel = await fsPromises.readFile(path.join(channelPath, file));
+  async function migrateChannel(
+    file: string,
+  ): Promise<{ raw: Channel; entity: ChannelEntity }> {
+    logger.info('Migrating channel: ' + file);
+    const channelFileContents = await fs.readFile(path.join(channelPath, file));
 
     // Create a backup of the channel file
     if (!backupExists) {
       logger.info('Creating channel backup...');
-      await fsPromises.copyFile(
+      await fs.copyFile(
         path.join(channelPath, file),
         path.join(channelsBackupPath, file + '.bak'),
       );
     }
 
-    const parsed = JSON.parse(channel.toString('utf-8')) as JSONObject;
+    const parsed = JSON.parse(
+      channelFileContents.toString('utf-8'),
+    ) as JSONObject;
+
+    const channelNumber = parsed['number'] as number;
 
     const transcodingOptions = get(
       parsed,
@@ -217,9 +341,40 @@ async function migrateChannels(db: Low<Schema>) {
 
     const watermark = parsed['watermark'] as JSONObject;
 
-    // const toIcon(obj: JSONObject)
+    const programs = ((parsed['programs'] as JSONArray) ?? []).map(
+      convertProgram,
+    );
 
-    return {
+    const dbProgramById = (
+      await sequentialPromises(programs, undefined, (p) =>
+        persistProgram(p).then((dbProgram) => {
+          if (dbProgram) {
+            return {
+              [uniqueProgramId(p)]: dbProgram,
+            };
+          } else {
+            return {};
+          }
+        }),
+      )
+    ).reduce((v, prev) => ({ ...v, ...prev }), {});
+
+    const lineup = createLineup(programs, dbProgramById);
+
+    logger.info(
+      `${lineup.items.length} lineup items for channel ${channelNumber}`,
+    );
+
+    const lineupPath = path.join(channelLineupsPath, `${channelNumber}.json`);
+
+    const lineupWriteResult = attempt(
+      async () => await fs.writeFile(lineupPath, JSON.stringify(lineup)),
+    );
+    if (isError(lineupWriteResult)) {
+      logger.warn(`Unable to write lineups for channel ${channelNumber}`);
+    }
+
+    const channel = {
       disableFillerOverlay: parsed['disableFillerOverlay'] as boolean,
       duration: parsed['duration'] as number,
       fallback: ((parsed['fallback'] as Maybe<JSONArray>) ?? []).map(
@@ -251,7 +406,7 @@ async function migrateChannels(db: Low<Schema>) {
               targetResolution: tryParseResolution(transcodingOptions)!,
             }
           : undefined,
-      programs: ((parsed['programs'] as JSONArray) ?? []).map(convertProgram),
+      programs,
       number: parsed['number'] as number,
       fillerCollections: ((parsed['fillerCollections'] as JSONArray) ?? []).map(
         (fc) => {
@@ -284,45 +439,96 @@ async function migrateChannels(db: Low<Schema>) {
         parsed['guideFlexPlaceholder'] as string,
       ),
     };
+
+    const em = getEm();
+    const channelEntity = em.create(ChannelEntity, {
+      disableFillerOverlay: channel.disableFillerOverlay,
+      duration: channel.duration,
+      groupTitle: channel.groupTitle,
+      guideMinimumDurationSeconds: channel.guideMinimumDurationSeconds,
+      icon: channel.icon,
+      name: channel.name,
+      number: channel.number,
+      startTime: channel.startTimeEpoch,
+      stealth: channel.stealth,
+      transcoding: channel.transcoding,
+      watermark: channel.watermark,
+    });
+    const entity = await em.upsert(ChannelEntity, channelEntity, {
+      onConflictFields: ['number'],
+      onConflictAction: 'ignore',
+    });
+
+    return { raw: channel, entity };
   }
 
-  logger.debug(`Using channel directory: ${channelPath}`);
+  logger.info(`Using channel directory: ${channelPath}`);
 
-  const channelFiles = await fsPromises.readdir(channelPath);
+  const channelFiles = await fs.readdir(channelPath);
 
-  logger.debug(`Found channels: ${channelFiles.join(', ')}`);
+  logger.info(`Found channels: ${channelFiles.join(', ')}`);
 
-  // return sequentialPromises(channelFiles, undefined, async (file) => {
-  //   const newChannel = await migrateChannel(file);
-  //   await fsPromises.writeFile(
-  //     path.join(channelPath, file),
-  //     JSON.stringify(newChannel),
-  //   );
-  // });
-
-  const newChannels = await channelFiles.reduce(
-    async (prev, file) => {
-      return [...(await prev), await migrateChannel(file)];
-    },
-    Promise.resolve([] as Channel[]),
+  const migratedChannels = await sequentialPromises(
+    channelFiles,
+    undefined,
+    migrateChannel,
   );
 
-  db.data.channels = newChannels;
-  return db.write();
+  // Create filler associations
+  const em = getEm();
+  await sequentialPromises(
+    migratedChannels,
+    undefined,
+    async ({ raw: channel, entity }) => {
+      const fillers = channel.fillerCollections ?? [];
+      const relations = map(fillers, (filler) => {
+        const cfs = em.create(ChannelFillerShow, {
+          channel: entity.uuid,
+          fillerShow: filler.id,
+          weight: filler.weight,
+        });
+        cfs.cooldown = dayjs.duration({ seconds: filler.cooldownSeconds });
+        return cfs;
+      });
+
+      await em.upsertMany(ChannelFillerShow, relations, {
+        onConflictAction: 'ignore',
+      });
+
+      return em.flush();
+    },
+  );
+
+  // Create custom show associations
+  await sequentialPromises(
+    migratedChannels,
+    undefined,
+    async ({ raw: channel, entity }) => {
+      const customShowRefs = chain(channel.programs)
+        .flatMap((p) => p.customShowId)
+        .compact()
+        .uniq()
+        .value();
+      entity.customShows.set(
+        customShowRefs.map((id) => em.getReference(CustomShowEntity, id)),
+      );
+      return em.persist(entity).flush();
+    },
+  );
+
+  return migratedChannels;
 }
 
-async function migrateCustomShows(db: Low<Schema>) {
-  const channelFiles = await fsPromises.readdir(
-    path.resolve(globalOptions().database, 'custom-shows'),
-  );
+async function migrateCustomShows(type: 'custom-shows' | 'filler') {
+  const prettyType = type === 'custom-shows' ? 'custom show' : 'filler';
+  const customShowsPath = path.join(globalOptions().database, type);
+  const configFiles = await fs.readdir(customShowsPath);
 
-  const newCustomShows = await channelFiles.reduce(
+  const newCustomShows = await configFiles.reduce(
     async (prev, file) => {
       const id = file.replace('.json', '');
-      logger.debug('Migrating custom show: ' + file);
-      const channel = await fsPromises.readFile(
-        path.join(path.resolve(globalOptions().database, 'custom-shows'), file),
-      );
+      logger.info(`Migrating ${prettyType}: ${file}`);
+      const channel = await fs.readFile(path.join(customShowsPath, file));
       const parsed = JSON.parse(channel.toString('utf-8')) as JSONObject;
 
       const show: CustomShow = {
@@ -330,233 +536,322 @@ async function migrateCustomShows(db: Low<Schema>) {
         name: parsed['name'] as string,
         content: (parsed['content'] as JSONArray).map(convertProgram),
       };
+
       return [...(await prev), show];
     },
     Promise.resolve([] as CustomShow[]),
   );
 
-  db.data.customShows = newCustomShows;
-  return db.write();
-}
+  await withDb(async (em) => {
+    const uniquePrograms = chain(newCustomShows)
+      .flatMap((cs) => cs.content)
+      .uniqBy(uniqueProgramId)
+      .value();
 
-async function migrateCachedImages(db: Low<Schema>) {
-  const cacheImages = (await readAllOldDbFile('cache-images')) as JSONObject[];
-  const newCacheImages: CachedImage[] = [];
-  for (const cacheImage of cacheImages) {
-    // Extract the original URL
-    const url = Buffer.from(cacheImage['url'] as string, 'base64').toString(
-      'utf-8',
+    const persistedPrograms = (
+      await sequentialPromises(uniquePrograms, undefined, (program) =>
+        persistProgram(program).then((dbProgram) =>
+          dbProgram
+            ? {
+                [uniqueProgramId(program)]: dbProgram,
+              }
+            : {},
+        ),
+      )
+    ).reduce((value, prev) => ({ ...value, ...prev }), {});
+
+    const entityType = type === 'custom-shows' ? CustomShowEntity : FillerShow;
+    const repo = em.getRepository(entityType);
+
+    const customShowById = groupByUniq(newCustomShows, 'id');
+
+    const entities = newCustomShows.map((customShow) => {
+      const cse = new entityType();
+      cse.uuid = customShow.id;
+      cse.name = customShow.name;
+      return cse;
+    });
+
+    const inserted = await sequentialPromises(
+      entities,
+      undefined,
+      async (insertedShow) => {
+        const show = await repo.findOneOrFail(
+          { uuid: insertedShow.uuid },
+          { populate: ['content'] },
+        );
+        const content = customShowById[show.uuid].content;
+        const existingMappings = (await show.content.loadItems()).map(
+          (program) => program.uuid,
+        );
+        show.content.add(
+          content
+            .map((c) => persistedPrograms[uniqueProgramId(c)])
+            .filter((program) => !existingMappings.includes(program.uuid)),
+        );
+        return insertedShow;
+      },
     );
-    const hash = cacheImage['url'] as string;
-    const mimeType = cacheImage['mimeType'] as string;
-    newCacheImages.push({ url, hash, mimeType });
-  }
-  db.data.cachedImages = newCacheImages;
-  return db.write();
+
+    await repo.upsertMany(inserted);
+    await em.flush();
+  });
 }
 
-export async function migrateFromLegacyDb(db: Low<Schema>) {
+async function migrateCachedImages() {
+  return withDb(async (em) => {
+    const repo = em.getRepository(CachedImage);
+    const cacheImages = (await readAllOldDbFile(
+      'cache-images',
+    )) as JSONObject[];
+    const newCacheImages: CachedImage[] = [];
+    for (const cacheImage of cacheImages) {
+      // Extract the original URL
+      const url = Buffer.from(cacheImage['url'] as string, 'base64').toString(
+        'utf-8',
+      );
+      const hash = cacheImage['url'] as string;
+      const mimeType = cacheImage['mimeType'] as Maybe<string>;
+      newCacheImages.push({ url, hash, mimeType });
+    }
+    return repo.upsertMany(newCacheImages);
+  });
+}
+
+export const MigratableEntities = [
+  'hdhr',
+  'xmltv',
+  'plex',
+  'plex-servers',
+  'custom-shows',
+  'filler-shows',
+  'channels',
+  'ffmpeg',
+  'cached-images',
+];
+
+export const migrateFromLegacyDb = (db: Low<Schema>, entities?: string[]) =>
+  withDb((em) => migrateFromLegacyDbInner(em, db, entities));
+
+async function migrateFromLegacyDbInner(
+  em: EntityManager,
+  db: Low<Schema>,
+  entities?: string[],
+) {
+  const entitiesToMigrate = entities ?? MigratableEntities;
   // First initialize the default schema:
   db.data = { ...defaultSchema };
   await db.write();
 
-  let settings: Partial<Settings> = {};
-  try {
-    const hdhrSettings = await readOldDbFile('hdhr-settings');
-    logger.debug('Migrating HDHR settings', hdhrSettings);
-    settings = {
-      ...settings,
-      hdhr: {
-        autoDiscoveryEnabled:
-          (hdhrSettings['autoDiscovery'] as Maybe<boolean>) ?? true,
-        tunerCount: (hdhrSettings['tunerCount'] as Maybe<number>) ?? 2,
-      },
-    };
-  } catch (e) {
-    logger.error('Unable to migrate HDHR settings', e);
-  }
-
-  try {
-    const xmltvSettings = await readOldDbFile('xmltv-settings');
-    logger.debug('Migrating XMLTV settings', xmltvSettings);
-    settings = {
-      ...settings,
-      xmltv: {
-        enableImageCache: xmltvSettings['enableImageCache'] as boolean,
-        outputPath: xmltvSettings['file'] as string,
-        programmingHours: xmltvSettings['cache'] as number,
-        refreshHours: xmltvSettings['refresh'] as number,
-      },
-    };
-  } catch (e) {
-    logger.error('Unable to migrate XMLTV settings', e);
-  }
-
-  try {
-    const plexSettings = (await readOldDbFile(
-      'plex-settings',
-    )) as LegacyPlexSettings;
-    logger.debug('Migrating Plex settings', plexSettings);
-    settings = {
-      ...settings,
-      plexStream: mergeWith<PlexStreamSettings, PlexStreamSettings>(
-        {
-          audioBoost: parseIntOrDefault(
-            plexSettings['audioBoost'],
-            defaultPlexStreamSettings.audioBoost,
-          ),
-          audioCodecs: tryStringSplitOrDefault(
-            plexSettings['audioCodecs'],
-            ',',
-            defaultPlexStreamSettings.audioCodecs,
-          ),
-          directStreamBitrate: plexSettings['directStreamBitrate'],
-          transcodeBitrate: plexSettings['transcodeBitrate'],
-          mediaBufferSize: plexSettings['mediaBufferSize'],
-          enableDebugLogging: plexSettings['debugLogging'],
-          enableSubtitles: plexSettings['enableSubtitles'],
-          forceDirectPlay: plexSettings['forceDirectPlay'],
-          maxAudioChannels: parseIntOrDefault(
-            plexSettings['maxAudioChannels'],
-            defaultPlexStreamSettings.maxAudioChannels,
-          ),
-          maxPlayableResolution:
-            tryParseResolution(plexSettings['maxPlayableResolution']) ??
-            defaultPlexStreamSettings.maxPlayableResolution,
-          maxTranscodeResolution:
-            tryParseResolution(plexSettings['maxTranscodeResolution']) ??
-            defaultPlexStreamSettings.maxTranscodeResolution,
-          pathReplace: plexSettings['pathReplace'],
-          pathReplaceWith: plexSettings['pathReplaceWith'],
-          streamPath: plexSettings['streamPath'],
-          streamProtocol: plexSettings['streamProtocol'],
-          subtitleSize: parseIntOrDefault(
-            plexSettings['subtitleSize'],
-            defaultPlexStreamSettings.subtitleSize,
-          ),
-          transcodeMediaBufferSize: plexSettings.transcodeMediaBufferSize,
-          updatePlayStatus: plexSettings.updatePlayStatus,
-          videoCodecs: tryStringSplitOrDefault(
-            plexSettings.videoCodecs,
-            ',',
-            defaultPlexStreamSettings.videoCodecs,
-          ),
+  let settings: Partial<SettingsSchema> = {};
+  if (entitiesToMigrate.includes('hdhr')) {
+    try {
+      const hdhrSettings = await readOldDbFile('hdhr-settings');
+      logger.info('Migrating HDHR settings', hdhrSettings);
+      settings = {
+        ...settings,
+        hdhr: {
+          autoDiscoveryEnabled:
+            (hdhrSettings['autoDiscovery'] as Maybe<boolean>) ?? true,
+          tunerCount: (hdhrSettings['tunerCount'] as Maybe<number>) ?? 2,
         },
-        defaultPlexStreamSettings,
-        (legacyObjValue, defaultObjValue) => {
-          if (isUndefined(legacyObjValue)) {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-            return defaultObjValue;
-          }
-        },
-      ),
-    };
-  } catch (e) {
-    logger.error('Unable to migrate Plex settings', e);
-  }
-
-  try {
-    const plexServers = await readAllOldDbFile('plex-servers');
-    logger.info('Migrating Plex servers', plexServers);
-    let servers: JSONObject[] = [];
-    if (isArray(plexServers)) {
-      servers = [...plexServers] as JSONObject[];
-    } else if (isObject(plexServers)) {
-      servers = [plexServers];
+      };
+    } catch (e) {
+      logger.error('Unable to migrate HDHR settings', e);
     }
-    const migratedServers: PlexServerSettings[] = sortBy(
-      map(servers, (server) => {
-        return {
-          id: server['id'] as string | undefined,
-          name: server['name'] as string,
-          uri: server['uri'] as string,
-          accessToken: server['accessToken'] as string,
-          sendChannelUpdates: server['arChannels'] as boolean,
-          sendGuideUpdates: server['arGuide'] as boolean,
-          index: server['index'] as number,
-        } as PlexServerSettings;
-      }),
-      'index',
-    );
-    settings = {
-      ...settings,
-      plexServers: migratedServers,
-    };
-    console.log(
-      sqldb()
-        .insertInto('plexServerSettings')
-        .values(
-          migratedServers.map((server) => ({
-            id: server.id ?? '?',
-            name: server.name,
-            uri: server.uri,
-            access_token: server.accessToken,
-            send_channel_updates: server.sendChannelUpdates,
-            send_guide_updates: server.sendGuideUpdates,
-            index: server.index,
-          })),
-        )
-        .returningAll()
-        .compile(),
-    );
-    // .execute();
-  } catch (e) {
-    logger.error('Unable to migrate Plex server settings', e);
   }
 
-  try {
-    const ffmpegSettings = readOldDbFile('ffmpeg-settings');
-    logger.debug('Migrating ffmpeg settings', ffmpegSettings);
-    settings = {
-      ...settings,
-      ffmpeg: merge<FfmpegSettings, FfmpegSettings>(
-        {
-          configVersion: ffmpegSettings['configVersion'] as number,
-          ffmpegExecutablePath: ffmpegSettings['ffmpegPath'] as string,
-          numThreads: ffmpegSettings['threads'] as number,
-          concatMuxDelay: ffmpegSettings['concatMuxDelay'] as number,
-          enableLogging: ffmpegSettings['logFfmpeg'] as boolean,
-          enableTranscoding: ffmpegSettings[
-            'enableFFMPEGTranscoding'
-          ] as boolean,
-          audioVolumePercent: ffmpegSettings['audioVolumePercent'] as number,
-          videoEncoder: ffmpegSettings['videoEncoder'] as string,
-          audioEncoder: ffmpegSettings['audioEncoder'] as string,
-          targetResolution:
-            tryParseResolution(ffmpegSettings['targetResolution'] as string) ??
-            defaultFfmpegSettings.targetResolution,
-          videoBitrate: ffmpegSettings['videoBitrate'] as number,
-          videoBufferSize: ffmpegSettings['videoBufSize'] as number,
-          audioBitrate: ffmpegSettings['audioBitrate'] as number,
-          audioBufferSize: ffmpegSettings['audioBufSize'] as number,
-          audioSampleRate: ffmpegSettings['audioSampleRate'] as number,
-          audioChannels: ffmpegSettings['audioChannels'] as number,
-          errorScreen: ffmpegSettings['errorScreen'] as string,
-          errorAudio: ffmpegSettings['errorAudio'] as string,
-          normalizeVideoCodec: ffmpegSettings['normalizeVideoCodec'] as boolean,
-          normalizeAudioCodec: ffmpegSettings['normalizeAudioCodec'] as boolean,
-          normalizeResolution: ffmpegSettings['normalizeResolution'] as boolean,
-          normalizeAudio: ffmpegSettings['normalizeAudio'] as boolean,
-          maxFPS: ffmpegSettings['maxFPS'] as number,
-          scalingAlgorithm: ffmpegSettings[
-            'scalingAlgorithm'
-          ] as (typeof defaultFfmpegSettings)['scalingAlgorithm'],
-          deinterlaceFilter: ffmpegSettings[
-            'deinterlaceFilter'
-          ] as (typeof defaultFfmpegSettings)['deinterlaceFilter'],
-          disableChannelOverlay: ffmpegSettings[
-            'disableChannelOverlay'
-          ] as (typeof defaultFfmpegSettings)['disableChannelOverlay'],
+  if (entitiesToMigrate.includes('xmltv')) {
+    try {
+      const xmltvSettings = await readOldDbFile('xmltv-settings');
+      logger.info('Migrating XMLTV settings', xmltvSettings);
+      settings = {
+        ...settings,
+        xmltv: {
+          enableImageCache: xmltvSettings['enableImageCache'] as boolean,
+          outputPath: xmltvSettings['file'] as string,
+          programmingHours: xmltvSettings['cache'] as number,
+          refreshHours: xmltvSettings['refresh'] as number,
         },
-        defaultFfmpegSettings,
-      ),
-    };
-  } catch (e) {
-    logger.error('Unable to migrate ffmpeg settings', e);
+      };
+    } catch (e) {
+      logger.error('Unable to migrate XMLTV settings', e);
+    }
+  }
+
+  if (entitiesToMigrate.includes('plex')) {
+    try {
+      const plexSettings = (await readOldDbFile(
+        'plex-settings',
+      )) as LegacyPlexSettings;
+      logger.info('Migrating Plex settings', plexSettings);
+      settings = {
+        ...settings,
+        plexStream: mergeWith<PlexStreamSettings, PlexStreamSettings>(
+          {
+            audioBoost: parseIntOrDefault(
+              plexSettings['audioBoost'],
+              defaultPlexStreamSettings.audioBoost,
+            ),
+            audioCodecs: tryStringSplitOrDefault(
+              plexSettings['audioCodecs'],
+              ',',
+              defaultPlexStreamSettings.audioCodecs,
+            ),
+            directStreamBitrate: plexSettings['directStreamBitrate'],
+            transcodeBitrate: plexSettings['transcodeBitrate'],
+            mediaBufferSize: plexSettings['mediaBufferSize'],
+            enableDebugLogging: plexSettings['debugLogging'],
+            enableSubtitles: plexSettings['enableSubtitles'],
+            forceDirectPlay: plexSettings['forceDirectPlay'],
+            maxAudioChannels: parseIntOrDefault(
+              plexSettings['maxAudioChannels'],
+              defaultPlexStreamSettings.maxAudioChannels,
+            ),
+            maxPlayableResolution:
+              tryParseResolution(plexSettings['maxPlayableResolution']) ??
+              defaultPlexStreamSettings.maxPlayableResolution,
+            maxTranscodeResolution:
+              tryParseResolution(plexSettings['maxTranscodeResolution']) ??
+              defaultPlexStreamSettings.maxTranscodeResolution,
+            pathReplace: plexSettings['pathReplace'],
+            pathReplaceWith: plexSettings['pathReplaceWith'],
+            streamPath: plexSettings['streamPath'],
+            streamProtocol: plexSettings['streamProtocol'],
+            subtitleSize: parseIntOrDefault(
+              plexSettings['subtitleSize'],
+              defaultPlexStreamSettings.subtitleSize,
+            ),
+            transcodeMediaBufferSize: plexSettings.transcodeMediaBufferSize,
+            updatePlayStatus: plexSettings.updatePlayStatus,
+            videoCodecs: tryStringSplitOrDefault(
+              plexSettings.videoCodecs,
+              ',',
+              defaultPlexStreamSettings.videoCodecs,
+            ),
+          },
+          defaultPlexStreamSettings,
+          (legacyObjValue, defaultObjValue) => {
+            if (isUndefined(legacyObjValue)) {
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+              return defaultObjValue;
+            }
+          },
+        ),
+      };
+    } catch (e) {
+      logger.error('Unable to migrate Plex settings', e);
+    }
+  }
+
+  if (entitiesToMigrate.includes('plex-servers')) {
+    try {
+      const plexServers = await readAllOldDbFile('plex-servers');
+      logger.info('Migrating Plex servers', plexServers);
+      let servers: JSONObject[] = [];
+      if (isArray(plexServers)) {
+        servers = [...plexServers] as JSONObject[];
+      } else if (isObject(plexServers)) {
+        servers = [plexServers];
+      }
+      const migratedServers: PlexServerSettings[] = sortBy(
+        map(servers, (server) => {
+          return {
+            id: server['id'] as string | undefined,
+            name: server['name'] as string,
+            uri: server['uri'] as string,
+            accessToken: server['accessToken'] as string,
+            sendChannelUpdates: server['arChannels'] as boolean,
+            sendGuideUpdates: server['arGuide'] as boolean,
+            index: server['index'] as number,
+          } as PlexServerSettings;
+        }),
+        'index',
+      );
+
+      const entities = migratedServers.map((server) => {
+        const pss = new PlexServerSettingsEntity();
+        pss.name = server.name;
+        pss.accessToken = server.accessToken;
+        pss.uri = server.uri;
+        pss.sendChannelUpdates = server.sendChannelUpdates;
+        pss.sendGuideUpdates = server.sendGuideUpdates;
+        pss.index = server.index;
+        return pss;
+      });
+
+      await em.upsertMany(PlexServerSettingsEntity, entities, {
+        onConflictFields: ['name', 'uri'],
+        onConflictAction: 'ignore',
+      });
+      await em.persistAndFlush(entities);
+    } catch (e) {
+      logger.error('Unable to migrate Plex server settings', e);
+    }
+  }
+
+  if (entitiesToMigrate.includes('ffmpeg')) {
+    try {
+      const ffmpegSettings = readOldDbFile('ffmpeg-settings');
+      logger.info('Migrating ffmpeg settings', ffmpegSettings);
+      settings = {
+        ...settings,
+        ffmpeg: merge<FfmpegSettings, FfmpegSettings>(
+          {
+            configVersion: ffmpegSettings['configVersion'] as number,
+            ffmpegExecutablePath: ffmpegSettings['ffmpegPath'] as string,
+            numThreads: ffmpegSettings['threads'] as number,
+            concatMuxDelay: ffmpegSettings['concatMuxDelay'] as number,
+            enableLogging: ffmpegSettings['logFfmpeg'] as boolean,
+            enableTranscoding: ffmpegSettings[
+              'enableFFMPEGTranscoding'
+            ] as boolean,
+            audioVolumePercent: ffmpegSettings['audioVolumePercent'] as number,
+            videoEncoder: ffmpegSettings['videoEncoder'] as string,
+            audioEncoder: ffmpegSettings['audioEncoder'] as string,
+            targetResolution:
+              tryParseResolution(
+                ffmpegSettings['targetResolution'] as string,
+              ) ?? defaultFfmpegSettings.targetResolution,
+            videoBitrate: ffmpegSettings['videoBitrate'] as number,
+            videoBufferSize: ffmpegSettings['videoBufSize'] as number,
+            audioBitrate: ffmpegSettings['audioBitrate'] as number,
+            audioBufferSize: ffmpegSettings['audioBufSize'] as number,
+            audioSampleRate: ffmpegSettings['audioSampleRate'] as number,
+            audioChannels: ffmpegSettings['audioChannels'] as number,
+            errorScreen: ffmpegSettings['errorScreen'] as string,
+            errorAudio: ffmpegSettings['errorAudio'] as string,
+            normalizeVideoCodec: ffmpegSettings[
+              'normalizeVideoCodec'
+            ] as boolean,
+            normalizeAudioCodec: ffmpegSettings[
+              'normalizeAudioCodec'
+            ] as boolean,
+            normalizeResolution: ffmpegSettings[
+              'normalizeResolution'
+            ] as boolean,
+            normalizeAudio: ffmpegSettings['normalizeAudio'] as boolean,
+            maxFPS: ffmpegSettings['maxFPS'] as number,
+            scalingAlgorithm: ffmpegSettings[
+              'scalingAlgorithm'
+            ] as (typeof defaultFfmpegSettings)['scalingAlgorithm'],
+            deinterlaceFilter: ffmpegSettings[
+              'deinterlaceFilter'
+            ] as (typeof defaultFfmpegSettings)['deinterlaceFilter'],
+            disableChannelOverlay: ffmpegSettings[
+              'disableChannelOverlay'
+            ] as (typeof defaultFfmpegSettings)['disableChannelOverlay'],
+          },
+          defaultFfmpegSettings,
+        ),
+      };
+    } catch (e) {
+      logger.error('Unable to migrate ffmpeg settings', e);
+    }
   }
 
   try {
-    logger.debug('Migrating client ID');
+    logger.info('Migrating client ID');
     const clientId = await readOldDbFile('client-id');
     settings = {
       ...settings,
@@ -566,30 +861,46 @@ export async function migrateFromLegacyDb(db: Low<Schema>) {
     logger.error('Unable to migrate client ID', e);
   }
 
-  try {
-    logger.debug('Migraing channels...');
-    await migrateChannels(db);
-  } catch (e) {
-    logger.error('Unable to migrate channels', e);
+  if (entitiesToMigrate.includes('custom-shows')) {
+    try {
+      logger.info('Migrating custom shows');
+      await migrateCustomShows('custom-shows');
+    } catch (e) {
+      logger.error('Unable to migrate all custom shows', e);
+    }
   }
 
-  try {
-    logger.debug('Migrating custom shows');
-    await migrateCustomShows(db);
-  } catch (e) {
-    logger.error('Unable to migrate all custom shows', e);
+  if (entitiesToMigrate.includes('filler-shows')) {
+    try {
+      logger.info('Migrating filler shows');
+      await migrateCustomShows('filler');
+    } catch (e) {
+      logger.error('Unable to migrate all filler shows', e);
+    }
   }
 
-  try {
-    logger.debug('Migrating cached images');
-    await migrateCachedImages(db);
-  } catch (e) {
-    logger.error('Unable to migrate cached images', e);
+  if (entitiesToMigrate.includes('channels')) {
+    try {
+      logger.info('Migraing channels...');
+      await migrateChannels();
+    } catch (e) {
+      logger.error('Unable to migrate channels', e);
+    }
   }
 
-  // TODO migrate fillerLists
+  if (entitiesToMigrate.includes('cached-images')) {
+    try {
+      logger.info('Migrating cached images');
+      await migrateCachedImages();
+    } catch (e) {
+      logger.error('Unable to migrate cached images', e);
+    }
+  }
 
-  db.data.settings = settings as Required<Settings>;
+  // Close the ORM
+  await initOrm().then((s) => s.close());
+
+  db.data.settings = settings as Required<SettingsSchema>;
   db.data.migration.legacyMigration = true;
   return db.write();
 }

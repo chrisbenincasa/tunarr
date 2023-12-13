@@ -1,10 +1,11 @@
-import { isError, isUndefined } from 'lodash-es';
-import createLogger from '../../logger.js';
-import { RouterPluginAsyncCallback } from '../../types/serverType.js';
+import { isError, isNil } from 'lodash-es';
 import z from 'zod';
-import { ErrorSchema } from '../schemas/errorSchema.js';
+import { PlexServerSettings } from '../../dao/entities/PlexServerSettings.js';
+import createLogger from '../../logger.js';
 import { Plex } from '../../plex.js';
+import { RouterPluginAsyncCallback } from '../../types/serverType.js';
 import { wait } from '../../util.js';
+import { ErrorSchema } from '../schemas/errorSchema.js';
 
 const logger = createLogger(import.meta);
 
@@ -33,15 +34,15 @@ export const plexServerApiV2: RouterPluginAsyncCallback = async (fastify) => {
     },
     async (req, res) => {
       try {
-        const servers = req.serverCtx.dbAccess
-          .plexServers()
-          .getById(req.query.serverName);
+        const server = await req.entityManager
+          .repo(PlexServerSettings)
+          .findOne({ name: req.query.serverName });
 
-        if (isUndefined(servers)) {
+        if (isNil(server)) {
           return res.status(404).send({ message: 'Plex server not found.' });
         }
 
-        const plex = new Plex(servers);
+        const plex = new Plex(server);
 
         const s = await Promise.race([
           plex.checkServerStatus().then((res) => res === 1),
@@ -52,11 +53,9 @@ export const plexServerApiV2: RouterPluginAsyncCallback = async (fastify) => {
           healthy: s,
         });
       } catch (err) {
-        return res
-          .status(500)
-          .send({
-            message: isError(err) ? err.message : 'Unknown error occurred',
-          });
+        return res.status(500).send({
+          message: isError(err) ? err.message : 'Unknown error occurred',
+        });
       }
     },
   );

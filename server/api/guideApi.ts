@@ -34,7 +34,7 @@ export const guideRouter: RouterPluginCallback = (fastify, _opts, done) => {
     },
     async (req, res) => {
       const allChannelNumbers = map(
-        req.serverCtx.channelDB.getAllChannels(),
+        await req.serverCtx.channelDB.getAllChannels(),
         'number',
       );
 

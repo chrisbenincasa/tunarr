@@ -4,9 +4,12 @@ import { FastifyPluginCallback, FastifyReply, FastifyRequest } from 'fastify';
 import { createWriteStream, promises as fs } from 'fs';
 import { isString, isUndefined } from 'lodash-es';
 import stream from 'stream';
-import { CachedImage, DbAccess } from '../dao/db.js';
+// import { CachedImage, DbAccess } from '../dao/db.js';
 import createLogger from '../logger.js';
 import { FileCacheService } from './fileCacheService.js';
+import { CachedImage } from '../dao/entities/CachedImage.js';
+import { EntityRepository } from '@mikro-orm/core';
+import { withDb } from '../dao/dataSource.js';
 
 const logger = createLogger(import.meta);
 
@@ -18,12 +21,10 @@ const logger = createLogger(import.meta);
 export class CacheImageService {
   private cacheService: FileCacheService;
   private imageCacheFolder: string;
-  private dbAccess: DbAccess;
 
-  constructor(dbAccess: DbAccess, fileCacheService: FileCacheService) {
+  constructor(fileCacheService: FileCacheService) {
     this.cacheService = fileCacheService;
     this.imageCacheFolder = 'images';
-    this.dbAccess = dbAccess;
   }
 
   /**
@@ -41,11 +42,12 @@ export class CacheImageService {
   ) {
     try {
       const hash = req.params.hash;
-      const imgItem = this.dbAccess.cachedImages().getById(hash);
+      const repo = req.entityManager.repo(CachedImage);
+      const imgItem = await repo.findOne({ hash });
       if (imgItem) {
         const file = await this.getImageFromCache(imgItem.hash);
         if (isUndefined(file) || !file.length) {
-          const fileMimeType = await this.requestImageAndStore(imgItem);
+          const fileMimeType = await this.requestImageAndStore(imgItem, repo);
           void res.header('content-type', fileMimeType);
         } else {
           void res.header('content-type', imgItem.mimeType);
@@ -53,6 +55,8 @@ export class CacheImageService {
       }
     } catch (err) {
       return res.status(500).send('error');
+    } finally {
+      await req.entityManager.flush();
     }
   }
 
@@ -78,8 +82,9 @@ export class CacheImageService {
     };
   }
 
-  async requestImageAndStore(
+  private async requestImageAndStore(
     cachedImage: CachedImage,
+    repo: EntityRepository<CachedImage>,
   ): Promise<string | undefined> {
     const requestConfiguration: AxiosRequestConfig = {
       method: 'get',
@@ -94,9 +99,7 @@ export class CacheImageService {
     const mimeType = (response.headers as AxiosHeaders).get('content-type');
     if (!isUndefined(mimeType) && isString(mimeType)) {
       logger.debug('Got image file with mimeType ' + mimeType);
-      await this.dbAccess
-        .cachedImages()
-        .insertOrUpdate({ ...cachedImage, mimeType });
+      await repo.upsert({ ...cachedImage, mimeType });
     }
 
     return new Promise((resolve, reject) => {
@@ -140,9 +143,10 @@ export class CacheImageService {
       .update(imageUrl)
       .digest('base64');
     // const encodedUrl = Buffer.from(imageUrl).toString('base64');
-    await this.dbAccess
-      .cachedImages()
-      .insertOrUpdate({ hash: encodedUrl, url: imageUrl });
+    await withDb(async (em) => {
+      await em.repo(CachedImage).upsert({ hash: encodedUrl, url: imageUrl });
+      await em.flush();
+    });
     return encodedUrl;
   }
 }

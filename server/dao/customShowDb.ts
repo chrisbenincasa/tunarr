@@ -2,19 +2,20 @@ import { isUndefined, map } from 'lodash-es';
 import { DeepReadonly, MarkOptional } from 'ts-essentials';
 import { v4 as uuidv4 } from 'uuid';
 import { Maybe } from '../types.js';
-import { CustomShow, CustomShowCollection, DbAccess } from './db.js';
+import { getEm } from './dataSource.js';
+import { CustomShow } from './entities/CustomShow.js';
+import { Program } from './entities/Program.js';
 
 export type CustomShowUpdate = MarkOptional<CustomShow, 'content'>;
-export type CustomShowInsert = MarkOptional<CustomShow, 'id' | 'content'>;
+export type CustomShowInsert = {
+  uuid?: string;
+  name: string;
+  content?: string[];
+};
+
 export class CustomShowDB {
-  private collection: CustomShowCollection;
-
-  constructor(db: DbAccess) {
-    this.collection = db.customShows();
-  }
-
-  getShow(id: string): Maybe<DeepReadonly<CustomShow>> {
-    return this.collection.getById(id);
+  getShow(id: string) {
+    return getEm().repo(CustomShow).findOne(id);
   }
 
   async saveShow(id: Maybe<string>, customShow: CustomShowUpdate) {
@@ -22,40 +23,46 @@ export class CustomShowDB {
       throw Error('Mising custom show id');
     }
 
-    const showToSave: CustomShow = {
-      ...customShow,
-      content: customShow.content ?? [],
-      id,
-    };
-
-    return this.collection.insertOrUpdate(showToSave);
+    return getEm().repo(CustomShow).upsert(customShow);
   }
 
   async createShow(customShow: CustomShowInsert) {
-    const id = uuidv4();
-    await this.saveShow(id, {
-      ...customShow,
-      id,
-      content: customShow.content ?? [],
+    const id = customShow.uuid ?? uuidv4();
+    const em = getEm();
+    const content = (customShow.content ?? []).map((id) =>
+      em.getReference(Program, id),
+    );
+    const show = em.create(CustomShow, {
+      uuid: id,
+      name: customShow.name,
+      content,
     });
+    await em.insert(show);
     return id;
   }
 
   async deleteShow(id: string) {
-    return this.collection.delete(id);
+    const em = getEm();
+    await em.removeAndFlush(em.getReference(CustomShow, id));
   }
 
-  getAllShowIds(): string[] {
-    return map(this.getAllShows(), 'id');
+  async getAllShowIds() {
+    const res = await getEm()
+      .repo(CustomShow)
+      .findAll({ fields: ['uuid'] });
+    return res.map((s) => s.uuid);
   }
 
-  getAllShows(): DeepReadonly<CustomShow[]> {
-    return this.collection.getAll();
+  getAllShows() {
+    return getEm().repo(CustomShow).findAll();
   }
 
-  getAllShowsInfo() {
-    //returns just name and id
-    const shows = this.getAllShows();
+  async getAllShowsInfo() {
+    const x = getEm()
+      .createQueryBuilder(CustomShow, 'cs')
+      .select(['cs.uuid', 'cs.name', 'count(c.uuid) as count'])
+      .leftJoin('cs.content', 'c')
+      .getResultAndCount();
     return shows.map((f) => {
       return {
         id: f.id,

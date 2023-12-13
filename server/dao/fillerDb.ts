@@ -1,19 +1,16 @@
-import { isEmpty, isUndefined, map, remove, some } from 'lodash-es';
-import { DeepReadonly, MarkOptional, Writable } from 'ts-essentials';
+import { EntityDTO } from '@mikro-orm/core';
+import { isEmpty, isNil, map } from 'lodash-es';
+import { MarkOptional } from 'ts-essentials';
 import { v4 as uuidv4 } from 'uuid';
 import { ChannelCache } from '../channelCache.js';
 import createLogger from '../logger.js';
-import { Maybe } from '../types.js';
+import { Maybe, Nullable } from '../types.js';
 import { sequentialPromises } from '../util.js';
 import { ChannelDB } from './channelDb.js';
-import {
-  DbAccess,
-  FillerCollection,
-  FillerList,
-  FillerProgram,
-  ImmutableChannel,
-} from './db.js';
-import { Channel, Program } from 'dizquetv-types';
+import { getEm } from './dataSource.js';
+import { FillerList } from './db.js';
+import { Channel as ChannelEntity } from './entities/Channel.js';
+import { FillerShow } from './entities/FillerShow.js';
 
 const logger = createLogger(import.meta);
 
@@ -24,46 +21,43 @@ export type FillerCreate = MarkOptional<
 >;
 
 export class FillerDB {
-  private cache: Record<string, Maybe<DeepReadonly<FillerList>>>;
   private channelDB: ChannelDB;
   private channelCache: ChannelCache;
-  private dbAccess: DbAccess;
 
-  constructor(
-    channelDB: ChannelDB,
-    channelCache: ChannelCache,
-    dbAccess: DbAccess,
-  ) {
-    this.cache = {};
+  constructor(channelDB: ChannelDB, channelCache: ChannelCache) {
     this.channelDB = channelDB;
     this.channelCache = channelCache;
-    this.dbAccess = dbAccess;
   }
 
   // TODO Is cache necessary if we always have the DB in memory?
-  getFiller(id: string): Maybe<DeepReadonly<FillerList>> {
-    if (isUndefined(this.cache[id])) {
-      this.cache[id] = this.dbAccess.fillerLists().getById(id);
-    }
-    return this.cache[id];
+  getFiller(id: string): Promise<Nullable<FillerShow>> {
+    return getEm().repo(FillerShow).findOne(id);
   }
 
   async saveFiller(id: Maybe<string>, fillerList: FillerUpdate): Promise<void> {
-    if (isUndefined(id)) {
+    if (isNil(id)) {
       throw Error('Mising filler id');
     }
 
-    const actualFiller: FillerList = {
-      ...fillerList,
-      content: fillerList.content ?? [],
-      id,
-    };
+    // const actualFiller: FillerShow = {
+    //   ...fillerList,
+    //   content: fillerList.content ?? [],
+    //   uuid: id,
+    // };
 
-    try {
-      return this.dbAccess.fillerLists().insertOrUpdate(actualFiller);
-    } finally {
-      delete this.cache[id];
-    }
+    const programIds = fillerList.content?.map((program) => program.id) ?? [];
+    const em = getEm();
+    await em.repo(FillerShow).upsert({
+      uuid: id,
+      name: fillerList.name,
+      content: programIds,
+    });
+
+    // try {
+    //   return this.dbAccess.fillerLists().insertOrUpdate(actualFiller);
+    // } finally {
+    //   delete this.cache[id];
+    // }
   }
 
   async createFiller(fillerList: FillerCreate): Promise<string> {
@@ -81,87 +75,83 @@ export class FillerDB {
   }
 
   // Returns all channels a given filler list is a part of
-  getFillerChannels(id: string): { name: string; number: number }[] {
-    const fillerChannels: { name: string; number: number }[] = [];
-    this.channelDB.getAllChannels().forEach((channel) => {
-      if (some(channel.fillerCollections ?? [], { id })) {
-        fillerChannels.push({ number: channel.number, name: channel.name });
-      }
-    });
-    return fillerChannels;
+  async getFillerChannels(id: string) {
+    const channels = await getEm()
+      .createQueryBuilder(ChannelEntity, 'channel')
+      .select(['number', 'name'], true)
+      .where({ fillers: { uuid: id } })
+      .execute();
+    return channels.map((channel) => ({
+      name: channel.name,
+      number: channel.number,
+    }));
   }
 
   async deleteFiller(id: string): Promise<void> {
-    const channels = this.getFillerChannels(id);
+    const channels = await this.getFillerChannels(id);
 
     // Remove references to filler collection.
     await sequentialPromises(channels, undefined, async (channel) => {
       logger.debug(`Updating channel ${channel.number}, remove filler ${id}`);
-      const fullChannel = this.channelDB.getChannel(channel.number);
-      if (
-        !isUndefined(fullChannel) &&
-        !isEmpty(fullChannel.fillerCollections)
-      ) {
-        const newChannel: Channel = {
-          ...(fullChannel as Writable<Channel>),
-          fillerCollections: remove(fullChannel.fillerCollections ?? [], {
-            id,
-          }),
-        };
-        return this.channelDB.saveChannel(newChannel);
+      const fullChannel = await this.channelDB.getChannel(channel.number);
+      await fullChannel?.fillers.init();
+
+      if (!isNil(fullChannel) && !isEmpty(fullChannel.fillers)) {
+        fullChannel.fillers.remove((filler) => filler.uuid === id);
+        return this.channelDB.saveChannel(fullChannel);
       }
 
-      return void 0;
+      return;
     });
 
     this.channelCache.clear();
 
-    return this.dbAccess.fillerLists().delete(id);
+    const em = getEm();
+    await em.removeAndFlush(em.getReference(FillerShow, id));
+    return;
   }
 
-  getAllFillerIds(): string[] {
-    return map(this.getAllFillers(), 'id');
+  getAllFillerIds() {
+    return getEm()
+      .repo(FillerShow)
+      .findAll({ fields: ['uuid'] })
+      .then((shows) => map(shows, 'uuid'));
   }
 
-  getAllFillers(): DeepReadonly<FillerList[]> {
-    return this.dbAccess.fillerLists().getAll();
+  getAllFillers(): Promise<FillerShow[]> {
+    return getEm().repo(FillerShow).findAll();
   }
 
-  getAllFillersInfo() {
+  async getAllFillersInfo() {
     //returns just name and id
-    const fillers = this.getAllFillers();
+    const fillers = await getEm()
+      .repo(FillerShow)
+      .findAll({ fields: ['uuid', 'name'], populate: ['content'] });
+    // getEm().createQueryBuilder(FillerShow).count().where({
+    //   content: {},
+    // });
+    // const fillers = await this.getAllFillers();
     return fillers.map((f) => {
       return {
-        id: f.id,
+        id: f.uuid,
         name: f.name,
         count: f.content.length,
       };
     });
   }
 
-  getFillersFromChannel(
-    channel: ImmutableChannel,
-  ): (FillerCollection & { content: Program[] })[] {
-    // TODO nasty return type, fix.
-    const loadChannelFiller = (fillerEntry: FillerCollection) => {
-      let content: FillerProgram[] = [];
-      try {
-        const filler = this.getFiller(fillerEntry.id);
-        content = [...(filler?.content ?? [])];
-      } catch (e) {
-        logger.error(
-          `Channel #${channel.number} - ${channel.name} references an unattainable filler id: ${fillerEntry.id}`,
-          e,
-        );
-      }
-      return {
-        id: fillerEntry.id,
-        content: content,
-        weight: fillerEntry.weight,
-        cooldownSeconds: fillerEntry.cooldownSeconds,
-      };
-    };
+  async getFillersFromChannel(
+    channelNumber: number,
+  ): Promise<EntityDTO<FillerShow>[]> {
+    const em = getEm();
+    const channel = await em.repo(ChannelEntity).findOne(
+      { number: channelNumber },
+      {
+        fields: ['uuid', 'number'],
+        populate: ['fillers', 'fillers.content'],
+      },
+    );
 
-    return (channel.fillerCollections ?? []).map(loadChannelFiller);
+    return channel?.fillers.toArray() ?? [];
   }
 }

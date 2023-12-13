@@ -75,7 +75,7 @@ export const scheduledJobsById: Partial<
 > = {};
 
 export const scheduleJobs = (serverContext: ServerContext) => {
-  const xmlTvSettings = serverContext.dbAccess.xmlTvSettings();
+  const xmlTvSettings = serverContext.settings.xmlTvSettings();
 
   scheduledJobsById[UpdateXmlTvTask.ID] = new ScheduledTask(
     UpdateXmlTvTask.name,

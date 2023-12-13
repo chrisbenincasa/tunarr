@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
+import { isArray, isString } from 'lodash-es';
 import { fileURLToPath } from 'node:url';
 import path from 'path';
-import { inspect } from 'util';
 import { ArgumentsCamelCase } from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import yargs from 'yargs/yargs';
 import constants from './constants.js';
-import { getDB, getDBRaw } from './dao/db.js';
-import { migrateToLatest, resetDb } from './dao/migrator.js';
+import { getSettings } from './dao/db.js';
+import { MigratableEntities } from './dao/legacyDbMigration.js';
 import { setGlobalOptions, setServerOptions } from './globals.js';
 import createLogger from './logger.js';
 import { ServerOptions } from './types.js';
@@ -50,28 +50,28 @@ time('parse', () =>
       },
     )
     .command(
-      'db [command]',
-      'Perform operations on the DB',
+      'legacy-migrate',
+      'Migrate from the legacy .dizquetv/ database',
       (yargs) => {
-        return yargs.positional('command', {
-          choices: ['print', 'migrate', 'legacy-migrate', 'reset'] as const,
-          demandOption: true,
+        return yargs.option('entities', {
+          type: 'array',
+          choices: MigratableEntities,
+          coerce(arg) {
+            if (isArray(arg)) {
+              return arg as string[];
+            } else if (isString(arg)) {
+              return arg.split(',');
+            } else {
+              throw new Error('Bad arg');
+            }
+          },
         });
       },
       async (argv) => {
-        switch (argv.command) {
-          case 'print':
-            logger.info('Printing DB contents.');
-            console.log(inspect((await getDBRaw()).data, undefined, null));
-            return;
-          case 'legacy-migrate':
-            logger.info('Migrating DB from legacy schema...');
-            return await getDB().then((db) => db.migrateFromLegacyDb());
-          case 'migrate':
-            return migrateToLatest();
-          case 'reset':
-            return resetDb();
-        }
+        logger.info('Migrating DB from legacy schema...');
+        return await getSettings().then((db) =>
+          db.migrateFromLegacyDb(argv.entities),
+        );
       },
     )
     .help()

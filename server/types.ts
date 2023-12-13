@@ -1,5 +1,6 @@
 import { FfmpegSettings, Program } from 'dizquetv-types';
-import { DbAccess, ImmutableChannel, Watermark } from './dao/db.js';
+import { EntityManager } from './dao/dataSource.js';
+import { ImmutableChannel, Settings, Watermark } from './dao/db.js';
 
 export type GlobalOptions = {
   database: string;
@@ -11,6 +12,7 @@ export type ServerOptions = GlobalOptions & {
 };
 
 export type Maybe<T> = T | undefined;
+export type Nullable<T> = T | null;
 
 export type PlayerContext = {
   lineupItem: LineupItem;
@@ -20,7 +22,8 @@ export type PlayerContext = {
   audioOnly: boolean;
   isLoading?: boolean;
   watermark?: Watermark;
-  dbAccess: DbAccess;
+  entityManager: EntityManager;
+  settings: Settings;
 };
 
 type BaseLineupItem = {

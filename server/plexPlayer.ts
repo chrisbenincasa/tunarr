@@ -11,10 +11,11 @@ import { FFMPEG, FfmpegEvents } from './ffmpeg.js';
 import { PlexTranscoder } from './plexTranscoder.js';
 import { PlayerContext, isPlexBackedLineupItem } from './types.js';
 import { TypedEventEmitter } from './types/eventEmitter.js';
-import { isUndefined } from 'lodash-es';
+import { isNil, isUndefined } from 'lodash-es';
 import { Player } from './player.js';
 import { Writable } from 'stream';
 import createLogger from './logger.js';
+import { PlexServerSettings } from './dao/entities/PlexServerSettings.js';
 
 const USED_CLIENTS: Record<string, boolean> = {};
 const logger = createLogger(import.meta);
@@ -31,7 +32,7 @@ export class PlexPlayer extends Player {
     this.ffmpeg = null;
     this.plexTranscoder = null;
     this.killed = false;
-    const coreClientId = this.context.dbAccess.clientId();
+    const coreClientId = this.context.settings.clientId();
     let i = 0;
     while (USED_CLIENTS[coreClientId + '-' + i] === true) {
       i++;
@@ -64,10 +65,10 @@ export class PlexPlayer extends Player {
       );
     }
     const ffmpegSettings = this.context.ffmpegSettings;
-    const db = this.context.dbAccess;
+    const db = this.context.entityManager.repo(PlexServerSettings);
     const channel = this.context.channel;
-    let server = db.plexServers().getById(lineupItem.serverKey);
-    if (isUndefined(server)) {
+    let server = await db.findOne({ name: lineupItem.serverKey });
+    if (isNil(server)) {
       throw Error(
         `Unable to find server "${lineupItem.serverKey}" specified by program.`,
       );
@@ -79,7 +80,7 @@ export class PlexPlayer extends Player {
       };
     }
 
-    const plexSettings = db.plexSettings();
+    const plexSettings = this.context.settings.plexSettings();
     const plexTranscoder = new PlexTranscoder(
       this.clientId,
       server,

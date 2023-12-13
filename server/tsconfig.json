@@ -22,7 +22,10 @@
         "strictNullChecks": true,
         "types": [
             "vitest/globals"
-        ]
+        ],
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
+        "esModuleInterop": true
     },
     "files": [
         "./types/fastify.d.ts"

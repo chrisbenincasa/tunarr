@@ -52,11 +52,11 @@ export const debugRouter: FastifyPluginCallback = (fastify, _opts, done) => {
 
       const playerContext: PlayerContext = {
         lineupItem: lineupItem!,
-        ffmpegSettings: req.serverCtx.dbAccess.ffmpegSettings(),
+        ffmpegSettings: req.serverCtx.settings.ffmpegSettings(),
         channel: combinedChannel,
         m3u8: false,
         audioOnly: false,
-        dbAccess: req.serverCtx.dbAccess,
+        dbAccess: req.serverCtx.settings,
       };
 
       const plex = new PlexPlayer(playerContext);
@@ -103,8 +103,8 @@ export const debugRouter: FastifyPluginCallback = (fastify, _opts, done) => {
           );
       }
 
-      const plexServer = req.serverCtx.dbAccess.plexServers().getAll()[0];
-      const plexSettings = req.serverCtx.dbAccess.plexSettings();
+      const plexServer = req.serverCtx.settings.plexServers().getAll()[0];
+      const plexSettings = req.serverCtx.settings.plexSettings();
 
       const combinedChannel: ContextChannel = {
         ...helperFuncs.generateChannelContext(channel),

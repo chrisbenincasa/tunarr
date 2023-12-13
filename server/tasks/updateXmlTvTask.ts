@@ -1,21 +1,22 @@
-import { compact } from 'lodash-es';
+import { Loaded } from '@mikro-orm/core';
 import { ChannelCache } from '../channelCache.js';
-import { ChannelDB } from '../dao/channelDb.js';
+import { withDb } from '../dao/dataSource.js';
+import { Settings } from '../dao/db.js';
+import { Channel } from '../dao/entities/Channel.js';
+import { PlexServerSettings } from '../dao/entities/PlexServerSettings.js';
 import createLogger from '../logger.js';
-import { Maybe } from '../types.js';
-import { Task, TaskId } from './task.js';
-import { DbAccess, ImmutableChannel } from '../dao/db.js';
-import { TVGuideService } from '../services/tvGuideService.js';
-import { sequentialPromises } from '../util.js';
 import { Plex } from '../plex.js';
 import { ServerContext } from '../serverContext.js';
+import { TVGuideService } from '../services/tvGuideService.js';
+import { Maybe } from '../types.js';
+import { sequentialPromises } from '../util.js';
+import { Task, TaskId } from './task.js';
 
 const logger = createLogger(import.meta);
 
 export class UpdateXmlTvTask extends Task<void> {
-  private channelDb: ChannelDB;
   private channelCache: ChannelCache;
-  private dbAccess: DbAccess;
+  private dbAccess: Settings;
   private guideService: TVGuideService;
 
   public static ID: TaskId = 'update-xmltv';
@@ -24,21 +25,18 @@ export class UpdateXmlTvTask extends Task<void> {
 
   static create(serverContext: ServerContext): UpdateXmlTvTask {
     return new UpdateXmlTvTask(
-      serverContext.channelDB,
       serverContext.channelCache,
-      serverContext.dbAccess,
+      serverContext.settings,
       serverContext.guideService,
     );
   }
 
   constructor(
-    channelDb: ChannelDB,
     channelCache: ChannelCache,
-    dbAccess: DbAccess,
+    dbAccess: Settings,
     guideService: TVGuideService,
   ) {
     super();
-    this.channelDb = channelDb;
     this.channelCache = channelCache;
     this.dbAccess = dbAccess;
     this.guideService = guideService;
@@ -53,13 +51,13 @@ export class UpdateXmlTvTask extends Task<void> {
   }
 
   private async updateXmlTv() {
-    let channels: ImmutableChannel[] = [];
+    let channels: Loaded<Channel, never>[] = [];
 
     try {
       channels = await this.channelCache.getAllChannels();
       const xmltvSettings = this.dbAccess.xmlTvSettings();
       const t = this.guideService.prepareRefresh(
-        channels,
+        channels.map((c) => c.toDTO()),
         xmltvSettings.refreshHours * 60 * 60 * 1000,
       );
       channels = [];
@@ -73,57 +71,52 @@ export class UpdateXmlTvTask extends Task<void> {
       return;
     }
 
-    channels = this.getChannelsCached();
+    channels = await this.getChannelsCached();
 
-    await sequentialPromises(
-      this.dbAccess.plexServers().getAll(),
-      undefined,
-      async (plexServer) => {
-        const plex = new Plex(plexServer);
-        let dvrs;
-        if (!plexServer.sendGuideUpdates && !plexServer.sendChannelUpdates) {
-          return;
-        }
+    const allPlexServers = await withDb((em) => {
+      return em.find(PlexServerSettings, {});
+    });
+
+    await sequentialPromises(allPlexServers, undefined, async (plexServer) => {
+      const plex = new Plex(plexServer);
+      let dvrs;
+      if (!plexServer.sendGuideUpdates && !plexServer.sendChannelUpdates) {
+        return;
+      }
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        dvrs = await plex.GetDVRS(); // Refresh guide and channel mappings
+      } catch (err) {
+        logger.error(
+          `Couldn't get DVRS list from ${plexServer.name}. This error will prevent 'refresh guide' or 'refresh channels' from working for this Plex server. But it is NOT related to playback issues.`,
+          err,
+        );
+        return;
+      }
+      if (plexServer.sendGuideUpdates) {
         try {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-          dvrs = await plex.GetDVRS(); // Refresh guide and channel mappings
+          await plex.RefreshGuide(dvrs);
         } catch (err) {
           logger.error(
-            `Couldn't get DVRS list from ${plexServer.name}. This error will prevent 'refresh guide' or 'refresh channels' from working for this Plex server. But it is NOT related to playback issues.`,
+            `Couldn't tell Plex ${plexServer.name} to refresh guide for some reason. This error will prevent 'refresh guide' from working for this Plex server. But it is NOT related to playback issues.`,
             err,
           );
-          return;
         }
-        if (plexServer.sendGuideUpdates) {
-          try {
-            await plex.RefreshGuide(dvrs);
-          } catch (err) {
-            logger.error(
-              `Couldn't tell Plex ${plexServer.name} to refresh guide for some reason. This error will prevent 'refresh guide' from working for this Plex server. But it is NOT related to playback issues.`,
-              err,
-            );
-          }
+      }
+      if (plexServer.sendChannelUpdates && channels.length !== 0) {
+        try {
+          await plex.RefreshChannels(channels, dvrs);
+        } catch (err) {
+          logger.error(
+            `Couldn't tell Plex ${plexServer.name} to refresh channels for some reason. This error will prevent 'refresh channels' from working for this Plex server. But it is NOT related to playback issues.`,
+            err,
+          );
         }
-        if (plexServer.sendChannelUpdates && channels.length !== 0) {
-          try {
-            await plex.RefreshChannels(channels, dvrs);
-          } catch (err) {
-            logger.error(
-              `Couldn't tell Plex ${plexServer.name} to refresh channels for some reason. This error will prevent 'refresh channels' from working for this Plex server. But it is NOT related to playback issues.`,
-              err,
-            );
-          }
-        }
-      },
-    );
+      }
+    });
   }
 
   private getChannelsCached() {
-    const channelNumbers = this.channelDb.getAllChannelNumbers();
-    return compact(
-      channelNumbers.map((x) => {
-        return this.channelCache.getChannelConfig(x);
-      }),
-    );
+    return this.channelCache.getAllChannels();
   }
 }

@@ -28,8 +28,10 @@ import { hdhrSettingsRouter } from './api/hdhrSettingsApi.js';
 import { plexServersRouter } from './api/plexServersApi.js';
 import { plexSettingsRouter } from './api/plexSettingsApi.js';
 import { schedulerRouter } from './api/schedulerApi.js';
+import registerV2Routes from './api/v2/index.js';
 import { xmlTvSettingsRouter } from './api/xmltvSettingsApi.js';
 import constants from './constants.js';
+import { EntityManager, initOrm } from './dao/dataSource.js';
 import { serverOptions } from './globals.js';
 import createLogger from './logger.js';
 import { serverContext } from './serverContext.js';
@@ -38,9 +40,7 @@ import { UpdateXmlTvTask } from './tasks/updateXmlTvTask.js';
 import { ServerOptions } from './types.js';
 import { time } from './util.js';
 import { videoRouter } from './video.js';
-import registerV2Routes from './api/v2/index.js';
-import dataSource from './dao/dataSource.js';
-import initDb from './dao/dataSource.js';
+import { RequestContext } from '@mikro-orm/core';
 
 const logger = createLogger(import.meta);
 
@@ -103,6 +103,7 @@ function initDbDirectories() {
 
 export async function initServer(opts: ServerOptions) {
   await time('initDbDirectories', () => initDbDirectories);
+  const orm = await initOrm();
 
   const ctx = await time('generateServerContext', () => serverContext());
 
@@ -130,18 +131,22 @@ export async function initServer(opts: ServerOptions) {
         f.decorateRequest('serverCtx', null);
         f.addHook('onRequest', async (req) => {
           req.serverCtx = await serverContext();
+          req.entityManager =
+            RequestContext.getEntityManager()! as EntityManager;
         });
         done();
       }),
     );
 
-  await app.use(
-    morgan(':method :url :status :res[content-length] - :response-time ms', {
-      stream: {
-        write: (message) => logger.http(message.trim()),
-      },
-    }),
-  );
+  await app
+    .use(
+      morgan(':method :url :status :res[content-length] - :response-time ms', {
+        stream: {
+          write: (message) => logger.http(message.trim()),
+        },
+      }),
+    )
+    .use((_req, _res, next) => RequestContext.create(orm.em, next));
 
   ctx.eventService.setup(app);
 
@@ -220,7 +225,7 @@ export async function initServer(opts: ServerOptions) {
     },
     () => {
       logger.info(`HTTP server running on port: http://*:${opts.port}`);
-      const hdhrSettings = ctx.dbAccess.hdhrSettings();
+      const hdhrSettings = ctx.settings.hdhrSettings();
       if (hdhrSettings.autoDiscoveryEnabled) {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
         (ctx.hdhrService.ssdp as any).start();

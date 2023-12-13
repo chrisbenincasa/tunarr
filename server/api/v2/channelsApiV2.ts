@@ -1,8 +1,7 @@
-import { Channel } from 'dizquetv-types';
 import { ChannelSchema, ProgramSchema } from 'dizquetv-types/schemas';
-import { isUndefined, omit, sortBy } from 'lodash-es';
-import { Writable } from 'ts-essentials';
+import { isNil, isUndefined, omit, sortBy } from 'lodash-es';
 import z from 'zod';
+import { Channel as ChannelEntity } from '../../dao/entities/Channel.js';
 import createLogger from '../../logger.js';
 import { RouterPluginAsyncCallback } from '../../types/serverType.js';
 
@@ -67,16 +66,18 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
     },
     async (req, res) => {
       try {
-        const channel = req.serverCtx.channelCache.getChannelConfig(
+        const channel = await req.serverCtx.channelCache.getChannelConfig(
           req.params.number,
         );
 
-        if (!isUndefined(channel)) {
-          const newChannel: Channel = {
-            ...(channel as Writable<Channel>),
+        if (!isNil(channel)) {
+          const channelUpdate = {
             ...req.body,
           };
-          await req.serverCtx.channelDB.saveChannel(newChannel);
+          await req.serverCtx.channelDB.updateChannel(
+            channel.uuid,
+            ChannelEntity.fromPartialDTO(channelUpdate),
+          );
           return res.send(omit(channel, 'programs'));
         } else {
           return res.status(404);
@@ -100,13 +101,14 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
     },
     async (req, res) => {
       try {
-        const channel = req.serverCtx.channelCache.getChannelConfig(
+        const channel = await req.serverCtx.channelCache.getChannelConfig(
           req.params.number,
         );
 
-        if (!isUndefined(channel)) {
-          z.array(ProgramSchema).readonly().parse(channel.programs);
-          return res.send(channel.programs);
+        if (!isNil(channel)) {
+          // z.array(ProgramSchema).readonly().parse(channel.programs);
+          await channel.programs.init();
+          return res.send(channel.programs.map((p) => p.toDTO()));
           // const readableStream = new Readable();
           // readableStream._read = () => {};
 

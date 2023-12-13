@@ -19,6 +19,7 @@ export const ProgramSchema = z.object({
   episode: z.number().optional(),
   episodeIcon: z.string().optional(),
   file: z.string().optional(),
+  id: z.string(),
   icon: z.string().optional(),
   isOffline: z.boolean(), // Flex
   key: z.string().optional(),

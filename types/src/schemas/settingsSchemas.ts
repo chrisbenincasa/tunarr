@@ -54,7 +54,7 @@ export const FfmpegSettingsSchema = z.object({
 });
 
 export const PlexServerSettingsSchema = z.object({
-  id: z.string().optional(),
+  id: z.string(),
   name: z.string(),
   uri: z.string(),
   accessToken: z.string(),

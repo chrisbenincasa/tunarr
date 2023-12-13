@@ -13,7 +13,7 @@ import {
   PlexMediaContainer,
   PlexMediaContainerResponse,
 } from './types/plexApiTypes.js';
-import { PlexServerSettings } from 'dizquetv-types';
+import { PlexServerSettings } from './dao/entities/PlexServerSettings.js';
 
 type AxiosConfigWithMetadata = InternalAxiosRequestConfig & {
   metadata: {

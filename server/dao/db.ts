@@ -1,12 +1,11 @@
 import {
   Channel,
   FfmpegSettings,
-  PlexServerSettings,
   Program,
   defaultFfmpegSettings,
   defaultPlexStreamSettings,
 } from 'dizquetv-types';
-import { find, findIndex, isUndefined, once, sortBy } from 'lodash-es';
+import { once } from 'lodash-es';
 import { Low } from 'lowdb';
 import { JSONPreset } from 'lowdb/node';
 import path from 'path';
@@ -15,7 +14,6 @@ import { v4 as uuidv4 } from 'uuid';
 import z from 'zod';
 import constants from '../constants.js';
 import { globalOptions } from '../globals.js';
-import { Maybe } from '../types.js';
 import { migrateFromLegacyDb } from './legacyDbMigration.js';
 
 const CURRENT_VERSION = 1;
@@ -59,6 +57,7 @@ export type ProgramType =
 // type in an extensible and accurate way
 export const offlineProgram = (duration: number): DeepReadonly<Program> => {
   return {
+    id: 'offline',
     isOffline: true,
     duration,
     // Bogus fields...
@@ -194,12 +193,11 @@ export const defaultXmlTvSettings: XmlTvSettings = {
   enableImageCache: false,
 };
 
-export type Settings = {
+export type SettingsSchema = {
   clientId: string;
   hdhr: HdhrSettings;
   xmltv: XmlTvSettings;
   plexStream: PlexStreamSettings;
-  plexServers: PlexServerSettings[];
   ffmpeg: FfmpegSettings;
 };
 
@@ -216,11 +214,7 @@ export type CachedImage = {
 export type Schema = {
   version: number;
   migration: MigrationState;
-  channels: Channel[];
-  settings: Settings;
-  customShows: CustomShow[];
-  fillerLists: FillerList[];
-  cachedImages: CachedImage[];
+  settings: SettingsSchema;
 };
 
 export const defaultSchema: Schema = {
@@ -228,145 +222,16 @@ export const defaultSchema: Schema = {
   migration: {
     legacyMigration: false,
   },
-  channels: [],
-  customShows: [],
-  fillerLists: [],
   settings: {
     clientId: uuidv4(),
     hdhr: defaultHdhrSettings,
     xmltv: defaultXmlTvSettings,
     plexStream: defaultPlexStreamSettings,
-    plexServers: [],
     ffmpeg: defaultFfmpegSettings,
   },
-  cachedImages: [],
 };
 
-abstract class IdBasedCollection<T, IdType extends string | number = string> {
-  private name: string;
-  protected db: Low<Schema>;
-
-  constructor(name: string, db: Low<Schema>) {
-    this.name = name;
-    this.db = db;
-  }
-
-  getAll(): DeepReadonly<T[]> {
-    return [...this.getAllMutable().map((x) => x as DeepReadonly<T>)];
-  }
-
-  protected abstract getAllMutable(): T[];
-
-  protected abstract getId(item: T | DeepReadonly<T>): IdType;
-
-  getById(id: IdType): Maybe<DeepReadonly<T>> {
-    return find(this.getAll(), (x) => this.getId(x) === id);
-  }
-
-  async insertOrUpdate(item: T) {
-    const all = this.getAllMutable();
-    const idx = findIndex(all, (x) => this.getId(x) === this.getId(item));
-    if (isUndefined(idx) || idx < 0 || idx >= all.length) {
-      all.push(item);
-    } else {
-      all[idx] = item;
-    }
-    return this.db.write();
-  }
-
-  async delete(id: IdType) {
-    const all = this.getAllMutable();
-    const idx = findIndex(all, (x) => this.getId(x) === id);
-
-    if (idx === -1) {
-      console.warn(
-        `${this.name} Collection with ID = ${id} missing when attempting delete`,
-      );
-      return void 0;
-    }
-
-    all.splice(idx, 1);
-
-    return this.db.write();
-  }
-}
-
-export class FillerListCollection extends IdBasedCollection<FillerList> {
-  constructor(db: Low<Schema>) {
-    super('FillerList', db);
-  }
-
-  protected getAllMutable(): FillerList[] {
-    return this.db.data.fillerLists;
-  }
-
-  protected getId(item: FillerList | DeepReadonly<FillerList>): string {
-    return item.id;
-  }
-}
-
-export class CustomShowCollection extends IdBasedCollection<CustomShow> {
-  constructor(db: Low<Schema>) {
-    super('CustomShow', db);
-  }
-
-  protected getAllMutable(): CustomShow[] {
-    return this.db.data.customShows;
-  }
-
-  protected getId(item: CustomShow | DeepReadonly<CustomShow>): string {
-    return item.id;
-  }
-}
-
-export class ChannelCollection extends IdBasedCollection<Channel, number> {
-  constructor(db: Low<Schema>) {
-    super('Channel', db);
-  }
-
-  protected getAllMutable(): Channel[] {
-    return this.db.data.channels;
-  }
-
-  protected getId(item: Channel | DeepReadonly<Channel>): number {
-    return item.number;
-  }
-}
-
-export class PlexServerSettingsCollection extends IdBasedCollection<PlexServerSettings> {
-  constructor(db: Low<Schema>) {
-    super('PlexServer', db);
-  }
-
-  protected getAllMutable(): PlexServerSettings[] {
-    return sortBy(this.db.data.settings.plexServers, 'index');
-  }
-
-  protected getId(
-    item: PlexServerSettings | DeepReadonly<PlexServerSettings>,
-  ): string {
-    return item.name; // Is this right?
-  }
-}
-
-export class CachedImageCollection extends IdBasedCollection<CachedImage> {
-  constructor(db: Low<Schema>) {
-    super('CachedImages', db);
-  }
-
-  protected getAllMutable(): CachedImage[] {
-    if (isUndefined(this.db.data.cachedImages)) {
-      this.db.data.cachedImages = [];
-    }
-    return this.db.data.cachedImages;
-  }
-
-  protected getId(item: CachedImage | DeepReadonly<CachedImage>): string {
-    return item.hash;
-  }
-}
-
-export class DbAccess {
+export class Settings {
   private db: Low<Schema>;
 
   constructor(db: Low<Schema>) {
@@ -377,36 +242,16 @@ export class DbAccess {
     return this.db.data.migration.legacyMigration;
   }
 
-  async migrateFromLegacyDb() {
-    return migrateFromLegacyDb(this.db);
+  async migrateFromLegacyDb(entities?: string[]) {
+    return migrateFromLegacyDb(this.db, entities);
   }
 
   clientId(): string {
     return this.db.data.settings.clientId;
   }
 
-  plexServers(): PlexServerSettingsCollection {
-    return new PlexServerSettingsCollection(this.db);
-  }
-
   xmlTvSettings(): DeepReadonly<XmlTvSettings> {
     return this.db.data.settings.xmltv;
-  }
-
-  channels(): ChannelCollection {
-    return new ChannelCollection(this.db);
-  }
-
-  fillerLists(): FillerListCollection {
-    return new FillerListCollection(this.db);
-  }
-
-  customShows(): CustomShowCollection {
-    return new CustomShowCollection(this.db);
-  }
-
-  cachedImages(): CachedImageCollection {
-    return new CachedImageCollection(this.db);
   }
 
   hdhrSettings(): DeepReadonly<HdhrSettings> {
@@ -425,24 +270,23 @@ export class DbAccess {
     return this.updateSettings('ffmpeg', { ...ffmpegSettings });
   }
 
-  updateSettings<K extends keyof Settings>(key: K, settings: Settings[K]) {
+  updateSettings<K extends keyof SettingsSchema>(
+    key: K,
+    settings: SettingsSchema[K],
+  ) {
     this.db.data.settings[key] = settings;
     return this.db.write();
   }
 }
 
-export const getDBRaw = () => {
-  return JSONPreset<Schema>(
-    path.resolve(globalOptions().database, 'db.json'),
+export const getSettings = once(async (dbPath?: string) => {
+  const db = await JSONPreset<Schema>(
+    dbPath ?? path.resolve(globalOptions().database, 'db.json'),
     defaultSchema,
   );
-};
-
-export const getDB = once(async () => {
-  const db = await getDBRaw();
   await db.read();
 
-  const access = new DbAccess(db);
+  const access = new Settings(db);
 
   if (!access.needsLegacyMigration()) {
     await access.migrateFromLegacyDb();

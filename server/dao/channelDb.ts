@@ -1,36 +1,39 @@
-import { DeepReadonly } from 'ts-essentials';
-import { Maybe } from '../types.js';
-import { DbAccess, ImmutableChannel } from './db.js';
-import { Channel } from 'dizquetv-types';
+import { QueryOrder } from '@mikro-orm/core';
+import { Nullable } from '../types.js';
+import { getEm } from './dataSource.js';
+import { Channel } from './entities/Channel.js';
 
 export class ChannelDB {
-  private db: DbAccess;
-
-  constructor(db: DbAccess) {
-    this.db = db;
-  }
-
-  getChannel(channelNumber: number): DeepReadonly<Maybe<Channel>> {
-    return this.db.channels().getById(channelNumber);
+  getChannel(channelNumber: number): Promise<Nullable<Channel>> {
+    return getEm().repo(Channel).findOne({ number: channelNumber });
   }
 
   async saveChannel(channel: Channel) {
-    return this.db.channels().insertOrUpdate(channel);
+    const em = getEm();
+    await em.repo(Channel).upsert(channel);
+    await em.flush();
+  }
+
+  async updateChannel(id: string, channel: Omit<Partial<Channel>, 'uuid'>) {
+    const em = getEm();
+    await em.nativeUpdate(Channel, { uuid: id }, channel);
+    await em.flush();
   }
 
   async deleteChannel(channelNumber: number) {
-    return this.db.channels().delete(channelNumber);
+    const em = getEm();
+    await em.repo(Channel).nativeDelete({ number: channelNumber });
+    await em.flush();
   }
 
-  getAllChannelNumbers(): number[] {
-    return this.db
-      .channels()
-      .getAll()
-      .map((channel) => channel.number)
-      .sort();
+  async getAllChannelNumbers() {
+    const channels = await getEm()
+      .repo(Channel)
+      .findAll({ fields: ['number'], orderBy: { number: QueryOrder.DESC } });
+    return channels.map((channel) => channel.number);
   }
 
-  getAllChannels(): ReadonlyArray<ImmutableChannel> {
-    return [...this.db.channels().getAll()];
+  async getAllChannels() {
+    return getEm().repo(Channel).findAll();
   }
 }

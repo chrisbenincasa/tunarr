@@ -13,7 +13,7 @@ export const hdhrSettingsRouter: FastifyPluginCallback = (
 ) => {
   fastify.get('/api/hdhr-settings', (req, res) => {
     try {
-      const hdhr = req.serverCtx.dbAccess.hdhrSettings();
+      const hdhr = req.serverCtx.settings.hdhrSettings();
       return res.send(hdhr);
     } catch (err) {
       logger.error(err);
@@ -25,8 +25,8 @@ export const hdhrSettingsRouter: FastifyPluginCallback = (
     '/api/hdhr-settings',
     async (req, res) => {
       try {
-        await req.serverCtx.dbAccess.updateSettings('hdhr', req.body);
-        const hdhr = req.serverCtx.dbAccess.hdhrSettings();
+        await req.serverCtx.settings.updateSettings('hdhr', req.body);
+        const hdhr = req.serverCtx.settings.hdhrSettings();
         await res.send(hdhr);
         req.serverCtx.eventService.push('settings-update', {
           message: 'HDHR configuration updated.',
@@ -54,12 +54,12 @@ export const hdhrSettingsRouter: FastifyPluginCallback = (
 
   fastify.post('/api/hdhr-settings', async (req, res) => {
     try {
-      await req.serverCtx.dbAccess.updateSettings('hdhr', {
+      await req.serverCtx.settings.updateSettings('hdhr', {
         // _id: req.body._id,
         tunerCount: 1,
         autoDiscoveryEnabled: true,
       });
-      const hdhr = req.serverCtx.dbAccess.hdhrSettings();
+      const hdhr = req.serverCtx.settings.hdhrSettings();
       await res.send(hdhr);
       req.serverCtx.eventService.push('settings-update', {
         message: 'HDHR configuration reset.',

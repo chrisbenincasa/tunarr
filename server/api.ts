@@ -1,10 +1,10 @@
 import fileUpload from 'express-fileupload';
 import { FastifyPluginCallback } from 'fastify';
 import { promises as fsPromises } from 'fs';
-import { find, isNil, isUndefined } from 'lodash-es';
+import { isNil, isUndefined } from 'lodash-es';
 import path from 'path';
 import constants from './constants.js';
-import { getDB } from './dao/db.js';
+import { PlexServerSettings } from './dao/entities/PlexServerSettings.js';
 import { FFMPEGInfo } from './ffmpegInfo.js';
 import { serverOptions } from './globals.js';
 import createLogger from './logger.js';
@@ -28,7 +28,7 @@ export const miscRouter: FastifyPluginCallback = (fastify, _opts, done) => {
 
   fastify.get('/api/version', async (req, res) => {
     try {
-      const ffmpegSettings = req.serverCtx.dbAccess.ffmpegSettings();
+      const ffmpegSettings = req.serverCtx.settings.ffmpegSettings();
       const v = await new FFMPEGInfo(ffmpegSettings).getVersion();
       return res.send({
         dizquetv: constants.VERSION_NAME,
@@ -86,7 +86,7 @@ export const miscRouter: FastifyPluginCallback = (fastify, _opts, done) => {
     try {
       const host = `${req.protocol}://${req.hostname}`;
 
-      const xmltvSettings = req.serverCtx.dbAccess.xmlTvSettings();
+      const xmltvSettings = req.serverCtx.settings.xmlTvSettings();
       const fileContent = await fsPromises.readFile(
         xmltvSettings.outputPath,
         'utf8',
@@ -126,10 +126,10 @@ export const miscRouter: FastifyPluginCallback = (fastify, _opts, done) => {
   fastify.get<{ Querystring: { name: string; path: string } }>(
     '/api/plex',
     async (req, res) => {
-      const db = await getDB();
-      const servers = db.plexServers().getAll();
-      const server = find(servers, { name: req.query.name });
-      if (isUndefined(server)) {
+      const server = await req.entityManager
+        .repo(PlexServerSettings)
+        .findOne({ name: req.query.name });
+      if (isNil(server)) {
         return res
           .status(404)
           .send({ error: 'No server found with name: ' + req.query.name });

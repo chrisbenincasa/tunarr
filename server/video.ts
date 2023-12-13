@@ -29,7 +29,7 @@ type StreamQueryString = {
 
 export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
   fastify.get('/setup', async (req, res) => {
-    const ffmpegSettings = req.serverCtx.dbAccess.ffmpegSettings();
+    const ffmpegSettings = req.serverCtx.settings.ffmpegSettings();
     // Check if ffmpeg path is valid
     if (!fs.existsSync(ffmpegSettings.ffmpegExecutablePath)) {
       logger.error(
@@ -96,7 +96,7 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
       return res.status(500).send("Channel doesn't exist");
     }
 
-    const ffmpegSettings = req.serverCtx.dbAccess.ffmpegSettings();
+    const ffmpegSettings = req.serverCtx.settings.ffmpegSettings();
 
     // Check if ffmpeg path is valid
     if (!fs.existsSync(ffmpegSettings.ffmpegExecutablePath)) {
@@ -237,7 +237,7 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
       isFirst = true;
     }
 
-    const ffmpegSettings = req.serverCtx.dbAccess.ffmpegSettings();
+    const ffmpegSettings = req.serverCtx.settings.ffmpegSettings();
 
     // Check if ffmpeg path is valid
     if (!fs.existsSync(ffmpegSettings.ffmpegExecutablePath)) {
@@ -363,8 +363,9 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
       if (isNil(currentProgram) || isNil(currentProgram.program)) {
         throw "No video to play, this means there's a serious unexpected bug or the channel db is corrupted.";
       }
-      const fillers =
-        req.serverCtx.fillerDB.getFillersFromChannel(channelContext);
+      const fillers = req.serverCtx.fillerDB.getFillersFromChannel(
+        channelContext.number,
+      );
       const lineup = helperFuncs.createLineup(
         req.serverCtx.channelCache,
         currentProgram,
@@ -443,7 +444,8 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
       channel: combinedChannel,
       m3u8: m3u8,
       audioOnly: audioOnly,
-      dbAccess: req.serverCtx.dbAccess,
+      entityManager: req.entityManager.fork(),
+      settings: req.serverCtx.settings,
     };
 
     let player: ProgramPlayer | null = new ProgramPlayer(playerContext);
@@ -542,7 +544,7 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
         // `#EXT-X-STREAM-INF:BANDWIDTH=1123000`,
       ];
 
-      const ffmpegSettings = req.serverCtx.dbAccess.ffmpegSettings();
+      const ffmpegSettings = req.serverCtx.settings.ffmpegSettings();
 
       if (ffmpegSettings.enableTranscoding) {
         lines.push(
@@ -586,7 +588,7 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
 
       let data = 'ffconcat version 1.0\n';
 
-      const ffmpegSettings = req.serverCtx.dbAccess.ffmpegSettings();
+      const ffmpegSettings = req.serverCtx.settings.ffmpegSettings();
 
       const sessionId = StreamCount++;
       const audioOnly = req.query.audioOnly;

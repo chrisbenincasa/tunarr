@@ -14,7 +14,7 @@ export const plexSettingsRouter: FastifyPluginCallback = (
 ) => {
   fastify.get('/api/plex-settings', (req, res) => {
     try {
-      const plex = req.serverCtx.dbAccess.plexSettings();
+      const plex = req.serverCtx.settings.plexSettings();
       return res.send(plex);
     } catch (err) {
       logger.error(err);
@@ -26,8 +26,8 @@ export const plexSettingsRouter: FastifyPluginCallback = (
     '/api/plex-settings',
     async (req, res) => {
       try {
-        await req.serverCtx.dbAccess.updateSettings('plexStream', req.body);
-        const plex = req.serverCtx.dbAccess.plexSettings();
+        await req.serverCtx.settings.updateSettings('plexStream', req.body);
+        const plex = req.serverCtx.settings.plexSettings();
         await res.send(plex);
         req.serverCtx.eventService.push('settings-update', {
           message: 'Plex configuration updated.',
@@ -56,11 +56,11 @@ export const plexSettingsRouter: FastifyPluginCallback = (
   fastify.post('/api/plex-settings', async (req, res) => {
     // RESET
     try {
-      await req.serverCtx.dbAccess.updateSettings(
+      await req.serverCtx.settings.updateSettings(
         'plexStream',
         defaultPlexStreamSettings,
       );
-      const plex = req.serverCtx.dbAccess.plexSettings();
+      const plex = req.serverCtx.settings.plexSettings();
       await res.send(plex);
       req.serverCtx.eventService.push('settings-update', {
         message: 'Plex configuration reset.',

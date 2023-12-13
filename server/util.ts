@@ -2,10 +2,13 @@ import {
   chain,
   isArray,
   isEmpty,
+  isError,
   isPlainObject,
+  isString,
   isUndefined,
   reduce,
 } from 'lodash-es';
+import fs from 'fs/promises';
 import { isPromise } from 'node:util/types';
 
 declare global {
@@ -32,6 +35,15 @@ export type KeysOfType<T, X = string | number> = keyof {
 // export type KeyOfType<T, Key extends keyof T, Target> = keyof {
 //   [K in Key as T[K] extends Target ? K : never]: T[K];
 // };
+
+export function mapToObj<T, U, O extends Record<string | number, U>>(
+  data: T[],
+  mapper: (x: T) => O,
+): O {
+  return data
+    .map(mapper)
+    .reduce((prev, curr) => ({ ...prev, ...curr }), {} as O);
+}
 
 export function groupByUniq<
   T,
@@ -173,4 +185,32 @@ export function deepCopy<T>(value: T): T {
 
 export function isNodeError(error: unknown): error is NodeJS.ErrnoException {
   return error instanceof Error;
+}
+
+export async function createDirectoryIfNotExists(
+  dirPath: string,
+): Promise<void> {
+  try {
+    await fs.mkdir(dirPath, { recursive: true });
+  } catch (err) {
+    if (isNodeError(err) && err.code !== 'EEXIST') {
+      // Throw an error if it's not because the directory already exists
+      throw err;
+    }
+  }
+}
+
+export type Try<T> = T | Error;
+export function attempt<T>(f: () => T): Try<T> {
+  try {
+    return f();
+  } catch (e) {
+    if (isError(e)) {
+      return e;
+    } else if (isString(e)) {
+      return new Error(e);
+    }
+
+    throw e; // Unhandled
+  }
 }

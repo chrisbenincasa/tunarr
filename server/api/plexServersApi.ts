@@ -30,7 +30,7 @@ export const plexServersRouter: RouterPluginCallback = (
     },
     async (req, res) => {
       try {
-        return res.send(req.serverCtx.dbAccess.plexServers().getAll());
+        return res.send(req.serverCtx.settings.plexServers().getAll());
       } catch (err) {
         logger.error(err);
         return res.status(500).send('error');
@@ -42,7 +42,7 @@ export const plexServersRouter: RouterPluginCallback = (
     '/api/plex-servers/status',
     async (req, res) => {
       try {
-        const servers = req.serverCtx.dbAccess
+        const servers = req.serverCtx.settings
           .plexServers()
           .getById(req.body.name);
         if (isUndefined(servers)) {

@@ -14,8 +14,8 @@ export const xmlTvSettingsRouter: FastifyPluginCallback = (
 ) => {
   fastify.get('/api/xmltv-settings', async (req, res) => {
     try {
-      console.log(req.serverCtx.dbAccess.xmlTvSettings());
-      return res.send(req.serverCtx.dbAccess.xmlTvSettings());
+      console.log(req.serverCtx.settings.xmlTvSettings());
+      return res.send(req.serverCtx.settings.xmlTvSettings());
     } catch (err) {
       logger.error(err);
       return res.status(500).send('error');
@@ -29,15 +29,15 @@ export const xmlTvSettingsRouter: FastifyPluginCallback = (
   fastify.put('/api/xmltv-settings', async (req, res) => {
     try {
       const settings = req.body as Partial<XmlTvSettings>;
-      let xmltv = req.serverCtx.dbAccess.xmlTvSettings();
-      await req.serverCtx.dbAccess.updateSettings('xmltv', {
+      let xmltv = req.serverCtx.settings.xmlTvSettings();
+      await req.serverCtx.settings.updateSettings('xmltv', {
         refreshHours:
           (settings.refreshHours ?? 0) < 1 ? 1 : settings.refreshHours!,
         enableImageCache: settings.enableImageCache === true,
         outputPath: xmltv.outputPath,
         programmingHours: settings.programmingHours ?? 12,
       });
-      xmltv = req.serverCtx.dbAccess.xmlTvSettings();
+      xmltv = req.serverCtx.settings.xmlTvSettings();
       await res.send(xmltv);
       req.serverCtx.eventService.push('settings-update', {
         message: 'xmltv settings updated.',
@@ -66,11 +66,11 @@ export const xmlTvSettingsRouter: FastifyPluginCallback = (
 
   fastify.post('/api/xmltv-settings', async (req, res) => {
     try {
-      await req.serverCtx.dbAccess.updateSettings(
+      await req.serverCtx.settings.updateSettings(
         'xmltv',
         defaultXmlTvSettings,
       );
-      const xmltv = req.serverCtx.dbAccess.xmlTvSettings();
+      const xmltv = req.serverCtx.settings.xmlTvSettings();
       await res.send(xmltv);
       req.serverCtx.eventService.push('settings-update', {
         message: 'xmltv settings reset.',
