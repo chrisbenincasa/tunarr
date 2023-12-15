@@ -1,6 +1,6 @@
 import { FastifyPluginCallback } from 'fastify';
 import { isError } from 'lodash-es';
-import { PlexStreamSettings } from '../dao/db.js';
+import { PlexStreamSettings } from '../dao/settings.js';
 import createLogger from '../logger.js';
 import { firstDefined } from '../util.js';
 import { defaultPlexStreamSettings } from 'dizquetv-types';

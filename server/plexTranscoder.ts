@@ -4,7 +4,7 @@ import * as fs from 'node:fs/promises';
 import { stringify } from 'node:querystring';
 import { DeepReadonly } from 'ts-essentials';
 import { v4 as uuidv4 } from 'uuid';
-import { PlexStreamSettings } from './dao/db.js';
+import { PlexStreamSettings } from './dao/settings.js';
 import { serverOptions } from './globals.js';
 import createLogger from './logger.js';
 import { Plex } from './plex.js';

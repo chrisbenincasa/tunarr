@@ -14,7 +14,6 @@ import { v4 as uuidv4 } from 'uuid';
 import z from 'zod';
 import constants from '../constants.js';
 import { globalOptions } from '../globals.js';
-import { migrateFromLegacyDb } from './legacyDbMigration.js';
 
 const CURRENT_VERSION = 1;
 
@@ -242,10 +241,6 @@ export class Settings {
     return this.db.data.migration.legacyMigration;
   }
 
-  async migrateFromLegacyDb(entities?: string[]) {
-    return migrateFromLegacyDb(this.db, entities);
-  }
-
   clientId(): string {
     return this.db.data.settings.clientId;
   }
@@ -279,18 +274,19 @@ export class Settings {
   }
 }
 
-export const getSettings = once(async (dbPath?: string) => {
+export const getSettingsRawDb = once(async (dbPath?: string) => {
   const db = await JSONPreset<Schema>(
-    dbPath ?? path.resolve(globalOptions().database, 'db.json'),
+    dbPath ?? path.resolve(globalOptions().database, 'settings.json'),
     defaultSchema,
   );
   await db.read();
+  return db;
+});
+
+export const getSettings = once(async (dbPath?: string) => {
+  const db = await getSettingsRawDb(dbPath);
 
   const access = new Settings(db);
-
-  if (!access.needsLegacyMigration()) {
-    await access.migrateFromLegacyDb();
-  }
 
   if (db.data.version < CURRENT_VERSION) {
     // We need to perform a migration

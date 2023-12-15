@@ -1,7 +1,7 @@
 import { Loaded, wrap } from '@mikro-orm/core';
 import { ChannelCache } from '../channelCache.js';
 import { withDb } from '../dao/dataSource.js';
-import { Settings } from '../dao/db.js';
+import { Settings } from '../dao/settings.js';
 import { Channel } from '../dao/entities/Channel.js';
 import { PlexServerSettings } from '../dao/entities/PlexServerSettings.js';
 import createLogger from '../logger.js';

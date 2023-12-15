@@ -4,7 +4,7 @@ import path from 'path';
 import { ChannelCache } from './channelCache.js';
 import { ChannelDB } from './dao/channelDb.js';
 import { CustomShowDB } from './dao/customShowDb.js';
-import { Settings, getSettings } from './dao/db.js';
+import { Settings, getSettings } from './dao/settings.js';
 import { FillerDB } from './dao/fillerDb.js';
 import { PlexServerDB } from './dao/plexServerDb.js';
 import { serverOptions } from './globals.js';

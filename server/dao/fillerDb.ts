@@ -8,7 +8,7 @@ import { Maybe, Nullable } from '../types.js';
 import { sequentialPromises } from '../util.js';
 import { ChannelDB } from './channelDb.js';
 import { getEm } from './dataSource.js';
-import { FillerList } from './db.js';
+import { FillerList } from './settings.js';
 import { Channel as ChannelEntity } from './entities/Channel.js';
 import { ChannelFillerShow } from './entities/ChannelFillerShow.js';
 import { FillerShow } from './entities/FillerShow.js';

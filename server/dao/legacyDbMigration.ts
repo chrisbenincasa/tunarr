@@ -46,7 +46,7 @@ import {
   Schema,
   SettingsSchema,
   defaultSchema,
-} from './db.js';
+} from './settings.js';
 import {
   ContentItem,
   Lineup,
@@ -692,8 +692,10 @@ export const MigratableEntities = [
   'cached-images',
 ];
 
-export const migrateFromLegacyDb = (db: Low<Schema>, entities?: string[]) =>
-  withDb((em) => migrateFromLegacyDbInner(em, db, entities));
+export const migrateFromLegacyDb = (
+  settings: Low<Schema>,
+  entities?: string[],
+) => withDb((em) => migrateFromLegacyDbInner(em, settings, entities));
 
 async function migrateFromLegacyDbInner(
   em: EntityManager,

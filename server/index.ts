@@ -6,8 +6,11 @@ import { ArgumentsCamelCase } from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import yargs from 'yargs/yargs';
 import constants from './constants.js';
-import { getSettings } from './dao/db.js';
-import { MigratableEntities } from './dao/legacyDbMigration.js';
+import { getSettingsRawDb } from './dao/settings.js';
+import {
+  MigratableEntities,
+  migrateFromLegacyDb,
+} from './dao/legacyDbMigration.js';
 import { setGlobalOptions, setServerOptions } from './globals.js';
 import createLogger from './logger.js';
 import { ServerOptions } from './types.js';
@@ -69,8 +72,8 @@ time('parse', () =>
       },
       async (argv) => {
         logger.info('Migrating DB from legacy schema...');
-        return await getSettings().then((db) =>
-          db.migrateFromLegacyDb(argv.entities),
+        return await getSettingsRawDb().then((db) =>
+          migrateFromLegacyDb(db, argv.entities),
         );
       },
     )

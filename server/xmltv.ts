@@ -5,7 +5,7 @@ import { Channel, TvGuideProgram } from 'dizquetv-types';
 import fs from 'fs';
 import { keys, map } from 'lodash-es';
 import XMLWriter from 'xml-writer';
-import { XmlTvSettings } from './dao/db.js';
+import { XmlTvSettings } from './dao/settings.js';
 import { CacheImageService } from './services/cacheImageService.js';
 import { ChannelPrograms } from './services/tvGuideService.js';
 

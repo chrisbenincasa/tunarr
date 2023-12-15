@@ -1,7 +1,7 @@
 import { FastifyPluginAsync } from 'fastify';
 import { Server as SSDP } from 'node-ssdp';
 import { ChannelDB } from './dao/channelDb.js';
-import { Settings } from './dao/db.js';
+import { Settings } from './dao/settings.js';
 import { serverOptions } from './globals.js';
 
 export class HdhrService {

@@ -4,6 +4,7 @@ import fpStatic from '@fastify/static';
 import fastify from 'fastify';
 import fp from 'fastify-plugin';
 // import fastifyPrintRoutes from 'fastify-print-routes';
+import { RequestContext } from '@mikro-orm/core';
 import {
   ZodTypeProvider,
   serializerCompiler,
@@ -32,15 +33,15 @@ import registerV2Routes from './api/v2/index.js';
 import { xmlTvSettingsRouter } from './api/xmltvSettingsApi.js';
 import constants from './constants.js';
 import { EntityManager, initOrm } from './dao/dataSource.js';
+import { migrateFromLegacyDb } from './dao/legacyDbMigration.js';
+import { getSettingsRawDb } from './dao/settings.js';
 import { serverOptions } from './globals.js';
 import createLogger from './logger.js';
 import { serverContext } from './serverContext.js';
 import { scheduleJobs, scheduledJobsById } from './services/scheduler.js';
 import { UpdateXmlTvTask } from './tasks/updateXmlTvTask.js';
 import { ServerOptions } from './types.js';
-import { time } from './util.js';
 import { videoRouter } from './video.js';
-import { RequestContext } from '@mikro-orm/core';
 
 const logger = createLogger(import.meta);
 
@@ -69,7 +70,8 @@ if (NODE < 12) {
 
 function initDbDirectories() {
   const opts = serverOptions();
-  if (!fs.existsSync(opts.database)) {
+  const hasLegacyDb = !fs.existsSync(opts.database);
+  if (!hasLegacyDb) {
     if (fs.existsSync(path.join('.', '.pseudotv'))) {
       throw Error(
         opts.database +
@@ -99,18 +101,19 @@ function initDbDirectories() {
   if (!fs.existsSync(path.join(opts.database, 'cache', 'images'))) {
     fs.mkdirSync(path.join(opts.database, 'cache', 'images'));
   }
+  return hasLegacyDb;
 }
 
 export async function initServer(opts: ServerOptions) {
-  await time('initDbDirectories', () => initDbDirectories);
+  const hadLegacyDb = initDbDirectories();
+
   const orm = await initOrm();
 
-  const ctx = await time('generateServerContext', () => serverContext());
+  const ctx = await serverContext();
 
-  // const updateXMLPromise = time<Promise<void>>('xmltv.update', () =>
-  //   xmltvInterval.updateXML(),
-  // ).then(() => xmltvInterval.startInterval());
-  // const updateXMLPromise = UpdateXmlTvTask.create(ctx).run();
+  if (hadLegacyDb && ctx.settings.needsLegacyMigration()) {
+    await migrateFromLegacyDb(await getSettingsRawDb());
+  }
 
   scheduleJobs(ctx);
 

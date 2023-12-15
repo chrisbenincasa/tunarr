@@ -1,6 +1,6 @@
 import { FastifyPluginCallback } from 'fastify';
 import { isError } from 'lodash-es';
-import { XmlTvSettings, defaultXmlTvSettings } from '../dao/db.js';
+import { XmlTvSettings, defaultXmlTvSettings } from '../dao/settings.js';
 import createLogger from '../logger.js';
 import { scheduledJobsById } from '../services/scheduler.js';
 import { firstDefined } from '../util.js';

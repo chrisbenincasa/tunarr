@@ -1,6 +1,6 @@
 import { FfmpegSettings, Program } from 'dizquetv-types';
 import { EntityManager } from './dao/dataSource.js';
-import { Settings, Watermark } from './dao/db.js';
+import { Settings, Watermark } from './dao/settings.js';
 import { Channel } from './dao/entities/Channel.js';
 
 export type GlobalOptions = {

@@ -4,7 +4,7 @@ import { isError, isNil, isUndefined, once } from 'lodash-es';
 import * as fs from 'node:fs';
 import { Readable } from 'stream';
 import constants from './constants.js';
-import { offlineProgram } from './dao/db.js';
+import { offlineProgram } from './dao/settings.js';
 import { Channel } from './dao/entities/Channel.js';
 import { FFMPEG, FfmpegEvents } from './ffmpeg.js';
 import { FfmpegText } from './ffmpegText.js';

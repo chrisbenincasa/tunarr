@@ -10,7 +10,7 @@ import { MarkRequired } from 'ts-essentials';
 import z from 'zod';
 import constants from '../constants.js';
 import { ChannelDB } from '../dao/channelDb.js';
-import { ChannelIconSchema, getSettings } from '../dao/db.js';
+import { ChannelIconSchema, getSettings } from '../dao/settings.js';
 import {
   Lineup,
   isContentItem,

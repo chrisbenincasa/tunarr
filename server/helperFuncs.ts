@@ -5,7 +5,7 @@ import * as randomJS from 'random-js';
 import { DeepReadonly } from 'ts-essentials';
 import { ChannelCache } from './channelCache.js';
 import constants from './constants.js';
-import { Watermark, offlineProgram } from './dao/db.js';
+import { Watermark, offlineProgram } from './dao/settings.js';
 import { Channel } from './dao/entities/Channel.js';
 import { ChannelFillerShow } from './dao/entities/ChannelFillerShow.js';
 import { Program as ProgramEntity } from './dao/entities/Program.js';

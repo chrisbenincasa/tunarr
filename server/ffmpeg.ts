@@ -3,7 +3,7 @@ import events from 'events';
 import { isNil, isString, isUndefined } from 'lodash-es';
 import { Readable } from 'stream';
 import { DeepReadonly } from 'ts-essentials';
-import { Watermark } from './dao/db.js';
+import { Watermark } from './dao/settings.js';
 import { serverOptions } from './globals.js';
 import createLogger from './logger.js';
 import { ContextChannel, Maybe } from './types.js';
