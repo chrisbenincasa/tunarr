@@ -71,7 +71,7 @@ if (NODE < 12) {
 function initDbDirectories() {
   const opts = serverOptions();
   const hasLegacyDb = !fs.existsSync(opts.database);
-  if (!hasLegacyDb) {
+  if (hasLegacyDb) {
     if (fs.existsSync(path.join('.', '.pseudotv'))) {
       throw Error(
         opts.database +

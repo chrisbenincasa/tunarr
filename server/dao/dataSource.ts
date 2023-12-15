@@ -2,6 +2,7 @@ import type {
   BetterSqliteDriver,
   SqlEntityManager,
 } from '@mikro-orm/better-sqlite'; // or any other driver package
+import fs from 'fs';
 import { MikroORM } from '@mikro-orm/better-sqlite';
 import {
   CreateContextOptions,
@@ -18,6 +19,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 export const initOrm = once(async () => {
+  const hasExistingDb = fs.existsSync(
+    path.join(globalOptions().database, 'db.db'),
+  );
+
   const orm = await MikroORM.init<BetterSqliteDriver>({
     dbName: path.resolve(globalOptions().database, 'db.db'),
     baseDir: __dirname,
@@ -26,6 +31,12 @@ export const initOrm = once(async () => {
     debug: !!process.env['DATABASE_DEBUG_LOGGING'],
     namingStrategy: UnderscoreNamingStrategy,
   });
+
+  // First launch
+  if (!hasExistingDb) {
+    await orm.getSchemaGenerator().createSchema();
+  }
+
   return orm;
 });
 
