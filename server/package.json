@@ -10,7 +10,8 @@
     "dev": "nodemon -e ts --watch . --watch index.ts --ignore build/ -e .json,.ts,.yml,.yaml,.js -x ts-node-esm -r tsconfig-paths/register --files --project tsconfig.build.json index.ts --inspect=4321",
     "buildw": "nodemon -e ts --watch . --watch index.ts --ignore build/ -e .json,.ts,.yml,.yaml,.js -x tsc --project tsconfig.build.json",
     "debug": "nodemon --ignore build/ -e .json,.ts,.yml,.yaml,.js --exec \"node --inspect-brk=0.0.0.0:4321 --loader ts-node/esm ./index.ts\"",
-    "mikro-orm": "NODE_OPTIONS='--loader ts-node/esm --no-warnings' mikro-orm"
+    "mikro-orm": "NODE_OPTIONS='--loader ts-node/esm --no-warnings' mikro-orm",
+    "dizquetv": "ts-node-esm index.ts"
   },
   "type": "module",
   "main": "index.ts",

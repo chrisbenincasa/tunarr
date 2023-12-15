@@ -112,6 +112,7 @@ export async function initServer(opts: ServerOptions) {
   const ctx = await serverContext();
 
   if (hadLegacyDb && ctx.settings.needsLegacyMigration()) {
+    logger.info('Migrating from legacy database folder...');
     await migrateFromLegacyDb(await getSettingsRawDb());
   }
 
