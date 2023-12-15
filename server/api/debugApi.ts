@@ -1,10 +1,14 @@
+import { Loaded } from '@mikro-orm/core';
 import { FastifyPluginCallback, FastifyRequest } from 'fastify';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
+import { first, isNil, isUndefined } from 'lodash-es';
 import z from 'zod';
 import { ChannelCache } from '../channelCache.js';
+import { Channel } from '../dao/entities/Channel.js';
 import * as helperFuncs from '../helperFuncs.js';
 import createLogger from '../logger.js';
 import { PlexPlayer } from '../plexPlayer.js';
+import { PlexTranscoder } from '../plexTranscoder.js';
 import {
   ContextChannel,
   LineupItem,
@@ -12,9 +16,7 @@ import {
   PlayerContext,
   isPlexBackedLineupItem,
 } from '../types.js';
-import { isNil, isUndefined } from 'lodash-es';
-import { ImmutableChannel } from '../dao/db.js';
-import { PlexTranscoder } from '../plexTranscoder.js';
+import { getEm } from '../dao/dataSource.js';
 
 const logger = createLogger(import.meta);
 
@@ -33,9 +35,10 @@ export const debugRouter: FastifyPluginCallback = (fastify, _opts, done) => {
     async (req, res) => {
       void res.hijack();
       const t0 = new Date().getTime();
-      const channel = req.serverCtx.channelCache.getChannelConfig(
-        req.query.channel,
-      );
+      const channel =
+        await req.serverCtx.channelCache.getChannelConfigWithPrograms(
+          req.query.channel,
+        );
 
       if (!channel) {
         return res.status(404).send('No channel found');
@@ -47,16 +50,21 @@ export const debugRouter: FastifyPluginCallback = (fastify, _opts, done) => {
       };
       logger.info('combinedChannel: %O', combinedChannel);
 
-      const lineupItem = getLineupItemForDebug(req, channel, t0);
+      const lineupItem = await getLineupItemForDebug(req, channel, t0);
       logger.info('lineupItem: %O', lineupItem);
 
+      if (!lineupItem) {
+        return res.status(500).send('Could not get lineup item for params');
+      }
+
       const playerContext: PlayerContext = {
-        lineupItem: lineupItem!,
+        lineupItem: lineupItem,
         ffmpegSettings: req.serverCtx.settings.ffmpegSettings(),
         channel: combinedChannel,
         m3u8: false,
         audioOnly: false,
-        dbAccess: req.serverCtx.settings,
+        settings: req.serverCtx.settings,
+        entityManager: getEm(),
       };
 
       const plex = new PlexPlayer(playerContext);
@@ -75,15 +83,16 @@ export const debugRouter: FastifyPluginCallback = (fastify, _opts, done) => {
     '/api/v1/debug/plex-transcoder/video-stats',
     { schema: ChannelQuerySchema },
     async (req, res) => {
-      const channel = req.serverCtx.channelCache.getChannelConfig(
-        req.query.channel,
-      );
+      const channel =
+        await req.serverCtx.channelCache.getChannelConfigWithPrograms(
+          req.query.channel,
+        );
 
       if (!channel) {
         return res.status(404).send('No channel found');
       }
 
-      const lineupItem = getLineupItemForDebug(
+      const lineupItem = await getLineupItemForDebug(
         req,
         channel,
         new Date().getTime(),
@@ -103,7 +112,13 @@ export const debugRouter: FastifyPluginCallback = (fastify, _opts, done) => {
           );
       }
 
-      const plexServer = req.serverCtx.settings.plexServers().getAll()[0];
+      // TODO use plex server from item.
+      const plexServer = await req.serverCtx.plexServerDB.getAll().then(first);
+
+      if (isNil(plexServer)) {
+        return res.status(404).send('Could not find plex server');
+      }
+
       const plexSettings = req.serverCtx.settings.plexSettings();
 
       const combinedChannel: ContextChannel = {
@@ -126,9 +141,9 @@ export const debugRouter: FastifyPluginCallback = (fastify, _opts, done) => {
     },
   );
 
-  function getLineupItemForDebug(
+  async function getLineupItemForDebug(
     req: FastifyRequest,
-    channel: ImmutableChannel,
+    channel: Loaded<Channel, 'programs'>,
     now: number,
   ) {
     let lineupItem: Maybe<LineupItem> =
@@ -136,19 +151,23 @@ export const debugRouter: FastifyPluginCallback = (fastify, _opts, done) => {
 
     logger.info('lineupItem: %O', lineupItem);
 
+    const fillers = await req.serverCtx.fillerDB.getFillersFromChannel(
+      channel.number,
+    );
+
     if (isNil(lineupItem)) {
-      lineupItem = helperFuncs
-        .createLineup(
+      lineupItem = (
+        await helperFuncs.createLineup(
           req.serverCtx.channelCache,
           helperFuncs.getCurrentProgramAndTimeElapsed(
             new Date().getTime(),
             channel,
           ),
           channel,
-          req.serverCtx.fillerDB.getFillersFromChannel(channel),
+          fillers,
           false,
         )
-        .shift();
+      ).shift();
     }
     return lineupItem;
   }
@@ -158,8 +177,10 @@ export const debugRouter: FastifyPluginCallback = (fastify, _opts, done) => {
     {
       schema: ChannelQuerySchema,
     },
-    (req, res) => {
-      const channel = req.serverCtx.channelDB.getChannel(req.query.channel);
+    async (req, res) => {
+      const channel = await req.serverCtx.channelDB.getChannelAndPrograms(
+        req.query.channel,
+      );
 
       if (!channel) {
         return res
@@ -187,8 +208,10 @@ export const debugRouter: FastifyPluginCallback = (fastify, _opts, done) => {
     {
       schema: CreateLineupSchema,
     },
-    (req, res) => {
-      const channel = req.serverCtx.channelDB.getChannel(req.query.channel);
+    async (req, res) => {
+      const channel = await req.serverCtx.channelDB.getChannelAndPrograms(
+        req.query.channel,
+      );
 
       if (!channel) {
         return res
@@ -200,6 +223,10 @@ export const debugRouter: FastifyPluginCallback = (fastify, _opts, done) => {
         ? req.serverCtx.channelCache
         : new ChannelCache(req.serverCtx.channelDB);
 
+      const fillers = await req.serverCtx.fillerDB.getFillersFromChannel(
+        channel.number,
+      );
+
       return res.send(
         helperFuncs.createLineup(
           channelCache,
@@ -208,7 +235,7 @@ export const debugRouter: FastifyPluginCallback = (fastify, _opts, done) => {
             channel,
           ),
           channel,
-          req.serverCtx.fillerDB.getFillersFromChannel(channel),
+          fillers,
           false,
         ),
       );
@@ -226,8 +253,10 @@ export const debugRouter: FastifyPluginCallback = (fastify, _opts, done) => {
     {
       schema: RandomFillerSchema,
     },
-    (req, res) => {
-      const channel = req.serverCtx.channelDB.getChannel(req.query.channel);
+    async (req, res) => {
+      const channel = await req.serverCtx.channelDB.getChannel(
+        req.query.channel,
+      );
 
       if (!channel) {
         return res
@@ -239,11 +268,15 @@ export const debugRouter: FastifyPluginCallback = (fastify, _opts, done) => {
         ? req.serverCtx.channelCache
         : new ChannelCache(req.serverCtx.channelDB);
 
+      const fillers = await req.serverCtx.fillerDB.getFillersFromChannel(
+        channel.number,
+      );
+
       return res.send(
         helperFuncs.pickRandomWithMaxDuration(
           channelCache,
           channel,
-          req.serverCtx.fillerDB.getFillersFromChannel(channel),
+          fillers,
           req.query.maxDuration,
         ),
       );

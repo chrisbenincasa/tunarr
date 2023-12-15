@@ -1,6 +1,7 @@
 import { FfmpegSettings, Program } from 'dizquetv-types';
 import { EntityManager } from './dao/dataSource.js';
-import { ImmutableChannel, Settings, Watermark } from './dao/db.js';
+import { Settings, Watermark } from './dao/db.js';
+import { Channel } from './dao/entities/Channel.js';
 
 export type GlobalOptions = {
   database: string;
@@ -145,7 +146,7 @@ export const CHANNEL_CONTEXT_KEYS = [
 ] as const;
 
 export type ContextChannel = Pick<
-  ImmutableChannel & { offlinePicture?: string; offlineSoundtrack?: string },
+  Channel & { offlinePicture?: string; offlineSoundtrack?: string },
   TupleToUnion<typeof CHANNEL_CONTEXT_KEYS>
 >;
 

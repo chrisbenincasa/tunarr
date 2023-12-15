@@ -1,3 +1,6 @@
+import { Program as ProgramDTO } from 'dizquetv-types';
+import { Program } from '../entities/Program.js';
+
 export type Lineup = {
   items: LineupItem[];
 };
@@ -29,4 +32,12 @@ export function isContentItem(item: LineupItem): item is ContentItem {
 
 export function isOfflineItem(item: LineupItem): item is OfflineItem {
   return item.type === 'offline';
+}
+
+export function contentItemToProgramDTO(
+  backingItem: Program,
+): Partial<ProgramDTO> {
+  return {
+    ...backingItem.toDTO(),
+  };
 }

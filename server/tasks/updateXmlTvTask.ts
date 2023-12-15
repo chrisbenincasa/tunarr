@@ -1,4 +1,4 @@
-import { Loaded } from '@mikro-orm/core';
+import { Loaded, wrap } from '@mikro-orm/core';
 import { ChannelCache } from '../channelCache.js';
 import { withDb } from '../dao/dataSource.js';
 import { Settings } from '../dao/db.js';
@@ -51,13 +51,15 @@ export class UpdateXmlTvTask extends Task<void> {
   }
 
   private async updateXmlTv() {
-    let channels: Loaded<Channel, never>[] = [];
+    let channels: Loaded<Channel, 'programs'>[] = [];
 
     try {
-      channels = await this.channelCache.getAllChannels();
+      channels = await this.channelCache.getAllChannelsWithPrograms();
       const xmltvSettings = this.dbAccess.xmlTvSettings();
+      const channelDtos = channels.map((c) => wrap(c)).map((e) => e.toJSON());
+      console.log(channels, channelDtos);
       const t = this.guideService.prepareRefresh(
-        channels.map((c) => c.toDTO()),
+        channelDtos,
         xmltvSettings.refreshHours * 60 * 60 * 1000,
       );
       channels = [];
@@ -117,6 +119,6 @@ export class UpdateXmlTvTask extends Task<void> {
   }
 
   private getChannelsCached() {
-    return this.channelCache.getAllChannels();
+    return this.channelCache.getAllChannelsWithPrograms();
   }
 }

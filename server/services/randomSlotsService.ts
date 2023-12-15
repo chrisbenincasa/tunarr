@@ -34,7 +34,7 @@ export type ShuffleProgram = MarkOptional<
     Program,
     'summary' | 'icon' | 'rating' | 'ratingKey' | 'date' | 'year' | 'plexFile'
   >,
-  'duration'
+  'duration' | 'id'
 >;
 
 type SlotShow = ShowDataWithExtras & {

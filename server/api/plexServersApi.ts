@@ -1,5 +1,5 @@
 import { PlexServerSettingsSchema } from 'dizquetv-types/schemas';
-import { isError, isObject, isUndefined } from 'lodash-es';
+import { isNil, isError, isObject, isUndefined } from 'lodash-es';
 import z from 'zod';
 import {
   PlexServerSettingsInsert,
@@ -30,7 +30,9 @@ export const plexServersRouter: RouterPluginCallback = (
     },
     async (req, res) => {
       try {
-        return res.send(req.serverCtx.settings.plexServers().getAll());
+        const servers = await req.serverCtx.plexServerDB.getAll();
+        const dtos = servers.map((server) => server.toDTO());
+        return res.send(dtos);
       } catch (err) {
         logger.error(err);
         return res.status(500).send('error');
@@ -42,10 +44,8 @@ export const plexServersRouter: RouterPluginCallback = (
     '/api/plex-servers/status',
     async (req, res) => {
       try {
-        const servers = req.serverCtx.settings
-          .plexServers()
-          .getById(req.body.name);
-        if (isUndefined(servers)) {
+        const servers = await req.serverCtx.plexServerDB.getById(req.body.name);
+        if (isNil(servers)) {
           return res.status(404).send('Plex server not found.');
         }
 

@@ -1,19 +1,26 @@
-import { Channel, ChannelLineup, Program } from 'dizquetv-types';
+import { EntityDTO, Loaded } from '@mikro-orm/core';
 import {
-  compact,
-  isEmpty,
-  isNil,
-  isString,
-  isUndefined,
-  keys,
-} from 'lodash-es';
+  ChannelIcon,
+  ChannelLineup,
+  Program as ProgramDTO,
+} from 'dizquetv-types';
+import { compact, isNil, isUndefined, keys, mapValues } from 'lodash-es';
+import assert from 'node:assert';
 import { MarkRequired } from 'ts-essentials';
 import z from 'zod';
 import constants from '../constants.js';
-import { ChannelIconSchema, ImmutableChannel, getSettings } from '../dao/db.js';
+import { ChannelDB } from '../dao/channelDb.js';
+import { ChannelIconSchema, getSettings } from '../dao/db.js';
+import {
+  Lineup,
+  isContentItem,
+  isOfflineItem,
+} from '../dao/derived_types/Lineup.js';
+import { Channel } from '../dao/entities/Channel.js';
+import { programDaoToDto } from '../dao/entities/Program.js';
 import createLogger from '../logger.js';
 import { Maybe } from '../types.js';
-import { groupByUniq, groupByUniqAndMap } from '../util.js';
+import { groupByUniqFunc } from '../util.js';
 import { XmlTvWriter } from '../xmltv.js';
 import { CacheImageService } from './cacheImageService.js';
 import { EventService } from './eventService.js';
@@ -27,7 +34,7 @@ const FALLBACK_ICON =
 type CurrentPlayingProgram = {
   programIndex?: number;
   startTimeMs: number;
-  program: Partial<Program>;
+  program: Partial<ProgramDTO>;
 };
 
 const TvGuideProgramSubtitleSchema = z.object({
@@ -52,8 +59,14 @@ const TvGuideProgramSchema = z.object({
 
 export type TvGuideProgram = z.infer<typeof TvGuideProgramSchema>;
 
+export type TvGuideChannel = {
+  name: string;
+  number: number;
+  icon?: EntityDTO<ChannelIcon>;
+};
+
 export type ChannelPrograms = {
-  channel: Partial<Channel>;
+  channel: TvGuideChannel;
   programs: TvGuideProgram[];
 };
 
@@ -64,22 +77,28 @@ export const ChannelLineupSchema = z.object({
   programs: z.array(TvGuideProgramSchema),
 });
 
+type ChannelWithLineup = {
+  channel: EntityDTO<Loaded<Channel, 'programs'>>;
+  lineup: Lineup;
+};
+
 export class TVGuideService {
-  cached: Record<number, ChannelPrograms>;
-  lastUpdate: number;
-  lastBackoff: number;
-  updateTime: number;
-  currentUpdate: number;
-  currentLimit: number;
-  currentChannels: ImmutableChannel[];
-  xmltv: XmlTvWriter;
-  cacheImageService: CacheImageService;
-  eventService: EventService;
-  _throttle: () => Promise<void>;
-  updateLimit: number;
-  updateChannels: ImmutableChannel[];
-  accumulateTable: Record<number, number[]> = {};
-  channelsByNumber: Record<number, ImmutableChannel>;
+  private cached: Record<number, ChannelPrograms>;
+  private lastUpdate: number;
+  private lastBackoff: number;
+  private updateTime: number;
+  private currentUpdate: number;
+  private currentLimit: number;
+  private currentChannels: ChannelWithLineup[];
+  private xmltv: XmlTvWriter;
+  private cacheImageService: CacheImageService;
+  private eventService: EventService;
+  private _throttle: () => Promise<void>;
+  private updateLimit: number;
+  private updateChannels: EntityDTO<Channel>[];
+  private accumulateTable: Record<number, number[]> = {};
+  private channelsByNumber: Record<number, ChannelWithLineup>;
+  private channelDb: ChannelDB;
   /****
    *
    **/
@@ -87,6 +106,7 @@ export class TVGuideService {
     xmltv: XmlTvWriter,
     cacheImageService: CacheImageService,
     eventService: EventService,
+    channelDb: ChannelDB,
   ) {
     this.cached = {};
     this.lastUpdate = 0;
@@ -98,6 +118,7 @@ export class TVGuideService {
     this.xmltv = xmltv;
     this.cacheImageService = cacheImageService;
     this.eventService = eventService;
+    this.channelDb = channelDb;
     this._throttle = throttle;
   }
 
@@ -109,7 +130,10 @@ export class TVGuideService {
     return this.cached;
   }
 
-  prepareRefresh(inputChannels: ImmutableChannel[], limit: number) {
+  prepareRefresh(
+    inputChannels: EntityDTO<Loaded<Channel, 'programs'>>[],
+    limit: number,
+  ) {
     const t = new Date().getTime();
     this.updateTime = t;
     this.updateLimit = t + limit;
@@ -128,7 +152,14 @@ export class TVGuideService {
       if (this.currentUpdate == -1) {
         this.currentUpdate = this.updateTime;
         this.currentLimit = this.updateLimit;
-        this.currentChannels = this.updateChannels;
+        this.currentChannels = await this.updateChannels.sequentialPromises(
+          async (channel) => {
+            return {
+              channel,
+              lineup: await this.channelDb.loadLineup(channel.number),
+            };
+          },
+        );
         this.eventService.push('xmltv', {
           message: `Started building tv-guide at = ${new Date().toISOString()}`,
           module: 'xmltv',
@@ -146,25 +177,21 @@ export class TVGuideService {
   }
 
   // Returns duration offsets for programs on a channel in an array
-  makeAccumulated(channel: ImmutableChannel): number[] {
-    if (isUndefined(channel.programs)) {
-      throw Error(JSON.stringify(channel).slice(0, 200));
-    }
-    const n = channel.programs.length;
-    const arr = new Array<number>(channel.programs.length + 1);
+  makeAccumulated(channelAndLineup: ChannelWithLineup): number[] {
+    const n = channelAndLineup.lineup.items.length;
+    const arr = new Array<number>(n + 1);
     arr[0] = 0;
     for (let i = 0; i < n; i++) {
-      arr[i + 1] = arr[i] + channel.programs[i].duration;
-      // await this._throttle();
+      arr[i + 1] = arr[i] + channelAndLineup.lineup.items[i].durationMs;
     }
     return arr;
   }
 
   getCurrentPlayingIndex(
-    channel: ImmutableChannel,
+    { channel, lineup }: ChannelWithLineup,
     currentUpdateTimeMs: number,
   ): CurrentPlayingProgram {
-    const channelStartTime = new Date(channel.startTimeEpoch).getTime();
+    const channelStartTime = new Date(channel.startTime).getTime();
     if (currentUpdateTimeMs < channelStartTime) {
       //it's flex time
       return {
@@ -180,7 +207,7 @@ export class TVGuideService {
       if (isUndefined(accumulate)) {
         throw Error(channel.number + " wasn't preprocesed correctly???!?");
       }
-      let hi = channel.programs.length;
+      let hi = lineup.items.length;
       let lo = 0;
       const d =
         (currentUpdateTimeMs - channelStartTime) %
@@ -200,16 +227,37 @@ export class TVGuideService {
         throw Error('General algorithm error, completely unexpected');
       }
 
+      const lineupItem = lineup.items[lo];
+      let lineupProgram: Partial<ProgramDTO>;
+      if (isContentItem(lineupItem)) {
+        const program = channel.programs.find((p) => p.uuid === lineupItem.id);
+        assert(!isNil(program));
+        lineupProgram = programDaoToDto(program);
+      } else if (isOfflineItem(lineupItem)) {
+        lineupProgram = {
+          type: 'flex',
+          duration: lineupItem.durationMs,
+          isOffline: true,
+        };
+      } else {
+        lineupProgram = {
+          type: 'redirect',
+          isOffline: true,
+          duration: lineupItem.durationMs,
+          channel: lineupItem.channel,
+        };
+      }
+
       return {
         programIndex: lo,
         startTimeMs: epoch + accumulate[lo],
-        program: channel.programs[lo],
+        program: lineupProgram,
       };
     }
   }
 
   async getChannelPlaying(
-    channel: ImmutableChannel,
+    { channel, lineup }: ChannelWithLineup,
     previousKnown: Maybe<CurrentPlayingProgram>,
     currentUpdateTimeMs: number,
     depth: number[] = [],
@@ -220,7 +268,7 @@ export class TVGuideService {
       !isUndefined(previousKnown.programIndex) &&
       previousKnown.programIndex !== -1 &&
       previousKnown.program.duration ==
-        channel.programs[previousKnown.programIndex].duration &&
+        lineup.items[previousKnown.programIndex].durationMs &&
       previousKnown.startTimeMs + previousKnown.program.duration ==
         currentUpdateTimeMs
     ) {
@@ -232,7 +280,10 @@ export class TVGuideService {
         startTimeMs: currentUpdateTimeMs,
       };
     } else {
-      playing = this.getCurrentPlayingIndex(channel, currentUpdateTimeMs);
+      playing = this.getCurrentPlayingIndex(
+        { channel, lineup },
+        currentUpdateTimeMs,
+      );
     }
     if (playing.program == null || isUndefined(playing)) {
       logger.warn(
@@ -296,26 +347,31 @@ export class TVGuideService {
   async getChannelPrograms(
     currentUpdateTimeMs: number,
     currentEndTimeMs: number,
-    channel: ImmutableChannel,
+    channelWithLineup: ChannelWithLineup,
   ): Promise<ChannelPrograms> {
-    if (isUndefined(channel)) {
+    if (isUndefined(channelWithLineup)) {
       throw Error("Couldn't find channel?");
     }
     const result: ChannelPrograms = {
-      channel: makeChannelEntry(channel),
+      channel: makeChannelEntry(channelWithLineup.channel),
       programs: [],
     };
 
     const programs: CurrentPlayingProgram[] = [];
 
     let currentProgram = await this.getChannelPlaying(
-      channel,
+      channelWithLineup,
       undefined,
       currentUpdateTimeMs,
     );
 
     if (currentProgram.program.duration == 0) {
-      throw Error('A ' + channel.name + ' ' + JSON.stringify(currentProgram));
+      throw Error(
+        'A ' +
+          channelWithLineup.channel.name +
+          ' ' +
+          JSON.stringify(currentProgram),
+      );
     }
 
     let melded = 0;
@@ -324,10 +380,13 @@ export class TVGuideService {
       await this._throttle();
       if (
         programs.length > 0 &&
-        isProgramFlex(program.program, channel) &&
+        isProgramFlex(program.program, channelWithLineup.channel) &&
         ((program.program.duration ?? 0) <=
           constants.TVGUIDE_MAXIMUM_PADDING_LENGTH_MS ||
-          isProgramFlex(programs[programs.length - 1].program, channel))
+          isProgramFlex(
+            programs[programs.length - 1].program,
+            channelWithLineup.channel,
+          ))
       ) {
         //meld with previous
         const y = clone(programs[programs.length - 1]);
@@ -335,7 +394,10 @@ export class TVGuideService {
         melded += program.program.duration ?? 0;
         if (
           melded > constants.TVGUIDE_MAXIMUM_PADDING_LENGTH_MS &&
-          !isProgramFlex(programs[programs.length - 1].program, channel)
+          !isProgramFlex(
+            programs[programs.length - 1].program,
+            channelWithLineup.channel,
+          )
         ) {
           y.program.duration! -= melded;
           programs[programs.length - 1] = y;
@@ -352,7 +414,7 @@ export class TVGuideService {
         } else {
           programs[programs.length - 1] = y;
         }
-      } else if (isProgramFlex(program.program, channel)) {
+      } else if (isProgramFlex(program.program, channelWithLineup.channel)) {
         melded = 0;
         programs.push({
           startTimeMs: program.startTimeMs,
@@ -372,7 +434,7 @@ export class TVGuideService {
       const t2 =
         currentProgram.startTimeMs + (currentProgram.program.duration ?? 0);
       currentProgram = await this.getChannelPlaying(
-        channel,
+        channelWithLineup,
         currentProgram,
         t2,
       );
@@ -392,7 +454,7 @@ export class TVGuideService {
     result.programs = [];
     for (let i = 0; i < programs.length; i++) {
       await this._throttle();
-      if (isProgramFlex(programs[i].program, channel)) {
+      if (isProgramFlex(programs[i].program, channelWithLineup.channel)) {
         let start = programs[i].startTimeMs;
         let duration = programs[i].program.duration ?? 0;
         if (start <= currentUpdateTimeMs) {
@@ -420,10 +482,10 @@ export class TVGuideService {
           };
           duration -= d;
           start += d;
-          result.programs.push(makeEntry(channel, x));
+          result.programs.push(makeEntry(channelWithLineup.channel, x));
         }
       } else {
-        result.programs.push(makeEntry(channel, programs[i]));
+        result.programs.push(makeEntry(channelWithLineup.channel, programs[i]));
       }
     }
 
@@ -434,10 +496,9 @@ export class TVGuideService {
     const currentUpdateTimeMs = this.currentUpdate;
     const currentEndTimeMs = this.currentLimit;
     const channels = this.currentChannels;
-    this.channelsByNumber = groupByUniq(channels, 'number');
-    const accumulateTablePromises = groupByUniqAndMap(
-      channels,
-      'number',
+    this.channelsByNumber = groupByUniqFunc(channels, (c) => c.channel.number);
+    const accumulateTablePromises = mapValues(
+      this.channelsByNumber,
       (channel) => this.makeAccumulated(channel),
     );
     for (const channelId in accumulateTablePromises) {
@@ -446,7 +507,7 @@ export class TVGuideService {
 
     const result = {};
     if (channels.length == 0) {
-      const channel: Partial<Channel> = {
+      const channel: Partial<EntityDTO<Channel>> = {
         name: 'dizqueTV',
         icon: {
           path: FALLBACK_ICON,
@@ -472,14 +533,14 @@ export class TVGuideService {
         ],
       };
     } else {
-      for (let i = 0; i < channels.length; i++) {
-        if (!channels[i].stealth) {
+      for (const { channel, lineup } of channels) {
+        if (!channel.stealth) {
           const programs = await this.getChannelPrograms(
             currentUpdateTimeMs,
             currentEndTimeMs,
-            channels[i],
+            { channel, lineup },
           );
-          result[channels[i].number] = programs;
+          result[channel.number] = programs;
         }
       }
     }
@@ -542,19 +603,19 @@ export class TVGuideService {
     await this.get();
     const beginningTimeMs = dateFrom.toISOString();
     const endTimeMs = dateTo.toISOString();
-    const channel = this.cached[channelNumber];
+    const { channel, programs } = this.cached[channelNumber];
     if (isNil(channel)) {
       return;
     }
-    const programs = channel.programs;
+
     const result: ChannelLineup = {
-      icon: channel.channel.icon,
-      name: channel.channel.name,
-      number: channel.channel.number,
+      icon: channel.icon,
+      name: channel.name,
+      number: channel.number,
       programs: [],
     };
-    for (let i = 0; i < programs.length; i++) {
-      const program = programs[i];
+
+    for (const program of programs) {
       let a: string;
       if (program.start > beginningTimeMs) {
         a = program.start;
@@ -572,6 +633,7 @@ export class TVGuideService {
         result.programs.push(program);
       }
     }
+
     return result;
   }
 }
@@ -582,11 +644,8 @@ function _wait(t: number) {
   });
 }
 
-function getChannelStealthDuration(channel: Partial<ImmutableChannel>) {
-  if (
-    !isUndefined(channel.guideMinimumDurationSeconds) &&
-    !isNaN(channel.guideMinimumDurationSeconds)
-  ) {
+function getChannelStealthDuration(channel: Partial<EntityDTO<Channel>>) {
+  if (!isUndefined(channel.guideMinimumDurationSeconds)) {
     return channel.guideMinimumDurationSeconds * 1000;
   } else {
     return constants.DEFAULT_GUIDE_STEALTH_DURATION;
@@ -594,9 +653,9 @@ function getChannelStealthDuration(channel: Partial<ImmutableChannel>) {
 }
 
 function isProgramFlex(
-  program: Partial<Program>,
-  channel: Partial<ImmutableChannel>,
-): program is MarkRequired<Program, 'duration'> {
+  program: Partial<ProgramDTO>,
+  channel: Partial<EntityDTO<Channel>>,
+): program is MarkRequired<ProgramDTO, 'duration'> {
   return (
     program.isOffline ||
     (program.duration ?? 0) <= getChannelStealthDuration(channel)
@@ -608,7 +667,7 @@ function clone<T>(o: T): T {
   return JSON.parse(JSON.stringify(o)) as T;
 }
 
-function makeChannelEntry(channel: ImmutableChannel) {
+function makeChannelEntry(channel: EntityDTO<Channel>): TvGuideChannel {
   return {
     name: channel.name,
     icon: channel.icon,
@@ -617,21 +676,22 @@ function makeChannelEntry(channel: ImmutableChannel) {
 }
 
 function makeEntry(
-  channel: Partial<ImmutableChannel>,
+  channel: Partial<EntityDTO<Channel>>,
   currentProgram: CurrentPlayingProgram,
 ): TvGuideProgram {
   let title: string | undefined;
   let icon: string | undefined;
   let sub: TvGuideProgramSubtitle | undefined;
   if (isProgramFlex(currentProgram.program, channel)) {
-    if (
-      isString(channel.guideFlexPlaceholder) &&
-      !isEmpty(channel.guideFlexPlaceholder)
-    ) {
-      title = channel.guideFlexPlaceholder;
-    } else {
-      title = channel.name;
-    }
+    // ehhhh
+    // if (
+    //   isString(channel.guideFlexPlaceholder) &&
+    //   !isEmpty(channel.guideFlexPlaceholder)
+    // ) {
+    //   title = channel.guideFlexPlaceholder;
+    // } else {
+    //   title = channel.name;
+    // }
     icon = channel.icon?.path;
   } else {
     title = currentProgram.program.showTitle;

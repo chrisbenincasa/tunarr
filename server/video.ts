@@ -1,9 +1,11 @@
+import { Loaded } from '@mikro-orm/core';
 import { FastifyPluginCallback, FastifyReply, FastifyRequest } from 'fastify';
-import * as fs from 'node:fs';
 import { isError, isNil, isUndefined, once } from 'lodash-es';
+import * as fs from 'node:fs';
 import { Readable } from 'stream';
 import constants from './constants.js';
-import { ImmutableChannel, offlineProgram } from './dao/db.js';
+import { offlineProgram } from './dao/db.js';
+import { Channel } from './dao/entities/Channel.js';
 import { FFMPEG, FfmpegEvents } from './ffmpeg.js';
 import { FfmpegText } from './ffmpegText.js';
 import { serverOptions } from './globals.js';
@@ -91,8 +93,8 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
       return res.status(500).send('No Channel Specified');
     }
 
-    const channel = ctx.channelCache.getChannelConfig(req.query.channel);
-    if (isUndefined(channel)) {
+    const channel = await ctx.channelCache.getChannelConfig(req.query.channel);
+    if (isNil(channel)) {
       return res.status(500).send("Channel doesn't exist");
     }
 
@@ -219,11 +221,12 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
     logger.info(`/stream audioOnly=${audioOnly}`);
     const session = req.query.session;
     const m3u8 = req.query.m3u8 === '1';
-    const channel = req.serverCtx.channelCache.getChannelConfig(
-      req.query.channel,
-    );
+    const channel =
+      await req.serverCtx.channelCache.getChannelConfigWithPrograms(
+        req.query.channel,
+      );
 
-    if (isUndefined(channel)) {
+    if (isNil(channel)) {
       return res.status(404).send("Channel doesn't exist");
     }
 
@@ -257,7 +260,7 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
       req.serverCtx.channelCache.getCurrentLineupItem(channel.number, t0);
     let currentProgram: helperFuncs.ProgramAndTimeElapsed | undefined;
     let channelContext = channel;
-    const redirectChannels: ImmutableChannel[] = [];
+    const redirectChannels: Loaded<Channel, 'programs'>[] = [];
     const upperBounds: number[] = [];
 
     // Insert 40ms of loading time in front of the stream (let's look into this one later)
@@ -294,9 +297,11 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
 
         const newChannelNumber = currentProgram.program.channel!;
         const newChannel =
-          req.serverCtx.channelCache.getChannelConfig(newChannelNumber);
+          await req.serverCtx.channelCache.getChannelConfigWithPrograms(
+            newChannelNumber,
+          );
 
-        if (isUndefined(newChannel)) {
+        if (isNil(newChannel)) {
           const err = new Error(
             "Invalid redirect to a channel that doesn't exist",
           );
@@ -363,10 +368,10 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
       if (isNil(currentProgram) || isNil(currentProgram.program)) {
         throw "No video to play, this means there's a serious unexpected bug or the channel db is corrupted.";
       }
-      const fillers = req.serverCtx.fillerDB.getFillersFromChannel(
+      const fillers = await req.serverCtx.fillerDB.getFillersFromChannel(
         channelContext.number,
       );
-      const lineup = helperFuncs.createLineup(
+      const lineup = await helperFuncs.createLineup(
         req.serverCtx.channelCache,
         currentProgram,
         channelContext,

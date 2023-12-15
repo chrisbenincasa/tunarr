@@ -1,7 +1,7 @@
 import fileUpload from 'express-fileupload';
 import { FastifyPluginCallback } from 'fastify';
 import { promises as fsPromises } from 'fs';
-import { isNil, isUndefined } from 'lodash-es';
+import { isNil } from 'lodash-es';
 import path from 'path';
 import constants from './constants.js';
 import { PlexServerSettings } from './dao/entities/PlexServerSettings.js';

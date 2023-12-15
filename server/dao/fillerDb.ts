@@ -1,4 +1,4 @@
-import { EntityDTO } from '@mikro-orm/core';
+import { Loaded } from '@mikro-orm/core';
 import { isEmpty, isNil, map } from 'lodash-es';
 import { MarkOptional } from 'ts-essentials';
 import { v4 as uuidv4 } from 'uuid';
@@ -10,6 +10,7 @@ import { ChannelDB } from './channelDb.js';
 import { getEm } from './dataSource.js';
 import { FillerList } from './db.js';
 import { Channel as ChannelEntity } from './entities/Channel.js';
+import { ChannelFillerShow } from './entities/ChannelFillerShow.js';
 import { FillerShow } from './entities/FillerShow.js';
 
 const logger = createLogger(import.meta);
@@ -142,16 +143,14 @@ export class FillerDB {
 
   async getFillersFromChannel(
     channelNumber: number,
-  ): Promise<EntityDTO<FillerShow>[]> {
+  ): Promise<Loaded<ChannelFillerShow, 'fillerShow' | 'fillerShow.content'>[]> {
     const em = getEm();
-    const channel = await em.repo(ChannelEntity).findOne(
-      { number: channelNumber },
+    return await em.find(
+      ChannelFillerShow,
       {
-        fields: ['uuid', 'number'],
-        populate: ['fillers', 'fillers.content'],
+        channel: { number: channelNumber },
       },
+      { populate: ['fillerShow', 'fillerShow.content'] },
     );
-
-    return channel?.fillers.toArray() ?? [];
   }
 }

@@ -2,6 +2,7 @@ import {
   Collection,
   Entity,
   ManyToMany,
+  OptionalProps,
   Property,
   Unique,
 } from '@mikro-orm/core';
@@ -12,6 +13,9 @@ import { Program } from './Program.js';
 import { CustomShow } from './CustomShow.js';
 import { ChannelFillerShow } from './ChannelFillerShow.js';
 import { Channel as ChannelDTO } from 'dizquetv-types';
+import { DurationType } from '../custom_types/DurationType.js';
+import type { Duration } from 'dayjs/plugin/duration.js';
+import dayjs from 'dayjs';
 
 type ChannelIcon = {
   path: string;
@@ -44,6 +48,8 @@ type ChannelOfflineSettings = {
   mode: string;
 };
 
+type DurationProp = Duration;
+
 @Entity()
 @Unique({ properties: ['number'] })
 export class Channel extends BaseEntity {
@@ -51,9 +57,11 @@ export class Channel extends BaseEntity {
     const entity = new Channel();
     entity.number = channel.number;
     entity.icon = channel.icon;
-    entity.guideMinimumDurationSeconds = channel.guideMinimumDurationSeconds;
+    entity.guideMinimumDuration = dayjs.duration({
+      seconds: channel.guideMinimumDurationSeconds,
+    });
     entity.name = channel.name;
-    entity.duration = channel.duration;
+    entity.duration = dayjs.duration({ milliseconds: channel.duration });
     entity.stealth = channel.stealth;
     entity.groupTitle = channel.groupTitle;
     entity.startTime = channel.startTimeEpoch;
@@ -69,6 +77,8 @@ export class Channel extends BaseEntity {
     } as Partial<Channel>;
   }
 
+  [OptionalProps]?: 'guideMinimumDurationSeconds';
+
   @Property()
   number!: number;
 
@@ -78,8 +88,13 @@ export class Channel extends BaseEntity {
   @ManyToMany(() => Program, 'channels', { owner: true })
   programs = new Collection<Program>(this);
 
-  @Property()
-  guideMinimumDurationSeconds!: number;
+  @Property({ type: DurationType })
+  guideMinimumDuration!: Duration;
+
+  @Property({ persist: false, type: 'int' })
+  get guideMinimumDurationSeconds(): number {
+    return this.guideMinimumDuration.asSeconds();
+  }
 
   @Property({ default: false })
   disableFillerOverlay: boolean = false;
@@ -87,8 +102,8 @@ export class Channel extends BaseEntity {
   @Property()
   name!: string;
 
-  @Property()
-  duration!: number;
+  @Property({ type: DurationType })
+  duration!: DurationProp;
 
   @Property({ default: false })
   stealth!: boolean;
@@ -99,7 +114,11 @@ export class Channel extends BaseEntity {
   @Property()
   startTime!: number;
 
-  @Property({ type: 'json' })
+  @Property({
+    type: 'json',
+    nullable: true,
+    default: JSON.stringify({ mode: 'clip' } as ChannelOfflineSettings),
+  })
   offline!: ChannelOfflineSettings;
 
   // Filler collections
@@ -108,6 +127,9 @@ export class Channel extends BaseEntity {
     pivotEntity: () => ChannelFillerShow,
   })
   fillers = new Collection<FillerShow>(this);
+
+  @Property({ nullable: true, type: DurationType })
+  fillerRepeatCooldown?: Duration;
 
   @ManyToMany(() => CustomShow)
   customShows = new Collection<CustomShow>(this);
@@ -136,14 +158,14 @@ export class Channel extends BaseEntity {
         position: '',
         width: 0,
       },
-      guideMinimumDurationSeconds: this.guideMinimumDurationSeconds,
+      guideMinimumDurationSeconds: this.guideMinimumDuration.asSeconds(),
       groupTitle: this.groupTitle || '',
       disableFillerOverlay: this.disableFillerOverlay,
       startTimeEpoch: this.startTime,
       offline: this.offline,
       name: this.name,
       transcoding: this.transcoding,
-      duration: this.duration,
+      duration: this.duration.asMilliseconds(),
       stealth: this.stealth,
       programs: [],
     };

@@ -1,7 +1,12 @@
+import { serialize } from '@mikro-orm/core';
+import dayjs from 'dayjs';
+import duration from 'dayjs/plugin/duration.js';
 import { test } from 'vitest';
 import { setGlobalOptions } from '../globals.js';
 import { getEm, withDb } from './dataSource.js';
-import { CustomShow } from './entities/CustomShow.js';
+import { Channel } from './entities/Channel.js';
+
+dayjs.extend(duration);
 
 test('Filler DB', async () => {
   setGlobalOptions({
@@ -10,22 +15,11 @@ test('Filler DB', async () => {
   });
 
   await withDb(async () => {
-    // const channelDb = new ChannelDB();
-    // const channelCache = new ChannelCache(channelDb);
-    // const fillerDb = new FillerDB(channelDb, channelCache);
-    // const ids = await fillerDb.getAllFillerIds();
-    // console.log(ids);
-
-    // const fillers = await fillerDb.getAllFillers();
-    // console.log(fillers);
-
-    // console.log(await fillerDb.getFillerChannels(ids[0]));
-    const x = getEm()
-      .createQueryBuilder(CustomShow, 'cs')
-      .select(['cs.uuid', 'cs.name', 'count(c.uuid) as count'])
-      .leftJoin('cs.content', 'c')
-      .groupBy('cs.uuid');
-    console.log(x.getQuery());
-    console.log(await x.get);
+    const em = getEm();
+    const channel = await em.find(Channel, {}, { populate: ['programs'] });
+    channel.forEach((c) => {
+      console.log(c.programs.$.count());
+      serialize(c, { populate: ['programs'] });
+    });
   });
 });

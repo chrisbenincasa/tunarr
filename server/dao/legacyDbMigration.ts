@@ -10,6 +10,7 @@ import {
 import fs from 'fs/promises';
 import {
   chain,
+  compact,
   get,
   isArray,
   isError,
@@ -21,6 +22,7 @@ import {
   mergeWith,
   parseInt,
   sortBy,
+  values,
 } from 'lodash-es';
 import { Low } from 'lowdb';
 import path from 'path';
@@ -172,41 +174,45 @@ type JSONValue = string | number | undefined | boolean | JSONObject | JSONArray;
 interface JSONObject extends Record<string, JSONValue> {}
 
 async function persistProgram(program: Program) {
-  return withDb(async (em) => {
-    if (['movie', 'episode', 'track'].includes(program.type ?? '')) {
-      const dbProgram = new ProgramEntity();
-      dbProgram.durationMs = dayjs.duration({
-        milliseconds: program.duration,
-      });
-      dbProgram.sourceType = ProgramSourceType.PLEX;
-      dbProgram.episode = program.episode;
-      dbProgram.filePath = program.file;
-      dbProgram.icon = program.icon;
-      dbProgram.externalKey = program.key!;
-      dbProgram.plexRatingKey = program.ratingKey!;
-      dbProgram.externalSourceId = program.serverKey!;
-      dbProgram.showTitle = program.showTitle;
-      dbProgram.summary = program.summary;
-      dbProgram.title = program.title!;
-      // This is checked above
-      dbProgram.type = programTypeFromString(program.type!)!;
-      dbProgram.episode = program.episode;
-      dbProgram.season = program.season;
-      dbProgram.seasonIcon = program.seasonIcon;
-      dbProgram.showIcon = program.showIcon;
-      dbProgram.originalAirDate = program.date;
-      dbProgram.rating = program.rating;
-      dbProgram.year = program.year;
+  return withDb(
+    async (em) => {
+      if (['movie', 'episode', 'track'].includes(program.type ?? '')) {
+        const dbProgram = new ProgramEntity();
+        dbProgram.duration = dayjs.duration({
+          milliseconds: program.duration,
+        });
+        dbProgram.sourceType = ProgramSourceType.PLEX;
+        dbProgram.episode = program.episode;
+        dbProgram.filePath = program.file;
+        dbProgram.icon = program.icon;
+        dbProgram.externalKey = program.key!;
+        dbProgram.plexRatingKey = program.ratingKey!;
+        dbProgram.externalSourceId = program.serverKey!;
+        dbProgram.showTitle = program.showTitle;
+        dbProgram.summary = program.summary;
+        dbProgram.title = program.title!;
+        // This is checked above
+        dbProgram.type = programTypeFromString(program.type!)!;
+        dbProgram.episode = program.episode;
+        dbProgram.season = program.season;
+        dbProgram.seasonIcon = program.seasonIcon;
+        dbProgram.showIcon = program.showIcon;
+        dbProgram.originalAirDate = program.date;
+        dbProgram.rating = program.rating;
+        dbProgram.year = program.year;
 
-      return em.upsert(ProgramEntity, dbProgram, {
-        onConflictFields: ['sourceType', 'externalSourceId', 'externalKey'],
-        onConflictAction: 'merge',
-        onConflictExcludeFields: ['uuid'],
-      });
-    }
+        return em.upsert(ProgramEntity, dbProgram, {
+          onConflictFields: ['sourceType', 'externalSourceId', 'externalKey'],
+          onConflictAction: 'merge',
+          onConflictExcludeFields: ['uuid'],
+        });
+      }
 
-    return;
-  });
+      return;
+    },
+    undefined,
+    true,
+  );
 }
 
 function convertProgram(program: JSONObject): Program {
@@ -441,23 +447,77 @@ async function migrateChannels() {
     };
 
     const em = getEm();
-    const channelEntity = em.create(ChannelEntity, {
-      disableFillerOverlay: channel.disableFillerOverlay,
-      duration: channel.duration,
-      groupTitle: channel.groupTitle,
-      guideMinimumDurationSeconds: channel.guideMinimumDurationSeconds,
-      icon: channel.icon,
-      name: channel.name,
-      number: channel.number,
-      startTime: channel.startTimeEpoch,
-      stealth: channel.stealth,
-      transcoding: channel.transcoding,
-      watermark: channel.watermark,
+
+    let channelEntity: ChannelEntity;
+    const existingEntity = await em.findOne(
+      ChannelEntity,
+      {
+        number: channel.number,
+      },
+      { populate: ['programs', 'customShows'] },
+    );
+
+    if (existingEntity) {
+      channelEntity = existingEntity;
+      em.assign(channelEntity, {
+        disableFillerOverlay: channel.disableFillerOverlay,
+        groupTitle: channel.groupTitle,
+        icon: channel.icon,
+        name: channel.name,
+        number: channel.number,
+        startTime: channel.startTimeEpoch,
+        stealth: channel.stealth,
+        transcoding: channel.transcoding,
+        watermark: channel.watermark,
+        offline: { mode: 'clip' },
+      });
+    } else {
+      channelEntity = em.create(ChannelEntity, {
+        disableFillerOverlay: channel.disableFillerOverlay,
+        groupTitle: channel.groupTitle,
+        icon: channel.icon,
+        name: channel.name,
+        number: channel.number,
+        startTime: channel.startTimeEpoch,
+        stealth: channel.stealth,
+        transcoding: channel.transcoding,
+        watermark: channel.watermark,
+        offline: { mode: 'clip' },
+      });
+    }
+
+    channelEntity.duration = dayjs.duration({ milliseconds: channel.duration });
+    channelEntity.guideMinimumDuration = dayjs.duration({
+      seconds: channel.guideMinimumDurationSeconds,
     });
+
     const entity = await em.upsert(ChannelEntity, channelEntity, {
       onConflictFields: ['number'],
       onConflictAction: 'ignore',
     });
+
+    // Init programs, we may have already inserted some
+    entity.programs.removeAll();
+    entity.customShows.removeAll();
+
+    entity.programs.set(
+      values(dbProgramById).map((id) =>
+        em.getReference(ProgramEntity, id.uuid),
+      ),
+    );
+
+    const customShowRefs = chain(channel.programs)
+      .flatMap((p) => p.customShowId)
+      .compact()
+      .uniq()
+      .value();
+
+    entity.customShows.add(
+      customShowRefs.map((id) => em.getReference(CustomShowEntity, id)),
+    );
+
+    console.log('Saving channel');
+    await em.persistAndFlush(entity);
 
     return { raw: channel, entity };
   }
@@ -468,10 +528,15 @@ async function migrateChannels() {
 
   logger.info(`Found channels: ${channelFiles.join(', ')}`);
 
-  const migratedChannels = await sequentialPromises(
-    channelFiles,
-    undefined,
-    migrateChannel,
+  const migratedChannels = compact(
+    await sequentialPromises(channelFiles, undefined, async (channel) => {
+      try {
+        return await migrateChannel(channel);
+      } catch (e) {
+        logger.error(`Unable to migrate channel ${channel}`, e);
+        return;
+      }
+    }),
   );
 
   // Create filler associations
@@ -499,22 +564,24 @@ async function migrateChannels() {
     },
   );
 
-  // Create custom show associations
-  await sequentialPromises(
-    migratedChannels,
-    undefined,
-    async ({ raw: channel, entity }) => {
-      const customShowRefs = chain(channel.programs)
-        .flatMap((p) => p.customShowId)
-        .compact()
-        .uniq()
-        .value();
-      entity.customShows.set(
-        customShowRefs.map((id) => em.getReference(CustomShowEntity, id)),
-      );
-      return em.persist(entity).flush();
-    },
-  );
+  // // Create custom show associations
+  // await sequentialPromises(
+  //   migratedChannels,
+  //   undefined,
+  //   async ({ raw: channel, entity }) => {
+  //     const customShowRefs = chain(channel.programs)
+  //       .flatMap((p) => p.customShowId)
+  //       .compact()
+  //       .uniq()
+  //       .value();
+
+  //     entity.customShows.removeAll();
+  //     entity.customShows.add(
+  //       customShowRefs.map((id) => em.getReference(CustomShowEntity, id)),
+  //     );
+  //     return em.persist(entity).flush();
+  //   },
+  // );
 
   return migratedChannels;
 }
@@ -565,35 +632,30 @@ async function migrateCustomShows(type: 'custom-shows' | 'filler') {
 
     const customShowById = groupByUniq(newCustomShows, 'id');
 
-    const entities = newCustomShows.map((customShow) => {
-      const cse = new entityType();
-      cse.uuid = customShow.id;
-      cse.name = customShow.name;
-      return cse;
+    await sequentialPromises(newCustomShows, undefined, async (customShow) => {
+      // Refresh the entity after inserting programs
+      const existing = await repo.findOne(
+        { uuid: customShow.id },
+        { populate: ['content'], refresh: true },
+      );
+
+      // If we didn't find one, initialize it
+      const entity =
+        existing ??
+        em.create(entityType, {
+          uuid: customShow.id,
+          name: customShow.name,
+        });
+
+      // Reset mappings
+      const content = customShowById[entity.uuid].content;
+      entity.content.removeAll();
+      entity.content.set(
+        content.map((c) => persistedPrograms[uniqueProgramId(c)]),
+      );
+      em.persist(entity);
     });
 
-    const inserted = await sequentialPromises(
-      entities,
-      undefined,
-      async (insertedShow) => {
-        const show = await repo.findOneOrFail(
-          { uuid: insertedShow.uuid },
-          { populate: ['content'] },
-        );
-        const content = customShowById[show.uuid].content;
-        const existingMappings = (await show.content.loadItems()).map(
-          (program) => program.uuid,
-        );
-        show.content.add(
-          content
-            .map((c) => persistedPrograms[uniqueProgramId(c)])
-            .filter((program) => !existingMappings.includes(program.uuid)),
-        );
-        return insertedShow;
-      },
-    );
-
-    await repo.upsertMany(inserted);
     await em.flush();
   });
 }

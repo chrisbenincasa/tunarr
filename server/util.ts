@@ -57,6 +57,17 @@ export function groupByUniq<
   );
 }
 
+export function groupByUniqFunc<T, Key extends string | number>(
+  data: T[],
+  func: (item: T) => Key,
+): Record<Key, T> {
+  return reduce(
+    data,
+    (prev, t) => ({ ...prev, [func(t)]: t }),
+    {} as Record<Key, T>,
+  );
+}
+
 export function groupByFunc<T, Key extends string | number | symbol>(
   data: T[],
   func: (val: T) => Key,

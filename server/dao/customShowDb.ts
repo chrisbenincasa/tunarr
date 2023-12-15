@@ -1,5 +1,5 @@
-import { isUndefined, map } from 'lodash-es';
-import { DeepReadonly, MarkOptional } from 'ts-essentials';
+import { isUndefined } from 'lodash-es';
+import { MarkOptional } from 'ts-essentials';
 import { v4 as uuidv4 } from 'uuid';
 import { Maybe } from '../types.js';
 import { getEm } from './dataSource.js';
@@ -58,14 +58,12 @@ export class CustomShowDB {
   }
 
   async getAllShowsInfo() {
-    const x = getEm()
-      .createQueryBuilder(CustomShow, 'cs')
-      .select(['cs.uuid', 'cs.name', 'count(c.uuid) as count'])
-      .leftJoin('cs.content', 'c')
-      .getResultAndCount();
+    const shows = await getEm()
+      .repo(CustomShow)
+      .findAll({ populate: ['content.uuid'] });
     return shows.map((f) => {
       return {
-        id: f.id,
+        id: f.uuid,
         name: f.name,
         count: f.content.length,
       };

@@ -1,5 +1,5 @@
 import { PlexServerSettings } from 'dizquetv-types';
-import { isNil, isUndefined, map, mapValues } from 'lodash-es';
+import { chain, isNil, isUndefined, map, mapValues } from 'lodash-es';
 import type { MarkOptional } from 'ts-essentials';
 import { groupByUniq } from '../util.js';
 import { getEm } from './dataSource.js';
@@ -30,6 +30,15 @@ export type PlexServerSettingsUpdate = MarkOptional<
 >;
 
 export class PlexServerDB {
+  async getAll() {
+    const em = getEm();
+    return em.repo(PlexServerSettingsEntity).findAll();
+  }
+
+  async getById(id: string) {
+    return getEm().repo(PlexServerSettingsEntity).findOne({ uuid: id });
+  }
+
   async deleteServer(id: string) {
     const em = getEm();
     const report = await this.fixupProgramReferences(id);
@@ -38,7 +47,8 @@ export class PlexServerDB {
   }
 
   async updateServer(server: PlexServerSettingsUpdate) {
-    const repo = getEm().repo(PlexServerSettingsEntity);
+    const em = getEm();
+    const repo = em.repo(PlexServerSettingsEntity);
     const id = server.id;
 
     if (isNil(id)) {
@@ -54,7 +64,7 @@ export class PlexServerDB {
     const sendGuideUpdates = server.sendGuideUpdates ?? false;
     const sendChannelUpdates = server.sendChannelUpdates ?? false;
 
-    const newServer: PlexServerSettingsEntity = {
+    const newServer = em.create(PlexServerSettingsEntity, {
       ...server,
       uuid: id,
       name: s.name,
@@ -63,14 +73,14 @@ export class PlexServerDB {
       sendGuideUpdates,
       sendChannelUpdates,
       index: s.index,
-    };
+    });
 
     this.normalizeServer(newServer);
 
     const report = await this.fixupProgramReferences(id, newServer);
 
     await repo.upsert(newServer);
-    await getEm().flush();
+    await em.flush();
 
     return report;
   }
@@ -163,10 +173,10 @@ export class PlexServerDB {
 
     const isUpdate = newServer && newServer.uuid !== serverId;
     if (isUpdate) {
-      // const modifiedPrograms = chain(allPrograms)
-      //   .map((program) => this.fixupProgram(program, newServer))
-      //   .sum()
-      //   .value();
+      chain(allPrograms)
+        .map((program) => this.fixupProgram(program, newServer))
+        .sum()
+        .value();
       await em.flush();
     } else {
       allPrograms.forEach((program) => {

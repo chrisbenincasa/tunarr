@@ -22,6 +22,10 @@ export class DurationType extends Type<Duration, number> {
     return dayjs.duration({ milliseconds: value });
   }
 
+  toJSON(value: Duration): number | Duration {
+    return value.asMilliseconds();
+  }
+
   getColumnType(): string {
     return 'integer';
   }

@@ -17,7 +17,7 @@ export type ShowData = {
 // What is the minimal data we need here?
 type ShowDataProgram = MarkOptional<
   Omit<Program, 'summary' | 'icon' | 'plexFile' | 'episodeIcon' | 'ratingKey'>,
-  'duration'
+  'duration' | 'id'
 >;
 
 export default function () {

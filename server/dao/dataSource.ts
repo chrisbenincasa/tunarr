@@ -34,14 +34,16 @@ export type EntityManager = SqlEntityManager<BetterSqliteDriver>;
 export async function withDb<T>(
   f: (db: EntityManager) => Promise<T>,
   options?: CreateContextOptions,
+  fork?: boolean,
 ): Promise<T> {
   const scopedEm = RequestContext.getEntityManager();
   if (!isUndefined(scopedEm)) {
-    return f(scopedEm as EntityManager);
+    const manager = scopedEm as EntityManager;
+    return f(fork ? manager.fork() : manager);
   } else {
     const orm = await initOrm();
     return RequestContext.createAsync(
-      orm.em,
+      fork ? orm.em.fork() : orm.em,
       () => {
         return f(RequestContext.getEntityManager()! as EntityManager);
       },

@@ -1,22 +1,27 @@
 import {
   Collection,
   Entity,
+  EntityDTO,
   Enum,
   ManyToMany,
+  OptionalProps,
   Property,
   Unique,
+  serialize,
 } from '@mikro-orm/core';
 import type { Duration } from 'dayjs/plugin/duration.js';
+import { Program as ProgramDTO } from 'dizquetv-types';
 import { DurationType } from '../custom_types/DurationType.js';
 import { BaseEntity } from './BaseEntity.js';
 import { Channel } from './Channel.js';
 import { CustomShow } from './CustomShow.js';
 import { FillerShow } from './FillerShow.js';
-import { Program as ProgramDTO } from 'dizquetv-types';
 
 @Entity()
 @Unique({ properties: ['sourceType', 'externalSourceId', 'externalKey'] })
 export class Program extends BaseEntity {
+  [OptionalProps] = 'durationMs';
+
   @Enum(() => ProgramSourceType)
   sourceType!: ProgramSourceType;
 
@@ -24,7 +29,13 @@ export class Program extends BaseEntity {
   originalAirDate?: string;
 
   @Property({ type: DurationType })
-  durationMs!: Duration;
+  duration!: Duration;
+
+  // Used for serializing (and type safety)
+  @Property({ persist: false, type: 'int' })
+  get durationMs(): number {
+    return this.duration.asMilliseconds();
+  }
 
   @Property({ nullable: true })
   episode?: number;
@@ -32,19 +43,30 @@ export class Program extends BaseEntity {
   @Property({ nullable: true })
   episodeIcon?: string;
 
+  /**
+   * Previously "file"
+   */
   @Property({ nullable: true })
   filePath?: string;
 
   @Property({ nullable: true })
   icon?: string;
 
+  /**
+   * Previously "serverKey"
+   */
   @Property()
   externalSourceId!: string; // e.g., Plex server name
 
+  /**
+   * Previously "key"
+   */
   @Property()
   externalKey!: string;
 
-  // We'll see if we still need this
+  /**
+   * Previously "ratingKey"
+   */
   @Property({ nullable: true })
   plexRatingKey?: string;
 
@@ -99,29 +121,33 @@ export class Program extends BaseEntity {
   }
 
   toDTO(): ProgramDTO {
-    return {
-      date: this.originalAirDate,
-      duration: this.durationMs.asMilliseconds(),
-      episode: this.episode,
-      episodeIcon: this.episodeIcon,
-      file: this.filePath,
-      id: this.uuid,
-      icon: this.icon,
-      isOffline: false,
-      key: this.externalKey,
-      rating: this.rating,
-      ratingKey: this.plexRatingKey,
-      season: this.season,
-      seasonIcon: this.seasonIcon,
-      serverKey: this.externalSourceId,
-      showIcon: this.showIcon,
-      showTitle: this.showTitle,
-      summary: this.summary,
-      title: this.title,
-      type: this.type,
-      year: this.year,
-    };
+    return programDaoToDto(serialize(this as Program, { skipNull: true }));
   }
+}
+
+export function programDaoToDto(program: EntityDTO<Program>): ProgramDTO {
+  return {
+    date: program.originalAirDate,
+    duration: program.durationMs,
+    episode: program.episode,
+    episodeIcon: program.episodeIcon,
+    file: program.filePath,
+    id: program.uuid,
+    icon: program.icon,
+    isOffline: false,
+    key: program.externalKey,
+    rating: program.rating,
+    ratingKey: program.plexRatingKey,
+    season: program.season,
+    seasonIcon: program.seasonIcon,
+    serverKey: program.externalSourceId,
+    showIcon: program.showIcon,
+    showTitle: program.showTitle,
+    summary: program.summary,
+    title: program.title,
+    type: program.type,
+    year: program.year,
+  };
 }
 
 export enum ProgramSourceType {

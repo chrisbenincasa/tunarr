@@ -6,6 +6,7 @@ import { Maybe } from '../types.js';
 import { deepCopyArray } from '../util.js';
 import getShowDataFunc, { ShowData } from './getShowData.js';
 import throttle from './throttle.js';
+import { MarkOptional } from 'ts-essentials';
 
 const getShowData = getShowDataFunc();
 
@@ -14,9 +15,12 @@ const DAY = 24 * 60 * MINUTE;
 const LIMIT = 40000;
 
 // Use this to derive the minimum data we need for this service
-export type ShuffleProgram = Omit<
-  Program,
-  'summary' | 'icon' | 'rating' | 'ratingKey' | 'date' | 'year' | 'plexFile'
+export type ShuffleProgram = MarkOptional<
+  Omit<
+    Program,
+    'summary' | 'icon' | 'rating' | 'ratingKey' | 'date' | 'year' | 'plexFile'
+  >,
+  'id'
 >;
 
 type ShowDataWithExtras = Required<ShowData> & {

@@ -1,4 +1,3 @@
-import { Program } from 'dizquetv-types';
 import { isNil, isUndefined } from 'lodash-es';
 import constants from './constants.js';
 import { ChannelDB } from './dao/channelDb.js';
@@ -26,8 +25,16 @@ export class ChannelCache {
     return this.channelDb.getChannel(channelId);
   }
 
+  getChannelConfigWithPrograms(channelId: number) {
+    return this.channelDb.getChannelAndPrograms(channelId);
+  }
+
   getAllChannels() {
     return this.channelDb.getAllChannels();
+  }
+
+  getAllChannelsWithPrograms() {
+    return this.channelDb.getAllChannelsAndPrograms();
   }
 
   getAllNumbers() {
@@ -117,7 +124,10 @@ export class ChannelCache {
     }
   }
 
-  getProgramLastPlayTime(channelId: number, program: Program) {
+  getProgramLastPlayTime(
+    channelId: number,
+    program: { serverKey?: string; key?: string },
+  ) {
     const v = this.programPlayTimeCache[this.getKey(channelId, program)];
     if (isUndefined(v)) {
       return 0;

@@ -1,12 +1,13 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-import XMLWriter from 'xml-writer';
+import { EntityDTO, Loaded } from '@mikro-orm/core';
+import { Channel, TvGuideProgram } from 'dizquetv-types';
 import fs from 'fs';
+import { keys, map } from 'lodash-es';
+import XMLWriter from 'xml-writer';
 import { XmlTvSettings } from './dao/db.js';
 import { CacheImageService } from './services/cacheImageService.js';
-import { Channel, TvGuideProgram } from 'dizquetv-types';
 import { ChannelPrograms } from './services/tvGuideService.js';
-import { map } from 'lodash-es';
 
 let isShutdown = false;
 let isWorking = false;
@@ -52,7 +53,7 @@ export class XmlTvWriter {
       });
       this._writeDocStart(xw);
       const middle = async () => {
-        const channelNumbers: string[] = [];
+        const channelNumbers: string[] = keys(json);
         this._writeChannels(
           xw,
           map(json, (obj) => obj.channel),
@@ -71,7 +72,7 @@ export class XmlTvWriter {
       };
       await middle()
         .then(() => {
-          this._writeDocEnd(xw, ws);
+          this._writeDocEnd(xw);
         })
         .catch((err) => {
           console.error('Error', err);
@@ -86,12 +87,15 @@ export class XmlTvWriter {
     xw.writeAttribute('generator-info-name', 'psuedotv-plex');
   }
 
-  private _writeDocEnd(xw, _) {
+  private _writeDocEnd(xw) {
     xw.endElement();
     xw.endDocument();
   }
 
-  private _writeChannels(xw, channels: Partial<Channel>[]) {
+  private _writeChannels(
+    xw,
+    channels: Partial<EntityDTO<Loaded<Channel, 'programs'>>>[],
+  ) {
     for (let i = 0; i < channels.length; i++) {
       xw.startElement('channel');
       xw.writeAttribute('id', channels[i].number);

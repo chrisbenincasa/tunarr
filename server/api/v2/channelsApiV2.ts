@@ -11,6 +11,11 @@ const ChannelNumberParamSchema = z.object({
   number: z.coerce.number(),
 });
 
+const ChannelLineupQuery = z.object({
+  from: z.coerce.date(),
+  to: z.coerce.date(),
+});
+
 // eslint-disable-next-line @typescript-eslint/require-await
 export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
   fastify.addHook('onError', (req, _, error, done) => {
@@ -40,7 +45,7 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
     },
     async (req, res) => {
       try {
-        const channel = req.serverCtx.channelCache.getChannelConfig(
+        const channel = await req.serverCtx.channelCache.getChannelConfig(
           req.params.number,
         );
 
@@ -106,31 +111,9 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
         );
 
         if (!isNil(channel)) {
-          // z.array(ProgramSchema).readonly().parse(channel.programs);
           await channel.programs.init();
-          return res.send(channel.programs.map((p) => p.toDTO()));
-          // const readableStream = new Readable();
-          // readableStream._read = () => {};
-
-          // void res
-          //   .header('content-type', 'application/json')
-          //   .send(readableStream);
-
-          // // This is preserving previous behavior that it's unclear is even
-          // // necessary
-          // setTimeout(() => {
-          //   readableStream.push('[');
-          //   channel.programs.forEach((program, idx) => {
-          //     readableStream.push(JSON.stringify(program)); // Look into other stringify methods
-          //     if (idx < channel.programs.length - 1) {
-          //       readableStream.push(',');
-          //     }
-          //   });
-          //   readableStream.push(']');
-          //   readableStream.push(null);
-          // });
-
-          // return res;
+          const programDtos = channel.programs.map((p) => p.toDTO());
+          return res.send(programDtos);
         } else {
           return res.status(404);
         }
@@ -138,6 +121,25 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
         logger.error(req.routeOptions.url, err);
         return res.status(500);
       }
+    },
+  );
+
+  fastify.get(
+    '/channels/:number/lineup',
+    {
+      schema: {
+        params: ChannelNumberParamSchema,
+        querystring: ChannelLineupQuery,
+      },
+    },
+    async (req, res) => {
+      const lineup = await req.serverCtx.guideService.getChannelLineup(
+        req.params.number,
+        req.query.from,
+        req.query.to,
+      );
+
+      return res.send(lineup);
     },
   );
 };
