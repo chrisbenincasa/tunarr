@@ -100,27 +100,19 @@ export class PlexServerDB {
 
     const sendGuideUpdates = server.sendGuideUpdates ?? false;
     const sendChannelUpdates = server.sendChannelUpdates ?? false;
-
     const index = await repo.count();
 
-    const newServer = new PlexServerSettingsEntity();
-    newServer.name = name;
-    newServer.uri = server.uri;
-    newServer.accessToken = server.accessToken;
-    newServer.sendGuideUpdates = sendGuideUpdates;
-    newServer.sendChannelUpdates = sendChannelUpdates;
-    newServer.index = index;
+    const newServer = em.create(PlexServerSettingsEntity, {
+      ...server,
+      name,
+      sendGuideUpdates,
+      sendChannelUpdates,
+      index,
+    });
 
     this.normalizeServer(newServer);
 
-    await em.insert(PlexServerSettingsEntity, {
-      name: name,
-      uri: server.uri,
-      accessToken: server.accessToken,
-      sendGuideUpdates,
-      sendChannelUpdates,
-      index: index,
-    });
+    await em.insert(PlexServerSettingsEntity, newServer);
   }
 
   private async fixupProgramReferences(

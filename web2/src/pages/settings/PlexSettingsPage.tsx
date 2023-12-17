@@ -1,6 +1,8 @@
+import AddCircleIcon from '@mui/icons-material/AddCircle';
 import EditIcon from '@mui/icons-material/Edit';
 import {
   Box,
+  Button,
   Chip,
   FormControl,
   Grid,
@@ -20,12 +22,14 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { PlexServerInsert, Resolution } from 'dizquetv-types';
+import { fill } from 'lodash-es';
+import { checkNewPlexServers, plexLoginFlow } from '../../helpers/plexLogin.ts';
 import {
   usePlexServerSettings,
   usePlexStreamSettings,
 } from '../../hooks/settingsHooks.ts';
-import { Resolution } from 'dizquetv-types';
-import { fill } from 'lodash-es';
 
 const toStringResolution = (res: Resolution) =>
   `${res.widthPx}x${res.heightPx}` as const;
@@ -50,18 +54,51 @@ export default function PlexSettingsPage() {
     isPending: serversPending,
     error: serversError,
   } = usePlexServerSettings();
+
   const {
     data: streamSettings,
     isPending: streamSettingsPending,
     error: streamsError,
   } = usePlexStreamSettings();
 
+  const queryClient = useQueryClient();
+
+  const addPlexServerMutation = useMutation({
+    mutationFn: (newServer: PlexServerInsert) => {
+      return fetch('http://localhost:8000/api/plex-servers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newServer),
+      });
+    },
+    onSuccess: () => {
+      return queryClient.invalidateQueries({
+        queryKey: ['settings', 'plex-servers'],
+      });
+    },
+  });
+
   // This is messy, lets consider getting rid of combine, it probably isnt useful here
   if (serversError || streamsError) {
     return <h1>XML: {(serversError ?? streamsError)!.message}</h1>;
   }
 
-  console.log(servers, streamSettings);
+  const addPlexServer = () => {
+    plexLoginFlow()
+      .then(checkNewPlexServers)
+      .then((connections) => {
+        connections.forEach(({ server, connection }) =>
+          addPlexServerMutation.mutate({
+            name: server.name,
+            uri: connection.uri,
+            accessToken: server.accessToken,
+          }),
+        );
+      })
+      .catch(console.error);
+  };
 
   const getTableRows = () => {
     return servers!.map((server) => (
@@ -202,9 +239,18 @@ export default function PlexSettingsPage() {
   return (
     <Box>
       <Box mb={2}>
-        <Typography component="h4" variant="h4" sx={{ pb: 2 }}>
-          Plex Servers
-        </Typography>
+        <Box sx={{ display: 'flex', mb: 2 }}>
+          <Typography variant="h4" sx={{ flexGrow: 1 }}>
+            Plex Servers
+          </Typography>
+          <Button
+            onClick={() => addPlexServer()}
+            variant="contained"
+            startIcon={<AddCircleIcon />}
+          >
+            Add
+          </Button>
+        </Box>
         {renderServersTable()}
       </Box>
       <Typography component="h4" variant="h4" sx={{ pt: 2, pb: 1 }}>

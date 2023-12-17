@@ -63,6 +63,14 @@ export const PlexServerSettingsSchema = z.object({
   index: z.number(),
 });
 
+export const PlexServerSettingsInsert = z.object({
+  name: z.string(),
+  uri: z.string(),
+  accessToken: z.string(),
+  sendGuideUpdates: z.boolean().optional(),
+  sendChannelUpdates: z.boolean().optional(),
+});
+
 export const PlexStreamSettingsSchema = z.object({
   streamPath: z.union([z.literal('plex'), z.literal('direct')]).default('plex'),
   enableDebugLogging: z.boolean().default(false),

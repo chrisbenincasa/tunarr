@@ -135,7 +135,7 @@ export const plexServersRouter: RouterPluginCallback = (
     },
   );
 
-  fastify.post<{ Body: PlexServerSettingsUpdate }>(
+  fastify.put<{ Body: PlexServerSettingsUpdate }>(
     '/api/plex-servers',
     async (req, res) => {
       try {
@@ -175,7 +175,7 @@ export const plexServersRouter: RouterPluginCallback = (
     },
   );
 
-  fastify.put<{ Body: PlexServerSettingsInsert }>(
+  fastify.post<{ Body: PlexServerSettingsInsert }>(
     '/api/plex-servers',
     async (req, res) => {
       try {
