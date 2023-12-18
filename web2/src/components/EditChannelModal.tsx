@@ -10,11 +10,11 @@ import {
   Tabs,
   TextField,
 } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
-import { Channel } from 'dizquetv-types';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import dayjs from 'dayjs';
+import { Channel, CreateChannelRequest } from 'dizquetv-types';
 import React, { useState } from 'react';
 import { ChannelProgrammingConfig } from './channel_config/ChannelProgrammingConfig.tsx';
-import dayjs from 'dayjs';
 
 interface CreateChannelModalProps {
   open: boolean;
@@ -52,7 +52,7 @@ function defaultNewChannel(num: number): Channel {
   return {
     name: `Channel ${num}`,
     number: num,
-    startTimeEpoch: dayjs().unix(),
+    startTime: dayjs().unix(),
     duration: 0,
     programs: [],
     icon: {
@@ -87,13 +87,38 @@ export default function CreateChannelModal(props: CreateChannelModalProps) {
     enabled: !props.isNew,
   });
 
+  const queryClient = useQueryClient();
+
+  const createChannel = useMutation({
+    mutationFn: async (channel: CreateChannelRequest) =>
+      await fetch('http://localhost:8000/api/v2/channels', {
+        body: JSON.stringify(channel),
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        exact: false,
+        queryKey: ['channels'],
+      });
+      props.onClose();
+    },
+  });
+
+  const onCreateButtonClicked = (channel: Channel) => {
+    console.log('CLICK');
+    createChannel.mutate({
+      ...channel,
+    });
+  };
+
   const isEditingExistingChannel = !props.isNew;
   const isLoading = isEditingExistingChannel && channelLoading;
   const channel = isEditingExistingChannel
-    ? existingChannel
+    ? existingChannel!
     : defaultNewChannel(props.channelNumber);
-
-  console.log(channelLoading, existingChannel, channelError);
 
   const [currentTab, setCurrentTab] = useState<TabValues>(
     props.defaultTab ?? 'properties',
@@ -134,7 +159,7 @@ export default function CreateChannelModal(props: CreateChannelModalProps) {
             <TextField fullWidth label="Channel Name" value={channel?.name} />
           </TabPanel>
           <TabPanel value="programming" currentValue={currentTab}>
-            <ChannelProgrammingConfig channel={channel!} />
+            <ChannelProgrammingConfig channel={channel} />
           </TabPanel>
           <TabPanel value="flex" currentValue={currentTab}>
             Flex
@@ -150,7 +175,9 @@ export default function CreateChannelModal(props: CreateChannelModalProps) {
 
       <DialogActions>
         <Button onClick={props.onClose}>Cancel</Button>
-        <Button>{isEditingExistingChannel ? 'Save' : 'Create'}</Button>
+        <Button onClick={() => onCreateButtonClicked(channel)}>
+          {isEditingExistingChannel ? 'Save' : 'Create'}
+        </Button>
       </DialogActions>
     </Dialog>
   );

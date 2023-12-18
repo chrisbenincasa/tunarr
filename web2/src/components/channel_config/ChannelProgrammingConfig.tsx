@@ -40,7 +40,7 @@ export function ChannelProgrammingConfig(props: ChannelProgrammingConfigProps) {
   };
 
   // HACK
-  const dt = dayjs(props.channel.startTimeEpoch).toISOString().replace('Z', '');
+  const dt = dayjs(props.channel.startTime).toISOString().replace('Z', '');
 
   return (
     <Box>

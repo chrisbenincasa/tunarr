@@ -30,7 +30,7 @@ export const FillerCollectionSchema = z.object({
 export const ChannelOfflineSchema = z.object({
   picture: z.string().optional(),
   soundtrack: z.string().optional(),
-  mode: z.string(),
+  mode: z.union([z.literal('pic'), z.literal('clip')]),
 });
 
 export const ChannelTranscodingOptionsSchema = z.object({
@@ -48,7 +48,7 @@ export const ChannelSchema = z.object({
   guideMinimumDurationSeconds: z.number(),
   groupTitle: z.string(),
   disableFillerOverlay: z.boolean(),
-  startTimeEpoch: z.number(),
+  startTime: z.number(),
   offline: ChannelOfflineSchema,
   name: z.string(),
   transcoding: ChannelTranscodingOptionsSchema.optional(),
@@ -57,4 +57,21 @@ export const ChannelSchema = z.object({
   stealth: z.boolean(),
   guideFlexPlaceholder: z.string().optional(),
   fillerRepeatCooldown: z.number().optional(),
+});
+
+export const CreateChannelSchema = z.object({
+  number: z.number(),
+  name: z.string(),
+  startTime: z.number(),
+  watermark: WatermarkSchema.optional(),
+  icon: ChannelIconSchema,
+  guideMinimumDurationSeconds: z.number().default(300),
+  groupTitle: z.string().optional().default('dizqueTV'), // TODO Change?
+  disableFillerOverlay: z.boolean().optional().default(false),
+  offline: ChannelOfflineSchema.optional().default({
+    mode: 'pic',
+  }),
+  stealth: z.boolean().default(false),
+  guideFlexPlaceholder: z.string().optional(),
+  duration: z.number().optional().default(0),
 });

@@ -212,9 +212,14 @@ export async function createDirectoryIfNotExists(
 }
 
 export type Try<T> = T | Error;
-export function attempt<T>(f: () => T): Try<T> {
+export async function attempt<T>(f: () => T | PromiseLike<T>): Promise<Try<T>> {
   try {
-    return f();
+    const res = f();
+    if (isPromise(res)) {
+      return await res;
+    } else {
+      return res;
+    }
   } catch (e) {
     if (isError(e)) {
       return e;

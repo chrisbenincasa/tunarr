@@ -96,7 +96,7 @@ export function Root() {
           <Toolbar>
             <Box flexGrow={1}></Box>
             <Button
-              href="/api/xmltv.xml"
+              href="http://localhost:8000/api/xmltv.xml"
               color="inherit"
               startIcon={<TextSnippetIcon />}
             >

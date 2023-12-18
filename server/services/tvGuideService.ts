@@ -20,7 +20,7 @@ import { Channel } from '../dao/entities/Channel.js';
 import { programDaoToDto } from '../dao/entities/Program.js';
 import createLogger from '../logger.js';
 import { Maybe } from '../types.js';
-import { groupByUniqFunc } from '../util.js';
+import { groupByUniqFunc, wait } from '../util.js';
 import { XmlTvWriter } from '../xmltv.js';
 import { CacheImageService } from './cacheImageService.js';
 import { EventService } from './eventService.js';
@@ -124,7 +124,7 @@ export class TVGuideService {
 
   async get() {
     while (this.cached == null) {
-      await _wait(100);
+      await wait(100);
     }
 
     return this.cached;
@@ -171,7 +171,7 @@ export class TVGuideService {
 
         await this.buildIt();
       }
-      await _wait(100);
+      await wait(100);
     }
     return await this.get();
   }
@@ -200,6 +200,18 @@ export class TVGuideService {
         program: {
           isOffline: true,
           duration: channelStartTime - currentUpdateTimeMs,
+        },
+      };
+    } else if (lineup.items.length === 0) {
+      // This is sorta hacky...
+      const d = currentUpdateTimeMs - channelStartTime;
+      return {
+        programIndex: 0,
+        startTimeMs: currentUpdateTimeMs - d,
+        program: {
+          type: 'flex',
+          duration: Number.MAX_SAFE_INTEGER,
+          isOffline: true,
         },
       };
     } else {
@@ -266,6 +278,7 @@ export class TVGuideService {
     if (
       !isUndefined(previousKnown) &&
       !isUndefined(previousKnown.programIndex) &&
+      lineup.items.length > 0 &&
       previousKnown.programIndex !== -1 &&
       previousKnown.program.duration ==
         lineup.items[previousKnown.programIndex].durationMs &&
@@ -558,7 +571,7 @@ export class TVGuideService {
     } catch (err) {
       logger.error('Unable to update internal guide data', err);
       const w = Math.min(this.lastBackoff * 2, 300000);
-      await _wait(w);
+      await wait(w);
       this.lastBackoff = w;
       logger.error(`Retrying TV guide after ${w} milliseconds wait...`);
       await this.buildIt();
@@ -636,12 +649,6 @@ export class TVGuideService {
 
     return result;
   }
-}
-
-function _wait(t: number) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, t);
-  });
 }
 
 function getChannelStealthDuration(channel: Partial<EntityDTO<Channel>>) {

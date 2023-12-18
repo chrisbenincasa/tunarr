@@ -1,9 +1,9 @@
-import { ChannelSchema, ProgramSchema } from 'dizquetv-types/schemas';
-import { isNil, isUndefined, omit, sortBy } from 'lodash-es';
+import { CreateChannelSchema, ProgramSchema } from 'dizquetv-types/schemas';
+import { isError, isNil, isUndefined, omit, sortBy } from 'lodash-es';
 import z from 'zod';
-import { Channel as ChannelEntity } from '../../dao/entities/Channel.js';
 import createLogger from '../../logger.js';
 import { RouterPluginAsyncCallback } from '../../types/serverType.js';
+import { attempt } from '../../util.js';
 
 const logger = createLogger(import.meta);
 
@@ -61,11 +61,29 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
     },
   );
 
+  fastify.post(
+    '/channels',
+    {
+      schema: {
+        body: CreateChannelSchema,
+      },
+    },
+    async (req, res) => {
+      const inserted = await attempt(() =>
+        req.serverCtx.channelDB.saveChannel(req.body),
+      );
+      if (isError(inserted)) {
+        return res.status(500).send(inserted);
+      }
+      return res.status(201).send({ id: inserted });
+    },
+  );
+
   fastify.put(
     '/channels/:number',
     {
       schema: {
-        body: ChannelSchema.omit({ programs: true }).partial(),
+        body: CreateChannelSchema,
         params: ChannelNumberParamSchema,
       },
     },
@@ -81,15 +99,15 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
           };
           await req.serverCtx.channelDB.updateChannel(
             channel.uuid,
-            ChannelEntity.fromPartialDTO(channelUpdate),
+            channelUpdate,
           );
           return res.send(omit(channel, 'programs'));
         } else {
-          return res.status(404);
+          return res.status(404).send();
         }
       } catch (err) {
         logger.error(req.routeConfig.url, err);
-        return res.status(500);
+        return res.status(500).send();
       }
     },
   );
@@ -101,6 +119,7 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
         params: ChannelNumberParamSchema,
         response: {
           200: z.array(ProgramSchema).readonly(),
+          404: z.void(),
         },
       },
     },
@@ -110,16 +129,18 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
           req.params.number,
         );
 
+        console.log(channel);
+
         if (!isNil(channel)) {
           await channel.programs.init();
           const programDtos = channel.programs.map((p) => p.toDTO());
           return res.send(programDtos);
         } else {
-          return res.status(404);
+          return res.status(404).send();
         }
       } catch (err) {
         logger.error(req.routeOptions.url, err);
-        return res.status(500);
+        return res.status(500).send();
       }
     },
   );

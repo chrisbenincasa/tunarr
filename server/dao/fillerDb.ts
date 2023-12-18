@@ -1,19 +1,14 @@
 import { Loaded } from '@mikro-orm/core';
-import { isEmpty, isNil, map } from 'lodash-es';
+import { isNil, map } from 'lodash-es';
 import { MarkOptional } from 'ts-essentials';
 import { v4 as uuidv4 } from 'uuid';
 import { ChannelCache } from '../channelCache.js';
-import createLogger from '../logger.js';
 import { Maybe, Nullable } from '../types.js';
-import { sequentialPromises } from '../util.js';
-import { ChannelDB } from './channelDb.js';
 import { getEm } from './dataSource.js';
-import { FillerList } from './settings.js';
 import { Channel as ChannelEntity } from './entities/Channel.js';
 import { ChannelFillerShow } from './entities/ChannelFillerShow.js';
 import { FillerShow } from './entities/FillerShow.js';
-
-const logger = createLogger(import.meta);
+import { FillerList } from './settings.js';
 
 export type FillerUpdate = MarkOptional<FillerList, 'content'>;
 export type FillerCreate = MarkOptional<
@@ -22,11 +17,9 @@ export type FillerCreate = MarkOptional<
 >;
 
 export class FillerDB {
-  private channelDB: ChannelDB;
   private channelCache: ChannelCache;
 
-  constructor(channelDB: ChannelDB, channelCache: ChannelCache) {
-    this.channelDB = channelDB;
+  constructor(channelCache: ChannelCache) {
     this.channelCache = channelCache;
   }
 
@@ -89,26 +82,27 @@ export class FillerDB {
   }
 
   async deleteFiller(id: string): Promise<void> {
-    const channels = await this.getFillerChannels(id);
-
-    // Remove references to filler collection.
-    await sequentialPromises(channels, undefined, async (channel) => {
-      logger.debug(`Updating channel ${channel.number}, remove filler ${id}`);
-      const fullChannel = await this.channelDB.getChannel(channel.number);
-      await fullChannel?.fillers.init();
-
-      if (!isNil(fullChannel) && !isEmpty(fullChannel.fillers)) {
-        fullChannel.fillers.remove((filler) => filler.uuid === id);
-        return this.channelDB.saveChannel(fullChannel);
-      }
-
-      return;
-    });
-
-    this.channelCache.clear();
+    // const channels = await this.getFillerChannels(id);
 
     const em = getEm();
+    // await em.nativeDelete(ChannelFillerShow, {fillerShow: id});
+
+    // Remove references to filler collection.
+    // await sequentialPromises(channels, undefined, async (channel) => {
+    //   logger.debug(`Updating channel ${channel.number}, remove filler ${id}`);
+    //   const fullChannel = await this.channelDB.getChannel(channel.number);
+    //   await fullChannel?.fillers.init();
+
+    //   if (!isNil(fullChannel) && !isEmpty(fullChannel.fillers)) {
+    //     fullChannel.fillers.remove((filler) => filler.uuid === id);
+    //     return this.channelDB.saveChannel(fullChannel);
+    //   }
+
+    //   return;
+    // });
+
     await em.removeAndFlush(em.getReference(FillerShow, id));
+    this.channelCache.clear();
     return;
   }
 

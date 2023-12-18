@@ -37,6 +37,9 @@ export const setProgrammingDirectory = (
 ) =>
   useStore.setState((state) => {
     const listings = state.listingsByServer[serverName];
+    if (!listings) {
+      state.listingsByServer[serverName] = [];
+    }
     dir.forEach((d) => {
       const existing = find(listings, (l) => l.dir.key === d.key);
       if (!existing) {

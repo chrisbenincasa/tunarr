@@ -7,6 +7,7 @@ import fp from 'fastify-plugin';
 import { RequestContext } from '@mikro-orm/core';
 import {
   ZodTypeProvider,
+  jsonSchemaTransform,
   serializerCompiler,
   validatorCompiler,
 } from 'fastify-type-provider-zod';
@@ -42,6 +43,9 @@ import { scheduleJobs, scheduledJobsById } from './services/scheduler.js';
 import { UpdateXmlTvTask } from './tasks/updateXmlTvTask.js';
 import { ServerOptions } from './types.js';
 import { videoRouter } from './video.js';
+import { wait } from './util.js';
+import fastifySwagger from '@fastify/swagger';
+import fastifySwaggerUi from '@fastify/swagger-ui';
 
 const logger = createLogger(import.meta);
 
@@ -83,21 +87,14 @@ function initDbDirectories() {
     fs.mkdirSync(opts.database);
   }
 
-  if (!fs.existsSync(path.join(opts.database, 'images'))) {
-    fs.mkdirSync(path.join(opts.database, 'images'));
-  }
-  if (!fs.existsSync(path.join(opts.database, 'channels'))) {
-    fs.mkdirSync(path.join(opts.database, 'channels'));
-  }
-  if (!fs.existsSync(path.join(opts.database, 'filler'))) {
-    fs.mkdirSync(path.join(opts.database, 'filler'));
-  }
-  if (!fs.existsSync(path.join(opts.database, 'custom-shows'))) {
-    fs.mkdirSync(path.join(opts.database, 'custom-shows'));
-  }
-  if (!fs.existsSync(path.join(opts.database, 'cache'))) {
-    fs.mkdirSync(path.join(opts.database, 'cache'));
-  }
+  ['images', 'channels', 'filler', 'custom-shows', 'cache'].forEach(
+    (filePath) => {
+      if (!fs.existsSync(path.join(opts.database, filePath))) {
+        fs.mkdirSync(path.join(opts.database, filePath));
+      }
+    },
+  );
+
   if (!fs.existsSync(path.join(opts.database, 'cache', 'images'))) {
     fs.mkdirSync(path.join(opts.database, 'cache', 'images'));
   }
@@ -125,6 +122,20 @@ export async function initServer(opts: ServerOptions) {
     .setValidatorCompiler(validatorCompiler)
     .setSerializerCompiler(serializerCompiler)
     .withTypeProvider<ZodTypeProvider>()
+    .register(fastifySwagger, {
+      openapi: {
+        info: {
+          title: 'DizqueTV API',
+          description: 'test',
+          version: '1.0.0',
+        },
+        servers: [],
+      },
+      transform: jsonSchemaTransform,
+    })
+    .register(fastifySwaggerUi, {
+      routePrefix: '/docs',
+    })
     .register(middie)
     .register(cors, {
       origin: '*', // Testing
@@ -153,20 +164,6 @@ export async function initServer(opts: ServerOptions) {
     .use((_req, _res, next) => RequestContext.create(orm.em, next));
 
   ctx.eventService.setup(app);
-
-  app.get('/version.js', async (_, res) => {
-    return res.header('content-type', 'application/javascript').status(200)
-      .send(`
-        function setUIVersionNow() {
-            setTimeout( setUIVersionNow, 1000);
-            var element = document.getElementById("uiversion");
-            if (element != null) {
-                element.innerHTML = "${constants.VERSION_NAME}";
-            }
-        }
-        setTimeout( setUIVersionNow, 1000);
-    `);
-  });
 
   await app
     .use('/images', serveStatic(path.join(opts.database, 'images')))
@@ -244,12 +241,8 @@ export async function initServer(opts: ServerOptions) {
       });
     },
   );
-}
 
-function _wait(t: number) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, t);
-  });
+  return app;
 }
 
 onShutdown('log', [], async () => {
@@ -264,8 +257,9 @@ onShutdown('log', [], async () => {
   });
 
   logger.info('Received exit signal, attempting graceful shutdonw...');
-  await _wait(2000);
+  await wait(2000);
 });
+
 onShutdown('xmltv-writer', [], async () => {
   const ctx = await serverContext();
   await ctx.xmltv.shutdown();

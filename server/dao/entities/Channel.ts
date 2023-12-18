@@ -45,10 +45,8 @@ type ChannelWatermark = {
 type ChannelOfflineSettings = {
   picture?: string;
   soundtrack?: string;
-  mode: string;
+  mode: 'pic' | 'clip';
 };
-
-type DurationProp = Duration;
 
 @Entity()
 @Unique({ properties: ['number'] })
@@ -64,7 +62,7 @@ export class Channel extends BaseEntity {
     entity.duration = dayjs.duration({ milliseconds: channel.duration });
     entity.stealth = channel.stealth;
     entity.groupTitle = channel.groupTitle;
-    entity.startTime = channel.startTimeEpoch;
+    entity.startTime = channel.startTime;
     entity.offline = channel.offline;
     entity.watermark = channel.watermark;
     entity.transcoding = channel.transcoding;
@@ -77,7 +75,7 @@ export class Channel extends BaseEntity {
     } as Partial<Channel>;
   }
 
-  [OptionalProps]?: 'guideMinimumDurationSeconds';
+  [OptionalProps]?: 'guideMinimumDurationSeconds' | 'durationMs';
 
   @Property()
   number!: number;
@@ -96,6 +94,10 @@ export class Channel extends BaseEntity {
     return this.guideMinimumDuration.asSeconds();
   }
 
+  set guideMinimumDurationSeconds(seconds: number) {
+    this.guideMinimumDuration = dayjs.duration({ seconds });
+  }
+
   @Property({ default: false })
   disableFillerOverlay: boolean = false;
 
@@ -103,7 +105,11 @@ export class Channel extends BaseEntity {
   name!: string;
 
   @Property({ type: DurationType })
-  duration!: DurationProp;
+  duration!: Duration;
+
+  set durationMs(ms: number) {
+    this.duration = dayjs.duration({ milliseconds: ms });
+  }
 
   @Property({ default: false })
   stealth!: boolean;
@@ -161,7 +167,7 @@ export class Channel extends BaseEntity {
       guideMinimumDurationSeconds: this.guideMinimumDuration.asSeconds(),
       groupTitle: this.groupTitle || '',
       disableFillerOverlay: this.disableFillerOverlay,
-      startTimeEpoch: this.startTime,
+      startTime: this.startTime,
       offline: this.offline,
       name: this.name,
       transcoding: this.transcoding,

@@ -1,4 +1,6 @@
 import { QueryOrder } from '@mikro-orm/core';
+import { CreateChannelRequest } from 'dizquetv-types';
+import { isNull } from 'lodash-es';
 import { Low } from 'lowdb';
 import { JSONPreset } from 'lowdb/node';
 import { join } from 'path';
@@ -21,13 +23,24 @@ export class ChannelDB {
       .findOne({ number }, { populate: ['programs'] });
   }
 
-  async saveChannel(channel: Channel) {
+  async saveChannel(channel: CreateChannelRequest) {
     const em = getEm();
-    await em.repo(Channel).upsert(channel);
+    const existing = await em.findOne(Channel, { number: channel.number });
+    if (!isNull(existing)) {
+      throw new Error(
+        `Channel with number ${channel.number} already exists: ${existing.name}`,
+      );
+    }
+
+    const entity = em.create(Channel, { ...channel });
+    entity.durationMs = channel.duration ?? 0;
+    em.persist(entity);
+    await this.createLineup(entity.number);
     await em.flush();
+    return entity.uuid;
   }
 
-  async updateChannel(id: string, channel: Omit<Partial<Channel>, 'uuid'>) {
+  async updateChannel(id: string, channel: CreateChannelRequest) {
     const em = getEm();
     await em.nativeUpdate(Channel, { uuid: id }, channel);
     await em.flush();
@@ -59,6 +72,11 @@ export class ChannelDB {
   async loadLineup(channelNumber: number) {
     const db = await this.getFileDb(channelNumber);
     return db.data;
+  }
+
+  private async createLineup(channelNumber: number) {
+    const db = await this.getFileDb(channelNumber);
+    await db.write();
   }
 
   private async getFileDb(channel: number) {

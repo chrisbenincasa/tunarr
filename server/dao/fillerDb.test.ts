@@ -5,6 +5,7 @@ import { test } from 'vitest';
 import { setGlobalOptions } from '../globals.js';
 import { getEm, withDb } from './dataSource.js';
 import { Channel } from './entities/Channel.js';
+import { FillerShow } from './entities/FillerShow.js';
 
 dayjs.extend(duration);
 
@@ -16,10 +17,8 @@ test('Filler DB', async () => {
 
   await withDb(async () => {
     const em = getEm();
-    const channel = await em.find(Channel, {}, { populate: ['programs'] });
-    channel.forEach((c) => {
-      console.log(c.programs.$.count());
-      serialize(c, { populate: ['programs'] });
-    });
+    await em.removeAndFlush(
+      em.getReference(FillerShow, 'd75ee652-e290-41b7-b93d-a45dcdb89b4c'),
+    );
   });
 });

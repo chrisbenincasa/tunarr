@@ -50,7 +50,30 @@ yargs(hideBin(process.argv))
         .middleware(setServerOptions);
     },
     async (args: ArgumentsCamelCase<ServerOptions>) => {
-      return (await import('./server.js')).initServer(args);
+      (await import('./server.js')).initServer(args);
+    },
+  )
+  .command(
+    'generate-openapi',
+    'Generate',
+    (yargs) => {
+      return yargs
+        .option('port', {
+          alias: 'p',
+          type: 'number',
+          desc: 'The port to run the dizque server on',
+          default: 8000,
+        })
+        .middleware(setServerOptions);
+    },
+    async (args: ArgumentsCamelCase<ServerOptions>) => {
+      const f = await (await import('./server.js')).initServer(args);
+      const x = await f
+        .inject({ method: 'get', url: '/docs/json' })
+        .then((r) => r.body);
+      await f.close();
+      console.log(x);
+      process.exit(0);
     },
   )
   .command(

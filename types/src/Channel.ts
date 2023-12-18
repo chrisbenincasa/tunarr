@@ -3,6 +3,7 @@ import {
   ChannelIconSchema,
   ChannelOfflineSchema,
   ChannelSchema,
+  CreateChannelSchema,
   FillerCollectionSchema,
   WatermarkSchema,
 } from './schemas/channelSchema.js';
@@ -18,3 +19,5 @@ export type ChannelOffline = Alias<z.infer<typeof ChannelOfflineSchema>>;
 export type ChannelIcon = Alias<z.infer<typeof ChannelIconSchema>>;
 
 export type Channel = Alias<z.infer<typeof ChannelSchema>>;
+
+export type CreateChannelRequest = Alias<z.infer<typeof CreateChannelSchema>>;
