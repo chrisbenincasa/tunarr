@@ -266,6 +266,7 @@ export default async (
       return {
         isOffline: true,
         duration: remaining,
+        type: 'flex',
       };
     }
     const show = shows[showsById[slot.showId]];
@@ -356,6 +357,7 @@ export default async (
         p.push({
           duration: duration,
           isOffline: true,
+          type: 'flex',
         });
       }
     }

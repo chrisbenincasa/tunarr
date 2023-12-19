@@ -435,6 +435,7 @@ export default async (
       item = {
         isOffline: true,
         duration: remaining!,
+        type: 'flex',
       };
     }
 

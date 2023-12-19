@@ -33,6 +33,6 @@ export const ProgramSchema = z.object({
   showTitle: z.string().optional(), // Unclear if this is necessary
   summary: z.string().optional(), // Not present on offline type
   title: z.string().optional(),
-  type: ProgramTypeSchema.optional(),
+  type: ProgramTypeSchema,
   year: z.number().optional(),
 });

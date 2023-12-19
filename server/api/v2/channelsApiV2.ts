@@ -1,5 +1,5 @@
 import { CreateChannelSchema, ProgramSchema } from 'dizquetv-types/schemas';
-import { isError, isNil, isUndefined, omit, sortBy } from 'lodash-es';
+import { isError, isNil, omit, sortBy } from 'lodash-es';
 import z from 'zod';
 import createLogger from '../../logger.js';
 import { RouterPluginAsyncCallback } from '../../types/serverType.js';
@@ -26,10 +26,10 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
   fastify.get('/channels', async (req, res) => {
     try {
       const channels = sortBy(
-        req.serverCtx.channelDB.getAllChannels(),
+        await req.serverCtx.channelDB.getAllChannels(),
         'number',
       );
-      return res.send(channels);
+      return res.send(channels.map((c) => c.toDTO()));
     } catch (err) {
       logger.error(req.routeConfig.url, err);
       return res.status(500).send('error');
@@ -49,8 +49,8 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
           req.params.number,
         );
 
-        if (!isUndefined(channel)) {
-          return res.send(omit(channel, 'programs'));
+        if (!isNil(channel)) {
+          return res.send(channel.toDTO());
         } else {
           return res.status(404);
         }

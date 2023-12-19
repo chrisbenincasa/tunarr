@@ -1,8 +1,12 @@
-import { PlexLibrarySection, PlexMedia } from 'dizquetv-types/plex';
-import useStore from '..';
-import { find, map, reject } from 'lodash-es';
 import { PlexServerSettings } from 'dizquetv-types';
-import { ProgrammingListing, SelectedMedia } from './store';
+import {
+  PlexLibrarySection,
+  PlexMedia,
+  isPlexDirectory,
+} from 'dizquetv-types/plex';
+import { map, reject } from 'lodash-es';
+import useStore from '..';
+import { SelectedMedia } from './store';
 
 export const setProgrammingListingServer = (
   server: PlexServerSettings | undefined,
@@ -11,67 +15,61 @@ export const setProgrammingListingServer = (
     state.currentServer = server;
   });
 
+function uniqueId(item: PlexLibrarySection | PlexMedia): string {
+  if (isPlexDirectory(item)) {
+    return item.uuid;
+  } else {
+    return item.guid;
+  }
+}
+
 export const addKnownMediaForServer = (
   serverName: string,
-  plexMedia: PlexMedia[],
+  plexMedia: PlexLibrarySection[] | PlexMedia[],
+  parentId?: string,
 ) =>
   useStore.setState((state) => {
+    // Add new media
     if (!state.knownMediaByServer[serverName]) {
       state.knownMediaByServer[serverName] = {};
     }
 
     const byGuid = plexMedia.reduce(
-      (prev, media) => ({ ...prev, [media.guid]: media }),
+      (prev, media) => ({ ...prev, [uniqueId(media)]: media }),
       {},
     );
+
     state.knownMediaByServer[serverName] = {
       ...state.knownMediaByServer[serverName],
       ...byGuid,
     };
+
+    // Add relations
+    let hierarchy = state.contentHierarchyByServer[serverName];
+    if (!hierarchy) {
+      state.contentHierarchyByServer[serverName] = {};
+      hierarchy = state.contentHierarchyByServer[serverName];
+    }
+
+    const childrenByGuid = plexMedia.reduce(
+      (prev, media) => ({ ...prev, [uniqueId(media)]: [] }),
+      {},
+    );
+    state.contentHierarchyByServer[serverName] = {
+      ...state.contentHierarchyByServer[serverName],
+      ...childrenByGuid,
+    };
+
+    if (parentId) {
+      if (!state.contentHierarchyByServer[serverName][parentId]) {
+        state.contentHierarchyByServer[serverName][parentId] = [];
+      }
+
+      state.contentHierarchyByServer[serverName][parentId] =
+        plexMedia.map(uniqueId);
+    }
+
     return state;
-  });
-
-export const setProgrammingDirectory = (
-  serverName: string,
-  dir: PlexLibrarySection[],
-) =>
-  useStore.setState((state) => {
-    const listings = state.listingsByServer[serverName];
-    if (!listings) {
-      state.listingsByServer[serverName] = [];
-    }
-    dir.forEach((d) => {
-      const existing = find(listings, (l) => l.dir.key === d.key);
-      if (!existing) {
-        state.listingsByServer[serverName].push({ dir: d, children: [] });
-      } else {
-        // Figure out what to do here
-      }
-    });
-  });
-
-export const setProgrammingDirectoryListings = (
-  serverName: string,
-  directoryKey: string,
-  media: PlexMedia[],
-) =>
-  useStore.setState((state) => {
-    if (state.listingsByServer[serverName]) {
-      const directory = find(
-        state.listingsByServer[serverName],
-        (s) => s.dir.key === directoryKey,
-      );
-      if (directory) {
-        directory.children = [
-          // ...directory.children,
-          ...(media.map((m) => ({
-            guid: m.guid,
-            type: m.type,
-            children: [],
-          })) as ProgrammingListing[]),
-        ];
-      }
-    }
   });
 
 export const addSelectedMedia = (serverName: string, media: PlexMedia[]) =>

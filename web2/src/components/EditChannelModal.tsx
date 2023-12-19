@@ -80,7 +80,7 @@ export default function CreateChannelModal(props: CreateChannelModalProps) {
     queryKey: ['channels', props.channelNumber],
     queryFn: async ({ queryKey }) => {
       const res = await fetch(
-        `http://localhost:8000/api/channel/${queryKey[1]}`,
+        `http://localhost:8000/api/v2/channels/${queryKey[1]}`,
       );
       return res.json() as Promise<Channel>;
     },
@@ -159,7 +159,7 @@ export default function CreateChannelModal(props: CreateChannelModalProps) {
             <TextField fullWidth label="Channel Name" value={channel?.name} />
           </TabPanel>
           <TabPanel value="programming" currentValue={currentTab}>
-            <ChannelProgrammingConfig channel={channel} />
+            <ChannelProgrammingConfig channel={channel} isNew={props.isNew} />
           </TabPanel>
           <TabPanel value="flex" currentValue={currentTab}>
             Flex

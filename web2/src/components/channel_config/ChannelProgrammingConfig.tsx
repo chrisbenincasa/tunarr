@@ -14,9 +14,11 @@ import ProgrammingSelector from './ProgrammingSelector.tsx';
 import { useQuery } from '@tanstack/react-query';
 import { Channel, Program } from 'dizquetv-types';
 import dayjs from 'dayjs';
+import { useChannelLineup } from '../../hooks/useChannelLineup.ts';
 
 interface ChannelProgrammingConfigProps {
   channel: Channel;
+  isNew: boolean;
 }
 
 export function ChannelProgrammingConfig(props: ChannelProgrammingConfigProps) {
@@ -30,6 +32,14 @@ export function ChannelProgrammingConfig(props: ChannelProgrammingConfigProps) {
       return res.json() as Promise<Program[]>;
     },
   });
+
+  const {
+    isPending: channelLineupLoading,
+    data: channelLineup,
+    error: channelLineupError,
+  } = useChannelLineup(props.channel.number, !props.isNew);
+
+  console.log(channelLineup);
 
   const renderPrograms = () => {
     return programs?.map((p) => (
@@ -62,14 +72,10 @@ export function ChannelProgrammingConfig(props: ChannelProgrammingConfigProps) {
           )}
         </Box>
       </Box>
-      <Dialog
+      <ProgrammingSelector
         open={programmingModalOpen}
         onClose={() => setProgrammingModalOpen(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <ProgrammingSelector />
-      </Dialog>
+      />
     </Box>
   );
 }

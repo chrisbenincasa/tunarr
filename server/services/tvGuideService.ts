@@ -4,20 +4,22 @@ import {
   ChannelLineup,
   Program as ProgramDTO,
 } from 'dizquetv-types';
+import { ProgramTypeSchema } from 'dizquetv-types/schemas';
 import { compact, isNil, isUndefined, keys, mapValues } from 'lodash-es';
 import assert from 'node:assert';
 import { MarkRequired } from 'ts-essentials';
 import z from 'zod';
 import constants from '../constants.js';
 import { ChannelDB } from '../dao/channelDb.js';
-import { ChannelIconSchema, getSettings } from '../dao/settings.js';
 import {
   Lineup,
+  LineupItem,
   isContentItem,
   isOfflineItem,
 } from '../dao/derived_types/Lineup.js';
 import { Channel } from '../dao/entities/Channel.js';
-import { programDaoToDto } from '../dao/entities/Program.js';
+import { Program, programDaoToDto } from '../dao/entities/Program.js';
+import { ChannelIconSchema, getSettings } from '../dao/settings.js';
 import createLogger from '../logger.js';
 import { Maybe } from '../types.js';
 import { groupByUniqFunc, wait } from '../util.js';
@@ -31,10 +33,15 @@ const logger = createLogger(import.meta);
 const FALLBACK_ICON =
   'https://raw.githubusercontent.com/vexorain/dizquetv/main/resources/dizquetv.png';
 
+type CurrentPlayingProgramDetails = MarkRequired<
+  Partial<ProgramDTO>,
+  'type' | 'isOffline' | 'duration'
+>;
+
 type CurrentPlayingProgram = {
   programIndex?: number;
   startTimeMs: number;
-  program: Partial<ProgramDTO>;
+  program: CurrentPlayingProgramDetails;
 };
 
 const TvGuideProgramSubtitleSchema = z.object({
@@ -42,6 +49,28 @@ const TvGuideProgramSubtitleSchema = z.object({
   episode: z.number().optional(),
   title: z.string().optional(),
 });
+
+function lineupItemToCurrentProgram(
+  lineupItem: LineupItem,
+  backingItem?: EntityDTO<Program>,
+): CurrentPlayingProgramDetails {
+  if (isOfflineItem(lineupItem)) {
+    return {
+      duration: lineupItem.durationMs,
+      type: 'flex',
+      isOffline: true,
+    };
+  } else if (isContentItem(lineupItem)) {
+    return programDaoToDto(backingItem!);
+  } else {
+    return {
+      type: 'redirect',
+      isOffline: true,
+      duration: lineupItem.durationMs,
+      channel: lineupItem.channel,
+    };
+  }
+}
 
 type TvGuideProgramSubtitle = z.infer<typeof TvGuideProgramSubtitleSchema>;
 
@@ -55,6 +84,7 @@ const TvGuideProgramSchema = z.object({
   title: z.string(),
   sub: TvGuideProgramSubtitleSchema.optional(),
   programDuration: z.number().optional(),
+  type: ProgramTypeSchema,
 });
 
 export type TvGuideProgram = z.infer<typeof TvGuideProgramSchema>;
@@ -200,6 +230,7 @@ export class TVGuideService {
         program: {
           isOffline: true,
           duration: channelStartTime - currentUpdateTimeMs,
+          type: 'flex',
         },
       };
     } else if (lineup.items.length === 0) {
@@ -240,7 +271,7 @@ export class TVGuideService {
       }
 
       const lineupItem = lineup.items[lo];
-      let lineupProgram: Partial<ProgramDTO>;
+      let lineupProgram: CurrentPlayingProgramDetails;
       if (isContentItem(lineupItem)) {
         const program = channel.programs.find((p) => p.uuid === lineupItem.id);
         assert(!isNil(program));
@@ -287,9 +318,13 @@ export class TVGuideService {
     ) {
       //turns out we know the index.
       const index = (previousKnown.programIndex + 1) % channel.programs.length;
+      const lineupItem = lineup.items[index];
+      const backingItem = isContentItem(lineupItem)
+        ? channel.programs.find((p) => p.uuid === lineupItem.id)
+        : undefined;
       playing = {
         programIndex: index,
-        program: channel.programs[index],
+        program: lineupItemToCurrentProgram(lineup.items[index], backingItem),
         startTimeMs: currentUpdateTimeMs,
       };
     } else {
@@ -307,6 +342,7 @@ export class TVGuideService {
         program: {
           isOffline: true,
           duration: 30 * 60 * 1000,
+          type: 'flex',
         },
         startTimeMs: currentUpdateTimeMs,
       };
@@ -339,7 +375,7 @@ export class TVGuideService {
           );
           const start = Math.max(playing.startTimeMs, otherPlaying.startTimeMs);
           const duration = Math.min(
-            playing.startTimeMs + playing.program.duration! - start,
+            playing.startTimeMs + playing.program.duration - start,
             otherPlaying.startTimeMs +
               (otherPlaying.program.duration ?? 0) -
               start,
@@ -403,7 +439,7 @@ export class TVGuideService {
       ) {
         //meld with previous
         const y = clone(programs[programs.length - 1]);
-        y.program.duration! += program.program.duration;
+        y.program.duration += program.program.duration;
         melded += program.program.duration ?? 0;
         if (
           melded > constants.TVGUIDE_MAXIMUM_PADDING_LENGTH_MS &&
@@ -412,14 +448,15 @@ export class TVGuideService {
             channelWithLineup.channel,
           )
         ) {
-          y.program.duration! -= melded;
+          y.program.duration -= melded;
           programs[programs.length - 1] = y;
-          if (y.startTimeMs + y.program.duration! < currentEndTimeMs) {
+          if (y.startTimeMs + y.program.duration < currentEndTimeMs) {
             programs.push({
-              startTimeMs: y.startTimeMs + y.program.duration!,
+              startTimeMs: y.startTimeMs + y.program.duration,
               program: {
                 isOffline: true,
                 duration: melded,
+                type: 'flex',
               },
             });
           }
@@ -434,6 +471,7 @@ export class TVGuideService {
           program: {
             isOffline: true,
             duration: program.program.duration,
+            type: 'flex',
           },
         });
       } else {
@@ -491,6 +529,7 @@ export class TVGuideService {
             program: {
               isOffline: true,
               duration: d,
+              type: 'flex',
             },
           };
           duration -= d;
@@ -505,7 +544,7 @@ export class TVGuideService {
     return result;
   }
 
-  async buildItManaged(): Promise<Record<number, ChannelPrograms>> {
+  private async buildItManaged(): Promise<Record<number, ChannelPrograms>> {
     const currentUpdateTimeMs = this.currentUpdate;
     const currentEndTimeMs = this.currentLimit;
     const channels = this.currentChannels;
@@ -541,6 +580,8 @@ export class TVGuideService {
               showTitle: 'No channels configured',
               date: formatDateYYYYMMDD(new Date()),
               summary: 'Use the dizqueTV web UI to configure channels.',
+              type: 'flex',
+              isOffline: true,
             },
           }),
         ],
@@ -729,6 +770,7 @@ function makeEntry(
     title: title,
     sub: sub,
     programDuration: currentProgram.program?.duration,
+    type: currentProgram.program?.type,
   };
 }
 
