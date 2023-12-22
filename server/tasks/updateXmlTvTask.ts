@@ -9,7 +9,7 @@ import { Plex } from '../plex.js';
 import { ServerContext } from '../serverContext.js';
 import { TVGuideService } from '../services/tvGuideService.js';
 import { Maybe } from '../types.js';
-import { sequentialPromises } from '../util.js';
+import { mapAsyncSeq } from '../util.js';
 import { Task, TaskId } from './task.js';
 
 const logger = createLogger(import.meta);
@@ -79,7 +79,7 @@ export class UpdateXmlTvTask extends Task<void> {
       return em.find(PlexServerSettings, {});
     });
 
-    await sequentialPromises(allPlexServers, undefined, async (plexServer) => {
+    await mapAsyncSeq(allPlexServers, undefined, async (plexServer) => {
       const plex = new Plex(plexServer);
       let dvrs;
       if (!plexServer.sendGuideUpdates && !plexServer.sendChannelUpdates) {

@@ -3,6 +3,7 @@ import {
   isArray,
   isEmpty,
   isError,
+  isNil,
   isPlainObject,
   isString,
   isUndefined,
@@ -92,7 +93,7 @@ export function groupByUniqAndMap<
   );
 }
 
-export async function sequentialPromises<T, U>(
+export async function mapAsyncSeq<T, U>(
   seq: ReadonlyArray<T>,
   ms: number | undefined,
   itemFn: (item: T) => Promise<U>,
@@ -113,6 +114,26 @@ export async function sequentialPromises<T, U>(
   );
 
   return Promise.all(all);
+}
+
+export async function mapReduceAsyncSeq<T, U, Res>(
+  seq: ReadonlyArray<T>,
+  itemFn: (item: T) => Promise<U>,
+  combineFn: (prev: Res, next: U) => Res,
+  empty: Res,
+): Promise<Res> {
+  const all = await seq.reduce(
+    async (prev, item) => {
+      const last = await prev;
+
+      const result = await itemFn(item);
+
+      return [...last, result];
+    },
+    Promise.resolve([] as U[]),
+  );
+
+  return Promise.all(all).then((res) => res.reduce(combineFn, empty));
 }
 
 export const wait: (ms: number) => Promise<void> = (ms: number) => {
@@ -137,7 +158,7 @@ Array.prototype.sequentialPromises = async function <T, U>(
   itemFn: (item: T) => Promise<U>,
   ms: number | undefined,
 ) {
-  return sequentialPromises(this as ReadonlyArray<T>, ms, itemFn);
+  return mapAsyncSeq(this as ReadonlyArray<T>, ms, itemFn);
 };
 
 export function time<T>(
@@ -181,7 +202,6 @@ export function deepCopy<T>(value: T): T {
   return chain(value)
     .keys()
     .reduce((prev, key) => {
-      console.log(key, value[key]);
       return {
         ...prev,
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -229,4 +249,25 @@ export async function attempt<T>(f: () => T | PromiseLike<T>): Promise<Try<T>> {
 
     throw e; // Unhandled
   }
+}
+
+function enumKeys<O extends object, K extends keyof O = keyof O>(obj: O): K[] {
+  return Object.keys(obj).filter((k) => !Number.isNaN(k)) as K[];
+}
+
+export function enumFromString<O extends object>(
+  obj: O,
+  str: string,
+): O | undefined {
+  for (const key of enumKeys(obj)) {
+    const value = obj[key];
+    if ((key as string).toLowerCase() === str) {
+      return value as O;
+    }
+  }
+  return;
+}
+
+export function nilToUndefined<T>(t: T | undefined | null): T | undefined {
+  return isNil(t) ? undefined : t;
 }

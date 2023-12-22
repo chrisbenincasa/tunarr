@@ -8,7 +8,7 @@ import { PlexStreamSettings } from './dao/settings.js';
 import { serverOptions } from './globals.js';
 import createLogger from './logger.js';
 import { Plex } from './plex.js';
-import { ContextChannel, Maybe, PlexBackedLineupItem } from './types.js';
+import { ContextChannel, Maybe } from './types.js';
 import {
   PlexItemMetadata,
   PlexMediaContainer,
@@ -18,6 +18,7 @@ import {
   isPlexVideoStream,
 } from './types/plexApiTypes.js';
 import { PlexServerSettings } from './dao/entities/PlexServerSettings.js';
+import { ContentBackedStreamLineupItem } from './dao/derived_types/StreamLineup.js';
 
 const logger = createLogger(import.meta);
 
@@ -81,7 +82,7 @@ export class PlexTranscoder {
     server: DeepReadonly<PlexServerSettings>,
     settings: DeepReadonly<PlexStreamSettings>,
     channel: ContextChannel,
-    lineupItem: PlexBackedLineupItem,
+    lineupItem: ContentBackedStreamLineupItem,
   ) {
     this.session = uuidv4();
 
@@ -107,7 +108,7 @@ export class PlexTranscoder {
     }
     this.transcodeUrlBase = `${server.uri}/video/:/transcode/universal/start.m3u8?`;
     this.ratingKey = lineupItem.ratingKey;
-    this.currTimeMs = lineupItem.start;
+    this.currTimeMs = lineupItem.start ?? 0;
     this.currTimeS = this.currTimeMs / 1000;
     this.duration = lineupItem.duration;
     this.server = server;

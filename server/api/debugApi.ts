@@ -4,19 +4,17 @@ import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { first, isNil, isUndefined } from 'lodash-es';
 import z from 'zod';
 import { ChannelCache } from '../channelCache.js';
+import { getEm } from '../dao/dataSource.js';
 import { Channel } from '../dao/entities/Channel.js';
 import * as helperFuncs from '../helperFuncs.js';
 import createLogger from '../logger.js';
 import { PlexPlayer } from '../plexPlayer.js';
 import { PlexTranscoder } from '../plexTranscoder.js';
+import { ContextChannel, Maybe, PlayerContext } from '../types.js';
 import {
-  ContextChannel,
-  LineupItem,
-  Maybe,
-  PlayerContext,
+  StreamLineupItem,
   isPlexBackedLineupItem,
-} from '../types.js';
-import { getEm } from '../dao/dataSource.js';
+} from '../dao/derived_types/StreamLineup.js';
 
 const logger = createLogger(import.meta);
 
@@ -146,7 +144,7 @@ export const debugRouter: FastifyPluginCallback = (fastify, _opts, done) => {
     channel: Loaded<Channel, 'programs'>,
     now: number,
   ) {
-    let lineupItem: Maybe<LineupItem> =
+    let lineupItem: Maybe<StreamLineupItem> =
       req.serverCtx.channelCache.getCurrentLineupItem(channel.number, now);
 
     logger.info('lineupItem: %O', lineupItem);
@@ -162,6 +160,7 @@ export const debugRouter: FastifyPluginCallback = (fastify, _opts, done) => {
           helperFuncs.getCurrentProgramAndTimeElapsed(
             new Date().getTime(),
             channel,
+            await req.serverCtx.channelDB.loadLineup(channel.number),
           ),
           channel,
           fillers,
@@ -191,6 +190,7 @@ export const debugRouter: FastifyPluginCallback = (fastify, _opts, done) => {
       const result = helperFuncs.getCurrentProgramAndTimeElapsed(
         new Date().getTime(),
         channel,
+        await req.serverCtx.channelDB.loadLineup(channel.number),
       );
 
       return res.send(result);
@@ -233,6 +233,7 @@ export const debugRouter: FastifyPluginCallback = (fastify, _opts, done) => {
           helperFuncs.getCurrentProgramAndTimeElapsed(
             new Date().getTime(),
             channel,
+            await req.serverCtx.channelDB.loadLineup(channel.number),
           ),
           channel,
           fillers,

@@ -36,7 +36,7 @@ import {
   createDirectoryIfNotExists,
   groupByUniq,
   isNodeError,
-  sequentialPromises,
+  mapAsyncSeq,
 } from '../util.js';
 import { EntityManager, getEm, initOrm, withDb } from './dataSource.js';
 import {
@@ -161,12 +161,13 @@ async function persistProgram(program: Program) {
         dbProgram.icon = program.icon;
         dbProgram.externalKey = program.key!;
         dbProgram.plexRatingKey = program.ratingKey!;
+        dbProgram.plexFilePath = program.plexFile;
         dbProgram.externalSourceId = program.serverKey!;
         dbProgram.showTitle = program.showTitle;
         dbProgram.summary = program.summary;
         dbProgram.title = program.title!;
         // This is checked above
-        dbProgram.type = programTypeFromString(program.type!)!;
+        dbProgram.type = programTypeFromString(program.type)!;
         dbProgram.episode = program.episode;
         dbProgram.season = program.season;
         dbProgram.seasonIcon = program.seasonIcon;
@@ -326,7 +327,7 @@ async function migrateChannels() {
     );
 
     const dbProgramById = (
-      await sequentialPromises(programs, undefined, (p) =>
+      await mapAsyncSeq(programs, undefined, (p) =>
         persistProgram(p).then((dbProgram) => {
           if (dbProgram) {
             return {
@@ -503,7 +504,7 @@ async function migrateChannels() {
   logger.info(`Found channels: ${channelFiles.join(', ')}`);
 
   const migratedChannels = compact(
-    await sequentialPromises(channelFiles, undefined, async (channel) => {
+    await mapAsyncSeq(channelFiles, undefined, async (channel) => {
       try {
         return await migrateChannel(channel);
       } catch (e) {
@@ -515,7 +516,7 @@ async function migrateChannels() {
 
   // Create filler associations
   const em = getEm();
-  await sequentialPromises(
+  await mapAsyncSeq(
     migratedChannels,
     undefined,
     async ({ raw: channel, entity }) => {
@@ -590,7 +591,7 @@ async function migrateCustomShows(type: 'custom-shows' | 'filler') {
       .value();
 
     const persistedPrograms = (
-      await sequentialPromises(uniquePrograms, undefined, (program) =>
+      await mapAsyncSeq(uniquePrograms, undefined, (program) =>
         persistProgram(program).then((dbProgram) =>
           dbProgram
             ? {
@@ -606,7 +607,7 @@ async function migrateCustomShows(type: 'custom-shows' | 'filler') {
 
     const customShowById = groupByUniq(newCustomShows, 'id');
 
-    await sequentialPromises(newCustomShows, undefined, async (customShow) => {
+    await mapAsyncSeq(newCustomShows, undefined, async (customShow) => {
       // Refresh the entity after inserting programs
       const existing = await repo.findOne(
         { uuid: customShow.id },

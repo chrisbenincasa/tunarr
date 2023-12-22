@@ -400,7 +400,7 @@ export const isPlexSeason = isPlexMediaType<PlexTvSeason>('season');
 export const isPlexEpisode = isPlexMediaType<PlexEpisode>('episode');
 
 export function isTerminalItem(
-  item: PlexMedia,
+  item: PlexMedia | PlexLibrarySection,
 ): item is PlexMovie | PlexEpisode {
-  return isPlexMovie(item) || isPlexEpisode(item);
+  return !isPlexDirectory(item) && (isPlexMovie(item) || isPlexEpisode(item));
 }

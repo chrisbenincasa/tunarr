@@ -16,6 +16,7 @@ import { Channel as ChannelDTO } from 'dizquetv-types';
 import { DurationType } from '../custom_types/DurationType.js';
 import type { Duration } from 'dayjs/plugin/duration.js';
 import dayjs from 'dayjs';
+import { nilToUndefined } from '../../util.js';
 
 type ChannelIcon = {
   path: string;
@@ -154,7 +155,7 @@ export class Channel extends BaseEntity {
   toDTO(): ChannelDTO {
     return {
       number: this.number,
-      watermark: this.watermark,
+      watermark: nilToUndefined(this.watermark),
       // filler
       // programs
       // fallback
@@ -170,7 +171,7 @@ export class Channel extends BaseEntity {
       startTime: this.startTime,
       offline: this.offline,
       name: this.name,
-      transcoding: this.transcoding,
+      transcoding: nilToUndefined(this.transcoding),
       duration: this.duration.asMilliseconds(),
       stealth: this.stealth,
       programs: [],

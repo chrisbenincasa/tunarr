@@ -14,6 +14,7 @@ import { v4 as uuidv4 } from 'uuid';
 import z from 'zod';
 import constants from '../constants.js';
 import { globalOptions } from '../globals.js';
+import { existsSync } from 'fs';
 
 const CURRENT_VERSION = 1;
 
@@ -275,11 +276,17 @@ export class Settings {
 }
 
 export const getSettingsRawDb = once(async (dbPath?: string) => {
-  const db = await JSONPreset<Schema>(
-    dbPath ?? path.resolve(globalOptions().database, 'settings.json'),
-    defaultSchema,
-  );
+  const actualPath =
+    dbPath ?? path.resolve(globalOptions().database, 'settings.json');
+
+  const needsFlush = !existsSync(actualPath);
+
+  const db = await JSONPreset<Schema>(actualPath, defaultSchema);
+
   await db.read();
+  if (needsFlush) {
+    await db.write();
+  }
   return db;
 });
 

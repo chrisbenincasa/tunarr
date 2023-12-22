@@ -1,18 +1,29 @@
 import { EntityDTO, Loaded, wrap } from '@mikro-orm/core';
-import { FfmpegSettings, Program } from 'dizquetv-types';
-import { first, isEmpty, isNil, isUndefined, pick } from 'lodash-es';
+import { FfmpegSettings, Watermark } from 'dizquetv-types';
+import { first, isEmpty, isError, isNil, isUndefined, pick } from 'lodash-es';
 import * as randomJS from 'random-js';
-import { DeepReadonly } from 'ts-essentials';
 import { ChannelCache } from './channelCache.js';
 import constants from './constants.js';
-import { Watermark, offlineProgram } from './dao/settings.js';
+import {
+  Lineup,
+  isContentItem,
+  isOfflineItem,
+} from './dao/derived_types/Lineup.js';
+import {
+  OfflineStreamLineupItem,
+  ProgramStreamLineupItem,
+  RedirectStreamLineupItem,
+  StreamLineupItem,
+  createOfflineStreamLineupIteam,
+  isOfflineLineupItem,
+} from './dao/derived_types/StreamLineup.js';
 import { Channel } from './dao/entities/Channel.js';
 import { ChannelFillerShow } from './dao/entities/ChannelFillerShow.js';
 import { Program as ProgramEntity } from './dao/entities/Program.js';
 import {
   CHANNEL_CONTEXT_KEYS,
   ContextChannel,
-  LineupItem,
+  // LineupItem,
   Maybe,
   Nullable,
 } from './types.js';
@@ -23,7 +34,7 @@ export const random = new Random(randomJS.MersenneTwister19937.autoSeed());
 
 // Figure out this type later...
 export type ProgramAndTimeElapsed = {
-  program: DeepReadonly<Program> & { err?: Error };
+  program: StreamLineupItem & { err?: Error }; //DeepReadonly<Program> & { err?: Error };
   timeElapsed: number;
   programIndex: number;
 };
@@ -31,6 +42,7 @@ export type ProgramAndTimeElapsed = {
 export function getCurrentProgramAndTimeElapsed(
   time: number,
   channel: Loaded<Channel, 'programs'>,
+  channelLineup: Lineup,
 ): ProgramAndTimeElapsed {
   if (channel.startTime > time) {
     const t0 = time;
@@ -39,7 +51,7 @@ export function getCurrentProgramAndTimeElapsed(
       'Channel start time is above the given date. Flex time is picked till that.',
     );
     return {
-      program: offlineProgram(t1 - t0),
+      program: createOfflineStreamLineupIteam(t1 - t0),
       timeElapsed: 0,
       programIndex: -1,
     };
@@ -47,8 +59,8 @@ export function getCurrentProgramAndTimeElapsed(
   let timeElapsed =
     (time - channel.startTime) % channel.duration.asMilliseconds();
   let currentProgramIndex = -1;
-  for (let y = 0, l2 = channel.programs.$.length; y < l2; y++) {
-    const program = channel.programs[y];
+  for (let y = 0, l2 = channelLineup.items.length; y < l2; y++) {
+    const program = channelLineup.items[y];
     if (timeElapsed - program.durationMs < 0) {
       currentProgramIndex = y;
       // I'm pretty sure this allows for a little skew in
@@ -70,8 +82,40 @@ export function getCurrentProgramAndTimeElapsed(
     throw new Error('No program found; find algorithm fucked up');
   }
 
+  const lineupItem = channelLineup.items[currentProgramIndex];
+  let program: StreamLineupItem;
+  if (isContentItem(lineupItem)) {
+    const backingItem = channel.programs.find(
+      ({ uuid }) => uuid === lineupItem.id,
+    )!;
+    const programItem: ProgramStreamLineupItem = {
+      ...backingItem,
+      type: 'program',
+      plexFile: backingItem.plexFilePath!,
+      ratingKey: backingItem.plexRatingKey!,
+      key: backingItem.externalKey,
+      file: backingItem.filePath!,
+      serverKey: backingItem.externalSourceId,
+      duration: backingItem.durationMs,
+    };
+    program = programItem;
+  } else if (isOfflineItem(lineupItem)) {
+    const programItem: OfflineStreamLineupItem = {
+      duration: lineupItem.durationMs,
+      type: 'offline',
+    };
+    program = programItem;
+  } else {
+    const programItem: RedirectStreamLineupItem = {
+      duration: lineupItem.durationMs,
+      channel: lineupItem.channel,
+      type: 'redirect',
+    };
+    program = programItem;
+  }
+
   return {
-    program: channel.programs[currentProgramIndex].toDTO(),
+    program,
     timeElapsed: timeElapsed,
     programIndex: currentProgramIndex,
   };
@@ -89,7 +133,7 @@ export async function createLineup(
   channel: Loaded<Channel, 'programs'>,
   fillers: Loaded<ChannelFillerShow, 'fillerShow' | 'fillerShow.content'>[],
   isFirst: boolean,
-): Promise<LineupItem[]> {
+): Promise<StreamLineupItem[]> {
   let timeElapsed = obj.timeElapsed;
   // Start time of a file is never consistent unless 0. Run time of an episode can vary.
   // When within 30 seconds of start time, just make the time 0 to smooth things out
@@ -97,9 +141,9 @@ export async function createLineup(
   const activeProgram = obj.program;
   let beginningOffset = 0;
 
-  const lineup: LineupItem[] = [];
+  const lineup: StreamLineupItem[] = [];
 
-  if (!isUndefined(activeProgram.err)) {
+  if (isError(activeProgram)) {
     const remaining = activeProgram.duration - timeElapsed;
     lineup.push({
       type: 'offline',
@@ -113,7 +157,7 @@ export async function createLineup(
     return lineup;
   }
 
-  if (activeProgram.isOffline === true) {
+  if (isOfflineLineupItem(activeProgram)) {
     //offline case
     let remaining = activeProgram.duration - timeElapsed;
     //look for a random filler to play
@@ -215,17 +259,11 @@ export async function createLineup(
 
   return [
     {
+      ...(activeProgram as ProgramStreamLineupItem),
       type: 'program',
-      title: activeProgram.title!,
-      key: activeProgram.key!,
-      plexFile: activeProgram.plexFile!,
-      file: activeProgram.file!,
-      ratingKey: activeProgram.ratingKey!,
       start: timeElapsed,
       streamDuration: activeProgram.duration - timeElapsed,
       beginningOffset: beginningOffset,
-      duration: activeProgram.duration,
-      serverKey: activeProgram.serverKey!,
     },
   ];
 }

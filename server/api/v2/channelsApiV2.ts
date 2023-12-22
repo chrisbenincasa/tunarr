@@ -1,4 +1,8 @@
-import { CreateChannelSchema, ProgramSchema } from 'dizquetv-types/schemas';
+import {
+  ChannelSchema,
+  CreateChannelSchema,
+  ProgramSchema,
+} from 'dizquetv-types/schemas';
 import { isError, isNil, omit, sortBy } from 'lodash-es';
 import z from 'zod';
 import createLogger from '../../logger.js';
@@ -19,28 +23,47 @@ const ChannelLineupQuery = z.object({
 // eslint-disable-next-line @typescript-eslint/require-await
 export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
   fastify.addHook('onError', (req, _, error, done) => {
-    logger.error(req.routeConfig.url, error);
+    logger.error(req.routeOptions.url, error);
     done();
   });
 
-  fastify.get('/channels', async (req, res) => {
-    try {
-      const channels = sortBy(
-        await req.serverCtx.channelDB.getAllChannels(),
-        'number',
-      );
-      return res.send(channels.map((c) => c.toDTO()));
-    } catch (err) {
-      logger.error(req.routeConfig.url, err);
-      return res.status(500).send('error');
-    }
-  });
+  fastify.get(
+    '/channels',
+    {
+      schema: {
+        operationId: 'getChannelsV2',
+        response: {
+          200: z.array(ChannelSchema),
+          500: z.literal('error'),
+        },
+      },
+    },
+    async (req, res) => {
+      try {
+        const channels = sortBy(
+          await req.serverCtx.channelDB.getAllChannels(),
+          'number',
+        );
+        z.array(ChannelSchema).parse(channels.map((c) => c.toDTO()));
+        return res.send(channels.map((c) => c.toDTO()));
+      } catch (err) {
+        console.error(err);
+        return res.status(500).send('error');
+      }
+    },
+  );
 
   fastify.get(
     '/channels/:number',
     {
       schema: {
+        operationId: 'getChannelsByNumberV2',
         params: ChannelNumberParamSchema,
+        response: {
+          200: ChannelSchema,
+          404: z.void(),
+          500: z.void(),
+        },
       },
     },
     async (req, res) => {
@@ -52,11 +75,11 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
         if (!isNil(channel)) {
           return res.send(channel.toDTO());
         } else {
-          return res.status(404);
+          return res.status(404).send();
         }
       } catch (err) {
         logger.error(req.routeConfig.url, err);
-        return res.status(500);
+        return res.status(500).send();
       }
     },
   );
@@ -65,7 +88,12 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
     '/channels',
     {
       schema: {
+        operationId: 'createChannelV2',
         body: CreateChannelSchema,
+        response: {
+          201: z.object({ id: z.string() }),
+          500: z.object({}),
+        },
       },
     },
     async (req, res) => {
@@ -128,8 +156,6 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
         const channel = await req.serverCtx.channelCache.getChannelConfig(
           req.params.number,
         );
-
-        console.log(channel);
 
         if (!isNil(channel)) {
           await channel.programs.init();

@@ -22,6 +22,10 @@ type AxiosConfigWithMetadata = InternalAxiosRequestConfig & {
 };
 
 const logger = createLogger(import.meta);
+
+// export class PlexApiFactory {
+//   #cache
+// }
 export class Plex {
   private axiosInstance: AxiosInstance;
   private _accessToken: string;

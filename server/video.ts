@@ -4,7 +4,10 @@ import { isError, isNil, isUndefined, once } from 'lodash-es';
 import * as fs from 'node:fs';
 import { Readable } from 'stream';
 import constants from './constants.js';
-import { offlineProgram } from './dao/settings.js';
+import {
+  StreamLineupItem,
+  createOfflineStreamLineupIteam,
+} from './dao/derived_types/StreamLineup.js';
 import { Channel } from './dao/entities/Channel.js';
 import { FFMPEG, FfmpegEvents } from './ffmpeg.js';
 import { FfmpegText } from './ffmpegText.js';
@@ -14,7 +17,7 @@ import createLogger from './logger.js';
 import { ProgramPlayer } from './programPlayer.js';
 import { serverContext } from './serverContext.js';
 import { wereThereTooManyAttempts } from './throttler.js';
-import { ContextChannel, LineupItem, Maybe, PlayerContext } from './types.js';
+import { ContextChannel, Maybe, PlayerContext } from './types.js';
 import { TypedEventEmitter } from './types/eventEmitter.js';
 
 const logger = createLogger(import.meta);
@@ -256,7 +259,7 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
     }
 
     // Get video lineup (array of video urls with calculated start times and durations.)
-    let lineupItem: Maybe<LineupItem> =
+    let lineupItem: Maybe<StreamLineupItem> =
       req.serverCtx.channelCache.getCurrentLineupItem(channel.number, t0);
     let currentProgram: helperFuncs.ProgramAndTimeElapsed | undefined;
     let channelContext = channel;
@@ -272,7 +275,12 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
         start: 0,
       };
     } else if (isUndefined(lineupItem)) {
-      currentProgram = helperFuncs.getCurrentProgramAndTimeElapsed(t0, channel);
+      const lineup = await req.serverCtx.channelDB.loadLineup(channel.number);
+      currentProgram = helperFuncs.getCurrentProgramAndTimeElapsed(
+        t0,
+        channel,
+        lineup,
+      );
 
       for (;;) {
         redirectChannels.push(channelContext);
@@ -281,8 +289,8 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
         );
 
         if (
-          !currentProgram.program.isOffline ||
-          currentProgram.program.type != 'redirect'
+          // currentProgram.program.type !== 'offline'
+          currentProgram.program.type !== 'redirect'
         ) {
           break;
         }
@@ -295,7 +303,7 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
           start: 0,
         });
 
-        const newChannelNumber = currentProgram.program.channel!;
+        const newChannelNumber = currentProgram.program.channel;
         const newChannel =
           await req.serverCtx.channelCache.getChannelConfigWithPrograms(
             newChannelNumber,
@@ -307,7 +315,7 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
           );
           logger.error("Invalid redirect to channel that doesn't exist.", err);
           currentProgram = {
-            program: offlineProgram(60000),
+            program: createOfflineStreamLineupIteam(60000),
             timeElapsed: 0,
             programIndex: -1,
           };
@@ -327,6 +335,7 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
           currentProgram = helperFuncs.getCurrentProgramAndTimeElapsed(
             t0,
             newChannel,
+            lineup,
           );
         }
       }
@@ -338,7 +347,7 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
       }
 
       if (
-        currentProgram.program.isOffline &&
+        currentProgram.program.type === 'offline' &&
         channel.programs.length === 1 &&
         currentProgram.programIndex !== -1
       ) {
@@ -347,10 +356,10 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
         //and it's best to give it a long duration to ensure there's always
         //filler to play (if any)
         const t = 365 * 24 * 60 * 60 * 1000;
-        currentProgram.program = offlineProgram(t);
+        currentProgram.program = createOfflineStreamLineupIteam(t);
       } else if (
         allowSkip &&
-        currentProgram.program.isOffline &&
+        currentProgram.program.type === 'offline' &&
         currentProgram.program.duration - currentProgram.timeElapsed <=
           constants.SLACK + 1
       ) {

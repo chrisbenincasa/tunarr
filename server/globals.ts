@@ -1,6 +1,7 @@
 import once from 'lodash-es/once.js';
 import { GlobalOptions, ServerOptions } from './types.js';
 import isUndefined from 'lodash-es/isUndefined.js';
+import { merge } from 'lodash-es';
 
 let _globalOptions: GlobalOptions | undefined;
 let _serverOptions: ServerOptions | undefined;
@@ -26,5 +27,5 @@ export const serverOptions = () => {
     throw new Error('Accessing server options before they were set!');
   }
 
-  return _serverOptions;
+  return merge(globalOptions(), _serverOptions);
 };

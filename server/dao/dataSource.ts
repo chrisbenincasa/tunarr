@@ -13,18 +13,21 @@ import { isUndefined, once } from 'lodash-es';
 import path, { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { globalOptions } from '../globals.js';
+import createLogger from '../logger.js';
 
 // Temporary
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+const logger = createLogger(import.meta);
+
 export const initOrm = once(async () => {
-  const hasExistingDb = fs.existsSync(
-    path.join(globalOptions().database, 'db.db'),
-  );
+  const dbPath = path.join(globalOptions().database, 'db.db');
+  const hasExistingDb = fs.existsSync(dbPath);
+  logger.debug(`${hasExistingDb ? 'Existing' : 'No Existing'} DB at ${dbPath}`);
 
   const orm = await MikroORM.init<BetterSqliteDriver>({
-    dbName: path.resolve(globalOptions().database, 'db.db'),
+    dbName: dbPath,
     baseDir: __dirname,
     entities: ['../build/dao/entities'], // path to our JS entities (dist), relative to `baseDir`
     entitiesTs: ['./entities'], // path to our TS entities (src), relative to `baseDir`
@@ -34,6 +37,7 @@ export const initOrm = once(async () => {
 
   // First launch
   if (!hasExistingDb) {
+    logger.debug('Synchronizing DB');
     await orm.getSchemaGenerator().createSchema();
   }
 

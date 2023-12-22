@@ -1,7 +1,8 @@
-import { FfmpegSettings, Program } from 'dizquetv-types';
+import { FfmpegSettings } from 'dizquetv-types';
 import { EntityManager } from './dao/dataSource.js';
-import { Settings, Watermark } from './dao/settings.js';
+import { StreamLineupItem } from './dao/derived_types/StreamLineup.js';
 import { Channel } from './dao/entities/Channel.js';
+import { Settings, Watermark } from './dao/settings.js';
 
 export type GlobalOptions = {
   database: string;
@@ -16,7 +17,7 @@ export type Maybe<T> = T | undefined;
 export type Nullable<T> = T | null;
 
 export type PlayerContext = {
-  lineupItem: LineupItem;
+  lineupItem: StreamLineupItem;
   ffmpegSettings: FfmpegSettings;
   channel: ContextChannel;
   m3u8: boolean;
@@ -27,105 +28,105 @@ export type PlayerContext = {
   settings: Settings;
 };
 
-type BaseLineupItem = {
-  err?: Error;
-  originalT0?: number;
-  streamDuration?: number;
-  beginningOffset?: number;
-  title?: string;
-};
+// type BaseLineupItem = {
+//   err?: Error;
+//   originalT0?: number;
+//   streamDuration?: number;
+//   beginningOffset?: number;
+//   title?: string;
+// };
 
-export type LineupItem =
-  | OfflineLineupItem
-  | ProgramLineupItem
-  | CommercialLineupItem
-  | LoadingLineupItem;
+// export type LineupItem =
+//   | OfflineLineupItem
+//   | ProgramLineupItem
+//   | CommercialLineupItem
+//   | LoadingLineupItem;
 
-export function isOfflineLineupItem(
-  item: LineupItem,
-): item is OfflineLineupItem {
-  return item.type === 'offline';
-}
+// export function isOfflineLineupItem(
+//   item: LineupItem,
+// ): item is OfflineLineupItem {
+//   return item.type === 'offline';
+// }
 
-export function isCommercialLineupItem(
-  item: LineupItem,
-): item is CommercialLineupItem {
-  return item.type === 'commercial';
-}
+// export function isCommercialLineupItem(
+//   item: LineupItem,
+// ): item is CommercialLineupItem {
+//   return item.type === 'commercial';
+// }
 
-export function isProgramLineupItem(
-  item: LineupItem,
-): item is ProgramLineupItem {
-  return item.type === 'program';
-}
+// export function isProgramLineupItem(
+//   item: LineupItem,
+// ): item is ProgramLineupItem {
+//   return item.type === 'program';
+// }
 
-export function isPlexBackedLineupItem(
-  item: LineupItem,
-): item is PlexBackedLineupItem {
-  return isCommercialLineupItem(item) || isProgramLineupItem(item);
-}
+// export function isPlexBackedLineupItem(
+//   item: LineupItem,
+// ): item is ContentBackedLineupItem {
+//   return isCommercialLineupItem(item) || isProgramLineupItem(item);
+// }
 
-export type PlexBackedLineupItem = CommercialLineupItem | ProgramLineupItem;
+// export type ContentBackedLineupItem = CommercialLineupItem | ProgramLineupItem;
 
-type OfflineLineupItem = BaseLineupItem & {
-  type: 'offline';
-  duration: number;
-  start: number;
-};
+// type OfflineLineupItem = BaseLineupItem & {
+//   type: 'offline';
+//   duration: number;
+//   start: number;
+// };
 
-type LoadingLineupItem = BaseLineupItem & {
-  type: 'loading';
-  streamDuration: number;
-  duration: number;
-  start: number;
-};
+// type LoadingLineupItem = BaseLineupItem & {
+//   type: 'loading';
+//   streamDuration: number;
+//   duration: number;
+//   start: number;
+// };
 
-export type CommercialLineupItem = BaseLineupItem & {
-  type: 'commercial';
-  key: string;
-  plexFile: string;
-  file: string;
-  ratingKey: string;
-  start: number;
-  streamDuration: number;
-  beginningOffset: number;
-  duration: number;
-  serverKey: string;
-  fillerId: string;
-};
+// export type CommercialLineupItem = BaseLineupItem & {
+//   type: 'commercial';
+//   key: string;
+//   plexFile: string;
+//   file: string;
+//   ratingKey: string;
+//   start: number;
+//   streamDuration: number;
+//   beginningOffset: number;
+//   duration: number;
+//   serverKey: string;
+//   fillerId: string;
+// };
 
-type ProgramLineupItem = BaseLineupItem & {
-  type: 'program';
-  key: string;
-  plexFile: string;
-  file: string;
-  ratingKey: string;
-  start: number;
-  streamDuration: number;
-  beginningOffset: number;
-  duration: number;
-  serverKey: string;
-  title: string;
-};
+// type ProgramLineupItem = BaseLineupItem & {
+//   type: 'program';
+//   key: string;
+//   plexFile: string;
+//   file: string;
+//   ratingKey: string;
+//   start: number;
+//   streamDuration: number;
+//   beginningOffset: number;
+//   duration: number;
+//   serverKey: string;
+//   title: string;
+// };
 
-export const programToCommercial = (
-  program: Program,
-): Intersection<CommercialLineupItem, Program> => {
-  return {
-    type: 'commercial',
-    key: program.key!,
-    plexFile: program.plexFile!,
-    file: program.file!,
-    ratingKey: program.ratingKey!,
-    // start: program.st
-    // streamDuration: program.
-    // beginningOffset
-    duration: program.duration,
-    serverKey: program.serverKey!,
-    title: program.title,
-    // fillerId:
-  };
-};
+// export const programToCommercial = (
+//   program: Program,
+// ): Intersection<CommercialLineupItem, Program> => {
+//   return {
+//     type: 'commercial',
+//     key: program.key!,
+//     plexFile: program.plexFile!,
+//     file: program.file!,
+//     ratingKey: program.ratingKey!,
+//     // start: program.st
+//     // streamDuration: program.
+//     // beginningOffset
+//     duration: program.duration,
+//     serverKey: program.serverKey!,
+//     title: program.title,
+//     // fillerId:
+//   };
+// };
 
 type TupleToUnion<T extends ReadonlyArray<unknown>> = T[number];
 

@@ -70,6 +70,12 @@ export class Program extends BaseEntity {
   @Property({ nullable: true })
   plexRatingKey?: string;
 
+  /**
+   * Previously "plexFile"
+   */
+  @Property({ nullable: true })
+  plexFilePath?: string;
+
   @Property({ nullable: true })
   rating?: string;
 
@@ -162,6 +168,18 @@ export enum ProgramType {
 
 function enumKeys<O extends object, K extends keyof O = keyof O>(obj: O): K[] {
   return Object.keys(obj).filter((k) => !Number.isNaN(k)) as K[];
+}
+
+export function programSourceTypeFromString(
+  str: string,
+): ProgramSourceType | undefined {
+  for (const key of enumKeys(ProgramSourceType)) {
+    const value = ProgramSourceType[key];
+    if (key.toLowerCase() === str) {
+      return value;
+    }
+  }
+  return;
 }
 
 export function programTypeFromString(str: string): ProgramType | undefined {

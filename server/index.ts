@@ -14,6 +14,8 @@ import { getSettingsRawDb } from './dao/settings.js';
 import { setGlobalOptions, setServerOptions } from './globals.js';
 import createLogger from './logger.js';
 import { ServerOptions } from './types.js';
+import { existsSync } from 'node:fs';
+import { mkdir, writeFile } from 'node:fs/promises';
 
 const logger = createLogger(import.meta);
 
@@ -55,7 +57,7 @@ yargs(hideBin(process.argv))
   )
   .command(
     'generate-openapi',
-    'Generate',
+    'Generate OpenAPI schema which in turn is used to generate a well-typed API client',
     (yargs) => {
       return yargs
         .option('port', {
@@ -72,7 +74,11 @@ yargs(hideBin(process.argv))
         .inject({ method: 'get', url: '/docs/json' })
         .then((r) => r.body);
       await f.close();
-      console.log(x);
+      if (!existsSync('out')) {
+        await mkdir('out');
+      }
+
+      await writeFile('out/openapi_schema.yaml', Buffer.from(x));
       process.exit(0);
     },
   )

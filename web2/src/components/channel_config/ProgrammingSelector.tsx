@@ -24,7 +24,8 @@ import {
 } from 'dizquetv-types/plex';
 import { isEmpty, isUndefined, keys } from 'lodash-es';
 import React, { useCallback, useEffect } from 'react';
-import { usePlex } from '../../hooks/plexHooks.ts';
+import { sequentialPromises } from '../../helpers/util.ts';
+import { enumeratePlexItem, usePlex } from '../../hooks/plexHooks.ts';
 import { usePlexServerSettings } from '../../hooks/settingsHooks.ts';
 import useStore from '../../store/index.ts';
 import {
@@ -76,6 +77,15 @@ export default function ProgrammingSelector(props: {
       ]);
     }
   }, [selectedServer, directoryChildren]);
+
+  const addSelectedItems = () => {
+    sequentialPromises(selectedMedia, (selected) => {
+      const media = knownMedia[selected.server][selected.guid];
+      return enumeratePlexItem(selectedServer!.name, media)();
+    })
+      .then(console.log)
+      .catch(console.error);
+  };
 
   const removeSelectedItem = useCallback((selectedMedia: SelectedMedia) => {
     removeSelectedMedia(selectedMedia.server, [selectedMedia.guid]);
@@ -145,7 +155,12 @@ export default function ProgrammingSelector(props: {
       </DialogContent>
       <DialogActions>
         <Button onClick={() => props.onClose()}>Cancel</Button>
-        <Button disabled={selectedMedia.length === 0}>Add</Button>
+        <Button
+          onClick={() => addSelectedItems()}
+          disabled={selectedMedia.length === 0}
+        >
+          Add
+        </Button>
       </DialogActions>
     </Dialog>
   );

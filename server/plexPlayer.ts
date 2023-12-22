@@ -6,16 +6,17 @@
  * * Otherwise it returns a stream.
  **/
 import EventEmitter from 'events';
-import constants from './constants.js';
-import { FFMPEG, FfmpegEvents } from './ffmpeg.js';
-import { PlexTranscoder } from './plexTranscoder.js';
-import { PlayerContext, isPlexBackedLineupItem } from './types.js';
-import { TypedEventEmitter } from './types/eventEmitter.js';
 import { isNil, isUndefined } from 'lodash-es';
-import { Player } from './player.js';
 import { Writable } from 'stream';
-import createLogger from './logger.js';
+import constants from './constants.js';
 import { PlexServerSettings } from './dao/entities/PlexServerSettings.js';
+import { FFMPEG, FfmpegEvents } from './ffmpeg.js';
+import createLogger from './logger.js';
+import { Player } from './player.js';
+import { PlexTranscoder } from './plexTranscoder.js';
+import { PlayerContext } from './types.js';
+import { TypedEventEmitter } from './types/eventEmitter.js';
+import { isPlexBackedLineupItem } from './dao/derived_types/StreamLineup.js';
 
 const USED_CLIENTS: Record<string, boolean> = {};
 const logger = createLogger(import.meta);
@@ -96,7 +97,7 @@ export class PlexPlayer extends Player {
     let streamDuration: number | undefined;
     if (
       !isUndefined(lineupItem.streamDuration) &&
-      lineupItem.start + lineupItem.streamDuration + constants.SLACK <
+      (lineupItem.start ?? 0) + lineupItem.streamDuration + constants.SLACK <
         lineupItem.duration
     ) {
       streamDuration = lineupItem.streamDuration / 1000;

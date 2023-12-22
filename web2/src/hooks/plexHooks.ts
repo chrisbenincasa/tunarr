@@ -3,18 +3,16 @@ import {
   PlexEpisode,
   PlexEpisodeView,
   PlexLibraryListing,
-  PlexLibraryMovies,
+  PlexLibrarySection,
   PlexLibrarySections,
-  PlexLibraryShows,
   PlexMedia,
   PlexMovie,
   PlexSeasonView,
   isPlexDirectory,
-  isPlexSeason,
-  isPlexShow,
   isTerminalItem,
 } from 'dizquetv-types/plex';
 import { flattenDeep } from 'lodash-es';
+import { apiClient } from '../external/api.ts';
 import { sequentialPromises } from '../helpers/util.ts';
 
 type PlexPathMappings = {
@@ -57,7 +55,7 @@ export const usePlexTyped = <T>(
     enabled,
   });
 
-export const enumeratePlexItem = <T extends PlexMedia>(
+export const enumeratePlexItem = <T extends PlexMedia | PlexLibrarySection>(
   serverName: string,
   initialItem: T,
 ): (() => Promise<(PlexMovie | PlexEpisode)[]>) => {
@@ -66,7 +64,7 @@ export const enumeratePlexItem = <T extends PlexMedia>(
     fetchPlexPath<T>(serverName, path)();
 
   async function loopInner(
-    item: PlexMedia,
+    item: PlexMedia | PlexLibrarySection,
   ): Promise<(PlexMovie | PlexEpisode)[]> {
     if (isTerminalItem(item)) {
       return [item];
@@ -77,7 +75,16 @@ export const enumeratePlexItem = <T extends PlexMedia>(
       return fetchPlexPathFunc<
         PlexLibraryListing | PlexSeasonView | PlexEpisodeView
       >(path)
-        .then((result) => sequentialPromises(result.Metadata, loopInner))
+        .then(async (result) => {
+          const externalIds = result.Metadata.map(
+            (m) => `plex|${serverName}|${m.ratingKey}`,
+          );
+          const res = await apiClient.batchGetProgramsByExternalIds({
+            externalIds,
+          });
+          console.log(res);
+          return sequentialPromises(result.Metadata, loopInner);
+        })
         .then((allResults) => flattenDeep(allResults));
     }
   }

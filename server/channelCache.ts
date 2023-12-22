@@ -2,17 +2,18 @@ import { isNil, isUndefined } from 'lodash-es';
 import constants from './constants.js';
 import { ChannelDB } from './dao/channelDb.js';
 import { Channel } from './dao/entities/Channel.js';
+import { Nullable } from './types.js';
 import {
-  LineupItem,
-  Nullable,
+  StreamLineupItem,
   isCommercialLineupItem,
   isPlexBackedLineupItem,
-} from './types.js';
+} from './dao/derived_types/StreamLineup.js';
 
 const SLACK = constants.SLACK;
 
 export class ChannelCache {
-  private cache: Record<number, { t0: number; lineupItem: LineupItem }> = {};
+  private cache: Record<number, { t0: number; lineupItem: StreamLineupItem }> =
+    {};
   private fillerPlayTimeCache: Record<string, number> = {};
   private programPlayTimeCache: Record<string, number> = {};
   private channelDb: ChannelDB;
@@ -44,14 +45,14 @@ export class ChannelCache {
   getCurrentLineupItem(
     channelId: number,
     timeNow: number,
-  ): LineupItem | undefined {
+  ): StreamLineupItem | undefined {
     if (isUndefined(this.cache[channelId])) {
       return;
     }
     const recorded = this.cache[channelId];
     const lineupItem = { ...recorded.lineupItem };
     const timeSinceRecorded = timeNow - recorded.t0;
-    let remainingTime = lineupItem.duration - lineupItem.start;
+    let remainingTime = lineupItem.duration - (lineupItem.start ?? 0);
     if (!isUndefined(lineupItem.streamDuration)) {
       remainingTime = Math.min(remainingTime, lineupItem.streamDuration);
     }
@@ -69,7 +70,9 @@ export class ChannelCache {
       }
     }
 
-    lineupItem.start += timeSinceRecorded;
+    lineupItem.start
+      ? (lineupItem.start += timeSinceRecorded)
+      : timeSinceRecorded;
     if (!isNil(lineupItem.streamDuration)) {
       lineupItem.streamDuration -= timeSinceRecorded;
       if (lineupItem.streamDuration < SLACK) {
@@ -77,7 +80,7 @@ export class ChannelCache {
         return;
       }
     }
-    if (lineupItem.start + SLACK > lineupItem.duration) {
+    if (lineupItem.start ?? 0 + SLACK > lineupItem.duration) {
       return;
     }
     return lineupItem;
@@ -101,14 +104,14 @@ export class ChannelCache {
 
   private recordProgramPlayTime(
     channelId: number,
-    lineupItem: LineupItem,
+    lineupItem: StreamLineupItem,
     t0: number,
   ) {
     let remaining: number;
     if (typeof lineupItem.streamDuration !== 'undefined') {
       remaining = lineupItem.streamDuration;
     } else {
-      remaining = lineupItem.duration - lineupItem.start;
+      remaining = lineupItem.duration - (lineupItem.start ?? 0);
     }
     const key = this.getKey(channelId, {
       serverKey: isPlexBackedLineupItem(lineupItem)
@@ -145,7 +148,7 @@ export class ChannelCache {
     }
   }
 
-  recordPlayback(channelId: number, t0: number, lineupItem: LineupItem) {
+  recordPlayback(channelId: number, t0: number, lineupItem: StreamLineupItem) {
     this.recordProgramPlayTime(channelId, lineupItem, t0);
 
     this.cache[channelId] = {

@@ -6,6 +6,10 @@ import {
   ProgrammingListingsState,
   createProgrammingListingsState,
 } from './programmingSelector/store';
+import {
+  ChannelEditorState,
+  createChannelEditorState,
+} from './channelEditor/store.ts';
 
 // type WithSelectors<S> = S extends { getState: () => infer T }
 //   ? S & { use: { [K in keyof T]: () => T[K] } }
@@ -31,7 +35,10 @@ interface SettingsState {
   xmltvSettings?: XmlTvSettings;
 }
 
-type State = SettingsState & ChannelsState & ProgrammingListingsState;
+type State = SettingsState &
+  ChannelsState &
+  ProgrammingListingsState &
+  ChannelEditorState;
 
 const createSettingsSlice: StateCreator<SettingsState> = () => ({
   xmlTvSettings: undefined,
@@ -57,6 +64,7 @@ const useStore = create<State>()(
     ...createSettingsSlice(...set),
     ...createChannelsState(...set),
     ...createProgrammingListingsState(...set),
+    ...createChannelEditorState(...set),
   })),
 );
 

@@ -46,7 +46,7 @@ export class OfflinePlayer extends Player {
       const emitter = new EventEmitter() as TypedEventEmitter<FfmpegEvents>;
       let ffmpeg = this.ffmpeg;
       const lineupItem = this.context.lineupItem;
-      const duration = lineupItem.streamDuration ?? 0 - lineupItem.start;
+      const duration = lineupItem.streamDuration ?? 0 - (lineupItem.start ?? 0);
       let ff: Maybe<Readable>;
       if (this.error) {
         ff = ffmpeg.spawnError('Error', undefined, duration);

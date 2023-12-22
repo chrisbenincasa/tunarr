@@ -87,13 +87,13 @@ function initDbDirectories() {
     fs.mkdirSync(opts.database);
   }
 
-  ['images', 'channels', 'filler', 'custom-shows', 'cache'].forEach(
-    (filePath) => {
-      if (!fs.existsSync(path.join(opts.database, filePath))) {
-        fs.mkdirSync(path.join(opts.database, filePath));
-      }
-    },
-  );
+  ['channel-lineups', 'images', 'cache'].forEach((filePath) => {
+    const pathToCheck = path.join(opts.database, filePath);
+    if (!fs.existsSync(pathToCheck)) {
+      logger.debug(`Creating path at ${pathToCheck}`);
+      fs.mkdirSync(pathToCheck);
+    }
+  });
 
   if (!fs.existsSync(path.join(opts.database, 'cache', 'images'))) {
     fs.mkdirSync(path.join(opts.database, 'cache', 'images'));
