@@ -23,20 +23,14 @@ import {
   Typography,
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { PlexServerInsert, Resolution } from 'dizquetv-types';
+import { PlexServerInsert } from 'dizquetv-types';
 import { fill } from 'lodash-es';
 import { checkNewPlexServers, plexLoginFlow } from '../../helpers/plexLogin.ts';
 import {
   usePlexServerSettings,
   usePlexStreamSettings,
 } from '../../hooks/settingsHooks.ts';
-
-const toStringResolution = (res: Resolution) =>
-  `${res.widthPx}x${res.heightPx}` as const;
-const fromStringResolution = (res: `${number}x${number}`): Resolution => {
-  const [h, w] = res.split('x', 1);
-  return { widthPx: parseInt(w), heightPx: parseInt(h) };
-};
+import { toStringResolution } from '../../helpers/util.ts';
 
 const supportedResolutions = [
   '420x420',

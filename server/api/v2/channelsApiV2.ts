@@ -18,6 +18,7 @@ const ChannelNumberParamSchema = z.object({
 const ChannelLineupQuery = z.object({
   from: z.coerce.date(),
   to: z.coerce.date(),
+  includePrograms: z.coerce.boolean().default(false),
 });
 
 // eslint-disable-next-line @typescript-eslint/require-await

@@ -13,8 +13,13 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { Channel, CreateChannelRequest } from 'dizquetv-types';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ChannelProgrammingConfig } from './channel_config/ChannelProgrammingConfig.tsx';
+import { setCurrentChannel } from '../store/channelEditor/actions.ts';
+import ChannelPropertiesEditor from './channel_config/ChannelPropertiesEditor.tsx';
+import ChannelTranscodingConfig from './channel_config/ChannelTranscodingConfig.tsx';
+import ChannelEpgConfig from './channel_config/ChannelEpgConfig.tsx';
+import { ChannelFlexConfig } from './channel_config/ChannelFlexConfig.tsx';
 
 interface CreateChannelModalProps {
   open: boolean;
@@ -107,6 +112,10 @@ export default function CreateChannelModal(props: CreateChannelModalProps) {
     },
   });
 
+  const [currentTab, setCurrentTab] = useState<TabValues>(
+    props.defaultTab ?? 'properties',
+  );
+
   const onCreateButtonClicked = (channel: Channel) => {
     console.log('CLICK');
     createChannel.mutate({
@@ -120,9 +129,11 @@ export default function CreateChannelModal(props: CreateChannelModalProps) {
     ? existingChannel!
     : defaultNewChannel(props.channelNumber);
 
-  const [currentTab, setCurrentTab] = useState<TabValues>(
-    props.defaultTab ?? 'properties',
-  );
+  useEffect(() => {
+    if (props.open) {
+      setCurrentChannel(channel);
+    }
+  }, [channel, props.open]);
 
   const handleChange = (_: React.SyntheticEvent, newValue: TabValues) =>
     setCurrentTab(newValue);
@@ -150,25 +161,19 @@ export default function CreateChannelModal(props: CreateChannelModalProps) {
             </Tabs>
           </Box>
           <TabPanel value="properties" currentValue={currentTab}>
-            <TextField
-              fullWidth
-              label="Channel Number"
-              value={channel?.number}
-              sx={{ mt: 2, mb: 2 }}
-            />
-            <TextField fullWidth label="Channel Name" value={channel?.name} />
+            <ChannelPropertiesEditor />
           </TabPanel>
           <TabPanel value="programming" currentValue={currentTab}>
             <ChannelProgrammingConfig channel={channel} isNew={props.isNew} />
           </TabPanel>
           <TabPanel value="flex" currentValue={currentTab}>
-            Flex
+            <ChannelFlexConfig />
           </TabPanel>
           <TabPanel value="epg" currentValue={currentTab}>
-            EPG
+            <ChannelEpgConfig />
           </TabPanel>
           <TabPanel value="ffmpeg" currentValue={currentTab}>
-            FFMPEG
+            <ChannelTranscodingConfig />
           </TabPanel>
         </DialogContent>
       )}

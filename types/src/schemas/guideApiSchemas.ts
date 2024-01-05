@@ -1,5 +1,6 @@
 import z from 'zod';
 import { ChannelIconSchema } from './channelSchema.js';
+import { ProgramTypeSchema } from './programmingSchema.js';
 
 export const TvGuideProgramSubtitleSchema = z.object({
   season: z.number().optional(),
@@ -17,6 +18,7 @@ export const TvGuideProgramSchema = z.object({
   title: z.string(),
   sub: TvGuideProgramSubtitleSchema.optional(),
   programDuration: z.number().optional(),
+  type: ProgramTypeSchema,
 });
 
 export const ChannelLineupSchema = z.object({

@@ -2,7 +2,7 @@ import { isError, isNil } from 'lodash-es';
 import z from 'zod';
 import { PlexServerSettings } from '../../dao/entities/PlexServerSettings.js';
 import createLogger from '../../logger.js';
-import { Plex } from '../../plex.js';
+import { PlexApiFactory } from '../../plex.js';
 import { RouterPluginAsyncCallback } from '../../types/serverType.js';
 import { wait } from '../../util.js';
 import { ErrorSchema } from '../schemas/errorSchema.js';
@@ -42,7 +42,7 @@ export const plexServerApiV2: RouterPluginAsyncCallback = async (fastify) => {
           return res.status(404).send({ message: 'Plex server not found.' });
         }
 
-        const plex = new Plex(server);
+        const plex = PlexApiFactory.get(server);
 
         const s = await Promise.race([
           plex.checkServerStatus().then((res) => res === 1),

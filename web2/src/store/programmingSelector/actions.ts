@@ -29,6 +29,10 @@ export const addKnownMediaForServer = (
   parentId?: string,
 ) =>
   useStore.setState((state) => {
+    if (plexMedia.length === 0) {
+      return state;
+    }
+
     // Add new media
     if (!state.knownMediaByServer[serverName]) {
       state.knownMediaByServer[serverName] = {};

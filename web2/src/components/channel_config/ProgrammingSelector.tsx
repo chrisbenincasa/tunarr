@@ -22,11 +22,12 @@ import {
   isPlexSeason,
   isPlexShow,
 } from 'dizquetv-types/plex';
-import { isEmpty, isUndefined, keys } from 'lodash-es';
+import { flattenDeep, isEmpty, isUndefined, keys } from 'lodash-es';
 import React, { useCallback, useEffect } from 'react';
 import { sequentialPromises } from '../../helpers/util.ts';
 import { enumeratePlexItem, usePlex } from '../../hooks/plexHooks.ts';
 import { usePlexServerSettings } from '../../hooks/settingsHooks.ts';
+import { addPlexMediaToCurrentChannel } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
 import {
   addKnownMediaForServer,
@@ -83,7 +84,8 @@ export default function ProgrammingSelector(props: {
       const media = knownMedia[selected.server][selected.guid];
       return enumeratePlexItem(selectedServer!.name, media)();
     })
-      .then(console.log)
+      .then(flattenDeep)
+      .then(addPlexMediaToCurrentChannel)
       .catch(console.error);
   };
 

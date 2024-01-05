@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
+import { Resolution } from 'dizquetv-types';
 
 dayjs.extend(duration);
 
@@ -40,3 +41,12 @@ export function prettyItemDuration(durationMs: number): string {
       .format('m[m]s[s]');
   }
 }
+export const toStringResolution = (res: Resolution) =>
+  `${res.widthPx}x${res.heightPx}` as const;
+
+export const fromStringResolution = (
+  res: `${number}x${number}`,
+): Resolution => {
+  const [h, w] = res.split('x', 1);
+  return { widthPx: parseInt(w), heightPx: parseInt(h) };
+};

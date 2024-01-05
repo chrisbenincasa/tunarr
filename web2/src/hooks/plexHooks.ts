@@ -14,6 +14,7 @@ import {
 import { flattenDeep } from 'lodash-es';
 import { apiClient } from '../external/api.ts';
 import { sequentialPromises } from '../helpers/util.ts';
+import { addKnownMediaForServer } from '../store/programmingSelector/actions.ts';
 
 type PlexPathMappings = {
   '/library/sections': PlexLibrarySections;

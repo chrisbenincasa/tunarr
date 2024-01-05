@@ -33,6 +33,7 @@ export const initOrm = once(async () => {
     entitiesTs: ['./entities'], // path to our TS entities (src), relative to `baseDir`
     debug: !!process.env['DATABASE_DEBUG_LOGGING'],
     namingStrategy: UnderscoreNamingStrategy,
+    forceUndefined: true,
   });
 
   // First launch
