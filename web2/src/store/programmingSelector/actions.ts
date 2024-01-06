@@ -76,11 +76,18 @@ export const addKnownMediaForServer = (
     return state;
   });
 
-export const addSelectedMedia = (serverName: string, media: PlexMedia[]) =>
+export const addSelectedMedia = (
+  serverName: string,
+  media: (PlexLibrarySection | PlexMedia)[],
+) =>
   useStore.setState((state) => {
     const newSelectedMedia = map(
       media,
-      (m) => ({ server: serverName, guid: m.guid }) as SelectedMedia,
+      (m) =>
+        ({
+          server: serverName,
+          guid: isPlexDirectory(m) ? m.uuid : m.guid,
+        }) as SelectedMedia,
     );
     state.selectedMedia = [...state.selectedMedia, ...newSelectedMedia];
   });

@@ -36,7 +36,7 @@ export class XmlTvWriter {
   }
 
   private writePromise(
-    json: Record<number, ChannelPrograms>,
+    json: Record<string | number, ChannelPrograms>,
     xmlSettings: XmlTvSettings,
     throttle: () => Promise<void>,
     cacheImageService: CacheImageService,
@@ -207,8 +207,11 @@ export class XmlTvWriter {
     xw.endElement();
   }
 
-  private _createXMLTVDate(d) {
-    return d.substring(0, 19).replace(/[-T:]/g, '') + ' +0000';
+  private _createXMLTVDate(d: number) {
+    return (
+      new Date(d).toISOString().substring(0, 19).replace(/[-T:]/g, '') +
+      ' +0000'
+    );
   }
 
   async shutdown() {

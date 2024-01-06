@@ -86,6 +86,9 @@ export default function ProgrammingSelector(props: {
     })
       .then(flattenDeep)
       .then(addPlexMediaToCurrentChannel)
+      .then(() => {
+        props.onClose();
+      })
       .catch(console.error);
   };
 

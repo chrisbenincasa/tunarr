@@ -57,13 +57,8 @@ export function PlexTvListItem(
   }, [item.guid, server.name, children]);
 
   const addItem = useCallback(
-    (e: MouseEvent<HTMLButtonElement, MouseEvent>) => {
+    (e: MouseEvent<HTMLButtonElement>) => {
       e.stopPropagation();
-      // if (hasChildren) {
-
-      // } else {
-      // }
-      // Just add the item
       addSelectedMedia(selectedServer!.name, [item]);
     },
     [item, selectedServer],
@@ -73,9 +68,6 @@ export function PlexTvListItem(
     return isPending ? (
       <Skeleton />
     ) : (
-      // <Box
-      //   sx={{ width: '100%', maxHeight: 400, pl: 4, overflowY: 'scroll' }}
-      // >
       <List sx={{ pl: 4 }}>
         {children?.Metadata.map((child, idx, arr) => (
           <PlexTvListItem
@@ -86,7 +78,6 @@ export function PlexTvListItem(
           />
         ))}
       </List>
-      // </Box>
     );
   };
 

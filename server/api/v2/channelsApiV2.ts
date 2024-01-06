@@ -1,7 +1,9 @@
 import {
+  ChannelLineupSchema,
   ChannelSchema,
-  CreateChannelSchema,
+  UpdateChannelRequestSchema,
   ProgramSchema,
+  WorkingProgramSchema,
 } from 'dizquetv-types/schemas';
 import { isError, isNil, omit, sortBy } from 'lodash-es';
 import z from 'zod';
@@ -90,7 +92,7 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
     {
       schema: {
         operationId: 'createChannelV2',
-        body: CreateChannelSchema,
+        body: UpdateChannelRequestSchema,
         response: {
           201: z.object({ id: z.string() }),
           500: z.object({}),
@@ -112,7 +114,7 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
     '/channels/:number',
     {
       schema: {
-        body: CreateChannelSchema,
+        body: UpdateChannelRequestSchema,
         params: ChannelNumberParamSchema,
       },
     },
@@ -178,6 +180,9 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
       schema: {
         params: ChannelNumberParamSchema,
         querystring: ChannelLineupQuery,
+        response: {
+          200: ChannelLineupSchema,
+        },
       },
     },
     async (req, res) => {
@@ -188,6 +193,23 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
       );
 
       return res.send(lineup);
+    },
+  );
+
+  fastify.post(
+    '/channels/:number/lineup',
+    {
+      schema: {
+        params: ChannelNumberParamSchema,
+        body: z.array(WorkingProgramSchema),
+        response: {
+          200: z.object({}),
+        },
+      },
+    },
+    async (req, res) => {
+      console.log(req.body);
+      return res.status(200).send();
     },
   );
 };

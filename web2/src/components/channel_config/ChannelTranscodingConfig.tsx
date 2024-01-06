@@ -4,9 +4,11 @@ import { useFfmpegSettings } from '../../hooks/settingsHooks.ts';
 import {
   CircularProgress,
   FormControl,
+  Input,
   InputLabel,
   MenuItem,
   Select,
+  Skeleton,
   TextField,
 } from '@mui/material';
 import useStore from '../../store/index.ts';
@@ -60,19 +62,25 @@ export default function ChannelTranscodingConfig() {
         <Typography>Transcoding Settings</Typography>
         <FormControl fullWidth margin="normal">
           <InputLabel>Channel Resolution</InputLabel>
-          <Select
-            disabled={
-              isNil(ffmpegSettings) || !ffmpegSettings.enableTranscoding
-            }
-            label="Channel Resolution"
-            value={chosenResolution}
-          >
-            {allResolutionOptions.map((opt) => (
-              <MenuItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </MenuItem>
-            ))}
-          </Select>
+          {ffmpegSettingsLoading ? (
+            <Skeleton>
+              <Input />
+            </Skeleton>
+          ) : (
+            <Select
+              disabled={
+                isNil(ffmpegSettings) || !ffmpegSettings.enableTranscoding
+              }
+              label="Channel Resolution"
+              value={chosenResolution}
+            >
+              {allResolutionOptions.map((opt) => (
+                <MenuItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </MenuItem>
+              ))}
+            </Select>
+          )}
         </FormControl>
         <FormControl margin="normal">
           <TextField

@@ -8,20 +8,20 @@ import {
   Skeleton,
   Tab,
   Tabs,
-  TextField,
 } from '@mui/material';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueries, useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
-import { Channel, CreateChannelRequest } from 'dizquetv-types';
+import { Channel, UpdateChannelRequest } from 'dizquetv-types';
 import React, { useEffect, useState } from 'react';
-import { ChannelProgrammingConfig } from './channel_config/ChannelProgrammingConfig.tsx';
+import { apiClient } from '../external/api.ts';
 import { setCurrentChannel } from '../store/channelEditor/actions.ts';
-import ChannelPropertiesEditor from './channel_config/ChannelPropertiesEditor.tsx';
-import ChannelTranscodingConfig from './channel_config/ChannelTranscodingConfig.tsx';
 import ChannelEpgConfig from './channel_config/ChannelEpgConfig.tsx';
 import { ChannelFlexConfig } from './channel_config/ChannelFlexConfig.tsx';
+import ChannelPropertiesEditor from './channel_config/ChannelPropertiesEditor.tsx';
+import ChannelTranscodingConfig from './channel_config/ChannelTranscodingConfig.tsx';
+import { useChannelAndLineup } from '../hooks/useChannelLineup.ts';
 
-interface CreateChannelModalProps {
+interface EditChannelModalProps {
   open: boolean;
   onClose: () => void;
   defaultTab?: TabValues;
@@ -51,7 +51,7 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
-type TabValues = 'properties' | 'programming' | 'flex' | 'epg' | 'ffmpeg';
+type TabValues = 'properties' | 'flex' | 'epg' | 'ffmpeg';
 
 function defaultNewChannel(num: number): Channel {
   return {
@@ -76,33 +76,17 @@ function defaultNewChannel(num: number): Channel {
   };
 }
 
-export default function CreateChannelModal(props: CreateChannelModalProps) {
+export default function EditChannelSettingsModal(props: EditChannelModalProps) {
   const {
     isPending: channelLoading,
-    data: existingChannel,
-    error: channelError,
-  } = useQuery({
-    queryKey: ['channels', props.channelNumber],
-    queryFn: async ({ queryKey }) => {
-      const res = await fetch(
-        `http://localhost:8000/api/v2/channels/${queryKey[1]}`,
-      );
-      return res.json() as Promise<Channel>;
-    },
-    enabled: !props.isNew,
-  });
+    data: { channel: existingChannel, lineup: existingChannelLineup },
+  } = useChannelAndLineup(props.channelNumber, !props.isNew);
 
   const queryClient = useQueryClient();
 
   const createChannel = useMutation({
-    mutationFn: async (channel: CreateChannelRequest) =>
-      await fetch('http://localhost:8000/api/v2/channels', {
-        body: JSON.stringify(channel),
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }),
+    mutationFn: async (channel: UpdateChannelRequest) =>
+      await apiClient.post('/api/v2/channels', channel),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         exact: false,
@@ -116,8 +100,7 @@ export default function CreateChannelModal(props: CreateChannelModalProps) {
     props.defaultTab ?? 'properties',
   );
 
-  const onCreateButtonClicked = (channel: Channel) => {
-    console.log('CLICK');
+  const onSave = (channel: Channel) => {
     createChannel.mutate({
       ...channel,
     });
@@ -131,15 +114,21 @@ export default function CreateChannelModal(props: CreateChannelModalProps) {
 
   useEffect(() => {
     if (props.open) {
-      setCurrentChannel(channel);
+      setCurrentChannel(channel, existingChannelLineup?.programs ?? []);
     }
-  }, [channel, props.open]);
+  }, [channel, existingChannelLineup, props.open]);
 
   const handleChange = (_: React.SyntheticEvent, newValue: TabValues) =>
     setCurrentTab(newValue);
 
   return (
-    <Dialog open={props.open} onClose={props.onClose} maxWidth="md" fullWidth>
+    <Dialog
+      open={props.open}
+      onClose={props.onClose}
+      maxWidth="md"
+      fullWidth
+      keepMounted={false}
+    >
       <DialogTitle>
         {isEditingExistingChannel
           ? `Edit Channel ${props.channelNumber}`
@@ -154,7 +143,7 @@ export default function CreateChannelModal(props: CreateChannelModalProps) {
           <Box sx={{ borderColor: 'background.paper', borderBottom: 1 }}>
             <Tabs value={currentTab} onChange={handleChange}>
               <Tab value="properties" label="Properties" />
-              <Tab value="programming" label="Programming" />
+              {/* <Tab value="programming" label="Programming" /> */}
               <Tab value="flex" label="Flex" />
               <Tab value="epg" label="EPG" />
               <Tab value="ffmpeg" label="FFMPEG" />
@@ -163,9 +152,9 @@ export default function CreateChannelModal(props: CreateChannelModalProps) {
           <TabPanel value="properties" currentValue={currentTab}>
             <ChannelPropertiesEditor />
           </TabPanel>
-          <TabPanel value="programming" currentValue={currentTab}>
-            <ChannelProgrammingConfig channel={channel} isNew={props.isNew} />
-          </TabPanel>
+          {/* <TabPanel value="programming" currentValue={currentTab}>
+            <ChannelProgrammingConfig />
+          </TabPanel> */}
           <TabPanel value="flex" currentValue={currentTab}>
             <ChannelFlexConfig />
           </TabPanel>
@@ -180,7 +169,7 @@ export default function CreateChannelModal(props: CreateChannelModalProps) {
 
       <DialogActions>
         <Button onClick={props.onClose}>Cancel</Button>
-        <Button onClick={() => onCreateButtonClicked(channel)}>
+        <Button onClick={() => onSave(channel)}>
           {isEditingExistingChannel ? 'Save' : 'Create'}
         </Button>
       </DialogActions>

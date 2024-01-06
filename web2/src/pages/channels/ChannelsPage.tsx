@@ -11,16 +11,22 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { Channel } from 'dizquetv-types';
 import { useState } from 'react';
-import CreateChannelModal from '../../components/EditChannelModal.tsx';
+import EditChannelSettingsModal from '../../components/EditChannelModal.tsx';
 import { useChannels } from '../../hooks/useChannels.ts';
 import { isUndefined, maxBy } from 'lodash-es';
+import SettingsRemoteIcon from '@mui/icons-material/SettingsRemote';
+import EditIcon from '@mui/icons-material/Edit';
+import EditChannelProgrammingModal from '../../components/EditChannelProgrammingModal.tsx';
+import { resetChannelEditorState } from '../../store/channelEditor/actions.ts';
 
 export default function ChannelsPage() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [programmingModalOpen, setProgrammingModalOpen] = useState(false);
   const [channelModalConfig, setChannelModalConfig] = useState<
     { channelNumber: number; isNew: boolean } | undefined
   >(undefined);
@@ -35,6 +41,7 @@ export default function ChannelsPage() {
   if (channelsError) return 'An error occurred!: ' + channelsError.message;
 
   const openModal = (channelNumber?: number) => {
+    resetChannelEditorState();
     setChannelModalConfig({
       channelNumber:
         channelNumber ??
@@ -44,23 +51,40 @@ export default function ChannelsPage() {
     setCreateModalOpen(true);
   };
 
+  const openProgrammingModal = (channelNumber: number) => {
+    resetChannelEditorState();
+    setChannelModalConfig({ channelNumber, isNew: false });
+    setProgrammingModalOpen(true);
+  };
+
   // TODO properly define types from API
   const getDataTableRow = (channel: Channel) => {
     return (
-      <TableRow
-        sx={{ cursor: 'pointer' }}
-        onClick={() => openModal(channel.number)}
-        key={channel.number}
-      >
+      <TableRow key={channel.number}>
         <TableCell width="10%">{channel.number}</TableCell>
         <TableCell width="10%">
           <img style={{ maxHeight: '40px' }} src={channel.icon.path} />
         </TableCell>
         <TableCell>{channel.name}</TableCell>
-        <TableCell width="10%">
-          <IconButton color="error">
-            <DeleteIcon />
-          </IconButton>
+        <TableCell width="15%">
+          <Tooltip title="Edit" placement="top">
+            <IconButton
+              color="primary"
+              onClick={() => openModal(channel.number)}
+            >
+              <EditIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Edit Programs" placement="top">
+            <IconButton onClick={() => openProgrammingModal(channel.number)}>
+              <SettingsRemoteIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Delete" placement="top">
+            <IconButton color="error">
+              <DeleteIcon />
+            </IconButton>
+          </Tooltip>
         </TableCell>
       </TableRow>
     );
@@ -111,11 +135,16 @@ export default function ChannelsPage() {
           <TableBody>{getTableRows()}</TableBody>
         </Table>
       </TableContainer>
-      <CreateChannelModal
+      <EditChannelSettingsModal
         channelNumber={channelModalConfig?.channelNumber ?? -1}
         open={createModalOpen}
         onClose={() => setCreateModalOpen(false)}
         isNew={channelModalConfig?.isNew ?? true}
+      />
+      <EditChannelProgrammingModal
+        channelNumber={channelModalConfig?.channelNumber ?? -1}
+        open={programmingModalOpen}
+        onClose={() => setProgrammingModalOpen(false)}
       />
     </div>
   );

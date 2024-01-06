@@ -59,7 +59,7 @@ export const ChannelSchema = z.object({
   fillerRepeatCooldown: z.number().optional(),
 });
 
-export const CreateChannelSchema = z.object({
+export const UpdateChannelRequestSchema = z.object({
   number: z.number(),
   name: z.string(),
   startTime: z.number(),

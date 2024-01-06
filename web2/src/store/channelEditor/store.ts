@@ -1,23 +1,19 @@
-import { Channel, TvGuideProgram } from 'dizquetv-types';
-import { PlexMedia } from 'dizquetv-types/plex';
-import { get, has } from 'lodash-es';
+import { Channel, EphemeralProgram, TvGuideProgram } from 'dizquetv-types';
 import { StateCreator } from 'zustand';
-
-export type EphemeralProgram = {
-  persisted: false;
-  originalProgram: PlexMedia;
-};
 
 // Represents a program listing in the editor
 export type WorkingProgram = TvGuideProgram | EphemeralProgram;
 
 export function isEphemeralProgram(p: WorkingProgram): p is EphemeralProgram {
-  return has(p, 'persisted') && !get(p, 'persisted');
+  return !p.persisted;
 }
 
 export interface ChannelEditorStateInner {
   currentChannel?: Channel;
   programList: WorkingProgram[];
+  dirty: {
+    programs: boolean;
+  };
 }
 
 export interface ChannelEditorState {
@@ -27,15 +23,14 @@ export interface ChannelEditorState {
 export const initialChannelEditorState: ChannelEditorState = {
   channelEditor: {
     programList: [],
+    dirty: {
+      programs: false,
+    },
   },
 };
 
 export const createChannelEditorState: StateCreator<
   ChannelEditorState
 > = () => {
-  return {
-    channelEditor: {
-      programList: [],
-    },
-  };
+  return initialChannelEditorState;
 };

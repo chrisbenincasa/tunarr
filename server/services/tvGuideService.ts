@@ -3,12 +3,12 @@ import {
   ChannelIcon,
   ChannelLineup,
   Program as ProgramDTO,
+  TvGuideProgram,
+  TvGuideProgramSubtitle,
 } from 'dizquetv-types';
-import { ProgramTypeSchema } from 'dizquetv-types/schemas';
 import { compact, isNil, isUndefined, keys, mapValues } from 'lodash-es';
 import assert from 'node:assert';
 import { MarkRequired } from 'ts-essentials';
-import z from 'zod';
 import constants from '../constants.js';
 import { ChannelDB } from '../dao/channelDb.js';
 import {
@@ -19,7 +19,7 @@ import {
 } from '../dao/derived_types/Lineup.js';
 import { Channel } from '../dao/entities/Channel.js';
 import { Program, programDaoToDto } from '../dao/entities/Program.js';
-import { ChannelIconSchema, getSettings } from '../dao/settings.js';
+import { getSettings } from '../dao/settings.js';
 import createLogger from '../logger.js';
 import { Maybe } from '../types.js';
 import { groupByUniqFunc, wait } from '../util.js';
@@ -44,12 +44,6 @@ type CurrentPlayingProgram = {
   program: CurrentPlayingProgramDetails;
 };
 
-const TvGuideProgramSubtitleSchema = z.object({
-  season: z.number().optional(),
-  episode: z.number().optional(),
-  title: z.string().optional(),
-});
-
 function lineupItemToCurrentProgram(
   lineupItem: LineupItem,
   backingItem?: EntityDTO<Program>,
@@ -72,23 +66,6 @@ function lineupItemToCurrentProgram(
   }
 }
 
-type TvGuideProgramSubtitle = z.infer<typeof TvGuideProgramSubtitleSchema>;
-
-const TvGuideProgramSchema = z.object({
-  start: z.string(),
-  stop: z.string(),
-  summary: z.string().optional(),
-  date: z.string().optional(),
-  rating: z.string().optional(),
-  icon: z.string().optional(),
-  title: z.string(),
-  sub: TvGuideProgramSubtitleSchema.optional(),
-  programDuration: z.number().optional(),
-  type: ProgramTypeSchema,
-});
-
-export type TvGuideProgram = z.infer<typeof TvGuideProgramSchema>;
-
 export type TvGuideChannel = {
   name: string;
   number: number;
@@ -99,13 +76,6 @@ export type ChannelPrograms = {
   channel: TvGuideChannel;
   programs: TvGuideProgram[];
 };
-
-export const ChannelLineupSchema = z.object({
-  icon: ChannelIconSchema.optional(),
-  name: z.string().optional(),
-  number: z.number().optional(),
-  programs: z.array(TvGuideProgramSchema),
-});
 
 type ChannelWithLineup = {
   channel: EntityDTO<Loaded<Channel, 'programs'>>;
@@ -655,8 +625,8 @@ export class TVGuideService {
     dateTo: Date,
   ): Promise<Maybe<ChannelLineup>> {
     await this.get();
-    const beginningTimeMs = dateFrom.toISOString();
-    const endTimeMs = dateTo.toISOString();
+    const beginningTimeMs = dateFrom.getTime();
+    const endTimeMs = dateTo.getTime();
     const { channel, programs } = this.cached[channelNumber];
     if (isNil(channel)) {
       return;
@@ -670,13 +640,13 @@ export class TVGuideService {
     };
 
     for (const program of programs) {
-      let a: string;
+      let a: number;
       if (program.start > beginningTimeMs) {
         a = program.start;
       } else {
         a = beginningTimeMs;
       }
-      let b: string;
+      let b: number;
       if (program.stop < endTimeMs) {
         b = program.stop;
       } else {
@@ -759,10 +729,8 @@ function makeEntry(
   }
   //what data is needed here?
   return {
-    start: new Date(currentProgram.startTimeMs).toISOString(),
-    stop: new Date(
-      currentProgram.startTimeMs + (currentProgram.program.duration ?? 0),
-    ).toISOString(),
+    start: currentProgram.startTimeMs,
+    stop: currentProgram.startTimeMs + (currentProgram.program.duration ?? 0),
     summary: currentProgram.program.summary,
     date: currentProgram.program.date,
     rating: currentProgram.program.rating,
@@ -771,6 +739,7 @@ function makeEntry(
     sub: sub,
     programDuration: currentProgram.program?.duration,
     type: currentProgram.program?.type,
+    persisted: true,
   };
 }
 

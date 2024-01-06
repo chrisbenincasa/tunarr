@@ -19,10 +19,13 @@ import {
   isPlexShow,
 } from 'dizquetv-types/plex';
 import { take } from 'lodash-es';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, MouseEvent } from 'react';
 import { usePlexTyped } from '../../hooks/plexHooks.ts';
 import useStore from '../../store/index.ts';
-import { addKnownMediaForServer } from '../../store/programmingSelector/actions.ts';
+import {
+  addKnownMediaForServer,
+  addSelectedMedia,
+} from '../../store/programmingSelector/actions.ts';
 import { PlexMovieListItem } from './PlexMovieListItem.tsx';
 import { PlexTvListItem } from './PlexShowListItem.tsx';
 
@@ -76,9 +79,13 @@ export function PlexDirectoryListItem(props: {
     setOpen(!open);
   };
 
-  const addItems = () => {
-    console.log(item);
-  };
+  const addItems = useCallback(
+    (e: MouseEvent<HTMLButtonElement>) => {
+      e.stopPropagation();
+      addSelectedMedia(server.name, [item]);
+    },
+    [item, server.name],
+  );
 
   const renderCollectionRow2 = (id: string) => {
     const media = listings[id];
@@ -110,7 +117,7 @@ export function PlexDirectoryListItem(props: {
         <ListItemButton selected={open} onClick={handleClick}>
           <ListItemIcon>{open ? <ExpandLess /> : <ExpandMore />}</ListItemIcon>
           <ListItemText primary={item.title} />
-          <Button onClick={() => addItems()}>Add All</Button>
+          <Button onClick={(e) => addItems(e)}>Add All</Button>
         </ListItemButton>
       </ListItem>
       <Collapse in={open} timeout="auto" unmountOnExit>

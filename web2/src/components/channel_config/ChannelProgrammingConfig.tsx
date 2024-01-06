@@ -3,77 +3,87 @@ import {
   Button,
   FormControl,
   Input,
+  InputLabel,
   List,
   ListItem,
   ListItemText,
-  Skeleton,
 } from '@mui/material';
 import dayjs from 'dayjs';
-import { Channel } from 'dizquetv-types';
-import { useEffect, useState } from 'react';
-import { useChannelLineup } from '../../hooks/useChannelLineup.ts';
-import ProgrammingSelector from './ProgrammingSelector.tsx';
+import { isPlexMovie } from 'dizquetv-types/plex';
+import { useState } from 'react';
+import { setChannelStartTime } from '../../store/channelEditor/actions.ts';
+import { isEphemeralProgram } from '../../store/channelEditor/store.ts';
 import useStore from '../../store/index.ts';
-import { addProgramsToCurrentChannel } from '../../store/channelEditor/actions.ts';
+import ProgrammingSelector from './ProgrammingSelector.tsx';
 
-interface ChannelProgrammingConfigProps {
-  channel: Channel;
-  isNew: boolean;
-}
-
-export function ChannelProgrammingConfig(props: ChannelProgrammingConfigProps) {
+export function ChannelProgrammingConfig() {
+  const channel = useStore((s) => s.channelEditor.currentChannel);
   const [programmingModalOpen, setProgrammingModalOpen] = useState(false);
-  // const { isPending, data: programs } = useQuery({
-  //   queryKey: ['channels', 'programming', props.channel.number],
-  //   queryFn: async () => {
-  //     const res = await fetch(
-  //       `http://localhost:8000/api/v2/channels/${props.channel.number}/programs`,
-  //     );
-  //     return res.json() as Promise<Program[]>;
-  //   },
-  // });
-
-  const { isPending: channelLineupLoading, data: channelLineup } =
-    useChannelLineup(props.channel.number, !props.isNew);
-
   const programList = useStore((s) => s.channelEditor.programList);
 
-  console.log(programList);
-
   const renderPrograms = () => {
-    return channelLineup?.programs?.map((p) => {
-      // const title = `${p.title}`
-      let title: string = p.title;
-      if (p.type === 'flex') {
-        title = 'Flex';
+    return programList.map((p) => {
+      const startTime = dayjs(p.start).toString();
+
+      if (isEphemeralProgram(p)) {
+        let itemTitle: string;
+        if (isPlexMovie(p.originalProgram)) {
+          itemTitle = p.originalProgram.title;
+        } else {
+          itemTitle = `${p.originalProgram.grandparentTitle} - ${p.originalProgram.title}`;
+        }
+        const title = `${startTime} ${itemTitle}`;
+        return (
+          <ListItem key={p.start}>
+            <ListItemText primary={title} sx={{ fontStyle: 'italic' }} />
+          </ListItem>
+        );
+      } else {
+        // const title = `${p.title}`
+        let title: string = p.title;
+        if (p.type === 'flex') {
+          title = 'Flex';
+        }
+
+        title = `${startTime} ${title}`;
+
+        return (
+          <ListItem key={p.start}>
+            <ListItemText primary={title} />
+          </ListItem>
+        );
       }
-
-      title = `${p.start} ${title}`;
-
-      return (
-        <ListItem key={p.start}>
-          <ListItemText primary={title} />
-        </ListItem>
-      );
     });
   };
 
-  useEffect(() => {
-    if (channelLineup) {
-      addProgramsToCurrentChannel(channelLineup.programs);
-    }
-  }, [channelLineup]);
+  const handleStartTimeChange = (value: string) => {
+    setChannelStartTime(dayjs(value).unix());
+  };
 
-  // HACK
-  const dt = dayjs(props.channel.startTime).toISOString().replace('Z', '');
+  const startTime = channel ? dayjs(channel.startTime * 1000) : dayjs();
+  const endTime = startTime.add(channel?.duration ?? 0, 'milliseconds');
 
   return (
     <Box display="flex" flexDirection="column">
-      <Box>
-        <FormControl>
-          <Input type="datetime-local" value={dt} />
+      <Box display="flex">
+        <FormControl margin="normal" sx={{ flex: 1, mr: 2 }}>
+          <InputLabel>Programming Start</InputLabel>
+          <Input
+            type="datetime-local"
+            value={startTime.toISOString().replace('Z', '')}
+            onChange={(e) => handleStartTimeChange(e.target.value)}
+          />
         </FormControl>
-
+        <FormControl margin="normal" sx={{ flex: 1 }}>
+          <InputLabel>Programming End</InputLabel>
+          <Input
+            disabled
+            type="datetime-local"
+            value={endTime.toISOString().replace('Z', '')}
+          />
+        </FormControl>
+      </Box>
+      <Box>
         <Button
           variant="contained"
           onClick={() => setProgrammingModalOpen(true)}
@@ -83,13 +93,7 @@ export function ChannelProgrammingConfig(props: ChannelProgrammingConfigProps) {
       </Box>
       <Box display="flex">
         <Box sx={{ flex: 1, maxHeight: 400, overflowY: 'auto' }}>
-          {channelLineupLoading ? (
-            <Skeleton>
-              <List />
-            </Skeleton>
-          ) : (
-            <List dense>{renderPrograms()}</List>
-          )}
+          <List dense>{renderPrograms()}</List>
         </Box>
       </Box>
       <ProgrammingSelector

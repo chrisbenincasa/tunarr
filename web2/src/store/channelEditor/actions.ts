@@ -1,49 +1,111 @@
-import { Channel } from 'dizquetv-types';
-import { PlexMedia, isPlexEpisode } from 'dizquetv-types/plex';
+import { Channel, EphemeralProgram } from 'dizquetv-types';
+import { PlexEpisode, PlexMovie, isPlexEpisode } from 'dizquetv-types/plex';
 import useStore from '..';
-import {
-  EphemeralProgram,
-  WorkingProgram,
-  initialChannelEditorState,
-} from './store.ts';
+import { WorkingProgram, initialChannelEditorState } from './store.ts';
+import { sumBy } from 'lodash-es';
 
-// export const resetChannelEditorState = useStore.setState((state) => {
-//   const newState = {
-//     ...state,
-//     channelEditor: initialChannelEditorState,
-//   };
+export const resetChannelEditorState = () =>
+  useStore.setState((state) => {
+    const newState = {
+      ...state,
+      ...initialChannelEditorState,
+    };
 
-//   return newState;
-// });
+    return newState;
+  });
 
-export const setCurrentChannel = (channel: Channel) =>
+export const setCurrentChannel = (channel: Channel, lineup: WorkingProgram[]) =>
   useStore.setState((state) => {
     state.channelEditor.currentChannel = channel;
+    state.channelEditor.programList = [...lineup];
+  });
+
+export const updateCurrentChannel = (channel: Partial<Channel>) =>
+  useStore.setState((state) => {
+    if (state.channelEditor.currentChannel) {
+      state.channelEditor.currentChannel = {
+        ...state.channelEditor.currentChannel,
+        ...channel,
+      };
+    }
   });
 
 export const addProgramsToCurrentChannel = (programs: WorkingProgram[]) =>
   useStore.setState((state) => {
-    console.log({ ...state.channelEditor });
     state.channelEditor.programList.push(...programs);
   });
 
-export const addPlexMediaToCurrentChannel = (programs: PlexMedia[]) =>
+export const setChannelStartTime = (
+  startTime: number, // Epoch seconds...for now
+) =>
   useStore.setState((state) => {
     if (state.channelEditor.currentChannel) {
-      const ephemeralPrograms: EphemeralProgram[] = programs.map((program) => {
-        if (isPlexEpisode(program)) {
-          return {
-            persisted: false,
-            originalProgram: program,
-          };
-        } else {
-          return {
-            persisted: false,
-            originalProgram: program,
-          };
-        }
-      });
+      state.channelEditor.currentChannel.startTime = startTime;
+      state.channelEditor.dirty.programs = true;
+      let lastStartTime = startTime * 1000; // These durations deal in millis...annoying. Will fix
+      for (const program of state.channelEditor.programList) {
+        const endTime = lastStartTime + program.programDuration;
+        program.start = lastStartTime;
+        program.stop = endTime;
+        lastStartTime = endTime;
+      }
+    }
+  });
 
-      state.channelEditor.programList.push(...ephemeralPrograms);
+export const addPlexMediaToCurrentChannel = (
+  programs: (PlexMovie | PlexEpisode)[],
+) =>
+  useStore.setState((state) => {
+    if (state.channelEditor.currentChannel && programs.length > 0) {
+      state.channelEditor.dirty.programs = true;
+      const ephemeralPrograms: Omit<EphemeralProgram, 'start' | 'stop'>[] =
+        programs.map((program) => {
+          if (isPlexEpisode(program)) {
+            return {
+              persisted: false,
+              originalProgram: program,
+              programDuration: program.duration,
+            };
+          } else {
+            return {
+              persisted: false,
+              originalProgram: program,
+              programDuration: program.duration,
+            };
+          }
+        });
+
+      const oldDuration = state.channelEditor.currentChannel.duration;
+      const newDuration =
+        oldDuration + sumBy(ephemeralPrograms, (p) => p.programDuration);
+
+      // Set the new channel duration based on the new program durations
+      state.channelEditor.currentChannel.duration = newDuration;
+
+      // Set the new channel start time to "now". We can play with this later
+      // if we don't want to interrupt current programming when updating the lineup
+      let lastStartTime = new Date().getTime();
+
+      // Update the start time for all existing programs
+      for (const program of state.channelEditor.programList) {
+        const endTime = lastStartTime + program.programDuration;
+        program.start = lastStartTime;
+        program.stop = endTime;
+        lastStartTime = endTime;
+      }
+
+      // Add start/end times for all incoming programs
+      const programsWithStart: EphemeralProgram[] = [];
+      for (const program of ephemeralPrograms) {
+        const endTime = lastStartTime + program.programDuration;
+        programsWithStart.push({
+          ...program,
+          start: lastStartTime,
+          stop: endTime,
+        });
+        lastStartTime = endTime;
+      }
+
+      state.channelEditor.programList.push(...programsWithStart);
     }
   });

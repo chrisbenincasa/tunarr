@@ -382,6 +382,7 @@ export function isPlexShowLibrary(
 }
 
 export type PlexMedia = PlexMovie | PlexTvShow | PlexTvSeason | PlexEpisode;
+export type PlexTerminalMedia = PlexMovie | PlexEpisode; // Media that has no children
 export type PlexParentMediaType = PlexTvShow | PlexTvSeason;
 export type PlexChildType<T> = PlexTvShow extends T
   ? PlexTvSeason

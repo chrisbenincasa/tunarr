@@ -1,5 +1,5 @@
 import { QueryOrder } from '@mikro-orm/core';
-import { CreateChannelRequest } from 'dizquetv-types';
+import { UpdateChannelRequest } from 'dizquetv-types';
 import { isNull } from 'lodash-es';
 import { Low } from 'lowdb';
 import { JSONPreset } from 'lowdb/node';
@@ -23,7 +23,7 @@ export class ChannelDB {
       .findOne({ number }, { populate: ['programs'] });
   }
 
-  async saveChannel(channel: CreateChannelRequest) {
+  async saveChannel(channel: UpdateChannelRequest) {
     const em = getEm();
     const existing = await em.findOne(Channel, { number: channel.number });
     if (!isNull(existing)) {
@@ -40,7 +40,7 @@ export class ChannelDB {
     return entity.uuid;
   }
 
-  async updateChannel(id: string, channel: CreateChannelRequest) {
+  async updateChannel(id: string, channel: UpdateChannelRequest) {
     const em = getEm();
     await em.nativeUpdate(Channel, { uuid: id }, channel);
     await em.flush();

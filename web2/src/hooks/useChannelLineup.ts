@@ -1,18 +1,54 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQueries, useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
-import { ChannelLineup } from 'dizquetv-types';
+import { apiClient } from '../external/api.ts';
 
 export const useChannelLineup = (number: number, enabled: boolean = true) => {
-  const query = new URLSearchParams({
-    from: dayjs().toISOString(),
-    to: dayjs().add(2, 'days').toISOString(),
-  }).toString();
   return useQuery({
     queryKey: ['channels', number, 'lineup'],
     queryFn: () =>
-      fetch(
-        `http://localhost:8000/api/v2/channels/${number}/lineup?${query}`,
-      ).then((res) => res.json() as Promise<ChannelLineup>),
+      apiClient.get('/api/v2/channels/:number/lineup', {
+        params: { number },
+        queries: {
+          from: dayjs().toISOString(),
+          to: dayjs().add(2, 'days').toISOString(),
+        },
+      }),
     enabled,
   });
 };
+
+export const useChannelAndLineup = (number: number, enabled: boolean = true) =>
+  useQueries({
+    queries: [
+      {
+        queryKey: ['channels', number] as [string, number],
+        queryFn: async () =>
+          apiClient.get('/api/v2/channels/:number', {
+            params: { number },
+          }),
+        enabled: number > 0 && enabled,
+      },
+      {
+        queryKey: ['channels', number, 'lineup'],
+        queryFn: async () =>
+          apiClient.get('/api/v2/channels/:number/lineup', {
+            params: { number },
+            queries: {
+              from: dayjs().toISOString(),
+              to: dayjs().add(2, 'days').toISOString(),
+            },
+          }),
+        enabled: number > 0 && enabled,
+      },
+    ],
+    combine: ([channelResult, lineupResult]) => {
+      return {
+        error: channelResult.error || lineupResult.error,
+        isPending: channelResult.isPending || lineupResult.isPending,
+        data: {
+          channel: channelResult.data,
+          lineup: lineupResult.data,
+        },
+      };
+    },
+  });
