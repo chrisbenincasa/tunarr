@@ -10,6 +10,7 @@ import z from 'zod';
 import createLogger from '../../logger.js';
 import { RouterPluginAsyncCallback } from '../../types/serverType.js';
 import { attempt } from '../../util.js';
+import dayjs from 'dayjs';
 
 const logger = createLogger(import.meta);
 
@@ -18,8 +19,8 @@ const ChannelNumberParamSchema = z.object({
 });
 
 const ChannelLineupQuery = z.object({
-  from: z.coerce.date(),
-  to: z.coerce.date(),
+  from: z.coerce.date().optional(),
+  to: z.coerce.date().optional(),
   includePrograms: z.coerce.boolean().default(false),
 });
 
@@ -182,14 +183,29 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
         querystring: ChannelLineupQuery,
         response: {
           200: ChannelLineupSchema,
+          404: z.object({ error: z.string() }),
         },
       },
     },
     async (req, res) => {
+      const channel = await req.serverCtx.channelDB.getChannel(
+        req.params.number,
+      );
+
+      if (!channel) {
+        return res.status(404).send({ error: 'Channel Not Found' });
+      }
+
+      const startTime = req.query.from ?? new Date();
+      const endTime =
+        req.query.to ?? dayjs(startTime).add(channel.duration).toDate();
+
+      // Validate start and end time
+
       const lineup = await req.serverCtx.guideService.getChannelLineup(
         req.params.number,
-        req.query.from,
-        req.query.to,
+        startTime,
+        endTime,
       );
 
       return res.send(lineup);

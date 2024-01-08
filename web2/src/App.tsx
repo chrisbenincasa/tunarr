@@ -16,7 +16,7 @@ import {
 } from '@mui/material';
 import Container from '@mui/material/Container';
 import CssBaseline from '@mui/material/CssBaseline';
-import { ReactNode, useState } from 'react';
+import React, { ReactNode, useState } from 'react';
 import { Outlet, Link as RouterLink } from 'react-router-dom';
 import './App.css';
 import ServerEvents from './components/ServerEvents.tsx';
@@ -157,7 +157,7 @@ export function Root() {
             {navItems
               .filter((item) => item.visible)
               .map((item) => (
-                <>
+                <React.Fragment key={item.name}>
                   <ListItemButton
                     to={item.path}
                     key={item.name}
@@ -185,7 +185,7 @@ export function Root() {
                       ))}
                     </List>
                   ) : null}
-                </>
+                </React.Fragment>
               ))}
             <Divider sx={{ my: 1 }} />
           </List>
@@ -213,7 +213,7 @@ export function Root() {
   );
 }
 
-function App() {
+export default function App() {
   return (
     <>
       <Link to={'/channels'} component={RouterLink}>
@@ -222,5 +222,3 @@ function App() {
     </>
   );
 }
-
-export default App;

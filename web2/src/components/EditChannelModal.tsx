@@ -9,17 +9,17 @@ import {
   Tab,
   Tabs,
 } from '@mui/material';
-import { useMutation, useQueries, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { Channel, UpdateChannelRequest } from 'dizquetv-types';
 import React, { useEffect, useState } from 'react';
 import { apiClient } from '../external/api.ts';
+import { useChannelAndLineup } from '../hooks/useChannelLineup.ts';
 import { setCurrentChannel } from '../store/channelEditor/actions.ts';
 import ChannelEpgConfig from './channel_config/ChannelEpgConfig.tsx';
 import { ChannelFlexConfig } from './channel_config/ChannelFlexConfig.tsx';
 import ChannelPropertiesEditor from './channel_config/ChannelPropertiesEditor.tsx';
 import ChannelTranscodingConfig from './channel_config/ChannelTranscodingConfig.tsx';
-import { useChannelAndLineup } from '../hooks/useChannelLineup.ts';
 
 interface EditChannelModalProps {
   open: boolean;

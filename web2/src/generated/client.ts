@@ -1142,12 +1142,12 @@ const endpoints = makeApi([
       {
         name: 'from',
         type: 'Query',
-        schema: z.string().datetime({ offset: true }),
+        schema: z.string().datetime({ offset: true }).optional(),
       },
       {
         name: 'to',
         type: 'Query',
-        schema: z.string().datetime({ offset: true }),
+        schema: z.string().datetime({ offset: true }).optional(),
       },
       {
         name: 'includePrograms',
@@ -1201,6 +1201,13 @@ const endpoints = makeApi([
         }),
       ),
     }),
+    errors: [
+      {
+        status: 404,
+        description: `Default Response`,
+        schema: z.object({ error: z.string() }),
+      },
+    ],
   },
   {
     method: 'post',

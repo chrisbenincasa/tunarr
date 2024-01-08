@@ -1,44 +1,59 @@
-import { useQueries, useQuery } from '@tanstack/react-query';
+import { DataTag, useQueries, useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
+import { Channel, ChannelLineup } from 'dizquetv-types';
 import { apiClient } from '../external/api.ts';
+import { channelQuery } from './useChannels.ts';
 
-export const useChannelLineup = (number: number, enabled: boolean = true) => {
-  return useQuery({
-    queryKey: ['channels', number, 'lineup'],
-    queryFn: () =>
+export const lineupQuery = (
+  number: number,
+  dateRange: { start: dayjs.Dayjs; end: dayjs.Dayjs } | null,
+  enabled: boolean,
+) => {
+  const dateRangeKey = `${dateRange?.start?.unix() ?? 'null'}_${
+    dateRange?.end?.unix() ?? 'null'
+  }`;
+  return {
+    queryKey: ['channels', number, 'lineup', dateRangeKey] as DataTag<
+      ['channels', number, 'lineup', string],
+      ChannelLineup
+    >,
+    queryFn: async () =>
       apiClient.get('/api/v2/channels/:number/lineup', {
         params: { number },
         queries: {
-          from: dayjs().toISOString(),
-          to: dayjs().add(2, 'days').toISOString(),
+          from: dateRange?.start.toISOString(),
+          to: dateRange?.end.toISOString(),
         },
       }),
-    enabled,
-  });
+    enabled: number > 0 && enabled,
+  };
 };
 
-export const useChannelAndLineup = (number: number, enabled: boolean = true) =>
+export const useChannelLineup = (number: number, enabled: boolean = true) => {
+  return useQuery(
+    lineupQuery(
+      number,
+      {
+        start: dayjs(),
+        end: dayjs().add(2, 'days'),
+      },
+      enabled,
+    ),
+  );
+};
+
+export const useChannelAndLineup = (
+  number: number,
+  dateRange: { start: dayjs.Dayjs; end: dayjs.Dayjs } | null,
+  enabled: boolean = true,
+  initialData?: { channel?: Channel; lineup?: ChannelLineup },
+) =>
   useQueries({
     queries: [
+      { ...channelQuery(number, enabled), initialData: initialData?.channel },
       {
-        queryKey: ['channels', number] as [string, number],
-        queryFn: async () =>
-          apiClient.get('/api/v2/channels/:number', {
-            params: { number },
-          }),
-        enabled: number > 0 && enabled,
-      },
-      {
-        queryKey: ['channels', number, 'lineup'],
-        queryFn: async () =>
-          apiClient.get('/api/v2/channels/:number/lineup', {
-            params: { number },
-            queries: {
-              from: dayjs().toISOString(),
-              to: dayjs().add(2, 'days').toISOString(),
-            },
-          }),
-        enabled: number > 0 && enabled,
+        ...lineupQuery(number, dateRange, enabled),
+        initialData: initialData?.lineup,
       },
     ],
     combine: ([channelResult, lineupResult]) => {

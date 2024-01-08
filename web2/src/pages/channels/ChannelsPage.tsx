@@ -1,5 +1,7 @@
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
+import SettingsRemoteIcon from '@mui/icons-material/SettingsRemote';
 import {
   Box,
   Button,
@@ -15,13 +17,12 @@ import {
   Typography,
 } from '@mui/material';
 import { Channel } from 'dizquetv-types';
-import { useState } from 'react';
-import EditChannelSettingsModal from '../../components/EditChannelModal.tsx';
-import { useChannels } from '../../hooks/useChannels.ts';
 import { isUndefined, maxBy } from 'lodash-es';
-import SettingsRemoteIcon from '@mui/icons-material/SettingsRemote';
-import EditIcon from '@mui/icons-material/Edit';
+import { useState } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
+import EditChannelSettingsModal from '../../components/EditChannelModal.tsx';
 import EditChannelProgrammingModal from '../../components/EditChannelProgrammingModal.tsx';
+import { useChannels } from '../../hooks/useChannels.ts';
 import { resetChannelEditorState } from '../../store/channelEditor/actions.ts';
 
 export default function ChannelsPage() {
@@ -70,13 +71,17 @@ export default function ChannelsPage() {
           <Tooltip title="Edit" placement="top">
             <IconButton
               color="primary"
-              onClick={() => openModal(channel.number)}
+              to={`/channels/${channel.number}/edit`}
+              component={RouterLink}
             >
               <EditIcon />
             </IconButton>
           </Tooltip>
           <Tooltip title="Edit Programs" placement="top">
-            <IconButton onClick={() => openProgrammingModal(channel.number)}>
+            <IconButton
+              to={`/channels/${channel.number}/programming`}
+              component={RouterLink}
+            >
               <SettingsRemoteIcon />
             </IconButton>
           </Tooltip>
@@ -135,7 +140,7 @@ export default function ChannelsPage() {
           <TableBody>{getTableRows()}</TableBody>
         </Table>
       </TableContainer>
-      <EditChannelSettingsModal
+      {/* <EditChannelSettingsModal
         channelNumber={channelModalConfig?.channelNumber ?? -1}
         open={createModalOpen}
         onClose={() => setCreateModalOpen(false)}
@@ -145,7 +150,7 @@ export default function ChannelsPage() {
         channelNumber={channelModalConfig?.channelNumber ?? -1}
         open={programmingModalOpen}
         onClose={() => setProgrammingModalOpen(false)}
-      />
+      /> */}
     </div>
   );
 }
