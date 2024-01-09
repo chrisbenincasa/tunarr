@@ -36,7 +36,11 @@ export const ChannelLineupSchema = z.object({
 // been saved as part of the Channel's programs, yet.
 export const EphemeralProgramSchema = z.object({
   persisted: z.literal(false),
-  originalProgram: z.union([PlexEpisodeSchema, PlexMovieSchema]),
+  originalProgram: z.discriminatedUnion('type', [
+    PlexEpisodeSchema,
+    PlexMovieSchema,
+  ]),
+  externalSourceName: z.string().optional(), // e.g. Plex server name
   start: z.number(),
   stop: z.number(),
   programDuration: z.number(),

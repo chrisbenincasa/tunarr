@@ -82,7 +82,7 @@ export default function ProgrammingSelector(props: {
   const addSelectedItems = () => {
     sequentialPromises(selectedMedia, (selected) => {
       const media = knownMedia[selected.server][selected.guid];
-      return enumeratePlexItem(selectedServer!.name, media)();
+      return enumeratePlexItem(selected.server, media)();
     })
       .then(flattenDeep)
       .then(addPlexMediaToCurrentChannel)

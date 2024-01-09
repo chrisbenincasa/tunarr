@@ -1,16 +1,19 @@
+import dayjs from 'dayjs';
+import { isEphemeralProgram } from 'dizquetv-types';
 import {
   ChannelLineupSchema,
   ChannelSchema,
-  UpdateChannelRequestSchema,
   ProgramSchema,
+  UpdateChannelRequestSchema,
   WorkingProgramSchema,
 } from 'dizquetv-types/schemas';
-import { isError, isNil, omit, sortBy } from 'lodash-es';
+import { filter, isError, isNil, omit, reduce, sortBy } from 'lodash-es';
 import z from 'zod';
+import { getEm } from '../../dao/dataSource.js';
 import createLogger from '../../logger.js';
 import { RouterPluginAsyncCallback } from '../../types/serverType.js';
 import { attempt } from '../../util.js';
-import dayjs from 'dayjs';
+import { programMinter } from '../../util/programMinter.js';
 
 const logger = createLogger(import.meta);
 
@@ -197,10 +200,14 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
       }
 
       const startTime = req.query.from ?? new Date();
-      const endTime =
-        req.query.to ?? dayjs(startTime).add(channel.duration).toDate();
+      const duration =
+        channel.duration.asMilliseconds() <= 0
+          ? dayjs.duration(1, 'hour')
+          : channel.duration;
+      const endTime = req.query.to ?? dayjs(startTime).add(duration).toDate();
 
       // Validate start and end time
+      console.log(startTime, endTime, channel.durationMs);
 
       const lineup = await req.serverCtx.guideService.getChannelLineup(
         req.params.number,
@@ -224,8 +231,30 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      console.log(req.body);
+      const programsWithIndex = zipWithIndex(req.body);
+      console.log(programsWithIndex);
+      const nonPersisted = filter(req.body, isEphemeralProgram);
+      const minter = programMinter(getEm());
+
+      const programsToPersist = filter(
+        nonPersisted,
+        (p) => !isNil(p.externalSourceName),
+      ).map((p) => minter(p.externalSourceName!, p.originalProgram));
+
+      console.log(programsToPersist);
       return res.status(200).send();
     },
   );
 };
+
+function zipWithIndex<T>(
+  arr: ReadonlyArray<T>,
+): ReadonlyArray<T & { index: number }> {
+  return reduce(
+    arr,
+    (prev, curr, i) => {
+      return [...prev, { ...curr, index: i }];
+    },
+    [],
+  );
+}

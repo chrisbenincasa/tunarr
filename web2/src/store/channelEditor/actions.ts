@@ -1,8 +1,9 @@
 import { Channel, EphemeralProgram } from 'dizquetv-types';
-import { PlexEpisode, PlexMovie, isPlexEpisode } from 'dizquetv-types/plex';
-import useStore from '..';
-import { WorkingProgram, initialChannelEditorState } from './store.ts';
+import { isPlexEpisode } from 'dizquetv-types/plex';
 import { sumBy } from 'lodash-es';
+import useStore from '..';
+import { PlexMediaWithServerName } from '../../hooks/plexHooks.ts';
+import { WorkingProgram, initialChannelEditorState } from './store.ts';
 
 export const resetChannelEditorState = () =>
   useStore.setState((state) => {
@@ -53,26 +54,31 @@ export const setChannelStartTime = (
   });
 
 export const addPlexMediaToCurrentChannel = (
-  programs: (PlexMovie | PlexEpisode)[],
+  programs: PlexMediaWithServerName[],
 ) =>
   useStore.setState((state) => {
     if (state.channelEditor.currentChannel && programs.length > 0) {
       state.channelEditor.dirty.programs = true;
       const ephemeralPrograms: Omit<EphemeralProgram, 'start' | 'stop'>[] =
         programs.map((program) => {
+          let ephemeralProgram: Omit<EphemeralProgram, 'start' | 'stop'>;
           if (isPlexEpisode(program)) {
-            return {
+            ephemeralProgram = {
               persisted: false,
               originalProgram: program,
               programDuration: program.duration,
+              externalSourceName: program.serverName,
             };
           } else {
-            return {
+            ephemeralProgram = {
               persisted: false,
               originalProgram: program,
               programDuration: program.duration,
+              externalSourceName: program.serverName,
             };
           }
+
+          return ephemeralProgram;
         });
 
       const oldDuration = state.channelEditor.currentChannel.duration;

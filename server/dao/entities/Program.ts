@@ -76,6 +76,7 @@ export class Program extends BaseEntity {
   @Property({ nullable: true })
   plexFilePath?: string;
 
+  // G, PG, etc
   @Property({ nullable: true })
   rating?: string;
 

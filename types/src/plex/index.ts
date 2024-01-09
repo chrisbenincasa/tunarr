@@ -136,7 +136,7 @@ export const PlexJoinItemSchema = z.object({
 
 export type PlexJoinItem = z.infer<typeof PlexJoinItemSchema>;
 
-const neverDirectory = z.object({ directory: z.never() });
+const neverDirectory = z.object({ directory: z.never().optional() });
 
 export const PlexMovieSchema = z
   .object({
@@ -145,7 +145,7 @@ export const PlexMovieSchema = z
     guid: z.string(),
     editionTitle: z.string(),
     studio: z.string(),
-    type: z.string(),
+    type: z.literal('movie'),
     title: z.string(),
     titleSort: z.string(),
     contentRating: z.string(),
@@ -178,9 +178,9 @@ export type PlexMovie = z.infer<typeof PlexMovieSchema>;
 export const PlexTvShowSchema = z
   .object({
     addedAt: z.number(),
-    art: z.string(),
-    audienceRating: z.number(),
-    audienceRatingImage: z.string(),
+    art: z.string().optional(),
+    audienceRating: z.number().optional(),
+    audienceRatingImage: z.string().optional(),
     childCount: z.number(),
     Collection: z.array(PlexJoinItemSchema).optional(),
     contentRating: z.string(),
@@ -201,7 +201,7 @@ export const PlexTvShowSchema = z
     theme: z.string(),
     thumb: z.string(),
     title: z.string(),
-    type: z.string(),
+    type: z.literal('show'),
     updatedAt: z.number(),
     viewedLeafCount: z.number(),
     year: z.number(),
@@ -218,7 +218,7 @@ export const PlexTvSeasonSchema = z
     guid: z.string(),
     parentGuid: z.string(),
     parentStudio: z.string(),
-    type: z.string(),
+    type: z.literal('season'),
     title: z.string(),
     parentKey: z.string(),
     parentTitle: z.string(),
@@ -288,41 +288,41 @@ export type PlexSeasonView = Alias<z.infer<typeof PlexSeasonViewSchema>>;
 export const PlexEpisodeSchema = z
   .object({
     addedAt: z.number(),
-    art: z.string(),
-    audienceRating: z.number(),
-    audienceRatingImage: z.string(),
-    chapterSource: z.string(),
-    contentRating: z.string(),
+    art: z.string().optional(),
+    audienceRating: z.number().optional(),
+    audienceRatingImage: z.string().optional(),
+    chapterSource: z.string().optional(),
+    contentRating: z.string().optional(),
     duration: z.number(),
-    grandparentArt: z.string(),
+    grandparentArt: z.string().optional(),
     grandparentGuid: z.string(),
     grandparentKey: z.string(),
     grandparentRatingKey: z.string(),
-    grandparentTheme: z.string(),
-    grandparentThumb: z.string(),
+    grandparentTheme: z.string().optional(),
+    grandparentThumb: z.string().optional(),
     grandparentTitle: z.string(),
     guid: z.string(),
     index: z.number(),
     key: z.string(),
-    originallyAvailableAt: z.string(),
+    originallyAvailableAt: z.string().optional(),
     parentGuid: z.string(),
     parentIndex: z.number(),
     parentKey: z.string(),
     parentRatingKey: z.string(),
-    parentThumb: z.string(),
+    parentThumb: z.string().optional(),
     parentTitle: z.string(),
     ratingKey: z.string(),
-    summary: z.string(),
+    summary: z.string().default(''),
     thumb: z.string(),
     title: z.string(),
     titleSort: z.string().optional(),
-    type: z.string(),
+    type: z.literal('episode'),
     updatedAt: z.number(),
-    year: z.number(),
+    year: z.number().optional(),
     Media: z.array(PlexMediaDescriptionSchema),
-    Director: z.array(PlexJoinItemSchema),
-    Writer: z.array(PlexJoinItemSchema),
-    Role: z.array(PlexJoinItemSchema),
+    Director: z.array(PlexJoinItemSchema).optional(),
+    Writer: z.array(PlexJoinItemSchema).optional(),
+    Role: z.array(PlexJoinItemSchema).optional(),
   })
   .merge(neverDirectory);
 
