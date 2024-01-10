@@ -98,7 +98,12 @@ export default function ChannelsPage() {
         <Typography flexGrow={1} variant="h4">
           Channels
         </Typography>
-        <Button variant="contained" startIcon={<AddCircleIcon />}>
+        <Button
+          component={RouterLink}
+          to="/channels/new"
+          variant="contained"
+          startIcon={<AddCircleIcon />}
+        >
           New
         </Button>
       </Box>

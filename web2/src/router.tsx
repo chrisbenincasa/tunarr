@@ -1,8 +1,10 @@
+import { QueryClient } from '@tanstack/react-query';
 import { createBrowserRouter } from 'react-router-dom';
 import App, { Root } from './App.tsx';
 import ChannelProgrammingPage from './pages/channels/ChannelProgrammingPage.tsx';
 import ChannelsPage from './pages/channels/ChannelsPage.tsx';
-import EditChannelPage from './pages/channels/EditChannelPage.tsx';
+import EditExistingChannelPage from './pages/channels/EditExistingChannelPage.tsx';
+import NewChannelPage from './pages/channels/NewChannelPage.tsx';
 import {
   editChannelLoader,
   editProgrammingLoader,
@@ -15,7 +17,6 @@ import PlexSettingsPage from './pages/settings/PlexSettingsPage.tsx';
 import SettingsLayout from './pages/settings/SettingsLayout.tsx';
 import XmlTvSettingsPage from './pages/settings/XmlTvSettingsPage.tsx';
 import { queryCache } from './queryClient.ts';
-import { QueryClient } from '@tanstack/react-query';
 
 const queryClient = new QueryClient({ queryCache });
 
@@ -34,8 +35,12 @@ export const router = createBrowserRouter([
       },
       {
         path: '/channels/:id/edit',
-        element: <EditChannelPage />,
+        element: <EditExistingChannelPage />,
         loader: editChannelLoader(queryClient),
+      },
+      {
+        path: '/channels/new',
+        element: <NewChannelPage />,
       },
       {
         path: '/channels/:id/programming',

@@ -62,47 +62,35 @@ function defaultNewChannel(num: number): Channel {
   };
 }
 
-export default function EditChannelPage() {
+export default function EditChannelControls() {
   const [currentTab, setCurrentTab] = useState<TabValues>('properties');
-
-  const channel = usePreloadedData(editChannelLoader);
-
-  setCurrentChannel(channel, []);
 
   const handleChange = (_: React.SyntheticEvent, newValue: TabValues) =>
     setCurrentTab(newValue);
 
   return (
-    <div>
-      <Typography variant="h4" sx={{ mb: 2 }}>
-        Channel {channel.number}
-      </Typography>
-      <Paper sx={{ p: 2 }}>
-        <Box sx={{ borderColor: 'background.paper', borderBottom: 1 }}>
-          <Tabs value={currentTab} onChange={handleChange}>
-            <Tab value="properties" label="Properties" />
-            {/* <Tab value="programming" label="Programming" /> */}
-            <Tab value="flex" label="Flex" />
-            <Tab value="epg" label="EPG" />
-            <Tab value="ffmpeg" label="FFMPEG" />
-          </Tabs>
-        </Box>
-        <TabPanel value="properties" currentValue={currentTab}>
-          <ChannelPropertiesEditor />
-        </TabPanel>
-        {/* <TabPanel value="programming" currentValue={currentTab}>
-        <ChannelProgrammingConfig />
-      </TabPanel> */}
-        <TabPanel value="flex" currentValue={currentTab}>
-          <ChannelFlexConfig />
-        </TabPanel>
-        <TabPanel value="epg" currentValue={currentTab}>
-          <ChannelEpgConfig />
-        </TabPanel>
-        <TabPanel value="ffmpeg" currentValue={currentTab}>
-          <ChannelTranscodingConfig />
-        </TabPanel>
-      </Paper>
-    </div>
+    <Paper sx={{ p: 2 }}>
+      <Box sx={{ borderColor: 'background.paper', borderBottom: 1 }}>
+        <Tabs value={currentTab} onChange={handleChange}>
+          <Tab value="properties" label="Properties" />
+          {/* <Tab value="programming" label="Programming" /> */}
+          <Tab value="flex" label="Flex" />
+          <Tab value="epg" label="EPG" />
+          <Tab value="ffmpeg" label="FFMPEG" />
+        </Tabs>
+      </Box>
+      <TabPanel value="properties" currentValue={currentTab}>
+        <ChannelPropertiesEditor />
+      </TabPanel>
+      <TabPanel value="flex" currentValue={currentTab}>
+        <ChannelFlexConfig />
+      </TabPanel>
+      <TabPanel value="epg" currentValue={currentTab}>
+        <ChannelEpgConfig />
+      </TabPanel>
+      <TabPanel value="ffmpeg" currentValue={currentTab}>
+        <ChannelTranscodingConfig />
+      </TabPanel>
+    </Paper>
   );
 }
