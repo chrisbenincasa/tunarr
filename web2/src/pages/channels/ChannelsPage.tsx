@@ -19,6 +19,7 @@ import {
 import { Channel } from 'dizquetv-types';
 import { Link as RouterLink } from 'react-router-dom';
 import { useChannels } from '../../hooks/useChannels.ts';
+import { isEmpty } from 'lodash-es';
 
 export default function ChannelsPage() {
   const {
@@ -37,7 +38,12 @@ export default function ChannelsPage() {
       <TableRow key={channel.number}>
         <TableCell width="10%">{channel.number}</TableCell>
         <TableCell width="10%">
-          <img style={{ maxHeight: '40px' }} src={channel.icon.path} />
+          <img
+            style={{ maxHeight: '40px' }}
+            src={
+              isEmpty(channel.icon.path) ? '/dizquetv.png' : channel.icon.path
+            }
+          />
         </TableCell>
         <TableCell>{channel.name}</TableCell>
         <TableCell width="15%">

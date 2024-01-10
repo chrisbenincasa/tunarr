@@ -2,16 +2,20 @@ import {
   Box,
   Button,
   FormControl,
+  IconButton,
+  InputAdornment,
   InputLabel,
   OutlinedInput,
   TextField,
   styled,
 } from '@mui/material';
+import { isEmpty } from 'lodash-es';
 import { usePrevious } from '@uidotdev/usehooks';
 import { useEffect } from 'react';
 import useDebouncedState from '../../hooks/useDebouncedState.ts';
 import { updateCurrentChannel } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 
 const VisuallyHiddenInput = styled('input')({
   clip: 'rect(0 0 0 0)',
@@ -78,16 +82,22 @@ export default function ChannelPropertiesEditor() {
           value={channel.groupTitle}
           margin="normal"
         />
-        <FormControl>
+        <FormControl fullWidth margin="normal">
           <InputLabel>Thumbnail URL</InputLabel>
           <OutlinedInput
             label="Thumbnail URL"
-            value={channel.icon.path ?? ''}
+            value={
+              isEmpty(channel.icon.path) ? `/dizquetv.png` : channel.icon.path
+            }
+            endAdornment={
+              <InputAdornment position="end">
+                <IconButton component="label">
+                  <CloudUploadIcon />
+                  <VisuallyHiddenInput type="file" />
+                </IconButton>
+              </InputAdornment>
+            }
           />
-          <Button component="label" variant="contained">
-            Upload file
-            <VisuallyHiddenInput type="file" />
-          </Button>
         </FormControl>
       </Box>
     )
