@@ -2,11 +2,21 @@ import { Type } from '@mikro-orm/core';
 import dayjs from 'dayjs';
 import type { Duration } from 'dayjs/plugin/duration.js';
 import duration from 'dayjs/plugin/duration.js';
+import { isUndefined } from 'lodash-es';
 
 dayjs.extend(duration);
 
-export class DurationType extends Type<Duration, number> {
-  convertToDatabaseValue(value: number | Duration): number {
+export class DurationType extends Type<
+  Duration | undefined,
+  number | undefined
+> {
+  convertToDatabaseValue(
+    value: number | Duration | undefined,
+  ): number | undefined {
+    if (isUndefined(value)) {
+      return value;
+    }
+
     if (dayjs.isDuration(value)) {
       return value.asMilliseconds();
     }
@@ -14,7 +24,13 @@ export class DurationType extends Type<Duration, number> {
     return value;
   }
 
-  convertToJSValue(value: number | Duration): duration.Duration {
+  convertToJSValue(
+    value: number | Duration | undefined,
+  ): duration.Duration | undefined {
+    if (isUndefined(value)) {
+      return value;
+    }
+
     if (dayjs.isDuration(value)) {
       return value;
     }
@@ -22,8 +38,8 @@ export class DurationType extends Type<Duration, number> {
     return dayjs.duration({ milliseconds: value });
   }
 
-  toJSON(value: Duration): number | Duration {
-    return value.asMilliseconds();
+  toJSON(value: Duration | undefined): number | Duration | undefined {
+    return value?.asMilliseconds();
   }
 
   getColumnType(): string {

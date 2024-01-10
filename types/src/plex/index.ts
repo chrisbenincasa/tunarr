@@ -111,8 +111,8 @@ export const PlexMediaDescriptionSchema = z.object({
   videoResolution: z.string(),
   container: z.string(),
   videoFrameRate: z.string(),
-  audioProfile: z.string(),
-  videoProfile: z.string(),
+  audioProfile: z.string().optional(),
+  videoProfile: z.string().optional(),
   Part: z.array(
     z.object({
       id: z.number(),
@@ -120,7 +120,7 @@ export const PlexMediaDescriptionSchema = z.object({
       duration: z.number(),
       file: z.string(),
       size: z.number(),
-      audioProfile: z.string(),
+      audioProfile: z.string().optional(),
       container: z.string(),
       videoProfile: z.string(),
     }),
@@ -136,7 +136,7 @@ export const PlexJoinItemSchema = z.object({
 
 export type PlexJoinItem = z.infer<typeof PlexJoinItemSchema>;
 
-const neverDirectory = z.object({ directory: z.never().optional() });
+const neverDirectory = z.object({ directory: z.unknown().optional() });
 
 export const PlexMovieSchema = z
   .object({
@@ -144,18 +144,18 @@ export const PlexMovieSchema = z
     key: z.string(),
     guid: z.string(),
     editionTitle: z.string(),
-    studio: z.string(),
+    studio: z.string().optional(),
     type: z.literal('movie'),
     title: z.string(),
     titleSort: z.string(),
-    contentRating: z.string(),
-    summary: z.string(),
+    contentRating: z.string().optional(),
+    summary: z.string().optional(),
     rating: z.number(),
-    audienceRating: z.number(),
-    year: z.number(),
-    tagline: z.string(),
+    audienceRating: z.number().optional(),
+    year: z.number().optional(),
+    tagline: z.string().optional(),
     thumb: z.string(),
-    art: z.string(),
+    art: z.string().optional(),
     duration: z.number(),
     originallyAvailableAt: z.string(),
     addedAt: z.number(),
@@ -163,7 +163,7 @@ export const PlexMovieSchema = z
     audienceRatingImage: z.string(),
     chapterSource: z.string(),
     primaryExtraKey: z.string(),
-    ratingImage: z.string(),
+    ratingImage: z.string().optional(),
     Media: z.array(PlexMediaDescriptionSchema),
     Genre: z.array(PlexJoinItemSchema).optional(),
     Country: z.array(PlexJoinItemSchema).optional(),
@@ -312,7 +312,7 @@ export const PlexEpisodeSchema = z
     parentThumb: z.string().optional(),
     parentTitle: z.string(),
     ratingKey: z.string(),
-    summary: z.string().default(''),
+    summary: z.string().optional(),
     thumb: z.string(),
     title: z.string(),
     titleSort: z.string().optional(),

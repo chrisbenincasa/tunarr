@@ -2,9 +2,11 @@ import { EntityDTO, Loaded } from '@mikro-orm/core';
 import {
   ChannelIcon,
   ChannelLineup,
+  CustomGuideProgram,
+  FlexGuideProgram,
   Program as ProgramDTO,
+  RedirectGuideProgram,
   TvGuideProgram,
-  TvGuideProgramSubtitle,
 } from 'dizquetv-types';
 import { compact, isNil, isUndefined, keys, mapValues } from 'lodash-es';
 import assert from 'node:assert';
@@ -224,7 +226,7 @@ export class TVGuideService {
       let lo = 0;
       const d =
         (currentUpdateTimeMs - channelStartTime) %
-        accumulate[channel.programs.length];
+        accumulate[lineup.items.length];
       const epoch = currentUpdateTimeMs - d;
       // Binary search for the currently playing program
       while (lo + 1 < hi) {
@@ -287,7 +289,7 @@ export class TVGuideService {
         currentUpdateTimeMs
     ) {
       //turns out we know the index.
-      const index = (previousKnown.programIndex + 1) % channel.programs.length;
+      const index = (previousKnown.programIndex + 1) % lineup.items.length;
       const lineupItem = lineup.items[index];
       const backingItem = isContentItem(lineupItem)
         ? channel.programs.find((p) => p.uuid === lineupItem.id)
@@ -697,10 +699,19 @@ function makeEntry(
   channel: Partial<EntityDTO<Channel>>,
   currentProgram: CurrentPlayingProgram,
 ): TvGuideProgram {
+  const baseItem: Partial<TvGuideProgram> = {
+    start: currentProgram.startTimeMs,
+    stop: currentProgram.startTimeMs + (currentProgram.program.duration ?? 0),
+    persisted: true,
+    duration: currentProgram.program.duration ?? 0,
+  };
+
   let title: string | undefined;
   let icon: string | undefined;
-  let sub: TvGuideProgramSubtitle | undefined;
-  if (isProgramFlex(currentProgram.program, channel)) {
+  let seasonNumber: Maybe<number>;
+  let episodeNumber: Maybe<number>;
+  let episodeTitle: Maybe<string>;
+  if (currentProgram.program.type === 'flex') {
     // ehhhh
     // if (
     //   isString(channel.guideFlexPlaceholder) &&
@@ -711,18 +722,33 @@ function makeEntry(
     //   title = channel.name;
     // }
     icon = channel.icon?.path;
-  } else {
-    title = currentProgram.program.showTitle;
-    if (typeof currentProgram.program.icon !== 'undefined') {
-      icon = currentProgram.program.icon;
-    }
-    if (currentProgram.program.type === 'episode') {
-      sub = {
-        season: currentProgram.program.season,
-        episode: currentProgram.program.episode,
-        title: currentProgram.program.title,
-      };
-    }
+    return {
+      type: 'flex',
+      icon,
+      ...baseItem,
+    } as FlexGuideProgram;
+  } else if (currentProgram.program.type === 'custom') {
+    return {
+      type: 'custom',
+      id: currentProgram.program.id!,
+      ...baseItem,
+    } as CustomGuideProgram;
+  } else if (currentProgram.program.type === 'redirect') {
+    return {
+      type: 'redirect',
+      channel: currentProgram.program.channel!,
+      ...baseItem,
+    } as RedirectGuideProgram;
+  }
+
+  title = currentProgram.program.showTitle;
+  if (typeof currentProgram.program.icon !== 'undefined') {
+    icon = currentProgram.program.icon;
+  }
+  if (currentProgram.program.type === 'episode') {
+    seasonNumber = currentProgram.program.season;
+    episodeNumber = currentProgram.program.episode;
+    episodeTitle = currentProgram.program.title;
   }
   if (isUndefined(title)) {
     title = '.';
@@ -736,10 +762,14 @@ function makeEntry(
     rating: currentProgram.program.rating,
     icon: icon,
     title: title,
-    sub: sub,
-    programDuration: currentProgram.program?.duration,
-    type: currentProgram.program?.type,
+    duration: currentProgram.program?.duration,
+    type: 'content',
+    id: currentProgram.program.id,
+    subtype: currentProgram.program?.type,
     persisted: true,
+    seasonNumber,
+    episodeNumber,
+    episodeTitle,
   };
 }
 

@@ -1,4 +1,4 @@
-import { Loaded } from '@mikro-orm/core';
+import { Loaded, wrap } from '@mikro-orm/core';
 import { FastifyPluginCallback, FastifyRequest } from 'fastify';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { first, isNil, isUndefined } from 'lodash-es';
@@ -15,6 +15,7 @@ import {
   StreamLineupItem,
   isPlexBackedLineupItem,
 } from '../dao/derived_types/StreamLineup.js';
+import dayjs from 'dayjs';
 
 const logger = createLogger(import.meta);
 
@@ -204,7 +205,39 @@ export const debugRouter: FastifyPluginCallback = (fastify, _opts, done) => {
   };
 
   typeCheckedFastify.get(
-    '/api/v1/debug/helpers/create_lineup',
+    '/api/v1/debug/helpers/create_guide',
+    { schema: CreateLineupSchema },
+    async (req, res) => {
+      const channel = await req.serverCtx.channelDB.getChannelAndPrograms(
+        req.query.channel,
+      );
+      const t = req.serverCtx.guideService.prepareRefresh(
+        [wrap(channel!).toJSON()],
+        1000 * 60 * 60 * 24,
+      );
+      await req.serverCtx.guideService.refresh(t);
+
+      const startTime = new Date();
+      const duration =
+        channel!.duration <= 0
+          ? dayjs.duration(1, 'day').asMilliseconds()
+          : channel!.duration;
+      const endTime = dayjs(startTime).add(duration, 'milliseconds').toDate();
+
+      return res
+        .status(200)
+        .send(
+          await req.serverCtx.guideService.getChannelLineup(
+            req.query.channel,
+            startTime,
+            endTime,
+          ),
+        );
+    },
+  );
+
+  typeCheckedFastify.get(
+    '/api/v1/debug/helpers/create_stream_lineup',
     {
       schema: CreateLineupSchema,
     },

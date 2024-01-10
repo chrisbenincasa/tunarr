@@ -1,12 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import {
-  PlexEpisode,
   PlexEpisodeView,
   PlexLibraryListing,
   PlexLibrarySection,
   PlexLibrarySections,
   PlexMedia,
-  PlexMovie,
   PlexSeasonView,
   PlexTerminalMedia,
   isPlexDirectory,

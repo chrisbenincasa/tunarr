@@ -1,5 +1,5 @@
 import { Snackbar } from '@mui/material';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export default function ServerEvents() {
   const source = useRef<EventSource | null>(null);

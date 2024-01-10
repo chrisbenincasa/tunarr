@@ -1,12 +1,12 @@
 import z from 'zod';
 import {
-  ChannelIconSchema,
   ChannelOfflineSchema,
   ChannelSchema,
   UpdateChannelRequestSchema,
   FillerCollectionSchema,
   WatermarkSchema,
 } from './schemas/channelSchema.js';
+import { ChannelIconSchema } from './schemas/index.js';
 
 type Alias<t> = t & { _?: never };
 

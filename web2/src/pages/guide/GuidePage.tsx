@@ -64,7 +64,23 @@ export default function GuidePage() {
   if (error) return 'An error occurred!: ' + error.message;
 
   const renderProgram = (program: TvGuideProgram, index: number) => {
-    const key = `${program.title}_${program.start}_${program.stop}`;
+    let title: string;
+    switch (program.type) {
+      case 'custom':
+        title = program.program?.title ?? 'Custom Program';
+        break;
+      case 'content':
+        title = program.title;
+        break;
+      case 'redirect':
+        title = `Redirect to Channel ${program.channel}`;
+        break;
+      case 'flex':
+        title = 'Flex';
+        break;
+    }
+
+    const key = `${title}_${program.start}_${program.stop}`;
     const start = dayjs(program.start);
     const end = dayjs(program.stop);
     const duration = dayjs.duration(end.diff(start));
@@ -93,7 +109,7 @@ export default function GuidePage() {
         }}
         key={key}
       >
-        {program.title}
+        {title}
       </Box>
     );
   };

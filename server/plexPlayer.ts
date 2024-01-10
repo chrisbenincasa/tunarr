@@ -68,17 +68,14 @@ export class PlexPlayer extends Player {
     const ffmpegSettings = this.context.ffmpegSettings;
     const db = this.context.entityManager.repo(PlexServerSettings);
     const channel = this.context.channel;
-    let server = await db.findOne({ name: lineupItem.serverKey });
+    const server = await db.findOne({ name: lineupItem.serverKey });
     if (isNil(server)) {
       throw Error(
         `Unable to find server "${lineupItem.serverKey}" specified by program.`,
       );
     }
     if (server.uri.endsWith('/')) {
-      server = {
-        ...server,
-        uri: server.uri.slice(0, server.uri.length - 1),
-      };
+      server.uri = server.uri.slice(0, server.uri.length - 1);
     }
 
     const plexSettings = this.context.settings.plexSettings();

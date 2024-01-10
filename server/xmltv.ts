@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { EntityDTO, Loaded } from '@mikro-orm/core';
-import { Channel, TvGuideProgram } from 'dizquetv-types';
+import { Channel, TvGuideProgram, isContentGuideProgram } from 'dizquetv-types';
 import fs from 'fs';
-import { keys, map } from 'lodash-es';
+import { isUndefined, keys, map } from 'lodash-es';
 import XMLWriter from 'xml-writer';
 import { XmlTvSettings } from './dao/settings.js';
 import { CacheImageService } from './services/cacheImageService.js';
@@ -141,6 +141,21 @@ export class XmlTvWriter {
     xmlSettings,
     cacheImageService: CacheImageService,
   ) {
+    let title: string;
+    switch (program.type) {
+      case 'custom':
+        title = program.program?.title ?? 'Custom Program';
+        break;
+      case 'content':
+        title = program.title;
+        break;
+      case 'redirect':
+        title = `Redirect to Channel ${program.channel}`;
+        break;
+      case 'flex':
+        title = 'Flex';
+        break;
+    }
     // Programme
     xw.startElement('programme');
     xw.writeAttribute('start', this._createXMLTVDate(program.start));
@@ -149,35 +164,35 @@ export class XmlTvWriter {
     // Title
     xw.startElement('title');
     xw.writeAttribute('lang', 'en');
-    xw.text(program.title);
+    xw.text(title);
     xw.endElement();
     xw.writeRaw('\n        <previously-shown/>');
 
     //sub-title
-    if (typeof program.sub !== 'undefined') {
+    if (isContentGuideProgram(program) && !isUndefined(program.seasonNumber)) {
       xw.startElement('sub-title');
       xw.writeAttribute('lang', 'en');
-      xw.text(program.sub.title);
+      xw.text(program.episodeTitle);
       xw.endElement();
 
       xw.startElement('episode-num');
       xw.writeAttribute('system', 'onscreen');
-      xw.text('S' + program.sub.season + ' E' + program.sub.episode);
+      xw.text('S' + program.seasonNumber + ' E' + program.episodeNumber);
       xw.endElement();
 
       xw.startElement('episode-num');
       xw.writeAttribute('system', 'xmltv_ns');
       xw.text(
-        (program.sub.season ?? 1) -
+        (program.seasonNumber ?? 1) -
           1 +
           '.' +
-          ((program.sub.episode ?? 1) - 1) +
+          ((program.episodeNumber ?? 1) - 1) +
           '.0/1',
       );
       xw.endElement();
     }
     // Icon
-    if (typeof program.icon !== 'undefined') {
+    if (isContentGuideProgram(program) && typeof program.icon !== 'undefined') {
       xw.startElement('icon');
       let icon = program.icon;
       if (xmlSettings.enableImageCache === true) {
@@ -190,14 +205,22 @@ export class XmlTvWriter {
     // Desc
     xw.startElement('desc');
     xw.writeAttribute('lang', 'en');
-    if (typeof program.summary !== 'undefined' && program.summary.length > 0) {
+    if (
+      isContentGuideProgram(program) &&
+      typeof program.summary !== 'undefined' &&
+      program.summary.length > 0
+    ) {
       xw.text(program.summary);
     } else {
       xw.text(channel.name);
     }
     xw.endElement();
     // Rating
-    if (program.rating != null && typeof program.rating !== 'undefined') {
+    if (
+      isContentGuideProgram(program) &&
+      program.rating != null &&
+      typeof program.rating !== 'undefined'
+    ) {
       xw.startElement('rating');
       xw.writeAttribute('system', 'MPAA');
       xw.writeElement('value', program.rating);

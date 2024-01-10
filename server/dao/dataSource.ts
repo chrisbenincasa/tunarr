@@ -58,8 +58,9 @@ export async function withDb<T>(
     return f(fork ? manager.fork() : manager);
   } else {
     const orm = await initOrm();
-    return RequestContext.createAsync(
+    return RequestContext.create(
       fork ? orm.em.fork() : orm.em,
+      // eslint-disable-next-line @typescript-eslint/no-misused-promises
       () => {
         return f(RequestContext.getEntityManager()! as EntityManager);
       },

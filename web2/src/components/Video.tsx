@@ -25,7 +25,7 @@ export default function Video() {
       hls.on(Hls.Events.MEDIA_ATTACHED, () => {
         console.log('video and hls.js are now connected');
       });
-      hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
+      hls.on(Hls.Events.MANIFEST_PARSED, (_, data) => {
         console.log(
           'manifest loaded, found ' + data.levels.length + ' quality level',
         );

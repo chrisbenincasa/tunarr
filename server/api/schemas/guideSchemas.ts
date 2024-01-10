@@ -1,4 +1,4 @@
-import { ChannelLineupSchema } from 'dizquetv-types/schemas';
+import { ChannelProgrammingSchema } from 'dizquetv-types/schemas';
 import z from 'zod';
 
 export const AllChannelsGuideSchema = {
@@ -7,6 +7,6 @@ export const AllChannelsGuideSchema = {
     dateTo: z.coerce.date(),
   }),
   response: {
-    200: z.record(ChannelLineupSchema),
+    200: z.record(ChannelProgrammingSchema),
   },
 };

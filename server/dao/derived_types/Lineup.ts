@@ -26,17 +26,15 @@ export type RedirectItem = BaseLineupItem & {
 
 export type LineupItem = ContentItem | OfflineItem | RedirectItem;
 
-export function isContentItem(
-  item: LineupItem | undefined,
-): item is ContentItem {
-  return item?.type === 'content';
+function isItemOfType<T extends LineupItem>(discrim: string) {
+  return function (t: LineupItem | undefined): t is T {
+    return t?.type === discrim;
+  };
 }
 
-export function isOfflineItem(
-  item: LineupItem | undefined,
-): item is OfflineItem {
-  return item?.type === 'offline';
-}
+export const isContentItem = isItemOfType<ContentItem>('content');
+export const isOfflineItem = isItemOfType<OfflineItem>('offline');
+export const isRedirectItem = isItemOfType<RedirectItem>('redirect');
 
 export function contentItemToProgramDTO(
   backingItem: Program,

@@ -57,7 +57,6 @@ export class UpdateXmlTvTask extends Task<void> {
       channels = await this.channelCache.getAllChannelsWithPrograms();
       const xmltvSettings = this.dbAccess.xmlTvSettings();
       const channelDtos = channels.map((c) => wrap(c)).map((e) => e.toJSON());
-      console.log(channels, channelDtos);
       const t = this.guideService.prepareRefresh(
         channelDtos,
         xmltvSettings.refreshHours * 60 * 60 * 1000,

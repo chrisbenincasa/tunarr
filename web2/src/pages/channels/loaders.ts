@@ -42,7 +42,7 @@ export const editProgrammingLoader: Preloader<{
 
     return await Promise.all([channelPromise, lineupPromise]).then(
       ([channel, lineup]) => {
-        setCurrentChannel(channel, lineup.programs);
+        setCurrentChannel(channel, lineup!.programs);
         return {
           channel,
           lineup,

@@ -1,19 +1,27 @@
 import dayjs from 'dayjs';
-import { isEphemeralProgram } from 'dizquetv-types';
+import duration from 'dayjs/plugin/duration.js';
+import { ContentProgram, isContentGuideProgram } from 'dizquetv-types';
 import {
-  ChannelLineupSchema,
+  ChannelProgramSchema,
+  ChannelProgrammingSchema,
   ChannelSchema,
   ProgramSchema,
   UpdateChannelRequestSchema,
-  WorkingProgramSchema,
 } from 'dizquetv-types/schemas';
-import { filter, isError, isNil, omit, reduce, sortBy } from 'lodash-es';
+import { filter, isError, isNil, omit, reduce, sortBy, sumBy } from 'lodash-es';
 import z from 'zod';
 import { getEm } from '../../dao/dataSource.js';
+import { LineupItem } from '../../dao/derived_types/Lineup.js';
+import { Program } from '../../dao/entities/Program.js';
 import createLogger from '../../logger.js';
+import { scheduledJobsById } from '../../services/scheduler.js';
+import { UpdateXmlTvTask } from '../../tasks/updateXmlTvTask.js';
 import { RouterPluginAsyncCallback } from '../../types/serverType.js';
-import { attempt } from '../../util.js';
+import { attempt, groupByFunc } from '../../util.js';
 import { programMinter } from '../../util/programMinter.js';
+import { buildApiLineup } from '../../dao/channelDb.js';
+
+dayjs.extend(duration);
 
 const logger = createLogger(import.meta);
 
@@ -30,7 +38,7 @@ const ChannelLineupQuery = z.object({
 // eslint-disable-next-line @typescript-eslint/require-await
 export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
   fastify.addHook('onError', (req, _, error, done) => {
-    logger.error(req.routeOptions.url, error);
+    logger.error('%s %O', req.routeOptions.url, error);
     done();
   });
 
@@ -185,13 +193,13 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
         params: ChannelNumberParamSchema,
         querystring: ChannelLineupQuery,
         response: {
-          200: ChannelLineupSchema,
+          200: ChannelProgrammingSchema,
           404: z.object({ error: z.string() }),
         },
       },
     },
     async (req, res) => {
-      const channel = await req.serverCtx.channelDB.getChannel(
+      const channel = await req.serverCtx.channelDB.getChannelAndPrograms(
         req.params.number,
       );
 
@@ -199,23 +207,16 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
         return res.status(404).send({ error: 'Channel Not Found' });
       }
 
-      const startTime = req.query.from ?? new Date();
-      const duration =
-        channel.duration.asMilliseconds() <= 0
-          ? dayjs.duration(1, 'hour')
-          : channel.duration;
-      const endTime = req.query.to ?? dayjs(startTime).add(duration).toDate();
-
-      // Validate start and end time
-      console.log(startTime, endTime, channel.durationMs);
-
-      const lineup = await req.serverCtx.guideService.getChannelLineup(
+      const apiLineup = await req.serverCtx.channelDB.loadAndMaterializeLineup(
         req.params.number,
-        startTime,
-        endTime,
       );
 
-      return res.send(lineup);
+      return res.send({
+        icon: channel.icon,
+        name: channel.name,
+        number: channel.number,
+        programs: apiLineup!,
+      });
     },
   );
 
@@ -224,28 +225,125 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
     {
       schema: {
         params: ChannelNumberParamSchema,
-        body: z.array(WorkingProgramSchema),
+        body: z.array(ChannelProgramSchema),
         response: {
-          200: z.object({}),
+          200: ChannelProgrammingSchema,
+          404: z.void(),
         },
       },
     },
     async (req, res) => {
+      const channel = await req.serverCtx.channelDB.getChannelAndPrograms(
+        req.params.number,
+      );
+
+      if (isNil(channel)) {
+        return res.status(404).send();
+      }
+
       const programsWithIndex = zipWithIndex(req.body);
-      console.log(programsWithIndex);
-      const nonPersisted = filter(req.body, isEphemeralProgram);
-      const minter = programMinter(getEm());
+      const nonPersisted = filter(req.body, (p) => !p.persisted);
+      const em = getEm();
+      const minter = programMinter(em);
 
-      const programsToPersist = filter(
-        nonPersisted,
-        (p) => !isNil(p.externalSourceName),
-      ).map((p) => minter(p.externalSourceName!, p.originalProgram));
+      const programsToPersist = filter(nonPersisted, isContentGuideProgram).map(
+        (p) => minter(p.externalSourceName!, p.originalProgram!),
+      );
 
-      console.log(programsToPersist);
-      return res.status(200).send();
+      const upsertedPrograms = await em.upsertMany(Program, programsToPersist, {
+        batchSize: 10,
+        onConflictAction: 'merge',
+        onConflictFields: ['sourceType', 'externalSourceId', 'externalKey'],
+        onConflictExcludeFields: ['uuid'],
+      });
+
+      console.log(upsertedPrograms);
+
+      // TODO:
+      // * calculate new channel duration
+      // * remove "fake" flex item from front
+      channel.startTime = dayjs().unix() * 1000;
+      channel.duration = sumBy(req.body, (p) => p.duration);
+      const existingIds = new Set(channel.programs.map((p) => p.uuid));
+      for (const program of upsertedPrograms) {
+        if (!existingIds.has(program.uuid)) {
+          channel.programs.add(program);
+        }
+      }
+
+      await getEm().persistAndFlush(channel);
+
+      const dbIdByUniqueId = groupByFunc(
+        upsertedPrograms,
+        (p) => p.uniqueId(),
+        (p) => p.uuid,
+      );
+
+      const newLineup: LineupItem[] = programsWithIndex.map((p) => {
+        let item: LineupItem;
+        switch (p.type) {
+          case 'custom':
+            item = {
+              type: 'content', // Custom program
+              durationMs: p.duration,
+              id: p.id,
+            };
+            break;
+          case 'content':
+            item = {
+              type: 'content',
+              id: p.persisted ? p.id! : dbIdByUniqueId[contentItemUniqueId(p)],
+              durationMs: p.duration,
+            };
+            break;
+          case 'redirect':
+            item = {
+              type: 'redirect',
+              channel: 1, // TODO fix this....!
+              durationMs: p.duration,
+            };
+            break;
+          case 'flex':
+            item = {
+              type: 'offline',
+              durationMs: p.duration,
+            };
+            break;
+        }
+
+        return item;
+      });
+
+      await req.serverCtx.channelDB.saveLineup(req.params.number, {
+        items: newLineup,
+      });
+
+      try {
+        scheduledJobsById[UpdateXmlTvTask.ID]
+          ?.runNow(true)
+          .catch(console.error);
+      } catch (e) {
+        logger.error('Unable to update guide after lineup update %O', e);
+      }
+
+      const refreshedLineup = buildApiLineup(channel, newLineup);
+
+      return res.status(200).send({
+        icon: channel.icon,
+        number: channel.number,
+        name: channel.name,
+        programs: refreshedLineup,
+      });
     },
   );
 };
+
+function contentItemUniqueId(p: ContentProgram): string {
+  // This isn't ideal
+  return `${p.externalSourceType}_${p.externalSourceName}_${
+    p.originalProgram!.key
+  }`;
+}
 
 function zipWithIndex<T>(
   arr: ReadonlyArray<T>,

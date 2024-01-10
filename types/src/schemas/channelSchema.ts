@@ -1,13 +1,7 @@
 import z from 'zod';
 import { ResolutionSchema } from './miscSchemas.js';
 import { ProgramSchema } from './programmingSchema.js';
-
-export const ChannelIconSchema = z.object({
-  path: z.string(),
-  width: z.number(),
-  duration: z.number(),
-  position: z.string(),
-});
+import { ChannelIconSchema } from './utilSchemas.js';
 
 export const WatermarkSchema = z.object({
   url: z.string().optional(),

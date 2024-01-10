@@ -1,5 +1,6 @@
 import {
   chain,
+  identity,
   isArray,
   isEmpty,
   isError,
@@ -69,14 +70,15 @@ export function groupByUniqFunc<T, Key extends string | number>(
   );
 }
 
-export function groupByFunc<T, Key extends string | number | symbol>(
+export function groupByFunc<T, Key extends string | number | symbol, Value>(
   data: T[],
   func: (val: T) => Key,
-): Record<Key, T> {
+  mapper: (val: T) => Value = identity,
+): Record<Key, Value> {
   return reduce(
     data,
-    (prev, t) => ({ ...prev, [func(t)]: t }),
-    {} as Record<Key, T>,
+    (prev, t) => ({ ...prev, [func(t)]: mapper(t) }),
+    {} as Record<Key, Value>,
   );
 }
 

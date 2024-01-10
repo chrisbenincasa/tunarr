@@ -17,20 +17,10 @@ import {
   Typography,
 } from '@mui/material';
 import { Channel } from 'dizquetv-types';
-import { isUndefined, maxBy } from 'lodash-es';
-import { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
-import EditChannelSettingsModal from '../../components/EditChannelModal.tsx';
-import EditChannelProgrammingModal from '../../components/EditChannelProgrammingModal.tsx';
 import { useChannels } from '../../hooks/useChannels.ts';
-import { resetChannelEditorState } from '../../store/channelEditor/actions.ts';
 
 export default function ChannelsPage() {
-  const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [programmingModalOpen, setProgrammingModalOpen] = useState(false);
-  const [channelModalConfig, setChannelModalConfig] = useState<
-    { channelNumber: number; isNew: boolean } | undefined
-  >(undefined);
   const {
     isPending: channelsLoading,
     error: channelsError,
@@ -40,23 +30,6 @@ export default function ChannelsPage() {
   if (channelsLoading) return 'Loading...';
 
   if (channelsError) return 'An error occurred!: ' + channelsError.message;
-
-  const openModal = (channelNumber?: number) => {
-    resetChannelEditorState();
-    setChannelModalConfig({
-      channelNumber:
-        channelNumber ??
-        (channels.length === 0 ? 1 : maxBy(channels, 'number')!.number + 1),
-      isNew: isUndefined(channelNumber),
-    });
-    setCreateModalOpen(true);
-  };
-
-  const openProgrammingModal = (channelNumber: number) => {
-    resetChannelEditorState();
-    setChannelModalConfig({ channelNumber, isNew: false });
-    setProgrammingModalOpen(true);
-  };
 
   // TODO properly define types from API
   const getDataTableRow = (channel: Channel) => {
@@ -119,11 +92,7 @@ export default function ChannelsPage() {
         <Typography flexGrow={1} variant="h4">
           Channels
         </Typography>
-        <Button
-          onClick={() => openModal()}
-          variant="contained"
-          startIcon={<AddCircleIcon />}
-        >
+        <Button variant="contained" startIcon={<AddCircleIcon />}>
           New
         </Button>
       </Box>
@@ -140,17 +109,6 @@ export default function ChannelsPage() {
           <TableBody>{getTableRows()}</TableBody>
         </Table>
       </TableContainer>
-      {/* <EditChannelSettingsModal
-        channelNumber={channelModalConfig?.channelNumber ?? -1}
-        open={createModalOpen}
-        onClose={() => setCreateModalOpen(false)}
-        isNew={channelModalConfig?.isNew ?? true}
-      />
-      <EditChannelProgrammingModal
-        channelNumber={channelModalConfig?.channelNumber ?? -1}
-        open={programmingModalOpen}
-        onClose={() => setProgrammingModalOpen(false)}
-      /> */}
     </div>
   );
 }

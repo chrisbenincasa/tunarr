@@ -1,5 +1,9 @@
 import { PlexEpisode, PlexMovie, PlexTerminalMedia } from 'dizquetv-types/plex';
-import { Program, ProgramSourceType } from '../dao/entities/Program.js';
+import {
+  Program,
+  ProgramSourceType,
+  ProgramType,
+} from '../dao/entities/Program.js';
 import { EntityManager } from '@mikro-orm/better-sqlite';
 import { first } from 'lodash-es';
 
@@ -25,7 +29,7 @@ function mintMovieProgram(
   return em.create(Program, {
     sourceType: ProgramSourceType.PLEX,
     originalAirDate: plexMovie.originallyAvailableAt,
-    durationMs: plexMovie.duration,
+    duration: plexMovie.duration,
     filePath: file?.file,
     externalSourceId: serverName,
     externalKey: plexMovie.key,
@@ -33,6 +37,9 @@ function mintMovieProgram(
     plexFilePath: file?.key,
     rating: plexMovie.contentRating,
     summary: plexMovie.summary,
+    title: plexMovie.title,
+    type: ProgramType.Movie,
+    year: plexMovie.year,
   });
 }
 
@@ -45,7 +52,7 @@ function mintEpisodeProgram(
   return em.create(Program, {
     sourceType: ProgramSourceType.PLEX,
     originalAirDate: plexEpisode.originallyAvailableAt,
-    durationMs: plexEpisode.duration,
+    duration: plexEpisode.duration,
     filePath: file?.file,
     externalSourceId: serverName,
     externalKey: plexEpisode.key,
@@ -53,5 +60,11 @@ function mintEpisodeProgram(
     plexFilePath: file?.key,
     rating: plexEpisode.contentRating,
     summary: plexEpisode.summary,
+    title: plexEpisode.title,
+    type: ProgramType.Episode,
+    year: plexEpisode.year,
+    showTitle: plexEpisode.grandparentTitle,
+    showIcon: plexEpisode.grandparentThumb,
+    episode: plexEpisode.index,
   });
 }

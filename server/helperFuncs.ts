@@ -56,8 +56,7 @@ export function getCurrentProgramAndTimeElapsed(
       programIndex: -1,
     };
   }
-  let timeElapsed =
-    (time - channel.startTime) % channel.duration.asMilliseconds();
+  let timeElapsed = (time - channel.startTime) % channel.duration;
   let currentProgramIndex = -1;
   for (let y = 0, l2 = channelLineup.items.length; y < l2; y++) {
     const program = channelLineup.items[y];
@@ -96,7 +95,7 @@ export function getCurrentProgramAndTimeElapsed(
       key: backingItem.externalKey,
       file: backingItem.filePath!,
       serverKey: backingItem.externalSourceId,
-      duration: backingItem.durationMs,
+      duration: backingItem.duration,
     };
     program = programItem;
   } else if (isOfflineItem(lineupItem)) {
@@ -196,21 +195,18 @@ export async function createLineup(
       let fillerstart = 0;
       // If we have a special, push it on the lineup
       if (isSpecial) {
-        if (filler.durationMs > remaining) {
-          fillerstart = filler.durationMs - remaining;
+        if (filler.duration > remaining) {
+          fillerstart = filler.duration - remaining;
         } else {
           fillerstart = 0;
         }
 
         // Otherwise, if we're dealing with the first item in the lineup,
       } else if (isFirst) {
-        fillerstart = Math.max(0, filler.durationMs - remaining);
+        fillerstart = Math.max(0, filler.duration - remaining);
         //it's boring and odd to tune into a channel and it's always
         //the start of a commercial.
-        const more = Math.max(
-          0,
-          filler.durationMs - fillerstart - 15000 - SLACK,
-        );
+        const more = Math.max(0, filler.duration - fillerstart - 15000 - SLACK);
         fillerstart += random.integer(0, more);
       }
 
@@ -226,9 +222,9 @@ export async function createLineup(
         start: fillerstart,
         streamDuration: Math.max(
           1,
-          Math.min(filler.durationMs - fillerstart, remaining),
+          Math.min(filler.duration - fillerstart, remaining),
         ),
-        duration: filler.durationMs,
+        duration: filler.duration,
         fillerId: filler.uuid,
         beginningOffset: beginningOffset,
         serverKey: filler.externalSourceId,
@@ -316,7 +312,7 @@ export function pickRandomWithMaxDuration(
     for (let i = 0; i < fillerPrograms.length; i++) {
       const clip = fillerPrograms[i];
       // a few extra milliseconds won't hurt anyone, would it? dun dun dun
-      if (clip.durationMs <= maxDuration + SLACK) {
+      if (clip.duration <= maxDuration + SLACK) {
         const t1 = channelCache.getProgramLastPlayTime(channel.number, {
           serverKey: clip.externalSourceId,
           key: clip.externalKey,
@@ -325,7 +321,7 @@ export function pickRandomWithMaxDuration(
 
         if (timeSince < fillerRepeatCooldownMs - SLACK) {
           const w = fillerRepeatCooldownMs - timeSince;
-          if (clip.durationMs + w <= maxDuration + SLACK) {
+          if (clip.duration + w <= maxDuration + SLACK) {
             minimumWait = Math.min(minimumWait, w);
           }
           timeSince = 0;
@@ -348,7 +344,7 @@ export function pickRandomWithMaxDuration(
             }
           } else {
             const w = fillers[j].cooldown.asSeconds() - timeSince;
-            if (clip.durationMs + w <= maxDuration + SLACK) {
+            if (clip.duration + w <= maxDuration + SLACK) {
               minimumWait = Math.min(minimumWait, w);
             }
 
@@ -359,7 +355,7 @@ export function pickRandomWithMaxDuration(
           continue;
         }
         const s = norm_s(timeSince >= E ? E : timeSince);
-        const d = norm_d(clip.durationMs);
+        const d = norm_d(clip.duration);
         const w = s + d;
         n += w;
         if (weighedPick(w, n)) {
@@ -376,7 +372,7 @@ export function pickRandomWithMaxDuration(
       : {
           ...pick1,
           // fillerId: fillerId,
-          durationMs: pick1.durationMs,
+          duration: pick1.duration,
         },
     minimumWait: minimumWait,
   };

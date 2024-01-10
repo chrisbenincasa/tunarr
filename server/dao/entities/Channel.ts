@@ -60,7 +60,7 @@ export class Channel extends BaseEntity {
       seconds: channel.guideMinimumDurationSeconds,
     });
     entity.name = channel.name;
-    entity.duration = dayjs.duration({ milliseconds: channel.duration });
+    entity.duration = channel.duration;
     entity.stealth = channel.stealth;
     entity.groupTitle = channel.groupTitle;
     entity.startTime = channel.startTime;
@@ -105,12 +105,8 @@ export class Channel extends BaseEntity {
   @Property()
   name!: string;
 
-  @Property({ type: DurationType })
-  duration!: Duration;
-
-  set durationMs(ms: number) {
-    this.duration = dayjs.duration({ milliseconds: ms });
-  }
+  @Property()
+  duration!: number;
 
   @Property({ default: false })
   stealth!: boolean;
@@ -172,7 +168,7 @@ export class Channel extends BaseEntity {
       offline: this.offline,
       name: this.name,
       transcoding: nilToUndefined(this.transcoding),
-      duration: this.duration.asMilliseconds(),
+      duration: this.duration,
       stealth: this.stealth,
       programs: [],
     };

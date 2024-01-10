@@ -19,6 +19,5 @@ export default defineConfig<BetterSqliteDriver>({
     ChannelFillerShow,
   ],
   dbName: '.dizquetv/db.db',
-  type: 'better-sqlite',
   // driver: conf => new SQLite(),
 });
