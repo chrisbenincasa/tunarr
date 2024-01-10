@@ -1,12 +1,12 @@
 import z from 'zod';
 import {
-  ChannelProgrammingSchema,
+  ChannelLineupSchema,
   ContentGuideProgramSchema,
   CustomGuideProgramSchema,
   FlexGuideProgramSchema,
   RedirectGuideProgramSchema,
   TvGuideProgramSchema,
-} from './schemas/index.js';
+} from './schemas/guideApiSchemas.js';
 
 type Alias<t> = t & { _?: never };
 
@@ -42,4 +42,4 @@ export const isFlexGuideProgram = isGuideProgramType<FlexGuideProgram>([
   'flex',
 ]);
 
-export type ChannelLineup = Alias<z.infer<typeof ChannelProgrammingSchema>>;
+export type ChannelLineup = Alias<z.infer<typeof ChannelLineupSchema>>;

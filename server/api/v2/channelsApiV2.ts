@@ -2,14 +2,25 @@ import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
 import { ContentProgram, isContentGuideProgram } from 'dizquetv-types';
 import {
+  ChannelLineupSchema,
   ChannelProgramSchema,
   ChannelProgrammingSchema,
   ChannelSchema,
   ProgramSchema,
   UpdateChannelRequestSchema,
 } from 'dizquetv-types/schemas';
-import { filter, isError, isNil, omit, reduce, sortBy, sumBy } from 'lodash-es';
+import {
+  compact,
+  filter,
+  isError,
+  isNil,
+  omit,
+  reduce,
+  sortBy,
+  sumBy,
+} from 'lodash-es';
 import z from 'zod';
+import { buildApiLineup } from '../../dao/channelDb.js';
 import { getEm } from '../../dao/dataSource.js';
 import { LineupItem } from '../../dao/derived_types/Lineup.js';
 import { Program } from '../../dao/entities/Program.js';
@@ -17,9 +28,8 @@ import createLogger from '../../logger.js';
 import { scheduledJobsById } from '../../services/scheduler.js';
 import { UpdateXmlTvTask } from '../../tasks/updateXmlTvTask.js';
 import { RouterPluginAsyncCallback } from '../../types/serverType.js';
-import { attempt, groupByFunc } from '../../util.js';
+import { attempt, groupByFunc, mapAsyncSeq } from '../../util.js';
 import { programMinter } from '../../util/programMinter.js';
-import { buildApiLineup } from '../../dao/channelDb.js';
 
 dayjs.extend(duration);
 
@@ -187,11 +197,10 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
   );
 
   fastify.get(
-    '/channels/:number/lineup',
+    '/channels/:number/programming',
     {
       schema: {
         params: ChannelNumberParamSchema,
-        querystring: ChannelLineupQuery,
         response: {
           200: ChannelProgrammingSchema,
           404: z.object({ error: z.string() }),
@@ -221,7 +230,7 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
   );
 
   fastify.post(
-    '/channels/:number/lineup',
+    '/channels/:number/programming',
     {
       schema: {
         params: ChannelNumberParamSchema,
@@ -334,6 +343,85 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
         name: channel.name,
         programs: refreshedLineup,
       });
+    },
+  );
+
+  fastify.get(
+    '/channels/all/lineups',
+    {
+      schema: {
+        querystring: ChannelLineupQuery,
+        response: {
+          200: z.array(ChannelLineupSchema),
+        },
+      },
+    },
+    async (req, res) => {
+      const allChannels = await req.serverCtx.channelDB.getAllChannels();
+
+      const startTime = dayjs(req.query.from);
+      const endTime = dayjs(req.query.to);
+      const lineups = await mapAsyncSeq(
+        allChannels,
+        undefined,
+        async (channel) => {
+          const actualEndTime = req.query.to
+            ? endTime
+            : dayjs(
+                startTime.add(channel.guideMinimumDurationSeconds, 'seconds'),
+              );
+          return req.serverCtx.guideService.getChannelLineup(
+            channel.number,
+            startTime.toDate(),
+            actualEndTime.toDate(),
+          );
+        },
+      );
+
+      return res.status(200).send(compact(lineups));
+    },
+  );
+
+  fastify.get(
+    '/channels/:number/lineup',
+    {
+      schema: {
+        params: ChannelNumberParamSchema,
+        querystring: ChannelLineupQuery,
+        response: {
+          200: ChannelLineupSchema,
+          404: z.object({ error: z.string() }),
+        },
+      },
+    },
+    async (req, res) => {
+      const channel = await req.serverCtx.channelDB.getChannelAndPrograms(
+        req.params.number,
+      );
+
+      if (!channel) {
+        return res.status(404).send({ error: 'Channel Not Found' });
+      }
+
+      const startTime = dayjs(req.query.from);
+      const endTime = dayjs(
+        req.query.to ??
+          startTime.add(channel.guideMinimumDurationSeconds, 'seconds'),
+      );
+
+      const lineup = await req.serverCtx.guideService.getChannelLineup(
+        channel.number,
+        startTime.toDate(),
+        endTime.toDate(),
+      );
+
+      if (!lineup) {
+        return res
+          .status(404)
+          .send({ error: 'Could not generate lineup for channel' });
+      }
+
+      return res.status(200).send(lineup);
     },
   );
 };

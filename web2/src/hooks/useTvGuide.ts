@@ -1,15 +1,34 @@
 import { useQuery } from '@tanstack/react-query';
 import { Dayjs } from 'dayjs';
-import { ChannelLineup } from 'dizquetv-types';
+import { apiClient } from '../external/api.ts';
 
-export const useTvGuide = (params: { from: Dayjs; to: Dayjs }) =>
+export const useTvGuide = (params: {
+  number: number;
+  from: Dayjs;
+  to: Dayjs;
+}) =>
   useQuery({
-    queryKey: ['channels', 'guide', params] as const,
-    queryFn: async ({ queryKey }) => {
-      const [_, _2, { from, to }] = queryKey;
-      const res = await fetch(
-        `http://localhost:8000/api/guide/channels?dateFrom=${from.toISOString()}&dateTo=${to.toISOString()}`,
-      );
-      return res.json() as Promise<Record<string, ChannelLineup>>;
+    queryKey: ['channels', params.number, 'guide', params] as const,
+    queryFn: async () => {
+      return apiClient.get('/api/v2/channels/:number/lineup', {
+        params: { number: params.number },
+        queries: {
+          from: params.from.toISOString(),
+          to: params.to.toISOString(),
+        },
+      });
+    },
+  });
+
+export const useAllTvGuides = (params: { from: Dayjs; to: Dayjs }) =>
+  useQuery({
+    queryKey: ['channels', 'all', 'guide', params] as const,
+    queryFn: async () => {
+      return apiClient.get('/api/v2/channels/all/lineups', {
+        queries: {
+          from: params.from.toISOString(),
+          to: params.to.toISOString(),
+        },
+      });
     },
   });

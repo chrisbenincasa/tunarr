@@ -1,12 +1,12 @@
+import ZoomInIcon from '@mui/icons-material/ZoomIn';
+import ZoomOutIcon from '@mui/icons-material/ZoomOut';
 import { Box, IconButton, Typography, useTheme } from '@mui/material';
-import { useTvGuide } from '../../hooks/useTvGuide.ts';
-import { useCallback, useState } from 'react';
-import { TvGuideProgram } from 'dizquetv-types';
-import { useInterval } from 'usehooks-ts';
 import dayjs, { Dayjs } from 'dayjs';
 import duration from 'dayjs/plugin/duration';
-import ZoomOutIcon from '@mui/icons-material/ZoomOut';
-import ZoomInIcon from '@mui/icons-material/ZoomIn';
+import { TvGuideProgram } from 'dizquetv-types';
+import { useCallback, useState } from 'react';
+import { useInterval } from 'usehooks-ts';
+import { useAllTvGuides } from '../../hooks/useTvGuide.ts';
 
 dayjs.extend(duration);
 
@@ -45,7 +45,7 @@ export default function GuidePage() {
     isPending,
     error,
     data: channelLineup,
-  } = useTvGuide({ from: start, to: end });
+  } = useAllTvGuides({ from: start, to: end });
 
   useInterval(() => {
     setProgress(calcProgress(start, end));
@@ -114,10 +114,9 @@ export default function GuidePage() {
     );
   };
 
-  const channels = Object.keys(channelLineup).map((channel) => {
-    const lineup = channelLineup[channel];
+  const channels = channelLineup?.map((lineup) => {
     return (
-      <Box display="flex" flex={1} key={channel} component="section">
+      <Box display="flex" flex={1} key={lineup.number} component="section">
         {lineup.programs.map(renderProgram)}
       </Box>
     );

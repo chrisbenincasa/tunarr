@@ -24,7 +24,7 @@ export default function ChannelProgrammingPage() {
       });
     },
     onSuccess: async (data) => {
-      setCurrentLineup(data.programs);
+      setCurrentLineup(data.programs, /*dirty=*/ false);
       await queryClient.invalidateQueries({
         queryKey: ['channels', channel.number],
       });

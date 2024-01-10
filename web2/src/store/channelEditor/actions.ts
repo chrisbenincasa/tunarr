@@ -5,7 +5,7 @@ import {
   TvGuideProgram,
 } from 'dizquetv-types';
 import { isPlexEpisode } from 'dizquetv-types/plex';
-import { sumBy } from 'lodash-es';
+import { isUndefined, sumBy } from 'lodash-es';
 import useStore from '..';
 import { PlexMediaWithServerName } from '../../hooks/plexHooks.ts';
 import { initialChannelEditorState } from './store.ts';
@@ -26,9 +26,12 @@ export const setCurrentChannel = (channel: Channel, lineup: ChannelProgram[]) =>
     state.channelEditor.programList = [...lineup];
   });
 
-export const setCurrentLineup = (lineup: ChannelProgram[]) =>
+export const setCurrentLineup = (lineup: ChannelProgram[], dirty?: boolean) =>
   useStore.setState((state) => {
     state.channelEditor.programList = [...lineup];
+    if (!isUndefined(dirty)) {
+      state.channelEditor.dirty.programs = dirty;
+    }
   });
 
 export const updateCurrentChannel = (channel: Partial<Channel>) =>
@@ -44,22 +47,15 @@ export const updateCurrentChannel = (channel: Partial<Channel>) =>
 export const addProgramsToCurrentChannel = (programs: TvGuideProgram[]) =>
   useStore.setState((state) => {
     state.channelEditor.programList.push(...programs);
+    state.channelEditor.dirty.programs =
+      state.channelEditor.dirty.programs || programs.length > 0;
   });
 
-export const setChannelStartTime = (
-  startTime: number, // Epoch seconds...for now
-) =>
+export const setChannelStartTime = (startTime: number) =>
   useStore.setState((state) => {
     if (state.channelEditor.currentChannel) {
       state.channelEditor.currentChannel.startTime = startTime;
       state.channelEditor.dirty.programs = true;
-      let lastStartTime = startTime * 1000; // These durations deal in millis...annoying. Will fix
-      for (const program of state.channelEditor.programList) {
-        const endTime = lastStartTime + program.duration;
-        program.start = lastStartTime;
-        program.stop = endTime;
-        lastStartTime = endTime;
-      }
     }
   });
 

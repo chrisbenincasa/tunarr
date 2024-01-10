@@ -13,12 +13,12 @@ export const lineupQuery = (
     dateRange?.end?.unix() ?? 'null'
   }`;
   return {
-    queryKey: ['channels', number, 'lineup', dateRangeKey] as DataTag<
-      ['channels', number, 'lineup', string],
+    queryKey: ['channels', number, 'programming', dateRangeKey] as DataTag<
+      ['channels', number, 'programming', string],
       ChannelLineup
     >,
     queryFn: async () =>
-      apiClient.get('/api/v2/channels/:number/lineup', {
+      apiClient.get('/api/v2/channels/:number/programming', {
         params: { number },
         queries: {
           from: dateRange?.start.toISOString(),
