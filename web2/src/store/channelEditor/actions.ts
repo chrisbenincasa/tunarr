@@ -34,6 +34,18 @@ export const setCurrentLineup = (lineup: ChannelProgram[], dirty?: boolean) =>
     }
   });
 
+export const deleteProgram = (idx: number) =>
+  useStore.setState((state) => {
+    if (
+      state.channelEditor.programList.length > 0 &&
+      idx >= 0 &&
+      idx < state.channelEditor.programList.length
+    ) {
+      state.channelEditor.programList.splice(idx, 1);
+      state.channelEditor.dirty.programs = true;
+    }
+  });
+
 export const updateCurrentChannel = (channel: Partial<Channel>) =>
   useStore.setState((state) => {
     if (state.channelEditor.currentChannel) {
@@ -110,8 +122,8 @@ export const addPlexMediaToCurrentChannel = (
       // Update the start time for all existing programs
       for (const program of state.channelEditor.programList) {
         const endTime = lastStartTime + program.duration;
-        program.start = lastStartTime;
-        program.stop = endTime;
+        // program.start = lastStartTime;
+        // program.stop = endTime;
         lastStartTime = endTime;
       }
 

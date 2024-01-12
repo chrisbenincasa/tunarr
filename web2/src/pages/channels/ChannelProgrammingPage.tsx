@@ -19,7 +19,7 @@ export default function ChannelProgrammingPage() {
   const updateLineupMutation = useMutation({
     mutationKey: ['channels', channel.number, 'lineup'],
     mutationFn: (newLineup: ChannelProgram[]) => {
-      return apiClient.post('/api/v2/channels/:number/lineup', newLineup, {
+      return apiClient.post('/api/v2/channels/:number/programming', newLineup, {
         params: { number: channel.number },
       });
     },
@@ -49,9 +49,7 @@ export default function ChannelProgrammingPage() {
       <Typography variant="h4" sx={{ mb: 2 }}>
         Channel {channel.number} Programming
       </Typography>
-      <Paper sx={{ p: 2 }}>
-        <ChannelProgrammingConfig />
-      </Paper>
+      <ChannelProgrammingConfig />
       <Box sx={{ display: 'flex', justifyContent: 'end', pt: 1, columnGap: 1 }}>
         <Button variant="contained" to="/channels" component={Link}>
           Cancel
