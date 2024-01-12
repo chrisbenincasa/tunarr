@@ -23,6 +23,7 @@ export const resetChannelEditorState = () =>
 export const setCurrentChannel = (channel: Channel, lineup: ChannelProgram[]) =>
   useStore.setState((state) => {
     state.channelEditor.currentChannel = channel;
+    state.channelEditor.originalProgramList = [...lineup];
     state.channelEditor.programList = [...lineup];
   });
 
@@ -32,6 +33,14 @@ export const setCurrentLineup = (lineup: ChannelProgram[], dirty?: boolean) =>
     if (!isUndefined(dirty)) {
       state.channelEditor.dirty.programs = dirty;
     }
+  });
+
+export const resetLineup = () =>
+  useStore.setState((state) => {
+    state.channelEditor.programList = [
+      ...state.channelEditor.originalProgramList,
+    ];
+    state.channelEditor.dirty.programs = false;
   });
 
 export const deleteProgram = (idx: number) =>

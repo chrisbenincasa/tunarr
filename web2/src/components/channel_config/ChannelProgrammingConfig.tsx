@@ -37,18 +37,25 @@ import {
 } from '../../hooks/programming_controls/usePadStartTimes.ts';
 import {
   deleteProgram,
+  resetLineup,
   setChannelStartTime,
 } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
-import ProgrammingSelector from './ProgrammingSelector.tsx';
 import AddRedirectModal from '../programming_controls/AddRedirectModal.tsx';
+import ProgrammingSelector from './ProgrammingSelector.tsx';
 
 export function ChannelProgrammingConfig() {
   const channel = useStore((s) => s.channelEditor.currentChannel);
   const [programmingModalOpen, setProgrammingModalOpen] = useState(false);
   const programList = useStore((s) => s.channelEditor.programList);
+  const programsDirty = useStore((s) => s.channelEditor.dirty.programs);
 
   const [addRedirectModalOpen, setAddRedirectModalOpen] = useState(false);
+
+  // const [{isDragging}, drag] =
+  // const [, drop] = useDrop(() => ({
+  //   accept: 'all'
+  // }));
 
   const blockShuffle = useBlockShuffle();
   const [currentPadding, setCurrentPadding] = useState<StartTimePadding | null>(
@@ -248,6 +255,13 @@ export function ChannelProgrammingConfig() {
           </FormControl>
         </Box>
         <Box>
+          <Button
+            variant="contained"
+            onClick={() => resetLineup()}
+            disabled={!programsDirty}
+          >
+            Reset
+          </Button>
           <Button
             variant="contained"
             onClick={() => setProgrammingModalOpen(true)}
