@@ -1,3 +1,4 @@
+import { ThemeProvider } from '@mui/material/styles';
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
 import {
@@ -27,7 +28,7 @@ import SettingsRemoteIcon from '@mui/icons-material/SettingsRemote';
 import TvIcon from '@mui/icons-material/Tv';
 import PreviewIcon from '@mui/icons-material/Preview';
 import TheatersIcon from '@mui/icons-material/Theaters';
-
+import theme from './theme.tsx';
 interface NavItem {
   name: string;
   path: string;
@@ -82,7 +83,7 @@ export function Root() {
   };
 
   return (
-    <div>
+    <ThemeProvider theme={theme}>
       <ServerEvents />
       <Box sx={{ display: 'flex' }}>
         <CssBaseline />
@@ -91,6 +92,7 @@ export function Root() {
           sx={{
             width: `calc(100% - ${drawerWidth}px)`,
             ml: `${drawerWidth}px`,
+            p: 0,
           }}
         >
           <Toolbar>
@@ -118,6 +120,7 @@ export function Root() {
             '& .MuiDrawer-paper': {
               width: drawerWidth,
               boxSizing: 'border-box',
+              p: 0,
             },
           }}
           variant="permanent"
@@ -140,7 +143,7 @@ export function Root() {
               component="h1"
               noWrap
               color="inherit"
-              sx={{ flexGrow: 1 }}
+              sx={{ flexGrow: 1, pl: 1 }}
             >
               <Link
                 underline="none"
@@ -209,7 +212,7 @@ export function Root() {
           </Container>
         </Box>
       </Box>
-    </div>
+    </ThemeProvider>
   );
 }
 

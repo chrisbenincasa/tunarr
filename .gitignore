@@ -12,3 +12,4 @@ config/
 build/
 log.txt
 *.db
+.DS_Store
