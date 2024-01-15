@@ -1,6 +1,7 @@
 import z from 'zod';
 import {
   ChannelProgramSchema,
+  ChannelProgrammingSchema,
   ContentProgramSchema,
   CustomProgramSchema,
   FlexProgramSchema,
@@ -37,3 +38,7 @@ export const isContentProgram = isProgramType<ContentProgram>('content');
 export const isFlexProgram = isProgramType<FlexProgram>('flex');
 
 export const isRedirectProgram = isProgramType<RedirectProgram>('redirect');
+
+export type ChannelProgramming = Alias<
+  z.infer<typeof ChannelProgrammingSchema>
+>;

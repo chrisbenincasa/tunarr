@@ -1,9 +1,4 @@
-import {
-  Channel,
-  ChannelProgram,
-  ContentGuideProgram,
-  TvGuideProgram,
-} from 'dizquetv-types';
+import { Channel, ChannelProgram, ContentGuideProgram } from 'dizquetv-types';
 import { isPlexEpisode } from 'dizquetv-types/plex';
 import { isUndefined, sumBy } from 'lodash-es';
 import useStore from '..';
@@ -65,7 +60,7 @@ export const updateCurrentChannel = (channel: Partial<Channel>) =>
     }
   });
 
-export const addProgramsToCurrentChannel = (programs: TvGuideProgram[]) =>
+export const addProgramsToCurrentChannel = (programs: ChannelProgram[]) =>
   useStore.setState((state) => {
     state.channelEditor.programList.push(...programs);
     state.channelEditor.dirty.programs =

@@ -2,11 +2,12 @@ import { DataTag, useQuery } from '@tanstack/react-query';
 import { Channel } from 'dizquetv-types';
 import { apiClient } from '../external/api.ts';
 
-export const useChannels = () =>
-  useQuery({
-    queryKey: ['channels'],
-    queryFn: () => apiClient.get('/api/v2/channels') as Promise<Channel[]>,
-  });
+export const channelsQuery = {
+  queryKey: ['channels'] as DataTag<['channels'], Channel[]>,
+  queryFn: () => apiClient.get('/api/v2/channels'),
+};
+
+export const useChannels = () => useQuery(channelsQuery);
 
 export const channelQuery = (number: number, enabled: boolean = true) => ({
   queryKey: ['channels', number] as DataTag<['channels', number], Channel>,

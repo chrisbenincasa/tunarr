@@ -3,6 +3,7 @@ import { Program } from '../entities/Program.js';
 
 export type Lineup = {
   items: LineupItem[];
+  schedule?: LineupSchedule;
 };
 
 type BaseLineupItem = {
@@ -35,6 +36,62 @@ function isItemOfType<T extends LineupItem>(discrim: string) {
 export const isContentItem = isItemOfType<ContentItem>('content');
 export const isOfflineItem = isItemOfType<OfflineItem>('offline');
 export const isRedirectItem = isItemOfType<RedirectItem>('redirect');
+
+// type ScheduleSlot = {
+
+// }
+
+export type TimeSlot = {
+  order: 'next' | 'shuffle';
+  programId: string;
+  startTime: number; // Offset from midnight in millis
+};
+
+// type SlotBasedSchedule<T extends ScheduleSlot> = {
+//   type: string,
+//   slots: T[],
+//   timeZoneOffset: number; // time zone offset in millis
+//   flexPreference: 'distribute' | 'end';
+// }
+
+// Zod these up
+export type TimeSlotSchedule = {
+  type: 'slot';
+  flexPreference: 'distribute' | 'end';
+  latenessMs: number; // max lateness in millis
+  maxDays: number; // days to pregenerate schedule for
+  padMs: number; // Pad time in millis
+  periodMs: number;
+  slots: TimeSlot[];
+  timeZoneOffset: number; // tz offset in...minutes, i think?
+};
+
+export type RandomSlot = {
+  order: string;
+  showId: string;
+  startTime?: number; // Offset from midnight in millis
+  cooldown: number;
+  periodMs?: number;
+  durationMs: number;
+  weight?: number;
+  weightPercentage?: string; // Frontend specific?
+};
+
+// This is used on the frontend too, we will move common
+// types eventually.
+export type RandomSlotSchedule = {
+  type: 'random';
+  flexPreference: 'distribute' | 'end'; // distribute or end
+  maxDays: number; // days
+  padMs: number; // Pad time in millis
+  padStyle: 'slot' | 'episode';
+  slots: RandomSlot[];
+  timeZoneOffset?: number; // tz offset in...minutes, i think?
+  randomDistribution: 'uniform' | 'weighted';
+  periodMs?: number;
+};
+
+export type LineupSchedule = TimeSlotSchedule | RandomSlotSchedule;
 
 export function contentItemToProgramDTO(
   backingItem: Program,

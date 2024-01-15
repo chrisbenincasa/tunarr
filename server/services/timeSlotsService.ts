@@ -391,6 +391,7 @@ export default async (
       continue;
     }
 
+    // Milliseconds "into" the day from "curr"
     let dayTime = t % schedule.period;
     let slot: Maybe<TimeSlot>;
     let remaining: Maybe<number>;
@@ -398,6 +399,7 @@ export default async (
     for (let i = 0; i < s.length; i++) {
       let endTime: number;
       if (i == s.length - 1) {
+        // Loop into the next day
         endTime = s[0].time + schedule.period;
       } else {
         endTime = s[i + 1].time;
@@ -430,7 +432,7 @@ export default async (
     let item = getNextForSlot(slot, remaining);
 
     // So much potential nullness here, we will fix it...
-    if (late! >= schedule.lateness + constants.SLACK) {
+    if ((late ?? 0) >= schedule.lateness + constants.SLACK) {
       //it's late.
       item = {
         isOffline: true,

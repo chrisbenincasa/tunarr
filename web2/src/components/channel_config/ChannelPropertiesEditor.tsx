@@ -16,6 +16,7 @@ import useDebouncedState from '../../hooks/useDebouncedState.ts';
 import { updateCurrentChannel } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import { useDebounce } from 'usehooks-ts';
 
 const VisuallyHiddenInput = styled('input')({
   clip: 'rect(0 0 0 0)',
@@ -49,7 +50,11 @@ export default function ChannelPropertiesEditor() {
   }, [prevChannel, channel, setChannelName, setChannelNumber]);
 
   useEffect(() => {
-    if (channel && channel.name !== debounceChannelName) {
+    if (
+      channel &&
+      channel.name !== debounceChannelName &&
+      debounceChannelName.length > 0
+    ) {
       updateCurrentChannel({ name: debounceChannelName });
     }
   }, [channel, debounceChannelName]);

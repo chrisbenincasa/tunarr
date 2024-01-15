@@ -28,6 +28,7 @@ import {
 } from '@mui/material';
 import Grid2 from '@mui/material/Unstable_Grid2/Grid2';
 import dayjs from 'dayjs';
+import duration from 'dayjs/plugin/duration';
 import { useCallback, useState } from 'react';
 import { useBlockShuffle } from '../../hooks/programming_controls/useBlockShuffle.ts';
 import {
@@ -43,6 +44,9 @@ import {
 import useStore from '../../store/index.ts';
 import AddRedirectModal from '../programming_controls/AddRedirectModal.tsx';
 import ProgrammingSelector from './ProgrammingSelector.tsx';
+import AddFlexModal from '../programming_controls/AddFlexModal.tsx';
+
+// dayjs.extend(duration);
 
 export function ChannelProgrammingConfig() {
   const channel = useStore((s) => s.channelEditor.currentChannel);
@@ -51,6 +55,7 @@ export function ChannelProgrammingConfig() {
   const programsDirty = useStore((s) => s.channelEditor.dirty.programs);
 
   const [addRedirectModalOpen, setAddRedirectModalOpen] = useState(false);
+  const [addFlexModalOpen, setAddFlexModalOpen] = useState(false);
 
   // const [{isDragging}, drag] =
   // const [, drop] = useDrop(() => ({
@@ -68,10 +73,17 @@ export function ChannelProgrammingConfig() {
   }, []);
 
   const renderPrograms = () => {
-    let lastStart = channel!.startTime;
+    let lastStart = dayjs(channel!.startTime);
     return programList.map((p, idx) => {
-      const startTime = dayjs(lastStart).toString();
-      lastStart += p.duration;
+      const startTime = lastStart.format('YYYY-MM-DD HH:mm:ss');
+      const nextStart = lastStart.add(p.duration, 'milliseconds');
+      console.log(
+        nextStart.format(),
+        lastStart.format(),
+        nextStart.isAfter(lastStart),
+      );
+      const dayBoundary = nextStart.isAfter(lastStart, 'day');
+      lastStart = nextStart;
       let title: string;
 
       switch (p.type) {
@@ -93,11 +105,14 @@ export function ChannelProgrammingConfig() {
           break;
       }
 
-      title = `${startTime} ${title}`;
+      const dur = dayjs.duration({ milliseconds: p.duration }).humanize();
+
+      title = `${startTime} ${title} (${dur})`;
 
       return (
         <ListItem
           key={startTime}
+          sx={{ borderBottom: dayBoundary ? '1px dashed black' : null }}
           secondaryAction={
             <IconButton
               onClick={() => deleteProgramAtIndex(idx)}
@@ -215,7 +230,11 @@ export function ChannelProgrammingConfig() {
                 </FormGroup>
               </Grid2>
               <Grid2 xs={3}>
-                <Button variant="contained" startIcon={<CloudOffIcon />}>
+                <Button
+                  onClick={() => setAddFlexModalOpen(true)}
+                  variant="contained"
+                  startIcon={<CloudOffIcon />}
+                >
                   Add Flex
                 </Button>
               </Grid2>
@@ -231,6 +250,10 @@ export function ChannelProgrammingConfig() {
           </AccordionDetails>
         </Accordion>
       </Box>
+      <AddFlexModal
+        open={addFlexModalOpen}
+        onClose={() => setAddFlexModalOpen(false)}
+      />
       <AddRedirectModal
         open={addRedirectModalOpen}
         onClose={() => setAddRedirectModalOpen(false)}
@@ -241,7 +264,7 @@ export function ChannelProgrammingConfig() {
             <InputLabel>Programming Start</InputLabel>
             <Input
               type="datetime-local"
-              value={startTime.toISOString().replace('Z', '')}
+              value={startTime.format('YYYY-MM-DDTHH:mm:ss')}
               onChange={(e) => handleStartTimeChange(e.target.value)}
             />
           </FormControl>
@@ -250,7 +273,7 @@ export function ChannelProgrammingConfig() {
             <Input
               disabled
               type="datetime-local"
-              value={endTime.toISOString().replace('Z', '')}
+              value={endTime.format('YYYY-MM-DDTHH:mm:ss')}
             />
           </FormControl>
         </Box>

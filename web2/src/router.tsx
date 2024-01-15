@@ -8,6 +8,7 @@ import NewChannelPage from './pages/channels/NewChannelPage.tsx';
 import {
   editChannelLoader,
   editProgrammingLoader,
+  newChannelLoader,
 } from './pages/channels/loaders.ts';
 import CustomShowsPage from './pages/custom-shows/CustomShowsPage.tsx';
 import FillerListsPage from './pages/filler/FillerListsPage.tsx';
@@ -17,6 +18,7 @@ import PlexSettingsPage from './pages/settings/PlexSettingsPage.tsx';
 import SettingsLayout from './pages/settings/SettingsLayout.tsx';
 import XmlTvSettingsPage from './pages/settings/XmlTvSettingsPage.tsx';
 import { queryCache } from './queryClient.ts';
+import GeneralSettingsPage from './pages/settings/GeneralSettingsPage.tsx';
 
 const queryClient = new QueryClient({ queryCache });
 
@@ -41,6 +43,7 @@ export const router = createBrowserRouter([
       {
         path: '/channels/new',
         element: <NewChannelPage />,
+        loader: newChannelLoader(queryClient),
       },
       {
         path: '/channels/:id/programming',
@@ -55,6 +58,10 @@ export const router = createBrowserRouter([
         path: '/settings',
         element: <SettingsLayout />,
         children: [
+          {
+            path: '/settings/general',
+            element: <GeneralSettingsPage />,
+          },
           {
             path: '/settings/xmltv',
             element: <XmlTvSettingsPage />,

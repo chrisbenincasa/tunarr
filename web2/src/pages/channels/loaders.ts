@@ -1,10 +1,10 @@
 import { QueryClient } from '@tanstack/react-query';
+import { Channel, ChannelProgramming } from 'dizquetv-types';
 import { LoaderFunctionArgs } from 'react-router-dom';
 import { lineupQuery } from '../../hooks/useChannelLineup.ts';
-import { channelQuery } from '../../hooks/useChannels.ts';
-import { Preloader } from '../../types/index.ts';
-import { Channel, ChannelLineup } from 'dizquetv-types';
+import { channelQuery, channelsQuery } from '../../hooks/useChannels.ts';
 import { setCurrentChannel } from '../../store/channelEditor/actions.ts';
+import { Preloader } from '../../types/index.ts';
 
 export const editChannelLoader: Preloader<Channel> =
   (queryClient: QueryClient) =>
@@ -21,7 +21,7 @@ export const editChannelLoader: Preloader<Channel> =
 
 export const editProgrammingLoader: Preloader<{
   channel: Channel;
-  lineup: ChannelLineup;
+  lineup: ChannelProgramming;
 }> =
   (queryClient: QueryClient) =>
   async ({ params }: LoaderFunctionArgs) => {
@@ -42,11 +42,21 @@ export const editProgrammingLoader: Preloader<{
 
     return await Promise.all([channelPromise, lineupPromise]).then(
       ([channel, lineup]) => {
-        setCurrentChannel(channel, lineup!.programs);
+        setCurrentChannel(channel, lineup.programs);
         return {
           channel,
           lineup,
         };
       },
     );
+  };
+
+export const newChannelLoader: Preloader<Channel[]> =
+  (queryClient: QueryClient) => async () => {
+    let channels = queryClient.getQueryData(channelsQuery.queryKey);
+    if (!channels) {
+      channels = await queryClient.fetchQuery(channelsQuery);
+    }
+
+    return channels!;
   };
