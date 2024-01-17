@@ -100,3 +100,8 @@ export const PlexStreamSettingsSchema = z.object({
   pathReplace: z.string().default(''),
   pathReplaceWith: z.string().default(''),
 });
+
+export const HdhrSettingsSchema = z.object({
+  enableSsdpServer: z.boolean().default(false),
+  tunerCount: z.number().default(2),
+});

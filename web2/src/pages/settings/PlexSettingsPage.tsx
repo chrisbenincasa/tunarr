@@ -1,6 +1,4 @@
-import AddCircleIcon from '@mui/icons-material/AddCircle';
-import EditIcon from '@mui/icons-material/Edit';
-import Done from '@mui/icons-material/Done';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Box,
@@ -27,7 +25,10 @@ import {
   TableRow,
   TextField,
   Typography,
+  Input,
+  InputAdornment,
 } from '@mui/material';
+import { AddCircle, Close, Done, Edit } from '@mui/icons-material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { PlexServerInsert } from 'dizquetv-types';
 import { fill } from 'lodash-es';
@@ -37,8 +38,6 @@ import {
   usePlexStreamSettings,
 } from '../../hooks/settingsHooks.ts';
 import { toStringResolution } from '../../helpers/util.ts';
-import { Close } from '@mui/icons-material';
-import { useState } from 'react';
 
 const supportedResolutions = [
   '420x420',
@@ -49,6 +48,12 @@ const supportedResolutions = [
   '1920x1080',
   '3840x2160',
 ];
+
+const defaultPlexSettings = {
+  maxPlayableResolution: '1920x1080',
+  showSubtitles: false,
+  videoCodecs: ['h264', 'hevc', 'mpeg2video', 'av1'],
+};
 
 export default function PlexSettingsPage() {
   const {
@@ -65,10 +70,59 @@ export default function PlexSettingsPage() {
 
   const queryClient = useQueryClient();
 
-  const [showSubtitles, setShowSubtitles] = useState(false);
+  const [showSubtitles, setShowSubtitles] = useState<boolean>(
+    defaultPlexSettings.showSubtitles,
+  );
+
+  const [videoCodecs, setVideoCodecs] = React.useState<string[]>(
+    streamSettings?.videoCodecs || defaultPlexSettings.videoCodecs,
+  );
+
+  const [maxPlayableResolution, setMaxPlayableResolution] = useState<string>(
+    defaultPlexSettings.maxPlayableResolution,
+  );
+
+  const [addVideoCodecs, setAddVideoCodecs] = React.useState<string>('');
+
+  useEffect(() => {
+    setVideoCodecs(streamSettings?.videoCodecs || []);
+
+    setMaxPlayableResolution(
+      toStringResolution(
+        streamSettings?.maxPlayableResolution || {
+          widthPx: 1920,
+          heightPx: 1080,
+        },
+      ),
+    );
+  }, [streamSettings?.maxPlayableResolution, streamSettings?.videoCodecs]);
+
+  const handleVideoCodecUpdate = () => {
+    if (!addVideoCodecs.length) {
+      return;
+    }
+
+    // If there is a comma or white space at the end of user input, trim it
+    let newVideoCodecs: string[] = [addVideoCodecs.replace(/,\s*$/, '')];
+
+    if (addVideoCodecs?.indexOf(',') > -1) {
+      newVideoCodecs = newVideoCodecs[0].split(',');
+    } else {
+      newVideoCodecs = [newVideoCodecs[0]];
+    }
+
+    setVideoCodecs([...videoCodecs, ...newVideoCodecs]);
+    setAddVideoCodecs('');
+  };
+
+  const handleVideoCodecChange = (newVideoCodecs: string) => {
+    setAddVideoCodecs(newVideoCodecs);
+  };
+
   const onSubtitleChange = () => {
     setShowSubtitles(!showSubtitles);
   };
+
   const addPlexServerMutation = useMutation({
     mutationFn: (newServer: PlexServerInsert) => {
       return fetch('http://localhost:8000/api/plex-servers', {
@@ -86,8 +140,10 @@ export default function PlexSettingsPage() {
     },
   });
 
-  const removeVideoCodec = (codec: Text) => {
-    console.log(codec); // TODO
+  const removeVideoCodec = (codecToDelete: string) => () => {
+    setVideoCodecs(
+      (codecs) => codecs?.filter((codec) => codec !== codecToDelete),
+    );
   };
 
   const removeAudioCodec = (codec: Text) => {
@@ -138,7 +194,7 @@ export default function PlexSettingsPage() {
         </TableCell>
         <TableCell width="10%" align="right">
           <IconButton color="primary">
-            <EditIcon />
+            <Edit />
           </IconButton>
         </TableCell>
       </TableRow>
@@ -215,18 +271,35 @@ export default function PlexSettingsPage() {
         <Grid flex="1 0 50%" container spacing={3}>
           <Grid item xs={12} sm={6}>
             <FormControl fullWidth>
-              <TextField
-                id="component-outlined"
-                label="Video Codecs"
-                defaultValue={streamSettings?.videoCodecs}
+              <InputLabel htmlFor="add-video-codec">Video Codecs</InputLabel>
+              <Input
+                id="add-video-codec"
+                type={'text'}
+                value={addVideoCodecs}
+                onChange={(event) => handleVideoCodecChange(event.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleVideoCodecUpdate();
+                  }
+                }}
+                endAdornment={
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="Add Video Codec"
+                      onClick={handleVideoCodecUpdate}
+                    >
+                      <AddCircle />
+                    </IconButton>
+                  </InputAdornment>
+                }
               />
             </FormControl>
 
-            {streamSettings.videoCodecs.map((codec) => (
+            {videoCodecs?.map((codec) => (
               <Chip
                 label={codec}
                 key={codec}
-                onDelete={(codec) => removeVideoCodec(codec)}
+                onDelete={removeVideoCodec(codec)}
                 sx={{ mr: 1, mt: 1 }}
               />
             ))}
@@ -240,7 +313,7 @@ export default function PlexSettingsPage() {
                 labelId="max-playable-resolution"
                 id="max-playable-resolution"
                 label="Max Playable Resolution"
-                value={toStringResolution(streamSettings.maxPlayableResolution)}
+                value={maxPlayableResolution}
               >
                 {supportedResolutions.map((res) => (
                   <MenuItem key={res} value={res}>
@@ -479,7 +552,7 @@ export default function PlexSettingsPage() {
           <Button
             onClick={() => addPlexServer()}
             variant="contained"
-            startIcon={<AddCircleIcon />}
+            startIcon={<AddCircle />}
           >
             Add
           </Button>

@@ -4,6 +4,7 @@ import {
   PlexServerSettings,
   PlexStreamSettings,
   XmlTvSettings,
+  HdhrSettings,
 } from 'dizquetv-types';
 
 const getQuerySettings = <T>(settings: string, path: string) => ({
@@ -54,3 +55,6 @@ export const usePlexSettings = () =>
       };
     },
   });
+
+export const useHdhrSettings = () =>
+  useSettings<HdhrSettings>('hdhr', 'hdhr-settings');

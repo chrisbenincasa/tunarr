@@ -5,3 +5,4 @@ export * from './src/GuideApi.js';
 export * from './src/FfmpegSettings.js';
 export * from './src/misc.js';
 export * from './src/PlexSettings.js';
+export * from './src/HdhrSettings.js';

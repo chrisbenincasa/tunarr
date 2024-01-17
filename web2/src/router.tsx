@@ -14,6 +14,7 @@ import FillerListsPage from './pages/filler/FillerListsPage.tsx';
 import GuidePage from './pages/guide/GuidePage.tsx';
 import FfmpegSettingsPage from './pages/settings/FfmpegSettingsPage.tsx';
 import PlexSettingsPage from './pages/settings/PlexSettingsPage.tsx';
+import HdhrSettingsPage from './pages/settings/HdhrSettingsPage.tsx';
 import SettingsLayout from './pages/settings/SettingsLayout.tsx';
 import XmlTvSettingsPage from './pages/settings/XmlTvSettingsPage.tsx';
 import { queryCache } from './queryClient.ts';
@@ -66,6 +67,10 @@ export const router = createBrowserRouter([
           {
             path: '/settings/plex',
             element: <PlexSettingsPage />,
+          },
+          {
+            path: '/settings/hdhr',
+            element: <HdhrSettingsPage />,
           },
         ],
       },
