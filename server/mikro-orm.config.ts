@@ -1,23 +1,25 @@
-import type { BetterSqliteDriver } from '@mikro-orm/better-sqlite';
-import { defineConfig } from '@mikro-orm/core';
-import { PlexServerSettings } from './dao/entities/PlexServerSettings.js';
-import { Program } from './dao/entities/Program.js';
-import { Channel } from './dao/entities/Channel.js';
-import { CustomShow } from './dao/entities/CustomShow.js';
-import { FillerShow } from './dao/entities/FillerShow.js';
-import { CachedImage } from './dao/entities/CachedImage.js';
-import { ChannelFillerShow } from './dao/entities/ChannelFillerShow.js';
+import {
+  UnderscoreNamingStrategy,
+  defineConfig,
+} from '@mikro-orm/better-sqlite';
+import path, { dirname } from 'path';
+import { globalOptions } from './globals.js';
+import { TsMorphMetadataProvider } from '@mikro-orm/reflection';
+import { fileURLToPath } from 'node:url';
 
-export default defineConfig<BetterSqliteDriver>({
-  entities: [
-    PlexServerSettings,
-    Program,
-    Channel,
-    CustomShow,
-    FillerShow,
-    CachedImage,
-    ChannelFillerShow,
-  ],
-  dbName: '.dizquetv/db.db',
-  // driver: conf => new SQLite(),
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const dbPath = path.join(globalOptions().database, 'db.db');
+
+export default defineConfig({
+  dbName: dbPath,
+  baseDir: __dirname,
+  entities: ['./build/dao/entities'], // path to our JS entities (dist), relative to `baseDir`
+  entitiesTs: ['./dao/entities'], // path to our TS entities (src), relative to `baseDir`
+  debug: !!process.env['DATABASE_DEBUG_LOGGING'],
+  namingStrategy: UnderscoreNamingStrategy,
+  forceUndefined: true,
+  dynamicImportProvider: (id) => import(id),
+  metadataProvider: TsMorphMetadataProvider,
 });

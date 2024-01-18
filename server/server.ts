@@ -140,6 +140,10 @@ export async function initServer(opts: ServerOptions) {
     .register(cors, {
       origin: '*', // Testing
     })
+    .addHook('onRequest', (_req, _rep, done) =>
+      RequestContext.create(orm.em, done),
+    )
+    .addHook('onClose', async () => await orm.close())
     // .register(fastifyPrintRoutes)
     .register(
       fp((f, _, done) => {
@@ -153,15 +157,13 @@ export async function initServer(opts: ServerOptions) {
       }),
     );
 
-  await app
-    .use(
-      morgan(':method :url :status :res[content-length] - :response-time ms', {
-        stream: {
-          write: (message) => logger.http(message.trim()),
-        },
-      }),
-    )
-    .use((_req, _res, next) => RequestContext.create(orm.em, next));
+  await app.use(
+    morgan(':method :url :status :res[content-length] - :response-time ms', {
+      stream: {
+        write: (message) => logger.http(message.trim()),
+      },
+    }),
+  );
 
   ctx.eventService.setup(app);
 

@@ -2,18 +2,20 @@ import type {
   BetterSqliteDriver,
   SqlEntityManager,
 } from '@mikro-orm/better-sqlite'; // or any other driver package
-import fs from 'fs';
 import { MikroORM } from '@mikro-orm/better-sqlite';
 import {
   CreateContextOptions,
   RequestContext,
   UnderscoreNamingStrategy,
 } from '@mikro-orm/core';
+import fs from 'fs';
 import { isUndefined, once } from 'lodash-es';
 import path, { dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import 'reflect-metadata';
 import { globalOptions } from '../globals.js';
 import createLogger from '../logger.js';
+import { TsMorphMetadataProvider } from '@mikro-orm/reflection';
+import { fileURLToPath } from 'node:url';
 
 // Temporary
 const __filename = fileURLToPath(import.meta.url);
@@ -29,12 +31,17 @@ export const initOrm = once(async () => {
   const orm = await MikroORM.init<BetterSqliteDriver>({
     dbName: dbPath,
     baseDir: __dirname,
-    entities: ['../build/dao/entities'], // path to our JS entities (dist), relative to `baseDir`
-    entitiesTs: ['./entities'], // path to our TS entities (src), relative to `baseDir`
+    entities: ['../build/dao/entities'],
+    entitiesTs: ['./entities'],
     debug: !!process.env['DATABASE_DEBUG_LOGGING'],
     namingStrategy: UnderscoreNamingStrategy,
     forceUndefined: true,
+    dynamicImportProvider: (id) => import(id),
+    metadataProvider: TsMorphMetadataProvider,
   });
+
+  // Dynamically loading the config doesn't work in tests...figure out why
+  // const orm = await MikroORM.init();
 
   // First launch
   if (!hasExistingDb) {

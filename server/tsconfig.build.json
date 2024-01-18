@@ -4,6 +4,8 @@
         "./**/*.ts",
     ],
     "exclude": [
-        "./**/*.test.ts"
+        "./build/**/*",
+        "./**/*.test.ts",
+        "./**/*.ignore.ts"
     ]
 }

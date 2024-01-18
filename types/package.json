@@ -28,6 +28,9 @@
     },
     "./plex": {
       "import": "./src/plex/index.js"
+    },
+    "./api": {
+      "import": "./src/api/index.js"
     }
   }
 }

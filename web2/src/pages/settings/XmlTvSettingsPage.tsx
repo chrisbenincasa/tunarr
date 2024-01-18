@@ -36,10 +36,15 @@ export default function XmlTvSettingsPage() {
           defaultValue={data.outputPath}
           InputProps={{ readOnly: true }}
           variant="filled"
-          sx={{ mt: 2, mb: 2 }}
+          margin="normal"
+          sx={{ mt: 0 }}
           helperText="You can edit this location in file xmltv-settings.json."
         />
-        <Stack spacing={2} direction={{ sm: 'column', md: 'row' }}>
+        <Stack
+          sx={{ mt: 1, mb: 1 }}
+          spacing={2}
+          direction={{ sm: 'column', md: 'row' }}
+        >
           <TextField
             fullWidth
             label="EPG (Hours)"

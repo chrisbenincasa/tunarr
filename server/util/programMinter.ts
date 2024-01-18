@@ -7,18 +7,27 @@ import {
 import { EntityManager } from '@mikro-orm/better-sqlite';
 import { first } from 'lodash-es';
 
-type Minter = (
-  em: EntityManager,
-) => (serverName: string, plexItem: PlexTerminalMedia) => Program;
-
-export const programMinter: Minter = (em) => (serverName, plexItem) => {
-  switch (plexItem.type) {
-    case 'movie':
-      return mintMovieProgram(em, serverName, plexItem);
-    case 'episode':
-      return mintEpisodeProgram(em, serverName, plexItem);
+class ProgramMinter {
+  #em: EntityManager;
+  constructor(em: EntityManager) {
+    this.#em = em;
   }
-};
+
+  mint(serverName: string, plexItem: PlexTerminalMedia) {
+    switch (plexItem.type) {
+      case 'movie':
+        return mintMovieProgram(this.#em, serverName, plexItem);
+      case 'episode':
+        return mintEpisodeProgram(this.#em, serverName, plexItem);
+    }
+  }
+}
+
+export class ProgramMinterFactory {
+  static create(em: EntityManager): ProgramMinter {
+    return new ProgramMinter(em);
+  }
+}
 
 function mintMovieProgram(
   em: EntityManager,
@@ -66,5 +75,7 @@ function mintEpisodeProgram(
     showTitle: plexEpisode.grandparentTitle,
     showIcon: plexEpisode.grandparentThumb,
     episode: plexEpisode.index,
+    parentExternalKey: plexEpisode.parentRatingKey,
+    grandparentExternalKey: plexEpisode.grandparentRatingKey,
   });
 }

@@ -1,17 +1,12 @@
-import { Paper, Typography } from '@mui/material';
+import { Paper } from '@mui/material';
 import Box from '@mui/material/Box';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
-import { Channel } from 'dizquetv-types';
 import { useState } from 'react';
-import ChannelEpgConfig from '../../components/channel_config/ChannelEpgConfig.tsx';
-import { ChannelFlexConfig } from '../../components/channel_config/ChannelFlexConfig.tsx';
-import ChannelPropertiesEditor from '../../components/channel_config/ChannelPropertiesEditor.tsx';
-import ChannelTranscodingConfig from '../../components/channel_config/ChannelTranscodingConfig.tsx';
-import { usePreloadedData } from '../../hooks/preloadedDataHook.ts';
-import { setCurrentChannel } from '../../store/channelEditor/actions.ts';
-import { editChannelLoader } from './loaders.ts';
-import dayjs from 'dayjs';
+import ChannelEpgConfig from './ChannelEpgConfig.tsx';
+import { ChannelFlexConfig } from './ChannelFlexConfig.tsx';
+import ChannelPropertiesEditor from './ChannelPropertiesEditor.tsx';
+import ChannelTranscodingConfig from './ChannelTranscodingConfig.tsx';
 
 type TabValues = 'properties' | 'flex' | 'epg' | 'ffmpeg';
 
@@ -37,31 +32,6 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
-// TODO remove lint warning when we use this
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function defaultNewChannel(num: number): Channel {
-  return {
-    name: `Channel ${num}`,
-    number: num,
-    startTime: dayjs().unix() * 1000,
-    duration: 0,
-    programs: [],
-    icon: {
-      duration: 0,
-      path: '',
-      position: 'bottom',
-      width: 0,
-    },
-    guideMinimumDurationSeconds: 300,
-    groupTitle: 'tv',
-    stealth: false,
-    disableFillerOverlay: false,
-    offline: {
-      mode: 'pic',
-    },
-  };
-}
-
 export default function EditChannelControls() {
   const [currentTab, setCurrentTab] = useState<TabValues>('properties');
 
@@ -70,10 +40,9 @@ export default function EditChannelControls() {
 
   return (
     <Paper sx={{ p: 2 }}>
-      <Box sx={{ borderColor: 'background.paper', borderBottom: 1 }}>
+      <Box sx={{ borderColor: 'primary', borderBottom: 1 }}>
         <Tabs value={currentTab} onChange={handleChange}>
           <Tab value="properties" label="Properties" />
-          {/* <Tab value="programming" label="Programming" /> */}
           <Tab value="flex" label="Flex" />
           <Tab value="epg" label="EPG" />
           <Tab value="ffmpeg" label="FFMPEG" />

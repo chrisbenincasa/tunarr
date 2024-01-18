@@ -12,7 +12,7 @@ import { usePreloadedData } from '../../hooks/preloadedDataHook.ts';
 import { setCurrentChannel } from '../../store/channelEditor/actions.ts';
 import { editChannelLoader } from './loaders.ts';
 import dayjs from 'dayjs';
-import EditChannelControls from './EditChannelPage.tsx';
+import EditChannelControls from '../../components/channel_config/EditChannelControls.tsx';
 
 type TabValues = 'properties' | 'flex' | 'epg' | 'ffmpeg';
 

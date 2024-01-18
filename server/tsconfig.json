@@ -21,8 +21,10 @@
         "noImplicitThis": false,
         "strictNullChecks": true,
         "types": [
-            // "vitest/globals"
+            "vitest/globals",
+            "vitest/importMeta"
         ],
+        "declaration": true,
         "experimentalDecorators": true,
         "emitDecoratorMetadata": true,
         "esModuleInterop": true
@@ -34,4 +36,7 @@
         "./**/*.ts",
         "__tests__/**/*"
     ],
+    "exclude": [
+        "./build/**/*"
+    ]
 }

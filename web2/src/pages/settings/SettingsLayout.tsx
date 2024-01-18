@@ -24,6 +24,7 @@ const useRouteMatch = (
 
 export default function SettingsLayout() {
   const routeMatch = useRouteMatch([
+    '/settings/general',
     '/settings/xmltv',
     '/settings/ffmpeg',
     '/settings/plex',
@@ -38,6 +39,12 @@ export default function SettingsLayout() {
       </Typography>
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
         <Tabs value={currentTab}>
+          <Tab
+            label="General"
+            value="/settings/general"
+            to="/settings/general"
+            component={Link}
+          />
           <Tab
             label="XMLTV"
             value="/settings/xmltv"
