@@ -7,7 +7,7 @@ import {
 } from 'dizquetv-types';
 import { once } from 'lodash-es';
 import { Low } from 'lowdb';
-import { JSONPreset } from 'lowdb/node';
+import { JSONFilePreset } from 'lowdb/node';
 import path from 'path';
 import { DeepReadonly } from 'ts-essentials';
 import { v4 as uuidv4 } from 'uuid';
@@ -281,7 +281,7 @@ export const getSettingsRawDb = once(async (dbPath?: string) => {
 
   const needsFlush = !existsSync(actualPath);
 
-  const db = await JSONPreset<Schema>(actualPath, defaultSchema);
+  const db = await JSONFilePreset<Schema>(actualPath, defaultSchema);
 
   await db.read();
   if (needsFlush) {

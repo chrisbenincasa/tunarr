@@ -41,9 +41,36 @@ export const isRedirectItem = isItemOfType<RedirectItem>('redirect');
 
 // }
 
+export type MovieProgrammingSlot = {
+  type: 'movie';
+  sortType: '';
+};
+
+export type ShowProgrammingSlot = {
+  type: 'show';
+  showId: string; // grandparent id
+};
+
+export type FlexProgrammingSlot = {
+  type: 'flex';
+};
+
+export function slotProgrammingId(slot: SlotProgramming) {
+  if (slot.type === 'movie' || slot.type === 'flex') {
+    return slot.type;
+  } else {
+    return `show.${slot.showId}`;
+  }
+}
+
+export type SlotProgramming =
+  | MovieProgrammingSlot
+  | ShowProgrammingSlot
+  | FlexProgrammingSlot;
+
 export type TimeSlot = {
   order: 'next' | 'shuffle';
-  programId: string;
+  programming: SlotProgramming;
   startTime: number; // Offset from midnight in millis
 };
 
@@ -56,14 +83,15 @@ export type TimeSlot = {
 
 // Zod these up
 export type TimeSlotSchedule = {
-  type: 'slot';
+  type: 'time';
   flexPreference: 'distribute' | 'end';
   latenessMs: number; // max lateness in millis
   maxDays: number; // days to pregenerate schedule for
   padMs: number; // Pad time in millis
-  periodMs: number;
+  period: 'day' | 'week' | 'month';
   slots: TimeSlot[];
   timeZoneOffset: number; // tz offset in...minutes, i think?
+  startTomorrow?: boolean;
 };
 
 export type RandomSlot = {

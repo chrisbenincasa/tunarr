@@ -1,6 +1,7 @@
 import { Loaded, QueryOrder } from '@mikro-orm/core';
 import {
   ChannelProgram,
+  ChannelProgramming,
   ContentProgram,
   FlexProgram,
   RedirectProgram,
@@ -8,7 +9,7 @@ import {
 } from 'dizquetv-types';
 import { chain, isNil, isNull } from 'lodash-es';
 import { Low } from 'lowdb';
-import { JSONPreset } from 'lowdb/node';
+import { JSONFile } from 'lowdb/node';
 import { join } from 'path';
 import { globalOptions } from '../globals.js';
 import { Nullable } from '../types.js';
@@ -23,6 +24,7 @@ import {
 } from './derived_types/Lineup.js';
 import { Channel } from './entities/Channel.js';
 import { ProgramType } from './entities/Program.js';
+import { dbProgramToContentProgram } from './converters/programConverters.js';
 
 export class ChannelDB {
   private fileDbCache: Record<number, Low<Lineup>> = {};
@@ -85,10 +87,13 @@ export class ChannelDB {
 
   async loadLineup(channelNumber: number) {
     const db = await this.getFileDb(channelNumber);
+    await db.read();
     return db.data;
   }
 
-  async loadAndMaterializeLineup(channelNumber: number) {
+  async loadAndMaterializeLineup(
+    channelNumber: number,
+  ): Promise<ChannelProgramming | null> {
     const channel = await this.getChannelAndPrograms(channelNumber);
     if (isNil(channel)) {
       return null;
@@ -96,7 +101,12 @@ export class ChannelDB {
 
     const lineup = await this.loadLineup(channelNumber);
 
-    return buildApiLineup(channel, lineup.items);
+    return {
+      icon: channel.icon,
+      name: channel.name,
+      number: channel.number,
+      programs: buildApiLineup(channel, lineup.items),
+    };
   }
 
   async saveLineup(channelNumber: number, lineup: Lineup) {
@@ -112,8 +122,10 @@ export class ChannelDB {
 
   private async getFileDb(channel: number) {
     if (!this.fileDbCache[channel]) {
-      this.fileDbCache[channel] = await JSONPreset<Lineup>(
-        join(globalOptions().database, `channel-lineups/${channel}.json`),
+      this.fileDbCache[channel] = new Low<Lineup>(
+        new JSONFile(
+          join(globalOptions().database, `channel-lineups/${channel}.json`),
+        ),
         { items: [] },
       );
       await this.fileDbCache[channel].read();
@@ -173,22 +185,5 @@ function contentLineupItemToProgram(
     return null;
   }
 
-  return {
-    persisted,
-    summary: program.summary,
-    date: program.originalAirDate,
-    rating: program.rating,
-    icon: program.showIcon ?? program.episodeIcon ?? program.icon,
-    title: program.showTitle ?? program.title,
-    duration: program?.duration,
-    type: 'content',
-    id: program.uuid,
-    subtype: program.type,
-    seasonNumber:
-      program.type === ProgramType.Episode ? program.season : undefined,
-    episodeNumber:
-      program.type === ProgramType.Episode ? program.episode : undefined,
-    episodeTitle:
-      program.type === ProgramType.Episode ? program.title : undefined,
-  };
+  return dbProgramToContentProgram(program, persisted);
 }

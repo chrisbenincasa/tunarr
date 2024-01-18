@@ -77,11 +77,6 @@ export function ChannelProgrammingConfig() {
     return programList.map((p, idx) => {
       const startTime = lastStart.format('YYYY-MM-DD HH:mm:ss');
       const nextStart = lastStart.add(p.duration, 'milliseconds');
-      console.log(
-        nextStart.format(),
-        lastStart.format(),
-        nextStart.isAfter(lastStart),
-      );
       const dayBoundary = nextStart.isAfter(lastStart, 'day');
       lastStart = nextStart;
       let title: string;

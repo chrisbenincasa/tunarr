@@ -29,7 +29,7 @@ import { scheduledJobsById } from '../../services/scheduler.js';
 import { UpdateXmlTvTask } from '../../tasks/updateXmlTvTask.js';
 import { RouterPluginAsyncCallback } from '../../types/serverType.js';
 import { attempt, groupByFunc, mapAsyncSeq } from '../../util.js';
-import { programMinter } from '../../util/programMinter.js';
+import { ProgramMinterFactory } from '../../util/programMinter.js';
 
 dayjs.extend(duration);
 
@@ -220,12 +220,7 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
         req.params.number,
       );
 
-      return res.send({
-        icon: channel.icon,
-        name: channel.name,
-        number: channel.number,
-        programs: apiLineup!,
-      });
+      return res.send(apiLineup!);
     },
   );
 
@@ -253,10 +248,10 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
       const programsWithIndex = zipWithIndex(req.body);
       const nonPersisted = filter(req.body, (p) => !p.persisted);
       const em = getEm();
-      const minter = programMinter(em);
+      const minter = ProgramMinterFactory.create(em);
 
       const programsToPersist = filter(nonPersisted, isContentGuideProgram).map(
-        (p) => minter(p.externalSourceName!, p.originalProgram!),
+        (p) => minter.mint(p.externalSourceName!, p.originalProgram!),
       );
 
       const upsertedPrograms = await em.upsertMany(Program, programsToPersist, {

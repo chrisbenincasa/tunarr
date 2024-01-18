@@ -73,6 +73,14 @@ export class Program extends BaseEntity {
   @Property({ nullable: true })
   plexFilePath?: string;
 
+  // For TV Shows, this is the season key
+  @Property({ nullable: true })
+  parentExternalKey?: string;
+
+  // For TV shows, this is the show key
+  @Property({ nullable: true })
+  grandparentExternalKey?: string;
+
   // G, PG, etc
   @Property({ nullable: true })
   rating?: string;

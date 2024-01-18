@@ -39,7 +39,7 @@ export const ProgramSchema = z.object({
   year: z.number().optional(),
 });
 
-export const ExternalSourceTypeSchema = z.enum(['plex']);
+export const ExternalSourceTypeSchema = z.literal('plex');
 
 // The following schemas make up a channel's programming
 // They are "timeless" in the sense that they do not encode a

@@ -339,10 +339,9 @@ export default async (
     }
   }
 
-  const s = schedule.slots;
   const ts = new Date().getTime();
   const curr = ts - (ts % schedule.period);
-  const t0 = curr + s[0].time;
+  const t0 = curr + schedule.slots[0].time;
   const p: Partial<Program>[] = [];
   let t = t0;
   //   let wantedFinish = t % schedule.period;
@@ -383,10 +382,7 @@ export default async (
     await throttle();
     //ensure t is padded
     const m = t % schedule.pad;
-    if (
-      t % schedule.pad > constants.SLACK &&
-      schedule.pad - m > constants.SLACK
-    ) {
+    if (m > constants.SLACK && schedule.pad - m > constants.SLACK) {
       pushFlex(schedule.pad - m);
       continue;
     }
@@ -396,29 +392,30 @@ export default async (
     let slot: Maybe<TimeSlot>;
     let remaining: Maybe<number>;
     let late: Maybe<number>;
-    for (let i = 0; i < s.length; i++) {
+    for (let i = 0; i < schedule.slots.length; i++) {
       let endTime: number;
-      if (i == s.length - 1) {
+      if (i == schedule.slots.length - 1) {
         // Loop into the next day
-        endTime = s[0].time + schedule.period;
+        endTime = schedule.slots[0].time + schedule.period;
       } else {
-        endTime = s[i + 1].time;
+        endTime = schedule.slots[i + 1].time;
       }
 
-      if (s[i].time <= dayTime && dayTime < endTime) {
-        slot = s[i];
+      const currSlot = schedule.slots[i];
+      if (currSlot.time <= dayTime && dayTime < endTime) {
+        slot = currSlot;
         remaining = endTime - dayTime;
-        late = dayTime - s[i].time;
+        late = dayTime - currSlot.time;
         break;
       }
       if (
-        s[i].time <= dayTime + schedule.period &&
+        currSlot.time <= dayTime + schedule.period &&
         dayTime + schedule.period < endTime
       ) {
-        slot = s[i];
+        slot = currSlot;
         dayTime += schedule.period;
         remaining = endTime - dayTime;
-        late = dayTime + schedule.period - s[i].time;
+        late = dayTime + schedule.period - currSlot.time;
         break;
       }
     }
