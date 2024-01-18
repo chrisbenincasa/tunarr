@@ -25,6 +25,7 @@
     "@fastify/swagger-ui": "^2.0.1",
     "@mikro-orm/better-sqlite": "^6.0.4",
     "@mikro-orm/core": "^6.0.4",
+    "@mikro-orm/migrations": "6.0.4",
     "@mikro-orm/reflection": "^6.0.4",
     "JSONStream": "1.0.5",
     "axios": "^1.6.0",
