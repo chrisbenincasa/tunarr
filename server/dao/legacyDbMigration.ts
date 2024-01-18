@@ -11,10 +11,12 @@ import fs from 'fs/promises';
 import {
   chain,
   compact,
+  find,
   get,
   isArray,
   isError,
   isNaN,
+  isNil,
   isNumber,
   isObject,
   isUndefined,
@@ -70,6 +72,18 @@ import {
 } from './entities/Program.js';
 
 const logger = createLogger(import.meta);
+
+// Mapping from the old web UI
+const maxAudioChannelsOptions = [
+  { oldValue: '1', newValue: '1.0' },
+  { oldValue: '2', newValue: '2.0' },
+  { oldValue: '3', newValue: '2.1' },
+  { oldValue: '4', newValue: '4.0' },
+  { oldValue: '5', newValue: '5.0' },
+  { oldValue: '6', newValue: '5.1' },
+  { oldValue: '7', newValue: '6.1' },
+  { oldValue: '8', newValue: '7.1' },
+];
 
 async function readAllOldDbFile(file: string): Promise<JSONArray | JSONObject> {
   const data = await fs.readFile(
@@ -750,6 +764,13 @@ async function migrateFromLegacyDbInner(
         };
       } else {
         logger.info('Migrating Plex settings', plexSettings);
+        const audioChannelValue = plexSettings[
+          'maxAudioChannels'
+        ] as Maybe<string>;
+        const newAudioChannelValue = !isNil(audioChannelValue)
+          ? find(maxAudioChannelsOptions, { newValue: audioChannelValue })
+              ?.newValue ?? '2.0'
+          : '2.0';
         settings = {
           ...settings,
           plexStream: mergeWith<
@@ -784,10 +805,7 @@ async function migrateFromLegacyDbInner(
               forceDirectPlay: plexSettings[
                 'forceDirectPlay'
               ] as Maybe<boolean>,
-              maxAudioChannels: parseIntOrDefault(
-                plexSettings['maxAudioChannels'],
-                defaultPlexStreamSettings.maxAudioChannels,
-              ),
+              maxAudioChannels: newAudioChannelValue,
               maxPlayableResolution:
                 tryParseResolution(
                   plexSettings['maxPlayableResolution'] as Maybe<string>,

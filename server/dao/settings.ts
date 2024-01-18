@@ -158,7 +158,7 @@ export type PlexStreamSettings = {
   maxTranscodeResolution: Resolution;
   videoCodecs: string[];
   audioCodecs: string[];
-  maxAudioChannels: number;
+  maxAudioChannels: string;
   audioBoost: number;
   enableSubtitles: boolean;
   subtitleSize: number;

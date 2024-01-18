@@ -90,7 +90,7 @@ export const PlexStreamSettingsSchema = z.object({
     .array(z.string())
     .default(['h264', 'hevc', 'mpeg2video', 'av1']),
   audioCodecs: z.array(z.string()).default(['ac3']),
-  maxAudioChannels: z.number().default(2),
+  maxAudioChannels: z.string().default('2.0'),
   audioBoost: z.number().default(100),
   enableSubtitles: z.boolean().default(false),
   subtitleSize: z.number().default(100),
