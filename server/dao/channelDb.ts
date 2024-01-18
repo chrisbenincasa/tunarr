@@ -13,6 +13,7 @@ import { JSONFile } from 'lowdb/node';
 import { join } from 'path';
 import { globalOptions } from '../globals.js';
 import { Nullable } from '../types.js';
+import { dbProgramToContentProgram } from './converters/programConverters.js';
 import { getEm } from './dataSource.js';
 import {
   ContentItem,
@@ -23,8 +24,6 @@ import {
   isRedirectItem,
 } from './derived_types/Lineup.js';
 import { Channel } from './entities/Channel.js';
-import { ProgramType } from './entities/Program.js';
-import { dbProgramToContentProgram } from './converters/programConverters.js';
 
 export class ChannelDB {
   private fileDbCache: Record<number, Low<Lineup>> = {};
