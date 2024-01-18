@@ -10,8 +10,8 @@ import {
   editProgrammingLoader,
   newChannelLoader,
 } from './pages/channels/loaders.ts';
-import CustomShowsPage from './pages/custom-shows/CustomShowsPage.tsx';
-import FillerListsPage from './pages/filler/FillerListsPage.tsx';
+import CustomShowsPage from './pages/library/CustomShowsPage.tsx';
+import FillerListsPage from './pages/library/FillerListsPage.tsx';
 import GuidePage from './pages/guide/GuidePage.tsx';
 import FfmpegSettingsPage from './pages/settings/FfmpegSettingsPage.tsx';
 import PlexSettingsPage from './pages/settings/PlexSettingsPage.tsx';
@@ -20,6 +20,7 @@ import SettingsLayout from './pages/settings/SettingsLayout.tsx';
 import XmlTvSettingsPage from './pages/settings/XmlTvSettingsPage.tsx';
 import { queryCache } from './queryClient.ts';
 import GeneralSettingsPage from './pages/settings/GeneralSettingsPage.tsx';
+import LibraryIndexPage from './pages/library/LibraryIndexPage.tsx';
 
 const queryClient = new QueryClient({ queryCache });
 
@@ -84,6 +85,11 @@ export const router = createBrowserRouter([
       {
         path: '/library',
         children: [
+          {
+            path: '/library',
+            index: true,
+            element: <LibraryIndexPage />,
+          },
           {
             path: '/library/filler',
             element: <FillerListsPage />,
