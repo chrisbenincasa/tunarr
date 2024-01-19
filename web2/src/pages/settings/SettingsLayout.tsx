@@ -72,10 +72,11 @@ export default function SettingsLayout() {
             />
           </Tabs>
         </Box>
+
+        <Box sx={{ py: 3 }}>
+          <Outlet />
+        </Box>
       </Paper>
-      <Box sx={{ py: 3 }}>
-        <Outlet />
-      </Box>
     </Box>
   );
 }
