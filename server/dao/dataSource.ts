@@ -3,23 +3,18 @@ import type {
   SqlEntityManager,
 } from '@mikro-orm/better-sqlite'; // or any other driver package
 import { MikroORM } from '@mikro-orm/better-sqlite';
-import {
-  CreateContextOptions,
-  RequestContext,
-  UnderscoreNamingStrategy,
-} from '@mikro-orm/core';
+import { CreateContextOptions, RequestContext } from '@mikro-orm/core';
 import fs from 'fs';
 import { isUndefined, once } from 'lodash-es';
-import path, { dirname } from 'node:path';
+import path from 'node:path';
 import 'reflect-metadata';
 import { globalOptions } from '../globals.js';
 import createLogger from '../logger.js';
-import { TsMorphMetadataProvider } from '@mikro-orm/reflection';
-import { fileURLToPath } from 'node:url';
+import dbConfig from '../mikro-orm.config.js';
 
 // Temporary
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = dirname(__filename);
 
 const logger = createLogger(import.meta);
 
@@ -28,25 +23,21 @@ export const initOrm = once(async () => {
   const hasExistingDb = fs.existsSync(dbPath);
   logger.debug(`${hasExistingDb ? 'Existing' : 'No Existing'} DB at ${dbPath}`);
 
-  const orm = await MikroORM.init<BetterSqliteDriver>({
+  const orm = await MikroORM.init({
+    ...dbConfig,
     dbName: dbPath,
-    baseDir: __dirname,
-    entities: ['../build/dao/entities'],
-    entitiesTs: ['./entities'],
-    debug: !!process.env['DATABASE_DEBUG_LOGGING'],
-    namingStrategy: UnderscoreNamingStrategy,
-    forceUndefined: true,
-    dynamicImportProvider: (id) => import(id),
-    metadataProvider: TsMorphMetadataProvider,
   });
 
-  // Dynamically loading the config doesn't work in tests...figure out why
-  // const orm = await MikroORM.init();
+  const migrator = orm.getMigrator();
 
   // First launch
-  if (!hasExistingDb) {
+  if (
+    !hasExistingDb ||
+    (await migrator.checkMigrationNeeded()) ||
+    (await migrator.getPendingMigrations()).length > 0
+  ) {
     logger.debug('Synchronizing DB');
-    await orm.getSchemaGenerator().createSchema();
+    await migrator.up();
   }
 
   return orm;

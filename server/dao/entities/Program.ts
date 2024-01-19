@@ -118,8 +118,10 @@ export class Program extends BaseEntity {
   @ManyToMany(() => Channel, (channel) => channel.fallback, { eager: false })
   channelFallbacks = new Collection<Channel>(this);
 
-  @ManyToMany(() => CustomShow, (customShow) => customShow.content, {
+  @ManyToMany({
+    entity: () => CustomShow,
     eager: false,
+    mappedBy: (e) => e.content,
   })
   customShows = new Collection<CustomShow>(this);
 

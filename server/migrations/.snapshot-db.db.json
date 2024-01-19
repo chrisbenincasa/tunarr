@@ -1015,14 +1015,23 @@
           "nullable": false,
           "mappedType": "text"
         },
-        "program_uuid": {
-          "name": "program_uuid",
+        "content_uuid": {
+          "name": "content_uuid",
           "type": "text",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
           "nullable": false,
           "mappedType": "text"
+        },
+        "index": {
+          "name": "index",
+          "type": "integer",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "mappedType": "integer"
         }
       },
       "name": "custom_show_content",
@@ -1039,19 +1048,31 @@
         },
         {
           "columnNames": [
-            "program_uuid"
+            "content_uuid"
           ],
           "composite": false,
-          "keyName": "custom_show_content_program_uuid_index",
+          "keyName": "custom_show_content_content_uuid_index",
           "constraint": false,
           "primary": false,
           "unique": false
         },
         {
+          "keyName": "custom_show_content_custom_show_uuid_content_uuid_index_unique",
+          "columnNames": [
+            "custom_show_uuid",
+            "content_uuid",
+            "index"
+          ],
+          "composite": true,
+          "constraint": true,
+          "primary": false,
+          "unique": true
+        },
+        {
           "keyName": "primary",
           "columnNames": [
             "custom_show_uuid",
-            "program_uuid"
+            "content_uuid"
           ],
           "composite": true,
           "constraint": true,
@@ -1071,20 +1092,18 @@
             "uuid"
           ],
           "referencedTableName": "custom_show",
-          "deleteRule": "cascade",
           "updateRule": "cascade"
         },
-        "custom_show_content_program_uuid_foreign": {
-          "constraintName": "custom_show_content_program_uuid_foreign",
+        "custom_show_content_content_uuid_foreign": {
+          "constraintName": "custom_show_content_content_uuid_foreign",
           "columnNames": [
-            "program_uuid"
+            "content_uuid"
           ],
           "localTableName": "custom_show_content",
           "referencedColumnNames": [
             "uuid"
           ],
           "referencedTableName": "program",
-          "deleteRule": "cascade",
           "updateRule": "cascade"
         }
       },
