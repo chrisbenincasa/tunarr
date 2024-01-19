@@ -1,4 +1,4 @@
-import { Box, Tab, Tabs, Typography } from '@mui/material';
+import { Box, Paper, Tab, Tabs, Typography } from '@mui/material';
 import { isNil } from 'lodash-es';
 import {
   Link,
@@ -37,40 +37,42 @@ export default function SettingsLayout() {
       <Typography variant="h3" mb={2}>
         Settings
       </Typography>
-      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-        <Tabs value={currentTab}>
-          <Tab
-            label="General"
-            value="/settings/general"
-            to="/settings/general"
-            component={Link}
-          />
-          <Tab
-            label="XMLTV"
-            value="/settings/xmltv"
-            to="/settings/xmltv"
-            component={Link}
-          />
-          <Tab
-            label="FFMPEG"
-            value="/settings/ffmpeg"
-            to="/settings/ffmpeg"
-            component={Link}
-          />
-          <Tab
-            label="Plex"
-            value="/settings/plex"
-            to="/settings/plex"
-            component={Link}
-          />
-          <Tab
-            label="HDHR"
-            value="/settings/hdhr"
-            to="/settings/hdhr"
-            component={Link}
-          />
-        </Tabs>
-      </Box>
+      <Paper>
+        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+          <Tabs value={currentTab}>
+            <Tab
+              label="General"
+              value="/settings/general"
+              to="/settings/general"
+              component={Link}
+            />
+            <Tab
+              label="XMLTV"
+              value="/settings/xmltv"
+              to="/settings/xmltv"
+              component={Link}
+            />
+            <Tab
+              label="FFMPEG"
+              value="/settings/ffmpeg"
+              to="/settings/ffmpeg"
+              component={Link}
+            />
+            <Tab
+              label="Plex"
+              value="/settings/plex"
+              to="/settings/plex"
+              component={Link}
+            />
+            <Tab
+              label="HDHR"
+              value="/settings/hdhr"
+              to="/settings/hdhr"
+              component={Link}
+            />
+          </Tabs>
+        </Box>
+      </Paper>
       <Box sx={{ py: 3 }}>
         <Outlet />
       </Box>
