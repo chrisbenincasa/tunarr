@@ -43,7 +43,7 @@ import {
 } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
 import AddRedirectModal from '../programming_controls/AddRedirectModal.tsx';
-import ProgrammingSelector from './ProgrammingSelector.tsx';
+import ProgrammingSelectorDialog from './ProgrammingSelectorDialog.tsx';
 import AddFlexModal from '../programming_controls/AddFlexModal.tsx';
 
 // dayjs.extend(duration);
@@ -293,7 +293,7 @@ export function ChannelProgrammingConfig() {
           </Box>
         </Box>
       </Paper>
-      <ProgrammingSelector
+      <ProgrammingSelectorDialog
         open={programmingModalOpen}
         onClose={() => setProgrammingModalOpen(false)}
       />

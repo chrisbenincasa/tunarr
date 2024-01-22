@@ -5,6 +5,7 @@ import {
   ChannelProgramSchema,
   ChannelProgrammingSchema,
   ChannelSchema,
+  CustomShowSchema,
   ProgramSchema,
   UpdateChannelRequestSchema,
 } from 'dizquetv-types/schemas';
@@ -63,6 +64,12 @@ const api = makeApi([
       .addBody(BatchLookupExternalProgrammingSchema)
       .build(),
     response: z.array(ProgramSchema),
+  },
+  {
+    method: 'get',
+    path: '/api/v2/custom-shows',
+    alias: 'getCustomShows',
+    response: z.array(CustomShowSchema),
   },
 ]);
 

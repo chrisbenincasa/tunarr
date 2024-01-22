@@ -6,6 +6,7 @@ import ChannelsPage from './pages/channels/ChannelsPage.tsx';
 import EditExistingChannelPage from './pages/channels/EditExistingChannelPage.tsx';
 import NewChannelPage from './pages/channels/NewChannelPage.tsx';
 import {
+  customShowsLoader,
   editChannelLoader,
   editProgrammingLoader,
   newChannelLoader,
@@ -21,6 +22,7 @@ import XmlTvSettingsPage from './pages/settings/XmlTvSettingsPage.tsx';
 import { queryCache } from './queryClient.ts';
 import GeneralSettingsPage from './pages/settings/GeneralSettingsPage.tsx';
 import LibraryIndexPage from './pages/library/LibraryIndexPage.tsx';
+import EditCustomShowPage from './pages/library/EditCustomShowPage.tsx';
 
 const queryClient = new QueryClient({ queryCache });
 
@@ -97,6 +99,11 @@ export const router = createBrowserRouter([
           {
             path: '/library/custom-shows',
             element: <CustomShowsPage />,
+            loader: customShowsLoader(queryClient),
+          },
+          {
+            path: '/library/custom-shows/new',
+            element: <EditCustomShowPage />,
           },
         ],
       },

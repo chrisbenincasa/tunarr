@@ -11,10 +11,12 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import { Link } from 'react-router-dom';
+import { usePreloadedData } from '../../hooks/preloadedDataHook.ts';
+import { customShowsLoader } from '../channels/loaders.ts';
 
 export default function CustomShowsPage() {
-  // Placeholder...
-  const customShows = [];
+  const customShows = usePreloadedData(customShowsLoader);
+
   const getTableRows = () => {
     if (customShows.length === 0) {
       return (
@@ -36,7 +38,7 @@ export default function CustomShowsPage() {
         </Typography>
         <Button
           component={Link}
-          to="/channels/new"
+          to="/library/custom-shows/new"
           variant="contained"
           startIcon={<AddCircleIcon />}
         >
@@ -47,7 +49,7 @@ export default function CustomShowsPage() {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Name</TableCell>
+              <TableCell width={'80%'}>Name</TableCell>
               <TableCell># Clips</TableCell>
               <TableCell></TableCell>
             </TableRow>

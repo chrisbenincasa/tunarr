@@ -1,11 +1,12 @@
 import { Box, Paper, Stack, Typography } from '@mui/material';
 import { Link } from 'react-router-dom';
+import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 
 export default function LibraryIndexPage() {
   return (
     <Box sx={{ width: '100%' }}>
       <Stack direction="column" spacing={2}>
-        <Paper
+        <PaddedPaper
           component={Link}
           to="/library/filler"
           sx={{ textDecoration: 'none' }}
@@ -18,8 +19,8 @@ export default function LibraryIndexPage() {
             during 'flex' time segments. Flex is time within a channel that does
             not have a program scheduled (usually used for padding).
           </Typography>
-        </Paper>
-        <Paper
+        </PaddedPaper>
+        <PaddedPaper
           component={Link}
           to="/library/custom-shows"
           sx={{ textDecoration: 'none' }}
@@ -32,7 +33,7 @@ export default function LibraryIndexPage() {
             virtual TV show. When you add these shows to a channel, the schedule
             tools will treat the videos as if they belonged to a single TV show.
           </Typography>
-        </Paper>
+        </PaddedPaper>
       </Stack>
     </Box>
   );

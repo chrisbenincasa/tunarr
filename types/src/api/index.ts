@@ -1,4 +1,8 @@
 import { z } from 'zod';
+import {
+  ContentProgramSchema,
+  CustomProgramSchema,
+} from '../schemas/programmingSchema.js';
 
 export const ChannelNumberParamSchema = z.object({
   number: z.coerce.number(),
@@ -31,4 +35,11 @@ export const BatchLookupExternalProgrammingSchema = z.object({
   //     (tuple) => !isUndefined(programSourceTypeFromString(tuple[0])),
   //   );
   // }),
+});
+
+export const CreateCustomShowRequestSchema = z.object({
+  name: z.string(),
+  programs: z.array(
+    z.discriminatedUnion('type', [ContentProgramSchema, CustomProgramSchema]),
+  ),
 });

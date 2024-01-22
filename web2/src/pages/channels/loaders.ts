@@ -1,23 +1,38 @@
-import { QueryClient } from '@tanstack/react-query';
-import { Channel, ChannelProgramming } from 'dizquetv-types';
+import {
+  DataTag,
+  QueryClient,
+  QueryKey,
+  UseQueryOptions,
+} from '@tanstack/react-query';
+import { Channel, ChannelProgramming, CustomShow } from 'dizquetv-types';
 import { LoaderFunctionArgs } from 'react-router-dom';
 import { lineupQuery } from '../../hooks/useChannelLineup.ts';
 import { channelQuery, channelsQuery } from '../../hooks/useChannels.ts';
+import { useCustomShowsQuery } from '../../hooks/useCustomShows.ts';
 import { setCurrentChannel } from '../../store/channelEditor/actions.ts';
 import { Preloader } from '../../types/index.ts';
 
-export const editChannelLoader: Preloader<Channel> =
-  (queryClient: QueryClient) =>
-  async ({ params }: LoaderFunctionArgs) => {
-    const query = channelQuery(parseInt(params.id!));
-    let channel = queryClient.getQueryData(query.queryKey);
-    if (!channel) {
-      channel = await queryClient.fetchQuery(query);
+function createPreloader<T>(
+  query: (
+    args: LoaderFunctionArgs,
+  ) => UseQueryOptions<T, Error, T, DataTag<QueryKey, T>>,
+  callback: (data: T) => void = () => {},
+): Preloader<T> {
+  return (queryClient: QueryClient) => async (args) => {
+    const qk = query(args);
+    let data = queryClient.getQueryData(qk.queryKey);
+    if (!data) {
+      data = await queryClient.fetchQuery(qk);
     }
-
-    setCurrentChannel(channel!, []);
-    return channel!;
+    callback(data);
+    return data;
   };
+}
+
+export const editChannelLoader = createPreloader<Channel>(
+  ({ params }) => channelQuery(parseInt(params.id!)),
+  (channel) => setCurrentChannel(channel, []),
+);
 
 export const editProgrammingLoader: Preloader<{
   channel: Channel;
@@ -51,12 +66,10 @@ export const editProgrammingLoader: Preloader<{
     );
   };
 
-export const newChannelLoader: Preloader<Channel[]> =
-  (queryClient: QueryClient) => async () => {
-    let channels = queryClient.getQueryData(channelsQuery.queryKey);
-    if (!channels) {
-      channels = await queryClient.fetchQuery(channelsQuery);
-    }
+export const newChannelLoader: Preloader<Channel[]> = createPreloader(
+  () => channelsQuery,
+);
 
-    return channels!;
-  };
+export const customShowsLoader: Preloader<CustomShow[]> = createPreloader(
+  () => useCustomShowsQuery,
+);
