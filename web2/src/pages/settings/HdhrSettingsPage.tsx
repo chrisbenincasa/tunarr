@@ -1,12 +1,9 @@
 import {
-  Box,
   Button,
   Checkbox,
   FormControl,
   FormLabel,
-  FormControlLabel,
   FormHelperText,
-  Paper,
   Stack,
   TextField,
 } from '@mui/material';
@@ -28,22 +25,20 @@ export default function HdhrSettingsPage() {
 
   return (
     <>
-      <Paper>
-        <FormControl>
-          <Checkbox />
-          <FormLabel>Enable SSDP server</FormLabel>
-          <FormHelperText>* Restart required</FormHelperText>
-        </FormControl>
-        <TextField
-          fullWidth
-          id="output-path"
-          label="Tuner Count"
-          defaultValue={'2'}
-          InputProps={{ readOnly: true }}
-          variant="filled"
-          sx={{ mt: 2, mb: 2 }}
-        />
-      </Paper>
+      <FormControl>
+        <Checkbox />
+        <FormLabel>Enable SSDP server</FormLabel>
+        <FormHelperText>* Restart required</FormHelperText>
+      </FormControl>
+      <TextField
+        fullWidth
+        id="output-path"
+        label="Tuner Count"
+        defaultValue={'2'}
+        InputProps={{ readOnly: true }}
+        variant="filled"
+        sx={{ mt: 2, mb: 2 }}
+      />
       <Stack spacing={2} direction="row" justifyContent="right" sx={{ mt: 2 }}>
         <Button variant="outlined">Reset Options</Button>
         <Button variant="contained">Save</Button>

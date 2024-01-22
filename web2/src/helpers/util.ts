@@ -50,3 +50,7 @@ export const fromStringResolution = (
   const [h, w] = res.split('x', 1);
   return { widthPx: parseInt(w), heightPx: parseInt(h) };
 };
+
+export const hasOnlyDigits = (value: string) => {
+  return /^-?\d+$/.test(value);
+};

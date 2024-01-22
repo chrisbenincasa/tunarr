@@ -27,6 +27,7 @@ import {
   Typography,
   Input,
   InputAdornment,
+  SelectChangeEvent,
 } from '@mui/material';
 import { AddCircle, Close, Done, Edit } from '@mui/icons-material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -49,10 +50,52 @@ const supportedResolutions = [
   '3840x2160',
 ];
 
+const supportedAudioChannels = [
+  '1.0',
+  '2.0',
+  '2.1',
+  '4.0',
+  '5.0',
+  '5.1',
+  '6.1',
+  '7.1',
+];
+
+const supportedAudioBoost = [
+  { value: 100, string: '0 Seconds' },
+  { value: 120, string: '1 Second' },
+  { value: 140, string: '2 Seconds' },
+  { value: 160, string: '3 Seconds' },
+  { value: 180, string: '4 Seconds' },
+];
+
 const defaultPlexSettings = {
-  maxPlayableResolution: '1920x1080',
-  showSubtitles: false,
+  audioBoost: 100,
+  audioCodecs: ['ac3'],
+  directStreamBitrate: 20000,
+  enableDebugLogging: false,
+  enableSubtitles: false,
+  forceDirectPlay: false,
+  maxAudioChannels: '2.0',
+  maxPlayableResolution: {
+    widthPx: 1920,
+    heightPx: 1080,
+  },
+  maxTranscodeResolution: {
+    widthPx: 1920,
+    heightPx: 1080,
+  },
+  mediaBufferSize: 1000,
+  pathReplace: '',
+  pathReplaceWith: '',
+  streamPath: 'plex',
+  streamProtocol: 'http',
+  subtitleSize: 100,
+  transcodeBitrate: 2000,
+  transcodeMediaBufferSize: 20000,
+  updatePlayStatus: false,
   videoCodecs: ['h264', 'hevc', 'mpeg2video', 'av1'],
+  showSubtitles: false,
 };
 
 export default function PlexSettingsPage() {
@@ -75,27 +118,74 @@ export default function PlexSettingsPage() {
   );
 
   const [videoCodecs, setVideoCodecs] = React.useState<string[]>(
-    streamSettings?.videoCodecs || defaultPlexSettings.videoCodecs,
-  );
-
-  const [maxPlayableResolution, setMaxPlayableResolution] = useState<string>(
-    defaultPlexSettings.maxPlayableResolution,
+    defaultPlexSettings.videoCodecs,
   );
 
   const [addVideoCodecs, setAddVideoCodecs] = React.useState<string>('');
 
+  const [audioCodecs, setAudioCodecs] = React.useState<string[]>(
+    defaultPlexSettings.audioCodecs,
+  );
+
+  const [addAudioCodecs, setAddAudioCodecs] = React.useState<string>('');
+
+  const [maxAudioChannels, setMaxAudioChannels] = React.useState<string>(
+    defaultPlexSettings.maxAudioChannels,
+  );
+
+  const [directStreamBitrate, setDirectStreamBitrate] =
+    React.useState<string>('');
+
+  const [transcodeBitrate, setTranscodeBitrate] = React.useState<string>('');
+
+  const [mediaBufferSize, setMediaBufferSize] = React.useState<string>('');
+
+  const [transcodeMediaBufferSize, setTranscodeMediaBufferSize] =
+    React.useState<string>('');
+
   useEffect(() => {
-    setVideoCodecs(streamSettings?.videoCodecs || []);
+    setVideoCodecs(
+      streamSettings?.videoCodecs || defaultPlexSettings.videoCodecs,
+    );
 
     setMaxPlayableResolution(
       toStringResolution(
-        streamSettings?.maxPlayableResolution || {
-          widthPx: 1920,
-          heightPx: 1080,
-        },
+        streamSettings?.maxPlayableResolution ||
+          defaultPlexSettings.maxPlayableResolution,
       ),
     );
-  }, [streamSettings?.maxPlayableResolution, streamSettings?.videoCodecs]);
+
+    setMaxDirectStreamBitrate(
+      streamSettings?.directStreamBitrate.toString() ||
+        defaultPlexSettings.directStreamBitrate.toString(),
+    );
+
+    setAudioCodecs(
+      streamSettings?.audioCodecs || defaultPlexSettings.audioCodecs,
+    );
+
+    setMaxAudioChannels(
+      streamSettings?.maxAudioChannels || defaultPlexSettings.maxAudioChannels,
+    );
+
+    setDirectStreamBitrate(
+      streamSettings?.directStreamBitrate.toString() ||
+        defaultPlexSettings.directStreamBitrate.toString(),
+    );
+
+    setTranscodeBitrate(
+      streamSettings?.transcodeBitrate.toString() ||
+        defaultPlexSettings.transcodeBitrate.toString(),
+    );
+    setMediaBufferSize(
+      streamSettings?.mediaBufferSize.toString() ||
+        defaultPlexSettings.mediaBufferSize.toString(),
+    );
+    setTranscodeMediaBufferSize(
+      streamSettings?.transcodeMediaBufferSize.toString() ||
+        defaultPlexSettings.transcodeMediaBufferSize.toString(),
+    );
+  }, [streamSettings]);
 
   const handleVideoCodecUpdate = () => {
     if (!addVideoCodecs.length) {
@@ -117,6 +207,50 @@ export default function PlexSettingsPage() {
 
   const handleVideoCodecChange = (newVideoCodecs: string) => {
     setAddVideoCodecs(newVideoCodecs);
+  };
+
+  const handleAudioCodecUpdate = () => {
+    if (!addAudioCodecs.length) {
+      return;
+    }
+
+    // If there is a comma or white space at the end of user input, trim it
+    let newAudioCodecs: string[] = [addAudioCodecs.replace(/,\s*$/, '')];
+
+    if (addAudioCodecs?.indexOf(',') > -1) {
+      newAudioCodecs = newAudioCodecs[0].split(',');
+    } else {
+      newAudioCodecs = [newAudioCodecs[0]];
+    }
+
+    setAudioCodecs([...audioCodecs, ...newAudioCodecs]);
+    setAddAudioCodecs('');
+  };
+
+  const handleAudioCodecChange = (newAudioCodecs: string) => {
+    setAddAudioCodecs(newAudioCodecs);
+  };
+
+  const [maxPlayableResolution, setMaxPlayableResolution] = useState<string>(
+    toStringResolution(defaultPlexSettings.maxPlayableResolution),
+  );
+
+  const handleMaxPlayableResolution = (event: SelectChangeEvent<string>) => {
+    setMaxPlayableResolution(event.target.value as string);
+  };
+
+  const [maxDirectStreamBitrate, setMaxDirectStreamBitrate] = useState<string>(
+    defaultPlexSettings.directStreamBitrate.toString(),
+  );
+
+  const handleMaxDirectStreamBitrate = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    setMaxDirectStreamBitrate(event.target.value);
+  };
+
+  const handleMaxAudioChannels = (event: SelectChangeEvent<string>) => {
+    setMaxAudioChannels(event.target.value as string);
   };
 
   const onSubtitleChange = () => {
@@ -146,8 +280,10 @@ export default function PlexSettingsPage() {
     );
   };
 
-  const removeAudioCodec = (codec: Text) => {
-    console.log(codec); // TODO
+  const removeAudioCodec = (codecToDelete: string) => () => {
+    setAudioCodecs(
+      (codecs) => codecs?.filter((codec) => codec !== codecToDelete),
+    );
   };
 
   const UIRouteSuccess = true; // TODO
@@ -222,7 +358,7 @@ export default function PlexSettingsPage() {
 
   const renderServersTable = () => {
     return (
-      <TableContainer component={Paper}>
+      <TableContainer>
         <Table>
           <TableHead>
             <TableRow>
@@ -314,6 +450,7 @@ export default function PlexSettingsPage() {
                 id="max-playable-resolution"
                 label="Max Playable Resolution"
                 value={maxPlayableResolution}
+                onChange={handleMaxPlayableResolution}
               >
                 {supportedResolutions.map((res) => (
                   <MenuItem key={res} value={res}>
@@ -326,7 +463,8 @@ export default function PlexSettingsPage() {
           <Grid item xs={12}>
             <FormControl fullWidth>
               <TextField
-                defaultValue={streamSettings.directStreamBitrate}
+                value={maxDirectStreamBitrate}
+                onChange={handleMaxDirectStreamBitrate}
                 label="Max Direct Stream Bitrate (Kbps)"
               />
             </FormControl>
@@ -366,17 +504,34 @@ export default function PlexSettingsPage() {
         <Grid flex="1 0 50%" container spacing={3}>
           <Grid item xs={12} sm={6}>
             <FormControl fullWidth>
-              <TextField
-                id="component-outlined"
-                label="Audio Codecs"
-                defaultValue={streamSettings?.audioCodecs}
+              <InputLabel htmlFor="add-audio-codec">Audio Codecs</InputLabel>
+              <Input
+                id="add-audio-codec"
+                type={'text'}
+                value={addAudioCodecs}
+                onChange={(event) => handleAudioCodecChange(event.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleAudioCodecUpdate();
+                  }
+                }}
+                endAdornment={
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="Add Audio Codec"
+                      onClick={handleAudioCodecUpdate}
+                    >
+                      <AddCircle />
+                    </IconButton>
+                  </InputAdornment>
+                }
               />
             </FormControl>
-            {streamSettings.audioCodecs.map((codec) => (
+            {audioCodecs.map((codec) => (
               <Chip
                 label={codec}
                 key={codec}
-                onDelete={(codec) => removeAudioCodec(codec)}
+                onDelete={removeAudioCodec(codec)}
                 sx={{ mr: 1, mt: 1 }}
               />
             ))}
@@ -390,16 +545,14 @@ export default function PlexSettingsPage() {
                 labelId="maximum-audio-channels-label"
                 id="maximum-audio-channels"
                 label="Maxium Audio Channels"
-                value={streamSettings.maxAudioChannels}
+                value={maxAudioChannels}
+                onChange={handleMaxAudioChannels}
               >
-                <MenuItem value={1}>1.0</MenuItem>
-                <MenuItem value={2}>2.0</MenuItem>
-                <MenuItem value={2.1}>2.1</MenuItem>
-                <MenuItem value={4}>4.0</MenuItem>
-                <MenuItem value={5}>5.0</MenuItem>
-                <MenuItem value={5.1}>5.1</MenuItem>
-                <MenuItem value={6.1}>6.1</MenuItem>
-                <MenuItem value={7.1}>7.1</MenuItem>
+                {supportedAudioChannels.map((res) => (
+                  <MenuItem key={res} value={res}>
+                    {res}
+                  </MenuItem>
+                ))}
               </Select>
               <FormHelperText>
                 Note: 7.1 audio and on some clients, 6.1, is known to cause
@@ -416,11 +569,11 @@ export default function PlexSettingsPage() {
                 label="Audio Boost"
                 value={streamSettings.audioBoost}
               >
-                <MenuItem value={100}>0 Seconds</MenuItem>
-                <MenuItem value={120}>1 Second</MenuItem>
-                <MenuItem value={140}>2 Seconds</MenuItem>
-                <MenuItem value={160}>3 Seconds</MenuItem>
-                <MenuItem value={180}>4 Seconds</MenuItem>
+                {supportedAudioBoost.map((boost) => (
+                  <MenuItem key={boost.value} value={boost.value}>
+                    {boost.string}
+                  </MenuItem>
+                ))}
               </Select>
               <FormHelperText>
                 Note: Only applies when downmixing to stereo.
@@ -510,14 +663,14 @@ export default function PlexSettingsPage() {
               <TextField
                 id="component-outlined"
                 label="Max Direct Stream Bitrate (Kbps)"
-                defaultValue={streamSettings?.directStreamBitrate}
+                value={directStreamBitrate}
               />
             </FormControl>
             <FormControl fullWidth sx={{ my: 1 }}>
               <TextField
                 id="component-outlined"
                 label="Max Transcode Bitrate (Kbps)"
-                defaultValue={streamSettings?.transcodeBitrate}
+                value={transcodeBitrate}
               />
             </FormControl>
           </Grid>
@@ -526,14 +679,14 @@ export default function PlexSettingsPage() {
               <TextField
                 id="component-outlined"
                 label="Direct Stream Media Buffer Size"
-                defaultValue={streamSettings?.mediaBufferSize}
+                value={mediaBufferSize}
               />
             </FormControl>
             <FormControl fullWidth sx={{ my: 1 }}>
               <TextField
                 id="component-outlined"
                 label="Transcode Media Buffer Size"
-                defaultValue={streamSettings?.transcodeMediaBufferSize}
+                value={transcodeMediaBufferSize}
               />
             </FormControl>
           </Grid>
@@ -567,15 +720,15 @@ export default function PlexSettingsPage() {
         episode change, you will experience playback issues unless ffmpeg
         transcoding and normalization are also enabled.
       </Alert>
-      <Paper sx={{ display: 'block', p: 2 }}>
+      <Box sx={{ display: 'block', p: 2 }}>
         {renderStreamSettings()}
         {renderAudioSettings()}
         {renderSubtitleSettings()}
-      </Paper>
+      </Box>
       <Typography component="h6" variant="h6" sx={{ pt: 2, pb: 1 }}>
         Miscellaneous Options
       </Typography>
-      <Paper>{renderMiscSettings()}</Paper>
+      <Box>{renderMiscSettings()}</Box>
       <Stack spacing={2} direction="row" justifyContent="right" sx={{ mt: 2 }}>
         <Button variant="outlined">Reset Options</Button>
         <Button variant="contained">Save</Button>
