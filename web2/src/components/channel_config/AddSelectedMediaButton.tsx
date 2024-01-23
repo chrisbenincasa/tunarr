@@ -1,15 +1,22 @@
+import Button, { ButtonProps } from '@mui/material/Button';
 import { flattenDeep } from 'lodash-es';
 import { sequentialPromises } from '../../helpers/util.ts';
-import { enumeratePlexItem } from '../../hooks/plexHooks.ts';
-import { addPlexMediaToCurrentChannel } from '../../store/channelEditor/actions.ts';
+import {
+  PlexMediaWithServerName,
+  enumeratePlexItem,
+} from '../../hooks/plexHooks.ts';
 import useStore from '../../store/index.ts';
-import Button from '@mui/material/Button';
 
 type Props = {
+  onAdd: (items: PlexMediaWithServerName[]) => void;
   onSuccess: () => void;
-};
+} & ButtonProps;
 
-export default function AddSelectedMediaButton({ onSuccess }: Props) {
+export default function AddSelectedMediaButton({
+  onAdd,
+  onSuccess,
+  ...rest
+}: Props) {
   const knownMedia = useStore((s) => s.knownMediaByServer);
   const selectedMedia = useStore((s) => s.selectedMedia);
 
@@ -19,7 +26,7 @@ export default function AddSelectedMediaButton({ onSuccess }: Props) {
       return enumeratePlexItem(selected.server, media)();
     })
       .then(flattenDeep)
-      .then(addPlexMediaToCurrentChannel)
+      .then(onAdd)
       .then(() => {
         onSuccess();
       })
@@ -30,6 +37,7 @@ export default function AddSelectedMediaButton({ onSuccess }: Props) {
     <Button
       onClick={() => addSelectedItems()}
       disabled={selectedMedia.length === 0}
+      {...(rest ?? {})}
     >
       Add
     </Button>

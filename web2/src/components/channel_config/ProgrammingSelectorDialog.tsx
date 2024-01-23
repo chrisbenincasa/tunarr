@@ -17,7 +17,7 @@ import {
 } from '../../store/programmingSelector/actions.ts';
 import AddSelectedMediaButton from './AddSelectedMediaButton.tsx';
 import ProgrammingSelector from './ProgrammingSelector.tsx';
-import SelectedProgrammingList from './SelectedProgrammingList.tsx';
+import { addPlexMediaToCurrentChannel } from '../../store/channelEditor/actions.ts';
 
 export interface PlexListItemProps<T extends PlexMedia> {
   item: T;
@@ -62,11 +62,13 @@ export default function ProgrammingSelectorDialog(props: {
       <DialogTitle>Add Programming</DialogTitle>
       <DialogContent>
         <ProgrammingSelector />
-        <SelectedProgrammingList />
       </DialogContent>
       <DialogActions>
         <Button onClick={() => props.onClose()}>Cancel</Button>
-        <AddSelectedMediaButton onSuccess={() => props.onClose()} />
+        <AddSelectedMediaButton
+          onAdd={addPlexMediaToCurrentChannel}
+          onSuccess={() => props.onClose()}
+        />
       </DialogActions>
     </Dialog>
   );

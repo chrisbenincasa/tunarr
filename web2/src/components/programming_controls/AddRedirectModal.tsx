@@ -22,7 +22,7 @@ type AddRedirectModalProps = {
 };
 
 const AddRedirectModal = (props: AddRedirectModalProps) => {
-  const currentChannel = useStore((s) => s.channelEditor.currentChannel);
+  const currentChannel = useStore((s) => s.channelEditor.currentEntity);
   const { isPending, error, data } = useChannels();
 
   const dialogContent = () => {

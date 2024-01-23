@@ -20,10 +20,14 @@ type PlexPathMappings = {
 
 const fetchPlexPath = <T>(serverName: string, path: string) => {
   return async () => {
-    const res = await fetch(
-      `http://localhost:8000/api/plex?name=${serverName}&path=${path}`,
-    );
-    return res.json() as Promise<T>;
+    return apiClient
+      .getPlexPath({
+        queries: {
+          name: serverName,
+          path,
+        },
+      })
+      .then((r) => r as T);
   };
 };
 
@@ -34,12 +38,7 @@ export const usePlex = <T extends keyof PlexPathMappings>(
 ) =>
   useQuery({
     queryKey: ['plex', serverName, path],
-    queryFn: async () => {
-      const res = await fetch(
-        `http://localhost:8000/api/plex?name=${serverName}&path=${path}`,
-      );
-      return res.json() as Promise<PlexPathMappings[T]>;
-    },
+    queryFn: fetchPlexPath<PlexPathMappings[T]>(serverName, path),
     enabled,
   });
 
@@ -83,11 +82,12 @@ export const enumeratePlexItem = <T extends PlexMedia | PlexLibrarySection>(
             (m) => `plex|${serverName}|${m.ratingKey}`,
           );
 
-          console.log(
-            await apiClient.batchGetProgramsByExternalIds({
-              externalIds,
-            }),
-          );
+          console.log(externalIds);
+
+          apiClient
+            .batchGetProgramsByExternalIds({ externalIds })
+            .then((r) => console.log(r))
+            .catch((e) => console.error(e));
 
           return sequentialPromises(result.Metadata, loopInner);
         })

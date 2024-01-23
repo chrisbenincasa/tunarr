@@ -1,10 +1,14 @@
 import { Zodios, makeApi, parametersBuilder } from '@zodios/core';
-import { BatchLookupExternalProgrammingSchema } from 'dizquetv-types/api';
+import {
+  BatchLookupExternalProgrammingSchema,
+  CreateCustomShowRequestSchema,
+} from 'dizquetv-types/api';
 import {
   ChannelLineupSchema,
   ChannelProgramSchema,
   ChannelProgrammingSchema,
   ChannelSchema,
+  CustomShowProgrammingSchema,
   CustomShowSchema,
   ProgramSchema,
   UpdateChannelRequestSchema,
@@ -12,7 +16,7 @@ import {
 import { once } from 'lodash-es';
 import { z } from 'zod';
 
-const api = makeApi([
+export const api = makeApi([
   {
     method: 'get',
     path: '/api/v2/channels',
@@ -70,6 +74,49 @@ const api = makeApi([
     path: '/api/v2/custom-shows',
     alias: 'getCustomShows',
     response: z.array(CustomShowSchema),
+  },
+  {
+    method: 'get',
+    path: '/api/v2/custom-shows/:id',
+    alias: 'getCustomShow',
+    response: CustomShowSchema,
+    parameters: parametersBuilder()
+      .addPaths({
+        id: z.string(),
+      })
+      .build(),
+  },
+  {
+    method: 'post',
+    path: '/api/v2/custom-shows',
+    alias: 'createCustomShow',
+    response: z.object({ id: z.string() }),
+    parameters: parametersBuilder()
+      .addBody(CreateCustomShowRequestSchema)
+      .build(),
+  },
+  {
+    method: 'get',
+    path: '/api/v2/custom-shows/:id/programs',
+    alias: 'getCustomShowPrograms',
+    response: CustomShowProgrammingSchema,
+    parameters: parametersBuilder()
+      .addPaths({
+        id: z.string(),
+      })
+      .build(),
+  },
+  {
+    method: 'get',
+    path: '/api/plex',
+    alias: 'getPlexPath',
+    parameters: parametersBuilder()
+      .addQueries({
+        name: z.string(),
+        path: z.string(),
+      })
+      .build(),
+    response: z.any(),
   },
 ]);
 

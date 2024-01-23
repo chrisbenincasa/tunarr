@@ -4,7 +4,10 @@ import fpStatic from '@fastify/static';
 import fastify from 'fastify';
 import fp from 'fastify-plugin';
 // import fastifyPrintRoutes from 'fastify-print-routes';
+import fastifySwagger from '@fastify/swagger';
+import fastifySwaggerUi from '@fastify/swagger-ui';
 import { RequestContext } from '@mikro-orm/core';
+import fastifyPrintRoutes from 'fastify-print-routes';
 import {
   ZodTypeProvider,
   jsonSchemaTransform,
@@ -20,8 +23,6 @@ import path from 'path';
 import serveStatic from 'serve-static';
 import { miscRouter } from './api.js';
 import { channelToolRouter } from './api/channelToolsApi.js';
-import { channelsRouter } from './api/channelsApi.js';
-import { customShowRouter } from './api/customShowApi.js';
 import { debugRouter } from './api/debugApi.js';
 import { ffmpegSettingsRouter } from './api/ffmpegSettingsApi.js';
 import { fillerRouter } from './api/filllerApi.js';
@@ -42,10 +43,8 @@ import { serverContext } from './serverContext.js';
 import { scheduleJobs, scheduledJobsById } from './services/scheduler.js';
 import { UpdateXmlTvTask } from './tasks/updateXmlTvTask.js';
 import { ServerOptions } from './types.js';
-import { videoRouter } from './video.js';
 import { wait } from './util.js';
-import fastifySwagger from '@fastify/swagger';
-import fastifySwaggerUi from '@fastify/swagger-ui';
+import { videoRouter } from './video.js';
 
 const logger = createLogger(import.meta);
 
@@ -125,7 +124,7 @@ export async function initServer(opts: ServerOptions) {
     .register(fastifySwagger, {
       openapi: {
         info: {
-          title: 'DizqueTV API',
+          title: 'Tunarr API',
           description: 'test',
           version: '1.0.0',
         },
@@ -144,7 +143,7 @@ export async function initServer(opts: ServerOptions) {
       RequestContext.create(orm.em, done),
     )
     .addHook('onClose', async () => await orm.close())
-    // .register(fastifyPrintRoutes)
+    .register(fastifyPrintRoutes)
     .register(
       fp((f, _, done) => {
         f.decorateRequest('serverCtx', null);
@@ -199,9 +198,8 @@ export async function initServer(opts: ServerOptions) {
       );
     })
     .register(plexServersRouter)
-    .register(channelsRouter)
+    // .register(channelsRouter)
     .register(fillerRouter)
-    .register(customShowRouter)
     .register(ffmpegSettingsRouter)
     .register(plexSettingsRouter)
     .register(xmlTvSettingsRouter)
@@ -211,9 +209,7 @@ export async function initServer(opts: ServerOptions) {
     .register(miscRouter)
     .register(schedulerRouter)
     .register(debugRouter)
-    .register(registerV2Routes, { prefix: '/api/v2' });
-
-  await app
+    .register(registerV2Routes, { prefix: '/api/v2' })
     .register(ctx.cacheImageService.apiRouters(), {
       prefix: '/api/cache/images',
     })

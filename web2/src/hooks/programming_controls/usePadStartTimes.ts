@@ -23,7 +23,7 @@ export const StartTimePaddingOptions: readonly StartTimePadding[] = [
 ] as const;
 
 export function usePadStartTimes() {
-  const channel = useStore((s) => s.channelEditor.currentChannel);
+  const channel = useStore((s) => s.channelEditor.currentEntity);
   const programs = useStore((s) => s.channelEditor.programList);
 
   return (padding: StartTimePadding | null) => {

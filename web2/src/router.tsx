@@ -9,20 +9,22 @@ import {
   customShowsLoader,
   editChannelLoader,
   editProgrammingLoader,
+  existingCustomShowLoader,
   newChannelLoader,
+  newCustomShowLoader,
 } from './pages/channels/loaders.ts';
-import CustomShowsPage from './pages/library/CustomShowsPage.tsx';
-import FillerListsPage from './pages/library/FillerListsPage.tsx';
 import GuidePage from './pages/guide/GuidePage.tsx';
+import CustomShowsPage from './pages/library/CustomShowsPage.tsx';
+import EditCustomShowPage from './pages/library/EditCustomShowPage.tsx';
+import FillerListsPage from './pages/library/FillerListsPage.tsx';
+import LibraryIndexPage from './pages/library/LibraryIndexPage.tsx';
 import FfmpegSettingsPage from './pages/settings/FfmpegSettingsPage.tsx';
-import PlexSettingsPage from './pages/settings/PlexSettingsPage.tsx';
+import GeneralSettingsPage from './pages/settings/GeneralSettingsPage.tsx';
 import HdhrSettingsPage from './pages/settings/HdhrSettingsPage.tsx';
+import PlexSettingsPage from './pages/settings/PlexSettingsPage.tsx';
 import SettingsLayout from './pages/settings/SettingsLayout.tsx';
 import XmlTvSettingsPage from './pages/settings/XmlTvSettingsPage.tsx';
 import { queryCache } from './queryClient.ts';
-import GeneralSettingsPage from './pages/settings/GeneralSettingsPage.tsx';
-import LibraryIndexPage from './pages/library/LibraryIndexPage.tsx';
-import EditCustomShowPage from './pages/library/EditCustomShowPage.tsx';
 
 const queryClient = new QueryClient({ queryCache });
 
@@ -103,7 +105,13 @@ export const router = createBrowserRouter([
           },
           {
             path: '/library/custom-shows/new',
-            element: <EditCustomShowPage />,
+            element: <EditCustomShowPage isNew={true} />,
+            loader: newCustomShowLoader(queryClient),
+          },
+          {
+            path: '/library/custom-shows/:id/edit',
+            element: <EditCustomShowPage isNew={false} />,
+            loader: existingCustomShowLoader(queryClient),
           },
         ],
       },

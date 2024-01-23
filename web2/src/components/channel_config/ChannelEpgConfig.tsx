@@ -8,7 +8,7 @@ import FormControl from '@mui/material/FormControl';
 import FormHelperText from '@mui/material/FormHelperText';
 
 export default function ChannelEpgConfig() {
-  const channel = useStore((s) => s.channelEditor.currentChannel);
+  const channel = useStore((s) => s.channelEditor.currentEntity);
 
   return (
     <Box>

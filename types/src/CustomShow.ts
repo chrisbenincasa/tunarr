@@ -1,6 +1,13 @@
 import { z } from 'zod';
-import { CustomShowSchema } from './schemas/customShowsSchema.js';
+import {
+  CustomShowProgrammingSchema,
+  CustomShowSchema,
+} from './schemas/customShowsSchema.js';
 
 type Alias<T> = T & { _?: never };
 
 export type CustomShow = Alias<z.infer<typeof CustomShowSchema>>;
+
+export type CustomShowProgramming = Alias<
+  z.infer<typeof CustomShowProgrammingSchema>
+>;

@@ -1,21 +1,20 @@
-import { isContentProgram } from 'dizquetv-types';
 import { CreateCustomShowRequestSchema } from 'dizquetv-types/api';
-import { CustomShowSchema } from 'dizquetv-types/schemas';
-import { chain, isNull, map, partition, reduce } from 'lodash-es';
+import {
+  CustomShowProgrammingSchema,
+  CustomShowSchema,
+} from 'dizquetv-types/schemas';
+import { isNull, map } from 'lodash-es';
 import { z } from 'zod';
 import { CustomShow } from '../../dao/entities/CustomShow.js';
-import { CustomShowContent } from '../../dao/entities/CustomShowContent.js';
-import { Program } from '../../dao/entities/Program.js';
 import createLogger from '../../logger.js';
 import { RouterPluginAsyncCallback } from '../../types/serverType.js';
-import { ProgramMinterFactory } from '../../util/programMinter.js';
 
 const logger = createLogger(import.meta);
 
 // eslint-disable-next-line @typescript-eslint/require-await
 export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
   fastify.addHook('onError', (req, _, error, done) => {
-    logger.error(req.routeConfig.url, error);
+    logger.error(req.routeOptions.config.url, error);
     done();
   });
 
@@ -57,9 +56,9 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      const customShow = await req.entityManager
-        .repo(CustomShow)
-        .findOne({ uuid: req.params.id }, { populate: ['content.uuid'] });
+      const customShow = await req.serverCtx.customShowDB.getShow(
+        req.params.id,
+      );
       if (isNull(customShow)) {
         return res.status(404).send();
       }
@@ -69,6 +68,24 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
         name: customShow.name,
         contentCount: customShow.content.length,
       });
+    },
+  );
+
+  fastify.get(
+    '/custom-shows/:id/programs',
+    {
+      schema: {
+        params: z.object({ id: z.string() }),
+        response: {
+          200: CustomShowProgrammingSchema,
+          404: z.void(),
+        },
+      },
+    },
+    async (req, res) => {
+      return res
+        .status(200)
+        .send(await req.serverCtx.customShowDB.getShowPrograms(req.params.id));
     },
   );
 
@@ -83,72 +100,9 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      const show = req.entityManager.repo(CustomShow).create({
-        name: req.body.name,
-      });
+      const newId = await req.serverCtx.customShowDB.createShow(req.body);
 
-      let idx = 0;
-      const programIndexById = reduce(
-        req.body.programs,
-        (acc, p) => {
-          if (p.persisted) {
-            acc[p.id!] = idx++;
-          } else if (isContentProgram(p)) {
-            acc[
-              `${p.externalSourceType}_${p.externalSourceName!}_${p
-                .originalProgram?.key}`
-            ] = idx++;
-          }
-          return acc;
-        },
-        {} as Record<string, number>,
-      );
-
-      const [nonPersisted, persisted] = partition(
-        req.body.programs,
-        (p) => !p.persisted,
-      );
-      const minter = ProgramMinterFactory.create(req.entityManager);
-
-      // TODO handle custom shows
-      const programsToPersist = chain(nonPersisted)
-        .filter(isContentProgram)
-        .map((p) => minter.mint(p.externalSourceName!, p.originalProgram!))
-        .value();
-
-      const upsertedPrograms = await req.entityManager.upsertMany(
-        Program,
-        programsToPersist,
-        {
-          batchSize: 10,
-          onConflictAction: 'merge',
-          onConflictFields: ['sourceType', 'externalSourceId', 'externalKey'],
-          onConflictExcludeFields: ['uuid'],
-        },
-      );
-
-      await req.entityManager.persist(show).flush();
-
-      const persistedCustomShowContent = map(persisted, (p) =>
-        req.entityManager.create(CustomShowContent, {
-          customShow: show.uuid,
-          content: p.id!,
-          index: programIndexById[p.id!],
-        }),
-      );
-      const newCustomShowContent = map(upsertedPrograms, (p) =>
-        req.entityManager.create(CustomShowContent, {
-          customShow: show.uuid,
-          content: p.uuid,
-          index: programIndexById[p.uniqueId()],
-        }),
-      );
-
-      await req.entityManager
-        .persist([...persistedCustomShowContent, ...newCustomShowContent])
-        .flush();
-
-      return res.status(201).send({ id: show.uuid });
+      return res.status(201).send({ id: newId });
     },
   );
 };

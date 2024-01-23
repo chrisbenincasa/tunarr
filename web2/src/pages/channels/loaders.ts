@@ -4,12 +4,24 @@ import {
   QueryKey,
   UseQueryOptions,
 } from '@tanstack/react-query';
-import { Channel, ChannelProgramming, CustomShow } from 'dizquetv-types';
+import {
+  Channel,
+  ChannelProgramming,
+  CustomShow,
+  CustomShowProgramming,
+} from 'dizquetv-types';
 import { LoaderFunctionArgs } from 'react-router-dom';
 import { lineupQuery } from '../../hooks/useChannelLineup.ts';
 import { channelQuery, channelsQuery } from '../../hooks/useChannels.ts';
-import { useCustomShowsQuery } from '../../hooks/useCustomShows.ts';
-import { setCurrentChannel } from '../../store/channelEditor/actions.ts';
+import {
+  customShowProgramsQuery,
+  customShowQuery,
+  useCustomShowsQuery,
+} from '../../hooks/useCustomShows.ts';
+import {
+  setCurrentChannel,
+  setCurrentCustomShow,
+} from '../../store/channelEditor/actions.ts';
 import { Preloader } from '../../types/index.ts';
 
 function createPreloader<T>(
@@ -73,3 +85,61 @@ export const newChannelLoader: Preloader<Channel[]> = createPreloader(
 export const customShowsLoader: Preloader<CustomShow[]> = createPreloader(
   () => useCustomShowsQuery,
 );
+
+const customShowLoader = (isNew: boolean) => {
+  if (!isNew) {
+    return createPreloader(
+      ({ params }) => customShowQuery(params.id!),
+      (show) => setCurrentCustomShow(show, []),
+    );
+  } else {
+    return () => () => {
+      const customShow = {
+        id: 'unsaved',
+        name: 'New',
+        contentCount: 0,
+      };
+      setCurrentCustomShow(customShow, []);
+      return Promise.resolve(customShow);
+    };
+  }
+};
+
+export const newCustomShowLoader: Preloader<{
+  show: CustomShow;
+  programs: CustomShowProgramming;
+}> = (queryClient: QueryClient) => (args: LoaderFunctionArgs) => {
+  return customShowLoader(true)(queryClient)(args).then((show) => ({
+    show,
+    programs: [],
+  }));
+};
+
+export const existingCustomShowLoader: Preloader<{
+  show: CustomShow;
+  programs: CustomShowProgramming;
+}> = (queryClient: QueryClient) => {
+  const showLoader = customShowLoader(false)(queryClient);
+
+  return async (args: LoaderFunctionArgs) => {
+    const showLoaderPromise = showLoader(args);
+    const programQuery = customShowProgramsQuery(args.params.id!);
+
+    const programsPromise = Promise.resolve(
+      queryClient.getQueryData(programQuery.queryKey),
+    ).then((programs) => {
+      return programs ?? queryClient.fetchQuery(programQuery);
+    });
+
+    return await Promise.all([showLoaderPromise, programsPromise]).then(
+      ([show, programs]) => {
+        console.log(show, programs);
+        setCurrentCustomShow(show, programs);
+        return {
+          show,
+          programs,
+        };
+      },
+    );
+  };
+};

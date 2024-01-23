@@ -31,7 +31,7 @@ const VisuallyHiddenInput = styled('input')({
 });
 
 export default function ChannelPropertiesEditor() {
-  const channel = useStore((s) => s.channelEditor.currentChannel);
+  const channel = useStore((s) => s.channelEditor.currentEntity);
   const prevChannel = usePrevious(channel);
 
   const [channelName, debounceChannelName, setChannelName] = useDebouncedState(
