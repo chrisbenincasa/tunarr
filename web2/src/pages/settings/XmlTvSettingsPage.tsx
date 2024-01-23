@@ -13,7 +13,7 @@ import {
 import { useXmlTvSettings } from '../../hooks/settingsHooks.ts';
 import { hasOnlyDigits } from '../../helpers/util.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { XmlTvSettings } from 'dizquetv-types';
+import { XmlTvSettings, defaultXmlTvSettings } from 'dizquetv-types';
 
 export default function XmlTvSettingsPage() {
   const { data, isPending, error } = useXmlTvSettings();
@@ -47,39 +47,32 @@ export default function XmlTvSettingsPage() {
     });
   };
 
-  const defaultXMLTVSettings = {
-    outputPath: '',
-    programmingHours: 12,
-    refreshHours: 4,
-    enableImageCache: false,
-  };
-
   const handleResetOptions = () => {
     updateXmlTvSettingsMutation.mutate({
-      programmingHours: defaultXMLTVSettings.programmingHours,
-      refreshHours: defaultXMLTVSettings.refreshHours,
-      outputPath: defaultXMLTVSettings.outputPath,
-      enableImageCache: defaultXMLTVSettings.enableImageCache,
+      programmingHours: defaultXmlTvSettings.programmingHours,
+      refreshHours: defaultXmlTvSettings.refreshHours,
+      outputPath: defaultXmlTvSettings.outputPath,
+      enableImageCache: defaultXmlTvSettings.enableImageCache,
     });
-    setProgrammingHours(defaultXMLTVSettings.programmingHours.toString());
-    setRefreshHours(defaultXMLTVSettings.refreshHours.toString());
-    setEnableImageCache(defaultXMLTVSettings.enableImageCache);
+    setProgrammingHours(defaultXmlTvSettings.programmingHours.toString());
+    setRefreshHours(defaultXmlTvSettings.refreshHours.toString());
+    setEnableImageCache(defaultXmlTvSettings.enableImageCache);
   };
 
   const [outputPath, setOutputPath] = React.useState<string>(
-    defaultXMLTVSettings.outputPath,
+    defaultXmlTvSettings.outputPath,
   );
 
   const [programmingHours, setProgrammingHours] = React.useState<string>(
-    defaultXMLTVSettings.programmingHours.toString(),
+    defaultXmlTvSettings.programmingHours.toString(),
   );
 
   const [refreshHours, setRefreshHours] = React.useState<string>(
-    defaultXMLTVSettings.refreshHours.toString(),
+    defaultXmlTvSettings.refreshHours.toString(),
   );
 
   const [enableImageCache, setEnableImageCache] = React.useState<boolean>(
-    defaultXMLTVSettings.enableImageCache,
+    defaultXmlTvSettings.enableImageCache,
   );
 
   const [showFormError, setShowFormError] = React.useState<boolean>(false);
@@ -87,22 +80,22 @@ export default function XmlTvSettingsPage() {
   const [snackStatus, setSnackStatus] = React.useState<boolean>(false);
 
   useEffect(() => {
-    setOutputPath(data?.outputPath || defaultXMLTVSettings.outputPath);
-    defaultXMLTVSettings.outputPath =
-      data?.outputPath || defaultXMLTVSettings.outputPath;
+    setOutputPath(data?.outputPath || defaultXmlTvSettings.outputPath);
+    defaultXmlTvSettings.outputPath =
+      data?.outputPath || defaultXmlTvSettings.outputPath;
 
     setProgrammingHours(
       data?.programmingHours.toString() ||
-        defaultXMLTVSettings.programmingHours.toString(),
+        defaultXmlTvSettings.programmingHours.toString(),
     );
 
     setRefreshHours(
       data?.refreshHours.toString() ||
-        defaultXMLTVSettings.refreshHours.toString(),
+        defaultXmlTvSettings.refreshHours.toString(),
     );
 
     setEnableImageCache(
-      data?.enableImageCache || defaultXMLTVSettings.enableImageCache,
+      data?.enableImageCache || defaultXmlTvSettings.enableImageCache,
     );
   }, [data]);
 

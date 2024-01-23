@@ -2,10 +2,10 @@ import z from 'zod';
 import { ResolutionSchema } from './miscSchemas.js';
 
 export const XmlTvSettingsSchema = z.object({
-  programmingHours: z.number(),
-  refreshHours: z.number(),
-  outputPath: z.string(),
-  enableImageCache: z.boolean(),
+  programmingHours: z.number().default(12),
+  refreshHours: z.number().default(4),
+  outputPath: z.string().default(''),
+  enableImageCache: z.boolean().default(false),
 });
 
 export const FfmpegSettingsSchema = z.object({
