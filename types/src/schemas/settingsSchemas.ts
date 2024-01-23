@@ -71,6 +71,10 @@ export const PlexServerSettingsInsert = z.object({
   sendChannelUpdates: z.boolean().optional(),
 });
 
+export const PlexServerSettingsRemove = z.object({
+  name: z.string(),
+});
+
 export const PlexStreamSettingsSchema = z.object({
   streamPath: z.union([z.literal('plex'), z.literal('direct')]).default('plex'),
   enableDebugLogging: z.boolean().default(false),

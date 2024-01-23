@@ -6,21 +6,64 @@ import {
   FormControl,
   FormControlLabel,
   FormHelperText,
-  Paper,
+  Snackbar,
   Stack,
   TextField,
 } from '@mui/material';
 import { useXmlTvSettings } from '../../hooks/settingsHooks.ts';
 import { hasOnlyDigits } from '../../helpers/util.ts';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { XmlTvSettings } from 'dizquetv-types';
 
 export default function XmlTvSettingsPage() {
   const { data, isPending, error } = useXmlTvSettings();
+
+  const queryClient = useQueryClient();
+
+  const updateXmlTvSettingsMutation = useMutation({
+    mutationFn: (updateSettings: XmlTvSettings) => {
+      return fetch('http://localhost:8000/api/xmltv-settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateSettings),
+      });
+    },
+    onSuccess: () => {
+      setSnackStatus(true);
+      return queryClient.invalidateQueries({
+        queryKey: ['settings', 'xmltv-settings'],
+      });
+    },
+  });
+
+  const updateXmlTvSettings = () => {
+    updateXmlTvSettingsMutation.mutate({
+      programmingHours: Number(programmingHours),
+      refreshHours: Number(refreshHours),
+      outputPath,
+      enableImageCache,
+    });
+  };
 
   const defaultXMLTVSettings = {
     outputPath: '',
     programmingHours: 12,
     refreshHours: 4,
     enableImageCache: false,
+  };
+
+  const handleResetOptions = () => {
+    updateXmlTvSettingsMutation.mutate({
+      programmingHours: defaultXMLTVSettings.programmingHours,
+      refreshHours: defaultXMLTVSettings.refreshHours,
+      outputPath: defaultXMLTVSettings.outputPath,
+      enableImageCache: defaultXMLTVSettings.enableImageCache,
+    });
+    setProgrammingHours(defaultXMLTVSettings.programmingHours.toString());
+    setRefreshHours(defaultXMLTVSettings.refreshHours.toString());
+    setEnableImageCache(defaultXMLTVSettings.enableImageCache);
   };
 
   const [outputPath, setOutputPath] = React.useState<string>(
@@ -41,16 +84,23 @@ export default function XmlTvSettingsPage() {
 
   const [showFormError, setShowFormError] = React.useState<boolean>(false);
 
+  const [snackStatus, setSnackStatus] = React.useState<boolean>(false);
+
   useEffect(() => {
     setOutputPath(data?.outputPath || defaultXMLTVSettings.outputPath);
+    defaultXMLTVSettings.outputPath =
+      data?.outputPath || defaultXMLTVSettings.outputPath;
+
     setProgrammingHours(
       data?.programmingHours.toString() ||
         defaultXMLTVSettings.programmingHours.toString(),
     );
+
     setRefreshHours(
       data?.refreshHours.toString() ||
         defaultXMLTVSettings.refreshHours.toString(),
     );
+
     setEnableImageCache(
       data?.enableImageCache || defaultXMLTVSettings.enableImageCache,
     );
@@ -67,11 +117,15 @@ export default function XmlTvSettingsPage() {
   };
 
   const handleEnableImageCache = () => {
-    setEnableImageCache(!!enableImageCache);
+    setEnableImageCache(!enableImageCache);
   };
 
   const handleValidateFields = (event: React.FocusEvent<HTMLInputElement>) => {
     setShowFormError(!hasOnlyDigits(event.target.value));
+  };
+
+  const handleSnackClose = () => {
+    setSnackStatus(false);
   };
 
   if (isPending) {
@@ -82,6 +136,13 @@ export default function XmlTvSettingsPage() {
 
   return (
     <>
+      <Snackbar
+        open={snackStatus}
+        autoHideDuration={6000}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        onClose={handleSnackClose}
+        message="Settings Saved!"
+      />
       <TextField
         fullWidth
         id="output-path"
@@ -135,8 +196,14 @@ export default function XmlTvSettingsPage() {
         </FormHelperText>
       </FormControl>
       <Stack spacing={2} direction="row" justifyContent="right" sx={{ mt: 2 }}>
-        <Button variant="outlined">Reset Options</Button>
-        <Button variant="contained" disabled={showFormError}>
+        <Button variant="outlined" onClick={() => handleResetOptions()}>
+          Reset Options
+        </Button>
+        <Button
+          variant="contained"
+          disabled={showFormError}
+          onClick={() => updateXmlTvSettings()}
+        >
           Save
         </Button>
       </Stack>

@@ -29,9 +29,9 @@ import {
   InputAdornment,
   SelectChangeEvent,
 } from '@mui/material';
-import { AddCircle, Close, Done, Edit } from '@mui/icons-material';
+import { AddCircle, Close, Delete, Done, Edit } from '@mui/icons-material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { PlexServerInsert } from 'dizquetv-types';
+import { PlexServerInsert, PlexServerRemove } from 'dizquetv-types';
 import { fill } from 'lodash-es';
 import { checkNewPlexServers, plexLoginFlow } from '../../helpers/plexLogin.ts';
 import {
@@ -274,6 +274,23 @@ export default function PlexSettingsPage() {
     },
   });
 
+  const removePlexServerMutation = useMutation({
+    mutationFn: (serverName: PlexServerRemove) => {
+      return fetch('http://localhost:8000/api/plex-servers', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: serverName }),
+      });
+    },
+    onSuccess: () => {
+      return queryClient.invalidateQueries({
+        queryKey: ['settings', 'plex-servers'],
+      });
+    },
+  });
+
   const removeVideoCodec = (codecToDelete: string) => () => {
     setVideoCodecs(
       (codecs) => codecs?.filter((codec) => codec !== codecToDelete),
@@ -309,6 +326,12 @@ export default function PlexSettingsPage() {
       .catch(console.error);
   };
 
+  const removePlexServer = (serverName: string) => {
+    removePlexServerMutation.mutate({
+      name: serverName,
+    });
+  };
+
   const getTableRows = () => {
     return servers!.map((server) => (
       <TableRow key={server.name}>
@@ -331,6 +354,12 @@ export default function PlexSettingsPage() {
         <TableCell width="10%" align="right">
           <IconButton color="primary">
             <Edit />
+          </IconButton>
+          <IconButton
+            color="primary"
+            onClick={() => removePlexServer(server.name)}
+          >
+            <Delete />
           </IconButton>
         </TableCell>
       </TableRow>
