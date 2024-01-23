@@ -47,10 +47,10 @@ export const toStringResolution = (res: Resolution) =>
 export const fromStringResolution = (
   res: `${number}x${number}`,
 ): Resolution => {
-  const [h, w] = res.split('x', 1);
+  const [h, w] = res.split('x', 2);
   return { widthPx: parseInt(w), heightPx: parseInt(h) };
 };
 
 export const hasOnlyDigits = (value: string) => {
-  return /^-?\d+$/.test(value);
+  return /^-?\d+$/g.test(value);
 };

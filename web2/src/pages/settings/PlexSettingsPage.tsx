@@ -28,17 +28,26 @@ import {
   Input,
   InputAdornment,
   SelectChangeEvent,
+  Snackbar,
 } from '@mui/material';
-import { AddCircle, Close, Done, Edit } from '@mui/icons-material';
+import { AddCircle, Close, Delete, Done, Edit } from '@mui/icons-material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { PlexServerInsert } from 'dizquetv-types';
+import {
+  PlexServerInsert,
+  PlexServerRemove,
+  PlexStreamSettings,
+  defaultPlexStreamSettings,
+} from 'dizquetv-types';
 import { fill } from 'lodash-es';
 import { checkNewPlexServers, plexLoginFlow } from '../../helpers/plexLogin.ts';
 import {
   usePlexServerSettings,
   usePlexStreamSettings,
 } from '../../hooks/settingsHooks.ts';
-import { toStringResolution } from '../../helpers/util.ts';
+import {
+  fromStringResolution,
+  toStringResolution,
+} from '../../helpers/util.ts';
 
 const supportedResolutions = [
   '420x420',
@@ -69,35 +78,6 @@ const supportedAudioBoost = [
   { value: 180, string: '4 Seconds' },
 ];
 
-const defaultPlexSettings = {
-  audioBoost: 100,
-  audioCodecs: ['ac3'],
-  directStreamBitrate: 20000,
-  enableDebugLogging: false,
-  enableSubtitles: false,
-  forceDirectPlay: false,
-  maxAudioChannels: '2.0',
-  maxPlayableResolution: {
-    widthPx: 1920,
-    heightPx: 1080,
-  },
-  maxTranscodeResolution: {
-    widthPx: 1920,
-    heightPx: 1080,
-  },
-  mediaBufferSize: 1000,
-  pathReplace: '',
-  pathReplaceWith: '',
-  streamPath: 'plex',
-  streamProtocol: 'http',
-  subtitleSize: 100,
-  transcodeBitrate: 2000,
-  transcodeMediaBufferSize: 20000,
-  updatePlayStatus: false,
-  videoCodecs: ['h264', 'hevc', 'mpeg2video', 'av1'],
-  showSubtitles: false,
-};
-
 export default function PlexSettingsPage() {
   const {
     data: servers,
@@ -114,23 +94,23 @@ export default function PlexSettingsPage() {
   const queryClient = useQueryClient();
 
   const [showSubtitles, setShowSubtitles] = useState<boolean>(
-    defaultPlexSettings.showSubtitles,
+    defaultPlexStreamSettings.enableSubtitles,
   );
 
   const [videoCodecs, setVideoCodecs] = React.useState<string[]>(
-    defaultPlexSettings.videoCodecs,
+    defaultPlexStreamSettings.videoCodecs,
   );
 
   const [addVideoCodecs, setAddVideoCodecs] = React.useState<string>('');
 
   const [audioCodecs, setAudioCodecs] = React.useState<string[]>(
-    defaultPlexSettings.audioCodecs,
+    defaultPlexStreamSettings.audioCodecs,
   );
 
   const [addAudioCodecs, setAddAudioCodecs] = React.useState<string>('');
 
   const [maxAudioChannels, setMaxAudioChannels] = React.useState<string>(
-    defaultPlexSettings.maxAudioChannels,
+    defaultPlexStreamSettings.maxAudioChannels,
   );
 
   const [directStreamBitrate, setDirectStreamBitrate] =
@@ -144,48 +124,53 @@ export default function PlexSettingsPage() {
     React.useState<string>('');
 
   useEffect(() => {
+    handlePlexStreamingState();
+  }, [streamSettings]);
+
+  const handlePlexStreamingState = () => {
     setVideoCodecs(
-      streamSettings?.videoCodecs || defaultPlexSettings.videoCodecs,
+      streamSettings?.videoCodecs || defaultPlexStreamSettings.videoCodecs,
     );
 
     setMaxPlayableResolution(
       toStringResolution(
         streamSettings?.maxPlayableResolution ||
-          defaultPlexSettings.maxPlayableResolution,
+          defaultPlexStreamSettings.maxPlayableResolution,
       ),
     );
 
     setMaxDirectStreamBitrate(
       streamSettings?.directStreamBitrate.toString() ||
-        defaultPlexSettings.directStreamBitrate.toString(),
+        defaultPlexStreamSettings.directStreamBitrate.toString(),
     );
 
     setAudioCodecs(
-      streamSettings?.audioCodecs || defaultPlexSettings.audioCodecs,
+      streamSettings?.audioCodecs || defaultPlexStreamSettings.audioCodecs,
     );
 
     setMaxAudioChannels(
-      streamSettings?.maxAudioChannels || defaultPlexSettings.maxAudioChannels,
+      streamSettings?.maxAudioChannels ||
+        defaultPlexStreamSettings.maxAudioChannels,
     );
 
     setDirectStreamBitrate(
       streamSettings?.directStreamBitrate.toString() ||
-        defaultPlexSettings.directStreamBitrate.toString(),
+        defaultPlexStreamSettings.directStreamBitrate.toString(),
     );
 
     setTranscodeBitrate(
       streamSettings?.transcodeBitrate.toString() ||
-        defaultPlexSettings.transcodeBitrate.toString(),
+        defaultPlexStreamSettings.transcodeBitrate.toString(),
     );
     setMediaBufferSize(
       streamSettings?.mediaBufferSize.toString() ||
-        defaultPlexSettings.mediaBufferSize.toString(),
+        defaultPlexStreamSettings.mediaBufferSize.toString(),
     );
     setTranscodeMediaBufferSize(
       streamSettings?.transcodeMediaBufferSize.toString() ||
-        defaultPlexSettings.transcodeMediaBufferSize.toString(),
+        defaultPlexStreamSettings.transcodeMediaBufferSize.toString(),
     );
-  }, [streamSettings]);
+  };
 
   const handleVideoCodecUpdate = () => {
     if (!addVideoCodecs.length) {
@@ -232,7 +217,7 @@ export default function PlexSettingsPage() {
   };
 
   const [maxPlayableResolution, setMaxPlayableResolution] = useState<string>(
-    toStringResolution(defaultPlexSettings.maxPlayableResolution),
+    toStringResolution(defaultPlexStreamSettings.maxPlayableResolution),
   );
 
   const handleMaxPlayableResolution = (event: SelectChangeEvent<string>) => {
@@ -240,7 +225,7 @@ export default function PlexSettingsPage() {
   };
 
   const [maxDirectStreamBitrate, setMaxDirectStreamBitrate] = useState<string>(
-    defaultPlexSettings.directStreamBitrate.toString(),
+    defaultPlexStreamSettings.directStreamBitrate.toString(),
   );
 
   const handleMaxDirectStreamBitrate = (
@@ -274,6 +259,77 @@ export default function PlexSettingsPage() {
     },
   });
 
+  const removePlexServerMutation = useMutation({
+    mutationFn: (serverName: PlexServerRemove) => {
+      return fetch('http://localhost:8000/api/plex-servers', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: serverName }),
+      });
+    },
+    onSuccess: () => {
+      return queryClient.invalidateQueries({
+        queryKey: ['settings', 'plex-servers'],
+      });
+    },
+  });
+
+  const [snackStatus, setSnackStatus] = React.useState<boolean>(false);
+
+  const updatePlexStreamingSettingsMutation = useMutation({
+    mutationFn: (updateSettings: PlexStreamSettings) => {
+      return fetch('http://localhost:8000/api/plex-settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateSettings),
+      });
+    },
+    onSuccess: () => {
+      setSnackStatus(true);
+      return queryClient.invalidateQueries({
+        queryKey: ['settings', 'plex-settings'],
+      });
+    },
+  });
+
+  // TO DO: Add All Fields and remove defaults
+  // refactor
+  const updatePlexStreamSettings = () => {
+    const [h, w] = maxPlayableResolution.split('x', 2);
+
+    // This is temporary until I have all fields
+    const allPlexStreamFieldValues = {
+      ...defaultPlexStreamSettings,
+      ...{
+        audioCodecs,
+        directStreamBitrate: Number(directStreamBitrate),
+        enableSubtitles: showSubtitles,
+        maxAudioChannels,
+        maxPlayableResolution: fromStringResolution(
+          toStringResolution({ widthPx: Number(w), heightPx: Number(h) }),
+        ),
+        mediaBufferSize: Number(mediaBufferSize),
+        subtitleSize: 100,
+        transcodeBitrate: Number(transcodeBitrate),
+        transcodeMediaBufferSize: Number(transcodeMediaBufferSize),
+        videoCodecs,
+      },
+    };
+
+    updatePlexStreamingSettingsMutation.mutate(allPlexStreamFieldValues);
+  };
+
+  const handleResetOptions = () => {
+    updatePlexStreamingSettingsMutation.mutate({
+      ...defaultPlexStreamSettings,
+    });
+    handlePlexStreamingState();
+  };
+
   const removeVideoCodec = (codecToDelete: string) => () => {
     setVideoCodecs(
       (codecs) => codecs?.filter((codec) => codec !== codecToDelete),
@@ -284,6 +340,10 @@ export default function PlexSettingsPage() {
     setAudioCodecs(
       (codecs) => codecs?.filter((codec) => codec !== codecToDelete),
     );
+  };
+
+  const handleSnackClose = () => {
+    setSnackStatus(false);
   };
 
   const UIRouteSuccess = true; // TODO
@@ -309,6 +369,12 @@ export default function PlexSettingsPage() {
       .catch(console.error);
   };
 
+  const removePlexServer = (serverName: string) => {
+    removePlexServerMutation.mutate({
+      name: serverName,
+    });
+  };
+
   const getTableRows = () => {
     return servers!.map((server) => (
       <TableRow key={server.name}>
@@ -331,6 +397,12 @@ export default function PlexSettingsPage() {
         <TableCell width="10%" align="right">
           <IconButton color="primary">
             <Edit />
+          </IconButton>
+          <IconButton
+            color="primary"
+            onClick={() => removePlexServer(server.name)}
+          >
+            <Delete />
           </IconButton>
         </TableCell>
       </TableRow>
@@ -696,43 +768,64 @@ export default function PlexSettingsPage() {
   };
 
   return (
-    <Box>
-      <Box mb={2}>
-        <Box sx={{ display: 'flex', mb: 2 }}>
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            Plex Servers
-          </Typography>
-          <Button
-            onClick={() => addPlexServer()}
-            variant="contained"
-            startIcon={<AddCircle />}
-          >
-            Add
-          </Button>
+    <>
+      <Snackbar
+        open={snackStatus}
+        autoHideDuration={6000}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        onClose={handleSnackClose}
+        message="Settings Saved!"
+      />
+      <Box>
+        <Box mb={2}>
+          <Box sx={{ display: 'flex', mb: 2 }}>
+            <Typography variant="h6" sx={{ flexGrow: 1 }}>
+              Plex Servers
+            </Typography>
+            <Button
+              onClick={() => addPlexServer()}
+              variant="contained"
+              startIcon={<AddCircle />}
+            >
+              Add
+            </Button>
+          </Box>
+          {renderServersTable()}
         </Box>
-        {renderServersTable()}
+        <Typography component="h6" variant="h6" sx={{ pt: 2, pb: 1 }}>
+          Plex Transcoding
+        </Typography>
+        <Alert severity="info" sx={{ my: 1 }}>
+          If stream changes video codec, audio codec, or audio channels upon
+          episode change, you will experience playback issues unless ffmpeg
+          transcoding and normalization are also enabled.
+        </Alert>
+        <Box sx={{ display: 'block', p: 2 }}>
+          {renderStreamSettings()}
+          {renderAudioSettings()}
+          {renderSubtitleSettings()}
+        </Box>
+        <Typography component="h6" variant="h6" sx={{ pt: 2, pb: 1 }}>
+          Miscellaneous Options
+        </Typography>
+        <Box>{renderMiscSettings()}</Box>
+        <Stack
+          spacing={2}
+          direction="row"
+          justifyContent="right"
+          sx={{ mt: 2 }}
+        >
+          <Button variant="outlined" onClick={() => handleResetOptions()}>
+            Reset Options
+          </Button>
+          <Button
+            variant="contained"
+            onClick={() => updatePlexStreamSettings()}
+          >
+            Save
+          </Button>
+        </Stack>
       </Box>
-      <Typography component="h6" variant="h6" sx={{ pt: 2, pb: 1 }}>
-        Plex Transcoding
-      </Typography>
-      <Alert severity="info" sx={{ my: 1 }}>
-        If stream changes video codec, audio codec, or audio channels upon
-        episode change, you will experience playback issues unless ffmpeg
-        transcoding and normalization are also enabled.
-      </Alert>
-      <Box sx={{ display: 'block', p: 2 }}>
-        {renderStreamSettings()}
-        {renderAudioSettings()}
-        {renderSubtitleSettings()}
-      </Box>
-      <Typography component="h6" variant="h6" sx={{ pt: 2, pb: 1 }}>
-        Miscellaneous Options
-      </Typography>
-      <Box>{renderMiscSettings()}</Box>
-      <Stack spacing={2} direction="row" justifyContent="right" sx={{ mt: 2 }}>
-        <Button variant="outlined">Reset Options</Button>
-        <Button variant="contained">Save</Button>
-      </Stack>
-    </Box>
+    </>
   );
 }

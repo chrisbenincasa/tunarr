@@ -13,9 +13,12 @@ import {
   Typography,
   SelectChangeEvent,
   Alert,
+  Snackbar,
 } from '@mui/material';
 import { useFfmpegSettings } from '../../hooks/settingsHooks.ts';
 import { hasOnlyDigits } from '../../helpers/util.ts';
+import { FfmpegSettings, defaultFfmpegSettings } from 'dizquetv-types';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 const supportedVideoBuffer = [
   { value: 0, string: '0 Seconds' },
@@ -29,57 +32,140 @@ const supportedVideoBuffer = [
 
 export default function FfmpegSettingsPage() {
   const { data, isPending, error } = useFfmpegSettings();
+  const [snackStatus, setSnackStatus] = React.useState<boolean>(false);
 
-  const defaultFFMPEGSettings = {
-    ffmpegExecutablePath: '/usr/bin/ffmpeg',
-    numThreads: 4,
-    enableLogging: false,
-    videoBufferSize: 0,
-    enableTranscoding: false,
+  const queryClient = useQueryClient();
+
+  const updateFfmpegSettingsMutation = useMutation({
+    mutationFn: (updateSettings: FfmpegSettings) => {
+      return fetch('http://localhost:8000/api/ffmpeg-settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateSettings),
+      });
+    },
+    onSuccess: () => {
+      setSnackStatus(true);
+      return queryClient.invalidateQueries({
+        queryKey: ['settings', 'ffmpeg-settings'],
+      });
+    },
+  });
+
+  // TO DO: Add All Fields and remove defaults
+  // refactor
+  const updateFfmpegSettings = () => {
+    updateFfmpegSettingsMutation.mutate({
+      configVersion: defaultFfmpegSettings.configVersion,
+      ffmpegExecutablePath,
+      numThreads: Number(numThreads),
+      concatMuxDelay: defaultFfmpegSettings.concatMuxDelay,
+      enableLogging,
+      enableTranscoding,
+      audioVolumePercent: defaultFfmpegSettings.audioVolumePercent,
+      videoEncoder: defaultFfmpegSettings.videoEncoder,
+      audioEncoder: defaultFfmpegSettings.audioEncoder,
+      targetResolution: defaultFfmpegSettings.targetResolution,
+      videoBitrate: defaultFfmpegSettings.videoBitrate,
+      videoBufferSize: Number(videoBufferSize),
+      audioBitrate: defaultFfmpegSettings.audioBitrate,
+      audioBufferSize: defaultFfmpegSettings.audioBufferSize,
+      audioSampleRate: defaultFfmpegSettings.audioSampleRate,
+      audioChannels: defaultFfmpegSettings.audioChannels,
+      errorScreen: defaultFfmpegSettings.errorScreen,
+      errorAudio: defaultFfmpegSettings.errorAudio,
+      normalizeVideoCodec: defaultFfmpegSettings.normalizeVideoCodec,
+      normalizeAudioCodec: defaultFfmpegSettings.normalizeAudioCodec,
+      normalizeResolution: defaultFfmpegSettings.normalizeResolution,
+      normalizeAudio: defaultFfmpegSettings.normalizeAudio,
+      maxFPS: defaultFfmpegSettings.maxFPS,
+      scalingAlgorithm: defaultFfmpegSettings.scalingAlgorithm,
+      deinterlaceFilter: defaultFfmpegSettings.deinterlaceFilter,
+      disableChannelOverlay: defaultFfmpegSettings.disableChannelOverlay,
+    });
+  };
+
+  const handleResetOptions = () => {
+    updateFfmpegSettingsMutation.mutate({
+      configVersion: defaultFfmpegSettings.configVersion,
+      ffmpegExecutablePath: defaultFfmpegSettings.ffmpegExecutablePath,
+      numThreads: defaultFfmpegSettings.numThreads,
+      concatMuxDelay: defaultFfmpegSettings.concatMuxDelay,
+      enableLogging: defaultFfmpegSettings.enableLogging,
+      enableTranscoding: defaultFfmpegSettings.enableTranscoding,
+      audioVolumePercent: defaultFfmpegSettings.audioVolumePercent,
+      videoEncoder: defaultFfmpegSettings.videoEncoder,
+      audioEncoder: defaultFfmpegSettings.audioEncoder,
+      targetResolution: defaultFfmpegSettings.targetResolution,
+      videoBitrate: defaultFfmpegSettings.videoBitrate,
+      videoBufferSize: defaultFfmpegSettings.videoBufferSize,
+      audioBitrate: defaultFfmpegSettings.audioBitrate,
+      audioBufferSize: defaultFfmpegSettings.audioBufferSize,
+      audioSampleRate: defaultFfmpegSettings.audioSampleRate,
+      audioChannels: defaultFfmpegSettings.audioChannels,
+      errorScreen: defaultFfmpegSettings.errorScreen,
+      errorAudio: defaultFfmpegSettings.errorAudio,
+      normalizeVideoCodec: defaultFfmpegSettings.normalizeVideoCodec,
+      normalizeAudioCodec: defaultFfmpegSettings.normalizeAudioCodec,
+      normalizeResolution: defaultFfmpegSettings.normalizeResolution,
+      normalizeAudio: defaultFfmpegSettings.normalizeAudio,
+      maxFPS: defaultFfmpegSettings.maxFPS,
+      scalingAlgorithm: defaultFfmpegSettings.scalingAlgorithm,
+      deinterlaceFilter: defaultFfmpegSettings.deinterlaceFilter,
+      disableChannelOverlay: defaultFfmpegSettings.disableChannelOverlay,
+    });
+    setFfmpegExecutablePath(defaultFfmpegSettings.ffmpegExecutablePath);
+    setNumThreads(defaultFfmpegSettings.numThreads.toString());
+    setEnableLogging(defaultFfmpegSettings.enableLogging);
+    setVideoBufferSize(defaultFfmpegSettings.videoBufferSize.toString());
+    setEnableTranscoding(defaultFfmpegSettings.enableLogging);
   };
 
   const [ffmpegExecutablePath, setFfmpegExecutablePath] =
-    React.useState<string>(defaultFFMPEGSettings.ffmpegExecutablePath);
+    React.useState<string>(defaultFfmpegSettings.ffmpegExecutablePath);
 
   const [numThreads, setNumThreads] = React.useState<string>(
-    defaultFFMPEGSettings.numThreads.toString(),
+    defaultFfmpegSettings.numThreads.toString(),
   );
 
   const [enableLogging, setEnableLogging] = React.useState<boolean>(
-    defaultFFMPEGSettings.enableLogging,
+    defaultFfmpegSettings.enableLogging,
   );
 
   const [videoBufferSize, setVideoBufferSize] = React.useState<string>(
-    defaultFFMPEGSettings.videoBufferSize.toString(),
+    defaultFfmpegSettings.videoBufferSize.toString(),
   );
 
   const [enableTranscoding, setEnableTranscoding] = React.useState<boolean>(
-    defaultFFMPEGSettings.enableTranscoding,
+    defaultFfmpegSettings.enableTranscoding,
   );
 
   const [showFormError, setShowFormError] = React.useState<boolean>(false);
 
   useEffect(() => {
+    console.log(data);
     setFfmpegExecutablePath(
-      data?.ffmpegExecutablePath || defaultFFMPEGSettings.ffmpegExecutablePath,
+      data?.ffmpegExecutablePath || defaultFfmpegSettings.ffmpegExecutablePath,
     );
 
     setNumThreads(
-      data?.numThreads.toString() ||
-        defaultFFMPEGSettings.numThreads.toString(),
+      data?.numThreads?.toString() ||
+        defaultFfmpegSettings.numThreads.toString(),
     );
 
     setEnableLogging(
-      data?.enableLogging || defaultFFMPEGSettings.enableLogging,
+      data?.enableLogging || defaultFfmpegSettings.enableLogging,
     );
 
     setVideoBufferSize(
-      data?.videoBufferSize.toString() ||
-        defaultFFMPEGSettings.videoBufferSize.toString(),
+      data?.videoBufferSize?.toString() ||
+        defaultFfmpegSettings.videoBufferSize.toString(),
     );
 
     setEnableTranscoding(
-      data?.enableTranscoding || defaultFFMPEGSettings.enableTranscoding,
+      data?.enableTranscoding || defaultFfmpegSettings.enableTranscoding,
     );
   }, [data]);
 
@@ -109,12 +195,23 @@ export default function FfmpegSettingsPage() {
     setShowFormError(!hasOnlyDigits(event.target.value));
   };
 
+  const handleSnackClose = () => {
+    setSnackStatus(false);
+  };
+
   if (isPending || error) {
     return <div></div>;
   }
 
   return (
     <>
+      <Snackbar
+        open={snackStatus}
+        autoHideDuration={6000}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        onClose={handleSnackClose}
+        message="Settings Saved!"
+      />
       <FormControl fullWidth>
         <TextField
           id="executable-path"
@@ -188,8 +285,14 @@ export default function FfmpegSettingsPage() {
         </FormHelperText>
       </FormControl>
       <Stack spacing={2} direction="row" justifyContent="right" sx={{ mt: 2 }}>
-        <Button variant="outlined">Reset Options</Button>
-        <Button variant="contained" disabled={showFormError}>
+        <Button variant="outlined" onClick={() => handleResetOptions()}>
+          Reset Options
+        </Button>
+        <Button
+          variant="contained"
+          disabled={showFormError}
+          onClick={() => updateFfmpegSettings()}
+        >
           Save
         </Button>
       </Stack>

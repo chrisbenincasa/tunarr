@@ -1,4 +1,4 @@
-# dizqueTV next (name pending?)
+# Tunarr
 
 Create live TV channel streams from media on your Plex servers.
 
@@ -10,13 +10,13 @@ This is a fork of [**dizqueTV**](https://github.com/vexorian/dizquetv) (which in
 - Minimize breaking changes
 - **Add great new features**
 
-<img src="https://raw.githubusercontent.com/vexorian/dizquetv/main/resources/dizquetv.png" width="200">
+<img src="https://raw.githubusercontent.com/chrisbenincasa/tunarr/main/resources/dizquetv.png" width="200">
 
-Configure your channels, programs, commercials and settings using the dizqueTV web UI.
+Configure your channels, programs, commercials and settings using the Tunarr web UI.
 
-Access your channels by adding the spoofed dizqueTV HDHomerun tuner to Plex, Jellyfin or emby or utilize the M3U Url with any 3rd party IPTV player app.
+Access your channels by adding the spoofed Tunarr HDHomerun tuner to Plex, Jellyfin or emby or utilize the M3U Url with any 3rd party IPTV player app.
 
-EPG (Guide Information) data is stored to `.dizquetv/xmltv.xml`
+EPG (Guide Information) data is stored to `.tunarr/xmltv.xml`
 
 ## Features
 
@@ -35,13 +35,13 @@ EPG (Guide Information) data is stored to `.dizquetv/xmltv.xml`
 ## Limitations
 
 - If you want to play the TV channels in Plex using the spoofed HDHR, Plex pass is required.
-- dizqueTV does not currently watch your Plex server for media updates/changes. You must manually remove and re-add your programs for any changes to take effect. Same goes for Plex server changes (changing IP, port, etc).. You&apos;ll have to update the server settings manually in that case.
-- Most players (including Plex) will break after switching episodes if video / audio format is too different. dizqueTV can be configured to use ffmpeg transcoding to prevent this, but that costs resources.
+- Tunarr does not currently watch your Plex server for media updates/changes. You must manually remove and re-add your programs for any changes to take effect. Same goes for Plex server changes (changing IP, port, etc).. You&apos;ll have to update the server settings manually in that case.
+- Most players (including Plex) will break after switching episodes if video / audio format is too different. Tunarr can be configured to use ffmpeg transcoding to prevent this, but that costs resources.
 - If you configure Plex DVR, it will always be recording and transcoding the channel&apos;s contents.
 
 ## Releases
 
-- https://github.com/chrisbenincasa/dizquetv/releases
+- https://github.com/chrisbenincasa/Tunarr/releases
 
 ## Wiki
 

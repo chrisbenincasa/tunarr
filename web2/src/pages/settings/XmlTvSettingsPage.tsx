@@ -6,53 +6,96 @@ import {
   FormControl,
   FormControlLabel,
   FormHelperText,
-  Paper,
+  Snackbar,
   Stack,
   TextField,
 } from '@mui/material';
 import { useXmlTvSettings } from '../../hooks/settingsHooks.ts';
 import { hasOnlyDigits } from '../../helpers/util.ts';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { XmlTvSettings, defaultXmlTvSettings } from 'dizquetv-types';
 
 export default function XmlTvSettingsPage() {
   const { data, isPending, error } = useXmlTvSettings();
 
-  const defaultXMLTVSettings = {
-    outputPath: '',
-    programmingHours: 12,
-    refreshHours: 4,
-    enableImageCache: false,
+  const queryClient = useQueryClient();
+
+  const updateXmlTvSettingsMutation = useMutation({
+    mutationFn: (updateSettings: XmlTvSettings) => {
+      return fetch('http://localhost:8000/api/xmltv-settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateSettings),
+      });
+    },
+    onSuccess: () => {
+      setSnackStatus(true);
+      return queryClient.invalidateQueries({
+        queryKey: ['settings', 'xmltv-settings'],
+      });
+    },
+  });
+
+  const updateXmlTvSettings = () => {
+    updateXmlTvSettingsMutation.mutate({
+      programmingHours: Number(programmingHours),
+      refreshHours: Number(refreshHours),
+      outputPath,
+      enableImageCache,
+    });
+  };
+
+  const handleResetOptions = () => {
+    updateXmlTvSettingsMutation.mutate({
+      programmingHours: defaultXmlTvSettings.programmingHours,
+      refreshHours: defaultXmlTvSettings.refreshHours,
+      outputPath: defaultXmlTvSettings.outputPath,
+      enableImageCache: defaultXmlTvSettings.enableImageCache,
+    });
+    setProgrammingHours(defaultXmlTvSettings.programmingHours.toString());
+    setRefreshHours(defaultXmlTvSettings.refreshHours.toString());
+    setEnableImageCache(defaultXmlTvSettings.enableImageCache);
   };
 
   const [outputPath, setOutputPath] = React.useState<string>(
-    defaultXMLTVSettings.outputPath,
+    defaultXmlTvSettings.outputPath,
   );
 
   const [programmingHours, setProgrammingHours] = React.useState<string>(
-    defaultXMLTVSettings.programmingHours.toString(),
+    defaultXmlTvSettings.programmingHours.toString(),
   );
 
   const [refreshHours, setRefreshHours] = React.useState<string>(
-    defaultXMLTVSettings.refreshHours.toString(),
+    defaultXmlTvSettings.refreshHours.toString(),
   );
 
   const [enableImageCache, setEnableImageCache] = React.useState<boolean>(
-    defaultXMLTVSettings.enableImageCache,
+    defaultXmlTvSettings.enableImageCache,
   );
 
   const [showFormError, setShowFormError] = React.useState<boolean>(false);
 
+  const [snackStatus, setSnackStatus] = React.useState<boolean>(false);
+
   useEffect(() => {
-    setOutputPath(data?.outputPath || defaultXMLTVSettings.outputPath);
+    setOutputPath(data?.outputPath || defaultXmlTvSettings.outputPath);
+    defaultXmlTvSettings.outputPath =
+      data?.outputPath || defaultXmlTvSettings.outputPath;
+
     setProgrammingHours(
       data?.programmingHours.toString() ||
-        defaultXMLTVSettings.programmingHours.toString(),
+        defaultXmlTvSettings.programmingHours.toString(),
     );
+
     setRefreshHours(
       data?.refreshHours.toString() ||
-        defaultXMLTVSettings.refreshHours.toString(),
+        defaultXmlTvSettings.refreshHours.toString(),
     );
+
     setEnableImageCache(
-      data?.enableImageCache || defaultXMLTVSettings.enableImageCache,
+      data?.enableImageCache || defaultXmlTvSettings.enableImageCache,
     );
   }, [data]);
 
@@ -67,11 +110,15 @@ export default function XmlTvSettingsPage() {
   };
 
   const handleEnableImageCache = () => {
-    setEnableImageCache(!!enableImageCache);
+    setEnableImageCache(!enableImageCache);
   };
 
   const handleValidateFields = (event: React.FocusEvent<HTMLInputElement>) => {
     setShowFormError(!hasOnlyDigits(event.target.value));
+  };
+
+  const handleSnackClose = () => {
+    setSnackStatus(false);
   };
 
   if (isPending) {
@@ -82,6 +129,13 @@ export default function XmlTvSettingsPage() {
 
   return (
     <>
+      <Snackbar
+        open={snackStatus}
+        autoHideDuration={6000}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        onClose={handleSnackClose}
+        message="Settings Saved!"
+      />
       <TextField
         fullWidth
         id="output-path"
@@ -135,8 +189,14 @@ export default function XmlTvSettingsPage() {
         </FormHelperText>
       </FormControl>
       <Stack spacing={2} direction="row" justifyContent="right" sx={{ mt: 2 }}>
-        <Button variant="outlined">Reset Options</Button>
-        <Button variant="contained" disabled={showFormError}>
+        <Button variant="outlined" onClick={() => handleResetOptions()}>
+          Reset Options
+        </Button>
+        <Button
+          variant="contained"
+          disabled={showFormError}
+          onClick={() => updateXmlTvSettings()}
+        >
           Save
         </Button>
       </Stack>
