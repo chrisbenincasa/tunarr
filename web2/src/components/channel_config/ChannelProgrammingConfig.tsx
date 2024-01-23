@@ -28,7 +28,6 @@ import {
 } from '@mui/material';
 import Grid2 from '@mui/material/Unstable_Grid2/Grid2';
 import dayjs from 'dayjs';
-import duration from 'dayjs/plugin/duration';
 import { useCallback, useState } from 'react';
 import { useBlockShuffle } from '../../hooks/programming_controls/useBlockShuffle.ts';
 import {
@@ -43,13 +42,13 @@ import {
 } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
 import AddRedirectModal from '../programming_controls/AddRedirectModal.tsx';
-import ProgrammingSelector from './ProgrammingSelector.tsx';
+import ProgrammingSelectorDialog from './ProgrammingSelectorDialog.tsx';
 import AddFlexModal from '../programming_controls/AddFlexModal.tsx';
 
 // dayjs.extend(duration);
 
 export function ChannelProgrammingConfig() {
-  const channel = useStore((s) => s.channelEditor.currentChannel);
+  const channel = useStore((s) => s.channelEditor.currentEntity);
   const [programmingModalOpen, setProgrammingModalOpen] = useState(false);
   const programList = useStore((s) => s.channelEditor.programList);
   const programsDirty = useStore((s) => s.channelEditor.dirty.programs);
@@ -293,7 +292,7 @@ export function ChannelProgrammingConfig() {
           </Box>
         </Box>
       </Paper>
-      <ProgrammingSelector
+      <ProgrammingSelectorDialog
         open={programmingModalOpen}
         onClose={() => setProgrammingModalOpen(false)}
       />

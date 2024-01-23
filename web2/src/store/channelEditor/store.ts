@@ -1,29 +1,49 @@
-import { Channel, ChannelProgram } from 'dizquetv-types';
+import {
+  Channel,
+  ChannelProgram,
+  ContentProgram,
+  CustomProgram,
+  CustomShow,
+} from 'dizquetv-types';
 import { StateCreator } from 'zustand';
 
 // Represents a program listing in the editor
-export interface ChannelEditorStateInner {
-  // Original state of the working channel. Used to reset state
-  originalChannel?: Channel;
-  // The working channel - edits should be made directly here
-  currentChannel?: Channel;
+export interface ProgrammingEditorStateInner<
+  EntityType,
+  ProgramType extends ChannelProgram = ChannelProgram,
+> {
+  // Original state of the working entity. Used to reset state
+  originalEntity?: EntityType;
+  // The working entity - edits should be made directly here
+  currentEntity?: EntityType;
   // The programs in the state they were when we fetched them
   // This can be used to reset the state of the editor and
   // start over changes without having to close/enter the page
-  originalProgramList: ChannelProgram[];
+  originalProgramList: ProgramType[];
   // The actively edited list
-  programList: ChannelProgram[];
+  programList: ProgramType[];
   dirty: {
     programs: boolean;
   };
 }
 
 export interface ChannelEditorState {
-  channelEditor: ChannelEditorStateInner;
+  channelEditor: ProgrammingEditorStateInner<Channel>;
+  customShowEditor: ProgrammingEditorStateInner<
+    CustomShow,
+    ContentProgram | CustomProgram // You cannot add Flex to custom shows
+  >;
 }
 
 export const initialChannelEditorState: ChannelEditorState = {
   channelEditor: {
+    originalProgramList: [],
+    programList: [],
+    dirty: {
+      programs: false,
+    },
+  },
+  customShowEditor: {
     originalProgramList: [],
     programList: [],
     dirty: {

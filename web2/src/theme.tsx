@@ -12,11 +12,11 @@ const theme = createTheme({
   },
   components: {
     MuiPaper: {
-      styleOverrides: {
-        root: {
-          padding: 16,
-        },
-      },
+      // styleOverrides: {
+      //   root: {
+      //     padding: 16,
+      //   },
+      // },
     },
   },
 });

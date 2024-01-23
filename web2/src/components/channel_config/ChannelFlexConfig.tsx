@@ -3,7 +3,7 @@ import Box from '@mui/material/Box';
 import useStore from '../../store/index.ts';
 
 export function ChannelFlexConfig() {
-  const channel = useStore((s) => s.channelEditor.currentChannel);
+  const channel = useStore((s) => s.channelEditor.currentEntity);
   return (
     <Box>
       <Box>

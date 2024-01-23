@@ -3,7 +3,7 @@ import { PlexMovie } from 'dizquetv-types/plex';
 import { prettyItemDuration } from '../../helpers/util.ts';
 import useStore from '../../store/index.ts';
 import { addSelectedMedia } from '../../store/programmingSelector/actions.ts';
-import { PlexListItemProps } from './ProgrammingSelector.tsx';
+import { PlexListItemProps } from './ProgrammingSelectorDialog.tsx';
 
 export function PlexMovieListItem(props: PlexListItemProps<PlexMovie>) {
   const { item, index } = props;

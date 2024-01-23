@@ -221,7 +221,7 @@ export default function PlexSettingsPage() {
   );
 
   const handleMaxPlayableResolution = (event: SelectChangeEvent<string>) => {
-    setMaxPlayableResolution(event.target.value as string);
+    setMaxPlayableResolution(event.target.value);
   };
 
   const [maxDirectStreamBitrate, setMaxDirectStreamBitrate] = useState<string>(
@@ -235,7 +235,7 @@ export default function PlexSettingsPage() {
   };
 
   const handleMaxAudioChannels = (event: SelectChangeEvent<string>) => {
-    setMaxAudioChannels(event.target.value as string);
+    setMaxAudioChannels(event.target.value);
   };
 
   const onSubtitleChange = () => {

@@ -1,5 +1,6 @@
 import AddCircleIcon from '@mui/icons-material/AddCircle';
-
+import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Paper from '@mui/material/Paper';
@@ -11,10 +12,13 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import { Link } from 'react-router-dom';
+import { usePreloadedData } from '../../hooks/preloadedDataHook.ts';
+import { customShowsLoader } from '../channels/loaders.ts';
+import { IconButton, Tooltip } from '@mui/material';
 
 export default function CustomShowsPage() {
-  // Placeholder...
-  const customShows = [];
+  const customShows = usePreloadedData(customShowsLoader);
+
   const getTableRows = () => {
     if (customShows.length === 0) {
       return (
@@ -25,7 +29,30 @@ export default function CustomShowsPage() {
         </TableRow>
       );
     }
-    return null;
+    return customShows.map((cs) => {
+      return (
+        <TableRow>
+          <TableCell>{cs.name}</TableCell>
+          <TableCell>{cs.contentCount}</TableCell>
+          <TableCell width="15%">
+            <Tooltip title="Edit" placement="top">
+              <IconButton
+                color="primary"
+                to={`/library/custom-shows/${cs.id}/edit`}
+                component={Link}
+              >
+                <EditIcon />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Delete" placement="top">
+              <IconButton color="error">
+                <DeleteIcon />
+              </IconButton>
+            </Tooltip>
+          </TableCell>
+        </TableRow>
+      );
+    });
   };
 
   return (
@@ -36,7 +63,7 @@ export default function CustomShowsPage() {
         </Typography>
         <Button
           component={Link}
-          to="/channels/new"
+          to="/library/custom-shows/new"
           variant="contained"
           startIcon={<AddCircleIcon />}
         >
@@ -47,7 +74,7 @@ export default function CustomShowsPage() {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Name</TableCell>
+              <TableCell width={'80%'}>Name</TableCell>
               <TableCell># Clips</TableCell>
               <TableCell></TableCell>
             </TableRow>

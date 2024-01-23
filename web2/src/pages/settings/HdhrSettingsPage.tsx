@@ -9,6 +9,7 @@ import {
   TextField,
   Snackbar,
 } from '@mui/material';
+import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import { useHdhrSettings } from '../../hooks/settingsHooks.ts';
 import { defaultHdhrSettings, HdhrSettings } from 'dizquetv-types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';

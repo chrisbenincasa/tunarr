@@ -1,10 +1,14 @@
-import { isUndefined } from 'lodash-es';
+import { isContentProgram } from 'dizquetv-types';
+import { CreateCustomShowRequest } from 'dizquetv-types/api';
+import { chain, isUndefined, map, partition, reduce } from 'lodash-es';
 import { MarkOptional } from 'ts-essentials';
-import { v4 as uuidv4 } from 'uuid';
 import { Maybe } from '../types.js';
+import { ProgramMinterFactory } from '../util/programMinter.js';
 import { getEm } from './dataSource.js';
 import { CustomShow } from './entities/CustomShow.js';
+import { CustomShowContent } from './entities/CustomShowContent.js';
 import { Program } from './entities/Program.js';
+import { dbProgramToContentProgram } from './converters/programConverters.js';
 
 export type CustomShowUpdate = MarkOptional<CustomShow, 'content'>;
 export type CustomShowInsert = {
@@ -14,8 +18,23 @@ export type CustomShowInsert = {
 };
 
 export class CustomShowDB {
-  getShow(id: string) {
-    return getEm().repo(CustomShow).findOne(id);
+  async getShow(id: string) {
+    return getEm()
+      .repo(CustomShow)
+      .findOne({ uuid: id }, { populate: ['content.uuid'] });
+  }
+
+  async getShowPrograms(id: string) {
+    const customShowContent = await getEm()
+      .repo(CustomShowContent)
+      .find(
+        { customShow: id },
+        { populate: ['content.*'], orderBy: { index: 'desc' } },
+      );
+
+    return customShowContent.map((csc) => {
+      return dbProgramToContentProgram(csc.content, true);
+    });
   }
 
   async saveShow(id: Maybe<string>, customShow: CustomShowUpdate) {
@@ -26,19 +45,70 @@ export class CustomShowDB {
     return getEm().repo(CustomShow).upsert(customShow);
   }
 
-  async createShow(customShow: CustomShowInsert) {
-    const id = customShow.uuid ?? uuidv4();
+  async createShow(createRequest: CreateCustomShowRequest) {
     const em = getEm();
-    const content = (customShow.content ?? []).map((id) =>
-      em.getReference(Program, id),
-    );
-    const show = em.create(CustomShow, {
-      uuid: id,
-      name: customShow.name,
-      content,
+    const show = em.repo(CustomShow).create({
+      name: createRequest.name,
     });
-    await em.insert(show);
-    return id;
+
+    let idx = 0;
+    const programIndexById = reduce(
+      createRequest.programs,
+      (acc, p) => {
+        if (p.persisted) {
+          acc[p.id!] = idx++;
+        } else if (isContentProgram(p)) {
+          acc[
+            `${p.externalSourceType}_${p.externalSourceName!}_${p
+              .originalProgram?.key}`
+          ] = idx++;
+        }
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+
+    const [nonPersisted, persisted] = partition(
+      createRequest.programs,
+      (p) => !p.persisted,
+    );
+    const minter = ProgramMinterFactory.create(em);
+
+    // TODO handle custom shows
+    const programsToPersist = chain(nonPersisted)
+      .filter(isContentProgram)
+      .map((p) => minter.mint(p.externalSourceName!, p.originalProgram!))
+      .value();
+
+    const upsertedPrograms = await em.upsertMany(Program, programsToPersist, {
+      batchSize: 10,
+      onConflictAction: 'merge',
+      onConflictFields: ['sourceType', 'externalSourceId', 'externalKey'],
+      onConflictExcludeFields: ['uuid'],
+    });
+
+    await em.persist(show).flush();
+
+    const persistedCustomShowContent = map(persisted, (p) =>
+      em.create(CustomShowContent, {
+        customShow: show.uuid,
+        content: p.id!,
+        index: programIndexById[p.id!],
+      }),
+    );
+    const newCustomShowContent = map(upsertedPrograms, (p) =>
+      em.create(CustomShowContent, {
+        customShow: show.uuid,
+        content: p.uuid,
+        index: programIndexById[p.uniqueId()],
+      }),
+    );
+
+    await em
+      .persist([...persistedCustomShowContent, ...newCustomShowContent])
+      .flush();
+
+    return show.uuid;
   }
 
   async deleteShow(id: string) {

@@ -32,7 +32,7 @@ export default function ChannelTranscodingConfig() {
   const { data: ffmpegSettings, isPending: ffmpegSettingsLoading } =
     useFfmpegSettings();
 
-  const channel = useStore((s) => s.channelEditor.currentChannel);
+  const channel = useStore((s) => s.channelEditor.currentEntity);
 
   const resolution = channel?.transcoding?.targetResolution;
 

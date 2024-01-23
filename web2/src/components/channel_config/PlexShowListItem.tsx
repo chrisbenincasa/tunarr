@@ -27,7 +27,7 @@ import {
   addKnownMediaForServer,
   addSelectedMedia,
 } from '../../store/programmingSelector/actions.ts';
-import { PlexListItemProps } from './ProgrammingSelector.tsx';
+import { PlexListItemProps } from './ProgrammingSelectorDialog.tsx';
 import { prettyItemDuration } from '../../helpers/util.ts';
 
 export function PlexTvListItem(

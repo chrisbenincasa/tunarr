@@ -1,4 +1,10 @@
 import { z } from 'zod';
+import {
+  ContentProgramSchema,
+  CustomProgramSchema,
+} from '../schemas/programmingSchema.js';
+
+type Alias<T> = T & { _?: never };
 
 export const ChannelNumberParamSchema = z.object({
   number: z.coerce.number(),
@@ -17,18 +23,16 @@ export const LookupExternalProgrammingSchema = z.object({
 });
 
 export const BatchLookupExternalProgrammingSchema = z.object({
-  externalIds: z
-    .array(z.string())
-    .transform(
-      (s) =>
-        new Set(
-          [...s].map((s0) => s0.split('|', 3) as [string, string, string]),
-        ),
-    ),
-  // .refine((set) => {
-  //   return every(
-  //     [...set],
-  //     (tuple) => !isUndefined(programSourceTypeFromString(tuple[0])),
-  //   );
-  // }),
+  externalIds: z.array(z.string()),
 });
+
+export const CreateCustomShowRequestSchema = z.object({
+  name: z.string(),
+  programs: z.array(
+    z.discriminatedUnion('type', [ContentProgramSchema, CustomProgramSchema]),
+  ),
+});
+
+export type CreateCustomShowRequest = Alias<
+  z.infer<typeof CreateCustomShowRequestSchema>
+>;

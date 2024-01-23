@@ -46,7 +46,7 @@ export default function NewChannelPage() {
   const channel = defaultNewChannel(
     (maxBy(channels, (c) => c.number)?.number ?? 0) + 1,
   );
-  const workingChannel = useStore((s) => s.channelEditor.currentChannel);
+  const workingChannel = useStore((s) => s.channelEditor.currentEntity);
   const queryClient = useQueryClient();
 
   useEffectOnce(() => {
