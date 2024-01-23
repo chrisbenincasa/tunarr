@@ -145,12 +145,13 @@ export default function FfmpegSettingsPage() {
   const [showFormError, setShowFormError] = React.useState<boolean>(false);
 
   useEffect(() => {
+    console.log(data);
     setFfmpegExecutablePath(
       data?.ffmpegExecutablePath || defaultFfmpegSettings.ffmpegExecutablePath,
     );
 
     setNumThreads(
-      data?.numThreads.toString() ||
+      data?.numThreads?.toString() ||
         defaultFfmpegSettings.numThreads.toString(),
     );
 
@@ -159,7 +160,7 @@ export default function FfmpegSettingsPage() {
     );
 
     setVideoBufferSize(
-      data?.videoBufferSize.toString() ||
+      data?.videoBufferSize?.toString() ||
         defaultFfmpegSettings.videoBufferSize.toString(),
     );
 
