@@ -123,8 +123,6 @@ export default function FfmpegSettingsPage() {
     setEnableTranscoding(defaultFfmpegSettings.enableLogging);
   };
 
-  console.log(defaultFfmpegSettings);
-
   const [ffmpegExecutablePath, setFfmpegExecutablePath] =
     React.useState<string>(defaultFfmpegSettings.ffmpegExecutablePath);
 
