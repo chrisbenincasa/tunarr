@@ -1,6 +1,6 @@
 import { Migration } from '@mikro-orm/migrations';
 
-export class Migration20240118214840 extends Migration {
+export class Migration20240124115044 extends Migration {
 
   async up(): Promise<void> {
     this.addSql('create table `cached_image` (`hash` text not null, `url` text not null, `mime_type` text null, primary key (`hash`));');
@@ -30,9 +30,10 @@ export class Migration20240118214840 extends Migration {
     this.addSql('create index `filler_show_content_filler_show_uuid_index` on `filler_show_content` (`filler_show_uuid`);');
     this.addSql('create index `filler_show_content_program_uuid_index` on `filler_show_content` (`program_uuid`);');
 
-    this.addSql('create table `custom_show_content` (`custom_show_uuid` text not null, `program_uuid` text not null, constraint `custom_show_content_custom_show_uuid_foreign` foreign key(`custom_show_uuid`) references `custom_show`(`uuid`) on delete cascade on update cascade, constraint `custom_show_content_program_uuid_foreign` foreign key(`program_uuid`) references `program`(`uuid`) on delete cascade on update cascade, primary key (`custom_show_uuid`, `program_uuid`));');
+    this.addSql('create table `custom_show_content` (`custom_show_uuid` text not null, `content_uuid` text not null, `index` integer not null, constraint `custom_show_content_custom_show_uuid_foreign` foreign key(`custom_show_uuid`) references `custom_show`(`uuid`) on update cascade, constraint `custom_show_content_content_uuid_foreign` foreign key(`content_uuid`) references `program`(`uuid`) on update cascade, primary key (`custom_show_uuid`, `content_uuid`));');
     this.addSql('create index `custom_show_content_custom_show_uuid_index` on `custom_show_content` (`custom_show_uuid`);');
-    this.addSql('create index `custom_show_content_program_uuid_index` on `custom_show_content` (`program_uuid`);');
+    this.addSql('create index `custom_show_content_content_uuid_index` on `custom_show_content` (`content_uuid`);');
+    this.addSql('create unique index `custom_show_content_custom_show_uuid_content_uuid_index_unique` on `custom_show_content` (`custom_show_uuid`, `content_uuid`, `index`);');
 
     this.addSql('create table `channel_programs` (`channel_uuid` text not null, `program_uuid` text not null, constraint `channel_programs_channel_uuid_foreign` foreign key(`channel_uuid`) references `channel`(`uuid`) on delete cascade on update cascade, constraint `channel_programs_program_uuid_foreign` foreign key(`program_uuid`) references `program`(`uuid`) on delete cascade on update cascade, primary key (`channel_uuid`, `program_uuid`));');
     this.addSql('create index `channel_programs_channel_uuid_index` on `channel_programs` (`channel_uuid`);');
