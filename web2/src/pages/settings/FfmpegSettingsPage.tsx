@@ -206,8 +206,20 @@ export default function FfmpegSettingsPage() {
     setFfmpegExecutablePath(defaultFfmpegSettings.ffmpegExecutablePath);
     setNumThreads(defaultFfmpegSettings.numThreads.toString());
     setEnableLogging(defaultFfmpegSettings.enableLogging);
+    setConcatMuxDelay(defaultFfmpegSettings.concatMuxDelay.toString());
+    setEnableTranscoding(defaultFfmpegSettings.enableTranscoding);
+    setVideoEncoder(defaultFfmpegSettings.videoEncoder);
+    setVideoBitrate(defaultFfmpegSettings.videoBitrate.toString());
     setVideoBufferSize(defaultFfmpegSettings.videoBufferSize.toString());
-    setEnableTranscoding(defaultFfmpegSettings.enableLogging);
+    setMaxFPS(defaultFfmpegSettings.maxFPS.toString());
+    setScalingAlgorithm(defaultFfmpegSettings.scalingAlgorithm);
+    setDeinterlaceFilter(defaultFfmpegSettings.deinterlaceFilter);
+    setAudioEncoder(defaultFfmpegSettings.audioEncoder);
+    setAudioBitrate(defaultFfmpegSettings.audioBitrate.toString());
+    setAudioBufferSize(defaultFfmpegSettings.audioBufferSize.toString());
+    setAudioVolumePercent(defaultFfmpegSettings.audioVolumePercent.toString());
+    setAudioChannels(defaultFfmpegSettings.audioChannels.toString());
+    setAudioSampleRate(defaultFfmpegSettings.audioSampleRate.toString());
   };
 
   useEffect(() => {
