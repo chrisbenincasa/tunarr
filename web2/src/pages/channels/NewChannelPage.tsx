@@ -15,6 +15,7 @@ import { useCallback } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../../external/api.ts';
 import useStore from '../../store/index.ts';
+import { useNavigate } from 'react-router-dom';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function defaultNewChannel(num: number): Channel {
@@ -48,6 +49,7 @@ export default function NewChannelPage() {
   );
   const workingChannel = useStore((s) => s.channelEditor.currentEntity);
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   useEffectOnce(() => {
     setCurrentChannel(channel, []);
@@ -66,10 +68,11 @@ export default function NewChannelPage() {
     },
     mutationKey: ['channels'],
     onSuccess: async () => {
-      return queryClient.invalidateQueries({
+      await queryClient.invalidateQueries({
         queryKey: ['channels'],
         exact: true,
       });
+      navigate('/channels');
     },
   });
 
