@@ -37,7 +37,7 @@ export default function SettingsLayout() {
       <Typography variant="h3" mb={2}>
         Settings
       </Typography>
-      <Paper>
+      <Paper sx={{ p: 2 }}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <Tabs value={currentTab}>
             <Tab
