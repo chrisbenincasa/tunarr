@@ -33,6 +33,12 @@ dayjs.extend(relativeTime);
 dayjs.extend(mod);
 dayjs.extend(utc);
 
+export type PaddedProgram = {
+  program: ChannelProgram;
+  padMs: number;
+  totalDuration: number;
+};
+
 // Adds flex time to the end of a programs array.
 // If the final program is flex itself, just extends it
 // Returns a new array and amount to increment the cursor
@@ -138,48 +144,41 @@ function createPaddedProgram(program: ChannelProgram, padMs: number) {
   };
 }
 
-// async function initializePrograms(
-//   channelProgramming: ChannelProgramming,
-// ): Promise<ContentProgram[]> {
-//   // Load programs
-//   const em = getEm();
-//   const minter = ProgramMinterFactory.create(em);
-//   const allContent = filter(channelProgramming.programs, isContentProgram);
-//   const [persistedContent, nonPersistedContent] = partition(
-//     allContent,
-//     (p) => p.persisted,
-//   );
-//   const nonPersistedOther = filter(
-//     channelProgramming.programs,
-//     (p) => !p.persisted && !isContentProgram(p) && !isFlexProgram(p),
-//   );
-//   const mintedContent: ContentProgram[] = map(
-//     nonPersistedContent,
-//     (p) => ({
-//       ...p,
-//       dbProgram: minter.mint(p.externalSourceName!, p.originalProgram!),
-//     }),
-//   );
-//   // TODO should we batch this?
-//   const loadedPrograms = await em
-//     .repo(Program)
-//     .find({ uuid: { $in: map(persistedContent, (p) => p.id!) } });
+// Exported for testing only
+export function distributeFlex(
+  programs: PaddedProgram[],
+  schedule: TimeSlotSchedule,
+  remainingTime: number,
+) {
+  if (programs.length === 0) {
+    return;
+  }
 
-//   const existingPrograms: ContentProgram[] = compact(
-//     map(persistedContent, (pc) => {
-//       const match = find(loadedPrograms, (lp) => lp.uuid === pc.id);
-//       if (!match) {
-//         console.warn("Program claimed to be persisted by couldn't be found");
-//         return;
-//       }
+  const div = Math.floor(remainingTime / schedule.padMs);
+  const mod = remainingTime % schedule.padMs;
+  console.log({ remainingTime, 'schedule.padMs': schedule.padMs, div, mod });
+  // Add leftover flex to end
+  last(programs)!.padMs += mod;
+  last(programs)!.totalDuration += mod;
 
-//       return { ...pc, dbProgram: match };
-//     }),
-//   );
+  // Padded programs sorted by least amount of existing padding
+  // along with their original index in the programs array
+  const sortedPads = chain(programs)
+    .map(({ padMs }, index) => ({ padMs, index }))
+    .sortBy(({ padMs }) => padMs)
+    .value();
 
-//   // TODO include redirects and custom programs!
-//   return [...existingPrograms, ...mintedContent];
-// }
+  forEach(programs, (_, i) => {
+    let q = Math.floor(div / programs.length);
+    if (i < div % programs.length) {
+      q++;
+    }
+    console.log(q);
+    const extraPadding = q * schedule.padMs;
+    programs[sortedPads[i].index].padMs += extraPadding;
+    programs[sortedPads[i].index].totalDuration += extraPadding;
+  });
+}
 
 function createProgramMap(programs: ChannelProgram[]) {
   return reduce(
@@ -406,7 +405,7 @@ export default async function scheduleTimeSlots(
     const paddedProgram = createPaddedProgram(program, schedule.padMs);
     let totalDuration = paddedProgram.totalDuration;
     advanceIterator(currSlot, programmingIteratorsById);
-    const paddedPrograms = [paddedProgram];
+    const paddedPrograms: PaddedProgram[] = [paddedProgram];
 
     for (;;) {
       const nextProgram = getNextProgramForSlot(
@@ -432,6 +431,7 @@ export default async function scheduleTimeSlots(
     // "shuffle" ordering, it won't work for "in order" shows in slots.
     // TODO: Implement greedy filling.
     if (schedule.flexPreference === 'distribute') {
+      distributeFlex(paddedPrograms, schedule, remainingTimeInSlot);
     } else {
       const lastProgram = last(paddedPrograms)!;
       lastProgram.padMs += remainingTimeInSlot;

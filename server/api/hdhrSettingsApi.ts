@@ -28,25 +28,27 @@ export const hdhrSettingsRouter: FastifyPluginCallback = (
         await req.serverCtx.settings.updateSettings('hdhr', req.body);
         const hdhr = req.serverCtx.settings.hdhrSettings();
         await res.send(hdhr);
-        req.serverCtx.eventService.push('settings-update', {
+        req.serverCtx.eventService.push({
+          type: 'settings-update',
           message: 'HDHR configuration updated.',
           module: 'hdhr',
           detail: {
             action: 'update',
           },
-          level: 'info',
+          level: 'success',
         });
       } catch (err) {
         logger.error(err);
         await res.status(500).send('error');
-        req.serverCtx.eventService.push('settings-update', {
+        req.serverCtx.eventService.push({
+          type: 'settings-update',
           message: 'Error updating HDHR configuration',
           module: 'hdhr',
           detail: {
             action: 'action',
             error: isError(err) ? firstDefined(err, 'message') : 'unknown',
           },
-          level: 'danger',
+          level: 'error',
         });
       }
     },
@@ -61,7 +63,8 @@ export const hdhrSettingsRouter: FastifyPluginCallback = (
       });
       const hdhr = req.serverCtx.settings.hdhrSettings();
       await res.send(hdhr);
-      req.serverCtx.eventService.push('settings-update', {
+      req.serverCtx.eventService.push({
+        type: 'settings-update',
         message: 'HDHR configuration reset.',
         module: 'hdhr',
         detail: {
@@ -72,14 +75,15 @@ export const hdhrSettingsRouter: FastifyPluginCallback = (
     } catch (err) {
       logger.error(err);
       await res.status(500).send('error');
-      req.serverCtx.eventService.push('settings-update', {
+      req.serverCtx.eventService.push({
+        type: 'settings-update',
         message: 'Error reseting HDHR configuration',
         module: 'hdhr',
         detail: {
           action: 'reset',
           error: isError(err) ? firstDefined(err, 'message') : 'unknown',
         },
-        level: 'danger',
+        level: 'error',
       });
     }
   });

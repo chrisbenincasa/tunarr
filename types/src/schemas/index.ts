@@ -5,3 +5,4 @@ export * from './miscSchemas.js';
 export * from './settingsSchemas.js';
 export * from './programmingSchema.js';
 export * from './customShowsSchema.js';
+export * from './eventSchema.js';
