@@ -230,7 +230,8 @@ export async function initServer(opts: ServerOptions) {
         (ctx.hdhrService.ssdp as any).start();
       }
 
-      ctx.eventService.push('lifecycle', {
+      ctx.eventService.push({
+        type: 'lifecycle',
         message: `Server Started`,
         detail: {
           time: new Date().getTime(),
@@ -246,7 +247,8 @@ export async function initServer(opts: ServerOptions) {
 onShutdown('log', [], async () => {
   const ctx = await serverContext();
   const t = new Date().getTime();
-  ctx.eventService.push('lifecycle', {
+  ctx.eventService.push({
+    type: 'lifecycle',
     message: `Initiated Server Shutdown`,
     detail: {
       time: t,

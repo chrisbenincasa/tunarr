@@ -162,11 +162,12 @@ export class TVGuideService {
             };
           },
         );
-        this.eventService.push('xmltv', {
+        this.eventService.push({
+          type: 'xmltv',
           message: `Started building tv-guide at = ${new Date().toISOString()}`,
           module: 'xmltv',
           detail: {
-            time: new Date(),
+            time: new Date().getTime(),
           },
           level: 'info',
         });
@@ -602,11 +603,12 @@ export class TVGuideService {
       async () => await this._throttle(),
       this.cacheImageService,
     );
-    this.eventService.push('xmltv', {
+    this.eventService.push({
+      type: 'xmltv',
       message: `XMLTV updated at server time = ${new Date().toISOString()}`,
       module: 'xmltv',
       detail: {
-        time: new Date(),
+        time: new Date().getTime(),
       },
       level: 'info',
     });

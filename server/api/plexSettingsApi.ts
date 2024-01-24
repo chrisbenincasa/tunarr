@@ -29,25 +29,27 @@ export const plexSettingsRouter: FastifyPluginCallback = (
         await req.serverCtx.settings.updateSettings('plexStream', req.body);
         const plex = req.serverCtx.settings.plexSettings();
         await res.send(plex);
-        req.serverCtx.eventService.push('settings-update', {
+        req.serverCtx.eventService.push({
+          type: 'settings-update',
           message: 'Plex configuration updated.',
           module: 'plex',
           detail: {
             action: 'update',
           },
-          level: 'info',
+          level: 'success',
         });
       } catch (err) {
         logger.error(err);
         await res.status(500).send('error');
-        req.serverCtx.eventService.push('settings-update', {
+        req.serverCtx.eventService.push({
+          type: 'settings-update',
           message: 'Error updating Plex configuration',
           module: 'plex',
           detail: {
             action: 'update',
             error: isError(err) ? firstDefined(err, 'message') : 'unknown',
           },
-          level: 'danger',
+          level: 'error',
         });
       }
     },
@@ -62,7 +64,8 @@ export const plexSettingsRouter: FastifyPluginCallback = (
       );
       const plex = req.serverCtx.settings.plexSettings();
       await res.send(plex);
-      req.serverCtx.eventService.push('settings-update', {
+      req.serverCtx.eventService.push({
+        type: 'settings-update',
         message: 'Plex configuration reset.',
         module: 'plex',
         detail: {
@@ -74,14 +77,15 @@ export const plexSettingsRouter: FastifyPluginCallback = (
       logger.error(err);
       await res.status(500).send('error');
 
-      req.serverCtx.eventService.push('settings-update', {
+      req.serverCtx.eventService.push({
+        type: 'settings-update',
         message: 'Error reseting Plex configuration',
         module: 'plex',
         detail: {
           action: 'reset',
           error: isError(err) ? firstDefined(err, 'message') : 'unknown',
         },
-        level: 'danger',
+        level: 'error',
       });
     }
   });

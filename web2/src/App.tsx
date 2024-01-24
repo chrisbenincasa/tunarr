@@ -1,5 +1,10 @@
-import { ThemeProvider } from '@mui/material/styles';
+import LiveTvIcon from '@mui/icons-material/LiveTv';
+import PreviewIcon from '@mui/icons-material/Preview';
+import SettingsIcon from '@mui/icons-material/Settings';
+import SettingsRemoteIcon from '@mui/icons-material/SettingsRemote';
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
+import TheatersIcon from '@mui/icons-material/Theaters';
+import TvIcon from '@mui/icons-material/Tv';
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
 import {
   AppBar,
@@ -17,17 +22,12 @@ import {
 } from '@mui/material';
 import Container from '@mui/material/Container';
 import CssBaseline from '@mui/material/CssBaseline';
+import { ThemeProvider } from '@mui/material/styles';
 import React, { ReactNode, useState } from 'react';
 import { Outlet, Link as RouterLink } from 'react-router-dom';
 import './App.css';
 import ServerEvents from './components/ServerEvents.tsx';
 import VersionFooter from './components/VersionFooter.tsx';
-import SettingsIcon from '@mui/icons-material/Settings';
-import LiveTvIcon from '@mui/icons-material/LiveTv';
-import SettingsRemoteIcon from '@mui/icons-material/SettingsRemote';
-import TvIcon from '@mui/icons-material/Tv';
-import PreviewIcon from '@mui/icons-material/Preview';
-import TheatersIcon from '@mui/icons-material/Theaters';
 import theme from './theme.tsx';
 interface NavItem {
   name: string;

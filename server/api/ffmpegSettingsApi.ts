@@ -30,7 +30,8 @@ export const ffmpegSettingsRouter: FastifyPluginCallback = (
         if (typeof err !== 'undefined') {
           return res.status(400).send(err);
         }
-        req.serverCtx.eventService.push('settings-update', {
+        req.serverCtx.eventService.push({
+          type: 'settings-update',
           message: 'FFMPEG configuration updated.',
           module: 'ffmpeg',
           detail: {
@@ -42,14 +43,15 @@ export const ffmpegSettingsRouter: FastifyPluginCallback = (
       } catch (err) {
         logger.error(err);
         await res.status(500).send('error');
-        req.serverCtx.eventService.push('settings-update', {
+        req.serverCtx.eventService.push({
+          type: 'settings-update',
           message: 'Error updating FFMPEG configuration.',
           module: 'ffmpeg',
           detail: {
             action: 'update',
             error: isError(err) ? firstDefined(err, 'message') : 'unknown',
           },
-          level: 'danger',
+          level: 'error',
         });
       }
     },
@@ -64,7 +66,8 @@ export const ffmpegSettingsRouter: FastifyPluginCallback = (
         ffmpeg.ffmpegExecutablePath = req.body.ffmpegPath;
         await req.serverCtx.settings.updateFfmpegSettings(ffmpeg);
         ffmpeg = req.serverCtx.settings.ffmpegSettings();
-        req.serverCtx.eventService.push('settings-update', {
+        req.serverCtx.eventService.push({
+          type: 'settings-update',
           message: 'FFMPEG configuration reset.',
           module: 'ffmpeg',
           detail: {
@@ -76,14 +79,15 @@ export const ffmpegSettingsRouter: FastifyPluginCallback = (
       } catch (err) {
         logger.error(err);
         await res.status(500).send('error');
-        req.serverCtx.eventService.push('settings-update', {
+        req.serverCtx.eventService.push({
+          type: 'settings-update',
           message: 'Error reseting FFMPEG configuration.',
           module: 'ffmpeg',
           detail: {
             action: 'reset',
             error: isError(err) ? firstDefined(err, 'message') : 'unknown',
           },
-          level: 'danger',
+          level: 'error',
         });
       }
     },

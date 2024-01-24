@@ -109,19 +109,21 @@ export const plexServersRouter: RouterPluginCallback = (
         }
         const report = await req.serverCtx.plexServerDB.deleteServer(name);
         await res.send(report);
-        req.serverCtx.eventService.push('settings-update', {
+        req.serverCtx.eventService.push({
+          type: 'settings-update',
           message: `Plex server ${name} removed.`,
           module: 'plex-server',
           detail: {
             serverName: name,
             action: 'delete',
           },
-          level: 'warn',
+          level: 'warning',
         });
       } catch (err) {
         logger.error(err);
         await res.status(500).send('error');
-        req.serverCtx.eventService.push('settings-update', {
+        req.serverCtx.eventService.push({
+          type: 'settings-update',
           message: 'Error deleting plex server.',
           module: 'plex-server',
           detail: {
@@ -129,7 +131,7 @@ export const plexServersRouter: RouterPluginCallback = (
             serverName: name,
             error: isError(err) ? err.message : 'Missing',
           },
-          level: 'danger',
+          level: 'error',
         });
       }
     },
@@ -149,7 +151,8 @@ export const plexServersRouter: RouterPluginCallback = (
           destroyedPrograms += r.destroyedPrograms;
         });
         await res.status(204).send('Plex server updated.');
-        req.serverCtx.eventService.push('settings-update', {
+        req.serverCtx.eventService.push({
+          type: 'settings-update',
           message: `Plex server ${req.body.name} updated. ${modifiedPrograms} programs modified, ${destroyedPrograms} programs deleted`,
           module: 'plex-server',
           detail: {
@@ -161,7 +164,8 @@ export const plexServersRouter: RouterPluginCallback = (
       } catch (err) {
         logger.error('Could not update plex server.', err);
         await res.status(400).send('Could not add plex server.');
-        req.serverCtx.eventService.push('settings-update', {
+        req.serverCtx.eventService.push({
+          type: 'settings-update',
           message: 'Error updating plex server.',
           module: 'plex-server',
           detail: {
@@ -169,7 +173,7 @@ export const plexServersRouter: RouterPluginCallback = (
             serverName: firstDefined(req, 'body', 'name'),
             error: isObject(err) ? firstDefined(err, 'message') : 'unknown',
           },
-          level: 'danger',
+          level: 'error',
         });
       }
     },
@@ -181,19 +185,21 @@ export const plexServersRouter: RouterPluginCallback = (
       try {
         await req.serverCtx.plexServerDB.addServer(req.body);
         await res.status(201).send('Plex server added.');
-        req.serverCtx.eventService.push('settings-update', {
+        req.serverCtx.eventService.push({
+          type: 'settings-update',
           message: `Plex server ${req.body.name} added.`,
           module: 'plex-server',
           detail: {
             serverName: req.body.name,
             action: 'add',
           },
-          level: 'info',
+          level: 'success',
         });
       } catch (err) {
         logger.error('Could not add plex server.', err);
         await res.status(400).send('Could not add plex server.');
-        req.serverCtx.eventService.push('settings-update', {
+        req.serverCtx.eventService.push({
+          type: 'settings-update',
           message: 'Error adding plex server.',
           module: 'plex-server',
           detail: {
@@ -201,7 +207,7 @@ export const plexServersRouter: RouterPluginCallback = (
             serverName: firstDefined(req, 'body', 'name'),
             error: isError(err) ? firstDefined(err, 'message') : 'unknown',
           },
-          level: 'danger',
+          level: 'error',
         });
       }
     },

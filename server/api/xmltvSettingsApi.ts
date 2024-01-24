@@ -39,27 +39,29 @@ export const xmlTvSettingsRouter: FastifyPluginCallback = (
       });
       xmltv = req.serverCtx.settings.xmlTvSettings();
       await res.send(xmltv);
-      req.serverCtx.eventService.push('settings-update', {
-        message: 'xmltv settings updated.',
+      req.serverCtx.eventService.push({
+        type: 'settings-update',
+        message: 'XMLTV settings updated',
         module: 'xmltv',
         detail: {
           action: 'update',
         },
-        level: 'info',
+        level: 'success',
       });
       await updateXmltv();
     } catch (err) {
       logger.error(err);
       await res.status(500).send('error');
 
-      req.serverCtx.eventService.push('settings-update', {
-        message: 'Error updating xmltv configuration',
+      req.serverCtx.eventService.push({
+        type: 'settings-update',
+        message: 'Error updating XMLTV configuration',
         module: 'xmltv',
         detail: {
           action: 'update',
           error: isError(err) ? firstDefined(err, 'message') : 'unknown',
         },
-        level: 'danger',
+        level: 'error',
       });
     }
   });
@@ -72,8 +74,9 @@ export const xmlTvSettingsRouter: FastifyPluginCallback = (
       );
       const xmltv = req.serverCtx.settings.xmlTvSettings();
       await res.send(xmltv);
-      req.serverCtx.eventService.push('settings-update', {
-        message: 'xmltv settings reset.',
+      req.serverCtx.eventService.push({
+        type: 'settings-update',
+        message: 'XMLTV settings reset',
         module: 'xmltv',
         detail: {
           action: 'reset',
@@ -85,14 +88,15 @@ export const xmlTvSettingsRouter: FastifyPluginCallback = (
     } catch (err) {
       logger.error(err);
       await res.status(500).send('error');
-      req.serverCtx.eventService.push('settings-update', {
-        message: 'Error reseting xmltv configuration',
+      req.serverCtx.eventService.push({
+        type: 'settings-update',
+        message: 'Error reseting XMLTV configuration',
         module: 'xmltv',
         detail: {
           action: 'reset',
           error: isError(err) ? firstDefined(err, 'message') : 'unknown',
         },
-        level: 'danger',
+        level: 'error',
       });
     }
   });

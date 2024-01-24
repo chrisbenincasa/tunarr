@@ -142,14 +142,14 @@ export const wait: (ms: number) => Promise<void> = (ms: number) => {
   return new Promise((resolve) => setTimeout(resolve, ms));
 };
 
-export function firstDefined(obj: object, ...args: string[]) {
+export function firstDefined(obj: object, ...args: string[]): string {
   if (isEmpty(args)) {
-    return new String(obj);
+    return String(obj);
   }
 
   for (const arg of args) {
     if (!isUndefined(obj[arg])) {
-      return new String(obj[arg]);
+      return String(obj[arg]);
     }
   }
 
