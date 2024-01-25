@@ -8,3 +8,4 @@ export * from './src/PlexSettings.js';
 export * from './src/HdhrSettings.js';
 export * from './src/CustomShow.js';
 export * from './src/Event.js';
+export * from './src/FillerList.js';

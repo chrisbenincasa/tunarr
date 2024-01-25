@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
-import { Resolution } from 'dizquetv-types';
+import { Resolution } from '@tunarr/types';
 
 dayjs.extend(duration);
 

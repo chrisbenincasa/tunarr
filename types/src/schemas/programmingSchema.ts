@@ -23,7 +23,6 @@ export const ProgramSchema = z.object({
   file: z.string().optional(),
   id: z.string(),
   icon: z.string().optional(),
-  isOffline: z.boolean(), // Flex
   key: z.string().optional(),
   plexFile: z.string().optional(), // Not present on offline type
   rating: z.string().optional(),

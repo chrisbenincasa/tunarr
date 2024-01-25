@@ -1,5 +1,5 @@
 import { DataTag, useQuery } from '@tanstack/react-query';
-import { Channel } from 'dizquetv-types';
+import { Channel } from '@tunarr/types';
 import { apiClient } from '../external/api.ts';
 
 export const channelsQuery = {

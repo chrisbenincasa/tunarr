@@ -2,7 +2,7 @@ import { isError, isUndefined } from 'lodash-es';
 import createLogger from '../logger.js';
 import { firstDefined } from '../util.js';
 import { FastifyPluginCallback } from 'fastify';
-import { FfmpegSettings, defaultFfmpegSettings } from 'dizquetv-types';
+import { FfmpegSettings, defaultFfmpegSettings } from '@tunarr/types';
 
 const logger = createLogger(import.meta);
 

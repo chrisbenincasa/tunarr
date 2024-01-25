@@ -1,5 +1,5 @@
 {
-  "name": "dizquetv-types",
+  "name": "@tunarr/types",
   "version": "1.0.0",
   "description": "",
   "scripts": {
@@ -7,9 +7,9 @@
   },
   "main": "index.js",
   "keywords": [],
-  "author": "",
+  "author": "chrisbenincasa",
   "type": "module",
-  "license": "ISC",
+  "license": "Zlib",
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "6.0.0",
     "@typescript-eslint/parser": "6.0.0",

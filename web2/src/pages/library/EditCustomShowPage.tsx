@@ -25,16 +25,17 @@ import {
   removeCustomShowProgram,
 } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
-import { CustomShow } from 'dizquetv-types';
-import { useMutation } from '@tanstack/react-query';
+import { CustomShow } from '@tunarr/types';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../../external/api.ts';
 
 type Props = { isNew: boolean };
 
 export default function EditCustomShowPage({ isNew }: Props) {
   const customShow = useLoaderData() as CustomShow;
-  const workingCustomShow = useStore((s) => s.customShowEditor.currentEntity!);
+  const workingCustomShow = useStore((s) => s.customShowEditor.currentEntity);
   const customShowPrograms = useStore((s) => s.customShowEditor.programList);
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
 
   const saveShowMutation = useMutation({
@@ -45,7 +46,11 @@ export default function EditCustomShowPage({ isNew }: Props) {
         programs: customShowPrograms,
       });
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ['custom-shows'],
+        exact: false,
+      });
       navigate('/library/custom-shows');
     },
   });

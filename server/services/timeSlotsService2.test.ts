@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
 import timezone from 'dayjs/plugin/timezone.js';
-import { FlexProgram, isContentProgram } from 'dizquetv-types';
+import { FlexProgram, isContentProgram } from '@tunarr/types';
 import { isNull, pad } from 'lodash-es';
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'path';
@@ -12,7 +12,7 @@ import { setGlobalOptions } from '../globals.js';
 import scheduleTimeSlots, {
   PaddedProgram,
   distributeFlex,
-} from './timeSlotsService2.ignore.js';
+} from './timeSlotsService.js';
 import { TimeSlotSchedule } from '../dao/derived_types/Lineup.js';
 
 dayjs.extend(duration);

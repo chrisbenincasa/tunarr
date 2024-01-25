@@ -34,9 +34,11 @@
     ],
     "include": [
         "./**/*.ts",
-        "__tests__/**/*"
+        "__tests__/**/*",
+        "api/channelToolsApi.ts.ignore"
     ],
     "exclude": [
-        "./build/**/*"
+        "./build/**/*",
+        "./**/*.ignore.ts"
     ]
 }

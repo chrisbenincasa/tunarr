@@ -1,519 +1,456 @@
-import { Program } from 'dizquetv-types';
-import { isUndefined, shuffle as lodashShuffle } from 'lodash-es';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import dayjs from 'dayjs';
+import duration, { Duration } from 'dayjs/plugin/duration.js';
+import relativeTime from 'dayjs/plugin/relativeTime.js';
+import utc from 'dayjs/plugin/utc.js';
+import {
+  ChannelProgram,
+  ChannelProgramming,
+  ContentProgram,
+  FlexProgram,
+  isContentProgram,
+  isFlexProgram,
+} from '@tunarr/types';
+import {
+  chain,
+  first,
+  forEach,
+  isNull,
+  last,
+  nth,
+  reduce,
+  reject,
+  shuffle,
+  slice,
+  sortBy,
+} from 'lodash-es';
 import constants from '../constants.js';
-import { random } from '../helperFuncs.js';
-import { Maybe } from '../types.js';
-import { deepCopyArray } from '../util.js';
-import getShowDataFunc, { ShowData } from './getShowData.js';
-import throttle from './throttle.js';
-import { MarkOptional } from 'ts-essentials';
+import { TimeSlot, TimeSlotSchedule } from '../dao/derived_types/Lineup.js';
+import { mod } from '../util/dayjsExtensions.js';
 
-const getShowData = getShowDataFunc();
+dayjs.extend(duration);
+dayjs.extend(relativeTime);
+dayjs.extend(mod);
+dayjs.extend(utc);
 
-const MINUTE = 60 * 1000;
-const DAY = 24 * 60 * MINUTE;
-const LIMIT = 40000;
-
-// Use this to derive the minimum data we need for this service
-export type ShuffleProgram = MarkOptional<
-  Omit<
-    Program,
-    'summary' | 'icon' | 'rating' | 'ratingKey' | 'date' | 'year' | 'plexFile'
-  >,
-  'id'
->;
-
-type ShowDataWithExtras = Required<ShowData> & {
-  id: string;
-  description: string;
+export type PaddedProgram = {
+  program: ChannelProgram;
+  padMs: number;
+  totalDuration: number;
 };
 
-type TimeSlot = {
-  order: 'next' | 'shuffle';
-  showId: string;
-  time: number; // Offset from midnight in millis
-};
+// Adds flex time to the end of a programs array.
+// If the final program is flex itself, just extends it
+// Returns a new array and amount to increment the cursor
+function pushOrExtendFlex(
+  lineup: ChannelProgram[],
+  flexDuration: Duration,
+): [number, ChannelProgram[]] {
+  const durationMs = flexDuration.asMilliseconds();
+  if (durationMs <= 0) {
+    return [0, lineup];
+  }
 
-// This is used on the frontend too, we will move common
-// types eventually.
-export type TimeSlotSchedule = {
-  flexPreference: string; // distribute or end
-  lateness: number; // max lateness in millis
-  maxDays: number; // days
-  pad: number; // Pad time in millis
-  period: number;
-  slots: TimeSlot[];
-  timeZoneOffset: number; // tz offset in...minutes, i think?
-};
+  const lastLineupItem = last(lineup);
+  if (lastLineupItem && isFlexProgram(lastLineupItem)) {
+    const newDuration = lastLineupItem.duration + durationMs;
+    const newItem: FlexProgram = {
+      type: 'flex',
+      duration: newDuration,
+      persisted: false,
+    };
+    return [durationMs, [...slice(lineup, 0, lineup.length - 1), newItem]];
+  }
 
-// Hmmm...
-type Iterator<T> = {
-  current: () => T;
-  next: () => void;
-};
+  const newItem: FlexProgram = {
+    type: 'flex',
+    persisted: false,
+    duration: durationMs,
+  };
 
-type SlotShow = ShowDataWithExtras & {
-  founder?: ShuffleProgram; // The originating program?
-  programs?: ShuffleProgram[];
-  shuffler?: Iterator<ShuffleProgram>;
-  orderer?: Iterator<ShuffleProgram>;
-};
+  return [durationMs, [...lineup, newItem]];
+}
 
-function getShow(program: ShuffleProgram): ShowDataWithExtras | null {
-  const d = getShowData(program);
-  if (!d.hasShow) {
-    return null;
-  } else {
-    return {
-      ...d,
-      description: d.showDisplayName,
-      id: d.showId,
-    } as ShowDataWithExtras;
+abstract class ProgramIterator {
+  abstract current(): ChannelProgram | null;
+  abstract next(): void;
+}
+
+class ProgramShuffler extends ProgramIterator {
+  #programs: ChannelProgram[];
+  #position: number = 0;
+
+  constructor(programs: ChannelProgram[]) {
+    super();
+    this.#programs = shuffle(programs);
+  }
+
+  current() {
+    return nth(this.#programs, this.#position) ?? null;
+  }
+
+  next() {
+    this.#position++;
+    if (this.#position >= this.#programs.length) {
+      const mid = Math.floor(this.#programs.length / 2);
+      this.#programs = [
+        ...slice(this.#programs, 0, mid),
+        ...slice(this.#programs, mid),
+      ];
+      this.#position = 0;
+    }
   }
 }
 
-function shuffle<T>(array: T[], lo: number | undefined, hi: number) {
-  if (isUndefined(lo)) {
-    lo = 0;
-    hi = array.length;
+class ProgramOrderer extends ProgramIterator {
+  #programs: ChannelProgram[];
+  #position: number = 0;
+
+  constructor(programs: ChannelProgram[]) {
+    super();
+    this.#programs = sortBy(programs, getProgramOrder);
   }
-  let currentIndex = hi,
-    temporaryValue: T,
-    randomIndex: number;
-  while (lo !== currentIndex) {
-    randomIndex = random.integer(lo, currentIndex - 1);
-    currentIndex -= 1;
-    temporaryValue = array[currentIndex];
-    array[currentIndex] = array[randomIndex];
-    array[randomIndex] = temporaryValue;
+
+  current(): ChannelProgram | null {
+    return nth(this.#programs, this.#position) ?? null;
   }
-  return array;
+  next(): void {
+    this.#position = (this.#position + 1) % this.#programs.length;
+  }
 }
 
-function getProgramId(program: ShuffleProgram) {
-  let s = program.serverKey;
-  if (isUndefined(s)) {
-    s = 'unknown';
+function getProgramOrder(program: ContentProgram): string | number {
+  switch (program.subtype) {
+    case 'movie':
+      // A-z for now
+      return program.title;
+    case 'episode':
+      // Hacky thing from original code...
+      return program.seasonNumber! * 100000 + program.episodeNumber!;
+    case 'track':
+      // A-z for now
+      return program.title;
   }
-  let p = program.key;
-  if (isUndefined(p)) {
-    p = 'unknown';
-  }
-  return s + '|' + p;
 }
 
-function addProgramToShow(show: SlotShow, program: ShuffleProgram) {
-  if (show.id == 'flex.' || show.id.startsWith('redirect.')) {
-    //nothing to do
+function createPaddedProgram(program: ChannelProgram, padMs: number) {
+  const rem = program.duration % padMs;
+  const padAmount = padMs - rem;
+  const shouldPad = rem > constants.SLACK && padAmount > constants.SLACK;
+  return {
+    program,
+    padMs: shouldPad ? padAmount : 0,
+    totalDuration: program.duration + (shouldPad ? padAmount : 0),
+  };
+}
+
+// Exported for testing only
+export function distributeFlex(
+  programs: PaddedProgram[],
+  schedule: TimeSlotSchedule,
+  remainingTime: number,
+) {
+  if (programs.length === 0) {
     return;
   }
-  const id = getProgramId(program);
-  if (isUndefined(show.programs)) {
-    show.programs = [];
-  }
 
-  // WTF?
-  if (show.programs[id] !== true) {
-    show.programs.push(program);
-    show.programs[id] = true;
-  }
-}
+  const div = Math.floor(remainingTime / schedule.padMs);
+  const mod = remainingTime % schedule.padMs;
+  console.log({ remainingTime, 'schedule.padMs': schedule.padMs, div, mod });
+  // Add leftover flex to end
+  last(programs)!.padMs += mod;
+  last(programs)!.totalDuration += mod;
 
-function getShowOrderer(show: SlotShow) {
-  if (isUndefined(show.orderer)) {
-    const sortedPrograms = deepCopyArray(show.programs) ?? [];
-    sortedPrograms.sort((a, b) => {
-      const showA = getShowData(a);
-      const showB = getShowData(b);
-      return (showA.order ?? 0) - (showB.order ?? 0);
-    });
+  // Padded programs sorted by least amount of existing padding
+  // along with their original index in the programs array
+  const sortedPads = chain(programs)
+    .map(({ padMs }, index) => ({ padMs, index }))
+    .sortBy(({ padMs }) => padMs)
+    .value();
 
-    let position = 0;
-    while (
-      position + 1 < sortedPrograms.length &&
-      getShowData(show.founder!).order !==
-        getShowData(sortedPrograms[position]).order
-    ) {
-      position++;
+  forEach(programs, (_, i) => {
+    let q = Math.floor(div / programs.length);
+    if (i < div % programs.length) {
+      q++;
     }
-
-    show.orderer = {
-      current: () => {
-        return sortedPrograms[position];
-      },
-
-      next: () => {
-        position = (position + 1) % sortedPrograms.length;
-      },
-    };
-  }
-  return show.orderer;
-}
-
-function getShowShuffler(show: SlotShow) {
-  if (isUndefined(show.shuffler)) {
-    if (isUndefined(show.programs)) {
-      throw Error(show.id + ' has no programs?');
-    }
-
-    // Weird state holding here - fix.
-    // Also testing _.shuffle...
-    const randomPrograms = lodashShuffle([...show.programs]);
-    const numPrograms = randomPrograms.length;
-    // shuffle(randomPrograms, 0, n);
-    let position = 0;
-
-    show.shuffler = {
-      current: () => {
-        return randomPrograms[position];
-      },
-
-      next: () => {
-        position++;
-        if (position == numPrograms) {
-          const a = Math.floor(numPrograms / 2);
-          shuffle(randomPrograms, 0, a);
-          shuffle(randomPrograms, a, numPrograms);
-          position = 0;
-        }
-      },
-    };
-  }
-  return show.shuffler;
-}
-
-export default async (
-  programs: ShuffleProgram[],
-  schedule: TimeSlotSchedule,
-) => {
-  if (!Array.isArray(programs)) {
-    return { userError: 'Expected a programs array' };
-  }
-  if (isUndefined(schedule)) {
-    return { userError: 'Expected a schedule' };
-  }
-  if (isUndefined(schedule.timeZoneOffset)) {
-    return { userError: 'Expected a time zone offset' };
-  }
-  //verify that the schedule is in the correct format
-  if (!Array.isArray(schedule.slots)) {
-    return { userError: 'Expected a "slots" array in schedule' };
-  }
-  if (isUndefined(schedule.period)) {
-    schedule.period = DAY;
-  }
-  for (let i = 0; i < schedule.slots.length; i++) {
-    if (isUndefined(schedule.slots[i].time)) {
-      return { userError: 'Each slot should have a time' };
-    }
-    if (isUndefined(schedule.slots[i].showId)) {
-      return { userError: 'Each slot should have a showId' };
-    }
-    if (
-      schedule.slots[i].time < 0 ||
-      schedule.slots[i].time >= schedule.period ||
-      Math.floor(schedule.slots[i].time) != schedule.slots[i].time
-    ) {
-      return {
-        userError:
-          'Slot times should be a integer number of milliseconds between 0 and period-1, inclusive',
-      };
-    }
-    schedule.slots[i].time =
-      (schedule.slots[i].time +
-        10 * schedule.period +
-        schedule.timeZoneOffset * MINUTE) %
-      schedule.period;
-  }
-  schedule.slots.sort((a, b) => {
-    return a.time - b.time;
+    console.log(q);
+    const extraPadding = q * schedule.padMs;
+    programs[sortedPads[i].index].padMs += extraPadding;
+    programs[sortedPads[i].index].totalDuration += extraPadding;
   });
-  for (let i = 1; i < schedule.slots.length; i++) {
-    if (schedule.slots[i].time == schedule.slots[i - 1].time) {
-      return { userError: 'Slot times should be unique.' };
-    }
-  }
-  if (isUndefined(schedule.pad)) {
-    return { userError: 'Expected schedule.pad' };
+}
+
+function createProgramMap(programs: ChannelProgram[]) {
+  return reduce(
+    programs,
+    (acc, program) => {
+      if (isContentProgram(program)) {
+        let id: string;
+        if (program.subtype === 'track') return acc; // TODO handle music
+        if (program.subtype === 'movie') {
+          id = 'movie';
+        } else {
+          id = `tv.${program.title}`;
+        }
+
+        const existing = acc[id] ?? [];
+        acc[id] = [...existing, program];
+      }
+      return acc;
+    },
+    {} as Record<string, ContentProgram[]>,
+  );
+}
+
+function slotIteratorKey(slot: TimeSlot) {
+  if (slot.programming.type === 'movie') {
+    return `movie_${slot.order}`;
+  } else if (slot.programming.type === 'show') {
+    return `tv_${slot.programming.showId}_${slot.order}`;
   }
 
-  if (typeof schedule.lateness == 'undefined') {
-    return { userError: 'schedule.lateness must be defined.' };
-  }
-  if (typeof schedule.maxDays == 'undefined') {
-    return { userError: 'schedule.maxDays must be defined.' };
-  }
-  if (isUndefined(schedule.flexPreference)) {
-    schedule.flexPreference = 'distribute';
-  }
-  if (
-    schedule.flexPreference !== 'distribute' &&
-    schedule.flexPreference !== 'end'
-  ) {
-    return {
-      userError: `Invalid schedule.flexPreference value: "${schedule.flexPreference}"`,
-    };
-  }
-  const flexBetween = schedule.flexPreference !== 'end';
+  return null;
+}
 
-  // throttle so that the stream is not affected negatively
-  //   let steps = 0;
-
-  const showsById: Record<string, number> = {};
-  const shows: SlotShow[] = [];
-
-  function getNextForSlot(slot: TimeSlot, remaining?: number) {
-    //remaining doesn't restrict what next show is picked. It is only used
-    //for shows with flexible length (flex and redirects)
-    if (slot.showId === 'flex.') {
+function getNextProgramForSlot(
+  slot: TimeSlot,
+  iterators: Record<string, ProgramIterator>,
+  duration: number,
+): ChannelProgram | null {
+  switch (slot.programming.type) {
+    case 'movie':
+    case 'show':
+      return iterators[slotIteratorKey(slot)!].current();
+    case 'flex':
       return {
-        isOffline: true,
-        duration: remaining,
-      } as ShuffleProgram;
-    }
-    const show = shows[showsById[slot.showId]];
-
-    if (slot.showId.startsWith('redirect.')) {
-      return {
-        isOffline: true,
-        type: 'redirect',
-        duration: remaining,
-        channel: show.channel,
-      } as ShuffleProgram;
-    }
-
-    switch (slot.order) {
-      case 'shuffle':
-        return getShowShuffler(show).current();
-      case 'next':
-        return getShowOrderer(show).current();
-    }
-  }
-
-  function advanceSlot(slot: TimeSlot) {
-    if (slot.showId === 'flex.' || slot.showId.startsWith('redirect.')) {
-      return;
-    }
-    const show = shows[showsById[slot.showId]];
-
-    switch (slot.order) {
-      case 'shuffle':
-        return getShowShuffler(show).next();
-      case 'next':
-        return getShowOrderer(show).next();
-    }
-  }
-
-  function makePadded(item: ShuffleProgram) {
-    const x = item.duration;
-    const m = x % schedule.pad;
-    let f = 0;
-    if (m > constants.SLACK && schedule.pad - m > constants.SLACK) {
-      f = schedule.pad - m;
-    }
-    return {
-      item: item,
-      pad: f,
-      totalDuration: item.duration + f,
-    };
-  }
-
-  // load the programs
-  for (let i = 0; i < programs.length; i++) {
-    const p = programs[i];
-    let show: SlotShow = {
-      ...(getShow(p) as ShowDataWithExtras),
-      founder: p,
-      programs: [],
-    };
-    if (show != null) {
-      if (isUndefined(showsById[show.id])) {
-        showsById[show.id] = shows.length;
-        shows.push(show);
-        show.founder = p;
-        show.programs = [];
-      } else {
-        show = shows[showsById[show.id]];
-      }
-      addProgramToShow(show, p);
-    }
-  }
-
-  const ts = new Date().getTime();
-  const curr = ts - (ts % schedule.period);
-  const t0 = curr + schedule.slots[0].time;
-  const p: Partial<Program>[] = [];
-  let t = t0;
-  //   let wantedFinish = t % schedule.period;
-  const hardLimit = t0 + schedule.maxDays * DAY;
-
-  const pushFlex = (d: number) => {
-    if (d > 0) {
-      t += d;
-      if (
-        p.length > 0 &&
-        p[p.length - 1].isOffline &&
-        p[p.length - 1].type != 'redirect'
-      ) {
-        const currDuration = p[p.length - 1].duration ?? 0;
-        p[p.length - 1].duration = currDuration + d;
-      } else {
-        p.push({
-          duration: d,
-          isOffline: true,
-        });
-      }
-    }
-  };
-
-  const pushProgram = (item: ShuffleProgram) => {
-    if (item.isOffline && item.type !== 'redirect') {
-      pushFlex(item.duration);
-    } else {
-      p.push(item);
-      t += item.duration;
-    }
-  };
-
-  if (ts > t0) {
-    pushFlex(ts - t0);
-  }
-  while (t < hardLimit && p.length < LIMIT) {
-    await throttle();
-    //ensure t is padded
-    const m = t % schedule.pad;
-    if (m > constants.SLACK && schedule.pad - m > constants.SLACK) {
-      pushFlex(schedule.pad - m);
-      continue;
-    }
-
-    // Milliseconds "into" the day from "curr"
-    let dayTime = t % schedule.period;
-    let slot: Maybe<TimeSlot>;
-    let remaining: Maybe<number>;
-    let late: Maybe<number>;
-    for (let i = 0; i < schedule.slots.length; i++) {
-      let endTime: number;
-      if (i == schedule.slots.length - 1) {
-        // Loop into the next day
-        endTime = schedule.slots[0].time + schedule.period;
-      } else {
-        endTime = schedule.slots[i + 1].time;
-      }
-
-      const currSlot = schedule.slots[i];
-      if (currSlot.time <= dayTime && dayTime < endTime) {
-        slot = currSlot;
-        remaining = endTime - dayTime;
-        late = dayTime - currSlot.time;
-        break;
-      }
-      if (
-        currSlot.time <= dayTime + schedule.period &&
-        dayTime + schedule.period < endTime
-      ) {
-        slot = currSlot;
-        dayTime += schedule.period;
-        remaining = endTime - dayTime;
-        late = dayTime + schedule.period - currSlot.time;
-        break;
-      }
-    }
-
-    if (slot == null) {
-      throw Error(
-        'Unexpected. Unable to find slot for time of day ' + t + ' ' + dayTime,
-      );
-    }
-
-    let item = getNextForSlot(slot, remaining);
-
-    // So much potential nullness here, we will fix it...
-    if ((late ?? 0) >= schedule.lateness + constants.SLACK) {
-      //it's late.
-      item = {
-        isOffline: true,
-        duration: remaining!,
         type: 'flex',
+        duration,
+        persisted: false,
       };
+  }
+}
+
+function advanceIterator(
+  slot: TimeSlot,
+  iterators: Record<string, ProgramIterator>,
+) {
+  switch (slot.programming.type) {
+    case 'movie':
+    case 'show':
+      iterators[slotIteratorKey(slot)!].next();
+      return;
+    case 'flex':
+      return;
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/require-await
+export default async function scheduleTimeSlots(
+  schedule: TimeSlotSchedule,
+  channelProgramming: ChannelProgram[],
+) {
+  // Load programs
+  // TODO include redirects and custom programs!
+  const allPrograms = reject(channelProgramming, isFlexProgram);
+  const programBySlotType = createProgramMap(allPrograms);
+
+  const programmingIteratorsById = reduce(
+    schedule.slots,
+    (acc, slot) => {
+      let id: string | null = null,
+        slotId: string | null = null;
+      if (slot.programming.type === 'movie') {
+        id = `movie_${slot.order}`;
+        slotId = 'movie';
+      } else if (slot.programming.type === 'show') {
+        id = `tv_${slot.programming.showId}_${slot.order}`;
+        slotId = `tv.${slot.programming.showId}`;
+      }
+
+      if (id && slotId && !acc[id]) {
+        const programs = programBySlotType[slotId];
+        acc[id] =
+          slot.order === 'next'
+            ? new ProgramOrderer(programs)
+            : new ProgramShuffler(programs);
+      }
+      return acc;
+    },
+    {} as Record<string, ProgramIterator>,
+  );
+
+  const periodDuration = dayjs.duration(1, schedule.period);
+  const periodMs = dayjs.duration(1, schedule.period).asMilliseconds();
+  // TODO validate
+
+  const sortedSlots = chain(schedule.slots)
+    .sortBy((slot) => slot.startTime)
+    .map((slot) => ({
+      ...slot,
+      startTime:
+        slot.startTime +
+        dayjs.duration(schedule.timeZoneOffset, 'minutes').asMilliseconds(),
+    }))
+    .value();
+
+  const now = dayjs.utc();
+  const startOfCurrentPeriod = now.startOf(schedule.period);
+  let t0 = startOfCurrentPeriod.add(
+    first(sortedSlots)!.startTime,
+    'millisecond',
+  );
+  if (schedule.startTomorrow) {
+    t0 = t0.add(1, 'day');
+  }
+  const upperLimit = t0.add(schedule.maxDays + 1, 'day');
+
+  let timeCursor = t0;
+  let ChannelPrograms: ChannelProgram[] = [];
+
+  const pushFlex = (flexDuration: Duration) => {
+    const [inc, newPrograms] = pushOrExtendFlex(ChannelPrograms, flexDuration);
+    timeCursor = timeCursor.add(inc);
+    ChannelPrograms = newPrograms;
+  };
+
+  // if (t0.isAfter(startOfCurrentPeriod)) {
+  //   const d = dayjs.duration(t0.diff(startOfCurrentPeriod));
+  //   pushFlex(d);
+  // }
+
+  // const dayTime = timeCursor.subtract(
+  //   (timeCursor.unix() * 1000) % schedule.padMs,
+  // );
+
+  while (timeCursor.isBefore(upperLimit)) {
+    let dayTime = timeCursor.mod(periodDuration).asMilliseconds();
+
+    let currSlot: TimeSlot | null = null;
+    let remaining: number = 0;
+    let lateMillis: number | null = null;
+
+    console.log(timeCursor.format());
+    const m = timeCursor.mod(schedule.padMs).asMilliseconds();
+    if (m > constants.SLACK && schedule.padMs - m > constants.SLACK) {
+      console.log('we need to pad the TS');
     }
 
-    if (item.isOffline) {
-      //flex or redirect. We can just use the whole duration
-      item.duration = remaining!;
-      pushProgram(item);
-      continue;
+    for (let i = 0; i < sortedSlots.length; i++) {
+      const slot = sortedSlots[i];
+      let endTime: number;
+      if (i === sortedSlots.length - 1) {
+        endTime = first(sortedSlots)!.startTime + periodMs;
+      } else {
+        endTime = nth(sortedSlots, i + 1)!.startTime;
+      }
+
+      if (slot.startTime <= dayTime && dayTime < endTime) {
+        currSlot = slot;
+        remaining = endTime - dayTime;
+        lateMillis = dayTime - slot.startTime;
+        break;
+      }
+
+      const dayTimeNextPeriod = dayjs
+        .duration(dayTime)
+        .add(periodDuration)
+        .asMilliseconds();
+      if (slot.startTime <= dayTimeNextPeriod && dayTimeNextPeriod < endTime) {
+        currSlot = slot;
+        dayTime = dayTimeNextPeriod;
+        remaining = endTime - dayTime;
+        lateMillis = dayTime + periodDuration.asMilliseconds() - slot.startTime;
+        break;
+      }
     }
-    if (item.duration > remaining!) {
-      // Slide
-      pushProgram(item);
-      advanceSlot(slot);
+
+    if (isNull(currSlot)) {
+      throw new Error('Could not find a suitable slot');
+    }
+
+    const program = getNextProgramForSlot(
+      currSlot,
+      programmingIteratorsById,
+      remaining,
+    );
+
+    // if (isNull(program)) {
+    // pushFlex()
+    // continue;
+    // }
+
+    // TODO Late?
+    if (
+      !isNull(lateMillis) &&
+      lateMillis >= schedule.latenessMs + constants.SLACK
+    ) {
+      console.log('we got a runner', dayjs.duration(lateMillis).format());
+      pushFlex(dayjs.duration(remaining));
       continue;
     }
 
-    const padded = makePadded(item);
-    let total = padded.totalDuration;
-    advanceSlot(slot);
-    const pads = [padded];
+    if (isNull(program) || isFlexProgram(program)) {
+      pushFlex(dayjs.duration(remaining));
+      continue;
+    }
+
+    // Program longer than we have left? Add it and move on...
+    if (program && program.duration > remaining) {
+      ChannelPrograms.push(program);
+      advanceIterator(currSlot, programmingIteratorsById);
+      timeCursor = timeCursor.add(program.duration);
+      continue;
+    }
+
+    const paddedProgram = createPaddedProgram(program, schedule.padMs);
+    let totalDuration = paddedProgram.totalDuration;
+    advanceIterator(currSlot, programmingIteratorsById);
+    const paddedPrograms: PaddedProgram[] = [paddedProgram];
 
     for (;;) {
-      const item2 = getNextForSlot(slot, remaining);
-      if (total + item2.duration > remaining!) {
+      const nextProgram = getNextProgramForSlot(
+        currSlot,
+        programmingIteratorsById,
+        remaining,
+      );
+      if (isNull(nextProgram)) break;
+      if (totalDuration + nextProgram.duration > remaining) {
         break;
       }
-      const padded2 = makePadded(item2);
-      pads.push(padded2);
-      advanceSlot(slot);
-      total += padded2.totalDuration;
+      const nextPadded = createPaddedProgram(nextProgram, schedule.padMs);
+      paddedPrograms.push(nextPadded);
+      advanceIterator(currSlot, programmingIteratorsById);
+      totalDuration += nextPadded.totalDuration;
     }
-    const rem = Math.max(0, remaining! - total);
 
-    if (flexBetween) {
-      const div = Math.floor(rem / schedule.pad);
-      const mod = rem % schedule.pad;
-      // add mod to the latest item
-      pads[pads.length - 1].pad += mod;
-      pads[pads.length - 1].totalDuration += mod;
+    const remainingTimeInSlot = Math.max(0, remaining - totalDuration);
 
-      const sortedPads = pads.map((p, $index) => {
-        return {
-          pad: p.pad,
-          index: $index,
-        };
-      });
-      sortedPads.sort((a, b) => {
-        return a.pad - b.pad;
-      });
-      for (let i = 0; i < pads.length; i++) {
-        let q = Math.floor(div / pads.length);
-        if (i < div % pads.length) {
-          q++;
-        }
-        const j = sortedPads[i].index;
-        pads[j].pad += q * schedule.pad;
-      }
+    // We have two options here if there is remaining time in the slot
+    // If we want to be "greedy", we can keep attempting to look for items
+    // to fill the time for this slot. This works mainly if we're doing a
+    // "shuffle" ordering, it won't work for "in order" shows in slots.
+    // TODO: Implement greedy filling.
+    if (schedule.flexPreference === 'distribute') {
+      distributeFlex(paddedPrograms, schedule, remainingTimeInSlot);
     } else {
-      //also add div to the latest item
-      pads[pads.length - 1].pad += rem;
-      pads[pads.length - 1].totalDuration += rem;
+      const lastProgram = last(paddedPrograms)!;
+      lastProgram.padMs += remainingTimeInSlot;
+      lastProgram.totalDuration += remainingTimeInSlot;
     }
-    // now unroll them all
-    for (let i = 0; i < pads.length; i++) {
-      pushProgram(pads[i].item);
-      pushFlex(pads[i].pad);
-    }
-  }
-  while (t > hardLimit || p.length >= LIMIT) {
-    t -= p.pop()?.duration ?? 0;
-  }
-  const m = (t - t0) % schedule.period;
-  if (m > 0) {
-    //ensure the schedule is a multiple of period
-    pushFlex(schedule.period - m);
+
+    forEach(paddedPrograms, ({ program, padMs }) => {
+      ChannelPrograms.push(program);
+      timeCursor = timeCursor.add(program.duration);
+      pushFlex(dayjs.duration(padMs));
+    });
   }
 
   return {
-    programs: p,
-    startTime: new Date(t0).toISOString(),
+    programs: ChannelPrograms,
+    startTime: t0.unix() * 1000,
   };
-};
+
+  // while (timeCursor.isBefore(upperLimit)) {
+
+  // }
+}

@@ -1,5 +1,5 @@
 import { EntityDTO, Loaded, wrap } from '@mikro-orm/core';
-import { FfmpegSettings, Watermark } from 'dizquetv-types';
+import { FfmpegSettings, Watermark } from '@tunarr/types';
 import { first, isEmpty, isError, isNil, isUndefined, pick } from 'lodash-es';
 import * as randomJS from 'random-js';
 import { ChannelCache } from './channelCache.js';

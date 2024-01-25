@@ -1,4 +1,4 @@
-import { PlexServerSettingsSchema } from 'dizquetv-types/schemas';
+import { PlexServerSettingsSchema } from '@tunarr/types/schemas';
 import { isNil, isError, isObject, isUndefined } from 'lodash-es';
 import z from 'zod';
 import {
@@ -9,7 +9,7 @@ import createLogger from '../logger.js';
 import { Plex } from '../plex.js';
 import { RouterPluginCallback } from '../types/serverType.js';
 import { firstDefined } from '../util.js';
-import { PlexServerSettings } from 'dizquetv-types';
+import { PlexServerSettings } from '@tunarr/types';
 
 const logger = createLogger(import.meta);
 

@@ -1,0 +1,32 @@
+{
+  "name": "@tunarr/shared",
+  "version": "1.0.0",
+  "description": "",
+  "keywords": [],
+  "license": "Zlib",
+  "author": "",
+  "type": "module",
+  "exports": {
+    ".": "./common/index.js",
+    "./node": "./node/index.js",
+    "./browser": "./browser/index.js"
+  },
+  "main": "index.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "buildw": "nodemon -e ts --watch . --watch index.ts --ignore build/ -e .json,.ts,.yml,.yaml,.js -x tsc --project tsconfig.build.json"
+  },
+  "dependencies": {
+    "@tunarr/types": "workspace:*",
+    "dayjs": "^1.11.10",
+    "lodash-es": "^4.17.21",
+    "random-js": "2.1.0",
+    "tslib": "^2.6.2"
+  },
+  "devDependencies": {
+    "@types/lodash-es": "^4.17.10",
+    "@types/node": "18.18.0",
+    "nodemon": "3.0.2",
+    "typescript": "5.2.2"
+  }
+}

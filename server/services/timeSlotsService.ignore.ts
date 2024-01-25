@@ -1,15 +1,12 @@
-import { isUndefined, last } from 'lodash-es';
-import { MarkOptional } from 'ts-essentials';
+import { Program } from '@tunarr/types';
+import { isUndefined, shuffle as lodashShuffle } from 'lodash-es';
 import constants from '../constants.js';
-import { LineupItem, isOfflineItem } from '../dao/derived_types/Lineup.js';
 import { random } from '../helperFuncs.js';
-import createLogger from '../logger.js';
 import { Maybe } from '../types.js';
 import { deepCopyArray } from '../util.js';
 import getShowDataFunc, { ShowData } from './getShowData.js';
 import throttle from './throttle.js';
-
-const logger = createLogger(import.meta);
+import { MarkOptional } from 'ts-essentials';
 
 const getShowData = getShowDataFunc();
 
@@ -17,61 +14,60 @@ const MINUTE = 60 * 1000;
 const DAY = 24 * 60 * MINUTE;
 const LIMIT = 40000;
 
+// Use this to derive the minimum data we need for this service
+export type ShuffleProgram = MarkOptional<
+  Omit<
+    Program,
+    'summary' | 'icon' | 'rating' | 'ratingKey' | 'date' | 'year' | 'plexFile'
+  >,
+  'id'
+>;
+
 type ShowDataWithExtras = Required<ShowData> & {
   id: string;
   description: string;
 };
 
-// Hmmm...
-type Iterator = {
-  current: () => ShuffleProgram;
-  next: () => void;
-};
-
-// Use this to derive the minimum data we need for this service
-export type ShuffleProgram = LineupItem;
-
-type SlotShow = ShowDataWithExtras & {
-  founder?: ShuffleProgram;
-  programs?: ShuffleProgram[];
-  shuffler?: Iterator;
-  orderer?: Iterator;
-};
-
-type RandomSlot = {
-  order: string;
+type TimeSlot = {
+  order: 'next' | 'shuffle';
   showId: string;
-  time?: number; // Offset from midnight in millis
-  cooldown: number;
-  period?: number;
-  duration: number;
-  weight?: number;
-  weightPercentage?: string; // Frontend specific?
+  time: number; // Offset from midnight in millis
 };
 
 // This is used on the frontend too, we will move common
 // types eventually.
-export type RandomSlotSchedule = {
-  flexPreference: 'distribute' | 'end'; // distribute or end
+export type TimeSlotSchedule = {
+  flexPreference: string; // distribute or end
+  lateness: number; // max lateness in millis
   maxDays: number; // days
   pad: number; // Pad time in millis
-  padStyle: 'slot' | 'episode';
-  slots: RandomSlot[];
-  timeZoneOffset?: number; // tz offset in...minutes, i think?
-  randomDistribution: 'uniform' | 'weighted';
-  period?: number;
+  period: number;
+  slots: TimeSlot[];
+  timeZoneOffset: number; // tz offset in...minutes, i think?
+};
+
+// Hmmm...
+type Iterator<T> = {
+  current: () => T;
+  next: () => void;
+};
+
+type SlotShow = ShowDataWithExtras & {
+  founder?: ShuffleProgram; // The originating program?
+  programs?: ShuffleProgram[];
+  shuffler?: Iterator<ShuffleProgram>;
+  orderer?: Iterator<ShuffleProgram>;
 };
 
 function getShow(program: ShuffleProgram): ShowDataWithExtras | null {
   const d = getShowData(program);
   if (!d.hasShow) {
-    logger.warn('Program returned hasShow = false', program, d);
     return null;
   } else {
     return {
       ...d,
-      description: d.showDisplayName!,
-      id: d.showId!,
+      description: d.showDisplayName,
+      id: d.showId,
     } as ShowDataWithExtras;
   }
 }
@@ -95,11 +91,11 @@ function shuffle<T>(array: T[], lo: number | undefined, hi: number) {
 }
 
 function getProgramId(program: ShuffleProgram) {
-  let s = program.externalSourceId;
+  let s = program.serverKey;
   if (isUndefined(s)) {
     s = 'unknown';
   }
-  let p = program.externalKey;
+  let p = program.key;
   if (isUndefined(p)) {
     p = 'unknown';
   }
@@ -111,13 +107,12 @@ function addProgramToShow(show: SlotShow, program: ShuffleProgram) {
     //nothing to do
     return;
   }
-
   const id = getProgramId(program);
-
   if (isUndefined(show.programs)) {
     show.programs = [];
   }
 
+  // WTF?
   if (show.programs[id] !== true) {
     show.programs.push(program);
     show.programs[id] = true;
@@ -161,9 +156,11 @@ function getShowShuffler(show: SlotShow) {
       throw Error(show.id + ' has no programs?');
     }
 
-    const randomPrograms: LineupItem[] = deepCopyArray(show.programs) ?? [];
-    const n = randomPrograms.length;
-    shuffle(randomPrograms, 0, n);
+    // Weird state holding here - fix.
+    // Also testing _.shuffle...
+    const randomPrograms = lodashShuffle([...show.programs]);
+    const numPrograms = randomPrograms.length;
+    // shuffle(randomPrograms, 0, n);
     let position = 0;
 
     show.shuffler = {
@@ -173,10 +170,10 @@ function getShowShuffler(show: SlotShow) {
 
       next: () => {
         position++;
-        if (position == n) {
-          const a = Math.floor(n / 2);
+        if (position == numPrograms) {
+          const a = Math.floor(numPrograms / 2);
           shuffle(randomPrograms, 0, a);
-          shuffle(randomPrograms, a, n);
+          shuffle(randomPrograms, a, numPrograms);
           position = 0;
         }
       },
@@ -187,14 +184,17 @@ function getShowShuffler(show: SlotShow) {
 
 export default async (
   programs: ShuffleProgram[],
-  schedule: RandomSlotSchedule,
+  schedule: TimeSlotSchedule,
 ) => {
-  // if (!Array.isArray(programs)) {
-  //   return { userError: 'Expected a programs array' };
-  // }
-  // if (isUndefined(schedule)) {
-  //   return { userError: 'Expected a schedule' };
-  // }
+  if (!Array.isArray(programs)) {
+    return { userError: 'Expected a programs array' };
+  }
+  if (isUndefined(schedule)) {
+    return { userError: 'Expected a schedule' };
+  }
+  if (isUndefined(schedule.timeZoneOffset)) {
+    return { userError: 'Expected a time zone offset' };
+  }
   //verify that the schedule is in the correct format
   if (!Array.isArray(schedule.slots)) {
     return { userError: 'Expected a "slots" array in schedule' };
@@ -203,30 +203,42 @@ export default async (
     schedule.period = DAY;
   }
   for (let i = 0; i < schedule.slots.length; i++) {
-    if (isUndefined(schedule.slots[i].duration)) {
-      return { userError: 'Each slot should have a duration' };
+    if (isUndefined(schedule.slots[i].time)) {
+      return { userError: 'Each slot should have a time' };
     }
     if (isUndefined(schedule.slots[i].showId)) {
       return { userError: 'Each slot should have a showId' };
     }
     if (
-      schedule.slots[i].duration <= 0 ||
-      Math.floor(schedule.slots[i].duration) != schedule.slots[i].duration
+      schedule.slots[i].time < 0 ||
+      schedule.slots[i].time >= schedule.period ||
+      Math.floor(schedule.slots[i].time) != schedule.slots[i].time
     ) {
       return {
         userError:
-          'Slot duration should be a integer number of milliseconds greater than 0',
+          'Slot times should be a integer number of milliseconds between 0 and period-1, inclusive',
       };
     }
-    if (isNaN(schedule.slots[i].cooldown)) {
-      schedule.slots[i].cooldown = 0;
-    }
-    if (isUndefined(schedule.slots[i].weight)) {
-      schedule.slots[i].weight = 1;
+    schedule.slots[i].time =
+      (schedule.slots[i].time +
+        10 * schedule.period +
+        schedule.timeZoneOffset * MINUTE) %
+      schedule.period;
+  }
+  schedule.slots.sort((a, b) => {
+    return a.time - b.time;
+  });
+  for (let i = 1; i < schedule.slots.length; i++) {
+    if (schedule.slots[i].time == schedule.slots[i - 1].time) {
+      return { userError: 'Slot times should be unique.' };
     }
   }
   if (isUndefined(schedule.pad)) {
     return { userError: 'Expected schedule.pad' };
+  }
+
+  if (typeof schedule.lateness == 'undefined') {
+    return { userError: 'schedule.lateness must be defined.' };
   }
   if (typeof schedule.maxDays == 'undefined') {
     return { userError: 'schedule.maxDays must be defined.' };
@@ -234,90 +246,92 @@ export default async (
   if (isUndefined(schedule.flexPreference)) {
     schedule.flexPreference = 'distribute';
   }
-  if (isUndefined(schedule.padStyle)) {
-    schedule.padStyle = 'slot';
+  if (
+    schedule.flexPreference !== 'distribute' &&
+    schedule.flexPreference !== 'end'
+  ) {
+    return {
+      userError: `Invalid schedule.flexPreference value: "${schedule.flexPreference}"`,
+    };
   }
-  // if (schedule.padStyle !== 'slot' && schedule.padStyle !== 'episode') {
-  //   return {
-  //     userError: `Invalid schedule.padStyle value: "${schedule.padStyle}"`,
-  //   };
-  // }
   const flexBetween = schedule.flexPreference !== 'end';
 
   // throttle so that the stream is not affected negatively
-  // let steps = 0;
+  //   let steps = 0;
 
   const showsById: Record<string, number> = {};
   const shows: SlotShow[] = [];
 
-  function getNextForSlot(
-    slot: RandomSlot,
-    remaining: number | undefined,
-  ): Maybe<MarkOptional<LineupItem, 'durationMs'>> {
+  function getNextForSlot(slot: TimeSlot, remaining?: number) {
     //remaining doesn't restrict what next show is picked. It is only used
     //for shows with flexible length (flex and redirects)
     if (slot.showId === 'flex.') {
       return {
-        // isOffline: true,
-        durationMs: remaining,
-        type: 'offline',
-      };
+        isOffline: true,
+        duration: remaining,
+      } as ShuffleProgram;
     }
     const show = shows[showsById[slot.showId]];
+
     if (slot.showId.startsWith('redirect.')) {
       return {
-        // isOffline: true,
+        isOffline: true,
         type: 'redirect',
-        durationMs: remaining,
+        duration: remaining,
         channel: show.channel,
-      };
-    } else if (slot.order === 'shuffle') {
-      return getShowShuffler(show).current();
-    } else if (slot.order === 'next') {
-      return getShowOrderer(show).current();
+      } as ShuffleProgram;
     }
 
-    return;
+    switch (slot.order) {
+      case 'shuffle':
+        return getShowShuffler(show).current();
+      case 'next':
+        return getShowOrderer(show).current();
+    }
   }
 
-  function advanceSlot(slot: RandomSlot) {
-    if (slot.showId === 'flex.' || slot.showId.startsWith('redirect')) {
+  function advanceSlot(slot: TimeSlot) {
+    if (slot.showId === 'flex.' || slot.showId.startsWith('redirect.')) {
       return;
     }
     const show = shows[showsById[slot.showId]];
-    if (slot.order === 'shuffle') {
-      return getShowShuffler(show).next();
-    } else if (slot.order === 'next') {
-      return getShowOrderer(show).next();
+
+    switch (slot.order) {
+      case 'shuffle':
+        return getShowShuffler(show).next();
+      case 'next':
+        return getShowOrderer(show).next();
     }
   }
 
-  function makePadded(item: Maybe<ShuffleProgram>) {
-    let padOption = schedule.pad;
-    if (schedule.padStyle === 'slot') {
-      padOption = 1;
-    }
-    const x = item?.durationMs ?? 0;
-    const m = x % padOption;
+  function makePadded(item: ShuffleProgram) {
+    const x = item.duration;
+    const m = x % schedule.pad;
     let f = 0;
-    if (m > constants.SLACK && padOption - m > constants.SLACK) {
-      f = padOption - m;
+    if (m > constants.SLACK && schedule.pad - m > constants.SLACK) {
+      f = schedule.pad - m;
     }
     return {
       item: item,
       pad: f,
-      totalDuration: item?.durationMs ?? 0 + f,
+      totalDuration: item.duration + f,
     };
   }
 
   // load the programs
   for (let i = 0; i < programs.length; i++) {
     const p = programs[i];
-    let show = getShow(p);
+    let show: SlotShow = {
+      ...(getShow(p) as ShowDataWithExtras),
+      founder: p,
+      programs: [],
+    };
     if (show != null) {
       if (isUndefined(showsById[show.id])) {
         showsById[show.id] = shows.length;
-        shows.push({ ...show, founder: p, programs: [] });
+        shows.push(show);
+        show.founder = p;
+        show.programs = [];
       } else {
         show = shows[showsById[show.id]];
       }
@@ -325,95 +339,114 @@ export default async (
     }
   }
 
-  const s = schedule.slots;
   const ts = new Date().getTime();
-
-  const t0 = ts;
-  const p: ShuffleProgram[] = [];
+  const curr = ts - (ts % schedule.period);
+  const t0 = curr + schedule.slots[0].time;
+  const p: Partial<Program>[] = [];
   let t = t0;
-
+  //   let wantedFinish = t % schedule.period;
   const hardLimit = t0 + schedule.maxDays * DAY;
 
-  const pushFlex = (duration: number) => {
-    if (duration > 0) {
-      t += duration;
-      const lastProgram = last(p)!;
-      if (p.length > 0 && lastProgram.type === 'offline') {
-        if (isUndefined(lastProgram.durationMs)) {
-          lastProgram.durationMs = 0;
-        }
-        lastProgram.durationMs += duration;
+  const pushFlex = (d: number) => {
+    if (d > 0) {
+      t += d;
+      if (
+        p.length > 0 &&
+        p[p.length - 1].isOffline &&
+        p[p.length - 1].type != 'redirect'
+      ) {
+        const currDuration = p[p.length - 1].duration ?? 0;
+        p[p.length - 1].duration = currDuration + d;
       } else {
         p.push({
-          durationMs: duration,
-          type: 'offline',
+          duration: d,
+          isOffline: true,
         });
       }
     }
   };
 
   const pushProgram = (item: ShuffleProgram) => {
-    if (item.type === 'offline') {
-      pushFlex(item.durationMs);
+    if (item.isOffline && item.type !== 'redirect') {
+      pushFlex(item.duration);
     } else {
       p.push(item);
-      t += item?.durationMs ?? 0;
+      t += item.duration;
     }
   };
 
-  const slotLastPlayed: Record<number, number> = {};
-
+  if (ts > t0) {
+    pushFlex(ts - t0);
+  }
   while (t < hardLimit && p.length < LIMIT) {
     await throttle();
     //ensure t is padded
     const m = t % schedule.pad;
-    if (
-      t % schedule.pad > constants.SLACK &&
-      schedule.pad - m > constants.SLACK
-    ) {
+    if (m > constants.SLACK && schedule.pad - m > constants.SLACK) {
       pushFlex(schedule.pad - m);
       continue;
     }
 
-    let slot: RandomSlot | undefined;
-    let slotIndex: number;
-    let remaining: number;
-
-    let n = 0;
-    let minNextTime = t + 24 * DAY;
-    for (let i = 0; i < s.length; i++) {
-      if (!isUndefined(slotLastPlayed[i])) {
-        const lastt = slotLastPlayed[i];
-        minNextTime = Math.min(minNextTime, lastt + s[i].cooldown);
-        if (t - lastt < s[i].cooldown - constants.SLACK) {
-          continue;
-        }
+    // Milliseconds "into" the day from "curr"
+    let dayTime = t % schedule.period;
+    let slot: Maybe<TimeSlot>;
+    let remaining: Maybe<number>;
+    let late: Maybe<number>;
+    for (let i = 0; i < schedule.slots.length; i++) {
+      let endTime: number;
+      if (i == schedule.slots.length - 1) {
+        // Loop into the next day
+        endTime = schedule.slots[0].time + schedule.period;
+      } else {
+        endTime = schedule.slots[i + 1].time;
       }
-      n += s[i].weight!;
-      if (random.bool(s[i].weight!, n)) {
-        slot = s[i];
-        slotIndex = i;
-        remaining = s[i].duration;
+
+      const currSlot = schedule.slots[i];
+      if (currSlot.time <= dayTime && dayTime < endTime) {
+        slot = currSlot;
+        remaining = endTime - dayTime;
+        late = dayTime - currSlot.time;
+        break;
+      }
+      if (
+        currSlot.time <= dayTime + schedule.period &&
+        dayTime + schedule.period < endTime
+      ) {
+        slot = currSlot;
+        dayTime += schedule.period;
+        remaining = endTime - dayTime;
+        late = dayTime + schedule.period - currSlot.time;
+        break;
       }
     }
+
     if (slot == null) {
-      //Nothing to play, likely due to cooldown
-      pushFlex(minNextTime - t);
-      continue;
+      throw Error(
+        'Unexpected. Unable to find slot for time of day ' + t + ' ' + dayTime,
+      );
     }
-    const item = getNextForSlot(slot, remaining!);
 
-    if (item?.type === 'offline') {
+    let item = getNextForSlot(slot, remaining);
+
+    // So much potential nullness here, we will fix it...
+    if ((late ?? 0) >= schedule.lateness + constants.SLACK) {
+      //it's late.
+      item = {
+        isOffline: true,
+        duration: remaining!,
+        type: 'flex',
+      };
+    }
+
+    if (item.isOffline) {
       //flex or redirect. We can just use the whole duration
-      item.durationMs = remaining!;
+      item.duration = remaining!;
       pushProgram(item);
-      slotLastPlayed[slotIndex!] = t;
       continue;
     }
-    if (!isUndefined(item) && (item.durationMs ?? 0) > remaining!) {
+    if (item.duration > remaining!) {
       // Slide
       pushProgram(item);
-      slotLastPlayed[slotIndex!] = t;
       advanceSlot(slot);
       continue;
     }
@@ -424,8 +457,8 @@ export default async (
     const pads = [padded];
 
     for (;;) {
-      const item2 = getNextForSlot(slot, undefined);
-      if (total + (item2?.durationMs ?? 0) > remaining!) {
+      const item2 = getNextForSlot(slot, remaining);
+      if (total + item2.duration > remaining!) {
         break;
       }
       const padded2 = makePadded(item2);
@@ -433,16 +466,9 @@ export default async (
       advanceSlot(slot);
       total += padded2.totalDuration;
     }
-    const temt = t + total;
-    let rem = 0;
-    if (
-      temt % schedule.pad >= constants.SLACK &&
-      temt % schedule.pad < schedule.pad - constants.SLACK
-    ) {
-      rem = schedule.pad - (temt % schedule.pad);
-    }
+    const rem = Math.max(0, remaining! - total);
 
-    if (flexBetween && schedule.padStyle === 'episode') {
+    if (flexBetween) {
       const div = Math.floor(rem / schedule.pad);
       const mod = rem % schedule.pad;
       // add mod to the latest item
@@ -466,15 +492,6 @@ export default async (
         const j = sortedPads[i].index;
         pads[j].pad += q * schedule.pad;
       }
-    } else if (flexBetween) {
-      //just distribute it equitatively
-      const div = Math.floor(rem / pads.length);
-      let totalAdded = 0;
-      for (let i = 0; i < pads.length; i++) {
-        pads[i].pad += div;
-        totalAdded += div;
-      }
-      pads[0].pad += rem - totalAdded;
     } else {
       //also add div to the latest item
       pads[pads.length - 1].pad += rem;
@@ -482,16 +499,15 @@ export default async (
     }
     // now unroll them all
     for (let i = 0; i < pads.length; i++) {
-      pushProgram(pads[i].item!);
-      slotLastPlayed[slotIndex!] = t;
+      pushProgram(pads[i].item);
       pushFlex(pads[i].pad);
     }
   }
   while (t > hardLimit || p.length >= LIMIT) {
-    t -= p.pop()!.duration ?? 0;
+    t -= p.pop()?.duration ?? 0;
   }
   const m = (t - t0) % schedule.period;
-  if (m != 0) {
+  if (m > 0) {
     //ensure the schedule is a multiple of period
     pushFlex(schedule.period - m);
   }

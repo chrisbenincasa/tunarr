@@ -5,7 +5,7 @@ import {
   PlexStreamSettings,
   XmlTvSettings,
   HdhrSettings,
-} from 'dizquetv-types';
+} from '@tunarr/types';
 
 const getQuerySettings = <T>(settings: string, path: string) => ({
   queryKey: ['settings', settings],

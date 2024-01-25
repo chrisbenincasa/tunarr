@@ -10,7 +10,7 @@ import {
   serialize,
 } from '@mikro-orm/core';
 import type { Duration } from 'dayjs/plugin/duration.js';
-import { Program as ProgramDTO } from 'dizquetv-types';
+import { Program as ProgramDTO } from '@tunarr/types';
 import { BaseEntity } from './BaseEntity.js';
 import { Channel } from './Channel.js';
 import { CustomShow } from './CustomShow.js';
@@ -152,7 +152,6 @@ export function programDaoToDto(program: EntityDTO<Program>): ProgramDTO {
     file: program.filePath,
     id: program.uuid,
     icon: program.icon,
-    isOffline: false,
     key: program.externalKey,
     rating: program.rating,
     ratingKey: program.plexRatingKey,

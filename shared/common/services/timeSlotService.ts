@@ -10,7 +10,8 @@ import {
   FlexProgram,
   isContentProgram,
   isFlexProgram,
-} from 'dizquetv-types';
+} from '@tunarr/types';
+import { TimeSlot, TimeSlotSchedule } from '@tunarr/types/api';
 import {
   chain,
   first,
@@ -24,8 +25,7 @@ import {
   slice,
   sortBy,
 } from 'lodash-es';
-import constants from '../constants.js';
-import { TimeSlot, TimeSlotSchedule } from '../dao/derived_types/Lineup.js';
+import constants from '../util/constants.js';
 import { mod } from '../util/dayjsExtensions.js';
 
 dayjs.extend(duration);
@@ -245,13 +245,13 @@ function advanceIterator(
 }
 
 // eslint-disable-next-line @typescript-eslint/require-await
-export default async function scheduleTimeSlots(
+export async function scheduleTimeSlots(
   schedule: TimeSlotSchedule,
-  channelProgramming: ChannelProgramming,
+  channelProgramming: ChannelProgram[],
 ) {
   // Load programs
   // TODO include redirects and custom programs!
-  const allPrograms = reject(channelProgramming.programs, isFlexProgram);
+  const allPrograms = reject(channelProgramming, isFlexProgram);
   const programBySlotType = createProgramMap(allPrograms);
 
   const programmingIteratorsById = reduce(
@@ -449,8 +449,4 @@ export default async function scheduleTimeSlots(
     programs: ChannelPrograms,
     startTime: t0.unix() * 1000,
   };
-
-  // while (timeCursor.isBefore(upperLimit)) {
-
-  // }
 }

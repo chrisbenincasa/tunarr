@@ -3,7 +3,7 @@ import { ListItemText, IconButton } from '@mui/material';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemIcon from '@mui/material/ListItemIcon';
-import { isPlexDirectory, isPlexShow, isPlexSeason } from 'dizquetv-types/plex';
+import { isPlexDirectory, isPlexShow, isPlexSeason } from '@tunarr/types/plex';
 import { useCallback } from 'react';
 import { removeSelectedMedia } from '../../store/programmingSelector/actions.ts';
 import { SelectedMedia } from '../../store/programmingSelector/store.ts';

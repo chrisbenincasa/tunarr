@@ -1,4 +1,4 @@
-import { PlexEpisode, PlexMovie, PlexTerminalMedia } from 'dizquetv-types/plex';
+import { PlexEpisode, PlexMovie, PlexTerminalMedia } from '@tunarr/types/plex';
 import {
   Program,
   ProgramSourceType,

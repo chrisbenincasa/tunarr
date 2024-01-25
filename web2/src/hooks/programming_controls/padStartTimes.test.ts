@@ -1,4 +1,4 @@
-import { ChannelProgram } from 'dizquetv-types';
+import { ChannelProgram } from '@tunarr/types';
 import { test } from 'vitest';
 import { padStartTimes } from './usePadStartTimes.ts';
 

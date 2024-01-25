@@ -1,5 +1,5 @@
 import { exec } from 'child_process';
-import { FfmpegSettings } from 'dizquetv-types';
+import { FfmpegSettings } from '@tunarr/types';
 
 export class FFMPEGInfo {
   private ffmpegPath: string;

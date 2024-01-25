@@ -21,7 +21,7 @@ import {
 } from '@mui/material';
 import { useFfmpegSettings } from '../../hooks/settingsHooks.ts';
 import { hasOnlyDigits } from '../../helpers/util.ts';
-import { FfmpegSettings, defaultFfmpegSettings } from 'dizquetv-types';
+import { FfmpegSettings, defaultFfmpegSettings } from '@tunarr/types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   fromStringResolution,

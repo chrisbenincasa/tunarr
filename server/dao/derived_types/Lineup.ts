@@ -1,4 +1,4 @@
-import { Program as ProgramDTO } from 'dizquetv-types';
+import { Program as ProgramDTO } from '@tunarr/types';
 import { Program } from '../entities/Program.js';
 
 export type Lineup = {
@@ -37,25 +37,21 @@ export const isContentItem = isItemOfType<ContentItem>('content');
 export const isOfflineItem = isItemOfType<OfflineItem>('offline');
 export const isRedirectItem = isItemOfType<RedirectItem>('redirect');
 
-// type ScheduleSlot = {
-
-// }
-
-export type MovieProgrammingSlot = {
+export type MovieProgrammingTimeSlot = {
   type: 'movie';
   sortType: '';
 };
 
-export type ShowProgrammingSlot = {
+export type ShowProgrammingTimeSlot = {
   type: 'show';
   showId: string; // grandparent id
 };
 
-export type FlexProgrammingSlot = {
+export type FlexProgrammingTimeSlot = {
   type: 'flex';
 };
 
-export function slotProgrammingId(slot: SlotProgramming) {
+export function slotProgrammingId(slot: TimeSlotProgramming) {
   if (slot.type === 'movie' || slot.type === 'flex') {
     return slot.type;
   } else {
@@ -63,23 +59,16 @@ export function slotProgrammingId(slot: SlotProgramming) {
   }
 }
 
-export type SlotProgramming =
-  | MovieProgrammingSlot
-  | ShowProgrammingSlot
-  | FlexProgrammingSlot;
+export type TimeSlotProgramming =
+  | MovieProgrammingTimeSlot
+  | ShowProgrammingTimeSlot
+  | FlexProgrammingTimeSlot;
 
 export type TimeSlot = {
   order: 'next' | 'shuffle';
-  programming: SlotProgramming;
+  programming: TimeSlotProgramming;
   startTime: number; // Offset from midnight in millis
 };
-
-// type SlotBasedSchedule<T extends ScheduleSlot> = {
-//   type: string,
-//   slots: T[],
-//   timeZoneOffset: number; // time zone offset in millis
-//   flexPreference: 'distribute' | 'end';
-// }
 
 // Zod these up
 export type TimeSlotSchedule = {
@@ -94,15 +83,33 @@ export type TimeSlotSchedule = {
   startTomorrow?: boolean;
 };
 
+export type MovieProgrammingRandomSlot = {
+  type: 'movie';
+};
+
+export type ShowProgrammingRandomSlot = {
+  type: 'show';
+  showId: string;
+};
+
+export type FlexProgrammingRandomSlot = {
+  type: 'flex';
+};
+
+export type RandomSlotProgramming =
+  | MovieProgrammingRandomSlot
+  | ShowProgrammingRandomSlot
+  | FlexProgrammingRandomSlot;
+
 export type RandomSlot = {
   order: string;
-  showId: string;
-  startTime?: number; // Offset from midnight in millis
+  startTime?: number; // Offset from midnight millis
   cooldown: number;
-  periodMs?: number;
+  periodMs?: string;
   durationMs: number;
   weight?: number;
   weightPercentage?: string; // Frontend specific?
+  programming: RandomSlotProgramming;
 };
 
 // This is used on the frontend too, we will move common

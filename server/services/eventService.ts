@@ -1,4 +1,4 @@
-import { TunarrEvent } from 'dizquetv-types';
+import { TunarrEvent } from '@tunarr/types';
 import EventEmitter from 'events';
 import { FastifyInstance } from 'fastify';
 import { isString } from 'lodash-es';

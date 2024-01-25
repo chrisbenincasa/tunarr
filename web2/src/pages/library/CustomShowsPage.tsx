@@ -31,7 +31,7 @@ export default function CustomShowsPage() {
     }
     return customShows.map((cs) => {
       return (
-        <TableRow>
+        <TableRow key={cs.id}>
           <TableCell>{cs.name}</TableCell>
           <TableCell>{cs.contentCount}</TableCell>
           <TableCell width="15%">

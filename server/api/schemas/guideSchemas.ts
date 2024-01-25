@@ -1,4 +1,4 @@
-import { ChannelProgrammingSchema } from 'dizquetv-types/schemas';
+import { ChannelProgrammingSchema } from '@tunarr/types/schemas';
 import z from 'zod';
 
 export const AllChannelsGuideSchema = {

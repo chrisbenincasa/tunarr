@@ -16,7 +16,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { Channel } from 'dizquetv-types';
+import { Channel } from '@tunarr/types';
 import { Link as RouterLink } from 'react-router-dom';
 import { useChannels } from '../../hooks/useChannels.ts';
 import { isEmpty } from 'lodash-es';

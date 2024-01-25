@@ -1,8 +1,11 @@
-import { CreateCustomShowRequestSchema } from 'dizquetv-types/api';
+import {
+  CreateCustomShowRequestSchema,
+  IdPathParamSchema,
+} from '@tunarr/types/api';
 import {
   CustomShowProgrammingSchema,
   CustomShowSchema,
-} from 'dizquetv-types/schemas';
+} from '@tunarr/types/schemas';
 import { isNull, map } from 'lodash-es';
 import { z } from 'zod';
 import { CustomShow } from '../../dao/entities/CustomShow.js';
@@ -46,9 +49,7 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
     '/custom-shows/:id',
     {
       schema: {
-        params: z.object({
-          id: z.string(),
-        }),
+        params: IdPathParamSchema,
         response: {
           200: CustomShowSchema,
           404: z.void(),
@@ -75,7 +76,7 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
     '/custom-shows/:id/programs',
     {
       schema: {
-        params: z.object({ id: z.string() }),
+        params: IdPathParamSchema,
         response: {
           200: CustomShowProgrammingSchema,
           404: z.void(),

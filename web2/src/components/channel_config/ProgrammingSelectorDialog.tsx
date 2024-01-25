@@ -5,7 +5,7 @@ import {
   DialogContent,
   DialogTitle,
 } from '@mui/material';
-import { PlexMedia } from 'dizquetv-types/plex';
+import { PlexMedia } from '@tunarr/types/plex';
 import { isEmpty, isUndefined } from 'lodash-es';
 import React, { useEffect } from 'react';
 import { usePlex } from '../../hooks/plexHooks.ts';

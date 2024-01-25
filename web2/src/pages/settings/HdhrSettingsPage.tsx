@@ -11,7 +11,7 @@ import {
 } from '@mui/material';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import { useHdhrSettings } from '../../hooks/settingsHooks.ts';
-import { defaultHdhrSettings, HdhrSettings } from 'dizquetv-types';
+import { defaultHdhrSettings, HdhrSettings } from '@tunarr/types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export default function HdhrSettingsPage() {

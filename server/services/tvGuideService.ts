@@ -7,7 +7,7 @@ import {
   Program as ProgramDTO,
   RedirectGuideProgram,
   TvGuideProgram,
-} from 'dizquetv-types';
+} from '@tunarr/types';
 import { compact, isNil, isUndefined, keys, mapValues } from 'lodash-es';
 import assert from 'node:assert';
 import { MarkRequired } from 'ts-essentials';
@@ -36,8 +36,8 @@ const FALLBACK_ICON =
   'https://raw.githubusercontent.com/vexorain/dizquetv/main/resources/dizquetv.png';
 
 type CurrentPlayingProgramDetails = MarkRequired<
-  Partial<ProgramDTO>,
-  'type' | 'isOffline' | 'duration'
+  Partial<ProgramDTO> & { isOffline: boolean }, // Hack to make this work for now, we need a new type
+  'type' | 'duration'
 >;
 
 type CurrentPlayingProgram = {
@@ -57,7 +57,7 @@ function lineupItemToCurrentProgram(
       isOffline: true,
     };
   } else if (isContentItem(lineupItem)) {
-    return programDaoToDto(backingItem!);
+    return { ...programDaoToDto(backingItem!), isOffline: false };
   } else {
     return {
       type: 'redirect',
@@ -248,7 +248,7 @@ export class TVGuideService {
       if (isContentItem(lineupItem)) {
         const program = channel.programs.find((p) => p.uuid === lineupItem.id);
         assert(!isNil(program));
-        lineupProgram = programDaoToDto(program);
+        lineupProgram = { ...programDaoToDto(program), isOffline: false };
       } else if (isOfflineItem(lineupItem)) {
         lineupProgram = {
           type: 'flex',
@@ -675,9 +675,9 @@ function getChannelStealthDuration(channel: Partial<EntityDTO<Channel>>) {
 }
 
 function isProgramFlex(
-  program: Partial<ProgramDTO>,
+  program: Partial<ProgramDTO> & { isOffline: boolean },
   channel: Partial<EntityDTO<Channel>>,
-): program is MarkRequired<ProgramDTO, 'duration'> {
+): program is MarkRequired<ProgramDTO & { isOffline: boolean }, 'duration'> {
   return (
     program.isOffline ||
     (program.duration ?? 0) <= getChannelStealthDuration(channel)

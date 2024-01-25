@@ -13,7 +13,7 @@ import {
 import { useXmlTvSettings } from '../../hooks/settingsHooks.ts';
 import { hasOnlyDigits } from '../../helpers/util.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { XmlTvSettings, defaultXmlTvSettings } from 'dizquetv-types';
+import { XmlTvSettings, defaultXmlTvSettings } from '@tunarr/types';
 
 export default function XmlTvSettingsPage() {
   const { data, isPending, error } = useXmlTvSettings();

@@ -1,4 +1,4 @@
-import { Program } from 'dizquetv-types';
+import { Program } from '@tunarr/types';
 import { isUndefined } from 'lodash-es';
 import { MarkOptional } from 'ts-essentials';
 

@@ -5,8 +5,8 @@ import {
   ContentProgram,
   CustomShow,
   CustomShowProgramming,
-} from 'dizquetv-types';
-import { isPlexEpisode } from 'dizquetv-types/plex';
+} from '@tunarr/types';
+import { isPlexEpisode } from '@tunarr/types/plex';
 import { isUndefined, sumBy } from 'lodash-es';
 import useStore from '..';
 import { PlexMediaWithServerName } from '../../hooks/plexHooks.ts';
@@ -95,13 +95,22 @@ export const setChannelStartTime = (startTime: number) =>
     }
   });
 
+export const setSlotSchedulePreview = (programs: ChannelProgram[]) =>
+  useStore.setState(({ channelEditor }) => {
+    channelEditor.schedulePreviewList = [...programs];
+  });
+
+export const clearSlotSchedulePreview = () =>
+  useStore.setState(({ channelEditor }) => {
+    channelEditor.schedulePreviewList = [];
+  });
+
 const generatePrograms = (
   programs: PlexMediaWithServerName[],
 ): ContentProgram[] => {
   return programs.map((program) => {
-    let ephemeralProgram: Omit<ContentGuideProgram, 'start' | 'stop'>;
+    let ephemeralProgram: ContentProgram;
     if (isPlexEpisode(program)) {
-      const title = `${program.grandparentTitle} - ${program.parentTitle} - ${program.title}`;
       ephemeralProgram = {
         persisted: false,
         originalProgram: program,
@@ -110,7 +119,10 @@ const generatePrograms = (
         externalSourceType: 'plex',
         type: 'content',
         subtype: 'episode',
-        title: title,
+        title: program.grandparentTitle,
+        episodeTitle: program.title,
+        episodeNumber: program.index,
+        seasonNumber: program.parentIndex,
       };
     } else {
       ephemeralProgram = {

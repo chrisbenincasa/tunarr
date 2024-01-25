@@ -1,5 +1,5 @@
-import { PlexServerSettings } from 'dizquetv-types';
-import { PlexMedia, PlexLibrarySection } from 'dizquetv-types/plex';
+import { PlexServerSettings } from '@tunarr/types';
+import { PlexMedia, PlexLibrarySection } from '@tunarr/types/plex';
 import { StateCreator } from 'zustand';
 
 type ServerName = string;

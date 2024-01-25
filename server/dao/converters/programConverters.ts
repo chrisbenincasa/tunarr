@@ -1,4 +1,4 @@
-import { ContentProgram } from 'dizquetv-types';
+import { ContentProgram } from '@tunarr/types';
 import { Program, ProgramType } from '../entities/Program.js';
 
 export function dbProgramToContentProgram(

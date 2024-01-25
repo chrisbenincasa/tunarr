@@ -1,5 +1,5 @@
 import { QueryClient } from '@tanstack/react-query';
-import { Program } from 'dizquetv-types';
+import { Program } from '@tunarr/types';
 import { LoaderFunctionArgs } from 'react-router-dom';
 
 // A program that may or may not exist in the DB yet

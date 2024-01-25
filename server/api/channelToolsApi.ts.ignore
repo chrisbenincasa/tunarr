@@ -7,7 +7,7 @@ import createLogger from '../logger.js';
 import randomSlotsService, {
   RandomSlotSchedule,
   ShuffleProgram as RandomSlotShuffleProgram,
-} from '../services/randomSlotsService.js';
+} from '../services/randomSlotsService.ignore.js';
 import throttle from '../services/throttle.js';
 import timeSlotsService, {
   TimeSlotSchedule,

@@ -3,13 +3,12 @@ import events from 'events';
 import { isNil, isString, isUndefined } from 'lodash-es';
 import { Readable } from 'stream';
 import { DeepReadonly } from 'ts-essentials';
-import { Watermark } from './dao/settings.js';
 import { serverOptions } from './globals.js';
 import createLogger from './logger.js';
 import { ContextChannel, Maybe } from './types.js';
 import { TypedEventEmitter } from './types/eventEmitter.js';
 import { VideoStats } from './plexTranscoder.js';
-import { FfmpegSettings } from 'dizquetv-types';
+import { FfmpegSettings, Watermark } from '@tunarr/types';
 
 const spawn = child_process.spawn;
 
@@ -256,7 +255,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       // When we have an individual stream, there is a pipeline of possible
       // filters to apply.
       //
-      let doOverlay = !isUndefined(watermark);
+      let doOverlay = !isNil(watermark);
       let iW = streamStats!.videoWidth;
       let iH = streamStats!.videoHeight;
 
@@ -398,11 +397,11 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
         }
         currentVideo = '[videox]';
       }
-      if (doOverlay) {
-        if (watermark?.animated) {
+      if (doOverlay && !isNil(watermark)) {
+        if (watermark.animated) {
           ffmpegArgs.push('-ignore_loop', '0');
         }
-        ffmpegArgs.push(`-i`, `${watermark!.url}`);
+        ffmpegArgs.push(`-i`, `${watermark.url}`);
         overlayFile = inputFiles++;
         this.ensureResolution = true;
       }
@@ -471,11 +470,11 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       }
 
       // Channel watermark:
-      if (doOverlay && this.audioOnly !== true) {
-        const pW = watermark!.width;
+      if (doOverlay && !isNil(watermark) && this.audioOnly !== true) {
+        const pW = watermark.width;
         const w = Math.round((pW * iW) / 100.0);
-        const mpHorz = watermark!.horizontalMargin;
-        const mpVert = watermark!.verticalMargin;
+        const mpHorz = watermark.horizontalMargin;
+        const mpVert = watermark.verticalMargin;
         const horz = Math.round((mpHorz * iW) / 100.0);
         const vert = Math.round((mpVert * iH) / 100.0);
 
@@ -486,21 +485,21 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
           'bottom-right': `x=W-w-${horz}:y=H-h-${vert}`,
         };
         let icnDur = '';
-        if (watermark!.duration > 0) {
-          icnDur = `:enable='between(t,0,${watermark!.duration})'`;
+        if (watermark.duration > 0) {
+          icnDur = `:enable='between(t,0,${watermark.duration})'`;
         }
         let waterVideo = `[${overlayFile}:v]`;
-        if (!watermark!.fixedSize) {
+        if (!watermark.fixedSize) {
           videoComplex += `;${waterVideo}scale=${w}:-1[icn]`;
           waterVideo = '[icn]';
         }
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        const p: string = posAry[watermark!.position];
+        const p: string = posAry[watermark.position];
         if (isUndefined(p)) {
-          throw Error('Invalid watermark position: ' + watermark!.position);
+          throw Error('Invalid watermark position: ' + watermark.position);
         }
         let overlayShortest = '';
-        if (watermark!.animated) {
+        if (watermark.animated) {
           overlayShortest = 'shortest=1:';
         }
         videoComplex += `;${currentVideo}${waterVideo}overlay=${overlayShortest}${p}${icnDur}[comb]`;

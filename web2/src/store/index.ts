@@ -1,4 +1,4 @@
-import { Channel, XmlTvSettings } from 'dizquetv-types';
+import { Channel, XmlTvSettings } from '@tunarr/types';
 import { StateCreator, create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
@@ -35,7 +35,7 @@ interface SettingsState {
   xmltvSettings?: XmlTvSettings;
 }
 
-type State = SettingsState &
+export type State = SettingsState &
   ChannelsState &
   ProgrammingListingsState &
   ChannelEditorState;

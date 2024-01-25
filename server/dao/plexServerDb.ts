@@ -1,4 +1,4 @@
-import { PlexServerSettings } from 'dizquetv-types';
+import { PlexServerSettings } from '@tunarr/types';
 import { chain, isNil, isUndefined, map, mapValues } from 'lodash-es';
 import type { MarkOptional } from 'ts-essentials';
 import { groupByUniq } from '../util.js';

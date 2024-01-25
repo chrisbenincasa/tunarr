@@ -3,7 +3,7 @@ import {
   PlexLibrarySection,
   PlexMedia,
   isPlexDirectory,
-} from 'dizquetv-types/plex';
+} from '@tunarr/types/plex';
 import { isEmpty, isUndefined, keys } from 'lodash-es';
 import React, { useEffect } from 'react';
 import { usePlex } from '../../hooks/plexHooks.ts';

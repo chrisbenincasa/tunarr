@@ -3,3 +3,4 @@ packages:
   - "web/"
   - "web2/"
   - "types/"
+  - "shared/"
