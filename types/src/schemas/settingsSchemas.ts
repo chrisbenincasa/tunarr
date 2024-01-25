@@ -51,6 +51,7 @@ export const FfmpegSettingsSchema = z.object({
     ])
     .default('none'),
   disableChannelOverlay: z.boolean().default(true),
+  disableChannelPrelude: z.boolean().default(false),
 });
 
 export const PlexServerSettingsSchema = z.object({
