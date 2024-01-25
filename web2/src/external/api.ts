@@ -61,6 +61,18 @@ export const api = makeApi([
     alias: 'getChannelLineup',
   },
   {
+    method: 'get',
+    path: '/api/v2/channels/all/lineups',
+    response: z.array(ChannelLineupSchema),
+    parameters: parametersBuilder()
+      .addQueries({
+        from: z.string(),
+        to: z.string(),
+      })
+      .build(),
+    alias: 'getAllChannelLineups',
+  },
+  {
     method: 'post',
     path: '/api/v2/programming/batch/lookup',
     alias: 'batchGetProgramsByExternalIds',
