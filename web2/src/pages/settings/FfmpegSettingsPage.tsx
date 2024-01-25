@@ -228,6 +228,7 @@ export default function FfmpegSettingsPage() {
 
   const updateFfmpegSettingsMutation = useMutation({
     mutationFn: (updateSettings: FfmpegSettings) => {
+      console.log(updateSettings);
       return fetch('http://localhost:8000/api/ffmpeg-settings', {
         method: 'PUT',
         headers: {
@@ -302,6 +303,11 @@ export default function FfmpegSettingsPage() {
     setAudioChannels(defaultFfmpegSettings.audioChannels.toString());
     setAudioSampleRate(defaultFfmpegSettings.audioSampleRate.toString());
     setErrorScreen(defaultFfmpegSettings.errorScreen);
+    setErrorAudio(defaultFfmpegSettings.errorAudio);
+    setNormalizeVideoCodec(defaultFfmpegSettings.normalizeVideoCodec);
+    setNormalizeAudioCodec(defaultFfmpegSettings.normalizeAudioCodec);
+    setNormalizeResolution(defaultFfmpegSettings.normalizeResolution);
+    setNormalizeAudio(defaultFfmpegSettings.normalizeAudio);
     setDisableChannelOverlay(defaultFfmpegSettings.disableChannelOverlay);
     setDisableChannelPrelude(defaultFfmpegSettings.disableChannelPrelude);
     setTargetResolution(
@@ -311,73 +317,86 @@ export default function FfmpegSettingsPage() {
 
   useEffect(() => {
     setFfmpegExecutablePath(
-      data?.ffmpegExecutablePath || defaultFfmpegSettings.ffmpegExecutablePath,
+      data?.ffmpegExecutablePath ?? defaultFfmpegSettings.ffmpegExecutablePath,
     );
     setNumThreads(
-      data?.numThreads.toString() ||
+      data?.numThreads.toString() ??
         defaultFfmpegSettings.numThreads.toString(),
     );
     setEnableLogging(
-      data?.enableLogging || defaultFfmpegSettings.enableLogging,
+      data?.enableLogging ?? defaultFfmpegSettings.enableLogging,
     );
     setConcatMuxDelay(
-      data?.concatMuxDelay.toString() ||
+      data?.concatMuxDelay.toString() ??
         defaultFfmpegSettings.concatMuxDelay.toString(),
     );
     setEnableTranscoding(
-      data?.enableTranscoding || defaultFfmpegSettings.enableTranscoding,
+      data?.enableTranscoding ?? defaultFfmpegSettings.enableTranscoding,
     );
-    setVideoEncoder(data?.videoEncoder || defaultFfmpegSettings.videoEncoder);
+    setVideoEncoder(data?.videoEncoder ?? defaultFfmpegSettings.videoEncoder);
     setVideoBitrate(
-      data?.videoBitrate.toString() ||
+      data?.videoBitrate.toString() ??
         defaultFfmpegSettings.videoBitrate.toString(),
     );
     setVideoBufferSize(
-      data?.videoBufferSize.toString() ||
+      data?.videoBufferSize.toString() ??
         defaultFfmpegSettings.videoBufferSize.toString(),
     );
     setMaxFPS(
-      data?.maxFPS.toString() || defaultFfmpegSettings.maxFPS.toString(),
+      data?.maxFPS.toString() ?? defaultFfmpegSettings.maxFPS.toString(),
     );
     setScalingAlgorithm(
-      data?.scalingAlgorithm || defaultFfmpegSettings.scalingAlgorithm,
+      data?.scalingAlgorithm ?? defaultFfmpegSettings.scalingAlgorithm,
     );
     setDeinterlaceFilter(
-      data?.deinterlaceFilter || defaultFfmpegSettings.deinterlaceFilter,
+      data?.deinterlaceFilter ?? defaultFfmpegSettings.deinterlaceFilter,
     );
-    setAudioEncoder(data?.audioEncoder || defaultFfmpegSettings.audioEncoder);
+    setAudioEncoder(data?.audioEncoder ?? defaultFfmpegSettings.audioEncoder);
     setAudioBitrate(
-      data?.audioBitrate.toString() ||
+      data?.audioBitrate.toString() ??
         defaultFfmpegSettings.audioBitrate.toString(),
     );
     setAudioBufferSize(
-      data?.audioBufferSize.toString() ||
+      data?.audioBufferSize.toString() ??
         defaultFfmpegSettings.audioBufferSize.toString(),
     );
     setAudioVolumePercent(
-      data?.audioVolumePercent.toString() ||
+      data?.audioVolumePercent.toString() ??
         defaultFfmpegSettings.audioVolumePercent.toString(),
     );
     setAudioChannels(
-      data?.audioChannels.toString() ||
+      data?.audioChannels.toString() ??
         defaultFfmpegSettings.audioChannels.toString(),
     );
     setAudioSampleRate(
-      data?.audioSampleRate.toString() ||
+      data?.audioSampleRate.toString() ??
         defaultFfmpegSettings.audioSampleRate.toString(),
     );
-    setErrorScreen(data?.errorScreen || defaultFfmpegSettings.errorScreen);
+    setErrorScreen(data?.errorScreen ?? defaultFfmpegSettings.errorScreen);
+    setErrorAudio(data?.errorAudio ?? defaultFfmpegSettings.errorAudio);
+    setNormalizeVideoCodec(
+      data?.normalizeVideoCodec ?? defaultFfmpegSettings.normalizeVideoCodec,
+    );
+    setNormalizeAudioCodec(
+      data?.normalizeAudioCodec ?? defaultFfmpegSettings.normalizeAudioCodec,
+    );
+    setNormalizeResolution(
+      data?.normalizeResolution ?? defaultFfmpegSettings.normalizeResolution,
+    );
+    setNormalizeAudio(
+      data?.normalizeAudio ?? defaultFfmpegSettings.normalizeAudio,
+    );
     setDisableChannelOverlay(
-      data?.disableChannelOverlay ||
+      data?.disableChannelOverlay ??
         defaultFfmpegSettings.disableChannelOverlay,
     );
     setDisableChannelPrelude(
-      data?.disableChannelPrelude ||
+      data?.disableChannelPrelude ??
         defaultFfmpegSettings.disableChannelPrelude,
     );
     setTargetResolution(
       toStringResolution(
-        data?.targetResolution || defaultFfmpegSettings.targetResolution,
+        data?.targetResolution ?? defaultFfmpegSettings.targetResolution,
       ),
     );
   }, [data]);
@@ -471,6 +490,7 @@ export default function FfmpegSettingsPage() {
   };
 
   const handleNormalizeAudioCodec = () => {
+    console.log(normalizeAudioCodec);
     setNormalizeAudioCodec(!normalizeAudioCodec);
   };
 
