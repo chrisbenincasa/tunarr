@@ -1,32 +1,33 @@
-import { Box, Button, Typography } from '@mui/material';
+import { Box, Button, CircularProgress, Typography } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ZodiosError } from '@zodios/core';
-import { ChannelProgram } from 'dizquetv-types';
+import { ChannelProgram } from '@tunarr/types';
+import { isUndefined } from 'lodash-es';
 import { Link } from 'react-router-dom';
 import { ChannelProgrammingConfig } from '../../components/channel_config/ChannelProgrammingConfig.tsx';
 import { apiClient } from '../../external/api.ts';
-import { usePreloadedData } from '../../hooks/preloadedDataHook.ts';
+import { usePreloadedChannel } from '../../hooks/usePreloadedChannel.ts';
 import { setCurrentLineup } from '../../store/channelEditor/actions.ts';
-import useStore from '../../store/index.ts';
-import { editProgrammingLoader } from './loaders.ts';
+
+type MutateArgs = { channelNumber: number; newLineup: ChannelProgram[] };
 
 export default function ChannelProgrammingPage() {
-  const { channel } = usePreloadedData(editProgrammingLoader);
-  const newLineup = useStore((s) => s.channelEditor.programList);
+  const { currentEntity: channel, programList: newLineup } =
+    usePreloadedChannel();
   const queryClient = useQueryClient();
 
   // TODO we need to update the channel start time too
   const updateLineupMutation = useMutation({
-    mutationKey: ['channels', channel.number, 'lineup'],
-    mutationFn: (newLineup: ChannelProgram[]) => {
+    mutationKey: ['updateChannelProgramming'],
+    mutationFn: ({ channelNumber, newLineup }: MutateArgs) => {
       return apiClient.post('/api/v2/channels/:number/programming', newLineup, {
-        params: { number: channel.number },
+        params: { number: channelNumber },
       });
     },
-    onSuccess: async (data) => {
+    onSuccess: async (data, { channelNumber }) => {
       setCurrentLineup(data.programs, /*dirty=*/ false);
       await queryClient.invalidateQueries({
-        queryKey: ['channels', channel.number],
+        queryKey: ['channels', channelNumber],
       });
     },
     onError: (error) => {
@@ -39,12 +40,16 @@ export default function ChannelProgrammingPage() {
 
   const onSave = () => {
     updateLineupMutation
-      .mutateAsync(newLineup)
+      .mutateAsync({ channelNumber: channel.number, newLineup })
       .then(console.log)
       .catch(console.error);
   };
 
-  return (
+  return isUndefined(channel) ? (
+    <div>
+      <CircularProgress />
+    </div>
+  ) : (
     <div>
       <Typography variant="h4" sx={{ mb: 2 }}>
         Channel {channel.number} Programming

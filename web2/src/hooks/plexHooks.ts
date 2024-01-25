@@ -9,7 +9,7 @@ import {
   PlexTerminalMedia,
   isPlexDirectory,
   isTerminalItem,
-} from 'dizquetv-types/plex';
+} from '@tunarr/types/plex';
 import { flattenDeep } from 'lodash-es';
 import { apiClient } from '../external/api.ts';
 import { sequentialPromises } from '../helpers/util.ts';
@@ -57,9 +57,9 @@ export type PlexMediaWithServerName = PlexTerminalMedia & {
   serverName: string;
 };
 
-export const enumeratePlexItem = <T extends PlexMedia | PlexLibrarySection>(
+export const enumeratePlexItem = (
   serverName: string,
-  initialItem: T,
+  initialItem: PlexMedia | PlexLibrarySection,
 ): (() => Promise<PlexMediaWithServerName[]>) => {
   const fetchPlexPathFunc = <T>(path: string) =>
     fetchPlexPath<T>(serverName, path)();
@@ -78,24 +78,22 @@ export const enumeratePlexItem = <T extends PlexMedia | PlexLibrarySection>(
         PlexLibraryListing | PlexSeasonView | PlexEpisodeView
       >(path)
         .then(async (result) => {
-          const externalIds = result.Metadata.map(
-            (m) => `plex|${serverName}|${m.ratingKey}`,
-          );
-
-          console.log(externalIds);
-
-          apiClient
-            .batchGetProgramsByExternalIds({ externalIds })
-            .then((r) => console.log(r))
-            .catch((e) => console.error(e));
-
           return sequentialPromises(result.Metadata, loopInner);
         })
         .then((allResults) => flattenDeep(allResults));
     }
   }
 
-  return function () {
-    return loopInner(initialItem);
+  return async function () {
+    const res = await loopInner(initialItem);
+    const externalIds = res.map((m) => `plex|${serverName}|${m.key}`);
+
+    console.log(externalIds);
+
+    await apiClient
+      .batchGetProgramsByExternalIds({ externalIds })
+      .then((r) => console.log(r))
+      .catch((e) => console.error(e));
+    return res;
   };
 };

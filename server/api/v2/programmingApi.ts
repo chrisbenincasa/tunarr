@@ -1,4 +1,4 @@
-import { chunk, every, isNil, isUndefined } from 'lodash-es';
+import { chunk, every, isNil, isUndefined, reduce } from 'lodash-es';
 import z from 'zod';
 import { getEm } from '../../dao/dataSource.js';
 import {
@@ -7,7 +7,7 @@ import {
 } from '../../dao/entities/Program.js';
 import { RouterPluginAsyncCallback } from '../../types/serverType.js';
 import { mapAsyncSeq } from '../../util.js';
-import { ProgramSchema } from 'dizquetv-types/schemas';
+import { ProgramSchema } from '@tunarr/types/schemas';
 
 const LookupExternalProgrammingSchema = z.object({
   externalId: z
@@ -78,7 +78,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         operationId: 'batchGetProgramsByExternalIds',
         body: BatchLookupExternalProgrammingSchema,
         response: {
-          200: z.array(ProgramSchema),
+          200: z.array(ProgramSchema.partial().required({ id: true })),
         },
       },
     },
@@ -89,13 +89,17 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         chunk(allIds, 25),
         undefined,
         async (idChunk) => {
-          const ids = idChunk.map((id) => ({
-            sourceType: programSourceTypeFromString(id[0])!,
-            externalSourceId: id[1],
-            externalKey: id[2],
-          }));
-
-          return em.find<Program>(Program, { $or: ids });
+          return await reduce(
+            idChunk,
+            (acc, [ps, es, ek]) => {
+              return acc.orWhere({
+                sourceType: programSourceTypeFromString(ps)!,
+                externalSourceId: es,
+                externalKey: ek,
+              });
+            },
+            em.qb(Program).select('uuid'),
+          );
         },
       );
       const all = results.reduce((prev, next) => [...prev, ...next], []);

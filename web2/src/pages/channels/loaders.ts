@@ -6,10 +6,10 @@ import {
 } from '@tanstack/react-query';
 import {
   Channel,
-  ChannelProgramming,
+  ChannelProgram,
   CustomShow,
   CustomShowProgramming,
-} from 'dizquetv-types';
+} from '@tunarr/types';
 import { LoaderFunctionArgs } from 'react-router-dom';
 import { lineupQuery } from '../../hooks/useChannelLineup.ts';
 import { channelQuery, channelsQuery } from '../../hooks/useChannels.ts';
@@ -48,7 +48,7 @@ export const editChannelLoader = createPreloader<Channel>(
 
 export const editProgrammingLoader: Preloader<{
   channel: Channel;
-  lineup: ChannelProgramming;
+  lineup: ChannelProgram[];
 }> =
   (queryClient: QueryClient) =>
   async ({ params }: LoaderFunctionArgs) => {
@@ -69,10 +69,9 @@ export const editProgrammingLoader: Preloader<{
 
     return await Promise.all([channelPromise, lineupPromise]).then(
       ([channel, lineup]) => {
-        setCurrentChannel(channel, lineup.programs);
         return {
           channel,
-          lineup,
+          lineup: lineup.programs,
         };
       },
     );

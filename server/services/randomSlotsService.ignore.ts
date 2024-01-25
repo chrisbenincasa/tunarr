@@ -5,7 +5,7 @@ import throttle from './throttle.js';
 import { isUndefined, last } from 'lodash-es';
 import createLogger from '../logger.js';
 import { Maybe } from '../types.js';
-import { Program } from 'dizquetv-types';
+import { Program } from '@tunarr/types';
 import { deepCopyArray } from '../util.js';
 import { MarkOptional } from 'ts-essentials';
 

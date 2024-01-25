@@ -1,6 +1,6 @@
 import { DataTag, useQueries, useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
-import { Channel, ChannelLineup } from 'dizquetv-types';
+import { Channel, ChannelLineup } from '@tunarr/types';
 import { apiClient } from '../external/api.ts';
 import { channelQuery } from './useChannels.ts';
 

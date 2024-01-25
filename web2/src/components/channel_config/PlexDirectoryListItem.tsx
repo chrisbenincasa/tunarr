@@ -10,14 +10,14 @@ import {
   ListItemText,
   Skeleton,
 } from '@mui/material';
-import { PlexServerSettings } from 'dizquetv-types';
+import { PlexServerSettings } from '@tunarr/types';
 import {
   PlexLibraryMovies,
   PlexLibrarySection,
   PlexLibraryShows,
   isPlexMovie,
   isPlexShow,
-} from 'dizquetv-types/plex';
+} from '@tunarr/types/plex';
 import { take } from 'lodash-es';
 import { useCallback, useEffect, useRef, useState, MouseEvent } from 'react';
 import { usePlexTyped } from '../../hooks/plexHooks.ts';

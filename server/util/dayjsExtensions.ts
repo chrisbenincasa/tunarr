@@ -27,3 +27,11 @@ export const mod: PluginFunc = (_opts, dayjsClass, dayjsFactory) => {
     return dayjsFactory.duration((djs.unix() * 1000) % dur.asMilliseconds());
   };
 };
+
+export const min = (l: duration.Duration, r: duration.Duration) => {
+  return l.asMilliseconds() < r.asMilliseconds() ? l : r;
+};
+
+export const max = (l: duration.Duration, r: duration.Duration) => {
+  return l.asMilliseconds() >= r.asMilliseconds() ? l : r;
+};

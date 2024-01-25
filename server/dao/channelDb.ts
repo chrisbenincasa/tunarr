@@ -6,7 +6,7 @@ import {
   FlexProgram,
   RedirectProgram,
   UpdateChannelRequest,
-} from 'dizquetv-types';
+} from '@tunarr/types';
 import { chain, isNil, isNull } from 'lodash-es';
 import { Low } from 'lowdb';
 import { JSONFile } from 'lowdb/node';

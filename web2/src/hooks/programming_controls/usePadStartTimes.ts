@@ -1,7 +1,7 @@
 import filter from 'lodash-es/filter';
 import negate from 'lodash-es/negate';
 import useStore from '../../store/index.ts';
-import { Channel, ChannelProgram, isFlexProgram } from 'dizquetv-types';
+import { Channel, ChannelProgram, isFlexProgram } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { forEach } from 'lodash-es';
 import {

@@ -1,8 +1,8 @@
-import { FfmpegSettings } from 'dizquetv-types';
+import { FfmpegSettings, Watermark } from '@tunarr/types';
 import { EntityManager } from './dao/dataSource.js';
 import { StreamLineupItem } from './dao/derived_types/StreamLineup.js';
 import { Channel } from './dao/entities/Channel.js';
-import { Settings, Watermark } from './dao/settings.js';
+import { Settings } from './dao/settings.js';
 
 export type GlobalOptions = {
   database: string;

@@ -1,6 +1,6 @@
 import { Alert, Snackbar } from '@mui/material';
-import { TunarrEvent } from 'dizquetv-types';
-import { TunarrEventSchema } from 'dizquetv-types/schemas';
+import { TunarrEvent } from '@tunarr/types';
+import { TunarrEventSchema } from '@tunarr/types/schemas';
 import { first } from 'lodash-es';
 import { useEffect, useRef, useState } from 'react';
 

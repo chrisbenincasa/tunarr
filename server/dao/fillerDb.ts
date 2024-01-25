@@ -1,20 +1,12 @@
 import { Loaded } from '@mikro-orm/core';
-import { isNil, map } from 'lodash-es';
-import { MarkOptional } from 'ts-essentials';
-import { v4 as uuidv4 } from 'uuid';
+import { CreateFillerListRequest } from '@tunarr/types/api';
+import { map } from 'lodash-es';
 import { ChannelCache } from '../channelCache.js';
-import { Maybe, Nullable } from '../types.js';
+import { Nullable } from '../types.js';
 import { getEm } from './dataSource.js';
 import { Channel as ChannelEntity } from './entities/Channel.js';
 import { ChannelFillerShow } from './entities/ChannelFillerShow.js';
 import { FillerShow } from './entities/FillerShow.js';
-import { FillerList } from './settings.js';
-
-export type FillerUpdate = MarkOptional<FillerList, 'content'>;
-export type FillerCreate = MarkOptional<
-  Omit<FillerList, 'id'>,
-  'content' | 'name'
->;
 
 export class FillerDB {
   private channelCache: ChannelCache;
@@ -23,49 +15,32 @@ export class FillerDB {
     this.channelCache = channelCache;
   }
 
-  // TODO Is cache necessary if we always have the DB in memory?
   getFiller(id: string): Promise<Nullable<FillerShow>> {
     return getEm().repo(FillerShow).findOne(id);
   }
 
-  async saveFiller(id: Maybe<string>, fillerList: FillerUpdate): Promise<void> {
-    if (isNil(id)) {
-      throw Error('Mising filler id');
-    }
-
-    // const actualFiller: FillerShow = {
-    //   ...fillerList,
-    //   content: fillerList.content ?? [],
-    //   uuid: id,
-    // };
-
-    const programIds = fillerList.content?.map((program) => program.id) ?? [];
+  async saveFiller(filler: FillerShow): Promise<void> {
+    const programIds = filler.content?.map((program) => program.uuid) ?? [];
     const em = getEm();
     await em.repo(FillerShow).upsert({
-      uuid: id,
-      name: fillerList.name,
+      uuid: filler.uuid,
+      name: filler.name,
       content: programIds,
     });
-
-    // try {
-    //   return this.dbAccess.fillerLists().insertOrUpdate(actualFiller);
-    // } finally {
-    //   delete this.cache[id];
-    // }
   }
 
-  async createFiller(fillerList: FillerCreate): Promise<string> {
-    const id = uuidv4();
+  async createFiller(request: CreateFillerListRequest): Promise<string> {
+    const em = getEm();
 
-    const actualFiller: FillerList = {
-      id,
-      content: fillerList.content ?? [],
-      name: fillerList.name ?? 'Unnamed Filler',
-    };
+    const filler = em.create(FillerShow, {
+      name: request.name,
+    });
 
-    await this.saveFiller(id, actualFiller);
+    // TODO save programs - requires DB migration
 
-    return id;
+    await em.persistAndFlush(filler);
+
+    return filler.uuid;
   }
 
   // Returns all channels a given filler list is a part of

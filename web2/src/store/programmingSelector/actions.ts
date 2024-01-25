@@ -1,9 +1,9 @@
-import { PlexServerSettings } from 'dizquetv-types';
+import { PlexServerSettings } from '@tunarr/types';
 import {
   PlexLibrarySection,
   PlexMedia,
   isPlexDirectory,
-} from 'dizquetv-types/plex';
+} from '@tunarr/types/plex';
 import { map, reject } from 'lodash-es';
 import useStore from '..';
 import { SelectedMedia } from './store';

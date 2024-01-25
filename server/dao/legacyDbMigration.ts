@@ -4,9 +4,11 @@ import {
   FfmpegSettings,
   PlexServerSettings,
   Program,
+  ProgramType,
+  Resolution,
   defaultFfmpegSettings,
   defaultPlexStreamSettings,
-} from 'dizquetv-types';
+} from '@tunarr/types';
 import fs from 'fs/promises';
 import {
   chain,
@@ -42,17 +44,6 @@ import {
 } from '../util.js';
 import { EntityManager, getEm, initOrm, withDb } from './dataSource.js';
 import {
-  CustomShow,
-  PlexStreamSettings,
-  ProgramType,
-  Resolution,
-  Schema,
-  SettingsSchema,
-  defaultHdhrSettings,
-  defaultSchema,
-  defaultXmlTvSettings,
-} from './settings.js';
-import {
   ContentItem,
   Lineup,
   LineupItem,
@@ -70,6 +61,14 @@ import {
   ProgramSourceType,
   programTypeFromString,
 } from './entities/Program.js';
+import {
+  PlexStreamSettings,
+  Schema,
+  SettingsSchema,
+  defaultHdhrSettings,
+  defaultSchema,
+  defaultXmlTvSettings,
+} from './settings.js';
 
 const logger = createLogger(import.meta);
 
@@ -204,10 +203,18 @@ async function persistProgram(program: Program) {
   );
 }
 
-function convertProgram(program: JSONObject): Program {
+type LegacyProgram = Program & { isOffline: boolean };
+
+type CustomShow = {
+  id: string;
+  name: string;
+  content: LegacyProgram[];
+};
+
+function convertProgram(program: JSONObject): LegacyProgram {
   const programType = program['type'] as string | undefined;
   const isMovie = programType === 'movie';
-  const outProgram: Program = {
+  const outProgram: LegacyProgram = {
     id: v4(),
     duration: program['duration'] as number,
     episodeIcon: program['episodeIcon'] as Maybe<string>,
@@ -240,7 +247,7 @@ function convertProgram(program: JSONObject): Program {
 }
 
 function createLineup(
-  rawPrograms: Program[],
+  rawPrograms: LegacyProgram[],
   dbProgramById: Record<string, ProgramEntity>,
 ): Lineup {
   const lineupItems: LineupItem[] = chain(rawPrograms)

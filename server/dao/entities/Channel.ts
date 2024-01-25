@@ -6,13 +6,13 @@ import {
   Property,
   Unique,
 } from '@mikro-orm/core';
-import { Resolution } from 'dizquetv-types';
+import { Resolution } from '@tunarr/types';
 import { BaseEntity } from './BaseEntity.js';
 import { FillerShow } from './FillerShow.js';
 import { Program } from './Program.js';
 import { CustomShow } from './CustomShow.js';
 import { ChannelFillerShow } from './ChannelFillerShow.js';
-import { Channel as ChannelDTO } from 'dizquetv-types';
+import { Channel as ChannelDTO } from '@tunarr/types';
 import { DurationType } from '../custom_types/DurationType.js';
 import type { Duration } from 'dayjs/plugin/duration.js';
 import dayjs from 'dayjs';

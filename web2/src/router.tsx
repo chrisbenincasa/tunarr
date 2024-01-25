@@ -25,6 +25,7 @@ import PlexSettingsPage from './pages/settings/PlexSettingsPage.tsx';
 import SettingsLayout from './pages/settings/SettingsLayout.tsx';
 import XmlTvSettingsPage from './pages/settings/XmlTvSettingsPage.tsx';
 import { queryCache } from './queryClient.ts';
+import TimeSlotEditorPage from './pages/channels/TimeSlotEditorPage.tsx';
 
 const queryClient = new QueryClient({ queryCache });
 
@@ -54,6 +55,11 @@ export const router = createBrowserRouter([
       {
         path: '/channels/:id/programming',
         element: <ChannelProgrammingPage />,
+        loader: editProgrammingLoader(queryClient),
+      },
+      {
+        path: '/channels/:id/programming/time-slot-editor',
+        element: <TimeSlotEditorPage />,
         loader: editProgrammingLoader(queryClient),
       },
       {

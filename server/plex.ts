@@ -15,7 +15,7 @@ import {
 } from './types/plexApiTypes.js';
 import { PlexServerSettings } from './dao/entities/PlexServerSettings.js';
 import { EntityDTO } from '@mikro-orm/core';
-import { PlexDvr, PlexDvrsResponse } from 'dizquetv-types/plex';
+import { PlexDvr, PlexDvrsResponse } from '@tunarr/types/plex';
 import NodeCache from 'node-cache';
 
 type AxiosConfigWithMetadata = InternalAxiosRequestConfig & {

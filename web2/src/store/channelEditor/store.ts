@@ -4,7 +4,7 @@ import {
   ContentProgram,
   CustomProgram,
   CustomShow,
-} from 'dizquetv-types';
+} from '@tunarr/types';
 import { StateCreator } from 'zustand';
 
 // Represents a program listing in the editor
@@ -22,6 +22,10 @@ export interface ProgrammingEditorStateInner<
   originalProgramList: ProgramType[];
   // The actively edited list
   programList: ProgramType[];
+  // slot schedule preview list -- this may have A LOT of programs
+  // in it, so we should be sure to clear it out when the page is
+  // not currently being viewed
+  schedulePreviewList: ProgramType[];
   dirty: {
     programs: boolean;
   };
@@ -39,6 +43,7 @@ export const initialChannelEditorState: ChannelEditorState = {
   channelEditor: {
     originalProgramList: [],
     programList: [],
+    schedulePreviewList: [],
     dirty: {
       programs: false,
     },
@@ -46,6 +51,7 @@ export const initialChannelEditorState: ChannelEditorState = {
   customShowEditor: {
     originalProgramList: [],
     programList: [],
+    schedulePreviewList: [],
     dirty: {
       programs: false,
     },

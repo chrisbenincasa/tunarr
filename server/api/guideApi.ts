@@ -1,4 +1,4 @@
-import { ChannelLineup } from 'dizquetv-types';
+import { ChannelLineup } from '@tunarr/types';
 import { isError, map } from 'lodash-es';
 import createLogger from '../logger.js';
 import { RouterPluginCallback } from '../types/serverType.js';

@@ -1,3 +1,4 @@
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import CloudOffIcon from '@mui/icons-material/CloudOff';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -44,6 +45,8 @@ import useStore from '../../store/index.ts';
 import AddRedirectModal from '../programming_controls/AddRedirectModal.tsx';
 import ProgrammingSelectorDialog from './ProgrammingSelectorDialog.tsx';
 import AddFlexModal from '../programming_controls/AddFlexModal.tsx';
+import { Link } from 'react-router-dom';
+import ChannelProgrammingList from './ChannelProgrammingList.tsx';
 
 // dayjs.extend(duration);
 
@@ -240,6 +243,25 @@ export function ChannelProgrammingConfig() {
                   Add Redirect
                 </Button>
               </Grid2>
+              <Grid2 xs={3}>
+                <Button
+                  component={Link}
+                  to="time-slot-editor"
+                  variant="contained"
+                  startIcon={<AccessTimeIcon />}
+                >
+                  Time Slots
+                </Button>
+              </Grid2>
+              <Grid2 xs={3}>
+                <Button
+                  variant="contained"
+                  onClick={() => setAddRedirectModalOpen(true)}
+                  startIcon={<ShuffleIcon />}
+                >
+                  Random Slots
+                </Button>
+              </Grid2>
             </Grid2>
           </AccordionDetails>
         </Accordion>
@@ -286,11 +308,7 @@ export function ChannelProgrammingConfig() {
             Add
           </Button>
         </Box>
-        <Box display="flex">
-          <Box sx={{ flex: 1, maxHeight: 400, overflowY: 'auto' }}>
-            <List dense>{renderPrograms()}</List>
-          </Box>
-        </Box>
+        <ChannelProgrammingList />
       </Paper>
       <ProgrammingSelectorDialog
         open={programmingModalOpen}

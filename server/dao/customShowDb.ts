@@ -1,5 +1,5 @@
-import { isContentProgram } from 'dizquetv-types';
-import { CreateCustomShowRequest } from 'dizquetv-types/api';
+import { isContentProgram } from '@tunarr/types';
+import { CreateCustomShowRequest } from '@tunarr/types/api';
 import { chain, isUndefined, map, partition, reduce } from 'lodash-es';
 import { MarkOptional } from 'ts-essentials';
 import { Maybe } from '../types.js';

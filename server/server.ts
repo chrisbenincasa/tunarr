@@ -22,10 +22,8 @@ import { fileURLToPath } from 'node:url';
 import path from 'path';
 import serveStatic from 'serve-static';
 import { miscRouter } from './api.js';
-import { channelToolRouter } from './api/channelToolsApi.js';
 import { debugRouter } from './api/debugApi.js';
 import { ffmpegSettingsRouter } from './api/ffmpegSettingsApi.js';
-import { fillerRouter } from './api/filllerApi.js';
 import { guideRouter } from './api/guideApi.js';
 import { hdhrSettingsRouter } from './api/hdhrSettingsApi.js';
 import { plexServersRouter } from './api/plexServersApi.js';
@@ -199,12 +197,12 @@ export async function initServer(opts: ServerOptions) {
     })
     .register(plexServersRouter)
     // .register(channelsRouter)
-    .register(fillerRouter)
+    // .register(fillerRouter)
     .register(ffmpegSettingsRouter)
     .register(plexSettingsRouter)
     .register(xmlTvSettingsRouter)
     .register(hdhrSettingsRouter)
-    .register(channelToolRouter)
+    // .register(channelToolRouter)
     .register(guideRouter)
     .register(miscRouter)
     .register(schedulerRouter)

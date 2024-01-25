@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
-import { ContentProgram, isContentGuideProgram } from 'dizquetv-types';
+import { ContentProgram, isContentGuideProgram } from '@tunarr/types';
 import {
   ChannelLineupSchema,
   ChannelProgramSchema,
@@ -8,7 +8,7 @@ import {
   ChannelSchema,
   ProgramSchema,
   UpdateChannelRequestSchema,
-} from 'dizquetv-types/schemas';
+} from '@tunarr/types/schemas';
 import {
   compact,
   filter,
@@ -220,7 +220,13 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
         req.params.number,
       );
 
-      return res.send(apiLineup!);
+      if (isNil(apiLineup)) {
+        return res
+          .status(404)
+          .send({ error: 'Could not find channel lineup.' });
+      }
+
+      return res.send(apiLineup);
     },
   );
 

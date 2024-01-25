@@ -19,7 +19,7 @@ import {
   isPlexSeason,
   isPlexShow,
   isTerminalItem,
-} from 'dizquetv-types/plex';
+} from '@tunarr/types/plex';
 import React, { useCallback, useEffect, useState, MouseEvent } from 'react';
 import { usePlexTyped } from '../../hooks/plexHooks.ts';
 import useStore from '../../store/index.ts';

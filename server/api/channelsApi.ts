@@ -1,5 +1,5 @@
 import JSONStream from 'JSONStream';
-import { ProgramSchema } from 'dizquetv-types/schemas';
+import { ProgramSchema } from '@tunarr/types/schemas';
 import { RequestGenericInterface } from 'fastify';
 import { isEmpty, isNil, sortBy } from 'lodash-es';
 import { Writable } from 'stream';

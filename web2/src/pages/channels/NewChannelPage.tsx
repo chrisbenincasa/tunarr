@@ -2,7 +2,7 @@
 
 import Typography from '@mui/material/Typography';
 import dayjs from 'dayjs';
-import { Channel, UpdateChannelRequest } from 'dizquetv-types';
+import { Channel, UpdateChannelRequest } from '@tunarr/types';
 import EditChannelControls from '../../components/channel_config/EditChannelControls.tsx';
 import { setCurrentChannel } from '../../store/channelEditor/actions.ts';
 import { usePreloadedData } from '../../hooks/preloadedDataHook.ts';
@@ -77,7 +77,7 @@ export default function NewChannelPage() {
   });
 
   const saveNewChannel = () => {
-    newChannelMutation.mutate(workingChannel!);
+    newChannelMutation.mutate(workingChannel);
   };
 
   return (

@@ -2,7 +2,7 @@ import { Paper, Typography } from '@mui/material';
 import Box from '@mui/material/Box';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
-import { Channel } from 'dizquetv-types';
+import { Channel } from '@tunarr/types';
 import { useState } from 'react';
 import ChannelEpgConfig from '../../components/channel_config/ChannelEpgConfig.tsx';
 import { ChannelFlexConfig } from '../../components/channel_config/ChannelFlexConfig.tsx';

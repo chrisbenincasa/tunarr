@@ -2,7 +2,7 @@ import { ChildProcessWithoutNullStreams, spawn } from 'child_process';
 import events from 'events';
 import { globalOptions } from './globals.js';
 import { DeepReadonly } from 'ts-essentials';
-import { FfmpegSettings } from 'dizquetv-types';
+import { FfmpegSettings } from '@tunarr/types';
 
 export class FfmpegText extends events.EventEmitter {
   private args: string[];

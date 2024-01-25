@@ -6,6 +6,10 @@ import {
 
 type Alias<T> = T & { _?: never };
 
+export const IdPathParamSchema = z.object({
+  id: z.string(),
+});
+
 export const ChannelNumberParamSchema = z.object({
   number: z.coerce.number(),
 });
@@ -36,3 +40,16 @@ export const CreateCustomShowRequestSchema = z.object({
 export type CreateCustomShowRequest = Alias<
   z.infer<typeof CreateCustomShowRequestSchema>
 >;
+
+export const CreateFillerListRequestSchema = z.object({
+  name: z.string(),
+  programs: z.array(
+    z.discriminatedUnion('type', [ContentProgramSchema, CustomProgramSchema]),
+  ),
+});
+
+export type CreateFillerListRequest = Alias<
+  z.infer<typeof CreateFillerListRequestSchema>
+>;
+
+export * from './Scheduling.js';

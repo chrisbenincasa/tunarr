@@ -1,3 +1,5 @@
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
 import { DndProvider } from 'react-dnd';
@@ -13,10 +15,12 @@ const queryClient = new QueryClient({ queryCache });
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <DndProvider backend={HTML5Backend}>
-      <QueryClientProvider client={queryClient}>
-        <RouterProvider router={router} />
-      </QueryClientProvider>
-    </DndProvider>
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
+      <DndProvider backend={HTML5Backend}>
+        <QueryClientProvider client={queryClient}>
+          <RouterProvider router={router} />
+        </QueryClientProvider>
+      </DndProvider>
+    </LocalizationProvider>
   </React.StrictMode>,
 );

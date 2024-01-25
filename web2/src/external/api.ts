@@ -2,7 +2,7 @@ import { Zodios, makeApi, parametersBuilder } from '@zodios/core';
 import {
   BatchLookupExternalProgrammingSchema,
   CreateCustomShowRequestSchema,
-} from 'dizquetv-types/api';
+} from '@tunarr/types/api';
 import {
   ChannelLineupSchema,
   ChannelProgramSchema,
@@ -12,7 +12,7 @@ import {
   CustomShowSchema,
   ProgramSchema,
   UpdateChannelRequestSchema,
-} from 'dizquetv-types/schemas';
+} from '@tunarr/types/schemas';
 import { once } from 'lodash-es';
 import { z } from 'zod';
 
@@ -79,7 +79,7 @@ export const api = makeApi([
     parameters: parametersBuilder()
       .addBody(BatchLookupExternalProgrammingSchema)
       .build(),
-    response: z.array(ProgramSchema),
+    response: z.array(ProgramSchema.partial().required({ id: true })),
   },
   {
     method: 'get',

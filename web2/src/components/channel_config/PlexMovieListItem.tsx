@@ -1,5 +1,5 @@
 import { Button, ListItem, ListItemText } from '@mui/material';
-import { PlexMovie } from 'dizquetv-types/plex';
+import { PlexMovie } from '@tunarr/types/plex';
 import { prettyItemDuration } from '../../helpers/util.ts';
 import useStore from '../../store/index.ts';
 import { addSelectedMedia } from '../../store/programmingSelector/actions.ts';

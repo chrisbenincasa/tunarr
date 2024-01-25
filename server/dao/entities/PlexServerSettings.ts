@@ -1,6 +1,6 @@
 import { Entity, Property, Unique } from '@mikro-orm/core';
 import { BaseEntity } from './BaseEntity.js';
-import { PlexServerSettings as PlexServerSettingsDTO } from 'dizquetv-types';
+import { PlexServerSettings as PlexServerSettingsDTO } from '@tunarr/types';
 
 @Entity()
 @Unique({ properties: ['name', 'uri'] })

@@ -37,7 +37,7 @@ import {
   PlexServerRemove,
   PlexStreamSettings,
   defaultPlexStreamSettings,
-} from 'dizquetv-types';
+} from '@tunarr/types';
 import { fill } from 'lodash-es';
 import { checkNewPlexServers, plexLoginFlow } from '../../helpers/plexLogin.ts';
 import {

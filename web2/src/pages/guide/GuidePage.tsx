@@ -3,7 +3,7 @@ import ZoomOutIcon from '@mui/icons-material/ZoomOut';
 import { Box, IconButton, Typography, useTheme } from '@mui/material';
 import dayjs, { Dayjs } from 'dayjs';
 import duration from 'dayjs/plugin/duration';
-import { TvGuideProgram } from 'dizquetv-types';
+import { TvGuideProgram } from '@tunarr/types';
 import { useCallback, useState } from 'react';
 import { useInterval } from 'usehooks-ts';
 import { useAllTvGuides } from '../../hooks/useTvGuide.ts';
