@@ -125,8 +125,10 @@ export class Program extends BaseEntity {
   })
   customShows = new Collection<CustomShow>(this);
 
-  @ManyToMany(() => FillerShow, (fillerShow) => fillerShow.content, {
+  @ManyToMany({
+    entity: () => FillerShow,
     eager: false,
+    mappedBy: (e) => e.content,
   })
   fillerShows = new Collection<FillerShow>(this);
 

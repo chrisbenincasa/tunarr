@@ -937,6 +937,15 @@
           "primary": false,
           "nullable": false,
           "mappedType": "text"
+        },
+        "index": {
+          "name": "index",
+          "type": "integer",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "mappedType": "integer"
         }
       },
       "name": "filler_show_content",
@@ -962,6 +971,18 @@
           "unique": false
         },
         {
+          "keyName": "filler_show_content_filler_show_uuid_program_uuid_index_unique",
+          "columnNames": [
+            "filler_show_uuid",
+            "program_uuid",
+            "index"
+          ],
+          "composite": true,
+          "constraint": true,
+          "primary": false,
+          "unique": true
+        },
+        {
           "keyName": "primary",
           "columnNames": [
             "filler_show_uuid",
@@ -985,7 +1006,6 @@
             "uuid"
           ],
           "referencedTableName": "filler_show",
-          "deleteRule": "cascade",
           "updateRule": "cascade"
         },
         "filler_show_content_program_uuid_foreign": {
@@ -998,7 +1018,6 @@
             "uuid"
           ],
           "referencedTableName": "program",
-          "deleteRule": "cascade",
           "updateRule": "cascade"
         }
       },
