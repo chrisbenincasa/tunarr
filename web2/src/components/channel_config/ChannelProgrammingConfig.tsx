@@ -242,7 +242,9 @@ export function ChannelProgrammingConfig() {
             Add
           </Button>
         </Box>
-        <ChannelProgrammingList />
+        <ChannelProgrammingList
+          virtualListProps={{ width: '100%', height: 400, itemSize: 35 }}
+        />
       </Paper>
       <ProgrammingSelectorDialog
         open={programmingModalOpen}
