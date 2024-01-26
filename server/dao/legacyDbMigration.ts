@@ -964,6 +964,8 @@ async function migrateFromLegacyDbInner(
               disableChannelOverlay: ffmpegSettings[
                 'disableChannelOverlay'
               ] as (typeof defaultFfmpegSettings)['disableChannelOverlay'],
+              disableChannelPrelude:
+                (ffmpegSettings['disablePreludes'] as Maybe<boolean>) ?? false,
             },
             defaultFfmpegSettings,
           ),
