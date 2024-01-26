@@ -1,11 +1,16 @@
 import { Loaded } from '@mikro-orm/core';
 import { CreateFillerListRequest } from '@tunarr/types/api';
-import { map } from 'lodash-es';
+import { filter, map } from 'lodash-es';
 import { ChannelCache } from '../channelCache.js';
 import { getEm } from './dataSource.js';
 import { Channel as ChannelEntity } from './entities/Channel.js';
 import { ChannelFillerShow } from './entities/ChannelFillerShow.js';
+import { FillerListContent } from './entities/FillerListContent.js';
 import { FillerShow } from './entities/FillerShow.js';
+import {
+  createPendingProgramIndexMap,
+  upsertContentPrograms,
+} from './programHelpers.js';
 
 export class FillerDB {
   private channelCache: ChannelCache;
@@ -30,16 +35,42 @@ export class FillerDB {
     });
   }
 
-  async createFiller(request: CreateFillerListRequest): Promise<string> {
+  async createFiller(createRequest: CreateFillerListRequest): Promise<string> {
     const em = getEm();
-
-    const filler = em.create(FillerShow, {
-      name: request.name,
+    const filler = em.repo(FillerShow).create({
+      name: createRequest.name,
     });
 
-    // TODO save programs - requires DB migration
+    const programIndexById = createPendingProgramIndexMap(
+      createRequest.programs,
+    );
 
-    await em.persistAndFlush(filler);
+    const persisted = filter(createRequest.programs, (p) => p.persisted);
+
+    const upsertedPrograms = await upsertContentPrograms(
+      createRequest.programs,
+    );
+
+    await em.persist(filler).flush();
+
+    const persistedCustomShowContent = map(persisted, (p) =>
+      em.create(FillerListContent, {
+        fillerList: filler.uuid,
+        content: p.id!,
+        index: programIndexById[p.id!],
+      }),
+    );
+    const newCustomShowContent = map(upsertedPrograms, (p) =>
+      em.create(FillerListContent, {
+        fillerList: filler.uuid,
+        content: p.uuid,
+        index: programIndexById[p.uniqueId()],
+      }),
+    );
+
+    await em
+      .persist([...persistedCustomShowContent, ...newCustomShowContent])
+      .flush();
 
     return filler.uuid;
   }

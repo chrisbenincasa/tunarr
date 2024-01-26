@@ -5,7 +5,7 @@ import { isNil, map } from 'lodash-es';
 import { CreateFillerListRequestSchema } from '@tunarr/types/api';
 
 // eslint-disable-next-line @typescript-eslint/require-await
-export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
+export const fillerListsApiV2: RouterPluginAsyncCallback = async (fastify) => {
   fastify.get(
     '/filler-lists',
     {
@@ -63,8 +63,9 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
         },
       },
     },
-    async (_, res) => {
-      return res.status(201).send({ id: 'TODO' });
+    async (req, res) => {
+      const id = await req.serverCtx.fillerDB.createFiller(req.body);
+      return res.status(201).send({ id });
     },
   );
 };

@@ -1,14 +1,15 @@
-import { isContentProgram } from '@tunarr/types';
 import { CreateCustomShowRequest } from '@tunarr/types/api';
-import { chain, isUndefined, map, partition, reduce } from 'lodash-es';
+import { filter, isUndefined, map } from 'lodash-es';
 import { MarkOptional } from 'ts-essentials';
 import { Maybe } from '../types.js';
-import { ProgramMinterFactory } from '../util/programMinter.js';
+import { dbProgramToContentProgram } from './converters/programConverters.js';
 import { getEm } from './dataSource.js';
 import { CustomShow } from './entities/CustomShow.js';
 import { CustomShowContent } from './entities/CustomShowContent.js';
-import { Program } from './entities/Program.js';
-import { dbProgramToContentProgram } from './converters/programConverters.js';
+import {
+  createPendingProgramIndexMap,
+  upsertContentPrograms,
+} from './programHelpers.js';
 
 export type CustomShowUpdate = MarkOptional<CustomShow, 'content'>;
 export type CustomShowInsert = {
@@ -51,41 +52,15 @@ export class CustomShowDB {
       name: createRequest.name,
     });
 
-    let idx = 0;
-    const programIndexById = reduce(
+    const programIndexById = createPendingProgramIndexMap(
       createRequest.programs,
-      (acc, p) => {
-        if (p.persisted) {
-          acc[p.id!] = idx++;
-        } else if (isContentProgram(p)) {
-          acc[
-            `${p.externalSourceType}_${p.externalSourceName!}_${p
-              .originalProgram?.key}`
-          ] = idx++;
-        }
-        return acc;
-      },
-      {} as Record<string, number>,
     );
 
-    const [nonPersisted, persisted] = partition(
+    const persisted = filter(createRequest.programs, (p) => p.persisted);
+
+    const upsertedPrograms = await upsertContentPrograms(
       createRequest.programs,
-      (p) => !p.persisted,
     );
-    const minter = ProgramMinterFactory.create(em);
-
-    // TODO handle custom shows
-    const programsToPersist = chain(nonPersisted)
-      .filter(isContentProgram)
-      .map((p) => minter.mint(p.externalSourceName!, p.originalProgram!))
-      .value();
-
-    const upsertedPrograms = await em.upsertMany(Program, programsToPersist, {
-      batchSize: 10,
-      onConflictAction: 'merge',
-      onConflictFields: ['sourceType', 'externalSourceId', 'externalKey'],
-      onConflictExcludeFields: ['uuid'],
-    });
 
     await em.persist(show).flush();
 
