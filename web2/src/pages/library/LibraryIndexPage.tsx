@@ -7,7 +7,6 @@ import {
   Typography,
 } from '@mui/material';
 import { Link } from 'react-router-dom';
-import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import { ArrowForward } from '@mui/icons-material';
 
 export default function LibraryIndexPage() {
