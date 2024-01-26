@@ -15,11 +15,19 @@ import {
   Alert,
   Snackbar,
   Grid,
+  InputAdornment,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
 import { useFfmpegSettings } from '../../hooks/settingsHooks.ts';
 import { hasOnlyDigits } from '../../helpers/util.ts';
 import { FfmpegSettings, defaultFfmpegSettings } from 'dizquetv-types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  fromStringResolution,
+  toStringResolution,
+} from '../../helpers/util.ts';
+import { HelpOutline } from '@mui/icons-material';
 
 const supportedVideoBuffer = [
   { value: 0, string: '0 Seconds' },
@@ -43,6 +51,33 @@ const supportedMaxFPS = [
   { value: '120', string: '120 frames per second' },
 ];
 
+const supportedErrorScreens = [
+  {
+    value: 'pic',
+    string: 'images/generic-error-screen.png',
+  },
+  { value: 'blank', string: 'Blank Screen' },
+  { value: 'static', string: 'Static' },
+  {
+    value: 'testsrc',
+    string: 'Test Pattern (color bars + timer)',
+  },
+  {
+    value: 'text',
+    string: 'Detailed error (requires ffmpeg with drawtext)',
+  },
+  {
+    value: 'kill',
+    string: 'Stop stream, show errors in logs',
+  },
+];
+
+const supportedErrorAudio = [
+  { value: 'whitenoise', string: 'White Noise' },
+  { value: 'sine', string: 'Beep' },
+  { value: 'silent', string: 'No Audio' },
+];
+
 const supportedScalingAlgorithm = [
   'bicubic',
   'fast_bilinear',
@@ -57,6 +92,19 @@ const supportedDeinterlaceFilters = [
   { value: 'w3fdif', string: 'w3fdif' },
   { value: 'yadif=0', string: 'yadif send frame' },
   { value: 'yadif=1', string: 'yadif send field' },
+];
+
+const supportTargetResolution = [
+  { value: '420x420', string: '420x420 (1:1)' },
+  { value: '480x270', string: '480x270 (HD1080/16 16:9)' },
+  { value: '576x320', string: '576x320 (18:10)' },
+  { value: '640x360', string: '640x360 (nHD 16:9)' },
+  { value: '720x480', string: '720x480 (WVGA 3:2)' },
+  { value: '800x600', string: '800x600 (SVGA 4:3)' },
+  { value: '1024x768', string: '1024x768 (WXGA 4:3)' },
+  { value: '1280x720', string: '1280x720 (HD 16:9)' },
+  { value: '1920x1080', string: '1920x1080 (FHD 16:9)' },
+  { value: '3840x2160', string: '3840x2160 (4K 16:9)' },
 ];
 
 type ScalingAlgorithmValue = 'bicubic' | 'fast_bilinear' | 'lanczos' | 'spline';
@@ -141,11 +189,46 @@ export default function FfmpegSettingsPage() {
     defaultFfmpegSettings.audioSampleRate.toString(),
   );
 
+  const [errorScreen, setErrorScreen] = React.useState<string>(
+    defaultFfmpegSettings.errorScreen,
+  );
+
+  const [errorAudio, setErrorAudio] = React.useState<string>(
+    defaultFfmpegSettings.errorAudio,
+  );
+
+  const [normalizeVideoCodec, setNormalizeVideoCodec] = React.useState<boolean>(
+    defaultFfmpegSettings.normalizeVideoCodec,
+  );
+
+  const [normalizeAudioCodec, setNormalizeAudioCodec] = React.useState<boolean>(
+    defaultFfmpegSettings.normalizeAudioCodec,
+  );
+
+  const [normalizeResolution, setNormalizeResolution] = React.useState<boolean>(
+    defaultFfmpegSettings.normalizeResolution,
+  );
+
+  const [normalizeAudio, setNormalizeAudio] = React.useState<boolean>(
+    defaultFfmpegSettings.normalizeAudio,
+  );
+
+  const [disableChannelOverlay, setDisableChannelOverlay] =
+    React.useState<boolean>(defaultFfmpegSettings.disableChannelOverlay);
+
+  const [disableChannelPrelude, setDisableChannelPrelude] =
+    React.useState<boolean>(defaultFfmpegSettings.disableChannelPrelude);
+
+  const [targetResolution, setTargetResolution] = React.useState<string>(
+    toStringResolution(defaultFfmpegSettings.targetResolution),
+  );
+
   const [showFormError, setShowFormError] = React.useState<boolean>(false);
   const queryClient = useQueryClient();
 
   const updateFfmpegSettingsMutation = useMutation({
     mutationFn: (updateSettings: FfmpegSettings) => {
+      console.log(updateSettings);
       return fetch('http://localhost:8000/api/ffmpeg-settings', {
         method: 'PUT',
         headers: {
@@ -162,13 +245,9 @@ export default function FfmpegSettingsPage() {
     },
   });
 
-  console.log(defaultFfmpegSettings.deinterlaceFilter);
-
-  console.log(data);
-
-  // TO DO: Add All Fields and remove defaults
-  // refactor
   const updateFfmpegSettings = () => {
+    const [h, w] = targetResolution.split('x', 2);
+
     updateFfmpegSettingsMutation.mutate({
       configVersion: defaultFfmpegSettings.configVersion,
       ffmpegExecutablePath,
@@ -179,23 +258,26 @@ export default function FfmpegSettingsPage() {
       audioVolumePercent: Number(audioVolumePercent),
       videoEncoder,
       audioEncoder,
-      targetResolution: defaultFfmpegSettings.targetResolution,
+      targetResolution: fromStringResolution(
+        toStringResolution({ widthPx: Number(w), heightPx: Number(h) }),
+      ),
       videoBitrate: Number(videoBitrate),
       videoBufferSize: Number(videoBufferSize),
       audioBitrate: Number(audioBitrate),
       audioBufferSize: Number(audioBufferSize),
       audioSampleRate: Number(audioSampleRate),
       audioChannels: Number(audioChannels),
-      errorScreen: defaultFfmpegSettings.errorScreen,
-      errorAudio: defaultFfmpegSettings.errorAudio,
-      normalizeVideoCodec: defaultFfmpegSettings.normalizeVideoCodec,
-      normalizeAudioCodec: defaultFfmpegSettings.normalizeAudioCodec,
-      normalizeResolution: defaultFfmpegSettings.normalizeResolution,
-      normalizeAudio: defaultFfmpegSettings.normalizeAudio,
+      errorScreen,
+      errorAudio,
+      normalizeVideoCodec,
+      normalizeAudioCodec,
+      normalizeResolution,
+      normalizeAudio,
       maxFPS: Number(maxFPS),
       scalingAlgorithm,
       deinterlaceFilter,
-      disableChannelOverlay: defaultFfmpegSettings.disableChannelOverlay,
+      disableChannelOverlay,
+      disableChannelPrelude,
     });
   };
 
@@ -220,29 +302,102 @@ export default function FfmpegSettingsPage() {
     setAudioVolumePercent(defaultFfmpegSettings.audioVolumePercent.toString());
     setAudioChannels(defaultFfmpegSettings.audioChannels.toString());
     setAudioSampleRate(defaultFfmpegSettings.audioSampleRate.toString());
+    setErrorScreen(defaultFfmpegSettings.errorScreen);
+    setErrorAudio(defaultFfmpegSettings.errorAudio);
+    setNormalizeVideoCodec(defaultFfmpegSettings.normalizeVideoCodec);
+    setNormalizeAudioCodec(defaultFfmpegSettings.normalizeAudioCodec);
+    setNormalizeResolution(defaultFfmpegSettings.normalizeResolution);
+    setNormalizeAudio(defaultFfmpegSettings.normalizeAudio);
+    setDisableChannelOverlay(defaultFfmpegSettings.disableChannelOverlay);
+    setDisableChannelPrelude(defaultFfmpegSettings.disableChannelPrelude);
+    setTargetResolution(
+      toStringResolution(defaultFfmpegSettings.targetResolution),
+    );
   };
 
   useEffect(() => {
     setFfmpegExecutablePath(
-      data?.ffmpegExecutablePath || defaultFfmpegSettings.ffmpegExecutablePath,
+      data?.ffmpegExecutablePath ?? defaultFfmpegSettings.ffmpegExecutablePath,
     );
-
     setNumThreads(
-      data?.numThreads?.toString() ||
+      data?.numThreads.toString() ??
         defaultFfmpegSettings.numThreads.toString(),
     );
-
     setEnableLogging(
-      data?.enableLogging || defaultFfmpegSettings.enableLogging,
+      data?.enableLogging ?? defaultFfmpegSettings.enableLogging,
     );
-
+    setConcatMuxDelay(
+      data?.concatMuxDelay.toString() ??
+        defaultFfmpegSettings.concatMuxDelay.toString(),
+    );
+    setEnableTranscoding(
+      data?.enableTranscoding ?? defaultFfmpegSettings.enableTranscoding,
+    );
+    setVideoEncoder(data?.videoEncoder ?? defaultFfmpegSettings.videoEncoder);
+    setVideoBitrate(
+      data?.videoBitrate.toString() ??
+        defaultFfmpegSettings.videoBitrate.toString(),
+    );
     setVideoBufferSize(
-      data?.videoBufferSize?.toString() ||
+      data?.videoBufferSize.toString() ??
         defaultFfmpegSettings.videoBufferSize.toString(),
     );
-
-    setEnableTranscoding(
-      data?.enableTranscoding || defaultFfmpegSettings.enableTranscoding,
+    setMaxFPS(
+      data?.maxFPS.toString() ?? defaultFfmpegSettings.maxFPS.toString(),
+    );
+    setScalingAlgorithm(
+      data?.scalingAlgorithm ?? defaultFfmpegSettings.scalingAlgorithm,
+    );
+    setDeinterlaceFilter(
+      data?.deinterlaceFilter ?? defaultFfmpegSettings.deinterlaceFilter,
+    );
+    setAudioEncoder(data?.audioEncoder ?? defaultFfmpegSettings.audioEncoder);
+    setAudioBitrate(
+      data?.audioBitrate.toString() ??
+        defaultFfmpegSettings.audioBitrate.toString(),
+    );
+    setAudioBufferSize(
+      data?.audioBufferSize.toString() ??
+        defaultFfmpegSettings.audioBufferSize.toString(),
+    );
+    setAudioVolumePercent(
+      data?.audioVolumePercent.toString() ??
+        defaultFfmpegSettings.audioVolumePercent.toString(),
+    );
+    setAudioChannels(
+      data?.audioChannels.toString() ??
+        defaultFfmpegSettings.audioChannels.toString(),
+    );
+    setAudioSampleRate(
+      data?.audioSampleRate.toString() ??
+        defaultFfmpegSettings.audioSampleRate.toString(),
+    );
+    setErrorScreen(data?.errorScreen ?? defaultFfmpegSettings.errorScreen);
+    setErrorAudio(data?.errorAudio ?? defaultFfmpegSettings.errorAudio);
+    setNormalizeVideoCodec(
+      data?.normalizeVideoCodec ?? defaultFfmpegSettings.normalizeVideoCodec,
+    );
+    setNormalizeAudioCodec(
+      data?.normalizeAudioCodec ?? defaultFfmpegSettings.normalizeAudioCodec,
+    );
+    setNormalizeResolution(
+      data?.normalizeResolution ?? defaultFfmpegSettings.normalizeResolution,
+    );
+    setNormalizeAudio(
+      data?.normalizeAudio ?? defaultFfmpegSettings.normalizeAudio,
+    );
+    setDisableChannelOverlay(
+      data?.disableChannelOverlay ??
+        defaultFfmpegSettings.disableChannelOverlay,
+    );
+    setDisableChannelPrelude(
+      data?.disableChannelPrelude ??
+        defaultFfmpegSettings.disableChannelPrelude,
+    );
+    setTargetResolution(
+      toStringResolution(
+        data?.targetResolution ?? defaultFfmpegSettings.targetResolution,
+      ),
     );
   }, [data]);
 
@@ -322,6 +477,43 @@ export default function FfmpegSettingsPage() {
     setShowFormError(!hasOnlyDigits(event.target.value));
   };
 
+  const handlErrorScreen = (event: SelectChangeEvent<string>) => {
+    setErrorScreen(event.target.value);
+  };
+
+  const handlErrorAudio = (event: SelectChangeEvent<string>) => {
+    setErrorAudio(event.target.value);
+  };
+
+  const handleNormalizeVideoCodec = () => {
+    setNormalizeVideoCodec(!normalizeVideoCodec);
+  };
+
+  const handleNormalizeAudioCodec = () => {
+    console.log(normalizeAudioCodec);
+    setNormalizeAudioCodec(!normalizeAudioCodec);
+  };
+
+  const handleNormalizeResolution = () => {
+    setNormalizeResolution(!normalizeResolution);
+  };
+
+  const handleNormalizeAudio = () => {
+    setNormalizeAudio(!normalizeAudio);
+  };
+
+  const handleDisableChannelOverlay = () => {
+    setDisableChannelOverlay(!disableChannelOverlay);
+  };
+
+  const HandleDisableChannelPrelude = () => {
+    setDisableChannelPrelude(!disableChannelPrelude);
+  };
+
+  const handleTargetResolution = (event: SelectChangeEvent<string>) => {
+    setTargetResolution(event.target.value);
+  };
+
   const handleSnackClose = () => {
     setSnackStatus(false);
   };
@@ -340,31 +532,58 @@ export default function FfmpegSettingsPage() {
           onChange={handleVideoEncoder}
           fullWidth
           sx={{ my: 1 }}
-          helperText={`Some possible values are:
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <Tooltip
+                  title="Some possible values are:
           h264 with Intel Quick Sync: h264_qsv
           MPEG2 with Intel Quick Sync: mpeg2_qsv
           NVIDIA: h264_nvenc
           MPEG2: mpeg2video (default)
           H264: libx264
-          MacOS: h264_videotoolbox`}
+          MacOS: h264_videotoolbox"
+                >
+                  <IconButton
+                    aria-label="Some possible values are:
+          h264 with Intel Quick Sync: h264_qsv
+          MPEG2 with Intel Quick Sync: mpeg2_qsv
+          NVIDIA: h264_nvenc
+          MPEG2: mpeg2video (default)
+          H264: libx264
+          MacOS: h264_videotoolbox"
+                    edge="end"
+                  >
+                    <HelpOutline sx={{ opacity: 0.75 }} />
+                  </IconButton>
+                </Tooltip>
+              </InputAdornment>
+            ),
+          }}
         />
-        <TextField
-          id="video-bitrate"
-          label="Video Bitrate"
-          value={videoBitrate}
-          onChange={handleVideoBitrate}
-          fullWidth
-          sx={{ my: 1 }}
-        />
-        <TextField
-          id="video-buffer-size"
-          label="Video Buffer Size"
-          value={videoBufferSize}
-          onChange={handleVideoBufferSize}
-          fullWidth
-          sx={{ my: 1 }}
-        />
-        <FormControl sx={{ mt: 2 }}>
+        <Grid container columns={{ sm: 8, md: 16 }} columnSpacing={2}>
+          <Grid item sm={16} md={8}>
+            <TextField
+              id="video-bitrate"
+              label="Video Bitrate"
+              value={videoBitrate}
+              onChange={handleVideoBitrate}
+              fullWidth
+              sx={{ my: 1 }}
+            />
+          </Grid>
+          <Grid item sm={16} md={8}>
+            <TextField
+              id="video-buffer-size"
+              label="Video Buffer Size"
+              value={videoBufferSize}
+              onChange={handleVideoBufferSize}
+              fullWidth
+              sx={{ my: 1 }}
+            />
+          </Grid>
+        </Grid>
+        <FormControl sx={{ mt: 2 }} fullWidth>
           <InputLabel id="video-max-frame-rate-label">
             Max Frame Rate
           </InputLabel>
@@ -373,7 +592,6 @@ export default function FfmpegSettingsPage() {
             id="video-max-frame-rate"
             value={maxFPS}
             onChange={handleMaxFPS}
-            fullWidth
             sx={{ my: 1 }}
             label="Max Frame Rate"
           >
@@ -387,7 +605,7 @@ export default function FfmpegSettingsPage() {
             Will transcode videos that have FPS higher than this.
           </FormHelperText>
         </FormControl>
-        <FormControl sx={{ mt: 2 }}>
+        <FormControl sx={{ mt: 2 }} fullWidth>
           <InputLabel id="video-scaling-algorithm-label">
             Scaling Algorithm
           </InputLabel>
@@ -398,7 +616,6 @@ export default function FfmpegSettingsPage() {
             onChange={(e) =>
               handleScalingAlgorithm(e.target.value as ScalingAlgorithmValue)
             }
-            fullWidth
             sx={{ my: 1 }}
             label="Scaling Algorithm"
           >
@@ -413,7 +630,7 @@ export default function FfmpegSettingsPage() {
             video size.
           </FormHelperText>
         </FormControl>
-        <FormControl sx={{ mt: 2 }}>
+        <FormControl sx={{ mt: 2 }} fullWidth>
           <InputLabel id="video-deinterlace-filter-label">
             Deinterlace Filter
           </InputLabel>
@@ -424,7 +641,6 @@ export default function FfmpegSettingsPage() {
             onChange={(e) =>
               handleDeinterlaceFilter(e.target.value as DeinterlaceFilterValue)
             }
-            fullWidth
             sx={{ my: 1 }}
             label="Scaling Algorithm"
           >
@@ -437,6 +653,58 @@ export default function FfmpegSettingsPage() {
           <FormHelperText>
             Deinterlace filter to use when video is interlaced. This is only
             needed when Plex transcoding is not used.
+          </FormHelperText>
+        </FormControl>
+        <FormControl sx={{ mt: 2 }} fullWidth>
+          <InputLabel id="target-resolution-label">
+            Preferred Resolution
+          </InputLabel>
+          <Select
+            labelId="target-resolution-label"
+            id="target-resolution"
+            value={targetResolution}
+            onChange={handleTargetResolution}
+            sx={{ my: 1 }}
+            label="Preferred Resolution"
+          >
+            {supportTargetResolution.map((resolution) => (
+              <MenuItem key={resolution.value} value={resolution.value}>
+                {resolution.string}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <FormControl fullWidth>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={normalizeResolution}
+                onChange={handleNormalizeResolution}
+              />
+            }
+            label="Normalize Resolution"
+          />
+          <FormHelperText>
+            Some clients experience issues when the video stream changes
+            resolution. This option will make dizqueTV convert all videos to the
+            preferred resolution selected above. Otherwise, the preferred
+            resolution will be used as a maximum resolution for transcoding.
+          </FormHelperText>
+        </FormControl>
+        <FormControl>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={normalizeVideoCodec}
+                onChange={handleNormalizeVideoCodec}
+              />
+            }
+            label="Normalize Video Codec"
+          />
+          <FormHelperText>
+            Some clients experience issues when the stream's codecs change.
+            Enable these so that any videos with different codecs than the ones
+            specified above are forcefully transcoded.
           </FormHelperText>
         </FormControl>
       </>
@@ -453,52 +721,116 @@ export default function FfmpegSettingsPage() {
           onChange={handleAudioEncoder}
           fullWidth
           sx={{ my: 1 }}
-          helperText={`Some possible values are:
-        aac
-        ac3 (default), ac3_fixed
-        flac
-        libmp3lame`}
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <Tooltip
+                  title="Some possible values are:
+                  aac
+                  ac3 (default), ac3_fixed
+                  flac
+                  libmp3lame"
+                >
+                  <IconButton
+                    aria-label="Some possible values are:
+                    aac
+                    ac3 (default), ac3_fixed
+                    flac
+                    libmp3lame"
+                    edge="end"
+                  >
+                    <HelpOutline sx={{ opacity: 0.75 }} />
+                  </IconButton>
+                </Tooltip>
+              </InputAdornment>
+            ),
+          }}
         />
-        <TextField
-          id="audio-bitrate"
-          label="Audio Bitrate"
-          value={audioBitrate}
-          onChange={handleAudioBitrate}
-          fullWidth
-          sx={{ my: 1 }}
-        />
-        <TextField
-          id="audio-buffer-size"
-          label="Audio Buffer Size"
-          value={audioBufferSize}
-          onChange={handleAudioBufferSize}
-          fullWidth
-          sx={{ my: 1 }}
-        />
-        <TextField
-          id="audio-volume"
-          label="Audio Volume"
-          value={audioVolumePercent}
-          onChange={handleAudioVolumePercent}
-          fullWidth
-          sx={{ my: 1 }}
-        />
-        <TextField
-          id="audio-channels"
-          label="Audio Channels"
-          value={audioChannels}
-          onChange={handleAudioChannels}
-          fullWidth
-          sx={{ my: 1 }}
-        />
+        <Grid container columns={{ sm: 8, md: 16 }} columnSpacing={2}>
+          <Grid item sm={16} md={8}>
+            <TextField
+              id="audio-bitrate"
+              label="Audio Bitrate"
+              value={audioBitrate}
+              onChange={handleAudioBitrate}
+              sx={{ my: 1 }}
+              fullWidth
+            />
+          </Grid>
+          <Grid item sm={16} md={8}>
+            <TextField
+              id="audio-buffer-size"
+              label="Audio Buffer Size"
+              value={audioBufferSize}
+              onChange={handleAudioBufferSize}
+              sx={{ my: 1 }}
+              fullWidth
+            />
+          </Grid>
+        </Grid>
+        <Grid container columns={{ sm: 8, md: 16 }} columnSpacing={2}>
+          <Grid item sm={16} md={8}>
+            <TextField
+              id="audio-volume"
+              label="Audio Volume"
+              value={audioVolumePercent}
+              onChange={handleAudioVolumePercent}
+              fullWidth
+              sx={{ my: 1 }}
+              helperText={'Values higher than 100 will boost the audio.'}
+              InputProps={{
+                endAdornment: <InputAdornment position="end">%</InputAdornment>,
+              }}
+            />
+          </Grid>
+          <Grid item sm={16} md={8}>
+            <TextField
+              id="audio-channels"
+              label="Audio Channels"
+              value={audioChannels}
+              onChange={handleAudioChannels}
+              fullWidth
+              sx={{ my: 1 }}
+            />
+          </Grid>
+        </Grid>
         <TextField
           id="audio-sample-rate"
-          label="Audio Sample Rate"
+          label="Audio Sample Rate (k)"
           value={audioSampleRate}
           onChange={handleAudioSampleRate}
           fullWidth
           sx={{ my: 1 }}
         />
+        <FormControl fullWidth>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={normalizeAudioCodec}
+                onChange={handleNormalizeAudioCodec}
+              />
+            }
+            label="Normalize Audio Codec"
+          />
+        </FormControl>
+
+        <FormControl fullWidth>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={normalizeAudio}
+                onChange={handleNormalizeAudio}
+              />
+            }
+            label="Normalize Audio"
+          />
+          <FormHelperText>
+            This will force the preferred number of audio channels and sample
+            rate, in addition it will align the lengths of the audio and video
+            channels. This will prevent audio-related episode transition issues
+            in many clients. Audio will always be transcoded.
+          </FormHelperText>
+        </FormControl>
       </>
     );
   };
@@ -585,15 +917,111 @@ export default function FfmpegSettingsPage() {
         </FormHelperText>
       </FormControl>
       {enableTranscoding && (
-        <Grid container spacing={2} columns={16}>
-          <Grid item sm={16} md={8}>
-            {videoFfmpegSettings()}
+        <>
+          <Grid container spacing={2} columns={16}>
+            <Grid item sm={16} md={8}>
+              <Typography component="h6" variant="h6" sx={{ pt: 2, pb: 1 }}>
+                Video Options
+              </Typography>
+              {videoFfmpegSettings()}
+            </Grid>
+            <Grid item sm={16} md={8}>
+              <Typography component="h6" variant="h6" sx={{ pt: 2, pb: 1 }}>
+                Audio Options
+              </Typography>
+              {audioFfmpegSettings()}
+            </Grid>
           </Grid>
-          <Grid item sm={16} md={8}>
-            {audioFfmpegSettings()}
+
+          <Typography component="h6" variant="h6" sx={{ pt: 2, pb: 1 }}>
+            Error Options
+          </Typography>
+          <Grid container spacing={2} columns={16}>
+            <Grid item sm={16} md={8}>
+              <FormControl sx={{ mt: 2 }}>
+                <InputLabel id="error-screen-label">Error Screen</InputLabel>
+                <Select
+                  labelId="error-screen-label"
+                  id="error-screen"
+                  value={errorScreen}
+                  onChange={handlErrorScreen}
+                  label="Error Screen"
+                >
+                  {supportedErrorScreens.map((error) => (
+                    <MenuItem key={error.value} value={error.value}>
+                      {error.string}
+                    </MenuItem>
+                  ))}
+                </Select>
+                <FormHelperText>
+                  If there are issues playing a video, dizqueTV will try to use
+                  an error screen as a placeholder while retrying loading the
+                  video every 60 seconds.
+                </FormHelperText>
+              </FormControl>
+            </Grid>
+            <Grid item sm={16} md={8}>
+              <FormControl sx={{ mt: 2 }}>
+                <InputLabel id="error-audio-label">Error Audio</InputLabel>
+                <Select
+                  labelId="error-audio-label"
+                  id="error-screen"
+                  value={errorAudio}
+                  onChange={handlErrorAudio}
+                  label="Error Audio"
+                >
+                  {supportedErrorAudio.map((error) => (
+                    <MenuItem key={error.value} value={error.value}>
+                      {error.string}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
           </Grid>
-        </Grid>
+          <Typography component="h6" variant="h6" sx={{ pt: 2, pb: 1 }}>
+            Misc Options
+          </Typography>
+
+          <FormControl fullWidth>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={disableChannelOverlay}
+                  onChange={handleDisableChannelOverlay}
+                />
+              }
+              label="Disable Channel Watermark Globally"
+            />
+            <FormHelperText>
+              Toggling this option will disable channel watermarks regardless of
+              channel settings.
+            </FormHelperText>
+          </FormControl>
+
+          <FormControl fullWidth>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={disableChannelPrelude}
+                  onChange={HandleDisableChannelPrelude}
+                />
+              }
+              label="Disable Channel Prelude"
+            />
+            <FormHelperText>
+              In an attempt to improve playback, dizqueTV insets really short
+              clips of black screen between videos. The idea is that if the
+              stream pauses because Plex is taking too long to reply, it will
+              pause during one of those black screens instead of interrupting
+              the last second of a video. If you suspect these black screens are
+              causing trouble instead of helping, you can disable them with this
+              option.
+            </FormHelperText>
+          </FormControl>
+        </>
       )}
+
       <Stack spacing={2} direction="row" justifyContent="right" sx={{ mt: 2 }}>
         <Button variant="outlined" onClick={() => handleResetOptions()}>
           Reset Options
