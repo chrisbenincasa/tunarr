@@ -1,21 +1,21 @@
 // TODO remove lint warning when we use this
 
-import Typography from '@mui/material/Typography';
-import dayjs from 'dayjs';
-import { Channel, UpdateChannelRequest } from '@tunarr/types';
-import EditChannelControls from '../../components/channel_config/EditChannelControls.tsx';
-import { setCurrentChannel } from '../../store/channelEditor/actions.ts';
-import { usePreloadedData } from '../../hooks/preloadedDataHook.ts';
-import { newChannelLoader } from './loaders.ts';
-import { maxBy } from 'lodash-es';
-import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
-import { useEffectOnce } from 'usehooks-ts';
-import { useCallback } from 'react';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '../../external/api.ts';
-import useStore from '../../store/index.ts';
+import { Channel, UpdateChannelRequest } from '@tunarr/types';
+import dayjs from 'dayjs';
+import { maxBy } from 'lodash-es';
+import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useEffectOnce } from 'usehooks-ts';
+import EditChannelControls from '../../components/channel_config/EditChannelControls.tsx';
+import { apiClient } from '../../external/api.ts';
+import { usePreloadedData } from '../../hooks/preloadedDataHook.ts';
+import { setCurrentChannel } from '../../store/channelEditor/actions.ts';
+import useStore from '../../store/index.ts';
+import { newChannelLoader } from './loaders.ts';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function defaultNewChannel(num: number): Channel {
@@ -77,7 +77,7 @@ export default function NewChannelPage() {
   });
 
   const saveNewChannel = () => {
-    newChannelMutation.mutate(workingChannel);
+    newChannelMutation.mutate(workingChannel!);
   };
 
   return (

@@ -1,6 +1,5 @@
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import CloudOffIcon from '@mui/icons-material/CloudOff';
-import DeleteIcon from '@mui/icons-material/Delete';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ShuffleIcon from '@mui/icons-material/Shuffle';
 import SortIcon from '@mui/icons-material/Sort';
@@ -15,12 +14,8 @@ import {
   FormControl,
   FormControlLabel,
   FormGroup,
-  IconButton,
   Input,
   InputLabel,
-  List,
-  ListItem,
-  ListItemText,
   MenuItem,
   Paper,
   Select,
@@ -29,7 +24,8 @@ import {
 } from '@mui/material';
 import Grid2 from '@mui/material/Unstable_Grid2/Grid2';
 import dayjs from 'dayjs';
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useBlockShuffle } from '../../hooks/programming_controls/useBlockShuffle.ts';
 import {
   StartTimePadding,
@@ -37,23 +33,20 @@ import {
   usePadStartTimes,
 } from '../../hooks/programming_controls/usePadStartTimes.ts';
 import {
-  deleteProgram,
   resetLineup,
   setChannelStartTime,
 } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
-import AddRedirectModal from '../programming_controls/AddRedirectModal.tsx';
-import ProgrammingSelectorDialog from './ProgrammingSelectorDialog.tsx';
 import AddFlexModal from '../programming_controls/AddFlexModal.tsx';
-import { Link } from 'react-router-dom';
+import AddRedirectModal from '../programming_controls/AddRedirectModal.tsx';
 import ChannelProgrammingList from './ChannelProgrammingList.tsx';
+import ProgrammingSelectorDialog from './ProgrammingSelectorDialog.tsx';
 
 // dayjs.extend(duration);
 
 export function ChannelProgrammingConfig() {
   const channel = useStore((s) => s.channelEditor.currentEntity);
   const [programmingModalOpen, setProgrammingModalOpen] = useState(false);
-  const programList = useStore((s) => s.channelEditor.programList);
   const programsDirty = useStore((s) => s.channelEditor.dirty.programs);
 
   const [addRedirectModalOpen, setAddRedirectModalOpen] = useState(false);
@@ -69,65 +62,6 @@ export function ChannelProgrammingConfig() {
     null,
   );
   const padStartTimes = usePadStartTimes();
-
-  const deleteProgramAtIndex = useCallback((idx: number) => {
-    deleteProgram(idx);
-  }, []);
-
-  const renderPrograms = () => {
-    let lastStart = dayjs(channel!.startTime);
-    return programList.map((p, idx) => {
-      const startTime = lastStart.format('YYYY-MM-DD HH:mm:ss');
-      const nextStart = lastStart.add(p.duration, 'milliseconds');
-      const dayBoundary = nextStart.isAfter(lastStart, 'day');
-      lastStart = nextStart;
-      let title: string;
-
-      switch (p.type) {
-        case 'custom':
-          title = 'custom...';
-          break;
-        case 'redirect':
-          title = 'redirect...';
-          break;
-        case 'flex':
-          title = 'Flex';
-          break;
-        case 'content':
-          if (p.episodeTitle) {
-            title = `${p.title} - ${p.episodeTitle}`;
-          } else {
-            title = p.title;
-          }
-          break;
-      }
-
-      const dur = dayjs.duration({ milliseconds: p.duration }).humanize();
-
-      title = `${startTime} ${title} (${dur})`;
-
-      return (
-        <ListItem
-          key={startTime}
-          sx={{ borderBottom: dayBoundary ? '1px dashed black' : null }}
-          secondaryAction={
-            <IconButton
-              onClick={() => deleteProgramAtIndex(idx)}
-              edge="end"
-              aria-label="delete"
-            >
-              <DeleteIcon />
-            </IconButton>
-          }
-        >
-          <ListItemText
-            primary={title}
-            sx={{ fontStyle: p.persisted ? 'normal' : 'italic' }}
-          />
-        </ListItem>
-      );
-    });
-  };
 
   const handleStartTimeChange = (value: string) => {
     setChannelStartTime(dayjs(value).unix() * 1000);

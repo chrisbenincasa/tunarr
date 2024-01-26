@@ -18,6 +18,7 @@ import {
 } from '@mui/material';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import { dayjsMod, scheduleTimeSlots } from '@tunarr/shared';
+import { isContentProgram, isFlexProgram } from '@tunarr/types';
 import {
   TimeSlot,
   TimeSlotProgramming,
@@ -26,11 +27,9 @@ import {
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
-import { isContentProgram, isFlexProgram } from '@tunarr/types';
 import {
   chain,
   filter,
-  first,
   isNull,
   isNumber,
   isUndefined,
@@ -42,10 +41,7 @@ import { Link } from 'react-router-dom';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import ChannelProgrammingList from '../../components/channel_config/ChannelProgrammingList.tsx';
 import { usePreloadedChannel } from '../../hooks/usePreloadedChannel.ts';
-import {
-  clearSlotSchedulePreview,
-  setSlotSchedulePreview,
-} from '../../store/channelEditor/actions.ts';
+import { clearSlotSchedulePreview } from '../../store/channelEditor/actions.ts';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -72,7 +68,7 @@ export default function TimeSlotEditorPage() {
   const { currentEntity: channel, programList: newLineup } =
     usePreloadedChannel();
 
-  const [startTime, setStartTime] = useState(
+  const [, setStartTime] = useState(
     channel?.startTime ?? dayjs().unix() * 1000,
   );
   const [hasGenerated, setHasGenerated] = useState(false);

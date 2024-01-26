@@ -1,16 +1,15 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import dayjs from 'dayjs';
-import duration, { Duration } from 'dayjs/plugin/duration.js';
-import relativeTime from 'dayjs/plugin/relativeTime.js';
-import utc from 'dayjs/plugin/utc.js';
 import {
   ChannelProgram,
-  ChannelProgramming,
   ContentProgram,
   FlexProgram,
   isContentProgram,
   isFlexProgram,
 } from '@tunarr/types';
+import dayjs from 'dayjs';
+import duration, { Duration } from 'dayjs/plugin/duration.js';
+import relativeTime from 'dayjs/plugin/relativeTime.js';
+import utc from 'dayjs/plugin/utc.js';
 import {
   chain,
   first,

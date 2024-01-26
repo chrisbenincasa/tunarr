@@ -40,7 +40,7 @@ export default function ChannelProgrammingPage() {
 
   const onSave = () => {
     updateLineupMutation
-      .mutateAsync({ channelNumber: channel.number, newLineup })
+      .mutateAsync({ channelNumber: channel!.number, newLineup })
       .then(console.log)
       .catch(console.error);
   };

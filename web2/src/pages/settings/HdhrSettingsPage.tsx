@@ -1,18 +1,17 @@
-import React, { useEffect } from 'react';
 import {
   Button,
   Checkbox,
   FormControl,
-  FormLabel,
   FormHelperText,
+  FormLabel,
+  Snackbar,
   Stack,
   TextField,
-  Snackbar,
 } from '@mui/material';
-import PaddedPaper from '../../components/base/PaddedPaper.tsx';
-import { useHdhrSettings } from '../../hooks/settingsHooks.ts';
-import { defaultHdhrSettings, HdhrSettings } from '@tunarr/types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { HdhrSettings, defaultHdhrSettings } from '@tunarr/types';
+import React, { useEffect } from 'react';
+import { useHdhrSettings } from '../../hooks/settingsHooks.ts';
 
 export default function HdhrSettingsPage() {
   const { data, isPending, error } = useHdhrSettings();

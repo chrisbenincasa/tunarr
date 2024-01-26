@@ -5,7 +5,6 @@ import relativeTime from 'dayjs/plugin/relativeTime.js';
 import utc from 'dayjs/plugin/utc.js';
 import {
   ChannelProgram,
-  ChannelProgramming,
   ContentProgram,
   FlexProgram,
   isContentProgram,

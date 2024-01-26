@@ -42,7 +42,7 @@ export default function EditCustomShowPage({ isNew }: Props) {
     mutationKey: ['custom-shows', isNew ? 'new' : customShow.id],
     mutationFn: async () => {
       return apiClient.createCustomShow({
-        name: workingCustomShow.name,
+        name: workingCustomShow!.name,
         programs: customShowPrograms,
       });
     },
@@ -68,7 +68,9 @@ export default function EditCustomShowPage({ isNew }: Props) {
   }, []);
 
   const isValid =
-    workingCustomShow.name.length > 0 && customShowPrograms.length > 0;
+    workingCustomShow &&
+    workingCustomShow.name.length > 0 &&
+    customShowPrograms.length > 0;
 
   const renderPrograms = () => {
     return customShowPrograms.map((p, idx) => {

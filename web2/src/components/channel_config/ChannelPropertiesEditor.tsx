@@ -1,6 +1,6 @@
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import {
   Box,
-  Button,
   FormControl,
   IconButton,
   InputAdornment,
@@ -9,14 +9,12 @@ import {
   TextField,
   styled,
 } from '@mui/material';
-import { isEmpty } from 'lodash-es';
 import { usePrevious } from '@uidotdev/usehooks';
+import { isEmpty } from 'lodash-es';
 import { useEffect } from 'react';
 import useDebouncedState from '../../hooks/useDebouncedState.ts';
 import { updateCurrentChannel } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import { useDebounce } from 'usehooks-ts';
 
 const VisuallyHiddenInput = styled('input')({
   clip: 'rect(0 0 0 0)',
