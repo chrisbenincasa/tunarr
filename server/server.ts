@@ -114,7 +114,7 @@ export async function initServer(opts: ServerOptions) {
 
   const updateXMLPromise = scheduledJobsById[UpdateXmlTvTask.ID]?.runNow();
 
-  const app = fastify({ logger: false, bodyLimit: 50 * 1024 });
+  const app = fastify({ logger: false, bodyLimit: 50 * 1024 * 1024 });
   await app
     .setValidatorCompiler(validatorCompiler)
     .setSerializerCompiler(serializerCompiler)
