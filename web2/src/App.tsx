@@ -12,6 +12,7 @@ import {
   Button,
   Divider,
   Drawer,
+  IconButton,
   Link,
   List,
   ListItemButton,
@@ -28,7 +29,10 @@ import { Outlet, Link as RouterLink } from 'react-router-dom';
 import './App.css';
 import ServerEvents from './components/ServerEvents.tsx';
 import VersionFooter from './components/VersionFooter.tsx';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import theme from './theme.tsx';
+import { ExpandMore } from '@mui/icons-material';
+
 interface NavItem {
   name: string;
   path: string;
@@ -37,50 +41,56 @@ interface NavItem {
   icon?: ReactNode;
 }
 
-const navItems: NavItem[] = [
-  { name: 'Guide', path: '/guide', visible: true, icon: <TvIcon /> },
-  {
-    name: 'Channels',
-    path: '/channels',
-    visible: true,
-    icon: <SettingsRemoteIcon />,
-  },
-  { name: 'Watch', path: '/watch', visible: false, icon: <LiveTvIcon /> },
-  {
-    name: 'Library',
-    path: '/library',
-    visible: true,
-    icon: <VideoLibraryIcon />,
-    children: [
-      {
-        name: 'Filler Lists',
-        path: '/library/filler',
-        visible: true,
-        icon: <PreviewIcon />,
-      },
-      {
-        name: 'Custom Shows',
-        path: '/library/custom-shows',
-        visible: true,
-        icon: <TheatersIcon />,
-      },
-    ],
-  },
-  {
-    name: 'Settings',
-    path: '/settings/xmltv',
-    visible: true,
-    icon: <SettingsIcon />,
-  },
-];
-
-const drawerWidth = 240;
-
 export function Root() {
   const [open, setOpen] = useState(false);
-  const toggleDrawer = () => {
-    setOpen(!open);
+  const toggleDrawerOpen = () => {
+    setOpen(true);
   };
+
+  const toggleDrawerClosed = () => {
+    setOpen(false);
+  };
+
+  const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
+
+  const navItems: NavItem[] = [
+    { name: 'Guide', path: '/guide', visible: true, icon: <TvIcon /> },
+    {
+      name: 'Channels',
+      path: '/channels',
+      visible: true,
+      icon: <SettingsRemoteIcon />,
+    },
+    { name: 'Watch', path: '/watch', visible: false, icon: <LiveTvIcon /> },
+    {
+      name: 'Library',
+      path: '/library',
+      visible: true,
+      icon: <VideoLibraryIcon />,
+      children: [
+        {
+          name: 'Filler Lists',
+          path: '/library/filler',
+          visible: open,
+          icon: <PreviewIcon />,
+        },
+        {
+          name: 'Custom Shows',
+          path: '/library/custom-shows',
+          visible: open,
+          icon: <TheatersIcon />,
+        },
+      ],
+    },
+    {
+      name: 'Settings',
+      path: '/settings/general',
+      visible: true,
+      icon: <SettingsIcon />,
+    },
+  ];
+
+  const drawerWidth = open ? 240 : 60;
 
   return (
     <ThemeProvider theme={theme}>
@@ -88,14 +98,41 @@ export function Root() {
       <Box sx={{ display: 'flex' }}>
         <CssBaseline />
         <AppBar
-          position="absolute"
+          position="fixed"
           sx={{
-            width: `calc(100% - ${drawerWidth}px)`,
             ml: `${drawerWidth}px`,
             p: 0,
+            zIndex: theme.zIndex.drawer + 1,
           }}
         >
           <Toolbar>
+            <Link
+              underline="none"
+              color="inherit"
+              to="/guide"
+              component={RouterLink}
+            >
+              <img
+                style={{ width: '2rem', height: '2rem', marginTop: '0.4em' }}
+                src="/dizquetv.png"
+              />
+            </Link>
+            <Typography
+              variant="h6"
+              component="h1"
+              noWrap
+              color="inherit"
+              sx={{ flexGrow: 1, pl: 1 }}
+            >
+              <Link
+                underline="none"
+                color="inherit"
+                to="/guide"
+                component={RouterLink}
+              >
+                Tunarr
+              </Link>
+            </Typography>
             <Box flexGrow={1}></Box>
             <Button
               href="http://localhost:8000/api/xmltv.xml"
@@ -113,87 +150,102 @@ export function Root() {
             </Button>
           </Toolbar>
         </AppBar>
-        <Drawer
-          sx={{
-            width: drawerWidth,
-            flexShrink: 0,
-            '& .MuiDrawer-paper': {
-              width: drawerWidth,
-              boxSizing: 'border-box',
-              p: 0,
-            },
-          }}
-          variant="permanent"
-          anchor="left"
-        >
-          <Toolbar
+        {!smallViewport ? (
+          <Drawer
             sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'flex-end',
-              px: [1],
+              width: drawerWidth,
+              flexShrink: 0,
+              '& .MuiDrawer-paper': {
+                width: drawerWidth,
+                boxSizing: 'border-box',
+                p: 0,
+              },
+              WebkitTransitionDuration: '.15s',
+              WebkitTransitionTimingFunction: 'cubic-bezier(0.4,0,0.2,1)',
             }}
+            variant="permanent"
+            anchor="left"
+            onMouseEnter={toggleDrawerOpen}
+            onMouseLeave={toggleDrawerClosed}
           >
-            <img
-              style={{ width: '2rem', height: '2rem' }}
-              src="/dizquetv.png"
-            />
-            <Typography
-              variant="h6"
-              component="h1"
-              noWrap
-              color="inherit"
-              sx={{ flexGrow: 1, pl: 1 }}
-            >
-              <Link
-                underline="none"
-                color="inherit"
-                to="/guide"
-                component={RouterLink}
-              >
-                DizqueTV
-              </Link>
-            </Typography>
-          </Toolbar>
-          <Divider />
-          <List component="nav" sx={{ flex: '1 1 0%' }}>
-            {navItems
-              .filter((item) => item.visible)
-              .map((item) => (
-                <React.Fragment key={item.name}>
-                  <ListItemButton
-                    to={item.path}
-                    key={item.name}
-                    onClick={toggleDrawer}
-                    component={RouterLink}
-                  >
-                    {item.icon && <ListItemIcon>{item.icon}</ListItemIcon>}
-                    <ListItemText primary={item.name} />
-                  </ListItemButton>
-                  {item.children ? (
-                    <List component="div" disablePadding>
-                      {item.children.map((child) => (
-                        <ListItemButton
-                          key={child.name}
-                          to={child.path}
-                          sx={{ pl: 4 }}
-                          onClick={toggleDrawer}
-                          component={RouterLink}
-                        >
-                          {child.icon && (
-                            <ListItemIcon>{child.icon}</ListItemIcon>
-                          )}
-                          <ListItemText primary={child.name} />
-                        </ListItemButton>
-                      ))}
-                    </List>
-                  ) : null}
-                </React.Fragment>
-              ))}
-            <Divider sx={{ my: 1 }} />
-          </List>
-          <VersionFooter />
-        </Drawer>
+            <Toolbar
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'flex-end',
+                px: [1],
+              }}
+            ></Toolbar>
+            <Divider />
+            <List component="nav" sx={{ flex: '1 1 0%' }}>
+              {navItems
+                .filter((item) => item.visible)
+                .map((item) => (
+                  <React.Fragment key={item.name}>
+                    <ListItemButton
+                      to={item.path}
+                      key={item.name}
+                      component={RouterLink}
+                    >
+                      {item.icon && (
+                        <ListItemIcon sx={{ minWidth: 45 }}>
+                          {item.icon}
+                        </ListItemIcon>
+                      )}
+                      <ListItemText primary={item.name} />
+                      {item.children ? (
+                        <ListItemIcon sx={{ justifyContent: 'right' }}>
+                          <ExpandMore />
+                        </ListItemIcon>
+                      ) : null}
+                    </ListItemButton>
+                    {item.children ? (
+                      <List component="div" disablePadding>
+                        {item.children
+                          .filter((item) => item.visible)
+                          .map((child) => (
+                            <ListItemButton
+                              key={child.name}
+                              to={child.path}
+                              sx={{ pl: 4 }}
+                              component={RouterLink}
+                            >
+                              {child.icon && (
+                                <ListItemIcon sx={{ minWidth: 45 }}>
+                                  {child.icon}
+                                </ListItemIcon>
+                              )}
+                              <ListItemText primary={child.name} />
+                            </ListItemButton>
+                          ))}
+                      </List>
+                    ) : null}
+                  </React.Fragment>
+                ))}
+              <Divider sx={{ my: 1 }} />
+            </List>
+            {!open || <VersionFooter />}
+          </Drawer>
+        ) : (
+          <AppBar position="fixed" sx={{ top: 'auto', bottom: 0 }}>
+            <Toolbar sx={{ display: 'flex', justifyContent: 'space-around' }}>
+              {navItems
+                .filter((item) => item.visible)
+                .map((item) => (
+                  <React.Fragment key={item.name}>
+                    <IconButton
+                      to={item.path}
+                      key={item.name}
+                      component={RouterLink}
+                      sx={{ display: 'inline-block', color: '#fff' }}
+                    >
+                      {item.icon}
+                    </IconButton>
+                  </React.Fragment>
+                ))}
+            </Toolbar>
+          </AppBar>
+        )}
         <Box
           component="main"
           sx={{
