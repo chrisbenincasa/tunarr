@@ -196,8 +196,6 @@ export async function initServer(opts: ServerOptions) {
       );
     })
     .register(plexServersRouter)
-    // .register(channelsRouter)
-    // .register(fillerRouter)
     .register(ffmpegSettingsRouter)
     .register(plexSettingsRouter)
     .register(xmlTvSettingsRouter)
