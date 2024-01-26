@@ -119,6 +119,21 @@ export const router = createBrowserRouter([
             element: <EditCustomShowPage isNew={false} />,
             loader: existingCustomShowLoader(queryClient),
           },
+          {
+            path: '/library/fillers',
+            element: <CustomShowsPage />,
+            loader: customShowsLoader(queryClient),
+          },
+          {
+            path: '/library/fillers/new',
+            element: <EditCustomShowPage isNew={true} />,
+            loader: newCustomShowLoader(queryClient),
+          },
+          {
+            path: '/library/fillers/:id/edit',
+            element: <EditCustomShowPage isNew={false} />,
+            loader: existingCustomShowLoader(queryClient),
+          },
         ],
       },
     ],

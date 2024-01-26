@@ -16,29 +16,29 @@ import { usePreloadedData } from '../../hooks/preloadedDataHook.ts';
 import { customShowsLoader } from '../channels/loaders.ts';
 import { IconButton, Tooltip } from '@mui/material';
 
-export default function CustomShowsPage() {
-  const customShows = usePreloadedData(customShowsLoader);
+export default function FillersPage() {
+  const fillers = usePreloadedData(customShowsLoader);
 
   const getTableRows = () => {
-    if (customShows.length === 0) {
+    if (fillers.length === 0) {
       return (
         <TableRow>
           <TableCell sx={{ py: 3, textAlign: 'center' }} colSpan={3}>
-            No Custom Shows!
+            No Filler Lists!
           </TableCell>
         </TableRow>
       );
     }
-    return customShows.map((cs) => {
+    return fillers.map((filler) => {
       return (
-        <TableRow key={cs.id}>
-          <TableCell>{cs.name}</TableCell>
-          <TableCell>{cs.contentCount}</TableCell>
+        <TableRow key={filler.id}>
+          <TableCell>{filler.name}</TableCell>
+          <TableCell>{filler.contentCount}</TableCell>
           <TableCell width="10%">
             <Tooltip title="Edit" placement="top">
               <IconButton
                 color="primary"
-                to={`/library/custom-shows/${cs.id}/edit`}
+                to={`/library/fillers/${filler.id}/edit`}
                 component={Link}
               >
                 <EditIcon />
@@ -59,7 +59,7 @@ export default function CustomShowsPage() {
     <Box>
       <Box display="flex" mb={2}>
         <Typography flexGrow={1} variant="h4">
-          Custom Shows
+          Filler Lists
         </Typography>
         <Button
           component={Link}

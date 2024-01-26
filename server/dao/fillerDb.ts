@@ -2,7 +2,6 @@ import { Loaded } from '@mikro-orm/core';
 import { CreateFillerListRequest } from '@tunarr/types/api';
 import { map } from 'lodash-es';
 import { ChannelCache } from '../channelCache.js';
-import { Nullable } from '../types.js';
 import { getEm } from './dataSource.js';
 import { Channel as ChannelEntity } from './entities/Channel.js';
 import { ChannelFillerShow } from './entities/ChannelFillerShow.js';
@@ -15,8 +14,10 @@ export class FillerDB {
     this.channelCache = channelCache;
   }
 
-  getFiller(id: string): Promise<Nullable<FillerShow>> {
-    return getEm().repo(FillerShow).findOne(id);
+  getFiller(id: string) {
+    return getEm()
+      .repo(FillerShow)
+      .findOne(id, { populate: ['content.uuid'] });
   }
 
   async saveFiller(filler: FillerShow): Promise<void> {
@@ -88,8 +89,10 @@ export class FillerDB {
       .then((shows) => map(shows, 'uuid'));
   }
 
-  getAllFillers(): Promise<FillerShow[]> {
-    return getEm().repo(FillerShow).findAll();
+  getAllFillers() {
+    return getEm()
+      .repo(FillerShow)
+      .findAll({ populate: ['content.uuid'] });
   }
 
   async getAllFillersInfo() {

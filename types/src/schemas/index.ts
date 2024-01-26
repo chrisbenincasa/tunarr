@@ -6,3 +6,4 @@ export * from './settingsSchemas.js';
 export * from './programmingSchema.js';
 export * from './customShowsSchema.js';
 export * from './eventSchema.js';
+export * from './fillerSchema.js';
