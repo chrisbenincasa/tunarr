@@ -134,10 +134,10 @@ export default function ChannelsPage() {
           }}
         >
           <Box>
-            <Typography variant="h4">
-              You haven't created any Channels.
+            <SettingsRemoteIcon fontSize="large" />
+            <Typography variant="h5">
+              You haven't created any channels yet.
             </Typography>
-            <Typography variant="subtitle1">Let's get started....</Typography>
             <Button
               variant="contained"
               sx={{
@@ -148,7 +148,7 @@ export default function ChannelsPage() {
               component={RouterLink}
               to="/channels/new"
             >
-              Create your First Channel
+              Create your First Channel Now!
             </Button>
           </Box>
         </PaddedPaper>
