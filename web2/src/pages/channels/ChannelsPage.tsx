@@ -20,6 +20,7 @@ import { Channel } from '@tunarr/types';
 import { Link as RouterLink } from 'react-router-dom';
 import { useChannels } from '../../hooks/useChannels.ts';
 import { isEmpty } from 'lodash-es';
+import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 
 export default function ChannelsPage() {
   const {
@@ -98,28 +99,60 @@ export default function ChannelsPage() {
         <Typography flexGrow={1} variant="h4">
           Channels
         </Typography>
-        <Button
-          component={RouterLink}
-          to="/channels/new"
-          variant="contained"
-          startIcon={<AddCircleIcon />}
-        >
-          New
-        </Button>
+        {channels.length ? (
+          <Button
+            component={RouterLink}
+            to="/channels/new"
+            variant="contained"
+            startIcon={<AddCircleIcon />}
+          >
+            New
+          </Button>
+        ) : null}
       </Box>
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Number</TableCell>
-              <TableCell>Icon</TableCell>
-              <TableCell>Name</TableCell>
-              <TableCell></TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>{getTableRows()}</TableBody>
-        </Table>
-      </TableContainer>
+      {channels.length > 0 ? (
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Number</TableCell>
+                <TableCell>Icon</TableCell>
+                <TableCell>Name</TableCell>
+                <TableCell></TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>{getTableRows()}</TableBody>
+          </Table>
+        </TableContainer>
+      ) : (
+        <PaddedPaper
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            py: 10,
+            textAlign: 'center',
+          }}
+        >
+          <Box>
+            <SettingsRemoteIcon fontSize="large" />
+            <Typography variant="h5">
+              You haven't created any channels yet.
+            </Typography>
+            <Button
+              variant="contained"
+              sx={{
+                my: 2,
+                maxWidth: 350,
+                textAlign: 'center',
+              }}
+              component={RouterLink}
+              to="/channels/new"
+            >
+              Create your First Channel Now!
+            </Button>
+          </Box>
+        </PaddedPaper>
+      )}
     </div>
   );
 }
