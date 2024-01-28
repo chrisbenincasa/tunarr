@@ -3,6 +3,7 @@ import {
   ContentProgram,
   CustomProgram,
   isContentProgram,
+  isCustomProgram,
 } from '@tunarr/types';
 import { chain, filter, reduce } from 'lodash-es';
 import { ProgramMinterFactory } from '../util/programMinter.js';
@@ -40,7 +41,7 @@ export function createPendingProgramIndexMap(
   return reduce(
     programs,
     (acc, p) => {
-      if (p.persisted) {
+      if (p.persisted || isCustomProgram(p)) {
         acc[p.id!] = idx++;
         // TODO handle other types of programs
       } else if (isContentProgram(p)) {

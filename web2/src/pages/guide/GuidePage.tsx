@@ -1,14 +1,46 @@
 import ZoomInIcon from '@mui/icons-material/ZoomIn';
 import ZoomOutIcon from '@mui/icons-material/ZoomOut';
-import { Box, IconButton, Typography, useTheme } from '@mui/material';
+import { Box, Color, IconButton, styled } from '@mui/material';
+import { TvGuideProgram } from '@tunarr/types';
 import dayjs, { Dayjs } from 'dayjs';
 import duration from 'dayjs/plugin/duration';
-import { TvGuideProgram } from '@tunarr/types';
 import { useCallback, useState } from 'react';
 import { useInterval } from 'usehooks-ts';
+import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import { useAllTvGuides } from '../../hooks/useTvGuide.ts';
 
 dayjs.extend(duration);
+
+const GridParent = styled(Box)({
+  borderStyle: 'solid',
+  borderColor: 'rgba(0,0,0,0.2)',
+  borderWidth: '1px 0 0 1px',
+});
+
+const GridChild = styled(Box)({
+  borderStyle: 'solid',
+  borderColor: 'rgba(0,0,0,0.2)',
+  borderWidth: '0 1px 0 0',
+});
+
+const GuideItem = styled(GridChild)<{ grey: keyof Color; width: number }>(
+  ({ theme, grey, width }) => ({
+    display: 'flex',
+    alignItems: 'center',
+    backgroundColor: theme.palette.grey[grey],
+    borderCollapse: 'collapse',
+    borderStyle: 'solid',
+    borderWidth: '0 1px 1px 0',
+    borderColor: 'rgba(0,0,0,0.2)',
+    height: '3rem',
+    width: `${width}%`,
+    px: 1,
+    transition: 'width 0.5s ease-in',
+    overflow: 'hidden',
+    whiteSpace: 'nowrap',
+    textOverflow: 'ellipsis',
+  }),
+);
 
 const calcProgress = (start: Dayjs, end: Dayjs): number => {
   const total = end.unix() - start.unix();
@@ -34,7 +66,6 @@ export default function GuidePage() {
   const [progress, setProgress] = useState(() => {
     return calcProgress(start, end);
   });
-  const theme = useTheme();
 
   const timelineDuration = dayjs.duration(end.diff(start));
   const intervalArray = Array.from(
@@ -92,31 +123,25 @@ export default function GuidePage() {
     const grey = index % 2 === 0 ? 200 : 300;
 
     return (
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          backgroundColor: theme.palette.grey[grey],
-          borderCollapse: 'collapse',
-          border: '1px solid',
-          height: '3rem',
-          width: `${pct}%`,
-          borderColor: 'divider',
-          transition: 'width 0.5s ease-in',
-          overflow: 'hidden',
-          whiteSpace: 'nowrap',
-          textOverflow: 'ellipsis',
-        }}
-        key={key}
-      >
+      <GuideItem width={pct} grey={grey} key={key}>
         {title}
-      </Box>
+      </GuideItem>
     );
   };
 
   const channels = channelLineup?.map((lineup) => {
     return (
-      <Box display="flex" flex={1} key={lineup.number} component="section">
+      <Box
+        key={lineup.number}
+        component="section"
+        sx={{
+          display: 'flex',
+          flex: 1,
+          borderStyle: 'solid',
+          borderWidth: '1px 0 0 1px',
+          borderColor: 'rgba(0,0,0,0.2)',
+        }}
+      >
         {lineup.programs.map(renderProgram)}
       </Box>
     );
@@ -133,29 +158,63 @@ export default function GuidePage() {
       <IconButton onClick={zoomOut}>
         <ZoomOutIcon />
       </IconButton>
-      <Typography component="h1">
-        <Box display="flex" position="relative" flexDirection="column">
-          <Box display="flex" flex={1}>
-            {intervalArray.map((slot) => (
-              <Box sx={{ width: `${100 / intervalArray.length}%` }} key={slot}>
-                {start.add(slot * 30, 'minutes').format('hh:mm:ss')}
+      <PaddedPaper>
+        <Box display="flex">
+          <Box
+            display="flex"
+            position="relative"
+            flexDirection="column"
+            sx={{ width: '20%' }}
+          >
+            <Box sx={{ height: '2rem' }}></Box>
+            {channelLineup?.map((channel) => (
+              <Box sx={{ height: '3rem' }} key={channel.number}>
+                {channel.name}
               </Box>
             ))}
           </Box>
-          {channels}
           <Box
             sx={{
-              position: 'absolute',
-              width: '2px',
-              background: 'rgba(0, 0, 0, 0.5)',
-              zIndex: 10,
-              height: '100%',
-              left: `${progress}%`,
-              transition: 'left 0.5s linear',
+              display: 'flex',
+              position: 'relative',
+              flexDirection: 'column',
+              maxWidth: '100%',
+              overflowX: 'hidden',
             }}
-          ></Box>
+          >
+            <GridParent
+              sx={{
+                display: 'flex',
+                flex: 1,
+              }}
+            >
+              {intervalArray.map((slot) => (
+                <GridChild
+                  sx={{
+                    width: `${100 / intervalArray.length}%`,
+                    height: '2rem',
+                  }}
+                  key={slot}
+                >
+                  {start.add(slot * 30, 'minutes').format('hh:mm:ss')}
+                </GridChild>
+              ))}
+            </GridParent>
+            {channels}
+            <Box
+              sx={{
+                position: 'absolute',
+                width: '2px',
+                background: 'rgba(0, 0, 0, 0.5)',
+                zIndex: 10,
+                height: '100%',
+                left: `${progress}%`,
+                transition: 'left 0.5s linear',
+              }}
+            ></Box>
+          </Box>
         </Box>
-      </Typography>
+      </PaddedPaper>
     </>
   );
 }

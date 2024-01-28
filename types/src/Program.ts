@@ -39,6 +39,8 @@ export const isFlexProgram = isProgramType<FlexProgram>('flex');
 
 export const isRedirectProgram = isProgramType<RedirectProgram>('redirect');
 
+export const isCustomProgram = isProgramType<CustomProgram>('custom');
+
 export type ChannelProgramming = Alias<
   z.infer<typeof ChannelProgrammingSchema>
 >;
