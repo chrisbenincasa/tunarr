@@ -168,63 +168,65 @@ export function Root() {
             onMouseEnter={toggleDrawerOpen}
             onMouseLeave={toggleDrawerClosed}
           >
-            <Toolbar
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'flex-end',
-                px: [1],
-              }}
-            ></Toolbar>
-            <Divider />
-            <List component="nav" sx={{ flex: '1 1 0%' }}>
-              {navItems
-                .filter((item) => item.visible)
-                .map((item) => (
-                  <React.Fragment key={item.name}>
-                    <ListItemButton
-                      to={item.path}
-                      key={item.name}
-                      component={RouterLink}
-                    >
-                      {item.icon && (
-                        <ListItemIcon sx={{ minWidth: 45 }}>
-                          {item.icon}
-                        </ListItemIcon>
-                      )}
-                      <ListItemText primary={item.name} />
+            <>
+              <Toolbar
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'flex-end',
+                  px: [1],
+                }}
+              ></Toolbar>
+              <Divider />
+              <List component="nav" sx={{ flex: '1 1 0%' }}>
+                {navItems
+                  .filter((item) => item.visible)
+                  .map((item) => (
+                    <React.Fragment key={item.name}>
+                      <ListItemButton
+                        to={item.path}
+                        key={item.name}
+                        component={RouterLink}
+                      >
+                        {item.icon && (
+                          <ListItemIcon sx={{ minWidth: 45 }}>
+                            {item.icon}
+                          </ListItemIcon>
+                        )}
+                        <ListItemText primary={item.name} />
+                        {item.children ? (
+                          <ListItemIcon sx={{ justifyContent: 'right' }}>
+                            <ExpandMore />
+                          </ListItemIcon>
+                        ) : null}
+                      </ListItemButton>
                       {item.children ? (
-                        <ListItemIcon sx={{ justifyContent: 'right' }}>
-                          <ExpandMore />
-                        </ListItemIcon>
+                        <List component="div" disablePadding>
+                          {item.children
+                            .filter((item) => item.visible)
+                            .map((child) => (
+                              <ListItemButton
+                                key={child.name}
+                                to={child.path}
+                                sx={{ pl: 4 }}
+                                component={RouterLink}
+                              >
+                                {child.icon && (
+                                  <ListItemIcon sx={{ minWidth: 45 }}>
+                                    {child.icon}
+                                  </ListItemIcon>
+                                )}
+                                <ListItemText primary={child.name} />
+                              </ListItemButton>
+                            ))}
+                        </List>
                       ) : null}
-                    </ListItemButton>
-                    {item.children ? (
-                      <List component="div" disablePadding>
-                        {item.children
-                          .filter((item) => item.visible)
-                          .map((child) => (
-                            <ListItemButton
-                              key={child.name}
-                              to={child.path}
-                              sx={{ pl: 4 }}
-                              component={RouterLink}
-                            >
-                              {child.icon && (
-                                <ListItemIcon sx={{ minWidth: 45 }}>
-                                  {child.icon}
-                                </ListItemIcon>
-                              )}
-                              <ListItemText primary={child.name} />
-                            </ListItemButton>
-                          ))}
-                      </List>
-                    ) : null}
-                  </React.Fragment>
-                ))}
-              <Divider sx={{ my: 1 }} />
-            </List>
-            {!open || <VersionFooter />}
+                    </React.Fragment>
+                  ))}
+                <Divider sx={{ my: 1 }} />
+              </List>
+              {!open || <VersionFooter />}
+            </>
           </Drawer>
         ) : (
           <AppBar position="fixed" sx={{ top: 'auto', bottom: 0 }}>
