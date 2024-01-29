@@ -1,4 +1,4 @@
-import { Zodios, makeApi, parametersBuilder } from '@zodios/core';
+import { Zodios, makeApi, makeErrors, parametersBuilder } from '@zodios/core';
 import {
   BatchLookupExternalProgrammingSchema,
   CreateCustomShowRequestSchema,
@@ -11,6 +11,7 @@ import {
   CustomShowProgrammingSchema,
   CustomShowSchema,
   ProgramSchema,
+  TaskSchema,
   UpdateChannelRequestSchema,
 } from '@tunarr/types/schemas';
 import { once } from 'lodash-es';
@@ -129,6 +130,31 @@ export const api = makeApi([
       })
       .build(),
     response: z.any(),
+  },
+  {
+    method: 'get',
+    path: '/api/v2/jobs',
+    alias: 'getTasks',
+    response: z.array(TaskSchema),
+  },
+  {
+    method: 'post',
+    path: '/api/v2/jobs/:id/run',
+    alias: 'runTask',
+    parameters: parametersBuilder()
+      .addPaths({
+        id: z.string(),
+      })
+      .build(),
+    response: z.void(),
+    status: 202,
+    errors: makeErrors([
+      {
+        status: 404,
+        schema: z.void(),
+      },
+      { status: 400, schema: z.object({ reason: z.string() }) },
+    ]),
   },
 ]);
 

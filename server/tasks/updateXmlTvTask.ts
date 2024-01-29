@@ -21,7 +21,7 @@ export class UpdateXmlTvTask extends Task<void> {
 
   public static ID: TaskId = 'update-xmltv';
   public ID: TaskId = UpdateXmlTvTask.ID;
-  public static name = 'Update XMLTV Task';
+  public static name = 'Update XMLTV';
 
   static create(serverContext: ServerContext): UpdateXmlTvTask {
     return new UpdateXmlTvTask(

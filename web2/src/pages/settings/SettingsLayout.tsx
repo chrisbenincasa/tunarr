@@ -29,6 +29,7 @@ export default function SettingsLayout() {
     '/settings/ffmpeg',
     '/settings/plex',
     '/settings/hdhr',
+    '/settings/tasks',
   ]);
   const currentTab = routeMatch?.pattern?.path;
 
@@ -68,6 +69,12 @@ export default function SettingsLayout() {
               label="HDHR"
               value="/settings/hdhr"
               to="/settings/hdhr"
+              component={Link}
+            />
+            <Tab
+              label="Tasks"
+              value="/settings/tasks"
+              to="/settings/tasks"
               component={Link}
             />
           </Tabs>

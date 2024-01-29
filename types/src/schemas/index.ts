@@ -7,3 +7,4 @@ export * from './programmingSchema.js';
 export * from './customShowsSchema.js';
 export * from './eventSchema.js';
 export * from './fillerSchema.js';
+export * from './tasksSchema.js';

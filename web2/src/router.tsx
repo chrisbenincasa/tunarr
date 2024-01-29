@@ -26,6 +26,7 @@ import SettingsLayout from './pages/settings/SettingsLayout.tsx';
 import XmlTvSettingsPage from './pages/settings/XmlTvSettingsPage.tsx';
 import { queryCache } from './queryClient.ts';
 import TimeSlotEditorPage from './pages/channels/TimeSlotEditorPage.tsx';
+import TaskSettingsPage from './pages/settings/TaskSettingsPage.tsx';
 
 const queryClient = new QueryClient({ queryCache });
 
@@ -89,6 +90,10 @@ export const router = createBrowserRouter([
           {
             path: '/settings/hdhr',
             element: <HdhrSettingsPage />,
+          },
+          {
+            path: '/settings/tasks',
+            element: <TaskSettingsPage />,
           },
         ],
       },

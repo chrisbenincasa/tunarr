@@ -1,6 +1,6 @@
 import ZoomInIcon from '@mui/icons-material/ZoomIn';
 import ZoomOutIcon from '@mui/icons-material/ZoomOut';
-import { Box, Color, IconButton, styled } from '@mui/material';
+import { Box, Color, IconButton, Tooltip, styled } from '@mui/material';
 import { TvGuideProgram } from '@tunarr/types';
 import dayjs, { Dayjs } from 'dayjs';
 import duration from 'dayjs/plugin/duration';
@@ -123,9 +123,11 @@ export default function GuidePage() {
     const grey = index % 2 === 0 ? 200 : 300;
 
     return (
-      <GuideItem width={pct} grey={grey} key={key}>
-        {title}
-      </GuideItem>
+      <Tooltip title={start.format()} placement="top">
+        <GuideItem width={pct} grey={grey} key={key}>
+          {title}
+        </GuideItem>
+      </Tooltip>
     );
   };
 
