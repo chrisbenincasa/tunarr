@@ -10,17 +10,15 @@ import {
   Skeleton,
 } from '@mui/material';
 import {
-  PlexEpisode,
-  PlexEpisodeView,
-  PlexSeasonView,
-  PlexTvSeason,
-  PlexTvShow,
-  isPlexEpisode,
+  PlexChildMediaApiType,
+  PlexMedia,
+  isPlexCollection,
   isPlexSeason,
   isPlexShow,
   isTerminalItem,
 } from '@tunarr/types/plex';
-import React, { useCallback, useEffect, useState, MouseEvent } from 'react';
+import React, { MouseEvent, useCallback, useEffect, useState } from 'react';
+import { prettyItemDuration } from '../../helpers/util.ts';
 import { usePlexTyped } from '../../hooks/plexHooks.ts';
 import useStore from '../../store/index.ts';
 import {
@@ -28,20 +26,18 @@ import {
   addSelectedMedia,
 } from '../../store/programmingSelector/actions.ts';
 import { PlexListItemProps } from './ProgrammingSelectorDialog.tsx';
-import { prettyItemDuration } from '../../helpers/util.ts';
 
-export function PlexTvListItem(
-  props: PlexListItemProps<PlexTvShow | PlexTvSeason | PlexEpisode>,
-) {
+// function extractPlexItemChildren<T extends PlexMedia>()
+
+export function PlexListItem<T extends PlexMedia>(props: PlexListItemProps<T>) {
   const server = useStore((s) => s.currentServer!); // We have to have a server at this point
   const [open, setOpen] = useState(false);
   const { item } = props;
   const hasChildren = !isTerminalItem(item);
-  const { isPending, data: children } = usePlexTyped<
-    PlexSeasonView | PlexEpisodeView
-  >(
+  const childPath = isPlexCollection(item) ? 'collections' : 'metadata';
+  const { isPending, data: children } = usePlexTyped<PlexChildMediaApiType<T>>(
     server.name,
-    `/library/metadata/${props.item.ratingKey}/children`,
+    `/library/${childPath}/${props.item.ratingKey}/children`,
     hasChildren && open,
   );
   const selectedServer = useStore((s) => s.currentServer);
@@ -52,6 +48,7 @@ export function PlexTvListItem(
 
   useEffect(() => {
     if (children) {
+      console.log(children);
       addKnownMediaForServer(server.name, children.Metadata, item.guid);
     }
   }, [item.guid, server.name, children]);
@@ -65,12 +62,13 @@ export function PlexTvListItem(
   );
 
   const renderChildren = () => {
+    console.log(children);
     return isPending ? (
       <Skeleton />
     ) : (
       <List sx={{ pl: 4 }}>
         {children?.Metadata.map((child, idx, arr) => (
-          <PlexTvListItem
+          <PlexListItem
             key={child.guid}
             item={child}
             index={idx}
@@ -87,8 +85,12 @@ export function PlexTvListItem(
     } else if (isPlexSeason(item)) {
       // return item.leafCount * item.duration;
       return;
-    } else if (isPlexEpisode(item)) {
+    } else if (isTerminalItem(item)) {
       return prettyItemDuration(item.duration);
+    } else if (isPlexCollection(item)) {
+      const childCount = parseInt(item.childCount);
+      const count = isNaN(childCount) ? 0 : childCount;
+      return `${count} item${count === 0 || count > 1 ? 's' : ''}`;
     }
   };
 

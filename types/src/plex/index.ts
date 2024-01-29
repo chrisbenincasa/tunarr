@@ -3,6 +3,11 @@ import z from 'zod';
 
 type Alias<t> = t & { _?: never };
 
+// Marker field used to allow directories and non-directories both have
+// this field. This is never defined for non-directories, but can be
+// used in type-guards to differentiate
+const neverDirectory = z.object({ directory: z.unknown().optional() });
+
 export const PlexLibrarySectionSchema = z.object({
   allowSync: z.boolean(),
   art: z.string(),
@@ -39,32 +44,34 @@ export type PlexLibrarySection = Alias<
 
 export type PlexLibrarySections = z.infer<typeof PlexLibrarySectionsSchema>;
 
-export const PlexLibraryCollectionSchema = z.object({
-  ratingKey: z.string(),
-  key: z.string(),
-  guid: z.string(),
-  type: z.string(),
-  title: z.string(),
-  titleSort: z.string(),
-  subtype: z.string(),
-  contentRating: z.string().optional(),
-  summary: z.string(),
-  index: z.number(),
-  content: z.string().optional(),
-  ratingCount: z.number(),
-  thumb: z.string(),
-  addedAt: z.number(),
-  updatedAt: z.number(),
-  childCount: z.string(),
-  collectionSort: z.string().optional(),
-  smart: z.string(),
-  maxYear: z.string().optional(),
-  minYear: z.string().optional(),
-});
+export const PlexLibraryCollectionSchema = z
+  .object({
+    ratingKey: z.string(),
+    key: z.string(),
+    guid: z.string(),
+    type: z.literal('collection'),
+    title: z.string(),
+    titleSort: z.string(),
+    subtype: z.string(),
+    contentRating: z.string().optional(),
+    summary: z.string(),
+    index: z.number(),
+    content: z.string().optional(),
+    ratingCount: z.number(),
+    thumb: z.string(),
+    addedAt: z.number(),
+    updatedAt: z.number(),
+    childCount: z.string(),
+    collectionSort: z.string().optional(),
+    smart: z.string(),
+    maxYear: z.string().optional(),
+    minYear: z.string().optional(),
+  })
+  .merge(neverDirectory);
 
 export type PlexLibraryCollection = z.infer<typeof PlexLibraryCollectionSchema>;
 
-const basePlexLibraryCollectionsSchema = z.object({
+const basePlexLibrarySchema = z.object({
   allowSync: z.boolean(),
   art: z.string(),
   identifier: z.string(),
@@ -83,8 +90,10 @@ const basePlexLibraryCollectionsSchema = z.object({
   viewMode: z.number(),
 });
 
-const makePlexLibraryCollectionsSchema = (metadata: z.AnyZodObject) => {
-  return basePlexLibraryCollectionsSchema.extend({
+const makePlexLibraryCollectionsSchema = <T extends z.AnyZodObject>(
+  metadata: T,
+) => {
+  return basePlexLibrarySchema.extend({
     Metadata: z.array(metadata),
   });
 };
@@ -135,8 +144,6 @@ export const PlexJoinItemSchema = z.object({
 });
 
 export type PlexJoinItem = z.infer<typeof PlexJoinItemSchema>;
-
-const neverDirectory = z.object({ directory: z.unknown().optional() });
 
 export const PlexMovieSchema = z
   .object({
@@ -241,7 +248,7 @@ export type PlexTvSeason = Alias<z.infer<typeof PlexTvSeasonSchema>>;
 
 // /library/section/{id}/all for a Movie Library
 
-export const PlexLibraryMoviesSchema = basePlexLibraryCollectionsSchema.extend({
+export const PlexLibraryMoviesSchema = basePlexLibrarySchema.extend({
   Metadata: z.array(PlexMovieSchema),
 });
 
@@ -381,15 +388,6 @@ export function isPlexShowLibrary(
   return lib.viewGroup === 'show';
 }
 
-export type PlexMedia = PlexMovie | PlexTvShow | PlexTvSeason | PlexEpisode;
-export type PlexTerminalMedia = PlexMovie | PlexEpisode; // Media that has no children
-export type PlexParentMediaType = PlexTvShow | PlexTvSeason;
-export type PlexChildType<T> = PlexTvShow extends T
-  ? PlexTvSeason
-  : PlexTvSeason extends T
-  ? PlexEpisode
-  : never;
-
 export function isPlexMediaType<T extends PlexMedia>(discrim: string) {
   return (media: PlexLibrarySection | PlexMedia | undefined): media is T => {
     return !isPlexDirectory(media) && media?.type === discrim;
@@ -400,9 +398,93 @@ export const isPlexMovie = isPlexMediaType<PlexMovie>('movie');
 export const isPlexShow = isPlexMediaType<PlexTvShow>('show');
 export const isPlexSeason = isPlexMediaType<PlexTvSeason>('season');
 export const isPlexEpisode = isPlexMediaType<PlexEpisode>('episode');
+export const isPlexCollection =
+  isPlexMediaType<PlexLibraryCollection>('collection');
+const funcs = [
+  isPlexMovie,
+  isPlexShow,
+  isPlexSeason,
+  isPlexEpisode,
+  isPlexCollection,
+];
+export const isPlexMedia = (
+  media: PlexLibrarySection | PlexMedia | undefined,
+): media is PlexMedia => {
+  for (const func of funcs) {
+    if (func(media)) {
+      return true;
+    }
+  }
+  return false;
+};
 
 export function isTerminalItem(
   item: PlexMedia | PlexLibrarySection,
 ): item is PlexMovie | PlexEpisode {
   return !isPlexDirectory(item) && (isPlexMovie(item) || isPlexEpisode(item));
 }
+
+// /library/collections/{id}/children
+const basePlexCollectionContentsSchema = z.object({
+  size: z.number(),
+});
+
+export const PlexMovieCollectionContentsSchema =
+  basePlexCollectionContentsSchema.extend({
+    Metadata: z.array(PlexMovieSchema),
+  });
+
+export const PlexTvShowCollectionContentsSchema =
+  basePlexCollectionContentsSchema.extend({
+    Metadata: z.array(PlexTvShowSchema),
+  });
+
+export type PlexMovieCollectionContents = Alias<
+  z.infer<typeof PlexMovieCollectionContentsSchema>
+>;
+export type PlexTvShowCollectionContents = Alias<
+  z.infer<typeof PlexTvShowCollectionContentsSchema>
+>;
+
+export type PlexCollectionContents =
+  | PlexMovieCollectionContents
+  | PlexTvShowCollectionContents;
+
+export type PlexMedia = Alias<
+  PlexMovie | PlexTvShow | PlexTvSeason | PlexEpisode | PlexLibraryCollection
+>;
+export type PlexTerminalMedia = PlexMovie | PlexEpisode; // Media that has no children
+export type PlexParentMediaType = PlexTvShow | PlexTvSeason;
+
+type PlexMediaApiChildType = [
+  [PlexTvShow, PlexSeasonView],
+  [PlexTvSeason, PlexEpisodeView],
+  [
+    PlexLibraryCollection,
+    PlexMovieCollectionContents | PlexTvShowCollectionContents,
+  ],
+];
+
+type PlexMediaToChildType = [
+  [PlexTvShow, PlexTvSeason],
+  [PlexTvSeason, PlexEpisode],
+];
+
+type FindChild0<Target, Arr extends unknown[] = []> = Arr extends [
+  [infer Head, infer Child],
+  ...infer Tail,
+]
+  ? Head extends Target
+    ? Child
+    : FindChild0<Target, Tail>
+  : never;
+
+export type PlexChildMediaType<Target extends PlexMedia> =
+  Target extends PlexTerminalMedia
+    ? Target
+    : FindChild0<Target, PlexMediaToChildType>;
+
+export type PlexChildMediaApiType<Target extends PlexMedia> = FindChild0<
+  Target,
+  PlexMediaApiChildType
+>;

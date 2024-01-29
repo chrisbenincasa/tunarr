@@ -3,6 +3,7 @@ import {
   PlexLibrarySection,
   PlexMedia,
   isPlexDirectory,
+  isTerminalItem,
 } from '@tunarr/types/plex';
 import { map, reject } from 'lodash-es';
 import useStore from '..';
@@ -55,10 +56,9 @@ export const addKnownMediaForServer = (
       hierarchy = state.contentHierarchyByServer[serverName];
     }
 
-    const childrenByGuid = plexMedia.reduce(
-      (prev, media) => ({ ...prev, [uniqueId(media)]: [] }),
-      {},
-    );
+    const childrenByGuid = plexMedia
+      .filter((m) => !isTerminalItem(m))
+      .reduce((prev, media) => ({ ...prev, [uniqueId(media)]: [] }), {});
     state.contentHierarchyByServer[serverName] = {
       ...state.contentHierarchyByServer[serverName],
       ...childrenByGuid,
@@ -69,8 +69,10 @@ export const addKnownMediaForServer = (
         state.contentHierarchyByServer[serverName][parentId] = [];
       }
 
-      state.contentHierarchyByServer[serverName][parentId] =
-        plexMedia.map(uniqueId);
+      state.contentHierarchyByServer[serverName][parentId] = [
+        ...state.contentHierarchyByServer[serverName][parentId],
+        ...plexMedia.map(uniqueId),
+      ];
     }
 
     return state;

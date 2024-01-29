@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQueries, useQuery } from '@tanstack/react-query';
 import {
   PlexEpisodeView,
   PlexLibraryListing,
@@ -42,6 +42,15 @@ export const usePlex = <T extends keyof PlexPathMappings>(
     enabled,
   });
 
+declare const plexQueryArgsSymbol: unique symbol;
+
+type PlexQueryArgs<T> = {
+  serverName: string;
+  path: string;
+  enabled: boolean;
+  [plexQueryArgsSymbol]?: T;
+};
+
 export const usePlexTyped = <T>(
   serverName: string,
   path: string,
@@ -51,6 +60,28 @@ export const usePlexTyped = <T>(
     queryKey: ['plex', serverName, path],
     queryFn: fetchPlexPath<T>(serverName, path),
     enabled,
+  });
+
+export const usePlexTyped2 = <T = unknown, U = unknown>(
+  args: [PlexQueryArgs<T>, PlexQueryArgs<U>],
+) =>
+  useQueries({
+    queries: args.map((query) => ({
+      queryKey: ['plex', query.serverName, query.path],
+      queryFn: fetchPlexPath<(typeof query)[typeof plexQueryArgsSymbol]>(
+        query.serverName,
+        query.path,
+      ),
+      enabled: query.enabled,
+    })),
+    combine: ([firstResult, secondResult]) => {
+      return {
+        first: firstResult.data as T | undefined,
+        second: secondResult.data as U | undefined,
+        isPending: firstResult.isPending || secondResult.isPending,
+        error: firstResult.error || secondResult.error,
+      };
+    },
   });
 
 export type PlexMediaWithServerName = PlexTerminalMedia & {

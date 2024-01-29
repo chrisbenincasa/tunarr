@@ -12,22 +12,21 @@ import {
 } from '@mui/material';
 import { PlexServerSettings } from '@tunarr/types';
 import {
+  PlexLibraryCollections,
   PlexLibraryMovies,
   PlexLibrarySection,
   PlexLibraryShows,
-  isPlexMovie,
-  isPlexShow,
+  isPlexMedia,
 } from '@tunarr/types/plex';
 import { take } from 'lodash-es';
-import { useCallback, useEffect, useRef, useState, MouseEvent } from 'react';
-import { usePlexTyped } from '../../hooks/plexHooks.ts';
+import { MouseEvent, useCallback, useEffect, useRef, useState } from 'react';
+import { usePlexTyped2 } from '../../hooks/plexHooks.ts';
 import useStore from '../../store/index.ts';
 import {
   addKnownMediaForServer,
   addSelectedMedia,
 } from '../../store/programmingSelector/actions.ts';
-import { PlexMovieListItem } from './PlexMovieListItem.tsx';
-import { PlexTvListItem } from './PlexShowListItem.tsx';
+import { PlexListItem } from './PlexListItem.tsx';
 
 export function PlexDirectoryListItem(props: {
   server: PlexServerSettings;
@@ -35,9 +34,26 @@ export function PlexDirectoryListItem(props: {
 }) {
   const { server, item } = props;
   const [open, setOpen] = useState(false);
-  const { isPending, data } = usePlexTyped<
-    PlexLibraryMovies | PlexLibraryShows
-  >(props.server.name, `/library/sections/${item.key}/all`, open);
+  const {
+    isPending,
+    first: children,
+    second: collections,
+  } = usePlexTyped2<
+    PlexLibraryMovies | PlexLibraryShows,
+    PlexLibraryCollections
+  >([
+    {
+      serverName: props.server.name,
+      path: `/library/sections/${item.key}/all`,
+      enabled: open,
+    },
+    {
+      serverName: props.server.name,
+      path: `/library/sections/${item.key}/collections`,
+      enabled: open,
+    },
+  ]);
+
   const listings = useStore((s) => s.knownMediaByServer[server.name]);
   const hierarchy = useStore(
     (s) => s.contentHierarchyByServer[server.name][item.uuid],
@@ -69,10 +85,14 @@ export function PlexDirectoryListItem(props: {
   }, [observerTarget, limit, hierarchy, setLimit]);
 
   useEffect(() => {
-    if (data) {
-      addKnownMediaForServer(server.name, data.Metadata, item.uuid);
+    if (children) {
+      addKnownMediaForServer(server.name, children.Metadata, item.uuid);
     }
-  }, [item.uuid, item.key, server.name, data]);
+
+    if (collections) {
+      addKnownMediaForServer(server.name, collections.Metadata, item.uuid);
+    }
+  }, [item.uuid, item.key, server.name, children, collections]);
 
   const handleClick = () => {
     setLimit(Math.min(hierarchy.length, 20));
@@ -87,27 +107,13 @@ export function PlexDirectoryListItem(props: {
     [item, server.name],
   );
 
-  const renderCollectionRow2 = (id: string) => {
+  const renderCollectionRow = (id: string) => {
     const media = listings[id];
 
-    if (isPlexShow(media)) {
+    if (isPlexMedia(media)) {
       return (
-        <PlexTvListItem
-          key={media.guid}
-          item={media}
-          length={hierarchy.length}
-        />
+        <PlexListItem key={media.guid} item={media} length={hierarchy.length} />
       );
-    } else if (isPlexMovie(media)) {
-      return (
-        <PlexMovieListItem
-          key={media.guid}
-          item={media}
-          length={hierarchy.length}
-        />
-      );
-    } else {
-      return null;
     }
   };
 
@@ -120,14 +126,14 @@ export function PlexDirectoryListItem(props: {
           <Button onClick={(e) => addItems(e)}>Add All</Button>
         </ListItemButton>
       </ListItem>
-      <Collapse in={open} timeout="auto" unmountOnExit>
+      <Collapse in={open && !isPending} timeout="auto" unmountOnExit>
         {isPending ? (
           <Skeleton>
             <Box sx={{ width: '100%', height: 400, pl: 4 }} />
           </Skeleton>
         ) : (
           <Box sx={{ width: '100%', height: 400, pl: 4, overflowY: 'scroll' }}>
-            {take(hierarchy, limit).map(renderCollectionRow2)}
+            {take(hierarchy, limit).map(renderCollectionRow)}
             <div style={{ height: 40 }} ref={observerTarget}></div>
           </Box>
         )}
