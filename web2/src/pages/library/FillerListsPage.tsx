@@ -36,7 +36,7 @@ export default function FillerListsPage() {
         </Typography>
         <Button
           component={Link}
-          to="/channels/new"
+          to="/library/fillers/new"
           variant="contained"
           startIcon={<AddCircleIcon />}
         >

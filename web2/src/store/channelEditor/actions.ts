@@ -5,6 +5,8 @@ import {
   ContentProgram,
   CustomShow,
   CustomShowProgramming,
+  FillerList,
+  FillerListProgramming,
 } from '@tunarr/types';
 import { isPlexEpisode } from '@tunarr/types/plex';
 import { isUndefined, sumBy } from 'lodash-es';
@@ -205,5 +207,29 @@ export const addPlexMediaToCurrentCustomShow = (
       const convertedPrograms = generatePrograms(programs);
       customShowEditor.programList =
         customShowEditor.programList.concat(convertedPrograms);
+    }
+  });
+
+export const setCurrentFillerList = (
+  show: FillerList,
+  programs: FillerListProgramming,
+) =>
+  useStore.setState(({ fillerListEditor }) => {
+    fillerListEditor.currentEntity = show;
+    fillerListEditor.originalEntity = show;
+    fillerListEditor.dirty.programs = false;
+    fillerListEditor.originalProgramList = [...programs];
+    fillerListEditor.programList = [...programs];
+  });
+
+export const addPlexMediaToCurrentFillerList = (
+  programs: PlexMediaWithServerName[],
+) =>
+  useStore.setState(({ fillerListEditor }) => {
+    if (fillerListEditor.currentEntity && programs.length > 0) {
+      fillerListEditor.dirty.programs = true;
+      const convertedPrograms = generatePrograms(programs);
+      fillerListEditor.programList =
+        fillerListEditor.programList.concat(convertedPrograms);
     }
   });

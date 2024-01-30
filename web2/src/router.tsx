@@ -1,17 +1,20 @@
 import { QueryClient } from '@tanstack/react-query';
 import { createBrowserRouter } from 'react-router-dom';
-import App, { Root } from './App.tsx';
+import { Root } from './App.tsx';
 import ChannelProgrammingPage from './pages/channels/ChannelProgrammingPage.tsx';
 import ChannelsPage from './pages/channels/ChannelsPage.tsx';
 import EditExistingChannelPage from './pages/channels/EditExistingChannelPage.tsx';
 import NewChannelPage from './pages/channels/NewChannelPage.tsx';
+import TimeSlotEditorPage from './pages/channels/TimeSlotEditorPage.tsx';
 import {
   customShowsLoader,
   editChannelLoader,
   editProgrammingLoader,
   existingCustomShowLoader,
+  existingFillerListLoader,
   newChannelLoader,
   newCustomShowLoader,
+  newFillerListLoader,
 } from './pages/channels/loaders.ts';
 import GuidePage from './pages/guide/GuidePage.tsx';
 import CustomShowsPage from './pages/library/CustomShowsPage.tsx';
@@ -23,10 +26,10 @@ import GeneralSettingsPage from './pages/settings/GeneralSettingsPage.tsx';
 import HdhrSettingsPage from './pages/settings/HdhrSettingsPage.tsx';
 import PlexSettingsPage from './pages/settings/PlexSettingsPage.tsx';
 import SettingsLayout from './pages/settings/SettingsLayout.tsx';
+import TaskSettingsPage from './pages/settings/TaskSettingsPage.tsx';
 import XmlTvSettingsPage from './pages/settings/XmlTvSettingsPage.tsx';
 import { queryCache } from './queryClient.ts';
-import TimeSlotEditorPage from './pages/channels/TimeSlotEditorPage.tsx';
-import TaskSettingsPage from './pages/settings/TaskSettingsPage.tsx';
+import EditFillerPage from './pages/library/EditFillerPage.tsx';
 
 const queryClient = new QueryClient({ queryCache });
 
@@ -36,7 +39,7 @@ export const router = createBrowserRouter([
     element: <Root />,
     children: [
       {
-        element: <App />,
+        element: <GuidePage />,
         index: true,
       },
       {
@@ -106,10 +109,6 @@ export const router = createBrowserRouter([
             element: <LibraryIndexPage />,
           },
           {
-            path: '/library/filler',
-            element: <FillerListsPage />,
-          },
-          {
             path: '/library/custom-shows',
             element: <CustomShowsPage />,
             loader: customShowsLoader(queryClient),
@@ -126,18 +125,18 @@ export const router = createBrowserRouter([
           },
           {
             path: '/library/fillers',
-            element: <CustomShowsPage />,
+            element: <FillerListsPage />,
             loader: customShowsLoader(queryClient),
           },
           {
             path: '/library/fillers/new',
-            element: <EditCustomShowPage isNew={true} />,
-            loader: newCustomShowLoader(queryClient),
+            element: <EditFillerPage isNew={true} />,
+            loader: newFillerListLoader(queryClient),
           },
           {
             path: '/library/fillers/:id/edit',
-            element: <EditCustomShowPage isNew={false} />,
-            loader: existingCustomShowLoader(queryClient),
+            element: <EditFillerPage isNew={false} />,
+            loader: existingFillerListLoader(queryClient),
           },
         ],
       },

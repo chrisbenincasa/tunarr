@@ -1,33 +1,19 @@
-import { DataTag, useQuery } from '@tanstack/react-query';
-import { ApiOf } from '@zodios/core';
-import { ZodiosAliases } from '@zodios/core/lib/zodios.types';
+import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../external/api.ts';
+import { makeQueryOptions } from './useQueryHelpers.ts';
 
-type ApiType = ApiOf<typeof apiClient>;
-type RT<T extends keyof ZodiosAliases<ApiType>> = Awaited<
-  ReturnType<ZodiosAliases<ApiType>[T]>
->;
-// type Tag<Arr extends ReadonlyArray<unknown>, T extends keyof ZodiosAliases<ApiType>> = DataTag<Arr, RT<T>>
+export const useFillerListsQuery = makeQueryOptions(['fillers'], () =>
+  apiClient.getFillerLists(),
+);
 
-export const useCustomShowsQuery = {
-  queryKey: ['fillers'] as DataTag<['fillers'], RT<'getCustomShows'>>,
-  queryFn: () => apiClient.getCustomShows(),
-};
+export const useFillerLists = () => useQuery(useFillerListsQuery);
 
-export const useCustomShows = () => useQuery(useCustomShowsQuery);
+export const fillerListQuery = (id: string) =>
+  makeQueryOptions(['fillers', id], () =>
+    apiClient.getFillerList({ params: { id } }),
+  );
 
-export const customShowQuery = (id: string) => ({
-  queryKey: ['custom-shows', id] as DataTag<
-    ['custom-shows', string],
-    Awaited<ReturnType<(typeof apiClient)['getCustomShow']>>
-  >,
-  queryFn: () => apiClient.getCustomShow({ params: { id } }),
-});
-
-export const customShowProgramsQuery = (id: string) => ({
-  queryKey: ['custom-shows', id, 'programs'] as DataTag<
-    ['custom-shows', string, 'programs'],
-    RT<'getCustomShowPrograms'>
-  >,
-  queryFn: () => apiClient.getCustomShowPrograms({ params: { id } }),
-});
+export const fillerListProgramsQuery = (id: string) =>
+  makeQueryOptions(['fillers', id, 'programs'], () =>
+    apiClient.getFillerListPrograms({ params: { id } }),
+  );

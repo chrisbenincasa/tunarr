@@ -2,6 +2,7 @@ import { Zodios, makeApi, makeErrors, parametersBuilder } from '@zodios/core';
 import {
   BatchLookupExternalProgrammingSchema,
   CreateCustomShowRequestSchema,
+  CreateFillerListRequestSchema,
 } from '@tunarr/types/api';
 import {
   ChannelLineupSchema,
@@ -10,6 +11,8 @@ import {
   ChannelSchema,
   CustomShowProgrammingSchema,
   CustomShowSchema,
+  FillerListProgrammingSchema,
+  FillerListSchema,
   ProgramSchema,
   TaskSchema,
   UpdateChannelRequestSchema,
@@ -103,6 +106,7 @@ export const api = makeApi([
     method: 'post',
     path: '/api/v2/custom-shows',
     alias: 'createCustomShow',
+    status: 201,
     response: z.object({ id: z.string() }),
     parameters: parametersBuilder()
       .addBody(CreateCustomShowRequestSchema)
@@ -156,10 +160,51 @@ export const api = makeApi([
       { status: 400, schema: z.object({ reason: z.string() }) },
     ]),
   },
+  {
+    method: 'get',
+    path: '/api/v2/fillers/:id',
+    alias: 'getFillerList',
+    response: FillerListSchema,
+    errors: makeErrors([
+      {
+        status: 404,
+        schema: z.void(),
+      },
+    ]),
+    parameters: parametersBuilder().addPath('id', z.string()).build(),
+  },
+  {
+    method: 'get',
+    path: '/api/v2/fillers/:id/programs',
+    alias: 'getFillerListPrograms',
+    response: FillerListProgrammingSchema,
+    errors: makeErrors([
+      {
+        status: 404,
+        schema: z.void(),
+      },
+    ]),
+    parameters: parametersBuilder().addPath('id', z.string()).build(),
+  },
+  {
+    method: 'get',
+    path: '/api/v2/fillers',
+    alias: 'getFillerLists',
+    response: z.array(FillerListSchema),
+  },
+  {
+    method: 'post',
+    path: '/api/v2/fillers',
+    alias: 'createFillerList',
+    parameters: parametersBuilder()
+      .addBody(CreateFillerListRequestSchema)
+      .build(),
+    status: 201,
+    response: z.object({ id: z.string() }),
+  },
 ]);
 
 export const createApiClient = once((uri: string) => {
-  // return createBaseApiClient(uri);
   return new Zodios(uri, api);
 });
 

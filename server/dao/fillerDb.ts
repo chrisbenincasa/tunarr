@@ -11,6 +11,7 @@ import {
   createPendingProgramIndexMap,
   upsertContentPrograms,
 } from './programHelpers.js';
+import { dbProgramToContentProgram } from './converters/programConverters.js';
 
 export class FillerDB {
   private channelCache: ChannelCache;
@@ -126,22 +127,15 @@ export class FillerDB {
       .findAll({ populate: ['content.uuid'] });
   }
 
-  async getAllFillersInfo() {
-    //returns just name and id
-    const fillers = await getEm()
-      .repo(FillerShow)
-      .findAll({ fields: ['uuid', 'name'], populate: ['content'] });
-    // getEm().createQueryBuilder(FillerShow).count().where({
-    //   content: {},
-    // });
-    // const fillers = await this.getAllFillers();
-    return fillers.map((f) => {
-      return {
-        id: f.uuid,
-        name: f.name,
-        count: f.content.length,
-      };
-    });
+  async getFillerPrograms(id: string) {
+    const programs = await getEm()
+      .repo(FillerListContent)
+      .find(
+        { fillerList: id },
+        { populate: ['content'], orderBy: { index: 'DESC' } },
+      );
+
+    return programs.map((p) => dbProgramToContentProgram(p.content, true));
   }
 
   async getFillersFromChannel(

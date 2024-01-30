@@ -70,7 +70,7 @@ export function Root() {
       children: [
         {
           name: 'Filler Lists',
-          path: '/library/filler',
+          path: '/library/fillers',
           visible: open,
           icon: <PreviewIcon />,
         },

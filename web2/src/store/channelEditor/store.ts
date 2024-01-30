@@ -4,6 +4,7 @@ import {
   ContentProgram,
   CustomProgram,
   CustomShow,
+  FillerList,
 } from '@tunarr/types';
 import { StateCreator } from 'zustand';
 
@@ -37,25 +38,25 @@ export interface ChannelEditorState {
     CustomShow,
     ContentProgram | CustomProgram // You cannot add Flex to custom shows
   >;
+  fillerListEditor: ProgrammingEditorStateInner<
+    FillerList,
+    ContentProgram | CustomProgram // You cannot add Flex to custom shows
+  >;
 }
 
+const empty = () => ({
+  originalProgramList: [],
+  programList: [],
+  schedulePreviewList: [],
+  dirty: {
+    programs: false,
+  },
+});
+
 export const initialChannelEditorState: ChannelEditorState = {
-  channelEditor: {
-    originalProgramList: [],
-    programList: [],
-    schedulePreviewList: [],
-    dirty: {
-      programs: false,
-    },
-  },
-  customShowEditor: {
-    originalProgramList: [],
-    programList: [],
-    schedulePreviewList: [],
-    dirty: {
-      programs: false,
-    },
-  },
+  channelEditor: empty(),
+  customShowEditor: empty(),
+  fillerListEditor: empty(),
 };
 
 export const createChannelEditorState: StateCreator<

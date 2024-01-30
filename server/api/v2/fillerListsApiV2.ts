@@ -1,8 +1,14 @@
 import { z } from 'zod';
 import { RouterPluginAsyncCallback } from '../../types/serverType.js';
-import { FillerListSchema } from '@tunarr/types/schemas';
+import {
+  FillerListProgrammingSchema,
+  FillerListSchema,
+} from '@tunarr/types/schemas';
 import { isNil, map } from 'lodash-es';
-import { CreateFillerListRequestSchema } from '@tunarr/types/api';
+import {
+  CreateFillerListRequestSchema,
+  IdPathParamSchema,
+} from '@tunarr/types/api';
 
 // eslint-disable-next-line @typescript-eslint/require-await
 export const fillerListsApiV2: RouterPluginAsyncCallback = async (fastify) => {
@@ -66,6 +72,24 @@ export const fillerListsApiV2: RouterPluginAsyncCallback = async (fastify) => {
     async (req, res) => {
       const id = await req.serverCtx.fillerDB.createFiller(req.body);
       return res.status(201).send({ id });
+    },
+  );
+
+  fastify.get(
+    '/filler-lists/:id/programs',
+    {
+      schema: {
+        params: IdPathParamSchema,
+        response: {
+          200: FillerListProgrammingSchema,
+          404: z.void(),
+        },
+      },
+    },
+    async (req, res) => {
+      return res
+        .status(200)
+        .send(await req.serverCtx.fillerDB.getFillerPrograms(req.params.id));
     },
   );
 };

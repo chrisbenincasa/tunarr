@@ -9,6 +9,8 @@ import {
   ChannelProgram,
   CustomShow,
   CustomShowProgramming,
+  FillerList,
+  FillerListProgramming,
 } from '@tunarr/types';
 import { LoaderFunctionArgs } from 'react-router-dom';
 import { lineupQuery } from '../../hooks/useChannelLineup.ts';
@@ -16,23 +18,34 @@ import { channelQuery, channelsQuery } from '../../hooks/useChannels.ts';
 import {
   customShowProgramsQuery,
   customShowQuery,
-  useCustomShowsQuery,
+  customShowsQuery,
 } from '../../hooks/useCustomShows.ts';
 import {
   setCurrentChannel,
   setCurrentCustomShow,
+  setCurrentFillerList,
 } from '../../store/channelEditor/actions.ts';
 import { Preloader } from '../../types/index.ts';
+import {
+  fillerListProgramsQuery,
+  fillerListQuery,
+} from '../../hooks/useFillerLists.ts';
 
-function createPreloader<T>(
+function createPreloader<
+  T = unknown,
+  QK extends QueryKey = QueryKey,
+  TInferred = QK extends DataTag<ReadonlyArray<unknown>, infer TData>
+    ? TData
+    : T,
+>(
   query: (
     args: LoaderFunctionArgs,
-  ) => UseQueryOptions<T, Error, T, DataTag<QueryKey, T>>,
-  callback: (data: T) => void = () => {},
-): Preloader<T> {
+  ) => UseQueryOptions<TInferred, Error, TInferred, QK>,
+  callback: (data: TInferred) => void = () => {},
+): Preloader<TInferred> {
   return (queryClient: QueryClient) => async (args) => {
     const qk = query(args);
-    let data = queryClient.getQueryData(qk.queryKey);
+    let data: TInferred | undefined = queryClient.getQueryData(qk.queryKey);
     if (!data) {
       data = await queryClient.fetchQuery(qk);
     }
@@ -82,7 +95,7 @@ export const newChannelLoader: Preloader<Channel[]> = createPreloader(
 );
 
 export const customShowsLoader: Preloader<CustomShow[]> = createPreloader(
-  () => useCustomShowsQuery,
+  () => customShowsQuery,
 );
 
 const customShowLoader = (isNew: boolean) => {
@@ -136,6 +149,63 @@ export const existingCustomShowLoader: Preloader<{
         setCurrentCustomShow(show, programs);
         return {
           show,
+          programs,
+        };
+      },
+    );
+  };
+};
+
+const fillerListLoader = (isNew: boolean) => {
+  if (!isNew) {
+    return createPreloader(
+      ({ params }) => fillerListQuery(params.id!),
+      (filler) => setCurrentFillerList(filler, []),
+    );
+  } else {
+    return () => () => {
+      const filler = {
+        id: 'unsaved',
+        name: 'New',
+        contentCount: 0,
+      };
+      setCurrentFillerList(filler, []);
+      return Promise.resolve(filler);
+    };
+  }
+};
+
+export const newFillerListLoader: Preloader<{
+  filler: FillerList;
+  programs: FillerListProgramming;
+}> = (queryClient: QueryClient) => (args: LoaderFunctionArgs) => {
+  return fillerListLoader(true)(queryClient)(args).then((filler) => ({
+    filler,
+    programs: [],
+  }));
+};
+
+export const existingFillerListLoader: Preloader<{
+  filler: FillerList;
+  programs: CustomShowProgramming;
+}> = (queryClient: QueryClient) => {
+  const showLoader = fillerListLoader(false)(queryClient);
+
+  return async (args: LoaderFunctionArgs) => {
+    const showLoaderPromise = showLoader(args);
+    const programQuery = fillerListProgramsQuery(args.params.id!);
+
+    const programsPromise = Promise.resolve(
+      queryClient.getQueryData(programQuery.queryKey),
+    ).then((programs) => {
+      return programs ?? queryClient.fetchQuery(programQuery);
+    });
+
+    return await Promise.all([showLoaderPromise, programsPromise]).then(
+      ([filler, programs]) => {
+        setCurrentFillerList(filler, programs);
+        return {
+          filler,
           programs,
         };
       },
