@@ -597,7 +597,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
           `-maxrate:a`,
           `${this.opts.audioBitrate}k`,
           `-bufsize:a`,
-          `${this.opts.videoBufferSize}k`,
+          `${this.opts.audioBufferSize}k`,
         );
         if (this.audioChannelsSampleRate) {
           ffmpegArgs.push(
