@@ -377,6 +377,7 @@ async function migrateChannels() {
     }
 
     const channel = {
+      id: v4(),
       disableFillerOverlay: parsed['disableFillerOverlay'] as boolean,
       duration: parsed['duration'] as number,
       fallback: ((parsed['fallback'] as Maybe<JSONArray>) ?? []).map(

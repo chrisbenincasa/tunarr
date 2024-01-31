@@ -51,7 +51,7 @@ export default function ChannelsPage() {
           <Tooltip title="Edit" placement="top">
             <IconButton
               color="primary"
-              to={`/channels/${channel.number}/edit`}
+              to={`/channels/${channel.id}/edit`}
               component={RouterLink}
             >
               <EditIcon />
@@ -59,7 +59,7 @@ export default function ChannelsPage() {
           </Tooltip>
           <Tooltip title="Edit Programs" placement="top">
             <IconButton
-              to={`/channels/${channel.number}/programming`}
+              to={`/channels/${channel.id}/programming`}
               component={RouterLink}
             >
               <SettingsRemoteIcon />

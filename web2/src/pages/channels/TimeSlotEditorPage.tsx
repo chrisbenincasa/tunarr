@@ -192,7 +192,6 @@ export default function TimeSlotEditorPage() {
       } else if (slotId.startsWith('movie')) {
         slotProgram = {
           type: 'movie',
-          sortType: '',
         };
       } else if (slotId.startsWith('flex')) {
         slotProgram = {

@@ -1,16 +1,29 @@
-export type MovieProgrammingTimeSlot = {
-  type: 'movie';
-  sortType: '';
-};
+import { z } from 'zod';
 
-export type ShowProgrammingTimeSlot = {
-  type: 'show';
-  showId: string; // grandparent id
-};
+type Alias<T> = T & { _?: never };
 
-export type FlexProgrammingTimeSlot = {
-  type: 'flex';
-};
+export const MovieProgrammingTimeSlotSchema = z.object({
+  type: z.literal('movie'),
+});
+export const ShowProgrammingTimeSlotSchema = z.object({
+  type: z.literal('show'),
+  showId: z.string(),
+});
+export const FlexProgrammingTimeSlotSchema = z.object({
+  type: z.literal('flex'),
+});
+
+export type MovieProgrammingTimeSlot = Alias<
+  z.infer<typeof MovieProgrammingTimeSlotSchema>
+>;
+
+export type ShowProgrammingTimeSlot = Alias<
+  z.infer<typeof ShowProgrammingTimeSlotSchema>
+>;
+
+export type FlexProgrammingTimeSlot = Alias<
+  z.infer<typeof FlexProgrammingTimeSlotSchema>
+>;
 
 export function slotProgrammingId(slot: TimeSlotProgramming) {
   if (slot.type === 'movie' || slot.type === 'flex') {
@@ -20,29 +33,37 @@ export function slotProgrammingId(slot: TimeSlotProgramming) {
   }
 }
 
-export type TimeSlotProgramming =
-  | MovieProgrammingTimeSlot
-  | ShowProgrammingTimeSlot
-  | FlexProgrammingTimeSlot;
+export const TimeSlotProgrammingSchema = z.discriminatedUnion('type', [
+  MovieProgrammingTimeSlotSchema,
+  ShowProgrammingTimeSlotSchema,
+  FlexProgrammingTimeSlotSchema,
+]);
 
-export type TimeSlot = {
-  order: 'next' | 'shuffle';
-  programming: TimeSlotProgramming;
-  startTime: number; // Offset from midnight in millis
-};
+export type TimeSlotProgramming = Alias<
+  z.infer<typeof TimeSlotProgrammingSchema>
+>;
 
-// Zod these up
-export type TimeSlotSchedule = {
-  type: 'time';
-  flexPreference: 'distribute' | 'end';
-  latenessMs: number; // max lateness in millis
-  maxDays: number; // days to pregenerate schedule for
-  padMs: number; // Pad time in millis
-  period: 'day' | 'week' | 'month';
-  slots: TimeSlot[];
-  timeZoneOffset: number; // tz offset in...minutes, i think?
-  startTomorrow?: boolean;
-};
+export const TimeSlotSchema = z.object({
+  order: z.union([z.literal('next'), z.literal('shuffle')]),
+  programming: TimeSlotProgrammingSchema,
+  startTime: z.number(), // Offset from midnight in millis
+});
+
+export type TimeSlot = Alias<z.infer<typeof TimeSlotSchema>>;
+
+export const TimeSlotScheduleSchema = z.object({
+  type: z.literal('time'),
+  flexPreference: z.union([z.literal('distribute'), z.literal('end')]),
+  latenessMs: z.number(), // max lateness in millis
+  maxDays: z.number(), // days to pregenerate schedule for
+  padMs: z.number(), // Pad time in millis
+  period: z.union([z.literal('day'), z.literal('week'), z.literal('month')]),
+  slots: z.array(TimeSlotSchema),
+  timeZoneOffset: z.number(), // tz offset in...minutes, i think?
+  startTomorrow: z.boolean().optional(),
+});
+
+export type TimeSlotSchedule = Alias<z.infer<typeof TimeSlotScheduleSchema>>;
 
 export type MovieProgrammingRandomSlot = {
   type: 'movie';

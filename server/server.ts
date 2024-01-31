@@ -22,7 +22,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'path';
 import serveStatic from 'serve-static';
 import { miscRouter } from './api.js';
-import { debugRouter } from './api/debugApi.js';
+import { debugApi } from './api/v2/debugApi.js';
 import { ffmpegSettingsRouter } from './api/ffmpegSettingsApi.js';
 import { guideRouter } from './api/guideApi.js';
 import { hdhrSettingsRouter } from './api/hdhrSettingsApi.js';
@@ -204,7 +204,7 @@ export async function initServer(opts: ServerOptions) {
     .register(guideRouter)
     .register(miscRouter)
     .register(schedulerRouter)
-    .register(debugRouter)
+    .register(debugApi)
     .register(registerV2Routes, { prefix: '/api/v2' })
     .register(ctx.cacheImageService.apiRouters(), {
       prefix: '/api/cache/images',

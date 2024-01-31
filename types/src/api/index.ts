@@ -52,4 +52,8 @@ export type CreateFillerListRequest = Alias<
   z.infer<typeof CreateFillerListRequestSchema>
 >;
 
+export const BasicIdParamSchema = z.object({
+  id: z.string(),
+});
+
 export * from './Scheduling.js';

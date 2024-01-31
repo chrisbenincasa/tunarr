@@ -158,7 +158,7 @@ export class TVGuideService {
           async (channel) => {
             return {
               channel,
-              lineup: await this.channelDb.loadLineup(channel.number),
+              lineup: await this.channelDb.loadLineup(channel.uuid),
             };
           },
         );

@@ -53,6 +53,9 @@ importers:
       '@mikro-orm/reflection':
         specifier: ^6.0.4
         version: 6.0.4(@mikro-orm/core@6.0.4)
+      '@tunarr/shared':
+        specifier: workspace:*
+        version: link:../shared
       '@tunarr/types':
         specifier: workspace:*
         version: link:../types
@@ -134,6 +137,9 @@ importers:
       tslib:
         specifier: ^2.6.2
         version: 2.6.2
+      uuid:
+        specifier: ^9.0.1
+        version: 9.0.1
       winston:
         specifier: ^3.11.0
         version: 3.11.0
@@ -174,9 +180,6 @@ importers:
       '@types/node':
         specifier: ^20.8.9
         version: 20.8.9
-      '@types/node-cache':
-        specifier: ^4.2.5
-        version: 4.2.5
       '@types/node-schedule':
         specifier: ^2.1.3
         version: 2.1.3
@@ -222,9 +225,6 @@ importers:
       typescript:
         specifier: ^5.2.2
         version: 5.2.2
-      uuid:
-        specifier: ^9.0.1
-        version: 9.0.1
       vitest:
         specifier: ^1.2.0
         version: 1.2.0(@types/node@20.8.9)
@@ -359,6 +359,9 @@ importers:
       usehooks-ts:
         specifier: ^2.9.1
         version: 2.9.1(react-dom@18.2.0)(react@18.2.0)
+      uuid:
+        specifier: ^9.0.1
+        version: 9.0.1
       zod:
         specifier: ^3.22.4
         version: 3.22.4
@@ -378,6 +381,9 @@ importers:
       '@types/react-window':
         specifier: ^1.8.8
         version: 1.8.8
+      '@types/uuid':
+        specifier: ^9.0.6
+        version: 9.0.6
       '@typescript-eslint/eslint-plugin':
         specifier: ^6.0.0
         version: 6.0.0(@typescript-eslint/parser@6.0.0)(eslint@8.45.0)(typescript@5.2.2)
@@ -2294,13 +2300,6 @@ packages:
       '@types/node': 20.8.9
     dev: true
 
-  /@types/node-cache@4.2.5:
-    resolution: {integrity: sha512-faK2Owokboz53g8ooq2dw3iDJ6/HMTCIa2RvMte5WMTiABy+wA558K+iuyRtlR67Un5q9gEKysSDtqZYbSa0Pg==}
-    deprecated: This is a stub types definition. node-cache provides its own type definitions, so you do not need this installed.
-    dependencies:
-      node-cache: 5.1.2
-    dev: true
-
   /@types/node-schedule@2.1.3:
     resolution: {integrity: sha512-sTWHBCD+17XjHRuxkLwoC0VdxAx/TVNny+1DUxv8RTPJNZGuokEKiSiGag+v9XdrnJ/c36ObWi4HA3JiokvOQw==}
     dependencies:
@@ -3395,6 +3394,7 @@ packages:
   /clone@2.1.2:
     resolution: {integrity: sha512-3Pe/CF1Nn94hyhIYpjtiLhdCoEoz0DqQ+988E9gmeEdQZlojxnOb74wctFyuwWQHzqyf9X7C7MG8juUpqBJT8w==}
     engines: {node: '>=0.8'}
+    dev: false
 
   /clsx@2.0.0:
     resolution: {integrity: sha512-rQ1+kcj+ttHG0MKVGBUXwayCCF1oh39BF5COIpRzuCEv8Mwjv0XucrI2ExNTOn9IlLifGClWQcU9BrZORvtw6Q==}
@@ -5976,6 +5976,7 @@ packages:
     engines: {node: '>= 8.0.0'}
     dependencies:
       clone: 2.1.2
+    dev: false
 
   /node-graceful-shutdown@1.1.0:
     resolution: {integrity: sha512-g1tq/R8ie/At5xRHGfF+chTge1jVPxf1NEClLpZIPxOPi6PJ9II81T35ms1u+s4N/mqOCp60CFd+ps+DIWRigQ==}
@@ -8106,7 +8107,7 @@ packages:
   /uuid@9.0.1:
     resolution: {integrity: sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==}
     hasBin: true
-    dev: true
+    dev: false
 
   /v8-compile-cache-lib@3.0.1:
     resolution: {integrity: sha512-wa7YjyUGfNZngI/vtK0UHAN+lgDCxBPCylVXGp0zu59Fz5aiGtNXaq3DhIov063MorB+VfufLh3JlF2KdTK3xg==}

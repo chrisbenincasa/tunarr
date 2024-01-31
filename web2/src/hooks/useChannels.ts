@@ -9,25 +9,25 @@ export const channelsQuery = {
 
 export const useChannels = () => useQuery(channelsQuery);
 
-export const channelQuery = (number: number, enabled: boolean = true) => ({
-  queryKey: ['channels', number] as DataTag<['channels', number], Channel>,
+export const channelQuery = (id: string, enabled: boolean = true) => ({
+  queryKey: ['channels', id] as DataTag<['channels', string], Channel>,
   queryFn: async () =>
-    apiClient.get('/api/v2/channels/:number', {
-      params: { number },
+    apiClient.get('/api/v2/channels/:id', {
+      params: { id },
     }),
-  enabled: number > 0 && enabled,
+  enabled: id.length > 0 && enabled,
 });
 
 export const useChannel = (
-  number: number,
+  id: string,
   enabled: boolean = true,
   initialData: Channel | undefined = undefined,
-) => useQuery({ ...channelQuery(number, enabled), initialData });
+) => useQuery({ ...channelQuery(id, enabled), initialData });
 
 // If we absolutely have initialData defined, we can use this hook instead,
 // to eliminate the typing possiblity of "| undefined" for the resulting Channel
 export const useChannelWithInitialData = (
-  number: number,
+  id: string,
   initialData: Channel,
   enabled: boolean = true,
-) => useQuery({ ...channelQuery(number, enabled), initialData });
+) => useQuery({ ...channelQuery(id, enabled), initialData });

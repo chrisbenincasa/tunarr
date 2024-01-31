@@ -102,10 +102,10 @@ class ProgramShuffler extends ProgramIterator {
 }
 
 class ProgramOrderer extends ProgramIterator {
-  #programs: ChannelProgram[];
+  #programs: ContentProgram[];
   #position: number = 0;
 
-  constructor(programs: ChannelProgram[]) {
+  constructor(programs: ContentProgram[]) {
     super();
     this.#programs = sortBy(programs, getProgramOrder);
   }

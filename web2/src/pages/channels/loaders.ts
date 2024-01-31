@@ -55,7 +55,7 @@ function createPreloader<
 }
 
 export const editChannelLoader = createPreloader<Channel>(
-  ({ params }) => channelQuery(parseInt(params.id!)),
+  ({ params }) => channelQuery(params.id!),
   (channel) => setCurrentChannel(channel, []),
 );
 
@@ -65,8 +65,8 @@ export const editProgrammingLoader: Preloader<{
 }> =
   (queryClient: QueryClient) =>
   async ({ params }: LoaderFunctionArgs) => {
-    const lineupQueryData = lineupQuery(parseInt(params.id!), null, true);
-    const channelQueryData = channelQuery(parseInt(params.id!));
+    const lineupQueryData = lineupQuery(params.id!, null, true);
+    const channelQueryData = channelQuery(params.id!);
 
     const lineupPromise = Promise.resolve(
       queryClient.getQueryData(lineupQueryData.queryKey),

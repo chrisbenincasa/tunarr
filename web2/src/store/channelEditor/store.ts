@@ -33,7 +33,7 @@ export interface ProgrammingEditorStateInner<
 }
 
 export interface ChannelEditorState {
-  channelEditor: ProgrammingEditorStateInner<Channel>;
+  channelEditor: ProgrammingEditorStateInner<Omit<Channel, 'programs'>>;
   customShowEditor: ProgrammingEditorStateInner<
     CustomShow,
     ContentProgram | CustomProgram // You cannot add Flex to custom shows

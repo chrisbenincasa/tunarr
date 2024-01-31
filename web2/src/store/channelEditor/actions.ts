@@ -10,7 +10,7 @@ import {
 } from '@tunarr/types';
 import { isPlexEpisode } from '@tunarr/types/plex';
 import { isUndefined, sumBy } from 'lodash-es';
-import useStore from '..';
+import useStore from '../index.ts';
 import { PlexMediaWithServerName } from '../../hooks/plexHooks.ts';
 import { initialChannelEditorState } from './store.ts';
 
@@ -24,12 +24,17 @@ export const resetChannelEditorState = () =>
     return newState;
   });
 
-export const setCurrentChannel = (channel: Channel, lineup: ChannelProgram[]) =>
+export const setCurrentChannel = (
+  channel: Omit<Channel, 'programs'>,
+  lineup?: ChannelProgram[],
+) =>
   useStore.setState(({ channelEditor }) => {
     channelEditor.currentEntity = channel;
     channelEditor.originalEntity = channel;
-    channelEditor.originalProgramList = [...lineup];
-    channelEditor.programList = [...lineup];
+    if (lineup) {
+      channelEditor.originalProgramList = [...lineup];
+      channelEditor.programList = [...lineup];
+    }
   });
 
 export const setCurrentLineup = (lineup: ChannelProgram[], dirty?: boolean) =>

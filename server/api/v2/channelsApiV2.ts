@@ -30,14 +30,12 @@ import { UpdateXmlTvTask } from '../../tasks/updateXmlTvTask.js';
 import { RouterPluginAsyncCallback } from '../../types/serverType.js';
 import { attempt, groupByFunc, mapAsyncSeq } from '../../util.js';
 import { ProgramMinterFactory } from '../../util/programMinter.js';
+import { BasicIdParamSchema, TimeSlotScheduleSchema } from '@tunarr/types/api';
+import { scheduleTimeSlots } from '@tunarr/shared';
 
 dayjs.extend(duration);
 
 const logger = createLogger(import.meta);
-
-const ChannelNumberParamSchema = z.object({
-  number: z.coerce.number(),
-});
 
 const ChannelLineupQuery = z.object({
   from: z.coerce.date().optional(),
@@ -79,11 +77,11 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
   );
 
   fastify.get(
-    '/channels/:number',
+    '/channels/:id',
     {
       schema: {
         operationId: 'getChannelsByNumberV2',
-        params: ChannelNumberParamSchema,
+        params: BasicIdParamSchema,
         response: {
           200: ChannelSchema,
           404: z.void(),
@@ -94,7 +92,7 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
     async (req, res) => {
       try {
         const channel = await req.serverCtx.channelCache.getChannelConfig(
-          req.params.number,
+          req.params.id,
         );
 
         if (!isNil(channel)) {
@@ -114,7 +112,7 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
     {
       schema: {
         operationId: 'createChannelV2',
-        body: UpdateChannelRequestSchema,
+        body: ChannelSchema,
         response: {
           201: z.object({ id: z.string() }),
           500: z.object({}),
@@ -133,28 +131,31 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
   );
 
   fastify.put(
-    '/channels/:number',
+    '/channels/:id',
     {
       schema: {
         body: UpdateChannelRequestSchema,
-        params: ChannelNumberParamSchema,
+        params: z.object({ id: z.string() }),
+        response: {
+          200: ChannelSchema.omit({ programs: true }),
+        },
       },
     },
     async (req, res) => {
       try {
-        const channel = await req.serverCtx.channelCache.getChannelConfig(
-          req.params.number,
+        const channel = await req.serverCtx.channelDB.getChannelById(
+          req.params.id,
         );
 
         if (!isNil(channel)) {
           const channelUpdate = {
             ...req.body,
           };
-          await req.serverCtx.channelDB.updateChannel(
+          const updatedChannel = await req.serverCtx.channelDB.updateChannel(
             channel.uuid,
             channelUpdate,
           );
-          return res.send(omit(channel, 'programs'));
+          return res.send(omit(updatedChannel.toDTO(), 'programs'));
         } else {
           return res.status(404).send();
         }
@@ -166,10 +167,10 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
   );
 
   fastify.get(
-    '/channels/:number/programs',
+    '/channels/:id/programs',
     {
       schema: {
-        params: ChannelNumberParamSchema,
+        params: BasicIdParamSchema,
         response: {
           200: z.array(ProgramSchema).readonly(),
           404: z.void(),
@@ -179,7 +180,7 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
     async (req, res) => {
       try {
         const channel = await req.serverCtx.channelCache.getChannelConfig(
-          req.params.number,
+          req.params.id,
         );
 
         if (!isNil(channel)) {
@@ -197,10 +198,10 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
   );
 
   fastify.get(
-    '/channels/:number/programming',
+    '/channels/:id/programming',
     {
       schema: {
-        params: ChannelNumberParamSchema,
+        params: BasicIdParamSchema,
         response: {
           200: ChannelProgrammingSchema,
           404: z.object({ error: z.string() }),
@@ -209,7 +210,7 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
     },
     async (req, res) => {
       const channel = await req.serverCtx.channelDB.getChannelAndPrograms(
-        req.params.number,
+        req.params.id,
       );
 
       if (!channel) {
@@ -217,7 +218,7 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
       }
 
       const apiLineup = await req.serverCtx.channelDB.loadAndMaterializeLineup(
-        req.params.number,
+        req.params.id,
       );
 
       if (isNil(apiLineup)) {
@@ -231,10 +232,10 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
   );
 
   fastify.post(
-    '/channels/:number/programming',
+    '/channels/:id/programming',
     {
       schema: {
-        params: ChannelNumberParamSchema,
+        params: BasicIdParamSchema,
         body: z.array(ChannelProgramSchema),
         response: {
           200: ChannelProgrammingSchema,
@@ -244,7 +245,7 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
     },
     async (req, res) => {
       const channel = await req.serverCtx.channelDB.getChannelAndPrograms(
-        req.params.number,
+        req.params.id,
       );
 
       if (isNil(channel)) {
@@ -324,7 +325,7 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
         return item;
       });
 
-      await req.serverCtx.channelDB.saveLineup(req.params.number, {
+      await req.serverCtx.channelDB.saveLineup(req.params.id, {
         items: newLineup,
       });
 
@@ -384,10 +385,10 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
   );
 
   fastify.get(
-    '/channels/:number/lineup',
+    '/channels/:id/lineup',
     {
       schema: {
-        params: ChannelNumberParamSchema,
+        params: BasicIdParamSchema,
         querystring: ChannelLineupQuery,
         response: {
           200: ChannelLineupSchema,
@@ -397,7 +398,7 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
     },
     async (req, res) => {
       const channel = await req.serverCtx.channelDB.getChannelAndPrograms(
-        req.params.number,
+        req.params.id,
       );
 
       if (!channel) {
@@ -423,6 +424,23 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
       }
 
       return res.status(200).send(lineup);
+    },
+  );
+
+  fastify.post(
+    '/channels/schedule-time-slots',
+    {
+      schema: {
+        body: z.object({
+          schedule: TimeSlotScheduleSchema,
+          programs: z.array(ChannelProgramSchema),
+        }),
+      },
+    },
+    async (req, res) => {
+      return res.send(
+        await scheduleTimeSlots(req.body.schedule, req.body.programs),
+      );
     },
   );
 };

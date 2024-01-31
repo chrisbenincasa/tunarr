@@ -1,6 +1,5 @@
 packages:
   - "server/"
-  - "web/"
   - "web2/"
   - "types/"
   - "shared/"
