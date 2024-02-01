@@ -29,6 +29,7 @@ import TaskSettingsPage from './pages/settings/TaskSettingsPage.tsx';
 import XmlTvSettingsPage from './pages/settings/XmlTvSettingsPage.tsx';
 import WatchPage from './pages/watch/WatchPage.tsx';
 import { queryCache } from './queryClient.ts';
+import WelcomePage from './pages/welcome/WelcomePage.tsx';
 
 const queryClient = new QueryClient({ queryCache });
 
@@ -40,6 +41,10 @@ export const router = createBrowserRouter([
       {
         element: <GuidePage />,
         index: true,
+      },
+      {
+        path: '/welcome',
+        element: <WelcomePage />,
       },
       {
         path: '/channels',

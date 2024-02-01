@@ -31,7 +31,7 @@ import ServerEvents from './components/ServerEvents.tsx';
 import VersionFooter from './components/VersionFooter.tsx';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import theme from './theme.tsx';
-import { ExpandMore } from '@mui/icons-material';
+import { ExpandMore, Home } from '@mui/icons-material';
 
 interface NavItem {
   name: string;
@@ -54,6 +54,7 @@ export function Root() {
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
 
   const navItems: NavItem[] = [
+    { name: 'Welcome', path: '/welcome', visible: true, icon: <Home /> },
     { name: 'Guide', path: '/guide', visible: true, icon: <TvIcon /> },
     {
       name: 'Channels',
