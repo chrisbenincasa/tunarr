@@ -1,4 +1,4 @@
-import { isNil, isUndefined } from 'lodash-es';
+import { isNil, isNumber, isUndefined } from 'lodash-es';
 import constants from './constants.js';
 import { ChannelDB } from './dao/channelDb.js';
 import { Channel } from './dao/entities/Channel.js';
@@ -22,12 +22,18 @@ export class ChannelCache {
     this.channelDb = channelDb;
   }
 
-  getChannelConfig(channelId: number): Promise<Nullable<Channel>> {
-    return this.channelDb.getChannel(channelId);
+  getChannelConfig(channelId: string | number): Promise<Nullable<Channel>> {
+    return isNumber(channelId)
+      ? this.channelDb.getChannelByNumber(channelId)
+      : this.channelDb.getChannelById(channelId);
   }
 
-  getChannelConfigWithPrograms(channelId: number) {
+  getChannelConfigWithPrograms(channelId: string) {
     return this.channelDb.getChannelAndPrograms(channelId);
+  }
+
+  getChannelConfigWithProgramsByNumber(channelNumber: number) {
+    return this.channelDb.getChannelAndProgramsByNumber(channelNumber);
   }
 
   getAllChannels() {

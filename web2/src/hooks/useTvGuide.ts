@@ -3,15 +3,15 @@ import { Dayjs } from 'dayjs';
 import { apiClient } from '../external/api.ts';
 
 export const useTvGuide = (params: {
-  number: number;
+  channelId: string;
   from: Dayjs;
   to: Dayjs;
 }) =>
   useQuery({
-    queryKey: ['channels', params.number, 'guide', params] as const,
+    queryKey: ['channels', params.channelId, 'guide', params] as const,
     queryFn: async () => {
-      return apiClient.get('/api/v2/channels/:number/lineup', {
-        params: { number: params.number },
+      return apiClient.get('/api/v2/channels/:id/lineup', {
+        params: { id: params.channelId },
         queries: {
           from: params.from.toISOString(),
           to: params.to.toISOString(),

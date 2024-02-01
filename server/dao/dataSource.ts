@@ -12,10 +12,6 @@ import { globalOptions } from '../globals.js';
 import createLogger from '../logger.js';
 import dbConfig from '../mikro-orm.config.js';
 
-// Temporary
-// const __filename = fileURLToPath(import.meta.url);
-// const __dirname = dirname(__filename);
-
 const logger = createLogger(import.meta);
 
 export const initOrm = once(async () => {
@@ -30,7 +26,6 @@ export const initOrm = once(async () => {
 
   const migrator = orm.getMigrator();
 
-  // First launch
   if (
     !hasExistingDb ||
     (await migrator.checkMigrationNeeded()) ||

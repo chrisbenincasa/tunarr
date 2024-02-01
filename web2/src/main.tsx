@@ -9,7 +9,7 @@ import { RouterProvider } from 'react-router-dom';
 import './helpers/dayjs.ts';
 import './index.css';
 import { queryCache } from './queryClient.ts';
-import { router } from './router';
+import { router } from './router.tsx';
 
 const queryClient = new QueryClient({ queryCache });
 

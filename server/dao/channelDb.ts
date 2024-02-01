@@ -1,5 +1,6 @@
-import { Loaded, QueryOrder } from '@mikro-orm/core';
+import { Loaded, QueryOrder, RequiredEntityData, wrap } from '@mikro-orm/core';
 import {
+  Channel as ApiChannel,
   ChannelProgram,
   ChannelProgramming,
   ContentProgram,
@@ -7,7 +8,7 @@ import {
   RedirectProgram,
   UpdateChannelRequest,
 } from '@tunarr/types';
-import { chain, isNil, isNull } from 'lodash-es';
+import { chain, isNil, isNull, omitBy } from 'lodash-es';
 import { Low } from 'lowdb';
 import { JSONFile } from 'lowdb/node';
 import { join } from 'path';
@@ -24,40 +25,117 @@ import {
   isRedirectItem,
 } from './derived_types/Lineup.js';
 import { Channel } from './entities/Channel.js';
+import dayjs from 'dayjs';
+import duration from 'dayjs/plugin/duration.js';
+
+dayjs.extend(duration);
+
+function updateRequestToChannel(
+  updateReq: UpdateChannelRequest,
+): Partial<Channel> {
+  return omitBy(
+    {
+      number: updateReq.number,
+      watermark: updateReq.watermark,
+      icon: updateReq.icon,
+      guideMinimumDuration: updateReq.guideMinimumDurationSeconds
+        ? dayjs.duration({ seconds: updateReq.guideMinimumDurationSeconds })
+        : undefined,
+      groupTitle: updateReq.groupTitle,
+      disableFillerOverlay: updateReq.disableFillerOverlay,
+      startTime: updateReq.startTime,
+      offline: updateReq.offline,
+      name: updateReq.name,
+      transcoding: updateReq.transcoding,
+      duration: updateReq.duration,
+      stealth: updateReq.stealth,
+      fillerRepeatCooldown: updateReq.fillerRepeatCooldown
+        ? dayjs.duration({ seconds: updateReq.fillerRepeatCooldown })
+        : undefined,
+    },
+    isNil,
+  );
+}
+
+function createRequestToChannel(
+  updateReq: ApiChannel,
+): RequiredEntityData<Channel> {
+  const c: RequiredEntityData<Channel> = {
+    number: updateReq.number,
+    watermark: updateReq.watermark,
+    icon: updateReq.icon,
+    guideMinimumDurationSeconds: updateReq.guideMinimumDurationSeconds,
+    // guideMinimumDuration: dayjs.duration({ seconds: updateReq.guideMinimumDurationSeconds }),
+    // : undefined,
+    groupTitle: updateReq.groupTitle,
+    disableFillerOverlay: updateReq.disableFillerOverlay,
+    startTime: updateReq.startTime,
+    offline: updateReq.offline,
+    name: updateReq.name,
+    transcoding: updateReq.transcoding,
+    duration: updateReq.duration,
+    stealth: updateReq.stealth,
+    fillerRepeatCooldown: updateReq.fillerRepeatCooldown
+      ? dayjs.duration({ seconds: updateReq.fillerRepeatCooldown })
+      : undefined,
+  };
+  // c.guideMinimumDurationSeconds = updateReq.guideMinimumDurationSeconds;
+  return c;
+}
 
 export class ChannelDB {
-  private fileDbCache: Record<number, Low<Lineup>> = {};
+  private fileDbCache: Record<string | number, Low<Lineup>> = {};
 
-  getChannel(channelNumber: number): Promise<Nullable<Channel>> {
+  getChannelByNumber(channelNumber: number): Promise<Nullable<Channel>> {
     return getEm().repo(Channel).findOne({ number: channelNumber });
   }
 
-  getChannelAndPrograms(number: number) {
+  getChannelById(id: string) {
+    return getEm().repo(Channel).findOne({ uuid: id });
+  }
+
+  getChannelAndPrograms(uuid: string) {
+    return getEm()
+      .repo(Channel)
+      .findOne({ uuid }, { populate: ['programs'] });
+  }
+
+  getChannelAndProgramsByNumber(number: number) {
     return getEm()
       .repo(Channel)
       .findOne({ number }, { populate: ['programs'] });
   }
 
-  async saveChannel(channel: UpdateChannelRequest) {
+  async saveChannel(createReq: ApiChannel) {
     const em = getEm();
-    const existing = await em.findOne(Channel, { number: channel.number });
+    const existing = await em.findOne(Channel, { number: createReq.number });
     if (!isNull(existing)) {
       throw new Error(
-        `Channel with number ${channel.number} already exists: ${existing.name}`,
+        `Channel with number ${createReq.number} already exists: ${existing.name}`,
       );
     }
 
-    const entity = em.create(Channel, { ...channel });
-    em.persist(entity);
-    await this.createLineup(entity.number);
+    const channel = new Channel();
+    wrap(channel).assign(createRequestToChannel(createReq), { em });
+    em.persist(channel);
+    await this.createLineup(channel.uuid);
     await em.flush();
-    return entity.uuid;
+    return channel.uuid;
   }
 
-  async updateChannel(id: string, channel: UpdateChannelRequest) {
+  async updateChannel(id: string, updateReq: UpdateChannelRequest) {
     const em = getEm();
-    await em.nativeUpdate(Channel, { uuid: id }, channel);
+    const channel = em.getReference(Channel, id);
+    const update = updateRequestToChannel(updateReq);
+    console.log(channel, update);
+    wrap(channel).assign(update, {
+      merge: true,
+      convertCustomTypes: true,
+      onlyProperties: true,
+    });
+    console.log(channel);
     await em.flush();
+    return channel;
   }
 
   async deleteChannel(channelNumber: number) {
@@ -84,21 +162,21 @@ export class ChannelDB {
       .findAll({ populate: ['programs'] });
   }
 
-  async loadLineup(channelNumber: number) {
-    const db = await this.getFileDb(channelNumber);
+  async loadLineup(channelId: string) {
+    const db = await this.getFileDb(channelId);
     await db.read();
     return db.data;
   }
 
   async loadAndMaterializeLineup(
-    channelNumber: number,
+    channelId: string,
   ): Promise<ChannelProgramming | null> {
-    const channel = await this.getChannelAndPrograms(channelNumber);
+    const channel = await this.getChannelAndPrograms(channelId);
     if (isNil(channel)) {
       return null;
     }
 
-    const lineup = await this.loadLineup(channelNumber);
+    const lineup = await this.loadLineup(channelId);
 
     return {
       icon: channel.icon,
@@ -108,29 +186,29 @@ export class ChannelDB {
     };
   }
 
-  async saveLineup(channelNumber: number, lineup: Lineup) {
-    const db = await this.getFileDb(channelNumber);
+  async saveLineup(channelId: string, lineup: Lineup) {
+    const db = await this.getFileDb(channelId);
     db.data = lineup;
     return await db.write();
   }
 
-  private async createLineup(channelNumber: number) {
-    const db = await this.getFileDb(channelNumber);
+  private async createLineup(channelId: string) {
+    const db = await this.getFileDb(channelId);
     await db.write();
   }
 
-  private async getFileDb(channel: number) {
-    if (!this.fileDbCache[channel]) {
-      this.fileDbCache[channel] = new Low<Lineup>(
+  private async getFileDb(channelId: string) {
+    if (!this.fileDbCache[channelId]) {
+      this.fileDbCache[channelId] = new Low<Lineup>(
         new JSONFile(
-          join(globalOptions().database, `channel-lineups/${channel}.json`),
+          join(globalOptions().database, `channel-lineups/${channelId}.json`),
         ),
         { items: [] },
       );
-      await this.fileDbCache[channel].read();
+      await this.fileDbCache[channelId].read();
     }
 
-    return this.fileDbCache[channel];
+    return this.fileDbCache[channelId];
   }
 }
 

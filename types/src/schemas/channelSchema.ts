@@ -34,6 +34,7 @@ export const ChannelTranscodingOptionsSchema = z.object({
 });
 
 export const ChannelSchema = z.object({
+  id: z.string(),
   number: z.number(),
   watermark: WatermarkSchema.optional(),
   fillerCollections: z.array(FillerCollectionSchema).optional(),
@@ -53,19 +54,8 @@ export const ChannelSchema = z.object({
   fillerRepeatCooldown: z.number().optional(),
 });
 
-export const UpdateChannelRequestSchema = z.object({
-  number: z.number(),
-  name: z.string(),
-  startTime: z.number(),
-  watermark: WatermarkSchema.optional(),
-  icon: ChannelIconSchema,
-  guideMinimumDurationSeconds: z.number().default(300),
-  groupTitle: z.string().optional().default('dizqueTV'), // TODO Change?
-  disableFillerOverlay: z.boolean().optional().default(false),
-  offline: ChannelOfflineSchema.optional().default({
-    mode: 'pic',
-  }),
-  stealth: z.boolean().default(false),
-  guideFlexPlaceholder: z.string().optional(),
-  duration: z.number().optional().default(0),
+export const UpdateChannelRequestSchema = ChannelSchema.partial().omit({
+  programs: true,
+  fillerCollections: true,
+  fallback: true, // Figure out how to update this
 });

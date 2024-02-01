@@ -1,4 +1,4 @@
-import inst, { Dayjs, ManipulateType, PluginFunc, isDuration } from 'dayjs';
+import inst, { Dayjs, ManipulateType, PluginFunc } from 'dayjs';
 import duration, { Duration } from 'dayjs/plugin/duration.js';
 
 declare module 'dayjs' {
@@ -23,7 +23,7 @@ export const mod: PluginFunc = (_opts, dayjsClass, dayjsFactory) => {
     unit?: ManipulateType,
   ) {
     let dur: Duration;
-    if (isDuration(value)) {
+    if (dayjsFactory.isDuration(value)) {
       dur = value;
     } else {
       dur = dayjsFactory.duration(value, unit ?? 'milliseconds');

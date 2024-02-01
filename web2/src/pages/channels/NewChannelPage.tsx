@@ -16,10 +16,12 @@ import { usePreloadedData } from '../../hooks/preloadedDataHook.ts';
 import { setCurrentChannel } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
 import { newChannelLoader } from './loaders.ts';
+import { v4 as uuidv4 } from 'uuid';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function defaultNewChannel(num: number): Channel {
   return {
+    id: uuidv4(),
     name: `Channel ${num}`,
     number: num,
     startTime: dayjs().unix() * 1000,

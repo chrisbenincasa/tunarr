@@ -30,38 +30,46 @@ export const api = makeApi([
     method: 'post',
     parameters: parametersBuilder().addBody(UpdateChannelRequestSchema).build(),
     path: '/api/v2/channels',
+    status: 201,
     response: z.object({ id: z.string() }),
   },
   {
-    method: 'get',
-    path: '/api/v2/channels/:number',
+    method: 'put',
     parameters: parametersBuilder()
-      .addParameter('number', 'Path', z.coerce.number())
+      .addBody(UpdateChannelRequestSchema)
+      .addPath('id', z.string())
       .build(),
+    path: '/api/v2/channels/:id',
+    response: ChannelSchema.omit({ programs: true }),
+    alias: 'updateChannel',
+  },
+  {
+    method: 'get',
+    path: '/api/v2/channels/:id',
+    parameters: parametersBuilder().addPath('id', z.string()).build(),
     response: ChannelSchema,
   },
   {
     method: 'get',
-    path: '/api/v2/channels/:number/programming',
-    parameters: parametersBuilder()
-      .addParameter('number', 'Path', z.coerce.number())
-      .build(),
+    path: '/api/v2/channels/:id/programming',
+    parameters: parametersBuilder().addPath('id', z.string()).build(),
     response: ChannelProgrammingSchema,
   },
   {
     method: 'post',
-    path: '/api/v2/channels/:number/programming',
+    path: '/api/v2/channels/:id/programming',
     requestFormat: 'json',
     parameters: parametersBuilder()
-      .addParameter('number', 'Path', z.coerce.number())
+      .addPath('id', z.string())
       .addBody(z.array(ChannelProgramSchema))
       .build(),
     response: ChannelProgrammingSchema,
   },
   {
     method: 'get',
-    path: '/api/v2/channels/:number/lineup',
+    path: '/api/v2/channels/:id/lineup',
     response: ChannelLineupSchema,
+    parameters: parametersBuilder().addPath('id', z.string()).build(),
     alias: 'getChannelLineup',
   },
   {

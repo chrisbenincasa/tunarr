@@ -5,7 +5,7 @@ import { immer } from 'zustand/middleware/immer';
 import {
   ProgrammingListingsState,
   createProgrammingListingsState,
-} from './programmingSelector/store';
+} from './programmingSelector/store.ts';
 import {
   ChannelEditorState,
   createChannelEditorState,

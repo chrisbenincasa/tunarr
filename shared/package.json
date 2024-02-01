@@ -8,6 +8,7 @@
   "type": "module",
   "exports": {
     ".": "./common/index.js",
+    "./constants": "./common/util/constants.js",
     "./node": "./node/index.js",
     "./browser": "./browser/index.js"
   },

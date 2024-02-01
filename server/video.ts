@@ -225,7 +225,7 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
     const session = req.query.session;
     const m3u8 = req.query.m3u8 === '1';
     const channel =
-      await req.serverCtx.channelCache.getChannelConfigWithPrograms(
+      await req.serverCtx.channelCache.getChannelConfigWithProgramsByNumber(
         req.query.channel,
       );
 
@@ -275,7 +275,7 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
         start: 0,
       };
     } else if (isUndefined(lineupItem)) {
-      const lineup = await req.serverCtx.channelDB.loadLineup(channel.number);
+      const lineup = await req.serverCtx.channelDB.loadLineup(channel.uuid);
       currentProgram = helperFuncs.getCurrentProgramAndTimeElapsed(
         t0,
         channel,
@@ -305,7 +305,7 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
 
         const newChannelNumber = currentProgram.program.channel;
         const newChannel =
-          await req.serverCtx.channelCache.getChannelConfigWithPrograms(
+          await req.serverCtx.channelCache.getChannelConfigWithProgramsByNumber(
             newChannelNumber,
           );
 

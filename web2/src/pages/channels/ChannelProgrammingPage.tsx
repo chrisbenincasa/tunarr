@@ -17,7 +17,7 @@ import { usePreloadedChannel } from '../../hooks/usePreloadedChannel.ts';
 import { setCurrentLineup } from '../../store/channelEditor/actions.ts';
 import { useTheme } from '@mui/material/styles';
 
-type MutateArgs = { channelNumber: number; newLineup: ChannelProgram[] };
+type MutateArgs = { channelId: string; newLineup: ChannelProgram[] };
 
 type SnackBar = {
   display: boolean;
@@ -41,12 +41,12 @@ export default function ChannelProgrammingPage() {
   // TODO we need to update the channel start time too
   const updateLineupMutation = useMutation({
     mutationKey: ['updateChannelProgramming'],
-    mutationFn: ({ channelNumber, newLineup }: MutateArgs) => {
-      return apiClient.post('/api/v2/channels/:number/programming', newLineup, {
-        params: { number: channelNumber },
+    mutationFn: ({ channelId, newLineup }: MutateArgs) => {
+      return apiClient.post('/api/v2/channels/:id/programming', newLineup, {
+        params: { id: channelId },
       });
     },
-    onSuccess: async (data, { channelNumber }) => {
+    onSuccess: async (data, { channelId: channelNumber }) => {
       setCurrentLineup(data.programs, /*dirty=*/ false);
       setSnackStatus({
         display: true,
@@ -76,7 +76,7 @@ export default function ChannelProgrammingPage() {
 
   const onSave = () => {
     updateLineupMutation
-      .mutateAsync({ channelNumber: channel!.number, newLineup })
+      .mutateAsync({ channelId: channel!.id, newLineup })
       .then(console.log)
       .catch(console.error);
   };

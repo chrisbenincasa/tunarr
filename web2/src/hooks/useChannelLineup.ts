@@ -5,7 +5,7 @@ import { apiClient } from '../external/api.ts';
 import { channelQuery } from './useChannels.ts';
 
 export const lineupQuery = (
-  number: number,
+  id: string,
   dateRange: { start: dayjs.Dayjs; end: dayjs.Dayjs } | null,
   enabled: boolean,
 ) => {
@@ -13,26 +13,26 @@ export const lineupQuery = (
     dateRange?.end?.unix() ?? 'null'
   }`;
   return {
-    queryKey: ['channels', number, 'programming', dateRangeKey] as DataTag<
-      ['channels', number, 'programming', string],
+    queryKey: ['channels', id, 'programming', dateRangeKey] as DataTag<
+      ['channels', string, 'programming', string],
       ChannelLineup
     >,
     queryFn: async () =>
-      apiClient.get('/api/v2/channels/:number/programming', {
-        params: { number },
+      apiClient.get('/api/v2/channels/:id/programming', {
+        params: { id },
         queries: {
           from: dateRange?.start.toISOString(),
           to: dateRange?.end.toISOString(),
         },
       }),
-    enabled: number > 0 && enabled,
+    enabled: id.length > 0 && enabled,
   };
 };
 
-export const useChannelLineup = (number: number, enabled: boolean = true) => {
+export const useChannelLineup = (id: string, enabled: boolean = true) => {
   return useQuery(
     lineupQuery(
-      number,
+      id,
       {
         start: dayjs(),
         end: dayjs().add(2, 'days'),
@@ -43,16 +43,16 @@ export const useChannelLineup = (number: number, enabled: boolean = true) => {
 };
 
 export const useChannelAndLineup = (
-  number: number,
+  id: string,
   dateRange: { start: dayjs.Dayjs; end: dayjs.Dayjs } | null,
   enabled: boolean = true,
   initialData?: { channel?: Channel; lineup?: ChannelLineup },
 ) =>
   useQueries({
     queries: [
-      { ...channelQuery(number, enabled), initialData: initialData?.channel },
+      { ...channelQuery(id, enabled), initialData: initialData?.channel },
       {
-        ...lineupQuery(number, dateRange, enabled),
+        ...lineupQuery(id, dateRange, enabled),
         initialData: initialData?.lineup,
       },
     ],

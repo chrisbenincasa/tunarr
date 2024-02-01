@@ -26,6 +26,11 @@ export const miscRouter: FastifyPluginCallback = (fastify, _opts, done) => {
     }),
   );
 
+  fastify.addHook('onError', (req, _, error, done) => {
+    logger.error('%s %O', req.routeOptions.url, error);
+    done();
+  });
+
   fastify.get('/api/version', async (req, res) => {
     try {
       const ffmpegSettings = req.serverCtx.settings.ffmpegSettings();
@@ -97,7 +102,7 @@ export const miscRouter: FastifyPluginCallback = (fastify, _opts, done) => {
         .header('Content-Type', 'application/xml')
         .send(fileFinal);
     } catch (err) {
-      logger.error(err);
+      logger.error('%O', err);
       return res.status(500).send('error');
     }
   });
