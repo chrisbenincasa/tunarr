@@ -3,8 +3,7 @@ import { createBrowserRouter } from 'react-router-dom';
 import { Root } from './App.tsx';
 import ChannelProgrammingPage from './pages/channels/ChannelProgrammingPage.tsx';
 import ChannelsPage from './pages/channels/ChannelsPage.tsx';
-import EditExistingChannelPage from './pages/channels/EditExistingChannelPage.tsx';
-import NewChannelPage from './pages/channels/NewChannelPage.tsx';
+import EditChannelPage from './pages/channels/EditChannelPage.tsx';
 import TimeSlotEditorPage from './pages/channels/TimeSlotEditorPage.tsx';
 import {
   customShowsLoader,
@@ -12,13 +11,13 @@ import {
   editProgrammingLoader,
   existingCustomShowLoader,
   existingFillerListLoader,
-  newChannelLoader,
   newCustomShowLoader,
   newFillerListLoader,
 } from './pages/channels/loaders.ts';
 import GuidePage from './pages/guide/GuidePage.tsx';
 import CustomShowsPage from './pages/library/CustomShowsPage.tsx';
 import EditCustomShowPage from './pages/library/EditCustomShowPage.tsx';
+import EditFillerPage from './pages/library/EditFillerPage.tsx';
 import FillerListsPage from './pages/library/FillerListsPage.tsx';
 import LibraryIndexPage from './pages/library/LibraryIndexPage.tsx';
 import FfmpegSettingsPage from './pages/settings/FfmpegSettingsPage.tsx';
@@ -28,9 +27,8 @@ import PlexSettingsPage from './pages/settings/PlexSettingsPage.tsx';
 import SettingsLayout from './pages/settings/SettingsLayout.tsx';
 import TaskSettingsPage from './pages/settings/TaskSettingsPage.tsx';
 import XmlTvSettingsPage from './pages/settings/XmlTvSettingsPage.tsx';
-import { queryCache } from './queryClient.ts';
-import EditFillerPage from './pages/library/EditFillerPage.tsx';
 import WatchPage from './pages/watch/WatchPage.tsx';
+import { queryCache } from './queryClient.ts';
 
 const queryClient = new QueryClient({ queryCache });
 
@@ -49,13 +47,13 @@ export const router = createBrowserRouter([
       },
       {
         path: '/channels/:id/edit',
-        element: <EditExistingChannelPage />,
-        loader: editChannelLoader(queryClient),
+        element: <EditChannelPage isNew={false} />,
+        loader: editChannelLoader(false)(queryClient),
       },
       {
         path: '/channels/new',
-        element: <NewChannelPage />,
-        loader: newChannelLoader(queryClient),
+        element: <EditChannelPage isNew={true} />,
+        loader: editChannelLoader(true)(queryClient),
       },
       {
         path: '/channels/:id/programming',

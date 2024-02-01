@@ -30,6 +30,9 @@ import {
   fillerListProgramsQuery,
   fillerListQuery,
 } from '../../hooks/useFillerLists.ts';
+import { v4 as uuidv4 } from 'uuid';
+import dayjs from 'dayjs';
+import { maxBy } from 'lodash-es';
 
 function createPreloader<
   T = unknown,
@@ -53,11 +56,6 @@ function createPreloader<
     return data;
   };
 }
-
-export const editChannelLoader = createPreloader<Channel>(
-  ({ params }) => channelQuery(params.id!),
-  (channel) => setCurrentChannel(channel, []),
-);
 
 export const editProgrammingLoader: Preloader<{
   channel: Channel;
@@ -93,6 +91,45 @@ export const editProgrammingLoader: Preloader<{
 export const newChannelLoader: Preloader<Channel[]> = createPreloader(
   () => channelsQuery,
 );
+
+function defaultNewChannel(num: number): Channel {
+  return {
+    id: uuidv4(),
+    name: `Channel ${num}`,
+    number: num,
+    startTime: dayjs().unix() * 1000,
+    duration: 0,
+    programs: [],
+    icon: {
+      duration: 0,
+      path: '',
+      position: 'bottom',
+      width: 0,
+    },
+    guideMinimumDurationSeconds: 300,
+    groupTitle: 'tv',
+    stealth: false,
+    disableFillerOverlay: false,
+    offline: {
+      mode: 'pic',
+    },
+  };
+}
+
+export const editChannelLoader = (isNew: boolean): Preloader<Channel> => {
+  if (isNew) {
+    return (queryClient) => async (args) => {
+      const channels = await createPreloader(() => channelsQuery)(queryClient)(
+        args,
+      );
+      return defaultNewChannel(
+        (maxBy(channels, (c) => c.number)?.number ?? 0) + 1,
+      );
+    };
+  } else {
+    return createPreloader(({ params }) => channelQuery(params.id!));
+  }
+};
 
 export const customShowsLoader: Preloader<CustomShow[]> = createPreloader(
   () => customShowsQuery,
