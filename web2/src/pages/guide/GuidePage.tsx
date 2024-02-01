@@ -128,7 +128,7 @@ export default function GuidePage() {
     const grey = index % 2 === 0 ? 200 : 300;
 
     return (
-      <Tooltip title={start.format()} placement="top">
+      <Tooltip key={key} title={start.format()} placement="top">
         <GuideItem width={pct} grey={grey} key={key}>
           {title}
         </GuideItem>
