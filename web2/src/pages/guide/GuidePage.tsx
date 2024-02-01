@@ -188,7 +188,7 @@ export default function GuidePage() {
               display: 'flex',
               position: 'relative',
               flexDirection: 'column',
-              maxWidth: '100%',
+              width: '100%',
               overflowX: 'hidden',
             }}
           >
