@@ -11,6 +11,9 @@ import { useAllTvGuides } from '../../hooks/useTvGuide.ts';
 
 dayjs.extend(duration);
 
+const SubtractInterval = dayjs.duration(1, 'hour');
+const MinDurationMillis = dayjs.duration(1, 'hour').asMilliseconds();
+
 const GridParent = styled(Box)({
   borderStyle: 'solid',
   borderColor: 'rgba(0,0,0,0.2)',
@@ -87,8 +90,10 @@ export default function GuidePage() {
   }, [setEnd]);
 
   const zoomIn = useCallback(() => {
-    setEnd((last) => last.subtract(1, 'hours'));
-  }, [setEnd]);
+    if (end.subtract(SubtractInterval).diff(start) >= MinDurationMillis) {
+      setEnd((last) => last.subtract(SubtractInterval));
+    }
+  }, [end, start, setEnd]);
 
   if (isPending) return 'Loading...';
 
@@ -149,12 +154,15 @@ export default function GuidePage() {
     );
   });
 
+  const zoomDisabled =
+    end.subtract(SubtractInterval).diff(start) < MinDurationMillis;
+
   return (
     <>
       <p>
         {start.toISOString()} to {end.toISOString()}
       </p>
-      <IconButton onClick={zoomIn}>
+      <IconButton disabled={zoomDisabled} onClick={zoomIn}>
         <ZoomInIcon />
       </IconButton>
       <IconButton onClick={zoomOut}>
