@@ -30,6 +30,7 @@ import TaskSettingsPage from './pages/settings/TaskSettingsPage.tsx';
 import XmlTvSettingsPage from './pages/settings/XmlTvSettingsPage.tsx';
 import { queryCache } from './queryClient.ts';
 import EditFillerPage from './pages/library/EditFillerPage.tsx';
+import WatchPage from './pages/watch/WatchPage.tsx';
 
 const queryClient = new QueryClient({ queryCache });
 
@@ -69,6 +70,10 @@ export const router = createBrowserRouter([
       {
         path: '/guide',
         element: <GuidePage />,
+      },
+      {
+        path: '/watch',
+        element: <WatchPage />,
       },
       {
         path: '/settings',

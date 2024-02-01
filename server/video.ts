@@ -19,6 +19,7 @@ import { serverContext } from './serverContext.js';
 import { wereThereTooManyAttempts } from './throttler.js';
 import { ContextChannel, Maybe, PlayerContext } from './types.js';
 import { TypedEventEmitter } from './types/eventEmitter.js';
+import { v4 } from 'uuid';
 
 const logger = createLogger(import.meta);
 
@@ -84,22 +85,26 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
   });
 
   const concat = async (
-    req: FastifyRequest<{ Querystring: { channel?: number } }>,
+    req: FastifyRequest<{ Querystring: { channel?: string } }>,
     res: FastifyReply,
     audioOnly: boolean,
   ) => {
-    console.time('TOFB');
-    void res.hijack();
+    const reqId = `'conat-TOFB-${v4()}`;
+    console.time(reqId);
     const ctx = await serverContext();
     // Check if channel queried is valid
     if (isUndefined(req.query.channel)) {
       return res.status(500).send('No Channel Specified');
     }
 
-    const channel = await ctx.channelCache.getChannelConfig(req.query.channel);
+    const channel = await ctx.channelCache.getChannelConfig(
+      parseInt(req.query.channel),
+    );
     if (isNil(channel)) {
       return res.status(500).send("Channel doesn't exist");
     }
+
+    void res.hijack();
 
     const ffmpegSettings = req.serverCtx.settings.ffmpegSettings();
 
@@ -176,7 +181,7 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
     });
 
     const onceListener = once(() => {
-      console.timeEnd('TOFB');
+      console.timeEnd(reqId);
       ff.removeListener('data', onceListener);
     });
 
@@ -187,13 +192,13 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
     // return res.send(ff);
   };
 
-  fastify.get<{ Querystring: { channel?: number } }>(
+  fastify.get<{ Querystring: { channel?: string } }>(
     '/video',
     async (req, res) => {
       return await concat(req, res, false);
     },
   );
-  fastify.get<{ Querystring: { channel?: number } }>(
+  fastify.get<{ Querystring: { channel?: string } }>(
     '/radio',
     async (req, res) => {
       return await concat(req, res, true);

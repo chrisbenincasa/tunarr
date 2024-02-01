@@ -631,6 +631,8 @@ export class TVGuideService {
     await this.get();
     const beginningTimeMs = dateFrom.getTime();
     const endTimeMs = dateTo.getTime();
+    console.log(this.cached);
+
     const { channel, programs } = this.cached[channelNumber];
     if (isNil(channel)) {
       return;

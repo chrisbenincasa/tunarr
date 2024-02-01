@@ -160,7 +160,7 @@ export default function GuidePage() {
   return (
     <>
       <p>
-        {start.toISOString()} to {end.toISOString()}
+        {start.format()} to {end.format()}
       </p>
       <IconButton disabled={zoomDisabled} onClick={zoomIn}>
         <ZoomInIcon />

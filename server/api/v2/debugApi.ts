@@ -210,11 +210,6 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
       const channel = await req.serverCtx.channelDB.getChannelAndPrograms(
         req.query.channelId,
       );
-      const t = req.serverCtx.guideService.prepareRefresh(
-        [wrap(channel!).toJSON()],
-        1000 * 60 * 60 * 24,
-      );
-      await req.serverCtx.guideService.refresh(t);
 
       const startTime = new Date();
       const duration =
@@ -222,6 +217,13 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
           ? dayjs.duration(1, 'day').asMilliseconds()
           : channel!.duration;
       const endTime = dayjs(startTime).add(duration, 'milliseconds').toDate();
+
+      const t = req.serverCtx.guideService.prepareRefresh(
+        [wrap(channel!).toJSON()],
+        duration,
+      );
+
+      await req.serverCtx.guideService.refresh(t);
 
       return res
         .status(200)
@@ -259,19 +261,19 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
         channel.number,
       );
 
-      return res.send(
-        helperFuncs.createLineup(
-          channelCache,
-          helperFuncs.getCurrentProgramAndTimeElapsed(
-            new Date().getTime(),
-            channel,
-            await req.serverCtx.channelDB.loadLineup(channel.uuid),
-          ),
+      const lineup = await helperFuncs.createLineup(
+        channelCache,
+        helperFuncs.getCurrentProgramAndTimeElapsed(
+          new Date().getTime(),
           channel,
-          fillers,
-          false,
+          await req.serverCtx.channelDB.loadLineup(channel.uuid),
         ),
+        channel,
+        fillers,
+        false,
       );
+
+      return res.send(lineup);
     },
   );
 
