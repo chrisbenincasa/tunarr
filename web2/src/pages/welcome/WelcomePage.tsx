@@ -21,13 +21,17 @@ import React, { useEffect } from 'react';
 import { useAllTvGuides } from '../../hooks/useTvGuide';
 import dayjs from 'dayjs';
 import { useNavigate } from 'react-router-dom';
+import {
+  resetPathwayState,
+  updatePathwayState,
+} from '../../store/themeEditor/actions.ts';
+import useStore from '../../store/index.ts';
 
 export default function WelcomePage() {
   const [isPlexConnected, setIsPlexConnected] = React.useState<boolean>(false);
   const [channelsExist, setChannelsExist] = React.useState<boolean>(false);
   const [programmingExists, setProgrammingExists] =
     React.useState<boolean>(false);
-  const [pathway, setPathway] = React.useState<string>('');
 
   const { data: plexServers } = usePlexServerSettings();
   const { data: channels } = useChannels();
@@ -38,6 +42,7 @@ export default function WelcomePage() {
     to: endDate,
   });
   const navigate = useNavigate();
+  const pathway = useStore((theme) => theme.pathway);
 
   useEffect(() => {
     if (plexServers && plexServers.length > 0) {
@@ -54,17 +59,11 @@ export default function WelcomePage() {
   }, [plexServers, channels, programming]);
 
   const handlePathway = (pathway: string) => {
-    setPathway(pathway);
+    updatePathwayState(pathway);
 
     if (pathway === 'advanced') {
-      // set global state to hide page
-      // navigate to Guide
       navigate('/guide');
     }
-  };
-
-  const resetPathway = () => {
-    setPathway('');
   };
 
   const header = (
@@ -209,7 +208,7 @@ export default function WelcomePage() {
     <>
       <PaddedPaper>
         {pathway && (
-          <Button startIcon={<ArrowBack />} onClick={() => resetPathway()}>
+          <Button startIcon={<ArrowBack />} onClick={() => resetPathwayState()}>
             Go Back
           </Button>
         )}

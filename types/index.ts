@@ -10,3 +10,4 @@ export * from './src/CustomShow.js';
 export * from './src/Event.js';
 export * from './src/FillerList.js';
 export * from './src/Tasks.js';
+export * from './src/Theme.js';
