@@ -54,8 +54,12 @@ export const ChannelSchema = z.object({
   fillerRepeatCooldown: z.number().optional(),
 });
 
-export const UpdateChannelRequestSchema = ChannelSchema.partial().omit({
-  programs: true,
-  fillerCollections: true,
-  fallback: true, // Figure out how to update this
-});
+export const UpdateChannelRequestSchema = ChannelSchema.partial()
+  .omit({
+    programs: true,
+    fillerCollections: true,
+    fallback: true, // Figure out how to update this
+  })
+  .extend({
+    fillerCollections: z.array(z.string()),
+  });

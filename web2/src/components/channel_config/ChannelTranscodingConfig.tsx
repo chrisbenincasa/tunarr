@@ -14,6 +14,8 @@ import {
 import useStore from '../../store/index.ts';
 import { isNil } from 'lodash-es';
 import { toStringResolution } from '../../helpers/util.ts';
+import { Controller, useFormContext } from 'react-hook-form';
+import { Channel } from '@tunarr/types';
 
 const resolutionOptions = [
   { value: '420x420', label: '420x420 (1:1)' },
@@ -33,6 +35,8 @@ export default function ChannelTranscodingConfig() {
     useFfmpegSettings();
 
   const channel = useStore((s) => s.channelEditor.currentEntity);
+
+  const { control } = useFormContext<Channel>();
 
   const resolution = channel?.transcoding?.targetResolution;
 
@@ -67,19 +71,25 @@ export default function ChannelTranscodingConfig() {
               <Input />
             </Skeleton>
           ) : (
-            <Select
-              disabled={
-                isNil(ffmpegSettings) || !ffmpegSettings.enableTranscoding
-              }
-              label="Channel Resolution"
-              value={chosenResolution}
-            >
-              {allResolutionOptions.map((opt) => (
-                <MenuItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </MenuItem>
-              ))}
-            </Select>
+            <Controller
+              control={control}
+              name="transcoding.targetResolution"
+              render={({ field }) => (
+                <Select
+                  disabled={
+                    isNil(ffmpegSettings) || !ffmpegSettings.enableTranscoding
+                  }
+                  label="Channel Resolution"
+                  {...field}
+                >
+                  {allResolutionOptions.map((opt) => (
+                    <MenuItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              )}
+            />
           )}
         </FormControl>
         <FormControl margin="normal">

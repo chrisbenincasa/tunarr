@@ -12,7 +12,10 @@ import {
   FillerList,
   FillerListProgramming,
 } from '@tunarr/types';
+import dayjs from 'dayjs';
+import { maxBy } from 'lodash-es';
 import { LoaderFunctionArgs } from 'react-router-dom';
+import { v4 as uuidv4 } from 'uuid';
 import { lineupQuery } from '../../hooks/useChannelLineup.ts';
 import { channelQuery, channelsQuery } from '../../hooks/useChannels.ts';
 import {
@@ -21,18 +24,14 @@ import {
   customShowsQuery,
 } from '../../hooks/useCustomShows.ts';
 import {
-  setCurrentChannel,
+  fillerListProgramsQuery,
+  fillerListQuery,
+} from '../../hooks/useFillerLists.ts';
+import {
   setCurrentCustomShow,
   setCurrentFillerList,
 } from '../../store/channelEditor/actions.ts';
 import { Preloader } from '../../types/index.ts';
-import {
-  fillerListProgramsQuery,
-  fillerListQuery,
-} from '../../hooks/useFillerLists.ts';
-import { v4 as uuidv4 } from 'uuid';
-import dayjs from 'dayjs';
-import { maxBy } from 'lodash-es';
 
 function createPreloader<
   T = unknown,
