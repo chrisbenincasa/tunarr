@@ -67,8 +67,8 @@ const middleware = <T>(
     devtools(
       persist(f, {
         name: 'tunarr',
-        partialize: (state) => ({
-          theme: state.theme,
+        partialize: (state: any) => ({
+          theme: state['theme'],
         }),
       }),
     ),
