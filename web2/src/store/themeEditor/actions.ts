@@ -2,20 +2,20 @@ import useStore from '..';
 import { initialThemeEditorState } from './store.ts';
 
 export const setDarkModeState = () => {
-  useStore.setState((theme) => {
-    theme.darkMode = !theme.darkMode;
+  useStore.setState((state) => {
+    state.theme.darkMode = !state.theme.darkMode;
   });
 };
 
 export const updatePathwayState = (newPathway: string) => {
-  useStore.setState((theme) => {
-    theme.pathway = newPathway;
+  useStore.setState((state) => {
+    state.theme.pathway = newPathway;
   });
 };
 
 export const resetPathwayState = () => {
-  useStore.setState((theme) => {
-    theme.pathway = '';
+  useStore.setState((state) => {
+    state.theme.pathway = '';
   });
 };
 

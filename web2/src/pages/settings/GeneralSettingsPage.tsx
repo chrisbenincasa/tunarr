@@ -3,7 +3,7 @@ import useStore from '../../store/index.ts';
 import { setDarkModeState } from '../../store/themeEditor/actions.ts';
 
 export default function GeneralSettingsPage() {
-  const darkMode = useStore((theme) => theme.darkMode);
+  const darkMode = useStore((state) => state.theme.darkMode);
 
   return (
     <>

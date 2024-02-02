@@ -24,7 +24,7 @@ import {
 import Container from '@mui/material/Container';
 import CssBaseline from '@mui/material/CssBaseline';
 import { ThemeProvider } from '@mui/material/styles';
-import React, { ReactNode, useEffect, useState } from 'react';
+import React, { ReactNode, useState } from 'react';
 import { Outlet, Link as RouterLink } from 'react-router-dom';
 import './App.css';
 import ServerEvents from './components/ServerEvents.tsx';
@@ -56,7 +56,7 @@ export function Root() {
   };
 
   const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
-  const darkMode = useStore((theme) => theme.darkMode);
+  const darkMode = useStore((state) => state.theme.darkMode);
 
   // Fallback to browser preference if no user selection
   if (isUndefined(darkMode) && prefersDarkMode) {
@@ -77,7 +77,7 @@ export function Root() {
   );
 
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
-  const pathway = useStore((theme) => theme.pathway);
+  const pathway = useStore((state) => state.theme.pathway);
 
   const navItems: NavItem[] = [
     {
