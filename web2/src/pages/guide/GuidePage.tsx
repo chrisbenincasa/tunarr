@@ -1,6 +1,6 @@
 import ZoomInIcon from '@mui/icons-material/ZoomIn';
 import ZoomOutIcon from '@mui/icons-material/ZoomOut';
-import { Box, Color, IconButton, Tooltip, styled } from '@mui/material';
+import { Box, Color, IconButton, Stack, Tooltip, styled } from '@mui/material';
 import { TvGuideProgram } from '@tunarr/types';
 import dayjs, { Dayjs } from 'dayjs';
 import duration from 'dayjs/plugin/duration';
@@ -8,6 +8,7 @@ import { useCallback, useState } from 'react';
 import { useInterval } from 'usehooks-ts';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import { useAllTvGuides } from '../../hooks/useTvGuide.ts';
+import { isEmpty } from 'lodash-es';
 
 dayjs.extend(duration);
 
@@ -160,7 +161,8 @@ export default function GuidePage() {
   return (
     <>
       <p>
-        {start.format()} to {end.format()}
+        {start.format('DD/MM/YYYY, HH:mm:ss:SSS A')} to{' '}
+        {end.format('DD/MM/YYYY, HH:mm:ss:SSS A')}
       </p>
       <IconButton disabled={zoomDisabled} onClick={zoomIn}>
         <ZoomInIcon />
@@ -178,9 +180,34 @@ export default function GuidePage() {
           >
             <Box sx={{ height: '2rem' }}></Box>
             {channelLineup?.map((channel) => (
-              <Box sx={{ height: '3rem' }} key={channel.number}>
-                {channel.name}
-              </Box>
+              <Stack direction={{ sm: 'column', md: 'row' }}>
+                <Box
+                  sx={{ height: '3rem' }}
+                  key={`img-${channel.number}`}
+                  display={'flex'}
+                  alignItems={'center'}
+                  justifyContent={'center'}
+                >
+                  <img
+                    style={{ maxHeight: '40px' }}
+                    src={
+                      isEmpty(channel.icon?.path)
+                        ? '/dizquetv.png'
+                        : channel.icon?.path
+                    }
+                  />
+                </Box>
+                <Box
+                  sx={{ height: '3rem' }}
+                  key={channel.number}
+                  display={'flex'}
+                  alignItems={'center'}
+                  justifyContent={'center'}
+                  flexGrow={1}
+                >
+                  {channel.name}
+                </Box>
+              </Stack>
             ))}
           </Box>
           <Box
