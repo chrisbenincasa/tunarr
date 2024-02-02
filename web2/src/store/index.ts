@@ -1,6 +1,6 @@
-import { Channel, XmlTvSettings } from '@tunarr/types';
+import { Channel, XmlTvSettings, Theme } from '@tunarr/types';
 import { StateCreator, create } from 'zustand';
-import { devtools } from 'zustand/middleware';
+import { devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import {
   ProgrammingListingsState,
@@ -10,6 +10,10 @@ import {
   ChannelEditorState,
   createChannelEditorState,
 } from './channelEditor/store.ts';
+import {
+  ThemeEditorState,
+  createThemeEditorState,
+} from './themeEditor/store.ts';
 
 // type WithSelectors<S> = S extends { getState: () => infer T }
 //   ? S & { use: { [K in keyof T]: () => T[K] } }
@@ -35,7 +39,8 @@ interface SettingsState {
   xmltvSettings?: XmlTvSettings;
 }
 
-export type State = SettingsState &
+export type State = ThemeEditorState &
+  SettingsState &
   ChannelsState &
   ProgrammingListingsState &
   ChannelEditorState;
@@ -54,10 +59,20 @@ const middleware = <T>(
     [
       ['zustand/immer', never],
       ['zustand/devtools', never],
-      // ['zustand/persist', unknown],
+      ['zustand/persist', unknown],
     ]
   >,
-) => immer(devtools(f));
+) =>
+  immer(
+    devtools(
+      persist(f, {
+        name: 'tunarr',
+        partialize: (state: any) => ({
+          theme: state['theme'],
+        }),
+      }),
+    ),
+  );
 
 const useStore = create<State>()(
   middleware((...set) => ({
@@ -65,6 +80,7 @@ const useStore = create<State>()(
     ...createChannelsState(...set),
     ...createProgrammingListingsState(...set),
     ...createChannelEditorState(...set),
+    ...createThemeEditorState(...set),
   })),
 );
 
