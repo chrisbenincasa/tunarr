@@ -2,12 +2,12 @@ import { Theme } from '@tunarr/types';
 import { StateCreator } from 'zustand';
 
 export interface ThemeEditorState {
-  darkMode: boolean;
+  darkMode?: boolean | undefined;
   pathway: string;
 }
 
 export const initialThemeEditorState: Theme = {
-  darkMode: false,
+  darkMode: undefined,
   pathway: '',
 };
 

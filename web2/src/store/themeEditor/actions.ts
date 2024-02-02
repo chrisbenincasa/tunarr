@@ -1,5 +1,4 @@
 import useStore from '..';
-import { Theme } from '@tunarr/types';
 import { initialThemeEditorState } from './store.ts';
 
 export const setDarkModeState = () => {

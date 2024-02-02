@@ -24,16 +24,18 @@ import {
 import Container from '@mui/material/Container';
 import CssBaseline from '@mui/material/CssBaseline';
 import { ThemeProvider } from '@mui/material/styles';
-import React, { ReactNode, useState } from 'react';
+import React, { ReactNode, useEffect, useState } from 'react';
 import { Outlet, Link as RouterLink } from 'react-router-dom';
 import './App.css';
 import ServerEvents from './components/ServerEvents.tsx';
 import VersionFooter from './components/VersionFooter.tsx';
 import useMediaQuery from '@mui/material/useMediaQuery';
-import theme from './theme.tsx';
 import { ExpandMore, Home } from '@mui/icons-material';
 import useStore from './store/index.ts';
-
+import { createTheme } from '@mui/material/styles';
+import { red } from '@mui/material/colors';
+import { setDarkModeState } from './store/themeEditor/actions.ts';
+import { isUndefined } from 'lodash-es';
 interface NavItem {
   name: string;
   path: string;
@@ -44,6 +46,7 @@ interface NavItem {
 
 export function Root() {
   const [open, setOpen] = useState(false);
+
   const toggleDrawerOpen = () => {
     setOpen(true);
   };
@@ -52,8 +55,28 @@ export function Root() {
     setOpen(false);
   };
 
-  const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
+  const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
+  const darkMode = useStore((theme) => theme.darkMode);
 
+  // Fallback to browser preference if no user selection
+  if (isUndefined(darkMode) && prefersDarkMode) {
+    setDarkModeState();
+  }
+
+  const theme = React.useMemo(
+    () =>
+      createTheme({
+        palette: {
+          mode: darkMode ? 'dark' : 'light',
+          primary: {
+            main: red[500],
+          },
+        },
+      }),
+    [darkMode],
+  );
+
+  const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
   const pathway = useStore((theme) => theme.pathway);
 
   const navItems: NavItem[] = [
