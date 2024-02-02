@@ -3,6 +3,7 @@ import AddIcon from '@mui/icons-material/Add';
 import {
   Alert,
   Box,
+  Breadcrumbs,
   Button,
   Divider,
   FormControl,
@@ -11,6 +12,7 @@ import {
   Grid,
   IconButton,
   InputLabel,
+  Link,
   MenuItem,
   Select,
   Snackbar,
@@ -19,7 +21,11 @@ import {
 } from '@mui/material';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import { dayjsMod, scheduleTimeSlots } from '@tunarr/shared';
-import { ChannelProgram, isContentProgram } from '@tunarr/types';
+import {
+  ChannelProgram,
+  ContentProgram,
+  isContentProgram,
+} from '@tunarr/types';
 import {
   TimeSlot,
   TimeSlotProgramming,
@@ -36,15 +42,20 @@ import {
   isUndefined,
   map,
   maxBy,
+  reduce,
   some,
+  uniqBy,
 } from 'lodash-es';
 import { Fragment, useCallback, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import ChannelProgrammingList from '../../components/channel_config/ChannelProgrammingList.tsx';
 import { useNumberString } from '../../hooks/useNumberString.ts';
 import { usePreloadedChannel } from '../../hooks/usePreloadedChannel.ts';
-import { clearSlotSchedulePreview } from '../../store/channelEditor/actions.ts';
+import {
+  clearSlotSchedulePreview,
+  updateCurrentChannel,
+} from '../../store/channelEditor/actions.ts';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -293,6 +304,8 @@ export default function TimeSlotEditorPage() {
       slots: timeSlots,
     };
 
+    console.log('scheduling ', schedule);
+
     performance.mark('guide-start');
     scheduleTimeSlots(schedule, newLineup)
       .then((res) => {
@@ -306,8 +319,33 @@ export default function TimeSlotEditorPage() {
           ms: Math.round(ms),
           numShows: res.programs.length,
         });
+        // TODO Adjust for timezone
         setStartTime(res.startTime);
+        updateCurrentChannel({ startTime: res.startTime });
         setGeneratedList(res.programs);
+        const uniquePrograms: ContentProgram[] = uniqBy(
+          filter(res.programs, isContentProgram),
+          'uniqueId',
+        );
+        const programByIndex = reduce(
+          map(uniquePrograms, (p, idx) => [p, idx] as [ContentProgram, number]),
+          (acc, [p, idx]) => ({
+            ...acc,
+            [p.uniqueId]: idx,
+          }),
+          {} as Record<string, number>,
+        );
+        const condensedLineup = map(res.programs, (p) => {
+          if (isContentProgram(p)) {
+            return {
+              id: p.uniqueId,
+            };
+          } else {
+            return p;
+          }
+        });
+        console.log(condensedLineup);
+        // const indexList =
       })
       .catch(console.error);
   };
@@ -326,12 +364,23 @@ export default function TimeSlotEditorPage() {
       >
         <Alert variant="filled" color="success">
           {perfSnackbarDetails
-            ? `Calculated ${dayjs.duration(365, 'days').humanize()} (${
+            ? `Calculated ${dayjs.duration(precalcDays, 'days').humanize()} (${
                 perfSnackbarDetails.numShows
               } programs) of programming in ${perfSnackbarDetails.ms}ms`
             : null}
         </Alert>
       </Snackbar>
+      <Breadcrumbs sx={{ mb: 2 }}>
+        <Link
+          underline="hover"
+          color="inherit"
+          component={RouterLink}
+          to=".."
+          relative="path"
+        >
+          Back
+        </Link>
+      </Breadcrumbs>
       <Typography variant="h4" sx={{ mb: 2 }}>
         Edit Time Slots (Channel {channel?.number})
       </Typography>
@@ -491,7 +540,7 @@ export default function TimeSlotEditorPage() {
           variant="contained"
           to=".."
           relative="path"
-          component={Link}
+          component={RouterLink}
           onClick={() => clearSlotSchedulePreview()}
         >
           Cancel

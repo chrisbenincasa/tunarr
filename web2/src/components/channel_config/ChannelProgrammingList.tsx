@@ -55,7 +55,11 @@ export default function ChannelProgrammingList({
 
   const renderProgram = (idx: number, style?: CSSProperties) => {
     const program = programList[idx];
-    const startTime = startTimes[idx].format('YYYY-MM-DD HH:mm:ss');
+    // Intl.DateTimeFormat
+    const startTime = new Intl.DateTimeFormat(undefined, {
+      dateStyle: 'medium',
+      timeStyle: 'medium',
+    }).format(startTimes[idx].toDate());
     const dayBoundary = startTimes[idx + 1].isAfter(startTimes[idx], 'day');
     let title: string;
 

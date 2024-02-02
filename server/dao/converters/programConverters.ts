@@ -7,6 +7,7 @@ export function dbProgramToContentProgram(
 ): ContentProgram {
   return {
     persisted,
+    uniqueId: program.uuid,
     summary: program.summary,
     date: program.originalAirDate,
     rating: program.rating,

@@ -766,9 +766,12 @@ function makeEntry(
     rating: currentProgram.program.rating,
     icon: icon,
     title: title,
-    duration: currentProgram.program?.duration,
+    duration: currentProgram.program.duration,
     type: 'content',
     id: currentProgram.program.id,
+    uniqueId:
+      currentProgram.program.id ??
+      `${currentProgram.program.sourceType}|${currentProgram.program.serverKey}|${currentProgram.program.key}`,
     subtype: currentProgram.program?.type,
     persisted: true,
     seasonNumber,

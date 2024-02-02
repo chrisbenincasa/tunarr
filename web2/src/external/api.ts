@@ -15,7 +15,7 @@ import {
   FillerListSchema,
   ProgramSchema,
   TaskSchema,
-  UpdateChannelRequestSchema,
+  SaveChannelRequestSchema,
 } from '@tunarr/types/schemas';
 import { once } from 'lodash-es';
 import { z } from 'zod';
@@ -28,15 +28,16 @@ export const api = makeApi([
   },
   {
     method: 'post',
-    parameters: parametersBuilder().addBody(UpdateChannelRequestSchema).build(),
+    parameters: parametersBuilder().addBody(SaveChannelRequestSchema).build(),
     path: '/api/v2/channels',
+    alias: 'createChannel',
     status: 201,
     response: z.object({ id: z.string() }),
   },
   {
     method: 'put',
     parameters: parametersBuilder()
-      .addBody(UpdateChannelRequestSchema)
+      .addBody(SaveChannelRequestSchema)
       .addPath('id', z.string())
       .build(),
     path: '/api/v2/channels/:id',

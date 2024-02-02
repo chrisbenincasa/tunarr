@@ -7,7 +7,7 @@ import {
   ChannelProgrammingSchema,
   ChannelSchema,
   ProgramSchema,
-  UpdateChannelRequestSchema,
+  SaveChannelRequestSchema,
 } from '@tunarr/types/schemas';
 import {
   compact,
@@ -46,7 +46,7 @@ const ChannelLineupQuery = z.object({
 // eslint-disable-next-line @typescript-eslint/require-await
 export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
   fastify.addHook('onError', (req, _, error, done) => {
-    logger.error('%s %O', req.routeOptions.url, error);
+    logger.error('%s %s %O', req.routerMethod, req.routeOptions.url, error);
     done();
   });
 
@@ -112,7 +112,7 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
     {
       schema: {
         operationId: 'createChannelV2',
-        body: ChannelSchema,
+        body: SaveChannelRequestSchema,
         response: {
           201: z.object({ id: z.string() }),
           500: z.object({}),
@@ -134,7 +134,7 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
     '/channels/:id',
     {
       schema: {
-        body: UpdateChannelRequestSchema,
+        body: SaveChannelRequestSchema,
         params: z.object({ id: z.string() }),
         response: {
           200: ChannelSchema.omit({ programs: true }),
@@ -267,8 +267,6 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
         onConflictFields: ['sourceType', 'externalSourceId', 'externalKey'],
         onConflictExcludeFields: ['uuid'],
       });
-
-      console.log(upsertedPrograms);
 
       // TODO:
       // * calculate new channel duration

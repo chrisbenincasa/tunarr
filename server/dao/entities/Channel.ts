@@ -6,17 +6,15 @@ import {
   Property,
   Unique,
 } from '@mikro-orm/core';
-import { Resolution } from '@tunarr/types';
+import { Channel as ChannelDTO, Resolution } from '@tunarr/types';
+import { Duration } from 'dayjs/plugin/duration.js';
+import { nilToUndefined } from '../../util.js';
+import { DurationType } from '../custom_types/DurationType.js';
 import { BaseEntity } from './BaseEntity.js';
+import { ChannelFillerShow } from './ChannelFillerShow.js';
+import { CustomShow } from './CustomShow.js';
 import { FillerShow } from './FillerShow.js';
 import { Program } from './Program.js';
-import { CustomShow } from './CustomShow.js';
-import { ChannelFillerShow } from './ChannelFillerShow.js';
-import { Channel as ChannelDTO } from '@tunarr/types';
-import { DurationType } from '../custom_types/DurationType.js';
-import { Duration } from 'dayjs/plugin/duration.js';
-import dayjs from 'dayjs';
-import { nilToUndefined } from '../../util.js';
 
 type ChannelIcon = {
   path: string;
@@ -56,9 +54,7 @@ export class Channel extends BaseEntity {
     const entity = new Channel();
     entity.number = channel.number;
     entity.icon = channel.icon;
-    entity.guideMinimumDuration = dayjs.duration({
-      seconds: channel.guideMinimumDurationSeconds,
-    });
+    entity.guideMinimumDurationSeconds = channel.guideMinimumDurationSeconds;
     entity.name = channel.name;
     entity.duration = channel.duration;
     entity.stealth = channel.stealth;
@@ -87,17 +83,8 @@ export class Channel extends BaseEntity {
   @ManyToMany(() => Program, 'channels', { owner: true })
   programs = new Collection<Program>(this);
 
-  @Property({ type: DurationType })
-  guideMinimumDuration!: Duration;
-
-  @Property({ persist: false, type: 'int' })
-  get guideMinimumDurationSeconds(): number {
-    return this.guideMinimumDuration.asSeconds();
-  }
-
-  set guideMinimumDurationSeconds(seconds: number) {
-    this.guideMinimumDuration = dayjs.duration({ seconds });
-  }
+  @Property({ type: 'int', name: 'guide_minimum_duration' })
+  guideMinimumDurationSeconds: number;
 
   @Property({ default: false })
   disableFillerOverlay: boolean = false;
@@ -162,7 +149,7 @@ export class Channel extends BaseEntity {
         position: '',
         width: 0,
       },
-      guideMinimumDurationSeconds: this.guideMinimumDuration.asSeconds(),
+      guideMinimumDurationSeconds: this.guideMinimumDurationSeconds,
       groupTitle: this.groupTitle || '',
       disableFillerOverlay: this.disableFillerOverlay,
       startTime: this.startTime,

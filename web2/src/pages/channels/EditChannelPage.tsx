@@ -1,6 +1,6 @@
 import Box from '@mui/material/Box';
 import Link from '@mui/material/Link';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import Breadcrumbs from '@mui/material/Breadcrumbs';
 import Paper from '@mui/material/Paper';
 import Tab from '@mui/material/Tab';
@@ -21,8 +21,8 @@ import {
 } from './EditChannelContext.ts';
 import { editChannelLoader } from './loaders.ts';
 import { FormProvider, SubmitHandler, useForm } from 'react-hook-form';
-import { Channel, UpdateChannelRequest } from '@tunarr/types';
-import { useMutation } from '@tanstack/react-query';
+import { Channel, SaveChannelRequest } from '@tunarr/types';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../../external/api.ts';
 
 type TabValues = 'properties' | 'flex' | 'epg' | 'ffmpeg';
@@ -93,8 +93,9 @@ export default function EditChannelPage({ isNew }: Props) {
     setCurrentChannel(channel, []);
   });
 
-  console.log(originalChannel, channel);
-  const formMethods = useForm<Channel>({
+  const queryClient = useQueryClient();
+
+  const formMethods = useForm<SaveChannelRequest>({
     mode: 'onChange',
     // Change this so we only load the form on initial...
     defaultValues: originalChannel ?? channel,
@@ -103,16 +104,26 @@ export default function EditChannelPage({ isNew }: Props) {
   // make sure formState is read before render to enable the Proxy
   const formIsValid = formMethods.formState.isValid;
 
+  const navigate = useNavigate();
   const updateChannel = useMutation({
-    mutationFn: async (channelUpdates: UpdateChannelRequest) => {
+    mutationFn: async (channelUpdates: SaveChannelRequest) => {
       if (isNew) {
-        return apiClient.updateChannel(channelUpdates, {
-          params: { id: channel.id },
-        });
+        return apiClient.createChannel(channelUpdates);
       } else {
         return apiClient.updateChannel(channelUpdates, {
           params: { id: channel.id },
         });
+      }
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        exact: false,
+        queryKey: ['channels'],
+      });
+      if (isNew) {
+        navigate('/channels');
+      } else {
+        updateChannel.reset();
       }
     },
   });
@@ -132,7 +143,8 @@ export default function EditChannelPage({ isNew }: Props) {
     );
   };
 
-  const onSubmit: SubmitHandler<Channel> = (data) => {
+  const onSubmit: SubmitHandler<SaveChannelRequest> = (data) => {
+    updateChannel.mutate(data);
     console.log(data);
   };
 

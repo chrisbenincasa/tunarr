@@ -48,7 +48,6 @@ export function PlexListItem<T extends PlexMedia>(props: PlexListItemProps<T>) {
 
   useEffect(() => {
     if (children) {
-      console.log(children);
       addKnownMediaForServer(server.name, children.Metadata, item.guid);
     }
   }, [item.guid, server.name, children]);
@@ -62,7 +61,6 @@ export function PlexListItem<T extends PlexMedia>(props: PlexListItemProps<T>) {
   );
 
   const renderChildren = () => {
-    console.log(children);
     return isPending ? (
       <Skeleton />
     ) : (

@@ -1,13 +1,14 @@
 import { Loaded, QueryOrder, RequiredEntityData, wrap } from '@mikro-orm/core';
 import {
-  Channel as ApiChannel,
   ChannelProgram,
   ChannelProgramming,
   ContentProgram,
   FlexProgram,
   RedirectProgram,
-  UpdateChannelRequest,
+  SaveChannelRequest,
 } from '@tunarr/types';
+import dayjs from 'dayjs';
+import duration from 'dayjs/plugin/duration.js';
 import { chain, isNil, isNull, omitBy } from 'lodash-es';
 import { Low } from 'lowdb';
 import { JSONFile } from 'lowdb/node';
@@ -25,13 +26,11 @@ import {
   isRedirectItem,
 } from './derived_types/Lineup.js';
 import { Channel } from './entities/Channel.js';
-import dayjs from 'dayjs';
-import duration from 'dayjs/plugin/duration.js';
 
 dayjs.extend(duration);
 
 function updateRequestToChannel(
-  updateReq: UpdateChannelRequest,
+  updateReq: SaveChannelRequest,
 ): Partial<Channel> {
   return omitBy(
     {
@@ -58,25 +57,25 @@ function updateRequestToChannel(
 }
 
 function createRequestToChannel(
-  updateReq: ApiChannel,
+  saveReq: SaveChannelRequest,
 ): RequiredEntityData<Channel> {
   const c: RequiredEntityData<Channel> = {
-    number: updateReq.number,
-    watermark: updateReq.watermark,
-    icon: updateReq.icon,
-    guideMinimumDurationSeconds: updateReq.guideMinimumDurationSeconds,
+    number: saveReq.number,
+    watermark: saveReq.watermark,
+    icon: saveReq.icon,
+    guideMinimumDurationSeconds: saveReq.guideMinimumDurationSeconds,
     // guideMinimumDuration: dayjs.duration({ seconds: updateReq.guideMinimumDurationSeconds }),
     // : undefined,
-    groupTitle: updateReq.groupTitle,
-    disableFillerOverlay: updateReq.disableFillerOverlay,
-    startTime: updateReq.startTime,
-    offline: updateReq.offline,
-    name: updateReq.name,
-    transcoding: updateReq.transcoding,
-    duration: updateReq.duration,
-    stealth: updateReq.stealth,
-    fillerRepeatCooldown: updateReq.fillerRepeatCooldown
-      ? dayjs.duration({ seconds: updateReq.fillerRepeatCooldown })
+    groupTitle: saveReq.groupTitle,
+    disableFillerOverlay: saveReq.disableFillerOverlay,
+    startTime: saveReq.startTime,
+    offline: saveReq.offline,
+    name: saveReq.name,
+    transcoding: saveReq.transcoding,
+    duration: saveReq.duration,
+    stealth: saveReq.stealth,
+    fillerRepeatCooldown: saveReq.fillerRepeatCooldown
+      ? dayjs.duration({ seconds: saveReq.fillerRepeatCooldown })
       : undefined,
   };
   // c.guideMinimumDurationSeconds = updateReq.guideMinimumDurationSeconds;
@@ -106,7 +105,7 @@ export class ChannelDB {
       .findOne({ number }, { populate: ['programs'] });
   }
 
-  async saveChannel(createReq: ApiChannel) {
+  async saveChannel(createReq: SaveChannelRequest) {
     const em = getEm();
     const existing = await em.findOne(Channel, { number: createReq.number });
     if (!isNull(existing)) {
@@ -123,7 +122,7 @@ export class ChannelDB {
     return channel.uuid;
   }
 
-  async updateChannel(id: string, updateReq: UpdateChannelRequest) {
+  async updateChannel(id: string, updateReq: SaveChannelRequest) {
     const em = getEm();
     const channel = em.getReference(Channel, id);
     const update = updateRequestToChannel(updateReq);

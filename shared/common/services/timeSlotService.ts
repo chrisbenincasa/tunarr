@@ -155,7 +155,6 @@ export function distributeFlex(
 
   const div = Math.floor(remainingTime / schedule.padMs);
   const mod = remainingTime % schedule.padMs;
-  console.log({ remainingTime, 'schedule.padMs': schedule.padMs, div, mod });
   // Add leftover flex to end
   last(programs)!.padMs += mod;
   last(programs)!.totalDuration += mod;
@@ -172,7 +171,6 @@ export function distributeFlex(
     if (i < div % programs.length) {
       q++;
     }
-    console.log(q);
     const extraPadding = q * schedule.padMs;
     programs[sortedPads[i].index].padMs += extraPadding;
     programs[sortedPads[i].index].totalDuration += extraPadding;
@@ -328,10 +326,10 @@ export async function scheduleTimeSlots(
     let remaining: number = 0;
     let lateMillis: number | null = null;
 
-    console.log(timeCursor.format());
     const m = timeCursor.mod(schedule.padMs).asMilliseconds();
     if (m > constants.SLACK && schedule.padMs - m > constants.SLACK) {
-      console.log('we need to pad the TS');
+      pushFlex(dayjs.duration(schedule.padMs - m));
+      continue;
     }
 
     for (let i = 0; i < sortedSlots.length; i++) {
@@ -383,7 +381,6 @@ export async function scheduleTimeSlots(
       !isNull(lateMillis) &&
       lateMillis >= schedule.latenessMs + constants.SLACK
     ) {
-      console.log('we got a runner', dayjs.duration(lateMillis).format());
       pushFlex(dayjs.duration(remaining));
       continue;
     }
