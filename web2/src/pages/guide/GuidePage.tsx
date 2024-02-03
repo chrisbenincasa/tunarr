@@ -1,7 +1,15 @@
 import ZoomInIcon from '@mui/icons-material/ZoomIn';
 import ZoomOutIcon from '@mui/icons-material/ZoomOut';
-import { Box, Color, IconButton, Stack, Tooltip, styled } from '@mui/material';
-import { TvGuideProgram } from '@tunarr/types';
+import {
+  Box,
+  Color,
+  IconButton,
+  Stack,
+  Tooltip,
+  Typography,
+  styled,
+} from '@mui/material';
+import { TvGuideProgram, ChannelProgram } from '@tunarr/types';
 import dayjs, { Dayjs } from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import { useCallback, useState } from 'react';
@@ -38,7 +46,6 @@ const GuideItem = styled(GridChild)<{ grey: keyof Color; width: number }>(
     borderColor: 'rgba(0,0,0,0.2)',
     height: '3rem',
     width: `${width}%`,
-    px: 1,
     transition: 'width 0.5s ease-in',
     overflow: 'hidden',
     whiteSpace: 'nowrap',
@@ -100,7 +107,11 @@ export default function GuidePage() {
 
   if (error) return 'An error occurred!: ' + error.message;
 
-  const renderProgram = (program: TvGuideProgram, index: number) => {
+  const renderProgram = (
+    program: TvGuideProgram,
+    index: number,
+    lineup: ChannelProgram[],
+  ) => {
     let title: string;
     switch (program.type) {
       case 'custom':
@@ -118,18 +129,36 @@ export default function GuidePage() {
     }
 
     const key = `${title}_${program.start}_${program.stop}`;
-    const start = dayjs(program.start);
-    const end = dayjs(program.stop);
-    const duration = dayjs.duration(end.diff(start));
+    const programStart = dayjs(program.start);
+    const programEnd = dayjs(program.stop);
+    let duration = dayjs.duration(programEnd.diff(programStart));
+
+    // Trim any time that has already played in the current program
+    if (index === 0) {
+      const trimStart = start.diff(programStart);
+      duration = duration.subtract(trimStart, 'ms');
+    }
+
+    // Trim any time that goes beyond the current guide end time
+    if (index === lineup.length - 1) {
+      const trimEnd = programEnd.diff(end);
+      duration = duration.subtract(trimEnd, 'ms');
+    }
 
     const pct = Math.round(
       (duration.asMilliseconds() / timelineDuration.asMilliseconds()) * 100.0,
     );
 
-    const grey = index % 2 === 0 ? 200 : 300;
+    const grey = index % 2 === 0 ? 300 : 400;
 
     return (
-      <Tooltip key={key} title={start.format()} placement="top">
+      <Tooltip
+        key={key}
+        title={`Starts at ${programStart.format(
+          'h:mm A',
+        )} and ends at ${programEnd.format('h:mm A')}`}
+        placement="top"
+      >
         <GuideItem width={pct} grey={grey} key={key}>
           {title}
         </GuideItem>
@@ -160,9 +189,12 @@ export default function GuidePage() {
 
   return (
     <>
+      <Typography variant="h3" mb={2}>
+        TV Guide
+      </Typography>
       <p>
-        {start.format('DD/MM/YYYY, HH:mm:ss:SSS A')} to{' '}
-        {end.format('DD/MM/YYYY, HH:mm:ss:SSS A')}
+        {start.format('DD/MM/YYYY, h:mm A')} to{' '}
+        {end.format('DD/MM/YYYY, h:mm A')}
       </p>
       <IconButton disabled={zoomDisabled} onClick={zoomIn}>
         <ZoomInIcon />
@@ -180,10 +212,12 @@ export default function GuidePage() {
           >
             <Box sx={{ height: '2rem' }}></Box>
             {channelLineup?.map((channel) => (
-              <Stack direction={{ sm: 'column', md: 'row' }}>
+              <Stack
+                direction={{ sm: 'column', md: 'row' }}
+                key={`img-${channel.number}`}
+              >
                 <Box
                   sx={{ height: '3rem' }}
-                  key={`img-${channel.number}`}
                   display={'flex'}
                   alignItems={'center'}
                   justifyContent={'center'}
@@ -233,7 +267,7 @@ export default function GuidePage() {
                   }}
                   key={slot}
                 >
-                  {start.add(slot * 30, 'minutes').format('hh:mm:ss')}
+                  {start.add(slot * 30, 'minutes').format('h:mm A')}
                 </GridChild>
               ))}
             </GridParent>
