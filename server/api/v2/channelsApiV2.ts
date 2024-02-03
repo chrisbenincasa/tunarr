@@ -308,7 +308,7 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
           case 'redirect':
             item = {
               type: 'redirect',
-              channel: 1, // TODO fix this....!
+              channel: '', // TODO fix this....!
               durationMs: p.duration,
             };
             break;

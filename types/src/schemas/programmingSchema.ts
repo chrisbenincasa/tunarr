@@ -14,7 +14,7 @@ export const ProgramTypeSchema = z.union([
 export const ExternalSourceTypeSchema = z.literal('plex');
 
 export const ProgramSchema = z.object({
-  channel: z.number().optional(), // Redirect
+  channel: z.string().optional(), // Redirect
   customOrder: z.number().optional(),
   customShowId: z.string().optional(),
   customShowName: z.string().optional(),

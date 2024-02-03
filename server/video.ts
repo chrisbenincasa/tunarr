@@ -310,7 +310,7 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
 
         const newChannelNumber = currentProgram.program.channel;
         const newChannel =
-          await req.serverCtx.channelCache.getChannelConfigWithProgramsByNumber(
+          await req.serverCtx.channelCache.getChannelConfigWithPrograms(
             newChannelNumber,
           );
 

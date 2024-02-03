@@ -22,7 +22,7 @@ export type OfflineItem = BaseLineupItem & {
 
 export type RedirectItem = BaseLineupItem & {
   type: 'redirect';
-  channel: number;
+  channel: string;
 };
 
 export type LineupItem = ContentItem | OfflineItem | RedirectItem;

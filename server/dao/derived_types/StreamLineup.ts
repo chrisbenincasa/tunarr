@@ -88,7 +88,7 @@ export type RedirectStreamLineupItem = Partial<
   Omit<ProgramStreamLineupItem, 'type'>
 > & {
   type: 'redirect';
-  channel: number;
+  channel: string; // channel id
   duration: number;
 };
 

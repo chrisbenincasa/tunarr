@@ -1,4 +1,3 @@
-import dayjs from 'dayjs';
 import {
   Channel,
   FfmpegSettings,
@@ -9,6 +8,7 @@ import {
   defaultFfmpegSettings,
   defaultPlexStreamSettings,
 } from '@tunarr/types';
+import dayjs from 'dayjs';
 import fs from 'fs/promises';
 import {
   chain,
@@ -48,7 +48,6 @@ import {
   Lineup,
   LineupItem,
   OfflineItem,
-  RedirectItem,
 } from './derived_types/Lineup.js';
 import { CachedImage } from './entities/CachedImage.js';
 import { Channel as ChannelEntity } from './entities/Channel.js';
@@ -237,7 +236,8 @@ function convertProgram(program: JSONObject): LegacyProgram {
     date: program['date'] as string,
     rating: program['rating'] as string,
     year: program['year'] as number,
-    channel: program['channel'] as number,
+    // TODO FIX THIS
+    // channel: program['channel'] as number,
     isOffline: (program['isOffline'] as Maybe<boolean>) ?? false,
     customOrder: program['customOrder'] as Maybe<number>,
     customShowId: program['customShowId'] as Maybe<string>,
@@ -265,11 +265,12 @@ function createLineup(
           durationMs: program.duration,
         } as ContentItem;
       } else if (program.type === 'redirect') {
-        return {
-          type: 'redirect',
-          channel: program.channel!,
-          durationMs: program.duration,
-        } as RedirectItem;
+        // TODO fix redirect items here, they require a DB ID
+        // return {
+        //   type: 'redirect',
+        //   channel: program.channel!,
+        //   durationMs: program.duration,
+        // } as RedirectItem;
       } else if (program.isOffline) {
         return {
           type: 'offline',

@@ -99,7 +99,7 @@ export class TVGuideService {
   private updateLimit: number;
   private updateChannels: EntityDTO<Channel>[];
   private accumulateTable: Record<number, number[]> = {};
-  private channelsByNumber: Record<number, ChannelWithLineup>;
+  private channelsByid: Record<string, ChannelWithLineup>;
   private channelDb: ChannelDB;
   /****
    *
@@ -276,7 +276,7 @@ export class TVGuideService {
     { channel, lineup }: ChannelWithLineup,
     previousKnown: Maybe<CurrentPlayingProgram>,
     currentUpdateTimeMs: number,
-    depth: number[] = [],
+    depth: string[] = [],
   ): Promise<CurrentPlayingProgram> {
     let playing: CurrentPlayingProgram;
     if (
@@ -332,8 +332,8 @@ export class TVGuideService {
           'Redirrect loop found! Involved channels = ' + JSON.stringify(depth),
         );
       } else {
-        depth.push(channel.number);
-        const channel2 = this.channelsByNumber[ch2];
+        depth.push(channel.uuid);
+        const channel2 = this.channelsByid[ch2];
         if (isUndefined(channel2)) {
           logger.error(
             'Redirrect to an unknown channel found! Involved channels = ' +
@@ -521,10 +521,9 @@ export class TVGuideService {
     const currentUpdateTimeMs = this.currentUpdate;
     const currentEndTimeMs = this.currentLimit;
     const channels = this.currentChannels;
-    this.channelsByNumber = groupByUniqFunc(channels, (c) => c.channel.number);
-    const accumulateTablePromises = mapValues(
-      this.channelsByNumber,
-      (channel) => this.makeAccumulated(channel),
+    this.channelsByid = groupByUniqFunc(channels, (c) => c.channel.number);
+    const accumulateTablePromises = mapValues(this.channelsByid, (channel) =>
+      this.makeAccumulated(channel),
     );
     for (const channelId in accumulateTablePromises) {
       this.accumulateTable[channelId] = accumulateTablePromises[channelId];
