@@ -78,7 +78,7 @@ export default function GuidePage() {
     return calcProgress(start, end);
   });
 
-  let timelineDuration = dayjs.duration(end.diff(start));
+  const timelineDuration = dayjs.duration(end.diff(start));
   const intervalArray = Array.from(
     Array(timelineDuration.asMinutes() / 30).keys(),
   );
