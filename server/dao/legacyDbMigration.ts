@@ -214,8 +214,9 @@ type CustomShow = {
 function convertProgram(program: JSONObject): LegacyProgram {
   const programType = program['type'] as string | undefined;
   const isMovie = programType === 'movie';
+  const id = v4();
   const outProgram: LegacyProgram = {
-    id: v4(),
+    id,
     duration: program['duration'] as number,
     episodeIcon: program['episodeIcon'] as Maybe<string>,
     file: program['file'] as string,
@@ -241,6 +242,7 @@ function convertProgram(program: JSONObject): LegacyProgram {
     customOrder: program['customOrder'] as Maybe<number>,
     customShowId: program['customShowId'] as Maybe<string>,
     customShowName: program['customShowName'] as Maybe<string>,
+    sourceType: 'plex',
   };
 
   return outProgram;
@@ -467,6 +469,7 @@ async function migrateChannels() {
         transcoding: channel.transcoding,
         watermark: channel.watermark,
         offline: { mode: 'clip' },
+        guideMinimumDurationSeconds: channel.guideMinimumDurationSeconds,
       });
     } else {
       channelEntity = em.create(ChannelEntity, {
@@ -481,12 +484,9 @@ async function migrateChannels() {
         transcoding: channel.transcoding,
         watermark: channel.watermark,
         offline: { mode: 'clip' },
+        guideMinimumDurationSeconds: channel.guideMinimumDurationSeconds,
       });
     }
-
-    channelEntity.guideMinimumDuration = dayjs.duration({
-      seconds: channel.guideMinimumDurationSeconds,
-    });
 
     const entity = await em.upsert(ChannelEntity, channelEntity, {
       onConflictFields: ['number'],

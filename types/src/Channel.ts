@@ -2,7 +2,7 @@ import z from 'zod';
 import {
   ChannelOfflineSchema,
   ChannelSchema,
-  UpdateChannelRequestSchema,
+  SaveChannelRequestSchema,
   FillerCollectionSchema,
   WatermarkSchema,
 } from './schemas/channelSchema.js';
@@ -20,6 +20,6 @@ export type ChannelIcon = Alias<z.infer<typeof ChannelIconSchema>>;
 
 export type Channel = Alias<z.infer<typeof ChannelSchema>>;
 
-export type UpdateChannelRequest = Alias<
-  z.infer<typeof UpdateChannelRequestSchema>
+export type SaveChannelRequest = Alias<
+  z.infer<typeof SaveChannelRequestSchema>
 >;

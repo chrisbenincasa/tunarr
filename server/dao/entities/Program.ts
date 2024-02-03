@@ -162,6 +162,7 @@ export function programDaoToDto(program: EntityDTO<Program>): ProgramDTO {
     serverKey: program.externalSourceId,
     showIcon: program.showIcon,
     showTitle: program.showTitle,
+    sourceType: 'plex',
     summary: program.summary,
     title: program.title,
     type: program.type,

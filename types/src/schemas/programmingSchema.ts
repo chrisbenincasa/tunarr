@@ -11,6 +11,8 @@ export const ProgramTypeSchema = z.union([
   z.literal('flex'),
 ]);
 
+export const ExternalSourceTypeSchema = z.literal('plex');
+
 export const ProgramSchema = z.object({
   channel: z.number().optional(), // Redirect
   customOrder: z.number().optional(),
@@ -32,13 +34,12 @@ export const ProgramSchema = z.object({
   serverKey: z.string().optional(),
   showIcon: z.string().optional(),
   showTitle: z.string().optional(), // Unclear if this is necessary
+  sourceType: ExternalSourceTypeSchema,
   summary: z.string().optional(), // Not present on offline type
   title: z.string().optional(),
   type: ProgramTypeSchema,
   year: z.number().optional(),
 });
-
-export const ExternalSourceTypeSchema = z.literal('plex');
 
 // The following schemas make up a channel's programming
 // They are "timeless" in the sense that they do not encode a
@@ -56,7 +57,7 @@ export const FlexProgramSchema = BaseProgramSchema.extend({
 
 export const RedirectProgramSchema = BaseProgramSchema.extend({
   type: z.literal('redirect'),
-  channel: z.number(),
+  channel: z.string(), // Channel ID
 });
 
 export const ContentProgramSchema = BaseProgramSchema.extend({
@@ -81,6 +82,8 @@ export const ContentProgramSchema = BaseProgramSchema.extend({
     .optional(),
   externalSourceType: ExternalSourceTypeSchema.optional(),
   externalSourceName: z.string().optional(),
+  externalKey: z.string().optional(),
+  uniqueId: z.string(), // If persisted, this is the ID. If not persisted, this is `externalSourceType|externalSourceName|externalKey`
 });
 // Should be able to do this once we have https://github.com/colinhacks/zod/issues/2106
 // .refine(
