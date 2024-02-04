@@ -352,9 +352,7 @@ export class TVGuideService {
           const start = Math.max(playing.startTimeMs, otherPlaying.startTimeMs);
           const duration = Math.min(
             playing.startTimeMs + playing.program.duration - start,
-            otherPlaying.startTimeMs +
-              (otherPlaying.program.duration ?? 0) -
-              start,
+            otherPlaying.startTimeMs + otherPlaying.program.duration - start,
           );
           const program2 = clone(otherPlaying.program);
           program2.duration = duration;
@@ -406,7 +404,7 @@ export class TVGuideService {
       if (
         programs.length > 0 &&
         isProgramFlex(program.program, channelWithLineup.channel) &&
-        ((program.program.duration ?? 0) <=
+        (program.program.duration <=
           constants.TVGUIDE_MAXIMUM_PADDING_LENGTH_MS ||
           isProgramFlex(
             programs[programs.length - 1].program,
@@ -416,7 +414,7 @@ export class TVGuideService {
         //meld with previous
         const y = clone(programs[programs.length - 1]);
         y.program.duration += program.program.duration;
-        melded += program.program.duration ?? 0;
+        melded += program.program.duration;
         if (
           melded > constants.TVGUIDE_MAXIMUM_PADDING_LENGTH_MS &&
           !isProgramFlex(
@@ -458,8 +456,7 @@ export class TVGuideService {
 
     while (currentProgram.startTimeMs < currentEndTimeMs) {
       await push(currentProgram);
-      const t2 =
-        currentProgram.startTimeMs + (currentProgram.program.duration ?? 0);
+      const t2 = currentProgram.startTimeMs + currentProgram.program.duration;
       currentProgram = await this.getChannelPlaying(
         channelWithLineup,
         currentProgram,
@@ -483,7 +480,7 @@ export class TVGuideService {
       await this._throttle();
       if (isProgramFlex(programs[i].program, channelWithLineup.channel)) {
         let start = programs[i].startTimeMs;
-        let duration = programs[i].program.duration ?? 0;
+        let duration = programs[i].program.duration;
         if (start <= currentUpdateTimeMs) {
           const M = 5 * 60 * 1000;
           const newStart = currentUpdateTimeMs - (currentUpdateTimeMs % M);
@@ -633,7 +630,7 @@ export class TVGuideService {
     await this.get();
     const beginningTimeMs = dateFrom.getTime();
     const endTimeMs = dateTo.getTime();
-    console.log(inspect(this.cached));
+    console.log(inspect(this.cached, false, null));
 
     const { channel, programs } = this.cached[channelId];
     if (isNil(channel)) {
@@ -680,12 +677,13 @@ function getChannelStealthDuration(channel: Partial<EntityDTO<Channel>>) {
 }
 
 function isProgramFlex(
-  program: Partial<ProgramDTO> & { isOffline: boolean },
+  program: MarkRequired<Partial<ProgramDTO>, 'duration'> & {
+    isOffline: boolean;
+  },
   channel: Partial<EntityDTO<Channel>>,
 ): program is MarkRequired<ProgramDTO & { isOffline: boolean }, 'duration'> {
   return (
-    program.isOffline ||
-    (program.duration ?? 0) <= getChannelStealthDuration(channel)
+    program.isOffline || program.duration <= getChannelStealthDuration(channel)
   );
 }
 
@@ -709,9 +707,9 @@ function makeEntry(
 ): TvGuideProgram {
   const baseItem: Partial<TvGuideProgram> = {
     start: currentProgram.startTimeMs,
-    stop: currentProgram.startTimeMs + (currentProgram.program.duration ?? 0),
+    stop: currentProgram.startTimeMs + currentProgram.program.duration,
     persisted: true,
-    duration: currentProgram.program.duration ?? 0,
+    duration: currentProgram.program.duration,
   };
 
   let title: string | undefined;
@@ -764,7 +762,7 @@ function makeEntry(
   //what data is needed here?
   return {
     start: currentProgram.startTimeMs,
-    stop: currentProgram.startTimeMs + (currentProgram.program.duration ?? 0),
+    stop: currentProgram.startTimeMs + currentProgram.program.duration,
     summary: currentProgram.program.summary,
     date: currentProgram.program.date,
     rating: currentProgram.program.rating,

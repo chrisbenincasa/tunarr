@@ -37,9 +37,7 @@ function updateRequestToChannel(
       number: updateReq.number,
       watermark: updateReq.watermark,
       icon: updateReq.icon,
-      guideMinimumDuration: updateReq.guideMinimumDurationSeconds
-        ? dayjs.duration({ seconds: updateReq.guideMinimumDurationSeconds })
-        : undefined,
+      guideMinimumDurationSeconds: updateReq.guideMinimumDurationSeconds,
       groupTitle: updateReq.groupTitle,
       disableFillerOverlay: updateReq.disableFillerOverlay,
       startTime: updateReq.startTime,
@@ -64,8 +62,6 @@ function createRequestToChannel(
     watermark: saveReq.watermark,
     icon: saveReq.icon,
     guideMinimumDurationSeconds: saveReq.guideMinimumDurationSeconds,
-    // guideMinimumDuration: dayjs.duration({ seconds: updateReq.guideMinimumDurationSeconds }),
-    // : undefined,
     groupTitle: saveReq.groupTitle,
     disableFillerOverlay: saveReq.disableFillerOverlay,
     startTime: saveReq.startTime,
@@ -78,7 +74,6 @@ function createRequestToChannel(
       ? dayjs.duration({ seconds: saveReq.fillerRepeatCooldown })
       : undefined,
   };
-  // c.guideMinimumDurationSeconds = updateReq.guideMinimumDurationSeconds;
   return c;
 }
 

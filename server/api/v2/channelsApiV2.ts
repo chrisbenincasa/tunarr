@@ -412,6 +412,7 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
       const startTime = dayjs(req.query.from);
       const endTime = dayjs(
         req.query.to ??
+          // TODO THIS IS WRONG - use XMLTV settings
           startTime.add(channel.guideMinimumDurationSeconds, 'seconds'),
       );
 
