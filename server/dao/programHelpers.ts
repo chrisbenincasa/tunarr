@@ -5,10 +5,11 @@ import {
   isContentProgram,
   isCustomProgram,
 } from '@tunarr/types';
-import { chain, filter, reduce } from 'lodash-es';
+import { chain, chunk, filter, flatten, reduce } from 'lodash-es';
 import { ProgramMinterFactory } from '../util/programMinter.js';
 import { getEm } from './dataSource.js';
 import { Program } from './entities/Program.js';
+import { mapAsyncSeq } from '../util.js';
 
 export async function upsertContentPrograms(programs: ChannelProgram[]) {
   const em = getEm();
@@ -21,12 +22,15 @@ export async function upsertContentPrograms(programs: ChannelProgram[]) {
     .map((p) => minter.mint(p.externalSourceName!, p.originalProgram!))
     .value();
 
-  return await em.upsertMany(Program, programsToPersist, {
-    batchSize: 10,
-    onConflictAction: 'merge',
-    onConflictFields: ['sourceType', 'externalSourceId', 'externalKey'],
-    onConflictExcludeFields: ['uuid'],
-  });
+  return flatten(
+    await mapAsyncSeq(chunk(programsToPersist, 10), undefined, (programs) =>
+      em.upsertMany(Program, programs, {
+        onConflictAction: 'merge',
+        onConflictFields: ['sourceType', 'externalSourceId', 'externalKey'],
+        onConflictExcludeFields: ['uuid'],
+      }),
+    ),
+  );
 }
 
 // Takes a listing of programs and makes a mapping of a unique identifier,
