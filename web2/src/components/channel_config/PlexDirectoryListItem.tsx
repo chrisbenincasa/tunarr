@@ -85,11 +85,11 @@ export function PlexDirectoryListItem(props: {
   }, [observerTarget, limit, hierarchy, setLimit]);
 
   useEffect(() => {
-    if (children) {
+    if (children && children.Metadata) {
       addKnownMediaForServer(server.name, children.Metadata, item.uuid);
     }
 
-    if (collections) {
+    if (collections && collections.Metadata) {
       addKnownMediaForServer(server.name, collections.Metadata, item.uuid);
     }
   }, [item.uuid, item.key, server.name, children, collections]);
