@@ -10,8 +10,10 @@ import {
   SaveChannelRequestSchema,
 } from '@tunarr/types/schemas';
 import {
+  chunk,
   compact,
   filter,
+  flatten,
   isError,
   isNil,
   omit,
@@ -261,12 +263,16 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
         (p) => minter.mint(p.externalSourceName!, p.originalProgram!),
       );
 
-      const upsertedPrograms = await em.upsertMany(Program, programsToPersist, {
-        batchSize: 10,
-        onConflictAction: 'merge',
-        onConflictFields: ['sourceType', 'externalSourceId', 'externalKey'],
-        onConflictExcludeFields: ['uuid'],
-      });
+      const upsertedPrograms = flatten(
+        await mapAsyncSeq(chunk(programsToPersist, 10), undefined, (programs) =>
+          em.upsertMany(Program, programs, {
+            batchSize: 1,
+            onConflictAction: 'merge',
+            onConflictFields: ['sourceType', 'externalSourceId', 'externalKey'],
+            onConflictExcludeFields: ['uuid'],
+          }),
+        ),
+      );
 
       // TODO:
       // * calculate new channel duration

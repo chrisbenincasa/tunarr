@@ -94,7 +94,7 @@ const makePlexLibraryCollectionsSchema = <T extends z.AnyZodObject>(
   metadata: T,
 ) => {
   return basePlexLibrarySchema.extend({
-    Metadata: z.array(metadata),
+    Metadata: z.array(metadata).optional(), // There might be no collections
   });
 };
 
