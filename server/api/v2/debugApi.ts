@@ -229,7 +229,7 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
         .status(200)
         .send(
           await req.serverCtx.guideService.getChannelLineup(
-            channel!.number,
+            channel!.uuid,
             startTime,
             endTime,
           ),

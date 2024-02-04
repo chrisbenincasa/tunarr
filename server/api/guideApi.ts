@@ -33,12 +33,12 @@ export const guideRouter: RouterPluginCallback = (fastify, _opts, done) => {
       schema: AllChannelsGuideSchema,
     },
     async (req, res) => {
-      const allChannelNumbers = map(
+      const allChannelIds = map(
         await req.serverCtx.channelDB.getAllChannels(),
-        'number',
+        'uuid',
       );
 
-      const allLineups = await allChannelNumbers.reduce(
+      const allLineups = await allChannelIds.reduce(
         async (prev, curr) => {
           const res = await req.serverCtx.guideService.getChannelLineup(
             curr,
@@ -67,7 +67,7 @@ export const guideRouter: RouterPluginCallback = (fastify, _opts, done) => {
   );
 
   fastify.get<{
-    Params: { number: number };
+    Params: { id: string };
     Querystring: { dateFrom: string; dateTo: string };
   }>('/api/guide/channels/:number', async (req, res) => {
     try {
@@ -75,14 +75,12 @@ export const guideRouter: RouterPluginCallback = (fastify, _opts, done) => {
       const dateFrom = new Date(req.query.dateFrom);
       const dateTo = new Date(req.query.dateTo);
       const lineup = await req.serverCtx.guideService.getChannelLineup(
-        req.params.number,
+        req.params.id,
         dateFrom,
         dateTo,
       );
       if (lineup == null) {
-        logger.info(
-          `GET /api/guide/channels/${req.params.number} : 404 Not Found`,
-        );
+        logger.info(`GET /api/guide/channels/${req.params.id} : 404 Not Found`);
         return res.status(404).send('Channel not found in TV guide');
       } else {
         return res.send(lineup);

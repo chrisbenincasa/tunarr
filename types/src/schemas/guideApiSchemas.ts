@@ -38,5 +38,6 @@ export const ChannelLineupSchema = z.object({
   icon: ChannelIconSchema.optional(),
   name: z.string().optional(),
   number: z.number().optional(),
+  id: z.string().optional(),
   programs: z.array(TvGuideProgramSchema),
 });

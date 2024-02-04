@@ -371,7 +371,7 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
                 startTime.add(channel.guideMinimumDurationSeconds, 'seconds'),
               );
           return req.serverCtx.guideService.getChannelLineup(
-            channel.number,
+            channel.uuid,
             startTime.toDate(),
             actualEndTime.toDate(),
           );
@@ -410,7 +410,7 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
       );
 
       const lineup = await req.serverCtx.guideService.getChannelLineup(
-        channel.number,
+        channel.uuid,
         startTime.toDate(),
         endTime.toDate(),
       );

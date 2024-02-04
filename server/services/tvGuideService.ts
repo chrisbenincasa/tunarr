@@ -29,6 +29,7 @@ import { XmlTvWriter } from '../xmltv.js';
 import { CacheImageService } from './cacheImageService.js';
 import { EventService } from './eventService.js';
 import throttle from './throttle.js';
+import { inspect } from 'node:util';
 
 const logger = createLogger(import.meta);
 
@@ -71,6 +72,7 @@ function lineupItemToCurrentProgram(
 export type TvGuideChannel = {
   name: string;
   number: number;
+  id: string;
   icon?: EntityDTO<ChannelIcon>;
 };
 
@@ -85,7 +87,7 @@ type ChannelWithLineup = {
 };
 
 export class TVGuideService {
-  private cached: Record<number, ChannelPrograms>;
+  private cached: Record<string, ChannelPrograms>; // ChannelId -> ChannelPrograms
   private lastUpdate: number;
   private lastBackoff: number;
   private updateTime: number;
@@ -98,8 +100,8 @@ export class TVGuideService {
   private _throttle: () => Promise<void>;
   private updateLimit: number;
   private updateChannels: EntityDTO<Channel>[];
-  private accumulateTable: Record<number, number[]> = {};
-  private channelsByid: Record<string, ChannelWithLineup>;
+  private accumulateTable: Record<string, number[]> = {};
+  private channelsById: Record<string, ChannelWithLineup>;
   private channelDb: ChannelDB;
   /****
    *
@@ -162,6 +164,7 @@ export class TVGuideService {
             };
           },
         );
+        console.log(this.currentChannels);
         this.eventService.push({
           type: 'xmltv',
           message: `Started building tv-guide at = ${new Date().toISOString()}`,
@@ -219,7 +222,7 @@ export class TVGuideService {
         },
       };
     } else {
-      const accumulate = this.accumulateTable[channel.number];
+      const accumulate = this.accumulateTable[channel.uuid];
       if (isUndefined(accumulate)) {
         throw Error(channel.number + " wasn't preprocesed correctly???!?");
       }
@@ -333,7 +336,7 @@ export class TVGuideService {
         );
       } else {
         depth.push(channel.uuid);
-        const channel2 = this.channelsByid[ch2];
+        const channel2 = this.channelsById[ch2];
         if (isUndefined(channel2)) {
           logger.error(
             'Redirrect to an unknown channel found! Involved channels = ' +
@@ -521,8 +524,8 @@ export class TVGuideService {
     const currentUpdateTimeMs = this.currentUpdate;
     const currentEndTimeMs = this.currentLimit;
     const channels = this.currentChannels;
-    this.channelsByid = groupByUniqFunc(channels, (c) => c.channel.number);
-    const accumulateTablePromises = mapValues(this.channelsByid, (channel) =>
+    this.channelsById = groupByUniqFunc(channels, (c) => c.channel.uuid);
+    const accumulateTablePromises = mapValues(this.channelsById, (channel) =>
       this.makeAccumulated(channel),
     );
     for (const channelId in accumulateTablePromises) {
@@ -566,7 +569,7 @@ export class TVGuideService {
             currentEndTimeMs,
             { channel, lineup },
           );
-          result[channel.number] = programs;
+          result[channel.uuid] = programs;
         }
       }
     }
@@ -623,16 +626,16 @@ export class TVGuideService {
   }
 
   async getChannelLineup(
-    channelNumber: number,
+    channelId: string,
     dateFrom: Date,
     dateTo: Date,
   ): Promise<Maybe<ChannelLineup>> {
     await this.get();
     const beginningTimeMs = dateFrom.getTime();
     const endTimeMs = dateTo.getTime();
-    console.log(this.cached);
+    console.log(inspect(this.cached));
 
-    const { channel, programs } = this.cached[channelNumber];
+    const { channel, programs } = this.cached[channelId];
     if (isNil(channel)) {
       return;
     }
@@ -641,6 +644,7 @@ export class TVGuideService {
       icon: channel.icon,
       name: channel.name,
       number: channel.number,
+      id: channel.id,
       programs: [],
     };
 
@@ -695,6 +699,7 @@ function makeChannelEntry(channel: EntityDTO<Channel>): TvGuideChannel {
     name: channel.name,
     icon: channel.icon,
     number: channel.number,
+    id: channel.uuid,
   };
 }
 
