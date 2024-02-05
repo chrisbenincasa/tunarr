@@ -409,11 +409,10 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
         return res.status(404).send({ error: 'Channel Not Found' });
       }
 
+      const xmltvSettings = req.serverCtx.settings.xmlTvSettings();
       const startTime = dayjs(req.query.from);
       const endTime = dayjs(
-        req.query.to ??
-          // TODO THIS IS WRONG - use XMLTV settings
-          startTime.add(channel.guideMinimumDurationSeconds, 'seconds'),
+        req.query.to ?? startTime.add(xmltvSettings.programmingHours, 'hours'),
       );
 
       const lineup = await req.serverCtx.guideService.getChannelLineup(
