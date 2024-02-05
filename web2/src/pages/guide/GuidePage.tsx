@@ -16,7 +16,7 @@ import { useCallback, useState } from 'react';
 import { useInterval } from 'usehooks-ts';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import { useAllTvGuides } from '../../hooks/useTvGuide.ts';
-import { isEmpty } from 'lodash-es';
+import { isEmpty, round } from 'lodash-es';
 
 dayjs.extend(duration);
 
@@ -145,8 +145,9 @@ export default function GuidePage() {
       duration = duration.subtract(trimEnd, 'ms');
     }
 
-    const pct = Math.round(
+    const pct = round(
       (duration.asMilliseconds() / timelineDuration.asMilliseconds()) * 100.0,
+      2,
     );
 
     const grey = index % 2 === 0 ? 300 : 400;
