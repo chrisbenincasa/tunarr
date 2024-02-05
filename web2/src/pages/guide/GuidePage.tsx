@@ -56,7 +56,6 @@ const GuideItem = styled(GridChild)<{ grey: keyof Color; width: number }>(
 const calcProgress = (start: Dayjs, end: Dayjs): number => {
   const total = end.unix() - start.unix();
   const p = dayjs().unix() - start.unix();
-
   return round(100 * (p / total), 2);
 };
 
