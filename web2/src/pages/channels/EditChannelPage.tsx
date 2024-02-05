@@ -6,7 +6,7 @@ import Paper from '@mui/material/Paper';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useEffectOnce } from 'usehooks-ts';
 import ChannelEpgConfig from '../../components/channel_config/ChannelEpgConfig.tsx';
 import { ChannelFlexConfig } from '../../components/channel_config/ChannelFlexConfig.tsx';
@@ -24,6 +24,7 @@ import { FormProvider, SubmitHandler, useForm } from 'react-hook-form';
 import { Channel, SaveChannelRequest } from '@tunarr/types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../../external/api.ts';
+import { usePrevious } from '@uidotdev/usehooks';
 
 type TabValues = 'properties' | 'flex' | 'epg' | 'ffmpeg';
 
@@ -79,6 +80,7 @@ export default function EditChannelPage({ isNew }: Props) {
   const [currentTab, setCurrentTab] = useState<TabValues>('properties');
   const { currentEntity: workingChannel, originalEntity: originalChannel } =
     useStore((s) => s.channelEditor);
+  const previousChannel = usePrevious(workingChannel);
 
   const [channelEditorState, setChannelEditorState] =
     useState<ChannelEditContextState>({
@@ -89,10 +91,6 @@ export default function EditChannelPage({ isNew }: Props) {
   const handleChange = (_: React.SyntheticEvent, newValue: TabValues) =>
     setCurrentTab(newValue);
 
-  useEffectOnce(() => {
-    setCurrentChannel(channel, []);
-  });
-
   const queryClient = useQueryClient();
 
   const formMethods = useForm<SaveChannelRequest>({
@@ -100,6 +98,20 @@ export default function EditChannelPage({ isNew }: Props) {
     // Change this so we only load the form on initial...
     defaultValues: originalChannel ?? channel,
   });
+
+  useEffectOnce(() => {
+    setCurrentChannel(channel, []);
+  });
+
+  useEffect(() => {
+    if (
+      workingChannel &&
+      previousChannel &&
+      workingChannel.id !== previousChannel.id
+    ) {
+      formMethods.reset(workingChannel);
+    }
+  }, [workingChannel, previousChannel, formMethods]);
 
   // make sure formState is read before render to enable the Proxy
   const formIsValid = formMethods.formState.isValid;
