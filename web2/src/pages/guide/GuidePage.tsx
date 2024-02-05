@@ -225,11 +225,11 @@ export default function GuidePage() {
         <IconButton onClick={zoomOut}>
           <ZoomOutIcon />
         </IconButton>
-        <IconButton disabled={navigationDisabled}>
-          <ArrowBackIos onClick={navigateBackward} />
+        <IconButton disabled={navigationDisabled} onClick={navigateBackward}>
+          <ArrowBackIos />
         </IconButton>
-        <IconButton>
-          <ArrowForwardIos onClick={navigateForward} />
+        <IconButton onClick={navigateForward}>
+          <ArrowForwardIos />
         </IconButton>
       </Stack>
       <PaddedPaper>
