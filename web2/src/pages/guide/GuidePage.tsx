@@ -2,7 +2,9 @@ import ZoomInIcon from '@mui/icons-material/ZoomIn';
 import ZoomOutIcon from '@mui/icons-material/ZoomOut';
 import {
   Box,
+  Button,
   Color,
+  Icon,
   IconButton,
   Stack,
   Tooltip,
@@ -17,6 +19,13 @@ import { useInterval } from 'usehooks-ts';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import { useAllTvGuides } from '../../hooks/useTvGuide.ts';
 import { isEmpty, round } from 'lodash-es';
+import {
+  ArrowBackIos,
+  ArrowCircleLeft,
+  ArrowCircleRight,
+  ArrowForward,
+  ArrowForwardIos,
+} from '@mui/icons-material';
 
 dayjs.extend(duration);
 
@@ -67,7 +76,7 @@ const roundNearestMultiple = (num: number, multiple: number): number => {
 
 export default function GuidePage() {
   const now = dayjs();
-  const [start] = useState(
+  const [start, setStart] = useState(
     dayjs()
       .minute(roundNearestMultiple(now.minute(), 15))
       .second(0)
@@ -102,6 +111,16 @@ export default function GuidePage() {
       setEnd((last) => last.subtract(SubtractInterval));
     }
   }, [end, start, setEnd]);
+
+  const navigateForward = useCallback(() => {
+    setEnd((last) => last.add(1, 'hours'));
+    setStart((start) => start.add(1, 'hours'));
+  }, [end, start, setEnd, setStart]);
+
+  const navigateBackward = useCallback(() => {
+    setEnd((last) => last.subtract(1, 'hours'));
+    setStart((start) => start.subtract(1, 'hours'));
+  }, [end, start, setEnd, setStart]);
 
   if (isPending) return 'Loading...';
 
@@ -188,6 +207,8 @@ export default function GuidePage() {
   const zoomDisabled =
     end.subtract(SubtractInterval).diff(start) < MinDurationMillis;
 
+  const navigationDisabled = now.isAfter(start);
+
   return (
     <>
       <Typography variant="h3" mb={2}>
@@ -197,12 +218,20 @@ export default function GuidePage() {
         {start.format('DD/MM/YYYY, h:mm A')} to{' '}
         {end.format('DD/MM/YYYY, h:mm A')}
       </p>
-      <IconButton disabled={zoomDisabled} onClick={zoomIn}>
-        <ZoomInIcon />
-      </IconButton>
-      <IconButton onClick={zoomOut}>
-        <ZoomOutIcon />
-      </IconButton>
+      <Stack justifyContent={'right'} direction={'row'}>
+        <IconButton disabled={zoomDisabled} onClick={zoomIn}>
+          <ZoomInIcon />
+        </IconButton>
+        <IconButton onClick={zoomOut}>
+          <ZoomOutIcon />
+        </IconButton>
+        <IconButton disabled={navigationDisabled} onClick={navigateBackward}>
+          <ArrowBackIos />
+        </IconButton>
+        <IconButton onClick={navigateForward}>
+          <ArrowForwardIos />
+        </IconButton>
+      </Stack>
       <PaddedPaper>
         <Box display="flex">
           <Box
