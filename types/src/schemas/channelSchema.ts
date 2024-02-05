@@ -34,24 +34,24 @@ export const ChannelTranscodingOptionsSchema = z.object({
 });
 
 export const ChannelSchema = z.object({
-  id: z.string(),
-  number: z.number(),
-  watermark: WatermarkSchema.optional(),
-  fillerCollections: z.array(FillerCollectionSchema).optional(),
-  programs: z.array(ProgramSchema),
-  icon: ChannelIconSchema,
-  guideMinimumDurationSeconds: z.number(),
-  groupTitle: z.string(),
   disableFillerOverlay: z.boolean(),
-  startTime: z.number(),
-  offline: ChannelOfflineSchema,
-  name: z.string(),
-  transcoding: ChannelTranscodingOptionsSchema.optional(),
   duration: z.number(),
   fallback: z.array(ProgramSchema).optional(),
-  stealth: z.boolean(),
-  guideFlexPlaceholder: z.string().optional(),
+  fillerCollections: z.array(FillerCollectionSchema).optional(),
   fillerRepeatCooldown: z.number().optional(),
+  groupTitle: z.string(),
+  guideFlexPlaceholder: z.string().optional(),
+  guideMinimumDurationSeconds: z.number(),
+  icon: ChannelIconSchema,
+  id: z.string(),
+  name: z.string(),
+  number: z.number(),
+  offline: ChannelOfflineSchema,
+  programs: z.array(ProgramSchema),
+  startTime: z.number(),
+  stealth: z.boolean(),
+  transcoding: ChannelTranscodingOptionsSchema.optional(),
+  watermark: WatermarkSchema.optional(),
 });
 
 export const SaveChannelRequestSchema = ChannelSchema.omit({

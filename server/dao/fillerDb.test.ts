@@ -1,10 +1,8 @@
-import { serialize } from '@mikro-orm/core';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
 import { test } from 'vitest';
 import { setGlobalOptions } from '../globals.js';
 import { getEm, withDb } from './dataSource.js';
-import { Channel } from './entities/Channel.js';
 import { FillerShow } from './entities/FillerShow.js';
 
 dayjs.extend(duration);

@@ -273,3 +273,13 @@ export function enumFromString<O extends object>(
 export function nilToUndefined<T>(t: T | undefined | null): T | undefined {
   return isNil(t) ? undefined : t;
 }
+
+export function emptyStringToUndefined(
+  s: string | undefined,
+): string | undefined {
+  if (isUndefined(s)) {
+    return s;
+  }
+
+  return s.length === 0 ? undefined : s;
+}
