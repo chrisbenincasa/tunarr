@@ -2,6 +2,7 @@ import ZoomInIcon from '@mui/icons-material/ZoomIn';
 import ZoomOutIcon from '@mui/icons-material/ZoomOut';
 import {
   Box,
+  Button,
   Color,
   Icon,
   IconButton,
@@ -206,6 +207,8 @@ export default function GuidePage() {
   const zoomDisabled =
     end.subtract(SubtractInterval).diff(start) < MinDurationMillis;
 
+  const navigationDisabled = now.isAfter(start);
+
   return (
     <>
       <Typography variant="h3" mb={2}>
@@ -222,7 +225,7 @@ export default function GuidePage() {
         <IconButton onClick={zoomOut}>
           <ZoomOutIcon />
         </IconButton>
-        <IconButton>
+        <IconButton disabled={navigationDisabled}>
           <ArrowBackIos onClick={navigateBackward} />
         </IconButton>
         <IconButton>
