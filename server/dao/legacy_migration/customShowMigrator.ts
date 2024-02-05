@@ -1,11 +1,12 @@
 import fs from 'fs/promises';
-import { chain, concat, isNil, maxBy, partition, sortBy } from 'lodash-es';
+import { chain, isNil, maxBy, partition } from 'lodash-es';
 import path from 'path';
-import { CustomShow, logger } from '../legacyDbMigration.js';
 import { groupByUniq, mapAsyncSeq } from '../../util.js';
 import { withDb } from '../dataSource.js';
 import { CustomShow as CustomShowEntity } from '../entities/CustomShow.js';
+import { CustomShowContent } from '../entities/CustomShowContent.js';
 import { FillerShow } from '../entities/FillerShow.js';
+import { CustomShow, logger } from '../legacyDbMigration.js';
 import { persistProgram } from './channelMigrator.js';
 import {
   JSONArray,
@@ -13,7 +14,6 @@ import {
   convertProgram,
   uniqueProgramId,
 } from './migrationUtil.js';
-import { CustomShowContent } from '../entities/CustomShowContent.js';
 
 export async function convertCustomShow(
   id: string,
