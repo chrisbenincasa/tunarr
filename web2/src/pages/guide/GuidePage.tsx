@@ -16,7 +16,7 @@ import { useCallback, useState } from 'react';
 import { useInterval } from 'usehooks-ts';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import { useAllTvGuides } from '../../hooks/useTvGuide.ts';
-import { isEmpty } from 'lodash-es';
+import { isEmpty, round } from 'lodash-es';
 
 dayjs.extend(duration);
 
@@ -56,7 +56,7 @@ const GuideItem = styled(GridChild)<{ grey: keyof Color; width: number }>(
 const calcProgress = (start: Dayjs, end: Dayjs): number => {
   const total = end.unix() - start.unix();
   const p = dayjs().unix() - start.unix();
-  return Math.round(100 * (p / total));
+  return round(100 * (p / total), 2);
 };
 
 const roundNearestMultiple = (num: number, multiple: number): number => {
@@ -145,8 +145,9 @@ export default function GuidePage() {
       duration = duration.subtract(trimEnd, 'ms');
     }
 
-    const pct = Math.round(
+    const pct = round(
       (duration.asMilliseconds() / timelineDuration.asMilliseconds()) * 100.0,
+      2,
     );
 
     const grey = index % 2 === 0 ? 300 : 400;
