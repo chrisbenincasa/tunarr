@@ -266,7 +266,6 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
       const upsertedPrograms = flatten(
         await mapAsyncSeq(chunk(programsToPersist, 10), undefined, (programs) =>
           em.upsertMany(Program, programs, {
-            batchSize: 1,
             onConflictAction: 'merge',
             onConflictFields: ['sourceType', 'externalSourceId', 'externalKey'],
             onConflictExcludeFields: ['uuid'],
@@ -373,9 +372,7 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
         async (channel) => {
           const actualEndTime = req.query.to
             ? endTime
-            : dayjs(
-                startTime.add(channel.guideMinimumDurationSeconds, 'seconds'),
-              );
+            : dayjs(startTime.add(channel.guideMinimumDuration, 'seconds'));
           return req.serverCtx.guideService.getChannelLineup(
             channel.uuid,
             startTime.toDate(),

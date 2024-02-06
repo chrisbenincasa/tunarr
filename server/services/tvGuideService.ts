@@ -669,8 +669,8 @@ export class TVGuideService {
 }
 
 function getChannelStealthDuration(channel: Partial<EntityDTO<Channel>>) {
-  if (!isUndefined(channel.guideMinimumDurationSeconds)) {
-    return channel.guideMinimumDurationSeconds * 1000;
+  if (!isUndefined(channel.guideMinimumDuration)) {
+    return channel.guideMinimumDuration;
   } else {
     return constants.DEFAULT_GUIDE_STEALTH_DURATION;
   }

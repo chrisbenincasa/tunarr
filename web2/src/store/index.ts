@@ -53,35 +53,26 @@ const createChannelsState: StateCreator<ChannelsState> = () => ({
   channels: undefined,
 });
 
-const middleware = <T>(
-  f: StateCreator<
-    T,
-    [
-      ['zustand/immer', never],
-      ['zustand/devtools', never],
-      ['zustand/persist', unknown],
-    ]
-  >,
-) =>
+const useStore = create<State>()(
   immer(
     devtools(
-      persist(f, {
-        name: 'tunarr',
-        partialize: (state: any) => ({
-          theme: state['theme'],
+      persist(
+        (...set) => ({
+          ...createSettingsSlice(...set),
+          ...createChannelsState(...set),
+          ...createProgrammingListingsState(...set),
+          ...createChannelEditorState(...set),
+          ...createThemeEditorState(...set),
         }),
-      }),
+        {
+          name: 'tunarr',
+          partialize: (state: State) => ({
+            theme: state.theme,
+          }),
+        },
+      ),
     ),
-  );
-
-const useStore = create<State>()(
-  middleware((...set) => ({
-    ...createSettingsSlice(...set),
-    ...createChannelsState(...set),
-    ...createProgrammingListingsState(...set),
-    ...createChannelEditorState(...set),
-    ...createThemeEditorState(...set),
-  })),
+  ),
 );
 
 export const setChannels = (channels: Channel[]) =>

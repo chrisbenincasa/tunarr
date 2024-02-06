@@ -70,7 +70,6 @@ export default function ChannelPropertiesEditor() {
   }, [imgRef]);
 
   const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
-    console.log(e.target.files);
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
       setChannelIcon(`http://localhost:8000/images/uploads/${file.name}`); // Placeholder
