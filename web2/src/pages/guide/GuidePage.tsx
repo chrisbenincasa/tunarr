@@ -2,9 +2,7 @@ import ZoomInIcon from '@mui/icons-material/ZoomIn';
 import ZoomOutIcon from '@mui/icons-material/ZoomOut';
 import {
   Box,
-  Button,
   Color,
-  Icon,
   IconButton,
   Stack,
   Tooltip,
@@ -14,51 +12,59 @@ import {
 import { TvGuideProgram, ChannelProgram } from '@tunarr/types';
 import dayjs, { Dayjs } from 'dayjs';
 import duration from 'dayjs/plugin/duration';
+import isBetween from 'dayjs/plugin/isBetween';
 import { useCallback, useState } from 'react';
 import { useInterval } from 'usehooks-ts';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import { useAllTvGuides } from '../../hooks/useTvGuide.ts';
 import { isEmpty, round } from 'lodash-es';
-import {
-  ArrowBackIos,
-  ArrowCircleLeft,
-  ArrowCircleRight,
-  ArrowForward,
-  ArrowForwardIos,
-} from '@mui/icons-material';
+import { ArrowBackIos, ArrowForwardIos } from '@mui/icons-material';
+import { useTheme } from '@mui/material/styles';
 
 dayjs.extend(duration);
+dayjs.extend(isBetween);
 
 const SubtractInterval = dayjs.duration(1, 'hour');
 const MinDurationMillis = dayjs.duration(1, 'hour').asMilliseconds();
 
 const GridParent = styled(Box)({
   borderStyle: 'solid',
-  borderColor: 'rgba(0,0,0,0.2)',
+  borderColor: 'transparent',
   borderWidth: '1px 0 0 1px',
 });
 
 const GridChild = styled(Box)({
   borderStyle: 'solid',
-  borderColor: 'rgba(0,0,0,0.2)',
+  borderColor: 'transparent',
   borderWidth: '0 1px 0 0',
 });
 
 const GuideItem = styled(GridChild)<{ grey: keyof Color; width: number }>(
   ({ theme, grey, width }) => ({
     display: 'flex',
-    alignItems: 'center',
-    backgroundColor: theme.palette.grey[grey],
+    alignItems: 'flex-start',
+    backgroundColor:
+      theme.palette.mode === 'light'
+        ? theme.palette.grey[grey]
+        : grey === 300
+        ? theme.palette.grey[800]
+        : theme.palette.grey[700],
     borderCollapse: 'collapse',
     borderStyle: 'solid',
-    borderWidth: '0 1px 1px 0',
-    borderColor: 'rgba(0,0,0,0.2)',
+    borderWidth: '2px 5px 2px 5px',
+    borderColor: 'transparent',
+    borderRadius: '5px',
+    margin: 1,
+    padding: 1,
     height: '3rem',
     width: `${width}%`,
     transition: 'width 0.5s ease-in',
     overflow: 'hidden',
     whiteSpace: 'nowrap',
     textOverflow: 'ellipsis',
+    flexDirection: 'column',
+    justifyContent: 'flex-start',
+    cursor: 'pointer',
   }),
 );
 
@@ -75,6 +81,7 @@ const roundNearestMultiple = (num: number, multiple: number): number => {
 };
 
 export default function GuidePage() {
+  const theme = useTheme();
   const now = dayjs();
   const [start, setStart] = useState(
     dayjs()
@@ -83,6 +90,7 @@ export default function GuidePage() {
       .millisecond(0),
   );
   const [end, setEnd] = useState(start.add(2, 'hours'));
+  const [currentTime, setCurrentTime] = useState(dayjs().format('h:mm'));
   const [progress, setProgress] = useState(() => {
     return calcProgress(start, end);
   });
@@ -100,6 +108,7 @@ export default function GuidePage() {
 
   useInterval(() => {
     setProgress(calcProgress(start, end));
+    setCurrentTime(dayjs().format('h:mm'));
   }, 60000);
 
   const zoomOut = useCallback(() => {
@@ -147,6 +156,22 @@ export default function GuidePage() {
         break;
     }
 
+    let episodeTitle: string | undefined;
+    switch (program.type) {
+      case 'custom':
+        episodeTitle = program.program?.episodeTitle ?? '';
+        break;
+      case 'content':
+        episodeTitle = program.episodeTitle;
+        break;
+      case 'redirect':
+        episodeTitle = '';
+        break;
+      case 'flex':
+        episodeTitle = '';
+        break;
+    }
+
     const key = `${title}_${program.start}_${program.stop}`;
     const programStart = dayjs(program.start);
     const programEnd = dayjs(program.stop);
@@ -180,7 +205,10 @@ export default function GuidePage() {
         placement="top"
       >
         <GuideItem width={pct} grey={grey} key={key}>
-          {title}
+          <Box sx={{ fontSize: '14px', fontWeight: '600' }}>{title}</Box>
+          <Box sx={{ fontSize: '13px', fontStyle: 'italic' }}>
+            {episodeTitle}
+          </Box>
         </GuideItem>
       </Tooltip>
     );
@@ -195,8 +223,7 @@ export default function GuidePage() {
           display: 'flex',
           flex: 1,
           borderStyle: 'solid',
-          borderWidth: '1px 0 0 1px',
-          borderColor: 'rgba(0,0,0,0.2)',
+          borderColor: 'transparent',
         }}
       >
         {lineup.programs.map(renderProgram)}
@@ -218,7 +245,8 @@ export default function GuidePage() {
         {start.format('DD/MM/YYYY, h:mm A')} to{' '}
         {end.format('DD/MM/YYYY, h:mm A')}
       </p>
-      <Stack justifyContent={'right'} direction={'row'}>
+
+      <Stack justifyContent={'right'} direction={'row'} sx={{ my: 1 }}>
         <IconButton disabled={zoomDisabled} onClick={zoomIn}>
           <ZoomInIcon />
         </IconButton>
@@ -238,16 +266,16 @@ export default function GuidePage() {
             display="flex"
             position="relative"
             flexDirection="column"
-            sx={{ width: '20%' }}
+            sx={{ width: '15%' }}
           >
-            <Box sx={{ height: '2rem' }}></Box>
+            <Box sx={{ height: '2.75rem' }}></Box>
             {channelLineup?.map((channel) => (
               <Stack
                 direction={{ sm: 'column', md: 'row' }}
                 key={`img-${channel.number}`}
               >
                 <Box
-                  sx={{ height: '3rem' }}
+                  sx={{ height: '3.5rem' }}
                   display={'flex'}
                   alignItems={'center'}
                   justifyContent={'center'}
@@ -266,8 +294,8 @@ export default function GuidePage() {
                   key={channel.number}
                   display={'flex'}
                   alignItems={'center'}
-                  justifyContent={'center'}
                   flexGrow={1}
+                  marginLeft={1}
                 >
                   {channel.name}
                 </Box>
@@ -302,17 +330,35 @@ export default function GuidePage() {
               ))}
             </GridParent>
             {channels}
-            <Box
-              sx={{
-                position: 'absolute',
-                width: '2px',
-                background: 'rgba(0, 0, 0, 0.5)',
-                zIndex: 10,
-                height: '100%',
-                left: `${progress}%`,
-                transition: 'left 0.5s linear',
-              }}
-            ></Box>
+            {dayjs().isBetween(start, end) && (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  width: '2px',
+                  background: theme.palette.primary.main,
+                  zIndex: 10,
+                  height: '100%',
+                  left: `${progress}%`,
+                  top: '4px',
+                  transition: 'left 0.5s linear',
+                }}
+              >
+                <Box
+                  sx={{
+                    position: 'relative',
+                    left: '-25px',
+                    background: theme.palette.primary.main,
+                    color: '#fff',
+                    width: '50px',
+                    borderRadius: '5px',
+                    fontSize: '14px',
+                    textAlign: 'center',
+                  }}
+                >
+                  {currentTime}
+                </Box>
+              </Box>
+            )}
           </Box>
         </Box>
       </PaddedPaper>
