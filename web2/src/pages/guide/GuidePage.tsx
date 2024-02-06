@@ -47,8 +47,8 @@ const GuideItem = styled(GridChild)<{ grey: keyof Color; width: number }>(
       theme.palette.mode === 'light'
         ? theme.palette.grey[grey]
         : grey === 300
-        ? theme.palette.grey[800]
-        : theme.palette.grey[700],
+        ? theme.palette.grey[700]
+        : theme.palette.grey[800],
     borderCollapse: 'collapse',
     borderStyle: 'solid',
     borderWidth: '2px 5px 2px 5px',
