@@ -211,6 +211,10 @@ export const api = makeApi([
     status: 201,
     response: z.object({ id: z.string() }),
   },
+  // {
+  //   method: 'put',
+  //   path: '/api/v2/'
+  // }
 ]);
 
 export const createApiClient = once((uri: string) => {

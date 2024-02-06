@@ -1,6 +1,5 @@
 import { Channel, Program } from '@tunarr/types';
 import dayjs from 'dayjs';
-import { fs } from 'file-system-cache/lib/common/libs.js';
 import {
   attempt,
   chain,
@@ -12,6 +11,7 @@ import {
   map,
   values,
 } from 'lodash-es';
+import fs from 'node:fs/promises';
 import path from 'path';
 import { v4 } from 'uuid';
 import createLogger from '../../logger.js';
@@ -42,10 +42,10 @@ import {
 import {
   JSONArray,
   JSONObject,
+  convertProgram,
   tryParseResolution,
   uniqueProgramId,
 } from './migrationUtil.js';
-import { convertProgram } from './migrationUtil.js';
 
 const logger = createLogger(import.meta);
 
@@ -237,9 +237,8 @@ export async function migrateChannel(fullPath: string): Promise<{
     // convertProgram,
     // ),
     groupTitle: parsed['groupTitle'] as string,
-    guideMinimumDurationSeconds: parsed[
-      'guideMinimumDurationSeconds'
-    ] as number,
+    guideMinimumDuration:
+      (parsed['guideMinimumDurationSeconds'] as number) * 1000,
     icon: {
       path: parsed['icon'] as string,
       duration: parsed['iconDuration'] as number,
@@ -317,7 +316,7 @@ export async function migrateChannel(fullPath: string): Promise<{
       transcoding: channel.transcoding,
       watermark: channel.watermark,
       offline: { mode: 'clip' },
-      guideMinimumDurationSeconds: channel.guideMinimumDurationSeconds,
+      guideMinimumDuration: channel.guideMinimumDuration,
     });
   } else {
     channelEntity = em.create(ChannelEntity, {
@@ -332,7 +331,7 @@ export async function migrateChannel(fullPath: string): Promise<{
       transcoding: channel.transcoding,
       watermark: channel.watermark,
       offline: { mode: 'clip' },
-      guideMinimumDurationSeconds: channel.guideMinimumDurationSeconds,
+      guideMinimumDuration: channel.guideMinimumDuration,
     });
   }
 

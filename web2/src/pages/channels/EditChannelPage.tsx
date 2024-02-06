@@ -1,17 +1,28 @@
 import Box from '@mui/material/Box';
-import Link from '@mui/material/Link';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import Breadcrumbs from '@mui/material/Breadcrumbs';
+import Link from '@mui/material/Link';
 import Paper from '@mui/material/Paper';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { SaveChannelRequest } from '@tunarr/types';
+import { usePrevious } from '@uidotdev/usehooks';
 import { useCallback, useEffect, useState } from 'react';
+import {
+  FieldPath,
+  FormProvider,
+  SubmitErrorHandler,
+  SubmitHandler,
+  useForm,
+} from 'react-hook-form';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useEffectOnce } from 'usehooks-ts';
 import ChannelEpgConfig from '../../components/channel_config/ChannelEpgConfig.tsx';
 import { ChannelFlexConfig } from '../../components/channel_config/ChannelFlexConfig.tsx';
 import ChannelPropertiesEditor from '../../components/channel_config/ChannelPropertiesEditor.tsx';
 import ChannelTranscodingConfig from '../../components/channel_config/ChannelTranscodingConfig.tsx';
+import { apiClient } from '../../external/api.ts';
 import { usePreloadedData } from '../../hooks/preloadedDataHook.ts';
 import { setCurrentChannel } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
@@ -20,32 +31,38 @@ import {
   ChannelEditContextState,
 } from './EditChannelContext.ts';
 import { editChannelLoader } from './loaders.ts';
-import { FormProvider, SubmitHandler, useForm } from 'react-hook-form';
-import { Channel, SaveChannelRequest } from '@tunarr/types';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '../../external/api.ts';
-import { usePrevious } from '@uidotdev/usehooks';
+import { ZodiosError } from '@zodios/core';
+import { Badge } from '@mui/material';
+import { keys, some } from 'lodash-es';
 
 type TabValues = 'properties' | 'flex' | 'epg' | 'ffmpeg';
 
-type TabProps = { value: TabValues; description: string };
+type TabProps = {
+  value: TabValues;
+  description: string;
+  fields: FieldPath<SaveChannelRequest>[];
+};
 
 const tabs: TabProps[] = [
   {
     value: 'properties',
     description: 'Properties',
+    fields: ['number', 'name', 'groupTitle'],
   },
   {
     value: 'flex',
     description: 'Flex',
+    fields: ['offline'],
   },
   {
     value: 'epg',
     description: 'EPG',
+    fields: ['stealth', 'guideFlexPlaceholder', 'guideMinimumDuration'],
   },
   {
     value: 'ffmpeg',
     description: 'FFMPEG',
+    fields: ['transcoding'],
   },
 ];
 
@@ -96,7 +113,14 @@ export default function EditChannelPage({ isNew }: Props) {
   const formMethods = useForm<SaveChannelRequest>({
     mode: 'onChange',
     // Change this so we only load the form on initial...
-    defaultValues: originalChannel ?? channel,
+    // eslint-disable-next-line @typescript-eslint/require-await
+    defaultValues: async () => {
+      const c = originalChannel ?? channel;
+      return {
+        ...c,
+        guideMinimumDuration: c.guideMinimumDuration / 1000,
+      };
+    },
   });
 
   useEffectOnce(() => {
@@ -109,12 +133,18 @@ export default function EditChannelPage({ isNew }: Props) {
       previousChannel &&
       workingChannel.id !== previousChannel.id
     ) {
-      formMethods.reset(workingChannel);
+      formMethods.reset({
+        ...workingChannel,
+        guideMinimumDuration: workingChannel.guideMinimumDuration / 1000,
+      });
     }
   }, [workingChannel, previousChannel, formMethods]);
 
   // make sure formState is read before render to enable the Proxy
   const formIsValid = formMethods.formState.isValid;
+  const formErrorKeys = keys(
+    formMethods.formState.errors,
+  ) as (keyof SaveChannelRequest)[];
 
   const navigate = useNavigate();
   const updateChannel = useMutation({
@@ -138,26 +168,46 @@ export default function EditChannelPage({ isNew }: Props) {
         updateChannel.reset();
       }
     },
+    onError: (error) => {
+      if (error instanceof ZodiosError) {
+        console.error(error.data);
+        console.error(error, error.cause);
+      }
+    },
   });
 
-  const resetChannel = useCallback(() => {
-    formMethods.reset();
-  }, [formMethods]);
-
   const renderTab = (tab: TabProps) => {
+    const hasError = some(formErrorKeys, (k) => tab.fields.includes(k));
     return (
       <Tab
         key={tab.value}
         disabled={isNew && tab.value !== currentTab && !formIsValid}
         value={tab.value}
-        label={tab.description}
+        label={
+          <Badge
+            color="error"
+            variant="dot"
+            slotProps={{ badge: { style: { right: -3, top: -3 } } }}
+            invisible={!hasError}
+          >
+            {tab.description}
+          </Badge>
+        }
       />
     );
   };
 
   const onSubmit: SubmitHandler<SaveChannelRequest> = (data) => {
-    updateChannel.mutate(data);
     console.log(data);
+    updateChannel.mutate({
+      ...data,
+      // Transform this to milliseconds before we send it over
+      guideMinimumDuration: data.guideMinimumDuration * 1000,
+    });
+  };
+
+  const onInvalid: SubmitErrorHandler<SaveChannelRequest> = (data) => {
+    console.error(data, formMethods.getValues());
   };
 
   return (
@@ -188,7 +238,7 @@ export default function EditChannelPage({ isNew }: Props) {
             <FormProvider {...formMethods}>
               <Box
                 component="form"
-                onSubmit={formMethods.handleSubmit(onSubmit)}
+                onSubmit={formMethods.handleSubmit(onSubmit, onInvalid)}
               >
                 <TabPanel value="properties" currentValue={currentTab}>
                   <ChannelPropertiesEditor />

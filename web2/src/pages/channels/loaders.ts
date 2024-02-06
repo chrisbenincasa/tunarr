@@ -105,7 +105,7 @@ function defaultNewChannel(num: number): Channel {
       position: 'bottom',
       width: 0,
     },
-    guideMinimumDurationSeconds: 300,
+    guideMinimumDuration: 300,
     groupTitle: 'tv',
     stealth: false,
     disableFillerOverlay: false,

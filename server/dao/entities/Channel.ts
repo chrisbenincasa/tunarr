@@ -2,7 +2,6 @@ import {
   Collection,
   Entity,
   ManyToMany,
-  OptionalProps,
   Property,
   Unique,
 } from '@mikro-orm/core';
@@ -54,7 +53,7 @@ export class Channel extends BaseEntity {
     const entity = new Channel();
     entity.number = channel.number;
     entity.icon = channel.icon;
-    entity.guideMinimumDurationSeconds = channel.guideMinimumDurationSeconds;
+    entity.guideMinimumDuration = channel.guideMinimumDuration;
     entity.name = channel.name;
     entity.duration = channel.duration;
     entity.stealth = channel.stealth;
@@ -72,8 +71,6 @@ export class Channel extends BaseEntity {
     } as Partial<Channel>;
   }
 
-  [OptionalProps]?: 'guideMinimumDurationSeconds' | 'durationMs';
-
   @Property()
   number!: number;
 
@@ -83,8 +80,9 @@ export class Channel extends BaseEntity {
   @ManyToMany(() => Program, 'channels', { owner: true })
   programs = new Collection<Program>(this);
 
+  // Stored in millis
   @Property({ type: 'int', name: 'guide_minimum_duration' })
-  guideMinimumDurationSeconds: number;
+  guideMinimumDuration: number;
 
   @Property({ default: false })
   disableFillerOverlay: boolean = false;
@@ -149,7 +147,7 @@ export class Channel extends BaseEntity {
         position: '',
         width: 0,
       },
-      guideMinimumDurationSeconds: this.guideMinimumDurationSeconds,
+      guideMinimumDuration: this.guideMinimumDuration,
       groupTitle: this.groupTitle || '',
       disableFillerOverlay: this.disableFillerOverlay,
       startTime: this.startTime,

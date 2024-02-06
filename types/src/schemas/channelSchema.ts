@@ -41,7 +41,7 @@ export const ChannelSchema = z.object({
   fillerRepeatCooldown: z.number().optional(),
   groupTitle: z.string(),
   guideFlexPlaceholder: z.string().optional(),
-  guideMinimumDurationSeconds: z.number(),
+  guideMinimumDuration: z.number(),
   icon: ChannelIconSchema,
   id: z.string(),
   name: z.string(),

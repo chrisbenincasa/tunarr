@@ -32,12 +32,12 @@ dayjs.extend(duration);
 function updateRequestToChannel(
   updateReq: SaveChannelRequest,
 ): Partial<Channel> {
-  return omitBy(
+  return omitBy<Partial<Channel>>(
     {
       number: updateReq.number,
       watermark: updateReq.watermark,
       icon: updateReq.icon,
-      guideMinimumDurationSeconds: updateReq.guideMinimumDurationSeconds,
+      guideMinimumDuration: updateReq.guideMinimumDuration,
       groupTitle: updateReq.groupTitle,
       disableFillerOverlay: updateReq.disableFillerOverlay,
       startTime: updateReq.startTime,
@@ -61,7 +61,7 @@ function createRequestToChannel(
     number: saveReq.number,
     watermark: saveReq.watermark,
     icon: saveReq.icon,
-    guideMinimumDurationSeconds: saveReq.guideMinimumDurationSeconds,
+    guideMinimumDuration: saveReq.guideMinimumDuration,
     groupTitle: saveReq.groupTitle,
     disableFillerOverlay: saveReq.disableFillerOverlay,
     startTime: saveReq.startTime,
