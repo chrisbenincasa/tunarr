@@ -7,6 +7,7 @@ import {
   Button,
   IconButton,
   Paper,
+  Stack,
   Table,
   TableBody,
   TableCell,
@@ -15,12 +16,14 @@ import {
   TableRow,
   Tooltip,
   Typography,
+  useMediaQuery,
 } from '@mui/material';
 import { Channel } from '@tunarr/types';
 import { Link as RouterLink } from 'react-router-dom';
 import { useChannels } from '../../hooks/useChannels.ts';
 import { isEmpty } from 'lodash-es';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
+import { useTheme } from '@mui/material/styles';
 
 export default function ChannelsPage() {
   const {
@@ -28,6 +31,8 @@ export default function ChannelsPage() {
     error: channelsError,
     data: channels,
   } = useChannels();
+  const theme = useTheme();
+  const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
 
   if (channelsLoading) return 'Loading...';
 
@@ -38,38 +43,63 @@ export default function ChannelsPage() {
     return (
       <TableRow key={channel.number}>
         <TableCell width="10%">{channel.number}</TableCell>
-        <TableCell width="10%">
-          <img
-            style={{ maxHeight: '40px' }}
-            src={
-              isEmpty(channel.icon.path) ? '/dizquetv.png' : channel.icon.path
-            }
-          />
-        </TableCell>
+        {!smallViewport && (
+          <TableCell width="10%">
+            <img
+              style={{ maxHeight: '40px' }}
+              src={
+                isEmpty(channel.icon.path) ? '/dizquetv.png' : channel.icon.path
+              }
+            />
+          </TableCell>
+        )}
         <TableCell>{channel.name}</TableCell>
-        <TableCell width="15%">
-          <Tooltip title="Edit" placement="top">
-            <IconButton
-              color="primary"
-              to={`/channels/${channel.id}/edit`}
-              component={RouterLink}
-            >
-              <EditIcon />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Edit Programs" placement="top">
-            <IconButton
-              to={`/channels/${channel.id}/programming`}
-              component={RouterLink}
-            >
-              <SettingsRemoteIcon />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Delete" placement="top">
-            <IconButton color="error">
-              <DeleteIcon />
-            </IconButton>
-          </Tooltip>
+        <TableCell width="25%">
+          <Stack direction={'row'} justifyContent={'flex-end'}>
+            <Tooltip title="Edit Channel Settings" placement="top">
+              {smallViewport ? (
+                <IconButton
+                  to={`/channels/${channel.id}/edit`}
+                  component={RouterLink}
+                  color={'primary'}
+                >
+                  <EditIcon />
+                </IconButton>
+              ) : (
+                <Button
+                  variant="contained"
+                  startIcon={<EditIcon />}
+                  to={`/channels/${channel.id}/edit`}
+                  component={RouterLink}
+                  sx={{ marginRight: 1 }}
+                  color={'primary'}
+                >
+                  Edit
+                </Button>
+              )}
+            </Tooltip>
+            <Tooltip title="Add/Edit Programming" placement="top">
+              {smallViewport ? (
+                <IconButton
+                  to={`/channels/${channel.id}/programming`}
+                  component={RouterLink}
+                  color={'primary'}
+                >
+                  <SettingsRemoteIcon />
+                </IconButton>
+              ) : (
+                <Button
+                  variant="contained"
+                  startIcon={<SettingsRemoteIcon />}
+                  to={`/channels/${channel.id}/programming`}
+                  component={RouterLink}
+                  color={'primary'}
+                >
+                  Add Programming
+                </Button>
+              )}
+            </Tooltip>
+          </Stack>
         </TableCell>
       </TableRow>
     );
@@ -116,7 +146,7 @@ export default function ChannelsPage() {
             <TableHead>
               <TableRow>
                 <TableCell>Number</TableCell>
-                <TableCell>Icon</TableCell>
+                {!smallViewport && <TableCell>Icon</TableCell>}
                 <TableCell>Name</TableCell>
                 <TableCell></TableCell>
               </TableRow>

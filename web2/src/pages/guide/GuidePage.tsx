@@ -3,7 +3,11 @@ import ZoomOutIcon from '@mui/icons-material/ZoomOut';
 import {
   Box,
   Color,
+  FormControl,
   IconButton,
+  MenuItem,
+  Select,
+  SelectChangeEvent,
   Stack,
   Tooltip,
   Typography,
@@ -89,7 +93,7 @@ export default function GuidePage() {
       .second(0)
       .millisecond(0),
   );
-  const [end, setEnd] = useState(start.add(2, 'hours'));
+  const [end, setEnd] = useState(start.add(2, 'hour'));
   const [currentTime, setCurrentTime] = useState(dayjs().format('h:mm'));
   const [progress, setProgress] = useState(() => {
     return calcProgress(start, end);
@@ -112,7 +116,7 @@ export default function GuidePage() {
   }, 60000);
 
   const zoomOut = useCallback(() => {
-    setEnd((last) => last.add(1, 'hours'));
+    setEnd((last) => last.add(1, 'hour'));
   }, [setEnd]);
 
   const zoomIn = useCallback(() => {
@@ -122,13 +126,13 @@ export default function GuidePage() {
   }, [end, start, setEnd]);
 
   const navigateForward = useCallback(() => {
-    setEnd((last) => last.add(1, 'hours'));
-    setStart((start) => start.add(1, 'hours'));
+    setEnd((last) => last.add(1, 'hour'));
+    setStart((start) => start.add(1, 'hour'));
   }, [end, start, setEnd, setStart]);
 
   const navigateBackward = useCallback(() => {
-    setEnd((last) => last.subtract(1, 'hours'));
-    setStart((start) => start.subtract(1, 'hours'));
+    setEnd((last) => last.subtract(1, 'hour'));
+    setStart((start) => start.subtract(1, 'hour'));
   }, [end, start, setEnd, setStart]);
 
   if (isPending) return 'Loading...';
@@ -236,30 +240,66 @@ export default function GuidePage() {
 
   const navigationDisabled = now.isAfter(start);
 
+  const handleDayChange = (event: SelectChangeEvent<string>) => {
+    const day = event.target.value;
+
+    setStart((start) => dayjs(day).hour(start.hour()).minute(start.minute()));
+    setEnd((end) => dayjs(day).hour(end.hour()).minute(end.minute()));
+  };
+
+  const generateWeek = () => {
+    const today = dayjs();
+    let week: Dayjs[] | [] = [];
+
+    for (let i = 0; i < 7; i++) {
+      week = [...week, today.add(i, 'day')];
+    }
+
+    return week;
+  };
+
   return (
     <>
       <Typography variant="h3" mb={2}>
         TV Guide
       </Typography>
-      <p>
-        {start.format('DD/MM/YYYY, h:mm A')} to{' '}
-        {end.format('DD/MM/YYYY, h:mm A')}
-      </p>
+      <Box display={'flex'}>
+        <FormControl sx={{ m: 1, minWidth: 120 }}>
+          <Select
+            value={start.format('MM/DD/YYYY')}
+            onChange={handleDayChange}
+            inputProps={{ 'aria-label': 'Without label' }}
+          >
+            {generateWeek().map((date, index) => (
+              <MenuItem value={date.format('MM/DD/YYYY')} key={index}>
+                {dayjs().isSame(date)
+                  ? `Today, ${date.format('MMM D')}`
+                  : date.format('dddd, MMM D')}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
 
-      <Stack justifyContent={'right'} direction={'row'} sx={{ my: 1 }}>
-        <IconButton disabled={zoomDisabled} onClick={zoomIn}>
-          <ZoomInIcon />
-        </IconButton>
-        <IconButton onClick={zoomOut}>
-          <ZoomOutIcon />
-        </IconButton>
-        <IconButton disabled={navigationDisabled} onClick={navigateBackward}>
-          <ArrowBackIos />
-        </IconButton>
-        <IconButton onClick={navigateForward}>
-          <ArrowForwardIos />
-        </IconButton>
-      </Stack>
+        <Stack
+          flexGrow={1}
+          justifyContent={'right'}
+          direction={'row'}
+          sx={{ my: 1 }}
+        >
+          <IconButton disabled={zoomDisabled} onClick={zoomIn}>
+            <ZoomInIcon />
+          </IconButton>
+          <IconButton onClick={zoomOut}>
+            <ZoomOutIcon />
+          </IconButton>
+          <IconButton disabled={navigationDisabled} onClick={navigateBackward}>
+            <ArrowBackIos />
+          </IconButton>
+          <IconButton onClick={navigateForward}>
+            <ArrowForwardIos />
+          </IconButton>
+        </Stack>
+      </Box>
       <PaddedPaper>
         <Box display="flex">
           <Box
@@ -311,6 +351,16 @@ export default function GuidePage() {
               overflowX: 'hidden',
             }}
           >
+            <Box
+              sx={{
+                width: `100%`,
+                height: '2rem',
+                textAlign: 'center',
+                fontWeight: 'bold',
+              }}
+            >
+              {start.format('MMMM D')}
+            </Box>
             <GridParent
               sx={{
                 display: 'flex',

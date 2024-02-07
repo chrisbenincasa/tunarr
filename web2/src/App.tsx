@@ -69,7 +69,13 @@ export function Root() {
         palette: {
           mode: darkMode ? 'dark' : 'light',
           primary: {
-            main: red[500],
+            main: 'rgb(241, 93, 85)',
+          },
+          secondary: {
+            main: 'rgb(0, 125, 184)',
+          },
+          info: {
+            main: 'rgb(147, 168, 172)',
           },
         },
       }),
