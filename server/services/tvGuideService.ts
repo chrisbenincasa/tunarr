@@ -29,7 +29,6 @@ import { XmlTvWriter } from '../xmltv.js';
 import { CacheImageService } from './cacheImageService.js';
 import { EventService } from './eventService.js';
 import throttle from './throttle.js';
-import { inspect } from 'node:util';
 
 const logger = createLogger(import.meta);
 
@@ -630,7 +629,6 @@ export class TVGuideService {
     await this.get();
     const beginningTimeMs = dateFrom.getTime();
     const endTimeMs = dateTo.getTime();
-    console.log(inspect(this.cached, false, null));
 
     const { channel, programs } = this.cached[channelId];
     if (isNil(channel)) {

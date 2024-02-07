@@ -10,7 +10,7 @@ import {
   isPlexDirectory,
   isTerminalItem,
 } from '@tunarr/types/plex';
-import { flattenDeep } from 'lodash-es';
+import { flattenDeep, map } from 'lodash-es';
 import { apiClient } from '../external/api.ts';
 import { sequentialPromises } from '../helpers/util.ts';
 
@@ -84,20 +84,27 @@ export const usePlexTyped2 = <T = unknown, U = unknown>(
     },
   });
 
-export type PlexMediaWithServerName = PlexTerminalMedia & {
+export type EnrichedPlexMedia = PlexTerminalMedia & {
+  // This is the Plex server name that the info was retrieved from
   serverName: string;
+  // If we found an existing reference to this item on the server, we add it here
+  id?: string;
 };
+
+function plexItemExternalId(serverName: string, media: PlexTerminalMedia) {
+  return `plex|${serverName}|${media.key}`;
+}
 
 export const enumeratePlexItem = (
   serverName: string,
   initialItem: PlexMedia | PlexLibrarySection,
-): (() => Promise<PlexMediaWithServerName[]>) => {
+): (() => Promise<EnrichedPlexMedia[]>) => {
   const fetchPlexPathFunc = <T>(path: string) =>
     fetchPlexPath<T>(serverName, path)();
 
   async function loopInner(
     item: PlexMedia | PlexLibrarySection,
-  ): Promise<PlexMediaWithServerName[]> {
+  ): Promise<EnrichedPlexMedia[]> {
     if (isTerminalItem(item)) {
       return [{ ...item, serverName }];
     } else {
@@ -117,14 +124,21 @@ export const enumeratePlexItem = (
 
   return async function () {
     const res = await loopInner(initialItem);
-    const externalIds = res.map((m) => `plex|${serverName}|${m.key}`);
+    const externalIds = res.map((m) => plexItemExternalId(serverName, m));
 
-    console.log(externalIds);
+    // This is best effort - if the user saves these IDs later, the upsert
+    // logic should figure out what is new/existing
+    try {
+      const existingIdsByExternalId =
+        await apiClient.batchGetProgramsByExternalIds({ externalIds });
+      return map(res, (media) => ({
+        ...media,
+        id: existingIdsByExternalId[plexItemExternalId(serverName, media)]?.id,
+      }));
+    } catch (e) {
+      console.error('Unable to retrieve IDs in batch', e);
+    }
 
-    await apiClient
-      .batchGetProgramsByExternalIds({ externalIds })
-      .then((r) => console.log(r))
-      .catch((e) => console.error(e));
     return res;
   };
 };

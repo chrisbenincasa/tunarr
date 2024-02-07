@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
-import { Resolution } from '@tunarr/types';
+import { ChannelProgram, Resolution } from '@tunarr/types';
 
 dayjs.extend(duration);
 
@@ -53,4 +53,17 @@ export const fromStringResolution = (
 
 export const hasOnlyDigits = (value: string) => {
   return /^-?\d+$/g.test(value);
+};
+
+export const channelProgramUniqueId = (program: ChannelProgram): string => {
+  switch (program.type) {
+    case 'custom':
+      return `custom.${program.id}`;
+    case 'content':
+      return `content.${program.uniqueId}`;
+    case 'redirect':
+      return `redirect.${program.channel}`;
+    case 'flex':
+      return 'flex';
+  }
 };

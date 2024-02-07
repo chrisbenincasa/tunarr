@@ -1,4 +1,5 @@
 import { Loaded, QueryOrder, RequiredEntityData, wrap } from '@mikro-orm/core';
+import { scheduleTimeSlots } from '@tunarr/shared';
 import {
   ChannelProgram,
   ChannelProgramming,
@@ -7,14 +8,25 @@ import {
   RedirectProgram,
   SaveChannelRequest,
 } from '@tunarr/types';
+import { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
-import { chain, isNil, isNull, omitBy } from 'lodash-es';
+import {
+  chain,
+  compact,
+  isNil,
+  isNull,
+  map,
+  nth,
+  omitBy,
+  sumBy,
+} from 'lodash-es';
 import { Low } from 'lowdb';
-import { JSONFile } from 'lowdb/node';
+import { DataFile } from 'lowdb/node';
 import { join } from 'path';
 import { globalOptions } from '../globals.js';
 import { Nullable } from '../types.js';
+import { groupByFunc } from '../util.js';
 import { dbProgramToContentProgram } from './converters/programConverters.js';
 import { getEm } from './dataSource.js';
 import {
@@ -22,10 +34,13 @@ import {
   Lineup,
   LineupItem,
   OfflineItem,
+  isContentItem,
   isOfflineItem,
   isRedirectItem,
 } from './derived_types/Lineup.js';
 import { Channel } from './entities/Channel.js';
+import { Program } from './entities/Program.js';
+import { upsertContentPrograms } from './programHelpers.js';
 
 dayjs.extend(duration);
 
@@ -156,6 +171,113 @@ export class ChannelDB {
       .findAll({ populate: ['programs'] });
   }
 
+  async updateLineup(id: string, req: UpdateChannelProgrammingRequest) {
+    const channel = await this.getChannelAndPrograms(id);
+
+    if (isNil(channel)) {
+      return null;
+    }
+
+    const em = getEm();
+
+    const updateChannel = async (
+      lineup: readonly LineupItem[],
+      startTime: number,
+    ) => {
+      return await em.transactional(async (em) => {
+        channel.startTime = startTime;
+        channel.duration = sumBy(lineup, (p) => p.durationMs);
+        const allIds = chain(lineup)
+          .filter(isContentItem)
+          .map((p) => p.id)
+          .uniq()
+          .value();
+        channel.programs.removeAll();
+        await em.persistAndFlush(channel);
+        const refs = allIds.map((id) => em.getReference(Program, id));
+        channel.programs.set(refs);
+        await em.persistAndFlush(channel);
+        return channel;
+      });
+    };
+
+    const createNewLineup = async (
+      programs: ChannelProgram[],
+      lineup: ChannelProgram[] = programs,
+    ) => {
+      const upsertedPrograms = await upsertContentPrograms(programs);
+      const dbIdByUniqueId = groupByFunc(
+        upsertedPrograms,
+        (p) => p.uniqueId(),
+        (p) => p.uuid,
+      );
+      return map(lineup, (program) =>
+        channelProgramToLineupItem(program, dbIdByUniqueId),
+      );
+    };
+
+    if (req.type === 'manual') {
+      const programs = req.programs;
+      const lineup = compact(
+        map(req.lineup, ({ index, duration }) => {
+          const program = nth(programs, index);
+          if (program) {
+            return {
+              ...program,
+              duration: duration ?? program.duration,
+            };
+          }
+          return;
+        }),
+      );
+
+      const newLineup = await createNewLineup(programs, lineup);
+      const updatedChannel = await updateChannel(
+        newLineup,
+        dayjs().unix() * 1000,
+      );
+      await this.saveLineup(id, {
+        items: newLineup,
+      });
+
+      return {
+        channel: updatedChannel,
+        newLineup,
+      };
+    } else if (req.type === 'time') {
+      // const programs = req.body.programs;
+      // const persistedPrograms = filter(programs, isContentProgram)
+      // const upsertedPrograms = await upsertContentPrograms(programs);
+      // TODO: What would it be like to run the scheduler in a separate worker thread??
+      // await runWorker<number>(
+      //   new URL('../../util/scheduleTimeSlotsWorker', import.meta.url),
+      //   {
+      //     schedule: req.body.schedule,
+      //     programs: req.body.programs,
+      //   },
+      // ),
+      const { programs, startTime } = await scheduleTimeSlots(
+        req.schedule,
+        req.programs,
+      );
+
+      const newLineup = await createNewLineup(programs);
+
+      const updatedChannel = await updateChannel(newLineup, startTime);
+      await this.saveLineup(id, {
+        items: newLineup,
+        schedule: req.schedule,
+      });
+
+      return {
+        channel: updatedChannel,
+        newLineup,
+      };
+    }
+
+    return null;
+  }
+
   async loadLineup(channelId: string) {
     const db = await this.getFileDb(channelId);
     await db.read();
@@ -194,8 +316,14 @@ export class ChannelDB {
   private async getFileDb(channelId: string) {
     if (!this.fileDbCache[channelId]) {
       this.fileDbCache[channelId] = new Low<Lineup>(
-        new JSONFile(
+        new DataFile(
           join(globalOptions().database, `channel-lineups/${channelId}.json`),
+          {
+            parse: JSON.parse,
+            stringify(data) {
+              return JSON.stringify(data);
+            },
+          },
         ),
         { items: [] },
       );
@@ -257,4 +385,42 @@ function contentLineupItemToProgram(
   }
 
   return dbProgramToContentProgram(program, persisted);
+}
+
+function channelProgramToLineupItem(
+  program: ChannelProgram,
+  dbIdByUniqueId: Record<string, string>,
+): LineupItem {
+  let item: LineupItem;
+  switch (program.type) {
+    case 'custom':
+      item = {
+        type: 'content', // Custom program
+        durationMs: program.duration,
+        id: program.id,
+      };
+      break;
+    case 'content':
+      item = {
+        type: 'content',
+        id: program.persisted ? program.id! : dbIdByUniqueId[program.uniqueId],
+        durationMs: program.duration,
+      };
+      break;
+    case 'redirect':
+      item = {
+        type: 'redirect',
+        channel: '', // TODO fix this....!
+        durationMs: program.duration,
+      };
+      break;
+    case 'flex':
+      item = {
+        type: 'offline',
+        durationMs: program.duration,
+      };
+      break;
+  }
+
+  return item;
 }

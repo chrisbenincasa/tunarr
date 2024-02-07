@@ -9,9 +9,9 @@ import {
   FillerListProgramming,
 } from '@tunarr/types';
 import { isPlexEpisode } from '@tunarr/types/plex';
-import { isUndefined, sumBy } from 'lodash-es';
+import { isNil, isUndefined, sumBy } from 'lodash-es';
 import useStore from '../index.ts';
-import { PlexMediaWithServerName } from '../../hooks/plexHooks.ts';
+import { EnrichedPlexMedia } from '../../hooks/plexHooks.ts';
 import { initialChannelEditorState } from './store.ts';
 
 export const resetChannelEditorState = () =>
@@ -112,14 +112,13 @@ export const clearSlotSchedulePreview = () =>
     channelEditor.schedulePreviewList = [];
   });
 
-const generatePrograms = (
-  programs: PlexMediaWithServerName[],
-): ContentProgram[] => {
+const generatePrograms = (programs: EnrichedPlexMedia[]): ContentProgram[] => {
   return programs.map((program) => {
     let ephemeralProgram: ContentProgram;
     if (isPlexEpisode(program)) {
       ephemeralProgram = {
-        persisted: false,
+        id: program.id,
+        persisted: !isNil(program.id),
         originalProgram: program,
         duration: program.duration,
         externalSourceName: program.serverName,
@@ -135,7 +134,8 @@ const generatePrograms = (
       };
     } else {
       ephemeralProgram = {
-        persisted: false,
+        id: program.id,
+        persisted: !isNil(program.id),
         originalProgram: program,
         duration: program.duration,
         externalSourceName: program.serverName,
@@ -151,9 +151,7 @@ const generatePrograms = (
   });
 };
 
-export const addPlexMediaToCurrentChannel = (
-  programs: PlexMediaWithServerName[],
-) =>
+export const addPlexMediaToCurrentChannel = (programs: EnrichedPlexMedia[]) =>
   useStore.setState(({ channelEditor }) => {
     if (channelEditor.currentEntity && programs.length > 0) {
       channelEditor.dirty.programs = true;
@@ -207,7 +205,7 @@ export const setCurrentCustomShow = (
   });
 
 export const addPlexMediaToCurrentCustomShow = (
-  programs: PlexMediaWithServerName[],
+  programs: EnrichedPlexMedia[],
 ) =>
   useStore.setState(({ customShowEditor }) => {
     if (customShowEditor.currentEntity && programs.length > 0) {
@@ -231,7 +229,7 @@ export const setCurrentFillerList = (
   });
 
 export const addPlexMediaToCurrentFillerList = (
-  programs: PlexMediaWithServerName[],
+  programs: EnrichedPlexMedia[],
 ) =>
   useStore.setState(({ fillerListEditor }) => {
     if (fillerListEditor.currentEntity && programs.length > 0) {

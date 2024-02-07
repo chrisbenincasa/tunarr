@@ -1,14 +1,11 @@
 import Button, { ButtonProps } from '@mui/material/Button';
 import { flattenDeep } from 'lodash-es';
 import { sequentialPromises } from '../../helpers/util.ts';
-import {
-  PlexMediaWithServerName,
-  enumeratePlexItem,
-} from '../../hooks/plexHooks.ts';
+import { EnrichedPlexMedia, enumeratePlexItem } from '../../hooks/plexHooks.ts';
 import useStore from '../../store/index.ts';
 
 type Props = {
-  onAdd: (items: PlexMediaWithServerName[]) => void;
+  onAdd: (items: EnrichedPlexMedia[]) => void;
   onSuccess: () => void;
 } & ButtonProps;
 

@@ -16,6 +16,7 @@ export const usePreloadedChannel = () => {
       isUndefined(channelEditor.originalEntity) ||
       preloadChannel.number !== channelEditor.originalEntity.number
     ) {
+      console.log(preloadChannel, preloadLineup);
       setCurrentChannel(preloadChannel, preloadLineup);
     }
   }, [channelEditor, preloadChannel, preloadLineup]);

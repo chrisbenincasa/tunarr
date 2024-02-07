@@ -141,7 +141,7 @@ export class Program extends BaseEntity {
   }
 
   uniqueId(): string {
-    return `${this.sourceType}_${this.externalSourceId}_${this.externalKey}`;
+    return `${this.sourceType}|${this.externalSourceId}|${this.externalKey}`;
   }
 }
 

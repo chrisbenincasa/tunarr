@@ -302,12 +302,12 @@ export async function scheduleTimeSlots(
   const upperLimit = t0.add(schedule.maxDays + 1, 'day');
 
   let timeCursor = t0;
-  let ChannelPrograms: ChannelProgram[] = [];
+  let channelPrograms: ChannelProgram[] = [];
 
   const pushFlex = (flexDuration: Duration) => {
-    const [inc, newPrograms] = pushOrExtendFlex(ChannelPrograms, flexDuration);
+    const [inc, newPrograms] = pushOrExtendFlex(channelPrograms, flexDuration);
     timeCursor = timeCursor.add(inc);
-    ChannelPrograms = newPrograms;
+    channelPrograms = newPrograms;
   };
 
   // if (t0.isAfter(startOfCurrentPeriod)) {
@@ -392,7 +392,7 @@ export async function scheduleTimeSlots(
 
     // Program longer than we have left? Add it and move on...
     if (program && program.duration > remaining) {
-      ChannelPrograms.push(program);
+      channelPrograms.push(program);
       advanceIterator(currSlot, programmingIteratorsById);
       timeCursor = timeCursor.add(program.duration);
       continue;
@@ -435,14 +435,14 @@ export async function scheduleTimeSlots(
     }
 
     forEach(paddedPrograms, ({ program, padMs }) => {
-      ChannelPrograms.push(program);
+      channelPrograms.push(program);
       timeCursor = timeCursor.add(program.duration);
       pushFlex(dayjs.duration(padMs));
     });
   }
 
   return {
-    programs: ChannelPrograms,
+    programs: channelPrograms,
     startTime: t0.unix() * 1000,
   };
 }
