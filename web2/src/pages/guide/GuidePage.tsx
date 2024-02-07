@@ -22,7 +22,12 @@ import { useInterval } from 'usehooks-ts';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import { useAllTvGuides } from '../../hooks/useTvGuide.ts';
 import { isEmpty, round } from 'lodash-es';
-import { ArrowBackIos, ArrowForwardIos } from '@mui/icons-material';
+import {
+  ArrowBackIos,
+  ArrowForwardIos,
+  History,
+  KeyboardDoubleArrowLeft,
+} from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 
 dayjs.extend(duration);
@@ -135,6 +140,22 @@ export default function GuidePage() {
     setStart((start) => start.subtract(1, 'hour'));
   }, [end, start, setEnd, setStart]);
 
+  const handleReset = useCallback(() => {
+    setStart(
+      dayjs()
+        .minute(roundNearestMultiple(now.minute(), 15))
+        .second(0)
+        .millisecond(0),
+    );
+    setEnd(
+      dayjs()
+        .minute(roundNearestMultiple(now.minute(), 15))
+        .second(0)
+        .millisecond(0)
+        .add(2, 'hour'),
+    );
+  }, [end, start, setEnd, setStart]);
+
   if (isPending) return 'Loading...';
 
   if (error) return 'An error occurred!: ' + error.message;
@@ -230,7 +251,30 @@ export default function GuidePage() {
           borderColor: 'transparent',
         }}
       >
-        {lineup.programs.map(renderProgram)}
+        {lineup.programs.length > 0 ? (
+          lineup.programs.map(renderProgram)
+        ) : (
+          <Tooltip
+            title={'No programming available for this time period'}
+            placement="top"
+          >
+            <GuideItem display={'flex'} flexGrow={1} justifyContent={'center'}>
+              <Box
+                display={'flex'}
+                justifyContent={'center'}
+                alignContent={'center'}
+                alignItems={'center'}
+                sx={{
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  textAlign: 'center',
+                }}
+              >
+                No programming available for this time period
+              </Box>
+            </GuideItem>
+          </Tooltip>
+        )}
       </Box>
     );
   });
@@ -264,24 +308,37 @@ export default function GuidePage() {
         TV Guide
       </Typography>
       <Box display={'flex'}>
-        <FormControl sx={{ m: 1, minWidth: 120 }}>
-          <Select
-            value={start.format('MM/DD/YYYY')}
-            onChange={handleDayChange}
-            inputProps={{ 'aria-label': 'Without label' }}
-          >
-            {generateWeek().map((date, index) => (
-              <MenuItem value={date.format('MM/DD/YYYY')} key={index}>
-                {dayjs().isSame(date)
-                  ? `Today, ${date.format('MMM D')}`
-                  : date.format('dddd, MMM D')}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-
         <Stack
           flexGrow={1}
+          alignItems={'center'}
+          justifyContent={'flex-start'}
+          direction={'row'}
+          sx={{ my: 1 }}
+        >
+          <FormControl sx={{ m: 1, minWidth: 120 }}>
+            <Select
+              value={start.format('MM/DD/YYYY')}
+              onChange={handleDayChange}
+              inputProps={{ 'aria-label': 'Without label' }}
+            >
+              {generateWeek().map((date, index) => (
+                <MenuItem value={date.format('MM/DD/YYYY')} key={index}>
+                  {dayjs().isSame(date)
+                    ? `Today, ${date.format('MMM D')}`
+                    : date.format('dddd, MMM D')}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          {!dayjs().isBetween(start, end) && (
+            <IconButton onClick={handleReset}>
+              <History />
+            </IconButton>
+          )}
+        </Stack>
+        <Stack
+          flexGrow={1}
+          alignItems={'center'}
           justifyContent={'right'}
           direction={'row'}
           sx={{ my: 1 }}
