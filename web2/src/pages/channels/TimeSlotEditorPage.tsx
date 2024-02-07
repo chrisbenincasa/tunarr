@@ -30,6 +30,7 @@ import {
   TimeSlot,
   TimeSlotProgramming,
   TimeSlotSchedule,
+  UpdateChannelProgrammingRequest,
 } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
@@ -46,7 +47,7 @@ import {
   some,
   uniqBy,
 } from 'lodash-es';
-import { Fragment, useCallback, useState } from 'react';
+import { Fragment, useCallback, useMemo, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import ChannelProgrammingList from '../../components/channel_config/ChannelProgrammingList.tsx';
@@ -56,10 +57,17 @@ import {
   clearSlotSchedulePreview,
   updateCurrentChannel,
 } from '../../store/channelEditor/actions.ts';
+import { useMutation } from '@tanstack/react-query';
+import { apiClient } from '../../external/api.ts';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.extend(dayjsMod);
+
+type MutateArgs = {
+  channelId: string;
+  lineupRequest: UpdateChannelProgrammingRequest;
+};
 
 type DropdownOption<T extends string | number> = {
   value: T;
@@ -110,6 +118,14 @@ export default function TimeSlotEditorPage() {
     channel?.startTime ?? dayjs().unix() * 1000,
   );
 
+  const updateLineupMutation = useMutation({
+    mutationFn: ({ channelId, lineupRequest }: MutateArgs) => {
+      return apiClient.post('/api/v2/channels/:id/programming', lineupRequest, {
+        params: { id: channelId },
+      });
+    },
+  });
+
   const contentPrograms = filter(newLineup, isContentProgram);
   const programOptions: ProgramOption[] = [
     { value: 'flex', description: 'Flex' },
@@ -142,22 +158,81 @@ export default function TimeSlotEditorPage() {
   const [flexOption, setFlexOption] = useState<'end' | 'distribute'>(
     'distribute',
   );
+
   const {
     numValue: precalcDays,
     strValue: precalcDaysStr,
     setValue: setPrecalcDays,
     isValid: precalcDaysValid,
   } = useNumberString(10);
+
+  const schedule: TimeSlotSchedule = useMemo(() => {
+    return {
+      flexPreference: flexOption,
+      latenessMs: latenessOption,
+      maxDays: precalcDays,
+      padMs: padOption,
+      timeZoneOffset: new Date().getTimezoneOffset(),
+      period,
+      type: 'time',
+      slots: timeSlots,
+    };
+  }, [flexOption, latenessOption, precalcDays, padOption, timeSlots, period]);
+
   const [perfSnackbarDetails, setPerfSnackbarDetails] = useState<{
     ms: number;
     numShows: number;
   } | null>(null);
+
   const [generatedList, setGeneratedList] = useState<
     ChannelProgram[] | undefined
   >(undefined);
+
   const isValid = timeSlots.length > 0; // Need more than this
 
-  const onSave = () => {};
+  const lineupItemAppearsInSchedule = useMemo(() => {
+    return (item: ChannelProgram) => {
+      const slots = schedule.slots;
+      return some(slots, (slot) => {
+        switch (slot.programming.type) {
+          case 'flex':
+            return item.type === 'flex' || item.type === 'redirect';
+          case 'movie':
+            return (
+              (item.type === 'content' && item.subtype === 'movie') ||
+              (item.type === 'custom' && item.program?.subtype === 'movie')
+            );
+          case 'show': {
+            const showTitle = slot.programming.showId;
+            return (
+              (item.type === 'content' &&
+                item.subtype === 'episode' &&
+                showTitle === item.title) ||
+              (item.type === 'custom' &&
+                item.program?.subtype === 'episode' &&
+                item.program?.title === showTitle)
+            );
+          }
+        }
+      });
+    };
+  }, [schedule]);
+
+  const onSave = () => {
+    // Find programs that have active slots
+    const filteredLineup = filter(newLineup, lineupItemAppearsInSchedule);
+
+    console.log(newLineup.length, filteredLineup);
+
+    updateLineupMutation.mutate({
+      channelId: channel!.id,
+      lineupRequest: {
+        type: 'time',
+        schedule,
+        programs: filteredLineup,
+      },
+    });
+  };
 
   const addSlot = () => {
     setTimeSlots((prev) => {
@@ -208,6 +283,7 @@ export default function TimeSlotEditorPage() {
         slotProgram = {
           type: 'flex',
         };
+        // TODO: Support redirect
       } else {
         return;
       }
@@ -293,17 +369,6 @@ export default function TimeSlotEditorPage() {
   };
 
   const calculateSlots = () => {
-    const schedule: TimeSlotSchedule = {
-      flexPreference: flexOption,
-      latenessMs: latenessOption,
-      maxDays: precalcDays,
-      padMs: padOption,
-      timeZoneOffset: new Date().getTimezoneOffset(),
-      period,
-      type: 'time',
-      slots: timeSlots,
-    };
-
     console.log('scheduling ', schedule);
 
     performance.mark('guide-start');

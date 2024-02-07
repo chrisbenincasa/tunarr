@@ -3,6 +3,7 @@ import {
   BatchLookupExternalProgrammingSchema,
   CreateCustomShowRequestSchema,
   CreateFillerListRequestSchema,
+  UpdateChannelProgrammingRequestSchema,
 } from '@tunarr/types/api';
 import {
   ChannelLineupSchema,
@@ -62,7 +63,7 @@ export const api = makeApi([
     requestFormat: 'json',
     parameters: parametersBuilder()
       .addPath('id', z.string())
-      .addBody(z.array(ChannelProgramSchema))
+      .addBody(UpdateChannelProgrammingRequestSchema)
       .build(),
     response: ChannelProgrammingSchema,
   },
@@ -92,7 +93,7 @@ export const api = makeApi([
     parameters: parametersBuilder()
       .addBody(BatchLookupExternalProgrammingSchema)
       .build(),
-    response: z.array(ProgramSchema.partial().required({ id: true })),
+    response: z.record(ProgramSchema.partial().required({ id: true })),
   },
   {
     method: 'get',

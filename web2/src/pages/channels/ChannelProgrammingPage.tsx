@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   Box,
   Button,
@@ -6,18 +5,23 @@ import {
   Snackbar,
   Typography,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ZodiosError } from '@zodios/core';
-import { ChannelProgram } from '@tunarr/types';
-import { isUndefined } from 'lodash-es';
+import { chain, findIndex, first, isUndefined, map } from 'lodash-es';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChannelProgrammingConfig } from '../../components/channel_config/ChannelProgrammingConfig.tsx';
 import { apiClient } from '../../external/api.ts';
+import { channelProgramUniqueId } from '../../helpers/util.ts';
 import { usePreloadedChannel } from '../../hooks/usePreloadedChannel.ts';
 import { setCurrentLineup } from '../../store/channelEditor/actions.ts';
-import { useTheme } from '@mui/material/styles';
+import { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
 
-type MutateArgs = { channelId: string; newLineup: ChannelProgram[] };
+type MutateArgs = {
+  channelId: string;
+  lineupRequest: UpdateChannelProgrammingRequest;
+};
 
 type SnackBar = {
   display: boolean;
@@ -32,17 +36,15 @@ export default function ChannelProgrammingPage() {
   const queryClient = useQueryClient();
   const theme = useTheme();
 
-  const [snackStatus, setSnackStatus] = React.useState<SnackBar>({
+  const [snackStatus, setSnackStatus] = useState<SnackBar>({
     display: false,
     color: '',
     message: '',
   });
 
-  // TODO we need to update the channel start time too
   const updateLineupMutation = useMutation({
-    mutationKey: ['updateChannelProgramming'],
-    mutationFn: ({ channelId, newLineup }: MutateArgs) => {
-      return apiClient.post('/api/v2/channels/:id/programming', newLineup, {
+    mutationFn: ({ channelId, lineupRequest }: MutateArgs) => {
+      return apiClient.post('/api/v2/channels/:id/programming', lineupRequest, {
         params: { id: channelId },
       });
     },
@@ -75,8 +77,32 @@ export default function ChannelProgrammingPage() {
   };
 
   const onSave = () => {
+    // Group programs by their unique ID. This will disregard their durations,
+    // but we will keep the durations when creating the minimal lineup below
+    const uniquePrograms = chain(newLineup)
+      .groupBy((lineupItem) => channelProgramUniqueId(lineupItem))
+      .values()
+      .map(first)
+      .compact()
+      .value();
+
+    // Create the in-order lineup which is a lookup array - we have the index
+    // to the actual program (in the unique programs list) and then the
+    // duration of the lineup item.
+    const lineup = map(newLineup, (lineupItem) => {
+      const index = findIndex(
+        uniquePrograms,
+        (uniq) =>
+          channelProgramUniqueId(lineupItem) === channelProgramUniqueId(uniq),
+      );
+      return { duration: lineupItem.duration, index };
+    });
+
     updateLineupMutation
-      .mutateAsync({ channelId: channel!.id, newLineup })
+      .mutateAsync({
+        channelId: channel!.id,
+        lineupRequest: { type: 'manual', lineup, programs: uniquePrograms },
+      })
       .then(console.log)
       .catch(console.error);
   };

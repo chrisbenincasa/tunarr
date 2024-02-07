@@ -1,8 +1,12 @@
 import { z } from 'zod';
 import {
+  ChannelProgramSchema,
   ContentProgramSchema,
   CustomProgramSchema,
 } from '../schemas/programmingSchema.js';
+import { TimeSlotScheduleSchema } from './Scheduling.js';
+
+export * from './Scheduling.js';
 
 type Alias<T> = T & { _?: never };
 
@@ -56,4 +60,32 @@ export const BasicIdParamSchema = z.object({
   id: z.string(),
 });
 
-export * from './Scheduling.js';
+const UpdateLineupItemSchema = z.object({
+  index: z.number(),
+  duration: z.number().optional(), // Duration for non-content programs
+});
+
+export const ManualProgramLineupSchema = z.object({
+  type: z.literal('manual'),
+  programs: z.array(ChannelProgramSchema),
+  lineup: z.array(UpdateLineupItemSchema), // Array of indexes into the programming array
+});
+
+export const TimeBasedProgramLineupSchema = z.object({
+  type: z.literal('time'),
+  // This must be the list of programs BEFORE any scheduling
+  // We do this so that we can potentially create longer schedules
+  // on the server-side. However, we can filter this list down to only
+  // programs included in at least one time slot...
+  programs: z.array(ChannelProgramSchema),
+  schedule: TimeSlotScheduleSchema,
+});
+
+export const UpdateChannelProgrammingRequestSchema = z.discriminatedUnion(
+  'type',
+  [ManualProgramLineupSchema, TimeBasedProgramLineupSchema],
+);
+
+export type UpdateChannelProgrammingRequest = Alias<
+  z.infer<typeof UpdateChannelProgrammingRequestSchema>
+>;

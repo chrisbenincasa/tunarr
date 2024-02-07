@@ -10,8 +10,14 @@ import { ProgramMinterFactory } from '../util/programMinter.js';
 import { getEm } from './dataSource.js';
 import { Program } from './entities/Program.js';
 import { mapAsyncSeq } from '../util.js';
+import createLogger from '../logger.js';
 
-export async function upsertContentPrograms(programs: ChannelProgram[]) {
+const logger = createLogger(import.meta);
+
+export async function upsertContentPrograms(
+  programs: ChannelProgram[],
+  batchSize: number = 10,
+) {
   const em = getEm();
   const nonPersisted = filter(programs, (p) => !p.persisted);
   const minter = ProgramMinterFactory.create(em);
@@ -19,16 +25,22 @@ export async function upsertContentPrograms(programs: ChannelProgram[]) {
   // TODO handle custom shows
   const programsToPersist = chain(nonPersisted)
     .filter(isContentProgram)
+    .uniqBy((p) => p.uniqueId)
     .map((p) => minter.mint(p.externalSourceName!, p.originalProgram!))
     .value();
 
+  logger.debug('Upserting %d programs', programsToPersist.length);
+
   return flatten(
-    await mapAsyncSeq(chunk(programsToPersist, 10), undefined, (programs) =>
-      em.upsertMany(Program, programs, {
-        onConflictAction: 'merge',
-        onConflictFields: ['sourceType', 'externalSourceId', 'externalKey'],
-        onConflictExcludeFields: ['uuid'],
-      }),
+    await mapAsyncSeq(
+      chunk(programsToPersist, batchSize),
+      undefined,
+      (programs) =>
+        em.upsertMany(Program, programs, {
+          onConflictAction: 'merge',
+          onConflictFields: ['sourceType', 'externalSourceId', 'externalKey'],
+          onConflictExcludeFields: ['uuid'],
+        }),
     ),
   );
 }

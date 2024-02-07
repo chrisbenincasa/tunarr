@@ -1,5 +1,6 @@
 import {
   chain,
+  concat,
   identity,
   isArray,
   isEmpty,
@@ -116,6 +117,18 @@ export async function mapAsyncSeq<T, U>(
   );
 
   return Promise.all(all);
+}
+
+export async function flatMapAsyncSeq<T, U>(
+  seq: readonly T[],
+  itemFn: (item: T) => Promise<U[]>,
+): Promise<U[]> {
+  return mapReduceAsyncSeq(
+    seq,
+    itemFn,
+    (prev, next) => concat(prev, next),
+    [] as U[],
+  );
 }
 
 export async function mapReduceAsyncSeq<T, U, Res>(

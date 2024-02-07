@@ -1,3 +1,4 @@
+import { ProgramSchema } from '@tunarr/types/schemas';
 import { chunk, every, isNil, isUndefined, reduce } from 'lodash-es';
 import z from 'zod';
 import { getEm } from '../../dao/dataSource.js';
@@ -6,8 +7,7 @@ import {
   programSourceTypeFromString,
 } from '../../dao/entities/Program.js';
 import { RouterPluginAsyncCallback } from '../../types/serverType.js';
-import { mapAsyncSeq } from '../../util.js';
-import { ProgramSchema } from '@tunarr/types/schemas';
+import { flatMapAsyncSeq, groupByFunc } from '../../util.js';
 
 const LookupExternalProgrammingSchema = z.object({
   externalId: z
@@ -78,16 +78,15 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         operationId: 'batchGetProgramsByExternalIds',
         body: BatchLookupExternalProgrammingSchema,
         response: {
-          200: z.array(ProgramSchema.partial().required({ id: true })),
+          200: z.record(ProgramSchema.partial().required({ id: true })),
         },
       },
     },
     async (req, res) => {
       const em = getEm();
       const allIds = [...req.body.externalIds];
-      const results = await mapAsyncSeq(
+      const results = await flatMapAsyncSeq(
         chunk(allIds, 25),
-        undefined,
         async (idChunk) => {
           return await reduce(
             idChunk,
@@ -98,13 +97,24 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
                 externalKey: ek,
               });
             },
-            em.qb(Program).select('uuid'),
+            em
+              .qb(Program)
+              .select([
+                'uuid',
+                'sourceType',
+                'externalSourceId',
+                'externalKey',
+              ]),
           );
         },
       );
-      const all = results.reduce((prev, next) => [...prev, ...next], []);
+      const all = groupByFunc(
+        results,
+        (r) => r.uniqueId(),
+        (r) => r.toDTO(),
+      );
 
-      return res.send(all.map((program) => program.toDTO()));
+      return res.send(all);
     },
   );
 };

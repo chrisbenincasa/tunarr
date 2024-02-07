@@ -52,6 +52,7 @@
     "node-graceful-shutdown": "1.1.0",
     "node-schedule": "^2.1.1",
     "node-ssdp": "^4.0.0",
+    "p-queue": "^8.0.1",
     "random-js": "2.1.0",
     "reflect-metadata": "^0.1.13",
     "serve-static": "^1.15.0",

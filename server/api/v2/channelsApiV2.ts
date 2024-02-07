@@ -1,6 +1,9 @@
-import dayjs from 'dayjs';
-import duration from 'dayjs/plugin/duration.js';
-import { ContentProgram, isContentGuideProgram } from '@tunarr/types';
+import { scheduleTimeSlots } from '@tunarr/shared';
+import {
+  BasicIdParamSchema,
+  TimeSlotScheduleSchema,
+  UpdateChannelProgrammingRequestSchema,
+} from '@tunarr/types/api';
 import {
   ChannelLineupSchema,
   ChannelProgramSchema,
@@ -9,31 +12,16 @@ import {
   ProgramSchema,
   SaveChannelRequestSchema,
 } from '@tunarr/types/schemas';
-import {
-  chunk,
-  compact,
-  filter,
-  flatten,
-  isError,
-  isNil,
-  omit,
-  reduce,
-  sortBy,
-  sumBy,
-} from 'lodash-es';
+import dayjs from 'dayjs';
+import duration from 'dayjs/plugin/duration.js';
+import { compact, isError, isNil, omit, sortBy } from 'lodash-es';
 import z from 'zod';
 import { buildApiLineup } from '../../dao/channelDb.js';
-import { getEm } from '../../dao/dataSource.js';
-import { LineupItem } from '../../dao/derived_types/Lineup.js';
-import { Program } from '../../dao/entities/Program.js';
 import createLogger from '../../logger.js';
 import { scheduledJobsById } from '../../services/scheduler.js';
 import { UpdateXmlTvTask } from '../../tasks/updateXmlTvTask.js';
 import { RouterPluginAsyncCallback } from '../../types/serverType.js';
-import { attempt, groupByFunc, mapAsyncSeq } from '../../util.js';
-import { ProgramMinterFactory } from '../../util/programMinter.js';
-import { BasicIdParamSchema, TimeSlotScheduleSchema } from '@tunarr/types/api';
-import { scheduleTimeSlots } from '@tunarr/shared';
+import { attempt, mapAsyncSeq } from '../../util.js';
 
 dayjs.extend(duration);
 
@@ -238,99 +226,32 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
     {
       schema: {
         params: BasicIdParamSchema,
-        body: z.array(ChannelProgramSchema),
+        body: UpdateChannelProgrammingRequestSchema,
         response: {
           200: ChannelProgrammingSchema,
           404: z.void(),
+          500: z.void(),
+          501: z.void(),
         },
       },
     },
     async (req, res) => {
-      const channel = await req.serverCtx.channelDB.getChannelAndPrograms(
-        req.params.id,
-      );
-
-      if (isNil(channel)) {
+      if (
+        isNil(
+          await req.serverCtx.channelDB.getChannelAndPrograms(req.params.id),
+        )
+      ) {
         return res.status(404).send();
       }
 
-      const programsWithIndex = zipWithIndex(req.body);
-      const nonPersisted = filter(req.body, (p) => !p.persisted);
-      const em = getEm();
-      const minter = ProgramMinterFactory.create(em);
-
-      const programsToPersist = filter(nonPersisted, isContentGuideProgram).map(
-        (p) => minter.mint(p.externalSourceName!, p.originalProgram!),
+      const result = await req.serverCtx.channelDB.updateLineup(
+        req.params.id,
+        req.body,
       );
 
-      const upsertedPrograms = flatten(
-        await mapAsyncSeq(chunk(programsToPersist, 10), undefined, (programs) =>
-          em.upsertMany(Program, programs, {
-            onConflictAction: 'merge',
-            onConflictFields: ['sourceType', 'externalSourceId', 'externalKey'],
-            onConflictExcludeFields: ['uuid'],
-          }),
-        ),
-      );
-
-      // TODO:
-      // * calculate new channel duration
-      // * remove "fake" flex item from front
-      channel.startTime = dayjs().unix() * 1000;
-      channel.duration = sumBy(req.body, (p) => p.duration);
-      const existingIds = new Set(channel.programs.map((p) => p.uuid));
-      for (const program of upsertedPrograms) {
-        if (!existingIds.has(program.uuid)) {
-          channel.programs.add(program);
-        }
+      if (isNil(result)) {
+        return res.status(500).send();
       }
-
-      await getEm().persistAndFlush(channel);
-
-      const dbIdByUniqueId = groupByFunc(
-        upsertedPrograms,
-        (p) => p.uniqueId(),
-        (p) => p.uuid,
-      );
-
-      const newLineup: LineupItem[] = programsWithIndex.map((p) => {
-        let item: LineupItem;
-        switch (p.type) {
-          case 'custom':
-            item = {
-              type: 'content', // Custom program
-              durationMs: p.duration,
-              id: p.id,
-            };
-            break;
-          case 'content':
-            item = {
-              type: 'content',
-              id: p.persisted ? p.id! : dbIdByUniqueId[contentItemUniqueId(p)],
-              durationMs: p.duration,
-            };
-            break;
-          case 'redirect':
-            item = {
-              type: 'redirect',
-              channel: '', // TODO fix this....!
-              durationMs: p.duration,
-            };
-            break;
-          case 'flex':
-            item = {
-              type: 'offline',
-              durationMs: p.duration,
-            };
-            break;
-        }
-
-        return item;
-      });
-
-      await req.serverCtx.channelDB.saveLineup(req.params.id, {
-        items: newLineup,
-      });
 
       try {
         scheduledJobsById[UpdateXmlTvTask.ID]
@@ -340,13 +261,13 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
         logger.error('Unable to update guide after lineup update %O', e);
       }
 
-      const refreshedLineup = buildApiLineup(channel, newLineup);
+      const { channel, newLineup } = result;
 
       return res.status(200).send({
         icon: channel.icon,
         number: channel.number,
         name: channel.name,
-        programs: refreshedLineup,
+        programs: buildApiLineup(channel, newLineup),
       });
     },
   );
@@ -446,21 +367,14 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
   );
 };
 
-function contentItemUniqueId(p: ContentProgram): string {
-  // This isn't ideal
-  return `${p.externalSourceType}_${p.externalSourceName}_${
-    p.originalProgram!.key
-  }`;
-}
-
-function zipWithIndex<T>(
-  arr: ReadonlyArray<T>,
-): ReadonlyArray<T & { index: number }> {
-  return reduce(
-    arr,
-    (prev, curr, i) => {
-      return [...prev, { ...curr, index: i }];
-    },
-    [],
-  );
-}
+// function zipWithIndex<T>(
+//   arr: ReadonlyArray<T>,
+// ): ReadonlyArray<T & { index: number }> {
+//   return reduce(
+//     arr,
+//     (prev, curr, i) => {
+//       return [...prev, { ...curr, index: i }];
+//     },
+//     [],
+//   );
+// }
