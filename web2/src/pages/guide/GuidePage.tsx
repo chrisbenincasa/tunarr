@@ -2,6 +2,7 @@ import ZoomInIcon from '@mui/icons-material/ZoomIn';
 import ZoomOutIcon from '@mui/icons-material/ZoomOut';
 import {
   Box,
+  CircularProgress,
   Color,
   FormControl,
   IconButton,
@@ -17,10 +18,10 @@ import { TvGuideProgram, ChannelProgram } from '@tunarr/types';
 import dayjs, { Dayjs } from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import isBetween from 'dayjs/plugin/isBetween';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useInterval } from 'usehooks-ts';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
-import { useAllTvGuides } from '../../hooks/useTvGuide.ts';
+import { useAllTvGuides, prefetchAllTvGuides } from '../../hooks/useTvGuide.ts';
 import { isEmpty, round } from 'lodash-es';
 import {
   ArrowBackIos,
@@ -115,6 +116,11 @@ export default function GuidePage() {
     data: channelLineup,
   } = useAllTvGuides({ from: start, to: end });
 
+  prefetchAllTvGuides({
+    from: start.add(1, 'hour'),
+    to: end.add(1, 'hour'),
+  });
+
   useInterval(() => {
     setProgress(calcProgress(start, end));
     setCurrentTime(dayjs().format('h:mm'));
@@ -154,9 +160,9 @@ export default function GuidePage() {
         .millisecond(0)
         .add(2, 'hour'),
     );
-  }, [end, start, setEnd, setStart]);
 
-  if (isPending) return 'Loading...';
+    setCurrentTime(dayjs().format('h:mm'));
+  }, [end, start, setEnd, setStart]);
 
   if (error) return 'An error occurred!: ' + error.message;
 
@@ -331,9 +337,11 @@ export default function GuidePage() {
             </Select>
           </FormControl>
           {!dayjs().isBetween(start, end) && (
-            <IconButton onClick={handleReset}>
-              <History />
-            </IconButton>
+            <Tooltip title={'Reset to current date/time'} placement="top">
+              <IconButton onClick={handleReset}>
+                <History />
+              </IconButton>
+            </Tooltip>
           )}
         </Stack>
         <Stack
@@ -436,7 +444,7 @@ export default function GuidePage() {
                 </GridChild>
               ))}
             </GridParent>
-            {channels}
+            {isPending ? <CircularProgress color="secondary" /> : channels}
             {dayjs().isBetween(start, end) && (
               <Box
                 sx={{
