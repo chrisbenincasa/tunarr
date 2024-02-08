@@ -745,11 +745,14 @@ function makeEntry(
     } as RedirectGuideProgram;
   }
 
-  title = currentProgram.program.showTitle;
+  title = currentProgram.program.title;
   if (typeof currentProgram.program.icon !== 'undefined') {
     icon = currentProgram.program.icon;
   }
   if (currentProgram.program.type === 'episode') {
+    if (currentProgram.program.showTitle) {
+      title = currentProgram.program.showTitle;
+    }
     seasonNumber = currentProgram.program.season;
     episodeNumber = currentProgram.program.episode;
     episodeTitle = currentProgram.program.title;

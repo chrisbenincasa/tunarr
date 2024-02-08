@@ -57,7 +57,7 @@ import {
   clearSlotSchedulePreview,
   updateCurrentChannel,
 } from '../../store/channelEditor/actions.ts';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../../external/api.ts';
 
 dayjs.extend(utc);
@@ -118,10 +118,17 @@ export default function TimeSlotEditorPage() {
     channel?.startTime ?? dayjs().unix() * 1000,
   );
 
+  const queryClient = useQueryClient();
+
   const updateLineupMutation = useMutation({
     mutationFn: ({ channelId, lineupRequest }: MutateArgs) => {
       return apiClient.post('/api/v2/channels/:id/programming', lineupRequest, {
         params: { id: channelId },
+      });
+    },
+    onSuccess: async (_, { channelId }) => {
+      await queryClient.invalidateQueries({
+        queryKey: ['channels', channelId],
       });
     },
   });
@@ -221,8 +228,6 @@ export default function TimeSlotEditorPage() {
   const onSave = () => {
     // Find programs that have active slots
     const filteredLineup = filter(newLineup, lineupItemAppearsInSchedule);
-
-    console.log(newLineup.length, filteredLineup);
 
     updateLineupMutation.mutate({
       channelId: channel!.id,
