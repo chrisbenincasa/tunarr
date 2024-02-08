@@ -1,6 +1,7 @@
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import { ChannelProgram, Resolution } from '@tunarr/types';
+import { zipWith, range } from 'lodash-es';
 
 dayjs.extend(duration);
 
@@ -66,4 +67,13 @@ export const channelProgramUniqueId = (program: ChannelProgram): string => {
     case 'flex':
       return 'flex';
   }
+};
+export const zipWithIndex = <T extends object>(
+  seq: readonly T[],
+  start: number = 0,
+): (T & { originalIndex: number })[] => {
+  return zipWith(seq, range(start, seq.length), (s, i) => ({
+    ...s,
+    originalIndex: i,
+  }));
 };

@@ -20,6 +20,7 @@ import {
   Typography,
 } from '@mui/material';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { dayjsMod, scheduleTimeSlots } from '@tunarr/shared';
 import {
   ChannelProgram,
@@ -51,14 +52,11 @@ import { Fragment, useCallback, useMemo, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import ChannelProgrammingList from '../../components/channel_config/ChannelProgrammingList.tsx';
+import { apiClient } from '../../external/api.ts';
 import { useNumberString } from '../../hooks/useNumberString.ts';
 import { usePreloadedChannel } from '../../hooks/usePreloadedChannel.ts';
-import {
-  clearSlotSchedulePreview,
-  updateCurrentChannel,
-} from '../../store/channelEditor/actions.ts';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '../../external/api.ts';
+import { updateCurrentChannel } from '../../store/channelEditor/actions.ts';
+import { zipWithIndex } from '../../helpers/util.ts';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -393,29 +391,6 @@ export default function TimeSlotEditorPage() {
         setStartTime(res.startTime);
         updateCurrentChannel({ startTime: res.startTime });
         setGeneratedList(res.programs);
-        const uniquePrograms: ContentProgram[] = uniqBy(
-          filter(res.programs, isContentProgram),
-          'uniqueId',
-        );
-        const programByIndex = reduce(
-          map(uniquePrograms, (p, idx) => [p, idx] as [ContentProgram, number]),
-          (acc, [p, idx]) => ({
-            ...acc,
-            [p.uniqueId]: idx,
-          }),
-          {} as Record<string, number>,
-        );
-        const condensedLineup = map(res.programs, (p) => {
-          if (isContentProgram(p)) {
-            return {
-              id: p.uniqueId,
-            };
-          } else {
-            return p;
-          }
-        });
-        console.log(condensedLineup);
-        // const indexList =
       })
       .catch(console.error);
   };
@@ -595,7 +570,8 @@ export default function TimeSlotEditorPage() {
         </Typography>
         <Divider />
         <ChannelProgrammingList
-          programList={generatedList}
+          programList={generatedList ? zipWithIndex(generatedList) : undefined}
+          enableDnd={!generatedList}
           programListSelector={(s) => s.channelEditor.programList}
           virtualListProps={{
             width: '100%',
@@ -611,7 +587,6 @@ export default function TimeSlotEditorPage() {
           to=".."
           relative="path"
           component={RouterLink}
-          onClick={() => clearSlotSchedulePreview()}
         >
           Cancel
         </Button>
