@@ -57,7 +57,6 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
           await req.serverCtx.channelDB.getAllChannels(),
           'number',
         );
-        z.array(ChannelSchema).parse(channels.map((c) => c.toDTO()));
         return res.send(channels.map((c) => c.toDTO()));
       } catch (err) {
         console.error(err);

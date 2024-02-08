@@ -24,8 +24,10 @@ import { useChannels } from '../../hooks/useChannels.ts';
 import { isEmpty } from 'lodash-es';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import { useTheme } from '@mui/material/styles';
+import dayjs from 'dayjs';
 
 export default function ChannelsPage() {
+  const now = dayjs();
   const {
     isPending: channelsLoading,
     error: channelsError,
@@ -40,6 +42,7 @@ export default function ChannelsPage() {
 
   // TODO properly define types from API
   const getDataTableRow = (channel: Channel) => {
+    const startTime = dayjs(channel.startTime);
     return (
       <TableRow key={channel.number}>
         <TableCell width="10%">{channel.number}</TableCell>
@@ -54,7 +57,9 @@ export default function ChannelsPage() {
           </TableCell>
         )}
         <TableCell>{channel.name}</TableCell>
-        <TableCell width="25%">
+        <TableCell>{startTime.isBefore(now) ? 'Yes' : 'No'}</TableCell>
+        <TableCell>{channel.stealth ? 'Yes' : 'No'}</TableCell>
+        <TableCell width={smallViewport ? '15%' : undefined}>
           <Stack direction={'row'} justifyContent={'flex-end'}>
             <Tooltip title="Edit Channel Settings" placement="top">
               {smallViewport ? (
@@ -95,7 +100,7 @@ export default function ChannelsPage() {
                   component={RouterLink}
                   color={'primary'}
                 >
-                  Add Programming
+                  Add Programs
                 </Button>
               )}
             </Tooltip>
@@ -148,6 +153,8 @@ export default function ChannelsPage() {
                 <TableCell>Number</TableCell>
                 {!smallViewport && <TableCell>Icon</TableCell>}
                 <TableCell>Name</TableCell>
+                <TableCell>Live?</TableCell>
+                <TableCell>Stealth?</TableCell>
                 <TableCell></TableCell>
               </TableRow>
             </TableHead>

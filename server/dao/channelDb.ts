@@ -136,7 +136,6 @@ export class ChannelDB {
     const em = getEm();
     const channel = em.getReference(Channel, id);
     const update = updateRequestToChannel(updateReq);
-    console.log(channel, update);
     wrap(channel).assign(update, {
       merge: true,
       convertCustomTypes: true,
@@ -162,6 +161,7 @@ export class ChannelDB {
   }
 
   async getAllChannels() {
+    // TODO return all programs
     return getEm().repo(Channel).findAll();
   }
 

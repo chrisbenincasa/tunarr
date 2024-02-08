@@ -9,10 +9,11 @@ import {
   FillerListProgramming,
 } from '@tunarr/types';
 import { isPlexEpisode } from '@tunarr/types/plex';
-import { isNil, isUndefined, sumBy } from 'lodash-es';
-import useStore from '../index.ts';
+import { findIndex, inRange, isNil, isUndefined, sumBy } from 'lodash-es';
 import { EnrichedPlexMedia } from '../../hooks/plexHooks.ts';
+import useStore from '../index.ts';
 import { initialChannelEditorState } from './store.ts';
+import { zipWithIndex } from '../../helpers/util.ts';
 
 export const resetChannelEditorState = () =>
   useStore.setState((state) => {
@@ -32,14 +33,15 @@ export const setCurrentChannel = (
     channelEditor.currentEntity = channel;
     channelEditor.originalEntity = channel;
     if (lineup) {
-      channelEditor.originalProgramList = [...lineup];
-      channelEditor.programList = [...lineup];
+      const programs = zipWithIndex(lineup);
+      channelEditor.originalProgramList = [...programs];
+      channelEditor.programList = [...programs];
     }
   });
 
 export const setCurrentLineup = (lineup: ChannelProgram[], dirty?: boolean) =>
   useStore.setState((state) => {
-    state.channelEditor.programList = [...lineup];
+    state.channelEditor.programList = zipWithIndex(lineup);
     if (!isUndefined(dirty)) {
       state.channelEditor.dirty.programs = dirty;
     }
@@ -89,9 +91,23 @@ export const updateCurrentChannel = (channel: Partial<Channel>) =>
 
 export const addProgramsToCurrentChannel = (programs: ChannelProgram[]) =>
   useStore.setState(({ channelEditor }) => {
-    channelEditor.programList.push(...programs);
+    channelEditor.programList.push(
+      ...zipWithIndex(programs, channelEditor.programList.length),
+    );
     channelEditor.dirty.programs =
       channelEditor.dirty.programs || programs.length > 0;
+  });
+
+export const moveProgramInCurrentChannel = (
+  originalIndex: number,
+  toIndex: number,
+) =>
+  useStore.setState(({ channelEditor }) => {
+    const programIdx = findIndex(channelEditor.programList, { originalIndex });
+    if (inRange(toIndex, channelEditor.programList.length) && programIdx >= 0) {
+      const item = channelEditor.programList.splice(programIdx, 1);
+      channelEditor.programList.splice(toIndex, 0, ...item);
+    }
   });
 
 export const setChannelStartTime = (startTime: number) =>
@@ -100,16 +116,6 @@ export const setChannelStartTime = (startTime: number) =>
       channelEditor.currentEntity.startTime = startTime;
       channelEditor.dirty.programs = true;
     }
-  });
-
-export const setSlotSchedulePreview = (programs: ChannelProgram[]) =>
-  useStore.setState(({ channelEditor }) => {
-    channelEditor.schedulePreviewList = [...programs];
-  });
-
-export const clearSlotSchedulePreview = () =>
-  useStore.setState(({ channelEditor }) => {
-    channelEditor.schedulePreviewList = [];
   });
 
 const generatePrograms = (programs: EnrichedPlexMedia[]): ContentProgram[] => {
@@ -188,7 +194,9 @@ export const addPlexMediaToCurrentChannel = (programs: EnrichedPlexMedia[]) =>
         lastStartTime = endTime;
       }
 
-      channelEditor.programList.push(...programsWithStart);
+      channelEditor.programList.push(
+        ...zipWithIndex(programsWithStart, channelEditor.programList.length),
+      );
     }
   });
 
@@ -200,8 +208,9 @@ export const setCurrentCustomShow = (
     customShowEditor.currentEntity = show;
     customShowEditor.originalEntity = show;
     customShowEditor.dirty.programs = false;
-    customShowEditor.originalProgramList = [...programs];
-    customShowEditor.programList = [...programs];
+    const zippedPrograms = zipWithIndex(programs);
+    customShowEditor.originalProgramList = [...zippedPrograms];
+    customShowEditor.programList = [...zippedPrograms];
   });
 
 export const addPlexMediaToCurrentCustomShow = (
@@ -211,8 +220,9 @@ export const addPlexMediaToCurrentCustomShow = (
     if (customShowEditor.currentEntity && programs.length > 0) {
       customShowEditor.dirty.programs = true;
       const convertedPrograms = generatePrograms(programs);
-      customShowEditor.programList =
-        customShowEditor.programList.concat(convertedPrograms);
+      customShowEditor.programList = customShowEditor.programList.concat(
+        zipWithIndex(convertedPrograms, customShowEditor.programList.length),
+      );
     }
   });
 
@@ -224,8 +234,9 @@ export const setCurrentFillerList = (
     fillerListEditor.currentEntity = show;
     fillerListEditor.originalEntity = show;
     fillerListEditor.dirty.programs = false;
-    fillerListEditor.originalProgramList = [...programs];
-    fillerListEditor.programList = [...programs];
+    const zippedPrograms = zipWithIndex(programs);
+    fillerListEditor.originalProgramList = [...zippedPrograms];
+    fillerListEditor.programList = [...zippedPrograms];
   });
 
 export const addPlexMediaToCurrentFillerList = (
@@ -235,7 +246,8 @@ export const addPlexMediaToCurrentFillerList = (
     if (fillerListEditor.currentEntity && programs.length > 0) {
       fillerListEditor.dirty.programs = true;
       const convertedPrograms = generatePrograms(programs);
-      fillerListEditor.programList =
-        fillerListEditor.programList.concat(convertedPrograms);
+      fillerListEditor.programList = fillerListEditor.programList.concat(
+        zipWithIndex(convertedPrograms, fillerListEditor.programList.length),
+      );
     }
   });
