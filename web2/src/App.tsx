@@ -36,6 +36,7 @@ import { createTheme } from '@mui/material/styles';
 import { red } from '@mui/material/colors';
 import { setDarkModeState } from './store/themeEditor/actions.ts';
 import { isUndefined } from 'lodash-es';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 interface NavItem {
   name: string;
   path: string;
@@ -69,7 +70,13 @@ export function Root() {
         palette: {
           mode: darkMode ? 'dark' : 'light',
           primary: {
-            main: red[500],
+            main: 'rgb(241, 93, 85)',
+          },
+          secondary: {
+            main: 'rgb(0, 125, 184)',
+          },
+          info: {
+            main: 'rgb(147, 168, 172)',
           },
         },
       }),
@@ -298,6 +305,7 @@ export function Root() {
           </Container>
         </Box>
       </Box>
+      <ReactQueryDevtools initialIsOpen={false} />
     </ThemeProvider>
   );
 }

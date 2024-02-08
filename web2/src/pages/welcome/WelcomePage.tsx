@@ -42,7 +42,7 @@ export default function WelcomePage() {
     to: endDate,
   });
   const navigate = useNavigate();
-  const pathway = useStore((theme) => theme.pathway);
+  const pathway = useStore((state) => state.theme.pathway);
 
   useEffect(() => {
     if (plexServers && plexServers.length > 0) {

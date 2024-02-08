@@ -2,8 +2,13 @@ import ZoomInIcon from '@mui/icons-material/ZoomIn';
 import ZoomOutIcon from '@mui/icons-material/ZoomOut';
 import {
   Box,
+  CircularProgress,
   Color,
+  FormControl,
   IconButton,
+  MenuItem,
+  Select,
+  SelectChangeEvent,
   Stack,
   Tooltip,
   Typography,
@@ -13,12 +18,17 @@ import { TvGuideProgram, ChannelProgram } from '@tunarr/types';
 import dayjs, { Dayjs } from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import isBetween from 'dayjs/plugin/isBetween';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useInterval } from 'usehooks-ts';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
-import { useAllTvGuides } from '../../hooks/useTvGuide.ts';
+import { useAllTvGuides, prefetchAllTvGuides } from '../../hooks/useTvGuide.ts';
 import { isEmpty, round } from 'lodash-es';
-import { ArrowBackIos, ArrowForwardIos } from '@mui/icons-material';
+import {
+  ArrowBackIos,
+  ArrowForwardIos,
+  History,
+  KeyboardDoubleArrowLeft,
+} from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 
 dayjs.extend(duration);
@@ -89,7 +99,7 @@ export default function GuidePage() {
       .second(0)
       .millisecond(0),
   );
-  const [end, setEnd] = useState(start.add(2, 'hours'));
+  const [end, setEnd] = useState(start.add(2, 'hour'));
   const [currentTime, setCurrentTime] = useState(dayjs().format('h:mm'));
   const [progress, setProgress] = useState(() => {
     return calcProgress(start, end);
@@ -106,13 +116,18 @@ export default function GuidePage() {
     data: channelLineup,
   } = useAllTvGuides({ from: start, to: end });
 
+  prefetchAllTvGuides({
+    from: start.add(1, 'hour'),
+    to: end.add(1, 'hour'),
+  });
+
   useInterval(() => {
     setProgress(calcProgress(start, end));
     setCurrentTime(dayjs().format('h:mm'));
   }, 60000);
 
   const zoomOut = useCallback(() => {
-    setEnd((last) => last.add(1, 'hours'));
+    setEnd((last) => last.add(1, 'hour'));
   }, [setEnd]);
 
   const zoomIn = useCallback(() => {
@@ -122,16 +137,32 @@ export default function GuidePage() {
   }, [end, start, setEnd]);
 
   const navigateForward = useCallback(() => {
-    setEnd((last) => last.add(1, 'hours'));
-    setStart((start) => start.add(1, 'hours'));
+    setEnd((last) => last.add(1, 'hour'));
+    setStart((start) => start.add(1, 'hour'));
   }, [end, start, setEnd, setStart]);
 
   const navigateBackward = useCallback(() => {
-    setEnd((last) => last.subtract(1, 'hours'));
-    setStart((start) => start.subtract(1, 'hours'));
+    setEnd((last) => last.subtract(1, 'hour'));
+    setStart((start) => start.subtract(1, 'hour'));
   }, [end, start, setEnd, setStart]);
 
-  if (isPending) return 'Loading...';
+  const handleReset = useCallback(() => {
+    setStart(
+      dayjs()
+        .minute(roundNearestMultiple(now.minute(), 15))
+        .second(0)
+        .millisecond(0),
+    );
+    setEnd(
+      dayjs()
+        .minute(roundNearestMultiple(now.minute(), 15))
+        .second(0)
+        .millisecond(0)
+        .add(2, 'hour'),
+    );
+
+    setCurrentTime(dayjs().format('h:mm'));
+  }, [end, start, setEnd, setStart]);
 
   if (error) return 'An error occurred!: ' + error.message;
 
@@ -226,7 +257,30 @@ export default function GuidePage() {
           borderColor: 'transparent',
         }}
       >
-        {lineup.programs.map(renderProgram)}
+        {lineup.programs.length > 0 ? (
+          lineup.programs.map(renderProgram)
+        ) : (
+          <Tooltip
+            title={'No programming available for this time period'}
+            placement="top"
+          >
+            <GuideItem display={'flex'} flexGrow={1} justifyContent={'center'}>
+              <Box
+                display={'flex'}
+                justifyContent={'center'}
+                alignContent={'center'}
+                alignItems={'center'}
+                sx={{
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  textAlign: 'center',
+                }}
+              >
+                No programming available for this time period
+              </Box>
+            </GuideItem>
+          </Tooltip>
+        )}
       </Box>
     );
   });
@@ -236,30 +290,81 @@ export default function GuidePage() {
 
   const navigationDisabled = now.isAfter(start);
 
+  const handleDayChange = (event: SelectChangeEvent<string>) => {
+    const day = event.target.value;
+
+    setStart((start) => dayjs(day).hour(start.hour()).minute(start.minute()));
+    setEnd((end) => dayjs(day).hour(end.hour()).minute(end.minute()));
+  };
+
+  const generateWeek = () => {
+    const today = dayjs();
+    let week: Dayjs[] | [] = [];
+
+    for (let i = 0; i < 7; i++) {
+      week = [...week, today.add(i, 'day')];
+    }
+
+    return week;
+  };
+
   return (
     <>
       <Typography variant="h3" mb={2}>
         TV Guide
       </Typography>
-      <p>
-        {start.format('DD/MM/YYYY, h:mm A')} to{' '}
-        {end.format('DD/MM/YYYY, h:mm A')}
-      </p>
-
-      <Stack justifyContent={'right'} direction={'row'} sx={{ my: 1 }}>
-        <IconButton disabled={zoomDisabled} onClick={zoomIn}>
-          <ZoomInIcon />
-        </IconButton>
-        <IconButton onClick={zoomOut}>
-          <ZoomOutIcon />
-        </IconButton>
-        <IconButton disabled={navigationDisabled} onClick={navigateBackward}>
-          <ArrowBackIos />
-        </IconButton>
-        <IconButton onClick={navigateForward}>
-          <ArrowForwardIos />
-        </IconButton>
-      </Stack>
+      <Box display={'flex'}>
+        <Stack
+          flexGrow={1}
+          alignItems={'center'}
+          justifyContent={'flex-start'}
+          direction={'row'}
+          sx={{ my: 1 }}
+        >
+          <FormControl sx={{ m: 1, minWidth: 120 }}>
+            <Select
+              value={start.format('MM/DD/YYYY')}
+              onChange={handleDayChange}
+              inputProps={{ 'aria-label': 'Without label' }}
+            >
+              {generateWeek().map((date, index) => (
+                <MenuItem value={date.format('MM/DD/YYYY')} key={index}>
+                  {dayjs().isSame(date)
+                    ? `Today, ${date.format('MMM D')}`
+                    : date.format('dddd, MMM D')}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          {!dayjs().isBetween(start, end) && (
+            <Tooltip title={'Reset to current date/time'} placement="top">
+              <IconButton onClick={handleReset}>
+                <History />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Stack>
+        <Stack
+          flexGrow={1}
+          alignItems={'center'}
+          justifyContent={'right'}
+          direction={'row'}
+          sx={{ my: 1 }}
+        >
+          <IconButton disabled={zoomDisabled} onClick={zoomIn}>
+            <ZoomInIcon />
+          </IconButton>
+          <IconButton onClick={zoomOut}>
+            <ZoomOutIcon />
+          </IconButton>
+          <IconButton disabled={navigationDisabled} onClick={navigateBackward}>
+            <ArrowBackIos />
+          </IconButton>
+          <IconButton onClick={navigateForward}>
+            <ArrowForwardIos />
+          </IconButton>
+        </Stack>
+      </Box>
       <PaddedPaper>
         <Box display="flex">
           <Box
@@ -311,6 +416,16 @@ export default function GuidePage() {
               overflowX: 'hidden',
             }}
           >
+            <Box
+              sx={{
+                width: `100%`,
+                height: '2rem',
+                textAlign: 'center',
+                fontWeight: 'bold',
+              }}
+            >
+              {start.format('MMMM D')}
+            </Box>
             <GridParent
               sx={{
                 display: 'flex',
@@ -329,7 +444,7 @@ export default function GuidePage() {
                 </GridChild>
               ))}
             </GridParent>
-            {channels}
+            {isPending ? <CircularProgress color="secondary" /> : channels}
             {dayjs().isBetween(start, end) && (
               <Box
                 sx={{
