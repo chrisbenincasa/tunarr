@@ -1,5 +1,7 @@
 import { ChannelLineup } from '@tunarr/types';
+import { ChannelLineupSchema } from '@tunarr/types/schemas';
 import { isError, map } from 'lodash-es';
+import { z } from 'zod';
 import createLogger from '../logger.js';
 import { RouterPluginCallback } from '../types/serverType.js';
 import { AllChannelsGuideSchema } from './schemas/guideSchemas.js';
@@ -30,7 +32,15 @@ export const guideRouter: RouterPluginCallback = (fastify, _opts, done) => {
   fastify.get(
     '/api/guide/channels',
     {
-      schema: AllChannelsGuideSchema,
+      schema: {
+        querystring: z.object({
+          dateFrom: z.coerce.date(),
+          dateTo: z.coerce.date(),
+        }),
+        response: {
+          200: z.record(ChannelLineupSchema),
+        },
+      },
     },
     async (req, res) => {
       const allChannelIds = map(

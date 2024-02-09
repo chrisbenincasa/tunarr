@@ -1,27 +1,40 @@
 import { scheduleTimeSlots } from '@tunarr/shared';
 import {
   BasicIdParamSchema,
+  BasicPagingSchema,
   TimeSlotScheduleSchema,
   UpdateChannelProgrammingRequestSchema,
 } from '@tunarr/types/api';
 import {
   ChannelLineupSchema,
   ChannelProgramSchema,
-  ChannelProgrammingSchema,
   ChannelSchema,
+  CondensedChannelProgrammingSchema,
   ProgramSchema,
   SaveChannelRequestSchema,
 } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
-import { compact, isError, isNil, omit, sortBy } from 'lodash-es';
+import {
+  compact,
+  filter,
+  isError,
+  isNil,
+  omit,
+  omitBy,
+  sortBy,
+} from 'lodash-es';
 import z from 'zod';
-import { buildApiLineup } from '../../dao/channelDb.js';
+import {
+  buildCondensedLineup,
+  contentLineupItemToProgram,
+} from '../../dao/channelDb.js';
+import { isContentItem } from '../../dao/derived_types/Lineup.js';
 import createLogger from '../../logger.js';
 import { scheduledJobsById } from '../../services/scheduler.js';
 import { UpdateXmlTvTask } from '../../tasks/updateXmlTvTask.js';
 import { RouterPluginAsyncCallback } from '../../types/serverType.js';
-import { attempt, mapAsyncSeq } from '../../util.js';
+import { attempt, groupByUniqAndMap, mapAsyncSeq } from '../../util.js';
 
 dayjs.extend(duration);
 
@@ -126,7 +139,7 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
         body: SaveChannelRequestSchema,
         params: z.object({ id: z.string() }),
         response: {
-          200: ChannelSchema.omit({ programs: true }),
+          200: ChannelSchema,
         },
       },
     },
@@ -190,9 +203,9 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
     '/channels/:id/programming',
     {
       schema: {
-        params: BasicIdParamSchema,
+        params: BasicIdParamSchema.merge(BasicPagingSchema),
         response: {
-          200: ChannelProgrammingSchema,
+          200: CondensedChannelProgrammingSchema,
           404: z.object({ error: z.string() }),
         },
       },
@@ -206,8 +219,10 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
         return res.status(404).send({ error: 'Channel Not Found' });
       }
 
-      const apiLineup = await req.serverCtx.channelDB.loadAndMaterializeLineup(
+      const apiLineup = await req.serverCtx.channelDB.loadCondensedLineup(
         req.params.id,
+        req.params.offset ?? 0,
+        req.params.limit ?? -1,
       );
 
       if (isNil(apiLineup)) {
@@ -227,7 +242,7 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
         params: BasicIdParamSchema,
         body: UpdateChannelProgrammingRequestSchema,
         response: {
-          200: ChannelProgrammingSchema,
+          200: CondensedChannelProgrammingSchema,
           404: z.void(),
           500: z.void(),
           501: z.void(),
@@ -262,11 +277,20 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
 
       const { channel, newLineup } = result;
 
+      const materializedPrograms = omitBy(
+        groupByUniqAndMap(filter(newLineup, isContentItem), 'id', (item) =>
+          contentLineupItemToProgram(channel, item.id),
+        ),
+        isNil,
+      );
+
       return res.status(200).send({
         icon: channel.icon,
         number: channel.number,
         name: channel.name,
-        programs: buildApiLineup(channel, newLineup),
+        totalPrograms: newLineup.length,
+        programs: materializedPrograms,
+        lineup: buildCondensedLineup(channel, newLineup),
       });
     },
   );

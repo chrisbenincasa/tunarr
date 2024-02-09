@@ -1,6 +1,3 @@
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import { useFfmpegSettings } from '../../hooks/settingsHooks.ts';
 import {
   CircularProgress,
   FormControl,
@@ -11,11 +8,13 @@ import {
   Skeleton,
   TextField,
 } from '@mui/material';
-import useStore from '../../store/index.ts';
-import { isNil } from 'lodash-es';
-import { toStringResolution } from '../../helpers/util.ts';
-import { Controller, useFormContext } from 'react-hook-form';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
 import { Channel } from '@tunarr/types';
+import { isNil } from 'lodash-es';
+import { Controller, useFormContext } from 'react-hook-form';
+import { toStringResolution } from '../../helpers/util.ts';
+import { useFfmpegSettings } from '../../hooks/settingsHooks.ts';
 
 const resolutionOptions = [
   { value: '420x420', label: '420x420 (1:1)' },
@@ -34,15 +33,7 @@ export default function ChannelTranscodingConfig() {
   const { data: ffmpegSettings, isPending: ffmpegSettingsLoading } =
     useFfmpegSettings();
 
-  const channel = useStore((s) => s.channelEditor.currentEntity);
-
   const { control } = useFormContext<Channel>();
-
-  const resolution = channel?.transcoding?.targetResolution;
-
-  const chosenResolution = !isNil(resolution)
-    ? toStringResolution(resolution)
-    : 'global';
 
   if (ffmpegSettingsLoading) {
     return <CircularProgress />;

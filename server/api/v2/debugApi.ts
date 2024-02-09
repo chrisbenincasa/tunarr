@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Loaded, wrap } from '@mikro-orm/core';
 import dayjs from 'dayjs';
 import { FastifyRequest } from 'fastify';
-import { first, isNil, isUndefined } from 'lodash-es';
+import { first, isNil, isUndefined, map, range } from 'lodash-es';
 import z from 'zod';
 import { ChannelCache } from '../../channelCache.js';
 import { getEm } from '../../dao/dataSource.js';
@@ -16,6 +17,9 @@ import { PlexPlayer } from '../../plexPlayer.js';
 import { PlexTranscoder } from '../../plexTranscoder.js';
 import { ContextChannel, Maybe, PlayerContext } from '../../types.js';
 import { RouterPluginAsyncCallback } from '../../types/serverType.js';
+import { binarySearchRange } from '../../util/binarySearch.js';
+import { toApiLineupItem } from '../../dao/channelDb.js';
+import { inspect } from 'util';
 
 const logger = createLogger(import.meta);
 
@@ -200,6 +204,8 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
   const CreateLineupSchema = {
     querystring: ChannelQuerySchema.querystring.extend({
       live: z.coerce.boolean(),
+      startTime: z.coerce.number().optional(),
+      endTime: z.coerce.number().optional(),
     }),
   };
 
@@ -211,16 +217,18 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
         req.query.channelId,
       );
 
-      const startTime = new Date();
+      const startTime = dayjs(req.query.startTime);
       const duration =
         channel!.duration <= 0
           ? dayjs.duration(1, 'day').asMilliseconds()
           : channel!.duration;
-      const endTime = dayjs(startTime).add(duration, 'milliseconds').toDate();
+      const endTime = req.query.endTime
+        ? dayjs(req.query.endTime)
+        : startTime.add(duration, 'milliseconds');
 
       const t = req.serverCtx.guideService.prepareRefresh(
         [wrap(channel!).toJSON()],
-        duration,
+        dayjs.duration(endTime.diff(startTime)).asMilliseconds(),
       );
 
       await req.serverCtx.guideService.refresh(t);
@@ -230,10 +238,71 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
         .send(
           await req.serverCtx.guideService.getChannelLineup(
             channel!.uuid,
-            startTime,
-            endTime,
+            startTime.toDate(),
+            endTime.toDate(),
           ),
         );
+    },
+  );
+
+  fastify.get(
+    '/api/v1/debug/helpers/program_at_time',
+    {
+      schema: {
+        querystring: ChannelQuerySchema.querystring.extend({
+          ts: z.coerce.number(),
+        }),
+      },
+    },
+    async (req, res) => {
+      const channel = (await req.serverCtx.channelDB.getChannelAndPrograms(
+        req.query.channelId,
+      ))!;
+
+      const lineup = await req.serverCtx.channelDB.loadLineup(channel.uuid);
+
+      const acc = req.serverCtx.guideService.makeAccumulated({
+        channel: wrap(channel).toJSON(),
+        lineup,
+      });
+
+      function getProgramAtTime(t: number) {
+        const duration = channel.duration;
+        console.log(dayjs.duration(duration).asMilliseconds());
+        const howFarPastStart = t - channel.startTime;
+        const numCycles = Math.floor(howFarPastStart / duration);
+        const howFarIntoCurrentCycle = howFarPastStart % duration;
+
+        const idx = binarySearchRange(acc, howFarIntoCurrentCycle);
+        // const howFarIntoProgram = lineup.items[idx!].durationMs - acc[idx!];
+        console.log(
+          dayjs(channel.startTime)
+            .add(numCycles * duration)
+            .add(acc[idx!])
+            .format(),
+        );
+
+        return idx;
+      }
+      const idx = getProgramAtTime(req.query.ts);
+      // This isn't right... we have to round to the nearest "next" cycle
+      // Take found index, add durations from the remaining programs, subtract
+      // how far into the 'current' program we are. Then we have the timestamp
+      // of when the next "cycle" begins. Take the diff from the target date and
+      // the top of the next "cycle" to find how many 'full' cycles there are. Also
+      // find the remainder (i.e. the amount of time into the final cycle before we stop)
+      const nextT = dayjs(req.query.ts).add(3, 'days').unix() * 1000;
+      const cyclesInDuration = Math.floor(
+        dayjs.duration(nextT - req.query.ts).asMilliseconds() /
+          channel.duration,
+      );
+      // const idx2 = getProgramAtTime(nextT);
+      const x = map(range(0, cyclesInDuration * lineup.items.length), (i) => {
+        return (idx! + i) % lineup.items.length;
+      });
+      console.log(inspect(x));
+
+      return res.status(200).send(toApiLineupItem(channel, lineup.items[idx!]));
     },
   );
 

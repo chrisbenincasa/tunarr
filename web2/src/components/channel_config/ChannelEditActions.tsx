@@ -32,11 +32,7 @@ export default function ChannelEditActions() {
       ) : (
         <>
           <Button variant="contained">Next</Button>
-          <Button
-            disabled={!isValid || !isDirty}
-            variant="contained"
-            type="submit"
-          >
+          <Button disabled={!isValid} variant="contained" type="submit">
             Save
           </Button>
         </>

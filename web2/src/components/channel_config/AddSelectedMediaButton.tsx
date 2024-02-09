@@ -3,6 +3,7 @@ import { flattenDeep } from 'lodash-es';
 import { sequentialPromises } from '../../helpers/util.ts';
 import { EnrichedPlexMedia, enumeratePlexItem } from '../../hooks/plexHooks.ts';
 import useStore from '../../store/index.ts';
+import { clearSelectedMedia } from '../../store/programmingSelector/actions.ts';
 
 type Props = {
   onAdd: (items: EnrichedPlexMedia[]) => void;
@@ -25,6 +26,7 @@ export default function AddSelectedMediaButton({
       .then(flattenDeep)
       .then(onAdd)
       .then(() => {
+        clearSelectedMedia();
         onSuccess();
       })
       .catch(console.error);

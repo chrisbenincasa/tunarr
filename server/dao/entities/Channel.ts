@@ -156,7 +156,6 @@ export class Channel extends BaseEntity {
       transcoding: nilToUndefined(this.transcoding),
       duration: this.duration,
       stealth: this.stealth,
-      programs: [],
     };
   }
 }

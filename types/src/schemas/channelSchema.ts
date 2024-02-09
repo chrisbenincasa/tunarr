@@ -47,7 +47,6 @@ export const ChannelSchema = z.object({
   name: z.string(),
   number: z.number(),
   offline: ChannelOfflineSchema,
-  programs: z.array(ProgramSchema),
   startTime: z.number(),
   stealth: z.boolean(),
   transcoding: ChannelTranscodingOptionsSchema.optional(),

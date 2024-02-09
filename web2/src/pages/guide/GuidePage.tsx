@@ -1,4 +1,10 @@
-import { useCallback, useState } from 'react';
+import {
+  ArrowBackIos,
+  ArrowForwardIos,
+  History,
+  ZoomIn as ZoomInIcon,
+  ZoomOut as ZoomOutIcon,
+} from '@mui/icons-material';
 import {
   Box,
   CircularProgress,
@@ -13,21 +19,15 @@ import {
   Typography,
   styled,
 } from '@mui/material';
-import {
-  ArrowBackIos,
-  ArrowForwardIos,
-  History,
-  ZoomIn as ZoomInIcon,
-  ZoomOut as ZoomOutIcon,
-} from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
-import { TvGuideProgram, ChannelProgram } from '@tunarr/types';
+import { ChannelProgram, TvGuideProgram } from '@tunarr/types';
 import dayjs, { Dayjs, duration } from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
+import { isEmpty, round } from 'lodash-es';
+import { useCallback, useState } from 'react';
 import { useInterval } from 'usehooks-ts';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
-import { useAllTvGuides, prefetchAllTvGuides } from '../../hooks/useTvGuide.ts';
-import { isEmpty, round } from 'lodash-es';
+import { prefetchAllTvGuides, useAllTvGuides } from '../../hooks/useTvGuide.ts';
 import useStore from '../../store/index.ts';
 import { setGuideDurationState } from '../../store/themeEditor/actions.ts';
 
@@ -138,26 +138,25 @@ export default function GuidePage() {
     }
   }, [start, end]);
 
+  const navigateForward = useCallback(() => {
+    setEnd((last) => last.add(1, 'hour'));
+    setStart((start) => start.add(1, 'hour'));
+  }, [setEnd, setStart]);
   const zoomOut = useCallback(() => {
     setEnd((prevEnd) => {
       const newEnd = prevEnd.add(1, 'hour');
       setGuideDurationState(Math.abs(start.diff(newEnd)));
       return newEnd;
     });
-  }, [start, end]);
+  }, [start]);
 
   const zoomDisabled =
     end.subtract(SubtractInterval).diff(start) < MinDurationMillis;
 
   const navigateBackward = useCallback(() => {
-    setEnd((prevEnd) => prevEnd.subtract(1, 'hour'));
-    setStart((prevStart) => prevStart.subtract(1, 'hour'));
-  }, [end, start]);
-
-  const navigateForward = useCallback(() => {
-    setEnd((prevEnd) => prevEnd.add(1, 'hour'));
-    setStart((prevStart) => prevStart.add(1, 'hour'));
-  }, [end, start]);
+    setEnd((last) => last.subtract(1, 'hour'));
+    setStart((start) => start.subtract(1, 'hour'));
+  }, [setEnd, setStart]);
 
   const navigationDisabled = now.isAfter(start);
 
@@ -171,7 +170,7 @@ export default function GuidePage() {
     setEnd(newStart.add(guideDuration, 'ms'));
 
     setCurrentTime(dayjs().format('h:mm'));
-  }, [start, end]);
+  }, [guideDuration, now]);
 
   const handleDayChange = (event: SelectChangeEvent<string>) => {
     const day = event.target.value;

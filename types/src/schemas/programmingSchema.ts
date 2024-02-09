@@ -45,7 +45,13 @@ export const ProgramSchema = z.object({
 // They are "timeless" in the sense that they do not encode a
 // start and end time (like the guide/lineup). A listing of
 // these programs makes up one channel "cycle".
-const BaseProgramSchema = z.object({
+export const BaseProgramSchema = z.object({
+  type: z.union([
+    z.literal('flex'),
+    z.literal('redirect'),
+    z.literal('content'),
+    z.literal('custom'),
+  ]),
   persisted: z.boolean(),
   duration: z.number(),
   icon: z.string().optional(),
@@ -96,6 +102,26 @@ export const ContentProgramSchema = BaseProgramSchema.extend({
 //   },
 // );
 
+export const CondensedContentProgramSchema = BaseProgramSchema.extend({
+  type: z.literal('content'),
+  // subtype: z.union([
+  //   z.literal('movie'),
+  //   z.literal('episode'),
+  //   z.literal('track'),
+  // ]),
+  id: z.string().optional(), // Populated if persisted
+  // Only populated on client requests to the server
+  originalProgram: z
+    .discriminatedUnion('type', [PlexEpisodeSchema, PlexMovieSchema])
+    .optional(),
+});
+
+export const CondensedCustomProgramSchema = BaseProgramSchema.extend({
+  type: z.literal('custom'),
+  id: z.string(),
+  program: CondensedContentProgramSchema.optional(),
+});
+
 export const CustomProgramSchema = BaseProgramSchema.extend({
   type: z.literal('custom'),
   id: z.string(),
@@ -113,5 +139,22 @@ export const ChannelProgrammingSchema = z.object({
   icon: ChannelIconSchema.optional(),
   name: z.string().optional(),
   number: z.number().optional(),
+  totalPrograms: z.number(),
   programs: z.array(ChannelProgramSchema),
+});
+
+export const CondensedChannelProgramSchema = z.discriminatedUnion('type', [
+  CondensedContentProgramSchema,
+  CustomProgramSchema,
+  RedirectProgramSchema,
+  FlexProgramSchema,
+]);
+
+export const CondensedChannelProgrammingSchema = z.object({
+  icon: ChannelIconSchema.optional(),
+  name: z.string().optional(),
+  number: z.number().optional(),
+  totalPrograms: z.number(),
+  programs: z.record(ContentProgramSchema),
+  lineup: z.array(CondensedChannelProgramSchema),
 });

@@ -45,17 +45,14 @@ import ProgrammingSelectorDialog from './ProgrammingSelectorDialog.tsx';
 // dayjs.extend(duration);
 
 export function ChannelProgrammingConfig() {
-  const channel = useStore((s) => s.channelEditor.currentEntity);
+  const { currentEntity: channel, programList } = useStore(
+    (s) => s.channelEditor,
+  );
   const [programmingModalOpen, setProgrammingModalOpen] = useState(false);
   const programsDirty = useStore((s) => s.channelEditor.dirty.programs);
 
   const [addRedirectModalOpen, setAddRedirectModalOpen] = useState(false);
   const [addFlexModalOpen, setAddFlexModalOpen] = useState(false);
-
-  // const [{isDragging}, drag] =
-  // const [, drop] = useDrop(() => ({
-  //   accept: 'all'
-  // }));
 
   const blockShuffle = useBlockShuffle();
   const [currentPadding, setCurrentPadding] = useState<StartTimePadding | null>(
@@ -227,7 +224,18 @@ export function ChannelProgrammingConfig() {
             />
           </FormControl>
         </Box>
-        <Box>
+        <Box
+          sx={{
+            display: 'flex',
+            pt: 1,
+            mb: 2,
+            columnGap: 1,
+            alignItems: 'center',
+          }}
+        >
+          <Typography variant="caption" sx={{ flexGrow: 1 }}>
+            {programList.length} program{programList.length === 1 ? '' : 's'}
+          </Typography>
           <Button
             variant="contained"
             onClick={() => resetLineup()}

@@ -13,7 +13,6 @@ import { Channel } from '@tunarr/types';
 import { isNumber } from 'lodash-es';
 import { Controller, useFormContext } from 'react-hook-form';
 import useStore from '../../store/index.ts';
-import { useFillerLists } from '../../hooks/useFillerLists.ts';
 import ChannelEditActions from './ChannelEditActions.tsx';
 
 export function ChannelFlexConfig() {
@@ -21,8 +20,6 @@ export function ChannelFlexConfig() {
   const { control, watch } = useFormContext<Channel>();
 
   const offlineMode = watch('offline.mode');
-
-  const { isPending: fillerListsLoading, fillerLists } = useFillerLists();
 
   return (
     channel && (
@@ -97,7 +94,7 @@ export function ChannelFlexConfig() {
             <Controller
               name="fillerRepeatCooldown"
               control={control}
-              rules={{ validate: isNumber }}
+              rules={{ validate: (v) => isNumber(v) && !isNaN(v) }}
               render={({ field, formState: { errors } }) => (
                 <>
                   <TextField
@@ -110,6 +107,7 @@ export function ChannelFlexConfig() {
                         : null
                     }
                     {...field}
+                    onChange={(e) => field.onChange(parseInt(e.target.value))}
                   />
                   <Typography variant="caption" sx={{ ml: 1 }}>
                     Minimum time (minutes) before replaying a filler

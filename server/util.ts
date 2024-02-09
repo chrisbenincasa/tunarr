@@ -17,10 +17,7 @@ import { isPromise } from 'node:util/types';
 declare global {
   interface Array<T> {
     // async
-    sequentialPromises<U>(
-      fn: (item: T) => Promise<U>,
-      ms?: number,
-    ): Promise<Array<U>>;
+    mapAsyncSeq<U>(fn: (item: T) => Promise<U>, ms?: number): Promise<Array<U>>;
   }
 }
 
@@ -169,7 +166,7 @@ export function firstDefined(obj: object, ...args: string[]): string {
   return 'missing';
 }
 
-Array.prototype.sequentialPromises = async function <T, U>(
+Array.prototype.mapAsyncSeq = async function <T, U>(
   itemFn: (item: T) => Promise<U>,
   ms: number | undefined,
 ) {

@@ -22,17 +22,14 @@ import {
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { dayjsMod, scheduleTimeSlots } from '@tunarr/shared';
-import {
-  ChannelProgram,
-  ContentProgram,
-  isContentProgram,
-} from '@tunarr/types';
+import { ChannelProgram, isContentProgram } from '@tunarr/types';
 import {
   TimeSlot,
   TimeSlotProgramming,
   TimeSlotSchedule,
   UpdateChannelProgrammingRequest,
 } from '@tunarr/types/api';
+import { ZodiosError } from '@zodios/core';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
@@ -44,19 +41,17 @@ import {
   isUndefined,
   map,
   maxBy,
-  reduce,
   some,
-  uniqBy,
 } from 'lodash-es';
 import { Fragment, useCallback, useMemo, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import ChannelProgrammingList from '../../components/channel_config/ChannelProgrammingList.tsx';
 import { apiClient } from '../../external/api.ts';
+import { zipWithIndex } from '../../helpers/util.ts';
 import { useNumberString } from '../../hooks/useNumberString.ts';
 import { usePreloadedChannel } from '../../hooks/usePreloadedChannel.ts';
 import { updateCurrentChannel } from '../../store/channelEditor/actions.ts';
-import { zipWithIndex } from '../../helpers/util.ts';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -127,7 +122,13 @@ export default function TimeSlotEditorPage() {
     onSuccess: async (_, { channelId }) => {
       await queryClient.invalidateQueries({
         queryKey: ['channels', channelId],
+        exact: false,
       });
+    },
+    onError: (error) => {
+      if (error instanceof ZodiosError) {
+        console.error(error.message, error.data, error.cause);
+      }
     },
   });
 
@@ -571,8 +572,7 @@ export default function TimeSlotEditorPage() {
         <Divider />
         <ChannelProgrammingList
           programList={generatedList ? zipWithIndex(generatedList) : undefined}
-          enableDnd={!generatedList}
-          programListSelector={(s) => s.channelEditor.programList}
+          enableDnd={false}
           virtualListProps={{
             width: '100%',
             height: 400,

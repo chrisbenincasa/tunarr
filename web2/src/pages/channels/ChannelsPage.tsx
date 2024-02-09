@@ -1,5 +1,4 @@
 import AddCircleIcon from '@mui/icons-material/AddCircle';
-import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import SettingsRemoteIcon from '@mui/icons-material/SettingsRemote';
 import {
@@ -18,13 +17,13 @@ import {
   Typography,
   useMediaQuery,
 } from '@mui/material';
-import { Channel } from '@tunarr/types';
-import { Link as RouterLink } from 'react-router-dom';
-import { useChannels } from '../../hooks/useChannels.ts';
-import { isEmpty } from 'lodash-es';
-import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import { useTheme } from '@mui/material/styles';
+import { Channel } from '@tunarr/types';
 import dayjs from 'dayjs';
+import { isEmpty } from 'lodash-es';
+import { Link as RouterLink } from 'react-router-dom';
+import PaddedPaper from '../../components/base/PaddedPaper.tsx';
+import { useChannels } from '../../hooks/useChannels.ts';
 
 export default function ChannelsPage() {
   const now = dayjs();

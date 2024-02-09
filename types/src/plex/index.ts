@@ -22,7 +22,7 @@ export const PlexLibrarySectionSchema = z.object({
   scanner: z.string(),
   language: z.string(),
   uuid: z.string(),
-  updatedAt: z.number(),
+  updatedAt: z.number().optional(),
   createdAt: z.number(),
   scannedAt: z.number(),
   content: z.boolean(),
@@ -60,7 +60,7 @@ export const PlexLibraryCollectionSchema = z
     ratingCount: z.number(),
     thumb: z.string(),
     addedAt: z.number(),
-    updatedAt: z.number(),
+    updatedAt: z.number().optional(),
     childCount: z.string(),
     collectionSort: z.string().optional(),
     smart: z.string(),
@@ -166,7 +166,7 @@ export const PlexMovieSchema = z
     duration: z.number(),
     originallyAvailableAt: z.string(),
     addedAt: z.number(),
-    updatedAt: z.number(),
+    updatedAt: z.number().optional(),
     audienceRatingImage: z.string().optional(),
     chapterSource: z.string().optional(),
     primaryExtraKey: z.string().optional(),
@@ -209,7 +209,7 @@ export const PlexTvShowSchema = z
     thumb: z.string(),
     title: z.string(),
     type: z.literal('show'),
-    updatedAt: z.number(),
+    updatedAt: z.number().optional(),
     viewedLeafCount: z.number(),
     year: z.number(),
   })
@@ -240,7 +240,7 @@ export const PlexTvSeasonSchema = z
     leafCount: z.number(),
     viewedLeafCount: z.number(),
     addedAt: z.number(),
-    updatedAt: z.number(),
+    updatedAt: z.number().optional(),
   })
   .merge(neverDirectory);
 
@@ -324,7 +324,7 @@ export const PlexEpisodeSchema = z
     title: z.string(),
     titleSort: z.string().optional(),
     type: z.literal('episode'),
-    updatedAt: z.number(),
+    updatedAt: z.number().optional(),
     year: z.number().optional(),
     Media: z.array(PlexMediaDescriptionSchema),
     Director: z.array(PlexJoinItemSchema).optional(),

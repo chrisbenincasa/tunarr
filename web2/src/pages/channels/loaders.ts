@@ -6,7 +6,8 @@ import {
 } from '@tanstack/react-query';
 import {
   Channel,
-  ChannelProgram,
+  CondensedChannelProgram,
+  ContentProgram,
   CustomShow,
   CustomShowProgramming,
   FillerList,
@@ -16,7 +17,7 @@ import dayjs from 'dayjs';
 import { maxBy } from 'lodash-es';
 import { LoaderFunctionArgs } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
-import { lineupQuery } from '../../hooks/useChannelLineup.ts';
+import { channelProgrammingQuery } from '../../hooks/useChannelLineup.ts';
 import { channelQuery, channelsQuery } from '../../hooks/useChannels.ts';
 import {
   customShowProgramsQuery,
@@ -58,11 +59,14 @@ function createPreloader<
 
 export const editProgrammingLoader: Preloader<{
   channel: Channel;
-  lineup: ChannelProgram[];
+  programming: {
+    lineup: CondensedChannelProgram[];
+    programs: Record<string, ContentProgram>;
+  };
 }> =
   (queryClient: QueryClient) =>
   async ({ params }: LoaderFunctionArgs) => {
-    const lineupQueryData = lineupQuery(params.id!, null, true);
+    const lineupQueryData = channelProgrammingQuery(params.id!, true);
     const channelQueryData = channelQuery(params.id!);
 
     const lineupPromise = Promise.resolve(
@@ -78,10 +82,13 @@ export const editProgrammingLoader: Preloader<{
     });
 
     return await Promise.all([channelPromise, lineupPromise]).then(
-      ([channel, lineup]) => {
+      ([channel, programming]) => {
         return {
           channel,
-          lineup: lineup.programs,
+          programming: {
+            lineup: programming.lineup,
+            programs: programming.programs,
+          },
         };
       },
     );
@@ -98,14 +105,14 @@ function defaultNewChannel(num: number): Channel {
     number: num,
     startTime: dayjs().unix() * 1000,
     duration: 0,
-    programs: [],
     icon: {
       duration: 0,
       path: '',
       position: 'bottom',
       width: 0,
     },
-    guideMinimumDuration: 300,
+    guideMinimumDuration: 30000,
+    fillerRepeatCooldown: 30,
     groupTitle: 'tv',
     stealth: false,
     disableFillerOverlay: false,

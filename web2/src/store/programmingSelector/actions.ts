@@ -102,3 +102,8 @@ export const removeSelectedMedia = (serverName: string, guids: string[]) =>
       (m) => m.server === serverName && guidsSet.has(m.guid),
     );
   });
+
+export const clearSelectedMedia = () =>
+  useStore.setState((state) => {
+    state.selectedMedia = [];
+  });

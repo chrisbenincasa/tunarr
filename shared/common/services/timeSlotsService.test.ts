@@ -1,32 +1,24 @@
+import { FlexProgram, isContentProgram } from '@tunarr/types';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
 import timezone from 'dayjs/plugin/timezone.js';
-import { FlexProgram, isContentProgram } from '@tunarr/types';
-import { isNull, pad } from 'lodash-es';
+import { isNull } from 'lodash-es';
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'path';
-import { beforeAll, test } from 'vitest';
+import { test } from 'vitest';
 import { ChannelDB } from '../dao/channelDb.js';
 import { withDb } from '../dao/dataSource.js';
-import { setGlobalOptions } from '../globals.js';
+import { TimeSlotSchedule } from '../dao/derived_types/Lineup.js';
 import scheduleTimeSlots, {
   PaddedProgram,
   distributeFlex,
 } from './timeSlotsService.js';
-import { TimeSlotSchedule } from '../dao/derived_types/Lineup.js';
 
 dayjs.extend(duration);
 dayjs.extend(timezone);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-
-beforeAll(() => {
-  setGlobalOptions({
-    database: '.dizquetv',
-    force_migration: false,
-  });
-});
 
 const schedule: TimeSlotSchedule = {
   type: 'time',

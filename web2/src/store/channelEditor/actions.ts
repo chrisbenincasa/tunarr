@@ -1,6 +1,7 @@
 import {
   Channel,
   ChannelProgram,
+  CondensedChannelProgram,
   ContentGuideProgram,
   ContentProgram,
   CustomShow,
@@ -10,10 +11,10 @@ import {
 } from '@tunarr/types';
 import { isPlexEpisode } from '@tunarr/types/plex';
 import { findIndex, inRange, isNil, isUndefined, sumBy } from 'lodash-es';
+import { zipWithIndex } from '../../helpers/util.ts';
 import { EnrichedPlexMedia } from '../../hooks/plexHooks.ts';
 import useStore from '../index.ts';
 import { initialChannelEditorState } from './store.ts';
-import { zipWithIndex } from '../../helpers/util.ts';
 
 export const resetChannelEditorState = () =>
   useStore.setState((state) => {
@@ -25,26 +26,47 @@ export const resetChannelEditorState = () =>
     return newState;
   });
 
+type ChannelProgramming = {
+  lineup: CondensedChannelProgram[];
+  programs: Record<string, ContentProgram>;
+};
+
 export const setCurrentChannel = (
   channel: Omit<Channel, 'programs'>,
-  lineup?: ChannelProgram[],
+  programming?: ChannelProgramming,
 ) =>
   useStore.setState(({ channelEditor }) => {
     channelEditor.currentEntity = channel;
     channelEditor.originalEntity = channel;
-    if (lineup) {
-      const programs = zipWithIndex(lineup);
+    if (programming) {
+      const programs = zipWithIndex(programming.lineup);
       channelEditor.originalProgramList = [...programs];
       channelEditor.programList = [...programs];
+      channelEditor.programLookup = { ...programming.programs };
     }
   });
 
-export const setCurrentLineup = (lineup: ChannelProgram[], dirty?: boolean) =>
+export const setCurrentLineup = (
+  lineup: CondensedChannelProgram[],
+  dirty?: boolean,
+) =>
   useStore.setState((state) => {
     state.channelEditor.programList = zipWithIndex(lineup);
     if (!isUndefined(dirty)) {
       state.channelEditor.dirty.programs = dirty;
     }
+  });
+
+export const resetCurrentLineup = (
+  lineup: CondensedChannelProgram[],
+  programs: Record<string, ContentProgram>,
+) =>
+  useStore.setState((state) => {
+    const zippedLineup = zipWithIndex(lineup);
+    state.channelEditor.programList = [...zippedLineup];
+    state.channelEditor.originalProgramList = [...zippedLineup];
+    state.channelEditor.programLookup = { ...programs };
+    state.channelEditor.dirty.programs = false;
   });
 
 export const resetLineup = () =>

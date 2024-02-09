@@ -1,6 +1,6 @@
 import {
   Channel,
-  ChannelProgram,
+  CondensedChannelProgram,
   ContentProgram,
   CustomProgram,
   CustomShow,
@@ -8,13 +8,10 @@ import {
 } from '@tunarr/types';
 import { StateCreator } from 'zustand';
 
-type UiIndex = { originalIndex: number };
+export type UiIndex = { originalIndex: number };
 
 // Represents a program listing in the editor
-export interface ProgrammingEditorStateInner<
-  EntityType,
-  ProgramType extends ChannelProgram = ChannelProgram,
-> {
+export interface ProgrammingEditorState<EntityType, ProgramType> {
   // Original state of the working entity. Used to reset state
   originalEntity?: EntityType;
   // The working entity - edits should be made directly here
@@ -31,12 +28,14 @@ export interface ProgrammingEditorStateInner<
 }
 
 export interface ChannelEditorState {
-  channelEditor: ProgrammingEditorStateInner<Omit<Channel, 'programs'>>;
-  customShowEditor: ProgrammingEditorStateInner<
+  channelEditor: ProgrammingEditorState<Channel, CondensedChannelProgram> & {
+    programLookup: Record<string, ContentProgram>;
+  };
+  customShowEditor: ProgrammingEditorState<
     CustomShow,
     ContentProgram | CustomProgram // You cannot add Flex to custom shows
   >;
-  fillerListEditor: ProgrammingEditorStateInner<
+  fillerListEditor: ProgrammingEditorState<
     FillerList,
     ContentProgram | CustomProgram // You cannot add Flex to custom shows
   >;
@@ -52,7 +51,7 @@ const empty = () => ({
 });
 
 export const initialChannelEditorState: ChannelEditorState = {
-  channelEditor: empty(),
+  channelEditor: { ...empty(), programLookup: {} },
   customShowEditor: empty(),
   fillerListEditor: empty(),
 };
