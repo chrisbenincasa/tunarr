@@ -43,11 +43,13 @@ const GridParent = styled(Box)({
   borderWidth: '1px 0 0 1px',
 });
 
-const GridChild = styled(Box)({
+const GridChild = styled(Box)<{ width: number }>(({ width }) => ({
   borderStyle: 'solid',
   borderColor: 'transparent',
   borderWidth: '0 1px 0 0',
-});
+  width: `${width}%`,
+  transition: 'width 0.5s ease-in',
+}));
 
 const GuideItem = styled(GridChild)<{ grey: keyof Color; width: number }>(
   ({ theme, grey, width }) => ({
@@ -237,6 +239,7 @@ export default function GuidePage() {
     const programStart = dayjs(program.start);
     const programEnd = dayjs(program.stop);
     let duration = dayjs.duration(programEnd.diff(programStart));
+    let endOfAvailableProgramming = false;
 
     // Trim any time that has already played in the current program
     if (index === 0) {
@@ -248,6 +251,11 @@ export default function GuidePage() {
     if (index === lineup.length - 1) {
       const trimEnd = programEnd.diff(end);
       duration = duration.subtract(trimEnd, 'ms');
+
+      if (programEnd.isBefore(end)) {
+        endOfAvailableProgramming = true;
+        console.log('this is the end');
+      }
     }
 
     const pct = round(
@@ -258,20 +266,35 @@ export default function GuidePage() {
     const grey = index % 2 === 0 ? 300 : 400;
 
     return (
-      <Tooltip
-        key={key}
-        title={`Starts at ${programStart.format(
-          'h:mm A',
-        )} and ends at ${programEnd.format('h:mm A')}`}
-        placement="top"
-      >
-        <GuideItem width={pct} grey={grey} key={key}>
-          <Box sx={{ fontSize: '14px', fontWeight: '600' }}>{title}</Box>
-          <Box sx={{ fontSize: '13px', fontStyle: 'italic' }}>
-            {episodeTitle}
-          </Box>
-        </GuideItem>
-      </Tooltip>
+      <>
+        <Tooltip
+          key={key}
+          title={`Starts at ${programStart.format(
+            'h:mm A',
+          )} and ends at ${programEnd.format('h:mm A')}`}
+          placement="top"
+        >
+          <GuideItem width={pct} grey={grey} key={key}>
+            <Box sx={{ fontSize: '14px', fontWeight: '600' }}>{title}</Box>
+            <Box sx={{ fontSize: '13px', fontStyle: 'italic' }}>
+              {episodeTitle}
+            </Box>
+          </GuideItem>
+        </Tooltip>
+        {endOfAvailableProgramming ? (
+          <Tooltip
+            key={`${key}-unavailable`}
+            title={'Unavailable'}
+            placement="top"
+          >
+            <GuideItem width={pct} grey={grey} key={`${key}-unavailable`}>
+              <Box sx={{ fontSize: '14px', fontWeight: '600' }}>
+                No Programming
+              </Box>
+            </GuideItem>
+          </Tooltip>
+        ) : null}
+      </>
     );
   };
 
@@ -447,8 +470,8 @@ export default function GuidePage() {
             >
               {intervalArray.map((slot) => (
                 <GridChild
+                  width={100 / intervalArray.length}
                   sx={{
-                    width: `${100 / intervalArray.length}%`,
                     height: '2rem',
                   }}
                   key={slot}
