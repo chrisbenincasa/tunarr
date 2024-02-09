@@ -1,6 +1,12 @@
 import useStore from '..';
 import { initialThemeEditorState } from './store.ts';
 
+export const setGuideDurationState = (duration: number) => {
+  useStore.setState((state) => {
+    state.theme.guideDuration = duration;
+  });
+};
+
 export const setDarkModeState = () => {
   useStore.setState((state) => {
     state.theme.darkMode = !state.theme.darkMode;

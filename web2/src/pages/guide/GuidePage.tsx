@@ -1,5 +1,4 @@
-import ZoomInIcon from '@mui/icons-material/ZoomIn';
-import ZoomOutIcon from '@mui/icons-material/ZoomOut';
+import { useCallback, useState } from 'react';
 import {
   Box,
   CircularProgress,
@@ -14,22 +13,23 @@ import {
   Typography,
   styled,
 } from '@mui/material';
-import { TvGuideProgram, ChannelProgram } from '@tunarr/types';
-import dayjs, { Dayjs } from 'dayjs';
-import duration from 'dayjs/plugin/duration';
-import isBetween from 'dayjs/plugin/isBetween';
-import { useCallback, useEffect, useState } from 'react';
-import { useInterval } from 'usehooks-ts';
-import PaddedPaper from '../../components/base/PaddedPaper.tsx';
-import { useAllTvGuides, prefetchAllTvGuides } from '../../hooks/useTvGuide.ts';
-import { isEmpty, round } from 'lodash-es';
 import {
   ArrowBackIos,
   ArrowForwardIos,
   History,
-  KeyboardDoubleArrowLeft,
+  ZoomIn as ZoomInIcon,
+  ZoomOut as ZoomOutIcon,
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
+import { TvGuideProgram, ChannelProgram } from '@tunarr/types';
+import dayjs, { Dayjs, duration } from 'dayjs';
+import isBetween from 'dayjs/plugin/isBetween';
+import { useInterval } from 'usehooks-ts';
+import PaddedPaper from '../../components/base/PaddedPaper.tsx';
+import { useAllTvGuides, prefetchAllTvGuides } from '../../hooks/useTvGuide.ts';
+import { isEmpty, round } from 'lodash-es';
+import useStore from '../../store/index.ts';
+import { setGuideDurationState } from '../../store/themeEditor/actions.ts';
 
 dayjs.extend(duration);
 dayjs.extend(isBetween);
@@ -93,13 +93,15 @@ const roundNearestMultiple = (num: number, multiple: number): number => {
 export default function GuidePage() {
   const theme = useTheme();
   const now = dayjs();
+  const guideDuration =
+    useStore((state) => state.theme.guideDuration) || 7200000;
   const [start, setStart] = useState(
     dayjs()
       .minute(roundNearestMultiple(now.minute(), 15))
       .second(0)
       .millisecond(0),
   );
-  const [end, setEnd] = useState(start.add(2, 'hour'));
+  const [end, setEnd] = useState(start.add(guideDuration, 'ms'));
   const [currentTime, setCurrentTime] = useState(dayjs().format('h:mm'));
   const [progress, setProgress] = useState(() => {
     return calcProgress(start, end);
@@ -126,43 +128,72 @@ export default function GuidePage() {
     setCurrentTime(dayjs().format('h:mm'));
   }, 60000);
 
-  const zoomOut = useCallback(() => {
-    setEnd((last) => last.add(1, 'hour'));
-  }, [setEnd]);
-
   const zoomIn = useCallback(() => {
     if (end.subtract(SubtractInterval).diff(start) >= MinDurationMillis) {
-      setEnd((last) => last.subtract(SubtractInterval));
+      setEnd((prevEnd) => {
+        const newEnd = prevEnd.subtract(SubtractInterval);
+        setGuideDurationState(Math.abs(start.diff(newEnd)));
+        return newEnd;
+      });
     }
-  }, [end, start, setEnd]);
+  }, [start, end]);
 
-  const navigateForward = useCallback(() => {
-    setEnd((last) => last.add(1, 'hour'));
-    setStart((start) => start.add(1, 'hour'));
-  }, [end, start, setEnd, setStart]);
+  const zoomOut = useCallback(() => {
+    setEnd((prevEnd) => {
+      const newEnd = prevEnd.add(1, 'hour');
+      setGuideDurationState(Math.abs(start.diff(newEnd)));
+      return newEnd;
+    });
+  }, [start, end]);
+
+  const zoomDisabled =
+    end.subtract(SubtractInterval).diff(start) < MinDurationMillis;
 
   const navigateBackward = useCallback(() => {
-    setEnd((last) => last.subtract(1, 'hour'));
-    setStart((start) => start.subtract(1, 'hour'));
-  }, [end, start, setEnd, setStart]);
+    setEnd((prevEnd) => prevEnd.subtract(1, 'hour'));
+    setStart((prevStart) => prevStart.subtract(1, 'hour'));
+  }, [end, start]);
 
-  const handleReset = useCallback(() => {
-    setStart(
-      dayjs()
-        .minute(roundNearestMultiple(now.minute(), 15))
-        .second(0)
-        .millisecond(0),
-    );
-    setEnd(
-      dayjs()
-        .minute(roundNearestMultiple(now.minute(), 15))
-        .second(0)
-        .millisecond(0)
-        .add(2, 'hour'),
-    );
+  const navigateForward = useCallback(() => {
+    setEnd((prevEnd) => prevEnd.add(1, 'hour'));
+    setStart((prevStart) => prevStart.add(1, 'hour'));
+  }, [end, start]);
+
+  const navigationDisabled = now.isAfter(start);
+
+  const handleNavigationReset = useCallback(() => {
+    const newStart = dayjs()
+      .minute(roundNearestMultiple(now.minute(), 15))
+      .second(0)
+      .millisecond(0);
+
+    setStart(newStart);
+    setEnd(newStart.add(guideDuration, 'ms'));
 
     setCurrentTime(dayjs().format('h:mm'));
-  }, [end, start, setEnd, setStart]);
+  }, [start, end]);
+
+  const handleDayChange = (event: SelectChangeEvent<string>) => {
+    const day = event.target.value;
+
+    setStart((prevStart) =>
+      dayjs(day).hour(prevStart.hour()).minute(prevStart.minute()),
+    );
+    setEnd((prevEnd) =>
+      dayjs(day).hour(prevEnd.hour()).minute(prevEnd.minute()),
+    );
+  };
+
+  const generateWeek = () => {
+    const today = dayjs();
+    let week: Dayjs[] | [] = [];
+
+    for (let i = 0; i < 7; i++) {
+      week = [...week, today.add(i, 'day')];
+    }
+
+    return week;
+  };
 
   if (error) return 'An error occurred!: ' + error.message;
 
@@ -264,7 +295,13 @@ export default function GuidePage() {
             title={'No programming available for this time period'}
             placement="top"
           >
-            <GuideItem display={'flex'} flexGrow={1} justifyContent={'center'}>
+            <GuideItem
+              display={'flex'}
+              flexGrow={1}
+              justifyContent={'center'}
+              grey={300}
+              width={100}
+            >
               <Box
                 display={'flex'}
                 justifyContent={'center'}
@@ -284,29 +321,6 @@ export default function GuidePage() {
       </Box>
     );
   });
-
-  const zoomDisabled =
-    end.subtract(SubtractInterval).diff(start) < MinDurationMillis;
-
-  const navigationDisabled = now.isAfter(start);
-
-  const handleDayChange = (event: SelectChangeEvent<string>) => {
-    const day = event.target.value;
-
-    setStart((start) => dayjs(day).hour(start.hour()).minute(start.minute()));
-    setEnd((end) => dayjs(day).hour(end.hour()).minute(end.minute()));
-  };
-
-  const generateWeek = () => {
-    const today = dayjs();
-    let week: Dayjs[] | [] = [];
-
-    for (let i = 0; i < 7; i++) {
-      week = [...week, today.add(i, 'day')];
-    }
-
-    return week;
-  };
 
   return (
     <>
@@ -338,7 +352,7 @@ export default function GuidePage() {
           </FormControl>
           {!dayjs().isBetween(start, end) && (
             <Tooltip title={'Reset to current date/time'} placement="top">
-              <IconButton onClick={handleReset}>
+              <IconButton onClick={handleNavigationReset}>
                 <History />
               </IconButton>
             </Tooltip>
