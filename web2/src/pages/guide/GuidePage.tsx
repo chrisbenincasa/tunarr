@@ -77,6 +77,9 @@ const GuideItem = styled(GridChild)<{ grey: keyof Color; width: number }>(
     flexDirection: 'column',
     justifyContent: 'flex-start',
     cursor: 'pointer',
+    '&:hover': {
+      background: theme.palette.primary.main,
+    },
   }),
 );
 
@@ -118,7 +121,7 @@ export default function GuidePage() {
     isPending,
     error,
     data: channelLineup,
-  } = useAllTvGuides({ from: start, to: end });
+  } = useAllTvGuides({ from: start, to: end, refetchInterval: guideDuration });
 
   prefetchAllTvGuides({
     from: start.add(1, 'hour'),
@@ -254,7 +257,6 @@ export default function GuidePage() {
 
       if (programEnd.isBefore(end)) {
         endOfAvailableProgramming = true;
-        console.log('this is the end');
       }
     }
 
@@ -316,6 +318,7 @@ export default function GuidePage() {
           <Tooltip
             title={'No programming available for this time period'}
             placement="top"
+            key={`${lineup.number}-unavailable`}
           >
             <GuideItem
               display={'flex'}
