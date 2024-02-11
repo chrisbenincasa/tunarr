@@ -1,4 +1,3 @@
-import { Zodios, makeApi, makeErrors, parametersBuilder } from '@zodios/core';
 import {
   BatchLookupExternalProgrammingSchema,
   CreateCustomShowRequestSchema,
@@ -7,17 +6,17 @@ import {
 } from '@tunarr/types/api';
 import {
   ChannelLineupSchema,
-  ChannelProgramSchema,
-  ChannelProgrammingSchema,
   ChannelSchema,
+  CondensedChannelProgrammingSchema,
   CustomShowProgrammingSchema,
   CustomShowSchema,
   FillerListProgrammingSchema,
   FillerListSchema,
   ProgramSchema,
-  TaskSchema,
   SaveChannelRequestSchema,
+  TaskSchema,
 } from '@tunarr/types/schemas';
+import { Zodios, makeApi, makeErrors, parametersBuilder } from '@zodios/core';
 import { once } from 'lodash-es';
 import { z } from 'zod';
 
@@ -42,7 +41,7 @@ export const api = makeApi([
       .addPath('id', z.string())
       .build(),
     path: '/api/v2/channels/:id',
-    response: ChannelSchema.omit({ programs: true }),
+    response: ChannelSchema,
     alias: 'updateChannel',
   },
   {
@@ -55,7 +54,7 @@ export const api = makeApi([
     method: 'get',
     path: '/api/v2/channels/:id/programming',
     parameters: parametersBuilder().addPath('id', z.string()).build(),
-    response: ChannelProgrammingSchema,
+    response: CondensedChannelProgrammingSchema,
   },
   {
     method: 'post',
@@ -65,7 +64,7 @@ export const api = makeApi([
       .addPath('id', z.string())
       .addBody(UpdateChannelProgrammingRequestSchema)
       .build(),
-    response: ChannelProgrammingSchema,
+    response: CondensedChannelProgrammingSchema,
   },
   {
     method: 'get',

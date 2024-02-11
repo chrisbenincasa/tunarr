@@ -3,6 +3,8 @@ import { scheduleTimeSlots } from '@tunarr/shared';
 import {
   ChannelProgram,
   ChannelProgramming,
+  CondensedChannelProgram,
+  CondensedChannelProgramming,
   ContentProgram,
   FlexProgram,
   RedirectProgram,
@@ -14,6 +16,7 @@ import duration from 'dayjs/plugin/duration.js';
 import {
   chain,
   compact,
+  filter,
   isNil,
   isNull,
   map,
@@ -26,11 +29,10 @@ import { DataFile } from 'lowdb/node';
 import { join } from 'path';
 import { globalOptions } from '../globals.js';
 import { Nullable } from '../types.js';
-import { groupByFunc } from '../util.js';
+import { groupByFunc, groupByUniqAndMap } from '../util.js';
 import { dbProgramToContentProgram } from './converters/programConverters.js';
 import { getEm } from './dataSource.js';
 import {
-  ContentItem,
   Lineup,
   LineupItem,
   OfflineItem,
@@ -286,6 +288,8 @@ export class ChannelDB {
 
   async loadAndMaterializeLineup(
     channelId: string,
+    offset: number = 0,
+    limit: number = 100,
   ): Promise<ChannelProgramming | null> {
     const channel = await this.getChannelAndPrograms(channelId);
     if (isNil(channel)) {
@@ -293,12 +297,53 @@ export class ChannelDB {
     }
 
     const lineup = await this.loadLineup(channelId);
+    const len = lineup.items.length;
+    const cleanOffset = offset < 0 ? 0 : offset;
+    const cleanLimit = limit < 0 ? len : limit;
 
     return {
       icon: channel.icon,
       name: channel.name,
       number: channel.number,
-      programs: buildApiLineup(channel, lineup.items),
+      totalPrograms: len,
+      programs: buildApiLineup(
+        channel,
+        chain(lineup.items).drop(cleanOffset).take(cleanLimit).value(),
+      ),
+    };
+  }
+
+  async loadCondensedLineup(
+    channelId: string,
+    offset: number = 0,
+    limit: number = -1,
+  ): Promise<CondensedChannelProgramming | null> {
+    const channel = await this.getChannelAndPrograms(channelId);
+    if (isNil(channel)) {
+      return null;
+    }
+
+    const lineup = await this.loadLineup(channelId);
+    const len = lineup.items.length;
+    const cleanOffset = offset < 0 ? 0 : offset;
+    const cleanLimit = limit < 0 ? len : limit;
+    const pagedLineup = chain(lineup.items)
+      .drop(cleanOffset)
+      .take(cleanLimit)
+      .value();
+
+    const materializedPrograms = groupByUniqAndMap(
+      filter(pagedLineup, isContentItem),
+      'id',
+      (item) => contentLineupItemToProgram(channel, item.id),
+    );
+    return {
+      icon: channel.icon,
+      name: channel.name,
+      number: channel.number,
+      totalPrograms: len,
+      programs: omitBy(materializedPrograms, isNil),
+      lineup: buildCondensedLineup(channel, pagedLineup),
     };
   }
 
@@ -338,27 +383,64 @@ export function buildApiLineup(
   channel: Loaded<Channel, 'programs'>,
   lineup: LineupItem[],
 ) {
-  const baseItem: Partial<ChannelProgram> = {
-    persisted: true,
-  };
-
   return chain(lineup)
-    .map((p) => {
-      if (isOfflineItem(p)) {
-        return offlineLineupItemToProgram(channel, p);
-      } else if (isRedirectItem(p)) {
+    .map((item) => toApiLineupItem(channel, item))
+    .compact()
+    .value();
+}
+
+export function buildCondensedLineup(
+  channel: Loaded<Channel, 'programs'>,
+  lineup: LineupItem[],
+): CondensedChannelProgram[] {
+  return chain(lineup)
+    .map((item) => {
+      let p: CondensedChannelProgram | null = null;
+      if (isOfflineItem(item)) {
+        p = offlineLineupItemToProgram(channel, item);
+      } else if (isRedirectItem(item)) {
         // TODO: Materialize the redirected program???
-        return {
-          ...baseItem,
+        p = {
+          persisted: true,
           type: 'redirect',
-          channel: p.channel,
-        } as RedirectProgram;
+          channel: item.channel,
+          duration: item.durationMs,
+        };
       } else {
-        return contentLineupItemToProgram(channel, p);
+        const program = contentLineupItemToProgram(channel, item.id);
+        if (!isNil(program)) {
+          p = {
+            persisted: true,
+            type: 'content',
+            id: item.id,
+            // subtype: program.subtype,
+            duration: item.durationMs,
+          };
+        }
       }
+
+      return p;
     })
     .compact()
     .value();
+}
+
+export function toApiLineupItem(
+  channel: Loaded<Channel, 'programs'>,
+  item: LineupItem,
+) {
+  if (isOfflineItem(item)) {
+    return offlineLineupItemToProgram(channel, item);
+  } else if (isRedirectItem(item)) {
+    // TODO: Materialize the redirected program???
+    return {
+      persisted: true,
+      type: 'redirect',
+      channel: item.channel,
+    } as RedirectProgram;
+  } else {
+    return contentLineupItemToProgram(channel, item.id);
+  }
 }
 
 function offlineLineupItemToProgram(
@@ -374,12 +456,12 @@ function offlineLineupItemToProgram(
   };
 }
 
-function contentLineupItemToProgram(
+export function contentLineupItemToProgram(
   channel: Loaded<Channel, 'programs'>,
-  p: ContentItem,
+  programId: string,
   persisted: boolean = true,
 ): ContentProgram | null {
-  const program = channel.programs.find((x) => x.uuid === p.id);
+  const program = channel.programs.find((x) => x.uuid === programId);
   if (isNil(program)) {
     return null;
   }

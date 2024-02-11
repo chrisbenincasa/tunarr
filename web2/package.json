@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc --noEmit && vite build",
+    "buildw": "nodemon -e ts,json,tsx,js,yaml --watch src --ignore dist/ -x tsc --noEmit --project tsconfig.build.json",
     "dev": "vite",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
@@ -54,6 +55,7 @@
     "eslint": "^8.45.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.3",
+    "nodemon": "^3.0.3",
     "openapi-zod-client": "^1.14.0",
     "typescript": "^5.2.2",
     "vite": "^4.4.5"

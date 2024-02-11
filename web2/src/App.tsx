@@ -1,3 +1,4 @@
+import { ExpandMore, Home } from '@mui/icons-material';
 import LiveTvIcon from '@mui/icons-material/LiveTv';
 import PreviewIcon from '@mui/icons-material/Preview';
 import SettingsIcon from '@mui/icons-material/Settings';
@@ -23,20 +24,17 @@ import {
 } from '@mui/material';
 import Container from '@mui/material/Container';
 import CssBaseline from '@mui/material/CssBaseline';
-import { ThemeProvider } from '@mui/material/styles';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { isUndefined } from 'lodash-es';
 import React, { ReactNode, useState } from 'react';
 import { Outlet, Link as RouterLink } from 'react-router-dom';
 import './App.css';
 import ServerEvents from './components/ServerEvents.tsx';
 import VersionFooter from './components/VersionFooter.tsx';
-import useMediaQuery from '@mui/material/useMediaQuery';
-import { ExpandMore, Home } from '@mui/icons-material';
 import useStore from './store/index.ts';
-import { createTheme } from '@mui/material/styles';
-import { red } from '@mui/material/colors';
 import { setDarkModeState } from './store/themeEditor/actions.ts';
-import { isUndefined } from 'lodash-es';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 interface NavItem {
   name: string;
   path: string;

@@ -1,13 +1,14 @@
-import filter from 'lodash-es/filter';
-import negate from 'lodash-es/negate';
-import useStore from '../../store/index.ts';
-import { Channel, ChannelProgram, isFlexProgram } from '@tunarr/types';
+import { Channel, CondensedChannelProgram, isFlexProgram } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { forEach } from 'lodash-es';
+import filter from 'lodash-es/filter';
+import negate from 'lodash-es/negate';
 import {
   setCurrentLineup,
   updateCurrentChannel,
 } from '../../store/channelEditor/actions.ts';
+import useStore from '../../store/index.ts';
+import { materializedProgramListSelector } from '../../store/selectors.ts';
 
 export type StartTimePadding = {
   mod: number;
@@ -24,7 +25,7 @@ export const StartTimePaddingOptions: readonly StartTimePadding[] = [
 
 export function usePadStartTimes() {
   const channel = useStore((s) => s.channelEditor.currentEntity);
-  const programs = useStore((s) => s.channelEditor.programList);
+  const programs = useStore(materializedProgramListSelector);
 
   return (padding: StartTimePadding | null) => {
     const { newStartTime, newProgramList } = padStartTimes(
@@ -39,7 +40,7 @@ export function usePadStartTimes() {
 
 export function padStartTimes(
   channel: Channel | undefined,
-  programs: ChannelProgram[],
+  programs: CondensedChannelProgram[],
   padding: StartTimePadding | null,
 ) {
   const mod =
@@ -49,7 +50,7 @@ export function padStartTimes(
   const filteredPrograms = filter(programs, negate(isFlexProgram));
 
   let lastStartTime = newStartTime;
-  const newProgramList: ChannelProgram[] = [];
+  const newProgramList: CondensedChannelProgram[] = [];
   forEach(filteredPrograms, (program) => {
     newProgramList.push(program);
     const last = dayjs(lastStartTime);

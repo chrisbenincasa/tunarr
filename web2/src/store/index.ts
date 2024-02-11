@@ -1,4 +1,4 @@
-import { Channel, XmlTvSettings, Theme } from '@tunarr/types';
+import { Channel, XmlTvSettings } from '@tunarr/types';
 import { StateCreator, create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
@@ -74,8 +74,5 @@ const useStore = create<State>()(
     ),
   ),
 );
-
-export const setChannels = (channels: Channel[]) =>
-  useStore.setState({ channels });
 
 export default useStore;

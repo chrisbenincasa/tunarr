@@ -60,6 +60,11 @@ export const BasicIdParamSchema = z.object({
   id: z.string(),
 });
 
+export const BasicPagingSchema = z.object({
+  offset: z.coerce.number().optional(),
+  limit: z.coerce.number().optional(),
+});
+
 const UpdateLineupItemSchema = z.object({
   index: z.number(),
   duration: z.number().optional(), // Duration for non-content programs

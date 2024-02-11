@@ -1,3 +1,4 @@
+import { Badge } from '@mui/material';
 import Box from '@mui/material/Box';
 import Breadcrumbs from '@mui/material/Breadcrumbs';
 import Link from '@mui/material/Link';
@@ -8,7 +9,9 @@ import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { SaveChannelRequest } from '@tunarr/types';
 import { usePrevious } from '@uidotdev/usehooks';
-import { useCallback, useEffect, useState } from 'react';
+import { ZodiosError } from '@zodios/core';
+import { keys, some } from 'lodash-es';
+import { useEffect, useState } from 'react';
 import {
   FieldPath,
   FormProvider,
@@ -31,9 +34,6 @@ import {
   ChannelEditContextState,
 } from './EditChannelContext.ts';
 import { editChannelLoader } from './loaders.ts';
-import { ZodiosError } from '@zodios/core';
-import { Badge } from '@mui/material';
-import { keys, some } from 'lodash-es';
 
 type TabValues = 'properties' | 'flex' | 'epg' | 'ffmpeg';
 
@@ -124,7 +124,7 @@ export default function EditChannelPage({ isNew }: Props) {
   });
 
   useEffectOnce(() => {
-    setCurrentChannel(channel, []);
+    setCurrentChannel(channel);
   });
 
   useEffect(() => {

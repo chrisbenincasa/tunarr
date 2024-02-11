@@ -248,7 +248,7 @@ export async function scheduleTimeSlots(
 ) {
   // Load programs
   // TODO include redirects and custom programs!
-  const allPrograms = reject(channelProgramming, isFlexProgram);
+  const allPrograms = reject<ChannelProgram>(channelProgramming, isFlexProgram);
   const programBySlotType = createProgramMap(allPrograms);
 
   const programmingIteratorsById = reduce(

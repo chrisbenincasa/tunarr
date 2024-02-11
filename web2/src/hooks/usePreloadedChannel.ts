@@ -1,20 +1,19 @@
+import isUndefined from 'lodash-es/isUndefined';
 import { useEffect } from 'react';
 import { editProgrammingLoader } from '../pages/channels/loaders.ts';
-import useStore from '../store/index.ts';
-import { usePreloadedData } from './preloadedDataHook.ts';
-import isUndefined from 'lodash-es/isUndefined';
 import { setCurrentChannel } from '../store/channelEditor/actions.ts';
+import { usePreloadedData } from './preloadedDataHook.ts';
+import { useChannelEditor } from '../store/selectors.ts';
 
 export const usePreloadedChannel = () => {
-  const { channel: preloadChannel, lineup: preloadLineup } = usePreloadedData(
-    editProgrammingLoader,
-  );
-  const channelEditor = useStore((s) => s.channelEditor);
+  const { channel: preloadChannel, programming: preloadLineup } =
+    usePreloadedData(editProgrammingLoader);
+  const channelEditor = useChannelEditor();
 
   useEffect(() => {
     if (
       isUndefined(channelEditor.originalEntity) ||
-      preloadChannel.number !== channelEditor.originalEntity.number
+      preloadChannel.id !== channelEditor.originalEntity.id
     ) {
       setCurrentChannel(preloadChannel, preloadLineup);
     }

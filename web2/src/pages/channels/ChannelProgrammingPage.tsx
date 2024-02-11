@@ -7,6 +7,7 @@ import {
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
 import { ZodiosError } from '@zodios/core';
 import { chain, findIndex, first, isUndefined, map } from 'lodash-es';
 import { useState } from 'react';
@@ -15,8 +16,7 @@ import { ChannelProgrammingConfig } from '../../components/channel_config/Channe
 import { apiClient } from '../../external/api.ts';
 import { channelProgramUniqueId } from '../../helpers/util.ts';
 import { usePreloadedChannel } from '../../hooks/usePreloadedChannel.ts';
-import { setCurrentLineup } from '../../store/channelEditor/actions.ts';
-import { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
+import { resetCurrentLineup } from '../../store/channelEditor/actions.ts';
 
 type MutateArgs = {
   channelId: string;
@@ -49,7 +49,7 @@ export default function ChannelProgrammingPage() {
       });
     },
     onSuccess: async (data, { channelId: channelNumber }) => {
-      setCurrentLineup(data.programs, /*dirty=*/ false);
+      resetCurrentLineup(data.lineup, data.programs);
       setSnackStatus({
         display: true,
         message: 'Programs Saved!',

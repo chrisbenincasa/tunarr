@@ -19,8 +19,10 @@ import {
   moveProgramInCurrentChannel,
 } from '../../store/channelEditor/actions.ts';
 import useStore, { State } from '../../store/index.ts';
+import { materializedProgramListSelector } from '../../store/selectors.ts';
+import { UiIndex } from '../../store/channelEditor/store.ts';
 
-type ChannelProgramAndIndex = ChannelProgram & { originalIndex: number };
+type ChannelProgramAndIndex = ChannelProgram & UiIndex;
 
 type Props = {
   // The caller can pass the list of programs to render, if they don't
@@ -30,11 +32,11 @@ type Props = {
   programListSelector?: (s: State) => ChannelProgramAndIndex[];
   // If given, the list will be rendered using react-window
   virtualListProps?: Omit<FixedSizeListProps, 'itemCount' | 'children'>;
-  enableDnd: boolean;
+  enableDnd?: boolean;
 };
 
 const defaultProps: Props = {
-  programListSelector: (s) => s.channelEditor.programList,
+  programListSelector: materializedProgramListSelector,
   enableDnd: true,
 };
 
@@ -211,7 +213,7 @@ export default function ChannelProgrammingList({
         startTimeDate={startTimes[idx].toDate()}
         moveProgram={moveProgram}
         findProgram={findProgram}
-        enableDrag={enableDnd}
+        enableDrag={!!enableDnd}
       />
     );
   };
