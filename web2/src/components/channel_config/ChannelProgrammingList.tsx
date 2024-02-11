@@ -6,8 +6,8 @@ import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import { ChannelProgram } from '@tunarr/types';
 import dayjs from 'dayjs';
-import { findIndex, map, reduce } from 'lodash-es';
-import { CSSProperties, useCallback, useMemo } from 'react';
+import { findIndex, map } from 'lodash-es';
+import { CSSProperties, useCallback } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
 import {
   FixedSizeList,
@@ -20,16 +20,14 @@ import {
 } from '../../store/channelEditor/actions.ts';
 import useStore, { State } from '../../store/index.ts';
 import { materializedProgramListSelector } from '../../store/selectors.ts';
-import { UiIndex } from '../../store/channelEditor/store.ts';
-
-type ChannelProgramAndIndex = ChannelProgram & UiIndex;
+import { UIChannelProgram } from '../../types/index.ts';
 
 type Props = {
   // The caller can pass the list of programs to render, if they don't
   // want to render them from state
-  programList?: ChannelProgramAndIndex[];
+  programList?: UIChannelProgram[];
   // Otherwise, we can render programs from state given a selector function
-  programListSelector?: (s: State) => ChannelProgramAndIndex[];
+  programListSelector?: (s: State) => UIChannelProgram[];
   // If given, the list will be rendered using react-window
   virtualListProps?: Omit<FixedSizeListProps, 'itemCount' | 'children'>;
   enableDnd?: boolean;
@@ -167,16 +165,6 @@ export default function ChannelProgrammingList({
   const channel = useStore((s) => s.channelEditor.currentEntity);
   const storeProgramList = useStore(programListSelector!);
   const programList = passedProgramList ?? storeProgramList;
-  const startTimes = useMemo(() => {
-    if (!channel) return [];
-    return reduce(
-      programList,
-      (acc, program, idx) => {
-        return [...acc, acc[idx] + program.duration];
-      },
-      [channel.startTime],
-    );
-  }, [channel, programList]);
 
   const findProgram = useCallback(
     (originalIndex: number) => {
@@ -210,7 +198,9 @@ export default function ChannelProgrammingList({
         index={idx}
         program={program}
         style={style}
-        startTimeDate={dayjs(startTimes[idx]).toDate()}
+        startTimeDate={dayjs(
+          channel!.startTime + program.startTimeOffset,
+        ).toDate()}
         moveProgram={moveProgram}
         findProgram={findProgram}
         enableDrag={!!enableDnd}

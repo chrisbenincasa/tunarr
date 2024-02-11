@@ -1,26 +1,32 @@
+import { CondensedChannelProgram, ContentProgram } from '@tunarr/types';
 import { chain, isUndefined } from 'lodash-es';
+import { UIChannelProgram } from '../types/index.ts';
+import { UIIndex } from './channelEditor/store.ts';
 import useStore, { State } from './index.ts';
-import {
-  ChannelProgram,
-  CondensedChannelProgram,
-  ContentProgram,
-} from '@tunarr/types';
-import { UiIndex } from './channelEditor/store.ts';
 
 const materializeProgramList = (
-  programList: (CondensedChannelProgram & UiIndex)[],
+  programList: (CondensedChannelProgram & UIIndex)[],
   programLookup: Record<string, ContentProgram>,
-) => {
+): UIChannelProgram[] => {
+  // TODO: Use the offsets from the network call
+  let offset = 0;
   return chain(programList)
     .map((p) => {
       if (p.type === 'content' && !isUndefined(p.id) && programLookup[p.id]) {
-        const content: ContentProgram & UiIndex = {
+        const content: UIChannelProgram = {
           ...p,
           ...programLookup[p.id],
+          startTimeOffset: offset,
         };
+        offset += content.duration;
         return content;
       } else if (p.type !== 'content') {
-        return p;
+        const item: UIChannelProgram = {
+          ...p,
+          startTimeOffset: offset,
+        };
+        offset += item.duration;
+        return item;
       }
 
       return null;
@@ -31,7 +37,7 @@ const materializeProgramList = (
 
 export const materializedProgramListSelector = ({
   channelEditor: { programList, programLookup },
-}: State): (ChannelProgram & UiIndex)[] => {
+}: State): UIChannelProgram[] => {
   return materializeProgramList(programList, programLookup);
 };
 

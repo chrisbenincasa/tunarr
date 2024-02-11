@@ -52,6 +52,7 @@ import { zipWithIndex } from '../../helpers/util.ts';
 import { useNumberString } from '../../hooks/useNumberString.ts';
 import { usePreloadedChannel } from '../../hooks/usePreloadedChannel.ts';
 import { updateCurrentChannel } from '../../store/channelEditor/actions.ts';
+import { UIChannelProgram } from '../../types/index.ts';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -191,7 +192,7 @@ export default function TimeSlotEditorPage() {
   } | null>(null);
 
   const [generatedList, setGeneratedList] = useState<
-    ChannelProgram[] | undefined
+    UIChannelProgram[] | undefined
   >(undefined);
 
   const isValid = timeSlots.length > 0; // Need more than this
@@ -373,8 +374,6 @@ export default function TimeSlotEditorPage() {
   };
 
   const calculateSlots = () => {
-    console.log('scheduling ', schedule);
-
     performance.mark('guide-start');
     scheduleTimeSlots(schedule, newLineup)
       .then((res) => {
@@ -391,7 +390,20 @@ export default function TimeSlotEditorPage() {
         // TODO Adjust for timezone
         setStartTime(res.startTime);
         updateCurrentChannel({ startTime: res.startTime });
-        setGeneratedList(res.programs);
+        let offset = 0;
+        const uiPrograms: UIChannelProgram[] = map(
+          res.programs,
+          (program, index) => {
+            const newProgram = {
+              ...program,
+              originalIndex: index,
+              startTimeOffset: offset,
+            };
+            offset += program.duration;
+            return newProgram;
+          },
+        );
+        setGeneratedList(uiPrograms);
       })
       .catch(console.error);
   };

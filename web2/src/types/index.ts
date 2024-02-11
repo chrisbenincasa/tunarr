@@ -1,9 +1,14 @@
 import { QueryClient } from '@tanstack/react-query';
-import { Program } from '@tunarr/types';
+import {
+  ChannelProgram,
+  CondensedChannelProgram,
+  Program,
+} from '@tunarr/types';
 import { LoaderFunctionArgs } from 'react-router-dom';
 import { apiClient } from '../external/api.ts';
 import { ApiOf } from '@zodios/core';
 import { ZodiosAliases } from '@zodios/core/lib/zodios.types';
+import { UIIndex } from '../store/channelEditor/store.ts';
 
 // A program that may or may not exist in the DB yet
 export type EphemeralProgram = Omit<Program, 'id'>;
@@ -26,3 +31,10 @@ export type ApiAliases = keyof ZodiosAliases<ApiType>;
 // the response type
 export type ZodiosAliasReturnType<T extends keyof ZodiosAliases<ApiType>> =
   Awaited<ReturnType<ZodiosAliases<ApiType>[T]>>;
+
+export type UIChannelProgram = ChannelProgram &
+  UIIndex & {
+    startTimeOffset: number;
+  };
+
+export type UICondensedChannelProgarm = CondensedChannelProgram & UIIndex;

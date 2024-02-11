@@ -135,12 +135,15 @@ export const ChannelProgramSchema = z.discriminatedUnion('type', [
   FlexProgramSchema,
 ]);
 
+const startTimeOffsets = z.array(z.number());
+
 export const ChannelProgrammingSchema = z.object({
   icon: ChannelIconSchema.optional(),
   name: z.string().optional(),
   number: z.number().optional(),
   totalPrograms: z.number(),
   programs: z.array(ChannelProgramSchema),
+  startTimeOffsets,
 });
 
 export const CondensedChannelProgramSchema = z.discriminatedUnion('type', [
@@ -157,4 +160,5 @@ export const CondensedChannelProgrammingSchema = z.object({
   totalPrograms: z.number(),
   programs: z.record(ContentProgramSchema),
   lineup: z.array(CondensedChannelProgramSchema),
+  startTimeOffsets,
 });

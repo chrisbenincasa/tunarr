@@ -8,7 +8,7 @@ import {
 } from '@tunarr/types';
 import { StateCreator } from 'zustand';
 
-export type UiIndex = { originalIndex: number };
+export type UIIndex = { originalIndex: number };
 
 // Represents a program listing in the editor
 export interface ProgrammingEditorState<EntityType, ProgramType> {
@@ -19,9 +19,9 @@ export interface ProgrammingEditorState<EntityType, ProgramType> {
   // The programs in the state they were when we fetched them
   // This can be used to reset the state of the editor and
   // start over changes without having to close/enter the page
-  originalProgramList: (ProgramType & UiIndex)[];
+  originalProgramList: (ProgramType & UIIndex)[];
   // The actively edited list
-  programList: (ProgramType & UiIndex)[];
+  programList: (ProgramType & UIIndex)[];
   dirty: {
     programs: boolean;
   };

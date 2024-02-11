@@ -284,13 +284,16 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
         isNil,
       );
 
+      const { lineup, offsets } = buildCondensedLineup(channel, newLineup);
+
       return res.status(200).send({
         icon: channel.icon,
         number: channel.number,
         name: channel.name,
         totalPrograms: newLineup.length,
         programs: materializedPrograms,
-        lineup: buildCondensedLineup(channel, newLineup),
+        lineup,
+        startTimeOffsets: offsets,
       });
     },
   );

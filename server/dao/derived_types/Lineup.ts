@@ -7,6 +7,13 @@ export type Lineup = {
   // Unsure if we want this DB type to reference the
   // API type, but for now it will work.
   schedule?: LineupSchedule;
+  // These are precalculated offsets in milliseconds. The
+  // array is a list of the running 'total' duration sum
+  // of each of the lineup items. It can be used to quickly
+  // determine a start timestamp for a given program by
+  // pulling the offset at a given index and adding it to
+  // a "start" time timestamp.
+  startTimeOffsets?: number[];
 };
 
 type BaseLineupItem = {
