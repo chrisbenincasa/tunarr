@@ -81,7 +81,7 @@
     "copyfiles": "^2.2.0",
     "del-cli": "^3.0.0",
     "nexe": "^4.0.0-rc.2",
-    "nodemon": "^3.0.1",
+    "nodemon": "^3.0.3",
     "prettier": "^3.0.3",
     "tmp": "^0.2.1",
     "tmp-promise": "^3.0.3",

@@ -172,9 +172,9 @@ export default function ChannelProgrammingList({
     return reduce(
       programList,
       (acc, program, idx) => {
-        return [...acc, acc[idx].add(program.duration)];
+        return [...acc, acc[idx] + program.duration];
       },
-      [dayjs(channel.startTime)],
+      [channel.startTime],
     );
   }, [channel, programList]);
 
@@ -210,7 +210,7 @@ export default function ChannelProgrammingList({
         index={idx}
         program={program}
         style={style}
-        startTimeDate={startTimes[idx].toDate()}
+        startTimeDate={dayjs(startTimes[idx]).toDate()}
         moveProgram={moveProgram}
         findProgram={findProgram}
         enableDrag={!!enableDnd}
