@@ -20,7 +20,11 @@ export const useTvGuide = (params: {
     },
   });
 
-export const useAllTvGuides = (params: { from: Dayjs; to: Dayjs }) =>
+export const useAllTvGuides = (params: {
+  from: Dayjs;
+  to: Dayjs;
+  refetchInterval: number;
+}) =>
   useQuery({
     queryKey: ['channels', 'all', 'guide', params] as const,
     queryFn: async () => {
@@ -31,6 +35,7 @@ export const useAllTvGuides = (params: { from: Dayjs; to: Dayjs }) =>
         },
       });
     },
+    refetchInterval: params.refetchInterval,
   });
 
 export const prefetchAllTvGuides = (params: { from: Dayjs; to: Dayjs }) => {
