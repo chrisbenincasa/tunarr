@@ -198,7 +198,7 @@ export default function GuidePage() {
     setEnd(newStart.add(guideDuration, 'ms'));
 
     setCurrentTime(dayjs().format('h:mm'));
-  }, [guideDuration, now]);
+  }, [guideDuration]);
 
   const handleDayChange = (event: SelectChangeEvent<string>) => {
     const day = event.target.value;
