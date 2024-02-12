@@ -5,13 +5,16 @@ import {
   ZoomIn as ZoomInIcon,
   ZoomOut as ZoomOutIcon,
 } from '@mui/icons-material';
+import { Fragment, useCallback, useState } from 'react';
 import {
   Box,
+  Chip,
   CircularProgress,
   Color,
   FormControl,
   IconButton,
   MenuItem,
+  Modal,
   Select,
   SelectChangeEvent,
   Stack,
@@ -24,7 +27,6 @@ import { ChannelProgram, TvGuideProgram } from '@tunarr/types';
 import dayjs, { Dayjs, duration } from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 import { isEmpty, round } from 'lodash-es';
-import { useCallback, useState } from 'react';
 import { useInterval } from 'usehooks-ts';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import { prefetchAllTvGuides, useAllTvGuides } from '../../hooks/useTvGuide.ts';
@@ -33,9 +35,6 @@ import { setGuideDurationState } from '../../store/themeEditor/actions.ts';
 
 dayjs.extend(duration);
 dayjs.extend(isBetween);
-
-const SubtractInterval = dayjs.duration(1, 'hour');
-const MinDurationMillis = dayjs.duration(1, 'hour').asMilliseconds();
 
 const GridParent = styled(Box)({
   borderStyle: 'solid',
@@ -68,8 +67,9 @@ const GuideItem = styled(GridChild)<{ grey: keyof Color; width: number }>(
     borderRadius: '5px',
     margin: 1,
     padding: 1,
-    height: '3rem',
+    height: '4rem',
     width: `${width}%`,
+    // background: `linear-gradient(90deg, rgba(243, 125, 119,1) 1%, rgba(243, 125, 119,1) 7%, rgba(97, 97, 97,1) ${10}%)`,
     transition: 'width 0.5s ease-in',
     overflow: 'hidden',
     whiteSpace: 'nowrap',
@@ -78,10 +78,26 @@ const GuideItem = styled(GridChild)<{ grey: keyof Color; width: number }>(
     justifyContent: 'flex-start',
     cursor: 'pointer',
     '&:hover': {
-      background: theme.palette.primary.main,
+      background: theme.palette.primary.light,
     },
   }),
 );
+
+const modalStyle = {
+  position: 'absolute' as 'absolute',
+  top: '50%',
+  left: '50%',
+  transform: 'translate(-50%, -50%)',
+  width: 500,
+  bgcolor: 'background.paper',
+  outline: 'none',
+  boxShadow: 24,
+  borderRadius: '2%',
+  p: 4,
+};
+
+const SubtractInterval = dayjs.duration(1, 'hour');
+const MinDurationMillis = dayjs.duration(1, 'hour').asMilliseconds();
 
 const calcProgress = (start: Dayjs, end: Dayjs): number => {
   const total = end.unix() - start.unix();
@@ -95,22 +111,26 @@ const roundNearestMultiple = (num: number, multiple: number): number => {
   return Math.floor(num / multiple) * multiple;
 };
 
+const roundCurrentTime = (multiple?: number): Dayjs => {
+  return dayjs()
+    .minute(multiple ? roundNearestMultiple(dayjs().minute(), multiple) : 0)
+    .second(0)
+    .millisecond(0);
+};
+
 export default function GuidePage() {
   const theme = useTheme();
-  const now = dayjs();
   const guideDuration =
     useStore((state) => state.theme.guideDuration) || 7200000;
-  const [start, setStart] = useState(
-    dayjs()
-      .minute(roundNearestMultiple(now.minute(), 15))
-      .second(0)
-      .millisecond(0),
-  );
+  const [start, setStart] = useState(roundCurrentTime(15));
   const [end, setEnd] = useState(start.add(guideDuration, 'ms'));
   const [currentTime, setCurrentTime] = useState(dayjs().format('h:mm'));
   const [progress, setProgress] = useState(() => {
     return calcProgress(start, end);
   });
+  const [modalProgram, setModalProgram] = useState<
+    TvGuideProgram | undefined
+  >();
 
   const timelineDuration = dayjs.duration(end.diff(start));
   const intervalArray = Array.from(
@@ -131,6 +151,12 @@ export default function GuidePage() {
   useInterval(() => {
     setProgress(calcProgress(start, end));
     setCurrentTime(dayjs().format('h:mm'));
+
+    // Update start time when half of the guide duration has already played out
+    if (dayjs().diff(start) > guideDuration / 2) {
+      setStart(roundCurrentTime(15));
+      setEnd(roundCurrentTime(15).add(guideDuration));
+    }
   }, 60000);
 
   const zoomIn = useCallback(() => {
@@ -163,13 +189,10 @@ export default function GuidePage() {
     setStart((start) => start.subtract(1, 'hour'));
   }, [setEnd, setStart]);
 
-  const navigationDisabled = now.isAfter(start);
+  const navigationDisabled = dayjs().isAfter(start);
 
   const handleNavigationReset = useCallback(() => {
-    const newStart = dayjs()
-      .minute(roundNearestMultiple(now.minute(), 15))
-      .second(0)
-      .millisecond(0);
+    const newStart = roundCurrentTime(15);
 
     setStart(newStart);
     setEnd(newStart.add(guideDuration, 'ms'));
@@ -188,7 +211,15 @@ export default function GuidePage() {
     );
   };
 
-  const generateWeek = () => {
+  const handleModalOpen = (program: TvGuideProgram | undefined) => {
+    setModalProgram(program);
+  };
+
+  const handleModalClose = () => {
+    setModalProgram(undefined);
+  };
+
+  const generateWeek = useCallback(() => {
     const today = dayjs();
     let week: Dayjs[] | [] = [];
 
@@ -197,7 +228,7 @@ export default function GuidePage() {
     }
 
     return week;
-  };
+  }, []);
 
   if (error) return 'An error occurred!: ' + error.message;
 
@@ -267,43 +298,153 @@ export default function GuidePage() {
 
     const grey = index % 2 === 0 ? 300 : 400;
 
+    const isPlaying = dayjs().isBetween(programStart, programEnd);
+    let remainingTime;
+
+    if (isPlaying) {
+      remainingTime = programEnd.diff(dayjs());
+    }
+
     return (
-      <>
-        <Tooltip
-          key={key}
-          title={`Starts at ${programStart.format(
-            'h:mm A',
-          )} and ends at ${programEnd.format('h:mm A')}`}
-          placement="top"
+      <Fragment key={key}>
+        <GuideItem
+          width={pct}
+          grey={grey}
+          onClick={() => handleModalOpen(program)}
         >
-          <GuideItem width={pct} grey={grey} key={key}>
-            <Box sx={{ fontSize: '14px', fontWeight: '600' }}>{title}</Box>
-            <Box sx={{ fontSize: '13px', fontStyle: 'italic' }}>
-              {episodeTitle}
+          <Box sx={{ fontSize: '14px', fontWeight: '600' }}>{title}</Box>
+          <Box sx={{ fontSize: '13px', fontStyle: 'italic' }}>
+            {episodeTitle}
+          </Box>
+          <Box sx={{ fontSize: '12px' }}>
+            {`${programStart.format('h:mm')} - ${programEnd.format('h:mma')}`}
+            {isPlaying
+              ? ` (${dayjs(remainingTime).format('m')}m remaining)`
+              : null}
+          </Box>
+        </GuideItem>
+        {endOfAvailableProgramming ? (
+          <GuideItem width={pct} grey={grey}>
+            <Box sx={{ fontSize: '14px', fontWeight: '600' }}>
+              No Programming
             </Box>
           </GuideItem>
-        </Tooltip>
-        {endOfAvailableProgramming ? (
-          <Tooltip
-            key={`${key}-unavailable`}
-            title={'Unavailable'}
-            placement="top"
-          >
-            <GuideItem width={pct} grey={grey} key={`${key}-unavailable`}>
-              <Box sx={{ fontSize: '14px', fontWeight: '600' }}>
-                No Programming
-              </Box>
-            </GuideItem>
-          </Tooltip>
         ) : null}
-      </>
+      </Fragment>
+    );
+  };
+
+  const renderProgramModal = (program: TvGuideProgram | undefined) => {
+    if (!program) {
+      return;
+    }
+
+    let title: string;
+    switch (program.type) {
+      case 'custom':
+        title = program.program?.title ?? 'Custom Program';
+        break;
+      case 'content':
+        title = program.title;
+        break;
+      case 'redirect':
+        title = `Redirect to Channel ${program.channel}`;
+        break;
+      case 'flex':
+        title = 'Flex';
+        break;
+    }
+
+    let episodeTitle: string | undefined;
+    switch (program.type) {
+      case 'custom':
+        episodeTitle = program.program?.episodeTitle ?? '';
+        break;
+      case 'content':
+        episodeTitle = program.episodeTitle;
+        break;
+      case 'redirect':
+        episodeTitle = '';
+        break;
+      case 'flex':
+        episodeTitle = '';
+        break;
+    }
+
+    let rating: string | undefined;
+    switch (program.type) {
+      case 'custom':
+        rating = program.program?.rating ?? '';
+        break;
+      case 'content':
+        rating = program.rating;
+        break;
+      case 'redirect':
+        rating = '';
+        break;
+      case 'flex':
+        rating = '';
+        break;
+    }
+
+    let summary: string | undefined;
+    switch (program.type) {
+      case 'custom':
+        summary = program.program?.summary ?? '';
+        break;
+      case 'content':
+        summary = program.summary;
+        break;
+      case 'redirect':
+        summary = '';
+        break;
+      case 'flex':
+        summary = '';
+        break;
+    }
+
+    return (
+      <Modal
+        open={!!modalProgram}
+        onClose={handleModalClose}
+        aria-labelledby="modal-modal-title"
+        aria-describedby="modal-modal-description"
+      >
+        <Box sx={modalStyle}>
+          <Typography id="modal-modal-title" variant="h5" component="h2">
+            {title}
+          </Typography>
+          <Typography
+            id="modal-modal-title"
+            variant="h6"
+            component="h2"
+            fontStyle={'italic'}
+          >
+            {episodeTitle}
+          </Typography>
+          <Chip
+            color="secondary"
+            label={`${dayjs(program.duration).format('m')}m`}
+            sx={{ mt: 1 }}
+          />
+          <Chip color="secondary" label={rating} sx={{ mx: 1, mt: 1 }} />
+          <Typography id="modal-modal-description" sx={{ mt: 1 }}>
+            {`${dayjs(program.start).format('h:mm')} - ${dayjs(
+              program.stop,
+            ).format('h:mma')}`}
+          </Typography>
+          <Typography id="modal-modal-description" sx={{ mt: 1 }}>
+            {summary}
+          </Typography>
+        </Box>
+      </Modal>
     );
   };
 
   const channels = channelLineup?.map((lineup) => {
     return (
       <Box
-        key={lineup.number}
+        key={lineup.id}
         component="section"
         sx={{
           display: 'flex',
@@ -318,7 +459,7 @@ export default function GuidePage() {
           <Tooltip
             title={'No programming available for this time period'}
             placement="top"
-            key={`${lineup.number}-unavailable`}
+            key={`${lineup.id}-unavailable`}
           >
             <GuideItem
               display={'flex'}
@@ -352,6 +493,7 @@ export default function GuidePage() {
       <Typography variant="h3" mb={2}>
         TV Guide
       </Typography>
+      {renderProgramModal(modalProgram)}
       <Box display={'flex'}>
         <Stack
           flexGrow={1}
@@ -412,14 +554,14 @@ export default function GuidePage() {
             flexDirection="column"
             sx={{ width: '15%' }}
           >
-            <Box sx={{ height: '2.75rem' }}></Box>
+            <Box sx={{ height: '4.5rem' }}></Box>
             {channelLineup?.map((channel) => (
               <Stack
                 direction={{ sm: 'column', md: 'row' }}
-                key={`img-${channel.number}`}
+                key={`img-${channel.id}`}
               >
                 <Box
-                  sx={{ height: '3.5rem' }}
+                  sx={{ height: '4rem' }}
                   display={'flex'}
                   alignItems={'center'}
                   justifyContent={'center'}
@@ -434,7 +576,7 @@ export default function GuidePage() {
                   />
                 </Box>
                 <Box
-                  sx={{ height: '3rem' }}
+                  sx={{ height: '4rem' }}
                   key={channel.number}
                   display={'flex'}
                   alignItems={'center'}
