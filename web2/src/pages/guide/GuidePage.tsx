@@ -141,7 +141,7 @@ export default function GuidePage() {
     isPending,
     error,
     data: channelLineup,
-  } = useAllTvGuides({ from: start, to: end, refetchInterval: guideDuration });
+  } = useAllTvGuides({ from: start, to: end });
 
   const smallViewport = useMediaQuery(theme.breakpoints.down('md'));
 
