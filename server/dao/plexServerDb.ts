@@ -178,6 +178,8 @@ export class PlexServerDB {
         program.customShows.removeAll();
       });
 
+      // TODO We need to fix up the channel lineup JSON file too to remove
+      // the references
       em.remove(allPrograms);
       // TODO we have to redo the schedules of these.
       await em.flush();

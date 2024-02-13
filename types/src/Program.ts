@@ -49,6 +49,20 @@ export const isRedirectProgram = isProgramType<RedirectProgram>('redirect');
 
 export const isCustomProgram = isProgramType<CustomProgram>('custom');
 
+export function programUniqueId(program: BaseProgram): string | null {
+  if (isContentProgram(program)) {
+    return program.uniqueId;
+  } else if (isFlexProgram(program)) {
+    return 'flex'; // Cannot really be unique identified
+  } else if (isRedirectProgram(program)) {
+    return `redirect.${program.channel}`;
+  } else if (isCustomProgram(program)) {
+    return `custom.${program.id}`;
+  }
+
+  return null;
+}
+
 export type ChannelProgramming = Alias<
   z.infer<typeof ChannelProgrammingSchema>
 >;

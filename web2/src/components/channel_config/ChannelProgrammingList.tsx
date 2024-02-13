@@ -131,6 +131,10 @@ const ProgramListItem = ({
         opacity,
         cursor: enableDrag ? (isDragging ? 'grabbing' : 'grab') : 'default',
       }}
+      sx={{
+        backgroundColor: (theme) =>
+          index % 2 === 0 ? theme.palette.grey[100] : theme.palette.grey[300],
+      }}
       key={startTime}
       // sx={{ borderBottom: dayBoundary ? '1px dashed black' : null }}
       secondaryAction={
@@ -218,6 +222,7 @@ export default function ChannelProgrammingList({
 
   const renderList = () => {
     if (virtualListProps) {
+      // TODO Implement DND on virtual list
       return (
         <FixedSizeList {...virtualListProps} itemCount={programList.length}>
           {ProgramRow}

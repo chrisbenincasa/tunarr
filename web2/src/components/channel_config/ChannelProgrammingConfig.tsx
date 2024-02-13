@@ -41,6 +41,8 @@ import AddFlexModal from '../programming_controls/AddFlexModal.tsx';
 import AddRedirectModal from '../programming_controls/AddRedirectModal.tsx';
 import ChannelProgrammingList from './ChannelProgrammingList.tsx';
 import ProgrammingSelectorDialog from './ProgrammingSelectorDialog.tsx';
+import Delete from '@mui/icons-material/Delete';
+import { useRemoveDuplicates } from '../../hooks/programming_controls/useRemoveDuplicates.ts';
 
 // dayjs.extend(duration);
 
@@ -63,6 +65,8 @@ export function ChannelProgrammingConfig() {
   const handleStartTimeChange = (value: string) => {
     setChannelStartTime(dayjs(value).unix() * 1000);
   };
+
+  const removeDuplicatePrograms = useRemoveDuplicates();
 
   const startTime = channel ? dayjs(channel.startTime) : dayjs();
   const endTime = startTime.add(channel?.duration ?? 0, 'milliseconds');
@@ -191,6 +195,15 @@ export function ChannelProgrammingConfig() {
                   startIcon={<ShuffleIcon />}
                 >
                   Random Slots
+                </Button>
+              </Grid2>
+              <Grid2 xs={3}>
+                <Button
+                  variant="contained"
+                  startIcon={<Delete />}
+                  onClick={() => removeDuplicatePrograms()}
+                >
+                  Duplicates
                 </Button>
               </Grid2>
             </Grid2>
