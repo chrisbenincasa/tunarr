@@ -606,7 +606,6 @@ export default function GuidePage() {
               position: 'relative',
               flexDirection: 'column',
               width: '100%',
-              overflow: 'hidden',
             }}
           >
             <Box
