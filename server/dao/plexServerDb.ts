@@ -1,6 +1,8 @@
-import { PlexServerSettings } from '@tunarr/types';
+import {
+  InsertPlexServerRequest,
+  UpdatePlexServerRequest,
+} from '@tunarr/types/api';
 import { chain, isNil, isUndefined, map, mapValues } from 'lodash-es';
-import type { MarkOptional } from 'ts-essentials';
 import { groupByUniq } from '../util.js';
 import { getEm } from './dataSource.js';
 import { PlexServerSettings as PlexServerSettingsEntity } from './entities/PlexServerSettings.js';
@@ -18,17 +20,6 @@ type Report = {
   destroyedPrograms: number;
   modifiedPrograms: number;
 };
-
-export type PlexServerSettingsInsert = MarkOptional<
-  PlexServerSettings,
-  'sendChannelUpdates' | 'sendGuideUpdates' | 'id'
->;
-
-export type PlexServerSettingsUpdate = MarkOptional<
-  PlexServerSettings,
-  'sendChannelUpdates' | 'sendGuideUpdates' | 'id'
->;
-
 export class PlexServerDB {
   async getAll() {
     const em = getEm();
@@ -39,14 +30,27 @@ export class PlexServerDB {
     return getEm().repo(PlexServerSettingsEntity).findOne({ uuid: id });
   }
 
-  async deleteServer(id: string) {
-    const em = getEm();
-    const report = await this.fixupProgramReferences(id);
-    await em.remove(em.getReference(PlexServerSettingsEntity, id)).flush();
-    return report;
+  async deleteServer(id: string, removePrograms: boolean = true) {
+    const deletedServer = await getEm().transactional(async (em) => {
+      const ref = em.getReference(PlexServerSettingsEntity, id);
+      const existing = await em.findOneOrFail(PlexServerSettingsEntity, ref, {
+        populate: ['uuid', 'name'],
+      });
+      em.remove(ref);
+      return existing;
+    });
+
+    let reports: Report[];
+    if (!removePrograms) {
+      reports = [];
+    } else {
+      reports = await this.fixupProgramReferences(deletedServer.name);
+    }
+
+    return { deletedServer, reports };
   }
 
-  async updateServer(server: PlexServerSettingsUpdate) {
+  async updateServer(server: UpdatePlexServerRequest) {
     const em = getEm();
     const repo = em.repo(PlexServerSettingsEntity);
     const id = server.id;
@@ -85,7 +89,7 @@ export class PlexServerDB {
     return report;
   }
 
-  async addServer(server: PlexServerSettingsInsert) {
+  async addServer(server: InsertPlexServerRequest): Promise<string> {
     const em = getEm();
     const repo = em.repo(PlexServerSettingsEntity);
     const name = isUndefined(server.name) ? 'plex' : server.name;
@@ -112,18 +116,18 @@ export class PlexServerDB {
 
     this.normalizeServer(newServer);
 
-    await em.insert(PlexServerSettingsEntity, newServer);
+    return await em.insert(PlexServerSettingsEntity, newServer);
   }
 
   private async fixupProgramReferences(
-    serverId: string,
+    serverName: string,
     newServer?: PlexServerSettingsEntity,
   ) {
     const em = getEm();
     const allPrograms = await em
       .repo(Program)
       .find(
-        { sourceType: ProgramSourceType.PLEX, externalSourceId: serverId },
+        { sourceType: ProgramSourceType.PLEX, externalSourceId: serverName },
         { populate: ['fillerShows', 'channels', 'customShows'] },
       );
 
@@ -163,7 +167,7 @@ export class PlexServerDB {
           .length,
     );
 
-    const isUpdate = newServer && newServer.uuid !== serverId;
+    const isUpdate = newServer && newServer.uuid !== serverName;
     if (isUpdate) {
       chain(allPrograms)
         .map((program) => this.fixupProgram(program, newServer))

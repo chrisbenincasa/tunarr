@@ -5,6 +5,7 @@ import {
   CustomProgramSchema,
 } from '../schemas/programmingSchema.js';
 import { TimeSlotScheduleSchema } from './Scheduling.js';
+import { PlexServerSettingsSchema } from '../schemas/settingsSchemas.js';
 
 export * from './Scheduling.js';
 
@@ -93,4 +94,26 @@ export const UpdateChannelProgrammingRequestSchema = z.discriminatedUnion(
 
 export type UpdateChannelProgrammingRequest = Alias<
   z.infer<typeof UpdateChannelProgrammingRequestSchema>
+>;
+
+export const UpdatePlexServerRequestSchema = PlexServerSettingsSchema.partial({
+  sendChannelUpdates: true,
+  sendGuideUpdates: true,
+  id: true,
+});
+
+export type UpdatePlexServerRequest = Alias<
+  z.infer<typeof UpdatePlexServerRequestSchema>
+>;
+
+export const InsertPlexServerRequestSchema = PlexServerSettingsSchema.partial({
+  sendChannelUpdates: true,
+  sendGuideUpdates: true,
+  index: true,
+}).omit({
+  id: true,
+});
+
+export type InsertPlexServerRequest = Alias<
+  z.infer<typeof InsertPlexServerRequestSchema>
 >;

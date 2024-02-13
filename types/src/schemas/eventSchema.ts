@@ -30,6 +30,7 @@ export const SettingsUpdateEventSchema = BaseEventSchema.extend({
     ]),
     error: z.string().optional(),
     serverName: z.string().optional(),
+    serverId: z.string().optional(),
   }),
 });
 
