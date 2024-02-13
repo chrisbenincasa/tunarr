@@ -307,7 +307,10 @@ export default function GuidePage() {
     let remainingTime;
 
     if (isPlaying) {
-      remainingTime = programEnd.diff(dayjs());
+      console.log(programEnd);
+
+      remainingTime = programEnd.diff(dayjs(), 'm');
+      console.log(remainingTime);
     }
 
     return (
@@ -323,9 +326,7 @@ export default function GuidePage() {
           </Box>
           <Box sx={{ fontSize: '12px' }}>
             {`${programStart.format('h:mm')} - ${programEnd.format('h:mma')}`}
-            {isPlaying
-              ? ` (${dayjs(remainingTime).format('m')}m remaining)`
-              : null}
+            {isPlaying ? ` (${remainingTime}m remaining)` : null}
           </Box>
         </GuideItem>
         {endOfAvailableProgramming ? (
