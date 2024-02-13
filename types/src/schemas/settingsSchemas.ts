@@ -73,7 +73,7 @@ export const PlexServerSettingsInsert = z.object({
 });
 
 export const PlexServerSettingsRemove = z.object({
-  name: z.string(),
+  id: z.string(),
 });
 
 export const PlexStreamSettingsSchema = z.object({
