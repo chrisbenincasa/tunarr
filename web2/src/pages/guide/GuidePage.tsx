@@ -307,10 +307,7 @@ export default function GuidePage() {
     let remainingTime;
 
     if (isPlaying) {
-      console.log(programEnd);
-
       remainingTime = programEnd.diff(dayjs(), 'm');
-      console.log(remainingTime);
     }
 
     return (
