@@ -21,6 +21,7 @@ import {
   Tooltip,
   Typography,
   styled,
+  useMediaQuery,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { ChannelProgram, TvGuideProgram } from '@tunarr/types';
@@ -125,9 +126,8 @@ export default function GuidePage() {
   const [start, setStart] = useState(roundCurrentTime(15));
   const [end, setEnd] = useState(start.add(guideDuration, 'ms'));
   const [currentTime, setCurrentTime] = useState(dayjs().format('h:mm'));
-  const [progress, setProgress] = useState(() => {
-    return calcProgress(start, end);
-  });
+  const [progress, setProgress] = useState(calcProgress(start, end));
+
   const [modalProgram, setModalProgram] = useState<
     TvGuideProgram | undefined
   >();
@@ -141,7 +141,9 @@ export default function GuidePage() {
     isPending,
     error,
     data: channelLineup,
-  } = useAllTvGuides({ from: start, to: end, refetchInterval: guideDuration });
+  } = useAllTvGuides({ from: start, to: end });
+
+  const smallViewport = useMediaQuery(theme.breakpoints.down('md'));
 
   prefetchAllTvGuides({
     from: start.add(1, 'hour'),
@@ -164,19 +166,17 @@ export default function GuidePage() {
       setEnd((prevEnd) => {
         const newEnd = prevEnd.subtract(SubtractInterval);
         setGuideDurationState(Math.abs(start.diff(newEnd)));
+        setProgress(calcProgress(start, newEnd));
         return newEnd;
       });
     }
   }, [start, end]);
 
-  const navigateForward = useCallback(() => {
-    setEnd((last) => last.add(1, 'hour'));
-    setStart((start) => start.add(1, 'hour'));
-  }, [setEnd, setStart]);
   const zoomOut = useCallback(() => {
     setEnd((prevEnd) => {
       const newEnd = prevEnd.add(1, 'hour');
       setGuideDurationState(Math.abs(start.diff(newEnd)));
+      setProgress(calcProgress(start, newEnd));
       return newEnd;
     });
   }, [start]);
@@ -187,6 +187,11 @@ export default function GuidePage() {
   const navigateBackward = useCallback(() => {
     setEnd((last) => last.subtract(1, 'hour'));
     setStart((start) => start.subtract(1, 'hour'));
+  }, [setEnd, setStart]);
+
+  const navigateForward = useCallback(() => {
+    setEnd((last) => last.add(1, 'hour'));
+    setStart((start) => start.add(1, 'hour'));
   }, [setEnd, setStart]);
 
   const navigationDisabled = dayjs().isAfter(start);
@@ -552,7 +557,7 @@ export default function GuidePage() {
             display="flex"
             position="relative"
             flexDirection="column"
-            sx={{ width: '15%' }}
+            sx={{ width: `${smallViewport ? '10%' : '15%'}` }}
           >
             <Box sx={{ height: '4.5rem' }}></Box>
             {channelLineup?.map((channel) => (
@@ -560,21 +565,23 @@ export default function GuidePage() {
                 direction={{ sm: 'column', md: 'row' }}
                 key={`img-${channel.id}`}
               >
-                <Box
-                  sx={{ height: '4rem' }}
-                  display={'flex'}
-                  alignItems={'center'}
-                  justifyContent={'center'}
-                >
-                  <img
-                    style={{ maxHeight: '40px' }}
-                    src={
-                      isEmpty(channel.icon?.path)
-                        ? '/dizquetv.png'
-                        : channel.icon?.path
-                    }
-                  />
-                </Box>
+                {!smallViewport ? (
+                  <Box
+                    sx={{ height: '4rem' }}
+                    display={'flex'}
+                    alignItems={'center'}
+                    justifyContent={'center'}
+                  >
+                    <img
+                      style={{ maxHeight: '40px' }}
+                      src={
+                        isEmpty(channel.icon?.path)
+                          ? '/dizquetv.png'
+                          : channel.icon?.path
+                      }
+                    />
+                  </Box>
+                ) : null}
                 <Box
                   sx={{ height: '4rem' }}
                   key={channel.number}
@@ -583,7 +590,7 @@ export default function GuidePage() {
                   flexGrow={1}
                   marginLeft={1}
                 >
-                  {channel.name}
+                  {smallViewport ? channel.number : channel.name}
                 </Box>
               </Stack>
             ))}
@@ -594,7 +601,7 @@ export default function GuidePage() {
               position: 'relative',
               flexDirection: 'column',
               width: '100%',
-              overflowX: 'hidden',
+              overflow: 'hidden',
             }}
           >
             <Box
