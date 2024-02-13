@@ -19,9 +19,10 @@ import {
 import { Zodios, makeApi, makeErrors, parametersBuilder } from '@zodios/core';
 import { once } from 'lodash-es';
 import { z } from 'zod';
-import settingsApi, {
+import {
   createPlexServerEndpoint,
   deletePlexServerEndpoint,
+  getPlexBackendStatus,
   getPlexServersEndpoint,
   updatePlexServerEndpoint,
 } from './settingsApi.ts';
@@ -221,6 +222,7 @@ export const api = makeApi([
   createPlexServerEndpoint,
   updatePlexServerEndpoint,
   deletePlexServerEndpoint,
+  getPlexBackendStatus,
 ]);
 
 export const createApiClient = once((uri: string) => {

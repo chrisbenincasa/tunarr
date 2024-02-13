@@ -85,11 +85,15 @@ export const plexServersRouter: RouterPluginAsyncCallback = async (
     },
   );
 
-  fastify.get(
-    '/api/plex-servers/:id/foreignstatus',
+  fastify.post(
+    '/api/plex-servers/foreignstatus',
     {
       schema: {
-        params: BasicIdParamSchema,
+        body: z.object({
+          name: z.string(),
+          accessToken: z.string(),
+          uri: z.string(),
+        }),
         response: {
           200: z.object({
             // TODO Change this, this is very stupid
@@ -102,13 +106,7 @@ export const plexServersRouter: RouterPluginAsyncCallback = async (
     },
     async (req, res) => {
       try {
-        const server = await req.serverCtx.plexServerDB.getById(req.params.id);
-
-        if (isNil(server)) {
-          return res.status(404).send();
-        }
-
-        const plex = new Plex(server);
+        const plex = new Plex(req.body);
 
         const s: 1 | -1 = await Promise.race([
           (async () => {

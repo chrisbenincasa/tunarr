@@ -1,6 +1,7 @@
 import { compact, partition } from 'lodash-es';
 import { AsyncInterval } from './AsyncInterval.ts';
 import { sequentialPromises } from './util.ts';
+import { apiClient } from '../external/api.ts';
 
 const PlexLoginHeaders = {
   Accept: 'application/json',
@@ -153,22 +154,11 @@ export const checkNewPlexServers = async (servers: PlexResourcesResponse[]) => {
     );
 
     for (const connection of [...localConnections, ...remoteConnections]) {
-      const { status } = await fetch(
-        'http://localhost:8000/api/plex-servers/foreignstatus',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            name: server.name,
-            accessToken: server.accessToken,
-            uri: connection.uri,
-          }),
-        },
-      )
-        .then((response) => response.json())
-        .then((res) => res as { status: number });
+      const { status } = await apiClient.getPlexBackendStatus({
+        name: server.name,
+        accessToken: server.accessToken,
+        uri: connection.uri,
+      });
 
       if (status === 1) {
         return { server, connection };
