@@ -428,12 +428,16 @@ export default function GuidePage() {
           >
             {episodeTitle}
           </Typography>
-          <Chip
-            color="secondary"
-            label={`${dayjs(program.duration).format('m')}m`}
-            sx={{ mt: 1 }}
-          />
-          <Chip color="secondary" label={rating} sx={{ mx: 1, mt: 1 }} />
+          {program.type === 'content' ? (
+            <>
+              <Chip
+                color="secondary"
+                label={`${dayjs(program.duration).format('m')}m`}
+                sx={{ mt: 1 }}
+              />
+              <Chip color="secondary" label={rating} sx={{ mx: 1, mt: 1 }} />
+            </>
+          ) : null}
           <Typography id="modal-modal-description" sx={{ mt: 1 }}>
             {`${dayjs(program.start).format('h:mm')} - ${dayjs(
               program.stop,
