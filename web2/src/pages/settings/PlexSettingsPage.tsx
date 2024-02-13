@@ -266,7 +266,7 @@ export default function PlexSettingsPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(serverName),
+        body: JSON.stringify(id),
       });
     },
     onSuccess: () => {
@@ -400,7 +400,7 @@ export default function PlexSettingsPage() {
           </IconButton>
           <IconButton
             color="primary"
-            onClick={() => removePlexServer(server.name)}
+            onClick={() => removePlexServer(server.id)}
           >
             <Delete />
           </IconButton>
