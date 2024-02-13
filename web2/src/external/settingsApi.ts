@@ -2,7 +2,10 @@ import {
   InsertPlexServerRequestSchema,
   UpdatePlexServerRequestSchema,
 } from '@tunarr/types/api';
-import { PlexServerSettingsSchema } from '@tunarr/types/schemas';
+import {
+  PlexServerSettingsSchema,
+  XmlTvSettingsSchema,
+} from '@tunarr/types/schemas';
 import { makeEndpoint, parametersBuilder } from '@zodios/core';
 import { z } from 'zod';
 
@@ -63,4 +66,11 @@ export const getPlexBackendStatus = makeEndpoint({
     // TODO Change this, this is very stupid
     status: z.union([z.literal(1), z.literal(-1)]),
   }),
+});
+
+export const getXmlTvSettings = makeEndpoint({
+  method: 'get',
+  path: '/api/xmltv-settings',
+  response: XmlTvSettingsSchema,
+  alias: 'getXmlTvSettings',
 });

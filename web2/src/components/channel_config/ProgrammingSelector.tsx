@@ -1,4 +1,11 @@
-import { FormControl, List, MenuItem, Select, Typography } from '@mui/material';
+import {
+  FormControl,
+  InputLabel,
+  List,
+  MenuItem,
+  Select,
+  Typography,
+} from '@mui/material';
 import {
   PlexLibrarySection,
   PlexMedia,
@@ -73,13 +80,17 @@ export default function ProgrammingSelector() {
     <>
       <FormControl fullWidth size="small">
         {selectedServer && (
-          <Select value={selectedServer?.name}>
-            {plexServers?.map((server) => (
-              <MenuItem key={server.name} value={server.name}>
-                {server.name}
-              </MenuItem>
-            ))}
-          </Select>
+          <>
+            <InputLabel>Media Source</InputLabel>
+            <Select label="Media Source" value={selectedServer?.name}>
+              {plexServers?.map((server) => (
+                <MenuItem key={server.name} value={server.name}>
+                  Plex: {server.name}
+                </MenuItem>
+              ))}
+              <MenuItem value="custom-shows">Custom Shows</MenuItem>
+            </Select>
+          </>
         )}
       </FormControl>
       <List component="nav" sx={{ width: '100%' }}>

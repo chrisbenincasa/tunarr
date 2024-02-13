@@ -24,6 +24,7 @@ import {
   deletePlexServerEndpoint,
   getPlexBackendStatus,
   getPlexServersEndpoint,
+  getXmlTvSettings,
   updatePlexServerEndpoint,
 } from './settingsApi.ts';
 
@@ -223,6 +224,7 @@ export const api = makeApi([
   updatePlexServerEndpoint,
   deletePlexServerEndpoint,
   getPlexBackendStatus,
+  getXmlTvSettings,
 ]);
 
 export const createApiClient = once((uri: string) => {

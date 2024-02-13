@@ -30,6 +30,7 @@ import XmlTvSettingsPage from './pages/settings/XmlTvSettingsPage.tsx';
 import WatchPage from './pages/watch/WatchPage.tsx';
 import { queryCache } from './queryClient.ts';
 import WelcomePage from './pages/welcome/WelcomePage.tsx';
+import ProgrammingSelectorPage from './pages/channels/ProgrammingSelectorPage.tsx';
 
 const queryClient = new QueryClient({ queryCache });
 
@@ -67,6 +68,10 @@ export const router = createBrowserRouter([
         path: '/channels/:id/programming',
         element: <ChannelProgrammingPage />,
         loader: editProgrammingLoader(queryClient),
+      },
+      {
+        path: '/channels/:id/programming/add',
+        element: <ProgrammingSelectorPage />,
       },
       {
         path: '/channels/:id/programming/time-slot-editor',

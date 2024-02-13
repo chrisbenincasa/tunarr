@@ -1,25 +1,32 @@
-import { useQueries, useQuery } from '@tanstack/react-query';
+import { UseQueryOptions, useQueries, useQuery } from '@tanstack/react-query';
 import {
   FfmpegSettings,
+  HdhrSettings,
   PlexServerSettings,
   PlexStreamSettings,
   XmlTvSettings,
-  HdhrSettings,
 } from '@tunarr/types';
+import { apiClient } from '../external/api.ts';
+import {
+  ApiAliases,
+  RequestMethodForAlias,
+  ZodiosAliasReturnType,
+} from '../types/index.ts';
 
-const getQuerySettings = <T>(settings: string, path: string) => ({
-  queryKey: ['settings', settings],
-  queryFn: async () => {
-    const res = await fetch('http://localhost:8000/api/' + path);
-    return res.json() as Promise<T>;
-  },
-});
+// function getQuerySettings<Path extends ApiAliases>(
+//   settings: string,
+//   method: Path,
+//   params: Parameters<RequestMethodForAlias<Path>>,
+// ): UseQueryOptions<ZodiosAliasReturnType<Path>> {
+//   return {
+//     queryKey: ['settings', settings],
+//     queryFn: () => {
+//       return apiClient[method](params);
+//     },
+//   };
+// }
 
-const useSettings = <T>(settings: string, path: string) =>
-  useQuery(getQuerySettings<T>(settings, path));
-
-export const useXmlTvSettings = () =>
-  useSettings<XmlTvSettings>('xmltv', 'xmltv-settings');
+export const useXmlTvSettings = () => useQuery({});
 
 export const useFfmpegSettings = () =>
   useSettings<FfmpegSettings>('ffmpeg', 'ffmpeg-settings');
