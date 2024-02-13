@@ -1,21 +1,25 @@
-import React, { useEffect, useState } from 'react';
+import { AddCircle, Close, Delete, Done, Edit } from '@mui/icons-material';
 import {
   Alert,
   Box,
   Button,
-  Chip,
   Checkbox,
+  Chip,
   FormControl,
   FormControlLabel,
   FormHelperText,
   Grid,
   IconButton,
+  Input,
+  InputAdornment,
   InputLabel,
   Link,
   MenuItem,
   Paper,
   Select,
+  SelectChangeEvent,
   Skeleton,
+  Snackbar,
   Stack,
   Table,
   TableBody,
@@ -25,29 +29,22 @@ import {
   TableRow,
   TextField,
   Typography,
-  Input,
-  InputAdornment,
-  SelectChangeEvent,
-  Snackbar,
 } from '@mui/material';
-import { AddCircle, Close, Delete, Done, Edit } from '@mui/icons-material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  PlexServerInsert,
-  PlexServerRemove,
-  PlexStreamSettings,
-  defaultPlexStreamSettings,
-} from '@tunarr/types';
+import { PlexStreamSettings, defaultPlexStreamSettings } from '@tunarr/types';
+import { InsertPlexServerRequest } from '@tunarr/types/api';
 import { fill } from 'lodash-es';
+import React, { useCallback, useEffect, useState } from 'react';
+import { apiClient } from '../../external/api.ts';
 import { checkNewPlexServers, plexLoginFlow } from '../../helpers/plexLogin.ts';
-import {
-  usePlexServerSettings,
-  usePlexStreamSettings,
-} from '../../hooks/settingsHooks.ts';
 import {
   fromStringResolution,
   toStringResolution,
 } from '../../helpers/util.ts';
+import {
+  usePlexServerSettings,
+  usePlexStreamSettings,
+} from '../../hooks/settingsHooks.ts';
 
 const supportedResolutions = [
   '420x420',
@@ -123,11 +120,7 @@ export default function PlexSettingsPage() {
   const [transcodeMediaBufferSize, setTranscodeMediaBufferSize] =
     React.useState<string>('');
 
-  useEffect(() => {
-    handlePlexStreamingState();
-  }, [streamSettings]);
-
-  const handlePlexStreamingState = () => {
+  const handlePlexStreamingState = useCallback(() => {
     setVideoCodecs(
       streamSettings?.videoCodecs || defaultPlexStreamSettings.videoCodecs,
     );
@@ -170,7 +163,20 @@ export default function PlexSettingsPage() {
       streamSettings?.transcodeMediaBufferSize.toString() ||
         defaultPlexStreamSettings.transcodeMediaBufferSize.toString(),
     );
-  };
+  }, [
+    streamSettings?.audioCodecs,
+    streamSettings?.directStreamBitrate,
+    streamSettings?.maxAudioChannels,
+    streamSettings?.maxPlayableResolution,
+    streamSettings?.mediaBufferSize,
+    streamSettings?.transcodeBitrate,
+    streamSettings?.transcodeMediaBufferSize,
+    streamSettings?.videoCodecs,
+  ]);
+
+  useEffect(() => {
+    handlePlexStreamingState();
+  }, [handlePlexStreamingState, streamSettings]);
 
   const handleVideoCodecUpdate = () => {
     if (!addVideoCodecs.length) {
@@ -243,14 +249,8 @@ export default function PlexSettingsPage() {
   };
 
   const addPlexServerMutation = useMutation({
-    mutationFn: (newServer: PlexServerInsert) => {
-      return fetch('http://localhost:8000/api/plex-servers', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(newServer),
-      });
+    mutationFn: (newServer: InsertPlexServerRequest) => {
+      return apiClient.createPlexServer(newServer);
     },
     onSuccess: () => {
       return queryClient.invalidateQueries({
@@ -260,14 +260,8 @@ export default function PlexSettingsPage() {
   });
 
   const removePlexServerMutation = useMutation({
-    mutationFn: (id: PlexServerRemove) => {
-      return fetch('http://localhost:8000/api/plex-servers', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(id),
-      });
+    mutationFn: (id: string) => {
+      return apiClient.deletePlexServer(null, { params: { id } });
     },
     onSuccess: () => {
       return queryClient.invalidateQueries({
@@ -370,9 +364,7 @@ export default function PlexSettingsPage() {
   };
 
   const removePlexServer = (id: string) => {
-    removePlexServerMutation.mutate({
-      id,
-    });
+    removePlexServerMutation.mutate(id);
   };
 
   const getTableRows = () => {
