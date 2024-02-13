@@ -307,7 +307,7 @@ export default function GuidePage() {
     let remainingTime;
 
     if (isPlaying) {
-      remainingTime = programEnd.diff(dayjs());
+      remainingTime = programEnd.diff(dayjs(), 'm');
     }
 
     return (
@@ -323,9 +323,7 @@ export default function GuidePage() {
           </Box>
           <Box sx={{ fontSize: '12px' }}>
             {`${programStart.format('h:mm')} - ${programEnd.format('h:mma')}`}
-            {isPlaying
-              ? ` (${dayjs(remainingTime).format('m')}m remaining)`
-              : null}
+            {isPlaying ? ` (${remainingTime}m remaining)` : null}
           </Box>
         </GuideItem>
         {endOfAvailableProgramming ? (
@@ -427,12 +425,16 @@ export default function GuidePage() {
           >
             {episodeTitle}
           </Typography>
-          <Chip
-            color="secondary"
-            label={`${dayjs(program.duration).format('m')}m`}
-            sx={{ mt: 1 }}
-          />
-          <Chip color="secondary" label={rating} sx={{ mx: 1, mt: 1 }} />
+          {program.type === 'content' ? (
+            <>
+              <Chip
+                color="secondary"
+                label={`${dayjs(program.duration).format('m')}m`}
+                sx={{ mt: 1 }}
+              />
+              <Chip color="secondary" label={rating} sx={{ mx: 1, mt: 1 }} />
+            </>
+          ) : null}
           <Typography id="modal-modal-description" sx={{ mt: 1 }}>
             {`${dayjs(program.start).format('h:mm')} - ${dayjs(
               program.stop,
@@ -601,7 +603,6 @@ export default function GuidePage() {
               position: 'relative',
               flexDirection: 'column',
               width: '100%',
-              overflow: 'hidden',
             }}
           >
             <Box
