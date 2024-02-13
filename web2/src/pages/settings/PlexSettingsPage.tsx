@@ -266,7 +266,7 @@ export default function PlexSettingsPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ name: serverName }),
+        body: JSON.stringify(serverName),
       });
     },
     onSuccess: () => {
