@@ -260,7 +260,7 @@ export default function PlexSettingsPage() {
   });
 
   const removePlexServerMutation = useMutation({
-    mutationFn: (serverName: PlexServerRemove) => {
+    mutationFn: (id: PlexServerRemove) => {
       return fetch('http://localhost:8000/api/plex-servers', {
         method: 'DELETE',
         headers: {
@@ -369,9 +369,9 @@ export default function PlexSettingsPage() {
       .catch(console.error);
   };
 
-  const removePlexServer = (serverName: string) => {
+  const removePlexServer = (id: string) => {
     removePlexServerMutation.mutate({
-      name: serverName,
+      id,
     });
   };
 
