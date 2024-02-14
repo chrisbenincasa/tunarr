@@ -85,7 +85,7 @@ const GuideItem = styled(GridChild)<{ grey: keyof Color; width: number }>(
 );
 
 const modalStyle = {
-  position: 'absolute' as 'absolute',
+  position: 'absolute' as const,
   top: '50%',
   left: '50%',
   transform: 'translate(-50%, -50%)',
@@ -602,7 +602,7 @@ export default function GuidePage() {
               display: 'flex',
               position: 'relative',
               flexDirection: 'column',
-              width: '100%',
+              width: `${smallViewport ? '90%' : '85%'}`,
             }}
           >
             <Box
