@@ -124,9 +124,6 @@ export default function EditChannelPage({ isNew }: Props) {
   });
 
   useEffectOnce(() => {
-    console.log('it ran!');
-    // console.log(channel);
-
     setCurrentChannel(channel);
   });
 
