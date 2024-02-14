@@ -214,15 +214,16 @@ export default function EditChannelPage({ isNew }: Props) {
     <ChannelEditContext.Provider
       value={{ channelEditorState, setChannelEditorState }}
     >
-      <Breadcrumbs sx={{ mb: 2 }}>
+      <Breadcrumbs sx={{ mb: 2 }} separator="›" aria-label="channel-breadcrumb">
         <Link
           underline="hover"
           color="inherit"
           component={RouterLink}
           to="/channels"
         >
-          Back
+          Channels
         </Link>
+        <Box>Edit Channel</Box>
       </Breadcrumbs>
       {workingChannel && (
         <div>
