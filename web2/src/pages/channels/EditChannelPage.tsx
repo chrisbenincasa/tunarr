@@ -115,7 +115,7 @@ export default function EditChannelPage({ isNew }: Props) {
     // Change this so we only load the form on initial...
     // eslint-disable-next-line @typescript-eslint/require-await
     defaultValues: async () => {
-      const c = originalChannel ?? channel;
+      const c = previousChannel ?? channel;
       return {
         ...c,
         guideMinimumDuration: c.guideMinimumDuration / 1000,
@@ -124,6 +124,9 @@ export default function EditChannelPage({ isNew }: Props) {
   });
 
   useEffectOnce(() => {
+    console.log('it ran!');
+    // console.log(channel);
+
     setCurrentChannel(channel);
   });
 
