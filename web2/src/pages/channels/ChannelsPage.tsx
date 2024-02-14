@@ -6,7 +6,6 @@ import {
   Button,
   IconButton,
   Paper,
-  Stack,
   Table,
   TableBody,
   TableCell,
@@ -21,7 +20,7 @@ import { useTheme } from '@mui/material/styles';
 import { Channel } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { isEmpty } from 'lodash-es';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import { useChannels } from '../../hooks/useChannels.ts';
 
@@ -34,6 +33,14 @@ export default function ChannelsPage() {
   } = useChannels();
   const theme = useTheme();
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
+  const navigate = useNavigate();
+
+  const handleChannelNavigation = (
+    event: React.MouseEvent<HTMLTableRowElement, MouseEvent>,
+    id: string,
+  ) => {
+    navigate(`/channels/${id}/programming`);
+  };
 
   if (channelsLoading) return 'Loading...';
 
@@ -43,7 +50,12 @@ export default function ChannelsPage() {
   const getDataTableRow = (channel: Channel) => {
     const startTime = dayjs(channel.startTime);
     return (
-      <TableRow key={channel.number}>
+      <TableRow
+        key={channel.number}
+        onClick={(event) => handleChannelNavigation(event, channel.id)}
+        sx={{ cursor: 'pointer' }}
+        hover={true}
+      >
         <TableCell width="10%">{channel.number}</TableCell>
         {!smallViewport && (
           <TableCell width="10%">
@@ -58,52 +70,17 @@ export default function ChannelsPage() {
         <TableCell>{channel.name}</TableCell>
         <TableCell>{startTime.isBefore(now) ? 'Yes' : 'No'}</TableCell>
         <TableCell>{channel.stealth ? 'Yes' : 'No'}</TableCell>
-        <TableCell width={smallViewport ? '15%' : undefined}>
-          <Stack direction={'row'} justifyContent={'flex-end'}>
-            <Tooltip title="Edit Channel Settings" placement="top">
-              {smallViewport ? (
-                <IconButton
-                  to={`/channels/${channel.id}/edit`}
-                  component={RouterLink}
-                  color={'primary'}
-                >
-                  <EditIcon />
-                </IconButton>
-              ) : (
-                <Button
-                  variant="contained"
-                  startIcon={<EditIcon />}
-                  to={`/channels/${channel.id}/edit`}
-                  component={RouterLink}
-                  sx={{ marginRight: 1 }}
-                  color={'primary'}
-                >
-                  Edit
-                </Button>
-              )}
-            </Tooltip>
-            <Tooltip title="Add/Edit Programming" placement="top">
-              {smallViewport ? (
-                <IconButton
-                  to={`/channels/${channel.id}/programming`}
-                  component={RouterLink}
-                  color={'primary'}
-                >
-                  <SettingsRemoteIcon />
-                </IconButton>
-              ) : (
-                <Button
-                  variant="contained"
-                  startIcon={<SettingsRemoteIcon />}
-                  to={`/channels/${channel.id}/programming`}
-                  component={RouterLink}
-                  color={'primary'}
-                >
-                  Add Programs
-                </Button>
-              )}
-            </Tooltip>
-          </Stack>
+        <TableCell sx={{ textAlign: 'right' }}>
+          <Tooltip title="Edit Channel Settings" placement="top">
+            <IconButton
+              to={`/channels/${channel.id}/edit`}
+              component={RouterLink}
+              color={'primary'}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <EditIcon />
+            </IconButton>
+          </Tooltip>
         </TableCell>
       </TableRow>
     );
