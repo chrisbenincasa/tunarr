@@ -5,6 +5,11 @@ import {
   Button,
   Checkbox,
   Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   FormControl,
   FormControlLabel,
   FormHelperText,
@@ -89,6 +94,10 @@ export default function PlexSettingsPage() {
   } = usePlexStreamSettings();
 
   const queryClient = useQueryClient();
+
+  const [deletePlexConfirmation, setDeletePlexConfirmation] = useState<
+    string | undefined
+  >(undefined);
 
   const [showSubtitles, setShowSubtitles] = useState<boolean>(
     defaultPlexStreamSettings.enableSubtitles,
@@ -259,6 +268,42 @@ export default function PlexSettingsPage() {
     },
   });
 
+  const renderConfirmationDialog = () => {
+    return (
+      <Dialog
+        open={!!deletePlexConfirmation}
+        onClose={() => setDeletePlexConfirmation(undefined)}
+        aria-labelledby="delete-plex-server-title"
+        aria-describedby="delete-plex-server-description"
+      >
+        <DialogTitle id="delete-plex-server-title">
+          {'Delete Plex Server?'}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="delete-plex-server-description">
+            Deleting a Plex server will remove all programming from your
+            channels associated with this plex server. Missing programming will
+            be replaced with Flex time. This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setDeletePlexConfirmation(undefined)}
+            autoFocus
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={() => removePlexServer(deletePlexConfirmation!)}
+            variant="contained"
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+    );
+  };
+
   const removePlexServerMutation = useMutation({
     mutationFn: (id: string) => {
       return apiClient.deletePlexServer(null, { params: { id } });
@@ -365,6 +410,7 @@ export default function PlexSettingsPage() {
 
   const removePlexServer = (id: string) => {
     removePlexServerMutation.mutate(id);
+    setDeletePlexConfirmation(undefined);
   };
 
   const getTableRows = () => {
@@ -392,7 +438,7 @@ export default function PlexSettingsPage() {
           </IconButton>
           <IconButton
             color="primary"
-            onClick={() => removePlexServer(server.id)}
+            onClick={() => setDeletePlexConfirmation(server.id)}
           >
             <Delete />
           </IconButton>
@@ -768,6 +814,7 @@ export default function PlexSettingsPage() {
         onClose={handleSnackClose}
         message="Settings Saved!"
       />
+      {renderConfirmationDialog()}
       <Box>
         <Box mb={2}>
           <Box sx={{ display: 'flex', mb: 2 }}>
