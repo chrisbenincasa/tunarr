@@ -197,14 +197,15 @@ export default function ChannelProgrammingList({
 
   const renderProgram = (idx: number, style?: CSSProperties) => {
     const program = programList[idx];
+    const startTimeDate = dayjs(
+      channel!.startTime + program.startTimeOffset,
+    ).toDate();
     return (
       <ProgramListItem
         index={idx}
         program={program}
         style={style}
-        startTimeDate={dayjs(
-          channel!.startTime + program.startTimeOffset,
-        ).toDate()}
+        startTimeDate={startTimeDate}
         moveProgram={moveProgram}
         findProgram={findProgram}
         enableDrag={!!enableDnd}

@@ -1,12 +1,12 @@
 import {
   Channel,
-  CondensedChannelProgram,
   ContentProgram,
   CustomProgram,
   CustomShow,
   FillerList,
 } from '@tunarr/types';
 import { StateCreator } from 'zustand';
+import { UICondensedChannelProgram } from '../../types/index.ts';
 
 export type UIIndex = { originalIndex: number };
 
@@ -28,7 +28,9 @@ export interface ProgrammingEditorState<EntityType, ProgramType> {
 }
 
 export interface ChannelEditorState {
-  channelEditor: ProgrammingEditorState<Channel, CondensedChannelProgram> & {
+  channelEditor: ProgrammingEditorState<Channel, UICondensedChannelProgram> & {
+    // Since for channels we deal with 'condensed' programs, we need to have
+    // the lookup record for programs by ID
     programLookup: Record<string, ContentProgram>;
   };
   customShowEditor: ProgrammingEditorState<

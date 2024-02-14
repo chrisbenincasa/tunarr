@@ -157,7 +157,7 @@ export const PlexMovieSchema = z
     titleSort: z.string().optional(),
     contentRating: z.string().optional(),
     summary: z.string().optional(),
-    rating: z.number(),
+    rating: z.number().optional(),
     audienceRating: z.number().optional(),
     year: z.number().optional(),
     tagline: z.string().optional(),

@@ -2,7 +2,7 @@ import {
   Channel,
   ChannelProgram,
   CondensedChannelProgram,
-  ContentGuideProgram,
+  CondensedChannelProgramming,
   ContentProgram,
   CustomShow,
   CustomShowProgramming,
@@ -10,11 +10,22 @@ import {
   FillerListProgramming,
 } from '@tunarr/types';
 import { isPlexEpisode } from '@tunarr/types/plex';
-import { findIndex, inRange, isNil, isUndefined, sumBy } from 'lodash-es';
+import {
+  extend,
+  findIndex,
+  groupBy,
+  inRange,
+  isNil,
+  isUndefined,
+  last,
+  map,
+  omitBy,
+  sumBy,
+} from 'lodash-es';
 import { zipWithIndex } from '../../helpers/util.ts';
 import { EnrichedPlexMedia } from '../../hooks/plexHooks.ts';
 import useStore from '../index.ts';
-import { initialChannelEditorState } from './store.ts';
+import { UIIndex, initialChannelEditorState } from './store.ts';
 
 export const resetChannelEditorState = () =>
   useStore.setState((state) => {
@@ -26,20 +37,32 @@ export const resetChannelEditorState = () =>
     return newState;
   });
 
-type ChannelProgramming = {
-  lineup: CondensedChannelProgram[];
-  programs: Record<string, ContentProgram>;
-};
+function addIndexesAndCalculateOffsets<T extends { duration: number }>(
+  items: T[],
+  firstOffset: number = 0,
+  firstIndex: number = 0,
+): (T & UIIndex & { startTimeOffset: number })[] {
+  let runningOffset = firstOffset;
+  return map(items, (item, index) => {
+    const newItem = {
+      ...item,
+      originalIndex: firstIndex + index,
+      startTimeOffset: runningOffset,
+    };
+    runningOffset += item.duration;
+    return newItem;
+  });
+}
 
 export const setCurrentChannel = (
   channel: Omit<Channel, 'programs'>,
-  programming?: ChannelProgramming,
+  programming?: CondensedChannelProgramming,
 ) =>
   useStore.setState(({ channelEditor }) => {
     channelEditor.currentEntity = channel;
     channelEditor.originalEntity = channel;
     if (programming) {
-      const programs = zipWithIndex(programming.lineup);
+      const programs = addIndexesAndCalculateOffsets(programming.lineup);
       channelEditor.originalProgramList = [...programs];
       channelEditor.programList = [...programs];
       channelEditor.programLookup = { ...programming.programs };
@@ -51,7 +74,7 @@ export const setCurrentLineup = (
   dirty?: boolean,
 ) =>
   useStore.setState((state) => {
-    state.channelEditor.programList = zipWithIndex(lineup);
+    state.channelEditor.programList = addIndexesAndCalculateOffsets(lineup);
     if (!isUndefined(dirty)) {
       state.channelEditor.dirty.programs = dirty;
     }
@@ -62,7 +85,7 @@ export const resetCurrentLineup = (
   programs: Record<string, ContentProgram>,
 ) =>
   useStore.setState((state) => {
-    const zippedLineup = zipWithIndex(lineup);
+    const zippedLineup = addIndexesAndCalculateOffsets(lineup);
     state.channelEditor.programList = [...zippedLineup];
     state.channelEditor.originalProgramList = [...zippedLineup];
     state.channelEditor.programLookup = { ...programs };
@@ -113,8 +136,16 @@ export const updateCurrentChannel = (channel: Partial<Channel>) =>
 
 export const addProgramsToCurrentChannel = (programs: ChannelProgram[]) =>
   useStore.setState(({ channelEditor }) => {
+    const lastItem = last(channelEditor.programList);
+    const firstOffset = lastItem
+      ? lastItem.startTimeOffset + lastItem.duration
+      : 0;
     channelEditor.programList.push(
-      ...zipWithIndex(programs, channelEditor.programList.length),
+      ...addIndexesAndCalculateOffsets(
+        programs,
+        firstOffset,
+        channelEditor.programList.length,
+      ),
     );
     channelEditor.dirty.programs =
       channelEditor.dirty.programs || programs.length > 0;
@@ -145,7 +176,7 @@ const generatePrograms = (programs: EnrichedPlexMedia[]): ContentProgram[] => {
     let ephemeralProgram: ContentProgram;
     if (isPlexEpisode(program)) {
       ephemeralProgram = {
-        id: program.id,
+        id: program.id ?? `plex|${program.serverName}|${program.key}`,
         persisted: !isNil(program.id),
         originalProgram: program,
         duration: program.duration,
@@ -162,7 +193,7 @@ const generatePrograms = (programs: EnrichedPlexMedia[]): ContentProgram[] => {
       };
     } else {
       ephemeralProgram = {
-        id: program.id,
+        id: program.id ?? `plex|${program.serverName}|${program.key}`,
         persisted: !isNil(program.id),
         originalProgram: program,
         duration: program.duration,
@@ -190,34 +221,30 @@ export const addPlexMediaToCurrentChannel = (programs: EnrichedPlexMedia[]) =>
         oldDuration + sumBy(ephemeralPrograms, (p) => p.duration);
 
       // Set the new channel duration based on the new program durations
+      // const now = dayjs()
       channelEditor.currentEntity.duration = newDuration;
 
-      // Set the new channel start time to "now". We can play with this later
-      // if we don't want to interrupt current programming when updating the lineup
-      let lastStartTime = new Date().getTime();
+      // Add offset times to all incoming programs
+      const lastItem = last(channelEditor.programList);
+      const firstOffset = lastItem
+        ? lastItem.startTimeOffset + lastItem.duration
+        : 0;
+      const programsWithOffset = addIndexesAndCalculateOffsets(
+        ephemeralPrograms,
+        firstOffset,
+        channelEditor.programList.length,
+      );
 
-      // Update the start time for all existing programs
-      for (const program of channelEditor.programList) {
-        const endTime = lastStartTime + program.duration;
-        // program.start = lastStartTime;
-        // program.stop = endTime;
-        lastStartTime = endTime;
-      }
+      // Add new programs to the end of the existing list
+      channelEditor.programList.push(...programsWithOffset);
 
-      // Add start/end times for all incoming programs
-      const programsWithStart: ContentGuideProgram[] = [];
-      for (const program of ephemeralPrograms) {
-        const endTime = lastStartTime + program.duration;
-        programsWithStart.push({
-          ...program,
-          start: lastStartTime,
-          stop: endTime,
-        });
-        lastStartTime = endTime;
-      }
-
-      channelEditor.programList.push(
-        ...zipWithIndex(programsWithStart, channelEditor.programList.length),
+      // Add new lookups for these programs for when we materialize them in the selector
+      extend(
+        channelEditor.programLookup,
+        omitBy(
+          groupBy(ephemeralPrograms, (p) => p.id),
+          isNil,
+        ),
       );
     }
   });

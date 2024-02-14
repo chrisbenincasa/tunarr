@@ -39,6 +39,11 @@ export type ZodiosAliasReturnType<T extends ApiAliases> = Awaited<
 export type RequestMethodForAlias<T extends ApiAliases> =
   ZodiosAliases<ApiType>[T];
 
+export type UICondensedChannelProgram = CondensedChannelProgram &
+  UIIndex & {
+    startTimeOffset: number;
+  };
+
 export type UIChannelProgram = ChannelProgram &
   UIIndex & {
     startTimeOffset: number;

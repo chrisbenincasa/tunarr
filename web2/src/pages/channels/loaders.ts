@@ -6,8 +6,7 @@ import {
 } from '@tanstack/react-query';
 import {
   Channel,
-  CondensedChannelProgram,
-  ContentProgram,
+  CondensedChannelProgramming,
   CustomShow,
   CustomShowProgramming,
   FillerList,
@@ -59,10 +58,7 @@ function createPreloader<
 
 export const editProgrammingLoader: Preloader<{
   channel: Channel;
-  programming: {
-    lineup: CondensedChannelProgram[];
-    programs: Record<string, ContentProgram>;
-  };
+  programming: CondensedChannelProgramming;
 }> =
   (queryClient: QueryClient) =>
   async ({ params }: LoaderFunctionArgs) => {
@@ -85,10 +81,7 @@ export const editProgrammingLoader: Preloader<{
       ([channel, programming]) => {
         return {
           channel,
-          programming: {
-            lineup: programming.lineup,
-            programs: programming.programs,
-          },
+          programming,
         };
       },
     );
