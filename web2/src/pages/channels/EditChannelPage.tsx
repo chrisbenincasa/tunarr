@@ -95,8 +95,7 @@ type Props = {
 export default function EditChannelPage({ isNew }: Props) {
   const channel = usePreloadedData(editChannelLoader(isNew));
   const [currentTab, setCurrentTab] = useState<TabValues>('properties');
-  const { currentEntity: workingChannel, originalEntity: originalChannel } =
-    useStore((s) => s.channelEditor);
+  const { currentEntity: workingChannel } = useStore((s) => s.channelEditor);
   const previousChannel = usePrevious(workingChannel);
 
   const [channelEditorState, setChannelEditorState] =
