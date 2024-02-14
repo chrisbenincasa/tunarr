@@ -1,47 +1,41 @@
-import { UseQueryOptions, useQueries, useQuery } from '@tanstack/react-query';
-import {
-  FfmpegSettings,
-  HdhrSettings,
-  PlexServerSettings,
-  PlexStreamSettings,
-  XmlTvSettings,
-} from '@tunarr/types';
+import { useQueries, useQuery } from '@tanstack/react-query';
 import { apiClient } from '../external/api.ts';
-import {
-  ApiAliases,
-  RequestMethodForAlias,
-  ZodiosAliasReturnType,
-} from '../types/index.ts';
 
-// function getQuerySettings<Path extends ApiAliases>(
-//   settings: string,
-//   method: Path,
-//   params: Parameters<RequestMethodForAlias<Path>>,
-// ): UseQueryOptions<ZodiosAliasReturnType<Path>> {
-//   return {
-//     queryKey: ['settings', settings],
-//     queryFn: () => {
-//       return apiClient[method](params);
-//     },
-//   };
-// }
-
-export const useXmlTvSettings = () => useQuery({});
+export const useXmlTvSettings = () =>
+  useQuery({
+    queryKey: ['settings', 'xmltv'],
+    queryFn: () => apiClient.getXmlTvSettings(),
+  });
 
 export const useFfmpegSettings = () =>
-  useSettings<FfmpegSettings>('ffmpeg', 'ffmpeg-settings');
+  useQuery({
+    queryKey: ['settings', 'ffmpeg'],
+    queryFn: () => apiClient.getFfmpegSettings(),
+  });
 
 export const usePlexServerSettings = () =>
-  useSettings<PlexServerSettings[]>('plex-servers', 'plex-servers');
+  useQuery({
+    queryKey: ['settings', 'plex-servers'],
+    queryFn: () => apiClient.getPlexServers(),
+  });
 
 export const usePlexStreamSettings = () =>
-  useSettings<PlexStreamSettings>('plex', 'plex-settings');
+  useQuery({
+    queryKey: ['settings', 'plex-stream'],
+    queryFn: () => apiClient.getPlexStreamSettings(),
+  });
 
 export const usePlexSettings = () =>
   useQueries({
     queries: [
-      getQuerySettings<PlexServerSettings[]>('plex-servers', 'plex-servers'),
-      getQuerySettings<PlexStreamSettings>('plex', 'plex-settings'),
+      {
+        queryKey: ['settings', 'plex-servers'],
+        queryFn: () => apiClient.getPlexServers(),
+      },
+      {
+        queryKey: ['settings', 'plex-stream'],
+        queryFn: () => apiClient.getPlexStreamSettings(),
+      },
     ],
     combine: (result) => {
       const [serversResult, streamResult] = result;
@@ -64,4 +58,7 @@ export const usePlexSettings = () =>
   });
 
 export const useHdhrSettings = () =>
-  useSettings<HdhrSettings>('hdhr', 'hdhr-settings');
+  useQuery({
+    queryKey: ['settings', 'hdhr'],
+    queryFn: () => apiClient.getHdhrSettings(),
+  });

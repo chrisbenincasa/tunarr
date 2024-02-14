@@ -3,7 +3,10 @@ import {
   UpdatePlexServerRequestSchema,
 } from '@tunarr/types/api';
 import {
+  FfmpegSettingsSchema,
+  HdhrSettingsSchema,
   PlexServerSettingsSchema,
+  PlexStreamSettingsSchema,
   XmlTvSettingsSchema,
 } from '@tunarr/types/schemas';
 import { makeEndpoint, parametersBuilder } from '@zodios/core';
@@ -73,4 +76,25 @@ export const getXmlTvSettings = makeEndpoint({
   path: '/api/xmltv-settings',
   response: XmlTvSettingsSchema,
   alias: 'getXmlTvSettings',
+});
+
+export const getFffmpegSettings = makeEndpoint({
+  method: 'get',
+  path: '/api/ffmpeg-settings',
+  response: FfmpegSettingsSchema,
+  alias: 'getFfmpegSettings',
+});
+
+export const getHdhrSettings = makeEndpoint({
+  method: 'get',
+  path: '/api/hdhr-settings',
+  response: HdhrSettingsSchema,
+  alias: 'getHdhrSettings',
+});
+
+export const getPlexStreamSettings = makeEndpoint({
+  method: 'get',
+  path: '/api/plex-settings',
+  response: PlexStreamSettingsSchema,
+  alias: 'getPlexStreamSettings',
 });
