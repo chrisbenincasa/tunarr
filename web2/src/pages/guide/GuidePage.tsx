@@ -24,7 +24,7 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { ChannelProgram, TvGuideProgram } from '@tunarr/types';
+import { TvGuideProgram } from '@tunarr/types';
 import dayjs, { Dayjs, duration } from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 import { isEmpty, round } from 'lodash-es';
@@ -127,9 +127,6 @@ export default function GuidePage() {
   const [end, setEnd] = useState(start.add(guideDuration, 'ms'));
   const [currentTime, setCurrentTime] = useState(dayjs().format('h:mm'));
   const [progress, setProgress] = useState(calcProgress(start, end));
-  // const [totalChannelDuration, ChannelDuration] = useState<
-  //   TvGuideProgram | undefined
-  // >();
   const [modalProgram, setModalProgram] = useState<
     TvGuideProgram | undefined
   >();
