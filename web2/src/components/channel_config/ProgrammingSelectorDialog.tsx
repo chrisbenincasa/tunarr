@@ -5,11 +5,11 @@ import {
   DialogContent,
   DialogTitle,
 } from '@mui/material';
-import { PlexMedia } from '@tunarr/types/plex';
 import { isEmpty, isUndefined } from 'lodash-es';
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { usePlex } from '../../hooks/plexHooks.ts';
 import { usePlexServerSettings } from '../../hooks/settingsHooks.ts';
+import { addPlexMediaToCurrentChannel } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
 import {
   addKnownMediaForServer,
@@ -17,15 +17,6 @@ import {
 } from '../../store/programmingSelector/actions.ts';
 import AddSelectedMediaButton from './AddSelectedMediaButton.tsx';
 import ProgrammingSelector from './ProgrammingSelector.tsx';
-import { addPlexMediaToCurrentChannel } from '../../store/channelEditor/actions.ts';
-
-export interface PlexListItemProps<T extends PlexMedia> {
-  item: T;
-  style?: React.CSSProperties;
-  index?: number;
-  length: number;
-  parent?: string;
-}
 
 export default function ProgrammingSelectorDialog(props: {
   open: boolean;

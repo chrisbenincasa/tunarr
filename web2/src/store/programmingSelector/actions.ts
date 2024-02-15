@@ -16,9 +16,9 @@ export const setProgrammingListingServer = (
     state.currentServer = server;
   });
 
-export const setProgrammingListLibrary = (key: string) =>
+export const setProgrammingListLibrary = (library: PlexLibrarySection) =>
   useStore.setState((state) => {
-    state.currentLibrary = key;
+    state.currentLibrary = library;
   });
 
 function uniqueId(item: PlexLibrarySection | PlexMedia): string {
@@ -96,6 +96,15 @@ export const addSelectedMedia = (
           guid: isPlexDirectory(m) ? m.uuid : m.guid,
         }) as SelectedMedia,
     );
+    state.selectedMedia = [...state.selectedMedia, ...newSelectedMedia];
+  });
+
+export const addSelectedMediaById = (serverName: string, ids: string[]) =>
+  useStore.setState((state) => {
+    const newSelectedMedia: SelectedMedia[] = map(ids, (m) => ({
+      server: serverName,
+      guid: m,
+    }));
     state.selectedMedia = [...state.selectedMedia, ...newSelectedMedia];
   });
 

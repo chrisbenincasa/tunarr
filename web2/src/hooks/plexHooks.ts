@@ -18,7 +18,7 @@ type PlexPathMappings = {
   '/library/sections': PlexLibrarySections;
 };
 
-const fetchPlexPath = <T>(serverName: string, path: string) => {
+export const fetchPlexPath = <T>(serverName: string, path: string) => {
   return async () => {
     return apiClient
       .getPlexPath({
@@ -51,16 +51,21 @@ type PlexQueryArgs<T> = {
   [plexQueryArgsSymbol]?: T;
 };
 
+export const plexQueryOptions = <T>(
+  serverName: string,
+  path: string,
+  enabled: boolean = true,
+) => ({
+  queryKey: ['plex', serverName, path],
+  queryFn: fetchPlexPath<T>(serverName, path),
+  enabled,
+});
+
 export const usePlexTyped = <T>(
   serverName: string,
   path: string,
   enabled: boolean = true,
-) =>
-  useQuery({
-    queryKey: ['plex', serverName, path],
-    queryFn: fetchPlexPath<T>(serverName, path),
-    enabled,
-  });
+) => useQuery(plexQueryOptions<T>(serverName, path, enabled));
 
 export const usePlexTyped2 = <T = unknown, U = unknown>(
   args: [PlexQueryArgs<T>, PlexQueryArgs<U>],

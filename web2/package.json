@@ -17,7 +17,7 @@
     "@mui/icons-material": "^5.14.16",
     "@mui/material": "^5.14.17",
     "@mui/x-date-pickers": "^6.19.2",
-    "@tanstack/react-query": "^5.8.1",
+    "@tanstack/react-query": "^5.18.1",
     "@tanstack/react-query-devtools": "^5.18.1",
     "@tunarr/shared": "workspace:*",
     "@tunarr/types": "workspace:*",
@@ -38,7 +38,7 @@
     "react-router-dom": "^6.18.0",
     "react-window": "^1.8.9",
     "sort-by": "^1.2.0",
-    "usehooks-ts": "^2.9.1",
+    "usehooks-ts": "^2.14.0",
     "uuid": "^9.0.1",
     "zod": "^3.22.4",
     "zustand": "^4.4.6"

@@ -12,7 +12,7 @@ export interface SelectedMedia {
 
 export interface ProgrammingListingsState {
   currentServer?: PlexServerSettings;
-  currentLibrary?: string; // This is the key
+  currentLibrary?: PlexLibrarySection;
   // Tracks the parent-child mappings of library items
   contentHierarchyByServer: Record<
     ServerName,
