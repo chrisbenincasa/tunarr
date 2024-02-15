@@ -16,6 +16,11 @@ export const setProgrammingListingServer = (
     state.currentServer = server;
   });
 
+export const setProgrammingListLibrary = (key: string) =>
+  useStore.setState((state) => {
+    state.currentLibrary = key;
+  });
+
 function uniqueId(item: PlexLibrarySection | PlexMedia): string {
   if (isPlexDirectory(item)) {
     return item.uuid;
