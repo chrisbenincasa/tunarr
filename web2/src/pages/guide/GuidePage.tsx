@@ -24,7 +24,7 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { ChannelProgram, TvGuideProgram } from '@tunarr/types';
+import { TvGuideProgram } from '@tunarr/types';
 import dayjs, { Dayjs, duration } from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 import { isEmpty, round } from 'lodash-es';
@@ -127,7 +127,6 @@ export default function GuidePage() {
   const [end, setEnd] = useState(start.add(guideDuration, 'ms'));
   const [currentTime, setCurrentTime] = useState(dayjs().format('h:mm'));
   const [progress, setProgress] = useState(calcProgress(start, end));
-
   const [modalProgram, setModalProgram] = useState<
     TvGuideProgram | undefined
   >();
@@ -240,7 +239,7 @@ export default function GuidePage() {
   const renderProgram = (
     program: TvGuideProgram,
     index: number,
-    lineup: ChannelProgram[],
+    lineup: TvGuideProgram[],
   ) => {
     let title: string;
     switch (program.type) {
@@ -280,21 +279,54 @@ export default function GuidePage() {
     let duration = dayjs.duration(programEnd.diff(programStart));
     let endOfAvailableProgramming = false;
 
-    // Trim any time that has already played in the current program
+    // Trim any time that has already played from the currently playing program
     if (index === 0) {
       const trimStart = start.diff(programStart);
       duration = duration.subtract(trimStart, 'ms');
     }
 
-    // Trim any time that goes beyond the current guide end time
+    // Calc for final program in lineup
     if (index === lineup.length - 1) {
-      const trimEnd = programEnd.diff(end);
-      duration = duration.subtract(trimEnd, 'ms');
+      // If program goes beyond current guide duration, trim it so we get accurate program durations
+      if (programEnd.isAfter(end)) {
+        const trimEnd = programEnd.diff(end);
+        duration = duration.subtract(trimEnd, 'ms');
+      }
 
       if (programEnd.isBefore(end)) {
         endOfAvailableProgramming = true;
       }
     }
+
+    // Calculate the total duration of programming in the lineup
+    // This allows us to properly calculate the width of injected 'no programming available' blocks
+    const totalProgramDuration = lineup.reduce(
+      (totalDuration, currentProgram, index) => {
+        const programStart = dayjs(currentProgram.start);
+        const programEnd = dayjs(currentProgram.stop);
+        let duration = dayjs.duration(programEnd.diff(programStart));
+
+        if (index === 0 && programStart.isBefore(start)) {
+          const trimStart = start.diff(programStart);
+          duration = duration.subtract(trimStart, 'ms');
+        }
+
+        if (index === lineup.length - 1 && programEnd.isAfter(end)) {
+          const trimEnd = programEnd.diff(end);
+          duration = duration.subtract(trimEnd, 'ms');
+        }
+
+        return totalDuration + duration.asMilliseconds();
+      },
+      0,
+    );
+
+    const finalBlockWidth = round(
+      ((timelineDuration.asMilliseconds() - totalProgramDuration) /
+        timelineDuration.asMilliseconds()) *
+        100.0,
+      2,
+    );
 
     const pct = round(
       (duration.asMilliseconds() / timelineDuration.asMilliseconds()) * 100.0,
@@ -326,14 +358,44 @@ export default function GuidePage() {
             {isPlaying ? ` (${remainingTime}m remaining)` : null}
           </Box>
         </GuideItem>
-        {endOfAvailableProgramming ? (
-          <GuideItem width={pct} grey={grey}>
-            <Box sx={{ fontSize: '14px', fontWeight: '600' }}>
-              No Programming
-            </Box>
-          </GuideItem>
-        ) : null}
+        {endOfAvailableProgramming
+          ? renderUnavailableProgramming(finalBlockWidth)
+          : null}
       </Fragment>
+    );
+  };
+
+  const renderUnavailableProgramming = (width: number) => {
+    const lm = theme.palette.mode === 'light';
+    return (
+      <Tooltip
+        title={'No programming scheduled for this time period'}
+        placement="top"
+      >
+        <GuideItem
+          width={width}
+          grey={100}
+          sx={{
+            border: 'none',
+            background: `repeating-linear-gradient(
+              45deg,
+              ${theme.palette.grey[lm ? 300 : 700]},
+              ${theme.palette.grey[lm ? 300 : 700]} 10px,
+              ${theme.palette.grey[lm ? 400 : 800]} 10px,
+              ${theme.palette.grey[lm ? 400 : 800]} 20px)`,
+          }}
+        >
+          <Box
+            sx={{
+              fontSize: '14px',
+              fontWeight: '600',
+              m: 0.5,
+            }}
+          >
+            No Programming scheduled
+          </Box>
+        </GuideItem>
+      </Tooltip>
     );
   };
 
@@ -460,37 +522,9 @@ export default function GuidePage() {
           borderColor: 'transparent',
         }}
       >
-        {lineup.programs.length > 0 ? (
-          lineup.programs.map(renderProgram)
-        ) : (
-          <Tooltip
-            title={'No programming available for this time period'}
-            placement="top"
-            key={`${lineup.id}-unavailable`}
-          >
-            <GuideItem
-              display={'flex'}
-              flexGrow={1}
-              justifyContent={'center'}
-              grey={300}
-              width={100}
-            >
-              <Box
-                display={'flex'}
-                justifyContent={'center'}
-                alignContent={'center'}
-                alignItems={'center'}
-                sx={{
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  textAlign: 'center',
-                }}
-              >
-                No programming available for this time period
-              </Box>
-            </GuideItem>
-          </Tooltip>
-        )}
+        {lineup.programs.length > 0
+          ? lineup.programs.map(renderProgram)
+          : renderUnavailableProgramming(100)}
       </Box>
     );
   });
@@ -643,7 +677,7 @@ export default function GuidePage() {
                   zIndex: 10,
                   height: '100%',
                   left: `${progress}%`,
-                  top: '4px',
+                  top: '-2px',
                   transition: 'left 0.5s linear',
                 }}
               >
