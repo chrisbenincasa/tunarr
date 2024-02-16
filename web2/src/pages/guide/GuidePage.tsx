@@ -5,7 +5,6 @@ import {
   ZoomIn as ZoomInIcon,
   ZoomOut as ZoomOutIcon,
 } from '@mui/icons-material';
-import { Fragment, useCallback, useState } from 'react';
 import {
   Box,
   Chip,
@@ -24,10 +23,12 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import { useQueryClient } from '@tanstack/react-query';
 import { TvGuideProgram } from '@tunarr/types';
 import dayjs, { Dayjs, duration } from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 import { isEmpty, round } from 'lodash-es';
+import { Fragment, useCallback, useState } from 'react';
 import { useInterval } from 'usehooks-ts';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import { prefetchAllTvGuides, useAllTvGuides } from '../../hooks/useTvGuide.ts';
@@ -130,6 +131,7 @@ export default function GuidePage() {
   const [modalProgram, setModalProgram] = useState<
     TvGuideProgram | undefined
   >();
+  const queryClient = useQueryClient();
 
   const timelineDuration = dayjs.duration(end.diff(start));
   const intervalArray = Array.from(
@@ -144,10 +146,10 @@ export default function GuidePage() {
 
   const smallViewport = useMediaQuery(theme.breakpoints.down('md'));
 
-  prefetchAllTvGuides({
+  prefetchAllTvGuides(queryClient)({
     from: start.add(1, 'hour'),
     to: end.add(1, 'hour'),
-  });
+  }).catch(console.error);
 
   useInterval(() => {
     setProgress(calcProgress(start, end));

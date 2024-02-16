@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { QueryClient, useQuery } from '@tanstack/react-query';
 import { Dayjs } from 'dayjs';
 import { apiClient } from '../external/api.ts';
 
@@ -33,18 +33,17 @@ export const useAllTvGuides = (params: { from: Dayjs; to: Dayjs }) =>
     },
   });
 
-export const prefetchAllTvGuides = (params: { from: Dayjs; to: Dayjs }) => {
-  const queryClient = useQueryClient();
-
-  queryClient.prefetchQuery({
-    queryKey: ['channels', 'all', 'guide', params] as const,
-    queryFn: async () => {
-      return apiClient.get('/api/v2/channels/all/lineups', {
-        queries: {
-          from: params.from.toISOString(),
-          to: params.to.toISOString(),
-        },
-      });
-    },
-  });
-};
+export const prefetchAllTvGuides =
+  (queryClient: QueryClient) => async (params: { from: Dayjs; to: Dayjs }) => {
+    return await queryClient.prefetchQuery({
+      queryKey: ['channels', 'all', 'guide', params] as const,
+      queryFn: async () => {
+        return apiClient.get('/api/v2/channels/all/lineups', {
+          queries: {
+            from: params.from.toISOString(),
+            to: params.to.toISOString(),
+          },
+        });
+      },
+    });
+  };
