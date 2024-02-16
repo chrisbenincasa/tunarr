@@ -1,49 +1,64 @@
-import { QueryClient, useQuery } from '@tanstack/react-query';
+import { QueryClient, UseQueryOptions, useQuery } from '@tanstack/react-query';
 import { Dayjs } from 'dayjs';
 import { apiClient } from '../external/api.ts';
+import { ChannelLineup } from '@tunarr/types';
+
+const dateRangeQueryKey = (range: { from: Dayjs; to: Dayjs }) =>
+  `${range.from.unix()}_${range.to.unix()}`;
+
+const lineupQueryOpts = (
+  channelId: string,
+  range: { from: Dayjs; to: Dayjs },
+) => ({
+  queryKey: ['channels', channelId, 'guide', dateRangeQueryKey(range)],
+  queryFn: async () => {
+    return apiClient.get('/api/v2/channels/:id/lineup', {
+      params: { id: channelId },
+      queries: {
+        from: range.from.toISOString(),
+        to: range.to.toISOString(),
+      },
+    });
+  },
+});
+
+const allLineupsQueryOpts = (range: {
+  from: Dayjs;
+  to: Dayjs;
+}): UseQueryOptions<ChannelLineup[]> => ({
+  queryKey: ['channels', 'all', 'guide', dateRangeQueryKey(range)],
+  queryFn: async () => {
+    return apiClient.get('/api/v2/channels/all/lineups', {
+      queries: {
+        from: range.from.toISOString(),
+        to: range.to.toISOString(),
+      },
+    });
+  },
+});
 
 export const useTvGuide = (params: {
   channelId: string;
   from: Dayjs;
   to: Dayjs;
 }) =>
-  useQuery({
-    queryKey: ['channels', params.channelId, 'guide', params] as const,
-    queryFn: async () => {
-      return apiClient.get('/api/v2/channels/:id/lineup', {
-        params: { id: params.channelId },
-        queries: {
-          from: params.from.toISOString(),
-          to: params.to.toISOString(),
-        },
-      });
-    },
-  });
+  useQuery(
+    lineupQueryOpts(params.channelId, { from: params.from, to: params.to }),
+  );
 
-export const useAllTvGuides = (params: { from: Dayjs; to: Dayjs }) =>
-  useQuery({
-    queryKey: ['channels', 'all', 'guide', params] as const,
-    queryFn: async () => {
-      return apiClient.get('/api/v2/channels/all/lineups', {
-        queries: {
-          from: params.from.toISOString(),
-          to: params.to.toISOString(),
-        },
-      });
-    },
-  });
+export const useAllTvGuides = (
+  params: { from: Dayjs; to: Dayjs },
+  extraOpts: Partial<UseQueryOptions<ChannelLineup[]>> = {},
+) => useQuery({ ...allLineupsQueryOpts(params), ...extraOpts });
 
 export const prefetchAllTvGuides =
-  (queryClient: QueryClient) => async (params: { from: Dayjs; to: Dayjs }) => {
+  (queryClient: QueryClient) =>
+  async (
+    params: { from: Dayjs; to: Dayjs },
+    extraOpts: Partial<UseQueryOptions<ChannelLineup[]>> = {},
+  ) => {
     return await queryClient.prefetchQuery({
-      queryKey: ['channels', 'all', 'guide', params] as const,
-      queryFn: async () => {
-        return apiClient.get('/api/v2/channels/all/lineups', {
-          queries: {
-            from: params.from.toISOString(),
-            to: params.to.toISOString(),
-          },
-        });
-      },
+      ...allLineupsQueryOpts(params),
+      ...extraOpts,
     });
   };

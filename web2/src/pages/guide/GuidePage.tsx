@@ -142,14 +142,20 @@ export default function GuidePage() {
     isPending,
     error,
     data: channelLineup,
-  } = useAllTvGuides({ from: start, to: end });
+  } = useAllTvGuides(
+    { from: start, to: end },
+    { staleTime: dayjs.duration(5, 'minutes').asMilliseconds() },
+  );
 
   const smallViewport = useMediaQuery(theme.breakpoints.down('md'));
 
-  prefetchAllTvGuides(queryClient)({
-    from: start.add(1, 'hour'),
-    to: end.add(1, 'hour'),
-  }).catch(console.error);
+  prefetchAllTvGuides(queryClient)(
+    {
+      from: start.add(1, 'hour'),
+      to: end.add(1, 'hour'),
+    },
+    { staleTime: dayjs.duration(5, 'minutes').asMilliseconds() },
+  ).catch(console.error);
 
   useInterval(() => {
     setProgress(calcProgress(start, end));
