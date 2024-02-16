@@ -46,8 +46,14 @@ import {
   reject,
   some,
 } from 'lodash-es';
-import { Fragment, useCallback, useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { Fragment, useCallback, useMemo, useState } from 'react';
+import {
+  Control,
+  Controller,
+  UseFormSetValue,
+  useForm,
+  useWatch,
+} from 'react-hook-form';
 import { Link as RouterLink } from 'react-router-dom';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import ChannelProgrammingList from '../../components/channel_config/ChannelProgrammingList.tsx';
@@ -93,6 +99,8 @@ function rotateArrayRight<T>(arr: T[], times: number): T[] {
   return arr;
 }
 
+type TimeSlotForm = Omit<TimeSlotSchedule, 'timeZoneOffset' | 'type'>;
+
 type MutateArgs = {
   channelId: string;
   lineupRequest: UpdateChannelProgrammingRequest;
@@ -102,6 +110,7 @@ type DropdownOption<T extends string | number> = {
   value: T;
   description: string;
 };
+
 type ProgramOption = DropdownOption<string>;
 
 const padOptions: DropdownOption<number>[] = [
@@ -176,6 +185,185 @@ const lineupItemAppearsInSchedule = (
   });
 };
 
+type AddTimeSlotButtonProps = {
+  control: Control<TimeSlotForm>;
+  setValue: UseFormSetValue<TimeSlotForm>;
+};
+
+const AddTimeSlotButton = ({ control, setValue }: AddTimeSlotButtonProps) => {
+  const currentSlots = useWatch({ control, name: 'slots' });
+
+  const addSlot = useCallback(() => {
+    const maxSlot = maxBy(currentSlots, (p) => p.startTime);
+    const newStartTime = maxSlot
+      ? dayjs.duration(maxSlot.startTime).add(1, 'hour')
+      : dayjs.duration(new Date().getTimezoneOffset(), 'minutes');
+    const newSlots: TimeSlot[] = [
+      ...currentSlots,
+      {
+        programming: { type: 'flex' },
+        startTime: newStartTime.asMilliseconds(),
+        order: 'next',
+      },
+    ];
+
+    setValue('slots', newSlots);
+  }, [currentSlots, setValue]);
+
+  return (
+    <Button
+      startIcon={<AddIcon />}
+      variant="contained"
+      onClick={() => addSlot()}
+    >
+      Add Slot
+    </Button>
+  );
+};
+
+type TimeSlotProps = {
+  slot: TimeSlot;
+  index: number;
+  control: Control<TimeSlotForm>;
+  setValue: UseFormSetValue<TimeSlotForm>;
+  programOptions: ProgramOption[];
+};
+
+const TimeSlotRow = ({
+  slot,
+  index,
+  control,
+  setValue,
+  programOptions,
+}: TimeSlotProps) => {
+  const start = dayjs.tz().startOf('day');
+  const currentSlots = useWatch({ control, name: 'slots' });
+  const currentPeriod = useWatch({ control, name: 'period' });
+
+  const updateSlotTime = useCallback(
+    (idx: number, time: dayjs.Dayjs) => {
+      setValue(
+        `slots.${idx}.startTime`,
+        time.mod(dayjs.duration(1, 'day')).asMilliseconds(),
+      );
+    },
+    [setValue],
+  );
+
+  const removeSlot = useCallback(
+    (idx: number) => {
+      setValue(
+        'slots',
+        reject(currentSlots, (_, i) => idx === i),
+      );
+    },
+    [currentSlots, setValue],
+  );
+
+  const updateSlotDay = useCallback(
+    (idx: number, currentDay: number, dayOfWeek: number) => {
+      const slot = currentSlots[idx];
+      const daylessStartTime = slot.startTime - currentDay * OneDayMillis;
+      const newStartTime = daylessStartTime + dayOfWeek * OneDayMillis;
+      setValue(`slots.${idx}.startTime`, newStartTime);
+    },
+    [currentSlots, setValue],
+  );
+
+  const updateSlotType = useCallback(
+    (idx: number, slotId: string) => {
+      let slotProgram: TimeSlotProgramming;
+
+      if (slotId.startsWith('show')) {
+        slotProgram = {
+          type: 'show',
+          showId: slotId.split('.')[1],
+        };
+      } else if (slotId.startsWith('movie')) {
+        slotProgram = {
+          type: 'movie',
+        };
+      } else if (slotId.startsWith('flex')) {
+        slotProgram = {
+          type: 'flex',
+        };
+        // TODO: Support redirect
+      } else {
+        return;
+      }
+
+      const slot: Omit<TimeSlot, 'startTime'> = {
+        order: 'next',
+        programming: slotProgram,
+      };
+
+      const curr = currentSlots[idx];
+
+      setValue(`slots.${idx}`, { ...slot, startTime: curr.startTime });
+    },
+    [currentSlots, setValue],
+  );
+
+  const startTime = start
+    .add(slot.startTime)
+    .subtract(new Date().getTimezoneOffset(), 'minutes');
+  const selectValue =
+    slot.programming.type === 'show'
+      ? `show.${slot.programming.showId}`
+      : slot.programming.type;
+  const showInputSize = currentPeriod === 'week' ? 7 : 9;
+  const dayOfTheWeek = Math.floor(slot.startTime / OneDayMillis);
+  return (
+    <Fragment key={`${slot.startTime}_${index}`}>
+      {currentPeriod === 'week' ? (
+        <Grid item xs={2}>
+          <Select
+            fullWidth
+            value={dayOfTheWeek}
+            onChange={(e) =>
+              updateSlotDay(index, dayOfTheWeek, e.target.value as number)
+            }
+          >
+            {map(DaysOfWeekMenuItems, ({ value, name }) => (
+              <MenuItem key={value} value={value}>
+                {name}
+              </MenuItem>
+            ))}
+          </Select>
+        </Grid>
+      ) : null}
+      <Grid item xs={2}>
+        <TimePicker
+          onChange={(value) => value && updateSlotTime(index, value)}
+          value={startTime}
+          label="Start Time"
+        />
+      </Grid>
+      <Grid item xs={showInputSize}>
+        <FormControl fullWidth>
+          <InputLabel>Program</InputLabel>
+          <Select
+            label="Program"
+            value={selectValue}
+            onChange={(e) => updateSlotType(index, e.target.value)}
+          >
+            {map(programOptions, ({ description, value }) => (
+              <MenuItem key={value} value={value}>
+                {description}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Grid>
+      <Grid item xs={1}>
+        <IconButton onClick={() => removeSlot(index)} color="error">
+          <Delete />
+        </IconButton>
+      </Grid>
+    </Fragment>
+  );
+};
+
 export default function TimeSlotEditorPage() {
   // Requires that the channel was already loaded... not the case if
   // we navigated directly, so we need to handle that
@@ -210,33 +398,33 @@ export default function TimeSlotEditorPage() {
     },
   });
 
-  const contentPrograms = filter(newLineup, isContentProgram);
-  const programOptions: ProgramOption[] = [
-    { value: 'flex', description: 'Flex' },
-  ];
+  const programOptions: ProgramOption[] = useMemo(() => {
+    const contentPrograms = filter(newLineup, isContentProgram);
+    const opts: ProgramOption[] = [{ value: 'flex', description: 'Flex' }];
 
-  if (contentPrograms.length) {
-    if (some(contentPrograms, (p) => p.subtype === 'movie')) {
-      programOptions.push({ description: 'Movies', value: 'movie' });
+    if (contentPrograms.length) {
+      if (some(contentPrograms, (p) => p.subtype === 'movie')) {
+        opts.push({ description: 'Movies', value: 'movie' });
+      }
+
+      const showOptions = chain(contentPrograms)
+        .filter((p) => p.subtype === 'episode')
+        .groupBy((p) => p.title)
+        .reduce(
+          (acc, _, title) => [
+            ...acc,
+            { description: title, value: `show.${title}` },
+          ],
+          [] as ProgramOption[],
+        )
+        .value();
+      opts.push(...showOptions);
     }
 
-    const showOptions = chain(contentPrograms)
-      .filter((p) => p.subtype === 'episode')
-      .groupBy((p) => p.title)
-      .reduce(
-        (acc, _, title) => [
-          ...acc,
-          { description: title, value: `show.${title}` },
-        ],
-        [] as ProgramOption[],
-      )
-      .value();
-    programOptions.push(...showOptions);
-  }
+    return opts;
+  }, [newLineup]);
 
-  const { control, getValues, setValue, watch } = useForm<
-    Omit<TimeSlotSchedule, 'timeZoneOffset' | 'type'>
-  >({
+  const { control, getValues, setValue, watch } = useForm<TimeSlotForm>({
     defaultValues:
       !isUndefined(loadedSchedule) && loadedSchedule.type === 'time'
         ? loadedSchedule
@@ -328,148 +516,17 @@ export default function TimeSlotEditorPage() {
     [setValue, currentSlots],
   );
 
-  const addSlot = useCallback(() => {
-    const maxSlot = maxBy(currentSlots, (p) => p.startTime);
-    const newStartTime = maxSlot
-      ? dayjs.duration(maxSlot.startTime).add(1, 'hour')
-      : dayjs.duration(new Date().getTimezoneOffset(), 'minutes');
-    const newSlots: TimeSlot[] = [
-      ...currentSlots,
-      {
-        programming: { type: 'flex' },
-        startTime: newStartTime.asMilliseconds(),
-        order: 'next',
-      },
-    ];
-
-    setValue('slots', newSlots);
-  }, [currentSlots, setValue]);
-
-  const updateSlotTime = useCallback(
-    (idx: number, time: dayjs.Dayjs) => {
-      setValue(
-        `slots.${idx}.startTime`,
-        time.mod(dayjs.duration(1, 'day')).asMilliseconds(),
-      );
-    },
-    [setValue],
-  );
-
-  const updateSlotDay = useCallback(
-    (idx: number, currentDay: number, dayOfWeek: number) => {
-      const slot = currentSlots[idx];
-      const daylessStartTime = slot.startTime - currentDay * OneDayMillis;
-      const newStartTime = daylessStartTime + dayOfWeek * OneDayMillis;
-      setValue(`slots.${idx}.startTime`, newStartTime);
-    },
-    [currentSlots, setValue],
-  );
-
-  const updateSlotType = useCallback(
-    (idx: number, slotId: string) => {
-      let slotProgram: TimeSlotProgramming;
-
-      if (slotId.startsWith('show')) {
-        slotProgram = {
-          type: 'show',
-          showId: slotId.split('.')[1],
-        };
-      } else if (slotId.startsWith('movie')) {
-        slotProgram = {
-          type: 'movie',
-        };
-      } else if (slotId.startsWith('flex')) {
-        slotProgram = {
-          type: 'flex',
-        };
-        // TODO: Support redirect
-      } else {
-        return;
-      }
-
-      const slot: Omit<TimeSlot, 'startTime'> = {
-        order: 'next',
-        programming: slotProgram,
-      };
-
-      const curr = currentSlots[idx];
-
-      setValue(`slots.${idx}`, { ...slot, startTime: curr.startTime });
-    },
-    [currentSlots, setValue],
-  );
-
-  const removeSlot = useCallback(
-    (idx: number) => {
-      setValue(
-        'slots',
-        reject(currentSlots, (_, i) => idx === i),
-      );
-    },
-    [currentSlots, setValue],
-  );
-
   const renderTimeSlots = () => {
-    const start = dayjs.tz().startOf('day');
-
     const slots = map(currentSlots, (slot, idx) => {
-      const startTime = start
-        .add(slot.startTime)
-        .subtract(new Date().getTimezoneOffset(), 'minutes');
-      const selectValue =
-        slot.programming.type === 'show'
-          ? `show.${slot.programming.showId}`
-          : slot.programming.type;
-      const showInputSize = currentPeriod === 'week' ? 7 : 9;
-      const dayOfTheWeek = Math.floor(slot.startTime / OneDayMillis);
       return (
-        <Fragment key={`${slot.startTime}_${idx}`}>
-          {currentPeriod === 'week' ? (
-            <Grid item xs={2}>
-              <Select
-                fullWidth
-                value={dayOfTheWeek}
-                onChange={(e) =>
-                  updateSlotDay(idx, dayOfTheWeek, e.target.value as number)
-                }
-              >
-                {map(DaysOfWeekMenuItems, ({ value, name }) => (
-                  <MenuItem key={value} value={value}>
-                    {name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </Grid>
-          ) : null}
-          <Grid item xs={2}>
-            <TimePicker
-              onChange={(value) => value && updateSlotTime(idx, value)}
-              value={startTime}
-              label="Start Time"
-            />
-          </Grid>
-          <Grid item xs={showInputSize}>
-            <FormControl fullWidth>
-              <InputLabel>Program</InputLabel>
-              <Select
-                label="Program"
-                value={selectValue}
-                onChange={(e) => updateSlotType(idx, e.target.value)}
-              >
-                {map(programOptions, ({ description, value }) => (
-                  <MenuItem key={value} value={value}>
-                    {description}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={1}>
-            <IconButton onClick={() => removeSlot(idx)} color="error">
-              <Delete />
-            </IconButton>
-          </Grid>
-        </Fragment>
+        <TimeSlotRow
+          key={`${slot.startTime}_${idx}`}
+          control={control}
+          index={idx}
+          programOptions={programOptions}
+          setValue={setValue}
+          slot={slot}
+        />
       );
     });
 
@@ -570,13 +627,7 @@ export default function TimeSlotEditorPage() {
         </Box>
         <Divider sx={{ my: 2 }} />
         {renderTimeSlots()}
-        <Button
-          startIcon={<AddIcon />}
-          variant="contained"
-          onClick={() => addSlot()}
-        >
-          Add Slot
-        </Button>
+        <AddTimeSlotButton control={control} setValue={setValue} />
         <Divider sx={{ my: 2 }} />
         <Box>
           <FormControl fullWidth margin="normal">
