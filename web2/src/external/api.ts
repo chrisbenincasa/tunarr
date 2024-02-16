@@ -22,8 +22,12 @@ import { z } from 'zod';
 import {
   createPlexServerEndpoint,
   deletePlexServerEndpoint,
+  getFffmpegSettings,
+  getHdhrSettings,
   getPlexBackendStatus,
   getPlexServersEndpoint,
+  getPlexStreamSettings,
+  getXmlTvSettings,
   updatePlexServerEndpoint,
 } from './settingsApi.ts';
 
@@ -223,6 +227,10 @@ export const api = makeApi([
   updatePlexServerEndpoint,
   deletePlexServerEndpoint,
   getPlexBackendStatus,
+  getXmlTvSettings,
+  getHdhrSettings,
+  getPlexStreamSettings,
+  getFffmpegSettings,
 ]);
 
 export const createApiClient = once((uri: string) => {

@@ -4,6 +4,7 @@ import { Root } from './App.tsx';
 import ChannelProgrammingPage from './pages/channels/ChannelProgrammingPage.tsx';
 import ChannelsPage from './pages/channels/ChannelsPage.tsx';
 import EditChannelPage from './pages/channels/EditChannelPage.tsx';
+import ProgrammingSelectorPage from './pages/channels/ProgrammingSelectorPage.tsx';
 import TimeSlotEditorPage from './pages/channels/TimeSlotEditorPage.tsx';
 import {
   customShowsLoader,
@@ -28,8 +29,8 @@ import SettingsLayout from './pages/settings/SettingsLayout.tsx';
 import TaskSettingsPage from './pages/settings/TaskSettingsPage.tsx';
 import XmlTvSettingsPage from './pages/settings/XmlTvSettingsPage.tsx';
 import WatchPage from './pages/watch/WatchPage.tsx';
-import { queryCache } from './queryClient.ts';
 import WelcomePage from './pages/welcome/WelcomePage.tsx';
+import { queryCache } from './queryClient.ts';
 
 const queryClient = new QueryClient({ queryCache });
 
@@ -67,6 +68,10 @@ export const router = createBrowserRouter([
         path: '/channels/:id/programming',
         element: <ChannelProgrammingPage />,
         loader: editProgrammingLoader(queryClient),
+      },
+      {
+        path: '/channels/:id/programming/add',
+        element: <ProgrammingSelectorPage />,
       },
       {
         path: '/channels/:id/programming/time-slot-editor',

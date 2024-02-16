@@ -1,40 +1,41 @@
 import { useQueries, useQuery } from '@tanstack/react-query';
-import {
-  FfmpegSettings,
-  PlexServerSettings,
-  PlexStreamSettings,
-  XmlTvSettings,
-  HdhrSettings,
-} from '@tunarr/types';
-
-const getQuerySettings = <T>(settings: string, path: string) => ({
-  queryKey: ['settings', settings],
-  queryFn: async () => {
-    const res = await fetch('http://localhost:8000/api/' + path);
-    return res.json() as Promise<T>;
-  },
-});
-
-const useSettings = <T>(settings: string, path: string) =>
-  useQuery(getQuerySettings<T>(settings, path));
+import { apiClient } from '../external/api.ts';
 
 export const useXmlTvSettings = () =>
-  useSettings<XmlTvSettings>('xmltv', 'xmltv-settings');
+  useQuery({
+    queryKey: ['settings', 'xmltv'],
+    queryFn: () => apiClient.getXmlTvSettings(),
+  });
 
 export const useFfmpegSettings = () =>
-  useSettings<FfmpegSettings>('ffmpeg', 'ffmpeg-settings');
+  useQuery({
+    queryKey: ['settings', 'ffmpeg'],
+    queryFn: () => apiClient.getFfmpegSettings(),
+  });
 
 export const usePlexServerSettings = () =>
-  useSettings<PlexServerSettings[]>('plex-servers', 'plex-servers');
+  useQuery({
+    queryKey: ['settings', 'plex-servers'],
+    queryFn: () => apiClient.getPlexServers(),
+  });
 
 export const usePlexStreamSettings = () =>
-  useSettings<PlexStreamSettings>('plex', 'plex-settings');
+  useQuery({
+    queryKey: ['settings', 'plex-stream'],
+    queryFn: () => apiClient.getPlexStreamSettings(),
+  });
 
 export const usePlexSettings = () =>
   useQueries({
     queries: [
-      getQuerySettings<PlexServerSettings[]>('plex-servers', 'plex-servers'),
-      getQuerySettings<PlexStreamSettings>('plex', 'plex-settings'),
+      {
+        queryKey: ['settings', 'plex-servers'],
+        queryFn: () => apiClient.getPlexServers(),
+      },
+      {
+        queryKey: ['settings', 'plex-stream'],
+        queryFn: () => apiClient.getPlexStreamSettings(),
+      },
     ],
     combine: (result) => {
       const [serversResult, streamResult] = result;
@@ -57,4 +58,7 @@ export const usePlexSettings = () =>
   });
 
 export const useHdhrSettings = () =>
-  useSettings<HdhrSettings>('hdhr', 'hdhr-settings');
+  useQuery({
+    queryKey: ['settings', 'hdhr'],
+    queryFn: () => apiClient.getHdhrSettings(),
+  });

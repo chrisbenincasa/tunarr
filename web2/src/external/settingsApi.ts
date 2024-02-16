@@ -2,7 +2,13 @@ import {
   InsertPlexServerRequestSchema,
   UpdatePlexServerRequestSchema,
 } from '@tunarr/types/api';
-import { PlexServerSettingsSchema } from '@tunarr/types/schemas';
+import {
+  FfmpegSettingsSchema,
+  HdhrSettingsSchema,
+  PlexServerSettingsSchema,
+  PlexStreamSettingsSchema,
+  XmlTvSettingsSchema,
+} from '@tunarr/types/schemas';
 import { makeEndpoint, parametersBuilder } from '@zodios/core';
 import { z } from 'zod';
 
@@ -63,4 +69,32 @@ export const getPlexBackendStatus = makeEndpoint({
     // TODO Change this, this is very stupid
     status: z.union([z.literal(1), z.literal(-1)]),
   }),
+});
+
+export const getXmlTvSettings = makeEndpoint({
+  method: 'get',
+  path: '/api/xmltv-settings',
+  response: XmlTvSettingsSchema,
+  alias: 'getXmlTvSettings',
+});
+
+export const getFffmpegSettings = makeEndpoint({
+  method: 'get',
+  path: '/api/ffmpeg-settings',
+  response: FfmpegSettingsSchema,
+  alias: 'getFfmpegSettings',
+});
+
+export const getHdhrSettings = makeEndpoint({
+  method: 'get',
+  path: '/api/hdhr-settings',
+  response: HdhrSettingsSchema,
+  alias: 'getHdhrSettings',
+});
+
+export const getPlexStreamSettings = makeEndpoint({
+  method: 'get',
+  path: '/api/plex-settings',
+  response: PlexStreamSettingsSchema,
+  alias: 'getPlexStreamSettings',
 });

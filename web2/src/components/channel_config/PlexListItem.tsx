@@ -25,9 +25,14 @@ import {
   addKnownMediaForServer,
   addSelectedMedia,
 } from '../../store/programmingSelector/actions.ts';
-import { PlexListItemProps } from './ProgrammingSelectorDialog.tsx';
 
-// function extractPlexItemChildren<T extends PlexMedia>()
+export interface PlexListItemProps<T extends PlexMedia> {
+  item: T;
+  style?: React.CSSProperties;
+  index?: number;
+  length?: number;
+  parent?: string;
+}
 
 export function PlexListItem<T extends PlexMedia>(props: PlexListItemProps<T>) {
   const server = useStore((s) => s.currentServer!); // We have to have a server at this point

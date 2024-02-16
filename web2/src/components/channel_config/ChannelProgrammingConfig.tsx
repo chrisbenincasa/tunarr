@@ -258,7 +258,9 @@ export function ChannelProgrammingConfig() {
           </Button>
           <Button
             variant="contained"
-            onClick={() => setProgrammingModalOpen(true)}
+            component={Link}
+            to="add"
+            // onClick={() => setProgrammingModalOpen(true)}
           >
             Add
           </Button>
