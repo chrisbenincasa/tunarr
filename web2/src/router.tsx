@@ -6,15 +6,17 @@ import ChannelsPage from './pages/channels/ChannelsPage.tsx';
 import EditChannelPage from './pages/channels/EditChannelPage.tsx';
 import ProgrammingSelectorPage from './pages/channels/ProgrammingSelectorPage.tsx';
 import TimeSlotEditorPage from './pages/channels/TimeSlotEditorPage.tsx';
+import { editProgrammingLoader } from './preloaders/channelLoaders.ts';
+import { editChannelLoader } from './preloaders/channelLoaders.ts';
+import { customShowsLoader } from './preloaders/customShowLoaders.ts';
 import {
-  customShowsLoader,
-  editChannelLoader,
-  editProgrammingLoader,
   existingCustomShowLoader,
-  existingFillerListLoader,
   newCustomShowLoader,
+} from './preloaders/customShowLoaders.ts';
+import {
+  existingFillerListLoader,
   newFillerListLoader,
-} from './pages/channels/loaders.ts';
+} from './preloaders/fillerListLoader.ts';
 import GuidePage from './pages/guide/GuidePage.tsx';
 import CustomShowsPage from './pages/library/CustomShowsPage.tsx';
 import EditCustomShowPage from './pages/library/EditCustomShowPage.tsx';

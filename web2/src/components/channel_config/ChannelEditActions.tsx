@@ -12,8 +12,6 @@ export default function ChannelEditActions() {
     reset,
   } = useFormContext<SaveChannelRequest>();
 
-  console.log(isValid, isDirty);
-
   return (
     <Stack spacing={2} direction="row" justifyContent="right" sx={{ mt: 2 }}>
       {!channelEditorState.isNewChannel ? (

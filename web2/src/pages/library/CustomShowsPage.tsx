@@ -13,7 +13,7 @@ import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import { Link } from 'react-router-dom';
 import { usePreloadedData } from '../../hooks/preloadedDataHook.ts';
-import { customShowsLoader } from '../channels/loaders.ts';
+import { customShowsLoader } from '../../preloaders/customShowLoaders.ts';
 import { IconButton, Tooltip } from '@mui/material';
 
 export default function CustomShowsPage() {

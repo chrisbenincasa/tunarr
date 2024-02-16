@@ -8,6 +8,7 @@ import {
 } from './programmingSelector/store.ts';
 import {
   ChannelEditorState,
+  EditorsState,
   createChannelEditorState,
 } from './channelEditor/store.ts';
 import {
@@ -43,7 +44,7 @@ export type State = ThemeEditorState &
   SettingsState &
   ChannelsState &
   ProgrammingListingsState &
-  ChannelEditorState;
+  EditorsState;
 
 const createSettingsSlice: StateCreator<SettingsState> = () => ({
   xmlTvSettings: undefined,

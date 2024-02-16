@@ -65,47 +65,74 @@ export const TimeSlotScheduleSchema = z.object({
 
 export type TimeSlotSchedule = Alias<z.infer<typeof TimeSlotScheduleSchema>>;
 
-export type MovieProgrammingRandomSlot = {
-  type: 'movie';
-};
+export const MovieProgrammingRandomSlotSchema = z.object({
+  type: z.literal('movie'),
+});
 
-export type ShowProgrammingRandomSlot = {
-  type: 'show';
-  showId: string;
-};
+export type MovieProgrammingRandomSlot = Alias<
+  z.infer<typeof MovieProgrammingRandomSlotSchema>
+>;
 
-export type FlexProgrammingRandomSlot = {
-  type: 'flex';
-};
+export const ShowProgrammingRandomSlotSchema = z.object({
+  type: z.literal('show'),
+  showId: z.string(),
+});
 
-export type RandomSlotProgramming =
-  | MovieProgrammingRandomSlot
-  | ShowProgrammingRandomSlot
-  | FlexProgrammingRandomSlot;
+export type ShowProgrammingRandomSlot = Alias<
+  z.infer<typeof ShowProgrammingRandomSlotSchema>
+>;
 
-export type RandomSlot = {
-  order: string;
-  startTime?: number; // Offset from midnight millis
-  cooldown: number;
-  periodMs?: string;
-  durationMs: number;
-  weight?: number;
-  weightPercentage?: string; // Frontend specific?
-  programming: RandomSlotProgramming;
-};
+export const FlexProgrammingRandomSlotSchema = z.object({
+  type: z.literal('flex'),
+});
+
+export type FlexProgrammingRandomSlot = Alias<
+  z.infer<typeof FlexProgrammingRandomSlotSchema>
+>;
+
+export const RandomSlotProgrammingSchema = z.discriminatedUnion('type', [
+  MovieProgrammingRandomSlotSchema,
+  ShowProgrammingRandomSlotSchema,
+  FlexProgrammingRandomSlotSchema,
+]);
+
+export type RandomSlotProgramming = Alias<
+  z.infer<typeof RandomSlotProgrammingSchema>
+>;
+
+export const RandomSlotSchema = z.object({
+  order: z.string(),
+  startTime: z.number().optional(), // Offset from midnight millis
+  cooldownMs: z.number(),
+  periodMs: z.number().optional(),
+  durationMs: z.number(),
+  weight: z.number().optional(), // Percentage
+  programming: RandomSlotProgrammingSchema,
+});
+
+export type RandomSlot = Alias<z.infer<typeof RandomSlotSchema>>;
+
+export const RandomSlotScheduleSchema = z.object({
+  type: z.literal('random'),
+  flexPreference: z.union([z.literal('distribute'), z.literal('end')]),
+  maxDays: z.number(),
+  padMs: z.number(),
+  padStyle: z.union([z.literal('slot'), z.literal('episode')]),
+  slots: z.array(RandomSlotSchema),
+  timeZoneOffset: z.number().optional(), // Timezone offset in minutes
+  randomDistribution: z.union([z.literal('uniform'), z.literal('weighted')]),
+  periodMs: z.number().optional(),
+});
 
 // This is used on the frontend too, we will move common
 // types eventually.
-export type RandomSlotSchedule = {
-  type: 'random';
-  flexPreference: 'distribute' | 'end'; // distribute or end
-  maxDays: number; // days
-  padMs: number; // Pad time in millis
-  padStyle: 'slot' | 'episode';
-  slots: RandomSlot[];
-  timeZoneOffset?: number; // tz offset in...minutes, i think?
-  randomDistribution: 'uniform' | 'weighted';
-  periodMs?: number;
-};
+export type RandomSlotSchedule = Alias<
+  z.infer<typeof RandomSlotScheduleSchema>
+>;
 
-export type LineupSchedule = TimeSlotSchedule | RandomSlotSchedule;
+export const LineupScheduleSchema = z.discriminatedUnion('type', [
+  TimeSlotScheduleSchema,
+  RandomSlotScheduleSchema,
+]);
+
+export type LineupSchedule = Alias<z.infer<typeof LineupScheduleSchema>>;

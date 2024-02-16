@@ -33,7 +33,7 @@ import {
   ChannelEditContext,
   ChannelEditContextState,
 } from './EditChannelContext.ts';
-import { editChannelLoader } from './loaders.ts';
+import { editChannelLoader } from '../../preloaders/channelLoaders.ts';
 
 type TabValues = 'properties' | 'flex' | 'epg' | 'ffmpeg';
 

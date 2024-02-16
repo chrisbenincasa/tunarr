@@ -1,4 +1,5 @@
 import z from 'zod';
+import { LineupScheduleSchema } from '../api/Scheduling.js';
 import { PlexEpisodeSchema, PlexMovieSchema } from '../plex/index.js';
 import { ChannelIconSchema } from './utilSchemas.js';
 
@@ -161,4 +162,5 @@ export const CondensedChannelProgrammingSchema = z.object({
   programs: z.record(ContentProgramSchema),
   lineup: z.array(CondensedChannelProgramSchema),
   startTimeOffsets,
+  schedule: LineupScheduleSchema.optional(),
 });

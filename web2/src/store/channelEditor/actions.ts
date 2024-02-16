@@ -25,7 +25,12 @@ import {
 import { zipWithIndex } from '../../helpers/util.ts';
 import { EnrichedPlexMedia } from '../../hooks/plexHooks.ts';
 import useStore from '../index.ts';
-import { UIIndex, initialChannelEditorState } from './store.ts';
+import {
+  ChannelEditorState,
+  UIIndex,
+  initialChannelEditorState,
+} from './store.ts';
+import { Draft } from 'immer';
 
 export const resetChannelEditorState = () =>
   useStore.setState((state) => {
@@ -54,6 +59,18 @@ function addIndexesAndCalculateOffsets<T extends { duration: number }>(
   });
 }
 
+function updateProgramList(
+  channelEditor: Draft<ChannelEditorState>,
+  programming: CondensedChannelProgramming,
+) {
+  const programs = addIndexesAndCalculateOffsets(programming.lineup);
+  channelEditor.programsLoaded = true;
+  channelEditor.originalProgramList = [...programs];
+  channelEditor.programList = [...programs];
+  channelEditor.programLookup = { ...programming.programs };
+  channelEditor.schedule = programming.schedule;
+}
+
 export const setCurrentChannel = (
   channel: Omit<Channel, 'programs'>,
   programming?: CondensedChannelProgramming,
@@ -62,11 +79,15 @@ export const setCurrentChannel = (
     channelEditor.currentEntity = channel;
     channelEditor.originalEntity = channel;
     if (programming) {
-      const programs = addIndexesAndCalculateOffsets(programming.lineup);
-      channelEditor.originalProgramList = [...programs];
-      channelEditor.programList = [...programs];
-      channelEditor.programLookup = { ...programming.programs };
+      updateProgramList(channelEditor, programming);
     }
+  });
+
+export const setCurrentChannelProgramming = (
+  programming: CondensedChannelProgramming,
+) =>
+  useStore.setState(({ channelEditor }) => {
+    updateProgramList(channelEditor, programming);
   });
 
 export const setCurrentLineup = (
@@ -75,6 +96,7 @@ export const setCurrentLineup = (
 ) =>
   useStore.setState((state) => {
     state.channelEditor.programList = addIndexesAndCalculateOffsets(lineup);
+    state.channelEditor.programsLoaded = true;
     if (!isUndefined(dirty)) {
       state.channelEditor.dirty.programs = dirty;
     }

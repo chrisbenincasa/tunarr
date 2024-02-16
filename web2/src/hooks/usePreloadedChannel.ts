@@ -1,6 +1,6 @@
 import isUndefined from 'lodash-es/isUndefined';
 import { useEffect } from 'react';
-import { editProgrammingLoader } from '../pages/channels/loaders.ts';
+import { editProgrammingLoader } from '../preloaders/channelLoaders.ts';
 import { setCurrentChannel } from '../store/channelEditor/actions.ts';
 import { usePreloadedData } from './preloadedDataHook.ts';
 import { useChannelEditor } from '../store/selectors.ts';

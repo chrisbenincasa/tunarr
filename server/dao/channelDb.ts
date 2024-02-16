@@ -372,6 +372,7 @@ export class ChannelDB {
       programs: omitBy(materializedPrograms, isNil),
       lineup: condensedLineup,
       startTimeOffsets: apiOffsets,
+      schedule: lineup.schedule,
     };
   }
 

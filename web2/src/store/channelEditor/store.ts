@@ -7,6 +7,7 @@ import {
 } from '@tunarr/types';
 import { StateCreator } from 'zustand';
 import { UICondensedChannelProgram } from '../../types/index.ts';
+import { LineupSchedule } from '@tunarr/types/api';
 
 export type UIIndex = { originalIndex: number };
 
@@ -22,17 +23,24 @@ export interface ProgrammingEditorState<EntityType, ProgramType> {
   originalProgramList: (ProgramType & UIIndex)[];
   // The actively edited list
   programList: (ProgramType & UIIndex)[];
+  programsLoaded: boolean;
   dirty: {
     programs: boolean;
   };
 }
 
-export interface ChannelEditorState {
-  channelEditor: ProgrammingEditorState<Channel, UICondensedChannelProgram> & {
-    // Since for channels we deal with 'condensed' programs, we need to have
-    // the lookup record for programs by ID
-    programLookup: Record<string, ContentProgram>;
-  };
+export type ChannelEditorState = ProgrammingEditorState<
+  Channel,
+  UICondensedChannelProgram
+> & {
+  // Since for channels we deal with 'condensed' programs, we need to have
+  // the lookup record for programs by ID
+  programLookup: Record<string, ContentProgram>;
+  schedule?: LineupSchedule;
+};
+
+export interface EditorsState {
+  channelEditor: ChannelEditorState;
   customShowEditor: ProgrammingEditorState<
     CustomShow,
     ContentProgram | CustomProgram // You cannot add Flex to custom shows
@@ -47,19 +55,18 @@ const empty = () => ({
   originalProgramList: [],
   programList: [],
   schedulePreviewList: [],
+  programsLoaded: false,
   dirty: {
     programs: false,
   },
 });
 
-export const initialChannelEditorState: ChannelEditorState = {
+export const initialChannelEditorState: EditorsState = {
   channelEditor: { ...empty(), programLookup: {} },
   customShowEditor: empty(),
   fillerListEditor: empty(),
 };
 
-export const createChannelEditorState: StateCreator<
-  ChannelEditorState
-> = () => {
+export const createChannelEditorState: StateCreator<EditorsState> = () => {
   return initialChannelEditorState;
 };

@@ -15,6 +15,7 @@ import {
   Link,
   MenuItem,
   Select,
+  SelectChangeEvent,
   Snackbar,
   TextField,
   Typography,
@@ -36,20 +37,22 @@ import utc from 'dayjs/plugin/utc';
 import {
   chain,
   filter,
+  first,
   isNull,
-  isNumber,
   isUndefined,
   map,
   maxBy,
+  range,
+  reject,
   some,
 } from 'lodash-es';
-import { Fragment, useCallback, useMemo, useState } from 'react';
+import { Fragment, useCallback, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import { Link as RouterLink } from 'react-router-dom';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import ChannelProgrammingList from '../../components/channel_config/ChannelProgrammingList.tsx';
 import { apiClient } from '../../external/api.ts';
 import { zipWithIndex } from '../../helpers/util.ts';
-import { useNumberString } from '../../hooks/useNumberString.ts';
 import { usePreloadedChannel } from '../../hooks/usePreloadedChannel.ts';
 import { updateCurrentChannel } from '../../store/channelEditor/actions.ts';
 import { UIChannelProgram } from '../../types/index.ts';
@@ -57,6 +60,38 @@ import { UIChannelProgram } from '../../types/index.ts';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.extend(dayjsMod);
+
+const OneDayMillis = dayjs.duration(1, 'day').asMilliseconds();
+
+// TODO Make this locale aware
+const DaysOfWeekMenuItems = [
+  { value: 0, name: 'Sunday' },
+  { value: 1, name: 'Monday' },
+  { value: 2, name: 'Tuesday' },
+  { value: 3, name: 'Wednesday' },
+  { value: 4, name: 'Thursday' },
+  { value: 5, name: 'Friday' },
+  { value: 6, name: 'Saturday' },
+];
+
+// mutates array
+function rotateArrayRight<T>(arr: T[], times: number): T[] {
+  if (times <= 0) {
+    return arr;
+  }
+
+  if (arr.length === 0) {
+    return arr;
+  }
+
+  let i = 0;
+  while (i < times) {
+    arr.push(arr.shift()!);
+    i++;
+  }
+
+  return arr;
+}
 
 type MutateArgs = {
   channelId: string;
@@ -102,11 +137,53 @@ const flexOptions: DropdownOption<'end' | 'distribute'>[] = [
   { value: 'end', description: 'End of the slot' },
 ];
 
+const defaultTimeSlotSchedule: TimeSlotSchedule = {
+  type: 'time',
+  flexPreference: 'distribute',
+  latenessMs: 0,
+  maxDays: 10,
+  padMs: 0,
+  slots: [],
+  period: 'day',
+  timeZoneOffset: new Date().getTimezoneOffset(),
+};
+
+const lineupItemAppearsInSchedule = (
+  slots: TimeSlot[],
+  item: ChannelProgram,
+) => {
+  return some(slots, (slot) => {
+    switch (slot.programming.type) {
+      case 'flex':
+        return item.type === 'flex' || item.type === 'redirect';
+      case 'movie':
+        return (
+          (item.type === 'content' && item.subtype === 'movie') ||
+          (item.type === 'custom' && item.program?.subtype === 'movie')
+        );
+      case 'show': {
+        const showTitle = slot.programming.showId;
+        return (
+          (item.type === 'content' &&
+            item.subtype === 'episode' &&
+            showTitle === item.title) ||
+          (item.type === 'custom' &&
+            item.program?.subtype === 'episode' &&
+            item.program?.title === showTitle)
+        );
+      }
+    }
+  });
+};
+
 export default function TimeSlotEditorPage() {
   // Requires that the channel was already loaded... not the case if
   // we navigated directly, so we need to handle that
-  const { currentEntity: channel, programList: newLineup } =
-    usePreloadedChannel();
+  const {
+    currentEntity: channel,
+    programList: newLineup,
+    schedule: loadedSchedule,
+  } = usePreloadedChannel();
 
   const [, setStartTime] = useState(
     channel?.startTime ?? dayjs().unix() * 1000,
@@ -157,34 +234,24 @@ export default function TimeSlotEditorPage() {
     programOptions.push(...showOptions);
   }
 
-  // TODO get from the lineup config
-  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
-  const [period, setPeriod] = useState<'day' | 'week'>('day');
-  const [padOption, setPadOption] = useState<number>(1);
-  const [latenessOption, setLatenessOption] = useState<number>(0);
-  const [flexOption, setFlexOption] = useState<'end' | 'distribute'>(
-    'distribute',
-  );
+  const { control, getValues, setValue, watch } = useForm<
+    Omit<TimeSlotSchedule, 'timeZoneOffset' | 'type'>
+  >({
+    defaultValues:
+      !isUndefined(loadedSchedule) && loadedSchedule.type === 'time'
+        ? loadedSchedule
+        : defaultTimeSlotSchedule,
+  });
 
-  const {
-    numValue: precalcDays,
-    strValue: precalcDaysStr,
-    setValue: setPrecalcDays,
-    isValid: precalcDaysValid,
-  } = useNumberString(10);
+  // Have to use a watch here because rendering depends on this value
+  const currentPeriod = watch('period');
+  const currentSlots = watch('slots');
 
-  const schedule: TimeSlotSchedule = useMemo(() => {
-    return {
-      flexPreference: flexOption,
-      latenessMs: latenessOption,
-      maxDays: precalcDays,
-      padMs: padOption,
-      timeZoneOffset: new Date().getTimezoneOffset(),
-      period,
-      type: 'time',
-      slots: timeSlots,
-    };
-  }, [flexOption, latenessOption, precalcDays, padOption, timeSlots, period]);
+  const schedule: TimeSlotSchedule = {
+    ...getValues(),
+    timeZoneOffset: new Date().getTimezoneOffset(),
+    type: 'time',
+  };
 
   const [perfSnackbarDetails, setPerfSnackbarDetails] = useState<{
     ms: number;
@@ -195,39 +262,11 @@ export default function TimeSlotEditorPage() {
     UIChannelProgram[] | undefined
   >(undefined);
 
-  const isValid = timeSlots.length > 0; // Need more than this
-
-  const lineupItemAppearsInSchedule = useMemo(() => {
-    return (item: ChannelProgram) => {
-      const slots = schedule.slots;
-      return some(slots, (slot) => {
-        switch (slot.programming.type) {
-          case 'flex':
-            return item.type === 'flex' || item.type === 'redirect';
-          case 'movie':
-            return (
-              (item.type === 'content' && item.subtype === 'movie') ||
-              (item.type === 'custom' && item.program?.subtype === 'movie')
-            );
-          case 'show': {
-            const showTitle = slot.programming.showId;
-            return (
-              (item.type === 'content' &&
-                item.subtype === 'episode' &&
-                showTitle === item.title) ||
-              (item.type === 'custom' &&
-                item.program?.subtype === 'episode' &&
-                item.program?.title === showTitle)
-            );
-          }
-        }
-      });
-    };
-  }, [schedule]);
-
   const onSave = () => {
     // Find programs that have active slots
-    const filteredLineup = filter(newLineup, lineupItemAppearsInSchedule);
+    const filteredLineup = filter(newLineup, (item) =>
+      lineupItemAppearsInSchedule(getValues('slots'), item),
+    );
 
     updateLineupMutation.mutate({
       channelId: channel!.id,
@@ -239,36 +278,91 @@ export default function TimeSlotEditorPage() {
     });
   };
 
-  const addSlot = () => {
-    setTimeSlots((prev) => {
-      const maxSlot = maxBy(prev, (p) => p.startTime);
-      const newStartTime = maxSlot
-        ? dayjs.duration(maxSlot.startTime).add(1, 'hour')
-        : dayjs.duration(new Date().getTimezoneOffset(), 'minutes');
-      return [
-        ...prev,
-        {
-          programming: { type: 'flex' },
-          startTime: newStartTime.asMilliseconds(),
-          order: 'next',
-        },
-      ];
-    });
-  };
+  const handlePeriodChange = useCallback(
+    (e: SelectChangeEvent<'day' | 'week' | 'month'>) => {
+      const value = e.target.value as TimeSlotSchedule['period'];
+      setValue('period', value);
+      let newSlots: TimeSlot[] = [];
+      if (value === 'day') {
+        // Remove slots
+        // This is (sort of) what the original behavior was... keep
+        // as many unique time starts as possible. Seems weird. We
+        // can change in the future if we want.
+        newSlots = chain(currentSlots)
+          .map((slot) => ({
+            ...slot,
+            startTime: dayjs(slot.startTime)
+              .mod(dayjs.duration(1, 'day'))
+              .asMilliseconds(),
+          }))
+          .groupBy((slot) => slot.startTime)
+          .mapValues((v) => first(v)!)
+          .values()
+          .sortBy('startTime')
+          .value();
+      } else if (value === 'week') {
+        const now = dayjs();
+        const dayOfTheWeek = now.day();
+        const offsets = rotateArrayRight(
+          chain(range(0, 7))
+            .map((i) => i * OneDayMillis)
+            .value(),
+          dayOfTheWeek,
+        );
+
+        // For each day offset, spread out the current slots for each day
+        newSlots = chain(offsets)
+          .map((offset) => {
+            return map(currentSlots, (slot) => ({
+              ...slot,
+              startTime: slot.startTime + offset,
+            }));
+          })
+          .flatten()
+          .value();
+      }
+
+      // Add slots
+      setValue('slots', newSlots);
+    },
+    [setValue, currentSlots],
+  );
+
+  const addSlot = useCallback(() => {
+    const maxSlot = maxBy(currentSlots, (p) => p.startTime);
+    const newStartTime = maxSlot
+      ? dayjs.duration(maxSlot.startTime).add(1, 'hour')
+      : dayjs.duration(new Date().getTimezoneOffset(), 'minutes');
+    const newSlots: TimeSlot[] = [
+      ...currentSlots,
+      {
+        programming: { type: 'flex' },
+        startTime: newStartTime.asMilliseconds(),
+        order: 'next',
+      },
+    ];
+
+    setValue('slots', newSlots);
+  }, [currentSlots, setValue]);
 
   const updateSlotTime = useCallback(
     (idx: number, time: dayjs.Dayjs) => {
-      setTimeSlots((prev) => {
-        const existing = prev[idx];
-        const newArr = [...prev];
-        newArr[idx] = {
-          ...existing,
-          startTime: time.mod(dayjs.duration(1, 'day')).asMilliseconds(),
-        };
-        return newArr;
-      });
+      setValue(
+        `slots.${idx}.startTime`,
+        time.mod(dayjs.duration(1, 'day')).asMilliseconds(),
+      );
     },
-    [setTimeSlots],
+    [setValue],
+  );
+
+  const updateSlotDay = useCallback(
+    (idx: number, currentDay: number, dayOfWeek: number) => {
+      const slot = currentSlots[idx];
+      const daylessStartTime = slot.startTime - currentDay * OneDayMillis;
+      const newStartTime = daylessStartTime + dayOfWeek * OneDayMillis;
+      setValue(`slots.${idx}.startTime`, newStartTime);
+    },
+    [currentSlots, setValue],
   );
 
   const updateSlotType = useCallback(
@@ -298,27 +392,27 @@ export default function TimeSlotEditorPage() {
         programming: slotProgram,
       };
 
-      setTimeSlots((prev) => {
-        return map(prev, (item, i) => {
-          return idx === i ? { ...slot, startTime: item.startTime } : item;
-        });
-      });
+      const curr = currentSlots[idx];
+
+      setValue(`slots.${idx}`, { ...slot, startTime: curr.startTime });
     },
-    [setTimeSlots],
+    [currentSlots, setValue],
   );
 
   const removeSlot = useCallback(
     (idx: number) => {
-      setTimeSlots((prev) => {
-        return [...prev.splice(idx, 1)];
-      });
+      setValue(
+        'slots',
+        reject(currentSlots, (_, i) => idx === i),
+      );
     },
-    [setTimeSlots],
+    [currentSlots, setValue],
   );
 
   const renderTimeSlots = () => {
     const start = dayjs.tz().startOf('day');
-    const slots = map(timeSlots, (slot, idx) => {
+
+    const slots = map(currentSlots, (slot, idx) => {
       const startTime = start
         .add(slot.startTime)
         .subtract(new Date().getTimezoneOffset(), 'minutes');
@@ -326,8 +420,27 @@ export default function TimeSlotEditorPage() {
         slot.programming.type === 'show'
           ? `show.${slot.programming.showId}`
           : slot.programming.type;
+      const showInputSize = currentPeriod === 'week' ? 7 : 9;
+      const dayOfTheWeek = Math.floor(slot.startTime / OneDayMillis);
       return (
         <Fragment key={`${slot.startTime}_${idx}`}>
+          {currentPeriod === 'week' ? (
+            <Grid item xs={2}>
+              <Select
+                fullWidth
+                value={dayOfTheWeek}
+                onChange={(e) =>
+                  updateSlotDay(idx, dayOfTheWeek, e.target.value as number)
+                }
+              >
+                {map(DaysOfWeekMenuItems, ({ value, name }) => (
+                  <MenuItem key={value} value={value}>
+                    {name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </Grid>
+          ) : null}
           <Grid item xs={2}>
             <TimePicker
               onChange={(value) => value && updateSlotTime(idx, value)}
@@ -335,7 +448,7 @@ export default function TimeSlotEditorPage() {
               label="Start Time"
             />
           </Grid>
-          <Grid item xs={9}>
+          <Grid item xs={showInputSize}>
             <FormControl fullWidth>
               <InputLabel>Program</InputLabel>
               <Select
@@ -362,10 +475,10 @@ export default function TimeSlotEditorPage() {
 
     return (
       <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid item xs={2}>
+        <Grid item xs={currentPeriod === 'week' ? 4 : 2}>
           Start Time
         </Grid>
-        <Grid item xs={10}>
+        <Grid item xs={currentPeriod === 'week' ? 8 : 10}>
           Program
         </Grid>
         {slots}
@@ -422,7 +535,9 @@ export default function TimeSlotEditorPage() {
       >
         <Alert variant="filled" color="success">
           {perfSnackbarDetails
-            ? `Calculated ${dayjs.duration(precalcDays, 'days').humanize()} (${
+            ? `Calculated ${dayjs
+                .duration(getValues('maxDays'), 'days')
+                .humanize()} (${
                 perfSnackbarDetails.numShows
               } programs) of programming in ${perfSnackbarDetails.ms}ms`
             : null}
@@ -448,7 +563,7 @@ export default function TimeSlotEditorPage() {
           <Button
             variant="contained"
             onClick={() => calculateSlots()}
-            disabled={!isValid}
+            // disabled={!isValid}
           >
             Refresh
           </Button>
@@ -466,14 +581,20 @@ export default function TimeSlotEditorPage() {
         <Box>
           <FormControl fullWidth margin="normal">
             <InputLabel>Period</InputLabel>
-            <Select
-              label="Period"
-              value={period}
-              onChange={(e) => setPeriod(e.target.value as 'day' | 'week')}
-            >
-              <MenuItem value="day">Daily</MenuItem>
-              <MenuItem value="week">Weekly</MenuItem>
-            </Select>
+            <Controller
+              control={control}
+              name="period"
+              render={({ field }) => (
+                <Select
+                  label="Period"
+                  {...field}
+                  onChange={(e) => handlePeriodChange(e)}
+                >
+                  <MenuItem value="day">Daily</MenuItem>
+                  <MenuItem value="week">Weekly</MenuItem>
+                </Select>
+              )}
+            />
             <FormHelperText>
               By default, time slots are time of the day-based, you can change
               it to time of the day + day of the week. That means scheduling 7x
@@ -484,23 +605,20 @@ export default function TimeSlotEditorPage() {
           </FormControl>
           <FormControl fullWidth margin="normal">
             <InputLabel>Max Lateness</InputLabel>
-            <Select
-              label="Max Lateness"
-              value={latenessOption}
-              onChange={(e) =>
-                setLatenessOption(
-                  isNumber(e.target.value)
-                    ? e.target.value
-                    : parseInt(e.target.value),
-                )
-              }
-            >
-              {latenessOptions.map((opt) => (
-                <MenuItem key={opt.value} value={opt.value}>
-                  {opt.description}
-                </MenuItem>
-              ))}
-            </Select>
+            <Controller
+              control={control}
+              name="latenessMs"
+              render={({ field }) => (
+                <Select label="Max Lateness" {...field}>
+                  {latenessOptions.map((opt) => (
+                    <MenuItem key={opt.value} value={opt.value}>
+                      {opt.description}
+                    </MenuItem>
+                  ))}
+                </Select>
+              )}
+            />
+
             <FormHelperText>
               Allows programs to play a bit late if the previous program took
               longer than usual. If a program is too late, Flex is scheduled
@@ -509,23 +627,20 @@ export default function TimeSlotEditorPage() {
           </FormControl>
           <FormControl fullWidth margin="normal">
             <InputLabel>Pad Times</InputLabel>
-            <Select
-              label="Pad Times"
-              onChange={(e) =>
-                setPadOption(
-                  isNumber(e.target.value)
-                    ? e.target.value
-                    : parseInt(e.target.value),
-                )
-              }
-              value={padOption}
-            >
-              {padOptions.map((opt) => (
-                <MenuItem key={opt.value} value={opt.value}>
-                  {opt.description}
-                </MenuItem>
-              ))}
-            </Select>
+            <Controller
+              control={control}
+              name="padMs"
+              render={({ field }) => (
+                <Select label="Pad Times" {...field}>
+                  {padOptions.map((opt) => (
+                    <MenuItem key={opt.value} value={opt.value}>
+                      {opt.description}
+                    </MenuItem>
+                  ))}
+                </Select>
+              )}
+            />
+
             <FormHelperText>
               Ensures programs have a nice-looking start time, it will add Flex
               time to fill the gaps.
@@ -533,19 +648,19 @@ export default function TimeSlotEditorPage() {
           </FormControl>
           <FormControl fullWidth margin="normal">
             <InputLabel>Flex Style</InputLabel>
-            <Select
-              label="Flex Style"
-              value={flexOption}
-              onChange={(e) =>
-                setFlexOption(e.target.value as 'distribute' | 'end')
-              }
-            >
-              {flexOptions.map((opt) => (
-                <MenuItem key={opt.value} value={opt.value}>
-                  {opt.description}
-                </MenuItem>
-              ))}
-            </Select>
+            <Controller
+              control={control}
+              name="flexPreference"
+              render={({ field }) => (
+                <Select label="Flex Style" {...field}>
+                  {flexOptions.map((opt) => (
+                    <MenuItem key={opt.value} value={opt.value}>
+                      {opt.description}
+                    </MenuItem>
+                  ))}
+                </Select>
+              )}
+            />
             <FormHelperText>
               Usually slots need to add flex time to ensure that the next slot
               starts at the correct time. When there are multiple videos in the
@@ -554,20 +669,25 @@ export default function TimeSlotEditorPage() {
             </FormHelperText>
           </FormControl>
           <FormGroup row>
-            <TextField
-              fullWidth
-              margin="normal"
-              label="Days to Precalculate"
-              value={precalcDaysStr}
-              onChange={(e) => setPrecalcDays(e.target.value)}
-              error={!precalcDaysValid}
-              helperText="Input must be a number"
+            <Controller
+              control={control}
+              name="maxDays"
+              render={({ field }) => (
+                <TextField
+                  fullWidth
+                  margin="normal"
+                  label="Days to Precalculate"
+                  // error={!precalcDaysValid}
+                  {...field}
+                />
+              )}
             />
-            <Typography variant="caption" sx={{ ml: 1 }}>
+
+            <FormHelperText sx={{ ml: 1 }}>
               Maximum number of days to precalculate the schedule. Note that the
               length of the schedule is also bounded by the maximum number of
               programs allowed in a channel.
-            </Typography>
+            </FormHelperText>
           </FormGroup>
         </Box>
       </PaddedPaper>
@@ -576,7 +696,7 @@ export default function TimeSlotEditorPage() {
           Programming Preview (
           {generatedList
             ? `${generatedList.length} items, ${dayjs
-                .duration(precalcDays, 'days')
+                .duration(getValues('maxDays'), 'days')
                 .humanize()}`
             : `${newLineup.length} items`}
           )
