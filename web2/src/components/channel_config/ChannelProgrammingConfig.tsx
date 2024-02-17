@@ -43,6 +43,8 @@ import ChannelProgrammingList from './ChannelProgrammingList.tsx';
 import ProgrammingSelectorDialog from './ProgrammingSelectorDialog.tsx';
 import Delete from '@mui/icons-material/Delete';
 import { useRemoveDuplicates } from '../../hooks/programming_controls/useRemoveDuplicates.ts';
+import { range } from 'lodash-es';
+import { useRestrictHours } from '../../hooks/programming_controls/useRestrictHours.ts';
 
 // dayjs.extend(duration);
 
@@ -67,6 +69,7 @@ export function ChannelProgrammingConfig() {
   };
 
   const removeDuplicatePrograms = useRemoveDuplicates();
+  const restrictHours = useRestrictHours();
 
   const startTime = channel ? dayjs(channel.startTime) : dayjs();
   const endTime = startTime.add(channel?.duration ?? 0, 'milliseconds');
@@ -204,6 +207,26 @@ export function ChannelProgrammingConfig() {
                   onClick={() => removeDuplicatePrograms()}
                 >
                   Duplicates
+                </Button>
+              </Grid2>
+              <Grid2 xs={3}>
+                {/* This should be in its own component */}
+                <Select>
+                  {range(0, 24).map((hour) => (
+                    <MenuItem key={hour}>{`${hour}:00`}</MenuItem>
+                  ))}
+                </Select>
+                <Select>
+                  {range(0, 24).map((hour) => (
+                    <MenuItem key={hour}>{`${hour}:00`}</MenuItem>
+                  ))}
+                </Select>
+                <Button
+                  variant="contained"
+                  startIcon={<Delete />}
+                  onClick={() => restrictHours(5, 6)}
+                >
+                  Restrict Hours
                 </Button>
               </Grid2>
             </Grid2>
