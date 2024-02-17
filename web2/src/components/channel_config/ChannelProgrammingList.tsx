@@ -257,9 +257,12 @@ export default function ChannelProgrammingList({
 
       // Return a value that uniquely identifies this item.
       // Typically this will be a UID of some sort.
-      return item.type != 'flex'
-        ? channelProgramUniqueId(item)
-        : `flex-${item.originalIndex}`;
+      const key =
+        item.type != 'flex'
+          ? channelProgramUniqueId(item)
+          : `flex-${item.originalIndex}`;
+
+      return `${key}_${item.startTimeOffset}`;
     }
 
     if (virtualListProps) {

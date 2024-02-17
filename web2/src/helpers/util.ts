@@ -106,6 +106,15 @@ export const zipWithIndex = <T extends object>(
   }));
 };
 
+export const createFlexProgram = (
+  duration: number,
+  persisted: boolean = false,
+): FlexProgram => ({
+  duration,
+  persisted,
+  type: 'flex',
+});
+
 // Useful for toggling state
 export const toggle = (b: boolean) => !b;
 

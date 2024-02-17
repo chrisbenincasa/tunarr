@@ -224,7 +224,7 @@ export function ChannelProgrammingConfig() {
                 <Button
                   variant="contained"
                   startIcon={<Delete />}
-                  onClick={() => restrictHours(5, 6)}
+                  onClick={() => restrictHours(5, 8)}
                 >
                   Restrict Hours
                 </Button>

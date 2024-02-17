@@ -1,7 +1,7 @@
 import { CondensedChannelProgram, isFlexProgram } from '@tunarr/types';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
-import { inRange, reject } from 'lodash-es';
+import { forEach, inRange, reject } from 'lodash-es';
 import { OneDayMillis } from '../../helpers/constants.ts';
 import { createFlexProgram } from '../../helpers/util.ts';
 import useStore from '../../store/index.ts';
@@ -31,36 +31,24 @@ export const restrictHours = (
     (p) => isFlexProgram(p) || p.duration > maxDuration,
   );
 
-  // We start on day 0 of the channel. We will begin pushing programs
-  // at "from millis" into the day.
-  const day = 0;
   let currOffset = 0; // Offset from the channel start time
-  const currEndTime = endTimeOffset;
-
   const newPrograms: CondensedChannelProgram[] = [];
-  while (workingPrograms.length > 0) {
-    const program = workingPrograms.shift();
-    if (!program) {
-      break;
-    }
 
+  forEach(workingPrograms, (program) => {
     const timeLeft = maxDuration - currOffset;
-
-    // We don't have enough time left today. Push the remainder as flex,
-    // then increment the day and start over.
     if (program.duration > timeLeft) {
       // Put the program back and try tomorrow.
-      workingPrograms.unshift(program);
-      newPrograms.push(createFlexProgram(timeLeft));
-      // day++;
-      // currOffset += day * OneDayMillis + startTimeOffset;
+      // workingPrograms.unshift(program);
+      // Flex until the following day's start time
+      newPrograms.push(
+        createFlexProgram(timeLeft + OneDayMillis - maxDuration),
+      );
       currOffset = 0;
-      // currEndTime += day * OneDayMillis + endTimeOffset;
     }
 
     newPrograms.push(program);
     currOffset += program.duration;
-  }
+  });
 
   return { newStartTime, newPrograms };
 };
