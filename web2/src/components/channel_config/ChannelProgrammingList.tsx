@@ -151,7 +151,7 @@ const ProgramListItem = ({
       key={startTime}
       // sx={{ borderBottom: dayBoundary ? '1px dashed black' : null }}
       secondaryAction={
-        isDragging ? (
+        enableDrag && isDragging ? (
           false
         ) : (
           <IconButton
@@ -166,7 +166,7 @@ const ProgramListItem = ({
       component="div"
       ref={(node) => drag(drop(node))}
     >
-      {isDragging ? (
+      {enableDrag && isDragging ? (
         false
       ) : (
         <>
@@ -263,7 +263,6 @@ export default function ChannelProgrammingList({
     }
 
     if (virtualListProps) {
-      // TODO Implement DND on virtual list
       return (
         <FixedSizeList
           {...virtualListProps}
