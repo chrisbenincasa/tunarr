@@ -1,4 +1,7 @@
-import DeleteIcon from '@mui/icons-material/Delete';
+import {
+  Delete as DeleteIcon,
+  DragIndicator as DragIndicatorIcon,
+} from '@mui/icons-material';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import List from '@mui/material/List';
@@ -21,6 +24,8 @@ import {
 import useStore, { State } from '../../store/index.ts';
 import { materializedProgramListSelector } from '../../store/selectors.ts';
 import { UIChannelProgram } from '../../types/index.ts';
+import { ListItemIcon } from '@mui/material';
+import { channelProgramUniqueId } from '../../helpers/util.ts';
 
 type Props = {
   // The caller can pass the list of programs to render, if they don't
@@ -70,6 +75,7 @@ const ProgramListItem = ({
       item: { id: program.originalIndex, originalIndex: program.originalIndex },
       canDrag: () => enableDrag,
       collect: (monitor) => ({ isDragging: monitor.isDragging() }),
+      isDragging: (monitor) => program.originalIndex === monitor.getItem().id,
       end: (item, monitor) => {
         const { id: droppedId, originalIndex } = item;
         const didDrop = monitor.didDrop();
@@ -94,7 +100,7 @@ const ProgramListItem = ({
   // Intl.DateTimeFormat
   const startTime = new Intl.DateTimeFormat(undefined, {
     dateStyle: 'medium',
-    timeStyle: 'medium',
+    timeStyle: 'short',
   }).format(startTimeDate);
 
   // const dayBoundary = startTimes[idx + 1].isAfter(startTimes[idx], 'day');
@@ -121,41 +127,62 @@ const ProgramListItem = ({
 
   const dur = dayjs.duration({ milliseconds: program.duration }).humanize();
 
-  title = `${startTime} ${title} (${dur})`;
+  title = `${startTime} - ${title} -  (${dur})`;
 
-  const opacity = isDragging ? 0 : 1;
   return (
     <ListItem
       style={{
         ...(style ?? {}),
-        opacity,
+        border: enableDrag
+          ? isDragging
+            ? '1px dashed gray'
+            : 'transparent'
+          : 'transparent',
         cursor: enableDrag ? (isDragging ? 'grabbing' : 'grab') : 'default',
       }}
       sx={{
         backgroundColor: (theme) =>
-          index % 2 === 0 ? theme.palette.grey[100] : theme.palette.grey[300],
+          isDragging
+            ? theme.palette.background.paper
+            : index % 2 === 0
+            ? theme.palette.grey[100]
+            : theme.palette.grey[300],
       }}
       key={startTime}
       // sx={{ borderBottom: dayBoundary ? '1px dashed black' : null }}
       secondaryAction={
-        <IconButton
-          onClick={() => deleteProgram(index)}
-          edge="end"
-          aria-label="delete"
-        >
-          <DeleteIcon />
-        </IconButton>
+        isDragging ? (
+          false
+        ) : (
+          <IconButton
+            onClick={() => deleteProgram(index)}
+            edge="end"
+            aria-label="delete"
+          >
+            <DeleteIcon />
+          </IconButton>
+        )
       }
       component="div"
       ref={(node) => drag(drop(node))}
     >
-      <ListItemText
-        primary={title}
-        sx={{
-          fontStyle: program.persisted ? 'normal' : 'italic',
-        }}
-        primaryTypographyProps={{ sx: { fontSize: '0.875em' } }} // Hack to get dense styles applied for virtualized lists
-      />
+      {isDragging ? (
+        false
+      ) : (
+        <>
+          <ListItemIcon>
+            <DragIndicatorIcon />
+          </ListItemIcon>
+
+          <ListItemText
+            primary={title}
+            sx={{
+              fontStyle: program.persisted ? 'normal' : 'italic',
+            }}
+            primaryTypographyProps={{ sx: { fontSize: '0.875em' } }} // Hack to get dense styles applied for virtualized lists
+          />
+        </>
+      )}
     </ListItem>
   );
 };
@@ -222,10 +249,28 @@ export default function ChannelProgrammingList({
   };
 
   const renderList = () => {
+    function itemKey(index: number, data: UIChannelProgram[]) {
+      // Find the item at the specified index.
+      // In this case "data" is an Array that was passed to List as "itemData".
+
+      const item = data[index];
+
+      // Return a value that uniquely identifies this item.
+      // Typically this will be a UID of some sort.
+      return item.type != 'flex'
+        ? channelProgramUniqueId(item)
+        : `flex-${item.originalIndex}`;
+    }
+
     if (virtualListProps) {
       // TODO Implement DND on virtual list
       return (
-        <FixedSizeList {...virtualListProps} itemCount={programList.length}>
+        <FixedSizeList
+          {...virtualListProps}
+          itemCount={programList.length}
+          itemKey={itemKey}
+          itemData={programList}
+        >
           {ProgramRow}
         </FixedSizeList>
       );
