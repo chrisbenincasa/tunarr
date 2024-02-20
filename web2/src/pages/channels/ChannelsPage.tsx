@@ -1,9 +1,15 @@
 import AddCircleIcon from '@mui/icons-material/AddCircle';
+import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import EditIcon from '@mui/icons-material/Edit';
 import SettingsRemoteIcon from '@mui/icons-material/SettingsRemote';
 import {
   Box,
   Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   IconButton,
   Paper,
   Table,
@@ -23,6 +29,10 @@ import { isEmpty } from 'lodash-es';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import { useChannels } from '../../hooks/useChannels.ts';
+import { Delete } from '@mui/icons-material';
+import { useState } from 'react';
+import { useQueryClient, useMutation } from '@tanstack/react-query';
+import { apiClient } from '../../external/api.ts';
 
 export default function ChannelsPage() {
   const now = dayjs();
@@ -34,12 +44,66 @@ export default function ChannelsPage() {
   const theme = useTheme();
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [deleteChannelConfirmation, setDeleteChannelConfirmation] = useState<
+    string | undefined
+  >(undefined);
 
   const handleChannelNavigation = (
     event: React.MouseEvent<HTMLTableRowElement, MouseEvent>,
     id: string,
   ) => {
     navigate(`/channels/${id}/programming`);
+  };
+
+  const removeChannelMutation = useMutation({
+    // To do: Update the below when the channel delete endpoint exists
+    // mutationFn: (id: string) => {
+    //   return apiClient.deleteChannel(null, { params: { id } });
+    // },
+    // onSuccess: () => {
+    //   return queryClient.invalidateQueries({
+    //     queryKey: ['settings', 'plex-servers'],
+    //   });
+    // },
+  });
+
+  const removeChannel = (id: string) => {
+    removeChannelMutation.mutate(id);
+    setDeleteChannelConfirmation(undefined);
+  };
+
+  const renderConfirmationDialog = () => {
+    return (
+      <Dialog
+        open={!!deleteChannelConfirmation}
+        onClose={() => setDeleteChannelConfirmation(undefined)}
+        aria-labelledby="delete-channel-title"
+        aria-describedby="delete-channel-description"
+      >
+        <DialogTitle id="delete-channel-title">{'Delete Channel?'}</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="delete-channel-description">
+            Deleting a Channel will remove all programming from the channel.
+            This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setDeleteChannelConfirmation(undefined)}
+            autoFocus
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={() => removeChannel(deleteChannelConfirmation!)}
+            variant="contained"
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+    );
   };
 
   if (channelsLoading) return 'Loading...';
@@ -71,6 +135,15 @@ export default function ChannelsPage() {
         <TableCell>{startTime.isBefore(now) ? 'Yes' : 'No'}</TableCell>
         <TableCell>{channel.stealth ? 'Yes' : 'No'}</TableCell>
         <TableCell sx={{ textAlign: 'right' }}>
+          <Tooltip title="Get Channel M3U File" placement="top">
+            <IconButton
+              href={`//localhost:8000/media-player/${channel.number}.m3u`}
+              color={'primary'}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <TextSnippetIcon />
+            </IconButton>
+          </Tooltip>
           <Tooltip title="Edit Channel Settings" placement="top">
             <IconButton
               to={`/channels/${channel.id}/edit`}
@@ -79,6 +152,17 @@ export default function ChannelsPage() {
               onClick={(e) => e.stopPropagation()}
             >
               <EditIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Delete Channel" placement="top">
+            <IconButton
+              color={'primary'}
+              onClick={(e) => {
+                e.stopPropagation();
+                setDeleteChannelConfirmation(channel.id);
+              }}
+            >
+              <Delete />
             </IconButton>
           </Tooltip>
         </TableCell>
@@ -107,6 +191,7 @@ export default function ChannelsPage() {
   return (
     <div>
       <Box display="flex" mb={2}>
+        {renderConfirmationDialog()}
         <Typography flexGrow={1} variant="h4">
           Channels
         </Typography>

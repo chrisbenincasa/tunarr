@@ -116,12 +116,10 @@ export const miscRouter: FastifyPluginCallback = (fastify, _opts, done) => {
   // CHANNELS.M3U Download
   fastify.get('/api/channels.m3u', async (req, res) => {
     try {
-      await res.type('text');
-
       const host = `${req.protocol}://${req.hostname}`;
       const data = await req.serverCtx.m3uService.getChannelList(host);
 
-      return res.send(data);
+      return res.type('text').send(data);
     } catch (err) {
       logger.error(err);
       return res.status(500).send('error');

@@ -34,6 +34,7 @@ import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import { prefetchAllTvGuides, useAllTvGuides } from '../../hooks/useTvGuide.ts';
 import useStore from '../../store/index.ts';
 import { setGuideDurationState } from '../../store/themeEditor/actions.ts';
+import { formatProgramDuration } from '../../helpers/util.ts';
 
 dayjs.extend(duration);
 dayjs.extend(isBetween);
@@ -100,6 +101,7 @@ const modalStyle = {
 
 const SubtractInterval = dayjs.duration(1, 'hour');
 const MinDurationMillis = dayjs.duration(1, 'hour').asMilliseconds();
+const MaxDurationMillis = dayjs.duration(8, 'hour').asMilliseconds();
 
 const calcProgress = (start: Dayjs, end: Dayjs): number => {
   const total = end.unix() - start.unix();
@@ -123,7 +125,8 @@ const roundCurrentTime = (multiple?: number): Dayjs => {
 export default function GuidePage() {
   const theme = useTheme();
   const guideDuration =
-    useStore((state) => state.theme.guideDuration) || 7200000;
+    useStore((state) => state.theme.guideDuration) ||
+    dayjs.duration(2, 'hour').asMilliseconds();
   const [start, setStart] = useState(roundCurrentTime(15));
   const [end, setEnd] = useState(start.add(guideDuration, 'ms'));
   const [currentTime, setCurrentTime] = useState(dayjs().format('h:mm'));
@@ -134,8 +137,13 @@ export default function GuidePage() {
   const queryClient = useQueryClient();
 
   const timelineDuration = dayjs.duration(end.diff(start));
+  const increments =
+    timelineDuration.asMilliseconds() <
+    dayjs.duration(4, 'hour').asMilliseconds()
+      ? 30
+      : 60;
   const intervalArray = Array.from(
-    Array(timelineDuration.asMinutes() / 30).keys(),
+    Array(timelineDuration.asMinutes() / increments).keys(),
   );
 
   const {
@@ -188,8 +196,10 @@ export default function GuidePage() {
     });
   }, [start]);
 
-  const zoomDisabled =
+  const zoomInDisabled =
     end.subtract(SubtractInterval).diff(start) < MinDurationMillis;
+
+  const zoomOutDisabled = end.diff(start) >= MaxDurationMillis;
 
   const navigateBackward = useCallback(() => {
     setEnd((last) => last.subtract(1, 'hour'));
@@ -475,6 +485,7 @@ export default function GuidePage() {
         summary = '';
         break;
     }
+    console.log(program.duration);
 
     return (
       <Modal
@@ -499,7 +510,7 @@ export default function GuidePage() {
             <>
               <Chip
                 color="secondary"
-                label={`${dayjs(program.duration).format('m')}m`}
+                label={formatProgramDuration(program.duration)}
                 sx={{ mt: 1 }}
               />
               <Chip color="secondary" label={rating} sx={{ mx: 1, mt: 1 }} />
@@ -581,10 +592,10 @@ export default function GuidePage() {
           direction={'row'}
           sx={{ my: 1 }}
         >
-          <IconButton disabled={zoomDisabled} onClick={zoomIn}>
+          <IconButton disabled={zoomInDisabled} onClick={zoomIn}>
             <ZoomInIcon />
           </IconButton>
-          <IconButton onClick={zoomOut}>
+          <IconButton disabled={zoomOutDisabled} onClick={zoomOut}>
             <ZoomOutIcon />
           </IconButton>
           <IconButton disabled={navigationDisabled} onClick={navigateBackward}>
@@ -671,7 +682,9 @@ export default function GuidePage() {
                   }}
                   key={slot}
                 >
-                  {start.add(slot * 30, 'minutes').format('h:mm A')}
+                  {start
+                    .add(slot * increments, 'minutes')
+                    .format(`${smallViewport ? 'h:mm' : 'h:mm A'}`)}
                 </GridChild>
               ))}
             </GridParent>

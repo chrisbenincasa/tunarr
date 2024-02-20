@@ -172,14 +172,16 @@ export function Root() {
             </Typography>
             <Box flexGrow={1}></Box>
             <Button
-              href="http://localhost:8000/api/xmltv.xml"
+              href="//localhost:8000/api/xmltv.xml"
+              target="_blank"
               color="inherit"
               startIcon={<TextSnippetIcon />}
             >
               XMLTV
             </Button>
             <Button
-              href="/api/channels.m3u"
+              href="//localhost:8000/api/channels.m3u"
+              target="_blank"
               color="inherit"
               startIcon={<TextSnippetIcon />}
             >

@@ -68,6 +68,16 @@ export const channelProgramUniqueId = (program: ChannelProgram): string => {
       return 'flex';
   }
 };
+
+// Convert ms to human readable program length.
+// 6454864 => '1h 27m'
+export const formatProgramDuration = (duration: number) => {
+  const hours = Math.floor(dayjs.duration(duration).asHours());
+  const minutes = Math.floor(dayjs.duration(duration).asMinutes() - 60 * hours);
+
+  return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+};
+
 export const zipWithIndex = <T extends object>(
   seq: readonly T[],
   start: number = 0,
