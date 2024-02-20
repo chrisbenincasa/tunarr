@@ -100,6 +100,7 @@ const modalStyle = {
 
 const SubtractInterval = dayjs.duration(1, 'hour');
 const MinDurationMillis = dayjs.duration(1, 'hour').asMilliseconds();
+const MaxDurationMillis = dayjs.duration(6, 'hour').asMilliseconds();
 
 const calcProgress = (start: Dayjs, end: Dayjs): number => {
   const total = end.unix() - start.unix();
@@ -188,8 +189,10 @@ export default function GuidePage() {
     });
   }, [start]);
 
-  const zoomDisabled =
+  const zoomInDisabled =
     end.subtract(SubtractInterval).diff(start) < MinDurationMillis;
+
+  const zoomOutDisabled = end.diff(start) > MaxDurationMillis;
 
   const navigateBackward = useCallback(() => {
     setEnd((last) => last.subtract(1, 'hour'));
@@ -581,10 +584,10 @@ export default function GuidePage() {
           direction={'row'}
           sx={{ my: 1 }}
         >
-          <IconButton disabled={zoomDisabled} onClick={zoomIn}>
+          <IconButton disabled={zoomInDisabled} onClick={zoomIn}>
             <ZoomInIcon />
           </IconButton>
-          <IconButton onClick={zoomOut}>
+          <IconButton disabled={zoomOutDisabled} onClick={zoomOut}>
             <ZoomOutIcon />
           </IconButton>
           <IconButton disabled={navigationDisabled} onClick={navigateBackward}>
