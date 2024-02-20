@@ -100,7 +100,7 @@ const modalStyle = {
 
 const SubtractInterval = dayjs.duration(1, 'hour');
 const MinDurationMillis = dayjs.duration(1, 'hour').asMilliseconds();
-const MaxDurationMillis = dayjs.duration(6, 'hour').asMilliseconds();
+const MaxDurationMillis = dayjs.duration(8, 'hour').asMilliseconds();
 
 const calcProgress = (start: Dayjs, end: Dayjs): number => {
   const total = end.unix() - start.unix();
@@ -124,7 +124,8 @@ const roundCurrentTime = (multiple?: number): Dayjs => {
 export default function GuidePage() {
   const theme = useTheme();
   const guideDuration =
-    useStore((state) => state.theme.guideDuration) || 7200000;
+    useStore((state) => state.theme.guideDuration) ||
+    dayjs.duration(2, 'hour').asMilliseconds();
   const [start, setStart] = useState(roundCurrentTime(15));
   const [end, setEnd] = useState(start.add(guideDuration, 'ms'));
   const [currentTime, setCurrentTime] = useState(dayjs().format('h:mm'));
@@ -135,9 +136,16 @@ export default function GuidePage() {
   const queryClient = useQueryClient();
 
   const timelineDuration = dayjs.duration(end.diff(start));
+  const increments =
+    timelineDuration.asMilliseconds() <
+    dayjs.duration(4, 'hour').asMilliseconds()
+      ? 30
+      : 60;
   const intervalArray = Array.from(
-    Array(timelineDuration.asMinutes() / 30).keys(),
+    Array(timelineDuration.asMinutes() / increments).keys(),
   );
+
+  console.log(intervalArray);
 
   const {
     isPending,
@@ -192,7 +200,7 @@ export default function GuidePage() {
   const zoomInDisabled =
     end.subtract(SubtractInterval).diff(start) < MinDurationMillis;
 
-  const zoomOutDisabled = end.diff(start) > MaxDurationMillis;
+  const zoomOutDisabled = end.diff(start) >= MaxDurationMillis;
 
   const navigateBackward = useCallback(() => {
     setEnd((last) => last.subtract(1, 'hour'));
@@ -674,7 +682,9 @@ export default function GuidePage() {
                   }}
                   key={slot}
                 >
-                  {start.add(slot * 30, 'minutes').format('h:mm A')}
+                  {start
+                    .add(slot * increments, 'minutes')
+                    .format(`${smallViewport ? 'h:mm' : 'h:mm A'}`)}
                 </GridChild>
               ))}
             </GridParent>

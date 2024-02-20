@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { StateCreator } from 'zustand';
 
 export interface ThemeEditorStateInner {
@@ -14,7 +15,7 @@ export const initialThemeEditorState: ThemeEditorState = {
   theme: {
     darkMode: undefined,
     pathway: '',
-    guideDuration: 7200000, // 2 hours
+    guideDuration: dayjs.duration(2, 'hour').asMilliseconds(),
   },
 };
 
