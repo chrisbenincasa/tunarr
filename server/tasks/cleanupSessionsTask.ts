@@ -21,10 +21,27 @@ export class CleanupSessionsTask extends Task<void> {
       return;
     }
 
+    const now = new Date().getTime();
+
     forEach(sessions, (session) => {
-      const aliveConnections = chain(keys(session.connections()))
-        .filter((token) => session.lastHeartbeat(token) < ThirtySeconds)
+      const [aliveConnections, staleConnections] = chain(
+        keys(session.connections()),
+      )
+        .partition(
+          (token) => now - session.lastHeartbeat(token) < ThirtySeconds,
+        )
         .value();
+
+      // Cleanup stale connections
+
+      forEach(staleConnections, (conn) => session.removeConnection(conn));
+
+      console.debug(
+        `aliveConnections: ${aliveConnections.join(
+          ',',
+        )}, stale = ${staleConnections.join(',')}`,
+      );
+
       if (isEmpty(aliveConnections)) {
         session.scheduleCleanup(30000);
       }

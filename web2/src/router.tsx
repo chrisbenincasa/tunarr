@@ -6,7 +6,10 @@ import ChannelsPage from './pages/channels/ChannelsPage.tsx';
 import EditChannelPage from './pages/channels/EditChannelPage.tsx';
 import ProgrammingSelectorPage from './pages/channels/ProgrammingSelectorPage.tsx';
 import TimeSlotEditorPage from './pages/channels/TimeSlotEditorPage.tsx';
-import { editProgrammingLoader } from './preloaders/channelLoaders.ts';
+import {
+  channelLoader,
+  editProgrammingLoader,
+} from './preloaders/channelLoaders.ts';
 import { editChannelLoader } from './preloaders/channelLoaders.ts';
 import { customShowsLoader } from './preloaders/customShowLoaders.ts';
 import {
@@ -79,6 +82,11 @@ export const router = createBrowserRouter([
         path: '/channels/:id/programming/time-slot-editor',
         element: <TimeSlotEditorPage />,
         loader: editProgrammingLoader(queryClient),
+      },
+      {
+        path: '/channels/:id/watch',
+        element: <WatchPage />,
+        loader: channelLoader(queryClient),
       },
       {
         path: '/guide',

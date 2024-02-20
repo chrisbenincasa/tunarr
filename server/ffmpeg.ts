@@ -184,7 +184,8 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
         '-hls_list_size',
         filledOpts.hlsListSize.toString(),
         '-force_key_frames',
-        // Force a key frame every N secodns
+        // Force a key frame every N seconds
+        // TODO consider using the GOP parameter here as stated in the docs
         `expr:gte(t,n_forced*${filledOpts.hlsTime})`,
         '-hls_delete_threshold',
         '3', // Num unreferenced segments

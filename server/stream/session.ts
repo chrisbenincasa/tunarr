@@ -1,6 +1,6 @@
 import { FfmpegSettings } from '@tunarr/types';
 import retry from 'async-retry';
-import { isEmpty, isError, isUndefined, keys, once } from 'lodash-es';
+import { isEmpty, isError, isNil, isUndefined, keys, once } from 'lodash-es';
 import fs from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { Readable } from 'node:stream';
@@ -11,6 +11,7 @@ import { FFMPEG } from '../ffmpeg.js';
 import { serverOptions } from '../globals.js';
 import createLogger from '../logger.js';
 import { isNodeError, wait } from '../util.js';
+import { inspect } from 'node:util';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -200,6 +201,7 @@ export class StreamSession {
 
   removeConnection(token: string) {
     delete this.#connections[token];
+    delete this.#heartbeats[token];
   }
 
   connections() {
@@ -224,6 +226,10 @@ export class StreamSession {
 
   scheduleCleanup(delay: number) {
     if (this.#cleanupFunc) {
+      logger.debug(
+        '[Session %s] Cleanup already scheduled',
+        this.#channel.uuid,
+      );
       // We already scheduled shutdown
       return;
     }
@@ -232,6 +238,12 @@ export class StreamSession {
       logger.debug('[Session %s] Shutting down session', this.#channel.uuid);
       if (isEmpty(this.#connections) && this.#ffmpeg) {
         this.stop();
+      } else {
+        logger.debug(
+          `Got new connections: ${inspect(
+            this.#connections,
+          )}. Also ffmpeg = ${isNil(this.#ffmpeg)}`,
+        );
       }
     }, delay);
   }

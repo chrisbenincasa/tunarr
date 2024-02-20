@@ -61,6 +61,11 @@ function updateChannelState(
   return false;
 }
 
+export const channelLoader: Preloader<Channel> = createPreloader(
+  ({ params }) => channelQuery(params.id!),
+  updateChannelState,
+);
+
 // A preloader to load the details necessary to edit a channel itself
 export const editChannelLoader = (isNew: boolean): Preloader<Channel> => {
   if (isNew) {
@@ -78,10 +83,7 @@ export const editChannelLoader = (isNew: boolean): Preloader<Channel> => {
       return newChannel;
     };
   } else {
-    return createPreloader(
-      ({ params }) => channelQuery(params.id!),
-      updateChannelState,
-    );
+    return channelLoader;
   }
 };
 
