@@ -5,13 +5,13 @@ import fs from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { Readable } from 'node:stream';
 import { fileURLToPath } from 'node:url';
+import { inspect } from 'node:util';
 import { v4 } from 'uuid';
 import { Channel } from '../dao/entities/Channel.js';
 import { FFMPEG } from '../ffmpeg.js';
 import { serverOptions } from '../globals.js';
 import createLogger from '../logger.js';
-import { isNodeError, wait } from '../util.js';
-import { inspect } from 'node:util';
+import { isNodeError } from '../util.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -57,16 +57,7 @@ export class StreamSession {
       logger.debug('[Session %s] Stopping stream session', this.#channel.uuid);
       this.#ffmpeg.kill();
       setImmediate(() => {
-        fs.rm(
-          resolve(__dirname, '..', 'streams', `stream_${this.#channel.uuid}`),
-          { recursive: true, force: true },
-        ).catch((err) =>
-          logger.error(
-            'Failed to cleanup stream: %s %O',
-            this.#channel.uuid,
-            err,
-          ),
-        );
+        this.cleanupDirectory();
       });
       this.#state = 'stopped';
     } else {
@@ -76,6 +67,21 @@ export class StreamSession {
         this.#state,
       );
     }
+  }
+
+  private async cleanupDirectory() {
+    return fs
+      .rm(resolve(__dirname, '..', 'streams', `stream_${this.#channel.uuid}`), {
+        recursive: true,
+        force: true,
+      })
+      .catch((err) =>
+        logger.error(
+          'Failed to cleanup stream: %s %O',
+          this.#channel.uuid,
+          err,
+        ),
+      );
   }
 
   private async startStream() {
@@ -112,8 +118,10 @@ export class StreamSession {
       'streams',
       `stream_${this.#channel.uuid}`,
     );
+
     try {
       await fs.stat(outPath);
+      await this.cleanupDirectory();
     } catch (e) {
       if (isNodeError(e) && e.code === 'ENOENT') {
         await fs.mkdir(outPath);
@@ -133,7 +141,8 @@ export class StreamSession {
     );
 
     if (stream) {
-      await wait(5000); // How necessary is this really...
+      // we may have solved this on the frontend...
+      // await wait(5000); // How necessary is this really...
       this.#stream = stream;
       const onceListener = once(() => {
         console.timeEnd(reqId);

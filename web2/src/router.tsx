@@ -33,7 +33,7 @@ import PlexSettingsPage from './pages/settings/PlexSettingsPage.tsx';
 import SettingsLayout from './pages/settings/SettingsLayout.tsx';
 import TaskSettingsPage from './pages/settings/TaskSettingsPage.tsx';
 import XmlTvSettingsPage from './pages/settings/XmlTvSettingsPage.tsx';
-import WatchPage from './pages/watch/WatchPage.tsx';
+import ChannelWatchPage from './pages/watch/ChannelWatchPage.tsx';
 import WelcomePage from './pages/welcome/WelcomePage.tsx';
 import { queryCache } from './queryClient.ts';
 
@@ -85,7 +85,7 @@ export const router = createBrowserRouter([
       },
       {
         path: '/channels/:id/watch',
-        element: <WatchPage />,
+        element: <ChannelWatchPage />,
         loader: channelLoader(queryClient),
       },
       {
@@ -94,7 +94,7 @@ export const router = createBrowserRouter([
       },
       {
         path: '/watch',
-        element: <WatchPage />,
+        element: <ChannelWatchPage />,
       },
       {
         path: '/settings',

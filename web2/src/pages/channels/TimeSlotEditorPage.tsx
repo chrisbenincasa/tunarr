@@ -59,7 +59,7 @@ import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import ChannelProgrammingList from '../../components/channel_config/ChannelProgrammingList.tsx';
 import { apiClient } from '../../external/api.ts';
 import { zipWithIndex } from '../../helpers/util.ts';
-import { usePreloadedChannel } from '../../hooks/usePreloadedChannel.ts';
+import { usePreloadedChannelEdit } from '../../hooks/usePreloadedChannel.ts';
 import { updateCurrentChannel } from '../../store/channelEditor/actions.ts';
 import { UIChannelProgram } from '../../types/index.ts';
 
@@ -371,7 +371,7 @@ export default function TimeSlotEditorPage() {
     currentEntity: channel,
     programList: newLineup,
     schedule: loadedSchedule,
-  } = usePreloadedChannel();
+  } = usePreloadedChannelEdit();
 
   const [, setStartTime] = useState(
     channel?.startTime ?? dayjs().unix() * 1000,
