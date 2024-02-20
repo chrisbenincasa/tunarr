@@ -5,5 +5,7 @@ declare module 'fastify' {
   interface FastifyRequest {
     serverCtx: ServerContext;
     entityManager: EntityManager;
+
+    streamChannel?: string;
   }
 }

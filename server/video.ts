@@ -1,8 +1,13 @@
+import fastifyStatic from '@fastify/static';
 import { Loaded } from '@mikro-orm/core';
-import { FastifyPluginCallback, FastifyReply, FastifyRequest } from 'fastify';
-import { isError, isNil, isUndefined, once } from 'lodash-es';
-import * as fs from 'node:fs';
+import { FastifyReply, FastifyRequest } from 'fastify';
+import { isError, isNil, isUndefined, map, once } from 'lodash-es';
+import * as fsSync from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { Readable } from 'stream';
+import { v4 } from 'uuid';
+import { z } from 'zod';
 import constants from './constants.js';
 import {
   StreamLineupItem,
@@ -16,12 +21,16 @@ import * as helperFuncs from './helperFuncs.js';
 import createLogger from './logger.js';
 import { ProgramPlayer } from './programPlayer.js';
 import { serverContext } from './serverContext.js';
+import { sessionManager } from './stream/sessionManager.js';
 import { wereThereTooManyAttempts } from './throttler.js';
 import { ContextChannel, Maybe, PlayerContext } from './types.js';
 import { TypedEventEmitter } from './types/eventEmitter.js';
-import { v4 } from 'uuid';
+import { RouterPluginAsyncCallback } from './types/serverType.js';
 
 const logger = createLogger(import.meta);
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 let StreamCount = 0;
 
@@ -33,11 +42,12 @@ type StreamQueryString = {
   first?: string;
 };
 
-export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
+// eslint-disable-next-line @typescript-eslint/require-await
+export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
   fastify.get('/setup', async (req, res) => {
     const ffmpegSettings = req.serverCtx.settings.ffmpegSettings();
     // Check if ffmpeg path is valid
-    if (!fs.existsSync(ffmpegSettings.ffmpegExecutablePath)) {
+    if (!fsSync.existsSync(ffmpegSettings.ffmpegExecutablePath)) {
       logger.error(
         `FFMPEG path (${ffmpegSettings.ffmpegExecutablePath}) is invalid. The file (executable) doesn't exist.`,
       );
@@ -109,7 +119,7 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
     const ffmpegSettings = req.serverCtx.settings.ffmpegSettings();
 
     // Check if ffmpeg path is valid
-    if (!fs.existsSync(ffmpegSettings.ffmpegExecutablePath)) {
+    if (!fsSync.existsSync(ffmpegSettings.ffmpegExecutablePath)) {
       logger.error(
         `FFMPEG path (${ffmpegSettings.ffmpegExecutablePath}) is invalid. The file (executable) doesn't exist.`,
       );
@@ -148,19 +158,20 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
       logger.warn('CONCAT - FFMPEG CLOSE');
     });
 
+    ffmpeg.on('end', () => {
+      logger.warn('FFMPEG END - FFMPEG CLOSE');
+      logger.info(
+        'Video queue exhausted. Either you played 100 different clips in a row or there were technical issues that made all of the possible 100 attempts fail.',
+      );
+      stop();
+      res.raw.write(null);
+    });
+
     res.raw.on('close', () => {
       logger.warn('RESPONSE CLOSE - FFMPEG CLOSE');
       // on HTTP close, kill ffmpeg
       logger.info(
         `\r\nStream ended. Channel: ${channel?.number} (${channel?.name})`,
-      );
-      stop();
-    });
-
-    ffmpeg.on('end', () => {
-      logger.warn('FFMPEG END - FFMPEG CLOSE');
-      logger.info(
-        'Video queue exhausted. Either you played 100 different clips in a row or there were technical issues that made all of the possible 100 attempts fail.',
       );
       stop();
     });
@@ -251,7 +262,7 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
     const ffmpegSettings = req.serverCtx.settings.ffmpegSettings();
 
     // Check if ffmpeg path is valid
-    if (!fs.existsSync(ffmpegSettings.ffmpegExecutablePath)) {
+    if (!fsSync.existsSync(ffmpegSettings.ffmpegExecutablePath)) {
       logger.error(
         `FFMPEG path (${ffmpegSettings.ffmpegExecutablePath}) is invalid. The file (executable) doesn't exist.`,
       );
@@ -714,5 +725,162 @@ export const videoRouter: FastifyPluginCallback = (fastify, _opts, done) => {
     },
   );
 
-  done();
+  fastify
+    .register(fastifyStatic, {
+      root: join(__dirname, 'streams'),
+      decorateReply: false,
+      prefix: '/streams/',
+    })
+    .decorateRequest('streamChannel', null)
+    .addHook('onRequest', (req, res, done) => {
+      const matches = req.url.match(/^\/streams\/stream_(.*)\/stream\.m3u8.*/);
+      if (!isNil(matches) && matches.length > 1) {
+        const query = req.query as Record<string, string>;
+        const channelId = matches[1];
+        req.streamChannel = channelId;
+        const token = query['token'];
+        const session = sessionManager.getSession(channelId);
+        if (isNil(session)) {
+          void res.status(404).send();
+          return;
+        }
+
+        if (isNil(token)) {
+          void res.status(400).send('Requires a token');
+          return;
+        }
+
+        if (!session.isKnownConnection(token)) {
+          void res.status(404).send('Unrecognized session token: ' + token);
+        }
+
+        session.recordHeartbeat(token);
+      }
+      done();
+    })
+    .addHook('onResponse', (req, res, done) => {
+      const token = (req.query as Record<string, string>)['token'];
+      if (
+        res.statusCode === 200 &&
+        !isNil(token) &&
+        !isNil(req.streamChannel)
+      ) {
+        const session = sessionManager.getSession(req.streamChannel);
+        if (!isNil(session) && session.isKnownConnection(token)) {
+          session.recordHeartbeat(token);
+        }
+        // Keep track of active clients.
+        // Parse out the channel ID from the request path
+        // If we get an ID, reset the counter
+        // console.log(req.url);
+      }
+      done();
+    })
+    .put('/streams/*', async (req, res) => {
+      console.log(req.body);
+      await res.send(200);
+    });
+
+  fastify.get(
+    '/media-player/:number/hls',
+    {
+      schema: {
+        params: z.object({
+          number: z.coerce.number(),
+        }),
+      },
+    },
+    async (req, res) => {
+      const channel = await req.serverCtx.channelCache.getChannelConfig(
+        req.params.number,
+      );
+
+      if (isNil(channel)) {
+        return res.status(404).send("Channel doesn't exist");
+      }
+
+      const token = v4();
+
+      const session = await sessionManager.getOrCreateSession(
+        channel,
+        req.serverCtx.settings.ffmpegSettings(),
+        token,
+        {
+          ip: req.ip,
+        },
+      );
+
+      if (isNil(session)) {
+        return res.status(500).send('Error starting session');
+      }
+
+      return res.send({
+        streamPath: `${session.streamPath}?token=${token}`,
+      });
+    },
+  );
+
+  fastify.get(
+    '/media-player/:number/session',
+    {
+      schema: {
+        params: z.object({
+          number: z.coerce.number(),
+        }),
+      },
+    },
+    async (req, res) => {
+      const channel = await req.serverCtx.channelCache.getChannelConfig(
+        req.params.number,
+      );
+      if (isNil(channel)) {
+        return res.status(404).send("Channel doesn't exist");
+      }
+
+      const session = sessionManager.getSession(channel.uuid);
+
+      if (isNil(session)) {
+        return res.status(404).send('No sessions for channel');
+      }
+
+      return res.send({
+        channelId: channel.uuid,
+        channelNumber: channel.number,
+        numConnections: session.numConnections(),
+        connections: map(session.connections(), (connection, token) => ({
+          ...connection,
+          lastHeartbeat: session.lastHeartbeat(token),
+        })),
+      });
+    },
+  );
+
+  fastify.delete(
+    '/media-player/:number/session',
+    {
+      schema: {
+        params: z.object({
+          number: z.coerce.number(),
+        }),
+      },
+    },
+    async (req, res) => {
+      const channel = await req.serverCtx.channelCache.getChannelConfig(
+        req.params.number,
+      );
+      if (isNil(channel)) {
+        return res.status(404).send("Channel doesn't exist");
+      }
+
+      const session = sessionManager.getSession(channel.uuid);
+
+      if (isNil(session)) {
+        return res.status(404).send('No sessions for channel');
+      }
+
+      session.stop();
+
+      return res.send();
+    },
+  );
 };

@@ -3,3 +3,4 @@ node_modules
 .env
 out/
 temp/
+streams/

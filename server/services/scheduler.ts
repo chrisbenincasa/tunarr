@@ -4,6 +4,7 @@ import { Task, TaskId } from '../tasks/task.js';
 import { UpdateXmlTvTask } from '../tasks/updateXmlTvTask.js';
 import createLogger from '../logger.js';
 import { withDb } from '../dao/dataSource.js';
+import { CleanupSessionsTask } from '../tasks/cleanupSessionsTask.js';
 import { once } from 'lodash-es';
 
 const logger = createLogger(import.meta);
@@ -91,8 +92,18 @@ export const scheduleJobs = once((serverContext: ServerContext) => {
     hoursCrontab(xmlTvSettings.refreshHours),
     () => UpdateXmlTvTask.create(serverContext),
   );
+
+  scheduledJobsById[CleanupSessionsTask.ID] = new ScheduledTask(
+    CleanupSessionsTask.name,
+    minutesCrontab(1),
+    () => new CleanupSessionsTask(),
+  );
 });
 
 function hoursCrontab(hours: number): string {
   return `0 0 0/${hours} * * *`;
+}
+
+function minutesCrontab(mins: number): string {
+  return `*/${mins} * * * *`;
 }
