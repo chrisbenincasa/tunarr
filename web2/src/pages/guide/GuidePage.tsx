@@ -34,6 +34,7 @@ import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import { prefetchAllTvGuides, useAllTvGuides } from '../../hooks/useTvGuide.ts';
 import useStore from '../../store/index.ts';
 import { setGuideDurationState } from '../../store/themeEditor/actions.ts';
+import { formatProgramDuration } from '../../helpers/util.ts';
 
 dayjs.extend(duration);
 dayjs.extend(isBetween);
@@ -144,8 +145,6 @@ export default function GuidePage() {
   const intervalArray = Array.from(
     Array(timelineDuration.asMinutes() / increments).keys(),
   );
-
-  console.log(intervalArray);
 
   const {
     isPending,
@@ -486,6 +485,7 @@ export default function GuidePage() {
         summary = '';
         break;
     }
+    console.log(program.duration);
 
     return (
       <Modal
@@ -510,7 +510,7 @@ export default function GuidePage() {
             <>
               <Chip
                 color="secondary"
-                label={`${dayjs(program.duration).format('m')}m`}
+                label={formatProgramDuration(program.duration)}
                 sx={{ mt: 1 }}
               />
               <Chip color="secondary" label={rating} sx={{ mx: 1, mt: 1 }} />
