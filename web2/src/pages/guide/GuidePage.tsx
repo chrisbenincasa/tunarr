@@ -28,7 +28,7 @@ import { TvGuideProgram } from '@tunarr/types';
 import dayjs, { Dayjs, duration } from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 import { isEmpty, round } from 'lodash-es';
-import { Fragment, useCallback, useState } from 'react';
+import { Fragment, useCallback, useEffect, useState } from 'react';
 import { useInterval } from 'usehooks-ts';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import { prefetchAllTvGuides, useAllTvGuides } from '../../hooks/useTvGuide.ts';
@@ -164,6 +164,11 @@ export default function GuidePage() {
     },
     { staleTime: dayjs.duration(5, 'minutes').asMilliseconds() },
   ).catch(console.error);
+
+  useEffect(() => {
+    setProgress(calcProgress(start, end));
+    setCurrentTime(dayjs().format('h:mm'));
+  }, [start, end]);
 
   useInterval(() => {
     setProgress(calcProgress(start, end));
@@ -485,7 +490,6 @@ export default function GuidePage() {
         summary = '';
         break;
     }
-    console.log(program.duration);
 
     return (
       <Modal
