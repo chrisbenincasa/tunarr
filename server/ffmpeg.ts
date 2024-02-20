@@ -183,6 +183,9 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
         filledOpts.hlsTime.toString(),
         '-hls_list_size',
         filledOpts.hlsListSize.toString(),
+        '-force_key_frames',
+        // Force a key frame every N secodns
+        `expr:gte(t,n_forced*${filledOpts.hlsTime})`,
         '-hls_delete_threshold',
         '3', // Num unreferenced segments
         '-hls_flags',
@@ -360,7 +363,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     console.log(
       `video framerate = ${streamStats?.videoFramerate}, max = ${this.opts.maxFPS} `,
     );
-    if (streamStats?.videoFramerate ?? 0 >= this.opts.maxFPS + 0.000001) {
+    if ((streamStats?.videoFramerate ?? 0) >= this.opts.maxFPS + 0.000001) {
       videoComplex += `;${currentVideo}fps=${this.opts.maxFPS}[fpchange]`;
       currentVideo = '[fpchange]';
     }

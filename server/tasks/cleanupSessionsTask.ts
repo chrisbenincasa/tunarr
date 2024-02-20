@@ -1,4 +1,4 @@
-import { chain, forEach, isEmpty, keys } from 'lodash-es';
+import { chain, filter, forEach, isEmpty, keys } from 'lodash-es';
 import { sessionManager } from '../stream/sessionManager.js';
 import { Maybe } from '../types.js';
 import { Task, TaskId } from './task.js';
@@ -12,7 +12,10 @@ export class CleanupSessionsTask extends Task<void> {
 
   // eslint-disable-next-line @typescript-eslint/require-await
   protected async runInternal(): Promise<Maybe<void>> {
-    const sessions = sessionManager.allSessions();
+    const sessions = filter(
+      sessionManager.allSessions(),
+      (session) => session.started,
+    );
 
     if (isEmpty(sessions)) {
       return;
