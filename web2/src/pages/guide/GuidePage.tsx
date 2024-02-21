@@ -530,6 +530,27 @@ export default function GuidePage() {
   };
 
   const channels = channelLineup?.map((lineup) => {
+    const alignedLineup = lineup.programs;
+    if (
+      lineup.programs.length > 0 &&
+      start.isBefore(lineup.programs[0].start)
+    ) {
+      // TODO: This seems to happen when the server is started
+      // and generates a guide _after_ the start time of the page
+      // When this happens, we don't know what happened before this
+      // program, so we should just insert some filler.
+      // We can look into generating the _previous_ hour's (just say)
+      // programming on server startup, but out of scope for right now.
+      const startUnix = start.unix() * 1000;
+      const fillerLength = lineup.programs[0].start - startUnix;
+      alignedLineup.unshift({
+        type: 'flex',
+        persisted: false,
+        duration: fillerLength,
+        start: startUnix,
+        stop: lineup.programs[0].start,
+      });
+    }
     return (
       <Box
         key={lineup.id}
@@ -541,8 +562,8 @@ export default function GuidePage() {
           borderColor: 'transparent',
         }}
       >
-        {lineup.programs.length > 0
-          ? lineup.programs.map(renderProgram)
+        {alignedLineup.length > 0
+          ? alignedLineup.map(renderProgram)
           : renderUnavailableProgramming(100)}
       </Box>
     );
