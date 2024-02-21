@@ -26,13 +26,17 @@ import {
   updatePathwayState,
 } from '../../store/themeEditor/actions.ts';
 import useStore from '../../store/index.ts';
+import { useVersion } from '../../hooks/useVersion.ts';
 
 export default function WelcomePage() {
   const [isPlexConnected, setIsPlexConnected] = React.useState<boolean>(false);
+  const [isFfmpegInstalled, setIsFfmpegInstalled] =
+    React.useState<boolean>(false);
   const [channelsExist, setChannelsExist] = React.useState<boolean>(false);
   const [programmingExists, setProgrammingExists] =
     React.useState<boolean>(false);
 
+  const { data: version } = useVersion();
   const { data: plexServers } = usePlexServerSettings();
   const { data: channels } = useChannels();
   const startDate = dayjs(new Date(2024, 1, 1)); // a date before user would have been using Tunarr
@@ -47,6 +51,10 @@ export default function WelcomePage() {
   useEffect(() => {
     if (plexServers && plexServers.length > 0) {
       setIsPlexConnected(true);
+    }
+
+    if (version && version.ffmpeg != 'Error') {
+      setIsFfmpegInstalled(true);
     }
 
     if (channels && channels.length > 0) {
@@ -172,6 +180,10 @@ export default function WelcomePage() {
         <Stack direction={'row'} spacing={1}>
           {isPlexConnected ? <CheckBox /> : <CheckBoxOutlineBlank />}
           <Typography variant="body1">Connect your Plex Server</Typography>
+        </Stack>
+        <Stack direction={'row'} spacing={1}>
+          {isFfmpegInstalled ? <CheckBox /> : <CheckBoxOutlineBlank />}
+          <Typography variant="body1">Install FFMPEG 4.2+</Typography>
         </Stack>
         <Stack direction={'row'} spacing={1}>
           {channelsExist ? <CheckBox /> : <CheckBoxOutlineBlank />}
