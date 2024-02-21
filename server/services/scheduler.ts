@@ -4,6 +4,7 @@ import { Task, TaskId } from '../tasks/task.js';
 import { UpdateXmlTvTask } from '../tasks/updateXmlTvTask.js';
 import createLogger from '../logger.js';
 import { withDb } from '../dao/dataSource.js';
+import { once } from 'lodash-es';
 
 const logger = createLogger(import.meta);
 
@@ -77,11 +78,12 @@ class ScheduledTask<Data> {
   }
 }
 
+// TODO: It is annoying that this has to be partial
 export const scheduledJobsById: Partial<
   Record<TaskId, ScheduledTask<unknown>>
 > = {};
 
-export const scheduleJobs = (serverContext: ServerContext) => {
+export const scheduleJobs = once((serverContext: ServerContext) => {
   const xmlTvSettings = serverContext.settings.xmlTvSettings();
 
   scheduledJobsById[UpdateXmlTvTask.ID] = new ScheduledTask(
@@ -89,7 +91,7 @@ export const scheduleJobs = (serverContext: ServerContext) => {
     hoursCrontab(xmlTvSettings.refreshHours),
     () => UpdateXmlTvTask.create(serverContext),
   );
-};
+});
 
 function hoursCrontab(hours: number): string {
   return `0 0 0/${hours} * * *`;

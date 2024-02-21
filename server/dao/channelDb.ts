@@ -12,6 +12,7 @@ import {
 } from '@tunarr/types';
 import { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
 import dayjs from 'dayjs';
+import fs from 'node:fs/promises';
 import duration from 'dayjs/plugin/duration.js';
 import {
   chain,
@@ -47,8 +48,12 @@ import {
 import { Channel } from './entities/Channel.js';
 import { Program } from './entities/Program.js';
 import { upsertContentPrograms } from './programHelpers.js';
+import { fileExists } from '../util/fsUtil.js';
+import createLogger from '../logger.js';
 
 dayjs.extend(duration);
+
+const logger = createLogger(import.meta);
 
 function updateRequestToChannel(
   updateReq: SaveChannelRequest,
@@ -152,10 +157,27 @@ export class ChannelDB {
     return channel;
   }
 
-  async deleteChannel(channelNumber: number) {
+  async deleteChannel(channelId: string) {
     const em = getEm();
-    await em.repo(Channel).nativeDelete({ number: channelNumber });
-    await em.flush();
+    let marked = false;
+    try {
+      await this.markFileDbForDeletion(channelId);
+      marked = true;
+      const ref = em.getReference(Channel, channelId);
+      await em.remove(ref).flush();
+    } catch (e) {
+      // If we failed at the DB level for some reason,
+      // try to restore the lineup file.
+      if (marked) {
+        await this.markFileDbForDeletion(channelId, false);
+      }
+
+      logger.error(
+        'Error while attempting to delete channel %s: %O',
+        channelId,
+        e,
+      );
+    }
   }
 
   async getAllChannelNumbers() {
@@ -412,6 +434,36 @@ export class ChannelDB {
     }
 
     return this.fileDbCache[channelId];
+  }
+
+  private async markFileDbForDeletion(
+    channelId: string,
+    isDelete: boolean = true,
+  ) {
+    const path = join(
+      globalOptions().database,
+      `channel-lineups/${channelId}.json${isDelete ? '' : '.bak'}`,
+    );
+    try {
+      if (await fileExists(path)) {
+        const newPath = isDelete ? `${path}.bak` : path.replace('.bak', '');
+        await fs.rename(path, newPath);
+      }
+      if (isDelete) {
+        delete this.fileDbCache[channelId];
+      } else {
+        // Reload the file into the DB cache
+        await this.getFileDb(channelId);
+      }
+    } catch (e) {
+      logger.error(
+        `Error while trying to ${
+          isDelete ? 'mark' : 'unmark'
+        } Channel %s lineup json for deletion: %O`,
+        channelId,
+        e,
+      );
+    }
   }
 }
 

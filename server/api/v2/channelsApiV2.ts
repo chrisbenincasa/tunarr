@@ -168,6 +168,40 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
     },
   );
 
+  fastify.delete(
+    '/channels/:id',
+    {
+      schema: {
+        params: z.object({ id: z.string() }),
+        response: {
+          200: z.void(),
+          404: z.void(),
+        },
+      },
+    },
+    async (req, res) => {
+      const channel = await req.serverCtx.channelDB.getChannelById(
+        req.params.id,
+      );
+
+      if (isNil(channel)) {
+        return res.status(404).send();
+      }
+
+      await req.serverCtx.channelDB.deleteChannel(channel.uuid);
+
+      try {
+        scheduledJobsById[UpdateXmlTvTask.ID]
+          ?.runNow(true)
+          .catch(console.error);
+      } catch (e) {
+        logger.error('Unable to update guide after lineup update %O', e);
+      }
+
+      return res.send();
+    },
+  );
+
   fastify.get(
     '/channels/:id/programs',
     {

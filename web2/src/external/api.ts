@@ -56,6 +56,13 @@ export const api = makeApi([
     alias: 'updateChannel',
   },
   {
+    method: 'delete',
+    parameters: parametersBuilder().addPath('id', z.string()).build(),
+    path: '/api/v2/channels/:id',
+    response: z.void(),
+    alias: 'deleteChannel',
+  },
+  {
     method: 'get',
     path: '/api/v2/channels/:id',
     parameters: parametersBuilder().addPath('id', z.string()).build(),
