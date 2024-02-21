@@ -57,15 +57,14 @@ export default function ChannelsPage() {
   };
 
   const removeChannelMutation = useMutation({
-    // To do: Update the below when the channel delete endpoint exists
-    // mutationFn: (id: string) => {
-    //   return apiClient.deleteChannel(null, { params: { id } });
-    // },
-    // onSuccess: () => {
-    //   return queryClient.invalidateQueries({
-    //     queryKey: ['settings', 'plex-servers'],
-    //   });
-    // },
+    mutationFn: (id: string) => {
+      return apiClient.deleteChannel(undefined, { params: { id } });
+    },
+    onSuccess: () => {
+      return queryClient.invalidateQueries({
+        queryKey: ['channels'],
+      });
+    },
   });
 
   const removeChannel = (id: string) => {

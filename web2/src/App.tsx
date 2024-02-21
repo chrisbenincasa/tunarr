@@ -8,6 +8,7 @@ import TheatersIcon from '@mui/icons-material/Theaters';
 import TvIcon from '@mui/icons-material/Tv';
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
 import {
+  Alert,
   AppBar,
   Box,
   Button,
@@ -35,6 +36,8 @@ import ServerEvents from './components/ServerEvents.tsx';
 import VersionFooter from './components/VersionFooter.tsx';
 import useStore from './store/index.ts';
 import { setDarkModeState } from './store/themeEditor/actions.ts';
+import { useVersion } from './hooks/useVersion.ts';
+
 interface NavItem {
   name: string;
   path: string;
@@ -56,6 +59,8 @@ export function Root() {
 
   const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
   const darkMode = useStore((state) => state.theme.darkMode);
+
+  const { data: version } = useVersion();
 
   // Fallback to browser preference if no user selection
   if (isUndefined(darkMode) && prefersDarkMode) {
@@ -301,6 +306,31 @@ export function Root() {
         >
           <Toolbar />
           <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+            {version?.ffmpeg === 'Error' ? (
+              <Alert
+                variant="filled"
+                severity="error"
+                sx={{ my: 2, display: 'flex', flexGrow: 1, width: '100%' }}
+                action={
+                  <Button
+                    to={'/settings/ffmpeg'}
+                    component={RouterLink}
+                    variant="outlined"
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'flex-end',
+                      color: theme.palette.common.white,
+                    }}
+                  >
+                    Update Path
+                  </Button>
+                }
+              >
+                FFMPEG not found. For all features to work, we recommend
+                installing FFMPEG 4.2+ or update your FFMPEG executable path in
+                settings.
+              </Alert>
+            ) : null}
             <Outlet />
           </Container>
         </Box>
