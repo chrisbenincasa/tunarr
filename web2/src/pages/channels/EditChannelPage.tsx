@@ -20,20 +20,22 @@ import {
   useForm,
 } from 'react-hook-form';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
-import { useEffectOnce } from 'usehooks-ts';
 import ChannelEpgConfig from '../../components/channel_config/ChannelEpgConfig.tsx';
 import { ChannelFlexConfig } from '../../components/channel_config/ChannelFlexConfig.tsx';
 import ChannelPropertiesEditor from '../../components/channel_config/ChannelPropertiesEditor.tsx';
 import ChannelTranscodingConfig from '../../components/channel_config/ChannelTranscodingConfig.tsx';
 import { apiClient } from '../../external/api.ts';
 import { usePreloadedData } from '../../hooks/preloadedDataHook.ts';
+import {
+  defaultNewChannel,
+  editChannelLoader,
+} from '../../preloaders/channelLoaders.ts';
 import { setCurrentChannel } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
 import {
   ChannelEditContext,
   ChannelEditContextState,
 } from './EditChannelContext.ts';
-import { editChannelLoader } from '../../preloaders/channelLoaders.ts';
 
 type TabValues = 'properties' | 'flex' | 'epg' | 'ffmpeg';
 
@@ -113,19 +115,28 @@ export default function EditChannelPage({ isNew }: Props) {
     mode: 'onChange',
     // Change this so we only load the form on initial...
     // eslint-disable-next-line @typescript-eslint/require-await
-    defaultValues: async () => {
-      const c = channel;
-
-      return {
-        ...c,
-        guideMinimumDuration: c.guideMinimumDuration / 1000,
-      };
+    defaultValues: {
+      ...defaultNewChannel(-1),
+      transcoding: {
+        targetResolution: 'global',
+        videoBitrate: 'global',
+        videoBufferSize: 'global',
+      },
     },
   });
 
-  useEffectOnce(() => {
+  useEffect(() => {
     setCurrentChannel(channel);
-  });
+    formMethods.reset({
+      ...channel,
+      guideMinimumDuration: channel.guideMinimumDuration / 1000,
+      transcoding: {
+        targetResolution: channel.transcoding?.targetResolution ?? 'global',
+        videoBitrate: channel.transcoding?.videoBitrate ?? 'global',
+        videoBufferSize: channel.transcoding?.videoBufferSize ?? 'global',
+      },
+    });
+  }, [channel, formMethods]);
 
   useEffect(() => {
     if (

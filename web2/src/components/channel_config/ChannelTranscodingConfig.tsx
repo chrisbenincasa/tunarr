@@ -1,20 +1,27 @@
 import {
   CircularProgress,
+  Divider,
   FormControl,
   Input,
   InputLabel,
   MenuItem,
   Select,
+  SelectChangeEvent,
   Skeleton,
   TextField,
 } from '@mui/material';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import { Channel } from '@tunarr/types';
-import { isNil } from 'lodash-es';
+import { Channel, SaveChannelRequest } from '@tunarr/types';
+import { isNil, isUndefined, map } from 'lodash-es';
 import { Controller, useFormContext } from 'react-hook-form';
-import { toStringResolution } from '../../helpers/util.ts';
+import {
+  resolutionFromAnyString,
+  resolutionFromString,
+  resolutionToString,
+} from '../../helpers/util.ts';
 import { useFfmpegSettings } from '../../hooks/settingsHooks.ts';
+import { useState } from 'react';
 
 const resolutionOptions = [
   { value: '420x420', label: '420x420 (1:1)' },
@@ -27,13 +34,37 @@ const resolutionOptions = [
   { value: '1280x720', label: '1280x720 (HD 16:9)' },
   { value: '1920x1080', label: '1920x1080 (FHD 16:9)' },
   { value: '3840x2160', label: '3840x2160 (4K 16:9)' },
-];
+] as const;
+
+type ResolutionOptionValues =
+  | (typeof resolutionOptions)[number]['value']
+  | 'global';
+
+const resolutionValues = new Set<string>([
+  'global',
+  ...map(resolutionOptions, 'value'),
+]);
+
+const globalOrNumber = /^(global|\d+|)+$/;
 
 export default function ChannelTranscodingConfig() {
   const { data: ffmpegSettings, isPending: ffmpegSettingsLoading } =
     useFfmpegSettings();
 
-  const { control } = useFormContext<Channel>();
+  const { control, watch, setValue } = useFormContext<SaveChannelRequest>();
+  const targetRes = watch('transcoding.targetResolution');
+  const [targetResString, setTargetResString] =
+    useState<ResolutionOptionValues>(() => {
+      if (isUndefined(targetRes) || targetRes === 'global') {
+        return 'global';
+      }
+      const asStr = resolutionToString(targetRes);
+      if (resolutionValues.has(asStr)) {
+        return asStr as ResolutionOptionValues;
+      }
+
+      return 'global';
+    });
 
   if (ffmpegSettingsLoading) {
     return <CircularProgress />;
@@ -44,18 +75,40 @@ export default function ChannelTranscodingConfig() {
       value: 'global',
       label: `Use global setting: ${
         ffmpegSettings?.targetResolution
-          ? toStringResolution(ffmpegSettings.targetResolution)
+          ? resolutionToString(ffmpegSettings.targetResolution)
           : 'Unset'
       }`,
     },
     ...resolutionOptions,
   ];
 
+  const handleResolutionChange = (
+    e: SelectChangeEvent<ResolutionOptionValues>,
+  ) => {
+    if (e.target.value === 'global') {
+      setTargetResString('global');
+      setValue('transcoding.targetResolution', 'global');
+    } else if (resolutionValues.has(e.target.value)) {
+      setTargetResString(e.target.value as ResolutionOptionValues);
+      setValue(
+        'transcoding.targetResolution',
+        resolutionFromAnyString(e.target.value),
+      );
+    }
+  };
+
   return (
     <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <Box>
+        <Typography>Watermark</Typography>
+      </Box>
+      <Divider sx={{ my: 2 }} />
+      <Typography>Transcoding Settings</Typography>
+      <Typography variant="caption">
+        Use these settings to override global ffmpeg settings for this channel.
+      </Typography>
       <Box sx={{ flex: 1 }}>
-        <Typography>Transcoding Settings</Typography>
-        <FormControl fullWidth margin="normal">
+        <FormControl margin="normal">
           <InputLabel>Channel Resolution</InputLabel>
           {ffmpegSettingsLoading ? (
             <Skeleton>
@@ -65,13 +118,14 @@ export default function ChannelTranscodingConfig() {
             <Controller
               control={control}
               name="transcoding.targetResolution"
-              render={({ field }) => (
-                <Select
+              render={() => (
+                <Select<ResolutionOptionValues>
                   disabled={
                     isNil(ffmpegSettings) || !ffmpegSettings.enableTranscoding
                   }
                   label="Channel Resolution"
-                  {...field}
+                  value={targetResString}
+                  onChange={(e) => handleResolutionChange(e)}
                 >
                   {allResolutionOptions.map((opt) => (
                     <MenuItem key={opt.value} value={opt.value}>
@@ -84,10 +138,58 @@ export default function ChannelTranscodingConfig() {
           )}
         </FormControl>
         <FormControl margin="normal">
-          <TextField
-            label="Video Bitrate (kbps)"
-            value={ffmpegSettings?.videoBitrate}
-          />
+          {ffmpegSettingsLoading ? (
+            <Skeleton>
+              <Input />
+            </Skeleton>
+          ) : (
+            <Controller
+              control={control}
+              name="transcoding.videoBitrate"
+              disabled={
+                isNil(ffmpegSettings) || !ffmpegSettings.enableTranscoding
+              }
+              rules={{ pattern: globalOrNumber }}
+              render={({ field, formState: { errors } }) => (
+                <TextField
+                  label="Video Bitrate (kbps)"
+                  helperText={
+                    errors.transcoding && errors.transcoding.videoBitrate
+                      ? "Must be a number or 'global'"
+                      : null
+                  }
+                  {...field}
+                />
+              )}
+            />
+          )}
+        </FormControl>
+        <FormControl margin="normal">
+          {ffmpegSettingsLoading ? (
+            <Skeleton>
+              <Input />
+            </Skeleton>
+          ) : (
+            <Controller
+              control={control}
+              name="transcoding.videoBufferSize"
+              disabled={
+                isNil(ffmpegSettings) || !ffmpegSettings.enableTranscoding
+              }
+              rules={{ pattern: globalOrNumber }}
+              render={({ field, formState: { errors } }) => (
+                <TextField
+                  label="Video Buffer Size (kbps)"
+                  helperText={
+                    errors.transcoding && errors.transcoding.videoBufferSize
+                      ? "Must be a number or 'global'"
+                      : null
+                  }
+                  {...field}
+                />
+              )}
+            />
+          )}
         </FormControl>
       </Box>
     </Box>

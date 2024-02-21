@@ -1,4 +1,4 @@
-import z from 'zod';
+import z, { ZodTypeAny } from 'zod';
 import { ResolutionSchema } from './miscSchemas.js';
 import { ProgramSchema } from './programmingSchema.js';
 import { ChannelIconSchema } from './utilSchemas.js';
@@ -28,7 +28,7 @@ export const ChannelOfflineSchema = z.object({
 });
 
 export const ChannelTranscodingOptionsSchema = z.object({
-  targetResolution: ResolutionSchema,
+  targetResolution: ResolutionSchema.optional(),
   videoBitrate: z.number().optional(),
   videoBufferSize: z.number().optional(),
 });
@@ -53,11 +53,23 @@ export const ChannelSchema = z.object({
   watermark: WatermarkSchema.optional(),
 });
 
+function addOrTransform<T extends ZodTypeAny>(x: T) {
+  return x.or(z.literal('global')).transform((val) => {
+    if (val === 'global') {
+      return undefined;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return val;
+  });
+}
+
 export const SaveChannelRequestSchema = ChannelSchema.omit({
   programs: true,
-  // fillerCollections: true,
   fallback: true, // Figure out how to update this
+}).extend({
+  transcoding: ChannelTranscodingOptionsSchema.extend({
+    targetResolution: addOrTransform(ResolutionSchema.optional()),
+    videoBitrate: addOrTransform(z.number().optional()),
+    videoBufferSize: addOrTransform(z.number().optional()),
+  }),
 });
-// .extend({
-//   fillerCollections: z.array(z.string()),
-// });

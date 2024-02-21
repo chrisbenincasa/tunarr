@@ -3,6 +3,7 @@ import {
   CreateCustomShowRequestSchema,
   CreateFillerListRequestSchema,
   UpdateChannelProgrammingRequestSchema,
+  UpdateFillerListRequestSchema,
 } from '@tunarr/types/api';
 import {
   ChannelLineupSchema,
@@ -189,7 +190,7 @@ export const api = makeApi([
   },
   {
     method: 'get',
-    path: '/api/v2/fillers/:id',
+    path: '/api/v2/filler-lists/:id',
     alias: 'getFillerList',
     response: FillerListSchema,
     errors: makeErrors([
@@ -202,7 +203,7 @@ export const api = makeApi([
   },
   {
     method: 'get',
-    path: '/api/v2/fillers/:id/programs',
+    path: '/api/v2/filler-lists/:id/programs',
     alias: 'getFillerListPrograms',
     response: FillerListProgrammingSchema,
     errors: makeErrors([
@@ -215,19 +216,36 @@ export const api = makeApi([
   },
   {
     method: 'get',
-    path: '/api/v2/fillers',
+    path: '/api/v2/filler-lists',
     alias: 'getFillerLists',
     response: z.array(FillerListSchema),
   },
   {
     method: 'post',
-    path: '/api/v2/fillers',
+    path: '/api/v2/filler-lists',
     alias: 'createFillerList',
     parameters: parametersBuilder()
       .addBody(CreateFillerListRequestSchema)
       .build(),
     status: 201,
     response: z.object({ id: z.string() }),
+  },
+  {
+    method: 'delete',
+    path: '/api/v2/filler-lists/:id',
+    alias: 'deleteFillerList',
+    parameters: parametersBuilder().addPath('id', z.string()).build(),
+    response: z.void(),
+  },
+  {
+    method: 'put',
+    path: '/api/v2/filler-lists/:id',
+    alias: 'updateFillerList',
+    parameters: parametersBuilder()
+      .addPath('id', z.string())
+      .addBody(UpdateFillerListRequestSchema)
+      .build(),
+    response: FillerListSchema,
   },
   {
     method: 'get',

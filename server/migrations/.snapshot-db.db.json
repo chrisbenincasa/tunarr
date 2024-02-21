@@ -99,12 +99,12 @@
         },
         "guide_minimum_duration": {
           "name": "guide_minimum_duration",
-          "type": "integer",
+          "type": "text",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
           "nullable": false,
-          "mappedType": "integer"
+          "mappedType": "text"
         },
         "disable_filler_overlay": {
           "name": "disable_filler_overlay",

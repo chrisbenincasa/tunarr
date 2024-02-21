@@ -17,7 +17,8 @@ import { Preloader } from '../types/index.ts';
 export const newChannelLoader: Preloader<Channel[]> = createPreloader(
   () => channelsQuery,
 );
-function defaultNewChannel(num: number): Channel {
+
+export function defaultNewChannel(num: number): Channel {
   return {
     id: uuidv4(),
     name: `Channel ${num}`,

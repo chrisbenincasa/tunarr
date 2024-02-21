@@ -1,6 +1,8 @@
 import {
+  Checkbox,
   Divider,
   FormControl,
+  FormControlLabel,
   InputLabel,
   MenuItem,
   Select,
@@ -115,7 +117,23 @@ export function ChannelFlexConfig() {
                 </>
               )}
             />
+            <Controller
+              control={control}
+              name="disableFillerOverlay"
+              render={({ field }) => (
+                <FormControl fullWidth margin="normal">
+                  <FormControlLabel
+                    control={<Checkbox {...field} />}
+                    label="Hide watermark during filler"
+                  />
+                </FormControl>
+              )}
+            />
           </Box>
+          <Divider sx={{ my: 1 }} />
+          <Typography variant="h5" sx={{ mb: 1 }}>
+            Filler Lists
+          </Typography>
         </Box>
         <ChannelEditActions />
       </>

@@ -8,10 +8,13 @@ import { LoaderFunctionArgs } from 'react-router-dom';
 import {
   fillerListProgramsQuery,
   fillerListQuery,
+  fillerListsQuery,
 } from '../hooks/useFillerLists.ts';
 import { setCurrentFillerList } from '../store/channelEditor/actions.ts';
 import { Preloader } from '../types/index.ts';
 import { createPreloader } from '../helpers/preloaderUtil.ts';
+
+export const fillerListsLoader = createPreloader(() => fillerListsQuery);
 
 const fillerListLoader = (isNew: boolean) => {
   if (!isNew) {

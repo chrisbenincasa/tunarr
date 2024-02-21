@@ -12,12 +12,12 @@ import {
 } from '@tunarr/types';
 import { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
 import dayjs from 'dayjs';
-import fs from 'node:fs/promises';
 import duration from 'dayjs/plugin/duration.js';
 import {
   chain,
   compact,
   filter,
+  isEmpty,
   isNil,
   isNull,
   isUndefined,
@@ -30,10 +30,13 @@ import {
 } from 'lodash-es';
 import { Low } from 'lowdb';
 import { DataFile } from 'lowdb/node';
+import fs from 'node:fs/promises';
 import { join } from 'path';
 import { globalOptions } from '../globals.js';
+import createLogger from '../logger.js';
 import { Nullable } from '../types.js';
 import { groupByFunc, groupByUniqAndMap } from '../util.js';
+import { fileExists } from '../util/fsUtil.js';
 import { dbProgramToContentProgram } from './converters/programConverters.js';
 import { getEm } from './dataSource.js';
 import {
@@ -45,11 +48,9 @@ import {
   isOfflineItem,
   isRedirectItem,
 } from './derived_types/Lineup.js';
-import { Channel } from './entities/Channel.js';
+import { Channel, ChannelTranscodingSettings } from './entities/Channel.js';
 import { Program } from './entities/Program.js';
 import { upsertContentPrograms } from './programHelpers.js';
-import { fileExists } from '../util/fsUtil.js';
-import createLogger from '../logger.js';
 
 dayjs.extend(duration);
 
@@ -58,6 +59,11 @@ const logger = createLogger(import.meta);
 function updateRequestToChannel(
   updateReq: SaveChannelRequest,
 ): Partial<Channel> {
+  const transcoding: ChannelTranscodingSettings = omitBy(
+    updateReq.transcoding,
+    (val) => val === 'global' || isNil(val),
+  );
+
   return omitBy<Partial<Channel>>(
     {
       number: updateReq.number,
@@ -69,7 +75,13 @@ function updateRequestToChannel(
       startTime: updateReq.startTime,
       offline: updateReq.offline,
       name: updateReq.name,
-      transcoding: updateReq.transcoding,
+      transcoding: isEmpty(transcoding)
+        ? undefined
+        : {
+            targetResolution: transcoding?.targetResolution,
+            videoBitrate: transcoding?.videoBitrate,
+            videoBufferSize: transcoding?.videoBufferSize,
+          },
       duration: updateReq.duration,
       stealth: updateReq.stealth,
       fillerRepeatCooldown: updateReq.fillerRepeatCooldown
@@ -83,6 +95,11 @@ function updateRequestToChannel(
 function createRequestToChannel(
   saveReq: SaveChannelRequest,
 ): RequiredEntityData<Channel> {
+  const transcoding: ChannelTranscodingSettings = omitBy(
+    saveReq.transcoding,
+    (val) => val === 'global' || isNil(val),
+  );
+
   const c: RequiredEntityData<Channel> = {
     number: saveReq.number,
     watermark: saveReq.watermark,
@@ -93,7 +110,13 @@ function createRequestToChannel(
     startTime: saveReq.startTime,
     offline: saveReq.offline,
     name: saveReq.name,
-    transcoding: saveReq.transcoding,
+    transcoding: isEmpty(transcoding)
+      ? undefined
+      : {
+          targetResolution: transcoding?.targetResolution,
+          videoBitrate: transcoding?.videoBitrate,
+          videoBufferSize: transcoding?.videoBufferSize,
+        },
     duration: saveReq.duration,
     stealth: saveReq.stealth,
     fillerRepeatCooldown: saveReq.fillerRepeatCooldown
