@@ -21,14 +21,15 @@ import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import path from 'path';
 import serveStatic from 'serve-static';
+import { URL } from 'url';
 import { miscRouter } from './api.js';
-import { debugApi } from './api/v2/debugApi.js';
 import { ffmpegSettingsRouter } from './api/ffmpegSettingsApi.js';
 import { guideRouter } from './api/guideApi.js';
 import { hdhrSettingsRouter } from './api/hdhrSettingsApi.js';
 import { plexServersRouter } from './api/plexServersApi.js';
 import { plexSettingsRouter } from './api/plexSettingsApi.js';
 import { schedulerRouter } from './api/schedulerApi.js';
+import { debugApi } from './api/v2/debugApi.js';
 import registerV2Routes from './api/v2/index.js';
 import { xmlTvSettingsRouter } from './api/xmltvSettingsApi.js';
 import constants from './constants.js';
@@ -95,6 +96,11 @@ function initDbDirectories() {
   if (!fs.existsSync(path.join(opts.database, 'cache', 'images'))) {
     fs.mkdirSync(path.join(opts.database, 'cache', 'images'));
   }
+
+  if (!fs.existsSync('streams')) {
+    fs.mkdirSync('streams');
+  }
+
   return hasLegacyDb;
 }
 
@@ -159,13 +165,15 @@ export async function initServer(opts: ServerOptions) {
       stream: {
         write: (message) => logger.http(message.trim()),
       },
+      skip: (req) => {
+        return req.url ? req.url.startsWith('/streams') : false;
+      },
     }),
   );
 
   ctx.eventService.setup(app);
 
   await app
-    .use('/images', serveStatic(path.join(opts.database, 'images')))
     .use(serveStatic(fileURLToPath(new URL('../web/public', import.meta.url))))
     .use('/images', serveStatic(path.join(opts.database, 'images')))
     .use(

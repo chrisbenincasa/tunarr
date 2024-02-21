@@ -17,7 +17,7 @@ import { Link as RouterLink } from 'react-router-dom';
 import { ChannelProgrammingConfig } from '../../components/channel_config/ChannelProgrammingConfig.tsx';
 import { apiClient } from '../../external/api.ts';
 import { channelProgramUniqueId } from '../../helpers/util.ts';
-import { usePreloadedChannel } from '../../hooks/usePreloadedChannel.ts';
+import { usePreloadedChannelEdit } from '../../hooks/usePreloadedChannel.ts';
 import { resetCurrentLineup } from '../../store/channelEditor/actions.ts';
 
 type MutateArgs = {
@@ -33,7 +33,7 @@ type SnackBar = {
 
 export default function ChannelProgrammingPage() {
   const { currentEntity: channel, programList: newLineup } =
-    usePreloadedChannel();
+    usePreloadedChannelEdit();
 
   const queryClient = useQueryClient();
   const theme = useTheme();
@@ -139,7 +139,7 @@ export default function ChannelProgrammingPage() {
       </Typography>
       <ChannelProgrammingConfig />
       <Box sx={{ display: 'flex', justifyContent: 'end', pt: 1, columnGap: 1 }}>
-        <Button variant="contained" to="/channels" component={Link}>
+        <Button variant="contained" to="/channels" component={RouterLink}>
           Cancel
         </Button>
         <Button variant="contained" onClick={() => onSave()}>

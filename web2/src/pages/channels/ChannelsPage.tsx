@@ -29,7 +29,7 @@ import { isEmpty } from 'lodash-es';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import { useChannels } from '../../hooks/useChannels.ts';
-import { Delete } from '@mui/icons-material';
+import { Delete, Tv } from '@mui/icons-material';
 import { useState } from 'react';
 import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { apiClient } from '../../external/api.ts';
@@ -142,6 +142,16 @@ export default function ChannelsPage() {
               onClick={(e) => e.stopPropagation()}
             >
               <TextSnippetIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Watch Channel" placement="top">
+            <IconButton
+              component={RouterLink}
+              to={`/channels/${channel.id}/watch`}
+              color="primary"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Tv />
             </IconButton>
           </Tooltip>
           <Tooltip title="Edit Channel Settings" placement="top">

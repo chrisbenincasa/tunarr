@@ -6,6 +6,7 @@ import {
   FormHelperText,
   FormControlLabel,
   InputLabel,
+  Link as MuiLink,
   MenuItem,
   Stack,
   Select,
@@ -47,7 +48,7 @@ const supportedMaxFPS = [
   { value: '30', string: '30 frames per second' },
   { value: '50', string: '50 frames per second' },
   { value: '59.94', string: '59.94 frames per second' },
-  { value: '60', string: '60 frames per secondsecond' },
+  { value: '60', string: '60 frames per second' },
   { value: '120', string: '120 frames per second' },
 ];
 
@@ -565,7 +566,7 @@ export default function FfmpegSettingsPage() {
           <Grid item sm={16} md={8}>
             <TextField
               id="video-bitrate"
-              label="Video Bitrate"
+              label="Video Bitrate (Kbps)"
               value={videoBitrate}
               onChange={handleVideoBitrate}
               fullWidth
@@ -575,11 +576,23 @@ export default function FfmpegSettingsPage() {
           <Grid item sm={16} md={8}>
             <TextField
               id="video-buffer-size"
-              label="Video Buffer Size"
+              label="Video Buffer Size (kb)"
               value={videoBufferSize}
               onChange={handleVideoBufferSize}
               fullWidth
               sx={{ my: 1 }}
+              helperText={
+                <>
+                  Buffer size effects how frequently ffmpeg reconsiders the
+                  output bitrate.{' '}
+                  <MuiLink
+                    target="_blank"
+                    href="https://trac.ffmpeg.org/wiki/Limiting%20the%20output%20bitrate#Whatdoes-bufsizedo"
+                  >
+                    Read more
+                  </MuiLink>
+                </>
+              }
             />
           </Grid>
         </Grid>
@@ -750,7 +763,7 @@ export default function FfmpegSettingsPage() {
           <Grid item sm={16} md={8}>
             <TextField
               id="audio-bitrate"
-              label="Audio Bitrate"
+              label="Audio Bitrate (Kbps)"
               value={audioBitrate}
               onChange={handleAudioBitrate}
               sx={{ my: 1 }}
@@ -760,7 +773,7 @@ export default function FfmpegSettingsPage() {
           <Grid item sm={16} md={8}>
             <TextField
               id="audio-buffer-size"
-              label="Audio Buffer Size"
+              label="Audio Buffer Size (kb)"
               value={audioBufferSize}
               onChange={handleAudioBufferSize}
               sx={{ my: 1 }}

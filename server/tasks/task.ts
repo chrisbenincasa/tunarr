@@ -4,7 +4,7 @@ import { Maybe } from '../types.js';
 const logger = createLogger(import.meta);
 
 // Set of all of the possible Task IDs
-export type TaskId = 'update-xmltv';
+export type TaskId = 'update-xmltv' | 'cleanup-sessions';
 
 export abstract class Task<Data> {
   private running_ = false;

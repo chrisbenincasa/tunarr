@@ -39,6 +39,7 @@
     ],
     "exclude": [
         "./build/**/*",
-        "./**/*.ignore.ts"
+        "./**/*.ignore.ts",
+        "./streams/**/*.ts"
     ]
 }

@@ -229,6 +229,16 @@ export const api = makeApi([
     status: 201,
     response: z.object({ id: z.string() }),
   },
+  {
+    method: 'get',
+    path: '/media-player/:channelNumber/hls',
+    alias: 'startHlsStream',
+    parameters: parametersBuilder()
+      .addPath('channelNumber', z.coerce.number())
+      .build(),
+    status: 200,
+    response: z.object({ streamPath: z.string() }),
+  },
   getPlexServersEndpoint,
   createPlexServerEndpoint,
   updatePlexServerEndpoint,

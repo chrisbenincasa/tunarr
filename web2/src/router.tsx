@@ -6,7 +6,10 @@ import ChannelsPage from './pages/channels/ChannelsPage.tsx';
 import EditChannelPage from './pages/channels/EditChannelPage.tsx';
 import ProgrammingSelectorPage from './pages/channels/ProgrammingSelectorPage.tsx';
 import TimeSlotEditorPage from './pages/channels/TimeSlotEditorPage.tsx';
-import { editProgrammingLoader } from './preloaders/channelLoaders.ts';
+import {
+  channelLoader,
+  editProgrammingLoader,
+} from './preloaders/channelLoaders.ts';
 import { editChannelLoader } from './preloaders/channelLoaders.ts';
 import { customShowsLoader } from './preloaders/customShowLoaders.ts';
 import {
@@ -30,7 +33,7 @@ import PlexSettingsPage from './pages/settings/PlexSettingsPage.tsx';
 import SettingsLayout from './pages/settings/SettingsLayout.tsx';
 import TaskSettingsPage from './pages/settings/TaskSettingsPage.tsx';
 import XmlTvSettingsPage from './pages/settings/XmlTvSettingsPage.tsx';
-import WatchPage from './pages/watch/WatchPage.tsx';
+import ChannelWatchPage from './pages/watch/ChannelWatchPage.tsx';
 import WelcomePage from './pages/welcome/WelcomePage.tsx';
 import { queryCache } from './queryClient.ts';
 
@@ -81,12 +84,17 @@ export const router = createBrowserRouter([
         loader: editProgrammingLoader(queryClient),
       },
       {
+        path: '/channels/:id/watch',
+        element: <ChannelWatchPage />,
+        loader: channelLoader(queryClient),
+      },
+      {
         path: '/guide',
         element: <GuidePage />,
       },
       {
         path: '/watch',
-        element: <WatchPage />,
+        element: <ChannelWatchPage />,
       },
       {
         path: '/settings',
