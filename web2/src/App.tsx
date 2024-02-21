@@ -133,7 +133,6 @@ export function Root() {
   ];
 
   const drawerWidth = open ? 240 : 60;
-  console.log(version);
 
   return (
     <ThemeProvider theme={theme}>
