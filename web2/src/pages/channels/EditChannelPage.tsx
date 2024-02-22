@@ -10,7 +10,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { SaveChannelRequest } from '@tunarr/types';
 import { usePrevious } from '@uidotdev/usehooks';
 import { ZodiosError } from '@zodios/core';
-import { keys, some } from 'lodash-es';
+import { isUndefined, keys, some } from 'lodash-es';
 import { useEffect, useState } from 'react';
 import {
   FieldPath,
@@ -129,6 +129,8 @@ export default function EditChannelPage({ isNew }: Props) {
     setCurrentChannel(channel);
     formMethods.reset({
       ...channel,
+      fillerCollections: channel.fillerCollections ?? [],
+      fillerRepeatCooldown: 30 * 1000,
       guideMinimumDuration: channel.guideMinimumDuration / 1000,
       transcoding: {
         targetResolution: channel.transcoding?.targetResolution ?? 'global',

@@ -72,7 +72,7 @@ export function ChannelFlexConfig() {
       const newLists = [
         {
           id,
-          cooldownSeconds: 100,
+          cooldownSeconds: 30,
           weight: newWeight,
         },
         ...map(oldLists, (list) => ({
@@ -173,9 +173,13 @@ export function ChannelFlexConfig() {
             </FormControl>
           </Grid>
           <Grid item>
-            <FormControl key={cfl.id}>
-              <TextField label="Cooldown (minutes)" value={30} />
-            </FormControl>
+            <Controller
+              control={control}
+              name={`fillerCollections.${index}.cooldownSeconds`}
+              render={({ field }) => (
+                <TextField label="Cooldown (seconds)" {...field} />
+              )}
+            />
           </Grid>
           {channelFillerLists && channelFillerLists.length > 1 && (
             <Grid item xs={5}>
