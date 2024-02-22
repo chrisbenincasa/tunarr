@@ -3,6 +3,7 @@ import {
   Divider,
   FormControl,
   FormControlLabel,
+  FormGroup,
   InputLabel,
   MenuItem,
   Select,
@@ -13,13 +14,12 @@ import {
 } from '@mui/material';
 import Box from '@mui/material/Box';
 import { SaveChannelRequest } from '@tunarr/types';
-import { chain, isNumber, some } from 'lodash-es';
+import { chain, find, isNil, isNumber, map, some } from 'lodash-es';
 import { useCallback } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 import { useFillerLists } from '../../hooks/useFillerLists.ts';
 import useStore from '../../store/index.ts';
 import ChannelEditActions from './ChannelEditActions.tsx';
-import { find } from 'lodash-es';
 
 export function ChannelFlexConfig() {
   const channel = useStore((s) => s.channelEditor.currentEntity);
@@ -48,7 +48,38 @@ export function ChannelFlexConfig() {
     [fillerLists, setValue, channelFillerLists],
   );
 
-  const renderFillerListEditor = () => {
+  const renderFillerLists = () => {
+    if (!fillerLists || fillerLists.length === 0) {
+      return null;
+    }
+
+    const opts = chain(channelFillerLists)
+      .map((list) => find(fillerLists, { id: list.id }))
+      .reject(isNil)
+      .map((list) => (
+        <MenuItem key={list!.id} value={list!.id}>
+          {list!.name}
+        </MenuItem>
+      ))
+      .value();
+
+    return map(channelFillerLists, (cfl) => (
+      <FormGroup row key={cfl.id} sx={{ mb: 1 }}>
+        <FormControl sx={{ mb: 1 }} key={cfl.id}>
+          <InputLabel>Filler List</InputLabel>
+          <Select
+            value={cfl.id}
+            placeholder="Add a Filler List"
+            label="Filler List"
+          >
+            {opts}
+          </Select>
+        </FormControl>
+      </FormGroup>
+    ));
+  };
+
+  const renderAddFillerListEditor = () => {
     if (!fillerLists) {
       return null;
     }
@@ -73,25 +104,17 @@ export function ChannelFlexConfig() {
     );
 
     return (
-      <>
-        <FormControl sx={{ mb: 1 }}>
-          <InputLabel>Filler List</InputLabel>
-          <Controller
-            control={control}
-            name="fillerCollections"
-            render={() => (
-              <Select
-                value="_unused"
-                placeholder="Add a Filler List"
-                label="Filler List"
-                onChange={(e) => addFillerList(e.target.value)}
-              >
-                {opts}
-              </Select>
-            )}
-          />
-        </FormControl>
-      </>
+      <FormControl sx={{ mb: 1 }}>
+        <InputLabel>Filler List</InputLabel>
+        <Select
+          value="_unused"
+          placeholder="Add a Filler List"
+          label="Filler List"
+          onChange={(e) => addFillerList(e.target.value)}
+        >
+          {opts}
+        </Select>
+      </FormControl>
     );
   };
 
@@ -207,13 +230,8 @@ export function ChannelFlexConfig() {
             <Typography variant="h5" sx={{ mb: 1 }}>
               Filler Lists
             </Typography>
-            {!fillerListsLoading &&
-              (channelFillerLists ?? []).map((list) => (
-                <Typography key={list.id}>
-                  {find(fillerLists, { id: list.id })!.name}
-                </Typography>
-              ))}
-            {fillerListsLoading ? <Skeleton /> : renderFillerListEditor()}
+            {!fillerListsLoading && renderFillerLists()}
+            {fillerListsLoading ? <Skeleton /> : renderAddFillerListEditor()}
           </Box>
         </Box>
         <ChannelEditActions />
