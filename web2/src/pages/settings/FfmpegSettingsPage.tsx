@@ -25,8 +25,8 @@ import { hasOnlyDigits } from '../../helpers/util.ts';
 import { FfmpegSettings, defaultFfmpegSettings } from '@tunarr/types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  fromStringResolution,
-  toStringResolution,
+  resolutionFromString,
+  resolutionToString,
 } from '../../helpers/util.ts';
 import { HelpOutline } from '@mui/icons-material';
 
@@ -221,7 +221,7 @@ export default function FfmpegSettingsPage() {
     React.useState<boolean>(defaultFfmpegSettings.disableChannelPrelude);
 
   const [targetResolution, setTargetResolution] = React.useState<string>(
-    toStringResolution(defaultFfmpegSettings.targetResolution),
+    resolutionToString(defaultFfmpegSettings.targetResolution),
   );
 
   const [showFormError, setShowFormError] = React.useState<boolean>(false);
@@ -259,8 +259,8 @@ export default function FfmpegSettingsPage() {
       audioVolumePercent: Number(audioVolumePercent),
       videoEncoder,
       audioEncoder,
-      targetResolution: fromStringResolution(
-        toStringResolution({ widthPx: Number(w), heightPx: Number(h) }),
+      targetResolution: resolutionFromString(
+        resolutionToString({ widthPx: Number(w), heightPx: Number(h) }),
       ),
       videoBitrate: Number(videoBitrate),
       videoBufferSize: Number(videoBufferSize),
@@ -312,7 +312,7 @@ export default function FfmpegSettingsPage() {
     setDisableChannelOverlay(defaultFfmpegSettings.disableChannelOverlay);
     setDisableChannelPrelude(defaultFfmpegSettings.disableChannelPrelude);
     setTargetResolution(
-      toStringResolution(defaultFfmpegSettings.targetResolution),
+      resolutionToString(defaultFfmpegSettings.targetResolution),
     );
   };
 
@@ -396,7 +396,7 @@ export default function FfmpegSettingsPage() {
         defaultFfmpegSettings.disableChannelPrelude,
     );
     setTargetResolution(
-      toStringResolution(
+      resolutionToString(
         data?.targetResolution ?? defaultFfmpegSettings.targetResolution,
       ),
     );

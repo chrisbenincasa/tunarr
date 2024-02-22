@@ -42,14 +42,32 @@ export function prettyItemDuration(durationMs: number): string {
       .format('m[m]s[s]');
   }
 }
-export const toStringResolution = (res: Resolution) =>
+
+export const isResolutionString = (
+  str: string,
+): str is `${number}x${number}` => {
+  const split = str.split('x', 2);
+  if (split.length !== 2) {
+    return false;
+  }
+  return !isNaN(parseInt(split[0])) && !isNaN(parseInt(split[1]));
+};
+
+export const resolutionToString = (res: Resolution) =>
   `${res.widthPx}x${res.heightPx}` as const;
 
-export const fromStringResolution = (
+export const resolutionFromString = (
   res: `${number}x${number}`,
 ): Resolution => {
   const [h, w] = res.split('x', 2);
   return { widthPx: parseInt(w), heightPx: parseInt(h) };
+};
+
+export const resolutionFromAnyString = (res: string) => {
+  if (!isResolutionString(res)) {
+    return;
+  }
+  return resolutionFromString(res);
 };
 
 export const hasOnlyDigits = (value: string) => {

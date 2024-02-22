@@ -8,7 +8,7 @@ import { SaveChannelRequest } from '@tunarr/types';
 export default function ChannelEditActions() {
   const { channelEditorState } = useContext(ChannelEditContext)!;
   const {
-    formState: { isValid, isDirty },
+    formState: { isValid },
     reset,
   } = useFormContext<SaveChannelRequest>();
 
@@ -19,11 +19,7 @@ export default function ChannelEditActions() {
           <Button onClick={() => reset()} variant="outlined">
             Reset Options
           </Button>
-          <Button
-            disabled={!isValid || !isDirty}
-            variant="contained"
-            type="submit"
-          >
+          <Button disabled={!isValid} variant="contained" type="submit">
             Save
           </Button>
         </>

@@ -1,25 +1,269 @@
+import { Delete } from '@mui/icons-material';
 import {
+  Checkbox,
   Divider,
   FormControl,
+  FormControlLabel,
+  Grid,
+  IconButton,
   InputLabel,
   MenuItem,
   Select,
+  Skeleton,
+  Slider,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
 import Box from '@mui/material/Box';
-import { Channel } from '@tunarr/types';
-import { isNumber } from 'lodash-es';
+import { SaveChannelRequest } from '@tunarr/types';
+import {
+  chain,
+  find,
+  isNumber,
+  map,
+  pullAt,
+  range,
+  round,
+  some,
+  sumBy,
+} from 'lodash-es';
+import { useCallback, useState } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
+import { useDebounceCallback } from 'usehooks-ts';
+import { useFillerLists } from '../../hooks/useFillerLists.ts';
 import useStore from '../../store/index.ts';
 import ChannelEditActions from './ChannelEditActions.tsx';
 
 export function ChannelFlexConfig() {
   const channel = useStore((s) => s.channelEditor.currentEntity);
-  const { control, watch } = useFormContext<Channel>();
+  const { data: fillerLists, isPending: fillerListsLoading } = useFillerLists();
+  const { control, setValue, watch } = useFormContext<SaveChannelRequest>();
 
   const offlineMode = watch('offline.mode');
+  const channelFillerLists = watch('fillerCollections');
+  const [weights, setWeights] = useState<number[]>(
+    map(channelFillerLists, 'weight'),
+  );
+
+  const updateFormWeights = useDebounceCallback(
+    useCallback(() => {
+      setValue(
+        'fillerCollections',
+        map(channelFillerLists, (cfl, idx) => ({
+          ...cfl,
+          weight: weights[idx],
+        })),
+      );
+    }, [channelFillerLists, setValue, weights]),
+    100,
+  );
+
+  const addFillerList = useCallback(
+    (id: string) => {
+      if (id === '_unused') {
+        return;
+      }
+      const oldLists = channelFillerLists ? [...channelFillerLists] : [];
+
+      const newWeight = round(100 / (oldLists.length + 1), 2);
+      const distributeWeight = round((100 - newWeight) / oldLists.length, 2);
+
+      const newLists = [
+        {
+          id,
+          cooldownSeconds: 30,
+          weight: newWeight,
+        },
+        ...map(oldLists, (list) => ({
+          ...list,
+          weight: list.weight - distributeWeight,
+        })),
+      ];
+
+      setWeights(map(newLists, 'weight'));
+      setValue('fillerCollections', newLists);
+    },
+    [setValue, channelFillerLists, setWeights],
+  );
+
+  const removeSelectedFillerList = useCallback(
+    (idx: number) => {
+      if (!channelFillerLists) {
+        return;
+      }
+
+      const removed = pullAt(channelFillerLists, idx);
+      const removedWeight = sumBy(removed, 'weight');
+      const distributeWeight =
+        channelFillerLists.length > 0
+          ? round(removedWeight / channelFillerLists.length, 2)
+          : 0;
+      const newLists = map(channelFillerLists, (list) => ({
+        ...list,
+        weight: list.weight + distributeWeight,
+      }));
+
+      setWeights(map(newLists, 'weight'));
+      setValue('fillerCollections', newLists);
+    },
+    [channelFillerLists, setValue, setWeights],
+  );
+
+  const adjustWeights = useCallback(
+    (idx: number, value: string | number, upscaleAmt: number) => {
+      if (!channelFillerLists) {
+        return;
+      }
+
+      let newWeight = isNumber(value) ? value : parseInt(value);
+      if (isNaN(newWeight)) {
+        return;
+      }
+      newWeight /= upscaleAmt;
+
+      const newRemainingWeight = 100 - newWeight;
+      const distributedWeight = round(
+        newRemainingWeight / (channelFillerLists.length - 1),
+        4,
+      );
+
+      setWeights(
+        map(range(channelFillerLists.length), (i) =>
+          i === idx ? newWeight : distributedWeight,
+        ),
+      );
+
+      updateFormWeights();
+    },
+    [channelFillerLists, updateFormWeights],
+  );
+
+  const renderFillerLists = () => {
+    if (!channelFillerLists || channelFillerLists.length === 0) {
+      return null;
+    }
+
+    const unclaimedLists = chain(fillerLists)
+      .reject((list) => some(channelFillerLists, { id: list.id }))
+      .map((list) => (
+        <MenuItem key={list.id} value={list.id}>
+          {list.name}
+        </MenuItem>
+      ))
+      .value();
+
+    return map(channelFillerLists, (cfl, index) => {
+      const actualList = find(fillerLists, { id: cfl.id })!;
+      const thisListOpt = (
+        <MenuItem key={cfl.id} value={cfl.id}>
+          {actualList.name}
+        </MenuItem>
+      );
+
+      const listOpts = [thisListOpt, ...unclaimedLists];
+
+      return (
+        <Grid container key={cfl.id} sx={{ mb: 1 }}>
+          <Grid item xs={2}>
+            <FormControl key={cfl.id} sx={{ width: '100%' }}>
+              <Select value={cfl.id} disabled={unclaimedLists.length === 0}>
+                {listOpts}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item>
+            <Controller
+              control={control}
+              name={`fillerCollections.${index}.cooldownSeconds`}
+              render={({ field }) => (
+                <TextField label="Cooldown (seconds)" {...field} />
+              )}
+            />
+          </Grid>
+          {channelFillerLists && channelFillerLists.length > 1 && (
+            <Grid item xs={5}>
+              <FormControl sx={{ width: '100%', mb: 1 }} key={cfl.id}>
+                <Grid container spacing={2}>
+                  <Grid item xs={9}>
+                    <Slider
+                      min={0}
+                      max={1000}
+                      value={weights[index] * 10}
+                      // Gnarly - we cast onChange to the void so react-form-hook
+                      // doesn't try to do anything. Instead we wait for the onChangeCommited
+                      // event, which fires on onMouseUp, and then handle the change.
+                      onChange={(_, value) =>
+                        adjustWeights(index, value as number, 10)
+                      }
+                      onChangeCommitted={(_, value) =>
+                        adjustWeights(index, value as number, 10)
+                      }
+                    />
+                  </Grid>
+                  <Grid item xs>
+                    <TextField
+                      type="number"
+                      label="Weight %"
+                      value={weights[index]}
+                      disabled
+                    />
+                  </Grid>
+                </Grid>
+              </FormControl>
+            </Grid>
+          )}
+          <Grid item>
+            <IconButton onClick={() => removeSelectedFillerList(index)}>
+              <Delete />
+            </IconButton>
+          </Grid>
+        </Grid>
+      );
+    });
+  };
+
+  const renderAddFillerListEditor = () => {
+    if (!fillerLists) {
+      return null;
+    }
+
+    if (fillerLists.length === 0) {
+      return <Typography>You haven't created any filler lists yet!</Typography>;
+    }
+
+    const unclaimedLists = chain(fillerLists)
+      .reject((list) => some(channelFillerLists, { id: list.id }))
+      .map((list) => (
+        <MenuItem key={list.id} value={list.id}>
+          {list.name}
+        </MenuItem>
+      ))
+      .value();
+
+    const opts = [
+      <MenuItem key="null" value="_unused">
+        {unclaimedLists.length === 0
+          ? 'All lists are used'
+          : 'Add a Filler List'}
+      </MenuItem>,
+      ...unclaimedLists,
+    ];
+
+    return (
+      <FormControl sx={{ mb: 1 }}>
+        <InputLabel>Filler List</InputLabel>
+        <Select
+          value="_unused"
+          label="Filler List"
+          onChange={(e) => addFillerList(e.target.value)}
+          disabled={unclaimedLists.length === 0}
+        >
+          {opts}
+        </Select>
+      </FormControl>
+    );
+  };
 
   return (
     channel && (
@@ -115,6 +359,26 @@ export function ChannelFlexConfig() {
                 </>
               )}
             />
+            <Controller
+              control={control}
+              name="disableFillerOverlay"
+              render={({ field }) => (
+                <FormControl fullWidth margin="normal">
+                  <FormControlLabel
+                    control={<Checkbox {...field} />}
+                    label="Hide watermark during filler"
+                  />
+                </FormControl>
+              )}
+            />
+          </Box>
+          <Divider sx={{ my: 1 }} />
+          <Box>
+            <Typography variant="h5" sx={{ mb: 1 }}>
+              Filler Lists
+            </Typography>
+            {!fillerListsLoading && renderFillerLists()}
+            {fillerListsLoading ? <Skeleton /> : renderAddFillerListEditor()}
           </Box>
         </Box>
         <ChannelEditActions />

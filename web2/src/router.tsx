@@ -18,6 +18,7 @@ import {
 } from './preloaders/customShowLoaders.ts';
 import {
   existingFillerListLoader,
+  fillerListsLoader,
   newFillerListLoader,
 } from './preloaders/fillerListLoader.ts';
 import GuidePage from './pages/guide/GuidePage.tsx';
@@ -152,7 +153,7 @@ export const router = createBrowserRouter([
           {
             path: '/library/fillers',
             element: <FillerListsPage />,
-            loader: customShowsLoader(queryClient),
+            loader: fillerListsLoader(queryClient),
           },
           {
             path: '/library/fillers/new',

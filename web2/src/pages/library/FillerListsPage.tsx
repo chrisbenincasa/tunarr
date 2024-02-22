@@ -1,5 +1,7 @@
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 
+import { Delete, Edit } from '@mui/icons-material';
+import { IconButton, Tooltip } from '@mui/material';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Paper from '@mui/material/Paper';
@@ -10,12 +12,34 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
+import { apiClient } from '../../external/api.ts';
+import { useFillerLists } from '../../hooks/useFillerLists.ts';
+
+type DeleteFillerListRequest = { id: string };
 
 export default function FillerListsPage() {
-  // Placeholder...
-  const fillerLists = [];
+  // This should always be defined because of the preloader
+  const { data: fillerLists } = useFillerLists();
+  const queryClient = useQueryClient();
+
+  const deleteFillerList = useMutation({
+    mutationFn: ({ id }: DeleteFillerListRequest) =>
+      apiClient.deleteFillerList(undefined, { params: { id } }),
+    onSuccess: () => {
+      return queryClient.invalidateQueries({
+        queryKey: ['fillers'],
+      });
+    },
+    onError: (e) => console.error(e),
+  });
+
   const getTableRows = () => {
+    if (!fillerLists) {
+      return null;
+    }
+
     if (fillerLists.length === 0) {
       return (
         <TableRow>
@@ -25,7 +49,34 @@ export default function FillerListsPage() {
         </TableRow>
       );
     }
-    return null;
+
+    return fillerLists.map((filler) => {
+      return (
+        <TableRow key={filler.id}>
+          <TableCell>{filler.name}</TableCell>
+          <TableCell>{filler.contentCount}</TableCell>
+          <TableCell width="10%">
+            <Tooltip title="Edit" placement="top">
+              <IconButton
+                color="primary"
+                to={`/library/fillers/${filler.id}/edit`}
+                component={Link}
+              >
+                <Edit />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Delete" placement="top">
+              <IconButton
+                color="error"
+                onClick={() => deleteFillerList.mutate({ id: filler.id })}
+              >
+                <Delete />
+              </IconButton>
+            </Tooltip>
+          </TableCell>
+        </TableRow>
+      );
+    });
   };
 
   return (

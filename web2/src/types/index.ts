@@ -2,6 +2,8 @@ import { QueryClient } from '@tanstack/react-query';
 import {
   ChannelProgram,
   CondensedChannelProgram,
+  ContentProgram,
+  CustomProgram,
   Program,
 } from '@tunarr/types';
 import { LoaderFunctionArgs } from 'react-router-dom';
@@ -50,3 +52,5 @@ export type UIChannelProgram = ChannelProgram &
   };
 
 export type UICondensedChannelProgarm = CondensedChannelProgram & UIIndex;
+
+export type UIFillerListProgram = (ContentProgram | CustomProgram) & UIIndex;

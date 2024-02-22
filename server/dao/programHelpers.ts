@@ -61,13 +61,22 @@ export function createPendingProgramIndexMap(
         acc[p.id!] = idx++;
         // TODO handle other types of programs
       } else if (isContentProgram(p)) {
-        acc[
-          `${p.externalSourceType}_${p.externalSourceName!}_${p.originalProgram
-            ?.key}`
-        ] = idx++;
+        acc[contentProgramUniqueId(p)] = idx++;
       }
       return acc;
     },
     {} as Record<string, number>,
   );
+}
+
+// Creates a unique ID that matches the output of the entity Program#uniqueId
+// function. Useful to matching non-persisted API programs with persisted programs
+export function contentProgramUniqueId(p: ContentProgram) {
+  // ID should always be defined in the persistent case
+  if (p.persisted) {
+    return p.id!;
+  }
+
+  // These should always be defined for the non-persisted case
+  return `${p.externalSourceType}|${p.externalSourceName}|${p.originalProgram?.key}`;
 }

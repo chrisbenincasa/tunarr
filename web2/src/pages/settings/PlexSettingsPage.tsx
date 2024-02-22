@@ -43,8 +43,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { apiClient } from '../../external/api.ts';
 import { checkNewPlexServers, plexLoginFlow } from '../../helpers/plexLogin.ts';
 import {
-  fromStringResolution,
-  toStringResolution,
+  resolutionFromString,
+  resolutionToString,
 } from '../../helpers/util.ts';
 import {
   usePlexServerSettings,
@@ -135,7 +135,7 @@ export default function PlexSettingsPage() {
     );
 
     setMaxPlayableResolution(
-      toStringResolution(
+      resolutionToString(
         streamSettings?.maxPlayableResolution ||
           defaultPlexStreamSettings.maxPlayableResolution,
       ),
@@ -232,7 +232,7 @@ export default function PlexSettingsPage() {
   };
 
   const [maxPlayableResolution, setMaxPlayableResolution] = useState<string>(
-    toStringResolution(defaultPlexStreamSettings.maxPlayableResolution),
+    resolutionToString(defaultPlexStreamSettings.maxPlayableResolution),
   );
 
   const handleMaxPlayableResolution = (event: SelectChangeEvent<string>) => {
@@ -348,8 +348,8 @@ export default function PlexSettingsPage() {
         directStreamBitrate: Number(directStreamBitrate),
         enableSubtitles: showSubtitles,
         maxAudioChannels,
-        maxPlayableResolution: fromStringResolution(
-          toStringResolution({ widthPx: Number(w), heightPx: Number(h) }),
+        maxPlayableResolution: resolutionFromString(
+          resolutionToString({ widthPx: Number(w), heightPx: Number(h) }),
         ),
         mediaBufferSize: Number(mediaBufferSize),
         subtitleSize: 100,

@@ -8,6 +8,7 @@ import { isNil, map } from 'lodash-es';
 import {
   CreateFillerListRequestSchema,
   IdPathParamSchema,
+  UpdateFillerListRequestSchema,
 } from '@tunarr/types/api';
 
 // eslint-disable-next-line @typescript-eslint/require-await
@@ -59,6 +60,27 @@ export const fillerListsApiV2: RouterPluginAsyncCallback = async (fastify) => {
     },
   );
 
+  fastify.delete(
+    '/filler-lists/:id',
+    {
+      schema: {
+        params: z.object({ id: z.string() }),
+        response: {
+          200: z.void(),
+          404: z.void(),
+        },
+      },
+    },
+    async (req, res) => {
+      const filler = await req.serverCtx.fillerDB.getFiller(req.params.id);
+      if (isNil(filler)) {
+        return res.status(404).send();
+      }
+      await req.serverCtx.fillerDB.deleteFiller(req.params.id);
+      return res.send();
+    },
+  );
+
   fastify.post(
     '/filler-lists',
     {
@@ -72,6 +94,39 @@ export const fillerListsApiV2: RouterPluginAsyncCallback = async (fastify) => {
     async (req, res) => {
       const id = await req.serverCtx.fillerDB.createFiller(req.body);
       return res.status(201).send({ id });
+    },
+  );
+
+  fastify.put(
+    '/filler-lists/:id',
+    {
+      schema: {
+        params: z.object({
+          id: z.string(),
+        }),
+        body: UpdateFillerListRequestSchema,
+        response: {
+          200: FillerListSchema,
+        },
+      },
+    },
+    async (req, res) => {
+      const result = await req.serverCtx.fillerDB.saveFiller(
+        req.params.id,
+        req.body,
+      );
+
+      if (isNil(result)) {
+        return res.status(404).send();
+      }
+
+      console.log('sending response');
+
+      return res.send({
+        id: result.uuid,
+        name: result.name,
+        contentCount: result.content.length,
+      });
     },
   );
 

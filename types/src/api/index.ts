@@ -57,6 +57,13 @@ export type CreateFillerListRequest = Alias<
   z.infer<typeof CreateFillerListRequestSchema>
 >;
 
+export const UpdateFillerListRequestSchema =
+  CreateFillerListRequestSchema.partial();
+
+export type UpdateFillerListRequest = Alias<
+  z.infer<typeof UpdateFillerListRequestSchema>
+>;
+
 export const BasicIdParamSchema = z.object({
   id: z.string(),
 });

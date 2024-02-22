@@ -1,7 +1,11 @@
 import { Loaded } from '@mikro-orm/core';
-import { CreateFillerListRequest } from '@tunarr/types/api';
-import { filter, map } from 'lodash-es';
+import {
+  CreateFillerListRequest,
+  UpdateFillerListRequest,
+} from '@tunarr/types/api';
+import { filter, isNil, map } from 'lodash-es';
 import { ChannelCache } from '../channelCache.js';
+import { dbProgramToContentProgram } from './converters/programConverters.js';
 import { getEm } from './dataSource.js';
 import { Channel as ChannelEntity } from './entities/Channel.js';
 import { ChannelFillerShow } from './entities/ChannelFillerShow.js';
@@ -11,7 +15,6 @@ import {
   createPendingProgramIndexMap,
   upsertContentPrograms,
 } from './programHelpers.js';
-import { dbProgramToContentProgram } from './converters/programConverters.js';
 
 export class FillerDB {
   private channelCache: ChannelCache;
@@ -26,14 +29,64 @@ export class FillerDB {
       .findOne(id, { populate: ['content.uuid'] });
   }
 
-  async saveFiller(filler: FillerShow): Promise<void> {
-    const programIds = filler.content?.map((program) => program.uuid) ?? [];
+  async saveFiller(id: string, updateRequest: UpdateFillerListRequest) {
     const em = getEm();
-    await em.repo(FillerShow).upsert({
-      uuid: filler.uuid,
-      name: filler.name,
-      content: programIds,
-    });
+    const filler = await em.repo(FillerShow).findOne({ uuid: id });
+
+    if (isNil(filler)) {
+      return null;
+    }
+
+    if (updateRequest.programs) {
+      const programIndexById = createPendingProgramIndexMap(
+        updateRequest.programs,
+      );
+
+      const persisted = filter(updateRequest.programs, (p) => p.persisted);
+
+      const upsertedPrograms = await upsertContentPrograms(
+        updateRequest.programs,
+      );
+
+      const persistedCustomShowContent = map(persisted, (p) =>
+        em.create(FillerListContent, {
+          fillerList: filler.uuid,
+          content: p.id!,
+          index: programIndexById[p.id!],
+        }),
+      );
+      const newCustomShowContent = map(upsertedPrograms, (p) =>
+        em.create(FillerListContent, {
+          fillerList: filler.uuid,
+          content: p.uuid,
+          index: programIndexById[p.uniqueId()],
+        }),
+      );
+
+      await em.nativeDelete(FillerListContent, { fillerList: filler.uuid });
+      await em.persistAndFlush([
+        ...persistedCustomShowContent,
+        ...newCustomShowContent,
+      ]);
+
+      console.log('programs update');
+    }
+
+    if (updateRequest.name) {
+      console.log('assigning filter');
+      em.assign(filler, { name: updateRequest.name });
+      em.persist(filler);
+    }
+
+    console.log('flushing filler', filler);
+
+    await em.flush();
+
+    return em.findOne(
+      FillerShow,
+      { uuid: filler.uuid },
+      { populate: ['*', 'content.uuid'] },
+    );
   }
 
   async createFiller(createRequest: CreateFillerListRequest): Promise<string> {
@@ -52,7 +105,7 @@ export class FillerDB {
       createRequest.programs,
     );
 
-    await em.persist(filler).flush();
+    await em.persistAndFlush(filler);
 
     const persistedCustomShowContent = map(persisted, (p) =>
       em.create(FillerListContent, {
@@ -124,7 +177,7 @@ export class FillerDB {
   getAllFillers() {
     return getEm()
       .repo(FillerShow)
-      .findAll({ populate: ['content.uuid'] });
+      .findAll({ populate: ['*', 'content.uuid'] });
   }
 
   async getFillerPrograms(id: string) {

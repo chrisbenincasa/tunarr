@@ -22,8 +22,8 @@ type ChannelIcon = {
   position: string;
 };
 
-type ChannelTranscodingSettings = {
-  targetResolution: Resolution;
+export type ChannelTranscodingSettings = {
+  targetResolution?: Resolution;
   videoBitrate?: number;
   videoBufferSize?: number;
 };

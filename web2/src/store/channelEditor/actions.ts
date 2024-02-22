@@ -146,6 +146,18 @@ export const removeCustomShowProgram = (idx: number) =>
     }
   });
 
+export const removeFillerListProgram = (idx: number) =>
+  useStore.setState(({ fillerListEditor }) => {
+    if (
+      fillerListEditor.programList.length > 0 &&
+      idx >= 0 &&
+      idx < fillerListEditor.programList.length
+    ) {
+      fillerListEditor.programList.splice(idx, 1);
+      fillerListEditor.dirty.programs = true;
+    }
+  });
+
 export const updateCurrentChannel = (channel: Partial<Channel>) =>
   useStore.setState((state) => {
     if (state.channelEditor.currentEntity) {
