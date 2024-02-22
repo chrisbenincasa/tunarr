@@ -67,7 +67,7 @@ class ScheduledTask<Data> {
     this.#running = true;
     const instance = this.#factory();
     try {
-      return await instance.run();
+      return withDb(async () => await instance.run());
     } catch (e) {
       logger.error('Error while running job: %s; %O', instance.name, e);
       if (rethrow) throw e;
