@@ -66,10 +66,11 @@ export default function EditFillerPage({ isNew }: Props) {
   });
 
   useEffect(() => {
+    console.log('resetting!', fillerList.name);
     reset({
       name: fillerList.name,
     });
-  }, [fillerList, fillerListPrograms, reset]);
+  }, [fillerList.name, reset]);
 
   const saveShowMutation = useMutation({
     mutationFn: async ({ id, name, programs }: FillerListMutationArgs) => {

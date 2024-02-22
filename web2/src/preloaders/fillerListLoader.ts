@@ -26,7 +26,7 @@ const fillerListLoader = (isNew: boolean) => {
     return () => () => {
       const filler = {
         id: 'unsaved',
-        name: 'New',
+        name: 'New Filler Listt',
         contentCount: 0,
       };
       setCurrentFillerList(filler, []);
