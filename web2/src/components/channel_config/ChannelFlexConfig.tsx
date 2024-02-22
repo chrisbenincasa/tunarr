@@ -1,22 +1,36 @@
+import { Delete } from '@mui/icons-material';
 import {
   Checkbox,
   Divider,
   FormControl,
   FormControlLabel,
-  FormGroup,
+  Grid,
+  IconButton,
   InputLabel,
   MenuItem,
   Select,
   Skeleton,
+  Slider,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
 import Box from '@mui/material/Box';
 import { SaveChannelRequest } from '@tunarr/types';
-import { chain, find, isNil, isNumber, map, some } from 'lodash-es';
-import { useCallback } from 'react';
+import {
+  chain,
+  find,
+  isNumber,
+  map,
+  pullAt,
+  range,
+  round,
+  some,
+  sumBy,
+} from 'lodash-es';
+import { useCallback, useState } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
+import { useDebounceCallback } from 'usehooks-ts';
 import { useFillerLists } from '../../hooks/useFillerLists.ts';
 import useStore from '../../store/index.ts';
 import ChannelEditActions from './ChannelEditActions.tsx';
@@ -24,59 +38,185 @@ import ChannelEditActions from './ChannelEditActions.tsx';
 export function ChannelFlexConfig() {
   const channel = useStore((s) => s.channelEditor.currentEntity);
   const { data: fillerLists, isPending: fillerListsLoading } = useFillerLists();
-  const { control, getValues, setValue, watch } =
-    useFormContext<SaveChannelRequest>();
+  const { control, setValue, watch } = useFormContext<SaveChannelRequest>();
 
   const offlineMode = watch('offline.mode');
   const channelFillerLists = watch('fillerCollections');
+  const [weights, setWeights] = useState<number[]>(
+    map(channelFillerLists, 'weight'),
+  );
+
+  const updateFormWeights = useDebounceCallback(
+    useCallback(() => {
+      setValue(
+        'fillerCollections',
+        map(channelFillerLists, (cfl, idx) => ({
+          ...cfl,
+          weight: weights[idx],
+        })),
+      );
+    }, [channelFillerLists, setValue, weights]),
+    100,
+  );
 
   const addFillerList = useCallback(
     (id: string) => {
       if (id === '_unused') {
         return;
       }
+      const oldLists = channelFillerLists ? [...channelFillerLists] : [];
 
-      console.log(channelFillerLists);
-      const newLists = channelFillerLists ? [...channelFillerLists] : [];
-      newLists.push({
-        id,
-        cooldownSeconds: 100,
-        weight: 0,
-      });
+      const newWeight = round(100 / (oldLists.length + 1), 2);
+      const distributeWeight = round((100 - newWeight) / oldLists.length, 2);
+
+      const newLists = [
+        {
+          id,
+          cooldownSeconds: 100,
+          weight: newWeight,
+        },
+        ...map(oldLists, (list) => ({
+          ...list,
+          weight: list.weight - distributeWeight,
+        })),
+      ];
+
+      setWeights(map(newLists, 'weight'));
       setValue('fillerCollections', newLists);
     },
-    [fillerLists, setValue, channelFillerLists],
+    [setValue, channelFillerLists, setWeights],
+  );
+
+  const removeSelectedFillerList = useCallback(
+    (idx: number) => {
+      if (!channelFillerLists) {
+        return;
+      }
+
+      const removed = pullAt(channelFillerLists, idx);
+      const removedWeight = sumBy(removed, 'weight');
+      const distributeWeight =
+        channelFillerLists.length > 0
+          ? round(removedWeight / channelFillerLists.length, 2)
+          : 0;
+      const newLists = map(channelFillerLists, (list) => ({
+        ...list,
+        weight: list.weight + distributeWeight,
+      }));
+
+      setWeights(map(newLists, 'weight'));
+      setValue('fillerCollections', newLists);
+    },
+    [channelFillerLists, setValue, setWeights],
+  );
+
+  const adjustWeights = useCallback(
+    (idx: number, value: string | number, upscaleAmt: number) => {
+      if (!channelFillerLists) {
+        return;
+      }
+
+      let newWeight = isNumber(value) ? value : parseInt(value);
+      if (isNaN(newWeight)) {
+        return;
+      }
+      newWeight /= upscaleAmt;
+
+      const newRemainingWeight = 100 - newWeight;
+      const distributedWeight = round(
+        newRemainingWeight / (channelFillerLists.length - 1),
+        4,
+      );
+
+      setWeights(
+        map(range(channelFillerLists.length), (i) =>
+          i === idx ? newWeight : distributedWeight,
+        ),
+      );
+
+      updateFormWeights();
+    },
+    [channelFillerLists, updateFormWeights],
   );
 
   const renderFillerLists = () => {
-    if (!fillerLists || fillerLists.length === 0) {
+    if (!channelFillerLists || channelFillerLists.length === 0) {
       return null;
     }
 
-    const opts = chain(channelFillerLists)
-      .map((list) => find(fillerLists, { id: list.id }))
-      .reject(isNil)
+    const unclaimedLists = chain(fillerLists)
+      .reject((list) => some(channelFillerLists, { id: list.id }))
       .map((list) => (
-        <MenuItem key={list!.id} value={list!.id}>
-          {list!.name}
+        <MenuItem key={list.id} value={list.id}>
+          {list.name}
         </MenuItem>
       ))
       .value();
 
-    return map(channelFillerLists, (cfl) => (
-      <FormGroup row key={cfl.id} sx={{ mb: 1 }}>
-        <FormControl sx={{ mb: 1 }} key={cfl.id}>
-          <InputLabel>Filler List</InputLabel>
-          <Select
-            value={cfl.id}
-            placeholder="Add a Filler List"
-            label="Filler List"
-          >
-            {opts}
-          </Select>
-        </FormControl>
-      </FormGroup>
-    ));
+    return map(channelFillerLists, (cfl, index) => {
+      const actualList = find(fillerLists, { id: cfl.id })!;
+      const thisListOpt = (
+        <MenuItem key={cfl.id} value={cfl.id}>
+          {actualList.name}
+        </MenuItem>
+      );
+
+      const listOpts = [thisListOpt, ...unclaimedLists];
+
+      return (
+        <Grid container key={cfl.id} sx={{ mb: 1 }}>
+          <Grid item xs={2}>
+            <FormControl key={cfl.id} sx={{ width: '100%' }}>
+              <Select value={cfl.id} disabled={unclaimedLists.length === 0}>
+                {listOpts}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item>
+            <FormControl key={cfl.id}>
+              <TextField label="Cooldown (minutes)" value={30} />
+            </FormControl>
+          </Grid>
+          {channelFillerLists && channelFillerLists.length > 1 && (
+            <Grid item xs={5}>
+              <FormControl sx={{ width: '100%', mb: 1 }} key={cfl.id}>
+                <Grid container spacing={2}>
+                  <Grid item xs={9}>
+                    <Slider
+                      min={0}
+                      max={1000}
+                      value={weights[index] * 10}
+                      // Gnarly - we cast onChange to the void so react-form-hook
+                      // doesn't try to do anything. Instead we wait for the onChangeCommited
+                      // event, which fires on onMouseUp, and then handle the change.
+                      onChange={(_, value) =>
+                        adjustWeights(index, value as number, 10)
+                      }
+                      onChangeCommitted={(_, value) =>
+                        adjustWeights(index, value as number, 10)
+                      }
+                    />
+                  </Grid>
+                  <Grid item xs>
+                    <TextField
+                      type="number"
+                      label="Weight %"
+                      value={weights[index]}
+                      disabled
+                    />
+                  </Grid>
+                </Grid>
+              </FormControl>
+            </Grid>
+          )}
+          <Grid item>
+            <IconButton onClick={() => removeSelectedFillerList(index)}>
+              <Delete />
+            </IconButton>
+          </Grid>
+        </Grid>
+      );
+    });
   };
 
   const renderAddFillerListEditor = () => {
@@ -88,7 +228,7 @@ export function ChannelFlexConfig() {
       return <Typography>You haven't created any filler lists yet!</Typography>;
     }
 
-    const opts = chain(fillerLists)
+    const unclaimedLists = chain(fillerLists)
       .reject((list) => some(channelFillerLists, { id: list.id }))
       .map((list) => (
         <MenuItem key={list.id} value={list.id}>
@@ -97,20 +237,23 @@ export function ChannelFlexConfig() {
       ))
       .value();
 
-    opts.unshift(
+    const opts = [
       <MenuItem key="null" value="_unused">
-        Add a Filler List
+        {unclaimedLists.length === 0
+          ? 'All lists are used'
+          : 'Add a Filler List'}
       </MenuItem>,
-    );
+      ...unclaimedLists,
+    ];
 
     return (
       <FormControl sx={{ mb: 1 }}>
         <InputLabel>Filler List</InputLabel>
         <Select
           value="_unused"
-          placeholder="Add a Filler List"
           label="Filler List"
           onChange={(e) => addFillerList(e.target.value)}
+          disabled={unclaimedLists.length === 0}
         >
           {opts}
         </Select>
