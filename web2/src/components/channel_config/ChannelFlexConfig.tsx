@@ -6,22 +6,94 @@ import {
   InputLabel,
   MenuItem,
   Select,
+  Skeleton,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
 import Box from '@mui/material/Box';
-import { Channel } from '@tunarr/types';
-import { isNumber } from 'lodash-es';
+import { SaveChannelRequest } from '@tunarr/types';
+import { chain, isNumber, some } from 'lodash-es';
+import { useCallback } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
+import { useFillerLists } from '../../hooks/useFillerLists.ts';
 import useStore from '../../store/index.ts';
 import ChannelEditActions from './ChannelEditActions.tsx';
+import { find } from 'lodash-es';
 
 export function ChannelFlexConfig() {
   const channel = useStore((s) => s.channelEditor.currentEntity);
-  const { control, watch } = useFormContext<Channel>();
+  const { data: fillerLists, isPending: fillerListsLoading } = useFillerLists();
+  const { control, getValues, setValue, watch } =
+    useFormContext<SaveChannelRequest>();
 
   const offlineMode = watch('offline.mode');
+  const channelFillerLists = watch('fillerCollections');
+
+  const addFillerList = useCallback(
+    (id: string) => {
+      if (id === '_unused') {
+        return;
+      }
+
+      console.log(channelFillerLists);
+      const newLists = channelFillerLists ? [...channelFillerLists] : [];
+      newLists.push({
+        id,
+        cooldownSeconds: 100,
+        weight: 0,
+      });
+      setValue('fillerCollections', newLists);
+    },
+    [fillerLists, setValue, channelFillerLists],
+  );
+
+  const renderFillerListEditor = () => {
+    if (!fillerLists) {
+      return null;
+    }
+
+    if (fillerLists.length === 0) {
+      return <Typography>You haven't created any filler lists yet!</Typography>;
+    }
+
+    const opts = chain(fillerLists)
+      .reject((list) => some(channelFillerLists, { id: list.id }))
+      .map((list) => (
+        <MenuItem key={list.id} value={list.id}>
+          {list.name}
+        </MenuItem>
+      ))
+      .value();
+
+    opts.unshift(
+      <MenuItem key="null" value="_unused">
+        Add a Filler List
+      </MenuItem>,
+    );
+
+    return (
+      <>
+        <FormControl sx={{ mb: 1 }}>
+          <InputLabel>Filler List</InputLabel>
+          <Controller
+            control={control}
+            name="fillerCollections"
+            render={() => (
+              <Select
+                value="_unused"
+                placeholder="Add a Filler List"
+                label="Filler List"
+                onChange={(e) => addFillerList(e.target.value)}
+              >
+                {opts}
+              </Select>
+            )}
+          />
+        </FormControl>
+      </>
+    );
+  };
 
   return (
     channel && (
@@ -131,9 +203,18 @@ export function ChannelFlexConfig() {
             />
           </Box>
           <Divider sx={{ my: 1 }} />
-          <Typography variant="h5" sx={{ mb: 1 }}>
-            Filler Lists
-          </Typography>
+          <Box>
+            <Typography variant="h5" sx={{ mb: 1 }}>
+              Filler Lists
+            </Typography>
+            {!fillerListsLoading &&
+              (channelFillerLists ?? []).map((list) => (
+                <Typography key={list.id}>
+                  {find(fillerLists, { id: list.id })!.name}
+                </Typography>
+              ))}
+            {fillerListsLoading ? <Skeleton /> : renderFillerListEditor()}
+          </Box>
         </Box>
         <ChannelEditActions />
       </>
