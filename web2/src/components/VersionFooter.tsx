@@ -26,7 +26,7 @@ export default function VersionFooter() {
           <Typography
             component="p"
             variant="overline"
-          >{`Version: ${version.dizquetv}`}</Typography>
+          >{`Version: ${version.tunarr}`}</Typography>
           <Typography
             component="p"
             variant="overline"

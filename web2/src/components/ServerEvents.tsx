@@ -12,6 +12,18 @@ export default function ServerEvents() {
     null,
   );
 
+  // const handleEvent = useCallback(
+  //   (event: TunarrEvent) => {
+  //     if (event.type !== 'heartbeat') {
+  //       console.log('test');
+  //       setEventQueue((prev) => [...prev, event]);
+  //     }
+  //   },
+  //   [setEventQueue],
+  // );
+
+  // useServerEvents(handleEvent);
+
   useEffect(() => {
     let es: EventSource | undefined;
     if (!source.current) {
@@ -38,7 +50,6 @@ export default function ServerEvents() {
 
   useEffect(() => {
     if (eventQueue.length > 0 && !currentMessage) {
-      console.log(first(eventQueue));
       setCurrentMessage({ ...first(eventQueue)! });
       setEventQueue((prev) => [...prev.slice(1)]);
       setOpen(true);

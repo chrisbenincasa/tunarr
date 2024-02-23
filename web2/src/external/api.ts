@@ -4,6 +4,7 @@ import {
   CreateFillerListRequestSchema,
   UpdateChannelProgrammingRequestSchema,
   UpdateFillerListRequestSchema,
+  VersionApiResponseSchema,
 } from '@tunarr/types/api';
 import {
   ChannelLineupSchema,
@@ -33,6 +34,12 @@ import {
 } from './settingsApi.ts';
 
 export const api = makeApi([
+  {
+    method: 'get',
+    path: '/api/version',
+    response: VersionApiResponseSchema,
+    alias: 'getServerVersions',
+  },
   {
     method: 'get',
     path: '/api/v2/channels',

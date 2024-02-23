@@ -1,14 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
+import { apiClient } from '../external/api.ts';
 
 export const useVersion = () =>
   useQuery({
     queryKey: ['version'],
-    queryFn: async () => {
-      const res = await fetch('http://localhost:8000/api/version');
-      return res.json() as Promise<{
-        dizquetv: string;
-        ffmpeg: string;
-        nodejs: string;
-      }>; // TODO: Properly type this
+    queryFn: () => {
+      return apiClient.getServerVersions();
     },
+    staleTime: 30 * 1000,
   });

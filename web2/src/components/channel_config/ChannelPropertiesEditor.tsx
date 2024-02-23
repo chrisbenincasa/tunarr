@@ -72,6 +72,16 @@ export default function ChannelPropertiesEditor() {
   const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
+      fetch('http://localhost:8000/api/upload/image', {
+        method: 'POST',
+        body: new File([file.slice(0, file.size, file.type)], 'test.png', {
+          type: file.type,
+        }),
+      })
+        .then((res) => {
+          console.log('response thanks', res);
+        })
+        .catch(console.error);
       setChannelIcon(`http://localhost:8000/images/uploads/${file.name}`); // Placeholder
       setChannelIconPreview(URL.createObjectURL(file));
     }

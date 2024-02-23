@@ -1,8 +1,9 @@
+import { VersionApiResponseSchema } from '@tunarr/types/api';
 import fileUpload from 'express-fileupload';
-import { FastifyPluginCallback } from 'fastify';
 import { promises as fsPromises } from 'fs';
 import { isNil } from 'lodash-es';
 import path from 'path';
+import { z } from 'zod';
 import constants from './constants.js';
 import { PlexServerSettings } from './dao/entities/PlexServerSettings.js';
 import { FFMPEGInfo } from './ffmpegInfo.js';
@@ -10,6 +11,7 @@ import { serverOptions } from './globals.js';
 import createLogger from './logger.js';
 import { Plex } from './plex.js';
 import { scheduledJobsById } from './services/scheduler.js';
+import { RouterPluginCallback } from './types/serverType.js';
 
 const logger = createLogger(import.meta);
 
@@ -19,7 +21,11 @@ declare module 'fastify' {
   }
 }
 
-export const miscRouter: FastifyPluginCallback = (fastify, _opts, done) => {
+export const miscRouter: RouterPluginCallback = (fastify, _opts, done) => {
+  fastify.addContentTypeParser(/^image\/.*/, function (_, payload, done) {
+    done(null, payload);
+  });
+
   fastify.use(
     fileUpload({
       createParentPath: true,
@@ -31,20 +37,31 @@ export const miscRouter: FastifyPluginCallback = (fastify, _opts, done) => {
     done();
   });
 
-  fastify.get('/api/version', async (req, res) => {
-    try {
-      const ffmpegSettings = req.serverCtx.settings.ffmpegSettings();
-      const v = await new FFMPEGInfo(ffmpegSettings).getVersion();
-      return res.send({
-        dizquetv: constants.VERSION_NAME,
-        ffmpeg: v,
-        nodejs: process.version.replace('v', ''),
-      });
-    } catch (err) {
-      logger.error(err);
-      return res.status(500).send('error');
-    }
-  });
+  fastify.get(
+    '/api/version',
+    {
+      schema: {
+        response: {
+          200: VersionApiResponseSchema,
+          500: z.void(),
+        },
+      },
+    },
+    async (req, res) => {
+      try {
+        const ffmpegSettings = req.serverCtx.settings.ffmpegSettings();
+        const v = await new FFMPEGInfo(ffmpegSettings).getVersion();
+        return res.send({
+          tunarr: constants.VERSION_NAME,
+          ffmpeg: v,
+          nodejs: process.version.replace('v', ''),
+        });
+      } catch (err) {
+        logger.error(err);
+        return res.status(500).send();
+      }
+    },
+  );
 
   fastify.post('/api/upload/image', async (req, res) => {
     try {

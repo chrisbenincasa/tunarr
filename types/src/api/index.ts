@@ -124,3 +124,9 @@ export const InsertPlexServerRequestSchema = PlexServerSettingsSchema.partial({
 export type InsertPlexServerRequest = Alias<
   z.infer<typeof InsertPlexServerRequestSchema>
 >;
+
+export const VersionApiResponseSchema = z.object({
+  tunarr: z.string(),
+  ffmpeg: z.string(),
+  nodejs: z.string(),
+});
