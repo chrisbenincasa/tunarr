@@ -1,5 +1,6 @@
-import { Clear } from '@mui/icons-material';
+import { Clear, ExpandLess, ExpandMore } from '@mui/icons-material';
 import {
+  Collapse,
   Divider,
   FormControl,
   IconButton,
@@ -7,13 +8,17 @@ import {
   InputLabel,
   LinearProgress,
   List,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
   MenuItem,
   Select,
   TextField,
   Typography,
 } from '@mui/material';
-import { DataTag, useInfiniteQuery } from '@tanstack/react-query';
+import { DataTag, useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import {
+  PlexLibraryCollections,
   PlexLibraryMovies,
   PlexLibraryShows,
   PlexMedia,
@@ -21,10 +26,11 @@ import {
   PlexTvShow,
   isPlexDirectory,
 } from '@tunarr/types/plex';
-import { chain, first, isEmpty, isNil, isUndefined } from 'lodash-es';
-import React, { useCallback, useEffect, useState } from 'react';
+import { chain, first, isEmpty, isNil, isUndefined, map } from 'lodash-es';
+import React, { Fragment, useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useIntersectionObserver } from 'usehooks-ts';
+import { toggle } from '../../helpers/util.ts';
 import { fetchPlexPath, usePlex } from '../../hooks/plexHooks.ts';
 import { usePlexServerSettings } from '../../hooks/settingsHooks.ts';
 import useDebouncedState from '../../hooks/useDebouncedState.ts';
@@ -51,10 +57,9 @@ export default function ProgrammingSelector() {
   const { data: plexServers } = usePlexServerSettings();
   const selectedServer = useStore((s) => s.currentServer);
   const selectedLibrary = useStore((s) => s.currentLibrary);
-  // const listingsByServer = useStore((s) => s.listingsByServer);
   const knownMedia = useStore((s) => s.knownMediaByServer);
-  // const hierarchyByServer = useStore((s) => s.contentHierarchyByServer);
   const navigate = useNavigate();
+  const [collectionsOpen, setCollectionsOpen] = useState(false);
 
   useEffect(() => {
     const server =
@@ -83,6 +88,7 @@ export default function ProgrammingSelector() {
         ...directoryChildren.Directory,
       ]);
     }
+    setCollectionsOpen(false);
   }, [selectedServer, directoryChildren]);
 
   const { isLoading: searchLoading, data: searchData } = useInfiniteQuery({
@@ -121,6 +127,22 @@ export default function ProgrammingSelector() {
     },
   });
 
+  const { isLoading: collectionsLoading, data: collectionsData } = useQuery({
+    queryKey: [
+      'plex',
+      selectedServer?.name,
+      selectedLibrary?.key,
+      'collections',
+    ],
+    queryFn: () => {
+      return fetchPlexPath<PlexLibraryCollections>(
+        selectedServer!.name,
+        `/library/sections/${selectedLibrary!.key}/collections?`,
+      )();
+    },
+    enabled: !isNil(selectedServer) && !isNil(selectedLibrary),
+  });
+
   useEffect(() => {
     if (searchData) {
       // We're using this as an analogue for detecting the start of a new 'query'
@@ -143,6 +165,12 @@ export default function ProgrammingSelector() {
       }
     }
   }, [selectedServer, searchData, setScrollParams]);
+
+  useEffect(() => {
+    if (selectedServer?.name && collectionsData && collectionsData.Metadata) {
+      addKnownMediaForServer(selectedServer.name, collectionsData.Metadata);
+    }
+  }, [selectedServer?.name, collectionsData]);
 
   const onLibraryChange = useCallback(
     (libraryUuid: string) => {
@@ -174,19 +202,47 @@ export default function ProgrammingSelector() {
   }, [setSearch]);
 
   const renderListItems = () => {
-    if (!searchData) {
-      return null;
+    const elements: JSX.Element[] = [];
+    if (collectionsData && collectionsData.size > 0) {
+      elements.push(
+        <Fragment key="collections">
+          <ListItemButton onClick={() => setCollectionsOpen(toggle)} dense>
+            <ListItemIcon>
+              {collectionsOpen ? <ExpandLess /> : <ExpandMore />}
+            </ListItemIcon>
+            <ListItemText
+              primary="Collections"
+              secondary={`${collectionsData.size} Collection${
+                collectionsData.size === 1 ? '' : 's'
+              }`}
+            />
+            {/* <Button>Add All</Button> */}
+          </ListItemButton>
+          <Collapse in={collectionsOpen} timeout="auto">
+            {map(collectionsData.Metadata, (item) => (
+              <PlexListItem key={item.guid} item={item} />
+            ))}
+          </Collapse>
+          <Divider variant="fullWidth" />
+        </Fragment>,
+      );
     }
 
-    return chain(searchData.pages)
-      .reject((page) => page.size === 0)
-      .map((page) => page.Metadata)
-      .flatten()
-      .take(scrollParams.limit)
-      .map((item: PlexMovie | PlexTvShow) => {
-        return <PlexListItem key={item.guid} item={item} />;
-      })
-      .value();
+    if (searchData) {
+      const items = chain(searchData.pages)
+        .reject((page) => page.size === 0)
+        .map((page) => page.Metadata)
+        .flatten()
+        .take(scrollParams.limit)
+        .value();
+      elements.push(
+        ...map(items, (item: PlexMovie | PlexTvShow) => {
+          return <PlexListItem key={item.guid} item={item} />;
+        }),
+      );
+    }
+
+    return elements;
   };
 
   return (
