@@ -25,12 +25,9 @@ import {
 import { zipWithIndex } from '../../helpers/util.ts';
 import { EnrichedPlexMedia } from '../../hooks/plexHooks.ts';
 import useStore from '../index.ts';
-import {
-  ChannelEditorState,
-  UIIndex,
-  initialChannelEditorState,
-} from './store.ts';
+import { ChannelEditorState, initialChannelEditorState } from './store.ts';
 import { Draft } from 'immer';
+import { UIIndex } from '../../types/index.ts';
 
 export const resetChannelEditorState = () =>
   useStore.setState((state) => {

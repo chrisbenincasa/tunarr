@@ -1,7 +1,6 @@
 import { CondensedChannelProgram, ContentProgram } from '@tunarr/types';
 import { chain, isUndefined } from 'lodash-es';
-import { UIChannelProgram } from '../types/index.ts';
-import { UIIndex } from './channelEditor/store.ts';
+import { UIChannelProgram, UIIndex } from '../types/index.ts';
 import useStore, { State } from './index.ts';
 
 const materializeProgramList = (

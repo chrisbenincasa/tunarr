@@ -4,16 +4,17 @@ import {
   CondensedChannelProgram,
   ContentProgram,
   CustomProgram,
+  FlexProgram,
   Program,
+  RedirectProgram,
 } from '@tunarr/types';
-import { LoaderFunctionArgs } from 'react-router-dom';
-import { apiClient } from '../external/api.ts';
 import { ApiOf } from '@zodios/core';
 import {
   ZodiosAliases,
   ZodiosResponseByAlias,
 } from '@zodios/core/lib/zodios.types';
-import { UIIndex } from '../store/channelEditor/store.ts';
+import { LoaderFunctionArgs } from 'react-router-dom';
+import { apiClient } from '../external/api.ts';
 
 // A program that may or may not exist in the DB yet
 export type EphemeralProgram = Omit<Program, 'id'>;
@@ -41,16 +42,65 @@ export type ZodiosAliasReturnType<T extends ApiAliases> = Awaited<
 export type RequestMethodForAlias<T extends ApiAliases> =
   ZodiosAliases<ApiType>[T];
 
-export type UICondensedChannelProgram = CondensedChannelProgram &
-  UIIndex & {
-    startTimeOffset: number;
-  };
+export type UIIndex = { originalIndex: number };
 
-export type UIChannelProgram = ChannelProgram &
-  UIIndex & {
-    startTimeOffset: number;
-  };
+export type HasStartTimeOffset = { startTimeOffset: number };
 
-export type UICondensedChannelProgarm = CondensedChannelProgram & UIIndex;
+export type UICondensedChannelProgram<
+  T extends CondensedChannelProgram = CondensedChannelProgram,
+> = T & UIIndex & HasStartTimeOffset;
+
+export type UICondensedContentProgram =
+  UICondensedChannelProgram<CondensedChannelProgram>;
+export type UICondensedFlexProgram = UICondensedChannelProgram<FlexProgram>;
+export type UICondensedCustomProgram = UICondensedChannelProgram<CustomProgram>;
+export type UICondensedRedirectProgram =
+  UICondensedChannelProgram<RedirectProgram>;
+
+// It sucks that we have to repeat these everywhere...
+export const isUICondensedContentProgram = (
+  p: UICondensedChannelProgram,
+): p is UICondensedContentProgram => p.type === 'content';
+
+export const isUICondensedFlexProgram = (
+  p: UICondensedChannelProgram,
+): p is UICondensedFlexProgram => p.type === 'flex';
+
+export const isUICondensedCustomProgram = (
+  p: UICondensedChannelProgram,
+): p is UICondensedCustomProgram => p.type === 'custom';
+
+export const isUICondensedRedirectProgram = (
+  p: UIRedirectProgram,
+): p is UIRedirectProgram => p.type === 'redirect';
+
+// A UIChannelProgram is a ChannelProgram with some other UI-specific fields
+// The default type is any ChannelProgram (e.g. content, flex, etc) with the
+// fields. We generalize here so we can effectively downcast UIChannelProgram
+// to more specific program types when doing list operations.
+export type UIChannelProgram<T extends ChannelProgram = ChannelProgram> = T &
+  UIIndex &
+  HasStartTimeOffset;
+
+export type UIContentProgram = UIChannelProgram<ContentProgram>;
+export type UIFlexProgram = UIChannelProgram<FlexProgram>;
+export type UICustomProgram = UIChannelProgram<CustomProgram>;
+export type UIRedirectProgram = UIChannelProgram<RedirectProgram>;
+
+// It sucks that we have to repeat these everywhere...  but I couldn't figure out
+// generic way to do it
+export const isUIContentProgram = (
+  p: UIChannelProgram,
+): p is UIContentProgram => p.type === 'content';
+
+export const isUIFlexProgram = (p: UIChannelProgram): p is UIFlexProgram =>
+  p.type === 'flex';
+
+export const isUICustomProgram = (p: UIChannelProgram): p is UICustomProgram =>
+  p.type === 'custom';
+
+export const isUIRedirectProgram = (
+  p: UIRedirectProgram,
+): p is UIRedirectProgram => p.type === 'redirect';
 
 export type UIFillerListProgram = (ContentProgram | CustomProgram) & UIIndex;

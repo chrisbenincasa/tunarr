@@ -6,10 +6,8 @@ import {
   FillerList,
 } from '@tunarr/types';
 import { StateCreator } from 'zustand';
-import { UICondensedChannelProgram } from '../../types/index.ts';
+import { UICondensedChannelProgram, UIIndex } from '../../types/index.ts';
 import { LineupSchedule } from '@tunarr/types/api';
-
-export type UIIndex = { originalIndex: number };
 
 // Represents a program listing in the editor
 export interface ProgrammingEditorState<EntityType, ProgramType> {
