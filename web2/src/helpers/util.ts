@@ -105,3 +105,6 @@ export const zipWithIndex = <T extends object>(
     originalIndex: i,
   }));
 };
+
+// Useful for toggling state
+export const toggle = (b: boolean) => !b;

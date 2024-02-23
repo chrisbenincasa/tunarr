@@ -27,7 +27,8 @@
         "declaration": true,
         "experimentalDecorators": true,
         "emitDecoratorMetadata": true,
-        "esModuleInterop": true
+        "esModuleInterop": true,
+        "noErrorTruncation": true
     },
     "files": [
         "./types/fastify.d.ts"
