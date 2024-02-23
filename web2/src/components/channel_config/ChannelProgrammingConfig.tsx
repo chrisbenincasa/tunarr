@@ -45,6 +45,11 @@ import Delete from '@mui/icons-material/Delete';
 import { useRemoveDuplicates } from '../../hooks/programming_controls/useRemoveDuplicates.ts';
 import { range } from 'lodash-es';
 import { useRestrictHours } from '../../hooks/programming_controls/useRestrictHours.ts';
+import { FastForward, FastRewind } from '@mui/icons-material';
+import {
+  useFastForwardSchedule,
+  useRewindSchedule,
+} from '../../hooks/programming_controls/useSlideSchedule.ts';
 
 // dayjs.extend(duration);
 
@@ -70,6 +75,9 @@ export function ChannelProgrammingConfig() {
 
   const removeDuplicatePrograms = useRemoveDuplicates();
   const restrictHours = useRestrictHours();
+
+  const fastForward = useFastForwardSchedule();
+  const rewind = useRewindSchedule();
 
   const startTime = channel ? dayjs(channel.startTime) : dayjs();
   const endTime = startTime.add(channel?.duration ?? 0, 'milliseconds');
@@ -227,6 +235,24 @@ export function ChannelProgrammingConfig() {
                   onClick={() => restrictHours(5, 8)}
                 >
                   Restrict Hours
+                </Button>
+              </Grid2>
+              <Grid2 xs={3}>
+                <Button
+                  variant="contained"
+                  onClick={() => fastForward(60 * 1000)}
+                  startIcon={<FastForward />}
+                >
+                  Fast Forward
+                </Button>
+              </Grid2>
+              <Grid2 xs={3}>
+                <Button
+                  variant="contained"
+                  onClick={() => rewind(60 * 1000)}
+                  startIcon={<FastRewind />}
+                >
+                  Rewind
                 </Button>
               </Grid2>
             </Grid2>

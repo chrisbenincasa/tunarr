@@ -80,6 +80,13 @@ export const setCurrentChannel = (
     }
   });
 
+export const changeChannelStartTime = (newStartTime: number) =>
+  useStore.setState(({ channelEditor }) => {
+    if (channelEditor.currentEntity) {
+      channelEditor.currentEntity.startTime = newStartTime;
+    }
+  });
+
 export const setCurrentChannelProgramming = (
   programming: CondensedChannelProgramming,
 ) =>
