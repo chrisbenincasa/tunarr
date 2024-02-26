@@ -44,6 +44,7 @@ import { UpdateXmlTvTask } from './tasks/updateXmlTvTask.js';
 import { ServerOptions } from './types.js';
 import { wait } from './util.js';
 import { videoRouter } from './video.js';
+import { runFixers } from './tasks/fixers/index.js';
 
 const logger = createLogger(import.meta);
 
@@ -53,7 +54,7 @@ const __dirname = dirname(__filename);
 
 console.log(
   `         \\
-   dizqueTV ${constants.VERSION_NAME}
+   Tunarr ${constants.VERSION_NAME}
 .------------.
 |:::///### o |
 |:::///###   |
@@ -117,8 +118,9 @@ export async function initServer(opts: ServerOptions) {
   }
 
   scheduleJobs(ctx);
+  await runFixers();
 
-  const updateXMLPromise = scheduledJobsById[UpdateXmlTvTask.ID]?.runNow();
+  const updateXMLPromise = scheduledJobsById[UpdateXmlTvTask.ID]!.runNow();
 
   const app = fastify({ logger: false, bodyLimit: 50 * 1024 * 1024 });
   await app
