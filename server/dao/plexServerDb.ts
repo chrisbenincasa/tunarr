@@ -65,25 +65,19 @@ export class PlexServerDB {
       throw Error("Server doesn't exist.");
     }
 
-    const sendGuideUpdates = server.sendGuideUpdates ?? false;
-    const sendChannelUpdates = server.sendChannelUpdates ?? false;
-
-    const newServer = em.create(PlexServerSettingsEntity, {
-      ...server,
-      uuid: id,
-      name: s.name,
-      uri: server.uri,
+    em.assign(s, {
+      name: server.name,
       accessToken: server.accessToken,
-      sendGuideUpdates,
-      sendChannelUpdates,
-      index: s.index,
+      sendGuideUpdates: server.sendGuideUpdates ?? false,
+      sendChannelUpdates: server.sendChannelUpdates ?? false,
+      updatedAt: new Date(),
     });
 
-    this.normalizeServer(newServer);
+    this.normalizeServer(s);
 
-    const report = await this.fixupProgramReferences(id, newServer);
+    const report = await this.fixupProgramReferences(id, s);
 
-    await repo.upsert(newServer);
+    await repo.upsert(s);
     await em.flush();
 
     return report;
