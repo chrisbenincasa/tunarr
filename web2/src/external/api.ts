@@ -30,6 +30,7 @@ import {
   getPlexServersEndpoint,
   getPlexStreamSettings,
   getXmlTvSettings,
+  updateFfmpegSettings,
   updatePlexServerEndpoint,
 } from './settingsApi.ts';
 
@@ -273,6 +274,7 @@ export const api = makeApi([
   getHdhrSettings,
   getPlexStreamSettings,
   getFffmpegSettings,
+  updateFfmpegSettings,
 ]);
 
 export const createApiClient = once((uri: string) => {

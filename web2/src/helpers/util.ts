@@ -1,7 +1,8 @@
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import { ChannelProgram, Resolution } from '@tunarr/types';
-import { zipWith, range } from 'lodash-es';
+import { zipWith, range, isNumber } from 'lodash-es';
+import { ChangeEvent } from 'react';
 
 dayjs.extend(duration);
 
@@ -59,7 +60,7 @@ export const resolutionToString = (res: Resolution) =>
 export const resolutionFromString = (
   res: `${number}x${number}`,
 ): Resolution => {
-  const [h, w] = res.split('x', 2);
+  const [w, h] = res.split('x', 2);
   return { widthPx: parseInt(w), heightPx: parseInt(h) };
 };
 
@@ -108,3 +109,23 @@ export const zipWithIndex = <T extends object>(
 
 // Useful for toggling state
 export const toggle = (b: boolean) => !b;
+
+export const handleNumericFormValue = (
+  value: string | number,
+  float: boolean = false,
+) => {
+  if (isNumber(value)) {
+    return value;
+  }
+
+  return float ? parseFloat(value) : parseInt(value);
+};
+
+export const numericFormChangeHandler = (
+  cb: (...event: unknown[]) => void,
+  float: boolean = true,
+) => {
+  return (e: { target: { value: string | number } }) => {
+    cb(handleNumericFormValue(e.target.value, float));
+  };
+};

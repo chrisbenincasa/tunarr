@@ -85,6 +85,14 @@ export const getFffmpegSettings = makeEndpoint({
   alias: 'getFfmpegSettings',
 });
 
+export const updateFfmpegSettings = makeEndpoint({
+  method: 'put',
+  path: '/api/ffmpeg-settings',
+  response: FfmpegSettingsSchema,
+  parameters: parametersBuilder().addBody(FfmpegSettingsSchema).build(),
+  alias: 'updateFfmpegSettings',
+});
+
 export const getHdhrSettings = makeEndpoint({
   method: 'get',
   path: '/api/hdhr-settings',

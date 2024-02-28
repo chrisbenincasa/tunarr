@@ -1,34 +1,41 @@
-import React, { useEffect } from 'react';
+import { HelpOutline } from '@mui/icons-material';
 import {
+  Box,
   Button,
   Checkbox,
   FormControl,
-  FormHelperText,
   FormControlLabel,
-  InputLabel,
-  Link as MuiLink,
-  MenuItem,
-  Stack,
-  Select,
-  TextField,
-  Typography,
-  SelectChangeEvent,
-  Alert,
-  Snackbar,
+  FormHelperText,
   Grid,
-  InputAdornment,
   IconButton,
+  InputAdornment,
+  InputLabel,
+  MenuItem,
+  Link as MuiLink,
+  Select,
+  SelectChangeEvent,
+  Snackbar,
+  Stack,
+  TextField,
   Tooltip,
+  Typography,
 } from '@mui/material';
-import { useFfmpegSettings } from '../../hooks/settingsHooks.ts';
-import { hasOnlyDigits } from '../../helpers/util.ts';
-import { FfmpegSettings, defaultFfmpegSettings } from '@tunarr/types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { FfmpegSettings, defaultFfmpegSettings } from '@tunarr/types';
+import React, { useEffect } from 'react';
+import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import {
-  resolutionFromString,
+  CheckboxFormController,
+  NumericFormControllerText,
+  TypedController,
+} from '../../components/util/TypedController.tsx';
+import { apiClient } from '../../external/api.ts';
+import {
+  handleNumericFormValue,
+  resolutionFromAnyString,
   resolutionToString,
 } from '../../helpers/util.ts';
-import { HelpOutline } from '@mui/icons-material';
+import { useFfmpegSettings } from '../../hooks/settingsHooks.ts';
 
 const supportedVideoBuffer = [
   { value: 0, string: '0 Seconds' },
@@ -79,14 +86,10 @@ const supportedErrorAudio = [
   { value: 'silent', string: 'No Audio' },
 ];
 
-const supportedScalingAlgorithm = [
-  'bicubic',
-  'fast_bilinear',
-  'lanczos',
-  'spline',
-];
-
-const supportedDeinterlaceFilters = [
+const supportedDeinterlaceFilters: {
+  value: DeinterlaceFilterValue;
+  string: string;
+}[] = [
   { value: 'none', string: 'do not deinterlace' },
   { value: 'bwdif=0', string: 'bwdif send frame' },
   { value: 'bwdif=1', string: 'bwdif send field' },
@@ -110,6 +113,13 @@ const supportTargetResolution = [
 
 type ScalingAlgorithmValue = 'bicubic' | 'fast_bilinear' | 'lanczos' | 'spline';
 
+const supportedScalingAlgorithm: ScalingAlgorithmValue[] = [
+  'bicubic',
+  'fast_bilinear',
+  'lanczos',
+  'spline',
+];
+
 type DeinterlaceFilterValue =
   | 'none'
   | 'bwdif=0'
@@ -120,124 +130,31 @@ type DeinterlaceFilterValue =
 
 export default function FfmpegSettingsPage() {
   const { data, isPending, error } = useFfmpegSettings();
+
+  const {
+    reset,
+    control,
+    formState: { isDirty, isValid },
+    watch,
+    handleSubmit,
+  } = useForm<Omit<FfmpegSettings, 'configVersion'>>({
+    defaultValues: defaultFfmpegSettings,
+    mode: 'onBlur',
+  });
+
+  const enableTranscoding = watch('enableTranscoding');
+
+  useEffect(() => {
+    if (data && !isDirty) {
+      reset(data);
+    }
+  }, [data, isDirty, reset]);
+
   const [snackStatus, setSnackStatus] = React.useState<boolean>(false);
-  const [ffmpegExecutablePath, setFfmpegExecutablePath] =
-    React.useState<string>(defaultFfmpegSettings.ffmpegExecutablePath);
-
-  const [numThreads, setNumThreads] = React.useState<string>(
-    defaultFfmpegSettings.numThreads.toString(),
-  );
-
-  const [enableLogging, setEnableLogging] = React.useState<boolean>(
-    defaultFfmpegSettings.enableLogging,
-  );
-
-  const [concatMuxDelay, setConcatMuxDelay] = React.useState<string>(
-    defaultFfmpegSettings.concatMuxDelay.toString(),
-  );
-
-  const [enableTranscoding, setEnableTranscoding] = React.useState<boolean>(
-    defaultFfmpegSettings.enableTranscoding,
-  );
-
-  const [videoEncoder, setVideoEncoder] = React.useState<string>(
-    defaultFfmpegSettings.videoEncoder,
-  );
-
-  const [videoBitrate, setVideoBitrate] = React.useState<string>(
-    defaultFfmpegSettings.videoBitrate.toString(),
-  );
-
-  const [videoBufferSize, setVideoBufferSize] = React.useState<string>(
-    defaultFfmpegSettings.videoBufferSize.toString(),
-  );
-
-  const [maxFPS, setMaxFPS] = React.useState<string>(
-    defaultFfmpegSettings.maxFPS.toString(),
-  );
-
-  const [scalingAlgorithm, setScalingAlgorithm] =
-    React.useState<ScalingAlgorithmValue>(
-      defaultFfmpegSettings.scalingAlgorithm,
-    );
-
-  const [deinterlaceFilter, setDeinterlaceFilter] =
-    React.useState<DeinterlaceFilterValue>(
-      defaultFfmpegSettings.deinterlaceFilter,
-    );
-
-  const [audioEncoder, setAudioEncoder] = React.useState<string>(
-    defaultFfmpegSettings.audioEncoder,
-  );
-
-  const [audioBitrate, setAudioBitrate] = React.useState<string>(
-    defaultFfmpegSettings.audioBitrate.toString(),
-  );
-
-  const [audioBufferSize, setAudioBufferSize] = React.useState<string>(
-    defaultFfmpegSettings.audioBufferSize.toString(),
-  );
-
-  const [audioVolumePercent, setAudioVolumePercent] = React.useState<string>(
-    defaultFfmpegSettings.audioVolumePercent.toString(),
-  );
-
-  const [audioChannels, setAudioChannels] = React.useState<string>(
-    defaultFfmpegSettings.audioChannels.toString(),
-  );
-
-  const [audioSampleRate, setAudioSampleRate] = React.useState<string>(
-    defaultFfmpegSettings.audioSampleRate.toString(),
-  );
-
-  const [errorScreen, setErrorScreen] = React.useState<string>(
-    defaultFfmpegSettings.errorScreen,
-  );
-
-  const [errorAudio, setErrorAudio] = React.useState<string>(
-    defaultFfmpegSettings.errorAudio,
-  );
-
-  const [normalizeVideoCodec, setNormalizeVideoCodec] = React.useState<boolean>(
-    defaultFfmpegSettings.normalizeVideoCodec,
-  );
-
-  const [normalizeAudioCodec, setNormalizeAudioCodec] = React.useState<boolean>(
-    defaultFfmpegSettings.normalizeAudioCodec,
-  );
-
-  const [normalizeResolution, setNormalizeResolution] = React.useState<boolean>(
-    defaultFfmpegSettings.normalizeResolution,
-  );
-
-  const [normalizeAudio, setNormalizeAudio] = React.useState<boolean>(
-    defaultFfmpegSettings.normalizeAudio,
-  );
-
-  const [disableChannelOverlay, setDisableChannelOverlay] =
-    React.useState<boolean>(defaultFfmpegSettings.disableChannelOverlay);
-
-  const [disableChannelPrelude, setDisableChannelPrelude] =
-    React.useState<boolean>(defaultFfmpegSettings.disableChannelPrelude);
-
-  const [targetResolution, setTargetResolution] = React.useState<string>(
-    resolutionToString(defaultFfmpegSettings.targetResolution),
-  );
-
-  const [showFormError, setShowFormError] = React.useState<boolean>(false);
   const queryClient = useQueryClient();
 
   const updateFfmpegSettingsMutation = useMutation({
-    mutationFn: (updateSettings: FfmpegSettings) => {
-      console.log(updateSettings);
-      return fetch('http://localhost:8000/api/ffmpeg-settings', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updateSettings),
-      });
-    },
+    mutationFn: apiClient.updateFfmpegSettings,
     onSuccess: () => {
       setSnackStatus(true);
       return queryClient.invalidateQueries({
@@ -246,273 +163,13 @@ export default function FfmpegSettingsPage() {
     },
   });
 
-  const updateFfmpegSettings = () => {
-    const [h, w] = targetResolution.split('x', 2);
-
+  const updateFfmpegSettings: SubmitHandler<
+    Omit<FfmpegSettings, 'configVersion'>
+  > = (data) => {
     updateFfmpegSettingsMutation.mutate({
       configVersion: defaultFfmpegSettings.configVersion,
-      ffmpegExecutablePath,
-      numThreads: Number(numThreads),
-      concatMuxDelay: Number(concatMuxDelay),
-      enableLogging,
-      enableTranscoding,
-      audioVolumePercent: Number(audioVolumePercent),
-      videoEncoder,
-      audioEncoder,
-      targetResolution: resolutionFromString(
-        resolutionToString({ widthPx: Number(w), heightPx: Number(h) }),
-      ),
-      videoBitrate: Number(videoBitrate),
-      videoBufferSize: Number(videoBufferSize),
-      audioBitrate: Number(audioBitrate),
-      audioBufferSize: Number(audioBufferSize),
-      audioSampleRate: Number(audioSampleRate),
-      audioChannels: Number(audioChannels),
-      errorScreen,
-      errorAudio,
-      normalizeVideoCodec,
-      normalizeAudioCodec,
-      normalizeResolution,
-      normalizeAudio,
-      maxFPS: Number(maxFPS),
-      scalingAlgorithm,
-      deinterlaceFilter,
-      disableChannelOverlay,
-      disableChannelPrelude,
+      ...data,
     });
-  };
-
-  const handleResetOptions = () => {
-    updateFfmpegSettingsMutation.mutate({
-      ...defaultFfmpegSettings,
-    });
-    setFfmpegExecutablePath(defaultFfmpegSettings.ffmpegExecutablePath);
-    setNumThreads(defaultFfmpegSettings.numThreads.toString());
-    setEnableLogging(defaultFfmpegSettings.enableLogging);
-    setConcatMuxDelay(defaultFfmpegSettings.concatMuxDelay.toString());
-    setEnableTranscoding(defaultFfmpegSettings.enableTranscoding);
-    setVideoEncoder(defaultFfmpegSettings.videoEncoder);
-    setVideoBitrate(defaultFfmpegSettings.videoBitrate.toString());
-    setVideoBufferSize(defaultFfmpegSettings.videoBufferSize.toString());
-    setMaxFPS(defaultFfmpegSettings.maxFPS.toString());
-    setScalingAlgorithm(defaultFfmpegSettings.scalingAlgorithm);
-    setDeinterlaceFilter(defaultFfmpegSettings.deinterlaceFilter);
-    setAudioEncoder(defaultFfmpegSettings.audioEncoder);
-    setAudioBitrate(defaultFfmpegSettings.audioBitrate.toString());
-    setAudioBufferSize(defaultFfmpegSettings.audioBufferSize.toString());
-    setAudioVolumePercent(defaultFfmpegSettings.audioVolumePercent.toString());
-    setAudioChannels(defaultFfmpegSettings.audioChannels.toString());
-    setAudioSampleRate(defaultFfmpegSettings.audioSampleRate.toString());
-    setErrorScreen(defaultFfmpegSettings.errorScreen);
-    setErrorAudio(defaultFfmpegSettings.errorAudio);
-    setNormalizeVideoCodec(defaultFfmpegSettings.normalizeVideoCodec);
-    setNormalizeAudioCodec(defaultFfmpegSettings.normalizeAudioCodec);
-    setNormalizeResolution(defaultFfmpegSettings.normalizeResolution);
-    setNormalizeAudio(defaultFfmpegSettings.normalizeAudio);
-    setDisableChannelOverlay(defaultFfmpegSettings.disableChannelOverlay);
-    setDisableChannelPrelude(defaultFfmpegSettings.disableChannelPrelude);
-    setTargetResolution(
-      resolutionToString(defaultFfmpegSettings.targetResolution),
-    );
-  };
-
-  useEffect(() => {
-    setFfmpegExecutablePath(
-      data?.ffmpegExecutablePath ?? defaultFfmpegSettings.ffmpegExecutablePath,
-    );
-    setNumThreads(
-      data?.numThreads.toString() ??
-        defaultFfmpegSettings.numThreads.toString(),
-    );
-    setEnableLogging(
-      data?.enableLogging ?? defaultFfmpegSettings.enableLogging,
-    );
-    setConcatMuxDelay(
-      data?.concatMuxDelay.toString() ??
-        defaultFfmpegSettings.concatMuxDelay.toString(),
-    );
-    setEnableTranscoding(
-      data?.enableTranscoding ?? defaultFfmpegSettings.enableTranscoding,
-    );
-    setVideoEncoder(data?.videoEncoder ?? defaultFfmpegSettings.videoEncoder);
-    setVideoBitrate(
-      data?.videoBitrate.toString() ??
-        defaultFfmpegSettings.videoBitrate.toString(),
-    );
-    setVideoBufferSize(
-      data?.videoBufferSize.toString() ??
-        defaultFfmpegSettings.videoBufferSize.toString(),
-    );
-    setMaxFPS(
-      data?.maxFPS.toString() ?? defaultFfmpegSettings.maxFPS.toString(),
-    );
-    setScalingAlgorithm(
-      data?.scalingAlgorithm ?? defaultFfmpegSettings.scalingAlgorithm,
-    );
-    setDeinterlaceFilter(
-      data?.deinterlaceFilter ?? defaultFfmpegSettings.deinterlaceFilter,
-    );
-    setAudioEncoder(data?.audioEncoder ?? defaultFfmpegSettings.audioEncoder);
-    setAudioBitrate(
-      data?.audioBitrate.toString() ??
-        defaultFfmpegSettings.audioBitrate.toString(),
-    );
-    setAudioBufferSize(
-      data?.audioBufferSize.toString() ??
-        defaultFfmpegSettings.audioBufferSize.toString(),
-    );
-    setAudioVolumePercent(
-      data?.audioVolumePercent.toString() ??
-        defaultFfmpegSettings.audioVolumePercent.toString(),
-    );
-    setAudioChannels(
-      data?.audioChannels.toString() ??
-        defaultFfmpegSettings.audioChannels.toString(),
-    );
-    setAudioSampleRate(
-      data?.audioSampleRate.toString() ??
-        defaultFfmpegSettings.audioSampleRate.toString(),
-    );
-    setErrorScreen(data?.errorScreen ?? defaultFfmpegSettings.errorScreen);
-    setErrorAudio(data?.errorAudio ?? defaultFfmpegSettings.errorAudio);
-    setNormalizeVideoCodec(
-      data?.normalizeVideoCodec ?? defaultFfmpegSettings.normalizeVideoCodec,
-    );
-    setNormalizeAudioCodec(
-      data?.normalizeAudioCodec ?? defaultFfmpegSettings.normalizeAudioCodec,
-    );
-    setNormalizeResolution(
-      data?.normalizeResolution ?? defaultFfmpegSettings.normalizeResolution,
-    );
-    setNormalizeAudio(
-      data?.normalizeAudio ?? defaultFfmpegSettings.normalizeAudio,
-    );
-    setDisableChannelOverlay(
-      data?.disableChannelOverlay ??
-        defaultFfmpegSettings.disableChannelOverlay,
-    );
-    setDisableChannelPrelude(
-      data?.disableChannelPrelude ??
-        defaultFfmpegSettings.disableChannelPrelude,
-    );
-    setTargetResolution(
-      resolutionToString(
-        data?.targetResolution ?? defaultFfmpegSettings.targetResolution,
-      ),
-    );
-  }, [data]);
-
-  const handleFfmpegExecutablePath = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    setFfmpegExecutablePath(event.target.value);
-  };
-
-  const handleNumThreads = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setNumThreads(event.target.value);
-  };
-
-  const handleEnableLogging = () => {
-    setEnableLogging(!enableLogging);
-  };
-
-  const handleConcatMuxDelay = (event: SelectChangeEvent<string>) => {
-    setConcatMuxDelay(event.target.value);
-  };
-
-  const handleEnableTranscoding = () => {
-    setEnableTranscoding(!enableTranscoding);
-  };
-
-  const handleVideoEncoder = (event: React.FocusEvent<HTMLInputElement>) => {
-    setVideoEncoder(event.target.value);
-  };
-
-  const handleVideoBitrate = (event: React.FocusEvent<HTMLInputElement>) => {
-    setVideoBitrate(event.target.value);
-  };
-
-  const handleVideoBufferSize = (event: React.FocusEvent<HTMLInputElement>) => {
-    setVideoBufferSize(event.target.value);
-  };
-
-  const handleScalingAlgorithm = (algorithm: ScalingAlgorithmValue) => {
-    setScalingAlgorithm(algorithm);
-  };
-
-  const handleDeinterlaceFilter = (filter: DeinterlaceFilterValue) => {
-    setDeinterlaceFilter(filter);
-  };
-
-  const handleMaxFPS = (event: SelectChangeEvent<string>) => {
-    setMaxFPS(event.target.value);
-  };
-
-  const handleAudioEncoder = (event: React.FocusEvent<HTMLInputElement>) => {
-    setAudioEncoder(event.target.value);
-  };
-
-  const handleAudioBufferSize = (event: React.FocusEvent<HTMLInputElement>) => {
-    setAudioBufferSize(event.target.value);
-  };
-
-  const handleAudioBitrate = (event: React.FocusEvent<HTMLInputElement>) => {
-    setAudioBitrate(event.target.value);
-  };
-
-  const handleAudioVolumePercent = (
-    event: React.FocusEvent<HTMLInputElement>,
-  ) => {
-    setAudioVolumePercent(event.target.value);
-  };
-
-  const handleAudioChannels = (event: React.FocusEvent<HTMLInputElement>) => {
-    setAudioChannels(event.target.value);
-  };
-
-  const handleAudioSampleRate = (event: React.FocusEvent<HTMLInputElement>) => {
-    setAudioSampleRate(event.target.value);
-  };
-
-  const handleValidateFields = (event: React.FocusEvent<HTMLInputElement>) => {
-    setShowFormError(!hasOnlyDigits(event.target.value));
-  };
-
-  const handlErrorScreen = (event: SelectChangeEvent<string>) => {
-    setErrorScreen(event.target.value);
-  };
-
-  const handlErrorAudio = (event: SelectChangeEvent<string>) => {
-    setErrorAudio(event.target.value);
-  };
-
-  const handleNormalizeVideoCodec = () => {
-    setNormalizeVideoCodec(!normalizeVideoCodec);
-  };
-
-  const handleNormalizeAudioCodec = () => {
-    console.log(normalizeAudioCodec);
-    setNormalizeAudioCodec(!normalizeAudioCodec);
-  };
-
-  const handleNormalizeResolution = () => {
-    setNormalizeResolution(!normalizeResolution);
-  };
-
-  const handleNormalizeAudio = () => {
-    setNormalizeAudio(!normalizeAudio);
-  };
-
-  const handleDisableChannelOverlay = () => {
-    setDisableChannelOverlay(!disableChannelOverlay);
-  };
-
-  const HandleDisableChannelPrelude = () => {
-    setDisableChannelPrelude(!disableChannelPrelude);
-  };
-
-  const handleTargetResolution = (event: SelectChangeEvent<string>) => {
-    setTargetResolution(event.target.value);
   };
 
   const handleSnackClose = () => {
@@ -526,73 +183,85 @@ export default function FfmpegSettingsPage() {
   const videoFfmpegSettings = () => {
     return (
       <>
-        <TextField
-          id="video-encoder"
-          label="Video Encoder"
-          value={videoEncoder}
-          onChange={handleVideoEncoder}
-          fullWidth
-          sx={{ my: 1 }}
-          InputProps={{
-            endAdornment: (
-              <InputAdornment position="end">
-                <Tooltip
-                  title="Some possible values are:
-          h264 with Intel Quick Sync: h264_qsv
-          MPEG2 with Intel Quick Sync: mpeg2_qsv
-          NVIDIA: h264_nvenc
-          MPEG2: mpeg2video (default)
-          H264: libx264
-          MacOS: h264_videotoolbox"
-                >
-                  <IconButton
-                    aria-label="Some possible values are:
-          h264 with Intel Quick Sync: h264_qsv
-          MPEG2 with Intel Quick Sync: mpeg2_qsv
-          NVIDIA: h264_nvenc
-          MPEG2: mpeg2video (default)
-          H264: libx264
-          MacOS: h264_videotoolbox"
-                    edge="end"
-                  >
-                    <HelpOutline sx={{ opacity: 0.75 }} />
-                  </IconButton>
-                </Tooltip>
-              </InputAdornment>
-            ),
-          }}
-        />
-        <Grid container columns={{ sm: 8, md: 16 }} columnSpacing={2}>
-          <Grid item sm={16} md={8}>
+        <Controller
+          control={control}
+          name="videoEncoder"
+          render={({ field }) => (
             <TextField
-              id="video-bitrate"
-              label="Video Bitrate (Kbps)"
-              value={videoBitrate}
-              onChange={handleVideoBitrate}
+              id="video-encoder"
+              label="Video Encoder"
               fullWidth
               sx={{ my: 1 }}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <Tooltip
+                      title="Some possible values are:
+    h264 with Intel Quick Sync: h264_qsv
+    MPEG2 with Intel Quick Sync: mpeg2_qsv
+    NVIDIA: h264_nvenc
+    MPEG2: mpeg2video (default)
+    H264: libx264
+    MacOS: h264_videotoolbox"
+                    >
+                      <IconButton
+                        aria-label="Some possible values are:
+    h264 with Intel Quick Sync: h264_qsv
+    MPEG2 with Intel Quick Sync: mpeg2_qsv
+    NVIDIA: h264_nvenc
+    MPEG2: mpeg2video (default)
+    H264: libx264
+    MacOS: h264_videotoolbox"
+                        edge="end"
+                      >
+                        <HelpOutline sx={{ opacity: 0.75 }} />
+                      </IconButton>
+                    </Tooltip>
+                  </InputAdornment>
+                ),
+              }}
+              {...field}
+            />
+          )}
+        />
+
+        <Grid container columns={{ sm: 8, md: 16 }} columnSpacing={2}>
+          <Grid item sm={16} md={8}>
+            <NumericFormControllerText
+              control={control}
+              name="videoBitrate"
+              prettyFieldName="Video Bitrate"
+              TextFieldProps={{
+                id: 'video-bitrate',
+                label: 'Video Bitrate (Kbps)',
+                fullWidth: true,
+                sx: { my: 1 },
+              }}
             />
           </Grid>
           <Grid item sm={16} md={8}>
-            <TextField
-              id="video-buffer-size"
-              label="Video Buffer Size (kb)"
-              value={videoBufferSize}
-              onChange={handleVideoBufferSize}
-              fullWidth
-              sx={{ my: 1 }}
-              helperText={
-                <>
-                  Buffer size effects how frequently ffmpeg reconsiders the
-                  output bitrate.{' '}
-                  <MuiLink
-                    target="_blank"
-                    href="https://trac.ffmpeg.org/wiki/Limiting%20the%20output%20bitrate#Whatdoes-bufsizedo"
-                  >
-                    Read more
-                  </MuiLink>
-                </>
-              }
+            <NumericFormControllerText
+              control={control}
+              name="videoBufferSize"
+              prettyFieldName="Video Buffer Size"
+              TextFieldProps={{
+                id: 'video-buffer-size',
+                label: 'Video Buffer Size (kb)',
+                fullWidth: true,
+                sx: { my: 1 },
+                helperText: (
+                  <>
+                    Buffer size effects how frequently ffmpeg reconsiders the
+                    output bitrate.{' '}
+                    <MuiLink
+                      target="_blank"
+                      href="https://trac.ffmpeg.org/wiki/Limiting%20the%20output%20bitrate#Whatdoes-bufsizedo"
+                    >
+                      Read more
+                    </MuiLink>
+                  </>
+                ),
+              }}
             />
           </Grid>
         </Grid>
@@ -600,20 +269,27 @@ export default function FfmpegSettingsPage() {
           <InputLabel id="video-max-frame-rate-label">
             Max Frame Rate
           </InputLabel>
-          <Select
-            labelId="video-max-frame-rate-label"
-            id="video-max-frame-rate"
-            value={maxFPS}
-            onChange={handleMaxFPS}
-            sx={{ my: 1 }}
-            label="Max Frame Rate"
-          >
-            {supportedMaxFPS.map((fps) => (
-              <MenuItem key={fps.value} value={fps.value}>
-                {fps.string}
-              </MenuItem>
-            ))}
-          </Select>
+          <TypedController
+            control={control}
+            name="maxFPS"
+            toFormType={(v) => v && handleNumericFormValue(v, true)}
+            render={({ field }) => (
+              <Select
+                labelId="video-max-frame-rate-label"
+                id="video-max-frame-rate"
+                sx={{ my: 1 }}
+                label="Max Frame Rate"
+                {...field}
+              >
+                {supportedMaxFPS.map((fps) => (
+                  <MenuItem key={fps.value} value={fps.value}>
+                    {fps.string}
+                  </MenuItem>
+                ))}
+              </Select>
+            )}
+          />
+
           <FormHelperText>
             Will transcode videos that have FPS higher than this.
           </FormHelperText>
@@ -622,22 +298,25 @@ export default function FfmpegSettingsPage() {
           <InputLabel id="video-scaling-algorithm-label">
             Scaling Algorithm
           </InputLabel>
-          <Select
-            labelId="video-scaling-algorithm-label"
-            id="video-scaling-algorithm"
-            value={scalingAlgorithm}
-            onChange={(e) =>
-              handleScalingAlgorithm(e.target.value as ScalingAlgorithmValue)
-            }
-            sx={{ my: 1 }}
-            label="Scaling Algorithm"
-          >
-            {supportedScalingAlgorithm.map((algorithm) => (
-              <MenuItem key={algorithm} value={algorithm}>
-                {algorithm}
-              </MenuItem>
-            ))}
-          </Select>
+          <Controller
+            control={control}
+            name="scalingAlgorithm"
+            render={({ field }) => (
+              <Select
+                labelId="video-scaling-algorithm-label"
+                id="video-scaling-algorithm"
+                sx={{ my: 1 }}
+                label="Scaling Algorithm"
+                {...field}
+              >
+                {supportedScalingAlgorithm.map((algorithm) => (
+                  <MenuItem key={algorithm} value={algorithm}>
+                    {algorithm}
+                  </MenuItem>
+                ))}
+              </Select>
+            )}
+          />
           <FormHelperText>
             Scaling algorithm to use when the transcoder needs to change the
             video size.
@@ -647,22 +326,26 @@ export default function FfmpegSettingsPage() {
           <InputLabel id="video-deinterlace-filter-label">
             Deinterlace Filter
           </InputLabel>
-          <Select
-            labelId="video-deinterlace-filter-label"
-            id="video-deinterlace-filter"
-            value={deinterlaceFilter}
-            onChange={(e) =>
-              handleDeinterlaceFilter(e.target.value as DeinterlaceFilterValue)
-            }
-            sx={{ my: 1 }}
-            label="Scaling Algorithm"
-          >
-            {supportedDeinterlaceFilters.map((filter) => (
-              <MenuItem key={filter.value} value={filter.value}>
-                {filter.string}
-              </MenuItem>
-            ))}
-          </Select>
+          <Controller
+            control={control}
+            name="deinterlaceFilter"
+            render={({ field }) => (
+              <Select
+                labelId="video-deinterlace-filter-label"
+                id="video-deinterlace-filter"
+                sx={{ my: 1 }}
+                label="Scaling Algorithm"
+                {...field}
+              >
+                {supportedDeinterlaceFilters.map((filter) => (
+                  <MenuItem key={filter.value} value={filter.value}>
+                    {filter.string}
+                  </MenuItem>
+                ))}
+              </Select>
+            )}
+          />
+
           <FormHelperText>
             Deinterlace filter to use when video is interlaced. This is only
             needed when Plex transcoding is not used.
@@ -672,27 +355,35 @@ export default function FfmpegSettingsPage() {
           <InputLabel id="target-resolution-label">
             Preferred Resolution
           </InputLabel>
-          <Select
-            labelId="target-resolution-label"
-            id="target-resolution"
-            value={targetResolution}
-            onChange={handleTargetResolution}
-            sx={{ my: 1 }}
-            label="Preferred Resolution"
-          >
-            {supportTargetResolution.map((resolution) => (
-              <MenuItem key={resolution.value} value={resolution.value}>
-                {resolution.string}
-              </MenuItem>
-            ))}
-          </Select>
+          <TypedController
+            control={control}
+            name="targetResolution"
+            toFormType={resolutionFromAnyString}
+            valueExtractor={(e) => (e as SelectChangeEvent).target.value}
+            render={({ field }) => (
+              <Select
+                labelId="target-resolution-label"
+                id="target-resolution"
+                sx={{ my: 1 }}
+                label="Preferred Resolution"
+                {...field}
+                value={resolutionToString(field.value)}
+              >
+                {supportTargetResolution.map((resolution) => (
+                  <MenuItem key={resolution.value} value={resolution.value}>
+                    {resolution.string}
+                  </MenuItem>
+                ))}
+              </Select>
+            )}
+          />
         </FormControl>
         <FormControl fullWidth>
           <FormControlLabel
             control={
-              <Checkbox
-                checked={normalizeResolution}
-                onChange={handleNormalizeResolution}
+              <CheckboxFormController
+                control={control}
+                name="normalizeResolution"
               />
             }
             label="Normalize Resolution"
@@ -707,9 +398,9 @@ export default function FfmpegSettingsPage() {
         <FormControl>
           <FormControlLabel
             control={
-              <Checkbox
-                checked={normalizeVideoCodec}
-                onChange={handleNormalizeVideoCodec}
+              <CheckboxFormController
+                control={control}
+                name="normalizeVideoCodec"
               />
             }
             label="Normalize Video Codec"
@@ -727,100 +418,124 @@ export default function FfmpegSettingsPage() {
   const audioFfmpegSettings = () => {
     return (
       <>
-        <TextField
-          id="audioEncoder"
-          label="Audio Encoder"
-          value={audioEncoder}
-          onChange={handleAudioEncoder}
-          fullWidth
-          sx={{ my: 1 }}
-          InputProps={{
-            endAdornment: (
-              <InputAdornment position="end">
-                <Tooltip
-                  title="Some possible values are:
-                  aac
-                  ac3 (default), ac3_fixed
-                  flac
-                  libmp3lame"
-                >
-                  <IconButton
-                    aria-label="Some possible values are:
-                    aac
-                    ac3 (default), ac3_fixed
-                    flac
-                    libmp3lame"
-                    edge="end"
-                  >
-                    <HelpOutline sx={{ opacity: 0.75 }} />
-                  </IconButton>
-                </Tooltip>
-              </InputAdornment>
-            ),
-          }}
-        />
-        <Grid container columns={{ sm: 8, md: 16 }} columnSpacing={2}>
-          <Grid item sm={16} md={8}>
+        <Controller
+          control={control}
+          name="audioEncoder"
+          render={({ field }) => (
             <TextField
-              id="audio-bitrate"
-              label="Audio Bitrate (Kbps)"
-              value={audioBitrate}
-              onChange={handleAudioBitrate}
-              sx={{ my: 1 }}
-              fullWidth
-            />
-          </Grid>
-          <Grid item sm={16} md={8}>
-            <TextField
-              id="audio-buffer-size"
-              label="Audio Buffer Size (kb)"
-              value={audioBufferSize}
-              onChange={handleAudioBufferSize}
-              sx={{ my: 1 }}
-              fullWidth
-            />
-          </Grid>
-        </Grid>
-        <Grid container columns={{ sm: 8, md: 16 }} columnSpacing={2}>
-          <Grid item sm={16} md={8}>
-            <TextField
-              id="audio-volume"
-              label="Audio Volume"
-              value={audioVolumePercent}
-              onChange={handleAudioVolumePercent}
+              id="audioEncoder"
+              label="Audio Encoder"
               fullWidth
               sx={{ my: 1 }}
-              helperText={'Values higher than 100 will boost the audio.'}
+              {...field}
               InputProps={{
-                endAdornment: <InputAdornment position="end">%</InputAdornment>,
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <Tooltip
+                      title="Some possible values are:
+            aac
+            ac3 (default), ac3_fixed
+            flac
+            libmp3lame"
+                    >
+                      <IconButton
+                        aria-label="Some possible values are:
+              aac
+              ac3 (default), ac3_fixed
+              flac
+              libmp3lame"
+                        edge="end"
+                      >
+                        <HelpOutline sx={{ opacity: 0.75 }} />
+                      </IconButton>
+                    </Tooltip>
+                  </InputAdornment>
+                ),
+              }}
+            />
+          )}
+        />
+
+        <Grid container columns={{ sm: 8, md: 16 }} columnSpacing={2}>
+          <Grid item sm={16} md={8}>
+            <NumericFormControllerText
+              control={control}
+              name="audioBitrate"
+              prettyFieldName="Audio Bitrate"
+              TextFieldProps={{
+                id: 'audio-bitrate',
+                label: 'Audio Bitrate (Kbps)',
+                fullWidth: true,
+                sx: { my: 1 },
               }}
             />
           </Grid>
           <Grid item sm={16} md={8}>
-            <TextField
-              id="audio-channels"
-              label="Audio Channels"
-              value={audioChannels}
-              onChange={handleAudioChannels}
-              fullWidth
-              sx={{ my: 1 }}
+            <NumericFormControllerText
+              control={control}
+              name="audioBufferSize"
+              prettyFieldName="Audio Buffer Size"
+              TextFieldProps={{
+                id: 'audio-bitrate',
+                label: 'Audio Bitrate (Kbps)',
+                fullWidth: true,
+                sx: { my: 1 },
+              }}
             />
           </Grid>
         </Grid>
-        <TextField
-          id="audio-sample-rate"
-          label="Audio Sample Rate (k)"
-          value={audioSampleRate}
-          onChange={handleAudioSampleRate}
-          fullWidth
-          sx={{ my: 1 }}
+        <Grid container columns={{ sm: 8, md: 16 }} columnSpacing={2}>
+          <Grid item sm={16} md={8}>
+            <NumericFormControllerText
+              control={control}
+              name="audioVolumePercent"
+              prettyFieldName="Audio Volume Percent"
+              TextFieldProps={{
+                id: 'audio-bitrate',
+                label: 'Audio Bitrate (Kbps)',
+                fullWidth: true,
+                sx: { my: 1 },
+                helperText: 'Values higher than 100 will boost the audio.',
+                InputProps: {
+                  endAdornment: (
+                    <InputAdornment position="end">%</InputAdornment>
+                  ),
+                },
+              }}
+            />
+          </Grid>
+          <Grid item sm={16} md={8}>
+            <NumericFormControllerText
+              control={control}
+              name="audioChannels"
+              prettyFieldName="Audio Channels"
+              TextFieldProps={{
+                id: 'audio-bitrate',
+                label: 'Audio Channels',
+                fullWidth: true,
+                sx: { my: 1 },
+              }}
+            />
+          </Grid>
+        </Grid>
+        <NumericFormControllerText
+          control={control}
+          name="audioSampleRate"
+          prettyFieldName="Audio Sample Rate"
+          TextFieldProps={{
+            id: 'audio-sample-rate',
+            label: 'Audio Sample Rate (k)',
+            fullWidth: true,
+            sx: { my: 1 },
+          }}
         />
+
         <FormControl fullWidth>
           <FormControlLabel
             control={
-              <Checkbox
-                checked={normalizeAudioCodec}
-                onChange={handleNormalizeAudioCodec}
+              <CheckboxFormController
+                control={control}
+                name="normalizeAudioCodec"
               />
             }
             label="Normalize Audio Codec"
@@ -830,10 +545,7 @@ export default function FfmpegSettingsPage() {
         <FormControl fullWidth>
           <FormControlLabel
             control={
-              <Checkbox
-                checked={normalizeAudio}
-                onChange={handleNormalizeAudio}
-              />
+              <CheckboxFormController control={control} name="normalizeAudio" />
             }
             label="Normalize Audio"
           />
@@ -849,7 +561,7 @@ export default function FfmpegSettingsPage() {
   };
 
   return (
-    <>
+    <Box component="form" onSubmit={handleSubmit(updateFfmpegSettings)}>
       <Snackbar
         open={snackStatus}
         autoHideDuration={6000}
@@ -858,53 +570,63 @@ export default function FfmpegSettingsPage() {
         message="Settings Saved!"
       />
       <FormControl fullWidth>
-        <TextField
-          id="executable-path"
-          label="Executable Path"
-          value={ffmpegExecutablePath}
-          onChange={handleFfmpegExecutablePath}
-          helperText={
-            'FFMPEG version 4.2+ required. Check by opening the version tab'
-          }
+        <Controller
+          control={control}
+          name="ffmpegExecutablePath"
+          render={({ field }) => (
+            <TextField
+              id="executable-path"
+              label="Executable Path"
+              helperText={
+                'FFMPEG version 4.2+ required. Check by opening the version tab'
+              }
+              {...field}
+            />
+          )}
         />
       </FormControl>
       <Typography variant="h6" sx={{ my: 2 }}>
         Miscellaneous Options
       </Typography>
-      {showFormError && (
-        <Alert severity="error" sx={{ my: 2 }}>
-          Invalid input. Please make sure number of threads is a number
-        </Alert>
-      )}
       <Stack spacing={2} direction={{ sm: 'column', md: 'row' }}>
-        <TextField
-          label="Threads"
-          value={numThreads}
-          onChange={handleNumThreads}
-          onBlur={handleValidateFields}
+        <NumericFormControllerText
+          control={control}
+          name="numThreads"
+          prettyFieldName="Threads"
+          TextFieldProps={{ label: 'Threads' }}
         />
+
         <FormControlLabel
           control={
-            <Checkbox checked={enableLogging} onChange={handleEnableLogging} />
+            <CheckboxFormController control={control} name="enableLogging" />
           }
           label="Log FFMPEG to console"
         />
       </Stack>
       <FormControl sx={{ mt: 2 }}>
         <InputLabel id="video-concat-mux-delay-label">Video Buffer</InputLabel>
-        <Select
-          labelId="video-concat-mux-delay-label"
-          id="video-concat-mux-delay"
-          value={concatMuxDelay}
-          onChange={handleConcatMuxDelay}
-          label="Video Buffer"
-        >
-          {supportedVideoBuffer.map((buffer) => (
-            <MenuItem key={buffer.value} value={buffer.value}>
-              {buffer.string}
-            </MenuItem>
-          ))}
-        </Select>
+        <TypedController
+          control={control}
+          name="concatMuxDelay"
+          prettyFieldName="Video Buffer"
+          toFormType={handleNumericFormValue}
+          valueExtractor={(e) => (e as SelectChangeEvent<number>).target.value}
+          render={({ field }) => (
+            <Select
+              labelId="video-concat-mux-delay-label"
+              id="video-concat-mux-delay"
+              label="Video Buffer"
+              {...field}
+            >
+              {supportedVideoBuffer.map((buffer) => (
+                <MenuItem key={buffer.value} value={buffer.value}>
+                  {buffer.string}
+                </MenuItem>
+              ))}
+            </Select>
+          )}
+        />
+
         <FormHelperText>
           Note: If you experience playback issues upon stream start, try
           increasing this.
@@ -916,9 +638,12 @@ export default function FfmpegSettingsPage() {
       <FormControl>
         <FormControlLabel
           control={
-            <Checkbox
-              checked={enableTranscoding}
-              onChange={handleEnableTranscoding}
+            <Controller
+              control={control}
+              name="enableTranscoding"
+              render={({ field }) => (
+                <Checkbox checked={field.value} {...field} />
+              )}
             />
           }
           label="Enable FFMPEG Transcoding"
@@ -953,42 +678,54 @@ export default function FfmpegSettingsPage() {
             <Grid item sm={16} md={8}>
               <FormControl sx={{ mt: 2 }}>
                 <InputLabel id="error-screen-label">Error Screen</InputLabel>
-                <Select
-                  labelId="error-screen-label"
-                  id="error-screen"
-                  value={errorScreen}
-                  onChange={handlErrorScreen}
-                  label="Error Screen"
-                >
-                  {supportedErrorScreens.map((error) => (
-                    <MenuItem key={error.value} value={error.value}>
-                      {error.string}
-                    </MenuItem>
-                  ))}
-                </Select>
+                <Controller
+                  control={control}
+                  name="errorScreen"
+                  render={({ field }) => (
+                    <Select
+                      labelId="error-screen-label"
+                      id="error-screen"
+                      label="Error Screen"
+                      {...field}
+                    >
+                      {supportedErrorScreens.map((error) => (
+                        <MenuItem key={error.value} value={error.value}>
+                          {error.string}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  )}
+                />
+
                 <FormHelperText>
-                  If there are issues playing a video, dizqueTV will try to use
-                  an error screen as a placeholder while retrying loading the
-                  video every 60 seconds.
+                  If there are issues playing a video, Tunarr will try to use an
+                  error screen as a placeholder while retrying loading the video
+                  every 60 seconds.
                 </FormHelperText>
               </FormControl>
             </Grid>
             <Grid item sm={16} md={8}>
               <FormControl sx={{ mt: 2 }}>
                 <InputLabel id="error-audio-label">Error Audio</InputLabel>
-                <Select
-                  labelId="error-audio-label"
-                  id="error-screen"
-                  value={errorAudio}
-                  onChange={handlErrorAudio}
-                  label="Error Audio"
-                >
-                  {supportedErrorAudio.map((error) => (
-                    <MenuItem key={error.value} value={error.value}>
-                      {error.string}
-                    </MenuItem>
-                  ))}
-                </Select>
+                <Controller
+                  control={control}
+                  name="errorAudio"
+                  render={({ field }) => (
+                    <Select
+                      labelId="error-audio-label"
+                      id="error-screen"
+                      label="Error Audio"
+                      fullWidth
+                      {...field}
+                    >
+                      {supportedErrorAudio.map((error) => (
+                        <MenuItem key={error.value} value={error.value}>
+                          {error.string}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  )}
+                />
               </FormControl>
             </Grid>
           </Grid>
@@ -999,9 +736,12 @@ export default function FfmpegSettingsPage() {
           <FormControl fullWidth>
             <FormControlLabel
               control={
-                <Checkbox
-                  checked={disableChannelOverlay}
-                  onChange={handleDisableChannelOverlay}
+                <Controller
+                  control={control}
+                  name="disableChannelOverlay"
+                  render={({ field }) => (
+                    <Checkbox {...field} checked={field.value} />
+                  )}
                 />
               }
               label="Disable Channel Watermark Globally"
@@ -1015,9 +755,12 @@ export default function FfmpegSettingsPage() {
           <FormControl fullWidth>
             <FormControlLabel
               control={
-                <Checkbox
-                  checked={disableChannelPrelude}
-                  onChange={HandleDisableChannelPrelude}
+                <Controller
+                  control={control}
+                  name="disableChannelPrelude"
+                  render={({ field }) => (
+                    <Checkbox {...field} checked={field.value} />
+                  )}
                 />
               }
               label="Disable Channel Prelude"
@@ -1036,17 +779,13 @@ export default function FfmpegSettingsPage() {
       )}
 
       <Stack spacing={2} direction="row" justifyContent="right" sx={{ mt: 2 }}>
-        <Button variant="outlined" onClick={() => handleResetOptions()}>
+        <Button variant="outlined" onClick={() => reset()}>
           Reset Options
         </Button>
-        <Button
-          variant="contained"
-          disabled={showFormError}
-          onClick={() => updateFfmpegSettings()}
-        >
+        <Button variant="contained" disabled={!isValid} type="submit">
           Save
         </Button>
       </Stack>
-    </>
+    </Box>
   );
 }

@@ -1,12 +1,14 @@
+import { FfmpegSettings, defaultFfmpegSettings } from '@tunarr/types';
+import { FfmpegSettingsSchema } from '@tunarr/types/schemas';
 import { isError, isUndefined } from 'lodash-es';
 import createLogger from '../logger.js';
+import { RouterPluginCallback } from '../types/serverType.js';
 import { firstDefined } from '../util.js';
-import { FastifyPluginCallback } from 'fastify';
-import { FfmpegSettings, defaultFfmpegSettings } from '@tunarr/types';
+import { z } from 'zod';
 
 const logger = createLogger(import.meta);
 
-export const ffmpegSettingsRouter: FastifyPluginCallback = (
+export const ffmpegSettingsRouter: RouterPluginCallback = (
   fastify,
   _opts,
   done,
@@ -20,8 +22,19 @@ export const ffmpegSettingsRouter: FastifyPluginCallback = (
       return res.status(500).send('error');
     }
   });
-  fastify.put<{ Body: FfmpegSettings }>(
+
+  fastify.put(
     '/api/ffmpeg-settings',
+    {
+      schema: {
+        body: FfmpegSettingsSchema,
+        response: {
+          200: FfmpegSettingsSchema,
+          400: z.string(),
+          500: z.string(),
+        },
+      },
+    },
     async (req, res) => {
       try {
         await req.serverCtx.settings.updateSettings('ffmpeg', req.body);
