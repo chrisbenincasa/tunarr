@@ -74,6 +74,7 @@ function mintEpisodeProgram(
     year: plexEpisode.year,
     showTitle: plexEpisode.grandparentTitle,
     showIcon: plexEpisode.grandparentThumb,
+    season: plexEpisode.parentIndex,
     episode: plexEpisode.index,
     parentExternalKey: plexEpisode.parentRatingKey,
     grandparentExternalKey: plexEpisode.grandparentRatingKey,
