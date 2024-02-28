@@ -300,6 +300,23 @@ export const api = makeApi([
   getPlexStreamSettings,
   getFffmpegSettings,
   updateFfmpegSettings,
+  {
+    method: 'post',
+    path: '/api/upload/image',
+    alias: 'uploadImage',
+    requestFormat: 'form-data',
+    parameters: parametersBuilder()
+      .addBody(z.object({ file: z.instanceof(File) }))
+      .build(),
+    response: z.object({
+      status: z.literal(true),
+      message: z.string(),
+      data: z.object({
+        name: z.string(),
+        fileUrl: z.string(),
+      }),
+    }),
+  },
 ]);
 
 export const createApiClient = once((uri: string) => {

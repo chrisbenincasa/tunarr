@@ -25,6 +25,7 @@
     "@tunarr/types": "workspace:*",
     "@uidotdev/usehooks": "^2.4.1",
     "@zodios/core": "^10.9.6",
+    "@zodios/plugins": "^10.6.0",
     "axios": "^1.6.0",
     "bowser": "^2.11.0",
     "dayjs": "^1.11.10",

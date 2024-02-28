@@ -13,8 +13,9 @@ import {
 import { Channel } from '@tunarr/types';
 import { usePrevious } from '@uidotdev/usehooks';
 import { isEmpty } from 'lodash-es';
-import { ChangeEvent, useEffect, useRef, useState } from 'react';
+import { ChangeEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
+import { apiClient } from '../../external/api.ts';
 import useDebouncedState from '../../hooks/useDebouncedState.ts';
 import useStore from '../../store/index.ts';
 import ChannelEditActions from './ChannelEditActions.tsx';
@@ -31,6 +32,8 @@ const VisuallyHiddenInput = styled('input')({
   width: 1,
 });
 
+const DefaultIconPath = '/tunarr.png';
+
 export default function ChannelPropertiesEditor() {
   const imgRef = useRef<HTMLImageElement | null>(null);
   const channel = useStore((s) => s.channelEditor.currentEntity);
@@ -39,6 +42,7 @@ export default function ChannelPropertiesEditor() {
   const { control } = useFormContext<Channel>();
 
   const [channelIcon, setChannelIcon] = useState(channel?.icon.path);
+  const previousIconPath = usePrevious(channelIcon);
 
   const [, channelIconPreview, setChannelIconPreview] = useDebouncedState(
     channel?.icon.path,
@@ -48,7 +52,7 @@ export default function ChannelPropertiesEditor() {
   useEffect(() => {
     if (!prevChannel && channel) {
       const url = isEmpty(channel.icon.path)
-        ? `/tunarr.png`
+        ? DefaultIconPath
         : channel.icon.path;
       setChannelIcon(url);
       setChannelIconPreview(url);
@@ -71,21 +75,50 @@ export default function ChannelPropertiesEditor() {
 
   const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
+      const data = new FormData();
       const file = e.target.files[0];
-      fetch('http://localhost:8000/api/upload/image', {
-        method: 'POST',
-        body: new File([file.slice(0, file.size, file.type)], 'test.png', {
+      const idx = file.name.lastIndexOf('.');
+      let newName: string;
+
+      if (idx === -1) {
+        newName = `${channel!.id}_icon`;
+      } else {
+        const ext = file.name.slice(idx + 1);
+        newName = `${channel!.id}_icon.${ext}`;
+      }
+
+      const renamedFile = new File(
+        [file.slice(0, file.size, file.type)],
+        newName,
+        {
           type: file.type,
-        }),
-      })
-        .then((res) => {
-          console.log('response thanks', res);
+        },
+      );
+
+      data.append('file', renamedFile);
+
+      apiClient
+        .uploadImage({ file: renamedFile })
+        .then((response) => {
+          setChannelIcon(response.data.fileUrl);
         })
-        .catch(console.error);
-      setChannelIcon(`http://localhost:8000/images/uploads/${file.name}`); // Placeholder
+        .catch((err) => {
+          console.error(err);
+          setChannelIcon(previousIconPath ?? DefaultIconPath);
+          setChannelIconPreview(previousIconPath ?? DefaultIconPath);
+        });
+
       setChannelIconPreview(URL.createObjectURL(file));
     }
   };
+
+  const onThumbUrlChange = useCallback(
+    (e: ChangeEvent<HTMLInputElement>) => {
+      setChannelIcon(e.target.value);
+      setChannelIconPreview(e.target.value);
+    },
+    [setChannelIcon, setChannelIconPreview],
+  );
 
   return (
     <>
@@ -150,7 +183,7 @@ export default function ChannelPropertiesEditor() {
               <OutlinedInput
                 label="Thumbnail URL"
                 value={channelIcon}
-                onChange={(e) => setChannelIcon(e.target.value)}
+                onChange={onThumbUrlChange}
                 endAdornment={
                   <InputAdornment position="end">
                     <IconButton component="label">
@@ -158,6 +191,7 @@ export default function ChannelPropertiesEditor() {
                       <VisuallyHiddenInput
                         onChange={(e) => handleFileUpload(e)}
                         type="file"
+                        accept="image/*"
                       />
                     </IconButton>
                   </InputAdornment>

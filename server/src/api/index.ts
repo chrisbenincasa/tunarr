@@ -1,9 +1,9 @@
 import constants from '@tunarr/shared/constants';
 import { VersionApiResponseSchema } from '@tunarr/types/api';
-import fileUpload from 'express-fileupload';
-import { promises as fsPromises } from 'fs';
+import { createWriteStream, promises as fsPromises } from 'fs';
 import { isNil } from 'lodash-es';
 import path from 'path';
+import { pipeline } from 'stream/promises';
 import { z } from 'zod';
 import { PlexServerSettings } from '../dao/entities/PlexServerSettings.js';
 import { FFMPEGInfo } from '../ffmpegInfo.js';
@@ -12,6 +12,7 @@ import createLogger from '../logger.js';
 import { Plex } from '../plex.js';
 import { scheduledJobsById } from '../services/scheduler.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
+import { fileExists } from '../util/fsUtil.js';
 import { channelsApi } from './channelsApi.js';
 import { customShowsApiV2 } from './customShowsApi.js';
 import { debugApi } from './debugApi.js';
@@ -22,22 +23,10 @@ import { tasksApiRouter } from './tasksApi.js';
 
 const logger = createLogger(import.meta);
 
-declare module 'fastify' {
-  interface FastifyRequest {
-    files: fileUpload.FileArray | null | undefined;
-  }
-}
-
 export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
   fastify.addContentTypeParser(/^image\/.*/, function (_, payload, done) {
     done(null, payload);
   });
-
-  fastify.use(
-    fileUpload({
-      createParentPath: true,
-    }),
-  );
 
   fastify.addHook('onError', (req, _, error, done) => {
     logger.error(req.routeOptions.config.url, error);
@@ -81,26 +70,34 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
 
   fastify.post('/upload/image', async (req, res) => {
     try {
-      if (isNil(req.files)) {
-        return res.send({
-          status: false,
-          message: 'No file uploaded',
-        });
+      const data = await req.file();
+
+      if (isNil(data)) {
+        return res.status(400).send();
       }
 
-      const logo = req.files.image as fileUpload.UploadedFile;
-      await logo.mv(
-        path.join(serverOptions().database, '/images/uploads/', logo.name),
+      if (!data.mimetype.startsWith('image/')) {
+        return res.status(400).send();
+      }
+
+      const baseDir = path.join(serverOptions().database, 'images', 'uploads');
+
+      if (!(await fileExists(baseDir))) {
+        await fsPromises.mkdir(baseDir, { recursive: true });
+      }
+
+      await pipeline(
+        data.file,
+        createWriteStream(path.join(baseDir, data.filename)),
       );
 
       return res.send({
         status: true,
         message: 'File is uploaded',
         data: {
-          name: logo.name,
-          mimetype: logo.mimetype,
-          size: logo.size,
-          fileUrl: `${req.protocol}://${req.hostname}/images/uploads/${logo.name}`,
+          name: data.filename,
+          size: data.fields.size,
+          fileUrl: `${req.protocol}://${req.hostname}/images/uploads/${data.filename}`,
         },
       });
     } catch (err) {
