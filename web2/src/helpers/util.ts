@@ -1,8 +1,7 @@
+import { ChannelProgram, Resolution } from '@tunarr/types';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
-import { ChannelProgram, Resolution } from '@tunarr/types';
-import { zipWith, range, isNumber } from 'lodash-es';
-import { ChangeEvent } from 'react';
+import { isNumber, range, zipWith } from 'lodash-es';
 
 dayjs.extend(duration);
 
@@ -106,6 +105,15 @@ export const zipWithIndex = <T extends object>(
     originalIndex: i,
   }));
 };
+
+export const createFlexProgram = (
+  duration: number,
+  persisted: boolean = false,
+): FlexProgram => ({
+  duration,
+  persisted,
+  type: 'flex',
+});
 
 // Useful for toggling state
 export const toggle = (b: boolean) => !b;
