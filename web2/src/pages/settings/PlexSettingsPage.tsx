@@ -1,10 +1,23 @@
-import { AddCircle, Close, Delete, Done, Edit } from '@mui/icons-material';
+import {
+  AddCircle,
+  Cancel,
+  CancelOutlined,
+  CloudDoneOutlined,
+  CloudOff,
+  Delete,
+  Edit,
+  HelpOutline,
+  Save,
+  Visibility,
+  VisibilityOff,
+} from '@mui/icons-material';
 import {
   Alert,
   Box,
   Button,
   Checkbox,
   Chip,
+  Collapse,
   Dialog,
   DialogActions,
   DialogContent,
@@ -20,6 +33,7 @@ import {
   InputLabel,
   Link,
   MenuItem,
+  OutlinedInput,
   Paper,
   Select,
   SelectChangeEvent,
@@ -33,23 +47,30 @@ import {
   TableHead,
   TableRow,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { PlexStreamSettings, defaultPlexStreamSettings } from '@tunarr/types';
+import {
+  PlexServerSettings,
+  PlexStreamSettings,
+  defaultPlexStreamSettings,
+} from '@tunarr/types';
 import { InsertPlexServerRequest } from '@tunarr/types/api';
-import { fill } from 'lodash-es';
-import React, { useCallback, useEffect, useState } from 'react';
+import { fill, isNil, isNull, isUndefined } from 'lodash-es';
+import React, { Fragment, useCallback, useEffect, useState } from 'react';
 import { apiClient } from '../../external/api.ts';
 import { checkNewPlexServers, plexLoginFlow } from '../../helpers/plexLogin.ts';
 import {
   resolutionFromString,
   resolutionToString,
+  toggle,
 } from '../../helpers/util.ts';
 import {
   usePlexServerSettings,
   usePlexStreamSettings,
 } from '../../hooks/settingsHooks.ts';
+import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 
 const supportedResolutions = [
   '420x420',
@@ -94,6 +115,36 @@ export default function PlexSettingsPage() {
   } = usePlexStreamSettings();
 
   const queryClient = useQueryClient();
+
+  const [currentEditRow, setCurrentEditRow] = useState<number | null>(null);
+  const [showAccessToken, setShowAccessToken] = useState(false);
+
+  const {
+    reset,
+    control,
+    formState: { isValid },
+    handleSubmit,
+  } = useForm<Omit<PlexServerSettings, 'id'>>({
+    mode: 'onChange',
+    defaultValues: {
+      accessToken: '',
+      index: 0,
+      name: '',
+      sendChannelUpdates: false,
+      sendGuideUpdates: false,
+      uri: '',
+    },
+  });
+
+  useEffect(() => {
+    if (
+      !isNull(currentEditRow) &&
+      !isUndefined(servers) &&
+      servers.length > currentEditRow
+    ) {
+      reset(servers[currentEditRow]);
+    }
+  }, [currentEditRow, servers, reset]);
 
   const [deletePlexConfirmation, setDeletePlexConfirmation] = useState<
     string | undefined
@@ -268,6 +319,34 @@ export default function PlexSettingsPage() {
     },
   });
 
+  const updatePlexServerMutation = useMutation({
+    mutationFn: (updatedServer: PlexServerSettings) => {
+      return apiClient.updatePlexServer(updatedServer, {
+        params: { id: updatedServer.id },
+      });
+    },
+    onSuccess: () => {
+      return queryClient.invalidateQueries({
+        queryKey: ['settings', 'plex-servers'],
+      });
+    },
+  });
+
+  const savePlexServer: SubmitHandler<Omit<PlexServerSettings, 'id'>> =
+    useCallback(
+      (data) => {
+        if (
+          !isNull(currentEditRow) &&
+          !isUndefined(servers) &&
+          servers.length > currentEditRow
+        ) {
+          const originalServer = servers[currentEditRow];
+          updatePlexServerMutation.mutate({ id: originalServer.id, ...data });
+        }
+      },
+      [currentEditRow, servers, updatePlexServerMutation],
+    );
+
   const renderConfirmationDialog = () => {
     return (
       <Dialog
@@ -385,6 +464,14 @@ export default function PlexSettingsPage() {
     setSnackStatus(false);
   };
 
+  const handleEditServer = useCallback(
+    (index: number) => {
+      setCurrentEditRow(index);
+      setShowAccessToken(false);
+    },
+    [setCurrentEditRow, setShowAccessToken],
+  );
+
   const UIRouteSuccess = true; // TODO
   const backendRouteSuccess = true; // TODO
 
@@ -414,37 +501,176 @@ export default function PlexSettingsPage() {
   };
 
   const getTableRows = () => {
-    return servers!.map((server) => (
-      <TableRow key={server.name}>
-        <TableCell>{server.name}</TableCell>
-        <TableCell>
-          <Link href={server.uri} target={'_blank'}>
-            {server.uri}
-          </Link>
-        </TableCell>
-        <TableCell align="center">
-          {UIRouteSuccess ? <Done color="success" /> : <Close color="error" />}
-        </TableCell>
-        <TableCell align="center">
-          {backendRouteSuccess ? (
-            <Done color="success" />
-          ) : (
-            <Close color="error" />
-          )}
-        </TableCell>
-        <TableCell width="10%" align="right">
-          <IconButton color="primary">
-            <Edit />
-          </IconButton>
-          <IconButton
-            color="primary"
-            onClick={() => setDeletePlexConfirmation(server.id)}
-          >
-            <Delete />
-          </IconButton>
-        </TableCell>
-      </TableRow>
-    ));
+    return servers!.map((server, index) => {
+      const isEditing = index === currentEditRow;
+      return (
+        <Fragment key={server.name}>
+          <TableRow>
+            <TableCell>{server.name}</TableCell>
+            <TableCell width="60%">
+              {!isEditing ? (
+                <Link href={server.uri} target={'_blank'}>
+                  {server.uri}
+                </Link>
+              ) : (
+                <Controller
+                  control={control}
+                  name="uri"
+                  rules={{ required: true, minLength: 1 }}
+                  render={({ field, formState: { errors } }) => (
+                    <TextField
+                      label="URL"
+                      size="small"
+                      fullWidth
+                      error={!isNil(errors.uri)}
+                      {...field}
+                      helperText={errors.uri?.message ?? null}
+                    />
+                  )}
+                />
+              )}
+            </TableCell>
+            <TableCell align="center">
+              {UIRouteSuccess ? (
+                <CloudDoneOutlined color="success" />
+              ) : (
+                <CloudOff color="error" />
+              )}
+            </TableCell>
+            <TableCell align="center">
+              {backendRouteSuccess ? (
+                <CloudDoneOutlined color="success" />
+              ) : (
+                <CloudOff color="error" />
+              )}
+            </TableCell>
+            <TableCell width="10%" align="right">
+              {isEditing ? (
+                <>
+                  <IconButton
+                    color="primary"
+                    disabled={!isValid}
+                    onClick={handleSubmit(savePlexServer)}
+                  >
+                    <Save />
+                  </IconButton>
+                  <IconButton
+                    color="primary"
+                    onClick={() => setCurrentEditRow(null)}
+                  >
+                    <CancelOutlined />
+                  </IconButton>
+                </>
+              ) : (
+                <>
+                  <IconButton
+                    color="primary"
+                    onClick={() => handleEditServer(index)}
+                  >
+                    <Edit />
+                  </IconButton>
+                  <IconButton
+                    color="primary"
+                    onClick={() => setDeletePlexConfirmation(server.id)}
+                  >
+                    <Delete />
+                  </IconButton>
+                </>
+              )}
+            </TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell
+              sx={{ py: 0, borderBottom: isEditing ? null : 0 }}
+              colSpan={6}
+            >
+              <Collapse in={isEditing} timeout="auto" unmountOnExit>
+                <Stack
+                  direction="row"
+                  spacing={2}
+                  useFlexGap
+                  sx={{ m: 1, display: 'flex', alignItems: 'center' }}
+                >
+                  <Controller
+                    control={control}
+                    name="accessToken"
+                    rules={{
+                      required: true,
+                      minLength: 1,
+                    }}
+                    render={({ field, formState: { errors } }) => (
+                      <FormControl
+                        sx={{ m: 1, width: '25ch' }}
+                        variant="outlined"
+                      >
+                        <InputLabel htmlFor="access-token" size="small">
+                          Access Token
+                        </InputLabel>
+                        <OutlinedInput
+                          size="small"
+                          id="access-token"
+                          type={showAccessToken ? 'text' : 'password'}
+                          endAdornment={
+                            <InputAdornment position="end">
+                              <IconButton
+                                aria-label="toggle access token visibility"
+                                onClick={() => setShowAccessToken(toggle)}
+                                edge="end"
+                              >
+                                {showAccessToken ? (
+                                  <VisibilityOff />
+                                ) : (
+                                  <Visibility />
+                                )}
+                              </IconButton>
+                            </InputAdornment>
+                          }
+                          label="Access Token"
+                          {...field}
+                        />
+                        {errors.accessToken && (
+                          <FormHelperText>
+                            {errors.accessToken.message}
+                          </FormHelperText>
+                        )}
+                      </FormControl>
+                    )}
+                  />
+                  <FormControl>
+                    <FormControlLabel
+                      control={
+                        <Controller
+                          control={control}
+                          name="sendGuideUpdates"
+                          render={({ field }) => (
+                            <Checkbox {...field} checked={field.value} />
+                          )}
+                        />
+                      }
+                      label="Auto-Update Guide"
+                    />
+                  </FormControl>
+                  <FormControl>
+                    <FormControlLabel
+                      control={
+                        <Controller
+                          control={control}
+                          name="sendChannelUpdates"
+                          render={({ field }) => (
+                            <Checkbox {...field} checked={field.value} />
+                          )}
+                        />
+                      }
+                      label="Auto-Update Channels"
+                    />
+                  </FormControl>
+                </Stack>
+              </Collapse>
+            </TableCell>
+          </TableRow>
+        </Fragment>
+      );
+    });
   };
 
   const getSkeletonTableRows = (numRows: number) => {
@@ -474,8 +700,28 @@ export default function PlexSettingsPage() {
             <TableRow>
               <TableCell>Name</TableCell>
               <TableCell>URL</TableCell>
-              <TableCell align="center">UI Route</TableCell>
-              <TableCell align="center">Backend Route</TableCell>
+              <TableCell align="center">
+                UI
+                <Tooltip
+                  placement="top"
+                  title="The connection to Plex from the browser. Affects the ability to edit channel programming."
+                >
+                  <IconButton size="small" edge="end">
+                    <HelpOutline sx={{ opacity: 0.75 }} />
+                  </IconButton>
+                </Tooltip>
+              </TableCell>
+              <TableCell align="center">
+                Backend
+                <Tooltip
+                  placement="top"
+                  title="The connection to Plex from the server. Affects the ability to stream."
+                >
+                  <IconButton size="small" edge="end">
+                    <HelpOutline sx={{ opacity: 0.75 }} />
+                  </IconButton>
+                </Tooltip>
+              </TableCell>
               <TableCell></TableCell>
             </TableRow>
           </TableHead>
@@ -771,14 +1017,12 @@ export default function PlexSettingsPage() {
           <Grid item xs={12} sm={6}>
             <FormControl fullWidth sx={{ my: 1 }}>
               <TextField
-                id="component-outlined"
                 label="Max Direct Stream Bitrate (Kbps)"
                 value={directStreamBitrate}
               />
             </FormControl>
             <FormControl fullWidth sx={{ my: 1 }}>
               <TextField
-                id="component-outlined"
                 label="Max Transcode Bitrate (Kbps)"
                 value={transcodeBitrate}
               />
@@ -787,14 +1031,12 @@ export default function PlexSettingsPage() {
           <Grid item xs={12} sm={6}>
             <FormControl fullWidth sx={{ my: 1 }}>
               <TextField
-                id="component-outlined"
                 label="Direct Stream Media Buffer Size"
                 value={mediaBufferSize}
               />
             </FormControl>
             <FormControl fullWidth sx={{ my: 1 }}>
               <TextField
-                id="component-outlined"
                 label="Transcode Media Buffer Size"
                 value={transcodeMediaBufferSize}
               />
