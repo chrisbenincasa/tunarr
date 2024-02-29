@@ -5,6 +5,7 @@ export interface ThemeEditorStateInner {
   darkMode?: boolean | undefined;
   pathway: string;
   guideDuration: number;
+  openProgrammingOptions: boolean;
 }
 
 export interface ThemeEditorState {
@@ -16,6 +17,7 @@ export const initialThemeEditorState: ThemeEditorState = {
     darkMode: undefined,
     pathway: '',
     guideDuration: dayjs.duration(2, 'hour').asMilliseconds(),
+    openProgrammingOptions: false,
   },
 };
 

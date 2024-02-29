@@ -45,7 +45,7 @@ const AddRedirectModal = ({ open, onClose }: AddRedirectModalProps) => {
 
   return (
     <Dialog open={open}>
-      <DialogTitle>Add Flex (offline time)</DialogTitle>
+      <DialogTitle>Add Flex Time</DialogTitle>
       <DialogContent>
         <TextField
           fullWidth
@@ -65,7 +65,9 @@ const AddRedirectModal = ({ open, onClose }: AddRedirectModalProps) => {
       </DialogContent>
       <DialogActions>
         <Button onClick={() => onClose()}>Cancel</Button>
-        <Button onClick={() => addFlex()}>Save</Button>
+        <Button variant="contained" onClick={() => addFlex()}>
+          Save
+        </Button>
       </DialogActions>
     </Dialog>
   );

@@ -139,7 +139,7 @@ const AddRedirectModal = (props: AddRedirectModalProps) => {
       </DialogContent>
       <DialogActions>
         <Button onClick={() => props.onClose()}>Cancel</Button>
-        <Button form="redirect-channel-form" type="submit">
+        <Button variant="contained" form="redirect-channel-form" type="submit">
           Save
         </Button>
       </DialogActions>

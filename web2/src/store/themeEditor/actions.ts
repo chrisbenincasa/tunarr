@@ -25,6 +25,12 @@ export const resetPathwayState = () => {
   });
 };
 
+export const setProgrammingOptionsState = () => {
+  useStore.setState((state) => {
+    state.theme.openProgrammingOptions = !state.theme.openProgrammingOptions;
+  });
+};
+
 export const resetThemeEditorState = () => {
   useStore.setState((state) => {
     const newState = {
