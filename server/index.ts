@@ -16,6 +16,7 @@ import createLogger from './logger.js';
 import { ServerOptions } from './types.js';
 import { existsSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
+import { initServer } from './server.js';
 
 const logger = createLogger(import.meta);
 
@@ -52,7 +53,17 @@ yargs(hideBin(process.argv))
         .middleware(setServerOptions);
     },
     async (args: ArgumentsCamelCase<ServerOptions>) => {
-      (await import('./server.js')).initServer(args);
+      console.log(
+        `         \\
+         Tunarr ${constants.VERSION_NAME}
+      .------------.
+      |:::///### o |
+      |:::///###   |
+      ':::///### o |
+      '------------'
+      `,
+      );
+      await initServer(args);
     },
   )
   .command(
@@ -69,7 +80,7 @@ yargs(hideBin(process.argv))
         .middleware(setServerOptions);
     },
     async (args: ArgumentsCamelCase<ServerOptions>) => {
-      const f = await (await import('./server.js')).initServer(args);
+      const f = await initServer(args);
       const x = await f
         .inject({ method: 'get', url: '/docs/json' })
         .then((r) => r.body);

@@ -15,8 +15,8 @@
     "dizquetv": "ts-node-esm index.ts",
     "preinstall": "npx only-allow pnpm",
     "mikro-orm": "NODE_OPTIONS='--loader ts-node/esm --no-warnings' mikro-orm",
-    "package": "sh ./make_dist.sh",
-    "test": "vitest"
+    "test": "vitest",
+    "bundle": "ts-node-esm scripts/build.ts"
   },
   "dependencies": {
     "@fastify/cors": "^8.4.1",
@@ -46,6 +46,7 @@
     "fastify-print-routes": "^2.2.0",
     "fastify-type-provider-zod": "^1.1.9",
     "fluent-ffmpeg": "^2.1.2",
+    "lodash": "^4.17.21",
     "lodash-es": "^4.17.21",
     "lowdb": "^7.0.0",
     "morgan": "^1.10.0",
@@ -73,6 +74,7 @@
     "@types/express": "^4.17.20",
     "@types/express-fileupload": "^1.4.3",
     "@types/fluent-ffmpeg": "^2.1.23",
+    "@types/lodash": "^4.14.202",
     "@types/lodash-es": "^4.17.10",
     "@types/morgan": "^1.9.7",
     "@types/node": "^20.8.9",
@@ -84,7 +86,7 @@
     "@types/yargs": "^17.0.29",
     "copyfiles": "^2.2.0",
     "del-cli": "^3.0.0",
-    "nexe": "^4.0.0-rc.2",
+    "esbuild": "^0.19.5",
     "nodemon": "^3.0.3",
     "prettier": "^3.0.3",
     "tmp": "^0.2.1",

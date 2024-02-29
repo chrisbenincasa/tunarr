@@ -32,7 +32,6 @@ import { schedulerRouter } from './api/schedulerApi.js';
 import { debugApi } from './api/v2/debugApi.js';
 import registerV2Routes from './api/v2/index.js';
 import { xmlTvSettingsRouter } from './api/xmltvSettingsApi.js';
-import constants from './constants.js';
 import { EntityManager, initOrm } from './dao/dataSource.js';
 import { migrateFromLegacyDb } from './dao/legacyDbMigration.js';
 import { getSettingsRawDb } from './dao/settings.js';
@@ -40,36 +39,17 @@ import { serverOptions } from './globals.js';
 import createLogger from './logger.js';
 import { serverContext } from './serverContext.js';
 import { scheduleJobs, scheduledJobsById } from './services/scheduler.js';
+import { runFixers } from './tasks/fixers/index.js';
 import { UpdateXmlTvTask } from './tasks/updateXmlTvTask.js';
 import { ServerOptions } from './types.js';
 import { wait } from './util.js';
 import { videoRouter } from './video.js';
-import { runFixers } from './tasks/fixers/index.js';
 
 const logger = createLogger(import.meta);
 
 // Temporary
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-
-console.log(
-  `         \\
-   Tunarr ${constants.VERSION_NAME}
-.------------.
-|:::///### o |
-|:::///###   |
-':::///### o |
-'------------'
-`,
-);
-
-const NODE = parseInt(process.version.match(/^[^0-9]*(\d+)\..*$/)![1]);
-
-if (NODE < 12) {
-  logger.error(
-    `WARNING: Your nodejs version ${process.version} is lower than supported. dizqueTV has been tested best on nodejs 12.16.`,
-  );
-}
 
 function initDbDirectories() {
   const opts = serverOptions();
@@ -106,6 +86,28 @@ function initDbDirectories() {
 }
 
 export async function initServer(opts: ServerOptions) {
+  onShutdown('log', [], async () => {
+    const ctx = await serverContext();
+    const t = new Date().getTime();
+    ctx.eventService.push({
+      type: 'lifecycle',
+      message: `Initiated Server Shutdown`,
+      detail: {
+        time: t,
+      },
+      level: 'warning',
+    });
+  
+    logger.info('Received exit signal, attempting graceful shutdonw...');
+    await wait(2000);
+  });
+  
+  onShutdown('xmltv-writer', [], async () => {
+    const ctx = await serverContext();
+    await ctx.xmltv.shutdown();
+  });
+
+  
   const hadLegacyDb = initDbDirectories();
 
   const orm = await initOrm();
@@ -249,24 +251,3 @@ export async function initServer(opts: ServerOptions) {
 
   return app;
 }
-
-onShutdown('log', [], async () => {
-  const ctx = await serverContext();
-  const t = new Date().getTime();
-  ctx.eventService.push({
-    type: 'lifecycle',
-    message: `Initiated Server Shutdown`,
-    detail: {
-      time: t,
-    },
-    level: 'warning',
-  });
-
-  logger.info('Received exit signal, attempting graceful shutdonw...');
-  await wait(2000);
-});
-
-onShutdown('xmltv-writer', [], async () => {
-  const ctx = await serverContext();
-  await ctx.xmltv.shutdown();
-});

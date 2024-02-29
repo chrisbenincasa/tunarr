@@ -1,4 +1,5 @@
-import fastify, {
+import {
+  FastifyBaseLogger,
   FastifyInstance,
   FastifyPluginAsync,
   FastifyPluginCallback,
@@ -11,7 +12,7 @@ export type ServerType = FastifyInstance<
   RawServerDefault,
   IncomingMessage,
   ServerResponse<IncomingMessage>,
-  fastify.FastifyBaseLogger,
+  FastifyBaseLogger,
   ZodTypeProvider
 >;
 
