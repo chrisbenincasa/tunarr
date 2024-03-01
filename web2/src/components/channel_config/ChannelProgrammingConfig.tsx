@@ -1,327 +1,128 @@
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import CloudOffIcon from '@mui/icons-material/CloudOff';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ShuffleIcon from '@mui/icons-material/Shuffle';
-import SortIcon from '@mui/icons-material/Sort';
-import SortByAlphaIcon from '@mui/icons-material/SortByAlpha';
 import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
   Box,
   Button,
-  Checkbox,
   FormControl,
-  FormControlLabel,
-  FormGroup,
   Input,
   InputLabel,
   MenuItem,
   Paper,
   Select,
-  TextField,
+  Stack,
   Typography,
 } from '@mui/material';
-import Grid2 from '@mui/material/Unstable_Grid2/Grid2';
 import dayjs from 'dayjs';
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useBlockShuffle } from '../../hooks/programming_controls/useBlockShuffle.ts';
-import {
-  StartTimePadding,
-  StartTimePaddingOptions,
-  usePadStartTimes,
-} from '../../hooks/programming_controls/usePadStartTimes.ts';
 import {
   resetLineup,
   setChannelStartTime,
 } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
-import AddFlexModal from '../programming_controls/AddFlexModal.tsx';
-import AddRedirectModal from '../programming_controls/AddRedirectModal.tsx';
 import ChannelProgrammingList from './ChannelProgrammingList.tsx';
 import ProgrammingSelectorDialog from './ProgrammingSelectorDialog.tsx';
-import Delete from '@mui/icons-material/Delete';
-import { useRemoveDuplicates } from '../../hooks/programming_controls/useRemoveDuplicates.ts';
-import { range } from 'lodash-es';
-import { useRestrictHours } from '../../hooks/programming_controls/useRestrictHours.ts';
-import { FastForward, FastRewind } from '@mui/icons-material';
-import {
-  useFastForwardSchedule,
-  useRewindSchedule,
-} from '../../hooks/programming_controls/useSlideSchedule.ts';
+import { ChannelProgrammingSort } from './ChannelProgrammingSort.tsx';
+import { ChannelProgrammingTools } from './ChannelProgrammingTools.tsx';
+import AddProgrammingButton from './AddProgrammingButton.tsx';
+import AdjustScheduleControls from './AdjustScheduleControls.tsx';
+import { createContext, useState } from 'react';
 
-// dayjs.extend(duration);
+type ScheduleControlsType = {
+  showScheduleControls: boolean | null;
+  setShowScheduleControls: React.Dispatch<React.SetStateAction<boolean>> | null;
+} | null;
+
+export const ScheduleControlsContext = createContext<ScheduleControlsType>({
+  showScheduleControls: false,
+  setShowScheduleControls: null,
+});
 
 export function ChannelProgrammingConfig() {
   const { currentEntity: channel, programList } = useStore(
     (s) => s.channelEditor,
   );
-  const [programmingModalOpen, setProgrammingModalOpen] = useState(false);
+
   const programsDirty = useStore((s) => s.channelEditor.dirty.programs);
-
-  const [addRedirectModalOpen, setAddRedirectModalOpen] = useState(false);
-  const [addFlexModalOpen, setAddFlexModalOpen] = useState(false);
-
-  const blockShuffle = useBlockShuffle();
-  const [currentPadding, setCurrentPadding] = useState<StartTimePadding | null>(
-    null,
-  );
-  const padStartTimes = usePadStartTimes();
 
   const handleStartTimeChange = (value: string) => {
     setChannelStartTime(dayjs(value).unix() * 1000);
   };
 
-  const removeDuplicatePrograms = useRemoveDuplicates();
-  const restrictHours = useRestrictHours();
-
-  const fastForward = useFastForwardSchedule();
-  const rewind = useRewindSchedule();
-
   const startTime = channel ? dayjs(channel.startTime) : dayjs();
   const endTime = startTime.add(channel?.duration ?? 0, 'milliseconds');
 
+  const [showScheduleControls, setShowScheduleControls] =
+    useState<boolean>(false);
+
   return (
-    <Box display="flex" flexDirection="column">
-      <Box sx={{ mb: 2 }}>
-        <Accordion>
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography>Controls</Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            <Grid2 container spacing={2}>
-              <Grid2 xs={6}>
-                <FormGroup row>
-                  <TextField size="small" variant="outlined" />
-                  <FormControlLabel control={<Checkbox />} label="Randomize" />
-                  <Button
-                    variant="contained"
-                    disableElevation
-                    sx={{ textTransform: 'none' }}
-                    startIcon={<ShuffleIcon />}
-                    onClick={() => blockShuffle()}
-                  >
-                    Block Shuffle
-                  </Button>
-                </FormGroup>
-              </Grid2>
-              <Grid2 xs={3}>
-                <Button
-                  fullWidth
-                  variant="contained"
-                  startIcon={<ShuffleIcon />}
-                >
-                  Random
-                </Button>
-              </Grid2>
-              <Grid2 xs={3}>
-                <Button
-                  fullWidth
-                  variant="contained"
-                  startIcon={<ShuffleIcon />}
-                >
-                  Cyclic
-                </Button>
-              </Grid2>
-              <Grid2 xs={3}>
-                <Button
-                  fullWidth
-                  variant="contained"
-                  startIcon={<SortByAlphaIcon />}
-                >
-                  Alphabetically
-                </Button>
-              </Grid2>
-              <Grid2 xs={3}>
-                <Button fullWidth variant="contained" startIcon={<SortIcon />}>
-                  Release Date
-                </Button>
-              </Grid2>
-              <Grid2 xs={6}>
-                <FormGroup row>
-                  <FormControl fullWidth>
-                    <InputLabel>Pad Start Times</InputLabel>
-                    <Select
-                      value={currentPadding?.mod ?? -1}
-                      label={'Pad Start Times'}
-                      onChange={(e) =>
-                        setCurrentPadding(
-                          e.target.value === -1
-                            ? null
-                            : StartTimePaddingOptions.find(
-                                (opt) => opt.mod === e.target.value,
-                              )!,
-                        )
-                      }
-                    >
-                      {StartTimePaddingOptions.map((opt, idx) => (
-                        <MenuItem key={idx} value={opt.mod}>
-                          {opt.description}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                  <Button
-                    fullWidth
-                    variant="contained"
-                    startIcon={<SortIcon />}
-                    onClick={() => padStartTimes(currentPadding)}
-                  >
-                    Pad Times
-                  </Button>
-                </FormGroup>
-              </Grid2>
-              <Grid2 xs={3}>
-                <Button
-                  onClick={() => setAddFlexModalOpen(true)}
-                  variant="contained"
-                  startIcon={<CloudOffIcon />}
-                >
-                  Add Flex
-                </Button>
-              </Grid2>
-              <Grid2 xs={3}>
-                <Button
-                  variant="contained"
-                  onClick={() => setAddRedirectModalOpen(true)}
-                >
-                  Add Redirect
-                </Button>
-              </Grid2>
-              <Grid2 xs={3}>
-                <Button
-                  component={Link}
-                  to="time-slot-editor"
-                  variant="contained"
-                  startIcon={<AccessTimeIcon />}
-                >
-                  Time Slots
-                </Button>
-              </Grid2>
-              <Grid2 xs={3}>
-                <Button
-                  variant="contained"
-                  onClick={() => setAddRedirectModalOpen(true)}
-                  startIcon={<ShuffleIcon />}
-                >
-                  Random Slots
-                </Button>
-              </Grid2>
-              <Grid2 xs={3}>
-                <Button
-                  variant="contained"
-                  startIcon={<Delete />}
-                  onClick={() => removeDuplicatePrograms()}
-                >
-                  Duplicates
-                </Button>
-              </Grid2>
-              <Grid2 xs={3}>
-                {/* This should be in its own component */}
-                <Select>
-                  {range(0, 24).map((hour) => (
-                    <MenuItem key={hour}>{`${hour}:00`}</MenuItem>
-                  ))}
-                </Select>
-                <Select>
-                  {range(0, 24).map((hour) => (
-                    <MenuItem key={hour}>{`${hour}:00`}</MenuItem>
-                  ))}
-                </Select>
-                <Button
-                  variant="contained"
-                  startIcon={<Delete />}
-                  onClick={() => restrictHours(5, 8)}
-                >
-                  Restrict Hours
-                </Button>
-              </Grid2>
-              <Grid2 xs={3}>
-                <Button
-                  variant="contained"
-                  onClick={() => fastForward(60 * 1000)}
-                  startIcon={<FastForward />}
-                >
-                  Fast Forward
-                </Button>
-              </Grid2>
-              <Grid2 xs={3}>
-                <Button
-                  variant="contained"
-                  onClick={() => rewind(60 * 1000)}
-                  startIcon={<FastRewind />}
-                >
-                  Rewind
-                </Button>
-              </Grid2>
-            </Grid2>
-          </AccordionDetails>
-        </Accordion>
+    <ScheduleControlsContext.Provider
+      value={{
+        showScheduleControls,
+        setShowScheduleControls,
+      }}
+    >
+      <Box display="flex" flexDirection="column">
+        <Paper sx={{ p: 2 }}>
+          <Box display="flex" justifyContent={'flex-start'}>
+            <FormControl margin="normal" sx={{ flex: 1, mr: 2, maxWidth: 350 }}>
+              <InputLabel>Programming Start</InputLabel>
+              <Input
+                type="datetime-local"
+                value={startTime.format('YYYY-MM-DDTHH:mm')}
+                onChange={(e) => handleStartTimeChange(e.target.value)}
+              />
+            </FormControl>
+            <FormControl margin="normal" sx={{ flex: 1, maxWidth: 350 }}>
+              <InputLabel>Programming End</InputLabel>
+              <Input
+                disabled
+                type="datetime-local"
+                value={endTime.format('YYYY-MM-DDTHH:mm')}
+              />
+            </FormControl>
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              sx={{
+                display: 'flex',
+                pt: 1,
+                mb: 2,
+                columnGap: 1,
+                alignItems: 'center',
+                justifyContent: 'flex-end',
+                flexGrow: 1,
+              }}
+            >
+              <AdjustScheduleControls />
+            </Stack>
+          </Box>
+
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            sx={{
+              display: 'flex',
+              pt: 1,
+              mb: 2,
+              columnGap: 1,
+              alignItems: 'center',
+            }}
+          >
+            <Typography variant="caption" sx={{ flexGrow: 1 }}>
+              {programList.length} program{programList.length === 1 ? '' : 's'}
+            </Typography>
+            <Button
+              variant="contained"
+              onClick={() => resetLineup()}
+              disabled={!programsDirty}
+            >
+              Reset
+            </Button>
+            <ChannelProgrammingTools />
+            <ChannelProgrammingSort />
+            <AddProgrammingButton />
+          </Stack>
+
+          <ChannelProgrammingList
+            virtualListProps={{ width: '100%', height: 400, itemSize: 35 }}
+          />
+        </Paper>
       </Box>
-      <AddFlexModal
-        open={addFlexModalOpen}
-        onClose={() => setAddFlexModalOpen(false)}
-      />
-      <AddRedirectModal
-        open={addRedirectModalOpen}
-        onClose={() => setAddRedirectModalOpen(false)}
-      />
-      <Paper sx={{ p: 2 }}>
-        <Box display="flex">
-          <FormControl margin="normal" sx={{ flex: 1, mr: 2 }}>
-            <InputLabel>Programming Start</InputLabel>
-            <Input
-              type="datetime-local"
-              value={startTime.format('YYYY-MM-DDTHH:mm:ss')}
-              onChange={(e) => handleStartTimeChange(e.target.value)}
-            />
-          </FormControl>
-          <FormControl margin="normal" sx={{ flex: 1 }}>
-            <InputLabel>Programming End</InputLabel>
-            <Input
-              disabled
-              type="datetime-local"
-              value={endTime.format('YYYY-MM-DDTHH:mm:ss')}
-            />
-          </FormControl>
-        </Box>
-        <Box
-          sx={{
-            display: 'flex',
-            pt: 1,
-            mb: 2,
-            columnGap: 1,
-            alignItems: 'center',
-          }}
-        >
-          <Typography variant="caption" sx={{ flexGrow: 1 }}>
-            {programList.length} program{programList.length === 1 ? '' : 's'}
-          </Typography>
-          <Button
-            variant="contained"
-            onClick={() => resetLineup()}
-            disabled={!programsDirty}
-          >
-            Reset
-          </Button>
-          <Button
-            variant="contained"
-            component={Link}
-            to="add"
-            // onClick={() => setProgrammingModalOpen(true)}
-          >
-            Add
-          </Button>
-        </Box>
-        <ChannelProgrammingList
-          virtualListProps={{ width: '100%', height: 400, itemSize: 35 }}
-        />
-      </Paper>
-      <ProgrammingSelectorDialog
-        open={programmingModalOpen}
-        onClose={() => setProgrammingModalOpen(false)}
-      />
-    </Box>
+    </ScheduleControlsContext.Provider>
   );
 }
