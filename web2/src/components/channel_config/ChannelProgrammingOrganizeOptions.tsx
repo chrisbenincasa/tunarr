@@ -1,16 +1,18 @@
 import { MenuItem, Tooltip } from '@mui/material';
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 import {
   AccessTime as TimeIcon,
   ContentCopy as ReplicateIcon,
   RepeatOn as RerunBlocksIcon,
   Scale as TweakWeightsIcon,
   Shuffle as ShuffleIcon,
+  Update as AdjustSchedulingIcon,
 } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
 import AddReplicateModal from '../programming_controls/AddReplicateModal';
 import AddRerunBlockModal from '../programming_controls/AddRerunBlockModal';
 import AdjustWeightsModal from '../programming_controls/AdjustWeightsModal';
+import { ScheduleControlsContext } from './ChannelProgrammingConfig';
 
 type OrganizeOptionsProps = {
   onClose: () => void;
@@ -26,13 +28,29 @@ export function ChannelProgrammingOrganizeOptions({
   const [addReplicateModalOpen, setAddReplicateModalOpen] = useState(false);
   const [addRerunBlocksModal, setAddRerunBlocksModal] = useState(false);
   const [adjustWeightsModal, setAdjustWeightsModal] = useState(false);
+  const { showScheduleControls, setShowScheduleControls } = useContext(
+    ScheduleControlsContext,
+  );
 
   return (
     <>
       <MenuItem divider disabled>
         Organize
       </MenuItem>
-
+      <Tooltip
+        title="Slides the whole schedule. The 'Fast-Forward' button will advance the stream by the specified amount of time. The 'Rewind' button does the opposite."
+        placement="right"
+      >
+        <MenuItem
+          onClick={() => {
+            // To do: Fix issue with menu not closing
+            handleClose();
+            setShowScheduleControls(true);
+          }}
+        >
+          <AdjustSchedulingIcon /> Adjust Scheduling
+        </MenuItem>
+      </Tooltip>
       <Tooltip
         title="This allows to schedule specific shows to run at specific time slots of the day or a week. It's recommended you first populate the channel with the episodes from the shows you want to play and/or other content like movies and redirects."
         placement="right"

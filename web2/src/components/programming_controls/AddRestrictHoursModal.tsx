@@ -11,6 +11,9 @@ import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
+import { range } from 'lodash-es';
+import { useRestrictHours } from '../../hooks/programming_controls/useRestrictHours.ts';
+import { useState } from 'react';
 
 type AddRestrictHoursModalProps = {
   open: boolean;
@@ -21,10 +24,10 @@ const AddRestrictHoursModal = ({
   open,
   onClose,
 }: AddRestrictHoursModalProps) => {
-  const restrictHoursProgramming = () => {
-    console.log('To do');
-  };
-  const hours = [...Array(24).keys()]; // Generate array of hours (0-23)
+  const [startHour, setStartHour] = useState<string | null>(null);
+  const [endHour, setEndHour] = useState<string | null>(null);
+
+  const restrictHours = useRestrictHours();
 
   return (
     <Dialog open={open}>
@@ -42,11 +45,10 @@ const AddRestrictHoursModal = ({
               label={'Type'}
               labelId="restrict-hours-start-label"
               id="restrict-hours-start"
+              onChange={(e) => setStartHour(e.target.value)}
             >
-              {hours.map((hour) => (
-                <MenuItem key={hour} value={hour}>
-                  {hour < 10 ? `0${hour}:00` : `${hour}:00`}
-                </MenuItem>
+              {range(0, 24).map((hour) => (
+                <MenuItem key={hour}>{`${hour}:00`}</MenuItem>
               ))}
             </Select>
           </FormControl>
@@ -57,11 +59,10 @@ const AddRestrictHoursModal = ({
               label={'Type'}
               labelId="restrict-hours-end-label"
               id="restrict-hours-end"
+              onChange={(e) => setEndHour(e.target.value)}
             >
-              {hours.map((hour) => (
-                <MenuItem key={hour} value={hour}>
-                  {hour < 10 ? `0${hour}:00` : `${hour}:00`}
-                </MenuItem>
+              {range(0, 24).map((hour) => (
+                <MenuItem key={hour}>{`${hour}:00`}</MenuItem>
               ))}
             </Select>
           </FormControl>
@@ -69,7 +70,10 @@ const AddRestrictHoursModal = ({
       </DialogContent>
       <DialogActions>
         <Button onClick={() => onClose()}>Cancel</Button>
-        <Button variant="contained" onClick={() => restrictHoursProgramming()}>
+        <Button
+          variant="contained"
+          onClick={() => restrictHours(Number(startHour), Number(endHour))}
+        >
           Save
         </Button>
       </DialogActions>
