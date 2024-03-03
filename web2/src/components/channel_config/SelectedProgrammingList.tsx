@@ -1,5 +1,5 @@
 import DeleteIcon from '@mui/icons-material/Delete';
-import { ListItemText, IconButton } from '@mui/material';
+import { ListItemText, IconButton, Fab } from '@mui/material';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemIcon from '@mui/material/ListItemIcon';
@@ -43,5 +43,14 @@ export default function SelectedProgrammingList() {
     return <List>{items}</List>;
   };
 
-  return <List>{selectedMedia.length > 0 && renderSelectedItems()}</List>;
+  return (
+    <>
+      <List>{selectedMedia.length > 0 && renderSelectedItems()}</List>
+      {selectedMedia.length > 0 && (
+        <Fab variant="extended" sx={{ position: 'fixed', bottom: '1em' }}>
+          {selectedMedia.length} Selected Items
+        </Fab>
+      )}
+    </>
+  );
 }
