@@ -8,3 +8,5 @@ bin
 dist
 .pseudotv
 .dizquetv
+build
+.tunarr

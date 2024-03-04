@@ -5,6 +5,7 @@
         "lib": [
             "ES2022"
         ],
+        "declaration": true,
         "moduleResolution": "node16",
         "rootDir": ".",
         "outDir": "build",

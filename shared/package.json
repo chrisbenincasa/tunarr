@@ -7,14 +7,18 @@
   "author": "",
   "type": "module",
   "exports": {
-    ".": "./common/index.js",
-    "./constants": "./common/util/constants.js",
-    "./node": "./node/index.js",
-    "./browser": "./browser/index.js"
+    ".": {
+      "types": "./build/src/index.d.ts",
+      "default": "./build/src/index.js"
+    },
+    "./constants": {
+      "types": "./build/src/util/constants.d.ts",
+      "default": "./build/src/util/constants.js"
+    }
   },
   "main": "index.ts",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.build.json",
     "buildw": "nodemon -e ts --watch . --watch index.ts --ignore build/ -e .json,.ts,.yml,.yaml,.js -x tsc --project tsconfig.build.json"
   },
   "dependencies": {

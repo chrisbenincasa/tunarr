@@ -5,7 +5,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json"
   },
-  "main": "index.js",
+  "main": "build/index.js",
   "keywords": [],
   "author": "chrisbenincasa",
   "type": "module",
@@ -21,16 +21,21 @@
   },
   "exports": {
     ".": {
-      "import": "./index.js"
+      "types": "./build/index.d.ts",
+      "default": "./build/index.js"
     },
+    "./package.json": "./package.json",
     "./schemas": {
-      "import": "./src/schemas/index.js"
+      "types": "./build/src/schemas/index.d.ts",
+      "default": "./build/src/schemas/index.js"
     },
     "./plex": {
-      "import": "./src/plex/index.js"
+      "types": "./build/src/plex/index.d.ts",
+      "default": "./build/src/plex/index.js"
     },
     "./api": {
-      "import": "./src/api/index.js"
+      "types": "./build/src/api/index.d.ts",
+      "default": "./build/src/api/index.js"
     }
   }
 }

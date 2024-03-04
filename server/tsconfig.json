@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        "target": "es2022",
+        "target": "ESNext",
         "module": "ESNext",
         "lib": [
             "ES2022"
@@ -31,12 +31,14 @@
         "noErrorTruncation": true
     },
     "files": [
-        "./types/fastify.d.ts"
+        "src/types/fastify.d.ts"
     ],
     "include": [
-        "./**/*.ts",
+        "./src/**/*.ts",
+        "./scripts/**/*.ts",
         "__tests__/**/*",
-        "api/channelToolsApi.ts.ignore"
+        "src/api/channelToolsApi.ts.ignore",
+        "mikro-orm.config.ts"
     ],
     "exclude": [
         "./build/**/*",
