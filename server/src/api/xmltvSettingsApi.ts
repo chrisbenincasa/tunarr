@@ -4,6 +4,7 @@ import { XmlTvSettings, defaultXmlTvSettings } from '../dao/settings.js';
 import createLogger from '../logger.js';
 import { scheduledJobsById } from '../services/scheduler.js';
 import { firstDefined } from '../util.js';
+import { serverOptions } from '../globals.js';
 
 const logger = createLogger(import.meta);
 
@@ -70,7 +71,7 @@ export const xmlTvSettingsRouter: FastifyPluginCallback = (
     try {
       await req.serverCtx.settings.updateSettings(
         'xmltv',
-        defaultXmlTvSettings,
+        defaultXmlTvSettings(serverOptions().database),
       );
       const xmltv = req.serverCtx.settings.xmlTvSettings();
       await res.send(xmltv);

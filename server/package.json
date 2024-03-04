@@ -9,15 +9,14 @@
   "bin": "dist/index.js",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "buildw": "nodemon -e ts --watch src --ignore build/ -e .json,.ts,.yml,.yaml,.js -x tsc --project tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.build.json --noEmit",
+    "bundle": "node --loader ts-node/esm scripts/bundle.ts",
     "debug": "nodemon --ignore build/ -e .json,.ts,.yml,.yaml,.js --exec \"node --inspect-brk=0.0.0.0:4321 --loader ts-node/esm ./index.ts\"",
     "dev": "nodemon -e ts --watch src/ --ignore build/ --ignore streams/ -e .json,.ts,.yml,.yaml,.js -x ts-node-esm -r tsconfig-paths/register --files --project tsconfig.build.json src/index.ts --inspect=4321",
-    "dizquetv": "ts-node-esm index.ts",
-    "preinstall": "npx only-allow pnpm",
+    "make-exec": "node --loader ts-node/esm scripts/makeExecutable.ts",
     "mikro-orm": "NODE_OPTIONS='--loader ts-node/esm --no-warnings' mikro-orm",
-    "test": "vitest",
-    "bundle": "node --loader ts-node/esm scripts/bundle.ts",
-    "make-exec": "node --loader ts-node/esm scripts/makeExecutable.ts"
+    "preinstall": "npx only-allow pnpm",
+    "test": "vitest"
   },
   "dependencies": {
     "@fastify/cors": "^8.4.1",

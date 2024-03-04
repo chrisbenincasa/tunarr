@@ -228,12 +228,14 @@ export async function initServer(opts: ServerOptions) {
 
   await updateXMLPromise;
 
+  const host = process.env['TUNARR_BIND_ADDR'] ?? 'localhost';
   app.listen(
     {
+      host,
       port: opts.port,
     },
     () => {
-      logger.info(`HTTP server running on port: http://*:${opts.port}`);
+      logger.info(`HTTP server running on port: http://${host}:${opts.port}`);
       const hdhrSettings = ctx.settings.hdhrSettings();
       if (hdhrSettings.autoDiscoveryEnabled) {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any

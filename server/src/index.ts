@@ -20,6 +20,16 @@ import { initServer } from './server.js';
 
 const logger = createLogger(import.meta);
 
+const maybeEnvPort = () => {
+  const port = process.env['TUNARR_SERVER_PORT'];
+  if (!port) {
+    return;
+  }
+
+  const parsed = parseInt(port);
+  return isNaN(parsed) ? undefined : parsed;
+};
+
 yargs(hideBin(process.argv))
   .scriptName('tunarr')
   .option('database', {
@@ -48,7 +58,7 @@ yargs(hideBin(process.argv))
           alias: 'p',
           type: 'number',
           desc: 'The port to run the Tunarr server on',
-          default: 8000,
+          default: maybeEnvPort() ?? 8000,
         })
         .option('printRoutes', {
           type: 'boolean',
@@ -79,7 +89,11 @@ yargs(hideBin(process.argv))
           alias: 'p',
           type: 'number',
           desc: 'The port to run the Tunarr server on',
-          default: 8000,
+          default: maybeEnvPort() ?? 8000,
+        })
+        .option('printRoutes', {
+          type: 'boolean',
+          default: false,
         })
         .middleware(setServerOptions);
     },

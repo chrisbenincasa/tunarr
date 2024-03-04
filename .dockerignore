@@ -1,12 +1,13 @@
 node_modules
 npm-debug.log
-Dockerfile
+*Dockerfile
 .dockerignore
 .git
 .gitignore
 bin
-dist
+*/*/dist*
+*/*/build*
+
 .pseudotv
 .dizquetv
-build
 .tunarr

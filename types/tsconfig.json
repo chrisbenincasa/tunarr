@@ -27,6 +27,7 @@
         "__tests__/**/*"
     ],
     "exclude": [
-        "./**/*.test.ts"
+        "./**/*.test.ts",
+        "./build/**"
     ]
 }

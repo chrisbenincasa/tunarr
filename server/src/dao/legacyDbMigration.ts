@@ -141,7 +141,7 @@ async function migrateFromLegacyDbInner(
 ) {
   const entitiesToMigrate = entities ?? MigratableEntities;
   // First initialize the default schema:
-  db.data = { ...defaultSchema };
+  db.data = { ...defaultSchema(globalOptions().database) };
   await db.write();
 
   let settings: Partial<SettingsSchema> = {};
@@ -180,7 +180,7 @@ async function migrateFromLegacyDbInner(
         settings = {
           ...settings,
           xmltv: {
-            ...defaultXmlTvSettings,
+            ...defaultXmlTvSettings(globalOptions().database),
           },
         };
       } else {

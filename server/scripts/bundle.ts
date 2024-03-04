@@ -26,12 +26,13 @@ await esbuild.build({
   // when using cached metadata w/ not js/ts suffixes:
   // https://github.com/mikro-orm/mikro-orm/blob/e005cc22ef4e247f9741bdcaf1af012337977b7e/packages/core/src/cache/GeneratedCacheAdapter.ts#L16
   outfile: 'build/bundle.js',
-  format: 'cjs',
+  format: 'esm',
   platform: 'node',
   target: 'node18',
   inject: ['cjs-shim.ts'],
   packages: 'external',
   tsconfig: './tsconfig.build.json',
+  logLevel: 'verbose',
   // external: [
   //   'mysql',
   //   'mysql2',
