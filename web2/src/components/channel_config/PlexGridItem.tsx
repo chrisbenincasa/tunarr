@@ -5,7 +5,6 @@ import {
   RadioButtonUnchecked,
 } from '@mui/icons-material';
 import {
-  Button,
   Collapse,
   Divider,
   IconButton,
@@ -14,27 +13,22 @@ import {
   List,
   ListItemButton,
   ListItemIcon,
-  ListItemText,
   Skeleton,
 } from '@mui/material';
 import {
   PlexChildMediaApiType,
   PlexMedia,
   isPlexCollection,
-  isPlexSeason,
-  isPlexShow,
   isTerminalItem,
 } from '@tunarr/types/plex';
 import React, { MouseEvent, useCallback, useEffect, useState } from 'react';
-import {
-  formatProgramDuration,
-  prettyItemDuration,
-} from '../../helpers/util.ts';
+import { formatProgramDuration } from '../../helpers/util.ts';
 import { usePlexTyped } from '../../hooks/plexHooks.ts';
 import useStore from '../../store/index.ts';
 import {
   addKnownMediaForServer,
   addSelectedMedia,
+  removeSelectedMedia,
 } from '../../store/programmingSelector/actions.ts';
 
 export interface PlexGridItemProps<T extends PlexMedia> {
@@ -57,6 +51,8 @@ export function PlexGridItem<T extends PlexMedia>(props: PlexGridItemProps<T>) {
     hasChildren && open,
   );
   const selectedServer = useStore((s) => s.currentServer);
+  const selectedMedia = useStore((s) => s.selectedMedia);
+  const selectedMediaIds = selectedMedia.map((item) => item['guid']);
 
   const handleClick = () => {
     setOpen(!open);
@@ -68,19 +64,24 @@ export function PlexGridItem<T extends PlexMedia>(props: PlexGridItemProps<T>) {
     }
   }, [item.guid, server.name, children]);
 
-  const addItem = useCallback(
+  const handleItem = useCallback(
     (e: MouseEvent<HTMLButtonElement>) => {
       e.stopPropagation();
-      addSelectedMedia(selectedServer!.name, [item]);
+
+      if (selectedMediaIds.includes(item.guid)) {
+        removeSelectedMedia(selectedServer!.name, [item.guid]);
+      } else {
+        addSelectedMedia(selectedServer!.name, [item]);
+      }
     },
-    [item, selectedServer],
+    [item, selectedServer, selectedMediaIds],
   );
 
   const renderChildren = () => {
     return isPending ? (
       <Skeleton />
     ) : (
-      <List sx={{ pl: 4 }}>
+      <List sx={{ pl: 4, display: 'flex', flexWrap: 'wrap' }}>
         {children?.Metadata.map((child, idx, arr) => (
           <PlexGridItem
             key={child.guid}
@@ -93,48 +94,37 @@ export function PlexGridItem<T extends PlexMedia>(props: PlexGridItemProps<T>) {
     );
   };
 
-  const calculateItemRuntime = () => {
-    if (isPlexShow(item)) {
-      return `${prettyItemDuration(item.duration)} each`;
-    } else if (isPlexSeason(item)) {
-      // return item.leafCount * item.duration;
-      return;
-    } else if (isTerminalItem(item)) {
-      return prettyItemDuration(item.duration);
-    } else if (isPlexCollection(item)) {
-      const childCount = parseInt(item.childCount);
-      const count = isNaN(childCount) ? 0 : childCount;
-      return `${count} item${count === 0 || count > 1 ? 's' : ''}`;
-    }
-  };
-
   return (
     <React.Fragment key={item.guid}>
       {hasChildren ? (
         <ListItemButton
           onClick={handleClick}
           dense
-          sx={{ gridColumn: 'span 8' }}
+          sx={{
+            display: 'block',
+            width: '100%',
+          }}
         >
           {hasChildren && (
             <ListItemIcon>
               {open ? <ExpandLess /> : <ExpandMore />}
             </ListItemIcon>
           )}
-          {/* <ListItemText primary={item.title} secondary={calculateItemRuntime()} /> */}
-          <img src={`http://192.168.1.16:32400${item.thumb}`} width={100} />
-          <Button onClick={(e) => addItem(e)}>
-            {hasChildren ? 'Add All' : 'Add'}
-          </Button>
+          <img src={`${server.uri}${item.thumb}`} width={100} />
         </ListItemButton>
       ) : (
         <ImageListItem
           key={item.guid}
-          sx={{ width: 150, cursor: 'pointer' }}
-          onClick={(e) => addItem(e)}
+          sx={{
+            width: 160,
+            cursor: 'pointer',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+          onClick={(e) => handleItem(e)}
         >
           <img
-            // srcSet={`${item.img}?w=248&fit=crop&auto=format&dpr=2 2x`}
+            // srcSet={`${item.img}?w=248&fit=crop&auto=format&dpr=2 2x`} //to do
             src={`http://192.168.1.16:32400${item.thumb}`}
             alt={item.title}
             loading="lazy"
@@ -147,19 +137,23 @@ export function PlexGridItem<T extends PlexMedia>(props: PlexGridItemProps<T>) {
               <IconButton
                 sx={{ color: 'black' }}
                 aria-label={`star ${item.title}`}
+                onClick={(e) => handleItem(e)}
               >
-                <CheckCircle />
-                <RadioButtonUnchecked />
+                {selectedMediaIds.includes(item.guid) ? (
+                  <CheckCircle />
+                ) : (
+                  <RadioButtonUnchecked />
+                )}
               </IconButton>
             }
             actionPosition="right"
           />
         </ImageListItem>
       )}
-      {/* <Collapse in={open} timeout="auto" unmountOnExit>
+      <Collapse in={open} timeout="auto" unmountOnExit>
         {renderChildren()}
-      </Collapse> */}
-      {/* <Divider variant="fullWidth" /> */}
+      </Collapse>
+      <Divider variant="fullWidth" />
     </React.Fragment>
   );
 }

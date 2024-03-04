@@ -163,7 +163,7 @@ export default function ProgrammingSelector() {
       // We're using this as an analogue for detecting the start of a new 'query'
       if (searchData.pages.length === 1) {
         setScrollParams({
-          limit: 10,
+          limit: 16,
           max: first(searchData.pages)!.size,
         });
       }
@@ -218,12 +218,17 @@ export default function ProgrammingSelector() {
 
   const renderListItems = () => {
     const elements: JSX.Element[] = [];
-    console.log(collectionsData);
 
     if (collectionsData && collectionsData.size > 0) {
       elements.push(
         <Fragment key="collections">
-          <ListItemButton onClick={() => setCollectionsOpen(toggle)} dense>
+          <ListItemButton
+            onClick={() => setCollectionsOpen(toggle)}
+            dense
+            sx={
+              viewType === 'grid' ? { display: 'block', width: '100%' } : null
+            }
+          >
             <ListItemIcon>
               {collectionsOpen ? <ExpandLess /> : <ExpandMore />}
             </ListItemIcon>
@@ -233,9 +238,12 @@ export default function ProgrammingSelector() {
                 collectionsData.size === 1 ? '' : 's'
               }`}
             />
-            {/* <Button>Add All</Button> */}
           </ListItemButton>
-          <Collapse in={collectionsOpen} timeout="auto">
+          <Collapse
+            in={collectionsOpen}
+            timeout="auto"
+            sx={{ display: 'block', width: '100%' }}
+          >
             {map(collectionsData.Metadata, (item) =>
               viewType === 'list' ? (
                 <PlexListItem key={item.guid} item={item} />
@@ -244,7 +252,6 @@ export default function ProgrammingSelector() {
               ),
             )}
           </Collapse>
-          {/* <Divider variant="fullWidth" /> */}
         </Fragment>,
       );
     }
@@ -359,13 +366,18 @@ export default function ProgrammingSelector() {
       />
       <List
         component="nav"
-        sx={{ mt: 2, width: '100%', maxHeight: 800, overflowY: 'scroll' }}
+        sx={{
+          mt: 2,
+          width: '100%',
+          maxHeight: 1200,
+          overflowY: 'scroll',
+          display: viewType === 'grid' ? 'flex' : 'block',
+          flexWrap: 'wrap',
+          gap: '10px',
+          justifyContent: 'space-between',
+        }}
       >
-        {selectedServer && viewType === 'grid' ? (
-          <ImageList cols={8}>{renderListItems()}</ImageList>
-        ) : (
-          selectedServer && renderListItems()
-        )}
+        {selectedServer && renderListItems()}
 
         <div style={{ height: 40 }} ref={ref}></div>
       </List>

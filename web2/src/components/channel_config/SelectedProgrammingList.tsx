@@ -47,8 +47,18 @@ export default function SelectedProgrammingList() {
     <>
       <List>{selectedMedia.length > 0 && renderSelectedItems()}</List>
       {selectedMedia.length > 0 && (
-        <Fab variant="extended" sx={{ position: 'fixed', bottom: '1em' }}>
-          {selectedMedia.length} Selected Items
+        <Fab
+          variant="extended"
+          sx={{
+            position: 'fixed',
+            bottom: '1em',
+            width: '300px',
+            margin: '0 auto',
+            left: 0,
+            right: 0,
+          }}
+        >
+          {selectedMedia.length} Selected Programs
         </Fab>
       )}
     </>
