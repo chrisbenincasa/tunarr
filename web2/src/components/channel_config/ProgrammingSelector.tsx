@@ -1,9 +1,19 @@
-import { Clear, ExpandLess, ExpandMore } from '@mui/icons-material';
 import {
+  Clear,
+  ExpandLess,
+  ExpandMore,
+  GridView,
+  Search,
+  ViewList,
+} from '@mui/icons-material';
+import {
+  Button,
+  ButtonGroup,
   Collapse,
   Divider,
   FormControl,
   IconButton,
+  ImageList,
   InputAdornment,
   InputLabel,
   LinearProgress,
@@ -13,6 +23,7 @@ import {
   ListItemText,
   MenuItem,
   Select,
+  Stack,
   TextField,
   Typography,
 } from '@mui/material';
@@ -44,6 +55,7 @@ import {
 import AddSelectedMediaButton from './AddSelectedMediaButton.tsx';
 import { PlexListItem } from './PlexListItem.tsx';
 import SelectedProgrammingList from './SelectedProgrammingList.tsx';
+import { PlexGridItem } from './PlexGridItem.tsx';
 
 export interface PlexListItemProps<T extends PlexMedia> {
   item: T;
@@ -53,6 +65,8 @@ export interface PlexListItemProps<T extends PlexMedia> {
   parent?: string;
 }
 
+type viewType = 'list' | 'grid';
+
 export default function ProgrammingSelector() {
   const { data: plexServers } = usePlexServerSettings();
   const selectedServer = useStore((s) => s.currentServer);
@@ -60,6 +74,7 @@ export default function ProgrammingSelector() {
   const knownMedia = useStore((s) => s.knownMediaByServer);
   const navigate = useNavigate();
   const [collectionsOpen, setCollectionsOpen] = useState(false);
+  const [viewType, setViewType] = useState<viewType>('list');
 
   useEffect(() => {
     const server =
@@ -148,7 +163,7 @@ export default function ProgrammingSelector() {
       // We're using this as an analogue for detecting the start of a new 'query'
       if (searchData.pages.length === 1) {
         setScrollParams({
-          limit: 10,
+          limit: 16,
           max: first(searchData.pages)!.size,
         });
       }
@@ -203,10 +218,17 @@ export default function ProgrammingSelector() {
 
   const renderListItems = () => {
     const elements: JSX.Element[] = [];
+
     if (collectionsData && collectionsData.size > 0) {
       elements.push(
         <Fragment key="collections">
-          <ListItemButton onClick={() => setCollectionsOpen(toggle)} dense>
+          <ListItemButton
+            onClick={() => setCollectionsOpen(toggle)}
+            dense
+            sx={
+              viewType === 'grid' ? { display: 'block', width: '100%' } : null
+            }
+          >
             <ListItemIcon>
               {collectionsOpen ? <ExpandLess /> : <ExpandMore />}
             </ListItemIcon>
@@ -216,14 +238,20 @@ export default function ProgrammingSelector() {
                 collectionsData.size === 1 ? '' : 's'
               }`}
             />
-            {/* <Button>Add All</Button> */}
           </ListItemButton>
-          <Collapse in={collectionsOpen} timeout="auto">
-            {map(collectionsData.Metadata, (item) => (
-              <PlexListItem key={item.guid} item={item} />
-            ))}
+          <Collapse
+            in={collectionsOpen}
+            timeout="auto"
+            sx={{ display: 'block', width: '100%' }}
+          >
+            {map(collectionsData.Metadata, (item) =>
+              viewType === 'list' ? (
+                <PlexListItem key={item.guid} item={item} />
+              ) : (
+                <PlexGridItem key={item.guid} item={item} />
+              ),
+            )}
           </Collapse>
-          <Divider variant="fullWidth" />
         </Fragment>,
       );
     }
@@ -237,11 +265,14 @@ export default function ProgrammingSelector() {
         .value();
       elements.push(
         ...map(items, (item: PlexMovie | PlexTvShow) => {
-          return <PlexListItem key={item.guid} item={item} />;
+          return viewType === 'list' ? (
+            <PlexListItem key={item.guid} item={item} />
+          ) : (
+            <PlexGridItem key={item.guid} item={item} />
+          );
         }),
       );
     }
-
     return elements;
   };
 
@@ -302,6 +333,32 @@ export default function ProgrammingSelector() {
                 ),
               }}
             />
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              sx={{
+                display: 'flex',
+                pt: 1,
+                columnGap: 1,
+                alignItems: 'center',
+                justifyContent: 'flex-end',
+                flexGrow: 1,
+              }}
+            >
+              <ButtonGroup>
+                <Button
+                  variant={viewType === 'list' ? 'contained' : 'outlined'}
+                  onClick={() => setViewType('list')}
+                >
+                  <ViewList />
+                </Button>
+                <Button
+                  variant={viewType === 'grid' ? 'contained' : 'outlined'}
+                  onClick={() => setViewType('grid')}
+                >
+                  <GridView />
+                </Button>
+              </ButtonGroup>
+            </Stack>
           </>
         )}
       <LinearProgress
@@ -309,9 +366,19 @@ export default function ProgrammingSelector() {
       />
       <List
         component="nav"
-        sx={{ mt: 2, width: '100%', maxHeight: 400, overflowY: 'scroll' }}
+        sx={{
+          mt: 2,
+          width: '100%',
+          maxHeight: 1200,
+          overflowY: 'scroll',
+          display: viewType === 'grid' ? 'flex' : 'block',
+          flexWrap: 'wrap',
+          gap: '10px',
+          justifyContent: 'space-between',
+        }}
       >
         {selectedServer && renderListItems()}
+
         <div style={{ height: 40 }} ref={ref}></div>
       </List>
       <Divider sx={{ mt: 3, mb: 2 }} />

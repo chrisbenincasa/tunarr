@@ -1,24 +1,28 @@
-import { ExpandLess, ExpandMore } from '@mui/icons-material';
 import {
-  Button,
+  CheckCircle,
+  ExpandLess,
+  ExpandMore,
+  RadioButtonUnchecked,
+} from '@mui/icons-material';
+import {
   Collapse,
   Divider,
+  IconButton,
+  ImageListItem,
+  ImageListItemBar,
   List,
   ListItemButton,
   ListItemIcon,
-  ListItemText,
   Skeleton,
 } from '@mui/material';
 import {
   PlexChildMediaApiType,
   PlexMedia,
   isPlexCollection,
-  isPlexSeason,
-  isPlexShow,
   isTerminalItem,
 } from '@tunarr/types/plex';
 import React, { MouseEvent, useCallback, useEffect, useState } from 'react';
-import { prettyItemDuration } from '../../helpers/util.ts';
+import { formatProgramDuration } from '../../helpers/util.ts';
 import { usePlexTyped } from '../../hooks/plexHooks.ts';
 import useStore from '../../store/index.ts';
 import {
@@ -27,7 +31,7 @@ import {
   removeSelectedMedia,
 } from '../../store/programmingSelector/actions.ts';
 
-export interface PlexListItemProps<T extends PlexMedia> {
+export interface PlexGridItemProps<T extends PlexMedia> {
   item: T;
   style?: React.CSSProperties;
   index?: number;
@@ -35,7 +39,7 @@ export interface PlexListItemProps<T extends PlexMedia> {
   parent?: string;
 }
 
-export function PlexListItem<T extends PlexMedia>(props: PlexListItemProps<T>) {
+export function PlexGridItem<T extends PlexMedia>(props: PlexGridItemProps<T>) {
   const server = useStore((s) => s.currentServer!); // We have to have a server at this point
   const [open, setOpen] = useState(false);
   const { item } = props;
@@ -77,9 +81,11 @@ export function PlexListItem<T extends PlexMedia>(props: PlexListItemProps<T>) {
     return isPending ? (
       <Skeleton />
     ) : (
-      <List sx={{ pl: 4 }}>
+      <List
+        sx={{ pl: 4, display: 'flex', flexWrap: 'wrap', columnGap: '10px' }}
+      >
         {children?.Metadata.map((child, idx, arr) => (
-          <PlexListItem
+          <PlexGridItem
             key={child.guid}
             item={child}
             index={idx}
@@ -90,36 +96,62 @@ export function PlexListItem<T extends PlexMedia>(props: PlexListItemProps<T>) {
     );
   };
 
-  const calculateItemRuntime = () => {
-    if (isPlexShow(item)) {
-      return `${prettyItemDuration(item.duration)} each`;
-    } else if (isPlexSeason(item)) {
-      // return item.leafCount * item.duration;
-      return;
-    } else if (isTerminalItem(item)) {
-      return prettyItemDuration(item.duration);
-    } else if (isPlexCollection(item)) {
-      const childCount = parseInt(item.childCount);
-      const count = isNaN(childCount) ? 0 : childCount;
-      return `${count} item${count === 0 || count > 1 ? 's' : ''}`;
-    }
-  };
-
   return (
     <React.Fragment key={item.guid}>
-      <ListItemButton onClick={handleClick} dense>
-        {hasChildren && (
-          <ListItemIcon>{open ? <ExpandLess /> : <ExpandMore />}</ListItemIcon>
-        )}
-        <ListItemText primary={item.title} secondary={calculateItemRuntime()} />
-        <Button onClick={(e) => handleItem(e)}>
-          {hasChildren
-            ? 'Add All'
-            : selectedMediaIds.includes(item.guid)
-            ? 'Remove'
-            : 'Add'}
-        </Button>
-      </ListItemButton>
+      {hasChildren ? (
+        <ListItemButton
+          onClick={handleClick}
+          dense
+          sx={{
+            display: 'block',
+            width: '100%',
+          }}
+        >
+          {hasChildren && (
+            <ListItemIcon>
+              {open ? <ExpandLess /> : <ExpandMore />}
+            </ListItemIcon>
+          )}
+          <img src={`${server.uri}${item.thumb}`} width={100} />
+        </ListItemButton>
+      ) : (
+        <ImageListItem
+          key={item.guid}
+          sx={{
+            width: 160,
+            cursor: 'pointer',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+          onClick={(e) => handleItem(e)}
+        >
+          <img
+            // srcSet={`${item.img}?w=248&fit=crop&auto=format&dpr=2 2x`} //to do
+            src={`http://192.168.1.16:32400${item.thumb}`}
+            alt={item.title}
+            loading="lazy"
+          />
+          <ImageListItemBar
+            title={item.title}
+            subtitle={<span>{formatProgramDuration(item.duration)}</span>}
+            position="below"
+            actionIcon={
+              <IconButton
+                sx={{ color: 'black' }}
+                aria-label={`star ${item.title}`}
+                onClick={(e) => handleItem(e)}
+              >
+                {selectedMediaIds.includes(item.guid) ? (
+                  <CheckCircle />
+                ) : (
+                  <RadioButtonUnchecked />
+                )}
+              </IconButton>
+            }
+            actionPosition="right"
+          />
+        </ImageListItem>
+      )}
       <Collapse in={open} timeout="auto" unmountOnExit>
         {renderChildren()}
       </Collapse>
