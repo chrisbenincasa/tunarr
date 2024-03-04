@@ -142,12 +142,7 @@ export default function AddProgrammingButton() {
           title="Add TV Shows or Movies to programming list."
           placement="right"
         >
-          <MenuItem
-            disableRipple
-            onClick={() => {
-              handleClose();
-            }}
-          >
+          <MenuItem disableRipple component={Link} to="add">
             <MediaIcon /> Add Media
           </MenuItem>
         </Tooltip>
