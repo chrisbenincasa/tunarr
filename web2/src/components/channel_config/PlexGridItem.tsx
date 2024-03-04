@@ -81,7 +81,9 @@ export function PlexGridItem<T extends PlexMedia>(props: PlexGridItemProps<T>) {
     return isPending ? (
       <Skeleton />
     ) : (
-      <List sx={{ pl: 4, display: 'flex', flexWrap: 'wrap' }}>
+      <List
+        sx={{ pl: 4, display: 'flex', flexWrap: 'wrap', columnGap: '10px' }}
+      >
         {children?.Metadata.map((child, idx, arr) => (
           <PlexGridItem
             key={child.guid}

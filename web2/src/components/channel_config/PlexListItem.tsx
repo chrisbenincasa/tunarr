@@ -24,6 +24,7 @@ import useStore from '../../store/index.ts';
 import {
   addKnownMediaForServer,
   addSelectedMedia,
+  removeSelectedMedia,
 } from '../../store/programmingSelector/actions.ts';
 
 export interface PlexListItemProps<T extends PlexMedia> {
@@ -46,6 +47,8 @@ export function PlexListItem<T extends PlexMedia>(props: PlexListItemProps<T>) {
     hasChildren && open,
   );
   const selectedServer = useStore((s) => s.currentServer);
+  const selectedMedia = useStore((s) => s.selectedMedia);
+  const selectedMediaIds = selectedMedia.map((item) => item['guid']);
 
   const handleClick = () => {
     setOpen(!open);
@@ -57,12 +60,17 @@ export function PlexListItem<T extends PlexMedia>(props: PlexListItemProps<T>) {
     }
   }, [item.guid, server.name, children]);
 
-  const addItem = useCallback(
+  const handleItem = useCallback(
     (e: MouseEvent<HTMLButtonElement>) => {
       e.stopPropagation();
-      addSelectedMedia(selectedServer!.name, [item]);
+
+      if (selectedMediaIds.includes(item.guid)) {
+        removeSelectedMedia(selectedServer!.name, [item.guid]);
+      } else {
+        addSelectedMedia(selectedServer!.name, [item]);
+      }
     },
-    [item, selectedServer],
+    [item, selectedServer, selectedMediaIds],
   );
 
   const renderChildren = () => {
@@ -104,8 +112,12 @@ export function PlexListItem<T extends PlexMedia>(props: PlexListItemProps<T>) {
           <ListItemIcon>{open ? <ExpandLess /> : <ExpandMore />}</ListItemIcon>
         )}
         <ListItemText primary={item.title} secondary={calculateItemRuntime()} />
-        <Button onClick={(e) => addItem(e)}>
-          {hasChildren ? 'Add All' : 'Add'}
+        <Button onClick={(e) => handleItem(e)}>
+          {hasChildren
+            ? 'Add All'
+            : selectedMediaIds.includes(item.guid)
+            ? 'Remove'
+            : 'Add'}
         </Button>
       </ListItemButton>
       <Collapse in={open} timeout="auto" unmountOnExit>
