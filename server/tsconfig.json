@@ -37,7 +37,6 @@
         "./src/**/*.ts",
         "./scripts/**/*.ts",
         "__tests__/**/*",
-        "src/api/channelToolsApi.ts.ignore",
         "mikro-orm.prod.config.ts"
     ],
     "exclude": [

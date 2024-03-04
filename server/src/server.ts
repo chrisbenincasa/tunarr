@@ -18,7 +18,6 @@ import fs from 'fs';
 import morgan from 'morgan';
 import { onShutdown } from 'node-graceful-shutdown';
 import path, { dirname } from 'path';
-import serveStatic from 'serve-static';
 import { miscRouter } from './api.js';
 import { ffmpegSettingsRouter } from './api/ffmpegSettingsApi.js';
 import { guideRouter } from './api/guideApi.js';
@@ -174,25 +173,28 @@ export async function initServer(opts: ServerOptions) {
 
   ctx.eventService.setup(app);
 
-  app
-    // .use(serveStatic(fileURLToPath(new URL('../web/public', import.meta.url))))
-    .use(
-      '/images',
-      serveStatic(path.join(currentDirectory, 'resources', 'images')),
-    )
-    .use(
-      '/favicon.svg',
-      serveStatic(
-        path.join(currentDirectory, 'resources', 'images', 'favicon.svg'),
-      ),
-    );
-  // .use('/custom.css', serveStatic(path.join(opts.database, 'custom.css')));
-
   // API Routers
   await app
+    .register(fpStatic, {
+      root: path.join(currentDirectory, 'resources', 'images'),
+      prefix: '/images',
+    })
+    .get('/favicon.svg', async (_, res) => {
+      return res.sendFile(
+        'favicon.svg',
+        path.join(currentDirectory, 'resources', 'images'),
+      );
+    })
+    .get('/favicon.ico', async (_, res) => {
+      return res.sendFile(
+        'favicon.ico',
+        path.join(currentDirectory, 'resources', 'images'),
+      );
+    })
     .register(async (f) => {
       await f.register(fpStatic, {
         root: path.join(opts.database, 'cache', 'images'),
+        decorateReply: false,
       });
       // f.addHook('onRequest', async (req, res) => ctx.cacheImageService.routerInterceptor(req, res));
       f.get<{ Params: { hash: string } }>(

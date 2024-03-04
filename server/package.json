@@ -58,7 +58,6 @@
     "random-js": "2.1.0",
     "reflect-metadata": "^0.1.13",
     "retry": "^0.13.1",
-    "serve-static": "^1.15.0",
     "tslib": "^2.6.2",
     "uuid": "^9.0.1",
     "winston": "^3.11.0",
