@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "build": "tsc -p tsconfig.json"
+    "build": "tsc -p tsconfig.json",
+    "clean": "rimraf build",
+    "dev": "nodemon -e ts --watch src --ignore build/ -e .json,.ts,.yml,.yaml,.js -x tsc --project tsconfig.json"
   },
   "main": "build/index.js",
   "keywords": [],
@@ -14,6 +16,8 @@
     "@typescript-eslint/eslint-plugin": "6.0.0",
     "@typescript-eslint/parser": "6.0.0",
     "eslint": "8.45.0",
+    "nodemon": "^3.1.0",
+    "rimraf": "^5.0.5",
     "typescript": "5.2.2"
   },
   "dependencies": {
@@ -21,8 +25,8 @@
   },
   "exports": {
     ".": {
-      "types": "./build/index.d.ts",
-      "default": "./build/index.js"
+      "types": "./build/src/index.d.ts",
+      "default": "./build/src/index.js"
     },
     "./package.json": "./package.json",
     "./schemas": {

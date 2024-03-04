@@ -304,6 +304,9 @@ importers:
       nodemon:
         specifier: 3.0.2
         version: 3.0.2
+      rimraf:
+        specifier: ^5.0.5
+        version: 5.0.5
       typescript:
         specifier: 5.2.2
         version: 5.2.2
@@ -323,6 +326,12 @@ importers:
       eslint:
         specifier: 8.45.0
         version: 8.45.0
+      nodemon:
+        specifier: ^3.1.0
+        version: 3.1.0
+      rimraf:
+        specifier: ^5.0.5
+        version: 5.0.5
       typescript:
         specifier: 5.2.2
         version: 5.2.2
@@ -6510,6 +6519,23 @@ packages:
 
   /nodemon@3.0.3:
     resolution: {integrity: sha512-7jH/NXbFPxVaMwmBCC2B9F/V6X1VkEdNgx3iu9jji8WxWcvhMWkmhNWhI5077zknOnZnBzba9hZP6bCPJLSReQ==}
+    engines: {node: '>=10'}
+    hasBin: true
+    dependencies:
+      chokidar: 3.5.3
+      debug: 4.3.4(supports-color@5.5.0)
+      ignore-by-default: 1.0.1
+      minimatch: 3.1.2
+      pstree.remy: 1.1.8
+      semver: 7.5.4
+      simple-update-notifier: 2.0.0
+      supports-color: 5.5.0
+      touch: 3.1.0
+      undefsafe: 2.0.5
+    dev: true
+
+  /nodemon@3.1.0:
+    resolution: {integrity: sha512-xqlktYlDMCepBJd43ZQhjWwMw2obW/JRvkrLxq5RCNcuDDX1DbcPT+qT1IlIIdf+DhnWs90JpTMe+Y5KxOchvA==}
     engines: {node: '>=10'}
     hasBin: true
     dependencies:

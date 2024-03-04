@@ -11,6 +11,7 @@
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.build.json --noEmit",
     "bundle": "node --loader ts-node/esm scripts/bundle.ts",
+    "clean": "rimraf build",
     "debug": "nodemon --ignore build/ -e .json,.ts,.yml,.yaml,.js --exec \"node --inspect-brk=0.0.0.0:4321 --loader ts-node/esm ./index.ts\"",
     "dev": "nodemon -e ts --watch src/ --ignore build/ --ignore streams/ -e .json,.ts,.yml,.yaml,.js -x ts-node-esm -r tsconfig-paths/register --files --project tsconfig.build.json src/index.ts --inspect=4321",
     "make-exec": "node --loader ts-node/esm scripts/makeExecutable.ts",
