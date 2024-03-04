@@ -56,6 +56,7 @@ import AddSelectedMediaButton from './AddSelectedMediaButton.tsx';
 import { PlexListItem } from './PlexListItem.tsx';
 import SelectedProgrammingList from './SelectedProgrammingList.tsx';
 import { PlexGridItem } from './PlexGridItem.tsx';
+import { setProgrammingSelectorViewState } from '../../store/themeEditor/actions.ts';
 
 export interface PlexListItemProps<T extends PlexMedia> {
   item: T;
@@ -74,7 +75,11 @@ export default function ProgrammingSelector() {
   const knownMedia = useStore((s) => s.knownMediaByServer);
   const navigate = useNavigate();
   const [collectionsOpen, setCollectionsOpen] = useState(false);
-  const [viewType, setViewType] = useState<viewType>('list');
+  const viewType = useStore((state) => state.theme.programmingSelectorView);
+
+  const setViewType = (view: viewType) => {
+    setProgrammingSelectorViewState(view);
+  };
 
   useEffect(() => {
     const server =
