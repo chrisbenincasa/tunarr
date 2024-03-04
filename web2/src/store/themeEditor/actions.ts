@@ -25,9 +25,9 @@ export const resetPathwayState = () => {
   });
 };
 
-export const setProgrammingOptionsState = () => {
+export const setProgrammingSelectorViewState = (view: string) => {
   useStore.setState((state) => {
-    state.theme.openProgrammingOptions = !state.theme.openProgrammingOptions;
+    state.theme.programmingSelectorView = view;
   });
 };
 
