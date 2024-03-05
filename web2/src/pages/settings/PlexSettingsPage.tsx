@@ -282,25 +282,25 @@ export default function PlexSettingsPage() {
   };
 
   const handleMaxDirectStreamBitrate = (
-    event: React.ChangeEvent<HTMLInputElement>,
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     setMaxDirectStreamBitrate(event.target.value);
   };
 
   const handleMaxTranscodeBitrate = (
-    event: React.ChangeEvent<HTMLInputElement>,
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     setTranscodeBitrate(event.target.value);
   };
 
   const handleMediaBufferSize = (
-    event: React.ChangeEvent<HTMLInputElement>,
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     setMediaBufferSize(event.target.value);
   };
 
   const handleTranscodeMediaBufferSize = (
-    event: React.ChangeEvent<HTMLInputElement>,
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     setTranscodeMediaBufferSize(event.target.value);
   };
