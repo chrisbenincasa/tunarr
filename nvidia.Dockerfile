@@ -30,7 +30,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY server/ ./server
 COPY shared/ ./shared
 COPY types ./types
-COPY web2 ./web2
+COPY web ./web
 
 FROM sources AS prod-deps
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --prod --frozen-lockfile
@@ -74,4 +74,4 @@ CMD [ "/tunarr/server/build/bundle.js" ]
 
 ### Full stack ###
 FROM server AS full-stack
-COPY --from=build-web /tunarr/web2/dist /tunarr/server/build/web
+COPY --from=build-web /tunarr/web/dist /tunarr/server/build/web

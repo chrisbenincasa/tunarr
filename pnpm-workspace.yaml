@@ -1,5 +1,5 @@
 packages:
   - server
-  - web2
+  - web
   - types
   - shared
