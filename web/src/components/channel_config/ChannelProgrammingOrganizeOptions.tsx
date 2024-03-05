@@ -1,13 +1,13 @@
-import { MenuItem, Tooltip } from '@mui/material';
-import { useContext, useState } from 'react';
 import {
-  AccessTime as TimeIcon,
+  Update as AdjustSchedulingIcon,
   ContentCopy as ReplicateIcon,
   RepeatOn as RerunBlocksIcon,
-  Scale as TweakWeightsIcon,
   Shuffle as ShuffleIcon,
-  Update as AdjustSchedulingIcon,
+  AccessTime as TimeIcon,
+  Scale as TweakWeightsIcon,
 } from '@mui/icons-material';
+import { MenuItem, Tooltip } from '@mui/material';
+import { useContext, useState } from 'react';
 import { Link } from 'react-router-dom';
 import AddReplicateModal from '../programming_controls/AddReplicateModal';
 import AddRerunBlockModal from '../programming_controls/AddRerunBlockModal';
@@ -28,9 +28,7 @@ export function ChannelProgrammingOrganizeOptions({
   const [addReplicateModalOpen, setAddReplicateModalOpen] = useState(false);
   const [addRerunBlocksModal, setAddRerunBlocksModal] = useState(false);
   const [adjustWeightsModal, setAdjustWeightsModal] = useState(false);
-  const { showScheduleControls, setShowScheduleControls } = useContext(
-    ScheduleControlsContext,
-  );
+  const { setShowScheduleControls } = useContext(ScheduleControlsContext);
 
   return (
     <>

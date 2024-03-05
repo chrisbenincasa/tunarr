@@ -1,3 +1,4 @@
+import { Close, FastForward, FastRewind } from '@mui/icons-material';
 import {
   Button,
   FormControl,
@@ -8,7 +9,6 @@ import {
   Tooltip,
 } from '@mui/material';
 import { useContext, useState } from 'react';
-import { FastForward, FastRewind, Close } from '@mui/icons-material';
 import {
   useFastForwardSchedule,
   useRewindSchedule,

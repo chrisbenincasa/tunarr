@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Widgets as ShuffleIcon } from '@mui/icons-material';
 import {
   Button,
   Dialog,
@@ -10,7 +10,7 @@ import {
   Select,
   TextField,
 } from '@mui/material';
-import { Widgets as ShuffleIcon } from '@mui/icons-material';
+import { useState } from 'react';
 import {
   BlockShuffleProgramCount,
   BlockShuffleType,
@@ -52,14 +52,16 @@ const AddBlockShuffleModal = ({ open, onClose }: AddBlockShuffleModalProps) => {
             value={blockShuffleProgramCount}
             sx={{ mb: 1 }}
             onChange={(e) =>
-              setBlockShuffleProgramCount(e.target.valueAsNumber)
+              setBlockShuffleProgramCount(parseInt(e.target.value))
             }
           ></TextField>
           <Select
             id="sort-block-shuffle-type"
             value={blockShuffleType}
             label="Type"
-            onChange={(e) => setBlockShuffleType(e.target.value)}
+            onChange={(e) =>
+              setBlockShuffleType(e.target.value as BlockShuffleType)
+            }
           >
             <MenuItem value={'Fixed'}>Fixed</MenuItem>
             <MenuItem value={'Random'}>Random</MenuItem>

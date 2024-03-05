@@ -1,9 +1,8 @@
+import _, { chain, chunk, concat, forEach, max, range } from 'lodash-es';
+import { setCurrentLineup } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
 import { materializedProgramListSelector } from '../../store/selectors.ts';
-import _, { chain, forEach, maxBy, range, shuffle } from 'lodash-es';
-import { setCurrentLineup } from '../../store/channelEditor/actions.ts';
-import { UIChannelProgram } from '../../types/index.ts';
-import { ContentProgram, isContentProgram } from '@tunarr/types';
+import { UIChannelProgram, isUIContentProgram } from '../../types/index.ts';
 
 export type BlockShuffleProgramCount = number;
 
@@ -31,11 +30,8 @@ export function useBlockShuffle() {
     );
 
     let showList = chain(programs)
-      // .filter(isContentProgram)
-      .filter(
-        (program) =>
-          program.type === 'content' && program.subtype === 'episode',
-      )
+      .filter(isUIContentProgram)
+      .filter((program) => program.subtype === 'episode')
       .value();
 
     if (options?.type === 'Random') {
@@ -43,33 +39,24 @@ export function useBlockShuffle() {
     }
 
     const groupByShow = chain(showList)
-      .groupBy((program: ContentProgram) => program.title!)
-      .forOwn((value, key, obj) => {
-        obj[key] = _.chunk(obj[key], options?.programCount);
-      })
+      .groupBy((program) => program.title)
+      .mapValues((value) => chunk(value, options?.programCount))
       .value();
 
     // See which show has the most episodes in the program list
-    const maxLength =
-      _.max(Object.values(groupByShow).map((a) => a.length)) || 0;
+    const maxLength = max(Object.values(groupByShow).map((a) => a.length)) || 0;
 
-    // const alternatingPrograms:UIChannelProgram[] = [];
     const alternatingShows: UIChannelProgram[] = [];
 
     for (const i of range(maxLength)) {
       forEach(groupByShow, (arr) => {
         if (i < arr.length) {
-          alternatingShows.push(arr[i]);
+          alternatingShows.push(...arr[i]);
         }
       });
     }
 
-    const finalProgramList = chain(alternatingShows)
-      .flatMap()
-      .flatMap()
-      .value()
-      .concat(movieList); // Append movies to the end of the list
-    console.log(finalProgramList);
+    const finalProgramList = concat(alternatingShows, movieList); // Append movies to the end of the list
 
     setCurrentLineup(finalProgramList, true);
   };

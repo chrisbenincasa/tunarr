@@ -1,7 +1,7 @@
+import { ChannelProgram, isContentProgram } from '@tunarr/types';
+import { setCurrentLineup } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
 import { materializedProgramListSelector } from '../../store/selectors.ts';
-import { setCurrentLineup } from '../../store/channelEditor/actions.ts';
-import { CondensedChannelProgram } from '@tunarr/types';
 
 export type SortOrder = 'asc' | 'desc';
 
@@ -16,18 +16,26 @@ export function useAlphaSort() {
 }
 
 export const sortPrograms = (
-  programs: CondensedChannelProgram[],
+  programs: ChannelProgram[],
   sortOrder: SortOrder,
 ) => {
-  let newProgramSort: CondensedChannelProgram[] = [];
+  let newProgramSort: ChannelProgram[] = [];
   newProgramSort = programs.sort((a, b) => {
-    if (a.title < b.title) {
+    if (isContentProgram(a) && isContentProgram(b)) {
+      if (a.title < b.title) {
+        return -1;
+      }
+      if (a.title > b.title) {
+        return 1;
+      }
+      return 0;
+    } else if (isContentProgram(a)) {
       return -1;
-    }
-    if (a.title > b.title) {
+    } else if (isContentProgram(b)) {
       return 1;
+    } else {
+      return 0;
     }
-    return 0;
   });
 
   newProgramSort =

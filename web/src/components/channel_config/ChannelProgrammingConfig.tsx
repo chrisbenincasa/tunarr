@@ -4,34 +4,31 @@ import {
   FormControl,
   Input,
   InputLabel,
-  MenuItem,
   Paper,
-  Select,
   Stack,
   Typography,
 } from '@mui/material';
 import dayjs from 'dayjs';
+import { createContext, useState } from 'react';
 import {
   resetLineup,
   setChannelStartTime,
 } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
-import ChannelProgrammingList from './ChannelProgrammingList.tsx';
-import ProgrammingSelectorDialog from './ProgrammingSelectorDialog.tsx';
-import { ChannelProgrammingSort } from './ChannelProgrammingSort.tsx';
-import { ChannelProgrammingTools } from './ChannelProgrammingTools.tsx';
 import AddProgrammingButton from './AddProgrammingButton.tsx';
 import AdjustScheduleControls from './AdjustScheduleControls.tsx';
-import { createContext, useState } from 'react';
+import ChannelProgrammingList from './ChannelProgrammingList.tsx';
+import { ChannelProgrammingSort } from './ChannelProgrammingSort.tsx';
+import { ChannelProgrammingTools } from './ChannelProgrammingTools.tsx';
 
 type ScheduleControlsType = {
-  showScheduleControls: boolean | null;
-  setShowScheduleControls: React.Dispatch<React.SetStateAction<boolean>> | null;
-} | null;
+  showScheduleControls: boolean;
+  setShowScheduleControls: React.Dispatch<React.SetStateAction<boolean>>;
+};
 
 export const ScheduleControlsContext = createContext<ScheduleControlsType>({
   showScheduleControls: false,
-  setShowScheduleControls: null,
+  setShowScheduleControls: () => {},
 });
 
 export function ChannelProgrammingConfig() {

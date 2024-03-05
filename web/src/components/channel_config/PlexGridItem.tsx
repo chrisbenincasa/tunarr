@@ -6,7 +6,6 @@ import {
 } from '@mui/icons-material';
 import {
   Collapse,
-  Divider,
   IconButton,
   ImageListItem,
   ImageListItemBar,
@@ -65,7 +64,7 @@ export function PlexGridItem<T extends PlexMedia>(props: PlexGridItemProps<T>) {
   }, [item.guid, server.name, children]);
 
   const handleItem = useCallback(
-    (e: MouseEvent<HTMLButtonElement>) => {
+    (e: MouseEvent<HTMLLIElement | HTMLButtonElement>) => {
       e.stopPropagation();
 
       if (selectedMediaIds.includes(item.guid)) {

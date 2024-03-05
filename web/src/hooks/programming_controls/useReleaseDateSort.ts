@@ -1,7 +1,8 @@
+import { ChannelProgram, isContentProgram } from '@tunarr/types';
+import { sortBy } from 'lodash-es';
+import { setCurrentLineup } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
 import { materializedProgramListSelector } from '../../store/selectors.ts';
-import { setCurrentLineup } from '../../store/channelEditor/actions.ts';
-import { CondensedChannelProgram } from '@tunarr/types';
 
 export type SortOrder = 'asc' | 'desc';
 
@@ -16,19 +17,19 @@ export function useReleaseDateSort() {
 }
 
 export const sortPrograms = (
-  programs: CondensedChannelProgram[],
+  programs: ChannelProgram[],
   sortOrder: SortOrder,
 ) => {
-  let newProgramSort: CondensedChannelProgram[] = [];
-
-  newProgramSort = programs.sort(function (a, b) {
-    // Turn strings into dates, and then subtract them
-    // to get a value that is either negative, positive, or zero.
-    return new Date(a.date) - new Date(b.date);
+  const newProgramSort = sortBy(programs, (p) => {
+    let n;
+    if (isContentProgram(p)) {
+      const ts = p.date ? new Date(p.date).getTime() : 0;
+      n = sortOrder === 'asc' ? ts : -ts;
+    } else {
+      n = sortOrder === 'asc' ? Number.MAX_VALUE : Number.MAX_VALUE;
+    }
+    return n;
   });
-
-  newProgramSort =
-    sortOrder === 'asc' ? newProgramSort : newProgramSort.reverse();
 
   return { newProgramSort };
 };

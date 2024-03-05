@@ -17,7 +17,7 @@ export default function HdhrSettingsPage() {
   const { data, isPending, error } = useHdhrSettings();
   const [snackStatus, setSnackStatus] = React.useState<boolean>(false);
   const [enableSsdpServer, setEnableSsdpServer] = React.useState<boolean>(
-    defaultHdhrSettings.enableSsdpServer,
+    defaultHdhrSettings.autoDiscoveryEnabled,
   );
   const [tunerCount, setTunerCount] = React.useState<string>(
     defaultHdhrSettings.tunerCount.toString(),
@@ -45,7 +45,7 @@ export default function HdhrSettingsPage() {
 
   const updateHdhrSettings = () => {
     updateHdhrSettingsMutation.mutate({
-      enableSsdpServer,
+      autoDiscoveryEnabled: enableSsdpServer,
       tunerCount: Number(tunerCount),
     });
   };
@@ -54,7 +54,7 @@ export default function HdhrSettingsPage() {
     updateHdhrSettingsMutation.mutate({
       ...defaultHdhrSettings,
     });
-    setEnableSsdpServer(defaultHdhrSettings.enableSsdpServer);
+    setEnableSsdpServer(defaultHdhrSettings.autoDiscoveryEnabled);
     setTunerCount(defaultHdhrSettings.tunerCount.toString());
   };
 
@@ -72,7 +72,7 @@ export default function HdhrSettingsPage() {
 
   useEffect(() => {
     setEnableSsdpServer(
-      data?.enableSsdpServer || defaultHdhrSettings.enableSsdpServer,
+      data?.autoDiscoveryEnabled || defaultHdhrSettings.autoDiscoveryEnabled,
     );
     setTunerCount(
       data?.tunerCount.toString() || defaultHdhrSettings.tunerCount.toString(),

@@ -60,8 +60,18 @@ const StyledMenu = styled((props: MenuProps) => (
   },
 }));
 
+type SortOption =
+  | 'random'
+  | 'cyclic'
+  | 'alpha-asc'
+  | 'alpha-desc'
+  | 'release-asc'
+  | 'release-desc'
+  | 'block'
+  | 'shows';
+
 export function ChannelProgrammingSort() {
-  const [sort, setSort] = useState(null);
+  const [sort, setSort] = useState<SortOption | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [addBlockShuffleModalOpen, setAddBlockShuffleModalOpen] =
     useState(false);

@@ -3,7 +3,6 @@ import {
   ExpandLess,
   ExpandMore,
   GridView,
-  Search,
   ViewList,
 } from '@mui/icons-material';
 import {
@@ -13,7 +12,6 @@ import {
   Divider,
   FormControl,
   IconButton,
-  ImageList,
   InputAdornment,
   InputLabel,
   LinearProgress,
@@ -52,11 +50,11 @@ import {
   setProgrammingListLibrary,
   setProgrammingListingServer,
 } from '../../store/programmingSelector/actions.ts';
+import { setProgrammingSelectorViewState } from '../../store/themeEditor/actions.ts';
 import AddSelectedMediaButton from './AddSelectedMediaButton.tsx';
+import { PlexGridItem } from './PlexGridItem.tsx';
 import { PlexListItem } from './PlexListItem.tsx';
 import SelectedProgrammingList from './SelectedProgrammingList.tsx';
-import { PlexGridItem } from './PlexGridItem.tsx';
-import { setProgrammingSelectorViewState } from '../../store/themeEditor/actions.ts';
 
 export interface PlexListItemProps<T extends PlexMedia> {
   item: T;
