@@ -9,10 +9,6 @@ export default function ProgrammingSelectorPage() {
   const location = useLocation();
   const pathnames = reject(location.pathname.split('/'), isEmpty);
   const getRouteName = useGetRouteName();
-  console.log(location);
-
-  console.log({ pathnames });
-  console.log(getRouteName);
 
   return (
     <>
