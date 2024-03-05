@@ -20,6 +20,10 @@ COPY web ./web
 FROM sources AS prod-deps
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --prod --frozen-lockfile
 
+# FROM sources AS build-libs
+# RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+# RUN pnpm run --filter=types --filter shared build
+
 ### Begin server build ###
 FROM sources AS build-server
 # Install deps

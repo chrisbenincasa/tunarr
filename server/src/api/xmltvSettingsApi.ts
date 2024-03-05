@@ -1,10 +1,11 @@
+import { XmlTvSettings } from '@tunarr/types';
 import { FastifyPluginCallback } from 'fastify';
 import { isError } from 'lodash-es';
-import { XmlTvSettings, defaultXmlTvSettings } from '../dao/settings.js';
+import { defaultXmlTvSettings } from '../dao/settings.js';
+import { serverOptions } from '../globals.js';
 import createLogger from '../logger.js';
 import { scheduledJobsById } from '../services/scheduler.js';
 import { firstDefined } from '../util.js';
-import { serverOptions } from '../globals.js';
 
 const logger = createLogger(import.meta);
 

@@ -1,10 +1,12 @@
+import { PlexStreamSettings } from '@tunarr/types';
 import { first, isNil, isUndefined, pick } from 'lodash-es';
 import { constants as fsConstants } from 'node:fs';
 import * as fs from 'node:fs/promises';
 import { stringify } from 'node:querystring';
 import { DeepReadonly } from 'ts-essentials';
 import { v4 as uuidv4 } from 'uuid';
-import { PlexStreamSettings } from './dao/settings.js';
+import { ContentBackedStreamLineupItem } from './dao/derived_types/StreamLineup.js';
+import { PlexServerSettings } from './dao/entities/PlexServerSettings.js';
 import { serverOptions } from './globals.js';
 import createLogger from './logger.js';
 import { Plex } from './plex.js';
@@ -17,8 +19,6 @@ import {
   TranscodeDecisionMediaStream,
   isPlexVideoStream,
 } from './types/plexApiTypes.js';
-import { PlexServerSettings } from './dao/entities/PlexServerSettings.js';
-import { ContentBackedStreamLineupItem } from './dao/derived_types/StreamLineup.js';
 
 const logger = createLogger(import.meta);
 

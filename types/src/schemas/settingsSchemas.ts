@@ -107,6 +107,6 @@ export const PlexStreamSettingsSchema = z.object({
 });
 
 export const HdhrSettingsSchema = z.object({
-  enableSsdpServer: z.boolean().default(false),
+  autoDiscoveryEnabled: z.boolean().default(true),
   tunerCount: z.number().default(2),
 });
