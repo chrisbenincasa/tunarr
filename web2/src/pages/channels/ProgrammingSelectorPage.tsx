@@ -17,22 +17,6 @@ export default function ProgrammingSelectorPage() {
   return (
     <>
       <Breadcrumbs />
-      {/* <Breadcrumbs sx={{ mb: 2 }} separator="›" aria-label="channel-breadcrumb">
-        {map(pathnames, (_, index) => {
-          const isLast = index === pathnames.length - 1;
-          const to = `/${pathnames.slice(0, index + 1).join('/')}`;
-
-          return isLast ? (
-            <Typography color="text.primary" key={to}>
-              {getRouteName(to) ?? 'null'}
-            </Typography>
-          ) : (
-            <Link component={RouterLink} to={to} key={to}>
-              {getRouteName(to) ?? 'null'}
-            </Link>
-          );
-        })}
-      </Breadcrumbs> */}
       <PaddedPaper>
         <ProgrammingSelector />
       </PaddedPaper>
