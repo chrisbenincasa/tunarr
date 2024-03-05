@@ -1,7 +1,5 @@
 import { Badge } from '@mui/material';
 import Box from '@mui/material/Box';
-import Breadcrumbs from '@mui/material/Breadcrumbs';
-import Link from '@mui/material/Link';
 import Paper from '@mui/material/Paper';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
@@ -10,7 +8,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { SaveChannelRequest } from '@tunarr/types';
 import { usePrevious } from '@uidotdev/usehooks';
 import { ZodiosError } from '@zodios/core';
-import { isUndefined, keys, some } from 'lodash-es';
+import { keys, some } from 'lodash-es';
 import { useEffect, useState } from 'react';
 import {
   FieldPath,
@@ -19,7 +17,8 @@ import {
   SubmitHandler,
   useForm,
 } from 'react-hook-form';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import ChannelEpgConfig from '../../components/channel_config/ChannelEpgConfig.tsx';
 import { ChannelFlexConfig } from '../../components/channel_config/ChannelFlexConfig.tsx';
 import ChannelPropertiesEditor from '../../components/channel_config/ChannelPropertiesEditor.tsx';
@@ -227,17 +226,7 @@ export default function EditChannelPage({ isNew }: Props) {
     <ChannelEditContext.Provider
       value={{ channelEditorState, setChannelEditorState }}
     >
-      <Breadcrumbs sx={{ mb: 2 }} separator="›" aria-label="channel-breadcrumb">
-        <Link
-          underline="hover"
-          color="inherit"
-          component={RouterLink}
-          to="/channels"
-        >
-          Channels
-        </Link>
-        <Box>Edit Channel</Box>
-      </Breadcrumbs>
+      <Breadcrumbs />
       {workingChannel && (
         <div>
           <Typography variant="h4" sx={{ mb: 2 }}>

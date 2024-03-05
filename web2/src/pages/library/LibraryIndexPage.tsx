@@ -1,3 +1,4 @@
+import { ArrowForward } from '@mui/icons-material';
 import {
   Button,
   Card,
@@ -7,7 +8,6 @@ import {
   Typography,
 } from '@mui/material';
 import { Link } from 'react-router-dom';
-import { ArrowForward } from '@mui/icons-material';
 
 export default function LibraryIndexPage() {
   return (
@@ -38,7 +38,7 @@ export default function LibraryIndexPage() {
                 size="small"
                 variant="contained"
                 component={Link}
-                to="/library/filler"
+                to="/library/fillers"
                 endIcon={<ArrowForward />}
               >
                 Edit Fillers

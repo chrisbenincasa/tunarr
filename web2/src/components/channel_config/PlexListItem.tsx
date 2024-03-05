@@ -13,6 +13,7 @@ import {
   PlexChildMediaApiType,
   PlexMedia,
   isPlexCollection,
+  isPlexMovie,
   isPlexSeason,
   isPlexShow,
   isTerminalItem,
@@ -114,10 +115,18 @@ export function PlexListItem<T extends PlexMedia>(props: PlexListItemProps<T>) {
         <ListItemText primary={item.title} secondary={calculateItemRuntime()} />
         <Button onClick={(e) => handleItem(e)}>
           {hasChildren
-            ? 'Add All'
+            ? `Add ${
+                isPlexShow(item)
+                  ? 'Series'
+                  : isPlexCollection(item)
+                  ? 'Collection'
+                  : 'All'
+              }`
             : selectedMediaIds.includes(item.guid)
             ? 'Remove'
-            : 'Add'}
+            : isTerminalItem(item) && isPlexMovie(item)
+            ? 'Add Movie'
+            : 'Add Episode'}
         </Button>
       </ListItemButton>
       <Collapse in={open} timeout="auto" unmountOnExit>

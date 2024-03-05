@@ -15,19 +15,20 @@ import AccordionDetails from '@mui/material/AccordionDetails';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { CustomShow } from '@tunarr/types';
 import { useCallback } from 'react';
 import { useLoaderData, useNavigate } from 'react-router-dom';
+import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import AddSelectedMediaButton from '../../components/channel_config/AddSelectedMediaButton.tsx';
 import ProgrammingSelector from '../../components/channel_config/ProgrammingSelector.tsx';
+import { apiClient } from '../../external/api.ts';
 import {
   addPlexMediaToCurrentCustomShow,
   removeCustomShowProgram,
 } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
-import { CustomShow } from '@tunarr/types';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '../../external/api.ts';
 
 type Props = { isNew: boolean };
 
@@ -122,6 +123,7 @@ export default function EditCustomShowPage({ isNew }: Props) {
   return (
     <div>
       <Box>
+        <Breadcrumbs />
         <Typography variant="h4" sx={{ mb: 2 }}>
           New Custom Show
         </Typography>

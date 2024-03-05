@@ -155,7 +155,6 @@ export function PlexGridItem<T extends PlexMedia>(props: PlexGridItemProps<T>) {
       <Collapse in={open} timeout="auto" unmountOnExit>
         {renderChildren()}
       </Collapse>
-      <Divider variant="fullWidth" />
     </React.Fragment>
   );
 }

@@ -1,4 +1,12 @@
-import { Link } from 'react-router-dom';
+import {
+  FreeBreakfast as BreaksIcon,
+  Expand as FlexIcon,
+  KeyboardArrowDown as KeyboardArrowDownIcon,
+  Tv as MediaIcon,
+  Expand as PaddingIcon,
+  Directions as RedirectIcon,
+  Nightlight as RestrictHoursIcon,
+} from '@mui/icons-material';
 import {
   Button,
   ButtonGroup,
@@ -9,22 +17,14 @@ import {
   alpha,
   styled,
 } from '@mui/material';
-import {
-  Expand as FlexIcon,
-  Expand as PaddingIcon,
-  Directions as RedirectIcon,
-  FreeBreakfast as BreaksIcon,
-  KeyboardArrowDown as KeyboardArrowDownIcon,
-  Nightlight as RestrictHoursIcon,
-  Tv as MediaIcon,
-} from '@mui/icons-material';
 import { useState } from 'react';
-import AddFlexModal from '../programming_controls/AddFlexModal';
-import AddRedirectModal from '../programming_controls/AddRedirectModal';
-import AddPaddingModal from '../programming_controls/AddPaddingModal';
-import ProgrammingSelectorDialog from './ProgrammingSelectorDialog';
-import AddRestrictHoursModal from '../programming_controls/AddRestrictHoursModal';
+import { Link } from 'react-router-dom';
 import AddBreaksModal from '../programming_controls/AddBreaksModal';
+import AddFlexModal from '../programming_controls/AddFlexModal';
+import AddPaddingModal from '../programming_controls/AddPaddingModal';
+import AddRedirectModal from '../programming_controls/AddRedirectModal';
+import AddRestrictHoursModal from '../programming_controls/AddRestrictHoursModal';
+import ProgrammingSelectorDialog from './ProgrammingSelectorDialog';
 
 const StyledMenu = styled((props: MenuProps) => (
   <Menu

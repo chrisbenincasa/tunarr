@@ -14,6 +14,7 @@ import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
+import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import { apiClient } from '../../external/api.ts';
 import { useFillerLists } from '../../hooks/useFillerLists.ts';
 
@@ -81,6 +82,7 @@ export default function FillerListsPage() {
 
   return (
     <Box>
+      <Breadcrumbs />
       <Box display="flex" mb={2}>
         <Typography flexGrow={1} variant="h4">
           Filler Lists
