@@ -1,6 +1,6 @@
 import { test, describe, beforeAll, afterAll } from 'vitest';
 import { MikroORM, RequestContext } from '@mikro-orm/better-sqlite';
-import dbConfig from '../mikro-orm.config.js';
+import dbConfig from '../../mikro-orm.prod.config.js';
 import {
   migrateChannel,
   migratePrograms,

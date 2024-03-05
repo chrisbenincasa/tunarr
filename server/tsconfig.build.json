@@ -1,12 +1,14 @@
 {
     "extends": "./tsconfig.json",
     "include": [
-        "./**/*.ts",
+        "./src/**/*.ts",
     ],
     "exclude": [
         "./build/**/*",
         "./**/*.test.ts",
         "./**/*.ignore.ts",
-        "./streams/**/*.ts"
+        "./**/streams/**/*.ts",
+        "./scripts",
+        "./esbuild"
     ]
 }

@@ -17,11 +17,7 @@ import {
 import fs from 'fs';
 import morgan from 'morgan';
 import { onShutdown } from 'node-graceful-shutdown';
-import { dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import path from 'path';
-import serveStatic from 'serve-static';
-import { URL } from 'url';
+import path, { dirname } from 'path';
 import { miscRouter } from './api.js';
 import { ffmpegSettingsRouter } from './api/ffmpegSettingsApi.js';
 import { guideRouter } from './api/guideApi.js';
@@ -32,7 +28,6 @@ import { schedulerRouter } from './api/schedulerApi.js';
 import { debugApi } from './api/v2/debugApi.js';
 import registerV2Routes from './api/v2/index.js';
 import { xmlTvSettingsRouter } from './api/xmltvSettingsApi.js';
-import constants from './constants.js';
 import { EntityManager, initOrm } from './dao/dataSource.js';
 import { migrateFromLegacyDb } from './dao/legacyDbMigration.js';
 import { getSettingsRawDb } from './dao/settings.js';
@@ -40,36 +35,14 @@ import { serverOptions } from './globals.js';
 import createLogger from './logger.js';
 import { serverContext } from './serverContext.js';
 import { scheduleJobs, scheduledJobsById } from './services/scheduler.js';
+import { runFixers } from './tasks/fixers/index.js';
 import { UpdateXmlTvTask } from './tasks/updateXmlTvTask.js';
 import { ServerOptions } from './types.js';
-import { wait } from './util.js';
+import { filename, wait } from './util.js';
 import { videoRouter } from './video.js';
-import { runFixers } from './tasks/fixers/index.js';
 
 const logger = createLogger(import.meta);
-
-// Temporary
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-console.log(
-  `         \\
-   Tunarr ${constants.VERSION_NAME}
-.------------.
-|:::///### o |
-|:::///###   |
-':::///### o |
-'------------'
-`,
-);
-
-const NODE = parseInt(process.version.match(/^[^0-9]*(\d+)\..*$/)![1]);
-
-if (NODE < 12) {
-  logger.error(
-    `WARNING: Your nodejs version ${process.version} is lower than supported. dizqueTV has been tested best on nodejs 12.16.`,
-  );
-}
+const currentDirectory = dirname(filename(import.meta.url));
 
 function initDbDirectories() {
   const opts = serverOptions();
@@ -106,6 +79,27 @@ function initDbDirectories() {
 }
 
 export async function initServer(opts: ServerOptions) {
+  onShutdown('log', [], async () => {
+    const ctx = await serverContext();
+    const t = new Date().getTime();
+    ctx.eventService.push({
+      type: 'lifecycle',
+      message: `Initiated Server Shutdown`,
+      detail: {
+        time: t,
+      },
+      level: 'warning',
+    });
+
+    logger.info('Received exit signal, attempting graceful shutdonw...');
+    await wait(2000);
+  });
+
+  onShutdown('xmltv-writer', [], async () => {
+    const ctx = await serverContext();
+    await ctx.xmltv.shutdown();
+  });
+
   const hadLegacyDb = initDbDirectories();
 
   const orm = await initOrm();
@@ -122,11 +116,12 @@ export async function initServer(opts: ServerOptions) {
 
   const updateXMLPromise = scheduledJobsById[UpdateXmlTvTask.ID]!.runNow();
 
-  const app = fastify({ logger: false, bodyLimit: 50 * 1024 * 1024 });
-  await app
+  const app = fastify({ logger: false, bodyLimit: 50 * 1024 * 1024 })
     .setValidatorCompiler(validatorCompiler)
     .setSerializerCompiler(serializerCompiler)
-    .withTypeProvider<ZodTypeProvider>()
+    .withTypeProvider<ZodTypeProvider>();
+
+  await app
     .register(fastifySwagger, {
       openapi: {
         info: {
@@ -149,7 +144,6 @@ export async function initServer(opts: ServerOptions) {
       RequestContext.create(orm.em, done),
     )
     .addHook('onClose', async () => await orm.close())
-    .register(fastifyPrintRoutes)
     .register(
       fp((f, _, done) => {
         f.decorateRequest('serverCtx', null);
@@ -162,7 +156,11 @@ export async function initServer(opts: ServerOptions) {
       }),
     );
 
-  await app.use(
+  if (serverOptions().printRoutes) {
+    await app.register(fastifyPrintRoutes);
+  }
+
+  app.use(
     morgan(':method :url :status :res[content-length] - :response-time ms', {
       stream: {
         write: (message) => logger.http(message.trim()),
@@ -175,20 +173,28 @@ export async function initServer(opts: ServerOptions) {
 
   ctx.eventService.setup(app);
 
-  await app
-    .use(serveStatic(fileURLToPath(new URL('../web/public', import.meta.url))))
-    .use('/images', serveStatic(path.join(opts.database, 'images')))
-    .use(
-      '/favicon.svg',
-      serveStatic(path.join(__dirname, 'resources', 'favicon.svg')),
-    )
-    .use('/custom.css', serveStatic(path.join(opts.database, 'custom.css')));
-
   // API Routers
   await app
+    .register(fpStatic, {
+      root: path.join(currentDirectory, 'resources', 'images'),
+      prefix: '/images',
+    })
+    .get('/favicon.svg', async (_, res) => {
+      return res.sendFile(
+        'favicon.svg',
+        path.join(currentDirectory, 'resources', 'images'),
+      );
+    })
+    .get('/favicon.ico', async (_, res) => {
+      return res.sendFile(
+        'favicon.ico',
+        path.join(currentDirectory, 'resources', 'images'),
+      );
+    })
     .register(async (f) => {
       await f.register(fpStatic, {
         root: path.join(opts.database, 'cache', 'images'),
+        decorateReply: false,
       });
       // f.addHook('onRequest', async (req, res) => ctx.cacheImageService.routerInterceptor(req, res));
       f.get<{ Params: { hash: string } }>(
@@ -220,16 +226,27 @@ export async function initServer(opts: ServerOptions) {
       prefix: '/api/cache/images',
     })
     .register(videoRouter)
-    .register(ctx.hdhrService.createRouter());
+    .register(ctx.hdhrService.createRouter())
+    .register(async (f) => {
+      await f.register(fpStatic, {
+        root: path.join(currentDirectory, 'web'),
+        prefix: '/web',
+      });
+      f.get('/web', async (_, res) =>
+        res.sendFile('index.html', path.join(currentDirectory, 'web')),
+      );
+    });
 
   await updateXMLPromise;
 
+  const host = process.env['TUNARR_BIND_ADDR'] ?? 'localhost';
   app.listen(
     {
+      host,
       port: opts.port,
     },
     () => {
-      logger.info(`HTTP server running on port: http://*:${opts.port}`);
+      logger.info(`HTTP server running on port: http://${host}:${opts.port}`);
       const hdhrSettings = ctx.settings.hdhrSettings();
       if (hdhrSettings.autoDiscoveryEnabled) {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
@@ -249,24 +266,3 @@ export async function initServer(opts: ServerOptions) {
 
   return app;
 }
-
-onShutdown('log', [], async () => {
-  const ctx = await serverContext();
-  const t = new Date().getTime();
-  ctx.eventService.push({
-    type: 'lifecycle',
-    message: `Initiated Server Shutdown`,
-    detail: {
-      time: t,
-    },
-    level: 'warning',
-  });
-
-  logger.info('Received exit signal, attempting graceful shutdonw...');
-  await wait(2000);
-});
-
-onShutdown('xmltv-writer', [], async () => {
-  const ctx = await serverContext();
-  await ctx.xmltv.shutdown();
-});

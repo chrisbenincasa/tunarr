@@ -6,6 +6,7 @@ import { isUndefined, join } from 'lodash-es';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import chalk from 'chalk';
+import { isProduction } from './util.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -15,27 +16,32 @@ const getLabel = (callingModule: ImportMeta) => {
   return path.join(parts[parts.length - 2], parts.pop() ?? '');
 };
 
-const hformat = (module: ImportMeta) =>
-  winston.format.printf(({ level, label, message, timestamp, ...metadata }) => {
-    let msg = `${timestamp} [${level}] ${getLabel(module)}${
-      label ? `[${label}]` : ''
-    }: ${message} `;
-    for (const key of Object.keys(metadata)) {
-      if (key === 'stack') {
-        msg += metadata.message;
-        if (metadata.stack) {
-          msg += '\n';
-          msg += join(
-            metadata.stack.split('\n').map((line) => '\t' + line),
-            '\n',
-          );
+const hformat = (module: ImportMeta) => {
+  // Exclude module label in prod build because it will always be the same (bundle.js)
+  const moduleLabel = isProduction ? '' : ` ${getLabel(module)}`;
+  return winston.format.printf(
+    ({ level, label, message, timestamp, ...metadata }) => {
+      let msg = `${timestamp} [${level}]${moduleLabel}${
+        label ? `[${label}]` : ''
+      }: ${message} `;
+      for (const key of Object.keys(metadata)) {
+        if (key === 'stack') {
+          msg += metadata.message;
+          if (metadata.stack) {
+            msg += '\n';
+            msg += join(
+              metadata.stack.split('\n').map((line) => '\t' + line),
+              '\n',
+            );
+          }
+        } else if (isUndefined(metadata)) {
+          msg += chalk.gray('undefined');
         }
-      } else if (isUndefined(metadata)) {
-        msg += chalk.gray('undefined');
       }
-    }
-    return msg;
-  });
+      return msg;
+    },
+  );
+};
 
 const createLogger = (module: ImportMeta) => {
   const logger = winston.createLogger({

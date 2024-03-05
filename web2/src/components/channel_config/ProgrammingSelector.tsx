@@ -147,7 +147,7 @@ export default function ProgrammingSelector() {
     },
   });
 
-  const { isLoading: collectionsLoading, data: collectionsData } = useQuery({
+  const { data: collectionsData } = useQuery({
     queryKey: [
       'plex',
       selectedServer?.name,

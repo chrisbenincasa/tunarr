@@ -3,14 +3,13 @@ import { StateCreator, create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import {
-  ProgrammingListingsState,
-  createProgrammingListingsState,
-} from './programmingSelector/store.ts';
-import {
-  ChannelEditorState,
   EditorsState,
   createChannelEditorState,
 } from './channelEditor/store.ts';
+import {
+  ProgrammingListingsState,
+  createProgrammingListingsState,
+} from './programmingSelector/store.ts';
 import {
   ThemeEditorState,
   createThemeEditorState,

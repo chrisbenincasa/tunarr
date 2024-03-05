@@ -1,11 +1,11 @@
 {
     "compilerOptions": {
-        "target": "es2022",
-        "module": "node16",
+        "target": "ESNext",
+        "module": "ESNext",
         "lib": [
             "ES2022"
         ],
-        "moduleResolution": "node16",
+        "moduleResolution": "Bundler",
         "rootDir": ".",
         "outDir": "build",
         "allowSyntheticDefaultImports": true,
@@ -31,12 +31,13 @@
         "noErrorTruncation": true
     },
     "files": [
-        "./types/fastify.d.ts"
+        "src/types/fastify.d.ts"
     ],
     "include": [
-        "./**/*.ts",
+        "./src/**/*.ts",
+        "./scripts/**/*.ts",
         "__tests__/**/*",
-        "api/channelToolsApi.ts.ignore"
+        "mikro-orm.prod.config.ts"
     ],
     "exclude": [
         "./build/**/*",

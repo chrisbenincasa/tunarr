@@ -254,7 +254,9 @@ export default async function scheduleRandomSlots(
 ) {
   // Load programs
   // TODO include redirects and custom programs!
-  const allPrograms = reject(channelProgramming.programs, isFlexProgram);
+  const allPrograms = reject(channelProgramming.programs, (p) =>
+    isFlexProgram(p),
+  );
   const programBySlotType = createProgramMap(allPrograms);
 
   const programmingIteratorsById = reduce(
@@ -327,7 +329,7 @@ export default async function scheduleRandomSlots(
     // let dayTime = timeCursor.mod(periodDuration).asMilliseconds();
 
     let currSlot: RandomSlot | null = null;
-    let slotIndex: number | null = null;
+    // let slotIndex: number | null = null;
     let remaining: number = 0;
 
     // Pad time
@@ -342,11 +344,11 @@ export default async function scheduleRandomSlots(
       const slot = schedule.slots[i];
       const slotLastPlayed = slotsLastPlayedMap[i];
       if (!isNil(slotLastPlayed)) {
-        const nextPlay = dayjs(slotLastPlayed + slot.cooldown);
+        const nextPlay = dayjs(slotLastPlayed + slot.cooldownMs);
         minNextTime = minNextTime.isBefore(nextPlay) ? minNextTime : nextPlay;
         if (
           dayjs.duration(timeCursor.diff(slotLastPlayed)).asMilliseconds() <
-          slot.cooldown - constants.SLACK
+          slot.cooldownMs - constants.SLACK
         ) {
           continue;
         }
@@ -356,7 +358,7 @@ export default async function scheduleRandomSlots(
 
       if (random.bool(slot.weight!, n)) {
         currSlot = slot;
-        slotIndex = i;
+        // slotIndex = i;
         remaining = slot.durationMs;
       }
     }

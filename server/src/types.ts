@@ -11,6 +11,7 @@ export type GlobalOptions = {
 
 export type ServerOptions = GlobalOptions & {
   port: number;
+  printRoutes: boolean;
 };
 
 export type Maybe<T> = T | undefined;

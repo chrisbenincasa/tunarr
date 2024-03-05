@@ -16,11 +16,22 @@ import createLogger from './logger.js';
 import { ServerOptions } from './types.js';
 import { existsSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
+import { initServer } from './server.js';
 
 const logger = createLogger(import.meta);
 
+const maybeEnvPort = () => {
+  const port = process.env['TUNARR_SERVER_PORT'];
+  if (!port) {
+    return;
+  }
+
+  const parsed = parseInt(port);
+  return isNaN(parsed) ? undefined : parsed;
+};
+
 yargs(hideBin(process.argv))
-  .scriptName('dizquetv')
+  .scriptName('tunarr')
   .option('database', {
     alias: 'd',
     type: 'string',
@@ -31,7 +42,7 @@ yargs(hideBin(process.argv))
   })
   .option('force_migration', {
     type: 'boolean',
-    desc: 'Forces a migration from a legacy dizque database. Useful for development and debugging. NOTE: This WILL override any settings you have!',
+    desc: 'Forces a migration from a legacy dizquetv database. Useful for development and debugging. NOTE: This WILL override any settings you have!',
     default: false,
   })
   .middleware(setGlobalOptions)
@@ -40,19 +51,33 @@ yargs(hideBin(process.argv))
   })
   .command(
     ['server', '$0'],
-    'Run the dizqueTV server',
+    'Run the Tunarr server',
     (yargs) => {
       return yargs
         .option('port', {
           alias: 'p',
           type: 'number',
-          desc: 'The port to run the dizque server on',
-          default: 8000,
+          desc: 'The port to run the Tunarr server on',
+          default: maybeEnvPort() ?? 8000,
+        })
+        .option('printRoutes', {
+          type: 'boolean',
+          default: false,
         })
         .middleware(setServerOptions);
     },
     async (args: ArgumentsCamelCase<ServerOptions>) => {
-      (await import('./server.js')).initServer(args);
+      console.log(
+        `         \\
+         Tunarr ${constants.VERSION_NAME}
+      .------------.
+      |:::///### o |
+      |:::///###   |
+      ':::///### o |
+      '------------'
+      `,
+      );
+      await initServer(args);
     },
   )
   .command(
@@ -63,13 +88,17 @@ yargs(hideBin(process.argv))
         .option('port', {
           alias: 'p',
           type: 'number',
-          desc: 'The port to run the dizque server on',
-          default: 8000,
+          desc: 'The port to run the Tunarr server on',
+          default: maybeEnvPort() ?? 8000,
+        })
+        .option('printRoutes', {
+          type: 'boolean',
+          default: false,
         })
         .middleware(setServerOptions);
     },
     async (args: ArgumentsCamelCase<ServerOptions>) => {
-      const f = await (await import('./server.js')).initServer(args);
+      const f = await initServer(args);
       const x = await f
         .inject({ method: 'get', url: '/docs/json' })
         .then((r) => r.body);

@@ -10,7 +10,7 @@ import path from 'node:path';
 import 'reflect-metadata';
 import { globalOptions } from '../globals.js';
 import createLogger from '../logger.js';
-import dbConfig from '../mikro-orm.config.js';
+import dbConfig from '../../mikro-orm.config.js';
 
 const logger = createLogger(import.meta);
 

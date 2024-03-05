@@ -11,7 +11,6 @@ import { JSONFilePreset } from 'lowdb/node';
 import path from 'path';
 import { DeepReadonly } from 'ts-essentials';
 import { v4 as uuidv4 } from 'uuid';
-import constants from '../constants.js';
 import { globalOptions } from '../globals.js';
 
 const CURRENT_VERSION = 1;
@@ -55,12 +54,12 @@ export type XmlTvSettings = {
   enableImageCache: boolean;
 };
 
-export const defaultXmlTvSettings: XmlTvSettings = {
+export const defaultXmlTvSettings = (dbBasePath: string): XmlTvSettings => ({
   programmingHours: 12,
   refreshHours: 4,
-  outputPath: path.resolve(constants.DEFAULT_DATA_DIR, 'xmltv.xml'),
+  outputPath: path.resolve(dbBasePath, 'xmltv.xml'),
   enableImageCache: false,
-};
+});
 
 export type SettingsSchema = {
   clientId: string;
@@ -86,7 +85,7 @@ export type Schema = {
   settings: SettingsSchema;
 };
 
-export const defaultSchema: Schema = {
+export const defaultSchema = (dbBasePath: string): Schema => ({
   version: 1,
   migration: {
     legacyMigration: false,
@@ -94,11 +93,11 @@ export const defaultSchema: Schema = {
   settings: {
     clientId: uuidv4(),
     hdhr: defaultHdhrSettings,
-    xmltv: defaultXmlTvSettings,
+    xmltv: defaultXmlTvSettings(dbBasePath),
     plexStream: defaultPlexStreamSettings,
     ffmpeg: defaultFfmpegSettings,
   },
-};
+});
 
 export class Settings {
   private db: Low<Schema>;
@@ -150,7 +149,10 @@ export const getSettingsRawDb = once(async (dbPath?: string) => {
 
   const needsFlush = !existsSync(actualPath);
 
-  const db = await JSONFilePreset<Schema>(actualPath, defaultSchema);
+  const db = await JSONFilePreset<Schema>(
+    actualPath,
+    defaultSchema(globalOptions().database),
+  );
 
   await db.read();
   if (needsFlush) {

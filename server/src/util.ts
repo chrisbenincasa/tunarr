@@ -9,10 +9,12 @@ import {
   isPlainObject,
   isString,
   isUndefined,
+  once,
   reduce,
 } from 'lodash-es';
-import fs from 'fs/promises';
+import fs from 'node:fs/promises';
 import { isPromise } from 'node:util/types';
+import { fileURLToPath } from 'node:url';
 
 declare global {
   interface Array<T> {
@@ -293,3 +295,15 @@ export function emptyStringToUndefined(
 
   return s.length === 0 ? undefined : s;
 }
+
+export const filename = (path: string) => fileURLToPath(path);
+// const dirname = (path: string) => dirname(filename(path));
+
+export const currentEnv = once(() => {
+  const env = process.env['NODE_ENV'];
+  return env ?? 'production';
+});
+
+export const isProduction = currentEnv() === 'production';
+export const isDev = currentEnv() === 'development';
+export const isTest = currentEnv() === 'test';
