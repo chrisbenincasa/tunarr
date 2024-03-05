@@ -1,9 +1,8 @@
+import { PlexStreamSettings, defaultPlexStreamSettings } from '@tunarr/types';
 import { FastifyPluginCallback } from 'fastify';
 import { isError } from 'lodash-es';
-import { PlexStreamSettings } from '../dao/settings.js';
 import createLogger from '../logger.js';
 import { firstDefined } from '../util.js';
-import { defaultPlexStreamSettings } from '@tunarr/types';
 
 const logger = createLogger(import.meta);
 

@@ -1,11 +1,15 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { EntityDTO, Loaded } from '@mikro-orm/core';
-import { Channel, TvGuideProgram, isContentGuideProgram } from '@tunarr/types';
+import {
+  Channel,
+  TvGuideProgram,
+  XmlTvSettings,
+  isContentGuideProgram,
+} from '@tunarr/types';
 import fs from 'fs';
 import { isUndefined, keys, map } from 'lodash-es';
 import XMLWriter from 'xml-writer';
-import { XmlTvSettings } from './dao/settings.js';
 import { CacheImageService } from './services/cacheImageService.js';
 import { ChannelPrograms } from './services/tvGuideService.js';
 

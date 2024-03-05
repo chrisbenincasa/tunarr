@@ -1,7 +1,9 @@
 import {
   FfmpegSettings,
   PlexServerSettings,
+  PlexStreamSettings,
   defaultFfmpegSettings,
+  defaultHdhrSettings,
   defaultPlexStreamSettings,
 } from '@tunarr/types';
 import fs from 'fs/promises';
@@ -42,10 +44,8 @@ import {
   tryStringSplitOrDefault,
 } from './legacy_migration/migrationUtil.js';
 import {
-  PlexStreamSettings,
   Schema,
   SettingsSchema,
-  defaultHdhrSettings,
   defaultSchema,
   defaultXmlTvSettings,
 } from './settings.js';
@@ -264,7 +264,9 @@ async function migrateFromLegacyDbInner(
                 ) ?? defaultPlexStreamSettings.maxTranscodeResolution,
               pathReplace: plexSettings['pathReplace'] as Maybe<string>,
               pathReplaceWith: plexSettings['pathReplaceWith'] as Maybe<string>,
-              streamPath: plexSettings['streamPath'] as Maybe<string>,
+              streamPath: plexSettings['streamPath'] as Maybe<
+                'plex' | 'direct'
+              >,
               streamProtocol: plexSettings['streamProtocol'] as Maybe<string>,
               subtitleSize: parseIntOrDefault(
                 plexSettings['subtitleSize'],

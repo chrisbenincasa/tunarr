@@ -79,7 +79,7 @@ export const PlexServerSettingsRemove = z.object({
 export const PlexStreamSettingsSchema = z.object({
   streamPath: z.union([z.literal('plex'), z.literal('direct')]).default('plex'),
   enableDebugLogging: z.boolean().default(false),
-  maxDirectStreamBitrate: z.number().default(20000),
+  directStreamBitrate: z.number().default(20000),
   transcodeBitrate: z.number().default(2000),
   mediaBufferSize: z.number().default(1000),
   transcodeMediaBufferSize: z.number().default(20000),
@@ -107,6 +107,6 @@ export const PlexStreamSettingsSchema = z.object({
 });
 
 export const HdhrSettingsSchema = z.object({
-  enableSsdpServer: z.boolean().default(false),
+  autoDiscoveryEnabled: z.boolean().default(true),
   tunerCount: z.number().default(2),
 });

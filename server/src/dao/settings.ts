@@ -1,8 +1,12 @@
 import {
   FfmpegSettings,
-  Resolution,
+  HdhrSettings,
+  PlexStreamSettings,
+  XmlTvSettings,
   defaultFfmpegSettings,
+  defaultHdhrSettings,
   defaultPlexStreamSettings,
+  defaultXmlTvSettings as defaultXmlTvSettingsSchema,
 } from '@tunarr/types';
 import { existsSync } from 'fs';
 import { once } from 'lodash-es';
@@ -15,50 +19,9 @@ import { globalOptions } from '../globals.js';
 
 const CURRENT_VERSION = 1;
 
-export type PlexStreamSettings = {
-  streamPath: string;
-  enableDebugLogging: boolean;
-  directStreamBitrate: number;
-  transcodeBitrate: number;
-  mediaBufferSize: number;
-  transcodeMediaBufferSize: number;
-  maxPlayableResolution: Resolution;
-  maxTranscodeResolution: Resolution;
-  videoCodecs: string[];
-  audioCodecs: string[];
-  maxAudioChannels: string;
-  audioBoost: number;
-  enableSubtitles: boolean;
-  subtitleSize: number;
-  updatePlayStatus: boolean;
-  streamProtocol: string;
-  forceDirectPlay: boolean;
-  pathReplace: string;
-  pathReplaceWith: string;
-};
-
-export type HdhrSettings = {
-  autoDiscoveryEnabled: boolean;
-  tunerCount: number;
-};
-
-export const defaultHdhrSettings: HdhrSettings = {
-  autoDiscoveryEnabled: true,
-  tunerCount: 2,
-};
-
-export type XmlTvSettings = {
-  programmingHours: number;
-  refreshHours: number;
-  outputPath: string;
-  enableImageCache: boolean;
-};
-
 export const defaultXmlTvSettings = (dbBasePath: string): XmlTvSettings => ({
-  programmingHours: 12,
-  refreshHours: 4,
+  ...defaultXmlTvSettingsSchema,
   outputPath: path.resolve(dbBasePath, 'xmltv.xml'),
-  enableImageCache: false,
 });
 
 export type SettingsSchema = {
@@ -71,12 +34,6 @@ export type SettingsSchema = {
 
 type MigrationState = {
   legacyMigration: boolean;
-};
-
-export type CachedImage = {
-  hash: string;
-  mimeType?: string;
-  url: string;
 };
 
 export type Schema = {
