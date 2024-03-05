@@ -1,11 +1,9 @@
 import DeleteIcon from '@mui/icons-material/Delete';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import {
-  Breadcrumbs,
   Button,
   Divider,
   IconButton,
-  Link,
   List,
   ListItem,
   ListItemText,
@@ -20,7 +18,8 @@ import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import AddSelectedMediaButton from '../../components/channel_config/AddSelectedMediaButton.tsx';
 import ProgrammingSelector from '../../components/channel_config/ProgrammingSelector.tsx';
@@ -166,17 +165,7 @@ export default function EditFillerPage({ isNew }: Props) {
 
   return (
     <Box>
-      <Breadcrumbs sx={{ mb: 2 }} separator="›" aria-label="filler-breadcrumb">
-        <Link
-          underline="hover"
-          color="inherit"
-          component={RouterLink}
-          to="/library/fillers"
-        >
-          Filler Lists
-        </Link>
-        <Box>{isNew ? 'New' : 'Edit'} Filler List</Box>
-      </Breadcrumbs>
+      <Breadcrumbs />
       <Box component="form" onSubmit={handleSubmit(saveFiller)}>
         <Box>
           <Typography variant="h4" sx={{ mb: 2 }}>

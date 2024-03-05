@@ -3,7 +3,6 @@ import AddIcon from '@mui/icons-material/Add';
 import {
   Alert,
   Box,
-  Breadcrumbs,
   Button,
   Divider,
   FormControl,
@@ -12,7 +11,6 @@ import {
   Grid,
   IconButton,
   InputLabel,
-  Link,
   MenuItem,
   Select,
   SelectChangeEvent,
@@ -55,6 +53,7 @@ import {
   useWatch,
 } from 'react-hook-form';
 import { Link as RouterLink } from 'react-router-dom';
+import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import ChannelProgrammingList from '../../components/channel_config/ChannelProgrammingList.tsx';
 import { apiClient } from '../../external/api.ts';
@@ -600,17 +599,7 @@ export default function TimeSlotEditorPage() {
             : null}
         </Alert>
       </Snackbar>
-      <Breadcrumbs sx={{ mb: 2 }}>
-        <Link
-          underline="hover"
-          color="inherit"
-          component={RouterLink}
-          to=".."
-          relative="path"
-        >
-          Back
-        </Link>
-      </Breadcrumbs>
+      <Breadcrumbs />
       <Typography variant="h4" sx={{ mb: 2 }}>
         Edit Time Slots (Channel {channel?.number})
       </Typography>

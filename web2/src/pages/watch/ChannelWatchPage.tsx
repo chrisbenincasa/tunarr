@@ -1,8 +1,5 @@
-import Box from '@mui/material/Box';
-import Breadcrumbs from '@mui/material/Breadcrumbs';
-import Link from '@mui/material/Link';
 import Typography from '@mui/material/Typography';
-import { Link as RouterLink } from 'react-router-dom';
+import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import Video from '../../components/Video.tsx';
 import { usePreloadedChannel } from '../../hooks/usePreloadedChannel.ts';
 
@@ -12,21 +9,7 @@ export default function ChannelWatchPage() {
   return (
     channel && (
       <div>
-        <Breadcrumbs
-          sx={{ mb: 2 }}
-          separator="›"
-          aria-label="channel-breadcrumb"
-        >
-          <Link
-            underline="hover"
-            color="inherit"
-            component={RouterLink}
-            to="/channels"
-          >
-            Channels
-          </Link>
-          <Box>Manage Programming</Box>
-        </Breadcrumbs>
+        <Breadcrumbs />
         <Typography variant="h4" sx={{ mb: 2 }}>
           Channel {channel.number} Live
         </Typography>

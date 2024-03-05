@@ -1,9 +1,7 @@
 import {
   Box,
-  Breadcrumbs,
   Button,
   CircularProgress,
-  Link,
   Snackbar,
   Typography,
 } from '@mui/material';
@@ -14,6 +12,7 @@ import { ZodiosError } from '@zodios/core';
 import { chain, findIndex, first, isUndefined, map } from 'lodash-es';
 import { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
+import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import { ChannelProgrammingConfig } from '../../components/channel_config/ChannelProgrammingConfig.tsx';
 import { apiClient } from '../../external/api.ts';
 import { channelProgramUniqueId } from '../../helpers/util.ts';
@@ -123,17 +122,7 @@ export default function ChannelProgrammingPage() {
         message={snackStatus.message}
         sx={{ backgroundColor: snackStatus.color }}
       />
-      <Breadcrumbs sx={{ mb: 2 }} separator="›" aria-label="channel-breadcrumb">
-        <Link
-          underline="hover"
-          color="inherit"
-          component={RouterLink}
-          to="/channels"
-        >
-          Channels
-        </Link>
-        <Box>Manage Programming</Box>
-      </Breadcrumbs>
+      <Breadcrumbs />
       <Typography variant="h4" sx={{ mb: 2 }}>
         Channel {channel.number} Programming
       </Typography>

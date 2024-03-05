@@ -1,6 +1,7 @@
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
+import { IconButton, Tooltip } from '@mui/material';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Paper from '@mui/material/Paper';
@@ -12,9 +13,9 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import { Link } from 'react-router-dom';
+import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import { usePreloadedData } from '../../hooks/preloadedDataHook.ts';
 import { customShowsLoader } from '../../preloaders/customShowLoaders.ts';
-import { IconButton, Tooltip } from '@mui/material';
 
 export default function CustomShowsPage() {
   const customShows = usePreloadedData(customShowsLoader);
@@ -57,6 +58,7 @@ export default function CustomShowsPage() {
 
   return (
     <Box>
+      <Breadcrumbs />
       <Box display="flex" mb={2}>
         <Typography flexGrow={1} variant="h4">
           Custom Shows
