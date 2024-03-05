@@ -5,7 +5,6 @@ import {
   FillerListProgramming,
 } from '@tunarr/types';
 import { LoaderFunctionArgs } from 'react-router-dom';
-import { createPreloader } from '../helpers/preloaderUtil.ts';
 import {
   fillerListProgramsQuery,
   fillerListQuery,
@@ -13,6 +12,7 @@ import {
 } from '../hooks/useFillerLists.ts';
 import { setCurrentFillerList } from '../store/channelEditor/actions.ts';
 import { Preloader } from '../types/index.ts';
+import { createPreloader } from '../helpers/preloaderUtil.ts';
 
 export const fillerListsLoader = createPreloader(() => fillerListsQuery);
 
@@ -26,7 +26,7 @@ const fillerListLoader = (isNew: boolean) => {
     return () => () => {
       const filler = {
         id: 'unsaved',
-        name: 'New Filler List',
+        name: 'New Filler Listt',
         contentCount: 0,
       };
       setCurrentFillerList(filler, []);
