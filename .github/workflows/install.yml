@@ -8,17 +8,17 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 18.18.0
+          node-version: 20.11.1
 
-      - uses: pnpm/action-setup@v2
+      - uses: pnpm/action-setup@v3
         name: Install pnpm
         with:
-          version: 8.10.4
+          version: 8.15.4
           run_install: false
 
       - name: Get pnpm store directory
@@ -36,3 +36,12 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install
+
+      - name: Build shared libs
+        run: pnpm run --filter=shared --filter=types build
+
+      - name: Build server
+        run: pnpm run --filter=server typecheck
+
+      - name: Build web
+        run: pnpm run --filter=web build

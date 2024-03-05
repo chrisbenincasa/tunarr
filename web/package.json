@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit",
+    "bundle": "vite build",
     "buildw": "nodemon -e ts,json,tsx,js,yaml --watch src --ignore dist/ -x tsc --noEmit --project tsconfig.build.json",
     "dev": "vite",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",

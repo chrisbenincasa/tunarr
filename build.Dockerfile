@@ -47,6 +47,7 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 # Build common modules
 RUN pnpm run --filter=types --filter=shared build
 RUN pnpm run --filter=web build
+RUN pnpm run --filter=web bundle
 
 ### Experimental: Build a SEA
 FROM build-server AS build-exec
