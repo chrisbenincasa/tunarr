@@ -1,8 +1,7 @@
-import { ChangeEvent } from 'react';
+import { ChannelProgram, FlexProgram, Resolution } from '@tunarr/types';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import { isNumber, range, zipWith } from 'lodash-es';
-import { ChannelProgram, FlexProgram, Resolution } from '@tunarr/types';
 
 dayjs.extend(duration);
 

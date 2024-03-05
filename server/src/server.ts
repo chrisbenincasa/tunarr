@@ -226,7 +226,16 @@ export async function initServer(opts: ServerOptions) {
       prefix: '/api/cache/images',
     })
     .register(videoRouter)
-    .register(ctx.hdhrService.createRouter());
+    .register(ctx.hdhrService.createRouter())
+    .register(async (f) => {
+      await f.register(fpStatic, {
+        root: path.join(currentDirectory, 'web'),
+        prefix: '/web',
+      });
+      f.get('/web', async (_, res) =>
+        res.sendFile('index.html', path.join(currentDirectory, 'web')),
+      );
+    });
 
   await updateXMLPromise;
 

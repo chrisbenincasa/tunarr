@@ -1,7 +1,8 @@
+import { Delete, Tv } from '@mui/icons-material';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
-import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import EditIcon from '@mui/icons-material/Edit';
 import SettingsRemoteIcon from '@mui/icons-material/SettingsRemote';
+import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import {
   Box,
   Button,
@@ -23,16 +24,15 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Channel } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { isEmpty } from 'lodash-es';
+import { useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
-import { useChannels } from '../../hooks/useChannels.ts';
-import { Delete, Tv } from '@mui/icons-material';
-import { useState } from 'react';
-import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { apiClient } from '../../external/api.ts';
+import { useChannels } from '../../hooks/useChannels.ts';
 
 export default function ChannelsPage() {
   const now = dayjs();
@@ -50,7 +50,7 @@ export default function ChannelsPage() {
   >(undefined);
 
   const handleChannelNavigation = (
-    event: React.MouseEvent<HTMLTableRowElement, MouseEvent>,
+    _: React.MouseEvent<HTMLTableRowElement, MouseEvent>,
     id: string,
   ) => {
     navigate(`/channels/${id}/programming`);

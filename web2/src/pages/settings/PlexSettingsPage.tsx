@@ -1,6 +1,5 @@
 import {
   AddCircle,
-  Cancel,
   CancelOutlined,
   CloudDoneOutlined,
   CloudOff,
@@ -59,6 +58,7 @@ import {
 import { InsertPlexServerRequest } from '@tunarr/types/api';
 import { fill, isNil, isNull, isUndefined } from 'lodash-es';
 import React, { Fragment, useCallback, useEffect, useState } from 'react';
+import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { apiClient } from '../../external/api.ts';
 import { checkNewPlexServers, plexLoginFlow } from '../../helpers/plexLogin.ts';
 import {
@@ -70,7 +70,6 @@ import {
   usePlexServerSettings,
   usePlexStreamSettings,
 } from '../../hooks/settingsHooks.ts';
-import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 
 const supportedResolutions = [
   '420x420',

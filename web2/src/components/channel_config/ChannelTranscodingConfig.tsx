@@ -12,16 +12,15 @@ import {
 } from '@mui/material';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import { Channel, SaveChannelRequest } from '@tunarr/types';
+import { SaveChannelRequest } from '@tunarr/types';
 import { isNil, isUndefined, map } from 'lodash-es';
+import { useState } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 import {
   resolutionFromAnyString,
-  resolutionFromString,
   resolutionToString,
 } from '../../helpers/util.ts';
 import { useFfmpegSettings } from '../../hooks/settingsHooks.ts';
-import { useState } from 'react';
 
 const resolutionOptions = [
   { value: '420x420', label: '420x420 (1:1)' },
