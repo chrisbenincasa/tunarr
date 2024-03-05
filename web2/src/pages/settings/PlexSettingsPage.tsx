@@ -145,11 +145,11 @@ export default function PlexSettingsPage() {
     }
   }, [currentEditRow, servers, reset]);
 
-  const [deletePlexConfirmation, setDeletePlexConfirmation] = useState<
+  const [deletePlexConfirmation, setDeletePlexConfirmation] = React.useState<
     string | undefined
   >(undefined);
 
-  const [showSubtitles, setShowSubtitles] = useState<boolean>(
+  const [showSubtitles, setShowSubtitles] = React.useState<boolean>(
     defaultPlexStreamSettings.enableSubtitles,
   );
 
@@ -169,7 +169,7 @@ export default function PlexSettingsPage() {
     defaultPlexStreamSettings.maxAudioChannels,
   );
 
-  const [directStreamBitrate, setDirectStreamBitrate] =
+  const [maxDirectStreamBitrate, setMaxDirectStreamBitrate] =
     React.useState<string>('');
 
   const [transcodeBitrate, setTranscodeBitrate] = React.useState<string>('');
@@ -190,12 +190,6 @@ export default function PlexSettingsPage() {
           defaultPlexStreamSettings.maxPlayableResolution,
       ),
     );
-
-    setMaxDirectStreamBitrate(
-      streamSettings?.directStreamBitrate.toString() ||
-        defaultPlexStreamSettings.directStreamBitrate.toString(),
-    );
-
     setAudioCodecs(
       streamSettings?.audioCodecs || defaultPlexStreamSettings.audioCodecs,
     );
@@ -204,12 +198,10 @@ export default function PlexSettingsPage() {
       streamSettings?.maxAudioChannels ||
         defaultPlexStreamSettings.maxAudioChannels,
     );
-
-    setDirectStreamBitrate(
-      streamSettings?.directStreamBitrate.toString() ||
-        defaultPlexStreamSettings.directStreamBitrate.toString(),
+    setMaxDirectStreamBitrate(
+      streamSettings?.maxDirectStreamBitrate.toString() ||
+        defaultPlexStreamSettings.maxDirectStreamBitrate.toString(),
     );
-
     setTranscodeBitrate(
       streamSettings?.transcodeBitrate.toString() ||
         defaultPlexStreamSettings.transcodeBitrate.toString(),
@@ -224,13 +216,13 @@ export default function PlexSettingsPage() {
     );
   }, [
     streamSettings?.audioCodecs,
-    streamSettings?.directStreamBitrate,
     streamSettings?.maxAudioChannels,
     streamSettings?.maxPlayableResolution,
     streamSettings?.mediaBufferSize,
     streamSettings?.transcodeBitrate,
     streamSettings?.transcodeMediaBufferSize,
     streamSettings?.videoCodecs,
+    streamSettings?.maxDirectStreamBitrate,
   ]);
 
   useEffect(() => {
@@ -289,14 +281,28 @@ export default function PlexSettingsPage() {
     setMaxPlayableResolution(event.target.value);
   };
 
-  const [maxDirectStreamBitrate, setMaxDirectStreamBitrate] = useState<string>(
-    defaultPlexStreamSettings.directStreamBitrate.toString(),
-  );
-
   const handleMaxDirectStreamBitrate = (
-    event: React.ChangeEvent<HTMLInputElement>,
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     setMaxDirectStreamBitrate(event.target.value);
+  };
+
+  const handleMaxTranscodeBitrate = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
+    setTranscodeBitrate(event.target.value);
+  };
+
+  const handleMediaBufferSize = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
+    setMediaBufferSize(event.target.value);
+  };
+
+  const handleTranscodeMediaBufferSize = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
+    setTranscodeMediaBufferSize(event.target.value);
   };
 
   const handleMaxAudioChannels = (event: SelectChangeEvent<string>) => {
@@ -423,7 +429,7 @@ export default function PlexSettingsPage() {
       ...defaultPlexStreamSettings,
       ...{
         audioCodecs,
-        directStreamBitrate: Number(directStreamBitrate),
+        maxDirectStreamBitrate: Number(maxDirectStreamBitrate),
         enableSubtitles: showSubtitles,
         maxAudioChannels,
         maxPlayableResolution: resolutionFromString(
@@ -815,15 +821,6 @@ export default function PlexSettingsPage() {
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12}>
-            <FormControl fullWidth>
-              <TextField
-                value={maxDirectStreamBitrate}
-                onChange={handleMaxDirectStreamBitrate}
-                label="Max Direct Stream Bitrate (Kbps)"
-              />
-            </FormControl>
-          </Grid>
         </Grid>
       </>
     );
@@ -1017,13 +1014,15 @@ export default function PlexSettingsPage() {
             <FormControl fullWidth sx={{ my: 1 }}>
               <TextField
                 label="Max Direct Stream Bitrate (Kbps)"
-                value={directStreamBitrate}
+                value={maxDirectStreamBitrate}
+                onChange={(e) => handleMaxDirectStreamBitrate(e)}
               />
             </FormControl>
             <FormControl fullWidth sx={{ my: 1 }}>
               <TextField
                 label="Max Transcode Bitrate (Kbps)"
                 value={transcodeBitrate}
+                onChange={(e) => handleMaxTranscodeBitrate(e)}
               />
             </FormControl>
           </Grid>
@@ -1032,12 +1031,14 @@ export default function PlexSettingsPage() {
               <TextField
                 label="Direct Stream Media Buffer Size"
                 value={mediaBufferSize}
+                onChange={(e) => handleMediaBufferSize(e)}
               />
             </FormControl>
             <FormControl fullWidth sx={{ my: 1 }}>
               <TextField
                 label="Transcode Media Buffer Size"
                 value={transcodeMediaBufferSize}
+                onChange={(e) => handleTranscodeMediaBufferSize(e)}
               />
             </FormControl>
           </Grid>
