@@ -32,7 +32,6 @@ await esbuild.build({
   inject: ['cjs-shim.ts'],
   packages: 'external',
   tsconfig: './tsconfig.build.json',
-  logLevel: 'verbose',
   // external: [
   //   'mysql',
   //   'mysql2',

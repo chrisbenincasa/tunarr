@@ -3,11 +3,13 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsup",
     "clean": "rimraf build",
-    "dev": "nodemon -e ts --watch src --ignore build/ -e .json,.ts,.yml,.yaml,.js -x tsc --project tsconfig.json"
+    "dev": "pnpm run build -- --watch"
   },
-  "main": "build/index.js",
+  "main": "./build/src/index.js",
+  "module": "./build/src/index.js",
+  "types": "./build/src/index.d.ts",
   "keywords": [],
   "author": "chrisbenincasa",
   "type": "module",
@@ -16,8 +18,8 @@
     "@typescript-eslint/eslint-plugin": "6.0.0",
     "@typescript-eslint/parser": "6.0.0",
     "eslint": "8.45.0",
-    "nodemon": "^3.1.0",
     "rimraf": "^5.0.5",
+    "tsup": "^8.0.2",
     "typescript": "5.2.2"
   },
   "dependencies": {
@@ -25,21 +27,21 @@
   },
   "exports": {
     ".": {
-      "types": "./build/src/index.d.ts",
-      "default": "./build/src/index.js"
+      "types": "./build/index.d.ts",
+      "default": "./build/index.js"
     },
     "./package.json": "./package.json",
     "./schemas": {
-      "types": "./build/src/schemas/index.d.ts",
-      "default": "./build/src/schemas/index.js"
+      "types": "./build/schemas/index.d.ts",
+      "default": "./build/schemas/index.js"
     },
     "./plex": {
-      "types": "./build/src/plex/index.d.ts",
-      "default": "./build/src/plex/index.js"
+      "types": "./build/plex/index.d.ts",
+      "default": "./build/plex/index.js"
     },
     "./api": {
-      "types": "./build/src/api/index.d.ts",
-      "default": "./build/src/api/index.js"
+      "types": "./build/api/index.d.ts",
+      "default": "./build/api/index.js"
     }
   }
 }

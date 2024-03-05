@@ -11,7 +11,7 @@ RUN corepack enable
 
 FROM base as sources
 WORKDIR /tunarr
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
 COPY server/ ./server
 COPY shared/ ./shared
 COPY types ./types
@@ -20,24 +20,17 @@ COPY web ./web
 FROM sources AS prod-deps
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --prod --frozen-lockfile
 
-# FROM sources AS build-libs
-# RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
-# RUN pnpm run --filter=types --filter shared build
-
 ### Begin server build ###
 FROM sources AS build-server
 # Install deps
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
-# Build common modules
-RUN pnpm run --filter=types --filter=shared build
-# Runs tsc --noEmit on the server to ensure the code builds
-RUN pnpm run --filter=server typecheck
-# Build ORM metadata cache using source files
-RUN cd server && pnpm mikro-orm-esm cache:generate --combined --ts
+# Unfortunately we can't just have this as part of the turbo build graph
+# because we're relying on this hacky dev/prod mikro-orm config. If we
+# can figure that out, it would boil this down to one command.
+RUN pnpm turbo generate-db-cache
 # Replace the non-cached metadata config with the cache
 RUN mv server/mikro-orm.prod.config.ts server/mikro-orm.config.ts 
-# Build and bundle the server
-RUN pnpm run --filter=server bundle
+RUN pnpm turbo --filter=@tunarr/server bundle
 ### End server build ###
 
 ### Begin server web ###
@@ -45,9 +38,7 @@ FROM sources AS build-web
 # Install deps
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 # Build common modules
-RUN pnpm run --filter=types --filter=shared build
-RUN pnpm run --filter=web build
-RUN pnpm run --filter=web bundle
+RUN pnpm turbo --filter=@tunarr/web bundle
 
 ### Experimental: Build a SEA
 FROM build-server AS build-exec
