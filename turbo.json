@@ -11,7 +11,7 @@
       "outputs": ["build/**", "dist/**"]
     },
     "dev": {
-      "dependsOn": ["clean"],
+      "dependsOn": ["clean", "@tunarr/shared#build", "@tunarr/types#build"],
       "cache": false,
       "persistent": true
     }
