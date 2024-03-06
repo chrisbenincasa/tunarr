@@ -125,7 +125,7 @@ export default function ChannelsPage() {
             <img
               style={{ maxHeight: '40px' }}
               src={
-                isEmpty(channel.icon.path) ? '/dizquetv.png' : channel.icon.path
+                isEmpty(channel.icon.path) ? '/tunarr.png' : channel.icon.path
               }
             />
           </TableCell>

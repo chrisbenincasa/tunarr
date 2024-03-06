@@ -83,7 +83,7 @@ export default function WelcomePage() {
           margin: '0 auto',
           textAlign: 'center',
         }}
-        src="/dizquetv.png"
+        src="/tunarr.png"
       />
       <Typography variant="h3">Welcome to Tunarr!</Typography>
     </>

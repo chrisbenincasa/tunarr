@@ -34,9 +34,9 @@ import { Outlet, Link as RouterLink } from 'react-router-dom';
 import './App.css';
 import ServerEvents from './components/ServerEvents.tsx';
 import VersionFooter from './components/VersionFooter.tsx';
+import { useVersion } from './hooks/useVersion.ts';
 import useStore from './store/index.ts';
 import { setDarkModeState } from './store/themeEditor/actions.ts';
-import { useVersion } from './hooks/useVersion.ts';
 
 interface NavItem {
   name: string;
@@ -156,7 +156,7 @@ export function Root() {
             >
               <img
                 style={{ width: '2rem', height: '2rem', marginTop: '0.4em' }}
-                src="/dizquetv.png"
+                src="/tunarr.png"
               />
             </Link>
             <Typography

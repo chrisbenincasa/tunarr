@@ -31,10 +31,10 @@ import { isEmpty, round } from 'lodash-es';
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import { useInterval } from 'usehooks-ts';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
+import { formatProgramDuration } from '../../helpers/util.ts';
 import { prefetchAllTvGuides, useAllTvGuides } from '../../hooks/useTvGuide.ts';
 import useStore from '../../store/index.ts';
 import { setGuideDurationState } from '../../store/themeEditor/actions.ts';
-import { formatProgramDuration } from '../../helpers/util.ts';
 
 dayjs.extend(duration);
 dayjs.extend(isBetween);
@@ -656,7 +656,7 @@ export default function GuidePage() {
                       style={{ maxHeight: '40px' }}
                       src={
                         isEmpty(channel.icon?.path)
-                          ? '/dizquetv.png'
+                          ? '/tunarr.png'
                           : channel.icon?.path
                       }
                     />

@@ -1,13 +1,16 @@
 import { compact, partition } from 'lodash-es';
+import { apiClient } from '../external/api.ts';
 import { AsyncInterval } from './AsyncInterval.ts';
 import { sequentialPromises } from './util.ts';
-import { apiClient } from '../external/api.ts';
+
+// From Plex: The Client Identifier identifies the specific instance of your app. A random string or UUID is sufficient here. There are no hard requirements for Client Identifier length or format, but once one is generated the client should store and re-use this identifier for subsequent requests.
+const ClientIdentifier = 'p86cy1w47clco3ro8t92nfy1';
 
 const PlexLoginHeaders = {
   Accept: 'application/json',
-  'X-Plex-Product': 'dizqueTV',
+  'X-Plex-Product': 'Tunarr',
   'X-Plex-Version': 'Plex OAuth',
-  'X-Plex-Client-Identifier': 'rg14zekk3pa5zp4safjwaa8z',
+  'X-Plex-Client-Identifier': ClientIdentifier,
   'X-Plex-Model': 'Plex OAuth',
 };
 
@@ -83,7 +86,7 @@ export const plexLoginFlow = async () => {
   };
 
   const authWindow = window.open(
-    `https://app.plex.tv/auth/#!?clientID=rg14zekk3pa5zp4safjwaa8z&context[device][version]=Plex OAuth&context[device][model]=Plex OAuth&code=${initialResponseBody.code}&context[device][product]=Plex Web`,
+    `https://app.plex.tv/auth/#!?clientID=${ClientIdentifier}&context[device][version]=Plex OAuth&context[device][model]=Plex OAuth&code=${initialResponseBody.code}&context[device][product]=Plex Web`,
     '_blank',
     `height=${plexWindowSizes.height}, width=${plexWindowSizes.width}, top=${plexWindowPosition.height}, left=${plexWindowPosition.width}`,
   );
