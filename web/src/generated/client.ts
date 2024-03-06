@@ -25,7 +25,7 @@ const createChannelV2_Body = z.object({
     position: z.string(),
   }),
   guideMinimumDurationSeconds: z.number().optional().default(300),
-  groupTitle: z.string().optional().default('dizqueTV'),
+  groupTitle: z.string().optional().default('Tunarr'),
   disableFillerOverlay: z.boolean().optional(),
   offline: z
     .object({

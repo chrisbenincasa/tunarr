@@ -48,7 +48,7 @@ export default function ChannelPropertiesEditor() {
   useEffect(() => {
     if (!prevChannel && channel) {
       const url = isEmpty(channel.icon.path)
-        ? `/dizquetv.png`
+        ? `/tunarr.png`
         : channel.icon.path;
       setChannelIcon(url);
       setChannelIconPreview(url);

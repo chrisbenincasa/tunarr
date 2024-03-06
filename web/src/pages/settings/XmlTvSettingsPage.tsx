@@ -1,4 +1,3 @@
-import React, { useEffect } from 'react';
 import {
   Alert,
   Button,
@@ -10,10 +9,11 @@ import {
   Stack,
   TextField,
 } from '@mui/material';
-import { useXmlTvSettings } from '../../hooks/settingsHooks.ts';
-import { hasOnlyDigits } from '../../helpers/util.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { XmlTvSettings, defaultXmlTvSettings } from '@tunarr/types';
+import React, { useEffect } from 'react';
+import { hasOnlyDigits } from '../../helpers/util.ts';
+import { useXmlTvSettings } from '../../hooks/settingsHooks.ts';
 
 export default function XmlTvSettingsPage() {
   const { data, isPending, error } = useXmlTvSettings();
@@ -182,10 +182,10 @@ export default function XmlTvSettingsPage() {
         />
         <FormHelperText>
           If enabled the pictures used for Movie and TV Show posters will be
-          cached in dizqueTV's .dizqueTV folder and will be delivered by
-          dizqueTV's server instead of requiring calls to Plex. Note that using
-          fixed xmltv location in Plex (as opposed to url) will not work
-          correctly in this case.
+          cached in Tunarr's .tunarr folder and will be delivered by Tunarr's
+          server instead of requiring calls to Plex. Note that using fixed xmltv
+          location in Plex (as opposed to url) will not work correctly in this
+          case.
         </FormHelperText>
       </FormControl>
       <Stack spacing={2} direction="row" justifyContent="right" sx={{ mt: 2 }}>
