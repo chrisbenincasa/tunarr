@@ -26,10 +26,12 @@
         "esModuleInterop": true
     },
     "include": [
-        "./**/*.ts",
+        "./src/**/*.ts",
         "__tests__/**/*"
     ],
     "exclude": [
-        "./build/**/*"
+        "./build/**/*",
+        "./**/*.test.ts",
+        "./**/*.ignore.ts"
     ]
 }

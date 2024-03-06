@@ -8,19 +8,19 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./build/src/index.d.ts",
-      "default": "./build/src/index.js"
+      "types": "./build/index.d.ts",
+      "default": "./build/index.js"
     },
     "./constants": {
-      "types": "./build/src/util/constants.d.ts",
-      "default": "./build/src/util/constants.js"
+      "types": "./build/util/constants.d.ts",
+      "default": "./build/util/constants.js"
     }
   },
   "main": "index.ts",
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsup",
     "clean": "rimraf build/",
-    "dev": "nodemon -e ts --watch src --ignore build/ -e .json,.ts,.yml,.yaml,.js -x tsc --project tsconfig.build.json"
+    "dev": "pnpm run build -- --watch"
   },
   "dependencies": {
     "@tunarr/types": "workspace:*",
@@ -32,8 +32,8 @@
   "devDependencies": {
     "@types/lodash-es": "^4.17.10",
     "@types/node": "18.18.0",
-    "nodemon": "3.0.2",
     "rimraf": "^5.0.5",
+    "tsup": "^8.0.2",
     "typescript": "5.2.2"
   }
 }
