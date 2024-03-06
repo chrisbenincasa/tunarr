@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import {
   ChannelProgram,
-  ChannelProgramming,
   ContentProgram,
   FlexProgram,
   isContentProgram,
@@ -14,6 +13,7 @@ import relativeTime from 'dayjs/plugin/relativeTime.js';
 import utc from 'dayjs/plugin/utc.js';
 import {
   chain,
+  first,
   forEach,
   isNil,
   isNull,
@@ -159,7 +159,6 @@ export function distributeFlex(
 
   const div = Math.floor(remainingTime / schedule.padMs);
   const mod = remainingTime % schedule.padMs;
-  console.log({ remainingTime, 'schedule.padMs': schedule.padMs, div, mod });
   // Add leftover flex to end
   last(programs)!.padMs += mod;
   last(programs)!.totalDuration += mod;
@@ -176,7 +175,6 @@ export function distributeFlex(
     if (i < div % programs.length) {
       q++;
     }
-    console.log(q);
     const extraPadding = q * schedule.padMs;
     programs[sortedPads[i].index].padMs += extraPadding;
     programs[sortedPads[i].index].totalDuration += extraPadding;
@@ -248,15 +246,13 @@ function advanceIterator(
 }
 
 // eslint-disable-next-line @typescript-eslint/require-await
-export default async function scheduleRandomSlots(
+export async function scheduleRandomSlots(
   schedule: RandomSlotSchedule,
-  channelProgramming: ChannelProgramming,
+  channelProgramming: ChannelProgram[],
 ) {
   // Load programs
   // TODO include redirects and custom programs!
-  const allPrograms = reject(channelProgramming.programs, (p) =>
-    isFlexProgram(p),
-  );
+  const allPrograms = reject(channelProgramming, (p) => isFlexProgram(p));
   const programBySlotType = createProgramMap(allPrograms);
 
   const programmingIteratorsById = reduce(
@@ -354,9 +350,9 @@ export default async function scheduleRandomSlots(
         }
       }
 
-      n += slot.weight!; // why
+      n += slot.weight; // why
 
-      if (random.bool(slot.weight!, n)) {
+      if (random.bool(slot.weight, n)) {
         currSlot = slot;
         // slotIndex = i;
         remaining = slot.durationMs;
@@ -446,8 +442,19 @@ export default async function scheduleRandomSlots(
     // "shuffle" ordering, it won't work for "in order" shows in slots.
     // TODO: Implement greedy filling.
     // TODO: Handle padStyle === 'episode'
-    if (schedule.flexPreference === 'distribute') {
+    if (
+      schedule.flexPreference === 'distribute' &&
+      schedule.padStyle === 'episode'
+    ) {
       distributeFlex(paddedPrograms, schedule, remainingTimeInSlot);
+    } else if (schedule.flexPreference === 'distribute') {
+      const div = Math.floor(remaining / paddedPrograms.length);
+      let totalAdded = 0;
+      forEach(paddedPrograms, (paddedProgram) => {
+        paddedProgram.padMs += div;
+        totalAdded += div;
+      });
+      first(paddedPrograms)!.padMs += remaining - totalAdded;
     } else {
       const lastProgram = last(paddedPrograms)!;
       lastProgram.padMs += remainingTimeInSlot;

@@ -9,4 +9,5 @@ export default defineConfig({
   splitting: false,
   format: 'esm',
   outDir: 'build',
+  sourcemap: true,
 });

@@ -1,5 +1,5 @@
-import { exec } from 'child_process';
 import { FfmpegSettings } from '@tunarr/types';
+import { exec } from 'child_process';
 
 export class FFMPEGInfo {
   private ffmpegPath: string;
@@ -27,7 +27,7 @@ export class FFMPEGInfo {
       return m[1];
     } catch (err) {
       console.error('Error getting ffmpeg version', err);
-      return 'Error';
+      return 'unknown';
     }
   }
 }

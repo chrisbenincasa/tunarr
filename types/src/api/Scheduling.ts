@@ -101,12 +101,12 @@ export type RandomSlotProgramming = Alias<
 >;
 
 export const RandomSlotSchema = z.object({
-  order: z.string(),
+  order: z.string().optional(), // Present for show slots only
   startTime: z.number().optional(), // Offset from midnight millis
   cooldownMs: z.number(),
   periodMs: z.number().optional(),
   durationMs: z.number(),
-  weight: z.number().optional(), // Percentage
+  weight: z.number(),
   programming: RandomSlotProgrammingSchema,
 });
 

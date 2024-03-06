@@ -56,6 +56,12 @@ import { Link as RouterLink } from 'react-router-dom';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import ChannelProgrammingList from '../../components/channel_config/ChannelProgrammingList.tsx';
+import {
+  DropdownOption,
+  ProgramOption,
+  flexOptions,
+  padOptions,
+} from '../../components/slot_scheduler/commonSlotSchedulerOptions.ts';
 import { apiClient } from '../../external/api.ts';
 import { zipWithIndex } from '../../helpers/util.ts';
 import { usePreloadedChannelEdit } from '../../hooks/usePreloadedChannel.ts';
@@ -105,22 +111,6 @@ type MutateArgs = {
   lineupRequest: UpdateChannelProgrammingRequest;
 };
 
-type DropdownOption<T extends string | number> = {
-  value: T;
-  description: string;
-};
-
-type ProgramOption = DropdownOption<string>;
-
-const padOptions: DropdownOption<number>[] = [
-  { value: 1, description: 'Do not pad' },
-  { value: 5 * 60 * 1000, description: '0:00, 0:05, 0:10, ..., 0:55' },
-  { value: 10 * 60 * 1000, description: '0:00, 0:10, 0:20, ..., 0:50' },
-  { value: 15 * 60 * 1000, description: '0:00, 0:15, 0:30, ..., 0:45' },
-  { value: 30 * 60 * 1000, description: '0:00, 0:30' },
-  { value: 1 * 60 * 60 * 1000, description: '0:00' },
-];
-
 const latenessOptions: DropdownOption<number>[] = [
   dayjs.duration(5, 'minutes'),
   dayjs.duration(10, 'minutes'),
@@ -139,11 +129,6 @@ const latenessOptions: DropdownOption<number>[] = [
       description: 'Any amount',
     },
   ]);
-
-const flexOptions: DropdownOption<'end' | 'distribute'>[] = [
-  { value: 'distribute', description: 'Between videos' },
-  { value: 'end', description: 'End of the slot' },
-];
 
 const defaultTimeSlotSchedule: TimeSlotSchedule = {
   type: 'time',

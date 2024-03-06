@@ -20,7 +20,7 @@
   "scripts": {
     "build": "tsup",
     "clean": "rimraf build/",
-    "dev": "pnpm run build -- --watch"
+    "dev": "tsup --watch"
   },
   "dependencies": {
     "@tunarr/types": "workspace:*",

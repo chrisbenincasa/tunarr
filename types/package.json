@@ -5,7 +5,7 @@
   "scripts": {
     "build": "tsup",
     "clean": "rimraf build",
-    "dev": "pnpm run build -- --watch"
+    "dev": "tsup --watch"
   },
   "main": "./build/src/index.js",
   "module": "./build/src/index.js",
