@@ -2,6 +2,7 @@ import {
   Delete as DeleteIcon,
   DragIndicator as DragIndicatorIcon,
 } from '@mui/icons-material';
+import { ListItemIcon } from '@mui/material';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import List from '@mui/material/List';
@@ -17,6 +18,7 @@ import {
   FixedSizeListProps,
   ListChildComponentProps,
 } from 'react-window';
+import { alternateColors, channelProgramUniqueId } from '../../helpers/util.ts';
 import {
   deleteProgram,
   moveProgramInCurrentChannel,
@@ -24,8 +26,6 @@ import {
 import useStore, { State } from '../../store/index.ts';
 import { materializedProgramListSelector } from '../../store/selectors.ts';
 import { UIChannelProgram } from '../../types/index.ts';
-import { ListItemIcon } from '@mui/material';
-import { channelProgramUniqueId } from '../../helpers/util.ts';
 
 type Props = {
   // The caller can pass the list of programs to render, if they don't
@@ -143,10 +143,8 @@ const ProgramListItem = ({
       sx={{
         backgroundColor: (theme) =>
           isDragging
-            ? theme.palette.background.paper
-            : index % 2 === 0
-            ? theme.palette.grey[100]
-            : theme.palette.grey[300],
+            ? 'transparent'
+            : alternateColors(index, theme.palette.mode, theme),
       }}
       key={startTime}
       // sx={{ borderBottom: dayBoundary ? '1px dashed black' : null }}

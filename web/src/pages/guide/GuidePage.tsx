@@ -9,7 +9,6 @@ import {
   Box,
   Chip,
   CircularProgress,
-  Color,
   FormControl,
   IconButton,
   MenuItem,
@@ -31,7 +30,7 @@ import { isEmpty, round } from 'lodash-es';
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import { useInterval } from 'usehooks-ts';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
-import { formatProgramDuration } from '../../helpers/util.ts';
+import { alternateColors, prettyItemDuration } from '../../helpers/util.ts';
 import { prefetchAllTvGuides, useAllTvGuides } from '../../hooks/useTvGuide.ts';
 import useStore from '../../store/index.ts';
 import { setGuideDurationState } from '../../store/themeEditor/actions.ts';
@@ -53,16 +52,11 @@ const GridChild = styled(Box)<{ width: number }>(({ width }) => ({
   transition: 'width 0.5s ease-in',
 }));
 
-const GuideItem = styled(GridChild)<{ grey: keyof Color; width: number }>(
-  ({ theme, grey, width }) => ({
+const GuideItem = styled(GridChild)<{ width: number; index: number }>(
+  ({ theme, width, index }) => ({
     display: 'flex',
     alignItems: 'flex-start',
-    backgroundColor:
-      theme.palette.mode === 'light'
-        ? theme.palette.grey[grey]
-        : grey === 300
-        ? theme.palette.grey[700]
-        : theme.palette.grey[800],
+    backgroundColor: alternateColors(index, theme.palette.mode, theme),
     borderCollapse: 'collapse',
     borderStyle: 'solid',
     borderWidth: '2px 5px 2px 5px',
@@ -356,8 +350,6 @@ export default function GuidePage() {
       2,
     );
 
-    const grey = index % 2 === 0 ? 300 : 400;
-
     const isPlaying = dayjs().isBetween(programStart, programEnd);
     let remainingTime;
 
@@ -369,7 +361,7 @@ export default function GuidePage() {
       <Fragment key={key}>
         <GuideItem
           width={pct}
-          grey={grey}
+          index={index}
           onClick={() => handleModalOpen(program)}
         >
           <Box sx={{ fontSize: '14px', fontWeight: '600' }}>{title}</Box>
@@ -382,14 +374,13 @@ export default function GuidePage() {
           </Box>
         </GuideItem>
         {endOfAvailableProgramming
-          ? renderUnavailableProgramming(finalBlockWidth)
+          ? renderUnavailableProgramming(finalBlockWidth, index)
           : null}
       </Fragment>
     );
   };
 
-  const renderUnavailableProgramming = (width: number) => {
-    const lm = theme.palette.mode === 'light';
+  const renderUnavailableProgramming = (width: number, index: number) => {
     return (
       <Tooltip
         title={'No programming scheduled for this time period'}
@@ -397,15 +388,15 @@ export default function GuidePage() {
       >
         <GuideItem
           width={width}
-          grey={100}
+          index={index}
           sx={{
             border: 'none',
             background: `repeating-linear-gradient(
               45deg,
-              ${theme.palette.grey[lm ? 300 : 700]},
-              ${theme.palette.grey[lm ? 300 : 700]} 10px,
-              ${theme.palette.grey[lm ? 400 : 800]} 10px,
-              ${theme.palette.grey[lm ? 400 : 800]} 20px)`,
+              ${alternateColors(index, theme.palette.mode, theme)},
+              ${alternateColors(index, theme.palette.mode, theme)} 10px,
+              ${alternateColors(index, theme.palette.mode, theme)} 10px,
+              ${alternateColors(index, theme.palette.mode, theme)} 20px)`,
           }}
         >
           <Box
@@ -514,7 +505,7 @@ export default function GuidePage() {
             <>
               <Chip
                 color="secondary"
-                label={formatProgramDuration(program.duration)}
+                label={prettyItemDuration(program.duration)}
                 sx={{ mt: 1 }}
               />
               <Chip color="secondary" label={rating} sx={{ mx: 1, mt: 1 }} />
@@ -533,7 +524,7 @@ export default function GuidePage() {
     );
   };
 
-  const channels = channelLineup?.map((lineup) => {
+  const channels = channelLineup?.map((lineup, index) => {
     const alignedLineup = lineup.programs;
     if (
       lineup.programs.length > 0 &&
@@ -568,7 +559,7 @@ export default function GuidePage() {
       >
         {alignedLineup.length > 0
           ? alignedLineup.map(renderProgram)
-          : renderUnavailableProgramming(100)}
+          : renderUnavailableProgramming(100, index)}
       </Box>
     );
   });
