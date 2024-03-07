@@ -1,4 +1,5 @@
 import {
+  AddCircle,
   Clear,
   ExpandLess,
   ExpandMore,
@@ -6,6 +7,7 @@ import {
   ViewList,
 } from '@mui/icons-material';
 import {
+  Box,
   Button,
   ButtonGroup,
   Collapse,
@@ -37,7 +39,7 @@ import {
 } from '@tunarr/types/plex';
 import { chain, first, isEmpty, isNil, isUndefined, map } from 'lodash-es';
 import React, { Fragment, useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useIntersectionObserver } from 'usehooks-ts';
 import { toggle } from '../../helpers/util.ts';
 import { fetchPlexPath, usePlex } from '../../hooks/plexHooks.ts';
@@ -294,6 +296,28 @@ export default function ProgrammingSelector() {
           </Select>
         </FormControl>
       )}
+      {plexServers?.length === 0 && (
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            m: 4,
+          }}
+        >
+          <Typography align="center" variant="h6">
+            No Plex Servers connected
+          </Typography>
+          <Button
+            variant="contained"
+            to="/settings/plex"
+            component={Link}
+            sx={{ margin: '0 auto' }}
+            startIcon={<AddCircle />}
+          >
+            Add Your Plex Server
+          </Button>
+        </Box>
+      )}
       {!isNil(directoryChildren) &&
         directoryChildren.size > 0 &&
         selectedLibrary && (
@@ -364,26 +388,29 @@ export default function ProgrammingSelector() {
             </Stack>
           </>
         )}
-      <LinearProgress
-        sx={{ visibility: searchLoading ? 'visible' : 'hidden' }}
-      />
-      <List
-        component="nav"
-        sx={{
-          mt: 2,
-          width: '100%',
-          maxHeight: 1200,
-          overflowY: 'scroll',
-          display: viewType === 'grid' ? 'flex' : 'block',
-          flexWrap: 'wrap',
-          gap: '10px',
-          justifyContent: 'space-between',
-        }}
-      >
-        {selectedServer && renderListItems()}
-
-        <div style={{ height: 40 }} ref={ref}></div>
-      </List>
+      {selectedServer && (
+        <LinearProgress
+          sx={{ visibility: searchLoading ? 'visible' : 'hidden' }}
+        />
+      )}
+      {selectedServer && (
+        <List
+          component="nav"
+          sx={{
+            mt: 2,
+            width: '100%',
+            maxHeight: 1200,
+            overflowY: 'scroll',
+            display: viewType === 'grid' ? 'flex' : 'block',
+            flexWrap: 'wrap',
+            gap: '10px',
+            justifyContent: 'space-between',
+          }}
+        >
+          renderListItems()
+          <div style={{ height: 40 }} ref={ref}></div>
+        </List>
+      )}
       <Divider sx={{ mt: 3, mb: 2 }} />
       <Typography>Selected Items</Typography>
       <SelectedProgrammingList />
