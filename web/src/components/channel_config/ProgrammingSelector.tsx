@@ -296,28 +296,7 @@ export default function ProgrammingSelector() {
           </Select>
         </FormControl>
       )}
-      {plexServers?.length === 0 && (
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            m: 4,
-          }}
-        >
-          <Typography align="center" variant="h6">
-            No Plex Servers connected
-          </Typography>
-          <Button
-            variant="contained"
-            to="/settings/plex"
-            component={Link}
-            sx={{ margin: '0 auto' }}
-            startIcon={<AddCircle />}
-          >
-            Add Your Plex Server
-          </Button>
-        </Box>
-      )}
+
       {!isNil(directoryChildren) &&
         directoryChildren.size > 0 &&
         selectedLibrary && (
@@ -388,7 +367,28 @@ export default function ProgrammingSelector() {
             </Stack>
           </>
         )}
-      {selectedServer && (
+      {plexServers?.length === 0 ? (
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            m: 4,
+          }}
+        >
+          <Typography align="center" variant="h6">
+            No Plex Servers connected
+          </Typography>
+          <Button
+            variant="contained"
+            to="/settings/plex"
+            component={Link}
+            sx={{ margin: '0 auto' }}
+            startIcon={<AddCircle />}
+          >
+            Add Your Plex Server
+          </Button>
+        </Box>
+      ) : (
         <>
           <LinearProgress
             sx={{ visibility: searchLoading ? 'visible' : 'hidden' }}
@@ -406,7 +406,7 @@ export default function ProgrammingSelector() {
               justifyContent: 'space-between',
             }}
           >
-            renderListItems()
+            {renderListItems()}
             <div style={{ height: 40 }} ref={ref}></div>
           </List>
 
