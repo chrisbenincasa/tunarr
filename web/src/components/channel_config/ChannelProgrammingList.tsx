@@ -2,7 +2,7 @@ import {
   Delete as DeleteIcon,
   DragIndicator as DragIndicatorIcon,
 } from '@mui/icons-material';
-import { ListItemIcon } from '@mui/material';
+import { ListItemIcon, Typography } from '@mui/material';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import List from '@mui/material/List';
@@ -261,6 +261,18 @@ export default function ChannelProgrammingList({
           : `flex-${item.originalIndex}`;
 
       return `${key}_${item.startTimeOffset}`;
+    }
+
+    if (programList.length === 0) {
+      return (
+        <Typography
+          align="center"
+          width={'100%'}
+          sx={{ my: 4, fontStyle: 'italic' }}
+        >
+          No programming added yet
+        </Typography>
+      );
     }
 
     if (virtualListProps) {
