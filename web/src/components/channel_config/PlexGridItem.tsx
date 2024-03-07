@@ -21,7 +21,7 @@ import {
   isTerminalItem,
 } from '@tunarr/types/plex';
 import React, { MouseEvent, useCallback, useEffect, useState } from 'react';
-import { formatProgramDuration } from '../../helpers/util.ts';
+import { prettyItemDuration } from '../../helpers/util.ts';
 import { usePlexTyped } from '../../hooks/plexHooks.ts';
 import useStore from '../../store/index.ts';
 import {
@@ -132,7 +132,7 @@ export function PlexGridItem<T extends PlexMedia>(props: PlexGridItemProps<T>) {
           />
           <ImageListItemBar
             title={item.title}
-            subtitle={<span>{formatProgramDuration(item.duration)}</span>}
+            subtitle={<span>{prettyItemDuration(item.duration)}</span>}
             position="below"
             actionIcon={
               <IconButton

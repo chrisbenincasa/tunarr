@@ -1,3 +1,4 @@
+import { Theme } from '@mui/material';
 import { ChannelProgram, FlexProgram, Resolution } from '@tunarr/types';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
@@ -35,13 +36,28 @@ export const wait: (ms: number) => Promise<void> = (ms: number) => {
 export function prettyItemDuration(durationMs: number): string {
   const itemDuration = dayjs.duration(durationMs);
   if (itemDuration.asHours() >= 1) {
-    return dayjs.duration(itemDuration.asHours(), 'hours').format('H[h]mm[m]');
+    return dayjs.duration(itemDuration.asHours(), 'hours').format('H[h] m[m]');
   } else {
     return dayjs
       .duration(itemDuration.asMinutes(), 'minutes')
-      .format('m[m]s[s]');
+      .format('m[m] s[s]');
   }
 }
+
+// Alternate row colors utility that supports dark mode & light mode
+export const alternateColors = (
+  index: number,
+  mode: string,
+  theme: Theme,
+): string => {
+  return mode === 'light'
+    ? index % 2 === 0
+      ? theme.palette.grey[100]
+      : theme.palette.grey[400]
+    : index % 2 === 0
+    ? theme.palette.grey[700]
+    : theme.palette.grey[800];
+};
 
 export const isResolutionString = (
   str: string,
@@ -85,15 +101,6 @@ export const channelProgramUniqueId = (program: ChannelProgram): string => {
     case 'flex':
       return 'flex';
   }
-};
-
-// Convert ms to human readable program length.
-// 6454864 => '1h 27m'
-export const formatProgramDuration = (duration: number) => {
-  const hours = Math.floor(dayjs.duration(duration).asHours());
-  const minutes = Math.floor(dayjs.duration(duration).asMinutes() - 60 * hours);
-
-  return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
 };
 
 export const zipWithIndex = <T extends object>(
