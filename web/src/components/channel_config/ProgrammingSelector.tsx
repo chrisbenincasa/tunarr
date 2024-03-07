@@ -394,30 +394,33 @@ export default function ProgrammingSelector() {
         />
       )}
       {selectedServer && (
-        <List
-          component="nav"
-          sx={{
-            mt: 2,
-            width: '100%',
-            maxHeight: 1200,
-            overflowY: 'scroll',
-            display: viewType === 'grid' ? 'flex' : 'block',
-            flexWrap: 'wrap',
-            gap: '10px',
-            justifyContent: 'space-between',
-          }}
-        >
-          renderListItems()
-          <div style={{ height: 40 }} ref={ref}></div>
-        </List>
+        <>
+          <List
+            component="nav"
+            sx={{
+              mt: 2,
+              width: '100%',
+              maxHeight: 1200,
+              overflowY: 'scroll',
+              display: viewType === 'grid' ? 'flex' : 'block',
+              flexWrap: 'wrap',
+              gap: '10px',
+              justifyContent: 'space-between',
+            }}
+          >
+            renderListItems()
+            <div style={{ height: 40 }} ref={ref}></div>
+          </List>
+
+          <Divider sx={{ mt: 3, mb: 2 }} />
+          <Typography>Selected Items</Typography>
+          <SelectedProgrammingList />
+          <AddSelectedMediaButton
+            onAdd={addPlexMediaToCurrentChannel}
+            onSuccess={() => navigate('..', { relative: 'path' })}
+          />
+        </>
       )}
-      <Divider sx={{ mt: 3, mb: 2 }} />
-      <Typography>Selected Items</Typography>
-      <SelectedProgrammingList />
-      <AddSelectedMediaButton
-        onAdd={addPlexMediaToCurrentChannel}
-        onSuccess={() => navigate('..', { relative: 'path' })}
-      />
     </>
   );
 }
