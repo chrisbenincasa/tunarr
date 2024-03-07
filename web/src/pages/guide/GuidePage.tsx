@@ -27,7 +27,7 @@ import { TvGuideProgram } from '@tunarr/types';
 import dayjs, { Dayjs, duration } from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 import { isEmpty, round } from 'lodash-es';
-import { Fragment, useCallback, useEffect, useState } from 'react';
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { useInterval } from 'usehooks-ts';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import { alternateColors, prettyItemDuration } from '../../helpers/util.ts';
@@ -149,6 +149,9 @@ export default function GuidePage() {
     { staleTime: dayjs.duration(5, 'minutes').asMilliseconds() },
   );
 
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [minHeight, setMinHeight] = useState(0); // Workaround for issue with page jumping on-zoom or nav caused by collapsing div when loading new guide data
+
   const smallViewport = useMediaQuery(theme.breakpoints.down('md'));
 
   prefetchAllTvGuides(queryClient)(
@@ -162,7 +165,16 @@ export default function GuidePage() {
   useEffect(() => {
     setProgress(calcProgress(start, end));
     setCurrentTime(dayjs().format('h:mm'));
+    if (ref.current) {
+      setMinHeight(ref.current.offsetHeight);
+    }
   }, [start, end]);
+
+  useEffect(() => {
+    if (ref.current) {
+      setMinHeight(ref.current.offsetHeight);
+    }
+  }, [channelLineup]);
 
   useInterval(() => {
     setProgress(calcProgress(start, end));
@@ -622,7 +634,7 @@ export default function GuidePage() {
           </IconButton>
         </Stack>
       </Box>
-      <PaddedPaper>
+      <PaddedPaper ref={ref} sx={{ minHeight: minHeight || 0 }}>
         <Box display="flex">
           <Box
             display="flex"
