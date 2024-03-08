@@ -61,12 +61,7 @@ export function ChannelProgrammingOrganizeOptions({
         title="This is similar to Time Slots, but instead of time sections, you pick a probability to play each tv show and the length of the block. Once a channel has been configured with random slots, the reload button can re-evaluate them again, with the saved settings."
         placement="right"
       >
-        <MenuItem
-          onClick={() => {
-            // To do
-            handleClose();
-          }}
-        >
+        <MenuItem component={Link} to="random-slot-editor">
           <ShuffleIcon /> Random Slots
         </MenuItem>
       </Tooltip>

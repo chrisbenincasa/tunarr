@@ -5,6 +5,7 @@ import ChannelProgrammingPage from './pages/channels/ChannelProgrammingPage.tsx'
 import ChannelsPage from './pages/channels/ChannelsPage.tsx';
 import EditChannelPage from './pages/channels/EditChannelPage.tsx';
 import ProgrammingSelectorPage from './pages/channels/ProgrammingSelectorPage.tsx';
+import RandomSlotEditorPage from './pages/channels/RandomSlotEditorPage.tsx';
 import TimeSlotEditorPage from './pages/channels/TimeSlotEditorPage.tsx';
 import GuidePage from './pages/guide/GuidePage.tsx';
 import CustomShowsPage from './pages/library/CustomShowsPage.tsx';
@@ -83,6 +84,11 @@ export const router = createBrowserRouter(
         {
           path: '/channels/:id/programming/time-slot-editor',
           element: <TimeSlotEditorPage />,
+          loader: editProgrammingLoader(queryClient),
+        },
+        {
+          path: '/channels/:id/programming/random-slot-editor',
+          element: <RandomSlotEditorPage />,
           loader: editProgrammingLoader(queryClient),
         },
         {
