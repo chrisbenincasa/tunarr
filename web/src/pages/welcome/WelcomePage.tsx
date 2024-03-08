@@ -2,7 +2,6 @@ import { ArrowBack, CheckBox, CheckBoxOutlineBlank } from '@mui/icons-material';
 import { Box, Button, Stack, Typography } from '@mui/material';
 import dayjs from 'dayjs';
 import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import ConnectPlex from '../../components/settings/ConnectPlex.tsx';
 import { usePlexServerSettings } from '../../hooks/settingsHooks.ts';
@@ -10,10 +9,7 @@ import { useChannels } from '../../hooks/useChannels.ts';
 import { useAllTvGuides } from '../../hooks/useTvGuide.ts';
 import { useVersion } from '../../hooks/useVersion.ts';
 import useStore from '../../store/index.ts';
-import {
-  resetPathwayState,
-  updatePathwayState,
-} from '../../store/themeEditor/actions.ts';
+import { resetPathwayState } from '../../store/themeEditor/actions.ts';
 
 export default function WelcomePage() {
   const [isPlexConnected, setIsPlexConnected] = React.useState<boolean>(false);
@@ -32,7 +28,7 @@ export default function WelcomePage() {
     from: startDate,
     to: endDate,
   });
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const pathway = useStore((state) => state.theme.pathway);
 
   useEffect(() => {
@@ -53,13 +49,13 @@ export default function WelcomePage() {
     }
   }, [plexServers, channels, programming]);
 
-  const handlePathway = (pathway: string) => {
-    updatePathwayState(pathway);
+  // const handlePathway = (pathway: string) => {
+  //   updatePathwayState(pathway);
 
-    if (pathway === 'advanced') {
-      navigate('/guide');
-    }
-  };
+  //   if (pathway === 'advanced') {
+  //     navigate('/guide');
+  //   }
+  // };
 
   const header = (
     <>
