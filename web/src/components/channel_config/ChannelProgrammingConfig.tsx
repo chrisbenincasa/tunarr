@@ -32,7 +32,7 @@ export function ChannelProgrammingConfig() {
 
   const handleStartTimeChange = (value: Dayjs | null) => {
     if (value) {
-      setChannelStartTime(dayjs(value).unix() * 1000);
+      setChannelStartTime(value.unix() * 1000);
     }
   };
 
