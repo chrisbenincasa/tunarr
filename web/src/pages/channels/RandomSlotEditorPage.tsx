@@ -20,7 +20,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useQueryClient } from '@tanstack/react-query';
+// import { useQueryClient } from '@tanstack/react-query';
 import { scheduleRandomSlots } from '@tunarr/shared';
 import { isContentProgram } from '@tunarr/types';
 import {
@@ -321,7 +321,7 @@ export default function RandomSlotEditorPage() {
     channel?.startTime ?? dayjs().unix() * 1000,
   );
 
-  const queryClient = useQueryClient();
+  // const queryClient = useQueryClient();
 
   const { control, getValues, setValue, watch } = useForm<RandomSlotForm>({
     defaultValues:
