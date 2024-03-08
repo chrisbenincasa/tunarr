@@ -263,8 +263,6 @@ export default function GuidePage() {
     return week;
   }, []);
 
-  if (error) return 'An error occurred!: ' + error.message;
-
   const renderProgram = (
     program: TvGuideProgram,
     index: number,
@@ -716,7 +714,33 @@ export default function GuidePage() {
                 </GridChild>
               ))}
             </GridParent>
-            {isPending ? <CircularProgress color="secondary" /> : channels}
+            {error ? (
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  marginLeft: '-250px',
+                  my: 2,
+                }}
+              >
+                <Typography sx={{ m: 4 }}>
+                  An error occurred: {error.message}
+                </Typography>
+              </Box>
+            ) : isPending ? (
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  marginLeft: '-250px',
+                  my: 2,
+                }}
+              >
+                <CircularProgress color="secondary" sx={{ m: 4 }} />
+              </Box>
+            ) : (
+              channels
+            )}
             {dayjs().isBetween(start, end) && (
               <Box
                 sx={{

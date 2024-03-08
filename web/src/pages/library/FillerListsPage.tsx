@@ -21,6 +21,8 @@ import { useFillerLists } from '../../hooks/useFillerLists.ts';
 type DeleteFillerListRequest = { id: string };
 
 export default function FillerListsPage() {
+  console.log('test');
+
   // This should always be defined because of the preloader
   const { data: fillerLists } = useFillerLists();
   const queryClient = useQueryClient();
