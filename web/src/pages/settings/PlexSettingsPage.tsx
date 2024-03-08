@@ -55,12 +55,11 @@ import {
   PlexStreamSettings,
   defaultPlexStreamSettings,
 } from '@tunarr/types';
-import { InsertPlexServerRequest } from '@tunarr/types/api';
 import { fill, isNil, isNull, isUndefined } from 'lodash-es';
 import React, { Fragment, useCallback, useEffect, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import AddPlexServer from '../../components/settings/AddPlexServer.tsx';
 import { apiClient } from '../../external/api.ts';
-import { checkNewPlexServers, plexLoginFlow } from '../../helpers/plexLogin.ts';
 import {
   resolutionFromString,
   resolutionToString,
@@ -307,17 +306,6 @@ export default function PlexSettingsPage() {
     setShowSubtitles(!showSubtitles);
   };
 
-  const addPlexServerMutation = useMutation({
-    mutationFn: (newServer: InsertPlexServerRequest) => {
-      return apiClient.createPlexServer(newServer);
-    },
-    onSuccess: () => {
-      return queryClient.invalidateQueries({
-        queryKey: ['settings', 'plex-servers'],
-      });
-    },
-  });
-
   const updatePlexServerMutation = useMutation({
     mutationFn: (updatedServer: PlexServerSettings) => {
       return apiClient.updatePlexServer(updatedServer, {
@@ -478,21 +466,6 @@ export default function PlexSettingsPage() {
   if (serversError || streamsError) {
     return <h1>XML: {(serversError ?? streamsError)!.message}</h1>;
   }
-
-  const addPlexServer = () => {
-    plexLoginFlow()
-      .then(checkNewPlexServers)
-      .then((connections) => {
-        connections.forEach(({ server, connection }) =>
-          addPlexServerMutation.mutate({
-            name: server.name,
-            uri: connection.uri,
-            accessToken: server.accessToken,
-          }),
-        );
-      })
-      .catch(console.error);
-  };
 
   const removePlexServer = (id: string) => {
     removePlexServerMutation.mutate(id);
@@ -1062,13 +1035,7 @@ export default function PlexSettingsPage() {
             <Typography variant="h6" sx={{ flexGrow: 1 }}>
               Plex Servers
             </Typography>
-            <Button
-              onClick={() => addPlexServer()}
-              variant="contained"
-              startIcon={<AddCircle />}
-            >
-              Add
-            </Button>
+            <AddPlexServer />
           </Box>
           {renderServersTable()}
         </Box>
