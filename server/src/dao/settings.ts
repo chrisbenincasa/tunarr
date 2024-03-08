@@ -9,7 +9,7 @@ import {
   defaultXmlTvSettings as defaultXmlTvSettingsSchema,
 } from '@tunarr/types';
 import { existsSync } from 'fs';
-import { once } from 'lodash-es';
+import { merge, once } from 'lodash-es';
 import { Low } from 'lowdb';
 import { JSONFilePreset } from 'lowdb/node';
 import path from 'path';
@@ -64,7 +64,7 @@ export class Settings {
   }
 
   needsLegacyMigration() {
-    return this.db.data.migration.legacyMigration;
+    return !this.db.data.migration.legacyMigration;
   }
 
   clientId(): string {
@@ -91,12 +91,21 @@ export class Settings {
     return this.updateSettings('ffmpeg', { ...ffmpegSettings });
   }
 
-  updateSettings<K extends keyof SettingsSchema>(
+  async updateSettings<K extends keyof SettingsSchema>(
     key: K,
     settings: SettingsSchema[K],
   ) {
     this.db.data.settings[key] = settings;
-    return this.db.write();
+    return await this.db.write();
+  }
+
+  // Be careful!!!
+  async updateBaseSettings<K extends keyof Omit<Schema, 'settings'>>(
+    key: K,
+    settings: Partial<Schema[K]>,
+  ) {
+    this.db.data[key] = merge(this.db.data[key], settings);
+    return await this.db.write();
   }
 }
 

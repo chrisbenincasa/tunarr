@@ -29,8 +29,6 @@ import { debugApi } from './api/v2/debugApi.js';
 import registerV2Routes from './api/v2/index.js';
 import { xmlTvSettingsRouter } from './api/xmltvSettingsApi.js';
 import { EntityManager, initOrm } from './dao/dataSource.js';
-import { migrateFromLegacyDb } from './dao/legacyDbMigration.js';
-import { getSettingsRawDb } from './dao/settings.js';
 import { serverOptions } from './globals.js';
 import createLogger from './logger.js';
 import { serverContext } from './serverContext.js';
@@ -46,14 +44,17 @@ const currentDirectory = dirname(filename(import.meta.url));
 
 function initDbDirectories() {
   const opts = serverOptions();
-  const hasLegacyDb = !fs.existsSync(opts.database);
-  if (hasLegacyDb) {
-    if (fs.existsSync(path.join('.', '.pseudotv'))) {
-      throw Error(
-        opts.database +
-          ' folder not found but ./.pseudotv has been found. Please rename this folder or create an empty ' +
-          opts.database +
-          ' folder so that the program is not confused about.',
+  const hasTunarrDb = fs.existsSync(
+    path.resolve(currentDirectory, opts.database),
+  );
+  const hasLegacyDb = fs.existsSync(
+    path.resolve(currentDirectory, '.dizquetv'),
+  );
+  if (!hasTunarrDb) {
+    logger.debug(`Existing database at ${opts.database} not found`);
+    if (hasLegacyDb) {
+      logger.info(
+        `DB configured at location ${opts.database} was not found, but a legacy .dizquetv database was located. A migration will be attempted`,
       );
     }
     fs.mkdirSync(opts.database);
@@ -75,7 +76,7 @@ function initDbDirectories() {
     fs.mkdirSync('streams');
   }
 
-  return hasLegacyDb;
+  return !hasTunarrDb && hasLegacyDb;
 }
 
 export async function initServer(opts: ServerOptions) {
@@ -107,8 +108,19 @@ export async function initServer(opts: ServerOptions) {
   const ctx = await serverContext();
 
   if (hadLegacyDb && ctx.settings.needsLegacyMigration()) {
-    logger.info('Migrating from legacy database folder...');
-    await migrateFromLegacyDb(await getSettingsRawDb());
+    // logger.info('Migrating from legacy database folder...');
+    // await getSettingsRawDb()
+    //   .then(migrateFromLegacyDb)
+    //   .catch((e) => {
+    //     logger.error('Failed to migrate from legacy DB: %O', e);
+    //   });
+  } else if (ctx.settings.needsLegacyMigration()) {
+    // Mark the settings as if we migrated, even when there were no
+    // legacy settings present. This will prevent us from trying
+    // again on subsequent runs
+    await ctx.settings.updateBaseSettings('migration', {
+      legacyMigration: true,
+    });
   }
 
   scheduleJobs(ctx);
