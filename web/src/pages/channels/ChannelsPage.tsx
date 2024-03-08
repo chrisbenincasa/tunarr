@@ -105,10 +105,6 @@ export default function ChannelsPage() {
     );
   };
 
-  // if (channelsLoading) return 'Loading...';
-
-  // if (channelsError) return 'An error occurred!: ' + channelsError.message;
-
   // TODO properly define types from API
   const getDataTableRow = (channel: Channel) => {
     const startTime = dayjs(channel.startTime);
