@@ -1,10 +1,9 @@
 import { ChannelLineup } from '@tunarr/types';
 import { ChannelLineupSchema } from '@tunarr/types/schemas';
-import { isError, map } from 'lodash-es';
+import { map } from 'lodash-es';
 import { z } from 'zod';
 import createLogger from '../logger.js';
 import { RouterPluginCallback } from '../types/serverType.js';
-import { AllChannelsGuideSchema } from './schemas/guideSchemas.js';
 
 const logger = createLogger(import.meta);
 
@@ -63,14 +62,6 @@ export const guideRouter: RouterPluginCallback = (fastify, _opts, done) => {
         },
         Promise.resolve({} as Record<string, ChannelLineup>),
       );
-
-      try {
-        AllChannelsGuideSchema.response[200].parse(allLineups);
-      } catch (e) {
-        if (isError(e)) {
-          logger.error('Error parsing schema of result', e);
-        }
-      }
 
       return res.send(allLineups);
     },

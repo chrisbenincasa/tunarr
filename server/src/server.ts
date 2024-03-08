@@ -211,16 +211,22 @@ export async function initServer(opts: ServerOptions) {
         },
       );
     })
-    .register(plexServersRouter)
-    .register(ffmpegSettingsRouter)
-    .register(plexSettingsRouter)
-    .register(xmlTvSettingsRouter)
-    .register(hdhrSettingsRouter)
-    // .register(channelToolRouter)
-    .register(guideRouter)
-    .register(miscRouter)
-    .register(schedulerRouter)
-    .register(debugApi)
+    .register(async (f) => {
+      f.addHook('onError', (req, _, error, done) => {
+        logger.error(req.routeOptions.config.url, error);
+        done();
+      });
+      await f
+        .register(plexServersRouter)
+        .register(ffmpegSettingsRouter)
+        .register(plexSettingsRouter)
+        .register(xmlTvSettingsRouter)
+        .register(hdhrSettingsRouter)
+        .register(guideRouter)
+        .register(miscRouter)
+        .register(schedulerRouter)
+        .register(debugApi);
+    })
     .register(registerV2Routes, { prefix: '/api/v2' })
     .register(ctx.cacheImageService.apiRouters(), {
       prefix: '/api/cache/images',

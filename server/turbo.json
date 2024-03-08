@@ -10,6 +10,9 @@
     },
     "bundle": {
       "dependsOn": ["typecheck"]
+    },
+    "build-dev": {
+      "dependsOn": ["^build"]
     }
   }
 }

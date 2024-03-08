@@ -9,6 +9,7 @@
   "bin": "dist/index.js",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
+    "build-dev": "tsc -p tsconfig.build.json --noEmit --watch",
     "typecheck": "tsc -p tsconfig.build.json --noEmit",
     "bundle": "tsx scripts/bundle.ts",
     "clean": "rimraf build",

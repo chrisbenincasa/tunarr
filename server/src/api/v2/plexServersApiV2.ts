@@ -1,3 +1,4 @@
+import { BaseErrorSchema } from '@tunarr/types/api';
 import { isError, isNil } from 'lodash-es';
 import z from 'zod';
 import { PlexServerSettings } from '../../dao/entities/PlexServerSettings.js';
@@ -5,7 +6,6 @@ import createLogger from '../../logger.js';
 import { PlexApiFactory } from '../../plex.js';
 import { RouterPluginAsyncCallback } from '../../types/serverType.js';
 import { wait } from '../../util.js';
-import { ErrorSchema } from '../schemas/errorSchema.js';
 
 const logger = createLogger(import.meta);
 
@@ -27,8 +27,8 @@ export const plexServerApiV2: RouterPluginAsyncCallback = async (fastify) => {
           200: z.object({
             healthy: z.boolean(),
           }),
-          404: ErrorSchema,
-          500: ErrorSchema,
+          404: BaseErrorSchema,
+          500: BaseErrorSchema,
         },
       },
     },

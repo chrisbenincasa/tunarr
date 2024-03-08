@@ -4,8 +4,8 @@ import {
   ContentProgramSchema,
   CustomProgramSchema,
 } from '../schemas/programmingSchema.js';
-import { TimeSlotScheduleSchema } from './Scheduling.js';
 import { PlexServerSettingsSchema } from '../schemas/settingsSchemas.js';
+import { TimeSlotScheduleSchema } from './Scheduling.js';
 
 export * from './Scheduling.js';
 
@@ -129,4 +129,8 @@ export const VersionApiResponseSchema = z.object({
   tunarr: z.string(),
   ffmpeg: z.string(),
   nodejs: z.string(),
+});
+
+export const BaseErrorSchema = z.object({
+  message: z.string(),
 });

@@ -1,11 +1,12 @@
-import { chain, hasIn, isNil } from 'lodash-es';
-import { scheduledJobsById } from '../../services/scheduler.js';
-import { RouterPluginAsyncCallback } from '../../types/serverType.js';
-import dayjs from 'dayjs';
-import { z } from 'zod';
-import { TaskId } from '../../tasks/task.js';
-import createLogger from '../../logger.js';
+import { BaseErrorSchema } from '@tunarr/types/api';
 import { TaskSchema } from '@tunarr/types/schemas';
+import dayjs from 'dayjs';
+import { chain, hasIn, isNil } from 'lodash-es';
+import { z } from 'zod';
+import createLogger from '../../logger.js';
+import { scheduledJobsById } from '../../services/scheduler.js';
+import { TaskId } from '../../tasks/task.js';
+import { RouterPluginAsyncCallback } from '../../types/serverType.js';
 
 const logger = createLogger(import.meta);
 
@@ -60,7 +61,7 @@ export const tasksApiRouter: RouterPluginAsyncCallback = async (fastify) => {
         }),
         response: {
           202: z.void(),
-          400: z.object({ reason: z.string() }),
+          400: BaseErrorSchema,
           404: z.void(),
         },
       },
@@ -77,7 +78,7 @@ export const tasksApiRouter: RouterPluginAsyncCallback = async (fastify) => {
       }
 
       if (task.running()) {
-        return res.status(400).send({ reason: 'Task already running' });
+        return res.status(400).send({ message: 'Task already running' });
       }
 
       task.runNow(true).catch((e) => {
