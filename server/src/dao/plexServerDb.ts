@@ -2,8 +2,9 @@ import {
   InsertPlexServerRequest,
   UpdatePlexServerRequest,
 } from '@tunarr/types/api';
-import { chain, isNil, isUndefined, map, mapValues } from 'lodash-es';
+import { chain, isNil, isUndefined, keys, map, mapValues } from 'lodash-es';
 import { groupByUniq } from '../util.js';
+import { ChannelDB } from './channelDb.js';
 import { getEm } from './dataSource.js';
 import { PlexServerSettings as PlexServerSettingsEntity } from './entities/PlexServerSettings.js';
 import { Program, ProgramSourceType } from './entities/Program.js';
@@ -21,6 +22,12 @@ type Report = {
   modifiedPrograms: number;
 };
 export class PlexServerDB {
+  #channelDb: ChannelDB;
+
+  constructor(channelDb: ChannelDB) {
+    this.#channelDb = channelDb;
+  }
+
   async getAll() {
     const em = getEm();
     return em.repo(PlexServerSettingsEntity).findAll();
@@ -176,10 +183,13 @@ export class PlexServerDB {
         program.customShows.removeAll();
       });
 
-      // TODO We need to fix up the channel lineup JSON file too to remove
-      // the references
+      for (const channel of keys(channelById)) {
+        await this.#channelDb.removeProgramsFromLineup(
+          channel,
+          map(allPrograms, 'uuid'),
+        );
+      }
       em.remove(allPrograms);
-      // TODO we have to redo the schedules of these.
       await em.flush();
     }
 

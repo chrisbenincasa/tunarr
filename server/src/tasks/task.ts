@@ -1,3 +1,4 @@
+import { isError, isString, round } from 'lodash-es';
 import createLogger from '../logger.js';
 import { Maybe } from '../types.js';
 
@@ -18,11 +19,20 @@ export abstract class Task<Data> {
 
   async run(): Promise<Maybe<Data>> {
     this.running_ = true;
-    logger.info('Running task ' + this.constructor.name);
+    const start = performance.now();
     try {
       this.result = await this.runInternal();
+      const duration = round(performance.now() - start, 2);
+      logger.info('Task %s ran in %d ms', this.constructor.name, duration);
     } catch (e) {
-      logger.error('Task failed...');
+      const error = isError(e) ? e : new Error(isString(e) ? e : 'Unknown');
+      const duration = round(performance.now() - start, 2);
+      logger.warn(
+        'Task %s ran in %d ms and failed. Error = %O',
+        this.constructor.name,
+        duration,
+        error,
+      );
       return;
     } finally {
       this.hasRun = true;

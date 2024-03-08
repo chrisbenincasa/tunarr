@@ -9,7 +9,6 @@ import {
   TvGuideProgram,
 } from '@tunarr/types';
 import { compact, isNil, isUndefined, keys, mapValues } from 'lodash-es';
-import assert from 'node:assert';
 import { MarkRequired } from 'ts-essentials';
 import constants from '../constants.js';
 import { ChannelDB } from '../dao/channelDb.js';
@@ -57,7 +56,18 @@ function lineupItemToCurrentProgram(
       isOffline: true,
     };
   } else if (isContentItem(lineupItem)) {
-    return { ...programDaoToDto(backingItem!), isOffline: false };
+    if (isNil(backingItem)) {
+      logger.warn(
+        'Backing item for lineup item (ID %s) was null, which means it was probably deleted from the DB',
+        lineupItem.id,
+      );
+      return {
+        duration: lineupItem.durationMs,
+        type: 'flex',
+        isOffline: true,
+      };
+    }
+    return { ...programDaoToDto(backingItem), isOffline: false };
   } else {
     return {
       type: 'redirect',
@@ -248,8 +258,20 @@ export class TVGuideService {
       let lineupProgram: CurrentPlayingProgramDetails;
       if (isContentItem(lineupItem)) {
         const program = channel.programs.find((p) => p.uuid === lineupItem.id);
-        assert(!isNil(program));
-        lineupProgram = { ...programDaoToDto(program), isOffline: false };
+        if (isNil(program)) {
+          logger.warn(
+            'Got a nil program (ID %s) when we expected it to be found. This likely means the underlying source of the program was deleted',
+            lineupItem.id,
+          );
+          // For now just stick flex in the schedule
+          lineupProgram = {
+            isOffline: true,
+            type: 'flex',
+            duration: lineupItem.durationMs,
+          };
+        } else {
+          lineupProgram = { ...programDaoToDto(program), isOffline: false };
+        }
       } else if (isOfflineItem(lineupItem)) {
         lineupProgram = {
           type: 'flex',

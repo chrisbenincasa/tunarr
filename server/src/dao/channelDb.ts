@@ -20,7 +20,6 @@ import {
   isEmpty,
   isNil,
   isNull,
-  isUndefined,
   map,
   nth,
   omitBy,
@@ -423,15 +422,39 @@ export class ChannelDB {
 
   async saveLineup(channelId: string, lineup: Lineup) {
     const db = await this.getFileDb(channelId);
-    if (isUndefined(lineup.startTimeOffsets)) {
-      lineup.startTimeOffsets = reduce(
-        lineup.items,
-        (acc, item, index) => [...acc, acc[index] + item.durationMs],
-        [0],
-      );
+    if (lineup.items.length === 0) {
+      lineup.items.push({
+        type: 'offline',
+        durationMs: Number.MAX_SAFE_INTEGER,
+      });
     }
+    lineup.startTimeOffsets = reduce(
+      lineup.items,
+      (acc, item, index) => [...acc, acc[index] + item.durationMs],
+      [0],
+    );
     db.data = lineup;
     return await db.write();
+  }
+
+  async removeProgramsFromLineup(channelId: string, programIds: string[]) {
+    if (programIds.length === 0) {
+      return;
+    }
+
+    const idSet = new Set(programIds);
+    const lineup = await this.loadLineup(channelId);
+    lineup.items = map(lineup.items, (item) => {
+      if (isContentItem(item) && idSet.has(item.id)) {
+        return {
+          type: 'offline',
+          durationMs: item.durationMs,
+        };
+      } else {
+        return item;
+      }
+    });
+    await this.saveLineup(channelId, lineup);
   }
 
   private async createLineup(channelId: string) {

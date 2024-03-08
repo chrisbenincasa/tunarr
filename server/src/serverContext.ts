@@ -66,7 +66,7 @@ export const serverContext: () => Promise<ServerContext> = once(async () => {
     customShowDB,
     channelCache,
     xmltv,
-    plexServerDB: new PlexServerDB(),
+    plexServerDB: new PlexServerDB(channelDB),
     settings,
   };
 });

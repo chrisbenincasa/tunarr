@@ -8,6 +8,8 @@ import { isError, isNil, isObject } from 'lodash-es';
 import z from 'zod';
 import createLogger from '../logger.js';
 import { Plex } from '../plex.js';
+import { scheduledJobsById } from '../services/scheduler.js';
+import { UpdateXmlTvTask } from '../tasks/updateXmlTvTask.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { firstDefined } from '../util.js';
 
@@ -159,9 +161,18 @@ export const plexServersRouter: RouterPluginAsyncCallback = async (
           level: 'warning',
         });
 
+        // Regenerate guides
+        try {
+          scheduledJobsById[UpdateXmlTvTask.ID]
+            ?.runNow(true)
+            .catch(console.error);
+        } catch (e) {
+          logger.error('Unable to update guide after lineup update %O', e);
+        }
+
         return res.send();
       } catch (err) {
-        logger.error(err);
+        logger.error('Error %O', err);
         req.serverCtx.eventService.push({
           type: 'settings-update',
           message: 'Error deleting plex server.',
