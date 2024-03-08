@@ -1,5 +1,5 @@
 import { DarkMode, LightMode } from '@mui/icons-material';
-import { FormControlLabel, IconButton, Switch } from '@mui/material';
+import { FormControlLabel, IconButton, Switch, Tooltip } from '@mui/material';
 import useStore from '../../store/index.ts';
 import { setDarkModeState } from '../../store/themeEditor/actions';
 
@@ -14,9 +14,11 @@ export default function DarkModeButton(props: DarkModeProps) {
   return (
     <>
       {iconOnly ? (
-        <IconButton onClick={() => setDarkModeState()} sx={{ mx: 1 }}>
-          {darkMode ? <DarkMode /> : <LightMode sx={{ color: '#fff' }} />}
-        </IconButton>
+        <Tooltip title={`Enable ${darkMode ? 'light' : 'dark'} Mode`}>
+          <IconButton onClick={() => setDarkModeState()} sx={{ mx: 1 }}>
+            {darkMode ? <LightMode /> : <DarkMode sx={{ color: '#fff' }} />}
+          </IconButton>
+        </Tooltip>
       ) : (
         <FormControlLabel
           control={
