@@ -13,7 +13,6 @@ import {
   InputLabel,
   MenuItem,
   Select,
-  SelectChangeEvent,
   Slider,
   Snackbar,
   Stack,
@@ -28,6 +27,7 @@ import {
   RandomSlotProgramming,
   RandomSlotSchedule,
 } from '@tunarr/types/api';
+import { usePrevious } from '@uidotdev/usehooks';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import {
@@ -44,7 +44,13 @@ import {
   round,
   some,
 } from 'lodash-es';
-import { useCallback, useMemo, useState } from 'react';
+import React, {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import {
   Control,
   Controller,
@@ -121,88 +127,66 @@ type RandomSlotRowProps = {
   control: Control<RandomSlotForm>;
   setValue: UseFormSetValue<RandomSlotForm>;
   programOptions: ProgramOption[];
-  adjustWeight: (idx: number, weight: number, upscaleAmt: number) => void;
-  weight: number;
-  showWeights: boolean;
   removeSlot: (idx: number) => void;
 };
 
-const RandomSlotRow = ({
-  index,
-  control,
-  setValue,
-  programOptions,
-  adjustWeight,
-  weight,
-  showWeights,
-  removeSlot,
-}: RandomSlotRowProps) => {
-  const slot = useWatch({ control, name: `slots.${index}` });
-  const updateSlotType = useCallback(
-    (idx: number, slotId: string) => {
-      let slotProgram: RandomSlotProgramming;
+const RandomSlotRow = React.memo(
+  ({
+    index,
+    control,
+    setValue,
+    programOptions,
+    removeSlot,
+  }: RandomSlotRowProps) => {
+    const slot = useWatch({ control, name: `slots.${index}` });
+    const updateSlotType = useCallback(
+      (idx: number, slotId: string) => {
+        let slotProgram: RandomSlotProgramming;
 
-      if (slotId.startsWith('show')) {
-        slotProgram = {
-          type: 'show',
-          showId: slotId.split('.')[1],
+        if (slotId.startsWith('show')) {
+          slotProgram = {
+            type: 'show',
+            showId: slotId.split('.')[1],
+          };
+        } else if (slotId.startsWith('movie')) {
+          slotProgram = {
+            type: 'movie',
+          };
+        } else if (slotId.startsWith('flex')) {
+          slotProgram = {
+            type: 'flex',
+          };
+          // TODO: Support redirect
+        } else {
+          return;
+        }
+
+        const newSlot: RandomSlot = {
+          ...slot,
+          order: slotProgram.type === 'show' ? 'next' : '',
+          programming: slotProgram,
         };
-      } else if (slotId.startsWith('movie')) {
-        slotProgram = {
-          type: 'movie',
-        };
-      } else if (slotId.startsWith('flex')) {
-        slotProgram = {
-          type: 'flex',
-        };
-        // TODO: Support redirect
-      } else {
-        return;
-      }
 
-      const newSlot: RandomSlot = {
-        ...slot,
-        order: slotProgram.type === 'show' ? 'next' : '',
-        programming: slotProgram,
-      };
+        setValue(`slots.${idx}`, { ...newSlot });
+      },
+      [setValue, slot],
+    );
 
-      setValue(`slots.${idx}`, { ...newSlot });
-    },
-    [setValue, slot],
-  );
+    const updateSlot = useCallback(
+      (idx: number, newSlot: Partial<RandomSlot>) => {
+        setValue(`slots.${idx}`, { ...slot, ...newSlot });
+      },
+      [setValue],
+    );
 
-  const updateSlot = useCallback(
-    (idx: number, newSlot: Partial<RandomSlot>) => {
-      setValue(`slots.${idx}`, { ...slot, ...newSlot });
-    },
-    [setValue],
-  );
+    const selectValue =
+      slot.programming.type === 'show'
+        ? `show.${slot.programming.showId}`
+        : slot.programming.type;
 
-  const selectValue =
-    slot.programming.type === 'show'
-      ? `show.${slot.programming.showId}`
-      : slot.programming.type;
-
-  const sliderRow = !showWeights ? null : (
-    <Stack direction="row" spacing={2} alignItems="center">
-      <Slider
-        min={0}
-        max={100}
-        value={weight}
-        step={0.1}
-        // Gnarly - we cast onChange to the void so react-form-hook
-        // doesn't try to do anything. Instead we wait for the onChangeCommited
-        // event, which fires on onMouseUp, and then handle the change.
-        onChange={(_, value) => adjustWeight(index, value as number, 1)}
-      />
-      <TextField type="number" label="Weight %" value={weight} disabled />
-    </Stack>
-  );
-
-  return (
-    <Box key={`${slot.programming.type}_${index}`} sx={{ width: '100%' }}>
-      <Stack direction="row">
-        <Box>
+    return (
+      <>
+        <Grid item xs={2}>
           <Select
             fullWidth
             value={slot.durationMs}
@@ -219,8 +203,8 @@ const RandomSlotRow = ({
               </MenuItem>
             ))}
           </Select>
-        </Box>
-        <Box>
+        </Grid>
+        <Grid item xs={5}>
           <FormControl fullWidth>
             <InputLabel>Program</InputLabel>
             <Select
@@ -235,8 +219,8 @@ const RandomSlotRow = ({
               ))}
             </Select>
           </FormControl>
-        </Box>
-        <Box>
+        </Grid>
+        <Grid item xs={2}>
           <Select
             fullWidth
             value={slot.cooldownMs}
@@ -252,8 +236,8 @@ const RandomSlotRow = ({
               </MenuItem>
             ))}
           </Select>
-        </Box>
-        <Box>
+        </Grid>
+        <Grid item xs={2}>
           {slot.programming.type === 'show' && (
             <Select
               fullWidth
@@ -267,15 +251,230 @@ const RandomSlotRow = ({
               ))}
             </Select>
           )}
-        </Box>
-        <Box>
+        </Grid>
+        <Grid item xs={1}>
           <IconButton onClick={() => removeSlot(index)} color="error">
             <Delete />
           </IconButton>
-        </Box>
-      </Stack>
-      {sliderRow}
-    </Box>
+        </Grid>
+      </>
+    );
+  },
+);
+
+type RandomSlotsProps = {
+  control: Control<RandomSlotForm>;
+  setValue: UseFormSetValue<RandomSlotForm>;
+  programOptions: ProgramOption[];
+};
+
+const RandomSlots = ({
+  control,
+  setValue,
+  programOptions,
+}: RandomSlotsProps) => {
+  const [currentSlots, distribution] = useWatch({
+    control,
+    name: ['slots', 'randomDistribution'],
+  });
+
+  const prevDistribution = usePrevious(distribution);
+
+  const [weights, setWeights] = useState<number[]>(map(currentSlots, 'weight'));
+
+  // This is kinda gnarly -- will fix
+  useEffect(() => {
+    if (distribution !== prevDistribution) {
+      const newWeight = round(100 / currentSlots.length, 2);
+      setWeights(fill(Array(currentSlots.length), newWeight));
+      setValue(
+        'slots',
+        map(currentSlots, (slot) => ({ ...slot, weight: newWeight })),
+      );
+    }
+  }, [prevDistribution, distribution]);
+
+  const updateSlotWeights = useDebounceCallback(
+    useCallback(() => {
+      setValue(
+        'slots',
+        map(currentSlots, (cfl, idx) => ({
+          ...cfl,
+          weight: weights[idx],
+        })),
+      );
+    }, [currentSlots, setValue, weights]),
+    500,
+  );
+
+  const adjustWeights = useCallback(
+    (
+      idx: number,
+      value: string | number,
+      upscaleAmt: number,
+      commit: boolean = false,
+    ) => {
+      let newWeight = isNumber(value) ? value : parseInt(value);
+      if (isNaN(newWeight)) {
+        return;
+      }
+      newWeight /= upscaleAmt;
+      const oldWeight = weights[idx];
+      const scale = round((newWeight - oldWeight) / oldWeight, 2);
+      if (scale === 0) {
+        return;
+      }
+      const newRemainingWeight = 100 - newWeight;
+      const oldRemainingWeight = 100 - oldWeight;
+
+      const newWeights = map(range(currentSlots.length), (i) => {
+        if (idx === i) {
+          return newWeight;
+        } else if (weights[i] === 0) {
+          // If the adjusted slot is coming down from 100% weight
+          // just distribute the remaining weight among the other slots
+          return round(newRemainingWeight / (currentSlots.length - 1), 2);
+        } else {
+          // Take the percentage portion of the old weight
+          // from the newRemainingWeight. This scales the weights
+          // relative to their existing proportion.
+
+          const prevWeight = weights[i];
+          const prevPortion = round(prevWeight / oldRemainingWeight, 4);
+          return round(newRemainingWeight * prevPortion, 2);
+        }
+      });
+
+      setWeights(newWeights);
+
+      if (commit) {
+        updateSlotWeights();
+      }
+    },
+    [currentSlots, updateSlotWeights, weights],
+  );
+
+  const addSlot = useCallback(() => {
+    let newSlots: RandomSlot[];
+    const newSlot: Omit<RandomSlot, 'weight'> = {
+      programming: {
+        type: 'flex',
+      },
+      durationMs: dayjs.duration({ minutes: 30 }).asMilliseconds(),
+      cooldownMs: 0,
+      order: '', // figure out what this does
+    };
+
+    if (distribution === 'uniform') {
+      const slot = { ...newSlot, weight: 100 };
+      newSlots = [...currentSlots, slot];
+    } else {
+      const newWeight = round(100 / (currentSlots.length + 1), 2);
+      const distributeWeight = round(
+        (100 - newWeight) / currentSlots.length,
+        2,
+      );
+      const slot = { ...newSlot, weight: newWeight };
+      const oldSlots = map(currentSlots, (slot) => ({
+        ...slot,
+        weight: distributeWeight,
+      }));
+      newSlots = [...oldSlots, slot];
+    }
+
+    setWeights(map(newSlots, 'weight'));
+    setValue('slots', newSlots);
+  }, [currentSlots, setWeights, distribution]);
+
+  const removeSlot = useCallback(
+    (idx: number) => {
+      setValue(
+        'slots',
+        reject(currentSlots, (_, i) => idx === i),
+      );
+    },
+    [setValue, currentSlots],
+  );
+
+  const renderSlots = () => {
+    const slots = map(currentSlots, (slot, idx) => {
+      return (
+        <Fragment key={`${slot.programming.type}_${idx}`}>
+          <RandomSlotRow
+            key={`${slot.programming.type}_${idx}`}
+            index={idx}
+            programOptions={programOptions}
+            setValue={setValue}
+            control={control}
+            removeSlot={removeSlot}
+          />
+          {distribution === 'weighted' && (
+            <Grid item xs={12}>
+              <Stack direction="row" spacing={2} alignItems="center">
+                <Slider
+                  min={0}
+                  max={100}
+                  value={weights[idx]}
+                  step={0.1}
+                  onChange={(_, value) =>
+                    adjustWeights(idx, value as number, 1)
+                  }
+                  onChangeCommitted={(_, value) =>
+                    adjustWeights(idx, value as number, 1, true)
+                  }
+                  sx={{
+                    width: '90%',
+                    '& .MuiSlider-thumb': {
+                      transition: 'left 0.1s',
+                    },
+                    '& .MuiSlider-thumb.MuiSlider-active': {
+                      transition: 'left 0s',
+                    },
+                    '& .MuiSlider-track': {
+                      transition: 'width 0.1s',
+                    },
+                  }}
+                />
+                <TextField
+                  type="number"
+                  label="Weight %"
+                  value={weights[idx]}
+                  disabled
+                />
+              </Stack>
+            </Grid>
+          )}
+        </Fragment>
+      );
+    });
+
+    return (
+      <Grid container spacing={2} sx={{ mb: 2 }}>
+        <Grid item xs={2}>
+          Duration
+        </Grid>
+        <Grid item xs={5}>
+          Program
+        </Grid>
+        <Grid item xs={2}>
+          Cooldown
+        </Grid>
+        <Grid item xs={2}>
+          Order
+        </Grid>
+        <Grid item xs={1}></Grid>
+        {slots}
+      </Grid>
+    );
+  };
+
+  return (
+    <>
+      <Grid container>{renderSlots()}</Grid>
+      <Button startIcon={<Add />} variant="contained" onClick={() => addSlot()}>
+        Add Slot
+      </Button>
+    </>
   );
 };
 
@@ -323,70 +522,12 @@ export default function RandomSlotEditorPage() {
 
   // const queryClient = useQueryClient();
 
-  const { control, getValues, setValue, watch } = useForm<RandomSlotForm>({
+  const { control, getValues, setValue } = useForm<RandomSlotForm>({
     defaultValues:
       !isUndefined(loadedSchedule) && loadedSchedule.type === 'random'
         ? loadedSchedule
         : defaultRandomSlotSchedule,
   });
-
-  // Have to use a watch here because rendering depends on this value
-  const [currentSlots, distribution] = watch(['slots', 'randomDistribution']);
-
-  const [weights, setWeights] = useState<number[]>(map(currentSlots, 'weight'));
-
-  const updateSlotWeights = useDebounceCallback(
-    useCallback(() => {
-      setValue(
-        'slots',
-        map(currentSlots, (cfl, idx) => ({
-          ...cfl,
-          weight: weights[idx],
-        })),
-      );
-    }, [currentSlots, setValue, weights]),
-    500,
-  );
-
-  const adjustWeights = useCallback(
-    (idx: number, value: string | number, upscaleAmt: number) => {
-      let newWeight = isNumber(value) ? value : parseInt(value);
-      if (isNaN(newWeight)) {
-        return;
-      }
-      newWeight /= upscaleAmt;
-      const oldWeight = weights[idx];
-      const scale = round((newWeight - oldWeight) / oldWeight, 2);
-      if (scale === 0) {
-        return;
-      }
-      const newRemainingWeight = 100 - newWeight;
-      const oldRemainingWeight = 100 - oldWeight;
-
-      const newWeights = map(range(currentSlots.length), (i) => {
-        if (idx === i) {
-          return newWeight;
-        } else if (weights[i] === 0) {
-          // If the adjusted slot is coming down from 100% weight
-          // just distribute the remaining weight among the other slots
-          return round(newRemainingWeight / (currentSlots.length - 1), 2);
-        } else {
-          // Take the percentage portion of the old weight
-          // from the newRemainingWeight. This scales the weights
-          // relative to their existing proportion.
-
-          const prevWeight = weights[i];
-          const prevPortion = round(prevWeight / oldRemainingWeight, 4);
-          return round(newRemainingWeight * prevPortion, 2);
-        }
-      });
-
-      setWeights(newWeights);
-
-      updateSlotWeights();
-    },
-    [currentSlots, updateSlotWeights, weights],
-  );
 
   const schedule: RandomSlotSchedule = {
     ...getValues(),
@@ -402,85 +543,6 @@ export default function RandomSlotEditorPage() {
   const [generatedList, setGeneratedList] = useState<
     UIChannelProgram[] | undefined
   >(undefined);
-
-  const removeSlot = useCallback(
-    (idx: number) => {
-      setValue(
-        'slots',
-        reject(currentSlots, (_, i) => idx === i),
-      );
-    },
-    [setValue, currentSlots],
-  );
-
-  const renderSlots = () => {
-    const slots = map(currentSlots, (slot, idx) => {
-      return (
-        <RandomSlotRow
-          key={`${slot.startTime}_${idx}`}
-          index={idx}
-          programOptions={programOptions}
-          setValue={setValue}
-          control={control}
-          adjustWeight={adjustWeights}
-          weight={weights[idx]}
-          removeSlot={removeSlot}
-          showWeights={distribution === 'weighted'}
-        />
-      );
-    });
-
-    return (
-      <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid item xs={2}>
-          Duration
-        </Grid>
-        <Grid item xs={5}>
-          Program
-        </Grid>
-        <Grid item xs={2}>
-          Cooldown
-        </Grid>
-        <Grid item xs={2}>
-          Order
-        </Grid>
-        <Grid item xs={1}></Grid>
-        {slots}
-      </Grid>
-    );
-  };
-
-  const addSlot = useCallback(() => {
-    let newSlots: RandomSlot[];
-    const newSlot: Omit<RandomSlot, 'weight'> = {
-      programming: {
-        type: 'flex',
-      },
-      durationMs: dayjs.duration({ minutes: 30 }).asMilliseconds(),
-      cooldownMs: 0,
-      order: '', // figure out what this does
-    };
-
-    if (getValues('randomDistribution') === 'uniform') {
-      const slot = { ...newSlot, weight: 100 };
-      newSlots = [...currentSlots, slot];
-    } else {
-      const newWeight = round(100 / (currentSlots.length + 1), 2);
-      const distributeWeight = round(
-        (100 - newWeight) / currentSlots.length,
-        2,
-      );
-      const slot = { ...newSlot, weight: newWeight };
-      const oldSlots = map(currentSlots, (slot) => ({
-        ...slot,
-        weight: distributeWeight,
-      }));
-      newSlots = [...oldSlots, slot];
-    }
-
-    setWeights(map(newSlots, 'weight'));
-    setValue('slots', newSlots);
-  }, [currentSlots, setWeights, getValues]);
 
   const calculateSlots = () => {
     performance.mark('guide-start');
@@ -517,27 +579,6 @@ export default function RandomSlotEditorPage() {
       })
       .catch(console.error);
   };
-
-  const handleDistributionChange = useCallback(
-    (
-      event: SelectChangeEvent<'uniform' | 'weighted'>,
-      cb: (...event: any[]) => any,
-    ) => {
-      let newWeight: number;
-      if (event.target.value === 'weighted') {
-        newWeight = round(100 / currentSlots.length, 2);
-      } else {
-        newWeight = 100;
-      }
-      setWeights(fill(Array(currentSlots.length), newWeight));
-      setValue(
-        'slots',
-        map(currentSlots, (slot) => ({ ...slot, weight: newWeight })),
-      );
-      cb(event);
-    },
-    [currentSlots, setValue],
-  );
 
   if (isUndefined(channel)) {
     return <div>Loading</div>;
@@ -577,14 +618,11 @@ export default function RandomSlotEditorPage() {
           </Button>
         </Box>
         <Divider sx={{ my: 2 }} />
-        {renderSlots()}
-        <Button
-          startIcon={<Add />}
-          variant="contained"
-          onClick={() => addSlot()}
-        >
-          Add Slot
-        </Button>
+        <RandomSlots
+          control={control}
+          setValue={setValue}
+          programOptions={programOptions}
+        />
         <Divider sx={{ my: 2 }} />
         <Box>
           <FormControl fullWidth margin="normal">
@@ -636,11 +674,7 @@ export default function RandomSlotEditorPage() {
               control={control}
               name="randomDistribution"
               render={({ field }) => (
-                <Select
-                  label="Distribution"
-                  {...field}
-                  onChange={(e) => handleDistributionChange(e, field.onChange)}
-                >
+                <Select label="Distribution" {...field}>
                   {distributionOptions.map((opt) => (
                     <MenuItem key={opt.value} value={opt.value}>
                       {opt.description}
