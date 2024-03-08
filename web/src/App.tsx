@@ -34,6 +34,7 @@ import { Outlet, Link as RouterLink } from 'react-router-dom';
 import './App.css';
 import ServerEvents from './components/ServerEvents.tsx';
 import VersionFooter from './components/VersionFooter.tsx';
+import DarkModeButton from './components/settings/DarkModeButton.tsx';
 import { useVersion } from './hooks/useVersion.ts';
 import useStore from './store/index.ts';
 import { setDarkModeState } from './store/themeEditor/actions.ts';
@@ -176,6 +177,7 @@ export function Root() {
               </Link>
             </Typography>
             <Box flexGrow={1}></Box>
+            <DarkModeButton iconOnly />
             <Button
               href="//localhost:8000/api/xmltv.xml"
               target="_blank"

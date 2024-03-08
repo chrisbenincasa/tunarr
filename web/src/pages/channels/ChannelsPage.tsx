@@ -6,6 +6,7 @@ import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import {
   Box,
   Button,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -115,9 +116,9 @@ export default function ChannelsPage() {
         sx={{ cursor: 'pointer' }}
         hover={true}
       >
-        <TableCell width="10%">{channel.number}</TableCell>
+        <TableCell>{channel.number}</TableCell>
         {!smallViewport && (
-          <TableCell width="10%">
+          <TableCell>
             <img
               style={{ maxHeight: '40px' }}
               src={
@@ -179,13 +180,21 @@ export default function ChannelsPage() {
     if (channelsLoading) {
       return (
         <TableRow key="pending">
-          <TableCell colSpan={4}>Loading....</TableCell>
+          <TableCell
+            colSpan={smallViewport ? 5 : 6}
+            sx={{ my: 2, textAlign: 'center' }}
+          >
+            <CircularProgress />
+          </TableCell>
         </TableRow>
       );
     } else if (channelsError) {
       return (
-        <TableRow key="pending">
-          <TableCell colSpan={4}>Error</TableCell>
+        <TableRow key="error">
+          <TableCell
+            colSpan={smallViewport ? 5 : 6}
+            sx={{ my: 2, textAlign: 'center' }}
+          >{`Error: ${channelsError.message}`}</TableCell>
         </TableRow>
       );
     } else {
@@ -200,36 +209,35 @@ export default function ChannelsPage() {
         <Typography flexGrow={1} variant="h4">
           Channels
         </Typography>
-        {channelsLoading ? 'Loading...' : null}
-        {channelsError ? 'An error occurred!: ' + channelsError.message : null}
-        {channels && channels.length ? (
-          <Button
-            component={RouterLink}
-            to="/channels/new"
-            variant="contained"
-            startIcon={<AddCircleIcon />}
-          >
-            New
-          </Button>
-        ) : null}
+        <Button
+          component={RouterLink}
+          to="/channels/new"
+          variant="contained"
+          startIcon={<AddCircleIcon />}
+        >
+          New
+        </Button>
       </Box>
-      {channels && channels.length > 0 ? (
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Number</TableCell>
-                {!smallViewport && <TableCell>Icon</TableCell>}
-                <TableCell>Name</TableCell>
-                <TableCell>Live?</TableCell>
-                <TableCell>Stealth?</TableCell>
-                <TableCell></TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>{getTableRows()}</TableBody>
-          </Table>
-        </TableContainer>
-      ) : (
+
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Number</TableCell>
+              {!smallViewport && <TableCell>Icon</TableCell>}
+              <TableCell>Name</TableCell>
+              <TableCell>Live?</TableCell>
+              <TableCell>Stealth?</TableCell>
+              <TableCell></TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {channels && channels.length > 0 && getTableRows()}
+          </TableBody>
+        </Table>
+      </TableContainer>
+
+      {channels && channels.length === 0 && (
         <PaddedPaper
           sx={{
             display: 'flex',
