@@ -105,10 +105,6 @@ export default function ChannelsPage() {
     );
   };
 
-  if (channelsLoading) return 'Loading...';
-
-  if (channelsError) return 'An error occurred!: ' + channelsError.message;
-
   // TODO properly define types from API
   const getDataTableRow = (channel: Channel) => {
     const startTime = dayjs(channel.startTime);
@@ -204,7 +200,9 @@ export default function ChannelsPage() {
         <Typography flexGrow={1} variant="h4">
           Channels
         </Typography>
-        {channels.length ? (
+        {channelsLoading ? 'Loading...' : null}
+        {channelsError ? 'An error occurred!: ' + channelsError.message : null}
+        {channels && channels.length ? (
           <Button
             component={RouterLink}
             to="/channels/new"
@@ -215,7 +213,7 @@ export default function ChannelsPage() {
           </Button>
         ) : null}
       </Box>
-      {channels.length > 0 ? (
+      {channels && channels.length > 0 ? (
         <TableContainer component={Paper}>
           <Table>
             <TableHead>
