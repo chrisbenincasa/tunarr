@@ -7,6 +7,7 @@ export default function GeneralSettingsPage() {
 
   return (
     <>
+      {/* <DarkModeButton /> */}
       <FormControlLabel
         control={
           <Switch checked={darkMode} onClick={() => setDarkModeState()} />

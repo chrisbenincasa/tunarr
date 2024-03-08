@@ -18,6 +18,7 @@ import dayjs from 'dayjs';
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
+import ConnectPlex from '../../components/settings/ConnectPlex.tsx';
 import { usePlexServerSettings } from '../../hooks/settingsHooks.ts';
 import { useChannels } from '../../hooks/useChannels.ts';
 import { useAllTvGuides } from '../../hooks/useTvGuide.ts';
@@ -233,13 +234,15 @@ export default function WelcomePage() {
           }}
         >
           {header}
-          {!pathway
+          {getStarted}
+          {!isPlexConnected && <ConnectPlex />}
+          {/* {!pathway
             ? chooseYourPathway
             : pathway === 'get-started'
             ? getStarted
             : pathway === 'migration'
             ? migration
-            : null}
+            : null} */}
         </Box>
       </PaddedPaper>
     </>

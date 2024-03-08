@@ -5,7 +5,12 @@ import { InsertPlexServerRequest } from '@tunarr/types/api';
 import { apiClient } from '../../external/api.ts';
 import { checkNewPlexServers, plexLoginFlow } from '../../helpers/plexLogin.ts';
 
-export default function AddPlexServer() {
+type AddPlexServer = {
+  title?: string;
+};
+
+export default function AddPlexServer(props: AddPlexServer) {
+  const { title = 'Add', ...restProps } = props;
   const queryClient = useQueryClient();
 
   const addPlexServerMutation = useMutation({
@@ -39,8 +44,9 @@ export default function AddPlexServer() {
       onClick={() => addPlexServer()}
       variant="contained"
       startIcon={<AddCircle />}
+      {...restProps}
     >
-      Add
+      {title}
     </Button>
   );
 }
