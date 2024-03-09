@@ -1,14 +1,6 @@
-import {
-  Box,
-  Button,
-  FormControl,
-  Input,
-  InputLabel,
-  Paper,
-  Stack,
-  Typography,
-} from '@mui/material';
-import dayjs from 'dayjs';
+import { Box, Button, Paper, Stack, Typography } from '@mui/material';
+import { DateTimePicker } from '@mui/x-date-pickers';
+import dayjs, { Dayjs } from 'dayjs';
 import { createContext, useState } from 'react';
 import {
   resetLineup,
@@ -38,8 +30,10 @@ export function ChannelProgrammingConfig() {
 
   const programsDirty = useStore((s) => s.channelEditor.dirty.programs);
 
-  const handleStartTimeChange = (value: string) => {
-    setChannelStartTime(dayjs(value).unix() * 1000);
+  const handleStartTimeChange = (value: Dayjs | null) => {
+    if (value) {
+      setChannelStartTime(value.unix() * 1000);
+    }
   };
 
   const startTime = channel ? dayjs(channel.startTime) : dayjs();
@@ -58,22 +52,13 @@ export function ChannelProgrammingConfig() {
       <Box display="flex" flexDirection="column">
         <Paper sx={{ p: 2 }}>
           <Box display="flex" justifyContent={'flex-start'}>
-            <FormControl margin="normal" sx={{ flex: 1, mr: 2, maxWidth: 350 }}>
-              <InputLabel>Programming Start</InputLabel>
-              <Input
-                type="datetime-local"
-                value={startTime.format('YYYY-MM-DDTHH:mm')}
-                onChange={(e) => handleStartTimeChange(e.target.value)}
-              />
-            </FormControl>
-            <FormControl margin="normal" sx={{ flex: 1, maxWidth: 350 }}>
-              <InputLabel>Programming End</InputLabel>
-              <Input
-                disabled
-                type="datetime-local"
-                value={endTime.format('YYYY-MM-DDTHH:mm')}
-              />
-            </FormControl>
+            <DateTimePicker
+              label="Programming Start"
+              value={startTime}
+              onChange={(newDateTime) => handleStartTimeChange(newDateTime)}
+              sx={{ mr: 2 }}
+            />
+            <DateTimePicker label="Programming End" value={endTime} disabled />
             <Stack
               direction={{ xs: 'column', sm: 'row' }}
               sx={{
