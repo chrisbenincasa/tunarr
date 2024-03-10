@@ -1,9 +1,15 @@
-import { Box, DialogContentText } from '@mui/material';
+import { Checkbox, DialogContentText, List, ListItem } from '@mui/material';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
+import { isContentProgram } from '@tunarr/types';
+import _ from 'lodash-es';
+import { useState } from 'react';
+import { useRemoveShow } from '../../hooks/programming_controls/useRemoveShow';
+import useStore from '../../store';
+import { materializedProgramListSelector } from '../../store/selectors';
 
 type RemoveShowsModalProps = {
   open: boolean;
@@ -11,8 +17,36 @@ type RemoveShowsModalProps = {
 };
 
 const RemoveShowsModal = ({ open, onClose }: RemoveShowsModalProps) => {
+  const [checked, setChecked] = useState<string[]>([]);
+
+  const removeShow = useRemoveShow();
+
+  const programs = useStore(materializedProgramListSelector);
+  const onlyShows = _.filter(programs, (program) => {
+    return isContentProgram(program) && program.subtype === 'episode';
+  });
+
+  const showList: string[] = [];
+  _.uniqBy(onlyShows, (program) => program.title).map((program) =>
+    showList.push(program.title),
+  );
+
+  const handleToggle = (value: string) => () => {
+    const currentIndex = checked.indexOf(value);
+    const newChecked = [...checked];
+
+    if (currentIndex === -1) {
+      newChecked.push(value);
+    } else {
+      newChecked.splice(currentIndex, 1);
+    }
+
+    setChecked(newChecked);
+  };
+
   const removeShowsProgramming = () => {
-    console.log('To do');
+    removeShow(checked);
+    onClose();
   };
 
   return (
@@ -22,12 +56,33 @@ const RemoveShowsModal = ({ open, onClose }: RemoveShowsModalProps) => {
         <DialogContentText>
           Pick specific shows to remove from the channel.
         </DialogContentText>
-        <Box sx={{ display: 'flex', my: 1 }}>{/* To do */}</Box>
+        <List>
+          {showList.map((title) => {
+            return (
+              <ListItem
+                secondaryAction={
+                  <Checkbox
+                    edge="end"
+                    onChange={handleToggle(title)}
+                    checked={checked.indexOf(title) !== -1}
+                    inputProps={{ 'aria-labelledby': 'Select Show' }}
+                  />
+                }
+              >
+                {title}
+              </ListItem>
+            );
+          })}
+        </List>
       </DialogContent>
       <DialogActions>
         <Button onClick={() => onClose()}>Cancel</Button>
-        <Button variant="contained" onClick={() => removeShowsProgramming()}>
-          Save
+        <Button
+          variant="contained"
+          onClick={() => removeShowsProgramming()}
+          disabled={checked.length === 0}
+        >
+          {`Remove ${checked.length} show${checked.length === 1 ? '' : 's'}`}
         </Button>
       </DialogActions>
     </Dialog>
