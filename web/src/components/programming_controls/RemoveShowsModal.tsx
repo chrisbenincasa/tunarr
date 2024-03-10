@@ -4,12 +4,12 @@ import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
-import { isContentProgram } from '@tunarr/types';
 import _ from 'lodash-es';
 import { useState } from 'react';
 import { useRemoveShow } from '../../hooks/programming_controls/useRemoveShow';
 import useStore from '../../store';
 import { materializedProgramListSelector } from '../../store/selectors';
+import { UIContentProgram, isUIContentProgram } from '../../types';
 
 type RemoveShowsModalProps = {
   open: boolean;
@@ -22,9 +22,12 @@ const RemoveShowsModal = ({ open, onClose }: RemoveShowsModalProps) => {
   const removeShow = useRemoveShow();
 
   const programs = useStore(materializedProgramListSelector);
-  const onlyShows = _.filter(programs, (program) => {
-    return isContentProgram(program) && program.subtype === 'episode';
-  });
+  const onlyShows = _.filter(
+    programs,
+    (program): program is UIContentProgram => {
+      return isUIContentProgram(program) && program.subtype === 'episode';
+    },
+  );
 
   const showList: string[] = [];
   _.uniqBy(onlyShows, (program) => program.title).map((program) =>
