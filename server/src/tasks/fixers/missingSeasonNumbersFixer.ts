@@ -122,7 +122,7 @@ export class MissingSeasonNumbersFixer extends Fixer {
 
   private async findSeasonNumberUsingEpisode(episodeId: string, plex: Plex) {
     try {
-      const episode = await plex.Get<PlexEpisodeView>(
+      const episode = await plex.doGet<PlexEpisodeView>(
         `/library/metadata/${episodeId}`,
       );
       return episode?.parentIndex;
@@ -136,7 +136,7 @@ export class MissingSeasonNumbersFixer extends Fixer {
     // We get the parent because we're dealing with an episode and we want the
     // season index.
     try {
-      const season = await plex.Get<PlexSeasonView>(
+      const season = await plex.doGet<PlexSeasonView>(
         `/library/metadata/${seasonId}`,
       );
       return first(season?.Metadata ?? [])?.index;

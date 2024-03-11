@@ -117,6 +117,7 @@ export const InsertPlexServerRequestSchema = PlexServerSettingsSchema.partial({
   sendChannelUpdates: true,
   sendGuideUpdates: true,
   index: true,
+  clientIdentifier: true,
 }).omit({
   id: true,
 });

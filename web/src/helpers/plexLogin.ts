@@ -1,3 +1,4 @@
+import { PlexPinsResponse, PlexResourcesResponse } from '@tunarr/types/plex';
 import { compact, partition } from 'lodash-es';
 import { apiClient } from '../external/api.ts';
 import { AsyncInterval } from './AsyncInterval.ts';
@@ -12,55 +13,6 @@ const PlexLoginHeaders = {
   'X-Plex-Version': 'Plex OAuth',
   'X-Plex-Client-Identifier': ClientIdentifier,
   'X-Plex-Model': 'Plex OAuth',
-};
-
-type PlexPinsResponse = {
-  authToken: string | null;
-  clientIdentifier: string;
-  code: string;
-  createdAt: string;
-  expiresAt: string;
-  expiresIn: number;
-  id: number;
-  product: string;
-  qr: string;
-  trusted: boolean;
-};
-
-type PlexConnection = {
-  IPv6: boolean;
-  address: string;
-  local: boolean;
-  port: number;
-  protocol: string;
-  relay: boolean;
-  uri: string;
-};
-
-type PlexResourcesResponse = {
-  accessToken: string;
-  clientIdentifier: string;
-  connections: PlexConnection[];
-  createdAt: string;
-  device: string;
-  dnsRebindingProtection: boolean;
-  home: boolean;
-  httpsRequired: boolean;
-  lastSeenAt: string;
-  name: string;
-  owned: boolean;
-  ownerId: string | null;
-  platform: string;
-  platformVersion: string;
-  presence: boolean;
-  product: string;
-  productVersion: string;
-  provides: string;
-  publicAddress: string;
-  publicAddressMatches: boolean;
-  relay: boolean;
-  sourceTitle: string | null;
-  synced: boolean;
 };
 
 export const plexLoginFlow = async () => {
@@ -144,12 +96,12 @@ export const plexLoginFlow = async () => {
         'X-Plex-Token': authToken,
       },
     },
-  ).then((res) => res.json() as Promise<PlexResourcesResponse[]>);
+  ).then((res) => res.json() as Promise<PlexResourcesResponse>);
 
   return serversResponse.filter((server) => server.provides.includes('server'));
 };
 
-export const checkNewPlexServers = async (servers: PlexResourcesResponse[]) => {
+export const checkNewPlexServers = async (servers: PlexResourcesResponse) => {
   return sequentialPromises(servers, async (server) => {
     const [localConnections, remoteConnections] = partition(
       server.connections,

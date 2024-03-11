@@ -156,7 +156,7 @@ export const miscRouter: RouterPluginCallback = (fastify, _opts, done) => {
       }
 
       const plex = new Plex(server);
-      return res.send(await plex.Get(req.query.path));
+      return res.send(await plex.doGet(req.query.path));
     },
   );
 

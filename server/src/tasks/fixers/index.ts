@@ -1,4 +1,5 @@
 import createLogger from '../../logger.js';
+import { AddPlexServerIdsFixer } from './addPlexServerIds.js';
 import Fixer from './fixer.js';
 import { MissingSeasonNumbersFixer } from './missingSeasonNumbersFixer.js';
 
@@ -11,7 +12,10 @@ const logger = createLogger(import.meta);
 // Maybe one day we'll import these all dynamically and run
 // them, but not today.
 export const runFixers = async () => {
-  const allFixers: Fixer[] = [new MissingSeasonNumbersFixer()];
+  const allFixers: Fixer[] = [
+    new MissingSeasonNumbersFixer(),
+    new AddPlexServerIdsFixer(),
+  ];
 
   for (const fixer of allFixers) {
     try {

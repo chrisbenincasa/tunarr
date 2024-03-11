@@ -1,9 +1,9 @@
 import { Loaded, wrap } from '@mikro-orm/core';
 import { ChannelCache } from '../channelCache.js';
 import { withDb } from '../dao/dataSource.js';
-import { Settings } from '../dao/settings.js';
 import { Channel } from '../dao/entities/Channel.js';
 import { PlexServerSettings } from '../dao/entities/PlexServerSettings.js';
+import { Settings } from '../dao/settings.js';
 import createLogger from '../logger.js';
 import { Plex } from '../plex.js';
 import { ServerContext } from '../serverContext.js';
@@ -86,7 +86,7 @@ export class UpdateXmlTvTask extends Task<void> {
       }
       try {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        dvrs = await plex.GetDVRS(); // Refresh guide and channel mappings
+        dvrs = await plex.getDvrs(); // Refresh guide and channel mappings
       } catch (err) {
         logger.error(
           `Couldn't get DVRS list from ${plexServer.name}. This error will prevent 'refresh guide' or 'refresh channels' from working for this Plex server. But it is NOT related to playback issues.`,
@@ -96,7 +96,7 @@ export class UpdateXmlTvTask extends Task<void> {
       }
       if (plexServer.sendGuideUpdates) {
         try {
-          await plex.RefreshGuide(dvrs);
+          await plex.refreshGuide(dvrs);
         } catch (err) {
           logger.error(
             `Couldn't tell Plex ${plexServer.name} to refresh guide for some reason. This error will prevent 'refresh guide' from working for this Plex server. But it is NOT related to playback issues.`,
@@ -106,7 +106,7 @@ export class UpdateXmlTvTask extends Task<void> {
       }
       if (plexServer.sendChannelUpdates && channels.length !== 0) {
         try {
-          await plex.RefreshChannels(channels, dvrs);
+          await plex.refreshChannels(channels, dvrs);
         } catch (err) {
           logger.error(
             `Couldn't tell Plex ${plexServer.name} to refresh channels for some reason. This error will prevent 'refresh channels' from working for this Plex server. But it is NOT related to playback issues.`,

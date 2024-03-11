@@ -36,6 +36,7 @@ export class PlexServerSettings extends BaseEntity {
       sendChannelUpdates: this.sendChannelUpdates,
       sendGuideUpdates: this.sendGuideUpdates,
       index: this.index,
+      clientIdentifier: this.clientIdentifier,
     };
   }
 }

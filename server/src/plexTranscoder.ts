@@ -553,7 +553,7 @@ lang=en`;
   }
 
   async getDecisionUnmanaged(directPlay: boolean) {
-    this.decisionJson = await this.plex.Get<TranscodeDecision>(
+    this.decisionJson = await this.plex.doGet<TranscodeDecision>(
       `/video/:/transcode/universal/decision?${this.transcodingArgs}`,
     );
 
@@ -626,7 +626,7 @@ lang=en`;
       return this.cachedItemMetadata;
     }
 
-    this.cachedItemMetadata = await this.plex.Get<PlexItemMetadata>(this.key);
+    this.cachedItemMetadata = await this.plex.doGet<PlexItemMetadata>(this.key);
     return this.cachedItemMetadata;
   }
 
@@ -654,7 +654,7 @@ lang=en`;
     this.log('Updating plex status');
     const { path: statusUrl, params } = this.getStatusUrl();
     try {
-      await this.plex.Post(statusUrl, params);
+      await this.plex.doPost(statusUrl, params);
     } catch (error) {
       this.log(
         `Problem updating Plex status using status URL ${statusUrl}: `,
