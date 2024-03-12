@@ -1,7 +1,7 @@
 import {
-  Box,
   DialogContentText,
   FormControl,
+  FormGroup,
   InputLabel,
   MenuItem,
   Select,
@@ -30,10 +30,10 @@ const AddRerunBlockModal = ({ open, onClose }: AddRerunModalProps) => {
       <DialogTitle>Create Rerun Block</DialogTitle>
       <DialogContent>
         <DialogContentText>
-          Divides the programming in blocks of 6, 8 or 12 hours then repeats
+          Divides the programming in blocks of 4, 6, 8 or 12 hours then repeats
           each of the blocks the specified number of times.
         </DialogContentText>
-        <Box sx={{ display: 'flex', my: 1 }}>
+        <FormGroup>
           <FormControl sx={{ my: 1, flexGrow: 1 }}>
             <InputLabel id="rerun-hours-start-label">Start</InputLabel>
             <Select
@@ -41,6 +41,7 @@ const AddRerunBlockModal = ({ open, onClose }: AddRerunModalProps) => {
               label={'Type'}
               labelId="rerun-hours-start-label"
               id="rerun-hours-start"
+              fullWidth
             >
               {hours.map((hour) => (
                 <MenuItem key={hour} value={hour}>
@@ -79,7 +80,7 @@ const AddRerunBlockModal = ({ open, onClose }: AddRerunModalProps) => {
               ))}
             </Select>
           </FormControl>
-        </Box>
+        </FormGroup>
       </DialogContent>
       <DialogActions>
         <Button onClick={() => onClose()}>Cancel</Button>

@@ -1,5 +1,5 @@
 import {
-  Card,
+  Box,
   CardActions,
   CardContent,
   CardProps,
@@ -18,16 +18,19 @@ export default function ConnectPlex(props: CardProps) {
   } = props;
 
   return (
-    <Card sx={sx} {...restProps}>
+    <Box sx={sx} {...restProps}>
       <CardContent>
         <img src="/web/src/assets/plex.svg" width="75" />
-        <Typography sx={{ my: 2 }}>
+        {/* <Typography sx={{ my: 2 }}>
           First things first, let's get your Plex Server connected.
+        </Typography> */}
+        <Typography align="center" variant="h6">
+          No Plex Servers Connected
         </Typography>
         <CardActions sx={{ justifyContent: 'center' }}>
-          <AddPlexServer title="Connect Plex" />
+          <AddPlexServer title="Connect Plex Now" />
         </CardActions>
       </CardContent>
-    </Card>
+    </Box>
   );
 }

@@ -22,6 +22,8 @@ export const sortPrograms = (
 ) => {
   const newProgramSort = sortBy(programs, (p) => {
     let n;
+    console.log(p);
+
     if (isContentProgram(p)) {
       const ts = p.date ? new Date(p.date).getTime() : 0;
       n = sortOrder === 'asc' ? ts : -ts;

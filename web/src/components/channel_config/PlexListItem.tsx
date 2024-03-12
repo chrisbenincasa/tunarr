@@ -113,7 +113,7 @@ export function PlexListItem<T extends PlexMedia>(props: PlexListItemProps<T>) {
           <ListItemIcon>{open ? <ExpandLess /> : <ExpandMore />}</ListItemIcon>
         )}
         <ListItemText primary={item.title} secondary={calculateItemRuntime()} />
-        <Button onClick={(e) => handleItem(e)}>
+        <Button onClick={(e) => handleItem(e)} variant="contained">
           {hasChildren
             ? `Add ${
                 isPlexShow(item)

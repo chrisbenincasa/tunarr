@@ -1,3 +1,4 @@
+import { Tooltip } from '@mui/material';
 import Button, { ButtonProps } from '@mui/material/Button';
 import { flattenDeep } from 'lodash-es';
 import { sequentialPromises } from '../../helpers/util.ts';
@@ -33,12 +34,14 @@ export default function AddSelectedMediaButton({
   };
 
   return (
-    <Button
-      onClick={() => addSelectedItems()}
-      disabled={selectedMedia.length === 0}
-      {...(rest ?? {})}
-    >
-      Add
-    </Button>
+    <Tooltip title="Add all programs to channel">
+      <Button
+        onClick={() => addSelectedItems()}
+        disabled={selectedMedia.length === 0}
+        {...(rest ?? {})}
+      >
+        Add All
+      </Button>
+    </Tooltip>
   );
 }
