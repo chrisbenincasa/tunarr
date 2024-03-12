@@ -81,7 +81,7 @@ export default function ProgrammingSelector() {
   };
 
   const handleFormat = (
-    event: React.MouseEvent<HTMLElement>,
+    event: React.MouseEvent<HTMLElement>, // eslint-disable-line
     newFormats: ViewType,
   ) => {
     setViewType(newFormats);

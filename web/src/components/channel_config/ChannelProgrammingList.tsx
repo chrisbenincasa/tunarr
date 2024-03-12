@@ -19,7 +19,6 @@ import {
   ListChildComponentProps,
 } from 'react-window';
 import { alternateColors, channelProgramUniqueId } from '../../helpers/util.ts';
-import { usePlexServerSettings } from '../../hooks/settingsHooks.ts';
 import {
   deleteProgram,
   moveProgramInCurrentChannel,
@@ -192,7 +191,6 @@ export default function ChannelProgrammingList({
   virtualListProps,
   enableDnd = defaultProps.enableDnd,
 }: Props) {
-  const { data: plexServers } = usePlexServerSettings();
   const channel = useStore((s) => s.channelEditor.currentEntity);
   const storeProgramList = useStore(programListSelector!);
   const programList = passedProgramList ?? storeProgramList;
