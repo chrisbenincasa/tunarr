@@ -488,3 +488,64 @@ export type PlexChildMediaApiType<Target extends PlexMedia> = FindChild0<
   Target,
   PlexMediaApiChildType
 >;
+
+export const PlexPinsResponseSchema = z.object({
+  authToken: z.string().nullable(),
+  clientIdentifier: z.string(),
+  code: z.string(),
+  createdAt: z.string(),
+  expiresAt: z.string(),
+  expiresIn: z.number(),
+  id: z.number(),
+  product: z.string(),
+  qr: z.string(),
+  trusted: z.boolean(),
+});
+
+export type PlexPinsResponse = Alias<z.infer<typeof PlexPinsResponseSchema>>;
+
+export const PlexConnectionSchema = z.object({
+  IPv6: z.boolean(),
+  address: z.string(),
+  local: z.boolean(),
+  port: z.number(),
+  protocol: z.string(),
+  relay: z.boolean(),
+  uri: z.string(),
+});
+
+export type PlexConnection = Alias<z.infer<typeof PlexConnectionSchema>>;
+
+export const PlexResourceSchema = z.object({
+  accessToken: z.string(),
+  clientIdentifier: z.string(),
+  connections: z.array(PlexConnectionSchema),
+  createdAt: z.string(),
+  device: z.string(),
+  dnsRebindingProtection: z.boolean(),
+  home: z.boolean(),
+  httpsRequired: z.boolean(),
+  lastSeenAt: z.string(),
+  name: z.string(),
+  owned: z.boolean(),
+  ownerId: z.string().nullable(),
+  platform: z.string(),
+  platformVersion: z.string(),
+  presence: z.boolean(),
+  product: z.string(),
+  productVersion: z.string(),
+  provides: z.string(),
+  publicAddress: z.string(),
+  publicAddressMatches: z.boolean(),
+  relay: z.boolean(),
+  sourceTitle: z.string().nullable(),
+  synced: z.boolean(),
+});
+
+export type PlexResource = Alias<z.infer<typeof PlexResourceSchema>>;
+
+export const PlexResourcesResponseSchema = z.array(PlexResourceSchema);
+
+export type PlexResourcesResponse = Alias<
+  z.infer<typeof PlexResourcesResponseSchema>
+>;

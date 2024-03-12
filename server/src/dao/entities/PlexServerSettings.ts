@@ -1,6 +1,6 @@
 import { Entity, Property, Unique } from '@mikro-orm/core';
-import { BaseEntity } from './BaseEntity.js';
 import { PlexServerSettings as PlexServerSettingsDTO } from '@tunarr/types';
+import { BaseEntity } from './BaseEntity.js';
 
 @Entity()
 @Unique({ properties: ['name', 'uri'] })
@@ -23,6 +23,10 @@ export class PlexServerSettings extends BaseEntity {
   @Property()
   index: number;
 
+  // Nullable for now!
+  @Property({ nullable: true })
+  clientIdentifier?: string;
+
   toDTO(): PlexServerSettingsDTO {
     return {
       id: this.uuid,
@@ -32,6 +36,7 @@ export class PlexServerSettings extends BaseEntity {
       sendChannelUpdates: this.sendChannelUpdates,
       sendGuideUpdates: this.sendGuideUpdates,
       index: this.index,
+      clientIdentifier: this.clientIdentifier,
     };
   }
 }

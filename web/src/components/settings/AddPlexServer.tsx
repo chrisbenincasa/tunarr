@@ -33,6 +33,7 @@ export default function AddPlexServer(props: AddPlexServer) {
             name: server.name,
             uri: connection.uri,
             accessToken: server.accessToken,
+            clientIdentifier: server.clientIdentifier,
           }),
         );
       })

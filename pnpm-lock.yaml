@@ -89,6 +89,9 @@ importers:
       fast-json-stringify:
         specifier: ^5.9.1
         version: 5.9.1
+      fast-xml-parser:
+        specifier: ^4.3.5
+        version: 4.3.5
       fastify:
         specifier: ^4.24.3
         version: 4.24.3
@@ -104,9 +107,6 @@ importers:
       fluent-ffmpeg:
         specifier: ^2.1.2
         version: 2.1.2
-      lodash:
-        specifier: ^4.17.21
-        version: 4.17.21
       lodash-es:
         specifier: ^4.17.21
         version: 4.17.21
@@ -183,9 +183,6 @@ importers:
       '@types/fluent-ffmpeg':
         specifier: ^2.1.23
         version: 2.1.23
-      '@types/lodash':
-        specifier: ^4.14.202
-        version: 4.14.202
       '@types/lodash-es':
         specifier: ^4.17.10
         version: 4.17.10
@@ -4925,6 +4922,13 @@ packages:
     resolution: {integrity: sha512-eel5UKGn369gGEWOqBShmFJWfq/xSJvsgDzgLYC845GneayWvXBf0lJCBn5qTABfewy1ZDPoaR5OZCP+kssfuw==}
     dev: false
 
+  /fast-xml-parser@4.3.5:
+    resolution: {integrity: sha512-sWvP1Pl8H03B8oFJpFR3HE31HUfwtX7Rlf9BNsvdpujD4n7WMhfmu8h9wOV2u+c1k0ZilTADhPqypzx2J690ZQ==}
+    hasBin: true
+    dependencies:
+      strnum: 1.0.5
+    dev: false
+
   /fastify-plugin@4.5.1:
     resolution: {integrity: sha512-stRHYGeuqpEZTL1Ef0Ovr2ltazUT9g844X5z/zEBFLG8RYlpDiOCIG+ATvYEp+/zmc7sN29mcIMp8gvYplYPIQ==}
     dev: false
@@ -8372,6 +8376,10 @@ packages:
     dependencies:
       escape-string-regexp: 1.0.5
     dev: true
+
+  /strnum@1.0.5:
+    resolution: {integrity: sha512-J8bbNyKKXl5qYcR36TIO8W3mVGVHrmmxsd5PAItGkmyzwJvybiw2IVq5nqd0i4LSNSkB/sx9VHllbfFdr9k1JA==}
+    dev: false
 
   /stylis@4.2.0:
     resolution: {integrity: sha512-Orov6g6BB1sDfYgzWfTHDOxamtX1bE/zo104Dh9e6fqJ3PooipYyfJ0pUmrZO2wAvO8YbEyeFrkV91XTsGMSrw==}

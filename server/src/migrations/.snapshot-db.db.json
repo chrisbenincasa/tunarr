@@ -617,6 +617,15 @@
           "primary": false,
           "nullable": false,
           "mappedType": "integer"
+        },
+        "client_identifier": {
+          "name": "client_identifier",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "mappedType": "text"
         }
       },
       "name": "plex_server_settings",

@@ -106,6 +106,7 @@ export type UpdateChannelProgrammingRequest = Alias<
 export const UpdatePlexServerRequestSchema = PlexServerSettingsSchema.partial({
   sendChannelUpdates: true,
   sendGuideUpdates: true,
+  clientIdentifier: true,
   id: true,
 });
 
@@ -117,6 +118,7 @@ export const InsertPlexServerRequestSchema = PlexServerSettingsSchema.partial({
   sendChannelUpdates: true,
   sendGuideUpdates: true,
   index: true,
+  clientIdentifier: true,
 }).omit({
   id: true,
 });

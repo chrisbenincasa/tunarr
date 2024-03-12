@@ -62,18 +62,7 @@ export const PlexServerSettingsSchema = z.object({
   sendGuideUpdates: z.boolean(),
   sendChannelUpdates: z.boolean(),
   index: z.number(),
-});
-
-export const PlexServerSettingsInsert = z.object({
-  name: z.string(),
-  uri: z.string(),
-  accessToken: z.string(),
-  sendGuideUpdates: z.boolean().optional(),
-  sendChannelUpdates: z.boolean().optional(),
-});
-
-export const PlexServerSettingsRemove = z.object({
-  id: z.string(),
+  clientIdentifier: z.string().optional(),
 });
 
 export const PlexStreamSettingsSchema = z.object({
