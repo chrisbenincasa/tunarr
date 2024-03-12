@@ -25,7 +25,7 @@ export class PlexServerSettings extends BaseEntity {
 
   // Nullable for now!
   @Property({ nullable: true })
-  clientIdentifier: string;
+  clientIdentifier?: string;
 
   toDTO(): PlexServerSettingsDTO {
     return {
