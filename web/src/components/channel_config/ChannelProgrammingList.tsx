@@ -265,13 +265,15 @@ export default function ChannelProgrammingList({
 
     if (programList.length === 0) {
       return (
-        <Typography
-          align="center"
-          width={'100%'}
-          sx={{ my: 4, fontStyle: 'italic' }}
-        >
-          No programming added yet
-        </Typography>
+        <Box>
+          <Typography
+            align="center"
+            width={'100%'}
+            sx={{ my: 4, fontStyle: 'italic' }}
+          >
+            No programming added yet
+          </Typography>
+        </Box>
       );
     }
 

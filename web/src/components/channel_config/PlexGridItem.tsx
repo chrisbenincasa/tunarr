@@ -40,6 +40,7 @@ export interface PlexGridItemProps<T extends PlexMedia> {
 
 export function PlexGridItem<T extends PlexMedia>(props: PlexGridItemProps<T>) {
   const server = useStore((s) => s.currentServer!); // We have to have a server at this point
+  const darkMode = useStore((state) => state.theme.darkMode);
   const [open, setOpen] = useState(false);
   const { item } = props;
   const hasChildren = !isTerminalItem(item);
@@ -141,9 +142,11 @@ export function PlexGridItem<T extends PlexMedia>(props: PlexGridItemProps<T>) {
                 onClick={(e) => handleItem(e)}
               >
                 {selectedMediaIds.includes(item.guid) ? (
-                  <CheckCircle />
+                  <CheckCircle sx={{ color: darkMode ? '#fff' : '#000' }} />
                 ) : (
-                  <RadioButtonUnchecked />
+                  <RadioButtonUnchecked
+                    sx={{ color: darkMode ? '#fff' : '#000' }}
+                  />
                 )}
               </IconButton>
             }

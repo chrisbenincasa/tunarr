@@ -1,4 +1,4 @@
-import { PlayArrowOutlined } from '@mui/icons-material';
+import { Loop, PlayArrowOutlined } from '@mui/icons-material';
 import {
   Button,
   Table,
@@ -9,16 +9,36 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { styled } from '@mui/material/styles';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Task } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { apiClient } from '../../external/api.ts';
-import { Task } from '@tunarr/types';
+
+const StyledLoopIcon = styled(Loop)({
+  animation: 'spin 2s linear infinite',
+  '@keyframes spin': {
+    '0%': {
+      transform: 'rotate(360deg)',
+    },
+    '100%': {
+      transform: 'rotate(0deg)',
+    },
+  },
+});
 
 // Separated so we can track mutation state individually
 function TaskRow({ task }: { task: Task }) {
+  const queryClient = useQueryClient();
+
   const runJobMutation = useMutation({
     mutationFn: async (id: string) => {
       return apiClient.runTask(undefined, { params: { id } });
+    },
+    onSuccess: () => {
+      return queryClient.invalidateQueries({
+        queryKey: ['channels', 'all', 'guide'],
+      });
     },
   });
 
@@ -26,24 +46,33 @@ function TaskRow({ task }: { task: Task }) {
     runJobMutation.mutate(id);
   };
 
+  console.log(task);
+
   return (
     <TableRow key={task.id}>
       <TableCell>{task.name}</TableCell>
       <TableCell>
         {task.lastExecutionEpoch
-          ? dayjs(task.lastExecutionEpoch * 1000).format()
+          ? dayjs(task.lastExecutionEpoch * 1000).format('llll')
           : 'Never run'}
       </TableCell>
       <TableCell>
         {task.nextExecutionEpoch
-          ? dayjs(task.nextExecutionEpoch * 1000).format()
+          ? dayjs(task.nextExecutionEpoch * 1000).format('llll')
           : 'Not scheduled'}
       </TableCell>
       <TableCell>
         <Button
           onClick={() => runJobWithId(task.id)}
           disabled={runJobMutation.isPending || task.running}
-          startIcon={<PlayArrowOutlined />}
+          startIcon={
+            runJobMutation.isPending || task.running ? (
+              <StyledLoopIcon />
+            ) : (
+              <PlayArrowOutlined />
+            )
+          }
+          variant="contained"
         >
           Run Now
         </Button>

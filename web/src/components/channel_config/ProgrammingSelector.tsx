@@ -1,18 +1,17 @@
 import {
-  AddCircle,
   Clear,
   ExpandLess,
   ExpandMore,
   GridView,
+  Search,
   ViewList,
 } from '@mui/icons-material';
 import {
   Box,
-  Button,
-  ButtonGroup,
   Collapse,
   Divider,
   FormControl,
+  Grow,
   IconButton,
   InputAdornment,
   InputLabel,
@@ -25,6 +24,8 @@ import {
   Select,
   Stack,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
 } from '@mui/material';
 import { DataTag, useInfiniteQuery, useQuery } from '@tanstack/react-query';
@@ -39,13 +40,11 @@ import {
 } from '@tunarr/types/plex';
 import { chain, first, isEmpty, isNil, isUndefined, map } from 'lodash-es';
 import React, { Fragment, useCallback, useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
 import { useIntersectionObserver } from 'usehooks-ts';
 import { toggle } from '../../helpers/util.ts';
 import { fetchPlexPath, usePlex } from '../../hooks/plexHooks.ts';
 import { usePlexServerSettings } from '../../hooks/settingsHooks.ts';
 import useDebouncedState from '../../hooks/useDebouncedState.ts';
-import { addPlexMediaToCurrentChannel } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
 import {
   addKnownMediaForServer,
@@ -53,7 +52,7 @@ import {
   setProgrammingListingServer,
 } from '../../store/programmingSelector/actions.ts';
 import { setProgrammingSelectorViewState } from '../../store/themeEditor/actions.ts';
-import AddSelectedMediaButton from './AddSelectedMediaButton.tsx';
+import ConnectPlex from '../settings/ConnectPlex.tsx';
 import { PlexGridItem } from './PlexGridItem.tsx';
 import { PlexListItem } from './PlexListItem.tsx';
 import SelectedProgrammingList from './SelectedProgrammingList.tsx';
@@ -66,19 +65,30 @@ export interface PlexListItemProps<T extends PlexMedia> {
   parent?: string;
 }
 
-type viewType = 'list' | 'grid';
+type ViewType = 'list' | 'grid';
 
 export default function ProgrammingSelector() {
   const { data: plexServers } = usePlexServerSettings();
   const selectedServer = useStore((s) => s.currentServer);
   const selectedLibrary = useStore((s) => s.currentLibrary);
   const knownMedia = useStore((s) => s.knownMediaByServer);
-  const navigate = useNavigate();
   const [collectionsOpen, setCollectionsOpen] = useState(false);
   const viewType = useStore((state) => state.theme.programmingSelectorView);
+  const [searchBarOpen, setSearchBarOpen] = useState(false);
 
-  const setViewType = (view: viewType) => {
+  const setViewType = (view: ViewType) => {
     setProgrammingSelectorViewState(view);
+  };
+
+  const handleFormat = (
+    _event: React.MouseEvent<HTMLElement>,
+    newFormats: ViewType,
+  ) => {
+    setViewType(newFormats);
+  };
+
+  const handleSearchOpen = () => {
+    setSearchBarOpen(!searchBarOpen);
   };
 
   useEffect(() => {
@@ -219,6 +229,7 @@ export default function ProgrammingSelector() {
 
   const clearSearchInput = useCallback(() => {
     setSearch('');
+    setSearchBarOpen(false);
   }, [setSearch]);
 
   const renderListItems = () => {
@@ -283,25 +294,33 @@ export default function ProgrammingSelector() {
 
   return (
     <>
-      {selectedServer && (
-        <FormControl fullWidth size="small" margin="dense">
-          <InputLabel>Media Source</InputLabel>
-          <Select label="Media Source" value={selectedServer?.name}>
-            {plexServers?.map((server) => (
-              <MenuItem key={server.name} value={server.name}>
-                Plex: {server.name}
-              </MenuItem>
-            ))}
-            <MenuItem value="custom-shows">Custom Shows</MenuItem>
-          </Select>
-        </FormControl>
-      )}
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        sx={{
+          display: 'flex',
+          columnGap: 1,
+          justifyContent: 'flex-start',
+          flexGrow: 1,
+        }}
+      >
+        {selectedServer && (
+          <FormControl size="small" margin="normal">
+            <InputLabel>Media Source</InputLabel>
+            <Select label="Media Source" value={selectedServer?.name}>
+              {plexServers?.map((server) => (
+                <MenuItem key={server.name} value={server.name}>
+                  Plex: {server.name}
+                </MenuItem>
+              ))}
+              <MenuItem value="custom-shows">Custom Shows</MenuItem>
+            </Select>
+          </FormControl>
+        )}
 
-      {!isNil(directoryChildren) &&
-        directoryChildren.size > 0 &&
-        selectedLibrary && (
-          <>
-            <FormControl fullWidth size="small" margin="normal">
+        {!isNil(directoryChildren) &&
+          directoryChildren.size > 0 &&
+          selectedLibrary && (
+            <FormControl size="small" margin="normal">
               <InputLabel>Library</InputLabel>
               <Select
                 label="Library"
@@ -316,29 +335,13 @@ export default function ProgrammingSelector() {
                 <MenuItem value="custom-shows">Custom Shows</MenuItem>
               </Select>
             </FormControl>
-            <TextField
-              size="small"
-              label="Search"
-              margin="dense"
-              variant="outlined"
-              fullWidth
-              value={search}
-              disabled={searchLoading}
-              onChange={(e) => setSearch(e.target.value)}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      onClick={clearSearchInput}
-                      onMouseDown={(e) => e.preventDefault()}
-                      edge="end"
-                    >
-                      <Clear />
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
+          )}
+      </Stack>
+
+      {!isNil(directoryChildren) &&
+        directoryChildren.size > 0 &&
+        selectedLibrary && (
+          <>
             <Stack
               direction={{ xs: 'column', sm: 'row' }}
               sx={{
@@ -350,20 +353,52 @@ export default function ProgrammingSelector() {
                 flexGrow: 1,
               }}
             >
-              <ButtonGroup>
-                <Button
-                  variant={viewType === 'list' ? 'contained' : 'outlined'}
-                  onClick={() => setViewType('list')}
+              <Grow in={searchBarOpen} mountOnEnter>
+                <TextField
+                  label="Search"
+                  margin="dense"
+                  variant="outlined"
+                  fullWidth
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  key={'searchbar'}
+                  sx={{ m: 0 }}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          onClick={clearSearchInput}
+                          onMouseDown={(e) => e.preventDefault()}
+                          edge="end"
+                        >
+                          <Clear />
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                    sx: { height: '48px' },
+                  }}
+                />
+              </Grow>
+              {!searchBarOpen && (
+                <ToggleButton
+                  value={searchBarOpen}
+                  onChange={() => handleSearchOpen()}
                 >
+                  <Search />
+                </ToggleButton>
+              )}
+              <ToggleButtonGroup
+                value={viewType}
+                onChange={handleFormat}
+                exclusive
+              >
+                <ToggleButton value="list">
                   <ViewList />
-                </Button>
-                <Button
-                  variant={viewType === 'grid' ? 'contained' : 'outlined'}
-                  onClick={() => setViewType('grid')}
-                >
+                </ToggleButton>
+                <ToggleButton value="grid">
                   <GridView />
-                </Button>
-              </ButtonGroup>
+                </ToggleButton>
+              </ToggleButtonGroup>
             </Stack>
           </>
         )}
@@ -375,23 +410,16 @@ export default function ProgrammingSelector() {
             m: 4,
           }}
         >
-          <Typography align="center" variant="h6">
-            No Plex Servers connected
-          </Typography>
-          <Button
-            variant="contained"
-            to="/settings/plex"
-            component={Link}
-            sx={{ margin: '0 auto' }}
-            startIcon={<AddCircle />}
-          >
-            Add Your Plex Server
-          </Button>
+          <ConnectPlex />
         </Box>
       ) : (
         <>
           <LinearProgress
-            sx={{ visibility: searchLoading ? 'visible' : 'hidden' }}
+            sx={{
+              visibility: searchLoading ? 'visible' : 'hidden',
+              height: 10,
+              marginTop: 1,
+            }}
           />
           <List
             component="nav"
@@ -413,10 +441,6 @@ export default function ProgrammingSelector() {
           <Divider sx={{ mt: 3, mb: 2 }} />
           <Typography>Selected Items</Typography>
           <SelectedProgrammingList />
-          <AddSelectedMediaButton
-            onAdd={addPlexMediaToCurrentChannel}
-            onSuccess={() => navigate('..', { relative: 'path' })}
-          />
         </>
       )}
     </>

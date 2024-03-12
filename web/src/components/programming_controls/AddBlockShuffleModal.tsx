@@ -4,8 +4,11 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
+  DialogContentText,
   DialogTitle,
+  FormControl,
   FormGroup,
+  InputLabel,
   MenuItem,
   Select,
   TextField,
@@ -45,27 +48,35 @@ const AddBlockShuffleModal = ({ open, onClose }: AddBlockShuffleModalProps) => {
     <Dialog open={open}>
       <DialogTitle>Block Shuffle</DialogTitle>
       <DialogContent sx={{ py: 0 }}>
-        <FormGroup sx={{ my: 1 }}>
+        <DialogContentText>
+          Alternate TV shows in blocks of episodes. You can pick the number of
+          episodes per show in each block and if the order of shows in each
+          block should be randomized. Movies are moved to the bottom.
+        </DialogContentText>
+        <FormGroup sx={{ my: 3 }}>
           <TextField
             type="number"
             label="# of Programs"
             value={blockShuffleProgramCount}
-            sx={{ mb: 1 }}
+            sx={{ mb: 2 }}
             onChange={(e) =>
               setBlockShuffleProgramCount(parseInt(e.target.value))
             }
           ></TextField>
-          <Select
-            id="sort-block-shuffle-type"
-            value={blockShuffleType}
-            label="Type"
-            onChange={(e) =>
-              setBlockShuffleType(e.target.value as BlockShuffleType)
-            }
-          >
-            <MenuItem value={'Fixed'}>Fixed</MenuItem>
-            <MenuItem value={'Random'}>Random</MenuItem>
-          </Select>
+          <FormControl fullWidth>
+            <InputLabel id="sort-block-shuffle-type">Type</InputLabel>
+            <Select
+              id="sort-block-shuffle-type"
+              value={blockShuffleType}
+              label="Type"
+              onChange={(e) =>
+                setBlockShuffleType(e.target.value as BlockShuffleType)
+              }
+            >
+              <MenuItem value={'Fixed'}>Fixed</MenuItem>
+              <MenuItem value={'Random'}>Random</MenuItem>
+            </Select>
+          </FormControl>
         </FormGroup>
       </DialogContent>
       <DialogActions>

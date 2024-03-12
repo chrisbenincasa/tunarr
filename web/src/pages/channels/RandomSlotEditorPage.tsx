@@ -59,6 +59,7 @@ import {
   useWatch,
 } from 'react-hook-form';
 import { useDebounceCallback } from 'usehooks-ts';
+import Breadcrumbs from '../../components/Breadcrumbs';
 import PaddedPaper from '../../components/base/PaddedPaper';
 import ChannelProgrammingList from '../../components/channel_config/ChannelProgrammingList';
 import {
@@ -607,6 +608,7 @@ export default function RandomSlotEditorPage() {
           This channel has an existing time slot schedule
         </Alert>
       )}
+      <Breadcrumbs />
       <Typography variant="h4" sx={{ mb: 2 }}>
         Edit Random Slots (Channel {channel?.number})
       </Typography>

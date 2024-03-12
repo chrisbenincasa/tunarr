@@ -37,6 +37,11 @@ const namedRoutes: Route[] = [
     name: 'Time Slot Editor',
   },
   {
+    matcher:
+      /^\/channels\/[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}\/programming\/random-slot-editor$/g,
+    name: 'Random Slot Editor',
+  },
+  {
     matcher: /^\/library$/g,
     name: 'Library',
   },
