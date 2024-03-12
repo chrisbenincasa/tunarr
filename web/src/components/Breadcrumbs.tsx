@@ -31,7 +31,7 @@ export default function Breadcrumbs(props: BreadcrumbsProps) {
           // Don't display crumbs for pages that aren't excplicely defined in useRouteNames hook
           return isLast ? (
             <Typography color="text.primary" key={to}>
-              {getRouteName(to) ?? 'null'}
+              {getRouteName(to) ?? ''}
             </Typography>
           ) : getRouteName(to) ? (
             <Link component={RouterLink} to={to} key={to}>

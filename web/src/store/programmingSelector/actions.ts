@@ -7,7 +7,7 @@ import {
 } from '@tunarr/types/plex';
 import { map, reject } from 'lodash-es';
 import useStore from '..';
-import { SelectedMedia } from './store';
+import { SelectedLibrary, SelectedMedia } from './store';
 
 export const setProgrammingListingServer = (
   server: PlexServerSettings | undefined,
@@ -16,7 +16,7 @@ export const setProgrammingListingServer = (
     state.currentServer = server;
   });
 
-export const setProgrammingListLibrary = (library: PlexLibrarySection) =>
+export const setProgrammingListLibrary = (library: SelectedLibrary) =>
   useStore.setState((state) => {
     state.currentLibrary = library;
   });

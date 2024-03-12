@@ -25,7 +25,10 @@ import AddSelectedMediaButton from '../../components/channel_config/AddSelectedM
 import ProgrammingSelector from '../../components/channel_config/ProgrammingSelector.tsx';
 import { apiClient } from '../../external/api.ts';
 import { usePreloadedData } from '../../hooks/preloadedDataHook.ts';
-import { customShowLoader } from '../../preloaders/customShowLoaders.ts';
+import {
+  existingCustomShowLoader,
+  newCustomShowLoader,
+} from '../../preloaders/customShowLoaders.ts';
 import {
   addPlexMediaToCurrentCustomShow,
   removeCustomShowProgram,
@@ -40,7 +43,9 @@ type CustomShowForm = {
 };
 
 export default function EditCustomShowPage({ isNew }: Props) {
-  const customShow = usePreloadedData(customShowLoader(isNew));
+  const { show: customShow } = usePreloadedData(
+    isNew ? existingCustomShowLoader : newCustomShowLoader,
+  );
   const customShowPrograms = useStore((s) => s.customShowEditor.programList);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -57,10 +62,11 @@ export default function EditCustomShowPage({ isNew }: Props) {
   });
 
   useEffect(() => {
+    console.log(customShow, 'reset');
     reset({
       name: customShow.name,
     });
-  }, [customShow.name, reset]);
+  }, [customShow, reset]);
 
   const saveShowMutation = useMutation({
     mutationKey: ['custom-shows', isNew ? 'new' : customShow.id],
@@ -147,7 +153,7 @@ export default function EditCustomShowPage({ isNew }: Props) {
       <Box>
         <Breadcrumbs />
         <Typography variant="h4" sx={{ mb: 2 }}>
-          New Custom Show
+          {isNew ? 'New' : 'Edit'} Custom Show
         </Typography>
       </Box>
       <PaddedPaper sx={{ mb: 2 }}>

@@ -4,6 +4,7 @@ import {
   QueryFunction,
   UseQueryOptions,
 } from '@tanstack/react-query';
+import { NonUndefinedGuard } from '../types';
 
 export function makeQueryOptions<
   K extends readonly unknown[],
@@ -24,8 +25,6 @@ export function makeQueryOptions<
     ...opts,
   };
 }
-
-type NonUndefinedGuard<T> = T extends undefined ? never : T;
 
 export function makeQueryOptionsInitialData<
   K extends readonly unknown[],

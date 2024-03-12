@@ -105,3 +105,4 @@ export const isUIRedirectProgram = (
 
 export type UIFillerListProgram = (ContentProgram | CustomProgram) & UIIndex;
 export type UICustomShowProgram = (ContentProgram | CustomProgram) & UIIndex;
+export type NonUndefinedGuard<T> = T extends undefined ? never : T;

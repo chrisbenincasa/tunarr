@@ -1,5 +1,5 @@
-import { PlexServerSettings } from '@tunarr/types';
-import { PlexMedia, PlexLibrarySection } from '@tunarr/types/plex';
+import { CustomShow, PlexServerSettings } from '@tunarr/types';
+import { PlexLibrarySection, PlexMedia } from '@tunarr/types/plex';
 import { StateCreator } from 'zustand';
 
 type ServerName = string;
@@ -10,9 +10,21 @@ export interface SelectedMedia {
   guid: PlexItemGuid;
 }
 
+export type PlexLibrary = {
+  type: 'plex';
+  library: PlexLibrarySection;
+};
+
+export type CustomShowLibrary = {
+  type: 'custom-show';
+  library: CustomShow;
+};
+
+export type SelectedLibrary = PlexLibrary | CustomShowLibrary;
+
 export interface ProgrammingListingsState {
   currentServer?: PlexServerSettings;
-  currentLibrary?: PlexLibrarySection;
+  currentLibrary?: SelectedLibrary;
   // Tracks the parent-child mappings of library items
   contentHierarchyByServer: Record<
     ServerName,

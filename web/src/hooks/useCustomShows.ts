@@ -1,18 +1,38 @@
-import { DataTag, useQuery } from '@tanstack/react-query';
+import {
+  DataTag,
+  DefinedInitialDataOptions,
+  useQuery,
+} from '@tanstack/react-query';
 import { CustomShow } from '@tunarr/types';
 import { apiClient } from '../external/api.ts';
 import { ZodiosAliasReturnType } from '../types/index.ts';
 import { makeQueryOptionsInitialData } from './useQueryHelpers.ts';
 
-export const customShowsQuery = (initialData: CustomShow[] = []) =>
+export type CustomShowsQueryOpts = Omit<
+  DefinedInitialDataOptions<
+    CustomShow[],
+    Error,
+    CustomShow[],
+    DataTag<['custom-shows'], CustomShow[]>
+  >,
+  'queryKey' | 'queryFn' | 'initialData'
+>;
+
+export const customShowsQuery = (
+  initialData: CustomShow[] = [],
+  opts?: CustomShowsQueryOpts,
+) =>
   makeQueryOptionsInitialData(
     ['custom-shows'],
     () => apiClient.getCustomShows(),
     initialData,
+    opts ?? {},
   );
 
-export const useCustomShows = (initialData: CustomShow[] = []) =>
-  useQuery(customShowsQuery(initialData));
+export const useCustomShows = (
+  initialData: CustomShow[] = [],
+  opts?: CustomShowsQueryOpts,
+) => useQuery(customShowsQuery(initialData, opts ?? {}));
 
 export const customShowQuery = (id: string) => ({
   queryKey: ['custom-shows', id] as DataTag<

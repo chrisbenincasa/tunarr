@@ -10,7 +10,12 @@ import {
 import { setCurrentCustomShow } from '../store/channelEditor/actions.ts';
 import { Preloader } from '../types/index.ts';
 
-export const customShowLoader = (isNew: boolean) => {
+export type CustomShowPreload = {
+  show: CustomShow;
+  programs: CustomShowProgramming;
+};
+
+export const customShowLoader = (isNew: boolean): Preloader<CustomShow> => {
   if (!isNew) {
     return createPreloader(
       ({ params }) => customShowQuery(params.id!),
@@ -29,20 +34,17 @@ export const customShowLoader = (isNew: boolean) => {
   }
 };
 
-export const newCustomShowLoader: Preloader<{
-  show: CustomShow;
-  programs: CustomShowProgramming;
-}> = (queryClient: QueryClient) => (args: LoaderFunctionArgs) => {
-  return customShowLoader(true)(queryClient)(args).then((show) => ({
-    show,
-    programs: [],
-  }));
-};
+export const newCustomShowLoader: Preloader<CustomShowPreload> =
+  (queryClient: QueryClient) => (args: LoaderFunctionArgs) => {
+    return customShowLoader(true)(queryClient)(args).then((show) => ({
+      show,
+      programs: [],
+    }));
+  };
 
-export const existingCustomShowLoader: Preloader<{
-  show: CustomShow;
-  programs: CustomShowProgramming;
-}> = (queryClient: QueryClient) => {
+export const existingCustomShowLoader: Preloader<CustomShowPreload> = (
+  queryClient: QueryClient,
+) => {
   const showLoader = customShowLoader(false)(queryClient);
 
   return async (args: LoaderFunctionArgs) => {
@@ -53,7 +55,6 @@ export const existingCustomShowLoader: Preloader<{
 
     return await Promise.all([showLoaderPromise, programsPromise]).then(
       ([show, programs]) => {
-        console.log(show, programs);
         setCurrentCustomShow(show, programs);
         return {
           show,
