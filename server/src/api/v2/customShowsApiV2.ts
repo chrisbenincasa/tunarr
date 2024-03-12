@@ -106,4 +106,30 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
       return res.status(201).send({ id: newId });
     },
   );
+
+  fastify.delete(
+    '/custom-shows/:id',
+    {
+      schema: {
+        params: IdPathParamSchema,
+        response: {
+          200: z.object({ id: z.string() }),
+          404: z.void(),
+        },
+      },
+    },
+    async (req, res) => {
+      const customShow = await req.serverCtx.customShowDB.getShow(
+        req.params.id,
+      );
+
+      if (isNull(customShow)) {
+        return res.status(404).send();
+      }
+
+      await req.serverCtx.customShowDB.deleteShow(req.params.id);
+
+      return res.status(200).send({ id: req.params.id });
+    },
+  );
 };

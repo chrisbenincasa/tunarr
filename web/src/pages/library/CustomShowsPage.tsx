@@ -12,13 +12,30 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
+import { apiClient } from '../../external/api.ts';
 import { usePreloadedData } from '../../hooks/preloadedDataHook.ts';
+import { useCustomShows } from '../../hooks/useCustomShows.ts';
 import { customShowsLoader } from '../../preloaders/customShowLoaders.ts';
 
 export default function CustomShowsPage() {
-  const customShows = usePreloadedData(customShowsLoader);
+  const { data: customShows } = useCustomShows(
+    usePreloadedData(customShowsLoader),
+  );
+  const queryClient = useQueryClient();
+
+  const deleteShowMutation = useMutation({
+    mutationFn: async (id: string) =>
+      apiClient.deleteCustomShow(undefined, { params: { id } }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ['custom-shows'],
+        exact: false,
+      });
+    },
+  });
 
   const getTableRows = () => {
     if (customShows.length === 0) {
@@ -46,7 +63,10 @@ export default function CustomShowsPage() {
               </IconButton>
             </Tooltip>
             <Tooltip title="Delete" placement="top">
-              <IconButton color="error">
+              <IconButton
+                color="error"
+                onClick={() => deleteShowMutation.mutate(cs.id)}
+              >
                 <DeleteIcon />
               </IconButton>
             </Tooltip>

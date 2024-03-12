@@ -14,8 +14,8 @@ import {
 import useStore from '../store/index.ts';
 import { Preloader } from '../types/index.ts';
 
-export const newChannelLoader: Preloader<Channel[]> = createPreloader(
-  () => channelsQuery,
+export const newChannelLoader: Preloader<Channel[]> = createPreloader(() =>
+  channelsQuery(),
 );
 
 export function defaultNewChannel(num: number): Channel {
@@ -71,9 +71,9 @@ export const channelLoader: Preloader<Channel> = createPreloader(
 export const editChannelLoader = (isNew: boolean): Preloader<Channel> => {
   if (isNew) {
     return (queryClient) => async (args) => {
-      const channels = await createPreloader(() => channelsQuery)(queryClient)(
-        args,
-      );
+      const channels = await createPreloader(() => channelsQuery())(
+        queryClient,
+      )(args);
 
       const newChannel = defaultNewChannel(
         (maxBy(channels, (c) => c.number)?.number ?? 0) + 1,

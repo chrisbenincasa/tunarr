@@ -2,12 +2,14 @@ import { DataTag, useQuery } from '@tanstack/react-query';
 import { Channel } from '@tunarr/types';
 import { apiClient } from '../external/api.ts';
 
-export const channelsQuery = {
+export const channelsQuery = (initialData: Channel[] = []) => ({
   queryKey: ['channels'] as DataTag<['channels'], Channel[]>,
   queryFn: () => apiClient.get('/api/v2/channels'),
-};
+  initialData,
+});
 
-export const useChannels = () => useQuery(channelsQuery);
+export const useChannels = (initialData: Channel[] = []) =>
+  useQuery(channelsQuery(initialData));
 
 export const channelQuery = (id: string, enabled: boolean = true) => ({
   queryKey: ['channels', id] as DataTag<['channels', string], Channel>,

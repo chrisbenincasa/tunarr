@@ -16,35 +16,60 @@ import AccordionSummary from '@mui/material/AccordionSummary';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { CustomShow } from '@tunarr/types';
-import { useCallback } from 'react';
-import { useLoaderData, useNavigate } from 'react-router-dom';
+import { useCallback, useEffect } from 'react';
+import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import AddSelectedMediaButton from '../../components/channel_config/AddSelectedMediaButton.tsx';
 import ProgrammingSelector from '../../components/channel_config/ProgrammingSelector.tsx';
 import { apiClient } from '../../external/api.ts';
+import { usePreloadedData } from '../../hooks/preloadedDataHook.ts';
+import { customShowLoader } from '../../preloaders/customShowLoaders.ts';
 import {
   addPlexMediaToCurrentCustomShow,
   removeCustomShowProgram,
 } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
+import { UICustomShowProgram } from '../../types/index.ts';
 
 type Props = { isNew: boolean };
 
+type CustomShowForm = {
+  name: string;
+};
+
 export default function EditCustomShowPage({ isNew }: Props) {
-  const customShow = useLoaderData() as CustomShow;
-  const workingCustomShow = useStore((s) => s.customShowEditor.currentEntity);
+  const customShow = usePreloadedData(customShowLoader(isNew));
   const customShowPrograms = useStore((s) => s.customShowEditor.programList);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
+  const {
+    control,
+    reset,
+    handleSubmit,
+    formState: { isValid },
+  } = useForm<CustomShowForm>({
+    defaultValues: {
+      name: '',
+    },
+  });
+
+  useEffect(() => {
+    reset({
+      name: customShow.name,
+    });
+  }, [customShow.name, reset]);
+
   const saveShowMutation = useMutation({
     mutationKey: ['custom-shows', isNew ? 'new' : customShow.id],
-    mutationFn: async () => {
+    mutationFn: async (
+      data: CustomShowForm & { programs: UICustomShowProgram[] },
+    ) => {
       return apiClient.createCustomShow({
-        name: workingCustomShow!.name,
-        programs: customShowPrograms,
+        name: data.name,
+        programs: data.programs,
       });
     },
     onSuccess: async () => {
@@ -60,18 +85,15 @@ export default function EditCustomShowPage({ isNew }: Props) {
     navigate('/library/custom-shows');
   }, [navigate]);
 
-  const saveCustomShow = () => {
-    saveShowMutation.mutate();
+  const saveCustomShow: SubmitHandler<CustomShowForm> = (
+    data: CustomShowForm,
+  ) => {
+    saveShowMutation.mutate({ ...data, programs: customShowPrograms });
   };
 
   const deleteProgramAtIndex = useCallback((idx: number) => {
     removeCustomShowProgram(idx);
   }, []);
-
-  const isValid =
-    workingCustomShow &&
-    workingCustomShow.name.length > 0 &&
-    customShowPrograms.length > 0;
 
   const renderPrograms = () => {
     return customShowPrograms.map((p, idx) => {
@@ -121,7 +143,7 @@ export default function EditCustomShowPage({ isNew }: Props) {
   };
 
   return (
-    <div>
+    <Box component="form" onSubmit={handleSubmit(saveCustomShow)}>
       <Box>
         <Breadcrumbs />
         <Typography variant="h4" sx={{ mb: 2 }}>
@@ -130,11 +152,12 @@ export default function EditCustomShowPage({ isNew }: Props) {
       </Box>
       <PaddedPaper sx={{ mb: 2 }}>
         <Stack>
-          <TextField
-            value={customShow.name}
-            margin="normal"
-            fullWidth
-            label="Name"
+          <Controller
+            control={control}
+            name="name"
+            render={({ field }) => (
+              <TextField margin="normal" fullWidth label="Name" {...field} />
+            )}
           />
           <Box>
             <Typography>Programming</Typography>
@@ -152,9 +175,13 @@ export default function EditCustomShowPage({ isNew }: Props) {
           >
             <Button onClick={() => onCancel()}>Cancel</Button>
             <Button
-              disabled={saveShowMutation.isPending || !isValid}
+              disabled={
+                saveShowMutation.isPending ||
+                !isValid ||
+                customShowPrograms.length === 0
+              }
               variant="contained"
-              onClick={() => saveCustomShow()}
+              type="submit"
             >
               Save
             </Button>
@@ -166,7 +193,9 @@ export default function EditCustomShowPage({ isNew }: Props) {
           Add Programming
         </AccordionSummary>
         <AccordionDetails>
-          <ProgrammingSelector />
+          <ProgrammingSelector
+            onAddSelectedMedia={addPlexMediaToCurrentCustomShow}
+          />
           <Divider />
           <Box
             sx={{
@@ -184,6 +213,6 @@ export default function EditCustomShowPage({ isNew }: Props) {
           </Box>
         </AccordionDetails>
       </Accordion>
-    </div>
+    </Box>
   );
 }

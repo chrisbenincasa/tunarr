@@ -139,6 +139,17 @@ export const api = makeApi([
       .build(),
   },
   {
+    method: 'delete',
+    path: '/api/v2/custom-shows/:id',
+    alias: 'deleteCustomShow',
+    response: z.object({ id: z.string() }),
+    parameters: parametersBuilder()
+      .addPaths({
+        id: z.string(),
+      })
+      .build(),
+  },
+  {
     method: 'post',
     path: '/api/v2/custom-shows',
     alias: 'createCustomShow',

@@ -88,7 +88,19 @@ export class CustomShowDB {
 
   async deleteShow(id: string) {
     const em = getEm();
-    await em.removeAndFlush(em.getReference(CustomShow, id));
+    const show = await em.findOne(CustomShow, { uuid: id });
+    if (!show) {
+      return false;
+    }
+
+    await em.transactional(async (em) => {
+      show.channels.removeAll();
+      show.content.removeAll();
+      await em.flush();
+      await em.removeAndFlush(show);
+    });
+
+    return true;
   }
 
   async getAllShowIds() {

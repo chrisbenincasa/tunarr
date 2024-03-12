@@ -14,7 +14,7 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import { isPlexDirectory, isPlexSeason, isPlexShow } from '@tunarr/types/plex';
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { addPlexMediaToCurrentChannel } from '../../store/channelEditor/actions.ts';
+import { EnrichedPlexMedia } from '../../hooks/plexHooks.ts';
 import useStore from '../../store/index.ts';
 import {
   clearSelectedMedia,
@@ -23,7 +23,11 @@ import {
 import { SelectedMedia } from '../../store/programmingSelector/store.ts';
 import AddSelectedMediaButton from './AddSelectedMediaButton.tsx';
 
-export default function SelectedProgrammingList() {
+type Props = {
+  onAddSelectedMedia: (media: EnrichedPlexMedia[]) => void;
+};
+
+export default function SelectedProgrammingList({ onAddSelectedMedia }: Props) {
   const knownMedia = useStore((s) => s.knownMediaByServer);
   const selectedMedia = useStore((s) => s.selectedMedia);
   const darkMode = useStore((state) => state.theme.darkMode);
@@ -111,7 +115,7 @@ export default function SelectedProgrammingList() {
           </Tooltip>
 
           <AddSelectedMediaButton
-            onAdd={addPlexMediaToCurrentChannel}
+            onAdd={onAddSelectedMedia}
             startIcon={<AddCircle />}
             onSuccess={() => navigate('..', { relative: 'path' })}
             sx={{

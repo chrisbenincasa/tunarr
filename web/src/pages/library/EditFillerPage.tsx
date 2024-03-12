@@ -65,7 +65,6 @@ export default function EditFillerPage({ isNew }: Props) {
   });
 
   useEffect(() => {
-    console.log('resetting!', fillerList.name);
     reset({
       name: fillerList.name,
     });
@@ -214,7 +213,9 @@ export default function EditFillerPage({ isNew }: Props) {
             Add Programming
           </AccordionSummary>
           <AccordionDetails>
-            <ProgrammingSelector />
+            <ProgrammingSelector
+              onAddSelectedMedia={addPlexMediaToCurrentFillerList}
+            />
             <Divider />
             <Box
               sx={{

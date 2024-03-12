@@ -35,13 +35,15 @@ export default function AddSelectedMediaButton({
 
   return (
     <Tooltip title="Add all programs to channel">
-      <Button
-        onClick={() => addSelectedItems()}
-        disabled={selectedMedia.length === 0}
-        {...(rest ?? {})}
-      >
-        Add All
-      </Button>
+      <span>
+        <Button
+          onClick={() => addSelectedItems()}
+          disabled={selectedMedia.length === 0}
+          {...(rest ?? {})}
+        >
+          Add All
+        </Button>
+      </span>
     </Tooltip>
   );
 }

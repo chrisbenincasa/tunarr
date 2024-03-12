@@ -104,3 +104,4 @@ export const isUIRedirectProgram = (
 ): p is UIRedirectProgram => p.type === 'redirect';
 
 export type UIFillerListProgram = (ContentProgram | CustomProgram) & UIIndex;
+export type UICustomShowProgram = (ContentProgram | CustomProgram) & UIIndex;

@@ -42,7 +42,11 @@ import { chain, first, isEmpty, isNil, isUndefined, map } from 'lodash-es';
 import React, { Fragment, useCallback, useEffect, useState } from 'react';
 import { useIntersectionObserver } from 'usehooks-ts';
 import { toggle } from '../../helpers/util.ts';
-import { fetchPlexPath, usePlex } from '../../hooks/plexHooks.ts';
+import {
+  EnrichedPlexMedia,
+  fetchPlexPath,
+  usePlex,
+} from '../../hooks/plexHooks.ts';
 import { usePlexServerSettings } from '../../hooks/settingsHooks.ts';
 import useDebouncedState from '../../hooks/useDebouncedState.ts';
 import useStore from '../../store/index.ts';
@@ -67,7 +71,11 @@ export interface PlexListItemProps<T extends PlexMedia> {
 
 type ViewType = 'list' | 'grid';
 
-export default function ProgrammingSelector() {
+type Props = {
+  onAddSelectedMedia: (items: EnrichedPlexMedia[]) => void;
+};
+
+export default function ProgrammingSelector({ onAddSelectedMedia }: Props) {
   const { data: plexServers } = usePlexServerSettings();
   const selectedServer = useStore((s) => s.currentServer);
   const selectedLibrary = useStore((s) => s.currentLibrary);
@@ -204,6 +212,7 @@ export default function ProgrammingSelector() {
 
   const onLibraryChange = useCallback(
     (libraryUuid: string) => {
+      // TODO support loading custom shows
       if (selectedServer) {
         const known = knownMedia[selectedServer.name] ?? {};
         const library = known[libraryUuid];
@@ -440,7 +449,7 @@ export default function ProgrammingSelector() {
 
           <Divider sx={{ mt: 3, mb: 2 }} />
           <Typography>Selected Items</Typography>
-          <SelectedProgrammingList />
+          <SelectedProgrammingList onAddSelectedMedia={onAddSelectedMedia} />
         </>
       )}
     </>

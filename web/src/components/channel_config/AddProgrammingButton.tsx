@@ -24,7 +24,6 @@ import AddFlexModal from '../programming_controls/AddFlexModal';
 import AddPaddingModal from '../programming_controls/AddPaddingModal';
 import AddRedirectModal from '../programming_controls/AddRedirectModal';
 import AddRestrictHoursModal from '../programming_controls/AddRestrictHoursModal';
-import ProgrammingSelectorDialog from './ProgrammingSelectorDialog';
 
 const StyledMenu = styled((props: MenuProps) => (
   <Menu
@@ -76,7 +75,6 @@ export default function AddProgrammingButton() {
   const [addRestrictHoursModalOpen, setAddRestrictHoursModalOpen] =
     useState(false);
   const [addBreaksModalOpen, setAddBreaksModalOpen] = useState(false);
-  const [programmingModalOpen, setProgrammingModalOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
   const open = Boolean(anchorEl);
@@ -102,10 +100,6 @@ export default function AddProgrammingButton() {
       <AddPaddingModal
         open={addPaddingModalOpen}
         onClose={() => setAddPaddingModalOpen(false)}
-      />
-      <ProgrammingSelectorDialog
-        open={programmingModalOpen}
-        onClose={() => setProgrammingModalOpen(false)}
       />
       <AddRestrictHoursModal
         open={addRestrictHoursModalOpen}

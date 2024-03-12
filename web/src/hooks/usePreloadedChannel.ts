@@ -5,8 +5,8 @@ import {
   editProgrammingLoader,
 } from '../preloaders/channelLoaders.ts';
 import { setCurrentChannel } from '../store/channelEditor/actions.ts';
-import { usePreloadedData } from './preloadedDataHook.ts';
 import { useChannelEditor } from '../store/selectors.ts';
+import { usePreloadedData } from './preloadedDataHook.ts';
 
 export const usePreloadedChannel = () => {
   const channel = usePreloadedData(channelLoader);

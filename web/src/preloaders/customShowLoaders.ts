@@ -1,16 +1,16 @@
 import { QueryClient } from '@tanstack/react-query';
 import { CustomShow, CustomShowProgramming } from '@tunarr/types';
 import { LoaderFunctionArgs } from 'react-router-dom';
+import { createPreloader } from '../helpers/preloaderUtil.ts';
 import {
   customShowProgramsQuery,
   customShowQuery,
   customShowsQuery,
 } from '../hooks/useCustomShows.ts';
-import { createPreloader } from '../helpers/preloaderUtil.ts';
 import { setCurrentCustomShow } from '../store/channelEditor/actions.ts';
 import { Preloader } from '../types/index.ts';
 
-const customShowLoader = (isNew: boolean) => {
+export const customShowLoader = (isNew: boolean) => {
   if (!isNew) {
     return createPreloader(
       ({ params }) => customShowQuery(params.id!),
@@ -49,11 +49,7 @@ export const existingCustomShowLoader: Preloader<{
     const showLoaderPromise = showLoader(args);
     const programQuery = customShowProgramsQuery(args.params.id!);
 
-    const programsPromise = Promise.resolve(
-      queryClient.getQueryData(programQuery.queryKey),
-    ).then((programs) => {
-      return programs ?? queryClient.fetchQuery(programQuery);
-    });
+    const programsPromise = queryClient.ensureQueryData(programQuery);
 
     return await Promise.all([showLoaderPromise, programsPromise]).then(
       ([show, programs]) => {
@@ -67,6 +63,6 @@ export const existingCustomShowLoader: Preloader<{
     );
   };
 };
-export const customShowsLoader: Preloader<CustomShow[]> = createPreloader(
-  () => customShowsQuery,
+export const customShowsLoader: Preloader<CustomShow[]> = createPreloader(() =>
+  customShowsQuery(),
 );
