@@ -112,7 +112,10 @@ export function PlexGridItem<T extends PlexMedia>(props: PlexGridItemProps<T>) {
               {open ? <ExpandLess /> : <ExpandMore />}
             </ListItemIcon>
           )}
-          <img src={`${server.uri}${item.thumb}`} width={100} />
+          <img
+            src={`${server.uri}${item.thumb}?X-Plex-Token=${server.accessToken}`}
+            width={100}
+          />
         </ListItemButton>
       ) : (
         <ImageListItem
@@ -126,8 +129,7 @@ export function PlexGridItem<T extends PlexMedia>(props: PlexGridItemProps<T>) {
           onClick={(e) => handleItem(e)}
         >
           <img
-            // srcSet={`${item.img}?w=248&fit=crop&auto=format&dpr=2 2x`} //to do
-            src={`http://192.168.1.16:32400${item.thumb}`}
+            src={`${server.uri}${item.thumb}?X-Plex-Token=${server.accessToken}`}
             alt={item.title}
             loading="lazy"
           />
