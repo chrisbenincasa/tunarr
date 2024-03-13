@@ -1,16 +1,10 @@
+import { CheckCircle, RadioButtonUnchecked } from '@mui/icons-material';
 import {
-  CheckCircle,
-  ExpandLess,
-  ExpandMore,
-  RadioButtonUnchecked,
-} from '@mui/icons-material';
-import {
-  Collapse,
+  Fade,
+  Grid,
   IconButton,
   ImageListItem,
   ImageListItemBar,
-  List,
-  Skeleton,
 } from '@mui/material';
 import {
   PlexChildMediaApiType,
@@ -18,9 +12,16 @@ import {
   isPlexCollection,
   isTerminalItem,
 } from '@tunarr/types/plex';
-import { filter } from 'lodash-es';
-import React, { MouseEvent, useCallback, useEffect, useState } from 'react';
-import { prettyItemDuration } from '../../helpers/util.ts';
+import _, { filter, isNaN } from 'lodash-es';
+import React, {
+  MouseEvent,
+  forwardRef,
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
+import { useIntersectionObserver } from 'usehooks-ts';
+import { forPlexMedia, prettyItemDuration } from '../../helpers/util.ts';
 import { usePlexTyped } from '../../hooks/plexHooks.ts';
 import useStore from '../../store/index.ts';
 import {
@@ -36,171 +37,170 @@ export interface PlexGridItemProps<T extends PlexMedia> {
   index?: number;
   length?: number;
   parent?: string;
+  moveModal?: CallableFunction;
+  modalChildren?: CallableFunction;
+  modalIsPending?: CallableFunction;
+  modalIndex?: number;
+  onClick?: any;
+  ref?: any;
 }
 
-export function PlexGridItem<T extends PlexMedia>(props: PlexGridItemProps<T>) {
-  const server = useStore((s) => s.currentServer!); // We have to have a server at this point
-  const darkMode = useStore((state) => state.theme.darkMode);
-  const [open, setOpen] = useState(false);
-  const { item } = props;
-  const hasChildren = !isTerminalItem(item);
-  const childPath = isPlexCollection(item) ? 'collections' : 'metadata';
-  const { isPending, data: children } = usePlexTyped<PlexChildMediaApiType<T>>(
-    server.name,
-    `/library/${childPath}/${props.item.ratingKey}/children`,
-    hasChildren && open,
-  );
-  const selectedServer = useStore((s) => s.currentServer);
-  const selectedMedia = useStore((s) =>
-    filter(s.selectedMedia, (p): p is PlexSelectedMedia => p.type === 'plex'),
-  );
-  const selectedMediaIds = selectedMedia.map((item) => item.guid);
-
-  const handleClick = () => {
-    setOpen(!open);
-  };
-
-  useEffect(() => {
-    if (children) {
-      addKnownMediaForServer(server.name, children.Metadata, item.guid);
-    }
-  }, [item.guid, server.name, children]);
-
-  const handleItem = useCallback(
-    (e: MouseEvent<HTMLLIElement | HTMLButtonElement>) => {
-      e.stopPropagation();
-
-      if (selectedMediaIds.includes(item.guid)) {
-        removePlexSelectedMedia(selectedServer!.name, [item.guid]);
-      } else {
-        addPlexSelectedMedia(selectedServer!.name, [item]);
-      }
-    },
-    [item, selectedServer, selectedMediaIds],
-  );
-
-  const renderChildren = () => {
-    return isPending ? (
-      <Skeleton />
-    ) : (
-      <List
-        sx={{ pl: 4, display: 'flex', flexWrap: 'wrap', columnGap: '10px' }}
-      >
-        {children?.Metadata.map((child, idx, arr) => (
-          <PlexGridItem
-            key={child.guid}
-            item={child}
-            index={idx}
-            length={arr.length}
-          />
-        ))}
-      </List>
+const PlexGridItem = forwardRef(
+  <T extends PlexMedia>(props: PlexGridItemProps<T>, ref: any) => {
+    const server = useStore((s) => s.currentServer!); // We have to have a server at this point
+    const darkMode = useStore((state) => state.theme.darkMode);
+    const [open, setOpen] = useState(false);
+    const { item } = props;
+    const hasChildren = !isTerminalItem(item);
+    const childPath = isPlexCollection(item) ? 'collections' : 'metadata';
+    const { isPending, data: children } = usePlexTyped<
+      PlexChildMediaApiType<T>
+    >(
+      server.name,
+      `/library/${childPath}/${props.item.ratingKey}/children`,
+      hasChildren && open,
     );
-  };
+    const selectedServer = useStore((s) => s.currentServer);
+    const selectedMedia = useStore((s) =>
+      filter(s.selectedMedia, (p): p is PlexSelectedMedia => p.type === 'plex'),
+    );
+    const selectedMediaIds = selectedMedia.map((item) => item.guid);
 
-  //  <ListItemButton
-  //     onClick={handleClick}
-  //     dense
-  //     sx={
-  //       {
-  //         // display: 'bl',
-  //         // width: '100%',
-  //       }
-  //     }
-  //   >
-  //     {/* {hasChildren && (
-  //       <ListItemIcon>
-  //         {open ? <ExpandLess /> : <ExpandMore />}
-  //       </ListItemIcon>
-  //     )} */}
-  //     <img
-  //       src={`${server.uri}${item.thumb}?X-Plex-Token=${server.accessToken}`}
-  //       width={100}
-  //     />
-  //   </ListItemButton>
+    const handleClick = () => {
+      setOpen(!open);
 
-  // display: flex;
-  // flex-wrap: wrap;
+      if (props.moveModal) {
+        props.moveModal();
 
-  return (
-    <React.Fragment key={item.guid}>
-      {hasChildren ? (
-        <ImageListItem
-          key={item.guid}
-          sx={{
-            width: 160,
-            cursor: 'pointer',
-            display: 'flex',
-            flexDirection: 'column',
-          }}
-          onClick={handleClick}
+        if (children && props.modalChildren) {
+          props.modalChildren(children.Metadata);
+        }
+      }
+    };
+
+    useEffect(() => {
+      if (props.modalIsPending) {
+        props.modalIsPending(isPending);
+      }
+    }, [isPending]);
+
+    useEffect(() => {
+      if (children) {
+        addKnownMediaForServer(server.name, children.Metadata, item.guid);
+
+        if (children.Metadata.length > 0 && !!props.modalChildren) {
+          props.modalChildren(children.Metadata);
+        }
+      }
+    }, [item.guid, server.name, children]);
+
+    const handleItem = useCallback(
+      (e: MouseEvent<HTMLDivElement | HTMLButtonElement>) => {
+        e.stopPropagation();
+
+        if (selectedMediaIds.includes(item.guid)) {
+          removePlexSelectedMedia(selectedServer!.name, [item.guid]);
+        } else {
+          addPlexSelectedMedia(selectedServer!.name, [item]);
+        }
+      },
+      [item, selectedServer, selectedMediaIds],
+    );
+
+    const { isIntersecting: isInViewport, ref: imageRef } =
+      useIntersectionObserver({
+        threshold: 0,
+        rootMargin: '0px',
+        freezeOnceVisible: true,
+      });
+
+    const extractChildCount = forPlexMedia({
+      season: (s) => s.leafCount,
+      show: (s) => s.childCount,
+      collection: (s) => parseInt(s.childCount),
+    });
+
+    return (
+      <React.Fragment key={item.guid}>
+        <Fade
+          in={isInViewport && !_.isUndefined(item)} // to do: eventually we will want to add in:  && imageLoaded so it only fades in after image has loaded
+          timeout={500}
+          ref={imageRef}
         >
-          <img
-            src={`${server.uri}${item.thumb}?X-Plex-Token=${server.accessToken}`}
-            width={100}
-          />
-          <ImageListItemBar
-            title={item.title}
-            subtitle={<span>Five items</span>} // temp value for testing - add var
-            position="below"
-            actionIcon={
-              <IconButton
-                sx={{ color: 'black' }}
-                aria-label={`star ${item.title}`}
-                onClick={handleClick}
-              >
-                {selectedMediaIds.includes(item.guid) ? (
-                  <ExpandLess sx={{ color: darkMode ? '#fff' : '#000' }} />
-                ) : (
-                  <ExpandMore sx={{ color: darkMode ? '#fff' : '#000' }} />
-                )}
-              </IconButton>
+          <ImageListItem
+            component={Grid}
+            item
+            key={item.guid}
+            sx={{
+              width: 160,
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              flexGrow: 1,
+              paddingLeft: '8px !important',
+              paddingRight: '8px',
+              paddingTop: '8px',
+              borderRadiusTopLeft: '10px',
+              borderRadiusTopRight: '10px',
+              height: 'auto',
+              backgroundColor: (theme) =>
+                props.modalIndex === props.index
+                  ? darkMode
+                    ? theme.palette.grey[800]
+                    : theme.palette.grey[400]
+                  : 'transparent',
+              transition: 'background-color 10s ease',
+            }}
+            onClick={
+              hasChildren
+                ? handleClick
+                : (event: MouseEvent<HTMLDivElement>) => handleItem(event)
             }
-            actionPosition="right"
-          />
-        </ImageListItem>
-      ) : (
-        <ImageListItem
-          key={item.guid}
-          sx={{
-            width: 160,
-            cursor: 'pointer',
-            display: 'flex',
-            flexDirection: 'column',
-          }}
-          onClick={(e) => handleItem(e)}
-        >
-          <img
-            src={`${server.uri}${item.thumb}?X-Plex-Token=${server.accessToken}`}
-            alt={item.title}
-            loading="lazy"
-          />
-          <ImageListItemBar
-            title={item.title}
-            subtitle={<span>{prettyItemDuration(item.duration)}</span>}
-            position="below"
-            actionIcon={
-              <IconButton
-                sx={{ color: 'black' }}
-                aria-label={`star ${item.title}`}
-                onClick={(e) => handleItem(e)}
-              >
-                {selectedMediaIds.includes(item.guid) ? (
-                  <CheckCircle sx={{ color: darkMode ? '#fff' : '#000' }} />
+            ref={ref}
+          >
+            {isInViewport && ( // To do: Eventually turn this itno isNearViewport so images load before they hit the viewport
+              <img
+                src={`${server.uri}${item.thumb}?X-Plex-Token=${server.accessToken}`}
+                width={100}
+                style={{ borderRadius: '5%', height: 'auto' }}
+              />
+            )}
+            <ImageListItemBar
+              title={item.title}
+              subtitle={
+                item.type !== 'movie' ? (
+                  <span>{`${
+                    !isNaN(extractChildCount(item)) && extractChildCount(item)
+                  } items`}</span>
                 ) : (
-                  <RadioButtonUnchecked
-                    sx={{ color: darkMode ? '#fff' : '#000' }}
-                  />
-                )}
-              </IconButton>
-            }
-            actionPosition="right"
-          />
-        </ImageListItem>
-      )}
-      <Collapse in={open} timeout="auto" unmountOnExit>
-        {renderChildren()}
-      </Collapse>
-    </React.Fragment>
-  );
-}
+                  <span>{prettyItemDuration(item.duration)}</span>
+                )
+              }
+              position="below"
+              actionIcon={
+                <IconButton
+                  sx={{ color: 'black' }}
+                  aria-label={`star ${item.title}`}
+                  onClick={(event: MouseEvent<HTMLButtonElement>) =>
+                    handleItem(event)
+                  }
+                >
+                  {selectedMediaIds.includes(item.guid) ? (
+                    <CheckCircle sx={{ color: darkMode ? '#fff' : '#000' }} />
+                  ) : (
+                    <RadioButtonUnchecked
+                      sx={{ color: darkMode ? '#fff' : '#000' }}
+                    />
+                  )}
+                </IconButton>
+              }
+              actionPosition="right"
+            />
+          </ImageListItem>
+        </Fade>
+      </React.Fragment>
+    );
+  },
+);
+
+export default PlexGridItem;

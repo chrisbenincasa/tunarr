@@ -1,25 +1,20 @@
-import { ExpandLess, ExpandMore } from '@mui/icons-material';
 import Clear from '@mui/icons-material/Clear';
 import GridView from '@mui/icons-material/GridView';
 import Search from '@mui/icons-material/Search';
 import ViewList from '@mui/icons-material/ViewList';
 import {
   Box,
-  Collapse,
   Divider,
   Grow,
   IconButton,
   InputAdornment,
   LinearProgress,
-  List,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
   Stack,
+  Tab,
+  Tabs,
   TextField,
   ToggleButton,
-  ToggleButtonGroup,
-  Typography,
+  ToggleButtonGroup
 } from '@mui/material';
 import { DataTag, useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import {
@@ -27,13 +22,21 @@ import {
   PlexLibraryMovies,
   PlexLibraryMusic,
   PlexLibraryShows,
+  PlexMedia,
   PlexMovie,
   PlexMusicArtist,
   PlexTvShow,
 } from '@tunarr/types/plex';
 import { chain, first, isEmpty, isNil, isUndefined, map } from 'lodash-es';
-import { Fragment, useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useIntersectionObserver } from 'usehooks-ts';
+<<<<<<< HEAD
+=======
+import {
+  firstItemInNextRow,
+  getImagesPerRow,
+} from '../../helpers/inlineModalUtil';
+>>>>>>> a7dab69 (progress on grid ux)
 import { toggle } from '../../helpers/util';
 import { fetchPlexPath, usePlex } from '../../hooks/plexHooks';
 import { usePlexServerSettings } from '../../hooks/settingsHooks';
@@ -42,9 +45,18 @@ import useStore from '../../store';
 import { addKnownMediaForServer } from '../../store/programmingSelector/actions';
 import { setProgrammingSelectorViewState } from '../../store/themeEditor/actions';
 import { ProgramSelectorViewType } from '../../types';
+import InlineModal from '../InlineModal';
+import CustomTabPanel from '../TabPanel';
 import ConnectPlex from '../settings/ConnectPlex';
-import { PlexGridItem } from './PlexGridItem';
+import PlexGridItem from './PlexGridItem';
 import { PlexListItem } from './PlexListItem';
+
+function a11yProps(index: number) {
+  return {
+    id: `simple-tab-${index}`,
+    'aria-controls': `simple-tabpanel-${index}`,
+  };
+}
 
 export default function PlexProgrammingSelector() {
   const { data: plexServers } = usePlexServerSettings();
@@ -53,11 +65,85 @@ export default function PlexProgrammingSelector() {
     s.currentLibrary?.type === 'plex' ? s.currentLibrary : null,
   );
   const viewType = useStore((state) => state.theme.programmingSelectorView);
-
+  const [tabValue, setTabValue] = useState(0);
+  const [modalChildren, setModalChildren] = useState<PlexMedia[]>([]);
+  const [rowSize, setRowSize] = useState<number>(16);
+  const [modalIndex, setModalIndex] = useState<number>(-1);
+  const [modalIsPending, setModalIsPending] = useState<boolean>(true);
   const [searchBarOpen, setSearchBarOpen] = useState(false);
   const [search, debounceSearch, setSearch] = useDebouncedState('', 300);
-  const [collectionsOpen, setCollectionsOpen] = useState(false);
   const [scrollParams, setScrollParams] = useState({ limit: 0, max: -1 });
+  const containerRef = useRef<HTMLDivElement>(null);
+  const imageRef = useRef<HTMLDivElement>(null);
+  const libraryImageRef = useRef<HTMLDivElement>(null);
+  const libraryContainerRef = useRef<HTMLDivElement>(null);
+
+  const handleResize = () => {
+    if (tabValue === 0) {
+      const libraryContainerWidth =
+        libraryContainerRef?.current?.offsetWidth || 0;
+      setRowSize(getImagesPerRow(libraryContainerWidth, 160)); // to do: remove magic number
+    } else {
+      // Collections initial load
+      const containerWidth = containerRef?.current?.offsetWidth || 0;
+      const itemWidth = imageRef?.current?.offsetWidth || 0;
+
+      setRowSize(getImagesPerRow(containerWidth, itemWidth));
+    }
+  };
+
+  useEffect(() => {
+    if (viewType === 'grid') {
+      const handleResizeEvent = () => handleResize();
+      handleResize(); // Call initially to set width
+      window.addEventListener('resize', handleResizeEvent);
+
+      // Cleanup function to remove event listener
+      return () => window.removeEventListener('resize', handleResizeEvent);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (viewType === 'grid') {
+      const containerWidth = containerRef?.current?.offsetWidth || 0;
+      const itemWidth = imageRef?.current?.offsetWidth || 0;
+
+      setRowSize(getImagesPerRow(containerWidth, itemWidth));
+    }
+  }, [containerRef, imageRef, modalChildren]);
+
+  useEffect(() => {
+    setModalIndex(-1);
+  }, [tabValue]);
+
+  const handleChange = (_: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
+  };
+
+  const handleMoveModal = useCallback(
+    (index: number) => {
+      if (index === modalIndex) {
+        setModalIndex(-1);
+      } else {
+        setModalIndex(index);
+      }
+    },
+    [modalIndex],
+  );
+
+  const handleModalChildren = useCallback(
+    (children: PlexMedia[]) => {
+      setModalChildren(children);
+    },
+    [modalChildren],
+  );
+
+  const handleModalIsPending = useCallback(
+    (isPending: boolean) => {
+      setModalIsPending(isPending);
+    },
+    [modalIsPending],
+  );
 
   const { data: directoryChildren } = usePlex(
     selectedServer?.name ?? '',
@@ -81,7 +167,7 @@ export default function PlexProgrammingSelector() {
     setViewType(newFormats);
   };
 
-  const { data: collectionsData } = useQuery({
+  const { isLoading: isCollectionLoading, data: collectionsData } = useQuery({
     queryKey: [
       'plex',
       selectedServer?.name,
@@ -96,6 +182,13 @@ export default function PlexProgrammingSelector() {
     },
     enabled: !isNil(selectedServer) && !isNil(selectedLibrary),
   });
+
+  useEffect(() => {
+    // When switching between Libraries, if a collection doesn't exist switch back to 'Library' tab
+    if (!collectionsData && !isCollectionLoading && tabValue === 1) {
+      setTabValue(0);
+    }
+  }, [collectionsData, isCollectionLoading]);
 
   const { isLoading: searchLoading, data: searchData } = useInfiniteQuery({
     queryKey: [
@@ -112,7 +205,7 @@ export default function PlexProgrammingSelector() {
     queryFn: ({ pageParam }) => {
       const plexQuery = new URLSearchParams({
         'Plex-Container-Start': pageParam.toString(),
-        'Plex-Container-Size': '10',
+        'Plex-Container-Size': (rowSize * 4).toString(),
       });
 
       if (!isNil(debounceSearch) && !isEmpty(debounceSearch)) {
@@ -129,20 +222,22 @@ export default function PlexProgrammingSelector() {
       )();
     },
     getNextPageParam: (res, _, last) => {
-      if (res.size < 10) {
+      if (res.size < rowSize * 4) {
         return null;
       }
 
-      return last + 10;
+      return last + rowSize * 4;
     },
   });
 
   useEffect(() => {
     if (searchData) {
+      handleResize(); // Call initially to set rowSize
+
       // We're using this as an analogue for detecting the start of a new 'query'
       if (searchData.pages.length === 1) {
         setScrollParams({
-          limit: 16,
+          limit: rowSize * 4,
           max: first(searchData.pages)!.size,
         });
       }
@@ -158,14 +253,14 @@ export default function PlexProgrammingSelector() {
         addKnownMediaForServer(selectedServer.name, allMedia);
       }
     }
-  }, [selectedServer, searchData, setScrollParams]);
+  }, [selectedServer, searchData, setScrollParams, rowSize]);
 
   const { ref } = useIntersectionObserver({
     onChange: (_, entry) => {
       if (entry.isIntersecting && scrollParams.limit < scrollParams.max) {
         setScrollParams(({ limit: prevLimit, max }) => ({
           max,
-          limit: prevLimit + 10,
+          limit: prevLimit + rowSize * 4,
         }));
       }
     },
@@ -175,44 +270,49 @@ export default function PlexProgrammingSelector() {
   const renderListItems = () => {
     const elements: JSX.Element[] = [];
 
-    if (collectionsData && collectionsData.size > 0) {
+    if (collectionsData && collectionsData.size > 0 && tabValue === 1) {
       elements.push(
-        <Fragment key="collections">
-          <ListItemButton
-            onClick={() => setCollectionsOpen(toggle)}
-            dense
-            sx={
-              viewType === 'grid' ? { display: 'block', width: '100%' } : null
-            }
-          >
-            <ListItemIcon>
-              {collectionsOpen ? <ExpandLess /> : <ExpandMore />}
-            </ListItemIcon>
-            <ListItemText
-              primary="Collections"
-              secondary={`${collectionsData.size} Collection${
-                collectionsData.size === 1 ? '' : 's'
-              }`}
-            />
-          </ListItemButton>
-          <Collapse
-            in={collectionsOpen}
-            timeout="auto"
-            sx={{
-              width: '100%',
-              display: 'flex',
-              flexWrap: 'wrap',
-            }}
-          >
-            {map(collectionsData.Metadata, (item) =>
-              viewType === 'list' ? (
-                <PlexListItem key={item.guid} item={item} />
-              ) : (
-                <PlexGridItem key={item.guid} item={item} />
-              ),
-            )}
-          </Collapse>
-        </Fragment>,
+        <CustomTabPanel
+          value={tabValue}
+          index={1}
+          key="Collections"
+          ref={containerRef}
+        >
+          {map(collectionsData.Metadata, (item, index: number) =>
+            viewType === 'list' ? (
+              <PlexListItem key={item.guid} item={item} />
+            ) : (
+              <>
+                <InlineModal
+                  modalIndex={modalIndex}
+                  modalChildren={modalChildren}
+                  open={
+                    index ===
+                    firstItemInNextRow(
+                      modalIndex,
+                      rowSize,
+                      collectionsData?.Metadata?.length || 0,
+                    )
+                  }
+                />
+                <PlexGridItem
+                  key={item.guid}
+                  item={item}
+                  index={index}
+                  modalIndex={modalIndex}
+                  moveModal={() => handleMoveModal(index)}
+                  modalChildren={(children: PlexMedia[]) =>
+                    handleModalChildren(children)
+                  }
+                  modalIsPending={(isPending: boolean) =>
+                    handleModalIsPending(isPending)
+                  }
+                  ref={imageRef}
+                />
+              </>
+            ),
+          )}
+        </CustomTabPanel>,
       );
     }
 
@@ -223,7 +323,9 @@ export default function PlexProgrammingSelector() {
         .flatten()
         .take(scrollParams.limit)
         .value();
+
       elements.push(
+<<<<<<< HEAD
         ...map(items, (item: PlexMovie | PlexTvShow | PlexMusicArtist) => {
           return viewType === 'list' ? (
             <PlexListItem key={item.guid} item={item} />
@@ -231,8 +333,31 @@ export default function PlexProgrammingSelector() {
             <PlexGridItem key={item.guid} item={item} />
           );
         }),
+=======
+        <CustomTabPanel
+          value={tabValue}
+          index={0}
+          key="Library"
+          ref={libraryContainerRef}
+        >
+          {map(items, (item: PlexMovie | PlexTvShow, idx: number) => {
+            return viewType === 'list' ? (
+              <PlexListItem key={item.guid} item={item} />
+            ) : (
+              <PlexGridItem
+                key={item.guid}
+                item={item}
+                modalIndex={modalIndex}
+                index={idx}
+                ref={libraryImageRef}
+              />
+            );
+          })}
+        </CustomTabPanel>,
+>>>>>>> a7dab69 (progress on grid ux)
       );
     }
+
     return elements;
   };
 
@@ -321,28 +446,21 @@ export default function PlexProgrammingSelector() {
               marginTop: 1,
             }}
           />
-          {!searchLoading && (
-            <Typography variant="caption" color={(t) => t.palette.grey[700]}>
-              {first(searchData?.pages)?.size} Items
-            </Typography>
-          )}
-          <List
-            component="nav"
-            sx={{
-              mt: 2,
-              width: '100%',
-              maxHeight: 1200,
-              overflowY: 'scroll',
-              display: viewType === 'grid' ? 'flex' : 'block',
-              flexWrap: 'wrap',
-              gap: '10px',
-              justifyContent: 'space-between',
-            }}
-          >
-            {renderListItems()}
-            <div style={{ height: 40 }} ref={ref}></div>
-          </List>
+          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+            <Tabs
+              value={tabValue}
+              onChange={handleChange}
+              aria-label="basic tabs example"
+            >
+              <Tab label="Library" {...a11yProps(0)} />
+              {collectionsData && collectionsData.size > 0 && (
+                <Tab label="Collections" {...a11yProps(1)} />
+              )}
+            </Tabs>
+          </Box>
 
+          {renderListItems()}
+          <div style={{ height: 40 }} ref={ref}></div>
           <Divider sx={{ mt: 3, mb: 2 }} />
         </>
       )}

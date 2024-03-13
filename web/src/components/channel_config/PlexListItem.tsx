@@ -130,7 +130,7 @@ export function PlexListItem<T extends PlexMedia>(props: PlexListItemProps<T>) {
 
   return (
     <React.Fragment key={item.guid}>
-      <ListItemButton onClick={handleClick} dense>
+      <ListItemButton onClick={handleClick} dense sx={{ width: '100%' }}>
         {hasChildren && (
           <ListItemIcon>{open ? <ExpandLess /> : <ExpandMore />}</ListItemIcon>
         )}
@@ -143,7 +143,7 @@ export function PlexListItem<T extends PlexMedia>(props: PlexListItemProps<T>) {
             : `Add ${plexTypeString(item)}`}
         </Button>
       </ListItemButton>
-      <Collapse in={open} timeout="auto" unmountOnExit>
+      <Collapse in={open} timeout="auto" unmountOnExit sx={{ width: '100%' }}>
         {renderChildren()}
       </Collapse>
       <Divider variant="fullWidth" />
