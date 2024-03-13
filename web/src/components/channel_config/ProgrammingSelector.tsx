@@ -4,6 +4,7 @@ import {
   MenuItem,
   Select,
   Stack,
+  Typography,
 } from '@mui/material';
 import { PlexMedia, isPlexDirectory } from '@tunarr/types/plex';
 import { find, isEmpty, isNil, isUndefined } from 'lodash-es';
@@ -19,6 +20,7 @@ import {
 } from '../../store/programmingSelector/actions.ts';
 import { CustomShowProgrammingSelector } from './CustomShowProgrammingSelector.tsx';
 import PlexProgrammingSelector from './PlexProgrammingSelector.tsx';
+import SelectedProgrammingList from './SelectedProgrammingList.tsx';
 
 export interface PlexListItemProps<T extends PlexMedia> {
   item: T;
@@ -89,11 +91,7 @@ export default function ProgrammingSelector({ onAddSelectedMedia }: Props) {
   });
 
   useEffect(() => {
-    if (
-      mediaSource === 'custom-shows' &&
-      customShows &&
-      customShows.length > 0
-    ) {
+    if (mediaSource === 'custom-shows' && customShows.length > 0) {
       setProgrammingListLibrary({
         type: 'custom-show',
         library: customShows[0],
@@ -102,13 +100,13 @@ export default function ProgrammingSelector({ onAddSelectedMedia }: Props) {
   }, [mediaSource, customShows]);
 
   const onMediaSourceChange = useCallback(
-    (mediaSource: string) => {
-      if (mediaSource === 'custom-shows') {
+    (newMediaSource: string) => {
+      if (newMediaSource === 'custom-shows') {
         // Not dealing with a server
         setProgrammingListingServer(undefined);
-        setMediaSource(mediaSource);
+        setMediaSource(newMediaSource);
       } else {
-        const server = find(plexServers, { name: mediaSource });
+        const server = find(plexServers, { name: newMediaSource });
         if (server) {
           setProgrammingListingServer(server);
           setMediaSource(server.name);
@@ -120,8 +118,13 @@ export default function ProgrammingSelector({ onAddSelectedMedia }: Props) {
 
   const onLibraryChange = useCallback(
     (libraryUuid: string) => {
-      // TODO support loading custom shows
-      if (selectedServer) {
+      if (mediaSource === 'custom-shows') {
+        console.log('hello', customShows);
+        const library = find(customShows, { id: libraryUuid });
+        if (library) {
+          setProgrammingListLibrary({ type: 'custom-show', library });
+        }
+      } else if (selectedServer) {
         const known = knownMedia[selectedServer.name] ?? {};
         const library = known[libraryUuid];
         if (library && isPlexDirectory(library)) {
@@ -129,16 +132,14 @@ export default function ProgrammingSelector({ onAddSelectedMedia }: Props) {
         }
       }
     },
-    [knownMedia, selectedServer],
+    [mediaSource, knownMedia, selectedServer],
   );
 
   const renderMediaSourcePrograms = () => {
     if (selectedLibrary?.type === 'custom-show') {
       return <CustomShowProgrammingSelector />;
     } else if (selectedLibrary?.type === 'plex') {
-      return (
-        <PlexProgrammingSelector onAddSelectedMedia={onAddSelectedMedia} />
-      );
+      return <PlexProgrammingSelector />;
     }
 
     return null;
@@ -212,6 +213,8 @@ export default function ProgrammingSelector({ onAddSelectedMedia }: Props) {
         )}
       </Stack>
       {renderMediaSourcePrograms()}
+      <Typography>Selected Items</Typography>
+      <SelectedProgrammingList onAddSelectedMedia={onAddSelectedMedia} />
     </>
   );
 }

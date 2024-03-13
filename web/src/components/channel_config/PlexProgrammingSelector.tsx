@@ -19,7 +19,6 @@ import {
   TextField,
   ToggleButton,
   ToggleButtonGroup,
-  Typography,
 } from '@mui/material';
 import { DataTag, useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import {
@@ -34,27 +33,20 @@ import { Fragment, useCallback, useEffect, useState } from 'react';
 import { useIntersectionObserver } from 'usehooks-ts';
 import { toggle } from '../../helpers/util';
 import {
-  EnrichedPlexMedia,
   fetchPlexPath,
-  usePlex,
+  usePlex
 } from '../../hooks/plexHooks';
 import { usePlexServerSettings } from '../../hooks/settingsHooks';
 import useDebouncedState from '../../hooks/useDebouncedState';
 import useStore from '../../store';
 import { addKnownMediaForServer } from '../../store/programmingSelector/actions';
 import { setProgrammingSelectorViewState } from '../../store/themeEditor/actions';
+import { ProgramSelectorViewType } from '../../types';
 import ConnectPlex from '../settings/ConnectPlex';
 import { PlexGridItem } from './PlexGridItem';
 import { PlexListItem } from './PlexListItem';
-import SelectedProgrammingList from './SelectedProgrammingList';
 
-type ViewType = 'list' | 'grid';
-
-type Props = {
-  onAddSelectedMedia: (items: EnrichedPlexMedia[]) => void;
-};
-
-export default function PlexProgrammingSelector({ onAddSelectedMedia }: Props) {
+export default function PlexProgrammingSelector() {
   const { data: plexServers } = usePlexServerSettings();
   const selectedServer = useStore((s) => s.currentServer);
   const selectedLibrary = useStore((s) =>
@@ -78,13 +70,13 @@ export default function PlexProgrammingSelector({ onAddSelectedMedia }: Props) {
     setSearchBarOpen(false);
   }, [setSearch]);
 
-  const setViewType = (view: ViewType) => {
+  const setViewType = (view: ProgramSelectorViewType) => {
     setProgrammingSelectorViewState(view);
   };
 
   const handleFormat = (
     _event: React.MouseEvent<HTMLElement>,
-    newFormats: ViewType,
+    newFormats: ProgramSelectorViewType,
   ) => {
     setViewType(newFormats);
   };
@@ -341,8 +333,6 @@ export default function PlexProgrammingSelector({ onAddSelectedMedia }: Props) {
           </List>
 
           <Divider sx={{ mt: 3, mb: 2 }} />
-          <Typography>Selected Items</Typography>
-          <SelectedProgrammingList onAddSelectedMedia={onAddSelectedMedia} />
         </>
       )}
     </>

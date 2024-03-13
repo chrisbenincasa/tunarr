@@ -20,15 +20,17 @@ import {
   isPlexCollection,
   isTerminalItem,
 } from '@tunarr/types/plex';
+import { filter } from 'lodash-es';
 import React, { MouseEvent, useCallback, useEffect, useState } from 'react';
 import { prettyItemDuration } from '../../helpers/util.ts';
 import { usePlexTyped } from '../../hooks/plexHooks.ts';
 import useStore from '../../store/index.ts';
 import {
   addKnownMediaForServer,
-  addSelectedMedia,
-  removeSelectedMedia,
+  addPlexSelectedMedia,
+  removePlexSelectedMedia,
 } from '../../store/programmingSelector/actions.ts';
+import { PlexSelectedMedia } from '../../store/programmingSelector/store.ts';
 
 export interface PlexGridItemProps<T extends PlexMedia> {
   item: T;
@@ -51,8 +53,10 @@ export function PlexGridItem<T extends PlexMedia>(props: PlexGridItemProps<T>) {
     hasChildren && open,
   );
   const selectedServer = useStore((s) => s.currentServer);
-  const selectedMedia = useStore((s) => s.selectedMedia);
-  const selectedMediaIds = selectedMedia.map((item) => item['guid']);
+  const selectedMedia = useStore((s) =>
+    filter(s.selectedMedia, (p): p is PlexSelectedMedia => p.type === 'plex'),
+  );
+  const selectedMediaIds = selectedMedia.map((item) => item.guid);
 
   const handleClick = () => {
     setOpen(!open);
@@ -69,9 +73,9 @@ export function PlexGridItem<T extends PlexMedia>(props: PlexGridItemProps<T>) {
       e.stopPropagation();
 
       if (selectedMediaIds.includes(item.guid)) {
-        removeSelectedMedia(selectedServer!.name, [item.guid]);
+        removePlexSelectedMedia(selectedServer!.name, [item.guid]);
       } else {
-        addSelectedMedia(selectedServer!.name, [item]);
+        addPlexSelectedMedia(selectedServer!.name, [item]);
       }
     },
     [item, selectedServer, selectedMediaIds],

@@ -5,8 +5,9 @@ import {
   isPlexDirectory,
   isTerminalItem,
 } from '@tunarr/types/plex';
-import { map, reject } from 'lodash-es';
+import { map, reject, some } from 'lodash-es';
 import useStore from '..';
+import { forSelectedMediaType, groupSelectedMedia } from '../../helpers/util';
 import { SelectedLibrary, SelectedMedia } from './store';
 
 export const setProgrammingListingServer = (
@@ -83,37 +84,77 @@ export const addKnownMediaForServer = (
     return state;
   });
 
-export const addSelectedMedia = (
+export const addPlexSelectedMedia = (
   serverName: string,
   media: (PlexLibrarySection | PlexMedia)[],
 ) =>
   useStore.setState((state) => {
-    const newSelectedMedia = map(
-      media,
-      (m) =>
-        ({
-          server: serverName,
-          guid: isPlexDirectory(m) ? m.uuid : m.guid,
-        }) as SelectedMedia,
-    );
+    const newSelectedMedia: SelectedMedia[] = map(media, (m) => ({
+      type: 'plex',
+      server: serverName,
+      guid: isPlexDirectory(m) ? m.uuid : m.guid,
+    }));
     state.selectedMedia = [...state.selectedMedia, ...newSelectedMedia];
   });
 
-export const addSelectedMediaById = (serverName: string, ids: string[]) =>
+export const addPlexSelectedMediaById = (serverName: string, ids: string[]) =>
   useStore.setState((state) => {
     const newSelectedMedia: SelectedMedia[] = map(ids, (m) => ({
+      type: 'plex',
       server: serverName,
       guid: m,
     }));
     state.selectedMedia = [...state.selectedMedia, ...newSelectedMedia];
   });
 
-export const removeSelectedMedia = (serverName: string, guids: string[]) =>
+export const addSelectedMedia = (media: SelectedMedia | SelectedMedia[]) =>
+  useStore.setState((state) => {
+    state.selectedMedia = state.selectedMedia.concat(media);
+  });
+
+export const removeSelectedMedia = (media: SelectedMedia[]) =>
+  useStore.setState((state) => {
+    const grouped = groupSelectedMedia(media);
+    const it = forSelectedMediaType({
+      plex: (plex) =>
+        some(grouped.plex, { server: plex.server, guid: plex.guid }),
+      'custom-show': (cs) =>
+        some(grouped['custom-show'], {
+          customShowId: cs.customShowId,
+          programId: cs.program.id,
+        }),
+      default: false,
+    });
+
+    state.selectedMedia = reject(state.selectedMedia, (sm) => it(sm)!);
+  });
+
+export const removePlexSelectedMedia = (serverName: string, guids: string[]) =>
   useStore.setState((state) => {
     const guidsSet = new Set([...guids]);
     state.selectedMedia = reject(
       state.selectedMedia,
-      (m) => m.server === serverName && guidsSet.has(m.guid),
+      (m) =>
+        m.type === 'plex' && m.server === serverName && guidsSet.has(m.guid),
+    );
+  });
+
+export const removeCustomShowSelectedMedia = (
+  csId: string,
+  programIds: string[],
+) =>
+  useStore.setState((state) => {
+    if (programIds.length === 0) {
+      return;
+    }
+
+    const idsSet = new Set([...programIds]);
+    state.selectedMedia = reject(
+      state.selectedMedia,
+      (m) =>
+        m.type === 'custom-show' &&
+        m.customShowId === csId &&
+        idsSet.has(m.program.id!),
     );
   });
 

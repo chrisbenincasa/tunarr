@@ -12,15 +12,21 @@ import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import { isPlexDirectory, isPlexSeason, isPlexShow } from '@tunarr/types/plex';
+import { chain, first, groupBy, mapValues } from 'lodash-es';
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import {
+  forProgramType,
+  forSelectedMediaType,
+  unwrapNil,
+} from '../../helpers/util.ts';
 import { EnrichedPlexMedia } from '../../hooks/plexHooks.ts';
+import { useCustomShows } from '../../hooks/useCustomShows.ts';
 import useStore from '../../store/index.ts';
 import {
   clearSelectedMedia,
   removeSelectedMedia,
 } from '../../store/programmingSelector/actions.ts';
-import { SelectedMedia } from '../../store/programmingSelector/store.ts';
 import AddSelectedMediaButton from './AddSelectedMediaButton.tsx';
 
 type Props = {
@@ -28,44 +34,79 @@ type Props = {
 };
 
 export default function SelectedProgrammingList({ onAddSelectedMedia }: Props) {
+  const { data: customShows } = useCustomShows();
   const knownMedia = useStore((s) => s.knownMediaByServer);
   const selectedMedia = useStore((s) => s.selectedMedia);
   const darkMode = useStore((state) => state.theme.darkMode);
   const navigate = useNavigate();
 
-  const removeSelectedItem = useCallback((selectedMedia: SelectedMedia) => {
-    removeSelectedMedia(selectedMedia.server, [selectedMedia.guid]);
-  }, []);
+  const customShowById = mapValues(
+    mapValues(groupBy(customShows, 'id'), first),
+    unwrapNil,
+  );
 
   const removeAllItems = useCallback(() => {
     clearSelectedMedia();
   }, []);
 
+  const formattedTitle = useCallback(
+    forProgramType({
+      content: (p) => p.title,
+    }),
+    [],
+  );
+
+  const formattedEpisodeTitle = useCallback(
+    forProgramType({
+      custom: (p) => p.program?.episodeTitle ?? '',
+    }),
+    [],
+  );
+
   const renderSelectedItems = () => {
-    const items = selectedMedia.map((selected) => {
-      const media = knownMedia[selected.server][selected.guid];
-      console.log(media);
+    const items = chain(selectedMedia)
+      .map(
+        forSelectedMediaType({
+          plex: (selected) => {
+            const media = knownMedia[selected.server][selected.guid];
 
-      let title: string = media.title;
-      if (isPlexDirectory(media)) {
-        title = `Library - ${media.title}`;
-      } else if (isPlexShow(media)) {
-        title = `${media.title} (${media.childCount} season(s), ${media.leafCount} total episodes)`;
-      } else if (isPlexSeason(media)) {
-        title = `${media.parentTitle} - ${media.title} (${media.leafCount} episodes)`;
-      }
+            let title: string = media.title;
+            if (isPlexDirectory(media)) {
+              title = `Library - ${media.title}`;
+            } else if (isPlexShow(media)) {
+              title = `${media.title} (${media.childCount} season(s), ${media.leafCount} total episodes)`;
+            } else if (isPlexSeason(media)) {
+              title = `${media.parentTitle} - ${media.title} (${media.leafCount} episodes)`;
+            }
 
-      return (
-        <ListItem key={selected.guid} dense>
-          <ListItemText primary={title} />
-          <ListItemIcon>
-            <IconButton onClick={() => removeSelectedItem(selected)}>
-              <DeleteIcon color="error" />
-            </IconButton>
-          </ListItemIcon>
-        </ListItem>
-      );
-    });
+            return (
+              <ListItem key={selected.guid} dense>
+                <ListItemText primary={title} />
+                <ListItemIcon>
+                  <IconButton onClick={() => removeSelectedMedia([selected])}>
+                    <DeleteIcon color="error" />
+                  </IconButton>
+                </ListItemIcon>
+              </ListItem>
+            );
+          },
+          'custom-show': (selected) => {
+            const customShow = customShowById[selected.customShowId];
+            return (
+              customShow && (
+                <ListItem key={`custom_${selected.program.id}`}>
+                  Custom Show {customShow.name} -{' '}
+                  {formattedTitle(selected.program)}{' '}
+                  {formattedEpisodeTitle(selected.program)}
+                </ListItem>
+              )
+            );
+          },
+        }),
+      )
+      .compact()
+      .value();
+
     return <List>{items}</List>;
   };
 

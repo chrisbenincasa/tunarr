@@ -1,11 +1,12 @@
 import dayjs from 'dayjs';
 import { StateCreator } from 'zustand';
+import { ProgramSelectorViewType } from '../../types';
 
 export interface ThemeEditorStateInner {
   darkMode?: boolean | undefined;
   pathway: string;
   guideDuration: number;
-  programmingSelectorView: string;
+  programmingSelectorView: ProgramSelectorViewType;
 }
 
 export interface ThemeEditorState {
