@@ -1,10 +1,11 @@
 import { Tooltip } from '@mui/material';
 import Button, { ButtonProps } from '@mui/material/Button';
-import { flattenDeep } from 'lodash-es';
+import { filter, flattenDeep } from 'lodash-es';
 import { sequentialPromises } from '../../helpers/util.ts';
 import { EnrichedPlexMedia, enumeratePlexItem } from '../../hooks/plexHooks.ts';
 import useStore from '../../store/index.ts';
 import { clearSelectedMedia } from '../../store/programmingSelector/actions.ts';
+import { PlexSelectedMedia } from '../../store/programmingSelector/store.ts';
 
 type Props = {
   onAdd: (items: EnrichedPlexMedia[]) => void;
@@ -17,7 +18,10 @@ export default function AddSelectedMediaButton({
   ...rest
 }: Props) {
   const knownMedia = useStore((s) => s.knownMediaByServer);
-  const selectedMedia = useStore((s) => s.selectedMedia);
+  // TODO support custom shows
+  const selectedMedia = useStore((s) =>
+    filter(s.selectedMedia, (m): m is PlexSelectedMedia => m.type === 'plex'),
+  );
 
   const addSelectedItems = () => {
     sequentialPromises(selectedMedia, (selected) => {

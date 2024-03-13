@@ -1,3 +1,4 @@
+import { ProgramSelectorViewType } from '../../types/index.ts';
 import useStore from '../index.ts';
 import { initialThemeEditorState } from './store.ts';
 
@@ -25,7 +26,9 @@ export const resetPathwayState = () => {
   });
 };
 
-export const setProgrammingSelectorViewState = (view: string) => {
+export const setProgrammingSelectorViewState = (
+  view: ProgramSelectorViewType,
+) => {
   useStore.setState((state) => {
     state.theme.programmingSelectorView = view;
   });

@@ -30,7 +30,11 @@ import { isEmpty, round } from 'lodash-es';
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { useInterval } from 'usehooks-ts';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
-import { alternateColors, prettyItemDuration } from '../../helpers/util.ts';
+import {
+  alternateColors,
+  forTvGuideProgram,
+  prettyItemDuration,
+} from '../../helpers/util.ts';
 import { prefetchAllTvGuides, useAllTvGuides } from '../../hooks/useTvGuide.ts';
 import useStore from '../../store/index.ts';
 import { setGuideDurationState } from '../../store/themeEditor/actions.ts';
@@ -268,37 +272,18 @@ export default function GuidePage() {
     index: number,
     lineup: TvGuideProgram[],
   ) => {
-    let title: string;
-    switch (program.type) {
-      case 'custom':
-        title = program.program?.title ?? 'Custom Program';
-        break;
-      case 'content':
-        title = program.title;
-        break;
-      case 'redirect':
-        title = `Redirect to Channel ${program.channel}`;
-        break;
-      case 'flex':
-        title = 'Flex';
-        break;
-    }
+    const title = forTvGuideProgram({
+      content: (p) => p.title,
+      custom: (p) => p.program?.title ?? 'Custom Program',
+      redirect: (p) => `Redirect to Channel ${p.channel}`,
+      flex: 'Flex',
+    })(program);
 
-    let episodeTitle: string | undefined;
-    switch (program.type) {
-      case 'custom':
-        episodeTitle = program.program?.episodeTitle ?? '';
-        break;
-      case 'content':
-        episodeTitle = program.episodeTitle;
-        break;
-      case 'redirect':
-        episodeTitle = '';
-        break;
-      case 'flex':
-        episodeTitle = '';
-        break;
-    }
+    const episodeTitle = forTvGuideProgram({
+      custom: (p) => p.program?.episodeTitle ?? '',
+      content: (p) => p.episodeTitle,
+      default: '',
+    })(program);
 
     const key = `${title}_${program.start}_${program.stop}`;
     const programStart = dayjs(program.start);
@@ -423,74 +408,41 @@ export default function GuidePage() {
     );
   };
 
+  const formattedTitle = useCallback(
+    forTvGuideProgram({
+      content: (p) => p.title,
+      custom: (p) => p.program?.title ?? 'Custom Program',
+      redirect: (p) => `Redirect to Channel ${p.channel}`,
+      flex: 'Flex',
+    }),
+    [],
+  );
+
+  const formattedEpisodeTitle = useCallback(
+    forTvGuideProgram({
+      custom: (p) => p.program?.episodeTitle ?? '',
+      content: (p) => p.episodeTitle,
+      default: '',
+    }),
+    [],
+  );
+
   const renderProgramModal = (program: TvGuideProgram | undefined) => {
     if (!program) {
       return;
     }
 
-    let title: string;
-    switch (program.type) {
-      case 'custom':
-        title = program.program?.title ?? 'Custom Program';
-        break;
-      case 'content':
-        title = program.title;
-        break;
-      case 'redirect':
-        title = `Redirect to Channel ${program.channel}`;
-        break;
-      case 'flex':
-        title = 'Flex';
-        break;
-    }
+    const rating = forTvGuideProgram({
+      custom: (p) => p.program?.rating ?? '',
+      content: (p) => p.rating,
+      default: '',
+    })(program);
 
-    let episodeTitle: string | undefined;
-    switch (program.type) {
-      case 'custom':
-        episodeTitle = program.program?.episodeTitle ?? '';
-        break;
-      case 'content':
-        episodeTitle = program.episodeTitle;
-        break;
-      case 'redirect':
-        episodeTitle = '';
-        break;
-      case 'flex':
-        episodeTitle = '';
-        break;
-    }
-
-    let rating: string | undefined;
-    switch (program.type) {
-      case 'custom':
-        rating = program.program?.rating ?? '';
-        break;
-      case 'content':
-        rating = program.rating;
-        break;
-      case 'redirect':
-        rating = '';
-        break;
-      case 'flex':
-        rating = '';
-        break;
-    }
-
-    let summary: string | undefined;
-    switch (program.type) {
-      case 'custom':
-        summary = program.program?.summary ?? '';
-        break;
-      case 'content':
-        summary = program.summary;
-        break;
-      case 'redirect':
-        summary = '';
-        break;
-      case 'flex':
-        summary = '';
-        break;
-    }
+    const summary = forTvGuideProgram({
+      custom: (p) => p.program?.summary ?? '',
+      content: (p) => p.summary,
+      default: '',
+    })(program);
 
     return (
       <Modal
@@ -501,7 +453,7 @@ export default function GuidePage() {
       >
         <Box sx={modalStyle}>
           <Typography id="modal-modal-title" variant="h5" component="h2">
-            {title}
+            {formattedTitle(program)}
           </Typography>
           <Typography
             id="modal-modal-title"
@@ -509,7 +461,7 @@ export default function GuidePage() {
             component="h2"
             fontStyle={'italic'}
           >
-            {episodeTitle}
+            {formattedEpisodeTitle(program)}
           </Typography>
           {program.type === 'content' ? (
             <>

@@ -24,7 +24,7 @@ import { usePlexTyped2 } from '../../hooks/plexHooks.ts';
 import useStore from '../../store/index.ts';
 import {
   addKnownMediaForServer,
-  addSelectedMedia,
+  addPlexSelectedMedia,
 } from '../../store/programmingSelector/actions.ts';
 import { PlexListItem } from './PlexListItem.tsx';
 
@@ -102,7 +102,7 @@ export function PlexDirectoryListItem(props: {
   const addItems = useCallback(
     (e: MouseEvent<HTMLButtonElement>) => {
       e.stopPropagation();
-      addSelectedMedia(server.name, [item]);
+      addPlexSelectedMedia(server.name, [item]);
     },
     [item, server.name],
   );

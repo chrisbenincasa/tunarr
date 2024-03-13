@@ -1,6 +1,7 @@
 import {
   DataTag,
   DefinedInitialDataOptions,
+  useQueries,
   useQuery,
 } from '@tanstack/react-query';
 import { CustomShow } from '@tunarr/types';
@@ -49,3 +50,19 @@ export const customShowProgramsQuery = (id: string) => ({
   >,
   queryFn: () => apiClient.getCustomShowPrograms({ params: { id } }),
 });
+
+export const useCustomShow = (
+  id: string,
+  enabled: boolean,
+  includePrograms: boolean,
+) => {
+  return useQueries({
+    queries: [
+      { ...customShowQuery(id), enabled },
+      {
+        ...customShowProgramsQuery(id),
+        enabled: enabled && includePrograms,
+      },
+    ],
+  });
+};

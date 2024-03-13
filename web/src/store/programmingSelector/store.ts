@@ -1,14 +1,23 @@
-import { CustomShow, PlexServerSettings } from '@tunarr/types';
+import { ContentProgram, CustomShow, PlexServerSettings } from '@tunarr/types';
 import { PlexLibrarySection, PlexMedia } from '@tunarr/types/plex';
 import { StateCreator } from 'zustand';
 
 type ServerName = string;
 type PlexItemGuid = string;
 
-export interface SelectedMedia {
+export type PlexSelectedMedia = {
+  type: 'plex';
   server: ServerName;
   guid: PlexItemGuid;
-}
+};
+
+export type CustomShowSelectedMedia = {
+  type: 'custom-show';
+  customShowId: string;
+  program: ContentProgram;
+};
+
+export type SelectedMedia = PlexSelectedMedia | CustomShowSelectedMedia;
 
 export type PlexLibrary = {
   type: 'plex';
