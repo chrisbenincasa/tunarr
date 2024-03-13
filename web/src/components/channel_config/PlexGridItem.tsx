@@ -10,8 +10,6 @@ import {
   ImageListItem,
   ImageListItemBar,
   List,
-  ListItemButton,
-  ListItemIcon,
   Skeleton,
 } from '@mui/material';
 import {
@@ -100,27 +98,67 @@ export function PlexGridItem<T extends PlexMedia>(props: PlexGridItemProps<T>) {
     );
   };
 
+  //  <ListItemButton
+  //     onClick={handleClick}
+  //     dense
+  //     sx={
+  //       {
+  //         // display: 'bl',
+  //         // width: '100%',
+  //       }
+  //     }
+  //   >
+  //     {/* {hasChildren && (
+  //       <ListItemIcon>
+  //         {open ? <ExpandLess /> : <ExpandMore />}
+  //       </ListItemIcon>
+  //     )} */}
+  //     <img
+  //       src={`${server.uri}${item.thumb}?X-Plex-Token=${server.accessToken}`}
+  //       width={100}
+  //     />
+  //   </ListItemButton>
+
+  // display: flex;
+  // flex-wrap: wrap;
+
   return (
     <React.Fragment key={item.guid}>
       {hasChildren ? (
-        <ListItemButton
-          onClick={handleClick}
-          dense
+        <ImageListItem
+          key={item.guid}
           sx={{
-            display: 'block',
-            width: '100%',
+            width: 160,
+            cursor: 'pointer',
+            display: 'flex',
+            flexDirection: 'column',
           }}
+          onClick={handleClick}
         >
-          {hasChildren && (
-            <ListItemIcon>
-              {open ? <ExpandLess /> : <ExpandMore />}
-            </ListItemIcon>
-          )}
           <img
             src={`${server.uri}${item.thumb}?X-Plex-Token=${server.accessToken}`}
             width={100}
           />
-        </ListItemButton>
+          <ImageListItemBar
+            title={item.title}
+            subtitle={<span>Five items</span>} // temp value for testing - add var
+            position="below"
+            actionIcon={
+              <IconButton
+                sx={{ color: 'black' }}
+                aria-label={`star ${item.title}`}
+                onClick={handleClick}
+              >
+                {selectedMediaIds.includes(item.guid) ? (
+                  <ExpandLess sx={{ color: darkMode ? '#fff' : '#000' }} />
+                ) : (
+                  <ExpandMore sx={{ color: darkMode ? '#fff' : '#000' }} />
+                )}
+              </IconButton>
+            }
+            actionPosition="right"
+          />
+        </ImageListItem>
       ) : (
         <ImageListItem
           key={item.guid}

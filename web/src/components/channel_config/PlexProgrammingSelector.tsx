@@ -198,7 +198,11 @@ export default function PlexProgrammingSelector() {
           <Collapse
             in={collectionsOpen}
             timeout="auto"
-            sx={{ display: 'block', width: '100%' }}
+            sx={{
+              width: '100%',
+              display: 'flex',
+              flexWrap: 'wrap',
+            }}
           >
             {map(collectionsData.Metadata, (item) =>
               viewType === 'list' ? (
