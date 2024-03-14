@@ -1,4 +1,10 @@
 import { Theme } from '@mui/material';
+import { MakeRequired } from '@mui/x-date-pickers/internals/models/helpers';
+import type {
+  GenGroupedSubtypeMapping,
+  PerTypeCallback,
+} from '@tunarr/shared/types';
+import { applyOrValue } from '@tunarr/shared/util';
 import {
   ChannelProgram,
   FlexProgram,
@@ -8,9 +14,10 @@ import {
 import { PlexMedia } from '@tunarr/types/plex';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
-import { isFunction, isNumber, range, reduce, zipWith } from 'lodash-es';
+import { isNumber, property, range, reduce, zipWith } from 'lodash-es';
+import { Path, PathValue } from 'react-hook-form';
 import { SelectedMedia } from '../store/programmingSelector/store';
-import { UIChannelProgram } from '../types';
+import { AddedMedia, UIChannelProgram } from '../types';
 
 dayjs.extend(duration);
 
@@ -153,29 +160,39 @@ export const numericFormChangeHandler = (
   };
 };
 
-// Generates a mapping of discriminator to the concrete tyhpe
-type GenSubtypeMapping<T extends { type: string }> = {
-  [X in T['type']]: Extract<T, { type: X }>;
-};
+// // Generates a mapping of discriminator to the concrete tyhpe
+// type GenSubtypeMapping<T extends { type: string }> = {
+//   [X in T['type']]: Extract<T, { type: X }>;
+// };
 
-type GenGroupedSubtypeMapping<T extends { type: string }> = {
-  [X in T['type']]: Extract<T, { type: X }>[];
-};
+// type GenGroupedSubtypeMapping<T extends { type: string }> = {
+//   [X in T['type']]: Extract<T, { type: X }>[];
+// };
 
-type PerTypeCallback<Union extends { type: string }, Value> = {
-  [X in Union['type']]?: ((m: GenSubtypeMapping<Union>[X]) => Value) | Value;
-} & {
-  default?: ((m: Union) => Value) | Value;
-};
+// type PerTypeCallback<Union extends { type: string }, CallbackRet> = {
+//   [X in Union['type']]?:
+//     | ((m: GenSubtypeMapping<Union>[X]) => CallbackRet)
+//     | CallbackRet;
+// } & {
+//   default?: ((m: Union) => CallbackRet) | CallbackRet;
+// };
 
-const applyOrValue = <Super, X extends Super, T>(
-  f: ((m: X) => T) | T,
-  arg: X,
-) => (isFunction(f) ? f(arg) : f);
+// const applyOrValue = <Super, X extends Super, T>(
+//   f: ((m: X) => T) | T,
+//   arg: X,
+// ) => (isFunction(f) ? f(arg) : f);
 
-export const forSelectedMediaType = <T>(
+export function forSelectedMediaType<T>(
+  choices: MakeRequired<PerTypeCallback<SelectedMedia, T>, 'default'>,
+): (m: SelectedMedia) => NonNullable<T>;
+export function forSelectedMediaType<T>(
   choices: PerTypeCallback<SelectedMedia, T>,
-): ((m: SelectedMedia) => T | null) => {
+): (m: SelectedMedia) => T | null;
+export function forSelectedMediaType<T>(
+  choices:
+    | PerTypeCallback<SelectedMedia, T>
+    | MakeRequired<PerTypeCallback<SelectedMedia, T>, 'default'>,
+): (m: SelectedMedia) => T | null {
   // Unfortunately we still have to enumerate the types here
   // in order to get proper type guarding
   return (m: SelectedMedia) => {
@@ -189,7 +206,7 @@ export const forSelectedMediaType = <T>(
 
     return null;
   };
-};
+}
 
 // Produces a Record for each 'type' of SelectedMedia where the values
 // are the properly downcasted subtypes
@@ -208,42 +225,6 @@ export function groupSelectedMedia(
     {} as Partial<GenGroupedSubtypeMapping<SelectedMedia>>,
   );
 }
-
-export const forProgramType = <T>(
-  choices: PerTypeCallback<ChannelProgram, T>,
-) => {
-  return (m: ChannelProgram) => {
-    switch (m.type) {
-      case 'content':
-        if (choices.content) {
-          return applyOrValue(choices.content, m);
-        }
-        break;
-      case 'custom':
-        if (choices.custom) {
-          return applyOrValue(choices.custom, m);
-        }
-        break;
-      case 'redirect':
-        if (choices.redirect) {
-          return applyOrValue(choices.redirect, m);
-        }
-        break;
-      case 'flex':
-        if (choices.flex) {
-          return applyOrValue(choices.flex, m);
-        }
-        break;
-    }
-
-    // If we made it this far try to do the default
-    if (choices.default) {
-      return applyOrValue(choices.default, m);
-    }
-
-    return null;
-  };
-};
 
 export const forUIProgramType = <T>(
   choices: PerTypeCallback<UIChannelProgram, T>,
@@ -348,4 +329,39 @@ export const forPlexMedia = <T>(choices: PerTypeCallback<PlexMedia, T>) => {
   };
 };
 
+export function forAddedMediaType<T>(
+  choices:
+    | Omit<Required<PerTypeCallback<AddedMedia, T>>, 'default'>
+    | MakeRequired<PerTypeCallback<AddedMedia, T>, 'default'>,
+): (m: AddedMedia) => NonNullable<T>;
+export function forAddedMediaType<T>(
+  choices: PerTypeCallback<AddedMedia, T>,
+): (m: AddedMedia) => T | null;
+export function forAddedMediaType<T>(
+  choices:
+    | PerTypeCallback<AddedMedia, T>
+    | MakeRequired<PerTypeCallback<AddedMedia, T>, 'default'>,
+): (m: AddedMedia) => T | null {
+  return (m: AddedMedia) => {
+    switch (m.type) {
+      case 'plex':
+        if (choices.plex) return applyOrValue(choices.plex, m);
+        break;
+      case 'custom-show':
+        if (choices['custom-show'])
+          return applyOrValue(choices['custom-show'], m);
+        break;
+    }
+
+    if (choices.default) return applyOrValue(choices.default, m);
+
+    return null;
+  };
+}
+
 export const unwrapNil = <T>(x: T | null | undefined) => x!;
+
+// Reuses react-hook-form Path type here lol
+export function typedProperty<T, TPath extends Path<T> = Path<T>>(path: TPath) {
+  return property<T, PathValue<T, TPath>>(path);
+}

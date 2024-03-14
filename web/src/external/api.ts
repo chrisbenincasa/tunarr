@@ -10,7 +10,7 @@ import {
   ChannelLineupSchema,
   ChannelSchema,
   CondensedChannelProgrammingSchema,
-  CustomShowProgrammingSchema,
+  CustomProgramSchema,
   CustomShowSchema,
   FillerListProgrammingSchema,
   FillerListSchema,
@@ -163,7 +163,7 @@ export const api = makeApi([
     method: 'get',
     path: '/api/v2/custom-shows/:id/programs',
     alias: 'getCustomShowPrograms',
-    response: CustomShowProgrammingSchema,
+    response: z.array(CustomProgramSchema),
     parameters: parametersBuilder()
       .addPaths({
         id: z.string(),

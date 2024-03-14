@@ -14,6 +14,13 @@
     "./constants": {
       "types": "./build/util/constants.d.ts",
       "default": "./build/util/constants.js"
+    },
+    "./util": {
+      "types": "./build/util/index.d.ts",
+      "default": "./build/util/index.js"
+    },
+    "./types": {
+      "types": "./build/types/index.d.ts"
     }
   },
   "main": "index.ts",
@@ -34,6 +41,7 @@
     "@types/node": "18.18.0",
     "rimraf": "^5.0.5",
     "tsup": "^8.0.2",
-    "typescript": "5.2.2"
+    "typescript": "5.2.2",
+    "ts-essentials": "^9.4.1"
   }
 }

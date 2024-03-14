@@ -2,10 +2,7 @@ import {
   CreateCustomShowRequestSchema,
   IdPathParamSchema,
 } from '@tunarr/types/api';
-import {
-  CustomShowProgrammingSchema,
-  CustomShowSchema,
-} from '@tunarr/types/schemas';
+import { CustomProgramSchema, CustomShowSchema } from '@tunarr/types/schemas';
 import { isNull, map } from 'lodash-es';
 import { z } from 'zod';
 import { CustomShow } from '../../dao/entities/CustomShow.js';
@@ -78,7 +75,7 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
       schema: {
         params: IdPathParamSchema,
         response: {
-          200: CustomShowProgrammingSchema,
+          200: z.array(CustomProgramSchema),
           404: z.void(),
         },
       },

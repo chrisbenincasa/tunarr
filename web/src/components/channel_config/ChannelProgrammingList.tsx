@@ -108,7 +108,7 @@ const ProgramListItem = ({
 
   switch (program.type) {
     case 'custom':
-      title = 'custom...';
+      title = 'Custom Show';
       break;
     case 'redirect':
       title = 'redirect...';

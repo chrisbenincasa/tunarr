@@ -298,6 +298,9 @@ importers:
       rimraf:
         specifier: ^5.0.5
         version: 5.0.5
+      ts-essentials:
+        specifier: ^9.4.1
+        version: 9.4.1(typescript@5.2.2)
       tsup:
         specifier: ^8.0.2
         version: 8.0.2(typescript@5.2.2)
@@ -8650,6 +8653,17 @@ packages:
       typescript: '>=4.2.0'
     dependencies:
       typescript: 5.3.3
+    dev: true
+
+  /ts-essentials@9.4.1(typescript@5.2.2):
+    resolution: {integrity: sha512-oke0rI2EN9pzHsesdmrOrnqv1eQODmJpd/noJjwj2ZPC3Z4N2wbjrOEqnsEgmvlO2+4fBb0a794DCna2elEVIQ==}
+    peerDependencies:
+      typescript: '>=4.1.0'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+    dependencies:
+      typescript: 5.2.2
     dev: true
 
   /ts-essentials@9.4.1(typescript@5.3.3):

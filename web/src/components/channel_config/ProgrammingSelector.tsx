@@ -9,7 +9,7 @@ import {
 import { PlexMedia, isPlexDirectory } from '@tunarr/types/plex';
 import { find, isEmpty, isNil, isUndefined } from 'lodash-es';
 import React, { useCallback, useEffect, useState } from 'react';
-import { EnrichedPlexMedia, usePlex } from '../../hooks/plexHooks.ts';
+import { usePlex } from '../../hooks/plexHooks.ts';
 import { usePlexServerSettings } from '../../hooks/settingsHooks.ts';
 import { useCustomShows } from '../../hooks/useCustomShows.ts';
 import useStore from '../../store/index.ts';
@@ -18,6 +18,7 @@ import {
   setProgrammingListLibrary,
   setProgrammingListingServer,
 } from '../../store/programmingSelector/actions.ts';
+import { AddedMedia } from '../../types/index.ts';
 import { CustomShowProgrammingSelector } from './CustomShowProgrammingSelector.tsx';
 import PlexProgrammingSelector from './PlexProgrammingSelector.tsx';
 import SelectedProgrammingList from './SelectedProgrammingList.tsx';
@@ -31,7 +32,7 @@ export interface PlexListItemProps<T extends PlexMedia> {
 }
 
 type Props = {
-  onAddSelectedMedia: (items: EnrichedPlexMedia[]) => void;
+  onAddSelectedMedia: (items: AddedMedia[]) => void;
 };
 
 export default function ProgrammingSelector({ onAddSelectedMedia }: Props) {
@@ -119,7 +120,6 @@ export default function ProgrammingSelector({ onAddSelectedMedia }: Props) {
   const onLibraryChange = useCallback(
     (libraryUuid: string) => {
       if (mediaSource === 'custom-shows') {
-        console.log('hello', customShows);
         const library = find(customShows, { id: libraryUuid });
         if (library) {
           setProgrammingListLibrary({ type: 'custom-show', library });

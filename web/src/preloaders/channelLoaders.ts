@@ -54,7 +54,6 @@ function updateChannelState(
     isNil(currentState.originalEntity) ||
     channel.id !== currentState.originalEntity.id
   ) {
-    console.log('setting state...');
     setCurrentChannel(channel, programming);
     return true;
   }
@@ -110,7 +109,6 @@ export const editProgrammingLoader: Preloader<{
           !updateChannelState(channel, programming) &&
           !currentState.programsLoaded
         ) {
-          console.log('setting programming...');
           setCurrentChannelProgramming(programming);
         }
 

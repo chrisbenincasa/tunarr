@@ -1,14 +1,18 @@
 import { Tooltip } from '@mui/material';
 import Button, { ButtonProps } from '@mui/material/Button';
-import { filter, flattenDeep } from 'lodash-es';
-import { sequentialPromises } from '../../helpers/util.ts';
-import { EnrichedPlexMedia, enumeratePlexItem } from '../../hooks/plexHooks.ts';
+import { flattenDeep, map } from 'lodash-es';
+import {
+  forSelectedMediaType,
+  sequentialPromises,
+} from '../../helpers/util.ts';
+import { enumeratePlexItem } from '../../hooks/plexHooks.ts';
 import useStore from '../../store/index.ts';
 import { clearSelectedMedia } from '../../store/programmingSelector/actions.ts';
-import { PlexSelectedMedia } from '../../store/programmingSelector/store.ts';
+import { CustomShowSelectedMedia } from '../../store/programmingSelector/store.ts';
+import { AddedCustomShowProgram, AddedMedia } from '../../types/index.ts';
 
 type Props = {
-  onAdd: (items: EnrichedPlexMedia[]) => void;
+  onAdd: (items: AddedMedia[]) => void;
   onSuccess: () => void;
 } & ButtonProps;
 
@@ -18,16 +22,34 @@ export default function AddSelectedMediaButton({
   ...rest
 }: Props) {
   const knownMedia = useStore((s) => s.knownMediaByServer);
-  // TODO support custom shows
-  const selectedMedia = useStore((s) =>
-    filter(s.selectedMedia, (m): m is PlexSelectedMedia => m.type === 'plex'),
-  );
+  // const selectedMedia = useStore((s) =>
+  //   filter(s.selectedMedia, (m): m is PlexSelectedMedia => m.type === 'plex'),
+  // );
+  const selectedMedia = useStore((s) => s.selectedMedia);
 
   const addSelectedItems = () => {
-    sequentialPromises(selectedMedia, (selected) => {
-      const media = knownMedia[selected.server][selected.guid];
-      return enumeratePlexItem(selected.server, media)();
-    })
+    sequentialPromises(
+      selectedMedia,
+      forSelectedMediaType<Promise<AddedMedia[]>>({
+        plex: async (selected) => {
+          const media = knownMedia[selected.server][selected.guid];
+          const items = await enumeratePlexItem(selected.server, media)();
+          return map(items, (item) => ({ media: item, type: 'plex' }));
+        },
+        'custom-show': (
+          selected: CustomShowSelectedMedia,
+        ): Promise<AddedCustomShowProgram[]> => {
+          return Promise.resolve([
+            {
+              type: 'custom-show',
+              customShowId: selected.customShowId,
+              program: selected.program,
+            },
+          ]);
+        },
+        default: Promise.resolve([]),
+      }),
+    )
       .then(flattenDeep)
       .then(onAdd)
       .then(() => {

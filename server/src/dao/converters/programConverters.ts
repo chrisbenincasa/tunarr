@@ -13,7 +13,7 @@ export function dbProgramToContentProgram(
     rating: program.rating,
     icon: program.showIcon ?? program.episodeIcon ?? program.icon,
     title: program.showTitle ?? program.title,
-    duration: program?.duration,
+    duration: program.duration,
     type: 'content',
     id: program.uuid,
     subtype: program.type,
