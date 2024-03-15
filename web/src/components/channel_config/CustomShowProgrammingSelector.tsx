@@ -7,13 +7,14 @@ import {
   ListItem,
   ListItemText,
 } from '@mui/material';
-import { ContentProgram, isContentProgram } from '@tunarr/types';
+import { forProgramType } from '@tunarr/shared/util';
+import { CustomProgram, isCustomProgram } from '@tunarr/types';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
-import { chain, isEmpty, isNil, property } from 'lodash-es';
+import { chain, flow, isEmpty, isNil, negate } from 'lodash-es';
 import { MouseEvent, useCallback, useState } from 'react';
 import { useIntersectionObserver } from 'usehooks-ts';
-import { forProgramType } from '../../helpers/util';
+import { typedProperty } from '../../helpers/util';
 import { useCustomShow } from '../../hooks/useCustomShows';
 import useStore from '../../store';
 import { addSelectedMedia } from '../../store/programmingSelector/actions';
@@ -38,6 +39,7 @@ export function CustomShowProgrammingSelector() {
   const formattedTitle = useCallback(
     forProgramType({
       content: (p) => p.title,
+      custom: (p) => p.program!.title,
     }),
     [],
   );
@@ -62,7 +64,7 @@ export function CustomShowProgrammingSelector() {
   });
 
   const handleItem = useCallback(
-    (e: MouseEvent<HTMLButtonElement>, item: ContentProgram) => {
+    (e: MouseEvent<HTMLButtonElement>, item: CustomProgram) => {
       e.stopPropagation();
       if (selectedCustomShow) {
         addSelectedMedia({
@@ -82,8 +84,9 @@ export function CustomShowProgrammingSelector() {
       programsResult.data.length > 0
     ) {
       return chain(programsResult.data)
-        .filter(isContentProgram)
-        .filter(property('persisted'))
+        .filter(isCustomProgram)
+        .filter(typedProperty('persisted'))
+        .filter(flow(typedProperty('program'), negate(isNil)))
         .map((program) => {
           let title = formattedTitle(program);
           let epTitle = formattedEpisodeTitle(program);

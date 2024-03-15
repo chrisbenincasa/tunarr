@@ -24,10 +24,9 @@ import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import AddSelectedMediaButton from '../../components/channel_config/AddSelectedMediaButton.tsx';
 import ProgrammingSelector from '../../components/channel_config/ProgrammingSelector.tsx';
 import { apiClient } from '../../external/api.ts';
-import { EnrichedPlexMedia } from '../../hooks/plexHooks.ts';
 import { useCurrentFillerList } from '../../hooks/useFillerLists.ts';
 import {
-  addPlexMediaToCurrentFillerList,
+  addMediaToCurrentFillerList,
   removeFillerListProgram,
 } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
@@ -106,10 +105,6 @@ export default function EditFillerPage({ isNew }: Props) {
   const deleteProgramAtIndex = useCallback((idx: number) => {
     removeFillerListProgram(idx);
   }, []);
-
-  const onAddPrograms = (programs: EnrichedPlexMedia[]) => {
-    addPlexMediaToCurrentFillerList(programs);
-  };
 
   useEffect(() => {
     setValue('programs', fillerListPrograms);
@@ -214,7 +209,7 @@ export default function EditFillerPage({ isNew }: Props) {
           </AccordionSummary>
           <AccordionDetails>
             <ProgrammingSelector
-              onAddSelectedMedia={addPlexMediaToCurrentFillerList}
+              onAddSelectedMedia={addMediaToCurrentFillerList}
             />
             <Divider />
             <Box
@@ -226,7 +221,7 @@ export default function EditFillerPage({ isNew }: Props) {
               }}
             >
               <AddSelectedMediaButton
-                onAdd={onAddPrograms}
+                onAdd={addMediaToCurrentFillerList}
                 onSuccess={() => {}}
                 variant="contained"
               />

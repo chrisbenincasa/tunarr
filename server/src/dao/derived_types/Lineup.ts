@@ -1,6 +1,6 @@
 import { Program as ProgramDTO } from '@tunarr/types';
-import { Program } from '../entities/Program.js';
 import { LineupSchedule } from '@tunarr/types/api';
+import { Program } from '../entities/Program.js';
 
 export type Lineup = {
   items: LineupItem[];
@@ -24,6 +24,11 @@ type BaseLineupItem = {
 export type ContentItem = BaseLineupItem & {
   type: 'content';
   id: string;
+  // If this lineup item was a part of a custom show
+  // this is a pointer to that show.
+  // TODO: If a custom show is deleted, we have to remove
+  // references to these content items in the lineup
+  customShowId?: string;
 };
 
 export type OfflineItem = BaseLineupItem & {

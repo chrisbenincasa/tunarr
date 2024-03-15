@@ -1,3 +1,4 @@
+import { CustomProgram } from '@tunarr/types';
 import { CreateCustomShowRequest } from '@tunarr/types/api';
 import { filter, isUndefined, map } from 'lodash-es';
 import { MarkOptional } from 'ts-essentials';
@@ -25,7 +26,7 @@ export class CustomShowDB {
       .findOne({ uuid: id }, { populate: ['content.uuid'] });
   }
 
-  async getShowPrograms(id: string) {
+  async getShowPrograms(id: string): Promise<CustomProgram[]> {
     const customShowContent = await getEm()
       .repo(CustomShowContent)
       .find(
@@ -33,9 +34,15 @@ export class CustomShowDB {
         { populate: ['content.*'], orderBy: { index: 'desc' } },
       );
 
-    return customShowContent.map((csc) => {
-      return dbProgramToContentProgram(csc.content, true);
-    });
+    return customShowContent.map((csc) => ({
+      type: 'custom',
+      persisted: true,
+      duration: csc.content.duration,
+      program: dbProgramToContentProgram(csc.content, true),
+      customShowId: id,
+      index: csc.index,
+      id: csc.content.uuid,
+    }));
   }
 
   async saveShow(id: Maybe<string>, customShow: CustomShowUpdate) {

@@ -12,5 +12,5 @@ export const CustomShowSchema = z.object({
   id: z.string(),
   name: z.string(),
   contentCount: z.number(),
-  programs: CustomShowProgrammingSchema.optional(),
+  programs: z.array(CustomProgramSchema).optional(),
 });

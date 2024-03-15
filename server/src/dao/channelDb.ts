@@ -1,5 +1,6 @@
 import { Loaded, QueryOrder, RequiredEntityData, wrap } from '@mikro-orm/core';
 import { scheduleTimeSlots } from '@tunarr/shared';
+import { forProgramType } from '@tunarr/shared/util';
 import {
   ChannelProgram,
   ChannelProgramming,
@@ -17,6 +18,8 @@ import {
   chain,
   compact,
   filter,
+  find,
+  groupBy,
   isEmpty,
   isNil,
   isNull,
@@ -34,6 +37,7 @@ import { join } from 'path';
 import { globalOptions } from '../globals.js';
 import createLogger from '../logger.js';
 import { Nullable } from '../types.js';
+import { typedProperty } from '../types/path.js';
 import { groupByFunc, groupByUniqAndMap } from '../util.js';
 import { fileExists } from '../util/fsUtil.js';
 import { dbProgramToContentProgram } from './converters/programConverters.js';
@@ -48,6 +52,7 @@ import {
   isRedirectItem,
 } from './derived_types/Lineup.js';
 import { Channel, ChannelTranscodingSettings } from './entities/Channel.js';
+import { CustomShowContent } from './entities/CustomShowContent.js';
 import { Program } from './entities/Program.js';
 import { upsertContentPrograms } from './programHelpers.js';
 
@@ -139,7 +144,10 @@ export class ChannelDB {
   getChannelAndPrograms(uuid: string) {
     return getEm()
       .repo(Channel)
-      .findOne({ uuid }, { populate: ['programs'] });
+      .findOne(
+        { uuid },
+        { populate: ['programs', 'programs.customShows.uuid'] },
+      );
   }
 
   getChannelAndProgramsByNumber(number: number) {
@@ -236,7 +244,7 @@ export class ChannelDB {
     ) => {
       return await em.transactional(async (em) => {
         channel.startTime = startTime;
-        channel.duration = sumBy(lineup, (p) => p.durationMs);
+        channel.duration = sumBy(lineup, typedProperty('durationMs'));
         const allIds = chain(lineup)
           .filter(isContentItem)
           .map((p) => p.id)
@@ -261,9 +269,7 @@ export class ChannelDB {
         (p) => p.uniqueId(),
         (p) => p.uuid,
       );
-      return map(lineup, (program) =>
-        channelProgramToLineupItem(program, dbIdByUniqueId),
-      );
+      return map(lineup, channelProgramToLineupItemFunc(dbIdByUniqueId));
     };
 
     if (req.type === 'manual') {
@@ -389,7 +395,7 @@ export class ChannelDB {
       (item) => contentLineupItemToProgram(channel, item.id),
     );
 
-    const { lineup: condensedLineup, offsets } = buildCondensedLineup(
+    const { lineup: condensedLineup, offsets } = await buildCondensedLineup(
       channel,
       pagedLineup,
     );
@@ -514,7 +520,7 @@ export class ChannelDB {
 }
 
 export function buildApiLineup(
-  channel: Loaded<Channel, 'programs'>,
+  channel: Loaded<Channel, 'programs' | 'programs.customShows.uuid'>,
   lineup: LineupItem[],
 ): { lineup: ChannelProgram[]; offsets: number[] } {
   let lastOffset = 0;
@@ -534,12 +540,23 @@ export function buildApiLineup(
   return { lineup: programs, offsets };
 }
 
-export function buildCondensedLineup(
-  channel: Loaded<Channel, 'programs'>,
+export async function buildCondensedLineup(
+  channel: Loaded<Channel, 'programs' | 'programs.customShows.uuid'>,
   lineup: LineupItem[],
-): { lineup: CondensedChannelProgram[]; offsets: number[] } {
+): Promise<{ lineup: CondensedChannelProgram[]; offsets: number[] }> {
   let lastOffset = 0;
   const offsets: number[] = [];
+
+  const programIds = channel.programs.map((p) => p.uuid);
+  const customShowContent = groupBy(
+    await getEm()
+      .repo(CustomShowContent)
+      .findAll({
+        where: { content: { $in: programIds } },
+      }),
+    (csc) => csc.customShow.uuid,
+  );
+
   const programs = chain(lineup)
     .map((item) => {
       let p: CondensedChannelProgram | null = null;
@@ -547,6 +564,21 @@ export function buildCondensedLineup(
         p = offlineLineupItemToProgram(channel, item);
       } else if (isRedirectItem(item)) {
         p = redirectLineupItemToProgram(item);
+      } else if (item.customShowId) {
+        const csc = find(
+          customShowContent[item.customShowId],
+          (csc) => csc.content.uuid === item.id,
+        );
+        if (csc) {
+          p = {
+            persisted: true,
+            type: 'custom',
+            customShowId: item.customShowId,
+            duration: item.durationMs,
+            index: csc.index,
+            id: item.id,
+          };
+        }
       } else {
         const program = contentLineupItemToProgram(channel, item.id);
         if (!isNil(program)) {
@@ -554,7 +586,6 @@ export function buildCondensedLineup(
             persisted: true,
             type: 'content',
             id: item.id,
-            // subtype: program.subtype,
             duration: item.durationMs,
           };
         }
@@ -621,40 +652,29 @@ export function contentLineupItemToProgram(
   return dbProgramToContentProgram(program, persisted);
 }
 
-function channelProgramToLineupItem(
-  program: ChannelProgram,
+function channelProgramToLineupItemFunc(
   dbIdByUniqueId: Record<string, string>,
-): LineupItem {
-  let item: LineupItem;
-  switch (program.type) {
-    case 'custom':
-      item = {
-        type: 'content', // Custom program
-        durationMs: program.duration,
-        id: program.id,
-      };
-      break;
-    case 'content':
-      item = {
-        type: 'content',
-        id: program.persisted ? program.id! : dbIdByUniqueId[program.uniqueId],
-        durationMs: program.duration,
-      };
-      break;
-    case 'redirect':
-      item = {
-        type: 'redirect',
-        channel: '', // TODO fix this....!
-        durationMs: program.duration,
-      };
-      break;
-    case 'flex':
-      item = {
-        type: 'offline',
-        durationMs: program.duration,
-      };
-      break;
-  }
-
-  return item;
+): (p: ChannelProgram) => LineupItem {
+  return forProgramType<LineupItem>({
+    custom: (program) => ({
+      type: 'content', // Custom program
+      durationMs: program.duration,
+      id: program.id,
+      customShowId: program.customShowId,
+    }),
+    content: (program) => ({
+      type: 'content',
+      id: program.persisted ? program.id! : dbIdByUniqueId[program.uniqueId],
+      durationMs: program.duration,
+    }),
+    redirect: (program) => ({
+      type: 'redirect',
+      channel: '', // TODO fix this....!
+      durationMs: program.duration,
+    }),
+    flex: (program) => ({
+      type: 'offline',
+      durationMs: program.duration,
+    }),
+  });
 }

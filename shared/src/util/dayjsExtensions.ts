@@ -1,5 +1,5 @@
 import inst, { Dayjs, ManipulateType, PluginFunc } from 'dayjs';
-import duration, { Duration } from 'dayjs/plugin/duration.js';
+import duration, { type Duration } from 'dayjs/plugin/duration.js';
 
 declare module 'dayjs' {
   interface Dayjs {

@@ -1,33 +1,41 @@
+import { forProgramType } from '@tunarr/shared/util';
 import {
   Channel,
   ChannelProgram,
   CondensedChannelProgram,
   CondensedChannelProgramming,
   ContentProgram,
+  CustomProgram,
   CustomShow,
   CustomShowProgramming,
   FillerList,
   FillerListProgramming,
 } from '@tunarr/types';
 import { isPlexEpisode } from '@tunarr/types/plex';
+import { Draft } from 'immer';
 import {
+  chain,
   extend,
   findIndex,
-  groupBy,
+  first,
+  identity,
   inRange,
   isNil,
   isUndefined,
   last,
   map,
-  omitBy,
   sumBy,
 } from 'lodash-es';
-import { zipWithIndex } from '../../helpers/util.ts';
+import {
+  forAddedMediaType,
+  typedProperty,
+  unwrapNil,
+  zipWithIndex,
+} from '../../helpers/util.ts';
 import { EnrichedPlexMedia } from '../../hooks/plexHooks.ts';
+import { AddedMedia, UIIndex } from '../../types/index.ts';
 import useStore from '../index.ts';
 import { ChannelEditorState, initialChannelEditorState } from './store.ts';
-import { Draft } from 'immer';
-import { UIIndex } from '../../types/index.ts';
 
 export const resetChannelEditorState = () =>
   useStore.setState((state) => {
@@ -209,54 +217,73 @@ export const setChannelStartTime = (startTime: number) =>
     }
   });
 
-const generatePrograms = (programs: EnrichedPlexMedia[]): ContentProgram[] => {
-  return programs.map((program) => {
-    let ephemeralProgram: ContentProgram;
-    if (isPlexEpisode(program)) {
-      ephemeralProgram = {
-        id: program.id ?? `plex|${program.serverName}|${program.key}`,
-        persisted: !isNil(program.id),
-        originalProgram: program,
-        duration: program.duration,
-        externalSourceName: program.serverName,
-        externalSourceType: 'plex',
-        externalKey: program.key,
-        uniqueId: `plex|${program.serverName}|${program.key}`,
-        type: 'content',
-        subtype: 'episode',
-        title: program.grandparentTitle,
-        episodeTitle: program.title,
-        episodeNumber: program.index,
-        seasonNumber: program.parentIndex,
-      };
-    } else {
-      ephemeralProgram = {
-        id: program.id ?? `plex|${program.serverName}|${program.key}`,
-        persisted: !isNil(program.id),
-        originalProgram: program,
-        duration: program.duration,
-        externalSourceName: program.serverName,
-        externalSourceType: 'plex',
-        uniqueId: `plex|${program.serverName}|${program.key}`,
-        type: 'content',
-        subtype: 'movie',
-        title: program.title,
-      };
-    }
-
-    return ephemeralProgram;
-  });
+/**
+ * Creates an non-persisted, ephemeral ContentProgram for the given
+ * EnrichedPlexMedia. These are handed off to the server to persist
+ * to the database (if they don't already exist). They are also useful
+ * in order to deal with a common type for programming throughout other
+ * parts of the UI
+ */
+const plexMediaToContentProgram = (
+  media: EnrichedPlexMedia,
+): ContentProgram => {
+  // TODO Handle music tracks
+  if (isPlexEpisode(media)) {
+    return {
+      id: media.id ?? `plex|${media.serverName}|${media.key}`,
+      persisted: !isNil(media.id),
+      originalProgram: media,
+      duration: media.duration,
+      externalSourceName: media.serverName,
+      externalSourceType: 'plex',
+      externalKey: media.key,
+      uniqueId: `plex|${media.serverName}|${media.key}`,
+      type: 'content',
+      subtype: 'episode',
+      title: media.grandparentTitle,
+      episodeTitle: media.title,
+      episodeNumber: media.index,
+      seasonNumber: media.parentIndex,
+    };
+  } else {
+    return {
+      id: media.id ?? `plex|${media.serverName}|${media.key}`,
+      persisted: !isNil(media.id),
+      originalProgram: media,
+      duration: media.duration,
+      externalSourceName: media.serverName,
+      externalSourceType: 'plex',
+      uniqueId: `plex|${media.serverName}|${media.key}`,
+      type: 'content',
+      subtype: 'movie',
+      title: media.title,
+    };
+  }
 };
 
-export const addPlexMediaToCurrentChannel = (programs: EnrichedPlexMedia[]) =>
+export const addMediaToCurrentChannel = (programs: AddedMedia[]) =>
   useStore.setState(({ channelEditor }) => {
     if (channelEditor.currentEntity && programs.length > 0) {
       channelEditor.dirty.programs = true;
-      const ephemeralPrograms = generatePrograms(programs);
+      const addedDuration = sumBy(
+        programs,
+        forAddedMediaType({
+          plex: ({ media }) => media.duration,
+          'custom-show': ({ program }) => program.duration,
+        }),
+      );
+
+      // Convert any external program types to our internal representation
+      const allNewPrograms = map(
+        programs,
+        forAddedMediaType<ChannelProgram>({
+          plex: ({ media }) => plexMediaToContentProgram(media),
+          'custom-show': ({ program }) => program,
+        }),
+      );
 
       const oldDuration = channelEditor.currentEntity.duration;
-      const newDuration =
-        oldDuration + sumBy(ephemeralPrograms, (p) => p.duration);
+      const newDuration = oldDuration + addedDuration;
 
       // Set the new channel duration based on the new program durations
       // const now = dayjs()
@@ -268,7 +295,7 @@ export const addPlexMediaToCurrentChannel = (programs: EnrichedPlexMedia[]) =>
         ? lastItem.startTimeOffset + lastItem.duration
         : 0;
       const programsWithOffset = addIndexesAndCalculateOffsets(
-        ephemeralPrograms,
+        allNewPrograms,
         firstOffset,
         channelEditor.programList.length,
       );
@@ -277,13 +304,21 @@ export const addPlexMediaToCurrentChannel = (programs: EnrichedPlexMedia[]) =>
       channelEditor.programList.push(...programsWithOffset);
 
       // Add new lookups for these programs for when we materialize them in the selector
-      extend(
-        channelEditor.programLookup,
-        omitBy(
-          groupBy(ephemeralPrograms, (p) => p.id),
-          isNil,
-        ),
-      );
+      // Extract the underlying content program from any custom programs
+      const contentProgramsById = chain(allNewPrograms)
+        .map(
+          forProgramType({
+            content: identity,
+            custom: ({ program }) => program,
+          }),
+        )
+        .compact()
+        .groupBy(typedProperty('id'))
+        .omitBy(isNil)
+        .mapValues(unwrapNil(first))
+        .value();
+
+      extend(channelEditor.programLookup, contentProgramsById);
     }
   });
 
@@ -300,15 +335,20 @@ export const setCurrentCustomShow = (
     customShowEditor.programList = [...zippedPrograms];
   });
 
-export const addPlexMediaToCurrentCustomShow = (
-  programs: EnrichedPlexMedia[],
-) =>
+export const addMediaToCurrentCustomShow = (programs: AddedMedia[]) =>
   useStore.setState(({ customShowEditor }) => {
     if (customShowEditor.currentEntity && programs.length > 0) {
       customShowEditor.dirty.programs = true;
-      const convertedPrograms = generatePrograms(programs);
+      const allNewPrograms = map(
+        programs,
+        forAddedMediaType<ContentProgram | CustomProgram>({
+          plex: ({ media }) => plexMediaToContentProgram(media),
+          'custom-show': ({ program }) => program,
+        }),
+      );
+
       customShowEditor.programList = customShowEditor.programList.concat(
-        zipWithIndex(convertedPrograms, customShowEditor.programList.length),
+        zipWithIndex(allNewPrograms, customShowEditor.programList.length),
       );
     }
   });
@@ -326,13 +366,17 @@ export const setCurrentFillerList = (
     fillerListEditor.programList = [...zippedPrograms];
   });
 
-export const addPlexMediaToCurrentFillerList = (
-  programs: EnrichedPlexMedia[],
-) =>
+export const addMediaToCurrentFillerList = (programs: AddedMedia[]) =>
   useStore.setState(({ fillerListEditor }) => {
     if (fillerListEditor.currentEntity && programs.length > 0) {
       fillerListEditor.dirty.programs = true;
-      const convertedPrograms = generatePrograms(programs);
+      const convertedPrograms = map(
+        programs,
+        forAddedMediaType<ContentProgram | CustomProgram>({
+          plex: ({ media }) => plexMediaToContentProgram(media),
+          'custom-show': ({ program }) => program,
+        }),
+      );
       fillerListEditor.programList = fillerListEditor.programList.concat(
         zipWithIndex(convertedPrograms, fillerListEditor.programList.length),
       );

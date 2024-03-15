@@ -15,6 +15,7 @@ import {
 } from '@zodios/core/lib/zodios.types';
 import { LoaderFunctionArgs } from 'react-router-dom';
 import { apiClient } from '../external/api.ts';
+import { EnrichedPlexMedia } from '../hooks/plexHooks.ts';
 
 // A program that may or may not exist in the DB yet
 export type EphemeralProgram = Omit<Program, 'id'>;
@@ -108,3 +109,16 @@ export type UICustomShowProgram = (ContentProgram | CustomProgram) & UIIndex;
 export type NonUndefinedGuard<T> = T extends undefined ? never : T;
 
 export type ProgramSelectorViewType = 'list' | 'grid';
+
+export type AddedCustomShowProgram = {
+  type: 'custom-show';
+  customShowId: string;
+  program: CustomProgram;
+};
+
+export type AddedPlexMedia = {
+  type: 'plex';
+  media: EnrichedPlexMedia;
+};
+
+export type AddedMedia = AddedPlexMedia | AddedCustomShowProgram;

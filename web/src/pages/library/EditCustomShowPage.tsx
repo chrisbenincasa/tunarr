@@ -30,7 +30,7 @@ import {
   newCustomShowLoader,
 } from '../../preloaders/customShowLoaders.ts';
 import {
-  addPlexMediaToCurrentCustomShow,
+  addMediaToCurrentCustomShow,
   removeCustomShowProgram,
 } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
@@ -200,7 +200,7 @@ export default function EditCustomShowPage({ isNew }: Props) {
         </AccordionSummary>
         <AccordionDetails>
           <ProgrammingSelector
-            onAddSelectedMedia={addPlexMediaToCurrentCustomShow}
+            onAddSelectedMedia={addMediaToCurrentCustomShow}
           />
           <Divider />
           <Box
@@ -212,7 +212,7 @@ export default function EditCustomShowPage({ isNew }: Props) {
             }}
           >
             <AddSelectedMediaButton
-              onAdd={addPlexMediaToCurrentCustomShow}
+              onAdd={addMediaToCurrentCustomShow}
               onSuccess={() => {}}
               variant="contained"
             />

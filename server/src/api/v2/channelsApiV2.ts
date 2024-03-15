@@ -15,26 +15,13 @@ import {
 } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
-import {
-  compact,
-  filter,
-  isError,
-  isNil,
-  omit,
-  omitBy,
-  sortBy,
-} from 'lodash-es';
+import { compact, isError, isNil, omit, sortBy } from 'lodash-es';
 import z from 'zod';
-import {
-  buildCondensedLineup,
-  contentLineupItemToProgram,
-} from '../../dao/channelDb.js';
-import { isContentItem } from '../../dao/derived_types/Lineup.js';
 import createLogger from '../../logger.js';
 import { scheduledJobsById } from '../../services/scheduler.js';
 import { UpdateXmlTvTask } from '../../tasks/updateXmlTvTask.js';
 import { RouterPluginAsyncCallback } from '../../types/serverType.js';
-import { attempt, groupByUniqAndMap, mapAsyncSeq } from '../../util.js';
+import { attempt, mapAsyncSeq } from '../../util.js';
 
 dayjs.extend(duration);
 
@@ -245,7 +232,7 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      const channel = await req.serverCtx.channelDB.getChannelAndPrograms(
+      const channel = await req.serverCtx.channelDB.getChannelById(
         req.params.id,
       );
 
@@ -309,26 +296,24 @@ export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
         logger.error('Unable to update guide after lineup update %O', e);
       }
 
-      const { channel, newLineup } = result;
-
-      const materializedPrograms = omitBy(
-        groupByUniqAndMap(filter(newLineup, isContentItem), 'id', (item) =>
-          contentLineupItemToProgram(channel, item.id),
-        ),
-        isNil,
+      // Potentially more DB queries than just building from the result,
+      // this way we don't have to worry about what entities may or may not
+      // be completely loaded by the ORM. It's cheap enough, so just do a wholesale
+      // reload of the lineup and rebuild it to return to the frontend.
+      // Alternatively:
+      //  1. We can figure out a simple way to refresh the affected entities
+      //     from the updateLineup call above. If performance suffers we can look into this
+      //  2. We can just remove this completely and invalidate the lineup on the frontend
+      //     and make it reload. Also not very clean, but not the end of the world.
+      const newLineup = await req.serverCtx.channelDB.loadCondensedLineup(
+        req.params.id,
       );
 
-      const { lineup, offsets } = buildCondensedLineup(channel, newLineup);
+      if (isNil(newLineup)) {
+        return res.status(500).send();
+      }
 
-      return res.status(200).send({
-        icon: channel.icon,
-        number: channel.number,
-        name: channel.name,
-        totalPrograms: newLineup.length,
-        programs: materializedPrograms,
-        lineup,
-        startTimeOffsets: offsets,
-      });
+      return res.status(200).send(newLineup);
     },
   );
 

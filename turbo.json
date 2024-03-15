@@ -3,7 +3,7 @@
   "pipeline": {
     "clean": {},
     "build": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["clean", "^build"],
       "outputs": ["build/**", "dist/**"]
     },
     "bundle": {
@@ -11,7 +11,7 @@
       "outputs": ["build/**", "dist/**"]
     },
     "dev": {
-      "dependsOn": ["clean", "@tunarr/shared#build", "@tunarr/types#build"],
+      "dependsOn": ["@tunarr/shared#build", "@tunarr/types#build"],
       "cache": false,
       "persistent": true
     }

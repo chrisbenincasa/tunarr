@@ -105,11 +105,6 @@ export const ContentProgramSchema = BaseProgramSchema.extend({
 
 export const CondensedContentProgramSchema = BaseProgramSchema.extend({
   type: z.literal('content'),
-  // subtype: z.union([
-  //   z.literal('movie'),
-  //   z.literal('episode'),
-  //   z.literal('track'),
-  // ]),
   id: z.string().optional(), // Populated if persisted
   // Only populated on client requests to the server
   originalProgram: z
@@ -119,13 +114,19 @@ export const CondensedContentProgramSchema = BaseProgramSchema.extend({
 
 export const CondensedCustomProgramSchema = BaseProgramSchema.extend({
   type: z.literal('custom'),
+  // The ID of the underlying program
   id: z.string(),
+  customShowId: z.string(),
+  index: z.number(),
   program: CondensedContentProgramSchema.optional(),
 });
 
 export const CustomProgramSchema = BaseProgramSchema.extend({
   type: z.literal('custom'),
+  // The ID of the underlying program
   id: z.string(),
+  customShowId: z.string(),
+  index: z.number(),
   program: ContentProgramSchema.optional(),
 });
 
@@ -149,7 +150,7 @@ export const ChannelProgrammingSchema = z.object({
 
 export const CondensedChannelProgramSchema = z.discriminatedUnion('type', [
   CondensedContentProgramSchema,
-  CustomProgramSchema,
+  CondensedCustomProgramSchema,
   RedirectProgramSchema,
   FlexProgramSchema,
 ]);

@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "build": "tsc --noEmit",
+    "build-dev": "tsc --noEmit --watch",
     "bundle": "vite build",
-    "buildw": "nodemon -e ts,json,tsx,js,yaml --watch src --ignore dist/ -x tsc --noEmit --project tsconfig.build.json",
     "dev": "vite",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",

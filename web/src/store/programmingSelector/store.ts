@@ -1,4 +1,4 @@
-import { ContentProgram, CustomShow, PlexServerSettings } from '@tunarr/types';
+import { CustomProgram, CustomShow, PlexServerSettings } from '@tunarr/types';
 import { PlexLibrarySection, PlexMedia } from '@tunarr/types/plex';
 import { StateCreator } from 'zustand';
 
@@ -14,7 +14,7 @@ export type PlexSelectedMedia = {
 export type CustomShowSelectedMedia = {
   type: 'custom-show';
   customShowId: string;
-  program: ContentProgram;
+  program: CustomProgram;
 };
 
 export type SelectedMedia = PlexSelectedMedia | CustomShowSelectedMedia;

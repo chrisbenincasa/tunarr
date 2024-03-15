@@ -11,26 +11,23 @@ import {
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemIcon from '@mui/material/ListItemIcon';
+import { forProgramType } from '@tunarr/shared/util';
 import { isPlexDirectory, isPlexSeason, isPlexShow } from '@tunarr/types/plex';
 import { chain, first, groupBy, mapValues } from 'lodash-es';
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  forProgramType,
-  forSelectedMediaType,
-  unwrapNil,
-} from '../../helpers/util.ts';
-import { EnrichedPlexMedia } from '../../hooks/plexHooks.ts';
+import { forSelectedMediaType, unwrapNil } from '../../helpers/util.ts';
 import { useCustomShows } from '../../hooks/useCustomShows.ts';
 import useStore from '../../store/index.ts';
 import {
   clearSelectedMedia,
   removeSelectedMedia,
 } from '../../store/programmingSelector/actions.ts';
+import { AddedMedia } from '../../types/index.ts';
 import AddSelectedMediaButton from './AddSelectedMediaButton.tsx';
 
 type Props = {
-  onAddSelectedMedia: (media: EnrichedPlexMedia[]) => void;
+  onAddSelectedMedia: (media: AddedMedia[]) => void;
 };
 
 export default function SelectedProgrammingList({ onAddSelectedMedia }: Props) {

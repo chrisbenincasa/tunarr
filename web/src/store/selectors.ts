@@ -1,5 +1,5 @@
 import { CondensedChannelProgram, ContentProgram } from '@tunarr/types';
-import { chain, isUndefined } from 'lodash-es';
+import { chain, isNil, isUndefined } from 'lodash-es';
 import { UIChannelProgram, UIIndex } from '../types/index.ts';
 import useStore, { State } from './index.ts';
 
@@ -11,24 +11,35 @@ const materializeProgramList = (
   let offset = 0;
   return chain(programList)
     .map((p) => {
-      if (p.type === 'content' && !isUndefined(p.id) && programLookup[p.id]) {
-        const content: UIChannelProgram = {
+      let content: UIChannelProgram | null = null;
+      if (p.type === 'content') {
+        if (!isUndefined(p.id) && !isNil(programLookup[p.id])) {
+          content = {
+            ...p,
+            ...programLookup[p.id],
+            startTimeOffset: offset,
+          };
+        }
+      } else if (p.type === 'custom') {
+        if (!isNil(programLookup[p.id])) {
+          content = {
+            ...p,
+            ...programLookup[p.id],
+            startTimeOffset: offset,
+          };
+        }
+      } else {
+        content = {
           ...p,
-          ...programLookup[p.id],
           startTimeOffset: offset,
         };
-        offset += content.duration;
-        return content;
-      } else if (p.type !== 'content') {
-        const item: UIChannelProgram = {
-          ...p,
-          startTimeOffset: offset,
-        };
-        offset += item.duration;
-        return item;
       }
 
-      return null;
+      if (content) {
+        offset += content.duration;
+      }
+
+      return content;
     })
     .compact()
     .value();
