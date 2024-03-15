@@ -27,7 +27,7 @@ Tunarr has the following goals:
 
 - Modernize the stack, both backend and frontend
 - Provide an migration path for existing users
-- Stabilize the program, fix bugs
+- Stabilize the program, fix bugs, and improve performance
 - Modernize and "prettify" the Web UI
 - And of course, **Add a ton great new features!**
 
