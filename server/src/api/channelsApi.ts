@@ -17,11 +17,11 @@ import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
 import { compact, isError, isNil, omit, sortBy } from 'lodash-es';
 import z from 'zod';
-import createLogger from '../../logger.js';
-import { scheduledJobsById } from '../../services/scheduler.js';
-import { UpdateXmlTvTask } from '../../tasks/updateXmlTvTask.js';
-import { RouterPluginAsyncCallback } from '../../types/serverType.js';
-import { attempt, mapAsyncSeq } from '../../util.js';
+import createLogger from '../logger.js';
+import { scheduledJobsById } from '../services/scheduler.js';
+import { UpdateXmlTvTask } from '../tasks/updateXmlTvTask.js';
+import { RouterPluginAsyncCallback } from '../types/serverType.js';
+import { attempt, mapAsyncSeq } from '../util.js';
 
 dayjs.extend(duration);
 
@@ -34,7 +34,7 @@ const ChannelLineupQuery = z.object({
 });
 
 // eslint-disable-next-line @typescript-eslint/require-await
-export const channelsApiV2: RouterPluginAsyncCallback = async (fastify) => {
+export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
   fastify.addHook('onError', (req, _, error, done) => {
     logger.error('%s %s %O', req.routerMethod, req.routeOptions.url, error);
     done();

@@ -1,4 +1,5 @@
 import {
+  BaseErrorSchema,
   BasicIdParamSchema,
   InsertPlexServerRequestSchema,
   UpdatePlexServerRequestSchema,
@@ -7,11 +8,11 @@ import { PlexServerSettingsSchema } from '@tunarr/types/schemas';
 import { isError, isNil, isObject } from 'lodash-es';
 import z from 'zod';
 import createLogger from '../logger.js';
-import { Plex } from '../plex.js';
+import { Plex, PlexApiFactory } from '../plex.js';
 import { scheduledJobsById } from '../services/scheduler.js';
 import { UpdateXmlTvTask } from '../tasks/updateXmlTvTask.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
-import { firstDefined } from '../util.js';
+import { firstDefined, wait } from '../util.js';
 
 const logger = createLogger(import.meta);
 
@@ -288,6 +289,50 @@ export const plexServersRouter: RouterPluginAsyncCallback = async (
           level: 'error',
         });
         return res.status(400).send('Could not add plex server.');
+      }
+    },
+  );
+
+  fastify.get(
+    '/api/plex/status',
+    {
+      schema: {
+        querystring: z.object({
+          serverName: z.string(),
+        }),
+        response: {
+          200: z.object({
+            healthy: z.boolean(),
+          }),
+          404: BaseErrorSchema,
+          500: BaseErrorSchema,
+        },
+      },
+    },
+    async (req, res) => {
+      try {
+        const server = await req.entityManager
+          .repo(PlexServerSettings)
+          .findOne({ name: req.query.serverName });
+
+        if (isNil(server)) {
+          return res.status(404).send({ message: 'Plex server not found.' });
+        }
+
+        const plex = PlexApiFactory.get(server);
+
+        const s = await Promise.race([
+          plex.checkServerStatus().then((res) => res === 1),
+          wait(15000).then(() => false),
+        ]);
+
+        return res.send({
+          healthy: s,
+        });
+      } catch (err) {
+        return res.status(500).send({
+          message: isError(err) ? err.message : 'Unknown error occurred',
+        });
       }
     },
   );

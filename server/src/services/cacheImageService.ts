@@ -60,28 +60,6 @@ export class CacheImageService {
     }
   }
 
-  /**
-   * Routers exported to use on express.use() function.
-   * Use on api routers, like `{host}/api/cache/images`
-   *
-   * `DELETE /` - Clear all files on .dizquetv/cache/images
-   */
-  apiRouters(): FastifyPluginCallback {
-    return (fastify, _, done) => {
-      fastify.delete('/', async (_req, res) => {
-        try {
-          await this.clearCache();
-          return res.status(200).send({ msg: 'Cache Image are Cleared' });
-        } catch (error) {
-          logger.error('Error deleting cached images', error);
-          return res.status(500).send('error');
-        }
-      });
-
-      done();
-    };
-  }
-
   private async requestImageAndStore(
     cachedImage: CachedImage,
     repo: EntityRepository<CachedImage>,

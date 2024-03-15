@@ -21,12 +21,9 @@ import path, { dirname } from 'path';
 import { ffmpegSettingsRouter } from './api/ffmpegSettingsApi.js';
 import { guideRouter } from './api/guideApi.js';
 import { hdhrSettingsRouter } from './api/hdhrSettingsApi.js';
-import { miscRouter } from './api/index.js';
+import { apiRouter } from './api/index.js';
 import { plexServersRouter } from './api/plexServersApi.js';
 import { plexSettingsRouter } from './api/plexSettingsApi.js';
-import { schedulerRouter } from './api/schedulerApi.js';
-import { debugApi } from './api/v2/debugApi.js';
-import registerV2Routes from './api/v2/index.js';
 import { xmlTvSettingsRouter } from './api/xmltvSettingsApi.js';
 import { EntityManager, initOrm } from './dao/dataSource.js';
 import { migrateFromLegacyDb } from './dao/legacyDbMigration.js';
@@ -121,6 +118,10 @@ export async function initServer(opts: ServerOptions) {
     .setSerializerCompiler(serializerCompiler)
     .withTypeProvider<ZodTypeProvider>();
 
+  if (serverOptions().printRoutes) {
+    await app.register(fastifyPrintRoutes);
+  }
+
   await app
     .register(fastifySwagger, {
       openapi: {
@@ -155,10 +156,6 @@ export async function initServer(opts: ServerOptions) {
         done();
       }),
     );
-
-  if (serverOptions().printRoutes) {
-    await app.register(fastifyPrintRoutes);
-  }
 
   app.use(
     morgan(':method :url :status :res[content-length] - :response-time ms', {
@@ -210,6 +207,16 @@ export async function initServer(opts: ServerOptions) {
           return res.sendFile(req.params.hash);
         },
       );
+
+      f.delete('/api/cache/images', async (req, res) => {
+        try {
+          await req.serverCtx.cacheImageService.clearCache();
+          return res.status(200).send({ msg: 'Cache Image are Cleared' });
+        } catch (error) {
+          logger.error('Error deleting cached images', error);
+          return res.status(500).send('error');
+        }
+      });
     })
     .register(async (f) => {
       f.addHook('onError', (req, _, error, done) => {
@@ -223,13 +230,7 @@ export async function initServer(opts: ServerOptions) {
         .register(xmlTvSettingsRouter)
         .register(hdhrSettingsRouter)
         .register(guideRouter)
-        .register(miscRouter)
-        .register(schedulerRouter)
-        .register(debugApi);
-    })
-    .register(registerV2Routes, { prefix: '/api/v2' })
-    .register(ctx.cacheImageService.apiRouters(), {
-      prefix: '/api/cache/images',
+        .register(apiRouter, { prefix: '/api' });
     })
     .register(videoRouter)
     .register(ctx.hdhrService.createRouter())

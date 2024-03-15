@@ -2,14 +2,14 @@ import { BasicIdParamSchema } from '@tunarr/types/api';
 import { ProgramSchema } from '@tunarr/types/schemas';
 import { chunk, every, find, isNil, isUndefined, reduce } from 'lodash-es';
 import z from 'zod';
-import { getEm } from '../../dao/dataSource.js';
+import { getEm } from '../dao/dataSource.js';
 import {
   Program,
   ProgramSourceType,
   programSourceTypeFromString,
-} from '../../dao/entities/Program.js';
-import { RouterPluginAsyncCallback } from '../../types/serverType.js';
-import { flatMapAsyncSeq, groupByFunc } from '../../util.js';
+} from '../dao/entities/Program.js';
+import { RouterPluginAsyncCallback } from '../types/serverType.js';
+import { flatMapAsyncSeq, groupByFunc } from '../util.js';
 
 const LookupExternalProgrammingSchema = z.object({
   externalId: z

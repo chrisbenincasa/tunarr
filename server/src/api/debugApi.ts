@@ -3,23 +3,23 @@ import { Loaded, wrap } from '@mikro-orm/core';
 import dayjs from 'dayjs';
 import { FastifyRequest } from 'fastify';
 import { first, isNil, isUndefined, map, range } from 'lodash-es';
+import { inspect } from 'util';
 import z from 'zod';
-import { ChannelCache } from '../../channelCache.js';
-import { getEm } from '../../dao/dataSource.js';
+import { ChannelCache } from '../channelCache.js';
+import { toApiLineupItem } from '../dao/channelDb.js';
+import { getEm } from '../dao/dataSource.js';
 import {
   StreamLineupItem,
   isPlexBackedLineupItem,
-} from '../../dao/derived_types/StreamLineup.js';
-import { Channel } from '../../dao/entities/Channel.js';
-import * as helperFuncs from '../../helperFuncs.js';
-import createLogger from '../../logger.js';
-import { PlexPlayer } from '../../plexPlayer.js';
-import { PlexTranscoder } from '../../plexTranscoder.js';
-import { ContextChannel, Maybe, PlayerContext } from '../../types.js';
-import { RouterPluginAsyncCallback } from '../../types/serverType.js';
-import { binarySearchRange } from '../../util/binarySearch.js';
-import { toApiLineupItem } from '../../dao/channelDb.js';
-import { inspect } from 'util';
+} from '../dao/derived_types/StreamLineup.js';
+import { Channel } from '../dao/entities/Channel.js';
+import * as helperFuncs from '../helperFuncs.js';
+import createLogger from '../logger.js';
+import { PlexPlayer } from '../plexPlayer.js';
+import { PlexTranscoder } from '../plexTranscoder.js';
+import { ContextChannel, Maybe, PlayerContext } from '../types.js';
+import { RouterPluginAsyncCallback } from '../types/serverType.js';
+import { binarySearchRange } from '../util/binarySearch.js';
 
 const logger = createLogger(import.meta);
 
@@ -32,7 +32,7 @@ const ChannelQuerySchema = {
 // eslint-disable-next-line @typescript-eslint/require-await
 export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
   fastify.get(
-    '/api/v1/debug/plex',
+    '/debug/plex',
     { schema: ChannelQuerySchema },
     async (req, res) => {
       void res.hijack();
@@ -82,7 +82,7 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
   );
 
   fastify.get(
-    '/api/v1/debug/plex-transcoder/video-stats',
+    '/debug/plex-transcoder/video-stats',
     { schema: ChannelQuerySchema },
     async (req, res) => {
       const channel =
@@ -176,7 +176,7 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
   }
 
   fastify.get(
-    '/api/v1/debug/helpers/current_program',
+    '/debug/helpers/current_program',
     {
       schema: ChannelQuerySchema,
     },
@@ -210,7 +210,7 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
   };
 
   fastify.get(
-    '/api/v1/debug/helpers/create_guide',
+    '/debug/helpers/create_guide',
     { schema: CreateLineupSchema },
     async (req, res) => {
       const channel = await req.serverCtx.channelDB.getChannelAndPrograms(
@@ -246,7 +246,7 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
   );
 
   fastify.get(
-    '/api/v1/debug/helpers/program_at_time',
+    '/debug/helpers/program_at_time',
     {
       schema: {
         querystring: ChannelQuerySchema.querystring.extend({
@@ -307,7 +307,7 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
   );
 
   fastify.get(
-    '/api/v1/debug/helpers/create_stream_lineup',
+    '/debug/helpers/create_stream_lineup',
     {
       schema: CreateLineupSchema,
     },
@@ -353,7 +353,7 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
   };
 
   fastify.get(
-    '/api/v1/debug/helpers/random_filler',
+    '/debug/helpers/random_filler',
     {
       schema: RandomFillerSchema,
     },
