@@ -63,6 +63,7 @@ const RemoveShowsModal = ({ open, onClose }: RemoveShowsModalProps) => {
           {showList.map((title) => {
             return (
               <ListItem
+                key={title}
                 secondaryAction={
                   <Checkbox
                     edge="end"

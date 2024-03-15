@@ -4,14 +4,14 @@ import { promises as fsPromises } from 'fs';
 import { isNil } from 'lodash-es';
 import path from 'path';
 import { z } from 'zod';
-import constants from './constants.js';
-import { PlexServerSettings } from './dao/entities/PlexServerSettings.js';
-import { FFMPEGInfo } from './ffmpegInfo.js';
-import { serverOptions } from './globals.js';
-import createLogger from './logger.js';
-import { Plex } from './plex.js';
-import { scheduledJobsById } from './services/scheduler.js';
-import { RouterPluginCallback } from './types/serverType.js';
+import constants from '../constants.js';
+import { PlexServerSettings } from '../dao/entities/PlexServerSettings.js';
+import { FFMPEGInfo } from '../ffmpegInfo.js';
+import { serverOptions } from '../globals.js';
+import createLogger from '../logger.js';
+import { Plex } from '../plex.js';
+import { scheduledJobsById } from '../services/scheduler.js';
+import { RouterPluginCallback } from '../types/serverType.js';
 
 const logger = createLogger(import.meta);
 
@@ -143,8 +143,13 @@ export const miscRouter: RouterPluginCallback = (fastify, _opts, done) => {
     }
   });
 
-  fastify.get<{ Querystring: { name: string; path: string } }>(
+  fastify.get(
     '/api/plex',
+    {
+      schema: {
+        querystring: z.object({ name: z.string(), path: z.string() }),
+      },
+    },
     async (req, res) => {
       const server = await req.entityManager
         .repo(PlexServerSettings)

@@ -1,6 +1,7 @@
 import {
   Delete as DeleteIcon,
   DragIndicator as DragIndicatorIcon,
+  InfoOutlined,
 } from '@mui/icons-material';
 import { ListItemIcon, Typography } from '@mui/material';
 import Box from '@mui/material/Box';
@@ -8,10 +9,11 @@ import IconButton from '@mui/material/IconButton';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
+import { forProgramType } from '@tunarr/shared/util';
 import { ChannelProgram } from '@tunarr/types';
 import dayjs from 'dayjs';
-import { findIndex, map } from 'lodash-es';
-import { CSSProperties, useCallback } from 'react';
+import { findIndex, isUndefined, map } from 'lodash-es';
+import { CSSProperties, useCallback, useState } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
 import {
   FixedSizeList,
@@ -26,6 +28,7 @@ import {
 import useStore, { State } from '../../store/index.ts';
 import { materializedProgramListSelector } from '../../store/selectors.ts';
 import { UIChannelProgram } from '../../types/index.ts';
+import ProgramDetailsDialog from '../ProgramDetailsDialog.tsx';
 
 type Props = {
   // The caller can pass the list of programs to render, if they don't
@@ -52,6 +55,7 @@ type ListItemProps = {
   moveProgram: (id: number, to: number) => void;
   findProgram: (id: number) => { index: number };
   enableDrag: boolean;
+  onInfoClicked: (program: ChannelProgram) => void;
 };
 
 type ListDragItem = {
@@ -59,6 +63,27 @@ type ListDragItem = {
   id: number;
   program: ChannelProgram;
 };
+
+const programListItemTitleFormatter = (() => {
+  const itemTitle = forProgramType({
+    custom: 'Custom Show',
+    redirect: (p) => `Redirect to Channel ${p.channel}`,
+    flex: 'Flex',
+    content: (p) => {
+      if (p.episodeTitle) {
+        return `${p.title} - ${p.episodeTitle}`;
+      } else {
+        return p.title;
+      }
+    },
+  });
+
+  return (program: ChannelProgram) => {
+    const title = itemTitle(program);
+    const dur = dayjs.duration({ milliseconds: program.duration }).humanize();
+    return `${title} - (${dur})`;
+  };
+})();
 
 const ProgramListItem = ({
   style,
@@ -68,6 +93,7 @@ const ProgramListItem = ({
   moveProgram,
   findProgram,
   enableDrag,
+  onInfoClicked,
 }: ListItemProps) => {
   const [{ isDragging }, drag] = useDrag(
     () => ({
@@ -103,31 +129,15 @@ const ProgramListItem = ({
     timeStyle: 'short',
   }).format(startTimeDate);
 
+  const handleInfoButtonClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    console.log(program);
+    onInfoClicked(program);
+  };
+
   // const dayBoundary = startTimes[idx + 1].isAfter(startTimes[idx], 'day');
-  let title: string;
 
-  switch (program.type) {
-    case 'custom':
-      title = 'Custom Show';
-      break;
-    case 'redirect':
-      title = 'redirect...';
-      break;
-    case 'flex':
-      title = 'Flex';
-      break;
-    case 'content':
-      if (program.episodeTitle) {
-        title = `${program.title} - ${program.episodeTitle}`;
-      } else {
-        title = program.title;
-      }
-      break;
-  }
-
-  const dur = dayjs.duration({ milliseconds: program.duration }).humanize();
-
-  title = `${startTime} - ${title} -  (${dur})`;
+  const title = `${startTime} - ${programListItemTitleFormatter(program)}`;
 
   return (
     <ListItem
@@ -171,7 +181,14 @@ const ProgramListItem = ({
           <ListItemIcon>
             <DragIndicatorIcon />
           </ListItemIcon>
-
+          {program.type === 'content' && (
+            <ListItemIcon
+              onClick={handleInfoButtonClick}
+              sx={{ cursor: 'pointer' }}
+            >
+              <InfoOutlined />
+            </ListItemIcon>
+          )}
           <ListItemText
             primary={title}
             sx={{
@@ -194,6 +211,9 @@ export default function ChannelProgrammingList({
   const channel = useStore((s) => s.channelEditor.currentEntity);
   const storeProgramList = useStore(programListSelector!);
   const programList = passedProgramList ?? storeProgramList;
+  const [focusedProgramDetails, setFocusedProgramDetails] = useState<
+    ChannelProgram | undefined
+  >();
 
   const findProgram = useCallback(
     (originalIndex: number) => {
@@ -218,6 +238,13 @@ export default function ChannelProgrammingList({
     [passedProgramList],
   );
 
+  const openDetailsDialog = useCallback(
+    (program: ChannelProgram) => {
+      setFocusedProgramDetails(program);
+    },
+    [setFocusedProgramDetails],
+  );
+
   const [, drop] = useDrop(() => ({ accept: 'Program' }));
 
   const renderProgram = (idx: number, style?: CSSProperties) => {
@@ -234,6 +261,7 @@ export default function ChannelProgrammingList({
         moveProgram={moveProgram}
         findProgram={findProgram}
         enableDrag={!!enableDnd}
+        onInfoClicked={openDetailsDialog}
       />
     );
   };
@@ -277,24 +305,29 @@ export default function ChannelProgrammingList({
       );
     }
 
-    if (virtualListProps) {
-      return (
-        <FixedSizeList
-          {...virtualListProps}
-          itemCount={programList.length}
-          itemKey={itemKey}
-          itemData={programList}
-        >
-          {ProgramRow}
-        </FixedSizeList>
-      );
-    } else {
-      return (
-        <Box ref={drop} sx={{ flex: 1, maxHeight: 400, overflowY: 'auto' }}>
-          <List dense>{renderPrograms()}</List>
-        </Box>
-      );
-    }
+    return (
+      <>
+        {virtualListProps ? (
+          <FixedSizeList
+            {...virtualListProps}
+            itemCount={programList.length}
+            itemKey={itemKey}
+            itemData={programList}
+          >
+            {ProgramRow}
+          </FixedSizeList>
+        ) : (
+          <Box ref={drop} sx={{ flex: 1, maxHeight: 400, overflowY: 'auto' }}>
+            <List dense>{renderPrograms()}</List>
+          </Box>
+        )}
+        <ProgramDetailsDialog
+          open={!isUndefined(focusedProgramDetails)}
+          onClose={() => setFocusedProgramDetails(undefined)}
+          program={focusedProgramDetails}
+        />
+      </>
+    );
   };
 
   return <Box display="flex">{renderList()}</Box>;
