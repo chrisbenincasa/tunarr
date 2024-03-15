@@ -1,43 +1,51 @@
 # Tunarr
 
-Create live TV channel streams from media on your Plex servers.
+Create live TV channels from media on your Plex servers, and more!
 
-This is a fork of [**dizqueTV**](https://github.com/vexorian/dizquetv) (which in itself was a fork of other projects!). We have the following goals:
+Configure your channels, programs, commercials, and settings using the Tunarr web UI.
+
+Access your channels by adding the spoofed Tunarr HDHomerun tuner to Plex, Jellyfin, or Emby. Or utilize the m3u Url with any 3rd party IPTV player app.
+
+## Disclaimer
+
+- ⚠️ Tunarr is under **very active** development.
+- ⚠️ Expect bugs and breaking changes!
+- ⚠️ **At this point, we do NOT recommend replacing dizqueTV with Tunarr!**
+  - If you would like to try Tunarr, make sure to use a copy of your `.dizquetv` database folder!
+
+## What is this?
+
+Tunarr is a fork / rewrite / rebrand of [**dizqueTV**](https://github.com/vexorian/dizquetv) (which in itself was a fork of other projects!). This project was born out of both a love for TV and an appreciation for the work put into dizqueTV and its predecessors.
+
+Tunarr has the following goals:
 
 - Modernize the stack, both backend and frontend
 - Provide an migration path for existing users
+- Stabilize the program, fix bugs
 - Modernize and "prettify" the Web UI
-- Minimize breaking changes
-- **Add great new features**
-
-<img src="https://raw.githubusercontent.com/chrisbenincasa/tunarr/main/resources/dizquetv.png" width="200">
-
-Configure your channels, programs, commercials and settings using the Tunarr web UI.
-
-Access your channels by adding the spoofed Tunarr HDHomerun tuner to Plex, Jellyfin or emby or utilize the M3U Url with any 3rd party IPTV player app.
-
-EPG (Guide Information) data is stored to `.tunarr/xmltv.xml`
+- And of course, **Add a ton great new features!**
 
 ## Features
 
-- A wide variety of options for the clients where you can play the TV channels, since it both spoofs a HDHR tuner and a IPTV channel list.
+- "Spoofing" HDHR tuner and a IPTV channel list, providing a large amount of flexibility
 - Ease of setup for xteve and Plex playback by mocking a HDHR server.
 - Configure your channels once, and play them just the same in any of the other devices.
 - Customize your channels and what they play. Make them display their logo while they play. Play filler content (&quot;commercials&quot;, music videos, prerolls, channel branding videos) at specific times to pad time.
 - Docker image and prepackage binaries for Windows, Linux and Mac.
-- Supports nvidia for hardware encoding, including in docker.
+- Supports Nvidia for hardware encoding, including in Docker.
 - Select media (desired programs and commercials) across multiple Plex servers
 - Includes a WEB TV Guide where you can even play channels in your desktop by using your local media player.
 - Subtitle support.
 - Auto deinterlace any Plex media not marked `"scanType": "progressive"`
 - Can be configured to completely force Direct play, if you are ready for the caveats.
+- **NEW** Stream your channels directly in the browser using HLS (and soon [MPEG-DASH](https://github.com/chrisbenincasa/tunarr/issues/129))
+- **NEW** Dark mode!
 
 ## Limitations
 
 - If you want to play the TV channels in Plex using the spoofed HDHR, Plex pass is required.
-- Tunarr does not currently watch your Plex server for media updates/changes. You must manually remove and re-add your programs for any changes to take effect. Same goes for Plex server changes (changing IP, port, etc).. You&apos;ll have to update the server settings manually in that case.
+- Like dizqueTV, Tunarr does not currently watch your Plex server for media updates/changes. You must manually remove and re-add your programs for any changes to take effect. Same goes for Plex server changes (changing IP, port, etc).. You&apos;ll have to update the server settings manually in that case. **NOTE** This feature is actively under development!
 - Most players (including Plex) will break after switching episodes if video / audio format is too different. Tunarr can be configured to use ffmpeg transcoding to prevent this, but that costs resources.
-- If you configure Plex DVR, it will always be recording and transcoding the channel&apos;s contents.
 
 ## Releases
 
@@ -45,25 +53,20 @@ EPG (Guide Information) data is stored to `.tunarr/xmltv.xml`
 
 ## Wiki
 
-- For setup instructions, check [the wiki](https://github.com/vexorian/dizquetv/wiki)
+- For setup instructions, check [the wiki](https://github.com/chrisbenincasa/Tunarr/wiki)
 
 ## Development
 
-[pnpm](https://pnpm.io/) is used for package management and development
+[pnpm](https://pnpm.io) and [turbo](https://turbo.build/) are used for package management and development. More details on the development environment, setup, and contributing to come!
 
 ### Start dev servers
 
 Run from the root of the project:
 
 ```
-pnpm run --parallel dev
+pnpm turbo dev
 ```
-
-## Contribute
-
-- Pull requests welcome but please read the [Code of Conduct](CODE_OF_CONDUCT.md) and the [Pull Request Template](pull_request_template.md) first.
-<!-- - Tip Jar: https://buymeacoffee.com/vexorian -->
 
 ## License
 
-- The original dizqueTV is released under zlib license (c) 2020 Victor Hugo Soliz Kuncar: we've kept this
+- The original dizqueTV is released under zlib license (c) 2020 Victor Hugo Soliz Kuncar: we've kept this.
