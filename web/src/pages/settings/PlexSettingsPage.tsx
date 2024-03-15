@@ -313,6 +313,7 @@ export default function PlexSettingsPage() {
       });
     },
     onSuccess: () => {
+      setCurrentEditRow(null);
       return queryClient.invalidateQueries({
         queryKey: ['settings', 'plex-servers'],
       });

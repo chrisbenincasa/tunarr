@@ -74,6 +74,7 @@ export class PlexServerDB {
 
     em.assign(s, {
       name: server.name,
+      uri: server.uri,
       accessToken: server.accessToken,
       sendGuideUpdates: server.sendGuideUpdates ?? false,
       sendChannelUpdates: server.sendChannelUpdates ?? false,
