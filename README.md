@@ -10,6 +10,7 @@ Access your channels by adding the spoofed Tunarr HDHomerun tuner to Plex, Jelly
 
 - ⚠️ Tunarr is under **very active** development.
 - ⚠️ Expect bugs and breaking changes!
+- ⚠️ We are certain there are bugs, given the scale of this rewrite.
 - ⚠️ **At this point, we do NOT recommend replacing dizqueTV with Tunarr!**
   - If you would like to try Tunarr, make sure to use a copy of your `.dizquetv` database folder!
 
