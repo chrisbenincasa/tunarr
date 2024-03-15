@@ -6,6 +6,11 @@ Configure your channels, programs, commercials, and settings using the Tunarr we
 
 Access your channels by adding the spoofed Tunarr HDHomerun tuner to Plex, Jellyfin, or Emby. Or utilize the m3u Url with any 3rd party IPTV player app.
 
+<p align="center">
+<img src="./design/tunarr-guide.png">
+<img src="./design/tunarr-channels.png">
+</p>
+
 ## Disclaimer
 
 - ⚠️ Tunarr is under **very active** development.
