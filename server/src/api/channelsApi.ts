@@ -45,6 +45,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     {
       schema: {
         operationId: 'getChannelsV2',
+        tags: ['Channels'],
         response: {
           200: z.array(ChannelSchema),
           500: z.literal('error'),
@@ -70,6 +71,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     {
       schema: {
         operationId: 'getChannelsByNumberV2',
+        tags: ['Channels'],
         params: BasicIdParamSchema,
         response: {
           200: ChannelSchema,
@@ -101,6 +103,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     {
       schema: {
         operationId: 'createChannelV2',
+        tags: ['Channels'],
         body: SaveChannelRequestSchema,
         response: {
           201: z.object({ id: z.string() }),
@@ -124,6 +127,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     {
       schema: {
         body: SaveChannelRequestSchema,
+        tags: ['Channels'],
         params: z.object({ id: z.string() }),
         response: {
           200: ChannelSchema,
@@ -160,6 +164,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     {
       schema: {
         params: z.object({ id: z.string() }),
+        tags: ['Channels'],
         response: {
           200: z.void(),
           404: z.void(),
@@ -194,6 +199,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     {
       schema: {
         params: BasicIdParamSchema,
+        tags: ['Channels'],
         response: {
           200: z.array(ProgramSchema).readonly(),
           404: z.void(),
@@ -214,7 +220,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
           return res.status(404).send();
         }
       } catch (err) {
-        logger.error(req.routeOptions.url, err);
+        logger.error('%s, %s', req.routeOptions.url, err);
         return res.status(500).send();
       }
     },
@@ -225,6 +231,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     {
       schema: {
         params: BasicIdParamSchema.merge(BasicPagingSchema),
+        tags: ['Channels'],
         response: {
           200: CondensedChannelProgrammingSchema,
           404: z.object({ error: z.string() }),
@@ -261,6 +268,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     {
       schema: {
         params: BasicIdParamSchema,
+        tags: ['Channels'],
         body: UpdateChannelProgrammingRequestSchema,
         response: {
           200: CondensedChannelProgrammingSchema,
@@ -322,6 +330,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     {
       schema: {
         querystring: ChannelLineupQuery,
+        tags: ['Channels'],
         response: {
           200: z.array(ChannelLineupSchema),
         },
@@ -356,6 +365,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     {
       schema: {
         params: BasicIdParamSchema,
+        tags: ['Channels'],
         querystring: ChannelLineupQuery,
         response: {
           200: ChannelLineupSchema,
@@ -398,6 +408,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     '/channels/schedule-time-slots',
     {
       schema: {
+        tags: ['Channels'],
         body: z.object({
           schedule: TimeSlotScheduleSchema,
           programs: z.array(ChannelProgramSchema),

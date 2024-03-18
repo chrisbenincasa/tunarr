@@ -1,7 +1,7 @@
 import cors from '@fastify/cors';
 import middie from '@fastify/middie';
 import fpStatic from '@fastify/static';
-import fastify from 'fastify';
+import fastify, { FastifySchema } from 'fastify';
 import fp from 'fastify-plugin';
 // import fastifyPrintRoutes from 'fastify-print-routes';
 import fastifySwagger from '@fastify/swagger';
@@ -37,6 +37,7 @@ import { UpdateXmlTvTask } from './tasks/updateXmlTvTask.js';
 import { ServerOptions } from './types.js';
 import { filename, wait } from './util.js';
 import { videoRouter } from './video.js';
+import { isUndefined } from 'lodash-es';
 
 const logger = createLogger(import.meta);
 const currentDirectory = dirname(filename(import.meta.url));
@@ -126,11 +127,16 @@ export async function initServer(opts: ServerOptions) {
     .register(fastifySwagger, {
       openapi: {
         info: {
-          title: 'Tunarr API',
-          description: 'test',
+          title: 'Tunarr',
+          description: 'Tunarr API',
           version: '1.0.0',
         },
         servers: [],
+        tags: [
+          {
+            name: 'Channels',
+          },
+        ],
       },
       transform: jsonSchemaTransform,
     })
@@ -172,22 +178,38 @@ export async function initServer(opts: ServerOptions) {
 
   // API Routers
   await app
-    .register(fpStatic, {
-      root: path.join(currentDirectory, 'resources', 'images'),
-      prefix: '/images',
+    .register((f, _, done) => {
+      f.addHook('onRoute', (route) => {
+        if (!route.config) {
+          route.config = {};
+        }
+        route.config.swaggerTransform = ({ schema, url }) => {
+          const transformedSchema: FastifySchema = isUndefined(schema)
+            ? {}
+            : { ...schema };
+          transformedSchema.hide = true;
+          return { schema: transformedSchema, url };
+        };
+      });
+      f.register(fpStatic, {
+        root: path.join(currentDirectory, 'resources', 'images'),
+        prefix: '/images',
+      })
+        .get('/favicon.svg', async (_, res) => {
+          return res.sendFile(
+            'favicon.svg',
+            path.join(currentDirectory, 'resources', 'images'),
+          );
+        })
+        .get('/favicon.ico', async (_, res) => {
+          return res.sendFile(
+            'favicon.ico',
+            path.join(currentDirectory, 'resources', 'images'),
+          );
+        });
+      done();
     })
-    .get('/favicon.svg', async (_, res) => {
-      return res.sendFile(
-        'favicon.svg',
-        path.join(currentDirectory, 'resources', 'images'),
-      );
-    })
-    .get('/favicon.ico', async (_, res) => {
-      return res.sendFile(
-        'favicon.ico',
-        path.join(currentDirectory, 'resources', 'images'),
-      );
-    })
+
     .register(async (f) => {
       await f.register(fpStatic, {
         root: path.join(opts.database, 'cache', 'images'),
