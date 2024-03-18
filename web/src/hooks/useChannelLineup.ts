@@ -10,7 +10,7 @@ export const channelProgrammingQuery = (id: string, enabled: boolean) => {
       CondensedChannelProgramming
     >,
     queryFn: async () =>
-      apiClient.get('/api/v2/channels/:id/programming', {
+      apiClient.get('/api/channels/:id/programming', {
         params: { id },
       }),
     enabled: id.length > 0 && enabled,

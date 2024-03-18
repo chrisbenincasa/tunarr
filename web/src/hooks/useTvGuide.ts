@@ -12,7 +12,7 @@ const lineupQueryOpts = (
 ) => ({
   queryKey: ['channels', channelId, 'guide', dateRangeQueryKey(range)],
   queryFn: async () => {
-    return apiClient.get('/api/v2/channels/:id/lineup', {
+    return apiClient.get('/api/channels/:id/lineup', {
       params: { id: channelId },
       queries: {
         from: range.from.toISOString(),
@@ -28,7 +28,7 @@ const allLineupsQueryOpts = (range: {
 }): UseQueryOptions<ChannelLineup[]> => ({
   queryKey: ['channels', 'all', 'guide', dateRangeQueryKey(range)],
   queryFn: async () => {
-    return apiClient.get('/api/v2/channels/all/lineups', {
+    return apiClient.get('/api/channels/all/lineups', {
       queries: {
         from: range.from.toISOString(),
         to: range.to.toISOString(),

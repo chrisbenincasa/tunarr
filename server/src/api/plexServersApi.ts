@@ -13,6 +13,7 @@ import { scheduledJobsById } from '../services/scheduler.js';
 import { UpdateXmlTvTask } from '../tasks/updateXmlTvTask.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { firstDefined, wait } from '../util.js';
+import { PlexServerSettings } from '../dao/entities/PlexServerSettings.js';
 
 const logger = createLogger(import.meta);
 

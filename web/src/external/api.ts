@@ -43,13 +43,13 @@ export const api = makeApi([
   },
   {
     method: 'get',
-    path: '/api/v2/channels',
+    path: '/api/channels',
     response: z.array(ChannelSchema),
   },
   {
     method: 'post',
     parameters: parametersBuilder().addBody(SaveChannelRequestSchema).build(),
-    path: '/api/v2/channels',
+    path: '/api/channels',
     alias: 'createChannel',
     status: 201,
     response: z.object({ id: z.string() }),
@@ -60,32 +60,32 @@ export const api = makeApi([
       .addBody(SaveChannelRequestSchema)
       .addPath('id', z.string())
       .build(),
-    path: '/api/v2/channels/:id',
+    path: '/api/channels/:id',
     response: ChannelSchema,
     alias: 'updateChannel',
   },
   {
     method: 'delete',
     parameters: parametersBuilder().addPath('id', z.string()).build(),
-    path: '/api/v2/channels/:id',
+    path: '/api/channels/:id',
     response: z.void(),
     alias: 'deleteChannel',
   },
   {
     method: 'get',
-    path: '/api/v2/channels/:id',
+    path: '/api/channels/:id',
     parameters: parametersBuilder().addPath('id', z.string()).build(),
     response: ChannelSchema,
   },
   {
     method: 'get',
-    path: '/api/v2/channels/:id/programming',
+    path: '/api/channels/:id/programming',
     parameters: parametersBuilder().addPath('id', z.string()).build(),
     response: CondensedChannelProgrammingSchema,
   },
   {
     method: 'post',
-    path: '/api/v2/channels/:id/programming',
+    path: '/api/channels/:id/programming',
     requestFormat: 'json',
     parameters: parametersBuilder()
       .addPath('id', z.string())
@@ -95,14 +95,14 @@ export const api = makeApi([
   },
   {
     method: 'get',
-    path: '/api/v2/channels/:id/lineup',
+    path: '/api/channels/:id/lineup',
     response: ChannelLineupSchema,
     parameters: parametersBuilder().addPath('id', z.string()).build(),
     alias: 'getChannelLineup',
   },
   {
     method: 'get',
-    path: '/api/v2/channels/all/lineups',
+    path: '/api/channels/all/lineups',
     response: z.array(ChannelLineupSchema),
     parameters: parametersBuilder()
       .addQueries({
@@ -114,7 +114,7 @@ export const api = makeApi([
   },
   {
     method: 'post',
-    path: '/api/v2/programming/batch/lookup',
+    path: '/api/programming/batch/lookup',
     alias: 'batchGetProgramsByExternalIds',
     parameters: parametersBuilder()
       .addBody(BatchLookupExternalProgrammingSchema)
@@ -123,13 +123,13 @@ export const api = makeApi([
   },
   {
     method: 'get',
-    path: '/api/v2/custom-shows',
+    path: '/api/custom-shows',
     alias: 'getCustomShows',
     response: z.array(CustomShowSchema),
   },
   {
     method: 'get',
-    path: '/api/v2/custom-shows/:id',
+    path: '/api/custom-shows/:id',
     alias: 'getCustomShow',
     response: CustomShowSchema,
     parameters: parametersBuilder()
@@ -140,7 +140,7 @@ export const api = makeApi([
   },
   {
     method: 'delete',
-    path: '/api/v2/custom-shows/:id',
+    path: '/api/custom-shows/:id',
     alias: 'deleteCustomShow',
     response: z.object({ id: z.string() }),
     parameters: parametersBuilder()
@@ -151,7 +151,7 @@ export const api = makeApi([
   },
   {
     method: 'post',
-    path: '/api/v2/custom-shows',
+    path: '/api/custom-shows',
     alias: 'createCustomShow',
     status: 201,
     response: z.object({ id: z.string() }),
@@ -161,7 +161,7 @@ export const api = makeApi([
   },
   {
     method: 'get',
-    path: '/api/v2/custom-shows/:id/programs',
+    path: '/api/custom-shows/:id/programs',
     alias: 'getCustomShowPrograms',
     response: z.array(CustomProgramSchema),
     parameters: parametersBuilder()
@@ -184,13 +184,13 @@ export const api = makeApi([
   },
   {
     method: 'get',
-    path: '/api/v2/jobs',
+    path: '/api/jobs',
     alias: 'getTasks',
     response: z.array(TaskSchema),
   },
   {
     method: 'post',
-    path: '/api/v2/jobs/:id/run',
+    path: '/api/jobs/:id/run',
     alias: 'runTask',
     parameters: parametersBuilder()
       .addPaths({
@@ -209,7 +209,7 @@ export const api = makeApi([
   },
   {
     method: 'get',
-    path: '/api/v2/filler-lists/:id',
+    path: '/api/filler-lists/:id',
     alias: 'getFillerList',
     response: FillerListSchema,
     errors: makeErrors([
@@ -222,7 +222,7 @@ export const api = makeApi([
   },
   {
     method: 'get',
-    path: '/api/v2/filler-lists/:id/programs',
+    path: '/api/filler-lists/:id/programs',
     alias: 'getFillerListPrograms',
     response: FillerListProgrammingSchema,
     errors: makeErrors([
@@ -235,13 +235,13 @@ export const api = makeApi([
   },
   {
     method: 'get',
-    path: '/api/v2/filler-lists',
+    path: '/api/filler-lists',
     alias: 'getFillerLists',
     response: z.array(FillerListSchema),
   },
   {
     method: 'post',
-    path: '/api/v2/filler-lists',
+    path: '/api/filler-lists',
     alias: 'createFillerList',
     parameters: parametersBuilder()
       .addBody(CreateFillerListRequestSchema)
@@ -251,14 +251,14 @@ export const api = makeApi([
   },
   {
     method: 'delete',
-    path: '/api/v2/filler-lists/:id',
+    path: '/api/filler-lists/:id',
     alias: 'deleteFillerList',
     parameters: parametersBuilder().addPath('id', z.string()).build(),
     response: z.void(),
   },
   {
     method: 'put',
-    path: '/api/v2/filler-lists/:id',
+    path: '/api/filler-lists/:id',
     alias: 'updateFillerList',
     parameters: parametersBuilder()
       .addPath('id', z.string())
