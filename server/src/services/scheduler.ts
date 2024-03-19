@@ -1,11 +1,11 @@
+import { once } from 'lodash-es';
 import schedule from 'node-schedule';
+import { withDb } from '../dao/dataSource.js';
+import createLogger from '../logger.js';
 import { ServerContext } from '../serverContext.js';
+import { CleanupSessionsTask } from '../tasks/cleanupSessionsTask.js';
 import { Task, TaskId } from '../tasks/task.js';
 import { UpdateXmlTvTask } from '../tasks/updateXmlTvTask.js';
-import createLogger from '../logger.js';
-import { withDb } from '../dao/dataSource.js';
-import { CleanupSessionsTask } from '../tasks/cleanupSessionsTask.js';
-import { once } from 'lodash-es';
 
 const logger = createLogger(import.meta);
 
@@ -93,7 +93,7 @@ export const scheduleJobs = once((serverContext: ServerContext) => {
 
   scheduledJobsById[CleanupSessionsTask.ID] = new ScheduledTask(
     CleanupSessionsTask.name,
-    minutesCrontab(1),
+    minutesCrontab(30),
     () => new CleanupSessionsTask(),
   );
 });

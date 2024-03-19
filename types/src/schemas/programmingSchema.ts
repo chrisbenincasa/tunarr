@@ -1,6 +1,10 @@
 import z from 'zod';
 import { LineupScheduleSchema } from '../api/Scheduling.js';
-import { PlexEpisodeSchema, PlexMovieSchema } from '../plex/index.js';
+import {
+  PlexEpisodeSchema,
+  PlexMovieSchema,
+  PlexMusicTrackSchema,
+} from '../plex/index.js';
 import { ChannelIconSchema } from './utilSchemas.js';
 
 export const ProgramTypeSchema = z.union([
@@ -15,6 +19,8 @@ export const ProgramTypeSchema = z.union([
 export const ExternalSourceTypeSchema = z.literal('plex');
 
 export const ProgramSchema = z.object({
+  artistName: z.string().optional(),
+  albumName: z.string().optional(),
   channel: z.string().optional(), // Redirect
   customOrder: z.number().optional(),
   customShowId: z.string().optional(),
@@ -67,26 +73,38 @@ export const RedirectProgramSchema = BaseProgramSchema.extend({
   channel: z.string(), // Channel ID
 });
 
-export const ContentProgramSchema = BaseProgramSchema.extend({
+export const CondensedContentProgramSchema = BaseProgramSchema.extend({
   type: z.literal('content'),
+  id: z.string().optional(), // Populated if persisted
+  // Only populated on client requests to the server
+  originalProgram: z
+    .discriminatedUnion('type', [
+      PlexEpisodeSchema,
+      PlexMovieSchema,
+      PlexMusicTrackSchema,
+    ])
+    .optional(),
+});
+
+export const ContentProgramSchema = CondensedContentProgramSchema.extend({
   subtype: z.union([
     z.literal('movie'),
     z.literal('episode'),
     z.literal('track'),
   ]),
-  id: z.string().optional(), // If persisted
-  // Meta
   summary: z.string().optional(),
   date: z.string().optional(),
   rating: z.string().optional(),
-  title: z.string(), // If an episode, this is the show title
+  // If subtype = episode, this is the show title
+  title: z.string(),
+  // Episode specific stuff
   episodeTitle: z.string().optional(),
   seasonNumber: z.number().optional(),
   episodeNumber: z.number().optional(),
-  // TODO: Include track
-  originalProgram: z
-    .discriminatedUnion('type', [PlexEpisodeSchema, PlexMovieSchema])
-    .optional(),
+  // Track specific stuff
+  artistName: z.string().optional(),
+  albumName: z.string().optional(),
+  // External source metadata
   externalSourceType: ExternalSourceTypeSchema.optional(),
   externalSourceName: z.string().optional(),
   externalKey: z.string().optional(),
@@ -102,15 +120,6 @@ export const ContentProgramSchema = BaseProgramSchema.extend({
 //       'Must define neither externalSourceName / externalSourceType, or both.',
 //   },
 // );
-
-export const CondensedContentProgramSchema = BaseProgramSchema.extend({
-  type: z.literal('content'),
-  id: z.string().optional(), // Populated if persisted
-  // Only populated on client requests to the server
-  originalProgram: z
-    .discriminatedUnion('type', [PlexEpisodeSchema, PlexMovieSchema])
-    .optional(),
-});
 
 export const CondensedCustomProgramSchema = BaseProgramSchema.extend({
   type: z.literal('custom'),

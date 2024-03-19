@@ -14,6 +14,7 @@ import { ChannelProgram } from '@tunarr/types';
 import { isUndefined } from 'lodash-es';
 import { useCallback } from 'react';
 import { prettyItemDuration } from '../helpers/util';
+import { createExternalId } from '@tunarr/shared';
 
 type Props = {
   open: boolean;
@@ -75,9 +76,22 @@ export default function ProgramDetailsDialog({
 
   const thumbnailImage = useCallback(
     forProgramType({
-      content: (p) =>
-        // TODO use typed APi
-        p.id ? `http://localhost:8000/api/programs/${p.id}/thumb` : null,
+      content: (p) => {
+        if (p.id && p.persisted) {
+          return `http://localhost:8000/api/programs/${p.id}/thumb`;
+        }
+
+        let key = p.uniqueId;
+        if (p.subtype === 'track' && p.originalProgram?.type === 'track') {
+          key = createExternalId(
+            'plex',
+            p.externalSourceName!,
+            p.originalProgram.parentRatingKey,
+          );
+        }
+
+        return `http://localhost:8000/api/metadata/external?id=${key}&mode=proxy&asset=thumb`;
+      },
     }),
     [],
   );
@@ -85,9 +99,8 @@ export default function ProgramDetailsDialog({
   const externalLink = useCallback(
     forProgramType({
       content: (p) =>
-        p.id
-          ? // TODO use typed APi
-            `http://localhost:8000/api/programs/${p.id}/external-link`
+        p.id && p.persisted
+          ? `http://localhost:8000/api/programs/${p.id}/external-link`
           : null,
     }),
     [],

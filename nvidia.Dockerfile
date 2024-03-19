@@ -3,6 +3,7 @@ FROM jrottenberg/ffmpeg:4.4.4-nvidia2204 AS ffmpeg-base
 ENV NODE_MAJOR=20
 
 # Install musl for native node bindings (sqlite)
+RUN apt-get update --fix-missing
 RUN apt-get install -y musl-dev
 RUN ln -s /usr/lib/x86_64-linux-musl/libc.so /lib/libc.musl-x86_64.so.1
 

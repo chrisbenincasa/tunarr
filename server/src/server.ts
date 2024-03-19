@@ -30,7 +30,7 @@ import { migrateFromLegacyDb } from './dao/legacyDbMigration.js';
 import { getSettingsRawDb } from './dao/settings.js';
 import { serverOptions } from './globals.js';
 import createLogger from './logger.js';
-import { serverContext } from './serverContext.js';
+import { ServerRequestContext, serverContext } from './serverContext.js';
 import { scheduleJobs, scheduledJobsById } from './services/scheduler.js';
 import { runFixers } from './tasks/fixers/index.js';
 import { UpdateXmlTvTask } from './tasks/updateXmlTvTask.js';
@@ -150,14 +150,20 @@ export async function initServer(opts: ServerOptions) {
     .addHook('onRequest', (_req, _rep, done) =>
       RequestContext.create(orm.em, done),
     )
+    .addHook('onRequest', (_req, _res, done) => {
+      serverContext()
+        .then((ctx) => ServerRequestContext.create(ctx, done))
+        .catch(done);
+    })
     .addHook('onClose', async () => await orm.close())
     .register(
       fp((f, _, done) => {
         f.decorateRequest('serverCtx', null);
-        f.addHook('onRequest', async (req) => {
-          req.serverCtx = await serverContext();
+        f.addHook('onRequest', (req, _res, done) => {
+          req.serverCtx = ServerRequestContext.currentServerContext()!;
           req.entityManager =
             RequestContext.getEntityManager()! as EntityManager;
+          done();
         });
         done();
       }),

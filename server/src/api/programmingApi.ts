@@ -8,6 +8,7 @@ import {
   ProgramSourceType,
   programSourceTypeFromString,
 } from '../dao/entities/Program.js';
+import { Plex } from '../plex.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { flatMapAsyncSeq, groupByFunc } from '../util.js';
 
@@ -36,7 +37,7 @@ const BatchLookupExternalProgrammingSchema = z.object({
 
 // eslint-disable-next-line @typescript-eslint/require-await
 export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
-  // Image proxy for a program based on its source
+  // Image proxy for a program based on its source. Only works for persisted programs
   fastify.get(
     '/programs/:id/thumb',
     {
@@ -76,23 +77,19 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
             return res.status(404).send();
           }
 
-          let thumbUrl: URL;
-          const key = `/library/metadata/${program.plexRatingKey}/thumb?X-Plex-Token=${server.accessToken}`;
-          if (isUndefined(req.query.height) || isUndefined(req.query.width)) {
-            thumbUrl = new URL(`${server.uri}${key}`);
-          } else {
-            thumbUrl = new URL(`${server.uri}/photo/:/transcode`);
-            thumbUrl.searchParams.append('url', key);
-            thumbUrl.searchParams.append('X-Plex-Token', server.accessToken);
-            thumbUrl.searchParams.append('width', req.query.width.toString());
-            thumbUrl.searchParams.append('height', req.query.height.toString());
-            thumbUrl.searchParams.append(
-              'upscale',
-              req.query.upscale.toString(),
-            );
-          }
-
-          return res.redirect(302, thumbUrl.toString()).send();
+          return res
+            .redirect(
+              302,
+              Plex.getThumbUrl({
+                uri: server.uri,
+                itemKey: program.plexRatingKey,
+                accessToken: server.accessToken,
+                height: req.query.height,
+                width: req.query.width,
+                upscale: req.query.upscale.toString(),
+              }),
+            )
+            .send();
         }
       }
     },

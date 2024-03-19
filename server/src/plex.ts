@@ -284,6 +284,32 @@ export class Plex {
     }).parse(response) as PlexTvDevicesResponse;
     return parsed;
   }
+
+  static getThumbUrl(opts: {
+    uri: string;
+    accessToken: string;
+    itemKey: string;
+    width?: number;
+    height?: number;
+    upscale?: string;
+  }): string {
+    const { uri, accessToken, itemKey, width, height, upscale } = opts;
+    const cleanKey = itemKey.replaceAll(/\/library\/metadata\//g, '');
+
+    let thumbUrl: URL;
+    const key = `/library/metadata/${cleanKey}/thumb?X-Plex-Token=${accessToken}`;
+    if (isUndefined(height) || isUndefined(width)) {
+      thumbUrl = new URL(`${uri}${key}`);
+    } else {
+      thumbUrl = new URL(`${uri}/photo/:/transcode`);
+      thumbUrl.searchParams.append('url', key);
+      thumbUrl.searchParams.append('X-Plex-Token', accessToken);
+      thumbUrl.searchParams.append('width', width.toString());
+      thumbUrl.searchParams.append('height', height.toString());
+      thumbUrl.searchParams.append('upscale', (upscale ?? '1').toString());
+    }
+    return thumbUrl.toString();
+  }
 }
 
 type PlexTvDevicesResponse = {

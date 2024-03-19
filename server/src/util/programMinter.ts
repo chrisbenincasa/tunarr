@@ -1,11 +1,16 @@
-import { PlexEpisode, PlexMovie, PlexTerminalMedia } from '@tunarr/types/plex';
+import { EntityManager } from '@mikro-orm/better-sqlite';
+import {
+  PlexEpisode,
+  PlexMovie,
+  PlexMusicTrack,
+  PlexTerminalMedia,
+} from '@tunarr/types/plex';
+import { first } from 'lodash-es';
 import {
   Program,
   ProgramSourceType,
   ProgramType,
 } from '../dao/entities/Program.js';
-import { EntityManager } from '@mikro-orm/better-sqlite';
-import { first } from 'lodash-es';
 
 class ProgramMinter {
   #em: EntityManager;
@@ -19,6 +24,8 @@ class ProgramMinter {
         return mintMovieProgram(this.#em, serverName, plexItem);
       case 'episode':
         return mintEpisodeProgram(this.#em, serverName, plexItem);
+      case 'track':
+        return mintTrackProgram(this.#em, serverName, plexItem);
     }
   }
 }
@@ -78,5 +85,34 @@ function mintEpisodeProgram(
     episode: plexEpisode.index,
     parentExternalKey: plexEpisode.parentRatingKey,
     grandparentExternalKey: plexEpisode.grandparentRatingKey,
+  });
+}
+
+function mintTrackProgram(
+  em: EntityManager,
+  serverName: string,
+  plexTrack: PlexMusicTrack,
+) {
+  const file = first(first(plexTrack.Media)?.Part ?? []);
+  return em.create(Program, {
+    sourceType: ProgramSourceType.PLEX,
+    duration: plexTrack.duration,
+    filePath: file?.file,
+    externalSourceId: serverName,
+    externalKey: plexTrack.key,
+    plexRatingKey: plexTrack.ratingKey,
+    plexFilePath: file?.key,
+    summary: plexTrack.summary,
+    title: plexTrack.title,
+    type: ProgramType.Track,
+    year: plexTrack.parentYear,
+    showTitle: plexTrack.grandparentTitle,
+    showIcon: plexTrack.grandparentThumb,
+    season: plexTrack.parentIndex,
+    episode: plexTrack.index,
+    parentExternalKey: plexTrack.parentRatingKey,
+    grandparentExternalKey: plexTrack.grandparentRatingKey,
+    albumName: plexTrack.parentTitle,
+    artistName: plexTrack.grandparentTitle,
   });
 }

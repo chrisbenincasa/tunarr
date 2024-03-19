@@ -11,7 +11,7 @@ import {
   FillerList,
   FillerListProgramming,
 } from '@tunarr/types';
-import { isPlexEpisode } from '@tunarr/types/plex';
+import { isPlexEpisode, isPlexMusicTrack } from '@tunarr/types/plex';
 import { Draft } from 'immer';
 import {
   chain,
@@ -36,6 +36,7 @@ import { EnrichedPlexMedia } from '../../hooks/plexHooks.ts';
 import { AddedMedia, UIIndex } from '../../types/index.ts';
 import useStore from '../index.ts';
 import { ChannelEditorState, initialChannelEditorState } from './store.ts';
+import { createExternalId } from '@tunarr/shared';
 
 export const resetChannelEditorState = () =>
   useStore.setState((state) => {
@@ -227,17 +228,18 @@ export const setChannelStartTime = (startTime: number) =>
 const plexMediaToContentProgram = (
   media: EnrichedPlexMedia,
 ): ContentProgram => {
+  const uniqueId = createExternalId('plex', media.serverName, media.key);
   // TODO Handle music tracks
   if (isPlexEpisode(media)) {
     return {
-      id: media.id ?? `plex|${media.serverName}|${media.key}`,
+      id: media.id ?? uniqueId,
       persisted: !isNil(media.id),
       originalProgram: media,
       duration: media.duration,
       externalSourceName: media.serverName,
       externalSourceType: 'plex',
       externalKey: media.key,
-      uniqueId: `plex|${media.serverName}|${media.key}`,
+      uniqueId: uniqueId,
       type: 'content',
       subtype: 'episode',
       title: media.grandparentTitle,
@@ -245,15 +247,30 @@ const plexMediaToContentProgram = (
       episodeNumber: media.index,
       seasonNumber: media.parentIndex,
     };
-  } else {
+  } else if (isPlexMusicTrack(media)) {
     return {
-      id: media.id ?? `plex|${media.serverName}|${media.key}`,
+      id: media.id ?? uniqueId,
       persisted: !isNil(media.id),
       originalProgram: media,
       duration: media.duration,
       externalSourceName: media.serverName,
       externalSourceType: 'plex',
-      uniqueId: `plex|${media.serverName}|${media.key}`,
+      uniqueId: uniqueId,
+      type: 'content',
+      subtype: 'track',
+      title: media.title,
+      artistName: media.grandparentTitle,
+      albumName: media.parentTitle,
+    };
+  } else {
+    return {
+      id: media.id ?? uniqueId,
+      persisted: !isNil(media.id),
+      originalProgram: media,
+      duration: media.duration,
+      externalSourceName: media.serverName,
+      externalSourceType: 'plex',
+      uniqueId: uniqueId,
       type: 'content',
       subtype: 'movie',
       title: media.title,

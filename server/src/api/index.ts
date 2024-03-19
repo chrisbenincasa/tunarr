@@ -18,6 +18,7 @@ import { debugApi } from './debugApi.js';
 import { fillerListsApi } from './fillerListsApi.js';
 import { programmingApi } from './programmingApi.js';
 import { tasksApiRouter } from './tasksApi.js';
+import { metadataApiRouter } from './metadataApi.js';
 
 const logger = createLogger(import.meta);
 
@@ -49,7 +50,8 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
     .register(customShowsApiV2)
     .register(fillerListsApi)
     .register(programmingApi)
-    .register(debugApi);
+    .register(debugApi)
+    .register(metadataApiRouter);
 
   fastify.get(
     '/version',

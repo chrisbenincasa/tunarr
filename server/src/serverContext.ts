@@ -1,4 +1,4 @@
-import { once } from 'lodash-es';
+import { isUndefined, once } from 'lodash-es';
 import path from 'path';
 import { ChannelCache } from './channelCache.js';
 import { ChannelDB } from './dao/channelDb.js';
@@ -14,6 +14,7 @@ import { FileCacheService } from './services/fileCacheService.js';
 import { M3uService } from './services/m3uService.js';
 import { TVGuideService } from './services/tvGuideService.js';
 import { XmlTvWriter } from './xmltv.js';
+import { AsyncLocalStorage } from 'async_hooks';
 
 export type ServerContext = {
   channelDB: ChannelDB;
@@ -70,3 +71,29 @@ export const serverContext: () => Promise<ServerContext> = once(async () => {
     settings,
   };
 });
+
+export class ServerRequestContext {
+  static storage = new AsyncLocalStorage<ServerContext>();
+
+  static currentServerContext(): ServerContext | undefined {
+    return this.storage.getStore();
+  }
+
+  static create<T>(context: ServerContext, next: (...args: unknown[]) => T) {
+    this.storage.run(context, next);
+  }
+}
+
+export const withServerContext = <T>(f: (ctx: ServerContext) => T) => {
+  const ctx = ServerRequestContext.currentServerContext();
+  if (isUndefined(ctx)) throw new Error('No current server context!!');
+  return f(ctx);
+};
+
+export const withServerContextAsync = async <T>(
+  f: (ctx: ServerContext) => Promise<T>,
+) => {
+  const ctx = ServerRequestContext.currentServerContext();
+  if (isUndefined(ctx)) throw new Error('No current server context!!');
+  return await f(ctx);
+};

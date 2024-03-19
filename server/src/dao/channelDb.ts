@@ -431,7 +431,7 @@ export class ChannelDB {
     if (lineup.items.length === 0) {
       lineup.items.push({
         type: 'offline',
-        durationMs: Number.MAX_SAFE_INTEGER,
+        durationMs: 1000 * 60 * 60 * 24 * 30,
       });
     }
     lineup.startTimeOffsets = reduce(
