@@ -5,9 +5,8 @@ const constants = {
   TVGUIDE_MAXIMUM_FLEX_DURATION: 6 * 60 * 60 * 1000,
   TOO_FREQUENT: 100,
 
-  VERSION_NAME: '1.4.5',
-
-  DEFAULT_DATA_DIR: '.dizquetv',
+  VERSION_NAME: '1.4.5', // TODO fill this in dynamically
+  DEFAULT_DATA_DIR: '.tunarr',
 };
 
 export default constants;
