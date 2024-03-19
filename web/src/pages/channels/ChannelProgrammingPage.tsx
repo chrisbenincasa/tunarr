@@ -45,7 +45,7 @@ export default function ChannelProgrammingPage() {
 
   const updateLineupMutation = useMutation({
     mutationFn: ({ channelId, lineupRequest }: MutateArgs) => {
-      return apiClient.post('/api/v2/channels/:id/programming', lineupRequest, {
+      return apiClient.post('/api/channels/:id/programming', lineupRequest, {
         params: { id: channelId },
       });
     },

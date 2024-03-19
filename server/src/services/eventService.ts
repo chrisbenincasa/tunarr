@@ -28,35 +28,43 @@ export class EventService {
   }
 
   setup(app: FastifyInstance) {
-    app.get('/api/events', (request, response) => {
-      logger.info('Open event channel.');
-      const outStream = new Readable();
-      outStream._read = () => {};
+    app.get(
+      '/api/events',
+      {
+        schema: {
+          hide: true,
+        },
+      },
+      (request, response) => {
+        logger.info('Open event channel.');
+        const outStream = new Readable();
+        outStream._read = () => {};
 
-      const listener = (data: TunarrEvent) => {
-        const parts = [
-          `event: message`,
-          `data: ${JSON.stringify(data)}`,
-          'retry: 5000',
-        ].join('\n');
-        outStream.push(parts + '\n\n');
-      };
+        const listener = (data: TunarrEvent) => {
+          const parts = [
+            `event: message`,
+            `data: ${JSON.stringify(data)}`,
+            'retry: 5000',
+          ].join('\n');
+          outStream.push(parts + '\n\n');
+        };
 
-      this.stream.on('push', listener);
+        this.stream.on('push', listener);
 
-      request.socket.on('close', () => {
-        logger.info('Remove event channel.');
-        this.stream.removeListener('push', listener);
-      });
+        request.socket.on('close', () => {
+          logger.info('Remove event channel.');
+          this.stream.removeListener('push', listener);
+        });
 
-      return response
-        .headers({
-          'Content-Type': 'text/event-stream',
-          'Cache-Control': 'no-cache',
-          Connection: 'keep-alive',
-        })
-        .send(outStream);
-    });
+        return response
+          .headers({
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            Connection: 'keep-alive',
+          })
+          .send(outStream);
+      },
+    );
   }
 
   push(data: TunarrEvent) {

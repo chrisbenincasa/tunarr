@@ -1,7 +1,7 @@
 import cors from '@fastify/cors';
 import middie from '@fastify/middie';
 import fpStatic from '@fastify/static';
-import fastify from 'fastify';
+import fastify, { FastifySchema } from 'fastify';
 import fp from 'fastify-plugin';
 // import fastifyPrintRoutes from 'fastify-print-routes';
 import fastifySwagger from '@fastify/swagger';
@@ -21,12 +21,9 @@ import path, { dirname } from 'path';
 import { ffmpegSettingsRouter } from './api/ffmpegSettingsApi.js';
 import { guideRouter } from './api/guideApi.js';
 import { hdhrSettingsRouter } from './api/hdhrSettingsApi.js';
-import { miscRouter } from './api/index.js';
+import { apiRouter } from './api/index.js';
 import { plexServersRouter } from './api/plexServersApi.js';
 import { plexSettingsRouter } from './api/plexSettingsApi.js';
-import { schedulerRouter } from './api/schedulerApi.js';
-import { debugApi } from './api/v2/debugApi.js';
-import registerV2Routes from './api/v2/index.js';
 import { xmlTvSettingsRouter } from './api/xmltvSettingsApi.js';
 import { EntityManager, initOrm } from './dao/dataSource.js';
 import { migrateFromLegacyDb } from './dao/legacyDbMigration.js';
@@ -40,6 +37,7 @@ import { UpdateXmlTvTask } from './tasks/updateXmlTvTask.js';
 import { ServerOptions } from './types.js';
 import { filename, wait } from './util.js';
 import { videoRouter } from './video.js';
+import { isUndefined } from 'lodash-es';
 
 const logger = createLogger(import.meta);
 const currentDirectory = dirname(filename(import.meta.url));
@@ -121,15 +119,24 @@ export async function initServer(opts: ServerOptions) {
     .setSerializerCompiler(serializerCompiler)
     .withTypeProvider<ZodTypeProvider>();
 
+  if (serverOptions().printRoutes) {
+    await app.register(fastifyPrintRoutes);
+  }
+
   await app
     .register(fastifySwagger, {
       openapi: {
         info: {
-          title: 'Tunarr API',
-          description: 'test',
+          title: 'Tunarr',
+          description: 'Tunarr API',
           version: '1.0.0',
         },
         servers: [],
+        tags: [
+          {
+            name: 'Channels',
+          },
+        ],
       },
       transform: jsonSchemaTransform,
     })
@@ -156,10 +163,6 @@ export async function initServer(opts: ServerOptions) {
       }),
     );
 
-  if (serverOptions().printRoutes) {
-    await app.register(fastifyPrintRoutes);
-  }
-
   app.use(
     morgan(':method :url :status :res[content-length] - :response-time ms', {
       stream: {
@@ -175,22 +178,38 @@ export async function initServer(opts: ServerOptions) {
 
   // API Routers
   await app
-    .register(fpStatic, {
-      root: path.join(currentDirectory, 'resources', 'images'),
-      prefix: '/images',
+    .register((f, _, done) => {
+      f.addHook('onRoute', (route) => {
+        if (!route.config) {
+          route.config = {};
+        }
+        route.config.swaggerTransform = ({ schema, url }) => {
+          const transformedSchema: FastifySchema = isUndefined(schema)
+            ? {}
+            : { ...schema };
+          transformedSchema.hide = true;
+          return { schema: transformedSchema, url };
+        };
+      });
+      f.register(fpStatic, {
+        root: path.join(currentDirectory, 'resources', 'images'),
+        prefix: '/images',
+      })
+        .get('/favicon.svg', async (_, res) => {
+          return res.sendFile(
+            'favicon.svg',
+            path.join(currentDirectory, 'resources', 'images'),
+          );
+        })
+        .get('/favicon.ico', async (_, res) => {
+          return res.sendFile(
+            'favicon.ico',
+            path.join(currentDirectory, 'resources', 'images'),
+          );
+        });
+      done();
     })
-    .get('/favicon.svg', async (_, res) => {
-      return res.sendFile(
-        'favicon.svg',
-        path.join(currentDirectory, 'resources', 'images'),
-      );
-    })
-    .get('/favicon.ico', async (_, res) => {
-      return res.sendFile(
-        'favicon.ico',
-        path.join(currentDirectory, 'resources', 'images'),
-      );
-    })
+
     .register(async (f) => {
       await f.register(fpStatic, {
         root: path.join(opts.database, 'cache', 'images'),
@@ -210,6 +229,16 @@ export async function initServer(opts: ServerOptions) {
           return res.sendFile(req.params.hash);
         },
       );
+
+      f.delete('/api/cache/images', async (req, res) => {
+        try {
+          await req.serverCtx.cacheImageService.clearCache();
+          return res.status(200).send({ msg: 'Cache Image are Cleared' });
+        } catch (error) {
+          logger.error('Error deleting cached images', error);
+          return res.status(500).send('error');
+        }
+      });
     })
     .register(async (f) => {
       f.addHook('onError', (req, _, error, done) => {
@@ -223,13 +252,7 @@ export async function initServer(opts: ServerOptions) {
         .register(xmlTvSettingsRouter)
         .register(hdhrSettingsRouter)
         .register(guideRouter)
-        .register(miscRouter)
-        .register(schedulerRouter)
-        .register(debugApi);
-    })
-    .register(registerV2Routes, { prefix: '/api/v2' })
-    .register(ctx.cacheImageService.apiRouters(), {
-      prefix: '/api/cache/images',
+        .register(apiRouter, { prefix: '/api' });
     })
     .register(videoRouter)
     .register(ctx.hdhrService.createRouter())

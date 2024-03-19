@@ -76,7 +76,8 @@ export default function ProgramDetailsDialog({
   const thumbnailImage = useCallback(
     forProgramType({
       content: (p) =>
-        p.id ? `http://localhost:8000/api/v2/programs/${p.id}/thumb` : null,
+        // TODO use typed APi
+        p.id ? `http://localhost:8000/api/programs/${p.id}/thumb` : null,
     }),
     [],
   );
@@ -85,7 +86,8 @@ export default function ProgramDetailsDialog({
     forProgramType({
       content: (p) =>
         p.id
-          ? `http://localhost:8000/api/v2/programs/${p.id}/external-link`
+          ? // TODO use typed APi
+            `http://localhost:8000/api/programs/${p.id}/external-link`
           : null,
     }),
     [],

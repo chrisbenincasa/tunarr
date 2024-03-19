@@ -5,9 +5,9 @@ import {
 import { CustomProgramSchema, CustomShowSchema } from '@tunarr/types/schemas';
 import { isNull, map } from 'lodash-es';
 import { z } from 'zod';
-import { CustomShow } from '../../dao/entities/CustomShow.js';
-import createLogger from '../../logger.js';
-import { RouterPluginAsyncCallback } from '../../types/serverType.js';
+import { CustomShow } from '../dao/entities/CustomShow.js';
+import createLogger from '../logger.js';
+import { RouterPluginAsyncCallback } from '../types/serverType.js';
 
 const logger = createLogger(import.meta);
 

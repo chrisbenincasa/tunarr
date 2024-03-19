@@ -3,10 +3,10 @@ import { TaskSchema } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import { chain, hasIn, isNil } from 'lodash-es';
 import { z } from 'zod';
-import createLogger from '../../logger.js';
-import { scheduledJobsById } from '../../services/scheduler.js';
-import { TaskId } from '../../tasks/task.js';
-import { RouterPluginAsyncCallback } from '../../types/serverType.js';
+import createLogger from '../logger.js';
+import { scheduledJobsById } from '../services/scheduler.js';
+import { TaskId } from '../tasks/task.js';
+import { RouterPluginAsyncCallback } from '../types/serverType.js';
 
 const logger = createLogger(import.meta);
 

@@ -11,7 +11,13 @@ import { serverOptions } from '../globals.js';
 import createLogger from '../logger.js';
 import { Plex } from '../plex.js';
 import { scheduledJobsById } from '../services/scheduler.js';
-import { RouterPluginCallback } from '../types/serverType.js';
+import { RouterPluginAsyncCallback } from '../types/serverType.js';
+import { channelsApi } from './channelsApi.js';
+import { customShowsApiV2 } from './customShowsApi.js';
+import { debugApi } from './debugApi.js';
+import { fillerListsApi } from './fillerListsApi.js';
+import { programmingApi } from './programmingApi.js';
+import { tasksApiRouter } from './tasksApi.js';
 
 const logger = createLogger(import.meta);
 
@@ -21,7 +27,7 @@ declare module 'fastify' {
   }
 }
 
-export const miscRouter: RouterPluginCallback = (fastify, _opts, done) => {
+export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
   fastify.addContentTypeParser(/^image\/.*/, function (_, payload, done) {
     done(null, payload);
   });
@@ -33,12 +39,20 @@ export const miscRouter: RouterPluginCallback = (fastify, _opts, done) => {
   );
 
   fastify.addHook('onError', (req, _, error, done) => {
-    logger.error('%s %O', req.routeOptions.url, error);
+    logger.error(req.routeOptions.config.url, error);
     done();
   });
 
+  await fastify
+    .register(tasksApiRouter)
+    .register(channelsApi)
+    .register(customShowsApiV2)
+    .register(fillerListsApi)
+    .register(programmingApi)
+    .register(debugApi);
+
   fastify.get(
-    '/api/version',
+    '/version',
     {
       schema: {
         response: {
@@ -63,7 +77,7 @@ export const miscRouter: RouterPluginCallback = (fastify, _opts, done) => {
     },
   );
 
-  fastify.post('/api/upload/image', async (req, res) => {
+  fastify.post('/upload/image', async (req, res) => {
     try {
       if (isNil(req.files)) {
         return res.send({
@@ -92,7 +106,7 @@ export const miscRouter: RouterPluginCallback = (fastify, _opts, done) => {
     }
   });
 
-  fastify.get('/api/xmltv-last-refresh', (_req, res) => {
+  fastify.get('/xmltv-last-refresh', (_req, res) => {
     try {
       return res.send({
         value: scheduledJobsById['update-xmltv']?.lastExecution?.valueOf(),
@@ -104,7 +118,7 @@ export const miscRouter: RouterPluginCallback = (fastify, _opts, done) => {
   });
 
   // XMLTV.XML Download
-  fastify.get('/api/xmltv.xml', async (req, res) => {
+  fastify.get('/xmltv.xml', async (req, res) => {
     try {
       const host = `${req.protocol}://${req.hostname}`;
 
@@ -125,13 +139,13 @@ export const miscRouter: RouterPluginCallback = (fastify, _opts, done) => {
   });
 
   // Force an XMLTV refresh
-  fastify.post('/api/xmltv/refresh', async (_, res) => {
+  fastify.post('/xmltv/refresh', async (_, res) => {
     await scheduledJobsById['update-xmltv']?.runNow();
     return res.status(200);
   });
 
   // CHANNELS.M3U Download
-  fastify.get('/api/channels.m3u', async (req, res) => {
+  fastify.get('/channels.m3u', async (req, res) => {
     try {
       const host = `${req.protocol}://${req.hostname}`;
       const data = await req.serverCtx.m3uService.getChannelList(host);
@@ -144,7 +158,7 @@ export const miscRouter: RouterPluginCallback = (fastify, _opts, done) => {
   });
 
   fastify.get(
-    '/api/plex',
+    '/plex',
     {
       schema: {
         querystring: z.object({ name: z.string(), path: z.string() }),
@@ -164,6 +178,4 @@ export const miscRouter: RouterPluginCallback = (fastify, _opts, done) => {
       return res.send(await plex.doGet(req.query.path));
     },
   );
-
-  done();
 };

@@ -1,15 +1,15 @@
 import axios, { AxiosHeaders, AxiosRequestConfig } from 'axios';
 import crypto from 'crypto';
-import { FastifyPluginCallback, FastifyReply, FastifyRequest } from 'fastify';
+import { FastifyReply, FastifyRequest } from 'fastify';
 import { createWriteStream, promises as fs } from 'fs';
 import { isString, isUndefined } from 'lodash-es';
 import stream from 'stream';
 // import { CachedImage, DbAccess } from '../dao/db.js';
-import createLogger from '../logger.js';
-import { FileCacheService } from './fileCacheService.js';
-import { CachedImage } from '../dao/entities/CachedImage.js';
 import { EntityRepository } from '@mikro-orm/core';
 import { withDb } from '../dao/dataSource.js';
+import { CachedImage } from '../dao/entities/CachedImage.js';
+import createLogger from '../logger.js';
+import { FileCacheService } from './fileCacheService.js';
 
 const logger = createLogger(import.meta);
 
@@ -58,28 +58,6 @@ export class CacheImageService {
     } finally {
       await req.entityManager.flush();
     }
-  }
-
-  /**
-   * Routers exported to use on express.use() function.
-   * Use on api routers, like `{host}/api/cache/images`
-   *
-   * `DELETE /` - Clear all files on .dizquetv/cache/images
-   */
-  apiRouters(): FastifyPluginCallback {
-    return (fastify, _, done) => {
-      fastify.delete('/', async (_req, res) => {
-        try {
-          await this.clearCache();
-          return res.status(200).send({ msg: 'Cache Image are Cleared' });
-        } catch (error) {
-          logger.error('Error deleting cached images', error);
-          return res.status(500).send('error');
-        }
-      });
-
-      done();
-    };
   }
 
   private async requestImageAndStore(

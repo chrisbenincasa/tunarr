@@ -1,18 +1,18 @@
-import { z } from 'zod';
-import { RouterPluginAsyncCallback } from '../../types/serverType.js';
-import {
-  FillerListProgrammingSchema,
-  FillerListSchema,
-} from '@tunarr/types/schemas';
-import { isNil, map } from 'lodash-es';
 import {
   CreateFillerListRequestSchema,
   IdPathParamSchema,
   UpdateFillerListRequestSchema,
 } from '@tunarr/types/api';
+import {
+  FillerListProgrammingSchema,
+  FillerListSchema,
+} from '@tunarr/types/schemas';
+import { isNil, map } from 'lodash-es';
+import { z } from 'zod';
+import { RouterPluginAsyncCallback } from '../types/serverType.js';
 
 // eslint-disable-next-line @typescript-eslint/require-await
-export const fillerListsApiV2: RouterPluginAsyncCallback = async (fastify) => {
+export const fillerListsApi: RouterPluginAsyncCallback = async (fastify) => {
   fastify.get(
     '/filler-lists',
     {

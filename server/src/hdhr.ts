@@ -77,7 +77,7 @@ export class HdhrService {
         if (lineup.length === 0)
           lineup.push({
             GuideNumber: '1',
-            GuideName: 'dizqueTV',
+            GuideName: 'Tunarr',
             URL: `${req.protocol}://${req.hostname}/setup`,
           });
 
