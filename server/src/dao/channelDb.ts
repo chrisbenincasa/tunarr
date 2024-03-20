@@ -38,7 +38,7 @@ import { globalOptions } from '../globals.js';
 import createLogger from '../logger.js';
 import { Nullable } from '../types.js';
 import { typedProperty } from '../types/path.js';
-import { groupByFunc, groupByUniqAndMap } from '../util.js';
+import { groupByFunc, groupByUniqAndMap, mapReduceAsyncSeq } from '../util.js';
 import { fileExists } from '../util/fsUtil.js';
 import { dbProgramToContentProgram } from './converters/programConverters.js';
 import { getEm } from './dataSource.js';
@@ -332,6 +332,26 @@ export class ChannelDB {
     }
 
     return null;
+  }
+
+  async loadAllLineups() {
+    return mapReduceAsyncSeq(
+      await this.getAllChannelsAndPrograms(),
+      async (channel) => {
+        return {
+          channel,
+          lineup: await this.loadLineup(channel.uuid),
+        };
+      },
+      (prev, { channel, lineup }) => ({
+        ...prev,
+        [channel.uuid]: { channel, lineup },
+      }),
+      {} as Record<
+        string,
+        { channel: Loaded<Channel, 'programs'>; lineup: Lineup }
+      >,
+    );
   }
 
   async loadLineup(channelId: string) {
@@ -669,7 +689,7 @@ function channelProgramToLineupItemFunc(
     }),
     redirect: (program) => ({
       type: 'redirect',
-      channel: '', // TODO fix this....!
+      channel: program.channel,
       durationMs: program.duration,
     }),
     flex: (program) => ({

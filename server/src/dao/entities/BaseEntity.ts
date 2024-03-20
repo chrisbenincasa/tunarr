@@ -1,8 +1,13 @@
-import { Entity, PrimaryKey, Property } from '@mikro-orm/core';
+import {
+  Entity,
+  BaseEntity as OrmBaseEntity,
+  PrimaryKey,
+  Property,
+} from '@mikro-orm/core';
 import { v4 } from 'uuid';
 
 @Entity({ abstract: true })
-export abstract class BaseEntity {
+export abstract class BaseEntity extends OrmBaseEntity {
   @PrimaryKey()
   uuid: string = v4();
 

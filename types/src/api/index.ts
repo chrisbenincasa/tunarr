@@ -75,7 +75,7 @@ export const BasicPagingSchema = z.object({
 
 const UpdateLineupItemSchema = z.object({
   index: z.number(),
-  duration: z.number().optional(), // Duration for non-content programs
+  duration: z.number().positive().max(3.156e10).optional(), // Duration for non-content programs
 });
 
 export const ManualProgramLineupSchema = z.object({

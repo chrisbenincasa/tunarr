@@ -2,6 +2,7 @@ import { Box, Button, Paper, Stack, Typography } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers';
 import dayjs, { Dayjs } from 'dayjs';
 import { createContext, useState } from 'react';
+import { usePreloadedChannelEdit } from '../../hooks/usePreloadedChannel.ts';
 import {
   resetLineup,
   setChannelStartTime,
@@ -24,9 +25,7 @@ export const ScheduleControlsContext = createContext<ScheduleControlsType>({
 });
 
 export function ChannelProgrammingConfig() {
-  const { currentEntity: channel, programList } = useStore(
-    (s) => s.channelEditor,
-  );
+  const { currentEntity: channel, programList } = usePreloadedChannelEdit();
 
   const programsDirty = useStore((s) => s.channelEditor.dirty.programs);
 

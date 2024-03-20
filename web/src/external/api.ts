@@ -113,6 +113,20 @@ export const api = makeApi([
     alias: 'getAllChannelLineups',
   },
   {
+    method: 'get',
+    path: '/api/debug/helpers/compare_guides',
+    response: z.array(
+      z.object({ old: ChannelLineupSchema, new: ChannelLineupSchema }),
+    ),
+    parameters: parametersBuilder()
+      .addQueries({
+        from: z.string(),
+        to: z.string(),
+      })
+      .build(),
+    alias: 'getAllChannelLineupsDebug',
+  },
+  {
     method: 'post',
     path: '/api/programming/batch/lookup',
     alias: 'batchGetProgramsByExternalIds',

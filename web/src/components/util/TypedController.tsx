@@ -4,7 +4,7 @@ import {
   TextField,
   TextFieldProps,
 } from '@mui/material';
-import { get, has, isFinite, isNil } from 'lodash-es';
+import { get, has, isFunction, isNil, isUndefined, mapValues } from 'lodash-es';
 import { useCallback } from 'react';
 import {
   Controller,
@@ -16,12 +16,14 @@ import {
   FieldValues,
   UseControllerProps,
   UseFormStateReturn,
+  Validate,
 } from 'react-hook-form';
 import { handleNumericFormValue } from '../../helpers/util.ts';
 
 type RenderFunc<
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+  Result = React.ReactElement,
 > = ({
   field,
   fieldState,
@@ -32,7 +34,7 @@ type RenderFunc<
   fieldState: ControllerFieldState;
   formState: UseFormStateReturn<TFieldValues>;
   helperText?: React.ReactNode;
-}) => React.ReactElement;
+}) => Result;
 
 type Props<
   TFieldValues extends FieldValues = FieldValues,
@@ -123,20 +125,45 @@ export const NumericFormController = <
     [props.float],
   );
 
+  const validateNumeric = useCallback(
+    (v: number) => {
+      return isFinite(v)
+        ? undefined
+        : `${props.prettyFieldName ?? props.name} should be numeric.`;
+    },
+    [props.prettyFieldName, props.name],
+  );
+
+  const passedValidate = props.rules?.validate;
+  let validate: Record<
+    string,
+    Validate<FieldPathValue<TFieldValues, TName>, TFieldValues>
+  > = { validateNumeric };
+  if (isFunction(passedValidate)) {
+    validate['custom'] = passedValidate;
+  } else if (!isUndefined(passedValidate)) {
+    validate = { ...validate, ...passedValidate };
+  }
+
   return (
     <TypedController<TFieldValues, TName, string | number>
+      {...props}
       rules={{
-        validate: {
-          numeric: (v) =>
-            isFinite(v) ||
-            `${props.prettyFieldName ?? props.name} should be numeric.`,
-        },
+        validate,
         ...(props.rules ?? {}),
       }}
       toFormType={handleStr}
-      {...props}
     />
   );
+};
+
+type TextFieldPropsWithFuncs<
+  TFieldValues extends FieldValues,
+  TName extends FieldPath<TFieldValues>,
+> = {
+  [Key in keyof TextFieldProps]:
+    | TextFieldProps[Key]
+    | RenderFunc<TFieldValues, TName, TextFieldProps[Key]>;
 };
 
 export const NumericFormControllerText = <
@@ -148,35 +175,58 @@ export const NumericFormControllerText = <
     'transformer' | 'render'
   > & {
     float?: boolean;
-    TextFieldProps?: TextFieldProps;
+    TextFieldProps?: TextFieldPropsWithFuncs<TFieldValues, TName>;
   },
 ) => {
   return (
     <NumericFormController
       {...props}
-      render={({ field, formState: { errors } }) => {
+      render={(renderProps) => {
+        const {
+          field,
+          formState: { errors },
+        } = renderProps;
+
         const fieldError = errors[props.name] as FieldError | undefined;
         let helperText: React.ReactNode = null;
-        if (fieldError?.message && props.TextFieldProps?.helperText) {
+        const helperTextValue = props.TextFieldProps?.helperText;
+        let passedHelperText: React.ReactNode = null;
+        if (isFunction(helperTextValue)) {
+          passedHelperText = helperTextValue(renderProps);
+        } else if (!isNil(helperTextValue)) {
+          passedHelperText = helperTextValue;
+        }
+
+        if (fieldError?.message && helperTextValue) {
           helperText = (
             <>
               {fieldError?.message}
               <br />
-              {props.TextFieldProps.helperText}
+              {passedHelperText}
             </>
           );
         } else if (fieldError?.message) {
           helperText = fieldError?.message;
-        } else if (props.TextFieldProps?.helperText) {
-          helperText = props.TextFieldProps?.helperText;
+        } else if (helperTextValue) {
+          helperText = passedHelperText;
         }
+
+        const fieldProps: TextFieldProps = mapValues(
+          props.TextFieldProps,
+          (p) => {
+            if (isFunction(p)) {
+              return p(renderProps);
+            } else {
+              return p;
+            }
+          },
+        );
 
         return (
           <TextField
-            label="Threads"
             error={!isNil(errors[props.name])}
             {...field}
-            {...props.TextFieldProps}
+            {...fieldProps}
             helperText={helperText}
           />
         );

@@ -11,7 +11,7 @@ import fs from 'fs';
 import { isUndefined, keys, map } from 'lodash-es';
 import XMLWriter from 'xml-writer';
 import { CacheImageService } from './services/cacheImageService.js';
-import { ChannelPrograms } from './services/tvGuideService.js';
+import { ChannelPrograms } from './services/tvGuideServiceLegacy.js';
 
 let isShutdown = false;
 let isWorking = false;
