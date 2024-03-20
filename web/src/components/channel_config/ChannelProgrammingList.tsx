@@ -1,8 +1,9 @@
-import {
-  Delete as DeleteIcon,
-  DragIndicator as DragIndicatorIcon,
-  InfoOutlined,
-} from '@mui/icons-material';
+import DeleteIcon from '@mui/icons-material/Delete';
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import InfoOutlined from '@mui/icons-material/InfoOutlined';
+import MovieIcon from '@mui/icons-material/Movie';
+import MusicNote from '@mui/icons-material/MusicNote';
+import TvIcon from '@mui/icons-material/Tv';
 import { ListItemIcon, Typography } from '@mui/material';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
@@ -12,7 +13,16 @@ import ListItemText from '@mui/material/ListItemText';
 import { forProgramType } from '@tunarr/shared/util';
 import { ChannelProgram } from '@tunarr/types';
 import dayjs from 'dayjs';
-import { findIndex, isUndefined, map } from 'lodash-es';
+import {
+  findIndex,
+  isEmpty,
+  isNil,
+  isUndefined,
+  join,
+  map,
+  overSome,
+  reject,
+} from 'lodash-es';
 import { CSSProperties, useCallback, useState } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
 import {
@@ -70,10 +80,20 @@ const programListItemTitleFormatter = (() => {
     redirect: (p) => `Redirect to Channel ${p.channel}`,
     flex: 'Flex',
     content: (p) => {
-      if (p.episodeTitle) {
-        return `${p.title} - ${p.episodeTitle}`;
-      } else {
-        return p.title;
+      switch (p.subtype) {
+        case 'movie':
+          return p.title;
+        case 'episode':
+          return p.episodeTitle ? `${p.title} - ${p.episodeTitle}` : p.title;
+        case 'track': {
+          return join(
+            reject(
+              [p.artistName, p.albumName, p.title],
+              overSome(isNil, isEmpty),
+            ),
+            ' - ',
+          );
+        }
       }
     },
   });
@@ -131,13 +151,27 @@ const ProgramListItem = ({
 
   const handleInfoButtonClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log(program);
     onInfoClicked(program);
   };
 
   // const dayBoundary = startTimes[idx + 1].isAfter(startTimes[idx], 'day');
 
   const title = `${startTime} - ${programListItemTitleFormatter(program)}`;
+
+  let icon: React.ReactElement | null = null;
+  if (program.type === 'content') {
+    switch (program.subtype) {
+      case 'movie':
+        icon = <MovieIcon />;
+        break;
+      case 'episode':
+        icon = <TvIcon />;
+        break;
+      case 'track':
+        icon = <MusicNote />;
+        break;
+    }
+  }
 
   return (
     <ListItem
@@ -178,7 +212,9 @@ const ProgramListItem = ({
         false
       ) : (
         <>
-          <ListItemIcon>
+          <ListItemIcon
+            sx={{ minWidth: program.type === 'content' ? 35 : null }}
+          >
             <DragIndicatorIcon />
           </ListItemIcon>
           {program.type === 'content' && (
@@ -190,7 +226,12 @@ const ProgramListItem = ({
             </ListItemIcon>
           )}
           <ListItemText
-            primary={title}
+            primary={
+              <>
+                {icon}
+                {title}
+              </>
+            }
             sx={{
               fontStyle: program.persisted ? 'normal' : 'italic',
             }}

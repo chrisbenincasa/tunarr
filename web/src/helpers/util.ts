@@ -316,6 +316,15 @@ export const forPlexMedia = <T>(choices: PerTypeCallback<PlexMedia, T>) => {
       case 'episode':
         if (choices.episode) return applyOrValue(choices.episode, m);
         break;
+      case 'artist':
+        if (choices.artist) return applyOrValue(choices.artist, m);
+        break;
+      case 'album':
+        if (choices.album) return applyOrValue(choices.album, m);
+        break;
+      case 'track':
+        if (choices.track) return applyOrValue(choices.track, m);
+        break;
       case 'collection':
         if (choices.collection) return applyOrValue(choices.collection, m);
         break;

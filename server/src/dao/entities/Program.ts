@@ -9,8 +9,8 @@ import {
   Unique,
   serialize,
 } from '@mikro-orm/core';
-import type { Duration } from 'dayjs/plugin/duration.js';
 import { Program as ProgramDTO } from '@tunarr/types';
+import type { Duration } from 'dayjs/plugin/duration.js';
 import { BaseEntity } from './BaseEntity.js';
 import { Channel } from './Channel.js';
 import { CustomShow } from './CustomShow.js';
@@ -110,7 +110,10 @@ export class Program extends BaseEntity {
   year?: number;
 
   @Property({ nullable: true })
-  customOrder?: number;
+  artistName?: string;
+
+  @Property({ nullable: true })
+  albumName?: string;
 
   @ManyToMany(() => Channel, (channel) => channel.programs, { eager: false })
   channels = new Collection<Channel>(this);

@@ -12,7 +12,10 @@ export function dbProgramToContentProgram(
     date: program.originalAirDate,
     rating: program.rating,
     icon: program.showIcon ?? program.episodeIcon ?? program.icon,
-    title: program.showTitle ?? program.title,
+    title:
+      program.type === ProgramType.Episode
+        ? program.showTitle ?? program.title
+        : program.title,
     duration: program.duration,
     type: 'content',
     id: program.uuid,
@@ -23,5 +26,7 @@ export function dbProgramToContentProgram(
       program.type === ProgramType.Episode ? program.episode : undefined,
     episodeTitle:
       program.type === ProgramType.Episode ? program.title : undefined,
+    albumName: program.albumName,
+    artistName: program.artistName,
   };
 }

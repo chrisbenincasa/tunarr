@@ -888,14 +888,23 @@
           "nullable": true,
           "mappedType": "integer"
         },
-        "custom_order": {
-          "name": "custom_order",
-          "type": "integer",
+        "artist_name": {
+          "name": "artist_name",
+          "type": "text",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
           "nullable": true,
-          "mappedType": "integer"
+          "mappedType": "text"
+        },
+        "album_name": {
+          "name": "album_name",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "mappedType": "text"
         }
       },
       "name": "program",

@@ -225,7 +225,7 @@ export class TVGuideService {
         startTimeMs: currentUpdateTimeMs - d,
         program: {
           type: 'flex',
-          duration: Number.MAX_SAFE_INTEGER,
+          duration: 1000 * 60 * 60 * 24 * 30, // One month
           isOffline: true,
         },
       };

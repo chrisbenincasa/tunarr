@@ -19,23 +19,23 @@ import {
   TextField,
   ToggleButton,
   ToggleButtonGroup,
+  Typography,
 } from '@mui/material';
 import { DataTag, useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import {
   PlexLibraryCollections,
   PlexLibraryMovies,
+  PlexLibraryMusic,
   PlexLibraryShows,
   PlexMovie,
+  PlexMusicArtist,
   PlexTvShow,
 } from '@tunarr/types/plex';
 import { chain, first, isEmpty, isNil, isUndefined, map } from 'lodash-es';
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import { useIntersectionObserver } from 'usehooks-ts';
 import { toggle } from '../../helpers/util';
-import {
-  fetchPlexPath,
-  usePlex
-} from '../../hooks/plexHooks';
+import { fetchPlexPath, usePlex } from '../../hooks/plexHooks';
 import { usePlexServerSettings } from '../../hooks/settingsHooks';
 import useDebouncedState from '../../hooks/useDebouncedState';
 import useStore from '../../store';
@@ -105,7 +105,7 @@ export default function PlexProgrammingSelector() {
       debounceSearch,
     ] as DataTag<
       ['plex-search', string, string, string],
-      PlexLibraryMovies | PlexLibraryShows
+      PlexLibraryMovies | PlexLibraryShows | PlexLibraryMusic
     >,
     enabled: !isNil(selectedServer) && !isNil(selectedLibrary),
     initialPageParam: 0,
@@ -119,7 +119,9 @@ export default function PlexProgrammingSelector() {
         plexQuery.set('title<', debounceSearch);
       }
 
-      return fetchPlexPath<PlexLibraryMovies | PlexLibraryShows>(
+      return fetchPlexPath<
+        PlexLibraryMovies | PlexLibraryShows | PlexLibraryMusic
+      >(
         selectedServer!.name,
         `/library/sections/${
           selectedLibrary!.library.key
@@ -218,7 +220,7 @@ export default function PlexProgrammingSelector() {
         .take(scrollParams.limit)
         .value();
       elements.push(
-        ...map(items, (item: PlexMovie | PlexTvShow) => {
+        ...map(items, (item: PlexMovie | PlexTvShow | PlexMusicArtist) => {
           return viewType === 'list' ? (
             <PlexListItem key={item.guid} item={item} />
           ) : (
@@ -315,6 +317,11 @@ export default function PlexProgrammingSelector() {
               marginTop: 1,
             }}
           />
+          {!searchLoading && (
+            <Typography variant="caption" color={(t) => t.palette.grey[700]}>
+              {first(searchData?.pages)?.size} Items
+            </Typography>
+          )}
           <List
             component="nav"
             sx={{

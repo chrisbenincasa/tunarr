@@ -13,14 +13,18 @@ import {
   PlexChildMediaApiType,
   PlexMedia,
   isPlexCollection,
-  isPlexMovie,
-  isPlexSeason,
+  isPlexMusicAlbum,
+  isPlexMusicArtist,
   isPlexShow,
   isTerminalItem,
 } from '@tunarr/types/plex';
-import { filter } from 'lodash-es';
+import { filter, first, map } from 'lodash-es';
 import React, { MouseEvent, useCallback, useEffect, useState } from 'react';
-import { prettyItemDuration } from '../../helpers/util.ts';
+import {
+  forPlexMedia,
+  prettyItemDuration,
+  typedProperty,
+} from '../../helpers/util.ts';
 import { usePlexTyped } from '../../hooks/plexHooks.ts';
 import useStore from '../../store/index.ts';
 import {
@@ -38,6 +42,17 @@ export interface PlexListItemProps<T extends PlexMedia> {
   parent?: string;
 }
 
+const plexTypeString = forPlexMedia({
+  show: 'Series',
+  collection: 'Collection',
+  movie: 'Movie',
+  episode: 'Episode',
+  track: 'Track',
+  album: 'Album',
+  artist: 'Artist',
+  default: 'All',
+});
+
 export function PlexListItem<T extends PlexMedia>(props: PlexListItemProps<T>) {
   const server = useStore((s) => s.currentServer!); // We have to have a server at this point
   const [open, setOpen] = useState(false);
@@ -53,7 +68,7 @@ export function PlexListItem<T extends PlexMedia>(props: PlexListItemProps<T>) {
   const selectedMedia = useStore((s) =>
     filter(s.selectedMedia, (m): m is PlexSelectedMedia => m.type === 'plex'),
   );
-  const selectedMediaIds = selectedMedia.map((item) => item['guid']);
+  const selectedMediaIds = map(selectedMedia, typedProperty('guid'));
 
   const handleClick = () => {
     setOpen(!open);
@@ -95,18 +110,21 @@ export function PlexListItem<T extends PlexMedia>(props: PlexListItemProps<T>) {
     );
   };
 
-  const calculateItemRuntime = () => {
+  const getSecondaryText = () => {
     if (isPlexShow(item)) {
       return `${prettyItemDuration(item.duration)} each`;
-    } else if (isPlexSeason(item)) {
-      // return item.leafCount * item.duration;
-      return;
     } else if (isTerminalItem(item)) {
       return prettyItemDuration(item.duration);
     } else if (isPlexCollection(item)) {
       const childCount = parseInt(item.childCount);
       const count = isNaN(childCount) ? 0 : childCount;
       return `${count} item${count === 0 || count > 1 ? 's' : ''}`;
+    } else if (isPlexMusicArtist(item)) {
+      return first(item.Genre)?.tag ?? ' ';
+    } else if (isPlexMusicAlbum(item)) {
+      return item.year ?? ' ';
+    } else {
+      return ' ';
     }
   };
 
@@ -116,21 +134,13 @@ export function PlexListItem<T extends PlexMedia>(props: PlexListItemProps<T>) {
         {hasChildren && (
           <ListItemIcon>{open ? <ExpandLess /> : <ExpandMore />}</ListItemIcon>
         )}
-        <ListItemText primary={item.title} secondary={calculateItemRuntime()} />
+        <ListItemText primary={item.title} secondary={getSecondaryText()} />
         <Button onClick={(e) => handleItem(e)} variant="contained">
           {hasChildren
-            ? `Add ${
-                isPlexShow(item)
-                  ? 'Series'
-                  : isPlexCollection(item)
-                  ? 'Collection'
-                  : 'All'
-              }`
+            ? `Add ${plexTypeString(item)}`
             : selectedMediaIds.includes(item.guid)
             ? 'Remove'
-            : isTerminalItem(item) && isPlexMovie(item)
-            ? 'Add Movie'
-            : 'Add Episode'}
+            : `Add ${plexTypeString(item)}`}
         </Button>
       </ListItemButton>
       <Collapse in={open} timeout="auto" unmountOnExit>

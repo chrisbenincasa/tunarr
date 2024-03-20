@@ -27,6 +27,7 @@ export async function upsertContentPrograms(
     .filter(isContentProgram)
     .uniqBy((p) => p.uniqueId)
     .map((p) => minter.mint(p.externalSourceName!, p.originalProgram!))
+    .compact()
     .value();
 
   logger.debug('Upserting %d programs', programsToPersist.length);
