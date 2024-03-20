@@ -26,7 +26,7 @@ body:
       value: "A bug happened!"
     validations:
       required: true
-  - type: textarea
+  - type: input
     id: version
     attributes:
       label: Version
@@ -39,6 +39,11 @@ body:
     attributes:
       label: What browser did you experience the the problem on?
       placeholder: "ex: Chrome 122.0.6261.128"
+  - type: input
+    id: os
+    attributes:
+      label: What operating system are you using?
+      placeholder: "ex: Windows 8.1"
   - type: textarea
     id: logs
     attributes:
