@@ -14,7 +14,7 @@ import {
   Tabs,
   TextField,
   ToggleButton,
-  ToggleButtonGroup
+  ToggleButtonGroup,
 } from '@mui/material';
 import { DataTag, useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import {
@@ -30,13 +30,10 @@ import {
 import { chain, first, isEmpty, isNil, isUndefined, map } from 'lodash-es';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useIntersectionObserver } from 'usehooks-ts';
-<<<<<<< HEAD
-=======
 import {
   firstItemInNextRow,
   getImagesPerRow,
 } from '../../helpers/inlineModalUtil';
->>>>>>> a7dab69 (progress on grid ux)
 import { toggle } from '../../helpers/util';
 import { fetchPlexPath, usePlex } from '../../hooks/plexHooks';
 import { usePlexServerSettings } from '../../hooks/settingsHooks';
@@ -325,36 +322,29 @@ export default function PlexProgrammingSelector() {
         .value();
 
       elements.push(
-<<<<<<< HEAD
-        ...map(items, (item: PlexMovie | PlexTvShow | PlexMusicArtist) => {
-          return viewType === 'list' ? (
-            <PlexListItem key={item.guid} item={item} />
-          ) : (
-            <PlexGridItem key={item.guid} item={item} />
-          );
-        }),
-=======
         <CustomTabPanel
           value={tabValue}
           index={0}
           key="Library"
           ref={libraryContainerRef}
         >
-          {map(items, (item: PlexMovie | PlexTvShow, idx: number) => {
-            return viewType === 'list' ? (
-              <PlexListItem key={item.guid} item={item} />
-            ) : (
-              <PlexGridItem
-                key={item.guid}
-                item={item}
-                modalIndex={modalIndex}
-                index={idx}
-                ref={libraryImageRef}
-              />
-            );
-          })}
+          {map(
+            items,
+            (item: PlexMovie | PlexTvShow | PlexMusicArtist, idx: number) => {
+              return viewType === 'list' ? (
+                <PlexListItem key={item.guid} item={item} />
+              ) : (
+                <PlexGridItem
+                  key={item.guid}
+                  item={item}
+                  modalIndex={modalIndex}
+                  index={idx}
+                  ref={libraryImageRef}
+                />
+              );
+            },
+          )}
         </CustomTabPanel>,
->>>>>>> a7dab69 (progress on grid ux)
       );
     }
 
