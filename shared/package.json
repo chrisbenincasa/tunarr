@@ -1,10 +1,10 @@
 {
   "name": "@tunarr/shared",
-  "version": "1.0.0",
-  "description": "",
+  "version": "0.1.0",
+  "description": "Utility functions shared between server and web",
   "keywords": [],
   "license": "Zlib",
-  "author": "",
+  "author": "chrisbenincasa",
   "type": "module",
   "exports": {
     ".": {
@@ -12,8 +12,8 @@
       "default": "./build/index.js"
     },
     "./constants": {
-      "types": "./build/util/constants.d.ts",
-      "default": "./build/util/constants.js"
+      "types": "./build/constants/index.d.ts",
+      "default": "./build/constants/index.js"
     },
     "./util": {
       "types": "./build/util/index.d.ts",

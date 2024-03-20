@@ -1,11 +1,13 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
+import constants from '@tunarr/shared/constants';
 import { isArray, isString } from 'lodash-es';
+import { existsSync } from 'node:fs';
+import { mkdir, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'path';
 import { ArgumentsCamelCase } from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import yargs from 'yargs/yargs';
-import constants from './constants.js';
 import {
   MigratableEntities,
   migrateFromLegacyDb,
@@ -13,10 +15,8 @@ import {
 import { getSettingsRawDb } from './dao/settings.js';
 import { setGlobalOptions, setServerOptions } from './globals.js';
 import createLogger from './logger.js';
-import { ServerOptions } from './types.js';
-import { existsSync } from 'node:fs';
-import { mkdir, writeFile } from 'node:fs/promises';
 import { initServer } from './server.js';
+import { ServerOptions } from './types.js';
 
 const logger = createLogger(import.meta);
 

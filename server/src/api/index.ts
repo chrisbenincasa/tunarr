@@ -1,10 +1,10 @@
+import constants from '@tunarr/shared/constants';
 import { VersionApiResponseSchema } from '@tunarr/types/api';
 import fileUpload from 'express-fileupload';
 import { promises as fsPromises } from 'fs';
 import { isNil } from 'lodash-es';
 import path from 'path';
 import { z } from 'zod';
-import constants from '../constants.js';
 import { PlexServerSettings } from '../dao/entities/PlexServerSettings.js';
 import { FFMPEGInfo } from '../ffmpegInfo.js';
 import { serverOptions } from '../globals.js';
@@ -16,9 +16,9 @@ import { channelsApi } from './channelsApi.js';
 import { customShowsApiV2 } from './customShowsApi.js';
 import { debugApi } from './debugApi.js';
 import { fillerListsApi } from './fillerListsApi.js';
+import { metadataApiRouter } from './metadataApi.js';
 import { programmingApi } from './programmingApi.js';
 import { tasksApiRouter } from './tasksApi.js';
-import { metadataApiRouter } from './metadataApi.js';
 
 const logger = createLogger(import.meta);
 

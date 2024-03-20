@@ -1,4 +1,5 @@
 import { EntityDTO, Loaded } from '@mikro-orm/core';
+import constants from '@tunarr/shared/constants';
 import {
   ChannelIcon,
   ChannelLineup,
@@ -10,7 +11,6 @@ import {
 } from '@tunarr/types';
 import { compact, isNil, isUndefined, keys, mapValues } from 'lodash-es';
 import { MarkRequired } from 'ts-essentials';
-import constants from '../constants.js';
 import { ChannelDB } from '../dao/channelDb.js';
 import {
   Lineup,

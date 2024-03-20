@@ -1,7 +1,7 @@
-import constants from './constants.js';
+import constants from '@tunarr/shared/constants';
 import { isUndefined } from 'lodash-es';
 
-let cache = {};
+const cache = {};
 let previous;
 
 function equalItems(a, b) {
@@ -14,8 +14,8 @@ function equalItems(a, b) {
 }
 
 export function wereThereTooManyAttempts(sessionId, lineupItem) {
-  let obj = cache[sessionId];
-  let t1 = new Date().getTime();
+  const obj = cache[sessionId];
+  const t1 = new Date().getTime();
   if (isUndefined(obj)) {
     previous = cache[sessionId] = {
       t0: t1 - constants.TOO_FREQUENT * 5,

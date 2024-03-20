@@ -1,7 +1,7 @@
 {
   "name": "@tunarr/types",
-  "version": "1.0.0",
-  "description": "",
+  "version": "0.1.0",
+  "description": "Type definitions and schemas shared between server and web",
   "scripts": {
     "build": "tsup",
     "clean": "rimraf build",
