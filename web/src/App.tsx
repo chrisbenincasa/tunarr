@@ -47,7 +47,7 @@ interface NavItem {
   icon?: ReactNode;
 }
 
-export function Root() {
+export function Root({ children }: { children?: React.ReactNode }) {
   const [open, setOpen] = useState(false);
 
   const toggleDrawerOpen = () => {
@@ -333,7 +333,7 @@ export function Root() {
                 settings.
               </Alert>
             ) : null}
-            <Outlet />
+            {children ?? <Outlet />}
           </Container>
         </Box>
       </Box>

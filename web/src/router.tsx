@@ -1,6 +1,7 @@
 import { QueryClient } from '@tanstack/react-query';
 import { createBrowserRouter } from 'react-router-dom';
 import { Root } from './App.tsx';
+import { ErrorPage } from './pages/ErrorPage.tsx';
 import ChannelProgrammingPage from './pages/channels/ChannelProgrammingPage.tsx';
 import ChannelsPage from './pages/channels/ChannelsPage.tsx';
 import EditChannelPage from './pages/channels/EditChannelPage.tsx';
@@ -46,13 +47,23 @@ export const router = createBrowserRouter(
     {
       path: '/',
       element: <Root />,
-      ErrorBoundary: function Error() {
-        return <div>Error</div>;
-      },
+      errorElement: (
+        <Root>
+          <ErrorPage />
+        </Root>
+      ),
       children: [
+        {
+          path: '*',
+          errorElement: <ErrorPage />,
+        },
         {
           element: <GuidePage />,
           index: true,
+        },
+        {
+          element: <GuidePage />,
+          path: '/guide',
         },
         {
           path: '/welcome',
