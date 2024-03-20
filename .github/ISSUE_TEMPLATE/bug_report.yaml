@@ -34,7 +34,7 @@ body:
       placeholder: "1.0.0"
     validations:
       required: true
-  - type: textarea
+  - type: input
     id: browser
     attributes:
       label: What browser did you experience the the problem on?
