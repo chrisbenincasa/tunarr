@@ -43,7 +43,7 @@ function InlineModal(props: InlineModalProps) {
   return (
     <Collapse
       in={open}
-      timeout={{ appear: 1750, enter: 1750, exit: 750 }}
+      timeout={{ appear: 1250, enter: 1250, exit: 350 }}
       easing={{
         enter: 'easeInSine',
         exit: 'linear',
@@ -65,7 +65,7 @@ function InlineModal(props: InlineModalProps) {
             darkMode ? theme.palette.grey[800] : theme.palette.grey[400],
           padding: '0',
           paddingTop: 2,
-          minHeight: modalHeight || 'auto',
+          minHeight: modalHeight,
         }}
         ref={ref}
       >

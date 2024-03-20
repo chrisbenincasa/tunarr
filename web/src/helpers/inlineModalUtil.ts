@@ -13,6 +13,11 @@ export function getEstimatedModalHeight(
   imageWidth: number,
   listSize: number,
 ): number {
+  // Exit with defaults if container & image width are not provided
+  if (containerWidth === 0 || imageWidth === 0) {
+    return 294; //default modal height for 1 row
+  }
+
   const columns = getImagesPerRow(containerWidth, imageWidth);
   const widthPerItem = containerWidth / columns;
   const heightPerItem = widthPerItem * 1.72 + 8; //8  magic number for margin-top of each item
@@ -21,7 +26,7 @@ export function getEstimatedModalHeight(
   //use interesectionObserver to load them in
   const maxRows = rows >= 3 ? 3 : rows;
 
-  return maxRows * heightPerItem;
+  return Math.ceil(maxRows * heightPerItem);
 }
 
 export function firstItemInNextRow(
@@ -44,8 +49,6 @@ export function firstItemInNextRow(
     modalIndex >= numberOfItems - numberOfItemsLastRow &&
     numberOfItemsLastRow < itemsPerRow
   ) {
-    console.log('TEST');
-
     return numberOfItems - numberOfItemsLastRow;
   }
 
