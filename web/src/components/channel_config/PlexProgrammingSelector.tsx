@@ -28,7 +28,7 @@ import {
   PlexTvShow,
 } from '@tunarr/types/plex';
 import { chain, first, isEmpty, isNil, isUndefined, map } from 'lodash-es';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useIntersectionObserver } from 'usehooks-ts';
 import {
   firstItemInNextRow,
@@ -111,6 +111,7 @@ export default function PlexProgrammingSelector() {
 
   useEffect(() => {
     setModalIndex(-1);
+    handleModalChildren([]);
   }, [tabValue]);
 
   const handleChange = (_: React.SyntheticEvent, newValue: number) => {
@@ -119,14 +120,30 @@ export default function PlexProgrammingSelector() {
 
   const handleMoveModal = useCallback(
     (index: number) => {
+      console.log('TEST');
       if (index === modalIndex) {
+        handleModalChildren([]);
         setModalIndex(-1);
       } else {
+        handleModalChildren([]);
         setModalIndex(index);
       }
     },
     [modalIndex],
   );
+
+  const handleHeightCalc = (childCount: string) => {
+    console.log(childCount);
+
+    // const containerWidth = containerRef?.current?.offsetWidth || 0;
+    // const itemWidth = imageRef?.current?.offsetWidth || 0;
+
+    // return getEstimatedModalHeight(
+    //   containerWidth,
+    //   itemWidth,
+    //   parseInt(childCount),
+    // );
+  };
 
   const handleModalChildren = useCallback(
     (children: PlexMedia[]) => {
@@ -279,7 +296,7 @@ export default function PlexProgrammingSelector() {
             viewType === 'list' ? (
               <PlexListItem key={item.guid} item={item} />
             ) : (
-              <>
+              <React.Fragment key={item.guid}>
                 <InlineModal
                   modalIndex={modalIndex}
                   modalChildren={modalChildren}
@@ -293,7 +310,6 @@ export default function PlexProgrammingSelector() {
                   }
                 />
                 <PlexGridItem
-                  key={item.guid}
                   item={item}
                   index={index}
                   modalIndex={modalIndex}
@@ -304,9 +320,15 @@ export default function PlexProgrammingSelector() {
                   modalIsPending={(isPending: boolean) =>
                     handleModalIsPending(isPending)
                   }
+                  // style={{
+                  //   opacity:
+                  //     index === modalIndex && modalIndex === -1
+                  //       ? '0.75 !important'
+                  //       : '0.55 !important',
+                  // }}
                   ref={imageRef}
                 />
-              </>
+              </React.Fragment>
             ),
           )}
         </CustomTabPanel>,

@@ -43,7 +43,8 @@ function InlineModal(props: InlineModalProps) {
   return (
     <Collapse
       in={open}
-      timeout={{ appear: 1250, enter: 1250, exit: 350 }}
+      //   timeout={{ appear: 1250, enter: 1250, exit: 350 }}
+      timeout="auto"
       easing={{
         enter: 'easeInSine',
         exit: 'linear',

@@ -14,6 +14,7 @@ import {
 } from '@tunarr/types/plex';
 import _, { filter, isNaN } from 'lodash-es';
 import React, {
+  ForwardedRef,
   MouseEvent,
   forwardRef,
   useCallback,
@@ -42,15 +43,18 @@ export interface PlexGridItemProps<T extends PlexMedia> {
   modalIsPending?: CallableFunction;
   modalIndex?: number;
   onClick?: any;
-  ref?: any;
+  ref?: React.RefObject<HTMLDivElement>;
 }
 
 const PlexGridItem = forwardRef(
-  <T extends PlexMedia>(props: PlexGridItemProps<T>, ref: any) => {
+  <T extends PlexMedia>(
+    props: PlexGridItemProps<T>,
+    ref: ForwardedRef<HTMLDivElement>,
+  ) => {
     const server = useStore((s) => s.currentServer!); // We have to have a server at this point
     const darkMode = useStore((state) => state.theme.darkMode);
     const [open, setOpen] = useState(false);
-    const { item } = props;
+    const { item, style, moveModal, modalChildren } = props;
     const hasChildren = !isTerminalItem(item);
     const childPath = isPlexCollection(item) ? 'collections' : 'metadata';
     const { isPending, data: children } = usePlexTyped<
@@ -69,11 +73,11 @@ const PlexGridItem = forwardRef(
     const handleClick = () => {
       setOpen(!open);
 
-      if (props.moveModal) {
-        props.moveModal();
+      if (moveModal) {
+        moveModal();
 
-        if (children && props.modalChildren) {
-          props.modalChildren(children.Metadata);
+        if (children && modalChildren) {
+          modalChildren(children.Metadata);
         }
       }
     };
@@ -88,8 +92,8 @@ const PlexGridItem = forwardRef(
       if (children) {
         addKnownMediaForServer(server.name, children.Metadata, item.guid);
 
-        if (children.Metadata.length > 0 && !!props.modalChildren) {
-          props.modalChildren(children.Metadata);
+        if (children.Metadata.length > 0 && !!modalChildren) {
+          modalChildren(children.Metadata);
         }
       }
     }, [item.guid, server.name, children]);
@@ -107,7 +111,7 @@ const PlexGridItem = forwardRef(
       [item, selectedServer, selectedMediaIds],
     );
 
-    const { isIntersecting: isInViewport, ref: imageRef } =
+    const { isIntersecting: isInViewport, ref: imageContainerRef } =
       useIntersectionObserver({
         threshold: 0,
         rootMargin: '0px',
@@ -125,7 +129,7 @@ const PlexGridItem = forwardRef(
         <Fade
           in={isInViewport && !_.isUndefined(item)} // to do: eventually we will want to add in:  && imageLoaded so it only fades in after image has loaded
           timeout={500}
-          ref={imageRef}
+          ref={imageContainerRef}
         >
           <ImageListItem
             component={Grid}
@@ -150,6 +154,7 @@ const PlexGridItem = forwardRef(
                     : theme.palette.grey[400]
                   : 'transparent',
               transition: 'background-color 10s ease',
+              ...style,
             }}
             onClick={
               hasChildren
