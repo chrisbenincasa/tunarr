@@ -256,6 +256,12 @@ export default function PlexProgrammingSelector() {
     }
   }, [selectedServer, searchData, setScrollParams, rowSize]);
 
+  useEffect(() => {
+    if (selectedServer?.name && collectionsData && collectionsData.Metadata) {
+      addKnownMediaForServer(selectedServer.name, collectionsData.Metadata);
+    }
+  }, [selectedServer?.name, collectionsData]);
+
   const { ref } = useIntersectionObserver({
     onChange: (_, entry) => {
       if (entry.isIntersecting && scrollParams.limit < scrollParams.max) {
