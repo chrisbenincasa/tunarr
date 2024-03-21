@@ -153,7 +153,7 @@ const PlexGridItem = forwardRef(
                     ? theme.palette.grey[800]
                     : theme.palette.grey[400]
                   : 'transparent',
-              transition: 'background-color 10s ease',
+              transition: 'background-color 350ms linear !important',
               ...style,
             }}
             onClick={
