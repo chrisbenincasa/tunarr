@@ -30,6 +30,7 @@ export const sortPrograms = (
     } else {
       n = sortOrder === 'asc' ? Number.MAX_VALUE : Number.MAX_VALUE;
     }
+
     return n;
   });
 
