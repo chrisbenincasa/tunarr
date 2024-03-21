@@ -132,19 +132,6 @@ export default function PlexProgrammingSelector() {
     [modalIndex],
   );
 
-  const handleHeightCalc = (childCount: string) => {
-    console.log(childCount);
-
-    // const containerWidth = containerRef?.current?.offsetWidth || 0;
-    // const itemWidth = imageRef?.current?.offsetWidth || 0;
-
-    // return getEstimatedModalHeight(
-    //   containerWidth,
-    //   itemWidth,
-    //   parseInt(childCount),
-    // );
-  };
-
   const handleModalChildren = useCallback(
     (children: PlexMedia[]) => {
       setModalChildren(children);
@@ -320,12 +307,6 @@ export default function PlexProgrammingSelector() {
                   modalIsPending={(isPending: boolean) =>
                     handleModalIsPending(isPending)
                   }
-                  // style={{
-                  //   opacity:
-                  //     index === modalIndex && modalIndex === -1
-                  //       ? '0.75 !important'
-                  //       : '0.55 !important',
-                  // }}
                   ref={imageRef}
                 />
               </React.Fragment>
