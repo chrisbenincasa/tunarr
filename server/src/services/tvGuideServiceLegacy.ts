@@ -225,7 +225,7 @@ export class TVGuideService {
         startTimeMs: currentUpdateTimeMs - d,
         program: {
           type: 'flex',
-          duration: Number.MAX_SAFE_INTEGER,
+          duration: 1000 * 60 * 60 * 24 * 30, // One month
           isOffline: true,
         },
       };
@@ -355,7 +355,7 @@ export class TVGuideService {
           'Redirrect loop found! Involved channels = ' + JSON.stringify(depth),
         );
       } else {
-        depth.push(channel.uuid);
+        depth.push(ch2);
         const channel2 = this.channelsById[ch2];
         if (isUndefined(channel2)) {
           logger.error(

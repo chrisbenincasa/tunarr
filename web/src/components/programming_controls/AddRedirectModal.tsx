@@ -1,9 +1,3 @@
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
-import Button from '@mui/material/Button';
-import { useChannels } from '../../hooks/useChannels.ts';
 import {
   Box,
   CircularProgress,
@@ -12,18 +6,25 @@ import {
   InputLabel,
   MenuItem,
   Select,
-  TextField,
   Typography,
 } from '@mui/material';
-import useStore from '../../store/index.ts';
-import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
+import { RedirectProgram } from '@tunarr/types';
+import { usePrevious } from '@uidotdev/usehooks';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
+import { find, isNil } from 'lodash-es';
 import { useEffect } from 'react';
-import { usePrevious } from '@uidotdev/usehooks';
-import { find, isNumber } from 'lodash-es';
+import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import { uuidRegexPattern } from '../../helpers/util.ts';
+import { useChannels } from '../../hooks/useChannels.ts';
 import { addProgramsToCurrentChannel } from '../../store/channelEditor/actions.ts';
-import { RedirectProgram } from '@tunarr/types';
+import useStore from '../../store/index.ts';
+import { NumericFormControllerText } from '../util/TypedController.tsx';
 
 dayjs.extend(duration);
 
@@ -86,6 +87,7 @@ const AddRedirectModal = (props: AddRedirectModalProps) => {
           <Controller
             control={control}
             name="redirectChannelId"
+            rules={{ minLength: 1, pattern: new RegExp(uuidRegexPattern) }}
             render={({ field }) => (
               <FormControl fullWidth margin="normal">
                 <InputLabel>Channel</InputLabel>
@@ -99,19 +101,20 @@ const AddRedirectModal = (props: AddRedirectModalProps) => {
               </FormControl>
             )}
           />
-          <Controller
+          <NumericFormControllerText
             control={control}
             name="redirectDuration"
-            rules={{ validate: isNumber }}
-            render={({ field }) => (
-              <TextField
-                fullWidth
-                margin="normal"
-                label="Duration (seconds)"
-                helperText={dayjs.duration(field.value, 'seconds').humanize()}
-                {...field}
-              />
-            )}
+            prettyFieldName="Redirect duration"
+            rules={{ required: true, minLength: 1, min: 1 }}
+            TextFieldProps={{
+              fullWidth: true,
+              margin: 'normal',
+              label: 'Duration (seconds)',
+              helperText: ({ field, formState: { errors } }) =>
+                isNil(errors['redirectDuration'])
+                  ? dayjs.duration(field.value, 'seconds').humanize()
+                  : null,
+            }}
           />
         </FormGroup>
       );

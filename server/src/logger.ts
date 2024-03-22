@@ -2,10 +2,10 @@ import path from 'path';
 import * as winston from 'winston';
 import 'winston-daily-rotate-file';
 
+import chalk from 'chalk';
 import { isUndefined, join } from 'lodash-es';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import chalk from 'chalk';
 import { isProduction } from './util.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -21,7 +21,7 @@ const hformat = (module: ImportMeta) => {
   const moduleLabel = isProduction ? '' : ` ${getLabel(module)}`;
   return winston.format.printf(
     ({ level, label, message, timestamp, ...metadata }) => {
-      let msg = `${timestamp} [${level}]${moduleLabel}${
+      let msg = `${timestamp} [${level}]${moduleLabel} ${
         label ? `[${label}]` : ''
       }: ${message} `;
       for (const key of Object.keys(metadata)) {

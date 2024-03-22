@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from 'async_hooks';
 import { isUndefined, once } from 'lodash-es';
 import path from 'path';
 import { ChannelCache } from './channelCache.js';
@@ -14,7 +15,6 @@ import { FileCacheService } from './services/fileCacheService.js';
 import { M3uService } from './services/m3uService.js';
 import { TVGuideService } from './services/tvGuideService.js';
 import { XmlTvWriter } from './xmltv.js';
-import { AsyncLocalStorage } from 'async_hooks';
 
 export type ServerContext = {
   channelDB: ChannelDB;
@@ -53,6 +53,13 @@ export const serverContext: () => Promise<ServerContext> = once(async () => {
     channelDB,
   );
 
+  const guideService2 = new TVGuideService(
+    xmltv,
+    cacheImageService,
+    eventService,
+    channelDB,
+  );
+
   const customShowDB = new CustomShowDB();
 
   return {
@@ -63,6 +70,7 @@ export const serverContext: () => Promise<ServerContext> = once(async () => {
     m3uService,
     eventService,
     guideService,
+    guideService2,
     hdhrService: new HdhrService(settings, channelDB),
     customShowDB,
     channelCache,

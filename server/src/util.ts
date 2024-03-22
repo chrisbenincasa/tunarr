@@ -13,8 +13,8 @@ import {
   reduce,
 } from 'lodash-es';
 import fs from 'node:fs/promises';
-import { isPromise } from 'node:util/types';
 import { fileURLToPath } from 'node:url';
+import { isPromise } from 'node:util/types';
 
 declare global {
   interface Array<T> {
@@ -150,7 +150,10 @@ export async function mapReduceAsyncSeq<T, U, Res>(
   return Promise.all(all).then((res) => res.reduce(combineFn, empty));
 }
 
-export const wait: (ms: number) => Promise<void> = (ms: number) => {
+export const wait: (ms?: number) => Promise<void> = (ms: number) => {
+  if (isUndefined(ms)) {
+    return new Promise((resolve) => setImmediate(resolve));
+  }
   return new Promise((resolve) => setTimeout(resolve, ms));
 };
 

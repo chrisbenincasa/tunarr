@@ -1,7 +1,7 @@
 import { QueryClient, UseQueryOptions, useQuery } from '@tanstack/react-query';
+import { ChannelLineup } from '@tunarr/types';
 import { Dayjs } from 'dayjs';
 import { apiClient } from '../external/api.ts';
-import { ChannelLineup } from '@tunarr/types';
 
 const dateRangeQueryKey = (range: { from: Dayjs; to: Dayjs }) =>
   `${range.from.unix()}_${range.to.unix()}`;
@@ -50,6 +50,25 @@ export const useAllTvGuides = (
   params: { from: Dayjs; to: Dayjs },
   extraOpts: Partial<UseQueryOptions<ChannelLineup[]>> = {},
 ) => useQuery({ ...allLineupsQueryOpts(params), ...extraOpts });
+
+export const useAllTvGuidesDebug = (
+  params: { from: Dayjs; to: Dayjs },
+  extraOpts: Partial<
+    UseQueryOptions<{ old: ChannelLineup; new: ChannelLineup }[]>
+  > = {},
+) =>
+  useQuery({
+    queryKey: ['channels', 'all', 'guide', dateRangeQueryKey(params)],
+    queryFn: async () => {
+      return apiClient.getAllChannelLineupsDebug({
+        queries: {
+          from: params.from.toISOString(),
+          to: params.to.toISOString(),
+        },
+      });
+    },
+    ...extraOpts,
+  });
 
 export const prefetchAllTvGuides =
   (queryClient: QueryClient) =>

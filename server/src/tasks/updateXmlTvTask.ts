@@ -1,4 +1,5 @@
-import { Loaded, wrap } from '@mikro-orm/core';
+import { Loaded } from '@mikro-orm/core';
+import dayjs from 'dayjs';
 import { ChannelCache } from '../channelCache.js';
 import { withDb } from '../dao/dataSource.js';
 import { Channel } from '../dao/entities/Channel.js';
@@ -56,14 +57,11 @@ export class UpdateXmlTvTask extends Task<void> {
     try {
       channels = await this.channelCache.getAllChannelsWithPrograms();
       const xmltvSettings = this.dbAccess.xmlTvSettings();
-      const channelDtos = channels.map((c) => wrap(c)).map((e) => e.toJSON());
-      const t = this.guideService.prepareRefresh(
-        channelDtos,
-        xmltvSettings.programmingHours * 60 * 60 * 1000,
-      );
       channels = [];
 
-      await this.guideService.refresh(t);
+      await this.guideService.refreshGuide(
+        dayjs.duration({ hours: xmltvSettings.programmingHours }),
+      );
       // xmltvInterval.lastRefresh = new Date();
 
       logger.info('XMLTV Updated at ' + new Date().toLocaleString());

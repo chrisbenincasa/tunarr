@@ -1,6 +1,4 @@
-import { Program as ProgramDTO } from '@tunarr/types';
 import { LineupSchedule } from '@tunarr/types/api';
-import { Program } from '../entities/Program.js';
 
 export type Lineup = {
   items: LineupItem[];
@@ -51,11 +49,3 @@ function isItemOfType<T extends LineupItem>(discrim: string) {
 export const isContentItem = isItemOfType<ContentItem>('content');
 export const isOfflineItem = isItemOfType<OfflineItem>('offline');
 export const isRedirectItem = isItemOfType<RedirectItem>('redirect');
-
-export function contentItemToProgramDTO(
-  backingItem: Program,
-): Partial<ProgramDTO> {
-  return {
-    ...backingItem.toDTO(),
-  };
-}

@@ -1,9 +1,7 @@
 import { find, memoize } from 'lodash-es';
+import { uuidRegexPattern } from '../helpers/util';
 
 type Route = { matcher: RegExp; name: string };
-
-const uuidRegexPattern =
-  '[0-9a-fA-F]{8}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{12}';
 
 const entityPageMatcher = (entity: string, path: string) =>
   new RegExp(`^\/${entity}\/${uuidRegexPattern}\/${path}\/?$`);

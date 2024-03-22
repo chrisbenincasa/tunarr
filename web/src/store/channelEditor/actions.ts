@@ -1,3 +1,4 @@
+import { createExternalId } from '@tunarr/shared';
 import { forProgramType } from '@tunarr/shared/util';
 import {
   Channel,
@@ -36,7 +37,6 @@ import { EnrichedPlexMedia } from '../../hooks/plexHooks.ts';
 import { AddedMedia, UIIndex } from '../../types/index.ts';
 import useStore from '../index.ts';
 import { ChannelEditorState, initialChannelEditorState } from './store.ts';
-import { createExternalId } from '@tunarr/shared';
 
 export const resetChannelEditorState = () =>
   useStore.setState((state) => {
@@ -129,6 +129,13 @@ export const resetCurrentLineup = (
 
 export const resetLineup = () =>
   useStore.setState((state) => {
+    if (
+      state.channelEditor.originalEntity &&
+      state.channelEditor.currentEntity
+    ) {
+      state.channelEditor.currentEntity.startTime =
+        state.channelEditor.originalEntity.startTime;
+    }
     state.channelEditor.programList = [
       ...state.channelEditor.originalProgramList,
     ];

@@ -57,7 +57,13 @@ export class StreamSession {
       logger.debug('[Session %s] Stopping stream session', this.#channel.uuid);
       this.#ffmpeg.kill();
       setImmediate(() => {
-        this.cleanupDirectory();
+        this.cleanupDirectory().catch((e) =>
+          logger.error(
+            'Error while attempting to cleanup stream directory: %O',
+            e,
+            { label: `Session ${this.#channel.uuid}` },
+          ),
+        );
       });
       this.#state = 'stopped';
     } else {
