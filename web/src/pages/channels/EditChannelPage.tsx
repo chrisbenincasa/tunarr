@@ -26,6 +26,7 @@ import ChannelTranscodingConfig from '../../components/channel_config/ChannelTra
 import { apiClient } from '../../external/api.ts';
 import { usePreloadedData } from '../../hooks/preloadedDataHook.ts';
 import {
+  DefaultChannel,
   defaultNewChannel,
   editChannelLoader,
 } from '../../preloaders/channelLoaders.ts';
@@ -135,6 +136,10 @@ export default function EditChannelPage({ isNew }: Props) {
         targetResolution: channel.transcoding?.targetResolution ?? 'global',
         videoBitrate: channel.transcoding?.videoBitrate ?? 'global',
         videoBufferSize: channel.transcoding?.videoBufferSize ?? 'global',
+      },
+      offline: {
+        ...channel.offline,
+        picture: channel.offline.picture ?? DefaultChannel.offline.picture,
       },
     });
   }, [channel, formMethods]);

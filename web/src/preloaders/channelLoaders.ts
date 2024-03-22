@@ -18,27 +18,36 @@ export const newChannelLoader: Preloader<Channel[]> = createPreloader(() =>
   channelsQuery(),
 );
 
+// Default channel values that aren't dynamic
+export const DefaultChannel: Omit<
+  Channel,
+  'id' | 'name' | 'number' | 'startTime'
+> = {
+  duration: 0,
+  icon: {
+    duration: 0,
+    path: '',
+    position: 'bottom',
+    width: 0,
+  },
+  guideMinimumDuration: 30000,
+  fillerRepeatCooldown: 30,
+  groupTitle: 'tv',
+  stealth: false,
+  disableFillerOverlay: false,
+  offline: {
+    mode: 'pic',
+    picture: 'http://localhost:8000/images/generic-offline-screen.png',
+  },
+};
+
 export function defaultNewChannel(num: number): Channel {
   return {
     id: uuidv4(),
     name: `Channel ${num}`,
     number: num,
     startTime: dayjs().unix() * 1000,
-    duration: 0,
-    icon: {
-      duration: 0,
-      path: '',
-      position: 'bottom',
-      width: 0,
-    },
-    guideMinimumDuration: 30000,
-    fillerRepeatCooldown: 30,
-    groupTitle: 'tv',
-    stealth: false,
-    disableFillerOverlay: false,
-    offline: {
-      mode: 'pic',
-    },
+    ...DefaultChannel,
   };
 }
 

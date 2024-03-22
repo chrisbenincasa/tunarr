@@ -31,8 +31,10 @@ import {
 import { useCallback, useState } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 import { useDebounceCallback } from 'usehooks-ts';
+import { typedProperty } from '../../helpers/util.ts';
 import { useFillerLists } from '../../hooks/useFillerLists.ts';
 import useStore from '../../store/index.ts';
+import { ImageUploadInput } from '../settings/ImageUploadInput.tsx';
 import ChannelEditActions from './ChannelEditActions.tsx';
 
 export function ChannelFlexConfig() {
@@ -40,8 +42,11 @@ export function ChannelFlexConfig() {
   const { data: fillerLists, isPending: fillerListsLoading } = useFillerLists();
   const { control, setValue, watch } = useFormContext<SaveChannelRequest>();
 
-  const offlineMode = watch('offline.mode');
-  const channelFillerLists = watch('fillerCollections');
+  const [offlineMode, channelFillerLists, offlinePicture] = watch([
+    'offline.mode',
+    'fillerCollections',
+    'offline.picture',
+  ]);
   const [weights, setWeights] = useState<number[]>(
     map(channelFillerLists, 'weight'),
   );
@@ -283,10 +288,7 @@ export function ChannelFlexConfig() {
                 <Box
                   component="img"
                   width="100%"
-                  src={
-                    channel.offline.picture ??
-                    'http://localhost:8000/images/generic-offline-screen.png'
-                  }
+                  src={offlinePicture}
                   sx={{ mr: 1 }}
                 />
               </Box>
@@ -309,11 +311,17 @@ export function ChannelFlexConfig() {
                 name="offline.picture"
                 control={control}
                 render={({ field }) => (
-                  <TextField
-                    fullWidth
-                    sx={{ mb: 1 }}
+                  <ImageUploadInput
+                    // TODO: This should be something like {channel.id}_fallback_picture.ext
+                    fileRenamer={typedProperty('name')}
                     label="Picture"
-                    {...field}
+                    onFormValueChange={(value) =>
+                      setValue('offline.picture', value)
+                    }
+                    onUploadError={console.error}
+                    onPreviewValueChange={() => {}}
+                    FormControlProps={{ fullWidth: true, sx: { mb: 1 } }}
+                    value={field.value ?? ''}
                   />
                 )}
               />
