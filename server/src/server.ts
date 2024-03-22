@@ -199,10 +199,16 @@ export async function initServer(opts: ServerOptions) {
           return { schema: transformedSchema, url };
         };
       });
+
       f.register(fpStatic, {
-        root: path.join(currentDirectory, 'resources', 'images'),
-        prefix: '/images',
+        root: path.join(serverOptions().database, 'images', 'uploads'),
+        prefix: '/images/uploads',
       })
+        .register(fpStatic, {
+          root: path.join(currentDirectory, 'resources', 'images'),
+          prefix: '/images',
+          decorateReply: false,
+        })
         .get('/favicon.svg', async (_, res) => {
           return res.sendFile(
             'favicon.svg',

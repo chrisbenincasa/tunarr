@@ -1,36 +1,13 @@
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import {
-  Box,
-  FormControl,
-  IconButton,
-  InputAdornment,
-  InputLabel,
-  OutlinedInput,
-  Snackbar,
-  TextField,
-  styled,
-} from '@mui/material';
+import { Box, Snackbar, TextField } from '@mui/material';
 import { Channel } from '@tunarr/types';
 import { usePrevious } from '@uidotdev/usehooks';
 import { isEmpty } from 'lodash-es';
-import { ChangeEvent, useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
-import { apiClient } from '../../external/api.ts';
 import useDebouncedState from '../../hooks/useDebouncedState.ts';
 import useStore from '../../store/index.ts';
+import { ImageUploadInput } from '../settings/ImageUploadInput.tsx';
 import ChannelEditActions from './ChannelEditActions.tsx';
-
-const VisuallyHiddenInput = styled('input')({
-  clip: 'rect(0 0 0 0)',
-  clipPath: 'inset(50%)',
-  height: 1,
-  overflow: 'hidden',
-  position: 'absolute',
-  bottom: 0,
-  left: 0,
-  whiteSpace: 'nowrap',
-  width: 1,
-});
 
 const DefaultIconPath = '/tunarr.png';
 
@@ -73,10 +50,16 @@ export default function ChannelPropertiesEditor() {
     }
   }, [imgRef]);
 
-  const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const data = new FormData();
-      const file = e.target.files[0];
+  const onThumbUrlChange = useCallback(
+    (value: string) => {
+      setChannelIcon(value);
+      setChannelIconPreview(value);
+    },
+    [setChannelIcon, setChannelIconPreview],
+  );
+
+  const renameFile = useCallback(
+    (file: File) => {
       const idx = file.name.lastIndexOf('.');
       let newName: string;
 
@@ -86,38 +69,9 @@ export default function ChannelPropertiesEditor() {
         const ext = file.name.slice(idx + 1);
         newName = `${channel!.id}_icon.${ext}`;
       }
-
-      const renamedFile = new File(
-        [file.slice(0, file.size, file.type)],
-        newName,
-        {
-          type: file.type,
-        },
-      );
-
-      data.append('file', renamedFile);
-
-      apiClient
-        .uploadImage({ file: renamedFile })
-        .then((response) => {
-          setChannelIcon(response.data.fileUrl);
-        })
-        .catch((err) => {
-          console.error(err);
-          setChannelIcon(previousIconPath ?? DefaultIconPath);
-          setChannelIconPreview(previousIconPath ?? DefaultIconPath);
-        });
-
-      setChannelIconPreview(URL.createObjectURL(file));
-    }
-  };
-
-  const onThumbUrlChange = useCallback(
-    (e: ChangeEvent<HTMLInputElement>) => {
-      setChannelIcon(e.target.value);
-      setChannelIconPreview(e.target.value);
+      return newName;
     },
-    [setChannelIcon, setChannelIconPreview],
+    [channel],
   );
 
   return (
@@ -178,26 +132,17 @@ export default function ChannelPropertiesEditor() {
               sx={{ mr: 1 }}
               ref={imgRef}
             />
-            <FormControl fullWidth margin="normal">
-              <InputLabel>Thumbnail URL</InputLabel>
-              <OutlinedInput
-                label="Thumbnail URL"
-                value={channelIcon}
-                onChange={onThumbUrlChange}
-                endAdornment={
-                  <InputAdornment position="end">
-                    <IconButton component="label">
-                      <CloudUploadIcon />
-                      <VisuallyHiddenInput
-                        onChange={(e) => handleFileUpload(e)}
-                        type="file"
-                        accept="image/*"
-                      />
-                    </IconButton>
-                  </InputAdornment>
-                }
-              />
-            </FormControl>
+            <ImageUploadInput
+              FormControlProps={{ fullWidth: true, margin: 'normal' }}
+              value={channelIcon ?? DefaultIconPath}
+              onFormValueChange={onThumbUrlChange}
+              fileRenamer={renameFile}
+              label="Thumbnail URL"
+              onUploadError={() =>
+                onThumbUrlChange(previousIconPath ?? DefaultIconPath)
+              }
+              onPreviewValueChange={setChannelIconPreview}
+            />
           </Box>
           <ChannelEditActions />
         </>
