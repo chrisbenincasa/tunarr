@@ -311,6 +311,7 @@ export const forTvGuideProgram = <T>(
 
 export const forPlexMedia = <T>(choices: PerTypeCallback<PlexMedia, T>) => {
   return (m: PlexMedia) => {
+    // console.log('m.type ===', m.type);
     switch (m.type) {
       case 'movie':
         if (choices.movie) return applyOrValue(choices.movie, m);

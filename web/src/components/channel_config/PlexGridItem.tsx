@@ -72,7 +72,7 @@ const PlexGridItem = forwardRef(
 
     const handleClick = () => {
       setOpen(!open);
-      console.log('TEST');
+      console.log();
 
       if (moveModal) {
         moveModal();

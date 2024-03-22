@@ -16,7 +16,10 @@ export function getEstimatedModalHeight(
 ): number {
   // Episode modals have smaller height, short circuit for  now
 
-  if (type === 'All') {
+  console.log('type: ', type);
+  if (type === 'Episode') {
+    console.log('MATCH!');
+
     return 143;
   }
   // Exit with defaults if container & image width are not provided
@@ -66,6 +69,7 @@ export function firstItemInNextRow(
     modalIndex >= numberOfItems - numberOfItemsLastRow &&
     numberOfItemsLastRow < itemsPerRow
   ) {
+    return -1;
     return numberOfItems - numberOfItemsLastRow;
   }
 

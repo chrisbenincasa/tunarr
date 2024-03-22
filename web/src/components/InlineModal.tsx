@@ -3,6 +3,7 @@ import { PlexMedia } from '@tunarr/types/plex';
 import { usePrevious } from '@uidotdev/usehooks';
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 import {
+  extractLastIndexes,
   firstItemInNextRow,
   getEstimatedModalHeight,
 } from '../helpers/inlineModalUtil';
@@ -26,7 +27,6 @@ const plexTypeString = forPlexMedia({
   track: 'Track',
   album: 'Album',
   artist: 'Artist',
-  default: 'All',
 });
 
 function InlineModal(props: InlineModalProps) {
@@ -121,6 +121,8 @@ function InlineModal(props: InlineModalProps) {
         {modalChildren?.map(
           (child: PlexMedia, idx: number, arr: PlexMedia[]) => (
             <React.Fragment key={child.guid}>
+              {console.log(child)}
+              {console.log('log ', idx, ' ', plexTypeString(child))}
               <InlineModal
                 modalIndex={childModalIndex} //to do
                 modalChildren={childModalChildren} //to do
@@ -134,7 +136,6 @@ function InlineModal(props: InlineModalProps) {
                 }
                 rowSize={rowSize}
                 type={plexTypeString(child)}
-                // firstItemInNextRow={firstItemInNextRow}
               />
               <PlexGridItem
                 key={child.guid}
@@ -159,6 +160,17 @@ function InlineModal(props: InlineModalProps) {
             </React.Fragment>
           ),
         )}
+        {/* This Modal is for last row items because they can't be inserted using the above inline modal */}
+        <InlineModal
+          modalIndex={childModalIndex}
+          modalChildren={childModalChildren}
+          rowSize={rowSize}
+          open={extractLastIndexes(
+            modalChildren,
+            modalChildren.length % rowSize,
+          ).includes(childModalIndex)}
+          type={'All'}
+        />
       </List>
     </Collapse>
   );

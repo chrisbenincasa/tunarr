@@ -28,6 +28,7 @@ import { chain, first, forEach, isNil, isUndefined, map } from 'lodash-es';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useIntersectionObserver } from 'usehooks-ts';
 import {
+  extractLastIndexes,
   firstItemInNextRow,
   getImagesPerRow,
 } from '../../helpers/inlineModalUtil';
@@ -305,6 +306,7 @@ export default function PlexProgrammingSelector() {
               <PlexListItem key={item.guid} item={item} />
             ) : (
               <React.Fragment key={item.guid}>
+                {console.log('log ', index, ' ', plexTypeString(item))}
                 <InlineModal
                   modalIndex={modalIndex}
                   modalChildren={modalChildren}
@@ -335,6 +337,17 @@ export default function PlexProgrammingSelector() {
               </React.Fragment>
             ),
           )}
+          {/* This Modal is for last row items because they can't be inserted using the above inline modal */}
+          <InlineModal
+            modalIndex={modalIndex}
+            modalChildren={modalChildren}
+            rowSize={rowSize}
+            open={extractLastIndexes(
+              collectionsData?.Metadata,
+              collectionsData?.Metadata.length % rowSize,
+            ).includes(modalIndex)}
+            type={'All'}
+          />
         </CustomTabPanel>,
       );
     }
