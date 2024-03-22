@@ -98,6 +98,8 @@ export function PlexListItem<T extends PlexMedia>(props: PlexListItemProps<T>) {
       <Skeleton />
     ) : (
       <List sx={{ pl: 4 }}>
+        {console.log('TEST')}
+
         {children?.Metadata.map((child, idx, arr) => (
           <PlexListItem
             key={child.guid}

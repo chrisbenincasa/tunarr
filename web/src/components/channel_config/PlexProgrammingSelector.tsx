@@ -31,7 +31,7 @@ import {
   firstItemInNextRow,
   getImagesPerRow,
 } from '../../helpers/inlineModalUtil';
-import { toggle } from '../../helpers/util.ts';
+import { forPlexMedia, toggle } from '../../helpers/util';
 import { fetchPlexPath, usePlex } from '../../hooks/plexHooks';
 import { usePlexServerSettings } from '../../hooks/settingsHooks';
 import useStore from '../../store';
@@ -53,6 +53,17 @@ function a11yProps(index: number) {
     'aria-controls': `simple-tabpanel-${index}`,
   };
 }
+
+const plexTypeString = forPlexMedia({
+  show: 'Series',
+  collection: 'Collection',
+  movie: 'Movie',
+  episode: 'Episode',
+  track: 'Track',
+  album: 'Album',
+  artist: 'Artist',
+  default: 'All',
+});
 
 export default function PlexProgrammingSelector() {
   const { data: plexServers } = usePlexServerSettings();
@@ -297,6 +308,7 @@ export default function PlexProgrammingSelector() {
                 <InlineModal
                   modalIndex={modalIndex}
                   modalChildren={modalChildren}
+                  rowSize={rowSize}
                   open={
                     index ===
                     firstItemInNextRow(
@@ -305,6 +317,7 @@ export default function PlexProgrammingSelector() {
                       collectionsData?.Metadata?.length || 0,
                     )
                   }
+                  type={plexTypeString(item)}
                 />
                 <PlexGridItem
                   item={item}

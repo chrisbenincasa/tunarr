@@ -12,7 +12,13 @@ export function getEstimatedModalHeight(
   containerWidth: number,
   imageContainerWidth: number,
   listSize: number,
+  type: string | null,
 ): number {
+  // Episode modals have smaller height, short circuit for  now
+
+  if (type === 'All') {
+    return 143;
+  }
   // Exit with defaults if container & image width are not provided
   if (containerWidth === 0 || imageContainerWidth === 0) {
     return 294; //default modal height for 1 row
