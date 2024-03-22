@@ -9,6 +9,8 @@ import {
   IconButton,
   InputAdornment,
   LinearProgress,
+  MenuItem,
+  Select,
   Stack,
   Tab,
   Tabs,
@@ -27,7 +29,15 @@ import {
   PlexMusicArtist,
   PlexTvShow,
 } from '@tunarr/types/plex';
-import { chain, first, isEmpty, isNil, isUndefined, map } from 'lodash-es';
+import {
+  chain,
+  find,
+  first,
+  isEmpty,
+  isNil,
+  isUndefined,
+  map,
+} from 'lodash-es';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useIntersectionObserver } from 'usehooks-ts';
 import {
@@ -74,10 +84,12 @@ export default function PlexProgrammingSelector() {
   const imageRef = useRef<HTMLDivElement>(null);
   const libraryImageRef = useRef<HTMLDivElement>(null);
   const libraryContainerRef = useRef<HTMLDivElement>(null);
-  usePlexFilters(
-    selectedServer?.name ?? '',
-    selectedLibrary?.library.key ?? '',
-  );
+  const { data: plexFilterMetadata, isLoading: filterMetadataLoading } =
+    usePlexFilters(
+      selectedServer?.name ?? '',
+      selectedLibrary?.library.key ?? '',
+    );
+  console.log(plexFilterMetadata);
 
   const handleResize = () => {
     if (tabValue === 0) {
@@ -364,12 +376,50 @@ export default function PlexProgrammingSelector() {
     return elements;
   };
 
+  const libraryFilterMeta = find(
+    plexFilterMetadata?.Type,
+    (t) => t.type === 'movie',
+  );
+
+  const lookupFieldOperators = (fieldType: string) => {
+    if (!plexFilterMetadata || !libraryFilterMeta) {
+      return;
+    }
+
+    return find(plexFilterMetadata.FieldType, { type: fieldType })?.Operator;
+  };
+
   return (
     <>
       {!isNil(directoryChildren) &&
         directoryChildren.size > 0 &&
         selectedLibrary && (
           <>
+            {libraryFilterMeta && libraryFilterMeta.Field.length > 0 && (
+              <>
+                <Select value={libraryFilterMeta.Field[0].key}>
+                  {map(libraryFilterMeta.Field, (field) => {
+                    return (
+                      <MenuItem key={field.key} value={field.key}>
+                        {field.title}
+                      </MenuItem>
+                    );
+                  })}
+                </Select>
+                <Select value="==">
+                  {map(
+                    lookupFieldOperators(libraryFilterMeta.Field[0].type),
+                    (ops) => {
+                      return (
+                        <MenuItem key={ops.key} value={ops.key}>
+                          {ops.title}
+                        </MenuItem>
+                      );
+                    },
+                  )}
+                </Select>
+              </>
+            )}
             <Stack
               direction={{ xs: 'column', sm: 'row' }}
               sx={{

@@ -18,6 +18,7 @@ import { flattenDeep, map } from 'lodash-es';
 import { useEffect } from 'react';
 import { apiClient } from '../external/api.ts';
 import { sequentialPromises } from '../helpers/util.ts';
+import useStore from '../store/index.ts';
 import { setPlexMetadataFilters } from '../store/plexMetadata/actions.ts';
 
 type PlexPathMappings = [
@@ -162,7 +163,16 @@ export const usePlexFilters = (serverName: string, plexKey: string) => {
     }
   }, [serverName, plexKey, query.data]);
 
-  return query;
+  return {
+    isLoading: query.isLoading,
+    error: query.error,
+    data: useStore(({ plexMetadata }) => {
+      const server = plexMetadata.libraryFilters[serverName];
+      if (server) {
+        return server[plexKey]?.Meta;
+      }
+    }),
+  };
 };
 
 export type EnrichedPlexMedia = PlexTerminalMedia & {
