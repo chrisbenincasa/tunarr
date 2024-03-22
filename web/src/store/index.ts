@@ -7,6 +7,10 @@ import {
   createChannelEditorState,
 } from './channelEditor/store.ts';
 import {
+  PlexMetadataState,
+  createPlexMetadataState,
+} from './plexMetadata/store.ts';
+import {
   ProgrammingListingsState,
   createProgrammingListingsState,
 } from './programmingSelector/store.ts';
@@ -43,7 +47,8 @@ export type State = ThemeEditorState &
   SettingsState &
   ChannelsState &
   ProgrammingListingsState &
-  EditorsState;
+  EditorsState &
+  PlexMetadataState;
 
 const createSettingsSlice: StateCreator<SettingsState> = () => ({
   xmlTvSettings: undefined,
@@ -63,6 +68,7 @@ const useStore = create<State>()(
           ...createProgrammingListingsState(...set),
           ...createChannelEditorState(...set),
           ...createThemeEditorState(...set),
+          ...createPlexMetadataState(...set),
         }),
         {
           name: 'tunarr',

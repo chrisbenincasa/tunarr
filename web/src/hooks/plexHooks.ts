@@ -3,6 +3,7 @@ import { DefaultPlexHeaders } from '@tunarr/shared/constants';
 import { PlexServerSettings } from '@tunarr/types';
 import {
   PlexEpisodeView,
+  PlexFiltersResponse,
   PlexLibraryListing,
   PlexLibrarySection,
   PlexLibrarySections,
@@ -14,12 +15,34 @@ import {
 } from '@tunarr/types/plex';
 import axios from 'axios';
 import { flattenDeep, map } from 'lodash-es';
+import { useEffect } from 'react';
 import { apiClient } from '../external/api.ts';
 import { sequentialPromises } from '../helpers/util.ts';
+import { setPlexMetadataFilters } from '../store/plexMetadata/actions.ts';
 
-type PlexPathMappings = {
-  '/library/sections': PlexLibrarySections;
-};
+type PlexPathMappings = [
+  ['/library/sections', PlexLibrarySections],
+  [`/library/sections/${string}/all`, unknown],
+];
+
+type FindChild0<Target, Arr extends unknown[] = []> = Arr extends [
+  [infer Head, infer Child],
+  ...infer Tail,
+]
+  ? Head extends Target
+    ? Child
+    : FindChild0<Target, Tail>
+  : never;
+
+// Turns a key/val tuple type array into a union of the "keys"
+type ExtractTypeKeys<
+  Arr extends unknown[] = [],
+  Acc extends unknown[] = [],
+> = Arr extends []
+  ? Acc
+  : Arr extends [[infer Head, any], ...infer Tail]
+  ? Head | ExtractTypeKeys<Tail>
+  : never;
 
 export const fetchPlexPath = <T>(serverName: string, path: string) => {
   return async () => {
@@ -34,16 +57,22 @@ export const fetchPlexPath = <T>(serverName: string, path: string) => {
   };
 };
 
-export const usePlex = <T extends keyof PlexPathMappings>(
+export const usePlex = <
+  T extends ExtractTypeKeys<PlexPathMappings>,
+  OutType = FindChild0<T, PlexPathMappings>,
+>(
   serverName: string,
-  path: T,
+  path: string,
   enabled: boolean = true,
 ) =>
   useQuery({
     queryKey: ['plex', serverName, path],
-    queryFn: fetchPlexPath<PlexPathMappings[T]>(serverName, path),
+    queryFn: fetchPlexPath<OutType>(serverName, path),
     enabled,
   });
+
+export const usePlexLibraries = (serverName: string, enabled: boolean = true) =>
+  usePlex<'/library/sections'>(serverName, '/library/sections', enabled);
 
 declare const plexQueryArgsSymbol: unique symbol;
 
@@ -114,6 +143,26 @@ export const usePlexServerStatus = (server: PlexServerSettings) => {
       }
     },
   });
+};
+
+export const usePlexFilters = (serverName: string, plexKey: string) => {
+  const key = `/library/sections/${plexKey}/all?includeMeta=1&includeAdvanced=1&X-Plex-Container-Start=0&X-Plex-Container-Size=0`;
+  const query = useQuery<PlexFiltersResponse>({
+    ...plexQueryOptions(
+      serverName,
+      key,
+      serverName.length > 0 && plexKey.length > 0,
+    ),
+    staleTime: 1000 * 60 * 60 * 60,
+  });
+
+  useEffect(() => {
+    if (query.data) {
+      setPlexMetadataFilters(serverName, plexKey, query.data);
+    }
+  }, [serverName, plexKey, query.data]);
+
+  return query;
 };
 
 export type EnrichedPlexMedia = PlexTerminalMedia & {

@@ -35,7 +35,7 @@ import {
   getImagesPerRow,
 } from '../../helpers/inlineModalUtil';
 import { toggle } from '../../helpers/util';
-import { fetchPlexPath, usePlex } from '../../hooks/plexHooks';
+import { fetchPlexPath, usePlex, usePlexFilters } from '../../hooks/plexHooks';
 import { usePlexServerSettings } from '../../hooks/settingsHooks';
 import useDebouncedState from '../../hooks/useDebouncedState';
 import useStore from '../../store';
@@ -74,6 +74,10 @@ export default function PlexProgrammingSelector() {
   const imageRef = useRef<HTMLDivElement>(null);
   const libraryImageRef = useRef<HTMLDivElement>(null);
   const libraryContainerRef = useRef<HTMLDivElement>(null);
+  usePlexFilters(
+    selectedServer?.name ?? '',
+    selectedLibrary?.library.key ?? '',
+  );
 
   const handleResize = () => {
     if (tabValue === 0) {

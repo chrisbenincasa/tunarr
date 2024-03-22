@@ -9,7 +9,7 @@ import {
 import { PlexMedia, isPlexDirectory } from '@tunarr/types/plex';
 import { find, isEmpty, isNil, isUndefined } from 'lodash-es';
 import React, { useCallback, useEffect, useState } from 'react';
-import { usePlex } from '../../hooks/plexHooks.ts';
+import { usePlexLibraries } from '../../hooks/plexHooks.ts';
 import { usePlexServerSettings } from '../../hooks/settingsHooks.ts';
 import { useCustomShows } from '../../hooks/useCustomShows.ts';
 import useStore from '../../store/index.ts';
@@ -55,9 +55,8 @@ export default function ProgrammingSelector({ onAddSelectedMedia }: Props) {
   /**
    * Load Plex libraries
    */
-  const { data: plexLibraryChildren } = usePlex(
+  const { data: plexLibraryChildren } = usePlexLibraries(
     selectedServer?.name ?? '',
-    '/library/sections',
     !isUndefined(selectedServer),
   );
 
