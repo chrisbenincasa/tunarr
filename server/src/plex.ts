@@ -1,4 +1,5 @@
 import { EntityDTO } from '@mikro-orm/core';
+import { DefaultPlexHeaders } from '@tunarr/shared/constants';
 import { PlexDvr, PlexDvrsResponse, PlexResource } from '@tunarr/types/plex';
 import axios, {
   AxiosInstance,
@@ -19,8 +20,6 @@ import {
   PlexMediaContainerResponse,
 } from './types/plexApiTypes.js';
 
-const ClientIdentifier = 'p86cy1w47clco3ro8t92nfy1';
-
 type AxiosConfigWithMetadata = InternalAxiosRequestConfig & {
   metadata: {
     startTime: number;
@@ -28,17 +27,6 @@ type AxiosConfigWithMetadata = InternalAxiosRequestConfig & {
 };
 
 const logger = createLogger(import.meta);
-
-const DEFAULT_HEADERS = {
-  Accept: 'application/json',
-  'X-Plex-Device': 'Tunarr',
-  'X-Plex-Device-Name': 'Tunarr',
-  'X-Plex-Product': 'Tunarr',
-  'X-Plex-Version': '0.1',
-  'X-Plex-Client-Identifier': ClientIdentifier,
-  'X-Plex-Platform': 'Chrome',
-  'X-Plex-Platform-Version': '80.0',
-};
 
 type PlexApiOptions = Pick<
   EntityDTO<PlexServerSettings>,
@@ -75,7 +63,7 @@ export class Plex {
     this.axiosInstance = axios.create({
       baseURL: uri,
       headers: {
-        ...DEFAULT_HEADERS,
+        ...DefaultPlexHeaders,
         'X-Plex-Token': this._accessToken,
       },
     });

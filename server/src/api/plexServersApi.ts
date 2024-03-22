@@ -7,13 +7,13 @@ import {
 import { PlexServerSettingsSchema } from '@tunarr/types/schemas';
 import { isError, isNil, isObject } from 'lodash-es';
 import z from 'zod';
+import { PlexServerSettings } from '../dao/entities/PlexServerSettings.js';
 import createLogger from '../logger.js';
 import { Plex, PlexApiFactory } from '../plex.js';
 import { scheduledJobsById } from '../services/scheduler.js';
 import { UpdateXmlTvTask } from '../tasks/updateXmlTvTask.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { firstDefined, wait } from '../util.js';
-import { PlexServerSettings } from '../dao/entities/PlexServerSettings.js';
 
 const logger = createLogger(import.meta);
 
@@ -50,8 +50,7 @@ export const plexServersRouter: RouterPluginAsyncCallback = async (
         params: BasicIdParamSchema,
         response: {
           200: z.object({
-            // TODO Change this, this is very stupid
-            status: z.union([z.literal(1), z.literal(-1)]),
+            healthy: z.boolean(),
           }),
           404: z.void(),
           500: z.void(),
@@ -80,7 +79,7 @@ export const plexServersRouter: RouterPluginAsyncCallback = async (
         ]);
 
         return res.send({
-          status: s,
+          healthy: s === 1,
         });
       } catch (err) {
         logger.error(err);

@@ -1,4 +1,5 @@
 import {
+  BaseErrorSchema,
   BatchLookupExternalProgrammingSchema,
   CreateCustomShowRequestSchema,
   CreateFillerListRequestSchema,
@@ -195,6 +196,29 @@ export const api = makeApi([
       })
       .build(),
     response: z.any(),
+  },
+  {
+    method: 'get',
+    path: '/api/plex-servers/:id/status',
+    alias: 'getPlexServerStatus',
+    parameters: parametersBuilder()
+      .addPaths({
+        id: z.string(),
+      })
+      .build(),
+    response: z.object({
+      healthy: z.boolean(),
+    }),
+    errors: makeErrors([
+      {
+        status: 404,
+        schema: BaseErrorSchema,
+      },
+      {
+        status: 500,
+        schema: BaseErrorSchema,
+      },
+    ]),
   },
   {
     method: 'get',

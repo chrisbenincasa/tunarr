@@ -1,26 +1,15 @@
 import GitHub from '@mui/icons-material/GitHub';
-import Loop from '@mui/icons-material/Loop';
 import Refresh from '@mui/icons-material/Refresh';
-import {
-  Box,
-  Button,
-  Collapse,
-  Stack,
-  Typography,
-  styled,
-} from '@mui/material';
+import { Box, Button, Collapse, Stack, Typography } from '@mui/material';
 import Bowser from 'bowser';
 import { isError } from 'lodash-es';
 import { useMemo } from 'react';
 import { useRouteError } from 'react-router-dom';
 import errorImage from '../assets/error_this_is_fine.png';
+import { RotatingLoopIcon } from '../components/base/LoadingIcon';
 import { useVersion } from '../hooks/useVersion';
 
 const browser = Bowser.getParser(window.navigator.userAgent);
-
-const RotatingLoopIcon = styled(Loop)({
-  animation: 'spin 2s linear infinite',
-});
 
 export function ErrorPage() {
   const { data: version, isLoading: versionLoading } = useVersion();

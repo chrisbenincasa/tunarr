@@ -1,4 +1,6 @@
 import { useQueries, useQuery } from '@tanstack/react-query';
+import { DefaultPlexHeaders } from '@tunarr/shared/constants';
+import { PlexServerSettings } from '@tunarr/types';
 import {
   PlexEpisodeView,
   PlexLibraryListing,
@@ -10,6 +12,7 @@ import {
   isPlexDirectory,
   isTerminalItem,
 } from '@tunarr/types/plex';
+import axios from 'axios';
 import { flattenDeep, map } from 'lodash-es';
 import { apiClient } from '../external/api.ts';
 import { sequentialPromises } from '../helpers/util.ts';
@@ -67,6 +70,10 @@ export const usePlexTyped = <T>(
   enabled: boolean = true,
 ) => useQuery(plexQueryOptions<T>(serverName, path, enabled));
 
+/**
+ * Like {@link usePlexTyped} but accepts two queries that each return
+ * a well-typed Plex object
+ */
 export const usePlexTyped2 = <T = unknown, U = unknown>(
   args: [PlexQueryArgs<T>, PlexQueryArgs<U>],
 ) =>
@@ -88,6 +95,26 @@ export const usePlexTyped2 = <T = unknown, U = unknown>(
       };
     },
   });
+
+export const usePlexServerStatus = (server: PlexServerSettings) => {
+  return useQuery({
+    queryKey: ['plex-servers', server.id, 'status-local'],
+    queryFn: async () => {
+      try {
+        await axios.get(`${server.uri}`, {
+          headers: {
+            ...DefaultPlexHeaders,
+            'X-Plex-Token': server.accessToken,
+          },
+          timeout: 30 * 1000,
+        });
+        return true;
+      } catch (e) {
+        return false;
+      }
+    },
+  });
+};
 
 export type EnrichedPlexMedia = PlexTerminalMedia & {
   // This is the Plex server name that the info was retrieved from
