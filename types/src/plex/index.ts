@@ -740,8 +740,11 @@ export const PlexLibrarySortSchema = z.object({
   title: z.string(),
 });
 
+<<<<<<< HEAD
 export type PlexLibrarySort = z.infer<typeof PlexLibrarySortSchema>;
 
+=======
+>>>>>>> 0de3ca3 (Plex Search - outlining filter metadata types + querying for them)
 export const PlexLibraryFieldSchema = z.object({
   key: z.string(),
   title: z.string(),
@@ -758,6 +761,7 @@ export const PlexFilterTypeSchema = z.object({
   Field: z.array(PlexLibraryFieldSchema),
 });
 
+<<<<<<< HEAD
 export type PlexFilterType = z.infer<typeof PlexFilterTypeSchema>;
 
 const PlexFilterResponseMetaSchema = z.object({
@@ -790,3 +794,14 @@ export const PlexTagResultSchema = z.object({
 });
 
 export type PlexTagResult = z.infer<typeof PlexTagResultSchema>;
+=======
+export const PlexFiltersResponseSchema = z.object({
+  // There are some standard fields here...
+  Meta: z.object({
+    Type: z.array(PlexFilterTypeSchema),
+    FieldType: z.array(PlexFilterFieldTypeSchema),
+  }),
+});
+
+export type PlexFiltersResponse = z.infer<typeof PlexFiltersResponseSchema>;
+>>>>>>> 0de3ca3 (Plex Search - outlining filter metadata types + querying for them)

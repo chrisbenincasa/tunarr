@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { isUndefined } from 'lodash-es';
 
 // Commenting this out for now because it breaks the build but we will need it
@@ -80,3 +81,6 @@ export function buildPlexSortKey(sort: PlexSort | undefined): string[] {
 
   return ['sort=' + key];
 }
+=======
+const PlexFilterFieldPattern = /(?:([a-zA-Z]*)\.)?([a-zA-Z]+)([!<>=&]*)/;
+>>>>>>> 0de3ca3 (Plex Search - outlining filter metadata types + querying for them)

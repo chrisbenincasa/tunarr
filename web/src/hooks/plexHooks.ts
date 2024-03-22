@@ -127,6 +127,26 @@ export const usePlexTyped2 = <T = unknown, U = unknown>(
     },
   });
 
+export const usePlexFilters = (serverName: string, plexKey: string) => {
+  const key = `/library/sections/${plexKey}/all?includeMeta=1&includeAdvanced=1&X-Plex-Container-Start=0&X-Plex-Container-Size=0`;
+  const query = useQuery<PlexFiltersResponse>({
+    ...plexQueryOptions(
+      serverName,
+      key,
+      serverName.length > 0 && plexKey.length > 0,
+    ),
+    staleTime: 1000 * 60 * 60 * 60,
+  });
+
+  useEffect(() => {
+    if (query.data) {
+      setPlexMetadataFilters(serverName, plexKey, query.data);
+    }
+  }, [serverName, plexKey, query.data]);
+
+  return query;
+};
+
 export const usePlexServerStatus = (server: PlexServerSettings) => {
   return useQuery({
     queryKey: ['plex-servers', server.id, 'status-local'],
@@ -145,35 +165,6 @@ export const usePlexServerStatus = (server: PlexServerSettings) => {
       }
     },
   });
-};
-
-export const usePlexFilters = (serverName: string, plexKey: string) => {
-  const key = `/library/sections/${plexKey}/all?includeMeta=1&includeAdvanced=1&X-Plex-Container-Start=0&X-Plex-Container-Size=0`;
-  const query = useQuery<PlexFiltersResponse>({
-    ...plexQueryOptions(
-      serverName,
-      key,
-      serverName.length > 0 && plexKey.length > 0,
-    ),
-    staleTime: 1000 * 60 * 60 * 60,
-  });
-
-  useEffect(() => {
-    if (query.data) {
-      setPlexMetadataFilters(serverName, plexKey, query.data);
-    }
-  }, [serverName, plexKey, query.data]);
-
-  return {
-    isLoading: query.isLoading,
-    error: query.error,
-    data: useStore(({ plexMetadata }) => {
-      const server = plexMetadata.libraryFilters[serverName];
-      if (server) {
-        return server[plexKey]?.Meta;
-      }
-    }),
-  };
 };
 
 // Like usePlexFilters, but uses the selected server and library from

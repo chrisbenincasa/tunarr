@@ -31,8 +31,13 @@ import {
   firstItemInNextRow,
   getImagesPerRow,
 } from '../../helpers/inlineModalUtil';
+<<<<<<< HEAD
 import { toggle } from '../../helpers/util.ts';
 import { fetchPlexPath, usePlex } from '../../hooks/plexHooks';
+=======
+import { toggle } from '../../helpers/util';
+import { fetchPlexPath, usePlex, usePlexFilters } from '../../hooks/plexHooks';
+>>>>>>> 0de3ca3 (Plex Search - outlining filter metadata types + querying for them)
 import { usePlexServerSettings } from '../../hooks/settingsHooks';
 import useStore from '../../store';
 import { addKnownMediaForServer } from '../../store/programmingSelector/actions';
@@ -71,8 +76,15 @@ export default function PlexProgrammingSelector() {
   const imageRef = useRef<HTMLDivElement>(null);
   const libraryImageRef = useRef<HTMLDivElement>(null);
   const libraryContainerRef = useRef<HTMLDivElement>(null);
+<<<<<<< HEAD
   const [searchVisible, setSearchVisible] = useState(false);
   const [useAdvancedSearch, setUseAdvancedSearch] = useState(false);
+=======
+  usePlexFilters(
+    selectedServer?.name ?? '',
+    selectedLibrary?.library.key ?? '',
+  );
+>>>>>>> 0de3ca3 (Plex Search - outlining filter metadata types + querying for them)
 
   const handleResize = () => {
     if (tabValue === 0) {
