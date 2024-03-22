@@ -26,6 +26,7 @@
     "@uidotdev/usehooks": "^2.4.1",
     "@zodios/core": "^10.9.6",
     "axios": "^1.6.0",
+    "bowser": "^2.11.0",
     "dayjs": "^1.11.10",
     "hls.js": "^1.4.12",
     "immer": "^10.0.3",

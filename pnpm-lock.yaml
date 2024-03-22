@@ -374,6 +374,9 @@ importers:
       axios:
         specifier: ^1.6.0
         version: 1.6.0
+      bowser:
+        specifier: ^2.11.0
+        version: 2.11.0
       dayjs:
         specifier: ^1.11.10
         version: 1.11.10
@@ -3506,6 +3509,10 @@ packages:
       type-is: 1.6.18
     transitivePeerDependencies:
       - supports-color
+    dev: false
+
+  /bowser@2.11.0:
+    resolution: {integrity: sha512-AlcaJBi/pqqJBIQ8U9Mcpc9i8Aqxn88Skv5d+xBX006BY5u8N3mGLHa5Lgppa7L/HfwgwLgZ6NYs+Ag6uUmJRA==}
     dev: false
 
   /brace-expansion@1.1.11:
