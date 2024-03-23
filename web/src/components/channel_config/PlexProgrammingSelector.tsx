@@ -69,7 +69,9 @@ export default function PlexProgrammingSelector() {
   const [modalIsPending, setModalIsPending] = useState<boolean>(true);
   const [scrollParams, setScrollParams] = useState({ limit: 0, max: -1 });
   const containerRef = useRef<HTMLDivElement>(null);
-  const imageRef = useRef<HTMLDivElement>(null);
+  const libraryImageRef = useRef([]);
+  const collectionsImageRef = useRef([]);
+
   const libraryContainerRef = useRef<HTMLDivElement>(null);
   const [searchVisible, setSearchVisible] = useState(false);
   const [useAdvancedSearch, setUseAdvancedSearch] = useState(false);
@@ -79,12 +81,14 @@ export default function PlexProgrammingSelector() {
       const libraryContainerWidth =
         libraryContainerRef?.current?.offsetWidth || 0;
       const containerWidth = containerRef?.current?.offsetWidth || 0;
-      const itemWidth = imageRef?.current?.offsetWidth || 0;
+      const libraryItemWidth = libraryImageRef?.current[0]?.offsetWidth || 0;
+      const collectionsItemWidth =
+        collectionsImageRef?.current[0]?.offsetWidth || 0;
 
       setRowSize(
         getImagesPerRow(
           tabValue === 0 ? libraryContainerWidth : containerWidth,
-          itemWidth,
+          tabValue === 0 ? libraryItemWidth : collectionsItemWidth,
         ),
       );
     }
@@ -106,16 +110,18 @@ export default function PlexProgrammingSelector() {
       const libraryContainerWidth =
         libraryContainerRef?.current?.offsetWidth || 0;
       const containerWidth = containerRef?.current?.offsetWidth || 0;
-      const itemWidth = imageRef?.current?.offsetWidth || 0;
+      const libraryItemWidth = libraryImageRef?.current[0]?.offsetWidth || 0;
+      const collectionsItemWidth =
+        collectionsImageRef?.current[0]?.offsetWidth || 0;
 
       setRowSize(
         getImagesPerRow(
           tabValue === 0 ? libraryContainerWidth : containerWidth,
-          itemWidth,
+          tabValue === 0 ? libraryItemWidth : collectionsItemWidth,
         ),
       );
     }
-  }, [containerRef, imageRef, modalChildren]);
+  }, [containerRef, libraryContainerRef, libraryImageRef, modalChildren]);
 
   useEffect(() => {
     setModalIndex(-1);
@@ -315,7 +321,12 @@ export default function PlexProgrammingSelector() {
           modalIsPending={(isPending: boolean) =>
             handleModalIsPending(isPending)
           }
-          ref={imageRef}
+          ref={
+            tabValue === 0
+              ? (element) => libraryImageRef.current.push(element)
+              : (element) => collectionsImageRef.current.push(element)
+          }
+          // ref={libraryImageRef}
         />
       </React.Fragment>
     );

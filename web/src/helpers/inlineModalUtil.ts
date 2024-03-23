@@ -41,6 +41,13 @@ export function getEstimatedModalHeight(
   //use interesectionObserver to load them in
   const maxRows = rows >= 3 ? 3 : rows;
 
+  console.log({ maxRows });
+  console.log({ heightPerItem });
+  console.log(
+    'test',
+    Math.ceil(maxRows * heightPerItem + inlineModalTopPadding),
+  );
+
   return Math.ceil(maxRows * heightPerItem + inlineModalTopPadding); // 16px padding added to top
 }
 
