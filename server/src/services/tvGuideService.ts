@@ -284,10 +284,9 @@ export class TVGuideService {
       };
     } else if (lineup.items.length === 0) {
       // This is sorta hacky...
-      const d = currentUpdateTimeMs - channelStartTime;
       return {
         programIndex: 0,
-        startTimeMs: currentUpdateTimeMs - d,
+        startTimeMs: currentUpdateTimeMs,
         program: {
           type: 'flex',
           duration: dayjs.duration({ months: 1 }).asMilliseconds(),
@@ -588,8 +587,9 @@ export class TVGuideService {
       }
       if (currentProgram.program.duration <= 0) {
         logger.error(
-          "There's a program with duration %d?: %O",
+          'Invalid program duration = %d?: Channel %s \n %O',
           currentProgram.program.duration,
+          channelWithLineup.channel.uuid,
           currentProgram,
         );
       }
