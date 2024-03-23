@@ -7,6 +7,7 @@ import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import TheatersIcon from '@mui/icons-material/Theaters';
 import TvIcon from '@mui/icons-material/Tv';
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
+import { GitHub } from '@mui/icons-material';
 import {
   Alert,
   AppBar,
@@ -178,6 +179,13 @@ export function Root({ children }: { children?: React.ReactNode }) {
             </Typography>
             <Box flexGrow={1}></Box>
             <DarkModeButton iconOnly />
+            <Button
+              href="https://github.com/chrisbenincasa/tunarr"
+              target="_blank"
+              color="inherit"
+            >
+              <GitHub/>
+            </Button>
             <Button
               href="//localhost:8000/api/xmltv.xml"
               target="_blank"
