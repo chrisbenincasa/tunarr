@@ -32,7 +32,7 @@ import {
   firstItemInNextRow,
   getImagesPerRow,
 } from '../../helpers/inlineModalUtil';
-import { forPlexMedia, toggle } from '../../helpers/util';
+import { toggle } from '../../helpers/util';
 import { fetchPlexPath, usePlex } from '../../hooks/plexHooks';
 import { usePlexServerSettings } from '../../hooks/settingsHooks';
 import useStore from '../../store';
@@ -55,17 +55,6 @@ function a11yProps(index: number) {
   };
 }
 
-const plexTypeString = forPlexMedia({
-  show: 'Series',
-  collection: 'Collection',
-  movie: 'Movie',
-  episode: 'Episode',
-  track: 'Track',
-  album: 'Album',
-  artist: 'Artist',
-  default: 'All',
-});
-
 export default function PlexProgrammingSelector() {
   const { data: plexServers } = usePlexServerSettings();
   const selectedServer = useStore((s) => s.currentServer);
@@ -81,22 +70,23 @@ export default function PlexProgrammingSelector() {
   const [scrollParams, setScrollParams] = useState({ limit: 0, max: -1 });
   const containerRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLDivElement>(null);
-  const libraryImageRef = useRef<HTMLDivElement>(null);
   const libraryContainerRef = useRef<HTMLDivElement>(null);
   const [searchVisible, setSearchVisible] = useState(false);
   const [useAdvancedSearch, setUseAdvancedSearch] = useState(false);
 
   const handleResize = () => {
-    if (tabValue === 0) {
+    if (viewType === 'grid') {
       const libraryContainerWidth =
         libraryContainerRef?.current?.offsetWidth || 0;
-      setRowSize(getImagesPerRow(libraryContainerWidth, 160)); // to do: remove magic number
-    } else {
-      // Collections initial load
       const containerWidth = containerRef?.current?.offsetWidth || 0;
       const itemWidth = imageRef?.current?.offsetWidth || 0;
 
-      setRowSize(getImagesPerRow(containerWidth, itemWidth));
+      setRowSize(
+        getImagesPerRow(
+          tabValue === 0 ? libraryContainerWidth : containerWidth,
+          itemWidth,
+        ),
+      );
     }
   };
 
@@ -113,10 +103,17 @@ export default function PlexProgrammingSelector() {
 
   useEffect(() => {
     if (viewType === 'grid') {
+      const libraryContainerWidth =
+        libraryContainerRef?.current?.offsetWidth || 0;
       const containerWidth = containerRef?.current?.offsetWidth || 0;
       const itemWidth = imageRef?.current?.offsetWidth || 0;
 
-      setRowSize(getImagesPerRow(containerWidth, itemWidth));
+      setRowSize(
+        getImagesPerRow(
+          tabValue === 0 ? libraryContainerWidth : containerWidth,
+          itemWidth,
+        ),
+      );
     }
   }, [containerRef, imageRef, modalChildren]);
 
@@ -290,6 +287,57 @@ export default function PlexProgrammingSelector() {
     threshold: 0.5,
   });
 
+  const renderGridItems = (item: PlexMedia, index: number) => {
+    return (
+      <React.Fragment key={item.guid}>
+        <InlineModal
+          modalIndex={modalIndex}
+          modalChildren={modalChildren}
+          rowSize={rowSize}
+          open={
+            index ===
+            firstItemInNextRow(
+              modalIndex,
+              rowSize,
+              collectionsData?.Metadata?.length || 0,
+            )
+          }
+          type={item.type}
+        />
+        <PlexGridItem
+          item={item}
+          index={index}
+          modalIndex={modalIndex}
+          moveModal={() => handleMoveModal(index)}
+          modalChildren={(children: PlexMedia[]) =>
+            handleModalChildren(children)
+          }
+          modalIsPending={(isPending: boolean) =>
+            handleModalIsPending(isPending)
+          }
+          ref={imageRef}
+        />
+      </React.Fragment>
+    );
+  };
+
+  const renderFinalRowInlineModal = (arr: PlexMedia[]) => {
+    {
+      /* This Modal is for last row items because they can't be inserted using the above inline modal */
+    }
+    return (
+      <InlineModal
+        modalIndex={modalIndex}
+        modalChildren={modalChildren}
+        rowSize={rowSize}
+        open={extractLastIndexes(arr, arr.length % rowSize).includes(
+          modalIndex,
+        )}
+        type={'season'}
+      />
+    );
+  };
+
   const renderListItems = () => {
     const elements: JSX.Element[] = [];
 
@@ -301,53 +349,16 @@ export default function PlexProgrammingSelector() {
           key="Collections"
           ref={containerRef}
         >
-          {map(collectionsData.Metadata, (item, index: number) =>
-            viewType === 'list' ? (
-              <PlexListItem key={item.guid} item={item} />
-            ) : (
-              <React.Fragment key={item.guid}>
-                {console.log('log ', index, ' ', plexTypeString(item))}
-                <InlineModal
-                  modalIndex={modalIndex}
-                  modalChildren={modalChildren}
-                  rowSize={rowSize}
-                  open={
-                    index ===
-                    firstItemInNextRow(
-                      modalIndex,
-                      rowSize,
-                      collectionsData?.Metadata?.length || 0,
-                    )
-                  }
-                  type={plexTypeString(item)}
-                />
-                <PlexGridItem
-                  item={item}
-                  index={index}
-                  modalIndex={modalIndex}
-                  moveModal={() => handleMoveModal(index)}
-                  modalChildren={(children: PlexMedia[]) =>
-                    handleModalChildren(children)
-                  }
-                  modalIsPending={(isPending: boolean) =>
-                    handleModalIsPending(isPending)
-                  }
-                  ref={imageRef}
-                />
-              </React.Fragment>
-            ),
+          {map(
+            collectionsData.Metadata,
+            (item: PlexMovie | PlexTvShow | PlexMusicArtist, index: number) =>
+              viewType === 'list' ? (
+                <PlexListItem key={item.guid} item={item} />
+              ) : (
+                renderGridItems(item, index)
+              ),
           )}
-          {/* This Modal is for last row items because they can't be inserted using the above inline modal */}
-          <InlineModal
-            modalIndex={modalIndex}
-            modalChildren={modalChildren}
-            rowSize={rowSize}
-            open={extractLastIndexes(
-              collectionsData?.Metadata,
-              collectionsData?.Metadata.length % rowSize,
-            ).includes(modalIndex)}
-            type={'All'}
-          />
+          {renderFinalRowInlineModal(collectionsData?.Metadata)}
         </CustomTabPanel>,
       );
     }
@@ -369,20 +380,14 @@ export default function PlexProgrammingSelector() {
         >
           {map(
             items,
-            (item: PlexMovie | PlexTvShow | PlexMusicArtist, idx: number) => {
-              return viewType === 'list' ? (
+            (item: PlexMovie | PlexTvShow | PlexMusicArtist, index: number) =>
+              viewType === 'list' ? (
                 <PlexListItem key={item.guid} item={item} />
               ) : (
-                <PlexGridItem
-                  key={item.guid}
-                  item={item}
-                  modalIndex={modalIndex}
-                  index={idx}
-                  ref={libraryImageRef}
-                />
-              );
-            },
+                renderGridItems(item, index)
+              ),
           )}
+          {renderFinalRowInlineModal(items)}
         </CustomTabPanel>,
       );
     }

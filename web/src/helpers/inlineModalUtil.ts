@@ -12,14 +12,10 @@ export function getEstimatedModalHeight(
   containerWidth: number,
   imageContainerWidth: number,
   listSize: number,
-  type: string | null,
+  type: PlexMedia['type'] | 'all',
 ): number {
   // Episode modals have smaller height, short circuit for  now
-
-  console.log('type: ', type);
-  if (type === 'Episode') {
-    console.log('MATCH!');
-
+  if (type === 'season') {
     return 143;
   }
   // Exit with defaults if container & image width are not provided

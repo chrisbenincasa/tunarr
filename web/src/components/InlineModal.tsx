@@ -7,7 +7,6 @@ import {
   firstItemInNextRow,
   getEstimatedModalHeight,
 } from '../helpers/inlineModalUtil';
-import { forPlexMedia } from '../helpers/util';
 import useStore from '../store';
 import PlexGridItem from './channel_config/PlexGridItem';
 
@@ -16,18 +15,8 @@ type InlineModalProps = {
   modalChildren?: PlexMedia[];
   open?: boolean;
   rowSize: number;
-  type: string | null;
+  type: PlexMedia['type'] | 'all';
 };
-
-const plexTypeString = forPlexMedia({
-  show: 'Series',
-  collection: 'Collection',
-  movie: 'Movie',
-  episode: 'Episode',
-  track: 'Track',
-  album: 'Album',
-  artist: 'Artist',
-});
 
 function InlineModal(props: InlineModalProps) {
   const { modalChildren, modalIndex, open, rowSize, type } = props;
@@ -58,6 +47,12 @@ function InlineModal(props: InlineModalProps) {
     }
   }, [ref, modalChildren, gridItemRef]);
 
+  useEffect(() => {
+    if (ref.current && previousData && previousData.modalIndex !== modalIndex) {
+      setChildModalChildren([]);
+    }
+  }, [modalIndex]);
+
   const [childModalIndex, setChildModalIndex] = useState<number>(-1);
   const [childModalIsPending, setChildModalIsPending] = useState<boolean>(true);
   const [childModalChildren, setChildModalChildren] = useState<PlexMedia[]>([]);
@@ -79,7 +74,7 @@ function InlineModal(props: InlineModalProps) {
     (children: PlexMedia[]) => {
       setChildModalChildren(children);
     },
-    [modalChildren],
+    [childModalChildren],
   );
 
   const handleModalIsPending = useCallback(
@@ -121,8 +116,6 @@ function InlineModal(props: InlineModalProps) {
         {modalChildren?.map(
           (child: PlexMedia, idx: number, arr: PlexMedia[]) => (
             <React.Fragment key={child.guid}>
-              {console.log(child)}
-              {console.log('log ', idx, ' ', plexTypeString(child))}
               <InlineModal
                 modalIndex={childModalIndex} //to do
                 modalChildren={childModalChildren} //to do
@@ -135,14 +128,12 @@ function InlineModal(props: InlineModalProps) {
                   )
                 }
                 rowSize={rowSize}
-                type={plexTypeString(child)}
+                type={child.type}
               />
               <PlexGridItem
-                key={child.guid}
                 item={child}
                 index={idx}
                 modalIndex={modalIndex || childModalIndex}
-                length={arr.length}
                 ref={gridItemRef}
                 moveModal={() => handleMoveModal(idx)}
                 modalChildren={(children: PlexMedia[]) =>
@@ -169,7 +160,7 @@ function InlineModal(props: InlineModalProps) {
             modalChildren,
             modalChildren.length % rowSize,
           ).includes(childModalIndex)}
-          type={'All'}
+          type={'season'}
         />
       </List>
     </Collapse>

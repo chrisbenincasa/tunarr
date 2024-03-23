@@ -36,7 +36,6 @@ export interface PlexGridItemProps<T extends PlexMedia> {
   item: T;
   style?: React.CSSProperties;
   index?: number;
-  length?: number;
   parent?: string;
   moveModal?: CallableFunction;
   modalChildren?: CallableFunction;
@@ -72,7 +71,6 @@ const PlexGridItem = forwardRef(
 
     const handleClick = () => {
       setOpen(!open);
-      console.log();
 
       if (moveModal) {
         moveModal();
