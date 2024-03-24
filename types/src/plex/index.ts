@@ -773,3 +773,18 @@ export const PlexFiltersResponseSchema = z.object({
 });
 
 export type PlexFiltersResponse = z.infer<typeof PlexFiltersResponseSchema>;
+
+export const PlexTagSchema = z.object({
+  fastKey: z.string().optional(),
+  thumb: z.string().optional(),
+  key: z.string(),
+  title: z.string(),
+})
+
+export const PlexTagResultSchema = z.object({
+  size: z.number(),
+  // Some other stuff here that we don't need yet...
+  Directory: z.array(PlexTagSchema),
+});
+
+export type PlexTagResult = z.infer<typeof PlexTagResultSchema>;

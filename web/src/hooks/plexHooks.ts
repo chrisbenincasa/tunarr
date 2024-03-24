@@ -9,6 +9,7 @@ import {
   PlexLibrarySections,
   PlexMedia,
   PlexSeasonView,
+  PlexTagResult,
   PlexTerminalMedia,
   isPlexDirectory,
   isTerminalItem,
@@ -91,7 +92,7 @@ export const plexQueryOptions = <T>(
 ) => ({
   queryKey: ['plex', serverName, path],
   queryFn: fetchPlexPath<T>(serverName, path),
-  enabled,
+  enabled: enabled && serverName.length > 0 && path.length > 0,
 });
 
 export const usePlexTyped = <T>(
@@ -175,6 +176,20 @@ export const usePlexFilters = (serverName: string, plexKey: string) => {
   };
 };
 
+export const usePlexTags = (key: string) => {
+  const selectedServer = useStore((s) => s.currentServer);
+  const selectedLibrary = useStore((s) =>
+    s.currentLibrary?.type === 'plex' ? s.currentLibrary : null,
+  );
+  const path = selectedLibrary
+    ? `/library/sections/${selectedLibrary.library.key}/${key}`
+    : '';
+
+  return useQuery<PlexTagResult>({
+    ...plexQueryOptions(selectedServer?.name ?? '', path),
+  });
+};
+
 export type EnrichedPlexMedia = PlexTerminalMedia & {
   // This is the Plex server name that the info was retrieved from
   serverName: string;
@@ -233,3 +248,5 @@ export const enumeratePlexItem = (
     return res;
   };
 };
+
+export const usePlexSearch = () => {};

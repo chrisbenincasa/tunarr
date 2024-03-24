@@ -2,7 +2,10 @@ import Add from '@mui/icons-material/Add';
 import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
 import Remove from '@mui/icons-material/Remove';
 import {
+  Autocomplete,
   Box,
+  Button,
+  CircularProgress,
   FormControl,
   IconButton,
   InputLabel,
@@ -12,43 +15,30 @@ import {
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
 import { PlexFilterResponseMeta, PlexFilterType } from '@tunarr/types/plex';
-import { find, map, size } from 'lodash-es';
-import { createContext, useContext, useState } from 'react';
+import { find, first, isUndefined, map, size } from 'lodash-es';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+} from 'react';
 import {
   Controller,
   FormProvider,
+  SubmitHandler,
   useFieldArray,
   useForm,
   useFormContext,
 } from 'react-hook-form';
-import { usePlexFilters } from '../../hooks/plexHooks.ts';
+import {
+  PlexOpNode,
+  PlexQuery,
+  PlexQueryValueNode,
+} from '../../helpers/plexSearchUtil.ts';
+import { usePlexFilters, usePlexTags } from '../../hooks/plexHooks.ts';
 import useStore from '../../store/index.ts';
-
-type PlexQueryValueNode = {
-  type: 'value';
-  field: string;
-  op: string;
-  value: string;
-};
-
-type PlexAndNode = {
-  type: 'op';
-  op: 'and';
-  children: PlexQuery[];
-};
-type PlexOrNode = {
-  type: 'op';
-  op: 'or';
-  children: PlexQuery[];
-};
-type PlexOpNode = PlexAndNode | PlexOrNode;
-type PlexQuery = PlexOpNode | PlexQueryValueNode;
-
-function PlexSearchNode() {}
-
-type PlexGroupNodeProps = {
-  opType: PlexOpNode['op'];
-};
+import { setPlexQuery } from '../../store/programmingSelector/actions.ts';
 
 type FilterMetadataContextType = {
   plexFilterMetadata: PlexFilterResponseMeta | undefined;
@@ -63,7 +53,7 @@ const FilterMetadataContext = createContext<FilterMetadataContextType>({
 type NodeProps = { depth: number; formKey: string };
 type PlexValueNodeProps = NodeProps & {
   index: number;
-  formKey: string;
+  formKey: `children.${number}`;
   only: boolean;
   remove(index: number): void;
 };
@@ -75,19 +65,126 @@ function PlexValueNode({
   only,
   remove,
 }: PlexValueNodeProps) {
-  const { control, setValue, watch } = useFormContext();
+  const { control, watch, setValue } = useFormContext<PlexQuery>();
   const { plexFilterMetadata, libraryFilterMetadata } = useContext(
     FilterMetadataContext,
   );
-  const selfValue = watch(formKey);
-  console.log(selfValue);
+  const selfValue = watch(formKey) as PlexQueryValueNode;
+
+  const findPlexField = useCallback(
+    (field: string) => {
+      if (!plexFilterMetadata || !libraryFilterMetadata) {
+        return;
+      }
+
+      return find(libraryFilterMetadata.Field, { key: field });
+    },
+    [plexFilterMetadata, libraryFilterMetadata],
+  );
+
+  const plexFilter = useMemo(() => {
+    return findPlexField(selfValue.field)!;
+  }, [selfValue.field]);
+
+  const { data: plexTags, isLoading: plexTagsLoading } = usePlexTags(
+    plexFilter.type === 'tag' ? plexFilter.key : '',
+  );
 
   const lookupFieldOperators = (fieldType: string) => {
     if (!plexFilterMetadata || !libraryFilterMetadata) {
-      return;
+      return [];
     }
 
-    return find(plexFilterMetadata.FieldType, { type: fieldType })?.Operator;
+    return (
+      find(plexFilterMetadata.FieldType, { type: fieldType })?.Operator ?? []
+    );
+  };
+
+  const handleFieldChange = useCallback(
+    (newField: string) => {
+      const newPlexFilter = findPlexField(newField);
+      if (newPlexFilter) {
+        setValue(`${formKey}.field`, newField);
+      }
+
+      if (
+        newPlexFilter &&
+        plexFilter &&
+        newPlexFilter.type !== plexFilter.type
+      ) {
+        const operators = lookupFieldOperators(newPlexFilter.type);
+        if (operators.length > 0) {
+          setValue(`${formKey}.op`, operators[0].key);
+        }
+      }
+    },
+    [plexFilter, setValue],
+  );
+
+  const autocompleteOptions = useMemo(() => {
+    return map(plexTags?.Directory, (tag) => ({
+      label: tag.title,
+      value: tag.key,
+    }));
+  }, [plexTags]);
+
+  const [localValue, setLocalValue] = useState('');
+
+  const renderValueInput = () => {
+    if (plexFilter.type === 'tag') {
+      return (
+        <Controller
+          control={control}
+          name={`${formKey}.value`}
+          render={({ field }) => {
+            const value = find(autocompleteOptions, { value: field.value });
+            return (
+              <Autocomplete
+                disablePortal
+                size="small"
+                fullWidth
+                loading={plexTagsLoading}
+                value={value}
+                inputValue={localValue}
+                onChange={(_, newValue) => field.onChange(newValue?.value)}
+                onInputChange={(_, newInputValue) => {
+                  setLocalValue(newInputValue);
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    label="Value"
+                    margin="normal"
+                    {...params}
+                    InputProps={{
+                      ...params.InputProps,
+                      endAdornment: (
+                        <>
+                          {plexTagsLoading ? (
+                            <CircularProgress color="inherit" size={20} />
+                          ) : null}
+                          {params.InputProps.endAdornment}
+                        </>
+                      ),
+                    }}
+                  />
+                )}
+                options={autocompleteOptions}
+              />
+            );
+          }}
+        />
+      );
+    } else {
+      return (
+        <Controller
+          control={control}
+          name={`${formKey}.value`}
+          render={({ field }) => (
+            <TextField label="Value" size="small" margin="normal" {...field} />
+          )}
+        />
+      );
+    }
   };
 
   return (
@@ -104,6 +201,7 @@ function PlexValueNode({
                 label="Field"
                 MenuProps={{ sx: { maxHeight: 375 } }}
                 {...field}
+                onChange={(e) => handleFieldChange(e.target.value)}
               >
                 {map(libraryFilterMetadata.Field, (field) => {
                   return (
@@ -119,20 +217,26 @@ function PlexValueNode({
 
         <FormControl size="small" margin="normal" sx={{ minWidth: 200 }}>
           <InputLabel>Operation</InputLabel>
-          <Select value="==" label="Operation">
-            {map(
-              lookupFieldOperators(libraryFilterMetadata.Field[0].type),
-              (ops) => {
-                return (
-                  <MenuItem key={ops.key} value={ops.key}>
-                    {ops.title}
-                  </MenuItem>
-                );
-              },
-            )}
-          </Select>
+          {plexFilter && (
+            <Controller
+              control={control}
+              name={`${formKey}.op`}
+              render={({ field }) => (
+                <Select label="Operation" {...field}>
+                  {map(lookupFieldOperators(plexFilter!.type), (ops) => {
+                    return (
+                      <MenuItem key={ops.key} value={ops.key}>
+                        {ops.title}
+                      </MenuItem>
+                    );
+                  })}
+                </Select>
+              )}
+            />
+          )}
         </FormControl>
-        <TextField label="Value" value="" size="small" margin="normal" />
+        {renderValueInput()}
+
         {!only && (
           <IconButton onClick={() => remove(index)}>
             <Remove />
@@ -144,11 +248,11 @@ function PlexValueNode({
 }
 
 function PlexGroupNode({ depth, formKey }: NodeProps) {
-  const { libraryFilterMetadata } = useContext(FilterMetadataContext);
+  const { plexFilterMetadata, libraryFilterMetadata } = useContext(
+    FilterMetadataContext,
+  );
 
-  const { watch, control } = useFormContext();
   const [opType, setOpType] = useState<PlexOpNode['op']>('and');
-  const [children, setChildren] = useState<PlexQueryValueNode[]>([]);
   const prefix = formKey.length === 0 ? '' : `${formKey}.`;
   const { fields, append, remove } = useFieldArray<PlexOpNode>({
     // Hack to get react-hook-form to work with recurisve data structures
@@ -158,10 +262,30 @@ function PlexGroupNode({ depth, formKey }: NodeProps) {
     name: `${prefix}children` as 'children',
   });
 
-  console.log(watch());
+  const defaultField = useMemo(() => {
+    if (
+      !plexFilterMetadata ||
+      !libraryFilterMetadata ||
+      size(libraryFilterMetadata.Field) === 0
+    ) {
+      return;
+    }
+
+    const field = first(libraryFilterMetadata.Field);
+    const op = first(
+      find(plexFilterMetadata.FieldType, { type: field?.type })?.Operator,
+    );
+    if (field && op) {
+      return {
+        field,
+        operator: op,
+      };
+    }
+  }, [libraryFilterMetadata]);
 
   return (
-    size(libraryFilterMetadata?.Field) > 0 && (
+    size(libraryFilterMetadata?.Field) > 0 &&
+    !isUndefined(defaultField) && (
       <>
         <Stack direction="row" sx={{ pl: 4 * depth }}>
           <FormControl size="small" margin="normal" sx={{ minWidth: 200 }}>
@@ -178,7 +302,12 @@ function PlexGroupNode({ depth, formKey }: NodeProps) {
           </FormControl>
           <IconButton
             onClick={() =>
-              append({ type: 'value', field: 'title', op: '==', value: '' })
+              append({
+                type: 'value',
+                field: defaultField.field.key,
+                op: defaultField.operator.key,
+                value: '',
+              })
             }
           >
             <Add />
@@ -194,7 +323,7 @@ function PlexGroupNode({ depth, formKey }: NodeProps) {
             <PlexValueNode
               key={field.id}
               depth={depth + 1}
-              formKey={`${prefix}children.${index}`}
+              formKey={`${prefix}children.${index}` as `children.${number}`}
               index={index}
               only={fields.length === 1}
               remove={remove}
@@ -222,6 +351,7 @@ export function PlexSearchBuilder() {
     defaultValues: {
       children: [],
       op: 'and',
+      type: 'op',
     },
   });
 
@@ -238,13 +368,21 @@ export function PlexSearchBuilder() {
     (t) => t.type === selectedLibrary?.library.type,
   );
 
+  const handleSearch: SubmitHandler<PlexQuery> = (data) => {
+    setPlexQuery(data);
+  };
+
   return (
     <FilterMetadataContext.Provider
       value={{ plexFilterMetadata, libraryFilterMetadata }}
     >
       <FormProvider {...formMethods}>
-        <Box component="form">
+        <Box
+          component="form"
+          onSubmit={formMethods.handleSubmit(handleSearch, console.error)}
+        >
           <PlexGroupNode depth={0} formKey="" />
+          <Button type="submit">Search</Button>
         </Box>
       </FormProvider>
     </FilterMetadataContext.Provider>

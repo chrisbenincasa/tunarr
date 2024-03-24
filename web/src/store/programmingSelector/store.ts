@@ -1,6 +1,7 @@
 import { CustomProgram, CustomShow, PlexServerSettings } from '@tunarr/types';
 import { PlexLibrarySection, PlexMedia } from '@tunarr/types/plex';
 import { StateCreator } from 'zustand';
+import { PlexQuery } from '../../helpers/plexSearchUtil.ts';
 
 type ServerName = string;
 type PlexItemGuid = string;
@@ -45,6 +46,10 @@ export interface ProgrammingListingsState {
     Record<PlexItemGuid, PlexLibrarySection | PlexMedia>
   >;
   selectedMedia: SelectedMedia[];
+  plexQuery?: {
+    query: PlexQuery;
+    urlQuery: string;
+  };
 }
 
 export const createProgrammingListingsState: StateCreator<

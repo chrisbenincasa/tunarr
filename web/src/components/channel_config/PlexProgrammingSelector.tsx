@@ -31,7 +31,7 @@ import {
   chain,
   find,
   first,
-  isEmpty,
+  forEach,
   isNil,
   isUndefined,
   map,
@@ -204,12 +204,14 @@ export default function PlexProgrammingSelector() {
     }
   }, [collectionsData, isCollectionLoading]);
 
+  const searchKey = useStore(({ plexQuery }) => plexQuery?.urlQuery);
+
   const { isLoading: searchLoading, data: searchData } = useInfiniteQuery({
     queryKey: [
       'plex-search',
       selectedServer?.name,
       selectedLibrary?.library.key,
-      debounceSearch,
+      searchKey,
     ] as DataTag<
       ['plex-search', string, string, string],
       PlexLibraryMovies | PlexLibraryShows | PlexLibraryMusic
@@ -221,10 +223,17 @@ export default function PlexProgrammingSelector() {
         'Plex-Container-Start': pageParam.toString(),
         'Plex-Container-Size': (rowSize * 4).toString(),
       });
+      // HACK for now
+      forEach(searchKey?.split('&'), (keyval) => {
+        const idx = keyval.lastIndexOf('=');
+        if (idx !== -1) {
+          plexQuery.append(keyval.substring(0, idx), keyval.substring(idx + 1));
+        }
+      });
 
-      if (!isNil(debounceSearch) && !isEmpty(debounceSearch)) {
-        plexQuery.set('title<', debounceSearch);
-      }
+      // if (!isNil(debounceSearch) && !isEmpty(debounceSearch)) {
+      //   plexQuery.set('title<', debounceSearch);
+      // }
 
       return fetchPlexPath<
         PlexLibraryMovies | PlexLibraryShows | PlexLibraryMusic

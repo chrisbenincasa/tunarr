@@ -7,6 +7,7 @@ import {
 } from '@tunarr/types/plex';
 import { map, reject, some } from 'lodash-es';
 import useStore from '..';
+import { PlexQuery, buildSearchKey } from '../../helpers/plexSearchUtil.ts';
 import { forSelectedMediaType, groupSelectedMedia } from '../../helpers/util';
 import { SelectedLibrary, SelectedMedia } from './store';
 
@@ -161,4 +162,12 @@ export const removeCustomShowSelectedMedia = (
 export const clearSelectedMedia = () =>
   useStore.setState((state) => {
     state.selectedMedia = [];
+  });
+
+export const setPlexQuery = (query: PlexQuery) =>
+  useStore.setState((state) => {
+    state.plexQuery = {
+      query: { ...query },
+      urlQuery: buildSearchKey(query).join('&'),
+    };
   });
