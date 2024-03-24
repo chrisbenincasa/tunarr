@@ -9,8 +9,6 @@ import {
   IconButton,
   InputAdornment,
   LinearProgress,
-  MenuItem,
-  Select,
   Stack,
   Tab,
   Tabs,
@@ -57,6 +55,7 @@ import CustomTabPanel from '../TabPanel';
 import ConnectPlex from '../settings/ConnectPlex';
 import PlexGridItem from './PlexGridItem';
 import { PlexListItem } from './PlexListItem';
+import { PlexSearchBuilder } from './PlexSearchBuilder.tsx';
 
 function a11yProps(index: number) {
   return {
@@ -89,7 +88,6 @@ export default function PlexProgrammingSelector() {
       selectedServer?.name ?? '',
       selectedLibrary?.library.key ?? '',
     );
-  console.log(plexFilterMetadata);
 
   const handleResize = () => {
     if (tabValue === 0) {
@@ -136,7 +134,6 @@ export default function PlexProgrammingSelector() {
 
   const handleMoveModal = useCallback(
     (index: number) => {
-      console.log('TEST');
       if (index === modalIndex) {
         handleModalChildren([]);
         setModalIndex(-1);
@@ -395,31 +392,7 @@ export default function PlexProgrammingSelector() {
         directoryChildren.size > 0 &&
         selectedLibrary && (
           <>
-            {libraryFilterMeta && libraryFilterMeta.Field.length > 0 && (
-              <>
-                <Select value={libraryFilterMeta.Field[0].key}>
-                  {map(libraryFilterMeta.Field, (field) => {
-                    return (
-                      <MenuItem key={field.key} value={field.key}>
-                        {field.title}
-                      </MenuItem>
-                    );
-                  })}
-                </Select>
-                <Select value="==">
-                  {map(
-                    lookupFieldOperators(libraryFilterMeta.Field[0].type),
-                    (ops) => {
-                      return (
-                        <MenuItem key={ops.key} value={ops.key}>
-                          {ops.title}
-                        </MenuItem>
-                      );
-                    },
-                  )}
-                </Select>
-              </>
-            )}
+            <PlexSearchBuilder />
             <Stack
               direction={{ xs: 'column', sm: 'row' }}
               sx={{

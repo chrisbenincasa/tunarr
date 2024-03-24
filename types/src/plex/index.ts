@@ -756,12 +756,20 @@ export const PlexFilterTypeSchema = z.object({
   Field: z.array(PlexLibraryFieldSchema),
 });
 
+export type PlexFilterType = z.infer<typeof PlexFilterTypeSchema>;
+
+const PlexFilterResponseMetaSchema = z.object({
+  Type: z.array(PlexFilterTypeSchema),
+  FieldType: z.array(PlexFilterFieldTypeSchema),
+});
+
+export type PlexFilterResponseMeta = z.infer<
+  typeof PlexFilterResponseMetaSchema
+>;
+
 export const PlexFiltersResponseSchema = z.object({
   // There are some standard fields here...
-  Meta: z.object({
-    Type: z.array(PlexFilterTypeSchema),
-    FieldType: z.array(PlexFilterFieldTypeSchema),
-  }),
+  Meta: PlexFilterResponseMetaSchema,
 });
 
 export type PlexFiltersResponse = z.infer<typeof PlexFiltersResponseSchema>;
