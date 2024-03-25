@@ -7,7 +7,12 @@ import {
 } from '@tunarr/types/plex';
 import { map, reject, some } from 'lodash-es';
 import useStore from '..';
-import { PlexQuery, buildSearchKey } from '../../helpers/plexSearchUtil.ts';
+import {
+  PlexFilter,
+  PlexSort,
+  buildPlexFilterKey,
+  buildPlexSortKey,
+} from '../../helpers/plexSearchUtil.ts';
 import { forSelectedMediaType, groupSelectedMedia } from '../../helpers/util';
 import { SelectedLibrary, SelectedMedia } from './store';
 
@@ -164,10 +169,27 @@ export const clearSelectedMedia = () =>
     state.selectedMedia = [];
   });
 
-export const setPlexQuery = (query: PlexQuery) =>
+export const setPlexFilter = (plexFilter: PlexFilter | undefined) =>
   useStore.setState((state) => {
-    state.plexQuery = {
-      query: { ...query },
-      urlQuery: buildSearchKey(query).join('&'),
+    state.plexSearch = {
+      ...state.plexSearch,
+      filter: plexFilter,
+      urlFilter: [
+        ...buildPlexFilterKey(plexFilter),
+        ...buildPlexSortKey(state.plexSearch.sort),
+      ].join('&'),
+    };
+  });
+
+export const setPlexSort = (plexSort: PlexSort | undefined) =>
+  useStore.setState((state) => {
+    console.log('plexSort', plexSort);
+    state.plexSearch = {
+      ...state.plexSearch,
+      sort: plexSort,
+      urlFilter: [
+        ...buildPlexFilterKey(state.plexSearch.filter),
+        ...buildPlexSortKey(plexSort),
+      ].join('&'),
     };
   });

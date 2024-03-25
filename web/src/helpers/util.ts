@@ -382,6 +382,15 @@ export const unwrapNil = <T>(x: T | null | undefined) => x!;
 export function typedProperty<T, TPath extends Path<T> = Path<T>>(path: TPath) {
   return property<T, PathValue<T, TPath>>(path);
 }
+
+type ObjectPredicate<T> = {
+  [Key in keyof T]?: T[Key];
+};
+
+export function typedObjectPredicate<T>(obj: ObjectPredicate<T>) {
+  return obj;
+}
+
 export const uuidRegexPattern =
   '[0-9a-fA-F]{8}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{12}';
 

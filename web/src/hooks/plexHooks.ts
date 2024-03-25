@@ -176,6 +176,19 @@ export const usePlexFilters = (serverName: string, plexKey: string) => {
   };
 };
 
+// Like usePlexFilters, but uses the selected server and library from
+// local state.
+export const useSelectedLibraryPlexFilters = () => {
+  const selectedServer = useStore((s) => s.currentServer);
+  const selectedLibrary = useStore((s) =>
+    s.currentLibrary?.type === 'plex' ? s.currentLibrary : null,
+  );
+  return usePlexFilters(
+    selectedServer?.name ?? '',
+    selectedLibrary?.library.key ?? '',
+  );
+};
+
 export const usePlexTags = (key: string) => {
   const selectedServer = useStore((s) => s.currentServer);
   const selectedLibrary = useStore((s) =>

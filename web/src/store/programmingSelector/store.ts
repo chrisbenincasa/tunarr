@@ -1,7 +1,7 @@
 import { CustomProgram, CustomShow, PlexServerSettings } from '@tunarr/types';
 import { PlexLibrarySection, PlexMedia } from '@tunarr/types/plex';
 import { StateCreator } from 'zustand';
-import { PlexQuery } from '../../helpers/plexSearchUtil.ts';
+import { PlexSearch } from '../../helpers/plexSearchUtil';
 
 type ServerName = string;
 type PlexItemGuid = string;
@@ -46,9 +46,8 @@ export interface ProgrammingListingsState {
     Record<PlexItemGuid, PlexLibrarySection | PlexMedia>
   >;
   selectedMedia: SelectedMedia[];
-  plexQuery?: {
-    query: PlexQuery;
-    urlQuery: string;
+  plexSearch: PlexSearch & {
+    urlFilter?: string; // Validated PlexFilter ready to be used as a request query param
   };
 }
 
@@ -58,4 +57,5 @@ export const createProgrammingListingsState: StateCreator<
   knownMediaByServer: {},
   selectedMedia: [],
   contentHierarchyByServer: {},
+  plexSearch: {},
 });

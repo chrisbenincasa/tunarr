@@ -740,6 +740,8 @@ export const PlexLibrarySortSchema = z.object({
   title: z.string(),
 });
 
+export type PlexLibrarySort = z.infer<typeof PlexLibrarySortSchema>;
+
 export const PlexLibraryFieldSchema = z.object({
   key: z.string(),
   title: z.string(),
@@ -779,7 +781,7 @@ export const PlexTagSchema = z.object({
   thumb: z.string().optional(),
   key: z.string(),
   title: z.string(),
-})
+});
 
 export const PlexTagResultSchema = z.object({
   size: z.number(),
