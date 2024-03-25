@@ -52,7 +52,7 @@ export function buildSearchKey(query: PlexQuery): string[] {
 
     case 'value': {
       // Need to validate
-      const operator = operatorToParam[query.op] ?? query.op;
+      const operator = query.op.substring(0, query.op.length - 1); //operatorToParam[query.op] ?? query.op;
       // filters.push(
       //   `${encodeURIComponent(
       //     `${query.field}${operator}`,

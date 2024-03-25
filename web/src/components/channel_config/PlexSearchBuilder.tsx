@@ -1,6 +1,6 @@
 import Add from '@mui/icons-material/Add';
+import Delete from '@mui/icons-material/Delete';
 import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
-import Remove from '@mui/icons-material/Remove';
 import {
   Autocomplete,
   Box,
@@ -11,10 +11,13 @@ import {
   InputLabel,
   Stack,
   TextField,
+  Tooltip,
 } from '@mui/material';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
+import { DatePicker } from '@mui/x-date-pickers';
 import { PlexFilterResponseMeta, PlexFilterType } from '@tunarr/types/plex';
+import dayjs from 'dayjs';
 import { find, first, isUndefined, map, size } from 'lodash-es';
 import {
   createContext,
@@ -50,12 +53,15 @@ const FilterMetadataContext = createContext<FilterMetadataContextType>({
   libraryFilterMetadata: undefined,
 });
 
-type NodeProps = { depth: number; formKey: string };
-type PlexValueNodeProps = NodeProps & {
+type NodeProps = {
   index: number;
+  depth: number;
+  formKey: '' | `children.${number}`;
+  remove(index: number): void;
+};
+type PlexValueNodeProps = NodeProps & {
   formKey: `children.${number}`;
   only: boolean;
-  remove(index: number): void;
 };
 
 function PlexValueNode({
@@ -142,7 +148,6 @@ function PlexValueNode({
               <Autocomplete
                 disablePortal
                 size="small"
-                fullWidth
                 loading={plexTagsLoading}
                 value={value}
                 inputValue={localValue}
@@ -150,10 +155,10 @@ function PlexValueNode({
                 onInputChange={(_, newInputValue) => {
                   setLocalValue(newInputValue);
                 }}
+                sx={{ minWidth: 200 }}
                 renderInput={(params) => (
                   <TextField
                     label="Value"
-                    margin="normal"
                     {...params}
                     InputProps={{
                       ...params.InputProps,
@@ -174,13 +179,33 @@ function PlexValueNode({
           }}
         />
       );
+    } else if (plexFilter.type === 'date') {
+      return (
+        <Controller
+          control={control}
+          name={`${formKey}.value`}
+          render={({ field }) => (
+            <DatePicker
+              sx={{ height: 40, mt: 2 }}
+              label="Value"
+              slotProps={{
+                textField: {
+                  size: 'small',
+                },
+              }}
+              value={dayjs(field.value)}
+              onChange={(e) => field.onChange(e?.format('YYYY-MM-DD'))}
+            />
+          )}
+        />
+      );
     } else {
       return (
         <Controller
           control={control}
           name={`${formKey}.value`}
           render={({ field }) => (
-            <TextField label="Value" size="small" margin="normal" {...field} />
+            <TextField label="Value" size="small" {...field} />
           )}
         />
       );
@@ -195,7 +220,7 @@ function PlexValueNode({
           control={control}
           name={`${formKey}.field`}
           render={({ field }) => (
-            <FormControl size="small" margin="normal" sx={{ minWidth: 200 }}>
+            <FormControl size="small" sx={{ minWidth: 200 }}>
               <InputLabel>Field</InputLabel>
               <Select
                 label="Field"
@@ -215,7 +240,7 @@ function PlexValueNode({
           )}
         />
 
-        <FormControl size="small" margin="normal" sx={{ minWidth: 200 }}>
+        <FormControl size="small" sx={{ minWidth: 200 }}>
           <InputLabel>Operation</InputLabel>
           {plexFilter && (
             <Controller
@@ -236,25 +261,36 @@ function PlexValueNode({
           )}
         </FormControl>
         {renderValueInput()}
-
         {!only && (
-          <IconButton onClick={() => remove(index)}>
-            <Remove />
-          </IconButton>
+          <span>
+            <IconButton onClick={() => remove(index)}>
+              <Delete />
+            </IconButton>
+          </span>
         )}
       </Stack>
     )
   );
 }
 
-function PlexGroupNode({ depth, formKey }: NodeProps) {
+function PlexGroupNode({
+  depth,
+  formKey,
+  remove: removeSelf,
+  index,
+}: NodeProps) {
   const { plexFilterMetadata, libraryFilterMetadata } = useContext(
     FilterMetadataContext,
   );
 
-  const [opType, setOpType] = useState<PlexOpNode['op']>('and');
+  console.log(formKey);
+  const { control } = useFormContext();
   const prefix = formKey.length === 0 ? '' : `${formKey}.`;
-  const { fields, append, remove } = useFieldArray<PlexOpNode>({
+  const {
+    fields,
+    append,
+    remove: removeChild,
+  } = useFieldArray<PlexOpNode>({
     // Hack to get react-hook-form to work with recurisve data structures
     // References:
     //  * https://github.com/react-hook-form/react-hook-form/issues/4055
@@ -286,37 +322,53 @@ function PlexGroupNode({ depth, formKey }: NodeProps) {
   return (
     size(libraryFilterMetadata?.Field) > 0 &&
     !isUndefined(defaultField) && (
-      <>
-        <Stack direction="row" sx={{ pl: 4 * depth }}>
-          <FormControl size="small" margin="normal" sx={{ minWidth: 200 }}>
+      <Stack direction="column" gap={2}>
+        <Stack direction="row" sx={{ pl: 4 * depth, alignItems: 'center' }}>
+          <FormControl size="small" sx={{ minWidth: 200 }}>
             <InputLabel>Field</InputLabel>
-            <Select<PlexOpNode['op']>
-              value={opType}
-              label="Field"
-              MenuProps={{ sx: { maxHeight: 375 } }}
-              onChange={(e) => setOpType(e.target.value as PlexOpNode['op'])}
-            >
-              <MenuItem value={'and'}>Match all of</MenuItem>
-              <MenuItem value={'or'}>Match any of</MenuItem>
-            </Select>
+            <Controller
+              control={control}
+              name={`${formKey}.op`}
+              render={({ field }) => (
+                <Select<PlexOpNode['op']>
+                  label="Field"
+                  MenuProps={{ sx: { maxHeight: 375 } }}
+                  {...field}
+                >
+                  <MenuItem value={'and'}>Match all of</MenuItem>
+                  <MenuItem value={'or'}>Match any of</MenuItem>
+                </Select>
+              )}
+            />
           </FormControl>
-          <IconButton
-            onClick={() =>
-              append({
-                type: 'value',
-                field: defaultField.field.key,
-                op: defaultField.operator.key,
-                value: '',
-              })
-            }
-          >
-            <Add />
-          </IconButton>
-          <IconButton
-            onClick={() => append({ type: 'op', children: [], op: 'and' })}
-          >
-            <PlaylistAddIcon />
-          </IconButton>
+          <Tooltip title="Add field">
+            <IconButton
+              onClick={() =>
+                append({
+                  type: 'value',
+                  field: defaultField.field.key,
+                  op: defaultField.operator.key,
+                  value: '',
+                })
+              }
+            >
+              <Add />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Add group">
+            <IconButton
+              onClick={() => append({ type: 'op', children: [], op: 'and' })}
+            >
+              <PlaylistAddIcon />
+            </IconButton>
+          </Tooltip>
+          {depth > 0 && (
+            <span>
+              <IconButton onClick={() => removeSelf(index)}>
+                <Delete />
+              </IconButton>
+            </span>
+          )}
         </Stack>
         {map(fields, (field, index) =>
           field.type === 'value' ? (
@@ -326,17 +378,19 @@ function PlexGroupNode({ depth, formKey }: NodeProps) {
               formKey={`${prefix}children.${index}` as `children.${number}`}
               index={index}
               only={fields.length === 1}
-              remove={remove}
+              remove={removeChild}
             />
           ) : (
             <PlexGroupNode
               key={field.id}
               depth={depth + 1}
-              formKey={`${prefix}children.${index}`}
+              formKey={`${prefix}children.${index}` as `children.${number}`}
+              remove={removeChild}
+              index={index}
             />
           ),
         )}
-      </>
+      </Stack>
     )
   );
 }
@@ -381,7 +435,9 @@ export function PlexSearchBuilder() {
           component="form"
           onSubmit={formMethods.handleSubmit(handleSearch, console.error)}
         >
-          <PlexGroupNode depth={0} formKey="" />
+          <Box sx={{ my: 2 }}>
+            <PlexGroupNode depth={0} formKey="" index={0} remove={() => {}} />
+          </Box>
           <Button type="submit">Search</Button>
         </Box>
       </FormProvider>
