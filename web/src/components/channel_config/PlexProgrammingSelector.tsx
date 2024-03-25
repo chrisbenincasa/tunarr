@@ -42,7 +42,7 @@ import InlineModal from '../InlineModal';
 import CustomTabPanel from '../TabPanel';
 import StandaloneToggleButton from '../base/StandaloneToggleButton.tsx';
 import ConnectPlex from '../settings/ConnectPlex';
-import { PlexFilterBuilder } from './PlexAdvancedFilterBuilder.tsx';
+import { PlexFilterBuilder } from './PlexFilterBuilder.tsx';
 import PlexGridItem from './PlexGridItem';
 import { PlexListItem } from './PlexListItem';
 import { PlexSortField } from './PlexSortField.tsx';

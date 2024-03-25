@@ -1,6 +1,8 @@
 import { isUndefined } from 'lodash-es';
 
-const PlexFilterFieldPattern = /(?:([a-zA-Z]*)\.)?([a-zA-Z]+)([!<>=&]*)/;
+// Commenting this out for now because it breaks the build but we will need it
+// later.
+//const PlexFilterFieldPattern = /(?:([a-zA-Z]*)\.)?([a-zA-Z]+)([!<>=&]*)/;
 
 export type PlexFilterValueNode = {
   type: 'value';
