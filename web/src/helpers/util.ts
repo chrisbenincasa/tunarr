@@ -14,7 +14,15 @@ import {
 import { PlexMedia } from '@tunarr/types/plex';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
-import { isNumber, property, range, reduce, zipWith } from 'lodash-es';
+import {
+  flatMap,
+  isNumber,
+  map,
+  property,
+  range,
+  reduce,
+  zipWith,
+} from 'lodash-es';
 import { Path, PathValue } from 'react-hook-form';
 import { SelectedMedia } from '../store/programmingSelector/store';
 import { AddedMedia, UIChannelProgram } from '../types';
@@ -376,3 +384,18 @@ export function typedProperty<T, TPath extends Path<T> = Path<T>>(path: TPath) {
 }
 export const uuidRegexPattern =
   '[0-9a-fA-F]{8}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{12}';
+
+export function product<T, U, V>(
+  l: readonly T[] | null | undefined,
+  r: readonly U[] | null | undefined,
+  f: (l0: T, r0: U) => V,
+): V[] {
+  return flatMap(l, (l0) => map(r, (r0) => f(l0, r0)));
+}
+
+export function scale(
+  coll: readonly number[] | null | undefined,
+  factor: number,
+): number[] {
+  return map(coll, (c) => c * factor);
+}

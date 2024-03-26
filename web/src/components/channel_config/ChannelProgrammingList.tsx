@@ -1,8 +1,8 @@
 import DeleteIcon from '@mui/icons-material/Delete';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import InfoOutlined from '@mui/icons-material/InfoOutlined';
-import MovieIcon from '@mui/icons-material/Movie';
 import MusicNote from '@mui/icons-material/MusicNote';
+import TheatersIcon from '@mui/icons-material/Theaters';
 import TvIcon from '@mui/icons-material/Tv';
 import { ListItemIcon, Typography } from '@mui/material';
 import Box from '@mui/material/Box';
@@ -162,7 +162,7 @@ const ProgramListItem = ({
   if (program.type === 'content') {
     switch (program.subtype) {
       case 'movie':
-        icon = <MovieIcon />;
+        icon = <TheatersIcon />;
         break;
       case 'episode':
         icon = <TvIcon />;
@@ -171,6 +171,9 @@ const ProgramListItem = ({
         icon = <MusicNote />;
         break;
     }
+  }
+  if (icon !== null) {
+    icon = <ListItemIcon sx={{ minWidth: 0, pr: 1 }}>{icon}</ListItemIcon>;
   }
 
   return (
@@ -217,21 +220,19 @@ const ProgramListItem = ({
           >
             <DragIndicatorIcon />
           </ListItemIcon>
-          {program.type === 'content' && (
+          {program.type === 'content' ? (
             <ListItemIcon
               onClick={handleInfoButtonClick}
-              sx={{ cursor: 'pointer' }}
+              sx={{ cursor: 'pointer', minWidth: 0, pr: 1 }}
             >
               <InfoOutlined />
             </ListItemIcon>
+          ) : (
+            <Box sx={{ pr: 1, width: 24 }} />
           )}
+          {icon ?? <Box sx={{ pr: 1, width: 20 }} />}
           <ListItemText
-            primary={
-              <>
-                {icon}
-                {title}
-              </>
-            }
+            primary={title}
             sx={{
               fontStyle: program.persisted ? 'normal' : 'italic',
             }}

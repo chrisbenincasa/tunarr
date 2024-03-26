@@ -1,18 +1,20 @@
-import { useState } from 'react';
+import { Expand as PaddingIcon } from '@mui/icons-material';
 import {
   Button,
   Dialog,
   DialogActions,
   DialogContent,
-  FormControl,
+  DialogContentText,
   DialogTitle,
+  FormControl,
   FormGroup,
   InputLabel,
   MenuItem,
   Select,
-  DialogContentText,
 } from '@mui/material';
-import { Expand as PaddingIcon } from '@mui/icons-material';
+import { find } from 'lodash-es';
+import { useCallback, useState } from 'react';
+import { handleNumericFormValue } from '../../helpers/util.ts';
 import {
   StartTimePadding,
   StartTimePaddingOptions,
@@ -30,6 +32,17 @@ const AddPaddingModal = ({ open, onClose }: AddPaddingModalProps) => {
   );
   const padStartTimes = usePadStartTimes();
 
+  const handlePaddingChange = useCallback(
+    (value: number) => {
+      setCurrentPadding(
+        value === -1 || isNaN(value)
+          ? null
+          : find(StartTimePaddingOptions, { key: value })!,
+      );
+    },
+    [setCurrentPadding],
+  );
+
   return (
     <Dialog open={open}>
       <DialogTitle>Pad Start Times</DialogTitle>
@@ -41,21 +54,17 @@ const AddPaddingModal = ({ open, onClose }: AddPaddingModalProps) => {
         <FormGroup sx={{ flexGrow: 1, flexWrap: 'nowrap' }}>
           <FormControl fullWidth sx={{ my: 1 }}>
             <InputLabel>Pad Start Times</InputLabel>
-            <Select
-              value={currentPadding?.mod ?? -1}
+            <Select<StartTimePadding['key']>
+              value={currentPadding?.key ?? -1}
               label={'Pad Start Times'}
               onChange={(e) =>
-                setCurrentPadding(
-                  e.target.value === -1
-                    ? null
-                    : StartTimePaddingOptions.find(
-                        (opt) => opt.mod === e.target.value,
-                      )!,
+                handlePaddingChange(
+                  handleNumericFormValue(e.target.value, true),
                 )
               }
             >
               {StartTimePaddingOptions.map((opt, idx) => (
-                <MenuItem key={idx} value={opt.mod}>
+                <MenuItem key={idx} value={opt.key}>
                   {opt.description}
                 </MenuItem>
               ))}
