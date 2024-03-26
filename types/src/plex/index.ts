@@ -1,5 +1,6 @@
 export * from './dvr.js';
 import z from 'zod';
+import { PlexWebhookBasePayloadSchema } from './webhooks.js';
 
 type Alias<t> = t & { _?: never };
 
@@ -589,6 +590,29 @@ export type PlexCollectionContents =
   | PlexMovieCollectionContents
   | PlexTvShowCollectionContents;
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+// const PlexMediaSchema = z.discriminatedUnion('type', [
+//   PlexMovieSchema,
+//   PlexTvShowSchema,
+//   PlexTvSeasonSchema,
+//   PlexEpisodeSchema,
+//   PlexLibraryCollectionSchema,
+//   PlexMusicArtistSchema,
+//   PlexMusicAlbumSchema,
+//   PlexMusicTrackSchema,
+// ]);
+
+const PartialPlexMediaSchema = z.discriminatedUnion('type', [
+  PlexMovieSchema.partial().required({ type: true }),
+  PlexTvShowSchema.partial().required({ type: true }),
+  PlexTvSeasonSchema.partial().required({ type: true }),
+  PlexEpisodeSchema.partial().required({ type: true }),
+  PlexLibraryCollectionSchema.partial().required({ type: true }),
+  PlexMusicArtistSchema.partial().required({ type: true }),
+  PlexMusicAlbumSchema.partial().required({ type: true }),
+  PlexMusicTrackSchema.partial().required({ type: true }),
+]);
+
 export type PlexMedia = Alias<
   | PlexMovie
   | PlexTvShow
@@ -703,3 +727,9 @@ export const PlexResourcesResponseSchema = z.array(PlexResourceSchema);
 export type PlexResourcesResponse = Alias<
   z.infer<typeof PlexResourcesResponseSchema>
 >;
+
+export * from './webhooks.js';
+
+export const PlexWebhookPayloadSchema = PlexWebhookBasePayloadSchema.extend({
+  Metadata: PartialPlexMediaSchema,
+});
