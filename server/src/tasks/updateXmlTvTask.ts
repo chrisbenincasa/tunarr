@@ -43,7 +43,7 @@ export class UpdateXmlTvTask extends Task<void> {
     this.guideService = guideService;
   }
 
-  get name() {
+  get taskName() {
     return UpdateXmlTvTask.name;
   }
 

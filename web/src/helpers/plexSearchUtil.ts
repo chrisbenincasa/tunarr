@@ -1,36 +1,9 @@
-<<<<<<< HEAD
+import { PlexFilter, PlexSort } from '@tunarr/types/plex';
 import { isUndefined } from 'lodash-es';
 
 // Commenting this out for now because it breaks the build but we will need it
 // later.
 //const PlexFilterFieldPattern = /(?:([a-zA-Z]*)\.)?([a-zA-Z]+)([!<>=&]*)/;
-
-export type PlexFilterValueNode = {
-  type: 'value';
-  field: string;
-  op: string;
-  value: string;
-};
-
-export type PlexFilterAndNode = {
-  type: 'op';
-  op: 'and';
-  children: PlexFilter[];
-};
-
-export type PlexFilterOrNode = {
-  type: 'op';
-  op: 'or';
-  children: PlexFilter[];
-};
-
-export type PlexFilterOperatorNode = PlexFilterAndNode | PlexFilterOrNode;
-export type PlexFilter = PlexFilterOperatorNode | PlexFilterValueNode;
-export type PlexSort = { field: string; direction: 'asc' | 'desc' };
-export type PlexSearch = {
-  filter?: PlexFilter;
-  sort?: PlexSort;
-};
 
 // TODO make this a hook
 export function buildPlexFilterKey(query: PlexFilter | undefined): string[] {
@@ -81,6 +54,3 @@ export function buildPlexSortKey(sort: PlexSort | undefined): string[] {
 
   return ['sort=' + key];
 }
-=======
-const PlexFilterFieldPattern = /(?:([a-zA-Z]*)\.)?([a-zA-Z]+)([!<>=&]*)/;
->>>>>>> 0de3ca3 (Plex Search - outlining filter metadata types + querying for them)

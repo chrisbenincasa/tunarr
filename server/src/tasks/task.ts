@@ -5,7 +5,10 @@ import { Maybe } from '../types.js';
 const logger = createLogger(import.meta);
 
 // Set of all of the possible Task IDs
-export type TaskId = 'update-xmltv' | 'cleanup-sessions';
+export type TaskId =
+  | 'update-xmltv'
+  | 'cleanup-sessions'
+  | 'schedule-dynamic-channels';
 
 export abstract class Task<Data> {
   private running_ = false;
@@ -50,5 +53,5 @@ export abstract class Task<Data> {
     return this.running_;
   }
 
-  abstract get name(): string;
+  abstract get taskName(): string;
 }

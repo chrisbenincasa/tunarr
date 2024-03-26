@@ -9,8 +9,6 @@ import { TimeSlotScheduleSchema } from './Scheduling.js';
 
 export * from './Scheduling.js';
 
-type Alias<T> = T & { _?: never };
-
 export const IdPathParamSchema = z.object({
   id: z.string(),
 });
@@ -42,8 +40,8 @@ export const CreateCustomShowRequestSchema = z.object({
   ),
 });
 
-export type CreateCustomShowRequest = Alias<
-  z.infer<typeof CreateCustomShowRequestSchema>
+export type CreateCustomShowRequest = z.infer<
+  typeof CreateCustomShowRequestSchema
 >;
 
 export const CreateFillerListRequestSchema = z.object({
@@ -53,15 +51,15 @@ export const CreateFillerListRequestSchema = z.object({
   ),
 });
 
-export type CreateFillerListRequest = Alias<
-  z.infer<typeof CreateFillerListRequestSchema>
+export type CreateFillerListRequest = z.infer<
+  typeof CreateFillerListRequestSchema
 >;
 
 export const UpdateFillerListRequestSchema =
   CreateFillerListRequestSchema.partial();
 
-export type UpdateFillerListRequest = Alias<
-  z.infer<typeof UpdateFillerListRequestSchema>
+export type UpdateFillerListRequest = z.infer<
+  typeof UpdateFillerListRequestSchema
 >;
 
 export const BasicIdParamSchema = z.object({
@@ -99,8 +97,8 @@ export const UpdateChannelProgrammingRequestSchema = z.discriminatedUnion(
   [ManualProgramLineupSchema, TimeBasedProgramLineupSchema],
 );
 
-export type UpdateChannelProgrammingRequest = Alias<
-  z.infer<typeof UpdateChannelProgrammingRequestSchema>
+export type UpdateChannelProgrammingRequest = z.infer<
+  typeof UpdateChannelProgrammingRequestSchema
 >;
 
 export const UpdatePlexServerRequestSchema = PlexServerSettingsSchema.partial({
@@ -110,8 +108,8 @@ export const UpdatePlexServerRequestSchema = PlexServerSettingsSchema.partial({
   id: true,
 });
 
-export type UpdatePlexServerRequest = Alias<
-  z.infer<typeof UpdatePlexServerRequestSchema>
+export type UpdatePlexServerRequest = z.infer<
+  typeof UpdatePlexServerRequestSchema
 >;
 
 export const InsertPlexServerRequestSchema = PlexServerSettingsSchema.partial({
@@ -123,8 +121,8 @@ export const InsertPlexServerRequestSchema = PlexServerSettingsSchema.partial({
   id: true,
 });
 
-export type InsertPlexServerRequest = Alias<
-  z.infer<typeof InsertPlexServerRequestSchema>
+export type InsertPlexServerRequest = z.infer<
+  typeof InsertPlexServerRequestSchema
 >;
 
 export const VersionApiResponseSchema = z.object({

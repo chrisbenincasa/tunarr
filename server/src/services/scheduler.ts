@@ -4,6 +4,7 @@ import { withDb } from '../dao/dataSource.js';
 import createLogger from '../logger.js';
 import { ServerContext } from '../serverContext.js';
 import { CleanupSessionsTask } from '../tasks/cleanupSessionsTask.js';
+import { ScheduleDynamiChannelsTask } from '../tasks/scheduleDynamicChannelsTask.js';
 import { Task, TaskId } from '../tasks/task.js';
 import { UpdateXmlTvTask } from '../tasks/updateXmlTvTask.js';
 
@@ -67,7 +68,7 @@ class ScheduledTask<Data> {
     try {
       return withDb(async () => await instance.run());
     } catch (e) {
-      logger.error('Error while running job: %s; %O', instance.name, e);
+      logger.error('Error while running job: %s; %O', instance.taskName, e);
       if (rethrow) throw e;
       return;
     } finally {
@@ -95,6 +96,13 @@ export const scheduleJobs = once((serverContext: ServerContext) => {
     CleanupSessionsTask.name,
     minutesCrontab(30),
     () => new CleanupSessionsTask(),
+  );
+
+  scheduledJobsById[ScheduleDynamiChannelsTask.ID] = new ScheduledTask(
+    ScheduleDynamiChannelsTask.name,
+    // Temporary
+    hoursCrontab(1),
+    () => ScheduleDynamiChannelsTask.create(serverContext.channelDB),
   );
 });
 

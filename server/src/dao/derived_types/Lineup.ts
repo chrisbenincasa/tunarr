@@ -1,7 +1,12 @@
 import { LineupSchedule } from '@tunarr/types/api';
+import { PlexSearch } from '@tunarr/types/plex';
 
 export type Lineup = {
+  // The current lineup of a single cycle of this channel
   items: LineupItem[];
+  // Defines rules for how to schedule content in the channel
+  // Currently time-based and random-slot-based rulesets are
+  // supported.
   // Unsure if we want this DB type to reference the
   // API type, but for now it will work.
   schedule?: LineupSchedule;
@@ -12,6 +17,9 @@ export type Lineup = {
   // pulling the offset at a given index and adding it to
   // a "start" time timestamp.
   startTimeOffsets?: number[];
+
+  //
+  dynamicContentConfig?: DynamicContentConfig;
 };
 
 type BaseLineupItem = {
@@ -49,3 +57,23 @@ function isItemOfType<T extends LineupItem>(discrim: string) {
 export const isContentItem = isItemOfType<ContentItem>('content');
 export const isOfflineItem = isItemOfType<OfflineItem>('offline');
 export const isRedirectItem = isItemOfType<RedirectItem>('redirect');
+
+export type DynamicContentCronUpdaterConfig = {
+  _id: string; // Unique ID to track scheduling. Not for use outside of bookkeeping
+  type: 'cron';
+  schedule: string; // Cron string
+};
+
+export type DynamicContentUpdaterConfig = DynamicContentCronUpdaterConfig;
+
+export type DynamicContentConfigPlexSource = {
+  type: 'plex';
+  query?: PlexSearch;
+  updater: DynamicContentUpdaterConfig;
+};
+
+export type DynamicContentConfigSource = DynamicContentConfigPlexSource;
+
+export type DynamicContentConfig = {
+  contentSources: [DynamicContentConfigSource, ...DynamicContentConfigSource[]];
+};

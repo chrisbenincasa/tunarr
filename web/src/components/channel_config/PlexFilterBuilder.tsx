@@ -16,7 +16,13 @@ import {
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
 import { DatePicker } from '@mui/x-date-pickers';
-import { PlexFilterResponseMeta, PlexFilterType } from '@tunarr/types/plex';
+import {
+  PlexFilter,
+  PlexFilterOperatorNode,
+  PlexFilterResponseMeta,
+  PlexFilterType,
+  PlexFilterValueNode,
+} from '@tunarr/types/plex';
 import dayjs from 'dayjs';
 import { find, first, isUndefined, map, size } from 'lodash-es';
 import {
@@ -35,11 +41,6 @@ import {
   useForm,
   useFormContext,
 } from 'react-hook-form';
-import {
-  PlexFilter,
-  PlexFilterOperatorNode,
-  PlexFilterValueNode,
-} from '../../helpers/plexSearchUtil.ts';
 import {
   usePlexTags,
   useSelectedLibraryPlexFilters,

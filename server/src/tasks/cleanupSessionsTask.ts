@@ -48,7 +48,7 @@ export class CleanupSessionsTask extends Task<void> {
     });
   }
 
-  get name() {
+  get taskName() {
     return CleanupSessionsTask.name;
   }
 }
