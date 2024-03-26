@@ -14,7 +14,7 @@
     "bundle": "tsx scripts/bundle.ts",
     "clean": "rimraf build",
     "debug": "tsx watch --tsconfig ./tsconfig.build.json --ignore 'src/streams' --inspect-brk src",
-    "dev": "NODE_ENV=development  tsx watch --tsconfig ./tsconfig.build.json --ignore 'build' --ignore 'src/streams' src",
+    "dev": "NODE_ENV=development TUNARR_BIND_ADDR='0.0.0.0' tsx watch --tsconfig ./tsconfig.build.json --ignore 'build' --ignore 'src/streams' src",
     "make-exec": "tsx scripts/makeExecutable.ts",
     "generate-db-cache": "mikro-orm-esm cache:generate --combined --ts",
     "mikro-orm": "mikro-orm-esm",

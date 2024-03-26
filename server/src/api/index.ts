@@ -18,6 +18,7 @@ import { customShowsApiV2 } from './customShowsApi.js';
 import { debugApi } from './debugApi.js';
 import { fillerListsApi } from './fillerListsApi.js';
 import { metadataApiRouter } from './metadataApi.js';
+import { plexWebhookRouter } from './plexWebhookApi.js';
 import { programmingApi } from './programmingApi.js';
 import { tasksApiRouter } from './tasksApi.js';
 
@@ -40,7 +41,8 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
     .register(fillerListsApi)
     .register(programmingApi)
     .register(debugApi)
-    .register(metadataApiRouter);
+    .register(metadataApiRouter)
+    .register(plexWebhookRouter);
 
   fastify.get(
     '/version',
