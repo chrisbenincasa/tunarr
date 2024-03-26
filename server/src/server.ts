@@ -4,6 +4,7 @@ import fpStatic from '@fastify/static';
 import fastify, { FastifySchema } from 'fastify';
 import fp from 'fastify-plugin';
 // import fastifyPrintRoutes from 'fastify-print-routes';
+import fastifyMultipart from '@fastify/multipart';
 import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
 import { RequestContext } from '@mikro-orm/core';
@@ -15,6 +16,7 @@ import {
   validatorCompiler,
 } from 'fastify-type-provider-zod';
 import fs from 'fs';
+import { isUndefined } from 'lodash-es';
 import morgan from 'morgan';
 import { onShutdown } from 'node-graceful-shutdown';
 import path, { dirname } from 'path';
@@ -37,7 +39,6 @@ import { UpdateXmlTvTask } from './tasks/updateXmlTvTask.js';
 import { ServerOptions } from './types.js';
 import { filename, wait } from './util.js';
 import { videoRouter } from './video.js';
-import { isUndefined } from 'lodash-es';
 
 const logger = createLogger(import.meta);
 const currentDirectory = dirname(filename(import.meta.url));
@@ -147,6 +148,7 @@ export async function initServer(opts: ServerOptions) {
     .register(cors, {
       origin: '*', // Testing
     })
+    .register(fastifyMultipart)
     .addHook('onRequest', (_req, _rep, done) =>
       RequestContext.create(orm.em, done),
     )
@@ -197,10 +199,16 @@ export async function initServer(opts: ServerOptions) {
           return { schema: transformedSchema, url };
         };
       });
+
       f.register(fpStatic, {
-        root: path.join(currentDirectory, 'resources', 'images'),
-        prefix: '/images',
+        root: path.join(serverOptions().database, 'images', 'uploads'),
+        prefix: '/images/uploads',
       })
+        .register(fpStatic, {
+          root: path.join(currentDirectory, 'resources', 'images'),
+          prefix: '/images',
+          decorateReply: false,
+        })
         .get('/favicon.svg', async (_, res) => {
           return res.sendFile(
             'favicon.svg',

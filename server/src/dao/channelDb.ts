@@ -182,7 +182,6 @@ export class ChannelDB {
       convertCustomTypes: true,
       onlyProperties: true,
     });
-    console.log(channel);
     await em.flush();
     return channel;
   }
