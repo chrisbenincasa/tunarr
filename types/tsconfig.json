@@ -6,6 +6,7 @@
             "ES2022"
         ],
         "declaration": true,
+        "declarationMap": true,
         "moduleResolution": "node16",
         "rootDir": ".",
         "outDir": "build",

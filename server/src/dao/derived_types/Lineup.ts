@@ -1,7 +1,11 @@
-import { LineupSchedule } from '@tunarr/types/api';
+import { DynamicContentConfig, LineupSchedule } from '@tunarr/types/api';
 
 export type Lineup = {
+  // The current lineup of a single cycle of this channel
   items: LineupItem[];
+  // Defines rules for how to schedule content in the channel
+  // Currently time-based and random-slot-based rulesets are
+  // supported.
   // Unsure if we want this DB type to reference the
   // API type, but for now it will work.
   schedule?: LineupSchedule;
@@ -12,6 +16,9 @@ export type Lineup = {
   // pulling the offset at a given index and adding it to
   // a "start" time timestamp.
   startTimeOffsets?: number[];
+
+  //
+  dynamicContentConfig?: DynamicContentConfig;
 };
 
 type BaseLineupItem = {

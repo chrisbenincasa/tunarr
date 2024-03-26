@@ -10,7 +10,7 @@ import z from 'zod';
 import { PlexServerSettings } from '../dao/entities/PlexServerSettings.js';
 import createLogger from '../logger.js';
 import { Plex, PlexApiFactory } from '../plex.js';
-import { scheduledJobsById } from '../services/scheduler.js';
+import { GlobalScheduler } from '../services/scheduler.js';
 import { UpdateXmlTvTask } from '../tasks/updateXmlTvTask.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { firstDefined, wait } from '../util.js';
@@ -164,8 +164,8 @@ export const plexServersRouter: RouterPluginAsyncCallback = async (
 
         // Regenerate guides
         try {
-          scheduledJobsById[UpdateXmlTvTask.ID]
-            ?.runNow(true)
+          GlobalScheduler.getScheduledJob(UpdateXmlTvTask.ID)
+            .runNow(true)
             .catch(console.error);
         } catch (e) {
           logger.error('Unable to update guide after lineup update %O', e);

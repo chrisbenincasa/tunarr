@@ -11,4 +11,6 @@ export default defineConfig({
   dts: true,
   outDir: 'build',
   splitting: false,
+  sourcemap: true,
+  target: 'esnext',
 });

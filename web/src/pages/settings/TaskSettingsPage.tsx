@@ -13,6 +13,7 @@ import { styled } from '@mui/material/styles';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Task } from '@tunarr/types';
 import dayjs from 'dayjs';
+import { map } from 'lodash-es';
 import { apiClient } from '../../external/api.ts';
 
 const StyledLoopIcon = styled(Loop)({
@@ -40,13 +41,28 @@ function TaskRow({ task }: { task: Task }) {
         queryKey: ['channels', 'all', 'guide'],
       });
     },
+    onMutate: async (id: string) => {
+      await queryClient.cancelQueries({ queryKey: ['jobs'] });
+      const prevJobs = queryClient.getQueryData<Task[]>(['jobs']);
+      const now = new Date();
+      queryClient.setQueryData(
+        ['jobs'],
+        map(prevJobs, (j) => {
+          return j.id === id
+            ? {
+                ...j,
+                lastExecution: now,
+                lastExecutionEpoch: now.getTime() / 1000,
+              }
+            : j;
+        }),
+      );
+    },
   });
 
   const runJobWithId = (id: string) => {
     runJobMutation.mutate(id);
   };
-
-  console.log(task);
 
   return (
     <TableRow key={task.id}>

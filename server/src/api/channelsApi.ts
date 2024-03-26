@@ -18,7 +18,7 @@ import duration from 'dayjs/plugin/duration.js';
 import { compact, isError, isNil, omit, sortBy } from 'lodash-es';
 import z from 'zod';
 import createLogger from '../logger.js';
-import { scheduledJobsById } from '../services/scheduler.js';
+import { GlobalScheduler } from '../services/scheduler.js';
 import { UpdateXmlTvTask } from '../tasks/updateXmlTvTask.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { attempt, mapAsyncSeq } from '../util.js';
@@ -115,6 +115,9 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
       const inserted = await attempt(() =>
         req.serverCtx.channelDB.saveChannel(req.body),
       );
+      GlobalScheduler.getScheduledJob(UpdateXmlTvTask.ID)
+        .runNow(true)
+        .catch((err) => logger.error('Error regenerating guide: %O', err));
       if (isError(inserted)) {
         return res.status(500).send(inserted);
       }
@@ -183,9 +186,9 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
       await req.serverCtx.channelDB.deleteChannel(channel.uuid);
 
       try {
-        scheduledJobsById[UpdateXmlTvTask.ID]
-          ?.runNow(true)
-          .catch(console.error);
+        GlobalScheduler.getScheduledJob(UpdateXmlTvTask.ID)
+          .runNow()
+          .catch((err) => logger.error('Error regenerating guide: %O', err));
       } catch (e) {
         logger.error('Unable to update guide after lineup update %O', e);
       }
@@ -297,9 +300,9 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
       }
 
       try {
-        scheduledJobsById[UpdateXmlTvTask.ID]
-          ?.runNow(true)
-          .catch(console.error);
+        GlobalScheduler.getScheduledJob(UpdateXmlTvTask.ID)
+          .runNow(true)
+          .catch((err) => logger.error('Error regenerating guide: %O', err));
       } catch (e) {
         logger.error('Unable to update guide after lineup update %O', e);
       }

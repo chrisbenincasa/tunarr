@@ -10,8 +10,9 @@ import { Plex } from '../plex.js';
 import { ServerContext } from '../serverContext.js';
 import { TVGuideService } from '../services/tvGuideService.js';
 import { Maybe } from '../types.js';
+import { Tag } from '../types/util.js';
 import { mapAsyncSeq } from '../util.js';
-import { Task, TaskId } from './task.js';
+import { Task } from './task.js';
 
 const logger = createLogger(import.meta);
 
@@ -20,9 +21,8 @@ export class UpdateXmlTvTask extends Task<void> {
   private dbAccess: Settings;
   private guideService: TVGuideService;
 
-  public static ID: TaskId = 'update-xmltv';
-  public ID: TaskId = UpdateXmlTvTask.ID;
-  public static name = 'Update XMLTV';
+  public static ID = 'update-xmltv' as Tag<'update-xmltv', void>;
+  public ID = UpdateXmlTvTask.ID;
 
   static create(serverContext: ServerContext): UpdateXmlTvTask {
     return new UpdateXmlTvTask(
@@ -43,7 +43,7 @@ export class UpdateXmlTvTask extends Task<void> {
     this.guideService = guideService;
   }
 
-  get name() {
+  get taskName() {
     return UpdateXmlTvTask.name;
   }
 

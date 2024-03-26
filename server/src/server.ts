@@ -33,7 +33,7 @@ import { getSettingsRawDb } from './dao/settings.js';
 import { serverOptions } from './globals.js';
 import createLogger from './logger.js';
 import { ServerRequestContext, serverContext } from './serverContext.js';
-import { scheduleJobs, scheduledJobsById } from './services/scheduler.js';
+import { GlobalScheduler, scheduleJobs } from './services/scheduler.js';
 import { runFixers } from './tasks/fixers/index.js';
 import { UpdateXmlTvTask } from './tasks/updateXmlTvTask.js';
 import { ServerOptions } from './types.js';
@@ -113,7 +113,9 @@ export async function initServer(opts: ServerOptions) {
   scheduleJobs(ctx);
   await runFixers();
 
-  const updateXMLPromise = scheduledJobsById[UpdateXmlTvTask.ID]!.runNow();
+  const updateXMLPromise = GlobalScheduler.getScheduledJob(
+    UpdateXmlTvTask.ID,
+  ).runNow();
 
   const app = fastify({ logger: false, bodyLimit: 50 * 1024 * 1024 })
     .setValidatorCompiler(validatorCompiler)

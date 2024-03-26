@@ -130,9 +130,9 @@ function createRequestToChannel(
   return c;
 }
 
+// Let's see if this works... in so we can have many ChannelDb objects flying around.
+const fileDbCache: Record<string | number, Low<Lineup>> = {};
 export class ChannelDB {
-  private fileDbCache: Record<string | number, Low<Lineup>> = {};
-
   getChannelByNumber(channelNumber: number): Promise<Nullable<Channel>> {
     return getEm().repo(Channel).findOne({ number: channelNumber });
   }
@@ -488,8 +488,8 @@ export class ChannelDB {
   }
 
   private async getFileDb(channelId: string) {
-    if (!this.fileDbCache[channelId]) {
-      this.fileDbCache[channelId] = new Low<Lineup>(
+    if (!fileDbCache[channelId]) {
+      fileDbCache[channelId] = new Low<Lineup>(
         new DataFile(
           join(globalOptions().database, `channel-lineups/${channelId}.json`),
           {
@@ -501,10 +501,10 @@ export class ChannelDB {
         ),
         { items: [], startTimeOffsets: [] },
       );
-      await this.fileDbCache[channelId].read();
+      await fileDbCache[channelId].read();
     }
 
-    return this.fileDbCache[channelId];
+    return fileDbCache[channelId];
   }
 
   private async markFileDbForDeletion(
@@ -521,7 +521,7 @@ export class ChannelDB {
         await fs.rename(path, newPath);
       }
       if (isDelete) {
-        delete this.fileDbCache[channelId];
+        delete fileDbCache[channelId];
       } else {
         // Reload the file into the DB cache
         await this.getFileDb(channelId);

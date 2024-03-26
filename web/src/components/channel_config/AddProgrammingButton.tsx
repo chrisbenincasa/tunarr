@@ -16,7 +16,10 @@ import {
   Tooltip,
   alpha,
   styled,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
+import { isNull } from 'lodash-es';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import AddBreaksModal from '../programming_controls/AddBreaksModal';
@@ -76,8 +79,9 @@ export default function AddProgrammingButton() {
     useState(false);
   const [addBreaksModalOpen, setAddBreaksModalOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const hidden = useMediaQuery(useTheme().breakpoints.down('lg'));
 
-  const open = Boolean(anchorEl);
+  const open = !isNull(anchorEl);
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -124,7 +128,6 @@ export default function AddProgrammingButton() {
         </Button>
       </ButtonGroup>
       <StyledMenu
-        id="demo-customized-menu"
         MenuListProps={{
           'aria-labelledby': 'demo-customized-button',
         }}
