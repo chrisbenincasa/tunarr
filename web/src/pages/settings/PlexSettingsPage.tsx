@@ -49,15 +49,16 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   PlexServerSettings,
   PlexStreamSettings,
   defaultPlexStreamSettings,
 } from '@tunarr/types';
-import { fill, isNil, isNull, isUndefined } from 'lodash-es';
-import React, { Fragment, useCallback, useEffect, useState } from 'react';
+import { fill, isNil, isNull, isUndefined, map } from 'lodash-es';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import { RotatingLoopIcon } from '../../components/base/LoadingIcon.tsx';
 import AddPlexServer from '../../components/settings/AddPlexServer.tsx';
 import { apiClient } from '../../external/api.ts';
 import {
@@ -65,6 +66,7 @@ import {
   resolutionToString,
   toggle,
 } from '../../helpers/util.ts';
+import { usePlexServerStatus } from '../../hooks/plexHooks.ts';
 import {
   usePlexServerSettings,
   usePlexStreamSettings,
@@ -99,23 +101,88 @@ const supportedAudioBoost = [
   { value: 180, string: '4 Seconds' },
 ];
 
-export default function PlexSettingsPage() {
-  const {
-    data: servers,
-    isPending: serversPending,
-    error: serversError,
-  } = usePlexServerSettings();
+type PlexServerDeleteDialogProps = {
+  open: boolean;
+  onClose: () => void;
+  serverId: string;
+};
 
+function PlexServerDeleteDialog({
+  open,
+  onClose,
+  serverId,
+}: PlexServerDeleteDialogProps) {
+  const queryClient = useQueryClient();
+  const removePlexServerMutation = useMutation({
+    mutationFn: (id: string) => {
+      return apiClient.deletePlexServer(null, { params: { id } });
+    },
+    onSuccess: () => {
+      return queryClient.invalidateQueries({
+        queryKey: ['settings', 'plex-servers'],
+      });
+    },
+  });
+
+  const titleId = `delete-plex-server-${serverId}-title`;
+  const descId = `delete-plex-server-${serverId}-description`;
+
+  return (
+    <Dialog open={open} aria-labelledby={titleId} aria-describedby={descId}>
+      <DialogTitle id={titleId}>Delete Plex Server?</DialogTitle>
+      <DialogContent>
+        <DialogContentText id={descId}>
+          Deleting a Plex server will remove all programming from your channels
+          associated with this plex server. Missing programming will be replaced
+          with Flex time. This action cannot be undone.
+        </DialogContentText>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose} autoFocus>
+          Cancel
+        </Button>
+        <Button
+          onClick={() => removePlexServerMutation.mutate(serverId)}
+          variant="contained"
+        >
+          Delete
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
+type PlexServerRowProps = {
+  server: PlexServerSettings;
+  // isEditing: boolean,
+};
+
+function PlexServerRow({ server }: PlexServerRowProps) {
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [showAccessToken, setShowAccessToken] = useState(false);
   const {
-    data: streamSettings,
-    isPending: streamSettingsPending,
-    error: streamsError,
-  } = usePlexStreamSettings();
+    data: uiStatus,
+    isLoading: uisStatusLoading,
+    error: uiStatusError,
+  } = usePlexServerStatus(server);
+  const {
+    data: backendStatus,
+    isLoading: backendStatusLoading,
+    error: backendStatusError,
+  } = useQuery({
+    queryKey: ['plex-servers', server.id, 'status'],
+    queryFn: () => apiClient.getPlexServerStatus({ params: { id: server.id } }),
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const uiHealthy = isNull(uiStatusError) && !isUndefined(uiStatus) && uiStatus;
+  const backendHealthy =
+    isNull(backendStatusError) &&
+    !isUndefined(backendStatus) &&
+    backendStatus.healthy;
 
   const queryClient = useQueryClient();
-
-  const [currentEditRow, setCurrentEditRow] = useState<number | null>(null);
-  const [showAccessToken, setShowAccessToken] = useState(false);
 
   const {
     reset,
@@ -134,15 +201,217 @@ export default function PlexSettingsPage() {
     },
   });
 
+  const updatePlexServerMutation = useMutation({
+    mutationFn: (updatedServer: PlexServerSettings) => {
+      return apiClient.updatePlexServer(updatedServer, {
+        params: { id: updatedServer.id },
+      });
+    },
+    onSuccess: () => {
+      setIsEditing(false);
+      return queryClient.invalidateQueries({
+        queryKey: ['settings', 'plex-servers'],
+      });
+    },
+  });
+
+  const savePlexServer: SubmitHandler<Omit<PlexServerSettings, 'id'>> =
+    useCallback(
+      (data) => {
+        if (isEditing) {
+          updatePlexServerMutation.mutate({ id: server.id, ...data });
+        }
+      },
+      [isEditing, server, updatePlexServerMutation],
+    );
+
   useEffect(() => {
-    if (
-      !isNull(currentEditRow) &&
-      !isUndefined(servers) &&
-      servers.length > currentEditRow
-    ) {
-      reset(servers[currentEditRow]);
-    }
-  }, [currentEditRow, servers, reset]);
+    reset(server);
+  }, []);
+
+  return (
+    <>
+      <TableRow>
+        <TableCell>{server.name}</TableCell>
+        <TableCell width="60%">
+          {!isEditing ? (
+            <Link href={server.uri} target={'_blank'}>
+              {server.uri}
+            </Link>
+          ) : (
+            <Controller
+              control={control}
+              name="uri"
+              rules={{ required: true, minLength: 1 }}
+              render={({ field, formState: { errors } }) => (
+                <TextField
+                  label="URL"
+                  size="small"
+                  fullWidth
+                  error={!isNil(errors.uri)}
+                  {...field}
+                  helperText={errors.uri?.message ?? null}
+                />
+              )}
+            />
+          )}
+        </TableCell>
+        <TableCell align="center">
+          {uisStatusLoading ? (
+            <RotatingLoopIcon />
+          ) : uiHealthy ? (
+            <CloudDoneOutlined color="success" />
+          ) : (
+            <CloudOff color="error" />
+          )}
+        </TableCell>
+        <TableCell align="center">
+          {backendStatusLoading ? (
+            <RotatingLoopIcon />
+          ) : backendHealthy ? (
+            <CloudDoneOutlined color="success" />
+          ) : (
+            <CloudOff color="error" />
+          )}
+        </TableCell>
+        <TableCell width="10%" align="right">
+          {isEditing ? (
+            <>
+              <IconButton
+                color="primary"
+                disabled={!isValid}
+                onClick={handleSubmit(savePlexServer)}
+              >
+                <Save />
+              </IconButton>
+              <IconButton color="primary" onClick={() => setIsEditing(false)}>
+                <CancelOutlined />
+              </IconButton>
+            </>
+          ) : (
+            <>
+              <IconButton color="primary" onClick={() => setIsEditing(true)}>
+                <Edit />
+              </IconButton>
+              <IconButton
+                color="primary"
+                onClick={() => setDeleteDialogOpen(true)}
+              >
+                <Delete />
+              </IconButton>
+            </>
+          )}
+        </TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell
+          sx={{ py: 0, borderBottom: isEditing ? null : 0 }}
+          colSpan={6}
+        >
+          <Collapse in={isEditing} timeout="auto" unmountOnExit>
+            <Stack
+              direction="row"
+              spacing={2}
+              useFlexGap
+              sx={{ m: 1, display: 'flex', alignItems: 'center' }}
+            >
+              <Controller
+                control={control}
+                name="accessToken"
+                rules={{
+                  required: true,
+                  minLength: 1,
+                }}
+                render={({ field, formState: { errors } }) => (
+                  <FormControl sx={{ m: 1, width: '25ch' }} variant="outlined">
+                    <InputLabel htmlFor="access-token" size="small">
+                      Access Token
+                    </InputLabel>
+                    <OutlinedInput
+                      size="small"
+                      id="access-token"
+                      type={showAccessToken ? 'text' : 'password'}
+                      endAdornment={
+                        <InputAdornment position="end">
+                          <IconButton
+                            aria-label="toggle access token visibility"
+                            onClick={() => setShowAccessToken(toggle)}
+                            edge="end"
+                          >
+                            {showAccessToken ? (
+                              <VisibilityOff />
+                            ) : (
+                              <Visibility />
+                            )}
+                          </IconButton>
+                        </InputAdornment>
+                      }
+                      label="Access Token"
+                      {...field}
+                    />
+                    {errors.accessToken && (
+                      <FormHelperText>
+                        {errors.accessToken.message}
+                      </FormHelperText>
+                    )}
+                  </FormControl>
+                )}
+              />
+              <FormControl>
+                <FormControlLabel
+                  control={
+                    <Controller
+                      control={control}
+                      name="sendGuideUpdates"
+                      render={({ field }) => (
+                        <Checkbox {...field} checked={field.value} />
+                      )}
+                    />
+                  }
+                  label="Auto-Update Guide"
+                />
+              </FormControl>
+              <FormControl>
+                <FormControlLabel
+                  control={
+                    <Controller
+                      control={control}
+                      name="sendChannelUpdates"
+                      render={({ field }) => (
+                        <Checkbox {...field} checked={field.value} />
+                      )}
+                    />
+                  }
+                  label="Auto-Update Channels"
+                />
+              </FormControl>
+            </Stack>
+          </Collapse>
+        </TableCell>
+      </TableRow>
+      <PlexServerDeleteDialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        serverId={server.id}
+      />
+    </>
+  );
+}
+
+export default function PlexSettingsPage() {
+  const {
+    data: servers,
+    isPending: serversPending,
+    error: serversError,
+  } = usePlexServerSettings();
+
+  const {
+    data: streamSettings,
+    isPending: streamSettingsPending,
+    error: streamsError,
+  } = usePlexStreamSettings();
+
+  const queryClient = useQueryClient();
 
   const [deletePlexConfirmation, setDeletePlexConfirmation] = useState<
     string | undefined
@@ -306,35 +575,6 @@ export default function PlexSettingsPage() {
     setShowSubtitles(!showSubtitles);
   };
 
-  const updatePlexServerMutation = useMutation({
-    mutationFn: (updatedServer: PlexServerSettings) => {
-      return apiClient.updatePlexServer(updatedServer, {
-        params: { id: updatedServer.id },
-      });
-    },
-    onSuccess: () => {
-      setCurrentEditRow(null);
-      return queryClient.invalidateQueries({
-        queryKey: ['settings', 'plex-servers'],
-      });
-    },
-  });
-
-  const savePlexServer: SubmitHandler<Omit<PlexServerSettings, 'id'>> =
-    useCallback(
-      (data) => {
-        if (
-          !isNull(currentEditRow) &&
-          !isUndefined(servers) &&
-          servers.length > currentEditRow
-        ) {
-          const originalServer = servers[currentEditRow];
-          updatePlexServerMutation.mutate({ id: originalServer.id, ...data });
-        }
-      },
-      [currentEditRow, servers, updatePlexServerMutation],
-    );
-
   const renderConfirmationDialog = () => {
     return (
       <Dialog
@@ -452,17 +692,6 @@ export default function PlexSettingsPage() {
     setSnackStatus(false);
   };
 
-  const handleEditServer = useCallback(
-    (index: number) => {
-      setCurrentEditRow(index);
-      setShowAccessToken(false);
-    },
-    [setCurrentEditRow, setShowAccessToken],
-  );
-
-  const UIRouteSuccess = true; // TODO
-  const backendRouteSuccess = true; // TODO
-
   // This is messy, lets consider getting rid of combine, it probably isnt useful here
   if (serversError || streamsError) {
     return <h1>XML: {(serversError ?? streamsError)!.message}</h1>;
@@ -474,175 +703,8 @@ export default function PlexSettingsPage() {
   };
 
   const getTableRows = () => {
-    return servers!.map((server, index) => {
-      const isEditing = index === currentEditRow;
-      return (
-        <Fragment key={server.name}>
-          <TableRow>
-            <TableCell>{server.name}</TableCell>
-            <TableCell width="60%">
-              {!isEditing ? (
-                <Link href={server.uri} target={'_blank'}>
-                  {server.uri}
-                </Link>
-              ) : (
-                <Controller
-                  control={control}
-                  name="uri"
-                  rules={{ required: true, minLength: 1 }}
-                  render={({ field, formState: { errors } }) => (
-                    <TextField
-                      label="URL"
-                      size="small"
-                      fullWidth
-                      error={!isNil(errors.uri)}
-                      {...field}
-                      helperText={errors.uri?.message ?? null}
-                    />
-                  )}
-                />
-              )}
-            </TableCell>
-            <TableCell align="center">
-              {UIRouteSuccess ? (
-                <CloudDoneOutlined color="success" />
-              ) : (
-                <CloudOff color="error" />
-              )}
-            </TableCell>
-            <TableCell align="center">
-              {backendRouteSuccess ? (
-                <CloudDoneOutlined color="success" />
-              ) : (
-                <CloudOff color="error" />
-              )}
-            </TableCell>
-            <TableCell width="10%" align="right">
-              {isEditing ? (
-                <>
-                  <IconButton
-                    color="primary"
-                    disabled={!isValid}
-                    onClick={handleSubmit(savePlexServer)}
-                  >
-                    <Save />
-                  </IconButton>
-                  <IconButton
-                    color="primary"
-                    onClick={() => setCurrentEditRow(null)}
-                  >
-                    <CancelOutlined />
-                  </IconButton>
-                </>
-              ) : (
-                <>
-                  <IconButton
-                    color="primary"
-                    onClick={() => handleEditServer(index)}
-                  >
-                    <Edit />
-                  </IconButton>
-                  <IconButton
-                    color="primary"
-                    onClick={() => setDeletePlexConfirmation(server.id)}
-                  >
-                    <Delete />
-                  </IconButton>
-                </>
-              )}
-            </TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell
-              sx={{ py: 0, borderBottom: isEditing ? null : 0 }}
-              colSpan={6}
-            >
-              <Collapse in={isEditing} timeout="auto" unmountOnExit>
-                <Stack
-                  direction="row"
-                  spacing={2}
-                  useFlexGap
-                  sx={{ m: 1, display: 'flex', alignItems: 'center' }}
-                >
-                  <Controller
-                    control={control}
-                    name="accessToken"
-                    rules={{
-                      required: true,
-                      minLength: 1,
-                    }}
-                    render={({ field, formState: { errors } }) => (
-                      <FormControl
-                        sx={{ m: 1, width: '25ch' }}
-                        variant="outlined"
-                      >
-                        <InputLabel htmlFor="access-token" size="small">
-                          Access Token
-                        </InputLabel>
-                        <OutlinedInput
-                          size="small"
-                          id="access-token"
-                          type={showAccessToken ? 'text' : 'password'}
-                          endAdornment={
-                            <InputAdornment position="end">
-                              <IconButton
-                                aria-label="toggle access token visibility"
-                                onClick={() => setShowAccessToken(toggle)}
-                                edge="end"
-                              >
-                                {showAccessToken ? (
-                                  <VisibilityOff />
-                                ) : (
-                                  <Visibility />
-                                )}
-                              </IconButton>
-                            </InputAdornment>
-                          }
-                          label="Access Token"
-                          {...field}
-                        />
-                        {errors.accessToken && (
-                          <FormHelperText>
-                            {errors.accessToken.message}
-                          </FormHelperText>
-                        )}
-                      </FormControl>
-                    )}
-                  />
-                  <FormControl>
-                    <FormControlLabel
-                      control={
-                        <Controller
-                          control={control}
-                          name="sendGuideUpdates"
-                          render={({ field }) => (
-                            <Checkbox {...field} checked={field.value} />
-                          )}
-                        />
-                      }
-                      label="Auto-Update Guide"
-                    />
-                  </FormControl>
-                  <FormControl>
-                    <FormControlLabel
-                      control={
-                        <Controller
-                          control={control}
-                          name="sendChannelUpdates"
-                          render={({ field }) => (
-                            <Checkbox {...field} checked={field.value} />
-                          )}
-                        />
-                      }
-                      label="Auto-Update Channels"
-                    />
-                  </FormControl>
-                </Stack>
-              </Collapse>
-            </TableCell>
-          </TableRow>
-        </Fragment>
-      );
+    return map(servers, (server) => {
+      return <PlexServerRow key={server.id} server={server} />;
     });
   };
 
