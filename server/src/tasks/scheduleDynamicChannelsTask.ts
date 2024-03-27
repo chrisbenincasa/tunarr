@@ -1,3 +1,9 @@
+import { buildPlexFilterKey } from '@tunarr/shared/util';
+import {
+  PlexLibraryMovies,
+  PlexLibraryMusic,
+  PlexLibraryShows,
+} from '@tunarr/types/plex';
 import { isNull, isUndefined } from 'lodash-es';
 import filter from 'lodash-es/filter';
 import { ChannelDB } from '../dao/channelDb';
@@ -78,8 +84,19 @@ class DynamicChannelUpdaterFactory {
             }
 
             const plex = new Plex(result);
-            const plexResult = await plex.doGet(
-              `/library/sections/${contentSourceDef.query?.libraryKey ?? ''}`,
+            console.log(contentSourceDef.query);
+            const filter = buildPlexFilterKey(
+              contentSourceDef.query?.search.filter,
+            );
+            console.log(filter);
+
+            // TODO page through the results
+            const plexResult = await plex.doGet<
+              PlexLibraryMovies | PlexLibraryShows | PlexLibraryMusic
+            >(
+              `/library/sections/${
+                contentSourceDef.query?.libraryKey ?? ''
+              }/all?${filter.join('&')}`,
             );
             console.log(plexResult);
           }

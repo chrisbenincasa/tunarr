@@ -1,3 +1,4 @@
+export * from './plexSearchUtil.js';
 import { ChannelProgram } from '@tunarr/types';
 import isFunction from 'lodash-es/isFunction.js';
 import { MarkRequired } from 'ts-essentials';
