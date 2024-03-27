@@ -19,9 +19,8 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-// import { useQueryClient } from '@tanstack/react-query';
 import { scheduleRandomSlots } from '@tunarr/shared';
-import { isContentProgram } from '@tunarr/types';
+import { ChannelProgram, isContentProgram } from '@tunarr/types';
 import {
   RandomSlot,
   RandomSlotProgramming,
@@ -58,6 +57,7 @@ import {
   useForm,
   useWatch,
 } from 'react-hook-form';
+import { Link as RouterLink } from 'react-router-dom';
 import { useDebounceCallback } from 'usehooks-ts';
 import Breadcrumbs from '../../components/Breadcrumbs';
 import PaddedPaper from '../../components/base/PaddedPaper';
@@ -70,7 +70,11 @@ import {
 } from '../../components/slot_scheduler/commonSlotSchedulerOptions';
 import { handleNumericFormValue, zipWithIndex } from '../../helpers/util';
 import { usePreloadedChannelEdit } from '../../hooks/usePreloadedChannel';
-import { updateCurrentChannel } from '../../store/channelEditor/actions';
+import { useUpdateLineup } from '../../hooks/useUpdateLineup';
+import {
+  resetLineup,
+  updateCurrentChannel,
+} from '../../store/channelEditor/actions';
 import { UIChannelProgram } from '../../types';
 
 dayjs.extend(duration);
@@ -129,6 +133,34 @@ type RandomSlotRowProps = {
   setValue: UseFormSetValue<RandomSlotForm>;
   programOptions: ProgramOption[];
   removeSlot: (idx: number) => void;
+};
+
+const lineupItemAppearsInSchedule = (
+  slots: RandomSlot[],
+  item: ChannelProgram,
+) => {
+  return some(slots, (slot) => {
+    switch (slot.programming.type) {
+      case 'flex':
+        return item.type === 'flex' || item.type === 'redirect';
+      case 'movie':
+        return (
+          (item.type === 'content' && item.subtype === 'movie') ||
+          (item.type === 'custom' && item.program?.subtype === 'movie')
+        );
+      case 'show': {
+        const showTitle = slot.programming.showId;
+        return (
+          (item.type === 'content' &&
+            item.subtype === 'episode' &&
+            showTitle === item.title) ||
+          (item.type === 'custom' &&
+            item.program?.subtype === 'episode' &&
+            item.program?.title === showTitle)
+        );
+      }
+    }
+  });
 };
 
 const RandomSlotRow = React.memo(
@@ -488,6 +520,8 @@ export default function RandomSlotEditorPage() {
     schedule: loadedSchedule,
   } = usePreloadedChannelEdit();
 
+  const updateLineupMutation = useUpdateLineup();
+
   const programOptions: ProgramOption[] = useMemo(() => {
     const contentPrograms = filter(newLineup, isContentProgram);
     const opts: ProgramOption[] = [{ value: 'flex', description: 'Flex' }];
@@ -521,20 +555,12 @@ export default function RandomSlotEditorPage() {
     channel?.startTime ?? dayjs().unix() * 1000,
   );
 
-  // const queryClient = useQueryClient();
-
   const { control, getValues, setValue } = useForm<RandomSlotForm>({
     defaultValues:
       !isUndefined(loadedSchedule) && loadedSchedule.type === 'random'
         ? loadedSchedule
         : defaultRandomSlotSchedule,
   });
-
-  const schedule: RandomSlotSchedule = {
-    ...getValues(),
-    timeZoneOffset: new Date().getTimezoneOffset(),
-    type: 'random',
-  };
 
   const [perfSnackbarDetails, setPerfSnackbarDetails] = useState<{
     ms: number;
@@ -545,10 +571,43 @@ export default function RandomSlotEditorPage() {
     UIChannelProgram[] | undefined
   >(undefined);
 
+  const resetLineupToSaved = useCallback(() => {
+    setGeneratedList(undefined);
+    resetLineup();
+  }, [setGeneratedList]);
+
+  const onSave = () => {
+    const schedule: RandomSlotSchedule = {
+      ...getValues(),
+      timeZoneOffset: new Date().getTimezoneOffset(),
+      type: 'random',
+    };
+
+    // Find programs that have active slots
+    const filteredLineup = filter(newLineup, (item) =>
+      lineupItemAppearsInSchedule(getValues('slots'), item),
+    );
+
+    updateLineupMutation.mutate({
+      channelId: channel!.id,
+      lineupRequest: {
+        type: 'random',
+        schedule,
+        programs: filteredLineup,
+      },
+    });
+  };
+
   const calculateSlots = () => {
     performance.mark('guide-start');
-    console.log(schedule);
-    scheduleRandomSlots(schedule, newLineup)
+    scheduleRandomSlots(
+      {
+        ...getValues(),
+        timeZoneOffset: new Date().getTimezoneOffset(),
+        type: 'random',
+      },
+      newLineup,
+    )
       .then((res) => {
         performance.mark('guide-end');
         const { duration: ms } = performance.measure(
@@ -613,12 +672,17 @@ export default function RandomSlotEditorPage() {
         Edit Random Slots (Channel {channel?.number})
       </Typography>
       <PaddedPaper sx={{ mb: 2 }}>
-        <Box sx={{ display: 'flex', alignContent: 'center' }}>
+        <Stack
+          direction="row"
+          gap={1}
+          sx={{ display: 'flex', alignContent: 'center' }}
+        >
           <Typography sx={{ flexGrow: 1 }}>Random Slots</Typography>
+          <Button onClick={() => resetLineupToSaved()}>Reset</Button>
           <Button variant="contained" onClick={() => calculateSlots()}>
             Refresh
           </Button>
-        </Box>
+        </Stack>
         <Divider sx={{ my: 2 }} />
         <RandomSlots
           control={control}
@@ -737,6 +801,19 @@ export default function RandomSlotEditorPage() {
           }}
         />
       </PaddedPaper>
+      <Box sx={{ display: 'flex', justifyContent: 'end', pt: 1, columnGap: 1 }}>
+        <Button
+          variant="contained"
+          to=".."
+          relative="path"
+          component={RouterLink}
+        >
+          Cancel
+        </Button>
+        <Button variant="contained" onClick={() => onSave()}>
+          Save
+        </Button>
+      </Box>
     </>
   );
 }

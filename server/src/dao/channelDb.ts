@@ -1,5 +1,5 @@
 import { Loaded, QueryOrder, RequiredEntityData, wrap } from '@mikro-orm/core';
-import { scheduleTimeSlots } from '@tunarr/shared';
+import { scheduleRandomSlots, scheduleTimeSlots } from '@tunarr/shared';
 import { forProgramType } from '@tunarr/shared/util';
 import {
   ChannelProgram,
@@ -299,7 +299,7 @@ export class ChannelDB {
         channel: updatedChannel,
         newLineup,
       };
-    } else if (req.type === 'time') {
+    } else if (req.type === 'time' || req.type === 'random') {
       // const programs = req.body.programs;
       // const persistedPrograms = filter(programs, isContentProgram)
       // const upsertedPrograms = await upsertContentPrograms(programs);
@@ -311,10 +311,10 @@ export class ChannelDB {
       //     programs: req.body.programs,
       //   },
       // ),
-      const { programs, startTime } = await scheduleTimeSlots(
-        req.schedule,
-        req.programs,
-      );
+      const { programs, startTime } =
+        req.type === 'time'
+          ? await scheduleTimeSlots(req.schedule, req.programs)
+          : await scheduleRandomSlots(req.schedule, req.programs);
 
       const newLineup = await createNewLineup(programs);
 
