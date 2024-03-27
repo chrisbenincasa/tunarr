@@ -6,7 +6,8 @@ import { z } from 'zod';
 import { defaultXmlTvSettings } from '../dao/settings.js';
 import { serverOptions } from '../globals.js';
 import createLogger from '../logger.js';
-import { scheduledJobsById } from '../services/scheduler.js';
+import { GlobalScheduler } from '../services/scheduler.js';
+import { UpdateXmlTvTask } from '../tasks/updateXmlTvTask.js';
 import { RouterPluginCallback } from '../types/serverType.js';
 import { firstDefined } from '../util.js';
 
@@ -67,7 +68,7 @@ export const xmlTvSettingsRouter: RouterPluginCallback = (
           },
           level: 'success',
         });
-        await updateXmltv();
+        await GlobalScheduler.getScheduledJob(UpdateXmlTvTask.ID).runNow(false);
         return res.send(xmltv);
       } catch (err) {
         logger.error(err);
@@ -113,7 +114,7 @@ export const xmlTvSettingsRouter: RouterPluginCallback = (
           level: 'warning',
         });
 
-        await updateXmltv();
+        await GlobalScheduler.getScheduledJob(UpdateXmlTvTask.ID).runNow(false);
         return res.send(xmltv);
       } catch (err) {
         logger.error(err);
@@ -134,7 +135,3 @@ export const xmlTvSettingsRouter: RouterPluginCallback = (
 
   done();
 };
-
-async function updateXmltv() {
-  await scheduledJobsById['update-xmltv']?.runNow();
-}

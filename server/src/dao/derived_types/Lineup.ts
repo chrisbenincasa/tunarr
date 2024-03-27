@@ -1,5 +1,5 @@
 import { LineupSchedule } from '@tunarr/types/api';
-import { PlexSearch } from '@tunarr/types/plex';
+import { ScopedPlexSearch } from '@tunarr/types/plex';
 
 export type Lineup = {
   // The current lineup of a single cycle of this channel
@@ -68,7 +68,8 @@ export type DynamicContentUpdaterConfig = DynamicContentCronUpdaterConfig;
 
 export type DynamicContentConfigPlexSource = {
   type: 'plex';
-  query?: PlexSearch;
+  plexServerId: string; // server name or unique ID
+  query?: ScopedPlexSearch;
   updater: DynamicContentUpdaterConfig;
 };
 

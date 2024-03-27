@@ -1,11 +1,10 @@
 import { BaseErrorSchema } from '@tunarr/types/api';
 import { TaskSchema } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
-import { chain, hasIn, isNil } from 'lodash-es';
+import { chain, isNil } from 'lodash-es';
 import { z } from 'zod';
 import createLogger from '../logger.js';
-import { scheduledJobsById } from '../services/scheduler.js';
-import { TaskId } from '../tasks/task.js';
+import { GlobalScheduler } from '../services/scheduler.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
 
 const logger = createLogger(import.meta);
@@ -22,7 +21,7 @@ export const tasksApiRouter: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (_, res) => {
-      const result = chain(scheduledJobsById)
+      const result = chain(GlobalScheduler.scheduledJobsById)
         .map((task, id) => {
           if (isNil(task)) {
             return;
@@ -58,20 +57,22 @@ export const tasksApiRouter: RouterPluginAsyncCallback = async (fastify) => {
       schema: {
         params: z.object({
           id: z.string(),
+          background: z.boolean().default(true),
         }),
         response: {
+          200: z.any(),
           202: z.void(),
           400: BaseErrorSchema,
           404: z.void(),
+          500: z.void(),
         },
       },
     },
     async (req, res) => {
-      if (!hasIn(scheduledJobsById, req.params.id)) {
+      const task = GlobalScheduler.getScheduledJob(req.params.id);
+      if (isNil(task)) {
         return res.status(404).send();
       }
-
-      const task = scheduledJobsById[req.params.id as TaskId];
 
       if (isNil(task)) {
         return res.status(404).send();
@@ -81,11 +82,17 @@ export const tasksApiRouter: RouterPluginAsyncCallback = async (fastify) => {
         return res.status(400).send({ message: 'Task already running' });
       }
 
-      task.runNow(true).catch((e) => {
+      const taskPromise = task.runNow(req.params.background).catch((e) => {
         logger.error('Async task triggered by API failed: %O', e);
       });
 
-      return res.status(202).send();
+      if (!req.params.background) {
+        return taskPromise
+          .then((result) => res.status(200).send(result))
+          .catch(() => res.status(500).send());
+      } else {
+        return res.status(202).send();
+      }
     },
   );
 };

@@ -31,7 +31,7 @@
         "noErrorTruncation": true
     },
     "files": [
-        "src/types/fastify.d.ts"
+        "src/types/fastify.d.ts",
     ],
     "include": [
         "./src/**/*.ts",

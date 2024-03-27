@@ -26,3 +26,9 @@ export type PlexSearch = {
   filter?: PlexFilter;
   sort?: PlexSort;
 };
+// A PlexSearch but with a reference to the
+// library it is for.
+export type ScopedPlexSearch = {
+  search: PlexSearch;
+  libraryKey: string;
+};
