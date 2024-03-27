@@ -5,7 +5,10 @@ import {
   CustomProgramSchema,
 } from '../schemas/programmingSchema.js';
 import { PlexServerSettingsSchema } from '../schemas/settingsSchemas.js';
-import { TimeSlotScheduleSchema } from './Scheduling.js';
+import {
+  RandomSlotScheduleSchema,
+  TimeSlotScheduleSchema,
+} from './Scheduling.js';
 
 export * from './Scheduling.js';
 
@@ -94,9 +97,19 @@ export const TimeBasedProgramLineupSchema = z.object({
   schedule: TimeSlotScheduleSchema,
 });
 
+export const RandomSlotProgramLineupSchema = z.object({
+  type: z.literal('random'),
+  programs: z.array(ChannelProgramSchema),
+  schedule: RandomSlotScheduleSchema,
+});
+
 export const UpdateChannelProgrammingRequestSchema = z.discriminatedUnion(
   'type',
-  [ManualProgramLineupSchema, TimeBasedProgramLineupSchema],
+  [
+    ManualProgramLineupSchema,
+    TimeBasedProgramLineupSchema,
+    RandomSlotProgramLineupSchema,
+  ],
 );
 
 export type UpdateChannelProgrammingRequest = Alias<
