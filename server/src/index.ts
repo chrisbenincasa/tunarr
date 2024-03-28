@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
 import constants from '@tunarr/shared/constants';
+import chalk from 'chalk';
 import { isArray, isString } from 'lodash-es';
 import { existsSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
@@ -67,15 +68,32 @@ yargs(hideBin(process.argv))
         .middleware(setServerOptions);
     },
     async (args: ArgumentsCamelCase<ServerOptions>) => {
+      /* eslint-disable max-len */
       console.log(
-        `         \\
-         Tunarr ${constants.VERSION_NAME}
-      .------------.
-      |:::///### o |
-      |:::///###   |
-      ':::///### o |
-      '------------'
-      `,
+        `
+${chalk.blue(' _____')} ${chalk.green('_   _')}${chalk.yellow(
+          ' _  _ ',
+        )}${chalk.magentaBright('  _   ')}${chalk.red('___ ')}${chalk.cyan(
+          '___ ',
+        )}
+${chalk.blue('|_   _|')}${chalk.green(' | | | ')}${chalk.yellow(
+          '\\| |',
+        )}${chalk.magentaBright(' /_\\ ')}${chalk.red('| _ \\')}${chalk.cyan(
+          ' _ \\',
+        )}
+${chalk.blue('  | | ')}${chalk.green('| |_| |')}${chalk.yellow(
+          ' .` |',
+        )}${chalk.magentaBright('/ _ \\')}${chalk.red('|   /')}${chalk.cyan(
+          '   /',
+        )}
+${chalk.blue('  |_| ')}${chalk.green(' \\___/')}${chalk.yellow(
+          '|_|\\_/',
+        )}${chalk.magentaBright('_/ \\_\\')}${chalk.red('_|_\\')}${chalk.cyan(
+          '_|_\\',
+        )}
+\n\t\t${constants.VERSION_NAME}
+`,
+        /* eslint-enable max-len */
       );
       await initServer(args);
     },
