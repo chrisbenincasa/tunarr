@@ -1,17 +1,11 @@
-import { buildPlexFilterKey } from '@tunarr/shared/util';
-import {
-  PlexLibraryMovies,
-  PlexLibraryMusic,
-  PlexLibraryShows,
-} from '@tunarr/types/plex';
-import { isNull, isUndefined } from 'lodash-es';
+import { Loaded } from '@mikro-orm/core';
+import { isUndefined } from 'lodash-es';
 import filter from 'lodash-es/filter';
 import { ChannelDB } from '../dao/channelDb';
-import { withDb } from '../dao/dataSource';
 import { DynamicContentConfigSource } from '../dao/derived_types/Lineup';
-import { PlexServerSettings } from '../dao/entities/PlexServerSettings';
-import { Plex } from '../plex';
+import { Channel } from '../dao/entities/Channel';
 import { ScheduledTask } from '../services/ScheduledTask';
+import { ContentSourceUpdaterFactory } from '../services/dynamic_channels/ContentSourceUpdaterFactory';
 import { GlobalScheduler } from '../services/scheduler';
 import { Maybe } from '../types';
 import { Task, TaskId } from './task';
@@ -50,7 +44,7 @@ export class ScheduleDynamicChannelsTask extends Task<void> {
           new ScheduledTask(
             'UpdateDynamicChannel',
             source.updater.schedule,
-            () => this.#taskFactory.getTask(source),
+            () => this.#taskFactory.getTask(channel, source),
           ),
         );
         console.log('scheduling task = ' + scheduled);
@@ -60,47 +54,20 @@ export class ScheduleDynamicChannelsTask extends Task<void> {
 }
 
 class DynamicChannelUpdaterFactory {
-  getTask(contentSourceDef: DynamicContentConfigSource): Task<unknown> {
+  getTask(
+    channel: Loaded<Channel>,
+    contentSourceDef: DynamicContentConfigSource,
+  ): Task<unknown> {
     // This won't always be anonymous
     return new (class extends Task<unknown> {
       public ID = contentSourceDef.updater._id;
       public taskName = `AnonymousTest_` + contentSourceDef.updater._id;
       // eslint-disable-next-line @typescript-eslint/require-await
       protected async runInternal() {
-        switch (contentSourceDef.type) {
-          case 'plex': {
-            const result = await withDb((em) => {
-              return em.repo(PlexServerSettings).findOne({
-                $or: [
-                  { name: contentSourceDef.plexServerId },
-                  { clientIdentifier: contentSourceDef.plexServerId },
-                ],
-              });
-            });
-
-            if (isNull(result)) {
-              console.error('Couldnt find Plex server oooooo');
-              return;
-            }
-
-            const plex = new Plex(result);
-            console.log(contentSourceDef.query);
-            const filter = buildPlexFilterKey(
-              contentSourceDef.query?.search.filter,
-            );
-            console.log(filter);
-
-            // TODO page through the results
-            const plexResult = await plex.doGet<
-              PlexLibraryMovies | PlexLibraryShows | PlexLibraryMusic
-            >(
-              `/library/sections/${
-                contentSourceDef.query?.libraryKey ?? ''
-              }/all?${filter.join('&')}`,
-            );
-            console.log(plexResult);
-          }
-        }
+        return ContentSourceUpdaterFactory.getUpdater(
+          channel,
+          contentSourceDef,
+        ).update();
       }
     })();
   }
