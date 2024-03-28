@@ -36,7 +36,6 @@ export function ChannelProgrammingConfig() {
   };
 
   const startTime = channel ? dayjs(channel.startTime) : dayjs();
-  const endTime = startTime.add(channel?.duration ?? 0, 'milliseconds');
 
   const [showScheduleControls, setShowScheduleControls] =
     useState<boolean>(false);
@@ -56,8 +55,8 @@ export function ChannelProgrammingConfig() {
               value={startTime}
               onChange={(newDateTime) => handleStartTimeChange(newDateTime)}
               sx={{ mr: 2 }}
+              slotProps={{ textField: { size: 'small' } }}
             />
-            <DateTimePicker label="Programming End" value={endTime} disabled />
             <Stack
               direction={{ xs: 'column', sm: 'row' }}
               sx={{

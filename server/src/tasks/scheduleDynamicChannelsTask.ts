@@ -34,11 +34,16 @@ export class ScheduleDynamicChannelsTask extends Task<void> {
     const lineups = await this.#channelsDb.loadAllLineups();
     const dynamicLineups = filter(
       lineups,
-      (lineup) => !isUndefined(lineup.lineup.dynamicContentConfig),
+      ({ lineup }) =>
+        !isUndefined(lineup.dynamicContentConfig) &&
+        lineup.dynamicContentConfig.enabled,
     );
 
     for (const { channel, lineup } of dynamicLineups) {
       for (const source of lineup.dynamicContentConfig!.contentSources) {
+        if (!source.enabled) {
+          continue;
+        }
         const scheduled = GlobalScheduler.scheduleTask(
           source.updater._id,
           new ScheduledTask(

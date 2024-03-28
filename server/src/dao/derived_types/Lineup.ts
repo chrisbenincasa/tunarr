@@ -66,6 +66,10 @@ export type DynamicContentCronUpdaterConfig = {
 
 export type DynamicContentUpdaterConfig = DynamicContentCronUpdaterConfig;
 
+type WithEnabled = {
+  enabled: boolean;
+};
+
 export type DynamicContentConfigPlexSource = {
   type: 'plex';
   plexServerId: string; // server name or unique ID
@@ -73,8 +77,9 @@ export type DynamicContentConfigPlexSource = {
   updater: DynamicContentUpdaterConfig;
 };
 
-export type DynamicContentConfigSource = DynamicContentConfigPlexSource;
+export type DynamicContentConfigSource = DynamicContentConfigPlexSource &
+  WithEnabled;
 
 export type DynamicContentConfig = {
   contentSources: [DynamicContentConfigSource, ...DynamicContentConfigSource[]];
-};
+} & WithEnabled;

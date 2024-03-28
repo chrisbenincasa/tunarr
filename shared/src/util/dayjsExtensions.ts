@@ -1,5 +1,5 @@
 import inst, { Dayjs, ManipulateType, PluginFunc } from 'dayjs';
-import duration, { type Duration } from 'dayjs/plugin/duration.js';
+import duration from 'dayjs/plugin/duration.js';
 
 declare module 'dayjs' {
   interface Dayjs {
@@ -19,10 +19,10 @@ export const mod: PluginFunc = (_opts, dayjsClass, dayjsFactory) => {
   // be timezone adjusted (i.e. duration - new Date().getTimezoneOffset())
   // before being used with new timestamps.
   dayjsClass.prototype['mod'] = function (
-    value: number | Duration,
+    value: number | duration.Duration,
     unit?: ManipulateType,
   ) {
-    let dur: Duration;
+    let dur: duration.Duration;
     if (dayjsFactory.isDuration(value)) {
       dur = value;
     } else {
