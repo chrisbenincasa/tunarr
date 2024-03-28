@@ -1,4 +1,9 @@
 import { z } from 'zod';
+import { PlexSearchSchema } from '../plex/index.js';
+
+//
+// Time slots
+//
 
 export const MovieProgrammingTimeSlotSchema = z.object({
   type: z.literal('movie'),
@@ -63,6 +68,10 @@ export const TimeSlotScheduleSchema = z.object({
 
 export type TimeSlotSchedule = z.infer<typeof TimeSlotScheduleSchema>;
 
+//
+// Random slots
+//
+
 export const MovieProgrammingRandomSlotSchema = z.object({
   type: z.literal('movie'),
 });
@@ -122,6 +131,62 @@ export const RandomSlotScheduleSchema = z.object({
 
 export type RandomSlotSchedule = z.infer<typeof RandomSlotScheduleSchema>;
 
+//
+// Dynamic content
+//
+export const DynamicContentCronUpdaterConfigSchema = z.object({
+  // Unique ID to track scheduling. Not for use outside of bookkeeping
+  _id: z.string(),
+  type: z.literal('cron'),
+  // Cron schedule string compatible with node-schedule
+  schedule: z.string(),
+});
+
+export type DynamicContentCronUpdaterConfig = z.infer<
+  typeof DynamicContentCronUpdaterConfigSchema
+>;
+
+export const DynamicContentUpdaterConfigSchema = z.discriminatedUnion('type', [
+  DynamicContentCronUpdaterConfigSchema,
+]);
+
+export type DynamicContentUpdaterConfig = z.infer<
+  typeof DynamicContentUpdaterConfigSchema
+>;
+
+const WithEnabledSchema = z.object({
+  enabled: z.boolean().default(true),
+});
+
+export const DynamicContentConfigPlexSourceSchema = z
+  .object({
+    type: z.literal('plex'),
+    plexServerId: z.string(), // server name or unique ID
+    plexLibraryKey: z.string(),
+    search: PlexSearchSchema.optional(),
+    updater: DynamicContentUpdaterConfigSchema,
+  })
+  .merge(WithEnabledSchema);
+
+export type DynamicContentConfigPlexSource = z.infer<
+  typeof DynamicContentConfigPlexSourceSchema
+>;
+
+export const DynamicContentConfigSourceSchema = z.discriminatedUnion('type', [
+  DynamicContentConfigPlexSourceSchema,
+]);
+
+export const DynamicContentConfigSchema = z
+  .object({
+    contentSources: z.array(DynamicContentConfigSourceSchema).nonempty(),
+  })
+  .merge(WithEnabledSchema);
+
+export type DynamicContentConfig = z.infer<typeof DynamicContentConfigSchema>;
+
+//
+// Lineups
+//
 export const LineupScheduleSchema = z.discriminatedUnion('type', [
   TimeSlotScheduleSchema,
   RandomSlotScheduleSchema,

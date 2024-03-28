@@ -30,6 +30,7 @@ import {
   FixedSizeListProps,
   ListChildComponentProps,
 } from 'react-window';
+import { betterHumanize } from '../../helpers/dayjs.ts';
 import { alternateColors, channelProgramUniqueId } from '../../helpers/util.ts';
 import {
   deleteProgram,
@@ -49,11 +50,13 @@ type Props = {
   // If given, the list will be rendered using react-window
   virtualListProps?: Omit<FixedSizeListProps, 'itemCount' | 'children'>;
   enableDnd?: boolean;
+  showProgramCount?: boolean;
 };
 
 const defaultProps: Props = {
   programListSelector: materializedProgramListSelector,
   enableDnd: true,
+  showProgramCount: true,
 };
 
 type ListItemProps = {
@@ -100,7 +103,9 @@ const programListItemTitleFormatter = (() => {
 
   return (program: ChannelProgram) => {
     const title = itemTitle(program);
-    const dur = dayjs.duration({ milliseconds: program.duration }).humanize();
+    const dur = betterHumanize(
+      dayjs.duration({ milliseconds: program.duration }),
+    );
     return `${title} - (${dur})`;
   };
 })();
@@ -248,6 +253,7 @@ export default function ChannelProgrammingList({
   programList: passedProgramList,
   programListSelector = defaultProps.programListSelector,
   virtualListProps,
+  showProgramCount = defaultProps.showProgramCount,
   enableDnd = defaultProps.enableDnd,
 }: Props) {
   const channel = useStore((s) => s.channelEditor.currentEntity);
@@ -335,12 +341,8 @@ export default function ChannelProgrammingList({
 
     if (programList.length === 0) {
       return (
-        <Box>
-          <Typography
-            align="center"
-            width={'100%'}
-            sx={{ my: 4, fontStyle: 'italic' }}
-          >
+        <Box width={'100%'}>
+          <Typography align="center" sx={{ my: 4, fontStyle: 'italic' }}>
             No programming added yet
           </Typography>
         </Box>
@@ -348,7 +350,19 @@ export default function ChannelProgrammingList({
     }
 
     return (
-      <>
+      <Box width="100%">
+        {showProgramCount && (
+          <Box sx={{ width: '100%', mb: 1, textAlign: 'right' }}>
+            <Typography variant="caption" sx={{ flexGrow: 1, mr: 2 }}>
+              {programList.length} program{programList.length === 1 ? '' : 's'}
+            </Typography>
+            {channel?.duration && (
+              <Typography variant="caption">
+                {dayjs.duration(channel.duration).humanize()}
+              </Typography>
+            )}
+          </Box>
+        )}
         {virtualListProps ? (
           <FixedSizeList
             {...virtualListProps}
@@ -359,7 +373,7 @@ export default function ChannelProgrammingList({
             {ProgramRow}
           </FixedSizeList>
         ) : (
-          <Box ref={drop} sx={{ flex: 1, maxHeight: 400, overflowY: 'auto' }}>
+          <Box ref={drop} sx={{ flex: 1, maxHeight: 600, overflowY: 'auto' }}>
             <List dense>{renderPrograms()}</List>
           </Box>
         )}
@@ -368,7 +382,7 @@ export default function ChannelProgrammingList({
           onClose={() => setFocusedProgramDetails(undefined)}
           program={focusedProgramDetails}
         />
-      </>
+      </Box>
     );
   };
 

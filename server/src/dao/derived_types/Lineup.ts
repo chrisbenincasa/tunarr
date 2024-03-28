@@ -1,5 +1,4 @@
-import { LineupSchedule } from '@tunarr/types/api';
-import { ScopedPlexSearch } from '@tunarr/types/plex';
+import { DynamicContentConfig, LineupSchedule } from '@tunarr/types/api';
 
 export type Lineup = {
   // The current lineup of a single cycle of this channel
@@ -57,29 +56,3 @@ function isItemOfType<T extends LineupItem>(discrim: string) {
 export const isContentItem = isItemOfType<ContentItem>('content');
 export const isOfflineItem = isItemOfType<OfflineItem>('offline');
 export const isRedirectItem = isItemOfType<RedirectItem>('redirect');
-
-export type DynamicContentCronUpdaterConfig = {
-  _id: string; // Unique ID to track scheduling. Not for use outside of bookkeeping
-  type: 'cron';
-  schedule: string; // Cron string
-};
-
-export type DynamicContentUpdaterConfig = DynamicContentCronUpdaterConfig;
-
-type WithEnabled = {
-  enabled: boolean;
-};
-
-export type DynamicContentConfigPlexSource = {
-  type: 'plex';
-  plexServerId: string; // server name or unique ID
-  query?: ScopedPlexSearch;
-  updater: DynamicContentUpdaterConfig;
-};
-
-export type DynamicContentConfigSource = DynamicContentConfigPlexSource &
-  WithEnabled;
-
-export type DynamicContentConfig = {
-  contentSources: [DynamicContentConfigSource, ...DynamicContentConfigSource[]];
-} & WithEnabled;
