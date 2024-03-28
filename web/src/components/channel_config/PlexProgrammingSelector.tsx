@@ -1,18 +1,15 @@
-import Clear from '@mui/icons-material/Clear';
+import FilterAlt from '@mui/icons-material/FilterAlt';
 import GridView from '@mui/icons-material/GridView';
-import Search from '@mui/icons-material/Search';
 import ViewList from '@mui/icons-material/ViewList';
 import {
   Box,
+  Collapse,
   Divider,
   Grow,
-  IconButton,
-  InputAdornment,
   LinearProgress,
   Stack,
   Tab,
   Tabs,
-  TextField,
   ToggleButton,
   ToggleButtonGroup,
 } from '@mui/material';
@@ -27,26 +24,28 @@ import {
   PlexMusicArtist,
   PlexTvShow,
 } from '@tunarr/types/plex';
-import { chain, first, isEmpty, isNil, isUndefined, map } from 'lodash-es';
+import { chain, first, forEach, isNil, isUndefined, map } from 'lodash-es';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useIntersectionObserver } from 'usehooks-ts';
 import {
   firstItemInNextRow,
   getImagesPerRow,
 } from '../../helpers/inlineModalUtil';
-import { toggle } from '../../helpers/util';
+import { toggle } from '../../helpers/util.ts';
 import { fetchPlexPath, usePlex } from '../../hooks/plexHooks';
 import { usePlexServerSettings } from '../../hooks/settingsHooks';
-import useDebouncedState from '../../hooks/useDebouncedState';
 import useStore from '../../store';
 import { addKnownMediaForServer } from '../../store/programmingSelector/actions';
 import { setProgrammingSelectorViewState } from '../../store/themeEditor/actions';
 import { ProgramSelectorViewType } from '../../types';
 import InlineModal from '../InlineModal';
 import CustomTabPanel from '../TabPanel';
+import StandaloneToggleButton from '../base/StandaloneToggleButton.tsx';
 import ConnectPlex from '../settings/ConnectPlex';
+import { PlexFilterBuilder } from './PlexFilterBuilder.tsx';
 import PlexGridItem from './PlexGridItem';
 import { PlexListItem } from './PlexListItem';
+import { PlexSortField } from './PlexSortField.tsx';
 
 function a11yProps(index: number) {
   return {
@@ -67,13 +66,13 @@ export default function PlexProgrammingSelector() {
   const [rowSize, setRowSize] = useState<number>(16);
   const [modalIndex, setModalIndex] = useState<number>(-1);
   const [modalIsPending, setModalIsPending] = useState<boolean>(true);
-  const [searchBarOpen, setSearchBarOpen] = useState(false);
-  const [search, debounceSearch, setSearch] = useDebouncedState('', 300);
   const [scrollParams, setScrollParams] = useState({ limit: 0, max: -1 });
   const containerRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLDivElement>(null);
   const libraryImageRef = useRef<HTMLDivElement>(null);
   const libraryContainerRef = useRef<HTMLDivElement>(null);
+  const [searchVisible, setSearchVisible] = useState(false);
+  const [useAdvancedSearch, setUseAdvancedSearch] = useState(false);
 
   const handleResize = () => {
     if (tabValue === 0) {
@@ -120,7 +119,6 @@ export default function PlexProgrammingSelector() {
 
   const handleMoveModal = useCallback(
     (index: number) => {
-      console.log('TEST');
       if (index === modalIndex) {
         handleModalChildren([]);
         setModalIndex(-1);
@@ -151,11 +149,6 @@ export default function PlexProgrammingSelector() {
     '/library/sections',
     !isUndefined(selectedServer),
   );
-
-  const clearSearchInput = useCallback(() => {
-    setSearch('');
-    setSearchBarOpen(false);
-  }, [setSearch]);
 
   const setViewType = (view: ProgramSelectorViewType) => {
     setProgrammingSelectorViewState(view);
@@ -191,12 +184,16 @@ export default function PlexProgrammingSelector() {
     }
   }, [collectionsData, isCollectionLoading]);
 
+  const { urlFilter: searchKey } = useStore(
+    ({ plexSearch: plexQuery }) => plexQuery,
+  );
+
   const { isLoading: searchLoading, data: searchData } = useInfiniteQuery({
     queryKey: [
       'plex-search',
       selectedServer?.name,
       selectedLibrary?.library.key,
-      debounceSearch,
+      searchKey,
     ] as DataTag<
       ['plex-search', string, string, string],
       PlexLibraryMovies | PlexLibraryShows | PlexLibraryMusic
@@ -208,10 +205,17 @@ export default function PlexProgrammingSelector() {
         'Plex-Container-Start': pageParam.toString(),
         'Plex-Container-Size': (rowSize * 4).toString(),
       });
+      // HACK for now
+      forEach(searchKey?.split('&'), (keyval) => {
+        const idx = keyval.lastIndexOf('=');
+        if (idx !== -1) {
+          plexQuery.append(keyval.substring(0, idx), keyval.substring(idx + 1));
+        }
+      });
 
-      if (!isNil(debounceSearch) && !isEmpty(debounceSearch)) {
-        plexQuery.set('title<', debounceSearch);
-      }
+      // if (!isNil(debounceSearch) && !isEmpty(debounceSearch)) {
+      //   plexQuery.set('title<', debounceSearch);
+      // }
 
       return fetchPlexPath<
         PlexLibraryMovies | PlexLibraryShows | PlexLibraryMusic
@@ -365,7 +369,39 @@ export default function PlexProgrammingSelector() {
       {!isNil(directoryChildren) &&
         directoryChildren.size > 0 &&
         selectedLibrary && (
-          <>
+          <Box sx={{ mt: 1 }}>
+            <Stack direction="row" gap={1} sx={{ mt: 2 }}>
+              <StandaloneToggleButton
+                selected={searchVisible}
+                onToggle={() => setSearchVisible(toggle)}
+                toggleButtonProps={{
+                  size: 'small',
+                  sx: { mr: 1 },
+                  color: 'primary',
+                }}
+              >
+                <FilterAlt />
+              </StandaloneToggleButton>
+              <Grow in={searchVisible}>
+                <ToggleButtonGroup
+                  size="small"
+                  color="primary"
+                  exclusive
+                  value={useAdvancedSearch ? 'advanced' : 'basic'}
+                  onChange={() => setUseAdvancedSearch(toggle)}
+                >
+                  <ToggleButton value="basic">Basic</ToggleButton>
+                  <ToggleButton value="advanced">Advanced</ToggleButton>
+                </ToggleButtonGroup>
+              </Grow>
+              <PlexSortField />
+            </Stack>
+            <Collapse in={searchVisible} mountOnEnter>
+              <Box sx={{ py: 2 }}>
+                <PlexFilterBuilder advanced={useAdvancedSearch} />
+              </Box>
+            </Collapse>
+
             <Stack
               direction={{ xs: 'column', sm: 'row' }}
               sx={{
@@ -377,40 +413,6 @@ export default function PlexProgrammingSelector() {
                 flexGrow: 1,
               }}
             >
-              <Grow in={searchBarOpen} mountOnEnter>
-                <TextField
-                  label="Search"
-                  margin="dense"
-                  variant="outlined"
-                  fullWidth
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  key={'searchbar'}
-                  sx={{ m: 0 }}
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton
-                          onClick={clearSearchInput}
-                          onMouseDown={(e) => e.preventDefault()}
-                          edge="end"
-                        >
-                          <Clear />
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                    sx: { height: '48px' },
-                  }}
-                />
-              </Grow>
-              {!searchBarOpen && (
-                <ToggleButton
-                  value={searchBarOpen}
-                  onChange={() => setSearchBarOpen(toggle)}
-                >
-                  <Search />
-                </ToggleButton>
-              )}
               <ToggleButtonGroup
                 value={viewType}
                 onChange={handleFormat}
@@ -424,7 +426,7 @@ export default function PlexProgrammingSelector() {
                 </ToggleButton>
               </ToggleButtonGroup>
             </Stack>
-          </>
+          </Box>
         )}
       {plexServers?.length === 0 ? (
         <Box

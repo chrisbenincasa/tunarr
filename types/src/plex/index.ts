@@ -15,6 +15,12 @@ export const PlexJoinItemSchema = z.object({
 
 export type PlexJoinItem = z.infer<typeof PlexJoinItemSchema>;
 
+export const PlexMediaTypeSchema = z.union([
+  z.literal('movie'),
+  z.literal('show'),
+  z.literal('artist'),
+]);
+
 export const PlexLibrarySectionSchema = z.object({
   allowSync: z.boolean(),
   art: z.string(),
@@ -23,7 +29,7 @@ export const PlexLibrarySectionSchema = z.object({
   refreshing: z.boolean(),
   thumb: z.string(),
   key: z.string(),
-  type: z.union([z.literal('movie'), z.literal('show'), z.literal('artist')]),
+  type: PlexMediaTypeSchema,
   title: z.string(),
   agent: z.string(),
   scanner: z.string(),
@@ -102,7 +108,7 @@ const basePlexCollectionSchema = z.object({
 });
 
 const basePlexLibrarySchema = basePlexCollectionSchema.extend({
-  type: z.union([z.literal('movie'), z.literal('show'), z.literal('artist')]),
+  type: PlexMediaTypeSchema,
 });
 
 const basePlexChildCollectionSchema = basePlexCollectionSchema.extend({
@@ -703,3 +709,84 @@ export const PlexResourcesResponseSchema = z.array(PlexResourceSchema);
 export type PlexResourcesResponse = Alias<
   z.infer<typeof PlexResourcesResponseSchema>
 >;
+
+export const PlexFilterFieldTypeOperatorSchema = z.object({
+  key: z.string(),
+  title: z.string(),
+});
+
+export const PlexFilterFieldTypeSchema = z.object({
+  type: z.string(),
+  Operator: z.array(PlexFilterFieldTypeOperatorSchema),
+});
+
+export const PlexLibraryFilterSchema = z.object({
+  filter: z.string(),
+  filterType: z.string(),
+  key: z.string(),
+  title: z.string(),
+  type: z.string(),
+  advanced: z.boolean().optional(),
+});
+
+export const PlexLibrarySortSchema = z.object({
+  active: z.boolean().optional(),
+  activeDirection: z.string().optional(),
+  default: z.string().optional(),
+  defaultDirection: z.string(),
+  descKey: z.string(),
+  firstCharacterKey: z.string().optional(),
+  key: z.string(),
+  title: z.string(),
+});
+
+export type PlexLibrarySort = z.infer<typeof PlexLibrarySortSchema>;
+
+export const PlexLibraryFieldSchema = z.object({
+  key: z.string(),
+  title: z.string(),
+  type: z.string(),
+});
+
+export const PlexFilterTypeSchema = z.object({
+  key: z.string(),
+  type: PlexMediaTypeSchema,
+  title: z.string(),
+  active: z.boolean(),
+  Filter: z.array(PlexLibraryFilterSchema),
+  Sort: z.array(PlexLibrarySortSchema),
+  Field: z.array(PlexLibraryFieldSchema),
+});
+
+export type PlexFilterType = z.infer<typeof PlexFilterTypeSchema>;
+
+const PlexFilterResponseMetaSchema = z.object({
+  Type: z.array(PlexFilterTypeSchema),
+  FieldType: z.array(PlexFilterFieldTypeSchema),
+});
+
+export type PlexFilterResponseMeta = z.infer<
+  typeof PlexFilterResponseMetaSchema
+>;
+
+export const PlexFiltersResponseSchema = z.object({
+  // There are some standard fields here...
+  Meta: PlexFilterResponseMetaSchema,
+});
+
+export type PlexFiltersResponse = z.infer<typeof PlexFiltersResponseSchema>;
+
+export const PlexTagSchema = z.object({
+  fastKey: z.string().optional(),
+  thumb: z.string().optional(),
+  key: z.string(),
+  title: z.string(),
+});
+
+export const PlexTagResultSchema = z.object({
+  size: z.number(),
+  // Some other stuff here that we don't need yet...
+  Directory: z.array(PlexTagSchema),
+});
+
+export type PlexTagResult = z.infer<typeof PlexTagResultSchema>;

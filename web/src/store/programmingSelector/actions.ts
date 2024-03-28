@@ -7,6 +7,12 @@ import {
 } from '@tunarr/types/plex';
 import { map, reject, some } from 'lodash-es';
 import useStore from '..';
+import {
+  PlexFilter,
+  PlexSort,
+  buildPlexFilterKey,
+  buildPlexSortKey,
+} from '../../helpers/plexSearchUtil.ts';
 import { forSelectedMediaType, groupSelectedMedia } from '../../helpers/util';
 import { SelectedLibrary, SelectedMedia } from './store';
 
@@ -161,4 +167,29 @@ export const removeCustomShowSelectedMedia = (
 export const clearSelectedMedia = () =>
   useStore.setState((state) => {
     state.selectedMedia = [];
+  });
+
+export const setPlexFilter = (plexFilter: PlexFilter | undefined) =>
+  useStore.setState((state) => {
+    state.plexSearch = {
+      ...state.plexSearch,
+      filter: plexFilter,
+      urlFilter: [
+        ...buildPlexFilterKey(plexFilter),
+        ...buildPlexSortKey(state.plexSearch.sort),
+      ].join('&'),
+    };
+  });
+
+export const setPlexSort = (plexSort: PlexSort | undefined) =>
+  useStore.setState((state) => {
+    console.log('plexSort', plexSort);
+    state.plexSearch = {
+      ...state.plexSearch,
+      sort: plexSort,
+      urlFilter: [
+        ...buildPlexFilterKey(state.plexSearch.filter),
+        ...buildPlexSortKey(plexSort),
+      ].join('&'),
+    };
   });

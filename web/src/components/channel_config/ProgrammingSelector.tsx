@@ -1,4 +1,5 @@
 import {
+  Box,
   FormControl,
   InputLabel,
   MenuItem,
@@ -9,7 +10,7 @@ import {
 import { PlexMedia, isPlexDirectory } from '@tunarr/types/plex';
 import { find, isEmpty, isNil, isUndefined } from 'lodash-es';
 import React, { useCallback, useEffect, useState } from 'react';
-import { usePlex } from '../../hooks/plexHooks.ts';
+import { usePlexLibraries } from '../../hooks/plexHooks.ts';
 import { usePlexServerSettings } from '../../hooks/settingsHooks.ts';
 import { useCustomShows } from '../../hooks/useCustomShows.ts';
 import useStore from '../../store/index.ts';
@@ -55,9 +56,8 @@ export default function ProgrammingSelector({ onAddSelectedMedia }: Props) {
   /**
    * Load Plex libraries
    */
-  const { data: plexLibraryChildren } = usePlex(
+  const { data: plexLibraryChildren } = usePlexLibraries(
     selectedServer?.name ?? '',
-    '/library/sections',
     !isUndefined(selectedServer),
   );
 
@@ -146,7 +146,7 @@ export default function ProgrammingSelector({ onAddSelectedMedia }: Props) {
   };
 
   return (
-    <>
+    <Box sx={{ p: 1 }}>
       <Stack
         direction={{ xs: 'column', sm: 'row' }}
         sx={{
@@ -157,7 +157,7 @@ export default function ProgrammingSelector({ onAddSelectedMedia }: Props) {
         }}
       >
         {plexServers && (
-          <FormControl size="small" margin="normal">
+          <FormControl size="small" sx={{ minWidth: { sm: 200 } }}>
             <InputLabel>Media Source</InputLabel>
             <Select
               label="Media Source"
@@ -179,7 +179,7 @@ export default function ProgrammingSelector({ onAddSelectedMedia }: Props) {
         {!isNil(plexLibraryChildren) &&
           plexLibraryChildren.size > 0 &&
           selectedPlexLibrary && (
-            <FormControl size="small" margin="normal">
+            <FormControl size="small" sx={{ minWidth: { sm: 200 } }}>
               <InputLabel>Library</InputLabel>
               <Select
                 label="Library"
@@ -196,7 +196,7 @@ export default function ProgrammingSelector({ onAddSelectedMedia }: Props) {
           )}
 
         {viewingCustomShows && customShows && selectedCustomShow && (
-          <FormControl size="small" margin="normal">
+          <FormControl size="small">
             <InputLabel>Custom Show</InputLabel>
             <Select
               label="Custom Show"
@@ -215,6 +215,6 @@ export default function ProgrammingSelector({ onAddSelectedMedia }: Props) {
       {renderMediaSourcePrograms()}
       <Typography>Selected Items</Typography>
       <SelectedProgrammingList onAddSelectedMedia={onAddSelectedMedia} />
-    </>
+    </Box>
   );
 }

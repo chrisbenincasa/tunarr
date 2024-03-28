@@ -1,4 +1,4 @@
-import { Grid } from '@mui/material';
+import { Unstable_Grid2 as Grid } from '@mui/material';
 import { ForwardedRef, forwardRef } from 'react';
 import useStore from '../store';
 

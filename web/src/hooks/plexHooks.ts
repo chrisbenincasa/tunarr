@@ -3,23 +3,48 @@ import { DefaultPlexHeaders } from '@tunarr/shared/constants';
 import { PlexServerSettings } from '@tunarr/types';
 import {
   PlexEpisodeView,
+  PlexFiltersResponse,
   PlexLibraryListing,
   PlexLibrarySection,
   PlexLibrarySections,
   PlexMedia,
   PlexSeasonView,
+  PlexTagResult,
   PlexTerminalMedia,
   isPlexDirectory,
   isTerminalItem,
 } from '@tunarr/types/plex';
 import axios from 'axios';
 import { flattenDeep, map } from 'lodash-es';
+import { useEffect } from 'react';
 import { apiClient } from '../external/api.ts';
 import { sequentialPromises } from '../helpers/util.ts';
+import useStore from '../store/index.ts';
+import { setPlexMetadataFilters } from '../store/plexMetadata/actions.ts';
 
-type PlexPathMappings = {
-  '/library/sections': PlexLibrarySections;
-};
+type PlexPathMappings = [
+  ['/library/sections', PlexLibrarySections],
+  [`/library/sections/${string}/all`, unknown],
+];
+
+type FindChild0<Target, Arr extends unknown[] = []> = Arr extends [
+  [infer Head, infer Child],
+  ...infer Tail,
+]
+  ? Head extends Target
+    ? Child
+    : FindChild0<Target, Tail>
+  : never;
+
+// Turns a key/val tuple type array into a union of the "keys"
+type ExtractTypeKeys<
+  Arr extends unknown[] = [],
+  Acc extends unknown[] = [],
+> = Arr extends []
+  ? Acc
+  : Arr extends [[infer Head, any], ...infer Tail]
+  ? Head | ExtractTypeKeys<Tail>
+  : never;
 
 export const fetchPlexPath = <T>(serverName: string, path: string) => {
   return async () => {
@@ -34,16 +59,22 @@ export const fetchPlexPath = <T>(serverName: string, path: string) => {
   };
 };
 
-export const usePlex = <T extends keyof PlexPathMappings>(
+export const usePlex = <
+  T extends ExtractTypeKeys<PlexPathMappings>,
+  OutType = FindChild0<T, PlexPathMappings>,
+>(
   serverName: string,
-  path: T,
+  path: string,
   enabled: boolean = true,
 ) =>
   useQuery({
     queryKey: ['plex', serverName, path],
-    queryFn: fetchPlexPath<PlexPathMappings[T]>(serverName, path),
+    queryFn: fetchPlexPath<OutType>(serverName, path),
     enabled,
   });
+
+export const usePlexLibraries = (serverName: string, enabled: boolean = true) =>
+  usePlex<'/library/sections'>(serverName, '/library/sections', enabled);
 
 declare const plexQueryArgsSymbol: unique symbol;
 
@@ -61,7 +92,7 @@ export const plexQueryOptions = <T>(
 ) => ({
   queryKey: ['plex', serverName, path],
   queryFn: fetchPlexPath<T>(serverName, path),
-  enabled,
+  enabled: enabled && serverName.length > 0 && path.length > 0,
 });
 
 export const usePlexTyped = <T>(
@@ -113,6 +144,62 @@ export const usePlexServerStatus = (server: PlexServerSettings) => {
         return false;
       }
     },
+  });
+};
+
+export const usePlexFilters = (serverName: string, plexKey: string) => {
+  const key = `/library/sections/${plexKey}/all?includeMeta=1&includeAdvanced=1&X-Plex-Container-Start=0&X-Plex-Container-Size=0`;
+  const query = useQuery<PlexFiltersResponse>({
+    ...plexQueryOptions(
+      serverName,
+      key,
+      serverName.length > 0 && plexKey.length > 0,
+    ),
+    staleTime: 1000 * 60 * 60 * 60,
+  });
+
+  useEffect(() => {
+    if (query.data) {
+      setPlexMetadataFilters(serverName, plexKey, query.data);
+    }
+  }, [serverName, plexKey, query.data]);
+
+  return {
+    isLoading: query.isLoading,
+    error: query.error,
+    data: useStore(({ plexMetadata }) => {
+      const server = plexMetadata.libraryFilters[serverName];
+      if (server) {
+        return server[plexKey]?.Meta;
+      }
+    }),
+  };
+};
+
+// Like usePlexFilters, but uses the selected server and library from
+// local state.
+export const useSelectedLibraryPlexFilters = () => {
+  const selectedServer = useStore((s) => s.currentServer);
+  const selectedLibrary = useStore((s) =>
+    s.currentLibrary?.type === 'plex' ? s.currentLibrary : null,
+  );
+  return usePlexFilters(
+    selectedServer?.name ?? '',
+    selectedLibrary?.library.key ?? '',
+  );
+};
+
+export const usePlexTags = (key: string) => {
+  const selectedServer = useStore((s) => s.currentServer);
+  const selectedLibrary = useStore((s) =>
+    s.currentLibrary?.type === 'plex' ? s.currentLibrary : null,
+  );
+  const path = selectedLibrary
+    ? `/library/sections/${selectedLibrary.library.key}/${key}`
+    : '';
+
+  return useQuery<PlexTagResult>({
+    ...plexQueryOptions(selectedServer?.name ?? '', path),
   });
 };
 
@@ -174,3 +261,5 @@ export const enumeratePlexItem = (
     return res;
   };
 };
+
+export const usePlexSearch = () => {};
