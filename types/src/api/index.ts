@@ -11,6 +11,7 @@ import {
 } from './Scheduling.js';
 
 export * from './Scheduling.js';
+export * from './plexSearch.js';
 
 export const IdPathParamSchema = z.object({
   id: z.string(),

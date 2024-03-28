@@ -1,7 +1,7 @@
 import { Loaded } from '@mikro-orm/core';
+import { DynamicContentConfigSource } from '@tunarr/types/api';
 import { Mutex, withTimeout } from 'async-mutex';
 import { EntityManager, withDb } from '../../dao/dataSource';
-import { DynamicContentConfigSource } from '../../dao/derived_types/Lineup';
 import { Channel } from '../../dao/entities/Channel';
 
 const locks: Record<DynamicContentConfigSource['type'], Mutex> = {

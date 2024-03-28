@@ -19,10 +19,9 @@ import { DatePicker } from '@mui/x-date-pickers';
 import {
   PlexFilter,
   PlexFilterOperatorNode,
-  PlexFilterResponseMeta,
-  PlexFilterType,
   PlexFilterValueNode,
-} from '@tunarr/types/plex';
+} from '@tunarr/types/api';
+import { PlexFilterResponseMeta, PlexFilterType } from '@tunarr/types/plex';
 import dayjs from 'dayjs';
 import { find, first, isUndefined, map, size } from 'lodash-es';
 import {

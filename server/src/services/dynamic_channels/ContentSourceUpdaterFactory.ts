@@ -1,5 +1,5 @@
 import { Loaded } from '@mikro-orm/core';
-import { DynamicContentConfigSource } from '../../dao/derived_types/Lineup';
+import { DynamicContentConfigSource } from '@tunarr/types/api';
 import { Channel } from '../../dao/entities/Channel';
 import { ContentSourceUpdater } from './ContentSourceUpdater';
 import { PlexContentSourceUpdater } from './PlexContentSourceUpdater';

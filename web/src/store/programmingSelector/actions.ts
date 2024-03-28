@@ -1,9 +1,8 @@
 import { PlexServerSettings } from '@tunarr/types';
+import { PlexFilter, PlexSort } from '@tunarr/types/api';
 import {
-  PlexFilter,
   PlexLibrarySection,
   PlexMedia,
-  PlexSort,
   isPlexDirectory,
   isTerminalItem,
 } from '@tunarr/types/plex';

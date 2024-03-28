@@ -1,4 +1,10 @@
-import { DynamicContentConfig, LineupSchedule } from '@tunarr/types/api';
+import {
+  DynamicContentConfig,
+  DynamicContentConfigSchema,
+  LineupSchedule,
+  LineupScheduleSchema,
+} from '@tunarr/types/api';
+import { z } from 'zod';
 
 export type Lineup = {
   // The current lineup of a single cycle of this channel
@@ -25,6 +31,10 @@ type BaseLineupItem = {
   durationMs: number;
 };
 
+const BaseLineupItemSchema = z.object({
+  durationMs: z.number().positive(), // Add a max
+});
+
 // This item has to be hydrated from the DB
 export type ContentItem = BaseLineupItem & {
   type: 'content';
@@ -36,14 +46,41 @@ export type ContentItem = BaseLineupItem & {
   customShowId?: string;
 };
 
+export const ContentLineupItemSchema = z
+  .object({
+    type: z.literal('content'),
+    id: z.string().min(1),
+    customShowId: z.string().uuid().optional(),
+  })
+  .merge(BaseLineupItemSchema);
+
 export type OfflineItem = BaseLineupItem & {
   type: 'offline';
 };
+
+export const OfflineLineupItemSchema = z
+  .object({
+    type: z.literal('offline'),
+  })
+  .merge(BaseLineupItemSchema);
 
 export type RedirectItem = BaseLineupItem & {
   type: 'redirect';
   channel: string;
 };
+
+export const RedirectLineupItemSchema = z
+  .object({
+    type: z.literal('redirect'),
+    channel: z.string().uuid(),
+  })
+  .merge(BaseLineupItemSchema);
+
+export const LineupItemSchema = z.discriminatedUnion('type', [
+  ContentLineupItemSchema,
+  OfflineLineupItemSchema,
+  RedirectLineupItemSchema,
+]);
 
 export type LineupItem = ContentItem | OfflineItem | RedirectItem;
 
@@ -56,3 +93,10 @@ function isItemOfType<T extends LineupItem>(discrim: string) {
 export const isContentItem = isItemOfType<ContentItem>('content');
 export const isOfflineItem = isItemOfType<OfflineItem>('offline');
 export const isRedirectItem = isItemOfType<RedirectItem>('redirect');
+
+export const LineupSchema = z.object({
+  items: LineupItemSchema.array(),
+  schedule: LineupScheduleSchema.optional(),
+  startTimeOffsets: z.array(z.number()).optional(),
+  dynamicContentConfig: DynamicContentConfigSchema.optional(),
+});

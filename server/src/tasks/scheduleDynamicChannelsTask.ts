@@ -1,8 +1,8 @@
 import { Loaded } from '@mikro-orm/core';
+import { DynamicContentConfigSource } from '@tunarr/types/api';
 import { isUndefined } from 'lodash-es';
 import filter from 'lodash-es/filter';
 import { ChannelDB } from '../dao/channelDb';
-import { DynamicContentConfigSource } from '../dao/derived_types/Lineup';
 import { Channel } from '../dao/entities/Channel';
 import { ScheduledTask } from '../services/ScheduledTask';
 import { ContentSourceUpdaterFactory } from '../services/dynamic_channels/ContentSourceUpdaterFactory';

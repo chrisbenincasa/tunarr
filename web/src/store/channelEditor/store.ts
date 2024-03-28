@@ -5,9 +5,9 @@ import {
   CustomShow,
   FillerList,
 } from '@tunarr/types';
+import { DynamicContentConfig, LineupSchedule } from '@tunarr/types/api';
 import { StateCreator } from 'zustand';
 import { UICondensedChannelProgram, UIIndex } from '../../types/index.ts';
-import { LineupSchedule } from '@tunarr/types/api';
 
 // Represents a program listing in the editor
 export interface ProgrammingEditorState<EntityType, ProgramType> {
@@ -35,6 +35,7 @@ export type ChannelEditorState = ProgrammingEditorState<
   // the lookup record for programs by ID
   programLookup: Record<string, ContentProgram>;
   schedule?: LineupSchedule;
+  dynamicContentConfiguration?: DynamicContentConfig;
 };
 
 export interface EditorsState {

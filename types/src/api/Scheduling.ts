@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { PlexSearchSchema } from '../plex/index.js';
+import { PlexSearchSchema } from './plexSearch.js';
 
 //
 // Time slots
@@ -161,8 +161,8 @@ const WithEnabledSchema = z.object({
 export const DynamicContentConfigPlexSourceSchema = z
   .object({
     type: z.literal('plex'),
-    plexServerId: z.string(), // server name or unique ID
-    plexLibraryKey: z.string(),
+    plexServerId: z.string().min(1), // server name or unique ID
+    plexLibraryKey: z.string().min(1),
     search: PlexSearchSchema.optional(),
     updater: DynamicContentUpdaterConfigSchema,
   })
@@ -175,6 +175,10 @@ export type DynamicContentConfigPlexSource = z.infer<
 export const DynamicContentConfigSourceSchema = z.discriminatedUnion('type', [
   DynamicContentConfigPlexSourceSchema,
 ]);
+
+export type DynamicContentConfigSource = z.infer<
+  typeof DynamicContentConfigSourceSchema
+>;
 
 export const DynamicContentConfigSchema = z
   .object({
