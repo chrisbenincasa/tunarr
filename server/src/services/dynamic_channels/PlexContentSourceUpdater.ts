@@ -1,7 +1,10 @@
 import { Loaded } from '@mikro-orm/core';
+import { createExternalId } from '@tunarr/shared';
 import { buildPlexFilterKey } from '@tunarr/shared/util';
+import { ContentProgram } from '@tunarr/types';
 import { DynamicContentConfigPlexSource } from '@tunarr/types/api';
 import { PlexLibraryListing } from '@tunarr/types/plex';
+import { isNil, map } from 'lodash-es';
 import { ChannelDB } from '../../dao/channelDb.js';
 import { EntityManager } from '../../dao/dataSource.js';
 import { Channel } from '../../dao/entities/Channel.js';
@@ -48,7 +51,31 @@ export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicConten
       plexResult?.Metadata ?? [],
     );
 
-    console.log(enumeratedItems.length);
+    const programs: ContentProgram[] = map(enumeratedItems, (media) => {
+      const uniqueId = createExternalId(
+        'plex',
+        this.#plex.serverName,
+        media.key,
+      );
+      return {
+        id: media.id ?? uniqueId,
+        persisted: !isNil(media.id),
+        originalProgram: media,
+        duration: media.duration,
+        externalSourceName: this.#plex.serverName,
+        externalSourceType: 'plex',
+        externalKey: media.key,
+        uniqueId: uniqueId,
+        type: 'content',
+        subtype: media.type,
+        title: media.type === 'episode' ? media.grandparentTitle : media.title,
+        episodeTitle: media.type === 'episode' ? media.title : undefined,
+        episodeNumber: media.type === 'episode' ? media.index : undefined,
+        seasonNumber: media.type === 'episode' ? media.parentIndex : undefined,
+      };
+    });
+
+    console.log(programs.length);
 
     await this.#channelDB.updateLineup(this.channel.uuid, {
       type: 'manual',

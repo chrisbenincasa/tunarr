@@ -1,4 +1,5 @@
 import { Loaded } from '@mikro-orm/core';
+import { PlexDvr } from '@tunarr/types/plex';
 import dayjs from 'dayjs';
 import { ChannelCache } from '../channelCache.js';
 import { withDb } from '../dao/dataSource.js';
@@ -62,7 +63,6 @@ export class UpdateXmlTvTask extends Task<void> {
       await this.guideService.refreshGuide(
         dayjs.duration({ hours: xmltvSettings.programmingHours }),
       );
-      // xmltvInterval.lastRefresh = new Date();
 
       logger.info('XMLTV Updated at ' + new Date().toLocaleString());
     } catch (err) {
@@ -78,12 +78,13 @@ export class UpdateXmlTvTask extends Task<void> {
 
     await mapAsyncSeq(allPlexServers, undefined, async (plexServer) => {
       const plex = new Plex(plexServer);
-      let dvrs;
+      let dvrs: PlexDvr[] = [];
+
       if (!plexServer.sendGuideUpdates && !plexServer.sendChannelUpdates) {
         return;
       }
+
       try {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         dvrs = await plex.getDvrs(); // Refresh guide and channel mappings
       } catch (err) {
         logger.error(
@@ -92,6 +93,11 @@ export class UpdateXmlTvTask extends Task<void> {
         );
         return;
       }
+
+      if (dvrs.length === 0) {
+        return;
+      }
+
       if (plexServer.sendGuideUpdates) {
         try {
           await plex.refreshGuide(dvrs);
@@ -102,6 +108,7 @@ export class UpdateXmlTvTask extends Task<void> {
           );
         }
       }
+
       if (plexServer.sendChannelUpdates && channels.length !== 0) {
         try {
           await plex.refreshChannels(channels, dvrs);

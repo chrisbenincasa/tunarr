@@ -27,36 +27,24 @@ export type Lineup = {
   dynamicContentConfig?: DynamicContentConfig;
 };
 
-type BaseLineupItem = {
-  durationMs: number;
-};
-
 const BaseLineupItemSchema = z.object({
   durationMs: z.number().positive(), // Add a max
 });
-
-// This item has to be hydrated from the DB
-export type ContentItem = BaseLineupItem & {
-  type: 'content';
-  id: string;
-  // If this lineup item was a part of a custom show
-  // this is a pointer to that show.
-  // TODO: If a custom show is deleted, we have to remove
-  // references to these content items in the lineup
-  customShowId?: string;
-};
 
 export const ContentLineupItemSchema = z
   .object({
     type: z.literal('content'),
     id: z.string().min(1),
+    // If this lineup item was a part of a custom show
+    // this is a pointer to that show.
+    // TODO: If a custom show is deleted, we have to remove
+    // references to these content items in the lineup
     customShowId: z.string().uuid().optional(),
   })
   .merge(BaseLineupItemSchema);
 
-export type OfflineItem = BaseLineupItem & {
-  type: 'offline';
-};
+// This item has to be hydrated from the DB
+export type ContentItem = z.infer<typeof ContentLineupItemSchema>;
 
 export const OfflineLineupItemSchema = z
   .object({
@@ -64,10 +52,7 @@ export const OfflineLineupItemSchema = z
   })
   .merge(BaseLineupItemSchema);
 
-export type RedirectItem = BaseLineupItem & {
-  type: 'redirect';
-  channel: string;
-};
+export type OfflineItem = z.infer<typeof OfflineLineupItemSchema>;
 
 export const RedirectLineupItemSchema = z
   .object({
@@ -75,6 +60,7 @@ export const RedirectLineupItemSchema = z
     channel: z.string().uuid(),
   })
   .merge(BaseLineupItemSchema);
+export type RedirectItem = z.infer<typeof RedirectLineupItemSchema>;
 
 export const LineupItemSchema = z.discriminatedUnion('type', [
   ContentLineupItemSchema,
@@ -82,7 +68,7 @@ export const LineupItemSchema = z.discriminatedUnion('type', [
   RedirectLineupItemSchema,
 ]);
 
-export type LineupItem = ContentItem | OfflineItem | RedirectItem;
+export type LineupItem = z.infer<typeof LineupItemSchema>;
 
 function isItemOfType<T extends LineupItem>(discrim: string) {
   return function (t: LineupItem | undefined): t is T {

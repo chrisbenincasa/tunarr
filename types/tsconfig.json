@@ -13,7 +13,7 @@
         "allowSyntheticDefaultImports": true,
         "importHelpers": true,
         "alwaysStrict": true,
-        "sourceMap": true,
+        "sourceMap": false,
         "inlineSourceMap": true,
         "forceConsistentCasingInFileNames": true,
         "noFallthroughCasesInSwitch": true,

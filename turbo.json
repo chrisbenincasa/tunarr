@@ -7,7 +7,8 @@
       "outputs": ["build/**", "dist/**"]
     },
     "clean-build": {
-      "dependsOn": ["clean", "build"]
+      "dependsOn": ["clean", "build"],
+      "outputs": ["build/**", "dist/**"]
     },
     "bundle": {
       "dependsOn": ["clean", "build"],

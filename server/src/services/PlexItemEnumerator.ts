@@ -14,6 +14,10 @@ import { Plex } from '../plex';
 import { typedProperty } from '../types/path';
 import { flatMapAsyncSeq } from '../util';
 
+type EnrichedPlexTerminalMedia = PlexTerminalMedia & {
+  id?: string;
+};
+
 export class PlexItemEnumerator {
   #plex: Plex;
   #programDB: ProgramDB;
@@ -32,7 +36,7 @@ export class PlexItemEnumerator {
 
   async enumerateItem(
     initialItem: PlexMedia | PlexLibrarySection,
-  ): Promise<PlexTerminalMedia[]> {
+  ): Promise<EnrichedPlexTerminalMedia[]> {
     const loopInner = async (
       item: PlexMedia | PlexLibrarySection,
     ): Promise<PlexTerminalMedia[]> => {
@@ -50,7 +54,7 @@ export class PlexItemEnumerator {
           return [];
         }
 
-        const results: PlexTerminalMedia[] = [];
+        const results: EnrichedPlexTerminalMedia[] = [];
         for (const listing of plexResult.Metadata) {
           results.push(...(await loopInner(listing)));
         }
