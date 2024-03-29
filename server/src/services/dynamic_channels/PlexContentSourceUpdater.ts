@@ -13,14 +13,14 @@ import { ContentSourceUpdater } from './ContentSourceUpdater.js';
 
 export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicContentConfigPlexSource> {
   #plex: Plex;
-  _channelDb: ChannelDB;
+  #channelDB: ChannelDB;
 
   constructor(
     channel: Loaded<Channel>,
     config: DynamicContentConfigPlexSource,
   ) {
     super(channel, config);
-    this._channelDb = new ChannelDB();
+    this.#channelDB = new ChannelDB();
   }
 
   protected async prepare(em: EntityManager) {
@@ -48,6 +48,12 @@ export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicConten
       plexResult?.Metadata ?? [],
     );
 
-    console.log(this.channel, enumeratedItems.length);
+    console.log(enumeratedItems.length);
+
+    await this.#channelDB.updateLineup(this.channel.uuid, {
+      type: 'manual',
+      lineup: [],
+      programs: [],
+    });
   }
 }

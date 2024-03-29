@@ -1,0 +1,97 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+deleted file mode 100644
+index 0dc097738ae073897eb86b1fbb5324d34b3d9813..0000000000000000000000000000000000000000
+diff --git a/dist/deep-nullable/index.d.ts b/dist/deep-nullable/index.d.ts
+index ba3852eaa05020cb79af42b530916625ab2efaa9..3f6b0e5cf7ef22e76cc7712b72271967ab7cfe1a 100644
+--- a/dist/deep-nullable/index.d.ts
++++ b/dist/deep-nullable/index.d.ts
+@@ -1,7 +1,31 @@
+ import { Builtin } from "../built-in";
+ import { IsTuple } from "../is-tuple";
+-export declare type DeepNullable<Type> = Type extends Builtin ? Type | null : Type extends Map<infer Keys, infer Values> ? Map<DeepNullable<Keys>, DeepNullable<Values>> : Type extends ReadonlyMap<infer Keys, infer Values> ? ReadonlyMap<DeepNullable<Keys>, DeepNullable<Values>> : Type extends WeakMap<infer Keys, infer Values> ? WeakMap<DeepNullable<Keys>, DeepNullable<Values>> : Type extends Set<infer Values> ? Set<DeepNullable<Values>> : Type extends ReadonlySet<infer Values> ? ReadonlySet<DeepNullable<Values>> : Type extends WeakSet<infer Values> ? WeakSet<DeepNullable<Values>> : Type extends ReadonlyArray<infer Values> ? Type extends IsTuple<Type> ? {
+-    [Key in keyof Type]: DeepNullable<Type[Key]> | null;
+-} : Type extends Array<Values> ? Array<DeepNullable<Values>> : ReadonlyArray<DeepNullable<Values>> : Type extends Promise<infer Value> ? Promise<DeepNullable<Value>> : Type extends {} ? {
+-    [Key in keyof Type]: DeepNullable<Type[Key]>;
+-} : Type | null;
++export declare type DeepNullable<Type> = Type extends Builtin
++  ? Type | null
++  : Type extends Map<infer Keys, infer Values>
++  ? Map<DeepNullable<Keys>, DeepNullable<Values>>
++  : Type extends ReadonlyMap<infer Keys, infer Values>
++  ? ReadonlyMap<DeepNullable<Keys>, DeepNullable<Values>>
++  : Type extends WeakMap<infer Keys, infer Values>
++  ? WeakMap<Keys, DeepNullable<Values>>
++  : Type extends Set<infer Values>
++  ? Set<DeepNullable<Values>>
++  : Type extends ReadonlySet<infer Values>
++  ? ReadonlySet<DeepNullable<Values>>
++  : Type extends WeakSet<infer Values>
++  ? WeakSet<Values>
++  : Type extends ReadonlyArray<infer Values>
++  ? Type extends IsTuple<Type>
++    ? {
++        [Key in keyof Type]: DeepNullable<Type[Key]> | null;
++      }
++    : Type extends Array<Values>
++    ? Array<DeepNullable<Values>>
++    : ReadonlyArray<DeepNullable<Values>>
++  : Type extends Promise<infer Value>
++  ? Promise<DeepNullable<Value>>
++  : Type extends {}
++  ? {
++      [Key in keyof Type]: DeepNullable<Type[Key]>;
++    }
++  : Type | null;
+diff --git a/dist/deep-undefinable/index.d.ts b/dist/deep-undefinable/index.d.ts
+index 9e157cd4b59fbb33c36c82bfc8967ba62e6e9888..04e3026545352b984d686723edf90779b79c7791 100644
+--- a/dist/deep-undefinable/index.d.ts
++++ b/dist/deep-undefinable/index.d.ts
+@@ -1,7 +1,31 @@
+ import { Builtin } from "../built-in";
+ import { IsTuple } from "../is-tuple";
+-export declare type DeepUndefinable<Type> = Type extends Builtin ? Type | undefined : Type extends Map<infer Keys, infer Values> ? Map<DeepUndefinable<Keys>, DeepUndefinable<Values>> : Type extends ReadonlyMap<infer Keys, infer Values> ? ReadonlyMap<DeepUndefinable<Keys>, DeepUndefinable<Values>> : Type extends WeakMap<infer Keys, infer Values> ? WeakMap<DeepUndefinable<Keys>, DeepUndefinable<Values>> : Type extends Set<infer Values> ? Set<DeepUndefinable<Values>> : Type extends ReadonlySet<infer Values> ? ReadonlySet<DeepUndefinable<Values>> : Type extends WeakSet<infer Values> ? WeakSet<DeepUndefinable<Values>> : Type extends ReadonlyArray<infer Values> ? Type extends IsTuple<Type> ? {
+-    [Key in keyof Type]: DeepUndefinable<Type[Key]> | undefined;
+-} : Type extends Array<Values> ? Array<DeepUndefinable<Values>> : ReadonlyArray<DeepUndefinable<Values>> : Type extends Promise<infer Value> ? Promise<DeepUndefinable<Value>> : Type extends {} ? {
+-    [Key in keyof Type]: DeepUndefinable<Type[Key]>;
+-} : Type | undefined;
++export declare type DeepUndefinable<Type> = Type extends Builtin
++  ? Type | undefined
++  : Type extends Map<infer Keys, infer Values>
++  ? Map<DeepUndefinable<Keys>, DeepUndefinable<Values>>
++  : Type extends ReadonlyMap<infer Keys, infer Values>
++  ? ReadonlyMap<DeepUndefinable<Keys>, DeepUndefinable<Values>>
++  : Type extends WeakMap<infer Keys, infer Values>
++  ? WeakMap<Keys, DeepUndefinable<Values>>
++  : Type extends Set<infer Values>
++  ? Set<DeepUndefinable<Values>>
++  : Type extends ReadonlySet<infer Values>
++  ? ReadonlySet<DeepUndefinable<Values>>
++  : Type extends WeakSet<infer Values>
++  ? WeakSet<Values>
++  : Type extends ReadonlyArray<infer Values>
++  ? Type extends IsTuple<Type>
++    ? {
++        [Key in keyof Type]: DeepUndefinable<Type[Key]> | undefined;
++      }
++    : Type extends Array<Values>
++    ? Array<DeepUndefinable<Values>>
++    : ReadonlyArray<DeepUndefinable<Values>>
++  : Type extends Promise<infer Value>
++  ? Promise<DeepUndefinable<Value>>
++  : Type extends {}
++  ? {
++      [Key in keyof Type]: DeepUndefinable<Type[Key]>;
++    }
++  : Type | undefined;
+diff --git a/package.json b/package.json
+index da3fa96d66333522b05e46b178ff3a2e98808d0a..263d52cd58edf499b6b91e3b17ce83607d862379 100644
+--- a/package.json
++++ b/package.json
+@@ -45,6 +45,6 @@
+     "conditional-type-checks": "^1.0.4",
+     "prettier": "^2.0.0",
+     "rimraf": "^3.0.2",
+-    "typescript": "^4.1.0"
++    "typescript": "^5.4.3"
+   }
+ }

@@ -90,9 +90,7 @@ function updateRequestToChannel(
           },
       duration: updateReq.duration,
       stealth: updateReq.stealth,
-      fillerRepeatCooldown: updateReq.fillerRepeatCooldown
-        ? dayjs.duration({ seconds: updateReq.fillerRepeatCooldown })
-        : undefined,
+      fillerRepeatCooldown: updateReq.fillerRepeatCooldown,
     },
     isNil,
   );
@@ -125,9 +123,7 @@ function createRequestToChannel(
         },
     duration: saveReq.duration,
     stealth: saveReq.stealth,
-    fillerRepeatCooldown: saveReq.fillerRepeatCooldown
-      ? dayjs.duration({ seconds: saveReq.fillerRepeatCooldown })
-      : undefined,
+    fillerRepeatCooldown: saveReq.fillerRepeatCooldown,
   };
   return c;
 }
