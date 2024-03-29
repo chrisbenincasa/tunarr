@@ -8,7 +8,7 @@ export default defineConfig({
     'api/index': 'src/api/index.ts',
   },
   format: 'esm',
-  dts: true,
+  experimentalDts: true,
   outDir: 'build',
   splitting: false,
 });
