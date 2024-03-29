@@ -7,6 +7,7 @@ services:
     ports:
       - '5173:5173'
       - '8000:8000'
+    user: $USER:$GID
     runtime: nvidia
     volumes:
       - ../:/tunarr

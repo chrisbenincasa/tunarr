@@ -774,7 +774,7 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
       }
       done();
     })
-    .put('/streams/*', async (req, res) => {
+    .put('/streams/*', async (_, res) => {
       await res.send(200);
     });
 
