@@ -1,6 +1,8 @@
 # Setup a node + ffmpeg + nvidia base
-FROM jrottenberg/ffmpeg:4.4.4-nvidia2204 AS ffmpeg-base
+FROM jrottenberg/ffmpeg:6.1.1-nvidia2204 AS ffmpeg-base
 ENV NODE_MAJOR=20
+ENV TUNARR_BIND_ADDR=0.0.0.0
+EXPOSE 8000
 
 # Install musl for native node bindings (sqlite)
 RUN apt-get update --fix-missing
@@ -33,6 +35,14 @@ COPY shared/ ./shared
 COPY types ./types
 COPY web ./web
 
+FROM ffmpeg-base as dev
+EXPOSE 5173
+WORKDIR /tunarr
+COPY . .
+RUN pnpm install --frozen-lockfile
+ENTRYPOINT [ "pnpm" ]
+CMD [ "turbo", "dev" ]
+
 FROM sources AS prod-deps
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --prod --frozen-lockfile
 
@@ -64,8 +74,6 @@ COPY --from=build-server /tunarr/types /tunarr/types
 COPY --from=build-server /tunarr/shared /tunarr/shared
 COPY --from=build-server /tunarr/server/package.json /tunarr/server/package.json
 COPY --from=build-server /tunarr/server/build /tunarr/server/build
-ENV TUNARR_BIND_ADDR=0.0.0.0
-EXPOSE 8000
 CMD [ "/tunarr/server/build/bundle.js" ]
 ### Begin server run
 

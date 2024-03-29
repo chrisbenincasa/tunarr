@@ -2,10 +2,9 @@ import fastifyStatic from '@fastify/static';
 import { Loaded } from '@mikro-orm/core';
 import constants from '@tunarr/shared/constants';
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { isError, isNil, isUndefined, map, once } from 'lodash-es';
+import { isNil, isUndefined, map, once } from 'lodash-es';
 import * as fsSync from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import { Readable } from 'stream';
 import { v4 } from 'uuid';
 import { z } from 'zod';
@@ -29,18 +28,17 @@ import { RouterPluginAsyncCallback } from './types/serverType.js';
 
 const logger = createLogger(import.meta);
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
 let StreamCount = 0;
 
-type StreamQueryString = {
-  channel?: number;
-  audioOnly: boolean;
-  m3u8?: string;
-  session: number;
-  first?: string;
-};
+const StreamQueryStringSchema = z.object({
+  channel: z.coerce.number().optional(),
+  m3u8: z.string().optional(),
+  audioOnly: z.string().transform((s) => s === 'true'),
+  session: z.coerce.number(),
+  first: z.string().optional(),
+});
+
+type StreamQueryString = z.infer<typeof StreamQueryStringSchema>;
 
 // eslint-disable-next-line @typescript-eslint/require-await
 export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
@@ -218,10 +216,9 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
 
   // Stream individual video to ffmpeg concat above. This is used by the server, NOT the client
   const streamFunction = async (
-    req: FastifyRequest<{
-      Querystring: StreamQueryString;
-    }>,
+    req: FastifyRequest,
     res: FastifyReply,
+    query: StreamQueryString,
     t0: number,
     allowSkip: boolean,
   ): Promise<void> => {
@@ -231,18 +228,19 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
     // res.on('error', (e) => {
     //   logger.error('There was an unexpected error in stream.', e);
     // });
+    console.log(query);
 
-    if (isUndefined(req.query.channel)) {
+    if (isUndefined(query.channel)) {
       return res.status(400).send('No Channel Specified');
     }
 
-    const audioOnly = req.query.audioOnly;
+    const audioOnly = query.audioOnly;
     logger.info(`/stream audioOnly=${audioOnly}`);
-    const session = req.query.session;
-    const m3u8 = req.query.m3u8 === '1';
+    const session = query.session;
+    const m3u8 = query.m3u8 === '1';
     const channel =
       await req.serverCtx.channelCache.getChannelConfigWithProgramsByNumber(
-        req.query.channel,
+        query.channel,
       );
 
     if (isNil(channel)) {
@@ -250,12 +248,12 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
     }
 
     let isLoading = false;
-    if (req.query.first === '0') {
+    if (query.first === '0') {
       isLoading = true;
     }
 
     let isFirst = false;
-    if (req.query.first === '1') {
+    if (query.first === '1') {
       isFirst = true;
     }
 
@@ -388,7 +386,7 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
         logger.info(
           'Too litlle time before the filler ends, skip to next slot',
         );
-        return await streamFunction(req, res, t0 + dt + 1, false);
+        return await streamFunction(req, res, query, t0 + dt + 1, false);
       }
       if (isNil(currentProgram) || isNil(currentProgram.program)) {
         throw "No video to play, this means there's a serious unexpected bug or the channel db is corrupted.";
@@ -503,40 +501,40 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
       logger.info('About to play stream...');
       playerObj = await player.play(res.raw);
     } catch (err) {
-      if (isError(err)) {
-        logger.error('Error when attempting to play video', err);
-      } else {
-        logger.error('Error when attempting to play video ' + err);
-      }
-      try {
-        return res.status(500).send('Unable to start playing video.');
-      } catch (err2) {
-        if (isError(err2)) {
-          logger.error('error', err2.stack);
-        } else {
-          logger.error('Unknown error ' + err2);
-        }
-      }
+      logger.error('Error when attempting to play video: %O', err);
       stop();
-      return res; // Unclear if this is correct
+      return res.status(500).send('Unable to start playing video.');
     }
 
+    playerObj?.on('error', (err) => {
+      logger.error('Error while playing video: %O', err);
+    });
+
     playerObj?.on('end', () => {
-      logger.info('playObj.end');
+      logger.debug('playObj.end');
       stop();
     });
 
     req.raw.on('close', () => {
-      logger.info('Client Closed');
+      logger.debug('Client Closed');
       stop();
     });
   };
 
-  fastify.get<{ Querystring: StreamQueryString }>(
+  fastify.get(
     '/stream',
+    {
+      schema: {
+        querystring: StreamQueryStringSchema,
+      },
+      onError(req, _, e) {
+        console.error(req.raw.url, e);
+      },
+    },
     async (req, res) => {
       const t0 = new Date().getTime();
-      return await streamFunction(req, res, t0, true);
+      console.log(req.query);
+      return await streamFunction(req, res, req.query, t0, true);
     },
   );
 
@@ -727,7 +725,7 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
 
   fastify
     .register(fastifyStatic, {
-      root: join(__dirname, 'streams'),
+      root: join(process.cwd(), 'streams'),
       decorateReply: false,
       prefix: '/streams/',
     })
@@ -777,7 +775,6 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
       done();
     })
     .put('/streams/*', async (req, res) => {
-      console.log(req.body);
       await res.send(200);
     });
 
@@ -839,17 +836,13 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
 
       const session = sessionManager.getSession(channel.uuid);
 
-      if (isNil(session)) {
-        return res.status(404).send('No sessions for channel');
-      }
-
       return res.send({
         channelId: channel.uuid,
         channelNumber: channel.number,
-        numConnections: session.numConnections(),
-        connections: map(session.connections(), (connection, token) => ({
+        numConnections: session?.numConnections() ?? 0,
+        connections: map(session?.connections(), (connection, token) => ({
           ...connection,
-          lastHeartbeat: session.lastHeartbeat(token),
+          lastHeartbeat: session?.lastHeartbeat(token),
         })),
       });
     },

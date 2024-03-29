@@ -8,4 +8,7 @@ export default defineConfig({
     sourcemap: true,
   },
   base: '/web',
+  server: {
+    host: process.env['TUNARR_BIND_ADDR'] ?? 'localhost',
+  },
 });

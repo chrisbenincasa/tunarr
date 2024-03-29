@@ -1,0 +1,12 @@
+services:
+  tunarr:
+    build:
+      context: ../
+      target: dev
+      dockerfile: ./nvidia.Dockerfile
+    ports:
+      - '5173:5173'
+      - '8000:8000'
+    runtime: nvidia
+    volumes:
+      - ../:/tunarr

@@ -119,11 +119,12 @@ export class StreamSession {
 
     // TODO this is hacky
     const outPath = resolve(
-      __dirname,
-      '..',
+      process.cwd(),
       'streams',
       `stream_${this.#channel.uuid}`,
     );
+
+    logger.debug(`Creating stream directory: ${outPath}`);
 
     try {
       await fs.stat(outPath);
@@ -143,6 +144,7 @@ export class StreamSession {
         streamBasePath: `stream_${this.#channel.uuid}`,
         hlsTime: 2,
         hlsListSize: 5,
+        logOutput: false,
       },
     );
 
@@ -165,7 +167,7 @@ export class StreamSession {
             await fs.stat(streamPath);
           } catch (e) {
             if (isNodeError(e) && e.code === 'ENOENT') {
-              console.warn('not found yet');
+              logger.debug('Still waiting for stream to start.');
               throw e; // Retry
             } else {
               this.#state === 'error';

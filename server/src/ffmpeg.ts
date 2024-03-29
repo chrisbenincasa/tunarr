@@ -1,7 +1,8 @@
 import { FfmpegSettings, Watermark } from '@tunarr/types';
 import child_process, { ChildProcessByStdio } from 'child_process';
 import events from 'events';
-import { isNil, isString, isUndefined, merge } from 'lodash-es';
+import { isEmpty, isNil, isString, isUndefined, merge } from 'lodash-es';
+import path from 'path';
 import { Readable } from 'stream';
 import { DeepReadonly } from 'ts-essentials';
 import { serverOptions } from './globals.js';
@@ -9,7 +10,6 @@ import createLogger from './logger.js';
 import { VideoStats } from './plexTranscoder.js';
 import { ContextChannel, Maybe } from './types.js';
 import { TypedEventEmitter } from './types/eventEmitter.js';
-import path from 'path';
 
 const spawn = child_process.spawn;
 
@@ -32,6 +32,7 @@ type ConcatOptions = {
   streamBasePath: string;
   segmentNameFormat: string;
   streamNameFormat: string;
+  logOutput: boolean;
 };
 
 const defaultConcatOptions: ConcatOptions = {
@@ -42,6 +43,7 @@ const defaultConcatOptions: ConcatOptions = {
   streamBasePath: 'stream_%v',
   segmentNameFormat: 'data%05d.ts',
   streamNameFormat: 'stream.m3u8',
+  logOutput: false,
 };
 
 export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<FfmpegEvents>) {
@@ -72,7 +74,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     }/images/generic-error-screen.png`;
     this.ffmpegName = 'unnamed ffmpeg';
     if (!this.opts.enableTranscoding) {
-      //this ensures transcoding is completely disabled even if
+      // this ensures transcoding is completely disabled even if
       // some settings are true
       this.opts = {
         ...this.opts,
@@ -90,26 +92,26 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
 
     let targetResolution = opts.targetResolution;
     if (!isUndefined(channel.transcoding?.targetResolution)) {
-      targetResolution = channel.transcoding!.targetResolution;
+      targetResolution = channel.transcoding.targetResolution;
     }
 
     if (
       !isUndefined(channel.transcoding?.videoBitrate) &&
-      channel.transcoding!.videoBitrate !== 0
+      channel.transcoding.videoBitrate !== 0
     ) {
       this.opts = {
         ...this.opts,
-        videoBitrate: channel.transcoding!.videoBitrate,
+        videoBitrate: channel.transcoding.videoBitrate,
       };
     }
 
     if (
       !isUndefined(channel.transcoding?.videoBufferSize) &&
-      channel.transcoding!.videoBufferSize !== 0
+      channel.transcoding.videoBufferSize !== 0
     ) {
       this.opts = {
         ...this.opts,
-        videoBufferSize: channel.transcoding!.videoBufferSize,
+        videoBufferSize: channel.transcoding.videoBufferSize,
       };
     }
 
@@ -176,6 +178,8 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     if (opts.enableHls) {
       const filledOpts = merge(defaultConcatOptions, opts);
 
+      console.log(process.cwd());
+
       ffmpegArgs.push(
         '-f',
         'hls',
@@ -218,7 +222,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       ffmpegArgs.push(`-f`, `mpegts`, `pipe:1`);
     }
 
-    return this.startProcess(ffmpegArgs, false);
+    return this.startProcess(ffmpegArgs, opts.logOutput ?? false);
   }
 
   spawnStream(
@@ -331,7 +335,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     let audioFile = -1;
     let videoFile = -1;
     let overlayFile = -1;
-    if (isString(streamUrl)) {
+    if (isString(streamUrl) && !isEmpty(streamUrl)) {
       ffmpegArgs.push(`-i`, streamUrl);
       videoFile = inputFiles++;
       audioFile = videoFile;
@@ -361,9 +365,6 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     // When adding filters, make sure that
     // videoComplex always begins wiht ; and doesn't end with ;
 
-    console.log(
-      `video framerate = ${streamStats?.videoFramerate}, max = ${this.opts.maxFPS} `,
-    );
     if ((streamStats?.videoFramerate ?? 0) >= this.opts.maxFPS + 0.000001) {
       videoComplex += `;${currentVideo}fps=${this.opts.maxFPS}[fpchange]`;
       currentVideo = '[fpchange]';
@@ -379,7 +380,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     }
 
     // prepare input streams
-    if (!isString(streamUrl) || streamStats?.audioOnly) {
+    if (!isString(streamUrl) || isEmpty(streamUrl) || streamStats?.audioOnly) {
       doOverlay = false; //never show icon in the error screen
       // for error stream, we have to generate the input as well
       this.apad = false; //all of these generate audio correctly-aligned to video so there is no need for apad
@@ -391,7 +392,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       iW = this.wantedW;
       iH = this.wantedH;
 
-      if (this.audioOnly !== true) {
+      if (!this.audioOnly) {
         ffmpegArgs.push('-r', '24');
         let pic: string | undefined;
 
@@ -399,25 +400,34 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
         if (isString(streamUrl) && streamStats?.audioOnly) {
           pic = streamStats.placeholderImage;
         } else if (!isString(streamUrl) && streamUrl.errorTitle == 'offline') {
-          pic = `${this.channel.offlinePicture}`;
+          // TODO fix me
+          const defaultOfflinePic = `http://localhost:${
+            serverOptions().port
+          }/images/generic-offline-screen.png`;
+          pic = this.channel.offlinePicture ?? defaultOfflinePic;
         } else if (this.opts.errorScreen == 'pic') {
-          pic = `${this.errorPicturePath}`;
+          pic = this.errorPicturePath;
         }
 
-        if (!isNil(pic)) {
+        logger.error('PIC = ' + pic);
+        if (!isNil(pic) && !isEmpty(pic)) {
           ffmpegArgs.push('-i', pic);
           if (isUndefined(duration) && !isUndefined(streamStats?.duration)) {
             //add 150 milliseconds just in case, exact duration seems to cut out the last bits of music some times.
-            duration = `${streamStats!.duration + 150}ms`;
+            duration = `${streamStats.duration + 150}ms`;
           }
           videoComplex = `;[${inputFiles++}:0]format=yuv420p[formatted]`;
           videoComplex += `;[formatted]scale=w=${iW}:h=${iH}:force_original_aspect_ratio=1[scaled]`;
           videoComplex += `;[scaled]pad=${iW}:${iH}:(ow-iw)/2:(oh-ih)/2[padded]`;
           videoComplex += `;[padded]loop=loop=-1:size=1:start=0[looped]`;
           videoComplex += `;[looped]realtime[videox]`;
-          //this tune apparently makes the video compress better
+          // this tune apparently makes the video compress better
           // when it is the same image
-          stillImage = true;
+          // Don't enable this for NVENC...it seems to break with a strange
+          // error. Unclear if this affects other HW encoders
+          if (!this.opts.videoEncoder.includes('nvenc')) {
+            stillImage = true;
+          }
         } else if (this.opts.errorScreen == 'static') {
           ffmpegArgs.push('-f', 'lavfi', '-i', `nullsrc=s=64x36`);
           videoComplex = `;geq=random(1)*255:128:128[videoz];[videoz]scale=${iW}:${iH}[videoy];[videoy]realtime[videox]`;
@@ -452,12 +462,12 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       }
       const durstr = `duration=${streamStats?.duration}ms`;
       if (!isString(streamUrl)) {
-        //silent
+        // silent
         audioComplex = `;aevalsrc=0:${durstr}[audioy]`;
         if (streamUrl.errorTitle == 'offline') {
           if (
-            typeof this.channel.offlineSoundtrack !== 'undefined' &&
-            this.channel.offlineSoundtrack != ''
+            !isUndefined(this.channel.offlineSoundtrack) &&
+            !isEmpty(this.channel.offlineSoundtrack)
           ) {
             ffmpegArgs.push('-i', `${this.channel.offlineSoundtrack}`);
             // I don't really understand why, but you need to use this
@@ -482,7 +492,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       }
       currentVideo = '[videox]';
     }
-    if (doOverlay && !isNil(watermark)) {
+    if (doOverlay && !isNil(watermark?.url)) {
       if (watermark.animated) {
         ffmpegArgs.push('-ignore_loop', '0');
       }
@@ -555,7 +565,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     }
 
     // Channel watermark:
-    if (doOverlay && !isNil(watermark) && this.audioOnly !== true) {
+    if (doOverlay && !isNil(watermark) && !this.audioOnly) {
       const pW = watermark.width;
       const w = Math.round((pW * iW) / 100.0);
       const mpHorz = watermark.horizontalMargin;

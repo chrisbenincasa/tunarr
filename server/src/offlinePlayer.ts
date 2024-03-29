@@ -7,12 +7,16 @@
  * can be used to play the program.
  **/
 import EventEmitter from 'events';
+import { isError } from 'lodash-es';
+import { Readable, Writable } from 'stream';
 import { FFMPEG, FfmpegEvents } from './ffmpeg.js';
 import { serverOptions } from './globals.js';
+import createLogger from './logger.js';
+import { Player } from './player.js';
 import { Maybe, PlayerContext } from './types.js';
 import { TypedEventEmitter } from './types/eventEmitter.js';
-import { Player } from './player.js';
-import { Readable, Writable } from 'stream';
+
+const logger = createLogger(import.meta);
 
 export class OfflinePlayer extends Player {
   private context: PlayerContext;
@@ -33,6 +37,7 @@ export class OfflinePlayer extends Player {
       };
     }
     this.ffmpeg = new FFMPEG(context.ffmpegSettings, context.channel);
+    console.log(this.context);
     this.ffmpeg.setAudioOnly(this.context.audioOnly);
   }
 
@@ -47,31 +52,32 @@ export class OfflinePlayer extends Player {
       let ffmpeg = this.ffmpeg;
       const lineupItem = this.context.lineupItem;
       const duration = lineupItem.streamDuration ?? 0 - (lineupItem.start ?? 0);
+
       let ff: Maybe<Readable>;
       if (this.error) {
         ff = ffmpeg.spawnError('Error', undefined, duration);
       } else {
         ff = ffmpeg.spawnOffline(duration);
       }
-      ff?.on('data', () => {
-        console.log('got data!!');
-      });
+
       ff?.pipe(outStream, { end: false });
 
       ffmpeg.on('end', () => {
-        console.log('offline player end');
+        logger.debug('offline player end');
         emitter.emit('end');
       });
+
       ffmpeg.on('close', () => {
-        console.log('offline player close');
+        logger.debug('offline player close');
         emitter.emit('close');
       });
-      ffmpeg.on('error', async (err) => {
-        console.log('offline player error', err);
+
+      ffmpeg.on('error', (err) => {
+        logger.error('offline player error: %O', err);
 
         //wish this code wasn't repeated.
         if (!this.error) {
-          console.log('Replacing failed stream with error stream');
+          logger.debug('Replacing failed stream with error stream');
           ff?.unpipe(outStream);
           // ffmpeg.removeAllListeners('data'); Type inference says this is never actually used...
           ffmpeg.removeAllListeners('end');
@@ -89,14 +95,12 @@ export class OfflinePlayer extends Player {
             emitter.emit('end');
           });
           ffmpeg.on('error', (err) => {
+            logger.error('Emitting error ... %O', err);
             emitter.emit('error', err);
           });
 
-          ff = await ffmpeg.spawnError(
-            'oops',
-            'oops',
-            Math.min(duration, 60000),
-          );
+          ff = ffmpeg.spawnError('oops', 'oops', Math.min(duration, 60000));
+
           ff?.pipe(outStream);
         } else {
           emitter.emit('error', err);
@@ -104,7 +108,7 @@ export class OfflinePlayer extends Player {
       });
       return Promise.resolve(emitter);
     } catch (err) {
-      if (err instanceof Error) {
+      if (isError(err)) {
         throw err;
       } else {
         throw Error(
