@@ -13,6 +13,10 @@
     },
     "build-dev": {
       "dependsOn": ["^build"]
+    },
+    "make-exec": {
+      "dependsOn": ["bundle"],
+      "outputs": ["build/**", "dist/**"]
     }
   }
 }

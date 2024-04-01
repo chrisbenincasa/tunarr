@@ -1,5 +1,6 @@
-import { Entity, ManyToOne, Property, Rel } from '@mikro-orm/core';
-import { Duration } from 'dayjs/plugin/duration.js';
+import type { Rel } from '@mikro-orm/core';
+import { Entity, ManyToOne, Property } from '@mikro-orm/core';
+import type { Duration } from 'dayjs/plugin/duration.js';
 import { DurationType } from '../custom_types/DurationType.js';
 import { Channel } from './Channel.js';
 import { FillerShow } from './FillerShow.js';

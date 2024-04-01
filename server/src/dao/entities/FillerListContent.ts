@@ -3,8 +3,8 @@ import {
   ManyToOne,
   PrimaryKeyProp,
   Property,
-  Rel,
   Unique,
+  type Rel,
 } from '@mikro-orm/core';
 import { FillerShow } from './FillerShow.js';
 import { Program } from './Program.js';

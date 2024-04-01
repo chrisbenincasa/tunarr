@@ -29,7 +29,7 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 # can figure that out, it would boil this down to one command.
 RUN pnpm turbo generate-db-cache
 # Replace the non-cached metadata config with the cache
-RUN mv server/mikro-orm.prod.config.ts server/mikro-orm.config.ts 
+#RUN mv server/mikro-orm.prod.config.ts server/mikro-orm.config.ts 
 RUN pnpm turbo --filter=@tunarr/server bundle
 ### End server build ###
 

@@ -6,7 +6,7 @@ import {
   Unique,
 } from '@mikro-orm/core';
 import { Channel as ChannelDTO, Resolution } from '@tunarr/types';
-import { Duration } from 'dayjs/plugin/duration.js';
+import type { Duration } from 'dayjs/plugin/duration.js';
 import { nilToUndefined } from '../../util.js';
 import { DurationType } from '../custom_types/DurationType.js';
 import { BaseEntity } from './BaseEntity.js';
