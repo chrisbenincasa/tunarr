@@ -134,39 +134,37 @@ function InlineModal(props: InlineModalProps) {
           }}
           ref={ref}
         >
-          {modalChildren?.map(
-            (child: PlexMedia, idx: number, arr: PlexMedia[]) => (
-              <React.Fragment key={child.guid}>
-                <InlineModal
-                  modalIndex={childModalIndex}
-                  modalChildren={childModalChildren}
-                  open={
-                    idx ===
-                    firstItemInNextRow(
-                      childModalIndex,
-                      rowSize,
-                      modalChildren?.length || 0,
-                    )
-                  }
-                  rowSize={rowSize}
-                  type={child.type}
-                />
-                <PlexGridItem
-                  item={child}
-                  index={idx}
-                  modalIndex={modalIndex || childModalIndex}
-                  ref={gridItemRef}
-                  moveModal={() => handleMoveModal(idx)}
-                  modalChildren={(children: PlexMedia[]) =>
-                    handleModalChildren(children)
-                  }
-                  modalIsPending={(isPending: boolean) =>
-                    handleModalIsPending(isPending)
-                  }
-                />
-              </React.Fragment>
-            ),
-          )}
+          {modalChildren?.map((child: PlexMedia, idx: number) => (
+            <React.Fragment key={child.guid}>
+              <InlineModal
+                modalIndex={childModalIndex}
+                modalChildren={childModalChildren}
+                open={
+                  idx ===
+                  firstItemInNextRow(
+                    childModalIndex,
+                    rowSize,
+                    modalChildren?.length || 0,
+                  )
+                }
+                rowSize={rowSize}
+                type={child.type}
+              />
+              <PlexGridItem
+                item={child}
+                index={idx}
+                modalIndex={modalIndex || childModalIndex}
+                ref={gridItemRef}
+                moveModal={() => handleMoveModal(idx)}
+                modalChildren={(children: PlexMedia[]) =>
+                  handleModalChildren(children)
+                }
+                modalIsPending={(isPending: boolean) =>
+                  handleModalIsPending(isPending)
+                }
+              />
+            </React.Fragment>
+          ))}
           {/* This Modal is for last row items because they can't be inserted using the above inline modal */}
           <InlineModal
             modalIndex={childModalIndex}
