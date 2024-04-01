@@ -24,13 +24,15 @@ import {
   PlexMusicArtist,
   PlexTvShow,
 } from '@tunarr/types/plex';
-import { chain, first, forEach, isNil, isUndefined, map } from 'lodash-es';
+import { usePrevious } from '@uidotdev/usehooks';
+import _, { chain, first, forEach, isNil, isUndefined, map } from 'lodash-es';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useIntersectionObserver } from 'usehooks-ts';
 import {
   extractLastIndexes,
   firstItemInNextRow,
   getImagesPerRow,
+  isNewModalAbove,
 } from '../../helpers/inlineModalUtil';
 import { toggle } from '../../helpers/util';
 import { fetchPlexPath, usePlex } from '../../hooks/plexHooks';
@@ -54,6 +56,9 @@ function a11yProps(index: number) {
     'aria-controls': `simple-tabpanel-${index}`,
   };
 }
+type refObject = {
+  [k: string]: HTMLDivElement | null;
+};
 
 export default function PlexProgrammingSelector() {
   const { data: plexServers } = usePlexServerSettings();
@@ -66,36 +71,41 @@ export default function PlexProgrammingSelector() {
   const [modalChildren, setModalChildren] = useState<PlexMedia[]>([]);
   const [rowSize, setRowSize] = useState<number>(16);
   const [modalIndex, setModalIndex] = useState<number>(-1);
+  const [modalGuid, setModalGuid] = useState<string>('');
   const [modalIsPending, setModalIsPending] = useState<boolean>(true);
   const [scrollParams, setScrollParams] = useState({ limit: 0, max: -1 });
-  const containerRef = useRef<HTMLDivElement>(null);
-  const libraryImageRef = useRef([]);
-  const collectionsImageRef = useRef([]);
-
-  const libraryContainerRef = useRef<HTMLDivElement>(null);
   const [searchVisible, setSearchVisible] = useState(false);
   const [useAdvancedSearch, setUseAdvancedSearch] = useState(false);
+  const gridContainerRef = useRef<HTMLDivElement>(null);
+  const gridImageRefs = useRef<refObject>({});
+  const inlineModalRef = useRef<HTMLDivElement>(null);
+  const previousModalIndex = usePrevious(modalIndex);
 
   const handleResize = () => {
     if (viewType === 'grid') {
-      const libraryContainerWidth =
-        libraryContainerRef?.current?.offsetWidth || 0;
-      const containerWidth = containerRef?.current?.offsetWidth || 0;
-      const libraryItemWidth = libraryImageRef?.current[0]?.offsetWidth || 0;
-      const collectionsItemWidth =
-        collectionsImageRef?.current[0]?.offsetWidth || 0;
+      const gridContainerWidth = gridContainerRef?.current?.offsetWidth || 0;
+      let imageRef;
 
-      setRowSize(
-        getImagesPerRow(
-          tabValue === 0 ? libraryContainerWidth : containerWidth,
-          tabValue === 0 ? libraryItemWidth : collectionsItemWidth,
-        ),
-      );
+      if (modalGuid === '') {
+        // Grab the first non-null ref for an image
+        for (const key in gridImageRefs.current) {
+          if (gridImageRefs.current[key] !== null) {
+            imageRef = gridImageRefs.current[key];
+            break;
+          }
+        }
+      } else {
+        imageRef = _.get(gridImageRefs.current, modalGuid);
+      }
+
+      const imageWidth = imageRef?.offsetWidth || 0;
+
+      setRowSize(getImagesPerRow(gridContainerWidth, imageWidth || 0));
     }
   };
 
   useEffect(() => {
-    if (viewType === 'grid') {
+    if (viewType === 'grid' && (searchData || collectionsData)) {
       const handleResizeEvent = () => handleResize();
       handleResize(); // Call initially to set width
       window.addEventListener('resize', handleResizeEvent);
@@ -106,25 +116,18 @@ export default function PlexProgrammingSelector() {
   }, []);
 
   useEffect(() => {
-    if (viewType === 'grid') {
-      const libraryContainerWidth =
-        libraryContainerRef?.current?.offsetWidth || 0;
-      const containerWidth = containerRef?.current?.offsetWidth || 0;
-      const libraryItemWidth = libraryImageRef?.current[0]?.offsetWidth || 0;
-      const collectionsItemWidth =
-        collectionsImageRef?.current[0]?.offsetWidth || 0;
+    if (viewType === 'grid' && (searchData || collectionsData)) {
+      const gridContainerWidth = gridContainerRef?.current?.offsetWidth || 0;
+      const imageRef = _.get(gridImageRefs.current, modalGuid);
+      const imageWidth = imageRef?.offsetWidth || 0;
 
-      setRowSize(
-        getImagesPerRow(
-          tabValue === 0 ? libraryContainerWidth : containerWidth,
-          tabValue === 0 ? libraryItemWidth : collectionsItemWidth,
-        ),
-      );
+      setRowSize(getImagesPerRow(gridContainerWidth, imageWidth || 0));
     }
-  }, [containerRef, libraryContainerRef, libraryImageRef, modalChildren]);
+  }, [modalChildren, gridContainerRef, gridImageRefs]);
 
   useEffect(() => {
     setModalIndex(-1);
+    setModalGuid('');
     handleModalChildren([]);
   }, [tabValue]);
 
@@ -132,14 +135,48 @@ export default function PlexProgrammingSelector() {
     setTabValue(newValue);
   };
 
+  const scrollToGridItem = (guid: string, index: number) => {
+    const selectedElement = gridImageRefs.current[guid];
+    const container = gridContainerRef?.current;
+    const includeModalInHeightCalc = isNewModalAbove(
+      previousModalIndex,
+      index,
+      rowSize,
+    );
+
+    if (selectedElement && container) {
+      // magic number for top bar padding; to do: calc it off ref
+      const topBarPadding = 64;
+      // New modal is opening in a row above previous modal
+      const modalMovesUp = selectedElement.offsetTop - topBarPadding;
+      // New modal is opening in the same row or a row below the current modal
+      const modalMovesDown =
+        selectedElement.offsetTop -
+        selectedElement.offsetHeight -
+        topBarPadding;
+
+      window.scrollTo({
+        top: includeModalInHeightCalc ? modalMovesDown : modalMovesUp,
+        behavior: 'smooth',
+      });
+    }
+  };
+
+  // Scroll to new selected item when modalIndex changes
+  useEffect(() => {
+    scrollToGridItem(modalGuid, modalIndex);
+  }, [modalIndex]);
+
   const handleMoveModal = useCallback(
-    (index: number) => {
+    (item: PlexMedia, index: number) => {
+      handleModalChildren([]); // reset children to prevent flashing of previous models images
+
       if (index === modalIndex) {
-        handleModalChildren([]);
         setModalIndex(-1);
+        setModalGuid('');
       } else {
-        handleModalChildren([]);
         setModalIndex(index);
+        setModalGuid(item.guid);
       }
     },
     [modalIndex],
@@ -294,39 +331,36 @@ export default function PlexProgrammingSelector() {
   });
 
   const renderGridItems = (item: PlexMedia, index: number) => {
+    const isOpen =
+      index ===
+      firstItemInNextRow(
+        modalIndex,
+        rowSize,
+        collectionsData?.Metadata?.length || 0,
+      );
+
     return (
       <React.Fragment key={item.guid}>
         <InlineModal
           modalIndex={modalIndex}
           modalChildren={modalChildren}
           rowSize={rowSize}
-          open={
-            index ===
-            firstItemInNextRow(
-              modalIndex,
-              rowSize,
-              collectionsData?.Metadata?.length || 0,
-            )
-          }
+          open={isOpen}
+          containerRef={inlineModalRef}
           type={item.type}
         />
         <PlexGridItem
           item={item}
           index={index}
           modalIndex={modalIndex}
-          moveModal={() => handleMoveModal(index)}
+          moveModal={() => handleMoveModal(item, index)}
           modalChildren={(children: PlexMedia[]) =>
             handleModalChildren(children)
           }
           modalIsPending={(isPending: boolean) =>
             handleModalIsPending(isPending)
           }
-          ref={
-            tabValue === 0
-              ? (element) => libraryImageRef.current.push(element)
-              : (element) => collectionsImageRef.current.push(element)
-          }
-          // ref={libraryImageRef}
+          ref={(element) => (gridImageRefs.current[item.guid] = element)}
         />
       </React.Fragment>
     );
@@ -354,12 +388,7 @@ export default function PlexProgrammingSelector() {
 
     if (collectionsData && collectionsData.size > 0 && tabValue === 1) {
       elements.push(
-        <CustomTabPanel
-          value={tabValue}
-          index={1}
-          key="Collections"
-          ref={containerRef}
-        >
+        <CustomTabPanel value={tabValue} index={1} key="Collections">
           {map(
             collectionsData.Metadata,
             (item: PlexMovie | PlexTvShow | PlexMusicArtist, index: number) =>
@@ -369,7 +398,8 @@ export default function PlexProgrammingSelector() {
                 renderGridItems(item, index)
               ),
           )}
-          {renderFinalRowInlineModal(collectionsData?.Metadata)}
+          {collectionsData?.Metadata &&
+            renderFinalRowInlineModal(collectionsData?.Metadata)}
         </CustomTabPanel>,
       );
     }
@@ -383,12 +413,7 @@ export default function PlexProgrammingSelector() {
         .value();
 
       elements.push(
-        <CustomTabPanel
-          value={tabValue}
-          index={0}
-          key="Library"
-          ref={libraryContainerRef}
-        >
+        <CustomTabPanel value={tabValue} index={0} key="Library">
           {map(
             items,
             (item: PlexMovie | PlexTvShow | PlexMusicArtist, index: number) =>
@@ -502,7 +527,7 @@ export default function PlexProgrammingSelector() {
             </Tabs>
           </Box>
 
-          {renderListItems()}
+          <Box ref={gridContainerRef}>{renderListItems()}</Box>
           <div style={{ height: 40 }} ref={ref}></div>
           <Divider sx={{ mt: 3, mb: 2 }} />
         </>

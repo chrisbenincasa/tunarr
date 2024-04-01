@@ -4,6 +4,9 @@ export function getImagesPerRow(
   containerWidth: number,
   imageWidth: number,
 ): number {
+  if (!imageWidth || !containerWidth) {
+    return 9; // some default value
+  }
   return Math.floor(containerWidth / imageWidth);
 }
 
@@ -41,14 +44,24 @@ export function getEstimatedModalHeight(
   //use interesectionObserver to load them in
   const maxRows = rows >= 3 ? 3 : rows;
 
-  console.log({ maxRows });
-  console.log({ heightPerItem });
-  console.log(
-    'test',
-    Math.ceil(maxRows * heightPerItem + inlineModalTopPadding),
-  );
-
   return Math.ceil(maxRows * heightPerItem + inlineModalTopPadding); // 16px padding added to top
+}
+
+export function isNewModalAbove(
+  previousModalIndex: number,
+  newModalIndex: number,
+  itemsPerRow: number,
+) {
+  // Calculate the row number of the current item
+  const previousRowNumber = Math.floor(previousModalIndex / itemsPerRow);
+  const newRowNumber = Math.floor(newModalIndex / itemsPerRow);
+
+  if (previousModalIndex === -1 || newModalIndex === -1) {
+    //Modal is opening or closing, not moving
+    return false;
+  } else {
+    return newRowNumber > previousRowNumber;
+  }
 }
 
 export function firstItemInNextRow(
