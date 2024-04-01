@@ -118,15 +118,9 @@ export default function PlexProgrammingSelector() {
       } else {
         imageRef = _.get(gridImageRefs.current, modalGuid);
       }
-      console.log({ gridContainerWidth });
-      const imageWidth = imageRef?.offsetWidth || 0;
-      console.log({ imageWidth });
+      const imageWidth = imageRef?.getBoundingClientRect().width;
 
-      console.log(
-        'set row size: ',
-        getImagesPerRow(gridContainerWidth + 16, imageWidth || 0),
-      );
-
+      // 16 is additional padding available in the parent container
       setRowSize(getImagesPerRow(width ? width + 16 : 0, imageWidth || 0));
     }
   }, [width, tabValue]);
@@ -531,7 +525,9 @@ export default function PlexProgrammingSelector() {
             </Tabs>
           </Box>
 
-          <Box ref={gridContainerRef}>{renderListItems()}</Box>
+          <Box ref={gridContainerRef} sx={{ width: '100%' }}>
+            {renderListItems()}
+          </Box>
           <div style={{ height: 40 }} ref={ref}></div>
           <Divider sx={{ mt: 3, mb: 2 }} />
         </>
