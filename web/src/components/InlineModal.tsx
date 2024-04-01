@@ -26,6 +26,7 @@ function InlineModal(props: InlineModalProps) {
   const previousData = usePrevious(props);
   const ref = useRef<HTMLUListElement>(null);
   const gridItemRef = useRef<HTMLDivElement>(null);
+  const inlineModalRef = useRef<HTMLDivElement>(null);
   const darkMode = useStore((state) => state.theme.darkMode);
   const modalHeight = getEstimatedModalHeight(
     containerWidth,
@@ -97,79 +98,86 @@ function InlineModal(props: InlineModalProps) {
     : false;
 
   return (
-    <Collapse
-      in={open}
-      timeout="auto"
-      easing={{
-        enter: 'easeInSine',
-        exit: 'linear',
-      }}
-      mountOnEnter
-      unmountOnExit
-      sx={{ width: '100%', display: 'grid', gridColumn: '1 / -1' }}
-      onEnter={toggleModal}
-      onExited={toggleModal}
+    <div
+      ref={inlineModalRef}
+      style={
+        isOpen ? { display: 'grid', gridColumn: '1 / -1' } : { display: 'none' }
+      }
     >
-      <List
-        component={'ul'}
-        sx={{
-          pl: 4,
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
-          alignContent: 'flex-start',
-          flexWrap: 'wrap',
-          justifyContent: 'flex-start',
-          backgroundColor: (theme) =>
-            darkMode ? theme.palette.grey[800] : theme.palette.grey[400],
-          padding: '0',
-          paddingTop: 2,
-          minHeight: modalHeight,
+      <Collapse
+        in={open}
+        timeout="auto"
+        easing={{
+          enter: 'easeInSine',
+          exit: 'linear',
         }}
-        ref={ref}
+        mountOnEnter
+        unmountOnExit
+        sx={{ width: '100%', display: 'grid', gridColumn: '1 / -1' }}
+        onEnter={toggleModal}
+        onExited={toggleModal}
       >
-        {modalChildren?.map(
-          (child: PlexMedia, idx: number, arr: PlexMedia[]) => (
-            <React.Fragment key={child.guid}>
-              <InlineModal
-                modalIndex={childModalIndex} //to do
-                modalChildren={childModalChildren} //to do
-                open={
-                  idx ===
-                  firstItemInNextRow(
-                    childModalIndex,
-                    rowSize,
-                    modalChildren?.length || 0,
-                  )
-                }
-                rowSize={rowSize}
-                type={child.type}
-              />
-              <PlexGridItem
-                item={child}
-                index={idx}
-                modalIndex={modalIndex || childModalIndex}
-                ref={gridItemRef}
-                moveModal={() => handleMoveModal(idx)}
-                modalChildren={(children: PlexMedia[]) =>
-                  handleModalChildren(children)
-                }
-                modalIsPending={(isPending: boolean) =>
-                  handleModalIsPending(isPending)
-                }
-              />
-            </React.Fragment>
-          ),
-        )}
-        {/* This Modal is for last row items because they can't be inserted using the above inline modal */}
-        <InlineModal
-          modalIndex={childModalIndex}
-          modalChildren={childModalChildren}
-          rowSize={rowSize}
-          open={isFinalChildModalOpen}
-          type={'season'}
-        />
-      </List>
-    </Collapse>
+        <List
+          component={'ul'}
+          sx={{
+            pl: 4,
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+            alignContent: 'flex-start',
+            flexWrap: 'wrap',
+            justifyContent: 'flex-start',
+            backgroundColor: (theme) =>
+              darkMode ? theme.palette.grey[800] : theme.palette.grey[400],
+            padding: '0',
+            paddingTop: 2,
+            minHeight: modalHeight,
+          }}
+          ref={ref}
+        >
+          {modalChildren?.map(
+            (child: PlexMedia, idx: number, arr: PlexMedia[]) => (
+              <React.Fragment key={child.guid}>
+                <InlineModal
+                  modalIndex={childModalIndex}
+                  modalChildren={childModalChildren}
+                  open={
+                    idx ===
+                    firstItemInNextRow(
+                      childModalIndex,
+                      rowSize,
+                      modalChildren?.length || 0,
+                    )
+                  }
+                  rowSize={rowSize}
+                  type={child.type}
+                />
+                <PlexGridItem
+                  item={child}
+                  index={idx}
+                  modalIndex={modalIndex || childModalIndex}
+                  ref={gridItemRef}
+                  moveModal={() => handleMoveModal(idx)}
+                  modalChildren={(children: PlexMedia[]) =>
+                    handleModalChildren(children)
+                  }
+                  modalIsPending={(isPending: boolean) =>
+                    handleModalIsPending(isPending)
+                  }
+                />
+              </React.Fragment>
+            ),
+          )}
+          {/* This Modal is for last row items because they can't be inserted using the above inline modal */}
+          <InlineModal
+            modalIndex={childModalIndex}
+            modalChildren={childModalChildren}
+            rowSize={rowSize}
+            open={isFinalChildModalOpen}
+            type={'season'}
+          />
+        </List>
+      </Collapse>
+    </div>
   );
 }
 

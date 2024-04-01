@@ -346,7 +346,6 @@ export default function PlexProgrammingSelector() {
           modalChildren={modalChildren}
           rowSize={rowSize}
           open={isOpen}
-          containerRef={inlineModalRef}
           type={item.type}
         />
         <PlexGridItem
