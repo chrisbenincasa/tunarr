@@ -19,7 +19,7 @@ import fs from 'fs';
 import { isUndefined } from 'lodash-es';
 import morgan from 'morgan';
 import { onShutdown } from 'node-graceful-shutdown';
-import path, { dirname } from 'path';
+import path, { dirname, join } from 'path';
 import { ffmpegSettingsRouter } from './api/ffmpegSettingsApi.js';
 import { guideRouter } from './api/guideApi.js';
 import { hdhrSettingsRouter } from './api/hdhrSettingsApi.js';
@@ -37,7 +37,7 @@ import { scheduleJobs, scheduledJobsById } from './services/scheduler.js';
 import { runFixers } from './tasks/fixers/index.js';
 import { UpdateXmlTvTask } from './tasks/updateXmlTvTask.js';
 import { ServerOptions } from './types.js';
-import { filename, wait } from './util.js';
+import { filename, isProduction, wait } from './util.js';
 import { videoRouter } from './video.js';
 
 const logger = createLogger(import.meta);
@@ -124,6 +124,8 @@ export async function initServer(opts: ServerOptions) {
     await app.register(fastifyPrintRoutes);
   }
 
+  console.log(join(dirname(process.argv[1]), 'static'));
+
   await app
     .register(fastifySwagger, {
       openapi: {
@@ -143,6 +145,10 @@ export async function initServer(opts: ServerOptions) {
     })
     .register(fastifySwaggerUi, {
       routePrefix: '/docs',
+      baseDir:
+        isProduction && process.argv.length > 1
+          ? join(dirname(process.argv[1]), 'static')
+          : undefined,
     })
     .register(middie)
     .register(cors, {

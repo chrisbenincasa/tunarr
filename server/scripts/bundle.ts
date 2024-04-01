@@ -1,7 +1,10 @@
 import esbuild from 'esbuild';
+import { copy } from 'esbuild-plugin-copy';
 import fg from 'fast-glob';
 import fs from 'node:fs';
+import { basename } from 'node:path';
 import { rimraf } from 'rimraf';
+import { mikroOrmProdPlugin } from '../esbuild/mikro-orm-prod-plugin.js';
 import { nativeNodeModulesPlugin } from '../esbuild/native-node-module.js';
 import { nodeProtocolPlugin } from '../esbuild/node-protocol.js';
 
@@ -18,33 +21,56 @@ fs.cpSync('src/resources/images', 'build/resources/images', {
 });
 
 console.log('Bundling app...');
-await esbuild.build({
-  entryPoints: ['src/index.ts'],
+const result = await esbuild.build({
+  entryPoints: {
+    bundle: 'src/index.ts',
+  },
   bundle: true,
-  // minify: true,
+  minify: true,
+  outdir: 'build',
   // We can't make this mjs yet because mikro-orm breaks
   // when using cached metadata w/ not js/ts suffixes:
   // https://github.com/mikro-orm/mikro-orm/blob/e005cc22ef4e247f9741bdcaf1af012337977b7e/packages/core/src/cache/GeneratedCacheAdapter.ts#L16
-  outfile: 'build/bundle.js',
   format: 'esm',
   platform: 'node',
   target: 'node18',
   inject: ['cjs-shim.ts'],
-  packages: 'external',
   tsconfig: './tsconfig.build.json',
-  // external: [
-  //   'mysql',
-  //   'mysql2',
-  //   'sqlite3',
-  //   'pg',
-  //   'tedious',
-  //   'pg-query-stream',
-  //   'oracledb',
-  //   'assert',
-  // ],
+  external: [
+    'mysql',
+    'mysql2',
+    'sqlite3',
+    'pg',
+    'tedious',
+    'pg-query-stream',
+    'oracledb',
+  ],
   mainFields: ['module', 'main'],
-  plugins: [nativeNodeModulesPlugin(), nodeProtocolPlugin()],
+  plugins: [
+    nativeNodeModulesPlugin(),
+    nodeProtocolPlugin(),
+    mikroOrmProdPlugin(),
+    copy({
+      resolveFrom: 'cwd',
+      assets: {
+        from: ['node_modules/@fastify/swagger-ui/static/*'],
+        to: ['build/static'],
+      },
+    }),
+  ],
+  keepNames: true, // This is to ensure that Entity class names remain the same
+  metafile: true,
 });
+
+fs.writeFileSync('build/meta.json', JSON.stringify(result.metafile));
+
+fs.cpSync('package.json', 'build/package.json');
+
+const nativeBindings = await fg('node_modules/better-sqlite3/**/*.node');
+for (const binding of nativeBindings) {
+  console.log(`Copying ${binding} to build dir`);
+  fs.cpSync(binding, 'build/build/' + basename(binding));
+}
 
 console.log('Bundling DB migrations...');
 await esbuild.build({
