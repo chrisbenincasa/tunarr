@@ -29,6 +29,7 @@ function InlineModal(props: InlineModalProps) {
   const inlineModalRef = useRef<HTMLDivElement>(null);
   const darkMode = useStore((state) => state.theme.darkMode);
   const modalHeight = getEstimatedModalHeight(
+    rowSize,
     containerWidth,
     itemWidth,
     modalChildren?.length || 0,
@@ -45,8 +46,9 @@ function InlineModal(props: InlineModalProps) {
       previousData &&
       previousData.modalChildren !== modalChildren
     ) {
-      const containerWidth = ref?.current?.offsetWidth || 0;
-      const itemWidth = gridItemRef?.current?.offsetWidth || 0;
+      const containerWidth = ref?.current?.getBoundingClientRect().width || 0;
+      const itemWidth =
+        gridItemRef?.current?.getBoundingClientRect().width || 0;
 
       setItemWidth(itemWidth);
       setContainerWidth(containerWidth);

@@ -12,6 +12,7 @@ export function getImagesPerRow(
 
 // Estimate the modal height to prevent div collapse while new modal images load
 export function getEstimatedModalHeight(
+  rowSize: number,
   containerWidth: number,
   imageContainerWidth: number,
   listSize: number,
@@ -26,7 +27,8 @@ export function getEstimatedModalHeight(
     return 294; //default modal height for 1 row
   }
 
-  const columns = getImagesPerRow(containerWidth, imageContainerWidth);
+  // const columns = getImagesPerRow(containerWidth, imageContainerWidth);
+  const columns = rowSize;
 
   // Magic Numbers
   // to do: eventually grab this data via refs just in case it changes in the future
