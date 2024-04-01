@@ -27,7 +27,11 @@ import {
 import { usePrevious } from '@uidotdev/usehooks';
 import _, { chain, first, forEach, isNil, isUndefined, map } from 'lodash-es';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useIntersectionObserver } from 'usehooks-ts';
+import {
+  useDebounceCallback,
+  useIntersectionObserver,
+  useResizeObserver,
+} from 'usehooks-ts';
 import {
   extractLastIndexes,
   firstItemInNextRow,
@@ -56,8 +60,14 @@ function a11yProps(index: number) {
     'aria-controls': `simple-tabpanel-${index}`,
   };
 }
+
 type refObject = {
   [k: string]: HTMLDivElement | null;
+};
+
+type Size = {
+  width?: number;
+  height?: number;
 };
 
 export default function PlexProgrammingSelector() {
@@ -78,10 +88,48 @@ export default function PlexProgrammingSelector() {
   const [useAdvancedSearch, setUseAdvancedSearch] = useState(false);
   const gridContainerRef = useRef<HTMLDivElement>(null);
   const gridImageRefs = useRef<refObject>({});
-  const inlineModalRef = useRef<HTMLDivElement>(null);
   const previousModalIndex = usePrevious(modalIndex);
 
-  const handleResize = () => {
+  const [{ width, height }, setSize] = useState<Size>({
+    width: undefined,
+    height: undefined,
+  });
+
+  const onResize = useDebounceCallback(setSize, 200);
+
+  useResizeObserver({
+    ref: gridContainerRef,
+    onResize,
+  });
+
+  // const handleResize = () => {
+  //   if (viewType === 'grid') {
+  //     const gridContainerWidth = gridContainerRef?.current?.offsetWidth || 0;
+  //     let imageRef;
+
+  //     if (modalGuid === '') {
+  //       // Grab the first non-null ref for an image
+  //       for (const key in gridImageRefs.current) {
+  //         if (gridImageRefs.current[key] !== null) {
+  //           imageRef = gridImageRefs.current[key];
+  //           break;
+  //         }
+  //       }
+  //     } else {
+  //       imageRef = _.get(gridImageRefs.current, modalGuid);
+  //     }
+
+  //     const imageWidth = imageRef?.offsetWidth || 0;
+  //     console.log(
+  //       'set row size: ',
+  //       getImagesPerRow(gridContainerWidth, imageWidth || 0),
+  //     );
+
+  //     setRowSize(getImagesPerRow(gridContainerWidth, imageWidth || 0));
+  //   }
+  // };
+
+  useEffect(() => {
     if (viewType === 'grid') {
       const gridContainerWidth = gridContainerRef?.current?.offsetWidth || 0;
       let imageRef;
@@ -99,21 +147,14 @@ export default function PlexProgrammingSelector() {
       }
 
       const imageWidth = imageRef?.offsetWidth || 0;
+      console.log(
+        'set row size: ',
+        getImagesPerRow(gridContainerWidth, imageWidth || 0),
+      );
 
-      setRowSize(getImagesPerRow(gridContainerWidth, imageWidth || 0));
+      setRowSize(getImagesPerRow(width || 0, imageWidth || 0));
     }
-  };
-
-  useEffect(() => {
-    if (viewType === 'grid' && (searchData || collectionsData)) {
-      const handleResizeEvent = () => handleResize();
-      handleResize(); // Call initially to set width
-      window.addEventListener('resize', handleResizeEvent);
-
-      // Cleanup function to remove event listener
-      return () => window.removeEventListener('resize', handleResizeEvent);
-    }
-  }, []);
+  }, [width]);
 
   useEffect(() => {
     if (viewType === 'grid' && (searchData || collectionsData)) {
@@ -163,6 +204,7 @@ export default function PlexProgrammingSelector() {
   };
 
   // Scroll to new selected item when modalIndex changes
+  // Doing this on modalIndex change negates the need to calc inline modal height since it's collapsed at this time
   useEffect(() => {
     scrollToGridItem(modalGuid, modalIndex);
   }, [modalIndex]);
@@ -289,8 +331,6 @@ export default function PlexProgrammingSelector() {
 
   useEffect(() => {
     if (searchData) {
-      handleResize(); // Call initially to set rowSize
-
       // We're using this as an analogue for detecting the start of a new 'query'
       if (searchData.pages.length === 1) {
         setScrollParams({

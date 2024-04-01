@@ -56,6 +56,7 @@ function InlineModal(props: InlineModalProps) {
   useEffect(() => {
     if (ref.current && previousData && previousData.modalIndex !== modalIndex) {
       setChildModalChildren([]);
+      //   toggleModal();
     }
   }, [modalIndex]);
 
