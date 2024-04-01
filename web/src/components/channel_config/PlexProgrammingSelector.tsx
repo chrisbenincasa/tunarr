@@ -102,33 +102,6 @@ export default function PlexProgrammingSelector() {
     onResize,
   });
 
-  // const handleResize = () => {
-  //   if (viewType === 'grid') {
-  //     const gridContainerWidth = gridContainerRef?.current?.offsetWidth || 0;
-  //     let imageRef;
-
-  //     if (modalGuid === '') {
-  //       // Grab the first non-null ref for an image
-  //       for (const key in gridImageRefs.current) {
-  //         if (gridImageRefs.current[key] !== null) {
-  //           imageRef = gridImageRefs.current[key];
-  //           break;
-  //         }
-  //       }
-  //     } else {
-  //       imageRef = _.get(gridImageRefs.current, modalGuid);
-  //     }
-
-  //     const imageWidth = imageRef?.offsetWidth || 0;
-  //     console.log(
-  //       'set row size: ',
-  //       getImagesPerRow(gridContainerWidth, imageWidth || 0),
-  //     );
-
-  //     setRowSize(getImagesPerRow(gridContainerWidth, imageWidth || 0));
-  //   }
-  // };
-
   useEffect(() => {
     if (viewType === 'grid') {
       const gridContainerWidth = gridContainerRef?.current?.offsetWidth || 0;
