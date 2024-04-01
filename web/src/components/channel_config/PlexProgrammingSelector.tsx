@@ -90,7 +90,7 @@ export default function PlexProgrammingSelector() {
   const gridImageRefs = useRef<refObject>({});
   const previousModalIndex = usePrevious(modalIndex);
 
-  const [{ width, height }, setSize] = useState<Size>({
+  const [{ width }, setSize] = useState<Size>({
     width: undefined,
     height: undefined,
   });
@@ -118,26 +118,18 @@ export default function PlexProgrammingSelector() {
       } else {
         imageRef = _.get(gridImageRefs.current, modalGuid);
       }
-
+      console.log({ gridContainerWidth });
       const imageWidth = imageRef?.offsetWidth || 0;
+      console.log({ imageWidth });
+
       console.log(
         'set row size: ',
-        getImagesPerRow(gridContainerWidth, imageWidth || 0),
+        getImagesPerRow(gridContainerWidth + 16, imageWidth || 0),
       );
 
-      setRowSize(getImagesPerRow(width || 0, imageWidth || 0));
+      setRowSize(getImagesPerRow(width ? width + 16 : 0, imageWidth || 0));
     }
-  }, [width]);
-
-  useEffect(() => {
-    if (viewType === 'grid' && (searchData || collectionsData)) {
-      const gridContainerWidth = gridContainerRef?.current?.offsetWidth || 0;
-      const imageRef = _.get(gridImageRefs.current, modalGuid);
-      const imageWidth = imageRef?.offsetWidth || 0;
-
-      setRowSize(getImagesPerRow(gridContainerWidth, imageWidth || 0));
-    }
-  }, [modalChildren, gridContainerRef, gridImageRefs]);
+  }, [width, tabValue]);
 
   useEffect(() => {
     setModalIndex(-1);
