@@ -4,21 +4,31 @@ export function getImagesPerRow(
   containerWidth: number,
   imageWidth: number,
 ): number {
+  if (!imageWidth || !containerWidth) {
+    return 9; // some default value
+  }
   return Math.floor(containerWidth / imageWidth);
 }
 
 // Estimate the modal height to prevent div collapse while new modal images load
 export function getEstimatedModalHeight(
+  rowSize: number,
   containerWidth: number,
   imageContainerWidth: number,
   listSize: number,
+  type: PlexMedia['type'] | 'all',
 ): number {
+  // Episode modals have smaller height, short circuit for  now
+  if (type === 'season') {
+    return 143;
+  }
   // Exit with defaults if container & image width are not provided
   if (containerWidth === 0 || imageContainerWidth === 0) {
     return 294; //default modal height for 1 row
   }
 
-  const columns = getImagesPerRow(containerWidth, imageContainerWidth);
+  // const columns = getImagesPerRow(containerWidth, imageContainerWidth);
+  const columns = rowSize;
 
   // Magic Numbers
   // to do: eventually grab this data via refs just in case it changes in the future
@@ -37,6 +47,23 @@ export function getEstimatedModalHeight(
   const maxRows = rows >= 3 ? 3 : rows;
 
   return Math.ceil(maxRows * heightPerItem + inlineModalTopPadding); // 16px padding added to top
+}
+
+export function isNewModalAbove(
+  previousModalIndex: number,
+  newModalIndex: number,
+  itemsPerRow: number,
+) {
+  // Calculate the row number of the current item
+  const previousRowNumber = Math.floor(previousModalIndex / itemsPerRow);
+  const newRowNumber = Math.floor(newModalIndex / itemsPerRow);
+
+  if (previousModalIndex === -1 || newModalIndex === -1) {
+    //Modal is opening or closing, not moving
+    return false;
+  } else {
+    return newRowNumber > previousRowNumber;
+  }
 }
 
 export function firstItemInNextRow(
@@ -60,6 +87,7 @@ export function firstItemInNextRow(
     modalIndex >= numberOfItems - numberOfItemsLastRow &&
     numberOfItemsLastRow < itemsPerRow
   ) {
+    return -1;
     return numberOfItems - numberOfItemsLastRow;
   }
 
