@@ -310,8 +310,8 @@ export function Root({ children }: { children?: React.ReactNode }) {
                 ? theme.palette.grey[100]
                 : theme.palette.grey[900],
             flexGrow: 1,
-            height: '100vh',
-            // overflow: 'auto', // Uncommenting this breaks any use of scrollTo()
+            // height: '100vh', // Uncommenting this breaks any use of scrollTo()
+            overflow: 'auto',
           }}
         >
           <Toolbar />
