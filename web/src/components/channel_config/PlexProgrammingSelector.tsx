@@ -104,7 +104,6 @@ export default function PlexProgrammingSelector() {
 
   useEffect(() => {
     if (viewType === 'grid') {
-      const gridContainerWidth = gridContainerRef?.current?.offsetWidth || 0;
       let imageRef;
 
       if (modalGuid === '') {
@@ -137,14 +136,13 @@ export default function PlexProgrammingSelector() {
 
   const scrollToGridItem = (guid: string, index: number) => {
     const selectedElement = gridImageRefs.current[guid];
-    const container = gridContainerRef?.current;
     const includeModalInHeightCalc = isNewModalAbove(
       previousModalIndex,
       index,
       rowSize,
     );
 
-    if (selectedElement && container) {
+    if (selectedElement) {
       // magic number for top bar padding; to do: calc it off ref
       const topBarPadding = 64;
       // New modal is opening in a row above previous modal
