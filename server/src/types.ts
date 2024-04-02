@@ -7,6 +7,8 @@ import { Settings } from './dao/settings.js';
 export type GlobalOptions = {
   database: string;
   force_migration: boolean;
+  log_level: string;
+  verbose?: number;
 };
 
 export type ServerOptions = GlobalOptions & {

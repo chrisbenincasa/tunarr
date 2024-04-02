@@ -18,6 +18,7 @@ import { setGlobalOptions, setServerOptions } from './globals.js';
 import createLogger from './logger.js';
 import { initServer } from './server.js';
 import { ServerOptions } from './types.js';
+import { isProduction } from './util.js';
 
 const logger = createLogger(import.meta);
 
@@ -33,6 +34,14 @@ const maybeEnvPort = () => {
 
 yargs(hideBin(process.argv))
   .scriptName('tunarr')
+  .option('log_level', {
+    type: 'string',
+    default: isProduction ? 'info' : 'debug',
+  })
+  .option('verbose', {
+    alias: 'v',
+    count: true,
+  })
   .option('database', {
     alias: 'd',
     type: 'string',

@@ -6,6 +6,7 @@ import chalk from 'chalk';
 import { isUndefined, join } from 'lodash-es';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { globalOptions } from './globals.js';
 import { isProduction } from './util.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -45,7 +46,7 @@ const hformat = (module: ImportMeta) => {
 
 const createLogger = (module: ImportMeta) => {
   const logger = winston.createLogger({
-    level: process.env.LOG_LEVEL?.toLowerCase() || 'debug',
+    level: globalOptions().log_level,
     format: winston.format.combine(
       winston.format.splat(),
       winston.format.timestamp(),
@@ -62,14 +63,14 @@ const createLogger = (module: ImportMeta) => {
       }),
       new winston.transports.DailyRotateFile({
         filename: process.env.CONFIG_DIRECTORY
-          ? `${process.env.CONFIG_DIRECTORY}/logs/dizquetv-%DATE%.log`
-          : path.join(__dirname, '../config/logs/dizquetv-%DATE%.log'),
+          ? `${process.env.CONFIG_DIRECTORY}/logs/tunarr-%DATE%.log`
+          : path.join(__dirname, '../config/logs/tunarr-%DATE%.log'),
         datePattern: 'YYYY-MM-DD',
         zippedArchive: true,
         maxSize: '20m',
         maxFiles: '7d',
         createSymlink: true,
-        symlinkName: 'dizquetv.log',
+        symlinkName: 'tunarr.log',
       }),
       new winston.transports.DailyRotateFile({
         filename: process.env.CONFIG_DIRECTORY
@@ -90,6 +91,7 @@ const createLogger = (module: ImportMeta) => {
     ],
   });
 
+  // Hook up temporary log level override
   if (process.env.LOG_LEVEL) {
     logger.level = process.env.LOG_LEVEL;
   }

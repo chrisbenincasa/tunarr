@@ -66,6 +66,7 @@ const result = await esbuild.build({
     // in the bundle, even though it's definitely in there...
     // We know we have matching versions, so just override this for "prod"
     'process.env.MIKRO_ORM_ALLOW_VERSION_MISMATCH': 'true',
+    'process.env.NODE_ENV': '"production"',
   },
 });
 

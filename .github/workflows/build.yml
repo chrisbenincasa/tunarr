@@ -30,6 +30,6 @@ jobs:
           push: true
           file: build.Dockerfile
           target: full-stack
-          tags: cbenincasa/tunarr:${{ inputs.tag }}-test
+          tags: chrisbenincasa/tunarr:${{ inputs.tag }}-test
           cache-from: type=gha
           cache-to: type=gha,mode=max

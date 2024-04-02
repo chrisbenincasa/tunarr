@@ -1,17 +1,36 @@
-import once from 'lodash-es/once.js';
-import { GlobalOptions, ServerOptions } from './types.js';
+import { findKey, merge } from 'lodash-es';
 import isUndefined from 'lodash-es/isUndefined.js';
-import { merge } from 'lodash-es';
-import { fileURLToPath } from 'node:url';
+import once from 'lodash-es/once.js';
 import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { GlobalOptions, ServerOptions } from './types.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+const logLevels = {
+  error: 0,
+  warn: 1,
+  info: 2,
+  http: 3,
+  verbose: 4,
+  debug: 5,
+  silly: 6,
+} as const;
 
 let _globalOptions: GlobalOptions | undefined;
 let _serverOptions: ServerOptions | undefined;
 
 export const setGlobalOptions = once((runtimeOptions: GlobalOptions) => {
+  let logLevel: string = runtimeOptions.log_level.toLowerCase();
+  if (!isUndefined(runtimeOptions.verbose) && runtimeOptions.verbose > 0) {
+    const level = Math.max(runtimeOptions.verbose, 4);
+    const levelKey = findKey(logLevels, (value) => value === level);
+    if (!isUndefined(levelKey)) {
+      logLevel = levelKey;
+    }
+  }
+
   _globalOptions = {
     ...runtimeOptions,
     database: resolve(__dirname, runtimeOptions.database),
