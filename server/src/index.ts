@@ -161,4 +161,4 @@ ${chalk.blue('  |_| ')}${chalk.green(' \\___/')}${chalk.yellow(
     },
   )
   .help()
-  .parse();
+  .parseAsync();

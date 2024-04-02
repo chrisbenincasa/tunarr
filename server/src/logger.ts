@@ -6,7 +6,6 @@ import chalk from 'chalk';
 import { isUndefined, join } from 'lodash-es';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { globalOptions } from './globals.js';
 import { isProduction } from './util.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -46,7 +45,7 @@ const hformat = (module: ImportMeta) => {
 
 const createLogger = (module: ImportMeta) => {
   const logger = winston.createLogger({
-    level: globalOptions().log_level,
+    level: process.env.LOG_LEVEL ?? (isProduction ? 'info' : 'debug'),
     format: winston.format.combine(
       winston.format.splat(),
       winston.format.timestamp(),
