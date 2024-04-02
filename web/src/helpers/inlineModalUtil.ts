@@ -4,17 +4,19 @@ export function getImagesPerRow(
   containerWidth: number,
   imageWidth: number,
 ): number {
+  const roundedImageWidth = Math.round(imageWidth * 100) / 100;
+
   if (!imageWidth || !containerWidth) {
     return 9; // some default value
   }
-  return Math.floor(containerWidth / imageWidth);
+
+  return Math.round(((containerWidth / roundedImageWidth) * 100) / 100);
 }
 
 // Estimate the modal height to prevent div collapse while new modal images load
 export function getEstimatedModalHeight(
-  rowSize: number,
+  itemsPerRow: number,
   containerWidth: number,
-  imageContainerWidth: number,
   listSize: number,
   type: PlexMedia['type'] | 'all',
 ): number {
@@ -22,26 +24,24 @@ export function getEstimatedModalHeight(
   if (type === 'season') {
     return 143;
   }
-  // Exit with defaults if container & image width are not provided
-  if (containerWidth === 0 || imageContainerWidth === 0) {
-    return 294; //default modal height for 1 row
-  }
 
-  // const columns = getImagesPerRow(containerWidth, imageContainerWidth);
-  const columns = rowSize;
+  const imageContainerWidth = containerWidth / itemsPerRow;
+
+  // If the container width isn't available yet, just exit and use the approx
+  if (containerWidth === 0) {
+    return (listSize / itemsPerRow) * 294; //299 is approx height of items
+  }
 
   // Magic Numbers
   // to do: eventually grab this data via refs just in case it changes in the future
   const inlineModalTopPadding = 16;
   const imageContainerXPadding = 8;
   const listItemBarContainerHeight = 54;
-
-  const imagewidth = imageContainerWidth - imageContainerXPadding * 2; // 16px padding on each item
-  const heightPerImage = (3 * imagewidth) / 2; // Movie Posters are 2:3
+  const heightPerImage = (3 * imageContainerWidth) / 2; // Movie Posters are 2:3
   const heightPerItem =
     heightPerImage + listItemBarContainerHeight + imageContainerXPadding; // 54px
 
-  const rows = listSize < columns ? 1 : Math.ceil(listSize / columns);
+  const rows = listSize < itemsPerRow ? 1 : Math.ceil(listSize / itemsPerRow);
   //This is min-height so we only need to adjust it for visible rows since we
   //use interesectionObserver to load them in
   const maxRows = rows >= 3 ? 3 : rows;

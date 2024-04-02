@@ -28,16 +28,21 @@ function InlineModal(props: InlineModalProps) {
   const gridItemRef = useRef<HTMLDivElement>(null);
   const inlineModalRef = useRef<HTMLDivElement>(null);
   const darkMode = useStore((state) => state.theme.darkMode);
-  const modalHeight = getEstimatedModalHeight(
-    rowSize,
-    containerWidth,
-    itemWidth,
-    modalChildren?.length || 0,
-    type,
-  );
+  const modalHeight = open
+    ? getEstimatedModalHeight(
+        rowSize,
+        containerWidth,
+        modalChildren?.length || 0,
+        type,
+      )
+    : 0;
 
-  const toggleModal = () => {
-    setIsOpen(!isOpen);
+  const toggleModal = (value?: boolean) => {
+    if (value) {
+      setIsOpen(value);
+    } else {
+      setIsOpen(!isOpen);
+    }
   };
 
   useEffect(() => {
@@ -115,9 +120,14 @@ function InlineModal(props: InlineModalProps) {
         }}
         mountOnEnter
         unmountOnExit
-        sx={{ width: '100%', display: 'grid', gridColumn: '1 / -1' }}
-        onEnter={toggleModal}
-        onExited={toggleModal}
+        sx={{
+          width: '100%',
+          display: 'grid',
+          gridColumn: '1 / -1',
+          minHeight: modalHeight,
+        }}
+        onEnter={() => toggleModal()}
+        onExited={() => toggleModal()}
       >
         <List
           component={'ul'}
@@ -130,7 +140,7 @@ function InlineModal(props: InlineModalProps) {
             justifyContent: 'flex-start',
             backgroundColor: (theme) =>
               darkMode ? theme.palette.grey[800] : theme.palette.grey[400],
-            padding: '0',
+            padding: 0,
             paddingTop: 2,
             minHeight: modalHeight,
           }}
