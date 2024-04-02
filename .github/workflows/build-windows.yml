@@ -35,4 +35,4 @@ jobs:
         run: pnpm turbo bundle
 
       - name: Build Windows exe
-        run: pnpm turbo make-exec --target windows-x64-20.11.1
+        run: pnpm turbo make-exec -- --target windows-x64-20.11.1
