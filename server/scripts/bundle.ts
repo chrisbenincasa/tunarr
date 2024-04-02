@@ -26,7 +26,7 @@ const result = await esbuild.build({
     bundle: 'src/index.ts',
   },
   bundle: true,
-  minify: true,
+  minify: false,
   outdir: 'build',
   // We can't make this mjs yet because mikro-orm breaks
   // when using cached metadata w/ not js/ts suffixes:
@@ -60,6 +60,13 @@ const result = await esbuild.build({
   ],
   keepNames: true, // This is to ensure that Entity class names remain the same
   metafile: true,
+  define: {
+    // Hack to ensure this is set in the resultant bundle
+    // For some reason mikro-orm cannot resolve its own package.json
+    // in the bundle, even though it's definitely in there...
+    // We know we have matching versions, so just override this for "prod"
+    'process.env.MIKRO_ORM_ALLOW_VERSION_MISMATCH': 'true',
+  },
 });
 
 fs.writeFileSync('build/meta.json', JSON.stringify(result.metafile));
