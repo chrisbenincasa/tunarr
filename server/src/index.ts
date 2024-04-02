@@ -15,12 +15,9 @@ import {
 } from './dao/legacyDbMigration.js';
 import { getSettingsRawDb } from './dao/settings.js';
 import { setGlobalOptions, setServerOptions } from './globals.js';
-import createLogger from './logger.js';
 import { initServer } from './server.js';
 import { ServerOptions } from './types.js';
 import { isProduction } from './util.js';
-
-const logger = createLogger(import.meta);
 
 const maybeEnvPort = () => {
   const port = process.env['TUNARR_SERVER_PORT'];
@@ -157,7 +154,7 @@ ${chalk.blue('  |_| ')}${chalk.green(' \\___/')}${chalk.yellow(
       });
     },
     async (argv) => {
-      logger.info('Migrating DB from legacy schema...');
+      console.log('Migrating DB from legacy schema...');
       return await getSettingsRawDb().then((db) =>
         migrateFromLegacyDb(db, argv.entities),
       );
