@@ -16,7 +16,7 @@
     "debug": "tsx watch --tsconfig ./tsconfig.build.json --ignore 'src/streams' --inspect-brk src",
     "dev": "NODE_ENV=development  tsx watch --tsconfig ./tsconfig.build.json --ignore 'build' --ignore 'src/streams' src",
     "make-exec": "tsx scripts/makeExecutable.ts",
-    "make-exec:windows": "tsx scripts/makeExecutable.ts --target windows-x64-20.11.1",
+    "make-exec:windows": "tsx scripts/makeExecutable.ts --target windows-x64-20.11.1 --python python",
     "generate-db-cache": "mikro-orm-esm cache:generate --combined --ts",
     "mikro-orm": "mikro-orm-esm",
     "preinstall": "npx only-allow pnpm",

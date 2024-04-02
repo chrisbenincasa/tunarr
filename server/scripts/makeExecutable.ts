@@ -56,4 +56,5 @@ await compile({
   ],
   python: args.python,
   temp: args.tempdir,
+  verbose: args.target === 'windows-x64-20.11.1',
 });
