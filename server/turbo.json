@@ -9,7 +9,7 @@
       "dependsOn": ["^build"]
     },
     "bundle": {
-      "dependsOn": ["typecheck"]
+      "dependsOn": ["generate-db-cache", "typecheck"]
     },
     "build-dev": {
       "dependsOn": ["^build"]

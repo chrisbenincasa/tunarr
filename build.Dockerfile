@@ -24,12 +24,7 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --prod --frozen-l
 FROM sources AS build-server
 # Install deps
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
-# Unfortunately we can't just have this as part of the turbo build graph
-# because we're relying on this hacky dev/prod mikro-orm config. If we
-# can figure that out, it would boil this down to one command.
-RUN pnpm turbo generate-db-cache
-# Replace the non-cached metadata config with the cache
-#RUN mv server/mikro-orm.prod.config.ts server/mikro-orm.config.ts 
+# Build and bundle
 RUN pnpm turbo --filter=@tunarr/server bundle
 ### End server build ###
 
@@ -37,7 +32,7 @@ RUN pnpm turbo --filter=@tunarr/server bundle
 FROM sources AS build-web
 # Install deps
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
-# Build common modules
+# Build and bundle
 RUN pnpm turbo --filter=@tunarr/web bundle
 
 ### Experimental: Build a SEA
