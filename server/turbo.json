@@ -17,6 +17,10 @@
     "make-exec": {
       "dependsOn": ["bundle"],
       "outputs": ["build/**", "dist/**"]
+    },
+    "make-exec:windows": {
+      "dependsOn": ["bundle"],
+      "outputs": ["build/**", "dist/**"]
     }
   }
 }
