@@ -5,7 +5,8 @@ import { hideBin } from 'yargs/helpers';
 const NODE_VERSION = '20.11.1';
 const OSX_TARGET = `mac-x64-${NODE_VERSION}`;
 const LINUX_TARGET = `linux-x64-${NODE_VERSION}`;
-const ALL_TARGETS = [OSX_TARGET, LINUX_TARGET] as const;
+const WINDOWS_TARGET = `windows-x64-${NODE_VERSION}`;
+const ALL_TARGETS = [OSX_TARGET, LINUX_TARGET, WINDOWS_TARGET] as const;
 
 const args = await yargs(hideBin(process.argv))
   .scriptName('tunarr-make-exec')
@@ -35,6 +36,9 @@ switch (args.target) {
     break;
   case 'linux-x64-20.11.1':
     binaryName = 'tunarr-linux-x64';
+    break;
+  case 'windows-x64-20.11.1':
+    binaryName = 'tunarr-windows-x64.exe';
     break;
 }
 
