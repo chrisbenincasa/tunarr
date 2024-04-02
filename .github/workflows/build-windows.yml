@@ -14,14 +14,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3.2.0
-
-      - name: Build and push
-        uses: docker/build-push-action@v5
+      - name: Install Node.js
+        uses: actions/setup-node@v4
         with:
-          context: .
-          push: false
-          file: ./docker/nexe-windows.Dockerfile
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          node-version: 20.11.1
+
+      - uses: pnpm/action-setup@v3
+        name: Install pnpm
+        with:
+          version: 8.15.4
+          run_install: false
+
+      - name: Install dependencies
+        run: pnpm install -g nexe@next
