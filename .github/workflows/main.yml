@@ -40,11 +40,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Build shared libs
-        run: pnpm run --filter=shared --filter=types build
-
       - name: Build server
-        run: pnpm run --filter=server typecheck
+        run: pnpm turbo typecheck --filter=@tunarr/server
 
       - name: Build web
-        run: pnpm run --filter=web build
+        run: pnpm turbo build --filter=@tunarr/web

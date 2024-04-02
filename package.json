@@ -6,8 +6,10 @@
   "author": "chrisbenincasa",
   "license": "Zlib",
   "scripts": {
-    "preinstall": "npx only-allow pnpm",
-    "dev": "turbo run dev"
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "preinstall": "npx only-allow pnpm"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^6.0.0",
