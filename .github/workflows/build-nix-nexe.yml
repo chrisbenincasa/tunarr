@@ -1,19 +1,25 @@
-name: Build Windows
+name: Build Windows Nexe Binaries
 
 on:
   workflow_dispatch:
-    inputs:
-      tag:
-        required: true
-        type: string
+  workflow_call:
 
 jobs:
   build:
-    runs-on: windows-latest
+    strategy:
+      matrix:
+        os:
+          - name: macos-latest
+            binary_name: macos-x64
+          - name: ubuntu-latest
+            binary_name: linux-x64
+        node_version: [20.11.1]
+    runs-on: ${{matrix.os.name}}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Python and NASM are required for compiling Node
       - name: Install Python
         uses: actions/setup-python@v5
         with:
@@ -35,43 +41,33 @@ jobs:
       - name: Install nexe
         run: pnpm install -g nexe@next
 
-      # - name: Install dependencies
-      #   run: pnpm install
-
-      # - name: Build Tunarr
-      #   run: pnpm turbo bundle
-
       - name: Retrieve cached build
         id: cache-nexe-node-restore
         uses: actions/cache/restore@v4
         with:
-          path: .\windows-x64-20.11.1.exe
-          key: nexe-windows-x64-20.11.1
+          path: ./${{matrix.os.binary_name}}-${{matrix.node_version}}
+          key: nexe-${{matrix.os.binary_name}}-${{matrix.node_version}}
 
       - name: Build Windows exe
         if: steps.cache-nexe-node-restore.outputs.cache-hit != 'true'
-        run: nexe -t windows-x64-20.11.1 --no-bundle --build --name dummy.exe --verbose -i ./server/scripts/dummy-script.js
+        run: nexe --temp /var/nexe -t ${{matrix.os.binary_name}}-${{matrix.node_version}} --no-bundle --build --name dummy.exe --verbose -i ./server/scripts/dummy-script.js
 
       - name: Copy Node binary
         if: steps.cache-nexe-node-restore.outputs.cache-hit != 'true'
-        run: xcopy C:\Users\runneradmin\.nexe\20.11.1\out\Release\node.exe .\
-
-      - name: Rename Node binary
-        if: steps.cache-nexe-node-restore.outputs.cache-hit != 'true'
-        run: ren node.exe windows-x64-20.11.1.exe
+        run: cp /var/nexe/${{matrix.node_version}}/out/Release/node ./${{matrix.os.binary_name}}-${{matrix.node_version}}
 
       - name: Save Node binary to cache
         id: cache-nexe-node-save
         uses: actions/cache/save@v4
         with:
           path: |
-            .\windows-x64-20.11.1.exe
+            ./${{matrix.os.binary_name}}-${{matrix.node_version}}
           key: ${{ steps.cache-nexe-node-restore.outputs.cache-primary-key }}
 
-      - name: Upload pre-built Windows nexe
+      - name: Upload pre-built Nexe binary
         uses: softprops/action-gh-release@v2
         with:
-          name: nexe-windows-prebuild-20.11.1
+          name: Nexe Prebuilt Binaries
           tag_name: nexe-prebuild
           files: |
-            windows-x64-20.11.1.exe
+            ./${{matrix.os.binary_name}}-${{matrix.node_version}}

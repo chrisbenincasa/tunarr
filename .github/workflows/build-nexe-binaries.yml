@@ -2,10 +2,6 @@ name: Build Binaries
 
 on:
   workflow_dispatch:
-    inputs:
-      tag:
-        required: true
-        type: string
 
 jobs:
   build:
