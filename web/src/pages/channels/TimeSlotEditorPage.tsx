@@ -19,16 +19,13 @@ import {
   Typography,
 } from '@mui/material';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { dayjsMod, scheduleTimeSlots } from '@tunarr/shared';
 import { ChannelProgram, isContentProgram } from '@tunarr/types';
 import {
   TimeSlot,
   TimeSlotProgramming,
   TimeSlotSchedule,
-  UpdateChannelProgrammingRequest,
 } from '@tunarr/types/api';
-import { ZodiosError } from '@zodios/core';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
@@ -62,9 +59,9 @@ import {
   flexOptions,
   padOptions,
 } from '../../components/slot_scheduler/commonSlotSchedulerOptions.ts';
-import { apiClient } from '../../external/api.ts';
 import { zipWithIndex } from '../../helpers/util.ts';
 import { usePreloadedChannelEdit } from '../../hooks/usePreloadedChannel.ts';
+import { useUpdateLineup } from '../../hooks/useUpdateLineup.ts';
 import { updateCurrentChannel } from '../../store/channelEditor/actions.ts';
 import { UIChannelProgram } from '../../types/index.ts';
 
@@ -105,11 +102,6 @@ function rotateArrayRight<T>(arr: T[], times: number): T[] {
 }
 
 type TimeSlotForm = Omit<TimeSlotSchedule, 'timeZoneOffset' | 'type'>;
-
-type MutateArgs = {
-  channelId: string;
-  lineupRequest: UpdateChannelProgrammingRequest;
-};
 
 const latenessOptions: DropdownOption<number>[] = [
   dayjs.duration(5, 'minutes'),
@@ -361,26 +353,7 @@ export default function TimeSlotEditorPage() {
     channel?.startTime ?? dayjs().unix() * 1000,
   );
 
-  const queryClient = useQueryClient();
-
-  const updateLineupMutation = useMutation({
-    mutationFn: ({ channelId, lineupRequest }: MutateArgs) => {
-      return apiClient.post('/api/channels/:id/programming', lineupRequest, {
-        params: { id: channelId },
-      });
-    },
-    onSuccess: async (_, { channelId }) => {
-      await queryClient.invalidateQueries({
-        queryKey: ['channels', channelId],
-        exact: false,
-      });
-    },
-    onError: (error) => {
-      if (error instanceof ZodiosError) {
-        console.error(error.message, error.data, error.cause);
-      }
-    },
-  });
+  const updateLineupMutation = useUpdateLineup();
 
   const programOptions: ProgramOption[] = useMemo(() => {
     const contentPrograms = filter(newLineup, isContentProgram);
@@ -419,12 +392,6 @@ export default function TimeSlotEditorPage() {
   const currentPeriod = watch('period');
   const currentSlots = watch('slots');
 
-  const schedule: TimeSlotSchedule = {
-    ...getValues(),
-    timeZoneOffset: new Date().getTimezoneOffset(),
-    type: 'time',
-  };
-
   const [perfSnackbarDetails, setPerfSnackbarDetails] = useState<{
     ms: number;
     numShows: number;
@@ -435,6 +402,12 @@ export default function TimeSlotEditorPage() {
   >(undefined);
 
   const onSave = () => {
+    const schedule: TimeSlotSchedule = {
+      ...getValues(),
+      timeZoneOffset: new Date().getTimezoneOffset(),
+      type: 'time',
+    };
+
     // Find programs that have active slots
     const filteredLineup = filter(newLineup, (item) =>
       lineupItemAppearsInSchedule(getValues('slots'), item),
@@ -529,7 +502,14 @@ export default function TimeSlotEditorPage() {
 
   const calculateSlots = () => {
     performance.mark('guide-start');
-    scheduleTimeSlots(schedule, newLineup)
+    scheduleTimeSlots(
+      {
+        ...getValues(),
+        timeZoneOffset: new Date().getTimezoneOffset(),
+        type: 'time',
+      },
+      newLineup,
+    )
       .then((res) => {
         performance.mark('guide-end');
         const { duration: ms } = performance.measure(
