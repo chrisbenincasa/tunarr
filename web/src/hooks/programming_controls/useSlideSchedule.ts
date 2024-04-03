@@ -2,7 +2,7 @@ import { setChannelStartTime } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
 import { materializedProgramListSelector } from '../../store/selectors.ts';
 
-const useSlide = () => {
+export const useSlideSchedule = () => {
   const channel = useStore(({ channelEditor }) => channelEditor.currentEntity);
   const programs = useStore(materializedProgramListSelector);
   return (amount: number) => {
