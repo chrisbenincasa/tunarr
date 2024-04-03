@@ -56,4 +56,4 @@ jobs:
           name: nexe-windows-prebuild-20.11.1
           tag_name: nexe-prebuild
           files: |
-            windows-x64-20.11.1
+            windows-x64-20.11.1.exe
