@@ -140,6 +140,7 @@ export default function ChannelPropertiesEditor({ isNew }: Props) {
                   slotProps={{
                     textField: { margin: 'normal', fullWidth: true },
                   }}
+                  disablePast
                   value={dayjs(field.value)}
                   onChange={(newDateTime) =>
                     field.onChange((newDateTime ?? dayjs()).unix() * 1000)
