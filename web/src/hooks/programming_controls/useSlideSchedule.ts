@@ -13,11 +13,11 @@ export const useSlideSchedule = () => {
 };
 
 export const useFastForwardSchedule = () => {
-  const slide = useSlide();
+  const slide = useSlideSchedule();
   return (amount: number) => slide(amount < 0 ? amount : -amount);
 };
 
 export const useRewindSchedule = () => {
-  const slide = useSlide();
+  const slide = useSlideSchedule();
   return (amount: number) => slide(Math.abs(amount));
 };

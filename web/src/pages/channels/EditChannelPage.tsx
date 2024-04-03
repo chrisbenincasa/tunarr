@@ -4,7 +4,6 @@ import Paper from '@mui/material/Paper';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
-import { useQueryClient } from '@tanstack/react-query';
 import { SaveChannelRequest } from '@tunarr/types';
 import { usePrevious } from '@uidotdev/usehooks';
 import { keys, some } from 'lodash-es';
@@ -106,8 +105,6 @@ export default function EditChannelPage({ isNew }: Props) {
 
   const handleChange = (_: React.SyntheticEvent, newValue: TabValues) =>
     setCurrentTab(newValue);
-
-  const queryClient = useQueryClient();
 
   const formMethods = useForm<SaveChannelRequest>({
     mode: 'onChange',
