@@ -218,7 +218,7 @@ export default function EditChannelPage({ isNew }: Props) {
                 onSubmit={formMethods.handleSubmit(onSubmit, onInvalid)}
               >
                 <TabPanel value="properties" currentValue={currentTab}>
-                  <ChannelPropertiesEditor />
+                  <ChannelPropertiesEditor isNew={isNew} />
                 </TabPanel>
                 <TabPanel value="flex" currentValue={currentTab}>
                   <ChannelFlexConfig />

@@ -1,6 +1,8 @@
 import { Box, Snackbar, TextField } from '@mui/material';
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { Channel } from '@tunarr/types';
 import { usePrevious } from '@uidotdev/usehooks';
+import dayjs from 'dayjs';
 import { isEmpty } from 'lodash-es';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
@@ -11,7 +13,11 @@ import ChannelEditActions from './ChannelEditActions.tsx';
 
 const DefaultIconPath = '/tunarr.png';
 
-export default function ChannelPropertiesEditor() {
+type Props = {
+  isNew: boolean;
+};
+
+export default function ChannelPropertiesEditor({ isNew }: Props) {
   const imgRef = useRef<HTMLImageElement | null>(null);
   const channel = useStore((s) => s.channelEditor.currentEntity);
   const prevChannel = usePrevious(channel);
@@ -123,6 +129,25 @@ export default function ChannelPropertiesEditor() {
               />
             )}
           />
+
+          {isNew && (
+            <Controller
+              name="startTime"
+              control={control}
+              render={({ field }) => (
+                <DateTimePicker
+                  label="Programming Start"
+                  slotProps={{
+                    textField: { margin: 'normal', fullWidth: true },
+                  }}
+                  value={dayjs(field.value)}
+                  onChange={(newDateTime) =>
+                    field.onChange((newDateTime ?? dayjs()).unix() * 1000)
+                  }
+                />
+              )}
+            />
+          )}
 
           <Box sx={{ display: 'flex', alignItems: 'end' }}>
             <Box
