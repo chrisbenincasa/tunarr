@@ -45,11 +45,12 @@ jobs:
         run: nexe -t windows-x64-20.11.1 --no-bundle --build --name dummy.exe --verbose -i ./server/scripts/dummy-script.js
 
       - name: Copy node binary
-        run: xcopy C:\Users\runneradmin\.nexe\20.11.1\out\Release\node.exe windows-x64-20.11.1
+        run: xcopy C:\Users\runneradmin\.nexe\20.11.1\out\Release\node.exe .\windows-x64-20.11.1.exe
 
       - name: Upload pre-built Windows nexe
         uses: softprops/action-gh-release@v2
         with:
           name: nexe-windows-prebuild-20.11.1
+          tag_name: nexe-prebuild
           files: |
             windows-x64-20.11.1
