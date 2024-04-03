@@ -317,7 +317,7 @@ importers:
         version: 9.4.1(patch_hash=254pvnpgpcwoswa4ncfq4tq6su)(typescript@5.4.3)
       tsup:
         specifier: ^8.0.2
-        version: 8.0.2(typescript@5.4.3)
+        version: 8.0.2(@microsoft/api-extractor@7.43.0)(typescript@5.4.3)
       typescript:
         specifier: ^5.4.3
         version: 5.4.3
@@ -345,7 +345,7 @@ importers:
         version: 5.0.5
       tsup:
         specifier: ^8.0.2
-        version: 8.0.2(typescript@5.4.3)
+        version: 8.0.2(@microsoft/api-extractor@7.43.0)(typescript@5.4.3)
       typescript:
         specifier: ^5.4.3
         version: 5.4.3
@@ -1856,6 +1856,50 @@ packages:
     resolution: {integrity: sha512-Xs/4RZltsAL7pkvaNStUQt7netTkyxrS0K+RILcVr3TRMS/ToOg4I6uNfhB9SlGsnWBym4U+EaXq0f0cEMNkHA==}
     engines: {node: '>=8'}
     dev: false
+
+  /@microsoft/api-extractor-model@7.28.13:
+    resolution: {integrity: sha512-39v/JyldX4MS9uzHcdfmjjfS6cYGAoXV+io8B5a338pkHiSt+gy2eXQ0Q7cGFJ7quSa1VqqlMdlPrB6sLR/cAw==}
+    dependencies:
+      '@microsoft/tsdoc': 0.14.2
+      '@microsoft/tsdoc-config': 0.16.2
+      '@rushstack/node-core-library': 4.0.2
+    transitivePeerDependencies:
+      - '@types/node'
+    dev: true
+
+  /@microsoft/api-extractor@7.43.0:
+    resolution: {integrity: sha512-GFhTcJpB+MI6FhvXEI9b2K0snulNLWHqC/BbcJtyNYcKUiw7l3Lgis5ApsYncJ0leALX7/of4XfmXk+maT111w==}
+    hasBin: true
+    dependencies:
+      '@microsoft/api-extractor-model': 7.28.13
+      '@microsoft/tsdoc': 0.14.2
+      '@microsoft/tsdoc-config': 0.16.2
+      '@rushstack/node-core-library': 4.0.2
+      '@rushstack/rig-package': 0.5.2
+      '@rushstack/terminal': 0.10.0
+      '@rushstack/ts-command-line': 4.19.1
+      lodash: 4.17.21
+      minimatch: 3.0.8
+      resolve: 1.22.8
+      semver: 7.5.4
+      source-map: 0.6.1
+      typescript: 5.4.2
+    transitivePeerDependencies:
+      - '@types/node'
+    dev: true
+
+  /@microsoft/tsdoc-config@0.16.2:
+    resolution: {integrity: sha512-OGiIzzoBLgWWR0UdRJX98oYO+XKGf7tiK4Zk6tQ/E4IJqGCe7dvkTvgDZV5cFJUzLGDOjeAXrnZoA6QkVySuxw==}
+    dependencies:
+      '@microsoft/tsdoc': 0.14.2
+      ajv: 6.12.6
+      jju: 1.4.0
+      resolve: 1.19.0
+    dev: true
+
+  /@microsoft/tsdoc@0.14.2:
+    resolution: {integrity: sha512-9b8mPpKrfeGRuhFH5iO1iwCLeIIsV6+H1sRfxbkoGXIyQE2BTsPd9zqSqQJ+pv5sJ/hT5M1zvOFL02MnEezFug==}
+    dev: true
 
   /@mikro-orm/better-sqlite@6.1.12(@mikro-orm/core@6.1.12):
     resolution: {integrity: sha512-7uupNjdoi8FgCfZ8sacC1Pau0xkOO+oRcOtQpa1Ddyh/8em/CMuPbjCzY04HrfAU0JPCL9KGDdL+4hleB3GH5Q==}
@@ -9485,6 +9529,22 @@ packages:
     resolution: {integrity: sha512-Y/arvbn+rrz3JCKl9C4kVNfTfSm2/mEp5FSz5EsZSANGPSlQrpRI5M4PKF+mJnE52jOO90PnPSc3Ur3bTQw0gA==}
     dev: true
 
+  /ts-loader@9.5.1(typescript@5.4.3)(webpack@5.91.0):
+    resolution: {integrity: sha512-rNH3sK9kGZcH9dYzC7CewQm4NtxJTjSEVRJ2DyBZR7f8/wcta+iV44UPCXc5+nzDzivKtlzV6c9P4e+oFhDLYg==}
+    engines: {node: '>=12.0.0'}
+    peerDependencies:
+      typescript: '*'
+      webpack: ^5.0.0
+    dependencies:
+      chalk: 4.1.2
+      enhanced-resolve: 5.16.0
+      micromatch: 4.0.5
+      semver: 7.5.4
+      source-map: 0.7.4
+      typescript: 5.4.3
+      webpack: 5.91.0(esbuild@0.19.5)(webpack-cli@5.1.4)
+    dev: true
+
   /ts-morph@22.0.0:
     resolution: {integrity: sha512-M9MqFGZREyeb5fTl6gNHKZLqBQA0TjA1lea+CR48R8EBTDuWrNqW6ccC5QvjNR4s6wDumD3LTCjOFSp9iwlzaw==}
     dependencies:
@@ -9569,7 +9629,7 @@ packages:
   /tslib@2.6.2:
     resolution: {integrity: sha512-AEYxH93jGFPn/a2iVAwW87VuUIkR1FVUKB77NwMF7nBTDkDrrT/Hpt/IrCJ0QXhW27jTBDcf5ZY7w6RiqTMw2Q==}
 
-  /tsup@8.0.2(ts-node@10.9.2)(typescript@5.4.3):
+  /tsup@8.0.2(@microsoft/api-extractor@7.43.0)(typescript@5.4.3):
     resolution: {integrity: sha512-NY8xtQXdH7hDUAZwcQdY/Vzlw9johQsaqf7iwZ6g1DOUlFYQ5/AtVAjTvihhEyeRlGo4dLRVHtrRaL35M1daqQ==}
     engines: {node: '>=18'}
     hasBin: true
@@ -9609,7 +9669,7 @@ packages:
       - ts-node
     dev: true
 
-  /tsup@8.0.2(typescript@5.4.3):
+  /tsup@8.0.2(ts-node@10.9.2)(typescript@5.4.3):
     resolution: {integrity: sha512-NY8xtQXdH7hDUAZwcQdY/Vzlw9johQsaqf7iwZ6g1DOUlFYQ5/AtVAjTvihhEyeRlGo4dLRVHtrRaL35M1daqQ==}
     engines: {node: '>=18'}
     hasBin: true
@@ -9628,6 +9688,7 @@ packages:
       typescript:
         optional: true
     dependencies:
+      '@microsoft/api-extractor': 7.43.0
       bundle-require: 4.0.2(esbuild@0.19.12)
       cac: 6.7.14
       chokidar: 3.5.3
@@ -9776,6 +9837,12 @@ packages:
   /typescript@4.9.5:
     resolution: {integrity: sha512-1FXk9E2Hm+QzZQ7z+McJiHL4NW1F2EzMu9Nq9i3zAaGqibafqYwCVU6WyWAuyQRRzOlxou8xZSyXLEN8oKj24g==}
     engines: {node: '>=4.2.0'}
+    hasBin: true
+    dev: true
+
+  /typescript@5.4.2:
+    resolution: {integrity: sha512-+2/g0Fds1ERlP6JsakQQDXjZdZMM+rqpamFZJEKh4kwTIn3iDkgKtby0CeNd5ATNZ4Ry1ax15TMx0W2V+miizQ==}
+    engines: {node: '>=14.17'}
     hasBin: true
     dev: true
 
@@ -10167,9 +10234,9 @@ packages:
       lodash: 4.17.21
       source-map-loader: 5.0.0(webpack@5.91.0)
       string-replace-loader: 3.1.0(webpack@5.91.0)
-      ts-loader: 9.5.1(typescript@5.4.2)(webpack@5.91.0)
+      ts-loader: 9.5.1(typescript@5.4.3)(webpack@5.91.0)
       tslib: 2.6.2
-      typescript: 5.4.2
+      typescript: 5.4.3
       webpack: 5.91.0(esbuild@0.19.5)(webpack-cli@5.1.4)
       webpack-cli: 5.1.4(webpack@5.91.0)
     transitivePeerDependencies:
