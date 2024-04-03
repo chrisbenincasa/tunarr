@@ -10,7 +10,8 @@ import { FFMPEGInfo } from '../ffmpegInfo.js';
 import { serverOptions } from '../globals.js';
 import createLogger from '../logger.js';
 import { Plex } from '../plex.js';
-import { scheduledJobsById } from '../services/scheduler.js';
+import { GlobalScheduler } from '../services/scheduler.js';
+import { UpdateXmlTvTask } from '../tasks/updateXmlTvTask.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { fileExists } from '../util/fsUtil.js';
 import { channelsApi } from './channelsApi.js';
@@ -108,7 +109,9 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
   fastify.get('/xmltv-last-refresh', (_req, res) => {
     try {
       return res.send({
-        value: scheduledJobsById['update-xmltv']?.lastExecution?.valueOf(),
+        value: GlobalScheduler.getScheduledJob(
+          UpdateXmlTvTask.ID,
+        ).lastExecution?.valueOf(),
       });
     } catch (err) {
       logger.error(err);
@@ -139,7 +142,7 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
 
   // Force an XMLTV refresh
   fastify.post('/xmltv/refresh', async (_, res) => {
-    await scheduledJobsById['update-xmltv']?.runNow();
+    await GlobalScheduler.getScheduledJob(UpdateXmlTvTask.ID).runNow(false);
     return res.status(200);
   });
 

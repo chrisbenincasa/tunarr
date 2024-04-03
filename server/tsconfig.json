@@ -31,16 +31,18 @@
         "noErrorTruncation": true
     },
     "files": [
-        "src/types/fastify.d.ts"
+        "src/types/fastify.d.ts",
     ],
     "include": [
         "./src/**/*.ts",
         "./scripts/**/*.ts",
         "__tests__/**/*",
-        "mikro-orm.prod.config.ts"
+        "mikro-orm.prod.config.ts",
+        "../types/src/**/*.ts",
     ],
     "exclude": [
         "./build/**/*",
+        "../types/build/**/*",
         "./**/*.ignore.ts",
         "./streams/**/*.ts"
     ]

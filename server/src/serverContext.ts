@@ -6,6 +6,7 @@ import { ChannelDB } from './dao/channelDb.js';
 import { CustomShowDB } from './dao/customShowDb.js';
 import { FillerDB } from './dao/fillerDb.js';
 import { PlexServerDB } from './dao/plexServerDb.js';
+import { ProgramDB } from './dao/programDB.js';
 import { Settings, getSettings } from './dao/settings.js';
 import { serverOptions } from './globals.js';
 import { HdhrService } from './hdhr.js';
@@ -30,6 +31,7 @@ export type ServerContext = {
   xmltv: XmlTvWriter;
   plexServerDB: PlexServerDB;
   settings: Settings;
+  programDB: ProgramDB;
 };
 
 export const serverContext: () => Promise<ServerContext> = once(async () => {
@@ -77,6 +79,7 @@ export const serverContext: () => Promise<ServerContext> = once(async () => {
     xmltv,
     plexServerDB: new PlexServerDB(channelDB),
     settings,
+    programDB: new ProgramDB(),
   };
 });
 

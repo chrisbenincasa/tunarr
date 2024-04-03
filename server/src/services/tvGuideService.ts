@@ -156,7 +156,7 @@ export class TVGuideService {
    * @returns The current cached guide
    */
   async get() {
-    if (this.cachedGuide !== null) {
+    if (!isNil(this.cachedGuide)) {
       return this.cachedGuide;
     }
 
@@ -232,10 +232,12 @@ export class TVGuideService {
       );
     }
 
-    const { channel, programs } = this.cachedGuide[channelId];
-    if (isNil(channel)) {
+    const channelAndLineup = this.cachedGuide[channelId];
+    if (isNil(channelAndLineup)) {
       return;
     }
+
+    const { channel, programs } = channelAndLineup;
 
     const result: ChannelLineup = {
       icon: channel.icon,

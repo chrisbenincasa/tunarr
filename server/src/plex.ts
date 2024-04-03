@@ -12,6 +12,7 @@ import { XMLParser } from 'fast-xml-parser';
 import { isNil, isUndefined } from 'lodash-es';
 import NodeCache from 'node-cache';
 import querystring, { ParsedUrlQueryInput } from 'querystring';
+import { MarkOptional } from 'ts-essentials';
 import { PlexServerSettings } from './dao/entities/PlexServerSettings.js';
 import createLogger from './logger.js';
 import { Maybe } from './types.js';
@@ -28,9 +29,12 @@ type AxiosConfigWithMetadata = InternalAxiosRequestConfig & {
 
 const logger = createLogger(import.meta);
 
-type PlexApiOptions = Pick<
-  EntityDTO<PlexServerSettings>,
-  'accessToken' | 'uri'
+type PlexApiOptions = MarkOptional<
+  Pick<
+    EntityDTO<PlexServerSettings>,
+    'accessToken' | 'uri' | 'name' | 'clientIdentifier'
+  >,
+  'clientIdentifier'
 >;
 
 class PlexApiFactoryImpl {
@@ -51,10 +55,12 @@ class PlexApiFactoryImpl {
 export const PlexApiFactory = new PlexApiFactoryImpl();
 
 export class Plex {
+  #opts: PlexApiOptions;
   private axiosInstance: AxiosInstance;
   private _accessToken: string;
 
   constructor(opts: PlexApiOptions) {
+    this.#opts = opts;
     this._accessToken = opts.accessToken;
     const uri = opts.uri.endsWith('/')
       ? opts.uri.slice(0, opts.uri.length - 1)
@@ -104,6 +110,10 @@ export class Plex {
         throw err;
       },
     );
+  }
+
+  get serverName() {
+    return this.#opts.name;
   }
 
   private async doRequest<T>(req: AxiosRequestConfig): Promise<Maybe<T>> {

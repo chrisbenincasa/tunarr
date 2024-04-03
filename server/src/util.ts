@@ -96,10 +96,14 @@ export function groupByUniqAndMap<
 }
 
 export async function mapAsyncSeq<T, U>(
-  seq: ReadonlyArray<T>,
+  seq: T[] | null | undefined,
   ms: number | undefined,
   itemFn: (item: T) => Promise<U>,
 ): Promise<U[]> {
+  if (isNil(seq)) {
+    return [];
+  }
+
   const all = await seq.reduce(
     async (prev, item) => {
       const last = await prev;
@@ -175,7 +179,7 @@ Array.prototype.mapAsyncSeq = async function <T, U>(
   itemFn: (item: T) => Promise<U>,
   ms: number | undefined,
 ) {
-  return mapAsyncSeq(this as ReadonlyArray<T>, ms, itemFn);
+  return mapAsyncSeq(this as T[], ms, itemFn);
 };
 
 export function time<T>(

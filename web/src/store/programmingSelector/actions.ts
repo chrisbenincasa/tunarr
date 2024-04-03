@@ -1,4 +1,5 @@
 import { PlexServerSettings } from '@tunarr/types';
+import { PlexFilter, PlexSort } from '@tunarr/types/api';
 import {
   PlexLibrarySection,
   PlexMedia,
@@ -8,8 +9,6 @@ import {
 import { map, reject, some } from 'lodash-es';
 import useStore from '..';
 import {
-  PlexFilter,
-  PlexSort,
   buildPlexFilterKey,
   buildPlexSortKey,
 } from '../../helpers/plexSearchUtil.ts';

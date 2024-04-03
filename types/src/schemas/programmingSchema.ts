@@ -1,5 +1,8 @@
 import z from 'zod';
-import { LineupScheduleSchema } from '../api/Scheduling.js';
+import {
+  DynamicContentConfigSchema,
+  LineupScheduleSchema,
+} from '../api/Scheduling.js';
 import {
   PlexEpisodeSchema,
   PlexMovieSchema,
@@ -173,4 +176,5 @@ export const CondensedChannelProgrammingSchema = z.object({
   lineup: z.array(CondensedChannelProgramSchema),
   startTimeOffsets,
   schedule: LineupScheduleSchema.optional(),
+  dynamicContentConfig: DynamicContentConfigSchema.optional(),
 });

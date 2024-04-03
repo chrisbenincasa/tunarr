@@ -1,6 +1,6 @@
 import { BasicIdParamSchema } from '@tunarr/types/api';
 import { ProgramSchema } from '@tunarr/types/schemas';
-import { chunk, every, find, isNil, isUndefined, reduce } from 'lodash-es';
+import { every, find, isNil, isUndefined } from 'lodash-es';
 import z from 'zod';
 import { getEm } from '../dao/dataSource.js';
 import {
@@ -10,7 +10,6 @@ import {
 } from '../dao/entities/Program.js';
 import { Plex } from '../plex.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
-import { flatMapAsyncSeq, groupByFunc } from '../util.js';
 
 const LookupExternalProgrammingSchema = z.object({
   externalId: z
@@ -195,38 +194,9 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      const em = getEm();
-      const allIds = [...req.body.externalIds];
-      const results = await flatMapAsyncSeq(
-        chunk(allIds, 25),
-        async (idChunk) => {
-          return await reduce(
-            idChunk,
-            (acc, [ps, es, ek]) => {
-              return acc.orWhere({
-                sourceType: programSourceTypeFromString(ps)!,
-                externalSourceId: es,
-                externalKey: ek,
-              });
-            },
-            em
-              .qb(Program)
-              .select([
-                'uuid',
-                'sourceType',
-                'externalSourceId',
-                'externalKey',
-              ]),
-          );
-        },
+      return res.send(
+        await req.serverCtx.programDB.lookupByExternalIds(req.body.externalIds),
       );
-      const all = groupByFunc(
-        results,
-        (r) => r.uniqueId(),
-        (r) => r.toDTO(),
-      );
-
-      return res.send(all);
     },
   );
 };

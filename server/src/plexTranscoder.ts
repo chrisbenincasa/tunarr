@@ -79,7 +79,7 @@ export class PlexTranscoder {
 
   constructor(
     clientId: string,
-    server: DeepReadonly<PlexServerSettings>,
+    server: PlexServerSettings,
     settings: DeepReadonly<PlexStreamSettings>,
     channel: ContextChannel,
     lineupItem: ContentBackedStreamLineupItem,

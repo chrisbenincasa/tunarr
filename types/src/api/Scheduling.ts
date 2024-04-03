@@ -1,28 +1,33 @@
 import { z } from 'zod';
+import { PlexSearchSchema } from './plexSearch.js';
 
-type Alias<T> = T & { _?: never };
+//
+// Time slots
+//
 
 export const MovieProgrammingTimeSlotSchema = z.object({
   type: z.literal('movie'),
 });
+
 export const ShowProgrammingTimeSlotSchema = z.object({
   type: z.literal('show'),
   showId: z.string(),
 });
+
 export const FlexProgrammingTimeSlotSchema = z.object({
   type: z.literal('flex'),
 });
 
-export type MovieProgrammingTimeSlot = Alias<
-  z.infer<typeof MovieProgrammingTimeSlotSchema>
+export type MovieProgrammingTimeSlot = z.infer<
+  typeof MovieProgrammingTimeSlotSchema
 >;
 
-export type ShowProgrammingTimeSlot = Alias<
-  z.infer<typeof ShowProgrammingTimeSlotSchema>
+export type ShowProgrammingTimeSlot = z.infer<
+  typeof ShowProgrammingTimeSlotSchema
 >;
 
-export type FlexProgrammingTimeSlot = Alias<
-  z.infer<typeof FlexProgrammingTimeSlotSchema>
+export type FlexProgrammingTimeSlot = z.infer<
+  typeof FlexProgrammingTimeSlotSchema
 >;
 
 export function slotProgrammingId(slot: TimeSlotProgramming) {
@@ -39,9 +44,7 @@ export const TimeSlotProgrammingSchema = z.discriminatedUnion('type', [
   FlexProgrammingTimeSlotSchema,
 ]);
 
-export type TimeSlotProgramming = Alias<
-  z.infer<typeof TimeSlotProgrammingSchema>
->;
+export type TimeSlotProgramming = z.infer<typeof TimeSlotProgrammingSchema>;
 
 export const TimeSlotSchema = z.object({
   order: z.union([z.literal('next'), z.literal('shuffle')]),
@@ -49,7 +52,7 @@ export const TimeSlotSchema = z.object({
   startTime: z.number(), // Offset from midnight in millis
 });
 
-export type TimeSlot = Alias<z.infer<typeof TimeSlotSchema>>;
+export type TimeSlot = z.infer<typeof TimeSlotSchema>;
 
 export const TimeSlotScheduleSchema = z.object({
   type: z.literal('time'),
@@ -63,14 +66,18 @@ export const TimeSlotScheduleSchema = z.object({
   startTomorrow: z.boolean().optional(),
 });
 
-export type TimeSlotSchedule = Alias<z.infer<typeof TimeSlotScheduleSchema>>;
+export type TimeSlotSchedule = z.infer<typeof TimeSlotScheduleSchema>;
+
+//
+// Random slots
+//
 
 export const MovieProgrammingRandomSlotSchema = z.object({
   type: z.literal('movie'),
 });
 
-export type MovieProgrammingRandomSlot = Alias<
-  z.infer<typeof MovieProgrammingRandomSlotSchema>
+export type MovieProgrammingRandomSlot = z.infer<
+  typeof MovieProgrammingRandomSlotSchema
 >;
 
 export const ShowProgrammingRandomSlotSchema = z.object({
@@ -78,16 +85,16 @@ export const ShowProgrammingRandomSlotSchema = z.object({
   showId: z.string(),
 });
 
-export type ShowProgrammingRandomSlot = Alias<
-  z.infer<typeof ShowProgrammingRandomSlotSchema>
+export type ShowProgrammingRandomSlot = z.infer<
+  typeof ShowProgrammingRandomSlotSchema
 >;
 
 export const FlexProgrammingRandomSlotSchema = z.object({
   type: z.literal('flex'),
 });
 
-export type FlexProgrammingRandomSlot = Alias<
-  z.infer<typeof FlexProgrammingRandomSlotSchema>
+export type FlexProgrammingRandomSlot = z.infer<
+  typeof FlexProgrammingRandomSlotSchema
 >;
 
 export const RandomSlotProgrammingSchema = z.discriminatedUnion('type', [
@@ -96,9 +103,7 @@ export const RandomSlotProgrammingSchema = z.discriminatedUnion('type', [
   FlexProgrammingRandomSlotSchema,
 ]);
 
-export type RandomSlotProgramming = Alias<
-  z.infer<typeof RandomSlotProgrammingSchema>
->;
+export type RandomSlotProgramming = z.infer<typeof RandomSlotProgrammingSchema>;
 
 export const RandomSlotSchema = z.object({
   order: z.string().optional(), // Present for show slots only
@@ -110,7 +115,7 @@ export const RandomSlotSchema = z.object({
   programming: RandomSlotProgrammingSchema,
 });
 
-export type RandomSlot = Alias<z.infer<typeof RandomSlotSchema>>;
+export type RandomSlot = z.infer<typeof RandomSlotSchema>;
 
 export const RandomSlotScheduleSchema = z.object({
   type: z.literal('random'),
@@ -124,15 +129,71 @@ export const RandomSlotScheduleSchema = z.object({
   periodMs: z.number().optional(),
 });
 
-// This is used on the frontend too, we will move common
-// types eventually.
-export type RandomSlotSchedule = Alias<
-  z.infer<typeof RandomSlotScheduleSchema>
+export type RandomSlotSchedule = z.infer<typeof RandomSlotScheduleSchema>;
+
+//
+// Dynamic content
+//
+export const DynamicContentCronUpdaterConfigSchema = z.object({
+  // Unique ID to track scheduling. Not for use outside of bookkeeping
+  _id: z.string(),
+  type: z.literal('cron'),
+  // Cron schedule string compatible with node-schedule
+  schedule: z.string(),
+});
+
+export type DynamicContentCronUpdaterConfig = z.infer<
+  typeof DynamicContentCronUpdaterConfigSchema
 >;
 
+export const DynamicContentUpdaterConfigSchema = z.discriminatedUnion('type', [
+  DynamicContentCronUpdaterConfigSchema,
+]);
+
+export type DynamicContentUpdaterConfig = z.infer<
+  typeof DynamicContentUpdaterConfigSchema
+>;
+
+const WithEnabledSchema = z.object({
+  enabled: z.boolean().default(true),
+});
+
+export const DynamicContentConfigPlexSourceSchema = z
+  .object({
+    type: z.literal('plex'),
+    plexServerId: z.string().min(1), // server name or unique ID
+    plexLibraryKey: z.string().min(1),
+    search: PlexSearchSchema.optional(),
+    updater: DynamicContentUpdaterConfigSchema,
+  })
+  .merge(WithEnabledSchema);
+
+export type DynamicContentConfigPlexSource = z.infer<
+  typeof DynamicContentConfigPlexSourceSchema
+>;
+
+export const DynamicContentConfigSourceSchema = z.discriminatedUnion('type', [
+  DynamicContentConfigPlexSourceSchema,
+]);
+
+export type DynamicContentConfigSource = z.infer<
+  typeof DynamicContentConfigSourceSchema
+>;
+
+export const DynamicContentConfigSchema = z
+  .object({
+    contentSources: z.array(DynamicContentConfigSourceSchema).nonempty(),
+  })
+  .merge(WithEnabledSchema);
+
+export type DynamicContentConfig = z.infer<typeof DynamicContentConfigSchema>;
+
+//
+// Lineups
+//
 export const LineupScheduleSchema = z.discriminatedUnion('type', [
   TimeSlotScheduleSchema,
   RandomSlotScheduleSchema,
 ]);
 
-export type LineupSchedule = Alias<z.infer<typeof LineupScheduleSchema>>;
+export type LineupSchedule = z.infer<typeof LineupScheduleSchema>;

@@ -30,8 +30,9 @@ import {
   sumBy,
   take,
 } from 'lodash-es';
-import { Low } from 'lowdb';
-import { DataFile } from 'lowdb/node';
+import { Adapter, Low } from 'lowdb';
+import { TextFile } from 'lowdb/node';
+import { PathLike } from 'node:fs';
 import fs from 'node:fs/promises';
 import { join } from 'path';
 import { globalOptions } from '../globals.js';
@@ -45,6 +46,7 @@ import { getEm } from './dataSource.js';
 import {
   Lineup,
   LineupItem,
+  LineupSchema,
   OfflineItem,
   RedirectItem,
   isContentItem,
@@ -88,9 +90,7 @@ function updateRequestToChannel(
           },
       duration: updateReq.duration,
       stealth: updateReq.stealth,
-      fillerRepeatCooldown: updateReq.fillerRepeatCooldown
-        ? dayjs.duration({ seconds: updateReq.fillerRepeatCooldown })
-        : undefined,
+      fillerRepeatCooldown: updateReq.fillerRepeatCooldown,
     },
     isNil,
   );
@@ -123,16 +123,14 @@ function createRequestToChannel(
         },
     duration: saveReq.duration,
     stealth: saveReq.stealth,
-    fillerRepeatCooldown: saveReq.fillerRepeatCooldown
-      ? dayjs.duration({ seconds: saveReq.fillerRepeatCooldown })
-      : undefined,
+    fillerRepeatCooldown: saveReq.fillerRepeatCooldown,
   };
   return c;
 }
 
+// Let's see if this works... in so we can have many ChannelDb objects flying around.
+const fileDbCache: Record<string | number, Low<Lineup>> = {};
 export class ChannelDB {
-  private fileDbCache: Record<string | number, Low<Lineup>> = {};
-
   getChannelByNumber(channelNumber: number): Promise<Nullable<Channel>> {
     return getEm().repo(Channel).findOne({ number: channelNumber });
   }
@@ -488,23 +486,17 @@ export class ChannelDB {
   }
 
   private async getFileDb(channelId: string) {
-    if (!this.fileDbCache[channelId]) {
-      this.fileDbCache[channelId] = new Low<Lineup>(
-        new DataFile(
+    if (!fileDbCache[channelId]) {
+      fileDbCache[channelId] = new Low<Lineup>(
+        new LineupDbAdapter(
           join(globalOptions().database, `channel-lineups/${channelId}.json`),
-          {
-            parse: JSON.parse,
-            stringify(data) {
-              return JSON.stringify(data);
-            },
-          },
         ),
         { items: [], startTimeOffsets: [] },
       );
-      await this.fileDbCache[channelId].read();
+      await fileDbCache[channelId].read();
     }
 
-    return this.fileDbCache[channelId];
+    return fileDbCache[channelId];
   }
 
   private async markFileDbForDeletion(
@@ -521,7 +513,7 @@ export class ChannelDB {
         await fs.rename(path, newPath);
       }
       if (isDelete) {
-        delete this.fileDbCache[channelId];
+        delete fileDbCache[channelId];
       } else {
         // Reload the file into the DB cache
         await this.getFileDb(channelId);
@@ -535,6 +527,43 @@ export class ChannelDB {
         e,
       );
     }
+  }
+}
+
+class LineupDbAdapter implements Adapter<Lineup> {
+  #path: PathLike;
+  #adapter: TextFile;
+  constructor(filename: PathLike) {
+    this.#path = filename;
+    this.#adapter = new TextFile(filename);
+  }
+
+  async read(): Promise<Lineup | null> {
+    const data = await this.#adapter.read();
+    if (data === null) {
+      return null;
+    }
+    const parseResult = await LineupSchema.safeParseAsync(JSON.parse(data));
+    if (!parseResult.success) {
+      console.error(
+        `Error while trying to load lineup file ${this.#path.toString()}`,
+        parseResult.error,
+      );
+      return null;
+    }
+    return parseResult.data;
+  }
+
+  async write(data: Lineup): Promise<void> {
+    const parseResult = await LineupSchema.safeParseAsync(data);
+    if (!parseResult.success) {
+      console.warn(
+        'Could not parse lineup before saving to DB',
+        parseResult.error,
+      );
+    }
+
+    return this.#adapter.write(JSON.stringify(data));
   }
 }
 

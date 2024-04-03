@@ -1,4 +1,5 @@
 import {
+  Bolt,
   FreeBreakfast as BreaksIcon,
   Expand as FlexIcon,
   KeyboardArrowDown as KeyboardArrowDownIcon,
@@ -17,6 +18,7 @@ import {
   alpha,
   styled,
 } from '@mui/material';
+import { isNull } from 'lodash-es';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import AddBreaksModal from '../programming_controls/AddBreaksModal';
@@ -77,7 +79,7 @@ export default function AddProgrammingButton() {
   const [addBreaksModalOpen, setAddBreaksModalOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
-  const open = Boolean(anchorEl);
+  const open = !isNull(anchorEl);
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -117,14 +119,13 @@ export default function AddProgrammingButton() {
           to="add"
           startIcon={<MediaIcon />}
         >
-          Add Media
+          Schedule
         </Button>
         <Button onClick={handleClick}>
           <KeyboardArrowDownIcon />
         </Button>
       </ButtonGroup>
       <StyledMenu
-        id="demo-customized-menu"
         MenuListProps={{
           'aria-labelledby': 'demo-customized-button',
         }}
@@ -132,6 +133,9 @@ export default function AddProgrammingButton() {
         open={open}
         onClose={handleClose}
       >
+        <MenuItem disableRipple>
+          <Bolt /> Make Dynamic
+        </MenuItem>
         <Tooltip
           title="Add TV Shows or Movies to programming list."
           placement="right"

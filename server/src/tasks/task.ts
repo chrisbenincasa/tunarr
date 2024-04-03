@@ -1,11 +1,15 @@
 import { isError, isString, round } from 'lodash-es';
 import createLogger from '../logger.js';
 import { Maybe } from '../types.js';
+import { Tag } from '../types/util.js';
 
 const logger = createLogger(import.meta);
 
 // Set of all of the possible Task IDs
-export type TaskId = 'update-xmltv' | 'cleanup-sessions';
+export type TaskId =
+  | 'update-xmltv'
+  | 'cleanup-sessions'
+  | 'schedule-dynamic-channels';
 
 export abstract class Task<Data> {
   private running_ = false;
@@ -13,7 +17,7 @@ export abstract class Task<Data> {
   protected hasRun: boolean = false;
   protected result: Maybe<Data>;
 
-  public abstract ID: TaskId;
+  public abstract ID: string | Tag<TaskId, Data>;
 
   protected abstract runInternal(): Promise<Maybe<Data>>;
 
@@ -50,5 +54,16 @@ export abstract class Task<Data> {
     return this.running_;
   }
 
-  abstract get name(): string;
+  abstract get taskName(): string;
+}
+
+export function AnonymousTask(id: string): Task<unknown> {
+  return new (class extends Task<unknown> {
+    public ID = id;
+    public taskName = `AnonymousTest_` + id;
+    // eslint-disable-next-line @typescript-eslint/require-await
+    protected async runInternal() {
+      console.log('hello girly');
+    }
+  })();
 }

@@ -6,7 +6,6 @@ import {
   Unique,
 } from '@mikro-orm/core';
 import { Channel as ChannelDTO, Resolution } from '@tunarr/types';
-import type { Duration } from 'dayjs/plugin/duration.js';
 import { nilToUndefined } from '../../util.js';
 import { DurationType } from '../custom_types/DurationType.js';
 import { BaseEntity } from './BaseEntity.js';
@@ -117,7 +116,7 @@ export class Channel extends BaseEntity {
   fillers = new Collection<FillerShow>(this);
 
   @Property({ nullable: true, type: DurationType })
-  fillerRepeatCooldown?: Duration;
+  fillerRepeatCooldown?: number; // Seconds
 
   @ManyToMany(() => CustomShow)
   customShows = new Collection<CustomShow>(this);

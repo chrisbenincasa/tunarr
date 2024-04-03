@@ -3,7 +3,11 @@
   "pipeline": {
     "clean": {},
     "build": {
-      "dependsOn": ["clean", "^build"],
+      "dependsOn": ["^build"],
+      "outputs": ["build/**", "dist/**"]
+    },
+    "clean-build": {
+      "dependsOn": ["clean", "build"],
       "outputs": ["build/**", "dist/**"]
     },
     "bundle": {

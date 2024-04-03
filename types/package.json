@@ -21,7 +21,7 @@
     "eslint": "8.45.0",
     "rimraf": "^5.0.5",
     "tsup": "^8.0.2",
-    "typescript": "5.2.2"
+    "typescript": "^5.4.3"
   },
   "dependencies": {
     "zod": "^3.22.4"

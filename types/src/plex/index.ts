@@ -1,5 +1,6 @@
-export * from './dvr.js';
 import z from 'zod';
+
+export * from './dvr.js';
 
 type Alias<t> = t & { _?: never };
 
@@ -606,6 +607,14 @@ export type PlexMedia = Alias<
   | PlexMusicTrack
 >;
 export type PlexTerminalMedia = PlexMovie | PlexEpisode | PlexMusicTrack; // Media that has no children
+
+// Results you might get by looking up the children of a parent node type
+export type PlexChildMediaViewType =
+  | PlexSeasonView
+  | PlexEpisodeView
+  | PlexMusicAlbumView
+  | PlexMusicTrackView;
+
 export type PlexParentMediaType =
   | PlexTvShow
   | PlexTvSeason

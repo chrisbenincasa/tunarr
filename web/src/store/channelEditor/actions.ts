@@ -12,7 +12,6 @@ import {
   FillerList,
   FillerListProgramming,
 } from '@tunarr/types';
-import { isPlexEpisode, isPlexMusicTrack } from '@tunarr/types/plex';
 import { Draft } from 'immer';
 import {
   chain,
@@ -236,53 +235,22 @@ const plexMediaToContentProgram = (
   media: EnrichedPlexMedia,
 ): ContentProgram => {
   const uniqueId = createExternalId('plex', media.serverName, media.key);
-  // TODO Handle music tracks
-  if (isPlexEpisode(media)) {
-    return {
-      id: media.id ?? uniqueId,
-      persisted: !isNil(media.id),
-      originalProgram: media,
-      duration: media.duration,
-      externalSourceName: media.serverName,
-      externalSourceType: 'plex',
-      externalKey: media.key,
-      uniqueId: uniqueId,
-      type: 'content',
-      subtype: 'episode',
-      title: media.grandparentTitle,
-      episodeTitle: media.title,
-      episodeNumber: media.index,
-      seasonNumber: media.parentIndex,
-    };
-  } else if (isPlexMusicTrack(media)) {
-    return {
-      id: media.id ?? uniqueId,
-      persisted: !isNil(media.id),
-      originalProgram: media,
-      duration: media.duration,
-      externalSourceName: media.serverName,
-      externalSourceType: 'plex',
-      uniqueId: uniqueId,
-      type: 'content',
-      subtype: 'track',
-      title: media.title,
-      artistName: media.grandparentTitle,
-      albumName: media.parentTitle,
-    };
-  } else {
-    return {
-      id: media.id ?? uniqueId,
-      persisted: !isNil(media.id),
-      originalProgram: media,
-      duration: media.duration,
-      externalSourceName: media.serverName,
-      externalSourceType: 'plex',
-      uniqueId: uniqueId,
-      type: 'content',
-      subtype: 'movie',
-      title: media.title,
-    };
-  }
+  return {
+    id: media.id ?? uniqueId,
+    persisted: !isNil(media.id),
+    originalProgram: media,
+    duration: media.duration,
+    externalSourceName: media.serverName,
+    externalSourceType: 'plex',
+    externalKey: media.key,
+    uniqueId: uniqueId,
+    type: 'content',
+    subtype: media.type,
+    title: media.type === 'episode' ? media.grandparentTitle : media.title,
+    episodeTitle: media.type === 'episode' ? media.title : undefined,
+    episodeNumber: media.type === 'episode' ? media.index : undefined,
+    seasonNumber: media.type === 'episode' ? media.parentIndex : undefined,
+  };
 };
 
 export const addMediaToCurrentChannel = (programs: AddedMedia[]) =>

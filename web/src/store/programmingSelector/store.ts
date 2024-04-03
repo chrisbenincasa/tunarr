@@ -1,7 +1,7 @@
 import { CustomProgram, CustomShow, PlexServerSettings } from '@tunarr/types';
+import { PlexSearch } from '@tunarr/types/api';
 import { PlexLibrarySection, PlexMedia } from '@tunarr/types/plex';
 import { StateCreator } from 'zustand';
-import { PlexSearch } from '../../helpers/plexSearchUtil';
 
 type ServerName = string;
 type PlexItemGuid = string;
