@@ -1,0 +1,71 @@
+name: Build Windows Nexe Binaries
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        node_version: [20.11.1]
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - uses: ilammy/setup-nasm@v1
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.11.1
+
+      - uses: pnpm/action-setup@v3
+        name: Install pnpm
+        with:
+          version: 8.15.4
+          run_install: false
+
+      - name: Install nexe
+        run: pnpm install -g nexe@next
+
+      - name: Retrieve cached build
+        id: cache-nexe-node-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: .\windows-x64-${{matrix.node_version}}
+          key: nexe-windows-x64-${{matrix.node_version}}
+
+      - name: Build Windows exe
+        if: steps.cache-nexe-node-restore.outputs.cache-hit != 'true'
+        run: nexe -t windows-x64-${{matrix.node_version}} --no-bundle --build --name dummy.exe --verbose -i ./server/scripts/dummy-script.js
+
+      - name: Copy Node binary
+        if: steps.cache-nexe-node-restore.outputs.cache-hit != 'true'
+        run: xcopy C:\Users\runneradmin\.nexe\${{matrix.node_version}}\out\Release\node.exe .\
+
+      - name: Rename Node binary
+        if: steps.cache-nexe-node-restore.outputs.cache-hit != 'true'
+        run: ren node.exe windows-x64-${{matrix.node_version}}
+
+      - name: Save Node binary to cache
+        id: cache-nexe-node-save
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            .\windows-x64-${{matrix.node_version}}
+          key: ${{ steps.cache-nexe-node-restore.outputs.cache-primary-key }}
+
+      - name: Upload pre-built Windows nexe
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Nexe Prebuilt Binaries
+          tag_name: nexe-prebuild
+          files: |
+            windows-x64-${{matrix.node_version}}
