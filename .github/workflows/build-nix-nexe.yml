@@ -1,4 +1,4 @@
-name: Build Windows Nexe Binaries
+name: Build *nix Nexe Binaries
 
 on:
   workflow_dispatch:
