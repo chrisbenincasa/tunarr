@@ -668,7 +668,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
         `-sc_threshold`,
         `1000000000`,
       );
-      if (stillImage) {
+      if (stillImage && this.opts.videoEncoder.toLowerCase().includes('nv')) {
         ffmpegArgs.push('-tune', 'stillimage');
       }
     }
@@ -676,13 +676,17 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     if (transcodeVideo && this.audioOnly !== true) {
       // add the video encoder flags
       ffmpegArgs.push(
-        `-b:v`,
-        `${this.opts.videoBitrate}k`,
+        '-crf',
+        '22',
         `-maxrate:v`,
         `${this.opts.videoBitrate}k`,
         `-bufsize:v`,
         `${this.opts.videoBufferSize}k`,
       );
+
+      if (this.opts.videoEncoder.toLowerCase() === 'mpeg2video') {
+        ffmpegArgs.push('-qscale:v', '1', '-b:v', `${this.opts.videoBitrate}k`);
+      }
     }
     if (transcodeAudio) {
       // add the audio encoder flags
