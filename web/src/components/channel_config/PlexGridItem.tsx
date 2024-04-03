@@ -53,6 +53,7 @@ const PlexGridItem = forwardRef(
     const server = useStore((s) => s.currentServer!); // We have to have a server at this point
     const darkMode = useStore((state) => state.theme.darkMode);
     const [open, setOpen] = useState(false);
+    const [imageLoaded, setImageLoaded] = useState(false);
     const { item, style, moveModal, modalChildren } = props;
     const hasChildren = !isTerminalItem(item);
     const childPath = isPlexCollection(item) ? 'collections' : 'metadata';
@@ -125,79 +126,82 @@ const PlexGridItem = forwardRef(
 
     return (
       <Fade
-        in={isInViewport && !_.isUndefined(item)} // TODO: eventually we will want to add in:  && imageLoaded so it only fades in after image has loaded
+        in={isInViewport && !_.isUndefined(item) && imageLoaded}
         timeout={500}
         ref={imageContainerRef}
       >
-        <ImageListItem
-          component={Grid}
-          key={item.guid}
-          sx={{
-            cursor: 'pointer',
-            display: 'flex',
-            flexDirection: 'column',
-            flexGrow: 1,
-            paddingLeft: '8px !important',
-            paddingRight: '8px',
-            paddingTop: '8px',
-            borderRadiusTopLeft: '10px',
-            borderRadiusTopRight: '10px',
-            height: 'auto',
-            backgroundColor: (theme) =>
-              props.modalIndex === props.index
-                ? darkMode
-                  ? theme.palette.grey[800]
-                  : theme.palette.grey[400]
-                : 'transparent',
-            transition: 'background-color 350ms linear !important',
-            ...style,
-          }}
-          onClick={
-            hasChildren
-              ? handleClick
-              : (event: MouseEvent<HTMLDivElement>) => handleItem(event)
-          }
-          ref={ref}
-        >
-          {isInViewport && ( // To do: Eventually turn this itno isNearViewport so images load before they hit the viewport
-            <img
-              src={`${server.uri}${item.thumb}?X-Plex-Token=${server.accessToken}`}
-              width={100}
-              style={{ borderRadius: '5%', height: 'auto' }}
-            />
-          )}
-          <ImageListItemBar
-            title={item.title}
-            subtitle={
-              item.type !== 'movie' ? (
-                <span>{`${
-                  !isNaN(extractChildCount(item)) && extractChildCount(item)
-                } items`}</span>
-              ) : (
-                <span>{prettyItemDuration(item.duration)}</span>
-              )
+        <div>
+          <ImageListItem
+            component={Grid}
+            key={item.guid}
+            sx={{
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              flexGrow: 1,
+              paddingLeft: '8px !important',
+              paddingRight: '8px',
+              paddingTop: '8px',
+              borderRadiusTopLeft: '10px',
+              borderRadiusTopRight: '10px',
+              height: 'auto',
+              backgroundColor: (theme) =>
+                props.modalIndex === props.index
+                  ? darkMode
+                    ? theme.palette.grey[800]
+                    : theme.palette.grey[400]
+                  : 'transparent',
+              transition: 'background-color 350ms linear !important',
+              ...style,
+            }}
+            onClick={
+              hasChildren
+                ? handleClick
+                : (event: MouseEvent<HTMLDivElement>) => handleItem(event)
             }
-            position="below"
-            actionIcon={
-              <IconButton
-                sx={{ color: 'black' }}
-                aria-label={`star ${item.title}`}
-                onClick={(event: MouseEvent<HTMLButtonElement>) =>
-                  handleItem(event)
-                }
-              >
-                {selectedMediaIds.includes(item.guid) ? (
-                  <CheckCircle sx={{ color: darkMode ? '#fff' : '#000' }} />
+            ref={ref}
+          >
+            {isInViewport && ( // To do: Eventually turn this itno isNearViewport so images load before they hit the viewport
+              <img
+                src={`${server.uri}${item.thumb}?X-Plex-Token=${server.accessToken}`}
+                width={100}
+                style={{ borderRadius: '5%', height: 'auto' }}
+                onLoad={() => setImageLoaded(true)}
+              />
+            )}
+            <ImageListItemBar
+              title={item.title}
+              subtitle={
+                item.type !== 'movie' ? (
+                  <span>{`${
+                    !isNaN(extractChildCount(item)) && extractChildCount(item)
+                  } items`}</span>
                 ) : (
-                  <RadioButtonUnchecked
-                    sx={{ color: darkMode ? '#fff' : '#000' }}
-                  />
-                )}
-              </IconButton>
-            }
-            actionPosition="right"
-          />
-        </ImageListItem>
+                  <span>{prettyItemDuration(item.duration)}</span>
+                )
+              }
+              position="below"
+              actionIcon={
+                <IconButton
+                  sx={{ color: 'black' }}
+                  aria-label={`star ${item.title}`}
+                  onClick={(event: MouseEvent<HTMLButtonElement>) =>
+                    handleItem(event)
+                  }
+                >
+                  {selectedMediaIds.includes(item.guid) ? (
+                    <CheckCircle sx={{ color: darkMode ? '#fff' : '#000' }} />
+                  ) : (
+                    <RadioButtonUnchecked
+                      sx={{ color: darkMode ? '#fff' : '#000' }}
+                    />
+                  )}
+                </IconButton>
+              }
+              actionPosition="right"
+            />
+          </ImageListItem>
+        </div>
       </Fade>
     );
   },

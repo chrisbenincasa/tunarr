@@ -130,7 +130,7 @@ function InlineModal(props: InlineModalProps) {
             justifyContent: 'flex-start',
             backgroundColor: (theme) =>
               darkMode ? theme.palette.grey[800] : theme.palette.grey[400],
-            padding: '0',
+            padding: 0,
             paddingTop: 2,
             minHeight: modalHeight,
           }}
