@@ -41,14 +41,32 @@ jobs:
       # - name: Build Tunarr
       #   run: pnpm turbo bundle
 
+      - name: Retrieve cached build
+        id: cache-nexe-node-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: .\windows-x64-20.11.1.exe
+          key: nexe-windows-x64-20.11.1
+
       - name: Build Windows exe
+        if: steps.cache-nexe-node-restore.outputs.cache-hit != 'true'
         run: nexe -t windows-x64-20.11.1 --no-bundle --build --name dummy.exe --verbose -i ./server/scripts/dummy-script.js
 
-      - name: Copy node binary
+      - name: Copy Node binary
+        if: steps.cache-nexe-node-restore.outputs.cache-hit != 'true'
         run: xcopy C:\Users\runneradmin\.nexe\20.11.1\out\Release\node.exe .\
-      
+
       - name: Rename Node binary
+        if: steps.cache-nexe-node-restore.outputs.cache-hit != 'true'
         run: ren node.exe windows-x64-20.11.1.exe
+
+      - name: Save Node binary to cache
+        id: cache-nexe-node-save
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            .\windows-x64-20.11.1.exe
+          key: ${{ steps.cache-nexe-node-restore.outputs.cache-primary-key }}
 
       - name: Upload pre-built Windows nexe
         uses: softprops/action-gh-release@v2
