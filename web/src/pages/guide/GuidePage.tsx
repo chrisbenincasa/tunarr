@@ -7,12 +7,10 @@ import {
 } from '@mui/icons-material';
 import {
   Box,
-  Chip,
   CircularProgress,
   FormControl,
   IconButton,
   MenuItem,
-  Modal,
   Select,
   SelectChangeEvent,
   Stack,
@@ -26,15 +24,12 @@ import { useQueryClient } from '@tanstack/react-query';
 import { TvGuideProgram } from '@tunarr/types';
 import dayjs, { Dayjs, duration } from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
-import { isEmpty, round } from 'lodash-es';
+import { isEmpty, isUndefined, round } from 'lodash-es';
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { useInterval } from 'usehooks-ts';
+import ProgramDetailsDialog from '../../components/ProgramDetailsDialog.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
-import {
-  alternateColors,
-  forTvGuideProgram,
-  prettyItemDuration,
-} from '../../helpers/util.ts';
+import { alternateColors, forTvGuideProgram } from '../../helpers/util.ts';
 import { prefetchAllTvGuides, useAllTvGuides } from '../../hooks/useTvGuide.ts';
 import useStore from '../../store/index.ts';
 import { setGuideDurationState } from '../../store/themeEditor/actions.ts';
@@ -70,7 +65,6 @@ const GuideItem = styled(GridChild)<{ width: number; index: number }>(
     padding: 1,
     height: '4rem',
     width: `${width}%`,
-    // background: `linear-gradient(90deg, rgba(243, 125, 119,1) 1%, rgba(243, 125, 119,1) 7%, rgba(97, 97, 97,1) ${10}%)`,
     transition: 'width 0.5s ease-in',
     overflow: 'hidden',
     whiteSpace: 'nowrap',
@@ -83,19 +77,6 @@ const GuideItem = styled(GridChild)<{ width: number; index: number }>(
     },
   }),
 );
-
-const modalStyle = {
-  position: 'absolute' as const,
-  top: '50%',
-  left: '50%',
-  transform: 'translate(-50%, -50%)',
-  width: 500,
-  bgcolor: 'background.paper',
-  outline: 'none',
-  boxShadow: 24,
-  borderRadius: '2%',
-  p: 4,
-};
 
 const SubtractInterval = dayjs.duration(1, 'hour');
 const MinDurationMillis = dayjs.duration(1, 'hour').asMilliseconds();
@@ -408,84 +389,6 @@ export default function GuidePage() {
     );
   };
 
-  const formattedTitle = useCallback(
-    forTvGuideProgram({
-      content: (p) => p.title,
-      custom: (p) => p.program?.title ?? 'Custom Program',
-      redirect: (p) => `Redirect to Channel ${p.channel}`,
-      flex: 'Flex',
-    }),
-    [],
-  );
-
-  const formattedEpisodeTitle = useCallback(
-    forTvGuideProgram({
-      custom: (p) => p.program?.episodeTitle ?? '',
-      content: (p) => p.episodeTitle,
-      default: '',
-    }),
-    [],
-  );
-
-  const renderProgramModal = (program: TvGuideProgram | undefined) => {
-    if (!program) {
-      return;
-    }
-
-    const rating = forTvGuideProgram({
-      custom: (p) => p.program?.rating ?? '',
-      content: (p) => p.rating,
-      default: '',
-    })(program);
-
-    const summary = forTvGuideProgram({
-      custom: (p) => p.program?.summary ?? '',
-      content: (p) => p.summary,
-      default: '',
-    })(program);
-
-    return (
-      <Modal
-        open={!!modalProgram}
-        onClose={handleModalClose}
-        aria-labelledby="modal-modal-title"
-        aria-describedby="modal-modal-description"
-      >
-        <Box sx={modalStyle}>
-          <Typography id="modal-modal-title" variant="h5" component="h2">
-            {formattedTitle(program)}
-          </Typography>
-          <Typography
-            id="modal-modal-title"
-            variant="h6"
-            component="h2"
-            fontStyle={'italic'}
-          >
-            {formattedEpisodeTitle(program)}
-          </Typography>
-          {program.type === 'content' ? (
-            <>
-              <Chip
-                color="secondary"
-                label={prettyItemDuration(program.duration)}
-                sx={{ mt: 1 }}
-              />
-              <Chip color="secondary" label={rating} sx={{ mx: 1, mt: 1 }} />
-            </>
-          ) : null}
-          <Typography id="modal-modal-description" sx={{ mt: 1 }}>
-            {`${dayjs(program.start).format('h:mm')} - ${dayjs(
-              program.stop,
-            ).format('h:mma')}`}
-          </Typography>
-          <Typography id="modal-modal-description" sx={{ mt: 1 }}>
-            {summary}
-          </Typography>
-        </Box>
-      </Modal>
-    );
-  };
-
   const channels = channelLineup?.map((lineup, index) => {
     const alignedLineup = lineup.programs;
     if (
@@ -531,7 +434,11 @@ export default function GuidePage() {
       <Typography variant="h3" mb={2}>
         TV Guide
       </Typography>
-      {renderProgramModal(modalProgram)}
+      <ProgramDetailsDialog
+        open={!isUndefined(modalProgram)}
+        onClose={() => handleModalClose()}
+        program={modalProgram}
+      />
       <Box display={'flex'}>
         <Stack
           flexGrow={1}
