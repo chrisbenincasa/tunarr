@@ -1,21 +1,31 @@
 import {
+  Cascade,
   Collection,
   Entity,
   EntityDTO,
   Enum,
   ManyToMany,
+  ManyToOne,
   OptionalProps,
   Property,
   Unique,
   serialize,
+  type Rel,
 } from '@mikro-orm/core';
 import { Program as ProgramDTO } from '@tunarr/types';
 import type { Duration } from 'dayjs/plugin/duration.js';
+import { enumKeys } from '../../util/enumUtil.js';
+import { ProgramSourceType } from '../custom_types/ProgramSourceType.js';
 import { BaseEntity } from './BaseEntity.js';
 import { Channel } from './Channel.js';
 import { CustomShow } from './CustomShow.js';
 import { FillerShow } from './FillerShow.js';
+import { ProgramGrouping } from './ProgramGrouping.js';
 
+/**
+ * Program represents a 'playable' entity. A movie, episode, or music track
+ * can be a Program, but a show, season, music album or artist, cannot.
+ */
 @Entity()
 @Unique({ properties: ['sourceType', 'externalSourceId', 'externalKey'] })
 export class Program extends BaseEntity {
@@ -85,8 +95,8 @@ export class Program extends BaseEntity {
   @Property({ nullable: true })
   rating?: string;
 
-  @Property({ nullable: true })
-  season?: number;
+  @Property({ nullable: true, name: 'season' })
+  seasonNumber?: number;
 
   @Property({ nullable: true })
   seasonIcon?: string;
@@ -103,7 +113,7 @@ export class Program extends BaseEntity {
   @Property()
   title!: string;
 
-  @Property()
+  @Enum()
   type!: ProgramType;
 
   @Property({ nullable: true })
@@ -135,6 +145,21 @@ export class Program extends BaseEntity {
   })
   fillerShows = new Collection<FillerShow>(this);
 
+  @ManyToOne(() => ProgramGrouping, { nullable: true })
+  season?: Rel<ProgramGrouping>;
+
+  @ManyToOne(() => ProgramGrouping, {
+    nullable: true,
+    cascade: [Cascade.PERSIST],
+  })
+  tvShow?: Rel<ProgramGrouping>;
+
+  @ManyToOne(() => ProgramGrouping, { nullable: true })
+  album?: Rel<ProgramGrouping>;
+
+  @ManyToOne(() => ProgramGrouping, { nullable: true })
+  artist?: Rel<ProgramGrouping>;
+
   get contentKey() {
     return `${this.sourceType}|${this.externalSourceId}|${this.externalKey}`;
   }
@@ -160,7 +185,7 @@ export function programDaoToDto(program: EntityDTO<Program>): ProgramDTO {
     key: program.externalKey,
     rating: program.rating,
     ratingKey: program.plexRatingKey,
-    season: program.season,
+    season: program.seasonNumber,
     seasonIcon: program.seasonIcon,
     serverKey: program.externalSourceId,
     showIcon: program.showIcon,
@@ -173,30 +198,10 @@ export function programDaoToDto(program: EntityDTO<Program>): ProgramDTO {
   };
 }
 
-export enum ProgramSourceType {
-  PLEX = 'plex',
-}
-
 export enum ProgramType {
   Movie = 'movie',
   Episode = 'episode',
   Track = 'track',
-}
-
-function enumKeys<O extends object, K extends keyof O = keyof O>(obj: O): K[] {
-  return Object.keys(obj).filter((k) => !Number.isNaN(k)) as K[];
-}
-
-export function programSourceTypeFromString(
-  str: string,
-): ProgramSourceType | undefined {
-  for (const key of enumKeys(ProgramSourceType)) {
-    const value = ProgramSourceType[key];
-    if (key.toLowerCase() === str) {
-      return value;
-    }
-  }
-  return;
 }
 
 export function programTypeFromString(str: string): ProgramType | undefined {

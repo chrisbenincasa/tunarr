@@ -38,12 +38,15 @@
         "./scripts/**/*.ts",
         "__tests__/**/*",
         "mikro-orm.prod.config.ts",
-        "../types/src/**/*.ts",
+        // "../types/src/**/*.ts",
     ],
     "exclude": [
         "./build/**/*",
         "../types/build/**/*",
         "./**/*.ignore.ts",
         "./streams/**/*.ts"
-    ]
+    ],
+    "ts-node": {
+        "esm": true
+    }
 }

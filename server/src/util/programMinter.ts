@@ -6,11 +6,8 @@ import {
   PlexTerminalMedia,
 } from '@tunarr/types/plex';
 import { first } from 'lodash-es';
-import {
-  Program,
-  ProgramSourceType,
-  ProgramType,
-} from '../dao/entities/Program.js';
+import { ProgramSourceType } from '../dao/custom_types/ProgramSourceType.js';
+import { Program, ProgramType } from '../dao/entities/Program.js';
 
 class ProgramMinter {
   #em: EntityManager;
@@ -81,7 +78,7 @@ function mintEpisodeProgram(
     year: plexEpisode.year,
     showTitle: plexEpisode.grandparentTitle,
     showIcon: plexEpisode.grandparentThumb,
-    season: plexEpisode.parentIndex,
+    seasonNumber: plexEpisode.parentIndex,
     episode: plexEpisode.index,
     parentExternalKey: plexEpisode.parentRatingKey,
     grandparentExternalKey: plexEpisode.grandparentRatingKey,
@@ -108,7 +105,7 @@ function mintTrackProgram(
     year: plexTrack.parentYear,
     showTitle: plexTrack.grandparentTitle,
     showIcon: plexTrack.grandparentThumb,
-    season: plexTrack.parentIndex,
+    seasonNumber: plexTrack.parentIndex,
     episode: plexTrack.index,
     parentExternalKey: plexTrack.parentRatingKey,
     grandparentExternalKey: plexTrack.grandparentRatingKey,

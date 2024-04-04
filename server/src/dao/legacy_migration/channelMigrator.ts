@@ -23,6 +23,7 @@ import {
   isNodeError,
   mapAsyncSeq,
 } from '../../util.js';
+import { ProgramSourceType } from '../custom_types/ProgramSourceType.js';
 import { getEm, withDb } from '../dataSource.js';
 import {
   ContentItem,
@@ -36,7 +37,6 @@ import { ChannelFillerShow } from '../entities/ChannelFillerShow.js';
 import { CustomShow as CustomShowEntity } from '../entities/CustomShow.js';
 import {
   Program as ProgramEntity,
-  ProgramSourceType,
   programTypeFromString,
 } from '../entities/Program.js';
 import {
@@ -446,7 +446,7 @@ export async function persistProgram(program: LegacyProgram) {
         // This is checked above
         dbProgram.type = programTypeFromString(program.type)!;
         dbProgram.episode = program.episode;
-        dbProgram.season = program.season;
+        dbProgram.seasonNumber = program.season;
         dbProgram.seasonIcon = program.seasonIcon;
         dbProgram.showIcon = program.showIcon;
         dbProgram.originalAirDate = program.date;

@@ -453,7 +453,7 @@ export const PlexEpisodeSchema = z
     parentTitle: z.string(),
     ratingKey: z.string(),
     summary: z.string().optional(),
-    thumb: z.string(),
+    thumb: z.string().optional(),
     title: z.string(),
     titleSort: z.string().optional(),
     type: z.literal('episode'),

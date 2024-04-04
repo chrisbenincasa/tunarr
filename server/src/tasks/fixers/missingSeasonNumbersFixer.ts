@@ -1,7 +1,7 @@
+import { EntityManager } from '@mikro-orm/better-sqlite';
 import { Cursor } from '@mikro-orm/core';
 import { PlexEpisodeView, PlexSeasonView } from '@tunarr/types/plex';
 import { first, forEach, groupBy, mapValues, pickBy } from 'lodash-es';
-import { EntityManager } from '../../dao/dataSource.js';
 import { PlexServerSettings } from '../../dao/entities/PlexServerSettings.js';
 import { Program, ProgramType } from '../../dao/entities/Program.js';
 import { logger } from '../../dao/legacyDbMigration.js';
@@ -28,7 +28,7 @@ export class MissingSeasonNumbersFixer extends Fixer {
     do {
       cursor = await em.findByCursor(
         Program,
-        { season: null, type: ProgramType.Episode },
+        { seasonNumber: null, type: ProgramType.Episode },
         {
           first: 25,
           orderBy: { uuid: 'desc' },
@@ -73,7 +73,7 @@ export class MissingSeasonNumbersFixer extends Fixer {
               await wait(100);
 
               if (seasonNum) {
-                program.season = seasonNum;
+                program.seasonNumber = seasonNum;
                 em.persist(program);
               }
             }
@@ -86,7 +86,7 @@ export class MissingSeasonNumbersFixer extends Fixer {
 
             if (seasonNum) {
               forEach(programs, (program) => {
-                program.season = seasonNum;
+                program.seasonNumber = seasonNum;
                 em.persist(program);
               });
             } else {
@@ -107,7 +107,7 @@ export class MissingSeasonNumbersFixer extends Fixer {
                 await wait(100);
 
                 if (seasonNum) {
-                  program.season = seasonNum;
+                  program.seasonNumber = seasonNum;
                   em.persist(program);
                 }
               }

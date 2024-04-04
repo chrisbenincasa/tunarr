@@ -1,18 +1,17 @@
-import type {
-  BetterSqliteDriver,
-  SqlEntityManager,
-} from '@mikro-orm/better-sqlite'; // or any other driver package
+import type { EntityManager as BetterSqlite3EntityManager } from '@mikro-orm/better-sqlite'; // or any other driver package
 import { MikroORM } from '@mikro-orm/better-sqlite';
 import { CreateContextOptions, RequestContext } from '@mikro-orm/core';
 import fs from 'fs';
 import { isUndefined, once } from 'lodash-es';
 import path from 'node:path';
 import 'reflect-metadata';
+import dbConfig from '../../mikro-orm.config.js';
 import { globalOptions } from '../globals.js';
 import createLogger from '../logger.js';
-import dbConfig from '../../mikro-orm.config.js';
 
 const logger = createLogger(import.meta);
+
+export type EntityManager = BetterSqlite3EntityManager;
 
 export const initOrm = once(async () => {
   const dbPath = path.join(globalOptions().database, 'db.db');
@@ -37,8 +36,6 @@ export const initOrm = once(async () => {
 
   return orm;
 });
-
-export type EntityManager = SqlEntityManager<BetterSqliteDriver>;
 
 export async function withDb<T>(
   f: (db: EntityManager) => Promise<T>,

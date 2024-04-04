@@ -17,6 +17,7 @@
     "dev": "NODE_ENV=development  tsx watch --tsconfig ./tsconfig.build.json --ignore 'build' --ignore 'src/streams' src",
     "make-exec": "tsx scripts/makeExecutable.ts",
     "make-exec:windows": "tsx scripts/makeExecutable.ts --target windows-x64-20.11.1 --python python",
+    "generate-db-migration": "pnpm run mikro-orm migration:create",
     "generate-db-cache": "mikro-orm-esm cache:generate --combined --ts",
     "mikro-orm": "mikro-orm-esm",
     "preinstall": "npx only-allow pnpm",
@@ -106,7 +107,7 @@
     "tsup": "^8.0.2",
     "tsx": "^4.7.1",
     "typed-emitter": "^2.1.0",
-    "typescript": "^5.4.3",
+    "typescript": "5.4.3",
     "vitest": "^1.2.0"
   },
   "mikro-orm": {

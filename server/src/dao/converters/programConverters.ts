@@ -21,7 +21,7 @@ export function dbProgramToContentProgram(
     id: program.uuid,
     subtype: program.type,
     seasonNumber:
-      program.type === ProgramType.Episode ? program.season : undefined,
+      program.type === ProgramType.Episode ? program.seasonNumber : undefined,
     episodeNumber:
       program.type === ProgramType.Episode ? program.episode : undefined,
     episodeTitle:

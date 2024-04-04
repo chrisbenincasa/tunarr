@@ -3,12 +3,12 @@ import { HttpHeader } from 'fastify/types/utils';
 import { isNil, isNull, isString, isUndefined, omitBy } from 'lodash-es';
 import stream from 'stream';
 import { z } from 'zod';
-import { withDb } from '../dao/dataSource';
-import { PlexServerSettings } from '../dao/entities/PlexServerSettings';
 import {
   ProgramSourceType,
   programSourceTypeFromString,
-} from '../dao/entities/Program';
+} from '../dao/custom_types/ProgramSourceType';
+import { withDb } from '../dao/dataSource';
+import { PlexServerSettings } from '../dao/entities/PlexServerSettings';
 import { Plex } from '../plex';
 import { RouterPluginAsyncCallback } from '../types/serverType';
 

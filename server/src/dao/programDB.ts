@@ -1,7 +1,8 @@
 import { chunk, reduce } from 'lodash-es';
 import { flatMapAsyncSeq, groupByFunc } from '../util';
+import { programSourceTypeFromString } from './custom_types/ProgramSourceType';
 import { getEm } from './dataSource';
-import { Program, programSourceTypeFromString } from './entities/Program';
+import { Program } from './entities/Program';
 
 export class ProgramDB {
   async lookupByExternalIds(
