@@ -1,5 +1,6 @@
 import {
   chain,
+  chunk,
   concat,
   identity,
   isArray,
@@ -9,6 +10,7 @@ import {
   isPlainObject,
   isString,
   isUndefined,
+  map,
   once,
   reduce,
 } from 'lodash-es';
@@ -120,6 +122,34 @@ export async function mapAsyncSeq<T, U>(
   );
 
   return Promise.all(all);
+}
+
+type mapAsyncSeq2Opts = {
+  ms?: number;
+  parallelism?: number;
+  failuresToNull?: boolean;
+};
+
+export async function mapAsyncSeq2<T, U>(
+  seq: T[] | null | undefined,
+  fn: (item: T) => Promise<U>,
+  opts: mapAsyncSeq2Opts,
+): Promise<U[]> {
+  if (isNil(seq)) {
+    return [];
+  }
+
+  const parallelism = opts.parallelism ?? 1;
+  const results: U[] = [];
+  for (const itemChunk of chunk(seq, parallelism)) {
+    const promises = map(itemChunk, fn);
+    const result = await Promise.all(promises);
+    if (opts.ms && opts.ms >= 0) {
+      await wait(opts.ms);
+    }
+    results.push(...result);
+  }
+  return results;
 }
 
 export async function flatMapAsyncSeq<T, U>(

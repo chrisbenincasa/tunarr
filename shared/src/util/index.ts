@@ -1,5 +1,6 @@
 export * from './plexSearchUtil.js';
 import { ChannelProgram } from '@tunarr/types';
+import { PlexMedia } from '@tunarr/types/plex';
 import isFunction from 'lodash-es/isFunction.js';
 import { MarkRequired } from 'ts-essentials';
 import type { PerTypeCallback } from '../types/index.js';
@@ -52,3 +53,40 @@ export function forProgramType<T>(
     return null;
   };
 }
+
+export const forPlexMedia = <T>(choices: PerTypeCallback<PlexMedia, T>) => {
+  return (m: PlexMedia) => {
+    switch (m.type) {
+      case 'movie':
+        if (choices.movie) return applyOrValue(choices.movie, m);
+        break;
+      case 'show':
+        if (choices.show) return applyOrValue(choices.show, m);
+        break;
+      case 'season':
+        if (choices.season) return applyOrValue(choices.season, m);
+        break;
+      case 'episode':
+        if (choices.episode) return applyOrValue(choices.episode, m);
+        break;
+      case 'artist':
+        if (choices.artist) return applyOrValue(choices.artist, m);
+        break;
+      case 'album':
+        if (choices.album) return applyOrValue(choices.album, m);
+        break;
+      case 'track':
+        if (choices.track) return applyOrValue(choices.track, m);
+        break;
+      case 'collection':
+        if (choices.collection) return applyOrValue(choices.collection, m);
+        break;
+    }
+
+    if (choices.default) {
+      return applyOrValue(choices.default, m);
+    }
+
+    return null;
+  };
+};

@@ -5,14 +5,47 @@ import {
   isContentProgram,
   isCustomProgram,
 } from '@tunarr/types';
-import { chain, chunk, filter, flatten, reduce } from 'lodash-es';
-import { ProgramMinterFactory } from '../util/programMinter.js';
-import { getEm } from './dataSource.js';
-import { Program } from './entities/Program.js';
-import { mapAsyncSeq } from '../util.js';
+import {
+  PlexLibraryMusic,
+  PlexLibraryShows,
+  PlexMusicAlbumView,
+  PlexSeasonView,
+} from '@tunarr/types/plex';
+import {
+  chain,
+  chunk,
+  filter,
+  flatten,
+  groupBy,
+  isEmpty,
+  isNil,
+  keys,
+  map,
+  reduce,
+} from 'lodash-es';
 import createLogger from '../logger.js';
+import { PlexApiFactory } from '../plex.js';
+import { mapAsyncSeq, mapAsyncSeq2 } from '../util.js';
+import { ProgramMinterFactory } from '../util/programMinter.js';
+import { ProgramSourceType } from './custom_types/ProgramSourceType.js';
+import { getEm } from './dataSource.js';
+import { PlexServerSettings } from './entities/PlexServerSettings.js';
+import { Program } from './entities/Program.js';
+import { ProgramGrouping } from './entities/ProgramGrouping.js';
 
 const logger = createLogger(import.meta);
+
+type ProgramsBySource = Record<
+  NonNullable<ContentProgram['externalSourceType']>,
+  Record<string, ContentProgram[]>
+>;
+
+function typedKeys<
+  T extends Record<keyof any, unknown>,
+  KeyType = T extends Record<infer K, unknown> ? K : never,
+>(record: T): KeyType[] {
+  return keys(record) as KeyType[];
+}
 
 export async function upsertContentPrograms(
   programs: ChannelProgram[],
@@ -22,13 +55,31 @@ export async function upsertContentPrograms(
   const nonPersisted = filter(programs, (p) => !p.persisted);
   const minter = ProgramMinterFactory.create(em);
 
-  // TODO handle custom shows
-  const programsToPersist = chain(nonPersisted)
+  const contentPrograms = chain(nonPersisted)
     .filter(isContentProgram)
     .uniqBy((p) => p.uniqueId)
+    .filter(
+      (p) =>
+        !isNil(p.externalSourceType) &&
+        !isNil(p.externalSourceName) &&
+        !isNil(p.originalProgram),
+    )
+    .value();
+
+  // TODO handle custom shows
+  const programsToPersist = chain(contentPrograms)
     .map((p) => minter.mint(p.externalSourceName!, p.originalProgram!))
     .compact()
     .value();
+
+  // We verified this is not nil above.
+
+  // TODO: Probably want to do this step in the background...
+  //
+  const programsBySource: ProgramsBySource = chain(contentPrograms)
+    .filter((p) => p.subtype === 'episode' || p.subtype === 'track')
+    .groupBy((cp) => cp.externalSourceType!)
+    .mapValues((programs) => groupBy(programs, (p) => p.externalSourceName!));
 
   logger.debug('Upserting %d programs', programsToPersist.length);
 
@@ -44,6 +95,124 @@ export async function upsertContentPrograms(
         }),
     ),
   );
+}
+
+// Consider making the UI pass this information in to make it potentially
+// less error-prone. We could also do this asynchronously, but that's kinda
+// mess as well
+async function findAndUpdateProgramRelations(
+  programsBySource: ProgramsBySource,
+) {
+  for (const source of typedKeys(programsBySource)) {
+    switch (source) {
+      case 'plex':
+        const programsByServer = programsBySource[source];
+    }
+  }
+}
+
+async function findAndUpdatePlexServerPrograms(
+  plexServerName: string,
+  programs: ContentProgram[],
+) {
+  if (programs.length === 0) {
+    return;
+  }
+
+  const em = getEm();
+
+  const plexServer = await getEm().findOne(PlexServerSettings, {
+    name: plexServerName,
+  });
+  if (isNil(plexServer)) {
+    // Rate limit this potentially noisy log
+    logger.warn(
+      'Could not find server %s when attempting to update hierarchy',
+      plexServerName,
+    );
+    return;
+  }
+
+  const plexApi = PlexApiFactory.get(plexServer);
+
+  // Shows
+  const grandparentParentPairs = chain(programs)
+    .map((p) => p.originalProgram!)
+    .map((op) =>
+      op.type === 'episode' || op.type === 'track'
+        ? ([op.grandparentRatingKey, op.parentKey] as const)
+        : null,
+    )
+    .compact()
+    .value();
+
+  const parentIdsByGrandparent = reduce(
+    grandparentParentPairs,
+    (prev, [grandparent, parent]) => {
+      const last = prev[grandparent];
+      if (last) {
+        return { ...prev, [grandparent]: last.add(parent) };
+      } else {
+        return { ...prev, [grandparent]: new Set(parent) };
+      }
+    },
+    {} as Record<string, Set<string>>,
+  );
+
+  const allIds = chain(parentIdsByGrandparent)
+    .map((value, key) => {
+      return [...value, key];
+    })
+    .flattenDeep()
+    .value();
+
+  mapAsyncSeq2(
+    chunk(allIds, 25),
+    (chunk) => {
+      const ors = map(chunk, (id) => ({
+        sourceType: ProgramSourceType.PLEX,
+        externalKey: id,
+        externalSourceId: plexServerName,
+      }));
+
+      return em.find(
+        ProgramGrouping,
+        {
+          externalRefs: {
+            $or: ors,
+          },
+        },
+        {
+          fields: ['uuid', 'externalRefs.externalKey'],
+        },
+      );
+    },
+    { parallelism: 2 },
+  );
+
+  // TODO:
+  // 1. Accumulate different types of groupings
+  // 2. Check for dupes
+  // 3. Inter-relate them (shows<=>seasons, artist<=>album)
+  // 4. Persist them
+  // 5. Return mapping of the new or existing IDs to the previous function
+  // and update the mappings of the programs...c
+  mapAsyncSeq(allIds, 50, async (id) => {
+    const metadata = await plexApi.doGet<
+      PlexLibraryShows | PlexSeasonView | PlexLibraryMusic | PlexMusicAlbumView
+    >(`/library/metadata/${id}`);
+    if (!isNil(metadata) && !isEmpty(metadata.Metadata)) {
+      const item = metadata.Metadata[0];
+      switch (item.type) {
+        case 'show':
+          em.create(ProgramGrouping, {});
+        case 'season':
+        case 'artist':
+        case 'album':
+      }
+      // Common function to mint a ProgramGrouping
+    }
+  });
 }
 
 // Takes a listing of programs and makes a mapping of a unique identifier,
