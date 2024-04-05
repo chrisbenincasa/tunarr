@@ -283,7 +283,7 @@ export const PlexMusicArtistSchema = z
     guid: z.string(),
     type: z.literal('artist'),
     title: z.string(),
-    sumamry: z.string().optional(),
+    summary: z.string().optional(),
     index: z.number(),
     viewCount: z.number(),
     skipCount: z.number(),

@@ -7,6 +7,7 @@ import {
   filter,
   find,
   first,
+  isEmpty,
   isNil,
   map,
   reduce,
@@ -56,7 +57,7 @@ export class BackfillProgramGroupings extends Fixer {
       });
 
       if (!isNil(existing)) {
-        logger.debug('Skipping existing TV show: %s', existing.uuid);
+        logger.log('silly', 'Skipping existing TV show: %s', existing.uuid);
         continue;
       }
 
@@ -122,7 +123,7 @@ export class BackfillProgramGroupings extends Fixer {
       });
 
       if (!isNil(existing)) {
-        logger.debug('Skipping existing season: %s', existing.uuid);
+        logger.log('silly', 'Skipping existing season: %s', existing.uuid);
         continue;
       }
 
@@ -181,6 +182,10 @@ export class BackfillProgramGroupings extends Fixer {
         orderBy: { uuid: 'desc' },
       },
     );
+
+    if (isEmpty(episodes)) {
+      return;
+    }
 
     const seasonIds = chain(episodes)
       .map((p) => ({ sourceId: p.externalSourceId, id: p.parentExternalKey }))
