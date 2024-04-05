@@ -21,7 +21,6 @@ export const initOrm = once(async () => {
   const orm = await MikroORM.init({
     ...dbConfig,
     dbName: dbPath,
-    debug: true,
   });
 
   const migrator = orm.getMigrator();
