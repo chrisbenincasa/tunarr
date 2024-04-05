@@ -36,7 +36,6 @@ import {
   OutlinedInput,
   Paper,
   Select,
-  SelectChangeEvent,
   Skeleton,
   Snackbar,
   Stack,
@@ -422,186 +421,81 @@ export default function PlexSettingsPage() {
     error: streamsError,
   } = usePlexStreamSettings();
 
-  const queryClient = useQueryClient();
-
-  const [deletePlexConfirmation, setDeletePlexConfirmation] = useState<
-    string | undefined
-  >(undefined);
-
-  const [showSubtitles, setShowSubtitles] = useState<boolean>(
-    defaultPlexStreamSettings.enableSubtitles,
-  );
-
-  const [audioBoost, setAudioBoost] = useState<number>(
-    defaultPlexStreamSettings.audioBoost,
-  );
-
-  const [forceDirectPlay, setForceDirectPlay] = useState<boolean>(
-    defaultPlexStreamSettings.forceDirectPlay,
-  );
-
-  const [debugLogging, setDebugLogging] = useState<boolean>(
-    defaultPlexStreamSettings.enableDebugLogging,
-  );
-
-  const [playStatus, setPlayStatus] = useState<boolean>(
-    defaultPlexStreamSettings.updatePlayStatus,
-  );
-
-  const [streamPath, setStreamPath] = useState<'plex' | 'direct'>(
-    defaultPlexStreamSettings.streamPath,
-  );
-
-  const [videoCodecs, setVideoCodecs] = React.useState<string[]>(
-    defaultPlexStreamSettings.videoCodecs,
-  );
-
-  const [addVideoCodecs, setAddVideoCodecs] = React.useState<string>('');
-
-  const [audioCodecs, setAudioCodecs] = React.useState<string[]>(
-    defaultPlexStreamSettings.audioCodecs,
-  );
-
-  const [addAudioCodecs, setAddAudioCodecs] = React.useState<string>('');
-
-  const [maxAudioChannels, setMaxAudioChannels] = React.useState<string>(
-    defaultPlexStreamSettings.maxAudioChannels,
-  );
-
-  const [maxDirectStreamBitrate, setMaxDirectStreamBitrate] = useState<string>(
-    defaultPlexStreamSettings.directStreamBitrate.toString(),
-  );
-
-  const [pathReplace, setPathReplace] = React.useState<string>('');
-
-  const [pathReplaceWith, setPathReplaceWith] = React.useState<string>('');
-
-  const [streamProtocol, setStreamProtocol] = React.useState<string>('');
-
-  const [transcodeBitrate, setTranscodeBitrate] = React.useState<string>('');
-
-  const [mediaBufferSize, setMediaBufferSize] = React.useState<string>('');
-
-  const [transcodeMediaBufferSize, setTranscodeMediaBufferSize] =
-    React.useState<string>('');
-
-  const [subtitleSize, setSubtitleSize] = React.useState<string>('');
-
-  const handlePlexStreamingState = useCallback(() => {
-    setVideoCodecs(
-      streamSettings?.videoCodecs || defaultPlexStreamSettings.videoCodecs,
-    );
-
-    setMaxPlayableResolution(
-      resolutionToString(
-        streamSettings?.maxPlayableResolution ||
-          defaultPlexStreamSettings.maxPlayableResolution,
-      ),
-    );
-
-    setMaxTranscodeResolution(
-      resolutionToString(
-        streamSettings?.maxTranscodeResolution ||
-          defaultPlexStreamSettings.maxTranscodeResolution,
-      ),
-    );
-
-    setMaxDirectStreamBitrate(
-      streamSettings?.directStreamBitrate.toString() ||
-        defaultPlexStreamSettings.directStreamBitrate.toString(),
-    );
-
-    setAudioBoost(
-      streamSettings?.audioBoost || defaultPlexStreamSettings.audioBoost,
-    );
-
-    setStreamPath(
-      streamSettings?.streamPath || defaultPlexStreamSettings.streamPath,
-    );
-
-    setForceDirectPlay(
-      streamSettings?.forceDirectPlay ||
-        defaultPlexStreamSettings.forceDirectPlay,
-    );
-
-    setDebugLogging(
-      streamSettings?.enableDebugLogging ||
-        defaultPlexStreamSettings.enableDebugLogging,
-    );
-
-    setPlayStatus(
-      streamSettings?.updatePlayStatus ||
-        defaultPlexStreamSettings.updatePlayStatus,
-    );
-
-    setStreamProtocol(
-      streamSettings?.streamProtocol ||
-        defaultPlexStreamSettings.streamProtocol,
-    );
-
-    setAudioCodecs(
-      streamSettings?.audioCodecs || defaultPlexStreamSettings.audioCodecs,
-    );
-
-    setMaxAudioChannels(
-      streamSettings?.maxAudioChannels ||
-        defaultPlexStreamSettings.maxAudioChannels,
-    );
-
-    setPathReplace(
-      streamSettings?.pathReplace || defaultPlexStreamSettings.pathReplace,
-    );
-
-    setPathReplaceWith(
-      streamSettings?.pathReplaceWith ||
-        defaultPlexStreamSettings.pathReplaceWith,
-    );
-
-    setTranscodeBitrate(
-      streamSettings?.transcodeBitrate.toString() ||
-        defaultPlexStreamSettings.transcodeBitrate.toString(),
-    );
-
-    setMediaBufferSize(
-      streamSettings?.mediaBufferSize.toString() ||
-        defaultPlexStreamSettings.mediaBufferSize.toString(),
-    );
-
-    setTranscodeMediaBufferSize(
-      streamSettings?.transcodeMediaBufferSize.toString() ||
-        defaultPlexStreamSettings.transcodeMediaBufferSize.toString(),
-    );
-
-    setSubtitleSize(
-      streamSettings?.subtitleSize.toString() ||
-        defaultPlexStreamSettings.subtitleSize.toString(),
-    );
-
-    setShowSubtitles(
-      streamSettings?.enableSubtitles ||
-        defaultPlexStreamSettings.enableSubtitles,
-    );
-  }, [
-    streamSettings?.audioCodecs,
-    streamSettings?.audioBoost,
-    streamSettings?.directStreamBitrate,
-    streamSettings?.maxAudioChannels,
-    streamSettings?.maxPlayableResolution,
-    streamSettings?.maxTranscodeResolution,
-    streamSettings?.mediaBufferSize,
-    streamSettings?.transcodeBitrate,
-    streamSettings?.transcodeMediaBufferSize,
-    streamSettings?.videoCodecs,
-    streamSettings?.subtitleSize,
-    streamSettings?.enableSubtitles,
-    streamSettings?.forceDirectPlay,
-    streamSettings?.enableDebugLogging,
-    streamSettings?.updatePlayStatus,
-  ]);
+  const {
+    reset,
+    control,
+    formState: { isDirty, isValid },
+    handleSubmit,
+  } = useForm<PlexStreamSettings>({
+    defaultValues: defaultPlexStreamSettings,
+    mode: 'onBlur',
+  });
 
   useEffect(() => {
-    handlePlexStreamingState();
-  }, [handlePlexStreamingState, streamSettings]);
+    if (streamSettings && !isDirty) {
+      reset(streamSettings);
+    }
+  }, [streamSettings, isDirty, reset]);
+
+  const [snackStatus, setSnackStatus] = React.useState<boolean>(false);
+  const queryClient = useQueryClient();
+
+  const updatePlexStreamingSettingsMutation = useMutation({
+    mutationFn: (updateSettings: PlexStreamSettings) => {
+      return fetch('http://localhost:8000/api/plex-settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateSettings),
+      });
+    },
+    onSuccess: () => {
+      setSnackStatus(true);
+      return queryClient.invalidateQueries({
+        queryKey: ['settings', 'plex-settings'],
+      });
+    },
+  });
+
+  // TO DO: Add All Fields and remove defaults
+  // refactor
+  const updatePlexStreamSettings = () => {
+    const [maxPlayableResolutionWidth, maxPlayableResolutionHeight] =
+      maxPlayableResolution.split('x', 2);
+    const [maxTranscodeResolutionWidth, maxTranscodeResolutionHeight] =
+      maxTranscodeResolution.split('x', 2);
+
+    // This is temporary until I have all fields
+    const allPlexStreamFieldValues = {
+      ...streamSettings,
+      ...{
+        maxPlayableResolution: resolutionFromString(
+          resolutionToString({
+            widthPx: Number(maxPlayableResolutionWidth),
+            heightPx: Number(maxPlayableResolutionHeight),
+          }),
+        ),
+        maxTranscodeResolution: resolutionFromString(
+          resolutionToString({
+            widthPx: Number(maxTranscodeResolutionWidth),
+            heightPx: Number(maxTranscodeResolutionHeight),
+          }),
+        ),
+      },
+    };
+
+    updatePlexStreamingSettingsMutation.mutate(allPlexStreamFieldValues);
+  };
+
+  const handleSnackClose = () => {
+    setSnackStatus(false);
+  };
+
+  // This is messy, lets consider getting rid of combine, it probably isnt useful here
+  if (serversError || streamsError) {
+    return <h1>XML: {(serversError ?? streamsError)!.message}</h1>;
+  }
 
   const handleVideoCodecUpdate = () => {
     if (!addVideoCodecs.length) {
@@ -641,96 +535,6 @@ export default function PlexSettingsPage() {
 
     setAudioCodecs([...audioCodecs, ...newAudioCodecs]);
     setAddAudioCodecs('');
-  };
-
-  const handleAudioCodecChange = (newAudioCodecs: string) => {
-    setAddAudioCodecs(newAudioCodecs);
-  };
-
-  const handleAudioBoost = (event: SelectChangeEvent<number>) => {
-    setAudioBoost(event.target.value as number); // We know this will be a number
-  };
-
-  const [maxPlayableResolution, setMaxPlayableResolution] = useState<string>(
-    resolutionToString(defaultPlexStreamSettings.maxPlayableResolution),
-  );
-
-  const handleMaxPlayableResolution = (event: SelectChangeEvent<string>) => {
-    setMaxPlayableResolution(event.target.value);
-  };
-
-  const [maxTranscodeResolution, setMaxTranscodeResolution] = useState<string>(
-    resolutionToString(defaultPlexStreamSettings.maxTranscodeResolution),
-  );
-
-  const handleMaxTranscodeResolution = (event: SelectChangeEvent<string>) => {
-    setMaxTranscodeResolution(event.target.value);
-  };
-
-  const handleStreamProtocol = (event: SelectChangeEvent<string>) => {
-    setStreamProtocol(event.target.value);
-  };
-
-  const handleMaxDirectStreamBitrate = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    setMaxDirectStreamBitrate(event.target.value);
-  };
-
-  const handleTranscodeBitrate = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    setTranscodeBitrate(event.target.value);
-  };
-
-  const handleMediaBufferSize = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    setMediaBufferSize(event.target.value);
-  };
-
-  const handleTranscodeMediaBufferSize = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    setTranscodeMediaBufferSize(event.target.value);
-  };
-
-  const handleMaxAudioChannels = (event: SelectChangeEvent<string>) => {
-    setMaxAudioChannels(event.target.value);
-  };
-
-  const onSubtitleChange = () => {
-    setShowSubtitles(!showSubtitles);
-  };
-
-  const onDirectPlayChange = () => {
-    setForceDirectPlay(!forceDirectPlay);
-  };
-
-  const onDebugLoggingChange = () => {
-    setDebugLogging(!debugLogging);
-  };
-
-  const onPlayStatusChange = () => {
-    setPlayStatus(!playStatus);
-  };
-
-  const handlePathChange = (event: SelectChangeEvent<'plex' | 'direct'>) => {
-    setStreamPath(event.target.value as 'plex' | 'direct');
-  };
-
-  const handlePathReplace = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setPathReplace(event.target.value);
-  };
-
-  const handlePathReplaceWith = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    setPathReplaceWith(event.target.value);
-  };
-
-  const handleSubtitleSize = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSubtitleSize(event.target.value);
   };
 
   const renderConfirmationDialog = () => {
@@ -780,80 +584,6 @@ export default function PlexSettingsPage() {
     },
   });
 
-  const [snackStatus, setSnackStatus] = React.useState<boolean>(false);
-
-  const updatePlexStreamingSettingsMutation = useMutation({
-    mutationFn: (updateSettings: PlexStreamSettings) => {
-      return fetch('http://localhost:8000/api/plex-settings', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updateSettings),
-      });
-    },
-    onSuccess: () => {
-      setSnackStatus(true);
-      return queryClient.invalidateQueries({
-        queryKey: ['settings', 'plex-settings'],
-      });
-    },
-  });
-
-  // TO DO: Add All Fields and remove defaults
-  // refactor
-  const updatePlexStreamSettings = () => {
-    const [maxPlayableResolutionWidth, maxPlayableResolutionHeight] =
-      maxPlayableResolution.split('x', 2);
-    const [maxTranscodeResolutionWidth, maxTranscodeResolutionHeight] =
-      maxTranscodeResolution.split('x', 2);
-
-    // This is temporary until I have all fields
-    const allPlexStreamFieldValues = {
-      ...defaultPlexStreamSettings,
-      ...{
-        audioCodecs,
-        audioBoost,
-        directStreamBitrate: Number(maxDirectStreamBitrate),
-        enableSubtitles: showSubtitles,
-        maxAudioChannels,
-        maxPlayableResolution: resolutionFromString(
-          resolutionToString({
-            widthPx: Number(maxPlayableResolutionWidth),
-            heightPx: Number(maxPlayableResolutionHeight),
-          }),
-        ),
-        maxTranscodeResolution: resolutionFromString(
-          resolutionToString({
-            widthPx: Number(maxTranscodeResolutionWidth),
-            heightPx: Number(maxTranscodeResolutionHeight),
-          }),
-        ),
-        mediaBufferSize: Number(mediaBufferSize),
-        subtitleSize: Number(subtitleSize),
-        transcodeBitrate: Number(transcodeBitrate),
-        transcodeMediaBufferSize: Number(transcodeMediaBufferSize),
-        videoCodecs,
-        forceDirectPlay,
-        enableDebugLogging: debugLogging,
-        updatePlayStatus: playStatus,
-        streamPath,
-        pathReplace,
-        pathReplaceWith,
-        streamProtocol,
-      },
-    };
-
-    updatePlexStreamingSettingsMutation.mutate(allPlexStreamFieldValues);
-  };
-
-  const handleResetOptions = () => {
-    updatePlexStreamingSettingsMutation.mutate({
-      ...defaultPlexStreamSettings,
-    });
-    handlePlexStreamingState();
-  };
-
   const removeVideoCodec = (codecToDelete: string) => () => {
     setVideoCodecs(
       (codecs) => codecs?.filter((codec) => codec !== codecToDelete),
@@ -865,15 +595,6 @@ export default function PlexSettingsPage() {
       (codecs) => codecs?.filter((codec) => codec !== codecToDelete),
     );
   };
-
-  const handleSnackClose = () => {
-    setSnackStatus(false);
-  };
-
-  // This is messy, lets consider getting rid of combine, it probably isnt useful here
-  if (serversError || streamsError) {
-    return <h1>XML: {(serversError ?? streamsError)!.message}</h1>;
-  }
 
   const removePlexServer = (id: string) => {
     removePlexServerMutation.mutate(id);
@@ -1345,7 +1066,7 @@ export default function PlexSettingsPage() {
   };
 
   return (
-    <>
+    <Box component="form" onSubmit={handleSubmit(updatePlexStreamSettings)}>
       <Snackbar
         open={snackStatus}
         autoHideDuration={6000}
@@ -1438,17 +1159,14 @@ export default function PlexSettingsPage() {
           justifyContent="right"
           sx={{ mt: 2 }}
         >
-          <Button variant="outlined" onClick={() => handleResetOptions()}>
+          <Button variant="outlined" onClick={() => reset()}>
             Reset Options
           </Button>
-          <Button
-            variant="contained"
-            onClick={() => updatePlexStreamSettings()}
-          >
+          <Button variant="contained" disabled={!isValid} type="submit">
             Save
           </Button>
         </Stack>
       </Box>
-    </>
+    </Box>
   );
 }
