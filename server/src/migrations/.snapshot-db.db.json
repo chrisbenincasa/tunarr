@@ -687,6 +687,174 @@
           "length": 0,
           "mappedType": "datetime"
         },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "mappedType": "text"
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "mappedType": "text"
+        },
+        "summary": {
+          "name": "summary",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "mappedType": "text"
+        },
+        "icon": {
+          "name": "icon",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "mappedType": "text"
+        },
+        "year": {
+          "name": "year",
+          "type": "integer",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "mappedType": "integer"
+        },
+        "index": {
+          "name": "index",
+          "type": "integer",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "mappedType": "integer"
+        },
+        "show_uuid": {
+          "name": "show_uuid",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "mappedType": "text"
+        },
+        "artist_uuid": {
+          "name": "artist_uuid",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "mappedType": "text"
+        }
+      },
+      "name": "program_grouping",
+      "indexes": [
+        {
+          "columnNames": [
+            "show_uuid"
+          ],
+          "composite": false,
+          "keyName": "program_grouping_show_uuid_index",
+          "constraint": false,
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "artist_uuid"
+          ],
+          "composite": false,
+          "keyName": "program_grouping_artist_uuid_index",
+          "constraint": false,
+          "primary": false,
+          "unique": false
+        },
+        {
+          "keyName": "primary",
+          "columnNames": [
+            "uuid"
+          ],
+          "composite": false,
+          "constraint": true,
+          "primary": true,
+          "unique": true
+        }
+      ],
+      "checks": [],
+      "foreignKeys": {
+        "program_grouping_show_uuid_foreign": {
+          "constraintName": "program_grouping_show_uuid_foreign",
+          "columnNames": [
+            "show_uuid"
+          ],
+          "localTableName": "program_grouping",
+          "referencedColumnNames": [
+            "uuid"
+          ],
+          "referencedTableName": "program_grouping",
+          "deleteRule": "set null",
+          "updateRule": "cascade"
+        },
+        "program_grouping_artist_uuid_foreign": {
+          "constraintName": "program_grouping_artist_uuid_foreign",
+          "columnNames": [
+            "artist_uuid"
+          ],
+          "localTableName": "program_grouping",
+          "referencedColumnNames": [
+            "uuid"
+          ],
+          "referencedTableName": "program_grouping",
+          "deleteRule": "set null",
+          "updateRule": "cascade"
+        }
+      },
+      "nativeEnums": {}
+    },
+    {
+      "columns": {
+        "uuid": {
+          "name": "uuid",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "mappedType": "text"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "datetime",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "length": 0,
+          "mappedType": "datetime"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "datetime",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "length": 0,
+          "mappedType": "datetime"
+        },
         "source_type": {
           "name": "source_type",
           "type": "text",
@@ -877,7 +1045,12 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
-          "mappedType": "text"
+          "enumItems": [
+            "movie",
+            "episode",
+            "track"
+          ],
+          "mappedType": "enum"
         },
         "year": {
           "name": "year",
@@ -905,10 +1078,86 @@
           "primary": false,
           "nullable": true,
           "mappedType": "text"
+        },
+        "season_uuid": {
+          "name": "season_uuid",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "mappedType": "text"
+        },
+        "tv_show_uuid": {
+          "name": "tv_show_uuid",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "mappedType": "text"
+        },
+        "album_uuid": {
+          "name": "album_uuid",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "mappedType": "text"
+        },
+        "artist_uuid": {
+          "name": "artist_uuid",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "mappedType": "text"
         }
       },
       "name": "program",
       "indexes": [
+        {
+          "columnNames": [
+            "season_uuid"
+          ],
+          "composite": false,
+          "keyName": "program_season_uuid_index",
+          "constraint": false,
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "tv_show_uuid"
+          ],
+          "composite": false,
+          "keyName": "program_tv_show_uuid_index",
+          "constraint": false,
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "album_uuid"
+          ],
+          "composite": false,
+          "keyName": "program_album_uuid_index",
+          "constraint": false,
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "artist_uuid"
+          ],
+          "composite": false,
+          "keyName": "program_artist_uuid_index",
+          "constraint": false,
+          "primary": false,
+          "unique": false
+        },
         {
           "keyName": "program_source_type_external_source_id_external_key_unique",
           "columnNames": [
@@ -933,7 +1182,60 @@
         }
       ],
       "checks": [],
-      "foreignKeys": {},
+      "foreignKeys": {
+        "program_season_uuid_foreign": {
+          "constraintName": "program_season_uuid_foreign",
+          "columnNames": [
+            "season_uuid"
+          ],
+          "localTableName": "program",
+          "referencedColumnNames": [
+            "uuid"
+          ],
+          "referencedTableName": "program_grouping",
+          "deleteRule": "set null",
+          "updateRule": "cascade"
+        },
+        "program_tv_show_uuid_foreign": {
+          "constraintName": "program_tv_show_uuid_foreign",
+          "columnNames": [
+            "tv_show_uuid"
+          ],
+          "localTableName": "program",
+          "referencedColumnNames": [
+            "uuid"
+          ],
+          "referencedTableName": "program_grouping",
+          "deleteRule": "set null",
+          "updateRule": "cascade"
+        },
+        "program_album_uuid_foreign": {
+          "constraintName": "program_album_uuid_foreign",
+          "columnNames": [
+            "album_uuid"
+          ],
+          "localTableName": "program",
+          "referencedColumnNames": [
+            "uuid"
+          ],
+          "referencedTableName": "program_grouping",
+          "deleteRule": "set null",
+          "updateRule": "cascade"
+        },
+        "program_artist_uuid_foreign": {
+          "constraintName": "program_artist_uuid_foreign",
+          "columnNames": [
+            "artist_uuid"
+          ],
+          "localTableName": "program",
+          "referencedColumnNames": [
+            "uuid"
+          ],
+          "referencedTableName": "program_grouping",
+          "deleteRule": "set null",
+          "updateRule": "cascade"
+        }
+      },
       "nativeEnums": {}
     },
     {
@@ -1313,6 +1615,137 @@
           ],
           "referencedTableName": "program",
           "deleteRule": "cascade",
+          "updateRule": "cascade"
+        }
+      },
+      "nativeEnums": {}
+    },
+    {
+      "columns": {
+        "uuid": {
+          "name": "uuid",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "mappedType": "text"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "datetime",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "length": 0,
+          "mappedType": "datetime"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "datetime",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "length": 0,
+          "mappedType": "datetime"
+        },
+        "source_type": {
+          "name": "source_type",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "enumItems": [
+            "plex"
+          ],
+          "mappedType": "enum"
+        },
+        "external_source_id": {
+          "name": "external_source_id",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "mappedType": "text"
+        },
+        "external_key": {
+          "name": "external_key",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "mappedType": "text"
+        },
+        "external_file_path": {
+          "name": "external_file_path",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "mappedType": "text"
+        },
+        "group_uuid": {
+          "name": "group_uuid",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "mappedType": "text"
+        }
+      },
+      "name": "program_grouping_external_id",
+      "indexes": [
+        {
+          "columnNames": [
+            "group_uuid"
+          ],
+          "composite": false,
+          "keyName": "program_grouping_external_id_group_uuid_index",
+          "constraint": false,
+          "primary": false,
+          "unique": false
+        },
+        {
+          "keyName": "program_grouping_external_id_uuid_source_type_unique",
+          "columnNames": [
+            "uuid",
+            "source_type"
+          ],
+          "composite": true,
+          "constraint": true,
+          "primary": false,
+          "unique": true
+        },
+        {
+          "keyName": "primary",
+          "columnNames": [
+            "uuid"
+          ],
+          "composite": false,
+          "constraint": true,
+          "primary": true,
+          "unique": true
+        }
+      ],
+      "checks": [],
+      "foreignKeys": {
+        "program_grouping_external_id_group_uuid_foreign": {
+          "constraintName": "program_grouping_external_id_group_uuid_foreign",
+          "columnNames": [
+            "group_uuid"
+          ],
+          "localTableName": "program_grouping_external_id",
+          "referencedColumnNames": [
+            "uuid"
+          ],
+          "referencedTableName": "program_grouping",
           "updateRule": "cascade"
         }
       },

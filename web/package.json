@@ -62,7 +62,7 @@
     "nodemon": "^3.0.3",
     "openapi-zod-client": "^1.14.0",
     "ts-essentials": "^9.4.1",
-    "typescript": "^5.4.3",
+    "typescript": "5.4.3",
     "vite": "^4.4.5"
   }
 }

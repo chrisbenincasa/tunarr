@@ -40,6 +40,10 @@ type PlexApiOptions = MarkOptional<
 class PlexApiFactoryImpl {
   #cache: NodeCache;
 
+  constructor() {
+    this.#cache = new NodeCache();
+  }
+
   get(opts: PlexApiOptions) {
     const key = `${opts.uri}|${opts.accessToken}`;
     let client = this.#cache.get<Plex>(key);

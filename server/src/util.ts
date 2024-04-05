@@ -1,14 +1,17 @@
 import {
   chain,
+  chunk,
   concat,
   identity,
   isArray,
   isEmpty,
   isError,
+  isFunction,
   isNil,
   isPlainObject,
   isString,
   isUndefined,
+  map,
   once,
   reduce,
 } from 'lodash-es';
@@ -87,11 +90,45 @@ export function groupByUniqAndMap<
   K extends KeysOfType<T>,
   Key extends IsStringOrNumberValue<T, K>,
   Value,
->(data: T[], member: K, mapper: (val: T) => Value): Record<Key, Value> {
+>(
+  data: T[],
+  member: K | ((item: T) => K),
+  mapper: (val: T) => Value,
+): Record<Key, Value> {
   return reduce(
     data,
-    (prev, t) => ({ ...prev, [t[member] as Key]: mapper(t) }),
+    (prev, t) => ({
+      ...prev,
+      [t[isFunction(member) ? member(t) : member] as Key]: mapper(t),
+    }),
     {} as Record<Key, Value>,
+  );
+}
+
+// This will fail if any mapping function fails
+export function groupByUniqAndMapAsync<
+  T,
+  K extends KeysOfType<T>,
+  Key extends IsStringOrNumberValue<T, K>,
+  Value,
+>(
+  data: T[],
+  member: K | ((item: T) => K),
+  mapper: (val: T) => Promise<Value>,
+  opts?: mapAsyncSeq2Opts,
+): Promise<Record<Key, Value>> {
+  const keyFunc = (t: T) => t[isFunction(member) ? member(t) : member] as Key;
+  return mapReduceAsyncSeq2(
+    data,
+    (t) => mapper(t).then((v) => [keyFunc(t), v] as const),
+    (acc, [key, value]) => {
+      return {
+        ...acc,
+        [key]: value,
+      };
+    },
+    {} as Record<Key, Value>,
+    opts,
   );
 }
 
@@ -122,6 +159,44 @@ export async function mapAsyncSeq<T, U>(
   return Promise.all(all);
 }
 
+type mapAsyncSeq2Opts = {
+  ms?: number;
+  parallelism?: number;
+  failuresToNull?: boolean;
+};
+
+export async function mapReduceAsyncSeq2<T, U, Res>(
+  seq: T[] | null | undefined,
+  fn: (item: T) => Promise<U>,
+  reduce: (res: Res, item: U) => Res,
+  empty: Res,
+  opts?: mapAsyncSeq2Opts,
+): Promise<Res> {
+  if (isNil(seq)) {
+    return empty;
+  }
+
+  const parallelism = opts?.parallelism ?? 1;
+  const results: U[] = [];
+  for (const itemChunk of chunk(seq, parallelism)) {
+    const promises = map(itemChunk, fn);
+    const result = await Promise.all(promises);
+    if (opts?.ms && opts.ms >= 0) {
+      await wait(opts.ms);
+    }
+    results.push(...result);
+  }
+  return results.reduce(reduce, empty);
+}
+
+export async function mapAsyncSeq2<T, U>(
+  seq: T[] | null | undefined,
+  fn: (item: T) => Promise<U>,
+  opts?: mapAsyncSeq2Opts,
+): Promise<U[]> {
+  return mapReduceAsyncSeq2(seq, fn, (x, y) => [...x, y], [] as U[], opts);
+}
+
 export async function flatMapAsyncSeq<T, U>(
   seq: readonly T[],
   itemFn: (item: T) => Promise<U[]>,
@@ -129,7 +204,13 @@ export async function flatMapAsyncSeq<T, U>(
   return mapReduceAsyncSeq(
     seq,
     itemFn,
-    (prev, next) => concat(prev, next),
+    (prev, next) => {
+      if (isNil(next)) {
+        return prev;
+      } else {
+        return concat(prev, next);
+      }
+    },
     [] as U[],
   );
 }
@@ -301,6 +382,33 @@ export function emptyStringToUndefined(
   }
 
   return s.length === 0 ? undefined : s;
+}
+
+export function isNonEmptyString(v: unknown): v is string {
+  return isString(v) && !isEmpty(v);
+}
+
+export function ifDefined<T, U>(
+  v: T | null | undefined,
+  f: (t: T) => U,
+): U | null {
+  if (isNil(v)) {
+    return null;
+  }
+  return f(v);
+}
+
+export function flipMap<K extends string | number, V extends string | number>(
+  m: Record<K, Iterable<V>>,
+): Record<V, K> {
+  const acc: Record<V, K> = {} as Record<V, K>;
+  for (const [key, vs] of Object.entries<Iterable<V>>(m)) {
+    for (const v of vs) {
+      acc[v] = key as K;
+    }
+  }
+
+  return acc;
 }
 
 export const filename = (path: string) => fileURLToPath(path);

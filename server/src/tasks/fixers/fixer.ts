@@ -1,4 +1,5 @@
-import { EntityManager, withDb } from '../../dao/dataSource.js';
+import { EntityManager } from '@mikro-orm/better-sqlite';
+import { withDb } from '../../dao/dataSource.js';
 
 export default abstract class Fixer {
   async run() {

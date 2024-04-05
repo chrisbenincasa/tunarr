@@ -89,6 +89,12 @@ export const CondensedContentProgramSchema = BaseProgramSchema.extend({
     .optional(),
 });
 
+// Unfortunately we can't make this a discrim union, or even a regular union,
+// because it is used in other discriminatedUnions and zod cannot handle this
+// See:
+// https://github.com/colinhacks/zod/issues/2106
+// https://github.com/colinhacks/zod/issues/1884
+// This stuff makes me wanna just redefine all of this...
 export const ContentProgramSchema = CondensedContentProgramSchema.extend({
   subtype: z.union([
     z.literal('movie'),
@@ -101,10 +107,14 @@ export const ContentProgramSchema = CondensedContentProgramSchema.extend({
   // If subtype = episode, this is the show title
   title: z.string(),
   // Episode specific stuff
+  showId: z.string().optional(),
+  seasonId: z.string().optional(),
   episodeTitle: z.string().optional(),
   seasonNumber: z.number().optional(),
   episodeNumber: z.number().optional(),
   // Track specific stuff
+  albumId: z.string().optional(),
+  artistId: z.string().optional(),
   artistName: z.string().optional(),
   albumName: z.string().optional(),
   // External source metadata
@@ -113,6 +123,7 @@ export const ContentProgramSchema = CondensedContentProgramSchema.extend({
   externalKey: z.string().optional(),
   uniqueId: z.string(), // If persisted, this is the ID. If not persisted, this is `externalSourceType|externalSourceName|externalKey`
 });
+
 // Should be able to do this once we have https://github.com/colinhacks/zod/issues/2106
 // .refine(
 //   (val) =>

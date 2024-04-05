@@ -5,9 +5,10 @@ import {
 import { chain, isNil, isUndefined, keys, map, mapValues } from 'lodash-es';
 import { groupByUniq } from '../util.js';
 import { ChannelDB } from './channelDb.js';
+import { ProgramSourceType } from './custom_types/ProgramSourceType.js';
 import { getEm } from './dataSource.js';
 import { PlexServerSettings as PlexServerSettingsEntity } from './entities/PlexServerSettings.js';
-import { Program, ProgramSourceType } from './entities/Program.js';
+import { Program } from './entities/Program.js';
 
 //hmnn this is more of a "PlexServerService"...
 const ICON_REGEX =

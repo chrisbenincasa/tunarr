@@ -1,5 +1,6 @@
 import createLogger from '../../logger.js';
 import { AddPlexServerIdsFixer } from './addPlexServerIds.js';
+import { BackfillProgramGroupings } from './backfillProgramGroupings.js';
 import Fixer from './fixer.js';
 import { MissingSeasonNumbersFixer } from './missingSeasonNumbersFixer.js';
 
@@ -15,6 +16,7 @@ export const runFixers = async () => {
   const allFixers: Fixer[] = [
     new MissingSeasonNumbersFixer(),
     new AddPlexServerIdsFixer(),
+    new BackfillProgramGroupings(),
   ];
 
   for (const fixer of allFixers) {
