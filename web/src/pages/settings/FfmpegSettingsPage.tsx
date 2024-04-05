@@ -477,7 +477,7 @@ export default function FfmpegSettingsPage() {
               prettyFieldName="Audio Buffer Size"
               TextFieldProps={{
                 id: 'audio-buffer-size',
-                label: 'Audio Buffer Size (K)',
+                label: 'Audio Buffer Size (kb)',
                 fullWidth: true,
                 sx: { my: 1 },
               }}
