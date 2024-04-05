@@ -2,8 +2,9 @@ import {
   Button,
   Checkbox,
   FormControl,
+  FormControlLabel,
   FormHelperText,
-  FormLabel,
+  Grid,
   Snackbar,
   Stack,
   TextField,
@@ -94,14 +95,20 @@ export default function HdhrSettingsPage() {
         onClose={handleSnackClose}
         message="Settings Saved!"
       />
-      <FormControl>
-        <Checkbox
-          value={enableSsdpServer}
-          onChange={() => handleEnableSsdpServer()}
-        />
-        <FormLabel>Enable SSDP server</FormLabel>
-        <FormHelperText>* Restart required</FormHelperText>
-      </FormControl>
+      <Grid item xs={12} sm={6}>
+        <FormControl fullWidth>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={enableSsdpServer}
+                onChange={() => handleEnableSsdpServer()}
+              />
+            }
+            label="Enable SSDP server"
+          />
+          <FormHelperText>* Restart required</FormHelperText>
+        </FormControl>
+      </Grid>
       <TextField
         fullWidth
         id="output-path"
