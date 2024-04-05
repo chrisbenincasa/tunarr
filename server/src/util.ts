@@ -130,13 +130,15 @@ type mapAsyncSeq2Opts = {
   failuresToNull?: boolean;
 };
 
-export async function mapAsyncSeq2<T, U>(
+export async function mapReduceAsyncSeq2<T, U, Res>(
   seq: T[] | null | undefined,
   fn: (item: T) => Promise<U>,
+  reduce: (res: Res, item: U) => Res,
+  empty: Res,
   opts: mapAsyncSeq2Opts,
-): Promise<U[]> {
+): Promise<Res> {
   if (isNil(seq)) {
-    return [];
+    return empty;
   }
 
   const parallelism = opts.parallelism ?? 1;
@@ -149,7 +151,15 @@ export async function mapAsyncSeq2<T, U>(
     }
     results.push(...result);
   }
-  return results;
+  return results.reduce(reduce, empty);
+}
+
+export async function mapAsyncSeq2<T, U>(
+  seq: T[] | null | undefined,
+  fn: (item: T) => Promise<U>,
+  opts: mapAsyncSeq2Opts,
+): Promise<U[]> {
+  return mapReduceAsyncSeq2(seq, fn, concat, [] as U[], opts);
 }
 
 export async function flatMapAsyncSeq<T, U>(

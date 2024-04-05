@@ -1,3 +1,4 @@
+import { PopulateHint } from '@mikro-orm/core';
 import {
   ChannelProgram,
   ContentProgram,
@@ -14,24 +15,30 @@ import {
 import {
   chain,
   chunk,
+  concat,
   filter,
+  find,
   flatten,
   groupBy,
   isEmpty,
   isNil,
+  isUndefined,
   keys,
   map,
   reduce,
 } from 'lodash-es';
 import createLogger from '../logger.js';
 import { PlexApiFactory } from '../plex.js';
-import { mapAsyncSeq, mapAsyncSeq2 } from '../util.js';
+import { mapAsyncSeq, mapAsyncSeq2, mapReduceAsyncSeq2 } from '../util.js';
 import { ProgramMinterFactory } from '../util/programMinter.js';
 import { ProgramSourceType } from './custom_types/ProgramSourceType.js';
 import { getEm } from './dataSource.js';
 import { PlexServerSettings } from './entities/PlexServerSettings.js';
 import { Program } from './entities/Program.js';
-import { ProgramGrouping } from './entities/ProgramGrouping.js';
+import {
+  ProgramGrouping,
+  ProgramGroupingType,
+} from './entities/ProgramGrouping.js';
 
 const logger = createLogger(import.meta);
 
@@ -166,29 +173,44 @@ async function findAndUpdatePlexServerPrograms(
     .flattenDeep()
     .value();
 
-  mapAsyncSeq2(
-    chunk(allIds, 25),
-    (chunk) => {
-      const ors = map(chunk, (id) => ({
-        sourceType: ProgramSourceType.PLEX,
-        externalKey: id,
-        externalSourceId: plexServerName,
-      }));
+  const existingGroupings = flatten(
+    await mapAsyncSeq2(
+      chunk(allIds, 25),
+      (chunk) => {
+        const ors = map(chunk, (id) => ({
+          sourceType: ProgramSourceType.PLEX,
+          externalKey: id,
+          externalSourceId: plexServerName,
+        }));
 
-      return em.find(
-        ProgramGrouping,
-        {
-          externalRefs: {
-            $or: ors,
+        return em.find(
+          ProgramGrouping,
+          {
+            externalRefs: {
+              $or: ors,
+            },
           },
-        },
-        {
-          fields: ['uuid', 'externalRefs.externalKey'],
-        },
-      );
-    },
-    { parallelism: 2 },
+          {
+            populateWhere: PopulateHint.INFER,
+            fields: ['uuid', 'externalRefs.externalKey'],
+          },
+        );
+      },
+      { parallelism: 2 },
+    ),
   );
+
+  chain(existingGroupings).map(eg => find(
+    eg.externalRefs,
+    { sourceType: ProgramSourceType.PLEX, externalSourceId: plexServerName }
+  ))
+  const existingGroupingsByPlexId = keys(groupBy(existingGroupings, (eg) =>
+    find(
+      eg.externalRefs,
+      { sourceType: ProgramSourceType.PLEX, externalSourceId: plexServerName }!
+        .externalSourceId,
+    ),
+  ));
 
   // TODO:
   // 1. Accumulate different types of groupings
@@ -196,23 +218,55 @@ async function findAndUpdatePlexServerPrograms(
   // 3. Inter-relate them (shows<=>seasons, artist<=>album)
   // 4. Persist them
   // 5. Return mapping of the new or existing IDs to the previous function
-  // and update the mappings of the programs...c
-  mapAsyncSeq(allIds, 50, async (id) => {
-    const metadata = await plexApi.doGet<
-      PlexLibraryShows | PlexSeasonView | PlexLibraryMusic | PlexMusicAlbumView
-    >(`/library/metadata/${id}`);
-    if (!isNil(metadata) && !isEmpty(metadata.Metadata)) {
-      const item = metadata.Metadata[0];
-      switch (item.type) {
-        case 'show':
-          em.create(ProgramGrouping, {});
-        case 'season':
-        case 'artist':
-        case 'album':
+  // and update the mappings of the programs...
+  const empty: Record<ProgramGroupingType, ProgramGrouping[]> = {
+    [ProgramGroupingType.MusicAlbum]: [],
+    [ProgramGroupingType.MusicArtist]: [],
+    [ProgramGroupingType.TvShow]: [],
+    [ProgramGroupingType.TvShowSeason]: [],
+  };
+
+  return mapReduceAsyncSeq2(
+    reject(allIds, ,
+    async (id) => {
+      const metadata = await plexApi.doGet<
+        | PlexLibraryShows
+        | PlexSeasonView
+        | PlexLibraryMusic
+        | PlexMusicAlbumView
+      >(`/library/metadata/${id}`);
+      if (!isNil(metadata) && !isEmpty(metadata.Metadata)) {
+        const item = metadata.Metadata[0];
+        switch (item.type) {
+          case 'show':
+            return em.create(ProgramGrouping, {});
+          case 'season':
+            return em.create(ProgramGrouping, {});
+          case 'artist':
+            return em.create(ProgramGrouping, {});
+          case 'album':
+            return em.create(ProgramGrouping, {});
+        }
+        // Common function to mint a ProgramGrouping
       }
-      // Common function to mint a ProgramGrouping
-    }
-  });
+      return;
+    },
+    (prev, curr) => {
+      if (isUndefined(curr)) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        [curr.type]: concat(prev[curr.type], curr),
+      };
+    },
+    empty,
+    {
+      parallelism: 2,
+      ms: 50,
+    },
+  );
 }
 
 // Takes a listing of programs and makes a mapping of a unique identifier,
