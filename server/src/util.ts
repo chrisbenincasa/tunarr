@@ -204,7 +204,13 @@ export async function flatMapAsyncSeq<T, U>(
   return mapReduceAsyncSeq(
     seq,
     itemFn,
-    (prev, next) => concat(prev, next),
+    (prev, next) => {
+      if (isNil(next)) {
+        return prev;
+      } else {
+        return concat(prev, next);
+      }
+    },
     [] as U[],
   );
 }

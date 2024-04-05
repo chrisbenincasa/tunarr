@@ -6,9 +6,6 @@ import {
   ChannelProgramming,
   CondensedChannelProgram,
   CondensedChannelProgramming,
-  ContentProgram,
-  FlexProgram,
-  RedirectProgram,
   SaveChannelRequest,
 } from '@tunarr/types';
 import { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
@@ -30,9 +27,7 @@ import {
   sumBy,
   take,
 } from 'lodash-es';
-import { Adapter, Low } from 'lowdb';
-import { TextFile } from 'lowdb/node';
-import { PathLike } from 'node:fs';
+import { Low } from 'lowdb';
 import fs from 'node:fs/promises';
 import { join } from 'path';
 import { globalOptions } from '../globals.js';
@@ -42,20 +37,16 @@ import { typedProperty } from '../types/path.js';
 import {
   groupByFunc,
   groupByUniqAndMapAsync,
+  mapAsyncSeq,
   mapReduceAsyncSeq,
 } from '../util.js';
 import { fileExists } from '../util/fsUtil.js';
-import {
-  ProgramConverter,
-  dbProgramToContentProgram,
-} from './converters/programConverters.js';
+import { LineupDbAdapter } from './LineupDbAdapter.js';
+import { ProgramConverter } from './converters/programConverters.js';
 import { getEm } from './dataSource.js';
 import {
   Lineup,
   LineupItem,
-  LineupSchema,
-  OfflineItem,
-  RedirectItem,
   isContentItem,
   isOfflineItem,
   isRedirectItem,
@@ -381,7 +372,7 @@ export class ChannelDB {
     const cleanOffset = offset < 0 ? 0 : offset;
     const cleanLimit = limit < 0 ? len : limit;
 
-    const { lineup: apiLineup, offsets } = buildApiLineup(
+    const { lineup: apiLineup, offsets } = await this.buildApiLineup(
       channel,
       chain(lineup.items).drop(cleanOffset).take(cleanLimit).value(),
     );
@@ -447,10 +438,8 @@ export class ChannelDB {
       },
     );
 
-    const { lineup: condensedLineup, offsets } = await buildCondensedLineup(
-      channel,
-      pagedLineup,
-    );
+    const { lineup: condensedLineup, offsets } =
+      await this.buildCondensedLineup(channel, pagedLineup);
 
     let apiOffsets: number[];
     if (lineup.startTimeOffsets) {
@@ -563,183 +552,106 @@ export class ChannelDB {
       );
     }
   }
-}
 
-class LineupDbAdapter implements Adapter<Lineup> {
-  #path: PathLike;
-  #adapter: TextFile;
-  constructor(filename: PathLike) {
-    this.#path = filename;
-    this.#adapter = new TextFile(filename);
-  }
-
-  async read(): Promise<Lineup | null> {
-    const data = await this.#adapter.read();
-    if (data === null) {
-      return null;
-    }
-    const parseResult = await LineupSchema.safeParseAsync(JSON.parse(data));
-    if (!parseResult.success) {
-      console.error(
-        `Error while trying to load lineup file ${this.#path.toString()}`,
-        parseResult.error,
-      );
-      return null;
-    }
-    return parseResult.data;
-  }
-
-  async write(data: Lineup): Promise<void> {
-    const parseResult = await LineupSchema.safeParseAsync(data);
-    if (!parseResult.success) {
-      console.warn(
-        'Could not parse lineup before saving to DB',
-        parseResult.error,
-      );
-    }
-
-    return this.#adapter.write(JSON.stringify(data));
-  }
-}
-
-export function buildApiLineup(
-  channel: Loaded<Channel, 'programs' | 'programs.customShows.uuid'>,
-  lineup: LineupItem[],
-): { lineup: ChannelProgram[]; offsets: number[] } {
-  let lastOffset = 0;
-  const offsets: number[] = [];
-  const programs = chain(lineup)
-    .map((item) => {
-      const apiItem = toApiLineupItem(channel, item);
-      if (apiItem) {
-        offsets.push(lastOffset);
-        lastOffset += item.durationMs;
-      }
-      return apiItem;
-    })
-    .compact()
-    .value();
-
-  return { lineup: programs, offsets };
-}
-
-export async function buildCondensedLineup(
-  channel: Loaded<Channel, 'programs' | 'programs.customShows.uuid'>,
-  lineup: LineupItem[],
-): Promise<{ lineup: CondensedChannelProgram[]; offsets: number[] }> {
-  let lastOffset = 0;
-  const offsets: number[] = [];
-
-  const programIds = channel.programs.map((p) => p.uuid);
-  const customShowContent = groupBy(
-    await getEm()
-      .repo(CustomShowContent)
-      .findAll({
-        where: { content: { $in: programIds } },
+  private async buildApiLineup(
+    channel: Loaded<Channel, 'programs' | 'programs.customShows.uuid'>,
+    lineup: LineupItem[],
+  ): Promise<{ lineup: ChannelProgram[]; offsets: number[] }> {
+    let lastOffset = 0;
+    const offsets: number[] = [];
+    const programs = compact(
+      await mapAsyncSeq(lineup, undefined, async (item) => {
+        const apiItem = await this.toApiLineupItem(channel, item);
+        if (apiItem) {
+          offsets.push(lastOffset);
+          lastOffset += item.durationMs;
+        }
+        return apiItem;
       }),
-    (csc) => csc.customShow.uuid,
-  );
+    );
 
-  const programs = chain(lineup)
-    .map((item) => {
-      let p: CondensedChannelProgram | null = null;
-      if (isOfflineItem(item)) {
-        p = offlineLineupItemToProgram(channel, item);
-      } else if (isRedirectItem(item)) {
-        p = redirectLineupItemToProgram(item);
-      } else if (item.customShowId) {
-        const csc = find(
-          customShowContent[item.customShowId],
-          (csc) => csc.content.uuid === item.id,
-        );
-        if (csc) {
-          p = {
-            persisted: true,
-            type: 'custom',
-            customShowId: item.customShowId,
-            duration: item.durationMs,
-            index: csc.index,
-            id: item.id,
-          };
-        }
-      } else {
-        const program = contentLineupItemToProgram(channel, item.id);
-        if (!isNil(program)) {
-          p = {
-            persisted: true,
-            type: 'content',
-            id: item.id,
-            duration: item.durationMs,
-          };
-        }
-      }
-
-      if (p) {
-        offsets.push(lastOffset);
-        lastOffset += item.durationMs;
-      }
-
-      return p;
-    })
-    .compact()
-    .value();
-  return { lineup: programs, offsets };
-}
-
-export function toApiLineupItem(
-  channel: Loaded<Channel, 'programs'>,
-  item: LineupItem,
-) {
-  if (isOfflineItem(item)) {
-    return offlineLineupItemToProgram(channel, item);
-  } else if (isRedirectItem(item)) {
-    return redirectLineupItemToProgram(item);
-  } else {
-    return contentLineupItemToProgram(channel, item.id);
-  }
-}
-
-function offlineLineupItemToProgram(
-  channel: Loaded<Channel>,
-  p: OfflineItem,
-  persisted: boolean = true,
-): FlexProgram {
-  return {
-    persisted,
-    type: 'flex',
-    icon: channel.icon?.path,
-    duration: p.durationMs,
-  };
-}
-
-function redirectLineupItemToProgram(item: RedirectItem): RedirectProgram {
-  // TODO: Materialize the redirected program???
-  return {
-    persisted: true,
-    type: 'redirect',
-    channel: item.channel,
-    duration: item.durationMs,
-  };
-}
-
-export function contentLineupItemToProgram(
-  channel: Loaded<
-    Channel,
-    | 'programs'
-    | 'programs.season'
-    | 'programs.tv_show'
-    | 'programs.artist'
-    | 'programs.album'
-  >,
-  programId: string,
-  persisted: boolean = true,
-): ContentProgram | null {
-  const program = channel.programs.find((x) => x.uuid === programId);
-  if (isNil(program)) {
-    return null;
+    return { lineup: programs, offsets };
   }
 
-  return dbProgramToContentProgram(program, persisted);
+  private async buildCondensedLineup(
+    channel: Loaded<Channel, 'programs' | 'programs.customShows.uuid'>,
+    lineup: LineupItem[],
+  ): Promise<{ lineup: CondensedChannelProgram[]; offsets: number[] }> {
+    let lastOffset = 0;
+    const offsets: number[] = [];
+
+    const programIds = channel.programs.map((p) => p.uuid);
+    const customShowContent = groupBy(
+      await getEm()
+        .repo(CustomShowContent)
+        .findAll({
+          where: { content: { $in: programIds } },
+        }),
+      (csc) => csc.customShow.uuid,
+    );
+
+    const programs = chain(lineup)
+      .map((item) => {
+        let p: CondensedChannelProgram | null = null;
+        if (isOfflineItem(item)) {
+          p = this.#programConverter.offlineLineupItemToProgram(channel, item);
+        } else if (isRedirectItem(item)) {
+          p = this.#programConverter.redirectLineupItemToProgram(item);
+        } else if (item.customShowId) {
+          const csc = find(
+            customShowContent[item.customShowId],
+            (csc) => csc.content.uuid === item.id,
+          );
+          if (csc) {
+            p = {
+              persisted: true,
+              type: 'custom',
+              customShowId: item.customShowId,
+              duration: item.durationMs,
+              index: csc.index,
+              id: item.id,
+            };
+          }
+        } else {
+          if (channel.programs.exists((p) => p.uuid === item.id)) {
+            p = {
+              persisted: true,
+              type: 'content',
+              id: item.id,
+              duration: item.durationMs,
+            };
+          }
+        }
+
+        if (p) {
+          offsets.push(lastOffset);
+          lastOffset += item.durationMs;
+        }
+
+        return p;
+      })
+      .compact()
+      .value();
+    return { lineup: programs, offsets };
+  }
+
+  private toApiLineupItem(
+    channel: Loaded<Channel, 'programs'>,
+    item: LineupItem,
+  ) {
+    if (isOfflineItem(item)) {
+      return this.#programConverter.offlineLineupItemToProgram(channel, item);
+    } else if (isRedirectItem(item)) {
+      return this.#programConverter.redirectLineupItemToProgram(item);
+    } else {
+      const program = channel.programs.find((p) => p.uuid === item.id);
+      if (isNil(program)) {
+        return null;
+      }
+
+      return this.#programConverter.entityToContentProgram(program);
+    }
+  }
 }
 
 function channelProgramToLineupItemFunc(

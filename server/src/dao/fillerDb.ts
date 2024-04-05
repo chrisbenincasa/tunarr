@@ -5,7 +5,8 @@ import {
 } from '@tunarr/types/api';
 import { filter, isNil, map } from 'lodash-es';
 import { ChannelCache } from '../channelCache.js';
-import { dbProgramToContentProgram } from './converters/programConverters.js';
+import { mapAsyncSeq } from '../util.js';
+import { ProgramConverter } from './converters/programConverters.js';
 import { getEm } from './dataSource.js';
 import { Channel as ChannelEntity } from './entities/Channel.js';
 import { ChannelFillerShow } from './entities/ChannelFillerShow.js';
@@ -18,6 +19,7 @@ import {
 
 export class FillerDB {
   private channelCache: ChannelCache;
+  #programConverter: ProgramConverter = new ProgramConverter();
 
   constructor(channelCache: ChannelCache) {
     this.channelCache = channelCache;
@@ -185,10 +187,21 @@ export class FillerDB {
       .repo(FillerListContent)
       .find(
         { fillerList: id },
-        { populate: ['content'], orderBy: { index: 'DESC' } },
+        {
+          populate: [
+            'content',
+            'content.album',
+            'content.artist',
+            'content.tvShow',
+            'content.season',
+          ],
+          orderBy: { index: 'DESC' },
+        },
       );
 
-    return programs.map((p) => dbProgramToContentProgram(p.content, true));
+    return await mapAsyncSeq(programs, undefined, async (fillerContent) =>
+      this.#programConverter.entityToContentProgram(fillerContent.content),
+    );
   }
 
   async getFillersFromChannel(

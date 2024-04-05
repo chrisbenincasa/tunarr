@@ -3,7 +3,8 @@ import { CreateCustomShowRequest } from '@tunarr/types/api';
 import { filter, isUndefined, map } from 'lodash-es';
 import { MarkOptional } from 'ts-essentials';
 import { Maybe } from '../types.js';
-import { dbProgramToContentProgram } from './converters/programConverters.js';
+import { mapAsyncSeq } from '../util.js';
+import { ProgramConverter } from './converters/programConverters.js';
 import { getEm } from './dataSource.js';
 import { CustomShow } from './entities/CustomShow.js';
 import { CustomShowContent } from './entities/CustomShowContent.js';
@@ -20,6 +21,8 @@ export type CustomShowInsert = {
 };
 
 export class CustomShowDB {
+  #programConverter: ProgramConverter = new ProgramConverter();
+
   async getShow(id: string) {
     return getEm()
       .repo(CustomShow)
@@ -31,14 +34,24 @@ export class CustomShowDB {
       .repo(CustomShowContent)
       .find(
         { customShow: id },
-        { populate: ['content.*'], orderBy: { index: 'desc' } },
+        {
+          // Preload relations
+          populate: [
+            'content',
+            'content.album',
+            'content.artist',
+            'content.tvShow',
+            'content.season',
+          ],
+          orderBy: { index: 'desc' },
+        },
       );
 
-    return customShowContent.map((csc) => ({
+    return mapAsyncSeq(customShowContent, undefined, async (csc) => ({
       type: 'custom',
       persisted: true,
       duration: csc.content.duration,
-      program: dbProgramToContentProgram(csc.content, true),
+      program: await this.#programConverter.entityToContentProgram(csc.content),
       customShowId: id,
       index: csc.index,
       id: csc.content.uuid,

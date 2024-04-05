@@ -32,6 +32,7 @@
     },
     "files": [
         "src/types/fastify.d.ts",
+        "./src/dao/LineupDbAdapter.ts",
     ],
     "include": [
         "./src/**/*.ts",
