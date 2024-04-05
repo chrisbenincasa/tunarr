@@ -105,6 +105,33 @@ export function groupByUniqAndMap<
   );
 }
 
+// This will fail if any mapping function fails
+export function groupByUniqAndMapAsync<
+  T,
+  K extends KeysOfType<T>,
+  Key extends IsStringOrNumberValue<T, K>,
+  Value,
+>(
+  data: T[],
+  member: K | ((item: T) => K),
+  mapper: (val: T) => Promise<Value>,
+  opts?: mapAsyncSeq2Opts,
+): Promise<Record<Key, Value>> {
+  const keyFunc = (t: T) => t[isFunction(member) ? member(t) : member] as Key;
+  return mapReduceAsyncSeq2(
+    data,
+    (t) => mapper(t).then((v) => [keyFunc(t), v] as const),
+    (acc, [key, value]) => {
+      return {
+        ...acc,
+        [key]: value,
+      };
+    },
+    {} as Record<Key, Value>,
+    opts,
+  );
+}
+
 export async function mapAsyncSeq<T, U>(
   seq: T[] | null | undefined,
   ms: number | undefined,

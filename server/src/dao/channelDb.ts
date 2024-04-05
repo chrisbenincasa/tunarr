@@ -39,9 +39,16 @@ import { globalOptions } from '../globals.js';
 import createLogger from '../logger.js';
 import { Nullable } from '../types.js';
 import { typedProperty } from '../types/path.js';
-import { groupByFunc, groupByUniqAndMap, mapReduceAsyncSeq } from '../util.js';
+import {
+  groupByFunc,
+  groupByUniqAndMapAsync,
+  mapReduceAsyncSeq,
+} from '../util.js';
 import { fileExists } from '../util/fsUtil.js';
-import { dbProgramToContentProgram } from './converters/programConverters.js';
+import {
+  ProgramConverter,
+  dbProgramToContentProgram,
+} from './converters/programConverters.js';
 import { getEm } from './dataSource.js';
 import {
   Lineup,
@@ -131,6 +138,8 @@ function createRequestToChannel(
 // Let's see if this works... in so we can have many ChannelDb objects flying around.
 const fileDbCache: Record<string | number, Low<Lineup>> = {};
 export class ChannelDB {
+  #programConverter = new ProgramConverter();
+
   getChannelByNumber(channelNumber: number): Promise<Nullable<Channel>> {
     return getEm().repo(Channel).findOne({ number: channelNumber });
   }
@@ -392,7 +401,27 @@ export class ChannelDB {
     offset: number = 0,
     limit: number = -1,
   ): Promise<CondensedChannelProgramming | null> {
-    const channel = await this.getChannelAndPrograms(channelId);
+    // TODO: Don't load all of the programs upfront
+    // We can get away with:
+    // 1. Waiting until we've applied offset/limit to the lineup
+    //    and then only load what we need AND
+    // 2. Loading these incrementally as we materialize so we don't
+    //    potentially pull a ton of crap into memory at once
+    const channel = await getEm()
+      .repo(Channel)
+      .findOne(
+        { uuid: channelId },
+        {
+          populate: [
+            'programs',
+            'programs.customShows.uuid',
+            'programs.tvShow',
+            'programs.season',
+            'programs.album',
+            'programs.artist',
+          ],
+        },
+      );
     if (isNil(channel)) {
       return null;
     }
@@ -406,10 +435,16 @@ export class ChannelDB {
       .take(cleanLimit)
       .value();
 
-    const materializedPrograms = groupByUniqAndMap(
+    const materializedPrograms = await groupByUniqAndMapAsync(
       filter(pagedLineup, isContentItem),
       'id',
-      (item) => contentLineupItemToProgram(channel, item.id),
+      async (item) => {
+        const program = channel.programs.find((p) => p.uuid === item.id);
+        if (!program) {
+          return null;
+        }
+        return this.#programConverter.entityToContentProgram(program);
+      },
     );
 
     const { lineup: condensedLineup, offsets } = await buildCondensedLineup(
@@ -688,7 +723,14 @@ function redirectLineupItemToProgram(item: RedirectItem): RedirectProgram {
 }
 
 export function contentLineupItemToProgram(
-  channel: Loaded<Channel, 'programs'>,
+  channel: Loaded<
+    Channel,
+    | 'programs'
+    | 'programs.season'
+    | 'programs.tv_show'
+    | 'programs.artist'
+    | 'programs.album'
+  >,
   programId: string,
   persisted: boolean = true,
 ): ContentProgram | null {

@@ -75,8 +75,6 @@ type ProgramGroupingsByType = Record<
   GroupingIdAndPlexInfo[]
 >;
 
-type ProgramGroupsBySource = Record<ProgramSourceType, ProgramGroupingsByType>;
-
 function typedKeys<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   T extends Record<keyof any, unknown>,
