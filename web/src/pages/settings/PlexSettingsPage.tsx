@@ -22,6 +22,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
+  Divider,
   FormControl,
   FormControlLabel,
   FormHelperText,
@@ -99,6 +100,16 @@ const supportedAudioBoost = [
   { value: 140, string: '2 Seconds' },
   { value: 160, string: '3 Seconds' },
   { value: 180, string: '4 Seconds' },
+];
+
+const supportedStreamProtocols = [
+  { value: 'http', string: 'HTTP' },
+  { value: 'hls', string: 'HLS' },
+];
+
+const supportedPaths = [
+  { value: 'plex', string: 'Plex' },
+  { value: 'direct', string: 'Direct' },
 ];
 
 type PlexServerDeleteDialogProps = {
@@ -421,6 +432,26 @@ export default function PlexSettingsPage() {
     defaultPlexStreamSettings.enableSubtitles,
   );
 
+  const [audioBoost, setAudioBoost] = useState<number>(
+    defaultPlexStreamSettings.audioBoost,
+  );
+
+  const [forceDirectPlay, setForceDirectPlay] = useState<boolean>(
+    defaultPlexStreamSettings.forceDirectPlay,
+  );
+
+  const [debugLogging, setDebugLogging] = useState<boolean>(
+    defaultPlexStreamSettings.enableDebugLogging,
+  );
+
+  const [playStatus, setPlayStatus] = useState<boolean>(
+    defaultPlexStreamSettings.updatePlayStatus,
+  );
+
+  const [streamPath, setStreamPath] = useState<'plex' | 'direct'>(
+    defaultPlexStreamSettings.streamPath,
+  );
+
   const [videoCodecs, setVideoCodecs] = React.useState<string[]>(
     defaultPlexStreamSettings.videoCodecs,
   );
@@ -437,8 +468,15 @@ export default function PlexSettingsPage() {
     defaultPlexStreamSettings.maxAudioChannels,
   );
 
-  const [directStreamBitrate, setDirectStreamBitrate] =
-    React.useState<string>('');
+  const [maxDirectStreamBitrate, setMaxDirectStreamBitrate] = useState<string>(
+    defaultPlexStreamSettings.directStreamBitrate.toString(),
+  );
+
+  const [pathReplace, setPathReplace] = React.useState<string>('');
+
+  const [pathReplaceWith, setPathReplaceWith] = React.useState<string>('');
+
+  const [streamProtocol, setStreamProtocol] = React.useState<string>('');
 
   const [transcodeBitrate, setTranscodeBitrate] = React.useState<string>('');
 
@@ -446,6 +484,8 @@ export default function PlexSettingsPage() {
 
   const [transcodeMediaBufferSize, setTranscodeMediaBufferSize] =
     React.useState<string>('');
+
+  const [subtitleSize, setSubtitleSize] = React.useState<string>('');
 
   const handlePlexStreamingState = useCallback(() => {
     setVideoCodecs(
@@ -459,9 +499,44 @@ export default function PlexSettingsPage() {
       ),
     );
 
+    setMaxTranscodeResolution(
+      resolutionToString(
+        streamSettings?.maxTranscodeResolution ||
+          defaultPlexStreamSettings.maxTranscodeResolution,
+      ),
+    );
+
     setMaxDirectStreamBitrate(
       streamSettings?.directStreamBitrate.toString() ||
         defaultPlexStreamSettings.directStreamBitrate.toString(),
+    );
+
+    setAudioBoost(
+      streamSettings?.audioBoost || defaultPlexStreamSettings.audioBoost,
+    );
+
+    setStreamPath(
+      streamSettings?.streamPath || defaultPlexStreamSettings.streamPath,
+    );
+
+    setForceDirectPlay(
+      streamSettings?.forceDirectPlay ||
+        defaultPlexStreamSettings.forceDirectPlay,
+    );
+
+    setDebugLogging(
+      streamSettings?.enableDebugLogging ||
+        defaultPlexStreamSettings.enableDebugLogging,
+    );
+
+    setPlayStatus(
+      streamSettings?.updatePlayStatus ||
+        defaultPlexStreamSettings.updatePlayStatus,
+    );
+
+    setStreamProtocol(
+      streamSettings?.streamProtocol ||
+        defaultPlexStreamSettings.streamProtocol,
     );
 
     setAudioCodecs(
@@ -473,32 +548,55 @@ export default function PlexSettingsPage() {
         defaultPlexStreamSettings.maxAudioChannels,
     );
 
-    setDirectStreamBitrate(
-      streamSettings?.directStreamBitrate.toString() ||
-        defaultPlexStreamSettings.directStreamBitrate.toString(),
+    setPathReplace(
+      streamSettings?.pathReplace || defaultPlexStreamSettings.pathReplace,
+    );
+
+    setPathReplaceWith(
+      streamSettings?.pathReplaceWith ||
+        defaultPlexStreamSettings.pathReplaceWith,
     );
 
     setTranscodeBitrate(
       streamSettings?.transcodeBitrate.toString() ||
         defaultPlexStreamSettings.transcodeBitrate.toString(),
     );
+
     setMediaBufferSize(
       streamSettings?.mediaBufferSize.toString() ||
         defaultPlexStreamSettings.mediaBufferSize.toString(),
     );
+
     setTranscodeMediaBufferSize(
       streamSettings?.transcodeMediaBufferSize.toString() ||
         defaultPlexStreamSettings.transcodeMediaBufferSize.toString(),
     );
+
+    setSubtitleSize(
+      streamSettings?.subtitleSize.toString() ||
+        defaultPlexStreamSettings.subtitleSize.toString(),
+    );
+
+    setShowSubtitles(
+      streamSettings?.enableSubtitles ||
+        defaultPlexStreamSettings.enableSubtitles,
+    );
   }, [
     streamSettings?.audioCodecs,
+    streamSettings?.audioBoost,
     streamSettings?.directStreamBitrate,
     streamSettings?.maxAudioChannels,
     streamSettings?.maxPlayableResolution,
+    streamSettings?.maxTranscodeResolution,
     streamSettings?.mediaBufferSize,
     streamSettings?.transcodeBitrate,
     streamSettings?.transcodeMediaBufferSize,
     streamSettings?.videoCodecs,
+    streamSettings?.subtitleSize,
+    streamSettings?.enableSubtitles,
+    streamSettings?.forceDirectPlay,
+    streamSettings?.enableDebugLogging,
+    streamSettings?.updatePlayStatus,
   ]);
 
   useEffect(() => {
@@ -549,6 +647,10 @@ export default function PlexSettingsPage() {
     setAddAudioCodecs(newAudioCodecs);
   };
 
+  const handleAudioBoost = (event: SelectChangeEvent<number>) => {
+    setAudioBoost(event.target.value as number); // We know this will be a number
+  };
+
   const [maxPlayableResolution, setMaxPlayableResolution] = useState<string>(
     resolutionToString(defaultPlexStreamSettings.maxPlayableResolution),
   );
@@ -557,14 +659,40 @@ export default function PlexSettingsPage() {
     setMaxPlayableResolution(event.target.value);
   };
 
-  const [maxDirectStreamBitrate, setMaxDirectStreamBitrate] = useState<string>(
-    defaultPlexStreamSettings.directStreamBitrate.toString(),
+  const [maxTranscodeResolution, setMaxTranscodeResolution] = useState<string>(
+    resolutionToString(defaultPlexStreamSettings.maxTranscodeResolution),
   );
+
+  const handleMaxTranscodeResolution = (event: SelectChangeEvent<string>) => {
+    setMaxTranscodeResolution(event.target.value);
+  };
+
+  const handleStreamProtocol = (event: SelectChangeEvent<string>) => {
+    setStreamProtocol(event.target.value);
+  };
 
   const handleMaxDirectStreamBitrate = (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
     setMaxDirectStreamBitrate(event.target.value);
+  };
+
+  const handleTranscodeBitrate = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    setTranscodeBitrate(event.target.value);
+  };
+
+  const handleMediaBufferSize = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    setMediaBufferSize(event.target.value);
+  };
+
+  const handleTranscodeMediaBufferSize = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    setTranscodeMediaBufferSize(event.target.value);
   };
 
   const handleMaxAudioChannels = (event: SelectChangeEvent<string>) => {
@@ -573,6 +701,36 @@ export default function PlexSettingsPage() {
 
   const onSubtitleChange = () => {
     setShowSubtitles(!showSubtitles);
+  };
+
+  const onDirectPlayChange = () => {
+    setForceDirectPlay(!forceDirectPlay);
+  };
+
+  const onDebugLoggingChange = () => {
+    setDebugLogging(!debugLogging);
+  };
+
+  const onPlayStatusChange = () => {
+    setPlayStatus(!playStatus);
+  };
+
+  const handlePathChange = (event: SelectChangeEvent<'plex' | 'direct'>) => {
+    setStreamPath(event.target.value as 'plex' | 'direct');
+  };
+
+  const handlePathReplace = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setPathReplace(event.target.value);
+  };
+
+  const handlePathReplaceWith = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    setPathReplaceWith(event.target.value);
+  };
+
+  const handleSubtitleSize = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSubtitleSize(event.target.value);
   };
 
   const renderConfirmationDialog = () => {
@@ -645,24 +803,44 @@ export default function PlexSettingsPage() {
   // TO DO: Add All Fields and remove defaults
   // refactor
   const updatePlexStreamSettings = () => {
-    const [h, w] = maxPlayableResolution.split('x', 2);
+    const [maxPlayableResolutionWidth, maxPlayableResolutionHeight] =
+      maxPlayableResolution.split('x', 2);
+    const [maxTranscodeResolutionWidth, maxTranscodeResolutionHeight] =
+      maxTranscodeResolution.split('x', 2);
 
     // This is temporary until I have all fields
     const allPlexStreamFieldValues = {
       ...defaultPlexStreamSettings,
       ...{
         audioCodecs,
-        directStreamBitrate: Number(directStreamBitrate),
+        audioBoost,
+        directStreamBitrate: Number(maxDirectStreamBitrate),
         enableSubtitles: showSubtitles,
         maxAudioChannels,
         maxPlayableResolution: resolutionFromString(
-          resolutionToString({ widthPx: Number(w), heightPx: Number(h) }),
+          resolutionToString({
+            widthPx: Number(maxPlayableResolutionWidth),
+            heightPx: Number(maxPlayableResolutionHeight),
+          }),
+        ),
+        maxTranscodeResolution: resolutionFromString(
+          resolutionToString({
+            widthPx: Number(maxTranscodeResolutionWidth),
+            heightPx: Number(maxTranscodeResolutionHeight),
+          }),
         ),
         mediaBufferSize: Number(mediaBufferSize),
-        subtitleSize: 100,
+        subtitleSize: Number(subtitleSize),
         transcodeBitrate: Number(transcodeBitrate),
         transcodeMediaBufferSize: Number(transcodeMediaBufferSize),
         videoCodecs,
+        forceDirectPlay,
+        enableDebugLogging: debugLogging,
+        updatePlayStatus: playStatus,
+        streamPath,
+        pathReplace,
+        pathReplaceWith,
+        streamProtocol,
       },
     };
 
@@ -792,6 +970,7 @@ export default function PlexSettingsPage() {
 
     return (
       <>
+        <Divider sx={{ my: 3 }} />
         <Typography component="h6" sx={{ my: 2 }}>
           Video Options
         </Typography>
@@ -832,7 +1011,7 @@ export default function PlexSettingsPage() {
             ))}
           </Grid>
           <Grid item xs={12} sm={6}>
-            <FormControl fullWidth>
+            <FormControl fullWidth sx={{ mb: 2 }}>
               <InputLabel id="max-playable-resolution">
                 Max Playable Resolution
               </InputLabel>
@@ -850,14 +1029,23 @@ export default function PlexSettingsPage() {
                 ))}
               </Select>
             </FormControl>
-          </Grid>
-          <Grid item xs={12}>
             <FormControl fullWidth>
-              <TextField
-                value={maxDirectStreamBitrate}
-                onChange={handleMaxDirectStreamBitrate}
-                label="Max Direct Stream Bitrate (Kbps)"
-              />
+              <InputLabel id="max-transcode-resolution">
+                Max Transcode Resolution
+              </InputLabel>
+              <Select
+                labelId="max-transcode-resolution"
+                id="max-transcode-resolution"
+                label="Max Transcode Resolution"
+                value={maxTranscodeResolution}
+                onChange={handleMaxTranscodeResolution}
+              >
+                {supportedResolutions.map((res) => (
+                  <MenuItem key={res} value={res}>
+                    {res}
+                  </MenuItem>
+                ))}
+              </Select>
             </FormControl>
           </Grid>
         </Grid>
@@ -889,6 +1077,7 @@ export default function PlexSettingsPage() {
 
     return (
       <>
+        <Divider sx={{ my: 3 }} />
         <Typography component="h6" sx={{ my: 2 }}>
           Audio Options
         </Typography>
@@ -958,7 +1147,8 @@ export default function PlexSettingsPage() {
                 labelId="audio-boost-label"
                 id="audio-boost"
                 label="Audio Boost"
-                value={streamSettings.audioBoost}
+                value={audioBoost}
+                onChange={handleAudioBoost}
               >
                 {supportedAudioBoost.map((boost) => (
                   <MenuItem key={boost.value} value={boost.value}>
@@ -1000,6 +1190,7 @@ export default function PlexSettingsPage() {
 
     return (
       <>
+        <Divider sx={{ my: 3 }} />
         <Typography component="h6" sx={{ my: 2 }}>
           Subtitle Options
         </Typography>
@@ -1007,16 +1198,50 @@ export default function PlexSettingsPage() {
           <Grid item xs={12} sm={6}>
             <FormControl fullWidth>
               <FormControlLabel
-                control={<Checkbox onChange={onSubtitleChange} />}
+                control={
+                  <Checkbox
+                    onChange={onSubtitleChange}
+                    checked={showSubtitles}
+                  />
+                }
                 label="Enable Subtitles (Requires Transcoding)"
               />
               {showSubtitles && (
                 <TextField
                   id="component-outlined"
                   label="Subtitle Size"
-                  defaultValue={streamSettings?.subtitleSize}
+                  onChange={handleSubtitleSize}
+                  value={subtitleSize}
                 />
               )}
+            </FormControl>
+          </Grid>
+        </Grid>
+      </>
+    );
+  };
+
+  const renderPathReplacements = () => {
+    return (
+      <>
+        <Typography component="h6" sx={{ my: 2 }}>
+          Path Replacements
+        </Typography>
+        <Grid flex="1 0 50%" container spacing={3}>
+          <Grid item xs={12} sm={6}>
+            <FormControl fullWidth sx={{ my: 1 }}>
+              <TextField
+                label="Original Plex path to replace:"
+                value={pathReplace}
+                onChange={handlePathReplace}
+              />
+            </FormControl>
+            <FormControl fullWidth sx={{ my: 1 }}>
+              <TextField
+                label="Replace Plex path with:"
+                value={pathReplaceWith}
+                onChange={handlePathReplaceWith}
+              />
             </FormControl>
           </Grid>
         </Grid>
@@ -1048,17 +1273,23 @@ export default function PlexSettingsPage() {
 
     return (
       <>
+        <Divider sx={{ my: 3 }} />
+        <Typography component="h6" variant="h6" sx={{ pt: 2, pb: 1 }}>
+          Miscellaneous Options
+        </Typography>
         <Grid flex="1 0 50%" container spacing={3}>
           <Grid item xs={12} sm={6}>
             <FormControl fullWidth sx={{ my: 1 }}>
               <TextField
                 label="Max Direct Stream Bitrate (Kbps)"
-                value={directStreamBitrate}
+                onChange={handleMaxDirectStreamBitrate}
+                value={maxDirectStreamBitrate}
               />
             </FormControl>
             <FormControl fullWidth sx={{ my: 1 }}>
               <TextField
                 label="Max Transcode Bitrate (Kbps)"
+                onChange={handleTranscodeBitrate}
                 value={transcodeBitrate}
               />
             </FormControl>
@@ -1067,13 +1298,44 @@ export default function PlexSettingsPage() {
             <FormControl fullWidth sx={{ my: 1 }}>
               <TextField
                 label="Direct Stream Media Buffer Size"
+                onChange={handleMediaBufferSize}
                 value={mediaBufferSize}
               />
             </FormControl>
             <FormControl fullWidth sx={{ my: 1 }}>
               <TextField
                 label="Transcode Media Buffer Size"
+                onChange={handleTranscodeMediaBufferSize}
                 value={transcodeMediaBufferSize}
+              />
+            </FormControl>
+            <FormControl fullWidth>
+              <InputLabel id="stream-protocol-label">
+                Stream Protocol
+              </InputLabel>
+              <Select
+                labelId="stream-protocol-label"
+                id="stream-protocol"
+                label="Stream Protocol"
+                value={streamProtocol}
+                onChange={handleStreamProtocol}
+              >
+                {supportedStreamProtocols.map((protocol) => (
+                  <MenuItem key={protocol.value} value={protocol.value}>
+                    {protocol.string}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <FormControl fullWidth>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    onChange={onDirectPlayChange}
+                    checked={forceDirectPlay}
+                  />
+                }
+                label="Force Direct Play"
               />
             </FormControl>
           </Grid>
@@ -1110,15 +1372,66 @@ export default function PlexSettingsPage() {
           episode change, you will experience playback issues unless ffmpeg
           transcoding and normalization are also enabled.
         </Alert>
+
+        <Grid flex="1 0 50%" container spacing={3}>
+          <Grid item xs={12} sm={6}>
+            <FormControl fullWidth>
+              <InputLabel id="stream-path-label">Stream Path</InputLabel>
+              <Select
+                labelId="stream-path-label"
+                id="stream-path"
+                label="Stream Path"
+                value={streamPath}
+                onChange={handlePathChange}
+              >
+                {supportedPaths.map((path) => (
+                  <MenuItem key={path.value} value={path.value}>
+                    {path.string}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <FormControl fullWidth>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    onChange={onDebugLoggingChange}
+                    checked={debugLogging}
+                  />
+                }
+                label="Debug Logging"
+              />
+            </FormControl>
+            <FormControl fullWidth>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    onChange={onPlayStatusChange}
+                    checked={playStatus}
+                  />
+                }
+                label="Send play status to Plex"
+              />
+              <FormHelperText>
+                Note: This affects the "on deck" for your plex account.
+              </FormHelperText>
+            </FormControl>
+          </Grid>
+        </Grid>
         <Box sx={{ display: 'block', p: 2 }}>
-          {renderStreamSettings()}
-          {renderAudioSettings()}
-          {renderSubtitleSettings()}
+          {streamPath === 'plex' ? (
+            <>
+              {renderStreamSettings()}
+              {renderAudioSettings()}
+              {renderSubtitleSettings()}
+              {renderMiscSettings()}
+            </>
+          ) : (
+            renderPathReplacements()
+          )}
         </Box>
-        <Typography component="h6" variant="h6" sx={{ pt: 2, pb: 1 }}>
-          Miscellaneous Options
-        </Typography>
-        <Box>{renderMiscSettings()}</Box>
         <Stack
           spacing={2}
           direction="row"
