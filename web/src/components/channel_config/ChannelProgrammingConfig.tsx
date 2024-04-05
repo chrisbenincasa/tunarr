@@ -2,6 +2,7 @@ import { Box, Button, Paper, Stack } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers';
 import dayjs, { Dayjs } from 'dayjs';
 import { createContext, useState } from 'react';
+import { useSlideSchedule } from '../../hooks/programming_controls/useSlideSchedule.ts';
 import { usePreloadedChannelEdit } from '../../hooks/usePreloadedChannel.ts';
 import {
   resetLineup,
@@ -28,10 +29,17 @@ export function ChannelProgrammingConfig() {
   const { currentEntity: channel } = usePreloadedChannelEdit();
 
   const programsDirty = useStore((s) => s.channelEditor.dirty.programs);
+  const slideSchedule = useSlideSchedule();
 
   const handleStartTimeChange = (value: Dayjs | null) => {
     if (value) {
-      setChannelStartTime(value.unix() * 1000);
+      const newStartTime = value.unix() * 1000;
+      setChannelStartTime(newStartTime);
+      const prevStartTime = channel?.startTime;
+      if (prevStartTime) {
+        const diff = newStartTime - prevStartTime;
+        slideSchedule(diff);
+      }
     }
   };
 

@@ -17,6 +17,7 @@ import { ChannelProgrammingConfig } from '../../components/channel_config/Channe
 import { apiClient } from '../../external/api.ts';
 import { channelProgramUniqueId } from '../../helpers/util.ts';
 import { usePreloadedChannelEdit } from '../../hooks/usePreloadedChannel.ts';
+import { useUpdateChannel } from '../../hooks/useUpdateChannel.ts';
 import { resetCurrentLineup } from '../../store/channelEditor/actions.ts';
 
 type MutateArgs = {
@@ -31,8 +32,11 @@ type SnackBar = {
 };
 
 export default function ChannelProgrammingPage() {
-  const { currentEntity: channel, programList: newLineup } =
-    usePreloadedChannelEdit();
+  const {
+    currentEntity: channel,
+    originalEntity: originalChannel,
+    programList: newLineup,
+  } = usePreloadedChannelEdit();
 
   const queryClient = useQueryClient();
   const theme = useTheme();
@@ -42,6 +46,8 @@ export default function ChannelProgrammingPage() {
     color: '',
     message: '',
   });
+
+  const updateChannelMutation = useUpdateChannel(/*isNewChannel=*/ false);
 
   const updateLineupMutation = useMutation({
     mutationFn: ({ channelId, lineupRequest }: MutateArgs) => {
@@ -78,6 +84,22 @@ export default function ChannelProgrammingPage() {
   };
 
   const onSave = () => {
+    if (
+      !isUndefined(channel) &&
+      !isUndefined(originalChannel) &&
+      channel.startTime !== originalChannel.startTime
+    ) {
+      updateChannelMutation.mutate({
+        ...channel,
+        // This is a little wonky...
+        transcoding: {
+          targetResolution: channel.transcoding?.targetResolution ?? 'global',
+          videoBitrate: channel.transcoding?.videoBitrate ?? 'global',
+          videoBufferSize: channel.transcoding?.videoBufferSize ?? 'global',
+        },
+      });
+    }
+
     // Group programs by their unique ID. This will disregard their durations,
     // but we will keep the durations when creating the minimal lineup below
     const uniquePrograms = chain(newLineup)

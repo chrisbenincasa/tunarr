@@ -4,10 +4,8 @@ import Paper from '@mui/material/Paper';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { SaveChannelRequest } from '@tunarr/types';
 import { usePrevious } from '@uidotdev/usehooks';
-import { ZodiosError } from '@zodios/core';
 import { keys, some } from 'lodash-es';
 import { useEffect, useState } from 'react';
 import {
@@ -17,14 +15,13 @@ import {
   SubmitHandler,
   useForm,
 } from 'react-hook-form';
-import { useNavigate } from 'react-router-dom';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import ChannelEpgConfig from '../../components/channel_config/ChannelEpgConfig.tsx';
 import { ChannelFlexConfig } from '../../components/channel_config/ChannelFlexConfig.tsx';
 import ChannelPropertiesEditor from '../../components/channel_config/ChannelPropertiesEditor.tsx';
 import ChannelTranscodingConfig from '../../components/channel_config/ChannelTranscodingConfig.tsx';
-import { apiClient } from '../../external/api.ts';
 import { usePreloadedData } from '../../hooks/preloadedDataHook.ts';
+import { useUpdateChannel } from '../../hooks/useUpdateChannel.ts';
 import {
   DefaultChannel,
   defaultNewChannel,
@@ -109,8 +106,6 @@ export default function EditChannelPage({ isNew }: Props) {
   const handleChange = (_: React.SyntheticEvent, newValue: TabValues) =>
     setCurrentTab(newValue);
 
-  const queryClient = useQueryClient();
-
   const formMethods = useForm<SaveChannelRequest>({
     mode: 'onChange',
     // Change this so we only load the form on initial...
@@ -163,35 +158,7 @@ export default function EditChannelPage({ isNew }: Props) {
     formMethods.formState.errors,
   ) as (keyof SaveChannelRequest)[];
 
-  const navigate = useNavigate();
-  const updateChannel = useMutation({
-    mutationFn: async (channelUpdates: SaveChannelRequest) => {
-      if (isNew) {
-        return apiClient.createChannel(channelUpdates);
-      } else {
-        return apiClient.updateChannel(channelUpdates, {
-          params: { id: channel.id },
-        });
-      }
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        exact: false,
-        queryKey: ['channels'],
-      });
-      if (isNew) {
-        navigate('/channels');
-      } else {
-        updateChannel.reset();
-      }
-    },
-    onError: (error) => {
-      if (error instanceof ZodiosError) {
-        console.error(error.data);
-        console.error(error, error.cause);
-      }
-    },
-  });
+  const updateChannelMutation = useUpdateChannel(isNew);
 
   const renderTab = (tab: TabProps) => {
     const hasError = some(formErrorKeys, (k) => tab.fields.includes(k));
@@ -215,8 +182,7 @@ export default function EditChannelPage({ isNew }: Props) {
   };
 
   const onSubmit: SubmitHandler<SaveChannelRequest> = (data) => {
-    console.log(data);
-    updateChannel.mutate({
+    updateChannelMutation.mutate({
       ...data,
       // Transform this to milliseconds before we send it over
       guideMinimumDuration: data.guideMinimumDuration * 1000,
@@ -249,7 +215,7 @@ export default function EditChannelPage({ isNew }: Props) {
                 onSubmit={formMethods.handleSubmit(onSubmit, onInvalid)}
               >
                 <TabPanel value="properties" currentValue={currentTab}>
-                  <ChannelPropertiesEditor />
+                  <ChannelPropertiesEditor isNew={isNew} />
                 </TabPanel>
                 <TabPanel value="flex" currentValue={currentTab}>
                   <ChannelFlexConfig />
