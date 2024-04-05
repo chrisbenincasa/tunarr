@@ -1,29 +1,43 @@
 import {
+  Box,
   Button,
-  Checkbox,
   FormControl,
   FormControlLabel,
   FormHelperText,
   Grid,
   Snackbar,
   Stack,
-  TextField,
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { HdhrSettings, defaultHdhrSettings } from '@tunarr/types';
 import React, { useEffect } from 'react';
+import { SubmitHandler, useForm } from 'react-hook-form';
+import {
+  CheckboxFormController,
+  NumericFormControllerText,
+} from '../../components/util/TypedController.tsx';
 import { useHdhrSettings } from '../../hooks/settingsHooks.ts';
 
 export default function HdhrSettingsPage() {
   const { data, isPending, error } = useHdhrSettings();
-  const [snackStatus, setSnackStatus] = React.useState<boolean>(false);
-  const [enableSsdpServer, setEnableSsdpServer] = React.useState<boolean>(
-    defaultHdhrSettings.autoDiscoveryEnabled,
-  );
-  const [tunerCount, setTunerCount] = React.useState<string>(
-    defaultHdhrSettings.tunerCount.toString(),
-  );
 
+  const {
+    reset,
+    control,
+    formState: { isDirty, isValid },
+    handleSubmit,
+  } = useForm<HdhrSettings>({
+    defaultValues: defaultHdhrSettings,
+    mode: 'onBlur',
+  });
+
+  useEffect(() => {
+    if (data && !isDirty) {
+      reset(data);
+    }
+  }, [data, isDirty, reset]);
+
+  const [snackStatus, setSnackStatus] = React.useState<boolean>(false);
   const queryClient = useQueryClient();
 
   const updateHdhrSettingsMutation = useMutation({
@@ -44,41 +58,15 @@ export default function HdhrSettingsPage() {
     },
   });
 
-  const updateHdhrSettings = () => {
+  const updateHdhrSettings: SubmitHandler<HdhrSettings> = (data) => {
     updateHdhrSettingsMutation.mutate({
-      autoDiscoveryEnabled: enableSsdpServer,
-      tunerCount: Number(tunerCount),
+      ...data,
     });
-  };
-
-  const handleResetOptions = () => {
-    updateHdhrSettingsMutation.mutate({
-      ...defaultHdhrSettings,
-    });
-    setEnableSsdpServer(defaultHdhrSettings.autoDiscoveryEnabled);
-    setTunerCount(defaultHdhrSettings.tunerCount.toString());
-  };
-
-  const handleEnableSsdpServer = () => {
-    setEnableSsdpServer(!enableSsdpServer);
-  };
-
-  const handleTunerCount = (value: string) => {
-    setTunerCount(value);
   };
 
   const handleSnackClose = () => {
     setSnackStatus(false);
   };
-
-  useEffect(() => {
-    setEnableSsdpServer(
-      data?.autoDiscoveryEnabled || defaultHdhrSettings.autoDiscoveryEnabled,
-    );
-    setTunerCount(
-      data?.tunerCount.toString() || defaultHdhrSettings.tunerCount.toString(),
-    );
-  }, [data]);
 
   if (isPending) {
     return <h1>XML: Loading...</h1>;
@@ -87,7 +75,7 @@ export default function HdhrSettingsPage() {
   }
 
   return (
-    <>
+    <Box component="form" onSubmit={handleSubmit(updateHdhrSettings)}>
       <Snackbar
         open={snackStatus}
         autoHideDuration={6000}
@@ -99,9 +87,9 @@ export default function HdhrSettingsPage() {
         <FormControl fullWidth>
           <FormControlLabel
             control={
-              <Checkbox
-                checked={enableSsdpServer}
-                onChange={() => handleEnableSsdpServer()}
+              <CheckboxFormController
+                control={control}
+                name="autoDiscoveryEnabled"
               />
             }
             label="Enable SSDP server"
@@ -109,23 +97,26 @@ export default function HdhrSettingsPage() {
           <FormHelperText>* Restart required</FormHelperText>
         </FormControl>
       </Grid>
-      <TextField
-        fullWidth
-        id="output-path"
-        label="Tuner Count"
-        value={tunerCount}
-        onChange={(event) => handleTunerCount(event.target.value)}
-        variant="filled"
-        sx={{ mt: 2, mb: 2 }}
+      <NumericFormControllerText
+        control={control}
+        name="tunerCount"
+        prettyFieldName="Tuner Count"
+        TextFieldProps={{
+          id: 'tuner-count',
+          label: 'Tuner Count',
+          fullWidth: true,
+          variant: 'filled',
+        }}
       />
+
       <Stack spacing={2} direction="row" justifyContent="right" sx={{ mt: 2 }}>
-        <Button variant="outlined" onClick={() => handleResetOptions()}>
+        <Button variant="outlined" onClick={() => reset()}>
           Reset Options
         </Button>
-        <Button variant="contained" onClick={() => updateHdhrSettings()}>
+        <Button variant="contained" disabled={!isValid} type="submit">
           Save
         </Button>
       </Stack>
-    </>
+    </Box>
   );
 }
