@@ -476,8 +476,8 @@ export default function FfmpegSettingsPage() {
               name="audioBufferSize"
               prettyFieldName="Audio Buffer Size"
               TextFieldProps={{
-                id: 'audio-bitrate',
-                label: 'Audio Bitrate (Kbps)',
+                id: 'audio-buffer-size',
+                label: 'Audio Buffer Size (K)',
                 fullWidth: true,
                 sx: { my: 1 },
               }}
@@ -491,8 +491,8 @@ export default function FfmpegSettingsPage() {
               name="audioVolumePercent"
               prettyFieldName="Audio Volume Percent"
               TextFieldProps={{
-                id: 'audio-bitrate',
-                label: 'Audio Bitrate (Kbps)',
+                id: 'audio-volume',
+                label: 'Audio Volume (%)',
                 fullWidth: true,
                 sx: { my: 1 },
                 helperText: 'Values higher than 100 will boost the audio.',
