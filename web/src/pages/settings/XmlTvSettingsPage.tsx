@@ -1,7 +1,6 @@
 import {
-  Alert,
+  Box,
   Button,
-  Checkbox,
   FormControl,
   FormControlLabel,
   FormHelperText,
@@ -12,12 +11,33 @@ import {
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { XmlTvSettings, defaultXmlTvSettings } from '@tunarr/types';
 import React, { useEffect } from 'react';
-import { hasOnlyDigits } from '../../helpers/util.ts';
+import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import {
+  CheckboxFormController,
+  NumericFormControllerText,
+} from '../../components/util/TypedController.tsx';
 import { useXmlTvSettings } from '../../hooks/settingsHooks.ts';
 
 export default function XmlTvSettingsPage() {
   const { data, isPending, error } = useXmlTvSettings();
 
+  const {
+    reset,
+    control,
+    formState: { isDirty, isValid },
+    handleSubmit,
+  } = useForm<XmlTvSettings>({
+    defaultValues: defaultXmlTvSettings,
+    mode: 'onBlur',
+  });
+
+  useEffect(() => {
+    if (data && !isDirty) {
+      reset(data);
+    }
+  }, [data, isDirty, reset]);
+
+  const [snackStatus, setSnackStatus] = React.useState<boolean>(false);
   const queryClient = useQueryClient();
 
   const updateXmlTvSettingsMutation = useMutation({
@@ -38,83 +58,10 @@ export default function XmlTvSettingsPage() {
     },
   });
 
-  const updateXmlTvSettings = () => {
+  const updateXmlTvSettings: SubmitHandler<XmlTvSettings> = (data) => {
     updateXmlTvSettingsMutation.mutate({
-      programmingHours: Number(programmingHours),
-      refreshHours: Number(refreshHours),
-      outputPath,
-      enableImageCache,
+      ...data,
     });
-  };
-
-  const handleResetOptions = () => {
-    updateXmlTvSettingsMutation.mutate({
-      programmingHours: defaultXmlTvSettings.programmingHours,
-      refreshHours: defaultXmlTvSettings.refreshHours,
-      outputPath: defaultXmlTvSettings.outputPath,
-      enableImageCache: defaultXmlTvSettings.enableImageCache,
-    });
-    setProgrammingHours(defaultXmlTvSettings.programmingHours.toString());
-    setRefreshHours(defaultXmlTvSettings.refreshHours.toString());
-    setEnableImageCache(defaultXmlTvSettings.enableImageCache);
-  };
-
-  const [outputPath, setOutputPath] = React.useState<string>(
-    defaultXmlTvSettings.outputPath,
-  );
-
-  const [programmingHours, setProgrammingHours] = React.useState<string>(
-    defaultXmlTvSettings.programmingHours.toString(),
-  );
-
-  const [refreshHours, setRefreshHours] = React.useState<string>(
-    defaultXmlTvSettings.refreshHours.toString(),
-  );
-
-  const [enableImageCache, setEnableImageCache] = React.useState<boolean>(
-    defaultXmlTvSettings.enableImageCache,
-  );
-
-  const [showFormError, setShowFormError] = React.useState<boolean>(false);
-
-  const [snackStatus, setSnackStatus] = React.useState<boolean>(false);
-
-  useEffect(() => {
-    setOutputPath(data?.outputPath || defaultXmlTvSettings.outputPath);
-    defaultXmlTvSettings.outputPath =
-      data?.outputPath || defaultXmlTvSettings.outputPath;
-
-    setProgrammingHours(
-      data?.programmingHours.toString() ||
-        defaultXmlTvSettings.programmingHours.toString(),
-    );
-
-    setRefreshHours(
-      data?.refreshHours.toString() ||
-        defaultXmlTvSettings.refreshHours.toString(),
-    );
-
-    setEnableImageCache(
-      data?.enableImageCache || defaultXmlTvSettings.enableImageCache,
-    );
-  }, [data]);
-
-  const handleProgrammingHours = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    setProgrammingHours(event.target.value);
-  };
-
-  const handleRefreshHours = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRefreshHours(event.target.value);
-  };
-
-  const handleEnableImageCache = () => {
-    setEnableImageCache(!enableImageCache);
-  };
-
-  const handleValidateFields = (event: React.FocusEvent<HTMLInputElement>) => {
-    setShowFormError(!hasOnlyDigits(event.target.value));
   };
 
   const handleSnackClose = () => {
@@ -128,7 +75,7 @@ export default function XmlTvSettingsPage() {
   }
 
   return (
-    <>
+    <Box component="form" onSubmit={handleSubmit(updateXmlTvSettings)}>
       <Snackbar
         open={snackStatus}
         autoHideDuration={6000}
@@ -136,47 +83,49 @@ export default function XmlTvSettingsPage() {
         onClose={handleSnackClose}
         message="Settings Saved!"
       />
-      <TextField
-        fullWidth
-        id="output-path"
-        label="Output Path"
-        value={outputPath}
-        InputProps={{ readOnly: true }}
-        variant="filled"
-        margin="normal"
-        sx={{ mt: 2, mb: 2 }}
-        helperText="You can edit this location in file xmltv-settings.json."
-      />
-      {showFormError && (
-        <Alert severity="error" sx={{ my: 2 }}>
-          Invalid input. Please make sure EPG Hours & Refresh Timer is a number
-        </Alert>
-      )}
-      <Stack spacing={2} direction={{ sm: 'column', md: 'row' }}>
-        <TextField
-          fullWidth
-          label="EPG (Hours)"
-          value={programmingHours}
-          onChange={handleProgrammingHours}
-          onBlur={handleValidateFields}
-          helperText="How many hours of programming to include in the xmltv file."
+      <FormControl fullWidth>
+        <Controller
+          control={control}
+          name="outputPath"
+          render={({ field }) => (
+            <TextField
+              id="output-path"
+              label="Output Path"
+              helperText={
+                'You can edit this location in file xmltv-settings.json.'
+              }
+              {...field}
+            />
+          )}
         />
-        <TextField
-          fullWidth
-          label="Refresh Timer (Hours)"
-          value={refreshHours}
-          onChange={handleRefreshHours}
-          onBlur={handleValidateFields}
-          helperText="How often should the xmltv file be updated."
+      </FormControl>
+      <Stack spacing={2} direction={{ sm: 'column', md: 'row' }}>
+        <NumericFormControllerText
+          control={control}
+          name="programmingHours"
+          prettyFieldName="EPG (Hours)"
+          TextFieldProps={{
+            id: 'epg-hours',
+            label: 'EPG (Hours)',
+            helperText:
+              'How many hours of programming to include in the xmltv file.',
+          }}
+        />
+        <NumericFormControllerText
+          control={control}
+          name="refreshHours"
+          prettyFieldName="Refresh Timer (Hours)"
+          TextFieldProps={{
+            id: 'refresh-hours',
+            label: 'Refresh Timer (Hours)',
+            helperText: 'How often should the xmltv file be updated.',
+          }}
         />
       </Stack>
       <FormControl>
         <FormControlLabel
           control={
-            <Checkbox
-              checked={enableImageCache}
-              onChange={handleEnableImageCache}
-            />
+            <CheckboxFormController control={control} name="enableImageCache" />
           }
           label="Image Cache"
         />
@@ -189,17 +138,13 @@ export default function XmlTvSettingsPage() {
         </FormHelperText>
       </FormControl>
       <Stack spacing={2} direction="row" justifyContent="right" sx={{ mt: 2 }}>
-        <Button variant="outlined" onClick={() => handleResetOptions()}>
+        <Button variant="outlined" onClick={() => reset()}>
           Reset Options
         </Button>
-        <Button
-          variant="contained"
-          disabled={showFormError}
-          onClick={() => updateXmlTvSettings()}
-        >
+        <Button variant="contained" disabled={!isValid} type="submit">
           Save
         </Button>
       </Stack>
-    </>
+    </Box>
   );
 }
