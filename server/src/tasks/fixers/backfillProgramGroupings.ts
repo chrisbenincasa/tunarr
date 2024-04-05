@@ -38,6 +38,7 @@ export class BackfillProgramGroupings extends Fixer {
       .where({
         type: ProgramType.Episode,
         grandparentExternalKey: { $ne: null },
+        tvShow: null,
         // At the time this was written, this was the only source type
         sourceType: ProgramSourceType.PLEX,
       })
@@ -107,6 +108,7 @@ export class BackfillProgramGroupings extends Fixer {
       .where({
         type: ProgramType.Episode,
         parentExternalKey: { $ne: null },
+        season: null,
         // At the time this was written, this was the only source type
         sourceType: ProgramSourceType.PLEX,
       })
@@ -177,11 +179,21 @@ export class BackfillProgramGroupings extends Fixer {
         type: ProgramType.Episode,
         parentExternalKey: { $ne: null },
         grandparentExternalKey: { $ne: null },
+        $or: [
+          {
+            season: null,
+          },
+          {
+            tvShow: null,
+          },
+        ],
       },
       {
         orderBy: { uuid: 'desc' },
       },
     );
+
+    logger.debug('Updateing %d episodes', episodes.length);
 
     if (isEmpty(episodes)) {
       return;
