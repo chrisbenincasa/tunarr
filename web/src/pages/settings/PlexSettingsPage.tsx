@@ -1,5 +1,4 @@
 import {
-  AddCircle,
   CancelOutlined,
   CloudDoneOutlined,
   CloudOff,
@@ -15,7 +14,6 @@ import {
   Box,
   Button,
   Checkbox,
-  Chip,
   Collapse,
   Dialog,
   DialogActions,
@@ -28,7 +26,6 @@ import {
   FormHelperText,
   Grid,
   IconButton,
-  Input,
   InputAdornment,
   InputLabel,
   Link,
@@ -61,9 +58,15 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { RotatingLoopIcon } from '../../components/base/LoadingIcon.tsx';
 import AddPlexServer from '../../components/settings/AddPlexServer.tsx';
+import {
+  CheckboxFormController,
+  NumericFormControllerText,
+  TypedController,
+} from '../../components/util/TypedController.tsx';
 import { apiClient } from '../../external/api.ts';
 import {
-  resolutionFromString,
+  handleNumericFormValue,
+  resolutionFromAnyString,
   resolutionToString,
   toggle,
 } from '../../helpers/util.ts';
@@ -422,316 +425,65 @@ export default function PlexSettingsPage() {
     error: streamsError,
   } = usePlexStreamSettings();
 
+  const {
+    reset,
+    control,
+    formState: { isDirty, isValid },
+    watch,
+    handleSubmit,
+  } = useForm<PlexStreamSettings>({
+    defaultValues: defaultPlexStreamSettings,
+    mode: 'onBlur',
+  });
+
+  const streamPath = watch('streamPath');
+  const showSubtitles = watch('enableSubtitles');
+
+  useEffect(() => {
+    if (streamSettings && !isDirty) {
+      reset(streamSettings);
+    }
+  }, [streamSettings, isDirty, reset]);
+
+  const [snackStatus, setSnackStatus] = React.useState<boolean>(false);
   const queryClient = useQueryClient();
+
+  const updatePlexStreamingSettingsMutation = useMutation({
+    mutationFn: (updateSettings: PlexStreamSettings) => {
+      return fetch('http://localhost:8000/api/plex-settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateSettings),
+      });
+    },
+    onSuccess: () => {
+      setSnackStatus(true);
+      return queryClient.invalidateQueries({
+        queryKey: ['settings', 'plex-settings'],
+      });
+    },
+  });
+
+  const updatePlexStreamSettings: SubmitHandler<PlexStreamSettings> = (
+    streamSettings,
+  ) => {
+    updatePlexStreamingSettingsMutation.mutate({ ...streamSettings });
+  };
+
+  const handleSnackClose = () => {
+    setSnackStatus(false);
+  };
+
+  // This is messy, lets consider getting rid of combine, it probably isnt useful here
+  if (serversError || streamsError) {
+    return <h1>XML: {(serversError ?? streamsError)!.message}</h1>;
+  }
 
   const [deletePlexConfirmation, setDeletePlexConfirmation] = useState<
     string | undefined
   >(undefined);
-
-  const [showSubtitles, setShowSubtitles] = useState<boolean>(
-    defaultPlexStreamSettings.enableSubtitles,
-  );
-
-  const [audioBoost, setAudioBoost] = useState<number>(
-    defaultPlexStreamSettings.audioBoost,
-  );
-
-  const [forceDirectPlay, setForceDirectPlay] = useState<boolean>(
-    defaultPlexStreamSettings.forceDirectPlay,
-  );
-
-  const [debugLogging, setDebugLogging] = useState<boolean>(
-    defaultPlexStreamSettings.enableDebugLogging,
-  );
-
-  const [playStatus, setPlayStatus] = useState<boolean>(
-    defaultPlexStreamSettings.updatePlayStatus,
-  );
-
-  const [streamPath, setStreamPath] = useState<'plex' | 'direct'>(
-    defaultPlexStreamSettings.streamPath,
-  );
-
-  const [videoCodecs, setVideoCodecs] = React.useState<string[]>(
-    defaultPlexStreamSettings.videoCodecs,
-  );
-
-  const [addVideoCodecs, setAddVideoCodecs] = React.useState<string>('');
-
-  const [audioCodecs, setAudioCodecs] = React.useState<string[]>(
-    defaultPlexStreamSettings.audioCodecs,
-  );
-
-  const [addAudioCodecs, setAddAudioCodecs] = React.useState<string>('');
-
-  const [maxAudioChannels, setMaxAudioChannels] = React.useState<string>(
-    defaultPlexStreamSettings.maxAudioChannels,
-  );
-
-  const [maxDirectStreamBitrate, setMaxDirectStreamBitrate] = useState<string>(
-    defaultPlexStreamSettings.directStreamBitrate.toString(),
-  );
-
-  const [pathReplace, setPathReplace] = React.useState<string>('');
-
-  const [pathReplaceWith, setPathReplaceWith] = React.useState<string>('');
-
-  const [streamProtocol, setStreamProtocol] = React.useState<string>('');
-
-  const [transcodeBitrate, setTranscodeBitrate] = React.useState<string>('');
-
-  const [mediaBufferSize, setMediaBufferSize] = React.useState<string>('');
-
-  const [transcodeMediaBufferSize, setTranscodeMediaBufferSize] =
-    React.useState<string>('');
-
-  const [subtitleSize, setSubtitleSize] = React.useState<string>('');
-
-  const handlePlexStreamingState = useCallback(() => {
-    setVideoCodecs(
-      streamSettings?.videoCodecs || defaultPlexStreamSettings.videoCodecs,
-    );
-
-    setMaxPlayableResolution(
-      resolutionToString(
-        streamSettings?.maxPlayableResolution ||
-          defaultPlexStreamSettings.maxPlayableResolution,
-      ),
-    );
-
-    setMaxTranscodeResolution(
-      resolutionToString(
-        streamSettings?.maxTranscodeResolution ||
-          defaultPlexStreamSettings.maxTranscodeResolution,
-      ),
-    );
-
-    setMaxDirectStreamBitrate(
-      streamSettings?.directStreamBitrate.toString() ||
-        defaultPlexStreamSettings.directStreamBitrate.toString(),
-    );
-
-    setAudioBoost(
-      streamSettings?.audioBoost || defaultPlexStreamSettings.audioBoost,
-    );
-
-    setStreamPath(
-      streamSettings?.streamPath || defaultPlexStreamSettings.streamPath,
-    );
-
-    setForceDirectPlay(
-      streamSettings?.forceDirectPlay ||
-        defaultPlexStreamSettings.forceDirectPlay,
-    );
-
-    setDebugLogging(
-      streamSettings?.enableDebugLogging ||
-        defaultPlexStreamSettings.enableDebugLogging,
-    );
-
-    setPlayStatus(
-      streamSettings?.updatePlayStatus ||
-        defaultPlexStreamSettings.updatePlayStatus,
-    );
-
-    setStreamProtocol(
-      streamSettings?.streamProtocol ||
-        defaultPlexStreamSettings.streamProtocol,
-    );
-
-    setAudioCodecs(
-      streamSettings?.audioCodecs || defaultPlexStreamSettings.audioCodecs,
-    );
-
-    setMaxAudioChannels(
-      streamSettings?.maxAudioChannels ||
-        defaultPlexStreamSettings.maxAudioChannels,
-    );
-
-    setPathReplace(
-      streamSettings?.pathReplace || defaultPlexStreamSettings.pathReplace,
-    );
-
-    setPathReplaceWith(
-      streamSettings?.pathReplaceWith ||
-        defaultPlexStreamSettings.pathReplaceWith,
-    );
-
-    setTranscodeBitrate(
-      streamSettings?.transcodeBitrate.toString() ||
-        defaultPlexStreamSettings.transcodeBitrate.toString(),
-    );
-
-    setMediaBufferSize(
-      streamSettings?.mediaBufferSize.toString() ||
-        defaultPlexStreamSettings.mediaBufferSize.toString(),
-    );
-
-    setTranscodeMediaBufferSize(
-      streamSettings?.transcodeMediaBufferSize.toString() ||
-        defaultPlexStreamSettings.transcodeMediaBufferSize.toString(),
-    );
-
-    setSubtitleSize(
-      streamSettings?.subtitleSize.toString() ||
-        defaultPlexStreamSettings.subtitleSize.toString(),
-    );
-
-    setShowSubtitles(
-      streamSettings?.enableSubtitles ||
-        defaultPlexStreamSettings.enableSubtitles,
-    );
-  }, [
-    streamSettings?.audioCodecs,
-    streamSettings?.audioBoost,
-    streamSettings?.directStreamBitrate,
-    streamSettings?.maxAudioChannels,
-    streamSettings?.maxPlayableResolution,
-    streamSettings?.maxTranscodeResolution,
-    streamSettings?.mediaBufferSize,
-    streamSettings?.transcodeBitrate,
-    streamSettings?.transcodeMediaBufferSize,
-    streamSettings?.videoCodecs,
-    streamSettings?.subtitleSize,
-    streamSettings?.enableSubtitles,
-    streamSettings?.forceDirectPlay,
-    streamSettings?.enableDebugLogging,
-    streamSettings?.updatePlayStatus,
-  ]);
-
-  useEffect(() => {
-    handlePlexStreamingState();
-  }, [handlePlexStreamingState, streamSettings]);
-
-  const handleVideoCodecUpdate = () => {
-    if (!addVideoCodecs.length) {
-      return;
-    }
-
-    // If there is a comma or white space at the end of user input, trim it
-    let newVideoCodecs: string[] = [addVideoCodecs.replace(/,\s*$/, '')];
-
-    if (addVideoCodecs?.indexOf(',') > -1) {
-      newVideoCodecs = newVideoCodecs[0].split(',');
-    } else {
-      newVideoCodecs = [newVideoCodecs[0]];
-    }
-
-    setVideoCodecs([...videoCodecs, ...newVideoCodecs]);
-    setAddVideoCodecs('');
-  };
-
-  const handleVideoCodecChange = (newVideoCodecs: string) => {
-    setAddVideoCodecs(newVideoCodecs);
-  };
-
-  const handleAudioCodecUpdate = () => {
-    if (!addAudioCodecs.length) {
-      return;
-    }
-
-    // If there is a comma or white space at the end of user input, trim it
-    let newAudioCodecs: string[] = [addAudioCodecs.replace(/,\s*$/, '')];
-
-    if (addAudioCodecs?.indexOf(',') > -1) {
-      newAudioCodecs = newAudioCodecs[0].split(',');
-    } else {
-      newAudioCodecs = [newAudioCodecs[0]];
-    }
-
-    setAudioCodecs([...audioCodecs, ...newAudioCodecs]);
-    setAddAudioCodecs('');
-  };
-
-  const handleAudioCodecChange = (newAudioCodecs: string) => {
-    setAddAudioCodecs(newAudioCodecs);
-  };
-
-  const handleAudioBoost = (event: SelectChangeEvent<number>) => {
-    setAudioBoost(event.target.value as number); // We know this will be a number
-  };
-
-  const [maxPlayableResolution, setMaxPlayableResolution] = useState<string>(
-    resolutionToString(defaultPlexStreamSettings.maxPlayableResolution),
-  );
-
-  const handleMaxPlayableResolution = (event: SelectChangeEvent<string>) => {
-    setMaxPlayableResolution(event.target.value);
-  };
-
-  const [maxTranscodeResolution, setMaxTranscodeResolution] = useState<string>(
-    resolutionToString(defaultPlexStreamSettings.maxTranscodeResolution),
-  );
-
-  const handleMaxTranscodeResolution = (event: SelectChangeEvent<string>) => {
-    setMaxTranscodeResolution(event.target.value);
-  };
-
-  const handleStreamProtocol = (event: SelectChangeEvent<string>) => {
-    setStreamProtocol(event.target.value);
-  };
-
-  const handleMaxDirectStreamBitrate = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    setMaxDirectStreamBitrate(event.target.value);
-  };
-
-  const handleTranscodeBitrate = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    setTranscodeBitrate(event.target.value);
-  };
-
-  const handleMediaBufferSize = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    setMediaBufferSize(event.target.value);
-  };
-
-  const handleTranscodeMediaBufferSize = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    setTranscodeMediaBufferSize(event.target.value);
-  };
-
-  const handleMaxAudioChannels = (event: SelectChangeEvent<string>) => {
-    setMaxAudioChannels(event.target.value);
-  };
-
-  const onSubtitleChange = () => {
-    setShowSubtitles(!showSubtitles);
-  };
-
-  const onDirectPlayChange = () => {
-    setForceDirectPlay(!forceDirectPlay);
-  };
-
-  const onDebugLoggingChange = () => {
-    setDebugLogging(!debugLogging);
-  };
-
-  const onPlayStatusChange = () => {
-    setPlayStatus(!playStatus);
-  };
-
-  const handlePathChange = (event: SelectChangeEvent<'plex' | 'direct'>) => {
-    setStreamPath(event.target.value as 'plex' | 'direct');
-  };
-
-  const handlePathReplace = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setPathReplace(event.target.value);
-  };
-
-  const handlePathReplaceWith = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    setPathReplaceWith(event.target.value);
-  };
-
-  const handleSubtitleSize = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSubtitleSize(event.target.value);
-  };
 
   const renderConfirmationDialog = () => {
     return (
@@ -779,101 +531,6 @@ export default function PlexSettingsPage() {
       });
     },
   });
-
-  const [snackStatus, setSnackStatus] = React.useState<boolean>(false);
-
-  const updatePlexStreamingSettingsMutation = useMutation({
-    mutationFn: (updateSettings: PlexStreamSettings) => {
-      return fetch('http://localhost:8000/api/plex-settings', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updateSettings),
-      });
-    },
-    onSuccess: () => {
-      setSnackStatus(true);
-      return queryClient.invalidateQueries({
-        queryKey: ['settings', 'plex-settings'],
-      });
-    },
-  });
-
-  // TO DO: Add All Fields and remove defaults
-  // refactor
-  const updatePlexStreamSettings = () => {
-    const [maxPlayableResolutionWidth, maxPlayableResolutionHeight] =
-      maxPlayableResolution.split('x', 2);
-    const [maxTranscodeResolutionWidth, maxTranscodeResolutionHeight] =
-      maxTranscodeResolution.split('x', 2);
-
-    // This is temporary until I have all fields
-    const allPlexStreamFieldValues = {
-      ...defaultPlexStreamSettings,
-      ...{
-        audioCodecs,
-        audioBoost,
-        directStreamBitrate: Number(maxDirectStreamBitrate),
-        enableSubtitles: showSubtitles,
-        maxAudioChannels,
-        maxPlayableResolution: resolutionFromString(
-          resolutionToString({
-            widthPx: Number(maxPlayableResolutionWidth),
-            heightPx: Number(maxPlayableResolutionHeight),
-          }),
-        ),
-        maxTranscodeResolution: resolutionFromString(
-          resolutionToString({
-            widthPx: Number(maxTranscodeResolutionWidth),
-            heightPx: Number(maxTranscodeResolutionHeight),
-          }),
-        ),
-        mediaBufferSize: Number(mediaBufferSize),
-        subtitleSize: Number(subtitleSize),
-        transcodeBitrate: Number(transcodeBitrate),
-        transcodeMediaBufferSize: Number(transcodeMediaBufferSize),
-        videoCodecs,
-        forceDirectPlay,
-        enableDebugLogging: debugLogging,
-        updatePlayStatus: playStatus,
-        streamPath,
-        pathReplace,
-        pathReplaceWith,
-        streamProtocol,
-      },
-    };
-
-    updatePlexStreamingSettingsMutation.mutate(allPlexStreamFieldValues);
-  };
-
-  const handleResetOptions = () => {
-    updatePlexStreamingSettingsMutation.mutate({
-      ...defaultPlexStreamSettings,
-    });
-    handlePlexStreamingState();
-  };
-
-  const removeVideoCodec = (codecToDelete: string) => () => {
-    setVideoCodecs(
-      (codecs) => codecs?.filter((codec) => codec !== codecToDelete),
-    );
-  };
-
-  const removeAudioCodec = (codecToDelete: string) => () => {
-    setAudioCodecs(
-      (codecs) => codecs?.filter((codec) => codec !== codecToDelete),
-    );
-  };
-
-  const handleSnackClose = () => {
-    setSnackStatus(false);
-  };
-
-  // This is messy, lets consider getting rid of combine, it probably isnt useful here
-  if (serversError || streamsError) {
-    return <h1>XML: {(serversError ?? streamsError)!.message}</h1>;
-  }
 
   const removePlexServer = (id: string) => {
     removePlexServerMutation.mutate(id);
@@ -964,10 +621,6 @@ export default function PlexSettingsPage() {
       );
     }
 
-    if (!streamSettings) {
-      return <div>Error</div>;
-    }
-
     return (
       <>
         <Divider sx={{ my: 3 }} />
@@ -976,76 +629,97 @@ export default function PlexSettingsPage() {
         </Typography>
         <Grid flex="1 0 50%" container spacing={3}>
           <Grid item xs={12} sm={6}>
-            <FormControl fullWidth>
-              <InputLabel htmlFor="add-video-codec">Video Codecs</InputLabel>
-              <Input
-                id="add-video-codec"
-                type={'text'}
-                value={addVideoCodecs}
-                onChange={(event) => handleVideoCodecChange(event.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleVideoCodecUpdate();
-                  }
-                }}
-                endAdornment={
-                  <InputAdornment position="end">
-                    <IconButton
-                      aria-label="Add Video Codec"
-                      onClick={handleVideoCodecUpdate}
-                    >
-                      <AddCircle />
-                    </IconButton>
-                  </InputAdornment>
-                }
-              />
-            </FormControl>
-
-            {videoCodecs?.map((codec) => (
-              <Chip
-                label={codec}
-                key={codec}
-                onDelete={removeVideoCodec(codec)}
-                sx={{ mr: 1, mt: 1 }}
-              />
-            ))}
+            <Controller
+              control={control}
+              name="videoCodecs"
+              render={({ field }) => (
+                <TextField
+                  id="video-codecs"
+                  label="Video Codecs"
+                  fullWidth
+                  {...field}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <Tooltip
+                          title="Some possible values are:
+    h264 with Intel Quick Sync: h264_qsv
+    MPEG2 with Intel Quick Sync: mpeg2_qsv
+    NVIDIA: h264_nvenc
+    MPEG2: mpeg2video (default)
+    H264: libx264
+    MacOS: h264_videotoolbox"
+                        >
+                          <IconButton
+                            aria-label="Some possible values are:
+    h264 with Intel Quick Sync: h264_qsv
+    MPEG2 with Intel Quick Sync: mpeg2_qsv
+    NVIDIA: h264_nvenc
+    MPEG2: mpeg2video (default)
+    H264: libx264
+    MacOS: h264_videotoolbox"
+                            edge="end"
+                          >
+                            <HelpOutline sx={{ opacity: 0.75 }} />
+                          </IconButton>
+                        </Tooltip>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              )}
+            />
           </Grid>
           <Grid item xs={12} sm={6}>
             <FormControl fullWidth sx={{ mb: 2 }}>
-              <InputLabel id="max-playable-resolution">
+              <InputLabel id="max-playable-resolution-label">
                 Max Playable Resolution
               </InputLabel>
-              <Select
-                labelId="max-playable-resolution"
-                id="max-playable-resolution"
-                label="Max Playable Resolution"
-                value={maxPlayableResolution}
-                onChange={handleMaxPlayableResolution}
-              >
-                {supportedResolutions.map((res) => (
-                  <MenuItem key={res} value={res}>
-                    {res}
-                  </MenuItem>
-                ))}
-              </Select>
+              <TypedController
+                control={control}
+                name="maxPlayableResolution"
+                toFormType={resolutionFromAnyString}
+                render={({ field }) => (
+                  <Select
+                    labelId="max-playable-resolution-label"
+                    id="max-playable-resolution"
+                    label="Max Playable Resolution"
+                    {...field}
+                    value={resolutionToString(field.value)}
+                  >
+                    {supportedResolutions.map((resolution) => (
+                      <MenuItem key={resolution} value={resolution}>
+                        {resolution}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                )}
+              />
             </FormControl>
             <FormControl fullWidth>
-              <InputLabel id="max-transcode-resolution">
+              <InputLabel id="max-transcode-resolution-label">
                 Max Transcode Resolution
               </InputLabel>
-              <Select
-                labelId="max-transcode-resolution"
-                id="max-transcode-resolution"
-                label="Max Transcode Resolution"
-                value={maxTranscodeResolution}
-                onChange={handleMaxTranscodeResolution}
-              >
-                {supportedResolutions.map((res) => (
-                  <MenuItem key={res} value={res}>
-                    {res}
-                  </MenuItem>
-                ))}
-              </Select>
+              <TypedController
+                control={control}
+                name="maxTranscodeResolution"
+                toFormType={resolutionFromAnyString}
+                render={({ field }) => (
+                  <Select
+                    labelId="max-transcode-resolution-label"
+                    id="max-transcode-resolution"
+                    label="Max Transcode Resolution"
+                    {...field}
+                    value={resolutionToString(field.value)}
+                  >
+                    {supportedResolutions.map((resolution) => (
+                      <MenuItem key={resolution} value={resolution}>
+                        {resolution}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                )}
+              />
             </FormControl>
           </Grid>
         </Grid>
@@ -1071,10 +745,6 @@ export default function PlexSettingsPage() {
       );
     }
 
-    if (!streamSettings) {
-      return <div>Error</div>;
-    }
-
     return (
       <>
         <Divider sx={{ my: 3 }} />
@@ -1083,57 +753,70 @@ export default function PlexSettingsPage() {
         </Typography>
         <Grid flex="1 0 50%" container spacing={3}>
           <Grid item xs={12} sm={6}>
-            <FormControl fullWidth>
-              <InputLabel htmlFor="add-audio-codec">Audio Codecs</InputLabel>
-              <Input
-                id="add-audio-codec"
-                type={'text'}
-                value={addAudioCodecs}
-                onChange={(event) => handleAudioCodecChange(event.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleAudioCodecUpdate();
-                  }
-                }}
-                endAdornment={
-                  <InputAdornment position="end">
-                    <IconButton
-                      aria-label="Add Audio Codec"
-                      onClick={handleAudioCodecUpdate}
-                    >
-                      <AddCircle />
-                    </IconButton>
-                  </InputAdornment>
-                }
-              />
-            </FormControl>
-            {audioCodecs.map((codec) => (
-              <Chip
-                label={codec}
-                key={codec}
-                onDelete={removeAudioCodec(codec)}
-                sx={{ mr: 1, mt: 1 }}
-              />
-            ))}
+            <Controller
+              control={control}
+              name="audioCodecs"
+              render={({ field }) => (
+                <TextField
+                  id="audioCodecs"
+                  label="Audio Codecs"
+                  fullWidth
+                  {...field}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <Tooltip
+                          title="Some possible values are:
+            aac
+            ac3 (default), ac3_fixed
+            flac
+            libmp3lame"
+                        >
+                          <IconButton
+                            aria-label="Some possible values are:
+              aac
+              ac3 (default), ac3_fixed
+              flac
+              libmp3lame"
+                            edge="end"
+                          >
+                            <HelpOutline sx={{ opacity: 0.75 }} />
+                          </IconButton>
+                        </Tooltip>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              )}
+            />
           </Grid>
           <Grid item xs={12} sm={6}>
             <FormControl fullWidth>
               <InputLabel id="maximum-audio-channels-label">
                 Maxium Audio Channels
               </InputLabel>
-              <Select
-                labelId="maximum-audio-channels-label"
-                id="maximum-audio-channels"
-                label="Maxium Audio Channels"
-                value={maxAudioChannels}
-                onChange={handleMaxAudioChannels}
-              >
-                {supportedAudioChannels.map((res) => (
-                  <MenuItem key={res} value={res}>
-                    {res}
-                  </MenuItem>
-                ))}
-              </Select>
+              <TypedController
+                control={control}
+                name="maxAudioChannels"
+                prettyFieldName="Maximum Audio Channels"
+                valueExtractor={(e) =>
+                  (e as SelectChangeEvent<number>).target.value
+                }
+                render={({ field }) => (
+                  <Select
+                    labelId="maximum-audio-channels-label"
+                    id="maximum-audio-channels"
+                    label="Maximum Audio Channels"
+                    {...field}
+                  >
+                    {supportedAudioChannels.map((res) => (
+                      <MenuItem key={res} value={res}>
+                        {res}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                )}
+              />
               <FormHelperText>
                 Note: 7.1 audio and on some clients, 6.1, is known to cause
                 playback issues.
@@ -1143,19 +826,29 @@ export default function PlexSettingsPage() {
           <Grid item xs={12}>
             <FormControl fullWidth>
               <InputLabel id="audio-boost-label">Audio Boost</InputLabel>
-              <Select
-                labelId="audio-boost-label"
-                id="audio-boost"
-                label="Audio Boost"
-                value={audioBoost}
-                onChange={handleAudioBoost}
-              >
-                {supportedAudioBoost.map((boost) => (
-                  <MenuItem key={boost.value} value={boost.value}>
-                    {boost.string}
-                  </MenuItem>
-                ))}
-              </Select>
+              <TypedController
+                control={control}
+                name="audioBoost"
+                prettyFieldName="Audio Boost"
+                toFormType={handleNumericFormValue}
+                valueExtractor={(e) =>
+                  (e as SelectChangeEvent<number>).target.value
+                }
+                render={({ field }) => (
+                  <Select
+                    labelId="audio-boost-label"
+                    id="audio-boost"
+                    label="Audio Boost"
+                    {...field}
+                  >
+                    {supportedAudioBoost.map((boost) => (
+                      <MenuItem key={boost.value} value={boost.value}>
+                        {boost.string}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                )}
+              />
               <FormHelperText>
                 Note: Only applies when downmixing to stereo.
               </FormHelperText>
@@ -1184,10 +877,6 @@ export default function PlexSettingsPage() {
       );
     }
 
-    if (!streamSettings) {
-      return <div>Error</div>;
-    }
-
     return (
       <>
         <Divider sx={{ my: 3 }} />
@@ -1199,19 +888,26 @@ export default function PlexSettingsPage() {
             <FormControl fullWidth>
               <FormControlLabel
                 control={
-                  <Checkbox
-                    onChange={onSubtitleChange}
-                    checked={showSubtitles}
+                  <Controller
+                    control={control}
+                    name="enableSubtitles"
+                    render={({ field }) => (
+                      <Checkbox checked={field.value} {...field} />
+                    )}
                   />
                 }
                 label="Enable Subtitles (Requires Transcoding)"
               />
+
               {showSubtitles && (
-                <TextField
-                  id="component-outlined"
-                  label="Subtitle Size"
-                  onChange={handleSubtitleSize}
-                  value={subtitleSize}
+                <NumericFormControllerText
+                  control={control}
+                  name="subtitleSize"
+                  prettyFieldName="Subtitle Size"
+                  TextFieldProps={{
+                    id: 'subtitle-size',
+                    label: 'Subtitle Size',
+                  }}
                 />
               )}
             </FormControl>
@@ -1230,17 +926,30 @@ export default function PlexSettingsPage() {
         <Grid flex="1 0 50%" container spacing={3}>
           <Grid item xs={12} sm={6}>
             <FormControl fullWidth sx={{ my: 1 }}>
-              <TextField
-                label="Original Plex path to replace:"
-                value={pathReplace}
-                onChange={handlePathReplace}
+              <Controller
+                control={control}
+                name="pathReplace"
+                render={({ field }) => (
+                  <TextField
+                    id="original-path-replace"
+                    label="Original Plex path to replace:"
+                    {...field}
+                  />
+                )}
               />
             </FormControl>
+
             <FormControl fullWidth sx={{ my: 1 }}>
-              <TextField
-                label="Replace Plex path with:"
-                value={pathReplaceWith}
-                onChange={handlePathReplaceWith}
+              <Controller
+                control={control}
+                name="pathReplaceWith"
+                render={({ field }) => (
+                  <TextField
+                    id="new-path-replace-with"
+                    label="Replace Plex path with:"
+                    {...field}
+                  />
+                )}
               />
             </FormControl>
           </Grid>
@@ -1267,10 +976,6 @@ export default function PlexSettingsPage() {
       );
     }
 
-    if (!streamSettings) {
-      return <div>Error</div>;
-    }
-
     return (
       <>
         <Divider sx={{ my: 3 }} />
@@ -1279,60 +984,84 @@ export default function PlexSettingsPage() {
         </Typography>
         <Grid flex="1 0 50%" container spacing={3}>
           <Grid item xs={12} sm={6}>
-            <FormControl fullWidth sx={{ my: 1 }}>
-              <TextField
-                label="Max Direct Stream Bitrate (Kbps)"
-                onChange={handleMaxDirectStreamBitrate}
-                value={maxDirectStreamBitrate}
-              />
-            </FormControl>
-            <FormControl fullWidth sx={{ my: 1 }}>
-              <TextField
-                label="Max Transcode Bitrate (Kbps)"
-                onChange={handleTranscodeBitrate}
-                value={transcodeBitrate}
-              />
-            </FormControl>
+            <NumericFormControllerText
+              control={control}
+              name="directStreamBitrate"
+              prettyFieldName="Max Direct Stream Bitrate (Kbps)"
+              TextFieldProps={{
+                label: 'Max Direct Stream Bitrate (Kbps)',
+                fullWidth: true,
+                sx: { my: 1 },
+              }}
+            />
+            <NumericFormControllerText
+              control={control}
+              name="transcodeBitrate"
+              prettyFieldName="Max Transcode Bitrate (Kbps)"
+              TextFieldProps={{
+                label: 'Max Transcode Bitrate (Kbps)',
+                fullWidth: true,
+                sx: { my: 1 },
+              }}
+            />
           </Grid>
           <Grid item xs={12} sm={6}>
-            <FormControl fullWidth sx={{ my: 1 }}>
-              <TextField
-                label="Direct Stream Media Buffer Size"
-                onChange={handleMediaBufferSize}
-                value={mediaBufferSize}
-              />
-            </FormControl>
-            <FormControl fullWidth sx={{ my: 1 }}>
-              <TextField
-                label="Transcode Media Buffer Size"
-                onChange={handleTranscodeMediaBufferSize}
-                value={transcodeMediaBufferSize}
-              />
-            </FormControl>
+            <NumericFormControllerText
+              control={control}
+              name="mediaBufferSize"
+              prettyFieldName="Direct Stream Media Buffer Size"
+              TextFieldProps={{
+                label: 'Direct Stream Media Buffer Size',
+                fullWidth: true,
+                sx: { my: 1 },
+              }}
+            />
+            <NumericFormControllerText
+              control={control}
+              name="transcodeMediaBufferSize"
+              prettyFieldName="Transcode Media Buffer Size"
+              TextFieldProps={{
+                label: 'Transcode Media Buffer Size',
+                fullWidth: true,
+                sx: { my: 1 },
+              }}
+            />
             <FormControl fullWidth>
               <InputLabel id="stream-protocol-label">
                 Stream Protocol
               </InputLabel>
-              <Select
-                labelId="stream-protocol-label"
-                id="stream-protocol"
-                label="Stream Protocol"
-                value={streamProtocol}
-                onChange={handleStreamProtocol}
-              >
-                {supportedStreamProtocols.map((protocol) => (
-                  <MenuItem key={protocol.value} value={protocol.value}>
-                    {protocol.string}
-                  </MenuItem>
-                ))}
-              </Select>
+              <TypedController
+                control={control}
+                name="streamProtocol"
+                prettyFieldName="Stream Protocol"
+                valueExtractor={(e) =>
+                  (e as SelectChangeEvent<string>).target.value
+                }
+                render={({ field }) => (
+                  <Select
+                    labelId="stream-protocol-label"
+                    id="stream-protocol"
+                    label="Stream Protocol"
+                    {...field}
+                  >
+                    {supportedStreamProtocols.map((protocol) => (
+                      <MenuItem key={protocol.value} value={protocol.value}>
+                        {protocol.string}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                )}
+              />
             </FormControl>
             <FormControl fullWidth>
               <FormControlLabel
                 control={
-                  <Checkbox
-                    onChange={onDirectPlayChange}
-                    checked={forceDirectPlay}
+                  <Controller
+                    control={control}
+                    name="forceDirectPlay"
+                    render={({ field }) => (
+                      <Checkbox checked={field.value} {...field} />
+                    )}
                   />
                 }
                 label="Force Direct Play"
@@ -1345,7 +1074,7 @@ export default function PlexSettingsPage() {
   };
 
   return (
-    <>
+    <Box component="form" onSubmit={handleSubmit(updatePlexStreamSettings)}>
       <Snackbar
         open={snackStatus}
         autoHideDuration={6000}
@@ -1367,7 +1096,7 @@ export default function PlexSettingsPage() {
         <Typography component="h6" variant="h6" sx={{ pt: 2, pb: 1 }}>
           Plex Transcoding
         </Typography>
-        <Alert severity="info" sx={{ my: 1 }}>
+        <Alert severity="info" sx={{ my: 2 }}>
           If stream changes video codec, audio codec, or audio channels upon
           episode change, you will experience playback issues unless ffmpeg
           transcoding and normalization are also enabled.
@@ -1377,28 +1106,34 @@ export default function PlexSettingsPage() {
           <Grid item xs={12} sm={6}>
             <FormControl fullWidth>
               <InputLabel id="stream-path-label">Stream Path</InputLabel>
-              <Select
-                labelId="stream-path-label"
-                id="stream-path"
-                label="Stream Path"
-                value={streamPath}
-                onChange={handlePathChange}
-              >
-                {supportedPaths.map((path) => (
-                  <MenuItem key={path.value} value={path.value}>
-                    {path.string}
-                  </MenuItem>
-                ))}
-              </Select>
+              <TypedController
+                control={control}
+                name="streamPath"
+                render={({ field }) => (
+                  <Select
+                    labelId="stream-path-label"
+                    id="stream-path"
+                    sx={{ my: 1 }}
+                    label="Stream Path"
+                    {...field}
+                  >
+                    {supportedPaths.map((path) => (
+                      <MenuItem key={path.value} value={path.value}>
+                        {path.string}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                )}
+              />
             </FormControl>
           </Grid>
           <Grid item xs={12} sm={6}>
             <FormControl fullWidth>
               <FormControlLabel
                 control={
-                  <Checkbox
-                    onChange={onDebugLoggingChange}
-                    checked={debugLogging}
+                  <CheckboxFormController
+                    control={control}
+                    name="enableDebugLogging"
                   />
                 }
                 label="Debug Logging"
@@ -1407,9 +1142,9 @@ export default function PlexSettingsPage() {
             <FormControl fullWidth>
               <FormControlLabel
                 control={
-                  <Checkbox
-                    onChange={onPlayStatusChange}
-                    checked={playStatus}
+                  <CheckboxFormController
+                    control={control}
+                    name="updatePlayStatus"
                   />
                 }
                 label="Send play status to Plex"
@@ -1438,17 +1173,14 @@ export default function PlexSettingsPage() {
           justifyContent="right"
           sx={{ mt: 2 }}
         >
-          <Button variant="outlined" onClick={() => handleResetOptions()}>
+          <Button variant="outlined" onClick={() => reset()}>
             Reset Options
           </Button>
-          <Button
-            variant="contained"
-            onClick={() => updatePlexStreamSettings()}
-          >
+          <Button variant="contained" disabled={!isValid} type="submit">
             Save
           </Button>
         </Stack>
       </Box>
-    </>
+    </Box>
   );
 }
