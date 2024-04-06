@@ -37,10 +37,6 @@ export type KeysOfType<T, X = string | number> = keyof {
   [Key in keyof T as T[Key] extends X ? Key : never]: T[Key];
 };
 
-// export type KeyOfType<T, Key extends keyof T, Target> = keyof {
-//   [K in Key as T[K] extends Target ? K : never]: T[K];
-// };
-
 export function mapToObj<T, U, O extends Record<string | number, U>>(
   data: T[],
   mapper: (x: T) => O,
@@ -118,7 +114,7 @@ export function groupByUniqAndMapAsync<
   opts?: mapAsyncSeq2Opts,
 ): Promise<Record<Key, Value>> {
   const keyFunc = (t: T) => t[isFunction(member) ? member(t) : member] as Key;
-  return mapReduceAsyncSeq2(
+  return mapReduceAsyncSeq(
     data,
     (t) => mapper(t).then((v) => [keyFunc(t), v] as const),
     (acc, [key, value]) => {
@@ -132,7 +128,7 @@ export function groupByUniqAndMapAsync<
   );
 }
 
-export async function mapAsyncSeq<T, U>(
+export async function mapAsyncSeq_old<T, U>(
   seq: T[] | null | undefined,
   ms: number | undefined,
   itemFn: (item: T) => Promise<U>,
@@ -165,15 +161,23 @@ type mapAsyncSeq2Opts = {
   failuresToNull?: boolean;
 };
 
-export async function mapReduceAsyncSeq2<T, U, Res>(
+export async function mapReduceAsyncSeq<T, U, Res>(
   seq: T[] | null | undefined,
   fn: (item: T) => Promise<U>,
   reduce: (res: Res, item: U) => Res,
   empty: Res,
   opts?: mapAsyncSeq2Opts,
 ): Promise<Res> {
+  return (await mapAsyncSeq(seq, fn, opts)).reduce(reduce, empty);
+}
+
+export async function mapAsyncSeq<T, U>(
+  seq: T[] | null | undefined,
+  fn: (item: T) => Promise<U>,
+  opts?: mapAsyncSeq2Opts,
+): Promise<U[]> {
   if (isNil(seq)) {
-    return empty;
+    return [];
   }
 
   const parallelism = opts?.parallelism ?? 1;
@@ -186,20 +190,13 @@ export async function mapReduceAsyncSeq2<T, U, Res>(
     }
     results.push(...result);
   }
-  return results.reduce(reduce, empty);
-}
-
-export async function mapAsyncSeq2<T, U>(
-  seq: T[] | null | undefined,
-  fn: (item: T) => Promise<U>,
-  opts?: mapAsyncSeq2Opts,
-): Promise<U[]> {
-  return mapReduceAsyncSeq2(seq, fn, (x, y) => [...x, y], [] as U[], opts);
+  return results;
 }
 
 export async function flatMapAsyncSeq<T, U>(
-  seq: readonly T[],
+  seq: T[] | null | undefined,
   itemFn: (item: T) => Promise<U[]>,
+  opts?: mapAsyncSeq2Opts,
 ): Promise<U[]> {
   return mapReduceAsyncSeq(
     seq,
@@ -212,27 +209,8 @@ export async function flatMapAsyncSeq<T, U>(
       }
     },
     [] as U[],
+    opts,
   );
-}
-
-export async function mapReduceAsyncSeq<T, U, Res>(
-  seq: ReadonlyArray<T>,
-  itemFn: (item: T) => Promise<U>,
-  combineFn: (prev: Res, next: U) => Res,
-  empty: Res,
-): Promise<Res> {
-  const all = await seq.reduce(
-    async (prev, item) => {
-      const last = await prev;
-
-      const result = await itemFn(item);
-
-      return [...last, result];
-    },
-    Promise.resolve([] as U[]),
-  );
-
-  return Promise.all(all).then((res) => res.reduce(combineFn, empty));
 }
 
 export const wait: (ms?: number) => Promise<void> = (ms: number) => {
@@ -260,7 +238,7 @@ Array.prototype.mapAsyncSeq = async function <T, U>(
   itemFn: (item: T) => Promise<U>,
   ms: number | undefined,
 ) {
-  return mapAsyncSeq(this as T[], ms, itemFn);
+  return mapAsyncSeq_old(this as T[], ms, itemFn);
 };
 
 export function time<T>(

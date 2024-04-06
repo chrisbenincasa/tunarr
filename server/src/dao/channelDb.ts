@@ -560,7 +560,7 @@ export class ChannelDB {
     let lastOffset = 0;
     const offsets: number[] = [];
     const programs = compact(
-      await mapAsyncSeq(lineup, undefined, async (item) => {
+      await mapAsyncSeq(lineup, async (item) => {
         const apiItem = await this.toApiLineupItem(channel, item);
         if (apiItem) {
           offsets.push(lastOffset);

@@ -199,7 +199,7 @@ export class FillerDB {
         },
       );
 
-    return await mapAsyncSeq(programs, undefined, async (fillerContent) =>
+    return await mapAsyncSeq(programs, async (fillerContent) =>
       this.#programConverter.entityToContentProgram(fillerContent.content),
     );
   }

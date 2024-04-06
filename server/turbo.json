@@ -21,6 +21,10 @@
     "make-exec:windows": {
       "dependsOn": ["bundle"],
       "outputs": ["build/**", "dist/**"]
+    },
+    "lint-staged": {},
+    "lint": {
+      "dependsOn": ["lint-staged"]
     }
   }
 }

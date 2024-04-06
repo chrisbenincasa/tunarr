@@ -130,7 +130,7 @@ export async function migratePrograms(
   );
 
   const dbProgramById = (
-    await mapAsyncSeq(programs, undefined, (p) =>
+    await mapAsyncSeq(programs, (p) =>
       persistProgram(p).then((dbProgram) => {
         if (dbProgram) {
           return {
@@ -378,7 +378,7 @@ export async function migrateChannels(dbPath: string) {
   logger.info(`Found channels: ${channelFiles.join(', ')}`);
 
   const migratedChannels = compact(
-    await mapAsyncSeq(channelFiles, undefined, async (channel) => {
+    await mapAsyncSeq(channelFiles, async (channel) => {
       try {
         // Create a backup of the channel file
         const fullPath = path.join(channelPath, channel);
@@ -399,28 +399,24 @@ export async function migrateChannels(dbPath: string) {
 
   // Create filler associations
   const em = getEm();
-  await mapAsyncSeq(
-    migratedChannels,
-    undefined,
-    async ({ raw: channel, entity }) => {
-      const fillers = channel.fillerCollections ?? [];
-      const relations = map(fillers, (filler) => {
-        const cfs = em.create(ChannelFillerShow, {
-          channel: entity.uuid,
-          fillerShow: filler.id,
-          weight: filler.weight,
-        });
-        cfs.cooldown = dayjs.duration({ seconds: filler.cooldownSeconds });
-        return cfs;
+  await mapAsyncSeq(migratedChannels, async ({ raw: channel, entity }) => {
+    const fillers = channel.fillerCollections ?? [];
+    const relations = map(fillers, (filler) => {
+      const cfs = em.create(ChannelFillerShow, {
+        channel: entity.uuid,
+        fillerShow: filler.id,
+        weight: filler.weight,
       });
+      cfs.cooldown = dayjs.duration({ seconds: filler.cooldownSeconds });
+      return cfs;
+    });
 
-      await em.upsertMany(ChannelFillerShow, relations, {
-        onConflictAction: 'ignore',
-      });
+    await em.upsertMany(ChannelFillerShow, relations, {
+      onConflictAction: 'ignore',
+    });
 
-      return em.flush();
-    },
-  );
+    return em.flush();
+  });
 
   return migratedChannels;
 }

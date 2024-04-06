@@ -43,8 +43,7 @@ import {
   ifDefined,
   isNonEmptyString,
   mapAsyncSeq,
-  mapAsyncSeq2,
-  mapReduceAsyncSeq2,
+  mapReduceAsyncSeq,
 } from '../util.js';
 import { ProgramMinterFactory } from '../util/programMinter.js';
 import { ProgramSourceType } from './custom_types/ProgramSourceType.js';
@@ -174,15 +173,12 @@ export async function upsertContentPrograms(
   });
 
   const upsertedPrograms = flatten(
-    await mapAsyncSeq(
-      chunk(programsToPersist, batchSize),
-      undefined,
-      (programs) =>
-        em.upsertMany(Program, programs, {
-          onConflictAction: 'merge',
-          onConflictFields: ['sourceType', 'externalSourceId', 'externalKey'],
-          onConflictExcludeFields: ['uuid'],
-        }),
+    await mapAsyncSeq(chunk(programsToPersist, batchSize), (programs) =>
+      em.upsertMany(Program, programs, {
+        onConflictAction: 'merge',
+        onConflictFields: ['sourceType', 'externalSourceId', 'externalKey'],
+        onConflictExcludeFields: ['uuid'],
+      }),
     ),
   );
 
@@ -304,7 +300,7 @@ async function findAndUpdatePlexServerPrograms(
     .value();
 
   const existingGroupings = flatten(
-    await mapAsyncSeq2(
+    await mapAsyncSeq(
       chunk(allIds, 25),
       (chunk) => {
         const ors = map(chunk, (id) => ({
@@ -347,7 +343,7 @@ async function findAndUpdatePlexServerPrograms(
   // 4. Persist them
   // 5. Return mapping of the new or existing IDs to the previous function
   // and update the mappings of the programs...
-  const newGroupings = await mapReduceAsyncSeq2(
+  const newGroupings = await mapReduceAsyncSeq(
     reject(allIds, (id) => has(existingGroupingsByPlexId, id) || isEmpty(id)),
     async (id) => {
       const metadata = await plexApi.doGet<

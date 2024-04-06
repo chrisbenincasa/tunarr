@@ -76,7 +76,7 @@ export class UpdateXmlTvTask extends Task<void> {
       return em.find(PlexServerSettings, {});
     });
 
-    await mapAsyncSeq(allPlexServers, undefined, async (plexServer) => {
+    await mapAsyncSeq(allPlexServers, async (plexServer) => {
       const plex = new Plex(plexServer);
       let dvrs: PlexDvr[] = [];
 

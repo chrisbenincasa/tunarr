@@ -4,7 +4,7 @@ import { uuidRegexPattern } from '../helpers/util';
 type Route = { matcher: RegExp; name: string };
 
 const entityPageMatcher = (entity: string, path: string) =>
-  new RegExp(`^\/${entity}\/${uuidRegexPattern}\/${path}\/?$`);
+  new RegExp(`^/${entity}/${uuidRegexPattern}/${path}/?$`);
 
 const channelsPageMatcher = (path: string) =>
   entityPageMatcher('channels', path);

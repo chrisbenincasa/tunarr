@@ -265,7 +265,7 @@ export function PlexValueNode({
               name={getFieldName('op')}
               render={({ field }) => (
                 <Select label="Operation" {...field}>
-                  {map(lookupFieldOperators(plexFilter!.type), (ops) => {
+                  {map(lookupFieldOperators(plexFilter.type), (ops) => {
                     return (
                       <MenuItem key={ops.key} value={ops.key}>
                         {ops.title}

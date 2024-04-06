@@ -131,7 +131,7 @@ export const removeSelectedMedia = (media: SelectedMedia[]) =>
       default: false,
     });
 
-    state.selectedMedia = reject(state.selectedMedia, (sm) => it(sm)!);
+    state.selectedMedia = reject(state.selectedMedia, it);
   });
 
 export const removePlexSelectedMedia = (serverName: string, guids: string[]) =>
@@ -159,7 +159,7 @@ export const removeCustomShowSelectedMedia = (
       (m) =>
         m.type === 'custom-show' &&
         m.customShowId === csId &&
-        idsSet.has(m.program.id!),
+        idsSet.has(m.program.id),
     );
   });
 
@@ -182,7 +182,6 @@ export const setPlexFilter = (plexFilter: PlexFilter | undefined) =>
 
 export const setPlexSort = (plexSort: PlexSort | undefined) =>
   useStore.setState((state) => {
-    console.log('plexSort', plexSort);
     state.plexSearch = {
       ...state.plexSearch,
       sort: plexSort,

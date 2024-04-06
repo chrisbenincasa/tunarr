@@ -89,7 +89,7 @@ export function CustomShowProgrammingSelector() {
         .filter(flow(typedProperty('program'), negate(isNil)))
         .map((program) => {
           let title = formattedTitle(program);
-          let epTitle = formattedEpisodeTitle(program);
+          const epTitle = formattedEpisodeTitle(program);
           if (!isEmpty(epTitle)) {
             title += ` - ${epTitle}`;
           }
