@@ -54,7 +54,15 @@ export function forProgramType<T>(
   };
 }
 
-export const forPlexMedia = <T>(choices: PerTypeCallback<PlexMedia, T>) => {
+export function forPlexMedia<T>(
+  choices:
+    | Omit<Required<PerTypeCallback<PlexMedia, T>>, 'default'>
+    | MarkRequired<PerTypeCallback<PlexMedia, T>, 'default'>,
+): (m: PlexMedia) => NonNullable<T>;
+export function forPlexMedia<T>(
+  choices: PerTypeCallback<PlexMedia, T>,
+): (m: PlexMedia) => T | null;
+export function forPlexMedia<T>(choices: PerTypeCallback<PlexMedia, T>) {
   return (m: PlexMedia) => {
     switch (m.type) {
       case 'movie':
@@ -89,4 +97,4 @@ export const forPlexMedia = <T>(choices: PerTypeCallback<PlexMedia, T>) => {
 
     return null;
   };
-};
+}
