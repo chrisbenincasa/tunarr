@@ -64,6 +64,7 @@ import { usePreloadedChannelEdit } from '../../hooks/usePreloadedChannel.ts';
 import { useUpdateLineup } from '../../hooks/useUpdateLineup.ts';
 import { updateCurrentChannel } from '../../store/channelEditor/actions.ts';
 import { UIChannelProgram } from '../../types/index.ts';
+import { NumericFormControllerText } from '../../components/util/TypedController.tsx';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -402,6 +403,7 @@ export default function TimeSlotEditorPage() {
   >(undefined);
 
   const onSave = () => {
+    console.log(getValues());
     const schedule: TimeSlotSchedule = {
       ...getValues(),
       timeZoneOffset: new Date().getTimezoneOffset(),
@@ -674,18 +676,15 @@ export default function TimeSlotEditorPage() {
             </FormHelperText>
           </FormControl>
           <FormGroup row>
-            <Controller
+            <NumericFormControllerText
               control={control}
               name="maxDays"
-              render={({ field }) => (
-                <TextField
-                  fullWidth
-                  margin="normal"
-                  label="Days to Precalculate"
-                  // error={!precalcDaysValid}
-                  {...field}
-                />
-              )}
+              prettyFieldName="Days to Precalculate"
+              TextFieldProps={{
+                label: 'Days to Precalculate',
+                fullWidth: true,
+                margin: 'normal',
+              }}
             />
 
             <FormHelperText sx={{ ml: 1 }}>
