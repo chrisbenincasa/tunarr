@@ -113,15 +113,18 @@ export function PlexValueNode({
     plexFilter?.type === 'tag' ? plexFilter.key : '',
   );
 
-  const lookupFieldOperators = (fieldType: string) => {
-    if (!plexFilterMetadata || !libraryFilterMetadata) {
-      return [];
-    }
+  const lookupFieldOperators = useCallback(
+    (fieldType: string) => {
+      if (!plexFilterMetadata || !libraryFilterMetadata) {
+        return [];
+      }
 
-    return (
-      find(plexFilterMetadata.FieldType, { type: fieldType })?.Operator ?? []
-    );
-  };
+      return (
+        find(plexFilterMetadata.FieldType, { type: fieldType })?.Operator ?? []
+      );
+    },
+    [libraryFilterMetadata, plexFilterMetadata],
+  );
 
   const handleFieldChange = useCallback(
     (newField: string) => {
@@ -141,7 +144,7 @@ export function PlexValueNode({
         }
       }
     },
-    [plexFilter, setValue],
+    [findPlexField, getFieldName, lookupFieldOperators, plexFilter, setValue],
   );
 
   const autocompleteOptions = useMemo(() => {
@@ -335,7 +338,7 @@ function PlexGroupNode({
         operator: op,
       };
     }
-  }, [libraryFilterMetadata]);
+  }, [libraryFilterMetadata, plexFilterMetadata]);
 
   return (
     size(libraryFilterMetadata?.Field) > 0 &&
@@ -460,7 +463,7 @@ export function PlexFilterBuilder(
         value: '',
       });
     }
-  }, [advanced, formMethods.reset]);
+  }, [advanced, formMethods, formMethods.reset]);
 
   return (
     <FilterMetadataContext.Provider

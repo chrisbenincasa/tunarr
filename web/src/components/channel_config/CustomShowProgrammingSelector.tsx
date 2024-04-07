@@ -12,7 +12,7 @@ import { CustomProgram, isCustomProgram } from '@tunarr/types';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import { chain, flow, isEmpty, isNil, negate } from 'lodash-es';
-import { MouseEvent, useCallback, useState } from 'react';
+import { MouseEvent, useCallback, useMemo, useState } from 'react';
 import { useIntersectionObserver } from 'usehooks-ts';
 import { typedProperty } from '../../helpers/util';
 import { useCustomShow } from '../../hooks/useCustomShows';
@@ -36,18 +36,20 @@ export function CustomShowProgrammingSelector() {
 
   const isLoading = showResult.isLoading || programsResult.isLoading;
 
-  const formattedTitle = useCallback(
-    forProgramType({
-      content: (p) => p.title,
-      custom: (p) => p.program!.title,
-    }),
+  const formattedTitle = useMemo(
+    () =>
+      forProgramType({
+        content: (p) => p.title,
+        custom: (p) => p.program!.title,
+      }),
     [],
   );
 
-  const formattedEpisodeTitle = useCallback(
-    forProgramType({
-      custom: (p) => p.program?.episodeTitle ?? '',
-    }),
+  const formattedEpisodeTitle = useMemo(
+    () =>
+      forProgramType({
+        custom: (p) => p.program?.episodeTitle ?? '',
+      }),
     [],
   );
 
@@ -74,7 +76,7 @@ export function CustomShowProgrammingSelector() {
         });
       }
     },
-    [],
+    [selectedCustomShow],
   );
 
   const renderListItems = () => {
