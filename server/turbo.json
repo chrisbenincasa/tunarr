@@ -3,7 +3,7 @@
   "extends": ["//"],
   "pipeline": {
     "typecheck": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build", "generate-db-cache"]
     },
     "generate-db-cache": {
       "dependsOn": ["^build"]
