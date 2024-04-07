@@ -73,6 +73,7 @@ export function CustomShowProgrammingSelector() {
           type: 'custom-show',
           customShowId: selectedCustomShow.library.id,
           program: item,
+          childCount: selectedCustomShow.library.contentCount,
         });
       }
     },
