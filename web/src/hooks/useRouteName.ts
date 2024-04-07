@@ -42,11 +42,11 @@ const namedRoutes: Route[] = [
     name: 'Add',
   },
   {
-    matcher: channelsPageMatcher('time-slot-editor'),
+    matcher: channelsPageMatcher('programming/time-slot-editor'),
     name: 'Time Slot Editor',
   },
   {
-    matcher: channelsPageMatcher('random-slot-editor'),
+    matcher: channelsPageMatcher('programming/random-slot-editor'),
     name: 'Random Slot Editor',
   },
   {
