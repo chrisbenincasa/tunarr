@@ -2,6 +2,7 @@ import { ExpandMore, Home } from '@mui/icons-material';
 import LiveTvIcon from '@mui/icons-material/LiveTv';
 import PreviewIcon from '@mui/icons-material/Preview';
 import SettingsIcon from '@mui/icons-material/Settings';
+import ComputerIcon from '@mui/icons-material/Computer';
 import SettingsRemoteIcon from '@mui/icons-material/SettingsRemote';
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import TheatersIcon from '@mui/icons-material/Theaters';
@@ -132,6 +133,12 @@ export function Root({ children }: { children?: React.ReactNode }) {
       visible: true,
       icon: <SettingsIcon />,
     },
+    {
+      name: 'System',
+      path: '/system',
+      visible: false, // TODO
+      icon: <ComputerIcon />,
+    },
   ];
 
   const drawerWidth = open ? 240 : 60;
@@ -184,7 +191,7 @@ export function Root({ children }: { children?: React.ReactNode }) {
               target="_blank"
               color="inherit"
             >
-              <GitHub/>
+              <GitHub />
             </Button>
             <Button
               href="//localhost:8000/api/xmltv.xml"

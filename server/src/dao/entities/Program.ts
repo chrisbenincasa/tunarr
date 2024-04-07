@@ -4,6 +4,7 @@ import {
   Entity,
   EntityDTO,
   Enum,
+  Index,
   ManyToMany,
   ManyToOne,
   OptionalProps,
@@ -28,6 +29,7 @@ import { ProgramGrouping } from './ProgramGrouping.js';
  */
 @Entity()
 @Unique({ properties: ['sourceType', 'externalSourceId', 'externalKey'] })
+@Index({ properties: ['sourceType', 'externalSourceId', 'plexRatingKey'] })
 export class Program extends BaseEntity {
   [OptionalProps] = 'durationMs';
 

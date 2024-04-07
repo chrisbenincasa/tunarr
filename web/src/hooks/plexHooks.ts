@@ -209,6 +209,8 @@ export type EnrichedPlexMedia = PlexTerminalMedia & {
   serverName: string;
   // If we found an existing reference to this item on the server, we add it here
   id?: string;
+  showId?: string;
+  seasonId?: string;
 };
 
 function plexItemExternalId(serverName: string, media: PlexTerminalMedia) {
@@ -251,10 +253,16 @@ export const enumeratePlexItem = (
     try {
       const existingIdsByExternalId =
         await apiClient.batchGetProgramsByExternalIds({ externalIds });
-      return map(res, (media) => ({
-        ...media,
-        id: existingIdsByExternalId[plexItemExternalId(serverName, media)]?.id,
-      }));
+      return map(res, (media) => {
+        const existing =
+          existingIdsByExternalId[plexItemExternalId(serverName, media)];
+        return {
+          ...media,
+          id: existing?.id,
+          showId: existing?.showId,
+          seasonId: existing?.seasonId,
+        };
+      });
     } catch (e) {
       console.error('Unable to retrieve IDs in batch', e);
     }

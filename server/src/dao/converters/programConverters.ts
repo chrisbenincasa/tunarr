@@ -1,5 +1,6 @@
 import { Loaded } from '@mikro-orm/core';
 import { ContentProgram, FlexProgram, RedirectProgram } from '@tunarr/types';
+import { MarkRequired } from 'ts-essentials';
 import { getEm } from '../dataSource.js';
 import { OfflineItem, RedirectItem } from '../derived_types/Lineup.js';
 import { Channel } from '../entities/Channel.js';
@@ -15,13 +16,31 @@ export class ProgramConverter {
    */
   async entityToContentProgram(
     program: Loaded<Program>,
+    opts: { skipPopulate?: boolean } = { skipPopulate: false },
+  ) {
+    return this.partialEntityToContentProgram(program, opts);
+  }
+
+  /**
+   * Convert a Program entity to a ContentProgram, disregarding which fields
+   * were loaded on the Program. Prefer {@link entityToContentProgram} for more
+   * strict checks.
+   */
+  async partialEntityToContentProgram(
+    program: MarkRequired<
+      Partial<Program>,
+      'uuid' | 'title' | 'duration' | 'type'
+    >,
+    opts: { skipPopulate?: boolean } = { skipPopulate: false },
   ): Promise<ContentProgram> {
     const em = getEm();
     let extraFields: Partial<ContentProgram> = {};
     // This will ensure extra fields are populated for join types
     // It won't reissue queries if the loaded program already has these popualted
     if (program.type === ProgramType.Episode) {
-      const populatedProgram = await em.populate(program, ['tvShow', 'season']);
+      const populatedProgram = !opts.skipPopulate
+        ? await em.populate(program, ['tvShow', 'season'])
+        : program;
       extraFields = {
         seasonNumber: populatedProgram.season?.index,
         episodeNumber: populatedProgram.episode,
@@ -31,7 +50,9 @@ export class ProgramConverter {
         seasonId: populatedProgram.season?.uuid,
       };
     } else if (program.type === ProgramType.Track) {
-      const populatedProgram = await em.populate(program, ['artist', 'album']);
+      const populatedProgram = !opts.skipPopulate
+        ? await em.populate(program, ['artist', 'album'])
+        : program;
       extraFields = {
         // TODO: Use the join fields
         albumName: populatedProgram.albumName,

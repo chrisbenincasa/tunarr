@@ -1,5 +1,6 @@
-import { chunk, reduce } from 'lodash-es';
-import { flatMapAsyncSeq, groupByFunc } from '../util';
+import { chunk, map } from 'lodash-es';
+import { flatMapAsyncSeq, groupByAndMapAsync } from '../util';
+import { ProgramConverter } from './converters/programConverters.js';
 import { programSourceTypeFromString } from './custom_types/ProgramSourceType';
 import { getEm } from './dataSource';
 import { Program } from './entities/Program';
@@ -10,28 +11,54 @@ export class ProgramDB {
     chunkSize: number = 25,
   ) {
     const em = getEm();
+    const converter = new ProgramConverter();
     const results = await flatMapAsyncSeq(
       chunk([...ids], chunkSize),
       async (idChunk) => {
-        return await reduce(
-          idChunk,
-          (acc, [ps, es, ek]) => {
-            return acc.orWhere({
+        return em.find(
+          Program,
+          {
+            $or: map(idChunk, ([ps, es, ek]) => ({
               sourceType: programSourceTypeFromString(ps)!,
               externalSourceId: es,
-              externalKey: ek,
-            });
+              $or: [
+                {
+                  externalKey: ek,
+                },
+                {
+                  plexRatingKey: ek,
+                },
+              ],
+            })),
           },
-          em
-            .qb(Program)
-            .select(['uuid', 'sourceType', 'externalSourceId', 'externalKey']),
+          {
+            populate: [
+              'artist.uuid',
+              'artist.title',
+              'album.title',
+              'album.uuid',
+              'tvShow.uuid',
+              'tvShow.title',
+              'season.uuid',
+              'season.title',
+            ],
+            fields: [
+              'uuid',
+              'sourceType',
+              'externalSourceId',
+              'externalKey',
+              'duration',
+              'title',
+              'type',
+            ],
+          },
         );
       },
     );
-    return groupByFunc(
+    return groupByAndMapAsync(
       results,
       (r) => r.uniqueId(),
-      (r) => r.toDTO(),
+      (r) => converter.partialEntityToContentProgram(r, { skipPopulate: true }),
     );
   }
 }

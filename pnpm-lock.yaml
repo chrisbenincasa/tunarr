@@ -40,6 +40,9 @@ importers:
       eslint-plugin-react-refresh:
         specifier: ^0.4.3
         version: 0.4.3(eslint@8.56.0)
+      eslint-plugin-unused-imports:
+        specifier: ^3.1.0
+        version: 3.1.0(@typescript-eslint/eslint-plugin@7.5.0)(eslint@8.56.0)
       globals:
         specifier: ^15.0.0
         version: 15.0.0

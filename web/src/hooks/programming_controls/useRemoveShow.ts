@@ -1,5 +1,5 @@
 import { ChannelProgram, isContentProgram } from '@tunarr/types';
-import _ from 'lodash-es';
+import { isNil, reject } from 'lodash-es';
 import { setCurrentLineup } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
 import { materializedProgramListSelector } from '../../store/selectors.ts';
@@ -8,8 +8,7 @@ export function useRemoveShow() {
   const programs = useStore(materializedProgramListSelector);
 
   return (showsToRemove: string[]) => {
-    const remainingPrograms = removeShows(programs, showsToRemove);
-    setCurrentLineup(remainingPrograms, true);
+    setCurrentLineup(removeShows(programs, showsToRemove), true);
   };
 }
 
@@ -17,9 +16,12 @@ export const removeShows = (
   programs: ChannelProgram[],
   showsToRemove: string[],
 ) => {
-  const filteredData = _.filter(programs, (program) => {
-    return isContentProgram(program) && !showsToRemove.includes(program.title);
+  const showsSet = new Set([...showsToRemove]);
+  return reject(programs, (program) => {
+    return (
+      isContentProgram(program) &&
+      (showsSet.has(program.title) ||
+        (!isNil(program.showId) && showsSet.has(program.showId)))
+    );
   });
-
-  return filteredData;
 };

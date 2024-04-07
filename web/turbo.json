@@ -4,6 +4,9 @@
   "pipeline": {
     "build-dev": {
       "dependsOn": ["^build"]
+    },
+    "typecheck": {
+      "dependsOn": ["^build"]
     }
   }
 }

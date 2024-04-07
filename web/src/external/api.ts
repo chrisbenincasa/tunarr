@@ -11,11 +11,11 @@ import {
   ChannelLineupSchema,
   ChannelSchema,
   CondensedChannelProgrammingSchema,
+  ContentProgramSchema,
   CustomProgramSchema,
   CustomShowSchema,
   FillerListProgrammingSchema,
   FillerListSchema,
-  ProgramSchema,
   SaveChannelRequestSchema,
   TaskSchema,
 } from '@tunarr/types/schemas';
@@ -134,7 +134,7 @@ export const api = makeApi([
     parameters: parametersBuilder()
       .addBody(BatchLookupExternalProgrammingSchema)
       .build(),
-    response: z.record(ProgramSchema.partial().required({ id: true })),
+    response: z.record(ContentProgramSchema),
   },
   {
     method: 'get',

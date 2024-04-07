@@ -5,6 +5,7 @@ import reactRecommended from 'eslint-plugin-react/configs/recommended.js';
 import jsxRuntime from 'eslint-plugin-react/configs/jsx-runtime.js';
 import reactRefresh from 'eslint-plugin-react-refresh';
 import reactHooks from 'eslint-plugin-react-hooks';
+import noUnusedImports from 'eslint-plugin-unused-imports';
 
 export default tseslint.config(
   {
@@ -16,6 +17,14 @@ export default tseslint.config(
       '**/*.ignore.ts',
       '**/*.test.ts', // Ignore test files for now, until we fix up tsconfig files
     ],
+  },
+  {
+    plugins: {
+      'unused-imports': noUnusedImports,
+    },
+    rules: {
+      'unused-imports/no-unused-imports': 'error',
+    },
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,

@@ -1,6 +1,6 @@
 import { BasicIdParamSchema } from '@tunarr/types/api';
-import { ProgramSchema } from '@tunarr/types/schemas';
-import { every, find, isNil, isUndefined } from 'lodash-es';
+import { ContentProgramSchema } from '@tunarr/types/schemas';
+import { every, find, first, isNil, isUndefined, values } from 'lodash-es';
 import z from 'zod';
 import {
   ProgramSourceType,
@@ -152,14 +152,14 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         operationId: 'getProgramByExternalId',
         params: LookupExternalProgrammingSchema,
         response: {
-          200: ProgramSchema,
+          200: ContentProgramSchema,
           400: z.object({ message: z.string() }),
           404: z.void(),
         },
       },
     },
     async (req, res) => {
-      const [sourceType, externalSourceId, externalKey] = req.params.externalId;
+      const [sourceType, ,] = req.params.externalId;
       const sourceTypeParsed = programSourceTypeFromString(sourceType);
       if (isUndefined(sourceTypeParsed)) {
         return res
@@ -167,18 +167,16 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
           .send({ message: 'Invalid sourceType ' + sourceType });
       }
 
-      const em = getEm();
-      const program = await em.findOne(Program, {
-        sourceType: sourceTypeParsed,
-        externalSourceId,
-        externalKey,
-      });
+      const result = await req.serverCtx.programDB.lookupByExternalIds(
+        new Set([req.params.externalId]),
+      );
+      const program = first(values(result));
 
       if (isNil(program)) {
         return res.status(404).send();
       }
 
-      return res.send(program.toDTO());
+      return res.send(program);
     },
   );
 
@@ -189,7 +187,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         operationId: 'batchGetProgramsByExternalIds',
         body: BatchLookupExternalProgrammingSchema,
         response: {
-          200: z.record(ProgramSchema.partial().required({ id: true })),
+          200: z.record(ContentProgramSchema),
         },
       },
     },

@@ -128,6 +128,25 @@ export function groupByUniqAndMapAsync<
   );
 }
 
+export function groupByAndMapAsync<
+  T,
+  Key extends string | number | symbol,
+  Value,
+>(
+  data: T[] | null | undefined,
+  func: (val: T) => Key,
+  mapper: (val: T) => Promise<Value>,
+  opts?: mapAsyncSeq2Opts,
+) {
+  return mapReduceAsyncSeq(
+    data,
+    (t) => mapper(t).then((v) => [func(t), v] as const),
+    (acc, [key, value]) => ({ ...acc, [key]: value }),
+    {} as Record<Key, Value>,
+    opts,
+  );
+}
+
 export async function mapAsyncSeq_old<T, U>(
   seq: T[] | null | undefined,
   ms: number | undefined,

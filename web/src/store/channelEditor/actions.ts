@@ -234,7 +234,7 @@ export const setChannelStartTime = (startTime: number) =>
 const plexMediaToContentProgram = (
   media: EnrichedPlexMedia,
 ): ContentProgram => {
-  const uniqueId = createExternalId('plex', media.serverName, media.key);
+  const uniqueId = createExternalId('plex', media.serverName, media.ratingKey);
   return {
     id: media.id ?? uniqueId,
     persisted: !isNil(media.id),
@@ -243,13 +243,23 @@ const plexMediaToContentProgram = (
     externalSourceName: media.serverName,
     externalSourceType: 'plex',
     externalKey: media.key,
-    uniqueId: uniqueId,
+    uniqueId,
     type: 'content',
     subtype: media.type,
     title: media.type === 'episode' ? media.grandparentTitle : media.title,
     episodeTitle: media.type === 'episode' ? media.title : undefined,
     episodeNumber: media.type === 'episode' ? media.index : undefined,
     seasonNumber: media.type === 'episode' ? media.parentIndex : undefined,
+    showId:
+      media.showId ??
+      (media.type === 'episode'
+        ? createExternalId('plex', media.serverName, media.grandparentRatingKey)
+        : undefined),
+    seasonId:
+      media.seasonId ??
+      (media.type === 'episode'
+        ? createExternalId('plex', media.serverName, media.parentRatingKey)
+        : undefined),
   };
 };
 

@@ -4,8 +4,8 @@ import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
-import _ from 'lodash-es';
-import { useState } from 'react';
+import { chain } from 'lodash-es';
+import { useMemo, useState } from 'react';
 import { useRemoveShow } from '../../hooks/programming_controls/useRemoveShow';
 import useStore from '../../store';
 import { materializedProgramListSelector } from '../../store/selectors';
@@ -17,38 +17,38 @@ type RemoveShowsModalProps = {
 };
 
 const RemoveShowsModal = ({ open, onClose }: RemoveShowsModalProps) => {
-  const [checked, setChecked] = useState<string[]>([]);
+  const [checked, setChecked] = useState(new Set<string>());
 
   const removeShow = useRemoveShow();
 
   const programs = useStore(materializedProgramListSelector);
-  const onlyShows = _.filter(
-    programs,
-    (program): program is UIContentProgram => {
-      return isUIContentProgram(program) && program.subtype === 'episode';
-    },
+  const showList = useMemo(
+    () =>
+      chain(programs)
+        .filter((program): program is UIContentProgram => {
+          return isUIContentProgram(program) && program.subtype === 'episode';
+        })
+        .uniqBy((program) => program.showId ?? program.title)
+        .map((p) => ({ title: p.title, id: p.showId ?? p.title }))
+        .value(),
+    [programs],
   );
 
-  const showList: string[] = [];
-  _.uniqBy(onlyShows, (program) => program.title).map((program) =>
-    showList.push(program.title),
-  );
-
-  const handleToggle = (value: string) => () => {
-    const currentIndex = checked.indexOf(value);
-    const newChecked = [...checked];
-
-    if (currentIndex === -1) {
-      newChecked.push(value);
-    } else {
-      newChecked.splice(currentIndex, 1);
-    }
-
-    setChecked(newChecked);
+  const handleToggle = (value: string) => {
+    setChecked((prev) => {
+      // New reference, force render
+      const set = new Set(prev);
+      if (set.has(value)) {
+        set.delete(value);
+        return set;
+      } else {
+        return set.add(value);
+      }
+    });
   };
 
   const removeShowsProgramming = () => {
-    removeShow(checked);
+    removeShow([...checked]);
     onClose();
   };
 
@@ -60,15 +60,15 @@ const RemoveShowsModal = ({ open, onClose }: RemoveShowsModalProps) => {
           Pick specific shows to remove from the channel.
         </DialogContentText>
         <List>
-          {showList.map((title) => {
+          {showList.map(({ title, id }) => {
             return (
               <ListItem
-                key={title}
+                key={id}
                 secondaryAction={
                   <Checkbox
                     edge="end"
-                    onChange={handleToggle(title)}
-                    checked={checked.indexOf(title) !== -1}
+                    onChange={() => handleToggle(id)}
+                    checked={checked.has(id)}
                     inputProps={{ 'aria-labelledby': 'Select Show' }}
                   />
                 }
@@ -84,9 +84,9 @@ const RemoveShowsModal = ({ open, onClose }: RemoveShowsModalProps) => {
         <Button
           variant="contained"
           onClick={() => removeShowsProgramming()}
-          disabled={checked.length === 0}
+          disabled={checked.size === 0}
         >
-          {`Remove ${checked.length} show${checked.length === 1 ? '' : 's'}`}
+          {`Remove ${checked.size} show${checked.size === 1 ? '' : 's'}`}
         </Button>
       </DialogActions>
     </Dialog>
