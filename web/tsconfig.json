@@ -24,14 +24,18 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
+  "files": [
+    "vite.config.ts"
+  ],
   "include": [
     "./src/**/*.ts",
     "./src/**/*.tsx",
   ],
   "exclude": [
     "./build/**/*",
-    "./**/*.test.ts",
-    "./**/*.ignore.ts"
+    "./dist/**/*",
+    "./src/**/*.test.ts",
+    "./src/**/*.ignore.ts"
   ],
   "references": [
     {

@@ -344,20 +344,16 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
 
       const startTime = dayjs(req.query.from);
       const endTime = dayjs(req.query.to);
-      const lineups = await mapAsyncSeq(
-        allChannels,
-        undefined,
-        async (channel) => {
-          const actualEndTime = req.query.to
-            ? endTime
-            : dayjs(startTime.add(channel.guideMinimumDuration, 'seconds'));
-          return req.serverCtx.guideService.getChannelLineup(
-            channel.uuid,
-            startTime.toDate(),
-            actualEndTime.toDate(),
-          );
-        },
-      );
+      const lineups = await mapAsyncSeq(allChannels, async (channel) => {
+        const actualEndTime = req.query.to
+          ? endTime
+          : dayjs(startTime.add(channel.guideMinimumDuration, 'seconds'));
+        return req.serverCtx.guideService.getChannelLineup(
+          channel.uuid,
+          startTime.toDate(),
+          actualEndTime.toDate(),
+        );
+      });
 
       return res.status(200).send(compact(lineups));
     },

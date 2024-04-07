@@ -45,9 +45,10 @@ export class XmlTvWriter {
     throttle: () => Promise<void>,
     cacheImageService: CacheImageService,
   ) {
-    // eslint-disable-next-line @typescript-eslint/no-misused-promises
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises, no-async-promise-executor
     return new Promise(async (resolve, reject) => {
       const ws = fs.createWriteStream(xmlSettings.outputPath);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument
       const xw = new XMLWriter(true, (str, enc) => ws.write(str, enc));
       ws.on('close', () => {
         resolve(void 0);

@@ -78,7 +78,7 @@ export default function ProgrammingSelector({ onAddSelectedMedia }: Props) {
           library: plexLibraryChildren.Directory[0],
         });
       }
-      addKnownMediaForServer(selectedServer!.name, [
+      addKnownMediaForServer(selectedServer.name, [
         ...plexLibraryChildren.Directory,
       ]);
     }

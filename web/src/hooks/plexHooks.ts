@@ -42,7 +42,8 @@ type ExtractTypeKeys<
   Acc extends unknown[] = [],
 > = Arr extends []
   ? Acc
-  : Arr extends [[infer Head, any], ...infer Tail]
+  : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  Arr extends [[infer Head, any], ...infer Tail]
   ? Head | ExtractTypeKeys<Tail>
   : never;
 

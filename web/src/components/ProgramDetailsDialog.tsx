@@ -12,7 +12,7 @@ import {
 import { forProgramType } from '@tunarr/shared/util';
 import { ChannelProgram } from '@tunarr/types';
 import { isUndefined } from 'lodash-es';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { prettyItemDuration } from '../helpers/util';
 import { createExternalId } from '@tunarr/shared';
 
@@ -34,33 +34,36 @@ export default function ProgramDetailsDialog({
   onClose,
   program,
 }: Props) {
-  const rating = useCallback(
-    forProgramType({
-      custom: (p) => p.program?.rating ?? '',
-      content: (p) => p.rating,
-    }),
+  const rating = useMemo(
+    () =>
+      forProgramType({
+        custom: (p) => p.program?.rating ?? '',
+        content: (p) => p.rating,
+      }),
     [],
   );
 
-  const summary = useCallback(
-    forProgramType({
-      custom: (p) => p.program?.summary ?? '',
-      content: (p) => p.summary,
-      default: '',
-    }),
+  const summary = useMemo(
+    () =>
+      forProgramType({
+        custom: (p) => p.program?.summary ?? '',
+        content: (p) => p.summary,
+        default: '',
+      }),
     [],
   );
 
-  const durationChip = useCallback(
-    forProgramType({
-      content: (program) => (
-        <Chip
-          color="secondary"
-          label={prettyItemDuration(program.duration)}
-          sx={{ mt: 1 }}
-        />
-      ),
-    }),
+  const durationChip = useMemo(
+    () =>
+      forProgramType({
+        content: (program) => (
+          <Chip
+            color="secondary"
+            label={prettyItemDuration(program.duration)}
+            sx={{ mt: 1 }}
+          />
+        ),
+      }),
     [],
   );
 
@@ -74,35 +77,37 @@ export default function ProgramDetailsDialog({
     [rating],
   );
 
-  const thumbnailImage = useCallback(
-    forProgramType({
-      content: (p) => {
-        if (p.id && p.persisted) {
-          return `http://localhost:8000/api/programs/${p.id}/thumb`;
-        }
+  const thumbnailImage = useMemo(
+    () =>
+      forProgramType({
+        content: (p) => {
+          if (p.id && p.persisted) {
+            return `http://localhost:8000/api/programs/${p.id}/thumb`;
+          }
 
-        let key = p.uniqueId;
-        if (p.subtype === 'track' && p.originalProgram?.type === 'track') {
-          key = createExternalId(
-            'plex',
-            p.externalSourceName!,
-            p.originalProgram.parentRatingKey,
-          );
-        }
+          let key = p.uniqueId;
+          if (p.subtype === 'track' && p.originalProgram?.type === 'track') {
+            key = createExternalId(
+              'plex',
+              p.externalSourceName!,
+              p.originalProgram.parentRatingKey,
+            );
+          }
 
-        return `http://localhost:8000/api/metadata/external?id=${key}&mode=proxy&asset=thumb`;
-      },
-    }),
+          return `http://localhost:8000/api/metadata/external?id=${key}&mode=proxy&asset=thumb`;
+        },
+      }),
     [],
   );
 
-  const externalLink = useCallback(
-    forProgramType({
-      content: (p) =>
-        p.id && p.persisted
-          ? `http://localhost:8000/api/programs/${p.id}/external-link`
-          : null,
-    }),
+  const externalLink = useMemo(
+    () =>
+      forProgramType({
+        content: (p) =>
+          p.id && p.persisted
+            ? `http://localhost:8000/api/programs/${p.id}/external-link`
+            : null,
+      }),
     [],
   );
 

@@ -59,7 +59,7 @@ export async function migrateCustomShows(
       .value();
 
     const persistedPrograms = (
-      await mapAsyncSeq(uniquePrograms, undefined, (program) =>
+      await mapAsyncSeq(uniquePrograms, (program) =>
         persistProgram(program).then((dbProgram) =>
           dbProgram
             ? {
@@ -75,7 +75,7 @@ export async function migrateCustomShows(
 
     const customShowById = groupByUniq(newCustomShows, 'id');
 
-    await mapAsyncSeq(newCustomShows, undefined, async (customShow) => {
+    await mapAsyncSeq(newCustomShows, async (customShow) => {
       // Refresh the entity after inserting programs
       const existing = await repo.findOne(
         { uuid: customShow.id },

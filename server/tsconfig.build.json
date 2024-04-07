@@ -2,14 +2,16 @@
     "extends": "./tsconfig.json",
     "include": [
         "./src/**/*.ts",
+        "mikro-orm.prod.config.ts",
+        "mikro-orm.base.config.ts"
     ],
     "exclude": [
         "./build/**/*",
         "__tests__/**/*",
-        "./**/*.test.ts",
-        "./**/*.ignore.ts",
+        "./src/**/*.test.ts",
+        "./src/**/*.ignore.ts",
         "./**/streams/**/*.ts",
         "./scripts",
-        "./esbuild"
+        "./esbuild",
     ]
 }

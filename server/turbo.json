@@ -3,7 +3,7 @@
   "extends": ["//"],
   "pipeline": {
     "typecheck": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build", "generate-db-cache"]
     },
     "generate-db-cache": {
       "dependsOn": ["^build"]
@@ -21,6 +21,10 @@
     "make-exec:windows": {
       "dependsOn": ["bundle"],
       "outputs": ["build/**", "dist/**"]
+    },
+    "lint-staged": {},
+    "lint": {
+      "dependsOn": ["lint-staged"]
     }
   }
 }

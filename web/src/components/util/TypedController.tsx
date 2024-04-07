@@ -215,8 +215,10 @@ export const NumericFormControllerText = <
           props.TextFieldProps,
           (p) => {
             if (isFunction(p)) {
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-return
               return p(renderProps);
             } else {
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-return
               return p;
             }
           },

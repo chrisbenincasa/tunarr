@@ -270,50 +270,46 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
       //     : channel!.duration;
       const endTime = dayjs(req.query.to);
 
-      const lineups = await mapAsyncSeq(
-        allChannels,
-        undefined,
-        async (channel) => {
-          const guideServiceLegacy = new TVGuideServiceLegacy(
-            req.serverCtx.xmltv,
-            req.serverCtx.cacheImageService,
-            req.serverCtx.eventService,
-            req.serverCtx.channelDB,
-          );
-          const t = guideServiceLegacy.prepareRefresh(
-            [wrap(channel).toJSON()],
-            dayjs.duration(endTime.diff(startTime)).asMilliseconds(),
-          );
+      const lineups = await mapAsyncSeq(allChannels, async (channel) => {
+        const guideServiceLegacy = new TVGuideServiceLegacy(
+          req.serverCtx.xmltv,
+          req.serverCtx.cacheImageService,
+          req.serverCtx.eventService,
+          req.serverCtx.channelDB,
+        );
+        const t = guideServiceLegacy.prepareRefresh(
+          [wrap(channel).toJSON()],
+          dayjs.duration(endTime.diff(startTime)).asMilliseconds(),
+        );
 
-          await Promise.all([
-            guideServiceLegacy.refresh(t),
-            req.serverCtx.guideService.refreshGuide(
-              dayjs.duration(endTime.diff(startTime)),
-            ),
-          ]);
+        await Promise.all([
+          guideServiceLegacy.refresh(t),
+          req.serverCtx.guideService.refreshGuide(
+            dayjs.duration(endTime.diff(startTime)),
+          ),
+        ]);
 
-          const oldLineup = await guideServiceLegacy.getChannelLineup(
-            channel.uuid,
-            startTime.toDate(),
-            endTime.toDate(),
-          );
+        const oldLineup = await guideServiceLegacy.getChannelLineup(
+          channel.uuid,
+          startTime.toDate(),
+          endTime.toDate(),
+        );
 
-          const newLineup = await req.serverCtx.guideService.getChannelLineup(
-            channel.uuid,
-            startTime.toDate(),
-            endTime.toDate(),
-          );
+        const newLineup = await req.serverCtx.guideService.getChannelLineup(
+          channel.uuid,
+          startTime.toDate(),
+          endTime.toDate(),
+        );
 
-          if (!isNil(newLineup) && !isNil(oldLineup)) {
-            return {
-              old: oldLineup,
-              new: newLineup,
-            };
-          } else {
-            return;
-          }
-        },
-      );
+        if (!isNil(newLineup) && !isNil(oldLineup)) {
+          return {
+            old: oldLineup,
+            new: newLineup,
+          };
+        } else {
+          return;
+        }
+      });
 
       return res.status(200).send(compact(lineups));
     },

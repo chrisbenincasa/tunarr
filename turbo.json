@@ -14,6 +14,8 @@
       "dependsOn": ["clean", "build"],
       "outputs": ["build/**", "dist/**"]
     },
+    "lint": {},
+    "lint-fix": {},
     "dev": {
       "dependsOn": ["@tunarr/shared#build", "@tunarr/types#build"],
       "cache": false,

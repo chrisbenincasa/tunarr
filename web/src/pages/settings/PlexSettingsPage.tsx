@@ -476,14 +476,25 @@ export default function PlexSettingsPage() {
     setSnackStatus(false);
   };
 
+  const [deletePlexConfirmation, setDeletePlexConfirmation] = useState<
+    string | undefined
+  >(undefined);
+
+  const removePlexServerMutation = useMutation({
+    mutationFn: (id: string) => {
+      return apiClient.deletePlexServer(null, { params: { id } });
+    },
+    onSuccess: () => {
+      return queryClient.invalidateQueries({
+        queryKey: ['settings', 'plex-servers'],
+      });
+    },
+  });
+
   // This is messy, lets consider getting rid of combine, it probably isnt useful here
   if (serversError || streamsError) {
     return <h1>XML: {(serversError ?? streamsError)!.message}</h1>;
   }
-
-  const [deletePlexConfirmation, setDeletePlexConfirmation] = useState<
-    string | undefined
-  >(undefined);
 
   const renderConfirmationDialog = () => {
     return (
@@ -520,17 +531,6 @@ export default function PlexSettingsPage() {
       </Dialog>
     );
   };
-
-  const removePlexServerMutation = useMutation({
-    mutationFn: (id: string) => {
-      return apiClient.deletePlexServer(null, { params: { id } });
-    },
-    onSuccess: () => {
-      return queryClient.invalidateQueries({
-        queryKey: ['settings', 'plex-servers'],
-      });
-    },
-  });
 
   const removePlexServer = (id: string) => {
     removePlexServerMutation.mutate(id);

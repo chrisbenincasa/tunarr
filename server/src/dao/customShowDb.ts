@@ -47,7 +47,7 @@ export class CustomShowDB {
         },
       );
 
-    return mapAsyncSeq(customShowContent, undefined, async (csc) => ({
+    return mapAsyncSeq(customShowContent, async (csc) => ({
       type: 'custom',
       persisted: true,
       duration: csc.content.duration,

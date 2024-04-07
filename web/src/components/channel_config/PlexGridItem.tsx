@@ -41,7 +41,7 @@ export interface PlexGridItemProps<T extends PlexMedia> {
   modalChildren?: CallableFunction;
   modalIsPending?: CallableFunction;
   modalIndex?: number;
-  onClick?: any;
+  onClick?: () => void;
   ref?: React.RefObject<HTMLDivElement>;
 }
 
