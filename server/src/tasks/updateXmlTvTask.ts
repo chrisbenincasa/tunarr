@@ -1,11 +1,9 @@
-import { Loaded } from '@mikro-orm/core';
 import { PlexDvr } from '@tunarr/types/plex';
 import dayjs from 'dayjs';
 import { ChannelCache } from '../channelCache.js';
 import { withDb } from '../dao/dataSource.js';
-import { Channel } from '../dao/entities/Channel.js';
 import { PlexServerSettings } from '../dao/entities/PlexServerSettings.js';
-import { Settings } from '../dao/settings.js';
+import { Settings, defaultXmlTvSettings } from '../dao/settings.js';
 import createLogger from '../logger.js';
 import { Plex } from '../plex.js';
 import { ServerContext } from '../serverContext.js';
@@ -14,6 +12,8 @@ import { Maybe } from '../types.js';
 import { Tag } from '../types/util.js';
 import { mapAsyncSeq } from '../util.js';
 import { Task } from './task.js';
+import { fileExists } from '../util/fsUtil.js';
+import { globalOptions } from '../globals.js';
 
 const logger = createLogger(import.meta);
 
@@ -53,12 +53,20 @@ export class UpdateXmlTvTask extends Task<void> {
   }
 
   private async updateXmlTv() {
-    let channels: Loaded<Channel, 'programs'>[] = [];
-
     try {
-      channels = await this.channelCache.getAllChannelsWithPrograms();
-      const xmltvSettings = this.dbAccess.xmlTvSettings();
-      channels = [];
+      let xmltvSettings = this.dbAccess.xmlTvSettings();
+      if (!(await fileExists(xmltvSettings.outputPath))) {
+        logger.debug(
+          'XMLTV settings missing at path %s. Regenerating path.',
+          xmltvSettings.outputPath,
+        );
+        await this.dbAccess.updateSettings('xmltv', {
+          ...xmltvSettings,
+          outputPath: defaultXmlTvSettings(globalOptions().database).outputPath,
+        });
+        // Re-read
+        xmltvSettings = this.dbAccess.xmlTvSettings();
+      }
 
       await this.guideService.refreshGuide(
         dayjs.duration({ hours: xmltvSettings.programmingHours }),
@@ -66,11 +74,11 @@ export class UpdateXmlTvTask extends Task<void> {
 
       logger.info('XMLTV Updated at ' + new Date().toLocaleString());
     } catch (err) {
-      logger.error('Unable to update TV guide?', err);
+      logger.error('Unable to update TV guide', err);
       return;
     }
 
-    channels = await this.getChannelsCached();
+    const channels = await this.getChannelsCached();
 
     const allPlexServers = await withDb((em) => {
       return em.find(PlexServerSettings, {});

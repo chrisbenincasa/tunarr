@@ -9,6 +9,7 @@ export type TaskFactoryFn<T> = () => Task<T>;
 type ScheduledTaskOptions = {
   visible?: boolean;
   runOnSchedule?: boolean;
+  runAtStartup?: boolean;
 };
 
 export class ScheduledTask<OutType = unknown> {
@@ -17,6 +18,7 @@ export class ScheduledTask<OutType = unknown> {
   #running: boolean = false;
   #schedule: string;
 
+  public runAtStartup = false;
   public visible: boolean = true;
   public lastExecution?: Date;
 
@@ -36,6 +38,10 @@ export class ScheduledTask<OutType = unknown> {
 
     if (options?.runOnSchedule) {
       this.runNow(true).catch(console.error);
+    }
+
+    if (options?.runAtStartup) {
+      this.runAtStartup = options.runAtStartup;
     }
   }
 

@@ -36,12 +36,6 @@ export class CleanupSessionsTask extends Task<void> {
 
       forEach(staleConnections, (conn) => session.removeConnection(conn));
 
-      console.debug(
-        `aliveConnections: ${aliveConnections.join(
-          ',',
-        )}, stale = ${staleConnections.join(',')}`,
-      );
-
       if (isEmpty(aliveConnections)) {
         session.scheduleCleanup(30000);
       }

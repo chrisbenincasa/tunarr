@@ -1,4 +1,4 @@
-import { isString, once, pickBy } from 'lodash-es';
+import { chain, isString, once, pickBy } from 'lodash-es';
 import createLogger from '../logger.js';
 import { ServerContext } from '../serverContext.js';
 import { CleanupSessionsTask } from '../tasks/cleanupSessionsTask.js';
@@ -84,6 +84,17 @@ export const scheduleJobs = once((serverContext: ServerContext) => {
       },
     ),
   );
+
+  chain(GlobalScheduler.scheduledJobsById)
+    .values()
+    .filter((job) => job.runAtStartup)
+    .forEach((job) => {
+      job
+        .runNow(true)
+        .catch((e) =>
+          logger.error('Error running job %s at startup', job.name, e),
+        );
+    });
 });
 
 function hoursCrontab(hours: number): string {

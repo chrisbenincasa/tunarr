@@ -18,7 +18,7 @@ import {
 import fs from 'fs';
 import { isUndefined } from 'lodash-es';
 import morgan from 'morgan';
-import { onShutdown } from 'node-graceful-shutdown';
+import schedule from 'node-schedule';
 import path, { dirname, join } from 'path';
 import { ffmpegSettingsRouter } from './api/ffmpegSettingsApi.js';
 import { guideRouter } from './api/guideApi.js';
@@ -37,7 +37,7 @@ import { GlobalScheduler, scheduleJobs } from './services/scheduler.js';
 import { runFixers } from './tasks/fixers/index.js';
 import { UpdateXmlTvTask } from './tasks/updateXmlTvTask.js';
 import { ServerOptions } from './types.js';
-import { filename, isProduction, wait } from './util.js';
+import { filename, isProduction } from './util.js';
 import { videoRouter } from './video.js';
 
 const logger = createLogger(import.meta);
@@ -78,27 +78,6 @@ function initDbDirectories() {
 }
 
 export async function initServer(opts: ServerOptions) {
-  onShutdown('log', [], async () => {
-    const ctx = await serverContext();
-    const t = new Date().getTime();
-    ctx.eventService.push({
-      type: 'lifecycle',
-      message: `Initiated Server Shutdown`,
-      detail: {
-        time: t,
-      },
-      level: 'warning',
-    });
-
-    logger.info('Received exit signal, attempting graceful shutdonw...');
-    await wait(2000);
-  });
-
-  onShutdown('xmltv-writer', [], async () => {
-    const ctx = await serverContext();
-    await ctx.xmltv.shutdown();
-  });
-
   const hadLegacyDb = initDbDirectories();
 
   const orm = await initOrm();
@@ -125,8 +104,6 @@ export async function initServer(opts: ServerOptions) {
   if (serverOptions().printRoutes) {
     await app.register(fastifyPrintRoutes);
   }
-
-  console.log(join(dirname(process.argv[1]), 'static'));
 
   await app
     .register(fastifySwagger, {
@@ -291,29 +268,51 @@ export async function initServer(opts: ServerOptions) {
   await updateXMLPromise;
 
   const host = process.env['TUNARR_BIND_ADDR'] ?? 'localhost';
-  app.listen(
-    {
-      host,
-      port: opts.port,
-    },
-    () => {
-      logger.info(`HTTP server running on port: http://${host}:${opts.port}`);
-      const hdhrSettings = ctx.settings.hdhrSettings();
-      if (hdhrSettings.autoDiscoveryEnabled) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-        (ctx.hdhrService.ssdp as any).start();
-      }
-
+  app
+    .addHook('onClose', async () => {
+      const ctx = await serverContext();
+      const t = new Date().getTime();
       ctx.eventService.push({
         type: 'lifecycle',
-        message: `Server Started`,
+        message: `Initiated Server Shutdown`,
         detail: {
-          time: new Date().getTime(),
+          time: t,
         },
-        level: 'success',
+        level: 'warning',
       });
-    },
-  );
+
+      logger.info('Received exit signal, attempting graceful shutdown');
+
+      try {
+        logger.info('Waiting for pending jobs to complete');
+        await schedule.gracefulShutdown();
+      } catch (e) {
+        logger.error('Scheduled job graceful shutdown failed.', e);
+      }
+    })
+    .listen(
+      {
+        host,
+        port: opts.port,
+      },
+      () => {
+        logger.info(`HTTP server running on port: http://${host}:${opts.port}`);
+        const hdhrSettings = ctx.settings.hdhrSettings();
+        if (hdhrSettings.autoDiscoveryEnabled) {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+          (ctx.hdhrService.ssdp as any).start();
+        }
+
+        ctx.eventService.push({
+          type: 'lifecycle',
+          message: `Server Started`,
+          detail: {
+            time: new Date().getTime(),
+          },
+          level: 'success',
+        });
+      },
+    );
 
   return app;
 }

@@ -69,7 +69,7 @@ export class EventService {
 
   push(data: TunarrEvent) {
     if (isString(data['message'])) {
-      logger.info('Push event: ' + data['message']); // Why?
+      logger.debug('Push event: ' + data['message']); // Why?
     }
     this.stream.emit('push', { ...data });
   }

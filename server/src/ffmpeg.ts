@@ -178,8 +178,6 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     if (opts.enableHls) {
       const filledOpts = merge(defaultConcatOptions, opts);
 
-      console.log(process.cwd());
-
       ffmpegArgs.push(
         '-f',
         'hls',
