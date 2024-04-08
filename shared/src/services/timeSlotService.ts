@@ -9,6 +9,7 @@ import {
   FlexProgram,
   isContentProgram,
   isFlexProgram,
+  isRedirectProgram,
 } from '@tunarr/types';
 import { TimeSlot, TimeSlotSchedule } from '@tunarr/types/api';
 import {
@@ -73,6 +74,18 @@ function pushOrExtendFlex(
 abstract class ProgramIterator {
   abstract current(): ChannelProgram | null;
   abstract next(): void;
+}
+
+class StaticProgramIterator extends ProgramIterator {
+  #program: ChannelProgram;
+  constructor(program: ChannelProgram) {
+    this.#program = program;
+  }
+
+  current(): ChannelProgram | null {
+    return this.#program;
+  }
+  next(): void {}
 }
 
 class ProgramShuffler extends ProgramIterator {
@@ -181,18 +194,23 @@ function createProgramMap(programs: ChannelProgram[]) {
   return reduce(
     programs,
     (acc, program) => {
+      let id: string | null = null;
       if (isContentProgram(program)) {
-        let id: string;
         if (program.subtype === 'track') return acc; // TODO handle music
         if (program.subtype === 'movie') {
           id = 'movie';
         } else {
           id = `tv.${program.title}`;
         }
+      } else if (isRedirectProgram(program)) {
+        id = `redirect.${program.channel}`;
+      }
 
+      if (!isNull(id)) {
         const existing = acc[id] ?? [];
         acc[id] = [...existing, program];
       }
+
       return acc;
     },
     {} as Record<string, ContentProgram[]>,
@@ -200,13 +218,15 @@ function createProgramMap(programs: ChannelProgram[]) {
 }
 
 function slotIteratorKey(slot: TimeSlot) {
-  if (slot.programming.type === 'movie') {
-    return `movie_${slot.order}`;
-  } else if (slot.programming.type === 'show') {
-    return `tv_${slot.programming.showId}_${slot.order}`;
+  switch (slot.programming.type) {
+    case 'movie':
+      return `movie_${slot.order}`;
+    case 'show':
+      return `tv_${slot.programming.showId}_${slot.order}`;
+    case 'flex':
+    case 'redirect':
+      return null;
   }
-
-  return null;
 }
 
 function getNextProgramForSlot(
@@ -218,6 +238,13 @@ function getNextProgramForSlot(
     case 'movie':
     case 'show':
       return iterators[slotIteratorKey(slot)!].current();
+    case 'redirect':
+      return {
+        type: 'redirect',
+        duration,
+        persisted: false,
+        channel: slot.programming.channelId,
+      };
     case 'flex':
       return {
         type: 'flex',

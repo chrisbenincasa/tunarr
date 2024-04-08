@@ -101,7 +101,7 @@ export const isUICustomProgram = (p: UIChannelProgram): p is UICustomProgram =>
   p.type === 'custom';
 
 export const isUIRedirectProgram = (
-  p: UIRedirectProgram,
+  p: UIChannelProgram,
 ): p is UIRedirectProgram => p.type === 'redirect';
 
 export type UIFillerListProgram = (ContentProgram | CustomProgram) & UIIndex;

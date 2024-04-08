@@ -62,7 +62,7 @@ import { zipWithIndex } from '../../helpers/util.ts';
 import { usePreloadedChannelEdit } from '../../hooks/usePreloadedChannel.ts';
 import { useUpdateLineup } from '../../hooks/useUpdateLineup.ts';
 import { updateCurrentChannel } from '../../store/channelEditor/actions.ts';
-import { UIChannelProgram } from '../../types/index.ts';
+import { UIChannelProgram, isUIRedirectProgram } from '../../types/index.ts';
 import { NumericFormControllerText } from '../../components/util/TypedController.tsx';
 
 dayjs.extend(utc);
@@ -127,7 +127,7 @@ const defaultTimeSlotSchedule: TimeSlotSchedule = {
   flexPreference: 'distribute',
   latenessMs: 0,
   maxDays: 10,
-  padMs: 0,
+  padMs: 1,
   slots: [],
   period: 'day',
   timeZoneOffset: new Date().getTimezoneOffset(),
@@ -139,8 +139,10 @@ const lineupItemAppearsInSchedule = (
 ) => {
   return some(slots, (slot) => {
     switch (slot.programming.type) {
+      case 'redirect':
+        return item.type === 'redirect';
       case 'flex':
-        return item.type === 'flex' || item.type === 'redirect';
+        return item.type === 'flex';
       case 'movie':
         return (
           (item.type === 'content' && item.subtype === 'movie') ||
@@ -263,7 +265,11 @@ const TimeSlotRow = ({
         slotProgram = {
           type: 'flex',
         };
-        // TODO: Support redirect
+      } else if (slotId.startsWith('redirect')) {
+        slotProgram = {
+          type: 'redirect',
+          channelId: slotId.split('.')[1],
+        };
       } else {
         return;
       }
@@ -283,10 +289,21 @@ const TimeSlotRow = ({
   const startTime = start
     .add(slot.startTime)
     .subtract(new Date().getTimezoneOffset(), 'minutes');
-  const selectValue =
-    slot.programming.type === 'show'
-      ? `show.${slot.programming.showId}`
-      : slot.programming.type;
+  let selectValue: string;
+  switch (slot.programming.type) {
+    case 'show': {
+      selectValue = `show.${slot.programming.showId}`;
+      break;
+    }
+    case 'redirect': {
+      selectValue = `redirect.${slot.programming.channelId}`;
+      break;
+    }
+    default: {
+      selectValue = slot.programming.type;
+      break;
+    }
+  }
   const showInputSize = currentPeriod === 'week' ? 7 : 9;
   const dayOfTheWeek = Math.floor(slot.startTime / OneDayMillis);
   return (
@@ -377,6 +394,17 @@ export default function TimeSlotEditorPage() {
         .value();
       opts.push(...showOptions);
     }
+
+    opts.push(
+      ...chain(newLineup)
+        .filter(isUIRedirectProgram)
+        .uniqBy((p) => p.channel)
+        .map((p) => ({
+          description: `Redirect to "${p.channelName}"`,
+          value: `redirect.${p.channel}`,
+        }))
+        .value(),
+    );
 
     return opts;
   }, [newLineup]);
@@ -503,6 +531,7 @@ export default function TimeSlotEditorPage() {
 
   const calculateSlots = () => {
     performance.mark('guide-start');
+    console.log(getValues());
     scheduleTimeSlots(
       {
         ...getValues(),
@@ -690,6 +719,11 @@ export default function TimeSlotEditorPage() {
               Maximum number of days to precalculate the schedule. Note that the
               length of the schedule is also bounded by the maximum number of
               programs allowed in a channel.
+              <br />
+              <strong>
+                Note: Previewing the schedule in the browser for long lengths of
+                time can cause UI performance issues
+              </strong>
             </FormHelperText>
           </FormGroup>
         </Box>

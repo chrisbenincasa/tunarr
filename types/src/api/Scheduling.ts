@@ -18,6 +18,11 @@ export const FlexProgrammingTimeSlotSchema = z.object({
   type: z.literal('flex'),
 });
 
+export const RedirectProgrammingTimeSlotSchema = z.object({
+  type: z.literal('redirect'),
+  channelId: z.string(),
+});
+
 export type MovieProgrammingTimeSlot = z.infer<
   typeof MovieProgrammingTimeSlotSchema
 >;
@@ -33,6 +38,8 @@ export type FlexProgrammingTimeSlot = z.infer<
 export function slotProgrammingId(slot: TimeSlotProgramming) {
   if (slot.type === 'movie' || slot.type === 'flex') {
     return slot.type;
+  } else if (slot.type === 'redirect') {
+    return `redirect.${slot.channelId}`;
   } else {
     return `show.${slot.showId}`;
   }
@@ -42,6 +49,7 @@ export const TimeSlotProgrammingSchema = z.discriminatedUnion('type', [
   MovieProgrammingTimeSlotSchema,
   ShowProgrammingTimeSlotSchema,
   FlexProgrammingTimeSlotSchema,
+  RedirectProgrammingTimeSlotSchema,
 ]);
 
 export type TimeSlotProgramming = z.infer<typeof TimeSlotProgrammingSchema>;

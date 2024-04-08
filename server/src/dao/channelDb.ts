@@ -35,6 +35,7 @@ import { Nullable } from '../types.js';
 import { typedProperty } from '../types/path.js';
 import {
   groupByFunc,
+  groupByUniq,
   groupByUniqAndMapAsync,
   mapAsyncSeq,
   mapReduceAsyncSeq,
@@ -592,6 +593,13 @@ export class ChannelDB {
       (csc) => csc.customShow.uuid,
     );
 
+    const allChannels = await getEm()
+      .repo(Channel)
+      .findAll({
+        fields: ['name', 'number'],
+      });
+    const channelsById = groupByUniq(allChannels, 'uuid');
+
     const programs = ld
       .chain(lineup)
       .map((item) => {
@@ -599,7 +607,22 @@ export class ChannelDB {
         if (isOfflineItem(item)) {
           p = this.#programConverter.offlineLineupItemToProgram(channel, item);
         } else if (isRedirectItem(item)) {
-          p = this.#programConverter.redirectLineupItemToProgram(item);
+          if (channelsById[item.channel]) {
+            p = this.#programConverter.redirectLineupItemToProgram(
+              item,
+              channelsById[item.channel],
+            );
+          } else {
+            logger.warn(
+              'Found dangling redirect program. Bad ID = %s',
+              item.channel,
+            );
+            p = {
+              persisted: true,
+              type: 'flex',
+              duration: item.durationMs,
+            };
+          }
         } else if (item.customShowId) {
           const csc = find(
             customShowContent[item.customShowId],

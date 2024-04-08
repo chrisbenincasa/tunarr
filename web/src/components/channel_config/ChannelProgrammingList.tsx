@@ -80,7 +80,7 @@ type ListDragItem = {
 const programListItemTitleFormatter = (() => {
   const itemTitle = forProgramType({
     custom: 'Custom Show',
-    redirect: (p) => `Redirect to Channel ${p.channel}`,
+    redirect: (p) => `Redirect to "${p.channelName}"`,
     flex: 'Flex',
     content: (p) => {
       switch (p.subtype) {
