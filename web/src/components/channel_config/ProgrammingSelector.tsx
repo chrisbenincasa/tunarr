@@ -34,9 +34,13 @@ export interface PlexListItemProps<T extends PlexMedia> {
 
 type Props = {
   onAddSelectedMedia: (items: AddedMedia[]) => void;
+  onAddMediaSuccess: () => void;
 };
 
-export default function ProgrammingSelector({ onAddSelectedMedia }: Props) {
+export default function ProgrammingSelector({
+  onAddSelectedMedia,
+  onAddMediaSuccess,
+}: Props) {
   const { data: plexServers } = usePlexServerSettings();
   const selectedServer = useStore((s) => s.currentServer);
   const selectedLibrary = useStore((s) => s.currentLibrary);
@@ -214,7 +218,10 @@ export default function ProgrammingSelector({ onAddSelectedMedia }: Props) {
       </Stack>
       {renderMediaSourcePrograms()}
       <Typography>Selected Items</Typography>
-      <SelectedProgrammingList onAddSelectedMedia={onAddSelectedMedia} />
+      <SelectedProgrammingList
+        onAddSelectedMedia={onAddSelectedMedia}
+        onAddMediaSuccess={onAddMediaSuccess}
+      />
     </Box>
   );
 }

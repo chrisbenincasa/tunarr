@@ -16,7 +16,7 @@ import AccordionSummary from '@mui/material/AccordionSummary';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
@@ -49,6 +49,7 @@ export default function EditCustomShowPage({ isNew }: Props) {
   const customShowPrograms = useStore((s) => s.customShowEditor.programList);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const [addProgrammingOpen, setAddProgrammingOpen] = useState(false);
 
   const {
     control,
@@ -194,13 +195,17 @@ export default function EditCustomShowPage({ isNew }: Props) {
           </Stack>
         </Stack>
       </PaddedPaper>
-      <Accordion>
+      <Accordion
+        expanded={addProgrammingOpen}
+        onChange={(_, expanded) => setAddProgrammingOpen(expanded)}
+      >
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           Add Programming
         </AccordionSummary>
         <AccordionDetails>
           <ProgrammingSelector
             onAddSelectedMedia={addMediaToCurrentCustomShow}
+            onAddMediaSuccess={() => setAddProgrammingOpen(false)}
           />
           <Divider />
           <Box

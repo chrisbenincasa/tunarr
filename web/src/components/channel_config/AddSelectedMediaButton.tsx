@@ -1,6 +1,7 @@
 import { Tooltip } from '@mui/material';
 import Button, { ButtonProps } from '@mui/material/Button';
 import { flattenDeep, map } from 'lodash-es';
+import { MouseEventHandler } from 'react';
 import {
   forSelectedMediaType,
   sequentialPromises,
@@ -27,7 +28,9 @@ export default function AddSelectedMediaButton({
   // );
   const selectedMedia = useStore((s) => s.selectedMedia);
 
-  const addSelectedItems = () => {
+  const addSelectedItems: MouseEventHandler = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     sequentialPromises(
       selectedMedia,
       forSelectedMediaType<Promise<AddedMedia[]>>({
@@ -63,7 +66,7 @@ export default function AddSelectedMediaButton({
     <Tooltip title="Add all programs to channel">
       <span>
         <Button
-          onClick={() => addSelectedItems()}
+          onClick={(e) => addSelectedItems(e)}
           disabled={selectedMedia.length === 0}
           {...(rest ?? {})}
         >

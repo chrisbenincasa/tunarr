@@ -15,7 +15,6 @@ import { forProgramType } from '@tunarr/shared/util';
 import { isPlexDirectory, isPlexSeason, isPlexShow } from '@tunarr/types/plex';
 import { chain, first, groupBy, mapValues } from 'lodash-es';
 import { useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { forSelectedMediaType, unwrapNil } from '../../helpers/util.ts';
 import { useCustomShows } from '../../hooks/useCustomShows.ts';
 import useStore from '../../store/index.ts';
@@ -28,14 +27,17 @@ import AddSelectedMediaButton from './AddSelectedMediaButton.tsx';
 
 type Props = {
   onAddSelectedMedia: (media: AddedMedia[]) => void;
+  onAddMediaSuccess: () => void;
 };
 
-export default function SelectedProgrammingList({ onAddSelectedMedia }: Props) {
+export default function SelectedProgrammingList({
+  onAddSelectedMedia,
+  onAddMediaSuccess,
+}: Props) {
   const { data: customShows } = useCustomShows();
   const knownMedia = useStore((s) => s.knownMediaByServer);
   const selectedMedia = useStore((s) => s.selectedMedia);
   const darkMode = useStore((state) => state.theme.darkMode);
-  const navigate = useNavigate();
 
   const customShowById = mapValues(
     mapValues(groupBy(customShows, 'id'), first),
@@ -155,7 +157,7 @@ export default function SelectedProgrammingList({ onAddSelectedMedia }: Props) {
           <AddSelectedMediaButton
             onAdd={onAddSelectedMedia}
             startIcon={<AddCircle />}
-            onSuccess={() => navigate('..', { relative: 'path' })}
+            onSuccess={onAddMediaSuccess}
             sx={{
               color: '#fff',
               border: '1px solid white',

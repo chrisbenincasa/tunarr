@@ -58,7 +58,6 @@ export function PlexSortField() {
 
   useEffect(() => {
     const plexSort = find(libraryFilterMetadata?.Sort, { key: sort.key });
-    console.log(plexSort);
     if (!isUndefined(plexSort)) {
       setPlexSort({
         field: sort.key,
