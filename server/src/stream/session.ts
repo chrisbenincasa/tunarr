@@ -161,24 +161,30 @@ export class StreamSession {
       const streamPath = join(outPath, 'stream.m3u8');
 
       // Wait for the stream to become ready
-      await retry(
-        async (bail) => {
-          try {
-            await fs.stat(streamPath);
-          } catch (e) {
-            if (isNodeError(e) && e.code === 'ENOENT') {
-              logger.debug('Still waiting for stream to start.');
-              throw e; // Retry
-            } else {
-              this.#state === 'error';
-              bail(isError(e) ? e : new Error('Unexplained error: ' + e));
+      try {
+        await retry(
+          async (bail) => {
+            try {
+              await fs.stat(streamPath);
+            } catch (e) {
+              if (isNodeError(e) && e.code === 'ENOENT') {
+                logger.debug('Still waiting for stream to start.');
+                throw e; // Retry
+              } else {
+                this.#state === 'error';
+                bail(isError(e) ? e : new Error('Unexplained error: ' + e));
+              }
             }
-          }
-        },
-        {
-          retries: 10,
-        },
-      );
+          },
+          {
+            retries: 10,
+          },
+        );
+      } catch (e) {
+        logger.error('Error starting stream after retrying', e);
+        this.#state = 'error';
+        return;
+      }
 
       stream.on('data', onceListener);
 
