@@ -1,11 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import {
-  ChannelProgram,
-  ContentProgram,
-  FlexProgram,
-  isContentProgram,
-  isFlexProgram,
-} from '@tunarr/types';
+import { ChannelProgram, FlexProgram, isFlexProgram } from '@tunarr/types';
 import { RandomSlot, RandomSlotSchedule } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import duration, { Duration } from 'dayjs/plugin/duration.js';
@@ -18,16 +12,17 @@ import {
   isNil,
   isNull,
   last,
-  nth,
-  reduce,
   reject,
-  shuffle,
   slice,
-  sortBy,
 } from 'lodash-es';
 import { MersenneTwister19937, Random } from 'random-js';
 import constants from '../util/constants.js';
 import { mod } from '../util/dayjsExtensions.js';
+import { advanceIterator, getNextProgramForSlot } from './ProgramIterator.js';
+import {
+  createProgramIterators,
+  createProgramMap,
+} from './slotSchedulerUtil.js';
 
 export const random = new Random(MersenneTwister19937.autoSeed());
 
@@ -72,68 +67,6 @@ function pushOrExtendFlex(
   };
 
   return [durationMs, [...lineup, newItem]];
-}
-
-abstract class ProgramIterator {
-  abstract current(): ChannelProgram | null;
-  abstract next(): void;
-}
-
-class ProgramShuffler extends ProgramIterator {
-  #programs: ChannelProgram[];
-  #position: number = 0;
-
-  constructor(programs: ChannelProgram[]) {
-    super();
-    this.#programs = shuffle(programs);
-  }
-
-  current() {
-    return nth(this.#programs, this.#position) ?? null;
-  }
-
-  next() {
-    this.#position++;
-    if (this.#position >= this.#programs.length) {
-      const mid = Math.floor(this.#programs.length / 2);
-      this.#programs = [
-        ...slice(this.#programs, 0, mid),
-        ...slice(this.#programs, mid),
-      ];
-      this.#position = 0;
-    }
-  }
-}
-
-class ProgramOrderer extends ProgramIterator {
-  #programs: ChannelProgram[];
-  #position: number = 0;
-
-  constructor(programs: ChannelProgram[]) {
-    super();
-    this.#programs = sortBy(programs, getProgramOrder);
-  }
-
-  current(): ChannelProgram | null {
-    return nth(this.#programs, this.#position) ?? null;
-  }
-  next(): void {
-    this.#position = (this.#position + 1) % this.#programs.length;
-  }
-}
-
-function getProgramOrder(program: ContentProgram): string | number {
-  switch (program.subtype) {
-    case 'movie':
-      // A-z for now
-      return program.title;
-    case 'episode':
-      // Hacky thing from original code...
-      return program.seasonNumber! * 100000 + program.episodeNumber!;
-    case 'track':
-      // A-z for now
-      return program.title;
-  }
 }
 
 function createPaddedProgram(program: ChannelProgram, padMs: number) {
@@ -181,106 +114,19 @@ export function distributeFlex(
   });
 }
 
-function createProgramMap(programs: ChannelProgram[]) {
-  return reduce(
-    programs,
-    (acc, program) => {
-      if (isContentProgram(program)) {
-        let id: string;
-        if (program.subtype === 'track') return acc; // TODO handle music
-        if (program.subtype === 'movie') {
-          id = 'movie';
-        } else {
-          id = `tv.${program.title}`;
-        }
-
-        const existing = acc[id] ?? [];
-        acc[id] = [...existing, program];
-      }
-      return acc;
-    },
-    {} as Record<string, ContentProgram[]>,
-  );
-}
-
-function slotIteratorKey(slot: RandomSlot) {
-  if (slot.programming.type === 'movie') {
-    return `movie_${slot.order}`;
-  } else if (slot.programming.type === 'show') {
-    return `tv_${slot.programming.showId}_${slot.order}`;
-  }
-
-  return null;
-}
-
-function getNextProgramForSlot(
-  slot: RandomSlot,
-  iterators: Record<string, ProgramIterator>,
-  duration: number,
-): ChannelProgram | null {
-  switch (slot.programming.type) {
-    case 'movie':
-    case 'show':
-      return iterators[slotIteratorKey(slot)!].current();
-    case 'flex':
-      return {
-        type: 'flex',
-        duration,
-        persisted: false,
-      };
-  }
-}
-
-function advanceIterator(
-  slot: RandomSlot,
-  iterators: Record<string, ProgramIterator>,
-) {
-  switch (slot.programming.type) {
-    case 'movie':
-    case 'show':
-      iterators[slotIteratorKey(slot)!].next();
-      return;
-    case 'flex':
-      return;
-  }
-}
-
 // eslint-disable-next-line @typescript-eslint/require-await
 export async function scheduleRandomSlots(
   schedule: RandomSlotSchedule,
   channelProgramming: ChannelProgram[],
 ) {
-  console.log(schedule);
   // Load programs
-  // TODO include redirects and custom programs!
+  // TODO include custom programs!
   const allPrograms = reject(channelProgramming, (p) => isFlexProgram(p));
   const programBySlotType = createProgramMap(allPrograms);
-
-  const programmingIteratorsById = reduce(
+  const programmingIteratorsById = createProgramIterators(
     schedule.slots,
-    (acc, slot) => {
-      let id: string | null = null,
-        slotId: string | null = null;
-      if (slot.programming.type === 'movie') {
-        id = `movie_${slot.order}`;
-        slotId = 'movie';
-      } else if (slot.programming.type === 'show') {
-        id = `tv_${slot.programming.showId}_${slot.order}`;
-        slotId = `tv.${slot.programming.showId}`;
-      }
-
-      if (id && slotId && !acc[id]) {
-        const programs = programBySlotType[slotId];
-        acc[id] =
-          slot.order === 'next'
-            ? new ProgramOrderer(programs)
-            : new ProgramShuffler(programs);
-      }
-      return acc;
-    },
-    {} as Record<string, ProgramIterator>,
+    programBySlotType,
   );
-  console.log(programmingIteratorsById);
 
   // const periodDuration = dayjs.duration(1, schedule.period);
   // const periodMs = dayjs.duration(1, schedule.period).asMilliseconds();

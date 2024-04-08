@@ -372,6 +372,7 @@ export default function TimeSlotEditorPage() {
 
   const updateLineupMutation = useUpdateLineup();
 
+  // TODO: This can be shared between random / time slots
   const programOptions: ProgramOption[] = useMemo(() => {
     const contentPrograms = filter(newLineup, isContentProgram);
     const opts: ProgramOption[] = [{ value: 'flex', description: 'Flex' }];
