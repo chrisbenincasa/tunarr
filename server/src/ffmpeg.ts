@@ -1,7 +1,7 @@
 import { FfmpegSettings, Watermark } from '@tunarr/types';
 import child_process, { ChildProcessByStdio } from 'child_process';
 import events from 'events';
-import { isEmpty, isNil, isString, isUndefined, merge } from 'lodash-es';
+import { isEmpty, isNil, isString, isUndefined, merge, round } from 'lodash-es';
 import path from 'path';
 import { Readable } from 'stream';
 import { DeepReadonly } from 'ts-essentials';
@@ -571,36 +571,39 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       const horz = Math.round((mpHorz * iW) / 100.0);
       const vert = Math.round((mpVert * iH) / 100.0);
 
-      const posAry: object = {
-        'top-left': `x=${horz}:y=${vert}`,
-        'top-right': `x=W-w-${horz}:y=${vert}`,
-        'bottom-left': `x=${horz}:y=H-h-${vert}`,
-        'bottom-right': `x=W-w-${horz}:y=H-h-${vert}`,
-      };
-      let icnDur = '';
-      if (watermark.duration > 0) {
-        icnDur = `:enable='between(t,0,${watermark.duration})'`;
-      }
+      const icnDur =
+        watermark.duration > 0
+          ? `:enable='between(t,0,${watermark.duration})'`
+          : '';
       let waterVideo = `[${overlayFile}:v]`;
       if (!watermark.fixedSize) {
         videoComplex += `;${waterVideo}scale=${w}:-1[icn]`;
         waterVideo = '[icn]';
       }
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const p: string = posAry[watermark.position];
-      if (isUndefined(p)) {
-        throw Error('Invalid watermark position: ' + watermark.position);
+
+      let position: string;
+      switch (watermark.position) {
+        case 'top-left':
+          position = `x=${horz}:y=${vert}`;
+          break;
+        case 'top-right':
+          position = `x=W-w-${horz}:y=${vert}`;
+          break;
+        case 'bottom-left':
+          position = `x=${horz}:y=H-h-${vert}`;
+          break;
+        case 'bottom-right':
+          position = `x=W-w-${horz}:y=H-h-${vert}`;
+          break;
       }
-      let overlayShortest = '';
-      if (watermark.animated) {
-        overlayShortest = 'shortest=1:';
-      }
-      videoComplex += `;${currentVideo}${waterVideo}overlay=${overlayShortest}${p}${icnDur}[comb]`;
+
+      const overlayShortest = watermark.animated ? 'shortest=1:' : '';
+      videoComplex += `;${currentVideo}${waterVideo}overlay=${overlayShortest}${position}${icnDur}[comb]`;
       currentVideo = '[comb]';
     }
 
-    if (this.volumePercent != 100) {
-      const f = this.volumePercent / 100.0;
+    if (this.volumePercent !== 100) {
+      const f = round(this.volumePercent / 100.0, 2);
       audioComplex += `;${currentAudio}volume=${f}[boosted]`;
       currentAudio = '[boosted]';
     }

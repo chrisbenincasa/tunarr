@@ -30,7 +30,7 @@ export type ChannelTranscodingSettings = {
 type ChannelWatermark = {
   url?: string;
   enabled: boolean;
-  position: string;
+  position: 'bottom-left' | 'bottom-right' | 'top-right' | 'top-left';
   width: number;
   verticalMargin: number;
   horizontalMargin: number;

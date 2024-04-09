@@ -27,6 +27,7 @@ import {
   Maybe,
   Nullable,
 } from './types.js';
+import { isNonEmptyString } from './util.js';
 
 const SLACK = constants.SLACK;
 const Random = randomJS.Random;
@@ -415,20 +416,15 @@ export function getWatermark(
     return;
   }
 
-  let icon: Maybe<string>;
-  let watermark: Maybe<Watermark>;
-  if (!isUndefined(channel.watermark)) {
-    watermark = { ...channel.watermark };
-    if (!watermark.enabled) {
+  if (!isUndefined(channel.watermark) && channel.watermark.enabled) {
+    const watermark = { ...channel.watermark };
+    let icon: string;
+    if (isNonEmptyString(watermark.url)) {
+      icon = watermark.url;
+    } else if (isNonEmptyString(channel.icon?.path)) {
+      icon = channel.icon.path;
+    } else {
       return;
-    }
-
-    icon = watermark.url;
-    if (isUndefined(icon) || icon === '') {
-      icon = channel.icon?.path;
-      if (isUndefined(icon) || icon === '') {
-        return;
-      }
     }
 
     return {

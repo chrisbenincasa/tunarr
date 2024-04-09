@@ -136,6 +136,18 @@ export default function EditChannelPage({ isNew }: Props) {
         ...channel.offline,
         picture: channel.offline.picture ?? DefaultChannel.offline.picture,
       },
+      watermark: {
+        ...(channel.watermark ?? {}),
+        enabled: channel.watermark?.enabled ?? false,
+        url: channel.watermark?.url ?? '',
+        width: channel.watermark?.width ?? 10,
+        horizontalMargin: channel.watermark?.horizontalMargin ?? 1,
+        verticalMargin: channel.watermark?.verticalMargin ?? 1,
+        fixedSize: channel.watermark?.fixedSize ?? false,
+        animated: channel.watermark?.animated ?? false,
+        duration: channel.watermark?.duration ?? 0,
+        position: channel.watermark?.position ?? 'bottom-right',
+      },
     });
   }, [channel, formMethods]);
 

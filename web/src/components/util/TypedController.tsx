@@ -4,8 +4,17 @@ import {
   TextField,
   TextFieldProps,
 } from '@mui/material';
-import { get, has, isFunction, isNil, isUndefined, mapValues } from 'lodash-es';
-import { useCallback } from 'react';
+import {
+  get,
+  has,
+  isFunction,
+  isNil,
+  isUndefined,
+  mapValues,
+  omit,
+  toString,
+} from 'lodash-es';
+import { useCallback, useState } from 'react';
 import {
   Controller,
   ControllerFieldState,
@@ -30,7 +39,7 @@ type RenderFunc<
   formState,
   helperText,
 }: {
-  field: ControllerRenderProps<TFieldValues, TName>;
+  field: ControllerRenderProps<TFieldValues, TName> & { displayValue?: string };
   fieldState: ControllerFieldState;
   formState: UseFormStateReturn<TFieldValues>;
   helperText?: React.ReactNode;
@@ -73,6 +82,11 @@ export const TypedController = <
   props: Props<TFieldValues, TName, TValue, ExtractedType>,
 ) => {
   const extractor = props.valueExtractor ?? defaultValueExtractor;
+  // Try this out and see if it works...
+  const rawField = props.control?._getWatch(props.name, props.defaultValue);
+  const [rawValue, setRawValue] = useState<string | undefined>(
+    toString(rawField),
+  );
 
   const handleRender: RenderFunc<TFieldValues, TName> = (original) => {
     const originalOnChange = original.field.onChange;
@@ -80,12 +94,14 @@ export const TypedController = <
       ...original,
       field: {
         ...original.field,
+        displayValue: rawValue,
         onChange: (...event: unknown[]) => {
           // If we have a value transformer, attempt to use the extractor
           // to get the raw event value and then pass it to the transformer
+          const extractedValue = extractor(...event) as ExtractedType;
+          setRawValue(toString(extractedValue));
           if (props.toFormType) {
             // We're making a lot of assumptions here...
-            const extractedValue = extractor(...event) as ExtractedType;
             if (isNil(extractedValue)) {
               console.warn(
                 `Extracted null value for form field "${props.name}"!`,
@@ -227,8 +243,9 @@ export const NumericFormControllerText = <
         return (
           <TextField
             error={!isNil(errors[props.name])}
-            {...field}
+            {...omit(field, 'displayValue')}
             {...fieldProps}
+            value={field.displayValue ?? field.value}
             helperText={helperText}
           />
         );
@@ -250,7 +267,11 @@ export const CheckboxFormController = <
     <Controller
       {...props}
       render={({ field }) => (
-        <Checkbox {...props.CheckboxProps} {...field} checked={field.value} />
+        <Checkbox
+          {...props.CheckboxProps}
+          {...omit(field, 'displayValue')}
+          checked={field.value}
+        />
       )}
     />
   );

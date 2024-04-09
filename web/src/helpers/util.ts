@@ -156,6 +156,11 @@ export const handleNumericFormValue = (
     return value;
   }
 
+  // Special-case for typing a trailing decimal on a float
+  if (float && value.endsWith('.')) {
+    return parseFloat(value + '0'); // This still doesn't work
+  }
+
   return float ? parseFloat(value) : parseInt(value);
 };
 

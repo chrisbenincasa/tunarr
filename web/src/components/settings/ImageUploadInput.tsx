@@ -5,7 +5,7 @@ import InputAdornment from '@mui/material/InputAdornment';
 import InputLabel from '@mui/material/InputLabel';
 import OutlinedInput from '@mui/material/OutlinedInput';
 import { styled } from '@mui/material/styles';
-import { ChangeEvent, useCallback } from 'react';
+import React, { ChangeEvent, useCallback } from 'react';
 import { apiClient } from '../../external/api';
 
 const VisuallyHiddenInput = styled('input')({
@@ -28,6 +28,7 @@ type Props = {
   onPreviewValueChange(url: string): void;
   onUploadError(error: unknown): void;
   fileRenamer(name: File): string;
+  children?: React.ReactNode;
 };
 
 export function ImageUploadInput({
@@ -38,6 +39,7 @@ export function ImageUploadInput({
   onPreviewValueChange,
   fileRenamer,
   value,
+  children,
 }: Props) {
   const handleFileUpload = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
@@ -99,6 +101,7 @@ export function ImageUploadInput({
           </InputAdornment>
         }
       />
+      {children}
     </FormControl>
   );
 }

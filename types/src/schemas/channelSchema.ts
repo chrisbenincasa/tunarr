@@ -6,7 +6,12 @@ import { ChannelIconSchema } from './utilSchemas.js';
 export const WatermarkSchema = z.object({
   url: z.string().optional(),
   enabled: z.boolean(),
-  position: z.string(),
+  position: z.union([
+    z.literal('top-left'),
+    z.literal('top-right'),
+    z.literal('bottom-left'),
+    z.literal('bottom-right'),
+  ]),
   width: z.number(),
   verticalMargin: z.number(),
   horizontalMargin: z.number(),
