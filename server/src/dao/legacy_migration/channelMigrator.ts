@@ -1,4 +1,4 @@
-import { Channel, Program } from '@tunarr/types';
+import { Channel, Program, Watermark } from '@tunarr/types';
 import dayjs from 'dayjs';
 import {
   attempt,
@@ -21,6 +21,7 @@ import {
   emptyStringToUndefined,
   groupByUniqAndMap,
   isNodeError,
+  isNonEmptyString,
   mapAsyncSeq,
 } from '../../util.js';
 import { ProgramSourceType } from '../custom_types/ProgramSourceType.js';
@@ -48,6 +49,13 @@ import {
 } from './migrationUtil.js';
 
 const logger = createLogger(import.meta);
+
+const validWatermarkPositions = [
+  'bottom-left',
+  'bottom-right',
+  'top-left',
+  'top-right',
+];
 
 export type LegacyProgram = Omit<Program, 'channel'> & {
   isOffline: boolean;
@@ -273,7 +281,11 @@ export async function migrateChannel(fullPath: string): Promise<{
       ? {
           enabled: watermark['enabled'] as boolean,
           duration: watermark['duration'] as number,
-          position: watermark['position'] as string,
+          position:
+            isNonEmptyString(watermark['position']) &&
+            validWatermarkPositions.includes(watermark['position'])
+              ? (watermark['position'] as Watermark['position'])
+              : 'bottom-right',
           width: watermark['width'] as number,
           verticalMargin: watermark['verticalMargin'] as number,
           horizontalMargin: watermark['horizontalMargin'] as number,
