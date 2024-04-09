@@ -47,8 +47,9 @@ dayjs.extend(duration);
 
 const logger = createLogger(import.meta);
 
+// TODO - don't do this.
 const FALLBACK_ICON =
-  'https://raw.githubusercontent.com/vexorain/dizquetv/main/resources/dizquetv.png';
+  'https://raw.githubusercontent.com/chrisbenincasa/tunarr/main/server/resources/images/tunarr.png';
 
 type CurrentPlayingProgramDetails = MarkRequired<
   Partial<ProgramDTO> & { isOffline: boolean }, // Hack to make this work for now, we need a new type
@@ -677,7 +678,7 @@ export class TVGuideService {
               icon: FALLBACK_ICON,
               showTitle: 'No channels configured',
               date: dayjs().format('YYYY-MM-DD'),
-              summary: 'Use the dizqueTV web UI to configure channels.',
+              summary: 'Use the tunarr web UI to configure channels.',
               type: 'flex',
               isOffline: true,
             },

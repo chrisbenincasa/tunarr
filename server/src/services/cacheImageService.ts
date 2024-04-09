@@ -107,7 +107,7 @@ export class CacheImageService {
   }
 
   /**
-   * Clear all files on .dizquetv/cache/images
+   * Clear all files on {databasePath}/cache/images
    */
   async clearCache() {
     const cachePath = `${this.cacheService.cachePath}/${this.imageCacheFolder}`;

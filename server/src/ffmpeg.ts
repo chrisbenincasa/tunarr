@@ -16,7 +16,7 @@ const spawn = child_process.spawn;
 const logger = createLogger(import.meta);
 
 const MAXIMUM_ERROR_DURATION_MS = 60000;
-const REALLY_RIDICULOUSLY_HIGH_FPS_FOR_DIZQUETVS_USECASE = 120;
+const REALLY_RIDICULOUSLY_HIGH_FPS_FOR_TUNARRS_USECASE = 120;
 
 export type FfmpegEvents = {
   end: (obj?: { code: number; cmd: string }) => void;
@@ -84,7 +84,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
         errorScreen: 'kill',
         normalizeResolution: false,
         audioVolumePercent: 100,
-        maxFPS: REALLY_RIDICULOUSLY_HIGH_FPS_FOR_DIZQUETVS_USECASE,
+        maxFPS: REALLY_RIDICULOUSLY_HIGH_FPS_FOR_TUNARRS_USECASE,
       };
     }
     this.channel = channel;
@@ -167,7 +167,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       `-muxpreload`,
       this.opts.concatMuxDelay.toString(),
       `-metadata`,
-      `service_provider="dizqueTV"`,
+      `service_provider="tunarr"`,
       `-metadata`,
       `service_name="${this.channel.name}"`,
     );
@@ -738,7 +738,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
 
     ffmpegArgs.push(
       `-metadata`,
-      `service_provider="dizqueTV"`,
+      `service_provider="tunarr"`,
       `-metadata`,
       `service_name="${this.channel.name}"`,
     );

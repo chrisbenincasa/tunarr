@@ -90,14 +90,14 @@ export class HdhrService {
 function getDevice(db: Settings, host: string) {
   const hdhrSettings = db.hdhrSettings();
   return {
-    FriendlyName: 'dizqueTV',
-    Manufacturer: 'dizqueTV - Silicondust',
-    ManufacturerURL: 'https://github.com/chrisbenincasa/dizquetv',
+    FriendlyName: 'Tunarr',
+    Manufacturer: 'Tunarr - Silicondust',
+    ManufacturerURL: 'https://github.com/chrisbenincasa/tunarr',
     ModelNumber: 'HDTC-2US',
     FirmwareName: 'hdhomeruntc_atsc',
     TunerCount: hdhrSettings.tunerCount,
     FirmwareVersion: '20170930',
-    DeviceID: 'dizqueTV',
+    DeviceID: 'Tunarr',
     DeviceAuth: '',
     BaseURL: `${host}`,
     LineupURL: `${host}/lineup.json`,
@@ -110,7 +110,7 @@ function getDevice(db: Settings, host: string) {
         </specVersion>
         <device>
         <deviceType>urn:schemas-upnp-org:device:MediaServer:1</deviceType>
-        <friendlyName>dizqueTV</friendlyName>
+        <friendlyName>Tunarr</friendlyName>
         <manufacturer>Silicondust</manufacturer>
         <modelName>HDTC-2US</modelName>
         <modelNumber>HDTC-2US</modelNumber>
