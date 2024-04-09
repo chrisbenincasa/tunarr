@@ -1,4 +1,4 @@
-import { chain, filter, forEach, isEmpty, keys } from 'lodash-es';
+import ld, { filter, forEach, isEmpty, keys } from 'lodash-es';
 import { sessionManager } from '../stream/sessionManager.js';
 import { Maybe } from '../types.js';
 import { Task, TaskId } from './task.js';
@@ -24,9 +24,8 @@ export class CleanupSessionsTask extends Task<void> {
     const now = new Date().getTime();
 
     forEach(sessions, (session) => {
-      const [aliveConnections, staleConnections] = chain(
-        keys(session.connections()),
-      )
+      const [aliveConnections, staleConnections] = ld
+        .chain(keys(session.connections()))
         .partition(
           (token) => now - session.lastHeartbeat(token) < ThirtySeconds,
         )

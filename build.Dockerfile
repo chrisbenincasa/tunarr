@@ -19,6 +19,8 @@ COPY web ./web
 COPY patches ./patches
 
 FROM sources AS prod-deps
+ARG NODE_ENVIRONMENT
+ENV NODE_ENV=${NODE_ENVIRONMENT:-production}
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --prod --frozen-lockfile
 
 ### Begin server build ###

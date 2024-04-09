@@ -2,7 +2,7 @@ import {
   InsertPlexServerRequest,
   UpdatePlexServerRequest,
 } from '@tunarr/types/api';
-import { chain, isNil, isUndefined, keys, map, mapValues } from 'lodash-es';
+import ld, { isNil, isUndefined, keys, map, mapValues } from 'lodash-es';
 import { groupByUniq } from '../util.js';
 import { ChannelDB } from './channelDb.js';
 import { ProgramSourceType } from './custom_types/ProgramSourceType.js';
@@ -172,7 +172,7 @@ export class PlexServerDB {
 
     const isUpdate = newServer && newServer.uuid !== serverName;
     if (isUpdate) {
-      chain(allPrograms)
+      ld.chain(allPrograms)
         .map((program) => this.fixupProgram(program, newServer))
         .sum()
         .value();

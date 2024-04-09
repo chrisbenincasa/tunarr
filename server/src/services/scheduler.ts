@@ -1,4 +1,5 @@
-import { chain, isString, once, pickBy } from 'lodash-es';
+import { isString, once, pickBy, values } from 'lodash-es';
+import ld from 'lodash-es';
 import createLogger from '../logger.js';
 import { ServerContext } from '../serverContext.js';
 import { CleanupSessionsTask } from '../tasks/cleanupSessionsTask.js';
@@ -85,8 +86,7 @@ export const scheduleJobs = once((serverContext: ServerContext) => {
     ),
   );
 
-  chain(GlobalScheduler.scheduledJobsById)
-    .values()
+  ld.chain(values(GlobalScheduler.scheduledJobsById))
     .filter((job) => job.runAtStartup)
     .forEach((job) => {
       job

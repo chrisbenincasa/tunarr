@@ -11,8 +11,7 @@ import {
 import { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
-import {
-  chain,
+import ld, {
   compact,
   filter,
   find,
@@ -242,7 +241,8 @@ export class ChannelDB {
       return await em.transactional(async (em) => {
         channel.startTime = startTime;
         channel.duration = sumBy(lineup, typedProperty('durationMs'));
-        const allIds = chain(lineup)
+        const allIds = ld
+          .chain(lineup)
           .filter(isContentItem)
           .map((p) => p.id)
           .uniq()
@@ -374,7 +374,7 @@ export class ChannelDB {
 
     const { lineup: apiLineup, offsets } = await this.buildApiLineup(
       channel,
-      chain(lineup.items).drop(cleanOffset).take(cleanLimit).value(),
+      ld.chain(lineup.items).drop(cleanOffset).take(cleanLimit).value(),
     );
 
     return {
@@ -421,7 +421,8 @@ export class ChannelDB {
     const len = lineup.items.length;
     const cleanOffset = offset < 0 ? 0 : offset;
     const cleanLimit = limit < 0 ? len : limit;
-    const pagedLineup = chain(lineup.items)
+    const pagedLineup = ld
+      .chain(lineup.items)
       .drop(cleanOffset)
       .take(cleanLimit)
       .value();
@@ -443,7 +444,8 @@ export class ChannelDB {
 
     let apiOffsets: number[];
     if (lineup.startTimeOffsets) {
-      apiOffsets = chain(lineup.startTimeOffsets)
+      apiOffsets = ld
+        .chain(lineup.startTimeOffsets)
         .drop(cleanOffset)
         .take(cleanLimit)
         .value();
@@ -590,7 +592,8 @@ export class ChannelDB {
       (csc) => csc.customShow.uuid,
     );
 
-    const programs = chain(lineup)
+    const programs = ld
+      .chain(lineup)
       .map((item) => {
         let p: CondensedChannelProgram | null = null;
         if (isOfflineItem(item)) {

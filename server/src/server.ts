@@ -16,7 +16,6 @@ import {
   validatorCompiler,
 } from 'fastify-type-provider-zod';
 import fs from 'fs';
-import { isUndefined } from 'lodash-es';
 import morgan from 'morgan';
 import schedule from 'node-schedule';
 import path, { dirname, join } from 'path';
@@ -39,6 +38,7 @@ import { UpdateXmlTvTask } from './tasks/updateXmlTvTask.js';
 import { ServerOptions } from './types.js';
 import { filename, isProduction } from './util.js';
 import { videoRouter } from './video.js';
+import { isUndefined } from 'lodash-es';
 
 const logger = createLogger(import.meta);
 const currentDirectory = dirname(filename(import.meta.url));

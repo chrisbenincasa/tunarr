@@ -1,8 +1,7 @@
 import { Channel, Program, Watermark } from '@tunarr/types';
 import dayjs from 'dayjs';
-import {
+import ld, {
   attempt,
-  chain,
   compact,
   difference,
   get,
@@ -75,7 +74,8 @@ export async function createLineup(
     (c) => c.uuid,
   );
 
-  const lineupItems: LineupItem[] = chain(rawPrograms)
+  const lineupItems: LineupItem[] = ld
+    .chain(rawPrograms)
     .map((program) => {
       if (
         program.type &&
@@ -155,7 +155,8 @@ export async function migratePrograms(
     .repo(CustomShowEntity)
     .findAll({ populate: ['uuid'] });
 
-  const customShowRefs = chain(programs)
+  const customShowRefs = ld
+    .chain(programs)
     .flatMap((p) => p.customShowId)
     .compact()
     .uniq()

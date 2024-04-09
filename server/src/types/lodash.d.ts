@@ -1,7 +1,7 @@
-// import 'lodash';
+// import 'lodash-es';
 
-// declare module 'lodash' {
-//   interface LoDashStatic {
+// declare module 'lodash-es' {
+//   interface lodash-esStatic {
 //     // eslint-disable-next-line @typescript-eslint/no-explicit-any
 //     groupByTyped<TValue, K extends keyof any>(
 //       arr: List<TValue>,
@@ -9,8 +9,8 @@
 //     ): TValue;
 //   }
 
-//   interface LoDashExplicitWrapper<TValue> {
-//     groupByTyped(): LoDashExplicitWrapper<TValue>;
+//   interface lodash-esExplicitWrapper<TValue> {
+//     groupByTyped(): lodash-esExplicitWrapper<TValue>;
 //   }
 
 //   interface CollectionChain<T> {

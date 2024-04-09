@@ -10,7 +10,7 @@
     "build": "turbo run build",
     "test": "turbo run test",
     "preinstall": "npx only-allow pnpm",
-    "prepare": "husky"
+    "prepare": "node -e \"if (process.env.NODE_ENV !== 'production'){process.exit(1)} \" || husky install"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.0.2",

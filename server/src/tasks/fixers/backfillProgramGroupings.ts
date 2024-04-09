@@ -1,7 +1,6 @@
 import { EntityManager, Loaded } from '@mikro-orm/better-sqlite';
 import { PlexLibraryShows, PlexSeasonView } from '@tunarr/types/plex';
-import {
-  chain,
+import ld, {
   chunk,
   concat,
   filter,
@@ -199,11 +198,13 @@ export class BackfillProgramGroupings extends Fixer {
       return;
     }
 
-    const seasonIds = chain(episodes)
+    const seasonIds = ld
+      .chain(episodes)
       .map((p) => ({ sourceId: p.externalSourceId, id: p.parentExternalKey }))
       .uniqBy('id')
       .value();
-    const showIds = chain(episodes)
+    const showIds = ld
+      .chain(episodes)
       .map((p) => ({
         sourceId: p.externalSourceId,
         id: p.grandparentExternalKey,
@@ -249,7 +250,8 @@ export class BackfillProgramGroupings extends Fixer {
       );
     }
 
-    const showsToSeasons = chain(episodes)
+    const showsToSeasons = ld
+      .chain(episodes)
       .map((e) => ({
         show: e.grandparentExternalKey!,
         season: e.parentExternalKey!,
@@ -259,10 +261,11 @@ export class BackfillProgramGroupings extends Fixer {
       .mapValues(uniq)
       .value();
 
-    chain(showAndSeasonGroupings)
+    ld.chain(showAndSeasonGroupings)
       .filter({ type: ProgramGroupingType.TvShowSeason })
       .forEach((season) => {
-        const matchingEps = chain(episodes)
+        const matchingEps = ld
+          .chain(episodes)
           .filter((e) =>
             some(season.externalRefs, {
               externalSourceId: e.externalSourceId,
@@ -281,7 +284,7 @@ export class BackfillProgramGroupings extends Fixer {
       })
       .value();
 
-    chain(showAndSeasonGroupings)
+    ld.chain(showAndSeasonGroupings)
       .filter({ type: ProgramGroupingType.TvShow })
       .forEach((show) => {
         const matchingEps = episodes.filter((e) =>

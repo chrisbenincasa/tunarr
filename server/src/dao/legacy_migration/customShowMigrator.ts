@@ -1,5 +1,5 @@
 import fs from 'fs/promises';
-import { chain, isNil, maxBy, partition } from 'lodash-es';
+import ld, { isNil, maxBy, partition } from 'lodash-es';
 import path from 'path';
 import { groupByUniq, mapAsyncSeq } from '../../util.js';
 import { withDb } from '../dataSource.js';
@@ -53,7 +53,8 @@ export async function migrateCustomShows(
   );
 
   await withDb(async (em) => {
-    const uniquePrograms = chain(newCustomShows)
+    const uniquePrograms = ld
+      .chain(newCustomShows)
       .flatMap((cs) => cs.content)
       .uniqBy(uniqueProgramId)
       .value();
@@ -104,7 +105,8 @@ export async function migrateCustomShows(
           ...c,
           customOrder: maxOrder + idx + 1,
         }));
-        const csContent = chain(hasOrder)
+        const csContent = ld
+          .chain(hasOrder)
           .sortBy((c) => c.customOrder)
           .concat(newOrder)
           .map((c) =>

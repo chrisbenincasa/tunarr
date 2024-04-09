@@ -1,5 +1,4 @@
-import {
-  chain,
+import _, {
   chunk,
   concat,
   identity,
@@ -298,7 +297,7 @@ export function deepCopy<T>(value: T): T {
     return value;
   }
 
-  return chain(value)
+  return _.chain(value)
     .keys()
     .reduce((prev, key) => {
       return {

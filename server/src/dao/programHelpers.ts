@@ -15,8 +15,7 @@ import {
   isPlexEpisode,
   isPlexMusicTrack,
 } from '@tunarr/types/plex';
-import {
-  chain,
+import ld, {
   chunk,
   concat,
   filter,
@@ -90,7 +89,8 @@ export async function upsertContentPrograms(
   const nonPersisted = filter(programs, (p) => !p.persisted);
   const minter = ProgramMinterFactory.create(em);
 
-  const contentPrograms = chain(nonPersisted)
+  const contentPrograms = ld
+    .chain(nonPersisted)
     .filter(isContentProgram)
     .uniqBy((p) => p.uniqueId)
     .filter(
@@ -102,7 +102,8 @@ export async function upsertContentPrograms(
     .value();
 
   // TODO handle custom shows
-  const programsToPersist = chain(contentPrograms)
+  const programsToPersist = ld
+    .chain(contentPrograms)
     .map((p) => minter.mint(p.externalSourceName!, p.originalProgram!))
     .compact()
     .value();
@@ -111,9 +112,10 @@ export async function upsertContentPrograms(
 
   // TODO: Probably want to do this step in the background...
   //
-  const programsBySource = chain(contentPrograms)
+  const programsBySource = ld
+    .chain(contentPrograms)
     .filter((p) => p.subtype === 'episode' || p.subtype === 'track')
-    // TODO figure out a way to shim in a typed groupBy to lodash without
+    // TODO figure out a way to shim in a typed groupBy to lodash-es without
     // breaking the whole world
     .groupBy((cp) => cp.externalSourceType!)
     .mapValues((programs) => groupBy(programs, (p) => p.externalSourceName!))
@@ -263,7 +265,8 @@ async function findAndUpdatePlexServerPrograms(
 
   const plexApi = PlexApiFactory.get(plexServer);
 
-  const parentIdsByGrandparent = chain(programs)
+  const parentIdsByGrandparent = ld
+    .chain(programs)
     .map('originalProgram')
     .compact()
     .map((p) =>
@@ -289,7 +292,8 @@ async function findAndUpdatePlexServerPrograms(
 
   const grandparentsByParentId = flipMap(parentIdsByGrandparent);
 
-  const allIds = chain(programs)
+  const allIds = ld
+    .chain(programs)
     .map('originalProgram')
     .filter(
       (p): p is PlexEpisode | PlexMusicTrack =>
