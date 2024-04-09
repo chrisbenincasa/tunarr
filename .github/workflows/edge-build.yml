@@ -21,7 +21,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - uses: actions/cache@v3 # Cache previous HEAD SHA
+      - uses: actions/cache@v4 # Cache previous HEAD SHA
         with:
           path: previous_head_sha # Cache key
           key: ${{ runner.os }}-edge-build-${{ github.sha }} # Unique cache key
