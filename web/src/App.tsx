@@ -1,14 +1,13 @@
-import { ExpandMore, Home } from '@mui/icons-material';
+import { ExpandMore, GitHub, Home } from '@mui/icons-material';
+import ComputerIcon from '@mui/icons-material/Computer';
 import LiveTvIcon from '@mui/icons-material/LiveTv';
 import PreviewIcon from '@mui/icons-material/Preview';
 import SettingsIcon from '@mui/icons-material/Settings';
-import ComputerIcon from '@mui/icons-material/Computer';
 import SettingsRemoteIcon from '@mui/icons-material/SettingsRemote';
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import TheatersIcon from '@mui/icons-material/Theaters';
 import TvIcon from '@mui/icons-material/Tv';
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
-import { GitHub } from '@mui/icons-material';
 import {
   Alert,
   AppBar,
@@ -35,6 +34,7 @@ import React, { ReactNode, useState } from 'react';
 import { Outlet, Link as RouterLink } from 'react-router-dom';
 import './App.css';
 import ServerEvents from './components/ServerEvents.tsx';
+import TunarrLogo from './components/TunarrLogo.tsx';
 import VersionFooter from './components/VersionFooter.tsx';
 import DarkModeButton from './components/settings/DarkModeButton.tsx';
 import { useVersion } from './hooks/useVersion.ts';
@@ -163,10 +163,7 @@ export function Root({ children }: { children?: React.ReactNode }) {
               to="/guide"
               component={RouterLink}
             >
-              <img
-                style={{ width: '2rem', height: '2rem', marginTop: '0.4em' }}
-                src="/tunarr.png"
-              />
+              <TunarrLogo style={{ marginTop: '0.4em', maxHeight: '40px' }} />
             </Link>
             <Typography
               variant="h6"
@@ -186,18 +183,19 @@ export function Root({ children }: { children?: React.ReactNode }) {
             </Typography>
             <Box flexGrow={1}></Box>
             <DarkModeButton iconOnly />
-            <Button
+            <IconButton
               href="https://github.com/chrisbenincasa/tunarr"
               target="_blank"
               color="inherit"
             >
               <GitHub />
-            </Button>
+            </IconButton>
             <Button
               href="//localhost:8000/api/xmltv.xml"
               target="_blank"
               color="inherit"
               startIcon={<TextSnippetIcon />}
+              sx={{ px: 1, ml: 0.5 }}
             >
               XMLTV
             </Button>
@@ -206,6 +204,7 @@ export function Root({ children }: { children?: React.ReactNode }) {
               target="_blank"
               color="inherit"
               startIcon={<TextSnippetIcon />}
+              sx={{ px: 1, ml: 0.5 }}
             >
               M3U
             </Button>

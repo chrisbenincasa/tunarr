@@ -31,6 +31,7 @@ import dayjs from 'dayjs';
 import { isEmpty } from 'lodash-es';
 import { useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import TunarrLogo from '../../components/TunarrLogo.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import { apiClient } from '../../external/api.ts';
 import { useChannels } from '../../hooks/useChannels.ts';
@@ -119,12 +120,11 @@ export default function ChannelsPage() {
         <TableCell>{channel.number}</TableCell>
         {!smallViewport && (
           <TableCell>
-            <img
-              style={{ maxHeight: '40px' }}
-              src={
-                isEmpty(channel.icon.path) ? '/tunarr.png' : channel.icon.path
-              }
-            />
+            {isEmpty(channel.icon.path) ? (
+              <TunarrLogo style={{ width: '40px' }} />
+            ) : (
+              <img style={{ maxHeight: '40px' }} src={channel.icon.path} />
+            )}
           </TableCell>
         )}
         <TableCell>{channel.name}</TableCell>
