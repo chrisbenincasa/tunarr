@@ -89,7 +89,7 @@ export class PlexTranscoder {
     this.device = 'channel-' + channel.number;
     this.deviceName = this.device;
     this.clientIdentifier = clientId;
-    this.product = 'dizqueTV';
+    this.product = 'Tunarr';
 
     this.settings = settings;
 

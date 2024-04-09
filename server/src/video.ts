@@ -57,12 +57,12 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
         );
     }
 
-    logger.info(`\r\nStream starting. Channel: 1 (dizqueTV)`);
+    logger.info(`\r\nStream starting. Channel: 1 (Tunarr)`);
 
     const ffmpeg = new FfmpegText(
       ffmpegSettings,
-      'dizqueTV (No Channels Configured)',
-      'Configure your channels using the dizqueTV Web UI',
+      'Tunarr (No Channels Configured)',
+      'Configure your channels using the Tunarr Web UI',
     );
 
     const buffer = new Readable();
@@ -86,7 +86,7 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
     res.raw.on('close', () => {
       // on HTTP close, kill ffmpeg
       ffmpeg.kill();
-      logger.info(`\r\nStream ended. Channel: 1 (dizqueTV)`);
+      logger.info(`\r\nStream ended. Channel: 1 (Tunarr)`);
     });
 
     return res.send(buffer);
