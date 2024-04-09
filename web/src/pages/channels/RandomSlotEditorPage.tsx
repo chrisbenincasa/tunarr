@@ -75,7 +75,7 @@ import {
   resetLineup,
   updateCurrentChannel,
 } from '../../store/channelEditor/actions';
-import { UIChannelProgram } from '../../types';
+import { UIChannelProgram, isUIRedirectProgram } from '../../types';
 
 dayjs.extend(duration);
 
@@ -106,7 +106,6 @@ const slotCooldownOptions: DropdownOption<number>[] = map(
 );
 
 const slotOrderOptions: DropdownOption<string>[] = [
-  { value: '', description: '' },
   { value: 'shuffle', description: 'Shuffle' },
   { value: 'next', description: 'Play Next' },
 ];
@@ -189,14 +188,18 @@ const RandomSlotRow = React.memo(
           slotProgram = {
             type: 'flex',
           };
-          // TODO: Support redirect
+        } else if (slotId.startsWith('redirect')) {
+          slotProgram = {
+            type: 'redirect',
+            channelId: slotId.split('.')[1],
+          };
         } else {
           return;
         }
 
         const newSlot: RandomSlot = {
           ...slot,
-          order: slotProgram.type === 'show' ? 'next' : '',
+          order: 'next', // Default
           programming: slotProgram,
         };
 
@@ -212,10 +215,21 @@ const RandomSlotRow = React.memo(
       [setValue],
     );
 
-    const selectValue =
-      slot.programming.type === 'show'
-        ? `show.${slot.programming.showId}`
-        : slot.programming.type;
+    let selectValue: string;
+    switch (slot.programming.type) {
+      case 'show': {
+        selectValue = `show.${slot.programming.showId}`;
+        break;
+      }
+      case 'redirect': {
+        selectValue = `redirect.${slot.programming.channelId}`;
+        break;
+      }
+      default: {
+        selectValue = slot.programming.type;
+        break;
+      }
+    }
 
     return (
       <>
@@ -272,10 +286,14 @@ const RandomSlotRow = React.memo(
         </Grid>
         <Grid item xs={2}>
           {slot.programming.type === 'show' && (
-            <Select
+            <Select<'next' | 'shuffle'>
               fullWidth
-              value={slot.order ?? 'none'}
-              onChange={(e) => updateSlot(index, { order: e.target.value })}
+              value={slot.order ?? 'next'}
+              onChange={(e) =>
+                updateSlot(index, {
+                  order: (e.target.value ?? 'next') as 'next' | 'shuffle',
+                })
+              }
             >
               {map(slotOrderOptions, (opt) => (
                 <MenuItem key={opt.value} value={opt.value}>
@@ -395,7 +413,7 @@ const RandomSlots = ({
       },
       durationMs: dayjs.duration({ minutes: 30 }).asMilliseconds(),
       cooldownMs: 0,
-      order: '', // figure out what this does
+      order: 'next',
     };
 
     if (distribution === 'uniform') {
@@ -544,6 +562,17 @@ export default function RandomSlotEditorPage() {
         .value();
       opts.push(...showOptions);
     }
+
+    opts.push(
+      ...chain(newLineup)
+        .filter(isUIRedirectProgram)
+        .uniqBy((p) => p.channel)
+        .map((p) => ({
+          description: `Redirect to "${p.channelName}"`,
+          value: `redirect.${p.channel}`,
+        }))
+        .value(),
+    );
 
     return opts;
   }, [newLineup]);

@@ -1,16 +1,10 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import { ChannelProgram, FlexProgram, isFlexProgram } from '@tunarr/types';
+import { TimeSlot, TimeSlotSchedule } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import duration, { Duration } from 'dayjs/plugin/duration.js';
 import relativeTime from 'dayjs/plugin/relativeTime.js';
 import utc from 'dayjs/plugin/utc.js';
-import {
-  ChannelProgram,
-  ContentProgram,
-  FlexProgram,
-  isContentProgram,
-  isFlexProgram,
-} from '@tunarr/types';
-import { TimeSlot, TimeSlotSchedule } from '@tunarr/types/api';
 import {
   chain,
   first,
@@ -18,21 +12,23 @@ import {
   isNull,
   last,
   nth,
-  reduce,
   reject,
-  shuffle,
   slice,
-  sortBy,
 } from 'lodash-es';
 import constants from '../util/constants.js';
 import { mod } from '../util/dayjsExtensions.js';
+import { advanceIterator, getNextProgramForSlot } from './ProgramIterator.js';
+import {
+  createProgramIterators,
+  createProgramMap,
+} from './slotSchedulerUtil.js';
 
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
 dayjs.extend(mod);
 dayjs.extend(utc);
 
-export type PaddedProgram = {
+type PaddedProgram = {
   program: ChannelProgram;
   padMs: number;
   totalDuration: number;
@@ -68,68 +64,6 @@ function pushOrExtendFlex(
   };
 
   return [durationMs, [...lineup, newItem]];
-}
-
-abstract class ProgramIterator {
-  abstract current(): ChannelProgram | null;
-  abstract next(): void;
-}
-
-class ProgramShuffler extends ProgramIterator {
-  #programs: ChannelProgram[];
-  #position: number = 0;
-
-  constructor(programs: ChannelProgram[]) {
-    super();
-    this.#programs = shuffle(programs);
-  }
-
-  current() {
-    return nth(this.#programs, this.#position) ?? null;
-  }
-
-  next() {
-    this.#position++;
-    if (this.#position >= this.#programs.length) {
-      const mid = Math.floor(this.#programs.length / 2);
-      this.#programs = [
-        ...slice(this.#programs, 0, mid),
-        ...slice(this.#programs, mid),
-      ];
-      this.#position = 0;
-    }
-  }
-}
-
-class ProgramOrderer extends ProgramIterator {
-  #programs: ContentProgram[];
-  #position: number = 0;
-
-  constructor(programs: ContentProgram[]) {
-    super();
-    this.#programs = sortBy(programs, getProgramOrder);
-  }
-
-  current(): ChannelProgram | null {
-    return nth(this.#programs, this.#position) ?? null;
-  }
-  next(): void {
-    this.#position = (this.#position + 1) % this.#programs.length;
-  }
-}
-
-function getProgramOrder(program: ContentProgram): string | number {
-  switch (program.subtype) {
-    case 'movie':
-      // A-z for now
-      return program.title;
-    case 'episode':
-      // Hacky thing from original code...
-      return program.seasonNumber! * 100000 + program.episodeNumber!;
-    case 'track':
-      // A-z for now
-      return program.title;
-  }
 }
 
 function createPaddedProgram(program: ChannelProgram, padMs: number) {
@@ -177,70 +111,6 @@ export function distributeFlex(
   });
 }
 
-function createProgramMap(programs: ChannelProgram[]) {
-  return reduce(
-    programs,
-    (acc, program) => {
-      if (isContentProgram(program)) {
-        let id: string;
-        if (program.subtype === 'track') return acc; // TODO handle music
-        if (program.subtype === 'movie') {
-          id = 'movie';
-        } else {
-          id = `tv.${program.title}`;
-        }
-
-        const existing = acc[id] ?? [];
-        acc[id] = [...existing, program];
-      }
-      return acc;
-    },
-    {} as Record<string, ContentProgram[]>,
-  );
-}
-
-function slotIteratorKey(slot: TimeSlot) {
-  if (slot.programming.type === 'movie') {
-    return `movie_${slot.order}`;
-  } else if (slot.programming.type === 'show') {
-    return `tv_${slot.programming.showId}_${slot.order}`;
-  }
-
-  return null;
-}
-
-function getNextProgramForSlot(
-  slot: TimeSlot,
-  iterators: Record<string, ProgramIterator>,
-  duration: number,
-): ChannelProgram | null {
-  switch (slot.programming.type) {
-    case 'movie':
-    case 'show':
-      return iterators[slotIteratorKey(slot)!].current();
-    case 'flex':
-      return {
-        type: 'flex',
-        duration,
-        persisted: false,
-      };
-  }
-}
-
-function advanceIterator(
-  slot: TimeSlot,
-  iterators: Record<string, ProgramIterator>,
-) {
-  switch (slot.programming.type) {
-    case 'movie':
-    case 'show':
-      iterators[slotIteratorKey(slot)!].next();
-      return;
-    case 'flex':
-      return;
-  }
-}
-
 // eslint-disable-next-line @typescript-eslint/require-await
 export async function scheduleTimeSlots(
   schedule: TimeSlotSchedule,
@@ -250,30 +120,9 @@ export async function scheduleTimeSlots(
   // TODO include redirects and custom programs!
   const allPrograms = reject<ChannelProgram>(channelProgramming, isFlexProgram);
   const programBySlotType = createProgramMap(allPrograms);
-
-  const programmingIteratorsById = reduce(
+  const contentProgramIteratorsById = createProgramIterators(
     schedule.slots,
-    (acc, slot) => {
-      let id: string | null = null,
-        slotId: string | null = null;
-      if (slot.programming.type === 'movie') {
-        id = `movie_${slot.order}`;
-        slotId = 'movie';
-      } else if (slot.programming.type === 'show') {
-        id = `tv_${slot.programming.showId}_${slot.order}`;
-        slotId = `tv.${slot.programming.showId}`;
-      }
-
-      if (id && slotId && !acc[id]) {
-        const programs = programBySlotType[slotId];
-        acc[id] =
-          slot.order === 'next'
-            ? new ProgramOrderer(programs)
-            : new ProgramShuffler(programs);
-      }
-      return acc;
-    },
-    {} as Record<string, ProgramIterator>,
+    programBySlotType,
   );
 
   const periodDuration = dayjs.duration(1, schedule.period);
@@ -367,7 +216,7 @@ export async function scheduleTimeSlots(
 
     const program = getNextProgramForSlot(
       currSlot,
-      programmingIteratorsById,
+      contentProgramIteratorsById,
       remaining,
     );
 
@@ -393,20 +242,20 @@ export async function scheduleTimeSlots(
     // Program longer than we have left? Add it and move on...
     if (program && program.duration > remaining) {
       channelPrograms.push(program);
-      advanceIterator(currSlot, programmingIteratorsById);
+      advanceIterator(currSlot, contentProgramIteratorsById);
       timeCursor = timeCursor.add(program.duration);
       continue;
     }
 
     const paddedProgram = createPaddedProgram(program, schedule.padMs);
     let totalDuration = paddedProgram.totalDuration;
-    advanceIterator(currSlot, programmingIteratorsById);
+    advanceIterator(currSlot, contentProgramIteratorsById);
     const paddedPrograms: PaddedProgram[] = [paddedProgram];
 
     for (;;) {
       const nextProgram = getNextProgramForSlot(
         currSlot,
-        programmingIteratorsById,
+        contentProgramIteratorsById,
         remaining,
       );
       if (isNull(nextProgram)) break;
@@ -415,7 +264,7 @@ export async function scheduleTimeSlots(
       }
       const nextPadded = createPaddedProgram(nextProgram, schedule.padMs);
       paddedPrograms.push(nextPadded);
-      advanceIterator(currSlot, programmingIteratorsById);
+      advanceIterator(currSlot, contentProgramIteratorsById);
       totalDuration += nextPadded.totalDuration;
     }
 

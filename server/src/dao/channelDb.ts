@@ -35,6 +35,7 @@ import { Nullable } from '../types.js';
 import { typedProperty } from '../types/path.js';
 import {
   groupByFunc,
+  groupByUniq,
   groupByUniqAndMapAsync,
   mapAsyncSeq,
   mapReduceAsyncSeq,
@@ -559,11 +560,18 @@ export class ChannelDB {
     channel: Loaded<Channel, 'programs' | 'programs.customShows.uuid'>,
     lineup: LineupItem[],
   ): Promise<{ lineup: ChannelProgram[]; offsets: number[] }> {
+    const allChannels = getEm().findAll(Channel, {
+      fields: ['name', 'number'],
+    });
     let lastOffset = 0;
     const offsets: number[] = [];
     const programs = compact(
       await mapAsyncSeq(lineup, async (item) => {
-        const apiItem = await this.toApiLineupItem(channel, item);
+        const apiItem = await this.toApiLineupItem(
+          channel,
+          item,
+          await allChannels,
+        );
         if (apiItem) {
           offsets.push(lastOffset);
           lastOffset += item.durationMs;
@@ -592,6 +600,13 @@ export class ChannelDB {
       (csc) => csc.customShow.uuid,
     );
 
+    const allChannels = await getEm()
+      .repo(Channel)
+      .findAll({
+        fields: ['name', 'number'],
+      });
+    const channelsById = groupByUniq(allChannels, 'uuid');
+
     const programs = ld
       .chain(lineup)
       .map((item) => {
@@ -599,7 +614,22 @@ export class ChannelDB {
         if (isOfflineItem(item)) {
           p = this.#programConverter.offlineLineupItemToProgram(channel, item);
         } else if (isRedirectItem(item)) {
-          p = this.#programConverter.redirectLineupItemToProgram(item);
+          if (channelsById[item.channel]) {
+            p = this.#programConverter.redirectLineupItemToProgram(
+              item,
+              channelsById[item.channel],
+            );
+          } else {
+            logger.warn(
+              'Found dangling redirect program. Bad ID = %s',
+              item.channel,
+            );
+            p = {
+              persisted: true,
+              type: 'flex',
+              duration: item.durationMs,
+            };
+          }
         } else if (item.customShowId) {
           const csc = find(
             customShowContent[item.customShowId],
@@ -641,11 +671,27 @@ export class ChannelDB {
   private toApiLineupItem(
     channel: Loaded<Channel, 'programs'>,
     item: LineupItem,
+    channelReferences: Loaded<Channel, never, 'name' | 'number'>[],
   ) {
     if (isOfflineItem(item)) {
       return this.#programConverter.offlineLineupItemToProgram(channel, item);
     } else if (isRedirectItem(item)) {
-      return this.#programConverter.redirectLineupItemToProgram(item);
+      const redirectChannel = find(channelReferences, { uuid: item.channel });
+      if (isNil(redirectChannel)) {
+        logger.warn(
+          'Dangling redirect channel reference. Source channel = %s, target channel = %s',
+          channel.uuid,
+          item.channel,
+        );
+        return this.#programConverter.offlineLineupItemToProgram(channel, {
+          type: 'offline',
+          durationMs: item.durationMs,
+        });
+      }
+      return this.#programConverter.redirectLineupItemToProgram(
+        item,
+        redirectChannel,
+      );
     } else {
       const program = channel.programs.find((p) => p.uuid === item.id);
       if (isNil(program)) {

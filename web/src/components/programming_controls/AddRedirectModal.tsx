@@ -40,8 +40,8 @@ type FormValues = {
 
 const AddRedirectModal = (props: AddRedirectModalProps) => {
   const currentChannel = useStore((s) => s.channelEditor.currentEntity);
-  const { isPending, error, data } = useChannels();
-  const previousData = usePrevious(data);
+  const { isPending, error, data: channels } = useChannels();
+  const previousData = usePrevious(channels);
 
   const { control, setValue, handleSubmit } = useForm<FormValues>({
     mode: 'onChange',
@@ -52,36 +52,42 @@ const AddRedirectModal = (props: AddRedirectModalProps) => {
   });
 
   useEffect(() => {
-    if (!previousData && data && currentChannel) {
+    if (!previousData && channels && currentChannel) {
       const firstChannel = find(
-        data,
+        channels,
         (channel) => channel.id !== currentChannel.id,
       );
       if (firstChannel) {
         setValue('redirectChannelId', firstChannel.id);
       }
     }
-  }, [previousData, data, setValue, currentChannel]);
+  }, [previousData, channels, setValue, currentChannel]);
 
   const onSubmit: SubmitHandler<FormValues> = (data) => {
-    const program: RedirectProgram = {
-      channel: data.redirectChannelId,
-      duration: data.redirectDuration * 1000,
-      type: 'redirect',
-      persisted: false,
-    };
-    addProgramsToCurrentChannel([program]);
-    props.onClose();
+    if (channels) {
+      // Must exist
+      const channel = find(channels, { id: data.redirectChannelId })!;
+      const program: RedirectProgram = {
+        channel: data.redirectChannelId,
+        channelName: channel.name,
+        channelNumber: channel.number,
+        duration: data.redirectDuration * 1000,
+        type: 'redirect',
+        persisted: false,
+      };
+      addProgramsToCurrentChannel([program]);
+      props.onClose();
+    }
   };
 
-  const channelOptions = data?.filter(
+  const channelOptions = channels?.filter(
     (channel) => channel.id !== currentChannel?.id,
   );
 
   const dialogContent = () => {
     if (!currentChannel || isPending) {
       return <CircularProgress />;
-    } else if (data) {
+    } else if (channels) {
       return (
         <FormGroup>
           <Controller

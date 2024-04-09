@@ -74,6 +74,8 @@ export const FlexProgramSchema = BaseProgramSchema.extend({
 export const RedirectProgramSchema = BaseProgramSchema.extend({
   type: z.literal('redirect'),
   channel: z.string(), // Channel ID
+  channelNumber: z.number(),
+  channelName: z.string(),
 });
 
 export const CondensedContentProgramSchema = BaseProgramSchema.extend({

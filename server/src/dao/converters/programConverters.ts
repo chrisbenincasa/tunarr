@@ -5,6 +5,8 @@ import { getEm } from '../dataSource.js';
 import { OfflineItem, RedirectItem } from '../derived_types/Lineup.js';
 import { Channel } from '../entities/Channel.js';
 import { Program, ProgramType } from '../entities/Program.js';
+import { isNil } from 'lodash-es';
+import { isPromise } from 'util/types';
 
 /**
  * Converts DB types to API types
@@ -94,12 +96,34 @@ export class ProgramConverter {
     };
   }
 
-  redirectLineupItemToProgram(item: RedirectItem): RedirectProgram {
-    // TODO: Materialize the redirected program???
+  redirectLineupItemToProgram(
+    item: RedirectItem,
+    channel: Loaded<Channel, never, 'name' | 'number'>,
+  ): RedirectProgram;
+  redirectLineupItemToProgram(
+    item: RedirectItem,
+    channel?: Loaded<Channel, never, 'name' | 'number'>,
+  ): Promise<RedirectProgram> | RedirectProgram {
+    const loadedChannel = isNil(channel)
+      ? getEm().findOneOrFail(Channel, { uuid: item.channel })
+      : channel;
+    if (isPromise(loadedChannel)) {
+      return loadedChannel.then((c) => this.toRedirectChannelInternal(item, c));
+    } else {
+      return this.toRedirectChannelInternal(item, loadedChannel);
+    }
+  }
+
+  private toRedirectChannelInternal(
+    item: RedirectItem,
+    channel: Loaded<Channel, never, 'name' | 'number'>,
+  ): RedirectProgram {
     return {
       persisted: true,
       type: 'redirect',
       channel: item.channel,
+      channelName: channel.name,
+      channelNumber: channel.number,
       duration: item.durationMs,
     };
   }
