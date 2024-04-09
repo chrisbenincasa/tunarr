@@ -14,6 +14,7 @@ import {
 } from '../../helpers/plexSearchUtil.ts';
 import { forSelectedMediaType, groupSelectedMedia } from '../../helpers/util';
 import { SelectedLibrary, SelectedMedia } from './store';
+import { forPlexMedia } from '@tunarr/shared/util';
 
 export const setProgrammingListingServer = (
   server: PlexServerSettings | undefined,
@@ -89,6 +90,16 @@ export const addKnownMediaForServer = (
     return state;
   });
 
+const plexChildCount = forPlexMedia({
+  default: 1,
+  season: (s) => s.leafCount,
+  show: (s) => s.leafCount,
+  collection: (s) => {
+    const num = parseInt(s.childCount);
+    return isNaN(num) ? 1 : num;
+  },
+});
+
 export const addPlexSelectedMedia = (
   serverName: string,
   media: (PlexLibrarySection | PlexMedia)[],
@@ -98,6 +109,7 @@ export const addPlexSelectedMedia = (
       type: 'plex',
       server: serverName,
       guid: isPlexDirectory(m) ? m.uuid : m.guid,
+      childCount: isPlexDirectory(m) ? 1 : plexChildCount(m),
     }));
     state.selectedMedia = [...state.selectedMedia, ...newSelectedMedia];
   });

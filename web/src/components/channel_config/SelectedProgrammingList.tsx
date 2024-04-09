@@ -13,8 +13,8 @@ import ListItem from '@mui/material/ListItem';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import { forProgramType } from '@tunarr/shared/util';
 import { isPlexDirectory, isPlexSeason, isPlexShow } from '@tunarr/types/plex';
-import { chain, first, groupBy, mapValues } from 'lodash-es';
-import { useCallback } from 'react';
+import { chain, first, groupBy, mapValues, reduce } from 'lodash-es';
+import { useCallback, useMemo } from 'react';
 import { forSelectedMediaType, unwrapNil } from '../../helpers/util.ts';
 import { useCustomShows } from '../../hooks/useCustomShows.ts';
 import useStore from '../../store/index.ts';
@@ -24,6 +24,7 @@ import {
 } from '../../store/programmingSelector/actions.ts';
 import { AddedMedia } from '../../types/index.ts';
 import AddSelectedMediaButton from './AddSelectedMediaButton.tsx';
+import pluralize from 'pluralize';
 
 type Props = {
   onAddSelectedMedia: (media: AddedMedia[]) => void;
@@ -38,6 +39,11 @@ export default function SelectedProgrammingList({
   const knownMedia = useStore((s) => s.knownMediaByServer);
   const selectedMedia = useStore((s) => s.selectedMedia);
   const darkMode = useStore((state) => state.theme.darkMode);
+  const totalCount = reduce(
+    selectedMedia,
+    (acc, media) => acc + (media.childCount ?? 1),
+    0,
+  );
 
   const customShowById = mapValues(
     mapValues(groupBy(customShows, 'id'), first),
@@ -48,17 +54,19 @@ export default function SelectedProgrammingList({
     clearSelectedMedia();
   }, []);
 
-  const formattedTitle = useCallback(
-    forProgramType({
-      content: (p) => p.title,
-    }),
+  const formattedTitle = useMemo(
+    () =>
+      forProgramType({
+        content: (p) => p.title,
+      }),
     [],
   );
 
-  const formattedEpisodeTitle = useCallback(
-    forProgramType({
-      custom: (p) => p.program?.episodeTitle ?? '',
-    }),
+  const formattedEpisodeTitle = useMemo(
+    () =>
+      forProgramType({
+        custom: (p) => p.program?.episodeTitle ?? '',
+      }),
     [],
   );
 
@@ -73,9 +81,22 @@ export default function SelectedProgrammingList({
             if (isPlexDirectory(media)) {
               title = `Library - ${media.title}`;
             } else if (isPlexShow(media)) {
-              title = `${media.title} (${media.childCount} season(s), ${media.leafCount} total episodes)`;
+              title = `${media.title} (${media.childCount} ${pluralize(
+                'season',
+                media.childCount,
+              )}, ${media.leafCount} total ${pluralize(
+                'episode',
+                media.leafCount,
+              )})`;
             } else if (isPlexSeason(media)) {
-              title = `${media.parentTitle} - ${media.title} (${media.leafCount} episodes)`;
+              title = `${media.parentTitle} - ${media.title} (${
+                media.leafCount
+              } ${pluralize('episode', media.leafCount)})`;
+            } else if (media.type === 'collection') {
+              title = `${media.title} (${media.childCount} ${pluralize(
+                'item',
+                parseInt(media.childCount),
+              )})`;
             }
 
             return (
@@ -136,7 +157,7 @@ export default function SelectedProgrammingList({
               flexGrow: '1',
             }}
           >
-            {selectedMedia.length} Selected Programs{' '}
+            {totalCount} Selected {pluralize('Item', totalCount)}{' '}
           </Typography>
 
           <Tooltip title="Unselect all programs">

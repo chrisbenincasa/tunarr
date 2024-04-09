@@ -10,12 +10,14 @@ export type PlexSelectedMedia = {
   type: 'plex';
   server: ServerName;
   guid: PlexItemGuid;
+  childCount?: number;
 };
 
 export type CustomShowSelectedMedia = {
   type: 'custom-show';
   customShowId: string;
   program: CustomProgram;
+  childCount?: number;
 };
 
 export type SelectedMedia = PlexSelectedMedia | CustomShowSelectedMedia;
