@@ -16,6 +16,7 @@ COPY server/ ./server
 COPY shared/ ./shared
 COPY types ./types
 COPY web ./web
+COPY patches ./patches
 
 FROM sources AS prod-deps
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --prod --frozen-lockfile
