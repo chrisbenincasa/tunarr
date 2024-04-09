@@ -146,6 +146,7 @@ export default function EditChannelPage({ isNew }: Props) {
         fixedSize: channel.watermark?.fixedSize ?? false,
         animated: channel.watermark?.animated ?? false,
         duration: channel.watermark?.duration ?? 0,
+        position: channel.watermark?.position ?? 'bottom-right',
       },
     });
   }, [channel, formMethods]);

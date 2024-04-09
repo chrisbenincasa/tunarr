@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import { SaveChannelRequest } from '@tunarr/types';
+import { SaveChannelRequest, Watermark } from '@tunarr/types';
 import { isEmpty, isNil, isUndefined, map, round } from 'lodash-es';
 import { useEffect, useState } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
@@ -25,7 +25,10 @@ import {
   typedProperty,
 } from '../../helpers/util.ts';
 import { useFfmpegSettings } from '../../hooks/settingsHooks.ts';
-import { CheckboxFormController } from '../util/TypedController.tsx';
+import {
+  CheckboxFormController,
+  NumericFormControllerText,
+} from '../util/TypedController.tsx';
 import { ImageUploadInput } from '../settings/ImageUploadInput.tsx';
 import Grid2 from '@mui/material/Unstable_Grid2/Grid2';
 import useStore from '../../store/index.ts';
@@ -51,6 +54,16 @@ const resolutionValues = new Set<string>([
   'global',
   ...map(resolutionOptions, 'value'),
 ]);
+
+const watermarkPositionOptions: {
+  value: Watermark['position'];
+  label: string;
+}[] = [
+  { value: 'bottom-right', label: 'Bottom Right' },
+  { value: 'bottom-left', label: 'Bottom Left' },
+  { value: 'top-right', label: 'Top Right' },
+  { value: 'top-left', label: 'Top Left' },
+];
 
 const globalOrNumber = /^(global|\d+|)+$/;
 
@@ -127,6 +140,13 @@ export default function ChannelTranscodingConfig() {
     }
   };
 
+  const isRight =
+    watermark?.position === 'bottom-right' ||
+    watermark?.position === 'top-right';
+  const isBottom =
+    watermark?.position === 'bottom-left' ||
+    watermark?.position === 'bottom-right';
+
   return (
     channel && (
       <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
@@ -170,8 +190,8 @@ export default function ChannelTranscodingConfig() {
                         watermark?.width && !watermark?.fixedSize
                           ? `${watermark.width}%`
                           : null,
-                      bottom: watermark?.verticalMargin,
-                      right: watermark?.horizontalMargin,
+                      [isBottom ? 'bottom' : 'top']: watermark?.verticalMargin,
+                      [isRight ? 'right' : 'left']: watermark?.horizontalMargin,
                     }}
                     src={watermarkPreviewUrl}
                   />
@@ -203,26 +223,27 @@ export default function ChannelTranscodingConfig() {
                   />
                 </Grid2>
                 <Grid2 xs={12}>
-                  <Controller
-                    name="watermark.position"
-                    control={control}
-                    render={({ field }) => (
-                      <TextField
-                        sx={{ mb: 1 }}
-                        fullWidth
-                        label="Position"
-                        {...field}
-                      />
-                    )}
-                  />
+                  <FormControl fullWidth>
+                    <InputLabel>Position</InputLabel>
+                    <Controller
+                      name="watermark.position"
+                      control={control}
+                      render={({ field }) => (
+                        <Select label="Position" {...field}>
+                          {map(watermarkPositionOptions, (opt) => (
+                            <MenuItem value={opt.value}>{opt.label}</MenuItem>
+                          ))}
+                        </Select>
+                      )}
+                    />
+                  </FormControl>
                 </Grid2>
                 <Grid2 xs={12} sm={4}>
-                  <Controller
+                  <NumericFormControllerText
                     control={control}
                     name="watermark.width"
-                    render={({ field }) => (
-                      <TextField fullWidth label="Width %" {...field} />
-                    )}
+                    float
+                    TextFieldProps={{ label: 'Width %', fullWidth: true }}
                   />
                 </Grid2>
                 <Grid2 xs={12} sm={4}>

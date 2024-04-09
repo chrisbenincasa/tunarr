@@ -117,6 +117,7 @@ export const NumericFormController = <
   const handleStr = useCallback(
     (value: string) => {
       const v = handleNumericFormValue(value, !!props.float);
+      console.log(v);
       if (isNaN(v)) {
         return value;
       }
