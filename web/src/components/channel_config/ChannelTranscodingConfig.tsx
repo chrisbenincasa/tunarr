@@ -199,7 +199,8 @@ export default function ChannelTranscodingConfig() {
               </Box>
               <Grid2
                 container
-                spacing={2}
+                rowSpacing={1}
+                columnSpacing={2}
                 sx={{ flexGrow: 1, height: 'fit-content' }}
               >
                 <Grid2 xs={12}>
@@ -218,12 +219,16 @@ export default function ChannelTranscodingConfig() {
                         onPreviewValueChange={() => {}}
                         FormControlProps={{ fullWidth: true, sx: { mb: 1 } }}
                         value={field.value ?? ''}
-                      />
+                      >
+                        <FormHelperText>
+                          If blank, the channel icon will be used
+                        </FormHelperText>
+                      </ImageUploadInput>
                     )}
                   />
                 </Grid2>
                 <Grid2 xs={12}>
-                  <FormControl fullWidth>
+                  <FormControl fullWidth sx={{ mb: 1 }}>
                     <InputLabel>Position</InputLabel>
                     <Controller
                       name="watermark.position"
@@ -231,7 +236,9 @@ export default function ChannelTranscodingConfig() {
                       render={({ field }) => (
                         <Select label="Position" {...field}>
                           {map(watermarkPositionOptions, (opt) => (
-                            <MenuItem value={opt.value}>{opt.label}</MenuItem>
+                            <MenuItem key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </MenuItem>
                           ))}
                         </Select>
                       )}
@@ -243,33 +250,32 @@ export default function ChannelTranscodingConfig() {
                     control={control}
                     name="watermark.width"
                     float
+                    rules={{ min: 0, max: 100 }}
                     TextFieldProps={{ label: 'Width %', fullWidth: true }}
                   />
                 </Grid2>
                 <Grid2 xs={12} sm={4}>
-                  <Controller
+                  <NumericFormControllerText
                     control={control}
                     name="watermark.horizontalMargin"
-                    render={({ field }) => (
-                      <TextField
-                        fullWidth
-                        label="Horizontal Margin %"
-                        {...field}
-                      />
-                    )}
+                    float
+                    rules={{ min: 0, max: 100 }}
+                    TextFieldProps={{
+                      label: 'Horizontal Margin %',
+                      fullWidth: true,
+                    }}
                   />
                 </Grid2>
                 <Grid2 xs={12} sm={4}>
-                  <Controller
+                  <NumericFormControllerText
                     control={control}
                     name="watermark.verticalMargin"
-                    render={({ field }) => (
-                      <TextField
-                        fullWidth
-                        label="Vertical Margin %"
-                        {...field}
-                      />
-                    )}
+                    float
+                    rules={{ min: 0, max: 100 }}
+                    TextFieldProps={{
+                      label: 'Vertical Margin %',
+                      fullWidth: true,
+                    }}
                   />
                 </Grid2>
                 <Grid2>
@@ -290,7 +296,7 @@ export default function ChannelTranscodingConfig() {
                   </FormControl>
                 </Grid2>
                 <Grid2>
-                  <FormControl fullWidth>
+                  <FormControl fullWidth sx={{ mb: 1 }}>
                     <FormControlLabel
                       control={
                         <CheckboxFormController
@@ -307,6 +313,18 @@ export default function ChannelTranscodingConfig() {
                       not animated, there will be playback errors.
                     </FormHelperText>
                   </FormControl>
+                </Grid2>
+                <Grid2 xs={12}>
+                  <NumericFormControllerText
+                    control={control}
+                    name="watermark.duration"
+                    rules={{ min: 0 }}
+                    TextFieldProps={{
+                      label: 'Overlay Duration (seconds)',
+                      fullWidth: true,
+                      helperText: 'Set to 0 to make the overlay permanent',
+                    }}
+                  />
                 </Grid2>
               </Grid2>
             </Stack>
