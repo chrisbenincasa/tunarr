@@ -2,6 +2,7 @@ import { ArrowBack, CheckBox, CheckBoxOutlineBlank } from '@mui/icons-material';
 import { Box, Button, Stack, Typography } from '@mui/material';
 import dayjs from 'dayjs';
 import React, { useEffect } from 'react';
+import TunarrLogo from '../../components/TunarrLogo.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import ConnectPlex from '../../components/settings/ConnectPlex.tsx';
 import { usePlexServerSettings } from '../../hooks/settingsHooks.ts';
@@ -59,15 +60,15 @@ export default function WelcomePage() {
 
   const header = (
     <>
-      <img
+      <TunarrLogo
         style={{
           width: '4rem',
           height: '4rem',
           margin: '0 auto',
           textAlign: 'center',
         }}
-        src="/tunarr.png"
       />
+
       <Typography variant="h3">Welcome to Tunarr!</Typography>
     </>
   );

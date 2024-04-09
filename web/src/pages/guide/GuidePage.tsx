@@ -28,6 +28,7 @@ import { isEmpty, isUndefined, round } from 'lodash-es';
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { useInterval } from 'usehooks-ts';
 import ProgramDetailsDialog from '../../components/ProgramDetailsDialog.tsx';
+import TunarrLogo from '../../components/TunarrLogo.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import { alternateColors, forTvGuideProgram } from '../../helpers/util.ts';
 import { prefetchAllTvGuides, useAllTvGuides } from '../../hooks/useTvGuide.ts';
@@ -512,14 +513,14 @@ export default function GuidePage() {
                     alignItems={'center'}
                     justifyContent={'center'}
                   >
-                    <img
-                      style={{ maxHeight: '40px' }}
-                      src={
-                        isEmpty(channel.icon?.path)
-                          ? '/tunarr.png'
-                          : channel.icon?.path
-                      }
-                    />
+                    {isEmpty(channel.icon?.path) ? (
+                      <TunarrLogo style={{ maxHeight: '40px' }} />
+                    ) : (
+                      <img
+                        style={{ maxHeight: '40px' }}
+                        src={channel.icon?.path}
+                      />
+                    )}
                   </Box>
                 ) : null}
                 <Box
