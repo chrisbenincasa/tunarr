@@ -28,7 +28,7 @@ import { globalOptions } from '../globals.js';
 import createLogger from '../logger.js';
 import { Maybe } from '../types.js';
 import { attempt } from '../util.js';
-import { EntityManager, initOrm, withDb } from './dataSource.js';
+import { EntityManager, withDb } from './dataSource.js';
 import { CachedImage } from './entities/CachedImage.js';
 import { PlexServerSettings as PlexServerSettingsEntity } from './entities/PlexServerSettings.js';
 import {
@@ -466,10 +466,7 @@ async function migrateFromLegacyDbInner(
     }
   }
 
-  // Close the ORM
-  await initOrm().then((s) => s.close());
-
   db.data.settings = settings as Required<SettingsSchema>;
   db.data.migration.legacyMigration = true;
-  return db.write();
+  return await db.write();
 }
