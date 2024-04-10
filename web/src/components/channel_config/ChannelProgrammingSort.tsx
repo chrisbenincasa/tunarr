@@ -13,8 +13,10 @@ import Menu, { MenuProps } from '@mui/material/Menu';
 import { alpha, styled } from '@mui/material/styles';
 import { useState } from 'react';
 import { useAlphaSort } from '../../hooks/programming_controls/useAlphaSort.ts';
+import { useCyclicShuffle } from '../../hooks/programming_controls/useCyclicShuffle.ts';
 import { useRandomSort } from '../../hooks/programming_controls/useRandomSort.ts';
 import { useReleaseDateSort } from '../../hooks/programming_controls/useReleaseDateSort.ts';
+
 import AddBlockShuffleModal from '../programming_controls/AddBlockShuffleModal.tsx';
 
 const StyledMenu = styled((props: MenuProps) => (
@@ -80,6 +82,7 @@ export function ChannelProgrammingSort() {
   const randomSort = useRandomSort();
   const alphaSort = useAlphaSort();
   const releaseDateSort = useReleaseDateSort();
+  const cyclicShuffle = useCyclicShuffle();
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -107,10 +110,7 @@ export function ChannelProgrammingSort() {
           </Button>
         )}
         {sort === 'cyclic' && (
-          <Button
-            startIcon={<CyclicIcon />}
-            onClick={() => console.log('todo')}
-          >
+          <Button startIcon={<CyclicIcon />} onClick={() => cyclicShuffle()}>
             Cyclic Shuffle
           </Button>
         )}
