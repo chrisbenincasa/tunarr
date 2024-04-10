@@ -40,7 +40,6 @@ import { Maybe } from '../types.js';
 import { deepCopy, groupByUniqFunc, wait } from '../util.js';
 import { binarySearchRange } from '../util/binarySearch.js';
 import { XmlTvWriter } from '../xmltv.js';
-import { CacheImageService } from './cacheImageService.js';
 import { EventService } from './eventService.js';
 
 dayjs.extend(duration);
@@ -130,13 +129,11 @@ export class TVGuideService {
   private currentUpdateTime: number;
   private currentEndTime: number;
   private currentChannels: ChannelWithLineup[];
-  private cacheImageService: CacheImageService;
   private accumulateTable: Record<string, number[]> = {};
   private channelsById: Record<string, ChannelWithLineup>;
 
   constructor(
     xmltv: XmlTvWriter,
-    cacheImageService: CacheImageService,
     eventService: EventService,
     channelDb: ChannelDB,
   ) {
@@ -147,7 +144,6 @@ export class TVGuideService {
     this.currentEndTime = -1;
     this.currentChannels = [];
     this.xmltv = xmltv;
-    this.cacheImageService = cacheImageService;
     this.eventService = eventService;
     this.channelDb = channelDb;
   }

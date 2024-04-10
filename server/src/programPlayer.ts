@@ -45,19 +45,19 @@ export class ProgramPlayer extends Player {
       context.ffmpegSettings.normalizeResolution = false;
     }
     if (typeof program.err !== 'undefined') {
-      logger.info('About to play error stream');
+      logger.debug('About to play error stream');
       this.delegate = new OfflinePlayer(true, context);
     } else if (program.type === 'loading') {
-      logger.info('About to play loading stream');
+      logger.debug('About to play loading stream');
       /* loading */
       context.isLoading = true;
       this.delegate = new OfflinePlayer(false, context);
     } else if (program.type === 'offline') {
-      logger.info('About to play offline stream');
+      logger.debug('About to play offline stream');
       /* offline */
       this.delegate = new OfflinePlayer(false, context);
     } else {
-      logger.info('About to play plex stream');
+      logger.debug('About to play plex stream');
       /* plex */
       this.delegate = new PlexPlayer(context);
     }
@@ -115,10 +115,9 @@ export class ProgramPlayer extends Player {
     try {
       return await this.playDelegate(outStream);
     } catch (err) {
-      console.log('program player err', err);
       let actualError: Error;
       if (!isError(err)) {
-        actualError = Error(
+        actualError = new Error(
           'Program player had an error before receiving any data. ' +
             JSON.stringify(err),
         );
@@ -126,8 +125,9 @@ export class ProgramPlayer extends Player {
         actualError = err;
       }
       if (this.context.lineupItem.err instanceof Error) {
-        // logger.error(actualError.stack);
-        throw Error('Additional error when attempting to play error stream.');
+        throw new Error(
+          'Additional error when attempting to play error stream.',
+        );
       }
       logger.error(
         'Error when attempting to play video. Fallback to error stream: ' +

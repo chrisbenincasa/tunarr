@@ -141,9 +141,11 @@ export class StreamSession {
       }&audioOnly=false`, // TODO FIX
       {
         enableHls: true,
-        streamBasePath: `stream_${this.#channel.uuid}`,
-        hlsTime: 2,
-        hlsListSize: 5,
+        hlsOptions: {
+          streamBasePath: `stream_${this.#channel.uuid}`,
+          hlsTime: 2,
+          hlsListSize: 5,
+        },
         logOutput: false,
       },
     );

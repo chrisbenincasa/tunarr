@@ -273,7 +273,6 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
       const lineups = await mapAsyncSeq(allChannels, async (channel) => {
         const guideServiceLegacy = new TVGuideServiceLegacy(
           req.serverCtx.xmltv,
-          req.serverCtx.cacheImageService,
           req.serverCtx.eventService,
           req.serverCtx.channelDB,
         );

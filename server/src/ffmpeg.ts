@@ -4,7 +4,7 @@ import events from 'events';
 import { isEmpty, isNil, isString, isUndefined, merge, round } from 'lodash-es';
 import path from 'path';
 import { Readable } from 'stream';
-import { DeepReadonly } from 'ts-essentials';
+import { DeepReadonly, DeepRequired } from 'ts-essentials';
 import { serverOptions } from './globals.js';
 import createLogger from './logger.js';
 import { VideoStats } from './plexTranscoder.js';
@@ -24,25 +24,47 @@ export type FfmpegEvents = {
   close: (code?: number) => void;
 };
 
-type ConcatOptions = {
-  enableHls: boolean;
+type HlsOptions = {
   hlsTime: number; // Duration of each clip in seconds,
   hlsListSize: number; // Number of clips to have in the list
   hlsDeleteThreshold: number;
   streamBasePath: string;
   segmentNameFormat: string;
   streamNameFormat: string;
+};
+
+type DashOptions = {
+  windowSize: number; // number of segments kept in the manifest
+  segmentDuration: number; // segment duration in secodns
+  segmentType: 'auto' | 'mp4' | 'webm';
+  fragType: 'auto' | 'every_frame' | 'duration' | 'pframes';
+};
+
+type ConcatOptions = {
+  enableHls: boolean;
+  enableDash: boolean;
+  hlsOptions?: Partial<HlsOptions>;
+  dashOptions?: Partial<DashOptions>;
   logOutput: boolean;
 };
 
-const defaultConcatOptions: ConcatOptions = {
+const defaultConcatOptions: DeepRequired<ConcatOptions> = {
   enableHls: false,
-  hlsTime: 2,
-  hlsListSize: 3,
-  hlsDeleteThreshold: 3,
-  streamBasePath: 'stream_%v',
-  segmentNameFormat: 'data%05d.ts',
-  streamNameFormat: 'stream.m3u8',
+  enableDash: false,
+  hlsOptions: {
+    hlsTime: 2,
+    hlsListSize: 3,
+    hlsDeleteThreshold: 3,
+    streamBasePath: 'stream_%v',
+    segmentNameFormat: 'data%05d.ts',
+    streamNameFormat: 'stream.m3u8',
+  },
+  dashOptions: {
+    segmentDuration: 2,
+    windowSize: 3,
+    segmentType: 'auto',
+    fragType: 'auto',
+  },
   logOutput: false,
 };
 
@@ -176,19 +198,19 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     // We could offer a parameter to auto-convert to AAC...or offer a backup configuration
     // or just try and detect what the client supports and go from there.
     if (opts.enableHls) {
-      const filledOpts = merge(defaultConcatOptions, opts);
+      const hlsOpts = merge(defaultConcatOptions, opts).hlsOptions;
 
       ffmpegArgs.push(
         '-f',
         'hls',
         '-hls_time',
-        filledOpts.hlsTime.toString(),
+        hlsOpts.hlsTime.toString(),
         '-hls_list_size',
-        filledOpts.hlsListSize.toString(),
+        hlsOpts.hlsListSize.toString(),
         '-force_key_frames',
         // Force a key frame every N seconds
         // TODO consider using the GOP parameter here as stated in the docs
-        `expr:gte(t,n_forced*${filledOpts.hlsTime})`,
+        `expr:gte(t,n_forced*${hlsOpts.hlsTime})`,
         '-hls_delete_threshold',
         '3', // Num unreferenced segments
         '-hls_flags',
@@ -201,20 +223,28 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
         'delete_segments',
         '-hls_base_url',
         // TODO We should be smarter about which host we use here.
-        `http://localhost:8000/streams/${filledOpts.streamBasePath}/`,
+        `http://localhost:8000/streams/${hlsOpts.streamBasePath}/`,
         '-hls_segment_filename',
-        path.join(
-          'streams',
-          filledOpts.streamBasePath,
-          filledOpts.segmentNameFormat,
-        ),
+        path.join('streams', hlsOpts.streamBasePath, hlsOpts.segmentNameFormat),
         '-master_pl_name',
         'master.m3u8',
-        path.join(
-          'streams',
-          filledOpts.streamBasePath,
-          filledOpts.streamNameFormat,
-        ),
+        path.join('streams', hlsOpts.streamBasePath, hlsOpts.streamNameFormat),
+      );
+    } else if (opts.enableDash) {
+      const dashOpts = merge(defaultConcatOptions, opts).dashOptions;
+      ffmpegArgs.push(
+        '-f',
+        'dash',
+        '-seg_duration',
+        dashOpts.segmentDuration.toString(),
+        '-window_size',
+        dashOpts.windowSize.toString(),
+        '-extra_window_size',
+        '3',
+        '-dash_segment_type',
+        dashOpts.segmentType,
+        '-frag_type',
+        dashOpts.fragType,
       );
     } else {
       ffmpegArgs.push(`-f`, `mpegts`, `pipe:1`);
@@ -771,7 +801,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     this.ffmpegName = 'Stream FFMPEG';
 
     this.ffmpeg.on('error', (code, signal) => {
-      logger.info(
+      logger.debug(
         `${this.ffmpegName} received error event: ${code}, ${signal}`,
       );
     });
@@ -779,21 +809,21 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     this.ffmpeg.on('exit', (code: number, signal) => {
       if (code === null) {
         if (!this.hasBeenKilled) {
-          logger.info(`${this.ffmpegName} exited due to signal: ${signal}`, {
+          logger.warn(`${this.ffmpegName} exited due to signal: ${signal}`, {
             cmd: `${this.opts.ffmpegExecutablePath} ${ffmpegArgs.join(' ')}`,
           });
         } else {
-          logger.info(
+          logger.debug(
             `${this.ffmpegName} exited due to signal: ${signal} as expected.`,
           );
         }
         this.emit('close', code);
       } else if (code === 0) {
-        logger.info(`${this.ffmpegName} exited normally.`);
+        logger.debug(`${this.ffmpegName} exited normally.`);
         this.emit('end');
       } else if (code === 255) {
         if (this.hasBeenKilled) {
-          logger.info(`${this.ffmpegName} finished with code 255.`);
+          logger.debug(`${this.ffmpegName} finished with code 255.`);
           this.emit('close', code);
           return;
         }
@@ -803,10 +833,10 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
             cmd: `${this.opts.ffmpegExecutablePath} ${ffmpegArgs.join(' ')}`,
           });
         }
-        logger.info(`${this.ffmpegName} exited with code 255.`);
+        logger.warn(`${this.ffmpegName} exited with code 255.`);
         this.emit('close', code);
       } else {
-        logger.info(`${this.ffmpegName} exited with code ${code}.`);
+        logger.error(`${this.ffmpegName} exited with code ${code}.`);
         this.emit('error', {
           code: code,
           cmd: `${this.opts.ffmpegExecutablePath} ${ffmpegArgs.join(' ')}`,
@@ -818,7 +848,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
   }
 
   private startProcess(ffmpegArgs: string[], enableLogging: boolean) {
-    logger.info(
+    logger.debug(
       'Starting ffmpeg concat process with args: ' + ffmpegArgs.join(' '),
     );
     this.ffmpeg = spawn(this.ffmpegPath, ffmpegArgs, {
@@ -826,7 +856,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     });
 
     if (this.hasBeenKilled) {
-      logger.info('Send SIGKILL to ffmpeg');
+      logger.silly('Sending SIGKILL to ffmpeg');
       this.ffmpeg.kill('SIGKILL');
       return;
     }
@@ -834,7 +864,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     // this.ffmpegName = isConcatPlaylist ? 'Concat FFMPEG' : 'Stream FFMPEG';
 
     this.ffmpeg.on('error', (code, signal) => {
-      logger.info(
+      logger.error(
         `${this.ffmpegName} received error event: ${code}, ${signal}`,
       );
     });
@@ -881,10 +911,9 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
   }
 
   kill() {
-    logger.info(`${this.ffmpegName} RECEIVED kill() command`);
+    logger.debug(`${this.ffmpegName} RECEIVED kill() command`);
     this.hasBeenKilled = true;
-    if (typeof this.ffmpeg != 'undefined') {
-      logger.info(`${this.ffmpegName} this.ffmpeg.kill()`);
+    if (!isUndefined(this.ffmpeg)) {
       // TODO - maybe send SIGTERM here and give it some time before
       // dropping the hammer.
       this.ffmpeg.kill('SIGKILL');

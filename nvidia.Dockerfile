@@ -34,6 +34,7 @@ COPY server/ ./server
 COPY shared/ ./shared
 COPY types ./types
 COPY web ./web
+COPY patches ./patches
 
 FROM ffmpeg-base as dev
 EXPOSE 5173
@@ -44,18 +45,16 @@ ENTRYPOINT [ "pnpm" ]
 CMD [ "turbo", "dev" ]
 
 FROM sources AS prod-deps
+ARG NODE_ENVIRONMENT
+ENV NODE_ENV=${NODE_ENVIRONMENT:-production}
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --prod --frozen-lockfile
 
+### Begin server build ###
 ### Begin server build ###
 FROM sources AS build-server
 # Install deps
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
-# Unfortunately we can't just have this as part of the turbo build graph
-# because we're relying on this hacky dev/prod mikro-orm config. If we
-# can figure that out, it would boil this down to one command.
-RUN pnpm turbo generate-db-cache
-# Replace the non-cached metadata config with the cache
-RUN mv server/mikro-orm.prod.config.ts server/mikro-orm.config.ts 
+# Build and bundle
 RUN pnpm turbo --filter=@tunarr/server bundle
 ### End server build ###
 
@@ -65,6 +64,12 @@ FROM sources AS build-web
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 # Build common modules
 RUN pnpm turbo --filter=@tunarr/web bundle
+
+FROM sources as build-full-stack
+# Install deps
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+# Build common modules
+RUN pnpm turbo bundle
 
 ### Begin server run ###
 FROM ffmpeg-base AS server
@@ -78,5 +83,12 @@ CMD [ "/tunarr/server/build/bundle.js" ]
 ### Begin server run
 
 ### Full stack ###
-FROM server AS full-stack
-COPY --from=build-web /tunarr/web/dist /tunarr/server/build/web
+FROM ffmpeg-base AS full-stack
+COPY --from=prod-deps /tunarr/node_modules /tunarr/node_modules
+COPY --from=prod-deps /tunarr/server/node_modules /tunarr/server/node_modules
+COPY --from=build-full-stack /tunarr/types /tunarr/types
+COPY --from=build-full-stack /tunarr/shared /tunarr/shared
+COPY --from=build-full-stack /tunarr/server/package.json /tunarr/server/package.json
+COPY --from=build-full-stack /tunarr/server/build /tunarr/server/build
+COPY --from=build-full-stack /tunarr/web/dist /tunarr/server/build/web
+CMD [ "/tunarr/server/build/bundle.js" ]

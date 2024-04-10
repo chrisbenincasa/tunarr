@@ -1,45 +1,23 @@
 import fastifyStatic from '@fastify/static';
-import { Loaded } from '@mikro-orm/core';
-import constants from '@tunarr/shared/constants';
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { isNil, isNumber, isUndefined, map, once } from 'lodash-es';
+import { isNil, isUndefined, map } from 'lodash-es';
 import * as fsSync from 'node:fs';
 import { join } from 'node:path';
 import { Readable } from 'stream';
 import { v4 } from 'uuid';
 import { z } from 'zod';
-import {
-  StreamLineupItem,
-  createOfflineStreamLineupIteam,
-} from './dao/derived_types/StreamLineup.js';
-import { Channel } from './dao/entities/Channel.js';
-import { FFMPEG, FfmpegEvents } from './ffmpeg.js';
 import { FfmpegText } from './ffmpegText.js';
 import { serverOptions } from './globals.js';
-import * as helperFuncs from './helperFuncs.js';
 import createLogger from './logger.js';
-import { ProgramPlayer } from './programPlayer.js';
-import { serverContext } from './serverContext.js';
+import { ConcatStream } from './stream/ConcatStream.js';
+import { VideoStream } from './stream/VideoStream.js';
 import { sessionManager } from './stream/sessionManager.js';
-import { wereThereTooManyAttempts } from './throttler.js';
-import { ContextChannel, Maybe, PlayerContext } from './types.js';
-import { TypedEventEmitter } from './types/eventEmitter.js';
+import { StreamQueryStringSchema, TruthyQueryParam } from './types/schemas.js';
 import { RouterPluginAsyncCallback } from './types/serverType.js';
-import { TruthyQueryParam } from './types/schemas.js';
 
 const logger = createLogger(import.meta);
 
 let StreamCount = 0;
-
-const StreamQueryStringSchema = z.object({
-  channel: z.coerce.number().or(z.string().uuid()).optional(),
-  m3u8: z.string().optional(),
-  audioOnly: TruthyQueryParam,
-  session: z.coerce.number(),
-  first: z.string().optional(),
-});
-
-type StreamQueryString = z.infer<typeof StreamQueryStringSchema>;
 
 // eslint-disable-next-line @typescript-eslint/require-await
 export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
@@ -93,432 +71,57 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
     return res.send(buffer);
   });
 
-  const concat = async (
-    req: FastifyRequest<{ Querystring: { channel?: string } }>,
-    res: FastifyReply,
-    audioOnly: boolean,
-  ) => {
-    const reqId = `'conat-TOFB-${v4()}`;
-    console.time(reqId);
-    const ctx = await serverContext();
-    // Check if channel queried is valid
-    if (isUndefined(req.query.channel)) {
-      return res.status(500).send('No Channel Specified');
-    }
-
-    const channel = await ctx.channelCache.getChannelConfig(
-      parseInt(req.query.channel),
-    );
-    if (isNil(channel)) {
-      return res.status(500).send("Channel doesn't exist");
-    }
-
-    void res.hijack();
-
-    const ffmpegSettings = req.serverCtx.settings.ffmpegSettings();
-
-    // Check if ffmpeg path is valid
-    if (!fsSync.existsSync(ffmpegSettings.ffmpegExecutablePath)) {
-      logger.error(
-        `FFMPEG path (${ffmpegSettings.ffmpegExecutablePath}) is invalid. The file (executable) doesn't exist.`,
-      );
-      return res
-        .status(500)
-        .send(
-          `FFMPEG path (${ffmpegSettings.ffmpegExecutablePath}) is invalid. The file (executable) doesn't exist.`,
-        );
-    }
-
-    void res.header('Content-Type', 'video/mp2t');
-
-    logger.info(
-      `\r\nStream starting. Channel: ${channel.number} (${channel.name})`,
-    );
-
-    const ffmpeg = new FFMPEG(ffmpegSettings, channel); // Set the transcoder options
-    ffmpeg.setAudioOnly(audioOnly);
-
-    const stop = once(() => {
-      try {
-        res.raw.end();
-      } catch (err) {
-        logger.error('error ending request', err);
-      }
-      ffmpeg.kill();
-    });
-
-    ffmpeg.on('error', (err) => {
-      logger.error('CONCAT - FFMPEG ERROR', err);
-      //status was already sent
-      stop();
-    });
-
-    ffmpeg.on('close', () => {
-      logger.warn('CONCAT - FFMPEG CLOSE');
-    });
-
-    ffmpeg.on('end', () => {
-      logger.warn('FFMPEG END - FFMPEG CLOSE');
-      logger.info(
-        'Video queue exhausted. Either you played 100 different clips in a row or there were technical issues that made all of the possible 100 attempts fail.',
-      );
-      stop();
-      res.raw.write(null);
-    });
-
-    res.raw.on('close', () => {
-      logger.warn('RESPONSE CLOSE - FFMPEG CLOSE');
-      // on HTTP close, kill ffmpeg
-      logger.info(
-        `\r\nStream ended. Channel: ${channel?.number} (${channel?.name})`,
-      );
-      stop();
-    });
-
-    const ff = ffmpeg.spawnConcat(
-      `http://localhost:${serverOptions().port}/playlist?channel=${
-        req.query.channel
-      }&audioOnly=${audioOnly}`,
-    );
-
-    if (isUndefined(ff)) {
-      return res.status(500).send('Could not start concat stream');
-    }
-
-    res.raw.writeHead(200, {
-      'content-type': 'video/mp2t',
-      'Access-Control-Allow-Origin': '*',
-    });
-
-    const onceListener = once(() => {
-      console.timeEnd(reqId);
-      ff.removeListener('data', onceListener);
-    });
-
-    ff.on('data', onceListener);
-
-    ff.pipe(res.raw, { end: false });
-
-    // return res.send(ff);
-  };
-
-  fastify.get<{ Querystring: { channel?: string } }>(
+  fastify.get(
     '/video',
+    {
+      schema: {
+        querystring: z.object({
+          channel: z.coerce.number().or(z.string()),
+        }),
+      },
+    },
     async (req, res) => {
-      return await concat(req, res, false);
+      const result = await new ConcatStream().startStream(
+        req.query.channel,
+        false,
+      );
+      if (result.type === 'error') {
+        return res.send(result.httpStatus).send(result.message);
+      }
+
+      req.raw.on('close', () => {
+        result.stop();
+      });
+
+      return res.header('Content-Type', 'video/mp2t').send(result.stream);
     },
   );
-  fastify.get<{ Querystring: { channel?: string } }>(
+
+  fastify.get(
     '/radio',
+    {
+      schema: {
+        querystring: z.object({
+          channel: z.coerce.number().or(z.string()),
+        }),
+      },
+    },
     async (req, res) => {
-      return await concat(req, res, true);
+      const result = await new ConcatStream().startStream(
+        req.query.channel,
+        false,
+      );
+      if (result.type === 'error') {
+        return res.send(result.httpStatus).send(result.message);
+      }
+
+      req.raw.on('close', () => {
+        result.stop();
+      });
+
+      return res.header('Content-Type', 'video/mp2t').send(result.stream);
     },
   );
-
-  // Stream individual video to ffmpeg concat above. This is used by the server, NOT the client
-  const streamFunction = async (
-    req: FastifyRequest,
-    res: FastifyReply,
-    query: StreamQueryString,
-    t0: number,
-    allowSkip: boolean,
-  ): Promise<void> => {
-    void res.header('Access-Control-Allow-Origin', '*');
-    void res.hijack();
-
-    if (isUndefined(query.channel)) {
-      return res.status(400).send('No Channel Specified');
-    }
-
-    const audioOnly = query.audioOnly;
-    logger.info(`/stream audioOnly=${audioOnly}`);
-    const session = query.session;
-    const m3u8 = query.m3u8 === '1';
-    const channel = isNumber(query.channel)
-      ? await req.serverCtx.channelCache.getChannelConfigWithProgramsByNumber(
-          query.channel,
-        )
-      : await req.serverCtx.channelCache.getChannelConfigWithPrograms(
-          query.channel,
-        );
-
-    if (isNil(channel)) {
-      return res.status(404).send("Channel doesn't exist");
-    }
-
-    let isLoading = false;
-    if (query.first === '0') {
-      isLoading = true;
-    }
-
-    let isFirst = false;
-    if (query.first === '1') {
-      isFirst = true;
-    }
-
-    const ffmpegSettings = req.serverCtx.settings.ffmpegSettings();
-
-    // Check if ffmpeg path is valid
-    if (!fsSync.existsSync(ffmpegSettings.ffmpegExecutablePath)) {
-      logger.error(
-        `FFMPEG path (${ffmpegSettings.ffmpegExecutablePath}) is invalid. The file (executable) doesn't exist.`,
-      );
-
-      return res
-        .status(500)
-        .send(
-          `FFMPEG path (${ffmpegSettings.ffmpegExecutablePath}) is invalid. The file (executable) doesn't exist.`,
-        );
-    }
-
-    // Get video lineup (array of video urls with calculated start times and durations.)
-    let lineupItem: Maybe<StreamLineupItem> =
-      req.serverCtx.channelCache.getCurrentLineupItem(channel.number, t0);
-    let currentProgram: helperFuncs.ProgramAndTimeElapsed | undefined;
-    let channelContext = channel;
-    const redirectChannels: Loaded<Channel, 'programs'>[] = [];
-    const upperBounds: number[] = [];
-
-    // Insert 40ms of loading time in front of the stream (let's look into this one later)
-    if (isLoading) {
-      lineupItem = {
-        type: 'loading',
-        streamDuration: 40,
-        duration: 40,
-        start: 0,
-      };
-    } else if (isUndefined(lineupItem)) {
-      const lineup = await req.serverCtx.channelDB.loadLineup(channel.uuid);
-      currentProgram = helperFuncs.getCurrentProgramAndTimeElapsed(
-        t0,
-        channel,
-        lineup,
-      );
-
-      for (;;) {
-        redirectChannels.push(channelContext);
-        upperBounds.push(
-          currentProgram.program.duration - currentProgram.timeElapsed,
-        );
-
-        if (
-          // currentProgram.program.type !== 'offline'
-          currentProgram.program.type !== 'redirect'
-        ) {
-          break;
-        }
-
-        req.serverCtx.channelCache.recordPlayback(channelContext.number, t0, {
-          type: 'offline',
-          title: 'Error',
-          err: Error('Recursive channel redirect found'),
-          duration: 60000,
-          start: 0,
-        });
-
-        const newChannelNumber = currentProgram.program.channel;
-        const newChannel =
-          await req.serverCtx.channelCache.getChannelConfigWithPrograms(
-            newChannelNumber,
-          );
-
-        if (isNil(newChannel)) {
-          const err = new Error(
-            "Invalid redirect to a channel that doesn't exist",
-          );
-          logger.error("Invalid redirect to channel that doesn't exist.", err);
-          currentProgram = {
-            program: createOfflineStreamLineupIteam(60000),
-            timeElapsed: 0,
-            programIndex: -1,
-          };
-          continue;
-        }
-
-        channelContext = newChannel;
-        lineupItem = req.serverCtx.channelCache.getCurrentLineupItem(
-          newChannel.number,
-          t0,
-        );
-
-        if (!isUndefined(lineupItem)) {
-          lineupItem = { ...lineupItem }; // Not perfect, but better than the stringify hack
-          break;
-        } else {
-          currentProgram = helperFuncs.getCurrentProgramAndTimeElapsed(
-            t0,
-            newChannel,
-            lineup,
-          );
-        }
-      }
-    }
-
-    if (isUndefined(lineupItem)) {
-      if (isNil(currentProgram)) {
-        return res.status(500).send('server error');
-      }
-
-      if (
-        currentProgram.program.type === 'offline' &&
-        channel.programs.length === 1 &&
-        currentProgram.programIndex !== -1
-      ) {
-        //there's only one program and it's offline. So really, the channel is
-        //permanently offline, it doesn't matter what duration was set
-        //and it's best to give it a long duration to ensure there's always
-        //filler to play (if any)
-        const t = 365 * 24 * 60 * 60 * 1000;
-        currentProgram.program = createOfflineStreamLineupIteam(t);
-      } else if (
-        allowSkip &&
-        currentProgram.program.type === 'offline' &&
-        currentProgram.program.duration - currentProgram.timeElapsed <=
-          constants.SLACK + 1
-      ) {
-        //it's pointless to show the offline screen for such a short time, might as well
-        //skip to the next program
-        const dt = currentProgram.program.duration - currentProgram.timeElapsed;
-        for (let i = 0; i < redirectChannels.length; i++) {
-          req.serverCtx.channelCache.clearPlayback(redirectChannels[i].number);
-        }
-        logger.info(
-          'Too litlle time before the filler ends, skip to next slot',
-        );
-        return await streamFunction(req, res, query, t0 + dt + 1, false);
-      }
-      if (isNil(currentProgram) || isNil(currentProgram.program)) {
-        throw "No video to play, this means there's a serious unexpected bug or the channel db is corrupted.";
-      }
-      const fillers = await req.serverCtx.fillerDB.getFillersFromChannel(
-        channelContext.number,
-      );
-      const lineup = await helperFuncs.createLineup(
-        req.serverCtx.channelCache,
-        currentProgram,
-        channelContext,
-        fillers,
-        isFirst,
-      );
-      lineupItem = lineup.shift();
-    }
-
-    if (!isLoading && !isUndefined(lineupItem)) {
-      let upperBound = Number.MAX_SAFE_INTEGER;
-      let beginningOffset = 0;
-      if (!isUndefined(lineupItem?.beginningOffset)) {
-        beginningOffset = lineupItem.beginningOffset;
-      }
-      //adjust upper bounds and record playbacks
-      for (let i = redirectChannels.length - 1; i >= 0; i--) {
-        lineupItem = { ...lineupItem };
-        const u = upperBounds[i] + beginningOffset;
-        if (!isNil(u)) {
-          let u2 = upperBound;
-          if (!isNil(lineupItem.streamDuration)) {
-            u2 = Math.min(u2, lineupItem.streamDuration);
-          }
-          lineupItem.streamDuration = Math.min(u2, u);
-          upperBound = lineupItem.streamDuration;
-        }
-        req.serverCtx.channelCache.recordPlayback(
-          redirectChannels[i].number,
-          t0,
-          lineupItem,
-        );
-      }
-    }
-
-    [
-      '=========================================================',
-      '! Start playback',
-      `! Channel: ${channel.name} (${channel.number})`,
-      `! Title: ${lineupItem?.title ?? 'Unknown'}`,
-      isUndefined(lineupItem?.streamDuration)
-        ? `! From: ${lineupItem?.start}`
-        : `! From: ${lineupItem?.start} to: ${
-            (lineupItem?.start ?? 0) + (lineupItem?.streamDuration ?? 0)
-          }`,
-      `! Type: ${lineupItem?.type}`,
-      '=========================================================',
-    ].forEach((line) => logger.info(line));
-
-    if (!isLoading) {
-      req.serverCtx.channelCache.recordPlayback(
-        channel.number,
-        t0,
-        lineupItem!,
-      );
-    }
-    if (wereThereTooManyAttempts(session, lineupItem)) {
-      lineupItem = {
-        type: 'offline',
-        // isOffline: true,
-        err: Error('Too many attempts, throttling..'),
-        duration: 60000,
-        start: 0,
-      };
-    }
-
-    const combinedChannel: ContextChannel = {
-      ...helperFuncs.generateChannelContext(channelContext),
-      transcoding: channel.transcoding,
-    };
-
-    const playerContext: PlayerContext = {
-      lineupItem: lineupItem!,
-      ffmpegSettings: ffmpegSettings,
-      channel: combinedChannel,
-      m3u8: m3u8,
-      audioOnly: audioOnly,
-      entityManager: req.entityManager.fork(),
-      settings: req.serverCtx.settings,
-    };
-
-    let player: ProgramPlayer | null = new ProgramPlayer(playerContext);
-    let stopped = false;
-    const stop = () => {
-      logger.info('Stop function hit...');
-      if (!stopped) {
-        stopped = true;
-        player?.cleanUp();
-        player = null;
-        // Unsure if this is right...
-        res.raw.end();
-      }
-    };
-
-    let playerObj: Maybe<TypedEventEmitter<FfmpegEvents>>;
-    void res.header('Content-Type', 'video/mp2t');
-
-    res.raw.writeHead(200, {
-      'content-type': 'video/mp2t',
-      'Access-Control-Allow-Origin': '*',
-    });
-
-    try {
-      logger.info('About to play stream...');
-      playerObj = await player.play(res.raw);
-    } catch (err) {
-      logger.error('Error when attempting to play video: %O', err);
-      stop();
-      return res.status(500).send('Unable to start playing video.');
-    }
-
-    playerObj?.on('error', (err) => {
-      logger.error('Error while playing video: %O', err);
-    });
-
-    playerObj?.on('end', () => {
-      logger.debug('playObj.end');
-      stop();
-    });
-
-    req.raw.on('close', () => {
-      logger.debug('Client Closed');
-      stop();
-    });
-  };
 
   fastify.get(
     '/stream',
@@ -527,18 +130,49 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
         querystring: StreamQueryStringSchema,
       },
       onError(req, _, e) {
-        console.error(req.raw.url, e);
+        logger.error('Error on /stream: %s. %O', req.raw.url, e);
       },
     },
     async (req, res) => {
       const t0 = new Date().getTime();
-      console.log(req.query);
-      return await streamFunction(req, res, req.query, t0, true);
+      const videoStream = new VideoStream();
+      const rawStreamResult = await videoStream.startStream(
+        req.query,
+        t0,
+        true,
+      );
+
+      if (rawStreamResult.type === 'error') {
+        logger.error(
+          'Error starting stream! Message: %s, Error: %O',
+          rawStreamResult.message,
+          rawStreamResult.error ?? null,
+        );
+        return res
+          .status(rawStreamResult.httpStatus)
+          .send(rawStreamResult.message);
+      }
+
+      req.raw.on('close', () => {
+        logger.debug('Client closed video stream, stopping it now.');
+        rawStreamResult.stop();
+      });
+
+      return res
+        .header('Content-Type', 'video/mp2t')
+        .send(rawStreamResult.stream);
     },
   );
 
-  fastify.get<{ Querystring: { channel?: number } }>(
+  fastify.get(
     '/m3u8',
+    {
+      schema: {
+        querystring: z.object({
+          channel: z.coerce.number(),
+        }),
+      },
+    },
     async (req, res) => {
       const sessionId = StreamCount++;
 
@@ -591,8 +225,16 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
     },
   );
 
-  fastify.get<{ Querystring: { channel?: number; audioOnly?: boolean } }>(
+  fastify.get(
     '/playlist',
+    {
+      schema: {
+        querystring: z.object({
+          channel: z.coerce.number().optional(),
+          audioOnly: TruthyQueryParam.optional().default('0'),
+        }),
+      },
+    },
     async (req, res) => {
       void res.type('text');
 
@@ -680,12 +322,22 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
       .send(content.join('\n') + '\n');
   };
 
-  fastify.get<{ Params: { number: number }; Querystring: { fast?: string } }>(
+  fastify.get(
     '/media-player/:number.m3u',
+    {
+      schema: {
+        params: z.object({
+          number: z.coerce.number(),
+        }),
+        querystring: z.object({
+          fast: TruthyQueryParam.optional(),
+        }),
+      },
+    },
     async (req, res) => {
       try {
         let path = 'video';
-        if (req.query.fast === '1') {
+        if (req.query.fast) {
           path = 'm3u8';
         }
         return await mediaPlayer(req.params.number, path, req, res);
@@ -696,8 +348,15 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
     },
   );
 
-  fastify.get<{ Params: { number: number } }>(
+  fastify.get(
     '/media-player/fast/:number.m3u',
+    {
+      schema: {
+        params: z.object({
+          number: z.coerce.number(),
+        }),
+      },
+    },
     async (req, res) => {
       try {
         const path = 'm3u8';
@@ -709,8 +368,15 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
     },
   );
 
-  fastify.get<{ Params: { number: number } }>(
+  fastify.get(
     '/media-player/radio/:number.m3u',
+    {
+      schema: {
+        params: z.object({
+          number: z.coerce.number(),
+        }),
+      },
+    },
     async (req, res) => {
       try {
         const path = 'radio';

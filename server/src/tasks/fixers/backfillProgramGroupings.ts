@@ -8,6 +8,7 @@ import ld, {
   first,
   isEmpty,
   isNil,
+  isUndefined,
   map,
   reduce,
   some,
@@ -24,6 +25,7 @@ import { ProgramGroupingExternalId } from '../../dao/entities/ProgramGroupingExt
 import createLogger from '../../logger';
 import { PlexApiFactory } from '../../plex';
 import Fixer from './fixer';
+import { getEm } from '../../dao/dataSource';
 const logger = createLogger(import.meta);
 
 export class BackfillProgramGroupings extends Fixer {
@@ -192,12 +194,67 @@ export class BackfillProgramGroupings extends Fixer {
       },
     );
 
-    logger.debug('Updateing %d episodes', episodes.length);
+    logger.debug('Updating %d episodes', episodes.length);
 
-    if (isEmpty(episodes)) {
-      return;
+    if (!isEmpty(episodes)) {
+      await this.updateEpisodes(episodes);
     }
 
+    const seasonsMissingIndexes = await em.find(
+      ProgramGrouping,
+      { type: ProgramGroupingType.TvShowSeason, index: null },
+      {
+        populateWhere: {
+          externalRefs: {
+            sourceType: ProgramSourceType.PLEX,
+          },
+        },
+        populate: ['externalRefs'],
+      },
+    );
+
+    // Backfill missing season numbers
+    for (const season of seasonsMissingIndexes) {
+      const ref = season.externalRefs.$.find(
+        (ref) => ref.sourceType === ProgramSourceType.PLEX,
+      );
+      if (isUndefined(ref)) {
+        continue;
+      }
+
+      const server = find(
+        plexServers,
+        (ps) => ps.name === ref.externalSourceId,
+      );
+      if (isNil(server)) {
+        logger.warn('Could not find server with name %s', ref.externalSourceId);
+        continue;
+      }
+
+      const plex = PlexApiFactory.get(server);
+      const plexResult = await plex.doGet<PlexSeasonView>(
+        '/library/metadata/' + ref.externalKey,
+      );
+
+      if (isNil(plexResult) || plexResult.Metadata.length < 1) {
+        logger.warn(
+          'Found no result for key %s in plex server %s',
+          ref.externalKey,
+          ref.externalSourceId,
+        );
+        continue;
+      }
+
+      const plexSeason = first(plexResult.Metadata)!;
+      season.index = plexSeason.index;
+      em.persist(season);
+    }
+
+    await em.flush();
+  }
+
+  private async updateEpisodes(episodes: Loaded<Program>[]) {
+    const em = getEm();
     const seasonIds = ld
       .chain(episodes)
       .map((p) => ({ sourceId: p.externalSourceId, id: p.parentExternalKey }))

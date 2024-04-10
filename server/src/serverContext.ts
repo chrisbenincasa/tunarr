@@ -48,19 +48,7 @@ export const serverContext: () => Promise<ServerContext> = once(async () => {
   const eventService = new EventService();
   const xmltv = new XmlTvWriter();
 
-  const guideService = new TVGuideService(
-    xmltv,
-    cacheImageService,
-    eventService,
-    channelDB,
-  );
-
-  const guideService2 = new TVGuideService(
-    xmltv,
-    cacheImageService,
-    eventService,
-    channelDB,
-  );
+  const guideService = new TVGuideService(xmltv, eventService, channelDB);
 
   const customShowDB = new CustomShowDB();
 
@@ -72,7 +60,6 @@ export const serverContext: () => Promise<ServerContext> = once(async () => {
     m3uService,
     eventService,
     guideService,
-    guideService2,
     hdhrService: new HdhrService(settings, channelDB),
     customShowDB,
     channelCache,
@@ -95,16 +82,18 @@ export class ServerRequestContext {
   }
 }
 
-export const withServerContext = <T>(f: (ctx: ServerContext) => T) => {
+export const getServerContext = () => {
   const ctx = ServerRequestContext.currentServerContext();
   if (isUndefined(ctx)) throw new Error('No current server context!!');
-  return f(ctx);
+  return ctx;
+};
+
+export const withServerContext = <T>(f: (ctx: ServerContext) => T) => {
+  return f(getServerContext());
 };
 
 export const withServerContextAsync = async <T>(
   f: (ctx: ServerContext) => Promise<T>,
 ) => {
-  const ctx = ServerRequestContext.currentServerContext();
-  if (isUndefined(ctx)) throw new Error('No current server context!!');
-  return await f(ctx);
+  return await f(getServerContext());
 };

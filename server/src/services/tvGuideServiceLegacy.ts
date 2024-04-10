@@ -25,7 +25,6 @@ import createLogger from '../logger.js';
 import { Maybe } from '../types.js';
 import { groupByUniqFunc, wait } from '../util.js';
 import { XmlTvWriter } from '../xmltv.js';
-import { CacheImageService } from './cacheImageService.js';
 import { EventService } from './eventService.js';
 import throttle from './throttle.js';
 
@@ -104,7 +103,6 @@ export class TVGuideService {
   private currentLimit: number;
   private currentChannels: ChannelWithLineup[];
   private xmltv: XmlTvWriter;
-  private cacheImageService: CacheImageService;
   private eventService: EventService;
   private _throttle: () => Promise<void>;
   private updateLimit: number;
@@ -117,7 +115,6 @@ export class TVGuideService {
    **/
   constructor(
     xmltv: XmlTvWriter,
-    cacheImageService: CacheImageService,
     eventService: EventService,
     channelDb: ChannelDB,
   ) {
@@ -129,7 +126,6 @@ export class TVGuideService {
     this.currentLimit = -1;
     this.currentChannels = [];
     this.xmltv = xmltv;
-    this.cacheImageService = cacheImageService;
     this.eventService = eventService;
     this.channelDb = channelDb;
     this._throttle = throttle;
