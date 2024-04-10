@@ -20,12 +20,8 @@ export class M3uService {
 
   /**
    * Get the channel list in HLS or M3U
-   *
-   * @param {string} [type='m3u'] List type
-   * @returns {promise} Return a Promise with HLS or M3U file content
-   * @memberof M3uService
    */
-  getChannelList(host: string) {
+  getChannelList(host: string): Promise<string> {
     return this.buildM3uList(host);
   }
 
@@ -66,34 +62,26 @@ export class M3uService {
       data += `#EXTINF:0 tvg-id="1" tvg-chno="1" tvg-name="tunarr" tvg-logo="{{host}}/images/tunarr.png" group-title="tunarr",tunarr\n`;
       data += `{{host}}/setup\n`;
     }
-    const saveCacheThread = async () => {
-      try {
-        await this.fileCacheService.setCache('channels.m3u', data);
-        this.cacheReady = true;
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    await saveCacheThread();
+
+    try {
+      await this.fileCacheService.setCache('channels.m3u', data);
+      this.cacheReady = true;
+    } catch (err) {
+      console.error(err);
+    }
+
     return this.replaceHostOnM3u(host, data);
   }
 
   /**
    * Replace {{host}} string with a URL on file contents.
-   *
-   * @param {*} host
-   * @param {*} data
-   * @returns
-   * @memberof M3uService
    */
-  replaceHostOnM3u(host: string, data: string) {
+  private replaceHostOnM3u(host: string, data: string) {
     return data.replace(/\{\{host\}\}/g, host);
   }
 
   /**
    * Clear channels.m3u file from cache folder.
-   *
-   * @memberof M3uService
    */
   clearCache() {
     this.cacheReady = false;

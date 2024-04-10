@@ -2,7 +2,7 @@ import fastifyStatic from '@fastify/static';
 import { Loaded } from '@mikro-orm/core';
 import constants from '@tunarr/shared/constants';
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { isNil, isUndefined, map, once } from 'lodash-es';
+import { isNil, isNumber, isUndefined, map, once } from 'lodash-es';
 import * as fsSync from 'node:fs';
 import { join } from 'node:path';
 import { Readable } from 'stream';
@@ -32,7 +32,7 @@ const logger = createLogger(import.meta);
 let StreamCount = 0;
 
 const StreamQueryStringSchema = z.object({
-  channel: z.coerce.number().optional(),
+  channel: z.coerce.number().or(z.string().uuid()).optional(),
   m3u8: z.string().optional(),
   audioOnly: TruthyQueryParam,
   session: z.coerce.number(),
@@ -225,11 +225,6 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
   ): Promise<void> => {
     void res.header('Access-Control-Allow-Origin', '*');
     void res.hijack();
-    // Check if channel queried is valid
-    // res.on('error', (e) => {
-    //   logger.error('There was an unexpected error in stream.', e);
-    // });
-    console.log(query);
 
     if (isUndefined(query.channel)) {
       return res.status(400).send('No Channel Specified');
@@ -239,10 +234,13 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
     logger.info(`/stream audioOnly=${audioOnly}`);
     const session = query.session;
     const m3u8 = query.m3u8 === '1';
-    const channel =
-      await req.serverCtx.channelCache.getChannelConfigWithProgramsByNumber(
-        query.channel,
-      );
+    const channel = isNumber(query.channel)
+      ? await req.serverCtx.channelCache.getChannelConfigWithProgramsByNumber(
+          query.channel,
+        )
+      : await req.serverCtx.channelCache.getChannelConfigWithPrograms(
+          query.channel,
+        );
 
     if (isNil(channel)) {
       return res.status(404).send("Channel doesn't exist");

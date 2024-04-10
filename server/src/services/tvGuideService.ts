@@ -805,7 +805,6 @@ function makeEntry(
   let episodeNumber: Maybe<number>;
   let episodeTitle: Maybe<string>;
 
-  console.log(currentProgram.program);
   if (!isUndefined(currentProgram.program.icon)) {
     icon = currentProgram.program.icon;
   }
