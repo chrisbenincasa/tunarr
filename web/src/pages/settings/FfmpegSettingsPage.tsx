@@ -766,7 +766,7 @@ export default function FfmpegSettingsPage() {
               label="Disable Channel Prelude"
             />
             <FormHelperText>
-              In an attempt to improve playback, dizqueTV insets really short
+              In an attempt to improve playback, Tunarr insets really short
               clips of black screen between videos. The idea is that if the
               stream pauses because Plex is taking too long to reply, it will
               pause during one of those black screens instead of interrupting
