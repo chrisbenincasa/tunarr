@@ -1,6 +1,18 @@
 import { BasicIdParamSchema } from '@tunarr/types/api';
 import { ContentProgramSchema } from '@tunarr/types/schemas';
-import { every, find, first, isNil, isUndefined, values } from 'lodash-es';
+import axios, { AxiosHeaders, isAxiosError } from 'axios';
+import { HttpHeader } from 'fastify/types/utils.js';
+import {
+  every,
+  find,
+  first,
+  isNil,
+  isNull,
+  isUndefined,
+  omitBy,
+  values,
+} from 'lodash-es';
+import stream from 'stream';
 import z from 'zod';
 import {
   ProgramSourceType,
@@ -9,7 +21,11 @@ import {
 import { getEm } from '../dao/dataSource.js';
 import { Program } from '../dao/entities/Program.js';
 import { Plex } from '../plex.js';
+import { TruthyQueryParam } from '../types/schemas.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
+import createLogger from '../logger.js';
+
+const logger = createLogger(import.meta);
 
 const LookupExternalProgrammingSchema = z.object({
   externalId: z
@@ -50,10 +66,8 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
             .optional()
             .default(true)
             .transform((p) => (p ? 1 : 0)),
+          proxy: TruthyQueryParam.default('0'),
         }),
-        response: {
-          302: z.void(),
-        },
       },
     },
     async (req, res) => {
@@ -63,33 +77,65 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         return res.status(404).send();
       }
 
-      const plexServers = await req.serverCtx.plexServerDB.getAll();
-
       switch (program.sourceType) {
         case ProgramSourceType.PLEX: {
           if (isNil(program.plexRatingKey)) {
             return res.status(500).send();
           }
 
-          const server = find(plexServers, { name: program.externalSourceId });
+          const server = await req.serverCtx.plexServerDB.getByExternalid(
+            program.externalSourceId,
+          );
+
           if (isNil(server)) {
             return res.status(404).send();
           }
 
-          return res
-            .redirect(
-              302,
-              Plex.getThumbUrl({
-                uri: server.uri,
-                itemKey: program.plexRatingKey,
-                accessToken: server.accessToken,
-                height: req.query.height,
-                width: req.query.width,
-                upscale: req.query.upscale.toString(),
-              }),
-            )
-            .send();
+          const result = Plex.getThumbUrl({
+            uri: server.uri,
+            itemKey: program.plexRatingKey,
+            accessToken: server.accessToken,
+            height: req.query.height,
+            width: req.query.width,
+            upscale: req.query.upscale.toString(),
+          });
+
+          if (req.query.proxy) {
+            try {
+              const proxyRes = await axios.request<stream.Readable>({
+                url: result,
+                responseType: 'stream',
+              });
+
+              let headers: Partial<Record<HttpHeader, string | string[]>>;
+              if (proxyRes.headers instanceof AxiosHeaders) {
+                headers = {
+                  ...proxyRes.headers,
+                };
+              } else {
+                headers = { ...omitBy(proxyRes.headers, isNull) };
+              }
+
+              return res
+                .status(proxyRes.status)
+                .headers(headers)
+                .send(proxyRes.data);
+            } catch (e) {
+              if (isAxiosError(e) && e.response?.status === 404) {
+                logger.error(
+                  'Error retrieving thumb from Plex at url: %s. Status: 404',
+                  result,
+                );
+                return res.status(404).send();
+              }
+              throw e;
+            }
+          }
+
+          return res.redirect(302, result).send();
         }
+        default:
+          return res.status(405).send();
       }
     },
   );

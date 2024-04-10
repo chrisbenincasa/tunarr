@@ -38,6 +38,14 @@ export class PlexServerDB {
     return getEm().repo(PlexServerSettingsEntity).findOne({ uuid: id });
   }
 
+  async getByExternalid(nameOrClientId: string) {
+    return getEm()
+      .repo(PlexServerSettingsEntity)
+      .findOne({
+        $or: [{ name: nameOrClientId }, { clientIdentifier: nameOrClientId }],
+      });
+  }
+
   async deleteServer(id: string, removePrograms: boolean = true) {
     const deletedServer = await getEm().transactional(async (em) => {
       const ref = em.getReference(PlexServerSettingsEntity, id);

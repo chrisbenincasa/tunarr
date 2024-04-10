@@ -6,13 +6,14 @@ import {
   DialogContent,
   DialogTitle,
   IconButton,
+  Skeleton,
   Stack,
   Typography,
 } from '@mui/material';
 import { forProgramType } from '@tunarr/shared/util';
 import { ChannelProgram } from '@tunarr/types';
 import { isUndefined } from 'lodash-es';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { prettyItemDuration } from '../helpers/util';
 import { createExternalId } from '@tunarr/shared';
 
@@ -29,11 +30,17 @@ const formattedTitle = forProgramType({
   flex: 'Flex',
 });
 
+type ThumbLoadState = 'loading' | 'error' | 'success';
+
 export default function ProgramDetailsDialog({
   open,
   onClose,
   program,
 }: Props) {
+  const [thumbLoadState, setThumbLoadState] =
+    useState<ThumbLoadState>('loading');
+  const imageRef = useRef<HTMLImageElement>(null);
+
   const rating = useMemo(
     () =>
       forProgramType({
@@ -82,7 +89,7 @@ export default function ProgramDetailsDialog({
       forProgramType({
         content: (p) => {
           if (p.id && p.persisted) {
-            return `http://localhost:8000/api/programs/${p.id}/thumb`;
+            return `http://localhost:8000/api/programs/${p.id}/thumb?proxy=true`;
           }
 
           let key = p.uniqueId;
@@ -111,51 +118,90 @@ export default function ProgramDetailsDialog({
     [],
   );
 
-  if (isUndefined(program)) {
-    return null;
-  }
+  const thumbUrl = program ? thumbnailImage(program) : null;
+  const externalUrl = program ? externalLink(program) : null;
+  const programSummary = program ? summary(program) : null;
 
-  const thumbUrl = thumbnailImage(program);
-  const externalUrl = externalLink(program);
+  useEffect(() => {
+    setThumbLoadState('loading');
+  }, [thumbUrl]);
+
+  const onLoad = useCallback(() => {
+    setThumbLoadState('success');
+  }, [setThumbLoadState]);
+
+  const onError = useCallback(() => {
+    setThumbLoadState('error');
+  }, []);
 
   return (
-    <Dialog open={open && !isUndefined(program)} onClose={onClose}>
-      <DialogTitle>
-        {formattedTitle(program)}{' '}
-        {externalUrl && (
-          <IconButton
-            component="a"
-            target="_blank"
-            href={externalUrl}
-            size="small"
-          >
-            <OpenInNew />
-          </IconButton>
-        )}
-      </DialogTitle>
-      <DialogContent>
-        <Stack spacing={2}>
-          <Box>
-            {durationChip(program)}
-            {ratingChip(program)}
-          </Box>
-          <Stack direction="row" spacing={2}>
-            {thumbUrl ? (
-              <img
-                width={240}
-                src={thumbUrl}
-                alt={formattedTitle(program)}
-                loading="lazy"
-              />
-            ) : null}
+    program && (
+      <Dialog open={open && !isUndefined(program)} onClose={onClose}>
+        <DialogTitle>
+          {formattedTitle(program)}{' '}
+          {externalUrl && (
+            <IconButton
+              component="a"
+              target="_blank"
+              href={externalUrl}
+              size="small"
+            >
+              <OpenInNew />
+            </IconButton>
+          )}
+        </DialogTitle>
+        <DialogContent>
+          <Stack spacing={2}>
             <Box>
-              <Typography id="modal-modal-description" sx={{ mt: 1 }}>
-                {summary(program)}
-              </Typography>
+              {durationChip(program)}
+              {ratingChip(program)}
             </Box>
+            <Stack direction="row" spacing={2}>
+              <Box>
+                <Box
+                  component="img"
+                  width={240}
+                  src={thumbUrl ?? ''}
+                  alt={formattedTitle(program)}
+                  loading="lazy"
+                  onLoad={onLoad}
+                  ref={imageRef}
+                  sx={{
+                    display: thumbLoadState !== 'success' ? 'none' : undefined,
+                  }}
+                  onError={onError}
+                />
+                {(thumbLoadState === 'loading' ||
+                  thumbLoadState === 'error') && (
+                  <Skeleton
+                    variant="rectangular"
+                    width={240}
+                    height={360}
+                    animation={thumbLoadState === 'loading' ? 'pulse' : false}
+                  ></Skeleton>
+                )}
+              </Box>
+              <Box>
+                {programSummary ? (
+                  <Typography id="modal-modal-description" sx={{ mt: 1 }}>
+                    {programSummary}
+                  </Typography>
+                ) : (
+                  <Skeleton
+                    animation={false}
+                    variant="rectangular"
+                    sx={{
+                      backgroundColor: (theme) =>
+                        theme.palette.background.default,
+                    }}
+                    width={240}
+                  />
+                )}
+              </Box>
+            </Stack>
           </Stack>
-        </Stack>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+    )
   );
 }

@@ -25,6 +25,7 @@ import { wereThereTooManyAttempts } from './throttler.js';
 import { ContextChannel, Maybe, PlayerContext } from './types.js';
 import { TypedEventEmitter } from './types/eventEmitter.js';
 import { RouterPluginAsyncCallback } from './types/serverType.js';
+import { TruthyQueryParam } from './types/schemas.js';
 
 const logger = createLogger(import.meta);
 
@@ -33,7 +34,7 @@ let StreamCount = 0;
 const StreamQueryStringSchema = z.object({
   channel: z.coerce.number().optional(),
   m3u8: z.string().optional(),
-  audioOnly: z.string().transform((s) => s === 'true'),
+  audioOnly: TruthyQueryParam,
   session: z.coerce.number(),
   first: z.string().optional(),
 });
