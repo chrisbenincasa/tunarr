@@ -7,7 +7,7 @@ const constants = {
 
   VERSION_NAME: '0.1.0',
 
-  DEFAULT_DATA_DIR: '.dizquetv',
+  DEFAULT_DATA_DIR: '.tunarr',
 };
 
 const PlexClientIdentifier = 'p86cy1w47clco3ro8t92nfy1';
