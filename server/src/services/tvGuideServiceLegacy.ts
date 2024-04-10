@@ -616,12 +616,7 @@ export class TVGuideService {
 
   async refreshXML() {
     const xmltvSettings = (await getSettings()).xmlTvSettings();
-    await this.xmltv.WriteXMLTV(
-      this.cached,
-      xmltvSettings,
-      async () => await this._throttle(),
-      this.cacheImageService,
-    );
+    await this.xmltv.writeXMLTv(this.cached, xmltvSettings);
     this.eventService.push({
       type: 'xmltv',
       message: `XMLTV updated at server time = ${new Date().toISOString()}`,

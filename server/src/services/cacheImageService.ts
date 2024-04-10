@@ -120,7 +120,6 @@ export class CacheImageService {
       .createHash('md5')
       .update(imageUrl)
       .digest('base64');
-    // const encodedUrl = Buffer.from(imageUrl).toString('base64');
     await withDb(async (em) => {
       await em.repo(CachedImage).upsert({ hash: encodedUrl, url: imageUrl });
       await em.flush();

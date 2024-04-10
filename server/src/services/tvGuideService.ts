@@ -724,12 +724,7 @@ export class TVGuideService {
 
   private async refreshXML() {
     const xmltvSettings = (await getSettings()).xmlTvSettings();
-    await this.xmltv.WriteXMLTV(
-      this.cachedGuide,
-      xmltvSettings,
-      async () => await wait(),
-      this.cacheImageService,
-    );
+    await this.xmltv.writeXMLTv(this.cachedGuide, xmltvSettings);
     this.eventService.push({
       type: 'xmltv',
       message: `XMLTV updated at server time = ${new Date().toISOString()}`,
@@ -810,6 +805,7 @@ function makeEntry(
   let episodeNumber: Maybe<number>;
   let episodeTitle: Maybe<string>;
 
+  console.log(currentProgram.program);
   if (!isUndefined(currentProgram.program.icon)) {
     icon = currentProgram.program.icon;
   }

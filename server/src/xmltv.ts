@@ -8,33 +8,30 @@ import {
   isContentGuideProgram,
 } from '@tunarr/types';
 import fs from 'fs';
-import { isUndefined, keys, map } from 'lodash-es';
+import { isNil, isUndefined, keys, map } from 'lodash-es';
 import XMLWriter from 'xml-writer';
-import { CacheImageService } from './services/cacheImageService.js';
 import { ChannelPrograms } from './services/tvGuideServiceLegacy.js';
+import { wait } from './util.js';
+import createLogger from './logger.js';
 
-let isShutdown = false;
+const logger = createLogger(import.meta);
+
 let isWorking = false;
 
 export class XmlTvWriter {
-  async WriteXMLTV(
+  async writeXMLTv(
     json: Record<number, ChannelPrograms>,
     xmlSettings: XmlTvSettings,
-    throttle: () => Promise<void>,
-    cacheImageService: CacheImageService,
   ) {
-    if (isShutdown) {
-      return;
-    }
     if (isWorking) {
-      console.log('Concurrent xmltv write attempt detected, skipping');
+      logger.debug('Concurrent xmltv write attempt detected, skipping');
       return;
     }
     isWorking = true;
     try {
-      await this.writePromise(json, xmlSettings, throttle, cacheImageService);
+      await this.writePromise(json, xmlSettings);
     } catch (err) {
-      console.error('Error writing xmltv', err);
+      logger.error('Error writing xmltv: %O', err);
     }
     isWorking = false;
   }
@@ -42,8 +39,7 @@ export class XmlTvWriter {
   private writePromise(
     json: Record<string | number, ChannelPrograms>,
     xmlSettings: XmlTvSettings,
-    throttle: () => Promise<void>,
-    cacheImageService: CacheImageService,
+    // cacheImageService: CacheImageService,
   ) {
     // eslint-disable-next-line @typescript-eslint/no-misused-promises, no-async-promise-executor
     return new Promise(async (resolve, reject) => {
@@ -65,13 +61,10 @@ export class XmlTvWriter {
         );
         for (let i = 0; i < channelNumbers.length; i++) {
           const number = channelNumbers[i];
-          await this._writePrograms(
+          await this.writePrograms(
             xw,
             json[number].channel,
             json[number].programs,
-            throttle,
-            xmlSettings,
-            cacheImageService,
           );
         }
       };
@@ -80,7 +73,7 @@ export class XmlTvWriter {
           this._writeDocEnd(xw);
         })
         .catch((err) => {
-          console.error('Error', err);
+          logger.error('Error writing XMLTV: %O', err);
         })
         .then(() => ws.end());
     });
@@ -117,34 +110,21 @@ export class XmlTvWriter {
     }
   }
 
-  async _writePrograms(
+  private async writePrograms(
     xw: unknown,
     channel: Partial<Channel>,
     programs: TvGuideProgram[],
-    throttle: () => Promise<void>,
-    xmlSettings: XmlTvSettings,
-    cacheImageService: CacheImageService,
   ) {
     for (let i = 0; i < programs.length; i++) {
-      if (!isShutdown) {
-        await throttle();
-      }
-      await this._writeProgramme(
-        channel,
-        programs[i],
-        xw,
-        xmlSettings,
-        cacheImageService,
-      );
+      await wait();
+      this.writeProgramme(channel, programs[i], xw);
     }
   }
 
-  async _writeProgramme(
+  private writeProgramme(
     channel: Partial<Channel>,
     program: TvGuideProgram,
     xw,
-    xmlSettings,
-    cacheImageService: CacheImageService,
   ) {
     let title: string;
     switch (program.type) {
@@ -196,23 +176,34 @@ export class XmlTvWriter {
       );
       xw.endElement();
     }
+
     // Icon
-    if (isContentGuideProgram(program) && typeof program.icon !== 'undefined') {
+    // The persisted and id portions of this should always be true
+    // but we take the extra precaution
+    if (
+      isContentGuideProgram(program) &&
+      program.persisted &&
+      !isNil(program.id)
+    ) {
       xw.startElement('icon');
-      let icon = program.icon;
-      if (xmlSettings.enableImageCache === true) {
-        const imgUrl = await cacheImageService.registerImageOnDatabase(icon);
-        icon = `{{host}}/cache/images/${imgUrl}`;
-      }
-      xw.writeAttribute('src', icon);
+      // Disable this for now...
+      // if (xmlSettings.enableImageCache === true) {
+      //   const imgUrl = await cacheImageService.registerImageOnDatabase(icon);
+      //   icon = `{{host}}/cache/images/${imgUrl}`;
+      // }
+      xw.writeAttribute(
+        'src',
+        `{{host}}/api/programs/${program.id}/thumb?proxy=true`,
+      );
       xw.endElement();
     }
+
     // Desc
     xw.startElement('desc');
     xw.writeAttribute('lang', 'en');
     if (
       isContentGuideProgram(program) &&
-      typeof program.summary !== 'undefined' &&
+      !isNil(program.summary) &&
       program.summary.length > 0
     ) {
       xw.text(program.summary);
@@ -241,26 +232,4 @@ export class XmlTvWriter {
       ' +0000'
     );
   }
-
-  async shutdown() {
-    isShutdown = true;
-    console.log('Shutting down xmltv writer.');
-    if (isWorking) {
-      let s = 'Wait for xmltv writer...';
-      while (isWorking) {
-        console.log(s);
-        await wait(100);
-        s = 'Still waiting for xmltv writer...';
-      }
-      console.log('Write finished.');
-    } else {
-      console.log('xmltv writer had no pending jobs.');
-    }
-  }
-}
-
-function wait(x: number) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, x);
-  });
 }
