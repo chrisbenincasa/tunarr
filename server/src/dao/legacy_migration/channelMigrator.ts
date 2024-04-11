@@ -59,6 +59,7 @@ const validWatermarkPositions = [
 export type LegacyProgram = Omit<Program, 'channel'> & {
   isOffline: boolean;
   channel: number;
+  ratingKey?: string;
 };
 
 export async function createLineup(
@@ -446,7 +447,8 @@ export async function persistProgram(program: LegacyProgram) {
         dbProgram.filePath = program.file;
         dbProgram.icon = program.icon;
         dbProgram.externalKey = program.key!;
-        dbProgram.plexRatingKey = program.ratingKey!;
+        dbProgram.plexRatingKey = program.key!;
+        // dbProgram.plexRatingKey = program.ratingKey!;
         dbProgram.plexFilePath = program.plexFile;
         dbProgram.externalSourceId = program.serverKey!;
         dbProgram.showTitle = program.showTitle;

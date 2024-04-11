@@ -1159,6 +1159,18 @@
           "unique": false
         },
         {
+          "keyName": "program_source_type_external_source_id_plex_rating_key_index",
+          "columnNames": [
+            "source_type",
+            "external_source_id",
+            "plex_rating_key"
+          ],
+          "composite": true,
+          "constraint": false,
+          "primary": false,
+          "unique": false
+        },
+        {
           "keyName": "program_source_type_external_source_id_external_key_unique",
           "columnNames": [
             "source_type",

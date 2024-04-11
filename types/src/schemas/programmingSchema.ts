@@ -35,10 +35,12 @@ export const ProgramSchema = z.object({
   file: z.string().optional(),
   id: z.string(),
   icon: z.string().optional(),
+  // Deprecated
   key: z.string().optional(),
   plexFile: z.string().optional(), // Not present on offline type
   rating: z.string().optional(),
-  ratingKey: z.string().optional(), // Not present on offline type
+  // e.g. for Plex items, this is the rating key value
+  externalKey: z.string().optional(),
   season: z.number().optional(),
   seasonIcon: z.string().optional(),
   serverKey: z.string().optional(),
