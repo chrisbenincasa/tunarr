@@ -17,6 +17,7 @@ import { useCyclicShuffle } from '../../hooks/programming_controls/useCyclicShuf
 import { useRandomSort } from '../../hooks/programming_controls/useRandomSort.ts';
 import { useReleaseDateSort } from '../../hooks/programming_controls/useReleaseDateSort.ts';
 
+import { useEpisodeNumberSort } from '../../hooks/programming_controls/useEpisodeNumberSort.ts';
 import AddBlockShuffleModal from '../programming_controls/AddBlockShuffleModal.tsx';
 
 const StyledMenu = styled((props: MenuProps) => (
@@ -67,6 +68,8 @@ type SortOption =
   | 'cyclic'
   | 'alpha-asc'
   | 'alpha-desc'
+  | 'episode-asc'
+  | 'episode-desc'
   | 'release-asc'
   | 'release-desc'
   | 'block'
@@ -83,6 +86,7 @@ export function ChannelProgrammingSort() {
   const alphaSort = useAlphaSort();
   const releaseDateSort = useReleaseDateSort();
   const cyclicShuffle = useCyclicShuffle();
+  const episodeSort = useEpisodeNumberSort();
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -136,12 +140,15 @@ export function ChannelProgrammingSort() {
             Release Date {sort === 'release-asc' ? '(asc)' : '(desc)'}
           </Button>
         )}
-        {sort === 'shows' && (
+        {(sort === 'episode-asc' || sort === 'episode-desc') && (
           <Button
             startIcon={<SortTVIcon />}
-            onClick={() => console.log('todo')}
+            onClick={() => {
+              episodeSort(sort === 'episode-asc' ? 'desc' : 'asc');
+              setSort(sort === 'episode-asc' ? 'episode-desc' : 'episode-asc');
+            }}
           >
-            Sort TV Shows
+            Sort TV Shows {sort === 'episode-asc' ? '(asc)' : '(desc)'}
           </Button>
         )}
         {sort === 'block' && (
@@ -243,7 +250,8 @@ export function ChannelProgrammingSort() {
           <MenuItem
             disableRipple
             onClick={() => {
-              setSort('shows');
+              episodeSort(sort === 'episode-asc' ? 'desc' : 'asc');
+              setSort(sort === 'episode-asc' ? 'episode-desc' : 'episode-asc');
               handleClose();
             }}
           >
