@@ -10,12 +10,12 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
+import { createExternalId } from '@tunarr/shared';
 import { forProgramType } from '@tunarr/shared/util';
 import { ChannelProgram } from '@tunarr/types';
 import { isUndefined } from 'lodash-es';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { prettyItemDuration } from '../helpers/util';
-import { createExternalId } from '@tunarr/shared';
 
 type Props = {
   open: boolean;
@@ -40,6 +40,7 @@ export default function ProgramDetailsDialog({
   const [thumbLoadState, setThumbLoadState] =
     useState<ThumbLoadState>('loading');
   const imageRef = useRef<HTMLImageElement>(null);
+  console.log(thumbLoadState);
 
   const rating = useMemo(
     () =>
@@ -127,6 +128,8 @@ export default function ProgramDetailsDialog({
   }, [thumbUrl]);
 
   const onLoad = useCallback(() => {
+    console.log('test');
+
     setThumbLoadState('success');
   }, [setThumbLoadState]);
 
@@ -163,7 +166,6 @@ export default function ProgramDetailsDialog({
                   width={240}
                   src={thumbUrl ?? ''}
                   alt={formattedTitle(program)}
-                  loading="lazy"
                   onLoad={onLoad}
                   ref={imageRef}
                   sx={{
