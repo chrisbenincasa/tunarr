@@ -40,7 +40,6 @@ export default function ProgramDetailsDialog({
   const [thumbLoadState, setThumbLoadState] =
     useState<ThumbLoadState>('loading');
   const imageRef = useRef<HTMLImageElement>(null);
-  console.log(thumbLoadState);
 
   const rating = useMemo(
     () =>
@@ -128,8 +127,6 @@ export default function ProgramDetailsDialog({
   }, [thumbUrl]);
 
   const onLoad = useCallback(() => {
-    console.log('test');
-
     setThumbLoadState('success');
   }, [setThumbLoadState]);
 
