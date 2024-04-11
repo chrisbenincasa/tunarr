@@ -18,7 +18,7 @@ import { Program } from './src/dao/entities/Program.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const dbPath = path.join(process.env.DB_PATH ?? '.dizquetv', 'db.db');
+const dbPath = path.join(process.env.DB_PATH ?? '.tunarr', 'db.db');
 
 export default defineConfig({
   dbName: dbPath,

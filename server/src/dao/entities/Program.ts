@@ -22,6 +22,7 @@ import { Channel } from './Channel.js';
 import { CustomShow } from './CustomShow.js';
 import { FillerShow } from './FillerShow.js';
 import { ProgramGrouping } from './ProgramGrouping.js';
+import { createExternalId } from '@tunarr/shared';
 
 /**
  * Program represents a 'playable' entity. A movie, episode, or music track
@@ -75,6 +76,7 @@ export class Program extends BaseEntity {
 
   /**
    * Previously "ratingKey"
+   * @deprecated
    */
   @Property({ nullable: true })
   plexRatingKey?: string;
@@ -162,16 +164,16 @@ export class Program extends BaseEntity {
   @ManyToOne(() => ProgramGrouping, { nullable: true })
   artist?: Rel<ProgramGrouping>;
 
-  get contentKey() {
-    return `${this.sourceType}|${this.externalSourceId}|${this.externalKey}`;
-  }
-
   toDTO(): ProgramDTO {
     return programDaoToDto(serialize(this as Program, { skipNull: true }));
   }
 
   uniqueId(): string {
-    return `${this.sourceType}|${this.externalSourceId}|${this.externalKey}`;
+    return createExternalId(
+      this.sourceType,
+      this.externalSourceId,
+      this.externalKey,
+    );
   }
 }
 
@@ -186,7 +188,7 @@ export function programDaoToDto(program: EntityDTO<Program>): ProgramDTO {
     icon: program.icon,
     key: program.externalKey,
     rating: program.rating,
-    ratingKey: program.plexRatingKey,
+    externalKey: program.externalKey,
     season: program.seasonNumber,
     seasonIcon: program.seasonIcon,
     serverKey: program.externalSourceId,

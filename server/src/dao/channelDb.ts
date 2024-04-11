@@ -242,6 +242,7 @@ export class ChannelDB {
       return await em.transactional(async (em) => {
         channel.startTime = startTime;
         channel.duration = sumBy(lineup, typedProperty('durationMs'));
+
         const allIds = ld
           .chain(lineup)
           .filter(isContentItem)
@@ -713,11 +714,16 @@ function channelProgramToLineupItemFunc(
       id: program.id,
       customShowId: program.customShowId,
     }),
-    content: (program) => ({
-      type: 'content',
-      id: program.persisted ? program.id! : dbIdByUniqueId[program.uniqueId],
-      durationMs: program.duration,
-    }),
+    content: (program) => {
+      if (!program.persisted && !dbIdByUniqueId[program.uniqueId]) {
+        console.log(program, dbIdByUniqueId);
+      }
+      return {
+        type: 'content',
+        id: program.persisted ? program.id! : dbIdByUniqueId[program.uniqueId],
+        durationMs: program.duration,
+      };
+    },
     redirect: (program) => ({
       type: 'redirect',
       channel: program.channel,

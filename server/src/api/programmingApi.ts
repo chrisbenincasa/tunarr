@@ -79,7 +79,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
 
       switch (program.sourceType) {
         case ProgramSourceType.PLEX: {
-          if (isNil(program.plexRatingKey)) {
+          if (isNil(program.externalKey)) {
             return res.status(500).send();
           }
 
@@ -93,7 +93,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
 
           const result = Plex.getThumbUrl({
             uri: server.uri,
-            itemKey: program.plexRatingKey,
+            itemKey: program.externalKey,
             accessToken: server.accessToken,
             height: req.query.height,
             width: req.query.width,
@@ -166,7 +166,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
 
       switch (program.sourceType) {
         case ProgramSourceType.PLEX: {
-          if (isNil(program.plexRatingKey)) {
+          if (isNil(program.externalKey)) {
             return res.status(500).send();
           }
 
@@ -178,7 +178,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
           const url = `${server.uri}/web/index.html#!/server/${
             server.clientIdentifier
           }/details?key=${encodeURIComponent(
-            `/library/metadata/${program.plexRatingKey}`,
+            `/library/metadata/${program.externalKey}`,
           )}&X-Plex-Token=${server.accessToken}`;
 
           if (!req.query.forward) {
