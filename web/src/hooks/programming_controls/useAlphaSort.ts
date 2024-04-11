@@ -2,8 +2,7 @@ import { ChannelProgram, isContentProgram } from '@tunarr/types';
 import { setCurrentLineup } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
 import { materializedProgramListSelector } from '../../store/selectors.ts';
-
-export type SortOrder = 'asc' | 'desc';
+import { SortOrder } from '../../types/index.ts';
 
 export function useAlphaSort() {
   const programs = useStore(materializedProgramListSelector);

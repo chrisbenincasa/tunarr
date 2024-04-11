@@ -110,6 +110,8 @@ export type NonUndefinedGuard<T> = T extends undefined ? never : T;
 
 export type ProgramSelectorViewType = 'list' | 'grid';
 
+export type SortOrder = 'asc' | 'desc';
+
 export type AddedCustomShowProgram = {
   type: 'custom-show';
   customShowId: string;

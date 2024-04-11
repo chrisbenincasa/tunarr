@@ -1,5 +1,4 @@
 import {
-  Bolt,
   FreeBreakfast as BreaksIcon,
   Expand as FlexIcon,
   KeyboardArrowDown as KeyboardArrowDownIcon,
@@ -119,7 +118,7 @@ export default function AddProgrammingButton() {
           to="add"
           startIcon={<MediaIcon />}
         >
-          Schedule
+          Add Media
         </Button>
         <Button onClick={handleClick}>
           <KeyboardArrowDownIcon />
@@ -133,9 +132,9 @@ export default function AddProgrammingButton() {
         open={open}
         onClose={handleClose}
       >
-        <MenuItem disableRipple>
+        {/* <MenuItem disableRipple>
           <Bolt /> Make Dynamic
-        </MenuItem>
+        </MenuItem> */}
         <Tooltip
           title="Add TV Shows or Movies to programming list."
           placement="right"
