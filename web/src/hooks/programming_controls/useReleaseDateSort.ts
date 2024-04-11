@@ -3,8 +3,7 @@ import { sortBy } from 'lodash-es';
 import { setCurrentLineup } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
 import { materializedProgramListSelector } from '../../store/selectors.ts';
-
-export type SortOrder = 'asc' | 'desc';
+import { SortOrder } from '../../types/index.ts';
 
 export function useReleaseDateSort() {
   const programs = useStore(materializedProgramListSelector);
@@ -22,7 +21,6 @@ export const sortPrograms = (
 ) => {
   const newProgramSort = sortBy(programs, (p) => {
     let n;
-    console.log(p);
 
     if (isContentProgram(p)) {
       const ts = p.date ? new Date(p.date).getTime() : 0;

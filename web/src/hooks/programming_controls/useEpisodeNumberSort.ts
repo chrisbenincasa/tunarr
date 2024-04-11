@@ -1,10 +1,12 @@
-import { chain, concat } from 'lodash-es';
+import _ from 'lodash-es';
 import { setCurrentLineup } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
 import { materializedProgramListSelector } from '../../store/selectors.ts';
-import { UIChannelProgram, isUIContentProgram } from '../../types/index.ts';
-
-export type SortOrder = 'asc' | 'desc';
+import {
+  SortOrder,
+  UIChannelProgram,
+  isUIContentProgram,
+} from '../../types/index.ts';
 
 export function useEpisodeNumberSort() {
   const programs = useStore(materializedProgramListSelector);
@@ -21,13 +23,15 @@ export const sortPrograms = (
   sortOrder: SortOrder,
 ) => {
   // Extract movies since they are appended at the bottom of the list
-  const movieList = programs.filter(
-    (program) => program.type === 'content' && program.subtype === 'movie',
+  const nonShowList = programs.filter(
+    (program) =>
+      program.type === 'content' &&
+      (program.subtype === 'movie' || program.subtype === 'track'),
   );
 
   // Sort shows by showId so all unique shows are together
   // Then sort by season and episode number so they are in the correct order
-  const showList = chain(programs)
+  const showList = _.chain(programs)
     .filter(isUIContentProgram)
     .filter((program) => program.subtype === 'episode')
     .orderBy(
@@ -36,7 +40,7 @@ export const sortPrograms = (
     )
     .value();
 
-  const newProgramSort = concat(showList, movieList); // Append movies to the end of the list
+  const newProgramSort = _.concat(showList, nonShowList); // Append movies to the end of the list
 
   return { newProgramSort };
 };
