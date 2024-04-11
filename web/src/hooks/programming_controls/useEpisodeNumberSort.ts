@@ -22,7 +22,7 @@ export const sortPrograms = (
   programs: UIChannelProgram[],
   sortOrder: SortOrder,
 ) => {
-  // Extract movies since they are appended at the bottom of the list
+  // Extract movies & tracks since they are appended at the bottom of the list
   const nonShowList = programs.filter(
     (program) =>
       program.type === 'content' &&

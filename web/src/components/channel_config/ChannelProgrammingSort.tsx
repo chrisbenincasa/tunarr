@@ -14,10 +14,9 @@ import { alpha, styled } from '@mui/material/styles';
 import { useState } from 'react';
 import { useAlphaSort } from '../../hooks/programming_controls/useAlphaSort.ts';
 import { useCyclicShuffle } from '../../hooks/programming_controls/useCyclicShuffle.ts';
+import { useEpisodeNumberSort } from '../../hooks/programming_controls/useEpisodeNumberSort.ts';
 import { useRandomSort } from '../../hooks/programming_controls/useRandomSort.ts';
 import { useReleaseDateSort } from '../../hooks/programming_controls/useReleaseDateSort.ts';
-
-import { useEpisodeNumberSort } from '../../hooks/programming_controls/useEpisodeNumberSort.ts';
 import AddBlockShuffleModal from '../programming_controls/AddBlockShuffleModal.tsx';
 
 const StyledMenu = styled((props: MenuProps) => (
