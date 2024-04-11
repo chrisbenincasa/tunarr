@@ -2,6 +2,9 @@
 // but contain a bit more context and are used during an
 // active streaming session
 
+import { MarkRequired } from 'ts-essentials';
+import { Program } from '../entities/Program';
+
 type BaseStreamLineupItem = {
   err?: Error;
   originalT0?: number;
@@ -37,7 +40,7 @@ export function isProgramLineupItem(
   return item.type === 'program';
 }
 
-export function isPlexBackedLineupItem(
+export function isContentBackedLineupIteam(
   item: StreamLineupItem,
 ): item is ContentBackedStreamLineupItem {
   return isCommercialLineupItem(item) || isProgramLineupItem(item);
@@ -58,30 +61,47 @@ export type LoadingStreamLineupItem = BaseStreamLineupItem & {
   duration: number;
 };
 
-export type CommercialStreamLineupItem = BaseStreamLineupItem & {
+type BaseContentBackedStreamLineupIteam = BaseStreamLineupItem &
+  Pick<
+    MarkRequired<Program, 'plexFilePath'>,
+    | 'externalSourceId'
+    | 'filePath'
+    | 'externalKey'
+    | 'duration'
+    | 'plexFilePath'
+  > & {
+    programId: string;
+  };
+
+export type CommercialStreamLineupItem = MarkRequired<
+  BaseContentBackedStreamLineupIteam,
+  'streamDuration' | 'beginningOffset'
+> & {
   type: 'commercial';
-  key: string;
-  plexFile: string;
-  file: string;
-  ratingKey: string;
-  streamDuration: number;
-  beginningOffset: number;
-  duration: number;
-  serverKey: string;
-  fillerId: string;
+  // plexFile: string;
+  // file: string;
+  // ratingKey: string;
+  // streamDuration: number;
+  // beginningOffset: number;
+  // duration: number;
+  // serverKey: string;
+  // fillerId: string;
 };
 
-export type ProgramStreamLineupItem = BaseStreamLineupItem & {
+export type ProgramStreamLineupItem = MarkRequired<
+  BaseContentBackedStreamLineupIteam,
+  'title'
+> & {
   type: 'program';
-  key: string;
-  plexFile: string;
-  file: string;
-  ratingKey: string;
-  streamDuration?: number;
-  beginningOffset?: number;
-  duration: number;
-  serverKey: string;
-  title: string;
+  // plexFile: string;
+  // file: string;
+  // ratingKey: string;
+  // streamDuration?: number;
+  // beginningOffset?: number;
+  // duration: number;
+  // serverKey: string;
+  // title: string;
+  // uuid: string;
 };
 
 export type RedirectStreamLineupItem = Partial<

@@ -18,16 +18,18 @@
  * deal with the thrown error.
  **/
 
-import { isError } from 'lodash-es';
+import { FfmpegSettings, Watermark } from '@tunarr/types';
+import { isError, isUndefined } from 'lodash-es';
 import { Writable } from 'stream';
 import { FfmpegEvents } from './ffmpeg.js';
-import * as helperFuncs from './helperFuncs.js';
 import createLogger from './logger.js';
 import { OfflinePlayer } from './offlinePlayer.js';
 import { Player } from './player.js';
 import { PlexPlayer } from './plexPlayer.js';
-import { Maybe, PlayerContext } from './types.js';
+import { ContextChannel, Maybe, PlayerContext } from './types.js';
 import { TypedEventEmitter } from './types/eventEmitter.js';
+import { isNonEmptyString } from './util';
+import { isContentBackedLineupIteam } from './dao/derived_types/StreamLineup.js';
 
 const logger = createLogger(import.meta);
 
@@ -44,7 +46,8 @@ export class ProgramPlayer extends Player {
       // people might want the codec normalization to stay because of player support
       context.ffmpegSettings.normalizeResolution = false;
     }
-    if (typeof program.err !== 'undefined') {
+
+    if (!isUndefined(program.err)) {
       logger.debug('About to play error stream');
       this.delegate = new OfflinePlayer(true, context);
     } else if (program.type === 'loading') {
@@ -56,12 +59,12 @@ export class ProgramPlayer extends Player {
       logger.debug('About to play offline stream');
       /* offline */
       this.delegate = new OfflinePlayer(false, context);
-    } else {
+    } else if (isContentBackedLineupIteam(program) && program) {
       logger.debug('About to play plex stream');
       /* plex */
       this.delegate = new PlexPlayer(context);
     }
-    this.context.watermark = helperFuncs.getWatermark(
+    this.context.watermark = this.getWatermark(
       context.ffmpegSettings,
       context.channel,
       context.lineupItem.type,
@@ -145,5 +148,53 @@ export class ProgramPlayer extends Player {
       this.delegate = new OfflinePlayer(true, this.context);
       return await this.play(outStream);
     }
+  }
+
+  private getWatermark(
+    ffmpegSettings: FfmpegSettings,
+    channel: ContextChannel,
+    type: string,
+  ): Maybe<Watermark> {
+    if (
+      !ffmpegSettings.enableTranscoding ||
+      ffmpegSettings.disableChannelOverlay
+    ) {
+      return;
+    }
+
+    let disableFillerOverlay = channel.disableFillerOverlay;
+    if (isUndefined(disableFillerOverlay)) {
+      disableFillerOverlay = true;
+    }
+
+    if (type == 'commercial' && disableFillerOverlay) {
+      return;
+    }
+
+    if (!isUndefined(channel.watermark) && channel.watermark.enabled) {
+      const watermark = { ...channel.watermark };
+      let icon: string;
+      if (isNonEmptyString(watermark.url)) {
+        icon = watermark.url;
+      } else if (isNonEmptyString(channel.icon?.path)) {
+        icon = channel.icon.path;
+      } else {
+        return;
+      }
+
+      return {
+        enabled: true,
+        url: icon,
+        width: watermark.width,
+        verticalMargin: watermark.verticalMargin,
+        horizontalMargin: watermark.horizontalMargin,
+        duration: watermark.duration,
+        position: watermark.position,
+        fixedSize: watermark.fixedSize === true,
+        animated: watermark.animated === true,
+      };
+    }
+
+    return;
   }
 }

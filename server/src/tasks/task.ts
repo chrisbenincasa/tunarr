@@ -1,7 +1,7 @@
 import { isError, isString, round } from 'lodash-es';
 import createLogger from '../logger.js';
 import { Maybe } from '../types.js';
-import { Tag } from '../types/util.js';
+import type { Tag } from '@tunarr/types';
 
 const logger = createLogger(import.meta);
 

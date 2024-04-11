@@ -17,7 +17,7 @@ import { getSettingsRawDb } from './dao/settings.js';
 import { setGlobalOptions, setServerOptions } from './globals.js';
 import { initServer } from './server.js';
 import { ServerOptions } from './types.js';
-import { isProduction } from './util.js';
+import { isProduction } from './util';
 
 const maybeEnvPort = () => {
   const port = process.env['TUNARR_SERVER_PORT'];

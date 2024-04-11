@@ -21,7 +21,7 @@ import createLogger from '../logger.js';
 import { GlobalScheduler } from '../services/scheduler.js';
 import { UpdateXmlTvTask } from '../tasks/updateXmlTvTask.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
-import { attempt, mapAsyncSeq } from '../util.js';
+import { attempt, mapAsyncSeq } from '../util';
 
 dayjs.extend(duration);
 
@@ -82,9 +82,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     },
     async (req, res) => {
       try {
-        const channel = await req.serverCtx.channelCache.getChannelConfig(
-          req.params.id,
-        );
+        const channel = await req.serverCtx.channelDB.getChannel(req.params.id);
 
         if (!isNil(channel)) {
           return res.send(channel.toDTO());

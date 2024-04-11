@@ -9,7 +9,7 @@ export const StreamQueryStringSchema = z.object({
   m3u8: TruthyQueryParam.optional(),
   audioOnly: TruthyQueryParam,
   session: z.coerce.number(),
-  first: z.coerce.number(),
+  first: z.coerce.number().optional(),
 });
 
 export type StreamQueryString = z.infer<typeof StreamQueryStringSchema>;

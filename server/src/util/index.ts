@@ -12,7 +12,9 @@ import _, {
   isUndefined,
   map,
   once,
+  range,
   reduce,
+  zipWith,
 } from 'lodash-es';
 import fs from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
@@ -418,3 +420,10 @@ export const currentEnv = once(() => {
 export const isProduction = currentEnv() === 'production';
 export const isDev = currentEnv() === 'development';
 export const isTest = currentEnv() === 'test';
+
+export const zipWithIndex = <T>(
+  seq: readonly T[],
+  start: number = 0,
+): [T, number][] => {
+  return zipWith(seq, range(start, seq.length), (s, i) => [s, i]);
+};

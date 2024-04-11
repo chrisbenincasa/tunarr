@@ -4,20 +4,23 @@ import { ChannelDB } from './dao/channelDb.js';
 import {
   StreamLineupItem,
   isCommercialLineupItem,
-  isPlexBackedLineupItem,
 } from './dao/derived_types/StreamLineup.js';
 import { Channel } from './dao/entities/Channel.js';
+import { FillerShowId } from './dao/entities/FillerShow.js';
 import { Nullable } from './types.js';
 
 const SLACK = constants.SLACK;
 
+// All instances share the same maps.
+// TODO: This will eventually use a persistent store
+const streamPlayCache: Record<
+  string,
+  { t0: number; lineupItem: StreamLineupItem }
+> = {};
+const fillerPlayTimeCache: Record<string, number> = {};
+const programPlayTimeCache: Record<string, number> = {};
+
 export class ChannelCache {
-  private streamPlayCache: Record<
-    string,
-    { t0: number; lineupItem: StreamLineupItem }
-  > = {};
-  private fillerPlayTimeCache: Record<string, number> = {};
-  private programPlayTimeCache: Record<string, number> = {};
   private channelDb: ChannelDB;
 
   constructor(channelDb: ChannelDB) {
@@ -54,10 +57,10 @@ export class ChannelCache {
     channelId: string,
     timeNow: number,
   ): StreamLineupItem | undefined {
-    if (isUndefined(this.streamPlayCache[channelId])) {
+    if (isUndefined(streamPlayCache[channelId])) {
       return;
     }
-    const recorded = this.streamPlayCache[channelId];
+    const recorded = streamPlayCache[channelId];
     const lineupItem = { ...recorded.lineupItem };
     const timeSinceRecorded = timeNow - recorded.t0;
     let remainingTime = lineupItem.duration - (lineupItem.start ?? 0);
@@ -94,19 +97,17 @@ export class ChannelCache {
     return lineupItem;
   }
 
-  private getKey(
-    channelId: string,
-    program: { serverKey?: string; key?: string },
-  ) {
-    let serverKey = '!unknown!';
-    if (!isUndefined(program.serverKey)) {
-      serverKey = 'plex|' + program.serverKey;
-    }
-    let programKey = '!unknownProgram!';
-    if (!isUndefined(program.key)) {
-      programKey = program.key;
-    }
-    return channelId + '|' + serverKey + '|' + programKey;
+  private getKey(channelId: string, programId: string) {
+    // let serverKey = '!unknown!';
+    // if (!isUndefined(program.serverKey)) {
+    //   serverKey = 'plex|' + program.serverKey;
+    // }
+    // let programKey = '!unknownProgram!';
+    // if (!isUndefined(program.key)) {
+    //   programKey = program.key;
+    // }
+    // return channelId + '|' + serverKey + '|' + programKey;
+    return `${channelId}|${programId}`;
   }
 
   private getFillerKey(channelId: string, fillerId: string) {
@@ -119,30 +120,25 @@ export class ChannelCache {
     t0: number,
   ) {
     let remaining: number;
-    if (typeof lineupItem.streamDuration !== 'undefined') {
+    if (!isUndefined(lineupItem.streamDuration)) {
       remaining = lineupItem.streamDuration;
     } else {
       remaining = lineupItem.duration - (lineupItem.start ?? 0);
     }
-    const key = this.getKey(channelId, {
-      serverKey: isPlexBackedLineupItem(lineupItem)
-        ? lineupItem.serverKey
-        : undefined,
-      key: isPlexBackedLineupItem(lineupItem) ? lineupItem.key : undefined,
-    });
-    this.programPlayTimeCache[key] = t0 + remaining;
+
+    if (lineupItem.type === 'program') {
+      const key = this.getKey(channelId, lineupItem.programId);
+      programPlayTimeCache[key] = t0 + remaining;
+    }
+
     if (isCommercialLineupItem(lineupItem)) {
-      this.fillerPlayTimeCache[
-        this.getFillerKey(channelId, lineupItem.fillerId)
-      ] = t0 + remaining;
+      fillerPlayTimeCache[this.getFillerKey(channelId, lineupItem.programId)] =
+        t0 + remaining;
     }
   }
 
-  getProgramLastPlayTime(
-    channelId: string,
-    program: { serverKey?: string; key?: string },
-  ) {
-    const v = this.programPlayTimeCache[this.getKey(channelId, program)];
+  getProgramLastPlayTime(channelId: string, programId: string) {
+    const v = programPlayTimeCache[this.getKey(channelId, programId)];
     if (isUndefined(v)) {
       return 0;
     } else {
@@ -150,8 +146,8 @@ export class ChannelCache {
     }
   }
 
-  getFillerLastPlayTime(channelId: string, fillerId: string) {
-    const v = this.fillerPlayTimeCache[this.getFillerKey(channelId, fillerId)];
+  getFillerLastPlayTime(channelId: string, fillerId: FillerShowId) {
+    const v = fillerPlayTimeCache[this.getFillerKey(channelId, fillerId)];
     if (isUndefined(v)) {
       return 0;
     } else {
@@ -162,14 +158,14 @@ export class ChannelCache {
   recordPlayback(channelId: string, t0: number, lineupItem: StreamLineupItem) {
     this.recordProgramPlayTime(channelId, lineupItem, t0);
 
-    this.streamPlayCache[channelId] = {
+    streamPlayCache[channelId] = {
       t0: t0,
       lineupItem: lineupItem,
     };
   }
 
   clearPlayback(channelId: string) {
-    delete this.streamPlayCache[channelId];
+    delete streamPlayCache[channelId];
   }
 
   clear() {

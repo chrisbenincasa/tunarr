@@ -5,13 +5,13 @@ import {
 } from '@tunarr/types/api';
 import { filter, isNil, isString, map } from 'lodash-es';
 import { ChannelCache } from '../channelCache.js';
-import { mapAsyncSeq } from '../util.js';
+import { mapAsyncSeq } from '../util';
 import { ProgramConverter } from './converters/programConverters.js';
 import { getEm } from './dataSource.js';
 import { Channel as ChannelEntity } from './entities/Channel.js';
 import { ChannelFillerShow } from './entities/ChannelFillerShow.js';
 import { FillerListContent } from './entities/FillerListContent.js';
-import { FillerShow } from './entities/FillerShow.js';
+import { FillerShow, FillerShowId } from './entities/FillerShow.js';
 import {
   createPendingProgramIndexMap,
   upsertContentPrograms,
@@ -25,15 +25,15 @@ export class FillerDB {
     this.channelCache = channelCache;
   }
 
-  getFiller(id: string) {
+  getFiller(id: FillerShowId) {
     return getEm()
       .repo(FillerShow)
       .findOne(id, { populate: ['content.uuid'] });
   }
 
-  async saveFiller(id: string, updateRequest: UpdateFillerListRequest) {
+  async saveFiller(id: FillerShowId, updateRequest: UpdateFillerListRequest) {
     const em = getEm();
-    const filler = await em.repo(FillerShow).findOne({ uuid: id });
+    const filler = await this.getFiller(id);
 
     if (isNil(filler)) {
       return null;
@@ -144,7 +144,7 @@ export class FillerDB {
     }));
   }
 
-  async deleteFiller(id: string): Promise<void> {
+  async deleteFiller(id: FillerShowId): Promise<void> {
     // const channels = await this.getFillerChannels(id);
 
     const em = getEm();
@@ -169,7 +169,8 @@ export class FillerDB {
     return;
   }
 
-  getAllFillerIds() {
+  // Specifically cast these down for now because our TaggedType type is not portable
+  getAllFillerIds(): Promise<string[]> {
     return getEm()
       .repo(FillerShow)
       .findAll({ fields: ['uuid'] })
@@ -182,7 +183,7 @@ export class FillerDB {
       .findAll({ populate: ['*', 'content.uuid'] });
   }
 
-  async getFillerPrograms(id: string) {
+  async getFillerPrograms(id: FillerShowId) {
     const programs = await getEm()
       .repo(FillerListContent)
       .find(

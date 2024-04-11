@@ -3,10 +3,13 @@ import constants from '@tunarr/shared/constants';
 import { isNil, isUndefined, once } from 'lodash-es';
 import { PassThrough, Readable } from 'node:stream';
 import { EntityManager } from '../dao/dataSource';
-import { createOfflineStreamLineupIteam } from '../dao/derived_types/StreamLineup';
+import {
+  StreamLineupItem,
+  createOfflineStreamLineupIteam,
+} from '../dao/derived_types/StreamLineup';
 import {
   ProgramAndTimeElapsed,
-  createLineup,
+  createLineupItem,
   generateChannelContext,
   getCurrentProgramAndTimeElapsed,
 } from '../helperFuncs';
@@ -14,7 +17,7 @@ import createLogger from '../logger';
 import { ProgramPlayer } from '../programPlayer';
 import { getServerContext } from '../serverContext';
 import { wereThereTooManyAttempts } from '../throttler';
-import { ContextChannel, PlayerContext } from '../types';
+import { ContextChannel, Maybe, PlayerContext } from '../types';
 import { StreamQueryString } from '../types/schemas';
 import { deepCopy } from '../util';
 import { fileExists } from '../util/fsUtil';
@@ -44,7 +47,7 @@ type VideoStreamResult = VideoStreamSuccessResult | VideoStreamErrorResult;
 export class VideoStream {
   async startStream(
     req: StreamQueryString,
-    t0: number,
+    startTimestamp: number,
     allowSkip: boolean,
   ): Promise<VideoStreamResult> {
     const start = performance.now();
@@ -107,28 +110,34 @@ export class VideoStream {
       };
     }
 
-    // Get video lineup (array of video urls with calculated start times and durations.)
-    let lineupItem = serverCtx.channelCache.getCurrentLineupItem(
-      channel.uuid,
-      t0,
-    );
-    let currentProgram: ProgramAndTimeElapsed | undefined;
-    let channelContext: Loaded<Channel> = channel;
-    const redirectChannels: string[] = [];
-    const upperBounds: number[] = [];
-
-    // Insert 40ms of loading time in front of the stream (let's look into this one later)
+    let lineupItem: Maybe<StreamLineupItem>;
     if (isLoading) {
+      // Skip looking up program if we're doing the first loading screen
+      // Insert 40ms of loading time in front of the stream (let's look into this one later)
       lineupItem = {
         type: 'loading',
         streamDuration: 40,
         duration: 40,
         start: 0,
       };
-    } else if (isUndefined(lineupItem)) {
+    } else {
+      // Actually try and find a program
+      // Get video lineup (array of video urls with calculated start times and durations.)
+      lineupItem = serverCtx.channelCache.getCurrentLineupItem(
+        channel.uuid,
+        startTimestamp,
+      );
+    }
+
+    let currentProgram: ProgramAndTimeElapsed | undefined;
+    let channelContext: Loaded<Channel> = channel;
+    const redirectChannels: string[] = [];
+    const upperBounds: number[] = [];
+
+    if (isUndefined(lineupItem)) {
       const lineup = await serverCtx.channelDB.loadLineup(channel.uuid);
       currentProgram = await getCurrentProgramAndTimeElapsed(
-        t0,
+        startTimestamp,
         channel,
         lineup,
       );
@@ -146,13 +155,17 @@ export class VideoStream {
           break;
         }
 
-        serverCtx.channelCache.recordPlayback(channelContext.uuid, t0, {
-          type: 'offline',
-          title: 'Error',
-          err: new Error('Recursive channel redirect found'),
-          duration: 60000,
-          start: 0,
-        });
+        serverCtx.channelCache.recordPlayback(
+          channelContext.uuid,
+          startTimestamp,
+          {
+            type: 'offline',
+            title: 'Error',
+            err: new Error('Recursive channel redirect found'),
+            duration: 60000,
+            start: 0,
+          },
+        );
 
         const newChannelNumber = currentProgram.program.channel;
         const newChannel =
@@ -166,7 +179,7 @@ export class VideoStream {
           );
           logger.error("Invalid redirect to channel that doesn't exist.", err);
           currentProgram = {
-            program: createOfflineStreamLineupIteam(60000),
+            program: { ...createOfflineStreamLineupIteam(60000), err },
             timeElapsed: 0,
             programIndex: -1,
           };
@@ -176,7 +189,7 @@ export class VideoStream {
         channelContext = newChannel;
         lineupItem = serverCtx.channelCache.getCurrentLineupItem(
           newChannel.uuid,
-          t0,
+          startTimestamp,
         );
 
         if (!isUndefined(lineupItem)) {
@@ -184,7 +197,7 @@ export class VideoStream {
           break;
         } else {
           currentProgram = await getCurrentProgramAndTimeElapsed(
-            t0,
+            startTimestamp,
             newChannel,
             lineup,
           );
@@ -194,7 +207,6 @@ export class VideoStream {
 
     if (isUndefined(lineupItem)) {
       if (isNil(currentProgram)) {
-        // return res.status(500).send('server error');
         return {
           type: 'error',
           httpStatus: 500,
@@ -228,18 +240,24 @@ export class VideoStream {
         logger.info(
           'Too little time before the filler ends, skip to next slot',
         );
-        return await this.startStream(req, t0 + dt + 1, false);
+        return await this.startStream(req, startTimestamp + dt + 1, false);
       }
       if (isNil(currentProgram) || isNil(currentProgram.program)) {
-        throw "No video to play, this means there's a serious unexpected bug or the channel db is corrupted.";
+        const msg =
+          "No video to play, this means there's a serious unexpected bug or the channel db is corrupted.";
+        logger.error(msg);
+        return {
+          type: 'error',
+          httpStatus: 500,
+          message: msg,
+        };
       }
 
-      lineupItem = await createLineup(
-        serverCtx.channelCache,
+      lineupItem = await createLineupItem(
         currentProgram,
         channelContext,
         isFirst,
-      ).then((items) => items.shift());
+      );
     }
 
     if (!isLoading && !isUndefined(lineupItem)) {
@@ -262,7 +280,7 @@ export class VideoStream {
         }
         serverCtx.channelCache.recordPlayback(
           redirectChannels[i],
-          t0,
+          startTimestamp,
           lineupItem,
         );
       }
@@ -283,7 +301,11 @@ export class VideoStream {
     ].forEach((line) => logger.info(line));
 
     if (!isLoading) {
-      serverCtx.channelCache.recordPlayback(channel.uuid, t0, lineupItem!);
+      serverCtx.channelCache.recordPlayback(
+        channel.uuid,
+        startTimestamp,
+        lineupItem,
+      );
     }
 
     if (wereThereTooManyAttempts(session, lineupItem)) {
@@ -301,7 +323,7 @@ export class VideoStream {
     };
 
     const playerContext: PlayerContext = {
-      lineupItem: lineupItem!,
+      lineupItem: lineupItem,
       ffmpegSettings: ffmpegSettings,
       channel: combinedChannel,
       m3u8: m3u8,
@@ -317,17 +339,14 @@ export class VideoStream {
     let stopped = false;
 
     const stop = () => {
-      logger.info('Stop function hit...');
       if (!stopped) {
         stopped = true;
         player.cleanUp();
+        // End the stream
         // Unsure if this is right...
         outStream.push(null);
       }
     };
-
-    // let playerObj: Maybe<TypedEventEmitter<FfmpegEvents>>;
-    // res.header('Content-Type', 'video/mp2t');
 
     try {
       logger.info('About to play stream...');
@@ -349,7 +368,6 @@ export class VideoStream {
         message: 'Unable to start playing video.',
         error: err,
       };
-      // return res.status(500).send('Unable to start playing video.');
     }
 
     const logTimer = once(() => {

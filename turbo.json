@@ -14,6 +14,7 @@
       "dependsOn": ["clean", "build"],
       "outputs": ["build/**", "dist/**"]
     },
+    "build-dev": {},
     "lint": {},
     "lint-fix": {},
     "dev": {

@@ -9,7 +9,7 @@ import constants from '@tunarr/shared/constants';
 import EventEmitter from 'events';
 import { isNil, isUndefined } from 'lodash-es';
 import { Writable } from 'stream';
-import { isPlexBackedLineupItem } from './dao/derived_types/StreamLineup.js';
+import { isContentBackedLineupIteam } from './dao/derived_types/StreamLineup.js';
 import { PlexServerSettings } from './dao/entities/PlexServerSettings.js';
 import { FFMPEG, FfmpegEvents } from './ffmpeg.js';
 import createLogger from './logger.js';
@@ -60,7 +60,7 @@ export class PlexPlayer extends Player {
 
   async play(outStream: Writable) {
     const lineupItem = this.context.lineupItem;
-    if (!isPlexBackedLineupItem(lineupItem)) {
+    if (!isContentBackedLineupIteam(lineupItem)) {
       throw new Error(
         'Lineup item is not backed by Plex: ' + JSON.stringify(lineupItem),
       );
@@ -68,10 +68,10 @@ export class PlexPlayer extends Player {
     const ffmpegSettings = this.context.ffmpegSettings;
     const db = this.context.entityManager.repo(PlexServerSettings);
     const channel = this.context.channel;
-    const server = await db.findOne({ name: lineupItem.serverKey });
+    const server = await db.findOne({ name: lineupItem.externalSourceId });
     if (isNil(server)) {
       throw Error(
-        `Unable to find server "${lineupItem.serverKey}" specified by program.`,
+        `Unable to find server "${lineupItem.externalSourceId}" specified by program.`,
       );
     }
     if (server.uri.endsWith('/')) {

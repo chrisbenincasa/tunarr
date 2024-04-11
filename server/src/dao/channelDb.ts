@@ -16,6 +16,7 @@ import ld, {
   filter,
   find,
   groupBy,
+  initial,
   isEmpty,
   isNil,
   isNull,
@@ -39,7 +40,7 @@ import {
   groupByUniqAndMapAsync,
   mapAsyncSeq,
   mapReduceAsyncSeq,
-} from '../util.js';
+} from '../util';
 import { fileExists } from '../util/fsUtil.js';
 import { LineupDbAdapter } from './LineupDbAdapter.js';
 import { ProgramConverter } from './converters/programConverters.js';
@@ -484,7 +485,7 @@ export class ChannelDB {
       });
     }
     lineup.startTimeOffsets = reduce(
-      lineup.items,
+      initial(lineup.items),
       (acc, item, index) => [...acc, acc[index] + item.durationMs],
       [0],
     );
@@ -719,9 +720,6 @@ function channelProgramToLineupItemFunc(
       customShowId: program.customShowId,
     }),
     content: (program) => {
-      if (!program.persisted && !dbIdByUniqueId[program.uniqueId]) {
-        console.log(program, dbIdByUniqueId);
-      }
       return {
         type: 'content',
         id: program.persisted ? program.id! : dbIdByUniqueId[program.uniqueId],

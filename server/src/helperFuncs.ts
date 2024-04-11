@@ -1,92 +1,117 @@
 import { EntityDTO, Loaded, wrap } from '@mikro-orm/core';
 import constants from '@tunarr/shared/constants';
-import { FfmpegSettings, Watermark } from '@tunarr/types';
-import { first, isEmpty, isError, isNil, isUndefined, pick } from 'lodash-es';
-import * as randomJS from 'random-js';
-import { ChannelCache } from './channelCache.js';
+import { every, first, isError, isNil, isNull, negate, pick } from 'lodash-es';
+import { getEm } from './dao/dataSource.js';
 import {
   Lineup,
   isContentItem,
   isOfflineItem,
 } from './dao/derived_types/Lineup.js';
 import {
-  OfflineStreamLineupItem,
   ProgramStreamLineupItem,
-  RedirectStreamLineupItem,
   StreamLineupItem,
   createOfflineStreamLineupIteam,
   isOfflineLineupItem,
 } from './dao/derived_types/StreamLineup.js';
 import { Channel } from './dao/entities/Channel.js';
-import { ChannelFillerShow } from './dao/entities/ChannelFillerShow.js';
 import { Program as ProgramEntity } from './dao/entities/Program.js';
+import createLogger from './logger.js';
 import { getServerContext } from './serverContext.js';
-import {
-  CHANNEL_CONTEXT_KEYS,
-  ContextChannel,
-  // LineupItem,
-  Maybe,
-  Nullable,
-} from './types.js';
-import { isNonEmptyString } from './util.js';
-import { getEm } from './dao/dataSource.js';
+import { FillerPicker } from './services/FillerPicker.js';
+import { CHANNEL_CONTEXT_KEYS, ContextChannel, Nullable } from './types.js';
+import { zipWithIndex } from './util';
+import { binarySearchRange } from './util/binarySearch.js';
+import { random } from './util/random.js';
 
 const SLACK = constants.SLACK;
-const DEFAULT_FILLER_COOLDOWN_MS = 30 * 60 * 1000;
-
-const Random = randomJS.Random;
-
-const random = new Random(randomJS.MersenneTwister19937.autoSeed());
 
 // Figure out this type later...
 export type ProgramAndTimeElapsed = {
-  program: StreamLineupItem & { err?: Error }; //DeepReadonly<Program> & { err?: Error };
+  program: StreamLineupItem & { err?: Error };
   timeElapsed: number;
   programIndex: number;
 };
 
+const logger = createLogger(import.meta);
+
 // This code is almost identical to TvGuideService#getCurrentPlayingIndex
 export async function getCurrentProgramAndTimeElapsed(
-  time: number,
+  timestamp: number,
   channel: Loaded<Channel>,
   channelLineup: Lineup,
 ): Promise<ProgramAndTimeElapsed> {
-  if (channel.startTime > time) {
-    const t0 = time;
-    const t1 = channel.startTime;
-    console.log(
+  if (channel.startTime > timestamp) {
+    logger.debug(
       'Channel start time is above the given date. Flex time is picked till that.',
     );
     return {
-      program: createOfflineStreamLineupIteam(t1 - t0),
+      program: createOfflineStreamLineupIteam(channel.startTime - timestamp),
       timeElapsed: 0,
       programIndex: -1,
     };
   }
 
-  let timeElapsed = (time - channel.startTime) % channel.duration;
-  let currentProgramIndex = -1;
-  for (let y = 0, l2 = channelLineup.items.length; y < l2; y++) {
-    const program = channelLineup.items[y];
-    if (timeElapsed - program.durationMs < 0) {
-      // We found the program we are looking for
-      currentProgramIndex = y;
+  let timeElapsed: number;
+  let currentProgramIndex: number = -1;
+  // This is an optimization. We should have precalculated offsets on the channel
+  // We can find the current playing index using binary search on these, just like
+  // when creating the TV guide.
+  // TODO: We should make this required before v1.0
+  if (channelLineup.startTimeOffsets) {
+    const timeSinceStart = timestamp - channel.startTime;
+    // How far into the current program cycle are we.
+    const elapsed =
+      timeSinceStart < channel.duration
+        ? timeSinceStart
+        : timeSinceStart % channel.duration;
 
-      if (
-        program.durationMs > 2 * SLACK &&
-        timeElapsed > program.durationMs - SLACK
-      ) {
+    const programIndex = binarySearchRange(
+      channelLineup.startTimeOffsets,
+      elapsed,
+    );
+
+    if (!isNull(programIndex)) {
+      currentProgramIndex = programIndex;
+      const foundOffset = channelLineup.startTimeOffsets[programIndex];
+      // Mark how far 'into' the channel we are.
+      timeElapsed = elapsed - foundOffset;
+      const program = channelLineup.items[programIndex];
+      if (timeElapsed > program.durationMs - SLACK) {
+        // Go to the next program if we're very close to the end
+        // of the current one. No sense in starting a brand new
+        // stream for a couple of seconds.
         timeElapsed = 0;
-        currentProgramIndex = (y + 1) % channelLineup.items.length;
+        currentProgramIndex = (programIndex + 1) % channelLineup.items.length;
       }
-      break;
     } else {
-      timeElapsed -= program.durationMs;
+      // Throw below.
+      timeElapsed = 0;
+      currentProgramIndex = -1;
+    }
+  } else {
+    // Original logic - this is a fallback now.
+    timeElapsed = (timestamp - channel.startTime) % channel.duration;
+    for (const [program, index] of zipWithIndex(channelLineup.items)) {
+      if (timeElapsed - program.durationMs < 0) {
+        // We found the program we are looking for
+        currentProgramIndex = index;
+
+        if (
+          program.durationMs > 2 * SLACK &&
+          timeElapsed > program.durationMs - SLACK
+        ) {
+          timeElapsed = 0;
+          currentProgramIndex = (index + 1) % channelLineup.items.length;
+        }
+        break;
+      } else {
+        timeElapsed -= program.durationMs;
+      }
     }
   }
 
   if (currentProgramIndex === -1) {
-    throw new Error('No program found; find algorithm fucked up');
+    throw new Error('No program found; find algorithm messed up');
   }
 
   const lineupItem = channelLineup.items[currentProgramIndex];
@@ -97,40 +122,35 @@ export async function getCurrentProgramAndTimeElapsed(
       uuid: lineupItem.id,
     });
 
-    let programItem: StreamLineupItem;
-    if (isNil(backingItem)) {
-      // TODO put a logger warning here
-      programItem = {
-        duration: lineupItem.durationMs,
-        type: 'offline',
-      };
-    } else {
-      programItem = {
-        ...backingItem,
-        type: 'program',
-        plexFile: backingItem.plexFilePath!,
-        ratingKey: backingItem.plexRatingKey!,
-        key: backingItem.externalKey,
-        file: backingItem.filePath!,
-        serverKey: backingItem.externalSourceId,
-        duration: backingItem.duration,
-      };
-    }
-
-    program = programItem;
-  } else if (isOfflineItem(lineupItem)) {
-    const programItem: OfflineStreamLineupItem = {
+    program = {
       duration: lineupItem.durationMs,
       type: 'offline',
     };
-    program = programItem;
+
+    if (!isNil(backingItem) && programHasRequiredStreamingFields(backingItem)) {
+      // TODO put a logger warning here
+      program = {
+        type: 'program',
+        plexFilePath: backingItem.plexFilePath!,
+        externalKey: backingItem.externalKey,
+        filePath: backingItem.filePath!,
+        externalSourceId: backingItem.externalSourceId,
+        duration: backingItem.duration,
+        programId: backingItem.uuid,
+        title: backingItem.title,
+      };
+    }
+  } else if (isOfflineItem(lineupItem)) {
+    program = {
+      duration: lineupItem.durationMs,
+      type: 'offline',
+    };
   } else {
-    const programItem: RedirectStreamLineupItem = {
+    program = {
       duration: lineupItem.durationMs,
       channel: lineupItem.channel,
       type: 'redirect',
     };
-    program = programItem;
   }
 
   return {
@@ -140,18 +160,24 @@ export async function getCurrentProgramAndTimeElapsed(
   };
 }
 
+function programHasRequiredStreamingFields(program: Loaded<ProgramEntity>) {
+  return every(
+    [program.plexFilePath, program.plexRatingKey, program.filePath],
+    negate(isNil),
+  );
+}
+
 // TODO: This only ever returns a single-element array - fix the return type to simplify things
 // The naming is also kinda terrible - maybe it changed over time? This function seems to do one of:
 // 1. If the current item is an error item, return it with the time remaining until next up
 // 2. If the current program is "offline" type, try to pick best fitting content among fillter
 // 2b. If no fillter content is found, then pad with more offline time
 // 3. Return the currently playing "real" program
-export async function createLineup(
-  channelCache: ChannelCache,
+export async function createLineupItem(
   obj: ProgramAndTimeElapsed,
   channel: Loaded<Channel>,
   isFirst: boolean,
-): Promise<StreamLineupItem[]> {
+): Promise<StreamLineupItem> {
   let timeElapsed = obj.timeElapsed;
   // Start time of a file is never consistent unless 0. Run time of an episode can vary.
   // When within 30 seconds of start time, just make the time 0 to smooth things out
@@ -159,11 +185,9 @@ export async function createLineup(
   const activeProgram = obj.program;
   let beginningOffset = 0;
 
-  const lineup: StreamLineupItem[] = [];
-
   if (isError(activeProgram)) {
     const remaining = activeProgram.duration - timeElapsed;
-    lineup.push({
+    return {
       type: 'offline',
       title: 'Error',
       err: activeProgram.err,
@@ -171,8 +195,7 @@ export async function createLineup(
       duration: remaining,
       start: 0,
       beginningOffset: beginningOffset,
-    });
-    return lineup;
+    };
   }
 
   if (isOfflineLineupItem(activeProgram)) {
@@ -192,8 +215,7 @@ export async function createLineup(
     }
 
     // Pick a random filler, too
-    const randomResult = pickRandomWithMaxDuration(
-      channelCache,
+    const randomResult = new FillerPicker().pickRandomWithMaxDuration(
       channel,
       fillerPrograms,
       remaining + (isFirst ? 7 * 24 * 60 * 60 * 1000 : 0),
@@ -232,42 +254,37 @@ export async function createLineup(
         fillerstart += random.integer(0, more);
       }
 
-      lineup.push({
+      return {
         // just add the video, starting at 0, playing the entire duration
         type: 'commercial',
         title: filler.title,
-        key: filler.externalKey,
-        // plexFile: filler.plexFile!,
-        plexFile: '', // When is this used
-        file: filler.filePath!,
-        ratingKey: filler.plexRatingKey!,
+        filePath: filler.filePath!,
+        externalKey: filler.externalKey,
         start: fillerstart,
         streamDuration: Math.max(
           1,
           Math.min(filler.duration - fillerstart, remaining),
         ),
         duration: filler.duration,
-        fillerId: filler.uuid,
+        programId: filler.uuid,
         beginningOffset: beginningOffset,
-        serverKey: filler.externalSourceId,
-      });
-
-      return lineup;
+        externalSourceId: filler.externalSourceId,
+        plexFilePath: filler.plexFilePath!,
+      };
     }
     // pick the offline screen
     remaining = Math.min(remaining, 10 * 60 * 1000);
     //don't display the offline screen for longer than 10 minutes. Maybe the
     //channel's admin might change the schedule during that time and then
     //it would be better to start playing the content.
-    lineup.push({
+    return {
       type: 'offline',
       title: 'Channel Offline',
       streamDuration: remaining,
       beginningOffset: beginningOffset,
       duration: remaining,
       start: 0,
-    });
-    return lineup;
+    };
   }
   const originalTimeElapsed = timeElapsed;
   if (timeElapsed < 30000) {
@@ -275,195 +292,16 @@ export async function createLineup(
   }
   beginningOffset = Math.max(0, originalTimeElapsed - timeElapsed);
 
-  return [
-    {
-      ...(activeProgram as ProgramStreamLineupItem),
-      type: 'program',
-      start: timeElapsed,
-      streamDuration: activeProgram.duration - timeElapsed,
-      beginningOffset: beginningOffset,
-    },
-  ];
-}
-
-function weighedPick(a: number, total: number) {
-  return random.bool(a, total);
-}
-
-// Exported for debugging purposes only
-export function pickRandomWithMaxDuration(
-  channelCache: ChannelCache,
-  channel: Channel,
-  fillers: Loaded<ChannelFillerShow, 'fillerShow' | 'fillerShow.content'>[],
-  maxDuration: number,
-): {
-  fillerId: Nullable<string>;
-  filler: Nullable<EntityDTO<ProgramEntity>>;
-  minimumWait: number;
-} {
-  if (isEmpty(fillers)) {
-    return {
-      fillerId: null,
-      filler: null,
-      minimumWait: Number.MAX_SAFE_INTEGER,
-    };
-  }
-
-  let fillerPrograms = fillers.reduce(
-    (o, x) => [...o, ...x.fillerShow.content.$.toArray()],
-    [] as EntityDTO<Loaded<ProgramEntity, never>>[],
-  );
-
-  let pick1: Maybe<EntityDTO<Loaded<ProgramEntity, never>>>;
-  const t0 = new Date().getTime();
-  let minimumWait = 1000000000;
-  const D = 7 * 24 * 60 * 60 * 1000;
-  const E = 5 * 60 * 60 * 1000;
-  let fillerRepeatCooldownMs = 0;
-  if (isUndefined(channel.fillerRepeatCooldown)) {
-    fillerRepeatCooldownMs = DEFAULT_FILLER_COOLDOWN_MS;
-  }
-
-  let listM = 0;
-  let fillerId: Maybe<string> = undefined;
-  for (let j = 0; j < fillers.length; j++) {
-    fillerPrograms = fillers[j].fillerShow.content.$.toArray();
-    let pickedList = false;
-    let n = 0;
-
-    for (let i = 0; i < fillerPrograms.length; i++) {
-      const clip = fillerPrograms[i];
-      // a few extra milliseconds won't hurt anyone, would it? dun dun dun
-      if (clip.duration <= maxDuration + SLACK) {
-        const t1 = channelCache.getProgramLastPlayTime(channel.uuid, {
-          serverKey: clip.externalSourceId,
-          key: clip.externalKey,
-        });
-        let timeSince = t1 == 0 ? D : t0 - t1;
-
-        if (timeSince < fillerRepeatCooldownMs - SLACK) {
-          const w = fillerRepeatCooldownMs - timeSince;
-          if (clip.duration + w <= maxDuration + SLACK) {
-            minimumWait = Math.min(minimumWait, w);
-          }
-          timeSince = 0;
-          //30 minutes is too little, don't repeat it at all
-        } else if (!pickedList) {
-          const t1 = channelCache.getFillerLastPlayTime(
-            channel.uuid,
-            fillers[j].fillerShow.uuid,
-          );
-          const timeSince = t1 == 0 ? D : t0 - t1;
-          if (timeSince + SLACK >= fillers[j].cooldown.asSeconds()) {
-            //should we pick this list?
-            listM += fillers[j].weight;
-            if (weighedPick(fillers[j].weight, listM)) {
-              pickedList = true;
-              fillerId = fillers[j].fillerShow.uuid;
-              n = 0;
-            } else {
-              break;
-            }
-          } else {
-            const w = fillers[j].cooldown.asSeconds() - timeSince;
-            if (clip.duration + w <= maxDuration + SLACK) {
-              minimumWait = Math.min(minimumWait, w);
-            }
-
-            break;
-          }
-        }
-        if (timeSince <= 0) {
-          continue;
-        }
-        const s = norm_s(timeSince >= E ? E : timeSince);
-        const d = norm_d(clip.duration);
-        const w = s + d;
-        n += w;
-        if (weighedPick(w, n)) {
-          pick1 = clip;
-        }
-      }
-    }
-  }
-
   return {
-    fillerId: fillerId!,
-    filler: isNil(pick1)
-      ? null
-      : {
-          ...pick1,
-          // fillerId: fillerId,
-          duration: pick1.duration,
-        },
-    minimumWait: minimumWait,
+    ...(activeProgram as ProgramStreamLineupItem),
+    type: 'program',
+    start: timeElapsed,
+    streamDuration: activeProgram.duration - timeElapsed,
+    beginningOffset: beginningOffset,
   };
 }
 
-function norm_d(x: number) {
-  x /= 60 * 1000;
-  if (x >= 3.0) {
-    x = 3.0 + Math.log(x);
-  }
-  const y = 10000 * (Math.ceil(x * 1000) + 1);
-  return Math.ceil(y / 1000000) + 1;
-}
-
-function norm_s(x: number) {
-  let y = Math.ceil(x / 600) + 1;
-  y = y * y;
-  return Math.ceil(y / 1000000) + 1;
-}
-
 // any channel thing used here should be added to channel context
-export function getWatermark(
-  ffmpegSettings: FfmpegSettings,
-  channel: ContextChannel,
-  type: string,
-): Maybe<Watermark> {
-  if (
-    !ffmpegSettings.enableTranscoding ||
-    ffmpegSettings.disableChannelOverlay
-  ) {
-    return;
-  }
-
-  let disableFillerOverlay = channel.disableFillerOverlay;
-  if (isUndefined(disableFillerOverlay)) {
-    disableFillerOverlay = true;
-  }
-
-  if (type == 'commercial' && disableFillerOverlay) {
-    return;
-  }
-
-  if (!isUndefined(channel.watermark) && channel.watermark.enabled) {
-    const watermark = { ...channel.watermark };
-    let icon: string;
-    if (isNonEmptyString(watermark.url)) {
-      icon = watermark.url;
-    } else if (isNonEmptyString(channel.icon?.path)) {
-      icon = channel.icon.path;
-    } else {
-      return;
-    }
-
-    return {
-      enabled: true,
-      url: icon,
-      width: watermark.width,
-      verticalMargin: watermark.verticalMargin,
-      horizontalMargin: watermark.horizontalMargin,
-      duration: watermark.duration,
-      position: watermark.position,
-      fixedSize: watermark.fixedSize === true,
-      animated: watermark.animated === true,
-    };
-  }
-
-  return;
-}
-
 export function generateChannelContext(
   channel: Loaded<Channel, never, '*'>,
 ): ContextChannel {

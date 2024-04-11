@@ -8,8 +8,8 @@ import { Task, TaskId } from '../tasks/task.js';
 import { UpdateXmlTvTask } from '../tasks/updateXmlTvTask.js';
 import { Maybe } from '../types.js';
 import { typedProperty } from '../types/path.js';
-import { Tag } from '../types/util.js';
 import { ScheduledTask } from './ScheduledTask.js';
+import type { Tag } from '@tunarr/types';
 
 export const logger = createLogger(import.meta);
 
