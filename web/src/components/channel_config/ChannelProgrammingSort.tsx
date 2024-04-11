@@ -202,6 +202,7 @@ export function ChannelProgrammingSort() {
             disableRipple
             onClick={() => {
               setSort('cyclic');
+              cyclicShuffle();
               handleClose();
             }}
           >
