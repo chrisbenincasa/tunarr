@@ -10,12 +10,12 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
+import { createExternalId } from '@tunarr/shared';
 import { forProgramType } from '@tunarr/shared/util';
 import { ChannelProgram } from '@tunarr/types';
 import { isUndefined } from 'lodash-es';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { prettyItemDuration } from '../helpers/util';
-import { createExternalId } from '@tunarr/shared';
 
 type Props = {
   open: boolean;
@@ -163,7 +163,6 @@ export default function ProgramDetailsDialog({
                   width={240}
                   src={thumbUrl ?? ''}
                   alt={formattedTitle(program)}
-                  loading="lazy"
                   onLoad={onLoad}
                   ref={imageRef}
                   sx={{
