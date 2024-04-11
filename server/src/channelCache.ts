@@ -12,8 +12,10 @@ import { Nullable } from './types.js';
 const SLACK = constants.SLACK;
 
 export class ChannelCache {
-  private cache: Record<number, { t0: number; lineupItem: StreamLineupItem }> =
-    {};
+  private streamPlayCache: Record<
+    string,
+    { t0: number; lineupItem: StreamLineupItem }
+  > = {};
   private fillerPlayTimeCache: Record<string, number> = {};
   private programPlayTimeCache: Record<string, number> = {};
   private channelDb: ChannelDB;
@@ -49,13 +51,13 @@ export class ChannelCache {
   }
 
   getCurrentLineupItem(
-    channelId: number,
+    channelId: string,
     timeNow: number,
   ): StreamLineupItem | undefined {
-    if (isUndefined(this.cache[channelId])) {
+    if (isUndefined(this.streamPlayCache[channelId])) {
       return;
     }
-    const recorded = this.cache[channelId];
+    const recorded = this.streamPlayCache[channelId];
     const lineupItem = { ...recorded.lineupItem };
     const timeSinceRecorded = timeNow - recorded.t0;
     let remainingTime = lineupItem.duration - (lineupItem.start ?? 0);
@@ -86,13 +88,16 @@ export class ChannelCache {
         return;
       }
     }
-    if (lineupItem.start ?? 0 + SLACK > lineupItem.duration) {
+    if ((lineupItem.start ?? 0) + SLACK > lineupItem.duration) {
       return;
     }
     return lineupItem;
   }
 
-  getKey(channelId: number, program: { serverKey?: string; key?: string }) {
+  private getKey(
+    channelId: string,
+    program: { serverKey?: string; key?: string },
+  ) {
     let serverKey = '!unknown!';
     if (!isUndefined(program.serverKey)) {
       serverKey = 'plex|' + program.serverKey;
@@ -104,12 +109,12 @@ export class ChannelCache {
     return channelId + '|' + serverKey + '|' + programKey;
   }
 
-  private getFillerKey(channelId: number, fillerId: string) {
+  private getFillerKey(channelId: string, fillerId: string) {
     return channelId + '|' + fillerId;
   }
 
   private recordProgramPlayTime(
-    channelId: number,
+    channelId: string,
     lineupItem: StreamLineupItem,
     t0: number,
   ) {
@@ -134,7 +139,7 @@ export class ChannelCache {
   }
 
   getProgramLastPlayTime(
-    channelId: number,
+    channelId: string,
     program: { serverKey?: string; key?: string },
   ) {
     const v = this.programPlayTimeCache[this.getKey(channelId, program)];
@@ -145,7 +150,7 @@ export class ChannelCache {
     }
   }
 
-  getFillerLastPlayTime(channelId: number, fillerId: string) {
+  getFillerLastPlayTime(channelId: string, fillerId: string) {
     const v = this.fillerPlayTimeCache[this.getFillerKey(channelId, fillerId)];
     if (isUndefined(v)) {
       return 0;
@@ -154,17 +159,17 @@ export class ChannelCache {
     }
   }
 
-  recordPlayback(channelId: number, t0: number, lineupItem: StreamLineupItem) {
+  recordPlayback(channelId: string, t0: number, lineupItem: StreamLineupItem) {
     this.recordProgramPlayTime(channelId, lineupItem, t0);
 
-    this.cache[channelId] = {
+    this.streamPlayCache[channelId] = {
       t0: t0,
       lineupItem: lineupItem,
     };
   }
 
-  clearPlayback(channelId: number) {
-    delete this.cache[channelId];
+  clearPlayback(channelId: string) {
+    delete this.streamPlayCache[channelId];
   }
 
   clear() {

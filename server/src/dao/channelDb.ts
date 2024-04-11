@@ -19,6 +19,7 @@ import ld, {
   isEmpty,
   isNil,
   isNull,
+  isNumber,
   map,
   nth,
   omitBy,
@@ -31,7 +32,6 @@ import fs from 'node:fs/promises';
 import { join } from 'path';
 import { globalOptions } from '../globals.js';
 import createLogger from '../logger.js';
-import { Nullable } from '../types.js';
 import { typedProperty } from '../types/path.js';
 import {
   groupByFunc,
@@ -131,12 +131,16 @@ const fileDbCache: Record<string | number, Low<Lineup>> = {};
 export class ChannelDB {
   #programConverter = new ProgramConverter();
 
-  getChannelByNumber(channelNumber: number): Promise<Nullable<Channel>> {
+  getChannelByNumber(channelNumber: number) {
     return getEm().repo(Channel).findOne({ number: channelNumber });
   }
 
   getChannelById(id: string) {
     return getEm().repo(Channel).findOne({ uuid: id });
+  }
+
+  getChannel(id: string | number) {
+    return isNumber(id) ? this.getChannelByNumber(id) : this.getChannelById(id);
   }
 
   getChannelAndPrograms(uuid: string) {

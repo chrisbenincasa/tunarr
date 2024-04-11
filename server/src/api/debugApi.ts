@@ -150,13 +150,9 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
     now: number,
   ) {
     let lineupItem: Maybe<StreamLineupItem> =
-      req.serverCtx.channelCache.getCurrentLineupItem(channel.number, now);
+      req.serverCtx.channelCache.getCurrentLineupItem(channel.uuid, now);
 
     logger.info('lineupItem: %O', lineupItem);
-
-    const fillers = await req.serverCtx.fillerDB.getFillersFromChannel(
-      channel.number,
-    );
 
     if (isNil(lineupItem)) {
       lineupItem = (
@@ -168,7 +164,6 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
             await req.serverCtx.channelDB.loadLineup(channel.uuid),
           ),
           channel,
-          fillers,
           false,
         )
       ).shift();
@@ -334,10 +329,6 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
         ? req.serverCtx.channelCache
         : new ChannelCache(req.serverCtx.channelDB);
 
-      const fillers = await req.serverCtx.fillerDB.getFillersFromChannel(
-        channel.number,
-      );
-
       const lineup = await helperFuncs.createLineup(
         channelCache,
         helperFuncs.getCurrentProgramAndTimeElapsed(
@@ -346,7 +337,6 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
           await req.serverCtx.channelDB.loadLineup(channel.uuid),
         ),
         channel,
-        fillers,
         false,
       );
 

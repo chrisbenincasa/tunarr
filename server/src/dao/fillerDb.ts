@@ -3,7 +3,7 @@ import {
   CreateFillerListRequest,
   UpdateFillerListRequest,
 } from '@tunarr/types/api';
-import { filter, isNil, map } from 'lodash-es';
+import { filter, isNil, isString, map } from 'lodash-es';
 import { ChannelCache } from '../channelCache.js';
 import { mapAsyncSeq } from '../util.js';
 import { ProgramConverter } from './converters/programConverters.js';
@@ -205,13 +205,15 @@ export class FillerDB {
   }
 
   async getFillersFromChannel(
-    channelNumber: number,
+    channelId: string | number,
   ): Promise<Loaded<ChannelFillerShow, 'fillerShow' | 'fillerShow.content'>[]> {
     const em = getEm();
     return await em.find(
       ChannelFillerShow,
       {
-        channel: { number: channelNumber },
+        channel: isString(channelId)
+          ? { uuid: channelId }
+          : { number: channelId },
       },
       { populate: ['fillerShow', 'fillerShow.content'] },
     );

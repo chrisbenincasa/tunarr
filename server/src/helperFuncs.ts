@@ -20,6 +20,7 @@ import {
 import { Channel } from './dao/entities/Channel.js';
 import { ChannelFillerShow } from './dao/entities/ChannelFillerShow.js';
 import { Program as ProgramEntity } from './dao/entities/Program.js';
+import { getServerContext } from './serverContext.js';
 import {
   CHANNEL_CONTEXT_KEYS,
   ContextChannel,
@@ -28,10 +29,14 @@ import {
   Nullable,
 } from './types.js';
 import { isNonEmptyString } from './util.js';
+import { getEm } from './dao/dataSource.js';
 
 const SLACK = constants.SLACK;
+const DEFAULT_FILLER_COOLDOWN_MS = 30 * 60 * 1000;
+
 const Random = randomJS.Random;
-export const random = new Random(randomJS.MersenneTwister19937.autoSeed());
+
+const random = new Random(randomJS.MersenneTwister19937.autoSeed());
 
 // Figure out this type later...
 export type ProgramAndTimeElapsed = {
@@ -40,11 +45,12 @@ export type ProgramAndTimeElapsed = {
   programIndex: number;
 };
 
-export function getCurrentProgramAndTimeElapsed(
+// This code is almost identical to TvGuideService#getCurrentPlayingIndex
+export async function getCurrentProgramAndTimeElapsed(
   time: number,
-  channel: Loaded<Channel, 'programs'>,
+  channel: Loaded<Channel>,
   channelLineup: Lineup,
-): ProgramAndTimeElapsed {
+): Promise<ProgramAndTimeElapsed> {
   if (channel.startTime > time) {
     const t0 = time;
     const t1 = channel.startTime;
@@ -57,20 +63,21 @@ export function getCurrentProgramAndTimeElapsed(
       programIndex: -1,
     };
   }
+
   let timeElapsed = (time - channel.startTime) % channel.duration;
   let currentProgramIndex = -1;
   for (let y = 0, l2 = channelLineup.items.length; y < l2; y++) {
     const program = channelLineup.items[y];
     if (timeElapsed - program.durationMs < 0) {
+      // We found the program we are looking for
       currentProgramIndex = y;
-      // I'm pretty sure this allows for a little skew in
-      // the start time of the next show
+
       if (
         program.durationMs > 2 * SLACK &&
         timeElapsed > program.durationMs - SLACK
       ) {
         timeElapsed = 0;
-        currentProgramIndex = (y + 1) % channel.programs.length;
+        currentProgramIndex = (y + 1) % channelLineup.items.length;
       }
       break;
     } else {
@@ -85,19 +92,31 @@ export function getCurrentProgramAndTimeElapsed(
   const lineupItem = channelLineup.items[currentProgramIndex];
   let program: StreamLineupItem;
   if (isContentItem(lineupItem)) {
-    const backingItem = channel.programs.find(
-      ({ uuid }) => uuid === lineupItem.id,
-    )!;
-    const programItem: ProgramStreamLineupItem = {
-      ...backingItem,
-      type: 'program',
-      plexFile: backingItem.plexFilePath!,
-      ratingKey: backingItem.plexRatingKey!,
-      key: backingItem.externalKey,
-      file: backingItem.filePath!,
-      serverKey: backingItem.externalSourceId,
-      duration: backingItem.duration,
-    };
+    // Defer program lookup
+    const backingItem = await getEm().findOne(ProgramEntity, {
+      uuid: lineupItem.id,
+    });
+
+    let programItem: StreamLineupItem;
+    if (isNil(backingItem)) {
+      // TODO put a logger warning here
+      programItem = {
+        duration: lineupItem.durationMs,
+        type: 'offline',
+      };
+    } else {
+      programItem = {
+        ...backingItem,
+        type: 'program',
+        plexFile: backingItem.plexFilePath!,
+        ratingKey: backingItem.plexRatingKey!,
+        key: backingItem.externalKey,
+        file: backingItem.filePath!,
+        serverKey: backingItem.externalSourceId,
+        duration: backingItem.duration,
+      };
+    }
+
     program = programItem;
   } else if (isOfflineItem(lineupItem)) {
     const programItem: OfflineStreamLineupItem = {
@@ -116,7 +135,7 @@ export function getCurrentProgramAndTimeElapsed(
 
   return {
     program,
-    timeElapsed: timeElapsed,
+    timeElapsed,
     programIndex: currentProgramIndex,
   };
 }
@@ -130,8 +149,7 @@ export function getCurrentProgramAndTimeElapsed(
 export async function createLineup(
   channelCache: ChannelCache,
   obj: ProgramAndTimeElapsed,
-  channel: Loaded<Channel, 'programs'>,
-  fillers: Loaded<ChannelFillerShow, 'fillerShow' | 'fillerShow.content'>[],
+  channel: Loaded<Channel>,
   isFirst: boolean,
 ): Promise<StreamLineupItem[]> {
   let timeElapsed = obj.timeElapsed;
@@ -161,6 +179,9 @@ export async function createLineup(
     //offline case
     let remaining = activeProgram.duration - timeElapsed;
     //look for a random filler to play
+    const fillerPrograms =
+      await getServerContext().fillerDB.getFillersFromChannel(channel.uuid);
+
     let filler: Nullable<EntityDTO<ProgramEntity>>;
     let fallbackProgram: Nullable<EntityDTO<ProgramEntity>> = null;
 
@@ -174,7 +195,7 @@ export async function createLineup(
     const randomResult = pickRandomWithMaxDuration(
       channelCache,
       channel,
-      fillers,
+      fillerPrograms,
       remaining + (isFirst ? 7 * 24 * 60 * 60 * 1000 : 0),
     );
     filler = randomResult.filler;
@@ -300,7 +321,7 @@ export function pickRandomWithMaxDuration(
   const E = 5 * 60 * 60 * 1000;
   let fillerRepeatCooldownMs = 0;
   if (isUndefined(channel.fillerRepeatCooldown)) {
-    fillerRepeatCooldownMs = 30 * 60 * 1000;
+    fillerRepeatCooldownMs = DEFAULT_FILLER_COOLDOWN_MS;
   }
 
   let listM = 0;
@@ -314,7 +335,7 @@ export function pickRandomWithMaxDuration(
       const clip = fillerPrograms[i];
       // a few extra milliseconds won't hurt anyone, would it? dun dun dun
       if (clip.duration <= maxDuration + SLACK) {
-        const t1 = channelCache.getProgramLastPlayTime(channel.number, {
+        const t1 = channelCache.getProgramLastPlayTime(channel.uuid, {
           serverKey: clip.externalSourceId,
           key: clip.externalKey,
         });
@@ -329,7 +350,7 @@ export function pickRandomWithMaxDuration(
           //30 minutes is too little, don't repeat it at all
         } else if (!pickedList) {
           const t1 = channelCache.getFillerLastPlayTime(
-            channel.number,
+            channel.uuid,
             fillers[j].fillerShow.uuid,
           );
           const timeSince = t1 == 0 ? D : t0 - t1;
@@ -444,7 +465,7 @@ export function getWatermark(
 }
 
 export function generateChannelContext(
-  channel: Loaded<Channel, 'programs'>,
+  channel: Loaded<Channel, never, '*'>,
 ): ContextChannel {
   return pick(channel, CHANNEL_CONTEXT_KEYS as ReadonlyArray<keyof Channel>);
 }
