@@ -1,5 +1,5 @@
 import { sortBy } from 'lodash-es';
-import { ChannelCache } from '../channelCache.js';
+import { ChannelDB } from '../dao/channelDb.js';
 import { FileCacheService } from './fileCacheService.js';
 
 /**
@@ -8,14 +8,18 @@ import { FileCacheService } from './fileCacheService.js';
  * @class M3uService
  */
 export class M3uService {
-  fileCacheService: FileCacheService;
-  channelCache: ChannelCache;
-  cacheReady: boolean;
+  #channelDB: ChannelDB;
+  #fileCacheService: FileCacheService;
+  #cacheReady: boolean;
 
-  constructor(fileCacheService: FileCacheService, channelCache: ChannelCache) {
-    this.fileCacheService = fileCacheService;
-    this.channelCache = channelCache;
-    this.cacheReady = false;
+  // TODO figure out a better way to manage interdependencies of 'services'
+  constructor(
+    fileCacheService: FileCacheService = new FileCacheService(),
+    channelDB: ChannelDB = new ChannelDB(),
+  ) {
+    this.#channelDB = channelDB;
+    this.#fileCacheService = fileCacheService;
+    this.#cacheReady = false;
   }
 
   /**
@@ -34,13 +38,13 @@ export class M3uService {
    */
 
   async buildM3uList(host: string): Promise<string> {
-    if (this.cacheReady) {
-      const cachedM3U = await this.fileCacheService.getCache('channels.m3u');
+    if (this.#cacheReady) {
+      const cachedM3U = await this.#fileCacheService.getCache('channels.m3u');
       if (cachedM3U) {
         return this.replaceHostOnM3u(host, cachedM3U);
       }
     }
-    const channels = sortBy(await this.channelCache.getAllChannels(), 'number');
+    const channels = sortBy(await this.#channelDB.getAllChannels(), 'number');
 
     const tvg = `{{host}}/api/xmltv.xml`;
 
@@ -64,8 +68,8 @@ export class M3uService {
     }
 
     try {
-      await this.fileCacheService.setCache('channels.m3u', data);
-      this.cacheReady = true;
+      await this.#fileCacheService.setCache('channels.m3u', data);
+      this.#cacheReady = true;
     } catch (err) {
       console.error(err);
     }
@@ -84,6 +88,6 @@ export class M3uService {
    * Clear channels.m3u file from cache folder.
    */
   clearCache() {
-    this.cacheReady = false;
+    this.#cacheReady = false;
   }
 }

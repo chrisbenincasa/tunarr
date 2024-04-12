@@ -181,14 +181,11 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
 
       // Check if channel queried is valid
       if (isUndefined(req.query.channel)) {
-        return res.status(500).send('No Channel Specified');
+        return res.status(400).send('No Channel Specified');
       }
 
-      const channel = req.serverCtx.channelCache.getChannelConfig(
-        req.query.channel,
-      );
-      if (isUndefined(channel)) {
-        return res.status(500).send("Channel doesn't exist");
+      if (isNil(await req.serverCtx.channelDB.getChannel(req.query.channel))) {
+        return res.status(404).send("Channel doesn't exist");
       }
 
       // Maximum number of streams to concatinate beyond channel starting
@@ -240,14 +237,11 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
 
       // Check if channel queried is valid
       if (isUndefined(req.query.channel)) {
-        return res.status(500).send('No Channel Specified');
+        return res.status(400).send('No Channel Specified');
       }
 
-      const channel = req.serverCtx.channelCache.getChannelConfig(
-        req.query.channel,
-      );
-      if (isUndefined(channel)) {
-        return res.status(500).send("Channel doesn't exist");
+      if (isNil(await req.serverCtx.channelDB.getChannel(req.query.channel))) {
+        return res.status(404).send("Channel doesn't exist");
       }
 
       // Maximum number of streams to concatinate beyond channel starting
@@ -301,9 +295,8 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
     req: FastifyRequest,
     res: FastifyReply,
   ) => {
-    const channel = req.serverCtx.channelCache.getChannelConfig(channelNum);
-    if (isUndefined(channel)) {
-      return res.status(404).send('Channel not found.');
+    if (isNil(await req.serverCtx.channelDB.getChannel(channelNum))) {
+      return res.status(404).send("Channel doesn't exist");
     }
 
     const content = [
@@ -453,7 +446,7 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      const channel = await req.serverCtx.channelCache.getChannelConfig(
+      const channel = await req.serverCtx.channelDB.getChannel(
         req.params.number,
       );
 
@@ -492,7 +485,7 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      const channel = await req.serverCtx.channelCache.getChannelConfig(
+      const channel = await req.serverCtx.channelDB.getChannel(
         req.params.number,
       );
       if (isNil(channel)) {
@@ -523,7 +516,7 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      const channel = await req.serverCtx.channelCache.getChannelConfig(
+      const channel = await req.serverCtx.channelDB.getChannel(
         req.params.number,
       );
       if (isNil(channel)) {

@@ -19,7 +19,7 @@
  **/
 
 import { FfmpegSettings, Watermark } from '@tunarr/types';
-import { isError, isUndefined } from 'lodash-es';
+import { isError, isNil, isString, isUndefined } from 'lodash-es';
 import { Writable } from 'stream';
 import { FfmpegEvents } from './ffmpeg.js';
 import createLogger from './logger.js';
@@ -47,7 +47,7 @@ export class ProgramPlayer extends Player {
       context.ffmpegSettings.normalizeResolution = false;
     }
 
-    if (!isUndefined(program.err)) {
+    if (!isUndefined(program.error)) {
       logger.debug('About to play error stream');
       this.delegate = new OfflinePlayer(true, context);
     } else if (program.type === 'loading') {
@@ -127,9 +127,12 @@ export class ProgramPlayer extends Player {
       } else {
         actualError = err;
       }
-      if (this.context.lineupItem.err instanceof Error) {
+      if (!isNil(this.context.lineupItem.error)) {
+        const msg = isString(this.context.lineupItem.error)
+          ? this.context.lineupItem.error
+          : '';
         throw new Error(
-          'Additional error when attempting to play error stream.',
+          'Additional error when attempting to play error stream. ' + msg,
         );
       }
       logger.error(
@@ -139,7 +142,7 @@ export class ProgramPlayer extends Player {
       //Retry once with an error stream:
       this.context.lineupItem = {
         type: 'offline',
-        err: actualError,
+        error: actualError.message,
         start: this.context.lineupItem.start,
         streamDuration: this.context.lineupItem.streamDuration,
         duration: this.context.lineupItem.duration,

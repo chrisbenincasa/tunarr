@@ -142,7 +142,7 @@ export class VideoStream {
         lineup,
       );
 
-      for (;;) {
+      while (!isUndefined(currentProgram)) {
         redirectChannels.push(channelContext.uuid);
         upperBounds.push(
           currentProgram.program.duration - currentProgram.timeElapsed,
@@ -155,31 +155,27 @@ export class VideoStream {
           break;
         }
 
-        serverCtx.channelCache.recordPlayback(
+        await serverCtx.channelCache.recordPlayback(
           channelContext.uuid,
           startTimestamp,
           {
             type: 'offline',
             title: 'Error',
-            err: new Error('Recursive channel redirect found'),
+            error: 'Recursive channel redirect found',
             duration: 60000,
             start: 0,
           },
         );
 
-        const newChannelNumber = currentProgram.program.channel;
+        const nextChannelId = currentProgram.program.channel;
         const newChannel =
-          await serverCtx.channelCache.getChannelConfigWithPrograms(
-            newChannelNumber,
-          );
+          await serverCtx.channelDB.getChannelAndPrograms(nextChannelId);
 
         if (isNil(newChannel)) {
-          const err = new Error(
-            "Invalid redirect to a channel that doesn't exist",
-          );
-          logger.error("Invalid redirect to channel that doesn't exist.", err);
+          const msg = "Invalid redirect to a channel that doesn't exist";
+          logger.error(msg);
           currentProgram = {
-            program: { ...createOfflineStreamLineupIteam(60000), err },
+            program: { ...createOfflineStreamLineupIteam(60000), error: msg },
             timeElapsed: 0,
             programIndex: -1,
           };
@@ -235,7 +231,7 @@ export class VideoStream {
         //skip to the next program
         const dt = currentProgram.program.duration - currentProgram.timeElapsed;
         for (let i = 0; i < redirectChannels.length; i++) {
-          serverCtx.channelCache.clearPlayback(redirectChannels[i]);
+          await serverCtx.channelCache.clearPlayback(redirectChannels[i]);
         }
         logger.info(
           'Too little time before the filler ends, skip to next slot',
@@ -278,7 +274,7 @@ export class VideoStream {
           lineupItem.streamDuration = Math.min(u2, u);
           upperBound = lineupItem.streamDuration;
         }
-        serverCtx.channelCache.recordPlayback(
+        await serverCtx.channelCache.recordPlayback(
           redirectChannels[i],
           startTimestamp,
           lineupItem,
@@ -301,7 +297,7 @@ export class VideoStream {
     ].forEach((line) => logger.info(line));
 
     if (!isLoading) {
-      serverCtx.channelCache.recordPlayback(
+      await serverCtx.channelCache.recordPlayback(
         channel.uuid,
         startTimestamp,
         lineupItem,
@@ -311,7 +307,7 @@ export class VideoStream {
     if (wereThereTooManyAttempts(session, lineupItem)) {
       lineupItem = {
         type: 'offline',
-        err: Error('Too many attempts, throttling..'),
+        error: 'Too many attempts, throttling',
         duration: 60000,
         start: 0,
       };

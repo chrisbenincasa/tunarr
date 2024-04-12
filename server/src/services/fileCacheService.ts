@@ -1,8 +1,6 @@
 import path from 'path';
 import { createWriteStream, promises as fs } from 'fs';
-// import createLogger from '../logger.js';
-
-// const logger = createLogger(import.meta);
+import { serverOptions } from '../globals';
 
 /**
  * Store files in cache
@@ -13,7 +11,9 @@ export class FileCacheService {
   private _cachePath: string;
   private cache: Record<string, string>;
 
-  constructor(cachePath: string) {
+  constructor(
+    cachePath: string = path.join(serverOptions().database, 'cache'),
+  ) {
     this._cachePath = cachePath;
     this.cache = {};
   }
@@ -25,7 +25,7 @@ export class FileCacheService {
   /**
    * `save` a file on cache folder
    */
-  async setCache(fullFilePath: string, data: any): Promise<boolean> {
+  async setCache(fullFilePath: string, data: string): Promise<boolean> {
     const file = createWriteStream(path.join(this.cachePath, fullFilePath));
 
     return new Promise((resolve, reject) => {
@@ -70,12 +70,8 @@ export class FileCacheService {
       }
     }
 
-    try {
-      await fs.unlink(thePath);
-      delete this.cache[fullFilePath];
-      return true;
-    } catch (err) {
-      throw err;
-    }
+    await fs.unlink(thePath);
+    delete this.cache[fullFilePath];
+    return true;
   }
 }

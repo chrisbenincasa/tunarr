@@ -40,11 +40,11 @@ export const serverContext: () => Promise<ServerContext> = once(async () => {
   const settings = await getSettings();
 
   const channelDB = new ChannelDB();
-  const channelCache = new ChannelCache(channelDB);
+  const channelCache = new ChannelCache();
   const fillerDB = new FillerDB(channelCache);
   const fileCache = new FileCacheService(path.join(opts.database, 'cache'));
   const cacheImageService = new CacheImageService(fileCache);
-  const m3uService = new M3uService(fileCache, channelCache);
+  const m3uService = new M3uService(fileCache);
   const eventService = new EventService();
   const xmltv = new XmlTvWriter();
 

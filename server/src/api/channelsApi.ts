@@ -15,7 +15,7 @@ import {
 } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
-import { compact, isError, isNil, omit, sortBy } from 'lodash-es';
+import { compact, isError, isNil, map, omit, sortBy } from 'lodash-es';
 import z from 'zod';
 import createLogger from '../logger.js';
 import { GlobalScheduler } from '../services/scheduler.js';
@@ -209,14 +209,12 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     },
     async (req, res) => {
       try {
-        const channel = await req.serverCtx.channelCache.getChannelConfig(
+        const channel = await req.serverCtx.channelDB.getChannelAndPrograms(
           req.params.id,
         );
 
         if (!isNil(channel)) {
-          await channel.programs.init();
-          const programDtos = channel.programs.map((p) => p.toDTO());
-          return res.send(programDtos);
+          return res.send(map(channel.programs, (p) => p.toDTO()));
         } else {
           return res.status(404).send();
         }

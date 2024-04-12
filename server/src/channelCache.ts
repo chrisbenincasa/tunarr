@@ -1,68 +1,109 @@
 import constants from '@tunarr/shared/constants';
-import { isNil, isNumber, isUndefined } from 'lodash-es';
-import { ChannelDB } from './dao/channelDb.js';
+import { isNil, isUndefined } from 'lodash-es';
+import { z } from 'zod';
 import {
   StreamLineupItem,
+  StreamLineupItemSchema,
   isCommercialLineupItem,
 } from './dao/derived_types/StreamLineup.js';
-import { Channel } from './dao/entities/Channel.js';
 import { FillerShowId } from './dao/entities/FillerShow.js';
-import { Nullable } from './types.js';
+import { SchemaBackedDbAdapter } from './dao/SchemaBackedDbAdapter.js';
+import { join } from 'node:path';
+import { Low } from 'lowdb';
+import { globalOptions } from './globals.js';
+import { InMemoryCachedDbAdapter } from './dao/InMemoryCachedDbAdapter.js';
 
 const SLACK = constants.SLACK;
 
-// All instances share the same maps.
-// TODO: This will eventually use a persistent store
-const streamPlayCache: Record<
-  string,
-  { t0: number; lineupItem: StreamLineupItem }
-> = {};
-const fillerPlayTimeCache: Record<string, number> = {};
-const programPlayTimeCache: Record<string, number> = {};
+const streamPlayCacheItemSchema = z.object({
+  timestamp: z.number(),
+  lineupItem: StreamLineupItemSchema,
+});
+type StreamPlayCacheItem = z.infer<typeof streamPlayCacheItemSchema>;
+
+const channelCacheSchema = z.object({
+  streamPlayCache: z.record(streamPlayCacheItemSchema),
+  fillerPlayTimeCache: z.record(z.number()),
+  programPlayTimeCache: z.record(z.number()),
+});
+
+type ChannelCacheSchema = z.infer<typeof channelCacheSchema>;
+
+class PersistentChannelCache {
+  #initialized: boolean = false;
+  #db: Low<ChannelCacheSchema>;
+
+  async init() {
+    if (!this.#initialized) {
+      this.#db = new Low<ChannelCacheSchema>(
+        new InMemoryCachedDbAdapter(
+          new SchemaBackedDbAdapter(
+            channelCacheSchema,
+            join(globalOptions().database, 'stream-cache.json'),
+          ),
+        ),
+        {
+          streamPlayCache: {},
+          fillerPlayTimeCache: {},
+          programPlayTimeCache: {},
+        },
+      );
+      return await this.#db.read();
+    }
+  }
+
+  getStreamPlayItem(channelId: string): StreamPlayCacheItem | undefined {
+    return this.#db.data.streamPlayCache[channelId];
+  }
+
+  setStreamPlayItem(channelId: string, item: StreamPlayCacheItem) {
+    return this.#db.update(({ streamPlayCache }) => {
+      streamPlayCache[channelId] = item;
+    });
+  }
+
+  clearStreamPlayItem(channelId: string) {
+    return this.#db.update(({ streamPlayCache }) => {
+      delete streamPlayCache[channelId];
+    });
+  }
+
+  getProgramPlayTime(id: string): number | undefined {
+    return this.#db.data.programPlayTimeCache[id];
+  }
+
+  setProgramPlayTime(id: string, time: number) {
+    return this.#db.update(({ programPlayTimeCache }) => {
+      programPlayTimeCache[id] = time;
+    });
+  }
+
+  getFillerPlayTime(id: string): number | undefined {
+    return this.#db.data.fillerPlayTimeCache[id];
+  }
+
+  setFillerPlayTime(id: string, time: number) {
+    return this.#db.update(({ fillerPlayTimeCache }) => {
+      fillerPlayTimeCache[id] = time;
+    });
+  }
+}
+
+const persistentChannelCache = new PersistentChannelCache();
+
+export const initPersistentStreamCache = () => persistentChannelCache.init();
 
 export class ChannelCache {
-  private channelDb: ChannelDB;
-
-  constructor(channelDb: ChannelDB) {
-    this.channelDb = channelDb;
-  }
-
-  getChannelConfig(channelId: string | number): Promise<Nullable<Channel>> {
-    return isNumber(channelId)
-      ? this.channelDb.getChannelByNumber(channelId)
-      : this.channelDb.getChannelById(channelId);
-  }
-
-  getChannelConfigWithPrograms(channelId: string) {
-    return this.channelDb.getChannelAndPrograms(channelId);
-  }
-
-  getChannelConfigWithProgramsByNumber(channelNumber: number) {
-    return this.channelDb.getChannelAndProgramsByNumber(channelNumber);
-  }
-
-  getAllChannels() {
-    return this.channelDb.getAllChannels();
-  }
-
-  getAllChannelsWithPrograms() {
-    return this.channelDb.getAllChannelsAndPrograms();
-  }
-
-  getAllNumbers() {
-    return this.channelDb.getAllChannelNumbers();
-  }
-
   getCurrentLineupItem(
     channelId: string,
     timeNow: number,
   ): StreamLineupItem | undefined {
-    if (isUndefined(streamPlayCache[channelId])) {
+    const recorded = persistentChannelCache.getStreamPlayItem(channelId);
+    if (isUndefined(recorded)) {
       return;
     }
-    const recorded = streamPlayCache[channelId];
     const lineupItem = { ...recorded.lineupItem };
-    const timeSinceRecorded = timeNow - recorded.t0;
+    const timeSinceRecorded = timeNow - recorded.timestamp;
     let remainingTime = lineupItem.duration - (lineupItem.start ?? 0);
     if (!isUndefined(lineupItem.streamDuration)) {
       remainingTime = Math.min(remainingTime, lineupItem.streamDuration);
@@ -74,9 +115,10 @@ export class ChannelCache {
     ) {
       //closed the stream and opened it again let's not lose seconds for
       //no reason
-      const originalT0 = recorded.lineupItem.originalT0 ?? recorded.t0;
+      const originalT0 =
+        recorded.lineupItem.originalTimestamp ?? recorded.timestamp;
       if (timeNow - originalT0 <= SLACK) {
-        lineupItem.originalT0 = originalT0;
+        lineupItem.originalTimestamp = originalT0;
         return lineupItem;
       }
     }
@@ -98,23 +140,10 @@ export class ChannelCache {
   }
 
   private getKey(channelId: string, programId: string) {
-    // let serverKey = '!unknown!';
-    // if (!isUndefined(program.serverKey)) {
-    //   serverKey = 'plex|' + program.serverKey;
-    // }
-    // let programKey = '!unknownProgram!';
-    // if (!isUndefined(program.key)) {
-    //   programKey = program.key;
-    // }
-    // return channelId + '|' + serverKey + '|' + programKey;
     return `${channelId}|${programId}`;
   }
 
-  private getFillerKey(channelId: string, fillerId: string) {
-    return channelId + '|' + fillerId;
-  }
-
-  private recordProgramPlayTime(
+  private async recordProgramPlayTime(
     channelId: string,
     lineupItem: StreamLineupItem,
     t0: number,
@@ -128,48 +157,51 @@ export class ChannelCache {
 
     if (lineupItem.type === 'program') {
       const key = this.getKey(channelId, lineupItem.programId);
-      programPlayTimeCache[key] = t0 + remaining;
+      await persistentChannelCache.setProgramPlayTime(key, t0 + remaining);
     }
 
     if (isCommercialLineupItem(lineupItem)) {
-      fillerPlayTimeCache[this.getFillerKey(channelId, lineupItem.programId)] =
-        t0 + remaining;
+      await persistentChannelCache.setFillerPlayTime(
+        this.getKey(channelId, lineupItem.programId),
+        t0 + remaining,
+      );
     }
   }
 
   getProgramLastPlayTime(channelId: string, programId: string) {
-    const v = programPlayTimeCache[this.getKey(channelId, programId)];
-    if (isUndefined(v)) {
-      return 0;
-    } else {
-      return v;
-    }
+    return (
+      persistentChannelCache.getProgramPlayTime(
+        this.getKey(channelId, programId),
+      ) ?? 0
+    );
   }
 
   getFillerLastPlayTime(channelId: string, fillerId: FillerShowId) {
-    const v = fillerPlayTimeCache[this.getFillerKey(channelId, fillerId)];
-    if (isUndefined(v)) {
-      return 0;
-    } else {
-      return v;
-    }
+    return (
+      persistentChannelCache.getFillerPlayTime(
+        this.getKey(channelId, fillerId),
+      ) ?? 0
+    );
   }
 
-  recordPlayback(channelId: string, t0: number, lineupItem: StreamLineupItem) {
-    this.recordProgramPlayTime(channelId, lineupItem, t0);
-
-    streamPlayCache[channelId] = {
-      t0: t0,
+  async recordPlayback(
+    channelId: string,
+    t0: number,
+    lineupItem: StreamLineupItem,
+  ) {
+    await this.recordProgramPlayTime(channelId, lineupItem, t0);
+    await persistentChannelCache.setStreamPlayItem(channelId, {
+      timestamp: t0,
       lineupItem: lineupItem,
-    };
+    });
   }
 
-  clearPlayback(channelId: string) {
-    delete streamPlayCache[channelId];
+  async clearPlayback(channelId: string) {
+    return await persistentChannelCache.clearStreamPlayItem(channelId);
   }
 
+  // Is this necessary??
   clear() {
-    //it's not necessary to clear the playback cache and it may be undesirable
     // this.configCache = {};
     // this.cache = {};
     // this.channelNumbers = undefined;

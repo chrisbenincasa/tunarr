@@ -37,6 +37,9 @@ import { ServerOptions } from './types.js';
 import { filename, isProduction } from './util/index.js';
 import { videoRouter } from './video.js';
 import { isUndefined } from 'lodash-es';
+import { initPersistentStreamCache } from './channelCache.js';
+import { getSettingsRawDb } from './dao/settings.js';
+import { migrateFromLegacyDb } from './dao/legacyDbMigration.js';
 
 const logger = createLogger(import.meta);
 const currentDirectory = dirname(filename(import.meta.url));
@@ -86,12 +89,12 @@ export async function initServer(opts: ServerOptions) {
   const ctx = await serverContext();
 
   if (hadLegacyDb && ctx.settings.needsLegacyMigration()) {
-    // logger.info('Migrating from legacy database folder...');
-    // await getSettingsRawDb()
-    //   .then(migrateFromLegacyDb)
-    //   .catch((e) => {
-    //     logger.error('Failed to migrate from legacy DB: %O', e);
-    //   });
+    logger.info('Migrating from legacy database folder...');
+    await getSettingsRawDb()
+      .then(migrateFromLegacyDb)
+      .catch((e) => {
+        logger.error('Failed to migrate from legacy DB: %O', e);
+      });
   } else if (ctx.settings.needsLegacyMigration()) {
     // Mark the settings as if we migrated, even when there were no
     // legacy settings present. This will prevent us from trying
@@ -103,6 +106,7 @@ export async function initServer(opts: ServerOptions) {
 
   scheduleJobs(ctx);
   await runFixers();
+  await initPersistentStreamCache();
 
   const updateXMLPromise = GlobalScheduler.getScheduledJob(
     UpdateXmlTvTask.ID,
