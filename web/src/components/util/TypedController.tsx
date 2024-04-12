@@ -4,17 +4,8 @@ import {
   TextField,
   TextFieldProps,
 } from '@mui/material';
-import {
-  get,
-  has,
-  isFunction,
-  isNil,
-  isUndefined,
-  mapValues,
-  omit,
-  toString,
-} from 'lodash-es';
-import { useCallback, useState } from 'react';
+import { get, has, isFunction, isNil, isUndefined, mapValues } from 'lodash-es';
+import { useCallback } from 'react';
 import {
   Controller,
   ControllerFieldState,
@@ -38,11 +29,13 @@ type RenderFunc<
   fieldState,
   formState,
   helperText,
+  displayValue,
 }: {
-  field: ControllerRenderProps<TFieldValues, TName> & { displayValue?: string };
+  field: ControllerRenderProps<TFieldValues, TName>;
   fieldState: ControllerFieldState;
   formState: UseFormStateReturn<TFieldValues>;
   helperText?: React.ReactNode;
+  displayValue?: string;
 }) => Result;
 
 type Props<
@@ -83,10 +76,12 @@ export const TypedController = <
 ) => {
   const extractor = props.valueExtractor ?? defaultValueExtractor;
   // Try this out and see if it works...
-  const rawField = props.control?._getWatch(props.name, props.defaultValue);
-  const [rawValue, setRawValue] = useState<string | undefined>(
-    toString(rawField),
-  );
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  // TODO(http://github.com/chrisbenincasa/tunarr/issues/279) - fix decimal support
+  // const rawField = props.control?._getWatch(props.name, props.defaultValue);
+  // const [rawValue, setRawValue] = useState<string | undefined>(
+  //   toString(rawField),
+  // );
 
   const handleRender: RenderFunc<TFieldValues, TName> = (original) => {
     const originalOnChange = original.field.onChange;
@@ -94,12 +89,11 @@ export const TypedController = <
       ...original,
       field: {
         ...original.field,
-        displayValue: rawValue,
         onChange: (...event: unknown[]) => {
           // If we have a value transformer, attempt to use the extractor
           // to get the raw event value and then pass it to the transformer
           const extractedValue = extractor(...event) as ExtractedType;
-          setRawValue(toString(extractedValue));
+          // setRawValue(toString(extractedValue));
           if (props.toFormType) {
             // We're making a lot of assumptions here...
             if (isNil(extractedValue)) {
@@ -114,6 +108,7 @@ export const TypedController = <
           }
         },
       },
+      // displayValue: rawValue,
     };
 
     return props.render(newParams);
@@ -201,6 +196,7 @@ export const NumericFormControllerText = <
         const {
           field,
           formState: { errors },
+          displayValue,
         } = renderProps;
 
         const fieldError = errors[props.name] as FieldError | undefined;
@@ -243,9 +239,9 @@ export const NumericFormControllerText = <
         return (
           <TextField
             error={!isNil(errors[props.name])}
-            {...omit(field, 'displayValue')}
+            {...field}
             {...fieldProps}
-            value={field.displayValue ?? field.value}
+            value={displayValue ?? field.value}
             helperText={helperText}
           />
         );
@@ -267,11 +263,7 @@ export const CheckboxFormController = <
     <Controller
       {...props}
       render={({ field }) => (
-        <Checkbox
-          {...props.CheckboxProps}
-          {...omit(field, 'displayValue')}
-          checked={field.value}
-        />
+        <Checkbox {...props.CheckboxProps} {...field} checked={field.value} />
       )}
     />
   );
