@@ -1,47 +1,47 @@
+import type { Tag } from '@tunarr/types';
 import { PlexDvr } from '@tunarr/types/plex';
 import dayjs from 'dayjs';
-import { ChannelCache } from '../channelCache.js';
+import { ChannelDB } from '../dao/channelDb.js';
 import { withDb } from '../dao/dataSource.js';
 import { PlexServerSettings } from '../dao/entities/PlexServerSettings.js';
 import { Settings, defaultXmlTvSettings } from '../dao/settings.js';
+import { globalOptions } from '../globals.js';
 import createLogger from '../logger.js';
 import { Plex } from '../plex.js';
 import { ServerContext } from '../serverContext.js';
 import { TVGuideService } from '../services/tvGuideService.js';
 import { Maybe } from '../types.js';
-import type { Tag } from '@tunarr/types';
+import { fileExists } from '../util/fsUtil.js';
 import { mapAsyncSeq } from '../util/index.js';
 import { Task } from './task.js';
-import { fileExists } from '../util/fsUtil.js';
-import { globalOptions } from '../globals.js';
 
 const logger = createLogger(import.meta);
 
 export class UpdateXmlTvTask extends Task<void> {
-  private channelCache: ChannelCache;
-  private dbAccess: Settings;
-  private guideService: TVGuideService;
+  #channelDB: ChannelDB;
+  #settingsDB: Settings;
+  #guideService: TVGuideService;
 
   public static ID = 'update-xmltv' as Tag<'update-xmltv', void>;
   public ID = UpdateXmlTvTask.ID;
 
   static create(serverContext: ServerContext): UpdateXmlTvTask {
     return new UpdateXmlTvTask(
-      serverContext.channelCache,
+      serverContext.channelDB,
       serverContext.settings,
       serverContext.guideService,
     );
   }
 
-  constructor(
-    channelCache: ChannelCache,
+  private constructor(
+    channelDB: ChannelDB,
     dbAccess: Settings,
     guideService: TVGuideService,
   ) {
     super();
-    this.channelCache = channelCache;
-    this.dbAccess = dbAccess;
-    this.guideService = guideService;
+    this.#channelDB = channelDB;
+    this.#settingsDB = dbAccess;
+    this.#guideService = guideService;
   }
 
   get taskName() {
@@ -54,21 +54,21 @@ export class UpdateXmlTvTask extends Task<void> {
 
   private async updateXmlTv() {
     try {
-      let xmltvSettings = this.dbAccess.xmlTvSettings();
+      let xmltvSettings = this.#settingsDB.xmlTvSettings();
       if (!(await fileExists(xmltvSettings.outputPath))) {
         logger.debug(
           'XMLTV settings missing at path %s. Regenerating path.',
           xmltvSettings.outputPath,
         );
-        await this.dbAccess.updateSettings('xmltv', {
+        await this.#settingsDB.updateSettings('xmltv', {
           ...xmltvSettings,
           outputPath: defaultXmlTvSettings(globalOptions().database).outputPath,
         });
         // Re-read
-        xmltvSettings = this.dbAccess.xmlTvSettings();
+        xmltvSettings = this.#settingsDB.xmlTvSettings();
       }
 
-      await this.guideService.refreshGuide(
+      await this.#guideService.refreshGuide(
         dayjs.duration({ hours: xmltvSettings.programmingHours }),
       );
 
@@ -78,7 +78,7 @@ export class UpdateXmlTvTask extends Task<void> {
       return;
     }
 
-    const channels = await this.getChannelsCached();
+    const channels = await this.#channelDB.getAllChannels();
 
     const allPlexServers = await withDb((em) => {
       return em.find(PlexServerSettings, {});
@@ -128,9 +128,5 @@ export class UpdateXmlTvTask extends Task<void> {
         }
       }
     });
-  }
-
-  private getChannelsCached() {
-    return this.channelCache.getAllChannelsWithPrograms();
   }
 }

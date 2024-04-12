@@ -1,12 +1,11 @@
-import constants from '@tunarr/shared/constants';
 import { EntityDTO, Loaded } from '@mikro-orm/core';
+import constants from '@tunarr/shared/constants';
+import { isEmpty, isNil, isUndefined } from 'lodash-es';
 import { ChannelCache } from '../channelCache';
-import { ChannelDB } from '../dao/channelDb';
 import { Channel } from '../dao/entities/Channel';
 import { ChannelFillerShow } from '../dao/entities/ChannelFillerShow';
-import { Maybe, Nullable } from '../types';
 import { Program } from '../dao/entities/Program';
-import { isEmpty, isNil, isUndefined } from 'lodash-es';
+import { Maybe, Nullable } from '../types';
 import { random } from '../util/random';
 
 const DefaultFillerCooldownMillis = 30 * 60 * 1000;
@@ -14,12 +13,10 @@ const OneDayMillis = 7 * 24 * 60 * 60 * 1000;
 const FiveMinutesMillis = 5 * 60 * 60 * 1000;
 
 export class FillerPicker {
-  #channelDb: ChannelDB;
   #channelCache: ChannelCache;
 
-  constructor() {
-    this.#channelDb = new ChannelDB();
-    this.#channelCache = new ChannelCache(this.#channelDb);
+  constructor(channelCache: ChannelCache = new ChannelCache()) {
+    this.#channelCache = channelCache;
   }
 
   pickRandomWithMaxDuration(

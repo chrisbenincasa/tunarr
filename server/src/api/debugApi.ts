@@ -38,10 +38,9 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
     async (req, res) => {
       void res.hijack();
       const t0 = new Date().getTime();
-      const channel =
-        await req.serverCtx.channelCache.getChannelConfigWithPrograms(
-          req.query.channelId,
-        );
+      const channel = await req.serverCtx.channelDB.getChannelAndPrograms(
+        req.query.channelId,
+      );
 
       if (!channel) {
         return res.status(404).send('No channel found');
@@ -86,10 +85,9 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
     '/debug/plex-transcoder/video-stats',
     { schema: ChannelQuerySchema },
     async (req, res) => {
-      const channel =
-        await req.serverCtx.channelCache.getChannelConfigWithPrograms(
-          req.query.channelId,
-        );
+      const channel = await req.serverCtx.channelDB.getChannelAndPrograms(
+        req.query.channelId,
+      );
 
       if (!channel) {
         return res.status(404).send('No channel found');

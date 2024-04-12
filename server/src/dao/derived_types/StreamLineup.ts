@@ -2,25 +2,17 @@
 // but contain a bit more context and are used during an
 // active streaming session
 
-import { MarkRequired } from 'ts-essentials';
-import { Program } from '../entities/Program';
+import { z } from 'zod';
 
-type BaseStreamLineupItem = {
-  err?: Error;
-  originalT0?: number;
-  streamDuration?: number;
-  beginningOffset?: number;
-  title?: string;
-  type: 'offline' | 'loading' | 'commercial' | 'program' | 'redirect';
-  start?: number;
-};
-
-export type StreamLineupItem =
-  | OfflineStreamLineupItem
-  | ProgramStreamLineupItem
-  | CommercialStreamLineupItem
-  | LoadingStreamLineupItem
-  | RedirectStreamLineupItem;
+const baseStreamLineupItemSchema = z.object({
+  error: z.boolean().or(z.string()).optional(),
+  originalTimestamp: z.number().nonnegative().optional(),
+  streamDuration: z.number().nonnegative().optional(),
+  beginningOffset: z.number().nonnegative().optional(),
+  title: z.string().optional(),
+  start: z.number().nonnegative().optional(),
+  duration: z.number().nonnegative(),
+});
 
 export function isOfflineLineupItem(
   item: StreamLineupItem,
@@ -50,67 +42,73 @@ export type ContentBackedStreamLineupItem =
   | CommercialStreamLineupItem
   | ProgramStreamLineupItem;
 
-export type OfflineStreamLineupItem = BaseStreamLineupItem & {
-  type: 'offline';
-  duration: number;
-};
+export const OfflineStreamLineupItemSchema = baseStreamLineupItemSchema.extend({
+  type: z.literal('offline'),
+});
 
-export type LoadingStreamLineupItem = BaseStreamLineupItem & {
-  type: 'loading';
-  streamDuration: number;
-  duration: number;
-};
+export type OfflineStreamLineupItem = z.infer<
+  typeof OfflineStreamLineupItemSchema
+>;
 
-type BaseContentBackedStreamLineupIteam = BaseStreamLineupItem &
-  Pick<
-    MarkRequired<Program, 'plexFilePath'>,
-    | 'externalSourceId'
-    | 'filePath'
-    | 'externalKey'
-    | 'duration'
-    | 'plexFilePath'
-  > & {
-    programId: string;
-  };
+export const LoadingStreamLineupItemSchema = baseStreamLineupItemSchema
+  .extend({
+    type: z.literal('loading'),
+  })
+  .required({ streamDuration: true });
 
-export type CommercialStreamLineupItem = MarkRequired<
-  BaseContentBackedStreamLineupIteam,
-  'streamDuration' | 'beginningOffset'
-> & {
-  type: 'commercial';
-  // plexFile: string;
-  // file: string;
-  // ratingKey: string;
-  // streamDuration: number;
-  // beginningOffset: number;
-  // duration: number;
-  // serverKey: string;
-  // fillerId: string;
-};
+export type LoadingStreamLineupItem = z.infer<
+  typeof LoadingStreamLineupItemSchema
+>;
 
-export type ProgramStreamLineupItem = MarkRequired<
-  BaseContentBackedStreamLineupIteam,
-  'title'
-> & {
-  type: 'program';
-  // plexFile: string;
-  // file: string;
-  // ratingKey: string;
-  // streamDuration?: number;
-  // beginningOffset?: number;
-  // duration: number;
-  // serverKey: string;
-  // title: string;
-  // uuid: string;
-};
+const BaseContentBackedStreamLineupItemSchema =
+  baseStreamLineupItemSchema.extend({
+    programId: z.string().uuid(),
+    // These are taken from the Program DB entity
+    plexFilePath: z.string(),
+    externalSourceId: z.string(),
+    filePath: z.string(),
+    externalKey: z.string(),
+  });
 
-export type RedirectStreamLineupItem = Partial<
-  Omit<ProgramStreamLineupItem, 'type'>
-> & {
-  type: 'redirect';
-  channel: string; // channel id
-  duration: number;
-};
+const CommercialStreamLineupItemSchema =
+  BaseContentBackedStreamLineupItemSchema.extend({
+    type: z.literal('commercial'),
+  }).required({ streamDuration: true, beginningOffset: true });
+
+export type CommercialStreamLineupItem = z.infer<
+  typeof CommercialStreamLineupItemSchema
+>;
+
+const ProgramStreamLineupItemSchema =
+  BaseContentBackedStreamLineupItemSchema.extend({
+    type: z.literal('program'),
+  }).required({ title: true });
+
+export type ProgramStreamLineupItem = z.infer<
+  typeof ProgramStreamLineupItemSchema
+>;
+
+export const RedirectStreamLineupItemSchema = baseStreamLineupItemSchema.extend(
+  {
+    type: z.literal('redirect'),
+    channel: z.string().uuid(),
+    duration: z.number().positive(),
+  },
+);
+
+export type RedirectStreamLineupItem = z.infer<
+  typeof RedirectStreamLineupItemSchema
+>;
+
+export const StreamLineupItemSchema = z.discriminatedUnion('type', [
+  ProgramStreamLineupItemSchema,
+  CommercialStreamLineupItemSchema,
+  LoadingStreamLineupItemSchema,
+  OfflineStreamLineupItemSchema,
+  RedirectStreamLineupItemSchema,
+]);
+
+export type StreamLineupItem = z.infer<typeof StreamLineupItemSchema>;
 
 export function createOfflineStreamLineupIteam(
   duration: number,

@@ -38,7 +38,7 @@ export class ConcatStream {
     //   return res.status(500).send('No Channel Specified');
     // }
 
-    const channel = await ctx.channelCache.getChannelConfig(channelId);
+    const channel = await ctx.channelDB.getChannel(channelId);
     if (isNil(channel)) {
       return {
         type: 'error',

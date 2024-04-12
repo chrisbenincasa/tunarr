@@ -190,7 +190,7 @@ export async function createLineupItem(
     return {
       type: 'offline',
       title: 'Error',
-      err: activeProgram.err,
+      error: activeProgram.error,
       streamDuration: remaining,
       duration: remaining,
       start: 0,

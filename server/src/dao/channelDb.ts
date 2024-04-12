@@ -34,6 +34,7 @@ import { join } from 'path';
 import { globalOptions } from '../globals.js';
 import createLogger from '../logger.js';
 import { typedProperty } from '../types/path.js';
+import { fileExists } from '../util/fsUtil.js';
 import {
   groupByFunc,
   groupByUniq,
@@ -41,13 +42,13 @@ import {
   mapAsyncSeq,
   mapReduceAsyncSeq,
 } from '../util/index.js';
-import { fileExists } from '../util/fsUtil.js';
-import { LineupDbAdapter } from './LineupDbAdapter.js';
+import { SchemaBackedDbAdapter } from './SchemaBackedDbAdapter.js';
 import { ProgramConverter } from './converters/programConverters.js';
 import { getEm } from './dataSource.js';
 import {
   Lineup,
   LineupItem,
+  LineupSchema,
   isContentItem,
   isOfflineItem,
   isRedirectItem,
@@ -521,7 +522,8 @@ export class ChannelDB {
   private async getFileDb(channelId: string) {
     if (!fileDbCache[channelId]) {
       fileDbCache[channelId] = new Low<Lineup>(
-        new LineupDbAdapter(
+        new SchemaBackedDbAdapter(
+          LineupSchema,
           join(globalOptions().database, `channel-lineups/${channelId}.json`),
         ),
         { items: [], startTimeOffsets: [] },
