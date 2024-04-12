@@ -234,17 +234,6 @@ export default function GuidePage() {
     setModalProgram(undefined);
   };
 
-  const generateWeek = useCallback(() => {
-    const today = dayjs();
-    let week: Dayjs[] | [] = [];
-
-    for (let i = 0; i < 7; i++) {
-      week = [...week, today.add(i, 'day')];
-    }
-
-    return week;
-  }, []);
-
   const renderProgram = (
     program: TvGuideProgram,
     index: number,
