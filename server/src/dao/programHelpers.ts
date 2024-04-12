@@ -30,9 +30,9 @@ import ld, {
   keys,
   map,
   mapValues,
-  pickBy,
   reduce,
   reject,
+  values,
 } from 'lodash-es';
 import createLogger from '../logger.js';
 import { PlexApiFactory } from '../plex.js';
@@ -54,6 +54,7 @@ import {
   ProgramGroupingType,
 } from './entities/ProgramGrouping.js';
 import { ProgramGroupingExternalId } from './entities/ProgramGroupingExternalId.js';
+import { Loaded } from '@mikro-orm/core';
 
 const logger = createLogger(import.meta);
 
@@ -174,6 +175,37 @@ export async function upsertContentPrograms(
             );
           }
 
+          break;
+        }
+        case ProgramType.Track: {
+          if (program.grandparentExternalKey) {
+            console.log(program.grandparentExternalKey, groupings);
+            ifDefined(
+              findMatchingGrouping(
+                groupings,
+                ProgramGroupingType.MusicArtist,
+                program.externalSourceId,
+                program.grandparentExternalKey,
+              ),
+              (artist) => {
+                program.artist = em.getReference(ProgramGrouping, artist.uuid);
+              },
+            );
+          }
+
+          if (program.parentExternalKey) {
+            ifDefined(
+              findMatchingGrouping(
+                groupings,
+                ProgramGroupingType.MusicAlbum,
+                program.externalSourceId,
+                program.parentExternalKey,
+              ),
+              (album) => {
+                program.album = em.getReference(ProgramGrouping, album.uuid);
+              },
+            );
+          }
           break;
         }
         default:
@@ -329,7 +361,7 @@ async function findAndUpdatePlexServerPrograms(
             },
           },
           {
-            populate: ['externalRefs.*'],
+            populate: ['externalRefs'],
             fields: ['uuid', 'type'],
           },
         );
@@ -338,15 +370,42 @@ async function findAndUpdatePlexServerPrograms(
     ),
   );
 
-  const existingGroupingsByPlexId = groupByUniqFunc(
+  const existingGroupingsByType = reduce(
     existingGroupings,
-    (eg) =>
-      // This must exist because we just queried on it above
-      eg.externalRefs.find(
-        (er) =>
-          er.sourceType === ProgramSourceType.PLEX &&
-          er.externalSourceId === plexServerName,
-      )!.externalKey,
+    (prev, curr) => {
+      const existing = prev[curr.type] ?? [];
+      return {
+        ...prev,
+        [curr.type]: [...existing, curr],
+      };
+    },
+    makeEmptyGroupMap<
+      Loaded<ProgramGrouping, 'externalRefs', 'uuid' | 'type'>
+    >(),
+  );
+
+  const existingGroupingsByPlexIdByType = mapValues(
+    existingGroupingsByType,
+    (groupings) =>
+      groupByUniqFunc(
+        groupings,
+        (eg) =>
+          // This must exist because we just queried on it above
+          eg.externalRefs.find(
+            (er) =>
+              er.sourceType === ProgramSourceType.PLEX &&
+              er.externalSourceId === plexServerName,
+          )!.externalKey,
+      ),
+  );
+
+  const existingGroupingsByPlexId = reduce(
+    values(existingGroupingsByPlexIdByType),
+    (prev, curr) => ({ ...prev, ...curr }),
+    {} as Record<
+      string,
+      Loaded<ProgramGrouping, 'externalRefs', 'uuid' | 'type'>
+    >,
   );
 
   // 1. Accumulate different types of groupings
@@ -399,7 +458,7 @@ async function findAndUpdatePlexServerPrograms(
           case 'album':
             grouping = em.create(ProgramGrouping, {
               ...baseFields,
-              type: ProgramGroupingType.MusicArtist,
+              type: ProgramGroupingType.MusicAlbum,
               index: item.index,
             });
             break;
@@ -442,37 +501,36 @@ async function findAndUpdatePlexServerPrograms(
 
   await em.flush();
 
-  const existingSeasonsByPlexId = mapValues(
-    pickBy(
-      existingGroupingsByPlexId,
-      (value) => value.type === ProgramGroupingType.TvShowSeason,
-    ),
-    (group) => group.uuid,
-  );
-  // All new seasons will have exactly one externalRef already initialized
-  const newSeasonsByPlexId = mapValues(
-    groupByUniqFunc(
-      newGroupings[ProgramGroupingType.TvShowSeason],
-      (season) => season.externalRefs[0].externalKey,
-    ),
-    (group) => group.uuid,
+  // All new groupings will have exactly one externalRef already initialized
+  const newGroupingsByPlexIdByType = mapValues(
+    newGroupings,
+    (groupingsOfType) =>
+      mapValues(
+        groupByUniqFunc(
+          groupingsOfType,
+          (grouping) => grouping.externalRefs[0].externalKey,
+        ),
+        (group) => group.uuid,
+      ),
   );
 
   function associateNewGroupings(
     parentType: ProgramGroupingType,
+    childType: ProgramGroupingType,
     relation: 'seasons' | 'albums',
   ) {
-    forEach(newGroupings[parentType], (show) => {
+    forEach(newGroupings[parentType], (parentGrouping) => {
       // New groupings will have exactly one externalKey right now
-      const plexId = show.externalRefs[0].externalKey;
+      const plexId = parentGrouping.externalRefs[0].externalKey;
       const parentIds = [...(parentIdsByGrandparent[plexId] ?? new Set())];
-      const seasonGroupIds = map(
+      const childGroupIds = map(
         parentIds,
-        (id) => existingSeasonsByPlexId[id] ?? newSeasonsByPlexId[id],
+        (id) =>
+          existingGroupingsByPlexIdByType[childType][id]?.uuid ??
+          newGroupingsByPlexIdByType[childType][id],
       );
-      console.log(seasonGroupIds);
-      show[relation].set(
-        map(seasonGroupIds, (id) => em.getReference(ProgramGrouping, id)),
+      parentGrouping[relation].set(
+        map(childGroupIds, (id) => em.getReference(ProgramGrouping, id)),
       );
     });
   }
@@ -489,7 +547,6 @@ async function findAndUpdatePlexServerPrograms(
         ifDefined(existingGroupingsByPlexId[grandparentId], (gparent) => {
           // Extra check just in case
           if (gparent.type === expectedGrandparent) {
-            console.log(relation, gparent.uuid);
             grouping[relation] = em.getReference(ProgramGrouping, gparent.uuid);
           }
         });
@@ -502,8 +559,16 @@ async function findAndUpdatePlexServerPrograms(
   // situation where we are seeing a show for the first time without
   // any associated seasons. The opposite is not true though, we update
   // new seasons/albums to their parents below.
-  associateNewGroupings(ProgramGroupingType.TvShow, 'seasons');
-  associateNewGroupings(ProgramGroupingType.MusicArtist, 'albums');
+  associateNewGroupings(
+    ProgramGroupingType.TvShow,
+    ProgramGroupingType.TvShowSeason,
+    'seasons',
+  );
+  associateNewGroupings(
+    ProgramGroupingType.MusicArtist,
+    ProgramGroupingType.MusicAlbum,
+    'albums',
+  );
 
   associateExistingGroupings(
     ProgramGroupingType.TvShowSeason,

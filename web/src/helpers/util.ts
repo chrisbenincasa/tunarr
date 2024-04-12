@@ -17,6 +17,7 @@ import duration from 'dayjs/plugin/duration';
 import {
   flatMap,
   isNumber,
+  isString,
   map,
   property,
   range,
@@ -412,4 +413,8 @@ export function scale(
   factor: number,
 ): number[] {
   return map(coll, (c) => c * factor);
+}
+
+export function isNonEmptyString(s: unknown): s is string {
+  return isString(s) && s.length > 0;
 }

@@ -14,8 +14,15 @@ import { createExternalId } from '@tunarr/shared';
 import { forProgramType } from '@tunarr/shared/util';
 import { ChannelProgram } from '@tunarr/types';
 import { isUndefined } from 'lodash-es';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { prettyItemDuration } from '../helpers/util';
+import {
+  ReactEventHandler,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import { isNonEmptyString, prettyItemDuration } from '../helpers/util';
 
 type Props = {
   open: boolean;
@@ -88,8 +95,17 @@ export default function ProgramDetailsDialog({
     () =>
       forProgramType({
         content: (p) => {
-          if (p.id && p.persisted) {
-            return `http://localhost:8000/api/programs/${p.id}/thumb?proxy=true`;
+          let url: string | undefined;
+          if (p.persisted) {
+            let id: string | undefined = p.id;
+            if (p.subtype === 'track' && isNonEmptyString(p.albumId)) {
+              id = p.albumId;
+            }
+            url = `http://localhost:8000/api/programs/${id}/thumb?proxy=true`;
+          }
+
+          if (isNonEmptyString(url)) {
+            return url;
           }
 
           let key = p.uniqueId;
@@ -119,6 +135,7 @@ export default function ProgramDetailsDialog({
   );
 
   const thumbUrl = program ? thumbnailImage(program) : null;
+  console.log(thumbUrl);
   const externalUrl = program ? externalLink(program) : null;
   const programSummary = program ? summary(program) : null;
 
@@ -130,7 +147,8 @@ export default function ProgramDetailsDialog({
     setThumbLoadState('success');
   }, [setThumbLoadState]);
 
-  const onError = useCallback(() => {
+  const onError: ReactEventHandler<HTMLImageElement> = useCallback((e) => {
+    console.error(e);
     setThumbLoadState('error');
   }, []);
 

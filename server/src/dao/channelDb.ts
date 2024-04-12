@@ -128,8 +128,18 @@ function createRequestToChannel(
   return c;
 }
 
+export type LoadedChannelWithGroupRefs = Loaded<
+  Channel,
+  | 'programs'
+  | 'programs.artist'
+  | 'programs.album'
+  | 'programs.tvShow'
+  | 'programs.season'
+>;
+
 // Let's see if this works... in so we can have many ChannelDb objects flying around.
 const fileDbCache: Record<string | number, Low<Lineup>> = {};
+
 export class ChannelDB {
   #programConverter = new ProgramConverter();
 
@@ -226,10 +236,18 @@ export class ChannelDB {
     return getEm().repo(Channel).findAll();
   }
 
-  async getAllChannelsAndPrograms() {
+  async getAllChannelsAndPrograms(): Promise<LoadedChannelWithGroupRefs[]> {
     return getEm()
       .repo(Channel)
-      .findAll({ populate: ['programs'] });
+      .findAll({
+        populate: [
+          'programs',
+          'programs.artist',
+          'programs.album',
+          'programs.tvShow',
+          'programs.season',
+        ],
+      });
   }
 
   async updateLineup(id: string, req: UpdateChannelProgrammingRequest) {
@@ -354,7 +372,7 @@ export class ChannelDB {
       }),
       {} as Record<
         string,
-        { channel: Loaded<Channel, 'programs'>; lineup: Lineup }
+        { channel: LoadedChannelWithGroupRefs; lineup: Lineup }
       >,
     );
   }
@@ -575,7 +593,7 @@ export class ChannelDB {
     const offsets: number[] = [];
     const programs = compact(
       await mapAsyncSeq(lineup, async (item) => {
-        const apiItem = await this.toApiLineupItem(
+        const apiItem = await this.#programConverter.lineupItemToChannelProgram(
           channel,
           item,
           await allChannels,
@@ -674,40 +692,6 @@ export class ChannelDB {
       .compact()
       .value();
     return { lineup: programs, offsets };
-  }
-
-  private toApiLineupItem(
-    channel: Loaded<Channel, 'programs'>,
-    item: LineupItem,
-    channelReferences: Loaded<Channel, never, 'name' | 'number'>[],
-  ) {
-    if (isOfflineItem(item)) {
-      return this.#programConverter.offlineLineupItemToProgram(channel, item);
-    } else if (isRedirectItem(item)) {
-      const redirectChannel = find(channelReferences, { uuid: item.channel });
-      if (isNil(redirectChannel)) {
-        logger.warn(
-          'Dangling redirect channel reference. Source channel = %s, target channel = %s',
-          channel.uuid,
-          item.channel,
-        );
-        return this.#programConverter.offlineLineupItemToProgram(channel, {
-          type: 'offline',
-          durationMs: item.durationMs,
-        });
-      }
-      return this.#programConverter.redirectLineupItemToProgram(
-        item,
-        redirectChannel,
-      );
-    } else {
-      const program = channel.programs.find((p) => p.uuid === item.id);
-      if (isNil(program)) {
-        return null;
-      }
-
-      return this.#programConverter.entityToContentProgram(program);
-    }
   }
 }
 
