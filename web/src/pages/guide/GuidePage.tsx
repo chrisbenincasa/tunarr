@@ -10,9 +10,6 @@ import {
   CircularProgress,
   FormControl,
   IconButton,
-  MenuItem,
-  Select,
-  SelectChangeEvent,
   Stack,
   Tooltip,
   Typography,
@@ -20,6 +17,7 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { useQueryClient } from '@tanstack/react-query';
 import { TvGuideProgram } from '@tunarr/types';
 import dayjs, { Dayjs, duration } from 'dayjs';
@@ -219,15 +217,13 @@ export default function GuidePage() {
     setCurrentTime(dayjs().format('h:mm'));
   }, [guideDuration]);
 
-  const handleDayChange = (event: SelectChangeEvent<string>) => {
-    const day = event.target.value;
+  const handleDayChange = (value: Dayjs | null) => {
+    const date = value ?? dayjs();
 
     setStart((prevStart) =>
-      dayjs(day).hour(prevStart.hour()).minute(prevStart.minute()),
+      date.hour(prevStart.hour()).minute(prevStart.minute()),
     );
-    setEnd((prevEnd) =>
-      dayjs(day).hour(prevEnd.hour()).minute(prevEnd.minute()),
-    );
+    setEnd((prevEnd) => date.hour(prevEnd.hour()).minute(prevEnd.minute()));
   };
 
   const handleModalOpen = (program: TvGuideProgram | undefined) => {
@@ -432,7 +428,7 @@ export default function GuidePage() {
 
   return (
     <>
-      <Typography variant="h3" mb={2}>
+      <Typography variant="h4" mb={2}>
         TV Guide
       </Typography>
       <ProgramDetailsDialog
@@ -449,19 +445,12 @@ export default function GuidePage() {
           sx={{ my: 1 }}
         >
           <FormControl sx={{ m: 1, minWidth: 120 }}>
-            <Select
-              value={start.format('MM/DD/YYYY')}
-              onChange={handleDayChange}
-              inputProps={{ 'aria-label': 'Without label' }}
-            >
-              {generateWeek().map((date, index) => (
-                <MenuItem value={date.format('MM/DD/YYYY')} key={index}>
-                  {dayjs().isSame(date)
-                    ? `Today, ${date.format('MMM D')}`
-                    : date.format('dddd, MMM D')}
-                </MenuItem>
-              ))}
-            </Select>
+            <DatePicker
+              disablePast
+              value={start}
+              onChange={(v) => handleDayChange(v)}
+              label="Guide Start Time"
+            />
           </FormControl>
           {!dayjs().isBetween(start, end) && (
             <Tooltip title={'Reset to current date/time'} placement="top">
