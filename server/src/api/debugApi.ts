@@ -6,21 +6,21 @@ import dayjs from 'dayjs';
 import { FastifyRequest } from 'fastify';
 import { compact, first, isNil, isUndefined } from 'lodash-es';
 import z from 'zod';
-import { ChannelCache } from '../channelCache.js';
 import { getEm } from '../dao/dataSource.js';
 import {
   StreamLineupItem,
-  isPlexBackedLineupItem,
+  isContentBackedLineupIteam,
 } from '../dao/derived_types/StreamLineup.js';
 import { Channel } from '../dao/entities/Channel.js';
 import * as helperFuncs from '../helperFuncs.js';
 import createLogger from '../logger.js';
 import { PlexPlayer } from '../plexPlayer.js';
 import { PlexTranscoder } from '../plexTranscoder.js';
+import { FillerPicker } from '../services/FillerPicker.js';
 import { TVGuideService as TVGuideServiceLegacy } from '../services/tvGuideServiceLegacy.js';
 import { ContextChannel, Maybe, PlayerContext } from '../types.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
-import { mapAsyncSeq } from '../util.js';
+import { mapAsyncSeq } from '../util/index.js';
 
 const logger = createLogger(import.meta);
 
@@ -107,7 +107,7 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
           .send('Couldnt get a lineup item for this channel');
       }
 
-      if (!isPlexBackedLineupItem(lineupItem)) {
+      if (!isContentBackedLineupIteam(lineupItem)) {
         return res
           .status(500)
           .send(
@@ -150,28 +150,20 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
     now: number,
   ) {
     let lineupItem: Maybe<StreamLineupItem> =
-      req.serverCtx.channelCache.getCurrentLineupItem(channel.number, now);
+      req.serverCtx.channelCache.getCurrentLineupItem(channel.uuid, now);
 
     logger.info('lineupItem: %O', lineupItem);
 
-    const fillers = await req.serverCtx.fillerDB.getFillersFromChannel(
-      channel.number,
-    );
-
     if (isNil(lineupItem)) {
-      lineupItem = (
-        await helperFuncs.createLineup(
-          req.serverCtx.channelCache,
-          helperFuncs.getCurrentProgramAndTimeElapsed(
-            new Date().getTime(),
-            channel,
-            await req.serverCtx.channelDB.loadLineup(channel.uuid),
-          ),
+      lineupItem = await helperFuncs.createLineupItem(
+        await helperFuncs.getCurrentProgramAndTimeElapsed(
+          new Date().getTime(),
           channel,
-          fillers,
-          false,
-        )
-      ).shift();
+          await req.serverCtx.channelDB.loadLineup(channel.uuid),
+        ),
+        channel,
+        false,
+      );
     }
     return lineupItem;
   }
@@ -330,23 +322,13 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
           .send({ error: 'No channel with ID ' + req.query.channelId });
       }
 
-      const channelCache = req.query.live
-        ? req.serverCtx.channelCache
-        : new ChannelCache(req.serverCtx.channelDB);
-
-      const fillers = await req.serverCtx.fillerDB.getFillersFromChannel(
-        channel.number,
-      );
-
-      const lineup = await helperFuncs.createLineup(
-        channelCache,
-        helperFuncs.getCurrentProgramAndTimeElapsed(
+      const lineup = await helperFuncs.createLineupItem(
+        await helperFuncs.getCurrentProgramAndTimeElapsed(
           new Date().getTime(),
           channel,
           await req.serverCtx.channelDB.loadLineup(channel.uuid),
         ),
         channel,
-        fillers,
         false,
       );
 
@@ -376,17 +358,12 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
           .send({ error: 'No channel with ID ' + req.query.channelId });
       }
 
-      const channelCache = req.query.live
-        ? req.serverCtx.channelCache
-        : new ChannelCache(req.serverCtx.channelDB);
-
       const fillers = await req.serverCtx.fillerDB.getFillersFromChannel(
         channel.number,
       );
 
       return res.send(
-        helperFuncs.pickRandomWithMaxDuration(
-          channelCache,
+        new FillerPicker().pickRandomWithMaxDuration(
           channel,
           fillers,
           req.query.maxDuration,

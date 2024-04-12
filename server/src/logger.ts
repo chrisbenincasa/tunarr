@@ -3,10 +3,10 @@ import * as winston from 'winston';
 import 'winston-daily-rotate-file';
 
 import chalk from 'chalk';
-import { isUndefined, join } from 'lodash-es';
+import { isString, isUndefined, join } from 'lodash-es';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { isProduction } from './util.js';
+import { isProduction } from './util/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -27,7 +27,7 @@ const hformat = (module: ImportMeta) => {
       for (const key of Object.keys(metadata)) {
         if (key === 'stack') {
           msg += metadata.message;
-          if (metadata.stack) {
+          if (isString(metadata.stack)) {
             msg += '\n';
             msg += join(
               metadata.stack.split('\n').map((line) => '\t' + line),

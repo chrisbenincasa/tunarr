@@ -10,6 +10,14 @@ import {
 import { isNil, map } from 'lodash-es';
 import { z } from 'zod';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
+import { FillerShowId } from '../dao/entities/FillerShow.js';
+
+// We can't use the built-in zod brand because we have our own custom
+// tagged type.
+const fillerShowIdSchema = z
+  .string()
+  .uuid()
+  .transform((str) => str as FillerShowId);
 
 // eslint-disable-next-line @typescript-eslint/require-await
 export const fillerListsApi: RouterPluginAsyncCallback = async (fastify) => {
@@ -39,7 +47,7 @@ export const fillerListsApi: RouterPluginAsyncCallback = async (fastify) => {
     '/filler-lists/:id',
     {
       schema: {
-        params: z.object({ id: z.string() }),
+        params: z.object({ id: fillerShowIdSchema }),
         response: {
           200: FillerListSchema,
           404: z.void(),
@@ -64,7 +72,7 @@ export const fillerListsApi: RouterPluginAsyncCallback = async (fastify) => {
     '/filler-lists/:id',
     {
       schema: {
-        params: z.object({ id: z.string() }),
+        params: z.object({ id: fillerShowIdSchema }),
         response: {
           200: z.void(),
           404: z.void(),
@@ -102,7 +110,7 @@ export const fillerListsApi: RouterPluginAsyncCallback = async (fastify) => {
     {
       schema: {
         params: z.object({
-          id: z.string(),
+          id: fillerShowIdSchema,
         }),
         body: UpdateFillerListRequestSchema,
         response: {
@@ -134,7 +142,7 @@ export const fillerListsApi: RouterPluginAsyncCallback = async (fastify) => {
     '/filler-lists/:id/programs',
     {
       schema: {
-        params: IdPathParamSchema,
+        params: IdPathParamSchema.extend({ id: fillerShowIdSchema }),
         response: {
           200: FillerListProgrammingSchema,
           404: z.void(),

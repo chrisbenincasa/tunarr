@@ -12,7 +12,7 @@ import map from 'lodash-es/map';
 import { ProgramDB } from '../dao/programDB';
 import { Plex } from '../plex';
 import { typedProperty } from '../types/path';
-import { flatMapAsyncSeq } from '../util';
+import { flatMapAsyncSeq } from '../util/index.js';
 
 type EnrichedPlexTerminalMedia = PlexTerminalMedia & {
   id?: string;

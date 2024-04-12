@@ -5,7 +5,7 @@ import { isError } from 'lodash-es';
 import { DeepWritable } from 'ts-essentials';
 import createLogger from '../logger.js';
 import { RouterPluginCallback } from '../types/serverType.js';
-import { firstDefined } from '../util.js';
+import { firstDefined } from '../util/index.js';
 
 const logger = createLogger(import.meta);
 

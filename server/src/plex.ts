@@ -92,7 +92,7 @@ export class Plex {
           `?${querystring.stringify(req.params)}`
         : '';
       const elapsedTime = new Date().getTime() - req.metadata.startTime;
-      logger.debug(
+      logger.http(
         `[Axios Request]: ${req.method?.toUpperCase()} ${req.baseURL}${
           req.url
         }${query} - (${status}) ${elapsedTime}ms`,

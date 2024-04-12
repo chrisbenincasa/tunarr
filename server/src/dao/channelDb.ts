@@ -16,9 +16,11 @@ import ld, {
   filter,
   find,
   groupBy,
+  initial,
   isEmpty,
   isNil,
   isNull,
+  isNumber,
   map,
   nth,
   omitBy,
@@ -31,7 +33,6 @@ import fs from 'node:fs/promises';
 import { join } from 'path';
 import { globalOptions } from '../globals.js';
 import createLogger from '../logger.js';
-import { Nullable } from '../types.js';
 import { typedProperty } from '../types/path.js';
 import {
   groupByFunc,
@@ -39,7 +40,7 @@ import {
   groupByUniqAndMapAsync,
   mapAsyncSeq,
   mapReduceAsyncSeq,
-} from '../util.js';
+} from '../util/index.js';
 import { fileExists } from '../util/fsUtil.js';
 import { LineupDbAdapter } from './LineupDbAdapter.js';
 import { ProgramConverter } from './converters/programConverters.js';
@@ -131,12 +132,16 @@ const fileDbCache: Record<string | number, Low<Lineup>> = {};
 export class ChannelDB {
   #programConverter = new ProgramConverter();
 
-  getChannelByNumber(channelNumber: number): Promise<Nullable<Channel>> {
+  getChannelByNumber(channelNumber: number) {
     return getEm().repo(Channel).findOne({ number: channelNumber });
   }
 
   getChannelById(id: string) {
     return getEm().repo(Channel).findOne({ uuid: id });
+  }
+
+  getChannel(id: string | number) {
+    return isNumber(id) ? this.getChannelByNumber(id) : this.getChannelById(id);
   }
 
   getChannelAndPrograms(uuid: string) {
@@ -480,7 +485,7 @@ export class ChannelDB {
       });
     }
     lineup.startTimeOffsets = reduce(
-      lineup.items,
+      initial(lineup.items),
       (acc, item, index) => [...acc, acc[index] + item.durationMs],
       [0],
     );
@@ -715,9 +720,6 @@ function channelProgramToLineupItemFunc(
       customShowId: program.customShowId,
     }),
     content: (program) => {
-      if (!program.persisted && !dbIdByUniqueId[program.uniqueId]) {
-        console.log(program, dbIdByUniqueId);
-      }
       return {
         type: 'content',
         id: program.persisted ? program.id! : dbIdByUniqueId[program.uniqueId],

@@ -271,7 +271,7 @@ export class BackfillProgramGroupings extends Fixer {
 
     const showAndSeasonGroupings: Loaded<
       ProgramGrouping,
-      | 'externalRefs.*'
+      | 'externalRefs'
       | 'seasonEpisodes.uuid'
       | 'seasons.uuid'
       | 'showEpisodes.uuid',
@@ -297,7 +297,7 @@ export class BackfillProgramGroupings extends Fixer {
           },
           {
             populate: [
-              'externalRefs.*',
+              'externalRefs',
               'seasonEpisodes.uuid',
               'seasons.uuid',
               'showEpisodes.uuid',

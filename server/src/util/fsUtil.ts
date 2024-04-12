@@ -1,5 +1,5 @@
 import fs from 'node:fs/promises';
-import { isNodeError } from '../util.js';
+import { isNodeError } from './index.js';
 
 export async function fileExists(path: string) {
   try {

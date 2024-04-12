@@ -437,7 +437,6 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
           pic = this.errorPicturePath;
         }
 
-        logger.error('PIC = ' + pic);
         if (!isNil(pic) && !isEmpty(pic)) {
           ffmpegArgs.push('-i', pic);
           if (isUndefined(duration) && !isUndefined(streamStats?.duration)) {
@@ -665,7 +664,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       // and resolution normalization is off
       currentVideo = beforeSizeChange;
     } else {
-      logger.info(resizeMsg);
+      logger.debug(resizeMsg);
     }
     if (this.audioOnly !== true) {
       if (currentVideo != '[video]') {

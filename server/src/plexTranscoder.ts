@@ -55,8 +55,6 @@ export class PlexTranscoder {
   private clientIdentifier: string;
   private product: string;
   private settings: DeepReadonly<PlexStreamSettings>;
-  private key: string;
-  // private metadataPath: string;
   private plexFile: string;
   private file: string;
   private transcodeUrlBase: string;
@@ -96,18 +94,17 @@ export class PlexTranscoder {
     this.log('Plex transcoder initiated');
     this.log('Debug logging enabled');
 
-    this.key = lineupItem.key;
     this.plex = new Plex(server);
     // this.metadataPath = `${lineupItem.key}?X-Plex-Token=${server.accessToken}`;
-    this.plexFile = `${server.uri}${lineupItem.plexFile}?X-Plex-Token=${server.accessToken}`;
-    if (!isUndefined(lineupItem.file)) {
-      this.file = lineupItem.file.replace(
+    this.plexFile = `${server.uri}${lineupItem.plexFilePath}?X-Plex-Token=${server.accessToken}`;
+    if (!isUndefined(lineupItem.filePath)) {
+      this.file = lineupItem.filePath.replace(
         settings.pathReplace,
         settings.pathReplaceWith,
       );
     }
     this.transcodeUrlBase = `${server.uri}/video/:/transcode/universal/start.m3u8?`;
-    this.ratingKey = lineupItem.ratingKey;
+    this.ratingKey = lineupItem.externalKey;
     this.currTimeMs = lineupItem.start ?? 0;
     this.currTimeS = this.currTimeMs / 1000;
     this.duration = lineupItem.duration;
@@ -371,7 +368,7 @@ X-Plex-Client-Profile-Extra=${clientProfile_enc}&\
 protocol=${this.settings.streamProtocol}&\
 Connection=keep-alive&\
 hasMDE=${hasMDE}&\
-path=${this.key}&\
+path=/library/metadata/${this.ratingKey}&\
 mediaIndex=0&\
 partIndex=0&\
 fastSeek=1&\
@@ -605,7 +602,7 @@ lang=en`;
         containerKey: containerKey_enc,
         ratingKey: this.ratingKey,
         state: this.playState,
-        key: this.key,
+        key: `/library/metadata/${this.ratingKey}`,
         time: this.currTimeMs,
         duration: this.duration,
         'X-Plex-Product': this.product,
@@ -626,7 +623,9 @@ lang=en`;
       return this.cachedItemMetadata;
     }
 
-    this.cachedItemMetadata = await this.plex.doGet<PlexItemMetadata>(this.key);
+    this.cachedItemMetadata = await this.plex.doGet<PlexItemMetadata>(
+      `/library/metadata/${this.ratingKey}`,
+    );
     return this.cachedItemMetadata;
   }
 

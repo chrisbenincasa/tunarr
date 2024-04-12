@@ -22,7 +22,7 @@ import {
   isNodeError,
   isNonEmptyString,
   mapAsyncSeq,
-} from '../../util.js';
+} from '../../util/index.js';
 import { ProgramSourceType } from '../custom_types/ProgramSourceType.js';
 import { getEm, withDb } from '../dataSource.js';
 import {
@@ -35,6 +35,7 @@ import {
 import { Channel as ChannelEntity } from '../entities/Channel.js';
 import { ChannelFillerShow } from '../entities/ChannelFillerShow.js';
 import { CustomShow as CustomShowEntity } from '../entities/CustomShow.js';
+import { FillerShowId } from '../entities/FillerShow.js';
 import {
   Program as ProgramEntity,
   programTypeFromString,
@@ -418,7 +419,7 @@ export async function migrateChannels(dbPath: string) {
     const relations = map(fillers, (filler) => {
       const cfs = em.create(ChannelFillerShow, {
         channel: entity.uuid,
-        fillerShow: filler.id,
+        fillerShow: filler.id as FillerShowId,
         weight: filler.weight,
       });
       cfs.cooldown = dayjs.duration({ seconds: filler.cooldownSeconds });

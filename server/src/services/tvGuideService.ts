@@ -37,7 +37,7 @@ import { Program, programDaoToDto } from '../dao/entities/Program.js';
 import { getSettings } from '../dao/settings.js';
 import createLogger from '../logger.js';
 import { Maybe } from '../types.js';
-import { deepCopy, groupByUniqFunc, wait } from '../util.js';
+import { deepCopy, groupByUniqFunc, wait } from '../util/index.js';
 import { binarySearchRange } from '../util/binarySearch.js';
 import { XmlTvWriter } from '../xmltv.js';
 import { EventService } from './eventService.js';
@@ -643,7 +643,15 @@ export class TVGuideService {
     this.accumulateTable = mapValues(this.channelsById, (channel) => {
       // We have these precalculated!!
       // Fallback just in case...
-      if (channel.lineup.startTimeOffsets) {
+      // The offsets should also strictly have one additional item in
+      // the array
+      if (
+        channel.lineup.startTimeOffsets &&
+        (channel.lineup.startTimeOffsets.length ===
+          channel.lineup.items.length + 1 ||
+          channel.lineup.startTimeOffsets?.length ===
+            channel.lineup.items.length)
+      ) {
         return channel.lineup.startTimeOffsets;
       }
 

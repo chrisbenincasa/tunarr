@@ -1,20 +1,27 @@
-import { RequestContext } from '@mikro-orm/core';
+import { Loaded, RequestContext } from '@mikro-orm/core';
 import constants from '@tunarr/shared/constants';
-import { isNil, isNumber, isUndefined, once } from 'lodash-es';
+import { isNil, isUndefined, once } from 'lodash-es';
 import { PassThrough, Readable } from 'node:stream';
 import { EntityManager } from '../dao/dataSource';
 import {
   StreamLineupItem,
   createOfflineStreamLineupIteam,
 } from '../dao/derived_types/StreamLineup';
-import * as helperFuncs from '../helperFuncs.js';
+import {
+  ProgramAndTimeElapsed,
+  createLineupItem,
+  generateChannelContext,
+  getCurrentProgramAndTimeElapsed,
+} from '../helperFuncs';
 import createLogger from '../logger';
 import { ProgramPlayer } from '../programPlayer';
 import { getServerContext } from '../serverContext';
 import { wereThereTooManyAttempts } from '../throttler';
 import { ContextChannel, Maybe, PlayerContext } from '../types';
 import { StreamQueryString } from '../types/schemas';
+import { deepCopy } from '../util/index.js';
 import { fileExists } from '../util/fsUtil';
+import { Channel } from '../dao/entities/Channel';
 
 const logger = createLogger(import.meta);
 
@@ -40,7 +47,7 @@ type VideoStreamResult = VideoStreamSuccessResult | VideoStreamErrorResult;
 export class VideoStream {
   async startStream(
     req: StreamQueryString,
-    t0: number,
+    startTimestamp: number,
     allowSkip: boolean,
   ): Promise<VideoStreamResult> {
     const start = performance.now();
@@ -58,11 +65,17 @@ export class VideoStream {
     const audioOnly = req.audioOnly;
     const session = req.session;
     const m3u8 = req.m3u8 ?? false;
-    const channel = isNumber(req.channel)
-      ? await serverCtx.channelCache.getChannelConfigWithProgramsByNumber(
-          req.channel,
-        )
-      : await serverCtx.channelCache.getChannelConfigWithPrograms(req.channel);
+    const channel = await serverCtx.channelDB.getChannel(req.channel);
+
+    if (isNil(channel)) {
+      return {
+        type: 'error',
+        httpStatus: 404,
+        message: `Channel ${req.channel} doesn't exist`,
+      };
+    }
+
+    const lineup = await serverCtx.channelDB.loadLineup(channel.uuid);
 
     if (isNil(channel)) {
       return {
@@ -97,32 +110,40 @@ export class VideoStream {
       };
     }
 
-    // Get video lineup (array of video urls with calculated start times and durations.)
-    let lineupItem: Maybe<StreamLineupItem> =
-      serverCtx.channelCache.getCurrentLineupItem(channel.number, t0);
-    let currentProgram: helperFuncs.ProgramAndTimeElapsed | undefined;
-    let channelContext = channel;
-    const redirectChannels: number[] = [];
-    const upperBounds: number[] = [];
-
-    // Insert 40ms of loading time in front of the stream (let's look into this one later)
+    let lineupItem: Maybe<StreamLineupItem>;
     if (isLoading) {
+      // Skip looking up program if we're doing the first loading screen
+      // Insert 40ms of loading time in front of the stream (let's look into this one later)
       lineupItem = {
         type: 'loading',
         streamDuration: 40,
         duration: 40,
         start: 0,
       };
-    } else if (isUndefined(lineupItem)) {
+    } else {
+      // Actually try and find a program
+      // Get video lineup (array of video urls with calculated start times and durations.)
+      lineupItem = serverCtx.channelCache.getCurrentLineupItem(
+        channel.uuid,
+        startTimestamp,
+      );
+    }
+
+    let currentProgram: ProgramAndTimeElapsed | undefined;
+    let channelContext: Loaded<Channel> = channel;
+    const redirectChannels: string[] = [];
+    const upperBounds: number[] = [];
+
+    if (isUndefined(lineupItem)) {
       const lineup = await serverCtx.channelDB.loadLineup(channel.uuid);
-      currentProgram = helperFuncs.getCurrentProgramAndTimeElapsed(
-        t0,
+      currentProgram = await getCurrentProgramAndTimeElapsed(
+        startTimestamp,
         channel,
         lineup,
       );
 
       for (;;) {
-        redirectChannels.push(channelContext.number);
+        redirectChannels.push(channelContext.uuid);
         upperBounds.push(
           currentProgram.program.duration - currentProgram.timeElapsed,
         );
@@ -134,13 +155,17 @@ export class VideoStream {
           break;
         }
 
-        serverCtx.channelCache.recordPlayback(channelContext.number, t0, {
-          type: 'offline',
-          title: 'Error',
-          err: new Error('Recursive channel redirect found'),
-          duration: 60000,
-          start: 0,
-        });
+        serverCtx.channelCache.recordPlayback(
+          channelContext.uuid,
+          startTimestamp,
+          {
+            type: 'offline',
+            title: 'Error',
+            err: new Error('Recursive channel redirect found'),
+            duration: 60000,
+            start: 0,
+          },
+        );
 
         const newChannelNumber = currentProgram.program.channel;
         const newChannel =
@@ -154,7 +179,7 @@ export class VideoStream {
           );
           logger.error("Invalid redirect to channel that doesn't exist.", err);
           currentProgram = {
-            program: createOfflineStreamLineupIteam(60000),
+            program: { ...createOfflineStreamLineupIteam(60000), err },
             timeElapsed: 0,
             programIndex: -1,
           };
@@ -163,16 +188,16 @@ export class VideoStream {
 
         channelContext = newChannel;
         lineupItem = serverCtx.channelCache.getCurrentLineupItem(
-          newChannel.number,
-          t0,
+          newChannel.uuid,
+          startTimestamp,
         );
 
         if (!isUndefined(lineupItem)) {
-          lineupItem = { ...lineupItem }; // Not perfect, but better than the stringify hack
+          lineupItem = deepCopy(lineupItem);
           break;
         } else {
-          currentProgram = helperFuncs.getCurrentProgramAndTimeElapsed(
-            t0,
+          currentProgram = await getCurrentProgramAndTimeElapsed(
+            startTimestamp,
             newChannel,
             lineup,
           );
@@ -182,7 +207,6 @@ export class VideoStream {
 
     if (isUndefined(lineupItem)) {
       if (isNil(currentProgram)) {
-        // return res.status(500).send('server error');
         return {
           type: 'error',
           httpStatus: 500,
@@ -192,7 +216,7 @@ export class VideoStream {
 
       if (
         currentProgram.program.type === 'offline' &&
-        channel.programs.length === 1 &&
+        lineup.items.length === 1 &&
         currentProgram.programIndex !== -1
       ) {
         //there's only one program and it's offline. So really, the channel is
@@ -216,22 +240,24 @@ export class VideoStream {
         logger.info(
           'Too little time before the filler ends, skip to next slot',
         );
-        return await this.startStream(req, t0 + dt + 1, false);
+        return await this.startStream(req, startTimestamp + dt + 1, false);
       }
       if (isNil(currentProgram) || isNil(currentProgram.program)) {
-        throw "No video to play, this means there's a serious unexpected bug or the channel db is corrupted.";
+        const msg =
+          "No video to play, this means there's a serious unexpected bug or the channel db is corrupted.";
+        logger.error(msg);
+        return {
+          type: 'error',
+          httpStatus: 500,
+          message: msg,
+        };
       }
-      const fillers = await serverCtx.fillerDB.getFillersFromChannel(
-        channelContext.number,
-      );
-      const lineup = await helperFuncs.createLineup(
-        serverCtx.channelCache,
+
+      lineupItem = await createLineupItem(
         currentProgram,
         channelContext,
-        fillers,
         isFirst,
       );
-      lineupItem = lineup.shift();
     }
 
     if (!isLoading && !isUndefined(lineupItem)) {
@@ -242,7 +268,7 @@ export class VideoStream {
       }
       //adjust upper bounds and record playbacks
       for (let i = redirectChannels.length - 1; i >= 0; i--) {
-        lineupItem = { ...lineupItem };
+        lineupItem = deepCopy(lineupItem);
         const u = upperBounds[i] + beginningOffset;
         if (!isNil(u)) {
           let u2 = upperBound;
@@ -254,7 +280,7 @@ export class VideoStream {
         }
         serverCtx.channelCache.recordPlayback(
           redirectChannels[i],
-          t0,
+          startTimestamp,
           lineupItem,
         );
       }
@@ -275,8 +301,13 @@ export class VideoStream {
     ].forEach((line) => logger.info(line));
 
     if (!isLoading) {
-      serverCtx.channelCache.recordPlayback(channel.number, t0, lineupItem!);
+      serverCtx.channelCache.recordPlayback(
+        channel.uuid,
+        startTimestamp,
+        lineupItem,
+      );
     }
+
     if (wereThereTooManyAttempts(session, lineupItem)) {
       lineupItem = {
         type: 'offline',
@@ -287,12 +318,12 @@ export class VideoStream {
     }
 
     const combinedChannel: ContextChannel = {
-      ...helperFuncs.generateChannelContext(channelContext),
+      ...generateChannelContext(channelContext),
       transcoding: channel.transcoding,
     };
 
     const playerContext: PlayerContext = {
-      lineupItem: lineupItem!,
+      lineupItem: lineupItem,
       ffmpegSettings: ffmpegSettings,
       channel: combinedChannel,
       m3u8: m3u8,
@@ -308,19 +339,14 @@ export class VideoStream {
     let stopped = false;
 
     const stop = () => {
-      logger.info('Stop function hit...');
       if (!stopped) {
         stopped = true;
         player.cleanUp();
-        // player = null;
+        // End the stream
         // Unsure if this is right...
         outStream.push(null);
-        // res.raw.end();
       }
     };
-
-    // let playerObj: Maybe<TypedEventEmitter<FfmpegEvents>>;
-    // res.header('Content-Type', 'video/mp2t');
 
     try {
       logger.info('About to play stream...');
@@ -342,7 +368,6 @@ export class VideoStream {
         message: 'Unable to start playing video.',
         error: err,
       };
-      // return res.status(500).send('Unable to start playing video.');
     }
 
     const logTimer = once(() => {

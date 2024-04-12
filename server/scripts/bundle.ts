@@ -44,6 +44,8 @@ const result = await esbuild.build({
     'tedious',
     'pg-query-stream',
     'oracledb',
+    'mariadb',
+    'libsql',
   ],
   mainFields: ['module', 'main'],
   plugins: [

@@ -34,7 +34,7 @@ import { GlobalScheduler, scheduleJobs } from './services/scheduler.js';
 import { runFixers } from './tasks/fixers/index.js';
 import { UpdateXmlTvTask } from './tasks/updateXmlTvTask.js';
 import { ServerOptions } from './types.js';
-import { filename, isProduction } from './util.js';
+import { filename, isProduction } from './util/index.js';
 import { videoRouter } from './video.js';
 import { isUndefined } from 'lodash-es';
 

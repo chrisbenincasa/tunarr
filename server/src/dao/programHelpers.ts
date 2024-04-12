@@ -43,7 +43,7 @@ import {
   isNonEmptyString,
   mapAsyncSeq,
   mapReduceAsyncSeq,
-} from '../util.js';
+} from '../util/index.js';
 import { ProgramMinterFactory } from '../util/programMinter.js';
 import { ProgramSourceType } from './custom_types/ProgramSourceType.js';
 import { getEm } from './dataSource.js';

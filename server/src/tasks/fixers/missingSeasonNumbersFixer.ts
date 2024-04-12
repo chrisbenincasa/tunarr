@@ -7,7 +7,7 @@ import { Program, ProgramType } from '../../dao/entities/Program.js';
 import { logger } from '../../dao/legacyDbMigration.js';
 import { Plex } from '../../plex.js';
 import { Maybe } from '../../types.js';
-import { groupByUniqAndMap, wait } from '../../util.js';
+import { groupByUniqAndMap, wait } from '../../util/index.js';
 import Fixer from './fixer.js';
 
 export class MissingSeasonNumbersFixer extends Fixer {

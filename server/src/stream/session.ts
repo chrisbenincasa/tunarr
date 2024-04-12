@@ -11,7 +11,7 @@ import { Channel } from '../dao/entities/Channel.js';
 import { FFMPEG } from '../ffmpeg.js';
 import { serverOptions } from '../globals.js';
 import createLogger from '../logger.js';
-import { isNodeError } from '../util.js';
+import { isNodeError } from '../util/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

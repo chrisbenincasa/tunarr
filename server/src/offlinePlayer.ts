@@ -37,7 +37,6 @@ export class OfflinePlayer extends Player {
       };
     }
     this.ffmpeg = new FFMPEG(context.ffmpegSettings, context.channel);
-    console.log(this.context);
     this.ffmpeg.setAudioOnly(this.context.audioOnly);
   }
 
@@ -63,12 +62,12 @@ export class OfflinePlayer extends Player {
       ff?.pipe(outStream, { end: false });
 
       ffmpeg.on('end', () => {
-        logger.debug('offline player end');
+        logger.silly('offline player end');
         emitter.emit('end');
       });
 
       ffmpeg.on('close', () => {
-        logger.debug('offline player close');
+        logger.silly('offline player close');
         emitter.emit('close');
       });
 

@@ -1,11 +1,16 @@
 import { Collection, Entity, ManyToMany, Property } from '@mikro-orm/core';
-import { BaseEntity } from './BaseEntity.js';
+import { TaggedIdBaseEntity } from './BaseEntity2.js';
 import { Channel } from './Channel.js';
-import { Program } from './Program.js';
 import { FillerListContent } from './FillerListContent.js';
+import { Program } from './Program.js';
+import type { Tag } from '@tunarr/types';
+
+const FillerShowIdTag = 'FillerShowId';
+
+export type FillerShowId = Tag<string, typeof FillerShowIdTag>;
 
 @Entity()
-export class FillerShow extends BaseEntity {
+export class FillerShow extends TaggedIdBaseEntity<typeof FillerShowIdTag> {
   @Property()
   name!: string;
 

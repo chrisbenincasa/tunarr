@@ -3,7 +3,7 @@ import {
   UpdatePlexServerRequest,
 } from '@tunarr/types/api';
 import ld, { isNil, isUndefined, keys, map, mapValues } from 'lodash-es';
-import { groupByUniq } from '../util.js';
+import { groupByUniq } from '../util/index.js';
 import { ChannelDB } from './channelDb.js';
 import { ProgramSourceType } from './custom_types/ProgramSourceType.js';
 import { getEm } from './dataSource.js';

@@ -6,7 +6,8 @@ import {
   Unique,
 } from '@mikro-orm/core';
 import { Channel as ChannelDTO, Resolution } from '@tunarr/types';
-import { nilToUndefined } from '../../util.js';
+import { type Tag } from '@tunarr/types';
+import { nilToUndefined } from '../../util/index.js';
 import { DurationType } from '../custom_types/DurationType.js';
 import { BaseEntity } from './BaseEntity.js';
 import { ChannelFillerShow } from './ChannelFillerShow.js';
@@ -44,6 +45,10 @@ type ChannelOfflineSettings = {
   soundtrack?: string;
   mode: 'pic' | 'clip';
 };
+
+const ChannelIdTag = 'ChannelId';
+
+export type ChannelId = Tag<string, typeof ChannelIdTag>;
 
 @Entity()
 @Unique({ properties: ['number'] })
