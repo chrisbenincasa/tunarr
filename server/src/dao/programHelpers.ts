@@ -46,7 +46,7 @@ import {
 } from '../util/index.js';
 import { ProgramMinterFactory } from '../util/programMinter.js';
 import { ProgramSourceType } from './custom_types/ProgramSourceType.js';
-import { getEm } from './dataSource.js';
+import { getEm, withDb } from './dataSource.js';
 import { PlexServerSettings } from './entities/PlexServerSettings.js';
 import { Program, ProgramType } from './entities/Program.js';
 import {
@@ -121,8 +121,16 @@ export async function upsertContentPrograms(
     .mapValues((programs) => groupBy(programs, (p) => p.externalSourceName!))
     .value() as ProgramsBySource;
 
-  const programGroupingsBySource =
-    await findAndUpdateProgramRelations(programsBySource);
+  // Fork a new entity manager here so we don't attempt to persist anything
+  // in the parent context. This function potentially does a lot of work
+  // but we don't want to accidentally not do an upsert of a program.
+  const programGroupingsBySource = await withDb(
+    async () => {
+      return await findAndUpdateProgramRelations(programsBySource);
+    },
+    undefined,
+    true,
+  );
 
   logger.debug('Upserting %d programs', programsToPersist.length);
 
@@ -432,6 +440,8 @@ async function findAndUpdatePlexServerPrograms(
     },
   );
 
+  await em.flush();
+
   const existingSeasonsByPlexId = mapValues(
     pickBy(
       existingGroupingsByPlexId,
@@ -460,6 +470,7 @@ async function findAndUpdatePlexServerPrograms(
         parentIds,
         (id) => existingSeasonsByPlexId[id] ?? newSeasonsByPlexId[id],
       );
+      console.log(seasonGroupIds);
       show[relation].set(
         map(seasonGroupIds, (id) => em.getReference(ProgramGrouping, id)),
       );
@@ -478,6 +489,7 @@ async function findAndUpdatePlexServerPrograms(
         ifDefined(existingGroupingsByPlexId[grandparentId], (gparent) => {
           // Extra check just in case
           if (gparent.type === expectedGrandparent) {
+            console.log(relation, gparent.uuid);
             grouping[relation] = em.getReference(ProgramGrouping, gparent.uuid);
           }
         });

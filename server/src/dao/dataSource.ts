@@ -45,7 +45,11 @@ export async function withDb<T>(
   const scopedEm = RequestContext.getEntityManager();
   if (!isUndefined(scopedEm)) {
     const manager = scopedEm as EntityManager;
-    return f(fork ? manager.fork() : manager);
+    if (fork) {
+      return RequestContext.create(manager.fork(), f);
+    } else {
+      return f(manager);
+    }
   } else {
     const orm = await initOrm();
     return RequestContext.create(
