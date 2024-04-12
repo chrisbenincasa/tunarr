@@ -1,11 +1,11 @@
-import { EntityDTO, Loaded, serialize } from '@mikro-orm/core';
+import { EntityDTO, Loaded } from '@mikro-orm/core';
 import constants from '@tunarr/shared/constants';
 import {
   ChannelIcon,
   ChannelLineup,
+  ChannelProgram,
   CustomGuideProgram,
   FlexGuideProgram,
-  Program as ProgramDTO,
   RedirectGuideProgram,
   TvGuideProgram,
 } from '@tunarr/types';
@@ -14,31 +14,29 @@ import dayjs from 'dayjs';
 import duration, { Duration } from 'dayjs/plugin/duration.js';
 import {
   inRange,
+  includes,
   isNil,
   isNull,
   isUndefined,
   keys,
+  map,
   mapValues,
   nth,
   reduce,
+  round,
   values,
 } from 'lodash-es';
 import * as syncRetry from 'retry';
-import { MarkRequired } from 'ts-essentials';
 import { v4 } from 'uuid';
-import { ChannelDB } from '../dao/channelDb.js';
-import {
-  Lineup,
-  LineupItem,
-  isContentItem,
-} from '../dao/derived_types/Lineup.js';
+import { ChannelDB, LoadedChannelWithGroupRefs } from '../dao/channelDb.js';
+import { ProgramConverter } from '../dao/converters/programConverters.js';
+import { Lineup } from '../dao/derived_types/Lineup.js';
 import { Channel } from '../dao/entities/Channel.js';
-import { Program, programDaoToDto } from '../dao/entities/Program.js';
 import { getSettings } from '../dao/settings.js';
 import createLogger from '../logger.js';
 import { Maybe } from '../types.js';
-import { deepCopy, groupByUniqFunc, wait } from '../util/index.js';
 import { binarySearchRange } from '../util/binarySearch.js';
+import { deepCopy, groupByUniqFunc, wait } from '../util/index.js';
 import { XmlTvWriter } from '../xmltv.js';
 import { EventService } from './eventService.js';
 
@@ -50,54 +48,11 @@ const logger = createLogger(import.meta);
 const FALLBACK_ICON =
   'https://raw.githubusercontent.com/chrisbenincasa/tunarr/main/server/resources/images/tunarr.png';
 
-type CurrentPlayingProgramDetails = MarkRequired<
-  Partial<ProgramDTO> & { isOffline: boolean }, // Hack to make this work for now, we need a new type
-  'type' | 'duration'
->;
-
 type CurrentPlayingProgram = {
   programIndex?: number;
   startTimeMs: number;
-  program: CurrentPlayingProgramDetails;
+  program: ChannelProgram;
 };
-
-function lineupItemToCurrentProgram(
-  lineupItem: LineupItem,
-  backingItem?: EntityDTO<Program>,
-): CurrentPlayingProgramDetails {
-  switch (lineupItem.type) {
-    case 'content': {
-      if (isNil(backingItem)) {
-        logger.warn(
-          'Backing item for lineup item (ID %s) was null, which means it was probably deleted from the DB',
-          lineupItem.id,
-        );
-        return {
-          duration: lineupItem.durationMs,
-          type: 'flex',
-          isOffline: true,
-        };
-      }
-      return { ...programDaoToDto(backingItem), isOffline: false };
-    }
-
-    case 'offline': {
-      return {
-        duration: lineupItem.durationMs,
-        type: 'flex',
-        isOffline: true,
-      };
-    }
-    case 'redirect': {
-      return {
-        type: 'redirect',
-        isOffline: true,
-        duration: lineupItem.durationMs,
-        channel: lineupItem.channel,
-      };
-    }
-  }
-}
 
 export type TvGuideChannel = {
   name: string;
@@ -112,7 +67,7 @@ export type ChannelPrograms = {
 };
 
 type ChannelWithLineup = {
-  channel: EntityDTO<Loaded<Channel, 'programs'>>;
+  channel: LoadedChannelWithGroupRefs;
   lineup: Lineup;
 };
 
@@ -122,8 +77,8 @@ export class TVGuideService {
   private xmltv: XmlTvWriter;
   private channelDb: ChannelDB;
   private eventService: EventService;
-
-  private cachedGuide: Record<ChannelId, ChannelPrograms>; // ChannelId -> ChannelPrograms
+  private programConverter: ProgramConverter;
+  private cachedGuide: Record<ChannelId, ChannelPrograms>;
   private lastUpdateTime: number;
   private lastEndTime: number;
   private currentUpdateTime: number;
@@ -146,6 +101,7 @@ export class TVGuideService {
     this.xmltv = xmltv;
     this.eventService = eventService;
     this.channelDb = channelDb;
+    this.programConverter = new ProgramConverter();
   }
 
   /**
@@ -193,7 +149,7 @@ export class TVGuideService {
         mapValues(
           await this.channelDb.loadAllLineups(),
           ({ channel, lineup }) => ({
-            channel: serialize(channel, { populate: ['programs'] }),
+            channel,
             lineup,
           }),
         ),
@@ -265,10 +221,10 @@ export class TVGuideService {
     );
   }
 
-  private getCurrentPlayingIndex(
+  private async getCurrentPlayingIndex(
     { channel, lineup }: ChannelWithLineup,
     currentUpdateTimeMs: number,
-  ): CurrentPlayingProgram {
+  ): Promise<CurrentPlayingProgram> {
     const channelStartTime = new Date(channel.startTime).getTime();
     if (currentUpdateTimeMs < channelStartTime) {
       //it's flex time
@@ -276,9 +232,9 @@ export class TVGuideService {
         programIndex: -1,
         startTimeMs: currentUpdateTimeMs,
         program: {
-          isOffline: true,
           duration: channelStartTime - currentUpdateTimeMs,
           type: 'flex',
+          persisted: true,
         },
       };
     } else if (lineup.items.length === 0) {
@@ -289,7 +245,7 @@ export class TVGuideService {
         program: {
           type: 'flex',
           duration: dayjs.duration({ months: 1 }).asMilliseconds(),
-          isOffline: true,
+          persisted: true,
         },
       };
     } else {
@@ -317,45 +273,23 @@ export class TVGuideService {
       }
 
       const lineupItem = lineup.items[targetIndex];
-      let lineupProgram: CurrentPlayingProgramDetails;
-      switch (lineupItem.type) {
-        case 'content': {
-          const program = channel.programs.find(
-            (p) => p.uuid === lineupItem.id,
-          );
-          if (isNil(program)) {
-            logger.warn(
-              'Got a nil program (ID %s) when we expected it to be found. This likely means the underlying source of the program was deleted',
-              lineupItem.id,
-            );
-            // For now just stick flex in the schedule
-            lineupProgram = {
-              isOffline: true,
-              type: 'flex',
-              duration: lineupItem.durationMs,
-            };
-          } else {
-            lineupProgram = { ...programDaoToDto(program), isOffline: false };
-          }
-          break;
-        }
-        case 'offline': {
-          lineupProgram = {
-            type: 'flex',
-            duration: lineupItem.durationMs,
-            isOffline: true,
-          };
-          break;
-        }
-        case 'redirect': {
-          lineupProgram = {
-            type: 'redirect',
-            isOffline: true,
-            duration: lineupItem.durationMs,
-            channel: lineupItem.channel,
-          };
-          break;
-        }
+      let lineupProgram =
+        await this.programConverter.lineupItemToChannelProgram(
+          channel,
+          lineupItem,
+          map(this.currentChannels, 'channel'),
+        );
+
+      if (isNull(lineupProgram)) {
+        logger.warn(
+          'Unable to convert lineup item to guide item: %O',
+          lineupItem,
+        );
+        lineupProgram = {
+          type: 'flex',
+          duration: lineupItem.durationMs,
+          persisted: false,
+        };
       }
 
       return {
@@ -367,11 +301,12 @@ export class TVGuideService {
   }
 
   private async getChannelPlaying(
-    { channel, lineup }: ChannelWithLineup,
+    channelWithLineup: ChannelWithLineup,
     previousProgram: Maybe<CurrentPlayingProgram>,
     currentUpdateTimeMs: number,
     channelRedirectStack: string[] = [],
   ): Promise<CurrentPlayingProgram> {
+    const { channel, lineup } = channelWithLineup;
     let playing: CurrentPlayingProgram;
     if (
       !isUndefined(previousProgram?.programIndex) &&
@@ -386,17 +321,31 @@ export class TVGuideService {
       // the schedule.
       const index = (previousProgram.programIndex + 1) % lineup.items.length;
       const lineupItem = lineup.items[index];
-      const backingItem = isContentItem(lineupItem)
-        ? channel.programs.find((p) => p.uuid === lineupItem.id)
-        : undefined;
+      const program = await this.programConverter.lineupItemToChannelProgram(
+        channel,
+        lineupItem,
+        map(this.currentChannels, 'channel'),
+      );
+
+      if (isNull(program)) {
+        logger.warn(
+          'Was unable to convert lineup item to guide item: %O',
+          lineupItem,
+        );
+      }
+
       playing = {
         programIndex: index,
-        program: lineupItemToCurrentProgram(lineupItem, backingItem),
+        program: program ?? {
+          type: 'flex',
+          persisted: false,
+          duration: lineupItem.durationMs,
+        },
         startTimeMs: currentUpdateTimeMs,
       };
     } else {
-      playing = this.getCurrentPlayingIndex(
-        { channel, lineup },
+      playing = await this.getCurrentPlayingIndex(
+        channelWithLineup,
         currentUpdateTimeMs,
       );
     }
@@ -408,7 +357,7 @@ export class TVGuideService {
       playing = {
         programIndex: -1,
         program: {
-          isOffline: true,
+          persisted: true,
           duration: 30 * 60 * 1000,
           type: 'flex',
         },
@@ -424,20 +373,18 @@ export class TVGuideService {
       const redirectChannel = playing.program.channel;
 
       // Detect redirect loops
-      if (channelRedirectStack.indexOf(redirectChannel) !== -1) {
+      if (includes(channelRedirectStack, redirectChannel)) {
         logger.error(
-          `Redirect loop found! Involved channels = ${channelRedirectStack.join(
-            ', ',
-          )}`,
+          `Redirect loop found! Involved channels = %O`,
+          channelRedirectStack,
         );
       } else {
         channelRedirectStack.push(redirectChannel);
         const channel2 = this.channelsById[redirectChannel];
         if (isUndefined(channel2)) {
           logger.error(
-            `Redirect to an unknown channel found! Involved channels = [${channelRedirectStack.join(
-              ', ',
-            )}]`,
+            `Redirect to an unknown channel found! Involved channels: %O`,
+            channelRedirectStack,
           );
         } else {
           const redirectChannelProgram = await this.getChannelPlaying(
@@ -527,7 +474,7 @@ export class TVGuideService {
               startTimeMs:
                 meldedProgram.startTimeMs + meldedProgram.program.duration,
               program: {
-                isOffline: true,
+                persisted: true,
                 duration: melded,
                 type: 'flex',
               },
@@ -542,7 +489,7 @@ export class TVGuideService {
         programs.push({
           startTimeMs: program.startTimeMs,
           program: {
-            isOffline: true,
+            persisted: true,
             duration: currentProgram.duration,
             type: 'flex',
           },
@@ -619,17 +566,21 @@ export class TVGuideService {
           const x: CurrentPlayingProgram = {
             startTimeMs: start,
             program: {
-              isOffline: true,
+              persisted: true,
               duration: d,
               type: 'flex',
             },
           };
           duration -= d;
           start += d;
-          result.programs.push(makeEntry(channelWithLineup.channel, x));
+          result.programs.push(
+            programToTvGuideProgram(channelWithLineup.channel, x),
+          );
         }
       } else {
-        result.programs.push(makeEntry(channelWithLineup.channel, programs[i]));
+        result.programs.push(
+          programToTvGuideProgram(channelWithLineup.channel, programs[i]),
+        );
       }
     }
 
@@ -660,31 +611,43 @@ export class TVGuideService {
 
     const result = {};
     if (channels.length === 0) {
-      const channel: Partial<EntityDTO<Channel>> = {
-        name: 'Tunarr',
-        icon: {
-          path: FALLBACK_ICON,
-          width: 0,
-          duration: 0,
-          position: 'bottom',
-        },
+      const fakeChannelId = v4();
+      const channel = new Channel();
+      channel.uuid = fakeChannelId;
+      channel.name = 'Tunarr';
+      channel.icon = {
+        path: FALLBACK_ICON,
+        width: 0,
+        duration: 0,
+        position: 'bottom',
+      };
+      channel.disableFillerOverlay = false;
+      channel.number = 0;
+      channel.guideMinimumDuration = 0;
+      channel.duration = 0;
+      channel.stealth = false;
+      channel.startTime = 0;
+      channel.offline = {
+        picture: undefined,
+        soundtrack: undefined,
+        mode: 'pic',
       };
 
       // Placeholder channel with random ID.
-      result[v4()] = {
+      result[fakeChannelId] = {
         channel: channel,
         programs: [
-          makeEntry(channel, {
+          programToTvGuideProgram(channel, {
             startTimeMs:
               currentUpdateTimeMs - (currentUpdateTimeMs % (30 * 60 * 1000)),
             program: {
               duration: 24 * 60 * 60 * 1000,
               icon: FALLBACK_ICON,
-              showTitle: 'No channels configured',
-              date: dayjs().format('YYYY-MM-DD'),
-              summary: 'Use the tunarr web UI to configure channels.',
+              // showTitle: 'No channels configured',
+              // date: dayjs().format('YYYY-MM-DD'),
+              // summary: 'Use the tunarr web UI to configure channels.',
               type: 'flex',
-              isOffline: true,
+              persisted: false,
             },
           }),
         ],
@@ -708,12 +671,20 @@ export class TVGuideService {
     await retry(
       async () => {
         try {
+          const start = performance.now();
+          const thisGuideLength = this.currentEndTime - this.currentUpdateTime;
           this.cachedGuide = await this.buildGuideInternal();
           // This was moved from a finally block, make sure that is right...
           this.lastUpdateTime = this.currentUpdateTime;
           this.lastEndTime = this.currentEndTime;
           this.currentUpdateTime = -1;
           await this.refreshXML();
+          const diff = performance.now() - start;
+          logger.debug(
+            'Built TV Guide for %s in %d millis',
+            dayjs.duration(thisGuideLength).humanize(),
+            round(diff, 3),
+          );
         } catch (err) {
           logger.error('Unable to update internal guide data', err);
         }
@@ -742,19 +713,19 @@ export class TVGuideService {
 }
 
 function isProgramFlex(
-  program: { duration: number; isOffline: boolean } | undefined,
-  channel: Partial<EntityDTO<Channel>>,
+  program: ChannelProgram | undefined,
+  channel: Loaded<Channel>,
 ): boolean {
   return (
     !isUndefined(program) &&
-    (program.isOffline ||
+    (program.type === 'flex' ||
       program.duration <=
         (channel.guideMinimumDuration ??
           constants.DEFAULT_GUIDE_STEALTH_DURATION))
   );
 }
 
-function makeChannelEntry(channel: EntityDTO<Channel>): TvGuideChannel {
+function makeChannelEntry(channel: Loaded<Channel>): TvGuideChannel {
   return {
     name: channel.name,
     icon: channel.icon,
@@ -763,8 +734,8 @@ function makeChannelEntry(channel: EntityDTO<Channel>): TvGuideChannel {
   };
 }
 
-function makeEntry(
-  channel: Partial<EntityDTO<Channel>>,
+function programToTvGuideProgram(
+  channel: Loaded<Channel>,
   currentProgram: CurrentPlayingProgram,
 ): TvGuideProgram {
   const baseItem: Partial<TvGuideProgram> = {
@@ -793,54 +764,38 @@ function makeEntry(
   } else if (currentProgram.program.type === 'custom') {
     return {
       type: 'custom',
-      id: currentProgram.program.id!,
+      id: currentProgram.program.id,
       ...baseItem,
     } as CustomGuideProgram;
   } else if (currentProgram.program.type === 'redirect') {
     return {
       type: 'redirect',
-      channel: currentProgram.program.channel!,
+      channel: currentProgram.program.channel,
       ...baseItem,
     } as RedirectGuideProgram;
   }
 
-  let title = currentProgram.program.title;
-  let seasonNumber: Maybe<number>;
-  let episodeNumber: Maybe<number>;
-  let episodeTitle: Maybe<string>;
+  // let title = currentProgram.program.title;
+  // let seasonNumber: Maybe<number>;
+  // let episodeNumber: Maybe<number>;
+  // let episodeTitle: Maybe<string>;
 
   if (!isUndefined(currentProgram.program.icon)) {
     icon = currentProgram.program.icon;
   }
 
-  if (currentProgram.program.type === 'episode') {
-    if (currentProgram.program.showTitle) {
-      title = currentProgram.program.showTitle;
-    }
-    seasonNumber = currentProgram.program.season;
-    episodeNumber = currentProgram.program.episode;
-    episodeTitle = currentProgram.program.title;
-  }
+  // if (currentProgram.program.subtype === 'episode') {
+  //   if (currentProgram.program.showTitle) {
+  //     title = currentProgram.program.showTitle;
+  //   }
+  //   seasonNumber = currentProgram.program.season;
+  //   episodeNumber = currentProgram.program.episode;
+  //   episodeTitle = currentProgram.program.title;
+  // }
 
-  //what data is needed here?
   return {
+    ...currentProgram.program,
     start: currentProgram.startTimeMs,
     stop: currentProgram.startTimeMs + currentProgram.program.duration,
-    summary: currentProgram.program.summary,
-    date: currentProgram.program.date,
-    rating: currentProgram.program.rating,
-    icon: icon,
-    title: title ?? '.',
-    duration: currentProgram.program.duration,
-    type: 'content',
-    id: currentProgram.program.id,
-    uniqueId:
-      currentProgram.program.id ??
-      `${currentProgram.program.sourceType}|${currentProgram.program.serverKey}|${currentProgram.program.key}`,
-    subtype: currentProgram.program?.type,
-    persisted: true,
-    seasonNumber,
-    episodeNumber,
-    episodeTitle,
   };
 }

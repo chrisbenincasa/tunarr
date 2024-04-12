@@ -24,6 +24,7 @@ import { Plex } from '../plex.js';
 import { TruthyQueryParam } from '../types/schemas.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import createLogger from '../logger.js';
+import { ProgramGrouping } from '../dao/entities/ProgramGrouping.js';
 
 const logger = createLogger(import.meta);
 
@@ -72,70 +73,100 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
     },
     async (req, res) => {
       const em = getEm();
-      const program = await em.repo(Program).findOne({ uuid: req.params.id });
-      if (isNil(program)) {
+      // Unfortunately these don't have unique ID spaces, since we have separate tables
+      // so we'll just prefer program matches over group matches and hope all works out
+      // Alternatively, we could introduce a query param to narrow this down...
+      const [program, grouping] = await Promise.all([
+        em.repo(Program).findOne({ uuid: req.params.id }),
+        em
+          .repo(ProgramGrouping)
+          .findOne({ uuid: req.params.id }, { populate: ['externalRefs'] }),
+      ]);
+      // const program = await em.repo(Program).findOne({ uuid: req.params.id });
+      if (isNil(program) && isNil(grouping)) {
         return res.status(404).send();
       }
 
-      switch (program.sourceType) {
-        case ProgramSourceType.PLEX: {
-          if (isNil(program.externalKey)) {
-            return res.status(500).send();
-          }
-
-          const server = await req.serverCtx.plexServerDB.getByExternalid(
-            program.externalSourceId,
-          );
-
-          if (isNil(server)) {
-            return res.status(404).send();
-          }
-
-          const result = Plex.getThumbUrl({
-            uri: server.uri,
-            itemKey: program.externalKey,
-            accessToken: server.accessToken,
-            height: req.query.height,
-            width: req.query.width,
-            upscale: req.query.upscale.toString(),
-          });
-
-          if (req.query.proxy) {
-            try {
-              const proxyRes = await axios.request<stream.Readable>({
-                url: result,
-                responseType: 'stream',
-              });
-
-              let headers: Partial<Record<HttpHeader, string | string[]>>;
-              if (proxyRes.headers instanceof AxiosHeaders) {
-                headers = {
-                  ...proxyRes.headers,
-                };
-              } else {
-                headers = { ...omitBy(proxyRes.headers, isNull) };
-              }
-
-              return res
-                .status(proxyRes.status)
-                .headers(headers)
-                .send(proxyRes.data);
-            } catch (e) {
-              if (isAxiosError(e) && e.response?.status === 404) {
-                logger.error(
-                  'Error retrieving thumb from Plex at url: %s. Status: 404',
-                  result,
-                );
-                return res.status(404).send();
-              }
-              throw e;
-            }
-          }
-
-          return res.redirect(302, result).send();
+      const handlePlexItem = async (
+        externalKey: string | undefined,
+        externalSourceId: string,
+      ) => {
+        if (isNil(externalKey)) {
+          return res.status(500).send();
         }
-        default:
-          return res.status(405).send();
+
+        const server =
+          await req.serverCtx.plexServerDB.getByExternalid(externalSourceId);
+
+        if (isNil(server)) {
+          return res.status(404).send();
+        }
+
+        const result = Plex.getThumbUrl({
+          uri: server.uri,
+          itemKey: externalKey,
+          accessToken: server.accessToken,
+          height: req.query.height,
+          width: req.query.width,
+          upscale: req.query.upscale.toString(),
+        });
+
+        if (req.query.proxy) {
+          try {
+            const proxyRes = await axios.request<stream.Readable>({
+              url: result,
+              responseType: 'stream',
+            });
+
+            let headers: Partial<Record<HttpHeader, string | string[]>>;
+            if (proxyRes.headers instanceof AxiosHeaders) {
+              headers = {
+                ...proxyRes.headers,
+              };
+            } else {
+              headers = { ...omitBy(proxyRes.headers, isNull) };
+            }
+
+            return res
+              .status(proxyRes.status)
+              .headers(headers)
+              .send(proxyRes.data);
+          } catch (e) {
+            if (isAxiosError(e) && e.response?.status === 404) {
+              logger.error(
+                'Error retrieving thumb from Plex at url: %s. Status: 404',
+                result,
+              );
+              return res.status(404).send();
+            }
+            throw e;
+          }
+        }
+
+        return res.redirect(302, result).send();
+      };
+
+      if (!isNil(program)) {
+        switch (program.sourceType) {
+          case ProgramSourceType.PLEX: {
+            return handlePlexItem(
+              program.externalKey,
+              program.externalSourceId,
+            );
+          }
+          default:
+            return res.status(405).send();
+        }
+      } else {
+        // We can assume that we have a grouping here...
+        // We only support Plex now
+        const source = find(grouping!.externalRefs, {
+          sourceType: ProgramSourceType.PLEX,
+        });
+        if (isNil(source)) {
+          return res.status(500).send();
+        }
+        return handlePlexItem(source.externalKey, source.externalSourceId);
       }
     },
   );

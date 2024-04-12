@@ -234,6 +234,42 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
   );
 
   fastify.get(
+    '/debug/helpers/build_guide',
+    {
+      schema: {
+        querystring: ChannelLineupQuery,
+        tags: ['Channels'],
+        response: {
+          200: z.array(ChannelLineupSchema),
+        },
+      },
+    },
+    async (req, res) => {
+      const allChannels =
+        await req.serverCtx.channelDB.getAllChannelsAndPrograms();
+
+      const startTime = dayjs(req.query.from);
+      const endTime = dayjs(req.query.to);
+
+      await req.serverCtx.guideService.refreshGuide(
+        dayjs.duration(endTime.diff(startTime)),
+      );
+
+      const lineups = compact(
+        await mapAsyncSeq(allChannels, async (channel) => {
+          return await req.serverCtx.guideService.getChannelLineup(
+            channel.uuid,
+            startTime.toDate(),
+            endTime.toDate(),
+          );
+        }),
+      );
+
+      return res.send(lineups);
+    },
+  );
+
+  fastify.get(
     '/debug/helpers/compare_guides',
     {
       schema: {

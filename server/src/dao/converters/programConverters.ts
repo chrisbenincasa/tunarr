@@ -1,24 +1,94 @@
 import { Loaded } from '@mikro-orm/core';
-import { ContentProgram, FlexProgram, RedirectProgram } from '@tunarr/types';
+import {
+  ChannelProgram,
+  ContentProgram,
+  FlexProgram,
+  RedirectProgram,
+} from '@tunarr/types';
+import { find, isNil, merge } from 'lodash-es';
 import { MarkRequired } from 'ts-essentials';
+import { isPromise } from 'util/types';
 import { getEm } from '../dataSource.js';
-import { OfflineItem, RedirectItem } from '../derived_types/Lineup.js';
+import {
+  LineupItem,
+  OfflineItem,
+  RedirectItem,
+  isOfflineItem,
+  isRedirectItem,
+} from '../derived_types/Lineup.js';
 import { Channel } from '../entities/Channel.js';
 import { Program, ProgramType } from '../entities/Program.js';
-import { isNil } from 'lodash-es';
-import { isPromise } from 'util/types';
+import { logger } from '../legacyDbMigration.js';
+
+type ContentProgramConversionOptions = {
+  skipPopulate: boolean;
+  forcePopulate: boolean;
+};
+
+const defaultContentProgramConversionOptions: ContentProgramConversionOptions =
+  {
+    skipPopulate: false,
+    forcePopulate: false,
+  };
+
+type LineupItemConversionOptions = {
+  contentProgramConversionOptions?: Partial<ContentProgramConversionOptions>;
+};
 
 /**
  * Converts DB types to API types
  */
 export class ProgramConverter {
   /**
+   * Converts a LineupItem to a ChannelProgram
+   *
+   * @param channel
+   * @param item
+   * @param channelReferences
+   * @returns
+   */
+  async lineupItemToChannelProgram(
+    channel: Loaded<Channel, 'programs'>,
+    item: LineupItem,
+    channelReferences: Loaded<Channel, never, 'name' | 'number'>[],
+    opts?: LineupItemConversionOptions,
+  ): Promise<ChannelProgram | null> {
+    if (isOfflineItem(item)) {
+      return this.offlineLineupItemToProgram(channel, item);
+    } else if (isRedirectItem(item)) {
+      const redirectChannel = find(channelReferences, { uuid: item.channel });
+      if (isNil(redirectChannel)) {
+        logger.warn(
+          'Dangling redirect channel reference. Source channel = %s, target channel = %s',
+          channel.uuid,
+          item.channel,
+        );
+        return this.offlineLineupItemToProgram(channel, {
+          type: 'offline',
+          durationMs: item.durationMs,
+        });
+      }
+      return this.redirectLineupItemToProgram(item, redirectChannel);
+    } else {
+      const program = channel.programs.find((p) => p.uuid === item.id);
+      if (isNil(program)) {
+        return null;
+      }
+
+      return this.entityToContentProgram(
+        program,
+        opts?.contentProgramConversionOptions,
+      );
+    }
+  }
+
+  /**
    * Given a Program entity, convert to a ContentProgram for use in Lineup APIs
    * Takes care of loading missing relations
    */
   async entityToContentProgram(
     program: Loaded<Program>,
-    opts: { skipPopulate?: boolean } = { skipPopulate: false },
+    opts: Partial<ContentProgramConversionOptions> = defaultContentProgramConversionOptions,
   ) {
     return this.partialEntityToContentProgram(program, opts);
   }
@@ -33,15 +103,19 @@ export class ProgramConverter {
       Partial<Program>,
       'uuid' | 'title' | 'duration' | 'type'
     >,
-    opts: { skipPopulate?: boolean } = { skipPopulate: false },
+    opts: Partial<ContentProgramConversionOptions> = defaultContentProgramConversionOptions,
   ): Promise<ContentProgram> {
-    const em = getEm();
+    const mergedOpts = merge({}, defaultContentProgramConversionOptions, opts);
     let extraFields: Partial<ContentProgram> = {};
     // This will ensure extra fields are populated for join types
     // It won't reissue queries if the loaded program already has these popualted
     if (program.type === ProgramType.Episode) {
-      const populatedProgram = !opts.skipPopulate
-        ? await em.populate(program, ['tvShow', 'season'])
+      const shouldFetch =
+        mergedOpts.forcePopulate ||
+        ((isNil(program.tvShow) || isNil(program.season)) &&
+          !mergedOpts.skipPopulate);
+      const populatedProgram = shouldFetch
+        ? await getEm().populate(program, ['tvShow', 'season'])
         : program;
       extraFields = {
         seasonNumber: populatedProgram.season?.index,
@@ -52,8 +126,12 @@ export class ProgramConverter {
         seasonId: populatedProgram.season?.uuid,
       };
     } else if (program.type === ProgramType.Track) {
-      const populatedProgram = !opts.skipPopulate
-        ? await em.populate(program, ['artist', 'album'])
+      const shouldFetch =
+        mergedOpts.forcePopulate ||
+        ((isNil(program.album) || isNil(program.artist)) &&
+          !mergedOpts.skipPopulate);
+      const populatedProgram = shouldFetch
+        ? await getEm().populate(program, ['artist', 'album'])
         : program;
       extraFields = {
         // TODO: Use the join fields
