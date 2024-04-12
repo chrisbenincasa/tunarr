@@ -13,7 +13,7 @@ import { Plex, PlexApiFactory } from '../plex.js';
 import { GlobalScheduler } from '../services/scheduler.js';
 import { UpdateXmlTvTask } from '../tasks/updateXmlTvTask.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
-import { firstDefined, wait } from '../util';
+import { firstDefined, wait } from '../util/index.js';
 
 const logger = createLogger(import.meta);
 

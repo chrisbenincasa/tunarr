@@ -20,7 +20,7 @@ import { FillerPicker } from '../services/FillerPicker.js';
 import { TVGuideService as TVGuideServiceLegacy } from '../services/tvGuideServiceLegacy.js';
 import { ContextChannel, Maybe, PlayerContext } from '../types.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
-import { mapAsyncSeq } from '../util';
+import { mapAsyncSeq } from '../util/index.js';
 
 const logger = createLogger(import.meta);
 

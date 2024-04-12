@@ -21,7 +21,7 @@ import createLogger from '../logger.js';
 import { GlobalScheduler } from '../services/scheduler.js';
 import { UpdateXmlTvTask } from '../tasks/updateXmlTvTask.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
-import { attempt, mapAsyncSeq } from '../util';
+import { attempt, mapAsyncSeq } from '../util/index.js';
 
 dayjs.extend(duration);
 

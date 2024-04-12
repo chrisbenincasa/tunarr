@@ -37,7 +37,7 @@ import { Program, programDaoToDto } from '../dao/entities/Program.js';
 import { getSettings } from '../dao/settings.js';
 import createLogger from '../logger.js';
 import { Maybe } from '../types.js';
-import { deepCopy, groupByUniqFunc, wait } from '../util';
+import { deepCopy, groupByUniqFunc, wait } from '../util/index.js';
 import { binarySearchRange } from '../util/binarySearch.js';
 import { XmlTvWriter } from '../xmltv.js';
 import { EventService } from './eventService.js';

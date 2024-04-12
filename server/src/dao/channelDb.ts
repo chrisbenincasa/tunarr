@@ -40,7 +40,7 @@ import {
   groupByUniqAndMapAsync,
   mapAsyncSeq,
   mapReduceAsyncSeq,
-} from '../util';
+} from '../util/index.js';
 import { fileExists } from '../util/fsUtil.js';
 import { LineupDbAdapter } from './LineupDbAdapter.js';
 import { ProgramConverter } from './converters/programConverters.js';

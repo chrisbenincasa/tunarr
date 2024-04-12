@@ -19,7 +19,7 @@ import createLogger from './logger.js';
 import { getServerContext } from './serverContext.js';
 import { FillerPicker } from './services/FillerPicker.js';
 import { CHANNEL_CONTEXT_KEYS, ContextChannel, Nullable } from './types.js';
-import { zipWithIndex } from './util';
+import { zipWithIndex } from './util/index.js';
 import { binarySearchRange } from './util/binarySearch.js';
 import { random } from './util/random.js';
 

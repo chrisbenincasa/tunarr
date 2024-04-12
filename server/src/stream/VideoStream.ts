@@ -19,7 +19,7 @@ import { getServerContext } from '../serverContext';
 import { wereThereTooManyAttempts } from '../throttler';
 import { ContextChannel, Maybe, PlayerContext } from '../types';
 import { StreamQueryString } from '../types/schemas';
-import { deepCopy } from '../util';
+import { deepCopy } from '../util/index.js';
 import { fileExists } from '../util/fsUtil';
 import { Channel } from '../dao/entities/Channel';
 

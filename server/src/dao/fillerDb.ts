@@ -5,7 +5,7 @@ import {
 } from '@tunarr/types/api';
 import { filter, isNil, isString, map } from 'lodash-es';
 import { ChannelCache } from '../channelCache.js';
-import { mapAsyncSeq } from '../util';
+import { mapAsyncSeq } from '../util/index.js';
 import { ProgramConverter } from './converters/programConverters.js';
 import { getEm } from './dataSource.js';
 import { Channel as ChannelEntity } from './entities/Channel.js';

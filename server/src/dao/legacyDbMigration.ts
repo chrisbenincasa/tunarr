@@ -27,7 +27,7 @@ import path from 'path';
 import { globalOptions } from '../globals.js';
 import createLogger from '../logger.js';
 import { Maybe } from '../types.js';
-import { attempt } from '../util';
+import { attempt } from '../util/index.js';
 import { EntityManager, withDb } from './dataSource.js';
 import { CachedImage } from './entities/CachedImage.js';
 import { PlexServerSettings as PlexServerSettingsEntity } from './entities/PlexServerSettings.js';

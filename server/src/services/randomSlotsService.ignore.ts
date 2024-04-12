@@ -6,7 +6,7 @@ import { isUndefined, last } from 'lodash-es';
 import createLogger from '../logger.js';
 import { Maybe } from '../types.js';
 import { Program } from '@tunarr/types';
-import { deepCopyArray } from '../util.js';
+import { deepCopyArray } from '../util/index.js.js';
 import { MarkOptional } from 'ts-essentials';
 
 const logger = createLogger(import.meta);

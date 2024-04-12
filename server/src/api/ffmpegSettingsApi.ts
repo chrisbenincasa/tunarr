@@ -3,7 +3,7 @@ import { FfmpegSettingsSchema } from '@tunarr/types/schemas';
 import { isError, isUndefined } from 'lodash-es';
 import createLogger from '../logger.js';
 import { RouterPluginCallback } from '../types/serverType.js';
-import { firstDefined } from '../util';
+import { firstDefined } from '../util/index.js';
 import { z } from 'zod';
 
 const logger = createLogger(import.meta);

@@ -6,7 +6,7 @@ import {
 } from '@mikro-orm/core';
 import type { IType } from '@mikro-orm/core';
 import { v4 } from 'uuid';
-import { TaggedDbType } from '../custom_types/BrandedType';
+import { TaggedDbType } from '../custom_types/BrandedType.js';
 import type { Tag } from '@tunarr/types';
 
 /**

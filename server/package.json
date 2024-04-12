@@ -122,7 +122,7 @@
   },
   "lint-staged": {
     "*.ts": [
-      "eslint --fix"
+      "eslint --fix --no-warn-ignored"
     ]
   }
 }

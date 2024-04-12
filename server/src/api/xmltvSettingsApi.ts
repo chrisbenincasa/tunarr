@@ -9,7 +9,7 @@ import createLogger from '../logger.js';
 import { GlobalScheduler } from '../services/scheduler.js';
 import { UpdateXmlTvTask } from '../tasks/updateXmlTvTask.js';
 import { RouterPluginCallback } from '../types/serverType.js';
-import { firstDefined } from '../util';
+import { firstDefined } from '../util/index.js';
 
 const logger = createLogger(import.meta);
 

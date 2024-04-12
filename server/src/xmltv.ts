@@ -11,7 +11,7 @@ import fs from 'fs';
 import { isNil, isUndefined, keys, map } from 'lodash-es';
 import XMLWriter from 'xml-writer';
 import { ChannelPrograms } from './services/tvGuideServiceLegacy.js';
-import { wait } from './util';
+import { wait } from './util/index.js';
 import createLogger from './logger.js';
 
 const logger = createLogger(import.meta);

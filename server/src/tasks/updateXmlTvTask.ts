@@ -10,7 +10,7 @@ import { ServerContext } from '../serverContext.js';
 import { TVGuideService } from '../services/tvGuideService.js';
 import { Maybe } from '../types.js';
 import type { Tag } from '@tunarr/types';
-import { mapAsyncSeq } from '../util';
+import { mapAsyncSeq } from '../util/index.js';
 import { Task } from './task.js';
 import { fileExists } from '../util/fsUtil.js';
 import { globalOptions } from '../globals.js';

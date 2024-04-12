@@ -28,7 +28,7 @@ import { Player } from './player.js';
 import { PlexPlayer } from './plexPlayer.js';
 import { ContextChannel, Maybe, PlayerContext } from './types.js';
 import { TypedEventEmitter } from './types/eventEmitter.js';
-import { isNonEmptyString } from './util';
+import { isNonEmptyString } from './util/index.js';
 import { isContentBackedLineupIteam } from './dao/derived_types/StreamLineup.js';
 
 const logger = createLogger(import.meta);

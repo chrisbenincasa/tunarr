@@ -23,7 +23,7 @@ import { Program, programDaoToDto } from '../dao/entities/Program.js';
 import { getSettings } from '../dao/settings.js';
 import createLogger from '../logger.js';
 import { Maybe } from '../types.js';
-import { groupByUniqFunc, wait } from '../util';
+import { groupByUniqFunc, wait } from '../util/index.js';
 import { XmlTvWriter } from '../xmltv.js';
 import { EventService } from './eventService.js';
 import throttle from './throttle.js';

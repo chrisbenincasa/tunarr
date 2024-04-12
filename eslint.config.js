@@ -13,6 +13,7 @@ export default tseslint.config(
       '**/.tsup/*',
       '**/dist/*',
       '**/build/*',
+      '**/scripts/*',
       '**/*.config.ts',
       '**/*.ignore.ts',
       '**/*.test.ts', // Ignore test files for now, until we fix up tsconfig files

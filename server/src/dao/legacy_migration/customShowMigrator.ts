@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import ld, { isNil, maxBy, partition } from 'lodash-es';
 import path from 'path';
-import { groupByUniq, mapAsyncSeq } from '../../util';
+import { groupByUniq, mapAsyncSeq } from '../../util/index.js';
 import { withDb } from '../dataSource.js';
 import { CustomShow as CustomShowEntity } from '../entities/CustomShow.js';
 import { CustomShowContent } from '../entities/CustomShowContent.js';

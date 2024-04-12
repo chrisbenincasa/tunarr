@@ -1,5 +1,5 @@
 import { chunk, map } from 'lodash-es';
-import { flatMapAsyncSeq, groupByAndMapAsync } from '../util';
+import { flatMapAsyncSeq, groupByAndMapAsync } from '../util/index.js';
 import { ProgramConverter } from './converters/programConverters.js';
 import { programSourceTypeFromString } from './custom_types/ProgramSourceType';
 import { getEm } from './dataSource';

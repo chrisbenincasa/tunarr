@@ -22,7 +22,7 @@ import {
   isNodeError,
   isNonEmptyString,
   mapAsyncSeq,
-} from '../../util';
+} from '../../util/index.js';
 import { ProgramSourceType } from '../custom_types/ProgramSourceType.js';
 import { getEm, withDb } from '../dataSource.js';
 import {

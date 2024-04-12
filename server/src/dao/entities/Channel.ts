@@ -7,7 +7,7 @@ import {
 } from '@mikro-orm/core';
 import { Channel as ChannelDTO, Resolution } from '@tunarr/types';
 import { type Tag } from '@tunarr/types';
-import { nilToUndefined } from '../../util';
+import { nilToUndefined } from '../../util/index.js';
 import { DurationType } from '../custom_types/DurationType.js';
 import { BaseEntity } from './BaseEntity.js';
 import { ChannelFillerShow } from './ChannelFillerShow.js';
