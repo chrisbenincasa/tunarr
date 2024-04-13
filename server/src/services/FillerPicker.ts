@@ -74,7 +74,7 @@ export class FillerPicker {
               filler.fillerShow.uuid,
             );
             const timeSince = t1 == 0 ? OneDayMillis : t0 - t1;
-            if (timeSince + constants.SLACK >= filler.cooldown.asSeconds()) {
+            if (timeSince + constants.SLACK >= filler.cooldown) {
               //should we pick this list?
               listM += filler.weight;
               if (random.bool(filler.weight, listM)) {
@@ -85,7 +85,7 @@ export class FillerPicker {
                 break;
               }
             } else {
-              const w = filler.cooldown.asSeconds() - timeSince;
+              const w = filler.cooldown - timeSince;
               if (clip.duration + w <= maxDuration + constants.SLACK) {
                 minimumWait = Math.min(minimumWait, w);
               }

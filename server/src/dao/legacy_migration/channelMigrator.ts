@@ -421,8 +421,8 @@ export async function migrateChannels(dbPath: string) {
         channel: entity.uuid,
         fillerShow: filler.id as FillerShowId,
         weight: filler.weight,
+        cooldown: filler.cooldownSeconds,
       });
-      cfs.cooldown = dayjs.duration({ seconds: filler.cooldownSeconds });
       return cfs;
     });
 

@@ -15,5 +15,5 @@ export class ChannelFillerShow {
   weight!: number;
 
   @Property()
-  cooldown!: number;
+  cooldown!: number; // Seconds
 }
