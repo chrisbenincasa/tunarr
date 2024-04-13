@@ -16,7 +16,6 @@ import ld, {
   filter,
   find,
   groupBy,
-  initial,
   isEmpty,
   isNil,
   isNull,
@@ -504,7 +503,7 @@ export class ChannelDB {
       });
     }
     lineup.startTimeOffsets = reduce(
-      initial(lineup.items),
+      lineup.items,
       (acc, item, index) => [...acc, acc[index] + item.durationMs],
       [0],
     );
