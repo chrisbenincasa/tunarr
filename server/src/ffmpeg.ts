@@ -18,6 +18,12 @@ const logger = createLogger(import.meta);
 const MAXIMUM_ERROR_DURATION_MS = 60000;
 const REALLY_RIDICULOUSLY_HIGH_FPS_FOR_TUNARRS_USECASE = 120;
 
+const STILLIMAGE_SUPPORTED_ENCODERS = [
+  'mpeg2video',
+  'libx264',
+  'h264_videotoolbox',
+];
+
 export type FfmpegEvents = {
   end: (obj?: { code: number; cmd: string }) => void;
   error: (obj?: { code: number; cmd: string }) => void;
@@ -340,7 +346,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       `-fflags`,
       `+genpts+discardcorrupt+igndts`,
     ];
-    let stillImage = false;
+    let useStillImageTune = false;
 
     if (
       limitRead === true &&
@@ -452,8 +458,8 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
           // when it is the same image
           // Don't enable this for NVENC...it seems to break with a strange
           // error. Unclear if this affects other HW encoders
-          if (!this.opts.videoEncoder.includes('nvenc')) {
-            stillImage = true;
+          if (STILLIMAGE_SUPPORTED_ENCODERS.includes(this.opts.videoEncoder)) {
+            useStillImageTune = true;
           }
         } else if (this.opts.errorScreen == 'static') {
           ffmpegArgs.push('-f', 'lavfi', '-i', `nullsrc=s=64x36`);
@@ -698,7 +704,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
         `-sc_threshold`,
         `1000000000`,
       );
-      if (stillImage && this.opts.videoEncoder.toLowerCase().includes('nv')) {
+      if (useStillImageTune) {
         ffmpegArgs.push('-tune', 'stillimage');
       }
     }
