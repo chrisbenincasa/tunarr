@@ -65,10 +65,10 @@ export async function getCurrentProgramAndTimeElapsed(
         ? timeSinceStart
         : timeSinceStart % channel.duration;
 
-    const programIndex = binarySearchRange(
-      channelLineup.startTimeOffsets,
-      elapsed,
-    );
+    const programIndex =
+      channelLineup.startTimeOffsets.length === 1
+        ? 0
+        : binarySearchRange(channelLineup.startTimeOffsets, elapsed);
 
     if (!isNull(programIndex)) {
       currentProgramIndex = programIndex;

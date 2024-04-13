@@ -262,7 +262,10 @@ export class TVGuideService {
       const startOfCycle = currentUpdateTimeMs - channelProgress;
 
       // Binary search for the currently playing program
-      const targetIndex = binarySearchRange(accumulate, channelProgress);
+      const targetIndex =
+        accumulate.length === 1
+          ? 0
+          : binarySearchRange(accumulate, channelProgress);
 
       if (
         isNull(targetIndex) ||
