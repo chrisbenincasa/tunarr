@@ -712,17 +712,13 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     if (transcodeVideo && this.audioOnly !== true) {
       // add the video encoder flags
       ffmpegArgs.push(
-        '-crf',
-        '22',
+        `-b:v`,
+        `${this.opts.videoBitrate}k`,
         `-maxrate:v`,
         `${this.opts.videoBitrate}k`,
         `-bufsize:v`,
         `${this.opts.videoBufferSize}k`,
       );
-
-      if (this.opts.videoEncoder.toLowerCase() === 'mpeg2video') {
-        ffmpegArgs.push('-qscale:v', '1', '-b:v', `${this.opts.videoBitrate}k`);
-      }
     }
     if (transcodeAudio) {
       // add the audio encoder flags
