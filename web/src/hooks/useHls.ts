@@ -11,8 +11,6 @@ export const useHls = () => {
       return;
     }
 
-    console.log('Initializing HLS');
-
     const newHls = new Hls({
       progressive: true,
       fragLoadingTimeOut: 30000,
@@ -54,7 +52,7 @@ export const useHls = () => {
     }
     hlsRef.current = null;
     refreshHls();
-  }, [hlsRef]);
+  }, []);
 
   useEffect(() => {
     refreshHls();

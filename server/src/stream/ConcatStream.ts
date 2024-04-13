@@ -94,11 +94,11 @@ export class ConcatStream {
     });
 
     ffmpeg.on('close', () => {
-      logger.warn('CONCAT - FFMPEG CLOSE');
+      logger.debug('CONCAT - FFMPEG CLOSE');
     });
 
     ffmpeg.on('end', () => {
-      logger.warn('FFMPEG END - FFMPEG CLOSE');
+      logger.debug('FFMPEG END - FFMPEG CLOSE');
       logger.info(
         'Video queue exhausted. Either you played 100 different clips in a row or there were technical issues that made all of the possible 100 attempts fail.',
       );

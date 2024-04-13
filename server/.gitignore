@@ -4,3 +4,4 @@ node_modules
 out/
 temp/
 streams/
+*.log

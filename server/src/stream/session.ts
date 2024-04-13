@@ -2,9 +2,8 @@ import { FfmpegSettings } from '@tunarr/types';
 import retry from 'async-retry';
 import { isEmpty, isError, isNil, isUndefined, keys, once } from 'lodash-es';
 import fs from 'node:fs/promises';
-import { dirname, join, resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 import { Readable } from 'node:stream';
-import { fileURLToPath } from 'node:url';
 import { inspect } from 'node:util';
 import { v4 } from 'uuid';
 import { Channel } from '../dao/entities/Channel.js';
@@ -12,9 +11,6 @@ import { FFMPEG } from '../ffmpeg.js';
 import { serverOptions } from '../globals.js';
 import createLogger from '../logger.js';
 import { isNodeError } from '../util/index.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 const logger = createLogger(import.meta);
 
@@ -34,11 +30,24 @@ export class StreamSession {
   #connections: Record<string, StreamConnectionDetails> = {};
   #heartbeats: Record<string, number> = {};
   #cleanupFunc: NodeJS.Timeout | null = null;
+  #outPath: string;
+  // Absolute path to the stream directory
+  #streamPath: string;
+  // The path to request streaming assets from the server
+  #serverPath: string;
 
   private constructor(channel: Channel, ffmpegSettings: FfmpegSettings) {
     this.#uniqueId = v4();
     this.#channel = channel;
     this.#ffmpegSettings = ffmpegSettings;
+    // TODO expost this as an option on FfmpegSettings
+    this.#outPath = resolve(
+      process.cwd(),
+      'streams',
+      `stream_${this.#channel.uuid}`,
+    );
+    this.#streamPath = join(this.#outPath, 'stream.m3u8');
+    this.#serverPath = `/streams/stream_${this.#channel.uuid}/stream.m3u8`;
   }
 
   static create(channel: Channel, ffmpegSettings: FfmpegSettings) {
@@ -76,8 +85,9 @@ export class StreamSession {
   }
 
   private async cleanupDirectory() {
+    logger.debug(`Cleaning out stream path for session: %s`, this.#outPath);
     return fs
-      .rm(resolve(__dirname, '..', 'streams', `stream_${this.#channel.uuid}`), {
+      .rm(this.#outPath, {
         recursive: true,
         force: true,
       })
@@ -111,40 +121,33 @@ export class StreamSession {
     });
 
     this.#ffmpeg.on('end', () => {
-      logger.info(
-        'Video queue exhausted. Either you played 100 different clips in a row or there were technical issues that made all of the possible 100 attempts fail.',
-      );
+      logger.info('[Session %s]: Video queue exhausted.');
       stop();
     });
 
-    // TODO this is hacky
-    const outPath = resolve(
-      process.cwd(),
-      'streams',
-      `stream_${this.#channel.uuid}`,
-    );
-
-    logger.debug(`Creating stream directory: ${outPath}`);
+    logger.debug(`Creating stream directory: ${this.#outPath}`);
 
     try {
-      await fs.stat(outPath);
+      await fs.stat(this.#outPath);
       await this.cleanupDirectory();
     } catch (e) {
       if (isNodeError(e) && e.code === 'ENOENT') {
-        await fs.mkdir(outPath);
+        logger.debug("[Session %s]: Stream directory doesn't exist.");
       }
+    } finally {
+      await fs.mkdir(this.#outPath);
     }
 
     const stream = this.#ffmpeg.spawnConcat(
       `http://localhost:${serverOptions().port}/playlist?channel=${
         this.#channel.number
-      }&audioOnly=false`, // TODO FIX
+      }&audioOnly=false&hls=true`, // TODO FIX
       {
         enableHls: true,
         hlsOptions: {
           streamBasePath: `stream_${this.#channel.uuid}`,
-          hlsTime: 2,
-          hlsListSize: 5,
+          hlsTime: 3,
+          hlsListSize: 8,
         },
         logOutput: false,
       },
@@ -159,18 +162,18 @@ export class StreamSession {
         stream.removeListener('data', onceListener);
       });
 
-      // TODO this is hacky
-      const streamPath = join(outPath, 'stream.m3u8');
-
       // Wait for the stream to become ready
       try {
         await retry(
           async (bail) => {
             try {
-              await fs.stat(streamPath);
+              await fs.stat(this.#streamPath);
             } catch (e) {
               if (isNodeError(e) && e.code === 'ENOENT') {
-                logger.debug('Still waiting for stream to start.');
+                logger.debug(
+                  '[Session %s] Still waiting for stream to start.',
+                  this.#channel.uuid,
+                );
                 throw e; // Retry
               } else {
                 this.#state === 'error';
@@ -180,6 +183,7 @@ export class StreamSession {
           },
           {
             retries: 10,
+            factor: 1.2,
           },
         );
       } catch (e) {
@@ -274,6 +278,10 @@ export class StreamSession {
   }
 
   get streamPath() {
-    return `/streams/stream_${this.#channel.uuid}/stream.m3u8`;
+    return this.#streamPath;
+  }
+
+  get serverPath() {
+    return this.#serverPath;
   }
 }

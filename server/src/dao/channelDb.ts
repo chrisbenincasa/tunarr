@@ -376,6 +376,18 @@ export class ChannelDB {
     );
   }
 
+  async loadChannelAndLineup(channelId: string) {
+    const channel = await this.getChannelById(channelId);
+    if (isNull(channel)) {
+      return null;
+    }
+
+    return {
+      channel,
+      lineup: await this.loadLineup(channelId),
+    };
+  }
+
   async loadLineup(channelId: string) {
     const db = await this.getFileDb(channelId);
     await db.read();

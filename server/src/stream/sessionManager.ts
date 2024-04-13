@@ -1,9 +1,9 @@
 import { FfmpegSettings } from '@tunarr/types';
 import { Channel } from '../dao/entities/Channel.js';
 import { StreamConnectionDetails, StreamSession } from './session.js';
-import { isNil } from 'lodash-es';
+import { isNil, isNull } from 'lodash-es';
 import { Mutex } from 'async-mutex';
-import { Loaded } from '@mikro-orm/core';
+import { getEm } from '../dao/dataSource.js';
 
 class SessionManager {
   // A little janky, but we have the global lock which protects the locks map
@@ -38,25 +38,34 @@ class SessionManager {
   }
 
   async getOrCreateSession(
-    channel: Loaded<Channel>,
+    channelId: string,
     ffmpegSettings: FfmpegSettings,
     token: string,
     connection: StreamConnectionDetails,
   ) {
-    const lock = await this.getOrCreateLock(channel.uuid);
+    const lock = await this.getOrCreateLock(channelId);
     const session = await lock.runExclusive(async () => {
+      const channel = await getEm().findOne(Channel, { uuid: channelId });
+      if (isNil(channel)) {
+        return null;
+      }
+
       let session = this.#sessions[channel.uuid];
       if (!session) {
         session = StreamSession.create(channel, ffmpegSettings);
         this.#sessions[channel.uuid] = session;
       }
 
-      if (!session.started) {
+      if (!session.started || session.hasError) {
         await session.start();
       }
 
       return session;
     });
+
+    if (isNull(session)) {
+      return null;
+    }
 
     if (session.hasError) {
       return null;

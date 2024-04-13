@@ -129,9 +129,9 @@ export class TVGuideService {
     });
   }
 
-  async refreshGuide(guideDuration: Duration) {
+  async refreshGuide(guideDuration: Duration, force: boolean = false) {
     const now = new Date().getTime();
-    if (this.lastUpdateTime < now && this.currentUpdateTime === -1) {
+    if (force || (this.lastUpdateTime < now && this.currentUpdateTime === -1)) {
       this.currentUpdateTime = now;
       this.currentEndTime = now + guideDuration.asMilliseconds();
 
@@ -272,7 +272,9 @@ export class TVGuideService {
         !inRange(targetIndex, 0, accumulate.length) ||
         !inRange(targetIndex, 0, lineup.items.length)
       ) {
-        throw new Error('General algorithm error, completely unexpected');
+        throw new Error(
+          `General algorithm error, completely unexpected. Channel: ${channel.uuid} ${channel.name}`,
+        );
       }
 
       const lineupItem = lineup.items[targetIndex];
@@ -396,18 +398,20 @@ export class TVGuideService {
             currentUpdateTimeMs,
             channelRedirectStack,
           );
+
           const start = Math.max(
             playing.startTimeMs,
             redirectChannelProgram.startTimeMs,
           );
-          const duration = Math.min(
-            playing.startTimeMs + playing.program.duration - start,
-            redirectChannelProgram.startTimeMs +
-              redirectChannelProgram.program.duration -
-              start,
-          );
+
           const program2 = deepCopy(redirectChannelProgram.program);
-          program2.duration = duration;
+          // Cap the program at the lowest duration
+          // Either the redirect slot will cut off before the program is
+          // finished, or the program itself will end.
+          program2.duration = Math.min(
+            playing.program.duration,
+            redirectChannelProgram.program.duration,
+          );
           playing = {
             programIndex: playing.programIndex,
             startTimeMs: start,
