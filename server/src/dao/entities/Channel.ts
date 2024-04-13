@@ -8,7 +8,6 @@ import {
 import { Channel as ChannelDTO, Resolution } from '@tunarr/types';
 import { type Tag } from '@tunarr/types';
 import { nilToUndefined } from '../../util/index.js';
-import { DurationType } from '../custom_types/DurationType.js';
 import { BaseEntity } from './BaseEntity.js';
 import { ChannelFillerShow } from './ChannelFillerShow.js';
 import { CustomShow } from './CustomShow.js';
@@ -120,7 +119,7 @@ export class Channel extends BaseEntity {
   })
   fillers = new Collection<FillerShow>(this);
 
-  @Property({ nullable: true, type: DurationType })
+  @Property({ nullable: true })
   fillerRepeatCooldown?: number; // Seconds
 
   @ManyToMany(() => CustomShow)
