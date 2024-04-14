@@ -122,7 +122,7 @@ ${chalk.blue('  |_| ')}${chalk.green(' \\___/')}${chalk.yellow(
         .middleware(setServerOptions);
     },
     async (args: ArgumentsCamelCase<ServerOptions>) => {
-      const f = await initServer(args);
+      const { app: f } = await initServer(args);
       const x = await f
         .inject({ method: 'get', url: '/docs/json' })
         .then((r) => r.body);
