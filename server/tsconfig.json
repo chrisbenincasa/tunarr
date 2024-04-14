@@ -33,7 +33,7 @@
     "include": [
         "./src/**/*.ts",
         "./scripts/**/*.ts",
-        "__tests__/**/*",
+        "./tests/**/*.ts",
         "mikro-orm.prod.config.ts",
     ],
     "exclude": [

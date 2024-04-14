@@ -1,13 +1,10 @@
 import { findKey, merge } from 'lodash-es';
 import isUndefined from 'lodash-es/isUndefined.js';
 import once from 'lodash-es/once.js';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import path, { resolve } from 'node:path';
 import { GlobalOptions, ServerOptions } from './types.js';
-
-// TODO: See if we can replace with import.meta.dirname now
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import dbConfig from '../mikro-orm.config.js';
+import { Options } from '@mikro-orm/better-sqlite';
 
 const logLevels = {
   error: 0,
@@ -34,7 +31,7 @@ export const setGlobalOptions = once((runtimeOptions: GlobalOptions) => {
 
   _globalOptions = {
     ...runtimeOptions,
-    database: resolve(__dirname, runtimeOptions.database),
+    database: resolve(process.cwd(), runtimeOptions.database),
     log_level: logLevel,
   };
 });
@@ -61,4 +58,15 @@ export const serverOptions = () => {
   }
 
   return merge(globalOptions(), _serverOptions);
+};
+
+export const dbOptions = (): Options => {
+  if (isUndefined(_serverOptions)) {
+    throw new Error('Accessing server options before they were set!');
+  }
+
+  return {
+    ...dbConfig,
+    dbName: path.join(_serverOptions.database, 'db.db'),
+  };
 };

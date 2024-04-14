@@ -1,27 +1,27 @@
-import type { EntityManager as BetterSqlite3EntityManager } from '@mikro-orm/better-sqlite'; // or any other driver package
+import type {
+  EntityManager as BetterSqlite3EntityManager,
+  Options,
+} from '@mikro-orm/better-sqlite'; // or any other driver package
 import { MikroORM } from '@mikro-orm/better-sqlite';
 import { CreateContextOptions, RequestContext } from '@mikro-orm/core';
 import fs from 'fs';
 import { isUndefined, once } from 'lodash-es';
-import path from 'node:path';
 import 'reflect-metadata';
-import dbConfig from '../../mikro-orm.config.js';
-import { globalOptions } from '../globals.js';
+import { dbOptions } from '../globals.js';
 import createLogger from '../logger.js';
 
 const logger = createLogger(import.meta);
 
 export type EntityManager = BetterSqlite3EntityManager;
 
-export const initOrm = once(async () => {
-  const dbPath = path.join(globalOptions().database, 'db.db');
-  const hasExistingDb = fs.existsSync(dbPath);
-  logger.debug(`${hasExistingDb ? 'Existing' : 'No Existing'} DB at ${dbPath}`);
+export const initOrm = once(async (mikroOrmOptions?: Options) => {
+  const opts = mikroOrmOptions ?? dbOptions();
+  const hasExistingDb = fs.existsSync(opts.dbName!); // Fail fast.
+  logger.debug(
+    `${hasExistingDb ? 'Existing' : 'No Existing'} DB at ${opts.dbName}`,
+  );
 
-  const orm = await MikroORM.init({
-    ...dbConfig,
-    dbName: dbPath,
-  });
+  const orm = await MikroORM.init(opts);
 
   const migrator = orm.getMigrator();
 

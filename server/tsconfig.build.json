@@ -7,7 +7,7 @@
     ],
     "exclude": [
         "./build/**/*",
-        "__tests__/**/*",
+        "./tests/**/*",
         "./src/**/*.test.ts",
         "./src/**/*.ignore.ts",
         "./**/streams/**/*.ts",

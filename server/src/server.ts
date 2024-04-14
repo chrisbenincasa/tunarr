@@ -284,7 +284,8 @@ export async function initServer(opts: ServerOptions) {
   await updateXMLPromise;
 
   const host = process.env['TUNARR_BIND_ADDR'] ?? 'localhost';
-  app
+
+  const url = await app
     .addHook('onClose', async () => {
       const ctx = await serverContext();
       const t = new Date().getTime();
@@ -306,29 +307,26 @@ export async function initServer(opts: ServerOptions) {
         logger.error('Scheduled job graceful shutdown failed.', e);
       }
     })
-    .listen(
-      {
-        host,
-        port: opts.port,
-      },
-      () => {
-        logger.info(`HTTP server running on port: http://${host}:${opts.port}`);
-        const hdhrSettings = ctx.settings.hdhrSettings();
-        if (hdhrSettings.autoDiscoveryEnabled) {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-          (ctx.hdhrService.ssdp as any).start();
-        }
+    .listen({
+      host,
+      port: opts.port,
+    });
 
-        ctx.eventService.push({
-          type: 'lifecycle',
-          message: `Server Started`,
-          detail: {
-            time: new Date().getTime(),
-          },
-          level: 'success',
-        });
-      },
-    );
+  logger.info(`HTTP server running on port: http://${host}:${opts.port}`);
+  const hdhrSettings = ctx.settings.hdhrSettings();
+  if (hdhrSettings.autoDiscoveryEnabled) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+    (ctx.hdhrService.ssdp as any).start();
+  }
 
-  return app;
+  ctx.eventService.push({
+    type: 'lifecycle',
+    message: `Server Started`,
+    detail: {
+      time: new Date().getTime(),
+    },
+    level: 'success',
+  });
+
+  return { app, url };
 }
