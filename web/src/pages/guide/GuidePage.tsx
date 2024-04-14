@@ -181,17 +181,14 @@ export default function GuidePage() {
   >();
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
+  const darkMode = useStore((state) => state.theme.darkMode);
 
   const handleClick = (
     event: React.MouseEvent<HTMLElement>,
     channel: ChannelLineup,
   ) => {
-    console.log('test');
-
     setAnchorEl(event.currentTarget);
     setChannelMenu(channel);
-    console.log(event.currentTarget);
-    console.log(channel);
   };
 
   const handleClose = () => {
@@ -636,7 +633,11 @@ export default function GuidePage() {
                   onClick={(event) => handleClick(event, channel)}
                   endIcon={<KeyboardArrowDownIcon />}
                   fullWidth
-                  sx={{ color: '#000', textAlign: 'left', lineHeight: '1.25' }}
+                  sx={{
+                    color: darkMode ? '#fff' : '#000',
+                    textAlign: 'left',
+                    lineHeight: '1.25',
+                  }}
                 >
                   {smallViewport ? channel.number : channel.name}
                 </StyledButton>
