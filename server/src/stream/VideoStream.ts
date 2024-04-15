@@ -63,7 +63,7 @@ export class VideoStream {
     }
 
     const audioOnly = req.audioOnly;
-    const session = req.session;
+    const session = req.session ?? 0;
     const m3u8 = req.m3u8 ?? false;
     const channel = await serverCtx.channelDB.getChannel(req.channel);
 
