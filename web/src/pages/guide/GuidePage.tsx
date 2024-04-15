@@ -2,28 +2,44 @@ import {
   ArrowBackIos,
   ArrowForwardIos,
   History,
+  Dvr as ProgrammingIcon,
+  TextSnippet,
+  PlayArrow as WatchIcon,
   ZoomIn as ZoomInIcon,
   ZoomOut as ZoomOutIcon,
 } from '@mui/icons-material';
+import EditIcon from '@mui/icons-material/Edit';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import {
   Box,
+  Button,
   CircularProgress,
   FormControl,
   IconButton,
+  Menu,
+  MenuItem,
+  MenuProps,
   Stack,
   Tooltip,
   Typography,
   styled,
   useMediaQuery,
 } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
+import { alpha, useTheme } from '@mui/material/styles';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { useQueryClient } from '@tanstack/react-query';
-import { TvGuideProgram } from '@tunarr/types';
+import { ChannelLineup, TvGuideProgram } from '@tunarr/types';
 import dayjs, { Dayjs, duration } from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 import { isEmpty, isUndefined, round } from 'lodash-es';
-import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
+import React, {
+  Fragment,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+import { Link as RouterLink } from 'react-router-dom';
 import { useInterval } from 'usehooks-ts';
 import ProgramDetailsDialog from '../../components/ProgramDetailsDialog.tsx';
 import TunarrLogo from '../../components/TunarrLogo.tsx';
@@ -77,6 +93,56 @@ const GuideItem = styled(GridChild)<{ width: number; index: number }>(
   }),
 );
 
+const StyledMenu = styled((props: MenuProps) => (
+  <Menu
+    elevation={0}
+    anchorOrigin={{
+      vertical: 'bottom',
+      horizontal: 'right',
+    }}
+    transformOrigin={{
+      vertical: 'top',
+      horizontal: 'right',
+    }}
+    {...props}
+  />
+))(({ theme }) => ({
+  '& .MuiPaper-root': {
+    borderRadius: 6,
+    marginTop: theme.spacing(1),
+    minWidth: 180,
+    color:
+      theme.palette.mode === 'light'
+        ? 'rgb(55, 65, 81)'
+        : theme.palette.grey[300],
+    boxShadow:
+      'rgb(255, 255, 255) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 0px 0px 1px, rgba(0, 0, 0, 0.1) 0px 10px 15px -3px, rgba(0, 0, 0, 0.05) 0px 4px 6px -2px',
+    '& .MuiMenu-list': {
+      padding: '4px 0',
+    },
+    '& .MuiMenuItem-root': {
+      '& .MuiSvgIcon-root': {
+        fontSize: 18,
+        color: theme.palette.text.secondary,
+        marginRight: theme.spacing(1.5),
+      },
+      '&:active': {
+        backgroundColor: alpha(
+          theme.palette.primary.main,
+          theme.palette.action.selectedOpacity,
+        ),
+      },
+    },
+  },
+}));
+
+const StyledButton = styled(Button)`
+  & .MuiButton-endIcon {
+    flex-grow: 1;
+    justify-content: flex-end;
+  }
+`;
+
 const SubtractInterval = dayjs.duration(1, 'hour');
 const MinDurationMillis = dayjs.duration(1, 'hour').asMilliseconds();
 const MaxDurationMillis = dayjs.duration(8, 'hour').asMilliseconds();
@@ -108,10 +174,27 @@ export default function GuidePage() {
   const [start, setStart] = useState(roundCurrentTime(15));
   const [end, setEnd] = useState(start.add(guideDuration, 'ms'));
   const [currentTime, setCurrentTime] = useState(dayjs().format('h:mm'));
+  const [channelMenu, setChannelMenu] = useState<ChannelLineup>();
   const [progress, setProgress] = useState(calcProgress(start, end));
   const [modalProgram, setModalProgram] = useState<
     TvGuideProgram | undefined
   >();
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const open = Boolean(anchorEl);
+  const darkMode = useStore((state) => state.theme.darkMode);
+
+  const handleClick = (
+    event: React.MouseEvent<HTMLElement>,
+    channel: ChannelLineup,
+  ) => {
+    setAnchorEl(event.currentTarget);
+    setChannelMenu(channel);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
   const queryClient = useQueryClient();
 
   const timelineDuration = dayjs.duration(end.diff(start));
@@ -415,6 +498,53 @@ export default function GuidePage() {
     );
   });
 
+  const renderChannelMenu = () => {
+    return channelMenu ? (
+      <StyledMenu
+        id="channel-nav-menu"
+        MenuListProps={{
+          'aria-labelledby': 'channel-nav-button',
+        }}
+        anchorEl={anchorEl}
+        open={open}
+        onClose={handleClose}
+      >
+        <MenuItem
+          disableRipple
+          to={`/channels/${channelMenu.id}/edit`}
+          component={RouterLink}
+        >
+          <EditIcon />
+          Edit Channel
+        </MenuItem>
+        <MenuItem
+          disableRipple
+          to={`/channels/${channelMenu.id}/programming`}
+          component={RouterLink}
+        >
+          <ProgrammingIcon />
+          Modify Programing
+        </MenuItem>
+        <MenuItem
+          disableRipple
+          to={`/channels/${channelMenu.id}/watch`}
+          component={RouterLink}
+        >
+          <WatchIcon />
+          Watch Channel
+        </MenuItem>
+        <MenuItem
+          disableRipple
+          to={`http://localhost:8000/media-player/${channelMenu.number}.m3u`}
+          component={RouterLink}
+        >
+          <TextSnippet />
+          M3U Link
+        </MenuItem>
+      </StyledMenu>
+    ) : null;
+  };
+
   return (
     <>
       <Typography variant="h4" mb={2}>
@@ -478,40 +608,41 @@ export default function GuidePage() {
             flexDirection="column"
             sx={{ width: `${smallViewport ? '10%' : '15%'}` }}
           >
-            <Box sx={{ height: '4.5rem' }}></Box>
+            <Box sx={{ height: '4rem' }}></Box>
             {channelLineup?.map((channel) => (
-              <Stack
-                direction={{ sm: 'column', md: 'row' }}
-                key={`img-${channel.id}`}
+              <Box
+                sx={{ height: '4rem' }}
+                key={channel.number}
+                display={'flex'}
+                flexGrow={1}
               >
-                {!smallViewport ? (
-                  <Box
-                    sx={{ height: '4rem' }}
-                    display={'flex'}
-                    alignItems={'center'}
-                    justifyContent={'center'}
-                  >
-                    {isEmpty(channel.icon?.path) ? (
-                      <TunarrLogo style={{ maxHeight: '40px' }} />
+                <StyledButton
+                  id="channel-nav-button"
+                  aria-controls={open ? 'channel-nav-menu' : undefined}
+                  aria-haspopup="true"
+                  aria-expanded={open ? 'true' : undefined}
+                  variant="text"
+                  disableElevation
+                  startIcon={
+                    isEmpty(channel.icon?.path) ? (
+                      <TunarrLogo style={{ width: '40px' }} />
                     ) : (
-                      <img
-                        style={{ maxHeight: '40px' }}
-                        src={channel.icon?.path}
-                      />
-                    )}
-                  </Box>
-                ) : null}
-                <Box
-                  sx={{ height: '4rem' }}
-                  key={channel.number}
-                  display={'flex'}
-                  alignItems={'center'}
-                  flexGrow={1}
-                  marginLeft={1}
+                      <img style={{ width: '40px' }} src={channel.icon?.path} />
+                    )
+                  }
+                  onClick={(event) => handleClick(event, channel)}
+                  endIcon={<KeyboardArrowDownIcon />}
+                  fullWidth
+                  sx={{
+                    color: darkMode ? '#fff' : '#000',
+                    textAlign: 'left',
+                    lineHeight: '1.25',
+                  }}
                 >
                   {smallViewport ? channel.number : channel.name}
-                </Box>
-              </Stack>
+                </StyledButton>
+                {renderChannelMenu()}
+              </Box>
             ))}
           </Box>
           <Box

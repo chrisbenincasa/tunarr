@@ -1,4 +1,4 @@
-import { Delete, Tv } from '@mui/icons-material';
+import { Delete, PlayArrow as WatchIcon } from '@mui/icons-material';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import EditIcon from '@mui/icons-material/Edit';
 import SettingsRemoteIcon from '@mui/icons-material/SettingsRemote';
@@ -147,7 +147,7 @@ export default function ChannelsPage() {
               color="primary"
               onClick={(e) => e.stopPropagation()}
             >
-              <Tv />
+              <WatchIcon />
             </IconButton>
           </Tooltip>
           <Tooltip title="Edit Channel Settings" placement="top">
