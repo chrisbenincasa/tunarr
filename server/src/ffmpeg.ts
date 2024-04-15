@@ -1,5 +1,5 @@
 import { FfmpegSettings, Watermark } from '@tunarr/types';
-import child_process, { ChildProcess } from 'child_process';
+import child_process, { ChildProcessByStdio } from 'child_process';
 import events from 'events';
 import { isEmpty, isNil, isString, isUndefined, merge, round } from 'lodash-es';
 import path from 'path';
@@ -10,6 +10,7 @@ import createLogger from './logger.js';
 import { VideoStats } from './plexTranscoder.js';
 import { ContextChannel, Maybe } from './types.js';
 import { TypedEventEmitter } from './types/eventEmitter.js';
+import stream from 'stream';
 
 const spawn = child_process.spawn;
 
@@ -94,7 +95,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
   private audioOnly: boolean = false;
   private alignAudio: boolean;
 
-  private ffmpeg: ChildProcess;
+  private ffmpeg: ChildProcessByStdio<null, stream.Readable, null>;
 
   constructor(opts: DeepReadonly<FfmpegSettings>, channel: ContextChannel) {
     super();
@@ -803,7 +804,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
         'pipe',
         doLogs
           ? process.stderr
-          : fs.openSync(`debug_ffmpeg_${this.channel.number}.log`, 'a'),
+          : fs.createWriteStream(`debug_ffmpeg_${this.channel.number}.log`),
       ],
     });
 
