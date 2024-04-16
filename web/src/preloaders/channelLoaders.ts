@@ -19,10 +19,7 @@ export const newChannelLoader: Preloader<Channel[]> = createPreloader(() =>
 );
 
 // Default channel values that aren't dynamic
-export const DefaultChannel: Omit<
-  Channel,
-  'id' | 'name' | 'number' | 'startTime'
-> = {
+export const DefaultChannel = {
   duration: 0,
   icon: {
     duration: 0,
@@ -39,7 +36,7 @@ export const DefaultChannel: Omit<
     mode: 'pic',
     picture: 'http://localhost:8000/images/generic-offline-screen.png',
   },
-};
+} as const;
 
 export function defaultNewChannel(num: number): Channel {
   return {

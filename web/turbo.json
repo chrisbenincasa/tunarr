@@ -5,6 +5,9 @@
     "build-dev": {
       "dependsOn": ["^build"]
     },
+    "clean-build": {
+      "dependsOn": ["^build"]
+    },
     "bundle": {
       "dependsOn": ["^bundle"]
     },

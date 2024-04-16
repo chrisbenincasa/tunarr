@@ -33,6 +33,8 @@ import {
   ChannelEditContext,
   ChannelEditContextState,
 } from './EditChannelContext.ts';
+import { useNavigate } from 'react-router-dom';
+import { isNonEmptyString } from '../../helpers/util.ts';
 
 type TabValues = 'properties' | 'flex' | 'epg' | 'ffmpeg';
 
@@ -89,13 +91,17 @@ function TabPanel(props: TabPanelProps) {
 
 type Props = {
   isNew: boolean;
+  initialTab?: TabValues;
 };
 
-export default function EditChannelPage({ isNew }: Props) {
+export default function EditChannelPage({ isNew, initialTab }: Props) {
   const channel = usePreloadedData(editChannelLoader(isNew));
-  const [currentTab, setCurrentTab] = useState<TabValues>('properties');
+  const [currentTab, setCurrentTab] = useState<TabValues>(
+    initialTab ?? 'properties',
+  );
   const { currentEntity: workingChannel } = useStore((s) => s.channelEditor);
   const previousChannel = usePrevious(workingChannel);
+  const navigate = useNavigate();
 
   const [channelEditorState, setChannelEditorState] =
     useState<ChannelEditContextState>({
@@ -103,8 +109,20 @@ export default function EditChannelPage({ isNew }: Props) {
       isNewChannel: isNew,
     });
 
-  const handleChange = (_: React.SyntheticEvent, newValue: TabValues) =>
-    setCurrentTab(newValue);
+  const handleChange = (_: React.SyntheticEvent, newValue: TabValues) => {
+    if (newValue !== currentTab) {
+      setCurrentTab(newValue);
+      // Don't enable routing for new channel, yet.
+      if (!isNew) {
+        let path: string = currentTab === 'properties' ? '.' : '..';
+        if (newValue !== 'properties') {
+          path = `${path}/${newValue}`;
+        }
+
+        navigate(path, { relative: 'path', replace: true });
+      }
+    }
+  };
 
   const formMethods = useForm<SaveChannelRequest>({
     mode: 'onChange',
@@ -125,7 +143,10 @@ export default function EditChannelPage({ isNew }: Props) {
     formMethods.reset({
       ...channel,
       fillerCollections: channel.fillerCollections ?? [],
-      fillerRepeatCooldown: 30 * 1000,
+      fillerRepeatCooldown: channel.fillerRepeatCooldown
+        ? channel.fillerRepeatCooldown / 1000
+        : DefaultChannel.fillerRepeatCooldown,
+      guideFlexTitle: channel.guideFlexTitle ?? '',
       guideMinimumDuration: channel.guideMinimumDuration / 1000,
       transcoding: {
         targetResolution: channel.transcoding?.targetResolution ?? 'global',
@@ -159,7 +180,11 @@ export default function EditChannelPage({ isNew }: Props) {
     ) {
       formMethods.reset({
         ...workingChannel,
+        fillerRepeatCooldown: workingChannel.fillerRepeatCooldown
+          ? workingChannel.fillerRepeatCooldown / 1000
+          : DefaultChannel.fillerRepeatCooldown,
         guideMinimumDuration: workingChannel.guideMinimumDuration / 1000,
+        guideFlexTitle: workingChannel.guideFlexTitle ?? '',
       });
     }
   }, [workingChannel, previousChannel, formMethods]);
@@ -198,6 +223,12 @@ export default function EditChannelPage({ isNew }: Props) {
       ...data,
       // Transform this to milliseconds before we send it over
       guideMinimumDuration: data.guideMinimumDuration * 1000,
+      fillerRepeatCooldown: data.fillerRepeatCooldown
+        ? data.fillerRepeatCooldown * 1000
+        : undefined,
+      guideFlexTitle: isNonEmptyString(data.guideFlexTitle)
+        ? data.guideFlexTitle
+        : undefined,
     });
   };
 
