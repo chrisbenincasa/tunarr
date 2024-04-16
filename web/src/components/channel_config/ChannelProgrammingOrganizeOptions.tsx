@@ -4,7 +4,6 @@ import {
   RepeatOn as RerunBlocksIcon,
   Shuffle as ShuffleIcon,
   AccessTime as TimeIcon,
-  Scale as TweakWeightsIcon,
 } from '@mui/icons-material';
 import { MenuItem, Tooltip } from '@mui/material';
 import { useContext, useState } from 'react';
@@ -41,7 +40,7 @@ export function ChannelProgrammingOrganizeOptions({
       >
         <MenuItem
           onClick={() => {
-            // To do: Fix issue with menu not closing
+            // TODO: Fix issue with menu not closing
             handleClose();
             setShowScheduleControls(true);
           }}
@@ -65,27 +64,27 @@ export function ChannelProgrammingOrganizeOptions({
           <ShuffleIcon /> Random Slots
         </MenuItem>
       </Tooltip>
-      <Tooltip
+      {/* <Tooltip
         title="This allows you to pick the weights for each of the shows, so you can decide that some shows should be less frequent than other shows."
         placement="right"
       >
         <MenuItem
           onClick={() => {
-            // To do: Fix issue with menu not closing
+            // TODO: Fix issue with menu not closing
             // handleClose();
             setAdjustWeightsModal(true);
           }}
         >
           <TweakWeightsIcon /> Balance Media
         </MenuItem>
-      </Tooltip>
+      </Tooltip> */}
       <Tooltip
         title="Makes multiple copies of the schedule and plays them in sequence. Normally this isn't necessary, because Tunarr will always play the schedule back from the beginning when it finishes. But creating replicas is a useful intermediary step sometimes before applying other transformations. Note that because very large channels can be problematic, the number of replicas will be limited to avoid creating really large channels."
         placement="right"
       >
         <MenuItem
           onClick={() => {
-            // To do: Fix issue with menu not closing
+            // TODO: Fix issue with menu not closing
             // handleClose();
             setAddReplicateModalOpen(true);
           }}
@@ -99,7 +98,7 @@ export function ChannelProgrammingOrganizeOptions({
       >
         <MenuItem
           onClick={() => {
-            // To do: Fix issue with menu not closing
+            // TODO: Fix issue with menu not closing
             // handleClose();
             setAddRerunBlocksModal(true);
           }}
