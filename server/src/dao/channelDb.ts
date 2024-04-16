@@ -24,6 +24,7 @@ import ld, {
   nth,
   omitBy,
   reduce,
+  reject,
   sumBy,
   take,
 } from 'lodash-es';
@@ -56,6 +57,7 @@ import { Channel, ChannelTranscodingSettings } from './entities/Channel.js';
 import { CustomShowContent } from './entities/CustomShowContent.js';
 import { Program } from './entities/Program.js';
 import { upsertContentPrograms } from './programHelpers.js';
+import { asyncPool } from '../util/asyncPool.js';
 
 dayjs.extend(duration);
 
@@ -199,19 +201,35 @@ export class ChannelDB {
     return channel;
   }
 
-  async deleteChannel(channelId: string) {
+  async deleteChannel(
+    channelId: string,
+    blockOnLineupUpdates: boolean = false,
+  ) {
     const em = getEm();
     let marked = false;
     try {
-      await this.markFileDbForDeletion(channelId);
+      await this.markLineupFileForDeletion(channelId);
       marked = true;
       const ref = em.getReference(Channel, channelId);
       await em.remove(ref).flush();
+      // Best effort remove references to this channel
+      const removeRefs = () =>
+        this.removeRedirectReferences(channelId).catch((e) => {
+          logger.error('Error while removing redirect references: %O', e);
+        });
+
+      if (blockOnLineupUpdates) {
+        await removeRefs();
+      } else {
+        process.nextTick(() => {
+          removeRefs().catch(() => {});
+        });
+      }
     } catch (e) {
       // If we failed at the DB level for some reason,
       // try to restore the lineup file.
       if (marked) {
-        await this.markFileDbForDeletion(channelId, false);
+        await this.restoreLineupFile(channelId);
       }
 
       logger.error(
@@ -563,7 +581,11 @@ export class ChannelDB {
     return fileDbCache[channelId];
   }
 
-  private async markFileDbForDeletion(
+  private async restoreLineupFile(channelId: string) {
+    return this.markLineupFileForDeletion(channelId, false);
+  }
+
+  private async markLineupFileForDeletion(
     channelId: string,
     isDelete: boolean = true,
   ) {
@@ -703,6 +725,43 @@ export class ChannelDB {
       .compact()
       .value();
     return { lineup: programs, offsets };
+  }
+
+  private async removeRedirectReferences(toChannel: string) {
+    const allChannels = await this.getAllChannels();
+
+    const ops = asyncPool(
+      reject(allChannels, { uuid: toChannel }),
+      async (channel) => {
+        const lineup = await this.loadLineup(channel.uuid);
+        let changed = false;
+        const newLineup: LineupItem[] = map(lineup.items, (item) => {
+          if (item.type === 'redirect' && item.channel === toChannel) {
+            changed = true;
+            return {
+              type: 'offline',
+              durationMs: item.durationMs,
+            };
+          } else {
+            return item;
+          }
+        });
+        if (changed) {
+          return this.saveLineup(channel.uuid, { ...lineup, items: newLineup });
+        }
+      },
+      2,
+    );
+
+    for await (const updateResult of ops) {
+      if (updateResult.type === 'error') {
+        logger.error(
+          'Error removing redirect references for channel %s from channel %s',
+          toChannel,
+          updateResult.input.uuid,
+        );
+      }
+    }
   }
 }
 
