@@ -3,7 +3,7 @@ import {
   IdPathParamSchema,
 } from '@tunarr/types/api';
 import { CustomProgramSchema, CustomShowSchema } from '@tunarr/types/schemas';
-import { isNull, map } from 'lodash-es';
+import { isNull, map, sumBy } from 'lodash-es';
 import { z } from 'zod';
 import { CustomShow } from '../dao/entities/CustomShow.js';
 import createLogger from '../logger.js';
@@ -30,13 +30,14 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
     async (req, res) => {
       const customShows = await req.entityManager
         .repo(CustomShow)
-        .findAll({ populate: ['content.uuid'] });
+        .findAll({ populate: ['content.uuid', 'content.duration'] });
 
       return res.send(
         map(customShows, (cs) => ({
           id: cs.uuid,
           name: cs.name,
           contentCount: cs.content.length,
+          totalDuration: sumBy(cs.content, (c) => c.duration),
         })),
       );
     },
@@ -65,6 +66,7 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
         id: customShow.uuid,
         name: customShow.name,
         contentCount: customShow.content.length,
+        totalDuration: sumBy(customShow.content, (c) => c.duration),
       });
     },
   );

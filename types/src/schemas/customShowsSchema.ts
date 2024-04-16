@@ -13,4 +13,5 @@ export const CustomShowSchema = z.object({
   name: z.string(),
   contentCount: z.number(),
   programs: z.array(CustomProgramSchema).optional(),
+  totalDuration: z.number().nonnegative(),
 });

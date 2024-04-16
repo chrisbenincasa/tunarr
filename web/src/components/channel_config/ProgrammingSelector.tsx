@@ -8,7 +8,7 @@ import {
   Typography,
 } from '@mui/material';
 import { PlexMedia, isPlexDirectory } from '@tunarr/types/plex';
-import { find, isEmpty, isNil, isUndefined } from 'lodash-es';
+import { find, isEmpty, isNil, isUndefined, map } from 'lodash-es';
 import React, { useCallback, useEffect, useState } from 'react';
 import { usePlexLibraries } from '../../hooks/plexHooks.ts';
 import { usePlexServerSettings } from '../../hooks/settingsHooks.ts';
@@ -50,10 +50,6 @@ export default function ProgrammingSelector({
   // Convenience sub-selectors for specific library types
   const selectedPlexLibrary =
     selectedLibrary?.type === 'plex' ? selectedLibrary.library : undefined;
-  const selectedCustomShow =
-    selectedLibrary?.type === 'custom-show'
-      ? selectedLibrary.library
-      : undefined;
 
   const viewingCustomShows = mediaSource === 'custom-shows';
 
@@ -91,23 +87,13 @@ export default function ProgrammingSelector({
   /**
    * Load custom shows
    */
-  const { data: customShows } = useCustomShows([], {
-    enabled: viewingCustomShows,
-  });
-
-  useEffect(() => {
-    if (mediaSource === 'custom-shows' && customShows.length > 0) {
-      setProgrammingListLibrary({
-        type: 'custom-show',
-        library: customShows[0],
-      });
-    }
-  }, [mediaSource, customShows]);
+  const { data: customShows } = useCustomShows([]);
 
   const onMediaSourceChange = useCallback(
     (newMediaSource: string) => {
       if (newMediaSource === 'custom-shows') {
         // Not dealing with a server
+        setProgrammingListLibrary({ type: 'custom-show' });
         setProgrammingListingServer(undefined);
         setMediaSource(newMediaSource);
       } else {
@@ -123,12 +109,7 @@ export default function ProgrammingSelector({
 
   const onLibraryChange = useCallback(
     (libraryUuid: string) => {
-      if (mediaSource === 'custom-shows') {
-        const library = find(customShows, { id: libraryUuid });
-        if (library) {
-          setProgrammingListLibrary({ type: 'custom-show', library });
-        }
-      } else if (selectedServer) {
+      if (selectedServer) {
         const known = knownMedia[selectedServer.name] ?? {};
         const library = known[libraryUuid];
         if (library && isPlexDirectory(library)) {
@@ -136,7 +117,7 @@ export default function ProgrammingSelector({
         }
       }
     },
-    [mediaSource, knownMedia, selectedServer],
+    [knownMedia, selectedServer],
   );
 
   const renderMediaSourcePrograms = () => {
@@ -149,6 +130,9 @@ export default function ProgrammingSelector({
     return null;
   };
 
+  const hasAnySources =
+    (plexServers && plexServers.length > 0) || customShows.length > 0;
+
   return (
     <Box sx={{ p: 1 }}>
       <Stack
@@ -160,7 +144,7 @@ export default function ProgrammingSelector({
           flexGrow: 1,
         }}
       >
-        {plexServers && (
+        {hasAnySources && (
           <FormControl size="small" sx={{ minWidth: { sm: 200 } }}>
             <InputLabel>Media Source</InputLabel>
             <Select
@@ -170,12 +154,14 @@ export default function ProgrammingSelector({
               }
               onChange={(e) => onMediaSourceChange(e.target.value)}
             >
-              {plexServers?.map((server) => (
+              {map(plexServers, (server) => (
                 <MenuItem key={server.name} value={server.name}>
                   Plex: {server.name}
                 </MenuItem>
               ))}
-              <MenuItem value="custom-shows">Custom Shows</MenuItem>
+              {customShows.length > 0 && (
+                <MenuItem value="custom-shows">Custom Shows</MenuItem>
+              )}
             </Select>
           </FormControl>
         )}
@@ -198,23 +184,6 @@ export default function ProgrammingSelector({
               </Select>
             </FormControl>
           )}
-
-        {viewingCustomShows && customShows && selectedCustomShow && (
-          <FormControl size="small">
-            <InputLabel>Custom Show</InputLabel>
-            <Select
-              label="Custom Show"
-              value={selectedCustomShow.id}
-              onChange={(e) => onLibraryChange(e.target.value)}
-            >
-              {customShows.map((cs) => (
-                <MenuItem key={cs.id} value={cs.id}>
-                  {cs.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        )}
       </Stack>
       {renderMediaSourcePrograms()}
       <Typography>Selected Items</Typography>

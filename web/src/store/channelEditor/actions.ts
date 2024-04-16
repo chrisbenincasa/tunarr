@@ -242,7 +242,7 @@ const plexMediaToContentProgram = (
     duration: media.duration,
     externalSourceName: media.serverName,
     externalSourceType: 'plex',
-    externalKey: media.key,
+    externalKey: media.ratingKey,
     uniqueId,
     type: 'content',
     subtype: media.type,

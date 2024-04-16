@@ -55,6 +55,7 @@ import {
 } from './entities/ProgramGrouping.js';
 import { ProgramGroupingExternalId } from './entities/ProgramGroupingExternalId.js';
 import { Loaded } from '@mikro-orm/core';
+import { createExternalId } from '@tunarr/shared';
 
 const logger = createLogger(import.meta);
 
@@ -646,11 +647,22 @@ export function createPendingProgramIndexMap(
   return reduce(
     programs,
     (acc, p) => {
-      if (p.persisted || isCustomProgram(p)) {
-        acc[p.id!] = idx++;
+      if ((p.persisted || isCustomProgram(p)) && isNonEmptyString(p.id)) {
+        acc[p.id] = idx++;
         // TODO handle other types of programs
-      } else if (isContentProgram(p)) {
-        acc[contentProgramUniqueId(p)] = idx++;
+      } else if (
+        isContentProgram(p) &&
+        isNonEmptyString(p.externalSourceName) &&
+        isNonEmptyString(p.externalSourceType) &&
+        isNonEmptyString(p.externalKey)
+      ) {
+        acc[
+          createExternalId(
+            p.externalSourceType,
+            p.externalSourceName,
+            p.externalKey,
+          )
+        ] = idx++;
       }
       return acc;
     },

@@ -27,6 +27,7 @@ export const customShowLoader = (isNew: boolean): Preloader<CustomShow> => {
         id: 'unsaved',
         name: 'New',
         contentCount: 0,
+        totalDuration: 0,
       };
       setCurrentCustomShow(customShow, []);
       return Promise.resolve(customShow);
