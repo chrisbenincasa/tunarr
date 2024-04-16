@@ -74,6 +74,9 @@ export function Root({ children }: { children?: React.ReactNode }) {
     () =>
       createTheme({
         palette: {
+          background: {
+            default: darkMode ? '#212121' : '#f5f5f5',
+          },
           mode: darkMode ? 'dark' : 'light',
           primary: {
             main: 'rgb(241, 93, 85)',
