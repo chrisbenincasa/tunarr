@@ -92,6 +92,7 @@ function updateRequestToChannel(
       duration: updateReq.duration,
       stealth: updateReq.stealth,
       fillerRepeatCooldown: updateReq.fillerRepeatCooldown,
+      guideFlexTitle: updateReq.guideFlexTitle,
     },
     isNil,
   );
@@ -125,6 +126,7 @@ function createRequestToChannel(
     duration: saveReq.duration,
     stealth: saveReq.stealth,
     fillerRepeatCooldown: saveReq.fillerRepeatCooldown,
+    guideFlexTitle: saveReq.guideFlexTitle,
   };
   return c;
 }

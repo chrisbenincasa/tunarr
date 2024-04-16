@@ -105,6 +105,11 @@ export class Channel extends BaseEntity {
   @Property()
   startTime!: number;
 
+  // The title of 'flex' when shown in the guide.
+  // If null, it will show the channel's name.
+  @Property()
+  guideFlexTitle?: string;
+
   @Property({
     type: 'json',
     nullable: true,

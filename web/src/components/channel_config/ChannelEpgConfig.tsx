@@ -37,10 +37,10 @@ export default function ChannelEpgConfig() {
 
           <Controller
             control={control}
-            name="guideFlexPlaceholder"
+            name="guideFlexTitle"
             render={({ field }) => (
               <TextField
-                helperText="This is the name of the fake program that will appear in the TV guide when there are no programs to display in that time slot guide. E.g when a large Flex block is scheduled."
+                helperText="This is the name of the fake program that will appear in the TV guide when there are no programs to display in that time slot guide, e.g when a large Flex block is scheduled."
                 label="Placeholder Program Title"
                 margin="normal"
                 {...field}
