@@ -1,9 +1,9 @@
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
-import { useContext } from 'react';
-import { ChannelEditContext } from '../../pages/channels/EditChannelContext.ts';
-import { useFormContext } from 'react-hook-form';
 import { SaveChannelRequest } from '@tunarr/types';
+import { useContext } from 'react';
+import { useFormContext } from 'react-hook-form';
+import { ChannelEditContext } from '../../pages/channels/EditChannelContext.ts';
 
 export default function ChannelEditActions() {
   const { channelEditorState } = useContext(ChannelEditContext)!;
@@ -17,7 +17,7 @@ export default function ChannelEditActions() {
       {!channelEditorState.isNewChannel ? (
         <>
           <Button onClick={() => reset()} variant="outlined">
-            Reset Options
+            Reset Changes
           </Button>
           <Button disabled={!isValid} variant="contained" type="submit">
             Save

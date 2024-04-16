@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
+import Grid2 from '@mui/material/Unstable_Grid2/Grid2';
 import { SaveChannelRequest, Watermark } from '@tunarr/types';
 import { isEmpty, isNil, isUndefined, map, round } from 'lodash-es';
 import { useEffect, useState } from 'react';
@@ -25,13 +26,13 @@ import {
   typedProperty,
 } from '../../helpers/util.ts';
 import { useFfmpegSettings } from '../../hooks/settingsHooks.ts';
+import useStore from '../../store/index.ts';
+import { ImageUploadInput } from '../settings/ImageUploadInput.tsx';
 import {
   CheckboxFormController,
   NumericFormControllerText,
 } from '../util/TypedController.tsx';
-import { ImageUploadInput } from '../settings/ImageUploadInput.tsx';
-import Grid2 from '@mui/material/Unstable_Grid2/Grid2';
-import useStore from '../../store/index.ts';
+import ChannelEditActions from './ChannelEditActions.tsx';
 
 const resolutionOptions = [
   { value: '420x420', label: '420x420 (1:1)' },
@@ -421,6 +422,7 @@ export default function ChannelTranscodingConfig() {
             )}
           </FormControl>
         </Stack>
+        <ChannelEditActions />
       </Box>
     )
   );
