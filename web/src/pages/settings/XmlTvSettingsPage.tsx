@@ -17,6 +17,7 @@ import {
   CheckboxFormController,
   NumericFormControllerText,
 } from '../../components/util/TypedController.tsx';
+import { apiClient } from '../../external/api.ts';
 import { useXmlTvSettings } from '../../hooks/settingsHooks.ts';
 
 export default function XmlTvSettingsPage() {
@@ -44,15 +45,7 @@ export default function XmlTvSettingsPage() {
   const queryClient = useQueryClient();
 
   const updateXmlTvSettingsMutation = useMutation({
-    mutationFn: (updateSettings: XmlTvSettings) => {
-      return fetch('http://localhost:8000/api/xmltv-settings', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updateSettings),
-      });
-    },
+    mutationFn: apiClient.updateXmlTvSettings,
     onSuccess: (data) => {
       setSnackStatus(true);
       reset(data, { keepValues: true });

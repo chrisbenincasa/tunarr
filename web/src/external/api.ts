@@ -32,7 +32,10 @@ import {
   getPlexStreamSettings,
   getXmlTvSettings,
   updateFfmpegSettings,
+  updateHdhrSettings,
   updatePlexServerEndpoint,
+  updatePlexStreamSettings,
+  updateXmlTvSettings,
 } from './settingsApi.ts';
 
 export const api = makeApi([
@@ -320,8 +323,11 @@ export const api = makeApi([
   deletePlexServerEndpoint,
   getPlexBackendStatus,
   getXmlTvSettings,
+  updateXmlTvSettings,
   getHdhrSettings,
+  updateHdhrSettings,
   getPlexStreamSettings,
+  updatePlexStreamSettings,
   getFffmpegSettings,
   updateFfmpegSettings,
   {

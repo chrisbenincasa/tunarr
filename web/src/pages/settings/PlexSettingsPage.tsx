@@ -452,18 +452,10 @@ export default function PlexSettingsPage() {
   const queryClient = useQueryClient();
 
   const updatePlexStreamingSettingsMutation = useMutation({
-    mutationFn: (updateSettings: PlexStreamSettings) => {
-      return fetch('http://localhost:8000/api/plex-settings', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updateSettings),
-      });
-    },
+    mutationFn: apiClient.updatePlexStreamSettings,
     onSuccess: (data) => {
       setSnackStatus(true);
-      reset(streamSettings, { keepValues: true });
+      reset(data, { keepValues: true });
       return queryClient.invalidateQueries({
         queryKey: ['settings', 'plex-settings'],
       });

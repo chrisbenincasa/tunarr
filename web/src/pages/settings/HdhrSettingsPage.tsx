@@ -10,12 +10,14 @@ import {
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { HdhrSettings, defaultHdhrSettings } from '@tunarr/types';
+import _ from 'lodash-es';
 import React, { useEffect } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import {
   CheckboxFormController,
   NumericFormControllerText,
 } from '../../components/util/TypedController.tsx';
+import { apiClient } from '../../external/api.ts';
 import { useHdhrSettings } from '../../hooks/settingsHooks.ts';
 
 export default function HdhrSettingsPage() {
@@ -44,15 +46,7 @@ export default function HdhrSettingsPage() {
   const queryClient = useQueryClient();
 
   const updateHdhrSettingsMutation = useMutation({
-    mutationFn: (updateSettings: HdhrSettings) => {
-      return fetch('http://localhost:8000/api/hdhr-settings', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updateSettings),
-      });
-    },
+    mutationFn: apiClient.updateHdhrSettings,
     onSuccess: (data) => {
       setSnackStatus(true);
       reset(data, { keepValues: true });
@@ -62,7 +56,9 @@ export default function HdhrSettingsPage() {
     },
   });
 
-  const updateHdhrSettings: SubmitHandler<HdhrSettings> = (data) => {
+  const updateHdhrSettings: SubmitHandler<HdhrSettings> = (
+    data: HdhrSettings | undefined,
+  ) => {
     updateHdhrSettingsMutation.mutate({
       ...data,
     });
