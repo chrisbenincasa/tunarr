@@ -222,6 +222,7 @@ export function Root({ children }: { children?: React.ReactNode }) {
               },
               WebkitTransitionDuration: '.15s',
               WebkitTransitionTimingFunction: 'cubic-bezier(0.4,0,0.2,1)',
+              overflowX: 'hidden',
             }}
             variant="permanent"
             anchor="left"

@@ -3,22 +3,27 @@ import Button from '@mui/material/Button';
 import Hls from 'hls.js';
 import { isError, isNil } from 'lodash-es';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useBlocker } from 'react-router-dom';
+import { useBlocker, useSearchParams } from 'react-router-dom';
 import { apiClient } from '../external/api.ts';
 import { useFfmpegSettings } from '../hooks/settingsHooks.ts';
 import { useHls } from '../hooks/useHls.ts';
+import { PlayArrow, Replay } from '@mui/icons-material';
 
 type VideoProps = {
-  channelNumber: number;
+  channelId: string;
 };
 
-export default function Video({ channelNumber }: VideoProps) {
+export default function Video({ channelId }: VideoProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const { hls, resetHls } = useHls();
   const hlsSupported = useMemo(() => Hls.isSupported(), []);
   const [loadedStream, setLoadedStream] = useState<boolean | Error>(false);
   const { data: ffmpegSettings, isLoading: ffmpegSettingsLoading } =
     useFfmpegSettings();
+  const [searchParams] = useSearchParams();
+  const [manuallyStarted, setManuallyStarted] = useState(false);
+
+  const autoPlayEnabled = !searchParams.has('noAutoPlay');
 
   const canLoadStream = useMemo(() => {
     const initialized = !isNil(videoRef.current) && !isNil(hls);
@@ -57,10 +62,10 @@ export default function Video({ channelNumber }: VideoProps) {
 
   useEffect(() => {
     const video = videoRef.current;
-    if (video && hls && canLoadStream) {
+    if ((autoPlayEnabled || manuallyStarted) && video && hls && canLoadStream) {
       setLoadedStream(true);
       apiClient
-        .startHlsStream({ params: { channelNumber } })
+        .startHlsStream({ params: { channel: channelId } })
         .then(({ streamPath }) => {
           hls.loadSource(`http://localhost:8000${streamPath}`);
           hls.attachMedia(video);
@@ -72,14 +77,20 @@ export default function Video({ channelNumber }: VideoProps) {
           );
         });
     }
-  }, [videoRef, hls, canLoadStream, setLoadedStream, channelNumber]);
+  }, [
+    autoPlayEnabled,
+    videoRef,
+    hls,
+    canLoadStream,
+    channelId,
+    manuallyStarted,
+  ]);
 
   useEffect(() => {
     resetHls();
     setLoadedStream(false);
-    // if (loadedStream) {
-    // }
-  }, [channelNumber, resetHls]);
+    setManuallyStarted(true);
+  }, [channelId, resetHls]);
 
   const renderVideo = () => {
     if (!hlsSupported) {
@@ -97,9 +108,17 @@ export default function Video({ channelNumber }: VideoProps) {
     }
 
     return (
-      <Box>
-        <Button onClick={() => reloadStream()}>Reload</Button>
-        <video style={{ width: '1080px' }} controls autoPlay ref={videoRef} />
+      <Box sx={{ mb: 2 }}>
+        <Box sx={{ width: '100%' }}>
+          <video style={{ width: '100%' }} controls autoPlay ref={videoRef} />
+        </Box>
+        <Button
+          variant="contained"
+          onClick={() => reloadStream()}
+          startIcon={loadedStream ? <Replay /> : <PlayArrow />}
+        >
+          {loadedStream ? 'Reload' : 'Load'} Stream
+        </Button>
       </Box>
     );
   };

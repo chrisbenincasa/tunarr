@@ -135,7 +135,6 @@ export default function ProgramDetailsDialog({
   );
 
   const thumbUrl = program ? thumbnailImage(program) : null;
-  console.log(thumbUrl);
   const externalUrl = program ? externalLink(program) : null;
   const programSummary = program ? summary(program) : null;
 
@@ -155,7 +154,7 @@ export default function ProgramDetailsDialog({
   return (
     program && (
       <Dialog open={open && !isUndefined(program)} onClose={onClose}>
-        <DialogTitle>
+        <DialogTitle variant="h4">
           {formattedTitle(program)}{' '}
           {externalUrl && (
             <IconButton
