@@ -386,6 +386,7 @@ export class TVGuideService {
       } else {
         channelRedirectStack.push(redirectChannel);
         const channel2 = this.channelsById[redirectChannel];
+        // TODO: Just update the lineup file directly at this point
         if (isUndefined(channel2)) {
           logger.error(
             `Redirect to an unknown channel found! Involved channels: %O`,
