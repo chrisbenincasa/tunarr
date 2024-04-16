@@ -146,7 +146,10 @@ export default function XmlTvSettingsPage() {
           justifyContent="left"
           sx={{ mt: 2, flexGrow: 1 }}
         >
-          {!_.isEqual(defaultValues, defaultXmlTvSettings) && (
+          {!_.isEqual(defaultValues, {
+            ...defaultXmlTvSettings,
+            outputPath: data.outputPath,
+          }) && (
             <Button
               variant="outlined"
               onClick={() => {
