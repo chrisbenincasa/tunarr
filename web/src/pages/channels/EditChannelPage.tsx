@@ -46,22 +46,22 @@ const tabs: TabProps[] = [
   {
     value: 'properties',
     description: 'Properties',
-    fields: ['number', 'name', 'groupTitle'],
+    fields: ['number', 'name', 'groupTitle', 'icon'],
   },
   {
     value: 'flex',
     description: 'Flex',
-    fields: ['offline'],
+    fields: ['offline', 'fillerCollections', 'fillerRepeatCooldown'],
   },
   {
     value: 'epg',
     description: 'EPG',
-    fields: ['stealth', 'guideFlexPlaceholder', 'guideMinimumDuration'],
+    fields: ['stealth', 'guideFlexTitle', 'guideMinimumDuration'],
   },
   {
     value: 'ffmpeg',
     description: 'FFMPEG',
-    fields: ['transcoding'],
+    fields: ['transcoding', 'watermark'],
   },
 ];
 

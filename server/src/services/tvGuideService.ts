@@ -36,7 +36,12 @@ import { getSettings } from '../dao/settings.js';
 import createLogger from '../logger.js';
 import { Maybe } from '../types.js';
 import { binarySearchRange } from '../util/binarySearch.js';
-import { deepCopy, groupByUniqFunc, wait } from '../util/index.js';
+import {
+  deepCopy,
+  groupByUniqFunc,
+  isNonEmptyString,
+  wait,
+} from '../util/index.js';
 import { XmlTvWriter } from '../xmltv.js';
 import { EventService } from './eventService.js';
 
@@ -754,18 +759,12 @@ function programToTvGuideProgram(
 
   let icon = channel.icon?.path;
   if (currentProgram.program.type === 'flex') {
-    // ehhhh
-    // if (
-    //   isString(channel.guideFlexPlaceholder) &&
-    //   !isEmpty(channel.guideFlexPlaceholder)
-    // ) {
-    //   title = channel.guideFlexPlaceholder;
-    // } else {
-    //   title = channel.name;
-    // }
     return {
       type: 'flex',
       icon,
+      title: isNonEmptyString(channel.guideFlexTitle)
+        ? channel.guideFlexTitle
+        : channel.name,
       ...baseItem,
     } as FlexGuideProgram;
   } else if (currentProgram.program.type === 'custom') {
@@ -782,23 +781,9 @@ function programToTvGuideProgram(
     } as RedirectGuideProgram;
   }
 
-  // let title = currentProgram.program.title;
-  // let seasonNumber: Maybe<number>;
-  // let episodeNumber: Maybe<number>;
-  // let episodeTitle: Maybe<string>;
-
   if (!isUndefined(currentProgram.program.icon)) {
     icon = currentProgram.program.icon;
   }
-
-  // if (currentProgram.program.subtype === 'episode') {
-  //   if (currentProgram.program.showTitle) {
-  //     title = currentProgram.program.showTitle;
-  //   }
-  //   seasonNumber = currentProgram.program.season;
-  //   episodeNumber = currentProgram.program.episode;
-  //   episodeTitle = currentProgram.program.title;
-  // }
 
   return {
     ...currentProgram.program,

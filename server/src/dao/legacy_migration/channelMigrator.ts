@@ -302,7 +302,7 @@ export async function migrateChannel(fullPath: string): Promise<{
     stealth: isUndefined(parsed['stealth'])
       ? false
       : (parsed['stealth'] as boolean),
-    guideFlexPlaceholder: emptyStringToUndefined(
+    guideFlexTitle: emptyStringToUndefined(
       parsed['guideFlexPlaceholder'] as string,
     ),
   };
