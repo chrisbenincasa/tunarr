@@ -455,6 +455,7 @@ export default function PlexSettingsPage() {
     mutationFn: apiClient.updatePlexStreamSettings,
     onSuccess: (data) => {
       setSnackStatus(true);
+      setRestoreTunarrDefaults(false);
       reset(data, { keepValues: true });
       return queryClient.invalidateQueries({
         queryKey: ['settings', 'plex-settings'],
@@ -1202,9 +1203,8 @@ export default function PlexSettingsPage() {
             <Button
               variant="contained"
               disabled={
-                !isValid || (!isDirty && !restoreTunarrDefaults) || isSubmitting
+                !isValid || isSubmitting || (!isDirty && !restoreTunarrDefaults)
               }
-              onClick={() => setRestoreTunarrDefaults(false)}
               type="submit"
             >
               Save

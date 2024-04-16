@@ -49,6 +49,7 @@ export default function HdhrSettingsPage() {
     mutationFn: apiClient.updateHdhrSettings,
     onSuccess: (data) => {
       setSnackStatus(true);
+      setRestoreTunarrDefaults(false);
       reset(data, { keepValues: true });
       return queryClient.invalidateQueries({
         queryKey: ['settings', 'hdhr-settings'],
@@ -57,7 +58,7 @@ export default function HdhrSettingsPage() {
   });
 
   const updateHdhrSettings: SubmitHandler<HdhrSettings> = (
-    data: HdhrSettings | undefined,
+    data: HdhrSettings,
   ) => {
     updateHdhrSettingsMutation.mutate({
       ...data,
@@ -143,9 +144,8 @@ export default function HdhrSettingsPage() {
           <Button
             variant="contained"
             disabled={
-              !isValid || (!isDirty && !restoreTunarrDefaults) || isSubmitting
+              !isValid || isSubmitting || (!isDirty && !restoreTunarrDefaults)
             }
-            onClick={() => setRestoreTunarrDefaults(false)}
             type="submit"
           >
             Save

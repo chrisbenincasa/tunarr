@@ -22,7 +22,6 @@ import {
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { FfmpegSettings, defaultFfmpegSettings } from '@tunarr/types';
-import { usePrevious } from '@uidotdev/usehooks';
 import _ from 'lodash-es';
 import React, { useEffect } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
@@ -132,7 +131,6 @@ type DeinterlaceFilterValue =
 
 export default function FfmpegSettingsPage() {
   const { data, isPending, error } = useFfmpegSettings();
-  const prevData = usePrevious(data);
 
   const {
     reset,
@@ -148,7 +146,7 @@ export default function FfmpegSettingsPage() {
   const enableTranscoding = watch('enableTranscoding');
 
   useEffect(() => {
-    if (!_.isEqual(data, prevData)) {
+    if (data) {
       reset(data);
     }
   }, [data, reset]);

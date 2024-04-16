@@ -48,6 +48,7 @@ export default function XmlTvSettingsPage() {
     mutationFn: apiClient.updateXmlTvSettings,
     onSuccess: (data) => {
       setSnackStatus(true);
+      setRestoreTunarrDefaults(false);
       reset(data, { keepValues: true });
       return queryClient.invalidateQueries({
         queryKey: ['settings', 'xmltv-settings'],
@@ -173,9 +174,8 @@ export default function XmlTvSettingsPage() {
           <Button
             variant="contained"
             disabled={
-              !isValid || (!isDirty && !restoreTunarrDefaults) || isSubmitting
+              !isValid || isSubmitting || (!isDirty && !restoreTunarrDefaults)
             }
-            onClick={() => setRestoreTunarrDefaults(false)}
             type="submit"
           >
             Save
