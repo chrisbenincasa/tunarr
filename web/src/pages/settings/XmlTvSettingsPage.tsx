@@ -89,6 +89,10 @@ export default function XmlTvSettingsPage() {
             <TextField
               id="output-path"
               label="Output Path"
+              InputProps={{
+                readOnly: true,
+                disabled: true,
+              }}
               helperText={
                 'You can edit this location in file xmltv-settings.json.'
               }
@@ -97,7 +101,7 @@ export default function XmlTvSettingsPage() {
           )}
         />
       </FormControl>
-      <Stack spacing={2} direction={{ sm: 'column', md: 'row' }}>
+      <Stack spacing={2} direction={{ sm: 'column', md: 'row' }} sx={{ mt: 2 }}>
         <NumericFormControllerText
           control={control}
           name="programmingHours"
@@ -146,7 +150,7 @@ export default function XmlTvSettingsPage() {
             <Button
               variant="outlined"
               onClick={() => {
-                reset(defaultXmlTvSettings);
+                reset({ ...defaultXmlTvSettings, outputPath: data.outputPath });
                 setRestoreTunarrDefaults(true);
               }}
             >
