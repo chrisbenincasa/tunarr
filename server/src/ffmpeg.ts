@@ -3,13 +3,14 @@ import child_process, { ChildProcessByStdio } from 'child_process';
 import events from 'events';
 import { isEmpty, isNil, isString, isUndefined, merge, round } from 'lodash-es';
 import path from 'path';
-import { Readable } from 'stream';
+import fs from 'node:fs';
 import { DeepReadonly, DeepRequired } from 'ts-essentials';
 import { serverOptions } from './globals.js';
 import createLogger from './logger.js';
 import { VideoStats } from './plexTranscoder.js';
 import { ContextChannel, Maybe } from './types.js';
 import { TypedEventEmitter } from './types/eventEmitter.js';
+import stream from 'stream';
 
 const spawn = child_process.spawn;
 
@@ -49,6 +50,7 @@ type DashOptions = {
 type ConcatOptions = {
   enableHls: boolean;
   enableDash: boolean;
+  numThreads: number;
   hlsOptions?: Partial<HlsOptions>;
   dashOptions?: Partial<DashOptions>;
   logOutput: boolean;
@@ -57,6 +59,7 @@ type ConcatOptions = {
 const defaultConcatOptions: DeepRequired<ConcatOptions> = {
   enableHls: false,
   enableDash: false,
+  numThreads: 2,
   hlsOptions: {
     hlsTime: 2,
     hlsListSize: 3,
@@ -92,7 +95,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
   private audioOnly: boolean = false;
   private alignAudio: boolean;
 
-  private ffmpeg: ChildProcessByStdio<null, Readable, null>;
+  private ffmpeg: ChildProcessByStdio<null, stream.Readable, null>;
 
   constructor(opts: DeepReadonly<FfmpegSettings>, channel: ContextChannel) {
     super();
@@ -163,10 +166,11 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     this.ffmpegName = 'Concat FFMPEG';
     const ffmpegArgs: string[] = [
       `-threads`,
+      // (opts.numThreads ?? defaultConcatOptions.numThreads).toFixed(),
       '1',
       `-fflags`,
       `+genpts+discardcorrupt+igndts`,
-      // '-re' // Research this https://stackoverflow.com/a/48479202
+      '-re', // Research this https://stackoverflow.com/a/48479202
       `-f`,
       `concat`,
       `-safe`,
@@ -176,7 +180,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       `-protocol_whitelist`,
       `file,http,tcp,https,tcp,tls`,
       `-probesize`,
-      '32' /*`100000000`*/,
+      '32',
       `-i`,
       streamUrl,
     ];
@@ -188,7 +192,10 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     ffmpegArgs.push(
       `-map`,
       `0:a`,
-      `-c`,
+      // We need to re-encode the streams for DASH
+      ...(opts.enableDash
+        ? ['-c:v', this.opts.videoEncoder, '-c:a', this.opts.audioEncoder]
+        : [`-c`]),
       `copy`,
       `-muxdelay`,
       this.opts.concatMuxDelay.toString(),
@@ -251,6 +258,8 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
         dashOpts.segmentType,
         '-frag_type',
         dashOpts.fragType,
+        '-hls_playlist',
+        'true',
       );
     } else {
       ffmpegArgs.push(`-f`, `mpegts`, `pipe:1`);
@@ -775,7 +784,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     );
 
     //t should be before -f
-    if (typeof duration !== 'undefined') {
+    if (!isUndefined(duration)) {
       ffmpegArgs.push(`-t`, `${duration}`);
     }
 
@@ -790,7 +799,13 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     logger.debug(`Starting ffmpeg with args: "${ffmpegArgs.join(' ')}"`);
 
     this.ffmpeg = spawn(this.ffmpegPath, ffmpegArgs, {
-      stdio: ['ignore', 'pipe', doLogs ? process.stderr : 'ignore'],
+      stdio: [
+        'ignore',
+        'pipe',
+        doLogs
+          ? process.stderr
+          : fs.createWriteStream(`debug_ffmpeg_${this.channel.number}.log`),
+      ],
     });
 
     if (this.hasBeenKilled) {

@@ -115,7 +115,6 @@
     "vitest": "^1.2.0"
   },
   "mikro-orm": {
-    "useTsNode": true,
     "configPaths": [
       "./mikro-orm.config.ts",
       "./build/mikro-orm.config.js"

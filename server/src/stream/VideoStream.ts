@@ -1,12 +1,13 @@
 import { Loaded, RequestContext } from '@mikro-orm/core';
 import constants from '@tunarr/shared/constants';
-import { isNil, isUndefined, once } from 'lodash-es';
+import { isNil, isUndefined, nth, once } from 'lodash-es';
 import { PassThrough, Readable } from 'node:stream';
 import { EntityManager } from '../dao/dataSource';
 import {
   StreamLineupItem,
   createOfflineStreamLineupIteam,
 } from '../dao/derived_types/StreamLineup';
+import { Channel } from '../dao/entities/Channel';
 import {
   ProgramAndTimeElapsed,
   createLineupItem,
@@ -19,9 +20,8 @@ import { getServerContext } from '../serverContext';
 import { wereThereTooManyAttempts } from '../throttler';
 import { ContextChannel, Maybe, PlayerContext } from '../types';
 import { StreamQueryString } from '../types/schemas';
-import { deepCopy } from '../util/index.js';
 import { fileExists } from '../util/fsUtil';
-import { Channel } from '../dao/entities/Channel';
+import { deepCopy } from '../util/index.js';
 
 const logger = createLogger(import.meta);
 
@@ -63,7 +63,7 @@ export class VideoStream {
     }
 
     const audioOnly = req.audioOnly;
-    const session = req.session;
+    const session = req.session ?? 0;
     const m3u8 = req.m3u8 ?? false;
     const channel = await serverCtx.channelDB.getChannel(req.channel);
 
@@ -123,10 +123,10 @@ export class VideoStream {
     } else {
       // Actually try and find a program
       // Get video lineup (array of video urls with calculated start times and durations.)
-      lineupItem = serverCtx.channelCache.getCurrentLineupItem(
-        channel.uuid,
-        startTimestamp,
-      );
+      // lineupItem = serverCtx.channelCache.getCurrentLineupItem(
+      //   channel.uuid,
+      //   startTimestamp,
+      // );
     }
 
     let currentProgram: ProgramAndTimeElapsed | undefined;
@@ -142,36 +142,36 @@ export class VideoStream {
         lineup,
       );
 
-      while (!isUndefined(currentProgram)) {
+      while (
+        !isUndefined(currentProgram) &&
+        currentProgram.program.type === 'redirect'
+      ) {
         redirectChannels.push(channelContext.uuid);
         upperBounds.push(
           currentProgram.program.duration - currentProgram.timeElapsed,
         );
 
-        if (
-          // currentProgram.program.type !== 'offline'
-          currentProgram.program.type !== 'redirect'
-        ) {
-          break;
+        if (redirectChannels.includes(currentProgram.program.channel)) {
+          await serverCtx.channelCache.recordPlayback(
+            channelContext.uuid,
+            startTimestamp,
+            {
+              type: 'offline',
+              title: 'Error',
+              error:
+                'Recursive channel redirect found: ' +
+                redirectChannels.join(', '),
+              duration: 60000,
+              start: 0,
+            },
+          );
         }
 
-        await serverCtx.channelCache.recordPlayback(
-          channelContext.uuid,
-          startTimestamp,
-          {
-            type: 'offline',
-            title: 'Error',
-            error: 'Recursive channel redirect found',
-            duration: 60000,
-            start: 0,
-          },
-        );
-
         const nextChannelId = currentProgram.program.channel;
-        const newChannel =
-          await serverCtx.channelDB.getChannelAndPrograms(nextChannelId);
+        const newChannelAndLineup =
+          await serverCtx.channelDB.loadChannelAndLineup(nextChannelId);
 
-        if (isNil(newChannel)) {
+        if (isNil(newChannelAndLineup)) {
           const msg = "Invalid redirect to a channel that doesn't exist";
           logger.error(msg);
           currentProgram = {
@@ -182,9 +182,9 @@ export class VideoStream {
           continue;
         }
 
-        channelContext = newChannel;
+        channelContext = newChannelAndLineup.channel;
         lineupItem = serverCtx.channelCache.getCurrentLineupItem(
-          newChannel.uuid,
+          channelContext.uuid,
           startTimestamp,
         );
 
@@ -194,8 +194,8 @@ export class VideoStream {
         } else {
           currentProgram = await getCurrentProgramAndTimeElapsed(
             startTimestamp,
-            newChannel,
-            lineup,
+            channelContext,
+            newChannelAndLineup.lineup,
           );
         }
       }
@@ -258,22 +258,26 @@ export class VideoStream {
 
     if (!isLoading && !isUndefined(lineupItem)) {
       let upperBound = Number.MAX_SAFE_INTEGER;
-      let beginningOffset = 0;
-      if (!isUndefined(lineupItem?.beginningOffset)) {
-        beginningOffset = lineupItem.beginningOffset;
-      }
+      const beginningOffset = lineupItem?.beginningOffset ?? 0;
+
       //adjust upper bounds and record playbacks
       for (let i = redirectChannels.length - 1; i >= 0; i--) {
-        lineupItem = deepCopy(lineupItem);
-        const u = upperBounds[i] + beginningOffset;
-        if (!isNil(u)) {
-          let u2 = upperBound;
-          if (!isNil(lineupItem.streamDuration)) {
-            u2 = Math.min(u2, lineupItem.streamDuration);
-          }
-          lineupItem.streamDuration = Math.min(u2, u);
-          upperBound = lineupItem.streamDuration;
+        const thisUpperBound = nth(upperBounds, i);
+        if (!isNil(thisUpperBound)) {
+          console.log('adjusting upper bound....');
+          const nextBound = thisUpperBound + beginningOffset;
+          const prevBound = isNil(lineupItem.streamDuration)
+            ? upperBound
+            : Math.min(upperBound, lineupItem.streamDuration);
+          const newDuration = Math.min(nextBound, prevBound);
+
+          lineupItem = {
+            ...lineupItem,
+            streamDuration: newDuration,
+          };
+          upperBound = newDuration;
         }
+
         await serverCtx.channelCache.recordPlayback(
           redirectChannels[i],
           startTimestamp,
@@ -283,18 +287,19 @@ export class VideoStream {
     }
 
     [
-      '=========================================================',
       '! Start playback',
       `! Channel: ${channel.name} (${channel.number})`,
       `! Title: ${lineupItem?.title ?? 'Unknown'}`,
+      !isUndefined(lineupItem?.error) ? `! Error: ${lineupItem.error}` : '',
       isUndefined(lineupItem?.streamDuration)
         ? `! From: ${lineupItem?.start}`
         : `! From: ${lineupItem?.start} to: ${
             (lineupItem?.start ?? 0) + (lineupItem?.streamDuration ?? 0)
           }`,
       `! Type: ${lineupItem?.type}`,
-      '=========================================================',
-    ].forEach((line) => logger.info(line));
+    ]
+      .filter((s) => s.length > 0)
+      .forEach((line) => logger.info(line));
 
     if (!isLoading) {
       await serverCtx.channelCache.recordPlayback(

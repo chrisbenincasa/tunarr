@@ -35,11 +35,12 @@ import { runFixers } from './tasks/fixers/index.js';
 import { UpdateXmlTvTask } from './tasks/updateXmlTvTask.js';
 import { ServerOptions } from './types.js';
 import { filename, isProduction } from './util/index.js';
-import { videoRouter } from './video.js';
+import { videoRouter } from './api/videoApi.js';
 import { isUndefined } from 'lodash-es';
 import { initPersistentStreamCache } from './channelCache.js';
 import { getSettingsRawDb } from './dao/settings.js';
 import { migrateFromLegacyDb } from './dao/legacyDbMigration.js';
+import { hlsApi } from './api/hlsApi.js';
 
 const logger = createLogger(import.meta);
 const currentDirectory = dirname(filename(import.meta.url));
@@ -178,7 +179,9 @@ export async function initServer(opts: ServerOptions) {
         write: (message) => logger.http(message.trim()),
       },
       skip: (req) => {
-        return req.url ? req.url.startsWith('/streams') : false;
+        return req.url
+          ? req.url.startsWith('/streams') || req.url.endsWith('/hls/now')
+          : false;
       },
     }),
   );
@@ -270,6 +273,7 @@ export async function initServer(opts: ServerOptions) {
         .register(apiRouter, { prefix: '/api' });
     })
     .register(videoRouter)
+    .register(hlsApi)
     .register(ctx.hdhrService.createRouter())
     .register(async (f) => {
       await f.register(fpStatic, {

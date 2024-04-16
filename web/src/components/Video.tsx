@@ -77,6 +77,8 @@ export default function Video({ channelNumber }: VideoProps) {
   useEffect(() => {
     resetHls();
     setLoadedStream(false);
+    // if (loadedStream) {
+    // }
   }, [channelNumber, resetHls]);
 
   const renderVideo = () => {
