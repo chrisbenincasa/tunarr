@@ -566,9 +566,6 @@ export default function FfmpegSettingsPage() {
     );
   };
 
-  console.log({ defaultValues });
-  console.log(defaultFfmpegSettings);
-
   return (
     <Box component="form" onSubmit={handleSubmit(updateFfmpegSettings)}>
       <Snackbar
