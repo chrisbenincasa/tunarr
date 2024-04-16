@@ -78,6 +78,14 @@ export const getXmlTvSettings = makeEndpoint({
   alias: 'getXmlTvSettings',
 });
 
+export const updateXmlTvSettings = makeEndpoint({
+  method: 'put',
+  path: '/api/xmltv-settings',
+  response: XmlTvSettingsSchema,
+  parameters: parametersBuilder().addBody(XmlTvSettingsSchema).build(),
+  alias: 'updateXmlTvSettings',
+});
+
 export const getFffmpegSettings = makeEndpoint({
   method: 'get',
   path: '/api/ffmpeg-settings',
@@ -100,9 +108,25 @@ export const getHdhrSettings = makeEndpoint({
   alias: 'getHdhrSettings',
 });
 
+export const updateHdhrSettings = makeEndpoint({
+  method: 'put',
+  path: '/api/hdhr-settings',
+  response: HdhrSettingsSchema,
+  parameters: parametersBuilder().addBody(HdhrSettingsSchema).build(),
+  alias: 'updateHdhrSettings',
+});
+
 export const getPlexStreamSettings = makeEndpoint({
   method: 'get',
   path: '/api/plex-settings',
   response: PlexStreamSettingsSchema,
   alias: 'getPlexStreamSettings',
+});
+
+export const updatePlexStreamSettings = makeEndpoint({
+  method: 'put',
+  path: '/api/plex-settings',
+  response: PlexStreamSettingsSchema,
+  parameters: parametersBuilder().addBody(PlexStreamSettingsSchema).build(),
+  alias: 'updatePlexStreamSettings',
 });

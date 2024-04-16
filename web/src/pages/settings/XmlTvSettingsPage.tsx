@@ -10,21 +10,25 @@ import {
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { XmlTvSettings, defaultXmlTvSettings } from '@tunarr/types';
+import _ from 'lodash-es';
 import React, { useEffect } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import {
   CheckboxFormController,
   NumericFormControllerText,
 } from '../../components/util/TypedController.tsx';
+import { apiClient } from '../../external/api.ts';
 import { useXmlTvSettings } from '../../hooks/settingsHooks.ts';
 
 export default function XmlTvSettingsPage() {
+  const [restoreTunarrDefaults, setRestoreTunarrDefaults] =
+    React.useState<boolean>(false);
   const { data, isPending, error } = useXmlTvSettings();
 
   const {
     reset,
     control,
-    formState: { isDirty, isValid },
+    formState: { isDirty, isValid, isSubmitting, defaultValues },
     handleSubmit,
   } = useForm<XmlTvSettings>({
     defaultValues: defaultXmlTvSettings,
@@ -32,26 +36,20 @@ export default function XmlTvSettingsPage() {
   });
 
   useEffect(() => {
-    if (data && !isDirty) {
+    if (data) {
       reset(data);
     }
-  }, [data, isDirty, reset]);
+  }, [data, reset]);
 
   const [snackStatus, setSnackStatus] = React.useState<boolean>(false);
   const queryClient = useQueryClient();
 
   const updateXmlTvSettingsMutation = useMutation({
-    mutationFn: (updateSettings: XmlTvSettings) => {
-      return fetch('http://localhost:8000/api/xmltv-settings', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updateSettings),
-      });
-    },
-    onSuccess: () => {
+    mutationFn: apiClient.updateXmlTvSettings,
+    onSuccess: (data) => {
       setSnackStatus(true);
+      setRestoreTunarrDefaults(false);
+      reset(data, { keepValues: true });
       return queryClient.invalidateQueries({
         queryKey: ['settings', 'xmltv-settings'],
       });
@@ -91,6 +89,10 @@ export default function XmlTvSettingsPage() {
             <TextField
               id="output-path"
               label="Output Path"
+              InputProps={{
+                readOnly: true,
+                disabled: true,
+              }}
               helperText={
                 'You can edit this location in file xmltv-settings.json.'
               }
@@ -99,7 +101,7 @@ export default function XmlTvSettingsPage() {
           )}
         />
       </FormControl>
-      <Stack spacing={2} direction={{ sm: 'column', md: 'row' }}>
+      <Stack spacing={2} direction={{ sm: 'column', md: 'row' }} sx={{ mt: 2 }}>
         <NumericFormControllerText
           control={control}
           name="programmingHours"
@@ -137,13 +139,55 @@ export default function XmlTvSettingsPage() {
           case.
         </FormHelperText>
       </FormControl>
-      <Stack spacing={2} direction="row" justifyContent="right" sx={{ mt: 2 }}>
-        <Button variant="outlined" onClick={() => reset()}>
-          Reset Options
-        </Button>
-        <Button variant="contained" disabled={!isValid} type="submit">
-          Save
-        </Button>
+      <Stack spacing={2} direction="row" sx={{ mt: 2 }}>
+        <Stack
+          spacing={2}
+          direction="row"
+          justifyContent="left"
+          sx={{ mt: 2, flexGrow: 1 }}
+        >
+          {!_.isEqual(defaultValues, {
+            ...defaultXmlTvSettings,
+            outputPath: data.outputPath,
+          }) && (
+            <Button
+              variant="outlined"
+              onClick={() => {
+                reset({ ...defaultXmlTvSettings, outputPath: data.outputPath });
+                setRestoreTunarrDefaults(true);
+              }}
+            >
+              Restore Default Settings
+            </Button>
+          )}
+        </Stack>
+        <Stack
+          spacing={2}
+          direction="row"
+          justifyContent="right"
+          sx={{ mt: 2 }}
+        >
+          {isDirty && (
+            <Button
+              variant="outlined"
+              onClick={() => {
+                reset(data);
+                setRestoreTunarrDefaults(false);
+              }}
+            >
+              Reset Changes
+            </Button>
+          )}
+          <Button
+            variant="contained"
+            disabled={
+              !isValid || isSubmitting || (!isDirty && !restoreTunarrDefaults)
+            }
+            type="submit"
+          >
+            Save
+          </Button>
+        </Stack>
       </Stack>
     </Box>
   );
