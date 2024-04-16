@@ -1,57 +1,149 @@
 import {
   Box,
   Button,
+  Collapse,
   Divider,
   LinearProgress,
   List,
   ListItem,
+  ListItemButton,
+  ListItemIcon,
   ListItemText,
+  Tooltip,
 } from '@mui/material';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { forProgramType } from '@tunarr/shared/util';
-import { CustomProgram, isCustomProgram } from '@tunarr/types';
+import { CustomShow, isCustomProgram } from '@tunarr/types';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
-import { chain, flow, isEmpty, isNil, negate } from 'lodash-es';
-import { MouseEvent, useCallback, useMemo, useState } from 'react';
+import {
+  chain,
+  flow,
+  isEmpty,
+  isNil,
+  isUndefined,
+  map,
+  negate,
+} from 'lodash-es';
+import pluralize from 'pluralize';
+import { Fragment, MouseEvent, useCallback, useState } from 'react';
 import { useIntersectionObserver } from 'usehooks-ts';
-import { typedProperty } from '../../helpers/util';
-import { useCustomShow } from '../../hooks/useCustomShows';
+import { toggle, typedProperty } from '../../helpers/util';
+import {
+  customShowProgramsQuery,
+  useCustomShows,
+} from '../../hooks/useCustomShows';
 import useStore from '../../store';
 import { addSelectedMedia } from '../../store/programmingSelector/actions';
+import { ExpandLess, ExpandMore } from '@mui/icons-material';
 
 dayjs.extend(duration);
 
-export function CustomShowProgrammingSelector() {
-  const selectedCustomShow = useStore((s) =>
-    s.currentLibrary?.type === 'custom-show' ? s.currentLibrary : null,
+const formattedTitle = forProgramType({
+  content: (p) => p.title,
+  custom: (p) => p.program!.title,
+});
+
+const formattedEpisodeTitle = forProgramType({
+  custom: (p) => p.program?.episodeTitle ?? '',
+});
+
+type CustomShowListItemProps = {
+  customShow: CustomShow;
+  selectShow(show: CustomShow): Promise<void>;
+};
+
+function CustomShowListItem({
+  customShow,
+  selectShow,
+}: CustomShowListItemProps) {
+  const [open, setOpen] = useState(false);
+
+  const { data: programs, isPending: programsLoading } = useQuery({
+    ...customShowProgramsQuery(customShow.id),
+    enabled: open,
+  });
+
+  const renderPrograms = () => {
+    if (programsLoading) {
+      return <LinearProgress />;
+    } else if (!isUndefined(programs) && !isEmpty(programs)) {
+      return chain(programs)
+        .filter(isCustomProgram)
+        .filter(typedProperty('persisted'))
+        .filter(flow(typedProperty('program'), negate(isNil)))
+        .map((program) => {
+          let title = formattedTitle(program);
+          const epTitle = formattedEpisodeTitle(program);
+          if (!isEmpty(epTitle)) {
+            title += ` - ${epTitle}`;
+          }
+
+          return (
+            <ListItem divider dense key={program.id} sx={{ pl: 4 }}>
+              <ListItemText
+                // TODO add season and episode number?
+                primary={title}
+                secondary={dayjs.duration(program.duration).humanize()}
+              />
+            </ListItem>
+          );
+        })
+        .compact()
+        .value();
+    }
+
+    return null;
+  };
+
+  const onClick = useCallback(
+    async (e: MouseEvent<HTMLButtonElement>, show: CustomShow) => {
+      e.stopPropagation();
+      await selectShow(show);
+    },
+    [selectShow],
   );
+
+  return (
+    <Fragment key={customShow.id}>
+      <ListItemButton dense onClick={() => setOpen(toggle)}>
+        <Tooltip
+          title={
+            !open
+              ? 'Click to preview the items in this Custom Show. Note that only the whole show can be added at once.'
+              : ''
+          }
+          placement="top"
+        >
+          <ListItemIcon>{open ? <ExpandLess /> : <ExpandMore />}</ListItemIcon>
+        </Tooltip>
+        <ListItemText
+          // TODO add season and episode number?
+          primary={customShow.name}
+          secondary={`${customShow.contentCount} ${pluralize(
+            'Program',
+            customShow.contentCount,
+          )}`}
+        />
+        <Button onClick={(e) => onClick(e, customShow)} variant="contained">
+          Add Show
+        </Button>
+      </ListItemButton>
+      <Collapse in={open} timeout="auto" unmountOnExit sx={{ width: '100%' }}>
+        {renderPrograms()}
+      </Collapse>
+      <Divider variant="fullWidth" />
+    </Fragment>
+  );
+}
+
+export function CustomShowProgrammingSelector() {
+  const { data: customShows, isPending } = useCustomShows([]);
   const viewType = useStore((state) => state.theme.programmingSelectorView);
   const [scrollParams, setScrollParams] = useState({ limit: 0, max: -1 });
+  const queryClient = useQueryClient();
 
-  const [showResult, programsResult] = useCustomShow(
-    /*id=*/ selectedCustomShow?.library.id ?? '',
-    /*enabled=*/ !isNil(selectedCustomShow),
-    /*includePrograms=*/ true,
-  );
-
-  const isLoading = showResult.isLoading || programsResult.isLoading;
-
-  const formattedTitle = useMemo(
-    () =>
-      forProgramType({
-        content: (p) => p.title,
-        custom: (p) => p.program!.title,
-      }),
-    [],
-  );
-
-  const formattedEpisodeTitle = useMemo(
-    () =>
-      forProgramType({
-        custom: (p) => p.program?.episodeTitle ?? '',
-      }),
-    [],
-  );
+  const isLoading = isPending;
 
   const { ref } = useIntersectionObserver({
     onChange: (_, entry) => {
@@ -65,59 +157,37 @@ export function CustomShowProgrammingSelector() {
     threshold: 0.5,
   });
 
-  const handleItem = useCallback(
-    (e: MouseEvent<HTMLButtonElement>, item: CustomProgram) => {
-      e.stopPropagation();
-      if (selectedCustomShow) {
+  const selectShow = useCallback(
+    async (show: CustomShow) => {
+      try {
+        const customShowPrograms = await queryClient.ensureQueryData(
+          customShowProgramsQuery(show.id),
+        );
         addSelectedMedia({
           type: 'custom-show',
-          customShowId: selectedCustomShow.library.id,
-          program: item,
-          childCount: selectedCustomShow.library.contentCount,
+          customShowId: show.id,
+          childCount: show.contentCount,
+          totalDuration: show.totalDuration,
+          programs: customShowPrograms,
         });
+      } catch (e) {
+        console.error('Error fetching custom show programs', e);
       }
     },
-    [selectedCustomShow],
+    [queryClient],
   );
 
   const renderListItems = () => {
-    if (
-      showResult.data &&
-      programsResult.data &&
-      programsResult.data.length > 0
-    ) {
-      return chain(programsResult.data)
-        .filter(isCustomProgram)
-        .filter(typedProperty('persisted'))
-        .filter(flow(typedProperty('program'), negate(isNil)))
-        .map((program) => {
-          let title = formattedTitle(program);
-          const epTitle = formattedEpisodeTitle(program);
-          if (!isEmpty(epTitle)) {
-            title += ` - ${epTitle}`;
-          }
-
-          return (
-            <ListItem dense key={program.id}>
-              <ListItemText
-                // TODO add season and episode number?
-                primary={title}
-                secondary={dayjs.duration(program.duration).humanize()}
-              />
-              <Button
-                onClick={(e) => handleItem(e, program)}
-                variant="contained"
-              >
-                Add
-              </Button>
-            </ListItem>
-          );
-        })
-        .compact()
-        .value();
-    }
-
-    return null;
+    console.log(customShows);
+    return map(customShows, (cs) => {
+      return (
+        <CustomShowListItem
+          key={cs.id}
+          customShow={cs}
+          selectShow={() => selectShow(cs)}
+        />
+      );
+    });
   };
 
   return (

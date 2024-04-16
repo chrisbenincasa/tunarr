@@ -41,6 +41,11 @@ import { materializedProgramListSelector } from '../../store/selectors.ts';
 import { UIChannelProgram } from '../../types/index.ts';
 import ProgramDetailsDialog from '../ProgramDetailsDialog.tsx';
 
+const ListItemTimeFormatter = new Intl.DateTimeFormat(undefined, {
+  dateStyle: 'medium',
+  timeStyle: 'short',
+});
+
 type Props = {
   // The caller can pass the list of programs to render, if they don't
   // want to render them from state
@@ -79,7 +84,7 @@ type ListDragItem = {
 
 const programListItemTitleFormatter = (() => {
   const itemTitle = forProgramType({
-    custom: 'Custom Show',
+    custom: () => `Custom Show - `,
     redirect: (p) => `Redirect to "${p.channelName}"`,
     flex: 'Flex',
     content: (p) => {
@@ -102,7 +107,10 @@ const programListItemTitleFormatter = (() => {
   });
 
   return (program: ChannelProgram) => {
-    const title = itemTitle(program);
+    let title = itemTitle(program);
+    if (program.type === 'custom' && program.program) {
+      title += ` ${itemTitle(program.program)}`;
+    }
     const dur = betterHumanize(
       dayjs.duration({ milliseconds: program.duration }),
     );
@@ -148,11 +156,8 @@ const ProgramListItem = ({
     },
   }));
 
-  // Intl.DateTimeFormat
-  const startTime = new Intl.DateTimeFormat(undefined, {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(startTimeDate);
+  const startTime = ListItemTimeFormatter.format(startTimeDate);
+  // console.log(ListItemTimeFormatter.formatToParts(startTimeDate));
 
   const handleInfoButtonClick = (e: React.MouseEvent) => {
     e.stopPropagation();

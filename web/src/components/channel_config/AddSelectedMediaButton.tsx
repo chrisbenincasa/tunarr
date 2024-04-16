@@ -23,9 +23,6 @@ export default function AddSelectedMediaButton({
   ...rest
 }: Props) {
   const knownMedia = useStore((s) => s.knownMediaByServer);
-  // const selectedMedia = useStore((s) =>
-  //   filter(s.selectedMedia, (m): m is PlexSelectedMedia => m.type === 'plex'),
-  // );
   const selectedMedia = useStore((s) => s.selectedMedia);
 
   const addSelectedItems: MouseEventHandler = (e) => {
@@ -42,13 +39,14 @@ export default function AddSelectedMediaButton({
         'custom-show': (
           selected: CustomShowSelectedMedia,
         ): Promise<AddedCustomShowProgram[]> => {
-          return Promise.resolve([
-            {
+          return Promise.resolve(
+            map(selected.programs, (p) => ({
               type: 'custom-show',
               customShowId: selected.customShowId,
-              program: selected.program,
-            },
-          ]);
+              totalDuration: selected.totalDuration,
+              program: p,
+            })),
+          );
         },
         default: Promise.resolve([]),
       }),

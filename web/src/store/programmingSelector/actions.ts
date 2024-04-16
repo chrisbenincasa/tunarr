@@ -138,7 +138,6 @@ export const removeSelectedMedia = (media: SelectedMedia[]) =>
       'custom-show': (cs) =>
         some(grouped['custom-show'], {
           customShowId: cs.customShowId,
-          programId: cs.program.id,
         }),
       default: false,
     });
@@ -156,22 +155,11 @@ export const removePlexSelectedMedia = (serverName: string, guids: string[]) =>
     );
   });
 
-export const removeCustomShowSelectedMedia = (
-  csId: string,
-  programIds: string[],
-) =>
+export const removeCustomShowSelectedMedia = (csId: string) =>
   useStore.setState((state) => {
-    if (programIds.length === 0) {
-      return;
-    }
-
-    const idsSet = new Set([...programIds]);
     state.selectedMedia = reject(
       state.selectedMedia,
-      (m) =>
-        m.type === 'custom-show' &&
-        m.customShowId === csId &&
-        idsSet.has(m.program.id),
+      (m) => m.type === 'custom-show' && m.customShowId === csId,
     );
   });
 

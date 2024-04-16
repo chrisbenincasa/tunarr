@@ -24,7 +24,9 @@ const materializeProgramList = (
         if (!isNil(programLookup[p.id])) {
           content = {
             ...p,
-            ...programLookup[p.id],
+            program: {
+              ...programLookup[p.id],
+            },
             startTimeOffset: offset,
           };
         }

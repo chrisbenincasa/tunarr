@@ -4,7 +4,7 @@ import type {
   GenGroupedSubtypeMapping,
   PerTypeCallback,
 } from '@tunarr/shared/types';
-import { applyOrValue } from '@tunarr/shared/util';
+import { applyOrValue, applyOrValueNoRest } from '@tunarr/shared/util';
 import {
   ChannelProgram,
   FlexProgram,
@@ -174,48 +174,26 @@ export const numericFormChangeHandler = (
   };
 };
 
-// // Generates a mapping of discriminator to the concrete tyhpe
-// type GenSubtypeMapping<T extends { type: string }> = {
-//   [X in T['type']]: Extract<T, { type: X }>;
-// };
-
-// type GenGroupedSubtypeMapping<T extends { type: string }> = {
-//   [X in T['type']]: Extract<T, { type: X }>[];
-// };
-
-// type PerTypeCallback<Union extends { type: string }, CallbackRet> = {
-//   [X in Union['type']]?:
-//     | ((m: GenSubtypeMapping<Union>[X]) => CallbackRet)
-//     | CallbackRet;
-// } & {
-//   default?: ((m: Union) => CallbackRet) | CallbackRet;
-// };
-
-// const applyOrValue = <Super, X extends Super, T>(
-//   f: ((m: X) => T) | T,
-//   arg: X,
-// ) => (isFunction(f) ? f(arg) : f);
-
-export function forSelectedMediaType<T>(
-  choices: MakeRequired<PerTypeCallback<SelectedMedia, T>, 'default'>,
-): (m: SelectedMedia) => NonNullable<T>;
-export function forSelectedMediaType<T>(
-  choices: PerTypeCallback<SelectedMedia, T>,
-): (m: SelectedMedia) => T | null;
-export function forSelectedMediaType<T>(
+export function forSelectedMediaType<T, Args extends unknown[] = []>(
+  choices: MakeRequired<PerTypeCallback<SelectedMedia, T, Args>, 'default'>,
+): (m: SelectedMedia, ...rest: Args) => NonNullable<T>;
+export function forSelectedMediaType<T, Args extends unknown[] = []>(
+  choices: PerTypeCallback<SelectedMedia, T, Args>,
+): (m: SelectedMedia, ...rest: Args) => T | null;
+export function forSelectedMediaType<T, Args extends unknown[] = []>(
   choices:
-    | PerTypeCallback<SelectedMedia, T>
-    | MakeRequired<PerTypeCallback<SelectedMedia, T>, 'default'>,
-): (m: SelectedMedia) => T | null {
+    | PerTypeCallback<SelectedMedia, T, Args>
+    | MakeRequired<PerTypeCallback<SelectedMedia, T, Args>, 'default'>,
+): (m: SelectedMedia, ...rest: Args) => T | null {
   // Unfortunately we still have to enumerate the types here
   // in order to get proper type guarding
-  return (m: SelectedMedia) => {
+  return (m: SelectedMedia, ...rest: Args) => {
     if (m.type === 'custom-show' && choices['custom-show']) {
-      return applyOrValue(choices['custom-show'], m);
+      return applyOrValue(choices['custom-show'], m, rest);
     } else if (m.type === 'plex' && choices['plex']) {
-      return applyOrValue(choices['plex'], m);
+      return applyOrValue(choices['plex'], m, rest);
     } else if (choices.default) {
-      return applyOrValue(choices['default'], m);
+      return applyOrValue(choices['default'], m, rest);
     }
 
     return null;
@@ -247,29 +225,29 @@ export const forUIProgramType = <T>(
     switch (m.type) {
       case 'content':
         if (choices.content) {
-          return applyOrValue(choices.content, m);
+          return applyOrValueNoRest(choices.content, m);
         }
         break;
       case 'custom':
         if (choices.custom) {
-          return applyOrValue(choices.custom, m);
+          return applyOrValueNoRest(choices.custom, m);
         }
         break;
       case 'redirect':
         if (choices.redirect) {
-          return applyOrValue(choices.redirect, m);
+          return applyOrValueNoRest(choices.redirect, m);
         }
         break;
       case 'flex':
         if (choices.flex) {
-          return applyOrValue(choices.flex, m);
+          return applyOrValueNoRest(choices.flex, m);
         }
         break;
     }
 
     // If we made it this far try to do the default
     if (choices.default) {
-      return applyOrValue(choices.default, m);
+      return applyOrValueNoRest(choices.default, m);
     }
 
     return null;
@@ -286,29 +264,29 @@ export const forTvGuideProgram = <T>(
     switch (m.type) {
       case 'content':
         if (choices.content) {
-          return applyOrValue(choices.content, m);
+          return applyOrValueNoRest(choices.content, m);
         }
         break;
       case 'custom':
         if (choices.custom) {
-          return applyOrValue(choices.custom, m);
+          return applyOrValueNoRest(choices.custom, m);
         }
         break;
       case 'redirect':
         if (choices.redirect) {
-          return applyOrValue(choices.redirect, m);
+          return applyOrValueNoRest(choices.redirect, m);
         }
         break;
       case 'flex':
         if (choices.flex) {
-          return applyOrValue(choices.flex, m);
+          return applyOrValueNoRest(choices.flex, m);
         }
         break;
     }
 
     // If we made it this far try to do the default
     if (choices.default) {
-      return applyOrValue(choices.default, m);
+      return applyOrValueNoRest(choices.default, m);
     }
 
     return null;
@@ -319,33 +297,34 @@ export const forPlexMedia = <T>(choices: PerTypeCallback<PlexMedia, T>) => {
   return (m: PlexMedia) => {
     switch (m.type) {
       case 'movie':
-        if (choices.movie) return applyOrValue(choices.movie, m);
+        if (choices.movie) return applyOrValueNoRest(choices.movie, m);
         break;
       case 'show':
-        if (choices.show) return applyOrValue(choices.show, m);
+        if (choices.show) return applyOrValueNoRest(choices.show, m);
         break;
       case 'season':
-        if (choices.season) return applyOrValue(choices.season, m);
+        if (choices.season) return applyOrValueNoRest(choices.season, m);
         break;
       case 'episode':
-        if (choices.episode) return applyOrValue(choices.episode, m);
+        if (choices.episode) return applyOrValueNoRest(choices.episode, m);
         break;
       case 'artist':
-        if (choices.artist) return applyOrValue(choices.artist, m);
+        if (choices.artist) return applyOrValueNoRest(choices.artist, m);
         break;
       case 'album':
-        if (choices.album) return applyOrValue(choices.album, m);
+        if (choices.album) return applyOrValueNoRest(choices.album, m);
         break;
       case 'track':
-        if (choices.track) return applyOrValue(choices.track, m);
+        if (choices.track) return applyOrValueNoRest(choices.track, m);
         break;
       case 'collection':
-        if (choices.collection) return applyOrValue(choices.collection, m);
+        if (choices.collection)
+          return applyOrValueNoRest(choices.collection, m);
         break;
     }
 
     if (choices.default) {
-      return applyOrValue(choices.default, m);
+      return applyOrValueNoRest(choices.default, m);
     }
 
     return null;
@@ -368,15 +347,15 @@ export function forAddedMediaType<T>(
   return (m: AddedMedia) => {
     switch (m.type) {
       case 'plex':
-        if (choices.plex) return applyOrValue(choices.plex, m);
+        if (choices.plex) return applyOrValueNoRest(choices.plex, m);
         break;
       case 'custom-show':
         if (choices['custom-show'])
-          return applyOrValue(choices['custom-show'], m);
+          return applyOrValueNoRest(choices['custom-show'], m);
         break;
     }
 
-    if (choices.default) return applyOrValue(choices.default, m);
+    if (choices.default) return applyOrValueNoRest(choices.default, m);
 
     return null;
   };

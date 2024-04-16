@@ -1,4 +1,4 @@
-import { CustomProgram, CustomShow, PlexServerSettings } from '@tunarr/types';
+import { CustomProgram, PlexServerSettings } from '@tunarr/types';
 import { PlexSearch } from '@tunarr/types/api';
 import { PlexLibrarySection, PlexMedia } from '@tunarr/types/plex';
 import { StateCreator } from 'zustand';
@@ -16,8 +16,9 @@ export type PlexSelectedMedia = {
 export type CustomShowSelectedMedia = {
   type: 'custom-show';
   customShowId: string;
-  program: CustomProgram;
   childCount?: number;
+  totalDuration: number;
+  programs: CustomProgram[];
 };
 
 export type SelectedMedia = PlexSelectedMedia | CustomShowSelectedMedia;
@@ -29,7 +30,6 @@ export type PlexLibrary = {
 
 export type CustomShowLibrary = {
   type: 'custom-show';
-  library: CustomShow;
 };
 
 export type SelectedLibrary = PlexLibrary | CustomShowLibrary;

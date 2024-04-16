@@ -26,7 +26,10 @@ export class CustomShowDB {
   async getShow(id: string) {
     return getEm()
       .repo(CustomShow)
-      .findOne({ uuid: id }, { populate: ['content.uuid'] });
+      .findOne(
+        { uuid: id },
+        { populate: ['content.uuid', 'content.duration'] },
+      );
   }
 
   async getShowPrograms(id: string): Promise<CustomProgram[]> {

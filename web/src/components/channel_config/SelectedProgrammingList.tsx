@@ -11,10 +11,10 @@ import {
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemIcon from '@mui/material/ListItemIcon';
-import { forProgramType } from '@tunarr/shared/util';
 import { isPlexDirectory, isPlexSeason, isPlexShow } from '@tunarr/types/plex';
 import { chain, first, groupBy, mapValues, reduce } from 'lodash-es';
-import { useCallback, useMemo } from 'react';
+import pluralize from 'pluralize';
+import { useCallback } from 'react';
 import { forSelectedMediaType, unwrapNil } from '../../helpers/util.ts';
 import { useCustomShows } from '../../hooks/useCustomShows.ts';
 import useStore from '../../store/index.ts';
@@ -24,7 +24,6 @@ import {
 } from '../../store/programmingSelector/actions.ts';
 import { AddedMedia } from '../../types/index.ts';
 import AddSelectedMediaButton from './AddSelectedMediaButton.tsx';
-import pluralize from 'pluralize';
 
 type Props = {
   onAddSelectedMedia: (media: AddedMedia[]) => void;
@@ -54,76 +53,71 @@ export default function SelectedProgrammingList({
     clearSelectedMedia();
   }, []);
 
-  const formattedTitle = useMemo(
-    () =>
-      forProgramType({
-        content: (p) => p.title,
-      }),
-    [],
-  );
+  // const formattedTitle = useMemo(
+  //   () =>
+  //     forProgramType({
+  //       content: (p) => p.title,
+  //     }),
+  //   [],
+  // );
 
-  const formattedEpisodeTitle = useMemo(
-    () =>
-      forProgramType({
-        custom: (p) => p.program?.episodeTitle ?? '',
-      }),
-    [],
-  );
+  // const formattedEpisodeTitle = useMemo(
+  //   () =>
+  //     forProgramType({
+  //       custom: (p) => p.program?.episodeTitle ?? '',
+  //     }),
+  //   [],
+  // );
+
+  const renderSelectedMediaType = forSelectedMediaType<JSX.Element, [number]>({
+    plex: (selected) => {
+      const media = knownMedia[selected.server][selected.guid];
+
+      let title: string = media.title;
+      if (isPlexDirectory(media)) {
+        title = `Library - ${media.title}`;
+      } else if (isPlexShow(media)) {
+        title = `${media.title} (${media.childCount} ${pluralize(
+          'season',
+          media.childCount,
+        )}, ${media.leafCount} total ${pluralize('episode', media.leafCount)})`;
+      } else if (isPlexSeason(media)) {
+        title = `${media.parentTitle} - ${media.title} (${
+          media.leafCount
+        } ${pluralize('episode', media.leafCount)})`;
+      } else if (media.type === 'collection') {
+        title = `${media.title} (${media.childCount} ${pluralize(
+          'item',
+          parseInt(media.childCount),
+        )})`;
+      }
+
+      return (
+        <ListItem key={selected.guid} dense>
+          <ListItemText primary={title} />
+          <ListItemIcon>
+            <IconButton onClick={() => removeSelectedMedia([selected])}>
+              <DeleteIcon color="error" />
+            </IconButton>
+          </ListItemIcon>
+        </ListItem>
+      );
+    },
+    'custom-show': (selected, index: number) => {
+      const customShow = customShowById[selected.customShowId];
+      return (
+        customShow && (
+          <ListItem key={`custom_${selected.customShowId}_${index}`}>
+            Custom Show {customShow.name}
+          </ListItem>
+        )
+      );
+    },
+  });
 
   const renderSelectedItems = () => {
     const items = chain(selectedMedia)
-      .map(
-        forSelectedMediaType({
-          plex: (selected) => {
-            const media = knownMedia[selected.server][selected.guid];
-
-            let title: string = media.title;
-            if (isPlexDirectory(media)) {
-              title = `Library - ${media.title}`;
-            } else if (isPlexShow(media)) {
-              title = `${media.title} (${media.childCount} ${pluralize(
-                'season',
-                media.childCount,
-              )}, ${media.leafCount} total ${pluralize(
-                'episode',
-                media.leafCount,
-              )})`;
-            } else if (isPlexSeason(media)) {
-              title = `${media.parentTitle} - ${media.title} (${
-                media.leafCount
-              } ${pluralize('episode', media.leafCount)})`;
-            } else if (media.type === 'collection') {
-              title = `${media.title} (${media.childCount} ${pluralize(
-                'item',
-                parseInt(media.childCount),
-              )})`;
-            }
-
-            return (
-              <ListItem key={selected.guid} dense>
-                <ListItemText primary={title} />
-                <ListItemIcon>
-                  <IconButton onClick={() => removeSelectedMedia([selected])}>
-                    <DeleteIcon color="error" />
-                  </IconButton>
-                </ListItemIcon>
-              </ListItem>
-            );
-          },
-          'custom-show': (selected) => {
-            const customShow = customShowById[selected.customShowId];
-            return (
-              customShow && (
-                <ListItem key={`custom_${selected.program.id}`}>
-                  Custom Show {customShow.name} -{' '}
-                  {formattedTitle(selected.program)}{' '}
-                  {formattedEpisodeTitle(selected.program)}
-                </ListItem>
-              )
-            );
-          },
-        }),
-      )
+      .map((item, index) => renderSelectedMediaType(item, index))
       .compact()
       .value();
 
