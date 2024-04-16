@@ -3,7 +3,6 @@ import child_process, { ChildProcessByStdio } from 'child_process';
 import events from 'events';
 import { isEmpty, isNil, isString, isUndefined, merge, round } from 'lodash-es';
 import path from 'path';
-import fs from 'node:fs';
 import { DeepReadonly, DeepRequired } from 'ts-essentials';
 import { serverOptions } from './globals.js';
 import createLogger from './logger.js';
@@ -799,13 +798,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     logger.debug(`Starting ffmpeg with args: "${ffmpegArgs.join(' ')}"`);
 
     this.ffmpeg = spawn(this.ffmpegPath, ffmpegArgs, {
-      stdio: [
-        'ignore',
-        'pipe',
-        doLogs
-          ? process.stderr
-          : fs.createWriteStream(`debug_ffmpeg_${this.channel.number}.log`),
-      ],
+      stdio: ['ignore', 'pipe', doLogs ? process.stderr : 'ignore'],
     });
 
     if (this.hasBeenKilled) {
