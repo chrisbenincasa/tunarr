@@ -22,6 +22,8 @@ import {
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { FfmpegSettings, defaultFfmpegSettings } from '@tunarr/types';
+import { usePrevious } from '@uidotdev/usehooks';
+import _ from 'lodash-es';
 import React, { useEffect } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import {
@@ -130,11 +132,12 @@ type DeinterlaceFilterValue =
 
 export default function FfmpegSettingsPage() {
   const { data, isPending, error } = useFfmpegSettings();
+  const prevData = usePrevious(data);
 
   const {
     reset,
     control,
-    formState: { isDirty, isValid },
+    formState: { isDirty, isValid, isSubmitting, defaultValues },
     watch,
     handleSubmit,
   } = useForm<Omit<FfmpegSettings, 'configVersion'>>({
@@ -145,18 +148,23 @@ export default function FfmpegSettingsPage() {
   const enableTranscoding = watch('enableTranscoding');
 
   useEffect(() => {
-    if (data && !isDirty) {
+    if (!_.isEqual(data, prevData)) {
       reset(data);
     }
-  }, [data, isDirty, reset]);
+  }, [data, reset]);
 
   const [snackStatus, setSnackStatus] = React.useState<boolean>(false);
+  const [restoreTunarrDefaults, setRestoreTunarrDefaults] =
+    React.useState<boolean>(false);
+
   const queryClient = useQueryClient();
 
   const updateFfmpegSettingsMutation = useMutation({
     mutationFn: apiClient.updateFfmpegSettings,
-    onSuccess: () => {
+    onSuccess: (data) => {
+      setRestoreTunarrDefaults(false);
       setSnackStatus(true);
+      reset(data, { keepValues: true });
       return queryClient.invalidateQueries({
         queryKey: ['settings', 'ffmpeg-settings'],
       });
@@ -560,6 +568,9 @@ export default function FfmpegSettingsPage() {
     );
   };
 
+  console.log({ defaultValues });
+  console.log(defaultFfmpegSettings);
+
   return (
     <Box component="form" onSubmit={handleSubmit(updateFfmpegSettings)}>
       <Snackbar
@@ -777,14 +788,47 @@ export default function FfmpegSettingsPage() {
           </FormControl>
         </>
       )}
-
-      <Stack spacing={2} direction="row" justifyContent="right" sx={{ mt: 2 }}>
-        <Button variant="outlined" onClick={() => reset()}>
-          Reset Options
-        </Button>
-        <Button variant="contained" disabled={!isValid} type="submit">
-          Save
-        </Button>
+      <Stack spacing={2} direction="row" sx={{ mt: 2 }}>
+        <Stack
+          spacing={2}
+          direction="row"
+          justifyContent="left"
+          sx={{ mt: 2, flexGrow: 1 }}
+        >
+          {!_.isEqual(defaultValues, defaultFfmpegSettings) && (
+            <Button
+              variant="outlined"
+              onClick={() => {
+                reset(defaultFfmpegSettings);
+                setRestoreTunarrDefaults(true);
+              }}
+            >
+              Restore Default Settings
+            </Button>
+          )}
+        </Stack>
+        <Stack spacing={2} direction="row" justifyContent="right">
+          {(isDirty || (isDirty && !isSubmitting) || restoreTunarrDefaults) && (
+            <Button
+              variant="outlined"
+              onClick={() => {
+                reset(data);
+                setRestoreTunarrDefaults(false);
+              }}
+            >
+              Reset Changes
+            </Button>
+          )}
+          <Button
+            variant="contained"
+            disabled={
+              !isValid || isSubmitting || (!isDirty && !restoreTunarrDefaults)
+            }
+            type="submit"
+          >
+            Save
+          </Button>
+        </Stack>
       </Stack>
     </Box>
   );

@@ -19,12 +19,15 @@ import {
 import { useHdhrSettings } from '../../hooks/settingsHooks.ts';
 
 export default function HdhrSettingsPage() {
+  const [restoreTunarrDefaults, setRestoreTunarrDefaults] =
+    React.useState<boolean>(false);
+
   const { data, isPending, error } = useHdhrSettings();
 
   const {
     reset,
     control,
-    formState: { isDirty, isValid },
+    formState: { isDirty, isValid, isSubmitting, defaultValues },
     handleSubmit,
   } = useForm<HdhrSettings>({
     defaultValues: defaultHdhrSettings,
@@ -32,10 +35,10 @@ export default function HdhrSettingsPage() {
   });
 
   useEffect(() => {
-    if (data && !isDirty) {
+    if (data) {
       reset(data);
     }
-  }, [data, isDirty, reset]);
+  }, [data, reset]);
 
   const [snackStatus, setSnackStatus] = React.useState<boolean>(false);
   const queryClient = useQueryClient();
@@ -50,8 +53,9 @@ export default function HdhrSettingsPage() {
         body: JSON.stringify(updateSettings),
       });
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       setSnackStatus(true);
+      reset(data, { keepValues: true });
       return queryClient.invalidateQueries({
         queryKey: ['settings', 'hdhr-settings'],
       });
@@ -109,13 +113,48 @@ export default function HdhrSettingsPage() {
         }}
       />
 
-      <Stack spacing={2} direction="row" justifyContent="right" sx={{ mt: 2 }}>
-        <Button variant="outlined" onClick={() => reset()}>
-          Reset Options
-        </Button>
-        <Button variant="contained" disabled={!isValid} type="submit">
-          Save
-        </Button>
+      <Stack spacing={2} direction="row" sx={{ mt: 2 }}>
+        <Stack
+          spacing={2}
+          direction="row"
+          justifyContent="left"
+          sx={{ mt: 2, flexGrow: 1 }}
+        >
+          {!_.isEqual(defaultValues, defaultHdhrSettings) && (
+            <Button
+              variant="outlined"
+              onClick={() => {
+                reset(defaultHdhrSettings);
+                setRestoreTunarrDefaults(true);
+              }}
+            >
+              Restore Default Settings
+            </Button>
+          )}
+        </Stack>
+        <Stack spacing={2} direction="row" justifyContent="right">
+          {isDirty && (
+            <Button
+              variant="outlined"
+              onClick={() => {
+                reset(data);
+                setRestoreTunarrDefaults(false);
+              }}
+            >
+              Reset Changes
+            </Button>
+          )}
+          <Button
+            variant="contained"
+            disabled={
+              !isValid || (!isDirty && !restoreTunarrDefaults) || isSubmitting
+            }
+            onClick={() => setRestoreTunarrDefaults(false)}
+            type="submit"
+          >
+            Save
+          </Button>
+        </Stack>
       </Stack>
     </Box>
   );

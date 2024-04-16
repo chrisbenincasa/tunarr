@@ -53,7 +53,7 @@ import {
   PlexStreamSettings,
   defaultPlexStreamSettings,
 } from '@tunarr/types';
-import { fill, isNil, isNull, isUndefined, map } from 'lodash-es';
+import _, { fill, isNil, isNull, isUndefined, map } from 'lodash-es';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { RotatingLoopIcon } from '../../components/base/LoadingIcon.tsx';
@@ -413,6 +413,9 @@ function PlexServerRow({ server }: PlexServerRowProps) {
 }
 
 export default function PlexSettingsPage() {
+  const [restoreTunarrDefaults, setRestoreTunarrDefaults] =
+    React.useState<boolean>(false);
+
   const {
     data: servers,
     isPending: serversPending,
@@ -428,7 +431,7 @@ export default function PlexSettingsPage() {
   const {
     reset,
     control,
-    formState: { isDirty, isValid },
+    formState: { isDirty, isValid, isSubmitting, defaultValues },
     watch,
     handleSubmit,
   } = useForm<PlexStreamSettings>({
@@ -440,10 +443,10 @@ export default function PlexSettingsPage() {
   const showSubtitles = watch('enableSubtitles');
 
   useEffect(() => {
-    if (streamSettings && !isDirty) {
+    if (streamSettings) {
       reset(streamSettings);
     }
-  }, [streamSettings, isDirty, reset]);
+  }, [streamSettings, reset]);
 
   const [snackStatus, setSnackStatus] = React.useState<boolean>(false);
   const queryClient = useQueryClient();
@@ -458,8 +461,9 @@ export default function PlexSettingsPage() {
         body: JSON.stringify(updateSettings),
       });
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       setSnackStatus(true);
+      reset(streamSettings, { keepValues: true });
       return queryClient.invalidateQueries({
         queryKey: ['settings', 'plex-settings'],
       });
@@ -1167,18 +1171,53 @@ export default function PlexSettingsPage() {
             renderPathReplacements()
           )}
         </Box>
-        <Stack
-          spacing={2}
-          direction="row"
-          justifyContent="right"
-          sx={{ mt: 2 }}
-        >
-          <Button variant="outlined" onClick={() => reset()}>
-            Reset Options
-          </Button>
-          <Button variant="contained" disabled={!isValid} type="submit">
-            Save
-          </Button>
+        <Stack spacing={2} direction="row" sx={{ mt: 2 }}>
+          <Stack
+            spacing={2}
+            direction="row"
+            justifyContent="left"
+            sx={{ mt: 2, flexGrow: 1 }}
+          >
+            {!_.isEqual(defaultValues, defaultPlexStreamSettings) && (
+              <Button
+                variant="outlined"
+                onClick={() => {
+                  reset(defaultPlexStreamSettings);
+                  setRestoreTunarrDefaults(true);
+                }}
+              >
+                Restore Default Settings
+              </Button>
+            )}
+          </Stack>
+          <Stack
+            spacing={2}
+            direction="row"
+            justifyContent="right"
+            sx={{ mt: 2 }}
+          >
+            {isDirty && (
+              <Button
+                variant="outlined"
+                onClick={() => {
+                  reset(streamSettings);
+                  setRestoreTunarrDefaults(false);
+                }}
+              >
+                Reset Changes
+              </Button>
+            )}
+            <Button
+              variant="contained"
+              disabled={
+                !isValid || (!isDirty && !restoreTunarrDefaults) || isSubmitting
+              }
+              onClick={() => setRestoreTunarrDefaults(false)}
+              type="submit"
+            >
+              Save
+            </Button>
+          </Stack>
         </Stack>
       </Box>
     </Box>
