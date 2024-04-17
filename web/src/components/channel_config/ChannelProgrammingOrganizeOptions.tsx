@@ -1,33 +1,20 @@
 import {
-  Update as AdjustSchedulingIcon,
   ContentCopy as ReplicateIcon,
   RepeatOn as RerunBlocksIcon,
   Shuffle as ShuffleIcon,
   AccessTime as TimeIcon,
 } from '@mui/icons-material';
 import { MenuItem, Tooltip } from '@mui/material';
-import { useContext, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import AddReplicateModal from '../programming_controls/AddReplicateModal';
 import AddRerunBlockModal from '../programming_controls/AddRerunBlockModal';
 import AdjustWeightsModal from '../programming_controls/AdjustWeightsModal';
-import { ScheduleControlsContext } from './ChannelProgrammingConfig';
 
-type OrganizeOptionsProps = {
-  onClose: () => void;
-};
-
-export function ChannelProgrammingOrganizeOptions({
-  onClose,
-}: OrganizeOptionsProps) {
-  const handleClose = () => {
-    onClose();
-  };
-
+export function ChannelProgrammingOrganizeOptions() {
   const [addReplicateModalOpen, setAddReplicateModalOpen] = useState(false);
   const [addRerunBlocksModal, setAddRerunBlocksModal] = useState(false);
   const [adjustWeightsModal, setAdjustWeightsModal] = useState(false);
-  const { setShowScheduleControls } = useContext(ScheduleControlsContext);
 
   return (
     <>
@@ -35,25 +22,11 @@ export function ChannelProgrammingOrganizeOptions({
         Organize
       </MenuItem>
       <Tooltip
-        title="Slides the whole schedule. The 'Fast-Forward' button will advance the stream by the specified amount of time. The 'Rewind' button does the opposite."
-        placement="right"
-      >
-        <MenuItem
-          onClick={() => {
-            // TODO: Fix issue with menu not closing
-            handleClose();
-            setShowScheduleControls(true);
-          }}
-        >
-          <AdjustSchedulingIcon /> Adjust Scheduling
-        </MenuItem>
-      </Tooltip>
-      <Tooltip
         title="This allows to schedule specific shows to run at specific time slots of the day or a week. It's recommended you first populate the channel with the episodes from the shows you want to play and/or other content like movies and redirects."
         placement="right"
       >
         <MenuItem component={Link} to="time-slot-editor">
-          <TimeIcon /> Time Slots
+          <TimeIcon /> Time Slots...
         </MenuItem>
       </Tooltip>
       <Tooltip
@@ -61,7 +34,7 @@ export function ChannelProgrammingOrganizeOptions({
         placement="right"
       >
         <MenuItem component={Link} to="random-slot-editor">
-          <ShuffleIcon /> Random Slots
+          <ShuffleIcon /> Random Slots...
         </MenuItem>
       </Tooltip>
       {/* <Tooltip
@@ -89,7 +62,7 @@ export function ChannelProgrammingOrganizeOptions({
             setAddReplicateModalOpen(true);
           }}
         >
-          <ReplicateIcon /> Replicate Programming
+          <ReplicateIcon /> Replicate Programming...
         </MenuItem>
       </Tooltip>
       <Tooltip
@@ -103,7 +76,7 @@ export function ChannelProgrammingOrganizeOptions({
             setAddRerunBlocksModal(true);
           }}
         >
-          <RerunBlocksIcon /> Create Rerun Blocks
+          <RerunBlocksIcon /> Create Rerun Blocks...
         </MenuItem>
       </Tooltip>
       <AddRerunBlockModal
