@@ -15,11 +15,14 @@ import {
   SubmitHandler,
   useForm,
 } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import ChannelEpgConfig from '../../components/channel_config/ChannelEpgConfig.tsx';
 import { ChannelFlexConfig } from '../../components/channel_config/ChannelFlexConfig.tsx';
 import ChannelPropertiesEditor from '../../components/channel_config/ChannelPropertiesEditor.tsx';
 import ChannelTranscodingConfig from '../../components/channel_config/ChannelTranscodingConfig.tsx';
+import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert.tsx';
+import { isNonEmptyString } from '../../helpers/util.ts';
 import { usePreloadedData } from '../../hooks/preloadedDataHook.ts';
 import { useUpdateChannel } from '../../hooks/useUpdateChannel.ts';
 import {
@@ -33,8 +36,6 @@ import {
   ChannelEditContext,
   ChannelEditContextState,
 } from './EditChannelContext.ts';
-import { useNavigate } from 'react-router-dom';
-import { isNonEmptyString } from '../../helpers/util.ts';
 
 type TabValues = 'properties' | 'flex' | 'epg' | 'ffmpeg';
 
@@ -194,6 +195,7 @@ export default function EditChannelPage({ isNew, initialTab }: Props) {
   const formErrorKeys = keys(
     formMethods.formState.errors,
   ) as (keyof SaveChannelRequest)[];
+  const formIsDirty = formMethods.formState.isDirty;
 
   const updateChannelMutation = useUpdateChannel(isNew);
 
@@ -271,6 +273,10 @@ export default function EditChannelPage({ isNew, initialTab }: Props) {
                 </TabPanel>
               </Box>
             </FormProvider>
+            <UnsavedNavigationAlert
+              isDirty={formIsDirty}
+              exemptPath="channels/:id/edit/*"
+            />
           </Paper>
         </div>
       )}

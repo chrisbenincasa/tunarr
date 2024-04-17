@@ -58,6 +58,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { RotatingLoopIcon } from '../../components/base/LoadingIcon.tsx';
 import AddPlexServer from '../../components/settings/AddPlexServer.tsx';
+import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert.tsx';
 import {
   CheckboxFormController,
   NumericFormControllerText,
@@ -1164,6 +1165,7 @@ export default function PlexSettingsPage() {
             renderPathReplacements()
           )}
         </Box>
+        <UnsavedNavigationAlert isDirty={isDirty} />
         <Stack spacing={2} direction="row" sx={{ mt: 2 }}>
           <Stack
             spacing={2}
