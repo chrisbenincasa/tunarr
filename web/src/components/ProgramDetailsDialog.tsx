@@ -135,7 +135,6 @@ export default function ProgramDetailsDialog({
   );
 
   const thumbUrl = program ? thumbnailImage(program) : null;
-  console.log(thumbUrl);
   const externalUrl = program ? externalLink(program) : null;
   const programSummary = program ? summary(program) : null;
 

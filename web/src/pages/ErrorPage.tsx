@@ -32,7 +32,7 @@ export function ErrorPage() {
     url.searchParams.append('version', version?.tunarr ?? '');
     url.searchParams.append('logs', stack);
     return url;
-  }, [version]);
+  }, [stack, version?.tunarr]);
 
   return (
     <Box sx={{ width: '100%' }}>
@@ -41,12 +41,12 @@ export function ErrorPage() {
         component="img"
         src={errorImage}
       />
-      <p style={{ textAlign: 'center' }}>
+      <div style={{ textAlign: 'center' }}>
         <Typography variant="h2" sx={{ pb: 1 }}>
           Oops!
         </Typography>
         <Typography>Looks like something went wrong.</Typography>
-      </p>
+      </div>
       <Stack direction="row" sx={{ justifyContent: 'center' }} gap={2}>
         <Button
           onClick={() => window.location.reload()}

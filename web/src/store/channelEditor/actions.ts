@@ -213,6 +213,7 @@ export const moveProgramInCurrentChannel = (
     if (inRange(toIndex, channelEditor.programList.length) && programIdx >= 0) {
       const item = channelEditor.programList.splice(programIdx, 1);
       channelEditor.programList.splice(toIndex, 0, ...item);
+      channelEditor.dirty.programs = true;
     }
   });
 
