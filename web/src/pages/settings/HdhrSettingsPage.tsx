@@ -13,6 +13,7 @@ import { HdhrSettings, defaultHdhrSettings } from '@tunarr/types';
 import _ from 'lodash-es';
 import React, { useEffect } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
+import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert.tsx';
 import {
   CheckboxFormController,
   NumericFormControllerText,
@@ -109,7 +110,7 @@ export default function HdhrSettingsPage() {
           variant: 'filled',
         }}
       />
-
+      <UnsavedNavigationAlert isDirty={isDirty} />
       <Stack spacing={2} direction="row" sx={{ mt: 2 }}>
         <Stack
           spacing={2}
