@@ -39,6 +39,7 @@ import {
   newFillerListLoader,
 } from './preloaders/fillerListLoader.ts';
 import { queryCache } from './queryClient.ts';
+import { map } from 'lodash-es';
 
 const queryClient = new QueryClient({ queryCache });
 
@@ -78,6 +79,11 @@ export const router = createBrowserRouter(
           element: <EditChannelPage isNew={false} />,
           loader: editChannelLoader(false)(queryClient),
         },
+        ...map(['flex', 'epg', 'ffmpeg'] as const, (panel) => ({
+          path: '/channels/:id/edit/' + panel,
+          element: <EditChannelPage isNew={false} initialTab={panel} />,
+          loader: editChannelLoader(false)(queryClient),
+        })),
         {
           path: '/channels/new',
           element: <EditChannelPage isNew={true} />,

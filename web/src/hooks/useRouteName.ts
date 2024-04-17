@@ -30,6 +30,18 @@ const namedRoutes: Route[] = [
     name: 'Edit',
   },
   {
+    matcher: channelsPageMatcher('edit/flex'),
+    name: 'Flex',
+  },
+  {
+    matcher: channelsPageMatcher('edit/ffmpeg'),
+    name: 'FFMPEG',
+  },
+  {
+    matcher: channelsPageMatcher('edit/epg'),
+    name: 'EPG',
+  },
+  {
     matcher: customShowsPageMatcher('edit'),
     name: 'Edit',
   },

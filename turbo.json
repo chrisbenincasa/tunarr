@@ -1,13 +1,12 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "pipeline": {
+    "topo": {
+      "dependsOn": ["^topo"]
+    },
     "clean": {},
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["build/**", "dist/**"]
-    },
-    "clean-build": {
-      "dependsOn": ["clean", "build"],
       "outputs": ["build/**", "dist/**"]
     },
     "bundle": {

@@ -7,6 +7,7 @@ import {
   Grid,
   IconButton,
   InputLabel,
+  Link,
   MenuItem,
   Select,
   Skeleton,
@@ -17,6 +18,7 @@ import {
 } from '@mui/material';
 import Box from '@mui/material/Box';
 import { SaveChannelRequest } from '@tunarr/types';
+import { Link as RouterLink } from 'react-router-dom';
 import {
   chain,
   find,
@@ -169,7 +171,7 @@ export function ChannelFlexConfig() {
       const listOpts = [thisListOpt, ...unclaimedLists];
 
       return (
-        <Grid container key={cfl.id} sx={{ mb: 1 }}>
+        <Grid container key={cfl.id} sx={{ mb: 2 }} columnSpacing={2}>
           <Grid item xs={2}>
             <FormControl key={cfl.id} sx={{ width: '100%' }}>
               <Select value={cfl.id} disabled={unclaimedLists.length === 0}>
@@ -181,6 +183,7 @@ export function ChannelFlexConfig() {
             <Controller
               control={control}
               name={`fillerCollections.${index}.cooldownSeconds`}
+              rules={{ min: 0, max: 525600 }}
               render={({ field }) => (
                 <TextField label="Cooldown (seconds)" {...field} />
               )}
@@ -218,7 +221,7 @@ export function ChannelFlexConfig() {
               </FormControl>
             </Grid>
           )}
-          <Grid item>
+          <Grid item alignSelf={'center'}>
             <IconButton onClick={() => removeSelectedFillerList(index)}>
               <Delete />
             </IconButton>
@@ -234,7 +237,15 @@ export function ChannelFlexConfig() {
     }
 
     if (fillerLists.length === 0) {
-      return <Typography>You haven't created any filler lists yet!</Typography>;
+      return (
+        <Typography>
+          You haven't created any filler lists yet! Go to the{' '}
+          <Link component={RouterLink} to="/library/fillers">
+            Filler Lists
+          </Link>{' '}
+          page to create one.
+        </Typography>
+      );
     }
 
     const unclaimedLists = chain(fillerLists)
@@ -274,70 +285,24 @@ export function ChannelFlexConfig() {
     channel && (
       <>
         <Box>
-          <Typography variant="h5" sx={{ mb: 1 }}>
-            Channel Fallback
-          </Typography>
-          <Typography variant="body1" sx={{ mb: 2 }}>
-            Configure what appears on your channel when there is no suitable
-            filler content available. Using channel fallbacks requires ffmpeg
-            transcoding.
-          </Typography>
-          <Stack spacing={2} direction="row" sx={{ pb: 1 }}>
-            {offlineMode === 'pic' && (
-              <Box sx={{ flexBasis: '33%' }}>
-                <Box
-                  component="img"
-                  width="100%"
-                  src={offlinePicture}
-                  sx={{ mr: 1 }}
-                />
-              </Box>
-            )}
-            <Stack direction="column" sx={{ flexGrow: 1 }}>
-              <Controller
-                name="offline.mode"
-                control={control}
-                render={({ field }) => (
-                  <FormControl fullWidth sx={{ mb: 1 }}>
-                    <InputLabel>Fallback Mode</InputLabel>
-                    <Select fullWidth label="Fallback Mode" {...field}>
-                      <MenuItem value={'pic'}>Picture</MenuItem>
-                      <MenuItem value={'clip'}>Library Clip</MenuItem>
-                    </Select>
-                  </FormControl>
-                )}
-              />
-              <Controller
-                name="offline.picture"
-                control={control}
-                render={({ field }) => (
-                  <ImageUploadInput
-                    // TODO: This should be something like {channel.id}_fallback_picture.ext
-                    fileRenamer={typedProperty('name')}
-                    label="Picture"
-                    onFormValueChange={(value) =>
-                      setValue('offline.picture', value)
-                    }
-                    onUploadError={console.error}
-                    onPreviewValueChange={() => {}}
-                    FormControlProps={{ fullWidth: true, sx: { mb: 1 } }}
-                    value={field.value ?? ''}
-                  />
-                )}
-              />
-              <Controller
-                name="offline.soundtrack"
-                control={control}
-                render={({ field }) => (
-                  <TextField fullWidth label="Soundtrack" {...field} />
-                )}
-              />
-            </Stack>
-          </Stack>
-          <Divider sx={{ my: 1 }} />
           <Box>
+            <Box>
+              <Typography variant="h5" sx={{ mb: 1 }}>
+                Filler Content
+              </Typography>
+              <Typography variant="body1" sx={{ mb: 2 }}>
+                Videos from filler lists will be picked randomly to play during
+                channel offline time. Videos from the filler list will be
+                randomly picked to play unless there are cooldown restrictions
+                to place or if no videos are short enough for the remaining Flex
+                time.
+              </Typography>
+              {!fillerListsLoading && renderFillerLists()}
+              {fillerListsLoading ? <Skeleton /> : renderAddFillerListEditor()}
+            </Box>
+            <Divider sx={{ my: 2 }} />
             <Typography variant="h5" sx={{ mb: 1 }}>
-              Filler
+              Filler Options
             </Typography>
             <Typography variant="body1">
               Select content to use as filler content in between programs on the
@@ -380,14 +345,69 @@ export function ChannelFlexConfig() {
               )}
             />
           </Box>
-          <Divider sx={{ my: 1 }} />
-          <Box>
-            <Typography variant="h5" sx={{ mb: 1 }}>
-              Filler Lists
-            </Typography>
-            {!fillerListsLoading && renderFillerLists()}
-            {fillerListsLoading ? <Skeleton /> : renderAddFillerListEditor()}
-          </Box>
+          <Divider sx={{ my: 2 }} />
+          <Typography variant="h5" sx={{ mb: 1 }}>
+            Channel Fallback
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            Configure what appears on your channel when there is no suitable
+            filler content available. Using channel fallbacks requires ffmpeg
+            transcoding.
+          </Typography>
+          <Stack spacing={2} direction="row" sx={{ pb: 1 }}>
+            {offlineMode === 'pic' && (
+              <Box sx={{ flexBasis: '33%' }}>
+                <Box
+                  component="img"
+                  width="100%"
+                  src={offlinePicture}
+                  sx={{ mr: 1 }}
+                />
+              </Box>
+            )}
+            <Stack direction="column" sx={{ flexGrow: 1 }} gap={1}>
+              <Controller
+                name="offline.mode"
+                control={control}
+                render={({ field }) => (
+                  <FormControl fullWidth sx={{ mb: 1 }}>
+                    <InputLabel>Fallback Mode</InputLabel>
+                    <Select fullWidth label="Fallback Mode" {...field}>
+                      <MenuItem value={'pic'}>Picture</MenuItem>
+                      <MenuItem disabled value={'clip'}>
+                        Library Clip (not yet implemented)
+                      </MenuItem>
+                    </Select>
+                  </FormControl>
+                )}
+              />
+              <Controller
+                name="offline.picture"
+                control={control}
+                render={({ field }) => (
+                  <ImageUploadInput
+                    // TODO: This should be something like {channel.id}_fallback_picture.ext
+                    fileRenamer={typedProperty('name')}
+                    label="Picture"
+                    onFormValueChange={(value) =>
+                      setValue('offline.picture', value)
+                    }
+                    onUploadError={console.error}
+                    onPreviewValueChange={() => {}}
+                    FormControlProps={{ fullWidth: true, sx: { mb: 1 } }}
+                    value={field.value ?? ''}
+                  />
+                )}
+              />
+              <Controller
+                name="offline.soundtrack"
+                control={control}
+                render={({ field }) => (
+                  <TextField fullWidth label="Soundtrack" {...field} />
+                )}
+              />
+            </Stack>
+          </Stack>
         </Box>
         <ChannelEditActions />
       </>

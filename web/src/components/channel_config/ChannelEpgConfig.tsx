@@ -44,6 +44,7 @@ export default function ChannelEpgConfig() {
                 label="Placeholder Program Title"
                 margin="normal"
                 {...field}
+                value={field.value ?? ''}
               />
             )}
           />
