@@ -1,5 +1,5 @@
 # Setup a node + ffmpeg + nvidia base
-FROM jrottenberg/ffmpeg:6.1.1-nvidia2204 AS ffmpeg-base
+FROM jasongdove/ersatztv-ffmpeg:7.0-nvidia AS ffmpeg-base
 ENV NODE_MAJOR=20
 ENV TUNARR_BIND_ADDR=0.0.0.0
 EXPOSE 8000
@@ -12,6 +12,7 @@ RUN ln -s /usr/lib/x86_64-linux-musl/libc.so /lib/libc.musl-x86_64.so.1
 # Install node
 RUN <<EOF 
 apt-get update && apt-get install -y ca-certificates curl gnupg
+mkdir -p /etc/apt/keyrings
 curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
 echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list
 apt-get update && apt-get install nodejs -y
@@ -36,20 +37,11 @@ COPY types ./types
 COPY web ./web
 COPY patches ./patches
 
-FROM ffmpeg-base as dev
-EXPOSE 5173
-WORKDIR /tunarr
-COPY . .
-RUN pnpm install --frozen-lockfile
-ENTRYPOINT [ "pnpm" ]
-CMD [ "turbo", "dev" ]
-
 FROM sources AS prod-deps
 ARG NODE_ENVIRONMENT
 ENV NODE_ENV=${NODE_ENVIRONMENT:-production}
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --prod --frozen-lockfile
 
-### Begin server build ###
 ### Begin server build ###
 FROM sources AS build-server
 # Install deps
