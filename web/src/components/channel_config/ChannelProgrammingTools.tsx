@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import {
+  KeyboardArrowDown as KeyboardArrowDownIcon,
+  Construction as OrganizeIcon,
+} from '@mui/icons-material';
 import { Button } from '@mui/material';
 import Menu, { MenuProps } from '@mui/material/Menu';
-import { styled, alpha } from '@mui/material/styles';
-import {
-  Construction as OrganizeIcon,
-  KeyboardArrowDown as KeyboardArrowDownIcon,
-} from '@mui/icons-material';
+import { alpha, styled } from '@mui/material/styles';
+import { useState } from 'react';
 import { ChannelProgrammingDeleteOptions } from './ChannelProgrammingDeleteOptions';
 import { ChannelProgrammingOrganizeOptions } from './ChannelProgrammingOrganizeOptions';
 
@@ -82,7 +82,7 @@ export function ChannelProgrammingTools() {
         open={open}
         onClose={handleClose}
       >
-        <ChannelProgrammingOrganizeOptions onClose={() => handleClose()} />
+        <ChannelProgrammingOrganizeOptions />
         <ChannelProgrammingDeleteOptions onClose={() => handleClose()} />
       </StyledMenu>
     </>
