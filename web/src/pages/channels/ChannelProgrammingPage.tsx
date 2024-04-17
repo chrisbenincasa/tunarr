@@ -2,6 +2,7 @@ import {
   Box,
   Button,
   CircularProgress,
+  Paper,
   Snackbar,
   Typography,
 } from '@mui/material';
@@ -11,14 +12,17 @@ import { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
 import { ZodiosError } from '@zodios/core';
 import { chain, findIndex, first, isUndefined, map } from 'lodash-es';
 import { useState } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import { ChannelProgrammingConfig } from '../../components/channel_config/ChannelProgrammingConfig.tsx';
 import { apiClient } from '../../external/api.ts';
 import { channelProgramUniqueId } from '../../helpers/util.ts';
 import { usePreloadedChannelEdit } from '../../hooks/usePreloadedChannel.ts';
 import { useUpdateChannel } from '../../hooks/useUpdateChannel.ts';
-import { resetCurrentLineup } from '../../store/channelEditor/actions.ts';
+import {
+  resetCurrentLineup,
+  resetLineup,
+} from '../../store/channelEditor/actions.ts';
+import useStore from '../../store/index.ts';
 
 type MutateArgs = {
   channelId: string;
@@ -37,6 +41,8 @@ export default function ChannelProgrammingPage() {
     originalEntity: originalChannel,
     programList: newLineup,
   } = usePreloadedChannelEdit();
+
+  const programsDirty = useStore((s) => s.channelEditor.dirty.programs);
 
   const queryClient = useQueryClient();
   const theme = useTheme();
@@ -148,15 +154,30 @@ export default function ChannelProgrammingPage() {
       <Typography variant="h4" sx={{ mb: 2 }}>
         Channel {channel.number} Programming
       </Typography>
-      <ChannelProgrammingConfig />
-      <Box sx={{ display: 'flex', justifyContent: 'end', pt: 1, columnGap: 1 }}>
-        <Button variant="contained" to="/channels" component={RouterLink}>
-          Cancel
-        </Button>
-        <Button variant="contained" onClick={() => onSave()}>
-          Save
-        </Button>
-      </Box>
+      <Paper sx={{ p: 2 }}>
+        <ChannelProgrammingConfig />
+
+        <Box
+          sx={{ display: 'flex', justifyContent: 'end', pt: 1, columnGap: 1 }}
+        >
+          {programsDirty && (
+            <Button
+              variant="contained"
+              onClick={() => resetLineup()}
+              disabled={!programsDirty}
+            >
+              Reset Changes
+            </Button>
+          )}
+          <Button
+            variant="contained"
+            onClick={() => onSave()}
+            disabled={!programsDirty}
+          >
+            Save
+          </Button>
+        </Box>
+      </Paper>
     </div>
   );
 }
