@@ -25,6 +25,7 @@ import {
   last,
   map,
   sumBy,
+  tail,
 } from 'lodash-es';
 import {
   forAddedMediaType,
@@ -33,7 +34,7 @@ import {
   zipWithIndex,
 } from '../../helpers/util.ts';
 import { EnrichedPlexMedia } from '../../hooks/plexHooks.ts';
-import { AddedMedia, UIIndex } from '../../types/index.ts';
+import { AddedMedia, UIChannelProgram, UIIndex } from '../../types/index.ts';
 import useStore from '../index.ts';
 import { ChannelEditorState, initialChannelEditorState } from './store.ts';
 
@@ -202,6 +203,36 @@ export const addProgramsToCurrentChannel = (programs: ChannelProgram[]) =>
     );
     channelEditor.dirty.programs =
       channelEditor.dirty.programs || programs.length > 0;
+  });
+
+export const setProgramAtIndex = (program: UIChannelProgram, index: number) =>
+  useStore.setState(({ channelEditor }) => {
+    if (inRange(index, 0, channelEditor.programList.length)) {
+      // Remove all items after the target index.
+      const afterIndexItems = channelEditor.programList.splice(index);
+      // Take the temporary last item (i.e. index - 1) and find
+      // the offset that will become the initial offset for calculating the
+      // new lineup
+      const newLast = last(channelEditor.programList);
+      const firstOffset = newLast
+        ? newLast.startTimeOffset + newLast.duration
+        : 0;
+      // Repush the items, replacing the first item (i.e. at 'index')
+      // with the updated program. This recalculates all start time
+      // offsets using the new items duration. It's a little heavy
+      // handed, since we really could just loop from index -> length
+      // and add/subtract the difference between old/new program's duration
+      // but we already have this loop written so no biggie.
+      channelEditor.programList.push(
+        ...addIndexesAndCalculateOffsets(
+          [program, ...tail(afterIndexItems)],
+          firstOffset,
+          index,
+        ),
+      );
+      // channelEditor.programList[index] = program;
+      channelEditor.dirty.programs = true;
+    }
   });
 
 export const moveProgramInCurrentChannel = (

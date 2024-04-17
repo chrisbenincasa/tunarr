@@ -4,7 +4,7 @@ import InfoOutlined from '@mui/icons-material/InfoOutlined';
 import MusicNote from '@mui/icons-material/MusicNote';
 import TheatersIcon from '@mui/icons-material/Theaters';
 import TvIcon from '@mui/icons-material/Tv';
-import { ListItemIcon, Typography } from '@mui/material';
+import { ListItemIcon, Typography, lighten } from '@mui/material';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import List from '@mui/material/List';
@@ -38,8 +38,15 @@ import {
 } from '../../store/channelEditor/actions.ts';
 import useStore, { State } from '../../store/index.ts';
 import { materializedProgramListSelector } from '../../store/selectors.ts';
-import { UIChannelProgram } from '../../types/index.ts';
+import {
+  UIChannelProgram,
+  UIFlexProgram,
+  UIRedirectProgram,
+} from '../../types/index.ts';
 import ProgramDetailsDialog from '../ProgramDetailsDialog.tsx';
+import Edit from '@mui/icons-material/Edit';
+import AddFlexModal from '../programming_controls/AddFlexModal.tsx';
+import AddRedirectModal from '../programming_controls/AddRedirectModal.tsx';
 
 const ListItemTimeFormatter = new Intl.DateTimeFormat(undefined, {
   dateStyle: 'medium',
@@ -67,13 +74,16 @@ const defaultProps: Props = {
 type ListItemProps = {
   // originalIndex: number;
   index: number;
-  program: ChannelProgram & { originalIndex: number };
+  program: UIChannelProgram;
   startTimeDate: Date;
   style?: CSSProperties;
   moveProgram: (id: number, to: number) => void;
   findProgram: (id: number) => { index: number };
   enableDrag: boolean;
   onInfoClicked: (program: ChannelProgram) => void;
+  onEditClicked: (
+    program: (UIFlexProgram | UIRedirectProgram) & { index: number },
+  ) => void;
 };
 
 type ListDragItem = {
@@ -127,6 +137,7 @@ const ProgramListItem = ({
   findProgram,
   enableDrag,
   onInfoClicked,
+  onEditClicked,
 }: ListItemProps) => {
   const [{ isDragging }, drag] = useDrag(
     () => ({
@@ -202,20 +213,37 @@ const ProgramListItem = ({
           isDragging
             ? 'transparent'
             : alternateColors(index, theme.palette.mode, theme),
+        '&:hover': {
+          backgroundColor: (theme) =>
+            isDragging
+              ? 'transparent'
+              : lighten(
+                  alternateColors(index, theme.palette.mode, theme),
+                  0.05,
+                ),
+        },
       }}
       key={startTime}
-      // sx={{ borderBottom: dayBoundary ? '1px dashed black' : null }}
       secondaryAction={
-        enableDrag && isDragging ? (
-          false
-        ) : (
-          <IconButton
-            onClick={() => deleteProgram(index)}
-            edge="end"
-            aria-label="delete"
-          >
-            <DeleteIcon />
-          </IconButton>
+        enableDrag && isDragging ? null : (
+          <>
+            {program.type === 'flex' || program.type === 'redirect' ? (
+              <IconButton
+                onClick={() => onEditClicked({ ...program, index })}
+                edge="end"
+                aria-label="delete"
+              >
+                <Edit />
+              </IconButton>
+            ) : null}
+            <IconButton
+              onClick={() => deleteProgram(index)}
+              edge="end"
+              aria-label="delete"
+            >
+              <DeleteIcon />
+            </IconButton>
+          </>
         )
       }
       component="div"
@@ -267,6 +295,9 @@ export default function ChannelProgrammingList({
   const [focusedProgramDetails, setFocusedProgramDetails] = useState<
     ChannelProgram | undefined
   >();
+  const [editProgram, setEditProgram] = useState<
+    ((UIFlexProgram | UIRedirectProgram) & { index: number }) | undefined
+  >();
 
   const findProgram = useCallback(
     (originalIndex: number) => {
@@ -291,11 +322,15 @@ export default function ChannelProgrammingList({
     [passedProgramList],
   );
 
-  const openDetailsDialog = useCallback(
-    (program: ChannelProgram) => {
-      setFocusedProgramDetails(program);
+  const openDetailsDialog = useCallback((program: ChannelProgram) => {
+    setFocusedProgramDetails(program);
+  }, []);
+
+  const openEditDialog = useCallback(
+    (program: (UIFlexProgram | UIRedirectProgram) & { index: number }) => {
+      setEditProgram(program);
     },
-    [setFocusedProgramDetails],
+    [],
   );
 
   const [, drop] = useDrop(() => ({ accept: 'Program' }));
@@ -315,6 +350,7 @@ export default function ChannelProgrammingList({
         findProgram={findProgram}
         enableDrag={!!enableDnd}
         onInfoClicked={openDetailsDialog}
+        onEditClicked={openEditDialog}
       />
     );
   };
@@ -386,6 +422,20 @@ export default function ChannelProgrammingList({
           open={!isUndefined(focusedProgramDetails)}
           onClose={() => setFocusedProgramDetails(undefined)}
           program={focusedProgramDetails}
+        />
+        <AddFlexModal
+          open={!isUndefined(editProgram) && editProgram.type === 'flex'}
+          onClose={() => setEditProgram(undefined)}
+          initialProgram={
+            editProgram?.type === 'flex' ? editProgram : undefined
+          }
+        />
+        <AddRedirectModal
+          open={!isUndefined(editProgram) && editProgram.type === 'redirect'}
+          onClose={() => setEditProgram(undefined)}
+          initialProgram={
+            editProgram?.type === 'redirect' ? editProgram : undefined
+          }
         />
       </Box>
     );
