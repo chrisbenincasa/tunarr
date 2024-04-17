@@ -17,20 +17,26 @@ import { RedirectProgram } from '@tunarr/types';
 import { usePrevious } from '@uidotdev/usehooks';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
-import { find, isNil } from 'lodash-es';
+import { filter, find, isNil, isUndefined } from 'lodash-es';
 import { useEffect } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { uuidRegexPattern } from '../../helpers/util.ts';
 import { useChannels } from '../../hooks/useChannels.ts';
-import { addProgramsToCurrentChannel } from '../../store/channelEditor/actions.ts';
+import {
+  addProgramsToCurrentChannel,
+  setProgramAtIndex,
+} from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
 import { NumericFormControllerText } from '../util/TypedController.tsx';
+import { UIRedirectProgram } from '../../types/index.ts';
+import { betterHumanize } from '../../helpers/dayjs.ts';
 
 dayjs.extend(duration);
 
 type AddRedirectModalProps = {
   open: boolean;
   onClose: () => void;
+  initialProgram?: UIRedirectProgram & { index: number };
 };
 
 type FormValues = {
@@ -42,26 +48,41 @@ const AddRedirectModal = (props: AddRedirectModalProps) => {
   const currentChannel = useStore((s) => s.channelEditor.currentEntity);
   const { isPending, error, data: channels } = useChannels();
   const previousData = usePrevious(channels);
-
-  const { control, setValue, handleSubmit } = useForm<FormValues>({
+  const { control, setValue, handleSubmit, reset } = useForm<FormValues>({
     mode: 'onChange',
     defaultValues: {
       redirectChannelId: '',
-      redirectDuration: 300,
+      redirectDuration: !isUndefined(props.initialProgram)
+        ? props.initialProgram.duration / 1000
+        : 300,
     },
   });
+
+  useEffect(() => {
+    if (props.initialProgram) {
+      reset({
+        redirectChannelId: props.initialProgram.channel,
+        redirectDuration: props.initialProgram.duration / 1000,
+      });
+    }
+  }, [props.initialProgram, reset]);
 
   useEffect(() => {
     if (!previousData && channels && currentChannel) {
       const firstChannel = find(
         channels,
-        (channel) => channel.id !== currentChannel.id,
+        (channel) =>
+          channel.id !== currentChannel.id &&
+          (!isUndefined(props.initialProgram)
+            ? props.initialProgram.channel === channel.id
+            : true),
       );
+
       if (firstChannel) {
         setValue('redirectChannelId', firstChannel.id);
       }
     }
-  }, [previousData, channels, setValue, currentChannel]);
+  }, [previousData, channels, setValue, currentChannel, props.initialProgram]);
 
   const onSubmit: SubmitHandler<FormValues> = (data) => {
     if (channels) {
@@ -75,12 +96,22 @@ const AddRedirectModal = (props: AddRedirectModalProps) => {
         type: 'redirect',
         persisted: false,
       };
-      addProgramsToCurrentChannel([program]);
+
+      if (isUndefined(props.initialProgram)) {
+        addProgramsToCurrentChannel([program]);
+      } else {
+        setProgramAtIndex(
+          { ...props.initialProgram, ...program },
+          props.initialProgram.index,
+        );
+      }
+
       props.onClose();
     }
   };
 
-  const channelOptions = channels?.filter(
+  const channelOptions = filter(
+    channels,
     (channel) => channel.id !== currentChannel?.id,
   );
 
@@ -118,7 +149,7 @@ const AddRedirectModal = (props: AddRedirectModalProps) => {
               label: 'Duration (seconds)',
               helperText: ({ field, formState: { errors } }) =>
                 isNil(errors['redirectDuration'])
-                  ? dayjs.duration(field.value, 'seconds').humanize()
+                  ? betterHumanize(dayjs.duration(field.value, 'seconds'))
                   : null,
             }}
           />
@@ -136,7 +167,9 @@ const AddRedirectModal = (props: AddRedirectModalProps) => {
 
   return (
     <Dialog open={props.open}>
-      <DialogTitle>Add Channel Redirect</DialogTitle>
+      <DialogTitle>
+        {isUndefined(props.initialProgram) ? 'Add' : 'Edit'} Channel Redirect
+      </DialogTitle>
       <DialogContent>
         <Box
           component="form"
