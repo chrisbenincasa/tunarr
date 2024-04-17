@@ -1,4 +1,12 @@
-import { Badge } from '@mui/material';
+import {
+  Badge,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+} from '@mui/material';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 import Tab from '@mui/material/Tab';
@@ -15,6 +23,7 @@ import {
   SubmitHandler,
   useForm,
 } from 'react-hook-form';
+import { useBlocker } from 'react-router-dom';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import ChannelEpgConfig from '../../components/channel_config/ChannelEpgConfig.tsx';
 import { ChannelFlexConfig } from '../../components/channel_config/ChannelFlexConfig.tsx';
@@ -194,6 +203,7 @@ export default function EditChannelPage({ isNew, initialTab }: Props) {
   const formErrorKeys = keys(
     formMethods.formState.errors,
   ) as (keyof SaveChannelRequest)[];
+  const formIsDirty = formMethods.formState.isDirty;
 
   const updateChannelMutation = useUpdateChannel(isNew);
 
@@ -236,6 +246,12 @@ export default function EditChannelPage({ isNew, initialTab }: Props) {
     console.error(data, formMethods.getValues());
   };
 
+  // Block navigating elsewhere when data has been changed
+  let blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      formIsDirty && currentLocation.pathname !== nextLocation.pathname,
+  );
+
   return (
     <ChannelEditContext.Provider
       value={{ channelEditorState, setChannelEditorState }}
@@ -271,6 +287,33 @@ export default function EditChannelPage({ isNew, initialTab }: Props) {
                 </TabPanel>
               </Box>
             </FormProvider>
+            {blocker && blocker.state === 'blocked' ? (
+              <Dialog
+                open={blocker.state === 'blocked'}
+                onClose={() => blocker.reset()}
+                aria-labelledby="alert-dialog-title"
+                aria-describedby="alert-dialog-description"
+              >
+                <DialogTitle id="alert-dialog-title">
+                  {'Are you sure?'}
+                </DialogTitle>
+                <DialogContent>
+                  <DialogContentText id="alert-dialog-description">
+                    You have unsaved changes. Are you sure you want to exit?
+                  </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                  <Button onClick={() => blocker.reset()}>Cancel</Button>
+                  <Button
+                    onClick={() => blocker.proceed()}
+                    autoFocus
+                    variant="contained"
+                  >
+                    Proceed
+                  </Button>
+                </DialogActions>
+              </Dialog>
+            ) : null}
           </Paper>
         </div>
       )}
