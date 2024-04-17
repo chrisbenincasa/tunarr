@@ -309,10 +309,10 @@ export const api = makeApi([
   },
   {
     method: 'get',
-    path: '/media-player/:channelNumber/hls',
+    path: '/media-player/:channel/hls',
     alias: 'startHlsStream',
     parameters: parametersBuilder()
-      .addPath('channelNumber', z.coerce.number())
+      .addPath('channel', z.coerce.number().or(z.string().uuid()))
       .build(),
     status: 200,
     response: z.object({ streamPath: z.string() }),

@@ -12,7 +12,7 @@ import {
   TvGuideProgram,
 } from '@tunarr/types';
 import { PlexMedia } from '@tunarr/types/plex';
-import dayjs from 'dayjs';
+import dayjs, { Dayjs } from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import {
   flatMap,
@@ -397,3 +397,14 @@ export function scale(
 export function isNonEmptyString(s: unknown): s is string {
   return isString(s) && s.length > 0;
 }
+export const roundCurrentTime = (multiple?: number): Dayjs => {
+  return dayjs()
+    .minute(multiple ? roundNearestMultiple(dayjs().minute(), multiple) : 0)
+    .second(0)
+    .millisecond(0);
+};
+export const roundNearestMultiple = (num: number, multiple: number): number => {
+  if (multiple <= 0) return 0;
+
+  return Math.floor(num / multiple) * multiple;
+};

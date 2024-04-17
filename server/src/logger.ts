@@ -98,4 +98,13 @@ const createLogger = (module: ImportMeta) => {
   return logger;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const createFfmpegProcessLogger = (_: string) => {
+  return winston.createLogger({
+    level: 'info',
+    format: winston.format.simple(),
+    transports: [new winston.transports.Console()],
+  });
+};
+
 export default createLogger;

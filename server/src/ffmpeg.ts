@@ -5,11 +5,11 @@ import { isEmpty, isNil, isString, isUndefined, merge, round } from 'lodash-es';
 import path from 'path';
 import { DeepReadonly, DeepRequired } from 'ts-essentials';
 import { serverOptions } from './globals.js';
-import createLogger from './logger.js';
+import createLogger, { createFfmpegProcessLogger } from './logger.js';
 import { VideoStats } from './plexTranscoder.js';
 import { ContextChannel, Maybe } from './types.js';
 import { TypedEventEmitter } from './types/eventEmitter.js';
-import stream from 'stream';
+import stream, { Writable } from 'stream';
 
 const spawn = child_process.spawn;
 
@@ -94,7 +94,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
   private audioOnly: boolean = false;
   private alignAudio: boolean;
 
-  private ffmpeg: ChildProcessByStdio<null, stream.Readable, null>;
+  private ffmpeg: ChildProcessByStdio<null, stream.Readable, stream.Readable>;
 
   constructor(opts: DeepReadonly<FfmpegSettings>, channel: ContextChannel) {
     super();
@@ -798,8 +798,31 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     logger.debug(`Starting ffmpeg with args: "${ffmpegArgs.join(' ')}"`);
 
     this.ffmpeg = spawn(this.ffmpegPath, ffmpegArgs, {
-      stdio: ['ignore', 'pipe', doLogs ? process.stderr : 'ignore'],
+      stdio: ['ignore', 'pipe', 'pipe'],
     });
+
+    // Pipe to our own stderr if enabled
+    if (doLogs) {
+      this.ffmpeg.stderr.pipe(process.stderr);
+    }
+
+    // Hide this behind a 'flag' for now...
+    if (process.env.DEBUG_FFMPEG) {
+      const ffmpegLogger = createFfmpegProcessLogger(
+        `${this.channel.uuid}_${this.ffmpegName}`,
+      );
+      this.ffmpeg.stderr.on('end', () => ffmpegLogger.close());
+      this.ffmpeg.stderr.pipe(
+        new Writable({
+          write(chunk, _, callback) {
+            if (chunk instanceof Buffer) {
+              ffmpegLogger.info(chunk.toString());
+            }
+            callback();
+          },
+        }),
+      );
+    }
 
     if (this.hasBeenKilled) {
       logger.info('Send SIGKILL to ffmpeg');
@@ -860,9 +883,34 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     logger.debug(
       'Starting ffmpeg concat process with args: ' + ffmpegArgs.join(' '),
     );
+
+    // const test = createWriteStream('./test.log', { flags: 'a' });
     this.ffmpeg = spawn(this.ffmpegPath, ffmpegArgs, {
-      stdio: ['ignore', 'pipe', enableLogging ? process.stderr : 'ignore'],
+      stdio: ['ignore', 'pipe', 'pipe'],
     });
+
+    // Pipe to our own stderr if enabled
+    if (enableLogging) {
+      this.ffmpeg.stderr.pipe(process.stderr);
+    }
+
+    // Hide this behind a 'flag' for now...
+    if (process.env.DEBUG_FFMPEG) {
+      const ffmpegLogger = createFfmpegProcessLogger(
+        `${this.channel.uuid}_${this.ffmpegName}`,
+      );
+      this.ffmpeg.stderr.on('end', () => ffmpegLogger.close());
+      this.ffmpeg.stderr.pipe(
+        new Writable({
+          write(chunk, _, callback) {
+            if (chunk instanceof Buffer) {
+              ffmpegLogger.info(chunk.toString());
+            }
+            callback();
+          },
+        }),
+      );
+    }
 
     if (this.hasBeenKilled) {
       logger.silly('Sending SIGKILL to ffmpeg');

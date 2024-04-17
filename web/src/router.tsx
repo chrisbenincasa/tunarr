@@ -59,11 +59,11 @@ export const router = createBrowserRouter(
           errorElement: <ErrorPage />,
         },
         {
-          element: <GuidePage />,
+          element: <GuidePage channelId="all" />,
           index: true,
         },
         {
-          element: <GuidePage />,
+          element: <GuidePage channelId="all" />,
           path: '/guide',
         },
         {
@@ -115,7 +115,7 @@ export const router = createBrowserRouter(
         },
         {
           path: '/guide',
-          element: <GuidePage />,
+          element: <GuidePage channelId="all" />,
         },
         {
           path: '/watch',

@@ -154,7 +154,7 @@ export default function ProgramDetailsDialog({
   return (
     program && (
       <Dialog open={open && !isUndefined(program)} onClose={onClose}>
-        <DialogTitle>
+        <DialogTitle variant="h4">
           {formattedTitle(program)}{' '}
           {externalUrl && (
             <IconButton

@@ -47,6 +47,7 @@ export const CHANNEL_CONTEXT_KEYS = [
   'name',
   'transcoding',
   'number',
+  'uuid',
 ] as const;
 
 export type ContextChannel = Pick<
