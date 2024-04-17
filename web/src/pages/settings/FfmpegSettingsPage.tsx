@@ -3,6 +3,7 @@ import {
   Box,
   Button,
   Checkbox,
+  Divider,
   FormControl,
   FormControlLabel,
   FormHelperText,
@@ -638,8 +639,9 @@ export default function FfmpegSettingsPage() {
           increasing this.
         </FormHelperText>
       </FormControl>
+      <Divider sx={{ mt: 2 }} />
       <Typography variant="h6" sx={{ my: 2 }}>
-        Transcoding Features
+        Transcoding Options
       </Typography>
       <FormControl>
         <FormControlLabel
@@ -676,7 +678,7 @@ export default function FfmpegSettingsPage() {
               {audioFfmpegSettings()}
             </Grid>
           </Grid>
-
+          <Divider sx={{ mt: 2 }} />
           <Typography component="h6" variant="h6" sx={{ pt: 2, pb: 1 }}>
             Error Options
           </Typography>

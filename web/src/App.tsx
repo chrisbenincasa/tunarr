@@ -1,4 +1,4 @@
-import { ExpandMore, GitHub, Home } from '@mui/icons-material';
+import { ExpandLess, ExpandMore, GitHub, Home } from '@mui/icons-material';
 import ComputerIcon from '@mui/icons-material/Computer';
 import LiveTvIcon from '@mui/icons-material/LiveTv';
 import PreviewIcon from '@mui/icons-material/Preview';
@@ -13,6 +13,7 @@ import {
   AppBar,
   Box,
   Button,
+  Collapse,
   Divider,
   Drawer,
   IconButton,
@@ -30,7 +31,7 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { isUndefined } from 'lodash-es';
-import React, { ReactNode, useState } from 'react';
+import React, { ReactNode, useCallback, useMemo, useState } from 'react';
 import { Outlet, Link as RouterLink } from 'react-router-dom';
 import './App.css';
 import ServerEvents from './components/ServerEvents.tsx';
@@ -51,6 +52,9 @@ interface NavItem {
 
 export function Root({ children }: { children?: React.ReactNode }) {
   const [open, setOpen] = useState(false);
+  const [sublistStates, setSublistStates] = useState<Record<string, boolean>>(
+    {},
+  );
 
   const toggleDrawerOpen = () => {
     setOpen(true);
@@ -70,7 +74,7 @@ export function Root({ children }: { children?: React.ReactNode }) {
     setDarkModeState();
   }
 
-  const theme = React.useMemo(
+  const theme = useMemo(
     () =>
       createTheme({
         palette: {
@@ -95,54 +99,64 @@ export function Root({ children }: { children?: React.ReactNode }) {
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
   const pathway = useStore((state) => state.theme.pathway);
 
-  const navItems: NavItem[] = [
-    {
-      name: 'Welcome',
-      path: '/welcome',
-      visible: pathway === 'advanced' ? false : true,
-      icon: <Home />,
-    },
-    { name: 'Guide', path: '/guide', visible: true, icon: <TvIcon /> },
-    {
-      name: 'Channels',
-      path: '/channels',
-      visible: true,
-      icon: <SettingsRemoteIcon />,
-    },
-    { name: 'Watch', path: '/watch', visible: false, icon: <LiveTvIcon /> },
-    {
-      name: 'Library',
-      path: '/library',
-      visible: true,
-      icon: <VideoLibraryIcon />,
-      children: [
-        {
-          name: 'Filler Lists',
-          path: '/library/fillers',
-          visible: open,
-          icon: <PreviewIcon />,
-        },
-        {
-          name: 'Custom Shows',
-          path: '/library/custom-shows',
-          visible: open,
-          icon: <TheatersIcon />,
-        },
-      ],
-    },
-    {
-      name: 'Settings',
-      path: '/settings/general',
-      visible: true,
-      icon: <SettingsIcon />,
-    },
-    {
-      name: 'System',
-      path: '/system',
-      visible: false, // TODO
-      icon: <ComputerIcon />,
-    },
-  ];
+  const navItems: NavItem[] = useMemo(
+    () => [
+      {
+        name: 'Welcome',
+        path: '/welcome',
+        visible: pathway === 'advanced' ? false : true,
+        icon: <Home />,
+      },
+      { name: 'Guide', path: '/guide', visible: true, icon: <TvIcon /> },
+      {
+        name: 'Channels',
+        path: '/channels',
+        visible: true,
+        icon: <SettingsRemoteIcon />,
+      },
+      { name: 'Watch', path: '/watch', visible: false, icon: <LiveTvIcon /> },
+      {
+        name: 'Library',
+        path: '/library',
+        visible: true,
+        icon: <VideoLibraryIcon />,
+        children: [
+          {
+            name: 'Filler Lists',
+            path: '/library/fillers',
+            visible: open,
+            icon: <PreviewIcon />,
+          },
+          {
+            name: 'Custom Shows',
+            path: '/library/custom-shows',
+            visible: open,
+            icon: <TheatersIcon />,
+          },
+        ],
+      },
+      {
+        name: 'Settings',
+        path: '/settings/general',
+        visible: true,
+        icon: <SettingsIcon />,
+      },
+      {
+        name: 'System',
+        path: '/system',
+        visible: false, // TODO
+        icon: <ComputerIcon />,
+      },
+    ],
+    [open, pathway],
+  );
+
+  const handleOpenClick = useCallback((itemName: string) => {
+    setSublistStates((prev) => ({
+      ...prev,
+      [itemName]: prev[itemName] ? !prev[itemName] : true,
+    }));
+  }, []);
 
   const drawerWidth = open ? 240 : 60;
 
@@ -258,31 +272,40 @@ export function Root({ children }: { children?: React.ReactNode }) {
                         )}
                         <ListItemText primary={item.name} />
                         {item.children ? (
-                          <ListItemIcon sx={{ justifyContent: 'right' }}>
-                            <ExpandMore />
+                          <ListItemIcon
+                            sx={{ justifyContent: 'right' }}
+                            onClick={() => handleOpenClick(item.name)}
+                          >
+                            {sublistStates[item.name] ? (
+                              <ExpandLess />
+                            ) : (
+                              <ExpandMore />
+                            )}
                           </ListItemIcon>
                         ) : null}
                       </ListItemButton>
                       {item.children ? (
-                        <List component="div" disablePadding>
-                          {item.children
-                            .filter((item) => item.visible)
-                            .map((child) => (
-                              <ListItemButton
-                                key={child.name}
-                                to={child.path}
-                                sx={{ pl: 4 }}
-                                component={RouterLink}
-                              >
-                                {child.icon && (
-                                  <ListItemIcon sx={{ minWidth: 45 }}>
-                                    {child.icon}
-                                  </ListItemIcon>
-                                )}
-                                <ListItemText primary={child.name} />
-                              </ListItemButton>
-                            ))}
-                        </List>
+                        <Collapse in={sublistStates[item.name]}>
+                          <List component="div" disablePadding>
+                            {item.children
+                              .filter((item) => item.visible)
+                              .map((child) => (
+                                <ListItemButton
+                                  key={child.name}
+                                  to={child.path}
+                                  sx={{ pl: 4 }}
+                                  component={RouterLink}
+                                >
+                                  {child.icon && (
+                                    <ListItemIcon sx={{ minWidth: 45 }}>
+                                      {child.icon}
+                                    </ListItemIcon>
+                                  )}
+                                  <ListItemText primary={child.name} />
+                                </ListItemButton>
+                              ))}
+                          </List>
+                        </Collapse>
                       ) : null}
                     </React.Fragment>
                   ))}
