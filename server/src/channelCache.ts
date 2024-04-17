@@ -39,7 +39,7 @@ class PersistentChannelCache {
         new InMemoryCachedDbAdapter(
           new SchemaBackedDbAdapter(
             channelCacheSchema,
-            join(globalOptions().database, 'stream-cache.json'),
+            join(globalOptions().databaseDirectory, 'stream-cache.json'),
           ),
         ),
         {

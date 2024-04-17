@@ -52,7 +52,9 @@ yargs(hideBin(process.argv))
     desc: 'Forces a migration from a legacy dizquetv database. Useful for development and debugging. NOTE: This WILL override any settings you have!',
     default: false,
   })
-  .middleware(setGlobalOptions)
+  .middleware((opts) =>
+    setGlobalOptions({ ...opts, databaseDirectory: opts.database }),
+  )
   .command('version', 'Print the current version', () => {
     console.log(constants.VERSION_NAME);
   })
@@ -71,7 +73,9 @@ yargs(hideBin(process.argv))
           type: 'boolean',
           default: false,
         })
-        .middleware(setServerOptions);
+        .middleware((opts) =>
+          setServerOptions({ ...opts, databaseDirectory: opts.database }),
+        );
     },
     async (args: ArgumentsCamelCase<ServerOptions>) => {
       /* eslint-disable max-len */
@@ -119,7 +123,9 @@ ${chalk.blue('  |_| ')}${chalk.green(' \\___/')}${chalk.yellow(
           type: 'boolean',
           default: false,
         })
-        .middleware(setServerOptions);
+        .middleware((opts) =>
+          setServerOptions({ ...opts, databaseDirectory: opts.database }),
+        );
     },
     async (args: ArgumentsCamelCase<ServerOptions>) => {
       const { app: f } = await initServer(args);

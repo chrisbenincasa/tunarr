@@ -62,7 +62,8 @@ export class UpdateXmlTvTask extends Task<void> {
         );
         await this.#settingsDB.updateSettings('xmltv', {
           ...xmltvSettings,
-          outputPath: defaultXmlTvSettings(globalOptions().database).outputPath,
+          outputPath: defaultXmlTvSettings(globalOptions().databaseDirectory)
+            .outputPath,
         });
         // Re-read
         xmltvSettings = this.#settingsDB.xmlTvSettings();

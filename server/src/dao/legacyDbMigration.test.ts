@@ -11,7 +11,7 @@ import { Channel } from './entities/Channel.js';
 import tmp from 'tmp-promise';
 import fs from 'node:fs/promises';
 import { inspect } from 'node:util';
-import { migrateCustomShows } from './legacy_migration/customShowMigrator.js';
+import { migrateCustomShows } from './legacy_migration/libraryMigrator.js';
 import { CustomShow } from './entities/CustomShow.js';
 
 const __filename = fileURLToPath(import.meta.url);

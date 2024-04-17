@@ -81,7 +81,11 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
         return res.status(400).send();
       }
 
-      const baseDir = path.join(serverOptions().database, 'images', 'uploads');
+      const baseDir = path.join(
+        serverOptions().databaseDirectory,
+        'images',
+        'uploads',
+      );
 
       if (!(await fileExists(baseDir))) {
         await fsPromises.mkdir(baseDir, { recursive: true });

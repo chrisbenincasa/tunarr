@@ -51,13 +51,13 @@ export function tryStringSplitOrDefault(
 export function uniqueProgramId<
   T extends {
     serverKey?: string;
-    key?: string;
+    ratingKey?: string;
   },
 >(program: T): string {
-  return `${program.serverKey!}|${program.key!}`;
+  return `${program.serverKey!}|${program.ratingKey!}`;
 }
 
-export function convertProgram(program: JSONObject): LegacyProgram {
+export function convertRawProgram(program: JSONObject): LegacyProgram {
   const programType = program['type'] as string | undefined;
   const isMovie = programType === 'movie';
   const id = v4();

@@ -26,9 +26,9 @@ export class FfmpegText extends events.EventEmitter {
       'anullsrc',
       '-vf',
       `drawtext=fontfile=${
-        globalOptions().database
+        globalOptions().databaseDirectory
       }/font.ttf:fontsize=30:fontcolor=white:x=(w-text_w)/2:y=(h-text_h)/2:text='${title}',drawtext=fontfile=${
-        globalOptions().database
+        globalOptions().databaseDirectory
       }/font.ttf:fontsize=20:fontcolor=white:x=(w-text_w)/2:y=(h+text_h+20)/2:text='${subtitle}'`,
       '-c:v',
       opts.videoEncoder,

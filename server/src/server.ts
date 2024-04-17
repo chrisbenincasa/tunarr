@@ -47,36 +47,32 @@ const currentDirectory = dirname(filename(import.meta.url));
 
 function initDbDirectories() {
   const opts = serverOptions();
-  const hasTunarrDb = fs.existsSync(
-    path.resolve(currentDirectory, opts.database),
-  );
-  const hasLegacyDb = fs.existsSync(
-    path.resolve(currentDirectory, '.dizquetv'),
-  );
+  console.log(opts);
+  const hasTunarrDb = fs.existsSync(opts.databaseDirectory);
+  const hasLegacyDb = fs.existsSync(path.resolve(process.cwd(), '.dizquetv'));
   if (!hasTunarrDb) {
-    logger.debug(`Existing database at ${opts.database} not found`);
+    logger.debug(`Existing database at ${opts.databaseDirectory} not found`);
     if (hasLegacyDb) {
       logger.info(
-        `DB configured at location ${opts.database} was not found, but a legacy .dizquetv database was located. A migration will be attempted`,
+        `DB configured at location ${opts.databaseDirectory} was not found, but a legacy .dizquetv database was located. A migration will be attempted`,
       );
     }
-    fs.mkdirSync(opts.database);
+    fs.mkdirSync(opts.databaseDirectory);
   }
 
-  ['channel-lineups', 'images', 'cache'].forEach((filePath) => {
-    const pathToCheck = path.join(opts.database, filePath);
-    if (!fs.existsSync(pathToCheck)) {
-      logger.debug(`Creating path at ${pathToCheck}`);
-      fs.mkdirSync(pathToCheck);
-    }
-  });
+  [['channel-lineups'], ['images'], ['cache'], ['cache', 'images']].forEach(
+    (pathParts) => {
+      const pathToCheck = path.join(opts.databaseDirectory, ...pathParts);
+      if (!fs.existsSync(pathToCheck)) {
+        logger.debug(`Creating path at ${pathToCheck}`);
+        fs.mkdirSync(pathToCheck);
+      }
+    },
+  );
 
-  if (!fs.existsSync(path.join(opts.database, 'cache', 'images'))) {
-    fs.mkdirSync(path.join(opts.database, 'cache', 'images'));
-  }
-
-  if (!fs.existsSync('streams')) {
-    fs.mkdirSync('streams');
+  // TODO: This will be an option that the user can set...
+  if (!fs.existsSync(path.join(process.cwd(), 'streams'))) {
+    fs.mkdirSync(path.join(process.cwd(), 'streams'));
   }
 
   return !hasTunarrDb && hasLegacyDb;
@@ -205,7 +201,7 @@ export async function initServer(opts: ServerOptions) {
       });
 
       f.register(fpStatic, {
-        root: path.join(serverOptions().database, 'images', 'uploads'),
+        root: path.join(serverOptions().databaseDirectory, 'images', 'uploads'),
         prefix: '/images/uploads',
       })
         .register(fpStatic, {
@@ -230,7 +226,7 @@ export async function initServer(opts: ServerOptions) {
 
     .register(async (f) => {
       await f.register(fpStatic, {
-        root: path.join(opts.database, 'cache', 'images'),
+        root: path.join(opts.databaseDirectory, 'cache', 'images'),
         decorateReply: false,
       });
       // f.addHook('onRequest', async (req, res) => ctx.cacheImageService.routerInterceptor(req, res));

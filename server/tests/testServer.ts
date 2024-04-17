@@ -6,7 +6,7 @@ import { v4 } from 'uuid';
 
 export async function initTestApp(port: number) {
   setServerOptions({
-    database: `/tmp/test_${v4()}`,
+    databaseDirectory: `/tmp/test_${v4()}`,
     force_migration: false,
     log_level: 'info',
     port,

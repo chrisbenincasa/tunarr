@@ -6,7 +6,8 @@
       "dependsOn": ["^build", "generate-db-cache"]
     },
     "generate-db-cache": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build"],
+      "outputs": ["temp/metadata.json"]
     },
     "bundle": {
       "dependsOn": ["generate-db-cache", "typecheck", "^bundle"]

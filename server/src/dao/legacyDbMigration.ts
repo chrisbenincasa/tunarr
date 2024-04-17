@@ -35,7 +35,7 @@ import {
   LegacyProgram,
   migrateChannels,
 } from './legacy_migration/channelMigrator.js';
-import { migrateCustomShows } from './legacy_migration/customShowMigrator.js';
+import { migrateCustomShows } from './legacy_migration/libraryMigrator.js';
 import {
   JSONArray,
   JSONObject,
@@ -65,8 +65,10 @@ const maxAudioChannelsOptions = [
 ];
 
 async function readAllOldDbFile(file: string): Promise<JSONArray | JSONObject> {
+  // We make an assumption about the location of the legacy db file, because
+  // we know how the server discovered it...
   const data = await fs.readFile(
-    path.resolve(globalOptions().database, file + '.json'),
+    path.join(process.cwd(), '.dizquetv', file + '.json'),
   );
   const str = data.toString('utf-8');
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -141,7 +143,7 @@ async function migrateFromLegacyDbInner(
 ) {
   const entitiesToMigrate = entities ?? MigratableEntities;
   // First initialize the default schema:
-  db.data = { ...defaultSchema(globalOptions().database) };
+  db.data = { ...defaultSchema(globalOptions().databaseDirectory) };
   await db.write();
 
   let settings: Partial<SettingsSchema> = {};
@@ -156,7 +158,7 @@ async function migrateFromLegacyDbInner(
           },
         };
       } else {
-        logger.info('Migrating HDHR settings', hdhrSettings);
+        logger.debug('Migrating HDHR settings', hdhrSettings);
         settings = {
           ...settings,
           hdhr: {
@@ -180,11 +182,11 @@ async function migrateFromLegacyDbInner(
         settings = {
           ...settings,
           xmltv: {
-            ...defaultXmlTvSettings(globalOptions().database),
+            ...defaultXmlTvSettings(globalOptions().databaseDirectory),
           },
         };
       } else {
-        logger.info('Migrating XMLTV settings', xmltvSettings);
+        logger.debug('Migrating XMLTV settings', xmltvSettings);
         settings = {
           ...settings,
           xmltv: {
@@ -211,7 +213,7 @@ async function migrateFromLegacyDbInner(
           },
         };
       } else {
-        logger.info('Migrating Plex settings', plexSettings);
+        logger.debug('Migrating Plex settings', plexSettings);
         const audioChannelValue = plexSettings[
           'maxAudioChannels'
         ] as Maybe<string>;
@@ -300,7 +302,7 @@ async function migrateFromLegacyDbInner(
     const plexServers = await attempt(() => readAllOldDbFile('plex-servers'));
     try {
       if (!isError(plexServers)) {
-        logger.info('Migrating Plex servers', plexServers);
+        logger.debug('Migrating Plex servers', plexServers);
         let servers: JSONObject[] = [];
         if (isArray(plexServers)) {
           servers = [...plexServers] as JSONObject[];
@@ -357,7 +359,7 @@ async function migrateFromLegacyDbInner(
           },
         };
       } else {
-        logger.info('Migrating ffmpeg settings', ffmpegSettings);
+        logger.debug('Migrating ffmpeg settings', ffmpegSettings);
         settings = {
           ...settings,
           ffmpeg: merge<FfmpegSettings, FfmpegSettings>(
@@ -420,7 +422,7 @@ async function migrateFromLegacyDbInner(
   }
 
   try {
-    logger.info('Migrating client ID');
+    logger.debug('Migrating client ID');
     const clientId = await readOldDbFile('client-id');
     settings = {
       ...settings,
@@ -432,8 +434,11 @@ async function migrateFromLegacyDbInner(
 
   if (entitiesToMigrate.includes('custom-shows')) {
     try {
-      logger.info('Migrating custom shows');
-      await migrateCustomShows(globalOptions().database, 'custom-shows');
+      logger.debug('Migrating custom shows');
+      await migrateCustomShows(
+        path.join(process.cwd(), '.dizquetv'),
+        'custom-shows',
+      );
     } catch (e) {
       logger.error('Unable to migrate all custom shows', e);
     }
@@ -441,8 +446,8 @@ async function migrateFromLegacyDbInner(
 
   if (entitiesToMigrate.includes('filler-shows')) {
     try {
-      logger.info('Migrating filler shows');
-      await migrateCustomShows(globalOptions().database, 'filler');
+      logger.debug('Migrating filler shows');
+      await migrateCustomShows(path.join(process.cwd(), '.dizquetv'), 'filler');
     } catch (e) {
       logger.error('Unable to migrate all filler shows', e);
     }
@@ -450,8 +455,8 @@ async function migrateFromLegacyDbInner(
 
   if (entitiesToMigrate.includes('channels')) {
     try {
-      logger.info('Migraing channels...');
-      await migrateChannels(globalOptions().database);
+      logger.debug('Migraing channels...');
+      await migrateChannels(path.join(process.cwd(), '.dizquetv'));
     } catch (e) {
       logger.error('Unable to migrate channels', e);
     }
@@ -459,7 +464,7 @@ async function migrateFromLegacyDbInner(
 
   if (entitiesToMigrate.includes('cached-images')) {
     try {
-      logger.info('Migrating cached images');
+      logger.debug('Migrating cached images');
       await migrateCachedImages();
     } catch (e) {
       logger.error('Unable to migrate cached images', e);

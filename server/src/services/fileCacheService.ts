@@ -12,7 +12,7 @@ export class FileCacheService {
   private cache: Record<string, string>;
 
   constructor(
-    cachePath: string = path.join(serverOptions().database, 'cache'),
+    cachePath: string = path.join(serverOptions().databaseDirectory, 'cache'),
   ) {
     this._cachePath = cachePath;
     this.cache = {};
