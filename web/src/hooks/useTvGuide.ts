@@ -1,5 +1,4 @@
 import {
-  QueryClient,
   UseQueryOptions,
   UseQueryResult,
   useQuery,
@@ -7,13 +6,15 @@ import {
 } from '@tanstack/react-query';
 import { ChannelLineup } from '@tunarr/types';
 import { Dayjs } from 'dayjs';
-import { apiClient } from '../external/api.ts';
 import { identity, isUndefined } from 'lodash-es';
+import { ApiClient } from '../external/api.ts';
+import { useTunarrApi } from './useTunarrApi.ts';
 
 const dateRangeQueryKey = (range: { from: Dayjs; to: Dayjs }) =>
   `${range.from.unix()}_${range.to.unix()}`;
 
 function lineupQueryOpts<Out = ChannelLineup | undefined>(
+  apiClient: ApiClient,
   channelId: string,
   range: { from: Dayjs; to: Dayjs },
   mapper: (lineup: ChannelLineup | undefined) => Out = identity,
@@ -34,10 +35,13 @@ function lineupQueryOpts<Out = ChannelLineup | undefined>(
   };
 }
 
-const allLineupsQueryOpts = (range: {
-  from: Dayjs;
-  to: Dayjs;
-}): UseQueryOptions<ChannelLineup[]> => ({
+const allLineupsQueryOpts = (
+  apiClient: ApiClient,
+  range: {
+    from: Dayjs;
+    to: Dayjs;
+  },
+): UseQueryOptions<ChannelLineup[]> => ({
   queryKey: ['channels', 'all', 'guide', dateRangeQueryKey(range)],
   queryFn: async () => {
     return apiClient.get('/api/channels/all/lineups', {
@@ -53,18 +57,24 @@ export const useTvGuide = (params: {
   channelId: string;
   from: Dayjs;
   to: Dayjs;
-}) =>
-  useQuery(
-    lineupQueryOpts(params.channelId, { from: params.from, to: params.to }),
+}) => {
+  const client = useTunarrApi();
+  return useQuery(
+    lineupQueryOpts(client, params.channelId, {
+      from: params.from,
+      to: params.to,
+    }),
   );
+};
 
 export const useTvGuides = (
   channelId: string,
   params: { from: Dayjs; to: Dayjs },
   extraOpts: Partial<UseQueryOptions<ChannelLineup[]>> = {},
 ): UseQueryResult<ChannelLineup[], Error> => {
+  const client = useTunarrApi();
   const singleChannelResult = useQuery({
-    ...lineupQueryOpts(channelId, params, (lineup) =>
+    ...lineupQueryOpts(client, channelId, params, (lineup) =>
       !isUndefined(lineup) ? [lineup] : [],
     ),
     ...extraOpts,
@@ -84,17 +94,18 @@ export const useTvGuidesPrefetch = (
   params: { from: Dayjs; to: Dayjs },
   extraOpts: Partial<UseQueryOptions<ChannelLineup[]>> = {},
 ) => {
+  const client = useTunarrApi();
   const queryClient = useQueryClient();
   const query: UseQueryOptions<ChannelLineup[]> =
     channelId !== 'all'
       ? {
-          ...lineupQueryOpts(channelId, params, (lineup) =>
+          ...lineupQueryOpts(client, channelId, params, (lineup) =>
             !isUndefined(lineup) ? [lineup] : [],
           ),
           ...extraOpts,
         }
       : {
-          ...allLineupsQueryOpts(params),
+          ...allLineupsQueryOpts(client, params),
           ...extraOpts,
         };
 
@@ -104,15 +115,19 @@ export const useTvGuidesPrefetch = (
 export const useAllTvGuides = (
   params: { from: Dayjs; to: Dayjs },
   extraOpts: Partial<UseQueryOptions<ChannelLineup[]>> = {},
-) => useQuery({ ...allLineupsQueryOpts(params), ...extraOpts });
+) => {
+  const client = useTunarrApi();
+  return useQuery({ ...allLineupsQueryOpts(client, params), ...extraOpts });
+};
 
 export const useAllTvGuidesDebug = (
   params: { from: Dayjs; to: Dayjs },
   extraOpts: Partial<
     UseQueryOptions<{ old: ChannelLineup; new: ChannelLineup }[]>
   > = {},
-) =>
-  useQuery({
+) => {
+  const apiClient = useTunarrApi();
+  return useQuery({
     queryKey: ['channels', 'all', 'guide', dateRangeQueryKey(params)],
     queryFn: async () => {
       return apiClient.getAllChannelLineupsDebug({
@@ -124,15 +139,4 @@ export const useAllTvGuidesDebug = (
     },
     ...extraOpts,
   });
-
-export const prefetchAllTvGuides =
-  (queryClient: QueryClient) =>
-  async (
-    params: { from: Dayjs; to: Dayjs },
-    extraOpts: Partial<UseQueryOptions<ChannelLineup[]>> = {},
-  ) => {
-    return await queryClient.prefetchQuery({
-      ...allLineupsQueryOpts(params),
-      ...extraOpts,
-    });
-  };
+};

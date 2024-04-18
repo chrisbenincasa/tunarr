@@ -13,10 +13,7 @@ import {
 } from '../store/channelEditor/actions.ts';
 import useStore from '../store/index.ts';
 import { Preloader } from '../types/index.ts';
-
-export const newChannelLoader: Preloader<Channel[]> = createPreloader(() =>
-  channelsQuery(),
-);
+import { ApiClient } from '../external/api.ts';
 
 // Default channel values that aren't dynamic
 export const DefaultChannel = {
@@ -34,6 +31,7 @@ export const DefaultChannel = {
   disableFillerOverlay: false,
   offline: {
     mode: 'pic',
+    // TODO: Make this work with the backend settings
     picture: 'http://localhost:8000/images/generic-offline-screen.png',
   },
 } as const;
@@ -68,16 +66,19 @@ function updateChannelState(
 }
 
 export const channelLoader: Preloader<Channel> = createPreloader(
-  ({ params }) => channelQuery(params.id!),
+  (apiClient, { params }) => channelQuery(apiClient, params.id!),
   updateChannelState,
 );
 
 // A preloader to load the details necessary to edit a channel itself
 export const editChannelLoader = (isNew: boolean): Preloader<Channel> => {
   if (isNew) {
-    return (queryClient) => async (args) => {
-      const channels = await createPreloader(() => channelsQuery())(
+    return (queryClient, apiClient) => async (args) => {
+      const channels = await createPreloader((apiClient) =>
+        channelsQuery(apiClient),
+      )(
         queryClient,
+        apiClient,
       )(args);
 
       const newChannel = defaultNewChannel(
@@ -98,10 +99,14 @@ export const editProgrammingLoader: Preloader<{
   channel: Channel;
   programming: CondensedChannelProgramming;
 }> =
-  (queryClient: QueryClient) =>
+  (queryClient: QueryClient, apiClient: ApiClient) =>
   async ({ params }: LoaderFunctionArgs) => {
-    const lineupQueryOpts = channelProgrammingQuery(params.id!, true);
-    const channelQueryOpts = channelQuery(params.id!);
+    const lineupQueryOpts = channelProgrammingQuery(
+      apiClient,
+      params.id!,
+      true,
+    );
+    const channelQueryOpts = channelQuery(apiClient, params.id!);
 
     const lineupPromise = queryClient.ensureQueryData(lineupQueryOpts);
     const channelPromise = queryClient.ensureQueryData(channelQueryOpts);

@@ -23,7 +23,6 @@ import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import AddSelectedMediaButton from '../../components/channel_config/AddSelectedMediaButton.tsx';
 import ProgrammingSelector from '../../components/channel_config/ProgrammingSelector.tsx';
-import { apiClient } from '../../external/api.ts';
 import { useCurrentFillerList } from '../../hooks/useFillerLists.ts';
 import {
   addMediaToCurrentFillerList,
@@ -43,6 +42,7 @@ type FillerListMutationArgs = {
 type FillerListFormType = Omit<FillerListMutationArgs, 'id'>;
 
 export default function EditFillerPage({ isNew }: Props) {
+  const apiClient = useTunarrApi();
   const fillerList = useCurrentFillerList()!;
   const fillerListPrograms = useStore((s) => s.fillerListEditor.programList);
   const queryClient = useQueryClient();

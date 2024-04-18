@@ -1,9 +1,14 @@
 import { DataTag, useQueries, useQuery } from '@tanstack/react-query';
 import { Channel, CondensedChannelProgramming } from '@tunarr/types';
-import { apiClient } from '../external/api.ts';
 import { channelQuery } from './useChannels.ts';
+import { ApiClient } from '../external/api.ts';
+import { useTunarrApi } from './useTunarrApi.ts';
 
-export const channelProgrammingQuery = (id: string, enabled: boolean) => {
+export const channelProgrammingQuery = (
+  apiClient: ApiClient,
+  id: string,
+  enabled: boolean,
+) => {
   return {
     queryKey: ['channels', id, 'programming'] as DataTag<
       ['channels', string, 'programming'],
@@ -18,19 +23,24 @@ export const channelProgrammingQuery = (id: string, enabled: boolean) => {
 };
 
 export const useChannelProgramming = (id: string, enabled: boolean = true) => {
-  return useQuery(channelProgrammingQuery(id, enabled));
+  const apiClient = useTunarrApi();
+  return useQuery(channelProgrammingQuery(apiClient, id, enabled));
 };
 
 export const useChannelAndProgramming = (
   id: string,
   enabled: boolean = true,
   initialData?: { channel?: Channel; lineup?: CondensedChannelProgramming },
-) =>
-  useQueries({
+) => {
+  const apiClient = useTunarrApi();
+  return useQueries({
     queries: [
-      { ...channelQuery(id, enabled), initialData: initialData?.channel },
       {
-        ...channelProgrammingQuery(id, enabled),
+        ...channelQuery(apiClient, id, enabled),
+        initialData: initialData?.channel,
+      },
+      {
+        ...channelProgrammingQuery(apiClient, id, enabled),
         initialData: initialData?.lineup,
       },
     ],
@@ -45,3 +55,4 @@ export const useChannelAndProgramming = (
       };
     },
   });
+};

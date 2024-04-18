@@ -14,7 +14,6 @@ import { chain, findIndex, first, isUndefined, map } from 'lodash-es';
 import { useState } from 'react';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import { ChannelProgrammingConfig } from '../../components/channel_config/ChannelProgrammingConfig.tsx';
-import { apiClient } from '../../external/api.ts';
 import { channelProgramUniqueId } from '../../helpers/util.ts';
 import { usePreloadedChannelEdit } from '../../hooks/usePreloadedChannel.ts';
 import { useUpdateChannel } from '../../hooks/useUpdateChannel.ts';
@@ -23,6 +22,7 @@ import {
   resetLineup,
 } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
+import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 
 type MutateArgs = {
   channelId: string;
@@ -44,6 +44,7 @@ export default function ChannelProgrammingPage() {
 
   const programsDirty = useStore((s) => s.channelEditor.dirty.programs);
 
+  const apiClient = useTunarrApi();
   const queryClient = useQueryClient();
   const theme = useTheme();
 

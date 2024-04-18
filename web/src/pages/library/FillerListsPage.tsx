@@ -15,12 +15,13 @@ import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
-import { apiClient } from '../../external/api.ts';
 import { useFillerLists } from '../../hooks/useFillerLists.ts';
+import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 
 type DeleteFillerListRequest = { id: string };
 
 export default function FillerListsPage() {
+  const apiClient = useTunarrApi();
   // This should always be defined because of the preloader
   const { data: fillerLists } = useFillerLists();
   const queryClient = useQueryClient();

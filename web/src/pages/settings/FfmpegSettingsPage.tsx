@@ -39,6 +39,7 @@ import {
   resolutionToString,
 } from '../../helpers/util.ts';
 import { useFfmpegSettings } from '../../hooks/settingsHooks.ts';
+import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 
 const supportedVideoBuffer = [
   { value: 0, string: '0 Seconds' },
@@ -132,6 +133,7 @@ type DeinterlaceFilterValue =
   | 'yadif=1';
 
 export default function FfmpegSettingsPage() {
+  const apiClient = useTunarrApi();
   const { data, isPending, error } = useFfmpegSettings();
 
   const {

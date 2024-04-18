@@ -15,12 +15,13 @@ import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
-import { apiClient } from '../../external/api.ts';
 import { usePreloadedData } from '../../hooks/preloadedDataHook.ts';
 import { useCustomShows } from '../../hooks/useCustomShows.ts';
 import { customShowsLoader } from '../../preloaders/customShowLoaders.ts';
+import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 
 export default function CustomShowsPage() {
+  const apiClient = useTunarrApi();
   const { data: customShows } = useCustomShows(
     usePreloadedData(customShowsLoader),
   );

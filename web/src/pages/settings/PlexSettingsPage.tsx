@@ -64,7 +64,6 @@ import {
   NumericFormControllerText,
   TypedController,
 } from '../../components/util/TypedController.tsx';
-import { apiClient } from '../../external/api.ts';
 import {
   handleNumericFormValue,
   resolutionFromAnyString,
@@ -76,6 +75,7 @@ import {
   usePlexServerSettings,
   usePlexStreamSettings,
 } from '../../hooks/settingsHooks.ts';
+import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 
 const supportedResolutions = [
   '420x420',
@@ -127,6 +127,7 @@ function PlexServerDeleteDialog({
   onClose,
   serverId,
 }: PlexServerDeleteDialogProps) {
+  const apiClient = useTunarrApi();
   const queryClient = useQueryClient();
   const removePlexServerMutation = useMutation({
     mutationFn: (id: string) => {
@@ -173,6 +174,7 @@ type PlexServerRowProps = {
 };
 
 function PlexServerRow({ server }: PlexServerRowProps) {
+  const apiClient = useTunarrApi();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [showAccessToken, setShowAccessToken] = useState(false);
@@ -414,6 +416,7 @@ function PlexServerRow({ server }: PlexServerRowProps) {
 }
 
 export default function PlexSettingsPage() {
+  const apiClient = useTunarrApi();
   const [restoreTunarrDefaults, setRestoreTunarrDefaults] =
     React.useState<boolean>(false);
 

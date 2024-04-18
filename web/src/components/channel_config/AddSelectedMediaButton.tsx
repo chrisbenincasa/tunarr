@@ -11,6 +11,7 @@ import useStore from '../../store/index.ts';
 import { clearSelectedMedia } from '../../store/programmingSelector/actions.ts';
 import { CustomShowSelectedMedia } from '../../store/programmingSelector/store.ts';
 import { AddedCustomShowProgram, AddedMedia } from '../../types/index.ts';
+import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 
 type Props = {
   onAdd: (items: AddedMedia[]) => void;
@@ -22,6 +23,7 @@ export default function AddSelectedMediaButton({
   onSuccess,
   ...rest
 }: Props) {
+  const apiClient = useTunarrApi();
   const knownMedia = useStore((s) => s.knownMediaByServer);
   const selectedMedia = useStore((s) => s.selectedMedia);
 
@@ -33,7 +35,11 @@ export default function AddSelectedMediaButton({
       forSelectedMediaType<Promise<AddedMedia[]>>({
         plex: async (selected) => {
           const media = knownMedia[selected.server][selected.guid];
-          const items = await enumeratePlexItem(selected.server, media)();
+          const items = await enumeratePlexItem(
+            apiClient,
+            selected.server,
+            media,
+          )();
           return map(items, (item) => ({ media: item, type: 'plex' }));
         },
         'custom-show': (

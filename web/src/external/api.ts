@@ -19,8 +19,13 @@ import {
   SaveChannelRequestSchema,
   TaskSchema,
 } from '@tunarr/types/schemas';
-import { Zodios, makeApi, makeErrors, parametersBuilder } from '@zodios/core';
-import { once } from 'lodash-es';
+import {
+  Zodios,
+  ZodiosInstance,
+  makeApi,
+  makeErrors,
+  parametersBuilder,
+} from '@zodios/core';
 import { z } from 'zod';
 import {
   createPlexServerEndpoint,
@@ -349,8 +354,8 @@ export const api = makeApi([
   },
 ]);
 
-export const createApiClient = once((uri: string) => {
-  return new Zodios(uri, api);
-});
+export type ApiClient = ZodiosInstance<typeof api>;
 
-export const apiClient = createApiClient('http://localhost:8000');
+export const createApiClient = (uri: string) => {
+  return new Zodios(uri, api);
+};

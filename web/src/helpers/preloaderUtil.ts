@@ -6,6 +6,7 @@ import {
 } from '@tanstack/react-query';
 import { LoaderFunctionArgs } from 'react-router-dom';
 import { Preloader } from '../types/index.ts';
+import { ApiClient } from '../external/api.ts';
 
 export function createPreloader<
   T = unknown,
@@ -15,13 +16,15 @@ export function createPreloader<
     : T,
 >(
   query: (
+    apiClient: ApiClient,
     args: LoaderFunctionArgs,
   ) => UseQueryOptions<TInferred, Error, TInferred, QK>,
   callback: (data: TInferred) => void = () => {},
 ): Preloader<TInferred> {
-  return (queryClient: QueryClient) => async (args) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  return (queryClient: QueryClient, apiClient: ApiClient) => async (args) => {
     const data: TInferred | undefined = await queryClient.ensureQueryData(
-      query(args),
+      query(apiClient, args),
     );
     callback(data);
     return data;

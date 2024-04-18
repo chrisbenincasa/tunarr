@@ -40,6 +40,7 @@ import {
 } from './preloaders/fillerListLoader.ts';
 import { queryCache } from './queryClient.ts';
 import { map } from 'lodash-es';
+import { getApiClient } from './components/TunarrApiContext.tsx';
 
 const queryClient = new QueryClient({ queryCache });
 
@@ -77,22 +78,26 @@ export const router = createBrowserRouter(
         {
           path: '/channels/:id/edit',
           element: <EditChannelPage isNew={false} />,
-          loader: editChannelLoader(false)(queryClient),
+          loader: (args) =>
+            editChannelLoader(false)(queryClient, getApiClient())(args),
         },
         ...map(['flex', 'epg', 'ffmpeg'] as const, (panel) => ({
           path: '/channels/:id/edit/' + panel,
           element: <EditChannelPage isNew={false} initialTab={panel} />,
-          loader: editChannelLoader(false)(queryClient),
+          loader: (args) =>
+            editChannelLoader(false)(queryClient, getApiClient())(args),
         })),
         {
           path: '/channels/new',
           element: <EditChannelPage isNew={true} />,
-          loader: editChannelLoader(true)(queryClient),
+          loader: (args) =>
+            editChannelLoader(true)(queryClient, getApiClient())(args),
         },
         {
           path: '/channels/:id/programming',
           element: <ChannelProgrammingPage />,
-          loader: editProgrammingLoader(queryClient),
+          loader: (args) =>
+            editProgrammingLoader(queryClient, getApiClient())(args),
         },
         {
           path: '/channels/:id/programming/add',
@@ -101,17 +106,19 @@ export const router = createBrowserRouter(
         {
           path: '/channels/:id/programming/time-slot-editor',
           element: <TimeSlotEditorPage />,
-          loader: editProgrammingLoader(queryClient),
+          loader: (args) =>
+            editProgrammingLoader(queryClient, getApiClient())(args),
         },
         {
           path: '/channels/:id/programming/random-slot-editor',
           element: <RandomSlotEditorPage />,
-          loader: editProgrammingLoader(queryClient),
+          loader: (args) =>
+            editProgrammingLoader(queryClient, getApiClient())(args),
         },
         {
           path: '/channels/:id/watch',
           element: <ChannelWatchPage />,
-          loader: channelLoader(queryClient),
+          loader: (args) => channelLoader(queryClient, getApiClient())(args),
         },
         {
           path: '/guide',

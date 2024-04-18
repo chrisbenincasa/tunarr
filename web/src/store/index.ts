@@ -1,5 +1,4 @@
-import { Channel, XmlTvSettings } from '@tunarr/types';
-import { StateCreator, create } from 'zustand';
+import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import {
@@ -14,33 +13,19 @@ import {
   ProgrammingListingsState,
   createProgrammingListingsState,
 } from './programmingSelector/store.ts';
+import { SettingsState, createSettingsSlice } from './settings/store.ts';
 import {
   ThemeEditorState,
   createThemeEditorState,
 } from './themeEditor/store.ts';
 
-interface ChannelsState {
-  channels?: Channel[];
-}
-
-interface SettingsState {
-  xmltvSettings?: XmlTvSettings;
-}
-
 export type State = ThemeEditorState &
   SettingsState &
-  ChannelsState &
   ProgrammingListingsState &
   EditorsState &
   PlexMetadataState;
 
-const createSettingsSlice: StateCreator<SettingsState> = () => ({
-  xmlTvSettings: undefined,
-});
-
-const createChannelsState: StateCreator<ChannelsState> = () => ({
-  channels: undefined,
-});
+type PersistedState = SettingsState & ThemeEditorState;
 
 const useStore = create<State>()(
   immer(
@@ -48,7 +33,6 @@ const useStore = create<State>()(
       persist(
         (...set) => ({
           ...createSettingsSlice(...set),
-          ...createChannelsState(...set),
           ...createProgrammingListingsState(...set),
           ...createChannelEditorState(...set),
           ...createThemeEditorState(...set),
@@ -56,9 +40,11 @@ const useStore = create<State>()(
         }),
         {
           name: 'tunarr',
-          partialize: (state: State) => ({
-            theme: state.theme,
-          }),
+          partialize: (state: State) =>
+            <PersistedState>{
+              theme: state.theme,
+              settings: state.settings,
+            },
         },
       ),
     ),

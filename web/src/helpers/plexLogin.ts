@@ -1,6 +1,6 @@
 import { PlexPinsResponse, PlexResourcesResponse } from '@tunarr/types/plex';
 import { compact, partition } from 'lodash-es';
-import { apiClient } from '../external/api.ts';
+import { ApiClient } from '../external/api.ts';
 import { AsyncInterval } from './AsyncInterval.ts';
 import { sequentialPromises } from './util.ts';
 
@@ -24,8 +24,6 @@ export const plexLoginFlow = async () => {
   const initialResponse = await fetch(request);
   const initialResponseBody =
     (await initialResponse.json()) as PlexPinsResponse;
-
-  console.log(initialResponseBody);
 
   const plexWindowSizes = {
     width: 800,
@@ -101,23 +99,24 @@ export const plexLoginFlow = async () => {
   return serversResponse.filter((server) => server.provides.includes('server'));
 };
 
-export const checkNewPlexServers = async (servers: PlexResourcesResponse) => {
-  return sequentialPromises(servers, async (server) => {
-    const [localConnections, remoteConnections] = partition(
-      server.connections,
-      (c) => c.local,
-    );
+export const checkNewPlexServers =
+  (apiClient: ApiClient) => async (servers: PlexResourcesResponse) => {
+    return sequentialPromises(servers, async (server) => {
+      const [localConnections, remoteConnections] = partition(
+        server.connections,
+        (c) => c.local,
+      );
 
-    for (const connection of [...localConnections, ...remoteConnections]) {
-      const { status } = await apiClient.getPlexBackendStatus({
-        name: server.name,
-        accessToken: server.accessToken,
-        uri: connection.uri,
-      });
+      for (const connection of [...localConnections, ...remoteConnections]) {
+        const { status } = await apiClient.getPlexBackendStatus({
+          name: server.name,
+          accessToken: server.accessToken,
+          uri: connection.uri,
+        });
 
-      if (status === 1) {
-        return { server, connection };
+        if (status === 1) {
+          return { server, connection };
+        }
       }
-    }
-  }).then(compact);
-};
+    }).then(compact);
+  };
