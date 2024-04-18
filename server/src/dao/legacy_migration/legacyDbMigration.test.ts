@@ -1,18 +1,15 @@
 import { test, describe, beforeAll, afterAll } from 'vitest';
 import { MikroORM, RequestContext } from '@mikro-orm/better-sqlite';
-import dbConfig from '../../mikro-orm.prod.config.js';
-import {
-  migrateChannel,
-  migratePrograms,
-} from './legacy_migration/channelMigrator.js';
+import dbConfig from '../../../mikro-orm.prod.config.js';
+import { migrateChannel, migratePrograms } from './channelMigrator.js';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { Channel } from './entities/Channel.js';
+import { Channel } from '../entities/Channel.js';
 import tmp from 'tmp-promise';
 import fs from 'node:fs/promises';
 import { inspect } from 'node:util';
-import { migrateCustomShows } from './legacy_migration/libraryMigrator.js';
-import { CustomShow } from './entities/CustomShow.js';
+import { migrateCustomShows } from './libraryMigrator.js';
+import { CustomShow } from '../entities/CustomShow.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -45,14 +42,13 @@ describe('Legacy DB Migration', () => {
 
     await RequestContext.create(orm.em, async () => {
       await migrateChannel(channelPath);
-      await migratePrograms(channelPath, tmpDir.path);
+      await migratePrograms(channelPath);
     });
 
     const allChannels = await orm.em.fork().repo(Channel).findAll();
-    console.log(allChannels);
 
     const lineup = await fs.readFile(
-      join(tmpDir.path, `${allChannels[0].uuid}.json`),
+      join(tmpDir.path, `${allChannels[0]!.uuid}.json`),
       'utf-8',
     );
     console.log(inspect(JSON.parse(lineup)));

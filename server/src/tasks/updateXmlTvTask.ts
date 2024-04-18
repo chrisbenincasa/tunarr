@@ -13,7 +13,7 @@ import { TVGuideService } from '../services/tvGuideService.js';
 import { Maybe } from '../types.js';
 import { fileExists } from '../util/fsUtil.js';
 import { mapAsyncSeq } from '../util/index.js';
-import { Task } from './task.js';
+import { Task } from './Task.js';
 
 const logger = createLogger(import.meta);
 

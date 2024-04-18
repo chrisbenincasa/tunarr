@@ -9,7 +9,7 @@ import axios, {
   isAxiosError,
 } from 'axios';
 import { XMLParser } from 'fast-xml-parser';
-import { isNil, isUndefined } from 'lodash-es';
+import { flatMap, forEach, isNil, isUndefined, map } from 'lodash-es';
 import NodeCache from 'node-cache';
 import querystring, { ParsedUrlQueryInput } from 'querystring';
 import { MarkOptional } from 'ts-essentials';
@@ -59,13 +59,13 @@ class PlexApiFactoryImpl {
 export const PlexApiFactory = new PlexApiFactoryImpl();
 
 export class Plex {
-  #opts: PlexApiOptions;
+  private opts: PlexApiOptions;
   private axiosInstance: AxiosInstance;
-  private _accessToken: string;
+  private accessToken: string;
 
   constructor(opts: PlexApiOptions) {
-    this.#opts = opts;
-    this._accessToken = opts.accessToken;
+    this.opts = opts;
+    this.accessToken = opts.accessToken;
     const uri = opts.uri.endsWith('/')
       ? opts.uri.slice(0, opts.uri.length - 1)
       : opts.uri;
@@ -74,7 +74,7 @@ export class Plex {
       baseURL: uri,
       headers: {
         ...DefaultPlexHeaders,
-        'X-Plex-Token': this._accessToken,
+        'X-Plex-Token': this.accessToken,
       },
     });
 
@@ -117,7 +117,7 @@ export class Plex {
   }
 
   get serverName() {
-    return this.#opts.name;
+    return this.opts.name;
   }
 
   private async doRequest<T>(req: AxiosRequestConfig): Promise<Maybe<T>> {
@@ -157,7 +157,7 @@ export class Plex {
       headers: optionalHeaders,
     };
 
-    if (this._accessToken === '') {
+    if (this.accessToken === '') {
       throw Error(
         'No Plex token provided. Please use the SignIn method or provide a X-Plex-Token in the Plex constructor.',
       );
@@ -182,7 +182,7 @@ export class Plex {
       headers: optionalHeaders,
     };
 
-    if (this._accessToken === '') {
+    if (this.accessToken === '') {
       throw Error(
         'No Plex token provided. Please use the SignIn method or provide a X-Plex-Token in the Plex constructor.',
       );
@@ -203,7 +203,7 @@ export class Plex {
       params: query,
     };
 
-    if (this._accessToken === '') {
+    if (this.accessToken === '') {
       throw Error(
         'No Plex token provided. Please use the SignIn method or provide a X-Plex-Token in the Plex constructor.',
       );
@@ -240,8 +240,9 @@ export class Plex {
     if (!dvrs) {
       throw new Error('Could not retrieve Plex DVRs');
     }
-    for (let i = 0; i < dvrs.length; i++) {
-      await this.doPost(`/livetv/dvrs/${dvrs[i].key}/reloadGuide`);
+
+    for (const dvr of dvrs) {
+      await this.doPost(`/livetv/dvrs/${dvr.key}/reloadGuide`);
     }
   }
 
@@ -249,23 +250,21 @@ export class Plex {
     const dvrs = !isUndefined(_dvrs) ? _dvrs : await this.getDvrs();
     if (!dvrs) throw new Error('Could not retrieve Plex DVRs');
 
-    const _channels: number[] = [];
-    const qs: Record<string, number | string> = {};
-    for (let i = 0; i < channels.length; i++) {
-      _channels.push(channels[i].number);
-    }
-    qs.channelsEnabled = _channels.join(',');
-    for (let i = 0; i < _channels.length; i++) {
-      qs[`channelMapping[${_channels[i]}]`] = _channels[i];
-      qs[`channelMappingByKey[${_channels[i]}]`] = _channels[i];
-    }
-    for (let i = 0; i < dvrs.length; i++) {
-      for (let y = 0; y < dvrs[i].Device.length; y++) {
-        await this.doPut(
-          `/media/grabbers/devices/${dvrs[i].Device[y].key}/channelmap`,
-          qs,
-        );
-      }
+    const qs: Record<string, number | string> = {
+      channelsEnabled: map(channels, 'number').join(','),
+    };
+
+    forEach(channels, ({ number }) => {
+      qs[`channelMapping[${number}]`] = number;
+      qs[`channelMappingByKey[${number}]`] = number;
+    });
+
+    const keys = map(
+      flatMap(dvrs, ({ Device }) => Device),
+      (device) => device.key,
+    );
+    for (const key of keys) {
+      await this.doPut(`/media/grabbers/devices/${key}/channelmap`, qs);
     }
   }
 

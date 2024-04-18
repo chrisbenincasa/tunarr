@@ -85,12 +85,15 @@ export async function createLineup(
         program.type &&
         ['movie', 'episode', 'track'].includes(program.type)
       ) {
-        // Content type
-        return {
-          type: 'content',
-          id: dbProgramById[uniqueProgramId(program)].uuid,
-          durationMs: program.duration,
-        } as ContentItem;
+        const dbProgram = dbProgramById[uniqueProgramId(program)];
+        if (!isUndefined(dbProgram)) {
+          // Content type
+          return {
+            type: 'content',
+            id: dbProgram.uuid,
+            durationMs: program.duration,
+          } as ContentItem;
+        }
       } else if (program.type === 'redirect') {
         return {
           type: 'redirect',

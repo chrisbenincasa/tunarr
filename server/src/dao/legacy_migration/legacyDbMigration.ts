@@ -24,31 +24,34 @@ import {
 } from 'lodash-es';
 import { Low } from 'lowdb';
 import path from 'path';
-import { globalOptions } from '../globals.js';
-import createLogger from '../logger.js';
-import { Maybe } from '../types.js';
-import { attempt } from '../util/index.js';
-import { EntityManager, withDb } from './dataSource.js';
-import { CachedImage } from './entities/CachedImage.js';
-import { PlexServerSettings as PlexServerSettingsEntity } from './entities/PlexServerSettings.js';
-import {
-  LegacyProgram,
-  migrateChannels,
-} from './legacy_migration/channelMigrator.js';
-import { migrateCustomShows } from './legacy_migration/libraryMigrator.js';
+import { globalOptions } from '../../globals.js';
+import createLogger from '../../logger.js';
+import { Maybe } from '../../types.js';
+import { attempt } from '../../util/index.js';
+import { EntityManager, withDb } from '../dataSource.js';
+import { CachedImage } from '../entities/CachedImage.js';
+import { PlexServerSettings as PlexServerSettingsEntity } from '../entities/PlexServerSettings.js';
+import { LegacyProgram, migrateChannels } from './channelMigrator.js';
+import { migrateCustomShows } from './libraryMigrator.js';
 import {
   JSONArray,
   JSONObject,
   JSONValue,
   tryParseResolution,
   tryStringSplitOrDefault,
-} from './legacy_migration/migrationUtil.js';
+} from './migrationUtil.js';
 import {
   Schema,
   SettingsSchema,
   defaultSchema,
   defaultXmlTvSettings,
-} from './settings.js';
+} from '../settings.js';
+import { PlexApiFactory } from '../../plex.js';
+import { backfillParentMetadata } from './metadataBackfill.js';
+import { GlobalScheduler } from '../../services/scheduler.js';
+import dayjs from 'dayjs';
+import { AnonymousTask } from '../../tasks/Task.js';
+import { serverContext } from '../../serverContext.js';
 
 export const logger = createLogger(import.meta);
 
@@ -335,6 +338,27 @@ async function migrateFromLegacyDbInner(
           return pss;
         });
 
+        // Don't bother filling in the client_identifier here, the Fixer
+        // will take care of that -- we may want to do it here if we want
+        // to remove the fixer eventually, though.
+        for (const entity of entities) {
+          const plexApi = PlexApiFactory.get(entity);
+          const status = await plexApi.checkServerStatus();
+          if (status === 1) {
+            logger.debug(
+              'Plex server name: %s url: %s healthy',
+              entity.name,
+              entity.uri,
+            );
+          } else {
+            logger.warn(
+              'Plex server from legacy settings unhealthy: %s (%s)',
+              entity.name,
+              entity.uri,
+            );
+          }
+        }
+
         await em.upsertMany(PlexServerSettingsEntity, entities, {
           onConflictFields: ['name', 'uri'],
           onConflictAction: 'ignore',
@@ -457,6 +481,23 @@ async function migrateFromLegacyDbInner(
     try {
       logger.debug('Migraing channels...');
       await migrateChannels(path.join(process.cwd(), '.dizquetv'));
+      // Finish this process in the background, since it could take a while
+      GlobalScheduler.scheduleOneOffTask(
+        'BackfillParentMetadata',
+        dayjs().add(10, 'seconds').toDate(),
+        AnonymousTask('BackfillParentMetadata', async () => {
+          (await serverContext()).eventService.push({
+            type: 'lifecycle',
+            detail: {
+              time: new Date().getTime(),
+            },
+            message:
+              'Background metadata backfill in progress. Please be patient!',
+            level: 'info',
+          });
+          return await backfillParentMetadata();
+        }),
+      );
     } catch (e) {
       logger.error('Unable to migrate channels', e);
     }

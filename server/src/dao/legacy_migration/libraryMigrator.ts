@@ -10,7 +10,7 @@ import { getEm } from '../dataSource.js';
 import { CustomShow as CustomShowEntity } from '../entities/CustomShow.js';
 import { CustomShowContent } from '../entities/CustomShowContent.js';
 import { FillerShow, FillerShowId } from '../entities/FillerShow.js';
-import { CustomShow, logger } from '../legacyDbMigration.js';
+import { CustomShow, logger } from './legacyDbMigration.js';
 import { createProgramEntity } from './channelMigrator.js';
 import {
   JSONArray,

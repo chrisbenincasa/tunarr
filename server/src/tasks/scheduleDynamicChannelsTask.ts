@@ -4,11 +4,11 @@ import { isUndefined } from 'lodash-es';
 import filter from 'lodash-es/filter';
 import { ChannelDB } from '../dao/channelDb';
 import { Channel } from '../dao/entities/Channel';
-import { ScheduledTask } from '../services/ScheduledTask';
+import { ScheduledTask } from './ScheduledTask';
 import { ContentSourceUpdaterFactory } from '../services/dynamic_channels/ContentSourceUpdaterFactory';
 import { GlobalScheduler } from '../services/scheduler';
 import { Maybe } from '../types';
-import { Task, TaskId } from './task';
+import { Task, TaskId } from './Task';
 
 export class ScheduleDynamicChannelsTask extends Task<void> {
   public static ID: TaskId = 'schedule-dynamic-channels';

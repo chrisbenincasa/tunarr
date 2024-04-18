@@ -39,7 +39,7 @@ import { videoRouter } from './api/videoApi.js';
 import { isUndefined } from 'lodash-es';
 import { initPersistentStreamCache } from './channelCache.js';
 import { getSettingsRawDb } from './dao/settings.js';
-import { migrateFromLegacyDb } from './dao/legacyDbMigration.js';
+import { migrateFromLegacyDb } from './dao/legacy_migration/legacyDbMigration.js';
 import { hlsApi } from './api/hlsApi.js';
 
 const logger = createLogger(import.meta);
@@ -85,7 +85,10 @@ export async function initServer(opts: ServerOptions) {
 
   const ctx = await serverContext();
 
-  if (hadLegacyDb && ctx.settings.needsLegacyMigration()) {
+  if (
+    hadLegacyDb &&
+    (ctx.settings.needsLegacyMigration() || opts.force_migration)
+  ) {
     logger.info('Migrating from legacy database folder...');
     await getSettingsRawDb()
       .then(migrateFromLegacyDb)

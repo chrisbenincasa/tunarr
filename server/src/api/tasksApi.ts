@@ -38,7 +38,7 @@ export const tasksApiRouter: RouterPluginAsyncCallback = async (fastify) => {
           return {
             id,
             name: task.name,
-            running: task.running(),
+            running: task.running,
             lastExecution: lastExecution?.format(),
             lastExecutionEpoch: lastExecution?.unix(),
             nextExecution: nextExecution?.format(),
@@ -79,7 +79,7 @@ export const tasksApiRouter: RouterPluginAsyncCallback = async (fastify) => {
         return res.status(404).send();
       }
 
-      if (task.running()) {
+      if (task.running) {
         return res.status(400).send({ message: 'Task already running' });
       }
 
