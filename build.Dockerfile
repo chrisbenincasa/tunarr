@@ -55,15 +55,21 @@ RUN pnpm turbo --filter=@tunarr/server bundle
 FROM sources AS build-web
 # Install deps
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
-# Build common modules
+# Build and bundle
 RUN pnpm turbo --filter=@tunarr/web bundle
+
+### Experimental: Build a SEA
+FROM build-server AS build-exec
+COPY --from=build-server /tunarr/server/node_modules /tunarr/server/node_modules
+COPY --from=build-server /tunarr/server/build /tunarr/server/build
+RUN pnpm run --filter=server make-exec
+###
 
 FROM sources as build-full-stack
 # Install deps
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 # Build common modules
 RUN pnpm turbo bundle
-
 
 ### Begin server run ###
 FROM ffmpeg-base AS server
