@@ -275,15 +275,25 @@ export async function initServer(opts: ServerOptions) {
     .register(videoRouter)
     .register(hlsApi)
     .register(ctx.hdhrService.createRouter())
-    .register(async (f) => {
-      await f.register(fpStatic, {
-        root: path.join(currentDirectory, 'web'),
-        prefix: '/web',
-      });
-      f.get('/web', async (_, res) =>
-        res.sendFile('index.html', path.join(currentDirectory, 'web')),
-      );
-    });
+    // Serve the webapp
+    .register(
+      async (f) => {
+        // For assets that exist...
+        await f.register(fpStatic, {
+          root: path.join(currentDirectory, 'web'),
+        });
+        // Make it work with just '/web' and not '/web/;
+        f.get('/', async (_, res) => {
+          return res.sendFile('index.html', path.join(currentDirectory, 'web'));
+        });
+        // client side routing 'hack'. This makes navigating to other client-side
+        // routes work as expected.
+        f.setNotFoundHandler(async (_, res) => {
+          return res.sendFile('index.html', path.join(currentDirectory, 'web'));
+        });
+      },
+      { prefix: '/web' },
+    );
 
   await updateXMLPromise;
 
