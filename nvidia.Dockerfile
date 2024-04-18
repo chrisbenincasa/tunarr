@@ -37,6 +37,14 @@ COPY types ./types
 COPY web ./web
 COPY patches ./patches
 
+FROM ffmpeg-base as dev
+EXPOSE 5173
+WORKDIR /tunarr
+COPY . .
+RUN pnpm install --frozen-lockfile
+ENTRYPOINT [ "pnpm" ]
+CMD [ "turbo", "dev" ]
+
 FROM sources AS prod-deps
 ARG NODE_ENVIRONMENT
 ENV NODE_ENV=${NODE_ENVIRONMENT:-production}
