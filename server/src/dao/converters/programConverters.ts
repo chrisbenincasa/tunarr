@@ -18,7 +18,7 @@ import {
 } from '../derived_types/Lineup.js';
 import { Channel } from '../entities/Channel.js';
 import { Program, ProgramType } from '../entities/Program.js';
-import { logger } from '../legacyDbMigration.js';
+import { logger } from '../legacy_migration/legacyDbMigration.js';
 
 type ContentProgramConversionOptions = {
   skipPopulate: boolean;

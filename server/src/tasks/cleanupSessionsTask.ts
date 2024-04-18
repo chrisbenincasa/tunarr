@@ -1,7 +1,7 @@
 import ld, { filter, forEach, isEmpty, keys } from 'lodash-es';
 import { sessionManager } from '../stream/sessionManager.js';
 import { Maybe } from '../types.js';
-import { Task, TaskId } from './task.js';
+import { Task, TaskId } from './Task.js';
 
 const ThirtySeconds = 30 * 1000;
 

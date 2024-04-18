@@ -4,12 +4,14 @@ import createLogger from '../logger.js';
 import { ServerContext } from '../serverContext.js';
 import { CleanupSessionsTask } from '../tasks/cleanupSessionsTask.js';
 import { ScheduleDynamicChannelsTask } from '../tasks/scheduleDynamicChannelsTask.js';
-import { Task, TaskId } from '../tasks/task.js';
+import { Task, TaskId } from '../tasks/Task.js';
 import { UpdateXmlTvTask } from '../tasks/updateXmlTvTask.js';
 import { Maybe } from '../types.js';
 import { typedProperty } from '../types/path.js';
-import { ScheduledTask } from './ScheduledTask.js';
+import { ScheduledTask } from '../tasks/ScheduledTask.js';
 import type { Tag } from '@tunarr/types';
+import { OneOffTask } from '../tasks/OneOffTask.js';
+import { v4 } from 'uuid';
 
 export const logger = createLogger(import.meta);
 
@@ -43,6 +45,18 @@ class Scheduler {
 
     this.#scheduledJobsById[id] = task;
     return true;
+  }
+
+  scheduleOneOffTask<OutType = unknown>(
+    name: string,
+    when: Date | number,
+    task: Task<OutType>,
+  ) {
+    const id = `one_off_${v4()}`;
+    task.addOnCompleteListener(() => {
+      delete this.#scheduledJobsById[id];
+    });
+    this.#scheduledJobsById[id] = new OneOffTask(name, when, () => task);
   }
 
   get scheduledJobsById(): Record<string, ScheduledTask> {

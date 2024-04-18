@@ -277,6 +277,7 @@ export class TVGuideService {
         !inRange(targetIndex, 0, accumulate.length) ||
         !inRange(targetIndex, 0, lineup.items.length)
       ) {
+        console.log(accumulate, channelProgress);
         throw new Error(
           `General algorithm error, completely unexpected. Channel: ${channel.uuid} ${channel.name}`,
         );

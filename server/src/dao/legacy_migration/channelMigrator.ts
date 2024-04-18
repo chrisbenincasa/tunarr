@@ -1,14 +1,15 @@
 import { Channel, Program, Watermark } from '@tunarr/types';
 import dayjs from 'dayjs';
 import ld, {
-  attempt,
   compact,
   difference,
   get,
-  isError,
   isUndefined,
   map,
   values,
+  every,
+  reduce,
+  keys,
 } from 'lodash-es';
 import fs from 'node:fs/promises';
 import path from 'path';
@@ -24,7 +25,7 @@ import {
   mapAsyncSeq,
 } from '../../util/index.js';
 import { ProgramSourceType } from '../custom_types/ProgramSourceType.js';
-import { getEm, withDb } from '../dataSource.js';
+import { getEm } from '../dataSource.js';
 import {
   ContentItem,
   Lineup,
@@ -43,10 +44,11 @@ import {
 import {
   JSONArray,
   JSONObject,
-  convertProgram,
+  convertRawProgram,
   tryParseResolution,
   uniqueProgramId,
 } from './migrationUtil.js';
+import { ChannelDB } from '../channelDb.js';
 
 const logger = createLogger(import.meta);
 
@@ -83,12 +85,15 @@ export async function createLineup(
         program.type &&
         ['movie', 'episode', 'track'].includes(program.type)
       ) {
-        // Content type
-        return {
-          type: 'content',
-          id: dbProgramById[uniqueProgramId(program)].uuid,
-          durationMs: program.duration,
-        } as ContentItem;
+        const dbProgram = dbProgramById[uniqueProgramId(program)];
+        if (!isUndefined(dbProgram)) {
+          // Content type
+          return {
+            type: 'content',
+            id: dbProgram.uuid,
+            durationMs: program.duration,
+          } as ContentItem;
+        }
       } else if (program.type === 'redirect') {
         return {
           type: 'redirect',
@@ -113,10 +118,7 @@ export async function createLineup(
 }
 
 // Migrates programs for a channel. The channel must already be persisted to the DB
-export async function migratePrograms(
-  fullPath: string,
-  channelLineupsPath: string,
-) {
+export async function migratePrograms(fullPath: string) {
   const channelFileContents = await fs.readFile(fullPath);
 
   const parsed = JSON.parse(
@@ -132,26 +134,49 @@ export async function migratePrograms(
     .findOneOrFail({ number: channelNumber });
 
   const fallbackPrograms = ((parsed['fallback'] as Maybe<JSONArray>) ?? []).map(
-    convertProgram,
+    convertRawProgram,
   );
 
-  const programs = ((parsed['programs'] as JSONArray) ?? []).map(
-    convertProgram,
-  );
-
-  const dbProgramById = (
-    await mapAsyncSeq(programs, (p) =>
-      persistProgram(p).then((dbProgram) => {
-        if (dbProgram) {
-          return {
-            [uniqueProgramId(p)]: dbProgram,
-          };
-        } else {
-          return {};
-        }
-      }),
+  // We don't filter out uniques yet because we will use this
+  // array to create the 'raw' lineup, which can contain dupes
+  const programs = ld
+    .chain((parsed['programs'] as JSONArray) ?? [])
+    .map(convertRawProgram)
+    .filter(
+      (p) =>
+        isNonEmptyString(p.serverKey) &&
+        isNonEmptyString(p.ratingKey) &&
+        isNonEmptyString(p.key),
     )
-  ).reduce((v, prev) => ({ ...v, ...prev }), {});
+    .value();
+
+  const programEntities = ld
+    .chain(programs)
+    .uniqBy(uniqueProgramId)
+    .map(createProgramEntity)
+    .compact()
+    .value();
+
+  logger.debug('Upserting %d programs from legacy DB', programEntities.length);
+
+  const dbProgramById = reduce(
+    await em.upsertMany(ProgramEntity, programEntities, {
+      batchSize: 25,
+      onConflictFields: ['sourceType', 'externalSourceId', 'externalKey'],
+      onConflictAction: 'merge',
+      onConflictExcludeFields: ['uuid'],
+    }),
+    (prev, curr) => ({
+      ...prev,
+      [`${curr.externalSourceId}|${curr.externalKey}`]: curr,
+    }),
+    {} as Record<string, ProgramEntity>,
+  );
+
+  logger.debug(
+    'Upserted %d programs from legacy DB',
+    keys(dbProgramById).length,
+  );
 
   const customShowIds = await em
     .repo(CustomShowEntity)
@@ -189,27 +214,15 @@ export async function migratePrograms(
     values(dbProgramById).map((id) => em.getReference(ProgramEntity, id.uuid)),
   );
 
-  logger.info('Saving channel');
+  logger.debug('Saving channel %s', channelEntity.uuid);
   await em.persistAndFlush(channelEntity);
 
-  const lineup = await createLineup(programs, dbProgramById);
-
-  logger.info(
-    `${lineup.items.length} lineup items for channel ${channelNumber}`,
+  logger.debug('Saving channel lineup %s', channelEntity.uuid);
+  const channelDB = new ChannelDB();
+  await channelDB.saveLineup(
+    channelEntity.uuid,
+    await createLineup(programs, dbProgramById),
   );
-
-  const lineupPath = path.join(
-    channelLineupsPath,
-    `${channelEntity.uuid}.json`,
-  );
-
-  const lineupWriteResult = attempt(
-    async () => await fs.writeFile(lineupPath, JSON.stringify(lineup)),
-  );
-
-  if (isError(lineupWriteResult)) {
-    logger.warn(`Unable to write lineups for channel ${channelNumber}`);
-  }
 
   return {
     legacyPrograms: programs,
@@ -362,6 +375,8 @@ export async function migrateChannel(fullPath: string): Promise<{
   logger.info('Saving channel');
   await em.persistAndFlush(entity);
 
+  await migratePrograms(fullPath);
+
   return { raw: channel, entity };
 }
 
@@ -435,46 +450,51 @@ export async function migrateChannels(dbPath: string) {
 
   return migratedChannels;
 }
+
+export function createProgramEntity(program: LegacyProgram) {
+  if (
+    ['movie', 'episode', 'track'].includes(program.type ?? '') &&
+    every([program.ratingKey, program.serverKey, program.key], isNonEmptyString)
+  ) {
+    const dbProgram = new ProgramEntity();
+    dbProgram.duration = program.duration;
+    dbProgram.sourceType = ProgramSourceType.PLEX;
+    dbProgram.episode = program.episode;
+    dbProgram.filePath = program.file;
+    dbProgram.icon = program.icon;
+    dbProgram.externalKey = program.ratingKey!;
+    dbProgram.plexRatingKey = program.key!;
+    dbProgram.plexFilePath = program.plexFile;
+    dbProgram.externalSourceId = program.serverKey!;
+    dbProgram.showTitle = program.showTitle;
+    dbProgram.summary = program.summary;
+    dbProgram.title = program.title!;
+    // This is checked above
+    dbProgram.type = programTypeFromString(program.type)!;
+    dbProgram.episode = program.episode;
+    dbProgram.seasonNumber = program.season;
+    dbProgram.seasonIcon = program.seasonIcon;
+    dbProgram.showIcon = program.showIcon;
+    dbProgram.originalAirDate = program.date;
+    dbProgram.rating = program.rating;
+    dbProgram.year = program.year;
+    return dbProgram;
+  }
+
+  return;
+}
+
 export async function persistProgram(program: LegacyProgram) {
-  return withDb(
-    async (em) => {
-      if (['movie', 'episode', 'track'].includes(program.type ?? '')) {
-        const dbProgram = new ProgramEntity();
-        dbProgram.durationObj = dayjs.duration({
-          milliseconds: program.duration,
-        });
-        dbProgram.sourceType = ProgramSourceType.PLEX;
-        dbProgram.episode = program.episode;
-        dbProgram.filePath = program.file;
-        dbProgram.icon = program.icon;
-        dbProgram.externalKey = program.key!;
-        dbProgram.plexRatingKey = program.key!;
-        // dbProgram.plexRatingKey = program.ratingKey!;
-        dbProgram.plexFilePath = program.plexFile;
-        dbProgram.externalSourceId = program.serverKey!;
-        dbProgram.showTitle = program.showTitle;
-        dbProgram.summary = program.summary;
-        dbProgram.title = program.title!;
-        // This is checked above
-        dbProgram.type = programTypeFromString(program.type)!;
-        dbProgram.episode = program.episode;
-        dbProgram.seasonNumber = program.season;
-        dbProgram.seasonIcon = program.seasonIcon;
-        dbProgram.showIcon = program.showIcon;
-        dbProgram.originalAirDate = program.date;
-        dbProgram.rating = program.rating;
-        dbProgram.year = program.year;
+  const em = getEm();
+  const dbProgram = createProgramEntity(program);
 
-        return em.upsert(ProgramEntity, dbProgram, {
-          onConflictFields: ['sourceType', 'externalSourceId', 'externalKey'],
-          onConflictAction: 'merge',
-          onConflictExcludeFields: ['uuid'],
-        });
-      }
+  if (!isUndefined(dbProgram)) {
+    return em.upsert(ProgramEntity, dbProgram, {
+      onConflictFields: ['sourceType', 'externalSourceId', 'externalKey'],
+      onConflictAction: 'merge',
+      onConflictExcludeFields: ['uuid'],
+    });
+  }
 
-      return;
-    },
-    undefined,
-    true,
-  );
+  return;
 }

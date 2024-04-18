@@ -12,6 +12,7 @@ export type TaskId =
   | 'schedule-dynamic-channels';
 
 export abstract class Task<Data> {
+  private onCompleteListeners = new Set<() => void>();
   private running_ = false;
 
   protected hasRun: boolean = false;
@@ -55,15 +56,22 @@ export abstract class Task<Data> {
   }
 
   abstract get taskName(): string;
+
+  addOnCompleteListener(listener: () => void) {
+    return this.onCompleteListeners.add(listener);
+  }
 }
 
-export function AnonymousTask(id: string): Task<unknown> {
-  return new (class extends Task<unknown> {
+export function AnonymousTask<OutType = unknown>(
+  id: string,
+  runnable: () => Promise<OutType>,
+): Task<OutType> {
+  return new (class extends Task<OutType> {
     public ID = id;
     public taskName = `AnonymousTest_` + id;
     // eslint-disable-next-line @typescript-eslint/require-await
     protected async runInternal() {
-      console.log('hello girly');
+      return runnable();
     }
   })();
 }

@@ -101,7 +101,7 @@ export const xmlTvSettingsRouter: RouterPluginCallback = (
       try {
         await req.serverCtx.settings.updateSettings(
           'xmltv',
-          defaultXmlTvSettings(serverOptions().database),
+          defaultXmlTvSettings(serverOptions().databaseDirectory),
         );
         const xmltv = req.serverCtx.settings.xmlTvSettings();
         req.serverCtx.eventService.push({

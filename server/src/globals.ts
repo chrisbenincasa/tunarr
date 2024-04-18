@@ -31,7 +31,7 @@ export const setGlobalOptions = once((runtimeOptions: GlobalOptions) => {
 
   _globalOptions = {
     ...runtimeOptions,
-    database: resolve(process.cwd(), runtimeOptions.database),
+    databaseDirectory: resolve(process.cwd(), runtimeOptions.databaseDirectory),
     log_level: logLevel,
   };
 });
@@ -50,6 +50,7 @@ export const setServerOptions = once((runtimeOptions: ServerOptions) => {
     ...globalOptions(),
     ...runtimeOptions,
   };
+  return _serverOptions;
 });
 
 export const serverOptions = () => {
@@ -67,6 +68,6 @@ export const dbOptions = (): Options => {
 
   return {
     ...dbConfig,
-    dbName: path.join(_serverOptions.database, 'db.db'),
+    dbName: path.join(_serverOptions.databaseDirectory, 'db.db'),
   };
 };

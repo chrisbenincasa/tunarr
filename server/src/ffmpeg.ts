@@ -486,11 +486,11 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
           inputFiles++;
 
           videoComplex = `;drawtext=fontfile=${
-            serverOptions().database
+            serverOptions().databaseDirectory
           }/font.ttf:fontsize=${sz1}:fontcolor=white:x=(w-text_w)/2:y=(h-text_h)/2:text='${
             streamUrl.errorTitle
           }',drawtext=fontfile=${
-            serverOptions().database
+            serverOptions().databaseDirectory
           }/font.ttf:fontsize=${sz2}:fontcolor=white:x=(w-text_w)/2:y=(h+text_h+${sz3})/2:text='${
             streamUrl.subtitle
           }'[videoy];[videoy]realtime[videox]`;

@@ -12,7 +12,7 @@ beforeAll(async () => {
 
   const database = await temp.mkdir();
   setGlobalOptions({
-    database,
+    databaseDirectory: database,
     force_migration: false,
     log_level: 'info',
   });

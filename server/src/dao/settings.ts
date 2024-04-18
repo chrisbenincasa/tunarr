@@ -111,13 +111,13 @@ export class Settings {
 
 export const getSettingsRawDb = once(async (dbPath?: string) => {
   const actualPath =
-    dbPath ?? path.resolve(globalOptions().database, 'settings.json');
+    dbPath ?? path.resolve(globalOptions().databaseDirectory, 'settings.json');
 
   const needsFlush = !existsSync(actualPath);
 
   const db = await JSONFilePreset<Schema>(
     actualPath,
-    defaultSchema(globalOptions().database),
+    defaultSchema(globalOptions().databaseDirectory),
   );
 
   await db.read();

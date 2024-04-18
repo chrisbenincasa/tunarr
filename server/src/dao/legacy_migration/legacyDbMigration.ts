@@ -24,31 +24,34 @@ import {
 } from 'lodash-es';
 import { Low } from 'lowdb';
 import path from 'path';
-import { globalOptions } from '../globals.js';
-import createLogger from '../logger.js';
-import { Maybe } from '../types.js';
-import { attempt } from '../util/index.js';
-import { EntityManager, withDb } from './dataSource.js';
-import { CachedImage } from './entities/CachedImage.js';
-import { PlexServerSettings as PlexServerSettingsEntity } from './entities/PlexServerSettings.js';
-import {
-  LegacyProgram,
-  migrateChannels,
-} from './legacy_migration/channelMigrator.js';
-import { migrateCustomShows } from './legacy_migration/customShowMigrator.js';
+import { globalOptions } from '../../globals.js';
+import createLogger from '../../logger.js';
+import { Maybe } from '../../types.js';
+import { attempt } from '../../util/index.js';
+import { EntityManager, withDb } from '../dataSource.js';
+import { CachedImage } from '../entities/CachedImage.js';
+import { PlexServerSettings as PlexServerSettingsEntity } from '../entities/PlexServerSettings.js';
+import { LegacyProgram, migrateChannels } from './channelMigrator.js';
+import { migrateCustomShows } from './libraryMigrator.js';
 import {
   JSONArray,
   JSONObject,
   JSONValue,
   tryParseResolution,
   tryStringSplitOrDefault,
-} from './legacy_migration/migrationUtil.js';
+} from './migrationUtil.js';
 import {
   Schema,
   SettingsSchema,
   defaultSchema,
   defaultXmlTvSettings,
-} from './settings.js';
+} from '../settings.js';
+import { PlexApiFactory } from '../../plex.js';
+import { backfillParentMetadata } from './metadataBackfill.js';
+import { GlobalScheduler } from '../../services/scheduler.js';
+import dayjs from 'dayjs';
+import { AnonymousTask } from '../../tasks/Task.js';
+import { serverContext } from '../../serverContext.js';
 
 export const logger = createLogger(import.meta);
 
@@ -65,8 +68,10 @@ const maxAudioChannelsOptions = [
 ];
 
 async function readAllOldDbFile(file: string): Promise<JSONArray | JSONObject> {
+  // We make an assumption about the location of the legacy db file, because
+  // we know how the server discovered it...
   const data = await fs.readFile(
-    path.resolve(globalOptions().database, file + '.json'),
+    path.join(process.cwd(), '.dizquetv', file + '.json'),
   );
   const str = data.toString('utf-8');
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -141,7 +146,7 @@ async function migrateFromLegacyDbInner(
 ) {
   const entitiesToMigrate = entities ?? MigratableEntities;
   // First initialize the default schema:
-  db.data = { ...defaultSchema(globalOptions().database) };
+  db.data = { ...defaultSchema(globalOptions().databaseDirectory) };
   await db.write();
 
   let settings: Partial<SettingsSchema> = {};
@@ -156,7 +161,7 @@ async function migrateFromLegacyDbInner(
           },
         };
       } else {
-        logger.info('Migrating HDHR settings', hdhrSettings);
+        logger.debug('Migrating HDHR settings', hdhrSettings);
         settings = {
           ...settings,
           hdhr: {
@@ -180,11 +185,11 @@ async function migrateFromLegacyDbInner(
         settings = {
           ...settings,
           xmltv: {
-            ...defaultXmlTvSettings(globalOptions().database),
+            ...defaultXmlTvSettings(globalOptions().databaseDirectory),
           },
         };
       } else {
-        logger.info('Migrating XMLTV settings', xmltvSettings);
+        logger.debug('Migrating XMLTV settings', xmltvSettings);
         settings = {
           ...settings,
           xmltv: {
@@ -211,7 +216,7 @@ async function migrateFromLegacyDbInner(
           },
         };
       } else {
-        logger.info('Migrating Plex settings', plexSettings);
+        logger.debug('Migrating Plex settings', plexSettings);
         const audioChannelValue = plexSettings[
           'maxAudioChannels'
         ] as Maybe<string>;
@@ -300,7 +305,7 @@ async function migrateFromLegacyDbInner(
     const plexServers = await attempt(() => readAllOldDbFile('plex-servers'));
     try {
       if (!isError(plexServers)) {
-        logger.info('Migrating Plex servers', plexServers);
+        logger.debug('Migrating Plex servers', plexServers);
         let servers: JSONObject[] = [];
         if (isArray(plexServers)) {
           servers = [...plexServers] as JSONObject[];
@@ -333,6 +338,27 @@ async function migrateFromLegacyDbInner(
           return pss;
         });
 
+        // Don't bother filling in the client_identifier here, the Fixer
+        // will take care of that -- we may want to do it here if we want
+        // to remove the fixer eventually, though.
+        for (const entity of entities) {
+          const plexApi = PlexApiFactory.get(entity);
+          const status = await plexApi.checkServerStatus();
+          if (status === 1) {
+            logger.debug(
+              'Plex server name: %s url: %s healthy',
+              entity.name,
+              entity.uri,
+            );
+          } else {
+            logger.warn(
+              'Plex server from legacy settings unhealthy: %s (%s)',
+              entity.name,
+              entity.uri,
+            );
+          }
+        }
+
         await em.upsertMany(PlexServerSettingsEntity, entities, {
           onConflictFields: ['name', 'uri'],
           onConflictAction: 'ignore',
@@ -357,7 +383,7 @@ async function migrateFromLegacyDbInner(
           },
         };
       } else {
-        logger.info('Migrating ffmpeg settings', ffmpegSettings);
+        logger.debug('Migrating ffmpeg settings', ffmpegSettings);
         settings = {
           ...settings,
           ffmpeg: merge<FfmpegSettings, FfmpegSettings>(
@@ -420,7 +446,7 @@ async function migrateFromLegacyDbInner(
   }
 
   try {
-    logger.info('Migrating client ID');
+    logger.debug('Migrating client ID');
     const clientId = await readOldDbFile('client-id');
     settings = {
       ...settings,
@@ -432,8 +458,11 @@ async function migrateFromLegacyDbInner(
 
   if (entitiesToMigrate.includes('custom-shows')) {
     try {
-      logger.info('Migrating custom shows');
-      await migrateCustomShows(globalOptions().database, 'custom-shows');
+      logger.debug('Migrating custom shows');
+      await migrateCustomShows(
+        path.join(process.cwd(), '.dizquetv'),
+        'custom-shows',
+      );
     } catch (e) {
       logger.error('Unable to migrate all custom shows', e);
     }
@@ -441,8 +470,8 @@ async function migrateFromLegacyDbInner(
 
   if (entitiesToMigrate.includes('filler-shows')) {
     try {
-      logger.info('Migrating filler shows');
-      await migrateCustomShows(globalOptions().database, 'filler');
+      logger.debug('Migrating filler shows');
+      await migrateCustomShows(path.join(process.cwd(), '.dizquetv'), 'filler');
     } catch (e) {
       logger.error('Unable to migrate all filler shows', e);
     }
@@ -450,8 +479,25 @@ async function migrateFromLegacyDbInner(
 
   if (entitiesToMigrate.includes('channels')) {
     try {
-      logger.info('Migraing channels...');
-      await migrateChannels(globalOptions().database);
+      logger.debug('Migraing channels...');
+      await migrateChannels(path.join(process.cwd(), '.dizquetv'));
+      // Finish this process in the background, since it could take a while
+      GlobalScheduler.scheduleOneOffTask(
+        'BackfillParentMetadata',
+        dayjs().add(10, 'seconds').toDate(),
+        AnonymousTask('BackfillParentMetadata', async () => {
+          (await serverContext()).eventService.push({
+            type: 'lifecycle',
+            detail: {
+              time: new Date().getTime(),
+            },
+            message:
+              'Background metadata backfill in progress. Please be patient!',
+            level: 'info',
+          });
+          return await backfillParentMetadata();
+        }),
+      );
     } catch (e) {
       logger.error('Unable to migrate channels', e);
     }
@@ -459,7 +505,7 @@ async function migrateFromLegacyDbInner(
 
   if (entitiesToMigrate.includes('cached-images')) {
     try {
-      logger.info('Migrating cached images');
+      logger.debug('Migrating cached images');
       await migrateCachedImages();
     } catch (e) {
       logger.error('Unable to migrate cached images', e);

@@ -12,7 +12,7 @@ import yargs from 'yargs/yargs';
 import {
   MigratableEntities,
   migrateFromLegacyDb,
-} from './dao/legacyDbMigration.js';
+} from './dao/legacy_migration/legacyDbMigration.js';
 import { getSettingsRawDb } from './dao/settings.js';
 import { setGlobalOptions, setServerOptions } from './globals.js';
 import { initServer } from './server.js';
@@ -52,7 +52,9 @@ yargs(hideBin(process.argv))
     desc: 'Forces a migration from a legacy dizquetv database. Useful for development and debugging. NOTE: This WILL override any settings you have!',
     default: false,
   })
-  .middleware(setGlobalOptions)
+  .middleware((opts) =>
+    setGlobalOptions({ ...opts, databaseDirectory: opts.database }),
+  )
   .command('version', 'Print the current version', () => {
     console.log(constants.VERSION_NAME);
   })
@@ -70,10 +72,10 @@ yargs(hideBin(process.argv))
         .option('printRoutes', {
           type: 'boolean',
           default: false,
-        })
-        .middleware(setServerOptions);
+        });
     },
     async (args: ArgumentsCamelCase<ServerOptions>) => {
+      const serverOpts = setServerOptions(args);
       /* eslint-disable max-len */
       console.log(
         `
@@ -101,7 +103,7 @@ ${chalk.blue('  |_| ')}${chalk.green(' \\___/')}${chalk.yellow(
 `,
         /* eslint-enable max-len */
       );
-      await initServer(args);
+      await initServer(serverOpts);
     },
   )
   .command(
@@ -118,11 +120,11 @@ ${chalk.blue('  |_| ')}${chalk.green(' \\___/')}${chalk.yellow(
         .option('printRoutes', {
           type: 'boolean',
           default: false,
-        })
-        .middleware(setServerOptions);
+        });
     },
     async (args: ArgumentsCamelCase<ServerOptions>) => {
-      const { app: f } = await initServer(args);
+      const serverOpts = setServerOptions(args);
+      const { app: f } = await initServer(serverOpts);
       const x = await f
         .inject({ method: 'get', url: '/docs/json' })
         .then((r) => r.body);

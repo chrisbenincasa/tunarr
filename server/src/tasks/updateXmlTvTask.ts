@@ -13,7 +13,7 @@ import { TVGuideService } from '../services/tvGuideService.js';
 import { Maybe } from '../types.js';
 import { fileExists } from '../util/fsUtil.js';
 import { mapAsyncSeq } from '../util/index.js';
-import { Task } from './task.js';
+import { Task } from './Task.js';
 
 const logger = createLogger(import.meta);
 
@@ -62,7 +62,8 @@ export class UpdateXmlTvTask extends Task<void> {
         );
         await this.#settingsDB.updateSettings('xmltv', {
           ...xmltvSettings,
-          outputPath: defaultXmlTvSettings(globalOptions().database).outputPath,
+          outputPath: defaultXmlTvSettings(globalOptions().databaseDirectory)
+            .outputPath,
         });
         // Re-read
         xmltvSettings = this.#settingsDB.xmlTvSettings();

@@ -5,7 +5,7 @@ import { Channel } from './dao/entities/Channel.js';
 import { Settings } from './dao/settings.js';
 
 export type GlobalOptions = {
-  database: string;
+  databaseDirectory: string;
   force_migration: boolean;
   log_level: string;
   verbose?: number;

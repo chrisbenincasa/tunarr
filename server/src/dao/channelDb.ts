@@ -573,7 +573,10 @@ export class ChannelDB {
       fileDbCache[channelId] = new Low<Lineup>(
         new SchemaBackedDbAdapter(
           LineupSchema,
-          join(globalOptions().database, `channel-lineups/${channelId}.json`),
+          join(
+            globalOptions().databaseDirectory,
+            `channel-lineups/${channelId}.json`,
+          ),
         ),
         { items: [], startTimeOffsets: [] },
       );
@@ -592,7 +595,7 @@ export class ChannelDB {
     isDelete: boolean = true,
   ) {
     const path = join(
-      globalOptions().database,
+      globalOptions().databaseDirectory,
       `channel-lineups/${channelId}.json${isDelete ? '' : '.bak'}`,
     );
     try {
