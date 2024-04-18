@@ -9,7 +9,7 @@ export const useRemoveDuplicates = () => {
   return () => {
     if (programs.length > 0) {
       const newPrograms = removeDuplicatePrograms(programs);
-      setCurrentLineup(newPrograms);
+      setCurrentLineup(newPrograms, true);
     }
   };
 };
@@ -30,6 +30,6 @@ export const removeDuplicatePrograms = (programs: ChannelProgram[]) => {
       return false;
     }
 
-    return seenCount[uniqueId]++ === 1;
+    return seenCount[uniqueId]++ === 0;
   });
 };
