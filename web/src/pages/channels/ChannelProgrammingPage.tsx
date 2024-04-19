@@ -14,15 +14,16 @@ import { chain, findIndex, first, isUndefined, map } from 'lodash-es';
 import { useState } from 'react';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import { ChannelProgrammingConfig } from '../../components/channel_config/ChannelProgrammingConfig.tsx';
+import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert.tsx';
 import { channelProgramUniqueId } from '../../helpers/util.ts';
 import { usePreloadedChannelEdit } from '../../hooks/usePreloadedChannel.ts';
+import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 import { useUpdateChannel } from '../../hooks/useUpdateChannel.ts';
 import {
   resetCurrentLineup,
   resetLineup,
 } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
-import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 
 type MutateArgs = {
   channelId: string;
@@ -157,7 +158,10 @@ export default function ChannelProgrammingPage() {
       </Typography>
       <Paper sx={{ p: 2 }}>
         <ChannelProgrammingConfig />
-
+        <UnsavedNavigationAlert
+          isDirty={programsDirty}
+          onProceed={() => resetLineup()}
+        />
         <Box
           sx={{ display: 'flex', justifyContent: 'end', pt: 1, columnGap: 1 }}
         >

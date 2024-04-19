@@ -12,13 +12,14 @@ import { BlockerFunction, matchPath, useBlocker } from 'react-router-dom';
 type Props = {
   isDirty: boolean;
   exemptPath?: string;
+  onProceed?: CallableFunction;
 };
 
 // Exempt paths are used in situations where the form spans multiple tabs or pages.
 // This ensures the Alert is not activated in the middle of a form navigation.
 
 export default function UnsavedNavigationAlert(props: Props) {
-  const { isDirty, exemptPath } = props;
+  const { isDirty, exemptPath, onProceed } = props;
 
   let shouldBlock = React.useCallback<BlockerFunction>(
     ({ currentLocation, nextLocation }) => {
@@ -33,6 +34,13 @@ export default function UnsavedNavigationAlert(props: Props) {
     [isDirty],
   );
   let blocker = useBlocker(shouldBlock);
+
+  const handleProceed = () => {
+    blocker.proceed?.();
+    if (onProceed) {
+      onProceed();
+    }
+  };
 
   return blocker && blocker.state === 'blocked' ? (
     <Dialog
@@ -52,11 +60,7 @@ export default function UnsavedNavigationAlert(props: Props) {
       </DialogContent>
       <DialogActions>
         <Button onClick={() => blocker.reset?.()}>Cancel</Button>
-        <Button
-          onClick={() => blocker.proceed?.()}
-          autoFocus
-          variant="contained"
-        >
+        <Button onClick={handleProceed} autoFocus variant="contained">
           Proceed
         </Button>
       </DialogActions>
