@@ -313,11 +313,12 @@ export const api = makeApi([
     response: FillerListSchema,
   },
   {
-    method: 'get',
+    method: 'put',
     path: '/media-player/:channel/hls',
     alias: 'startHlsStream',
     parameters: parametersBuilder()
       .addPath('channel', z.coerce.number().or(z.string().uuid()))
+      .addBody(z.undefined())
       .build(),
     status: 200,
     response: z.object({ streamPath: z.string() }),

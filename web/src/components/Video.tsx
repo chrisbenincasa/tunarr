@@ -68,7 +68,7 @@ export default function Video({ channelId }: VideoProps) {
     if ((autoPlayEnabled || manuallyStarted) && video && hls && canLoadStream) {
       setLoadedStream(true);
       apiClient
-        .startHlsStream({ params: { channel: channelId } })
+        .startHlsStream(undefined, { params: { channel: channelId } })
         .then(({ streamPath }) => {
           hls.loadSource(`${backendUri}${streamPath}`);
           hls.attachMedia(video);

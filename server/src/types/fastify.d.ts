@@ -6,6 +6,10 @@ declare module 'fastify' {
     serverCtx: ServerContext;
     entityManager: EntityManager;
 
+    // Present when the request is identified as part of
+    // an HLS session.
     streamChannel?: string;
+
+    disableRequestLogging?: boolean;
   }
 }
