@@ -1,4 +1,4 @@
-import { Autorenew, Delete } from '@mui/icons-material';
+import { ArrowBack, Autorenew, Delete } from '@mui/icons-material';
 import AddIcon from '@mui/icons-material/Add';
 import {
   Alert,
@@ -63,7 +63,10 @@ import { NumericFormControllerText } from '../../components/util/TypedController
 import { zipWithIndex } from '../../helpers/util.ts';
 import { usePreloadedChannelEdit } from '../../hooks/usePreloadedChannel.ts';
 import { useUpdateLineup } from '../../hooks/useUpdateLineup.ts';
-import { updateCurrentChannel } from '../../store/channelEditor/actions.ts';
+import {
+  resetLineup,
+  updateCurrentChannel,
+} from '../../store/channelEditor/actions.ts';
 import { UIChannelProgram, isUIRedirectProgram } from '../../types/index.ts';
 
 dayjs.extend(utc);
@@ -423,6 +426,7 @@ export default function TimeSlotEditorPage() {
     setValue,
     watch,
     formState: { isValid, isDirty },
+    reset,
   } = useForm<TimeSlotForm>({
     defaultValues:
       !isUndefined(loadedSchedule) && loadedSchedule.type === 'time'
@@ -442,6 +446,12 @@ export default function TimeSlotEditorPage() {
   const [generatedList, setGeneratedList] = useState<
     UIChannelProgram[] | undefined
   >(undefined);
+
+  const resetLineupToSaved = useCallback(() => {
+    setGeneratedList(undefined);
+    resetLineup();
+    reset();
+  }, [setGeneratedList]);
 
   const onSave = () => {
     const schedule: TimeSlotSchedule = {
@@ -783,14 +793,23 @@ export default function TimeSlotEditorPage() {
       </PaddedPaper>
       <UnsavedNavigationAlert isDirty={isDirty} />
       <Box sx={{ display: 'flex', justifyContent: 'end', pt: 1, columnGap: 1 }}>
-        <Button
-          variant="contained"
-          to=".."
-          relative="path"
-          component={RouterLink}
-        >
-          Cancel
-        </Button>
+        <Box flexGrow={1}>
+          <Button
+            variant="outlined"
+            to=".."
+            relative="path"
+            component={RouterLink}
+            startIcon={<ArrowBack />}
+            sx={{ justifyContent: 'flex-start' }}
+          >
+            Back to Programming
+          </Button>
+        </Box>
+        {isDirty && (
+          <Button variant="contained" onClick={() => resetLineupToSaved()}>
+            Reset Options
+          </Button>
+        )}
         <Button
           variant="contained"
           disabled={!isValid || !isDirty}

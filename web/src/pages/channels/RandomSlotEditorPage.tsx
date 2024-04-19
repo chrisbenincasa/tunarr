@@ -1,4 +1,4 @@
-import { Delete } from '@mui/icons-material';
+import { ArrowBack, Autorenew, Delete } from '@mui/icons-material';
 import Add from '@mui/icons-material/Add';
 import {
   Alert,
@@ -17,6 +17,7 @@ import {
   Snackbar,
   Stack,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { scheduleRandomSlots } from '@tunarr/shared';
@@ -62,6 +63,7 @@ import { useDebounceCallback } from 'usehooks-ts';
 import Breadcrumbs from '../../components/Breadcrumbs';
 import PaddedPaper from '../../components/base/PaddedPaper';
 import ChannelProgrammingList from '../../components/channel_config/ChannelProgrammingList';
+import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert';
 import {
   DropdownOption,
   ProgramOption,
@@ -203,14 +205,18 @@ const RandomSlotRow = React.memo(
           programming: slotProgram,
         };
 
-        setValue(`slots.${idx}`, { ...newSlot });
+        setValue(`slots.${idx}`, { ...newSlot }, { shouldDirty: true });
       },
       [setValue, slot],
     );
 
     const updateSlot = useCallback(
       (idx: number, newSlot: Partial<RandomSlot>) => {
-        setValue(`slots.${idx}`, { ...slot, ...newSlot });
+        setValue(
+          `slots.${idx}`,
+          { ...slot, ...newSlot },
+          { shouldDirty: true },
+        );
       },
       [setValue],
     );
@@ -285,7 +291,7 @@ const RandomSlotRow = React.memo(
           </Select>
         </Grid>
         <Grid item xs={2}>
-          {slot.programming.type === 'show' && (
+          {slot.programming.type === 'show' ? (
             <Select<'next' | 'shuffle'>
               fullWidth
               value={slot.order ?? 'next'}
@@ -301,6 +307,14 @@ const RandomSlotRow = React.memo(
                 </MenuItem>
               ))}
             </Select>
+          ) : (
+            <Tooltip title="This applies to shows only">
+              <Select fullWidth value="N/A" disabled={true}>
+                <MenuItem key={'N/A'} value={'N/A'}>
+                  {'N/A'}
+                </MenuItem>
+              </Select>
+            </Tooltip>
           )}
         </Grid>
         <Grid item xs={1}>
@@ -341,6 +355,7 @@ const RandomSlots = ({
       setValue(
         'slots',
         map(currentSlots, (slot) => ({ ...slot, weight: newWeight })),
+        { shouldDirty: true },
       );
     }
   }, [prevDistribution, distribution]);
@@ -353,6 +368,7 @@ const RandomSlots = ({
           ...cfl,
           weight: weights[idx],
         })),
+        { shouldDirty: true },
       );
     }, [currentSlots, setValue, weights]),
     500,
@@ -434,7 +450,7 @@ const RandomSlots = ({
     }
 
     setWeights(map(newSlots, 'weight'));
-    setValue('slots', newSlots);
+    setValue('slots', newSlots, { shouldDirty: true });
   }, [currentSlots, setWeights, distribution]);
 
   const removeSlot = useCallback(
@@ -442,6 +458,7 @@ const RandomSlots = ({
       setValue(
         'slots',
         reject(currentSlots, (_, i) => idx === i),
+        { shouldDirty: true },
       );
     },
     [setValue, currentSlots],
@@ -584,7 +601,13 @@ export default function RandomSlotEditorPage() {
     channel?.startTime ?? dayjs().unix() * 1000,
   );
 
-  const { control, getValues, setValue } = useForm<RandomSlotForm>({
+  const {
+    control,
+    getValues,
+    setValue,
+    formState: { isValid, isDirty },
+    reset,
+  } = useForm<RandomSlotForm>({
     defaultValues:
       !isUndefined(loadedSchedule) && loadedSchedule.type === 'random'
         ? loadedSchedule
@@ -603,6 +626,7 @@ export default function RandomSlotEditorPage() {
   const resetLineupToSaved = useCallback(() => {
     setGeneratedList(undefined);
     resetLineup();
+    reset();
   }, [setGeneratedList]);
 
   const onSave = () => {
@@ -706,11 +730,9 @@ export default function RandomSlotEditorPage() {
           gap={1}
           sx={{ display: 'flex', alignContent: 'center' }}
         >
-          <Typography sx={{ flexGrow: 1 }}>Random Slots</Typography>
-          <Button onClick={() => resetLineupToSaved()}>Reset</Button>
-          <Button variant="contained" onClick={() => calculateSlots()}>
-            Refresh
-          </Button>
+          <Typography sx={{ flexGrow: 1, fontWeight: 600 }}>
+            Random Slots
+          </Typography>
         </Stack>
         <Divider sx={{ my: 2 }} />
         <RandomSlots
@@ -720,104 +742,127 @@ export default function RandomSlotEditorPage() {
         />
         <Divider sx={{ my: 2 }} />
         <Box>
-          <FormControl fullWidth margin="normal">
-            <InputLabel>Pad Times</InputLabel>
-            <Controller
-              control={control}
-              name="padMs"
-              render={({ field }) => (
-                <Select label="Pad Times" {...field}>
-                  {padOptions.map((opt) => (
-                    <MenuItem key={opt.value} value={opt.value}>
-                      {opt.description}
-                    </MenuItem>
-                  ))}
-                </Select>
-              )}
-            />
-
-            <FormHelperText>
-              Ensures programs have a nice-looking start time, it will add Flex
-              time to fill the gaps.
-            </FormHelperText>
-          </FormControl>
-          <FormControl fullWidth margin="normal">
-            <InputLabel>Flex Style</InputLabel>
-            <Controller
-              control={control}
-              name="flexPreference"
-              render={({ field }) => (
-                <Select label="Flex Style" {...field}>
-                  {flexOptions.map((opt) => (
-                    <MenuItem key={opt.value} value={opt.value}>
-                      {opt.description}
-                    </MenuItem>
-                  ))}
-                </Select>
-              )}
-            />
-            <FormHelperText>
-              Usually slots need to add flex time to ensure that the next slot
-              starts at the correct time. When there are multiple videos in the
-              slot, you might prefer to distribute the flex time between the
-              videos or to place most of the flex time at the end of the slot.
-            </FormHelperText>
-          </FormControl>
-          <FormControl fullWidth margin="normal">
-            <InputLabel>Distribution</InputLabel>
-            <Controller
-              control={control}
-              name="randomDistribution"
-              render={({ field }) => (
-                <Select label="Distribution" {...field}>
-                  {distributionOptions.map((opt) => (
-                    <MenuItem key={opt.value} value={opt.value}>
-                      {opt.description}
-                    </MenuItem>
-                  ))}
-                </Select>
-              )}
-            />
-            <FormHelperText>
-              Uniform means that all slots have an equal chancel to be picked.
-              Weighted makes the configuration of the slots more complicated but
-              allows to tweak the weight for each slot so you can make some
-              slots more likely to be picked than others.
-            </FormHelperText>
-          </FormControl>
-          <FormGroup row>
-            <Controller
-              control={control}
-              name="maxDays"
-              render={({ field }) => (
-                <TextField
-                  fullWidth
-                  margin="normal"
-                  label="Days to Precalculate"
-                  // error={!precalcDaysValid}
-                  {...field}
+          <Typography sx={{ flexGrow: 1, fontWeight: 600 }}>
+            Settings
+          </Typography>
+          <Grid
+            container
+            spacing={2}
+            columns={16}
+            justifyContent={'flex-start'}
+          >
+            <Grid item sm={16} md={8}>
+              <FormControl fullWidth margin="normal">
+                <InputLabel>Pad Times</InputLabel>
+                <Controller
+                  control={control}
+                  name="padMs"
+                  render={({ field }) => (
+                    <Select label="Pad Times" {...field}>
+                      {padOptions.map((opt) => (
+                        <MenuItem key={opt.value} value={opt.value}>
+                          {opt.description}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  )}
                 />
-              )}
-            />
 
-            <FormHelperText sx={{ ml: 1 }}>
-              Maximum number of days to precalculate the schedule. Note that the
-              length of the schedule is also bounded by the maximum number of
-              programs allowed in a channel.
-            </FormHelperText>
-          </FormGroup>
+                <FormHelperText>
+                  Ensures programs have a nice-looking start time, it will add
+                  Flex time to fill the gaps.
+                </FormHelperText>
+              </FormControl>
+            </Grid>
+            <Grid item sm={16} md={8}>
+              <FormControl fullWidth margin="normal">
+                <InputLabel>Flex Style</InputLabel>
+                <Controller
+                  control={control}
+                  name="flexPreference"
+                  render={({ field }) => (
+                    <Select label="Flex Style" {...field}>
+                      {flexOptions.map((opt) => (
+                        <MenuItem key={opt.value} value={opt.value}>
+                          {opt.description}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  )}
+                />
+                <FormHelperText>
+                  Usually slots need to add flex time to ensure that the next
+                  slot starts at the correct time. When there are multiple
+                  videos in the slot, you might prefer to distribute the flex
+                  time between the videos or to place most of the flex time at
+                  the end of the slot.
+                </FormHelperText>
+              </FormControl>
+            </Grid>
+            <Grid item sm={16} md={8}>
+              <FormControl fullWidth margin="normal">
+                <InputLabel>Distribution</InputLabel>
+                <Controller
+                  control={control}
+                  name="randomDistribution"
+                  render={({ field }) => (
+                    <Select label="Distribution" {...field}>
+                      {distributionOptions.map((opt) => (
+                        <MenuItem key={opt.value} value={opt.value}>
+                          {opt.description}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  )}
+                />
+                <FormHelperText>
+                  Uniform means that all slots have an equal chancel to be
+                  picked. Weighted makes the configuration of the slots more
+                  complicated but allows to tweak the weight for each slot so
+                  you can make some slots more likely to be picked than others.
+                </FormHelperText>
+              </FormControl>
+            </Grid>
+            <Grid item sm={16} md={8}>
+              <FormGroup row>
+                <Controller
+                  control={control}
+                  name="maxDays"
+                  render={({ field }) => (
+                    <TextField
+                      fullWidth
+                      margin="normal"
+                      label="Days to Precalculate"
+                      // error={!precalcDaysValid}
+                      {...field}
+                    />
+                  )}
+                />
+
+                <FormHelperText sx={{ ml: 1 }}>
+                  Maximum number of days to precalculate the schedule. Note that
+                  the length of the schedule is also bounded by the maximum
+                  number of programs allowed in a channel.
+                </FormHelperText>
+              </FormGroup>
+            </Grid>
+          </Grid>
+          <Divider sx={{ my: 4 }} />
+          <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+            <Button
+              variant="contained"
+              onClick={() => calculateSlots()}
+              disabled={!isValid || !isDirty}
+              startIcon={<Autorenew />}
+            >
+              Refresh Preview
+            </Button>
+          </Box>
         </Box>
       </PaddedPaper>
       <PaddedPaper>
-        <Typography sx={{ pb: 1 }}>
-          Programming Preview (
-          {generatedList
-            ? `${generatedList.length} items, ${dayjs
-                .duration(getValues('maxDays'), 'days')
-                .humanize()}`
-            : `${newLineup.length} items`}
-          )
-        </Typography>
+        <Typography sx={{ pb: 1 }}>Programming Preview</Typography>
+
         <Divider />
         <ChannelProgrammingList
           programList={generatedList ? zipWithIndex(generatedList) : undefined}
@@ -830,16 +875,30 @@ export default function RandomSlotEditorPage() {
           }}
         />
       </PaddedPaper>
+      <UnsavedNavigationAlert isDirty={isDirty} />
       <Box sx={{ display: 'flex', justifyContent: 'end', pt: 1, columnGap: 1 }}>
+        <Box flexGrow={1}>
+          <Button
+            variant="outlined"
+            to=".."
+            relative="path"
+            component={RouterLink}
+            startIcon={<ArrowBack />}
+            sx={{ justifyContent: 'flex-start' }}
+          >
+            Back to Programming
+          </Button>
+        </Box>
+        {isDirty && (
+          <Button variant="contained" onClick={() => resetLineupToSaved()}>
+            Reset Options
+          </Button>
+        )}
         <Button
           variant="contained"
-          to=".."
-          relative="path"
-          component={RouterLink}
+          disabled={!isValid || !isDirty}
+          onClick={() => onSave()}
         >
-          Cancel
-        </Button>
-        <Button variant="contained" onClick={() => onSave()}>
           Save
         </Button>
       </Box>
