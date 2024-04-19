@@ -231,6 +231,7 @@ export async function initServer(opts: ServerOptions) {
       await f.register(fpStatic, {
         root: path.join(opts.databaseDirectory, 'cache', 'images'),
         decorateReply: false,
+        serve: false, // Use the interceptor
       });
       // f.addHook('onRequest', async (req, res) => ctx.cacheImageService.routerInterceptor(req, res));
       f.get<{ Params: { hash: string } }>(
@@ -263,6 +264,7 @@ export async function initServer(opts: ServerOptions) {
         done();
       });
       await f
+        .get('/', async (_, res) => res.redirect(302, '/web'))
         .register(plexServersRouter)
         .register(ffmpegSettingsRouter)
         .register(plexSettingsRouter)
