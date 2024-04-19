@@ -1,15 +1,35 @@
-FROM node:20-alpine3.19 AS base
+# Setup a node + ffmpeg base
+FROM jasongdove/ersatztv-ffmpeg:7.0 AS ffmpeg-base
 
-# Update
-RUN apk add --no-cache libc6-compat
-RUN apk update
+ENV NODE_MAJOR=20
+ENV TUNARR_BIND_ADDR=0.0.0.0
+EXPOSE 8000
 
+# Install musl for native node bindings (sqlite)
+RUN apt-get update --fix-missing
+RUN apt-get install -y musl-dev
+RUN ln -s /usr/lib/x86_64-linux-musl/libc.so /lib/libc.musl-x86_64.so.1
+
+# Install node
+RUN <<EOF 
+apt-get update && apt-get install -y ca-certificates curl gnupg
+mkdir -p /etc/apt/keyrings
+curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
+echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list
+apt-get update && apt-get install nodejs -y
+EOF
+
+# Install pnpm
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-
 RUN corepack enable
 
-FROM base as sources
+EXPOSE 8000
+RUN ln -s /usr/local/bin/ffmpeg /usr/bin/ffmpeg
+ENTRYPOINT [ "node" ]
+
+# Add Tunarr sources
+FROM ffmpeg-base as sources
 WORKDIR /tunarr
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
 COPY server/ ./server
@@ -45,19 +65,30 @@ COPY --from=build-server /tunarr/server/build /tunarr/server/build
 RUN pnpm run --filter=server make-exec
 ###
 
+FROM sources as build-full-stack
+# Install deps
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+# Build common modules
+RUN pnpm turbo bundle
+
 ### Begin server run ###
-FROM base AS server
+FROM ffmpeg-base AS server
 COPY --from=prod-deps /tunarr/node_modules /tunarr/node_modules
 COPY --from=prod-deps /tunarr/server/node_modules /tunarr/server/node_modules
 COPY --from=build-server /tunarr/types /tunarr/types
 COPY --from=build-server /tunarr/shared /tunarr/shared
 COPY --from=build-server /tunarr/server/package.json /tunarr/server/package.json
 COPY --from=build-server /tunarr/server/build /tunarr/server/build
-ENV TUNARR_BIND_ADDR=0.0.0.0
-EXPOSE 8000
 CMD [ "/tunarr/server/build/bundle.js" ]
 ### Begin server run
 
 ### Full stack ###
-FROM server AS full-stack
-COPY --from=build-web /tunarr/web/dist /tunarr/server/build/web
+FROM ffmpeg-base AS full-stack
+COPY --from=prod-deps /tunarr/node_modules /tunarr/node_modules
+COPY --from=prod-deps /tunarr/server/node_modules /tunarr/server/node_modules
+COPY --from=build-full-stack /tunarr/types /tunarr/types
+COPY --from=build-full-stack /tunarr/shared /tunarr/shared
+COPY --from=build-full-stack /tunarr/server/package.json /tunarr/server/package.json
+COPY --from=build-full-stack /tunarr/server/build /tunarr/server/build
+COPY --from=build-full-stack /tunarr/web/dist /tunarr/server/build/web
+CMD [ "/tunarr/server/build/bundle.js" ]
