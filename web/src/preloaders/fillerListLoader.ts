@@ -13,13 +13,16 @@ import {
 import { setCurrentFillerList } from '../store/channelEditor/actions.ts';
 import { Preloader } from '../types/index.ts';
 import { createPreloader } from '../helpers/preloaderUtil.ts';
+import { getApiClient } from '../components/TunarrApiContext.tsx';
 
-export const fillerListsLoader = createPreloader(() => fillerListsQuery);
+export const fillerListsLoader = createPreloader((apiClient) =>
+  fillerListsQuery(apiClient),
+);
 
 const fillerListLoader = (isNew: boolean) => {
   if (!isNew) {
     return createPreloader(
-      ({ params }) => fillerListQuery(params.id!),
+      (apiClient, { params }) => fillerListQuery(apiClient, params.id!),
       (filler) => setCurrentFillerList(filler, []),
     );
   } else {
@@ -53,7 +56,10 @@ export const existingFillerListLoader: Preloader<{
 
   return async (args: LoaderFunctionArgs) => {
     const showLoaderPromise = showLoader(args);
-    const programQuery = fillerListProgramsQuery(args.params.id!);
+    const programQuery = fillerListProgramsQuery(
+      getApiClient(),
+      args.params.id!,
+    );
 
     const programsPromise = Promise.resolve(
       queryClient.getQueryData(programQuery.queryKey),

@@ -4,8 +4,9 @@ import Button from '@mui/material/Button';
 import { useSettings } from '../../store/settings/selectors.ts';
 import { Controller, useForm } from 'react-hook-form';
 import { attempt, isError } from 'lodash-es';
-import { Box, Divider, TextField, Typography } from '@mui/material';
+import { Box, Divider, Snackbar, TextField, Typography } from '@mui/material';
 import { setBackendUri } from '../../store/settings/actions.ts';
+import { useState } from 'react';
 
 type GeneralSettingsForm = {
   backendUri: string;
@@ -17,6 +18,7 @@ function isValidUrl(url: string) {
 
 export default function GeneralSettingsPage() {
   const settings = useSettings();
+  const [snackStatus, setSnackStatus] = useState(false);
 
   const { control, handleSubmit } = useForm<GeneralSettingsForm>({
     reValidateMode: 'onBlur',
@@ -25,10 +27,18 @@ export default function GeneralSettingsPage() {
 
   const onSave = (data: GeneralSettingsForm) => {
     setBackendUri(data.backendUri);
+    setSnackStatus(true);
   };
 
   return (
     <Box component="form" onSubmit={handleSubmit(onSave, console.error)}>
+      <Snackbar
+        open={snackStatus}
+        autoHideDuration={6000}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        onClose={() => setSnackStatus(false)}
+        message="Settings Saved!"
+      />
       <Stack direction="column" gap={2}>
         <Box>
           <Typography variant="h5" sx={{ mb: 2 }}>

@@ -22,7 +22,6 @@ export type EphemeralProgram = Omit<Program, 'id'>;
 
 export type Preloader<T> = (
   queryClient: QueryClient,
-  apiClient: ApiClient,
 ) => (args: LoaderFunctionArgs) => Promise<T>;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

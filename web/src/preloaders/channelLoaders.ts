@@ -4,6 +4,7 @@ import dayjs from 'dayjs';
 import { isNil, maxBy } from 'lodash-es';
 import { LoaderFunctionArgs } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
+import { getApiClient } from '../components/TunarrApiContext.tsx';
 import { createPreloader } from '../helpers/preloaderUtil.ts';
 import { channelProgrammingQuery } from '../hooks/useChannelLineup.ts';
 import { channelQuery, channelsQuery } from '../hooks/useChannels.ts';
@@ -13,7 +14,6 @@ import {
 } from '../store/channelEditor/actions.ts';
 import useStore from '../store/index.ts';
 import { Preloader } from '../types/index.ts';
-import { ApiClient } from '../external/api.ts';
 
 // Default channel values that aren't dynamic
 export const DefaultChannel = {
@@ -73,13 +73,10 @@ export const channelLoader: Preloader<Channel> = createPreloader(
 // A preloader to load the details necessary to edit a channel itself
 export const editChannelLoader = (isNew: boolean): Preloader<Channel> => {
   if (isNew) {
-    return (queryClient, apiClient) => async (args) => {
+    return (queryClient) => async (args) => {
       const channels = await createPreloader((apiClient) =>
         channelsQuery(apiClient),
-      )(
-        queryClient,
-        apiClient,
-      )(args);
+      )(queryClient)(args);
 
       const newChannel = defaultNewChannel(
         (maxBy(channels, (c) => c.number)?.number ?? 0) + 1,
@@ -99,8 +96,9 @@ export const editProgrammingLoader: Preloader<{
   channel: Channel;
   programming: CondensedChannelProgramming;
 }> =
-  (queryClient: QueryClient, apiClient: ApiClient) =>
+  (queryClient: QueryClient) =>
   async ({ params }: LoaderFunctionArgs) => {
+    const apiClient = getApiClient();
     const lineupQueryOpts = channelProgrammingQuery(
       apiClient,
       params.id!,

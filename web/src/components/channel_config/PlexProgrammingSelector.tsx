@@ -53,6 +53,7 @@ import { PlexFilterBuilder } from './PlexFilterBuilder.tsx';
 import PlexGridItem from './PlexGridItem';
 import { PlexListItem } from './PlexListItem';
 import { PlexSortField } from './PlexSortField.tsx';
+import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 
 function a11yProps(index: number) {
   return {
@@ -71,6 +72,7 @@ type Size = {
 };
 
 export default function PlexProgrammingSelector() {
+  const apiClient = useTunarrApi();
   const { data: plexServers } = usePlexServerSettings();
   const selectedServer = useStore((s) => s.currentServer);
   const selectedLibrary = useStore((s) =>
@@ -82,7 +84,7 @@ export default function PlexProgrammingSelector() {
   const [rowSize, setRowSize] = useState<number>(16);
   const [modalIndex, setModalIndex] = useState<number>(-1);
   const [modalGuid, setModalGuid] = useState<string>('');
-  const [modalIsPending, setModalIsPending] = useState<boolean>(true);
+  const [, setModalIsPending] = useState<boolean>(true);
   const [scrollParams, setScrollParams] = useState({ limit: 0, max: -1 });
   const [searchVisible, setSearchVisible] = useState(false);
   const [useAdvancedSearch, setUseAdvancedSearch] = useState(false);
@@ -122,49 +124,56 @@ export default function PlexProgrammingSelector() {
       // 16 is additional padding available in the parent container
       setRowSize(getImagesPerRow(width ? width + 16 : 0, imageWidth || 0));
     }
-  }, [width, tabValue]);
+  }, [width, tabValue, viewType, modalGuid]);
+
+  const handleModalChildren = useCallback((children: PlexMedia[]) => {
+    setModalChildren(children);
+  }, []);
 
   useEffect(() => {
     setModalIndex(-1);
     setModalGuid('');
     handleModalChildren([]);
-  }, [tabValue]);
+  }, [handleModalChildren, tabValue]);
 
   const handleChange = (_: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
 
-  const scrollToGridItem = (guid: string, index: number) => {
-    const selectedElement = gridImageRefs.current[guid];
-    const includeModalInHeightCalc = isNewModalAbove(
-      previousModalIndex,
-      index,
-      rowSize,
-    );
+  const scrollToGridItem = useCallback(
+    (guid: string, index: number) => {
+      const selectedElement = gridImageRefs.current[guid];
+      const includeModalInHeightCalc = isNewModalAbove(
+        previousModalIndex,
+        index,
+        rowSize,
+      );
 
-    if (selectedElement) {
-      // magic number for top bar padding; to do: calc it off ref
-      const topBarPadding = 64;
-      // New modal is opening in a row above previous modal
-      const modalMovesUp = selectedElement.offsetTop - topBarPadding;
-      // New modal is opening in the same row or a row below the current modal
-      const modalMovesDown =
-        selectedElement.offsetTop -
-        selectedElement.offsetHeight -
-        topBarPadding;
+      if (selectedElement) {
+        // magic number for top bar padding; to do: calc it off ref
+        const topBarPadding = 64;
+        // New modal is opening in a row above previous modal
+        const modalMovesUp = selectedElement.offsetTop - topBarPadding;
+        // New modal is opening in the same row or a row below the current modal
+        const modalMovesDown =
+          selectedElement.offsetTop -
+          selectedElement.offsetHeight -
+          topBarPadding;
 
-      window.scrollTo({
-        top: includeModalInHeightCalc ? modalMovesDown : modalMovesUp,
-        behavior: 'smooth',
-      });
-    }
-  };
+        window.scrollTo({
+          top: includeModalInHeightCalc ? modalMovesDown : modalMovesUp,
+          behavior: 'smooth',
+        });
+      }
+    },
+    [previousModalIndex, rowSize],
+  );
 
   // Scroll to new selected item when modalIndex changes
   // Doing this on modalIndex change negates the need to calc inline modal height since it's collapsed at this time
   useEffect(() => {
     scrollToGridItem(modalGuid, modalIndex);
-  }, [modalIndex]);
+  }, [modalGuid, modalIndex, scrollToGridItem]);
 
   const handleMoveModal = useCallback(
     (item: PlexMedia, index: number) => {
@@ -178,22 +187,12 @@ export default function PlexProgrammingSelector() {
         setModalGuid(item.guid);
       }
     },
-    [modalIndex],
+    [handleModalChildren, modalIndex],
   );
 
-  const handleModalChildren = useCallback(
-    (children: PlexMedia[]) => {
-      setModalChildren(children);
-    },
-    [modalChildren],
-  );
-
-  const handleModalIsPending = useCallback(
-    (isPending: boolean) => {
-      setModalIsPending(isPending);
-    },
-    [modalIsPending],
-  );
+  const handleModalIsPending = useCallback((isPending: boolean) => {
+    setModalIsPending(isPending);
+  }, []);
 
   const { data: directoryChildren } = usePlex(
     selectedServer?.name ?? '',
@@ -221,6 +220,7 @@ export default function PlexProgrammingSelector() {
     ],
     queryFn: () => {
       return fetchPlexPath<PlexLibraryCollections>(
+        apiClient,
         selectedServer!.name,
         `/library/sections/${selectedLibrary?.library.key}/collections?`,
       )();
@@ -233,7 +233,7 @@ export default function PlexProgrammingSelector() {
     if (!collectionsData && !isCollectionLoading && tabValue === 1) {
       setTabValue(0);
     }
-  }, [collectionsData, isCollectionLoading]);
+  }, [collectionsData, isCollectionLoading, tabValue]);
 
   const { urlFilter: searchKey } = useStore(
     ({ plexSearch: plexQuery }) => plexQuery,
@@ -271,6 +271,7 @@ export default function PlexProgrammingSelector() {
       return fetchPlexPath<
         PlexLibraryMovies | PlexLibraryShows | PlexLibraryMusic
       >(
+        apiClient,
         selectedServer!.name,
         `/library/sections/${
           selectedLibrary!.library.key

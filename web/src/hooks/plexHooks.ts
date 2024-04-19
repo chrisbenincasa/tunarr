@@ -76,7 +76,8 @@ export const usePlex = <
 ) =>
   useApiQuery({
     queryKey: ['plex', serverName, path],
-    queryFn: (apiClient) => fetchPlexPath<OutType>(apiClient, serverName, path),
+    queryFn: (apiClient) =>
+      fetchPlexPath<OutType>(apiClient, serverName, path)(),
     enabled,
   });
 
@@ -120,7 +121,7 @@ export const usePlexTyped2 = <T = unknown, U = unknown>(
   args: [PlexQueryArgs<T>, PlexQueryArgs<U>],
 ) => {
   const apiClient = useTunarrApi();
-  useQueries({
+  return useQueries({
     queries: args.map((query) => ({
       queryKey: ['plex', query.serverName, query.path],
       queryFn: fetchPlexPath<(typeof query)[typeof plexQueryArgsSymbol]>(
@@ -140,6 +141,7 @@ export const usePlexTyped2 = <T = unknown, U = unknown>(
     },
   });
 };
+
 export const usePlexServerStatus = (server: PlexServerSettings) => {
   return useQuery({
     queryKey: ['plex-servers', server.id, 'status-local'],

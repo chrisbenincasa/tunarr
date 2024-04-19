@@ -36,6 +36,7 @@ import {
 import useStore from '../../store';
 import { addSelectedMedia } from '../../store/programmingSelector/actions';
 import { ExpandLess, ExpandMore } from '@mui/icons-material';
+import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 
 dayjs.extend(duration);
 
@@ -57,10 +58,11 @@ function CustomShowListItem({
   customShow,
   selectShow,
 }: CustomShowListItemProps) {
+  const apiClient = useTunarrApi();
   const [open, setOpen] = useState(false);
 
   const { data: programs, isPending: programsLoading } = useQuery({
-    ...customShowProgramsQuery(customShow.id),
+    ...customShowProgramsQuery(apiClient, customShow.id),
     enabled: open,
   });
 
@@ -138,6 +140,7 @@ function CustomShowListItem({
 }
 
 export function CustomShowProgrammingSelector() {
+  const apiClient = useTunarrApi();
   const { data: customShows, isPending } = useCustomShows([]);
   const viewType = useStore((state) => state.theme.programmingSelectorView);
   const [scrollParams, setScrollParams] = useState({ limit: 0, max: -1 });
@@ -161,7 +164,7 @@ export function CustomShowProgrammingSelector() {
     async (show: CustomShow) => {
       try {
         const customShowPrograms = await queryClient.ensureQueryData(
-          customShowProgramsQuery(show.id),
+          customShowProgramsQuery(apiClient, show.id),
         );
         addSelectedMedia({
           type: 'custom-show',
@@ -174,7 +177,7 @@ export function CustomShowProgrammingSelector() {
         console.error('Error fetching custom show programs', e);
       }
     },
-    [queryClient],
+    [apiClient, queryClient],
   );
 
   const renderListItems = () => {

@@ -30,6 +30,7 @@ import {
 } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
 import { UIFillerListProgram } from '../../types/index.ts';
+import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 
 type Props = { isNew: boolean };
 
