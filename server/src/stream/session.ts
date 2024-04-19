@@ -47,7 +47,8 @@ export class StreamSession {
       `stream_${this.#channel.uuid}`,
     );
     this.#streamPath = join(this.#outPath, 'stream.m3u8');
-    this.#serverPath = `/streams/stream_${this.#channel.uuid}/stream.m3u8`;
+    // Direct players back to the /hls URL which will return the playlist
+    this.#serverPath = `/media-player/${this.#channel.uuid}/hls`;
   }
 
   static create(channel: Channel, ffmpegSettings: FfmpegSettings) {

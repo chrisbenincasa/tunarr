@@ -233,6 +233,8 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
         'mpegts',
         '-hls_flags',
         'delete_segments',
+        '-hls_base_url',
+        'hls/',
         '-hls_segment_filename',
         path.join('streams', hlsOpts.streamBasePath, hlsOpts.segmentNameFormat),
         '-master_pl_name',

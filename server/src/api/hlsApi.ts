@@ -173,7 +173,6 @@ export const hlsApi: RouterPluginAsyncCallback = async (fastify) => {
       }
 
       if (req.query.direct) {
-        console.log(session.serverPath);
         return res.redirect(302, `${session.serverPath}?token=${token}`);
       }
 
