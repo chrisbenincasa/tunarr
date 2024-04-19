@@ -282,6 +282,8 @@ const plexMediaToContentProgram = (
     episodeTitle: media.type === 'episode' ? media.title : undefined,
     episodeNumber: media.type === 'episode' ? media.index : undefined,
     seasonNumber: media.type === 'episode' ? media.parentIndex : undefined,
+    artistName: media.type === 'track' ? media.grandparentTitle : undefined,
+    albumName: media.type === 'track' ? media.parentTitle : undefined,
     showId:
       media.showId ??
       (media.type === 'episode'
