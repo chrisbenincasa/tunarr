@@ -1,5 +1,6 @@
 import DeleteIcon from '@mui/icons-material/Delete';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import Edit from '@mui/icons-material/Edit';
 import InfoOutlined from '@mui/icons-material/InfoOutlined';
 import MusicNote from '@mui/icons-material/MusicNote';
 import TheatersIcon from '@mui/icons-material/Theaters';
@@ -13,16 +14,7 @@ import ListItemText from '@mui/material/ListItemText';
 import { forProgramType } from '@tunarr/shared/util';
 import { ChannelProgram } from '@tunarr/types';
 import dayjs from 'dayjs';
-import {
-  findIndex,
-  isEmpty,
-  isNil,
-  isUndefined,
-  join,
-  map,
-  overSome,
-  reject,
-} from 'lodash-es';
+import { findIndex, isUndefined, join, map, negate, reject } from 'lodash-es';
 import { CSSProperties, useCallback, useState } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
 import {
@@ -31,7 +23,11 @@ import {
   ListChildComponentProps,
 } from 'react-window';
 import { betterHumanize } from '../../helpers/dayjs.ts';
-import { alternateColors, channelProgramUniqueId } from '../../helpers/util.ts';
+import {
+  alternateColors,
+  channelProgramUniqueId,
+  isNonEmptyString,
+} from '../../helpers/util.ts';
 import {
   deleteProgram,
   moveProgramInCurrentChannel,
@@ -44,7 +40,6 @@ import {
   UIRedirectProgram,
 } from '../../types/index.ts';
 import ProgramDetailsDialog from '../ProgramDetailsDialog.tsx';
-import Edit from '@mui/icons-material/Edit';
 import AddFlexModal from '../programming_controls/AddFlexModal.tsx';
 import AddRedirectModal from '../programming_controls/AddRedirectModal.tsx';
 
@@ -107,7 +102,7 @@ const programListItemTitleFormatter = (() => {
           return join(
             reject(
               [p.artistName, p.albumName, p.title],
-              overSome(isNil, isEmpty),
+              negate(isNonEmptyString),
             ),
             ' - ',
           );
