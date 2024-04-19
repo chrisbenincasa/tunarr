@@ -10,11 +10,12 @@ import {
   Typography,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Task } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { map } from 'lodash-es';
-import { apiClient } from '../../external/api.ts';
+import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
+import { useApiQuery } from '../../hooks/useApiQuery.ts';
 
 const StyledLoopIcon = styled(Loop)({
   animation: 'spin 2s linear infinite',
@@ -30,6 +31,7 @@ const StyledLoopIcon = styled(Loop)({
 
 // Separated so we can track mutation state individually
 function TaskRow({ task }: { task: Task }) {
+  const apiClient = useTunarrApi();
   const queryClient = useQueryClient();
 
   const runJobMutation = useMutation({
@@ -98,9 +100,9 @@ function TaskRow({ task }: { task: Task }) {
 }
 
 export default function TaskSettingsPage() {
-  const { isPending, data: tasks } = useQuery({
+  const { isPending, data: tasks } = useApiQuery({
     queryKey: ['jobs'],
-    queryFn: async () => {
+    queryFn: async (apiClient) => {
       return apiClient.getTasks();
     },
     refetchInterval: 60 * 1000, // Check tasks every minute

@@ -6,7 +6,7 @@ import InputLabel from '@mui/material/InputLabel';
 import OutlinedInput from '@mui/material/OutlinedInput';
 import { styled } from '@mui/material/styles';
 import React, { ChangeEvent, useCallback } from 'react';
-import { apiClient } from '../../external/api';
+import { useTunarrApi } from '../../hooks/useTunarrApi';
 
 const VisuallyHiddenInput = styled('input')({
   clip: 'rect(0 0 0 0)',
@@ -41,6 +41,7 @@ export function ImageUploadInput({
   value,
   children,
 }: Props) {
+  const apiClient = useTunarrApi();
   const handleFileUpload = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
       if (e.target.files && e.target.files.length > 0) {

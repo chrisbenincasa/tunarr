@@ -1,11 +1,11 @@
-import { useQuery } from '@tanstack/react-query';
-import { apiClient } from '../external/api.ts';
+import { useApiQuery } from './useApiQuery.ts';
 
-export const useVersion = () =>
-  useQuery({
+export const useVersion = () => {
+  return useApiQuery({
     queryKey: ['version'],
-    queryFn: () => {
+    queryFn: (apiClient) => {
       return apiClient.getServerVersions();
     },
     staleTime: 30 * 1000,
   });
+};

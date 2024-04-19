@@ -18,10 +18,11 @@ import {
   CheckboxFormController,
   NumericFormControllerText,
 } from '../../components/util/TypedController.tsx';
-import { apiClient } from '../../external/api.ts';
 import { useHdhrSettings } from '../../hooks/settingsHooks.ts';
+import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 
 export default function HdhrSettingsPage() {
+  const apiClient = useTunarrApi();
   const [restoreTunarrDefaults, setRestoreTunarrDefaults] =
     React.useState<boolean>(false);
 

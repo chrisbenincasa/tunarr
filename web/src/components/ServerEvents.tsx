@@ -3,8 +3,10 @@ import { TunarrEvent } from '@tunarr/types';
 import { TunarrEventSchema } from '@tunarr/types/schemas';
 import { first } from 'lodash-es';
 import { useEffect, useRef, useState } from 'react';
+import { useSettings } from '../store/settings/selectors.ts';
 
 export default function ServerEvents() {
+  const { backendUri } = useSettings();
   const source = useRef<EventSource | null>(null);
   const [open, setOpen] = useState(false);
   const [eventQueue, setEventQueue] = useState<readonly TunarrEvent[]>([]);
@@ -27,7 +29,7 @@ export default function ServerEvents() {
   useEffect(() => {
     let es: EventSource | undefined;
     if (!source.current) {
-      es = new EventSource('http://localhost:8000/api/events');
+      es = new EventSource(`${backendUri}/api/events`);
       source.current = es;
 
       es.addEventListener('message', (event: MessageEvent<string>) => {

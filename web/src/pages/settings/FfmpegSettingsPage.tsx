@@ -24,7 +24,7 @@ import {
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { FfmpegSettings, defaultFfmpegSettings } from '@tunarr/types';
 import _ from 'lodash-es';
-import React, { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert.tsx';
 import {
@@ -32,13 +32,13 @@ import {
   NumericFormControllerText,
   TypedController,
 } from '../../components/util/TypedController.tsx';
-import { apiClient } from '../../external/api.ts';
 import {
   handleNumericFormValue,
   resolutionFromAnyString,
   resolutionToString,
 } from '../../helpers/util.ts';
 import { useFfmpegSettings } from '../../hooks/settingsHooks.ts';
+import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 
 const supportedVideoBuffer = [
   { value: 0, string: '0 Seconds' },
@@ -132,6 +132,7 @@ type DeinterlaceFilterValue =
   | 'yadif=1';
 
 export default function FfmpegSettingsPage() {
+  const apiClient = useTunarrApi();
   const { data, isPending, error } = useFfmpegSettings();
 
   const {
@@ -153,9 +154,8 @@ export default function FfmpegSettingsPage() {
     }
   }, [data, reset]);
 
-  const [snackStatus, setSnackStatus] = React.useState<boolean>(false);
-  const [restoreTunarrDefaults, setRestoreTunarrDefaults] =
-    React.useState<boolean>(false);
+  const [snackStatus, setSnackStatus] = useState(false);
+  const [restoreTunarrDefaults, setRestoreTunarrDefaults] = useState(false);
 
   const queryClient = useQueryClient();
 

@@ -23,7 +23,6 @@ import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import AddSelectedMediaButton from '../../components/channel_config/AddSelectedMediaButton.tsx';
 import ProgrammingSelector from '../../components/channel_config/ProgrammingSelector.tsx';
-import { apiClient } from '../../external/api.ts';
 import { usePreloadedData } from '../../hooks/preloadedDataHook.ts';
 import {
   existingCustomShowLoader,
@@ -35,6 +34,7 @@ import {
 } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
 import { UICustomShowProgram } from '../../types/index.ts';
+import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 
 type Props = { isNew: boolean };
 
@@ -43,6 +43,7 @@ type CustomShowForm = {
 };
 
 export default function EditCustomShowPage({ isNew }: Props) {
+  const apiClient = useTunarrApi();
   const { show: customShow } = usePreloadedData(
     isNew ? existingCustomShowLoader : newCustomShowLoader,
   );
@@ -63,7 +64,6 @@ export default function EditCustomShowPage({ isNew }: Props) {
   });
 
   useEffect(() => {
-    console.log(customShow, 'reset');
     reset({
       name: customShow.name,
     });

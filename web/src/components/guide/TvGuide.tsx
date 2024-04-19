@@ -31,6 +31,7 @@ import useStore from '../../store';
 import ProgramDetailsDialog from '../ProgramDetailsDialog';
 import TunarrLogo from '../TunarrLogo';
 import PaddedPaper from '../base/PaddedPaper';
+import { useSettings } from '../../store/settings/selectors.ts';
 
 const StyledMenu = styled((props: MenuProps) => (
   <Menu
@@ -137,6 +138,7 @@ type Props = {
 
 export function TvGuide({ channelId, start, end }: Props) {
   const theme = useTheme();
+  const { backendUri } = useSettings();
 
   // Workaround for issue with page jumping on-zoom or nav caused by collapsing
   // div when loading new guide data
@@ -261,7 +263,7 @@ export function TvGuide({ channelId, start, end }: Props) {
         </MenuItem>
         <MenuItem
           disableRipple
-          to={`http://localhost:8000/media-player/${channelMenu.number}.m3u`}
+          to={`${backendUri}/media-player/${channelMenu.number}.m3u`}
           component={RouterLink}
         >
           <TextSnippet />

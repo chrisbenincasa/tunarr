@@ -10,17 +10,20 @@ import './helpers/dayjs.ts';
 import './index.css';
 import { queryCache } from './queryClient.ts';
 import { router } from './router.tsx';
+import { TunarrApiProvider } from './components/TunarrApiContext.tsx';
 
 const queryClient = new QueryClient({ queryCache });
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <LocalizationProvider dateAdapter={AdapterDayjs}>
-      <DndProvider backend={HTML5Backend}>
-        <QueryClientProvider client={queryClient}>
-          <RouterProvider router={router} />
-        </QueryClientProvider>
-      </DndProvider>
-    </LocalizationProvider>
+    <TunarrApiProvider>
+      <LocalizationProvider dateAdapter={AdapterDayjs}>
+        <DndProvider backend={HTML5Backend}>
+          <QueryClientProvider client={queryClient}>
+            <RouterProvider router={router} />
+          </QueryClientProvider>
+        </DndProvider>
+      </LocalizationProvider>
+    </TunarrApiProvider>
   </React.StrictMode>,
 );

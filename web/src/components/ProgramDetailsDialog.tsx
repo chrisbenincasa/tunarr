@@ -23,6 +23,7 @@ import {
   useState,
 } from 'react';
 import { isNonEmptyString, prettyItemDuration } from '../helpers/util';
+import { useSettings } from '../store/settings/selectors';
 
 type Props = {
   open: boolean;
@@ -44,6 +45,7 @@ export default function ProgramDetailsDialog({
   onClose,
   program,
 }: Props) {
+  const settings = useSettings();
   const [thumbLoadState, setThumbLoadState] =
     useState<ThumbLoadState>('loading');
   const imageRef = useRef<HTMLImageElement>(null);
@@ -101,7 +103,7 @@ export default function ProgramDetailsDialog({
             if (p.subtype === 'track' && isNonEmptyString(p.albumId)) {
               id = p.albumId;
             }
-            url = `http://localhost:8000/api/programs/${id}/thumb?proxy=true`;
+            url = `${settings.backendUri}/api/programs/${id}/thumb?proxy=true`;
           }
 
           if (isNonEmptyString(url)) {
@@ -117,7 +119,7 @@ export default function ProgramDetailsDialog({
             );
           }
 
-          return `http://localhost:8000/api/metadata/external?id=${key}&mode=proxy&asset=thumb`;
+          return `${settings.backendUri}/api/metadata/external?id=${key}&mode=proxy&asset=thumb`;
         },
       }),
     [],
@@ -128,7 +130,7 @@ export default function ProgramDetailsDialog({
       forProgramType({
         content: (p) =>
           p.id && p.persisted
-            ? `http://localhost:8000/api/programs/${p.id}/external-link`
+            ? `${settings.backendUri}/api/programs/${p.id}/external-link`
             : null,
       }),
     [],

@@ -9,6 +9,7 @@ import {
 } from '../hooks/useCustomShows.ts';
 import { setCurrentCustomShow } from '../store/channelEditor/actions.ts';
 import { Preloader } from '../types/index.ts';
+import { getApiClient } from '../components/TunarrApiContext.tsx';
 
 export type CustomShowPreload = {
   show: CustomShow;
@@ -18,7 +19,7 @@ export type CustomShowPreload = {
 export const customShowLoader = (isNew: boolean): Preloader<CustomShow> => {
   if (!isNew) {
     return createPreloader(
-      ({ params }) => customShowQuery(params.id!),
+      (apiClient, { params }) => customShowQuery(apiClient, params.id!),
       (show) => setCurrentCustomShow(show, []),
     );
   } else {
@@ -50,7 +51,10 @@ export const existingCustomShowLoader: Preloader<CustomShowPreload> = (
 
   return async (args: LoaderFunctionArgs) => {
     const showLoaderPromise = showLoader(args);
-    const programQuery = customShowProgramsQuery(args.params.id!);
+    const programQuery = customShowProgramsQuery(
+      getApiClient(),
+      args.params.id!,
+    );
 
     const programsPromise = queryClient.ensureQueryData(programQuery);
 
@@ -66,5 +70,5 @@ export const existingCustomShowLoader: Preloader<CustomShowPreload> = (
   };
 };
 export const customShowsLoader: Preloader<CustomShow[]> = createPreloader(() =>
-  customShowsQuery(),
+  customShowsQuery(getApiClient()),
 );

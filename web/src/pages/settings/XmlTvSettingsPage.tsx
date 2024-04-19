@@ -18,10 +18,11 @@ import {
   CheckboxFormController,
   NumericFormControllerText,
 } from '../../components/util/TypedController.tsx';
-import { apiClient } from '../../external/api.ts';
 import { useXmlTvSettings } from '../../hooks/settingsHooks.ts';
+import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 
 export default function XmlTvSettingsPage() {
+  const apiClient = useTunarrApi();
   const [restoreTunarrDefaults, setRestoreTunarrDefaults] =
     React.useState<boolean>(false);
   const { data, isPending, error } = useXmlTvSettings();

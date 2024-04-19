@@ -14,7 +14,7 @@ import {
   ZodiosResponseByAlias,
 } from '@zodios/core/lib/zodios.types';
 import { LoaderFunctionArgs } from 'react-router-dom';
-import { apiClient } from '../external/api.ts';
+import { type ApiClient } from '../external/api.ts';
 import { EnrichedPlexMedia } from '../hooks/plexHooks.ts';
 
 // A program that may or may not exist in the DB yet
@@ -30,7 +30,7 @@ export type PreloadedData<T extends (...args: any[]) => any> = Awaited<
 >;
 
 // The expanded type of our API
-type ApiType = ApiOf<typeof apiClient>;
+type ApiType = ApiOf<ApiClient>;
 
 export type ApiAliases = keyof ZodiosAliases<ApiType>;
 

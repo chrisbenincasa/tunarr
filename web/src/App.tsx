@@ -41,6 +41,7 @@ import DarkModeButton from './components/settings/DarkModeButton.tsx';
 import { useVersion } from './hooks/useVersion.ts';
 import useStore from './store/index.ts';
 import { setDarkModeState } from './store/themeEditor/actions.ts';
+import { useSettings } from './store/settings/selectors.ts';
 
 interface NavItem {
   name: string;
@@ -66,6 +67,7 @@ export function Root({ children }: { children?: React.ReactNode }) {
 
   const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
   const darkMode = useStore((state) => state.theme.darkMode);
+  const settings = useSettings();
 
   const { data: version } = useVersion();
 
@@ -208,7 +210,7 @@ export function Root({ children }: { children?: React.ReactNode }) {
               <GitHub />
             </IconButton>
             <Button
-              href="//localhost:8000/api/xmltv.xml"
+              href={`${settings.backendUri}/api/xmltv.xml`}
               target="_blank"
               color="inherit"
               startIcon={<TextSnippetIcon />}
@@ -217,7 +219,7 @@ export function Root({ children }: { children?: React.ReactNode }) {
               XMLTV
             </Button>
             <Button
-              href="//localhost:8000/api/channels.m3u"
+              href={`${settings.backendUri}/api/channels.m3u`}
               target="_blank"
               color="inherit"
               startIcon={<TextSnippetIcon />}

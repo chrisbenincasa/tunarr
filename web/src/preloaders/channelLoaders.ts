@@ -4,6 +4,7 @@ import dayjs from 'dayjs';
 import { isNil, maxBy } from 'lodash-es';
 import { LoaderFunctionArgs } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
+import { getApiClient } from '../components/TunarrApiContext.tsx';
 import { createPreloader } from '../helpers/preloaderUtil.ts';
 import { channelProgrammingQuery } from '../hooks/useChannelLineup.ts';
 import { channelQuery, channelsQuery } from '../hooks/useChannels.ts';
@@ -13,10 +14,6 @@ import {
 } from '../store/channelEditor/actions.ts';
 import useStore from '../store/index.ts';
 import { Preloader } from '../types/index.ts';
-
-export const newChannelLoader: Preloader<Channel[]> = createPreloader(() =>
-  channelsQuery(),
-);
 
 // Default channel values that aren't dynamic
 export const DefaultChannel = {
@@ -34,6 +31,7 @@ export const DefaultChannel = {
   disableFillerOverlay: false,
   offline: {
     mode: 'pic',
+    // TODO: Make this work with the backend settings
     picture: 'http://localhost:8000/images/generic-offline-screen.png',
   },
 } as const;
@@ -68,7 +66,7 @@ function updateChannelState(
 }
 
 export const channelLoader: Preloader<Channel> = createPreloader(
-  ({ params }) => channelQuery(params.id!),
+  (apiClient, { params }) => channelQuery(apiClient, params.id!),
   updateChannelState,
 );
 
@@ -76,9 +74,9 @@ export const channelLoader: Preloader<Channel> = createPreloader(
 export const editChannelLoader = (isNew: boolean): Preloader<Channel> => {
   if (isNew) {
     return (queryClient) => async (args) => {
-      const channels = await createPreloader(() => channelsQuery())(
-        queryClient,
-      )(args);
+      const channels = await createPreloader((apiClient) =>
+        channelsQuery(apiClient),
+      )(queryClient)(args);
 
       const newChannel = defaultNewChannel(
         (maxBy(channels, (c) => c.number)?.number ?? 0) + 1,
@@ -100,8 +98,13 @@ export const editProgrammingLoader: Preloader<{
 }> =
   (queryClient: QueryClient) =>
   async ({ params }: LoaderFunctionArgs) => {
-    const lineupQueryOpts = channelProgrammingQuery(params.id!, true);
-    const channelQueryOpts = channelQuery(params.id!);
+    const apiClient = getApiClient();
+    const lineupQueryOpts = channelProgrammingQuery(
+      apiClient,
+      params.id!,
+      true,
+    );
+    const channelQueryOpts = channelQuery(apiClient, params.id!);
 
     const lineupPromise = queryClient.ensureQueryData(lineupQueryOpts);
     const channelPromise = queryClient.ensureQueryData(channelQueryOpts);

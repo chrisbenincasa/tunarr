@@ -1,1 +1,2 @@
-pnpm run -r lint-staged
+pnpm run --filter=server lint-staged
+pnpm run --filter=web lint-staged

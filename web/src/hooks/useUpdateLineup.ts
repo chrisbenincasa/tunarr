@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
 import { ZodiosError } from '@zodios/core';
-import { apiClient } from '../external/api';
+import { useTunarrApi } from './useTunarrApi';
 
 type MutateArgs = {
   channelId: string;
@@ -9,6 +9,7 @@ type MutateArgs = {
 };
 
 export const useUpdateLineup = () => {
+  const apiClient = useTunarrApi();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ channelId, lineupRequest }: MutateArgs) => {

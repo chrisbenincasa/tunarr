@@ -111,7 +111,7 @@ export const router = createBrowserRouter(
         {
           path: '/channels/:id/watch',
           element: <ChannelWatchPage />,
-          loader: channelLoader(queryClient),
+          loader: (args) => channelLoader(queryClient)(args),
         },
         {
           path: '/guide',

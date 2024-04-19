@@ -1,17 +1,27 @@
 import { DataTag, useQuery } from '@tanstack/react-query';
 import { Channel } from '@tunarr/types';
-import { apiClient } from '../external/api.ts';
+import { ApiClient } from '../external/api';
+import { useTunarrApi } from './useTunarrApi';
 
-export const channelsQuery = (initialData: Channel[] = []) => ({
+export const channelsQuery = (
+  apiClient: ApiClient,
+  initialData: Channel[] = [],
+) => ({
   queryKey: ['channels'] as DataTag<['channels'], Channel[]>,
   queryFn: () => apiClient.get('/api/channels'),
   initialData,
 });
 
-export const useChannels = (initialData: Channel[] = []) =>
-  useQuery(channelsQuery(initialData));
+export const useChannels = (initialData: Channel[] = []) => {
+  const apiClient = useTunarrApi();
+  return useQuery(channelsQuery(apiClient, initialData));
+};
 
-export const channelQuery = (id: string, enabled: boolean = true) => ({
+export const channelQuery = (
+  apiClient: ApiClient,
+  id: string,
+  enabled: boolean = true,
+) => ({
   queryKey: ['channels', id] as DataTag<['channels', string], Channel>,
   queryFn: async () =>
     apiClient.get('/api/channels/:id', {
@@ -24,7 +34,10 @@ export const useChannel = (
   id: string,
   enabled: boolean = true,
   initialData: Channel | undefined = undefined,
-) => useQuery({ ...channelQuery(id, enabled), initialData });
+) => {
+  const apiClient = useTunarrApi();
+  return useQuery({ ...channelQuery(apiClient, id, enabled), initialData });
+};
 
 // If we absolutely have initialData defined, we can use this hook instead,
 // to eliminate the typing possiblity of "| undefined" for the resulting Channel
@@ -32,4 +45,7 @@ export const useChannelWithInitialData = (
   id: string,
   initialData: Channel,
   enabled: boolean = true,
-) => useQuery({ ...channelQuery(id, enabled), initialData });
+) => {
+  const apiClient = useTunarrApi();
+  return useQuery({ ...channelQuery(apiClient, id, enabled), initialData });
+};

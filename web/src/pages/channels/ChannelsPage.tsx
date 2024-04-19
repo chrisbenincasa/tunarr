@@ -33,10 +33,11 @@ import { useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import TunarrLogo from '../../components/TunarrLogo.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
-import { apiClient } from '../../external/api.ts';
 import { useChannels } from '../../hooks/useChannels.ts';
+import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 
 export default function ChannelsPage() {
+  const apiClient = useTunarrApi();
   const now = dayjs();
   const {
     isPending: channelsLoading,

@@ -17,10 +17,12 @@ import {
 import axios from 'axios';
 import { flattenDeep, map } from 'lodash-es';
 import { useEffect } from 'react';
-import { apiClient } from '../external/api.ts';
+import { ApiClient } from '../external/api.ts';
 import { sequentialPromises } from '../helpers/util.ts';
 import useStore from '../store/index.ts';
 import { setPlexMetadataFilters } from '../store/plexMetadata/actions.ts';
+import { useApiQuery } from './useApiQuery.ts';
+import { useTunarrApi } from './useTunarrApi.ts';
 
 type PlexPathMappings = [
   ['/library/sections', PlexLibrarySections],
@@ -47,7 +49,11 @@ type ExtractTypeKeys<
   ? Head | ExtractTypeKeys<Tail>
   : never;
 
-export const fetchPlexPath = <T>(serverName: string, path: string) => {
+export const fetchPlexPath = <T>(
+  apiClient: ApiClient,
+  serverName: string,
+  path: string,
+) => {
   return async () => {
     return apiClient
       .getPlexPath({
@@ -68,9 +74,10 @@ export const usePlex = <
   path: string,
   enabled: boolean = true,
 ) =>
-  useQuery({
+  useApiQuery({
     queryKey: ['plex', serverName, path],
-    queryFn: fetchPlexPath<OutType>(serverName, path),
+    queryFn: (apiClient) =>
+      fetchPlexPath<OutType>(apiClient, serverName, path)(),
     enabled,
   });
 
@@ -87,12 +94,13 @@ type PlexQueryArgs<T> = {
 };
 
 export const plexQueryOptions = <T>(
+  apiClient: ApiClient,
   serverName: string,
   path: string,
   enabled: boolean = true,
 ) => ({
   queryKey: ['plex', serverName, path],
-  queryFn: fetchPlexPath<T>(serverName, path),
+  queryFn: fetchPlexPath<T>(apiClient, serverName, path),
   enabled: enabled && serverName.length > 0 && path.length > 0,
 });
 
@@ -100,7 +108,10 @@ export const usePlexTyped = <T>(
   serverName: string,
   path: string,
   enabled: boolean = true,
-) => useQuery(plexQueryOptions<T>(serverName, path, enabled));
+) => {
+  const apiClient = useTunarrApi();
+  return useQuery(plexQueryOptions<T>(apiClient, serverName, path, enabled));
+};
 
 /**
  * Like {@link usePlexTyped} but accepts two queries that each return
@@ -108,11 +119,13 @@ export const usePlexTyped = <T>(
  */
 export const usePlexTyped2 = <T = unknown, U = unknown>(
   args: [PlexQueryArgs<T>, PlexQueryArgs<U>],
-) =>
-  useQueries({
+) => {
+  const apiClient = useTunarrApi();
+  return useQueries({
     queries: args.map((query) => ({
       queryKey: ['plex', query.serverName, query.path],
       queryFn: fetchPlexPath<(typeof query)[typeof plexQueryArgsSymbol]>(
+        apiClient,
         query.serverName,
         query.path,
       ),
@@ -127,6 +140,7 @@ export const usePlexTyped2 = <T = unknown, U = unknown>(
       };
     },
   });
+};
 
 export const usePlexServerStatus = (server: PlexServerSettings) => {
   return useQuery({
@@ -149,9 +163,11 @@ export const usePlexServerStatus = (server: PlexServerSettings) => {
 };
 
 export const usePlexFilters = (serverName: string, plexKey: string) => {
+  const apiClient = useTunarrApi();
   const key = `/library/sections/${plexKey}/all?includeMeta=1&includeAdvanced=1&X-Plex-Container-Start=0&X-Plex-Container-Size=0`;
   const query = useQuery<PlexFiltersResponse>({
     ...plexQueryOptions(
+      apiClient,
       serverName,
       key,
       serverName.length > 0 && plexKey.length > 0,
@@ -191,6 +207,7 @@ export const useSelectedLibraryPlexFilters = () => {
 };
 
 export const usePlexTags = (key: string) => {
+  const apiClient = useTunarrApi();
   const selectedServer = useStore((s) => s.currentServer);
   const selectedLibrary = useStore((s) =>
     s.currentLibrary?.type === 'plex' ? s.currentLibrary : null,
@@ -200,7 +217,7 @@ export const usePlexTags = (key: string) => {
     : '';
 
   return useQuery<PlexTagResult>({
-    ...plexQueryOptions(selectedServer?.name ?? '', path),
+    ...plexQueryOptions(apiClient, selectedServer?.name ?? '', path),
   });
 };
 
@@ -218,11 +235,12 @@ function plexItemExternalId(serverName: string, media: PlexTerminalMedia) {
 }
 
 export const enumeratePlexItem = (
+  apiClient: ApiClient,
   serverName: string,
   initialItem: PlexMedia | PlexLibrarySection,
 ): (() => Promise<EnrichedPlexMedia[]>) => {
   const fetchPlexPathFunc = <T>(path: string) =>
-    fetchPlexPath<T>(serverName, path)();
+    fetchPlexPath<T>(apiClient, serverName, path)();
 
   async function loopInner(
     item: PlexMedia | PlexLibrarySection,
