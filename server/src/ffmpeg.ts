@@ -233,9 +233,6 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
         'mpegts',
         '-hls_flags',
         'delete_segments',
-        '-hls_base_url',
-        // TODO We should be smarter about which host we use here.
-        `http://localhost:8000/streams/${hlsOpts.streamBasePath}/`,
         '-hls_segment_filename',
         path.join('streams', hlsOpts.streamBasePath, hlsOpts.segmentNameFormat),
         '-master_pl_name',
