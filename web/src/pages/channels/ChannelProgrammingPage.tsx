@@ -24,7 +24,6 @@ import {
   resetLineup,
 } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
-w;
 
 type MutateArgs = {
   channelId: string;
