@@ -17,6 +17,7 @@ import {
   Snackbar,
   Stack,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { scheduleRandomSlots } from '@tunarr/shared';
@@ -290,7 +291,7 @@ const RandomSlotRow = React.memo(
           </Select>
         </Grid>
         <Grid item xs={2}>
-          {slot.programming.type === 'show' && (
+          {slot.programming.type === 'show' ? (
             <Select<'next' | 'shuffle'>
               fullWidth
               value={slot.order ?? 'next'}
@@ -306,6 +307,14 @@ const RandomSlotRow = React.memo(
                 </MenuItem>
               ))}
             </Select>
+          ) : (
+            <Tooltip title="This applies to shows only">
+              <Select fullWidth value="N/A" disabled={true}>
+                <MenuItem key={'N/A'} value={'N/A'}>
+                  {'N/A'}
+                </MenuItem>
+              </Select>
+            </Tooltip>
           )}
         </Grid>
         <Grid item xs={1}>
