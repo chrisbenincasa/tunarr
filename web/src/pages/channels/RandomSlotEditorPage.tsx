@@ -736,92 +736,108 @@ export default function RandomSlotEditorPage() {
           <Typography sx={{ flexGrow: 1, fontWeight: 600 }}>
             Settings
           </Typography>
-          <FormControl fullWidth margin="normal">
-            <InputLabel>Pad Times</InputLabel>
-            <Controller
-              control={control}
-              name="padMs"
-              render={({ field }) => (
-                <Select label="Pad Times" {...field}>
-                  {padOptions.map((opt) => (
-                    <MenuItem key={opt.value} value={opt.value}>
-                      {opt.description}
-                    </MenuItem>
-                  ))}
-                </Select>
-              )}
-            />
-
-            <FormHelperText>
-              Ensures programs have a nice-looking start time, it will add Flex
-              time to fill the gaps.
-            </FormHelperText>
-          </FormControl>
-          <FormControl fullWidth margin="normal">
-            <InputLabel>Flex Style</InputLabel>
-            <Controller
-              control={control}
-              name="flexPreference"
-              render={({ field }) => (
-                <Select label="Flex Style" {...field}>
-                  {flexOptions.map((opt) => (
-                    <MenuItem key={opt.value} value={opt.value}>
-                      {opt.description}
-                    </MenuItem>
-                  ))}
-                </Select>
-              )}
-            />
-            <FormHelperText>
-              Usually slots need to add flex time to ensure that the next slot
-              starts at the correct time. When there are multiple videos in the
-              slot, you might prefer to distribute the flex time between the
-              videos or to place most of the flex time at the end of the slot.
-            </FormHelperText>
-          </FormControl>
-          <FormControl fullWidth margin="normal">
-            <InputLabel>Distribution</InputLabel>
-            <Controller
-              control={control}
-              name="randomDistribution"
-              render={({ field }) => (
-                <Select label="Distribution" {...field}>
-                  {distributionOptions.map((opt) => (
-                    <MenuItem key={opt.value} value={opt.value}>
-                      {opt.description}
-                    </MenuItem>
-                  ))}
-                </Select>
-              )}
-            />
-            <FormHelperText>
-              Uniform means that all slots have an equal chancel to be picked.
-              Weighted makes the configuration of the slots more complicated but
-              allows to tweak the weight for each slot so you can make some
-              slots more likely to be picked than others.
-            </FormHelperText>
-          </FormControl>
-          <FormGroup row>
-            <Controller
-              control={control}
-              name="maxDays"
-              render={({ field }) => (
-                <TextField
-                  fullWidth
-                  margin="normal"
-                  label="Days to Precalculate"
-                  // error={!precalcDaysValid}
-                  {...field}
+          <Grid
+            container
+            spacing={2}
+            columns={16}
+            justifyContent={'flex-start'}
+          >
+            <Grid item sm={16} md={8}>
+              <FormControl fullWidth margin="normal">
+                <InputLabel>Pad Times</InputLabel>
+                <Controller
+                  control={control}
+                  name="padMs"
+                  render={({ field }) => (
+                    <Select label="Pad Times" {...field}>
+                      {padOptions.map((opt) => (
+                        <MenuItem key={opt.value} value={opt.value}>
+                          {opt.description}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  )}
                 />
-              )}
-            />
 
-            <FormHelperText sx={{ ml: 1 }}>
-              Maximum number of days to precalculate the schedule. Note that the
-              length of the schedule is also bounded by the maximum number of
-              programs allowed in a channel.
-            </FormHelperText>
-          </FormGroup>
+                <FormHelperText>
+                  Ensures programs have a nice-looking start time, it will add
+                  Flex time to fill the gaps.
+                </FormHelperText>
+              </FormControl>
+            </Grid>
+            <Grid item sm={16} md={8}>
+              <FormControl fullWidth margin="normal">
+                <InputLabel>Flex Style</InputLabel>
+                <Controller
+                  control={control}
+                  name="flexPreference"
+                  render={({ field }) => (
+                    <Select label="Flex Style" {...field}>
+                      {flexOptions.map((opt) => (
+                        <MenuItem key={opt.value} value={opt.value}>
+                          {opt.description}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  )}
+                />
+                <FormHelperText>
+                  Usually slots need to add flex time to ensure that the next
+                  slot starts at the correct time. When there are multiple
+                  videos in the slot, you might prefer to distribute the flex
+                  time between the videos or to place most of the flex time at
+                  the end of the slot.
+                </FormHelperText>
+              </FormControl>
+            </Grid>
+            <Grid item sm={16} md={8}>
+              <FormControl fullWidth margin="normal">
+                <InputLabel>Distribution</InputLabel>
+                <Controller
+                  control={control}
+                  name="randomDistribution"
+                  render={({ field }) => (
+                    <Select label="Distribution" {...field}>
+                      {distributionOptions.map((opt) => (
+                        <MenuItem key={opt.value} value={opt.value}>
+                          {opt.description}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  )}
+                />
+                <FormHelperText>
+                  Uniform means that all slots have an equal chancel to be
+                  picked. Weighted makes the configuration of the slots more
+                  complicated but allows to tweak the weight for each slot so
+                  you can make some slots more likely to be picked than others.
+                </FormHelperText>
+              </FormControl>
+            </Grid>
+            <Grid item sm={16} md={8}>
+              <FormGroup row>
+                <Controller
+                  control={control}
+                  name="maxDays"
+                  render={({ field }) => (
+                    <TextField
+                      fullWidth
+                      margin="normal"
+                      label="Days to Precalculate"
+                      // error={!precalcDaysValid}
+                      {...field}
+                    />
+                  )}
+                />
+
+                <FormHelperText sx={{ ml: 1 }}>
+                  Maximum number of days to precalculate the schedule. Note that
+                  the length of the schedule is also bounded by the maximum
+                  number of programs allowed in a channel.
+                </FormHelperText>
+              </FormGroup>
+            </Grid>
+          </Grid>
           <Divider sx={{ my: 4 }} />
           <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
             <Button
