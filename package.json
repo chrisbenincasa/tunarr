@@ -32,6 +32,9 @@
   "pnpm": {
     "patchedDependencies": {
       "ts-essentials@9.4.1": "patches/ts-essentials@9.4.1.patch"
+    },
+    "overrides": {
+      "eslint": "8.56.0"
     }
   }
 }
