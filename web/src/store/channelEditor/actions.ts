@@ -292,6 +292,14 @@ const plexMediaToContentProgram = (
       (media.type === 'episode'
         ? createExternalId('plex', media.serverName, media.parentRatingKey)
         : undefined),
+    externalIds: [
+      {
+        type: 'multi',
+        source: 'plex',
+        sourceId: media.serverName,
+        id: media.ratingKey,
+      },
+    ],
   };
 };
 

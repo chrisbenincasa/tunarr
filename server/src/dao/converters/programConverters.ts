@@ -19,6 +19,7 @@ import {
 import { Channel } from '../entities/Channel.js';
 import { Program, ProgramType } from '../entities/Program.js';
 import { logger } from '../legacy_migration/legacyDbMigration.js';
+import { createPlexExternalId } from '../../util/externalIds.js';
 
 type ContentProgramConversionOptions = {
   skipPopulate: boolean;
@@ -101,7 +102,13 @@ export class ProgramConverter {
   async partialEntityToContentProgram(
     program: MarkRequired<
       Partial<Program>,
-      'uuid' | 'title' | 'duration' | 'type'
+      | 'uuid'
+      | 'title'
+      | 'duration'
+      | 'type'
+      | 'externalKey'
+      | 'externalSourceId'
+      | 'sourceType'
     >,
     opts: Partial<ContentProgramConversionOptions> = defaultContentProgramConversionOptions,
   ): Promise<ContentProgram> {
@@ -157,6 +164,9 @@ export class ProgramConverter {
       type: 'content',
       id: program.uuid,
       subtype: program.type,
+      externalIds: [
+        createPlexExternalId(program.externalSourceId, program.externalKey),
+      ],
       ...extraFields,
     };
   }

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Loaded, wrap } from '@mikro-orm/core';
+import { Loaded } from '@mikro-orm/core';
 import { ChannelLineupQuery } from '@tunarr/types/api';
 import { ChannelLineupSchema } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
@@ -17,7 +17,6 @@ import createLogger from '../logger.js';
 import { PlexPlayer } from '../plexPlayer.js';
 import { PlexTranscoder } from '../plexTranscoder.js';
 import { FillerPicker } from '../services/FillerPicker.js';
-import { TVGuideService as TVGuideServiceLegacy } from '../services/tvGuideServiceLegacy.js';
 import { ContextChannel, Maybe, PlayerContext } from '../types.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { mapAsyncSeq } from '../util/index.js';
@@ -266,77 +265,6 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
       );
 
       return res.send(lineups);
-    },
-  );
-
-  fastify.get(
-    '/debug/helpers/compare_guides',
-    {
-      schema: {
-        querystring: ChannelLineupQuery,
-        tags: ['Channels'],
-        response: {
-          200: z.array(
-            z.object({
-              old: ChannelLineupSchema,
-              new: ChannelLineupSchema,
-            }),
-          ),
-        },
-      },
-    },
-    async (req, res) => {
-      const allChannels =
-        await req.serverCtx.channelDB.getAllChannelsAndPrograms();
-
-      const startTime = dayjs(req.query.from);
-      // const duration =
-      //   channel!.duration <= 0
-      //     ? dayjs.duration(1, 'day').asMilliseconds()
-      //     : channel!.duration;
-      const endTime = dayjs(req.query.to);
-
-      const lineups = await mapAsyncSeq(allChannels, async (channel) => {
-        const guideServiceLegacy = new TVGuideServiceLegacy(
-          req.serverCtx.xmltv,
-          req.serverCtx.eventService,
-          req.serverCtx.channelDB,
-        );
-        const t = guideServiceLegacy.prepareRefresh(
-          [wrap(channel).toJSON()],
-          dayjs.duration(endTime.diff(startTime)).asMilliseconds(),
-        );
-
-        await Promise.all([
-          guideServiceLegacy.refresh(t),
-          req.serverCtx.guideService.refreshGuide(
-            dayjs.duration(endTime.diff(startTime)),
-          ),
-        ]);
-
-        const oldLineup = await guideServiceLegacy.getChannelLineup(
-          channel.uuid,
-          startTime.toDate(),
-          endTime.toDate(),
-        );
-
-        const newLineup = await req.serverCtx.guideService.getChannelLineup(
-          channel.uuid,
-          startTime.toDate(),
-          endTime.toDate(),
-        );
-
-        if (!isNil(newLineup) && !isNil(oldLineup)) {
-          return {
-            old: oldLineup,
-            new: newLineup,
-          };
-        } else {
-          return;
-        }
-      });
-
-      return res.status(200).send(compact(lineups));
     },
   );
 
