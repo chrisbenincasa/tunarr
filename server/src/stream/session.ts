@@ -277,6 +277,10 @@ export class StreamSession {
     }, delay);
   }
 
+  get workingDirectory() {
+    return this.#outPath;
+  }
+
   get streamPath() {
     return this.#streamPath;
   }

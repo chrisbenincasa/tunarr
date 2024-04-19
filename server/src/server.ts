@@ -36,7 +36,14 @@ import { UpdateXmlTvTask } from './tasks/updateXmlTvTask.js';
 import { ServerOptions } from './types.js';
 import { filename, isProduction } from './util/index.js';
 import { videoRouter } from './api/videoApi.js';
-import { isUndefined } from 'lodash-es';
+import {
+  endsWith,
+  identity,
+  isUndefined,
+  over,
+  some,
+  startsWith,
+} from 'lodash-es';
 import { initPersistentStreamCache } from './channelCache.js';
 import { getSettingsRawDb } from './dao/settings.js';
 import { migrateFromLegacyDb } from './dao/legacy_migration/legacyDbMigration.js';
@@ -177,9 +184,22 @@ export async function initServer(opts: ServerOptions) {
         write: (message) => logger.http(message.trim()),
       },
       skip: (req) => {
-        return req.url
-          ? req.url.startsWith('/streams') || req.url.endsWith('/hls/now')
-          : false;
+        if (req['disableRequestLogging']) {
+          return true;
+        }
+
+        if (req.url) {
+          return some(
+            over<boolean>([
+              (s: string) => startsWith(s, '/streams'),
+              (s: string) => endsWith(s, '/hls/now'),
+              (s: string) => /\/media-player\/.+\/hls\/.*\.ts/.test(s),
+            ])(req.url),
+            identity,
+          );
+        }
+
+        return false;
       },
     }),
   );

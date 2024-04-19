@@ -2,7 +2,7 @@ import fastifyStatic from '@fastify/static';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import fs from 'node:fs/promises';
 import { join } from 'node:path';
-import { isNil, map } from 'lodash-es';
+import { isNil, isUndefined, map } from 'lodash-es';
 import { sessionManager } from '../stream/sessionManager.js';
 import { z } from 'zod';
 import { TruthyQueryParam } from '../types/schemas.js';
@@ -13,10 +13,11 @@ export const hlsApi: RouterPluginAsyncCallback = async (fastify) => {
   fastify
     .register(fastifyStatic, {
       root: join(process.cwd(), 'streams'),
-      decorateReply: false,
+      // decorateReply: false,
       prefix: '/streams/',
     })
     .decorateRequest('streamChannel', null)
+    .decorateRequest('disableRequestLogging', false)
     .addHook('onRequest', (req, res, done) => {
       const matches = req.url.match(/^\/streams\/stream_(.*)\/stream\.m3u8.*/);
       if (!isNil(matches) && matches.length > 1) {
@@ -66,12 +67,35 @@ export const hlsApi: RouterPluginAsyncCallback = async (fastify) => {
       }
       done();
     })
+    .get(
+      '/media-player/:id/hls/:file',
+      {
+        onRequest: (req, _, done) => {
+          req.disableRequestLogging = true;
+          done();
+        },
+        schema: {
+          params: z.object({
+            id: z.string().uuid(),
+            file: z.string(),
+          }),
+        },
+      },
+      async (req, res) => {
+        const session = sessionManager.getSession(req.params.id);
+        if (isUndefined(session)) {
+          return res.status(404).send();
+        }
+
+        return res.sendFile(req.params.file, session.workingDirectory);
+      },
+    )
     .put('/streams/*', async (_, res) => {
       await res.send(200);
     });
 
   fastify.get(
-    '/media-player/:id/hls/now',
+    '/media-player/:id/hls',
     {
       schema: {
         params: z.object({
@@ -112,7 +136,7 @@ export const hlsApi: RouterPluginAsyncCallback = async (fastify) => {
     },
   );
 
-  fastify.get(
+  fastify.put(
     '/media-player/:channelId/hls',
     {
       schema: {
