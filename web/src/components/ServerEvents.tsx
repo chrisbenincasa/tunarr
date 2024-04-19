@@ -48,7 +48,7 @@ export default function ServerEvents() {
       source.current = null;
       es?.close();
     };
-  }, [source, setEventQueue]);
+  }, [source, setEventQueue, backendUri]);
 
   useEffect(() => {
     if (eventQueue.length > 0 && !currentMessage) {
