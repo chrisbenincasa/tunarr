@@ -8,12 +8,14 @@ import { useFfmpegSettings } from '../hooks/settingsHooks.ts';
 import { useHls } from '../hooks/useHls.ts';
 import { PlayArrow, Replay } from '@mui/icons-material';
 import { useTunarrApi } from '../hooks/useTunarrApi.ts';
+import { useSettings } from '../store/settings/selectors.ts';
 
 type VideoProps = {
   channelId: string;
 };
 
 export default function Video({ channelId }: VideoProps) {
+  const { backendUri } = useSettings();
   const apiClient = useTunarrApi();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const { hls, resetHls } = useHls();
@@ -68,7 +70,7 @@ export default function Video({ channelId }: VideoProps) {
       apiClient
         .startHlsStream({ params: { channel: channelId } })
         .then(({ streamPath }) => {
-          hls.loadSource(`http://localhost:8000${streamPath}`);
+          hls.loadSource(`${backendUri}${streamPath}`);
           hls.attachMedia(video);
         })
         .catch((err) => {
@@ -85,6 +87,8 @@ export default function Video({ channelId }: VideoProps) {
     canLoadStream,
     channelId,
     manuallyStarted,
+    apiClient,
+    backendUri,
   ]);
 
   useEffect(() => {

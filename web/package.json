@@ -9,6 +9,7 @@
     "bundle": "vite build",
     "dev": "vite",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "lint-staged": "lint-staged",
     "preview": "vite preview",
     "test": "vitest",
     "typecheck": "tsc -p tsconfig.build.json --noEmit"
