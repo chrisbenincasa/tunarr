@@ -1,4 +1,4 @@
-import { Delete } from '@mui/icons-material';
+import { Autorenew, Delete } from '@mui/icons-material';
 import AddIcon from '@mui/icons-material/Add';
 import {
   Alert,
@@ -52,18 +52,19 @@ import { Link as RouterLink } from 'react-router-dom';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import ChannelProgrammingList from '../../components/channel_config/ChannelProgrammingList.tsx';
+import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert.tsx';
 import {
   DropdownOption,
   ProgramOption,
   flexOptions,
   padOptions,
 } from '../../components/slot_scheduler/commonSlotSchedulerOptions.ts';
+import { NumericFormControllerText } from '../../components/util/TypedController.tsx';
 import { zipWithIndex } from '../../helpers/util.ts';
 import { usePreloadedChannelEdit } from '../../hooks/usePreloadedChannel.ts';
 import { useUpdateLineup } from '../../hooks/useUpdateLineup.ts';
 import { updateCurrentChannel } from '../../store/channelEditor/actions.ts';
 import { UIChannelProgram, isUIRedirectProgram } from '../../types/index.ts';
-import { NumericFormControllerText } from '../../components/util/TypedController.tsx';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -185,7 +186,7 @@ const AddTimeSlotButton = ({ control, setValue }: AddTimeSlotButtonProps) => {
       },
     ];
 
-    setValue('slots', newSlots);
+    setValue('slots', newSlots, { shouldDirty: true });
   }, [currentSlots, setValue]);
 
   return (
@@ -223,6 +224,7 @@ const TimeSlotRow = ({
       setValue(
         `slots.${idx}.startTime`,
         time.mod(dayjs.duration(1, 'day')).asMilliseconds(),
+        { shouldDirty: true },
       );
     },
     [setValue],
@@ -233,6 +235,7 @@ const TimeSlotRow = ({
       setValue(
         'slots',
         reject(currentSlots, (_, i) => idx === i),
+        { shouldDirty: true },
       );
     },
     [currentSlots, setValue],
@@ -243,7 +246,7 @@ const TimeSlotRow = ({
       const slot = currentSlots[idx];
       const daylessStartTime = slot.startTime - currentDay * OneDayMillis;
       const newStartTime = daylessStartTime + dayOfWeek * OneDayMillis;
-      setValue(`slots.${idx}.startTime`, newStartTime);
+      setValue(`slots.${idx}.startTime`, newStartTime, { shouldDirty: true });
     },
     [currentSlots, setValue],
   );
@@ -281,7 +284,11 @@ const TimeSlotRow = ({
 
       const curr = currentSlots[idx];
 
-      setValue(`slots.${idx}`, { ...slot, startTime: curr.startTime });
+      setValue(
+        `slots.${idx}`,
+        { ...slot, startTime: curr.startTime },
+        { shouldDirty: true },
+      );
     },
     [currentSlots, setValue],
   );
@@ -410,7 +417,13 @@ export default function TimeSlotEditorPage() {
     return opts;
   }, [newLineup]);
 
-  const { control, getValues, setValue, watch } = useForm<TimeSlotForm>({
+  const {
+    control,
+    getValues,
+    setValue,
+    watch,
+    formState: { isValid, isDirty },
+  } = useForm<TimeSlotForm>({
     defaultValues:
       !isUndefined(loadedSchedule) && loadedSchedule.type === 'time'
         ? loadedSchedule
@@ -431,7 +444,6 @@ export default function TimeSlotEditorPage() {
   >(undefined);
 
   const onSave = () => {
-    console.log(getValues());
     const schedule: TimeSlotSchedule = {
       ...getValues(),
       timeZoneOffset: new Date().getTimezoneOffset(),
@@ -456,7 +468,7 @@ export default function TimeSlotEditorPage() {
   const handlePeriodChange = useCallback(
     (e: SelectChangeEvent<'day' | 'week' | 'month'>) => {
       const value = e.target.value as TimeSlotSchedule['period'];
-      setValue('period', value);
+      setValue('period', value, { shouldDirty: true });
       let newSlots: TimeSlot[] = [];
       if (value === 'day') {
         // Remove slots
@@ -498,7 +510,7 @@ export default function TimeSlotEditorPage() {
       }
 
       // Add slots
-      setValue('slots', newSlots);
+      setValue('slots', newSlots, { shouldDirty: true });
     },
     [setValue, currentSlots],
   );
@@ -532,7 +544,6 @@ export default function TimeSlotEditorPage() {
 
   const calculateSlots = () => {
     performance.mark('guide-start');
-    console.log(getValues());
     scheduleTimeSlots(
       {
         ...getValues(),
@@ -600,145 +611,164 @@ export default function TimeSlotEditorPage() {
         Edit Time Slots (Channel {channel?.number})
       </Typography>
       <PaddedPaper sx={{ mb: 2 }}>
-        <Box sx={{ display: 'flex', alignContent: 'center' }}>
-          <Typography sx={{ flexGrow: 1 }}>Time Slots</Typography>
-          <Button
-            variant="contained"
-            onClick={() => calculateSlots()}
-            // disabled={!isValid}
-          >
-            Refresh
-          </Button>
-        </Box>
+        <Typography sx={{ flexGrow: 1, fontWeight: 600 }}>
+          Time Slots
+        </Typography>
         <Divider sx={{ my: 2 }} />
         {renderTimeSlots()}
         <AddTimeSlotButton control={control} setValue={setValue} />
         <Divider sx={{ my: 2 }} />
+        <Typography sx={{ flexGrow: 1, fontWeight: '600' }}>
+          Settings
+        </Typography>
         <Box>
-          <FormControl fullWidth margin="normal">
-            <InputLabel>Period</InputLabel>
-            <Controller
-              control={control}
-              name="period"
-              render={({ field }) => (
-                <Select
-                  label="Period"
-                  {...field}
-                  onChange={(e) => handlePeriodChange(e)}
-                >
-                  <MenuItem value="day">Daily</MenuItem>
-                  <MenuItem value="week">Weekly</MenuItem>
-                </Select>
-              )}
-            />
-            <FormHelperText>
-              By default, time slots are time of the day-based, you can change
-              it to time of the day + day of the week. That means scheduling 7x
-              the number of time slots. If you change from daily to weekly, the
-              current schedule will be repeated 7 times. If you change from
-              weekly to daily, many of the slots will be deleted.
-            </FormHelperText>
-          </FormControl>
-          <FormControl fullWidth margin="normal">
-            <InputLabel>Max Lateness</InputLabel>
-            <Controller
-              control={control}
-              name="latenessMs"
-              render={({ field }) => (
-                <Select label="Max Lateness" {...field}>
-                  {latenessOptions.map((opt) => (
-                    <MenuItem key={opt.value} value={opt.value}>
-                      {opt.description}
-                    </MenuItem>
-                  ))}
-                </Select>
-              )}
-            />
+          <Grid
+            container
+            spacing={2}
+            columns={16}
+            justifyContent={'flex-start'}
+          >
+            <Grid item sm={16} md={5}>
+              <FormControl fullWidth margin="normal">
+                <InputLabel>Period</InputLabel>
+                <Controller
+                  control={control}
+                  name="period"
+                  render={({ field }) => (
+                    <Select
+                      label="Period"
+                      {...field}
+                      onChange={(e) => handlePeriodChange(e)}
+                    >
+                      <MenuItem value="day">Daily</MenuItem>
+                      <MenuItem value="week">Weekly</MenuItem>
+                    </Select>
+                  )}
+                />
+                <FormHelperText>
+                  By default, time slots are time of the day-based, you can
+                  change it to time of the day + day of the week. That means
+                  scheduling 7x the number of time slots. If you change from
+                  daily to weekly, the current schedule will be repeated 7
+                  times. If you change from weekly to daily, many of the slots
+                  will be deleted.
+                </FormHelperText>
+              </FormControl>
+            </Grid>
+            <Grid item sm={16} md={5}>
+              <FormControl fullWidth margin="normal">
+                <InputLabel>Max Lateness</InputLabel>
+                <Controller
+                  control={control}
+                  name="latenessMs"
+                  render={({ field }) => (
+                    <Select label="Max Lateness" {...field}>
+                      {latenessOptions.map((opt) => (
+                        <MenuItem key={opt.value} value={opt.value}>
+                          {opt.description}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  )}
+                />
 
-            <FormHelperText>
-              Allows programs to play a bit late if the previous program took
-              longer than usual. If a program is too late, Flex is scheduled
-              instead.
-            </FormHelperText>
-          </FormControl>
-          <FormControl fullWidth margin="normal">
-            <InputLabel>Pad Times</InputLabel>
-            <Controller
-              control={control}
-              name="padMs"
-              render={({ field }) => (
-                <Select label="Pad Times" {...field}>
-                  {padOptions.map((opt) => (
-                    <MenuItem key={opt.value} value={opt.value}>
-                      {opt.description}
-                    </MenuItem>
-                  ))}
-                </Select>
-              )}
-            />
+                <FormHelperText>
+                  Allows programs to play a bit late if the previous program
+                  took longer than usual. If a program is too late, Flex is
+                  scheduled instead.
+                </FormHelperText>
+              </FormControl>
+            </Grid>
+            <Grid item sm={16} md={5}>
+              <FormControl fullWidth margin="normal">
+                <InputLabel>Pad Times</InputLabel>
+                <Controller
+                  control={control}
+                  name="padMs"
+                  render={({ field }) => (
+                    <Select label="Pad Times" {...field}>
+                      {padOptions.map((opt) => (
+                        <MenuItem key={opt.value} value={opt.value}>
+                          {opt.description}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  )}
+                />
 
-            <FormHelperText>
-              Ensures programs have a nice-looking start time, it will add Flex
-              time to fill the gaps.
-            </FormHelperText>
-          </FormControl>
-          <FormControl fullWidth margin="normal">
-            <InputLabel>Flex Style</InputLabel>
-            <Controller
-              control={control}
-              name="flexPreference"
-              render={({ field }) => (
-                <Select label="Flex Style" {...field}>
-                  {flexOptions.map((opt) => (
-                    <MenuItem key={opt.value} value={opt.value}>
-                      {opt.description}
-                    </MenuItem>
-                  ))}
-                </Select>
-              )}
-            />
-            <FormHelperText>
-              Usually slots need to add flex time to ensure that the next slot
-              starts at the correct time. When there are multiple videos in the
-              slot, you might prefer to distribute the flex time between the
-              videos or to place most of the flex time at the end of the slot.
-            </FormHelperText>
-          </FormControl>
-          <FormGroup row>
-            <NumericFormControllerText
-              control={control}
-              name="maxDays"
-              prettyFieldName="Days to Precalculate"
-              TextFieldProps={{
-                label: 'Days to Precalculate',
-                fullWidth: true,
-                margin: 'normal',
-              }}
-            />
+                <FormHelperText>
+                  Ensures programs have a nice-looking start time, it will add
+                  Flex time to fill the gaps.
+                </FormHelperText>
+              </FormControl>
+            </Grid>
 
-            <FormHelperText sx={{ ml: 1 }}>
-              Maximum number of days to precalculate the schedule. Note that the
-              length of the schedule is also bounded by the maximum number of
-              programs allowed in a channel.
-              <br />
-              <strong>
-                Note: Previewing the schedule in the browser for long lengths of
-                time can cause UI performance issues
-              </strong>
-            </FormHelperText>
-          </FormGroup>
+            <Grid item sm={16} md={5}>
+              <FormControl fullWidth margin="normal">
+                <InputLabel>Flex Style</InputLabel>
+                <Controller
+                  control={control}
+                  name="flexPreference"
+                  render={({ field }) => (
+                    <Select label="Flex Style" {...field}>
+                      {flexOptions.map((opt) => (
+                        <MenuItem key={opt.value} value={opt.value}>
+                          {opt.description}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  )}
+                />
+                <FormHelperText>
+                  Usually slots need to add flex time to ensure that the next
+                  slot starts at the correct time. When there are multiple
+                  videos in the slot, you might prefer to distribute the flex
+                  time between the videos or to place most of the flex time at
+                  the end of the slot.
+                </FormHelperText>
+              </FormControl>
+            </Grid>
+            <Grid item sm={16} md={5}>
+              <FormGroup row>
+                <NumericFormControllerText
+                  control={control}
+                  name="maxDays"
+                  prettyFieldName="Days to Precalculate"
+                  TextFieldProps={{
+                    label: 'Days to Precalculate',
+                    fullWidth: true,
+                    margin: 'normal',
+                  }}
+                />
+
+                <FormHelperText sx={{ ml: 1 }}>
+                  Maximum number of days to precalculate the schedule. Note that
+                  the length of the schedule is also bounded by the maximum
+                  number of programs allowed in a channel.
+                  <br />
+                  <strong>
+                    Note: Previewing the schedule in the browser for long
+                    lengths of time can cause UI performance issues
+                  </strong>
+                </FormHelperText>
+              </FormGroup>
+            </Grid>
+          </Grid>
+        </Box>
+        <Divider sx={{ my: 4 }} />
+        <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+          <Button
+            variant="contained"
+            onClick={() => calculateSlots()}
+            disabled={!isValid || !isDirty}
+            startIcon={<Autorenew />}
+          >
+            Refresh Preview
+          </Button>
         </Box>
       </PaddedPaper>
       <PaddedPaper>
-        <Typography sx={{ pb: 1 }}>
-          Programming Preview (
-          {generatedList
-            ? `${generatedList.length} items, ${dayjs
-                .duration(getValues('maxDays'), 'days')
-                .humanize()}`
-            : `${newLineup.length} items`}
-          )
-        </Typography>
+        <Typography sx={{ pb: 1 }}>Programming Preview</Typography>
         <Divider />
         <ChannelProgrammingList
           programList={generatedList ? zipWithIndex(generatedList) : undefined}
@@ -751,6 +781,7 @@ export default function TimeSlotEditorPage() {
           }}
         />
       </PaddedPaper>
+      <UnsavedNavigationAlert isDirty={isDirty} />
       <Box sx={{ display: 'flex', justifyContent: 'end', pt: 1, columnGap: 1 }}>
         <Button
           variant="contained"
@@ -760,7 +791,11 @@ export default function TimeSlotEditorPage() {
         >
           Cancel
         </Button>
-        <Button variant="contained" onClick={() => onSave()}>
+        <Button
+          variant="contained"
+          disabled={!isValid || !isDirty}
+          onClick={() => onSave()}
+        >
           Save
         </Button>
       </Box>
