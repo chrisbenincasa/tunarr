@@ -62,10 +62,16 @@
     "eslint": "^8.45.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.3",
+    "lint-staged": "^15.2.2",
     "nodemon": "^3.0.3",
     "openapi-zod-client": "^1.14.0",
     "ts-essentials": "^9.4.1",
     "typescript": "5.4.3",
     "vite": "^4.4.5"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix --no-warn-ignored"
+    ]
   }
 }

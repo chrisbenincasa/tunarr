@@ -24,7 +24,7 @@ import {
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { FfmpegSettings, defaultFfmpegSettings } from '@tunarr/types';
 import _ from 'lodash-es';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert.tsx';
 import {
