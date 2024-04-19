@@ -13,6 +13,7 @@ import { ProgramDB } from '../../dao/programDB.js';
 import { Plex } from '../../plex.js';
 import { PlexItemEnumerator } from '../PlexItemEnumerator.js';
 import { ContentSourceUpdater } from './ContentSourceUpdater.js';
+import { createPlexExternalId } from '../../util/externalIds.js';
 
 export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicContentConfigPlexSource> {
   #plex: Plex;
@@ -55,7 +56,7 @@ export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicConten
       const uniqueId = createExternalId(
         'plex',
         this.#plex.serverName,
-        media.key,
+        media.ratingKey,
       );
       return {
         id: media.id ?? uniqueId,
@@ -72,6 +73,9 @@ export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicConten
         episodeTitle: media.type === 'episode' ? media.title : undefined,
         episodeNumber: media.type === 'episode' ? media.index : undefined,
         seasonNumber: media.type === 'episode' ? media.parentIndex : undefined,
+        externalIds: [
+          createPlexExternalId(this.#plex.serverName, media.ratingKey),
+        ],
       };
     });
 

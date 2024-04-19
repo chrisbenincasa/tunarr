@@ -8,7 +8,7 @@ import {
   PlexMovieSchema,
   PlexMusicTrackSchema,
 } from '../plex/index.js';
-import { ChannelIconSchema } from './utilSchemas.js';
+import { ChannelIconSchema, ExternalIdSchema } from './utilSchemas.js';
 
 export const ProgramTypeSchema = z.union([
   z.literal('movie'),
@@ -126,6 +126,7 @@ export const ContentProgramSchema = CondensedContentProgramSchema.extend({
   externalSourceName: z.string().optional(),
   externalKey: z.string().optional(),
   uniqueId: z.string(), // If persisted, this is the ID. If not persisted, this is `externalSourceType|externalSourceName|externalKey`
+  externalIds: z.array(ExternalIdSchema),
 });
 
 // Should be able to do this once we have https://github.com/colinhacks/zod/issues/2106

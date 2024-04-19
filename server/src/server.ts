@@ -47,7 +47,6 @@ const currentDirectory = dirname(filename(import.meta.url));
 
 function initDbDirectories() {
   const opts = serverOptions();
-  console.log(opts);
   const hasTunarrDb = fs.existsSync(opts.databaseDirectory);
   const hasLegacyDb = fs.existsSync(path.resolve(process.cwd(), '.dizquetv'));
   if (!hasTunarrDb) {
