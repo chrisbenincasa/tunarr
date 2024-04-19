@@ -132,7 +132,9 @@ export const hlsApi: RouterPluginAsyncCallback = async (fastify) => {
         return res.status(500).send('Error starting session');
       }
 
-      return res.type('text').send(await fs.readFile(session.streamPath));
+      return res
+        .type('application/vnd.apple.mpegurl')
+        .send(await fs.readFile(session.streamPath));
     },
   );
 
@@ -142,9 +144,6 @@ export const hlsApi: RouterPluginAsyncCallback = async (fastify) => {
       schema: {
         params: z.object({
           channelId: z.coerce.number().or(z.string().uuid()),
-        }),
-        querystring: z.object({
-          direct: TruthyQueryParam.optional().default('0'),
         }),
       },
     },
@@ -170,10 +169,6 @@ export const hlsApi: RouterPluginAsyncCallback = async (fastify) => {
 
       if (isNil(session)) {
         return res.status(500).send('Error starting session');
-      }
-
-      if (req.query.direct) {
-        return res.redirect(302, `${session.serverPath}?token=${token}`);
       }
 
       return res.send({
