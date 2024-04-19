@@ -52,6 +52,9 @@ importers:
       husky:
         specifier: ^9.0.11
         version: 9.0.11
+      lint-staged:
+        specifier: ^15.2.2
+        version: 15.2.2
       turbo:
         specifier: ^1.13.2
         version: 1.13.2
@@ -266,9 +269,6 @@ importers:
       globals:
         specifier: ^15.0.0
         version: 15.0.0
-      lint-staged:
-        specifier: ^15.2.2
-        version: 15.2.2
       nexe:
         specifier: 5.0.0-beta.1
         version: 5.0.0-beta.1(esbuild@0.19.5)

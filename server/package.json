@@ -16,7 +16,6 @@
     "debug": "tsx watch --tsconfig ./tsconfig.build.json --ignore 'src/streams' --inspect-brk src",
     "dev": "NODE_ENV=development  tsx watch --tsconfig ./tsconfig.build.json --ignore 'build' --ignore 'src/streams' src",
     "lint-changed": "eslint --fix $(git diff --name-only HEAD -- './**/*.ts' | sed 's/server\\///g' | xargs)",
-    "lint-staged": "lint-staged",
     "make-exec": "tsx scripts/makeExecutable.ts",
     "make-exec:windows": "tsx scripts/makeExecutable.ts --target windows-x64-20.11.1 --python python",
     "generate-db-migration": "pnpm run mikro-orm migration:create",
@@ -96,7 +95,6 @@
     "fast-check": "^3.17.1",
     "fast-glob": "^3.3.2",
     "globals": "^15.0.0",
-    "lint-staged": "^15.2.2",
     "nexe": "5.0.0-beta.1",
     "pkg": "^5.8.1",
     "postject": "1.0.0-alpha.6",
@@ -120,11 +118,6 @@
     "configPaths": [
       "./mikro-orm.config.ts",
       "./build/mikro-orm.config.js"
-    ]
-  },
-  "lint-staged": {
-    "*.ts": [
-      "eslint --fix --no-warn-ignored"
     ]
   }
 }
