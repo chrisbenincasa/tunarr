@@ -40,7 +40,7 @@ const AddReplicateModal = ({ open, onClose }: AddReplicateModalProps) => {
   } = useForm<FormValues>({
     mode: 'onChange',
     defaultValues: {
-      numberOfReplications: 1,
+      numberOfReplications: 2,
       type: 'fixed',
     },
   });
@@ -71,17 +71,15 @@ const AddReplicateModal = ({ open, onClose }: AddReplicateModalProps) => {
             control={control}
             name="numberOfReplications"
             prettyFieldName="Number of Replications"
-            rules={{ required: true, minLength: 1, min: 1 }}
+            rules={{ required: true, minLength: 1, min: 2 }}
             TextFieldProps={{
               fullWidth: true,
               margin: 'normal',
               label: 'Number of Replications',
               helperText: ({ field, formState: { errors } }) =>
                 isNil(errors['numberOfReplications'])
-                  ? `Your list will be replicated ${field.value} time${
-                      field.value === 1 ? '' : 's'
-                    }`
-                  : 'Please choose a value greater than 0',
+                  ? `Your list will be replicated ${field.value} times`
+                  : 'Please choose a valuegst greater than 1',
             }}
           />
 
