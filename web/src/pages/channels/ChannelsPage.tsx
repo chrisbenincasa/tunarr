@@ -29,7 +29,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Channel } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { isEmpty } from 'lodash-es';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import TunarrLogo from '../../components/TunarrLogo.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
@@ -40,7 +40,7 @@ export default function ChannelsPage() {
   const apiClient = useTunarrApi();
   const now = dayjs();
   const {
-    isPending: channelsLoading,
+    isFetching: channelsFetching,
     error: channelsError,
     data: channels,
   } = useChannels();
@@ -51,6 +51,10 @@ export default function ChannelsPage() {
   const [deleteChannelConfirmation, setDeleteChannelConfirmation] = useState<
     string | undefined
   >(undefined);
+
+  useEffect(() => {
+    console.log(channelsFetching);
+  }, [channelsFetching]);
 
   const handleChannelNavigation = (
     _: React.MouseEvent<HTMLTableRowElement, MouseEvent>,
@@ -178,7 +182,7 @@ export default function ChannelsPage() {
   };
 
   const getTableRows = () => {
-    if (channelsLoading) {
+    if (channelsFetching) {
       return (
         <TableRow key="pending">
           <TableCell
@@ -238,7 +242,7 @@ export default function ChannelsPage() {
         </Table>
       </TableContainer>
 
-      {channels && channels.length === 0 && (
+      {channels && channels.length === 0 && !channelsFetching && (
         <PaddedPaper
           sx={{
             display: 'flex',
