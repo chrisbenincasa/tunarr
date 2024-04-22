@@ -59,7 +59,8 @@ for (const target of args.target) {
     name: binaryName,
     cwd: './build',
     targets: [target],
-    build: true,
+    build: false,
+    loglevel: 'verbose',
     bundle: false,
     resources: [
       './migrations/**/*',
@@ -75,6 +76,6 @@ for (const target of args.target) {
     temp: args.tempdir,
     verbose: true, //target === 'windows-x64-20.11.1',
     remote:
-      'https://github.com/chrisbenincasa/tunarr/releases/tag/nexe-prebuild',
+      'https://github.com/chrisbenincasa/tunarr/releases/download/nexe-prebuild/',
   });
 }
