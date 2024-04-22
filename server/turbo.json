@@ -16,7 +16,7 @@
       "dependsOn": ["^build"]
     },
     "make-exec-base": {
-      "dependsOn": ["^bundle", "bundle", "@tunarr/web#bundle"],
+      "dependsOn": ["bundle", "@tunarr/web#bundle"],
       "outputs": ["build/**"]
     },
     "make-exec:linux": {

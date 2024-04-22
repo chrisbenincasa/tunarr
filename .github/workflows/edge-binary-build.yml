@@ -51,6 +51,15 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      # Apparently we have to do this in a few separate steps
+      # because building/bundling web and server simultaneously
+      # can destroy a machine...
+      - name: Bundle web
+        run: pnpm turbo bundle --filter=@tunarr/web
+
+      - name: Bundle server
+        run: pnpm turbo bundle --filter=@tunarr/server
+
       - name: Build Executable
         run: pnpm turbo make-exec:${{ matrix.os.target_name }}
 
