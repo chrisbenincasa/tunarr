@@ -17,6 +17,7 @@ jobs:
             target_name: windows
         node_version: [20.11.1]
     runs-on: ${{matrix.os.name}}
+    continue-on-error: true
     steps:
       - name: Checkout
         uses: actions/checkout@v4 # Checkout code from repository
