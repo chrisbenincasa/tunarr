@@ -5,7 +5,7 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
 const NODE_VERSION = '20.11.1';
-const OSX_TARGET = `mac-x64-${NODE_VERSION}`;
+const OSX_TARGET = `macos-x64-${NODE_VERSION}`;
 const LINUX_TARGET = `linux-x64-${NODE_VERSION}`;
 const WINDOWS_TARGET = `windows-x64-${NODE_VERSION}`;
 const ALL_TARGETS = [OSX_TARGET, LINUX_TARGET, WINDOWS_TARGET] as const;
@@ -43,7 +43,7 @@ await fs.cp(path.resolve(process.cwd(), '../web/dist'), './build/web', {
 for (const target of args.target) {
   let binaryName: string;
   switch (target) {
-    case 'mac-x64-20.11.1':
+    case 'macos-x64-20.11.1':
       binaryName = 'tunarr-macos-x64';
       break;
     case 'linux-x64-20.11.1':
