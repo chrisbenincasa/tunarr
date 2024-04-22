@@ -54,11 +54,14 @@ for (const target of args.target) {
       break;
   }
 
+  const sanitizedTargetName =
+    target === 'macos-x64-20.11.1' ? target.replace('macos', 'mac') : target;
+
   await compile({
     input: 'bundle.js',
     name: binaryName,
     cwd: './build',
-    targets: [target],
+    targets: [sanitizedTargetName],
     build: false,
     loglevel: 'verbose',
     bundle: false,
