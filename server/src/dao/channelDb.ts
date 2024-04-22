@@ -30,6 +30,7 @@ import ld, {
   isNil,
   isNull,
   isNumber,
+  isUndefined,
   map,
   nth,
   omitBy,
@@ -59,6 +60,7 @@ import { SchemaBackedDbAdapter } from './SchemaBackedDbAdapter.js';
 import { ProgramConverter } from './converters/programConverters.js';
 import { getEm } from './dataSource.js';
 import {
+  ContentItem,
   Lineup,
   LineupItem,
   LineupSchema,
@@ -439,6 +441,52 @@ export class ChannelDB {
     return null;
   }
 
+  async setChannelPrograms(
+    channelId: string,
+    lineup: readonly LineupItem[],
+    startTime?: number,
+  ) {
+    const channel = await this.getChannelById(channelId);
+    if (isNull(channel)) {
+      return;
+    }
+
+    return await getEm().transactional(async (em) => {
+      if (!isUndefined(startTime)) {
+        channel.startTime = startTime;
+      }
+      channel.duration = sumBy(lineup, typedProperty('durationMs'));
+
+      const allIds = ld
+        .chain(lineup)
+        .filter(isContentItem)
+        .map((p) => p.id)
+        .uniq()
+        .value();
+      channel.programs.removeAll();
+      await em.persistAndFlush(channel);
+      const refs = allIds.map((id) => em.getReference(Program, id));
+      channel.programs.set(refs);
+      await em.persistAndFlush(channel);
+      return channel;
+    });
+  }
+
+  async addPendingPrograms(channelId: string, pendingPrograms: ContentItem[]) {
+    if (pendingPrograms.length === 0) {
+      return;
+    }
+
+    const db = await this.getFileDb(channelId);
+    return await db.update((data) => {
+      if (isUndefined(data.pendingPrograms)) {
+        data.pendingPrograms = [...pendingPrograms];
+      } else {
+        data.pendingPrograms.push(...pendingPrograms);
+      }
+    });
+  }
+
   async loadAllLineups() {
     return mapReduceAsyncSeq(
       await this.getAllChannelsAndPrograms(),
@@ -638,7 +686,13 @@ export class ChannelDB {
       (acc, item, index) => [...acc, acc[index] + item.durationMs],
       [0],
     );
-    db.data = lineup;
+    db.data = {
+      ...db.data,
+      items: lineup.items,
+      startTimeOffsets: lineup.startTimeOffsets,
+      schedule: lineup.schedule,
+      pendingPrograms: lineup.pendingPrograms,
+    };
     return await db.write();
   }
 

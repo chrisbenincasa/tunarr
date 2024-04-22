@@ -1,7 +1,6 @@
 import { Loaded } from '@mikro-orm/core';
 import { createExternalId } from '@tunarr/shared';
 import { buildPlexFilterKey } from '@tunarr/shared/util';
-import { ContentProgram } from '@tunarr/types';
 import { DynamicContentConfigPlexSource } from '@tunarr/types/api';
 import { PlexLibraryListing } from '@tunarr/types/plex';
 import { isNil, map } from 'lodash-es';
@@ -11,9 +10,14 @@ import { Channel } from '../../dao/entities/Channel.js';
 import { PlexServerSettings } from '../../dao/entities/PlexServerSettings.js';
 import { ProgramDB } from '../../dao/programDB.js';
 import { Plex } from '../../external/plex.js';
-import { PlexItemEnumerator } from '../PlexItemEnumerator.js';
+import {
+  EnrichedPlexTerminalMedia,
+  PlexItemEnumerator,
+} from '../PlexItemEnumerator.js';
 import { ContentSourceUpdater } from './ContentSourceUpdater.js';
-import { createPlexExternalId } from '../../util/externalIds.js';
+import { upsertContentPrograms } from '../../dao/programHelpers.js';
+import { ContentProgram } from '@tunarr/types';
+import { PendingProgram } from '../../dao/derived_types/Lineup.js';
 
 export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicContentConfigPlexSource> {
   #plex: Plex;
@@ -52,39 +56,71 @@ export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicConten
       plexResult?.Metadata ?? [],
     );
 
-    const programs: ContentProgram[] = map(enumeratedItems, (media) => {
-      const uniqueId = createExternalId(
-        'plex',
-        this.#plex.serverName,
-        media.ratingKey,
-      );
-      return {
-        id: media.id ?? uniqueId,
-        persisted: !isNil(media.id),
-        originalProgram: media,
-        duration: media.duration,
-        externalSourceName: this.#plex.serverName,
-        externalSourceType: 'plex',
-        externalKey: media.key,
-        uniqueId: uniqueId,
-        type: 'content',
-        subtype: media.type,
-        title: media.type === 'episode' ? media.grandparentTitle : media.title,
-        episodeTitle: media.type === 'episode' ? media.title : undefined,
-        episodeNumber: media.type === 'episode' ? media.index : undefined,
-        seasonNumber: media.type === 'episode' ? media.parentIndex : undefined,
-        externalIds: [
-          createPlexExternalId(this.#plex.serverName, media.ratingKey),
-        ],
-      };
+    const channelPrograms: ContentProgram[] = map(enumeratedItems, (media) => {
+      return plexMediaToContentProgram(this.#plex.serverName, media);
     });
 
-    console.log(programs.length);
+    const dbPrograms = await upsertContentPrograms(channelPrograms);
 
-    await this.#channelDB.updateLineup(this.channel.uuid, {
-      type: 'manual',
-      lineup: [],
-      programs: [],
-    });
+    const now = new Date().getTime();
+
+    const pendingPrograms: PendingProgram[] = map(dbPrograms, (program) => ({
+      type: 'content' as const,
+      id: program.uuid,
+      durationMs: program.duration,
+      updaterId: this.config.updater._id,
+      addedAt: now,
+    }));
+
+    await this.#channelDB.addPendingPrograms(
+      this.channel.uuid,
+      pendingPrograms,
+    );
+
+    // await new LineupCreator().resolveLineup(this.channel.uuid);
   }
 }
+
+// TODO: duplicated from web - move to common
+const plexMediaToContentProgram = (
+  serverName: string,
+  media: EnrichedPlexTerminalMedia,
+): ContentProgram => {
+  const uniqueId = createExternalId('plex', serverName, media.ratingKey);
+  return {
+    id: media.id ?? uniqueId,
+    persisted: !isNil(media.id),
+    originalProgram: media,
+    duration: media.duration,
+    externalSourceName: serverName,
+    externalSourceType: 'plex',
+    externalKey: media.ratingKey,
+    uniqueId,
+    type: 'content',
+    subtype: media.type,
+    title: media.type === 'episode' ? media.grandparentTitle : media.title,
+    episodeTitle: media.type === 'episode' ? media.title : undefined,
+    episodeNumber: media.type === 'episode' ? media.index : undefined,
+    seasonNumber: media.type === 'episode' ? media.parentIndex : undefined,
+    artistName: media.type === 'track' ? media.grandparentTitle : undefined,
+    albumName: media.type === 'track' ? media.parentTitle : undefined,
+    // showId:
+    //   media.showId ??
+    //   (media.type === 'episode'
+    //     ? createExternalId('plex', serverName, media.grandparentRatingKey)
+    //     : undefined),
+    // seasonId:
+    //   media.seasonId ??
+    //   (media.type === 'episode'
+    //     ? createExternalId('plex', serverName, media.parentRatingKey)
+    //     : undefined),
+    externalIds: [
+      {
+        type: 'multi',
+        source: 'plex',
+        sourceId: serverName,
+        id: media.ratingKey,
+      },
+    ],
+  };
+};

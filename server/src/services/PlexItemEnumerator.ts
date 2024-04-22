@@ -14,7 +14,7 @@ import { Plex } from '../external/plex';
 import { typedProperty } from '../types/path';
 import { flatMapAsyncSeq } from '../util/index.js';
 
-type EnrichedPlexTerminalMedia = PlexTerminalMedia & {
+export type EnrichedPlexTerminalMedia = PlexTerminalMedia & {
   id?: string;
 };
 
