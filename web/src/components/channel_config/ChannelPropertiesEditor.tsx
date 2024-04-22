@@ -50,7 +50,6 @@ export default function ChannelPropertiesEditor({ isNew }: Props) {
     [channel],
   );
   const imagePath = watch('icon.path');
-  console.log(imagePath);
 
   return (
     <>
