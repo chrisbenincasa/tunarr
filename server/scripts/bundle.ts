@@ -100,3 +100,4 @@ fs.cpSync(
 );
 
 console.log('Done bundling!');
+process.exit(0);
