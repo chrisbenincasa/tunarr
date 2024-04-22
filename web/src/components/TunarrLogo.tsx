@@ -3,7 +3,7 @@ import useStore from '../store';
 
 export default function TunarrLogo(props: SVGProps<SVGElement>) {
   const darkMode = useStore((state) => state.theme.darkMode);
-  const currentColor = darkMode ? '#474143' : '#231A12';
+  const currentColor = darkMode ? '#616161' : '#231A12';
 
   return (
     <svg

@@ -17,8 +17,8 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Grid2 from '@mui/material/Unstable_Grid2/Grid2';
 import { SaveChannelRequest, Watermark } from '@tunarr/types';
-import { isEmpty, isNil, isUndefined, map, round } from 'lodash-es';
-import { useEffect, useState } from 'react';
+import { isNil, isUndefined, map, round } from 'lodash-es';
+import { useState } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 import {
   resolutionFromAnyString,
@@ -72,7 +72,6 @@ export default function ChannelTranscodingConfig() {
   const { data: ffmpegSettings, isPending: ffmpegSettingsLoading } =
     useFfmpegSettings();
   const channel = useStore((s) => s.channelEditor.currentEntity);
-  const [watermarkPreviewUrl, setWatermarkPreviewUrl] = useState('');
 
   const { control, watch, setValue } = useFormContext<SaveChannelRequest>();
 
@@ -80,14 +79,6 @@ export default function ChannelTranscodingConfig() {
     'transcoding.targetResolution',
     'watermark',
   ]);
-
-  useEffect(() => {
-    if (channel && (isNil(watermark?.url) || isEmpty(watermark?.url))) {
-      setWatermarkPreviewUrl(
-        !isEmpty(channel.icon.path) ? channel.icon.path : '/tunarr.png',
-      );
-    }
-  }, [channel, watermark?.url, setWatermarkPreviewUrl]);
 
   const [targetResString, setTargetResString] =
     useState<ResolutionOptionValues>(() => {
@@ -147,6 +138,7 @@ export default function ChannelTranscodingConfig() {
   const isBottom =
     watermark?.position === 'bottom-left' ||
     watermark?.position === 'bottom-right';
+  const watermarkPath = watch('watermark.url');
 
   return (
     channel && (
@@ -194,7 +186,7 @@ export default function ChannelTranscodingConfig() {
                       [isBottom ? 'bottom' : 'top']: watermark?.verticalMargin,
                       [isRight ? 'right' : 'left']: watermark?.horizontalMargin,
                     }}
-                    src={watermarkPreviewUrl}
+                    src={watermarkPath || '/tunarr.png'}
                   />
                 </Box>
               </Box>
@@ -213,11 +205,8 @@ export default function ChannelTranscodingConfig() {
                         // TODO: This should be something like {channel.id}_fallback_picture.ext
                         fileRenamer={typedProperty('name')}
                         label="Watermark Picture URL"
-                        onFormValueChange={(value) =>
-                          setValue('watermark.url', value)
-                        }
+                        onFormValueChange={(newPath) => field.onChange(newPath)}
                         onUploadError={console.error}
-                        onPreviewValueChange={() => {}}
                         FormControlProps={{ fullWidth: true, sx: { mb: 1 } }}
                         value={field.value ?? ''}
                       >
