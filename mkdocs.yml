@@ -1,0 +1,10 @@
+site_name: Tunarr
+repo_name: chrisbenincasa/tunarr
+repo_url: https://github.com/chrisbenincasa/tunarr
+theme:
+  name: material
+  palette: 
+    scheme: slate
+    primary: teal
+    accent: indigo
+  logo: assets/tunarr.png
