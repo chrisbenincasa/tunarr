@@ -40,7 +40,7 @@ export default function ChannelsPage() {
   const apiClient = useTunarrApi();
   const now = dayjs();
   const {
-    isPending: channelsLoading,
+    isFetching: channelsFetching,
     error: channelsError,
     data: channels,
   } = useChannels();
@@ -178,7 +178,7 @@ export default function ChannelsPage() {
   };
 
   const getTableRows = () => {
-    if (channelsLoading) {
+    if (channelsFetching) {
       return (
         <TableRow key="pending">
           <TableCell
@@ -238,7 +238,7 @@ export default function ChannelsPage() {
         </Table>
       </TableContainer>
 
-      {channels && channels.length === 0 && (
+      {channels && channels.length === 0 && !channelsFetching && (
         <PaddedPaper
           sx={{
             display: 'flex',
