@@ -18,7 +18,6 @@ import {
 } from '@mui/material';
 import Box from '@mui/material/Box';
 import { SaveChannelRequest } from '@tunarr/types';
-import { Link as RouterLink } from 'react-router-dom';
 import {
   chain,
   find,
@@ -32,6 +31,7 @@ import {
 } from 'lodash-es';
 import { useCallback, useState } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
+import { Link as RouterLink } from 'react-router-dom';
 import { useDebounceCallback } from 'usehooks-ts';
 import { typedProperty } from '../../helpers/util.ts';
 import { useFillerLists } from '../../hooks/useFillerLists.ts';
@@ -393,7 +393,6 @@ export function ChannelFlexConfig() {
                       setValue('offline.picture', value)
                     }
                     onUploadError={console.error}
-                    onPreviewValueChange={() => {}}
                     FormControlProps={{ fullWidth: true, sx: { mb: 1 } }}
                     value={field.value ?? ''}
                   />
