@@ -28,6 +28,7 @@ const result = await esbuild.build({
   bundle: true,
   minify: false,
   outdir: 'build',
+  logLevel: 'info',
   // We can't make this mjs yet because mikro-orm breaks
   // when using cached metadata w/ not js/ts suffixes:
   // https://github.com/mikro-orm/mikro-orm/blob/e005cc22ef4e247f9741bdcaf1af012337977b7e/packages/core/src/cache/GeneratedCacheAdapter.ts#L16
@@ -86,12 +87,16 @@ console.log('Bundling DB migrations...');
 await esbuild.build({
   entryPoints: await fg('src/migrations/*'),
   outdir: 'build/migrations',
+  logLevel: 'debug',
   bundle: false,
   packages: 'external',
   tsconfig: './tsconfig.build.json',
 });
 
+console.log('Copying DB snapshot JSON');
 fs.cpSync(
   'src/migrations/.snapshot-db.db.json',
   'build/migrations/.snapshot-db.db.json',
 );
+
+console.log('Done bundling!');
