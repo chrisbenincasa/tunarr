@@ -1,0 +1,61 @@
+name: Build Edge Binaries
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os:
+          - name: macos-latest
+            target_name: macos
+          - name: ubuntu-latest
+            target_name: linux
+          - name: windows-latest
+            target_name: windows
+        node_version: [20.11.1]
+    runs-on: ${{matrix.os.name}}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4 # Checkout code from repository
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.11.1
+
+      - uses: pnpm/action-setup@v3
+        name: Install pnpm
+        with:
+          version: 8.15.4
+          run_install: false
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - uses: actions/cache@v3
+        name: Setup pnpm cache
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build Executable
+        run: pnpm turbo make-exec:${{ matrix.os.target_name }}
+
+      - name: Upload Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Tunarr Edge
+          tag_name: edge
+          prerelease: true
+          files: |
+            ./server/build/tunarr-${{ matrix.os.target_name }}-x64*

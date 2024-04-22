@@ -1,4 +1,6 @@
 import { compile } from 'nexe';
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
@@ -13,7 +15,9 @@ const args = await yargs(hideBin(process.argv))
   .option('target', {
     alias: 't',
     type: 'string',
+    array: true,
     choices: ALL_TARGETS,
+    default: ALL_TARGETS,
   })
   .demandOption('target')
   .option('build', {
@@ -29,32 +33,48 @@ const args = await yargs(hideBin(process.argv))
   })
   .parseAsync();
 
-let binaryName: string;
-switch (args.target) {
-  case 'mac-x64-20.11.1':
-    binaryName = 'tunarr-macos-x64';
-    break;
-  case 'linux-x64-20.11.1':
-    binaryName = 'tunarr-linux-x64';
-    break;
-  case 'windows-x64-20.11.1':
-    binaryName = 'tunarr-windows-x64.exe';
-    break;
-}
-
-await compile({
-  input: 'bundle.js',
-  name: binaryName,
-  cwd: './build',
-  targets: [args.target],
-  build: true,
-  bundle: false,
-  resources: [
-    './migrations/**/*',
-    './build/better_sqlite3.node',
-    './resources/**/*',
-  ],
-  python: args.python,
-  temp: args.tempdir,
-  verbose: args.target === 'windows-x64-20.11.1',
+// Copy over the bundled webapp for packaging. We could
+// probably symlink this but the compiled webapp is so
+// lightweight that this isn't a huge deal.
+await fs.cp(path.resolve(process.cwd(), '../web/dist'), './build/web', {
+  recursive: true,
 });
+
+for (const target of args.target) {
+  let binaryName: string;
+  switch (target) {
+    case 'mac-x64-20.11.1':
+      binaryName = 'tunarr-macos-x64';
+      break;
+    case 'linux-x64-20.11.1':
+      binaryName = 'tunarr-linux-x64';
+      break;
+    case 'windows-x64-20.11.1':
+      binaryName = 'tunarr-windows-x64.exe';
+      break;
+  }
+
+  await compile({
+    input: 'bundle.js',
+    name: binaryName,
+    cwd: './build',
+    targets: [target],
+    build: true,
+    bundle: false,
+    resources: [
+      './migrations/**/*',
+      // NOTE: When building the executable, we need to make sure that
+      // we are on the same arch type as the target so we copy in the
+      // correct native bindings.
+      './build/better_sqlite3.node',
+      './resources/**/*',
+      './static/**/*', // Swagger -- TODO: Change this path
+      './web/**',
+    ],
+    python: args.python,
+    temp: args.tempdir,
+    verbose: true, //target === 'windows-x64-20.11.1',
+    remote:
+      'https://github.com/chrisbenincasa/tunarr/releases/tag/nexe-prebuild',
+  });
+}
