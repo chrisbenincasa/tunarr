@@ -15,13 +15,18 @@
     "build-dev": {
       "dependsOn": ["^build"]
     },
+    "make-exec-base": {
+      "dependsOn": ["^bundle", "bundle", "@tunarr/web#bundle"],
+      "outputs": ["build/**"]
+    },
     "make-exec:linux": {
-      "dependsOn": ["^bundle", "@tunarr/web#bundle"],
-      "outputs": ["build/**", "dist/**"]
+      "dependsOn": ["make-exec-base"]
     },
     "make-exec:windows": {
-      "dependsOn": ["bundle"],
-      "outputs": ["build/**", "dist/**"]
+      "dependsOn": ["make-exec-base"]
+    },
+    "make-exec:macos": {
+      "dependsOn": ["make-exec-base"]
     },
     "lint-staged": {},
     "lint": {
