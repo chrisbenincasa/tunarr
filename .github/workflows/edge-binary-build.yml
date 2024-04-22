@@ -55,13 +55,13 @@ jobs:
       # because building/bundling web and server simultaneously
       # can destroy a machine...
       - name: Bundle web
-        run: pnpm turbo bundle --filter=@tunarr/web
+        run: pnpm turbo -vv bundle --filter=@tunarr/web
 
       - name: Bundle server
-        run: pnpm turbo bundle --filter=@tunarr/server
+        run: pnpm turbo -vv bundle --filter=@tunarr/server
 
       - name: Build Executable
-        run: pnpm turbo make-exec:${{ matrix.os.target_name }}
+        run: pnpm run --filter=server make-exec:${{ matrix.os.target_name }}
 
       - name: Upload Release
         uses: softprops/action-gh-release@v2
