@@ -221,7 +221,7 @@ export default function EditChannelPage({ isNew, initialTab }: Props) {
   };
 
   const onSubmit: SubmitHandler<SaveChannelRequest> = (data) => {
-    updateChannelMutation.mutate({
+    const dataTransform = {
       ...data,
       // Transform this to milliseconds before we send it over
       guideMinimumDuration: data.guideMinimumDuration * 1000,
@@ -231,7 +231,10 @@ export default function EditChannelPage({ isNew, initialTab }: Props) {
       guideFlexTitle: isNonEmptyString(data.guideFlexTitle)
         ? data.guideFlexTitle
         : undefined,
-    });
+    };
+
+    formMethods.reset(dataTransform);
+    updateChannelMutation.mutate(dataTransform);
   };
 
   const onInvalid: SubmitErrorHandler<SaveChannelRequest> = (data) => {
@@ -246,7 +249,7 @@ export default function EditChannelPage({ isNew, initialTab }: Props) {
       {workingChannel && (
         <div>
           <Typography variant="h4" sx={{ mb: 2 }}>
-            Channel {workingChannel.number}
+            {channel.name}
           </Typography>
           <Paper sx={{ p: 2 }}>
             <Box sx={{ borderColor: 'primary', borderBottom: 1 }}>

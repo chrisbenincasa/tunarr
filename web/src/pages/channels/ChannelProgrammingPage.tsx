@@ -154,7 +154,7 @@ export default function ChannelProgrammingPage() {
       />
       <Breadcrumbs />
       <Typography variant="h4" sx={{ mb: 2 }}>
-        Channel {channel.number} Programming
+        {channel.name}
       </Typography>
       <Paper sx={{ p: 2 }}>
         <ChannelProgrammingConfig />

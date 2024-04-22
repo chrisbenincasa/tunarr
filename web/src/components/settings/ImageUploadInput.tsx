@@ -25,7 +25,6 @@ type Props = {
   label: string;
   value: string;
   onFormValueChange(value: string): void;
-  onPreviewValueChange(url: string): void;
   onUploadError(error: unknown): void;
   fileRenamer(name: File): string;
   children?: React.ReactNode;
@@ -36,7 +35,6 @@ export function ImageUploadInput({
   label,
   onFormValueChange: onChange,
   onUploadError,
-  onPreviewValueChange,
   fileRenamer,
   value,
   children,
@@ -67,19 +65,16 @@ export function ImageUploadInput({
             console.error(err);
             onUploadError(err);
           });
-
-        onPreviewValueChange(URL.createObjectURL(file));
       }
     },
-    [onPreviewValueChange, onUploadError, onChange, fileRenamer],
+    [onUploadError, onChange, fileRenamer],
   );
 
   const onThumbUrlChange = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
       onChange(e.target.value);
-      onPreviewValueChange(e.target.value);
     },
-    [onChange, onPreviewValueChange],
+    [onChange],
   );
 
   return (
@@ -94,7 +89,9 @@ export function ImageUploadInput({
             <IconButton component="label">
               <CloudUpload />
               <VisuallyHiddenInput
-                onChange={(e) => handleFileUpload(e)}
+                onChange={(e) => {
+                  handleFileUpload(e);
+                }}
                 type="file"
                 accept="image/*"
               />

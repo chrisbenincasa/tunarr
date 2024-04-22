@@ -1,17 +1,15 @@
 import { Box, Snackbar, TextField } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { Channel } from '@tunarr/types';
-import { usePrevious } from '@uidotdev/usehooks';
 import dayjs from 'dayjs';
-import { isEmpty } from 'lodash-es';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
-import useDebouncedState from '../../hooks/useDebouncedState.ts';
 import useStore from '../../store/index.ts';
+import TunarrLogo from '../TunarrLogo.tsx';
 import { ImageUploadInput } from '../settings/ImageUploadInput.tsx';
 import ChannelEditActions from './ChannelEditActions.tsx';
 
-const DefaultIconPath = '/tunarr.png';
+const DefaultIconPath = '';
 
 type Props = {
   isNew: boolean;
@@ -20,27 +18,7 @@ type Props = {
 export default function ChannelPropertiesEditor({ isNew }: Props) {
   const imgRef = useRef<HTMLImageElement | null>(null);
   const channel = useStore((s) => s.channelEditor.currentEntity);
-  const prevChannel = usePrevious(channel);
-
-  const { control } = useFormContext<Channel>();
-
-  const [channelIcon, setChannelIcon] = useState(channel?.icon.path);
-  const previousIconPath = usePrevious(channelIcon);
-
-  const [, channelIconPreview, setChannelIconPreview] = useDebouncedState(
-    channel?.icon.path,
-    250,
-  );
-
-  useEffect(() => {
-    if (!prevChannel && channel) {
-      const url = isEmpty(channel.icon.path)
-        ? DefaultIconPath
-        : channel.icon.path;
-      setChannelIcon(url);
-      setChannelIconPreview(url);
-    }
-  }, [prevChannel, channel, setChannelIcon, setChannelIconPreview]);
+  const { control, watch } = useFormContext<Channel>();
 
   const onloadstart = () => {
     console.log('on load start');
@@ -55,14 +33,6 @@ export default function ChannelPropertiesEditor({ isNew }: Props) {
       };
     }
   }, [imgRef]);
-
-  const onThumbUrlChange = useCallback(
-    (value: string) => {
-      setChannelIcon(value);
-      setChannelIconPreview(value);
-    },
-    [setChannelIcon, setChannelIconPreview],
-  );
 
   const renameFile = useCallback(
     (file: File) => {
@@ -79,6 +49,7 @@ export default function ChannelPropertiesEditor({ isNew }: Props) {
     },
     [channel],
   );
+  const imagePath = watch('icon.path');
 
   return (
     <>
@@ -151,23 +122,33 @@ export default function ChannelPropertiesEditor({ isNew }: Props) {
           )}
 
           <Box sx={{ display: 'flex', alignItems: 'end' }}>
-            <Box
-              component="img"
-              width="10%"
-              src={channelIconPreview}
-              sx={{ mr: 1 }}
-              ref={imgRef}
-            />
-            <ImageUploadInput
-              FormControlProps={{ fullWidth: true, margin: 'normal' }}
-              value={channelIcon ?? DefaultIconPath}
-              onFormValueChange={onThumbUrlChange}
-              fileRenamer={renameFile}
-              label="Thumbnail URL"
-              onUploadError={() =>
-                onThumbUrlChange(previousIconPath ?? DefaultIconPath)
-              }
-              onPreviewValueChange={setChannelIconPreview}
+            {DefaultIconPath !== imagePath ? (
+              <Box
+                component="img"
+                width="10%"
+                src={imagePath}
+                sx={{ mr: 1 }}
+                ref={imgRef}
+              />
+            ) : (
+              <TunarrLogo style={{ maxWidth: '132px' }} />
+            )}
+
+            <Controller
+              name="icon.path"
+              control={control}
+              render={({ field }) => (
+                <ImageUploadInput
+                  FormControlProps={{ fullWidth: true, margin: 'normal' }}
+                  value={field.value}
+                  onFormValueChange={(newPath) => {
+                    field.onChange(newPath);
+                  }}
+                  fileRenamer={renameFile}
+                  label="Thumbnail URL"
+                  onUploadError={console.error}
+                />
+              )}
             />
           </Box>
           <ChannelEditActions />
