@@ -993,8 +993,8 @@
           "nullable": true,
           "mappedType": "text"
         },
-        "season": {
-          "name": "season",
+        "season_number": {
+          "name": "season_number",
           "type": "integer",
           "unsigned": false,
           "autoincrement": false,

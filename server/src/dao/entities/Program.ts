@@ -99,7 +99,7 @@ export class Program extends BaseEntity {
   @Property({ nullable: true })
   rating?: string;
 
-  @Property({ nullable: true, name: 'season' })
+  @Property({ nullable: true, name: 'season_number' })
   seasonNumber?: number;
 
   @Property({ nullable: true })
