@@ -122,7 +122,7 @@ export default function ChannelsPage() {
         {!smallViewport && (
           <TableCell>
             {isEmpty(channel.icon.path) ? (
-              <TunarrLogo style={{ width: '40px' }} />
+              <TunarrLogo style={{ width: '40px', height: '32px' }} />
             ) : (
               <img style={{ maxHeight: '40px' }} src={channel.icon.path} />
             )}

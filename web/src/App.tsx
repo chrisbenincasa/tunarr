@@ -40,8 +40,8 @@ import VersionFooter from './components/VersionFooter.tsx';
 import DarkModeButton from './components/settings/DarkModeButton.tsx';
 import { useVersion } from './hooks/useVersion.ts';
 import useStore from './store/index.ts';
-import { setDarkModeState } from './store/themeEditor/actions.ts';
 import { useSettings } from './store/settings/selectors.ts';
+import { setDarkModeState } from './store/themeEditor/actions.ts';
 
 interface NavItem {
   name: string;
@@ -182,7 +182,7 @@ export function Root({ children }: { children?: React.ReactNode }) {
               to="/guide"
               component={RouterLink}
             >
-              <TunarrLogo style={{ marginTop: '0.4em', maxHeight: '40px' }} />
+              <TunarrLogo style={{ marginTop: '0.4em', width: '40px' }} />
             </Link>
             <Typography
               variant="h6"
