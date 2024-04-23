@@ -215,3 +215,22 @@ export const LineupScheduleSchema = z.discriminatedUnion('type', [
 ]);
 
 export type LineupSchedule = z.infer<typeof LineupScheduleSchema>;
+
+//
+// Tools
+//
+
+const AddPaddingSchedulingOperationSchema = z.object({
+  type: z.literal('modifier'), // not sure I like this name yet
+  id: z.literal('add_padding'), // every operation needs a unique ID
+  mod: z.number(),
+  allowedOffsets: z.array(z.number()).optional(),
+});
+
+export type AddPaddingSchedulingOperation = z.infer<
+  typeof AddPaddingSchedulingOperationSchema
+>;
+
+export const SchedulingOperationSchema = AddPaddingSchedulingOperationSchema;
+
+export type SchedulingOperation = z.infer<typeof SchedulingOperationSchema>;

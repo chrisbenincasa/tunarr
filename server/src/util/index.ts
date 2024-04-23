@@ -21,6 +21,7 @@ import fs from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { format } from 'node:util';
 import { isPromise } from 'node:util/types';
+import { Func } from '../types/func';
 import { Try } from '../types/util';
 
 export type IsStringOrNumberValue<T, K extends keyof T> = T[K] extends
@@ -144,33 +145,6 @@ export function groupByAndMapAsync<
   );
 }
 
-export async function mapAsyncSeq_old<T, U>(
-  seq: T[] | null | undefined,
-  ms: number | undefined,
-  itemFn: (item: T) => Promise<U>,
-): Promise<U[]> {
-  if (isNil(seq)) {
-    return [];
-  }
-
-  const all = await seq.reduce(
-    async (prev, item) => {
-      const last = await prev;
-
-      const result = await itemFn(item);
-
-      if (ms) {
-        await wait(ms);
-      }
-
-      return [...last, result];
-    },
-    Promise.resolve([] as U[]),
-  );
-
-  return Promise.all(all);
-}
-
 type mapAsyncSeq2Opts = {
   ms?: number;
   parallelism?: number;
@@ -259,6 +233,19 @@ export function firstDefined(obj: object, ...args: string[]): string {
   }
 
   return 'missing';
+}
+
+type NativeFuncOrApply<In, Out> = ((input: In) => Out) | Func<In, Out>;
+
+export async function asyncFlow<T>(
+  ops: NativeFuncOrApply<T[], Promise<T[]>>[],
+  initial: readonly T[],
+): Promise<T[]> {
+  let res: T[] = [...initial];
+  for (const op of ops) {
+    res = await (isFunction(op) ? op(res) : op.apply(res));
+  }
+  return res;
 }
 
 export function time<T>(

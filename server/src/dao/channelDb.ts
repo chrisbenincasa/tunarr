@@ -60,10 +60,10 @@ import { SchemaBackedDbAdapter } from './SchemaBackedDbAdapter.js';
 import { ProgramConverter } from './converters/programConverters.js';
 import { getEm } from './dataSource.js';
 import {
-  ContentItem,
   Lineup,
   LineupItem,
   LineupSchema,
+  PendingProgram,
   isContentItem,
   isOfflineItem,
   isRedirectItem,
@@ -472,7 +472,10 @@ export class ChannelDB {
     });
   }
 
-  async addPendingPrograms(channelId: string, pendingPrograms: ContentItem[]) {
+  async addPendingPrograms(
+    channelId: string,
+    pendingPrograms: PendingProgram[],
+  ) {
     if (pendingPrograms.length === 0) {
       return;
     }

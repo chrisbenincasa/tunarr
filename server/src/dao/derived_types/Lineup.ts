@@ -1,6 +1,7 @@
 import {
   DynamicContentConfigSchema,
   LineupScheduleSchema,
+  SchedulingOperationSchema,
 } from '@tunarr/types/api';
 import { z } from 'zod';
 
@@ -91,6 +92,11 @@ export const LineupSchema = z.object({
   // that will be part of a channel once the channel's schedule is
   // updated.
   pendingPrograms: z.array(PendingProgramSchema).optional(),
+
+  schedulingOperations: z
+    .array(SchedulingOperationSchema)
+    .nonempty()
+    .optional(),
 });
 
 export type Lineup = z.infer<typeof LineupSchema>;
