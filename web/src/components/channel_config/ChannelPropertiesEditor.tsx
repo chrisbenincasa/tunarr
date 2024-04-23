@@ -131,7 +131,7 @@ export default function ChannelPropertiesEditor({ isNew }: Props) {
                 ref={imgRef}
               />
             ) : (
-              <TunarrLogo style={{ maxWidth: '132px' }} />
+              <TunarrLogo style={{ width: '132px' }} />
             )}
 
             <Controller
