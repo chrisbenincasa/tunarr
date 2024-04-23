@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "tsc --noEmit",
-    "build-dev": "tsc --noEmit --watch",
+    "build": "tsc -p tsconfig.build.json --noEmit",
+    "build-dev": "tsc -p tsconfig.build.json --noEmit --watch",
     "bundle": "vite build",
     "dev": "vite",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
@@ -66,6 +66,7 @@
     "openapi-zod-client": "^1.14.0",
     "ts-essentials": "^9.4.1",
     "typescript": "5.4.3",
-    "vite": "^4.4.5"
+    "vite": "^4.4.5",
+    "vitest": "^1.2.0"
   }
 }

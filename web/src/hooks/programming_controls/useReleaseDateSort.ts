@@ -9,28 +9,49 @@ export function useReleaseDateSort() {
   const programs = useStore(materializedProgramListSelector);
 
   return (sortOrder: SortOrder) => {
-    const { newProgramSort } = sortPrograms(programs, sortOrder);
+    const sortedPrograms = sortProgramsByReleaseDate(programs, sortOrder);
 
-    setCurrentLineup(newProgramSort, true);
+    setCurrentLineup(sortedPrograms, true);
   };
 }
 
-export const sortPrograms = (
+export const sortProgramsByReleaseDate = (
   programs: ChannelProgram[],
   sortOrder: SortOrder,
 ) => {
-  const newProgramSort = sortBy(programs, (p) => {
-    let n;
+  return sortBy(
+    programs,
+    (p) => {
+      let n;
 
-    if (isContentProgram(p)) {
-      const ts = p.date ? new Date(p.date).getTime() : 0;
-      n = sortOrder === 'asc' ? ts : -ts;
-    } else {
-      n = sortOrder === 'asc' ? Number.MAX_VALUE : Number.MAX_VALUE;
-    }
+      if (isContentProgram(p)) {
+        const ts = p.date ? new Date(p.date).getTime() : 0;
+        n = sortOrder === 'asc' ? ts : -ts;
+      } else {
+        n = sortOrder === 'asc' ? Number.MAX_VALUE : Number.MAX_VALUE;
+      }
 
-    return n;
-  });
+      return n;
+    },
+    (p) => {
+      if (isContentProgram(p)) {
+        let n = 1;
+        if (p.subtype === 'episode') {
+          if (p.seasonNumber) {
+            n *= p.seasonNumber * 1e4;
+          }
 
-  return { newProgramSort };
+          if (p.episodeNumber) {
+            n += p.episodeNumber * 1e2;
+          }
+        } else if (p.subtype === 'track') {
+          // TODO: Plumb through album index
+        }
+
+        return sortOrder === 'asc' ? n : -n;
+      } else {
+        return 0;
+      }
+    },
+  );
 };

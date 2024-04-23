@@ -25,7 +25,8 @@
     "noFallthroughCasesInSwitch": true
   },
   "files": [
-    "vite.config.ts"
+    "vite.config.ts",
+    "vitest.config.ts",
   ],
   "include": [
     "./src/**/*.ts",
@@ -34,7 +35,6 @@
   "exclude": [
     "./build/**/*",
     "./dist/**/*",
-    "./src/**/*.test.ts",
     "./src/**/*.ignore.ts"
   ],
   "references": [
