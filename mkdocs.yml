@@ -8,3 +8,6 @@ theme:
     primary: teal
     accent: indigo
   logo: assets/tunarr.png
+  features:
+    - navigation.tracking
+    - navigation.path
