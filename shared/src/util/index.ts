@@ -5,6 +5,8 @@ import isFunction from 'lodash-es/isFunction.js';
 import { MarkRequired } from 'ts-essentials';
 import type { PerTypeCallback } from '../types/index.js';
 
+export { mod as dayjsMod } from './dayjsExtensions.js';
+
 export function applyOrValueNoRest<Super, X extends Super, T>(
   f: ((m: X) => T) | T,
   arg: X,

@@ -1,10 +1,10 @@
-import { isUndefined, map, values } from 'lodash-es';
-import { ChannelDB } from '../../dao/channelDb.js';
+import { compact, isNull, isUndefined, map, reject, values } from 'lodash-es';
+import { ChannelAndLineup, ChannelDB } from '../../dao/channelDb.js';
 import { asyncPool } from '../../util/asyncPool.js';
-import { Lineup, LineupItem } from '../../dao/derived_types/Lineup.js';
+import { Lineup } from '../../dao/derived_types/Lineup.js';
 import { SchedulingOperation } from '@tunarr/types/api';
-import { PadProgramsSchedulingOperator } from './SchedulingOperator.js';
 import { asyncFlow } from '../../util/index.js';
+import { SchedulingOperatorFactory } from './SchedulingOperatorFactory.js';
 
 export class LineupCreator {
   private channelDB = new ChannelDB();
@@ -51,21 +51,34 @@ export class LineupCreator {
       lineup.pendingPrograms.length > 0
     ) {
       console.log('Resolving lineup for channel ' + channelId);
-      const newItems = await this.applySchedulingOperations(lineup);
+      const channelAndLineup =
+        await this.channelDB.loadChannelAndLineup(channelId);
+      if (isNull(channelAndLineup)) {
+        console.warn('Could not load channel and lineup ID = ' + channelId);
+        return;
+      }
 
-      await this.channelDB.setChannelPrograms(channelId, newItems);
+      const { channel: updatedChannel, lineup: updatedLineup } =
+        await this.applySchedulingOperations(channelAndLineup);
+
+      // We're only going to allow operations to alter the channel start
+      // time for now...
+      await this.channelDB.setChannelPrograms(
+        updatedChannel,
+        updatedLineup.items,
+      );
       await this.channelDB.saveLineup(channelId, {
         ...lineup,
-        items: newItems,
+        items: updatedLineup.items,
         pendingPrograms: [],
       });
     }
   }
 
-  private async applySchedulingOperations(lineup: Lineup) {
+  private async applySchedulingOperations(channelAndLineup: ChannelAndLineup) {
     return await this.createScheduleOperationPipeline(
-      lineup.schedulingOperations ?? [],
-    )([...lineup.items]);
+      channelAndLineup.lineup.schedulingOperations ?? [],
+    )(channelAndLineup);
   }
 
   // This doesn't really do much yet, but eventually it'll
@@ -73,14 +86,25 @@ export class LineupCreator {
   // function
   private createScheduleOperationPipeline(
     ops: SchedulingOperation[],
-  ): (lineup: readonly LineupItem[]) => Promise<LineupItem[]> {
-    const operators = map(ops, (op) => {
-      switch (op.id) {
-        case 'add_padding':
-          return new PadProgramsSchedulingOperator(op);
+  ): (channelAndLineup: ChannelAndLineup) => Promise<ChannelAndLineup> {
+    const seenIds = new Set<string>();
+    const dedupedOps = reject(ops, (op) => {
+      if (op.allowMultiple) {
+        return false;
       }
+
+      if (seenIds.has(op.id)) {
+        return true;
+      }
+
+      seenIds.add(op.id);
+      return false;
     });
 
-    return (lineup) => asyncFlow(operators, lineup);
+    const operators = compact(
+      map(dedupedOps, (op) => SchedulingOperatorFactory.create(op)),
+    );
+
+    return (channelAndLineup) => asyncFlow(operators, channelAndLineup);
   }
 }

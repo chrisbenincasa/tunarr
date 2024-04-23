@@ -238,10 +238,10 @@ export function firstDefined(obj: object, ...args: string[]): string {
 type NativeFuncOrApply<In, Out> = ((input: In) => Out) | Func<In, Out>;
 
 export async function asyncFlow<T>(
-  ops: NativeFuncOrApply<T[], Promise<T[]>>[],
-  initial: readonly T[],
-): Promise<T[]> {
-  let res: T[] = [...initial];
+  ops: NativeFuncOrApply<T, Promise<T>>[],
+  initial: T,
+): Promise<T> {
+  let res: T = initial;
   for (const op of ops) {
     res = await (isFunction(op) ? op(res) : op.apply(res));
   }
@@ -428,6 +428,13 @@ export const zipWithIndex = <T>(
 ): [T, number][] => {
   return zipWith(seq, range(start, seq.length), (s, i) => [s, i]);
 };
+
+export function scale(
+  coll: readonly number[] | null | undefined,
+  factor: number,
+): number[] {
+  return map(coll, (c) => c * factor);
+}
 
 export function run<T>(f: () => T): T {
   return f();

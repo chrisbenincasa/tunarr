@@ -220,17 +220,41 @@ export type LineupSchedule = z.infer<typeof LineupScheduleSchema>;
 // Tools
 //
 
-const AddPaddingSchedulingOperationSchema = z.object({
+const BaseSchedulingOpertionSchema = z.object({
+  allowMultiple: z.boolean().default(true),
+});
+
+const ScheduledRedirectOperationSchema = BaseSchedulingOpertionSchema.extend({
+  type: z.literal('modifier'),
+  id: z.literal('scheduled_redirect'),
+  channelId: z.string().uuid(),
+  startHour: z.number().min(0).max(23),
+  // Anything less than 30 mins doesn't really make sense?
+  // And can't schedule more than 24 hours either...
+  duration: z
+    .number()
+    .min(15 * 60 * 1000)
+    .max(24 * 60 * 60 * 1000),
+});
+
+export type ScheduledRedirectOperation = z.infer<
+  typeof ScheduledRedirectOperationSchema
+>;
+
+const AddPaddingOperationSchema = BaseSchedulingOpertionSchema.extend({
   type: z.literal('modifier'), // not sure I like this name yet
   id: z.literal('add_padding'), // every operation needs a unique ID
   mod: z.number(),
   allowedOffsets: z.array(z.number()).optional(),
+  alignChannelStartTime: z.boolean().default(false),
+  allowMultiple: z.literal(false).default(false).optional(),
 });
 
-export type AddPaddingSchedulingOperation = z.infer<
-  typeof AddPaddingSchedulingOperationSchema
->;
+export type AddPaddingOperation = z.infer<typeof AddPaddingOperationSchema>;
 
-export const SchedulingOperationSchema = AddPaddingSchedulingOperationSchema;
+export const SchedulingOperationSchema = z.union([
+  AddPaddingOperationSchema,
+  ScheduledRedirectOperationSchema,
+]);
 
 export type SchedulingOperation = z.infer<typeof SchedulingOperationSchema>;

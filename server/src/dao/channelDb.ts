@@ -30,6 +30,7 @@ import ld, {
   isNil,
   isNull,
   isNumber,
+  isString,
   isUndefined,
   map,
   nth,
@@ -53,6 +54,7 @@ import {
   groupByUniq,
   mapAsyncSeq,
   mapReduceAsyncSeq,
+  run,
 } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { Timer, timeNamedAsync } from '../util/perf.js';
@@ -160,6 +162,11 @@ export type LoadedChannelWithGroupRefs = Loaded<
   | 'programs.season'
 >;
 
+export type ChannelAndLineup = {
+  channel: Loaded<Channel>;
+  lineup: Lineup;
+};
+
 // Let's see if this works... in so we can have many ChannelDb objects flying around.
 const fileDbCache: Record<string | number, Low<Lineup>> = {};
 
@@ -204,8 +211,7 @@ export class ChannelDB {
       );
     }
 
-    const channel = new Channel();
-    wrap(channel).assign(createRequestToChannel(createReq), { em });
+    const channel = em.create(Channel, createRequestToChannel(createReq));
     em.persist(channel);
     await this.createLineup(channel.uuid);
     await em.flush();
@@ -442,20 +448,31 @@ export class ChannelDB {
   }
 
   async setChannelPrograms(
-    channelId: string,
+    channel: Loaded<Channel>,
+    lineup: readonly LineupItem[],
+  ): Promise<Loaded<Channel> | null>;
+  async setChannelPrograms(
+    channel: string | Loaded<Channel>,
     lineup: readonly LineupItem[],
     startTime?: number,
-  ) {
-    const channel = await this.getChannelById(channelId);
-    if (isNull(channel)) {
-      return;
+  ): Promise<Loaded<Channel> | null> {
+    const loadedChannel = await run(async () => {
+      if (isString(channel)) {
+        return await this.getChannelById(channel);
+      } else {
+        return channel;
+      }
+    });
+
+    if (isNull(loadedChannel)) {
+      return null;
     }
 
     return await getEm().transactional(async (em) => {
       if (!isUndefined(startTime)) {
-        channel.startTime = startTime;
+        loadedChannel.startTime = startTime;
       }
-      channel.duration = sumBy(lineup, typedProperty('durationMs'));
+      loadedChannel.duration = sumBy(lineup, typedProperty('durationMs'));
 
       const allIds = ld
         .chain(lineup)
@@ -463,12 +480,12 @@ export class ChannelDB {
         .map((p) => p.id)
         .uniq()
         .value();
-      channel.programs.removeAll();
-      await em.persistAndFlush(channel);
+      loadedChannel.programs.removeAll();
+      await em.persistAndFlush(loadedChannel);
       const refs = allIds.map((id) => em.getReference(Program, id));
-      channel.programs.set(refs);
-      await em.persistAndFlush(channel);
-      return channel;
+      loadedChannel.programs.set(refs);
+      await em.persistAndFlush(loadedChannel);
+      return loadedChannel;
     });
   }
 
