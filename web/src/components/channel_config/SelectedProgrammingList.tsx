@@ -1,4 +1,4 @@
-import { AddCircle, Delete } from '@mui/icons-material';
+import { Delete } from '@mui/icons-material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import {
   Box,
@@ -171,7 +171,6 @@ export default function SelectedProgrammingList({
 
           <AddSelectedMediaButton
             onAdd={onAddSelectedMedia}
-            startIcon={<AddCircle />}
             onSuccess={onAddMediaSuccess}
             sx={{
               color: '#fff',
