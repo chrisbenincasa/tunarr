@@ -1,17 +1,18 @@
-import { Tooltip } from '@mui/material';
+import { AddCircle } from '@mui/icons-material';
+import { CircularProgress, Tooltip } from '@mui/material';
 import Button, { ButtonProps } from '@mui/material/Button';
 import { flattenDeep, map } from 'lodash-es';
-import { MouseEventHandler } from 'react';
+import { MouseEventHandler, useState } from 'react';
 import {
   forSelectedMediaType,
   sequentialPromises,
 } from '../../helpers/util.ts';
 import { enumeratePlexItem } from '../../hooks/plexHooks.ts';
+import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 import useStore from '../../store/index.ts';
 import { clearSelectedMedia } from '../../store/programmingSelector/actions.ts';
 import { CustomShowSelectedMedia } from '../../store/programmingSelector/store.ts';
 import { AddedCustomShowProgram, AddedMedia } from '../../types/index.ts';
-import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 
 type Props = {
   onAdd: (items: AddedMedia[]) => void;
@@ -26,10 +27,12 @@ export default function AddSelectedMediaButton({
   const apiClient = useTunarrApi();
   const knownMedia = useStore((s) => s.knownMediaByServer);
   const selectedMedia = useStore((s) => s.selectedMedia);
+  const [isLoading, setIsLoading] = useState(false);
 
   const addSelectedItems: MouseEventHandler = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    setIsLoading(true);
     sequentialPromises(
       selectedMedia,
       forSelectedMediaType<Promise<AddedMedia[]>>({
@@ -61,6 +64,7 @@ export default function AddSelectedMediaButton({
       .then(onAdd)
       .then(() => {
         clearSelectedMedia();
+        setIsLoading(false);
         onSuccess();
       })
       .catch(console.error);
@@ -71,8 +75,15 @@ export default function AddSelectedMediaButton({
       <span>
         <Button
           onClick={(e) => addSelectedItems(e)}
-          disabled={selectedMedia.length === 0}
+          disabled={selectedMedia.length === 0 || isLoading}
           {...(rest ?? {})}
+          startIcon={
+            isLoading ? (
+              <CircularProgress size="20px" sx={{ mx: 1, color: '#fff' }} />
+            ) : (
+              <AddCircle />
+            )
+          }
         >
           Add All
         </Button>
