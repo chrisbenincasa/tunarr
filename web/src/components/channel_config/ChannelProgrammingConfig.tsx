@@ -1,4 +1,5 @@
-import { Box, Stack } from '@mui/material';
+import { Alert, Box, Link, Stack } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
 import { DateTimePicker } from '@mui/x-date-pickers';
 import dayjs, { Dayjs } from 'dayjs';
 import { useSlideSchedule } from '../../hooks/programming_controls/useSlideSchedule.ts';
@@ -10,7 +11,7 @@ import { ChannelProgrammingSort } from './ChannelProgrammingSort.tsx';
 import { ChannelProgrammingTools } from './ChannelProgrammingTools.tsx';
 
 export function ChannelProgrammingConfig() {
-  const { currentEntity: channel } = usePreloadedChannelEdit();
+  const { currentEntity: channel, schedule } = usePreloadedChannelEdit();
 
   const slideSchedule = useSlideSchedule();
 
@@ -29,7 +30,24 @@ export function ChannelProgrammingConfig() {
   const startTime = channel ? dayjs(channel.startTime) : dayjs();
   return (
     <Box display="flex" flexDirection="column">
-      <Box display="flex" justifyContent={'flex-start'}></Box>
+      {schedule && (
+        <Alert sx={{ mb: 2 }} severity="info">
+          This channel is setup to use{' '}
+          <Link
+            to={
+              schedule.type === 'time'
+                ? 'time-slot-editor'
+                : 'random-slot-editor'
+            }
+            component={RouterLink}
+          >
+            {schedule.type === 'time' ? 'Time ' : 'Random '}
+            Slots
+          </Link>{' '}
+          for programming. Any manual changes on this page will likely make this
+          channel stop adhering to that schedule.
+        </Alert>
+      )}
 
       <Stack
         direction={{ xs: 'column', sm: 'row' }}
