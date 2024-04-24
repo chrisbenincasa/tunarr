@@ -221,7 +221,7 @@ export type LineupSchedule = z.infer<typeof LineupScheduleSchema>;
 //
 
 const BaseSchedulingOpertionSchema = z.object({
-  allowMultiple: z.boolean().default(true),
+  allowMultiple: z.boolean().default(true).optional(),
 });
 
 const ScheduledRedirectOperationSchema = BaseSchedulingOpertionSchema.extend({

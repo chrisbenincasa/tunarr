@@ -3,8 +3,9 @@ import { ChannelAndLineup, ChannelDB } from '../../dao/channelDb.js';
 import { asyncPool } from '../../util/asyncPool.js';
 import { Lineup } from '../../dao/derived_types/Lineup.js';
 import { SchedulingOperation } from '@tunarr/types/api';
-import { asyncFlow } from '../../util/index.js';
+import { asyncFlow, intersperse } from '../../util/index.js';
 import { SchedulingOperatorFactory } from './SchedulingOperatorFactory.js';
+import { IntermediateOperator } from './IntermediateOperator.js';
 
 export class LineupCreator {
   private channelDB = new ChannelDB();
@@ -101,8 +102,9 @@ export class LineupCreator {
       return false;
     });
 
-    const operators = compact(
-      map(dedupedOps, (op) => SchedulingOperatorFactory.create(op)),
+    const operators = intersperse(
+      compact(map(dedupedOps, (op) => SchedulingOperatorFactory.create(op))),
+      IntermediateOperator,
     );
 
     return (channelAndLineup) => asyncFlow(operators, channelAndLineup);

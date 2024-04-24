@@ -2,6 +2,7 @@ import _, {
   chunk,
   compact,
   concat,
+  flatMap,
   identity,
   isArray,
   isEmpty,
@@ -438,6 +439,12 @@ export function scale(
 
 export function run<T>(f: () => T): T {
   return f();
+}
+
+// If makeLast == true, value will be inserted on a one-element array
+// If makeLast == false, value will only be inserted in between 2 array values
+export function intersperse<T>(arr: T[], v: T, makeLast: boolean = false): T[] {
+  return flatMap(arr, (x, i) => (i === 0 && !makeLast ? [x] : [x, v]));
 }
 
 export function isSuccess<T>(x: Try<T>): x is T {
