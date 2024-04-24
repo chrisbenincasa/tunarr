@@ -1,3 +1,4 @@
+import { Save } from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -48,6 +49,7 @@ export default function ChannelProgrammingPage() {
   const apiClient = useTunarrApi();
   const queryClient = useQueryClient();
   const theme = useTheme();
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   const [snackStatus, setSnackStatus] = useState<SnackBar>({
     display: false,
@@ -65,6 +67,7 @@ export default function ChannelProgrammingPage() {
     },
     onSuccess: async (data, { channelId: channelNumber }) => {
       resetCurrentLineup(data.lineup, data.programs);
+      setIsSubmitting(false);
       setSnackStatus({
         display: true,
         message: 'Programs Saved!',
@@ -75,6 +78,7 @@ export default function ChannelProgrammingPage() {
       });
     },
     onError: (error) => {
+      setIsSubmitting(false);
       setSnackStatus({
         display: true,
         message: error.message,
@@ -92,6 +96,7 @@ export default function ChannelProgrammingPage() {
   };
 
   const onSave = () => {
+    setIsSubmitting(true);
     if (
       !isUndefined(channel) &&
       !isUndefined(originalChannel) &&
@@ -177,7 +182,14 @@ export default function ChannelProgrammingPage() {
           <Button
             variant="contained"
             onClick={() => onSave()}
-            disabled={!programsDirty}
+            disabled={!programsDirty || isSubmitting}
+            startIcon={
+              isSubmitting ? (
+                <CircularProgress size="20px" sx={{ mx: 1, color: '#fff' }} />
+              ) : (
+                <Save />
+              )
+            }
           >
             Save
           </Button>
