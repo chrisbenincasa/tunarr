@@ -1,21 +1,57 @@
 import { Save } from '@mui/icons-material';
-import { CircularProgress } from '@mui/material';
+import { CircularProgress, Snackbar } from '@mui/material';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
+import { useTheme } from '@mui/material/styles';
 import { SaveChannelRequest } from '@tunarr/types';
-import { useContext } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { ChannelEditContext } from '../../pages/channels/EditChannelContext.ts';
+
+type SnackBar = {
+  display: boolean;
+  message: string;
+  color: string;
+};
 
 export default function ChannelEditActions() {
   const { channelEditorState } = useContext(ChannelEditContext)!;
   const {
-    formState: { isValid, isDirty, isSubmitting },
+    formState: { isValid, isDirty, isSubmitting, isSubmitSuccessful },
     reset,
   } = useFormContext<SaveChannelRequest>();
+  const theme = useTheme();
+
+  const [snackStatus, setSnackStatus] = useState<SnackBar>({
+    display: false,
+    color: '',
+    message: '',
+  });
+
+  useEffect(() => {
+    if (isSubmitSuccessful) {
+      setSnackStatus({
+        display: true,
+        message: 'Channel settings saved!',
+        color: theme.palette.success.main,
+      });
+    }
+  }, [isSubmitSuccessful]);
+
+  const handleSnackClose = () => {
+    setSnackStatus({ display: false, message: '', color: '' });
+  };
 
   return (
     <Stack spacing={2} direction="row" justifyContent="right" sx={{ mt: 2 }}>
+      <Snackbar
+        open={snackStatus.display}
+        autoHideDuration={6000}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        onClose={handleSnackClose}
+        message={snackStatus.message}
+        sx={{ backgroundColor: snackStatus.color }}
+      />
       {!channelEditorState.isNewChannel ? (
         <>
           {isDirty && (
