@@ -10,21 +10,23 @@ Tunarr is available on [Docker Hub](https://hub.docker.com/r/chrisbenincasa/tuna
 
 The general format of tags is: `{release}{-encoder}?`.
 
-Since Tunarr is currently pre-release, there is a single tag: `edge`. The edge tag is pushed hourly from the `main` branch. We also support a specialized image build which includes support for Nvidia hardware-accelerated encoding:
+Since Tunarr is currently pre-release, there is a single tag: `edge`. The edge tag is pushed hourly from the `main` branch. We also support a specialized image builds which include support for hardware-accelerated encoding with Nvidia, QSV, and VAAPI.
 
 !!! info
 
-    Tunarr currently does not have builds that support QSV / VAAPI. We are looking into software changes to how Tunarr uses FFMPEG in order to function properly. This issue is tracked here: [chrisbenincasa/tunarr#23](https://github.com/chrisbenincasa/tunarr/issues/23)
+    Tunarr has experimental support for QSV / VAAPI. This issue is tracked here: [chrisbenincasa/tunarr#23](https://github.com/chrisbenincasa/tunarr/issues/23)
 
 Docker:
 
 - `chrisbenincasa/tunarr:edge`
-- `chrisbenincasa/tunarr:nvidia-edge`
+- `chrisbenincasa/tunarr:edge-nvidia`
+- `chrisbenincasa/tunarr:edge-vaapi`
 
 GHCR:
 
 - `ghcr.io/chrisbenincasa/tunarr:edge`
-- `ghcr.io/chrisbenincasa/tunarr:nvidia-edge`
+- `ghcr.io/chrisbenincasa/tunarr:edge-nvidia`
+- `ghcr.io/chrisbenincasa/tunarr:edge-vaapi`
 
 ## Binaries
 
