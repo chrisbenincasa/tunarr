@@ -16,8 +16,8 @@ export const WatermarkSchema = z.object({
   verticalMargin: z.number(),
   horizontalMargin: z.number(),
   duration: z.number(),
-  fixedSize: z.boolean(),
-  animated: z.boolean(),
+  fixedSize: z.boolean().optional(),
+  animated: z.boolean().optional(),
 });
 
 export const FillerCollectionSchema = z.object({

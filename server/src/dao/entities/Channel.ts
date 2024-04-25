@@ -35,8 +35,8 @@ type ChannelWatermark = {
   verticalMargin: number;
   horizontalMargin: number;
   duration: number;
-  fixedSize: boolean;
-  animated: boolean;
+  fixedSize?: boolean;
+  animated?: boolean;
 };
 
 type ChannelOfflineSettings = {
