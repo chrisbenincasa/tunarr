@@ -7,17 +7,19 @@ on:
 
 jobs:
   build_and_push:
-    runs-on: ubuntu-latest # Replace with desired runner
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         builds:
-          - dockerfile: build.Dockerfile
+          - base_tag: 7.0
             tag: edge
-          - dockerfile: nvidia.Dockerfile
-            tag: nvidia-edge
+          - base_tag: 7.0-nvidia
+            tag: edge-nvidia
+          - base_tag: 7.0-vaapi
+            tag: edge-vaapi
 
     steps:
-      - uses: actions/checkout@v4 # Checkout code from repository
+      - uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -37,8 +39,8 @@ jobs:
 
       - uses: actions/cache@v4 # Cache previous HEAD SHA
         with:
-          path: previous_head_sha # Cache key
-          key: ${{ runner.os }}-edge-build-${{ github.sha }} # Unique cache key
+          path: previous_head_sha
+          key: ${{ runner.os }}-edge-build-${{ github.sha }}
           restore-keys: | # Check for previous SHA in cache
             ${{ runner.os }}-edge-build-
 
@@ -62,7 +64,7 @@ jobs:
         with:
           context: .
           push: true
-          file: ${{ matrix.builds.dockerfile }}
+          build-args: base_image_tag=${{ matrix.builds.base_tag }}
           target: full-stack
           tags: |
             chrisbenincasa/tunarr:${{ matrix.builds.tag }}
