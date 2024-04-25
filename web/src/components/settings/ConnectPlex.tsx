@@ -6,6 +6,7 @@ import {
   Typography,
 } from '@mui/material';
 import AddPlexServer from './AddPlexServer.tsx';
+import plexSvg from '../../assets/plex.svg';
 
 export default function ConnectPlex(props: CardProps) {
   const {
@@ -20,7 +21,7 @@ export default function ConnectPlex(props: CardProps) {
   return (
     <Box sx={sx} {...restProps}>
       <CardContent>
-        <img src="/web/src/assets/plex.svg" width="75" />
+        <img src={plexSvg} width="75" />
         {/* <Typography sx={{ my: 2 }}>
           First things first, let's get your Plex Server connected.
         </Typography> */}
