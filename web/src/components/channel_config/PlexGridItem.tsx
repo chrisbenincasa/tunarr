@@ -5,6 +5,7 @@ import {
   IconButton,
   ImageListItem,
   ImageListItemBar,
+  Skeleton,
 } from '@mui/material';
 import {
   PlexChildMediaApiType,
@@ -12,7 +13,7 @@ import {
   isPlexCollection,
   isTerminalItem,
 } from '@tunarr/types/plex';
-import _, { filter, isNaN } from 'lodash-es';
+import { filter, isNaN, isNull, isUndefined } from 'lodash-es';
 import React, {
   ForwardedRef,
   MouseEvent,
@@ -22,7 +23,11 @@ import React, {
   useState,
 } from 'react';
 import { useIntersectionObserver } from 'usehooks-ts';
-import { forPlexMedia, prettyItemDuration } from '../../helpers/util.ts';
+import {
+  forPlexMedia,
+  isNonEmptyString,
+  prettyItemDuration,
+} from '../../helpers/util.ts';
 import { usePlexTyped } from '../../hooks/plexHooks.ts';
 import useStore from '../../store/index.ts';
 import {
@@ -31,6 +36,7 @@ import {
   removePlexSelectedMedia,
 } from '../../store/programmingSelector/actions.ts';
 import { PlexSelectedMedia } from '../../store/programmingSelector/store.ts';
+import pluralize from 'pluralize';
 
 export interface PlexGridItemProps<T extends PlexMedia> {
   item: T;
@@ -54,7 +60,7 @@ const PlexGridItem = forwardRef(
     const darkMode = useStore((state) => state.theme.darkMode);
     const [open, setOpen] = useState(false);
     const [imageLoaded, setImageLoaded] = useState(false);
-    const { item, style, moveModal, modalChildren } = props;
+    const { item, style, moveModal, modalChildren, modalIsPending } = props;
     const hasChildren = !isTerminalItem(item);
     const childPath = isPlexCollection(item) ? 'collections' : 'metadata';
     const { isPending, data: children } = usePlexTyped<
@@ -83,10 +89,10 @@ const PlexGridItem = forwardRef(
     };
 
     useEffect(() => {
-      if (props.modalIsPending) {
-        props.modalIsPending(isPending);
+      if (modalIsPending) {
+        modalIsPending(isPending);
       }
-    }, [isPending]);
+    }, [isPending, modalIsPending]);
 
     useEffect(() => {
       if (children) {
@@ -96,7 +102,7 @@ const PlexGridItem = forwardRef(
           modalChildren(children.Metadata);
         }
       }
-    }, [item.guid, server.name, children]);
+    }, [item.guid, server.name, children, modalChildren]);
 
     const handleItem = useCallback(
       (e: MouseEvent<HTMLDivElement | HTMLButtonElement>) => {
@@ -124,9 +130,18 @@ const PlexGridItem = forwardRef(
       collection: (s) => parseInt(s.childCount),
     });
 
+    let childCount = isUndefined(item) ? null : extractChildCount(item);
+    if (isNaN(childCount)) {
+      childCount = null;
+    }
+
     return (
       <Fade
-        in={isInViewport && !_.isUndefined(item) && imageLoaded}
+        in={
+          isInViewport &&
+          !isUndefined(item) &&
+          (imageLoaded || !isNonEmptyString(item.thumb))
+        }
         timeout={500}
         ref={imageContainerRef}
       >
@@ -161,21 +176,32 @@ const PlexGridItem = forwardRef(
             }
             ref={ref}
           >
-            {isInViewport && ( // To do: Eventually turn this itno isNearViewport so images load before they hit the viewport
-              <img
-                src={`${server.uri}${item.thumb}?X-Plex-Token=${server.accessToken}`}
-                width={100}
-                style={{ borderRadius: '5%', height: 'auto' }}
-                onLoad={() => setImageLoaded(true)}
-              />
-            )}
+            {isInViewport && // TODO: Eventually turn this itno isNearViewport so images load before they hit the viewport
+              (isNonEmptyString(item.thumb) ? (
+                // TODO: Use server endpoint for plex metdata
+                <img
+                  src={`${server.uri}${item.thumb}?X-Plex-Token=${server.accessToken}`}
+                  style={{ borderRadius: '5%', height: 'auto' }}
+                  onLoad={() => setImageLoaded(true)}
+                />
+              ) : (
+                <Skeleton
+                  variant="rectangular"
+                  animation={false}
+                  sx={{ borderRadius: '5%' }}
+                  height={250}
+                />
+              ))}
             <ImageListItemBar
               title={item.title}
               subtitle={
                 item.type !== 'movie' ? (
-                  <span>{`${
-                    !isNaN(extractChildCount(item)) && extractChildCount(item)
-                  } items`}</span>
+                  !isNull(childCount) ? (
+                    <span>{`${childCount} ${pluralize(
+                      'item',
+                      childCount,
+                    )}`}</span>
+                  ) : null
                 ) : (
                   <span>{prettyItemDuration(item.duration)}</span>
                 )
