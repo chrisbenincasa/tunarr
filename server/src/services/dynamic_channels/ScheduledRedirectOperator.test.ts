@@ -1,14 +1,12 @@
 import dayjs from 'dayjs';
+import { initial, last, map, range, reduce } from 'lodash-es';
 import { initTestDb } from '../../../tests/testDb';
 import { initOrm } from '../../dao/dataSource';
 import { Lineup, LineupItem } from '../../dao/derived_types/Lineup';
 import { Channel } from '../../dao/entities/Channel';
-import { ScheduledRedirectOperator } from './ScheduledRedirectOperator';
-import { inspect } from 'node:util';
-import { initial, last, map, range, reduce } from 'lodash-es';
 import { asyncFlow } from '../../util';
 import { IntermediateOperator } from './IntermediateOperator';
-import { v4 } from 'uuid';
+import { ScheduledRedirectOperator } from './ScheduledRedirectOperator';
 
 beforeAll(async () => {
   await initTestDb();
@@ -73,6 +71,7 @@ describe('ScheduledRedirectOperator', () => {
       type: 'modifier',
     });
 
+    const startTime = performance.now();
     const { channel: updatedChannel, lineup: updatedLineup } = await asyncFlow(
       [op, IntermediateOperator],
       {
@@ -80,6 +79,7 @@ describe('ScheduledRedirectOperator', () => {
         lineup,
       },
     );
+    const end = performance.now();
 
     initial(updatedLineup.startTimeOffsets)?.forEach((offset, i) =>
       console.log(
@@ -88,5 +88,7 @@ describe('ScheduledRedirectOperator', () => {
         i,
       ),
     );
+
+    console.log('Took ' + (end - startTime) + 'ms for 200 days');
   });
 });

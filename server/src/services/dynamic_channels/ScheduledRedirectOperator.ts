@@ -16,6 +16,7 @@ export class ScheduledRedirectOperator extends SchedulingOperator<ScheduledRedir
     const newItems: LineupItem[] = [...lineup.items];
     const newOffsets = [...(lineup.startTimeOffsets ?? [])];
     const channelDuration = dayjs.duration(channel.duration);
+    const redirectDuration = dayjs.duration(this.config.duration);
 
     if (channelDuration.asDays() < 1) {
       const diff = dayjs.duration({ days: 1 }).subtract(channelDuration);
@@ -31,6 +32,7 @@ export class ScheduledRedirectOperator extends SchedulingOperator<ScheduledRedir
 
     let t0 = channelStart;
     while (t0 < end) {
+      // console.log(newItems, newOffsets);
       // Find out how far into the channel we are. This is measured in days essentially
       const since = dayjs.duration(t0.diff(channelStart));
       // Then find how far into the day the redirect would start
@@ -45,15 +47,19 @@ export class ScheduledRedirectOperator extends SchedulingOperator<ScheduledRedir
       );
 
       if (!isNull(idx)) {
+        // console.log(idx);
         const programStart = channelStart.add(newOffsets[idx]);
         const untilRedirect = dayjs.duration(redirectStart.diff(programStart));
 
+        let addedDuration = 0;
         // Add padding time to get an 'even' start for the redirect
         if (untilRedirect.asMilliseconds() > 0) {
+          addedDuration += untilRedirect.asMilliseconds();
           newItems.splice(idx, 0, {
             type: 'offline',
             durationMs: untilRedirect.asMilliseconds(),
           });
+
           newOffsets.splice(
             idx + 1,
             0,
@@ -62,19 +68,39 @@ export class ScheduledRedirectOperator extends SchedulingOperator<ScheduledRedir
           idx++;
         }
 
+        addedDuration += this.config.duration;
+
         // Now add the redirect
         newItems.splice(idx, 0, {
           type: 'redirect',
           channel: this.config.channelId,
           durationMs: this.config.duration,
         });
+
         newOffsets.splice(idx + 1, 0, newOffsets[idx] + this.config.duration);
+
+        // Scale the remaining offsets by the amount of duraiton we added overall
+        // to the lineup (optional flex + redirect).
+        for (let i = idx + 1; i < newOffsets.length; i++) {
+          newOffsets[i] += addedDuration;
+        }
       }
 
       // Advance the iterator by a day. This only works IFF:
       // the scheduled redirect duration is < 24 hours (it should be validated)
-      t0 = t0.add(1, 'day');
+      t0 =
+        redirectDuration.asDays() > 1
+          ? t0.add(redirectDuration)
+          : t0.add(1, 'day');
     }
+
+    // initial(newOffsets)?.forEach((offset, i) =>
+    //   console.log(
+    //     newItems[i].type,
+    //     dayjs(channel.startTime).add(offset).format(),
+    //     i,
+    //   ),
+    // );
 
     return Promise.resolve({
       channel,
