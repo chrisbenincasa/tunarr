@@ -16,7 +16,7 @@ const queryClient = new QueryClient({ queryCache });
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <TunarrApiProvider>
+    <TunarrApiProvider queryClient={queryClient}>
       <LocalizationProvider dateAdapter={AdapterDayjs}>
         <DndProvider backend={HTML5Backend}>
           <QueryClientProvider client={queryClient}>
