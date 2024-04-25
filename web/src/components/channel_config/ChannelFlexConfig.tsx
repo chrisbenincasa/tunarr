@@ -37,7 +37,6 @@ import { typedProperty } from '../../helpers/util.ts';
 import { useFillerLists } from '../../hooks/useFillerLists.ts';
 import useStore from '../../store/index.ts';
 import { ImageUploadInput } from '../settings/ImageUploadInput.tsx';
-import ChannelEditActions from './ChannelEditActions.tsx';
 
 export function ChannelFlexConfig() {
   const channel = useStore((s) => s.channelEditor.currentEntity);
@@ -408,7 +407,6 @@ export function ChannelFlexConfig() {
             </Stack>
           </Stack>
         </Box>
-        <ChannelEditActions />
       </>
     )
   );

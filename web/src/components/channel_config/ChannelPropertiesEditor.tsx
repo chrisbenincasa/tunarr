@@ -7,7 +7,6 @@ import { Controller, useFormContext } from 'react-hook-form';
 import useStore from '../../store/index.ts';
 import TunarrLogo from '../TunarrLogo.tsx';
 import { ImageUploadInput } from '../settings/ImageUploadInput.tsx';
-import ChannelEditActions from './ChannelEditActions.tsx';
 
 const DefaultIconPath = '';
 
@@ -156,7 +155,7 @@ export default function ChannelPropertiesEditor({ isNew }: Props) {
               )}
             />
           </Box>
-          <ChannelEditActions />
+          {/* <ChannelEditActions /> */}
         </>
       )}
     </>

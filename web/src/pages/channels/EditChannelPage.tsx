@@ -1,4 +1,4 @@
-import { Badge } from '@mui/material';
+import { Badge, Divider } from '@mui/material';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 import Tab from '@mui/material/Tab';
@@ -6,10 +6,9 @@ import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
 import { SaveChannelRequest } from '@tunarr/types';
 import { usePrevious } from '@uidotdev/usehooks';
-import { keys, some } from 'lodash-es';
+import { find, keys, map, some } from 'lodash-es';
 import { useEffect, useState } from 'react';
 import {
-  FieldPath,
   FormProvider,
   SubmitErrorHandler,
   SubmitHandler,
@@ -17,6 +16,7 @@ import {
 } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
+import ChannelEditActions from '../../components/channel_config/ChannelEditActions.tsx';
 import ChannelEpgConfig from '../../components/channel_config/ChannelEpgConfig.tsx';
 import { ChannelFlexConfig } from '../../components/channel_config/ChannelFlexConfig.tsx';
 import ChannelPropertiesEditor from '../../components/channel_config/ChannelPropertiesEditor.tsx';
@@ -35,69 +35,41 @@ import useStore from '../../store/index.ts';
 import {
   ChannelEditContext,
   ChannelEditContextState,
+  ChannelEditTab,
+  ChannelEditTabProps,
+  channelEditTabs,
 } from './EditChannelContext.ts';
-
-type TabValues = 'properties' | 'flex' | 'epg' | 'ffmpeg';
-
-type TabProps = {
-  value: TabValues;
-  description: string;
-  fields: FieldPath<SaveChannelRequest>[];
-};
-
-const tabs: TabProps[] = [
-  {
-    value: 'properties',
-    description: 'Properties',
-    fields: ['number', 'name', 'groupTitle', 'icon'],
-  },
-  {
-    value: 'flex',
-    description: 'Flex',
-    fields: ['offline', 'fillerCollections', 'fillerRepeatCooldown'],
-  },
-  {
-    value: 'epg',
-    description: 'EPG',
-    fields: ['stealth', 'guideFlexTitle', 'guideMinimumDuration'],
-  },
-  {
-    value: 'ffmpeg',
-    description: 'FFMPEG',
-    fields: ['transcoding', 'watermark'],
-  },
-];
 
 interface TabPanelProps {
   children?: React.ReactNode;
-  currentValue: TabValues;
-  value: TabValues;
+  currentValue: ChannelEditTab;
+  value: ChannelEditTab;
 }
 
 function TabPanel(props: TabPanelProps) {
   const { children, value, currentValue, ...other } = props;
 
   return (
-    <div
+    <Box
       role="tabpanel"
       hidden={value !== currentValue}
-      id={`simple-tabpanel-${currentValue}`}
-      aria-labelledby={`simple-tab-${currentValue}`}
+      id={`channel-edit-tabpanel-${currentValue}`}
+      aria-labelledby={`channel-edit-tab-${currentValue}`}
       {...other}
     >
-      {value === currentValue && <Box sx={{ p: 3 }}>{children}</Box>}
-    </div>
+      {value === currentValue && <Box sx={{ px: 3, pt: 2 }}>{children}</Box>}
+    </Box>
   );
 }
 
 type Props = {
   isNew: boolean;
-  initialTab?: TabValues;
+  initialTab?: ChannelEditTab;
 };
 
 export default function EditChannelPage({ isNew, initialTab }: Props) {
   const channel = usePreloadedData(editChannelLoader(isNew));
-  const [currentTab, setCurrentTab] = useState<TabValues>(
+  const [currentTab, setCurrentTab] = useState<ChannelEditTab>(
     initialTab ?? 'properties',
   );
   const { currentEntity: workingChannel } = useStore((s) => s.channelEditor);
@@ -106,13 +78,15 @@ export default function EditChannelPage({ isNew, initialTab }: Props) {
 
   const [channelEditorState, setChannelEditorState] =
     useState<ChannelEditContextState>({
-      currentTabValid: true,
       isNewChannel: isNew,
+      currentTab: channelEditTabs[0],
     });
 
-  const handleChange = (_: React.SyntheticEvent, newValue: TabValues) => {
+  const handleChange = (newValue: ChannelEditTab) => {
     if (newValue !== currentTab) {
+      const tabProps = find(channelEditTabs, { value: newValue })!;
       setCurrentTab(newValue);
+      setChannelEditorState((prev) => ({ ...prev, currentTab: tabProps }));
       // Don't enable routing for new channel, yet.
       if (!isNew) {
         let path: string = currentTab === 'properties' ? '.' : '..';
@@ -199,7 +173,7 @@ export default function EditChannelPage({ isNew, initialTab }: Props) {
 
   const updateChannelMutation = useUpdateChannel(isNew);
 
-  const renderTab = (tab: TabProps) => {
+  const renderTab = (tab: ChannelEditTabProps) => {
     const hasError = some(formErrorKeys, (k) => tab.fields.includes(k));
     return (
       <Tab
@@ -242,9 +216,7 @@ export default function EditChannelPage({ isNew, initialTab }: Props) {
   };
 
   return (
-    <ChannelEditContext.Provider
-      value={{ channelEditorState, setChannelEditorState }}
-    >
+    <ChannelEditContext.Provider value={channelEditorState}>
       <Breadcrumbs />
       {workingChannel && (
         <div>
@@ -253,8 +225,11 @@ export default function EditChannelPage({ isNew, initialTab }: Props) {
           </Typography>
           <Paper sx={{ p: 2 }}>
             <Box sx={{ borderColor: 'primary', borderBottom: 1 }}>
-              <Tabs value={currentTab} onChange={handleChange}>
-                {tabs.map(renderTab)}
+              <Tabs
+                value={currentTab}
+                onChange={(_, tab) => handleChange(tab as ChannelEditTab)}
+              >
+                {map(channelEditTabs, (tab) => renderTab(tab))}
               </Tabs>
             </Box>
             <FormProvider {...formMethods}>
@@ -274,6 +249,10 @@ export default function EditChannelPage({ isNew, initialTab }: Props) {
                 <TabPanel value="ffmpeg" currentValue={currentTab}>
                   <ChannelTranscodingConfig />
                 </TabPanel>
+                <Divider sx={{ mt: 2 }} />
+                <Box sx={{ px: 3, pb: 1 }}>
+                  <ChannelEditActions onNav={handleChange} />
+                </Box>
               </Box>
             </FormProvider>
             <UnsavedNavigationAlert

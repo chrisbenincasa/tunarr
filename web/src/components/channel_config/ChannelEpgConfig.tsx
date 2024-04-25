@@ -8,7 +8,6 @@ import TextField from '@mui/material/TextField';
 import { Channel } from '@tunarr/types';
 import { isInteger, omit } from 'lodash-es';
 import { Controller, useFormContext } from 'react-hook-form';
-import ChannelEditActions from './ChannelEditActions.tsx';
 
 export default function ChannelEpgConfig() {
   const { control } = useFormContext<Channel>();
@@ -69,7 +68,6 @@ export default function ChannelEpgConfig() {
           />
         </FormGroup>
       </Box>
-      <ChannelEditActions />
     </>
   );
 }
