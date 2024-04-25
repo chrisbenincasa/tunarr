@@ -145,6 +145,8 @@ export const VersionApiResponseSchema = z.object({
   nodejs: z.string(),
 });
 
+export type VersionApiResponse = z.infer<typeof VersionApiResponseSchema>;
+
 export const BaseErrorSchema = z.object({
   message: z.string(),
 });

@@ -4,9 +4,19 @@ import Button from '@mui/material/Button';
 import { useSettings } from '../../store/settings/selectors.ts';
 import { Controller, useForm } from 'react-hook-form';
 import { attempt, isEmpty, isError } from 'lodash-es';
-import { Box, Divider, Snackbar, TextField, Typography } from '@mui/material';
+import {
+  Box,
+  Divider,
+  InputAdornment,
+  Snackbar,
+  TextField,
+  Typography,
+} from '@mui/material';
 import { setBackendUri } from '../../store/settings/actions.ts';
 import { useState } from 'react';
+import { useVersion } from '../../hooks/useVersion.ts';
+import { RotatingLoopIcon } from '../../components/base/LoadingIcon.tsx';
+import { CloudDoneOutlined, CloudOff } from '@mui/icons-material';
 
 type GeneralSettingsForm = {
   backendUri: string;
@@ -19,6 +29,11 @@ function isValidUrl(url: string) {
 export default function GeneralSettingsPage() {
   const settings = useSettings();
   const [snackStatus, setSnackStatus] = useState(false);
+  const versionInfo = useVersion({
+    retry: 0,
+  });
+
+  const { isLoading, isError } = versionInfo;
 
   const { control, handleSubmit } = useForm<GeneralSettingsForm>({
     reValidateMode: 'onBlur',
@@ -59,6 +74,19 @@ export default function GeneralSettingsPage() {
               <TextField
                 fullWidth
                 label="Tunarr Backend URL"
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      {isLoading ? (
+                        <RotatingLoopIcon />
+                      ) : !isError ? (
+                        <CloudDoneOutlined color="success" />
+                      ) : (
+                        <CloudOff color="error" />
+                      )}
+                    </InputAdornment>
+                  ),
+                }}
                 {...field}
                 helperText={
                   error?.type === 'isValidUrl'

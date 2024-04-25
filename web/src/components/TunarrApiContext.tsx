@@ -1,7 +1,9 @@
-import { ReactNode, createContext, useEffect, useState } from 'react';
+import { ReactNode, createContext, useEffect } from 'react';
 import { createApiClient } from '../external/api';
 import useStore from '../store/index.ts';
 import { useSettings } from '../store/settings/selectors';
+import { QueryClient } from '@tanstack/react-query';
+import { isUndefined } from 'lodash-es';
 
 // HACK ALERT
 // Read zustand state out-of-band here (i.e. not in a hook) because we
@@ -21,17 +23,31 @@ export const getApiClient = () => apiClient;
 
 export const TunarrApiContext = createContext(apiClient);
 
-export function TunarrApiProvider({ children }: { children: ReactNode }) {
+export function TunarrApiProvider({
+  children,
+  queryClient,
+}: {
+  children: ReactNode;
+  queryClient: QueryClient;
+}) {
   const { backendUri } = useSettings();
-  const [api, setApi] = useState(apiClient);
 
   useEffect(() => {
-    apiClient = createApiClient(backendUri);
-    setApi(apiClient);
+    // Only do this if something actually changed
+    if (
+      (backendUri.length === 0 && !isUndefined(apiClient.baseURL)) ||
+      (backendUri.length > 0 && isUndefined(apiClient.baseURL))
+    ) {
+      apiClient = createApiClient(backendUri);
+    }
   }, [backendUri]);
 
+  useEffect(() => {
+    queryClient.invalidateQueries().catch(console.warn);
+  }, [backendUri, queryClient]);
+
   return (
-    <TunarrApiContext.Provider value={api}>
+    <TunarrApiContext.Provider value={apiClient}>
       {children}
     </TunarrApiContext.Provider>
   );

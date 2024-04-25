@@ -7,8 +7,8 @@ import {
   UseQueryResult,
   useQuery,
 } from '@tanstack/react-query';
+import { getApiClient } from '../components/TunarrApiContext';
 import { ApiClient } from '../external/api';
-import { useTunarrApi } from './useTunarrApi';
 
 export function useApiQuery<
   TQueryFnData = unknown,
@@ -27,11 +27,18 @@ export function useApiQuery<
   },
   queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> {
-  const apiClient = useTunarrApi();
+  // NOTE that this query also depends on the backendUrl used to
+  // create the API client, but we explicitly don't include it in the
+  // queryKey here because:
+  // 1. it makes the types super unwieldy
+  // 2. we do a mass cache invalidation in the tunarr API context when
+  //    the backend URL changes
+  // 3. it keeps query keys simple for when we have to do more fine-grained
+  //    invalidation (e.g. post-mutates)
   return useQuery(
     {
       ...options,
-      queryFn: (args) => options.queryFn(apiClient, args),
+      queryFn: (args) => options.queryFn(getApiClient(), args),
     },
     queryClient,
   );
