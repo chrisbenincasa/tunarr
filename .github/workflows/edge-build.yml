@@ -11,7 +11,7 @@ jobs:
     strategy:
       matrix:
         builds:
-          - base_tag: 7.0
+          - base_tag: '7.0'
             tag: edge
           - base_tag: 7.0-nvidia
             tag: edge-nvidia
