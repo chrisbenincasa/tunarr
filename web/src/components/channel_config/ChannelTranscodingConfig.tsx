@@ -32,7 +32,6 @@ import {
   CheckboxFormController,
   NumericFormControllerText,
 } from '../util/TypedController.tsx';
-import ChannelEditActions from './ChannelEditActions.tsx';
 
 const resolutionOptions = [
   { value: '420x420', label: '420x420 (1:1)' },
@@ -411,7 +410,6 @@ export default function ChannelTranscodingConfig() {
             )}
           </FormControl>
         </Stack>
-        <ChannelEditActions />
       </Box>
     )
   );
