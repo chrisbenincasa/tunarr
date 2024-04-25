@@ -3,7 +3,7 @@ import DarkModeButton from '../../components/settings/DarkModeButton.tsx';
 import Button from '@mui/material/Button';
 import { useSettings } from '../../store/settings/selectors.ts';
 import { Controller, useForm } from 'react-hook-form';
-import { attempt, isEmpty, isError } from 'lodash-es';
+import { attempt, isEmpty, isError, trim, trimEnd } from 'lodash-es';
 import {
   Box,
   Divider,
@@ -23,7 +23,8 @@ type GeneralSettingsForm = {
 };
 
 function isValidUrl(url: string) {
-  return isEmpty(url) || !isError(attempt(() => new URL(url)));
+  const sanitized = trim(url);
+  return isEmpty(sanitized) || !isError(attempt(() => new URL(sanitized)));
 }
 
 export default function GeneralSettingsPage() {
@@ -41,7 +42,7 @@ export default function GeneralSettingsPage() {
   });
 
   const onSave = (data: GeneralSettingsForm) => {
-    setBackendUri(data.backendUri);
+    setBackendUri(trimEnd(trim(data.backendUri), '/'));
     setSnackStatus(true);
   };
 
