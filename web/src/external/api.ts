@@ -42,6 +42,7 @@ import {
   updatePlexStreamSettings,
   updateXmlTvSettings,
 } from './settingsApi.ts';
+import { isEmpty } from 'lodash-es';
 
 export const api = makeApi([
   {
@@ -358,5 +359,5 @@ export const api = makeApi([
 export type ApiClient = ZodiosInstance<typeof api>;
 
 export const createApiClient = (uri: string) => {
-  return new Zodios(uri, api);
+  return isEmpty(uri) ? new Zodios(api) : new Zodios(uri, api);
 };

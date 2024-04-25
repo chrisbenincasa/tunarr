@@ -3,7 +3,7 @@ import DarkModeButton from '../../components/settings/DarkModeButton.tsx';
 import Button from '@mui/material/Button';
 import { useSettings } from '../../store/settings/selectors.ts';
 import { Controller, useForm } from 'react-hook-form';
-import { attempt, isError } from 'lodash-es';
+import { attempt, isEmpty, isError } from 'lodash-es';
 import { Box, Divider, Snackbar, TextField, Typography } from '@mui/material';
 import { setBackendUri } from '../../store/settings/actions.ts';
 import { useState } from 'react';
@@ -13,7 +13,7 @@ type GeneralSettingsForm = {
 };
 
 function isValidUrl(url: string) {
-  return !isError(attempt(() => new URL(url)));
+  return isEmpty(url) || !isError(attempt(() => new URL(url)));
 }
 
 export default function GeneralSettingsPage() {
@@ -61,7 +61,9 @@ export default function GeneralSettingsPage() {
                 label="Tunarr Backend URL"
                 {...field}
                 helperText={
-                  error?.type === 'isValidUrl' ? 'Must use a valid URL' : ''
+                  error?.type === 'isValidUrl'
+                    ? 'Must use a valid URL, or empty.'
+                    : 'Set the host of your Tunarr backend. When empty, the web UI will use the current host/port to communicate with the backend.'
                 }
               />
             )}
