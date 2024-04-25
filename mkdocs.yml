@@ -11,3 +11,25 @@ theme:
   features:
     - navigation.tracking
     - navigation.path
+    - navigation.sections
+    - content.code.copy
+    - content.code.select
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Install: getting-started/installation.md
+    - Setup: getting-started/setup.md
+  - Configure:
+    - Channels: configure/channels.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets

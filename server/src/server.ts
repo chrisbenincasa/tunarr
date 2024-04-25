@@ -91,7 +91,6 @@ export async function initServer(opts: ServerOptions) {
 
   const ctx = await serverContext();
 
-  console.log(ctx.settings, opts);
   if (
     hadLegacyDb &&
     (ctx.settings.needsLegacyMigration() || opts.force_migration)
