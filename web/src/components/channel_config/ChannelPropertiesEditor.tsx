@@ -109,7 +109,11 @@ export default function ChannelPropertiesEditor({ isNew }: Props) {
                 <DateTimePicker
                   label="Programming Start"
                   slotProps={{
-                    textField: { margin: 'normal', fullWidth: true },
+                    textField: {
+                      margin: 'normal',
+                      fullWidth: true,
+                      onBlur: field.onBlur,
+                    },
                   }}
                   disablePast
                   value={dayjs(field.value)}
@@ -146,6 +150,7 @@ export default function ChannelPropertiesEditor({ isNew }: Props) {
                   }}
                   fileRenamer={renameFile}
                   label="Thumbnail URL"
+                  // TODO Pop a toast or something
                   onUploadError={console.error}
                 />
               )}

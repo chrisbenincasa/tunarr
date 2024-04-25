@@ -41,7 +41,7 @@ export function defaultNewChannel(num: number): Channel {
     id: uuidv4(),
     name: `Channel ${num}`,
     number: num,
-    startTime: dayjs().unix() * 1000,
+    startTime: dayjs().add(1, 'h').startOf('h').unix() * 1000,
     ...DefaultChannel,
   };
 }

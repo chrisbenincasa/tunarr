@@ -3,7 +3,7 @@ import FormControl, { FormControlProps } from '@mui/material/FormControl';
 import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
 import InputLabel from '@mui/material/InputLabel';
-import OutlinedInput from '@mui/material/OutlinedInput';
+import OutlinedInput, { OutlinedInputProps } from '@mui/material/OutlinedInput';
 import { styled } from '@mui/material/styles';
 import React, { ChangeEvent, useCallback } from 'react';
 import { useTunarrApi } from '../../hooks/useTunarrApi';
@@ -22,6 +22,7 @@ const VisuallyHiddenInput = styled('input')({
 
 type Props = {
   FormControlProps?: FormControlProps;
+  InputProps?: OutlinedInputProps;
   label: string;
   value: string;
   onFormValueChange(value: string): void;
@@ -32,6 +33,7 @@ type Props = {
 
 export function ImageUploadInput({
   FormControlProps,
+  InputProps,
   label,
   onFormValueChange: onChange,
   onUploadError,
@@ -67,7 +69,7 @@ export function ImageUploadInput({
           });
       }
     },
-    [onUploadError, onChange, fileRenamer],
+    [fileRenamer, apiClient, onChange, onUploadError],
   );
 
   const onThumbUrlChange = useCallback(
@@ -98,6 +100,7 @@ export function ImageUploadInput({
             </IconButton>
           </InputAdornment>
         }
+        {...(InputProps ?? {})}
       />
       {children}
     </FormControl>
