@@ -11,9 +11,18 @@ import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
+import { TimePicker } from '@mui/x-date-pickers';
+import { dayjsMod } from '@tunarr/shared';
+import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
 import { range } from 'lodash-es';
+import { useCallback, useState } from 'react';
 import { useRestrictHours } from '../../hooks/programming_controls/useRestrictHours.ts';
-import { useState } from 'react';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.extend(dayjsMod);
 
 type AddRestrictHoursModalProps = {
   open: boolean;
@@ -24,10 +33,22 @@ const AddRestrictHoursModal = ({
   open,
   onClose,
 }: AddRestrictHoursModalProps) => {
-  const [startHour, setStartHour] = useState<string | null>(null);
+  const [startHour, setStartHour] = useState<number | null>(
+    // dayjs().unix() * 1000,
+    null,
+  );
   const [endHour, setEndHour] = useState<string | null>(null);
 
   const restrictHours = useRestrictHours();
+
+  const updateSlotTime = useCallback(
+    (time: dayjs.Dayjs) => {
+      console.log(time.mod(dayjs.duration(1, 'day')).asMilliseconds());
+
+      setStartHour(time.mod(dayjs.duration(1, 'day')).asMilliseconds());
+    },
+    [startHour],
+  );
 
   return (
     <Dialog open={open}>
@@ -39,8 +60,7 @@ const AddRestrictHoursModal = ({
         </DialogContentText>
         <Box sx={{ display: 'flex', my: 1 }}>
           <FormControl sx={{ my: 1, flexGrow: 1 }}>
-            <InputLabel id="restrict-hours-start-label">Start</InputLabel>
-            <Select
+            {/* <Select
               value={'fixed'}
               label={'Type'}
               labelId="restrict-hours-start-label"
@@ -50,7 +70,18 @@ const AddRestrictHoursModal = ({
               {range(0, 24).map((hour) => (
                 <MenuItem key={hour}>{`${hour}:00`}</MenuItem>
               ))}
-            </Select>
+            </Select> */}
+            <TimePicker
+              // onChange={(time: number | null) =>
+              //   time &&
+              //   setStartHour(
+              //     dayjs(time).mod(dayjs.duration(1, 'day')).asMilliseconds(),
+              //   )
+              // }
+              onChange={(value) => value && updateSlotTime(dayjs(value))}
+              value={startHour}
+              label="Start Time"
+            />
           </FormControl>
           <FormControl sx={{ my: 1, flexGrow: 1 }}>
             <InputLabel id="restrict-hours-end-label">End</InputLabel>
