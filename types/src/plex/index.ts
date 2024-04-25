@@ -151,8 +151,8 @@ export const PlexMediaDescriptionSchema = z.object({
   width: z.number().optional(), // Video only
   height: z.number().optional(), // Video only
   aspectRatio: z.number().optional(), // Video only
-  audioChannels: z.number(),
-  audioCodec: z.string(),
+  audioChannels: z.number().optional(),
+  audioCodec: z.string().optional(),
   videoCodec: z.string().optional(), // Video only
   videoResolution: z.string().optional(), // Video only
   container: z.string(),
