@@ -40,19 +40,16 @@ export default function GeneralSettingsPage() {
     control,
     handleSubmit,
     reset,
-    formState: { isDirty, isValid, isSubmitting, defaultValues },
+    formState: { isDirty, isValid, isSubmitting },
   } = useForm<GeneralSettingsForm>({
     reValidateMode: 'onBlur',
     defaultValues: settings,
   });
-  console.log(defaultValues);
-  console.log(settings);
 
   const onSave = (data: GeneralSettingsForm) => {
     setBackendUri(trimEnd(trim(data.backendUri), '/'));
     setSnackStatus(true);
   };
-  console.log({ isValid });
 
   return (
     <Box component="form" onSubmit={handleSubmit(onSave, console.error)}>
