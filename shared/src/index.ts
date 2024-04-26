@@ -1,4 +1,4 @@
-import { ExternalId } from '@tunarr/types';
+import { ExternalId, MultiExternalId } from '@tunarr/types';
 
 export { scheduleRandomSlots } from './services/randomSlotsService.js';
 export { scheduleTimeSlots } from './services/timeSlotService.js';
@@ -11,6 +11,10 @@ export function createExternalId(
   itemId: string,
 ): `${string}|${string}|${string}` {
   return `${sourceType}|${sourceId}|${itemId}`;
+}
+
+export function createExternalIdFromMulti(multi: MultiExternalId) {
+  return createExternalId(multi.source, multi.sourceId, multi.id);
 }
 
 // We could type this better if we reuse the other ExternalId

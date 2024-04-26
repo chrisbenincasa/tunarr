@@ -63,6 +63,7 @@ export class ProgramOrderer implements ProgramIterator {
     orderer: (program: ContentProgram) => string | number = getProgramOrder,
   ) {
     this.#programs = sortBy(programs, orderer);
+    console.log(this.#programs);
   }
 
   current(): ChannelProgram | null {
@@ -80,7 +81,7 @@ export function getProgramOrder(program: ContentProgram): string | number {
       return program.title;
     case 'episode':
       // Hacky thing from original code...
-      return program.seasonNumber! * 100000 + program.episodeNumber!;
+      return program.seasonNumber! * 1e5 + program.episodeNumber!;
     case 'track':
       // A-z for now
       return program.title;

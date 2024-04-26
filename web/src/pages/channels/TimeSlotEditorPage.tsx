@@ -137,6 +137,17 @@ const defaultTimeSlotSchedule: TimeSlotSchedule = {
   timeZoneOffset: new Date().getTimezoneOffset(),
 };
 
+const showOrderOptions = [
+  {
+    value: 'next',
+    description: 'Next Episode',
+  },
+  {
+    value: 'shuffle',
+    description: 'Shuffle',
+  },
+];
+
 const lineupItemAppearsInSchedule = (
   slots: TimeSlot[],
   item: ChannelProgram,
@@ -314,8 +325,15 @@ const TimeSlotRow = ({
       break;
     }
   }
-  const showInputSize = currentPeriod === 'week' ? 7 : 9;
+
+  const isShowType = slot.programming.type === 'show';
+  let showInputSize = currentPeriod === 'week' ? 7 : 9;
+  if (isShowType) {
+    showInputSize -= 3;
+  }
+
   const dayOfTheWeek = Math.floor(slot.startTime / OneDayMillis);
+
   return (
     <Fragment key={`${slot.startTime}_${index}`}>
       {currentPeriod === 'week' ? (
@@ -358,6 +376,26 @@ const TimeSlotRow = ({
           </Select>
         </FormControl>
       </Grid>
+      {isShowType && (
+        <Grid item xs={3}>
+          <FormControl fullWidth>
+            <InputLabel>Order</InputLabel>
+            <Controller
+              control={control}
+              name={`slots.${index}.order`}
+              render={({ field }) => (
+                <Select label="Order" {...field}>
+                  {map(showOrderOptions, ({ description, value }) => (
+                    <MenuItem key={value} value={value}>
+                      {description}
+                    </MenuItem>
+                  ))}
+                </Select>
+              )}
+            />
+          </FormControl>
+        </Grid>
+      )}
       <Grid item xs={1}>
         <IconButton onClick={() => removeSlot(index)} color="error">
           <Delete />

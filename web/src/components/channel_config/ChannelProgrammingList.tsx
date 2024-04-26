@@ -96,8 +96,21 @@ const programListItemTitleFormatter = (() => {
       switch (p.subtype) {
         case 'movie':
           return p.title;
-        case 'episode':
-          return p.episodeTitle ? `${p.title} - ${p.episodeTitle}` : p.title;
+        case 'episode': {
+          // TODO: this makes some assumptions about number of seasons
+          // and episodes... it may break
+          const epPart =
+            p.seasonNumber && p.episodeNumber
+              ? ` S${p.seasonNumber
+                  .toString()
+                  .padStart(2, '0')}E${p.episodeNumber
+                  .toString()
+                  .padStart(2, '0')}`
+              : '';
+          return p.episodeTitle
+            ? `${p.title}${epPart} - ${p.episodeTitle}`
+            : p.title;
+        }
         case 'track': {
           return join(
             reject(
