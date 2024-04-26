@@ -17,11 +17,12 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs, { Dayjs, duration } from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 import { useCallback, useState } from 'react';
+import { useInterval } from 'usehooks-ts';
+import NoChannelsCreated from '../../components/channel_config/NoChannelsCreated.tsx';
 import { TvGuide } from '../../components/guide/TvGuide.tsx';
 import { roundCurrentTime } from '../../helpers/util.ts';
 import useStore from '../../store/index.ts';
 import { setGuideDurationState } from '../../store/themeEditor/actions.ts';
-import { useInterval } from 'usehooks-ts';
 
 dayjs.extend(duration);
 dayjs.extend(isBetween);
@@ -153,6 +154,7 @@ export default function GuidePage({ channelId }: Props = { channelId: 'all' }) {
         </Stack>
       </Box>
       <TvGuide channelId={channelId} start={start} end={end} />
+      <NoChannelsCreated />
     </>
   );
 }
