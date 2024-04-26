@@ -1,36 +1,32 @@
-import { ArrowBack, CheckBox, CheckBoxOutlineBlank } from '@mui/icons-material';
-import { Box, Button, Stack, Typography } from '@mui/material';
-import dayjs from 'dayjs';
+import { ArrowBack, Edit } from '@mui/icons-material';
+import {
+  Alert,
+  Box,
+  Button,
+  Step,
+  StepLabel,
+  Stepper,
+  Typography,
+} from '@mui/material';
 import React, { useEffect } from 'react';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import TunarrLogo from '../../components/TunarrLogo.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import ConnectPlex from '../../components/settings/ConnectPlex.tsx';
 import { usePlexServerSettings } from '../../hooks/settingsHooks.ts';
-import { useChannels } from '../../hooks/useChannels.ts';
-import { useAllTvGuides } from '../../hooks/useTvGuide.ts';
 import { useVersion } from '../../hooks/useVersion.ts';
-import useStore from '../../store/index.ts';
-import { resetPathwayState } from '../../store/themeEditor/actions.ts';
+import { updateShowWelcomeState } from '../../store/themeEditor/actions.ts';
+
+const steps = ['Connect Plex', 'Install FFMPEG', 'All Set!'];
 
 export default function WelcomePage() {
   const [isPlexConnected, setIsPlexConnected] = React.useState<boolean>(false);
   const [isFfmpegInstalled, setIsFfmpegInstalled] =
     React.useState<boolean>(false);
-  const [channelsExist, setChannelsExist] = React.useState<boolean>(false);
-  const [programmingExists, setProgrammingExists] =
-    React.useState<boolean>(false);
+  const navigate = useNavigate();
 
   const { data: version } = useVersion();
   const { data: plexServers } = usePlexServerSettings();
-  const { data: channels } = useChannels();
-  const startDate = dayjs(new Date(2024, 1, 1)); // a date before user would have been using Tunarr
-  const endDate = dayjs(new Date(2024, 1, 31)); // today
-  const { data: programming } = useAllTvGuides({
-    from: startDate,
-    to: endDate,
-  });
-  // const navigate = useNavigate();
-  const pathway = useStore((state) => state.theme.pathway);
 
   useEffect(() => {
     if (plexServers && plexServers.length > 0) {
@@ -40,23 +36,7 @@ export default function WelcomePage() {
     if (version && version.ffmpeg != 'Error') {
       setIsFfmpegInstalled(true);
     }
-
-    if (channels && channels.length > 0) {
-      setChannelsExist(true);
-    }
-
-    if (programming && programming.length > 0) {
-      setProgrammingExists(true);
-    }
-  }, [plexServers, channels, programming]);
-
-  // const handlePathway = (pathway: string) => {
-  //   updatePathwayState(pathway);
-
-  //   if (pathway === 'advanced') {
-  //     navigate('/guide');
-  //   }
-  // };
+  }, [plexServers, version]);
 
   const header = (
     <>
@@ -73,141 +53,209 @@ export default function WelcomePage() {
     </>
   );
 
-  // const chooseYourPathway = (
-  //   <>
-  //     <Typography variant="body1" sx={{ mb: 4 }}>
-  //       Get started in a way that works for you...
-  //     </Typography>
-  //     <Box
-  //       display={'flex'}
-  //       flexDirection={{ xs: 'column', md: 'row' }}
-  //       justifyContent={'center'}
-  //       columnGap={4}
-  //       rowGap={4}
-  //     >
-  //       <Card sx={{ minWidth: 275, pb: 1, pr: 1, maxWidth: 400 }}>
-  //         <CardContent>
-  //           <FiberNew fontSize="large" />
-  //           <Typography variant="h5" component="div">
-  //             I'm new here.
-  //           </Typography>
-  //           <Typography variant="body2">
-  //             I've never used dizquetv and this is my first time setting up
-  //             Tunarr.
-  //           </Typography>
-  //           <Button
-  //             variant="contained"
-  //             sx={{ my: 2 }}
-  //             onClick={() => handlePathway('get-started')}
-  //           >
-  //             Get Started
-  //           </Button>
-  //         </CardContent>
-  //       </Card>
-  //       <Card sx={{ minWidth: 275, pb: 1, pr: 1, maxWidth: 400 }}>
-  //         <CardContent>
-  //           <Elderly fontSize="large" />
-  //           <Typography variant="h5" component="div">
-  //             I've used dizqueTV
-  //           </Typography>
-  //           <Typography variant="body2">
-  //             This isn't my first rodeo. I have an existing dizqueTV database
-  //             that I want to migrate into Tunarr.
-  //           </Typography>
-  //           <Button
-  //             variant="contained"
-  //             sx={{ my: 2 }}
-  //             onClick={() => handlePathway('migration')}
-  //           >
-  //             Get Instructions
-  //           </Button>
-  //         </CardContent>
-  //       </Card>
-  //       <Card sx={{ minWidth: 275, pb: 1, pr: 1, maxWidth: 400 }}>
-  //         <CardContent>
-  //           <MilitaryTech fontSize="large" />
-  //           <Typography variant="h5" component="div">
-  //             Advanced
-  //           </Typography>
-  //           <Typography variant="body2">
-  //             I know what I am doing and don't need any instructions. Please
-  //             leave me alone.
-  //           </Typography>
-  //           <Button
-  //             variant="contained"
-  //             sx={{ my: 2 }}
-  //             onClick={() => handlePathway('advanced')}
-  //           >
-  //             Hide this page
-  //           </Button>
-  //         </CardContent>
-  //       </Card>
-  //     </Box>
-  //   </>
-  // );
+  const [activeStep, setActiveStep] = React.useState(0);
+  const [skipped, setSkipped] = React.useState(new Set<number>());
+
+  const isStepOptional = (step: number) => {
+    return step === 1;
+  };
+
+  const isStepSkipped = (step: number) => {
+    return skipped.has(step);
+  };
+
+  const handleNext = () => {
+    let newSkipped = skipped;
+    if (isStepSkipped(activeStep)) {
+      newSkipped = new Set(newSkipped.values());
+      newSkipped.delete(activeStep);
+    }
+
+    setActiveStep((prevActiveStep) => prevActiveStep + 1);
+    setSkipped(newSkipped);
+  };
+
+  const handleFinish = () => {
+    updateShowWelcomeState();
+    navigate('/channels/new');
+  };
+
+  const handleBack = () => {
+    setActiveStep((prevActiveStep) => prevActiveStep - 1);
+  };
+
+  const handleSkip = () => {
+    setActiveStep((prevActiveStep) => prevActiveStep + 1);
+    setSkipped((prevSkipped) => {
+      const newSkipped = new Set(prevSkipped.values());
+      newSkipped.add(activeStep);
+      return newSkipped;
+    });
+  };
 
   const getStarted = (
     <>
-      <Typography variant="body1">
-        Here are a few things to do to get started...
-      </Typography>
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          textAlign: 'left',
-          maxWidth: 500,
-          margin: '2em auto',
-        }}
-      >
-        <Stack direction={'row'} spacing={1}>
-          {isPlexConnected ? <CheckBox /> : <CheckBoxOutlineBlank />}
-          <Typography variant="body1">Connect your Plex Server</Typography>
-        </Stack>
-        <Stack direction={'row'} spacing={1}>
-          {isFfmpegInstalled ? <CheckBox /> : <CheckBoxOutlineBlank />}
-          <Typography variant="body1">Install FFMPEG 4.2+</Typography>
-        </Stack>
-        <Stack direction={'row'} spacing={1}>
-          {channelsExist ? <CheckBox /> : <CheckBoxOutlineBlank />}
-          <Typography variant="body1">Create your first channel</Typography>
-        </Stack>
-        <Stack direction={'row'} spacing={1}>
-          {programmingExists ? <CheckBox /> : <CheckBoxOutlineBlank />}
-          <Typography variant="body1">Add programming to a channel</Typography>
-        </Stack>
+      <Typography variant="body1">Let's get started...</Typography>
+      <Box sx={{ width: '100%', maxWidth: '750px', margin: '0 auto', mt: 4 }}>
+        <Stepper activeStep={activeStep}>
+          {steps.map((label, index) => {
+            const stepProps: { completed?: boolean } = {};
+            const labelProps: {
+              optional?: React.ReactNode;
+            } = {};
+            if (isStepOptional(index)) {
+              labelProps.optional = (
+                <Typography variant="caption">(Optional)</Typography>
+              );
+            }
+            if (isStepSkipped(index)) {
+              stepProps.completed = false;
+            }
+            return (
+              <Step key={label} {...stepProps}>
+                <StepLabel {...labelProps}>{label}</StepLabel>
+              </Step>
+            );
+          })}
+        </Stepper>
+
+        <React.Fragment>
+          {activeStep === 0 && (
+            <>
+              <Typography
+                variant="h6"
+                fontWeight={600}
+                align="left"
+                sx={{ mt: 3 }}
+              >
+                Connect Plex
+              </Typography>
+              <Typography sx={{ mb: 3 }} align="left">
+                To use Tunarr, you need to first connect your Plex library. This
+                will allow you to build custom channels with any of your plex
+                content.
+              </Typography>
+
+              {isPlexConnected ? (
+                <Alert variant="filled" severity="success">
+                  Plex is connected.
+                </Alert>
+              ) : (
+                <Alert variant="filled" severity="error">
+                  Plex is not connected.
+                </Alert>
+              )}
+              <ConnectPlex />
+            </>
+          )}
+          {activeStep === 1 && (
+            <>
+              <Typography
+                variant="h6"
+                fontWeight={600}
+                align="left"
+                sx={{ mt: 3 }}
+              >
+                Install FFMPEG
+              </Typography>
+              <Typography sx={{ mb: 3 }} align="left">
+                FFMPEG is recommended to use Tunnar. However, FFMPEG transcoding
+                is required for some features like channel overlay, subtitles,
+                and measures to prevent issues when switching episodes.
+              </Typography>
+
+              {isFfmpegInstalled ? (
+                <Alert variant="filled" severity="success">
+                  FFMPEG is installed.
+                </Alert>
+              ) : (
+                <>
+                  <Alert
+                    variant="filled"
+                    severity="warning"
+                    action={
+                      <Button
+                        component={RouterLink}
+                        to={`/settings/ffmpeg`}
+                        color="inherit"
+                        startIcon={<Edit />}
+                      >
+                        Edit
+                      </Button>
+                    }
+                  >
+                    FFMPEG is not detected.
+                  </Alert>
+                  <Typography sx={{ my: 3 }} align="left">
+                    If you are confident FFMPEG is installed, you may just need
+                    to update the executable path in the settings. To do so,
+                    simply click Edit above to update the path.
+                  </Typography>
+                </>
+              )}
+            </>
+          )}
+          {activeStep === 2 && (
+            <>
+              {' '}
+              <Typography
+                variant="h6"
+                fontWeight={600}
+                align="left"
+                sx={{ mt: 3 }}
+              >
+                You're All Set!
+              </Typography>
+              <Typography sx={{ mb: 3 }} align="left">
+                Congrats, you're ready to start building channels! Just click
+                Finish below to start working on your first channel.
+              </Typography>
+            </>
+          )}
+
+          <Box sx={{ display: 'flex', flexDirection: 'row', pt: 2 }}>
+            <Button
+              color="inherit"
+              disabled={activeStep === 0}
+              onClick={handleBack}
+              sx={{ mr: 1 }}
+              variant="outlined"
+              startIcon={<ArrowBack />}
+            >
+              Back
+            </Button>
+            <Box sx={{ flex: '1 1 auto' }} />
+            {isStepOptional(activeStep) && (
+              <Button color="inherit" onClick={handleSkip} sx={{ mr: 1 }}>
+                Skip
+              </Button>
+            )}
+            {activeStep !== steps.length - 1 ? (
+              <Button
+                onClick={handleNext}
+                variant="contained"
+                disabled={activeStep === 0 && !isPlexConnected}
+              >
+                Next
+              </Button>
+            ) : (
+              <Button
+                onClick={handleFinish}
+                variant="contained"
+                color="primary"
+              >
+                Finish
+              </Button>
+            )}
+          </Box>
+        </React.Fragment>
       </Box>
     </>
   );
 
-  // to do: write proper migration instructions or just write new ones in wiki and link to it
-  // const migration = (
-  //   <Box textAlign={'left'} margin={'0 auto'}>
-  //     <Typography variant="body1">
-  //       We've made migrating from dizqueTV easy...
-  //     </Typography>
-  //     <Typography>1.) Stop your existing dizqueTV</Typography>
-  //     <Typography>2.) Take a backup of your .dizquetv folder.</Typography>
-  //     <Typography>
-  //       3.) Within your new Tunarr install, replace your .dizquetv folder with
-  //       the one you just backed up.
-  //     </Typography>
-  //     <Typography>
-  //       3.) Startup Tunarr, it might need a couple of minutes to migrate the
-  //       databases. It's a good idea to pay attention to the logs during this.
-  //     </Typography>
-  //   </Box>
-  // );
-
   return (
     <>
       <PaddedPaper>
-        {pathway && (
-          <Button startIcon={<ArrowBack />} onClick={() => resetPathwayState()}>
-            Go Back
-          </Button>
-        )}
         <Box
           sx={{
             py: 10,
@@ -218,14 +266,6 @@ export default function WelcomePage() {
         >
           {header}
           {getStarted}
-          {!isPlexConnected && <ConnectPlex />}
-          {/* {!pathway
-            ? chooseYourPathway
-            : pathway === 'get-started'
-            ? getStarted
-            : pathway === 'migration'
-            ? migration
-            : null} */}
         </Box>
       </PaddedPaper>
     </>

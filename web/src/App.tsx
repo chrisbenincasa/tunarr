@@ -99,14 +99,14 @@ export function Root({ children }: { children?: React.ReactNode }) {
   );
 
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
-  const pathway = useStore((state) => state.theme.pathway);
+  const showWelcome = useStore((state) => state.theme.showWelcome);
 
   const navItems: NavItem[] = useMemo(
     () => [
       {
         name: 'Welcome',
         path: '/welcome',
-        visible: pathway === 'advanced' ? false : true,
+        visible: showWelcome,
         icon: <Home />,
       },
       { name: 'Guide', path: '/guide', visible: true, icon: <TvIcon /> },
@@ -150,7 +150,7 @@ export function Root({ children }: { children?: React.ReactNode }) {
         icon: <ComputerIcon />,
       },
     ],
-    [open, pathway],
+    [open, showWelcome],
   );
 
   const handleOpenClick = useCallback((itemName: string) => {

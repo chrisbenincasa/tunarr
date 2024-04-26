@@ -12,8 +12,8 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import { range } from 'lodash-es';
-import { useRestrictHours } from '../../hooks/programming_controls/useRestrictHours.ts';
 import { useState } from 'react';
+import { useRestrictHours } from '../../hooks/programming_controls/useRestrictHours.ts';
 
 type AddRestrictHoursModalProps = {
   open: boolean;

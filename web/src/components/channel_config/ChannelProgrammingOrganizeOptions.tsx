@@ -1,6 +1,5 @@
 import {
   ContentCopy as ReplicateIcon,
-  RepeatOn as RerunBlocksIcon,
   Shuffle as ShuffleIcon,
   AccessTime as TimeIcon,
 } from '@mui/icons-material';
@@ -65,7 +64,7 @@ export function ChannelProgrammingOrganizeOptions() {
           <ReplicateIcon /> Replicate Programming...
         </MenuItem>
       </Tooltip>
-      <Tooltip
+      {/* <Tooltip
         title="Divides the programming in blocks of 6, 8 or 12 hours then repeats each of the blocks the specified number of times. For example, you can make a channel that plays exactly the same channels in the morning and in the afternoon. This button might be disabled if the channel is already too large."
         placement="right"
       >
@@ -78,7 +77,7 @@ export function ChannelProgrammingOrganizeOptions() {
         >
           <RerunBlocksIcon /> Create Rerun Blocks...
         </MenuItem>
-      </Tooltip>
+      </Tooltip> */}
       <AddRerunBlockModal
         open={addRerunBlocksModal}
         onClose={() => setAddRerunBlocksModal(false)}
