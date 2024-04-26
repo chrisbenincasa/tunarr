@@ -1,9 +1,4 @@
-import Stack from '@mui/material/Stack';
-import DarkModeButton from '../../components/settings/DarkModeButton.tsx';
-import Button from '@mui/material/Button';
-import { useSettings } from '../../store/settings/selectors.ts';
-import { Controller, useForm } from 'react-hook-form';
-import { attempt, isEmpty, isError, trim, trimEnd } from 'lodash-es';
+import { CloudDoneOutlined, CloudOff } from '@mui/icons-material';
 import {
   Box,
   Divider,
@@ -12,11 +7,16 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { setBackendUri } from '../../store/settings/actions.ts';
+import Button from '@mui/material/Button';
+import Stack from '@mui/material/Stack';
+import { attempt, isEmpty, isError, trim, trimEnd } from 'lodash-es';
 import { useState } from 'react';
-import { useVersion } from '../../hooks/useVersion.ts';
+import { Controller, useForm } from 'react-hook-form';
 import { RotatingLoopIcon } from '../../components/base/LoadingIcon.tsx';
-import { CloudDoneOutlined, CloudOff } from '@mui/icons-material';
+import DarkModeButton from '../../components/settings/DarkModeButton.tsx';
+import { useVersion } from '../../hooks/useVersion.ts';
+import { setBackendUri } from '../../store/settings/actions.ts';
+import { useSettings } from '../../store/settings/selectors.ts';
 
 type GeneralSettingsForm = {
   backendUri: string;
@@ -36,7 +36,12 @@ export default function GeneralSettingsPage() {
 
   const { isLoading, isError } = versionInfo;
 
-  const { control, handleSubmit } = useForm<GeneralSettingsForm>({
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { isDirty, isValid, isSubmitting },
+  } = useForm<GeneralSettingsForm>({
     reValidateMode: 'onBlur',
     defaultValues: settings,
   });
@@ -100,8 +105,22 @@ export default function GeneralSettingsPage() {
         </Box>
       </Stack>
       <Stack spacing={2} direction="row" justifyContent="right" sx={{ mt: 2 }}>
-        <Button variant="outlined">Reset Options</Button>
-        <Button variant="contained" type="submit">
+        {isDirty && (
+          <Button
+            variant="outlined"
+            onClick={() => {
+              reset(settings);
+            }}
+            disabled={!isValid || isSubmitting || !isDirty}
+          >
+            Reset Options
+          </Button>
+        )}
+        <Button
+          variant="contained"
+          type="submit"
+          disabled={!isValid || isSubmitting || !isDirty}
+        >
           Save
         </Button>
       </Stack>
