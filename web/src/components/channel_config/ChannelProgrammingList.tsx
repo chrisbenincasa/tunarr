@@ -235,8 +235,10 @@ const ProgramListItem = ({
               onClick={() => deleteProgram(index)}
               edge="end"
               aria-label="delete"
+              size="small"
+              sx={{ maxHeight: '25px' }}
             >
-              <DeleteIcon />
+              <DeleteIcon fontSize="small" />
             </IconButton>
           </>
         )
