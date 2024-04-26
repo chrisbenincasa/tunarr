@@ -1,7 +1,6 @@
 import { Delete, PlayArrow as WatchIcon } from '@mui/icons-material';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import EditIcon from '@mui/icons-material/Edit';
-import SettingsRemoteIcon from '@mui/icons-material/SettingsRemote';
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import {
   Box,
@@ -32,7 +31,7 @@ import { isEmpty } from 'lodash-es';
 import { useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import TunarrLogo from '../../components/TunarrLogo.tsx';
-import PaddedPaper from '../../components/base/PaddedPaper.tsx';
+import NoChannelsCreated from '../../components/channel_config/NoChannelsCreated.tsx';
 import { useChannels } from '../../hooks/useChannels.ts';
 import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 
@@ -238,35 +237,7 @@ export default function ChannelsPage() {
         </Table>
       </TableContainer>
 
-      {channels && channels.length === 0 && !channelsFetching && (
-        <PaddedPaper
-          sx={{
-            display: 'flex',
-            justifyContent: 'center',
-            py: 10,
-            textAlign: 'center',
-          }}
-        >
-          <Box>
-            <SettingsRemoteIcon fontSize="large" />
-            <Typography variant="h5">
-              You haven't created any channels yet.
-            </Typography>
-            <Button
-              variant="contained"
-              sx={{
-                my: 2,
-                maxWidth: 350,
-                textAlign: 'center',
-              }}
-              component={RouterLink}
-              to="/channels/new"
-            >
-              Create your First Channel Now!
-            </Button>
-          </Box>
-        </PaddedPaper>
-      )}
+      <NoChannelsCreated />
     </div>
   );
 }
