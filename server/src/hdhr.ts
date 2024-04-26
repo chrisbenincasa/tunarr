@@ -7,31 +7,30 @@ import { serverOptions } from './globals.js';
 export class HdhrService {
   private db: Settings;
   private channelDB: ChannelDB;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private server: any;
+  private server: SSDP;
 
   constructor(db: Settings, channelDB: ChannelDB) {
     this.db = db;
     this.channelDB = channelDB;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
     this.server = new SSDP({
       location: {
         port: serverOptions().port,
         path: '/device.xml',
       },
-      udn: `uuid:2020-03-S3LA-BG3LIA:2`,
+      udn: `uuid:d936e232-6671-4cd7-a8ab-34b5956ff4d6`,
       allowWildcards: true,
-      ssdpSig: 'PsuedoTV/0.1 UPnP/1.0',
+      ssdpSig: 'Tunarr/0.1 UPnP/1.0',
+      customLogger: process.env['ENABLE_SSDP_DEBUG_LOGGING']
+        ? console.debug
+        : undefined,
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
     this.server.addUSN('upnp:rootdevice');
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
     this.server.addUSN('urn:schemas-upnp-org:device:MediaServer:1');
+    this.server.addUSN('urn:schemas-upnp-org:device:SatIPServer:1');
   }
 
-  get ssdp(): unknown {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+  get ssdp(): SSDP {
     return this.server;
   }
 
@@ -105,17 +104,17 @@ function getDevice(db: Settings, host: string) {
       return `<root xmlns="urn:schemas-upnp-org:device-1-0">
         <URLBase>${host}</URLBase>
         <specVersion>
-        <major>1</major>
-        <minor>0</minor>
+          <major>1</major>
+          <minor>0</minor>
         </specVersion>
         <device>
-        <deviceType>urn:schemas-upnp-org:device:MediaServer:1</deviceType>
-        <friendlyName>Tunarr</friendlyName>
-        <manufacturer>Silicondust</manufacturer>
-        <modelName>HDTC-2US</modelName>
-        <modelNumber>HDTC-2US</modelNumber>
-        <serialNumber/>
-        <UDN>uuid:2020-03-S3LA-BG3LIA:2</UDN>
+          <deviceType>urn:schemas-upnp-org:device:MediaServer:1</deviceType>
+          <friendlyName>Tunarr</friendlyName>
+          <manufacturer>Silicondust</manufacturer>
+          <modelName>HDTC-2US</modelName>
+          <modelNumber>HDTC-2US</modelNumber>
+          <serialNumber/>
+          <UDN>uuid:d936e232-6671-4cd7-a8ab-34b5956ff4d6</UDN>
         </device>
         </root>`;
     },

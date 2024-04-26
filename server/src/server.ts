@@ -349,8 +349,7 @@ export async function initServer(opts: ServerOptions) {
   logger.info(`HTTP server running on port: http://${host}:${opts.port}`);
   const hdhrSettings = ctx.settings.hdhrSettings();
   if (hdhrSettings.autoDiscoveryEnabled) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-    (ctx.hdhrService.ssdp as any).start();
+    await ctx.hdhrService.ssdp.start();
   }
 
   ctx.eventService.push({
