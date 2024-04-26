@@ -4,7 +4,7 @@ import { ProgramSelectorViewType } from '../../types';
 
 export interface ThemeEditorStateInner {
   darkMode?: boolean | undefined;
-  pathway: string;
+  showWelcome: boolean;
   guideDuration: number;
   programmingSelectorView: ProgramSelectorViewType;
 }
@@ -16,7 +16,7 @@ export interface ThemeEditorState {
 export const initialThemeEditorState: ThemeEditorState = {
   theme: {
     darkMode: undefined,
-    pathway: '',
+    showWelcome: true,
     guideDuration: dayjs.duration(2, 'hour').asMilliseconds(),
     programmingSelectorView: 'list',
   },

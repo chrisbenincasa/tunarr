@@ -14,15 +14,15 @@ export const setDarkModeState = () => {
   });
 };
 
-export const updatePathwayState = (newPathway: string) => {
+export const updateShowWelcomeState = () => {
   useStore.setState((state) => {
-    state.theme.pathway = newPathway;
+    state.theme.showWelcome = !state.theme.showWelcome;
   });
 };
 
-export const resetPathwayState = () => {
+export const resetShowWelcomeState = () => {
   useStore.setState((state) => {
-    state.theme.pathway = '';
+    state.theme.showWelcome = true;
   });
 };
 

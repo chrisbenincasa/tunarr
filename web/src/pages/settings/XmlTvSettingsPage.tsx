@@ -71,6 +71,8 @@ export default function XmlTvSettingsPage() {
   if (isPending) {
     return <h1>XML: Loading...</h1>;
   } else if (error) {
+    console.log(error);
+
     return <h1>XML: {error.message}</h1>;
   }
 
