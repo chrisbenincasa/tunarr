@@ -101,6 +101,8 @@ const basePlexCollectionSchema = z.object({
   mediaTagVersion: z.number(),
   nocache: z.boolean().optional(),
   size: z.number(),
+  totalSize: z.number().optional(), // Present when paging
+  offset: z.number().optional(),
   thumb: z.string(),
   title1: z.string(),
   title2: z.string(),
@@ -561,9 +563,16 @@ export const isPlexMedia = (
   return false;
 };
 
+// An item that has children
+export function isPlexParentItem(
+  item: PlexMedia | PlexLibrarySection,
+): item is PlexLibrarySection | PlexParentMediaType {
+  return !isTerminalItem(item);
+}
+
 export function isTerminalItem(
   item: PlexMedia | PlexLibrarySection,
-): item is PlexMovie | PlexEpisode {
+): item is PlexTerminalMedia {
   return (
     !isPlexDirectory(item) &&
     (isPlexMovie(item) || isPlexEpisode(item) || isPlexMusicTrack(item))
@@ -637,7 +646,13 @@ type PlexMediaToChildType = [
   [PlexTvSeason, PlexEpisode],
   [PlexMusicAlbum, PlexMusicArtist],
   [PlexMusicTrack, PlexMusicAlbum],
+  [PlexLibraryCollection, PlexMovie | PlexTvShow],
 ];
+
+export type PlexMetadataType<
+  M extends PlexMedia,
+  T extends { Metadata: M[] } = { Metadata: M[] },
+> = T['Metadata'][0];
 
 type FindChild0<Target, Arr extends unknown[] = []> = Arr extends [
   [infer Head, infer Child],

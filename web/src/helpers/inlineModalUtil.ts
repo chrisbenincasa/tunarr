@@ -1,14 +1,24 @@
 import { PlexMedia } from '@tunarr/types/plex';
+import { range } from 'lodash-es';
+
+// Magic Numbers
+// TODO: eventually grab this data via refs just in case it changes in the future
+const SeasonModalHeight = 143;
+const DefaultSingleRowModalHeight = 294;
+const inlineModalTopPadding = 16;
+const imageContainerXPadding = 8;
+const listItemBarContainerHeight = 54;
 
 export function getImagesPerRow(
   containerWidth: number,
   imageWidth: number,
 ): number {
-  const roundedImageWidth = Math.round(imageWidth * 100) / 100;
-
-  if (!imageWidth || !containerWidth) {
+  if (imageWidth <= 0 || containerWidth <= 0) {
     return 9; // some default value
   }
+
+  const roundedImageWidth = Math.round(imageWidth * 100) / 100;
+
   return Math.round(((containerWidth / roundedImageWidth) * 100) / 100);
 }
 
@@ -22,18 +32,12 @@ export function getEstimatedModalHeight(
 ): number {
   // Episode modals have smaller height, short circuit for  now
   if (type === 'season') {
-    return 143;
+    return SeasonModalHeight;
   }
   // Exit with defaults if container & image width are not provided
   if (containerWidth === 0 || imageContainerWidth === 0) {
-    return 294; //default modal height for 1 row
+    return DefaultSingleRowModalHeight; //default modal height for 1 row
   }
-
-  // Magic Numbers
-  // to do: eventually grab this data via refs just in case it changes in the future
-  const inlineModalTopPadding = 16;
-  const imageContainerXPadding = 8;
-  const listItemBarContainerHeight = 54;
 
   const imagewidth = imageContainerWidth - imageContainerXPadding * 2; // 16px padding on each item
   const heightPerImage = (3 * imagewidth) / 2; // Movie Posters are 2:3
@@ -87,7 +91,6 @@ export function firstItemInNextRow(
     numberOfItemsLastRow < itemsPerRow
   ) {
     return -1;
-    return numberOfItems - numberOfItemsLastRow;
   }
 
   // If the current item is not in the last row, return the index of the first item in the next row
@@ -104,13 +107,5 @@ export function firstItemInNextRow(
 }
 
 export function extractLastIndexes(arr: PlexMedia[], x: number): number[] {
-  if (x > arr.length) {
-    return arr.map((_, i) => i); // Return all indexes if x is too large
-  }
-
-  // Extract the last x elements
-  const lastElements = arr.slice(-x);
-
-  // Return last X indexes in new array
-  return lastElements.map((_) => arr.indexOf(_));
+  return range(x > arr.length ? 0 : x, arr.length);
 }
