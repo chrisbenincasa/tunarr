@@ -1,16 +1,27 @@
 import {
   ChannelProgram,
+  MultiExternalId,
   isContentProgram,
   isRedirectProgram,
 } from '@tunarr/types';
-import { TimeSlot, RandomSlot } from '@tunarr/types/api';
-import { reduce, isNull, first } from 'lodash-es';
+import { RandomSlot, TimeSlot } from '@tunarr/types/api';
 import {
-  slotIteratorKey,
-  StaticProgramIterator,
+  filter,
+  first,
+  forEach,
+  isNull,
+  isUndefined,
+  map,
+  reduce,
+  some,
+} from 'lodash-es';
+import { createExternalIdFromMulti } from '../index.js';
+import {
+  ProgramIterator,
   ProgramOrderer,
   ProgramShuffler,
-  ProgramIterator,
+  StaticProgramIterator,
+  slotIteratorKey,
 } from './ProgramIterator.js';
 
 export type SlotLike = {
@@ -101,10 +112,38 @@ export function createProgramIterators(
           }
         } else {
           const programs = programBySlotType['content'][slotId] ?? [];
+          // Remove any duplicates.
+          // We don't need to go through and remove flex since
+          // they will just be ignored during schedule generation
+          const seenDBIds = new Set<string>();
+          const seenIds = new Set<string>();
+          const uniquePrograms = filter(programs, (p) => {
+            if (p.persisted && !isUndefined(p.id) && !seenDBIds.has(p.id)) {
+              seenDBIds.add(p.id);
+              forEach(p.externalIds, (eid) => {
+                if (eid.type === 'multi') {
+                  seenIds.add(createExternalIdFromMulti(eid));
+                }
+              });
+              return true;
+            }
+
+            const externalIds = filter(
+              p.externalIds,
+              (eid): eid is MultiExternalId => eid.type === 'multi',
+            );
+            const eids = map(externalIds, createExternalIdFromMulti);
+            if (some(eids, (eid) => seenIds.has(eid))) {
+              return false;
+            }
+
+            forEach(eids, (eid) => seenIds.add(eid));
+            return true;
+          });
           acc[id] =
             slot.order === 'next'
-              ? new ProgramOrderer(programs)
-              : new ProgramShuffler(programs);
+              ? new ProgramOrderer(uniquePrograms)
+              : new ProgramShuffler(uniquePrograms);
         }
       }
 
