@@ -89,7 +89,6 @@ export default function ChannelTranscodingConfig() {
       if (resolutionValues.has(asStr)) {
         return asStr as ResolutionOptionValues;
       }
-
       return 'global';
     });
 

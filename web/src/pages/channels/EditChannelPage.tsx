@@ -157,6 +157,8 @@ export default function EditChannelPage({ isNew, initialTab }: Props) {
       offline: {
         ...channel.offline,
         picture: channel.offline.picture ?? DefaultChannel.offline.picture,
+        soundtrack:
+          channel.offline.soundtrack ?? DefaultChannel.offline.soundtrack,
       },
       watermark: {
         ...(channel.watermark ?? {}),

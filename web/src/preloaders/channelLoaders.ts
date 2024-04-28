@@ -33,6 +33,7 @@ export const DefaultChannel = {
     mode: 'pic',
     // TODO: Make this work with the backend settings
     picture: 'http://localhost:8000/images/generic-offline-screen.png',
+    soundtrack: '',
   },
 } as const;
 

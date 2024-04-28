@@ -75,7 +75,6 @@ export function ChannelFlexConfig() {
 
       const newWeight = round(100 / (oldLists.length + 1), 2);
       const distributeWeight = round((100 - newWeight) / oldLists.length, 2);
-
       const newLists = [
         {
           id,
@@ -389,9 +388,9 @@ export function ChannelFlexConfig() {
                     // TODO: This should be something like {channel.id}_fallback_picture.ext
                     fileRenamer={typedProperty('name')}
                     label="Picture"
-                    onFormValueChange={(value) =>
-                      setValue('offline.picture', value)
-                    }
+                    onFormValueChange={(newPath) => {
+                      field.onChange(newPath);
+                    }}
                     onUploadError={console.error}
                     FormControlProps={{ fullWidth: true, sx: { mb: 1 } }}
                     value={field.value ?? ''}
