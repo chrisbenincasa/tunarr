@@ -21,17 +21,17 @@ import {
 } from '@mui/material';
 import { ChannelLineup, TvGuideProgram } from '@tunarr/types';
 import dayjs, { Dayjs } from 'dayjs';
-import { isUndefined, isEmpty, isNull, map, round } from 'lodash-es';
+import { isEmpty, isNull, isUndefined, map, round } from 'lodash-es';
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { useInterval } from 'usehooks-ts';
 import { alternateColors, forTvGuideProgram } from '../../helpers/util';
 import { useTvGuides, useTvGuidesPrefetch } from '../../hooks/useTvGuide';
 import useStore from '../../store';
+import { useSettings } from '../../store/settings/selectors.ts';
 import ProgramDetailsDialog from '../ProgramDetailsDialog';
 import TunarrLogo from '../TunarrLogo';
 import PaddedPaper from '../base/PaddedPaper';
-import { useSettings } from '../../store/settings/selectors.ts';
 
 const StyledMenu = styled((props: MenuProps) => (
   <Menu
@@ -159,6 +159,10 @@ export function TvGuide({ channelId, start, end }: Props) {
   >();
 
   const handleModalOpen = useCallback((program: TvGuideProgram | undefined) => {
+    if (program && program.type === 'flex') {
+      return;
+    }
+
     setModalProgram(program);
   }, []);
 
