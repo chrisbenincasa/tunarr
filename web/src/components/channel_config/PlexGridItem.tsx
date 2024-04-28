@@ -27,6 +27,7 @@ import {
   forPlexMedia,
   isNonEmptyString,
   prettyItemDuration,
+  toggle,
 } from '../../helpers/util.ts';
 import { usePlexTyped } from '../../hooks/plexHooks.ts';
 import useStore from '../../store/index.ts';
@@ -43,15 +44,13 @@ export interface PlexGridItemProps<T extends PlexMedia> {
   style?: React.CSSProperties;
   index?: number;
   parent?: string;
-  moveModal?: CallableFunction;
-  modalChildren?: CallableFunction;
-  modalIsPending?: CallableFunction;
+  moveModal?: (index: number, item: T) => void;
   modalIndex?: number;
   onClick?: () => void;
   ref?: React.RefObject<HTMLDivElement>;
 }
 
-const PlexGridItem = forwardRef(
+export const PlexGridItem = forwardRef(
   <T extends PlexMedia>(
     props: PlexGridItemProps<T>,
     ref: ForwardedRef<HTMLDivElement>,
@@ -60,12 +59,10 @@ const PlexGridItem = forwardRef(
     const darkMode = useStore((state) => state.theme.darkMode);
     const [open, setOpen] = useState(false);
     const [imageLoaded, setImageLoaded] = useState(false);
-    const { item, style, moveModal, modalChildren, modalIsPending } = props;
+    const { item, index, style, moveModal } = props;
     const hasChildren = !isTerminalItem(item);
     const childPath = isPlexCollection(item) ? 'collections' : 'metadata';
-    const { isPending, data: children } = usePlexTyped<
-      PlexChildMediaApiType<T>
-    >(
+    const { data: children } = usePlexTyped<PlexChildMediaApiType<T>>(
       server.name,
       `/library/${childPath}/${props.item.ratingKey}/children`,
       hasChildren && open,
@@ -77,32 +74,18 @@ const PlexGridItem = forwardRef(
     const selectedMediaIds = selectedMedia.map((item) => item.guid);
 
     const handleClick = () => {
-      setOpen(!open);
+      setOpen(toggle);
 
-      if (moveModal) {
-        moveModal();
-
-        if (children && modalChildren) {
-          modalChildren(children.Metadata);
-        }
+      if (!isUndefined(index) && !isUndefined(moveModal)) {
+        moveModal(index, item);
       }
     };
 
     useEffect(() => {
-      if (modalIsPending) {
-        modalIsPending(isPending);
-      }
-    }, [isPending, modalIsPending]);
-
-    useEffect(() => {
-      if (children) {
+      if (!isUndefined(children?.Metadata)) {
         addKnownMediaForServer(server.name, children.Metadata, item.guid);
-
-        if (children.Metadata.length > 0 && !!modalChildren) {
-          modalChildren(children.Metadata);
-        }
       }
-    }, [item.guid, server.name, children, modalChildren]);
+    }, [item.guid, server.name, children]);
 
     const handleItem = useCallback(
       (e: MouseEvent<HTMLDivElement | HTMLButtonElement>) => {
@@ -167,6 +150,8 @@ const PlexGridItem = forwardRef(
                     : theme.palette.grey[400]
                   : 'transparent',
               transition: 'background-color 350ms linear !important',
+              borderTopLeftRadius: '0.5em',
+              borderTopRightRadius: '0.5em',
               ...style,
             }}
             onClick={
@@ -192,6 +177,13 @@ const PlexGridItem = forwardRef(
                   height={250}
                 />
               ))}
+            {!imageLoaded && (
+              <Skeleton
+                variant="rectangular"
+                sx={{ borderRadius: '5%' }}
+                height={250}
+              />
+            )}
             <ImageListItemBar
               title={item.title}
               subtitle={
@@ -232,5 +224,3 @@ const PlexGridItem = forwardRef(
     );
   },
 );
-
-export default PlexGridItem;
