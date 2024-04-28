@@ -1,7 +1,3 @@
-// This operator runs in between each user-defined scheduling operator
-// It's responsibility is to fix up internal data structures so that
-// each operator as an updated and correct view of the current state
-
 import { last, reduce } from 'lodash-es';
 import { ChannelAndLineup } from '../../dao/channelDb';
 import { Func } from '../../types/func';
@@ -20,6 +16,9 @@ function fix(channelAndLineup: ChannelAndLineup): Promise<ChannelAndLineup> {
   return Promise.resolve({ channel, lineup });
 }
 
+// This operator runs in between each user-defined scheduling operator
+// It's responsibility is to fix up internal data structures so that
+// each operator as an updated and correct view of the current state
 // of the channel lineup
 export const IntermediateOperator: Func<
   ChannelAndLineup,

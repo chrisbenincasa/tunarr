@@ -6,6 +6,7 @@ import { SchedulingOperation } from '@tunarr/types/api';
 import { asyncFlow, intersperse } from '../../util/index.js';
 import { SchedulingOperatorFactory } from './SchedulingOperatorFactory.js';
 import { IntermediateOperator } from './IntermediateOperator.js';
+import { CollapseOfflineTimeOperator } from './CollapseOfflineTimeOperator.js';
 
 export class LineupCreator {
   private channelDB = new ChannelDB();
@@ -102,11 +103,15 @@ export class LineupCreator {
       return false;
     });
 
-    const operators = intersperse(
-      compact(map(dedupedOps, (op) => SchedulingOperatorFactory.create(op))),
+    const operations = compact(
+      map(dedupedOps, (op) => SchedulingOperatorFactory.create(op)),
+    );
+    const pipeline = intersperse(
+      [...operations, CollapseOfflineTimeOperator],
       IntermediateOperator,
+      true,
     );
 
-    return (channelAndLineup) => asyncFlow(operators, channelAndLineup);
+    return (channelAndLineup) => asyncFlow(pipeline, channelAndLineup);
   }
 }
