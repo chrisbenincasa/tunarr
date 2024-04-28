@@ -5,7 +5,7 @@ import InputAdornment from '@mui/material/InputAdornment';
 import InputLabel from '@mui/material/InputLabel';
 import OutlinedInput, { OutlinedInputProps } from '@mui/material/OutlinedInput';
 import { styled } from '@mui/material/styles';
-import React, { ChangeEvent, useCallback } from 'react';
+import React, { ChangeEvent, useCallback, useRef } from 'react';
 import { useTunarrApi } from '../../hooks/useTunarrApi';
 
 const VisuallyHiddenInput = styled('input')({
@@ -41,6 +41,7 @@ export function ImageUploadInput({
   value,
   children,
 }: Props) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const apiClient = useTunarrApi();
   const handleFileUpload = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
@@ -89,8 +90,9 @@ export function ImageUploadInput({
         endAdornment={
           <InputAdornment position="end">
             <IconButton component="label">
-              <CloudUpload />
+              <CloudUpload onClick={() => (fileInputRef.current!.value = '')} />
               <VisuallyHiddenInput
+                ref={fileInputRef}
                 onChange={(e) => {
                   handleFileUpload(e);
                 }}
