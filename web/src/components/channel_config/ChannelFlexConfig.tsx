@@ -29,7 +29,7 @@ import {
   some,
   sumBy,
 } from 'lodash-es';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 import { Link as RouterLink } from 'react-router-dom';
 import { useDebounceCallback } from 'usehooks-ts';
@@ -42,7 +42,17 @@ import ChannelEditActions from './ChannelEditActions.tsx';
 export function ChannelFlexConfig() {
   const channel = useStore((s) => s.channelEditor.currentEntity);
   const { data: fillerLists, isPending: fillerListsLoading } = useFillerLists();
-  const { control, setValue, watch } = useFormContext<SaveChannelRequest>();
+  const {
+    control,
+    setValue,
+    watch,
+    formState: { dirtyFields, isDirty, defaultValues },
+  } = useFormContext<SaveChannelRequest>();
+  console.log(defaultValues);
+  useEffect(() => {
+    console.log(defaultValues);
+    console.log(isDirty);
+  }, [isDirty, dirtyFields]);
 
   const [offlineMode, channelFillerLists, offlinePicture] = watch([
     'offline.mode',
@@ -55,6 +65,7 @@ export function ChannelFlexConfig() {
 
   const updateFormWeights = useDebounceCallback(
     useCallback(() => {
+      console.log('test2');
       setValue(
         'fillerCollections',
         map(channelFillerLists, (cfl, idx) => ({
@@ -75,7 +86,7 @@ export function ChannelFlexConfig() {
 
       const newWeight = round(100 / (oldLists.length + 1), 2);
       const distributeWeight = round((100 - newWeight) / oldLists.length, 2);
-
+      console.log('test1');
       const newLists = [
         {
           id,
@@ -140,6 +151,7 @@ export function ChannelFlexConfig() {
           i === idx ? newWeight : distributedWeight,
         ),
       );
+      console.log('test1');
 
       updateFormWeights();
     },
@@ -389,9 +401,9 @@ export function ChannelFlexConfig() {
                     // TODO: This should be something like {channel.id}_fallback_picture.ext
                     fileRenamer={typedProperty('name')}
                     label="Picture"
-                    onFormValueChange={(value) =>
-                      setValue('offline.picture', value)
-                    }
+                    onFormValueChange={(newPath) => {
+                      field.onChange(newPath);
+                    }}
                     onUploadError={console.error}
                     FormControlProps={{ fullWidth: true, sx: { mb: 1 } }}
                     value={field.value ?? ''}
