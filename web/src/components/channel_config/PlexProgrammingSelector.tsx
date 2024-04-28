@@ -51,7 +51,7 @@ import {
 } from 'usehooks-ts';
 import {
   extractLastIndexes,
-  firstItemInNextRow,
+  findFirstItemInNextRowIndex,
   getImagesPerRow,
   isNewModalAbove,
 } from '../../helpers/inlineModalUtil';
@@ -381,9 +381,19 @@ export default function PlexProgrammingSelector() {
     threshold: 0.5,
   });
 
-  const firstItemInNextRowIndex = useMemo(
+  const firstItemInNexLibraryRowIndex = useMemo(
     () =>
-      firstItemInNextRow(
+      findFirstItemInNextRowIndex(
+        modalIndex,
+        rowSize,
+        sumBy(searchData?.pages, (p) => p.size) ?? 0,
+      ),
+    [searchData, rowSize, modalIndex],
+  );
+
+  const firstItemInNextCollectionRowIndex = useMemo(
+    () =>
+      findFirstItemInNextRowIndex(
         modalIndex,
         rowSize,
         sumBy(collectionsData?.pages, (p) => p.size) ?? 0,
@@ -392,11 +402,15 @@ export default function PlexProgrammingSelector() {
   );
 
   const renderGridItems = (item: PlexMedia, index: number) => {
-    const isOpen = index === firstItemInNextRowIndex;
+    const isOpen =
+      index ===
+      (tabValue === 0
+        ? firstItemInNexLibraryRowIndex
+        : firstItemInNextCollectionRowIndex);
 
     return (
       <React.Fragment key={item.guid}>
-        {isPlexParentItem(item) && isOpen && (
+        {isPlexParentItem(item) && (
           <InlineModal
             itemGuid={modalGuid}
             modalIndex={modalIndex}

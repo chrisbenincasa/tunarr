@@ -69,7 +69,12 @@ export function isNewModalAbove(
   }
 }
 
-export function firstItemInNextRow(
+/**
+ * Returns the index to insert the InlineModal
+ * Will return -1 if the modal is not open or if there
+ * are no items
+ */
+export function findFirstItemInNextRowIndex(
   modalIndex: number,
   itemsPerRow: number,
   numberOfItems: number,

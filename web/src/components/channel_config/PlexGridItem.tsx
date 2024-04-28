@@ -27,6 +27,7 @@ import {
   forPlexMedia,
   isNonEmptyString,
   prettyItemDuration,
+  toggle,
 } from '../../helpers/util.ts';
 import { usePlexTyped } from '../../hooks/plexHooks.ts';
 import useStore from '../../store/index.ts';
@@ -44,7 +45,6 @@ export interface PlexGridItemProps<T extends PlexMedia> {
   index?: number;
   parent?: string;
   moveModal?: (index: number, item: T) => void;
-  // setModalChildren?: (children: PlexMedia[]) => void;
   modalIndex?: number;
   onClick?: () => void;
   ref?: React.RefObject<HTMLDivElement>;
@@ -74,7 +74,7 @@ export const PlexGridItem = forwardRef(
     const selectedMediaIds = selectedMedia.map((item) => item.guid);
 
     const handleClick = () => {
-      setOpen(!open);
+      setOpen(toggle);
 
       if (!isUndefined(index) && !isUndefined(moveModal)) {
         moveModal(index, item);
@@ -150,6 +150,8 @@ export const PlexGridItem = forwardRef(
                     : theme.palette.grey[400]
                   : 'transparent',
               transition: 'background-color 350ms linear !important',
+              borderTopLeftRadius: '0.5em',
+              borderTopRightRadius: '0.5em',
               ...style,
             }}
             onClick={
@@ -175,6 +177,13 @@ export const PlexGridItem = forwardRef(
                   height={250}
                 />
               ))}
+            {!imageLoaded && (
+              <Skeleton
+                variant="rectangular"
+                sx={{ borderRadius: '5%' }}
+                height={250}
+              />
+            )}
             <ImageListItemBar
               title={item.title}
               subtitle={

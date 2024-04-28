@@ -1,4 +1,4 @@
-import { Collapse, List } from '@mui/material';
+import { Box, Collapse, List } from '@mui/material';
 import { PlexMedia, isPlexMedia, isTerminalItem } from '@tunarr/types/plex';
 import { usePrevious } from '@uidotdev/usehooks';
 import React, {
@@ -10,7 +10,7 @@ import React, {
 } from 'react';
 import {
   extractLastIndexes,
-  firstItemInNextRow,
+  findFirstItemInNextRowIndex,
   getEstimatedModalHeight,
   getImagesPerRow,
 } from '../helpers/inlineModalUtil';
@@ -23,7 +23,6 @@ import { toggle } from '../helpers/util.ts';
 type InlineModalProps = {
   itemGuid: string;
   modalIndex: number;
-  // modalChildren?: PlexMedia[];
   open?: boolean;
   rowSize: number;
   type: PlexMedia['type'] | 'all';
@@ -34,12 +33,12 @@ export function InlineModal(props: InlineModalProps) {
   const previousItemGuid = usePrevious(itemGuid);
   const [containerWidth, setContainerWidth] = useState(0);
   const [itemWidth, setItemWidth] = useState(0);
-  const [isOpen, setIsOpen] = useState(open ?? false);
+  const [isOpen, setIsOpen] = useState(false);
   const ref = useRef<HTMLUListElement>(null);
   const gridItemRef = useRef<HTMLDivElement>(null);
   const inlineModalRef = useRef<HTMLDivElement>(null);
   const darkMode = useStore((state) => state.theme.darkMode);
-  const [childLimit, setChildLimit] = useState(0);
+  const [childLimit, setChildLimit] = useState(9);
   const [imagesPerRow, setImagesPerRow] = useState(0);
   const modalChildren: PlexMedia[] = useStore((s) => {
     const known = s.contentHierarchyByServer[s.currentServer!.name];
@@ -62,7 +61,7 @@ export function InlineModal(props: InlineModalProps) {
         rowSize,
         containerWidth,
         itemWidth,
-        modalChildren?.length || 0,
+        modalChildren.length,
         type,
       ),
     [containerWidth, itemWidth, modalChildren?.length, rowSize, type],
@@ -78,9 +77,11 @@ export function InlineModal(props: InlineModalProps) {
       const itemWidth =
         gridItemRef?.current?.getBoundingClientRect().width || 0;
 
+      const imagesPerRow = getImagesPerRow(containerWidth, itemWidth);
+      setChildLimit(imagesPerRow * 2);
       setItemWidth(itemWidth);
       setContainerWidth(containerWidth);
-      setImagesPerRow(getImagesPerRow(containerWidth, itemWidth));
+      setImagesPerRow(imagesPerRow);
     }
   }, [ref, gridItemRef, previousItemGuid, itemGuid]);
 
@@ -118,18 +119,20 @@ export function InlineModal(props: InlineModalProps) {
     : false;
 
   return (
-    <div
+    <Box
       ref={inlineModalRef}
-      style={
-        isOpen ? { display: 'grid', gridColumn: '1 / -1' } : { display: 'none' }
-      }
+      component="div"
+      sx={{
+        display: isOpen ? 'grid' : 'none',
+        gridColumn: isOpen ? '1 / -1' : undefined,
+      }}
     >
       <Collapse
         in={open}
-        timeout="auto"
+        timeout={100}
         easing={{
           enter: 'easeInSine',
-          exit: 'linear',
+          exit: 'easeOutSine',
         }}
         mountOnEnter
         unmountOnExit
@@ -151,11 +154,14 @@ export function InlineModal(props: InlineModalProps) {
             padding: 0,
             paddingTop: 2,
             minHeight: modalHeight,
+            borderBottomLeftRadius: '0.5em',
+            borderBottomRightRadius: '0.5em',
           }}
           ref={ref}
         >
           {_.chain(modalChildren)
             .filter(isPlexMedia)
+            .take(childLimit)
             .map((child: PlexMedia, idx: number) => (
               <React.Fragment key={child.guid}>
                 {!isTerminalItem(child) && (
@@ -164,7 +170,7 @@ export function InlineModal(props: InlineModalProps) {
                     modalIndex={childModalIndex}
                     open={
                       idx ===
-                      firstItemInNextRow(
+                      findFirstItemInNextRowIndex(
                         childModalIndex,
                         rowSize,
                         modalChildren?.length || 0,
@@ -195,6 +201,6 @@ export function InlineModal(props: InlineModalProps) {
           <li style={{ height: 40 }} ref={intersectionRef}></li>
         </List>
       </Collapse>
-    </div>
+    </Box>
   );
 }

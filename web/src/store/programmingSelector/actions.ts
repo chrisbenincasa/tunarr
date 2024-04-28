@@ -6,7 +6,7 @@ import {
   isPlexDirectory,
   isTerminalItem,
 } from '@tunarr/types/plex';
-import { map, reject, some } from 'lodash-es';
+import { map, reject, some, uniq } from 'lodash-es';
 import useStore from '..';
 import {
   buildPlexFilterKey,
@@ -71,6 +71,7 @@ export const addKnownMediaForServer = (
     const childrenByGuid = plexMedia
       .filter((m) => !isTerminalItem(m))
       .reduce((prev, media) => ({ ...prev, [uniqueId(media)]: [] }), {});
+
     state.contentHierarchyByServer[serverName] = {
       ...state.contentHierarchyByServer[serverName],
       ...childrenByGuid,
@@ -81,10 +82,10 @@ export const addKnownMediaForServer = (
         state.contentHierarchyByServer[serverName][parentId] = [];
       }
 
-      state.contentHierarchyByServer[serverName][parentId] = [
+      state.contentHierarchyByServer[serverName][parentId] = uniq([
         ...state.contentHierarchyByServer[serverName][parentId],
         ...plexMedia.map(uniqueId),
-      ];
+      ]);
     }
 
     return state;
