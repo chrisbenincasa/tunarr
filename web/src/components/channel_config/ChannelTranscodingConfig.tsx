@@ -18,7 +18,7 @@ import Typography from '@mui/material/Typography';
 import Grid2 from '@mui/material/Unstable_Grid2/Grid2';
 import { SaveChannelRequest, Watermark } from '@tunarr/types';
 import { isNil, isUndefined, map, round } from 'lodash-es';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 import {
   resolutionFromAnyString,
@@ -73,22 +73,12 @@ export default function ChannelTranscodingConfig() {
     useFfmpegSettings();
   const channel = useStore((s) => s.channelEditor.currentEntity);
 
-  const {
-    control,
-    watch,
-    setValue,
-    formState: { dirtyFields, isDirty },
-  } = useFormContext<SaveChannelRequest>();
+  const { control, watch, setValue } = useFormContext<SaveChannelRequest>();
 
   const [targetRes, watermark] = watch([
     'transcoding.targetResolution',
     'watermark',
   ]);
-
-  useEffect(() => {
-    console.log(dirtyFields);
-    console.log(isDirty);
-  }, [isDirty, dirtyFields]);
 
   const [targetResString, setTargetResString] =
     useState<ResolutionOptionValues>(() => {
