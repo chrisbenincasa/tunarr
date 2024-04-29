@@ -19,12 +19,13 @@ import {
   programSourceTypeFromString,
 } from '../dao/custom_types/ProgramSourceType.js';
 import { getEm } from '../dao/dataSource.js';
-import { Program } from '../dao/entities/Program.js';
+import { Program, ProgramType } from '../dao/entities/Program.js';
 import { Plex } from '../external/plex.js';
 import { TruthyQueryParam } from '../types/schemas.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import createLogger from '../logger.js';
 import { ProgramGrouping } from '../dao/entities/ProgramGrouping.js';
+import { ifDefined } from '../util/index.js';
 
 const logger = createLogger(import.meta);
 
@@ -77,7 +78,12 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
       // so we'll just prefer program matches over group matches and hope all works out
       // Alternatively, we could introduce a query param to narrow this down...
       const [program, grouping] = await Promise.all([
-        em.repo(Program).findOne({ uuid: req.params.id }),
+        em
+          .repo(Program)
+          .findOne(
+            { uuid: req.params.id },
+            { populate: ['album', 'album.externalRefs'] },
+          ),
         em
           .repo(ProgramGrouping)
           .findOne({ uuid: req.params.id }, { populate: ['externalRefs'] }),
@@ -149,10 +155,21 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
       if (!isNil(program)) {
         switch (program.sourceType) {
           case ProgramSourceType.PLEX: {
-            return handlePlexItem(
-              program.externalKey,
-              program.externalSourceId,
-            );
+            let keyToUse = program.externalKey;
+            if (program.type === ProgramType.Track && !isNil(program.album)) {
+              ifDefined(
+                find(
+                  program.album.externalRefs,
+                  (ref) =>
+                    ref.sourceType === ProgramSourceType.PLEX &&
+                    ref.externalSourceId === program.externalSourceId,
+                ),
+                (ref) => {
+                  keyToUse = ref.externalKey;
+                },
+              );
+            }
+            return handlePlexItem(keyToUse, program.externalSourceId);
           }
           default:
             return res.status(405).send();
