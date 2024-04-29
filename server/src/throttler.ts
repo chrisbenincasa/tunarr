@@ -2,6 +2,7 @@ import constants from '@tunarr/shared/constants';
 import { isUndefined } from 'lodash-es';
 import { StreamLineupItem } from './dao/derived_types/StreamLineup';
 import { Maybe } from './types';
+import util from 'node:util';
 
 type CacheEntry = {
   t0: number;
@@ -14,11 +15,23 @@ let previous: CacheEntry;
 
 // WTF is this
 function equalItems(a: Maybe<StreamLineupItem>, b: Maybe<StreamLineupItem>) {
-  if (isUndefined(a) || a.type === 'offline' || b?.type === 'offline') {
+  if (
+    isUndefined(a) ||
+    isUndefined(b) ||
+    a.type === 'offline' ||
+    b.type === 'offline'
+  ) {
     return false;
   }
-  console.log('no idea how to compare this: ' + JSON.stringify(a));
-  console.log(' with this: ' + JSON.stringify(b));
+
+  if (a.type !== b.type) {
+    return false;
+  }
+
+  if (a.type !== 'program') {
+    console.log(util.format('Unclear how to compare %O and %O', a, b));
+  }
+
   return true;
 }
 

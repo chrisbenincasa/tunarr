@@ -1,6 +1,6 @@
 import { EntityDTO, Loaded, wrap } from '@mikro-orm/core';
 import constants from '@tunarr/shared/constants';
-import { every, first, isError, isNil, isNull, negate, pick } from 'lodash-es';
+import { every, first, isNil, isNull, negate, pick } from 'lodash-es';
 import { getEm } from './dao/dataSource.js';
 import {
   Lineup,
@@ -8,7 +8,7 @@ import {
   isOfflineItem,
 } from './dao/derived_types/Lineup.js';
 import {
-  ProgramStreamLineupItem,
+  EnrichedLineupItem,
   StreamLineupItem,
   createOfflineStreamLineupIteam,
   isOfflineLineupItem,
@@ -27,7 +27,7 @@ const SLACK = constants.SLACK;
 
 // Figure out this type later...
 export type ProgramAndTimeElapsed = {
-  program: StreamLineupItem & { err?: Error };
+  program: EnrichedLineupItem;
   timeElapsed: number;
   programIndex: number;
 };
@@ -138,6 +138,7 @@ export async function getCurrentProgramAndTimeElapsed(
         duration: backingItem.duration,
         programId: backingItem.uuid,
         title: backingItem.title,
+        id: backingItem.uuid,
       };
     }
   } else if (isOfflineItem(lineupItem)) {
@@ -185,10 +186,10 @@ export async function createLineupItem(
   const activeProgram = obj.program;
   let beginningOffset = 0;
 
-  if (isError(activeProgram)) {
+  if (activeProgram.type === 'error') {
     const remaining = activeProgram.duration - timeElapsed;
     return {
-      type: 'offline',
+      type: 'error',
       title: 'Error',
       error: activeProgram.error,
       streamDuration: remaining,
@@ -286,6 +287,7 @@ export async function createLineupItem(
       start: 0,
     };
   }
+
   const originalTimeElapsed = timeElapsed;
   if (timeElapsed < 30000) {
     timeElapsed = 0;
@@ -293,11 +295,12 @@ export async function createLineupItem(
   beginningOffset = Math.max(0, originalTimeElapsed - timeElapsed);
 
   return {
-    ...(activeProgram as ProgramStreamLineupItem),
+    ...activeProgram,
     type: 'program',
     start: timeElapsed,
     streamDuration: activeProgram.duration - timeElapsed,
     beginningOffset: beginningOffset,
+    id: activeProgram.id,
   };
 }
 
