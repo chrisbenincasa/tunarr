@@ -82,6 +82,9 @@ importers:
       '@fastify/swagger-ui':
         specifier: ^2.0.1
         version: 2.0.1
+      '@iptv/xmltv':
+        specifier: ^1.0.1
+        version: 1.0.1
       '@mikro-orm/better-sqlite':
         specifier: ^6.2.0
         version: 6.2.0(@mikro-orm/core@6.2.0)
@@ -1818,6 +1821,10 @@ packages:
   /@humanwhocodes/object-schema@2.0.3:
     resolution: {integrity: sha512-93zYdMES/c1D69yZiKDBj0V24vqNzB/koF26KPaagAfd3P/4gUlh3Dys5ogAK+Exi9QyzlD8x/08Zt7wIKcDcA==}
     dev: true
+
+  /@iptv/xmltv@1.0.1:
+    resolution: {integrity: sha512-e8gwa4/bQdbaWE3OP7CD4HvDbtzMuaw/rstdebjaD19mjAGEzHStQs055uSytulBC65oamKiYHCg8trtUdyE/g==}
+    dev: false
 
   /@isaacs/cliui@8.0.2:
     resolution: {integrity: sha512-O8jcjabXaleOG9DQ0+ARXWZBTfnP4WNAqzuiJK7ll44AmxGKv/J2M4TPjxjY3znBCfvBXFzucm1twdyFybFqEA==}

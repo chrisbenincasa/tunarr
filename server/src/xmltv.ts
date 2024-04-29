@@ -20,7 +20,7 @@ let isWorking = false;
 
 export class XmlTvWriter {
   async writeXMLTv(
-    json: Record<number, ChannelPrograms>,
+    json: Record<string, ChannelPrograms>,
     xmlSettings: XmlTvSettings,
   ) {
     if (isWorking) {
