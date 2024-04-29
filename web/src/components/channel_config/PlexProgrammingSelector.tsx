@@ -138,7 +138,9 @@ export default function PlexProgrammingSelector() {
       const imageWidth = imageRef?.getBoundingClientRect().width;
 
       // 16 is additional padding available in the parent container
-      setRowSize(getImagesPerRow(width ? width + 16 : 0, imageWidth || 0));
+      const rowSize = getImagesPerRow(width ? width + 16 : 0, imageWidth || 0);
+      setRowSize(rowSize);
+      setScrollParams(({ max }) => ({ max, limit: rowSize * 4 }));
     }
   }, [width, tabValue, viewType, modalGuid]);
 
@@ -319,19 +321,24 @@ export default function PlexProgrammingSelector() {
   });
 
   useEffect(() => {
-    if (!isUndefined(searchData)) {
-      // We're using this as an analogue for detecting the start of a new 'query'
-      if (scrollParams.max === -1 || searchData.pages.length === 1) {
-        const max = searchData.pages[0].totalSize ?? searchData.pages[0].size;
-        setScrollParams({
-          limit: rowSize * 4,
-          max,
-        });
+    if (searchData?.pages.length === 1) {
+      const size = searchData.pages[0].totalSize ?? searchData.pages[0].size;
+      if (scrollParams.max !== size) {
+        console.log('herehereh');
+        setScrollParams(({ limit }) => ({
+          limit,
+          max: size,
+        }));
       }
+    }
+  }, [searchData?.pages, scrollParams.max]);
 
+  useEffect(() => {
+    if (!isUndefined(searchData)) {
       // We probably wouldn't have made it this far if we didnt have a server, but
       // putting this here to prevent crashes
       if (selectedServer) {
+        console.log('still in this one');
         const allMedia = chain(searchData.pages)
           .reject((page) => page.size === 0)
           .map((page) => page.Metadata)
@@ -407,7 +414,6 @@ export default function PlexProgrammingSelector() {
       (tabValue === 0
         ? firstItemInNexLibraryRowIndex
         : firstItemInNextCollectionRowIndex);
-
     return (
       <React.Fragment key={item.guid}>
         {isPlexParentItem(item) && (
