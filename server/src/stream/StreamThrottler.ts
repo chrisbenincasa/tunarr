@@ -1,7 +1,7 @@
 import constants from '@tunarr/shared/constants';
 import { isUndefined } from 'lodash-es';
-import { StreamLineupItem } from './dao/derived_types/StreamLineup';
-import { Maybe } from './types';
+import { StreamLineupItem } from '../dao/derived_types/StreamLineup';
+import { Maybe } from '../types/util';
 import util from 'node:util';
 
 type CacheEntry = {

@@ -1,7 +1,7 @@
 import schedule, { RecurrenceRule } from 'node-schedule';
 import { withDb } from '../dao/dataSource.js';
 import { logger } from '../services/scheduler.js';
-import { Maybe } from '../types.js';
+import { Maybe } from '../types/util.js';
 import { Task } from './Task.js';
 import { isDate } from 'lodash-es';
 

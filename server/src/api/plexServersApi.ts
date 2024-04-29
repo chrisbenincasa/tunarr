@@ -9,7 +9,7 @@ import { isError, isNil, isObject } from 'lodash-es';
 import z from 'zod';
 import { PlexServerSettings } from '../dao/entities/PlexServerSettings.js';
 import createLogger from '../logger.js';
-import { Plex, PlexApiFactory } from '../plex.js';
+import { Plex, PlexApiFactory } from '../external/plex.js';
 import { GlobalScheduler } from '../services/scheduler.js';
 import { UpdateXmlTvTask } from '../tasks/updateXmlTvTask.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';

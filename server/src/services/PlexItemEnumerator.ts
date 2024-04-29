@@ -10,7 +10,7 @@ import {
 import { isNil, uniqBy } from 'lodash-es';
 import map from 'lodash-es/map';
 import { ProgramDB } from '../dao/programDB';
-import { Plex } from '../plex';
+import { Plex } from '../external/plex';
 import { typedProperty } from '../types/path';
 import { flatMapAsyncSeq } from '../util/index.js';
 

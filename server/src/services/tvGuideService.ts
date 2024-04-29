@@ -34,7 +34,7 @@ import { Lineup } from '../dao/derived_types/Lineup.js';
 import { Channel } from '../dao/entities/Channel.js';
 import { getSettings } from '../dao/settings.js';
 import createLogger from '../logger.js';
-import { Maybe } from '../types.js';
+import { Maybe } from '../types/util.js';
 import { binarySearchRange } from '../util/binarySearch.js';
 import {
   deepCopy,

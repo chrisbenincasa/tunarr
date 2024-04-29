@@ -7,7 +7,7 @@ import { Channel } from '../dao/entities/Channel';
 import { ScheduledTask } from './ScheduledTask';
 import { ContentSourceUpdaterFactory } from '../services/dynamic_channels/ContentSourceUpdaterFactory';
 import { GlobalScheduler } from '../services/scheduler';
-import { Maybe } from '../types';
+import { Maybe } from '../types/util';
 import { Task, TaskId } from './Task';
 
 export class ScheduleDynamicChannelsTask extends Task<void> {

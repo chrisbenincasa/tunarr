@@ -35,7 +35,7 @@ import ld, {
   values,
 } from 'lodash-es';
 import createLogger from '../logger.js';
-import { PlexApiFactory } from '../plex.js';
+import { PlexApiFactory } from '../external/plex.js';
 import {
   flipMap,
   groupByUniqFunc,

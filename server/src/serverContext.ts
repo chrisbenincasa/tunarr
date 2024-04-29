@@ -1,7 +1,7 @@
 import { AsyncLocalStorage } from 'async_hooks';
 import { isUndefined, once } from 'lodash-es';
 import path from 'path';
-import { ChannelCache } from './channelCache.js';
+import { ChannelCache } from './stream/channelCache.js';
 import { ChannelDB } from './dao/channelDb.js';
 import { CustomShowDB } from './dao/customShowDb.js';
 import { FillerDB } from './dao/fillerDb.js';

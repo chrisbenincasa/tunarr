@@ -2,7 +2,7 @@ import { CustomProgram } from '@tunarr/types';
 import { CreateCustomShowRequest } from '@tunarr/types/api';
 import { filter, isUndefined, map } from 'lodash-es';
 import { MarkOptional } from 'ts-essentials';
-import { Maybe } from '../types.js';
+import { Maybe } from '../types/util.js';
 import { mapAsyncSeq } from '../util/index.js';
 import { ProgramConverter } from './converters/programConverters.js';
 import { getEm } from './dataSource.js';

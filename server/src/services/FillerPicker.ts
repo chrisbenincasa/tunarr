@@ -1,11 +1,12 @@
 import { EntityDTO, Loaded } from '@mikro-orm/core';
 import constants from '@tunarr/shared/constants';
 import { isEmpty, isNil, isUndefined } from 'lodash-es';
-import { ChannelCache } from '../channelCache';
+import { ChannelCache } from '../stream/channelCache';
 import { Channel } from '../dao/entities/Channel';
 import { ChannelFillerShow } from '../dao/entities/ChannelFillerShow';
 import { Program } from '../dao/entities/Program';
-import { Maybe, Nullable } from '../types';
+import { Nullable } from '../types/util';
+import { Maybe } from '../types/util';
 import { random } from '../util/random';
 
 const DefaultFillerCooldownMillis = 30 * 60 * 1000;

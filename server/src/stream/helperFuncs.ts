@@ -1,27 +1,28 @@
 import { EntityDTO, Loaded, wrap } from '@mikro-orm/core';
 import constants from '@tunarr/shared/constants';
 import { every, first, isNil, isNull, negate, pick } from 'lodash-es';
-import { getEm } from './dao/dataSource.js';
+import { getEm } from '../dao/dataSource.js';
 import {
   Lineup,
   isContentItem,
   isOfflineItem,
-} from './dao/derived_types/Lineup.js';
+} from '../dao/derived_types/Lineup.js';
 import {
   EnrichedLineupItem,
   StreamLineupItem,
   createOfflineStreamLineupIteam,
   isOfflineLineupItem,
-} from './dao/derived_types/StreamLineup.js';
-import { Channel } from './dao/entities/Channel.js';
-import { Program as ProgramEntity } from './dao/entities/Program.js';
-import createLogger from './logger.js';
-import { getServerContext } from './serverContext.js';
-import { FillerPicker } from './services/FillerPicker.js';
-import { CHANNEL_CONTEXT_KEYS, ContextChannel, Nullable } from './types.js';
-import { zipWithIndex } from './util/index.js';
-import { binarySearchRange } from './util/binarySearch.js';
-import { random } from './util/random.js';
+} from '../dao/derived_types/StreamLineup.js';
+import { Channel } from '../dao/entities/Channel.js';
+import { Program as ProgramEntity } from '../dao/entities/Program.js';
+import createLogger from '../logger.js';
+import { getServerContext } from '../serverContext.js';
+import { FillerPicker } from '../services/FillerPicker.js';
+import { STREAM_CHANNEL_CONTEXT_KEYS, StreamContextChannel } from './types.js';
+import { Nullable } from '../types/util.js';
+import { zipWithIndex } from '../util/index.js';
+import { binarySearchRange } from '../util/binarySearch.js';
+import { random } from '../util/random.js';
 
 const SLACK = constants.SLACK;
 
@@ -307,6 +308,9 @@ export async function createLineupItem(
 // any channel thing used here should be added to channel context
 export function generateChannelContext(
   channel: Loaded<Channel, never, '*'>,
-): ContextChannel {
-  return pick(channel, CHANNEL_CONTEXT_KEYS as ReadonlyArray<keyof Channel>);
+): StreamContextChannel {
+  return pick(
+    channel,
+    STREAM_CHANNEL_CONTEXT_KEYS as ReadonlyArray<keyof Channel>,
+  );
 }

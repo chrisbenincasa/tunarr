@@ -5,13 +5,13 @@ import {
   StreamLineupItem,
   StreamLineupItemSchema,
   isCommercialLineupItem,
-} from './dao/derived_types/StreamLineup.js';
-import { FillerShowId } from './dao/entities/FillerShow.js';
-import { SchemaBackedDbAdapter } from './dao/SchemaBackedDbAdapter.js';
+} from '../dao/derived_types/StreamLineup.js';
+import { FillerShowId } from '../dao/entities/FillerShow.js';
+import { SchemaBackedDbAdapter } from '../dao/SchemaBackedDbAdapter.js';
 import { join } from 'node:path';
 import { Low } from 'lowdb';
-import { globalOptions } from './globals.js';
-import { InMemoryCachedDbAdapter } from './dao/InMemoryCachedDbAdapter.js';
+import { globalOptions } from '../globals.js';
+import { InMemoryCachedDbAdapter } from '../dao/InMemoryCachedDbAdapter.js';
 
 const SLACK = constants.SLACK;
 

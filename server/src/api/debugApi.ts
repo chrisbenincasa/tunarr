@@ -12,12 +12,14 @@ import {
   isContentBackedLineupIteam,
 } from '../dao/derived_types/StreamLineup.js';
 import { Channel } from '../dao/entities/Channel.js';
-import * as helperFuncs from '../helperFuncs.js';
+import * as helperFuncs from '../stream/helperFuncs.js';
 import createLogger from '../logger.js';
-import { PlexPlayer } from '../plexPlayer.js';
-import { PlexTranscoder } from '../plexTranscoder.js';
+import { PlexPlayer } from '../stream/plex/plexPlayer.js';
+import { PlexTranscoder } from '../stream/plex/plexTranscoder.js';
 import { FillerPicker } from '../services/FillerPicker.js';
-import { ContextChannel, Maybe, PlayerContext } from '../types.js';
+import { StreamContextChannel } from '../stream/types.js';
+import { PlayerContext } from '../stream/player.js';
+import { Maybe } from '../types/util.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { mapAsyncSeq } from '../util/index.js';
 
@@ -45,7 +47,7 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
         return res.status(404).send('No channel found');
       }
 
-      const combinedChannel: ContextChannel = {
+      const combinedChannel: StreamContextChannel = {
         ...helperFuncs.generateChannelContext(channel),
         transcoding: channel?.transcoding,
       };
@@ -121,7 +123,7 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
 
       const plexSettings = req.serverCtx.settings.plexSettings();
 
-      const combinedChannel: ContextChannel = {
+      const combinedChannel: StreamContextChannel = {
         ...helperFuncs.generateChannelContext(channel),
         transcoding: channel?.transcoding,
       };

@@ -33,7 +33,7 @@ import { ServerRequestContext, serverContext } from './serverContext.js';
 import { GlobalScheduler, scheduleJobs } from './services/scheduler.js';
 import { runFixers } from './tasks/fixers/index.js';
 import { UpdateXmlTvTask } from './tasks/updateXmlTvTask.js';
-import { ServerOptions } from './types.js';
+import { ServerOptions } from './globals.js';
 import { filename, isProduction } from './util/index.js';
 import { videoRouter } from './api/videoApi.js';
 import {
@@ -44,7 +44,7 @@ import {
   some,
   startsWith,
 } from 'lodash-es';
-import { initPersistentStreamCache } from './channelCache.js';
+import { initPersistentStreamCache } from './stream/channelCache.js';
 import { getSettingsRawDb } from './dao/settings.js';
 import { migrateFromLegacyDb } from './dao/legacy_migration/legacyDbMigration.js';
 import { hlsApi } from './api/hlsApi.js';

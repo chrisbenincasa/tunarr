@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { mapAsyncSeq } from './util/index.js';
+import { mapAsyncSeq } from './index.js';
 
 describe('utils', () => {
   test('mapAsyncSeq2', async () => {

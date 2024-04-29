@@ -1,6 +1,6 @@
 import ld, { filter, forEach, isEmpty, keys } from 'lodash-es';
 import { sessionManager } from '../stream/sessionManager.js';
-import { Maybe } from '../types.js';
+import { Maybe } from '../types/util.js';
 import { Task, TaskId } from './Task.js';
 
 const ThirtySeconds = 30 * 1000;

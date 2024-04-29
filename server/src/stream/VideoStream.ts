@@ -13,12 +13,14 @@ import {
   createLineupItem,
   generateChannelContext,
   getCurrentProgramAndTimeElapsed,
-} from '../helperFuncs';
+} from './helperFuncs';
 import createLogger from '../logger';
-import { ProgramPlayer } from '../programPlayer';
+import { ProgramPlayer } from './programPlayer';
 import { getServerContext } from '../serverContext';
-import { wereThereTooManyAttempts } from '../throttler';
-import { ContextChannel, Maybe, PlayerContext } from '../types';
+import { wereThereTooManyAttempts } from './StreamThrottler';
+import { StreamContextChannel } from './types';
+import { PlayerContext } from './player';
+import { Maybe } from '../types/util';
 import { StreamQueryString } from '../types/schemas';
 import { fileExists } from '../util/fsUtil';
 import { deepCopy } from '../util/index.js';
@@ -328,7 +330,7 @@ export class VideoStream {
       };
     }
 
-    const combinedChannel: ContextChannel = {
+    const combinedChannel: StreamContextChannel = {
       ...generateChannelContext(channelContext),
       transcoding: channel.transcoding,
     };

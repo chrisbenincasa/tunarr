@@ -5,12 +5,13 @@ import * as fs from 'node:fs/promises';
 import { stringify } from 'node:querystring';
 import { DeepReadonly } from 'ts-essentials';
 import { v4 as uuidv4 } from 'uuid';
-import { ContentBackedStreamLineupItem } from './dao/derived_types/StreamLineup.js';
-import { PlexServerSettings } from './dao/entities/PlexServerSettings.js';
-import { serverOptions } from './globals.js';
-import createLogger from './logger.js';
-import { Plex } from './plex.js';
-import { ContextChannel, Maybe } from './types.js';
+import { ContentBackedStreamLineupItem } from '../../dao/derived_types/StreamLineup.js';
+import { PlexServerSettings } from '../../dao/entities/PlexServerSettings.js';
+import { serverOptions } from '../../globals.js';
+import createLogger from '../../logger.js';
+import { Plex } from '../../external/plex.js';
+import { StreamContextChannel } from '../types.js';
+import { Maybe } from '../../types/util.js';
 import {
   PlexItemMetadata,
   PlexMediaContainer,
@@ -18,7 +19,7 @@ import {
   TranscodeDecision,
   TranscodeDecisionMediaStream,
   isPlexVideoStream,
-} from './types/plexApiTypes.js';
+} from '../../types/plexApiTypes.js';
 
 const logger = createLogger(import.meta);
 
@@ -79,7 +80,7 @@ export class PlexTranscoder {
     clientId: string,
     server: PlexServerSettings,
     settings: DeepReadonly<PlexStreamSettings>,
-    channel: ContextChannel,
+    channel: StreamContextChannel,
     lineupItem: ContentBackedStreamLineupItem,
   ) {
     this.session = uuidv4();

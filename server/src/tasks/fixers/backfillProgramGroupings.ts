@@ -23,7 +23,7 @@ import {
 } from '../../dao/entities/ProgramGrouping';
 import { ProgramGroupingExternalId } from '../../dao/entities/ProgramGroupingExternalId';
 import createLogger from '../../logger';
-import { PlexApiFactory } from '../../plex';
+import { PlexApiFactory } from '../../external/plex';
 import Fixer from './fixer';
 import { getEm } from '../../dao/dataSource';
 const logger = createLogger(import.meta);

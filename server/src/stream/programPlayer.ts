@@ -19,17 +19,18 @@
  **/
 
 import { FfmpegSettings, Watermark } from '@tunarr/types';
-import { isError, isNil, isString, isUndefined } from 'lodash-es';
+import { isError, isString, isUndefined } from 'lodash-es';
 import { Writable } from 'stream';
-import { FfmpegEvents } from './ffmpeg.js';
-import createLogger from './logger.js';
+import { isContentBackedLineupIteam } from '../dao/derived_types/StreamLineup.js';
+import { FfmpegEvents } from '../ffmpeg/ffmpeg.js';
+import createLogger from '../logger.js';
+import { TypedEventEmitter } from '../types/eventEmitter.js';
+import { Maybe } from '../types/util.js';
+import { isNonEmptyString } from '../util/index.js';
 import { OfflinePlayer } from './offlinePlayer.js';
-import { Player } from './player.js';
-import { PlexPlayer } from './plexPlayer.js';
-import { ContextChannel, Maybe, PlayerContext } from './types.js';
-import { TypedEventEmitter } from './types/eventEmitter.js';
-import { isNonEmptyString } from './util/index.js';
-import { isContentBackedLineupIteam } from './dao/derived_types/StreamLineup.js';
+import { Player, PlayerContext } from './player.js';
+import { PlexPlayer } from './plex/plexPlayer.js';
+import { StreamContextChannel } from './types.js';
 
 const logger = createLogger(import.meta);
 
@@ -47,7 +48,7 @@ export class ProgramPlayer extends Player {
       context.ffmpegSettings.normalizeResolution = false;
     }
 
-    if (!isUndefined(program.error)) {
+    if (program.type === 'error') {
       logger.debug('About to play error stream');
       this.delegate = new OfflinePlayer(true, context);
     } else if (program.type === 'loading') {
@@ -127,7 +128,7 @@ export class ProgramPlayer extends Player {
       } else {
         actualError = err;
       }
-      if (!isNil(this.context.lineupItem.error)) {
+      if (this.context.lineupItem.type === 'error') {
         const msg = isString(this.context.lineupItem.error)
           ? this.context.lineupItem.error
           : '';
@@ -141,7 +142,7 @@ export class ProgramPlayer extends Player {
       );
       //Retry once with an error stream:
       this.context.lineupItem = {
-        type: 'offline',
+        type: 'error',
         error: actualError.message,
         start: this.context.lineupItem.start,
         streamDuration: this.context.lineupItem.streamDuration,
@@ -155,7 +156,7 @@ export class ProgramPlayer extends Player {
 
   private getWatermark(
     ffmpegSettings: FfmpegSettings,
-    channel: ContextChannel,
+    channel: StreamContextChannel,
     type: string,
   ): Maybe<Watermark> {
     if (

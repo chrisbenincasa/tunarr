@@ -10,6 +10,7 @@
     "build": "turbo run build",
     "test": "turbo run test",
     "lint-staged": "lint-staged",
+    "lint-changed": "eslint --fix $(git diff --name-only HEAD -- './**/*.ts*' | xargs)",
     "preinstall": "npx only-allow pnpm",
     "prepare": "node -e \"if (process.env.NODE_ENV !== 'production'){process.exit(1)} \" || husky install"
   },

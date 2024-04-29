@@ -26,7 +26,7 @@ import { Low } from 'lowdb';
 import path from 'path';
 import { globalOptions } from '../../globals.js';
 import createLogger from '../../logger.js';
-import { Maybe } from '../../types.js';
+import { Maybe } from '../../types/util.js';
 import { attempt } from '../../util/index.js';
 import { EntityManager, withDb } from '../dataSource.js';
 import { CachedImage } from '../entities/CachedImage.js';
@@ -46,7 +46,7 @@ import {
   defaultSchema,
   defaultXmlTvSettings,
 } from '../settings.js';
-import { PlexApiFactory } from '../../plex.js';
+import { PlexApiFactory } from '../../external/plex.js';
 import { backfillParentMetadata } from './metadataBackfill.js';
 import { GlobalScheduler } from '../../services/scheduler.js';
 import dayjs from 'dayjs';

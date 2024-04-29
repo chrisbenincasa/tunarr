@@ -1,7 +1,7 @@
 import { find, isNil } from 'lodash-es';
 import { EntityManager } from '../../dao/dataSource.js';
 import { PlexServerSettings } from '../../dao/entities/PlexServerSettings.js';
-import { Plex } from '../../plex.js';
+import { Plex } from '../../external/plex.js';
 import Fixer from './fixer.js';
 
 export class AddPlexServerIdsFixer extends Fixer {

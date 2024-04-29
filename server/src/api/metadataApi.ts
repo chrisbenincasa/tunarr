@@ -9,7 +9,7 @@ import {
 } from '../dao/custom_types/ProgramSourceType';
 import { withDb } from '../dao/dataSource';
 import { PlexServerSettings } from '../dao/entities/PlexServerSettings';
-import { Plex } from '../plex';
+import { Plex } from '../external/plex';
 import { RouterPluginAsyncCallback } from '../types/serverType';
 
 type ExternalId = {
