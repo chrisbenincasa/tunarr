@@ -15,7 +15,7 @@ import { EventService } from './services/eventService.js';
 import { FileCacheService } from './services/fileCacheService.js';
 import { M3uService } from './services/m3uService.js';
 import { TVGuideService } from './services/tvGuideService.js';
-import { XmlTvWriter } from './xmltv.js';
+import { XmlTvWriter } from './XmlTvWriter.js';
 
 export type ServerContext = {
   channelDB: ChannelDB;
@@ -28,7 +28,6 @@ export type ServerContext = {
   hdhrService: HdhrService;
   customShowDB: CustomShowDB;
   channelCache: ChannelCache;
-  xmltv: XmlTvWriter;
   plexServerDB: PlexServerDB;
   settings: Settings;
   programDB: ProgramDB;
@@ -48,9 +47,12 @@ export const serverContext: () => Promise<ServerContext> = once(async () => {
   const cacheImageService = new CacheImageService(fileCache);
   const m3uService = new M3uService(fileCache);
   const eventService = new EventService();
-  const xmltv = new XmlTvWriter();
 
-  const guideService = new TVGuideService(xmltv, eventService, channelDB);
+  const guideService = new TVGuideService(
+    new XmlTvWriter(),
+    eventService,
+    channelDB,
+  );
 
   const customShowDB = new CustomShowDB();
 
@@ -65,7 +67,6 @@ export const serverContext: () => Promise<ServerContext> = once(async () => {
     hdhrService: new HdhrService(settings, channelDB),
     customShowDB,
     channelCache,
-    xmltv,
     plexServerDB: new PlexServerDB(channelDB),
     settings,
     programDB: new ProgramDB(),
