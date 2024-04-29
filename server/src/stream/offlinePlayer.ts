@@ -9,12 +9,13 @@
 import EventEmitter from 'events';
 import { isError } from 'lodash-es';
 import { Readable, Writable } from 'stream';
-import { FFMPEG, FfmpegEvents } from './ffmpeg.js';
-import { serverOptions } from './globals.js';
-import createLogger from './logger.js';
+import { FFMPEG, FfmpegEvents } from '../ffmpeg/ffmpeg.js';
+import { serverOptions } from '../globals.js';
+import createLogger from '../logger.js';
 import { Player } from './player.js';
-import { Maybe, PlayerContext } from './types.js';
-import { TypedEventEmitter } from './types/eventEmitter.js';
+import { PlayerContext } from './player.js';
+import { Maybe } from '../types/util.js';
+import { TypedEventEmitter } from '../types/eventEmitter.js';
 
 const logger = createLogger(import.meta);
 

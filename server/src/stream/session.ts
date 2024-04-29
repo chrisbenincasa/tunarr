@@ -7,7 +7,7 @@ import { Readable } from 'node:stream';
 import { inspect } from 'node:util';
 import { v4 } from 'uuid';
 import { Channel } from '../dao/entities/Channel.js';
-import { FFMPEG } from '../ffmpeg.js';
+import { FFMPEG } from '../ffmpeg/ffmpeg.js';
 import { serverOptions } from '../globals.js';
 import createLogger from '../logger.js';
 import { isNodeError } from '../util/index.js';

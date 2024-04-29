@@ -5,7 +5,6 @@
 import { z } from 'zod';
 
 const baseStreamLineupItemSchema = z.object({
-  error: z.boolean().or(z.string()).optional(),
   originalTimestamp: z.number().nonnegative().optional(),
   streamDuration: z.number().nonnegative().optional(),
   beginningOffset: z.number().nonnegative().optional(),
@@ -82,6 +81,7 @@ export type CommercialStreamLineupItem = z.infer<
 const ProgramStreamLineupItemSchema =
   BaseContentBackedStreamLineupItemSchema.extend({
     type: z.literal('program'),
+    id: z.string().uuid(),
   }).required({ title: true });
 
 export type ProgramStreamLineupItem = z.infer<
@@ -96,6 +96,11 @@ export const RedirectStreamLineupItemSchema = baseStreamLineupItemSchema.extend(
   },
 );
 
+export const ErrorStreamLineupItemSchema = baseStreamLineupItemSchema.extend({
+  type: z.literal('error'),
+  error: z.instanceof(Error).or(z.string()).or(z.boolean()),
+});
+
 export type RedirectStreamLineupItem = z.infer<
   typeof RedirectStreamLineupItemSchema
 >;
@@ -106,9 +111,25 @@ export const StreamLineupItemSchema = z.discriminatedUnion('type', [
   LoadingStreamLineupItemSchema,
   OfflineStreamLineupItemSchema,
   RedirectStreamLineupItemSchema,
+  ErrorStreamLineupItemSchema,
 ]);
 
 export type StreamLineupItem = z.infer<typeof StreamLineupItemSchema>;
+
+// Subset of StreamLineupItem that only includes valid lineup.json item
+// types with additional details + error type.
+// This is still a little messy because we have a lot of very similar
+// versions of the same type flying around -- a remnant of the untyped
+// nature of the original DTV -- this can slowly be unraveled and/or
+// consolidated as we rewrite pieces of the streaming pipeline.
+export const EnrichedLineupItemSchema = z.discriminatedUnion('type', [
+  ProgramStreamLineupItemSchema,
+  OfflineStreamLineupItemSchema,
+  RedirectStreamLineupItemSchema,
+  ErrorStreamLineupItemSchema,
+]);
+
+export type EnrichedLineupItem = z.infer<typeof EnrichedLineupItemSchema>;
 
 export function createOfflineStreamLineupIteam(
   duration: number,

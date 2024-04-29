@@ -5,8 +5,8 @@ import { first, forEach, groupBy, mapValues, pickBy } from 'lodash-es';
 import { PlexServerSettings } from '../../dao/entities/PlexServerSettings.js';
 import { Program, ProgramType } from '../../dao/entities/Program.js';
 import { logger } from '../../dao/legacy_migration/legacyDbMigration.js';
-import { Plex } from '../../plex.js';
-import { Maybe } from '../../types.js';
+import { Plex } from '../../external/plex.js';
+import { Maybe } from '../../types/util.js';
 import { groupByUniqAndMap, wait } from '../../util/index.js';
 import Fixer from './fixer.js';
 

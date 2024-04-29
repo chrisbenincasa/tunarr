@@ -3,7 +3,7 @@ import { isNil, isUndefined } from 'lodash-es';
 import * as fsSync from 'node:fs';
 import { Readable } from 'stream';
 import { z } from 'zod';
-import { FfmpegText } from '../ffmpegText.js';
+import { FfmpegText } from '../ffmpeg/ffmpegText.js';
 import { serverOptions } from '../globals.js';
 import createLogger from '../logger.js';
 import { ConcatStream } from '../stream/ConcatStream.js';

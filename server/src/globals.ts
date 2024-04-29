@@ -2,9 +2,20 @@ import { findKey, merge } from 'lodash-es';
 import isUndefined from 'lodash-es/isUndefined.js';
 import once from 'lodash-es/once.js';
 import path, { resolve } from 'node:path';
-import { GlobalOptions, ServerOptions } from './types.js';
 import dbConfig from '../mikro-orm.config.js';
 import { Options } from '@mikro-orm/better-sqlite';
+
+export type ServerOptions = GlobalOptions & {
+  port: number;
+  printRoutes: boolean;
+};
+
+export type GlobalOptions = {
+  databaseDirectory: string;
+  force_migration: boolean;
+  log_level: string;
+  verbose?: number;
+};
 
 const logLevels = {
   error: 0,

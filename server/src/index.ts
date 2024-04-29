@@ -16,7 +16,7 @@ import {
 import { getSettingsRawDb } from './dao/settings.js';
 import { setGlobalOptions, setServerOptions } from './globals.js';
 import { initServer } from './server.js';
-import { ServerOptions } from './types.js';
+import { ServerOptions } from './globals.js';
 import { isProduction } from './util/index.js';
 
 const maybeEnvPort = () => {

@@ -1,7 +1,7 @@
 import { isNil, isUndefined, once } from 'lodash-es';
 import { PassThrough, Readable } from 'node:stream';
 import { v4 } from 'uuid';
-import { FFMPEG } from '../ffmpeg';
+import { FFMPEG } from '../ffmpeg/ffmpeg';
 import { serverOptions } from '../globals';
 import createLogger from '../logger';
 import { getServerContext } from '../serverContext';

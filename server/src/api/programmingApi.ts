@@ -20,7 +20,7 @@ import {
 } from '../dao/custom_types/ProgramSourceType.js';
 import { getEm } from '../dao/dataSource.js';
 import { Program } from '../dao/entities/Program.js';
-import { Plex } from '../plex.js';
+import { Plex } from '../external/plex.js';
 import { TruthyQueryParam } from '../types/schemas.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import createLogger from '../logger.js';

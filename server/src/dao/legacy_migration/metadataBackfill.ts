@@ -13,7 +13,7 @@ import {
 } from '@tunarr/types/plex';
 import { first, groupBy, isNil, isNull, isUndefined, keys } from 'lodash-es';
 import createLogger from '../../logger';
-import { Plex, PlexApiFactory } from '../../plex';
+import { Plex, PlexApiFactory } from '../../external/plex';
 import { isNonEmptyString, wait } from '../../util';
 import { ProgramSourceType } from '../custom_types/ProgramSourceType';
 import { getEm } from '../dataSource';

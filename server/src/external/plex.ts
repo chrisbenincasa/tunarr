@@ -13,13 +13,13 @@ import { flatMap, forEach, isNil, isUndefined, map } from 'lodash-es';
 import NodeCache from 'node-cache';
 import querystring, { ParsedUrlQueryInput } from 'querystring';
 import { MarkOptional } from 'ts-essentials';
-import { PlexServerSettings } from './dao/entities/PlexServerSettings.js';
-import createLogger from './logger.js';
-import { Maybe } from './types.js';
+import { PlexServerSettings } from '../dao/entities/PlexServerSettings.js';
+import createLogger from '../logger.js';
+import { Maybe } from '../types/util.js';
 import {
   PlexMediaContainer,
   PlexMediaContainerResponse,
-} from './types/plexApiTypes.js';
+} from '../types/plexApiTypes.js';
 
 type AxiosConfigWithMetadata = InternalAxiosRequestConfig & {
   metadata: {

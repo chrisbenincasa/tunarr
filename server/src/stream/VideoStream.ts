@@ -1,6 +1,6 @@
 import { Loaded, RequestContext } from '@mikro-orm/core';
 import constants from '@tunarr/shared/constants';
-import { isNil, isUndefined, nth, once } from 'lodash-es';
+import { isError, isNil, isUndefined, nth, once } from 'lodash-es';
 import { PassThrough, Readable } from 'node:stream';
 import { EntityManager } from '../dao/dataSource';
 import {
@@ -13,12 +13,14 @@ import {
   createLineupItem,
   generateChannelContext,
   getCurrentProgramAndTimeElapsed,
-} from '../helperFuncs';
+} from './helperFuncs';
 import createLogger from '../logger';
-import { ProgramPlayer } from '../programPlayer';
+import { ProgramPlayer } from './programPlayer';
 import { getServerContext } from '../serverContext';
-import { wereThereTooManyAttempts } from '../throttler';
-import { ContextChannel, Maybe, PlayerContext } from '../types';
+import { wereThereTooManyAttempts } from './StreamThrottler';
+import { StreamContextChannel } from './types';
+import { PlayerContext } from './player';
+import { Maybe } from '../types/util';
 import { StreamQueryString } from '../types/schemas';
 import { fileExists } from '../util/fsUtil';
 import { deepCopy } from '../util/index.js';
@@ -156,7 +158,7 @@ export class VideoStream {
             channelContext.uuid,
             startTimestamp,
             {
-              type: 'offline',
+              type: 'error',
               title: 'Error',
               error:
                 'Recursive channel redirect found: ' +
@@ -175,7 +177,11 @@ export class VideoStream {
           const msg = "Invalid redirect to a channel that doesn't exist";
           logger.error(msg);
           currentProgram = {
-            program: { ...createOfflineStreamLineupIteam(60000), error: msg },
+            program: {
+              ...createOfflineStreamLineupIteam(60000),
+              type: 'error',
+              error: msg,
+            },
             timeElapsed: 0,
             programIndex: -1,
           };
@@ -290,7 +296,13 @@ export class VideoStream {
       '! Start playback',
       `! Channel: ${channel.name} (${channel.number})`,
       `! Title: ${lineupItem?.title ?? 'Unknown'}`,
-      !isUndefined(lineupItem?.error) ? `! Error: ${lineupItem.error}` : '',
+      lineupItem.type === 'error'
+        ? `! Error: ${
+            isError(lineupItem.error)
+              ? lineupItem.error.message
+              : lineupItem.error
+          }`
+        : '',
       isUndefined(lineupItem?.streamDuration)
         ? `! From: ${lineupItem?.start}`
         : `! From: ${lineupItem?.start} to: ${
@@ -311,14 +323,14 @@ export class VideoStream {
 
     if (wereThereTooManyAttempts(session, lineupItem)) {
       lineupItem = {
-        type: 'offline',
+        type: 'error',
         error: 'Too many attempts, throttling',
         duration: 60000,
         start: 0,
       };
     }
 
-    const combinedChannel: ContextChannel = {
+    const combinedChannel: StreamContextChannel = {
       ...generateChannelContext(channelContext),
       transcoding: channel.transcoding,
     };

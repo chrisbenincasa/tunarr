@@ -6,7 +6,7 @@ import { CleanupSessionsTask } from '../tasks/cleanupSessionsTask.js';
 import { ScheduleDynamicChannelsTask } from '../tasks/scheduleDynamicChannelsTask.js';
 import { Task, TaskId } from '../tasks/Task.js';
 import { UpdateXmlTvTask } from '../tasks/updateXmlTvTask.js';
-import { Maybe } from '../types.js';
+import { Maybe } from '../types/util.js';
 import { typedProperty } from '../types/path.js';
 import { ScheduledTask } from '../tasks/ScheduledTask.js';
 import type { Tag } from '@tunarr/types';

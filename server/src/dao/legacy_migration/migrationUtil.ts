@@ -2,7 +2,7 @@ import { ProgramType, Resolution } from '@tunarr/types';
 import { isNaN, isUndefined, parseInt } from 'lodash-es';
 import { LegacyProgram } from './channelMigrator.js';
 import { v4 } from 'uuid';
-import { Maybe } from '../../types.js';
+import { Maybe } from '../../types/util.js';
 
 // JSON representation for easier parsing of legacy db files
 export interface JSONArray extends Array<JSONValue> {}

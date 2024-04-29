@@ -4,11 +4,12 @@ import events from 'events';
 import { isEmpty, isNil, isString, isUndefined, merge, round } from 'lodash-es';
 import path from 'path';
 import { DeepReadonly, DeepRequired } from 'ts-essentials';
-import { serverOptions } from './globals.js';
-import createLogger, { createFfmpegProcessLogger } from './logger.js';
-import { VideoStats } from './plexTranscoder.js';
-import { ContextChannel, Maybe } from './types.js';
-import { TypedEventEmitter } from './types/eventEmitter.js';
+import { serverOptions } from '../globals.js';
+import createLogger, { createFfmpegProcessLogger } from '../logger.js';
+import { VideoStats } from '../stream/plex/plexTranscoder.js';
+import { StreamContextChannel } from '../stream/types.js';
+import { Maybe } from '../types/util.js';
+import { TypedEventEmitter } from '../types/eventEmitter.js';
 import stream, { Writable } from 'stream';
 
 const spawn = child_process.spawn;
@@ -80,7 +81,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
   private opts: DeepReadonly<FfmpegSettings>;
   private errorPicturePath: string;
   private ffmpegName: string;
-  private channel: ContextChannel;
+  private channel: StreamContextChannel;
   private ffmpegPath: string;
 
   private wantedW: number;
@@ -96,7 +97,10 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
 
   private ffmpeg: ChildProcessByStdio<null, stream.Readable, stream.Readable>;
 
-  constructor(opts: DeepReadonly<FfmpegSettings>, channel: ContextChannel) {
+  constructor(
+    opts: DeepReadonly<FfmpegSettings>,
+    channel: StreamContextChannel,
+  ) {
     super();
     this.opts = opts;
     this.errorPicturePath = `http://localhost:${

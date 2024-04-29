@@ -1,6 +1,6 @@
 import { ChildProcessWithoutNullStreams, spawn } from 'child_process';
 import events from 'events';
-import { globalOptions } from './globals.js';
+import { globalOptions } from '../globals.js';
 import { DeepReadonly } from 'ts-essentials';
 import { FfmpegSettings } from '@tunarr/types';
 

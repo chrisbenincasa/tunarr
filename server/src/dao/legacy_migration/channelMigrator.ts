@@ -15,7 +15,7 @@ import fs from 'node:fs/promises';
 import path from 'path';
 import { v4 } from 'uuid';
 import createLogger from '../../logger.js';
-import { Maybe } from '../../types.js';
+import { Maybe } from '../../types/util.js';
 import {
   createDirectoryIfNotExists,
   emptyStringToUndefined,
