@@ -1,13 +1,7 @@
 import { Box, Collapse, List } from '@mui/material';
-import { PlexMedia, isPlexMedia, isTerminalItem } from '@tunarr/types/plex';
+import { PlexMedia, isPlexMedia, isPlexParentItem } from '@tunarr/types/plex';
 import { usePrevious } from '@uidotdev/usehooks';
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { useEffect, useCallback, useRef, useState, useMemo } from 'react';
 import {
   extractLastIndexes,
   findFirstItemInNextRowIndex,
@@ -17,8 +11,9 @@ import {
 import _ from 'lodash-es';
 import useStore from '../store';
 import { PlexGridItem } from './channel_config/PlexGridItem';
-import { useIntersectionObserver } from 'usehooks-ts';
 import { toggle } from '../helpers/util.ts';
+import React from 'react';
+import { useIntersectionObserver } from 'usehooks-ts';
 
 type InlineModalProps = {
   itemGuid: string;
@@ -76,7 +71,6 @@ export function InlineModal(props: InlineModalProps) {
       const containerWidth = ref?.current?.getBoundingClientRect().width || 0;
       const itemWidth =
         gridItemRef?.current?.getBoundingClientRect().width || 0;
-
       const imagesPerRow = getImagesPerRow(containerWidth, itemWidth);
       setChildLimit(imagesPerRow * 2);
       setItemWidth(itemWidth);
@@ -85,24 +79,29 @@ export function InlineModal(props: InlineModalProps) {
     }
   }, [ref, gridItemRef, previousItemGuid, itemGuid]);
 
+  const [childItemGuid, setChildItemGuid] = useState<string | null>(null);
   const [childModalIndex, setChildModalIndex] = useState(-1);
 
-  const handleMoveModal = useCallback(
-    (index: number) => {
-      if (index === childModalIndex) {
-        setChildModalIndex(-1);
-      } else {
-        setChildModalIndex(index);
-      }
-    },
-    [childModalIndex],
+  const firstItemInNextRowIndex = useMemo(
+    () =>
+      findFirstItemInNextRowIndex(
+        childModalIndex,
+        rowSize,
+        modalChildren?.length ?? 0,
+      ),
+    [childModalIndex, modalChildren?.length, rowSize],
   );
+
+  const handleMoveModal = useCallback((index: number, item: PlexMedia) => {
+    setChildItemGuid((prev) => (prev === item.guid ? null : item.guid));
+    setChildModalIndex((prev) => (prev === index ? -1 : index));
+  }, []);
 
   // TODO: Complete this by updating the limit below, not doing this
   // right now because already working with a huge changeset.
   const { ref: intersectionRef } = useIntersectionObserver({
     onChange: (_, entry) => {
-      if (entry.isIntersecting) {
+      if (entry.isIntersecting && isOpen) {
         if (childLimit < modalChildren.length) {
           setChildLimit((prev) => prev + imagesPerRow * 2);
         }
@@ -117,6 +116,8 @@ export function InlineModal(props: InlineModalProps) {
         modalChildren.length % rowSize,
       ).includes(childModalIndex)
     : false;
+
+  console.log('my children, should be open', type, modalChildren);
 
   return (
     <Box
@@ -164,18 +165,11 @@ export function InlineModal(props: InlineModalProps) {
             .take(childLimit)
             .map((child: PlexMedia, idx: number) => (
               <React.Fragment key={child.guid}>
-                {!isTerminalItem(child) && (
+                {isPlexParentItem(child) && (
                   <InlineModal
                     itemGuid={child.guid}
                     modalIndex={childModalIndex}
-                    open={
-                      idx ===
-                      findFirstItemInNextRowIndex(
-                        childModalIndex,
-                        rowSize,
-                        modalChildren?.length || 0,
-                      )
-                    }
+                    open={idx === firstItemInNextRowIndex}
                     rowSize={rowSize}
                     type={child.type}
                   />
@@ -183,7 +177,7 @@ export function InlineModal(props: InlineModalProps) {
                 <PlexGridItem
                   item={child}
                   index={idx}
-                  modalIndex={modalIndex || childModalIndex}
+                  modalIndex={modalIndex ?? childModalIndex}
                   ref={gridItemRef}
                   moveModal={handleMoveModal}
                 />
@@ -192,7 +186,7 @@ export function InlineModal(props: InlineModalProps) {
             .value()}
           {/* This Modal is for last row items because they can't be inserted using the above inline modal */}
           <InlineModal
-            itemGuid={itemGuid}
+            itemGuid={childItemGuid ?? ''}
             modalIndex={childModalIndex}
             rowSize={rowSize}
             open={isFinalChildModalOpen}

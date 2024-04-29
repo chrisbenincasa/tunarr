@@ -83,6 +83,7 @@ export const PlexGridItem = forwardRef(
 
     useEffect(() => {
       if (!isUndefined(children?.Metadata)) {
+        console.log(item.guid, children.Metadata);
         addKnownMediaForServer(server.name, children.Metadata, item.guid);
       }
     }, [item.guid, server.name, children]);

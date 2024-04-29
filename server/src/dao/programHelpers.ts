@@ -46,7 +46,7 @@ import {
 } from '../util/index.js';
 import { ProgramMinterFactory } from '../util/programMinter.js';
 import { ProgramSourceType } from './custom_types/ProgramSourceType.js';
-import { getEm, withDb } from './dataSource.js';
+import { getEm } from './dataSource.js';
 import { PlexServerSettings } from './entities/PlexServerSettings.js';
 import { Program, ProgramType } from './entities/Program.js';
 import {
@@ -123,20 +123,25 @@ export async function upsertContentPrograms(
     .mapValues((programs) => groupBy(programs, (p) => p.externalSourceName!))
     .value() as ProgramsBySource;
 
+  logger.debug('Upserting %d programs', programsToPersist.length);
+
+  const upsertedPrograms = flatten(
+    await mapAsyncSeq(chunk(programsToPersist, batchSize), (programs) =>
+      em.upsertMany(Program, programs, {
+        onConflictAction: 'merge',
+        onConflictFields: ['sourceType', 'externalSourceId', 'externalKey'],
+        onConflictExcludeFields: ['uuid'],
+      }),
+    ),
+  );
+
   // Fork a new entity manager here so we don't attempt to persist anything
   // in the parent context. This function potentially does a lot of work
   // but we don't want to accidentally not do an upsert of a program.
-  const programGroupingsBySource = await withDb(
-    async () => {
-      return await findAndUpdateProgramRelations(programsBySource);
-    },
-    undefined,
-    true,
-  );
+  const programGroupingsBySource =
+    await findAndUpdateProgramRelations(programsBySource);
 
-  logger.debug('Upserting %d programs', programsToPersist.length);
-
-  forEach(programsToPersist, (program) => {
+  forEach(upsertedPrograms, (program) => {
     if (
       program.type !== ProgramType.Episode &&
       program.type !== ProgramType.Track
@@ -215,15 +220,7 @@ export async function upsertContentPrograms(
     }
   });
 
-  const upsertedPrograms = flatten(
-    await mapAsyncSeq(chunk(programsToPersist, batchSize), (programs) =>
-      em.upsertMany(Program, programs, {
-        onConflictAction: 'merge',
-        onConflictFields: ['sourceType', 'externalSourceId', 'externalKey'],
-        onConflictExcludeFields: ['uuid'],
-      }),
-    ),
-  );
+  await em.flush();
 
   return upsertedPrograms;
 }
@@ -289,9 +286,9 @@ async function findAndUpdatePlexServerPrograms(
     return;
   }
 
-  const em = getEm();
+  const em = getEm().fork();
 
-  const plexServer = await getEm().findOne(PlexServerSettings, {
+  const plexServer = await em.findOne(PlexServerSettings, {
     name: plexServerName,
   });
 

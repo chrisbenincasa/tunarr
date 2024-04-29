@@ -112,5 +112,10 @@ export function findFirstItemInNextRowIndex(
 }
 
 export function extractLastIndexes(arr: PlexMedia[], x: number): number[] {
-  return range(x > arr.length ? 0 : x, arr.length);
+  const indexes = range(0, arr.length);
+  if (x > arr.length) {
+    return indexes;
+  }
+
+  return indexes.slice(-x);
 }
