@@ -321,7 +321,7 @@ export default function PlexProgrammingSelector() {
   useEffect(() => {
     if (!isUndefined(searchData)) {
       // We're using this as an analogue for detecting the start of a new 'query'
-      if (searchData.pages.length === 1) {
+      if (scrollParams.max === -1 || searchData.pages.length === 1) {
         const max = searchData.pages[0].totalSize ?? searchData.pages[0].size;
         setScrollParams({
           limit: rowSize * 4,
@@ -340,7 +340,7 @@ export default function PlexProgrammingSelector() {
         addKnownMediaForServer(selectedServer.name, allMedia);
       }
     }
-  }, [selectedServer, searchData, setScrollParams, rowSize]);
+  }, [scrollParams, selectedServer, searchData, rowSize]);
 
   useEffect(() => {
     if (
