@@ -32,7 +32,6 @@ import { ChannelDB, LoadedChannelWithGroupRefs } from '../dao/channelDb.js';
 import { ProgramConverter } from '../dao/converters/programConverters.js';
 import { Lineup } from '../dao/derived_types/Lineup.js';
 import { Channel } from '../dao/entities/Channel.js';
-import { getSettings } from '../dao/settings.js';
 import createLogger from '../logger.js';
 import { Maybe } from '../types/util.js';
 import { binarySearchRange } from '../util/binarySearch.js';
@@ -42,8 +41,8 @@ import {
   isNonEmptyString,
   wait,
 } from '../util/index.js';
-import { XmlTvWriter } from '../xmltv.js';
 import { EventService } from './eventService.js';
+import { XmlTvWriter } from '../XmlTvWriter.js';
 
 dayjs.extend(duration);
 
@@ -712,8 +711,8 @@ export class TVGuideService {
   }
 
   private async refreshXML() {
-    const xmltvSettings = (await getSettings()).xmlTvSettings();
-    await this.xmltv.writeXMLTv(this.cachedGuide, xmltvSettings);
+    // const xmltvSettings = (await getSettings()).xmlTvSettings();
+    await this.xmltv.write(values(this.cachedGuide));
     this.eventService.push({
       type: 'xmltv',
       message: `XMLTV updated at server time = ${new Date().toISOString()}`,
