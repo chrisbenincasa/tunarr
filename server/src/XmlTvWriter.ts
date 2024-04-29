@@ -8,7 +8,7 @@ import {
 } from '@iptv/xmltv';
 import { ChannelPrograms, TvGuideChannel } from './services/tvGuideService';
 import { forProgramType } from '@tunarr/shared/util';
-import { flatMap, isNil, map, round } from 'lodash-es';
+import { flatMap, isNil, map, round, escape } from 'lodash-es';
 import { isNonEmptyString } from './util';
 import { writeFile } from 'fs/promises';
 import createLogger from './logger';
@@ -73,7 +73,7 @@ export class XmlTvWriter {
     const partial: XmltvProgramme = {
       start: new Date(program.start),
       stop: new Date(program.stop),
-      title: [{ _value: XmlTvWriter.titleExtractor(program) }],
+      title: [{ _value: escape(XmlTvWriter.titleExtractor(program)) }],
       previouslyShown: {},
       channel: channel.number.toString(),
     };
@@ -83,7 +83,7 @@ export class XmlTvWriter {
       if (isNonEmptyString(program.episodeTitle)) {
         partial.subTitle ??= [
           {
-            _value: program.episodeTitle,
+            _value: escape(program.episodeTitle),
           },
         ];
       }
@@ -91,7 +91,7 @@ export class XmlTvWriter {
       if (isNonEmptyString(program.summary)) {
         partial.desc ??= [
           {
-            _value: program.summary,
+            _value: escape(program.summary),
           },
         ];
       }
