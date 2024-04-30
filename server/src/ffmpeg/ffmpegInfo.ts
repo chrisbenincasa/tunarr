@@ -1,6 +1,6 @@
 import { FfmpegSettings } from '@tunarr/types';
 import { exec } from 'child_process';
-import _, { isEmpty, isError, nth, some, trim } from 'lodash-es';
+import _, { isEmpty, isError, some, trim } from 'lodash-es';
 import NodeCache from 'node-cache';
 import PQueue from 'p-queue';
 import { Nullable } from '../types/util.js';
@@ -35,6 +35,8 @@ const OptionsExtractionPattern = /^-([a-z_]+)\s+.*/;
 const NvidiaGpuArchPattern = /SM\s+(\d\.\d)/;
 const NvidiaGpuModelPattern = /(GTX\s+[0-9a-zA-Z]+[\sTtIi]+)/;
 
+const versionMutex = new Mutex();
+const versionCacheByPath = new NodeCache({ stdTTL: 60 * 5 });
 export class FFMPEGInfo {
   private logger = LoggerFactory.child({
     caller: import.meta,
