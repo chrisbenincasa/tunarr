@@ -149,6 +149,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
             channel.uuid,
             channelUpdate,
           );
+          await req.serverCtx.guideService.updateCachedChannel(updatedChannel);
           return res.send(omit(updatedChannel.toDTO(), 'programs'));
         } else {
           return res.status(404).send();

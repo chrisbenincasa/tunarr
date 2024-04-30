@@ -194,13 +194,13 @@ export class ChannelDB {
     const em = getEm();
     const channel = em.getReference(Channel, id);
     const update = updateRequestToChannel(updateReq);
-    wrap(channel).assign(update, {
+    const loadedChannel = wrap(channel).assign(update, {
       merge: true,
       convertCustomTypes: true,
       onlyProperties: true,
     });
     await em.flush();
-    return channel;
+    return loadedChannel;
   }
 
   async deleteChannel(

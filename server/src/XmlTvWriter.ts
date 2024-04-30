@@ -6,12 +6,13 @@ import {
   writeXmltv,
   type XmltvChannel,
 } from '@iptv/xmltv';
-import { ChannelPrograms, TvGuideChannel } from './services/tvGuideService';
+import { ChannelPrograms } from './services/tvGuideService';
 import { forProgramType } from '@tunarr/shared/util';
 import { flatMap, isNil, map, round, escape } from 'lodash-es';
 import { isNonEmptyString } from './util';
 import { writeFile } from 'fs/promises';
 import createLogger from './logger';
+import { Channel } from './dao/entities/Channel.js';
 
 const lock = new Mutex();
 const logger = createLogger(import.meta);
@@ -43,7 +44,7 @@ export class XmlTvWriter {
     return await writeFile(xmlTvSettings.outputPath, content);
   }
 
-  private makeXmlTvChannel(channel: TvGuideChannel): XmltvChannel {
+  private makeXmlTvChannel(channel: Channel): XmltvChannel {
     const partial: XmltvChannel = {
       id: channel.number.toString(),
       displayName: [
@@ -68,7 +69,7 @@ export class XmlTvWriter {
 
   private makeXmlTvProgram(
     program: TvGuideProgram,
-    channel: TvGuideChannel,
+    channel: Channel,
   ): XmltvProgramme {
     const partial: XmltvProgramme = {
       start: new Date(program.start),

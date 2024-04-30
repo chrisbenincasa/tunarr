@@ -131,16 +131,20 @@ export class Plex {
             `Not found: ${this.axiosInstance.defaults.baseURL}${req.url}`,
           );
         }
-        if (error.response) {
+        if (!isUndefined(error.response)) {
+          const { status, headers } = error.response;
           // The request was made and the server responded with a status code
           // that falls out of the range of 2xx
-          logger.warn(error.response?.data);
-          logger.warn(error.response?.status);
-          logger.warn(error.response?.headers);
+          logger.warn(
+            'Plex response error: status %d, data: %O, headers: %O',
+            status,
+            error.response.data,
+            headers,
+          );
         } else if (error.request) {
-          logger.error('Error requesting Plex ' + error.message);
+          logger.error('Plex request error: %s', error.message, error);
         } else {
-          logger.error('Error requesting Plex' + error.message);
+          logger.error('Error requesting Plex: %s', error.message, error);
         }
       }
       return;

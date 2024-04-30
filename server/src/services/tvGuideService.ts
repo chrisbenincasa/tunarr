@@ -1,4 +1,4 @@
-import { EntityDTO, Loaded } from '@mikro-orm/core';
+import { Loaded } from '@mikro-orm/core';
 import constants from '@tunarr/shared/constants';
 import {
   ChannelIcon,
@@ -62,11 +62,11 @@ export type TvGuideChannel = {
   name: string;
   number: number;
   id: string;
-  icon?: EntityDTO<ChannelIcon>;
+  icon?: ChannelIcon;
 };
 
 export type ChannelPrograms = {
-  channel: TvGuideChannel;
+  channel: Channel;
   programs: TvGuideProgram[];
 };
 
@@ -200,7 +200,7 @@ export class TVGuideService {
       icon: channel.icon,
       name: channel.name,
       number: channel.number,
-      id: channel.id,
+      id: channel.uuid,
       programs: [],
     };
 
@@ -214,6 +214,20 @@ export class TVGuideService {
     }
 
     return result;
+  }
+
+  // If we updated channel metadata, we should push it to this cache
+  // and rewrite xmltv. This should be very fast since we're not altering
+  // programming details or the schedule
+  async updateCachedChannel(updatedChannel: Loaded<Channel>) {
+    const cachedLineup = this.cachedGuide[updatedChannel.uuid];
+    if (isUndefined(cachedLineup)) {
+      return;
+    }
+
+    this.cachedGuide[updatedChannel.uuid].channel = updatedChannel;
+
+    return await this.refreshXML();
   }
 
   // Returns duration offsets for programs on a channel in an array
@@ -435,7 +449,7 @@ export class TVGuideService {
     channelWithLineup: ChannelWithLineup,
   ): Promise<ChannelPrograms> {
     const result: ChannelPrograms = {
-      channel: makeChannelEntry(channelWithLineup.channel),
+      channel: channelWithLineup.channel,
       programs: [],
     };
 
@@ -600,7 +614,9 @@ export class TVGuideService {
     return result;
   }
 
-  private async buildGuideInternal(): Promise<Record<number, ChannelPrograms>> {
+  private async buildGuideInternal(): Promise<
+    Record<ChannelId, ChannelPrograms>
+  > {
     const currentUpdateTimeMs = this.currentUpdateTime;
     const channels = this.currentChannels;
     this.channelsById = groupByUniqFunc(channels, (c) => c.channel.uuid);
@@ -622,7 +638,7 @@ export class TVGuideService {
       return this.makeAccumulated(channel);
     });
 
-    const result = {};
+    const result: Record<string, ChannelPrograms> = {};
     if (channels.length === 0) {
       const fakeChannelId = v4();
       const channel = new Channel();
@@ -736,15 +752,6 @@ function isProgramFlex(
         (channel.guideMinimumDuration ??
           constants.DEFAULT_GUIDE_STEALTH_DURATION))
   );
-}
-
-function makeChannelEntry(channel: Loaded<Channel>): TvGuideChannel {
-  return {
-    name: channel.name,
-    icon: channel.icon,
-    number: channel.number,
-    id: channel.uuid,
-  };
 }
 
 function programToTvGuideProgram(
