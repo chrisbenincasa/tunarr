@@ -1,11 +1,11 @@
 import { FfmpegSettings } from '@tunarr/types';
 import { exec } from 'child_process';
-import { LoggerFactory } from '../util/logging/LoggerFactory';
-import { attempt } from '../util/index.js';
 import _, { isEmpty, isError, some, trim } from 'lodash-es';
 import NodeCache from 'node-cache';
 import PQueue from 'p-queue';
 import { cacheGetOrSet } from '../util/cache.js';
+import { attempt } from '../util/index.js';
+import { LoggerFactory } from '../util/logging/LoggerFactory';
 
 const CacheKeys = {
   ENCODERS: 'encoders',
@@ -19,6 +19,8 @@ const VersionExtractionPattern = /version\s+([^\s]+)\s+.*Copyright/;
 const CoderExtractionPattern = /[A-Z.]+\s([a-z0-9_-]+)\s*(.*)$/;
 const OptionsExtractionPattern = /^-([a-z_]+)\s+.*/;
 
+const versionMutex = new Mutex();
+const versionCacheByPath = new NodeCache({ stdTTL: 60 * 5 });
 export class FFMPEGInfo {
   private logger = LoggerFactory.child({
     caller: import.meta,

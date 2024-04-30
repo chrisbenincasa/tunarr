@@ -261,6 +261,73 @@ export const PlexMediaStreamSchema = z.discriminatedUnion('streamType', [
   PlexMediaLyricsStreamSchema,
 ]);
 
+const BasePlexMediaStreamSchema = z.object({
+  default: z.boolean().optional(),
+  codec: z.string(),
+  index: z.number(),
+  bitrate: z.number(),
+  bitDepth: z.number().optional(),
+  displayTitle: z.string().optional(),
+});
+
+export const PlexMediaVideoStreamSchema = BasePlexMediaStreamSchema.extend({
+  streamType: z.literal(1),
+  chromaLocation: z.string().optional(),
+  chromaSubsampling: z.string().optional(),
+  codedHeight: z.number().optional(),
+  codedWidth: z.number().optional(),
+  colorPrimaries: z.string().optional(),
+  colorRange: z.string().optional(),
+  colorSpace: z.string().optional(),
+  colorTrc: z.string().optional(),
+  frameRate: z.number(),
+  hasScalingMatrix: z.boolean().optional(),
+  height: z.number(),
+  width: z.number(),
+  level: z.number().optional(),
+  profile: z.string().optional(),
+  scanType: z.string().optional(),
+  anamorphic: z.string().or(z.boolean()).optional(),
+  pixelAspectRatio: z.string().optional(),
+});
+
+export type PlexMediaVideoStream = z.infer<typeof PlexMediaVideoStreamSchema>;
+
+export const PlexMediaAudioStreamSchema = BasePlexMediaStreamSchema.extend({
+  streamType: z.literal(2),
+  selected: z.boolean().optional(),
+  channels: z.number().optional(),
+  language: z.string().optional(),
+  languageTag: z.string().optional(),
+  languageCode: z.string().optional(),
+  audioChannelLayout: z.string().optional(),
+  profile: z.string().optional(),
+  samplingRate: z.number().optional(),
+});
+
+export type PlexMediaAudioStream = z.infer<typeof PlexMediaAudioStreamSchema>;
+
+export const PlexMediaSubtitleStreamSchema = BasePlexMediaStreamSchema.extend({
+  streamType: z.literal(3),
+  language: z.string().optional(),
+  languageTag: z.string().optional(),
+  languageCode: z.string().optional(),
+  headerCompression: z.boolean().optional(),
+}).partial({
+  bitrate: true,
+  index: true,
+});
+
+export type PlexMediaSubtitleStream = z.infer<
+  typeof PlexMediaSubtitleStreamSchema
+>;
+
+export const PlexMediaStreamSchema = z.discriminatedUnion('streamType', [
+  PlexMediaVideoStreamSchema,
+  PlexMediaAudioStreamSchema,
+  PlexMediaSubtitleStreamSchema,
+]);
+
 export const PlexMediaDescriptionSchema = z.object({
   id: z.number(),
   duration: z.number().optional(),

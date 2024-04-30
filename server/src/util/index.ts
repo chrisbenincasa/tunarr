@@ -19,6 +19,7 @@ import _, {
   once,
   range,
   reject,
+  trim,
   zipWith,
 } from 'lodash-es';
 import fs from 'node:fs/promises';
@@ -390,7 +391,7 @@ export function emptyStringToUndefined(
 }
 
 export function isNonEmptyString(v: unknown): v is string {
-  return isString(v) && !isEmpty(v);
+  return isString(v) && !isEmpty(trim(v));
 }
 
 export function ifDefined<T, U>(
@@ -400,7 +401,8 @@ export function ifDefined<T, U>(
   if (isNil(v)) {
     return null;
   }
-  return f(v);
+  const ret = f(v);
+  return isUndefined(ret) ? null : ret;
 }
 
 export function flipMap<K extends string | number, V extends string | number>(
