@@ -93,9 +93,8 @@ export default function ChannelPropertiesEditor({ isNew }: Props) {
                 fullWidth
                 label="Channel Group"
                 margin="normal"
-                helperText={
-                  errors.groupTitle ? 'Channel group is required' : null
-                }
+                helperText={`This is used by iptv clients to categorize the channels. You can leave it as 'tunarr' if you don't need this sort of classification.
+                  ${errors.groupTitle ? 'Channel group is required' : ''}`}
                 {...field}
               />
             )}
