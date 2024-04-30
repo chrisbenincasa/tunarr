@@ -1,4 +1,4 @@
-import { ArrowBack, Edit } from '@mui/icons-material';
+import { ArrowBack, ArrowForward, Edit } from '@mui/icons-material';
 import {
   Alert,
   Box,
@@ -12,6 +12,7 @@ import React, { useEffect } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import TunarrLogo from '../../components/TunarrLogo.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
+import AddPlexServer from '../../components/settings/AddPlexServer.tsx';
 import ConnectPlex from '../../components/settings/ConnectPlex.tsx';
 import { usePlexServerSettings } from '../../hooks/settingsHooks.ts';
 import { useVersion } from '../../hooks/useVersion.ts';
@@ -26,17 +27,18 @@ export default function WelcomePage() {
   const navigate = useNavigate();
 
   const { data: version } = useVersion();
-  const { data: plexServers } = usePlexServerSettings();
+  const { data: plexServers, isLoading: isPlexLoading } =
+    usePlexServerSettings();
 
   useEffect(() => {
-    if (plexServers && plexServers.length > 0) {
+    if (plexServers && plexServers.length > 0 && !isPlexLoading) {
       setIsPlexConnected(true);
     }
 
     if (version && version.ffmpeg != 'Error') {
       setIsFfmpegInstalled(true);
     }
-  }, [plexServers, version]);
+  }, [plexServers, version, isPlexLoading]);
 
   const header = (
     <>
@@ -136,16 +138,22 @@ export default function WelcomePage() {
                 content.
               </Typography>
 
-              {isPlexConnected ? (
+              {!isPlexConnected ? (
+                <Alert
+                  variant="filled"
+                  severity="error"
+                  action={
+                    <AddPlexServer title={'Connect Plex'} variant="outlined" />
+                  }
+                >
+                  Plex is not connected.
+                </Alert>
+              ) : (
                 <Alert variant="filled" severity="success">
                   Plex is connected.
                 </Alert>
-              ) : (
-                <Alert variant="filled" severity="error">
-                  Plex is not connected.
-                </Alert>
               )}
-              <ConnectPlex />
+              {isPlexConnected && <ConnectPlex />}
             </>
           )}
           {activeStep === 1 && (
@@ -159,9 +167,10 @@ export default function WelcomePage() {
                 Install FFMPEG
               </Typography>
               <Typography sx={{ mb: 3 }} align="left">
-                FFMPEG is recommended to use Tunnar. However, FFMPEG transcoding
-                is required for some features like channel overlay, subtitles,
-                and measures to prevent issues when switching episodes.
+                FFMPEG transcoding is required for some features like channel
+                overlay, subtitles, and measures to prevent issues when
+                switching episodes. While FFMPEG is optional, we recommend using
+                it for the best Tunnar experience.
               </Typography>
 
               {isFfmpegInstalled ? (
@@ -235,6 +244,7 @@ export default function WelcomePage() {
                 onClick={handleNext}
                 variant="contained"
                 disabled={activeStep === 0 && !isPlexConnected}
+                endIcon={<ArrowForward />}
               >
                 Next
               </Button>
