@@ -9,6 +9,7 @@ import {
 import {
   DefaultHardwareAccel,
   DefaultVideoFormat,
+  FfmpegSettingsSchema,
   SupportedHardwareAccels,
   SupportedVideoFormats,
 } from '@tunarr/types/schemas';
@@ -32,6 +33,7 @@ import {
 } from 'lodash-es';
 import path, { dirname, join } from 'path';
 import { v4 } from 'uuid';
+import { z } from 'zod';
 import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.js';
 import { globalOptions } from '../../globals.js';
 import { serverContext } from '../../serverContext.js';
@@ -444,8 +446,12 @@ export class LegacyDbMigrator {
                 audioBufferSize: ffmpegSettings['audioBufSize'] as number,
                 audioSampleRate: ffmpegSettings['audioSampleRate'] as number,
                 audioChannels: ffmpegSettings['audioChannels'] as number,
-                errorScreen: ffmpegSettings['errorScreen'] as string,
-                errorAudio: ffmpegSettings['errorAudio'] as string,
+                errorScreen: ffmpegSettings['errorScreen'] as z.infer<
+                  typeof FfmpegSettingsSchema
+                >['errorScreen'],
+                errorAudio: ffmpegSettings['errorAudio'] as z.infer<
+                  typeof FfmpegSettingsSchema
+                >['errorAudio'],
                 normalizeVideoCodec: ffmpegSettings[
                   'normalizeVideoCodec'
                 ] as boolean,
@@ -469,6 +475,7 @@ export class LegacyDbMigrator {
                 disableChannelPrelude:
                   (ffmpegSettings['disablePreludes'] as Maybe<boolean>) ??
                   false,
+                useNewFfmpegPipeline: false,
               },
               defaultFfmpegSettings,
             ),

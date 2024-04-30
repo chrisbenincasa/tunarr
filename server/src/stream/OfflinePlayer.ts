@@ -1,9 +1,10 @@
 import dayjs from 'dayjs';
 import { isError, isUndefined } from 'lodash-es';
 import { SettingsDB, getSettings } from '../dao/settings.js';
+import { FfmpegStreamFactory } from '../ffmpeg/FfmpegStreamFactory.ts';
 import { FfmpegTranscodeSession } from '../ffmpeg/FfmpegTrancodeSession.js';
-import { OutputFormat } from '../ffmpeg/OutputFormat.js';
-import { FFMPEG } from '../ffmpeg/ffmpeg.js';
+import { OutputFormat } from '../ffmpeg/builder/constants.ts';
+import { FFMPEG, StreamOptions } from '../ffmpeg/ffmpeg.js';
 import { Result } from '../types/result.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '../util/serverUtil.js';
@@ -41,13 +42,20 @@ export class OfflineProgramStream extends ProgramStream {
 
   protected shutdownInternal() {}
 
-  async setupInternal(): Promise<Result<FfmpegTranscodeSession>> {
+  async setupInternal(
+    opts?: Partial<StreamOptions>,
+  ): Promise<Result<FfmpegTranscodeSession>> {
     try {
-      const ffmpeg = new FFMPEG(
-        this.settingsDB.ffmpegSettings(),
-        this.context.channel,
-        this.context.audioOnly,
-      );
+      const ffmpeg = this.context.useNewPipeline
+        ? new FfmpegStreamFactory(
+            this.settingsDB.ffmpegSettings(),
+            this.context.channel,
+          )
+        : new FFMPEG(
+            this.settingsDB.ffmpegSettings(),
+            this.context.channel,
+            this.context.audioOnly,
+          );
       const lineupItem = this.context.lineupItem;
       let duration = dayjs.duration(lineupItem.streamDuration ?? 0);
       const start = dayjs.duration(lineupItem.start ?? 0);
@@ -65,8 +73,15 @@ export class OfflineProgramStream extends ProgramStream {
             undefined,
             duration,
             this.outputFormat,
+            opts?.realtime ?? true,
+            opts?.ptsOffset,
           )
-        : await ffmpeg.createOfflineSession(duration, this.outputFormat);
+        : await ffmpeg.createOfflineSession(
+            duration,
+            this.outputFormat,
+            opts?.ptsOffset,
+            opts?.realtime,
+          );
 
       if (isUndefined(ff)) {
         throw new Error('Unable to start ffmpeg transcode session');

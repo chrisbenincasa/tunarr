@@ -5,8 +5,9 @@ import { isContentBackedLineupIteam } from '../../dao/derived_types/StreamLineup
 import { MediaSourceType } from '../../dao/direct/schema/MediaSource.ts';
 import { MediaSourceDB } from '../../dao/mediaSourceDB.js';
 import { SettingsDB, getSettings } from '../../dao/settings.js';
+import { FfmpegStreamFactory } from '../../ffmpeg/FfmpegStreamFactory.ts';
 import { FfmpegTranscodeSession } from '../../ffmpeg/FfmpegTrancodeSession.js';
-import { OutputFormat } from '../../ffmpeg/OutputFormat.js';
+import { OutputFormat } from '../../ffmpeg/builder/constants.ts';
 import { FFMPEG, StreamOptions } from '../../ffmpeg/ffmpeg.js';
 import { GlobalScheduler } from '../../services/scheduler.js';
 import { UpdatePlexPlayStatusScheduledTask } from '../../tasks/plex/UpdatePlexPlayStatusTask.js';
@@ -77,7 +78,9 @@ export class PlexProgramStream extends ProgramStream {
     const plexStreamDetails = new PlexStreamDetails(server);
 
     const watermark = await this.getWatermark();
-    const ffmpeg = new FFMPEG(ffmpegSettings, channel, this.context.audioOnly); // Set the transcoder options
+    const ffmpeg = this.context.useNewPipeline
+      ? new FfmpegStreamFactory(ffmpegSettings, channel)
+      : new FFMPEG(ffmpegSettings, channel, this.context.audioOnly); // Set the transcoder options
 
     const stream = await plexStreamDetails.getStream(lineupItem);
     if (isNull(stream)) {

@@ -1,5 +1,5 @@
 import { jsonObjectFrom } from 'kysely/helpers/sqlite';
-import { first, isNumber, isUndefined, random } from 'lodash-es';
+import { first, isNumber, isUndefined, nth, random } from 'lodash-es';
 import { PassThrough } from 'stream';
 import { z } from 'zod';
 import { createOfflineStreamLineupItem } from '../../dao/derived_types/StreamLineup.ts';
@@ -9,13 +9,14 @@ import {
   Channel,
 } from '../../dao/direct/schema/Channel.ts';
 import { Program, ProgramType } from '../../dao/direct/schema/Program.ts';
-import { MpegTsOutputFormat } from '../../ffmpeg/OutputFormat.ts';
+import { MpegTsOutputFormat } from '../../ffmpeg/builder/constants.ts';
 import { serverContext } from '../../serverContext.ts';
 import { OfflineProgramStream } from '../../stream/OfflinePlayer.ts';
 import { PlayerContext } from '../../stream/PlayerStreamContext.ts';
 import { ProgramStream } from '../../stream/ProgramStream.ts';
 import { JellyfinProgramStream } from '../../stream/jellyfin/JellyfinProgramStream.ts';
 import { PlexProgramStream } from '../../stream/plex/PlexProgramStream.ts';
+import { TruthyQueryParam } from '../../types/schemas.ts';
 import { RouterPluginAsyncCallback } from '../../types/serverType.ts';
 
 export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
@@ -28,6 +29,7 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
       schema: {
         querystring: z.object({
           duration: z.coerce.number().default(30_000),
+          useNewPipeline: TruthyQueryParam.default(false),
         }),
       },
     },
@@ -36,6 +38,7 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
         .selectFrom('channel')
         .selectAll()
         .executeTakeFirstOrThrow();
+
       const stream = new OfflineProgramStream(
         false,
         new PlayerContext(
@@ -47,6 +50,7 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
           false,
           false,
           true,
+          req.query.useNewPipeline,
         ),
         MpegTsOutputFormat,
       );
@@ -58,32 +62,38 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
     },
   );
 
-  fastify.get('/streams/error', async (_, res) => {
-    const channel = await directDbAccess()
-      .selectFrom('channel')
-      .selectAll()
-      .executeTakeFirstOrThrow();
-    const stream = new OfflineProgramStream(
-      true,
-      new PlayerContext(
-        {
-          ...createOfflineStreamLineupItem(30_000),
-          streamDuration: 30_000,
-          title: 'Error',
-        },
-        channel,
-        false,
-        false,
+  fastify.get(
+    '/streams/error',
+    {
+      schema: {
+        querystring: z.object({
+          useNewPipeline: TruthyQueryParam.default(false),
+        }),
+      },
+    },
+    async (req, res) => {
+      const channel = await directDbAccess()
+        .selectFrom('channel')
+        .selectAll()
+        .executeTakeFirstOrThrow();
+      const stream = new OfflineProgramStream(
         true,
-      ),
-      MpegTsOutputFormat,
-    );
+        PlayerContext.error(
+          30_000,
+          '',
+          channel,
+          true,
+          req.query.useNewPipeline,
+        ),
+        MpegTsOutputFormat,
+      );
 
-    const out = new PassThrough();
-    stream.on('error', () => out.end());
-    await stream.start(out);
-    return res.header('Content-Type', 'video/mp2t').send(out);
-  });
+      const out = new PassThrough();
+      stream.on('error', () => out.end());
+      await stream.start(out);
+      return res.header('Content-Type', 'video/mp2t').send(out);
+    },
+  );
 
   fastify.get('/streams/random', async (_, res) => {
     const program = await directDbAccess()
@@ -126,6 +136,7 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
         }),
         querystring: z.object({
           start: z.literal('random').or(z.coerce.number()).optional(),
+          useNewPipeline: TruthyQueryParam.default(false),
         }),
       },
     },
@@ -158,7 +169,7 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
         )
         .execute();
 
-      let firstChannel = channels?.[0].channel;
+      let firstChannel = nth(channels, 0)?.channel;
 
       if (!firstChannel) {
         firstChannel = await req.serverCtx.channelDB
@@ -173,6 +184,7 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
         program,
         firstChannel,
         startTime * 1000,
+        req.query.useNewPipeline,
       );
       return res.header('Content-Type', 'video/mp2t').send(outStream);
     },
@@ -182,12 +194,20 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
     program: Program,
     channel: Channel,
     startTime: number = 0,
+    useNewPipeline: boolean = false,
   ) {
     const lineupItem = serverContext()
       .streamProgramCalculator()
       .createStreamItemFromProgram(program);
     lineupItem.start = startTime;
-    const ctx = new PlayerContext(lineupItem, channel, false, false, true);
+    const ctx = new PlayerContext(
+      lineupItem,
+      channel,
+      false,
+      false,
+      true,
+      useNewPipeline,
+    );
 
     let stream: ProgramStream;
     switch (program.sourceType) {

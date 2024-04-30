@@ -1,11 +1,12 @@
 import constants from '@tunarr/shared/constants';
 import fs from 'node:fs/promises';
 import path from 'path';
+import { DeepPartial } from 'ts-essentials';
 import {
   initDirectDbAccess,
   syncMigrationTablesIfNecessary,
 } from './dao/direct/directDbAccess.ts';
-import { getSettings } from './dao/settings.js';
+import { SettingsFile, getSettings } from './dao/settings.js';
 import { globalOptions } from './globals.js';
 import { copyDirectoryContents, fileExists } from './util/fsUtil.js';
 import { LoggerFactory, RootLogger } from './util/logging/LoggerFactory.js';
@@ -58,10 +59,12 @@ export async function initDbDirectories() {
   return hasTunarrDb;
 }
 
-export async function bootstrapTunarr() {
+export async function bootstrapTunarr(
+  initialSettings?: DeepPartial<SettingsFile>,
+) {
   await initDbDirectories();
   initDirectDbAccess(path.join(globalOptions().databaseDirectory, 'db.db'));
   await syncMigrationTablesIfNecessary();
-  const settingsDb = getSettings();
+  const settingsDb = getSettings(undefined, initialSettings);
   LoggerFactory.initialize(settingsDb);
 }

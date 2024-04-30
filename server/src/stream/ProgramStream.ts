@@ -5,7 +5,7 @@ import { isUndefined } from 'lodash-es';
 import { PassThrough } from 'stream';
 import { SettingsDB, getSettings } from '../dao/settings.js';
 import { FfmpegTranscodeSession } from '../ffmpeg/FfmpegTrancodeSession.js';
-import { OutputFormat } from '../ffmpeg/OutputFormat.js';
+import { OutputFormat } from '../ffmpeg/builder/constants.ts';
 import { FFMPEG, StreamOptions } from '../ffmpeg/ffmpeg.js';
 import { serverContext } from '../serverContext.js';
 import { TypedEventEmitter } from '../types/eventEmitter.js';

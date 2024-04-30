@@ -6,7 +6,7 @@ import { MediaSourceType } from '../../dao/direct/schema/MediaSource.ts';
 import { MediaSourceDB } from '../../dao/mediaSourceDB.js';
 import { SettingsDB, getSettings } from '../../dao/settings.js';
 import { FfmpegTranscodeSession } from '../../ffmpeg/FfmpegTrancodeSession.js';
-import { OutputFormat } from '../../ffmpeg/OutputFormat.js';
+import { OutputFormat } from '../../ffmpeg/builder/constants.ts';
 import { FFMPEG } from '../../ffmpeg/ffmpeg.js';
 import { UpdateJellyfinPlayStatusScheduledTask } from '../../tasks/jellyfin/UpdateJellyfinPlayStatusTask.js';
 import { Result } from '../../types/result.js';

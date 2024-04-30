@@ -2,17 +2,20 @@ import { JellyfinItem } from '@tunarr/types/jellyfin';
 import { Selectable } from 'kysely';
 import {
   attempt,
+  filter,
   find,
   first,
   isEmpty,
   isError,
   isNull,
   isUndefined,
+  map,
   replace,
   takeWhile,
   trimEnd,
   trimStart,
 } from 'lodash-es';
+import { NonEmptyArray } from 'ts-essentials';
 import { ContentBackedStreamLineupItem } from '../../dao/derived_types/StreamLineup.js';
 import { MediaSourceTable } from '../../dao/direct/schema/MediaSource.js';
 import { ProgramType } from '../../dao/direct/schema/Program.ts';
@@ -22,16 +25,24 @@ import { isQueryError } from '../../external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.js';
 import { JellyfinApiClient } from '../../external/jellyfin/JellyfinApiClient.js';
 import { JellyfinItemFinder } from '../../external/jellyfin/JellyfinItemFinder.ts';
-import { Nullable } from '../../types/util.js';
+import { Maybe, Nullable } from '../../types/util.js';
 import { fileExists } from '../../util/fsUtil.js';
 import {
+  ifDefined,
   isDefined,
   isNonEmptyString,
   nullToUndefined,
 } from '../../util/index.js';
 import { Logger, LoggerFactory } from '../../util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '../../util/serverUtil.js';
-import { ProgramStream, StreamDetails, StreamSource } from '../types.js';
+import {
+  AudioStreamDetails,
+  HttpStreamSource,
+  ProgramStream,
+  StreamDetails,
+  StreamSource,
+  VideoStreamDetails,
+} from '../types.js';
 
 // The minimum fields we need to get stream details about an item
 // TODO: See if we need separate types for JF and Plex and what is really necessary here
@@ -162,17 +173,16 @@ export class JellyfinStreamDetails {
     } else {
       const path = details.serverPath ?? item.plexFilePath;
       if (isNonEmptyString(path)) {
-        streamSource = {
-          type: 'http',
-          streamUrl: `${trimEnd(this.server.uri, '/')}/Videos/${trimStart(
+        streamSource = new HttpStreamSource(
+          `${trimEnd(this.server.uri, '/')}/Videos/${trimStart(
             path,
             '/',
           )}/stream?static=true`,
-          extraHeaders: {
+          {
             // TODO: Use the real authorization string
             'X-Emby-Token': this.server.accessToken,
           },
-        };
+        );
       } else {
         throw new Error('Could not resolve stream URL');
       }
@@ -188,10 +198,7 @@ export class JellyfinStreamDetails {
     item: JellyfinItemStreamDetailsQuery,
     media: JellyfinItem,
   ): Promise<Nullable<StreamDetails>> {
-    const streamDetails: StreamDetails = {};
     const firstMediaSource = first(media.MediaSources);
-    streamDetails.serverPath = nullToUndefined(firstMediaSource?.Id);
-    streamDetails.directFilePath = nullToUndefined(firstMediaSource?.Path);
 
     // Jellyfin orders media streams with external ones first
     // We count these and then use the count as the offset for the
@@ -206,53 +213,91 @@ export class JellyfinStreamDetails {
       (stream) => stream.Type === 'Video',
     );
 
-    const audioStream = find(
-      firstMediaSource?.MediaStreams,
-      (stream) => stream.Type === 'Audio' && !!stream.IsDefault,
-    );
-    const audioOnly = isUndefined(videoStream) && !isUndefined(audioStream);
-
     // Video
+    let videoStreamDetails: Maybe<VideoStreamDetails>;
     if (isDefined(videoStream)) {
-      // TODO Parse pixel aspect ratio
-      streamDetails.anamorphic = !!videoStream.IsAnamorphic;
-      streamDetails.videoCodec = nullToUndefined(videoStream.Codec);
-      // Keeping old behavior here for now
-      streamDetails.videoFramerate = videoStream.AverageFrameRate
-        ? Math.round(videoStream.AverageFrameRate)
-        : undefined;
-      streamDetails.videoHeight = nullToUndefined(videoStream.Height);
-      streamDetails.videoWidth = nullToUndefined(videoStream.Width);
-      streamDetails.videoBitDepth = nullToUndefined(videoStream.BitDepth);
-      if (isDefined(videoStream.Index)) {
-        const index = videoStream.Index - externalStreamCount;
-        if (index >= 0) {
-          streamDetails.videoStreamIndex = index.toString();
-        }
-      }
-      streamDetails.pixelP = 1;
-      streamDetails.pixelQ = 1;
+      const isAnamorphic =
+        videoStream.IsAnamorphic ??
+        (isNonEmptyString(videoStream.AspectRatio) &&
+          videoStream.AspectRatio.includes(':'))
+          ? extractIsAnamorphic(
+              videoStream.Width ?? 1,
+              videoStream.Height ?? 1,
+              videoStream.AspectRatio!,
+            )
+          : false;
+
+      videoStreamDetails = {
+        width: videoStream.Width ?? 1,
+        height: videoStream.Height ?? 1,
+        anamorphic: isAnamorphic,
+        displayAspectRatio: isNonEmptyString(videoStream.AspectRatio)
+          ? videoStream.AspectRatio
+          : '',
+        scanType: videoStream.IsInterlaced ? 'interlaced' : 'progressive',
+        framerate: videoStream.RealFrameRate ?? undefined,
+        streamIndex:
+          ifDefined(videoStream.Index, (streamIndex) => {
+            const index = streamIndex - externalStreamCount;
+            if (index >= 0) {
+              return index.toString();
+            }
+            return;
+          }) ?? undefined,
+        sampleAspectRatio: isAnamorphic ? '0:0' : '1:1',
+        bitDepth: videoStream.BitDepth ?? undefined,
+        bitrate: videoStream.BitRate ?? undefined,
+        codec: videoStream.Codec ?? undefined,
+        profile: videoStream.Profile?.toLowerCase(),
+        pixelFormat: videoStream.PixelFormat ?? undefined,
+      };
     }
 
-    if (isDefined(audioStream)) {
-      streamDetails.audioChannels = nullToUndefined(audioStream.Channels);
-      streamDetails.audioCodec = nullToUndefined(audioStream.Codec);
-      if (isDefined(audioStream.Index)) {
-        const index = audioStream.Index - externalStreamCount;
-        if (index >= 0) {
-          streamDetails.audioIndex = index.toString();
-        }
-      }
-      streamDetails.audioIndex ??= 'a';
-    }
+    const audioStreamDetails = map(
+      filter(
+        firstMediaSource?.MediaStreams,
+        (stream) => stream.Type === 'Audio',
+      ),
+      (audioStream) => {
+        return {
+          bitrate: nullToUndefined(audioStream.BitRate),
+          channels: nullToUndefined(audioStream.Channels),
+          codec: nullToUndefined(audioStream.Codec),
+          default: !!audioStream.IsDefault,
+          forced: audioStream.IsForced,
+          index:
+            ifDefined(audioStream.Index, (streamIndex) => {
+              const index = streamIndex - externalStreamCount;
+              if (index >= 0) {
+                return index.toString();
+              }
+              return;
+            }) ?? undefined,
+          language: nullToUndefined(audioStream.Language),
+          profile: nullToUndefined(audioStream.Profile),
+          title: nullToUndefined(audioStream.Title),
+        } satisfies AudioStreamDetails;
+      },
+    );
 
-    if (isUndefined(videoStream) && isUndefined(audioStream)) {
+    if (!videoStreamDetails && isEmpty(audioStreamDetails)) {
       this.logger.warn(
         'Could not find a video nor audio stream for Plex item %s',
         item.externalKey,
       );
       return null;
     }
+
+    const audioOnly = !videoStreamDetails && !isEmpty(audioStreamDetails);
+
+    const streamDetails: StreamDetails = {
+      serverPath: nullToUndefined(firstMediaSource?.Id),
+      directFilePath: nullToUndefined(firstMediaSource?.Path),
+      videoDetails: videoStreamDetails ? [videoStreamDetails] : undefined,
+      audioDetails: isEmpty(audioStreamDetails)
+        ? undefined
+        : (audioStreamDetails as NonEmptyArray<AudioStreamDetails>),
+    };
 
     if (audioOnly) {
       // TODO Use our proxy endpoint here
@@ -281,6 +326,22 @@ export class JellyfinStreamDetails {
 
     return streamDetails;
   }
+}
+
+function extractIsAnamorphic(
+  width: number,
+  height: number,
+  aspectRatioString: string,
+) {
+  const resolutionRatio = width / height;
+  const [numS, denS] = aspectRatioString.split(':');
+  const num = parseFloat(numS);
+  const den = parseFloat(denS);
+  if (isNaN(num) || isNaN(den)) {
+    return false;
+  }
+
+  return Math.abs(resolutionRatio - num / den) > 0.01;
 }
 
 function jellyfinItemTypeToProgramType(item: JellyfinItem) {

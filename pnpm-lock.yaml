@@ -302,8 +302,8 @@ importers:
         specifier: ^3.0.3
         version: 3.0.3
       ts-essentials:
-        specifier: ^9.4.2
-        version: 9.4.2(typescript@5.4.3)
+        specifier: ^10.0.0
+        version: 10.0.0(typescript@5.4.3)
       ts-node:
         specifier: ^10.9.2
         version: 10.9.2(@types/node@20.11.1)(typescript@5.4.3)
@@ -10455,6 +10455,17 @@ packages:
       typescript: 5.4.3
     dev: true
 
+  /ts-essentials@10.0.0(typescript@5.4.3):
+    resolution: {integrity: sha512-77FHNJEyysF9+1s4G6eejuA1lxw7uMchT3ZPy3CIbh7GIunffpshtM8pTe5G6N5dpOzNevqRHew859ceLWVBfw==}
+    peerDependencies:
+      typescript: '>=4.5.0'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+    dependencies:
+      typescript: 5.4.3
+    dev: true
+
   /ts-essentials@9.4.1(patch_hash=254pvnpgpcwoswa4ncfq4tq6su)(typescript@5.4.3):
     resolution: {integrity: sha512-oke0rI2EN9pzHsesdmrOrnqv1eQODmJpd/noJjwj2ZPC3Z4N2wbjrOEqnsEgmvlO2+4fBb0a794DCna2elEVIQ==}
     peerDependencies:
@@ -10466,17 +10477,6 @@ packages:
       typescript: 5.4.3
     dev: true
     patched: true
-
-  /ts-essentials@9.4.2(typescript@5.4.3):
-    resolution: {integrity: sha512-mB/cDhOvD7pg3YCLk2rOtejHjjdSi9in/IBYE13S+8WA5FBSraYf4V/ws55uvs0IvQ/l0wBOlXy5yBNZ9Bl8ZQ==}
-    peerDependencies:
-      typescript: '>=4.1.0'
-    peerDependenciesMeta:
-      typescript:
-        optional: true
-    dependencies:
-      typescript: 5.4.3
-    dev: true
 
   /ts-interface-checker@0.1.13:
     resolution: {integrity: sha512-Y/arvbn+rrz3JCKl9C4kVNfTfSm2/mEp5FSz5EsZSANGPSlQrpRI5M4PKF+mJnE52jOO90PnPSc3Ur3bTQw0gA==}

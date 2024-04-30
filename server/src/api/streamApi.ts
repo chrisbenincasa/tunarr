@@ -44,6 +44,7 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
           streamMode: ChannelStreamModeSchema.optional(),
           token: z.string().uuid().optional(),
           audioOnly: TruthyQueryParam.optional().default(false),
+          useNewPipeline: TruthyQueryParam.optional().default(false),
         }),
       },
     },
@@ -59,11 +60,11 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
         case 'hls':
         case 'hls_slower':
           return res.redirect(
-            `/stream/channels/${channel.uuid}.m3u8?streamMode=${mode}`,
+            `/stream/channels/${channel.uuid}.m3u8?streamMode=${mode}&useNewPipeline=${req.query.useNewPipeline}`,
           );
         case 'mpegts':
           return res.redirect(
-            `/stream/channels/${channel.uuid}.ts?streamMode=${mode}`,
+            `/stream/channels/${channel.uuid}.ts?streamMode=${mode}&useNewPipeline=${req.query.useNewPipeline}`,
           );
       }
     },
@@ -260,6 +261,7 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
         }),
         querystring: z.object({
           mode: ChannelStreamModeSchema.optional(),
+          useNewPipeline: TruthyQueryParam.optional().default(false),
         }),
       },
     },
@@ -294,7 +296,9 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
       switch (mode) {
         case 'hls':
           sessionResult = await req.serverCtx.sessionManager
-            .getOrCreateHlsSession(channelId, req.ip, connectionDetails, {})
+            .getOrCreateHlsSession(channelId, req.ip, connectionDetails, {
+              useNewPipeline: req.query.useNewPipeline,
+            })
             .then((result) =>
               result.mapAsync(async (session) => {
                 session.recordHeartbeat(req.ip);

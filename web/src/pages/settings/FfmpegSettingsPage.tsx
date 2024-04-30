@@ -156,7 +156,7 @@ const VideoHardwareAccelerationOptions = [
     value: 'cuda',
   },
   {
-    description: 'Video Acceleration API (VAAPI) (Best Effort)',
+    description: 'Video Acceleration API (VA-API) (Best Effort)',
     value: 'vaapi',
   },
   {
@@ -194,7 +194,13 @@ export default function FfmpegSettingsPage() {
     ffmpegConsoleLoggingEnabled,
     ffmpegFileLoggingEnabled,
     hardwareAccelerationMode,
-  ] = watch(['enableLogging', 'enableFileLogging', 'hardwareAccelerationMode']);
+    useNewFfmpegPipeline,
+  ] = watch([
+    'enableLogging',
+    'enableFileLogging',
+    'hardwareAccelerationMode',
+    'useNewFfmpegPipeline',
+  ]);
   let logSelectValue: FfmpegLogOptions = 'disable';
   if (ffmpegFileLoggingEnabled) {
     logSelectValue = 'file';
@@ -316,7 +322,8 @@ export default function FfmpegSettingsPage() {
           <FormHelperText></FormHelperText>
         </FormControl>
 
-        {hardwareAccelerationMode === 'vaapi' && (
+        {(hardwareAccelerationMode === 'vaapi' ||
+          hardwareAccelerationMode === 'qsv') && (
           <Controller
             control={control}
             name="vaapiDevice"
@@ -324,12 +331,17 @@ export default function FfmpegSettingsPage() {
               <TextField
                 fullWidth
                 sx={{ mb: 2 }}
-                label="VAAPI Device"
+                label={
+                  hardwareAccelerationMode === 'qsv'
+                    ? 'QSV Device'
+                    : 'VA-API Device'
+                }
                 helperText={
                   <span>
-                    Override the default VAAPI device path (defaults to{' '}
-                    <code>/dev/dri/renderD128</code> on Linux and blank
-                    otherwise)
+                    Override the default{' '}
+                    {hardwareAccelerationMode === 'qsv' ? 'QSV' : 'VA-API'}{' '}
+                    device path (defaults to <code>/dev/dri/renderD128</code> on
+                    Linux and blank otherwise)
                   </span>
                 }
                 {...field}
@@ -474,8 +486,7 @@ export default function FfmpegSettingsPage() {
             />
 
             <FormHelperText>
-              Deinterlace filter to use when video is interlaced. This is only
-              needed when Plex transcoding is not used.{' '}
+              Deinterlace filter to use when video is interlaced.
               <MuiLink
                 target="_blank"
                 href="https://github.com/kfrn/ffmpeg-things/blob/master/deinterlacing.md"
@@ -497,7 +508,11 @@ export default function FfmpegSettingsPage() {
                 <Select
                   labelId="target-resolution-label"
                   id="target-resolution"
-                  label="Preferred Resolution"
+                  label={
+                    useNewFfmpegPipeline
+                      ? 'Output Resolution'
+                      : 'Preferred Resolution'
+                  }
                   {...field}
                   value={resolutionToString(field.value)}
                 >
@@ -510,39 +525,44 @@ export default function FfmpegSettingsPage() {
               )}
             />
           </FormControl>
-          <FormControl fullWidth>
-            <FormControlLabel
-              control={
-                <CheckboxFormController
-                  control={control}
-                  name="normalizeResolution"
-                />
-              }
-              label="Normalize Resolution"
-            />
-            <FormHelperText>
-              Some clients experience issues when the video stream changes
-              resolution. This option will make Tunarr convert all videos to the
-              preferred resolution selected above. Otherwise, the preferred
-              resolution will be used as a maximum resolution for transcoding.
-            </FormHelperText>
-          </FormControl>
-          <FormControl>
-            <FormControlLabel
-              control={
-                <CheckboxFormController
-                  control={control}
-                  name="normalizeVideoCodec"
-                />
-              }
-              label="Normalize Video Codec"
-            />
-            <FormHelperText>
-              Some clients experience issues when the stream's codecs change.
-              Enable these so that any videos with different codecs than the
-              ones specified above are forcefully transcoded.
-            </FormHelperText>
-          </FormControl>
+          {!useNewFfmpegPipeline && (
+            <FormControl fullWidth>
+              <FormControlLabel
+                control={
+                  <CheckboxFormController
+                    control={control}
+                    name="normalizeResolution"
+                  />
+                }
+                label={'Normalize Resolution'}
+              />
+              <FormHelperText>
+                Some clients experience issues when the video stream changes
+                resolution. This option will make Tunarr convert all videos to
+                the preferred resolution selected above. Otherwise, the
+                preferred resolution will be used as a maximum resolution for
+                transcoding.
+              </FormHelperText>
+            </FormControl>
+          )}
+          {!useNewFfmpegPipeline && (
+            <FormControl>
+              <FormControlLabel
+                control={
+                  <CheckboxFormController
+                    control={control}
+                    name="normalizeVideoCodec"
+                  />
+                }
+                label="Normalize Video Codec"
+              />
+              <FormHelperText>
+                Some clients experience issues when the stream's codecs change.
+                Enable these so that any videos with different codecs than the
+                ones specified above are forcefully transcoded.
+              </FormHelperText>
+            </FormControl>
+          )}
         </Stack>
       </>
     );
@@ -728,6 +748,32 @@ export default function FfmpegSettingsPage() {
         Miscellaneous Options
       </Typography>
       <Stack spacing={2} useFlexGap>
+        <FormControl fullWidth>
+          <FormControlLabel
+            control={
+              <CheckboxFormController
+                control={control}
+                name="useNewFfmpegPipeline"
+              />
+            }
+            label={
+              <span>
+                <strong>Experimental: </strong> Use new FFmpeg Pipeline
+              </span>
+            }
+          />
+          <FormHelperText>
+            Generate FFmpeg commands using Tunarr's new FFmpeg pipeline code.
+            The new code is more advanced than the original pipeline code. If
+            using hardware acceleration, the new code attempts to push as much
+            of the pipeline onto hardware as possible whereas the original code
+            would only encode using hardware. However, this code is still
+            considered experimental as bugs are discovered and fixed.
+            <br />
+            Additionally, some options on this page will change (or disappear)
+            when using the new pipeline code.
+          </FormHelperText>
+        </FormControl>
         <Stack spacing={2} useFlexGap direction={{ sm: 'column', md: 'row' }}>
           <NumericFormControllerText
             control={control}
@@ -849,6 +895,24 @@ export default function FfmpegSettingsPage() {
             </FormControl>
           )}
         </Stack>
+        <FormControl fullWidth>
+          <FormControlLabel
+            control={
+              <Controller
+                control={control}
+                name="disableChannelOverlay"
+                render={({ field }) => (
+                  <Checkbox {...field} checked={field.value} />
+                )}
+              />
+            }
+            label="Disable Channel Watermark Globally"
+          />
+          <FormHelperText>
+            Toggling this option will disable channel watermarks regardless of
+            channel settings.
+          </FormHelperText>
+        </FormControl>
       </Stack>
       <Divider sx={{ mt: 2 }} />
       <Typography variant="h5" sx={{ mt: 2, mb: 1 }}>
@@ -927,51 +991,6 @@ export default function FfmpegSettingsPage() {
           </FormControl>
         </Grid>
       </Grid>
-      <Typography component="h6" variant="h6" sx={{ pt: 2, pb: 1 }}>
-        Misc Options
-      </Typography>
-
-      <FormControl fullWidth>
-        <FormControlLabel
-          control={
-            <Controller
-              control={control}
-              name="disableChannelOverlay"
-              render={({ field }) => (
-                <Checkbox {...field} checked={field.value} />
-              )}
-            />
-          }
-          label="Disable Channel Watermark Globally"
-        />
-        <FormHelperText>
-          Toggling this option will disable channel watermarks regardless of
-          channel settings.
-        </FormHelperText>
-      </FormControl>
-
-      <FormControl fullWidth>
-        <FormControlLabel
-          control={
-            <Controller
-              control={control}
-              name="disableChannelPrelude"
-              render={({ field }) => (
-                <Checkbox {...field} checked={field.value} />
-              )}
-            />
-          }
-          label="Disable Channel Prelude"
-        />
-        <FormHelperText>
-          In an attempt to improve playback, Tunarr insets really short clips of
-          black screen between videos. The idea is that if the stream pauses
-          because Plex is taking too long to reply, it will pause during one of
-          those black screens instead of interrupting the last second of a
-          video. If you suspect these black screens are causing trouble instead
-          of helping, you can disable them with this option.
-        </FormHelperText>
-      </FormControl>
 
       <UnsavedNavigationAlert isDirty={isDirty} />
       <Stack spacing={2} direction="row" sx={{ mt: 2 }}>
