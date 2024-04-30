@@ -68,19 +68,16 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
   });
 
   fastify.get(
-    '/video',
+    '/channels/:id/video',
     {
       schema: {
-        querystring: z.object({
-          channel: z.coerce.number().or(z.string()),
+        params: z.object({
+          id: z.coerce.number().or(z.string()),
         }),
       },
     },
     async (req, res) => {
-      const result = await new ConcatStream().startStream(
-        req.query.channel,
-        false,
-      );
+      const result = await new ConcatStream().startStream(req.params.id, false);
       if (result.type === 'error') {
         return res.send(result.httpStatus).send(result.message);
       }

@@ -3,6 +3,15 @@ import { Server as SSDP } from 'node-ssdp';
 import { ChannelDB } from './dao/channelDb.js';
 import { Settings } from './dao/settings.js';
 import { serverOptions } from './globals.js';
+import { z } from 'zod';
+
+const LineupSchema = z.object({
+  GuideNumber: z.string(),
+  GuideName: z.string(),
+  URL: z.string().url(),
+});
+
+type LineupItem = z.infer<typeof LineupSchema>;
 
 export class HdhrService {
   private db: Settings;
@@ -57,31 +66,39 @@ export class HdhrService {
         });
       });
 
-      fastify.get('/lineup.json', async (req, res) => {
-        const lineup: {
-          GuideNumber: string;
-          GuideName: string;
-          URL: string;
-        }[] = [];
-        const channels = await this.channelDB.getAllChannels();
-        for (let i = 0, l = channels.length; i < l; i++) {
-          if (!channels[i].stealth) {
+      fastify.get(
+        '/lineup.json',
+        {
+          schema: {
+            response: {
+              200: LineupSchema,
+            },
+          },
+        },
+        async (req, res) => {
+          const lineup: LineupItem[] = [];
+          const channels = await this.channelDB.getAllChannels();
+          for (const channel of channels) {
+            if (channel.stealth) {
+              continue;
+            }
+
             lineup.push({
-              GuideNumber: channels[i].number.toString(),
-              GuideName: channels[i].name,
-              URL: `${req.protocol}://${req.hostname}/video?channel=${channels[i].number}`,
+              GuideNumber: channel.number.toString(),
+              GuideName: channel.name,
+              URL: `${req.protocol}://${req.hostname}/channels/${channel.number}/video`,
             });
           }
-        }
-        if (lineup.length === 0)
-          lineup.push({
-            GuideNumber: '1',
-            GuideName: 'Tunarr',
-            URL: `${req.protocol}://${req.hostname}/setup`,
-          });
+          if (lineup.length === 0)
+            lineup.push({
+              GuideNumber: '1',
+              GuideName: 'Tunarr',
+              URL: `${req.protocol}://${req.hostname}/setup`,
+            });
 
-        return res.send(lineup);
-      });
+          return res.send(lineup);
+        },
+      );
     };
   }
 }
