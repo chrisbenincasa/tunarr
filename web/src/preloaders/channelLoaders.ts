@@ -26,7 +26,7 @@ export const DefaultChannel = {
   },
   guideMinimumDuration: 30000,
   fillerRepeatCooldown: 30,
-  groupTitle: 'tv',
+  groupTitle: 'tunarr',
   stealth: false,
   disableFillerOverlay: false,
   offline: {

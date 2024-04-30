@@ -58,6 +58,7 @@ import {
 import { isNonEmptyString, toggle } from '../../helpers/util';
 import { fetchPlexPath, usePlex } from '../../hooks/plexHooks';
 import { usePlexServerSettings } from '../../hooks/settingsHooks';
+import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 import useStore from '../../store';
 import { addKnownMediaForServer } from '../../store/programmingSelector/actions';
 import { setProgrammingSelectorViewState } from '../../store/themeEditor/actions';
@@ -70,7 +71,6 @@ import { PlexFilterBuilder } from './PlexFilterBuilder.tsx';
 import { PlexGridItem } from './PlexGridItem';
 import { PlexListItem } from './PlexListItem';
 import { PlexSortField } from './PlexSortField.tsx';
-import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 
 function a11yProps(index: number) {
   return {
@@ -147,7 +147,7 @@ export default function PlexProgrammingSelector() {
   useEffect(() => {
     setModalIndex(-1);
     setModalGuid('');
-  }, [tabValue]);
+  }, [tabValue, selectedLibrary]);
 
   const handleChange = (_: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);

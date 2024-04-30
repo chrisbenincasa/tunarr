@@ -89,8 +89,11 @@ export function ImageUploadInput({
         onChange={onThumbUrlChange}
         endAdornment={
           <InputAdornment position="end">
-            <IconButton component="label">
-              <CloudUpload onClick={() => (fileInputRef.current!.value = '')} />
+            <IconButton
+              component="label"
+              onClick={() => (fileInputRef.current!.value = '')}
+            >
+              <CloudUpload />
               <VisuallyHiddenInput
                 ref={fileInputRef}
                 onChange={(e) => {

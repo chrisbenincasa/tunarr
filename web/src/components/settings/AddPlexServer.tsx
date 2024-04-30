@@ -7,11 +7,12 @@ import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 
 type AddPlexServer = {
   title?: string;
+  variant?: 'text' | 'contained' | 'outlined' | undefined;
 };
 
 export default function AddPlexServer(props: AddPlexServer) {
   const apiClient = useTunarrApi();
-  const { title = 'Add', ...restProps } = props;
+  const { title = 'Add', variant = 'contained', ...restProps } = props;
   const queryClient = useQueryClient();
 
   const addPlexServerMutation = useMutation({
@@ -43,8 +44,9 @@ export default function AddPlexServer(props: AddPlexServer) {
 
   return (
     <Button
+      color="inherit"
       onClick={() => addPlexServer()}
-      variant="contained"
+      variant={variant}
       startIcon={<AddCircle />}
       {...restProps}
     >
