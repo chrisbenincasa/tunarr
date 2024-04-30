@@ -145,9 +145,12 @@ export default function PlexProgrammingSelector() {
   }, [width, tabValue, viewType, modalGuid]);
 
   useEffect(() => {
+    setTabValue(0);
+  }, [selectedLibrary]);
+
+  useEffect(() => {
     setModalIndex(-1);
     setModalGuid('');
-    setTabValue(0);
   }, [tabValue, selectedLibrary]);
 
   const handleChange = (_: React.SyntheticEvent, newValue: number) => {
