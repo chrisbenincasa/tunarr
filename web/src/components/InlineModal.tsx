@@ -117,8 +117,6 @@ export function InlineModal(props: InlineModalProps) {
       ).includes(childModalIndex)
     : false;
 
-  console.log('my children, should be open', type, modalChildren);
-
   return (
     <Box
       ref={inlineModalRef}
@@ -167,7 +165,7 @@ export function InlineModal(props: InlineModalProps) {
               <React.Fragment key={child.guid}>
                 {isPlexParentItem(child) && (
                   <InlineModal
-                    itemGuid={child.guid}
+                    itemGuid={childItemGuid ?? ''}
                     modalIndex={childModalIndex}
                     open={idx === firstItemInNextRowIndex}
                     rowSize={rowSize}
