@@ -4,8 +4,9 @@ import {
   PlexLibrarySection,
   PlexMedia,
   isPlexDirectory,
+  isPlexParentItem,
 } from '@tunarr/types/plex';
-import { map, reject, some, uniq } from 'lodash-es';
+import { has, map, reject, some, uniq } from 'lodash-es';
 import useStore from '..';
 import {
   buildPlexFilterKey,
@@ -55,6 +56,9 @@ export const addKnownMediaForServer = (
       {},
     );
 
+    // known media is an overwrite operation, not dealing with
+    // lists here. we always want the most up-to-date view of
+    // an item
     state.knownMediaByServer[serverName] = {
       ...state.knownMediaByServer[serverName],
       ...byGuid,
@@ -67,23 +71,21 @@ export const addKnownMediaForServer = (
       hierarchy = state.contentHierarchyByServer[serverName];
     }
 
-    // plexMedia
-    //   .filter((m) => !isTerminalItem(m))
-    //   .map(uniqueId)
-    //   .forEach((id) => {
-    //     if (!has(state.contentHierarchyByServer[serverName], id)) {
-    //       state.contentHierarchyByServer[serverName][id] = [];
-    //     }
-    //   });
+    plexMedia
+      .filter(isPlexParentItem)
+      .map(uniqueId)
+      .forEach((id) => {
+        if (!has(state.contentHierarchyByServer[serverName], id)) {
+          state.contentHierarchyByServer[serverName][id] = [];
+        }
+      });
 
     if (parentId) {
-      console.log('setting parent id', parentId);
       if (!state.contentHierarchyByServer[serverName][parentId]) {
         state.contentHierarchyByServer[serverName][parentId] = [];
       }
 
-      console.log(plexMedia.map(uniqueId));
-
+      // Append only - take unique
       state.contentHierarchyByServer[serverName][parentId] = uniq([
         ...state.contentHierarchyByServer[serverName][parentId],
         ...plexMedia.map(uniqueId),

@@ -147,6 +147,7 @@ export default function PlexProgrammingSelector() {
   useEffect(() => {
     setModalIndex(-1);
     setModalGuid('');
+    setTabValue(0);
   }, [tabValue, selectedLibrary]);
 
   const handleChange = (_: React.SyntheticEvent, newValue: number) => {
@@ -324,7 +325,6 @@ export default function PlexProgrammingSelector() {
     if (searchData?.pages.length === 1) {
       const size = searchData.pages[0].totalSize ?? searchData.pages[0].size;
       if (scrollParams.max !== size) {
-        console.log('herehereh');
         setScrollParams(({ limit }) => ({
           limit,
           max: size,
@@ -338,7 +338,6 @@ export default function PlexProgrammingSelector() {
       // We probably wouldn't have made it this far if we didnt have a server, but
       // putting this here to prevent crashes
       if (selectedServer) {
-        console.log('still in this one');
         const allMedia = chain(searchData.pages)
           .reject((page) => page.size === 0)
           .map((page) => page.Metadata)
