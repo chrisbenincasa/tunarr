@@ -361,7 +361,7 @@ export function Root({ children }: { children?: React.ReactNode }) {
                       to={item.path}
                       key={item.name}
                       component={RouterLink}
-                      sx={{ display: 'inline-block', color: 'inherit' }}
+                      sx={{ display: 'inline-block' }}
                     >
                       {item.icon}
                     </IconButton>
