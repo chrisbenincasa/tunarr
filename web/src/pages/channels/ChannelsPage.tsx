@@ -134,7 +134,6 @@ export default function ChannelsPage() {
           <Tooltip title="Get Channel M3U File" placement="top">
             <IconButton
               href={`//localhost:8000/media-player/${channel.number}.m3u`}
-              color={'primary'}
               onClick={(e) => e.stopPropagation()}
             >
               <TextSnippetIcon />
@@ -144,7 +143,6 @@ export default function ChannelsPage() {
             <IconButton
               component={RouterLink}
               to={`/channels/${channel.id}/watch`}
-              color="primary"
               onClick={(e) => e.stopPropagation()}
             >
               <WatchIcon />
@@ -154,7 +152,6 @@ export default function ChannelsPage() {
             <IconButton
               to={`/channels/${channel.id}/edit`}
               component={RouterLink}
-              color={'primary'}
               onClick={(e) => e.stopPropagation()}
             >
               <EditIcon />
@@ -162,7 +159,6 @@ export default function ChannelsPage() {
           </Tooltip>
           <Tooltip title="Delete Channel" placement="top">
             <IconButton
-              color={'primary'}
               onClick={(e) => {
                 e.stopPropagation();
                 setDeleteChannelConfirmation(channel.id);

@@ -481,6 +481,8 @@ export function TvGuide({ channelId, start, end }: Props) {
                 aria-haspopup="true"
                 aria-expanded={open ? 'true' : undefined}
                 variant="text"
+                color="inherit"
+                disableRipple
                 disableElevation
                 startIcon={
                   isEmpty(channel.icon?.path) ? (

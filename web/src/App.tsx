@@ -80,28 +80,52 @@ export function Root({ children }: { children?: React.ReactNode }) {
     () =>
       createTheme({
         palette: {
-          background: {
-            default: darkMode ? '#0f1416' : '#f5fafc',
-          },
-          mode: darkMode ? 'dark' : 'light',
-          primary: {
-            main: darkMode ? '#84d2e5' : '#006879',
-          },
-          secondary: {
-            main: darkMode ? '#b2cbd2' : '#4b6268',
-          },
-          error: {
-            main: darkMode ? '#ffb4ab' : '#ba1a1a',
-          },
-          warning: {
-            main: darkMode ? '#93000a' : '#ffdad6',
-          },
-          info: {
-            main: darkMode ? '#bec5eb' : '#565d7e',
-          },
-          success: {
-            main: darkMode ? '#a8edff' : '#a8edff',
-          },
+          ...(darkMode
+            ? {
+                mode: 'dark',
+                primary: {
+                  main: '#008c93',
+                },
+                secondary: {
+                  main: '#004b79',
+                },
+                error: {
+                  main: '#770A0A',
+                },
+                warning: {
+                  main: '#FF9800',
+                },
+                info: {
+                  main: '#9EA1B3',
+                },
+                success: {
+                  main: '#0A772A',
+                },
+              }
+            : {
+                mode: 'light',
+                background: {
+                  default: '#f5fafc',
+                },
+                primary: {
+                  main: '#008c93',
+                },
+                secondary: {
+                  main: '#004b79',
+                },
+                error: {
+                  main: '#770A0A',
+                },
+                warning: {
+                  main: '#FF9800',
+                },
+                info: {
+                  main: '#9EA1B3',
+                },
+                success: {
+                  main: '#0A772A',
+                },
+              }),
         },
       }),
     [darkMode],
@@ -337,7 +361,7 @@ export function Root({ children }: { children?: React.ReactNode }) {
                       to={item.path}
                       key={item.name}
                       component={RouterLink}
-                      sx={{ display: 'inline-block', color: '#fff' }}
+                      sx={{ display: 'inline-block', color: 'inherit' }}
                     >
                       {item.icon}
                     </IconButton>

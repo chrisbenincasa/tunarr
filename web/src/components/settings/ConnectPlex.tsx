@@ -21,7 +21,7 @@ import AddPlexServer from './AddPlexServer.tsx';
 export default function ConnectPlex(props: CardProps) {
   const {
     sx = {
-      p: 2,
+      py: 2,
       margin: '0 auto',
       textAlign: 'center',
     },
