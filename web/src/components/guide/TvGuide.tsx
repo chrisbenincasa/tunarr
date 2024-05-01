@@ -27,7 +27,6 @@ import { Link as RouterLink } from 'react-router-dom';
 import { useInterval } from 'usehooks-ts';
 import { alternateColors, forTvGuideProgram } from '../../helpers/util';
 import { useTvGuides, useTvGuidesPrefetch } from '../../hooks/useTvGuide';
-import useStore from '../../store';
 import { useSettings } from '../../store/settings/selectors.ts';
 import ProgramDetailsDialog from '../ProgramDetailsDialog';
 import TunarrLogo from '../TunarrLogo';
@@ -51,10 +50,7 @@ const StyledMenu = styled((props: MenuProps) => (
     borderRadius: 6,
     marginTop: theme.spacing(1),
     minWidth: 180,
-    color:
-      theme.palette.mode === 'light'
-        ? 'rgb(55, 65, 81)'
-        : theme.palette.grey[300],
+    backgroundColor: theme.palette.background.paper,
     boxShadow:
       'rgb(255, 255, 255) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 0px 0px 1px, rgba(0, 0, 0, 0.1) 0px 10px 15px -3px, rgba(0, 0, 0, 0.05) 0px 4px 6px -2px',
     '& .MuiMenu-list': {
@@ -63,7 +59,6 @@ const StyledMenu = styled((props: MenuProps) => (
     '& .MuiMenuItem-root': {
       '& .MuiSvgIcon-root': {
         fontSize: 18,
-        color: theme.palette.text.secondary,
         marginRight: theme.spacing(1.5),
       },
       '&:active': {
@@ -113,6 +108,7 @@ const GuideItem = styled(GridChild)<{ width: number; index: number }>(
     cursor: 'pointer',
     '&:hover': {
       background: theme.palette.primary.light,
+      color: theme.palette.primary.contrastText,
     },
   }),
 );
@@ -147,7 +143,6 @@ export function TvGuide({ channelId, start, end }: Props) {
   const open = !isNull(anchorEl);
   const [minHeight, setMinHeight] = useState(0);
   const smallViewport = useMediaQuery(theme.breakpoints.down('md'));
-  const darkMode = useStore((state) => state.theme.darkMode);
 
   const [channelMenu, setChannelMenu] = useState<ChannelLineup>();
 
@@ -498,7 +493,6 @@ export function TvGuide({ channelId, start, end }: Props) {
                 endIcon={<KeyboardArrowDownIcon />}
                 fullWidth
                 sx={{
-                  color: darkMode ? '#fff' : '#000',
                   textAlign: 'left',
                   lineHeight: '1.25',
                 }}
@@ -592,7 +586,7 @@ export function TvGuide({ channelId, start, end }: Props) {
                   position: 'relative',
                   left: '-25px',
                   background: theme.palette.primary.main,
-                  color: '#fff',
+                  color: theme.palette.primary.contrastText,
                   width: '50px',
                   borderRadius: '5px',
                   fontSize: '14px',

@@ -7,6 +7,7 @@ import {
   ListItemText,
   Tooltip,
   Typography,
+  useTheme,
 } from '@mui/material';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
@@ -37,7 +38,7 @@ export default function SelectedProgrammingList({
   const { data: customShows } = useCustomShows();
   const knownMedia = useStore((s) => s.knownMediaByServer);
   const selectedMedia = useStore((s) => s.selectedMedia);
-  const darkMode = useStore((state) => state.theme.darkMode);
+  const theme = useTheme();
   const totalCount = reduce(
     selectedMedia,
     (acc, media) => acc + (media.childCount ?? 1),
@@ -131,8 +132,8 @@ export default function SelectedProgrammingList({
         <Box
           sx={{
             borderRadius: '10px',
-            backgroundColor: 'primary.main',
-            color: '#fff',
+            backgroundColor: theme.palette.primary.main,
+            color: theme.palette.primary.contrastText,
             position: 'fixed',
             bottom: '1em',
             width: '500px',
@@ -158,8 +159,8 @@ export default function SelectedProgrammingList({
             <Button
               startIcon={<Delete />}
               sx={{
-                color: darkMode ? '#fff' : '#fff',
-                border: '1px solid white',
+                color: theme.palette.primary.contrastText,
+                border: `1px solid ${theme.palette.primary.contrastText}`,
                 borderRadius: '10px',
                 marginRight: '8px',
               }}
@@ -173,8 +174,8 @@ export default function SelectedProgrammingList({
             onAdd={onAddSelectedMedia}
             onSuccess={onAddMediaSuccess}
             sx={{
-              color: '#fff',
-              border: '1px solid white',
+              color: theme.palette.primary.contrastText,
+              border: `1px solid ${theme.palette.primary.contrastText}`,
               borderRadius: '10px',
               marginRight: '8px',
             }}

@@ -36,7 +36,7 @@ export default function ChannelEditActions() {
         color: theme.palette.success.main,
       });
     }
-  }, [isSubmitSuccessful]);
+  }, [isSubmitSuccessful, theme.palette.success.main]);
 
   const handleSnackClose = () => {
     setSnackStatus({ display: false, message: '', color: '' });
@@ -65,7 +65,10 @@ export default function ChannelEditActions() {
             type="submit"
             startIcon={
               isSubmitting ? (
-                <CircularProgress size="20px" sx={{ mx: 1, color: '#fff' }} />
+                <CircularProgress
+                  size="20px"
+                  sx={{ mx: 1, color: 'inherit' }}
+                />
               ) : (
                 <Save />
               )
@@ -82,7 +85,10 @@ export default function ChannelEditActions() {
             type="submit"
             startIcon={
               isSubmitting ? (
-                <CircularProgress size="20px" sx={{ mx: 1, color: '#fff' }} />
+                <CircularProgress
+                  size="20px"
+                  sx={{ mx: 1, color: 'inherit' }}
+                />
               ) : (
                 <Save />
               )

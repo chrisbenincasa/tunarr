@@ -185,7 +185,10 @@ export default function ChannelProgrammingPage() {
             disabled={!programsDirty || isSubmitting}
             startIcon={
               isSubmitting ? (
-                <CircularProgress size="20px" sx={{ mx: 1, color: '#fff' }} />
+                <CircularProgress
+                  size="20px"
+                  sx={{ mx: 1, color: 'inherit' }}
+                />
               ) : (
                 <Save />
               )

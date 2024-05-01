@@ -81,17 +81,26 @@ export function Root({ children }: { children?: React.ReactNode }) {
       createTheme({
         palette: {
           background: {
-            default: darkMode ? '#212121' : '#f5f5f5',
+            default: darkMode ? '#0f1416' : '#f5fafc',
           },
           mode: darkMode ? 'dark' : 'light',
           primary: {
-            main: 'rgb(241, 93, 85)',
+            main: darkMode ? '#84d2e5' : '#006879',
           },
           secondary: {
-            main: 'rgb(0, 125, 184)',
+            main: darkMode ? '#b2cbd2' : '#4b6268',
+          },
+          error: {
+            main: darkMode ? '#ffb4ab' : '#ba1a1a',
+          },
+          warning: {
+            main: darkMode ? '#93000a' : '#ffdad6',
           },
           info: {
-            main: 'rgb(147, 168, 172)',
+            main: darkMode ? '#bec5eb' : '#565d7e',
+          },
+          success: {
+            main: darkMode ? '#a8edff' : '#a8edff',
           },
         },
       }),
@@ -340,10 +349,6 @@ export function Root({ children }: { children?: React.ReactNode }) {
         <Box
           component="main"
           sx={{
-            backgroundColor: (theme) =>
-              theme.palette.mode === 'light'
-                ? theme.palette.grey[100]
-                : theme.palette.grey[900],
             flexGrow: 1,
             // height: '100vh', // Uncommenting this breaks any use of scrollTo()
             overflow: 'auto',
