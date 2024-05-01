@@ -24,16 +24,33 @@ function makeConstantOutputOption(
   return new (class extends ConstantOutputOption {})(opts);
 }
 
-const NoSceneDetectOutputOption = (value: number): ConstantOutputOption =>
+export const NoSceneDetectOutputOption = (
+  value: number,
+): ConstantOutputOption =>
   makeConstantOutputOption(['-sc_threshold', value.toString(10)]);
 
-const TimeLimitOutputOption = (finish: string): ConstantOutputOption =>
+export const TimeLimitOutputOption = (finish: string): ConstantOutputOption =>
   makeConstantOutputOption(['-t', finish]);
 
-const VideoBitrateOutputOption = (bitrate: number): ConstantOutputOption =>
+export const VideoBitrateOutputOption = (
+  bitrate: number,
+): ConstantOutputOption =>
   makeConstantOutputOption([
     '-b:v',
     `${bitrate.toString(10)}k`,
     '-maxrate:v',
     `${bitrate.toString(10)}k`,
   ]);
+
+export const VideoBufferSizeOutputOption = (
+  bufferSize: number,
+): ConstantOutputOption =>
+  makeConstantOutputOption(['-bufsize:v', `${bufferSize}k`]);
+
+export const FrameRateOutputOption = (
+  frameRate: number,
+): ConstantOutputOption =>
+  makeConstantOutputOption(['-r', frameRate.toString(10), '-vsync', 'cfr']);
+
+export const VideoTrackTimescaleOutputOption = (scale: number) =>
+  makeConstantOutputOption(['video_track_timescale', scale.toString()]);

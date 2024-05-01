@@ -21,3 +21,12 @@ export function StreamSeekOption(start: string): InputOption {
     inputOptions: constant(['-ss', start]),
   };
 }
+
+export function RealtimeInputOption(): InputOption {
+  return {
+    ...BaseInputOption,
+    // TODO: Do not apply to still image
+    appliesToInput: constant(true),
+    inputOptions: constant(['-re']),
+  };
+}

@@ -1,9 +1,13 @@
-import { TupleToUnion } from '../../types/util';
+import { ExcludeByValueType, TupleToUnion } from '../../types/util';
 import { InputOption } from './options/InputOption';
 import { AudioStream, VideoStream } from './MediaStream';
 import { PipelineFilterStep } from './filter/PipelineFilterStep';
 import { AudioState } from './state/AudioState';
 import { FrameState } from './state/FrameState';
+import { AnyFunction } from 'ts-essentials';
+import { flatMap } from 'lodash-es';
+
+export type DataProps<T> = ExcludeByValueType<T, AnyFunction>;
 
 export const HardwareAccelerationModes = [
   'none',
@@ -42,11 +46,25 @@ export interface PipelineStep {
   nextState(currentState: FrameState): FrameState;
 }
 
+type FrameSizeFields = DataProps<FrameSize>;
+
 export class FrameSize {
-  constructor(
-    public width: number,
-    public height: number,
-  ) {}
+  width: number;
+  height: number;
+
+  private constructor(fields: FrameSizeFields) {
+    this.width = fields.width;
+    this.height = fields.height;
+  }
+
+  static create(fields: FrameSizeFields) {
+    return new FrameSize(fields);
+  }
+
+  // Prefer create above
+  static withDimensions(width: number, height: number) {
+    return this.create({ width, height });
+  }
 
   equals({ width: otherWidth, height: otherHeight }: FrameSize) {
     return this.width === otherWidth && this.height === otherHeight;
@@ -54,11 +72,32 @@ export class FrameSize {
 }
 
 export abstract class InputFile {
-  inputOptions: InputOption[];
-  filterSteps: PipelineFilterStep[];
+  type: 'video' | 'audio';
+  inputOptions: InputOption[] = [];
+  filterSteps: PipelineFilterStep[] = [];
+
+  addOption(option: InputOption) {
+    if (option.appliesToInput(this)) {
+      this.inputOptions.push(option);
+    }
+  }
+
+  // This isn't ideal since it means the parent
+  // class knows of its children... we can find a
+  // better way. it's also technically not true
+  // since something else could extend this and
+  // set their type to video
+  isVideo(): this is VideoInputFile {
+    return this.type === 'video';
+  }
+
+  getInputOptions() {
+    return flatMap(this.inputOptions, (opt) => opt.inputOptions(this));
+  }
 }
 
 export class AudioInputFile extends InputFile {
+  readonly type = 'audio';
   constructor(
     public path: string,
     public audioStreams: AudioStream[],
@@ -68,11 +107,18 @@ export class AudioInputFile extends InputFile {
   }
 }
 
-export class VideoInputFile extends InputFile {
+export class VideoInputFile<
+  Streams extends VideoStream[] = VideoStream[],
+> extends InputFile {
+  readonly type = 'video';
   constructor(
     public path: string,
-    public videoStreams: VideoStream[],
+    public videoStreams: Streams,
   ) {
     super();
   }
 }
+
+export class NonEmptyVideoInputFile extends VideoInputFile<
+  [VideoStream, ...VideoStream[]]
+> {}

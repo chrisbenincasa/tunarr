@@ -14,6 +14,7 @@ import _, {
   once,
   range,
   reduce,
+  trim,
   zipWith,
 } from 'lodash-es';
 import fs from 'node:fs/promises';
@@ -383,7 +384,7 @@ export function emptyStringToUndefined(
 }
 
 export function isNonEmptyString(v: unknown): v is string {
-  return isString(v) && !isEmpty(v);
+  return isString(v) && !isEmpty(trim(v));
 }
 
 export function ifDefined<T, U>(

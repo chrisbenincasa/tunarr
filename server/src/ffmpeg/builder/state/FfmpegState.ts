@@ -1,18 +1,6 @@
+import { merge } from 'lodash-es';
 import { Nullable } from '../../../types/util';
-import { HardwareAccelerationMode } from '../types';
-
-export type FfmpegState = {
-  threadCount: Nullable<number>;
-  start: Nullable<string>;
-  finish: Nullable<string>;
-  mapMetadata: boolean;
-  // metadata
-  decoderHwAccelMode: HardwareAccelerationMode;
-  encoderHwAccelMode: HardwareAccelerationMode;
-  softwareScalingAlgorithm: string;
-  softwareDeinterlaceFilter: string;
-  vaapiDevice: Nullable<string>;
-};
+import { DataProps, HardwareAccelerationMode } from '../types';
 
 export const DefaultFfmpegState: FfmpegState = {
   threadCount: null,
@@ -25,3 +13,24 @@ export const DefaultFfmpegState: FfmpegState = {
   softwareDeinterlaceFilter: 'yadif=1',
   vaapiDevice: null,
 };
+
+export class FfmpegState {
+  threadCount: Nullable<number> = null;
+  start: Nullable<string> = null;
+  finish: Nullable<string> = null;
+  mapMetadata: boolean = false;
+  // metadata
+  decoderHwAccelMode: HardwareAccelerationMode = 'none';
+  encoderHwAccelMode: HardwareAccelerationMode = 'none';
+  softwareScalingAlgorithm: string = 'fast_bilinear';
+  softwareDeinterlaceFilter: string = 'yadif=1';
+  vaapiDevice: Nullable<string> = null;
+
+  private constructor(fields: Partial<DataProps<FfmpegState>> = {}) {
+    merge(this, fields);
+  }
+
+  static create(fields: Partial<DataProps<FfmpegState>> = {}) {
+    return new FfmpegState(fields);
+  }
+}

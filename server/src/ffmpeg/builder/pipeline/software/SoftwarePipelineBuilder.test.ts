@@ -12,16 +12,16 @@ describe('SoftwarePipelineBuilder', () => {
       bitDepth: 8,
     };
 
-    const videoStream = new VideoStream(
-      1,
-      'h264',
+    const videoStream = VideoStream.create({
+      index: 1,
+      codec: 'h264',
       pixelFormat,
-      new FrameSize(640, 480),
-      false,
-      null,
-    );
+      frameSize: FrameSize.create({ width: 640, height: 480 }),
+      isAnamorphic: false,
+      pixelAspectRatio: null,
+    });
 
-    const audioState = AudioState({
+    const audioState = AudioState.create({
       audioEncoder: 'ac3',
       audioChannels: 2,
       audioBitrate: 192,
@@ -32,14 +32,14 @@ describe('SoftwarePipelineBuilder', () => {
 
     const audioInputFile = new AudioInputFile(
       'audio',
-      [AudioStream({ index: 2, codec: 'flac', channels: 6 })],
+      [AudioStream.create({ index: 2, codec: 'flac', channels: 6 })],
       audioState,
     );
 
-    const target = new FrameSize(1280, 720);
+    const target = FrameSize.withDimensions(1280, 720);
 
     const frameState = FrameState({
-      scaledSize: new FrameSize(1920, 1080),
+      scaledSize: FrameSize.withDimensions(1920, 1080),
       paddedSize: target,
       isAnamorphic: false,
       realtime: true,

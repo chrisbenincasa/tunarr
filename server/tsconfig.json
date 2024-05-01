@@ -19,7 +19,7 @@
         "noUnusedParameters": true,
         // "noUncheckedIndexedAccess": true,
         "noImplicitAny": false,
-        "noImplicitThis": false,
+        "noImplicitThis": true,
         "strictNullChecks": true,
         "types": [
             "vitest/globals",

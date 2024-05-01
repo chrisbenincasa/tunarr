@@ -1,14 +1,7 @@
-import { Nullable } from '../../../types/util';
+import { AnyFunction } from 'ts-essentials';
+import { ExcludeByValueType, Nullable } from '../../../types/util';
 
-export type AudioState = {
-  audioEncoder: string;
-  audioChannels: number;
-  audioBitrate: Nullable<number>;
-  audioBufferSize: Nullable<number>;
-  audioSampleRate: Nullable<number>;
-  audioDuration: Nullable<number>;
-  audioVolume: Nullable<number>;
-};
+export type AudioStateFields = ExcludeByValueType<AudioState, AnyFunction>;
 
 const DefaultAudioState: AudioState = {
   audioEncoder: 'aac',
@@ -20,9 +13,30 @@ const DefaultAudioState: AudioState = {
   audioVolume: null,
 };
 
-export function AudioState(fields: Partial<AudioState> = {}): AudioState {
-  return {
-    ...DefaultAudioState,
-    ...fields,
-  };
+export class AudioState {
+  audioEncoder: string;
+  audioChannels: number;
+  audioBitrate: Nullable<number>;
+  audioBufferSize: Nullable<number>;
+  audioSampleRate: Nullable<number>;
+  audioDuration: Nullable<number>;
+  audioVolume: Nullable<number>;
+
+  private constructor(fields: Partial<AudioStateFields> = {}) {
+    const merged: AudioStateFields = {
+      ...DefaultAudioState,
+      ...fields,
+    };
+    this.audioEncoder = merged.audioEncoder;
+    this.audioChannels = merged.audioChannels;
+    this.audioBitrate = merged.audioBitrate;
+    this.audioBufferSize = merged.audioBufferSize;
+    this.audioSampleRate = merged.audioSampleRate;
+    this.audioDuration = merged.audioDuration;
+    this.audioVolume = merged.audioVolume;
+  }
+
+  static create(fields: Partial<AudioStateFields> = {}) {
+    return new AudioState(fields);
+  }
 }

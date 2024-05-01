@@ -1,6 +1,8 @@
 import { isNull } from 'lodash-es';
 import { Nullable } from '../../types/util';
 import { FrameSize, PixelFormat, StreamKind } from './types';
+import { AnyFunction } from 'ts-essentials';
+import { ExcludeByValueType } from '../../types/util';
 
 export type MediaStream = {
   index: number;
@@ -8,29 +10,60 @@ export type MediaStream = {
   kind: StreamKind;
 };
 
-export type AudioStream = MediaStream & {
-  kind: 'audio';
-  channels: number;
-};
+type MediaStreamFields<T extends MediaStream> = Omit<
+  ExcludeByValueType<T, AnyFunction>,
+  'kind'
+>;
 
-export function AudioStream(fields: Omit<AudioStream, 'kind'>): AudioStream {
-  return {
-    ...fields,
-    kind: 'audio',
-  };
+// Object types that are used to construct the classes
+// They derive their values from the class fields themselves,
+// taking care to remove any functions or unwanted parameters.
+// We use a separate fields object to get "named argument"
+// semantics with class construction, but still enabling us
+// to have hierarchies, methods, etc.
+type AudioStreamFields = MediaStreamFields<AudioStream>;
+type VideoStreamFields = MediaStreamFields<VideoStream>;
+
+export class AudioStream implements MediaStream {
+  readonly kind: StreamKind = 'audio';
+  index: number;
+  codec: string;
+  channels: number;
+
+  private constructor(fields: AudioStreamFields) {
+    this.index = fields.index;
+    this.codec = fields.codec;
+    this.channels = fields.channels;
+  }
+
+  static create(fields: AudioStreamFields) {
+    return new AudioStream(fields);
+  }
 }
 
 export class VideoStream implements MediaStream {
-  public readonly kind: StreamKind = 'video';
+  readonly kind: StreamKind = 'video';
+  index: number;
+  codec: string;
+  pixelFormat: Nullable<PixelFormat>;
+  frameSize: FrameSize;
+  isAnamorphic: boolean;
+  pixelAspectRatio: Nullable<`${number}:${number}`>;
 
-  constructor(
-    public index: number,
-    public codec: string,
-    public pixelFormat: Nullable<PixelFormat>,
-    public frameSize: FrameSize,
-    public isAnamorphic: boolean,
-    public pixelAspectRatio: Nullable<`${number}:${number}`>,
-  ) {}
+  private constructor(fields: VideoStreamFields) {
+    // Unfortunately TS is not 'smart' enough to let us
+    // dynamically apply these fields
+    this.index = fields.index;
+    this.codec = fields.codec;
+    this.pixelFormat = fields.pixelFormat;
+    this.frameSize = fields.frameSize;
+    this.isAnamorphic = fields.isAnamorphic;
+    this.pixelAspectRatio = fields.pixelAspectRatio;
+  }
+
+  static create(fields: VideoStreamFields) {
+    return new VideoStream(fields);
+  }
 
   squarePixelFrameSize(resolution: FrameSize): FrameSize {
     let width = this.frameSize.width;
@@ -49,9 +82,9 @@ export class VideoStream implements MediaStream {
     const heightPercent = resolution.height / height;
     const minPercent = Math.min(widthPercent, heightPercent);
 
-    return new FrameSize(
-      Math.floor(width * minPercent),
-      Math.floor(height * minPercent),
-    );
+    return FrameSize.create({
+      width: Math.floor(width * minPercent),
+      height: Math.floor(height * minPercent),
+    });
   }
 }
