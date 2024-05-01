@@ -1,4 +1,5 @@
 import { TupleToUnion } from '../../types/util';
+import { InputOption } from './options/InputOption';
 import { AudioStream, VideoStream } from './MediaStream';
 import { PipelineFilterStep } from './filter/PipelineFilterStep';
 import { AudioState } from './state/AudioState';
@@ -39,11 +40,6 @@ export interface PipelineStep {
   outputOptions(): string[];
   inputOptions(inputFile: InputFile): string[];
   nextState(currentState: FrameState): FrameState;
-}
-
-export interface InputOption extends PipelineStep {
-  //
-  appliesToInput(input: InputFile): boolean;
 }
 
 export class FrameSize {
