@@ -14,6 +14,7 @@ import {
   isTerminalItem,
 } from '@tunarr/types/plex';
 import { filter, isNaN, isNull, isUndefined } from 'lodash-es';
+import pluralize from 'pluralize';
 import React, {
   ForwardedRef,
   MouseEvent,
@@ -37,7 +38,6 @@ import {
   removePlexSelectedMedia,
 } from '../../store/programmingSelector/actions.ts';
 import { PlexSelectedMedia } from '../../store/programmingSelector/store.ts';
-import pluralize from 'pluralize';
 
 export interface PlexGridItemProps<T extends PlexMedia> {
   item: T;
@@ -149,7 +149,6 @@ export const PlexGridItem = forwardRef(
                     ? theme.palette.grey[800]
                     : theme.palette.grey[400]
                   : 'transparent',
-              transition: 'background-color 350ms linear !important',
               borderTopLeftRadius: '0.5em',
               borderTopRightRadius: '0.5em',
               ...style,
@@ -201,18 +200,15 @@ export const PlexGridItem = forwardRef(
               position="below"
               actionIcon={
                 <IconButton
-                  sx={{ color: 'black' }}
                   aria-label={`star ${item.title}`}
                   onClick={(event: MouseEvent<HTMLButtonElement>) =>
                     handleItem(event)
                   }
                 >
                   {selectedMediaIds.includes(item.guid) ? (
-                    <CheckCircle sx={{ color: darkMode ? '#fff' : '#000' }} />
+                    <CheckCircle />
                   ) : (
-                    <RadioButtonUnchecked
-                      sx={{ color: darkMode ? '#fff' : '#000' }}
-                    />
+                    <RadioButtonUnchecked />
                   )}
                 </IconButton>
               }

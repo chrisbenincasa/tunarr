@@ -80,19 +80,52 @@ export function Root({ children }: { children?: React.ReactNode }) {
     () =>
       createTheme({
         palette: {
-          background: {
-            default: darkMode ? '#212121' : '#f5f5f5',
-          },
-          mode: darkMode ? 'dark' : 'light',
-          primary: {
-            main: 'rgb(241, 93, 85)',
-          },
-          secondary: {
-            main: 'rgb(0, 125, 184)',
-          },
-          info: {
-            main: 'rgb(147, 168, 172)',
-          },
+          ...(darkMode
+            ? {
+                mode: 'dark',
+                primary: {
+                  main: '#008c93',
+                },
+                secondary: {
+                  main: '#004b79',
+                },
+                error: {
+                  main: '#770A0A',
+                },
+                warning: {
+                  main: '#FF9800',
+                },
+                info: {
+                  main: '#9EA1B3',
+                },
+                success: {
+                  main: '#0A772A',
+                },
+              }
+            : {
+                mode: 'light',
+                background: {
+                  default: '#f5fafc',
+                },
+                primary: {
+                  main: '#008c93',
+                },
+                secondary: {
+                  main: '#004b79',
+                },
+                error: {
+                  main: '#770A0A',
+                },
+                warning: {
+                  main: '#FF9800',
+                },
+                info: {
+                  main: '#9EA1B3',
+                },
+                success: {
+                  main: '#0A772A',
+                },
+              }),
         },
       }),
     [darkMode],
@@ -328,7 +361,7 @@ export function Root({ children }: { children?: React.ReactNode }) {
                       to={item.path}
                       key={item.name}
                       component={RouterLink}
-                      sx={{ display: 'inline-block', color: '#fff' }}
+                      sx={{ display: 'inline-block' }}
                     >
                       {item.icon}
                     </IconButton>
@@ -340,10 +373,6 @@ export function Root({ children }: { children?: React.ReactNode }) {
         <Box
           component="main"
           sx={{
-            backgroundColor: (theme) =>
-              theme.palette.mode === 'light'
-                ? theme.palette.grey[100]
-                : theme.palette.grey[900],
             flexGrow: 1,
             // height: '100vh', // Uncommenting this breaks any use of scrollTo()
             overflow: 'auto',

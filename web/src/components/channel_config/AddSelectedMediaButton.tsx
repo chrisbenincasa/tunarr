@@ -79,7 +79,7 @@ export default function AddSelectedMediaButton({
           {...(rest ?? {})}
           startIcon={
             isLoading ? (
-              <CircularProgress size="20px" sx={{ mx: 1, color: '#fff' }} />
+              <CircularProgress size="20px" sx={{ mx: 1, color: 'inherit' }} />
             ) : (
               <AddCircle />
             )

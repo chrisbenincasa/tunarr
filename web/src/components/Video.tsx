@@ -1,3 +1,4 @@
+import { PlayArrow, Replay } from '@mui/icons-material';
 import { Alert, Box } from '@mui/material';
 import Button from '@mui/material/Button';
 import Hls from 'hls.js';
@@ -6,7 +7,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useBlocker, useSearchParams } from 'react-router-dom';
 import { useFfmpegSettings } from '../hooks/settingsHooks.ts';
 import { useHls } from '../hooks/useHls.ts';
-import { PlayArrow, Replay } from '@mui/icons-material';
 import { useTunarrApi } from '../hooks/useTunarrApi.ts';
 import { useSettings } from '../store/settings/selectors.ts';
 
@@ -99,12 +99,16 @@ export default function Video({ channelId }: VideoProps) {
 
   const renderVideo = () => {
     if (!hlsSupported) {
-      return <Alert severity="error">HLS not supported in this browser!</Alert>;
+      return (
+        <Alert severity="error" sx={{ my: 2 }}>
+          HLS not supported in this browser!
+        </Alert>
+      );
     }
 
     if (!isNil(ffmpegSettings) && ffmpegSettings.audioEncoder === 'ac3') {
       return (
-        <Alert severity="warning">
+        <Alert severity="warning" sx={{ my: 2 }}>
           Tunarr is currently configured to use the AC3 audio encoder. This
           audio format is not supported by browsers. The resultant stream will
           likely not have audio or will not play at all.
