@@ -1,6 +1,8 @@
 import { ExpandLess, ExpandMore, GitHub, Home } from '@mui/icons-material';
 import ComputerIcon from '@mui/icons-material/Computer';
+import LinkIcon from '@mui/icons-material/Link';
 import LiveTvIcon from '@mui/icons-material/LiveTv';
+import MenuIcon from '@mui/icons-material/Menu';
 import PreviewIcon from '@mui/icons-material/Preview';
 import SettingsIcon from '@mui/icons-material/Settings';
 import SettingsRemoteIcon from '@mui/icons-material/SettingsRemote';
@@ -22,15 +24,24 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  Menu,
+  MenuItem,
+  MenuProps,
   Toolbar,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import Container from '@mui/material/Container';
 import CssBaseline from '@mui/material/CssBaseline';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
+import {
+  ThemeProvider,
+  alpha,
+  createTheme,
+  styled,
+} from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { isUndefined } from 'lodash-es';
+import { isNull, isUndefined } from 'lodash-es';
 import React, { ReactNode, useCallback, useMemo, useState } from 'react';
 import { Outlet, Link as RouterLink } from 'react-router-dom';
 import './App.css';
@@ -51,14 +62,68 @@ interface NavItem {
   icon?: ReactNode;
 }
 
+const StyledMenu = styled((props: MenuProps) => (
+  <Menu
+    elevation={0}
+    anchorOrigin={{
+      vertical: 'bottom',
+      horizontal: 'right',
+    }}
+    transformOrigin={{
+      vertical: 'top',
+      horizontal: 'right',
+    }}
+    {...props}
+  />
+))(({ theme }) => ({
+  '& .MuiPaper-root': {
+    borderRadius: 6,
+    marginTop: theme.spacing(1),
+    minWidth: 180,
+    color:
+      theme.palette.mode === 'light'
+        ? 'rgb(55, 65, 81)'
+        : theme.palette.grey[300],
+    boxShadow:
+      'rgb(255, 255, 255) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 0px 0px 1px, rgba(0, 0, 0, 0.1) 0px 10px 15px -3px, rgba(0, 0, 0, 0.05) 0px 4px 6px -2px',
+    '& .MuiMenu-list': {
+      padding: '4px 0',
+    },
+    '& .MuiMenuItem-root': {
+      '& .MuiSvgIcon-root': {
+        fontSize: 18,
+        color: theme.palette.text.secondary,
+        marginRight: theme.spacing(1.5),
+      },
+      '&:active': {
+        backgroundColor: alpha(
+          theme.palette.primary.main,
+          theme.palette.action.selectedOpacity,
+        ),
+      },
+    },
+  },
+}));
+
 export function Root({ children }: { children?: React.ReactNode }) {
   const [open, setOpen] = useState(false);
+
   const [sublistStates, setSublistStates] = useState<Record<string, boolean>>(
     {},
   );
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const mobileLinksOpen = !isNull(anchorEl);
 
   const toggleDrawerOpen = () => {
     setOpen(true);
+  };
+
+  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
   };
 
   const toggleDrawerClosed = () => {
@@ -186,6 +251,36 @@ export function Root({ children }: { children?: React.ReactNode }) {
     [open, showWelcome],
   );
 
+  const Links: NavItem[] = useMemo(
+    () => [
+      {
+        name: 'XMLTV',
+        path: `${settings.backendUri}/api/xmltv.xml`,
+        visible: true,
+        icon: <LinkIcon />,
+      },
+      {
+        name: 'M3U',
+        path: `${settings.backendUri}/api/channels.m3u`,
+        visible: true,
+        icon: <LinkIcon />,
+      },
+      {
+        name: 'GitHub',
+        path: 'https://github.com/chrisbenincasa/tunarr',
+        visible: true,
+        icon: <GitHub />,
+      },
+      {
+        name: 'Documentation',
+        path: 'https://tunarr.com/',
+        visible: true,
+        icon: <TextSnippetIcon />,
+      },
+    ],
+    [mobileLinksOpen],
+  );
+
   const handleOpenClick = useCallback((itemName: string) => {
     setSublistStates((prev) => ({
       ...prev,
@@ -235,31 +330,62 @@ export function Root({ children }: { children?: React.ReactNode }) {
             </Typography>
             <Box flexGrow={1}></Box>
             <DarkModeButton iconOnly />
-            <IconButton
-              href="https://github.com/chrisbenincasa/tunarr"
-              target="_blank"
-              color="inherit"
-            >
-              <GitHub />
-            </IconButton>
-            <Button
-              href={`${settings.backendUri}/api/xmltv.xml`}
-              target="_blank"
-              color="inherit"
-              startIcon={<TextSnippetIcon />}
-              sx={{ px: 1, ml: 0.5 }}
-            >
-              XMLTV
-            </Button>
-            <Button
-              href={`${settings.backendUri}/api/channels.m3u`}
-              target="_blank"
-              color="inherit"
-              startIcon={<TextSnippetIcon />}
-              sx={{ px: 1, ml: 0.5 }}
-            >
-              M3U
-            </Button>
+            {smallViewport ? (
+              <>
+                <Button onClick={handleClick} color="inherit">
+                  <MenuIcon />
+                </Button>
+                <StyledMenu
+                  MenuListProps={{
+                    'aria-labelledby': 'demo-customized-button',
+                  }}
+                  anchorEl={anchorEl}
+                  open={mobileLinksOpen}
+                  onClose={handleClose}
+                >
+                  {Links.map((link) => (
+                    <MenuItem
+                      disableRipple
+                      component={RouterLink}
+                      to={link.path}
+                      target="_blank"
+                      color="inherit"
+                      sx={{ px: 1, ml: 0.5 }}
+                      key={`mobile-${link.name}`}
+                      divider={link.name === 'M3U'}
+                    >
+                      {link.icon} {link.name}
+                    </MenuItem>
+                  ))}
+                </StyledMenu>
+              </>
+            ) : (
+              Links.map((link) => {
+                return link.name === 'XMLTV' || link.name === 'M3U' ? (
+                  <Button
+                    href={link.path}
+                    target="_blank"
+                    color="inherit"
+                    startIcon={link.icon}
+                    sx={{ px: 1, ml: 0.5 }}
+                    key={link.name}
+                  >
+                    {link.name}
+                  </Button>
+                ) : (
+                  <Tooltip title={link.name}>
+                    <IconButton
+                      href={link.path}
+                      target="_blank"
+                      color="inherit"
+                      key={link.name}
+                    >
+                      {link.icon}
+                    </IconButton>
+                  </Tooltip>
+                );
+              })
+            )}
           </Toolbar>
         </AppBar>
         {!smallViewport ? (
@@ -362,6 +488,7 @@ export function Root({ children }: { children?: React.ReactNode }) {
                       key={item.name}
                       component={RouterLink}
                       sx={{ display: 'inline-block' }}
+                      color="inherit"
                     >
                       {item.icon}
                     </IconButton>

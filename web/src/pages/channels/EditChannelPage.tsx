@@ -255,7 +255,12 @@ export default function EditChannelPage({ isNew, initialTab }: Props) {
           </Typography>
           <Paper sx={{ p: 2 }}>
             <Box sx={{ borderColor: 'primary', borderBottom: 1 }}>
-              <Tabs value={currentTab} onChange={handleChange}>
+              <Tabs
+                value={currentTab}
+                onChange={handleChange}
+                variant="scrollable"
+                allowScrollButtonsMobile
+              >
                 {tabs.map(renderTab)}
               </Tabs>
             </Box>
