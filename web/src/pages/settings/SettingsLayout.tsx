@@ -40,7 +40,11 @@ export default function SettingsLayout() {
       </Typography>
       <Paper sx={{ p: 2 }}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs value={currentTab}>
+          <Tabs
+            value={currentTab}
+            variant="scrollable"
+            allowScrollButtonsMobile
+          >
             <Tab
               label="General"
               value="/settings/general"

@@ -596,6 +596,8 @@ export default function PlexProgrammingSelector() {
               value={tabValue}
               onChange={handleChange}
               aria-label="Plex media selector tabs"
+              variant="scrollable"
+              allowScrollButtonsMobile
             >
               <Tab label="Library" {...a11yProps(0)} />
               {!isUndefined(collectionsData) &&

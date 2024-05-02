@@ -34,7 +34,7 @@ export default function NoChannelsCreated() {
             component={RouterLink}
             to="/channels/new"
           >
-            Create your First Channel Now!
+            Create a Channel
           </Button>
         </Box>
       </PaddedPaper>
