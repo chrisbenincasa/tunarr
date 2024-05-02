@@ -8,6 +8,7 @@ import {
   Libx265Encoder,
   Mpeg2VideoEncoder,
 } from './VideoEncoders';
+import { Nullable } from '../../../types/util';
 
 export class EncoderFactory {
   static getSoftwareEncoder(videoStream: VideoStream): VideoEncoder {
@@ -22,6 +23,15 @@ export class EncoderFactory {
         return CopyVideoEncoder.create();
       default:
         return ImplicitVideoEncoder.create();
+    }
+  }
+
+  static getNvidiaEncoder(videoStream: VideoStream): Nullable<VideoEncoder> {
+    switch (videoStream.codec) {
+      case VideoFormats.Hevc:
+      case VideoFormats.H264:
+      default:
+        return null;
     }
   }
 }

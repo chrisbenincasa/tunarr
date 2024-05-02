@@ -53,6 +53,7 @@ export type PipelineVideoFunctionArgs = {
   desiredState: FrameState;
   pipelineSteps: PipelineStep[];
   filterChain: FilterChain;
+  decoder: Nullable<Decoder>;
 };
 
 export type PipelineAudioFunctionArgs = {

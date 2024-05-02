@@ -1,7 +1,7 @@
-import { isNull } from 'lodash-es';
+import { isNull, merge } from 'lodash-es';
 import { Nullable } from '../../types/util';
 import { FrameSize, PixelFormat, StreamKind } from './types';
-import { AnyFunction } from 'ts-essentials';
+import { AnyFunction, MarkOptional } from 'ts-essentials';
 import { ExcludeByValueType } from '../../types/util';
 
 export type MediaStream = {
@@ -41,6 +41,8 @@ export class AudioStream implements MediaStream {
   }
 }
 
+export type VideoInputKind = 'video' | 'stillimage' | 'filter';
+
 export class VideoStream implements MediaStream {
   readonly kind: StreamKind = 'video';
   index: number;
@@ -49,19 +51,17 @@ export class VideoStream implements MediaStream {
   frameSize: FrameSize;
   isAnamorphic: boolean;
   pixelAspectRatio: Nullable<`${number}:${number}`>;
+  inputKind: VideoInputKind = 'video';
 
-  private constructor(fields: VideoStreamFields) {
+  private constructor(fields: MarkOptional<VideoStreamFields, 'inputKind'>) {
     // Unfortunately TS is not 'smart' enough to let us
-    // dynamically apply these fields
-    this.index = fields.index;
-    this.codec = fields.codec;
-    this.pixelFormat = fields.pixelFormat;
-    this.frameSize = fields.frameSize;
-    this.isAnamorphic = fields.isAnamorphic;
-    this.pixelAspectRatio = fields.pixelAspectRatio;
+    // dynamically apply these fields. This works... mainly
+    // because we derive the fields for the input type right
+    // from the class itself.
+    merge(this, fields);
   }
 
-  static create(fields: VideoStreamFields) {
+  static create(fields: MarkOptional<VideoStreamFields, 'inputKind'>) {
     return new VideoStream(fields);
   }
 

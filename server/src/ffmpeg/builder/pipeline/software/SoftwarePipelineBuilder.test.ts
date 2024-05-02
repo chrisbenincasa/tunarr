@@ -45,7 +45,5 @@ describe('SoftwarePipelineBuilder', () => {
       realtime: true,
       videoFormat: VideoFormats.Hevc,
     });
-
-    console.log(audioState, frameState);
   });
 });

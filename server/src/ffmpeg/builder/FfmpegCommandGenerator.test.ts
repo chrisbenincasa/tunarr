@@ -22,12 +22,14 @@ describe('FfmpegCommandGenerator', () => {
 
     const videoStream = VideoStream.create({
       index: 1,
-      codec: 'h264',
+      codec: VideoFormats.H264,
       pixelFormat,
       frameSize: FrameSize.create({ width: 640, height: 480 }),
       isAnamorphic: false,
       pixelAspectRatio: null,
     });
+
+    console.log(videoStream);
 
     const audioState = AudioState.create({
       audioEncoder: 'ac3',

@@ -22,11 +22,7 @@ export class ScaleFilter extends FilterBase {
   }
 
   static create(currentState: FrameState, args: PipelineVideoFunctionArgs) {
-    const filter = new ScaleFilter(currentState, args);
-    return {
-      nextState: filter.nextState(currentState),
-      filter,
-    };
+    return new ScaleFilter(currentState, args);
   }
 
   static generateFilter(

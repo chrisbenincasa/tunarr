@@ -4,6 +4,7 @@ import {
   HardwareAccelerationMode,
   VideoInputFile,
 } from '../types';
+import { NvidiaPipelineBuilder } from './hardware/NvidiaPipelineBuilder';
 import { SoftwarePipelineBuilder } from './software/SoftwarePipelineBuilder';
 
 export class PipelineBuilderFactory {
@@ -14,6 +15,7 @@ export class PipelineBuilderFactory {
   ) {
     switch (hardwareAccelerationMode) {
       case 'nvenc':
+        return new NvidiaPipelineBuilder(videoInputFile, audioInputFile);
       case 'qsv':
         throw new Error('not yet implemented');
       default:

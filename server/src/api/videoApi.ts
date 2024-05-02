@@ -367,6 +367,10 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
       return res.status(404).send("Channel doesn't exist");
     }
 
+    const videoPath =
+      path == 'video'
+        ? `${req.protocol}://${req.hostname}/channels/${channelNum}/video`
+        : `${req.protocol}://${req.hostname}/${path}?channel=${channelNum}`;
     const content = [
       '#EXTM3U',
       '#EXT-X-VERSION:3',
@@ -374,7 +378,7 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
       '#EXT-X-ALLOW-CACHE:YES',
       '#EXT-X-TARGETDURATION:60',
       '#EXT-X-PLAYLIST-TYPE:VOD',
-      `${req.protocol}://${req.hostname}/channels/${channelNum}/${path}`,
+      videoPath,
     ];
 
     return res

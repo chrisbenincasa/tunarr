@@ -17,7 +17,8 @@ export abstract class BaseDecoder implements Decoder {
     return input.type === 'video';
   }
 
-  inputOptions(): string[] {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  inputOptions(_unusedInputFile: InputFile): string[] {
     return ['-c:v', this.name];
   }
 

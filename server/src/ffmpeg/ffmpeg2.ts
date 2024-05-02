@@ -3,25 +3,18 @@ import child_process, { ChildProcessByStdio } from 'child_process';
 import events from 'events';
 import { isEmpty, isNil, isString, isUndefined, merge, round } from 'lodash-es';
 import path from 'path';
-import stream from 'stream';
 import { DeepReadonly, DeepRequired } from 'ts-essentials';
 import { serverOptions } from '../globals.js';
+import createLogger, { createFfmpegProcessLogger } from '../logger.js';
 import { VideoStreamDetails } from '../stream/plex/plexTranscoder.js';
 import { StreamContextChannel } from '../stream/types.js';
-import { TypedEventEmitter } from '../types/eventEmitter.js';
 import { Maybe } from '../types/util.js';
-import { isNonEmptyString } from '../util/index.js';
-import { Logger, LoggerFactory } from '../util/logging/LoggerFactory.js';
-import { FfmpegCommandGenerator } from './builder/FfmpegCommandGenerator.js';
-import { AudioStream, VideoStream } from './builder/MediaStream.js';
-import { VideoFormats } from './builder/constants.js';
-import { PipelineBuilderFactory } from './builder/pipeline/PipelineBuilderFactory.js';
-import { AudioState } from './builder/state/AudioState.js';
-import { FfmpegState } from './builder/state/FfmpegState.js';
-import { FrameState } from './builder/state/FrameState.js';
-import { AudioInputFile, FrameSize, VideoInputFile } from './builder/types.js';
+import { TypedEventEmitter } from '../types/eventEmitter.js';
+import stream, { Writable } from 'stream';
 
 const spawn = child_process.spawn;
+
+const logger = createLogger(import.meta);
 
 const MAXIMUM_ERROR_DURATION_MS = 60000;
 const REALLY_RIDICULOUSLY_HIGH_FPS_FOR_TUNARRS_USECASE = 120;
@@ -54,7 +47,7 @@ type DashOptions = {
   fragType: 'auto' | 'every_frame' | 'duration' | 'pframes';
 };
 
-export type ConcatOptions = {
+type ConcatOptions = {
   enableHls: boolean;
   enableDash: boolean;
   numThreads: number;
@@ -85,7 +78,6 @@ const defaultConcatOptions: DeepRequired<ConcatOptions> = {
 };
 
 export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<FfmpegEvents>) {
-  private logger: Logger;
   private opts: DeepReadonly<FfmpegSettings>;
   private errorPicturePath: string;
   private ffmpegName: string;
@@ -110,10 +102,6 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     channel: StreamContextChannel,
   ) {
     super();
-    this.logger = LoggerFactory.child({
-      caller: import.meta,
-      channel: channel.uuid,
-    });
     this.opts = opts;
     this.errorPicturePath = `http://localhost:${
       serverOptions().port
@@ -180,7 +168,6 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
   ) {
     this.ffmpegName = 'Concat FFMPEG';
     const ffmpegArgs: string[] = [
-      '-hide_banner',
       `-threads`,
       // (opts.numThreads ?? defaultConcatOptions.numThreads).toFixed(),
       '1',
@@ -195,62 +182,24 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       '-1',
       `-protocol_whitelist`,
       `file,http,tcp,https,tcp,tls`,
-      // '-copyts',
       `-probesize`,
       '32',
       `-i`,
       streamUrl,
     ];
 
-    ffmpegArgs.push(
-      '-flags',
-      'cgop',
-      '-sc_threshold',
-      '0',
-      '-movflags',
-      '+faststart',
-    );
-
     if (!this.audioOnly) {
       ffmpegArgs.push(`-map`, `0:v`);
-    }
-
-    const audioOutputOpts = [
-      '-b:a',
-      `${this.opts.audioBitrate}k`,
-      '-maxrate:a',
-      `${this.opts.audioBitrate}k`,
-      '-bufsize:a',
-      `${this.opts.audioBufferSize}k`,
-      // This _seems_ to quell issues with non-monotonous DTS coming
-      // from the input audio stream
-      '-af',
-      'aselect=concatdec_select,aresample=async=1',
-    ];
-
-    if (this.audioChannelsSampleRate) {
-      audioOutputOpts.push(
-        '-ac',
-        `${this.opts.audioChannels}`,
-        '-ar',
-        `${this.opts.audioSampleRate}k`,
-      );
     }
 
     ffmpegArgs.push(
       `-map`,
       `0:a`,
-      '-c:v',
-      this.opts.videoEncoder,
-      '-c:a',
-      this.opts.audioEncoder,
-      `-b:v`,
-      `${this.opts.videoBitrate}k`,
-      `-maxrate:v`,
-      `${this.opts.videoBitrate}k`,
-      `-bufsize:v`,
-      `${this.opts.videoBufferSize}k`,
-      ...audioOutputOpts,
+      // We need to re-encode the streams for DASH
+      ...(opts.enableDash
+        ? ['-c:v', this.opts.videoEncoder, '-c:a', this.opts.audioEncoder]
+        : [`-c`]),
+      `copy`,
       `-muxdelay`,
       this.opts.concatMuxDelay.toString(),
       `-muxpreload`,
@@ -315,96 +264,21 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
         'true',
       );
     } else {
-      ffmpegArgs.push(
-        `-f`,
-        `mpegts`,
-        '-mpegts_flags',
-        '+initial_discontinuity',
-        `pipe:1`,
-      );
+      ffmpegArgs.push(`-f`, `mpegts`, `pipe:1`);
     }
 
-    return this.startProcess(ffmpegArgs, this.opts.enableLogging);
+    return this.startProcess(ffmpegArgs, opts.logOutput ?? false);
   }
 
   spawnStream(
     streamUrl: string,
-    streamStats: VideoStreamDetails,
+    streamStats: Maybe<VideoStreamDetails>,
     startTime: Maybe<number>,
     duration: Maybe<string>,
     enableIcon: Maybe<Watermark>,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _: string, //LineupItem[type]
   ) {
-    const stream = VideoStream.create({
-      index: 0, // stream index 0 on input index 0
-      codec:
-        this.opts.normalizeVideoCodec &&
-        isDifferentVideoCodec(streamStats.videoCodec, this.opts.videoEncoder)
-          ? streamStats.videoCodec ?? ''
-          : VideoFormats.Copy,
-      pixelFormat: null, // Do we know this?
-      frameSize: FrameSize.create({
-        width: streamStats.videoWidth,
-        height: streamStats.videoHeight,
-      }),
-      isAnamorphic: streamStats.anamorphic ?? false,
-      pixelAspectRatio:
-        !isUndefined(streamStats.pixelP) && !isUndefined(streamStats.pixelQ)
-          ? `${streamStats.pixelP}:${streamStats.pixelQ}`
-          : null,
-      inputKind: 'video',
-    });
-
-    const videoInput = new VideoInputFile(streamUrl, [stream]);
-    const audioInput = new AudioInputFile(
-      streamUrl,
-      [
-        AudioStream.create({
-          index: 1, // stream index 1 on input index 0
-          codec: streamStats.audioCodec ?? '',
-          channels: streamStats.audioChannels ?? 2,
-        }),
-      ],
-      AudioState.create({
-        audioEncoder: this.opts.audioEncoder,
-        audioBitrate: this.opts.audioBitrate,
-        audioBufferSize: this.opts.audioBufferSize,
-        audioChannels: this.opts.audioChannels,
-        audioVolume: this.opts.audioVolumePercent,
-        audioSampleRate: this.opts.audioSampleRate,
-      }),
-    );
-
-    const builder = PipelineBuilderFactory.getBuilder(
-      'nvenc',
-      videoInput,
-      audioInput,
-    );
-
-    const args = new FfmpegCommandGenerator().generateArgs(
-      videoInput,
-      builder.build(
-        FfmpegState.create({
-          start: startTime?.toString(),
-          threadCount: this.opts.numThreads,
-          softwareScalingAlgorithm: this.opts.scalingAlgorithm,
-        }),
-        FrameState({
-          videoFormat: 'mpegts',
-          scaledSize: FrameSize.create({
-            width: this.wantedW,
-            height: this.wantedH,
-          }),
-          paddedSize: FrameSize.create({
-            width: this.wantedW,
-            height: this.wantedH,
-          }),
-          isAnamorphic: false,
-        }),
-      ),
-    );
-
-    console.log(args.join(' '));
-
     return this.spawn(
       streamUrl,
       streamStats,
@@ -417,7 +291,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
 
   spawnError(title: string, subtitle?: string, duration?: number) {
     if (!this.opts.enableTranscoding || this.opts.errorScreen == 'kill') {
-      this.logger.error('error: ' + title + ' ; ' + subtitle);
+      logger.error('error: ' + title + ' ; ' + subtitle);
       this.emit('error', {
         code: -1,
         cmd: `error stream disabled. ${title} ${subtitle}`,
@@ -426,7 +300,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     }
     if (isUndefined(duration)) {
       //set a place-holder duration
-      this.logger.warn('No duration found for error stream, using placeholder');
+      logger.warn('No duration found for error stream, using placeholder');
       duration = MAXIMUM_ERROR_DURATION_MS;
     }
     duration = Math.min(MAXIMUM_ERROR_DURATION_MS, duration);
@@ -447,7 +321,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
 
   spawnOffline(duration: number) {
     if (!this.opts.enableTranscoding) {
-      this.logger.info(
+      logger.info(
         'The channel has an offline period scheduled for this time slot. FFMPEG transcoding is disabled, so it is not possible to render an offline screen. Ending the stream instead',
       );
       this.emit('end', { code: -1, cmd: `offline stream disabled.` });
@@ -459,6 +333,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       videoHeight: this.wantedH,
       duration: duration,
     };
+
     return this.spawn(
       { errorTitle: 'offline' },
       streamStats,
@@ -478,17 +353,17 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     watermark: Maybe<Watermark>,
   ) {
     const ffmpegArgs: string[] = [
-      '-hide_banner',
       `-threads`,
       this.opts.numThreads.toString(),
       `-fflags`,
       `+genpts+discardcorrupt+igndts`,
-      '-loglevel',
-      'error',
     ];
     let useStillImageTune = false;
 
-    if (limitRead && (!this.audioOnly || isNonEmptyString(streamUrl))) {
+    if (
+      limitRead === true &&
+      (this.audioOnly !== true || isString(streamUrl))
+    ) {
       ffmpegArgs.push(`-re`);
     }
 
@@ -506,7 +381,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     let audioFile = -1;
     let videoFile = -1;
     let overlayFile = -1;
-    if (isNonEmptyString(streamUrl)) {
+    if (isString(streamUrl) && !isEmpty(streamUrl)) {
       ffmpegArgs.push(`-i`, streamUrl);
       videoFile = inputFiles++;
       audioFile = videoFile;
@@ -631,10 +506,10 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
         }
       }
       const durstr = `duration=${streamStats?.duration}ms`;
-      if (!isNonEmptyString(streamUrl)) {
+      if (!isString(streamUrl)) {
         // silent
-        audioComplex = `;aevalsrc=0:${durstr}:s=48000,aresample=async=1:first_pts=0[audioy]`;
-        if (streamUrl.errorTitle === 'offline') {
+        audioComplex = `;aevalsrc=0:${durstr}[audioy]`;
+        if (streamUrl.errorTitle == 'offline') {
           if (
             !isUndefined(this.channel.offlineSoundtrack) &&
             !isEmpty(this.channel.offlineSoundtrack)
@@ -645,16 +520,16 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
             audioComplex = `;[${inputFiles++}:a]aloop=loop=-1:size=2147483647[audioy]`;
           }
         } else if (
-          this.opts.errorAudio === 'whitenoise' ||
-          (!(this.opts.errorAudio === 'sine') && this.audioOnly) //when it's in audio-only mode, silent stream is confusing for errors.
+          this.opts.errorAudio == 'whitenoise' ||
+          (!(this.opts.errorAudio == 'sine') && this.audioOnly === true) //when it's in audio-only mode, silent stream is confusing for errors.
         ) {
           audioComplex = `;aevalsrc=random(0):${durstr}[audioy]`;
           this.volumePercent = Math.min(70, this.volumePercent);
-        } else if (this.opts.errorAudio === 'sine') {
-          audioComplex = `;sine=f=440[audioy]`;
+        } else if (this.opts.errorAudio == 'sine') {
+          audioComplex = `;sine=f=440:${durstr}[audioy]`;
           this.volumePercent = Math.min(70, this.volumePercent);
         }
-        if (!this.audioOnly) {
+        if (this.audioOnly !== true) {
           ffmpegArgs.push('-pix_fmt', 'yuv420p');
         }
         audioComplex += ';[audioy]arealtime[audiox]';
@@ -679,8 +554,8 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       !streamStats?.audioOnly &&
       ((this.ensureResolution &&
         (streamStats?.anamorphic ||
-          iW !== this.wantedW ||
-          iH !== this.wantedH)) ||
+          iW != this.wantedW ||
+          iH != this.wantedH)) ||
         isLargerResolution(iW, iH, this.wantedW, this.wantedH))
     ) {
       //scaler stuff, need to change the size of the video and also add bars
@@ -702,14 +577,14 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
         cw = hypotheticalW2;
         ch = hypotheticalH2;
       }
-      videoComplex += `;${currentVideo}scale=${cw}:${ch}:flags=${algo},format=yuv420p[scaled]`;
+      videoComplex += `;${currentVideo}scale=${cw}:${ch}:flags=${algo}[scaled]`;
       currentVideo = 'scaled';
       resizeMsg = `Stretch to ${cw} x ${ch}. To fit target resolution of ${this.wantedW} x ${this.wantedH}.`;
       if (this.ensureResolution) {
-        this.logger.info(
+        logger.info(
           `First stretch to ${cw} x ${ch}. Then add padding to make it ${this.wantedW} x ${this.wantedH} `,
         );
-      } else if (cw % 2 === 1 || ch % 2 === 1) {
+      } else if (cw % 2 == 1 || ch % 2 == 1) {
         //we need to add padding so that the video dimensions are even
         const xw = cw + (cw % 2);
         const xh = ch + (ch % 2);
@@ -719,7 +594,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       } else {
         resizeMsg = `Stretch to ${cw} x ${ch}. To fit target resolution of ${this.wantedW} x ${this.wantedH}.`;
       }
-      if (this.wantedW !== cw || this.wantedH !== ch) {
+      if (this.wantedW != cw || this.wantedH != ch) {
         // also add black bars, because in this case it HAS to be this resolution
         videoComplex += `;[${currentVideo}]pad=${this.wantedW}:${this.wantedH}:(ow-iw)/2:(oh-ih)/2[blackpadded]`;
         currentVideo = 'blackpadded';
@@ -728,7 +603,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       if (!this.ensureResolution && beforeSizeChange != '[fpchange]') {
         name = 'minsiz';
       }
-      videoComplex += `;[${currentVideo}]setsar=1,format=yuv420p[${name}]`;
+      videoComplex += `;[${currentVideo}]setsar=1[${name}]`;
       currentVideo = `[${name}]`;
       iW = this.wantedW;
       iH = this.wantedH;
@@ -780,71 +655,120 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       currentAudio = '[boosted]';
     }
 
+    let transcodeAudio = false;
+
     // Align audio is just the apad filter applied to audio stream
-    if (this.apad && !this.audioOnly) {
+    if (this.apad && this.audioOnly !== true) {
       //it doesn't make much sense to pad audio when there is no video
-      const filters = [
-        'aresample=48000',
-        'aresample=async=1:first_pts=0',
-        `apad=whole_dur=${streamStats?.duration}ms`,
-      ].join(',');
-      audioComplex += `;${currentAudio}${filters}[padded]`;
+      audioComplex += `;${currentAudio}apad=whole_dur=${streamStats?.duration}ms[padded]`;
       currentAudio = '[padded]';
+    } else if (this.audioChannelsSampleRate) {
+      //TODO: Do not set this to true if audio channels and sample rate are already good
+      transcodeAudio = true;
     }
 
+    // If no filters have been applied, then the stream will still be
+    // [video] , in that case, we do not actually add the video stuff to
+    // filter_complex and this allows us to avoid transcoding.
+    let transcodeVideo =
+      this.opts.normalizeVideoCodec &&
+      isDifferentVideoCodec(streamStats?.videoCodec, this.opts.videoEncoder);
+    transcodeAudio =
+      this.opts.normalizeAudioCodec &&
+      isDifferentAudioCodec(streamStats?.audioCodec, this.opts.audioEncoder);
     let filterComplex = '';
-    if (currentVideo == '[minsiz]') {
+    if (!transcodeVideo && currentVideo == '[minsiz]') {
       //do not change resolution if no other transcoding will be done
       // and resolution normalization is off
       currentVideo = beforeSizeChange;
     } else {
-      this.logger.debug(resizeMsg);
+      logger.debug(resizeMsg);
     }
     if (this.audioOnly !== true) {
-      if (currentVideo !== '[video]') {
+      if (currentVideo != '[video]') {
+        transcodeVideo = true; //this is useful so that it adds some lines below
         filterComplex += videoComplex;
       } else {
         currentVideo = `${videoFile}:${videoIndex}`;
       }
     }
     // same with audio:
-    if (currentAudio !== '[audio]') {
+    if (currentAudio != '[audio]') {
+      transcodeAudio = true;
       filterComplex += audioComplex;
     } else {
       currentAudio = `${audioFile}:${audioIndex}`;
     }
 
     //If there is a filter complex, add it.
-    if (isNonEmptyString(filterComplex)) {
+    if (filterComplex != '') {
       ffmpegArgs.push(`-filter_complex`, filterComplex.slice(1));
       if (this.alignAudio) {
         ffmpegArgs.push('-shortest');
       }
     }
-
-    if (!this.audioOnly) {
+    if (this.audioOnly !== true) {
       ffmpegArgs.push(
         '-map',
         currentVideo,
         `-c:v`,
-        'rawvideo',
+        transcodeVideo ? this.opts.videoEncoder : 'copy',
         `-sc_threshold`,
-        `0`,
-        '-video_track_timescale',
-        '90000',
+        `1000000000`,
       );
       if (useStillImageTune) {
         ffmpegArgs.push('-tune', 'stillimage');
       }
     }
-
+    ffmpegArgs.push('-map', currentAudio, `-flags`, `cgop+ilme`);
+    if (transcodeVideo && this.audioOnly !== true) {
+      // add the video encoder flags
+      ffmpegArgs.push(
+        `-b:v`,
+        `${this.opts.videoBitrate}k`,
+        `-maxrate:v`,
+        `${this.opts.videoBitrate}k`,
+        `-bufsize:v`,
+        `${this.opts.videoBufferSize}k`,
+      );
+    }
+    if (transcodeAudio) {
+      // add the audio encoder flags
+      ffmpegArgs.push(
+        `-b:a`,
+        `${this.opts.audioBitrate}k`,
+        `-maxrate:a`,
+        `${this.opts.audioBitrate}k`,
+        `-bufsize:a`,
+        `${this.opts.audioBufferSize}k`,
+      );
+      if (this.audioChannelsSampleRate) {
+        ffmpegArgs.push(
+          `-ac`,
+          `${this.opts.audioChannels}`,
+          `-ar`,
+          `${this.opts.audioSampleRate}k`,
+        );
+      }
+    }
+    if (transcodeAudio && transcodeVideo) {
+      logger.info('Video and Audio are being transcoded by ffmpeg');
+    } else if (transcodeVideo) {
+      logger.info(
+        'Video is being transcoded by ffmpeg. Audio is being copied.',
+      );
+    } else if (transcodeAudio) {
+      logger.info(
+        'Audio is being transcoded by ffmpeg. Video is being copied.',
+      );
+    } else {
+      logger.info(
+        'Video and Audio are being copied. ffmpeg is not transcoding.',
+      );
+    }
     ffmpegArgs.push(
-      '-map',
-      currentAudio,
-      '-flags',
-      'cgop+ilme',
       `-c:a`,
-      'pcm_s16le',
+      transcodeAudio ? this.opts.audioEncoder : 'copy',
       '-map_metadata',
       '-1',
       '-movflags',
@@ -867,15 +791,15 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       ffmpegArgs.push(`-t`, `${duration}`);
     }
 
-    ffmpegArgs.push(`-f`, 'matroska', `pipe:1`);
+    ffmpegArgs.push(`-f`, `mpegts`, `pipe:1`);
 
     const doLogs = this.opts.enableLogging;
     if (this.hasBeenKilled) {
-      this.logger.info('ffmpeg preemptively killed');
+      logger.info('ffmpeg preemptively killed');
       return;
     }
 
-    this.logger.debug(`Starting ffmpeg with args: "${ffmpegArgs.join(' ')}"`);
+    logger.debug(`Starting ffmpeg with args: "${ffmpegArgs.join(' ')}"`);
 
     this.ffmpeg = spawn(this.ffmpegPath, ffmpegArgs, {
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -887,25 +811,25 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     }
 
     // Hide this behind a 'flag' for now...
-    // if (process.env.DEBUG_FFMPEG) {
-    //   const ffmpegLogger = createFfmpegProcessLogger(
-    //     `${this.channel.uuid}_${this.ffmpegName}`,
-    //   );
-    //   this.ffmpeg.stderr.on('end', () => ffmpegthis.Logger.close());
-    //   this.ffmpeg.stderr.pipe(
-    //     new Writable({
-    //       write(chunk, _, callback) {
-    //         if (chunk instanceof Buffer) {
-    //           ffmpegthis.Logger.info(chunk.toString());
-    //         }
-    //         callback();
-    //       },
-    //     }),
-    //   );
-    // }
+    if (process.env.DEBUG_FFMPEG) {
+      const ffmpegLogger = createFfmpegProcessLogger(
+        `${this.channel.uuid}_${this.ffmpegName}`,
+      );
+      this.ffmpeg.stderr.on('end', () => ffmpegLogger.close());
+      this.ffmpeg.stderr.pipe(
+        new Writable({
+          write(chunk, _, callback) {
+            if (chunk instanceof Buffer) {
+              ffmpegLogger.info(chunk.toString());
+            }
+            callback();
+          },
+        }),
+      );
+    }
 
     if (this.hasBeenKilled) {
-      this.logger.info('Send SIGKILL to ffmpeg');
+      logger.info('Send SIGKILL to ffmpeg');
       this.ffmpeg.kill('SIGKILL');
       return;
     }
@@ -913,7 +837,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     this.ffmpegName = 'Stream FFMPEG';
 
     this.ffmpeg.on('error', (code, signal) => {
-      this.logger.debug(
+      logger.debug(
         `${this.ffmpegName} received error event: ${code}, ${signal}`,
       );
     });
@@ -921,24 +845,21 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     this.ffmpeg.on('exit', (code: number, signal) => {
       if (code === null) {
         if (!this.hasBeenKilled) {
-          this.logger.warn(
-            `${this.ffmpegName} exited due to signal: ${signal}`,
-            {
-              cmd: `${this.opts.ffmpegExecutablePath} ${ffmpegArgs.join(' ')}`,
-            },
-          );
+          logger.warn(`${this.ffmpegName} exited due to signal: ${signal}`, {
+            cmd: `${this.opts.ffmpegExecutablePath} ${ffmpegArgs.join(' ')}`,
+          });
         } else {
-          this.logger.debug(
+          logger.debug(
             `${this.ffmpegName} exited due to signal: ${signal} as expected.`,
           );
         }
         this.emit('close', code);
       } else if (code === 0) {
-        this.logger.debug(`${this.ffmpegName} exited normally.`);
+        logger.debug(`${this.ffmpegName} exited normally.`);
         this.emit('end');
       } else if (code === 255) {
         if (this.hasBeenKilled) {
-          this.logger.debug(`${this.ffmpegName} finished with code 255.`);
+          logger.debug(`${this.ffmpegName} finished with code 255.`);
           this.emit('close', code);
           return;
         }
@@ -948,10 +869,10 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
             cmd: `${this.opts.ffmpegExecutablePath} ${ffmpegArgs.join(' ')}`,
           });
         }
-        this.logger.warn(`${this.ffmpegName} exited with code 255.`);
+        logger.warn(`${this.ffmpegName} exited with code 255.`);
         this.emit('close', code);
       } else {
-        this.logger.error(`${this.ffmpegName} exited with code ${code}.`);
+        logger.error(`${this.ffmpegName} exited with code ${code}.`);
         this.emit('error', {
           code: code,
           cmd: `${this.opts.ffmpegExecutablePath} ${ffmpegArgs.join(' ')}`,
@@ -963,7 +884,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
   }
 
   private startProcess(ffmpegArgs: string[], enableLogging: boolean) {
-    this.logger.debug(
+    logger.debug(
       'Starting ffmpeg concat process with args: ' + ffmpegArgs.join(' '),
     );
 
@@ -978,25 +899,25 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     }
 
     // Hide this behind a 'flag' for now...
-    // if (process.env.DEBUG_FFMPEG) {
-    //   const ffmpegLogger = createFfmpegProcessLogger(
-    //     `${this.channel.uuid}_${this.ffmpegName}`,
-    //   );
-    //   this.ffmpeg.stderr.on('end', () => ffmpegthis.Logger.close());
-    //   this.ffmpeg.stderr.pipe(
-    //     new Writable({
-    //       write(chunk, _, callback) {
-    //         if (chunk instanceof Buffer) {
-    //           ffmpegthis.Logger.info(chunk.toString());
-    //         }
-    //         callback();
-    //       },
-    //     }),
-    //   );
-    // }
+    if (process.env.DEBUG_FFMPEG) {
+      const ffmpegLogger = createFfmpegProcessLogger(
+        `${this.channel.uuid}_${this.ffmpegName}`,
+      );
+      this.ffmpeg.stderr.on('end', () => ffmpegLogger.close());
+      this.ffmpeg.stderr.pipe(
+        new Writable({
+          write(chunk, _, callback) {
+            if (chunk instanceof Buffer) {
+              ffmpegLogger.info(chunk.toString());
+            }
+            callback();
+          },
+        }),
+      );
+    }
 
     if (this.hasBeenKilled) {
-      this.logger.trace('Sending SIGKILL to ffmpeg');
+      logger.silly('Sending SIGKILL to ffmpeg');
       this.ffmpeg.kill('SIGKILL');
       return;
     }
@@ -1004,7 +925,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     // this.ffmpegName = isConcatPlaylist ? 'Concat FFMPEG' : 'Stream FFMPEG';
 
     this.ffmpeg.on('error', (code, signal) => {
-      this.logger.error(
+      logger.error(
         `${this.ffmpegName} received error event: ${code}, ${signal}`,
       );
     });
@@ -1012,24 +933,21 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     this.ffmpeg.on('exit', (code: number, signal) => {
       if (code === null) {
         if (!this.hasBeenKilled) {
-          this.logger.info(
-            `${this.ffmpegName} exited due to signal: ${signal}`,
-            {
-              cmd: `${this.opts.ffmpegExecutablePath} ${ffmpegArgs.join(' ')}`,
-            },
-          );
+          logger.info(`${this.ffmpegName} exited due to signal: ${signal}`, {
+            cmd: `${this.opts.ffmpegExecutablePath} ${ffmpegArgs.join(' ')}`,
+          });
         } else {
-          this.logger.info(
+          logger.info(
             `${this.ffmpegName} exited due to signal: ${signal} as expected.`,
           );
         }
         this.emit('close', code);
       } else if (code === 0) {
-        this.logger.info(`${this.ffmpegName} exited normally.`);
+        logger.info(`${this.ffmpegName} exited normally.`);
         this.emit('end');
       } else if (code === 255) {
         if (this.hasBeenKilled) {
-          this.logger.info(`${this.ffmpegName} finished with code 255.`);
+          logger.info(`${this.ffmpegName} finished with code 255.`);
           this.emit('close', code);
           return;
         }
@@ -1039,10 +957,10 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
             cmd: `${this.opts.ffmpegExecutablePath} ${ffmpegArgs.join(' ')}`,
           });
         }
-        this.logger.info(`${this.ffmpegName} exited with code 255.`);
+        logger.info(`${this.ffmpegName} exited with code 255.`);
         this.emit('close', code);
       } else {
-        this.logger.info(`${this.ffmpegName} exited with code ${code}.`);
+        logger.info(`${this.ffmpegName} exited with code ${code}.`);
         this.emit('error', {
           code: code,
           cmd: `${this.opts.ffmpegExecutablePath} ${ffmpegArgs.join(' ')}`,
@@ -1054,7 +972,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
   }
 
   kill() {
-    this.logger.debug(`${this.ffmpegName} RECEIVED kill() command`);
+    logger.debug(`${this.ffmpegName} RECEIVED kill() command`);
     this.hasBeenKilled = true;
     if (!isUndefined(this.ffmpeg)) {
       // TODO - maybe send SIGTERM here and give it some time before
@@ -1064,7 +982,33 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
   }
 }
 
-function isLargerResolution(w1: number, h1: number, w2: number, h2: number) {
+function isDifferentVideoCodec(codec: Maybe<string>, encoder: string) {
+  if (codec == 'mpeg2video') {
+    return !encoder.includes('mpeg2');
+  } else if (codec == 'h264') {
+    return !encoder.includes('264');
+  } else if (codec == 'hevc') {
+    return !(encoder.includes('265') || encoder.includes('hevc'));
+  }
+  // if the encoder/codec combinations are unknown, always encode, just in case
+  return true;
+}
+
+function isDifferentAudioCodec(codec: Maybe<string>, encoder: string) {
+  if (codec == 'mp3') {
+    return !(encoder.includes('mp3') || encoder.includes('lame'));
+  } else if (codec == 'aac') {
+    return !encoder.includes('aac');
+  } else if (codec == 'ac3') {
+    return !encoder.includes('ac3');
+  } else if (codec == 'flac') {
+    return !encoder.includes('flac');
+  }
+  // if the encoder/codec combinations are unknown, always encode, just in case
+  return true;
+}
+
+function isLargerResolution(w1, h1, w2, h2) {
   return w1 > w2 || h1 > h2 || w1 % 2 == 1 || h1 % 2 == 1;
 }
 

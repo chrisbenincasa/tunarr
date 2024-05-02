@@ -54,11 +54,10 @@ export class SoftwarePipelineBuilder extends BasePipelineBuilder {
     const { videoStream, desiredState } = args;
     if (!videoStream.frameSize.equals(desiredState.scaledSize)) {
       // Scale filter
-      const { nextState: state, filter } = ScaleFilter.create(
-        currentState,
-        args,
-      );
-      nextState = state;
+      const filter = ScaleFilter.create(currentState, args);
+      if (filter.affectsFrameState) {
+        nextState = filter.nextState(currentState);
+      }
       this.videoInputFile.filterSteps.push(filter);
     }
     return nextState;

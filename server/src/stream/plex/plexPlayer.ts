@@ -111,7 +111,7 @@ export class PlexPlayer extends Player {
     const streamStart = stream.directPlay
       ? plexTranscoder.currTimeS
       : undefined;
-    const streamStats = stream.streamStats;
+    const streamStats = stream.streamDetails;
     if (streamStats) {
       streamStats.duration = lineupItem.streamDuration;
     }
@@ -119,11 +119,10 @@ export class PlexPlayer extends Player {
     const emitter = new EventEmitter() as TypedEventEmitter<FfmpegEvents>;
     let ff = ffmpeg.spawnStream(
       stream.streamUrl,
-      stream.streamStats,
+      stream.streamDetails,
       streamStart,
       streamDuration?.toString(),
       watermark,
-      lineupItem.type,
     ); // Spawn the ffmpeg process
 
     if (isUndefined(ff)) {
