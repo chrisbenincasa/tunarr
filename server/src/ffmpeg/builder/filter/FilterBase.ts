@@ -10,5 +10,9 @@ export abstract class FilterBase implements PipelineFilterStep {
   outputOptions = constant([]);
   inputOptions = constant([]);
 
-  abstract nextState(currentState: FrameState): FrameState;
+  nextState(currentState: FrameState): FrameState {
+    return currentState;
+  }
+
+  affectsFrameState = false;
 }

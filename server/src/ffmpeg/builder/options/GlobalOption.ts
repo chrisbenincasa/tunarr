@@ -1,5 +1,6 @@
-import { isString } from 'lodash-es';
+import { identity, isString } from 'lodash-es';
 import { Option } from './Option.js';
+import { Option2 } from '../types.js';
 
 export abstract class GlobalOption extends Option {
   // env vars...
@@ -14,6 +15,12 @@ export abstract class GlobalOption extends Option {
   outputOptions(): string[] {
     return [];
   }
+}
+
+export abstract class GlobalOption2 implements Option2<[]> {
+  readonly type = 'global';
+  nextState = identity;
+  abstract options(): string[];
 }
 
 export abstract class ConstantGlobalOption extends GlobalOption {

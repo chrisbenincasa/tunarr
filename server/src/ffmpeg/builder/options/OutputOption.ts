@@ -9,7 +9,7 @@ export abstract class OutputOption extends Option {
 }
 
 export abstract class ConstantOutputOption extends OutputOption {
-  constructor(private options: [string, ...string[]]) {
+  constructor(private options: string[]) {
     super();
   }
 
@@ -18,11 +18,19 @@ export abstract class ConstantOutputOption extends OutputOption {
   }
 }
 
-function makeConstantOutputOption(
-  opts: [string, ...string[]],
-): ConstantOutputOption {
+// export function makeConstantOutputOption
+export function makeConstantOutputOption(opts: string[]): ConstantOutputOption {
   return new (class extends ConstantOutputOption {})(opts);
 }
+
+export const ClosedGopOutputOption = () =>
+  makeConstantOutputOption(['-flags', 'cgop']);
+
+export const NoDemuxDecodeDelayOutputOption = () =>
+  makeConstantOutputOption(['-muxdelay', '0', '-muxpreload', '0']);
+
+export const FastStartOutputOption = () =>
+  makeConstantOutputOption(['-movflags', '+faststart']);
 
 export const NoSceneDetectOutputOption = (
   value: number,
@@ -54,3 +62,14 @@ export const FrameRateOutputOption = (
 
 export const VideoTrackTimescaleOutputOption = (scale: number) =>
   makeConstantOutputOption(['video_track_timescale', scale.toString()]);
+
+export const MpegTsOutputFormatOption = () =>
+  makeConstantOutputOption([
+    '-f',
+    'mpegts',
+    '-mpegts_flags',
+    '+initial_discontinuity',
+  ]);
+
+export const PipeProtocolOutputOption = (fd: number = 1) =>
+  makeConstantOutputOption([`pipe:${fd}`]);

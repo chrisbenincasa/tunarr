@@ -19,7 +19,7 @@ export class ComplexFilter implements PipelineStep {
     let audioLabel = '0:a';
     let videoLabel = '0:v';
     const result: string[] = [];
-    const distinctPaths: string[] = [];
+    const distinctPaths: string[] = [this.videoInputFile.path];
 
     if (!isNull(this.audioInputFile)) {
       // TODO: use audio as a separate input with vaapi/qsv
@@ -41,12 +41,13 @@ export class ComplexFilter implements PipelineStep {
           isNonEmptyString(step.filter),
         )
       ) {
-        videoFilterComplex += `[${videoFilterComplex}:${index}]`;
-        videoFilterComplex += _.chain(this.filterChain.videoFilterSteps)
-          .filter(isNonEmptyString)
+        videoFilterComplex += `[${videoInputIndex}:${index}]`;
+        const filters = _.chain(this.filterChain.videoFilterSteps)
           .map('filter')
+          .filter(isNonEmptyString)
           .join(',')
           .value();
+        videoFilterComplex += filters;
         videoLabel = '[v]';
         videoFilterComplex += videoLabel;
       }
@@ -72,7 +73,7 @@ export class ComplexFilter implements PipelineStep {
       });
     });
 
-    const filterComplex = _.chain([...videoFilterComplex])
+    const filterComplex = _.chain([videoFilterComplex])
       .filter(isNonEmptyString)
       .join(',')
       .value();

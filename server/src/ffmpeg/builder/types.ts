@@ -37,6 +37,20 @@ export interface PixelFormat {
   bitDepth: number;
 }
 
+export interface PipelineStep2<Requirements extends unknown[] = []> {
+  options(...reqs: Requirements): string[];
+}
+
+type OptionType = 'global' | 'filter' | 'output' | 'input';
+
+export interface Option2<Requirements extends unknown[] = []>
+  extends PipelineStep2<Requirements> {
+  type: OptionType;
+  nextState(currentState: FrameState): FrameState;
+}
+
+export interface EnvironmentVariablePipelineStep extends PipelineStep2 {}
+
 export interface PipelineStep {
   // environment variables
   globalOptions(): string[];

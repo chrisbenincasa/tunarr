@@ -47,13 +47,14 @@ describe('FfmpegCommandGenerator', () => {
     const target = FrameSize.withDimensions(1280, 720);
 
     const desiredState = FrameState({
-      scaledSize: FrameSize.withDimensions(1920, 1080),
-      paddedSize: target,
+      scaledSize: videoStream.squarePixelFrameSize(target),
+      paddedSize: FrameSize.withDimensions(1280, 720),
       isAnamorphic: false,
       realtime: true,
       videoFormat: VideoFormats.Hevc,
       frameRate: 20,
       videoBitrate: 30_000,
+      interlaced: true,
     });
 
     const generator = new FfmpegCommandGenerator();
@@ -66,7 +67,6 @@ describe('FfmpegCommandGenerator', () => {
     );
 
     const steps = builder.build(FfmpegState.create(), desiredState);
-    console.log(steps);
 
     const result = generator.generateArgs(videoInputFile, steps);
 

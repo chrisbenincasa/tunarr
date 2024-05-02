@@ -1,9 +1,12 @@
+import { once } from 'lodash-es';
 import { VideoEncoder, AudioEncoder } from './BaseEncoder';
 
 export class CopyVideoEncoder extends VideoEncoder {
-  constructor() {
+  private constructor() {
     super('copy');
   }
+
+  static create = once(() => new CopyVideoEncoder());
 }
 
 export class CopyAudioEncoder extends AudioEncoder {
