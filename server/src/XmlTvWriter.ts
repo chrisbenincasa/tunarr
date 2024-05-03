@@ -58,7 +58,9 @@ export class XmlTvWriter {
     if (channel.icon) {
       partial.icon = [
         {
-          src: escape(channel.icon.path),
+          src: isNonEmptyString(channel.icon.path)
+            ? escape(channel.icon.path)
+            : '{{host}}/images/tunarr.png',
           width: channel.icon.width,
         },
       ];
