@@ -4,6 +4,7 @@ import { ChannelDB } from './dao/channelDb.js';
 import { Settings } from './dao/settings.js';
 import { serverOptions } from './globals.js';
 import { z } from 'zod';
+import createLogger from './logger.js';
 
 const LineupSchema = z.object({
   GuideNumber: z.string(),
@@ -12,6 +13,8 @@ const LineupSchema = z.object({
 });
 
 type LineupItem = z.infer<typeof LineupSchema>;
+
+const logger = createLogger(import.meta);
 
 export class HdhrService {
   private db: Settings;
@@ -46,6 +49,12 @@ export class HdhrService {
   createRouter(): FastifyPluginAsync {
     // eslint-disable-next-line @typescript-eslint/require-await
     return async (fastify) => {
+      fastify.addHook('onError', (req, _, error, done) => {
+        console.error('%O', error);
+        logger.error(req.routeOptions.config.url, error);
+        done();
+      });
+
       fastify.get('/device.xml', (req, res) => {
         const device = getDevice(this.db, req.protocol + '://' + req.hostname);
         const data = device.getXml();
@@ -71,7 +80,7 @@ export class HdhrService {
         {
           schema: {
             response: {
-              200: LineupSchema,
+              200: z.array(LineupSchema),
             },
           },
         },
