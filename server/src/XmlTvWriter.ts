@@ -49,7 +49,7 @@ export class XmlTvWriter {
       id: channel.number.toString(),
       displayName: [
         {
-          _value: channel.name,
+          _value: escape(channel.name),
           lang: 'en',
         },
       ],
@@ -58,7 +58,7 @@ export class XmlTvWriter {
     if (channel.icon) {
       partial.icon = [
         {
-          src: channel.icon.path,
+          src: escape(channel.icon.path),
           width: channel.icon.width,
         },
       ];
