@@ -2,9 +2,9 @@ import { isNull } from 'lodash-es';
 import { Nullable } from '../../../types/util';
 import { FrameState } from '../state/FrameState';
 import { FrameDataLocation, FrameSize, PixelFormat } from '../types';
-import { FilterBase } from './FilterBase';
+import { Filter } from './FilterBase';
 
-export class PadFilter extends FilterBase {
+export class PadFilter extends Filter {
   private currentFrameDataLocation: FrameDataLocation;
   private desiredPaddedSize: FrameSize;
 

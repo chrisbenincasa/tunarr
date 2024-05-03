@@ -1,24 +1,26 @@
-import { constant, first, isNil } from 'lodash-es';
+import { first, isNil } from 'lodash-es';
 import { FrameState } from '../state/FrameState';
 import { FrameDataLocation, InputSource } from '../types';
 import { Decoder } from './Decoder';
 
-export abstract class BaseDecoder implements Decoder {
-  abstract name: string;
+export abstract class BaseDecoder extends Decoder {
+  readonly type = 'input';
+  readonly affectsFrameState: boolean = true;
+
+  abstract readonly name: string;
   protected abstract outputFrameDataLocation: FrameDataLocation;
 
   // It's weird that these are defined in places where they
   // will never be hit... perhaps we should rethink the hierarchy
-  filterOptions = constant([]);
-  globalOptions = constant([]);
-  outputOptions = constant([]);
+  // filterOptions = constant([]);
+  // globalOptions = constant([]);
+  // outputOptions = constant([]);
 
   appliesToInput(input: InputSource): boolean {
     return input.type === 'video';
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  inputOptions(_unusedInputFile: InputSource): string[] {
+  options(_inputSource: InputSource): string[] {
     return ['-c:v', this.name];
   }
 

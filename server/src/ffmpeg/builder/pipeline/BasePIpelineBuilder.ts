@@ -15,7 +15,10 @@ import { FrameState } from '../state/FrameState';
 import { AudioInputSource, PipelineStep, VideoInputSource } from '../types';
 import { PipelineBuilder } from './PipelineBuilder';
 import { ifDefined } from '../../../util';
-import { RealtimeInputOption, StreamSeekOption } from '../options/InputOption';
+import {
+  RealtimeInputOption,
+  StreamSeekInputOption,
+} from '../options/InputOption';
 import { AudioStream, VideoStream } from '../MediaStream';
 import { Decoder } from '../decoder/Decoder';
 import { DecoderFactory } from '../decoder/DecoderFactory';
@@ -101,6 +104,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
           videoStream: this.videoInputFile.videoStreams[0],
           pipelineSteps: steps,
           filterChain,
+          decoder: this.decoder,
         });
       }
     }
@@ -124,11 +128,10 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       videoStream: this.videoInputFile.videoStreams[0],
       pipelineSteps: steps,
       filterChain,
+      decoder: this.decoder,
     });
 
-    steps.push(
-      new ComplexFilter(this.videoInputFile, this.audioInputFile, filterChain),
-    );
+    steps.push(new ComplexFilter(this.videoInputFile, this.audioInputFile));
 
     if (isNull(this.audioInputFile)) {
       steps.push(new CopyAudioEncoder());
@@ -220,7 +223,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
 
   protected setStreamSeek(ffmpegState: FfmpegState) {
     ifDefined(ffmpegState.start, (start) => {
-      const option = StreamSeekOption(start);
+      const option = new StreamSeekInputOption(start);
       this.audioInputFile?.addOption(option);
       this.videoInputFile.addOption(option);
     });
@@ -228,7 +231,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
 
   protected setRealtime(desiredState: FrameState) {
     if (desiredState.realtime) {
-      const option = RealtimeInputOption();
+      const option = new RealtimeInputOption();
       this.audioInputFile?.addOption(option);
       this.videoInputFile.addOption(option);
     }

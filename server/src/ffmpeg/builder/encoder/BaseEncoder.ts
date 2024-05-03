@@ -1,4 +1,3 @@
-import { constant } from 'lodash-es';
 import { FrameState } from '../state/FrameState';
 import { StreamKinds } from '../types';
 import { Encoder } from './Encoder';
@@ -7,27 +6,24 @@ import { Encoder } from './Encoder';
 type EncoderStreamKind = Exclude<(typeof StreamKinds)[number], 'all'>;
 
 export abstract class BaseEncoder implements Encoder {
+  readonly type = 'output';
+  readonly affectsFrameState: boolean = false;
+  // Unclear why this is needed here. Some work still left
+  // to do on the hierarchy
+  readonly filter: string = '';
+
   constructor(
     public name: string,
     public kind: EncoderStreamKind,
   ) {}
 
-  // env vars
-  globalOptions = constant([]);
-
-  filterOptions = constant([]);
-
-  inputOptions = constant([]);
-
-  outputOptions(): string[] {
+  options(): string[] {
     return [BaseEncoder.optionForStreamKind(this.kind), this.name];
   }
 
   nextState(currentState: FrameState): FrameState {
     return currentState;
   }
-
-  filter: string = '';
 
   private static optionForStreamKind(kind: EncoderStreamKind): string {
     switch (kind) {

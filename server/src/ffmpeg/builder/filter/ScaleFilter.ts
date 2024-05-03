@@ -1,9 +1,9 @@
 import { PipelineVideoFunctionArgs } from '../pipeline/BasePIpelineBuilder';
 import { FrameState } from '../state/FrameState';
 import { FrameSize } from '../types';
-import { FilterBase } from './FilterBase';
+import { Filter } from './FilterBase';
 
-export class ScaleFilter extends FilterBase {
+export class ScaleFilter extends Filter {
   private desiredScaledSize: FrameSize;
   private desiredPaddedSize: FrameSize;
 

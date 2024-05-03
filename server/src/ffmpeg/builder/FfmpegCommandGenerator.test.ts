@@ -29,8 +29,6 @@ describe('FfmpegCommandGenerator', () => {
       pixelAspectRatio: null,
     });
 
-    console.log(videoStream);
-
     const audioState = AudioState.create({
       audioEncoder: 'ac3',
       audioChannels: 2,
@@ -63,7 +61,7 @@ describe('FfmpegCommandGenerator', () => {
 
     const videoInputFile = new VideoInputSource('video', [videoStream]);
     const builder = PipelineBuilderFactory.getBuilder(
-      'none',
+      'nvenc',
       videoInputFile,
       audioInputFile,
     );

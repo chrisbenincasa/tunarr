@@ -1,5 +1,5 @@
 import { InputOption } from '../options/InputOption.js';
 
-export interface Decoder extends InputOption {
-  name: string;
+export abstract class Decoder extends InputOption {
+  abstract readonly name: string;
 }

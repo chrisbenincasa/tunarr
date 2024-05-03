@@ -1,6 +1,6 @@
-import { FilterBase } from './FilterBase';
+import { Filter } from './FilterBase';
 
-export class AudioPadFilter extends FilterBase {
+export class AudioPadFilter extends Filter {
   constructor(private duration: number) {
     super();
   }

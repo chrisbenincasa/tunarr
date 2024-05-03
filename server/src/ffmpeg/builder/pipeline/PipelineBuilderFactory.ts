@@ -5,6 +5,7 @@ import {
   VideoInputSource,
 } from '../types';
 import { NvidiaPipelineBuilder } from './hardware/NvidiaPipelineBuilder';
+import { QsvPipelineBuilder } from './hardware/QsvPipelineBuilder';
 import { SoftwarePipelineBuilder } from './software/SoftwarePipelineBuilder';
 
 export class PipelineBuilderFactory {
@@ -17,7 +18,7 @@ export class PipelineBuilderFactory {
       case 'nvenc':
         return new NvidiaPipelineBuilder(videoInputFile, audioInputFile);
       case 'qsv':
-        throw new Error('not yet implemented');
+        return new QsvPipelineBuilder(videoInputFile, audioInputFile);
       default:
         return new SoftwarePipelineBuilder(videoInputFile, audioInputFile);
     }

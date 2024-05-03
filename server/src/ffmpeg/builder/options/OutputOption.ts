@@ -1,20 +1,25 @@
-import { constant } from 'lodash-es';
+import { identity } from 'lodash-es';
 import { Option } from './Option';
+import { FrameState } from '../state/FrameState';
 
-export abstract class OutputOption extends Option {
-  globalOptions = constant([]);
-  filterOptions = constant([]);
-  inputOptions = constant([]);
+export abstract class OutputOption implements Option {
+  // globalOptions = constant([]);
+  // filterOptions = constant([]);
+  // inputOptions = constant([]);
+  readonly type = 'output';
+  readonly affectsFrameState: boolean = false;
+  nextState = identity<FrameState>;
+  abstract options(): string[];
   // env vars
 }
 
 export abstract class ConstantOutputOption extends OutputOption {
-  constructor(private options: string[]) {
+  constructor(private _options: string[]) {
     super();
   }
 
-  outputOptions(): string[] {
-    return this.options;
+  options(): string[] {
+    return this._options;
   }
 }
 

@@ -1,11 +1,11 @@
 import { ExcludeByValueType, TupleToUnion } from '../../types/util';
 import { InputOption } from './options/InputOption';
 import { AudioStream, VideoStream } from './MediaStream';
-import { PipelineFilterStep } from './filter/PipelineFilterStep';
 import { AudioState } from './state/AudioState';
 import { FrameState } from './state/FrameState';
 import { AnyFunction } from 'ts-essentials';
 import { flatMap } from 'lodash-es';
+import { PipelineFilterStep } from './filter/PipelineFilterStep';
 
 export type DataProps<T> = ExcludeByValueType<T, AnyFunction>;
 
@@ -37,28 +37,18 @@ export interface PixelFormat {
   bitDepth: number;
 }
 
-export interface PipelineStep2<Requirements extends unknown[] = []> {
+export type PipelineStepType = 'global' | 'filter' | 'output' | 'input';
+export interface PipelineStep<Requirements extends unknown[] = []> {
+  type: PipelineStepType;
   options(...reqs: Requirements): string[];
 }
 
-type OptionType = 'global' | 'filter' | 'output' | 'input';
-
-export interface Option2<Requirements extends unknown[] = []>
-  extends PipelineStep2<Requirements> {
-  type: OptionType;
+export interface FrameStateUpdater {
+  affectsFrameState: boolean;
   nextState(currentState: FrameState): FrameState;
 }
 
-export interface EnvironmentVariablePipelineStep extends PipelineStep2 {}
-
-export interface PipelineStep {
-  // environment variables
-  globalOptions(): string[];
-  filterOptions(): string[];
-  outputOptions(): string[];
-  inputOptions(inputFile: InputSource): string[];
-  nextState(currentState: FrameState): FrameState;
-}
+export interface EnvironmentVariablePipelineStep extends PipelineStep {}
 
 type FrameSizeFields = DataProps<FrameSize>;
 
@@ -106,7 +96,7 @@ export abstract class InputSource {
   }
 
   getInputOptions() {
-    return flatMap(this.inputOptions, (opt) => opt.inputOptions(this));
+    return flatMap(this.inputOptions, (opt) => opt.options(this));
   }
 }
 

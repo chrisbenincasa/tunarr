@@ -106,15 +106,11 @@ export class PlexPlayer extends Player {
       return;
     }
 
-    //let streamStart = (stream.directPlay) ? plexTranscoder.currTimeS : undefined;
-    //let streamStart = (stream.directPlay) ? plexTranscoder.currTimeS : lineupItem.start;
     const streamStart = stream.directPlay
       ? plexTranscoder.currTimeS
       : undefined;
     const streamStats = stream.streamDetails;
-    if (streamStats) {
-      streamStats.duration = lineupItem.streamDuration;
-    }
+    streamStats.duration = lineupItem.streamDuration;
 
     const emitter = new EventEmitter() as TypedEventEmitter<FfmpegEvents>;
     let ff = ffmpeg.spawnStream(
@@ -130,17 +126,16 @@ export class PlexPlayer extends Player {
     }
 
     ff.pipe(outStream, { end: false });
+
     plexTranscoder.startUpdatingPlex().catch((e) => {
       this.logger.error(e, 'Error starting Plex status updates');
     });
 
     ffmpeg.on('end', () => {
-      this.logger.trace('ffmpeg end');
       emitter.emit('end');
     });
 
     ffmpeg.on('close', () => {
-      this.logger.trace('ffmpeg close');
       emitter.emit('close');
     });
 
@@ -149,9 +144,7 @@ export class PlexPlayer extends Player {
       console.log('Replacing failed stream with error stream');
       ff!.unpipe(outStream);
       // ffmpeg.removeAllListeners('data'); Type inference says this doesnt ever exist
-      ffmpeg.removeAllListeners('end');
-      ffmpeg.removeAllListeners('error');
-      ffmpeg.removeAllListeners('close');
+      ffmpeg.removeAllListeners();
       ffmpeg = new FFMPEG(ffmpegSettings, channel); // Set the transcoder options
       ffmpeg.setAudioOnly(this.context.audioOnly);
       ffmpeg.on('close', () => {

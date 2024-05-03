@@ -12,7 +12,7 @@ import { FrameState } from '../../state/FrameState';
 import { FfmpegState } from '../../state/FfmpegState';
 import { DeinterlaceFilter } from '../../filter/DeinterlaceFilter';
 import { YadifCudaFilter } from '../../filter/nvidia/YadifCudaFilter';
-import { FilterBase } from '../../filter/FilterBase';
+import { Filter } from '../../filter/FilterBase';
 import { ScaleFilter } from '../../filter/ScaleFilter';
 import { ScaleCudaFilter } from '../../filter/nvidia/ScaleCudaFilter';
 import { isNonEmptyString } from '../../../../util';
@@ -29,8 +29,8 @@ export class NvidiaPipelineBuilder extends BasePipelineBuilder {
     pipelineSteps,
     ffmpegState,
   }: PipelineVideoFunctionArgs): void {
-    let canDecode = true,
-      canEncode = true;
+    let canDecode = true;
+    const canEncode = true;
     // TODO: check whether can decode and can encode based on capabilities
     // minimal check for now, h264_cuvid doesn't support 10-bit
     if (
@@ -111,8 +111,7 @@ export class NvidiaPipelineBuilder extends BasePipelineBuilder {
 
     pipelineSteps.push(encoder);
     this.videoInputFile.filterSteps.push(encoder);
-
-    args.filterChain.videoFilterSteps.push(...this.videoInputFile.filterSteps);
+    // args.filterChain.videoFilterSteps.push(...this.videoInputFile.filterSteps);
   }
 
   private setDeinterlace(
@@ -144,7 +143,7 @@ export class NvidiaPipelineBuilder extends BasePipelineBuilder {
       return currentState;
     }
 
-    let scaleStep: FilterBase;
+    let scaleStep: Filter;
     const decodeToSoftware = ffmpegState.decoderHwAccelMode === 'none';
     const softwareEncoder = ffmpegState.encoderHwAccelMode === 'none';
 

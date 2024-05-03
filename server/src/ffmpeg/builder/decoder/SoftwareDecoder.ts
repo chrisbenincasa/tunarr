@@ -7,10 +7,10 @@ abstract class SoftwareDecoder extends BaseDecoder {
 }
 
 export class ImplicitDecoder extends SoftwareDecoder {
-  name = '';
+  readonly name = '';
   inputOptions = constant([]);
 }
 
 export class H264Decoder extends SoftwareDecoder {
-  name = 'h264';
+  readonly name = 'h264';
 }

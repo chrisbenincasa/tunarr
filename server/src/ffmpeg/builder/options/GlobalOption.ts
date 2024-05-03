@@ -1,40 +1,25 @@
 import { identity, isString } from 'lodash-es';
 import { Option } from './Option.js';
-import { Option2 } from '../types.js';
 
-export abstract class GlobalOption extends Option {
-  // env vars...
-  inputOptions(): string[] {
-    return [];
-  }
-
-  filterOptions(): string[] {
-    return [];
-  }
-
-  outputOptions(): string[] {
-    return [];
-  }
-}
-
-export abstract class GlobalOption2 implements Option2<[]> {
+export abstract class GlobalOption implements Option<[]> {
   readonly type = 'global';
+  readonly affectsFrameState: boolean = false;
   nextState = identity;
   abstract options(): string[];
 }
 
 export abstract class ConstantGlobalOption extends GlobalOption {
-  private options: [string, ...string[]];
+  private _options: [string, ...string[]];
 
   constructor(options: string);
   constructor(options: [string, ...string[]]);
   constructor(options: string | [string, ...string[]]) {
     super();
-    this.options = isString(options) ? [options] : options;
+    this._options = isString(options) ? [options] : options;
   }
 
-  globalOptions(): string[] {
-    return this.options;
+  options(): string[] {
+    return this._options;
   }
 }
 

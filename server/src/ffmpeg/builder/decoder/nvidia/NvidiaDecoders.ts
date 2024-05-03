@@ -14,8 +14,8 @@ export abstract class NvidiaDecoder extends BaseDecoder {
       hardwareAccelerationMode === 'none' ? 'software' : 'hardware';
   }
 
-  inputOptions(inputFile: InputSource): string[] {
-    const result = super.inputOptions(inputFile);
+  options(inputFile: InputSource): string[] {
+    const result = super.options(inputFile);
     if (this.hardwareAccelerationMode !== 'none') {
       result.push('-hwaccel_output_format', 'cuda');
     } else {

@@ -1,8 +1,8 @@
 import { FfmpegState } from '../state/FfmpegState';
 import { FrameState } from '../state/FrameState';
-import { FilterBase } from './FilterBase';
+import { Filter } from './FilterBase';
 
-export class DeinterlaceFilter extends FilterBase {
+export class DeinterlaceFilter extends Filter {
   readonly filter: string;
 
   affectsFrameState: boolean = true;

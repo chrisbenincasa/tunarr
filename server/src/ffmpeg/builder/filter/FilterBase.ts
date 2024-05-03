@@ -1,18 +1,18 @@
-import { constant } from 'lodash-es';
-import { PipelineFilterStep } from './PipelineFilterStep';
+import { Option, OptionType } from '../options/Option';
 import { FrameState } from '../state/FrameState';
+import { PipelineFilterStep } from './PipelineFilterStep';
 
-export abstract class FilterBase implements PipelineFilterStep {
-  abstract filter: string;
+export abstract class Filter implements PipelineFilterStep, Option {
+  readonly type: OptionType = 'filter';
+  readonly affectsFrameState: boolean = false;
 
-  globalOptions = constant([]);
-  filterOptions = constant([]);
-  outputOptions = constant([]);
-  inputOptions = constant([]);
+  abstract readonly filter: string;
 
   nextState(currentState: FrameState): FrameState {
     return currentState;
   }
 
-  affectsFrameState = false;
+  options(): string[] {
+    return [this.filter];
+  }
 }

@@ -1,14 +1,15 @@
 import { FrameState } from '../../state/FrameState';
 import { Filter } from '../FilterBase';
 
-export class YadifCudaFilter extends Filter {
+export class DeinterlaceQsvFilter extends Filter {
   readonly filter: string;
-  readonly affectsFrameState: boolean = true;
 
   constructor(currentState: FrameState) {
     super();
     this.filter = this.generateFilter(currentState);
   }
+
+  readonly affectsFrameState: boolean = true;
 
   nextState(currentState: FrameState): FrameState {
     return {
@@ -18,11 +19,11 @@ export class YadifCudaFilter extends Filter {
     };
   }
 
-  private generateFilter(currentState: FrameState) {
-    let filter = 'yadif_cuda';
-    if (currentState.frameDataLocation !== 'hardware') {
-      filter = `hwupload,${filter}`;
-    }
-    return filter;
+  private generateFilter(currentState: FrameState): string {
+    const prelude =
+      currentState.frameDataLocation === 'hardware'
+        ? 'hwupload=extra_hw_frames=64,'
+        : '';
+    return `${prelude}deinterlace_qsv`;
   }
 }

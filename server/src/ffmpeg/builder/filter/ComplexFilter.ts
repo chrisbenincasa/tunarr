@@ -1,30 +1,34 @@
 import _, { constant, forEach, identity, isNull, some } from 'lodash-es';
 import { Nullable } from '../../../types/util';
-import { AudioInputSource, PipelineStep, VideoInputSource } from '../types';
-import { FilterChain } from './FilterChain';
 import { ifDefined, isNonEmptyString } from '../../../util';
+import { Option } from '../options/Option';
+import { AudioInputSource, VideoInputSource } from '../types';
 
-export class ComplexFilter implements PipelineStep {
+export class ComplexFilter implements Option {
+  readonly type = 'filter';
   constructor(
-    private videoInputFile: VideoInputSource,
-    private audioInputFile: Nullable<AudioInputSource>,
-    private filterChain: FilterChain,
+    private videoInputSource: VideoInputSource,
+    private audioInputSource: Nullable<AudioInputSource>,
   ) {}
 
+  readonly affectsFrameState: boolean = false;
   nextState = identity;
   globalOptions = constant([]);
   inputOptions = constant([]);
   outputOptions = constant([]);
   filterOptions(): string[] {
+    return this.options();
+  }
+  options(): string[] {
     let audioLabel = '0:a';
     let videoLabel = '0:v';
     const result: string[] = [];
-    const distinctPaths: string[] = [this.videoInputFile.path];
+    const distinctPaths: string[] = [this.videoInputSource.path];
 
-    if (!isNull(this.audioInputFile)) {
+    if (!isNull(this.audioInputSource)) {
       // TODO: use audio as a separate input with vaapi/qsv
-      if (!distinctPaths.includes(this.audioInputFile.path)) {
-        distinctPaths.push(this.audioInputFile.path);
+      if (!distinctPaths.includes(this.audioInputSource.path)) {
+        distinctPaths.push(this.audioInputSource.path);
       }
     }
 
@@ -32,17 +36,17 @@ export class ComplexFilter implements PipelineStep {
     let videoFilterComplex = '';
     let audioFilterComplex = '';
 
-    const videoInputIndex = distinctPaths.indexOf(this.videoInputFile.path);
-    forEach(this.videoInputFile.videoStreams, (stream) => {
+    const videoInputIndex = distinctPaths.indexOf(this.videoInputSource.path);
+    forEach(this.videoInputSource.videoStreams, (stream) => {
       const index = stream.index;
       videoLabel = `${videoInputIndex}:${index}`;
       if (
-        some(this.filterChain.videoFilterSteps, (step) =>
+        some(this.videoInputSource.filterSteps, (step) =>
           isNonEmptyString(step.filter),
         )
       ) {
         videoFilterComplex += `[${videoInputIndex}:${index}]`;
-        const filters = _.chain(this.filterChain.videoFilterSteps)
+        const filters = _.chain(this.videoInputSource.filterSteps)
           .map('filter')
           .filter(isNonEmptyString)
           .join(',')
@@ -53,7 +57,7 @@ export class ComplexFilter implements PipelineStep {
       }
     });
 
-    ifDefined(this.audioInputFile, (audioInput) => {
+    ifDefined(this.audioInputSource, (audioInput) => {
       const audioInputIndex = distinctPaths.indexOf(audioInput.path);
       forEach(audioInput.audioStreams, (stream) => {
         const index = stream.index;

@@ -14,7 +14,6 @@ import { isNonEmptyString } from '../util/index.js';
 import { Logger, LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { FfmpegCommandGenerator } from './builder/FfmpegCommandGenerator.js';
 import { AudioStream, VideoStream } from './builder/MediaStream.js';
-import { VideoFormats } from './builder/constants.js';
 import { PipelineBuilderFactory } from './builder/pipeline/PipelineBuilderFactory.js';
 import { AudioState } from './builder/state/AudioState.js';
 import { FfmpegState } from './builder/state/FfmpegState.js';
@@ -340,11 +339,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
   ) {
     const stream = VideoStream.create({
       index: 0, // stream index 0 on input index 0
-      codec:
-        this.opts.normalizeVideoCodec &&
-        isDifferentVideoCodec(streamStats.videoCodec, this.opts.videoEncoder)
-          ? streamStats.videoCodec ?? ''
-          : VideoFormats.Copy,
+      codec: streamStats.videoCodec ?? '',
       pixelFormat: null, // Do we know this?
       frameSize: FrameSize.create({
         width: streamStats.videoWidth,

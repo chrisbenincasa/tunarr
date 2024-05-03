@@ -1,8 +1,8 @@
 import { FrameState } from '../../state/FrameState';
 import { FrameSize } from '../../types';
-import { FilterBase } from '../FilterBase';
+import { Filter } from '../FilterBase';
 
-export class ScaleCudaFilter extends FilterBase {
+export class ScaleCudaFilter extends Filter {
   readonly filter: string;
   readonly affectsFrameState: boolean = true;
 

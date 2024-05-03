@@ -1,23 +1,29 @@
-import { findIndex, first, flatMap, partition } from 'lodash-es';
-import { PipelineStep, VideoInputSource } from './types';
-import { ComplexFilter } from './filter/ComplexFilter';
+import { findIndex, first, flatMap, partition, reduce } from 'lodash-es';
 import { ifDefined } from '../../util';
 import { BaseEncoder } from './encoder/BaseEncoder';
+import { ComplexFilter } from './filter/ComplexFilter';
+import { PipelineStep, PipelineStepType, VideoInputSource } from './types';
 
 export class FfmpegCommandGenerator {
   generateArgs(
     videoInputFile: VideoInputSource,
     steps: PipelineStep[],
   ): string[] {
-    const args: string[] = [...flatMap(steps, (step) => step.globalOptions())];
+    const stepsByType = reduce(
+      steps,
+      (prev, curr) => ({ ...prev, [curr.type]: [...prev[curr.type], curr] }),
+      emptyStepMap(),
+    );
+    // const args: string[] = [...flatMap(steps, (step) => step.globalOptions())];
+    const args = [...flatMap(stepsByType['global'], (step) => step.options())];
 
     // const includedPaths = new Set<string>([videoInputFile.path]);
 
     args.push(...videoInputFile.getInputOptions(), '-i', videoInputFile.path);
-    args.push(...flatMap(steps, (step) => step.filterOptions()));
+    args.push(...flatMap(stepsByType['filter'], (step) => step.options()));
 
     const [complexFilterSteps, otherSteps] = partition(
-      steps,
+      stepsByType['output'],
       (step) => step instanceof ComplexFilter,
     );
     // sort, filter complex, etc
@@ -32,8 +38,15 @@ export class FfmpegCommandGenerator {
       sortedSteps.splice(encoderIndex + 1, 0, complexFilter);
     });
 
-    args.push(...flatMap(sortedSteps, (step) => step.outputOptions()));
+    args.push(...flatMap(sortedSteps, (step) => step.options()));
 
     return args;
   }
 }
+
+const emptyStepMap = (): Record<PipelineStepType, PipelineStep[]> => ({
+  filter: [],
+  global: [],
+  input: [],
+  output: [],
+});
