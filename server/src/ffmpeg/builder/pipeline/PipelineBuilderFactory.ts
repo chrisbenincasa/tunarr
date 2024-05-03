@@ -1,8 +1,8 @@
 import { Nullable } from '../../../types/util';
 import {
-  AudioInputFile,
+  AudioInputSource,
   HardwareAccelerationMode,
-  VideoInputFile,
+  VideoInputSource,
 } from '../types';
 import { NvidiaPipelineBuilder } from './hardware/NvidiaPipelineBuilder';
 import { SoftwarePipelineBuilder } from './software/SoftwarePipelineBuilder';
@@ -10,8 +10,8 @@ import { SoftwarePipelineBuilder } from './software/SoftwarePipelineBuilder';
 export class PipelineBuilderFactory {
   static getBuilder(
     hardwareAccelerationMode: HardwareAccelerationMode,
-    videoInputFile: VideoInputFile,
-    audioInputFile: Nullable<AudioInputFile>,
+    videoInputFile: VideoInputSource,
+    audioInputFile: Nullable<AudioInputSource>,
   ) {
     switch (hardwareAccelerationMode) {
       case 'nvenc':

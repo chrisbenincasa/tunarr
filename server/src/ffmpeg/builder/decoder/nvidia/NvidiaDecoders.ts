@@ -1,7 +1,7 @@
 import {
   FrameDataLocation,
   HardwareAccelerationMode,
-  InputFile,
+  InputSource,
 } from '../../types';
 import { BaseDecoder } from '../BaseDecoder';
 
@@ -14,7 +14,7 @@ export abstract class NvidiaDecoder extends BaseDecoder {
       hardwareAccelerationMode === 'none' ? 'software' : 'hardware';
   }
 
-  inputOptions(inputFile: InputFile): string[] {
+  inputOptions(inputFile: InputSource): string[] {
     const result = super.inputOptions(inputFile);
     if (this.hardwareAccelerationMode !== 'none') {
       result.push('-hwaccel_output_format', 'cuda');

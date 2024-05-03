@@ -6,10 +6,10 @@ import { AudioState } from './state/AudioState';
 import { FfmpegState } from './state/FfmpegState';
 import { FrameState } from './state/FrameState';
 import {
-  AudioInputFile,
+  AudioInputSource,
   FrameSize,
   PixelFormat,
-  VideoInputFile,
+  VideoInputSource,
 } from './types';
 
 describe('FfmpegCommandGenerator', () => {
@@ -40,7 +40,7 @@ describe('FfmpegCommandGenerator', () => {
       audioDuration: 11_000,
     });
 
-    const audioInputFile = new AudioInputFile(
+    const audioInputFile = new AudioInputSource(
       'audio',
       [AudioStream.create({ index: 2, codec: 'flac', channels: 6 })],
       audioState,
@@ -61,7 +61,7 @@ describe('FfmpegCommandGenerator', () => {
 
     const generator = new FfmpegCommandGenerator();
 
-    const videoInputFile = new VideoInputFile('video', [videoStream]);
+    const videoInputFile = new VideoInputSource('video', [videoStream]);
     const builder = PipelineBuilderFactory.getBuilder(
       'none',
       videoInputFile,

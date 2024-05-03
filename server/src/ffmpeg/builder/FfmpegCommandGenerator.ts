@@ -1,12 +1,12 @@
 import { findIndex, first, flatMap, partition } from 'lodash-es';
-import { PipelineStep, VideoInputFile } from './types';
+import { PipelineStep, VideoInputSource } from './types';
 import { ComplexFilter } from './filter/ComplexFilter';
 import { ifDefined } from '../../util';
 import { BaseEncoder } from './encoder/BaseEncoder';
 
 export class FfmpegCommandGenerator {
   generateArgs(
-    videoInputFile: VideoInputFile,
+    videoInputFile: VideoInputSource,
     steps: PipelineStep[],
   ): string[] {
     const args: string[] = [...flatMap(steps, (step) => step.globalOptions())];

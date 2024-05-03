@@ -12,7 +12,7 @@ import { LogLevelOption } from '../options/LogLevelOption';
 import { NoStatsOption } from '../options/NoStatsOption';
 import { FfmpegState } from '../state/FfmpegState';
 import { FrameState } from '../state/FrameState';
-import { AudioInputFile, PipelineStep, VideoInputFile } from '../types';
+import { AudioInputSource, PipelineStep, VideoInputSource } from '../types';
 import { PipelineBuilder } from './PipelineBuilder';
 import { ifDefined } from '../../../util';
 import { RealtimeInputOption, StreamSeekOption } from '../options/InputOption';
@@ -67,8 +67,8 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
   protected decoder: Nullable<Decoder> = null;
 
   constructor(
-    protected videoInputFile: VideoInputFile,
-    private audioInputFile: Nullable<AudioInputFile>,
+    protected videoInputFile: VideoInputSource,
+    private audioInputFile: Nullable<AudioInputSource>,
   ) {}
 
   validate(): Nullable<Error> {

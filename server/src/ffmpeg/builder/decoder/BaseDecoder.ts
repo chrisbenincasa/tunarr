@@ -1,6 +1,6 @@
 import { constant, first, isNil } from 'lodash-es';
 import { FrameState } from '../state/FrameState';
-import { FrameDataLocation, InputFile } from '../types';
+import { FrameDataLocation, InputSource } from '../types';
 import { Decoder } from './Decoder';
 
 export abstract class BaseDecoder implements Decoder {
@@ -13,12 +13,12 @@ export abstract class BaseDecoder implements Decoder {
   globalOptions = constant([]);
   outputOptions = constant([]);
 
-  appliesToInput(input: InputFile): boolean {
+  appliesToInput(input: InputSource): boolean {
     return input.type === 'video';
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  inputOptions(_unusedInputFile: InputFile): string[] {
+  inputOptions(_unusedInputFile: InputSource): string[] {
     return ['-c:v', this.name];
   }
 
@@ -29,7 +29,7 @@ export abstract class BaseDecoder implements Decoder {
     };
   }
 
-  protected inputBitDepth(inputFile: InputFile): number {
+  protected inputBitDepth(inputFile: InputSource): number {
     let depth = 8;
     if (inputFile.isVideo()) {
       const fmt = first(inputFile.videoStreams)?.pixelFormat;

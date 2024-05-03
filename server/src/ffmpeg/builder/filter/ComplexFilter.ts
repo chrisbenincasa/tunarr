@@ -1,13 +1,13 @@
 import _, { constant, forEach, identity, isNull, some } from 'lodash-es';
 import { Nullable } from '../../../types/util';
-import { AudioInputFile, PipelineStep, VideoInputFile } from '../types';
+import { AudioInputSource, PipelineStep, VideoInputSource } from '../types';
 import { FilterChain } from './FilterChain';
 import { ifDefined, isNonEmptyString } from '../../../util';
 
 export class ComplexFilter implements PipelineStep {
   constructor(
-    private videoInputFile: VideoInputFile,
-    private audioInputFile: Nullable<AudioInputFile>,
+    private videoInputFile: VideoInputSource,
+    private audioInputFile: Nullable<AudioInputSource>,
     private filterChain: FilterChain,
   ) {}
 

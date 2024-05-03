@@ -1,8 +1,8 @@
 import { constant, identity } from 'lodash-es';
-import { PipelineStep, InputFile } from '../types';
+import { PipelineStep, InputSource } from '../types';
 
 export interface InputOption extends PipelineStep {
-  appliesToInput(input: InputFile): boolean;
+  appliesToInput(input: InputSource): boolean;
 }
 
 // export interface InputOption2 extends Option2<[InputFile]> {

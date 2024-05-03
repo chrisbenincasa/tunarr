@@ -1,6 +1,6 @@
 import { isNull, merge } from 'lodash-es';
 import { Nullable } from '../../types/util';
-import { FrameSize, PixelFormat, StreamKind } from './types';
+import { DataProps, FrameSize, PixelFormat, StreamKind } from './types';
 import { AnyFunction, MarkOptional } from 'ts-essentials';
 import { ExcludeByValueType } from '../../types/util';
 
@@ -53,7 +53,7 @@ export class VideoStream implements MediaStream {
   pixelAspectRatio: Nullable<`${number}:${number}`>;
   inputKind: VideoInputKind = 'video';
 
-  private constructor(fields: MarkOptional<VideoStreamFields, 'inputKind'>) {
+  protected constructor(fields: MarkOptional<VideoStreamFields, 'inputKind'>) {
     // Unfortunately TS is not 'smart' enough to let us
     // dynamically apply these fields. This works... mainly
     // because we derive the fields for the input type right
@@ -85,6 +85,35 @@ export class VideoStream implements MediaStream {
     return FrameSize.create({
       width: Math.floor(width * minPercent),
       height: Math.floor(height * minPercent),
+    });
+  }
+}
+
+type SyntheticVideoStreamFields = Omit<
+  DataProps<SyntheticVideoStream>,
+  'inputKind'
+>;
+export class SyntheticVideoStream extends VideoStream {
+  filterDefinition: string;
+  readonly inputKind: VideoInputKind = 'filter';
+
+  private constructor(fields: SyntheticVideoStreamFields) {
+    super(fields);
+    this.filterDefinition = fields.filterDefinition;
+  }
+
+  static create(fields: SyntheticVideoStreamFields) {
+    return new SyntheticVideoStream(fields);
+  }
+
+  static testSrc(
+    fields: Omit<SyntheticVideoStreamFields, 'filterDefinition'>,
+    size: FrameSize,
+    extraParams: string = '',
+  ) {
+    return this.create({
+      ...fields,
+      filterDefinition: `testsrc=size=${size.width}x${size.height}${extraParams}`,
     });
   }
 }

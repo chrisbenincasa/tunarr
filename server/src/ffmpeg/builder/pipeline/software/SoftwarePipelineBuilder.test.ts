@@ -2,7 +2,7 @@ import { AudioStream, VideoStream } from '../../MediaStream';
 import { VideoFormats } from '../../constants';
 import { AudioState } from '../../state/AudioState';
 import { FrameState } from '../../state/FrameState';
-import { AudioInputFile, FrameSize, PixelFormat } from '../../types';
+import { AudioInputSource, FrameSize, PixelFormat } from '../../types';
 
 describe('SoftwarePipelineBuilder', () => {
   test('build args', () => {
@@ -30,7 +30,7 @@ describe('SoftwarePipelineBuilder', () => {
       audioDuration: 11_000,
     });
 
-    const audioInputFile = new AudioInputFile(
+    const audioInputFile = new AudioInputSource(
       'audio',
       [AudioStream.create({ index: 2, codec: 'flac', channels: 6 })],
       audioState,

@@ -56,7 +56,7 @@ export interface PipelineStep {
   globalOptions(): string[];
   filterOptions(): string[];
   outputOptions(): string[];
-  inputOptions(inputFile: InputFile): string[];
+  inputOptions(inputFile: InputSource): string[];
   nextState(currentState: FrameState): FrameState;
 }
 
@@ -85,7 +85,7 @@ export class FrameSize {
   }
 }
 
-export abstract class InputFile {
+export abstract class InputSource {
   type: 'video' | 'audio';
   inputOptions: InputOption[] = [];
   filterSteps: PipelineFilterStep[] = [];
@@ -101,7 +101,7 @@ export abstract class InputFile {
   // better way. it's also technically not true
   // since something else could extend this and
   // set their type to video
-  isVideo(): this is VideoInputFile {
+  isVideo(): this is VideoInputSource {
     return this.type === 'video';
   }
 
@@ -110,7 +110,7 @@ export abstract class InputFile {
   }
 }
 
-export class AudioInputFile extends InputFile {
+export class AudioInputSource extends InputSource {
   readonly type = 'audio';
   constructor(
     public path: string,
@@ -121,9 +121,9 @@ export class AudioInputFile extends InputFile {
   }
 }
 
-export class VideoInputFile<
+export class VideoInputSource<
   Streams extends VideoStream[] = VideoStream[],
-> extends InputFile {
+> extends InputSource {
   readonly type = 'video';
   constructor(
     public path: string,
@@ -133,6 +133,6 @@ export class VideoInputFile<
   }
 }
 
-export class NonEmptyVideoInputFile extends VideoInputFile<
+export class NonEmptyVideoInputSource extends VideoInputSource<
   [VideoStream, ...VideoStream[]]
 > {}
