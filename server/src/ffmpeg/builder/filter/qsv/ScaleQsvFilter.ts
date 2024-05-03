@@ -31,7 +31,7 @@ export class ScaleQsvFilter extends Filter {
     let scale = '';
 
     if (!this.currentState.scaledSize.equals(this.scaledSize)) {
-      const targetSize = `w=${this.scaledSize.width}:h${this.scaledSize.height}`;
+      const targetSize = `w=${this.scaledSize.width}:h=${this.scaledSize.height}`;
       const sarValue =
         this.videoStream.pixelAspectRatio?.replace(':', '/') ?? '1/1';
       let squareScale = '';

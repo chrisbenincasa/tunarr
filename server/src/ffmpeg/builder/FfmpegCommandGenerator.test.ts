@@ -61,7 +61,7 @@ describe('FfmpegCommandGenerator', () => {
 
     const videoInputFile = new VideoInputSource('video', [videoStream]);
     const builder = PipelineBuilderFactory.getBuilder(
-      'nvenc',
+      'qsv',
       videoInputFile,
       audioInputFile,
     );

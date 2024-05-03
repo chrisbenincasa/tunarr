@@ -374,7 +374,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     );
 
     const builder = PipelineBuilderFactory.getBuilder(
-      'nvenc',
+      'qsv',
       videoInput,
       audioInput,
     );

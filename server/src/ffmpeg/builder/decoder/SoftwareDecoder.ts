@@ -1,5 +1,4 @@
-import { constant } from 'lodash-es';
-import { FrameDataLocation } from '../types';
+import { FrameDataLocation, InputSource } from '../types';
 import { BaseDecoder } from './BaseDecoder';
 
 abstract class SoftwareDecoder extends BaseDecoder {
@@ -8,7 +7,9 @@ abstract class SoftwareDecoder extends BaseDecoder {
 
 export class ImplicitDecoder extends SoftwareDecoder {
   readonly name = '';
-  inputOptions = constant([]);
+  options(_inputSource: InputSource): string[] {
+    return [];
+  }
 }
 
 export class H264Decoder extends SoftwareDecoder {

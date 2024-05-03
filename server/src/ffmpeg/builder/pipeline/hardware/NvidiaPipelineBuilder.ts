@@ -60,14 +60,11 @@ export class NvidiaPipelineBuilder extends BasePipelineBuilder {
     let decoder: Nullable<Decoder> = null;
     if (ffmpegState.decoderHwAccelMode === 'nvenc') {
       decoder = DecoderFactory.getNvidiaDecoder(videoStream, 'nvenc');
-    }
-
-    if (isNull(decoder)) {
-      decoder = super.setupDecoder(args);
-    }
-
-    if (!isNull(decoder)) {
-      this.videoInputFile.addOption(decoder);
+      if (!isNull(decoder)) {
+        this.videoInputFile.addOption(decoder);
+      } else {
+        decoder = super.setupDecoder(args);
+      }
     }
 
     return decoder;

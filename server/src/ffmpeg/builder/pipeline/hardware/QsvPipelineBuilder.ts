@@ -57,14 +57,11 @@ export class QsvPipelineBuilder extends BasePipelineBuilder {
 
     if (ffmpegState.decoderHwAccelMode === 'qsv') {
       decoder = DecoderFactory.getQsvDecoder(videoStream);
-    }
-
-    if (isNull(decoder)) {
-      decoder = super.setupDecoder(args);
-    }
-
-    if (!isNull(decoder)) {
-      this.videoInputFile.addOption(decoder);
+      if (!isNull(decoder)) {
+        this.videoInputFile.addOption(decoder);
+      } else {
+        decoder = super.setupDecoder(args);
+      }
     }
 
     return decoder;
