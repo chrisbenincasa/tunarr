@@ -7,6 +7,7 @@ import {
   ListItemText,
   Tooltip,
   Typography,
+  useMediaQuery,
   useTheme,
 } from '@mui/material';
 import List from '@mui/material/List';
@@ -39,6 +40,7 @@ export default function SelectedProgrammingList({
   const knownMedia = useStore((s) => s.knownMediaByServer);
   const selectedMedia = useStore((s) => s.selectedMedia);
   const theme = useTheme();
+  const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
   const totalCount = reduce(
     selectedMedia,
     (acc, media) => acc + (media.childCount ?? 1),
@@ -136,8 +138,9 @@ export default function SelectedProgrammingList({
             color: theme.palette.primary.contrastText,
             position: 'fixed',
             bottom: '1em',
-            width: '500px',
-            margin: '1em auto',
+            width: '100%',
+            maxWidth: '500px',
+            margin: '1em auto 46px',
             left: 0,
             right: 0,
             display: 'flex',
@@ -157,7 +160,7 @@ export default function SelectedProgrammingList({
 
           <Tooltip title="Unselect all programs">
             <Button
-              startIcon={<Delete />}
+              startIcon={smallViewport ? null : <Delete />}
               sx={{
                 color: theme.palette.primary.contrastText,
                 border: `1px solid ${theme.palette.primary.contrastText}`,
