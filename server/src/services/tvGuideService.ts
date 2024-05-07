@@ -8,6 +8,7 @@ import {
   FlexGuideProgram,
   RedirectGuideProgram,
   TvGuideProgram,
+  isContentProgram,
 } from '@tunarr/types';
 import retry from 'async-retry';
 import dayjs from 'dayjs';
@@ -335,8 +336,10 @@ export class TVGuideService {
     if (
       !isUndefined(previousProgram?.programIndex) &&
       inRange(previousProgram.programIndex, 0, lineup.items.length) &&
-      previousProgram.program.duration ===
-        lineup.items[previousProgram.programIndex].durationMs &&
+      // We're trialing removing this, since there is correction for these
+      // elsewhere in the algorithm.
+      // previousProgram.program.duration ===
+      //   lineup.items[previousProgram.programIndex].durationMs &&
       previousProgram.startTimeMs + previousProgram.program.duration ===
         currentUpdateTimeMs
     ) {
@@ -543,21 +546,62 @@ export class TVGuideService {
       );
     }
 
+    let nextOffsetTime =
+      currentProgram.startTimeMs + currentProgram.program.duration;
     while (currentProgram.startTimeMs < currentEndTimeMs) {
       await push(currentProgram);
-      const nextOffsetTime =
-        currentProgram.startTimeMs + currentProgram.program.duration;
+      const lastProgram = currentProgram;
       currentProgram = await this.getChannelPlaying(
         channelWithLineup,
         currentProgram,
         nextOffsetTime,
       );
       if (currentProgram.startTimeMs < nextOffsetTime) {
-        const d = nextOffsetTime - currentProgram.startTimeMs;
-        currentProgram.startTimeMs = nextOffsetTime;
-        currentProgram.program = deepCopy(currentProgram.program);
-        currentProgram.program.duration -= d;
+        // There are some situations where the durations of the lineup
+        // and DB item can go out of sync. For instance, if the DB item
+        // has changed to a different underlying file, which was saved as
+        // a part of an update for _another_ channel, but this channel's lineup
+        // has not been updated yet. In this case, we're handling a situation
+        // where the source-of-truth program is shorter than what our lineup says
+        // We'll just push a pad and move on - a scheduled task will resolve
+        // these discrenpancies.
+        if (
+          isContentProgram(currentProgram.program) &&
+          isContentProgram(lastProgram.program) &&
+          currentProgram.program.uniqueId === lastProgram.program.uniqueId &&
+          !isUndefined(currentProgram.programIndex) &&
+          currentProgram.program.duration <
+            (nth(channelWithLineup.lineup.items, currentProgram.programIndex)
+              ?.durationMs ?? Number.NEGATIVE_INFINITY)
+        ) {
+          const lineupDuration = nth(
+            channelWithLineup.lineup.items,
+            currentProgram.programIndex,
+          )!.durationMs;
+          const difference = lineupDuration - currentProgram.program.duration;
+          await push({
+            // programIndex: currentProgram.programIndex,
+            program: {
+              type: 'flex',
+              persisted: false,
+              duration: difference,
+            },
+            startTimeMs: currentProgram.startTimeMs,
+          });
+          nextOffsetTime += difference;
+          currentProgram.startTimeMs += difference;
+        } else {
+          const d = nextOffsetTime - currentProgram.startTimeMs;
+          currentProgram.startTimeMs = nextOffsetTime;
+          currentProgram.program = deepCopy(currentProgram.program);
+          currentProgram.program.duration -= d;
+        }
+      } else if (currentProgram.startTimeMs > nextOffsetTime) {
+        console.error('does this hit?');
       }
+
+      nextOffsetTime += currentProgram.program.duration;
+
       if (currentProgram.program.duration <= 0) {
         logger.error(
           'Invalid program duration = %d?: Channel %s \n %O',
