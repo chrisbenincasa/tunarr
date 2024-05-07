@@ -503,7 +503,6 @@ export function Root({ children }: { children?: React.ReactNode }) {
             flexGrow: 1,
             // height: '100vh', // Uncommenting this breaks any use of scrollTo()
             overflow: 'auto',
-            mb: smallViewport ? '56px' : 0,
           }}
         >
           <Toolbar />
