@@ -56,6 +56,9 @@ import {
 import { ProgramGroupingExternalId } from './entities/ProgramGroupingExternalId.js';
 import { Loaded } from '@mikro-orm/core';
 import { createExternalId } from '@tunarr/shared';
+import { GlobalScheduler } from '../services/scheduler.js';
+import { ReconcileProgramDurationsTask } from '../tasks/ReconcileProgramDurationsTask.js';
+import dayjs from 'dayjs';
 
 const logger = createLogger(import.meta);
 
@@ -221,6 +224,12 @@ export async function upsertContentPrograms(
   });
 
   await em.flush();
+
+  GlobalScheduler.scheduleOneOffTask(
+    ReconcileProgramDurationsTask.name,
+    dayjs().add(500, 'ms'),
+    new ReconcileProgramDurationsTask(),
+  );
 
   return upsertedPrograms;
 }

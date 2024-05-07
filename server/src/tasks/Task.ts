@@ -11,7 +11,7 @@ export type TaskId =
   | 'cleanup-sessions'
   | 'schedule-dynamic-channels';
 
-export abstract class Task<Data> {
+export abstract class Task<Data = unknown> {
   private onCompleteListeners = new Set<() => void>();
   private running_ = false;
 

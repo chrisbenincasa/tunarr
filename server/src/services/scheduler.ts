@@ -12,6 +12,10 @@ import { ScheduledTask } from '../tasks/ScheduledTask.js';
 import type { Tag } from '@tunarr/types';
 import { OneOffTask } from '../tasks/OneOffTask.js';
 import { v4 } from 'uuid';
+import { ReconcileProgramDurationsTask } from '../tasks/ReconcileProgramDurationsTask.js';
+import dayjs, { type Dayjs } from 'dayjs';
+
+const { isDayjs } = dayjs;
 
 export const logger = createLogger(import.meta);
 
@@ -49,14 +53,15 @@ class Scheduler {
 
   scheduleOneOffTask<OutType = unknown>(
     name: string,
-    when: Date | number,
+    when: Dayjs | Date | number,
     task: Task<OutType>,
   ) {
-    const id = `one_off_${v4()}`;
+    const id = `one_off_${name}_${v4()}`;
     task.addOnCompleteListener(() => {
       delete this.#scheduledJobsById[id];
     });
-    this.#scheduledJobsById[id] = new OneOffTask(name, when, () => task);
+    const ts = isDayjs(when) ? when.toDate() : when;
+    this.#scheduledJobsById[id] = new OneOffTask(name, ts, () => task);
   }
 
   get scheduledJobsById(): Record<string, ScheduledTask> {
@@ -97,6 +102,16 @@ export const scheduleJobs = once((serverContext: ServerContext) => {
       {
         runOnSchedule: true,
       },
+    ),
+  );
+
+  GlobalScheduler.scheduleTask(
+    ReconcileProgramDurationsTask.ID,
+    new ScheduledTask(
+      ReconcileProgramDurationsTask.name,
+      // temporary
+      hoursCrontab(1),
+      () => new ReconcileProgramDurationsTask(),
     ),
   );
 
