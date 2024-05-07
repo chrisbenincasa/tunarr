@@ -1,11 +1,12 @@
 import { ExcludeByValueType, TupleToUnion } from '../../types/util';
 import { InputOption } from './options/InputOption';
-import { AudioStream, VideoStream } from './MediaStream';
+import { AudioStream, StillImageStream, VideoStream } from './MediaStream';
 import { AudioState } from './state/AudioState';
 import { FrameState } from './state/FrameState';
 import { AnyFunction } from 'ts-essentials';
 import { flatMap } from 'lodash-es';
 import { PipelineFilterStep } from './filter/PipelineFilterStep';
+import { Watermark } from '@tunarr/types';
 
 export type DataProps<T> = ExcludeByValueType<T, AnyFunction>;
 
@@ -22,7 +23,7 @@ export type HardwareAccelerationMode = TupleToUnion<
   typeof HardwareAccelerationModes
 >;
 
-export const StreamKinds = ['audio', 'video', 'all'] as const;
+export const StreamKinds = ['audio', 'video', 'all', 'stillimage'] as const;
 
 export type StreamKind = TupleToUnion<typeof StreamKinds>;
 
@@ -127,3 +128,13 @@ export class VideoInputSource<
 export class NonEmptyVideoInputSource extends VideoInputSource<
   [VideoStream, ...VideoStream[]]
 > {}
+
+export class WatermarkInputSource extends VideoInputSource<[StillImageStream]> {
+  constructor(
+    path: string,
+    imageStream: StillImageStream,
+    public watermark: Watermark,
+  ) {
+    super(path, [imageStream]);
+  }
+}

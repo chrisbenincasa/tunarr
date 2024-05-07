@@ -12,9 +12,14 @@ import { LogLevelOption } from '../options/LogLevelOption';
 import { NoStatsOption } from '../options/NoStatsOption';
 import { FfmpegState } from '../state/FfmpegState';
 import { FrameState } from '../state/FrameState';
-import { AudioInputSource, PipelineStep, VideoInputSource } from '../types';
+import {
+  AudioInputSource,
+  PipelineStep,
+  VideoInputSource,
+  WatermarkInputSource,
+} from '../types';
 import { PipelineBuilder } from './PipelineBuilder';
-import { ifDefined } from '../../../util';
+import { ifDefined, isNonEmptyString } from '../../../util';
 import {
   RealtimeInputOption,
   StreamSeekInputOption,
@@ -44,8 +49,11 @@ import {
   AudioSampleRateOutputOption,
 } from '../options/AudioOutputOptions';
 import { AudioPadFilter } from '../filter/AudioPadFilter';
+import { AsyncLocalStorage } from 'node:async_hooks';
 
 const numProcessors = os.cpus().length;
+
+const context = new AsyncLocalStorage<PipelineVideoFunctionArgs>();
 
 // Args passed to each setter -- we use an object here so we
 // 1. can deconstruct args in each implementor to use only what we need
@@ -72,17 +80,22 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
   constructor(
     protected videoInputFile: VideoInputSource,
     private audioInputFile: Nullable<AudioInputSource>,
+    protected watermarkInoutSource: Nullable<WatermarkInputSource>,
   ) {}
 
   validate(): Nullable<Error> {
     return null;
   }
 
-  build(currentState: FfmpegState, desiredState: FrameState): PipelineStep[] {
+  // build(ffmpegState: FfmpegState, desiredState: FrameState): PipelineStep[] {
+  //   return context.run({ffmpegState, desiredState}, () => {
+  //     return this.buildInternal();
+  //   })
+  // }
+
+  build(ffmpegState: FfmpegState, desiredState: FrameState): PipelineStep[] {
     const steps: PipelineStep[] = [
-      desiredState.realtime
-        ? new ThreadCountOption(1)
-        : new ThreadCountOption(currentState.threadCount ?? numProcessors),
+      ...this.getThreadCountOption(desiredState, ffmpegState),
       new NoStdInOption(),
       new HideBannerOption(),
       new NoStatsOption(),
@@ -99,7 +112,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
         steps.push(CopyVideoEncoder.create());
       } else {
         this.buildVideoPipeline({
-          ffmpegState: currentState,
+          ffmpegState: ffmpegState,
           desiredState,
           videoStream: this.videoInputFile.videoStreams[0],
           pipelineSteps: steps,
@@ -113,7 +126,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       steps.push(new CopyAudioEncoder());
     } else if (this.audioInputFile.audioStreams.length > 0) {
       this.buildAudioPipeline({
-        ffmpegState: currentState,
+        ffmpegState: ffmpegState,
         audioStream: this.audioInputFile.audioStreams[0],
         pipelineSteps: steps,
         desiredState: this.audioInputFile.desiredState,
@@ -123,7 +136,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     // metadata
 
     this.setOutputFormat({
-      ffmpegState: currentState,
+      ffmpegState: ffmpegState,
       desiredState,
       videoStream: this.videoInputFile.videoStreams[0],
       pipelineSteps: steps,
@@ -131,7 +144,13 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       decoder: this.decoder,
     });
 
-    steps.push(new ComplexFilter(this.videoInputFile, this.audioInputFile));
+    steps.push(
+      new ComplexFilter(
+        this.videoInputFile,
+        this.audioInputFile,
+        this.watermarkInoutSource,
+      ),
+    );
 
     if (isNull(this.audioInputFile)) {
       steps.push(new CopyAudioEncoder());
@@ -239,5 +258,31 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
 
   protected setOutputFormat({ pipelineSteps }: PipelineVideoFunctionArgs) {
     pipelineSteps.push(MpegTsOutputFormatOption(), PipeProtocolOutputOption());
+  }
+
+  protected getThreadCountOption(
+    desiredState: FrameState,
+    ffmpegState: FfmpegState,
+  ) {
+    let threadCount: Nullable<number> = null;
+    if (
+      ffmpegState.decoderHwAccelMode !== 'none' ||
+      ffmpegState.encoderHwAccelMode !== 'none'
+    ) {
+      threadCount = 1;
+    } else if (isNonEmptyString(ffmpegState.start) && desiredState.realtime) {
+      threadCount = 1;
+    } else if (
+      !isNull(ffmpegState.threadCount) &&
+      ffmpegState.threadCount > 0
+    ) {
+      threadCount = ffmpegState.threadCount;
+    }
+
+    if (!isNull(threadCount)) {
+      return [new ThreadCountOption(threadCount)];
+    }
+
+    return [];
   }
 }

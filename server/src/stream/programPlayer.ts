@@ -30,6 +30,7 @@ import { OfflinePlayer } from './offlinePlayer.js';
 import { Player, PlayerContext } from './player.js';
 import { PlexPlayer } from './plex/plexPlayer.js';
 import { StreamContextChannel } from './types.js';
+import { serverOptions } from '../globals.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 
 export class ProgramPlayer extends Player {
@@ -174,6 +175,7 @@ export class ProgramPlayer extends Player {
       return;
     }
 
+    console.log(channel, channel.watermark);
     if (!isUndefined(channel.watermark) && channel.watermark.enabled) {
       const watermark = { ...channel.watermark };
       let icon: string;
@@ -182,7 +184,7 @@ export class ProgramPlayer extends Player {
       } else if (isNonEmptyString(channel.icon?.path)) {
         icon = channel.icon.path;
       } else {
-        return;
+        icon = `http://localhost:${serverOptions().port}/images/tunarr.png`;
       }
 
       return {

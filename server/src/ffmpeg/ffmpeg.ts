@@ -1,7 +1,15 @@
 import { FfmpegSettings, Watermark } from '@tunarr/types';
 import child_process, { ChildProcessByStdio } from 'child_process';
 import events from 'events';
-import { isEmpty, isNil, isString, isUndefined, merge, round } from 'lodash-es';
+import {
+  find,
+  isEmpty,
+  isNil,
+  isString,
+  isUndefined,
+  merge,
+  round,
+} from 'lodash-es';
 import path from 'path';
 import stream from 'stream';
 import { DeepReadonly, DeepRequired } from 'ts-essentials';
@@ -21,6 +29,7 @@ import { FrameState } from './builder/state/FrameState.js';
 import {
   AudioInputSource,
   FrameSize,
+  HardwareAccelerationModes,
   VideoInputSource,
 } from './builder/types.js';
 
@@ -373,11 +382,18 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       }),
     );
 
-    const builder = PipelineBuilderFactory.getBuilder(
-      'qsv',
-      videoInput,
-      audioInput,
-    );
+    // HACK: It'd be better to just expose HW Aceel mode as an option and let
+    // the pipeline builder decide on the right encoders, etc.
+    const hwAccel =
+      find(HardwareAccelerationModes, (mode) =>
+        this.opts.videoEncoder.includes(mode),
+      ) ?? 'none';
+
+    const builder = PipelineBuilderFactory.builder()
+      .setHardwareAccelerationMode(hwAccel)
+      .setVideoInputSource(videoInput)
+      .setAudioInputSource(audioInput)
+      .build();
 
     const args = new FfmpegCommandGenerator().generateArgs(
       videoInput,
@@ -386,6 +402,9 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
           start: startTime?.toString(),
           threadCount: this.opts.numThreads,
           softwareScalingAlgorithm: this.opts.scalingAlgorithm,
+          decoderHwAccelMode: hwAccel,
+          encoderHwAccelMode: hwAccel,
+          softwareDeinterlaceFilter: this.opts.deinterlaceFilter,
         }),
         FrameState({
           videoFormat: 'mpegts',
@@ -881,8 +900,8 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     });
 
     // Pipe to our own stderr if enabled
+    this.ffmpeg.stderr.pipe(process.stderr);
     if (doLogs) {
-      this.ffmpeg.stderr.pipe(process.stderr);
     }
 
     // Hide this behind a 'flag' for now...

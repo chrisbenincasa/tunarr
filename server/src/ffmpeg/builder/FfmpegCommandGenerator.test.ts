@@ -1,5 +1,5 @@
 import { FfmpegCommandGenerator } from './FfmpegCommandGenerator';
-import { AudioStream, VideoStream } from './MediaStream';
+import { AudioStream, StillImageStream, VideoStream } from './MediaStream';
 import { VideoFormats } from './constants';
 import { PipelineBuilderFactory } from './pipeline/PipelineBuilderFactory';
 import { AudioState } from './state/AudioState';
@@ -10,6 +10,7 @@ import {
   FrameSize,
   PixelFormat,
   VideoInputSource,
+  WatermarkInputSource,
 } from './types';
 
 describe('FfmpegCommandGenerator', () => {
@@ -21,7 +22,7 @@ describe('FfmpegCommandGenerator', () => {
     };
 
     const videoStream = VideoStream.create({
-      index: 1,
+      index: 0,
       codec: VideoFormats.H264,
       pixelFormat,
       frameSize: FrameSize.create({ width: 640, height: 480 }),
@@ -40,7 +41,7 @@ describe('FfmpegCommandGenerator', () => {
 
     const audioInputFile = new AudioInputSource(
       'audio',
-      [AudioStream.create({ index: 2, codec: 'flac', channels: 6 })],
+      [AudioStream.create({ index: 1, codec: 'flac', channels: 6 })],
       audioState,
     );
 
@@ -60,11 +61,28 @@ describe('FfmpegCommandGenerator', () => {
     const generator = new FfmpegCommandGenerator();
 
     const videoInputFile = new VideoInputSource('video', [videoStream]);
-    const builder = PipelineBuilderFactory.getBuilder(
-      'qsv',
-      videoInputFile,
-      audioInputFile,
+    const watermarkInputFile = new WatermarkInputSource(
+      'watermark',
+      StillImageStream.create({
+        index: 0,
+        frameSize: FrameSize.create({ width: 100, height: 100 }),
+      }),
+      {
+        duration: 0,
+        enabled: true,
+        horizontalMargin: 10,
+        verticalMargin: 10,
+        position: 'bottom-right',
+        width: 100,
+      },
     );
+
+    const builder = PipelineBuilderFactory.builder()
+      .setHardwareAccelerationMode('none')
+      .setVideoInputSource(videoInputFile)
+      .setAudioInputSource(audioInputFile)
+      .setWatermarkInputSource(watermarkInputFile)
+      .build();
 
     const steps = builder.build(FfmpegState.create(), desiredState);
 

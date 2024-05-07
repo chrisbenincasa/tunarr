@@ -89,6 +89,36 @@ export class VideoStream implements MediaStream {
   }
 }
 
+type StillImageStreamFields = Omit<
+  DataProps<StillImageStream>,
+  | 'codec'
+  | 'kind'
+  | 'pixelFormat'
+  | 'isAnamorphic'
+  | 'pixelAspectRatio'
+  | 'inputKind'
+>;
+
+export class StillImageStream extends VideoStream {
+  // readonly kind: StreamKind = 'stillimage';
+  readonly inputKind: VideoInputKind = 'stillimage';
+
+  private constructor(fields: StillImageStreamFields) {
+    super({
+      ...fields,
+      codec: '',
+      isAnamorphic: false,
+      pixelAspectRatio: null,
+      pixelFormat: null,
+    });
+    // merge(this, fields);
+  }
+
+  static create(fields: StillImageStreamFields) {
+    return new StillImageStream(fields);
+  }
+}
+
 type SyntheticVideoStreamFields = Omit<
   DataProps<SyntheticVideoStream>,
   'inputKind'
