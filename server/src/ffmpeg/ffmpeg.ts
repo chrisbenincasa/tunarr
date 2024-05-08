@@ -21,7 +21,11 @@ import { Maybe } from '../types/util.js';
 import { isNonEmptyString } from '../util/index.js';
 import { Logger, LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { FfmpegCommandGenerator } from './builder/FfmpegCommandGenerator.js';
-import { AudioStream, VideoStream } from './builder/MediaStream.js';
+import {
+  AudioStream,
+  StillImageStream,
+  VideoStream,
+} from './builder/MediaStream.js';
 import { PipelineBuilderFactory } from './builder/pipeline/PipelineBuilderFactory.js';
 import { AudioState } from './builder/state/AudioState.js';
 import { FfmpegState } from './builder/state/FfmpegState.js';
@@ -396,21 +400,36 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
         this.opts.videoEncoder.includes(mode),
       ) ?? 'none';
 
+    const watermarkSource =
+      ifDefined(enableIcon, (watermark) => {
+        if (isNonEmptyString(watermark.url)) {
+          return new WatermarkInputSource(
+            watermark.url,
+            StillImageStream.create({
+              frameSize: FrameSize.create({
+                width: watermark.width,
+                height: -1,
+              }),
+              index: 0,
+            }),
+            watermark,
+          );
+        }
+
+        return null;
+      }) ?? null;
+
     const builder = PipelineBuilderFactory.builder()
       .setHardwareAccelerationMode(hwAccel)
       .setVideoInputSource(videoInput)
       .setAudioInputSource(audioInput)
-      .setWatermarkInputSource(
-        ifDefined(enableIcon, (watermark) => {
-          if (isNonEmptyString(watermark.url)) {
-            return new WatermarkInputSource();
-          }
-        }) ?? null,
-      )
+      .setWatermarkInputSource(watermarkSource)
       .build();
 
     const args = new FfmpegCommandGenerator().generateArgs(
       videoInput,
+      audioInput,
+      watermarkSource,
       builder.build(
         FfmpegState.create({
           start: startTime?.toString(),
@@ -420,7 +439,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
           encoderHwAccelMode: hwAccel,
           softwareDeinterlaceFilter: this.opts.deinterlaceFilter,
         }),
-        FrameState({
+        new FrameState({
           videoFormat: 'mpegts',
           scaledSize: FrameSize.create({
             width: this.wantedW,

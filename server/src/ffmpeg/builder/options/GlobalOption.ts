@@ -1,10 +1,13 @@
-import { identity, isString } from 'lodash-es';
+import { isString } from 'lodash-es';
 import { Option } from './Option.js';
+import { FrameState } from '../state/FrameState.js';
 
 export abstract class GlobalOption implements Option<[]> {
   readonly type = 'global';
   readonly affectsFrameState: boolean = false;
-  nextState = identity;
+  nextState(currentState: FrameState): FrameState {
+    return currentState;
+  }
   abstract options(): string[];
 }
 

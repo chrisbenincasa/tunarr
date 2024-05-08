@@ -12,9 +12,9 @@ import { Filter } from '../../filter/FilterBase';
 import { ScaleFilter } from '../../filter/ScaleFilter';
 import { ScaleQsvFilter } from '../../filter/qsv/ScaleQsvFilter';
 import { isNonEmptyString } from '../../../../util';
-import { PixelFormat } from '../../types';
+import { PixelFormat } from '../../format/PixelFormat';
 import { PadFilter } from '../../filter/PadFilter';
-import { PixelFormatNv12 } from './NvidiaPipelineBuilder';
+import { PixelFormatNv12 } from '../../format/PixelFormat';
 import { Encoder } from '../../encoder/Encoder';
 import { EncoderFactory } from '../../encoder/EncoderFactory';
 import { SoftwarePipelineBuilder } from '../software/SoftwarePipelineBuilder';
@@ -80,12 +80,12 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
       pipelineSteps,
       filterChain,
     } = this.context;
-    let currentState = {
-      ...desiredState,
+
+    let currentState = desiredState.update({
       isAnamorphic: videoStream.isAnamorphic,
       scaledSize: videoStream.frameSize,
       paddedSize: videoStream.frameSize,
-    };
+    });
 
     if (decoder?.affectsFrameState) {
       currentState = decoder.nextState(currentState);

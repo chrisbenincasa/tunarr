@@ -1,8 +1,29 @@
 import { MarkOptional } from 'ts-essentials';
 import { Nullable } from '../../../types/util';
-import { FrameDataLocation, FrameSize } from '../types';
+import { DataProps, FrameDataLocation, FrameSize } from '../types';
+import { merge } from 'lodash-es';
+import { PixelFormat } from '../format/PixelFormat';
 
-export type FrameState = {
+type FrameStateFields = DataProps<FrameState>;
+
+// Some fields are always required...
+export const DefaultFrameState: Omit<
+  FrameStateFields,
+  'scaledSize' | 'paddedSize' | 'isAnamorphic'
+> = {
+  realtime: false,
+  videoFormat: 'mpeg2video',
+  frameRate: null,
+  videoTrackTimescale: null,
+  videoBitrate: null,
+  videoBufferSize: null,
+  frameDataLocation: 'unknown',
+  interlaced: false,
+  pixelFormat: null,
+  bitDepth: 8,
+};
+
+export class FrameState {
   scaledSize: FrameSize;
   paddedSize: FrameSize;
   isAnamorphic: boolean;
@@ -14,28 +35,27 @@ export type FrameState = {
   videoBufferSize: Nullable<number>;
   frameDataLocation: FrameDataLocation;
   interlaced: boolean;
-};
+  pixelFormat: Nullable<PixelFormat>;
 
-// Some fields are always required...
-export const DefaultFrameState: Omit<
-  FrameState,
-  'scaledSize' | 'paddedSize' | 'isAnamorphic'
-> = {
-  realtime: false,
-  videoFormat: 'mpeg2video',
-  frameRate: null,
-  videoTrackTimescale: null,
-  videoBitrate: null,
-  videoBufferSize: null,
-  frameDataLocation: 'unknown',
-  interlaced: false,
-};
+  constructor(
+    fields: MarkOptional<FrameStateFields, keyof typeof DefaultFrameState>,
+  ) {
+    merge(this, fields);
+  }
 
-export function FrameState(
-  frameState: MarkOptional<FrameState, keyof typeof DefaultFrameState>,
-): FrameState {
-  return {
-    ...DefaultFrameState,
-    ...frameState,
-  };
+  get bitDepth() {
+    return this.pixelFormat?.bitDepth ?? 8;
+  }
+
+  update(fields: Partial<FrameStateFields>) {
+    return new FrameState({ ...this, ...fields });
+  }
+
+  updateFrameLocation(location: FrameDataLocation) {
+    if (this.frameDataLocation !== location) {
+      return this.update({ frameDataLocation: location });
+    }
+
+    return this;
+  }
 }

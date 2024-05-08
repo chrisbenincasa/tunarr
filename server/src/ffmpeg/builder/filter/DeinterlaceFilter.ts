@@ -16,11 +16,10 @@ export class DeinterlaceFilter extends Filter {
   }
 
   nextState(currentState: FrameState): FrameState {
-    return {
-      ...currentState,
+    return currentState.update({
       interlaced: false,
       frameDataLocation: 'software',
-    };
+    });
   }
 
   private generateFilter(): string {

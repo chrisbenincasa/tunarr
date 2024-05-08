@@ -49,6 +49,7 @@ export class ComplexFilter implements Option {
     let videoFilterComplex = '';
     let audioFilterComplex = '';
     let watermarkFilterComplex = '';
+    let watermarkOverlayFilterComplex = '';
 
     const videoInputIndex = distinctPaths.indexOf(this.videoInputSource.path);
     forEach(this.videoInputSource.videoStreams, (stream) => {
@@ -95,15 +96,15 @@ export class ComplexFilter implements Option {
       this.filterChain.watermarkOverlayFilterSteps.length > 0
     ) {
       const filterString = _.chain(this.filterChain.watermarkOverlayFilterSteps)
-        .filter(isNonEmptyString)
         .map((step) => step.filter)
+        .filter(isNonEmptyString)
         .join(',')
         .value();
-      watermarkFilterComplex += `${formatLabel(videoLabel)}${formatLabel(
+      watermarkOverlayFilterComplex += `${formatLabel(videoLabel)}${formatLabel(
         watermarkLabel,
       )}${filterString}`;
       videoLabel = '[vwm]';
-      watermarkFilterComplex += videoLabel;
+      watermarkOverlayFilterComplex += videoLabel;
     }
 
     ifDefined(this.audioInputSource, (audioInput) => {
@@ -115,7 +116,6 @@ export class ComplexFilter implements Option {
       forEach(audioInput.audioStreams, (stream) => {
         const index = stream.index;
         audioLabel = `${audioInputIndex}:${index}`;
-        console.log(audioInput.filterSteps);
         if (
           some(audioInput.filterSteps, (step) => isNonEmptyString(step.filter))
         ) {
@@ -131,13 +131,30 @@ export class ComplexFilter implements Option {
       });
     });
 
+    let pixelFormatFilterComplex = '';
+    if (this.filterChain.pixelFormatFilterSteps.length > 0) {
+      pixelFormatFilterComplex += `${formatLabel(videoLabel)}`;
+      pixelFormatFilterComplex += _.chain(
+        this.filterChain.pixelFormatFilterSteps,
+      )
+        .map((step) => step.filter)
+        .filter(isNonEmptyString)
+        .join(',')
+        .value();
+      videoLabel = '[vpf]';
+      pixelFormatFilterComplex += videoLabel;
+    }
+
     const filterComplex = _.chain([
       videoFilterComplex,
       audioFilterComplex,
       watermarkFilterComplex,
+      watermarkOverlayFilterComplex,
+      pixelFormatFilterComplex,
     ])
+      .tap(console.log)
       .filter(isNonEmptyString)
-      .join(',')
+      .join(';')
       .value();
 
     if (isNonEmptyString(filterComplex)) {

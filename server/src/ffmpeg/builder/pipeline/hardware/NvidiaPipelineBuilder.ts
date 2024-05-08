@@ -1,4 +1,4 @@
-import { isNull } from 'lodash-es';
+import { isNil, isNull } from 'lodash-es';
 import { Nullable } from '../../../../types/util';
 import { VideoFormats } from '../../constants';
 import { Decoder } from '../../decoder/Decoder';
@@ -12,11 +12,19 @@ import { Filter } from '../../filter/FilterBase';
 import { ScaleFilter } from '../../filter/ScaleFilter';
 import { ScaleCudaFilter } from '../../filter/nvidia/ScaleCudaFilter';
 import { isNonEmptyString } from '../../../../util';
-import { PixelFormat } from '../../types';
+import { PixelFormat, PixelFormatYuv420P } from '../../format/PixelFormat';
 import { PadFilter } from '../../filter/PadFilter';
 import { EncoderFactory } from '../../encoder/EncoderFactory';
 import { VideoEncoder } from '../../encoder/BaseEncoder';
 import { SoftwarePipelineBuilder } from '../software/SoftwarePipelineBuilder';
+import { OverlayWatermarkCudaFilter } from '../../filter/nvidia/OverlayWatermarkCudaFilter';
+import { HardwareUploadCudaFilter } from '../../filter/nvidia/HardwareUploadCudaFilter';
+import { PixelFormatFilter } from '../../filter/PixelFormatFilter';
+import { PixelFormatNv12 } from '../../format/PixelFormat';
+import { HardwareDownloadCudaFilter } from '../../filter/nvidia/HardwareDownloadCudaFilter';
+import { PipelineFilterStep } from '../../filter/PipelineFilterStep';
+import { FormatCudaFilter } from '../../filter/nvidia/FormatCudaFilter';
+import { OverlayWatermarkFilter } from '../../filter/watermark/OverlayWatermarkFilter';
 
 export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
   protected setHardwareAccelState(): void {
@@ -68,7 +76,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
         decoder = super.setupDecoder();
       }
     }
-
+    this.context.decoder = decoder;
     return decoder;
   }
 
@@ -80,18 +88,55 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
     const { desiredState, videoStream, ffmpegState, pipelineSteps } =
       this.context;
 
-    let currentState = {
-      ...desiredState,
+    let currentState = desiredState.update({
       isAnamorphic: videoStream.isAnamorphic,
       scaledSize: videoStream.frameSize,
       paddedSize: videoStream.frameSize,
-    };
+    });
 
     currentState = this.decoder?.nextState(currentState) ?? currentState;
 
     currentState = this.setDeinterlace(currentState);
     currentState = this.setScale(currentState);
     currentState = this.setPad(currentState);
+
+    if (currentState.bitDepth === 8 && this.watermarkInputSource) {
+      const desiredPixelFormat = new PixelFormatYuv420P();
+      if (
+        !isNil(currentState.pixelFormat) &&
+        !desiredPixelFormat.equals(currentState.pixelFormat)
+      ) {
+        if (currentState.frameDataLocation === 'software') {
+          const pixelFormatFilter = new PixelFormatFilter(desiredPixelFormat);
+          currentState = pixelFormatFilter.nextState(currentState);
+          this.videoInputFile.filterSteps.push(pixelFormatFilter);
+        } else {
+          const filter = new ScaleCudaFilter(
+            currentState.update({ pixelFormat: desiredPixelFormat }),
+            currentState.scaledSize,
+            currentState.paddedSize,
+          );
+          currentState = filter.nextState(currentState);
+          this.videoInputFile.filterSteps.push(filter);
+        }
+      }
+    }
+
+    if (
+      currentState.frameDataLocation === 'software' &&
+      currentState.bitDepth === 8 &&
+      // We're not going to attempt to use the hwaccel overlay
+      // filter unless we're on >=5.0.0 because overlay_cuda does
+      // not support the W/w/H/h params on earlier versions
+      this.ffmpegState.isAtLeastVersion('5.0.0') &&
+      this.watermarkInputSource
+    ) {
+      const filter = new HardwareUploadCudaFilter(currentState);
+      currentState = filter.nextState(currentState);
+      this.videoInputFile.filterSteps.push(filter);
+    }
+
+    currentState = this.setWatermark(currentState);
 
     let encoder: Nullable<VideoEncoder> = null;
     if (ffmpegState.encoderHwAccelMode === 'nvenc') {
@@ -110,6 +155,8 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       pipelineSteps.push(encoder);
       this.videoInputFile.filterSteps.push(encoder);
     }
+
+    currentState = this.setPixelFormat(currentState);
 
     // args.filterChain.videoFilterSteps.push(...this.videoInputFile.filterSteps);
   }
@@ -183,8 +230,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       // TODO: move this into current/desired state, but see if it works here for now
       const pixelFormat: Nullable<PixelFormat> =
         this.ffmpegState.decoderHwAccelMode == 'nvenc' &&
-        this.context.videoStream.pixelFormat != null &&
-        this.context.videoStream.pixelFormat.bitDepth == 8
+        this.context.videoStream.pixelFormat?.bitDepth === 8
           ? new PixelFormatNv12(this.context.videoStream.pixelFormat.name)
           : this.context.videoStream.pixelFormat;
 
@@ -202,11 +248,98 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
     }
     return nextState;
   }
-}
 
-export class PixelFormatNv12 implements PixelFormat {
-  constructor(public readonly name: string) {}
+  protected setPixelFormat(currentState: FrameState): FrameState {
+    let nextState = currentState;
+    const steps: PipelineFilterStep[] = [];
+    // TODO ton of stuff to do here
+    if (!isNull(this.desiredState.pixelFormat)) {
+      // TODO figure out about available pixel formats
+      const desiredFormat = this.desiredState.pixelFormat; //.name === PixelFormats.NV12 ? null : this.desiredState.pixelFormat;
 
-  readonly ffmpegName: string = 'nv12';
-  readonly bitDepth: number = 8;
+      // TODO vp9
+
+      // TODO color params -- wow there's a lot of stuff to account for!!!
+
+      if (
+        this.ffmpegState.encoderHwAccelMode === 'none' &&
+        this.watermarkInputSource &&
+        currentState.frameDataLocation === 'hardware'
+      ) {
+        const hwDownloadFilter = new HardwareDownloadCudaFilter(
+          currentState.pixelFormat,
+          null,
+        );
+        nextState = hwDownloadFilter.nextState(nextState);
+        steps.push(hwDownloadFilter);
+      }
+
+      if (
+        nextState.frameDataLocation === 'hardware' &&
+        this.ffmpegState.encoderHwAccelMode === 'none'
+      ) {
+        if (nextState.pixelFormat?.ffmpegName !== desiredFormat?.ffmpegName) {
+          // TODO CUDA format filter
+          const formatFilter = new FormatCudaFilter(desiredFormat);
+          nextState = formatFilter.nextState(nextState);
+          steps.push(formatFilter);
+        }
+
+        const hwDownloadFilter = new HardwareDownloadCudaFilter(
+          currentState.pixelFormat,
+          null,
+        );
+        nextState = hwDownloadFilter.nextState(nextState);
+        steps.push(hwDownloadFilter);
+      }
+
+      if (nextState.pixelFormat?.ffmpegName !== desiredFormat?.ffmpegName) {
+        // TODO figureout what is going on here
+      }
+    }
+
+    this.context.filterChain.pixelFormatFilterSteps.push(...steps);
+
+    return currentState;
+  }
+
+  protected setWatermark(currentState: FrameState): FrameState {
+    let nextState = currentState;
+    if (this.watermarkInputSource) {
+      this.watermarkInputSource.filterSteps.push(
+        new PixelFormatFilter(new PixelFormatYuv420P()),
+      );
+
+      // This is not compatible with ffmpeg < 5.0
+      if (this.context.ffmpegState.isAtLeastVersion('5.0.0')) {
+        this.watermarkInputSource.filterSteps.push(
+          new HardwareUploadCudaFilter(
+            currentState.updateFrameLocation('software'),
+          ),
+        );
+
+        const overlayFilter = new OverlayWatermarkCudaFilter(
+          this.watermarkInputSource.watermark,
+          this.context.desiredState.paddedSize,
+        );
+
+        this.context.filterChain.watermarkOverlayFilterSteps.push(
+          overlayFilter,
+        );
+        nextState = overlayFilter.nextState(currentState);
+      } else {
+        const overlayFilter = new OverlayWatermarkFilter(
+          this.watermarkInputSource.watermark,
+          this.context.desiredState.paddedSize,
+          new PixelFormatYuv420P(),
+        );
+        this.context.filterChain.watermarkOverlayFilterSteps.push(
+          overlayFilter,
+        );
+        nextState = overlayFilter.nextState(nextState);
+      }
+    }
+
+    return nextState;
+  }
 }

@@ -1,12 +1,28 @@
-import { findIndex, first, flatMap, partition, reduce } from 'lodash-es';
+import {
+  findIndex,
+  first,
+  flatMap,
+  isNull,
+  partition,
+  reduce,
+} from 'lodash-es';
 import { ifDefined } from '../../util';
 import { BaseEncoder } from './encoder/BaseEncoder';
 import { ComplexFilter } from './filter/ComplexFilter';
-import { PipelineStep, PipelineStepType, VideoInputSource } from './types';
+import {
+  AudioInputSource,
+  PipelineStep,
+  PipelineStepType,
+  VideoInputSource,
+  WatermarkInputSource,
+} from './types';
+import { Nullable } from '../../types/util';
 
 export class FfmpegCommandGenerator {
   generateArgs(
-    videoInputFile: VideoInputSource,
+    videoInputSource: VideoInputSource,
+    audioInputSource: Nullable<AudioInputSource>,
+    watermarkInputSource: Nullable<WatermarkInputSource>,
     steps: PipelineStep[],
   ): string[] {
     const stepsByType = reduce(
@@ -17,9 +33,38 @@ export class FfmpegCommandGenerator {
     // const args: string[] = [...flatMap(steps, (step) => step.globalOptions())];
     const args = [...flatMap(stepsByType['global'], (step) => step.options())];
 
-    // const includedPaths = new Set<string>([videoInputFile.path]);
+    const includedPaths = new Set<string>([videoInputSource.path]);
 
-    args.push(...videoInputFile.getInputOptions(), '-i', videoInputFile.path);
+    args.push(
+      ...videoInputSource.getInputOptions(),
+      '-i',
+      videoInputSource.path,
+    );
+
+    if (
+      !isNull(audioInputSource) &&
+      !includedPaths.has(audioInputSource.path)
+    ) {
+      includedPaths.add(audioInputSource.path);
+      args.push(
+        ...audioInputSource.getInputOptions(),
+        '-i',
+        audioInputSource.path,
+      );
+    }
+
+    if (
+      !isNull(watermarkInputSource) &&
+      !includedPaths.has(watermarkInputSource.path)
+    ) {
+      includedPaths.add(watermarkInputSource.path);
+      args.push(
+        ...watermarkInputSource.getInputOptions(),
+        '-i',
+        watermarkInputSource.path,
+      );
+    }
+
     args.push(...flatMap(stepsByType['filter'], (step) => step.options()));
 
     const [complexFilterSteps, otherSteps] = partition(

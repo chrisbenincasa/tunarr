@@ -31,6 +31,8 @@ export abstract class BaseEncoder implements Encoder {
         return '-c:a';
       case 'video':
         return '-c:v';
+      default:
+        return '';
     }
   }
 }

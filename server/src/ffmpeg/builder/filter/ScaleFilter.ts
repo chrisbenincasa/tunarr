@@ -54,11 +54,10 @@ export class ScaleFilter extends Filter {
   }
 
   nextState(currentState: FrameState): FrameState {
-    return {
-      ...currentState,
+    return currentState.update({
       scaledSize: this.desiredScaledSize,
       paddedSize: this.desiredPaddedSize,
       isAnamorphic: false,
-    };
+    });
   }
 }

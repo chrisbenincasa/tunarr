@@ -12,11 +12,10 @@ export class DeinterlaceQsvFilter extends Filter {
   readonly affectsFrameState: boolean = true;
 
   nextState(currentState: FrameState): FrameState {
-    return {
-      ...currentState,
+    return currentState.update({
       interlaced: false,
       frameDataLocation: 'hardware',
-    };
+    });
   }
 
   private generateFilter(currentState: FrameState): string {

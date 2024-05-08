@@ -111,7 +111,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
   constructor(
     protected videoInputFile: VideoInputSource,
     private audioInputFile: Nullable<AudioInputSource>,
-    protected watermarkInoutSource: Nullable<WatermarkInputSource>,
+    protected watermarkInputSource: Nullable<WatermarkInputSource>,
   ) {}
 
   validate(): Nullable<Error> {
@@ -169,7 +169,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       new ComplexFilter(
         this.videoInputFile,
         this.audioInputFile,
-        this.watermarkInoutSource,
+        this.watermarkInputSource,
         this.context.filterChain,
       ),
     );
@@ -281,6 +281,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       decoder = DecoderFactory.getSoftwareDecoder(this.context.videoStream);
       this.videoInputFile.addOption(decoder);
     }
+    this.context.decoder = decoder;
     return decoder;
   }
 

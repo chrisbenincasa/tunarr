@@ -31,13 +31,6 @@ export const FrameDataLocations = ['unknown', 'hardware', 'software'] as const;
 
 export type FrameDataLocation = TupleToUnion<typeof FrameDataLocations>;
 
-export interface PixelFormat {
-  name: string;
-  // Name used in the generated ffmpeg command
-  ffmpegName: string;
-  bitDepth: number;
-}
-
 export type PipelineStepType = 'global' | 'filter' | 'output' | 'input';
 export interface PipelineStep<Requirements extends unknown[] = []> {
   type: PipelineStepType;

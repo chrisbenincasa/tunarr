@@ -2,7 +2,8 @@ import { AudioStream, VideoStream } from '../../MediaStream';
 import { VideoFormats } from '../../constants';
 import { AudioState } from '../../state/AudioState';
 import { FrameState } from '../../state/FrameState';
-import { AudioInputSource, FrameSize, PixelFormat } from '../../types';
+import { AudioInputSource, FrameSize } from '../../types';
+import { PixelFormat } from '../../format/PixelFormat';
 
 describe('SoftwarePipelineBuilder', () => {
   test('build args', () => {

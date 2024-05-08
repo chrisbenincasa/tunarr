@@ -1,4 +1,3 @@
-import { identity } from 'lodash-es';
 import { Option } from './Option';
 import { FrameState } from '../state/FrameState';
 
@@ -8,7 +7,9 @@ export abstract class OutputOption implements Option {
   // inputOptions = constant([]);
   readonly type = 'output';
   readonly affectsFrameState: boolean = false;
-  nextState = identity<FrameState>;
+  nextState(currentState: FrameState): FrameState {
+    return currentState;
+  }
   abstract options(): string[];
   // env vars
 }

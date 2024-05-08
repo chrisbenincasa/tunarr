@@ -1,7 +1,8 @@
 import { isNull } from 'lodash-es';
 import { Nullable } from '../../../types/util';
 import { FrameState } from '../state/FrameState';
-import { FrameDataLocation, FrameSize, PixelFormat } from '../types';
+import { FrameDataLocation, FrameSize } from '../types';
+import { PixelFormat } from '../format/PixelFormat';
 import { Filter } from './FilterBase';
 
 export class PadFilter extends Filter {
@@ -23,11 +24,10 @@ export class PadFilter extends Filter {
   }
 
   nextState(currentState: FrameState): FrameState {
-    return {
-      ...currentState,
+    return currentState.update({
       paddedSize: this.desiredPaddedSize,
       frameDataLocation: 'software',
-    };
+    });
   }
 
   private generateFilter(): string {

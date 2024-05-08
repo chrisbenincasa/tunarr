@@ -18,13 +18,12 @@ export class ScaleQsvFilter extends Filter {
   }
 
   nextState(currentState: FrameState): FrameState {
-    return {
-      ...currentState,
+    return currentState.update({
       scaledSize: this.scaledSize,
       paddedSize: this.scaledSize,
       frameDataLocation: 'hardware',
       isAnamorphic: false,
-    };
+    });
   }
 
   private generateFilter(): string {

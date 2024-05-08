@@ -16,14 +16,13 @@ export class ScaleCudaFilter extends Filter {
   }
 
   nextState(currentState: FrameState): FrameState {
-    return {
-      ...currentState,
+    return currentState.update({
       scaledSize: this.scaledSize,
       paddedSize: this.scaledSize,
       frameDataLocation: 'hardware',
       // this filter always outputs square pixels
       isAnamorphic: false,
-    };
+    });
   }
 
   private generateFilter(): string {

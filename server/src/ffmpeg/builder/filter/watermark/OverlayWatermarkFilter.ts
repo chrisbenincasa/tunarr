@@ -1,11 +1,12 @@
 import { Watermark } from '@tunarr/types';
 import { Filter } from '../FilterBase.js';
-import { FrameSize, PixelFormat } from '../../types.js';
+import { FrameSize } from '../../types.js';
+import { PixelFormat } from '../../format/PixelFormat.js';
 import { FrameState } from '../../state/FrameState.js';
 
 export class OverlayWatermarkFilter extends Filter {
   public readonly affectsFrameState: boolean = true;
-  public readonly filter: string;
+  public filter: string;
 
   constructor(
     private watermark: Watermark,
@@ -18,13 +19,10 @@ export class OverlayWatermarkFilter extends Filter {
   }
 
   nextState(currentState: FrameState): FrameState {
-    return {
-      ...currentState,
-      frameDataLocation: 'software',
-    };
+    return currentState.updateFrameLocation('software');
   }
 
-  private generateFilter() {
+  protected getPosition() {
     // We only support 'normal' margin mode currently.
     const x = Math.round(
       (this.watermark.horizontalMargin / 100.0) * this.resolution.width,
@@ -49,7 +47,11 @@ export class OverlayWatermarkFilter extends Filter {
         break;
     }
 
-    return `overlay=${position}:format=${
+    return position;
+  }
+
+  private generateFilter() {
+    return `overlay=${this.getPosition()}:format=${
       this.outputPixelFormat.bitDepth === 10 ? 1 : 0
     }`;
   }

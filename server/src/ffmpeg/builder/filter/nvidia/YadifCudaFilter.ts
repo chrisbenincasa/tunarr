@@ -11,11 +11,10 @@ export class YadifCudaFilter extends Filter {
   }
 
   nextState(currentState: FrameState): FrameState {
-    return {
-      ...currentState,
+    return currentState.update({
       interlaced: false,
       frameDataLocation: 'hardware',
-    };
+    });
   }
 
   private generateFilter(currentState: FrameState) {

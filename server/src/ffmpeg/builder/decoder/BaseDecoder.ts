@@ -25,11 +25,9 @@ export abstract class BaseDecoder extends Decoder {
   }
 
   nextState(currentState: FrameState): FrameState {
-    console.log('nvidia', currentState, this.outputFrameDataLocation);
-    return {
-      ...currentState,
+    return currentState.update({
       frameDataLocation: this.outputFrameDataLocation,
-    };
+    });
   }
 
   protected inputBitDepth(inputFile: InputSource): number {

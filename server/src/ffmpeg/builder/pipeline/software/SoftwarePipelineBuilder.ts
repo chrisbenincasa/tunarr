@@ -19,19 +19,18 @@ export class SoftwarePipelineBuilder extends BasePipelineBuilder {
     const { desiredState, videoStream, filterChain, pipelineSteps } =
       this.context;
 
-    let currentState: FrameState = {
-      ...desiredState,
+    let currentState = desiredState.update({
       frameDataLocation: 'software',
       isAnamorphic: videoStream.isAnamorphic,
       scaledSize: videoStream.frameSize,
       paddedSize: videoStream.frameSize,
-    };
+    });
 
     if (desiredState.videoFormat !== VideoFormats.Copy) {
       currentState = this.setDeinterlace(currentState);
       currentState = this.setScale(currentState);
       currentState = this.setPad(currentState);
-      this.setWatermark();
+      currentState = this.setWatermark(currentState);
     }
 
     const { nextState, encoder } = this.setupEncoder(currentState);
@@ -94,15 +93,15 @@ export class SoftwarePipelineBuilder extends BasePipelineBuilder {
     return currentState;
   }
 
-  protected setWatermark() {
-    if (this.watermarkInoutSource) {
+  protected setWatermark(currentState: FrameState): FrameState {
+    if (this.watermarkInputSource) {
       // pixel format
       // this.watermarkInoutSource.filterSteps.add()
       // this.watermarkInoutSource.filterSteps.push()
 
       this.context.filterChain.watermarkOverlayFilterSteps.push(
         new OverlayWatermarkFilter(
-          this.watermarkInoutSource.watermark,
+          this.watermarkInputSource.watermark,
           this.context.desiredState.paddedSize,
           // Hardcode for testing
           {
@@ -113,5 +112,7 @@ export class SoftwarePipelineBuilder extends BasePipelineBuilder {
         ),
       );
     }
+
+    return currentState;
   }
 }
