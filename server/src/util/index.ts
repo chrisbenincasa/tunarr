@@ -394,7 +394,8 @@ export function ifDefined<T, U>(
   if (isNil(v)) {
     return null;
   }
-  return f(v);
+  const ret = f(v);
+  return isUndefined(ret) ? null : ret;
 }
 
 export function flipMap<K extends string | number, V extends string | number>(

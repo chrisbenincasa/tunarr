@@ -27,9 +27,43 @@ export abstract class NvidiaDecoder extends BaseDecoder {
 }
 
 export class NvidiaH264Decoder extends NvidiaDecoder {
-  constructor(hardwareAccelerationMode: HardwareAccelerationMode) {
+  readonly name = 'h264_cuvid';
+}
+
+export class NvidiaHevcDecoder extends NvidiaDecoder {
+  readonly name = 'hevc_cuvid';
+}
+
+export class NvidiaVc1Decoder extends NvidiaDecoder {
+  readonly name = 'vc1_cuvid';
+}
+
+export class NvidiaVp9Decoder extends NvidiaDecoder {
+  readonly name = 'vp9_cuvid';
+}
+
+export class NvidiaMpeg2Decoder extends NvidiaDecoder {
+  readonly name = 'mpeg2_cuvid';
+
+  constructor(
+    hardwareAccelerationMode: HardwareAccelerationMode,
+    contentIsInterlaced: boolean,
+  ) {
     super(hardwareAccelerationMode);
+    if (contentIsInterlaced) {
+      this.outputFrameDataLocation = 'software';
+    }
+  }
+}
+
+export class NvidiaImplicitDecoder extends NvidiaDecoder {
+  constructor() {
+    super('nvenc');
   }
 
-  name = 'h264_cuvid';
+  readonly name = '';
+
+  options(_inputFile: InputSource): string[] {
+    return ['-hwaccel_output_format', 'cuda'];
+  }
 }

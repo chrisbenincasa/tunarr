@@ -38,7 +38,7 @@ class PipelineBuilderFactory$Builder {
   }
 
   setWatermarkInputSource(
-    watermarkInputSource: WatermarkInputSource,
+    watermarkInputSource: Nullable<WatermarkInputSource>,
   ): PipelineBuilderFactory$Builder {
     this.watermarkInputFile = watermarkInputSource;
     return this;

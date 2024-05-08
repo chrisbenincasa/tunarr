@@ -31,7 +31,14 @@ import {
   FrameSize,
   HardwareAccelerationModes,
   VideoInputSource,
+  WatermarkInputSource,
 } from './builder/types.js';
+import { AudioState } from './builder/state/AudioState.js';
+import { PipelineBuilderFactory } from './builder/pipeline/PipelineBuilderFactory.js';
+import { FfmpegState } from './builder/state/FfmpegState.js';
+import { FrameState } from './builder/state/FrameState.js';
+import { FfmpegCommandGenerator } from './builder/FfmpegCommandGenerator.js';
+import { ifDefined, isNonEmptyString } from '../util/index.js';
 
 const spawn = child_process.spawn;
 
@@ -393,6 +400,13 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       .setHardwareAccelerationMode(hwAccel)
       .setVideoInputSource(videoInput)
       .setAudioInputSource(audioInput)
+      .setWatermarkInputSource(
+        ifDefined(enableIcon, (watermark) => {
+          if (isNonEmptyString(watermark.url)) {
+            return new WatermarkInputSource();
+          }
+        }) ?? null,
+      )
       .build();
 
     const args = new FfmpegCommandGenerator().generateArgs(

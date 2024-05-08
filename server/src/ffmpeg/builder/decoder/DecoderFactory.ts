@@ -2,7 +2,13 @@ import { VideoStream } from '../MediaStream';
 import { VideoFormats } from '../constants';
 import { HardwareAccelerationMode } from '../types';
 import { H264Decoder, ImplicitDecoder } from './SoftwareDecoder';
-import { NvidiaH264Decoder } from './nvidia/NvidiaDecoders';
+import {
+  NvidiaH264Decoder,
+  NvidiaHevcDecoder,
+  NvidiaMpeg2Decoder,
+  NvidiaVc1Decoder,
+  NvidiaVp9Decoder,
+} from './nvidia/NvidiaDecoders';
 import {
   H264QsvDecoder,
   HevcQsvDecoder,
@@ -28,6 +34,17 @@ export class DecoderFactory {
     switch (videoStream.codec) {
       case VideoFormats.H264:
         return new NvidiaH264Decoder(hardwareAccelerationMode);
+      case VideoFormats.Hevc:
+        return new NvidiaHevcDecoder(hardwareAccelerationMode);
+      case VideoFormats.Mpeg2Video:
+        return new NvidiaMpeg2Decoder(
+          hardwareAccelerationMode,
+          /* TODO */ false,
+        );
+      case VideoFormats.Vc1:
+        return new NvidiaVc1Decoder(hardwareAccelerationMode);
+      case VideoFormats.Vp9:
+        return new NvidiaVp9Decoder(hardwareAccelerationMode);
       default:
         return null;
     }
