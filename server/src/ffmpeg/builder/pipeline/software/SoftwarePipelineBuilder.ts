@@ -1,15 +1,23 @@
+import { isNull } from 'lodash-es';
 import { DeinterlaceFilter } from '../../filter/DeinterlaceFilter';
 import { PadFilter } from '../../filter/PadFilter';
 import { ScaleFilter } from '../../filter/ScaleFilter';
 import { FrameState } from '../../state/FrameState';
 import {
   BasePipelineBuilder,
-  PipelineVideoFunctionArgs,
+  isVideoPipelineContext,
 } from '../BasePIpelineBuilder';
+import { OverlayWatermarkFilter } from '../../filter/watermark/OverlayWatermarkFilter';
+import { VideoFormats } from '../../constants';
 
 export class SoftwarePipelineBuilder extends BasePipelineBuilder {
-  protected setupVideoFilters(args: PipelineVideoFunctionArgs) {
-    const { desiredState, videoStream, filterChain, pipelineSteps } = args;
+  protected setupVideoFilters() {
+    if (!isVideoPipelineContext(this.context)) {
+      return;
+    }
+
+    const { desiredState, videoStream, filterChain, pipelineSteps } =
+      this.context;
 
     let currentState: FrameState = {
       ...desiredState,
@@ -19,23 +27,27 @@ export class SoftwarePipelineBuilder extends BasePipelineBuilder {
       paddedSize: videoStream.frameSize,
     };
 
-    currentState = this.setDeinterlace(currentState, args);
-    currentState = this.setScaleOption(currentState, args);
-    currentState = this.setPadOption(currentState, args);
-    const { nextState, encoder } = this.setupEncoder(currentState, args);
+    if (desiredState.videoFormat !== VideoFormats.Copy) {
+      currentState = this.setDeinterlace(currentState);
+      currentState = this.setScale(currentState);
+      currentState = this.setPad(currentState);
+      this.setWatermark();
+    }
+
+    const { nextState, encoder } = this.setupEncoder(currentState);
     currentState = nextState;
-    pipelineSteps.push(encoder);
-    this.videoInputFile.filterSteps.push(encoder);
+
+    if (!isNull(encoder)) {
+      pipelineSteps.push(encoder);
+      this.videoInputFile.filterSteps.push(encoder);
+    }
 
     filterChain.videoFilterSteps.push(...this.videoInputFile.filterSteps);
   }
 
-  private setDeinterlace(
-    currentState: FrameState,
-    args: Readonly<PipelineVideoFunctionArgs>,
-  ): FrameState {
-    if (args.desiredState.interlaced) {
-      const filter = new DeinterlaceFilter(args.ffmpegState, currentState);
+  protected setDeinterlace(currentState: FrameState): FrameState {
+    if (this.desiredState.interlaced) {
+      const filter = new DeinterlaceFilter(this.ffmpegState, currentState);
       this.videoInputFile.filterSteps.push(filter);
 
       if (filter.affectsFrameState) {
@@ -46,15 +58,22 @@ export class SoftwarePipelineBuilder extends BasePipelineBuilder {
     return currentState;
   }
 
-  private setScaleOption(
-    currentState: FrameState,
-    args: Readonly<PipelineVideoFunctionArgs>,
-  ) {
+  protected setScale(currentState: FrameState) {
     let nextState = currentState;
-    const { videoStream, desiredState } = args;
+
+    if (!isVideoPipelineContext(this.context)) {
+      return nextState;
+    }
+
+    const { videoStream, desiredState } = this.context;
     if (!videoStream.frameSize.equals(desiredState.scaledSize)) {
       // Scale filter
-      const filter = ScaleFilter.create(currentState, args);
+      const filter = ScaleFilter.create(
+        currentState,
+        this.context.ffmpegState,
+        desiredState.scaledSize,
+        desiredState.paddedSize,
+      );
       if (filter.affectsFrameState) {
         nextState = filter.nextState(currentState);
       }
@@ -63,12 +82,9 @@ export class SoftwarePipelineBuilder extends BasePipelineBuilder {
     return nextState;
   }
 
-  private setPadOption(
-    currentState: FrameState,
-    { desiredState }: PipelineVideoFunctionArgs,
-  ): FrameState {
-    if (!currentState.paddedSize.equals(desiredState.paddedSize)) {
-      const padFilter = new PadFilter(currentState, desiredState, null);
+  protected setPad(currentState: FrameState): FrameState {
+    if (!currentState.paddedSize.equals(this.desiredState.paddedSize)) {
+      const padFilter = new PadFilter(currentState, this.desiredState, null);
       this.videoInputFile.filterSteps.push(padFilter);
       if (padFilter.affectsFrameState) {
         return padFilter.nextState(currentState);
@@ -76,5 +92,26 @@ export class SoftwarePipelineBuilder extends BasePipelineBuilder {
     }
 
     return currentState;
+  }
+
+  protected setWatermark() {
+    if (this.watermarkInoutSource) {
+      // pixel format
+      // this.watermarkInoutSource.filterSteps.add()
+      // this.watermarkInoutSource.filterSteps.push()
+
+      this.context.filterChain.watermarkOverlayFilterSteps.push(
+        new OverlayWatermarkFilter(
+          this.watermarkInoutSource.watermark,
+          this.context.desiredState.paddedSize,
+          // Hardcode for testing
+          {
+            name: 'yuv420p',
+            ffmpegName: 'yuv420p',
+            bitDepth: 8,
+          },
+        ),
+      );
+    }
   }
 }

@@ -3,13 +3,9 @@ import { Nullable } from '../../../../types/util';
 import { VideoFormats } from '../../constants';
 import { Decoder } from '../../decoder/Decoder';
 import { CudaHardwareAccelerationOption } from '../../options/hardwareAcceleration/NvidiaOptions';
-import {
-  BasePipelineBuilder,
-  PipelineVideoFunctionArgs,
-} from '../BasePIpelineBuilder';
+import { isVideoPipelineContext } from '../BasePIpelineBuilder';
 import { DecoderFactory } from '../../decoder/DecoderFactory';
 import { FrameState } from '../../state/FrameState';
-import { FfmpegState } from '../../state/FfmpegState';
 import { DeinterlaceFilter } from '../../filter/DeinterlaceFilter';
 import { YadifCudaFilter } from '../../filter/nvidia/YadifCudaFilter';
 import { Filter } from '../../filter/FilterBase';
@@ -17,18 +13,20 @@ import { ScaleFilter } from '../../filter/ScaleFilter';
 import { ScaleCudaFilter } from '../../filter/nvidia/ScaleCudaFilter';
 import { isNonEmptyString } from '../../../../util';
 import { PixelFormat } from '../../types';
-import { VideoStream } from '../../MediaStream';
 import { PadFilter } from '../../filter/PadFilter';
 import { EncoderFactory } from '../../encoder/EncoderFactory';
 import { VideoEncoder } from '../../encoder/BaseEncoder';
+import { SoftwarePipelineBuilder } from '../software/SoftwarePipelineBuilder';
 
-export class NvidiaPipelineBuilder extends BasePipelineBuilder {
-  protected setHardwareAccelState({
-    videoStream,
-    desiredState,
-    pipelineSteps,
-    ffmpegState,
-  }: PipelineVideoFunctionArgs): void {
+export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
+  protected setHardwareAccelState(): void {
+    if (!isVideoPipelineContext(this.context)) {
+      return;
+    }
+
+    const { videoStream, ffmpegState, desiredState, pipelineSteps } =
+      this.context;
+
     let canDecode = true;
     const canEncode = true;
     // TODO: check whether can decode and can encode based on capabilities
@@ -55,24 +53,32 @@ export class NvidiaPipelineBuilder extends BasePipelineBuilder {
     ffmpegState.encoderHwAccelMode = canEncode ? 'nvenc' : 'none';
   }
 
-  protected setupDecoder(args: PipelineVideoFunctionArgs): Nullable<Decoder> {
-    const { videoStream, ffmpegState } = args;
+  protected setupDecoder(): Nullable<Decoder> {
+    if (!isVideoPipelineContext(this.context)) {
+      return null;
+    }
+
+    const { videoStream, ffmpegState } = this.context;
     let decoder: Nullable<Decoder> = null;
     if (ffmpegState.decoderHwAccelMode === 'nvenc') {
       decoder = DecoderFactory.getNvidiaDecoder(videoStream, 'nvenc');
       if (!isNull(decoder)) {
         this.videoInputFile.addOption(decoder);
       } else {
-        decoder = super.setupDecoder(args);
+        decoder = super.setupDecoder();
       }
     }
 
     return decoder;
   }
 
-  protected setupVideoFilters(args: Readonly<PipelineVideoFunctionArgs>): void {
-    const { desiredState, videoStream, decoder, ffmpegState, pipelineSteps } =
-      args;
+  protected setupVideoFilters(): void {
+    if (!isVideoPipelineContext(this.context)) {
+      return;
+    }
+
+    const { desiredState, videoStream, ffmpegState, pipelineSteps } =
+      this.context;
 
     let currentState = {
       ...desiredState,
@@ -81,16 +87,11 @@ export class NvidiaPipelineBuilder extends BasePipelineBuilder {
       paddedSize: videoStream.frameSize,
     };
 
-    currentState = decoder?.nextState(currentState) ?? currentState;
+    currentState = this.decoder?.nextState(currentState) ?? currentState;
 
-    currentState = this.setDeinterlace(ffmpegState, currentState, desiredState);
-    currentState = this.setScale(currentState, args);
-    currentState = this.setPad(
-      videoStream,
-      currentState,
-      desiredState,
-      ffmpegState,
-    );
+    currentState = this.setDeinterlace(currentState);
+    currentState = this.setScale(currentState);
+    currentState = this.setPad(currentState);
 
     let encoder: Nullable<VideoEncoder> = null;
     if (ffmpegState.encoderHwAccelMode === 'nvenc') {
@@ -100,26 +101,24 @@ export class NvidiaPipelineBuilder extends BasePipelineBuilder {
     if (isNull(encoder)) {
       const { encoder: softwareEncoder, nextState } = super.setupEncoder(
         currentState,
-        args,
       );
       currentState = nextState;
       encoder = softwareEncoder;
     }
 
-    pipelineSteps.push(encoder);
-    this.videoInputFile.filterSteps.push(encoder);
+    if (!isNull(encoder)) {
+      pipelineSteps.push(encoder);
+      this.videoInputFile.filterSteps.push(encoder);
+    }
+
     // args.filterChain.videoFilterSteps.push(...this.videoInputFile.filterSteps);
   }
 
-  private setDeinterlace(
-    ffmpegState: FfmpegState,
-    currentState: FrameState,
-    desiredState: FrameState,
-  ): FrameState {
-    if (desiredState.interlaced) {
+  protected override setDeinterlace(currentState: FrameState): FrameState {
+    if (this.desiredState.interlaced) {
       const filter =
         currentState.frameDataLocation === 'software'
-          ? new DeinterlaceFilter(ffmpegState, currentState)
+          ? new DeinterlaceFilter(this.ffmpegState, currentState)
           : new YadifCudaFilter(currentState);
       this.videoInputFile.filterSteps.push(filter);
       if (filter.affectsFrameState) {
@@ -129,12 +128,9 @@ export class NvidiaPipelineBuilder extends BasePipelineBuilder {
     return currentState;
   }
 
-  private setScale(
-    currentState: FrameState,
-    args: PipelineVideoFunctionArgs,
-  ): FrameState {
+  protected setScale(currentState: FrameState): FrameState {
     let nextState = currentState;
-    const { desiredState, ffmpegState } = args;
+    const { desiredState, ffmpegState } = this.context;
 
     if (currentState.scaledSize.equals(desiredState.scaledSize)) {
       return currentState;
@@ -152,7 +148,12 @@ export class NvidiaPipelineBuilder extends BasePipelineBuilder {
       (needsToPad || noHardwareFilters) &&
       softwareEncoder
     ) {
-      scaleStep = ScaleFilter.create(currentState, args);
+      scaleStep = ScaleFilter.create(
+        currentState,
+        ffmpegState,
+        desiredState.scaledSize,
+        desiredState.paddedSize,
+      );
     } else {
       scaleStep = new ScaleCudaFilter(
         currentState,
@@ -172,23 +173,26 @@ export class NvidiaPipelineBuilder extends BasePipelineBuilder {
     return nextState;
   }
 
-  private setPad(
-    videoStream: VideoStream,
-    currentState: FrameState,
-    desiredState: FrameState,
-    ffmpegState: FfmpegState,
-  ): FrameState {
+  protected setPad(currentState: FrameState): FrameState {
+    if (!isVideoPipelineContext(this.context)) {
+      return currentState;
+    }
+
     let nextState = currentState;
-    if (currentState.paddedSize.equals(desiredState.paddedSize) == false) {
+    if (currentState.paddedSize.equals(this.desiredState.paddedSize) == false) {
       // TODO: move this into current/desired state, but see if it works here for now
       const pixelFormat: Nullable<PixelFormat> =
-        ffmpegState.decoderHwAccelMode == 'nvenc' &&
-        videoStream.pixelFormat != null &&
-        videoStream.pixelFormat.bitDepth == 8
-          ? new PixelFormatNv12(videoStream.pixelFormat.name)
-          : videoStream.pixelFormat;
+        this.ffmpegState.decoderHwAccelMode == 'nvenc' &&
+        this.context.videoStream.pixelFormat != null &&
+        this.context.videoStream.pixelFormat.bitDepth == 8
+          ? new PixelFormatNv12(this.context.videoStream.pixelFormat.name)
+          : this.context.videoStream.pixelFormat;
 
-      const padStep = new PadFilter(currentState, desiredState, pixelFormat);
+      const padStep = new PadFilter(
+        currentState,
+        this.desiredState,
+        pixelFormat,
+      );
 
       if (padStep.affectsFrameState) {
         nextState = padStep.nextState(nextState);

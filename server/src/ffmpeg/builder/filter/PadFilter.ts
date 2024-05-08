@@ -8,8 +8,8 @@ export class PadFilter extends Filter {
   private currentFrameDataLocation: FrameDataLocation;
   private desiredPaddedSize: FrameSize;
 
-  readonly filter: string;
-  readonly affectsFrameState: boolean = true;
+  public readonly filter: string;
+  public readonly affectsFrameState: boolean = true;
 
   constructor(
     currentState: FrameState,

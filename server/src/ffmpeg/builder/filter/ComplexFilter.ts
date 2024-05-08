@@ -8,6 +8,7 @@ import {
   WatermarkInputSource,
 } from '../types';
 import { FrameState } from '../state/FrameState.js';
+import { FilterChain } from './FilterChain';
 
 export class ComplexFilter implements Option {
   readonly type = 'filter';
@@ -15,6 +16,7 @@ export class ComplexFilter implements Option {
     private videoInputSource: VideoInputSource,
     private audioInputSource: Nullable<AudioInputSource>,
     private watermarkInputSource: Nullable<WatermarkInputSource>,
+    private filterChain: FilterChain,
   ) {}
 
   readonly affectsFrameState: boolean = false;
@@ -59,7 +61,7 @@ export class ComplexFilter implements Option {
       ) {
         videoFilterComplex += `[${videoInputIndex}:${index}]`;
         const filters = _.chain(this.videoInputSource.filterSteps)
-          .map('filter')
+          .map((step) => step.filter)
           .filter(isNonEmptyString)
           .join(',')
           .value();
@@ -74,7 +76,7 @@ export class ComplexFilter implements Option {
       forEach(watermark.videoStreams, (_1, index) => {
         watermarkLabel = `${inputIndex}:${index}`;
         const filterSteps = _.chain(watermark.filterSteps)
-          .map('filter')
+          .map((step) => step.filter)
           .filter(isNonEmptyString)
           .value();
         if (filterSteps.length > 0) {
@@ -88,30 +90,52 @@ export class ComplexFilter implements Option {
       });
     });
 
-    if (isNonEmptyString(watermarkLabel))
-      ifDefined(this.audioInputSource, (audioInput) => {
-        const audioInputIndex = distinctPaths.indexOf(audioInput.path);
-        forEach(audioInput.audioStreams, (stream) => {
-          const index = stream.index;
-          audioLabel = `${audioInputIndex}:${index}`;
-          if (
-            some(audioInput.filterSteps, (step) =>
-              isNonEmptyString(step.filter),
-            )
-          ) {
-            audioFilterComplex += `[${audioFilterComplex}:${index}]`;
-            audioFilterComplex += _.chain(audioInput.filterSteps)
-              .filter(isNonEmptyString)
-              .map('filter')
-              .join(',')
-              .value();
-            audioLabel = '[a]';
-            audioFilterComplex += audioLabel;
-          }
-        });
-      });
+    if (
+      isNonEmptyString(watermarkLabel) &&
+      this.filterChain.watermarkOverlayFilterSteps.length > 0
+    ) {
+      const filterString = _.chain(this.filterChain.watermarkOverlayFilterSteps)
+        .filter(isNonEmptyString)
+        .map((step) => step.filter)
+        .join(',')
+        .value();
+      watermarkFilterComplex += `${formatLabel(videoLabel)}${formatLabel(
+        watermarkLabel,
+      )}${filterString}`;
+      videoLabel = '[vwm]';
+      watermarkFilterComplex += videoLabel;
+    }
 
-    const filterComplex = _.chain([videoFilterComplex])
+    ifDefined(this.audioInputSource, (audioInput) => {
+      const audioInputIndex = distinctPaths.indexOf(audioInput.path);
+      if (audioInputIndex === -1) {
+        return;
+      }
+
+      forEach(audioInput.audioStreams, (stream) => {
+        const index = stream.index;
+        audioLabel = `${audioInputIndex}:${index}`;
+        console.log(audioInput.filterSteps);
+        if (
+          some(audioInput.filterSteps, (step) => isNonEmptyString(step.filter))
+        ) {
+          audioFilterComplex += `[${audioInputIndex}:${index}]`;
+          audioFilterComplex += _.chain(audioInput.filterSteps)
+            .map((step) => step.filter)
+            .filter(isNonEmptyString)
+            .join(',')
+            .value();
+          audioLabel = '[a]';
+          audioFilterComplex += audioLabel;
+        }
+      });
+    });
+
+    const filterComplex = _.chain([
+      videoFilterComplex,
+      audioFilterComplex,
+      watermarkFilterComplex,
+    ])
       .filter(isNonEmptyString)
       .join(',')
       .value();
@@ -120,12 +144,12 @@ export class ComplexFilter implements Option {
       result.push('-filter_complex', filterComplex);
     }
 
-    result.push('-map', audioLabel, '-map', videoLabel);
+    result.push('-map', videoLabel, '-map', audioLabel);
 
     return result;
   }
+}
 
-  private formatLabel(label: string) {
-    return label.startsWith('[') ? label : `[${label}]`;
-  }
+function formatLabel(label: string) {
+  return label.startsWith('[') ? label : `[${label}]`;
 }

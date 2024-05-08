@@ -50,7 +50,7 @@ export class ScaleCudaFilter extends Filter {
       return scale;
     }
 
-    return this.currentState.frameDataLocation == 'hardware'
+    return this.currentState.frameDataLocation === 'hardware'
       ? scale
       : `hwupload_cuda,${scale}`;
   }

@@ -1,32 +1,34 @@
-import { isNull } from 'lodash-es';
-import os from 'node:os';
+import { first, isNull, isUndefined } from 'lodash-es';
 import { Nullable } from '../../../types/util';
+import { ifDefined, isNonEmptyString } from '../../../util';
+import { AudioStream, VideoStream } from '../MediaStream';
 import { VideoFormats } from '../constants';
+import { Decoder } from '../decoder/Decoder';
+import { DecoderFactory } from '../decoder/DecoderFactory';
+import { AudioEncoder } from '../encoder/BaseEncoder';
 import { CopyAudioEncoder, CopyVideoEncoder } from '../encoder/CopyEncoders';
+import { EncoderFactory } from '../encoder/EncoderFactory';
+import { AudioPadFilter } from '../filter/AudioPadFilter';
+import { ComplexFilter } from '../filter/ComplexFilter';
+import { VideoEncoder } from '../encoder/BaseEncoder';
+import { FilterChain } from '../filter/FilterChain';
+import {
+  AudioBitrateOutputOption,
+  AudioBufferSizeOutputOption,
+  AudioChannelsOutputOption,
+  AudioSampleRateOutputOption,
+} from '../options/AudioOutputOptions';
 import {
   HideBannerOption,
   NoStdInOption,
   ThreadCountOption,
 } from '../options/GlobalOption';
-import { LogLevelOption } from '../options/LogLevelOption';
-import { NoStatsOption } from '../options/NoStatsOption';
-import { FfmpegState } from '../state/FfmpegState';
-import { FrameState } from '../state/FrameState';
-import {
-  AudioInputSource,
-  PipelineStep,
-  VideoInputSource,
-  WatermarkInputSource,
-} from '../types';
-import { PipelineBuilder } from './PipelineBuilder';
-import { ifDefined, isNonEmptyString } from '../../../util';
 import {
   RealtimeInputOption,
   StreamSeekInputOption,
 } from '../options/InputOption';
-import { AudioStream, VideoStream } from '../MediaStream';
-import { Decoder } from '../decoder/Decoder';
-import { DecoderFactory } from '../decoder/DecoderFactory';
+import { LogLevelOption } from '../options/LogLevelOption';
+import { NoStatsOption } from '../options/NoStatsOption';
 import {
   ClosedGopOutputOption,
   FrameRateOutputOption,
@@ -37,23 +39,17 @@ import {
   VideoBufferSizeOutputOption,
   VideoTrackTimescaleOutputOption,
 } from '../options/OutputOption';
-import { FilterChain } from '../filter/FilterChain';
-import { EncoderFactory } from '../encoder/EncoderFactory';
-import { ComplexFilter } from '../filter/ComplexFilter';
-import { AudioEncoder } from '../encoder/BaseEncoder';
 import { AudioState } from '../state/AudioState';
+import { FfmpegState } from '../state/FfmpegState';
+import { FrameState } from '../state/FrameState';
 import {
-  AudioBitrateOutputOption,
-  AudioBufferSizeOutputOption,
-  AudioChannelsOutputOption,
-  AudioSampleRateOutputOption,
-} from '../options/AudioOutputOptions';
-import { AudioPadFilter } from '../filter/AudioPadFilter';
-import { AsyncLocalStorage } from 'node:async_hooks';
-
-const numProcessors = os.cpus().length;
-
-const context = new AsyncLocalStorage<PipelineVideoFunctionArgs>();
+  AudioInputSource,
+  PipelineStep,
+  VideoInputSource,
+  WatermarkInputSource,
+} from '../types';
+import { PipelineBuilder } from './PipelineBuilder';
+import { MarkRequired } from 'ts-essentials';
 
 // Args passed to each setter -- we use an object here so we
 // 1. can deconstruct args in each implementor to use only what we need
@@ -74,8 +70,43 @@ export type PipelineAudioFunctionArgs = {
   pipelineSteps: PipelineStep[];
 };
 
+export type PipelineBuilderContext = {
+  videoStream?: VideoStream;
+  audioStream?: AudioStream;
+  ffmpegState: FfmpegState;
+  desiredState: FrameState;
+  desiredAudioState?: AudioState;
+  pipelineSteps: PipelineStep[];
+  filterChain: FilterChain;
+  decoder: Nullable<Decoder>;
+};
+
+export type PipelineBuilderContextWithVideo = MarkRequired<
+  PipelineBuilderContext,
+  'videoStream'
+>;
+export type PipelineBuilderContextWithAudio = MarkRequired<
+  PipelineBuilderContext,
+  'audioStream' | 'desiredAudioState'
+>;
+
+export function isVideoPipelineContext(
+  context: PipelineBuilderContext,
+): context is PipelineBuilderContextWithVideo {
+  return !isUndefined(context.videoStream);
+}
+
+export function isAudioPipelineContext(
+  context: PipelineBuilderContext,
+): context is PipelineBuilderContextWithAudio {
+  return (
+    !isUndefined(context.audioStream) && !isUndefined(context.desiredAudioState)
+  );
+}
+
 export abstract class BasePipelineBuilder implements PipelineBuilder {
   protected decoder: Nullable<Decoder> = null;
+  protected context: PipelineBuilderContext;
 
   constructor(
     protected videoInputFile: VideoInputSource,
@@ -94,7 +125,18 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
   // }
 
   build(ffmpegState: FfmpegState, desiredState: FrameState): PipelineStep[] {
-    const steps: PipelineStep[] = [
+    this.context = {
+      videoStream: first(this.videoInputFile.videoStreams),
+      audioStream: first(this.audioInputFile?.audioStreams),
+      ffmpegState,
+      desiredState,
+      desiredAudioState: this.audioInputFile?.desiredState,
+      pipelineSteps: [],
+      filterChain: new FilterChain(),
+      decoder: this.decoder,
+    };
+
+    this.context.pipelineSteps = [
       ...this.getThreadCountOption(desiredState, ffmpegState),
       new NoStdInOption(),
       new HideBannerOption(),
@@ -105,121 +147,127 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       ClosedGopOutputOption(),
     ];
 
-    const filterChain = new FilterChain();
-
-    if (this.videoInputFile.videoStreams.length > 0) {
+    if (isVideoPipelineContext(this.context)) {
       if (desiredState.videoFormat === VideoFormats.Copy) {
-        steps.push(CopyVideoEncoder.create());
+        this.context.pipelineSteps.push(CopyVideoEncoder.create());
       } else {
-        this.buildVideoPipeline({
-          ffmpegState: ffmpegState,
-          desiredState,
-          videoStream: this.videoInputFile.videoStreams[0],
-          pipelineSteps: steps,
-          filterChain,
-          decoder: this.decoder,
-        });
+        this.buildVideoPipeline();
       }
     }
 
     if (isNull(this.audioInputFile)) {
-      steps.push(new CopyAudioEncoder());
+      this.context.pipelineSteps.push(new CopyAudioEncoder());
     } else if (this.audioInputFile.audioStreams.length > 0) {
-      this.buildAudioPipeline({
-        ffmpegState: ffmpegState,
-        audioStream: this.audioInputFile.audioStreams[0],
-        pipelineSteps: steps,
-        desiredState: this.audioInputFile.desiredState,
-      });
+      this.buildAudioPipeline();
     }
 
     // metadata
 
-    this.setOutputFormat({
-      ffmpegState: ffmpegState,
-      desiredState,
-      videoStream: this.videoInputFile.videoStreams[0],
-      pipelineSteps: steps,
-      filterChain,
-      decoder: this.decoder,
-    });
+    this.setOutputFormat();
 
-    steps.push(
+    this.pipelineSteps.push(
       new ComplexFilter(
         this.videoInputFile,
         this.audioInputFile,
         this.watermarkInoutSource,
+        this.context.filterChain,
       ),
     );
 
     if (isNull(this.audioInputFile)) {
-      steps.push(new CopyAudioEncoder());
+      this.pipelineSteps.push(new CopyAudioEncoder());
     }
 
-    return steps;
+    return this.pipelineSteps;
   }
 
-  protected buildVideoPipeline(args: Readonly<PipelineVideoFunctionArgs>) {
-    this.setHardwareAccelState(args);
-    this.decoder = this.setupDecoder(args);
-    ifDefined(args.desiredState.frameRate, (fr) =>
-      args.pipelineSteps.push(FrameRateOutputOption(fr)),
-    );
-    ifDefined(args.desiredState.videoTrackTimescale, (ts) =>
-      args.pipelineSteps.push(VideoTrackTimescaleOutputOption(ts)),
-    );
-    ifDefined(args.desiredState.videoBitrate, (br) =>
-      args.pipelineSteps.push(VideoBitrateOutputOption(br)),
-    );
-    ifDefined(args.desiredState.videoBufferSize, (bs) =>
-      args.pipelineSteps.push(VideoBufferSizeOutputOption(bs)),
-    );
-
-    this.setupVideoFilters(args);
+  protected get ffmpegState() {
+    return this.context.ffmpegState;
   }
 
-  protected buildAudioPipeline(args: Readonly<PipelineAudioFunctionArgs>) {
-    const encoder = new AudioEncoder(args.desiredState.audioEncoder);
-    args.pipelineSteps.push(encoder);
+  protected get desiredState() {
+    return this.context.desiredState;
+  }
 
-    args.pipelineSteps.push(
+  protected get desiredAudioState() {
+    return this.context.desiredAudioState;
+  }
+
+  protected get pipelineSteps() {
+    return this.context.pipelineSteps;
+  }
+
+  protected buildVideoPipeline() {
+    this.setHardwareAccelState();
+    if (isVideoPipelineContext(this.context)) {
+      this.decoder = this.setupDecoder();
+    }
+    ifDefined(this.desiredState.frameRate, (fr) =>
+      this.pipelineSteps.push(FrameRateOutputOption(fr)),
+    );
+    ifDefined(this.desiredState.videoTrackTimescale, (ts) =>
+      this.pipelineSteps.push(VideoTrackTimescaleOutputOption(ts)),
+    );
+    ifDefined(this.desiredState.videoBitrate, (br) =>
+      this.pipelineSteps.push(VideoBitrateOutputOption(br)),
+    );
+    ifDefined(this.desiredState.videoBufferSize, (bs) =>
+      this.pipelineSteps.push(VideoBufferSizeOutputOption(bs)),
+    );
+
+    this.setupVideoFilters();
+  }
+
+  protected buildAudioPipeline() {
+    if (!isAudioPipelineContext(this.context)) {
+      return;
+    }
+
+    const encoder = new AudioEncoder(
+      this.context.desiredAudioState.audioEncoder,
+    );
+    this.pipelineSteps.push(encoder);
+
+    this.pipelineSteps.push(
       AudioChannelsOutputOption(
-        args.audioStream.codec,
-        args.audioStream.channels,
-        args.desiredState.audioChannels,
+        this.context.audioStream.codec,
+        this.context.audioStream.channels,
+        this.context.desiredAudioState.audioChannels,
       ),
     );
 
-    ifDefined(args.desiredState.audioBitrate, (br) =>
-      args.pipelineSteps.push(AudioBitrateOutputOption(br)),
+    ifDefined(this.context.desiredAudioState.audioBitrate, (br) =>
+      this.pipelineSteps.push(AudioBitrateOutputOption(br)),
     );
 
-    ifDefined(args.desiredState.audioBufferSize, (buf) =>
-      args.pipelineSteps.push(AudioBufferSizeOutputOption(buf)),
+    ifDefined(this.context.desiredAudioState.audioBufferSize, (buf) =>
+      this.pipelineSteps.push(AudioBufferSizeOutputOption(buf)),
     );
 
-    ifDefined(args.desiredState.audioSampleRate, (rate) =>
-      args.pipelineSteps.push(AudioSampleRateOutputOption(rate)),
+    ifDefined(this.context.desiredAudioState.audioSampleRate, (rate) =>
+      this.pipelineSteps.push(AudioSampleRateOutputOption(rate)),
     );
 
     // TODO Audio volumne
 
-    if (!isNull(args.desiredState.audioDuration)) {
+    if (!isNull(this.context.desiredAudioState.audioDuration)) {
       this.audioInputFile?.filterSteps.push(
-        AudioPadFilter.create(args.desiredState.audioDuration),
+        AudioPadFilter.create(this.context.desiredAudioState.audioDuration),
       );
     }
   }
 
-  protected abstract setupVideoFilters(
-    args: Readonly<PipelineVideoFunctionArgs>,
-  ): void;
+  protected abstract setupVideoFilters(): void;
 
-  protected setupEncoder(
-    currentState: FrameState,
-    args: Readonly<PipelineVideoFunctionArgs>,
-  ) {
-    const encoder = EncoderFactory.getSoftwareEncoder(args.videoStream);
+  protected setupEncoder(currentState: FrameState): {
+    nextState: FrameState;
+    encoder: Nullable<VideoEncoder>;
+  } {
+    if (!isVideoPipelineContext(this.context)) {
+      return { nextState: currentState, encoder: null };
+    }
+
+    const encoder = EncoderFactory.getSoftwareEncoder(this.context.videoStream);
     const nextState = encoder.updateFrameState(currentState);
     return {
       nextState,
@@ -227,37 +275,44 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     };
   }
 
-  protected setupDecoder({
-    videoStream,
-  }: PipelineVideoFunctionArgs): Nullable<Decoder> {
-    const decoder = DecoderFactory.getSoftwareDecoder(videoStream);
-    this.videoInputFile.addOption(decoder);
+  protected setupDecoder(): Nullable<Decoder> {
+    let decoder: Nullable<Decoder> = null;
+    if (isVideoPipelineContext(this.context)) {
+      decoder = DecoderFactory.getSoftwareDecoder(this.context.videoStream);
+      this.videoInputFile.addOption(decoder);
+    }
     return decoder;
   }
 
-  protected setHardwareAccelState({ ffmpegState }: PipelineVideoFunctionArgs) {
-    ffmpegState.decoderHwAccelMode = 'none';
-    ffmpegState.encoderHwAccelMode = 'none';
+  protected setHardwareAccelState() {
+    this.context.ffmpegState = {
+      ...this.context.ffmpegState,
+      decoderHwAccelMode: 'none',
+      encoderHwAccelMode: 'none',
+    };
   }
 
-  protected setStreamSeek(ffmpegState: FfmpegState) {
-    ifDefined(ffmpegState.start, (start) => {
+  protected setStreamSeek() {
+    ifDefined(this.context.ffmpegState.start, (start) => {
       const option = new StreamSeekInputOption(start);
       this.audioInputFile?.addOption(option);
       this.videoInputFile.addOption(option);
     });
   }
 
-  protected setRealtime(desiredState: FrameState) {
-    if (desiredState.realtime) {
+  protected setRealtime() {
+    if (this.desiredState.realtime) {
       const option = new RealtimeInputOption();
       this.audioInputFile?.addOption(option);
       this.videoInputFile.addOption(option);
     }
   }
 
-  protected setOutputFormat({ pipelineSteps }: PipelineVideoFunctionArgs) {
-    pipelineSteps.push(MpegTsOutputFormatOption(), PipeProtocolOutputOption());
+  protected setOutputFormat() {
+    this.context.pipelineSteps.push(
+      MpegTsOutputFormatOption(),
+      PipeProtocolOutputOption(),
+    );
   }
 
   protected getThreadCountOption(

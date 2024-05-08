@@ -4,8 +4,8 @@ import { FrameSize, PixelFormat } from '../../types.js';
 import { FrameState } from '../../state/FrameState.js';
 
 export class OverlayWatermarkFilter extends Filter {
-  readonly affectsFrameState: boolean = true;
-  readonly filter: string;
+  public readonly affectsFrameState: boolean = true;
+  public readonly filter: string;
 
   constructor(
     private watermark: Watermark,

@@ -1,53 +1,51 @@
-import { PipelineVideoFunctionArgs } from '../pipeline/BasePIpelineBuilder';
+import { FfmpegState } from '../state/FfmpegState';
 import { FrameState } from '../state/FrameState';
 import { FrameSize } from '../types';
 import { Filter } from './FilterBase';
 
 export class ScaleFilter extends Filter {
-  private desiredScaledSize: FrameSize;
-  private desiredPaddedSize: FrameSize;
-
   readonly filter: string;
 
   readonly affectsFrameState = true;
 
   private constructor(
-    currentState: FrameState,
-    args: PipelineVideoFunctionArgs,
+    private currentState: FrameState,
+    private ffmpegState: FfmpegState,
+    private desiredScaledSize: FrameSize,
+    private desiredPaddedSize: FrameSize,
   ) {
     super();
-    this.filter = ScaleFilter.generateFilter(currentState, args);
-    this.desiredScaledSize = args.desiredState.scaledSize;
-    this.desiredPaddedSize = args.desiredState.paddedSize;
+    this.filter = this.generateFilter();
   }
 
-  static create(currentState: FrameState, args: PipelineVideoFunctionArgs) {
-    return new ScaleFilter(currentState, args);
-  }
-
-  static generateFilter(
+  static create(
     currentState: FrameState,
-    {
+    ffmpegState: FfmpegState,
+    desiredScaledSize: FrameSize,
+    desiredPaddedSize: FrameSize,
+  ) {
+    return new ScaleFilter(
+      currentState,
       ffmpegState,
-      desiredState: {
-        scaledSize: desiredScaledSize,
-        paddedSize: desiredPaddedSize,
-      },
-    }: PipelineVideoFunctionArgs,
-  ): string {
-    if (currentState.scaledSize.equals(desiredScaledSize)) {
+      desiredScaledSize,
+      desiredPaddedSize,
+    );
+  }
+
+  private generateFilter(): string {
+    if (this.currentState.scaledSize.equals(this.desiredScaledSize)) {
       return '';
     }
 
-    const aspectRatio = desiredScaledSize.equals(desiredPaddedSize)
+    const aspectRatio = this.desiredScaledSize.equals(this.desiredPaddedSize)
       ? ''
       : ':force_original_aspect_ratio=decrease';
 
     let scaleFilter: string;
-    if (currentState.isAnamorphic) {
-      scaleFilter = `scale=iw*sar:ih,setsar=1,scale=${desiredPaddedSize.width}:${desiredPaddedSize.height}:flags=${ffmpegState.softwareScalingAlgorithm}${aspectRatio}`;
+    if (this.currentState.isAnamorphic) {
+      scaleFilter = `scale=iw*sar:ih,setsar=1,scale=${this.desiredPaddedSize.width}:${this.desiredPaddedSize.height}:flags=${this.ffmpegState.softwareScalingAlgorithm}${aspectRatio}`;
     } else {
-      scaleFilter = `scale=${desiredPaddedSize.width}:${desiredPaddedSize.height}:flags=${ffmpegState.softwareScalingAlgorithm}${aspectRatio},setsar=1`;
+      scaleFilter = `scale=${this.desiredPaddedSize.width}:${this.desiredPaddedSize.height}:flags=${this.ffmpegState.softwareScalingAlgorithm}${aspectRatio},setsar=1`;
     }
 
     // TODO: hwdownload if needed

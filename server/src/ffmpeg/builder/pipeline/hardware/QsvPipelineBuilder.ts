@@ -4,11 +4,7 @@ import { VideoFormats } from '../../constants';
 import { Decoder } from '../../decoder/Decoder';
 import { DecoderFactory } from '../../decoder/DecoderFactory';
 import { QsvHardwareAccelerationOption } from '../../options/hardwareAcceleration/QsvOptions';
-import {
-  BasePipelineBuilder,
-  PipelineVideoFunctionArgs,
-} from '../BasePIpelineBuilder';
-import { FfmpegState } from '../../state/FfmpegState';
+import { isVideoPipelineContext } from '../BasePIpelineBuilder';
 import { FrameState } from '../../state/FrameState';
 import { DeinterlaceFilter } from '../../filter/DeinterlaceFilter';
 import { DeinterlaceQsvFilter } from '../../filter/qsv/DeinterlaceQsvFilter';
@@ -16,43 +12,47 @@ import { Filter } from '../../filter/FilterBase';
 import { ScaleFilter } from '../../filter/ScaleFilter';
 import { ScaleQsvFilter } from '../../filter/qsv/ScaleQsvFilter';
 import { isNonEmptyString } from '../../../../util';
-import { VideoStream } from '../../MediaStream';
 import { PixelFormat } from '../../types';
 import { PadFilter } from '../../filter/PadFilter';
 import { PixelFormatNv12 } from './NvidiaPipelineBuilder';
 import { Encoder } from '../../encoder/Encoder';
 import { EncoderFactory } from '../../encoder/EncoderFactory';
+import { SoftwarePipelineBuilder } from '../software/SoftwarePipelineBuilder';
 
-export class QsvPipelineBuilder extends BasePipelineBuilder {
-  protected setHardwareAccelState({
-    ffmpegState,
-    pipelineSteps,
-    videoStream,
-  }: PipelineVideoFunctionArgs): void {
+export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
+  protected setHardwareAccelState(): void {
+    if (!isVideoPipelineContext(this.context)) {
+      return;
+    }
+
     let canDecode = true;
     const canEncode = true;
 
     // TODO: vaapi device
-    pipelineSteps.push(
-      new QsvHardwareAccelerationOption(ffmpegState.vaapiDevice),
+    this.pipelineSteps.push(
+      new QsvHardwareAccelerationOption(this.ffmpegState.vaapiDevice),
     );
 
     // TODO: check whether can decode and can encode based on capabilities
     // minimal check for now, h264/hevc have issues with 10-bit
     if (
-      (videoStream.codec === VideoFormats.H264 ||
-        videoStream.codec === VideoFormats.Hevc) &&
-      videoStream.pixelFormat?.bitDepth === 10
+      (this.context.videoStream.codec === VideoFormats.H264 ||
+        this.context.videoStream.codec === VideoFormats.Hevc) &&
+      this.context.videoStream.pixelFormat?.bitDepth === 10
     ) {
       canDecode = false;
     }
 
-    ffmpegState.decoderHwAccelMode = canDecode ? 'qsv' : 'none';
-    ffmpegState.encoderHwAccelMode = canEncode ? 'qsv' : 'none';
+    this.ffmpegState.decoderHwAccelMode = canDecode ? 'qsv' : 'none';
+    this.ffmpegState.encoderHwAccelMode = canEncode ? 'qsv' : 'none';
   }
 
-  protected setupDecoder(args: PipelineVideoFunctionArgs): Nullable<Decoder> {
-    const { ffmpegState, videoStream } = args;
+  protected setupDecoder(): Nullable<Decoder> {
+    if (!isVideoPipelineContext(this.context)) {
+      return null;
+    }
+
+    const { ffmpegState, videoStream } = this.context;
     let decoder: Nullable<Decoder> = null;
 
     if (ffmpegState.decoderHwAccelMode === 'qsv') {
@@ -60,14 +60,18 @@ export class QsvPipelineBuilder extends BasePipelineBuilder {
       if (!isNull(decoder)) {
         this.videoInputFile.addOption(decoder);
       } else {
-        decoder = super.setupDecoder(args);
+        decoder = super.setupDecoder();
       }
     }
 
     return decoder;
   }
 
-  protected setupVideoFilters(args: Readonly<PipelineVideoFunctionArgs>): void {
+  protected setupVideoFilters(): void {
+    if (!isVideoPipelineContext(this.context)) {
+      return;
+    }
+
     const {
       desiredState,
       videoStream,
@@ -75,7 +79,7 @@ export class QsvPipelineBuilder extends BasePipelineBuilder {
       ffmpegState,
       pipelineSteps,
       filterChain,
-    } = args;
+    } = this.context;
     let currentState = {
       ...desiredState,
       isAnamorphic: videoStream.isAnamorphic,
@@ -87,13 +91,9 @@ export class QsvPipelineBuilder extends BasePipelineBuilder {
       currentState = decoder.nextState(currentState);
     }
 
-    currentState = this.setDeinterlaceFilter(
-      ffmpegState,
-      currentState,
-      desiredState,
-    );
-    currentState = this.setScaleFilter(currentState, args);
-    currentState = this.setPadFilter(videoStream, currentState, desiredState);
+    currentState = this.setDeinterlace(currentState);
+    currentState = this.setScale(currentState);
+    currentState = this.setPad(currentState);
 
     let encoder: Nullable<Encoder> = null;
     if (ffmpegState.encoderHwAccelMode === 'qsv') {
@@ -117,16 +117,12 @@ export class QsvPipelineBuilder extends BasePipelineBuilder {
     filterChain.videoFilterSteps.push(...this.videoInputFile.filterSteps);
   }
 
-  private setDeinterlaceFilter(
-    ffmpegState: FfmpegState,
-    currentState: FrameState,
-    desiredState: FrameState,
-  ): FrameState {
+  protected setDeinterlace(currentState: FrameState): FrameState {
     let nextState = currentState;
-    if (desiredState.interlaced) {
+    if (this.desiredState.interlaced) {
       const filter =
         currentState.frameDataLocation === 'software'
-          ? new DeinterlaceFilter(ffmpegState, currentState)
+          ? new DeinterlaceFilter(this.ffmpegState, currentState)
           : new DeinterlaceQsvFilter(currentState);
       if (filter.affectsFrameState) {
         nextState = filter.nextState(nextState);
@@ -136,11 +132,12 @@ export class QsvPipelineBuilder extends BasePipelineBuilder {
     return nextState;
   }
 
-  private setScaleFilter(
-    currentState: FrameState,
-    args: PipelineVideoFunctionArgs,
-  ): FrameState {
-    const { videoStream, ffmpegState, desiredState } = args;
+  protected setScale(currentState: FrameState): FrameState {
+    if (!isVideoPipelineContext(this.context)) {
+      return currentState;
+    }
+
+    const { videoStream, ffmpegState, desiredState } = this.context;
     let nextState = currentState;
     const needsScale = !currentState.scaledSize.equals(desiredState.scaledSize);
     const noHardware =
@@ -152,7 +149,12 @@ export class QsvPipelineBuilder extends BasePipelineBuilder {
 
     let scaleFilter: Filter;
     if (needsScale && (noHardware || onlySoftwareFilters)) {
-      scaleFilter = ScaleFilter.create(currentState, args);
+      scaleFilter = ScaleFilter.create(
+        currentState,
+        ffmpegState,
+        desiredState.scaledSize,
+        desiredState.paddedSize,
+      );
     } else {
       scaleFilter = new ScaleQsvFilter(
         videoStream,
@@ -171,11 +173,13 @@ export class QsvPipelineBuilder extends BasePipelineBuilder {
     return nextState;
   }
 
-  private setPadFilter(
-    videoStream: VideoStream,
-    currentState: FrameState,
-    desiredState: FrameState,
-  ): FrameState {
+  protected setPad(currentState: FrameState): FrameState {
+    if (!isVideoPipelineContext(this.context)) {
+      return currentState;
+    }
+
+    const { desiredState, videoStream } = this.context;
+
     if (!currentState.paddedSize.equals(desiredState.paddedSize)) {
       // TODO: move this into current/desired state, but see if it works here for now
       const pixelFormat: Nullable<PixelFormat> =
