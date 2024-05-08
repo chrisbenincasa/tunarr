@@ -5,7 +5,13 @@ import InfoOutlined from '@mui/icons-material/InfoOutlined';
 import MusicNote from '@mui/icons-material/MusicNote';
 import TheatersIcon from '@mui/icons-material/Theaters';
 import TvIcon from '@mui/icons-material/Tv';
-import { ListItemIcon, Typography, lighten } from '@mui/material';
+import {
+  ListItemIcon,
+  Typography,
+  lighten,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import List from '@mui/material/List';
@@ -175,6 +181,9 @@ const ProgramListItem = ({
     },
   }));
 
+  const theme = useTheme();
+  const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
+
   const startTime = ListItemTimeFormatter.format(startTimeDate);
   // console.log(ListItemTimeFormatter.formatToParts(startTimeDate));
 
@@ -235,7 +244,8 @@ const ProgramListItem = ({
       secondaryAction={
         enableDrag && isDragging ? null : (
           <>
-            {program.type === 'flex' || program.type === 'redirect' ? (
+            {(!smallViewport && program.type === 'flex') ||
+            program.type === 'redirect' ? (
               <IconButton
                 onClick={() => onEditClicked({ ...program, index })}
                 edge="end"
@@ -264,21 +274,28 @@ const ProgramListItem = ({
       ) : (
         <>
           <ListItemIcon
-            sx={{ minWidth: program.type === 'content' ? 35 : null }}
+            sx={{
+              minWidth: smallViewport || program.type === 'content' ? 35 : null,
+            }}
           >
             <DragIndicatorIcon />
           </ListItemIcon>
-          {program.type === 'content' ? (
-            <ListItemIcon
-              onClick={handleInfoButtonClick}
-              sx={{ cursor: 'pointer', minWidth: 0, pr: 1 }}
-            >
-              <InfoOutlined />
-            </ListItemIcon>
-          ) : (
-            <Box sx={{ pr: 1, width: 24 }} />
-          )}
-          {icon ?? <Box sx={{ pr: 1, width: 20 }} />}
+
+          {!smallViewport ? (
+            program.type === 'content' ? (
+              <ListItemIcon
+                onClick={handleInfoButtonClick}
+                sx={{ cursor: 'pointer', minWidth: 0, pr: 1 }}
+              >
+                <InfoOutlined />
+              </ListItemIcon>
+            ) : (
+              <Box sx={{ pr: 1, width: 20 }} />
+            )
+          ) : null}
+
+          {!smallViewport ? icon ?? <Box sx={{ pr: 1, width: 20 }} /> : null}
+
           <ListItemText
             primary={title}
             sx={{

@@ -16,6 +16,8 @@ import {
   SelectChangeEvent,
   Snackbar,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import { dayjsMod, scheduleTimeSlots } from '@tunarr/shared';
@@ -419,6 +421,8 @@ export default function TimeSlotEditorPage() {
   );
 
   const updateLineupMutation = useUpdateLineup();
+  const theme = useTheme();
+  const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
 
   // TODO: This can be shared between random / time slots
   const programOptions: ProgramOption[] = useMemo(() => {
@@ -824,7 +828,7 @@ export default function TimeSlotEditorPage() {
           virtualListProps={{
             width: '100%',
             height: 400,
-            itemSize: 35,
+            itemSize: smallViewport ? 70 : 35,
             overscanCount: 5,
           }}
         />
