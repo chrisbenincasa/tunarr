@@ -1,7 +1,14 @@
-import { Alert, Box, Link, Stack } from '@mui/material';
-import { Link as RouterLink } from 'react-router-dom';
+import {
+  Alert,
+  Box,
+  Link,
+  Stack,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers';
 import dayjs, { Dayjs } from 'dayjs';
+import { Link as RouterLink } from 'react-router-dom';
 import { useSlideSchedule } from '../../hooks/programming_controls/useSlideSchedule.ts';
 import { usePreloadedChannelEdit } from '../../hooks/usePreloadedChannel.ts';
 import { setChannelStartTime } from '../../store/channelEditor/actions.ts';
@@ -12,6 +19,8 @@ import { ChannelProgrammingTools } from './ChannelProgrammingTools.tsx';
 
 export function ChannelProgrammingConfig() {
   const { currentEntity: channel, schedule } = usePreloadedChannelEdit();
+  const theme = useTheme();
+  const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
 
   const slideSchedule = useSlideSchedule();
 
@@ -74,7 +83,11 @@ export function ChannelProgrammingConfig() {
       </Stack>
 
       <ChannelProgrammingList
-        virtualListProps={{ width: '100%', height: 600, itemSize: 35 }}
+        virtualListProps={{
+          width: '100%',
+          height: 600,
+          itemSize: smallViewport ? 70 : 35,
+        }}
       />
     </Box>
   );
