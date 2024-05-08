@@ -4,25 +4,28 @@ import dayjs from 'dayjs';
 import { ChannelDB } from '../dao/channelDb.js';
 import { withDb } from '../dao/dataSource.js';
 import { PlexServerSettings } from '../dao/entities/PlexServerSettings.js';
-import { Settings, defaultXmlTvSettings } from '../dao/settings.js';
-import { globalOptions } from '../globals.js';
-import createLogger from '../logger.js';
+import { SettingsDB, defaultXmlTvSettings } from '../dao/settings.js';
 import { Plex } from '../external/plex.js';
+import { globalOptions } from '../globals.js';
 import { ServerContext } from '../serverContext.js';
 import { TVGuideService } from '../services/tvGuideService.js';
 import { Maybe } from '../types/util.js';
 import { fileExists } from '../util/fsUtil.js';
 import { mapAsyncSeq } from '../util/index.js';
+import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { Task } from './Task.js';
 
-const logger = createLogger(import.meta);
-
 export class UpdateXmlTvTask extends Task<void> {
+  public static ID = 'update-xmltv' as Tag<'update-xmltv', void>;
+
+  protected logger = LoggerFactory.child({
+    caller: import.meta,
+    task: UpdateXmlTvTask.ID as string,
+  });
   #channelDB: ChannelDB;
-  #settingsDB: Settings;
+  #settingsDB: SettingsDB;
   #guideService: TVGuideService;
 
-  public static ID = 'update-xmltv' as Tag<'update-xmltv', void>;
   public ID = UpdateXmlTvTask.ID;
 
   static create(serverContext: ServerContext): UpdateXmlTvTask {
@@ -35,7 +38,7 @@ export class UpdateXmlTvTask extends Task<void> {
 
   private constructor(
     channelDB: ChannelDB,
-    dbAccess: Settings,
+    dbAccess: SettingsDB,
     guideService: TVGuideService,
   ) {
     super();
@@ -56,7 +59,7 @@ export class UpdateXmlTvTask extends Task<void> {
     try {
       let xmltvSettings = this.#settingsDB.xmlTvSettings();
       if (!(await fileExists(xmltvSettings.outputPath))) {
-        logger.debug(
+        this.logger.debug(
           'XMLTV settings missing at path %s. Regenerating path.',
           xmltvSettings.outputPath,
         );
@@ -73,9 +76,9 @@ export class UpdateXmlTvTask extends Task<void> {
         dayjs.duration({ hours: xmltvSettings.programmingHours }),
       );
 
-      logger.info('XMLTV Updated at ' + new Date().toLocaleString());
+      this.logger.info('XMLTV Updated at ' + new Date().toLocaleString());
     } catch (err) {
-      logger.error('Unable to update TV guide', err);
+      this.logger.error('Unable to update TV guide', err);
       return;
     }
 
@@ -96,7 +99,7 @@ export class UpdateXmlTvTask extends Task<void> {
       try {
         dvrs = await plex.getDvrs(); // Refresh guide and channel mappings
       } catch (err) {
-        logger.error(
+        this.logger.error(
           `Couldn't get DVRS list from ${plexServer.name}. This error will prevent 'refresh guide' or 'refresh channels' from working for this Plex server. But it is NOT related to playback issues.`,
           err,
         );
@@ -111,7 +114,7 @@ export class UpdateXmlTvTask extends Task<void> {
         try {
           await plex.refreshGuide(dvrs);
         } catch (err) {
-          logger.error(
+          this.logger.error(
             `Couldn't tell Plex ${plexServer.name} to refresh guide for some reason. This error will prevent 'refresh guide' from working for this Plex server. But it is NOT related to playback issues.`,
             err,
           );
@@ -122,7 +125,7 @@ export class UpdateXmlTvTask extends Task<void> {
         try {
           await plex.refreshChannels(channels, dvrs);
         } catch (err) {
-          logger.error(
+          this.logger.error(
             `Couldn't tell Plex ${plexServer.name} to refresh channels for some reason. This error will prevent 'refresh channels' from working for this Plex server. But it is NOT related to playback issues.`,
             err,
           );

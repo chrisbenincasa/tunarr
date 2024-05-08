@@ -1,18 +1,18 @@
 import { FfmpegSettings, defaultFfmpegSettings } from '@tunarr/types';
 import { FfmpegSettingsSchema } from '@tunarr/types/schemas';
 import { isError, isUndefined } from 'lodash-es';
-import createLogger from '../logger.js';
 import { RouterPluginCallback } from '../types/serverType.js';
 import { firstDefined } from '../util/index.js';
 import { z } from 'zod';
-
-const logger = createLogger(import.meta);
+import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 
 export const ffmpegSettingsRouter: RouterPluginCallback = (
   fastify,
   _opts,
   done,
 ) => {
+  const logger = LoggerFactory.child({ caller: import.meta });
+
   fastify.get('/api/ffmpeg-settings', (req, res) => {
     try {
       const ffmpeg = req.serverCtx.settings.ffmpegSettings();

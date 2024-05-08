@@ -1,7 +1,7 @@
 import { test, describe, beforeAll, afterAll } from 'vitest';
 import { MikroORM, RequestContext } from '@mikro-orm/better-sqlite';
 import dbConfig from '../../../mikro-orm.prod.config.js';
-import { migrateChannel, migratePrograms } from './channelMigrator.js';
+import { migrateChannel, migratePrograms } from './LegacyChannelMigrator.js';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Channel } from '../entities/Channel.js';

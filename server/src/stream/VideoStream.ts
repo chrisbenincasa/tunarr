@@ -8,24 +8,21 @@ import {
   createOfflineStreamLineupIteam,
 } from '../dao/derived_types/StreamLineup';
 import { Channel } from '../dao/entities/Channel';
-import {
-  ProgramAndTimeElapsed,
-  createLineupItem,
-  generateChannelContext,
-  getCurrentProgramAndTimeElapsed,
-} from './helperFuncs';
-import createLogger from '../logger';
-import { ProgramPlayer } from './programPlayer';
 import { getServerContext } from '../serverContext';
-import { wereThereTooManyAttempts } from './StreamThrottler';
-import { StreamContextChannel } from './types';
-import { PlayerContext } from './player';
-import { Maybe } from '../types/util';
 import { StreamQueryString } from '../types/schemas';
+import { Maybe } from '../types/util';
 import { fileExists } from '../util/fsUtil';
 import { deepCopy } from '../util/index.js';
-
-const logger = createLogger(import.meta);
+import { LoggerFactory } from '../util/logging/LoggerFactory';
+import {
+  ProgramAndTimeElapsed,
+  StreamProgramCalculator,
+  generateChannelContext,
+} from './StreamProgramCalculator';
+import { wereThereTooManyAttempts } from './StreamThrottler';
+import { PlayerContext } from './player';
+import { ProgramPlayer } from './programPlayer';
+import { StreamContextChannel } from './types';
 
 type VideoStreamSuccessResult = {
   type: 'success';
@@ -47,6 +44,9 @@ type VideoStreamResult = VideoStreamSuccessResult | VideoStreamErrorResult;
  * given timestamp
  */
 export class VideoStream {
+  private logger = LoggerFactory.child({ caller: import.meta });
+  private calculator = new StreamProgramCalculator();
+
   async startStream(
     req: StreamQueryString,
     startTimestamp: number,
@@ -101,7 +101,7 @@ export class VideoStream {
 
     // Check if ffmpeg path is valid
     if (!(await fileExists(ffmpegSettings.ffmpegExecutablePath))) {
-      logger.error(
+      this.logger.error(
         `FFMPEG path (${ffmpegSettings.ffmpegExecutablePath}) is invalid. The file (executable) doesn't exist.`,
       );
 
@@ -138,7 +138,7 @@ export class VideoStream {
 
     if (isUndefined(lineupItem)) {
       const lineup = await serverCtx.channelDB.loadLineup(channel.uuid);
-      currentProgram = await getCurrentProgramAndTimeElapsed(
+      currentProgram = await this.calculator.getCurrentProgramAndTimeElapsed(
         startTimestamp,
         channel,
         lineup,
@@ -175,7 +175,7 @@ export class VideoStream {
 
         if (isNil(newChannelAndLineup)) {
           const msg = "Invalid redirect to a channel that doesn't exist";
-          logger.error(msg);
+          this.logger.error(msg);
           currentProgram = {
             program: {
               ...createOfflineStreamLineupIteam(60000),
@@ -198,11 +198,12 @@ export class VideoStream {
           lineupItem = deepCopy(lineupItem);
           break;
         } else {
-          currentProgram = await getCurrentProgramAndTimeElapsed(
-            startTimestamp,
-            channelContext,
-            newChannelAndLineup.lineup,
-          );
+          currentProgram =
+            await this.calculator.getCurrentProgramAndTimeElapsed(
+              startTimestamp,
+              channelContext,
+              newChannelAndLineup.lineup,
+            );
         }
       }
     }
@@ -239,7 +240,7 @@ export class VideoStream {
         for (let i = 0; i < redirectChannels.length; i++) {
           await serverCtx.channelCache.clearPlayback(redirectChannels[i]);
         }
-        logger.info(
+        this.logger.info(
           'Too little time before the filler ends, skip to next slot',
         );
         return await this.startStream(req, startTimestamp + dt + 1, false);
@@ -247,7 +248,7 @@ export class VideoStream {
       if (isNil(currentProgram) || isNil(currentProgram.program)) {
         const msg =
           "No video to play, this means there's a serious unexpected bug or the channel db is corrupted.";
-        logger.error(msg);
+        this.logger.error(msg);
         return {
           type: 'error',
           httpStatus: 500,
@@ -255,7 +256,7 @@ export class VideoStream {
         };
       }
 
-      lineupItem = await createLineupItem(
+      lineupItem = await this.calculator.createLineupItem(
         currentProgram,
         channelContext,
         isFirst,
@@ -311,7 +312,7 @@ export class VideoStream {
       `! Type: ${lineupItem?.type}`,
     ]
       .filter((s) => s.length > 0)
-      .forEach((line) => logger.info(line));
+      .forEach((line) => this.logger.info(line));
 
     if (!isLoading) {
       await serverCtx.channelCache.recordPlayback(
@@ -362,18 +363,18 @@ export class VideoStream {
     };
 
     try {
-      logger.info('About to play stream...');
+      this.logger.info('About to play stream...');
       const ffmpegEmitter = await player.play(outStream);
       ffmpegEmitter?.on('error', (err) => {
-        logger.error('Error while playing video: %O', err);
+        this.logger.error('Error while playing video: %O', err);
       });
 
       ffmpegEmitter?.on('end', () => {
-        logger.debug('playObj.end');
+        this.logger.debug('playObj.end');
         stop();
       });
     } catch (err) {
-      logger.error('Error when attempting to play video: %O', err);
+      this.logger.error('Error when attempting to play video: %O', err);
       stop();
       return {
         type: 'error',
@@ -385,7 +386,7 @@ export class VideoStream {
 
     const logTimer = once(() => {
       const dur = performance.now() - start;
-      logger.debug('Video stream started in %d seconds', dur);
+      this.logger.debug('Video stream started in %d seconds', dur);
       outStream.off('data', logTimer);
     });
     outStream.on('data', logTimer);

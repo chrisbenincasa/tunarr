@@ -9,10 +9,8 @@ import { v4 } from 'uuid';
 import { Channel } from '../dao/entities/Channel.js';
 import { FFMPEG } from '../ffmpeg/ffmpeg.js';
 import { serverOptions } from '../globals.js';
-import createLogger from '../logger.js';
 import { isNodeError } from '../util/index.js';
-
-const logger = createLogger(import.meta);
+import { Logger, LoggerFactory } from '../util/logging/LoggerFactory.js';
 
 type SessionState = 'starting' | 'started' | 'error' | 'stopped' | 'init';
 
@@ -21,6 +19,7 @@ export type StreamConnectionDetails = {
 };
 
 export class StreamSession {
+  private logger: Logger;
   #channel: Channel;
   #ffmpegSettings: FfmpegSettings;
   #uniqueId: string;
@@ -38,6 +37,11 @@ export class StreamSession {
 
   private constructor(channel: Channel, ffmpegSettings: FfmpegSettings) {
     this.#uniqueId = v4();
+    this.logger = LoggerFactory.child({
+      caller: import.meta,
+      sessionId: this.#uniqueId,
+      channel: channel.uuid,
+    });
     this.#channel = channel;
     this.#ffmpegSettings = ffmpegSettings;
     // TODO expost this as an option on FfmpegSettings
@@ -64,11 +68,14 @@ export class StreamSession {
 
   stop() {
     if (this.#state === 'started') {
-      logger.debug('[Session %s] Stopping stream session', this.#channel.uuid);
+      this.logger.debug(
+        '[Session %s] Stopping stream session',
+        this.#channel.uuid,
+      );
       this.#ffmpeg.kill();
       setImmediate(() => {
         this.cleanupDirectory().catch((e) =>
-          logger.error(
+          this.logger.error(
             'Error while attempting to cleanup stream directory: %O',
             e,
             { label: `Session ${this.#channel.uuid}` },
@@ -77,7 +84,7 @@ export class StreamSession {
       });
       this.#state = 'stopped';
     } else {
-      logger.debug(
+      this.logger.debug(
         '[Session %s] Wanted to shutdown session but state was %s',
         this.#channel.uuid,
         this.#state,
@@ -86,14 +93,17 @@ export class StreamSession {
   }
 
   private async cleanupDirectory() {
-    logger.debug(`Cleaning out stream path for session: %s`, this.#outPath);
+    this.logger.debug(
+      `Cleaning out stream path for session: %s`,
+      this.#outPath,
+    );
     return fs
       .rm(this.#outPath, {
         recursive: true,
         force: true,
       })
       .catch((err) =>
-        logger.error(
+        this.logger.error(
           'Failed to cleanup stream: %s %O',
           this.#channel.uuid,
           err,
@@ -113,27 +123,31 @@ export class StreamSession {
     });
 
     this.#ffmpeg.on('error', (err) => {
-      logger.error('[Session %s]: ffmpeg error %O', this.#channel.uuid, err);
+      this.logger.error(
+        '[Session %s]: ffmpeg error %O',
+        this.#channel.uuid,
+        err,
+      );
       stop();
     });
 
     this.#ffmpeg.on('close', () => {
-      logger.error('[Session %s]: ffmpeg close %O', this.#channel.uuid);
+      this.logger.error('[Session %s]: ffmpeg close %O', this.#channel.uuid);
     });
 
     this.#ffmpeg.on('end', () => {
-      logger.info('[Session %s]: Video queue exhausted.');
+      this.logger.info('[Session %s]: Video queue exhausted.');
       stop();
     });
 
-    logger.debug(`Creating stream directory: ${this.#outPath}`);
+    this.logger.debug(`Creating stream directory: ${this.#outPath}`);
 
     try {
       await fs.stat(this.#outPath);
       await this.cleanupDirectory();
     } catch (e) {
       if (isNodeError(e) && e.code === 'ENOENT') {
-        logger.debug("[Session %s]: Stream directory doesn't exist.");
+        this.logger.debug("[Session %s]: Stream directory doesn't exist.");
       }
     } finally {
       await fs.mkdir(this.#outPath);
@@ -171,7 +185,7 @@ export class StreamSession {
               await fs.stat(this.#streamPath);
             } catch (e) {
               if (isNodeError(e) && e.code === 'ENOENT') {
-                logger.debug(
+                this.logger.debug(
                   '[Session %s] Still waiting for stream to start.',
                   this.#channel.uuid,
                 );
@@ -188,7 +202,7 @@ export class StreamSession {
           },
         );
       } catch (e) {
-        logger.error('Error starting stream after retrying', e);
+        this.logger.error('Error starting stream after retrying', e);
         this.#state = 'error';
         return;
       }
@@ -256,20 +270,23 @@ export class StreamSession {
 
   scheduleCleanup(delay: number) {
     if (this.#cleanupFunc) {
-      logger.debug(
+      this.logger.debug(
         '[Session %s] Cleanup already scheduled',
         this.#channel.uuid,
       );
       // We already scheduled shutdown
       return;
     }
-    logger.debug('[Session %s] Scheduling shutdown', this.#channel.uuid);
+    this.logger.debug('[Session %s] Scheduling shutdown', this.#channel.uuid);
     this.#cleanupFunc = setTimeout(() => {
-      logger.debug('[Session %s] Shutting down session', this.#channel.uuid);
+      this.logger.debug(
+        '[Session %s] Shutting down session',
+        this.#channel.uuid,
+      );
       if (isEmpty(this.#connections) && this.#ffmpeg) {
         this.stop();
       } else {
-        logger.debug(
+        this.logger.debug(
           `Got new connections: ${inspect(
             this.#connections,
           )}. Also ffmpeg = ${isNil(this.#ffmpeg)}`,

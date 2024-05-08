@@ -11,19 +11,20 @@ import { forProgramType } from '@tunarr/shared/util';
 import { flatMap, isNil, map, round, escape } from 'lodash-es';
 import { isNonEmptyString } from './util';
 import { writeFile } from 'fs/promises';
-import createLogger from './logger';
 import { Channel } from './dao/entities/Channel.js';
+import { LoggerFactory } from './util/logging/LoggerFactory';
 
 const lock = new Mutex();
-const logger = createLogger(import.meta);
 
 export class XmlTvWriter {
+  private logger = LoggerFactory.child({ caller: import.meta });
+
   async write(channels: ChannelPrograms[]) {
     const start = performance.now();
     return await lock.runExclusive(async () => {
       return await this.writeInternal(channels).finally(() => {
         const end = performance.now();
-        logger.debug(
+        this.logger.debug(
           `Generated and wrote xmltv file in ${round(end - start, 3)}ms`,
         );
       });
@@ -31,7 +32,7 @@ export class XmlTvWriter {
   }
 
   private async writeInternal(channels: ChannelPrograms[]) {
-    const xmlTvSettings = (await getSettings()).xmlTvSettings();
+    const xmlTvSettings = getSettings().xmlTvSettings();
     const content = writeXmltv({
       generatorInfoName: 'tunarr',
       date: new Date(),

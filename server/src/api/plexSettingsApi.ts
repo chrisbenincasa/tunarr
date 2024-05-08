@@ -3,16 +3,17 @@ import { PlexStreamSettingsSchema } from '@tunarr/types/schemas';
 import { isError } from 'lodash-es';
 import { DeepWritable } from 'ts-essentials';
 import { z } from 'zod';
-import createLogger from '../logger.js';
 import { RouterPluginCallback } from '../types/serverType.js';
 import { firstDefined } from '../util/index.js';
-const logger = createLogger(import.meta);
+import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 
 export const plexSettingsRouter: RouterPluginCallback = (
   fastify,
   _opts,
   done,
 ) => {
+  const logger = LoggerFactory.child({ caller: import.meta });
+
   fastify.get(
     '/api/plex-settings',
     {

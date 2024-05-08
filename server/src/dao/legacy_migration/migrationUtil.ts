@@ -1,8 +1,11 @@
 import { ProgramType, Resolution } from '@tunarr/types';
-import { isNaN, isUndefined, parseInt } from 'lodash-es';
-import { LegacyProgram } from './channelMigrator.js';
+import { every, isNaN, isUndefined, parseInt } from 'lodash-es';
+import { LegacyProgram } from './LegacyChannelMigrator.js';
 import { v4 } from 'uuid';
 import { Maybe } from '../../types/util.js';
+import { isNonEmptyString } from '../../util/index.js';
+import { ProgramSourceType } from '../custom_types/ProgramSourceType.js';
+import { Program, programTypeFromString } from '../entities/Program.js';
 
 // JSON representation for easier parsing of legacy db files
 export interface JSONArray extends Array<JSONValue> {}
@@ -92,4 +95,37 @@ export function convertRawProgram(program: JSONObject): LegacyProgram {
   };
 
   return outProgram;
+}
+
+export function createProgramEntity(program: LegacyProgram) {
+  if (
+    ['movie', 'episode', 'track'].includes(program.type ?? '') &&
+    every([program.ratingKey, program.serverKey, program.key], isNonEmptyString)
+  ) {
+    const dbProgram = new Program();
+    dbProgram.duration = program.duration;
+    dbProgram.sourceType = ProgramSourceType.PLEX;
+    dbProgram.episode = program.episode;
+    dbProgram.filePath = program.file;
+    dbProgram.icon = program.icon;
+    dbProgram.externalKey = program.ratingKey!;
+    dbProgram.plexRatingKey = program.key!;
+    dbProgram.plexFilePath = program.plexFile;
+    dbProgram.externalSourceId = program.serverKey!;
+    dbProgram.showTitle = program.showTitle;
+    dbProgram.summary = program.summary;
+    dbProgram.title = program.title!;
+    // This is checked above
+    dbProgram.type = programTypeFromString(program.type)!;
+    dbProgram.episode = program.episode;
+    dbProgram.seasonNumber = program.season;
+    dbProgram.seasonIcon = program.seasonIcon;
+    dbProgram.showIcon = program.showIcon;
+    dbProgram.originalAirDate = program.date;
+    dbProgram.rating = program.rating;
+    dbProgram.year = program.year;
+    return dbProgram;
+  }
+
+  return;
 }

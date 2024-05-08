@@ -1,9 +1,8 @@
-import { isError, isString, round } from 'lodash-es';
-import createLogger from '../logger.js';
-import { Maybe } from '../types/util.js';
 import type { Tag } from '@tunarr/types';
-
-const logger = createLogger(import.meta);
+import { isError, isString, round } from 'lodash-es';
+import { Maybe } from '../types/util.js';
+import { LoggerFactory } from '../util/logging/LoggerFactory.js';
+import { Logger } from 'pino';
 
 // Set of all of the possible Task IDs
 export type TaskId =
@@ -12,6 +11,7 @@ export type TaskId =
   | 'schedule-dynamic-channels';
 
 export abstract class Task<Data = unknown> {
+  protected logger: Logger;
   private onCompleteListeners = new Set<() => void>();
   private running_ = false;
 
@@ -19,6 +19,10 @@ export abstract class Task<Data = unknown> {
   protected result: Maybe<Data>;
 
   public abstract ID: string | Tag<TaskId, Data>;
+
+  constructor() {
+    this.logger = LoggerFactory.child({ caller: import.meta });
+  }
 
   protected abstract runInternal(): Promise<Maybe<Data>>;
 
@@ -28,11 +32,11 @@ export abstract class Task<Data = unknown> {
     try {
       this.result = await this.runInternal();
       const duration = round(performance.now() - start, 2);
-      logger.info('Task %s ran in %d ms', this.constructor.name, duration);
+      this.logger.info('Task %s ran in %d ms', this.constructor.name, duration);
     } catch (e) {
       const error = isError(e) ? e : new Error(isString(e) ? e : 'Unknown');
       const duration = round(performance.now() - start, 2);
-      logger.warn(
+      this.logger.warn(
         'Task %s ran in %d ms and failed. Error = %O',
         this.constructor.name,
         duration,

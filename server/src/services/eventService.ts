@@ -3,10 +3,8 @@ import EventEmitter from 'events';
 import { FastifyInstance } from 'fastify';
 import { isString } from 'lodash-es';
 import { Readable } from 'stream';
-import createLogger from '../logger.js';
 import { TypedEventEmitter } from '../types/eventEmitter.js';
-
-const logger = createLogger(import.meta);
+import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 
 type Events = {
   close: () => void;
@@ -14,6 +12,7 @@ type Events = {
 };
 
 export class EventService {
+  private logger = LoggerFactory.child({ caller: import.meta });
   private stream: TypedEventEmitter<Events>;
   private _heartbeat: NodeJS.Timeout;
 
@@ -36,7 +35,7 @@ export class EventService {
         },
       },
       (request, response) => {
-        logger.info('Open event channel.');
+        this.logger.info('Open event channel.');
         const outStream = new Readable();
         outStream._read = () => {};
 
@@ -52,7 +51,7 @@ export class EventService {
         this.stream.on('push', listener);
 
         request.socket.on('close', () => {
-          logger.info('Remove event channel.');
+          this.logger.info('Remove event channel.');
           this.stream.removeListener('push', listener);
         });
 
@@ -69,7 +68,7 @@ export class EventService {
 
   push(data: TunarrEvent) {
     if (isString(data['message'])) {
-      logger.debug('Push event: ' + data['message']); // Why?
+      this.logger.debug('Push event: ' + data['message']); // Why?
     }
     this.stream.emit('push', { ...data });
   }

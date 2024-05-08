@@ -8,7 +8,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { ContentBackedStreamLineupItem } from '../../dao/derived_types/StreamLineup.js';
 import { PlexServerSettings } from '../../dao/entities/PlexServerSettings.js';
 import { serverOptions } from '../../globals.js';
-import createLogger from '../../logger.js';
 import { Plex } from '../../external/plex.js';
 import { StreamContextChannel } from '../types.js';
 import { Maybe } from '../../types/util.js';
@@ -20,8 +19,7 @@ import {
   TranscodeDecisionMediaStream,
   isPlexVideoStream,
 } from '../../types/plexApiTypes.js';
-
-const logger = createLogger(import.meta);
+import { Logger, LoggerFactory } from '../../util/logging/LoggerFactory.js';
 
 type PlexStream = {
   directPlay: boolean;
@@ -50,6 +48,7 @@ export type VideoStats = {
 };
 
 export class PlexTranscoder {
+  private logger: Logger;
   private session: string;
   private device: string;
   private deviceName: string;
@@ -83,6 +82,11 @@ export class PlexTranscoder {
     channel: StreamContextChannel,
     lineupItem: ContentBackedStreamLineupItem,
   ) {
+    this.logger = LoggerFactory.child({
+      plexServer: server.name,
+      channel: channel.uuid,
+      caller: import.meta,
+    });
     this.session = uuidv4();
 
     this.device = 'channel-' + channel.number;
@@ -92,8 +96,10 @@ export class PlexTranscoder {
 
     this.settings = settings;
 
-    this.log('Plex transcoder initiated');
-    this.log('Debug logging enabled');
+    if (settings.enableDebugLogging) {
+      this.log('Plex transcoder initiated');
+      this.log('Debug logging enabled');
+    }
 
     this.plex = new Plex(server);
     // this.metadataPath = `${lineupItem.key}?X-Plex-Token=${server.accessToken}`;
@@ -656,7 +662,7 @@ lang=en`;
     try {
       await this.plex.doPost(statusUrl, params);
     } catch (error) {
-      this.log(
+      this.logger.warn(
         `Problem updating Plex status using status URL ${statusUrl}: `,
         error,
       );
@@ -670,9 +676,20 @@ lang=en`;
     return true;
   }
 
-  private log(msg: string, ...rest: unknown[]) {
+  //(obj: unknown, msg?: string, ...args: any[]): void;
+  //(msg: string, ...args: any[]): void;
+  // private log(obj: unknown, msg?: string, ...args: unknown[]): void;
+  private log(obj: object, msg?: string, ...args: unknown[]): void;
+  private log(msg: string, ...args: unknown[]);
+  private log(
+    t0: string | object,
+    msg: string | undefined,
+    ...rest: unknown[]
+  ): void {
     if (this.settings.enableDebugLogging) {
-      logger.debug(msg, ...rest);
+      return this.logger.debug(t0, msg, ...rest);
+    } else {
+      return this.logger.trace(t0, msg, ...rest);
     }
   }
 }

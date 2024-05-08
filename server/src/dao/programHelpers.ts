@@ -1,3 +1,5 @@
+import { Loaded } from '@mikro-orm/core';
+import { createExternalId } from '@tunarr/shared';
 import {
   ChannelProgram,
   ContentProgram,
@@ -15,6 +17,7 @@ import {
   isPlexEpisode,
   isPlexMusicTrack,
 } from '@tunarr/types/plex';
+import dayjs from 'dayjs';
 import ld, {
   chunk,
   concat,
@@ -34,8 +37,9 @@ import ld, {
   reject,
   values,
 } from 'lodash-es';
-import createLogger from '../logger.js';
 import { PlexApiFactory } from '../external/plex.js';
+import { GlobalScheduler } from '../services/scheduler.js';
+import { ReconcileProgramDurationsTask } from '../tasks/ReconcileProgramDurationsTask.js';
 import {
   flipMap,
   groupByUniqFunc,
@@ -44,6 +48,7 @@ import {
   mapAsyncSeq,
   mapReduceAsyncSeq,
 } from '../util/index.js';
+import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { ProgramMinterFactory } from '../util/programMinter.js';
 import { ProgramSourceType } from './custom_types/ProgramSourceType.js';
 import { getEm } from './dataSource.js';
@@ -54,13 +59,6 @@ import {
   ProgramGroupingType,
 } from './entities/ProgramGrouping.js';
 import { ProgramGroupingExternalId } from './entities/ProgramGroupingExternalId.js';
-import { Loaded } from '@mikro-orm/core';
-import { createExternalId } from '@tunarr/shared';
-import { GlobalScheduler } from '../services/scheduler.js';
-import { ReconcileProgramDurationsTask } from '../tasks/ReconcileProgramDurationsTask.js';
-import dayjs from 'dayjs';
-
-const logger = createLogger(import.meta);
 
 type ProgramsBySource = Record<
   NonNullable<ContentProgram['externalSourceType']>,
@@ -90,6 +88,8 @@ export async function upsertContentPrograms(
   programs: ChannelProgram[],
   batchSize: number = 10,
 ) {
+  // TODO: Wrap all of this stuff in a class and use its own logger
+  const logger = LoggerFactory.root;
   const em = getEm();
   const nonPersisted = filter(programs, (p) => !p.persisted);
   const minter = ProgramMinterFactory.create(em);
@@ -188,7 +188,6 @@ export async function upsertContentPrograms(
         }
         case ProgramType.Track: {
           if (program.grandparentExternalKey) {
-            console.log(program.grandparentExternalKey, groupings);
             ifDefined(
               findMatchingGrouping(
                 groupings,
@@ -295,6 +294,7 @@ async function findAndUpdatePlexServerPrograms(
     return;
   }
 
+  const logger = LoggerFactory.root;
   const em = getEm().fork();
 
   const plexServer = await em.findOne(PlexServerSettings, {

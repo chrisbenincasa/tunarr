@@ -12,8 +12,6 @@ import {
   isContentBackedLineupIteam,
 } from '../dao/derived_types/StreamLineup.js';
 import { Channel } from '../dao/entities/Channel.js';
-import * as helperFuncs from '../stream/helperFuncs.js';
-import createLogger from '../logger.js';
 import { PlexPlayer } from '../stream/plex/plexPlayer.js';
 import { PlexTranscoder } from '../stream/plex/plexTranscoder.js';
 import { FillerPicker } from '../services/FillerPicker.js';
@@ -22,8 +20,11 @@ import { PlayerContext } from '../stream/player.js';
 import { Maybe } from '../types/util.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { mapAsyncSeq } from '../util/index.js';
-
-const logger = createLogger(import.meta);
+import { LoggerFactory } from '../util/logging/LoggerFactory.js';
+import {
+  StreamProgramCalculator,
+  generateChannelContext,
+} from '../stream/StreamProgramCalculator.js';
 
 const ChannelQuerySchema = {
   querystring: z.object({
@@ -33,6 +34,8 @@ const ChannelQuerySchema = {
 
 // eslint-disable-next-line @typescript-eslint/require-await
 export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
+  const logger = LoggerFactory.child({ caller: import.meta });
+
   fastify.get(
     '/debug/plex',
     { schema: ChannelQuerySchema },
@@ -48,7 +51,7 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
       }
 
       const combinedChannel: StreamContextChannel = {
-        ...helperFuncs.generateChannelContext(channel),
+        ...generateChannelContext(channel),
         transcoding: channel?.transcoding,
       };
       logger.info('combinedChannel: %O', combinedChannel);
@@ -124,7 +127,7 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
       const plexSettings = req.serverCtx.settings.plexSettings();
 
       const combinedChannel: StreamContextChannel = {
-        ...helperFuncs.generateChannelContext(channel),
+        ...generateChannelContext(channel),
         transcoding: channel?.transcoding,
       };
 
@@ -153,9 +156,10 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
 
     logger.info('lineupItem: %O', lineupItem);
 
+    const calculator = new StreamProgramCalculator();
     if (isNil(lineupItem)) {
-      lineupItem = await helperFuncs.createLineupItem(
-        await helperFuncs.getCurrentProgramAndTimeElapsed(
+      lineupItem = await calculator.createLineupItem(
+        await calculator.getCurrentProgramAndTimeElapsed(
           new Date().getTime(),
           channel,
           await req.serverCtx.channelDB.loadLineup(channel.uuid),
@@ -183,11 +187,12 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
           .send({ error: 'No channel with ID ' + req.query.channelId });
       }
 
-      const result = helperFuncs.getCurrentProgramAndTimeElapsed(
-        new Date().getTime(),
-        channel,
-        await req.serverCtx.channelDB.loadLineup(channel.uuid),
-      );
+      const result =
+        new StreamProgramCalculator().getCurrentProgramAndTimeElapsed(
+          new Date().getTime(),
+          channel,
+          await req.serverCtx.channelDB.loadLineup(channel.uuid),
+        );
 
       return res.send(result);
     },
@@ -286,8 +291,9 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
           .send({ error: 'No channel with ID ' + req.query.channelId });
       }
 
-      const lineup = await helperFuncs.createLineupItem(
-        await helperFuncs.getCurrentProgramAndTimeElapsed(
+      const calculator = new StreamProgramCalculator();
+      const lineup = await calculator.createLineupItem(
+        await calculator.getCurrentProgramAndTimeElapsed(
           new Date().getTime(),
           channel,
           await req.serverCtx.channelDB.loadLineup(channel.uuid),

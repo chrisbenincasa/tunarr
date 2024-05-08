@@ -3,9 +3,9 @@ import { PassThrough, Readable } from 'node:stream';
 import { v4 } from 'uuid';
 import { FFMPEG } from '../ffmpeg/ffmpeg';
 import { serverOptions } from '../globals';
-import createLogger from '../logger';
 import { getServerContext } from '../serverContext';
 import { fileExists } from '../util/fsUtil';
+import { LoggerFactory } from '../util/logging/LoggerFactory';
 
 type VideoStreamSuccessResult = {
   type: 'success';
@@ -22,9 +22,9 @@ type VideoStreamErrorResult = {
 
 type VideoStreamResult = VideoStreamSuccessResult | VideoStreamErrorResult;
 
-const logger = createLogger(import.meta);
-
 export class ConcatStream {
+  private logger = LoggerFactory.child({ caller: import.meta });
+
   async startStream(
     channelId: string | number,
     audioOnly: boolean,
@@ -54,7 +54,7 @@ export class ConcatStream {
 
     // Check if ffmpeg path is valid
     if (!(await fileExists(ffmpegSettings.ffmpegExecutablePath))) {
-      logger.error(
+      this.logger.error(
         `FFMPEG path (${ffmpegSettings.ffmpegExecutablePath}) is invalid. The file (executable) doesn't exist.`,
       );
       return {
@@ -71,7 +71,7 @@ export class ConcatStream {
 
     // void res.header('Content-Type', 'video/mp2t');
 
-    logger.info(
+    this.logger.info(
       `\r\nStream starting. Channel: ${channel.number} (${channel.name})`,
     );
 
@@ -82,24 +82,24 @@ export class ConcatStream {
       try {
         // res.raw.end();
       } catch (err) {
-        logger.error('error ending request', err);
+        this.logger.error('error ending request', err);
       }
       ffmpeg.kill();
     });
 
     ffmpeg.on('error', (err) => {
-      logger.error('CONCAT - FFMPEG ERROR', err);
+      this.logger.error('CONCAT - FFMPEG ERROR', err);
       //status was already sent
       stop();
     });
 
     ffmpeg.on('close', () => {
-      logger.debug('CONCAT - FFMPEG CLOSE');
+      this.logger.debug('CONCAT - FFMPEG CLOSE');
     });
 
     ffmpeg.on('end', () => {
-      logger.debug('FFMPEG END - FFMPEG CLOSE');
-      logger.info(
+      this.logger.debug('FFMPEG END - FFMPEG CLOSE');
+      this.logger.info(
         'Video queue exhausted. Either you played 100 different clips in a row or there were technical issues that made all of the possible 100 attempts fail.',
       );
       stop();
@@ -108,9 +108,9 @@ export class ConcatStream {
     });
 
     // res.raw.on('close', () => {
-    //   logger.warn('RESPONSE CLOSE - FFMPEG CLOSE');
+    //   this.logger.warn('RESPONSE CLOSE - FFMPEG CLOSE');
     //   // on HTTP close, kill ffmpeg
-    //   logger.info(
+    //   this.logger.info(
     //     `\r\nStream ended. Channel: ${channel?.number} (${channel?.name})`,
     //   );
     //   stop();

@@ -17,7 +17,6 @@ export const hlsApi: RouterPluginAsyncCallback = async (fastify) => {
       prefix: '/streams/',
     })
     .decorateRequest('streamChannel', null)
-    .decorateRequest('disableRequestLogging', false)
     .addHook('onRequest', (req, res, done) => {
       const matches = req.url.match(/^\/streams\/stream_(.*)\/stream\.m3u8.*/);
       if (!isNil(matches) && matches.length > 1) {

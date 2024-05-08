@@ -2,11 +2,13 @@ import esbuild from 'esbuild';
 import { copy } from 'esbuild-plugin-copy';
 import fg from 'fast-glob';
 import fs from 'node:fs';
-import { basename } from 'node:path';
+import { basename, resolve } from 'node:path';
 import { rimraf } from 'rimraf';
 import { mikroOrmProdPlugin } from '../esbuild/mikro-orm-prod-plugin.js';
 import { nativeNodeModulesPlugin } from '../esbuild/native-node-module.js';
 import { nodeProtocolPlugin } from '../esbuild/node-protocol.js';
+import esbuildPluginPino from 'esbuild-plugin-pino';
+import basicPrettyTransport from '../src/util/logging/basicPrettyTransport.js';
 
 if (fs.existsSync('build')) {
   console.log('Deleting old build...');
@@ -19,11 +21,14 @@ console.log('Copying images...');
 fs.cpSync('src/resources/images', 'build/resources/images', {
   recursive: true,
 });
-
+console.log(
+  resolve(process.cwd(), './src/util/logging/basicPrettyTransport.ts'),
+);
 console.log('Bundling app...');
 const result = await esbuild.build({
   entryPoints: {
     bundle: 'src/index.ts',
+    basicPrettyTransport: 'src/util/logging/basicPrettyTransport.ts',
   },
   bundle: true,
   minify: false,
@@ -35,7 +40,7 @@ const result = await esbuild.build({
   format: 'esm',
   platform: 'node',
   target: 'node18',
-  inject: ['cjs-shim.ts'],
+  inject: ['cjs-shim.ts', './esbuild/bundlerPathsOverrideShim.ts'],
   tsconfig: './tsconfig.build.json',
   external: [
     'mysql',
@@ -59,6 +64,9 @@ const result = await esbuild.build({
         from: ['node_modules/@fastify/swagger-ui/static/*'],
         to: ['build/static'],
       },
+    }),
+    esbuildPluginPino({
+      transports: ['pino-pretty', 'pino-roll'],
     }),
   ],
   keepNames: true, // This is to ensure that Entity class names remain the same

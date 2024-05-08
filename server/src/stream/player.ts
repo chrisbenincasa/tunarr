@@ -5,7 +5,7 @@ import { TypedEventEmitter } from '../types/eventEmitter.js';
 import { Maybe } from '../types/util.js';
 import { EntityManager } from '../dao/dataSource.js';
 import { StreamLineupItem } from '../dao/derived_types/StreamLineup.js';
-import { Settings } from '../dao/settings.js';
+import { SettingsDB } from '../dao/settings.js';
 import { StreamContextChannel } from './types.js';
 
 export abstract class Player {
@@ -15,6 +15,7 @@ export abstract class Player {
     outStream: Writable,
   ): Promise<Maybe<TypedEventEmitter<FfmpegEvents>>>;
 }
+
 export type PlayerContext = {
   lineupItem: StreamLineupItem;
   ffmpegSettings: FfmpegSettings;
@@ -24,5 +25,5 @@ export type PlayerContext = {
   isLoading?: boolean;
   watermark?: Watermark;
   entityManager: EntityManager;
-  settings: Settings;
+  settings: SettingsDB;
 };

@@ -32,8 +32,8 @@ import { Low } from 'lowdb';
 import fs from 'node:fs/promises';
 import { join } from 'path';
 import { globalOptions } from '../globals.js';
-import createLogger from '../logger.js';
 import { typedProperty } from '../types/path.js';
+import { asyncPool } from '../util/asyncPool.js';
 import { fileExists } from '../util/fsUtil.js';
 import {
   groupByFunc,
@@ -42,6 +42,7 @@ import {
   mapAsyncSeq,
   mapReduceAsyncSeq,
 } from '../util/index.js';
+import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { SchemaBackedDbAdapter } from './SchemaBackedDbAdapter.js';
 import { ProgramConverter } from './converters/programConverters.js';
 import { getEm } from './dataSource.js';
@@ -57,11 +58,8 @@ import { Channel, ChannelTranscodingSettings } from './entities/Channel.js';
 import { CustomShowContent } from './entities/CustomShowContent.js';
 import { Program } from './entities/Program.js';
 import { upsertContentPrograms } from './programHelpers.js';
-import { asyncPool } from '../util/asyncPool.js';
 
 dayjs.extend(duration);
-
-const logger = createLogger(import.meta);
 
 function updateRequestToChannel(
   updateReq: SaveChannelRequest,
@@ -144,6 +142,7 @@ export type LoadedChannelWithGroupRefs = Loaded<
 const fileDbCache: Record<string | number, Low<Lineup>> = {};
 
 export class ChannelDB {
+  private logger = LoggerFactory.child({ caller: import.meta });
   #programConverter = new ProgramConverter();
 
   getChannelByNumber(channelNumber: number) {
@@ -217,7 +216,7 @@ export class ChannelDB {
       // Best effort remove references to this channel
       const removeRefs = () =>
         this.removeRedirectReferences(channelId).catch((e) => {
-          logger.error('Error while removing redirect references: %O', e);
+          this.logger.error('Error while removing redirect references: %O', e);
         });
 
       if (blockOnLineupUpdates) {
@@ -234,7 +233,7 @@ export class ChannelDB {
         await this.restoreLineupFile(channelId);
       }
 
-      logger.error(
+      this.logger.error(
         'Error while attempting to delete channel %s: %O',
         channelId,
         e,
@@ -610,12 +609,12 @@ export class ChannelDB {
         await this.getFileDb(channelId);
       }
     } catch (e) {
-      logger.error(
+      this.logger.error(
+        e,
         `Error while trying to ${
           isDelete ? 'mark' : 'unmark'
-        } Channel %s lineup json for deletion: %O`,
+        } Channel %s lineup json for deletion`,
         channelId,
-        e,
       );
     }
   }
@@ -684,7 +683,7 @@ export class ChannelDB {
               channelsById[item.channel],
             );
           } else {
-            logger.warn(
+            this.logger.warn(
               'Found dangling redirect program. Bad ID = %s',
               item.channel,
             );
@@ -760,7 +759,7 @@ export class ChannelDB {
 
     for await (const updateResult of ops) {
       if (updateResult.type === 'error') {
-        logger.error(
+        this.logger.error(
           'Error removing redirect references for channel %s from channel %s',
           toChannel,
           updateResult.input.uuid,

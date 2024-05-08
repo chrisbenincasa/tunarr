@@ -2,12 +2,12 @@ import { ChannelLineup } from '@tunarr/types';
 import { ChannelLineupSchema } from '@tunarr/types/schemas';
 import { map } from 'lodash-es';
 import { z } from 'zod';
-import createLogger from '../logger.js';
 import { RouterPluginCallback } from '../types/serverType.js';
-
-const logger = createLogger(import.meta);
+import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 
 export const guideRouter: RouterPluginCallback = (fastify, _opts, done) => {
+  const logger = LoggerFactory.child({ caller: import.meta });
+
   fastify.get('/api/guide/status', async (req, res) => {
     try {
       const s = await req.serverCtx.guideService.getStatus();

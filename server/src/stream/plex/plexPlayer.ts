@@ -12,15 +12,15 @@ import { Writable } from 'stream';
 import { isContentBackedLineupIteam } from '../../dao/derived_types/StreamLineup.js';
 import { PlexServerSettings } from '../../dao/entities/PlexServerSettings.js';
 import { FFMPEG, FfmpegEvents } from '../../ffmpeg/ffmpeg.js';
-import createLogger from '../../logger.js';
 import { Player } from '../player.js';
 import { PlexTranscoder } from './plexTranscoder.js';
 import { PlayerContext } from '../player.js';
 import { TypedEventEmitter } from '../../types/eventEmitter.js';
+import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
 
 const USED_CLIENTS: Record<string, boolean> = {};
-const logger = createLogger(import.meta);
 export class PlexPlayer extends Player {
+  private logger = LoggerFactory.child({ caller: import.meta });
   private context: PlayerContext;
   private ffmpeg: FFMPEG | null;
   private plexTranscoder: PlexTranscoder | null;
@@ -48,7 +48,7 @@ export class PlexPlayer extends Player {
     this.killed = true;
     if (this.plexTranscoder != null) {
       this.plexTranscoder.stopUpdatingPlex().catch((e) => {
-        logger.error('Error stopping Plex status updates', e);
+        this.logger.error(e, 'Error stopping Plex status updates');
       });
       this.plexTranscoder = null;
     }
@@ -132,16 +132,16 @@ export class PlexPlayer extends Player {
 
     ff.pipe(outStream, { end: false });
     plexTranscoder.startUpdatingPlex().catch((e) => {
-      logger.error('Error starting Plex status updates', e);
+      this.logger.error(e, 'Error starting Plex status updates');
     });
 
     ffmpeg.on('end', () => {
-      logger.info('ffmpeg end');
+      this.logger.info('ffmpeg end');
       emitter.emit('end');
     });
 
     ffmpeg.on('close', () => {
-      logger.info('ffmpeg close');
+      this.logger.info('ffmpeg close');
       emitter.emit('close');
     });
 
@@ -176,7 +176,7 @@ export class PlexPlayer extends Player {
         }
         ff.pipe(outStream);
       } catch (err) {
-        console.error('Err while trying to spawn error stream! YIKES', err);
+        this.logger.error(err, 'Err while trying to spawn error stream! YIKES');
       }
 
       emitter.emit('error', err);

@@ -17,15 +17,13 @@ import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
 import { compact, isError, isNil, map, omit, sortBy } from 'lodash-es';
 import z from 'zod';
-import createLogger from '../logger.js';
 import { GlobalScheduler } from '../services/scheduler.js';
 import { UpdateXmlTvTask } from '../tasks/updateXmlTvTask.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { attempt, mapAsyncSeq } from '../util/index.js';
+import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 
 dayjs.extend(duration);
-
-const logger = createLogger(import.meta);
 
 const ChannelLineupQuery = z.object({
   from: z.coerce.date().optional(),
@@ -35,6 +33,8 @@ const ChannelLineupQuery = z.object({
 
 // eslint-disable-next-line @typescript-eslint/require-await
 export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
+  const logger = LoggerFactory.child({ caller: import.meta });
+
   fastify.addHook('onError', (req, _, error, done) => {
     logger.error('%s %s %O', req.routerMethod, req.routeOptions.url, error);
     done();

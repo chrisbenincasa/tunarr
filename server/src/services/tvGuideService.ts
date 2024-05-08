@@ -29,11 +29,11 @@ import {
 } from 'lodash-es';
 import * as syncRetry from 'retry';
 import { v4 } from 'uuid';
+import { XmlTvWriter } from '../XmlTvWriter.js';
 import { ChannelDB, LoadedChannelWithGroupRefs } from '../dao/channelDb.js';
 import { ProgramConverter } from '../dao/converters/programConverters.js';
 import { Lineup } from '../dao/derived_types/Lineup.js';
 import { Channel } from '../dao/entities/Channel.js';
-import createLogger from '../logger.js';
 import { Maybe } from '../types/util.js';
 import { binarySearchRange } from '../util/binarySearch.js';
 import {
@@ -42,12 +42,10 @@ import {
   isNonEmptyString,
   wait,
 } from '../util/index.js';
+import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { EventService } from './eventService.js';
-import { XmlTvWriter } from '../XmlTvWriter.js';
 
 dayjs.extend(duration);
-
-const logger = createLogger(import.meta);
 
 // TODO - don't do this.
 const FALLBACK_ICON =
@@ -79,6 +77,7 @@ type ChannelWithLineup = {
 type ChannelId = string;
 
 export class TVGuideService {
+  private logger = LoggerFactory.child({ caller: import.meta });
   private xmltv: XmlTvWriter;
   private channelDb: ChannelDB;
   private eventService: EventService;
@@ -183,7 +182,7 @@ export class TVGuideService {
     const endTimeMs = dateTo.getTime();
 
     if (endTimeMs > this.lastEndTime) {
-      logger.warn(
+      this.logger.warn(
         'End time exceeds what the current cached guide generation (requested: %s, end: %s)',
         dayjs(endTimeMs).format(),
         dayjs(this.lastEndTime).format(),
@@ -306,7 +305,7 @@ export class TVGuideService {
         );
 
       if (isNull(lineupProgram)) {
-        logger.warn(
+        this.logger.warn(
           'Unable to convert lineup item to guide item: %O',
           lineupItem,
         );
@@ -355,7 +354,7 @@ export class TVGuideService {
       );
 
       if (isNull(program)) {
-        logger.warn(
+        this.logger.warn(
           'Was unable to convert lineup item to guide item: %O',
           lineupItem,
         );
@@ -378,7 +377,7 @@ export class TVGuideService {
     }
 
     if (isNil(playing) || isNil(playing.program)) {
-      logger.warn(
+      this.logger.warn(
         'There is a weird issue with the TV guide generation. A placeholder program is placed to prevent further issues. Please report this.',
       );
       playing = {
@@ -401,7 +400,7 @@ export class TVGuideService {
 
       // Detect redirect loops
       if (includes(channelRedirectStack, redirectChannel)) {
-        logger.error(
+        this.logger.error(
           `Redirect loop found! Involved channels = %O`,
           channelRedirectStack,
         );
@@ -410,7 +409,7 @@ export class TVGuideService {
         const channel2 = this.channelsById[redirectChannel];
         // TODO: Just update the lineup file directly at this point
         if (isUndefined(channel2)) {
-          logger.error(
+          this.logger.error(
             `Redirect to an unknown channel found! Involved channels: %O`,
             channelRedirectStack,
           );
@@ -603,7 +602,7 @@ export class TVGuideService {
       nextOffsetTime += currentProgram.program.duration;
 
       if (currentProgram.program.duration <= 0) {
-        logger.error(
+        this.logger.error(
           'Invalid program duration = %d?: Channel %s \n %O',
           currentProgram.program.duration,
           channelWithLineup.channel.uuid,
@@ -753,13 +752,13 @@ export class TVGuideService {
           this.currentUpdateTime = -1;
           await this.refreshXML();
           const diff = performance.now() - start;
-          logger.debug(
+          this.logger.debug(
             'Built TV Guide for %s in %d millis',
             dayjs.duration(thisGuideLength).humanize(),
             round(diff, 3),
           );
         } catch (err) {
-          logger.error('Unable to update internal guide data', err);
+          this.logger.error('Unable to update internal guide data', err);
         }
       },
       {

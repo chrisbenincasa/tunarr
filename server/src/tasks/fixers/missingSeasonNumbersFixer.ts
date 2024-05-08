@@ -4,13 +4,15 @@ import { PlexEpisodeView, PlexSeasonView } from '@tunarr/types/plex';
 import { first, forEach, groupBy, mapValues, pickBy } from 'lodash-es';
 import { PlexServerSettings } from '../../dao/entities/PlexServerSettings.js';
 import { Program, ProgramType } from '../../dao/entities/Program.js';
-import { logger } from '../../dao/legacy_migration/legacyDbMigration.js';
 import { Plex } from '../../external/plex.js';
 import { Maybe } from '../../types/util.js';
 import { groupByUniqAndMap, wait } from '../../util/index.js';
 import Fixer from './fixer.js';
+import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
 
 export class MissingSeasonNumbersFixer extends Fixer {
+  private logger = LoggerFactory.child({ caller: import.meta });
+
   async runInternal(em: EntityManager): Promise<void> {
     const allPlexServers = await em.findAll(PlexServerSettings);
 
@@ -39,7 +41,7 @@ export class MissingSeasonNumbersFixer extends Fixer {
       const goodProgramsByServer = pickBy(programsByPlexServer, (_, key) => {
         const hasKey = !!plexByName[key];
         if (!hasKey) {
-          logger.warn('No configured server called "%s"', key);
+          this.logger.warn('No configured server called "%s"', key);
         }
         return hasKey;
       });
@@ -58,7 +60,7 @@ export class MissingSeasonNumbersFixer extends Fixer {
           if (parentId === 'unset') {
             for (const program of programs) {
               if (!program.plexRatingKey) {
-                logger.warn(
+                this.logger.warn(
                   `Uh-oh, we're missing a plex rating key for %s`,
                   program.uuid,
                 );
@@ -92,7 +94,7 @@ export class MissingSeasonNumbersFixer extends Fixer {
             } else {
               for (const program of programs) {
                 if (!program.plexRatingKey) {
-                  logger.warn(
+                  this.logger.warn(
                     `Uh-oh, we're missing a plex rating key for %s`,
                     program.uuid,
                   );
@@ -127,7 +129,7 @@ export class MissingSeasonNumbersFixer extends Fixer {
       );
       return episode?.parentIndex;
     } catch (e) {
-      logger.warn('Error grabbing episode %s from plex: %O', episodeId, e);
+      this.logger.warn('Error grabbing episode %s from plex: %O', episodeId, e);
       return;
     }
   }
@@ -141,7 +143,7 @@ export class MissingSeasonNumbersFixer extends Fixer {
       );
       return first(season?.Metadata ?? [])?.index;
     } catch (e) {
-      logger.warn('Error grabbing season from plex: %O', e);
+      this.logger.warn('Error grabbing season from plex: %O', e);
       return;
     }
   }
