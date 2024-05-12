@@ -458,6 +458,8 @@ export default function PlexSettingsPage() {
   const updatePlexStreamingSettingsMutation = useMutation({
     mutationFn: apiClient.updatePlexStreamSettings,
     onSuccess: (data) => {
+      console.log(data);
+
       setSnackStatus(true);
       setRestoreTunarrDefaults(false);
       reset(data, { keepValues: true });
@@ -470,7 +472,21 @@ export default function PlexSettingsPage() {
   const updatePlexStreamSettings: SubmitHandler<PlexStreamSettings> = (
     streamSettings,
   ) => {
-    updatePlexStreamingSettingsMutation.mutate({ ...streamSettings });
+    updatePlexStreamingSettingsMutation.mutate({
+      ...streamSettings,
+      audioCodecs: streamSettings.audioCodecs
+        .toString()
+        .replace(/\s*,\s*/g, ',') //remove white spaces before/after comma
+        .trim() // remove trailing whitespaces
+        .split(',')
+        .filter((value) => value.trim() !== ''), // handle empty value after commas
+      videoCodecs: streamSettings.videoCodecs
+        .toString()
+        .replace(/\s*,\s*/g, ',') //remove white spaces before/after comma
+        .trim() // remove trailing whitespaces
+        .split(',')
+        .filter((value) => value.trim() !== ''), // handle empty value after commas
+    });
   };
 
   const handleSnackClose = () => {
