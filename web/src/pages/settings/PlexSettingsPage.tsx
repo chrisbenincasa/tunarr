@@ -458,8 +458,6 @@ export default function PlexSettingsPage() {
   const updatePlexStreamingSettingsMutation = useMutation({
     mutationFn: apiClient.updatePlexStreamSettings,
     onSuccess: (data) => {
-      console.log(data);
-
       setSnackStatus(true);
       setRestoreTunarrDefaults(false);
       reset(data, { keepValues: true });
