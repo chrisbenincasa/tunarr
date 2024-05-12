@@ -398,7 +398,7 @@ export default function FfmpegSettingsPage() {
           />
           <FormHelperText>
             Some clients experience issues when the video stream changes
-            resolution. This option will make dizqueTV convert all videos to the
+            resolution. This option will make Tunarr convert all videos to the
             preferred resolution selected above. Otherwise, the preferred
             resolution will be used as a maximum resolution for transcoding.
           </FormHelperText>
