@@ -147,7 +147,7 @@ class LoggerFactoryImpl {
     const { caller, ...rest } = opts;
     const newChild = this.rootLogger.child({
       ...rest,
-      caller: caller ? getCaller(caller) : undefined,
+      caller: isProduction ? undefined : caller ? getCaller(caller) : undefined,
     });
     this.children.push(newChild);
     return newChild;

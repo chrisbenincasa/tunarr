@@ -35,6 +35,7 @@ import NoChannelsCreated from '../../components/channel_config/NoChannelsCreated
 import { useChannels } from '../../hooks/useChannels.ts';
 import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 import { useSettings } from '../../store/settings/selectors.ts';
+import { isNonEmptyString } from '../../helpers/util.ts';
 
 export default function ChannelsPage() {
   const { backendUri } = useSettings();
@@ -135,7 +136,9 @@ export default function ChannelsPage() {
         <TableCell sx={{ textAlign: 'right' }}>
           <Tooltip title="Get Channel M3U File" placement="top">
             <IconButton
-              href={`${backendUri}/media-player/${channel.number}.m3u`}
+              href={`${
+                isNonEmptyString(backendUri) ? `${backendUri}/` : ''
+              }media-player/${channel.number}.m3u`}
               onClick={(e) => e.stopPropagation()}
             >
               <TextSnippetIcon />
