@@ -23,11 +23,9 @@ import { Program, ProgramType } from '../dao/entities/Program.js';
 import { Plex } from '../external/plex.js';
 import { TruthyQueryParam } from '../types/schemas.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
-import createLogger from '../logger.js';
 import { ProgramGrouping } from '../dao/entities/ProgramGrouping.js';
 import { ifDefined } from '../util/index.js';
-
-const logger = createLogger(import.meta);
+import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 
 const LookupExternalProgrammingSchema = z.object({
   externalId: z
@@ -54,6 +52,8 @@ const BatchLookupExternalProgrammingSchema = z.object({
 
 // eslint-disable-next-line @typescript-eslint/require-await
 export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
+  const logger = LoggerFactory.child({ caller: import.meta });
+
   // Image proxy for a program based on its source. Only works for persisted programs
   fastify.get(
     '/programs/:id/thumb',

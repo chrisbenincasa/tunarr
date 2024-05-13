@@ -8,13 +8,12 @@ import fs from 'fs';
 import { isUndefined, once } from 'lodash-es';
 import 'reflect-metadata';
 import { dbOptions } from '../globals.js';
-import createLogger from '../logger.js';
-
-const logger = createLogger(import.meta);
+import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 
 export type EntityManager = BetterSqlite3EntityManager;
 
 export const initOrm = once(async (mikroOrmOptions?: Options) => {
+  const logger = LoggerFactory.root;
   const opts = mikroOrmOptions ?? dbOptions();
   const hasExistingDb = fs.existsSync(opts.dbName!); // Fail fast.
   logger.debug(

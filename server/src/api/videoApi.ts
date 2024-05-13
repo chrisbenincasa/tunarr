@@ -5,18 +5,18 @@ import { Readable } from 'stream';
 import { z } from 'zod';
 import { FfmpegText } from '../ffmpeg/ffmpegText.js';
 import { serverOptions } from '../globals.js';
-import createLogger from '../logger.js';
 import { ConcatStream } from '../stream/ConcatStream.js';
 import { VideoStream } from '../stream/VideoStream.js';
 import { StreamQueryStringSchema, TruthyQueryParam } from '../types/schemas.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
-
-const logger = createLogger(import.meta);
+import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 
 let StreamCount = 0;
 
 // eslint-disable-next-line @typescript-eslint/require-await
 export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
+  const logger = LoggerFactory.child({ caller: import.meta });
+
   fastify.get('/setup', async (req, res) => {
     const ffmpegSettings = req.serverCtx.settings.ffmpegSettings();
     // Check if ffmpeg path is valid
@@ -83,7 +83,11 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
       }
 
       req.raw.on('close', () => {
-        result.stop();
+        logger.debug('close event');
+        if (req.raw.destroyed) {
+          logger.debug('client closed request...');
+          result.stop();
+        }
       });
 
       return res.header('Content-Type', 'video/mp2t').send(result.stream);

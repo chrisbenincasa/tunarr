@@ -1,10 +1,8 @@
-import createLogger from '../../logger.js';
+import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
 import { AddPlexServerIdsFixer } from './addPlexServerIds.js';
 import { BackfillProgramGroupings } from './backfillProgramGroupings.js';
 import Fixer from './fixer.js';
 import { MissingSeasonNumbersFixer } from './missingSeasonNumbersFixer.js';
-
-const logger = createLogger(import.meta);
 
 // Run all fixers one-off, swallowing all errors.
 // Fixers currently do not keep any state and we will
@@ -21,10 +19,14 @@ export const runFixers = async () => {
 
   for (const fixer of allFixers) {
     try {
-      logger.debug('Running fixer %s', fixer.constructor.name);
+      LoggerFactory.root.debug('Running fixer %s', fixer.constructor.name);
       await fixer.run();
     } catch (e) {
-      logger.error('Fixer %s failed to run %O', fixer.constructor.name, e);
+      LoggerFactory.root.error(
+        'Fixer %s failed to run %O',
+        fixer.constructor.name,
+        e,
+      );
     }
   }
 };

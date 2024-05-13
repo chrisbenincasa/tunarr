@@ -14,20 +14,18 @@ import NodeCache from 'node-cache';
 import querystring, { ParsedUrlQueryInput } from 'querystring';
 import { MarkOptional } from 'ts-essentials';
 import { PlexServerSettings } from '../dao/entities/PlexServerSettings.js';
-import createLogger from '../logger.js';
-import { Maybe } from '../types/util.js';
 import {
   PlexMediaContainer,
   PlexMediaContainerResponse,
 } from '../types/plexApiTypes.js';
+import { Maybe } from '../types/util.js';
+import { Logger, LoggerFactory } from '../util/logging/LoggerFactory.js';
 
 type AxiosConfigWithMetadata = InternalAxiosRequestConfig & {
   metadata: {
     startTime: number;
   };
 };
-
-const logger = createLogger(import.meta);
 
 type PlexApiOptions = MarkOptional<
   Pick<
@@ -59,6 +57,7 @@ class PlexApiFactoryImpl {
 export const PlexApiFactory = new PlexApiFactoryImpl();
 
 export class Plex {
+  private logger: Logger;
   private opts: PlexApiOptions;
   private axiosInstance: AxiosInstance;
   private accessToken: string;
@@ -66,6 +65,7 @@ export class Plex {
   constructor(opts: PlexApiOptions) {
     this.opts = opts;
     this.accessToken = opts.accessToken;
+    this.logger = LoggerFactory.child({ caller: import.meta });
     const uri = opts.uri.endsWith('/')
       ? opts.uri.slice(0, opts.uri.length - 1)
       : opts.uri;
@@ -92,7 +92,7 @@ export class Plex {
           `?${querystring.stringify(req.params)}`
         : '';
       const elapsedTime = new Date().getTime() - req.metadata.startTime;
-      logger.http(
+      this.logger.http(
         `[Axios Request]: ${req.method?.toUpperCase()} ${req.baseURL}${
           req.url
         }${query} - (${status}) ${elapsedTime}ms`,
@@ -127,7 +127,7 @@ export class Plex {
     } catch (error) {
       if (isAxiosError(error)) {
         if (error.response?.status === 404) {
-          logger.warn(
+          this.logger.warn(
             `Not found: ${this.axiosInstance.defaults.baseURL}${req.url}`,
           );
         }
@@ -135,16 +135,16 @@ export class Plex {
           const { status, headers } = error.response;
           // The request was made and the server responded with a status code
           // that falls out of the range of 2xx
-          logger.warn(
+          this.logger.warn(
             'Plex response error: status %d, data: %O, headers: %O',
             status,
             error.response.data,
             headers,
           );
         } else if (error.request) {
-          logger.error('Plex request error: %s', error.message, error);
+          this.logger.error(error, 'Plex request error: %s', error.message);
         } else {
-          logger.error('Error requesting Plex: %s', error.message, error);
+          this.logger.error(error, 'Error requesting Plex: %s', error.message);
         }
       }
       return;
@@ -169,7 +169,7 @@ export class Plex {
 
     const res = await this.doRequest<PlexMediaContainerResponse<T>>(req);
     if (!res?.MediaContainer) {
-      logger.error('Expected MediaContainer, got %O', res);
+      this.logger.error(res, 'Expected MediaContainer, got %O');
     }
     return res?.MediaContainer;
   }
@@ -232,7 +232,7 @@ export class Plex {
       const result = await this.doGet<PlexDvrsResponse>('/livetv/dvrs');
       return isUndefined(result?.Dvr) ? [] : result?.Dvr;
     } catch (err) {
-      logger.error('GET /livetv/drs failed: ', err);
+      this.logger.error(err, 'GET /livetv/drs failed');
       throw err;
     }
   }

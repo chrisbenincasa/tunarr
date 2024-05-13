@@ -10,14 +10,14 @@ import { ArgumentsCamelCase } from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import yargs from 'yargs/yargs';
 import {
+  LegacyDbMigrator,
   MigratableEntities,
-  migrateFromLegacyDb,
 } from './dao/legacy_migration/legacyDbMigration.js';
-import { getSettingsRawDb } from './dao/settings.js';
 import { setGlobalOptions, setServerOptions } from './globals.js';
 import { initServer } from './server.js';
 import { ServerOptions } from './globals.js';
 import { isProduction } from './util/index.js';
+import { getSettings } from './dao/settings.js';
 
 const maybeEnvPort = () => {
   const port = process.env['TUNARR_SERVER_PORT'];
@@ -157,8 +157,9 @@ ${chalk.blue('  |_| ')}${chalk.green(' \\___/')}${chalk.yellow(
     },
     async (argv) => {
       console.log('Migrating DB from legacy schema...');
-      return await getSettingsRawDb().then((db) =>
-        migrateFromLegacyDb(db, argv.entities),
+      return await new LegacyDbMigrator().migrateFromLegacyDb(
+        getSettings(),
+        argv.entities,
       );
     },
   )

@@ -8,10 +8,8 @@ import stream from 'stream';
 import { EntityRepository } from '@mikro-orm/core';
 import { withDb } from '../dao/dataSource.js';
 import { CachedImage } from '../dao/entities/CachedImage.js';
-import createLogger from '../logger.js';
 import { FileCacheService } from './fileCacheService.js';
-
-const logger = createLogger(import.meta);
+import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 
 /**
  * Manager a cache in disk for external images.
@@ -19,6 +17,7 @@ const logger = createLogger(import.meta);
  * @class CacheImageService
  */
 export class CacheImageService {
+  private logger = LoggerFactory.child({ caller: import.meta });
   private cacheService: FileCacheService;
   private imageCacheFolder: string;
 
@@ -70,13 +69,13 @@ export class CacheImageService {
       responseType: 'stream',
     };
 
-    logger.debug('Requesting original image file for caching');
+    this.logger.debug('Requesting original image file for caching');
 
     const response = await axios.request<stream.Readable>(requestConfiguration);
 
     const mimeType = (response.headers as AxiosHeaders).get('content-type');
     if (!isUndefined(mimeType) && isString(mimeType)) {
-      logger.debug('Got image file with mimeType ' + mimeType);
+      this.logger.debug('Got image file with mimeType ' + mimeType);
       await repo.upsert({ ...cachedImage, mimeType });
     }
 
@@ -101,7 +100,7 @@ export class CacheImageService {
         .getCache(`${this.imageCacheFolder}/${fileName}`)
         .catch(() => void 0);
     } catch (e) {
-      logger.debug(`Image ${fileName} not found in cache.`);
+      this.logger.debug(`Image ${fileName} not found in cache.`);
       return Promise.resolve(undefined);
     }
   }

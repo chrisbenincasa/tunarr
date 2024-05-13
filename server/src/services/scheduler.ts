@@ -1,23 +1,20 @@
-import { isString, once, pickBy, values } from 'lodash-es';
-import ld from 'lodash-es';
-import createLogger from '../logger.js';
+import type { Tag } from '@tunarr/types';
+import dayjs, { type Dayjs } from 'dayjs';
+import ld, { isString, once, pickBy, values } from 'lodash-es';
+import { v4 } from 'uuid';
 import { ServerContext } from '../serverContext.js';
+import { OneOffTask } from '../tasks/OneOffTask.js';
+import { ReconcileProgramDurationsTask } from '../tasks/ReconcileProgramDurationsTask.js';
+import { ScheduledTask } from '../tasks/ScheduledTask.js';
+import { Task, TaskId } from '../tasks/Task.js';
 import { CleanupSessionsTask } from '../tasks/cleanupSessionsTask.js';
 import { ScheduleDynamicChannelsTask } from '../tasks/scheduleDynamicChannelsTask.js';
-import { Task, TaskId } from '../tasks/Task.js';
 import { UpdateXmlTvTask } from '../tasks/updateXmlTvTask.js';
-import { Maybe } from '../types/util.js';
 import { typedProperty } from '../types/path.js';
-import { ScheduledTask } from '../tasks/ScheduledTask.js';
-import type { Tag } from '@tunarr/types';
-import { OneOffTask } from '../tasks/OneOffTask.js';
-import { v4 } from 'uuid';
-import { ReconcileProgramDurationsTask } from '../tasks/ReconcileProgramDurationsTask.js';
-import dayjs, { type Dayjs } from 'dayjs';
+import { Maybe } from '../types/util.js';
+import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 
 const { isDayjs } = dayjs;
-
-export const logger = createLogger(import.meta);
 
 class Scheduler {
   #scheduledJobsById: Record<string, ScheduledTask> = {};
@@ -121,7 +118,11 @@ export const scheduleJobs = once((serverContext: ServerContext) => {
       job
         .runNow(true)
         .catch((e) =>
-          logger.error('Error running job %s at startup', job.name, e),
+          LoggerFactory.root.error(
+            'Error running job %s at startup',
+            job.name,
+            e,
+          ),
         );
     });
 });

@@ -6,14 +6,14 @@ import path from 'path';
 import { pipeline } from 'stream/promises';
 import { z } from 'zod';
 import { PlexServerSettings } from '../dao/entities/PlexServerSettings.js';
+import { Plex } from '../external/plex.js';
 import { FFMPEGInfo } from '../ffmpeg/ffmpegInfo.js';
 import { serverOptions } from '../globals.js';
-import createLogger from '../logger.js';
-import { Plex } from '../external/plex.js';
 import { GlobalScheduler } from '../services/scheduler.js';
 import { UpdateXmlTvTask } from '../tasks/updateXmlTvTask.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { fileExists } from '../util/fsUtil.js';
+import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { channelsApi } from './channelsApi.js';
 import { customShowsApiV2 } from './customShowsApi.js';
 import { debugApi } from './debugApi.js';
@@ -22,9 +22,9 @@ import { metadataApiRouter } from './metadataApi.js';
 import { programmingApi } from './programmingApi.js';
 import { tasksApiRouter } from './tasksApi.js';
 
-const logger = createLogger(import.meta);
-
 export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
+  const logger = LoggerFactory.child({ caller: import.meta });
+
   fastify.addContentTypeParser(/^image\/.*/, function (_, payload, done) {
     done(null, payload);
   });

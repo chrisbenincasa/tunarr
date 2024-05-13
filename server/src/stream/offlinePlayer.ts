@@ -11,15 +11,13 @@ import { isError } from 'lodash-es';
 import { Readable, Writable } from 'stream';
 import { FFMPEG, FfmpegEvents } from '../ffmpeg/ffmpeg.js';
 import { serverOptions } from '../globals.js';
-import createLogger from '../logger.js';
-import { Player } from './player.js';
-import { PlayerContext } from './player.js';
-import { Maybe } from '../types/util.js';
 import { TypedEventEmitter } from '../types/eventEmitter.js';
-
-const logger = createLogger(import.meta);
+import { Maybe } from '../types/util.js';
+import { LoggerFactory } from '../util/logging/LoggerFactory.js';
+import { Player, PlayerContext } from './player.js';
 
 export class OfflinePlayer extends Player {
+  private logger = LoggerFactory.child({ caller: import.meta });
   private context: PlayerContext;
   private error: boolean;
   private ffmpeg: FFMPEG;
@@ -63,21 +61,21 @@ export class OfflinePlayer extends Player {
       ff?.pipe(outStream, { end: false });
 
       ffmpeg.on('end', () => {
-        logger.silly('offline player end');
+        this.logger.trace('offline player end');
         emitter.emit('end');
       });
 
       ffmpeg.on('close', () => {
-        logger.silly('offline player close');
+        this.logger.trace('offline player close');
         emitter.emit('close');
       });
 
       ffmpeg.on('error', (err) => {
-        logger.error('offline player error: %O', err);
+        this.logger.error('offline player error: %O', err);
 
         //wish this code wasn't repeated.
         if (!this.error) {
-          logger.debug('Replacing failed stream with error stream');
+          this.logger.debug('Replacing failed stream with error stream');
           ff?.unpipe(outStream);
           // ffmpeg.removeAllListeners('data'); Type inference says this is never actually used...
           ffmpeg.removeAllListeners('end');
@@ -95,7 +93,7 @@ export class OfflinePlayer extends Player {
             emitter.emit('end');
           });
           ffmpeg.on('error', (err) => {
-            logger.error('Emitting error ... %O', err);
+            this.logger.error('Emitting error ... %O', err);
             emitter.emit('error', err);
           });
 

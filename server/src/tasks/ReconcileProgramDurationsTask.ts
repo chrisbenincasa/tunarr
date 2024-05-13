@@ -6,7 +6,6 @@ import {
   isUndefined,
   keys,
   map,
-  once,
   uniqBy,
 } from 'lodash-es';
 import { ChannelDB } from '../dao/channelDb';
@@ -15,7 +14,6 @@ import { isContentItem } from '../dao/derived_types/Lineup';
 import { Program } from '../dao/entities/Program';
 import { flatMapAsyncSeq, isNonEmptyString } from '../util';
 import { Task } from './Task';
-import createLogger from '../logger';
 
 // This task is fired off whenever programs are updated. It goes through
 // all channel lineups that contain the program and ensure that their
@@ -25,6 +23,7 @@ import createLogger from '../logger';
 // different versions varies in length by a few seconds).
 export class ReconcileProgramDurationsTask extends Task {
   static ID = ReconcileProgramDurationsTask.name;
+
   ID = ReconcileProgramDurationsTask.ID;
   taskName = ReconcileProgramDurationsTask.name;
 
@@ -32,13 +31,8 @@ export class ReconcileProgramDurationsTask extends Task {
   // operation, since theoretically we don't have to check it.
   constructor(private channelId?: string) {
     super();
+    this.logger.setBindings({ task: this.ID });
   }
-
-  private get logger() {
-    return this.makeLogger();
-  }
-
-  private makeLogger = once(() => createLogger(import.meta));
 
   protected async runInternal(): Promise<unknown> {
     const em = getEm();

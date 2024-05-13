@@ -3,14 +3,14 @@ import { TaskSchema } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import ld, { isNil } from 'lodash-es';
 import { z } from 'zod';
-import createLogger from '../logger.js';
 import { GlobalScheduler } from '../services/scheduler.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
-
-const logger = createLogger(import.meta);
+import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 
 // eslint-disable-next-line @typescript-eslint/require-await
 export const tasksApiRouter: RouterPluginAsyncCallback = async (fastify) => {
+  const logger = LoggerFactory.child({ caller: import.meta });
+
   fastify.get(
     '/jobs',
     {

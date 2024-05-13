@@ -7,7 +7,7 @@ import { CustomShowDB } from './dao/customShowDb.js';
 import { FillerDB } from './dao/fillerDb.js';
 import { PlexServerDB } from './dao/plexServerDb.js';
 import { ProgramDB } from './dao/programDB.js';
-import { Settings, getSettings } from './dao/settings.js';
+import { SettingsDB, getSettings } from './dao/settings.js';
 import { serverOptions } from './globals.js';
 import { HdhrService } from './hdhr.js';
 import { CacheImageService } from './services/cacheImageService.js';
@@ -29,14 +29,14 @@ export type ServerContext = {
   customShowDB: CustomShowDB;
   channelCache: ChannelCache;
   plexServerDB: PlexServerDB;
-  settings: Settings;
+  settings: SettingsDB;
   programDB: ProgramDB;
 };
 
-export const serverContext: () => Promise<ServerContext> = once(async () => {
+export const serverContext: () => ServerContext = once(() => {
   const opts = serverOptions();
 
-  const settings = await getSettings();
+  const settings = getSettings();
 
   const channelDB = new ChannelDB();
   const channelCache = new ChannelCache();

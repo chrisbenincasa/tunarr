@@ -5,19 +5,19 @@ import { isError } from 'lodash-es';
 import { z } from 'zod';
 import { defaultXmlTvSettings } from '../dao/settings.js';
 import { serverOptions } from '../globals.js';
-import createLogger from '../logger.js';
 import { GlobalScheduler } from '../services/scheduler.js';
 import { UpdateXmlTvTask } from '../tasks/updateXmlTvTask.js';
 import { RouterPluginCallback } from '../types/serverType.js';
 import { firstDefined } from '../util/index.js';
-
-const logger = createLogger(import.meta);
+import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 
 export const xmlTvSettingsRouter: RouterPluginCallback = (
   fastify,
   _opts,
   done,
 ) => {
+  const logger = LoggerFactory.child({ caller: import.meta });
+
   fastify.get(
     '/api/xmltv-settings',
     {

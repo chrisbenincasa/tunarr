@@ -23,7 +23,6 @@ import { isError, isString, isUndefined } from 'lodash-es';
 import { Writable } from 'stream';
 import { isContentBackedLineupIteam } from '../dao/derived_types/StreamLineup.js';
 import { FfmpegEvents } from '../ffmpeg/ffmpeg.js';
-import createLogger from '../logger.js';
 import { TypedEventEmitter } from '../types/eventEmitter.js';
 import { Maybe } from '../types/util.js';
 import { isNonEmptyString } from '../util/index.js';
@@ -31,10 +30,10 @@ import { OfflinePlayer } from './offlinePlayer.js';
 import { Player, PlayerContext } from './player.js';
 import { PlexPlayer } from './plex/plexPlayer.js';
 import { StreamContextChannel } from './types.js';
-
-const logger = createLogger(import.meta);
+import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 
 export class ProgramPlayer extends Player {
+  private logger = LoggerFactory.child({ caller: import.meta });
   private context: PlayerContext;
   private delegate: Player;
 
@@ -49,19 +48,19 @@ export class ProgramPlayer extends Player {
     }
 
     if (program.type === 'error') {
-      logger.debug('About to play error stream');
+      this.logger.debug('About to play error stream');
       this.delegate = new OfflinePlayer(true, context);
     } else if (program.type === 'loading') {
-      logger.debug('About to play loading stream');
+      this.logger.debug('About to play loading stream');
       /* loading */
       context.isLoading = true;
       this.delegate = new OfflinePlayer(false, context);
     } else if (program.type === 'offline') {
-      logger.debug('About to play offline stream');
+      this.logger.debug('About to play offline stream');
       /* offline */
       this.delegate = new OfflinePlayer(false, context);
     } else if (isContentBackedLineupIteam(program) && program) {
-      logger.debug('About to play plex stream');
+      this.logger.debug('About to play plex stream');
       /* plex */
       this.delegate = new PlexPlayer(context);
     }
@@ -136,7 +135,7 @@ export class ProgramPlayer extends Player {
           'Additional error when attempting to play error stream. ' + msg,
         );
       }
-      logger.error(
+      this.logger.error(
         'Error when attempting to play video. Fallback to error stream: ' +
           actualError.stack,
       );

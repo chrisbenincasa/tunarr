@@ -8,19 +8,19 @@ import { PlexServerSettingsSchema } from '@tunarr/types/schemas';
 import { isError, isNil, isObject } from 'lodash-es';
 import z from 'zod';
 import { PlexServerSettings } from '../dao/entities/PlexServerSettings.js';
-import createLogger from '../logger.js';
 import { Plex, PlexApiFactory } from '../external/plex.js';
 import { GlobalScheduler } from '../services/scheduler.js';
 import { UpdateXmlTvTask } from '../tasks/updateXmlTvTask.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { firstDefined, wait } from '../util/index.js';
-
-const logger = createLogger(import.meta);
+import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 
 export const plexServersRouter: RouterPluginAsyncCallback = async (
   fastify,
   // eslint-disable-next-line @typescript-eslint/require-await
 ) => {
+  const logger = LoggerFactory.child({ caller: import.meta });
+
   fastify.get(
     '/api/plex-servers',
     {

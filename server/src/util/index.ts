@@ -427,3 +427,7 @@ export const zipWithIndex = <T>(
 ): [T, number][] => {
   return zipWith(seq, range(start, seq.length), (s, i) => [s, i]);
 };
+
+export function run<T>(f: () => T): T {
+  return f();
+}

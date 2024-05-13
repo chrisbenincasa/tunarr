@@ -1,10 +1,10 @@
 import { FastifyPluginAsync } from 'fastify';
 import { Server as SSDP } from 'node-ssdp';
-import { ChannelDB } from './dao/channelDb.js';
-import { Settings } from './dao/settings.js';
-import { serverOptions } from './globals.js';
 import { z } from 'zod';
-import createLogger from './logger.js';
+import { ChannelDB } from './dao/channelDb.js';
+import { SettingsDB } from './dao/settings.js';
+import { serverOptions } from './globals.js';
+import { LoggerFactory } from './util/logging/LoggerFactory.js';
 
 const LineupSchema = z.object({
   GuideNumber: z.string(),
@@ -14,14 +14,13 @@ const LineupSchema = z.object({
 
 type LineupItem = z.infer<typeof LineupSchema>;
 
-const logger = createLogger(import.meta);
-
 export class HdhrService {
-  private db: Settings;
+  private logger = LoggerFactory.child({ caller: import.meta });
+  private db: SettingsDB;
   private channelDB: ChannelDB;
   private server: SSDP;
 
-  constructor(db: Settings, channelDB: ChannelDB) {
+  constructor(db: SettingsDB, channelDB: ChannelDB) {
     this.db = db;
     this.channelDB = channelDB;
     this.server = new SSDP({
@@ -50,23 +49,25 @@ export class HdhrService {
     // eslint-disable-next-line @typescript-eslint/require-await
     return async (fastify) => {
       fastify.addHook('onError', (req, _, error, done) => {
-        console.error('%O', error);
-        logger.error(req.routeOptions.config.url, error);
+        this.logger.error({ url: req.routeOptions.config.url, error });
         done();
       });
 
       fastify.get('/device.xml', (req, res) => {
+        req.disableRequestLogging = true;
         const device = getDevice(this.db, req.protocol + '://' + req.hostname);
         const data = device.getXml();
         return res.header('Content-Type', 'application/xml').send(data);
       });
 
       fastify.get('/discover.json', (req, res) => {
+        req.disableRequestLogging = true;
         const device = getDevice(this.db, req.protocol + '://' + req.hostname);
         return res.send(device);
       });
 
-      fastify.get('/lineup_status.json', (_, res) => {
+      fastify.get('/lineup_status.json', (req, res) => {
+        req.disableRequestLogging = true;
         return res.send({
           ScanInProgress: 0,
           ScanPossible: 1,
@@ -78,6 +79,10 @@ export class HdhrService {
       fastify.get(
         '/lineup.json',
         {
+          onRequest(req, _, done) {
+            req.disableRequestLogging = true;
+            done();
+          },
           schema: {
             response: {
               200: z.array(LineupSchema),
@@ -112,7 +117,7 @@ export class HdhrService {
   }
 }
 
-function getDevice(db: Settings, host: string) {
+function getDevice(db: SettingsDB, host: string) {
   const hdhrSettings = db.hdhrSettings();
   return {
     FriendlyName: 'Tunarr',

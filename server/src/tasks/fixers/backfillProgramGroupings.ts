@@ -15,6 +15,7 @@ import ld, {
   uniq,
 } from 'lodash-es';
 import { ProgramSourceType } from '../../dao/custom_types/ProgramSourceType';
+import { getEm } from '../../dao/dataSource';
 import { PlexServerSettings } from '../../dao/entities/PlexServerSettings';
 import { Program, ProgramType } from '../../dao/entities/Program';
 import {
@@ -22,13 +23,13 @@ import {
   ProgramGroupingType,
 } from '../../dao/entities/ProgramGrouping';
 import { ProgramGroupingExternalId } from '../../dao/entities/ProgramGroupingExternalId';
-import createLogger from '../../logger';
 import { PlexApiFactory } from '../../external/plex';
+import { LoggerFactory } from '../../util/logging/LoggerFactory';
 import Fixer from './fixer';
-import { getEm } from '../../dao/dataSource';
-const logger = createLogger(import.meta);
 
 export class BackfillProgramGroupings extends Fixer {
+  private logger = LoggerFactory.child({ caller: import.meta });
+
   protected async runInternal(em: EntityManager): Promise<void> {
     const plexServers = await em.findAll(PlexServerSettings);
 
@@ -59,13 +60,16 @@ export class BackfillProgramGroupings extends Fixer {
       });
 
       if (!isNil(existing)) {
-        logger.log('silly', 'Skipping existing TV show: %s', existing.uuid);
+        this.logger.trace('Skipping existing TV show: %s', existing.uuid);
         continue;
       }
 
       const server = find(plexServers, (ps) => ps.name === externalSourceId);
       if (isNil(server)) {
-        logger.warn('Could not find server with name %s', externalSourceId);
+        this.logger.warn(
+          'Could not find server with name %s',
+          externalSourceId,
+        );
         continue;
       }
 
@@ -75,7 +79,7 @@ export class BackfillProgramGroupings extends Fixer {
       );
 
       if (isNil(plexResult) || plexResult.Metadata.length < 1) {
-        logger.warn(
+        this.logger.warn(
           'Found no result for key %s in plex server %s',
           grandparentExternalKey,
           externalSourceId,
@@ -126,13 +130,16 @@ export class BackfillProgramGroupings extends Fixer {
       });
 
       if (!isNil(existing)) {
-        logger.log('silly', 'Skipping existing season: %s', existing.uuid);
+        this.logger.trace('Skipping existing season: %s', existing.uuid);
         continue;
       }
 
       const server = find(plexServers, (ps) => ps.name === externalSourceId);
       if (isNil(server)) {
-        logger.warn('Could not find server with name %s', externalSourceId);
+        this.logger.warn(
+          'Could not find server with name %s',
+          externalSourceId,
+        );
         continue;
       }
 
@@ -142,7 +149,7 @@ export class BackfillProgramGroupings extends Fixer {
       );
 
       if (isNil(plexResult) || plexResult.Metadata.length < 1) {
-        logger.warn(
+        this.logger.warn(
           'Found no result for key %s in plex server %s',
           parentExternalKey,
           externalSourceId,
@@ -194,7 +201,7 @@ export class BackfillProgramGroupings extends Fixer {
       },
     );
 
-    logger.debug('Updating %d episodes', episodes.length);
+    this.logger.debug('Updating %d episodes', episodes.length);
 
     if (!isEmpty(episodes)) {
       await this.updateEpisodes(episodes);
@@ -227,7 +234,10 @@ export class BackfillProgramGroupings extends Fixer {
         (ps) => ps.name === ref.externalSourceId,
       );
       if (isNil(server)) {
-        logger.warn('Could not find server with name %s', ref.externalSourceId);
+        this.logger.warn(
+          'Could not find server with name %s',
+          ref.externalSourceId,
+        );
         continue;
       }
 
@@ -237,7 +247,7 @@ export class BackfillProgramGroupings extends Fixer {
       );
 
       if (isNil(plexResult) || plexResult.Metadata.length < 1) {
-        logger.warn(
+        this.logger.warn(
           'Found no result for key %s in plex server %s',
           ref.externalKey,
           ref.externalSourceId,

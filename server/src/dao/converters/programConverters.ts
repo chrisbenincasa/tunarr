@@ -18,8 +18,8 @@ import {
 } from '../derived_types/Lineup.js';
 import { Channel } from '../entities/Channel.js';
 import { Program, ProgramType } from '../entities/Program.js';
-import { logger } from '../legacy_migration/legacyDbMigration.js';
 import { createPlexExternalId } from '../../util/externalIds.js';
+import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
 
 type ContentProgramConversionOptions = {
   skipPopulate: boolean;
@@ -40,6 +40,8 @@ type LineupItemConversionOptions = {
  * Converts DB types to API types
  */
 export class ProgramConverter {
+  private logger = LoggerFactory.child({ caller: import.meta });
+
   /**
    * Converts a LineupItem to a ChannelProgram
    *
@@ -59,7 +61,7 @@ export class ProgramConverter {
     } else if (isRedirectItem(item)) {
       const redirectChannel = find(channelReferences, { uuid: item.channel });
       if (isNil(redirectChannel)) {
-        logger.warn(
+        this.logger.warn(
           'Dangling redirect channel reference. Source channel = %s, target channel = %s',
           channel.uuid,
           item.channel,
