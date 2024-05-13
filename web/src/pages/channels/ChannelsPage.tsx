@@ -34,8 +34,10 @@ import TunarrLogo from '../../components/TunarrLogo.tsx';
 import NoChannelsCreated from '../../components/channel_config/NoChannelsCreated.tsx';
 import { useChannels } from '../../hooks/useChannels.ts';
 import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
+import { useSettings } from '../../store/settings/selectors.ts';
 
 export default function ChannelsPage() {
+  const { backendUri } = useSettings();
   const apiClient = useTunarrApi();
   const now = dayjs();
   const {
@@ -133,7 +135,7 @@ export default function ChannelsPage() {
         <TableCell sx={{ textAlign: 'right' }}>
           <Tooltip title="Get Channel M3U File" placement="top">
             <IconButton
-              href={`//localhost:8000/media-player/${channel.number}.m3u`}
+              href={`${backendUri}/media-player/${channel.number}.m3u`}
               onClick={(e) => e.stopPropagation()}
             >
               <TextSnippetIcon />
