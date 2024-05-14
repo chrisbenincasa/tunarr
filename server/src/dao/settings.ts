@@ -33,6 +33,7 @@ import {
 } from '../util/logging/LoggerFactory.js';
 import events from 'events';
 import { TypedEventEmitter } from '../types/eventEmitter.js';
+import { existsSync } from 'node:fs';
 
 const CURRENT_VERSION = 1;
 
@@ -205,7 +206,7 @@ export const getSettings = once((dbPath?: string) => {
   const actualPath =
     dbPath ?? path.resolve(globalOptions().databaseDirectory, 'settings.json');
 
-  // const needsFlush = !existsSync(actualPath);
+  const needsFlush = !existsSync(actualPath);
 
   const defaultValue = defaultSchema(globalOptions().databaseDirectory);
   // Load this synchronously, but then give the DB instance an async version
@@ -215,9 +216,9 @@ export const getSettings = once((dbPath?: string) => {
   );
 
   db.read();
-  // if (needsFlush) {
-  //   db.write();
-  // }
+  if (needsFlush) {
+    db.write();
+  }
 
   settingsDbInstance = new SettingsDB(
     actualPath,
