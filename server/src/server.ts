@@ -281,7 +281,7 @@ export async function initServer(opts: ServerOptions) {
     })
     .register(async (f) => {
       f.addHook('onError', (req, _, error, done) => {
-        logger.error(req.routeOptions.config.url, error);
+        logger.error(error, req.routeOptions.config.url);
         done();
       });
       await f

@@ -39,7 +39,7 @@ class PlexApiFactoryImpl {
   #cache: NodeCache;
 
   constructor() {
-    this.#cache = new NodeCache();
+    this.#cache = new NodeCache({ useClones: false });
   }
 
   get(opts: PlexApiOptions) {

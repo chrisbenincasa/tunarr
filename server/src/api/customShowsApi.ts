@@ -14,7 +14,7 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
   const logger = LoggerFactory.child({ caller: import.meta });
 
   fastify.addHook('onError', (req, _, error, done) => {
-    logger.error(req.routeOptions.config.url, error);
+    logger.error({ error, url: req.routeOptions.config.url });
     done();
   });
 

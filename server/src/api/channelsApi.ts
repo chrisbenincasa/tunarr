@@ -36,7 +36,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
   const logger = LoggerFactory.child({ caller: import.meta });
 
   fastify.addHook('onError', (req, _, error, done) => {
-    logger.error('%s %s %O', req.routerMethod, req.routeOptions.url, error);
+    logger.error(error, '%s %s', req.routerMethod, req.routeOptions.url);
     done();
   });
 

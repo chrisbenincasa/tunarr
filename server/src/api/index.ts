@@ -30,7 +30,7 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
   });
 
   fastify.addHook('onError', (req, _, error, done) => {
-    logger.error(req.routeOptions.config.url, error);
+    logger.error({ url: req.routeOptions.config.url, error });
     done();
   });
 
