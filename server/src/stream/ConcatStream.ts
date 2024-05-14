@@ -1,26 +1,28 @@
-import { isNil, isUndefined, once } from 'lodash-es';
+import { isNil, isUndefined, once, round } from 'lodash-es';
 import { PassThrough, Readable } from 'node:stream';
 import { v4 } from 'uuid';
-import { FFMPEG } from '../ffmpeg/ffmpeg';
+import { ConcatOptions, FFMPEG } from '../ffmpeg/ffmpeg';
 import { serverOptions } from '../globals';
 import { getServerContext } from '../serverContext';
 import { fileExists } from '../util/fsUtil';
 import { LoggerFactory } from '../util/logging/LoggerFactory';
 
-type VideoStreamSuccessResult = {
+export type VideoStreamSuccessResult = {
   type: 'success';
   stream: Readable;
   stop(): void;
 };
 
-type VideoStreamErrorResult = {
+export type VideoStreamErrorResult = {
   type: 'error';
   httpStatus: number;
   message: string;
   error?: unknown;
 };
 
-type VideoStreamResult = VideoStreamSuccessResult | VideoStreamErrorResult;
+export type VideoStreamResult =
+  | VideoStreamSuccessResult
+  | VideoStreamErrorResult;
 
 export class ConcatStream {
   private logger = LoggerFactory.child({ caller: import.meta });
@@ -28,15 +30,12 @@ export class ConcatStream {
   async startStream(
     channelId: string | number,
     audioOnly: boolean,
+    concatOptions?: Partial<ConcatOptions>,
   ): Promise<VideoStreamResult> {
     const outStream = new PassThrough();
     const reqId = `'conat-TOFB-${v4()}`;
-    console.time(reqId);
+    const start = performance.now();
     const ctx = getServerContext();
-    // Check if channel queried is valid
-    // if (isUndefined(req.query.channel)) {
-    //   return res.status(500).send('No Channel Specified');
-    // }
 
     const channel = await ctx.channelDB.getChannel(channelId);
     if (isNil(channel)) {
@@ -45,10 +44,7 @@ export class ConcatStream {
         httpStatus: 404,
         message: "Channel doesn't exist",
       };
-      // return res.status(500).send("Channel doesn't exist");
     }
-
-    // void res.hijack();
 
     const ffmpegSettings = ctx.settings.ffmpegSettings();
 
@@ -62,14 +58,7 @@ export class ConcatStream {
         httpStatus: 500,
         message: `FFMPEG path (${ffmpegSettings.ffmpegExecutablePath}) is invalid. The file (executable) doesn't exist.`,
       };
-      // return res
-      //   .status(500)
-      //   .send(
-      //     `FFMPEG path (${ffmpegSettings.ffmpegExecutablePath}) is invalid. The file (executable) doesn't exist.`,
-      //   );
     }
-
-    // void res.header('Content-Type', 'video/mp2t');
 
     this.logger.info(
       `\r\nStream starting. Channel: ${channel.number} (${channel.name})`,
@@ -88,39 +77,27 @@ export class ConcatStream {
     });
 
     ffmpeg.on('error', (err) => {
-      this.logger.error('CONCAT - FFMPEG ERROR', err);
-      //status was already sent
+      this.logger.error(err, 'CONCAT - FFMPEG ERROR');
       stop();
     });
 
-    ffmpeg.on('close', () => {
-      this.logger.debug('CONCAT - FFMPEG CLOSE');
-    });
-
     ffmpeg.on('end', () => {
-      this.logger.debug('FFMPEG END - FFMPEG CLOSE');
       this.logger.info(
         'Video queue exhausted. Either you played 100 different clips in a row or there were technical issues that made all of the possible 100 attempts fail.',
       );
       stop();
       outStream.push(null);
-      // res.raw.write(null);
     });
 
-    // res.raw.on('close', () => {
-    //   this.logger.warn('RESPONSE CLOSE - FFMPEG CLOSE');
-    //   // on HTTP close, kill ffmpeg
-    //   this.logger.info(
-    //     `\r\nStream ended. Channel: ${channel?.number} (${channel?.name})`,
-    //   );
-    //   stop();
-    // });
-
-    const ff = ffmpeg.spawnConcat(
-      `http://localhost:${serverOptions().port}/playlist?channel=${
-        channel.number
-      }&audioOnly=${audioOnly}`,
+    const concatUrl = new URL(
+      `http://localhost:${serverOptions().port}/playlist`,
     );
+    concatUrl.searchParams.set('channel', channel.number.toString());
+    // TODO: Do we know this is true? We probably need to push a param through
+    concatUrl.searchParams.set('audioOnly', 'false');
+    concatUrl.searchParams.set('hls', `${!!concatOptions?.enableHls}`);
+
+    const ff = ffmpeg.spawnConcat(concatUrl.toString(), concatOptions);
 
     if (isUndefined(ff)) {
       return {
@@ -128,27 +105,36 @@ export class ConcatStream {
         httpStatus: 500,
         message: 'Could not start concat stream',
       };
-      // return res.status(500).send('Could not start concat stream');
     }
 
-    // res.raw.writeHead(200, {
-    //   'content-type': 'video/mp2t',
-    //   'Access-Control-Allow-Origin': '*',
-    // });
-
     const onceListener = once(() => {
-      console.timeEnd(reqId);
+      const end = performance.now();
+      this.logger.debug(
+        `Request ID ${reqId} concat time-to-first-byte: ${round(
+          end - start,
+          4,
+        )}ms`,
+        { channel: channel.uuid },
+      );
       ff.removeListener('data', onceListener);
     });
 
     ff.on('data', onceListener);
-    ff.pipe(outStream);
+    ff.on('data', (d) => {
+      if (isNil(d)) {
+        this.logger.debug('Got nil from concat stream', {
+          channel: channel.uuid,
+        });
+      }
+    });
+    ff.on('close', () => {
+      this.logger.debug('Concat stream was closed!', { channel: channel.uuid });
+    });
 
     return {
       type: 'success',
       stop,
-      stream: outStream,
+      stream: ff.pipe(outStream),
     };
-    // ff.pipe(res.raw, { end: false });
   }
 }

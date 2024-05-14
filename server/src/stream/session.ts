@@ -1,16 +1,9 @@
-import { FfmpegSettings } from '@tunarr/types';
-import retry from 'async-retry';
-import { isEmpty, isError, isNil, isUndefined, keys, once } from 'lodash-es';
-import fs from 'node:fs/promises';
-import { join, resolve } from 'node:path';
+import { isEmpty, isUndefined, keys, once, round } from 'lodash-es';
 import { Readable } from 'node:stream';
-import { inspect } from 'node:util';
 import { v4 } from 'uuid';
 import { Channel } from '../dao/entities/Channel.js';
-import { FFMPEG } from '../ffmpeg/ffmpeg.js';
-import { serverOptions } from '../globals.js';
-import { isNodeError } from '../util/index.js';
 import { Logger, LoggerFactory } from '../util/logging/LoggerFactory.js';
+import { VideoStreamResult } from './ConcatStream.js';
 
 type SessionState = 'starting' | 'started' | 'error' | 'stopped' | 'init';
 
@@ -18,201 +11,100 @@ export type StreamConnectionDetails = {
   ip: string;
 };
 
-export class StreamSession {
-  private logger: Logger;
-  #channel: Channel;
-  #ffmpegSettings: FfmpegSettings;
+export type SessionType = 'hls' | 'concat';
+
+export type SessionOptions = {
+  sessionType: SessionType;
+};
+
+export abstract class StreamSession {
+  protected logger: Logger;
+  protected sessionOptions: SessionOptions;
+  protected channel: Channel;
+  protected state: SessionState = 'init';
+
   #uniqueId: string;
-  #ffmpeg: FFMPEG;
-  #state: SessionState = 'init';
   #stream: Readable;
   #connections: Record<string, StreamConnectionDetails> = {};
   #heartbeats: Record<string, number> = {};
   #cleanupFunc: NodeJS.Timeout | null = null;
-  #outPath: string;
-  // Absolute path to the stream directory
-  #streamPath: string;
-  // The path to request streaming assets from the server
-  #serverPath: string;
 
-  private constructor(channel: Channel, ffmpegSettings: FfmpegSettings) {
+  protected constructor(channel: Channel, opts: SessionOptions) {
     this.#uniqueId = v4();
     this.logger = LoggerFactory.child({
       caller: import.meta,
       sessionId: this.#uniqueId,
+      sessionType: opts.sessionType,
       channel: channel.uuid,
     });
-    this.#channel = channel;
-    this.#ffmpegSettings = ffmpegSettings;
-    // TODO expost this as an option on FfmpegSettings
-    this.#outPath = resolve(
-      process.cwd(),
-      'streams',
-      `stream_${this.#channel.uuid}`,
-    );
-    this.#streamPath = join(this.#outPath, 'stream.m3u8');
-    // Direct players back to the /hls URL which will return the playlist
-    this.#serverPath = `/media-player/${this.#channel.uuid}/hls`;
+    this.sessionOptions = opts;
+    this.channel = channel;
+    // TODO expose this as an option on FfmpegSettings
+    // This is only valid for HLS sessions
+    // this.#outPath = resolve(
+    //   process.cwd(),
+    //   'streams',
+    //   `stream_${this.channel.uuid}`,
+    // );
+    // this.#streamPath = join(this.#outPath, 'stream.m3u8');
+    // // Direct players back to the /hls URL which will return the playlist
+    // this.#serverPath = `/media-player/${this.channel.uuid}/hls`;
   }
 
-  static create(channel: Channel, ffmpegSettings: FfmpegSettings) {
-    return new StreamSession(channel, ffmpegSettings);
-  }
+  // static create(channel: Channel, opts: SessionOptions) {
+  //   return new StreamSession(channel, opts);
+  // }
 
   async start() {
-    if (this.#state !== 'starting') {
-      this.#state = 'starting';
+    if (this.state !== 'starting') {
+      this.state = 'starting';
       await this.startStream();
     }
   }
 
   stop() {
-    if (this.#state === 'started') {
-      this.logger.debug(
-        '[Session %s] Stopping stream session',
-        this.#channel.uuid,
-      );
-      this.#ffmpeg.kill();
+    if (this.state === 'started') {
+      this.logger.debug('Stopping stream session', this.channel.uuid);
       setImmediate(() => {
-        this.cleanupDirectory().catch((e) =>
-          this.logger.error(
-            'Error while attempting to cleanup stream directory: %O',
-            e,
-            { label: `Session ${this.#channel.uuid}` },
-          ),
-        );
+        this.stopStream().catch((e) => {
+          this.logger.error(e, 'Error while cleaning up stream session');
+          this.state = 'error';
+        });
       });
-      this.#state = 'stopped';
+      this.state = 'stopped';
     } else {
       this.logger.debug(
-        '[Session %s] Wanted to shutdown session but state was %s',
-        this.#channel.uuid,
-        this.#state,
+        'Wanted to shutdown session but state was %s',
+        this.state,
       );
     }
   }
 
-  private async cleanupDirectory() {
-    this.logger.debug(
-      `Cleaning out stream path for session: %s`,
-      this.#outPath,
-    );
-    return fs
-      .rm(this.#outPath, {
-        recursive: true,
-        force: true,
-      })
-      .catch((err) =>
-        this.logger.error(
-          'Failed to cleanup stream: %s %O',
-          this.#channel.uuid,
-          err,
-        ),
-      );
-  }
+  protected abstract stopStream(): Promise<void>;
 
   private async startStream() {
-    const reqId = v4();
-    console.time(reqId);
-    this.#ffmpeg = new FFMPEG(this.#ffmpegSettings, this.#channel); // Set the transcoder options
+    const start = performance.now();
 
-    const stop = once(() => {
-      this.#state = 'stopped';
-      this.stop();
-      this.#ffmpeg.kill();
-    });
+    const streamInitResult = await this.initializeStream();
 
-    this.#ffmpeg.on('error', (err) => {
-      this.logger.error(
-        '[Session %s]: ffmpeg error %O',
-        this.#channel.uuid,
-        err,
+    if (streamInitResult.type === 'error') {
+      this.state = 'error';
+      return;
+    }
+
+    this.#stream = streamInitResult.stream;
+
+    const onceListener = once(() => {
+      const end = performance.now();
+      this.logger.debug(
+        `Took stream ${round(end - start, 4)}ms to provide data`,
       );
-      stop();
+      this.#stream.removeListener('data', onceListener);
     });
 
-    this.#ffmpeg.on('close', () => {
-      this.logger.error('[Session %s]: ffmpeg close %O', this.#channel.uuid);
-    });
+    this.#stream.once('data', onceListener);
 
-    this.#ffmpeg.on('end', () => {
-      this.logger.info('[Session %s]: Video queue exhausted.');
-      stop();
-    });
-
-    this.logger.debug(`Creating stream directory: ${this.#outPath}`);
-
-    try {
-      await fs.stat(this.#outPath);
-      await this.cleanupDirectory();
-    } catch (e) {
-      if (isNodeError(e) && e.code === 'ENOENT') {
-        this.logger.debug("[Session %s]: Stream directory doesn't exist.");
-      }
-    } finally {
-      await fs.mkdir(this.#outPath);
-    }
-
-    const stream = this.#ffmpeg.spawnConcat(
-      `http://localhost:${serverOptions().port}/playlist?channel=${
-        this.#channel.number
-      }&audioOnly=false&hls=true`, // TODO FIX
-      {
-        enableHls: true,
-        hlsOptions: {
-          streamBasePath: `stream_${this.#channel.uuid}`,
-          hlsTime: 3,
-          hlsListSize: 8,
-        },
-        logOutput: false,
-      },
-    );
-
-    if (stream) {
-      // we may have solved this on the frontend...
-      // await wait(5000); // How necessary is this really...
-      this.#stream = stream;
-      const onceListener = once(() => {
-        console.timeEnd(reqId);
-        stream.removeListener('data', onceListener);
-      });
-
-      // Wait for the stream to become ready
-      try {
-        await retry(
-          async (bail) => {
-            try {
-              await fs.stat(this.#streamPath);
-            } catch (e) {
-              if (isNodeError(e) && e.code === 'ENOENT') {
-                this.logger.debug(
-                  '[Session %s] Still waiting for stream to start.',
-                  this.#channel.uuid,
-                );
-                throw e; // Retry
-              } else {
-                this.#state === 'error';
-                bail(isError(e) ? e : new Error('Unexplained error: ' + e));
-              }
-            }
-          },
-          {
-            retries: 10,
-            factor: 1.2,
-          },
-        );
-      } catch (e) {
-        this.logger.error('Error starting stream after retrying', e);
-        this.#state = 'error';
-        return;
-      }
-
-      stream.on('data', onceListener);
-
-      this.#state = 'started';
-    } else {
-      this.#state = 'error';
-    }
+    await this.waitForStreamReadyInternal();
   }
 
   get id() {
@@ -220,19 +112,23 @@ export class StreamSession {
   }
 
   get started() {
-    return this.#state === 'started';
+    return this.state === 'started';
   }
 
   get stopped() {
-    return this.#state === 'stopped';
+    return this.state === 'stopped';
   }
 
   get hasError() {
-    return this.#state === 'error';
+    return this.state === 'error';
   }
 
   get rawStream() {
     return this.#stream;
+  }
+
+  get sessionType() {
+    return this.sessionOptions.sessionType;
   }
 
   addConnection(token: string, connection: StreamConnectionDetails) {
@@ -270,40 +166,48 @@ export class StreamSession {
 
   scheduleCleanup(delay: number) {
     if (this.#cleanupFunc) {
-      this.logger.debug(
-        '[Session %s] Cleanup already scheduled',
-        this.#channel.uuid,
-      );
+      this.logger.debug('Cleanup already scheduled');
       // We already scheduled shutdown
       return;
     }
-    this.logger.debug('[Session %s] Scheduling shutdown', this.#channel.uuid);
+    this.logger.debug('Scheduling session shutdown');
     this.#cleanupFunc = setTimeout(() => {
-      this.logger.debug(
-        '[Session %s] Shutting down session',
-        this.#channel.uuid,
-      );
-      if (isEmpty(this.#connections) && this.#ffmpeg) {
+      this.logger.debug('Shutting down session');
+      if (isEmpty(this.#connections)) {
         this.stop();
       } else {
-        this.logger.debug(
-          `Got new connections: ${inspect(
-            this.#connections,
-          )}. Also ffmpeg = ${isNil(this.#ffmpeg)}`,
-        );
+        this.logger.debug(`Got new connections: %O`, this.#connections);
       }
     }, delay);
   }
 
-  get workingDirectory() {
-    return this.#outPath;
+  protected abstract initializeStream(): Promise<VideoStreamResult>;
+
+  // Override if there are conditions to wait for until the stream is ready to return
+  protected waitForStreamReady(): Promise<StreamReadyResult> {
+    return Promise.resolve({ type: 'success' });
   }
 
-  get streamPath() {
-    return this.#streamPath;
-  }
+  private async waitForStreamReadyInternal() {
+    const waitResult = await this.waitForStreamReady();
 
-  get serverPath() {
-    return this.#serverPath;
+    if (waitResult.type === 'error') {
+      this.state = 'error';
+    } else {
+      this.state = 'started';
+    }
   }
 }
+
+type StreamReadyErrorResult = {
+  type: 'error';
+  error?: Error;
+};
+
+type StreamReadySuccessResult = {
+  type: 'success';
+};
+
+export type StreamReadyResult =
+  | StreamReadySuccessResult
+  | StreamReadyErrorResult;

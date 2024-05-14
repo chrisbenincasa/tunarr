@@ -24,7 +24,7 @@ export const hlsApi: RouterPluginAsyncCallback = async (fastify) => {
         const channelId = matches[1];
         req.streamChannel = channelId;
         const token = query['token'];
-        const session = sessionManager.getSession(channelId);
+        const session = sessionManager.getHlsSession(channelId);
         if (isNil(session)) {
           void res.status(404).send();
           return;
@@ -54,7 +54,7 @@ export const hlsApi: RouterPluginAsyncCallback = async (fastify) => {
         !isNil(token) &&
         !isNil(req.streamChannel)
       ) {
-        const session = sessionManager.getSession(req.streamChannel);
+        const session = sessionManager.getHlsSession(req.streamChannel);
         session?.recordHeartbeat(req.ip);
         if (!isNil(session) && session.isKnownConnection(token)) {
           session.recordHeartbeat(token);
@@ -81,7 +81,7 @@ export const hlsApi: RouterPluginAsyncCallback = async (fastify) => {
         },
       },
       async (req, res) => {
-        const session = sessionManager.getSession(req.params.id);
+        const session = sessionManager.getHlsSession(req.params.id);
         if (isUndefined(session)) {
           return res.status(404).send();
         }
@@ -118,12 +118,14 @@ export const hlsApi: RouterPluginAsyncCallback = async (fastify) => {
       // How should we handle this...
       // const token = req.query.token ?? v4();
 
-      const session = await sessionManager.getOrCreateSession(
+      const session = await sessionManager.getOrCreateHlsSession(
         req.params.id,
-        req.serverCtx.settings.ffmpegSettings(),
         req.ip,
         {
           ip: req.ip,
+        },
+        {
+          sessionType: 'hls',
         },
       );
 
@@ -157,12 +159,14 @@ export const hlsApi: RouterPluginAsyncCallback = async (fastify) => {
 
       const token = v4();
 
-      const session = await sessionManager.getOrCreateSession(
+      const session = await sessionManager.getOrCreateHlsSession(
         channel.uuid,
-        req.serverCtx.settings.ffmpegSettings(),
         token,
         {
           ip: req.ip,
+        },
+        {
+          sessionType: 'hls',
         },
       );
 
@@ -193,7 +197,7 @@ export const hlsApi: RouterPluginAsyncCallback = async (fastify) => {
         return res.status(404).send("Channel doesn't exist");
       }
 
-      const session = sessionManager.getSession(channel.uuid);
+      const session = sessionManager.getHlsSession(channel.uuid);
 
       return res.send({
         channelId: channel.uuid,
@@ -224,7 +228,7 @@ export const hlsApi: RouterPluginAsyncCallback = async (fastify) => {
         return res.status(404).send("Channel doesn't exist");
       }
 
-      const session = sessionManager.getSession(channel.uuid);
+      const session = sessionManager.getHlsSession(channel.uuid);
 
       if (isNil(session)) {
         return res.status(404).send('No sessions for channel');

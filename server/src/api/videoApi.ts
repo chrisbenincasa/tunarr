@@ -1,5 +1,5 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { isNil, isUndefined } from 'lodash-es';
+import { isNil, isNumber, isUndefined, map } from 'lodash-es';
 import * as fsSync from 'node:fs';
 import { Readable } from 'stream';
 import { z } from 'zod';
@@ -10,6 +10,10 @@ import { VideoStream } from '../stream/VideoStream.js';
 import { StreamQueryStringSchema, TruthyQueryParam } from '../types/schemas.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
+import { sessionManager } from '../stream/sessionManager.js';
+import { v4 } from 'uuid';
+import { run } from '../util/index.js';
+import { PassThrough } from 'node:stream';
 
 let StreamCount = 0;
 
@@ -68,7 +72,7 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
   });
 
   fastify.get(
-    '/channels/:id/video',
+    '/channels/:id/sessions',
     {
       schema: {
         params: z.object({
@@ -77,20 +81,116 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      const result = await new ConcatStream().startStream(req.params.id, false);
-      if (result.type === 'error') {
-        return res.send(result.httpStatus).send(result.message);
-      }
-
-      req.raw.on('close', () => {
-        logger.debug('close event');
-        if (req.raw.destroyed) {
-          logger.debug('client closed request...');
-          result.stop();
+      const channelId = await run(async () => {
+        if (isNumber(req.params.id)) {
+          return (
+            await req.serverCtx.channelDB.getChannelByNumber(req.params.id)
+          )?.uuid;
+        } else {
+          return req.params.id;
         }
       });
 
-      return res.header('Content-Type', 'video/mp2t').send(result.stream);
+      if (isNil(channelId)) {
+        return res.status(404).send('Could not derive channel ID');
+      }
+
+      const session = sessionManager.getConcatSession(channelId);
+
+      if (isNil(session)) {
+        return res.status(404).send('No session found for channel ID');
+      }
+
+      return res.send({
+        // channelId: channel.uuid,
+        // channelNumber: channel.number,
+        numConnections: session?.numConnections() ?? 0,
+        connections: map(session?.connections(), (connection, token) => ({
+          ...connection,
+          lastHeartbeat: session?.lastHeartbeat(token),
+        })),
+      });
+    },
+  );
+
+  fastify.get(
+    '/channels/:id/video',
+    {
+      schema: {
+        params: z.object({
+          id: z.coerce.number().or(z.string()),
+        }),
+        querystring: z.object({
+          useSessions: TruthyQueryParam.optional().default('false'),
+        }),
+      },
+    },
+    async (req, res) => {
+      if (req.query.useSessions) {
+        const channel = await req.serverCtx.channelDB.getChannel(req.params.id);
+        if (isNil(channel)) {
+          return res.status(404).send();
+        }
+
+        const token = v4();
+
+        const session = await sessionManager.getOrCreateConcatSession(
+          channel.uuid,
+          token,
+          {
+            ip: req.ip,
+          },
+          {
+            sessionType: 'concat',
+          },
+        );
+
+        if (isNil(session)) {
+          return res.status(500).send();
+        }
+
+        // We have to create an intermediate stream between the raw one
+        // and the response so that nothing messes up the backing raw stream
+        // when the request closes (i.e. anything that might happen internal
+        // in fastify on the send).
+        const piped = session.rawStream.pipe(new PassThrough());
+
+        req.raw.on('close', () => {
+          logger.debug('Concat request closed.');
+          if (req.raw.destroyed) {
+            logger.debug(
+              'Detected client initiated concat close, stopping stream...',
+            );
+            //TODO Not ideal to key each connectionon req.ip -- rethink this!
+            session.removeConnection(token);
+            piped.end();
+          }
+          res.raw.end();
+        });
+
+        return res.header('Content-Type', 'video/mp2t').send(piped);
+      } else {
+        const result = await new ConcatStream().startStream(
+          req.params.id,
+          false,
+        );
+        if (result.type === 'error') {
+          return res.send(result.httpStatus).send(result.message);
+        }
+
+        req.raw.on('close', () => {
+          logger.debug('Concat request closed.');
+          if (req.raw.destroyed) {
+            logger.debug(
+              'Detected client initiated concat close, stopping stream...',
+            );
+            result.stop();
+          }
+          res.raw.end();
+        });
+
+        return res.header('Content-Type', 'video/mp2t').send(result.stream);
+      }
     },
   );
 
@@ -248,7 +348,9 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
           serverOptions().port
         }/stream?channel=${
           req.query.channel
-        }&session=${sessionId}&audioOnly=${audioOnly}&hls=${req.query.hls}'\n`;
+        }&session=${sessionId}&audioOnly=${audioOnly}&hls=${
+          req.query.hls
+        }&index=${i}'\n`;
       }
 
       return res.type('text').send(data);

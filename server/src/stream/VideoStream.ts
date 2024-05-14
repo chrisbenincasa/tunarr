@@ -363,14 +363,14 @@ export class VideoStream {
     };
 
     try {
-      this.logger.info('About to play stream...');
+      this.logger.trace('About to play stream...');
       const ffmpegEmitter = await player.play(outStream);
       ffmpegEmitter?.on('error', (err) => {
         this.logger.error('Error while playing video: %O', err);
       });
 
       ffmpegEmitter?.on('end', () => {
-        this.logger.debug('playObj.end');
+        this.logger.trace('playObj.end');
         stop();
       });
     } catch (err) {
@@ -386,7 +386,7 @@ export class VideoStream {
 
     const logTimer = once(() => {
       const dur = performance.now() - start;
-      this.logger.debug('Video stream started in %d seconds', dur);
+      this.logger.debug('Video stream started in %d ms', dur);
       outStream.off('data', logTimer);
     });
     outStream.on('data', logTimer);
