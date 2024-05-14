@@ -103,7 +103,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     super();
     this.logger = LoggerFactory.child({
       caller: import.meta,
-      channe: channel.uuid,
+      channel: channel.uuid,
     });
     this.opts = opts;
     this.errorPicturePath = `http://localhost:${

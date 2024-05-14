@@ -95,19 +95,16 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
   );
 
   fastify.get(
-    '/radio',
+    '/channels/:id/radio',
     {
       schema: {
-        querystring: z.object({
-          channel: z.coerce.number().or(z.string()),
+        params: z.object({
+          id: z.coerce.number().or(z.string()),
         }),
       },
     },
     async (req, res) => {
-      const result = await new ConcatStream().startStream(
-        req.query.channel,
-        false,
-      );
+      const result = await new ConcatStream().startStream(req.params.id, false);
       if (result.type === 'error') {
         return res.send(result.httpStatus).send(result.message);
       }
@@ -163,11 +160,11 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
   );
 
   fastify.get(
-    '/m3u8',
+    '/channels/:id/m3u8',
     {
       schema: {
-        querystring: z.object({
-          channel: z.coerce.number().or(z.string().uuid()),
+        params: z.object({
+          id: z.coerce.number().or(z.string()),
         }),
       },
     },
@@ -175,11 +172,11 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
       const sessionId = StreamCount++;
 
       // Check if channel queried is valid
-      if (isUndefined(req.query.channel)) {
+      if (isUndefined(req.params.id)) {
         return res.status(400).send('No Channel Specified');
       }
 
-      if (isNil(await req.serverCtx.channelDB.getChannel(req.query.channel))) {
+      if (isNil(await req.serverCtx.channelDB.getChannel(req.params.id))) {
         return res.status(404).send("Channel doesn't exist");
       }
 
@@ -189,7 +186,7 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
           await req.serverCtx.m3uService.buildChannelM3U(
             req.protocol,
             req.hostname,
-            req.query.channel,
+            req.params.id,
             sessionId,
           ),
         );
@@ -275,7 +272,7 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
       '#EXT-X-ALLOW-CACHE:YES',
       '#EXT-X-TARGETDURATION:60',
       '#EXT-X-PLAYLIST-TYPE:VOD',
-      `${req.protocol}://${req.hostname}/${path}?channel=${channelNum}`,
+      `${req.protocol}://${req.hostname}/channels/${channelNum}/${path}`,
     ];
 
     return res
