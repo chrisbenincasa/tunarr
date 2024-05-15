@@ -3,7 +3,6 @@ import middie from '@fastify/middie';
 import fpStatic from '@fastify/static';
 import fastify, { FastifySchema } from 'fastify';
 import fp from 'fastify-plugin';
-// import fastifyPrintRoutes from 'fastify-print-routes';
 import fastifyMultipart from '@fastify/multipart';
 import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
@@ -19,15 +18,9 @@ import fs from 'fs';
 import { isArray, isNumber, isString, isUndefined, round } from 'lodash-es';
 import schedule from 'node-schedule';
 import path, { dirname, join } from 'path';
-import { ffmpegSettingsRouter } from './api/ffmpegSettingsApi.js';
-import { guideRouter } from './api/guideApi.js';
-import { hdhrSettingsRouter } from './api/hdhrSettingsApi.js';
 import { hlsApi } from './api/hlsApi.js';
 import { apiRouter } from './api/index.js';
-import { plexServersRouter } from './api/plexServersApi.js';
-import { plexSettingsRouter } from './api/plexSettingsApi.js';
 import { videoRouter } from './api/videoApi.js';
-import { xmlTvSettingsRouter } from './api/xmltvSettingsApi.js';
 import { EntityManager, initOrm } from './dao/dataSource.js';
 import { LegacyDbMigrator } from './dao/legacy_migration/legacyDbMigration.js';
 import { getSettings } from './dao/settings.js';
@@ -39,6 +32,8 @@ import { runFixers } from './tasks/fixers/index.js';
 import { UpdateXmlTvTask } from './tasks/updateXmlTvTask.js';
 import { filename, isProduction, run } from './util/index.js';
 import { Logger, LoggerFactory } from './util/logging/LoggerFactory.js';
+import { HdhrApiRouter } from './api/hdhrApi.js';
+import { FastifyRouteConfig } from 'fastify/types/route.js';
 
 const currentDirectory = dirname(filename(import.meta.url));
 
@@ -121,7 +116,26 @@ export async function initServer(opts: ServerOptions) {
     .withTypeProvider<ZodTypeProvider>();
 
   if (serverOptions().printRoutes) {
-    await app.register(fastifyPrintRoutes);
+    await app.register(
+      fp((f, opts, done) =>
+        fastifyPrintRoutes(
+          f,
+          {
+            ...opts,
+            querystring: false,
+            filter(route: FastifyRouteConfig) {
+              return (
+                route.method !== 'HEAD' &&
+                route.method !== 'OPTIONS' &&
+                !route.url.startsWith('/docs')
+              );
+            },
+            compact: true,
+          },
+          done,
+        ),
+      ),
+    );
   }
 
   await app
@@ -286,17 +300,11 @@ export async function initServer(opts: ServerOptions) {
       });
       await f
         .get('/', async (_, res) => res.redirect(302, '/web'))
-        .register(plexServersRouter)
-        .register(ffmpegSettingsRouter)
-        .register(plexSettingsRouter)
-        .register(xmlTvSettingsRouter)
-        .register(hdhrSettingsRouter)
-        .register(guideRouter)
+        .register(new HdhrApiRouter().router)
         .register(apiRouter, { prefix: '/api' });
     })
     .register(videoRouter)
     .register(hlsApi)
-    .register(ctx.hdhrService.createRouter())
     // Serve the webapp
     .register(
       async (f) => {

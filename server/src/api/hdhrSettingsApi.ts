@@ -15,7 +15,7 @@ export const hdhrSettingsRouter: RouterPluginCallback = (
   const logger = LoggerFactory.child({ caller: import.meta });
 
   fastify.get(
-    '/api/hdhr-settings',
+    '/hdhr-settings',
     {
       schema: {
         response: {
@@ -36,7 +36,7 @@ export const hdhrSettingsRouter: RouterPluginCallback = (
   );
 
   fastify.put(
-    '/api/hdhr-settings',
+    '/hdhr-settings',
     {
       schema: {
         body: HdhrSettingsSchema,
@@ -78,7 +78,7 @@ export const hdhrSettingsRouter: RouterPluginCallback = (
   );
 
   fastify.post(
-    '/api/hdhr-settings',
+    '/hdhr-settings',
     {
       schema: {
         response: {

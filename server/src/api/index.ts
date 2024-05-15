@@ -21,6 +21,12 @@ import { fillerListsApi } from './fillerListsApi.js';
 import { metadataApiRouter } from './metadataApi.js';
 import { programmingApi } from './programmingApi.js';
 import { tasksApiRouter } from './tasksApi.js';
+import { ffmpegSettingsRouter } from './ffmpegSettingsApi.js';
+import { guideRouter } from './guideApi.js';
+import { hdhrSettingsRouter } from './hdhrSettingsApi.js';
+import { plexServersRouter } from './plexServersApi.js';
+import { plexSettingsRouter } from './plexSettingsApi.js';
+import { xmlTvSettingsRouter } from './xmltvSettingsApi.js';
 
 export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
   const logger = LoggerFactory.child({ caller: import.meta });
@@ -41,7 +47,13 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
     .register(fillerListsApi)
     .register(programmingApi)
     .register(debugApi)
-    .register(metadataApiRouter);
+    .register(metadataApiRouter)
+    .register(plexServersRouter)
+    .register(ffmpegSettingsRouter)
+    .register(plexSettingsRouter)
+    .register(xmlTvSettingsRouter)
+    .register(hdhrSettingsRouter)
+    .register(guideRouter);
 
   fastify.get(
     '/version',

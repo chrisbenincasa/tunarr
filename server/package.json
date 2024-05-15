@@ -50,7 +50,7 @@
     "fast-xml-parser": "^4.3.5",
     "fastify": "^4.26.0",
     "fastify-plugin": "^4.5.1",
-    "fastify-print-routes": "^3.1.1",
+    "fastify-print-routes": "^3.2.0",
     "fastify-type-provider-zod": "^1.1.9",
     "lodash-es": "^4.17.21",
     "lowdb": "^7.0.0",

@@ -13,7 +13,7 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
 ) => {
   const logger = LoggerFactory.child({ caller: import.meta });
 
-  fastify.get('/api/ffmpeg-settings', (req, res) => {
+  fastify.get('/ffmpeg-settings', (req, res) => {
     try {
       const ffmpeg = req.serverCtx.settings.ffmpegSettings();
       return res.send(ffmpeg);
@@ -24,7 +24,7 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
   });
 
   fastify.put(
-    '/api/ffmpeg-settings',
+    '/ffmpeg-settings',
     {
       schema: {
         body: FfmpegSettingsSchema,
@@ -71,7 +71,7 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
   );
 
   fastify.post<{ Body: { ffmpegPath: string } }>(
-    '/api/ffmpeg-settings',
+    '/ffmpeg-settings',
     async (req, res) => {
       // RESET
       try {
