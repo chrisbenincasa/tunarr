@@ -15,7 +15,8 @@ import {
 } from '@mui/material';
 import { createExternalId } from '@tunarr/shared';
 import { forProgramType } from '@tunarr/shared/util';
-import { ChannelProgram } from '@tunarr/types';
+import { ChannelProgram, TvGuideProgram } from '@tunarr/types';
+import dayjs from 'dayjs';
 import { isUndefined } from 'lodash-es';
 import {
   ReactEventHandler,
@@ -31,7 +32,7 @@ import { useSettings } from '../store/settings/selectors';
 type Props = {
   open: boolean;
   onClose: () => void;
-  program: ChannelProgram | undefined;
+  program: TvGuideProgram | undefined;
 };
 
 const formattedTitle = forProgramType({
@@ -172,7 +173,8 @@ export default function ProgramDetailsDialog({
   const isEpisode =
     program && program.type === 'content' && program.subtype === 'episode';
   const imageWidth = smallViewport ? (isEpisode ? '100%' : '55%') : 240;
-  console.log(program);
+  const programStart = dayjs(program?.start);
+  const programEnd = dayjs(program?.stop);
 
   return (
     program && (
@@ -199,6 +201,13 @@ export default function ProgramDetailsDialog({
             <Box>
               {durationChip(program)}
               {ratingChip(program)}
+              <Chip
+                label={`${programStart.format('h:mm')} - ${programEnd.format(
+                  'h:mma',
+                )}`}
+                sx={{ mt: 1 }}
+                color="primary"
+              />
             </Box>
             <Stack
               direction="row"
@@ -223,7 +232,7 @@ export default function ProgramDetailsDialog({
                   thumbLoadState === 'error') && (
                   <Skeleton
                     variant="rectangular"
-                    width={imageWidth}
+                    width={smallViewport ? '100%' : imageWidth}
                     height={500}
                     animation={thumbLoadState === 'loading' ? 'pulse' : false}
                   ></Skeleton>

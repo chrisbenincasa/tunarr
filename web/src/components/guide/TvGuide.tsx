@@ -368,10 +368,18 @@ export function TvGuide({ channelId, start, end }: Props) {
           <Box sx={{ fontSize: '13px', fontStyle: 'italic' }}>
             {episodeTitle}
           </Box>
-          <Box sx={{ fontSize: '12px' }}>
-            {`${programStart.format('h:mm')} - ${programEnd.format('h:mma')}`}
-            {isPlaying ? ` (${remainingTime}m remaining)` : null}
-          </Box>
+          {((smallViewport && pct > 20) || (!smallViewport && pct > 8)) && (
+            <>
+              <Box sx={{ fontSize: '12px' }}>
+                {`${programStart.format('h:mm')} - ${programEnd.format(
+                  'h:mma',
+                )}`}
+              </Box>
+              <Box sx={{ fontSize: '12px' }}>
+                {isPlaying ? ` (${remainingTime}m left)` : null}
+              </Box>
+            </>
+          )}
         </GuideItem>
         {endOfAvailableProgramming
           ? renderUnavailableProgramming(finalBlockWidth, index)
