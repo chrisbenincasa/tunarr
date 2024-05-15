@@ -1,6 +1,7 @@
-import { OpenInNew } from '@mui/icons-material';
+import { Close as CloseIcon, OpenInNew } from '@mui/icons-material';
 import {
   Box,
+  Button,
   Chip,
   Dialog,
   DialogContent,
@@ -9,6 +10,8 @@ import {
   Skeleton,
   Stack,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { createExternalId } from '@tunarr/shared';
 import { forProgramType } from '@tunarr/shared/util';
@@ -49,6 +52,8 @@ export default function ProgramDetailsDialog({
   const [thumbLoadState, setThumbLoadState] =
     useState<ThumbLoadState>('loading');
   const imageRef = useRef<HTMLImageElement>(null);
+  const theme = useTheme();
+  const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
 
   const rating = useMemo(
     () =>
@@ -69,12 +74,22 @@ export default function ProgramDetailsDialog({
     [],
   );
 
+  const episodeTitle = useMemo(
+    () =>
+      forProgramType({
+        custom: (p) => p.program?.episodeTitle ?? '',
+        content: (p) => p.episodeTitle,
+        default: '',
+      }),
+    [],
+  );
+
   const durationChip = useMemo(
     () =>
       forProgramType({
         content: (program) => (
           <Chip
-            color="secondary"
+            color="primary"
             label={prettyItemDuration(program.duration)}
             sx={{ mt: 1 }}
           />
@@ -87,7 +102,7 @@ export default function ProgramDetailsDialog({
     (program: ChannelProgram) => {
       const ratingString = rating(program);
       return ratingString ? (
-        <Chip color="secondary" label={ratingString} sx={{ mx: 1, mt: 1 }} />
+        <Chip color="primary" label={ratingString} sx={{ mx: 1, mt: 1 }} />
       ) : null;
     },
     [rating],
@@ -139,6 +154,7 @@ export default function ProgramDetailsDialog({
   const thumbUrl = program ? thumbnailImage(program) : null;
   const externalUrl = program ? externalLink(program) : null;
   const programSummary = program ? summary(program) : null;
+  const programEpisodeTitle = program ? episodeTitle(program) : null;
 
   useEffect(() => {
     setThumbLoadState('loading');
@@ -153,21 +169,30 @@ export default function ProgramDetailsDialog({
     setThumbLoadState('error');
   }, []);
 
+  const isEpisode =
+    program && program.type === 'content' && program.subtype === 'episode';
+  const imageWidth = smallViewport ? (isEpisode ? '100%' : '55%') : 240;
+  console.log(program);
+
   return (
     program && (
-      <Dialog open={open && !isUndefined(program)} onClose={onClose}>
-        <DialogTitle variant="h4">
+      <Dialog
+        open={open && !isUndefined(program)}
+        onClose={onClose}
+        fullScreen={smallViewport}
+      >
+        <DialogTitle variant="h4" sx={{ marginRight: 3 }}>
           {formattedTitle(program)}{' '}
-          {externalUrl && (
-            <IconButton
-              component="a"
-              target="_blank"
-              href={externalUrl}
-              size="small"
-            >
-              <OpenInNew />
-            </IconButton>
-          )}
+          <IconButton
+            edge="start"
+            color="inherit"
+            onClick={() => onClose()}
+            aria-label="close"
+            sx={{ position: 'absolute', top: 10, right: 10 }}
+            size="large"
+          >
+            <CloseIcon />
+          </IconButton>
         </DialogTitle>
         <DialogContent>
           <Stack spacing={2}>
@@ -175,17 +200,22 @@ export default function ProgramDetailsDialog({
               {durationChip(program)}
               {ratingChip(program)}
             </Box>
-            <Stack direction="row" spacing={2}>
-              <Box>
+            <Stack
+              direction="row"
+              spacing={smallViewport ? 0 : 2}
+              flexDirection={smallViewport ? 'column' : 'row'}
+            >
+              <Box sx={{ textAlign: 'center' }}>
                 <Box
                   component="img"
-                  width={240}
+                  width={imageWidth}
                   src={thumbUrl ?? ''}
                   alt={formattedTitle(program)}
                   onLoad={onLoad}
                   ref={imageRef}
                   sx={{
                     display: thumbLoadState !== 'success' ? 'none' : undefined,
+                    borderRadius: '10px',
                   }}
                   onError={onError}
                 />
@@ -193,15 +223,20 @@ export default function ProgramDetailsDialog({
                   thumbLoadState === 'error') && (
                   <Skeleton
                     variant="rectangular"
-                    width={240}
-                    height={360}
+                    width={imageWidth}
+                    height={500}
                     animation={thumbLoadState === 'loading' ? 'pulse' : false}
                   ></Skeleton>
                 )}
               </Box>
               <Box>
+                {programEpisodeTitle ? (
+                  <Typography variant="h5" sx={{ mb: 1 }}>
+                    {programEpisodeTitle}
+                  </Typography>
+                ) : null}
                 {programSummary ? (
-                  <Typography id="modal-modal-description" sx={{ mt: 1 }}>
+                  <Typography id="modal-modal-description" sx={{ mb: 1 }}>
                     {programSummary}
                   </Typography>
                 ) : (
@@ -212,8 +247,20 @@ export default function ProgramDetailsDialog({
                       backgroundColor: (theme) =>
                         theme.palette.background.default,
                     }}
-                    width={240}
+                    width={imageWidth}
                   />
+                )}
+                {externalUrl && (
+                  <Button
+                    component="a"
+                    target="_blank"
+                    href={externalUrl}
+                    size="small"
+                    endIcon={<OpenInNew />}
+                    variant="contained"
+                  >
+                    View in Plex
+                  </Button>
                 )}
               </Box>
             </Stack>
