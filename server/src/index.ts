@@ -71,7 +71,7 @@ yargs(hideBin(process.argv))
         })
         .option('printRoutes', {
           type: 'boolean',
-          default: false,
+          default: Boolean(process.env['TUNARR_SERVER_PRINT_ROUTES']),
         });
     },
     async (args: ArgumentsCamelCase<ServerOptions>) => {

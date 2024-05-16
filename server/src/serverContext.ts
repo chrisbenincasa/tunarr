@@ -64,7 +64,7 @@ export const serverContext: () => ServerContext = once(() => {
     m3uService,
     eventService,
     guideService,
-    hdhrService: new HdhrService(settings, channelDB),
+    hdhrService: new HdhrService(settings),
     customShowDB,
     channelCache,
     plexServerDB: new PlexServerDB(channelDB),

@@ -8,7 +8,7 @@ import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 export const guideRouter: RouterPluginCallback = (fastify, _opts, done) => {
   const logger = LoggerFactory.child({ caller: import.meta });
 
-  fastify.get('/api/guide/status', async (req, res) => {
+  fastify.get('/guide/status', async (req, res) => {
     try {
       const s = await req.serverCtx.guideService.getStatus();
       return res.send(s);
@@ -18,7 +18,7 @@ export const guideRouter: RouterPluginCallback = (fastify, _opts, done) => {
     }
   });
 
-  fastify.get('/api/guide/debug', async (req, res) => {
+  fastify.get('/guide/debug', async (req, res) => {
     try {
       const s = await req.serverCtx.guideService.get();
       return res.send(s);
@@ -29,7 +29,7 @@ export const guideRouter: RouterPluginCallback = (fastify, _opts, done) => {
   });
 
   fastify.get(
-    '/api/guide/channels',
+    '/guide/channels',
     {
       schema: {
         querystring: z.object({
@@ -70,7 +70,7 @@ export const guideRouter: RouterPluginCallback = (fastify, _opts, done) => {
   fastify.get<{
     Params: { id: string };
     Querystring: { dateFrom: string; dateTo: string };
-  }>('/api/guide/channels/:number', async (req, res) => {
+  }>('/guide/channels/:number', async (req, res) => {
     try {
       // TODO determine if these params are numbers or strings
       const dateFrom = new Date(req.query.dateFrom);
@@ -81,7 +81,6 @@ export const guideRouter: RouterPluginCallback = (fastify, _opts, done) => {
         dateTo,
       );
       if (lineup == null) {
-        logger.info(`GET /api/guide/channels/${req.params.id} : 404 Not Found`);
         return res.status(404).send('Channel not found in TV guide');
       } else {
         return res.send(lineup);

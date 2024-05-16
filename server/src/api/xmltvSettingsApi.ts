@@ -1,5 +1,4 @@
 import { XmlTvSettings } from '@tunarr/types';
-import { BaseErrorSchema } from '@tunarr/types/api';
 import { XmlTvSettingsSchema } from '@tunarr/types/schemas';
 import { isError } from 'lodash-es';
 import { z } from 'zod';
@@ -10,6 +9,7 @@ import { UpdateXmlTvTask } from '../tasks/updateXmlTvTask.js';
 import { RouterPluginCallback } from '../types/serverType.js';
 import { firstDefined } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
+import { BaseErrorSchema } from '@tunarr/types/api';
 
 export const xmlTvSettingsRouter: RouterPluginCallback = (
   fastify,
@@ -19,7 +19,7 @@ export const xmlTvSettingsRouter: RouterPluginCallback = (
   const logger = LoggerFactory.child({ caller: import.meta });
 
   fastify.get(
-    '/api/xmltv-settings',
+    '/xmltv-settings',
     {
       schema: {
         response: {
@@ -38,7 +38,7 @@ export const xmlTvSettingsRouter: RouterPluginCallback = (
   );
 
   fastify.put(
-    '/api/xmltv-settings',
+    '/xmltv-settings',
     {
       schema: {
         response: {
@@ -88,7 +88,7 @@ export const xmlTvSettingsRouter: RouterPluginCallback = (
   );
 
   fastify.post(
-    '/api/xmltv-settings',
+    '/xmltv-settings',
     {
       schema: {
         response: {

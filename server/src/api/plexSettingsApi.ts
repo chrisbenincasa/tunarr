@@ -15,7 +15,7 @@ export const plexSettingsRouter: RouterPluginCallback = (
   const logger = LoggerFactory.child({ caller: import.meta });
 
   fastify.get(
-    '/api/plex-settings',
+    '/plex-settings',
     {
       schema: {
         response: {
@@ -38,7 +38,7 @@ export const plexSettingsRouter: RouterPluginCallback = (
   );
 
   fastify.put(
-    '/api/plex-settings',
+    '/plex-settings',
     {
       schema: {
         body: PlexStreamSettingsSchema,
@@ -80,7 +80,7 @@ export const plexSettingsRouter: RouterPluginCallback = (
   );
 
   fastify.post(
-    '/api/plex-settings',
+    '/plex-settings',
     {
       schema: {
         response: {

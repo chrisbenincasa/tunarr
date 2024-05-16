@@ -22,7 +22,7 @@ export const plexServersRouter: RouterPluginAsyncCallback = async (
   const logger = LoggerFactory.child({ caller: import.meta });
 
   fastify.get(
-    '/api/plex-servers',
+    '/plex-servers',
     {
       schema: {
         response: {
@@ -44,7 +44,7 @@ export const plexServersRouter: RouterPluginAsyncCallback = async (
   );
 
   fastify.get(
-    '/api/plex-servers/:id/status',
+    '/plex-servers/:id/status',
     {
       schema: {
         params: BasicIdParamSchema,
@@ -89,7 +89,7 @@ export const plexServersRouter: RouterPluginAsyncCallback = async (
   );
 
   fastify.post(
-    '/api/plex-servers/foreignstatus',
+    '/plex-servers/foreignstatus',
     {
       schema: {
         body: z.object({
@@ -133,7 +133,7 @@ export const plexServersRouter: RouterPluginAsyncCallback = async (
   );
 
   fastify.delete(
-    '/api/plex-servers/:id',
+    '/plex-servers/:id',
     {
       schema: {
         params: BasicIdParamSchema,
@@ -192,7 +192,7 @@ export const plexServersRouter: RouterPluginAsyncCallback = async (
   );
 
   fastify.put(
-    '/api/plex-servers/:id',
+    '/plex-servers/:id',
     {
       schema: {
         params: BasicIdParamSchema,
@@ -245,7 +245,7 @@ export const plexServersRouter: RouterPluginAsyncCallback = async (
   );
 
   fastify.post(
-    '/api/plex-servers',
+    '/plex-servers',
     {
       schema: {
         body: InsertPlexServerRequestSchema,
@@ -294,7 +294,7 @@ export const plexServersRouter: RouterPluginAsyncCallback = async (
   );
 
   fastify.get(
-    '/api/plex/status',
+    '/plex/status',
     {
       schema: {
         querystring: z.object({
