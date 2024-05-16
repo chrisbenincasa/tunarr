@@ -1,12 +1,12 @@
 import cors from '@fastify/cors';
 import middie from '@fastify/middie';
-import fpStatic from '@fastify/static';
-import fastify, { FastifySchema } from 'fastify';
-import fp from 'fastify-plugin';
 import fastifyMultipart from '@fastify/multipart';
+import fpStatic from '@fastify/static';
 import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
 import { RequestContext } from '@mikro-orm/core';
+import fastify, { FastifySchema } from 'fastify';
+import fp from 'fastify-plugin';
 import fastifyPrintRoutes from 'fastify-print-routes';
 import {
   ZodTypeProvider,
@@ -14,10 +14,12 @@ import {
   serializerCompiler,
   validatorCompiler,
 } from 'fastify-type-provider-zod';
+import { FastifyRouteConfig } from 'fastify/types/route.js';
 import fs from 'fs';
 import { isArray, isNumber, isString, isUndefined, round } from 'lodash-es';
 import schedule from 'node-schedule';
 import path, { dirname, join } from 'path';
+import { HdhrApiRouter } from './api/hdhrApi.js';
 import { hlsApi } from './api/hlsApi.js';
 import { apiRouter } from './api/index.js';
 import { videoRouter } from './api/videoApi.js';
@@ -31,13 +33,13 @@ import { initPersistentStreamCache } from './stream/channelCache.js';
 import { runFixers } from './tasks/fixers/index.js';
 import { UpdateXmlTvTask } from './tasks/updateXmlTvTask.js';
 import { filename, isProduction, run } from './util/index.js';
-import { Logger, LoggerFactory } from './util/logging/LoggerFactory.js';
-import { HdhrApiRouter } from './api/hdhrApi.js';
-import { FastifyRouteConfig } from 'fastify/types/route.js';
+import { LoggerFactory } from './util/logging/LoggerFactory.js';
 
 const currentDirectory = dirname(filename(import.meta.url));
 
-async function initDbDirectories(logger: Logger) {
+async function initDbDirectories() {
+  // Early init, have to use the non-settings-based root Logger
+  const logger = LoggerFactory.root;
   const opts = serverOptions();
   const hasTunarrDb = fs.existsSync(opts.databaseDirectory);
   const hasLegacyDb = fs.existsSync(path.resolve(process.cwd(), '.dizquetv'));
@@ -48,7 +50,7 @@ async function initDbDirectories(logger: Logger) {
         `DB configured at location ${opts.databaseDirectory} was not found, but a legacy .dizquetv database was located. A migration will be attempted`,
       );
     }
-    fs.mkdirSync(opts.databaseDirectory);
+    fs.mkdirSync(opts.databaseDirectory, { recursive: true });
     await getSettings().flush();
   }
 
@@ -71,12 +73,11 @@ async function initDbDirectories(logger: Logger) {
 }
 
 export async function initServer(opts: ServerOptions) {
+  const hadLegacyDb = await initDbDirectories();
   const settingsDb = getSettings();
   LoggerFactory.initialize(settingsDb);
 
   const logger = LoggerFactory.child({ caller: import.meta });
-
-  const hadLegacyDb = await initDbDirectories(logger);
 
   const orm = await initOrm();
 

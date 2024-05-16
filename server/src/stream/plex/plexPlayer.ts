@@ -136,12 +136,12 @@ export class PlexPlayer extends Player {
     });
 
     ffmpeg.on('end', () => {
-      this.logger.info('ffmpeg end');
+      this.logger.trace('ffmpeg end');
       emitter.emit('end');
     });
 
     ffmpeg.on('close', () => {
-      this.logger.info('ffmpeg close');
+      this.logger.trace('ffmpeg close');
       emitter.emit('close');
     });
 

@@ -11,6 +11,7 @@ import { Maybe } from '../types/util.js';
 import { TypedEventEmitter } from '../types/eventEmitter.js';
 import stream from 'stream';
 import { Logger, LoggerFactory } from '../util/logging/LoggerFactory.js';
+import { isNonEmptyString } from '../util/index.js';
 
 const spawn = child_process.spawn;
 
@@ -45,7 +46,7 @@ type DashOptions = {
   fragType: 'auto' | 'every_frame' | 'duration' | 'pframes';
 };
 
-type ConcatOptions = {
+export type ConcatOptions = {
   enableHls: boolean;
   enableDash: boolean;
   numThreads: number;
@@ -171,6 +172,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
   ) {
     this.ffmpegName = 'Concat FFMPEG';
     const ffmpegArgs: string[] = [
+      '-hide_banner',
       `-threads`,
       // (opts.numThreads ?? defaultConcatOptions.numThreads).toFixed(),
       '1',
@@ -185,24 +187,62 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       '-1',
       `-protocol_whitelist`,
       `file,http,tcp,https,tcp,tls`,
+      // '-copyts',
       `-probesize`,
       '32',
       `-i`,
       streamUrl,
     ];
 
+    ffmpegArgs.push(
+      '-flags',
+      'cgop',
+      '-sc_threshold',
+      '0',
+      '-movflags',
+      '+faststart',
+    );
+
     if (!this.audioOnly) {
       ffmpegArgs.push(`-map`, `0:v`);
+    }
+
+    const audioOutputOpts = [
+      '-b:a',
+      `${this.opts.audioBitrate}k`,
+      '-maxrate:a',
+      `${this.opts.audioBitrate}k`,
+      '-bufsize:a',
+      `${this.opts.audioBufferSize}k`,
+      // This _seems_ to quell issues with non-monotonous DTS coming
+      // from the input audio stream
+      '-af',
+      'aselect=concatdec_select,aresample=async=1',
+    ];
+
+    if (this.audioChannelsSampleRate) {
+      audioOutputOpts.push(
+        '-ac',
+        `${this.opts.audioChannels}`,
+        '-ar',
+        `${this.opts.audioSampleRate}k`,
+      );
     }
 
     ffmpegArgs.push(
       `-map`,
       `0:a`,
-      // We need to re-encode the streams for DASH
-      ...(opts.enableDash
-        ? ['-c:v', this.opts.videoEncoder, '-c:a', this.opts.audioEncoder]
-        : [`-c`]),
-      `copy`,
+      '-c:v',
+      this.opts.videoEncoder,
+      '-c:a',
+      this.opts.audioEncoder,
+      `-b:v`,
+      `${this.opts.videoBitrate}k`,
+      `-maxrate:v`,
+      `${this.opts.videoBitrate}k`,
+      `-bufsize:v`,
+      `${this.opts.videoBufferSize}k`,
+      ...audioOutputOpts,
       `-muxdelay`,
       this.opts.concatMuxDelay.toString(),
       `-muxpreload`,
@@ -267,10 +307,16 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
         'true',
       );
     } else {
-      ffmpegArgs.push(`-f`, `mpegts`, `pipe:1`);
+      ffmpegArgs.push(
+        `-f`,
+        `mpegts`,
+        '-mpegts_flags',
+        '+initial_discontinuity',
+        `pipe:1`,
+      );
     }
 
-    return this.startProcess(ffmpegArgs, opts.logOutput ?? false);
+    return this.startProcess(ffmpegArgs, this.opts.enableLogging);
   }
 
   spawnStream(
@@ -355,6 +401,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     watermark: Maybe<Watermark>,
   ) {
     const ffmpegArgs: string[] = [
+      '-hide_banner',
       `-threads`,
       this.opts.numThreads.toString(),
       `-fflags`,
@@ -364,10 +411,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     ];
     let useStillImageTune = false;
 
-    if (
-      limitRead === true &&
-      (this.audioOnly !== true || isString(streamUrl))
-    ) {
+    if (limitRead && (!this.audioOnly || isNonEmptyString(streamUrl))) {
       ffmpegArgs.push(`-re`);
     }
 
@@ -385,7 +429,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     let audioFile = -1;
     let videoFile = -1;
     let overlayFile = -1;
-    if (isString(streamUrl) && !isEmpty(streamUrl)) {
+    if (isNonEmptyString(streamUrl)) {
       ffmpegArgs.push(`-i`, streamUrl);
       videoFile = inputFiles++;
       audioFile = videoFile;
@@ -510,10 +554,10 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
         }
       }
       const durstr = `duration=${streamStats?.duration}ms`;
-      if (!isString(streamUrl)) {
+      if (!isNonEmptyString(streamUrl)) {
         // silent
-        audioComplex = `;aevalsrc=0:${durstr}[audioy]`;
-        if (streamUrl.errorTitle == 'offline') {
+        audioComplex = `;aevalsrc=0:${durstr}:s=48000,aresample=async=1:first_pts=0[audioy]`;
+        if (streamUrl.errorTitle === 'offline') {
           if (
             !isUndefined(this.channel.offlineSoundtrack) &&
             !isEmpty(this.channel.offlineSoundtrack)
@@ -524,16 +568,16 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
             audioComplex = `;[${inputFiles++}:a]aloop=loop=-1:size=2147483647[audioy]`;
           }
         } else if (
-          this.opts.errorAudio == 'whitenoise' ||
-          (!(this.opts.errorAudio == 'sine') && this.audioOnly === true) //when it's in audio-only mode, silent stream is confusing for errors.
+          this.opts.errorAudio === 'whitenoise' ||
+          (!(this.opts.errorAudio === 'sine') && this.audioOnly) //when it's in audio-only mode, silent stream is confusing for errors.
         ) {
           audioComplex = `;aevalsrc=random(0):${durstr}[audioy]`;
           this.volumePercent = Math.min(70, this.volumePercent);
-        } else if (this.opts.errorAudio == 'sine') {
-          audioComplex = `;sine=f=440:${durstr}[audioy]`;
+        } else if (this.opts.errorAudio === 'sine') {
+          audioComplex = `;sine=f=440[audioy]`;
           this.volumePercent = Math.min(70, this.volumePercent);
         }
-        if (this.audioOnly !== true) {
+        if (!this.audioOnly) {
           ffmpegArgs.push('-pix_fmt', 'yuv420p');
         }
         audioComplex += ';[audioy]arealtime[audiox]';
@@ -558,8 +602,8 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       !streamStats?.audioOnly &&
       ((this.ensureResolution &&
         (streamStats?.anamorphic ||
-          iW != this.wantedW ||
-          iH != this.wantedH)) ||
+          iW !== this.wantedW ||
+          iH !== this.wantedH)) ||
         isLargerResolution(iW, iH, this.wantedW, this.wantedH))
     ) {
       //scaler stuff, need to change the size of the video and also add bars
@@ -581,14 +625,14 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
         cw = hypotheticalW2;
         ch = hypotheticalH2;
       }
-      videoComplex += `;${currentVideo}scale=${cw}:${ch}:flags=${algo}[scaled]`;
+      videoComplex += `;${currentVideo}scale=${cw}:${ch}:flags=${algo},format=yuv420p[scaled]`;
       currentVideo = 'scaled';
       resizeMsg = `Stretch to ${cw} x ${ch}. To fit target resolution of ${this.wantedW} x ${this.wantedH}.`;
       if (this.ensureResolution) {
         this.logger.info(
           `First stretch to ${cw} x ${ch}. Then add padding to make it ${this.wantedW} x ${this.wantedH} `,
         );
-      } else if (cw % 2 == 1 || ch % 2 == 1) {
+      } else if (cw % 2 === 1 || ch % 2 === 1) {
         //we need to add padding so that the video dimensions are even
         const xw = cw + (cw % 2);
         const xh = ch + (ch % 2);
@@ -598,7 +642,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       } else {
         resizeMsg = `Stretch to ${cw} x ${ch}. To fit target resolution of ${this.wantedW} x ${this.wantedH}.`;
       }
-      if (this.wantedW != cw || this.wantedH != ch) {
+      if (this.wantedW !== cw || this.wantedH !== ch) {
         // also add black bars, because in this case it HAS to be this resolution
         videoComplex += `;[${currentVideo}]pad=${this.wantedW}:${this.wantedH}:(ow-iw)/2:(oh-ih)/2[blackpadded]`;
         currentVideo = 'blackpadded';
@@ -607,7 +651,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       if (!this.ensureResolution && beforeSizeChange != '[fpchange]') {
         name = 'minsiz';
       }
-      videoComplex += `;[${currentVideo}]setsar=1[${name}]`;
+      videoComplex += `;[${currentVideo}]setsar=1,format=yuv420p[${name}]`;
       currentVideo = `[${name}]`;
       iW = this.wantedW;
       iH = this.wantedH;
@@ -659,29 +703,20 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       currentAudio = '[boosted]';
     }
 
-    let transcodeAudio = false;
-
     // Align audio is just the apad filter applied to audio stream
-    if (this.apad && this.audioOnly !== true) {
+    if (this.apad && !this.audioOnly) {
       //it doesn't make much sense to pad audio when there is no video
-      audioComplex += `;${currentAudio}apad=whole_dur=${streamStats?.duration}ms[padded]`;
+      const filters = [
+        'aresample=48000',
+        'aresample=async=1:first_pts=0',
+        `apad=whole_dur=${streamStats?.duration}ms`,
+      ].join(',');
+      audioComplex += `;${currentAudio}${filters}[padded]`;
       currentAudio = '[padded]';
-    } else if (this.audioChannelsSampleRate) {
-      //TODO: Do not set this to true if audio channels and sample rate are already good
-      transcodeAudio = true;
     }
 
-    // If no filters have been applied, then the stream will still be
-    // [video] , in that case, we do not actually add the video stuff to
-    // filter_complex and this allows us to avoid transcoding.
-    let transcodeVideo =
-      this.opts.normalizeVideoCodec &&
-      isDifferentVideoCodec(streamStats?.videoCodec, this.opts.videoEncoder);
-    transcodeAudio =
-      this.opts.normalizeAudioCodec &&
-      isDifferentAudioCodec(streamStats?.audioCodec, this.opts.audioEncoder);
     let filterComplex = '';
-    if (!transcodeVideo && currentVideo == '[minsiz]') {
+    if (currentVideo == '[minsiz]') {
       //do not change resolution if no other transcoding will be done
       // and resolution normalization is off
       currentVideo = beforeSizeChange;
@@ -689,90 +724,50 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       this.logger.debug(resizeMsg);
     }
     if (this.audioOnly !== true) {
-      if (currentVideo != '[video]') {
-        transcodeVideo = true; //this is useful so that it adds some lines below
+      if (currentVideo !== '[video]') {
         filterComplex += videoComplex;
       } else {
         currentVideo = `${videoFile}:${videoIndex}`;
       }
     }
     // same with audio:
-    if (currentAudio != '[audio]') {
-      transcodeAudio = true;
+    if (currentAudio !== '[audio]') {
       filterComplex += audioComplex;
     } else {
       currentAudio = `${audioFile}:${audioIndex}`;
     }
 
     //If there is a filter complex, add it.
-    if (filterComplex != '') {
+    if (isNonEmptyString(filterComplex)) {
       ffmpegArgs.push(`-filter_complex`, filterComplex.slice(1));
       if (this.alignAudio) {
         ffmpegArgs.push('-shortest');
       }
     }
-    if (this.audioOnly !== true) {
+
+    if (!this.audioOnly) {
       ffmpegArgs.push(
         '-map',
         currentVideo,
         `-c:v`,
-        transcodeVideo ? this.opts.videoEncoder : 'copy',
+        'rawvideo',
         `-sc_threshold`,
-        `1000000000`,
+        `0`,
+        '-video_track_timescale',
+        '90000',
       );
       if (useStillImageTune) {
         ffmpegArgs.push('-tune', 'stillimage');
       }
     }
-    ffmpegArgs.push('-map', currentAudio, `-flags`, `cgop+ilme`);
-    if (transcodeVideo && this.audioOnly !== true) {
-      // add the video encoder flags
-      ffmpegArgs.push(
-        `-b:v`,
-        `${this.opts.videoBitrate}k`,
-        `-maxrate:v`,
-        `${this.opts.videoBitrate}k`,
-        `-bufsize:v`,
-        `${this.opts.videoBufferSize}k`,
-      );
-    }
-    if (transcodeAudio) {
-      // add the audio encoder flags
-      ffmpegArgs.push(
-        `-b:a`,
-        `${this.opts.audioBitrate}k`,
-        `-maxrate:a`,
-        `${this.opts.audioBitrate}k`,
-        `-bufsize:a`,
-        `${this.opts.audioBufferSize}k`,
-      );
-      if (this.audioChannelsSampleRate) {
-        ffmpegArgs.push(
-          `-ac`,
-          `${this.opts.audioChannels}`,
-          `-ar`,
-          `${this.opts.audioSampleRate}k`,
-        );
-      }
-    }
-    if (transcodeAudio && transcodeVideo) {
-      this.logger.info('Video and Audio are being transcoded by ffmpeg');
-    } else if (transcodeVideo) {
-      this.logger.info(
-        'Video is being transcoded by ffmpeg. Audio is being copied.',
-      );
-    } else if (transcodeAudio) {
-      this.logger.info(
-        'Audio is being transcoded by ffmpeg. Video is being copied.',
-      );
-    } else {
-      this.logger.info(
-        'Video and Audio are being copied. ffmpeg is not transcoding.',
-      );
-    }
+
     ffmpegArgs.push(
+      '-map',
+      currentAudio,
+      '-flags',
+      'cgop+ilme',
       `-c:a`,
-      transcodeAudio ? this.opts.audioEncoder : 'copy',
+      'pcm_s16le',
       '-map_metadata',
       '-1',
       '-movflags',
@@ -795,7 +790,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       ffmpegArgs.push(`-t`, `${duration}`);
     }
 
-    ffmpegArgs.push(`-f`, `mpegts`, `pipe:1`);
+    ffmpegArgs.push(`-f`, 'matroska', `pipe:1`);
 
     const doLogs = this.opts.enableLogging;
     if (this.hasBeenKilled) {
@@ -992,33 +987,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
   }
 }
 
-function isDifferentVideoCodec(codec: Maybe<string>, encoder: string) {
-  if (codec == 'mpeg2video') {
-    return !encoder.includes('mpeg2');
-  } else if (codec == 'h264') {
-    return !encoder.includes('264');
-  } else if (codec == 'hevc') {
-    return !(encoder.includes('265') || encoder.includes('hevc'));
-  }
-  // if the encoder/codec combinations are unknown, always encode, just in case
-  return true;
-}
-
-function isDifferentAudioCodec(codec: Maybe<string>, encoder: string) {
-  if (codec == 'mp3') {
-    return !(encoder.includes('mp3') || encoder.includes('lame'));
-  } else if (codec == 'aac') {
-    return !encoder.includes('aac');
-  } else if (codec == 'ac3') {
-    return !encoder.includes('ac3');
-  } else if (codec == 'flac') {
-    return !encoder.includes('flac');
-  }
-  // if the encoder/codec combinations are unknown, always encode, just in case
-  return true;
-}
-
-function isLargerResolution(w1, h1, w2, h2) {
+function isLargerResolution(w1: number, h1: number, w2: number, h2: number) {
   return w1 > w2 || h1 > h2 || w1 % 2 == 1 || h1 % 2 == 1;
 }
 

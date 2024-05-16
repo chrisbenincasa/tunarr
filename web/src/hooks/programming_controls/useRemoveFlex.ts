@@ -1,12 +1,20 @@
+import { reject } from 'lodash-es';
+import { setCurrentLineup } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
 import { materializedProgramListSelector } from '../../store/selectors.ts';
-import { setCurrentLineup } from '../../store/channelEditor/actions.ts';
-import _ from 'lodash-es';
 
 export function useRemoveFlex() {
   const programs = useStore(materializedProgramListSelector);
 
   return function () {
-    setCurrentLineup(_.filter(programs, (program) => program.type != 'flex'));
+    let changed = false;
+    const newLineup = reject(programs, (program) => {
+      if (program.type === 'flex') {
+        changed = true;
+        return true;
+      }
+      return false;
+    });
+    setCurrentLineup(newLineup, changed ? changed : undefined);
   };
 }

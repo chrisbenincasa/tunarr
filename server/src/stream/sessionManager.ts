@@ -1,9 +1,16 @@
-import { FfmpegSettings } from '@tunarr/types';
 import { Channel } from '../dao/entities/Channel.js';
-import { StreamConnectionDetails, StreamSession } from './session.js';
+import {
+  SessionOptions,
+  SessionType,
+  StreamConnectionDetails,
+  StreamSession,
+} from './session.js';
 import { isNil, isNull } from 'lodash-es';
 import { Mutex } from 'async-mutex';
 import { getEm } from '../dao/dataSource.js';
+import { ConcatSession } from './ConcatSession.js';
+import { HlsSession, HlsSessionOptions } from './HlsSession.js';
+import { Maybe, Nullable } from '../types/util.js';
 
 class SessionManager {
   // A little janky, but we have the global lock which protects the locks map
@@ -22,14 +29,22 @@ class SessionManager {
     return this.#sessions;
   }
 
-  getSession(id: string): StreamSession | undefined {
-    return this.#sessions[id];
+  getHlsSession(id: string): Maybe<HlsSession> {
+    return this.getSession(id, 'hls') as Maybe<HlsSession>;
   }
 
-  async endSession(id: string) {
+  getConcatSession(id: string): Maybe<ConcatSession> {
+    return this.getSession(id, 'concat') as Maybe<ConcatSession>;
+  }
+
+  getSession(id: string, sessionType: SessionType): Maybe<StreamSession> {
+    return this.#sessions[sessionCacheKey(id, sessionType)];
+  }
+
+  async endSession(id: string, sessionType: SessionType) {
     const lock = await this.getOrCreateLock(id);
     return await lock.runExclusive(() => {
-      const session = this.getSession(id);
+      const session = this.getSession(id, sessionType);
       if (isNil(session)) {
         return;
       }
@@ -37,12 +52,46 @@ class SessionManager {
     });
   }
 
-  async getOrCreateSession(
+  async getOrCreateConcatSession(
     channelId: string,
-    ffmpegSettings: FfmpegSettings,
     token: string,
     connection: StreamConnectionDetails,
+    options: Omit<SessionOptions, 'sessionType'>,
   ) {
+    return this.getOrCreateSession(
+      channelId,
+      token,
+      connection,
+      'concat',
+      (channel) =>
+        ConcatSession.create(channel, { ...options, sessionType: 'concat' }),
+    );
+  }
+
+  // TODO Consider using a builder pattern here with generics to control
+  // the returned session type
+  async getOrCreateHlsSession(
+    channelId: string,
+    token: string,
+    connection: StreamConnectionDetails,
+    options: Omit<HlsSessionOptions, 'sessionType'>,
+  ) {
+    return this.getOrCreateSession(
+      channelId,
+      token,
+      connection,
+      'hls',
+      (channel) => new HlsSession(channel, { ...options, sessionType: 'hls' }),
+    );
+  }
+
+  private async getOrCreateSession<Session extends StreamSession>(
+    channelId: string,
+    token: string,
+    connection: StreamConnectionDetails,
+    sessionType: SessionType,
+    sessionFactory: (channel: Channel) => Session,
+  ): Promise<Nullable<Session>> {
     const lock = await this.getOrCreateLock(channelId);
     const session = await lock.runExclusive(async () => {
       const channel = await getEm().findOne(Channel, { uuid: channelId });
@@ -50,10 +99,10 @@ class SessionManager {
         return null;
       }
 
-      let session = this.#sessions[channel.uuid];
-      if (!session) {
-        session = StreamSession.create(channel, ffmpegSettings);
-        this.#sessions[channel.uuid] = session;
+      let session = this.getSession(channelId, sessionType) as Maybe<Session>;
+      if (isNil(session)) {
+        session = sessionFactory(channel);
+        this.addSession(channel.uuid, session.sessionType, session);
       }
 
       if (!session.started || session.hasError) {
@@ -76,6 +125,14 @@ class SessionManager {
     return session;
   }
 
+  private addSession(
+    id: string,
+    sessionType: SessionType,
+    session: StreamSession,
+  ) {
+    this.#sessions[sessionCacheKey(id, sessionType)] = session;
+  }
+
   private async getOrCreateLock(id: string) {
     return await this.#mu.runExclusive(() => {
       let lock = this.#locks[id];
@@ -85,6 +142,10 @@ class SessionManager {
       return lock;
     });
   }
+}
+
+function sessionCacheKey(id: string, sessionType: SessionType): string {
+  return `${id}_${sessionType}`;
 }
 
 export const sessionManager = SessionManager.create();
