@@ -1,4 +1,4 @@
-import { Delete, PlayArrow as WatchIcon } from '@mui/icons-material';
+import { Delete, MoreVert, PlayArrow as WatchIcon } from '@mui/icons-material';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import EditIcon from '@mui/icons-material/Edit';
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
@@ -12,6 +12,10 @@ import {
   DialogContentText,
   DialogTitle,
   IconButton,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
   Paper,
   Table,
   TableBody,
@@ -28,14 +32,14 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Channel } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { isEmpty } from 'lodash-es';
-import { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import TunarrLogo from '../../components/TunarrLogo.tsx';
 import NoChannelsCreated from '../../components/channel_config/NoChannelsCreated.tsx';
+import { isNonEmptyString } from '../../helpers/util.ts';
 import { useChannels } from '../../hooks/useChannels.ts';
 import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 import { useSettings } from '../../store/settings/selectors.ts';
-import { isNonEmptyString } from '../../helpers/util.ts';
 
 export default function ChannelsPage() {
   const { backendUri } = useSettings();
@@ -48,11 +52,36 @@ export default function ChannelsPage() {
   } = useChannels();
   const theme = useTheme();
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
+  const mediumViewport = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [deleteChannelConfirmation, setDeleteChannelConfirmation] = useState<
     string | undefined
   >(undefined);
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const [open, setOpen] = React.useState(false);
+  const [channelMenu, setChannelMenu] = useState<Channel | null>(null);
+
+  const handleClick = (
+    event: React.MouseEvent<HTMLElement>,
+    channel: Channel,
+  ) => {
+    setOpen(true);
+    setChannelMenu(channel);
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+  };
+
+  // To do: figure out better solution.  This is a temp workaround
+  // Without this if user naviages away from tab then back, react query refetches and destroys exisitng ref
+  // this moves menu to the top left of the screen.
+  useEffect(() => {
+    setAnchorEl(null);
+    setChannelMenu(null);
+  }, [channelsFetching]);
 
   const handleChannelNavigation = (
     _: React.MouseEvent<HTMLTableRowElement, MouseEvent>,
@@ -110,6 +139,63 @@ export default function ChannelsPage() {
     );
   };
 
+  const renderChannelMenu = () => {
+    return (
+      channelMenu && (
+        <Menu
+          id="channel-options-menu"
+          anchorEl={anchorEl}
+          open={open}
+          onClose={handleClose}
+          MenuListProps={{
+            'aria-labelledby': 'channel-options-button',
+          }}
+        >
+          <MenuItem
+            to={`${
+              isNonEmptyString(backendUri) ? `${backendUri}/` : ''
+            }media-player/${channelMenu.number}.m3u`}
+            component={RouterLink}
+          >
+            <ListItemIcon>
+              <TextSnippetIcon />
+            </ListItemIcon>
+            <ListItemText>Get Channel M3U File</ListItemText>
+          </MenuItem>
+          <MenuItem
+            component={RouterLink}
+            to={`/channels/${channelMenu.id}/watch`}
+          >
+            <ListItemIcon>
+              <WatchIcon />
+            </ListItemIcon>
+            <ListItemText>Watch Channel</ListItemText>
+          </MenuItem>
+          <MenuItem
+            to={`/channels/${channelMenu.id}/edit`}
+            component={RouterLink}
+          >
+            <ListItemIcon>
+              <EditIcon />
+            </ListItemIcon>
+            <ListItemText>Edit Channel Settings</ListItemText>
+          </MenuItem>
+          <MenuItem
+            onClick={(e) => {
+              e.stopPropagation();
+              setDeleteChannelConfirmation(channelMenu.id);
+            }}
+          >
+            <ListItemIcon>
+              <Delete />
+            </ListItemIcon>
+            <ListItemText>Delete Channel</ListItemText>
+          </MenuItem>
+        </Menu>
+      )
+    );
+  };
+
   // TODO properly define types from API
   const getDataTableRow = (channel: Channel) => {
     const startTime = dayjs(channel.startTime);
@@ -133,45 +219,65 @@ export default function ChannelsPage() {
         <TableCell>{channel.name}</TableCell>
         <TableCell>{startTime.isBefore(now) ? 'Yes' : 'No'}</TableCell>
         <TableCell>{channel.stealth ? 'Yes' : 'No'}</TableCell>
-        <TableCell sx={{ textAlign: 'right' }}>
-          <Tooltip title="Get Channel M3U File" placement="top">
-            <IconButton
-              href={`${
-                isNonEmptyString(backendUri) ? `${backendUri}/` : ''
-              }media-player/${channel.number}.m3u`}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <TextSnippetIcon />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Watch Channel" placement="top">
-            <IconButton
-              component={RouterLink}
-              to={`/channels/${channel.id}/watch`}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <WatchIcon />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Edit Channel Settings" placement="top">
-            <IconButton
-              to={`/channels/${channel.id}/edit`}
-              component={RouterLink}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <EditIcon />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Delete Channel" placement="top">
-            <IconButton
-              onClick={(e) => {
-                e.stopPropagation();
-                setDeleteChannelConfirmation(channel.id);
-              }}
-            >
-              <Delete />
-            </IconButton>
-          </Tooltip>
+        <TableCell
+          sx={{ textAlign: 'right' }}
+          onClick={(event) => event.stopPropagation()}
+        >
+          {mediumViewport ? (
+            <>
+              <IconButton
+                id="channel-options-button"
+                aria-controls={open ? 'channel-options-menu' : undefined}
+                aria-haspopup="true"
+                aria-expanded={open ? 'true' : undefined}
+                onClick={(event) => handleClick(event, channel)}
+              >
+                <MoreVert />
+              </IconButton>
+              {renderChannelMenu()}
+            </>
+          ) : (
+            <>
+              <Tooltip title="Get Channel M3U File" placement="top">
+                <IconButton
+                  href={`${
+                    isNonEmptyString(backendUri) ? `${backendUri}/` : ''
+                  }media-player/${channel.number}.m3u`}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <TextSnippetIcon />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Watch Channel" placement="top">
+                <IconButton
+                  component={RouterLink}
+                  to={`/channels/${channel.id}/watch`}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <WatchIcon />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Edit Channel Settings" placement="top">
+                <IconButton
+                  to={`/channels/${channel.id}/edit`}
+                  component={RouterLink}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <EditIcon />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Delete Channel" placement="top">
+                <IconButton
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDeleteChannelConfirmation(channel.id);
+                  }}
+                >
+                  <Delete />
+                </IconButton>
+              </Tooltip>
+            </>
+          )}
         </TableCell>
       </TableRow>
     );
