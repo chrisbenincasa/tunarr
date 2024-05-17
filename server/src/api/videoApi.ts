@@ -283,7 +283,7 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
       return res
         .type('application/x-mpegURL')
         .send(
-          await req.serverCtx.m3uService.buildChannelM3U(
+          req.serverCtx.m3uService.buildChannelM3U(
             req.protocol,
             req.hostname,
             req.params.id,

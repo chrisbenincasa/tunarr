@@ -1,7 +1,6 @@
 import { sortBy } from 'lodash-es';
 import { ChannelDB } from '../dao/channelDb.js';
 import { FileCacheService } from './fileCacheService.js';
-import { getSettings } from '../dao/settings.js';
 
 /**
  * Manager and Generate M3U content
@@ -80,13 +79,12 @@ export class M3uService {
     return this.replaceHostOnM3u(host, data);
   }
 
-  async buildChannelM3U(
+  buildChannelM3U(
     protocol: string,
     host: string,
     channel: string | number,
     sessionId: number,
   ) {
-    const settings = await getSettings();
     // Maximum number of streams to concatinate beyond channel starting
     // If someone passes this number then they probably watch too much television
     const maxStreamsToPlayInARow = 100;
@@ -101,13 +99,9 @@ export class M3uService {
       // `#EXT-X-STREAM-INF:BANDWIDTH=1123000`,
     ];
 
-    const ffmpegSettings = settings.ffmpegSettings();
-
-    if (ffmpegSettings.enableTranscoding) {
-      lines.push(
-        `${protocol}://${host}/stream?channel=${channel}&first=0&m3u8=1&session=${sessionId}`,
-      );
-    }
+    lines.push(
+      `${protocol}://${host}/stream?channel=${channel}&first=0&m3u8=1&session=${sessionId}`,
+    );
 
     lines.push(
       `${protocol}://${host}/stream?channel=${channel}&first=1&m3u8=1&session=${sessionId}`,

@@ -338,9 +338,7 @@ export default function ChannelTranscodingConfig() {
                 name="transcoding.targetResolution"
                 render={() => (
                   <Select<ResolutionOptionValues>
-                    disabled={
-                      isNil(ffmpegSettings) || !ffmpegSettings.enableTranscoding
-                    }
+                    disabled={isNil(ffmpegSettings)}
                     label="Channel Resolution"
                     value={targetResString}
                     onChange={(e) => handleResolutionChange(e)}
@@ -364,9 +362,7 @@ export default function ChannelTranscodingConfig() {
               <Controller
                 control={control}
                 name="transcoding.videoBitrate"
-                disabled={
-                  isNil(ffmpegSettings) || !ffmpegSettings.enableTranscoding
-                }
+                disabled={isNil(ffmpegSettings)}
                 rules={{ pattern: globalOrNumber }}
                 render={({ field, formState: { errors } }) => (
                   <TextField
@@ -391,9 +387,7 @@ export default function ChannelTranscodingConfig() {
               <Controller
                 control={control}
                 name="transcoding.videoBufferSize"
-                disabled={
-                  isNil(ffmpegSettings) || !ffmpegSettings.enableTranscoding
-                }
+                disabled={isNil(ffmpegSettings)}
                 rules={{ pattern: globalOrNumber }}
                 render={({ field, formState: { errors } }) => (
                   <TextField

@@ -139,14 +139,11 @@ export default function FfmpegSettingsPage() {
     reset,
     control,
     formState: { isDirty, isValid, isSubmitting, defaultValues },
-    watch,
     handleSubmit,
   } = useForm<Omit<FfmpegSettings, 'configVersion'>>({
     defaultValues: defaultFfmpegSettings,
     mode: 'onBlur',
   });
-
-  const enableTranscoding = watch('enableTranscoding');
 
   useEffect(() => {
     if (data) {
@@ -644,148 +641,125 @@ export default function FfmpegSettingsPage() {
       <Typography variant="h6" sx={{ my: 2 }}>
         Transcoding Options
       </Typography>
-      <FormControl>
+      <Grid container spacing={2} columns={16}>
+        <Grid item sm={16} md={8}>
+          <Typography component="h6" variant="h6" sx={{ pt: 2, pb: 1 }}>
+            Video Options
+          </Typography>
+          {videoFfmpegSettings()}
+        </Grid>
+        <Grid item sm={16} md={8}>
+          <Typography component="h6" variant="h6" sx={{ pt: 2, pb: 1 }}>
+            Audio Options
+          </Typography>
+          {audioFfmpegSettings()}
+        </Grid>
+      </Grid>
+      <Divider sx={{ mt: 2 }} />
+      <Typography component="h6" variant="h6" sx={{ pt: 2, pb: 1 }}>
+        Error Options
+      </Typography>
+      <Grid container spacing={2} columns={16}>
+        <Grid item sm={16} md={8}>
+          <FormControl sx={{ mt: 2 }}>
+            <InputLabel id="error-screen-label">Error Screen</InputLabel>
+            <Controller
+              control={control}
+              name="errorScreen"
+              render={({ field }) => (
+                <Select
+                  labelId="error-screen-label"
+                  id="error-screen"
+                  label="Error Screen"
+                  {...field}
+                >
+                  {supportedErrorScreens.map((error) => (
+                    <MenuItem key={error.value} value={error.value}>
+                      {error.string}
+                    </MenuItem>
+                  ))}
+                </Select>
+              )}
+            />
+
+            <FormHelperText>
+              If there are issues playing a video, Tunarr will try to use an
+              error screen as a placeholder while retrying loading the video
+              every 60 seconds.
+            </FormHelperText>
+          </FormControl>
+        </Grid>
+        <Grid item sm={16} md={8}>
+          <FormControl sx={{ mt: 2 }}>
+            <InputLabel id="error-audio-label">Error Audio</InputLabel>
+            <Controller
+              control={control}
+              name="errorAudio"
+              render={({ field }) => (
+                <Select
+                  labelId="error-audio-label"
+                  id="error-screen"
+                  label="Error Audio"
+                  fullWidth
+                  {...field}
+                >
+                  {supportedErrorAudio.map((error) => (
+                    <MenuItem key={error.value} value={error.value}>
+                      {error.string}
+                    </MenuItem>
+                  ))}
+                </Select>
+              )}
+            />
+          </FormControl>
+        </Grid>
+      </Grid>
+      <Typography component="h6" variant="h6" sx={{ pt: 2, pb: 1 }}>
+        Misc Options
+      </Typography>
+
+      <FormControl fullWidth>
         <FormControlLabel
           control={
             <Controller
               control={control}
-              name="enableTranscoding"
+              name="disableChannelOverlay"
               render={({ field }) => (
-                <Checkbox checked={field.value} {...field} />
+                <Checkbox {...field} checked={field.value} />
               )}
             />
           }
-          label="Enable FFMPEG Transcoding"
+          label="Disable Channel Watermark Globally"
         />
         <FormHelperText>
-          Transcoding is required for some features like channel overlay and
-          measures to prevent issues when switching episodes. The trade-off is
-          quality loss and additional computing resource requirements.
+          Toggling this option will disable channel watermarks regardless of
+          channel settings.
         </FormHelperText>
       </FormControl>
-      {enableTranscoding && (
-        <>
-          <Grid container spacing={2} columns={16}>
-            <Grid item sm={16} md={8}>
-              <Typography component="h6" variant="h6" sx={{ pt: 2, pb: 1 }}>
-                Video Options
-              </Typography>
-              {videoFfmpegSettings()}
-            </Grid>
-            <Grid item sm={16} md={8}>
-              <Typography component="h6" variant="h6" sx={{ pt: 2, pb: 1 }}>
-                Audio Options
-              </Typography>
-              {audioFfmpegSettings()}
-            </Grid>
-          </Grid>
-          <Divider sx={{ mt: 2 }} />
-          <Typography component="h6" variant="h6" sx={{ pt: 2, pb: 1 }}>
-            Error Options
-          </Typography>
-          <Grid container spacing={2} columns={16}>
-            <Grid item sm={16} md={8}>
-              <FormControl sx={{ mt: 2 }}>
-                <InputLabel id="error-screen-label">Error Screen</InputLabel>
-                <Controller
-                  control={control}
-                  name="errorScreen"
-                  render={({ field }) => (
-                    <Select
-                      labelId="error-screen-label"
-                      id="error-screen"
-                      label="Error Screen"
-                      {...field}
-                    >
-                      {supportedErrorScreens.map((error) => (
-                        <MenuItem key={error.value} value={error.value}>
-                          {error.string}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  )}
-                />
 
-                <FormHelperText>
-                  If there are issues playing a video, Tunarr will try to use an
-                  error screen as a placeholder while retrying loading the video
-                  every 60 seconds.
-                </FormHelperText>
-              </FormControl>
-            </Grid>
-            <Grid item sm={16} md={8}>
-              <FormControl sx={{ mt: 2 }}>
-                <InputLabel id="error-audio-label">Error Audio</InputLabel>
-                <Controller
-                  control={control}
-                  name="errorAudio"
-                  render={({ field }) => (
-                    <Select
-                      labelId="error-audio-label"
-                      id="error-screen"
-                      label="Error Audio"
-                      fullWidth
-                      {...field}
-                    >
-                      {supportedErrorAudio.map((error) => (
-                        <MenuItem key={error.value} value={error.value}>
-                          {error.string}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  )}
-                />
-              </FormControl>
-            </Grid>
-          </Grid>
-          <Typography component="h6" variant="h6" sx={{ pt: 2, pb: 1 }}>
-            Misc Options
-          </Typography>
-
-          <FormControl fullWidth>
-            <FormControlLabel
-              control={
-                <Controller
-                  control={control}
-                  name="disableChannelOverlay"
-                  render={({ field }) => (
-                    <Checkbox {...field} checked={field.value} />
-                  )}
-                />
-              }
-              label="Disable Channel Watermark Globally"
+      <FormControl fullWidth>
+        <FormControlLabel
+          control={
+            <Controller
+              control={control}
+              name="disableChannelPrelude"
+              render={({ field }) => (
+                <Checkbox {...field} checked={field.value} />
+              )}
             />
-            <FormHelperText>
-              Toggling this option will disable channel watermarks regardless of
-              channel settings.
-            </FormHelperText>
-          </FormControl>
+          }
+          label="Disable Channel Prelude"
+        />
+        <FormHelperText>
+          In an attempt to improve playback, Tunarr insets really short clips of
+          black screen between videos. The idea is that if the stream pauses
+          because Plex is taking too long to reply, it will pause during one of
+          those black screens instead of interrupting the last second of a
+          video. If you suspect these black screens are causing trouble instead
+          of helping, you can disable them with this option.
+        </FormHelperText>
+      </FormControl>
 
-          <FormControl fullWidth>
-            <FormControlLabel
-              control={
-                <Controller
-                  control={control}
-                  name="disableChannelPrelude"
-                  render={({ field }) => (
-                    <Checkbox {...field} checked={field.value} />
-                  )}
-                />
-              }
-              label="Disable Channel Prelude"
-            />
-            <FormHelperText>
-              In an attempt to improve playback, Tunarr insets really short
-              clips of black screen between videos. The idea is that if the
-              stream pauses because Plex is taking too long to reply, it will
-              pause during one of those black screens instead of interrupting
-              the last second of a video. If you suspect these black screens are
-              causing trouble instead of helping, you can disable them with this
-              option.
-            </FormHelperText>
-          </FormControl>
-        </>
-      )}
       <UnsavedNavigationAlert isDirty={isDirty} />
       <Stack spacing={2} direction="row" sx={{ mt: 2 }}>
         <Stack

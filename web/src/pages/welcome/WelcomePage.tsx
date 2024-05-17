@@ -175,7 +175,7 @@ export default function WelcomePage() {
 
               {isFfmpegInstalled ? (
                 <Alert variant="filled" severity="success">
-                  FFMPEG is installed.
+                  FFMPEG is installed. Detected version {version?.ffmpeg}
                 </Alert>
               ) : (
                 <>

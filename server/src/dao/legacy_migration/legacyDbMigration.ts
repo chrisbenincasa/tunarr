@@ -362,9 +362,8 @@ export class LegacyDbMigrator {
                 numThreads: ffmpegSettings['threads'] as number,
                 concatMuxDelay: ffmpegSettings['concatMuxDelay'] as number,
                 enableLogging: ffmpegSettings['logFfmpeg'] as boolean,
-                enableTranscoding: ffmpegSettings[
-                  'enableFFMPEGTranscoding'
-                ] as boolean,
+                // This is ignored now
+                enableTranscoding: true,
                 audioVolumePercent: ffmpegSettings[
                   'audioVolumePercent'
                 ] as number,

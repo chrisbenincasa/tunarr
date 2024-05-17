@@ -158,10 +158,7 @@ export class ProgramPlayer extends Player {
     channel: StreamContextChannel,
     type: string,
   ): Maybe<Watermark> {
-    if (
-      !ffmpegSettings.enableTranscoding ||
-      ffmpegSettings.disableChannelOverlay
-    ) {
+    if (ffmpegSettings.disableChannelOverlay) {
       return;
     }
 
