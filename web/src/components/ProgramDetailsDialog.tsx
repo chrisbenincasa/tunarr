@@ -16,7 +16,7 @@ import {
 import { createExternalId } from '@tunarr/shared';
 import { forProgramType } from '@tunarr/shared/util';
 import { ChannelProgram, TvGuideProgram } from '@tunarr/types';
-import dayjs from 'dayjs';
+import dayjs, { Dayjs } from 'dayjs';
 import { isUndefined } from 'lodash-es';
 import {
   ReactEventHandler,
@@ -32,7 +32,9 @@ import { useSettings } from '../store/settings/selectors';
 type Props = {
   open: boolean;
   onClose: () => void;
-  program: TvGuideProgram | undefined;
+  program: TvGuideProgram | ChannelProgram | undefined;
+  start?: Dayjs;
+  stop?: Dayjs;
 };
 
 const formattedTitle = forProgramType({
@@ -47,6 +49,8 @@ type ThumbLoadState = 'loading' | 'error' | 'success';
 export default function ProgramDetailsDialog({
   open,
   onClose,
+  start,
+  stop,
   program,
 }: Props) {
   const settings = useSettings();
@@ -173,8 +177,8 @@ export default function ProgramDetailsDialog({
   const isEpisode =
     program && program.type === 'content' && program.subtype === 'episode';
   const imageWidth = smallViewport ? (isEpisode ? '100%' : '55%') : 240;
-  const programStart = dayjs(program?.start);
-  const programEnd = dayjs(program?.stop);
+  const programStart = dayjs(start);
+  const programEnd = dayjs(stop);
 
   return (
     program && (

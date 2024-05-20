@@ -19,7 +19,7 @@ import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import { forProgramType } from '@tunarr/shared/util';
 import { ChannelProgram } from '@tunarr/types';
-import dayjs from 'dayjs';
+import dayjs, { Dayjs } from 'dayjs';
 import { findIndex, isUndefined, join, map, negate, reject } from 'lodash-es';
 import { CSSProperties, useCallback, useState } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
@@ -309,6 +309,11 @@ const ProgramListItem = ({
   );
 };
 
+type GuideTime = {
+  start?: Dayjs;
+  stop?: Dayjs;
+};
+
 export default function ChannelProgrammingList({
   programList: passedProgramList,
   programListSelector = defaultProps.programListSelector,
@@ -322,6 +327,7 @@ export default function ChannelProgrammingList({
   const [focusedProgramDetails, setFocusedProgramDetails] = useState<
     ChannelProgram | undefined
   >();
+  const [startStop, setStartStop] = useState<GuideTime>({});
   const [editProgram, setEditProgram] = useState<
     ((UIFlexProgram | UIRedirectProgram) & { index: number }) | undefined
   >();
@@ -349,9 +355,15 @@ export default function ChannelProgrammingList({
     [passedProgramList],
   );
 
-  const openDetailsDialog = useCallback((program: ChannelProgram) => {
-    setFocusedProgramDetails(program);
-  }, []);
+  const openDetailsDialog = useCallback(
+    (program: ChannelProgram, startTimeDate: Date) => {
+      setFocusedProgramDetails(program);
+      const start = dayjs(startTimeDate);
+      const stop = start.add(program.duration);
+      setStartStop({ start, stop });
+    },
+    [],
+  );
 
   const openEditDialog = useCallback(
     (program: (UIFlexProgram | UIRedirectProgram) & { index: number }) => {
@@ -376,7 +388,7 @@ export default function ChannelProgrammingList({
         moveProgram={moveProgram}
         findProgram={findProgram}
         enableDrag={!!enableDnd}
-        onInfoClicked={openDetailsDialog}
+        onInfoClicked={() => openDetailsDialog(program, startTimeDate)}
         onEditClicked={openEditDialog}
       />
     );
@@ -449,6 +461,8 @@ export default function ChannelProgrammingList({
           open={!isUndefined(focusedProgramDetails)}
           onClose={() => setFocusedProgramDetails(undefined)}
           program={focusedProgramDetails}
+          start={startStop.start}
+          stop={startStop.stop}
         />
         <AddFlexModal
           open={!isUndefined(editProgram) && editProgram.type === 'flex'}

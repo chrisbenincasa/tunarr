@@ -467,6 +467,8 @@ export function TvGuide({ channelId, start, end }: Props) {
         open={!isUndefined(modalProgram)}
         onClose={() => handleModalClose()}
         program={modalProgram}
+        start={dayjs(modalProgram?.start)}
+        stop={dayjs(modalProgram?.stop)}
       />
       <Box display="flex" ref={ref}>
         <Box
