@@ -12,11 +12,10 @@ import { Writable } from 'stream';
 import { isContentBackedLineupIteam } from '../../dao/derived_types/StreamLineup.js';
 import { PlexServerSettings } from '../../dao/entities/PlexServerSettings.js';
 import { FFMPEG, FfmpegEvents } from '../../ffmpeg/ffmpeg.js';
-import { Player } from '../player.js';
-import { PlexTranscoder } from './plexTranscoder.js';
-import { PlayerContext } from '../player.js';
 import { TypedEventEmitter } from '../../types/eventEmitter.js';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
+import { Player, PlayerContext } from '../player.js';
+import { PlexTranscoder } from './plexTranscoder.js';
 
 const USED_CLIENTS: Record<string, boolean> = {};
 export class PlexPlayer extends Player {
@@ -99,9 +98,8 @@ export class PlexPlayer extends Player {
     ) {
       streamDuration = lineupItem.streamDuration / 1000;
     }
-    const deinterlace = ffmpegSettings.enableTranscoding; //for now it will always deinterlace when transcoding is enabled but this is sub-optimal
 
-    const stream = await plexTranscoder.getStream(deinterlace);
+    const stream = await plexTranscoder.getStream(/* deinterlace=*/ true);
     if (this.killed) {
       return;
     }

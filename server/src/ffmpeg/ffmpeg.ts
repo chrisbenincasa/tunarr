@@ -16,7 +16,6 @@ import { isNonEmptyString } from '../util/index.js';
 const spawn = child_process.spawn;
 
 const MAXIMUM_ERROR_DURATION_MS = 60000;
-const REALLY_RIDICULOUSLY_HIGH_FPS_FOR_TUNARRS_USECASE = 120;
 
 const STILLIMAGE_SUPPORTED_ENCODERS = [
   'mpeg2video',
@@ -111,20 +110,6 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       serverOptions().port
     }/images/generic-error-screen.png`;
     this.ffmpegName = 'unnamed ffmpeg';
-    if (!this.opts.enableTranscoding) {
-      // this ensures transcoding is completely disabled even if
-      // some settings are true
-      this.opts = {
-        ...this.opts,
-        normalizeAudio: false,
-        normalizeAudioCodec: false,
-        normalizeVideoCodec: false,
-        errorScreen: 'kill',
-        normalizeResolution: false,
-        audioVolumePercent: 100,
-        maxFPS: REALLY_RIDICULOUSLY_HIGH_FPS_FOR_TUNARRS_USECASE,
-      };
-    }
     this.channel = channel;
     this.ffmpegPath = opts.ffmpegExecutablePath;
 
@@ -339,7 +324,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
   }
 
   spawnError(title: string, subtitle?: string, duration?: number) {
-    if (!this.opts.enableTranscoding || this.opts.errorScreen == 'kill') {
+    if (this.opts.errorScreen === 'kill') {
       this.logger.error('error: ' + title + ' ; ' + subtitle);
       this.emit('error', {
         code: -1,
@@ -369,19 +354,12 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
   }
 
   spawnOffline(duration: number) {
-    if (!this.opts.enableTranscoding) {
-      this.logger.info(
-        'The channel has an offline period scheduled for this time slot. FFMPEG transcoding is disabled, so it is not possible to render an offline screen. Ending the stream instead',
-      );
-      this.emit('end', { code: -1, cmd: `offline stream disabled.` });
-      return;
-    }
-
     const streamStats = {
       videoWidth: this.wantedW,
       videoHeight: this.wantedH,
       duration: duration,
     };
+
     return this.spawn(
       { errorTitle: 'offline' },
       streamStats,

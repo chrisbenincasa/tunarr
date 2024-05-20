@@ -14,6 +14,7 @@ export const FfmpegSettingsSchema = z.object({
   numThreads: z.number().default(4),
   concatMuxDelay: z.number().default(0),
   enableLogging: z.boolean().default(false),
+  // DEPRECATED
   enableTranscoding: z.boolean().default(true),
   audioVolumePercent: z.number().default(100),
   videoEncoder: z.string().default('mpeg2video'),
