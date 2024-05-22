@@ -17,8 +17,8 @@ export const FfmpegSettingsSchema = z.object({
   // DEPRECATED
   enableTranscoding: z.boolean().default(true),
   audioVolumePercent: z.number().default(100),
-  videoEncoder: z.string().default('mpeg2video'),
-  audioEncoder: z.string().default('ac3'),
+  videoEncoder: z.string().default('libx264'),
+  audioEncoder: z.string().default('aac'),
   targetResolution: ResolutionSchema.default({ widthPx: 1920, heightPx: 1080 }),
   videoBitrate: z.number().default(2000),
   videoBufferSize: z.number().default(2000),

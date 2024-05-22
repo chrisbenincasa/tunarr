@@ -205,8 +205,8 @@ export default function FfmpegSettingsPage() {
     h264 with Intel Quick Sync: h264_qsv
     MPEG2 with Intel Quick Sync: mpeg2_qsv
     NVIDIA: h264_nvenc
-    MPEG2: mpeg2video (default)
-    H264: libx264
+    MPEG2: mpeg2video
+    H264: libx264 (default)
     MacOS: h264_videotoolbox"
                     >
                       <IconButton
@@ -214,8 +214,8 @@ export default function FfmpegSettingsPage() {
     h264 with Intel Quick Sync: h264_qsv
     MPEG2 with Intel Quick Sync: mpeg2_qsv
     NVIDIA: h264_nvenc
-    MPEG2: mpeg2video (default)
-    H264: libx264
+    MPEG2: mpeg2video
+    H264: libx264 (default)
     MacOS: h264_videotoolbox"
                         edge="end"
                       >
@@ -438,15 +438,15 @@ export default function FfmpegSettingsPage() {
                   <InputAdornment position="end">
                     <Tooltip
                       title="Some possible values are:
-            aac
-            ac3 (default), ac3_fixed
+            aac (default)
+            ac3, ac3_fixed
             flac
             libmp3lame"
                     >
                       <IconButton
                         aria-label="Some possible values are:
-              aac
-              ac3 (default), ac3_fixed
+              aac (default)
+              ac3, ac3_fixed
               flac
               libmp3lame"
                         edge="end"
