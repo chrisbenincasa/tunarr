@@ -61,4 +61,9 @@ export class ProgramDB {
       (r) => converter.partialEntityToContentProgram(r, { skipPopulate: true }),
     );
   }
+
+  async getProgramById(id: string) {
+    const em = getEm();
+    return em.findOne(Program, { uuid: id });
+  }
 }

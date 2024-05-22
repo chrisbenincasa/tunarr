@@ -7,6 +7,7 @@ import {
   Libx264Encoder,
   Libx265Encoder,
   Mpeg2VideoEncoder,
+  RawVideoEncoder,
 } from './SoftwareVideoEncoders';
 import { Nullable } from '../../../types/util';
 import { NvidiaH264Encoder, NvidiaHevcEncoder } from './nvidia/NvidiaEncoders';
@@ -17,14 +18,16 @@ import {
 } from './qsv/QsvEncoders';
 
 export class EncoderFactory {
-  static getSoftwareEncoder(videoStream: VideoStream): VideoEncoder {
-    switch (videoStream.codec) {
+  static getSoftwareEncoder(format: string): VideoEncoder {
+    switch (format) {
       case VideoFormats.Hevc:
         return Libx265Encoder.create();
       case VideoFormats.H264:
         return Libx264Encoder.create();
       case VideoFormats.Mpeg2Video:
         return Mpeg2VideoEncoder.create();
+      case VideoFormats.Raw:
+        return RawVideoEncoder.create();
       case VideoFormats.Copy:
         return CopyVideoEncoder.create();
       default:

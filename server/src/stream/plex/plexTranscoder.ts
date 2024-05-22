@@ -21,21 +21,22 @@ import {
 } from '../../types/plexApiTypes.js';
 import { Logger, LoggerFactory } from '../../util/logging/LoggerFactory.js';
 
-type PlexStream = {
+export type PlexStream = {
   directPlay: boolean;
   streamUrl: string;
   separateVideoStream?: string;
-  streamDetails: VideoStreamDetails;
+  streamDetails: StreamDetails;
 };
 
-export type VideoStreamDetails = {
+export type StreamDetails = {
   duration?: number;
   anamorphic?: boolean;
   pixelP?: number;
   pixelQ?: number;
   videoCodec?: string;
-  videoWidth: number;
-  videoHeight: number;
+  videoWidth?: number;
+  videoHeight?: number;
+  videoBitDepth?: number;
   videoFramerate?: number;
   videoDecision?: string;
   audioDecision?: string;
@@ -429,8 +430,8 @@ lang=en`;
   }
 
   // TODO - cache this somehow so we only update VideoStats if decisionJson or directInfo change
-  getVideoStats(): VideoStreamDetails {
-    const ret: Partial<VideoStreamDetails> = {};
+  getVideoStats(): StreamDetails {
+    const ret: Partial<StreamDetails> = {};
 
     try {
       const streams: TranscodeDecisionMediaStream[] =
@@ -499,7 +500,7 @@ lang=en`;
 
     this.log('Current video stats: %O', ret);
 
-    return ret as Required<VideoStreamDetails>; // This isn't technically right, but this is how the current code treats this
+    return ret as Required<StreamDetails>; // This isn't technically right, but this is how the current code treats this
   }
 
   private async getAudioIndex() {

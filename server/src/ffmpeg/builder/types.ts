@@ -90,7 +90,6 @@ export abstract class InputSource {
   }
 
   getInputOptions() {
-    console.log(this.inputOptions);
     return flatMap(this.inputOptions, (opt) => opt.options(this));
   }
 }

@@ -1,5 +1,6 @@
 import { once } from 'lodash-es';
 import { VideoEncoder } from '../BaseEncoder';
+import { VideoFormats } from '../../constants';
 
 abstract class QsvEncoder extends VideoEncoder {
   protected constructor(name: string) {
@@ -12,6 +13,8 @@ abstract class QsvEncoder extends VideoEncoder {
 }
 
 export class Mpeg2QsvEncoder extends QsvEncoder {
+  protected videoFormat: string = VideoFormats.Mpeg2Video;
+
   private constructor() {
     super('mpeg2_qsv');
   }
@@ -20,6 +23,8 @@ export class Mpeg2QsvEncoder extends QsvEncoder {
 }
 
 export class H264QsvEncoder extends QsvEncoder {
+  protected videoFormat: string = VideoFormats.H264;
+
   private constructor() {
     super('h264_qsv');
   }
@@ -28,6 +33,8 @@ export class H264QsvEncoder extends QsvEncoder {
 }
 
 export class HevcQsvEncoder extends QsvEncoder {
+  protected videoFormat: string = VideoFormats.Hevc;
+
   private constructor() {
     super('hevc_qsv');
   }

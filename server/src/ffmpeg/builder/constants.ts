@@ -11,4 +11,21 @@ export const VideoFormats = {
   Av1: 'av1',
   MpegTs: 'mpegts',
   Copy: 'copy',
+  Raw: 'raw',
+} as const;
+
+export const AudioFormats = {
+  Aac: 'aac',
+  Ac3: 'ac3',
+  Copy: 'copy',
+  PCMS16LE: 'pcm_s16le',
+} as const;
+
+export const OutputFormats = {
+  None: 'none',
+  Mkv: 'matroska',
+  MpegTs: 'mpegts',
+  Mp4: 'mp4',
+  Hls: 'hls',
+  Nut: 'nut',
 } as const;

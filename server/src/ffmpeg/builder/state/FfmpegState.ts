@@ -2,6 +2,7 @@ import { merge, trimStart } from 'lodash-es';
 import { Nullable } from '../../../types/util';
 import { DataProps, HardwareAccelerationMode } from '../types';
 import { MarkRequired } from 'ts-essentials';
+import { OutputFormats } from '../constants';
 
 export const DefaultFfmpegState: Partial<DataProps<FfmpegState>> = {
   threadCount: null,
@@ -33,6 +34,7 @@ export class FfmpegState {
   softwareScalingAlgorithm: string = 'fast_bilinear';
   softwareDeinterlaceFilter: string = 'yadif=1';
   vaapiDevice: Nullable<string> = null;
+  outputFormat: (typeof OutputFormats)[keyof typeof OutputFormats];
 
   private constructor(fields: FfmpegStateFields) {
     merge(this, fields);
@@ -55,7 +57,10 @@ export class FfmpegState {
 }
 
 function parseVersion(version: string): number {
-  const versionNum = parseInt(trimStart(version, 'n').replaceAll('.', ''), 10);
+  const versionNum = parseInt(
+    trimStart(version, 'n').replaceAll('.', '').replace(/-.+$/, ''),
+    10,
+  );
   if (versionNum < 100) {
     versionNum * 10; // Ensure we have a 3-digit number here.
   }

@@ -53,6 +53,7 @@ export class VideoStream implements MediaStream {
   isAnamorphic: boolean;
   pixelAspectRatio: Nullable<`${number}:${number}`>;
   inputKind: VideoInputKind = 'video';
+  bitDepth: Nullable<number>;
 
   protected constructor(fields: MarkOptional<VideoStreamFields, 'inputKind'>) {
     // Unfortunately TS is not 'smart' enough to let us

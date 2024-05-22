@@ -161,6 +161,7 @@ export class StreamProgramCalculator {
           programId: backingItem.uuid,
           title: backingItem.title,
           id: backingItem.uuid,
+          programType: backingItem.type,
         };
       }
     } else if (isOfflineItem(lineupItem)) {
@@ -190,15 +191,13 @@ export class StreamProgramCalculator {
   // 2b. If no fillter content is found, then pad with more offline time
   // 3. Return the currently playing "real" program
   async createLineupItem(
-    obj: ProgramAndTimeElapsed,
+    { program: activeProgram, timeElapsed }: ProgramAndTimeElapsed,
     channel: Loaded<Channel>,
     isFirst: boolean,
   ): Promise<StreamLineupItem> {
-    let timeElapsed = obj.timeElapsed;
     // Start time of a file is never consistent unless 0. Run time of an episode can vary.
     // When within 30 seconds of start time, just make the time 0 to smooth things out
     // Helps prevents losing first few seconds of an episode upon lineup change
-    const activeProgram = obj.program;
     let beginningOffset = 0;
 
     if (activeProgram.type === 'error') {
@@ -289,6 +288,7 @@ export class StreamProgramCalculator {
           beginningOffset: beginningOffset,
           externalSourceId: filler.externalSourceId,
           plexFilePath: filler.plexFilePath!,
+          programType: filler.type,
         };
       }
       // pick the offline screen

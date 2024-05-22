@@ -1,4 +1,4 @@
-import { isUndefined } from 'lodash-es';
+import { isNull, isUndefined } from 'lodash-es';
 import { Nullable } from '../../../types/util';
 import {
   AudioInputSource,
@@ -18,13 +18,13 @@ export class PipelineBuilderFactory {
 }
 
 class PipelineBuilderFactory$Builder {
-  private videoInputFile: VideoInputSource;
+  private videoInputFile: Nullable<VideoInputSource> = null;
   private audioInputFile: Nullable<AudioInputSource> = null;
   private watermarkInputFile: Nullable<WatermarkInputSource> = null;
   private hardwareAccelerationMode: HardwareAccelerationMode = 'none';
 
   setVideoInputSource(
-    videoInputSource: VideoInputSource,
+    videoInputSource: Nullable<VideoInputSource>,
   ): PipelineBuilderFactory$Builder {
     this.videoInputFile = videoInputSource;
     return this;
@@ -54,6 +54,12 @@ class PipelineBuilderFactory$Builder {
   build(): PipelineBuilder {
     if (isUndefined(this.videoInputFile)) {
       throw new Error();
+    }
+
+    if (isNull(this.videoInputFile)) {
+      // Audio-only pipeline builder??
+      throw new Error('Not yet implemented');
+      // return new SoftwarePipelineBuilder()
     }
 
     switch (this.hardwareAccelerationMode) {

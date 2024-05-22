@@ -9,6 +9,7 @@ import {
 } from '../BasePIpelineBuilder';
 import { OverlayWatermarkFilter } from '../../filter/watermark/OverlayWatermarkFilter';
 import { VideoFormats } from '../../constants';
+import { PixelFormatYuv420P } from '../../format/PixelFormat';
 
 export class SoftwarePipelineBuilder extends BasePipelineBuilder {
   protected setupVideoFilters() {
@@ -104,11 +105,7 @@ export class SoftwarePipelineBuilder extends BasePipelineBuilder {
           this.watermarkInputSource.watermark,
           this.context.desiredState.paddedSize,
           // Hardcode for testing
-          {
-            name: 'yuv420p',
-            ffmpegName: 'yuv420p',
-            bitDepth: 8,
-          },
+          new PixelFormatYuv420P(),
         ),
       );
     }

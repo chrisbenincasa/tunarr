@@ -2,7 +2,7 @@ import { first, isNull, isUndefined } from 'lodash-es';
 import { Nullable } from '../../../types/util';
 import { ifDefined, isNonEmptyString } from '../../../util';
 import { AudioStream, VideoStream } from '../MediaStream';
-import { VideoFormats } from '../constants';
+import { OutputFormats, VideoFormats } from '../constants';
 import { Decoder } from '../decoder/Decoder';
 import { DecoderFactory } from '../decoder/DecoderFactory';
 import { AudioEncoder } from '../encoder/BaseEncoder';
@@ -32,6 +32,7 @@ import { NoStatsOption } from '../options/NoStatsOption';
 import {
   ClosedGopOutputOption,
   FrameRateOutputOption,
+  MatroskaOutputFormatOption,
   MpegTsOutputFormatOption,
   NoDemuxDecodeDelayOutputOption,
   PipeProtocolOutputOption,
@@ -50,6 +51,7 @@ import {
 } from '../types';
 import { PipelineBuilder } from './PipelineBuilder';
 import { MarkRequired } from 'ts-essentials';
+import { Logger, LoggerFactory } from '../../../util/logging/LoggerFactory';
 
 // Args passed to each setter -- we use an object here so we
 // 1. can deconstruct args in each implementor to use only what we need
@@ -105,6 +107,7 @@ export function isAudioPipelineContext(
 }
 
 export abstract class BasePipelineBuilder implements PipelineBuilder {
+  protected logger: Logger = LoggerFactory.child({ caller: import.meta });
   protected decoder: Nullable<Decoder> = null;
   protected context: PipelineBuilderContext;
 
@@ -267,7 +270,9 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       return { nextState: currentState, encoder: null };
     }
 
-    const encoder = EncoderFactory.getSoftwareEncoder(this.context.videoStream);
+    const encoder = EncoderFactory.getSoftwareEncoder(
+      this.context.desiredState.videoFormat,
+    );
     const nextState = encoder.updateFrameState(currentState);
     return {
       nextState,
@@ -286,11 +291,8 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
   }
 
   protected setHardwareAccelState() {
-    this.context.ffmpegState = {
-      ...this.context.ffmpegState,
-      decoderHwAccelMode: 'none',
-      encoderHwAccelMode: 'none',
-    };
+    this.context.ffmpegState.decoderHwAccelMode = 'none';
+    this.context.ffmpegState.encoderHwAccelMode = 'none';
   }
 
   protected setStreamSeek() {
@@ -311,7 +313,9 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
 
   protected setOutputFormat() {
     this.context.pipelineSteps.push(
-      MpegTsOutputFormatOption(),
+      this.context.ffmpegState.outputFormat === OutputFormats.Mkv
+        ? MatroskaOutputFormatOption()
+        : MpegTsOutputFormatOption(),
       PipeProtocolOutputOption(),
     );
   }

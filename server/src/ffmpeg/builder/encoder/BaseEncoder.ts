@@ -1,3 +1,4 @@
+import { isEmpty } from 'lodash-es';
 import { FrameState } from '../state/FrameState';
 import { StreamKinds } from '../types';
 import { Encoder } from './Encoder';
@@ -43,7 +44,9 @@ export class AudioEncoder extends BaseEncoder {
   }
 }
 
-export class VideoEncoder extends BaseEncoder {
+export abstract class VideoEncoder extends BaseEncoder {
+  protected abstract videoFormat: string;
+
   constructor(encoder: string) {
     super(encoder, 'video');
   }
@@ -59,6 +62,12 @@ export class VideoEncoder extends BaseEncoder {
   // If affectsFrameState, this method should return the
   // 'next' state.
   updateFrameState(currentState: FrameState): FrameState {
-    return currentState;
+    if (isEmpty(this.name)) {
+      return currentState;
+    }
+
+    return currentState.update({
+      videoFormat: this.videoFormat,
+    });
   }
 }

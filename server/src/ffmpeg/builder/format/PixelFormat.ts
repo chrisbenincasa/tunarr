@@ -52,10 +52,7 @@ export class PixelFormatYuv420P extends BasePixelFormat {
 }
 
 export class PixelFormatNv12 extends BasePixelFormat {
-  constructor(public readonly name: string) {
-    super();
-  }
-
+  readonly name: string = PixelFormats.NV12;
   readonly ffmpegName: string = 'nv12';
   readonly bitDepth: number = 8;
 }

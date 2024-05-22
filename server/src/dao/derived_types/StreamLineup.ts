@@ -67,6 +67,11 @@ const BaseContentBackedStreamLineupItemSchema =
     externalSourceId: z.string(),
     filePath: z.string(),
     externalKey: z.string(),
+    programType: z.union([
+      z.literal('episode'),
+      z.literal('movie'),
+      z.literal('track'),
+    ]),
   });
 
 const CommercialStreamLineupItemSchema =

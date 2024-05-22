@@ -1,7 +1,10 @@
 import { once } from 'lodash-es';
 import { VideoEncoder } from '../BaseEncoder';
+import { VideoFormats } from '../../constants';
 
 export class NvidiaHevcEncoder extends VideoEncoder {
+  protected videoFormat: string = VideoFormats.Hevc;
+
   private constructor() {
     super('hevc_nvenc');
   }
@@ -14,6 +17,8 @@ export class NvidiaHevcEncoder extends VideoEncoder {
 }
 
 export class NvidiaH264Encoder extends VideoEncoder {
+  protected videoFormat: string = VideoFormats.H264;
+
   private constructor() {
     super('h264_nvenc');
   }

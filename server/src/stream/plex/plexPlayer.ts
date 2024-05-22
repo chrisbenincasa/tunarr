@@ -113,7 +113,7 @@ export class PlexPlayer extends Player {
     streamStats.duration = lineupItem.streamDuration;
 
     const emitter = new EventEmitter() as TypedEventEmitter<FfmpegEvents>;
-    let ff = ffmpeg.spawnStream(
+    let ff = await ffmpeg.spawnStream(
       stream.streamUrl,
       stream.streamDetails,
       streamStart,

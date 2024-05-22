@@ -2,16 +2,12 @@ import { Option } from './Option';
 import { FrameState } from '../state/FrameState';
 
 export abstract class OutputOption implements Option {
-  // globalOptions = constant([]);
-  // filterOptions = constant([]);
-  // inputOptions = constant([]);
   readonly type = 'output';
   readonly affectsFrameState: boolean = false;
   nextState(currentState: FrameState): FrameState {
     return currentState;
   }
   abstract options(): string[];
-  // env vars
 }
 
 export abstract class ConstantOutputOption extends OutputOption {
@@ -76,6 +72,9 @@ export const MpegTsOutputFormatOption = () =>
     '-mpegts_flags',
     '+initial_discontinuity',
   ]);
+
+export const MatroskaOutputFormatOption = () =>
+  makeConstantOutputOption(['-f', 'matroska']);
 
 export const PipeProtocolOutputOption = (fd: number = 1) =>
   makeConstantOutputOption([`pipe:${fd}`]);

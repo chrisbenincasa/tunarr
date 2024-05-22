@@ -103,7 +103,6 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
     if (isNull(encoder)) {
       const { nextState, encoder: softwareEncoder } = super.setupEncoder(
         currentState,
-        args,
       );
       currentState = nextState;
       encoder = softwareEncoder;

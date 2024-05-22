@@ -1,3 +1,4 @@
+import util from 'node:util';
 import { isNil, isNull } from 'lodash-es';
 import { Nullable } from '../../../../types/util';
 import { VideoFormats } from '../../constants';
@@ -36,7 +37,8 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       this.context;
 
     let canDecode = true;
-    const canEncode = true;
+    let canEncode = true;
+
     // TODO: check whether can decode and can encode based on capabilities
     // minimal check for now, h264_cuvid doesn't support 10-bit
     if (
@@ -44,6 +46,11 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       videoStream.pixelFormat?.bitDepth === 10
     ) {
       canDecode = false;
+    }
+
+    // Hardcode this assumption for now
+    if (desiredState.videoFormat === VideoFormats.Raw) {
+      canEncode = false;
     }
 
     if (
@@ -92,6 +99,10 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       isAnamorphic: videoStream.isAnamorphic,
       scaledSize: videoStream.frameSize,
       paddedSize: videoStream.frameSize,
+      pixelFormat:
+        ffmpegState.decoderHwAccelMode === 'nvenc' && videoStream.bitDepth === 8
+          ? new PixelFormatNv12()
+          : desiredState.pixelFormat,
     });
 
     currentState = this.decoder?.nextState(currentState) ?? currentState;
@@ -101,6 +112,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
     currentState = this.setPad(currentState);
 
     if (currentState.bitDepth === 8 && this.watermarkInputSource) {
+      console.log('adding pixel filter format for watermark!!!');
       const desiredPixelFormat = new PixelFormatYuv420P();
       if (
         !isNil(currentState.pixelFormat) &&
@@ -156,6 +168,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       this.videoInputFile.filterSteps.push(encoder);
     }
 
+    this.logger.debug(util.inspect(currentState));
     currentState = this.setPixelFormat(currentState);
 
     // args.filterChain.videoFilterSteps.push(...this.videoInputFile.filterSteps);
@@ -179,6 +192,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
     let nextState = currentState;
     const { desiredState, ffmpegState } = this.context;
 
+    console.log('do scale', currentState.scaledSize, desiredState.scaledSize);
     if (currentState.scaledSize.equals(desiredState.scaledSize)) {
       return currentState;
     }
@@ -231,7 +245,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       const pixelFormat: Nullable<PixelFormat> =
         this.ffmpegState.decoderHwAccelMode == 'nvenc' &&
         this.context.videoStream.pixelFormat?.bitDepth === 8
-          ? new PixelFormatNv12(this.context.videoStream.pixelFormat.name)
+          ? new PixelFormatNv12()
           : this.context.videoStream.pixelFormat;
 
       const padStep = new PadFilter(
@@ -266,6 +280,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
         this.watermarkInputSource &&
         currentState.frameDataLocation === 'hardware'
       ) {
+        this.logger.debug('%O', currentState);
         const hwDownloadFilter = new HardwareDownloadCudaFilter(
           currentState.pixelFormat,
           null,
@@ -274,6 +289,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
         steps.push(hwDownloadFilter);
       }
 
+      console.log('pixelFormat', nextState, this.ffmpegState);
       if (
         nextState.frameDataLocation === 'hardware' &&
         this.ffmpegState.encoderHwAccelMode === 'none'
@@ -286,8 +302,8 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
         }
 
         const hwDownloadFilter = new HardwareDownloadCudaFilter(
-          currentState.pixelFormat,
-          null,
+          nextState.pixelFormat,
+          desiredFormat,
         );
         nextState = hwDownloadFilter.nextState(nextState);
         steps.push(hwDownloadFilter);

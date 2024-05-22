@@ -28,9 +28,9 @@ export class ScaleCudaFilter extends Filter {
   private generateFilter(): string {
     let scale: string = '';
 
-    if (this.currentState.scaledSize.equals(this.scaledSize) == false) {
+    if (!this.currentState.scaledSize.equals(this.scaledSize)) {
       let aspectRatio = '';
-      if (this.scaledSize.equals(this.paddedSize) == false) {
+      if (!this.scaledSize.equals(this.paddedSize)) {
         aspectRatio = ':force_original_aspect_ratio=decrease';
       }
 
@@ -45,7 +45,7 @@ export class ScaleCudaFilter extends Filter {
       scale = `${squareScale}scale_cuda=${targetSize}${aspectRatio}`;
     }
 
-    if (scale == '') {
+    if (scale === '') {
       return scale;
     }
 

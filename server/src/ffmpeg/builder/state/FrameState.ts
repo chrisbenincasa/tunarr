@@ -40,7 +40,7 @@ export class FrameState {
   constructor(
     fields: MarkOptional<FrameStateFields, keyof typeof DefaultFrameState>,
   ) {
-    merge(this, fields);
+    merge(this, DefaultFrameState, fields);
   }
 
   get bitDepth() {

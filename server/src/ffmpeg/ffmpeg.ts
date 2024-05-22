@@ -5,6 +5,7 @@ import {
   find,
   isEmpty,
   isNil,
+  isNull,
   isString,
   isUndefined,
   merge,
@@ -14,11 +15,11 @@ import path from 'path';
 import stream from 'stream';
 import { DeepReadonly, DeepRequired } from 'ts-essentials';
 import { serverOptions } from '../globals.js';
-import { VideoStreamDetails } from '../stream/plex/plexTranscoder.js';
+import { StreamDetails } from '../stream/plex/plexTranscoder.js';
 import { StreamContextChannel } from '../stream/types.js';
 import { TypedEventEmitter } from '../types/eventEmitter.js';
-import { Maybe } from '../types/util.js';
-import { isNonEmptyString } from '../util/index.js';
+import { Maybe, Nullable } from '../types/util.js';
+import { ifDefined, isNonEmptyString } from '../util/index.js';
 import { Logger, LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { FfmpegCommandGenerator } from './builder/FfmpegCommandGenerator.js';
 import {
@@ -37,12 +38,12 @@ import {
   VideoInputSource,
   WatermarkInputSource,
 } from './builder/types.js';
-import { AudioState } from './builder/state/AudioState.js';
-import { PipelineBuilderFactory } from './builder/pipeline/PipelineBuilderFactory.js';
-import { FfmpegState } from './builder/state/FfmpegState.js';
-import { FrameState } from './builder/state/FrameState.js';
-import { FfmpegCommandGenerator } from './builder/FfmpegCommandGenerator.js';
-import { ifDefined, isNonEmptyString } from '../util/index.js';
+import { FFMPEGInfo } from './ffmpegInfo.js';
+import {
+  AudioFormats,
+  OutputFormats,
+  VideoFormats,
+} from './builder/constants.js';
 
 const spawn = child_process.spawn;
 
@@ -218,7 +219,6 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       '-1',
       `-protocol_whitelist`,
       `file,http,tcp,https,tcp,tls`,
-      // '-copyts',
       `-probesize`,
       '32',
       `-i`,
@@ -350,30 +350,38 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     return this.startProcess(ffmpegArgs, this.opts.enableLogging);
   }
 
-  spawnStream(
+  async spawnStream(
     streamUrl: string,
-    streamStats: VideoStreamDetails,
+    streamStats: StreamDetails,
     startTime: Maybe<number>,
     duration: Maybe<string>,
     enableIcon: Maybe<Watermark>,
   ) {
-    const stream = VideoStream.create({
-      index: 0, // stream index 0 on input index 0
-      codec: streamStats.videoCodec ?? '',
-      pixelFormat: null, // Do we know this?
-      frameSize: FrameSize.create({
-        width: streamStats.videoWidth,
-        height: streamStats.videoHeight,
-      }),
-      isAnamorphic: streamStats.anamorphic ?? false,
-      pixelAspectRatio:
-        !isUndefined(streamStats.pixelP) && !isUndefined(streamStats.pixelQ)
-          ? `${streamStats.pixelP}:${streamStats.pixelQ}`
-          : null,
-      inputKind: 'video',
-    });
+    let videoStream: Nullable<VideoStream> = null;
+    let videoInput: Nullable<VideoInputSource> = null;
+    if (
+      !streamStats.audioOnly &&
+      !isUndefined(streamStats.videoHeight) &&
+      !isUndefined(streamStats.videoWidth)
+    ) {
+      videoStream = VideoStream.create({
+        index: 0, // stream index 0 on input index 0
+        codec: streamStats.videoCodec ?? '',
+        pixelFormat: null, // Do we know this?
+        frameSize: FrameSize.create({
+          width: streamStats.videoWidth,
+          height: streamStats.videoHeight,
+        }),
+        isAnamorphic: streamStats.anamorphic ?? false,
+        pixelAspectRatio:
+          !isUndefined(streamStats.pixelP) && !isUndefined(streamStats.pixelQ)
+            ? `${streamStats.pixelP}:${streamStats.pixelQ}`
+            : null,
+        inputKind: 'video',
+      });
+      videoInput = new VideoInputSource(streamUrl, [videoStream]);
+    }
 
-    const videoInput = new VideoInputSource(streamUrl, [stream]);
     const audioInput = new AudioInputSource(
       streamUrl,
       [
@@ -384,12 +392,13 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
         }),
       ],
       AudioState.create({
-        audioEncoder: this.opts.audioEncoder,
-        audioBitrate: this.opts.audioBitrate,
-        audioBufferSize: this.opts.audioBufferSize,
-        audioChannels: this.opts.audioChannels,
-        audioVolume: this.opts.audioVolumePercent,
-        audioSampleRate: this.opts.audioSampleRate,
+        // audioEncoder: this.opts.audioEncoder,
+        audioEncoder: AudioFormats.PCMS16LE,
+        // audioBitrate: this.opts.audioBitrate,
+        // audioBufferSize: this.opts.audioBufferSize,
+        // audioChannels: this.opts.audioChannels,
+        // audioVolume: this.opts.audioVolumePercent,
+        // audioSampleRate: this.opts.audioSampleRate,
       }),
     );
 
@@ -426,35 +435,46 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       .setWatermarkInputSource(watermarkSource)
       .build();
 
-    const args = new FfmpegCommandGenerator().generateArgs(
-      videoInput,
-      audioInput,
-      watermarkSource,
-      builder.build(
-        FfmpegState.create({
-          start: startTime?.toString(),
-          threadCount: this.opts.numThreads,
-          softwareScalingAlgorithm: this.opts.scalingAlgorithm,
-          decoderHwAccelMode: hwAccel,
-          encoderHwAccelMode: hwAccel,
-          softwareDeinterlaceFilter: this.opts.deinterlaceFilter,
-        }),
-        new FrameState({
-          videoFormat: 'mpegts',
-          scaledSize: FrameSize.create({
-            width: this.wantedW,
-            height: this.wantedH,
+    if (!isNull(videoInput)) {
+      const args = new FfmpegCommandGenerator().generateArgs(
+        videoInput,
+        audioInput,
+        watermarkSource,
+        builder.build(
+          FfmpegState.create({
+            version: await new FFMPEGInfo(this.opts).getVersion(),
+            start: startTime?.toString(),
+            threadCount: this.opts.numThreads,
+            softwareScalingAlgorithm: this.opts.scalingAlgorithm,
+            decoderHwAccelMode: hwAccel,
+            encoderHwAccelMode: hwAccel,
+            softwareDeinterlaceFilter: this.opts.deinterlaceFilter,
+            outputFormat: OutputFormats.Mkv,
           }),
-          paddedSize: FrameSize.create({
-            width: this.wantedW,
-            height: this.wantedH,
+          new FrameState({
+            videoFormat: VideoFormats.Raw,
+            scaledSize: FrameSize.create({
+              width: this.wantedW,
+              height: this.wantedH,
+            }),
+            paddedSize: FrameSize.create({
+              width: this.wantedW,
+              height: this.wantedH,
+            }),
+            isAnamorphic: false,
           }),
-          isAnamorphic: false,
-        }),
-      ),
-    );
+        ),
+      );
 
-    console.log(args.join(' '));
+      this.logger.debug(
+        'Generated FFMPEG args by pipeline v2: \n%s',
+        args.join(' '),
+      );
+    } else {
+      this.logger.debug(
+        'Audio-only streams are not supported by ffmpeg pipeline v2 yet',
+      );
+    }
 
     return this.spawn(
       streamUrl,
@@ -481,7 +501,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       duration = MAXIMUM_ERROR_DURATION_MS;
     }
     duration = Math.min(MAXIMUM_ERROR_DURATION_MS, duration);
-    const streamStats: VideoStreamDetails = {
+    const streamStats: StreamDetails = {
       videoWidth: this.wantedW,
       videoHeight: this.wantedH,
       duration: duration,
@@ -522,7 +542,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
 
   private spawn(
     streamUrl: string | { errorTitle: string; subtitle?: string },
-    streamStats: Maybe<VideoStreamDetails>,
+    streamStats: Maybe<StreamDetails>,
     startTime: Maybe<number>,
     duration: Maybe<string>,
     limitRead: boolean,
@@ -712,6 +732,10 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
         currentAudio = '[audiox]';
       }
       currentVideo = '[videox]';
+    } else {
+      // HACK: We know these will be defined already if we get this far
+      iW = iW!;
+      iH = iH!;
     }
     if (doOverlay && !isNil(watermark?.url)) {
       if (watermark.animated) {
@@ -933,8 +957,8 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     });
 
     // Pipe to our own stderr if enabled
-    this.ffmpeg.stderr.pipe(process.stderr);
     if (doLogs) {
+      this.ffmpeg.stderr.pipe(process.stderr);
     }
 
     // Hide this behind a 'flag' for now...
