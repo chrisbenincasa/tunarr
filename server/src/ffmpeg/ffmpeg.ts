@@ -172,18 +172,22 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       '-1',
       `-protocol_whitelist`,
       `file,http,tcp,https,tcp,tls`,
-      // '-copyts',
       `-probesize`,
       '32',
       `-i`,
       streamUrl,
     ];
 
+    // Workaround until new pipeline is in place...
+    const scThreshold = this.opts.videoEncoder.includes('mpeg2')
+      ? '1000000000'
+      : '0';
+
     ffmpegArgs.push(
       '-flags',
       'cgop',
       '-sc_threshold',
-      '0',
+      scThreshold,
       '-movflags',
       '+faststart',
     );
