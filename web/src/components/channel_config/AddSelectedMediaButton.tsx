@@ -1,5 +1,5 @@
 import { AddCircle } from '@mui/icons-material';
-import { CircularProgress } from '@mui/material';
+import { CircularProgress, Tooltip } from '@mui/material';
 import Button, { ButtonProps } from '@mui/material/Button';
 import { flattenDeep, map } from 'lodash-es';
 import { MouseEventHandler, useState } from 'react';
@@ -71,23 +71,23 @@ export default function AddSelectedMediaButton({
   };
 
   return (
-    // <Tooltip title="Add all programs to channel">
-    //   <span>
-    <Button
-      onClick={(e) => addSelectedItems(e)}
-      disabled={selectedMedia.length === 0 || isLoading}
-      {...(rest ?? {})}
-      startIcon={
-        isLoading ? (
-          <CircularProgress size="20px" sx={{ mx: 1, color: 'inherit' }} />
-        ) : (
-          <AddCircle />
-        )
-      }
-    >
-      Add All
-    </Button>
-    //   </span>
-    // </Tooltip>
+    <Tooltip title="Add all programs to channel">
+      <span>
+        <Button
+          onClick={(e) => addSelectedItems(e)}
+          disabled={selectedMedia.length === 0 || isLoading}
+          {...(rest ?? {})}
+          startIcon={
+            isLoading ? (
+              <CircularProgress size="20px" sx={{ mx: 1, color: 'inherit' }} />
+            ) : (
+              <AddCircle />
+            )
+          }
+        >
+          Add All
+        </Button>
+      </span>
+    </Tooltip>
   );
 }
