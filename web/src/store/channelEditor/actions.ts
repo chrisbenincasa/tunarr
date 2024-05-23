@@ -307,6 +307,8 @@ const plexMediaToContentProgram = (
 
 export const addMediaToCurrentChannel = (programs: AddedMedia[]) =>
   useStore.setState(({ channelEditor }) => {
+    console.log(channelEditor.currentEntity);
+
     if (channelEditor.currentEntity && programs.length > 0) {
       channelEditor.dirty.programs = true;
       const addedDuration = sumBy(

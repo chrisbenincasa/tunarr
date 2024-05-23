@@ -2,7 +2,7 @@ import { ExpandLess, ExpandMore, GitHub, Home } from '@mui/icons-material';
 import ComputerIcon from '@mui/icons-material/Computer';
 import LinkIcon from '@mui/icons-material/Link';
 import LiveTvIcon from '@mui/icons-material/LiveTv';
-import MenuIcon from '@mui/icons-material/Menu';
+import MoreVert from '@mui/icons-material/MoreVert';
 import PreviewIcon from '@mui/icons-material/Preview';
 import SettingsIcon from '@mui/icons-material/Settings';
 import SettingsRemoteIcon from '@mui/icons-material/SettingsRemote';
@@ -43,13 +43,20 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { isNull, isUndefined } from 'lodash-es';
 import React, { ReactNode, useCallback, useMemo, useState } from 'react';
-import { Outlet, Link as RouterLink } from 'react-router-dom';
+import {
+  Outlet,
+  Link as RouterLink,
+  useLocation,
+  useNavigate,
+} from 'react-router-dom';
 import './App.css';
 import ServerEvents from './components/ServerEvents.tsx';
 import TunarrLogo from './components/TunarrLogo.tsx';
 import VersionFooter from './components/VersionFooter.tsx';
+import SelectedProgrammingList from './components/channel_config/SelectedProgrammingList.tsx';
 import DarkModeButton from './components/settings/DarkModeButton.tsx';
 import { useVersion } from './hooks/useVersion.ts';
+import { addMediaToCurrentChannel } from './store/channelEditor/actions.ts';
 import useStore from './store/index.ts';
 import { useSettings } from './store/settings/selectors.ts';
 import { setDarkModeState } from './store/themeEditor/actions.ts';
@@ -113,6 +120,18 @@ export function Root({ children }: { children?: React.ReactNode }) {
   );
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const mobileLinksOpen = !isNull(anchorEl);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const displayPaths = [
+    '/programming/add',
+    'library/custom-shows/new',
+    'library/fillers/new',
+  ];
+
+  const displaySelectedProgramming = displayPaths.some((path) =>
+    location.pathname.match(new RegExp(path)),
+  );
 
   const toggleDrawerOpen = () => {
     setOpen(true);
@@ -333,7 +352,7 @@ export function Root({ children }: { children?: React.ReactNode }) {
             {smallViewport ? (
               <>
                 <Button onClick={handleClick} color="inherit">
-                  <MenuIcon />
+                  <MoreVert />
                 </Button>
                 <StyledMenu
                   MenuListProps={{
@@ -535,6 +554,13 @@ export function Root({ children }: { children?: React.ReactNode }) {
             {children ?? <Outlet />}
           </Container>
         </Box>
+
+        {displaySelectedProgramming && (
+          <SelectedProgrammingList
+            onAddSelectedMedia={addMediaToCurrentChannel}
+            onAddMediaSuccess={() => navigate('..', { relative: 'path' })}
+          />
+        )}
       </Box>
       <ReactQueryDevtools initialIsOpen={false} />
     </ThemeProvider>
