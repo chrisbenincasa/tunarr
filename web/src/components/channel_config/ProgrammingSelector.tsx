@@ -5,7 +5,6 @@ import {
   MenuItem,
   Select,
   Stack,
-  Typography,
 } from '@mui/material';
 import { PlexMedia, isPlexDirectory } from '@tunarr/types/plex';
 import { find, isEmpty, isNil, isUndefined, map } from 'lodash-es';
@@ -19,10 +18,8 @@ import {
   setProgrammingListLibrary,
   setProgrammingListingServer,
 } from '../../store/programmingSelector/actions.ts';
-import { AddedMedia } from '../../types/index.ts';
 import { CustomShowProgrammingSelector } from './CustomShowProgrammingSelector.tsx';
 import PlexProgrammingSelector from './PlexProgrammingSelector.tsx';
-import SelectedProgrammingList from './SelectedProgrammingList.tsx';
 
 export interface PlexListItemProps<T extends PlexMedia> {
   item: T;
@@ -32,15 +29,7 @@ export interface PlexListItemProps<T extends PlexMedia> {
   parent?: string;
 }
 
-type Props = {
-  onAddSelectedMedia: (items: AddedMedia[]) => void;
-  onAddMediaSuccess: () => void;
-};
-
-export default function ProgrammingSelector({
-  onAddSelectedMedia,
-  onAddMediaSuccess,
-}: Props) {
+export default function ProgrammingSelector() {
   const { data: plexServers } = usePlexServerSettings();
   const selectedServer = useStore((s) => s.currentServer);
   const selectedLibrary = useStore((s) => s.currentLibrary);
@@ -186,11 +175,6 @@ export default function ProgrammingSelector({
           )}
       </Stack>
       {renderMediaSourcePrograms()}
-      <Typography>Selected Items</Typography>
-      <SelectedProgrammingList
-        onAddSelectedMedia={onAddSelectedMedia}
-        onAddMediaSuccess={onAddMediaSuccess}
-      />
     </Box>
   );
 }

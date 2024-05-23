@@ -24,6 +24,7 @@ import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import AddSelectedMediaButton from '../../components/channel_config/AddSelectedMediaButton.tsx';
 import ProgrammingSelector from '../../components/channel_config/ProgrammingSelector.tsx';
 import { usePreloadedData } from '../../hooks/preloadedDataHook.ts';
+import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 import {
   existingCustomShowLoader,
   newCustomShowLoader,
@@ -34,7 +35,6 @@ import {
 } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
 import { UICustomShowProgram } from '../../types/index.ts';
-import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 
 type Props = { isNew: boolean };
 
@@ -203,10 +203,7 @@ export default function EditCustomShowPage({ isNew }: Props) {
           Add Programming
         </AccordionSummary>
         <AccordionDetails>
-          <ProgrammingSelector
-            onAddSelectedMedia={addMediaToCurrentCustomShow}
-            onAddMediaSuccess={() => setAddProgrammingOpen(false)}
-          />
+          <ProgrammingSelector />
           <Divider />
           <Box
             sx={{

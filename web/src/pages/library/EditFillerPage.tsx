@@ -24,13 +24,13 @@ import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import AddSelectedMediaButton from '../../components/channel_config/AddSelectedMediaButton.tsx';
 import ProgrammingSelector from '../../components/channel_config/ProgrammingSelector.tsx';
 import { useCurrentFillerList } from '../../hooks/useFillerLists.ts';
+import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 import {
   addMediaToCurrentFillerList,
   removeFillerListProgram,
 } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
 import { UIFillerListProgram } from '../../types/index.ts';
-import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 
 type Props = { isNew: boolean };
 
@@ -213,10 +213,7 @@ export default function EditFillerPage({ isNew }: Props) {
             Add Programming
           </AccordionSummary>
           <AccordionDetails>
-            <ProgrammingSelector
-              onAddSelectedMedia={addMediaToCurrentFillerList}
-              onAddMediaSuccess={() => setAddProgrammingOpen(false)}
-            />
+            <ProgrammingSelector />
             <Divider />
             <Box
               sx={{
