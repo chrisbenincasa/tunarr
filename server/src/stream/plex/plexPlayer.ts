@@ -7,14 +7,16 @@
  **/
 import constants from '@tunarr/shared/constants';
 import EventEmitter from 'events';
-import { isNil, isUndefined } from 'lodash-es';
+import { isNil, isNull, isUndefined } from 'lodash-es';
 import { Writable } from 'stream';
 import { isContentBackedLineupIteam } from '../../dao/derived_types/StreamLineup.js';
 import { PlexServerSettings } from '../../dao/entities/PlexServerSettings.js';
+import { SettingsDB, getSettings } from '../../dao/settings.js';
 import { FFMPEG, FfmpegEvents } from '../../ffmpeg/ffmpeg.js';
 import { TypedEventEmitter } from '../../types/eventEmitter.js';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
 import { Player, PlayerContext } from '../player.js';
+import { PlexStreamDetails } from './PlexStreamDetails.js';
 import { PlexTranscoder } from './plexTranscoder.js';
 
 const USED_CLIENTS: Record<string, boolean> = {};
@@ -26,7 +28,10 @@ export class PlexPlayer extends Player {
   private killed: boolean;
   private clientId: string;
 
-  constructor(context: PlayerContext) {
+  constructor(
+    context: PlayerContext,
+    private setiingsDB: SettingsDB = getSettings(),
+  ) {
     super();
     this.context = context;
     this.ffmpeg = null;
@@ -57,13 +62,16 @@ export class PlexPlayer extends Player {
     }
   }
 
-  async play(outStream: Writable) {
+  async play(
+    outStream: Writable,
+  ): Promise<TypedEventEmitter<FfmpegEvents> | undefined> {
     const lineupItem = this.context.lineupItem;
     if (!isContentBackedLineupIteam(lineupItem)) {
       throw new Error(
         'Lineup item is not backed by Plex: ' + JSON.stringify(lineupItem),
       );
     }
+
     const ffmpegSettings = this.context.ffmpegSettings;
     const db = this.context.entityManager.repo(PlexServerSettings);
     const channel = this.context.channel;
@@ -85,12 +93,15 @@ export class PlexPlayer extends Player {
       channel,
       lineupItem,
     );
+    const plexStreamDetails = new PlexStreamDetails(server, this.setiingsDB);
+
     this.plexTranscoder = plexTranscoder;
     const watermark = this.context.watermark;
-    let ffmpeg = new FFMPEG(ffmpegSettings, channel); // Set the transcoder options
-    ffmpeg.setAudioOnly(this.context.audioOnly);
-    this.ffmpeg = ffmpeg;
+    this.ffmpeg = new FFMPEG(ffmpegSettings, channel); // Set the transcoder options
+    this.ffmpeg.setAudioOnly(this.context.audioOnly);
+
     let streamDuration: number | undefined;
+
     if (
       !isUndefined(lineupItem.streamDuration) &&
       (lineupItem.start ?? 0) + lineupItem.streamDuration + constants.SLACK <
@@ -99,29 +110,32 @@ export class PlexPlayer extends Player {
       streamDuration = lineupItem.streamDuration / 1000;
     }
 
-    const stream = await plexTranscoder.getStream(/* deinterlace=*/ true);
-    if (this.killed) {
+    const stream = await plexStreamDetails.getStream(lineupItem);
+    if (isNull(stream)) {
+      this.logger.error('Unable to retrieve stream details from Plex');
       return;
     }
 
-    //let streamStart = (stream.directPlay) ? plexTranscoder.currTimeS : undefined;
-    //let streamStart = (stream.directPlay) ? plexTranscoder.currTimeS : lineupItem.start;
-    const streamStart = stream.directPlay
-      ? plexTranscoder.currTimeS
-      : undefined;
-    const streamStats = stream.streamStats;
+    // const stream = await plexTranscoder.getStream(/* deinterlace=*/ true);
+    if (this.killed) {
+      this.logger.warn('Plex stream was killed already, returning');
+      return;
+    }
+
+    const streamStart = (lineupItem.start ?? 0) / 1000;
+    const streamStats = stream.streamDetails;
     if (streamStats) {
       streamStats.duration = lineupItem.streamDuration;
     }
+    console.log(stream);
 
     const emitter = new EventEmitter() as TypedEventEmitter<FfmpegEvents>;
-    let ff = ffmpeg.spawnStream(
+    let ff = this.ffmpeg.spawnStream(
       stream.streamUrl,
-      stream.streamStats,
+      stream.streamDetails,
       streamStart,
       streamDuration?.toString(),
       watermark,
-      lineupItem.type,
     ); // Spawn the ffmpeg process
 
     if (isUndefined(ff)) {
@@ -133,38 +147,38 @@ export class PlexPlayer extends Player {
       this.logger.error(e, 'Error starting Plex status updates');
     });
 
-    ffmpeg.on('end', () => {
+    this.ffmpeg.on('end', () => {
       this.logger.trace('ffmpeg end');
       emitter.emit('end');
     });
 
-    ffmpeg.on('close', () => {
+    this.ffmpeg.on('close', () => {
       this.logger.trace('ffmpeg close');
       emitter.emit('close');
     });
 
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
-    ffmpeg.on('error', (err) => {
+    this.ffmpeg.on('error', (err) => {
       console.log('Replacing failed stream with error stream');
       ff!.unpipe(outStream);
       // ffmpeg.removeAllListeners('data'); Type inference says this doesnt ever exist
-      ffmpeg.removeAllListeners('end');
-      ffmpeg.removeAllListeners('error');
-      ffmpeg.removeAllListeners('close');
-      ffmpeg = new FFMPEG(ffmpegSettings, channel); // Set the transcoder options
-      ffmpeg.setAudioOnly(this.context.audioOnly);
-      ffmpeg.on('close', () => {
+      this.ffmpeg?.removeAllListeners('end');
+      this.ffmpeg?.removeAllListeners('error');
+      this.ffmpeg?.removeAllListeners('close');
+      this.ffmpeg = new FFMPEG(ffmpegSettings, channel); // Set the transcoder options
+      this.ffmpeg.setAudioOnly(this.context.audioOnly);
+      this.ffmpeg.on('close', () => {
         emitter.emit('close');
       });
-      ffmpeg.on('end', () => {
+      this.ffmpeg.on('end', () => {
         emitter.emit('end');
       });
-      ffmpeg.on('error', (err) => {
+      this.ffmpeg.on('error', (err) => {
         emitter.emit('error', err);
       });
 
       try {
-        ff = ffmpeg.spawnError(
+        ff = this.ffmpeg.spawnError(
           'oops',
           'oops',
           Math.min(streamStats?.duration ?? 30000, 60000),

@@ -59,6 +59,8 @@ export type LoadingStreamLineupItem = z.infer<
   typeof LoadingStreamLineupItemSchema
 >;
 
+const ProgramTypeEnum = z.enum(['movie', 'episode', 'track']);
+
 const BaseContentBackedStreamLineupItemSchema =
   baseStreamLineupItemSchema.extend({
     programId: z.string().uuid(),
@@ -67,6 +69,7 @@ const BaseContentBackedStreamLineupItemSchema =
     externalSourceId: z.string(),
     filePath: z.string(),
     externalKey: z.string(),
+    programType: ProgramTypeEnum,
   });
 
 const CommercialStreamLineupItemSchema =

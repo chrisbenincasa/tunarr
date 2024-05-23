@@ -1,6 +1,12 @@
 import { EntityDTO } from '@mikro-orm/core';
 import { DefaultPlexHeaders } from '@tunarr/shared/constants';
-import { PlexDvr, PlexDvrsResponse, PlexResource } from '@tunarr/types/plex';
+import {
+  PlexDvr,
+  PlexDvrsResponse,
+  PlexMedia,
+  PlexMediaContainerResponseSchema,
+  PlexResource,
+} from '@tunarr/types/plex';
 import axios, {
   AxiosInstance,
   AxiosRequestConfig,
@@ -9,7 +15,7 @@ import axios, {
   isAxiosError,
 } from 'axios';
 import { XMLParser } from 'fast-xml-parser';
-import { flatMap, forEach, isNil, isUndefined, map } from 'lodash-es';
+import { first, flatMap, forEach, isNil, isUndefined, map } from 'lodash-es';
 import NodeCache from 'node-cache';
 import querystring, { ParsedUrlQueryInput } from 'querystring';
 import { MarkOptional } from 'ts-essentials';
@@ -20,6 +26,7 @@ import {
 } from '../types/plexApiTypes.js';
 import { Maybe } from '../types/util.js';
 import { Logger, LoggerFactory } from '../util/logging/LoggerFactory.js';
+import { z } from 'zod';
 
 type AxiosConfigWithMetadata = InternalAxiosRequestConfig & {
   metadata: {
@@ -162,7 +169,7 @@ export class Plex {
     };
 
     if (this.accessToken === '') {
-      throw Error(
+      throw new Error(
         'No Plex token provided. Please use the SignIn method or provide a X-Plex-Token in the Plex constructor.',
       );
     }
@@ -171,7 +178,52 @@ export class Plex {
     if (!res?.MediaContainer) {
       this.logger.error(res, 'Expected MediaContainer, got %O');
     }
+
     return res?.MediaContainer;
+  }
+
+  async doTypeCheckedGet<T extends z.ZodTypeAny, Out = z.infer<T>>(
+    path: string,
+    schema: T,
+    optionalHeaders: RawAxiosRequestHeaders = {},
+  ): Promise<Maybe<Out>> {
+    const req: AxiosRequestConfig = {
+      method: 'get',
+      url: path,
+      headers: optionalHeaders,
+    };
+
+    if (this.accessToken === '') {
+      throw new Error(
+        'No Plex token provided. Please use the SignIn method or provide a X-Plex-Token in the Plex constructor.',
+      );
+    }
+
+    const response = await this.doRequest<unknown>(req);
+
+    const parsed = await schema.safeParseAsync(response);
+
+    if (parsed.success) {
+      return parsed.data as Out;
+    }
+
+    this.logger.error(
+      parsed.error,
+      'Unable to parse schema from Plex response. Path: %s',
+      path,
+    );
+    return;
+  }
+
+  async getItemMetadata(key: string): Promise<Maybe<PlexMedia>> {
+    const parsedResponse = await this.doTypeCheckedGet(
+      `/library/metadata/${key}`,
+      PlexMediaContainerResponseSchema,
+    );
+    if (!isUndefined(parsedResponse)) {
+      return first(parsedResponse.MediaContainer.Metadata);
+    }
+    return;
   }
 
   doPut(

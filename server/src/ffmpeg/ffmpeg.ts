@@ -5,7 +5,7 @@ import { isEmpty, isNil, isString, isUndefined, merge, round } from 'lodash-es';
 import path from 'path';
 import { DeepReadonly, DeepRequired } from 'ts-essentials';
 import { serverOptions } from '../globals.js';
-import { VideoStats } from '../stream/plex/plexTranscoder.js';
+import { StreamDetails } from '../stream/plex/plexTranscoder.js';
 import { StreamContextChannel } from '../stream/types.js';
 import { Maybe } from '../types/util.js';
 import { TypedEventEmitter } from '../types/eventEmitter.js';
@@ -310,12 +310,10 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
 
   spawnStream(
     streamUrl: string,
-    streamStats: Maybe<VideoStats>,
+    streamStats: Maybe<StreamDetails>,
     startTime: Maybe<number>,
     duration: Maybe<string>,
     enableIcon: Maybe<Watermark>,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    _: string, //LineupItem[type]
   ) {
     return this.spawn(
       streamUrl,
@@ -342,7 +340,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       duration = MAXIMUM_ERROR_DURATION_MS;
     }
     duration = Math.min(MAXIMUM_ERROR_DURATION_MS, duration);
-    const streamStats: VideoStats = {
+    const streamStats: StreamDetails = {
       videoWidth: this.wantedW,
       videoHeight: this.wantedH,
       duration: duration,
@@ -376,7 +374,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
 
   spawn(
     streamUrl: string | { errorTitle: string; subtitle?: string },
-    streamStats: Maybe<VideoStats>,
+    streamStats: Maybe<StreamDetails>,
     startTime: Maybe<number>,
     duration: Maybe<string>,
     limitRead: boolean,
@@ -566,7 +564,12 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
         currentAudio = '[audiox]';
       }
       currentVideo = '[videox]';
+    } else {
+      // HACK: We know these will be defined already if we get this far
+      iW = iW!;
+      iH = iH!;
     }
+
     if (doOverlay && !isNil(watermark?.url)) {
       if (watermark.animated) {
         ffmpegArgs.push('-ignore_loop', '0');
