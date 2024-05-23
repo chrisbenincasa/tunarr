@@ -17,8 +17,9 @@ type ScheduledTaskOptions = {
 
 export class ScheduledTask<OutType = unknown> {
   protected logger: Logger;
+  protected scheduledJob: schedule.Job;
+
   private factory: TaskFactoryFn<OutType>;
-  private scheduledJob: schedule.Job;
   private schedule: ScheduleRule;
 
   public running: boolean = false;
