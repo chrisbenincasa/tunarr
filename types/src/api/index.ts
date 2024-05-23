@@ -156,6 +156,17 @@ export const BaseErrorSchema = z.object({
   message: z.string(),
 });
 
+const FfmpegCoderDetails = z.object({
+  name: z.string(),
+  ffmpegName: z.string(),
+});
+
+export const FfmpegInfoResponse = z.object({
+  audioEncoders: z.array(FfmpegCoderDetails),
+  videoEncoders: z.array(FfmpegCoderDetails),
+  hardwareAccelerationTypes: z.array(z.string()),
+});
+
 export const SystemSettingsResponseSchema = SystemSettingsSchema.extend({
   logging: LoggingSettingsSchema.extend({
     environmentLogLevel: LogLevelsSchema.optional(),

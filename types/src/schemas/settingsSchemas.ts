@@ -1,5 +1,6 @@
 import z from 'zod';
 import { ResolutionSchema } from './miscSchemas.js';
+import { TupleToUnion } from '../util.js';
 
 export const XmlTvSettingsSchema = z.object({
   programmingHours: z.number().default(12),
@@ -8,6 +9,24 @@ export const XmlTvSettingsSchema = z.object({
   enableImageCache: z.boolean().default(false),
 });
 
+export const SupportedVideoFormats = ['h264', 'hevc', 'mpeg2'] as const;
+export type SupportedVideoFormats = TupleToUnion<typeof SupportedVideoFormats>;
+export const DefaultVideoFormat = 'h264';
+
+export const SupportedHardwareAccels = [
+  'none',
+  'cuda',
+  'vaapi',
+  'qsv',
+  'videotoolbox',
+] as const;
+
+export type SupportedHardwareAccels = TupleToUnion<
+  typeof SupportedHardwareAccels
+>;
+
+export const DefaultHardwareAccel = 'none';
+
 export const FfmpegSettingsSchema = z.object({
   configVersion: z.number().default(5),
   ffmpegExecutablePath: z.string().default('/usr/bin/ffmpeg'),
@@ -15,9 +34,22 @@ export const FfmpegSettingsSchema = z.object({
   concatMuxDelay: z.number().default(0),
   enableLogging: z.boolean().default(false),
   // DEPRECATED
-  enableTranscoding: z.boolean().default(true),
+  enableTranscoding: z.boolean().default(true).describe('DEPRECATED'),
   audioVolumePercent: z.number().default(100),
-  videoEncoder: z.string().default('libx264'),
+  // DEPRECATED
+  videoEncoder: z.string().default('libx264').describe('DEPRECATED'),
+  hardwareAccelerationMode: z
+    .union([
+      z.literal('none'),
+      z.literal('cuda'),
+      z.literal('vaapi'),
+      z.literal('qsv'),
+      z.literal('videotoolbox'),
+    ])
+    .default(DefaultHardwareAccel),
+  videoFormat: z
+    .union([z.literal('h264'), z.literal('hevc'), z.literal('mpeg2')])
+    .default(DefaultVideoFormat),
   audioEncoder: z.string().default('aac'),
   targetResolution: ResolutionSchema.default({ widthPx: 1920, heightPx: 1080 }),
   videoBitrate: z.number().default(2000),

@@ -45,6 +45,7 @@ import {
   updateXmlTvSettings,
 } from './settingsApi.ts';
 import { isEmpty } from 'lodash-es';
+import { getFfmpegInfoEndpoint } from './ffmpegApi.ts';
 
 export const api = makeApi([
   {
@@ -326,6 +327,7 @@ export const api = makeApi([
     status: 200,
     response: z.object({ streamPath: z.string() }),
   },
+  getFfmpegInfoEndpoint,
   {
     method: 'post',
     path: '/api/upload/image',

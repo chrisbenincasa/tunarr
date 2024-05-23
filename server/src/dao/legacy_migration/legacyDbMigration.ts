@@ -6,6 +6,12 @@ import {
   defaultHdhrSettings,
   defaultPlexStreamSettings,
 } from '@tunarr/types';
+import {
+  DefaultVideoFormat,
+  DefaultHardwareAccel,
+  SupportedHardwareAccels,
+  SupportedVideoFormats,
+} from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import fs from 'fs/promises';
 import {
@@ -40,6 +46,8 @@ import {
   LegacyChannelMigrator,
   LegacyProgram,
 } from './LegacyChannelMigrator.js';
+import { LegacyLibraryMigrator } from './libraryMigrator.js';
+import { LegacyMetadataBackfiller } from './metadataBackfill.js';
 import {
   JSONArray,
   JSONObject,
@@ -47,8 +55,6 @@ import {
   tryParseResolution,
   tryStringSplitOrDefault,
 } from './migrationUtil.js';
-import { LegacyMetadataBackfiller } from './metadataBackfill.js';
-import { LegacyLibraryMigrator } from './libraryMigrator.js';
 
 // Mapping from the old web UI
 const maxAudioChannelsOptions = [
@@ -353,6 +359,31 @@ export class LegacyDbMigrator {
           };
         } else {
           this.logger.debug('Migrating ffmpeg settings', ffmpegSettings);
+          const legacyVideoEncoderSetting = ffmpegSettings[
+            'videoEncoder'
+          ] as string;
+          // Attempt to map the previous setting if it is something we support
+          let videoFormat: SupportedVideoFormats = DefaultVideoFormat;
+          if (
+            legacyVideoEncoderSetting.includes('x265') ||
+            legacyVideoEncoderSetting.includes('hevc')
+          ) {
+            videoFormat = 'hevc';
+          } else if (legacyVideoEncoderSetting.includes('mpeg2')) {
+            videoFormat = 'mpeg2';
+          }
+
+          let hwAccel: SupportedHardwareAccels = DefaultHardwareAccel;
+          if (legacyVideoEncoderSetting.includes('nvenc')) {
+            hwAccel = 'cuda';
+          } else if (legacyVideoEncoderSetting.includes('qsv')) {
+            hwAccel = 'qsv';
+          } else if (legacyVideoEncoderSetting.includes('vaapi')) {
+            hwAccel = 'vaapi';
+          } else if (legacyVideoEncoderSetting.includes('videotoolbox')) {
+            hwAccel = 'videotoolbox';
+          }
+
           settings = {
             ...settings,
             ffmpeg: merge<FfmpegSettings, FfmpegSettings>(
@@ -368,6 +399,8 @@ export class LegacyDbMigrator {
                   'audioVolumePercent'
                 ] as number,
                 videoEncoder: ffmpegSettings['videoEncoder'] as string,
+                videoFormat,
+                hardwareAccelerationMode: hwAccel,
                 audioEncoder: ffmpegSettings['audioEncoder'] as string,
                 targetResolution:
                   tryParseResolution(
