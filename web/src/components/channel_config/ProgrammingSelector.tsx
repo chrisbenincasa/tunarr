@@ -175,10 +175,6 @@ export default function ProgrammingSelector() {
           )}
       </Stack>
       {renderMediaSourcePrograms()}
-      {/* <SelectedProgrammingList
-        onAddSelectedMedia={onAddSelectedMedia}
-        onAddMediaSuccess={onAddMediaSuccess}
-      /> */}
     </Box>
   );
 }
