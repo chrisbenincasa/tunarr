@@ -10,7 +10,6 @@ import {
   VisibilityOff,
 } from '@mui/icons-material';
 import {
-  Alert,
   Box,
   Button,
   Checkbox,
@@ -20,7 +19,6 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
-  Divider,
   FormControl,
   FormControlLabel,
   FormHelperText,
@@ -31,9 +29,7 @@ import {
   Link,
   MenuItem,
   OutlinedInput,
-  Paper,
   Select,
-  SelectChangeEvent,
   Skeleton,
   Snackbar,
   Stack,
@@ -61,55 +57,15 @@ import AddPlexServer from '../../components/settings/AddPlexServer.tsx';
 import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert.tsx';
 import {
   CheckboxFormController,
-  NumericFormControllerText,
   TypedController,
 } from '../../components/util/TypedController.tsx';
-import {
-  handleNumericFormValue,
-  resolutionFromAnyString,
-  resolutionToString,
-  toggle,
-} from '../../helpers/util.ts';
+import { toggle } from '../../helpers/util.ts';
 import { usePlexServerStatus } from '../../hooks/plexHooks.ts';
 import {
   usePlexServerSettings,
   usePlexStreamSettings,
 } from '../../hooks/settingsHooks.ts';
 import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
-
-const supportedResolutions = [
-  '420x420',
-  '576x320',
-  '720x480',
-  '1024x768',
-  '1280x720',
-  '1920x1080',
-  '3840x2160',
-];
-
-const supportedAudioChannels = [
-  '1.0',
-  '2.0',
-  '2.1',
-  '4.0',
-  '5.0',
-  '5.1',
-  '6.1',
-  '7.1',
-];
-
-const supportedAudioBoost = [
-  { value: 100, string: '0 Seconds' },
-  { value: 120, string: '1 Second' },
-  { value: 140, string: '2 Seconds' },
-  { value: 160, string: '3 Seconds' },
-  { value: 180, string: '4 Seconds' },
-];
-
-const supportedStreamProtocols = [
-  { value: 'http', string: 'HTTP' },
-  { value: 'hls', string: 'HLS' },
-];
 
 const supportedPaths = [
   { value: 'plex', string: 'Plex' },
@@ -426,11 +382,7 @@ export default function PlexSettingsPage() {
     error: serversError,
   } = usePlexServerSettings();
 
-  const {
-    data: streamSettings,
-    isPending: streamSettingsPending,
-    error: streamsError,
-  } = usePlexStreamSettings();
+  const { data: streamSettings, error: streamsError } = usePlexStreamSettings();
 
   const {
     reset,
@@ -444,7 +396,6 @@ export default function PlexSettingsPage() {
   });
 
   const streamPath = watch('streamPath');
-  const showSubtitles = watch('enableSubtitles');
 
   useEffect(() => {
     if (streamSettings) {
@@ -618,320 +569,6 @@ export default function PlexSettingsPage() {
     );
   };
 
-  const renderStreamSettings = () => {
-    if (streamSettingsPending) {
-      return (
-        <Paper sx={{ display: 'flex' }}>
-          <Box flex={1}>
-            <Skeleton width="70%">
-              <TextField fullWidth />
-            </Skeleton>
-          </Box>
-          <Box flex={1}>
-            <Skeleton width="70%">
-              <TextField fullWidth />
-            </Skeleton>
-          </Box>
-        </Paper>
-      );
-    }
-
-    return (
-      <>
-        <Divider sx={{ my: 3 }} />
-        <Typography component="h6" sx={{ my: 2 }}>
-          Video Options
-        </Typography>
-        <Grid flex="1 0 50%" container spacing={3}>
-          <Grid item xs={12} sm={6}>
-            <Controller
-              control={control}
-              name="videoCodecs"
-              render={({ field }) => (
-                <TextField
-                  id="video-codecs"
-                  label="Video Codecs"
-                  fullWidth
-                  {...field}
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <Tooltip
-                          title="Some possible values are:
-    h264 with Intel Quick Sync: h264_qsv
-    MPEG2 with Intel Quick Sync: mpeg2_qsv
-    NVIDIA: h264_nvenc
-    MPEG2: mpeg2video (default)
-    H264: libx264
-    MacOS: h264_videotoolbox"
-                        >
-                          <IconButton
-                            aria-label="Some possible values are:
-    h264 with Intel Quick Sync: h264_qsv
-    MPEG2 with Intel Quick Sync: mpeg2_qsv
-    NVIDIA: h264_nvenc
-    MPEG2: mpeg2video (default)
-    H264: libx264
-    MacOS: h264_videotoolbox"
-                            edge="end"
-                          >
-                            <HelpOutline sx={{ opacity: 0.75 }} />
-                          </IconButton>
-                        </Tooltip>
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              )}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <FormControl fullWidth sx={{ mb: 2 }}>
-              <InputLabel id="max-playable-resolution-label">
-                Max Playable Resolution
-              </InputLabel>
-              <TypedController
-                control={control}
-                name="maxPlayableResolution"
-                toFormType={resolutionFromAnyString}
-                render={({ field }) => (
-                  <Select
-                    labelId="max-playable-resolution-label"
-                    id="max-playable-resolution"
-                    label="Max Playable Resolution"
-                    {...field}
-                    value={resolutionToString(field.value)}
-                  >
-                    {supportedResolutions.map((resolution) => (
-                      <MenuItem key={resolution} value={resolution}>
-                        {resolution}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                )}
-              />
-            </FormControl>
-            <FormControl fullWidth>
-              <InputLabel id="max-transcode-resolution-label">
-                Max Transcode Resolution
-              </InputLabel>
-              <TypedController
-                control={control}
-                name="maxTranscodeResolution"
-                toFormType={resolutionFromAnyString}
-                render={({ field }) => (
-                  <Select
-                    labelId="max-transcode-resolution-label"
-                    id="max-transcode-resolution"
-                    label="Max Transcode Resolution"
-                    {...field}
-                    value={resolutionToString(field.value)}
-                  >
-                    {supportedResolutions.map((resolution) => (
-                      <MenuItem key={resolution} value={resolution}>
-                        {resolution}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                )}
-              />
-            </FormControl>
-          </Grid>
-        </Grid>
-      </>
-    );
-  };
-
-  const renderAudioSettings = () => {
-    if (streamSettingsPending) {
-      return (
-        <Paper sx={{ display: 'flex' }}>
-          <Box flex={1}>
-            <Skeleton width="70%">
-              <TextField fullWidth />
-            </Skeleton>
-          </Box>
-          <Box flex={1}>
-            <Skeleton width="70%">
-              <TextField fullWidth />
-            </Skeleton>
-          </Box>
-        </Paper>
-      );
-    }
-
-    return (
-      <>
-        <Divider sx={{ my: 3 }} />
-        <Typography component="h6" sx={{ my: 2 }}>
-          Audio Options
-        </Typography>
-        <Grid flex="1 0 50%" container spacing={3}>
-          <Grid item xs={12} sm={6}>
-            <Controller
-              control={control}
-              name="audioCodecs"
-              render={({ field }) => (
-                <TextField
-                  id="audioCodecs"
-                  label="Audio Codecs"
-                  fullWidth
-                  {...field}
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <Tooltip
-                          title="Some possible values are:
-            aac
-            ac3 (default), ac3_fixed
-            flac
-            libmp3lame"
-                        >
-                          <IconButton
-                            aria-label="Some possible values are:
-              aac
-              ac3 (default), ac3_fixed
-              flac
-              libmp3lame"
-                            edge="end"
-                          >
-                            <HelpOutline sx={{ opacity: 0.75 }} />
-                          </IconButton>
-                        </Tooltip>
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              )}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <FormControl fullWidth>
-              <InputLabel id="maximum-audio-channels-label">
-                Maxium Audio Channels
-              </InputLabel>
-              <TypedController
-                control={control}
-                name="maxAudioChannels"
-                prettyFieldName="Maximum Audio Channels"
-                valueExtractor={(e) =>
-                  (e as SelectChangeEvent<number>).target.value
-                }
-                render={({ field }) => (
-                  <Select
-                    labelId="maximum-audio-channels-label"
-                    id="maximum-audio-channels"
-                    label="Maximum Audio Channels"
-                    {...field}
-                  >
-                    {supportedAudioChannels.map((res) => (
-                      <MenuItem key={res} value={res}>
-                        {res}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                )}
-              />
-              <FormHelperText>
-                Note: 7.1 audio and on some clients, 6.1, is known to cause
-                playback issues.
-              </FormHelperText>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12}>
-            <FormControl fullWidth>
-              <InputLabel id="audio-boost-label">Audio Boost</InputLabel>
-              <TypedController
-                control={control}
-                name="audioBoost"
-                prettyFieldName="Audio Boost"
-                toFormType={handleNumericFormValue}
-                valueExtractor={(e) =>
-                  (e as SelectChangeEvent<number>).target.value
-                }
-                render={({ field }) => (
-                  <Select
-                    labelId="audio-boost-label"
-                    id="audio-boost"
-                    label="Audio Boost"
-                    {...field}
-                  >
-                    {supportedAudioBoost.map((boost) => (
-                      <MenuItem key={boost.value} value={boost.value}>
-                        {boost.string}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                )}
-              />
-              <FormHelperText>
-                Note: Only applies when downmixing to stereo.
-              </FormHelperText>
-            </FormControl>
-          </Grid>
-        </Grid>
-      </>
-    );
-  };
-
-  const renderSubtitleSettings = () => {
-    if (streamSettingsPending) {
-      return (
-        <Paper sx={{ display: 'flex' }}>
-          <Box flex={1}>
-            <Skeleton width="70%">
-              <TextField fullWidth />
-            </Skeleton>
-          </Box>
-          <Box flex={1}>
-            <Skeleton width="70%">
-              <TextField fullWidth />
-            </Skeleton>
-          </Box>
-        </Paper>
-      );
-    }
-
-    return (
-      <>
-        <Divider sx={{ my: 3 }} />
-        <Typography component="h6" sx={{ my: 2 }}>
-          Subtitle Options
-        </Typography>
-        <Grid flex="1 0 50%" container spacing={3}>
-          <Grid item xs={12} sm={6}>
-            <FormControl fullWidth>
-              <FormControlLabel
-                control={
-                  <Controller
-                    control={control}
-                    name="enableSubtitles"
-                    render={({ field }) => (
-                      <Checkbox checked={field.value} {...field} />
-                    )}
-                  />
-                }
-                label="Enable Subtitles (Requires Transcoding)"
-              />
-
-              {showSubtitles && (
-                <NumericFormControllerText
-                  control={control}
-                  name="subtitleSize"
-                  prettyFieldName="Subtitle Size"
-                  TextFieldProps={{
-                    id: 'subtitle-size',
-                    label: 'Subtitle Size',
-                  }}
-                />
-              )}
-            </FormControl>
-          </Grid>
-        </Grid>
-      </>
-    );
-  };
-
   const renderPathReplacements = () => {
     return (
       <>
@@ -947,7 +584,7 @@ export default function PlexSettingsPage() {
                 render={({ field }) => (
                   <TextField
                     id="original-path-replace"
-                    label="Original Plex path to replace:"
+                    label="Original Plex path to replace"
                     {...field}
                   />
                 )}
@@ -961,125 +598,10 @@ export default function PlexSettingsPage() {
                 render={({ field }) => (
                   <TextField
                     id="new-path-replace-with"
-                    label="Replace Plex path with:"
+                    label="Replace Plex path with"
                     {...field}
                   />
                 )}
-              />
-            </FormControl>
-          </Grid>
-        </Grid>
-      </>
-    );
-  };
-
-  const renderMiscSettings = () => {
-    if (streamSettingsPending) {
-      return (
-        <Paper sx={{ display: 'flex' }}>
-          <Box flex={1}>
-            <Skeleton width="70%">
-              <TextField fullWidth />
-            </Skeleton>
-          </Box>
-          <Box flex={1}>
-            <Skeleton width="70%">
-              <TextField fullWidth />
-            </Skeleton>
-          </Box>
-        </Paper>
-      );
-    }
-
-    return (
-      <>
-        <Divider sx={{ my: 3 }} />
-        <Typography component="h6" variant="h6" sx={{ pt: 2, pb: 1 }}>
-          Miscellaneous Options
-        </Typography>
-        <Grid flex="1 0 50%" container spacing={3}>
-          <Grid item xs={12} sm={6}>
-            <NumericFormControllerText
-              control={control}
-              name="directStreamBitrate"
-              prettyFieldName="Max Direct Stream Bitrate (Kbps)"
-              TextFieldProps={{
-                label: 'Max Direct Stream Bitrate (Kbps)',
-                fullWidth: true,
-                sx: { my: 1 },
-              }}
-            />
-            <NumericFormControllerText
-              control={control}
-              name="transcodeBitrate"
-              prettyFieldName="Max Transcode Bitrate (Kbps)"
-              TextFieldProps={{
-                label: 'Max Transcode Bitrate (Kbps)',
-                fullWidth: true,
-                sx: { my: 1 },
-              }}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <NumericFormControllerText
-              control={control}
-              name="mediaBufferSize"
-              prettyFieldName="Direct Stream Media Buffer Size"
-              TextFieldProps={{
-                label: 'Direct Stream Media Buffer Size',
-                fullWidth: true,
-                sx: { my: 1 },
-              }}
-            />
-            <NumericFormControllerText
-              control={control}
-              name="transcodeMediaBufferSize"
-              prettyFieldName="Transcode Media Buffer Size"
-              TextFieldProps={{
-                label: 'Transcode Media Buffer Size',
-                fullWidth: true,
-                sx: { my: 1 },
-              }}
-            />
-            <FormControl fullWidth>
-              <InputLabel id="stream-protocol-label">
-                Stream Protocol
-              </InputLabel>
-              <TypedController
-                control={control}
-                name="streamProtocol"
-                prettyFieldName="Stream Protocol"
-                valueExtractor={(e) =>
-                  (e as SelectChangeEvent<string>).target.value
-                }
-                render={({ field }) => (
-                  <Select
-                    labelId="stream-protocol-label"
-                    id="stream-protocol"
-                    label="Stream Protocol"
-                    {...field}
-                  >
-                    {supportedStreamProtocols.map((protocol) => (
-                      <MenuItem key={protocol.value} value={protocol.value}>
-                        {protocol.string}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                )}
-              />
-            </FormControl>
-            <FormControl fullWidth>
-              <FormControlLabel
-                control={
-                  <Controller
-                    control={control}
-                    name="forceDirectPlay"
-                    render={({ field }) => (
-                      <Checkbox checked={field.value} {...field} />
-                    )}
-                  />
-                }
-                label="Force Direct Play"
               />
             </FormControl>
           </Grid>
@@ -1108,14 +630,9 @@ export default function PlexSettingsPage() {
           </Box>
           {renderServersTable()}
         </Box>
-        <Typography component="h6" variant="h6" sx={{ pt: 2, pb: 1 }}>
-          Plex Transcoding
+        <Typography component="h6" variant="h6" sx={{ pt: 2, pb: 2 }}>
+          Plex Streaming
         </Typography>
-        <Alert severity="info" sx={{ my: 2 }}>
-          If stream changes video codec, audio codec, or audio channels upon
-          episode change, you will experience playback issues unless ffmpeg
-          transcoding and normalization are also enabled.
-        </Alert>
 
         <Grid flex="1 0 50%" container spacing={3}>
           <Grid item xs={12} sm={6}>
@@ -1140,6 +657,15 @@ export default function PlexSettingsPage() {
                   </Select>
                 )}
               />
+              <FormHelperText>
+                <strong>Plex</strong>: This option will initialize the stream
+                over the network, i.e. stream from the Plex server
+                <br />
+                <strong>Direct</strong>: This option attempts to open the file
+                from the filesystem, using the file path provided by Plex. This
+                path can be normalized for Tunarr using a find/replace string
+                combination
+              </FormHelperText>
             </FormControl>
           </Grid>
           <Grid item xs={12} sm={6}>
@@ -1171,16 +697,7 @@ export default function PlexSettingsPage() {
           </Grid>
         </Grid>
         <Box sx={{ display: 'block', p: 2 }}>
-          {streamPath === 'plex' ? (
-            <>
-              {renderStreamSettings()}
-              {renderAudioSettings()}
-              {renderSubtitleSettings()}
-              {renderMiscSettings()}
-            </>
-          ) : (
-            renderPathReplacements()
-          )}
+          {streamPath === 'direct' ? renderPathReplacements() : null}
         </Box>
         <UnsavedNavigationAlert isDirty={isDirty} />
         <Stack spacing={2} direction="row" sx={{ mt: 2 }}>

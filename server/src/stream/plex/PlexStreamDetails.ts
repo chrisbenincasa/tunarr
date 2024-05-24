@@ -1,21 +1,34 @@
-import { PlexMediaAudioStream, PlexMediaVideoStream } from '@tunarr/types/plex';
-import { find, first, indexOf, isNull, isUndefined, trimEnd } from 'lodash-es';
-import { v4 } from 'uuid';
+import {
+  PlexEpisode,
+  PlexMediaAudioStream,
+  PlexMediaVideoStream,
+  PlexMovie,
+  PlexMusicTrack,
+} from '@tunarr/types/plex';
+import {
+  find,
+  first,
+  indexOf,
+  isNull,
+  isUndefined,
+  replace,
+  trimEnd,
+} from 'lodash-es';
 import { PlexServerSettings } from '../../dao/entities/PlexServerSettings';
-import { SettingsDB } from '../../dao/settings';
 import { Plex, PlexApiFactory } from '../../external/plex';
 import { Nullable } from '../../types/util';
 import { Logger, LoggerFactory } from '../../util/logging/LoggerFactory';
 import { PlexStream, StreamDetails } from './plexTranscoder';
 import { isNonEmptyString } from '../../util';
 import { serverOptions } from '../../globals';
+import { ContentBackedStreamLineupItem } from '../../dao/derived_types/StreamLineup.js';
+import { SettingsDB } from '../../dao/settings.js';
 
 // The minimum fields we need to get stream details about an item
-type PlexItemStreamDetailsQuery = {
-  programType: 'movie' | 'episode' | 'track'; // HACK: this needs to be cenrtalized somewhere
-  externalKey: string;
-  plexFilePath: string;
-};
+type PlexItemStreamDetailsQuery = Pick<
+  ContentBackedStreamLineupItem,
+  'programType' | 'externalKey' | 'plexFilePath' | 'filePath'
+>;
 
 /**
  * A 'new' version of the PlexTranscoder class that does not
@@ -25,45 +38,21 @@ type PlexItemStreamDetailsQuery = {
  */
 export class PlexStreamDetails {
   private logger: Logger;
-  private session: string;
 
   constructor(
     private server: PlexServerSettings,
-    private settingsDB: SettingsDB,
+    private settings: SettingsDB,
   ) {
     this.logger = LoggerFactory.child({
       plexServer: server.name,
       // channel: channel.uuid,
       caller: import.meta,
     });
-    this.session = v4();
   }
 
   async getStream(
     item: PlexItemStreamDetailsQuery,
   ): Promise<Nullable<PlexStream>> {
-    const path = item.plexFilePath.startsWith('/')
-      ? item.plexFilePath
-      : `/${item.plexFilePath}`;
-    const details = await this.getItemStreamDetails(item);
-
-    if (isNull(details)) {
-      return null;
-    }
-
-    return {
-      directPlay: true,
-      streamUrl: `${trimEnd(this.server.uri, '/')}${path}?X-Plex-Token=${
-        this.server.accessToken
-      }`,
-      streamDetails: details,
-    };
-  }
-
-  async getItemStreamDetails(
-    item: PlexItemStreamDetailsQuery,
-  ): Promise<Nullable<StreamDetails>> {
-    const streamDetails: StreamDetails = {};
     const plex = PlexApiFactory.get(this.server);
     const expectedItemType = item.programType;
     const itemMetadata = await plex.getItemMetadata(item.externalKey);
@@ -83,7 +72,44 @@ export class PlexStreamDetails {
       return null;
     }
 
-    const firstStream = first(first(itemMetadata.Media)?.Part)?.Stream;
+    const details = this.getItemStreamDetails(item, itemMetadata);
+
+    if (isNull(details)) {
+      return null;
+    }
+
+    const streamSettings = this.settings.plexSettings();
+
+    let streamUrl: string;
+    const filePath = first(first(itemMetadata.Media)?.Part)?.file;
+    if (streamSettings.streamPath === 'direct' && isNonEmptyString(filePath)) {
+      streamUrl = replace(
+        filePath,
+        streamSettings.pathReplace,
+        streamSettings.pathReplaceWith,
+      );
+    } else {
+      const path = item.plexFilePath.startsWith('/')
+        ? item.plexFilePath
+        : `/${item.plexFilePath}`;
+      streamUrl = `${trimEnd(this.server.uri, '/')}${path}?X-Plex-Token=${
+        this.server.accessToken
+      }`;
+    }
+
+    return {
+      directPlay: true,
+      streamUrl,
+      streamDetails: details,
+    };
+  }
+
+  private getItemStreamDetails(
+    item: PlexItemStreamDetailsQuery,
+    media: PlexMovie | PlexEpisode | PlexMusicTrack,
+  ): Nullable<StreamDetails> {
+    const streamDetails: StreamDetails = {};
+    const firstStream = first(first(media.Media)?.Part)?.Stream;
     if (isUndefined(firstStream)) {
       this.logger.error(
         'Could not extract a stream for Plex item ID = %s',

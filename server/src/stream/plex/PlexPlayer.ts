@@ -4,7 +4,6 @@ import { isNil, isNull, isUndefined } from 'lodash-es';
 import { Writable } from 'stream';
 import { isContentBackedLineupIteam } from '../../dao/derived_types/StreamLineup.js';
 import { PlexServerSettings } from '../../dao/entities/PlexServerSettings.js';
-import { SettingsDB, getSettings } from '../../dao/settings.js';
 import { FFMPEG, FfmpegEvents } from '../../ffmpeg/ffmpeg.js';
 import { GlobalScheduler } from '../../services/scheduler.js';
 import { UpdatePlexPlayStatusScheduledTask } from '../../tasks/UpdatePlexPlayStatusTask.js';
@@ -24,10 +23,7 @@ export class PlexPlayer extends Player {
   private clientId: string;
   private updatePlexStatusTask: Maybe<UpdatePlexPlayStatusScheduledTask>;
 
-  constructor(
-    private context: PlayerContext,
-    private setiingsDB: SettingsDB = getSettings(),
-  ) {
+  constructor(private context: PlayerContext) {
     super();
     // TODO: Is this even useful??
     const coreClientId = this.context.settings.clientId();
@@ -78,7 +74,10 @@ export class PlexPlayer extends Player {
     }
 
     const plexSettings = this.context.settings.plexSettings();
-    const plexStreamDetails = new PlexStreamDetails(server, this.setiingsDB);
+    const plexStreamDetails = new PlexStreamDetails(
+      server,
+      this.context.settings,
+    );
 
     const watermark = this.context.watermark;
     this.ffmpeg = new FFMPEG(ffmpegSettings, channel); // Set the transcoder options

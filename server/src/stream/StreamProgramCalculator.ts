@@ -34,10 +34,7 @@ export type ProgramAndTimeElapsed = {
 };
 
 function programHasRequiredStreamingFields(program: Loaded<ProgramEntity>) {
-  return every(
-    [program.plexFilePath, program.plexRatingKey, program.filePath],
-    negate(isNil),
-  );
+  return every([program.plexFilePath, program.filePath], negate(isNil));
 }
 
 // any channel thing used here should be added to channel context
