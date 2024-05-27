@@ -28,7 +28,7 @@ import { Maybe } from '../types/util.js';
 import { isNonEmptyString } from '../util/index.js';
 import { OfflinePlayer } from './offlinePlayer.js';
 import { Player, PlayerContext } from './player.js';
-import { PlexPlayer } from './plex/plexPlayer.js';
+import { PlexPlayer } from './plex/PlexPlayer.js';
 import { StreamContextChannel } from './types.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 

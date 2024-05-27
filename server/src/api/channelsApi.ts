@@ -18,7 +18,7 @@ import duration from 'dayjs/plugin/duration.js';
 import { compact, isError, isNil, map, omit, sortBy } from 'lodash-es';
 import z from 'zod';
 import { GlobalScheduler } from '../services/scheduler.js';
-import { UpdateXmlTvTask } from '../tasks/updateXmlTvTask.js';
+import { UpdateXmlTvTask } from '../tasks/UpdateXmlTvTask.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { attempt, mapAsyncSeq } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';

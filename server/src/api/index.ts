@@ -10,7 +10,7 @@ import { Plex } from '../external/plex.js';
 import { FFMPEGInfo } from '../ffmpeg/ffmpegInfo.js';
 import { serverOptions } from '../globals.js';
 import { GlobalScheduler } from '../services/scheduler.js';
-import { UpdateXmlTvTask } from '../tasks/updateXmlTvTask.js';
+import { UpdateXmlTvTask } from '../tasks/UpdateXmlTvTask.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { fileExists } from '../util/fsUtil.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';

@@ -34,10 +34,7 @@ export type ProgramAndTimeElapsed = {
 };
 
 function programHasRequiredStreamingFields(program: Loaded<ProgramEntity>) {
-  return every(
-    [program.plexFilePath, program.plexRatingKey, program.filePath],
-    negate(isNil),
-  );
+  return every([program.plexFilePath, program.filePath], negate(isNil));
 }
 
 // any channel thing used here should be added to channel context
@@ -161,6 +158,7 @@ export class StreamProgramCalculator {
           programId: backingItem.uuid,
           title: backingItem.title,
           id: backingItem.uuid,
+          programType: backingItem.type,
         };
       }
     } else if (isOfflineItem(lineupItem)) {
@@ -289,6 +287,7 @@ export class StreamProgramCalculator {
           beginningOffset: beginningOffset,
           externalSourceId: filler.externalSourceId,
           plexFilePath: filler.plexFilePath!,
+          programType: filler.type,
         };
       }
       // pick the offline screen

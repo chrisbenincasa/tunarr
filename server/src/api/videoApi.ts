@@ -224,7 +224,7 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
         querystring: StreamQueryStringSchema,
       },
       onError(req, _, e) {
-        logger.error('Error on /stream: %s. %O', req.raw.url, e);
+        logger.error(e, 'Error on /stream: %s. %O', req.raw.url);
       },
     },
     async (req, res) => {

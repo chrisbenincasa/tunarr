@@ -12,7 +12,7 @@ import {
   isContentBackedLineupIteam,
 } from '../dao/derived_types/StreamLineup.js';
 import { Channel } from '../dao/entities/Channel.js';
-import { PlexPlayer } from '../stream/plex/plexPlayer.js';
+import { PlexPlayer } from '../stream/plex/PlexPlayer.js';
 import { PlexTranscoder } from '../stream/plex/plexTranscoder.js';
 import { FillerPicker } from '../services/FillerPicker.js';
 import { StreamContextChannel } from '../stream/types.js';
