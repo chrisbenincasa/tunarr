@@ -5,6 +5,8 @@ import {
   FillerListProgramming,
 } from '@tunarr/types';
 import { LoaderFunctionArgs } from 'react-router-dom';
+import { getApiClient } from '../components/TunarrApiContext.tsx';
+import { createPreloader } from '../helpers/preloaderUtil.ts';
 import {
   fillerListProgramsQuery,
   fillerListQuery,
@@ -12,8 +14,6 @@ import {
 } from '../hooks/useFillerLists.ts';
 import { setCurrentFillerList } from '../store/channelEditor/actions.ts';
 import { Preloader } from '../types/index.ts';
-import { createPreloader } from '../helpers/preloaderUtil.ts';
-import { getApiClient } from '../components/TunarrApiContext.tsx';
 
 export const fillerListsLoader = createPreloader((apiClient) =>
   fillerListsQuery(apiClient),
@@ -29,7 +29,7 @@ const fillerListLoader = (isNew: boolean) => {
     return () => () => {
       const filler = {
         id: 'unsaved',
-        name: 'New Filler Listt',
+        name: 'New Filler List',
         contentCount: 0,
       };
       setCurrentFillerList(filler, []);
