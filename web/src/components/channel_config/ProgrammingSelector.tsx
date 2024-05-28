@@ -1,10 +1,12 @@
 import {
+  Alert,
   Box,
   FormControl,
   InputLabel,
   MenuItem,
   Select,
   Stack,
+  Typography,
 } from '@mui/material';
 import { PlexMedia, isPlexDirectory } from '@tunarr/types/plex';
 import { find, isEmpty, isNil, isUndefined, map } from 'lodash-es';
@@ -18,6 +20,7 @@ import {
   setProgrammingListLibrary,
   setProgrammingListingServer,
 } from '../../store/programmingSelector/actions.ts';
+import AddPlexServer from '../settings/AddPlexServer.tsx';
 import { CustomShowProgrammingSelector } from './CustomShowProgrammingSelector.tsx';
 import PlexProgrammingSelector from './PlexProgrammingSelector.tsx';
 
@@ -114,6 +117,29 @@ export default function ProgrammingSelector() {
       return <CustomShowProgrammingSelector />;
     } else if (selectedLibrary?.type === 'plex') {
       return <PlexProgrammingSelector />;
+    }
+
+    if (!selectedServer) {
+      return (
+        <>
+          <Typography variant="h6" fontWeight={600} align="left" sx={{ mt: 3 }}>
+            Connect Plex
+          </Typography>
+          <Typography sx={{ mb: 3 }} align="left">
+            To use Tunarr, you need to first connect your Plex library. This
+            will allow you to build custom channels with any of your plex
+            content.
+          </Typography>
+
+          <Alert
+            variant="filled"
+            severity="error"
+            action={<AddPlexServer title={'Connect Plex'} variant="outlined" />}
+          >
+            Plex is not connected.
+          </Alert>
+        </>
+      );
     }
 
     return null;
