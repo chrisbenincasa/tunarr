@@ -24,15 +24,22 @@ version: '3.8'
 services:
   tunarr:
     image: chrisbenincasa/tunarr:edge
+    # Uncomment along with runtime below to enable HW accel
+    # image: chrisbenincasa/tunarr:edge-nvidia
     container_name: tunarr
     ports:
-      - '8000:8000'
+      - ${TUNARR_SERVER_PORT:-8000}:8000
     # Uncomment if using the Nvidia container
     # runtime: nvidia
-    volumes:
-      # The host path is relative to the location of the compose file
-      # This can also use an absolute path.
-      - ./.dizquetv:/.dizquetv
+    environment:
+      - LOG_LEVEL=${TUNARR_LOG_LEVEL:-INFO}
+    # volumes:
+    # The host path is relative to the location of the compose file
+    # This can also use an absolute path.
+    #
+    # Uncomment if migrating from dizquetv. Chnage the host path
+    # to the location of your dizquetv "database"
+    # - ./.dizquetv:/.dizquetv
 ```
 
 !!! note
