@@ -610,7 +610,7 @@ export default function PlexProgrammingSelector() {
           <Box ref={gridContainerRef} sx={{ width: '100%' }}>
             {renderListItems()}
           </Box>
-          <div style={{ height: 40 }} ref={ref}></div>
+          {!searchLoading && <div style={{ height: 96 }} ref={ref}></div>}
           <Divider sx={{ mt: 3, mb: 2 }} />
         </>
       )}
