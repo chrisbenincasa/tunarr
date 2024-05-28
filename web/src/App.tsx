@@ -558,7 +558,7 @@ export function Root({ children }: { children?: React.ReactNode }) {
         {displaySelectedProgramming && (
           <SelectedProgrammingList
             onAddSelectedMedia={addMediaToCurrentChannel}
-            onAddMediaSuccess={() => navigate('..', { relative: 'path' })}
+            onAddMediaSuccess={() => navigate(-1)}
           />
         )}
       </Box>
