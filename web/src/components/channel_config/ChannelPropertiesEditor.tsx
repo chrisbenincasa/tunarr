@@ -70,7 +70,6 @@ export default function ChannelPropertiesEditor({ isNew }: Props) {
                 errors.number ? 'Channel number is required' : null,
             }}
           />
-
           <Controller
             name="name"
             control={control}
