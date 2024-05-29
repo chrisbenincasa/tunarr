@@ -232,13 +232,13 @@ export const PlexMediaDescriptionSchema = z.object({
     z.object({
       id: z.number(),
       key: z.string(),
-      duration: z.number(),
+      duration: z.number().optional(),
       file: z.string(),
       size: z.number(),
       audioProfile: z.string().optional(),
       container: z.string(),
       videoProfile: z.string().optional(), // video only
-      Stream: z.array(PlexMediaStreamSchema),
+      Stream: z.array(PlexMediaStreamSchema).optional(),
     }),
   ),
 });
@@ -512,7 +512,7 @@ export const PlexEpisodeSchema = z
     grandparentThumb: z.string().optional(),
     grandparentTitle: z.string(),
     guid: z.string(),
-    index: z.number(),
+    index: z.number().optional(),
     key: z.string(),
     originallyAvailableAt: z.string().optional(),
     parentGuid: z.string(),

@@ -12,6 +12,7 @@ import { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
 import ld, {
+  chunk,
   compact,
   filter,
   find,
@@ -23,6 +24,7 @@ import ld, {
   map,
   nth,
   omitBy,
+  partition,
   reduce,
   reject,
   sumBy,
@@ -60,6 +62,14 @@ import { Program } from './entities/Program.js';
 import { upsertContentPrograms } from './programHelpers.js';
 
 dayjs.extend(duration);
+
+// We use this to chunk super huge channel / program relation updates because
+// of the way that mikro-orm generates these (e.g. "delete from XYZ where () or () ...").
+// When updating a _huge_ channel, we hit internal sqlite limits, so we must chunk these
+// operations ourselves.
+const SqliteMaxDepthLimit = 1000;
+
+type ProgramRelationOperation = { operation: 'add' | 'remove'; id: Program };
 
 function updateRequestToChannel(
   updateReq: SaveChannelRequest,
@@ -285,17 +295,55 @@ export class ChannelDB {
         channel.startTime = startTime;
         channel.duration = sumBy(lineup, typedProperty('durationMs'));
 
-        const allIds = ld
-          .chain(lineup)
-          .filter(isContentItem)
-          .map((p) => p.id)
-          .uniq()
+        const allNewIds = new Set([
+          ...ld
+            .chain(lineup)
+            .filter(isContentItem)
+            .map((p) => p.id)
+            .uniq()
+            .value(),
+        ]);
+
+        const existingIds = new Set([
+          ...channel.programs.map((program) => program.uuid),
+        ]);
+
+        // Create our remove operations
+        const removeOperations: ProgramRelationOperation[] = ld
+          .chain([...existingIds])
+          .reject((existingId) => allNewIds.has(existingId))
+          .map((removalId) => ({
+            operation: 'remove' as const,
+            id: em.getReference(Program, removalId),
+          }))
           .value();
-        channel.programs.removeAll();
-        await em.persistAndFlush(channel);
-        const refs = allIds.map((id) => em.getReference(Program, id));
-        channel.programs.set(refs);
-        await em.persistAndFlush(channel);
+
+        // Create addition operations
+        const addOperations: ProgramRelationOperation[] = ld
+          .chain([...allNewIds])
+          .reject((newId) => existingIds.has(newId))
+          .map((addId) => ({
+            operation: 'add' as const,
+            id: em.getReference(Program, addId),
+          }))
+          .value();
+
+        await mapAsyncSeq(
+          chunk(
+            [...addOperations, ...removeOperations],
+            SqliteMaxDepthLimit / 2,
+          ),
+          async (ops) => {
+            const [adds, removes] = partition(
+              ops,
+              ({ operation }) => operation === 'add',
+            );
+            channel.programs.remove(map(removes, ({ id }) => id));
+            channel.programs.add(map(adds, ({ id }) => id));
+            await em.persistAndFlush(channel);
+          },
+        );
+
         return channel;
       });
     };
@@ -654,12 +702,32 @@ export class ChannelDB {
     const offsets: number[] = [];
 
     const programIds = channel.programs.map((p) => p.uuid);
+    const gen = asyncPool(
+      chunk(programIds, 100),
+      async (chunk) => {
+        return await getEm()
+          .repo(CustomShowContent)
+          .findAll({
+            where: { content: { $in: chunk } },
+          });
+      },
+      2,
+    );
+
+    const allCustomShowContent: CustomShowContent[] = [];
+    for await (const selectedChunkResult of gen) {
+      if (selectedChunkResult.type === 'success') {
+        allCustomShowContent.push(...selectedChunkResult.result);
+      } else {
+        this.logger.warn(
+          selectedChunkResult.error,
+          'Error while selecting custom show content',
+        );
+      }
+    }
+
     const customShowContent = groupBy(
-      await getEm()
-        .repo(CustomShowContent)
-        .findAll({
-          where: { content: { $in: programIds } },
-        }),
+      allCustomShowContent,
       (csc) => csc.customShow.uuid,
     );
 
