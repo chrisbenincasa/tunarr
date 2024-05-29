@@ -1,3 +1,4 @@
+import { SystemSettingsSchema } from '@tunarr/types';
 import {
   InsertPlexServerRequestSchema,
   UpdatePlexServerRequestSchema,
@@ -129,4 +130,11 @@ export const updatePlexStreamSettings = makeEndpoint({
   response: PlexStreamSettingsSchema,
   parameters: parametersBuilder().addBody(PlexStreamSettingsSchema).build(),
   alias: 'updatePlexStreamSettings',
+});
+
+export const getSystemSettings = makeEndpoint({
+  method: 'get',
+  path: '/api/system/settings',
+  response: SystemSettingsSchema,
+  alias: 'getSystemSettings',
 });

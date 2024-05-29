@@ -1,7 +1,10 @@
 import {
   FfmpegSettings,
   HdhrSettings,
+  LoggingSettingsSchema,
   PlexStreamSettings,
+  SystemSettings,
+  SystemSettingsSchema,
   XmlTvSettings,
   defaultFfmpegSettings,
   defaultHdhrSettings,
@@ -42,28 +45,6 @@ export const defaultXmlTvSettings = (dbBasePath: string): XmlTvSettings => ({
   outputPath: path.resolve(dbBasePath, 'xmltv.xml'),
 });
 
-const LoggingSettingsSchema = z.object({
-  logLevel: z
-    .union([
-      z.literal('silent'),
-      z.literal('fatal'),
-      z.literal('error'),
-      z.literal('warn'),
-      z.literal('info'),
-      z.literal('http'),
-      z.literal('debug'),
-      z.literal('trace'),
-    ])
-    .default(() => (isProduction ? 'info' : 'debug')),
-  logsDirectory: z.string(),
-});
-
-const SystemSettingsSchema = z.object({
-  logging: LoggingSettingsSchema,
-});
-
-type SystemSettings = z.infer<typeof SystemSettingsSchema>;
-
 export const SettingsSchema = z.object({
   clientId: z.string(),
   hdhr: HdhrSettingsSchema,
@@ -82,7 +63,13 @@ export const SettingsFileSchema = z.object({
   version: z.number(),
   migration: MigrationStateSchema,
   settings: SettingsSchema,
-  system: SystemSettingsSchema,
+  system: SystemSettingsSchema.extend({
+    logging: LoggingSettingsSchema.extend({
+      logLevel: SystemSettingsSchema.shape.logging.shape.logLevel.default(() =>
+        isProduction ? 'info' : 'debug',
+      ),
+    }),
+  }),
 });
 
 export type SettingsFile = z.infer<typeof SettingsFileSchema>;

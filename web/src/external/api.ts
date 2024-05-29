@@ -35,6 +35,7 @@ import {
   getPlexBackendStatus,
   getPlexServersEndpoint,
   getPlexStreamSettings,
+  getSystemSettings,
   getXmlTvSettings,
   updateFfmpegSettings,
   updateHdhrSettings,
@@ -337,6 +338,7 @@ export const api = makeApi([
   updatePlexStreamSettings,
   getFffmpegSettings,
   updateFfmpegSettings,
+  getSystemSettings,
   {
     method: 'post',
     path: '/api/upload/image',
