@@ -7,6 +7,7 @@ import { Controller, useFormContext } from 'react-hook-form';
 import useStore from '../../store/index.ts';
 import TunarrLogo from '../TunarrLogo.tsx';
 import { ImageUploadInput } from '../settings/ImageUploadInput.tsx';
+import { NumericFormControllerText } from '../util/TypedController.tsx';
 import ChannelEditActions from './ChannelEditActions.tsx';
 
 const DefaultIconPath = '';
@@ -56,19 +57,18 @@ export default function ChannelPropertiesEditor({ isNew }: Props) {
       <Snackbar />
       {channel && (
         <>
-          <Controller
+          <NumericFormControllerText
             name="number"
             control={control}
             rules={{ required: true }}
-            render={({ field, formState: { errors } }) => (
-              <TextField
-                fullWidth
-                label="Channel Number"
-                margin="normal"
-                helperText={errors.number ? 'Channel number is required' : null}
-                {...field}
-              />
-            )}
+            TextFieldProps={{
+              fullWidth: true,
+              label: 'Channel Number',
+              type: 'number',
+              margin: 'normal',
+              helperText: ({ formState: { errors } }) =>
+                errors.number ? 'Channel number is required' : null,
+            }}
           />
           <Controller
             name="name"
