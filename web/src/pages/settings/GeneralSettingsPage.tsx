@@ -14,25 +14,40 @@ import {
 } from '@mui/material';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
+import { LogLevel, LogLevels, SystemSettings } from '@tunarr/types';
 import { attempt, isEmpty, isError, map, trim, trimEnd } from 'lodash-es';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { RotatingLoopIcon } from '../../components/base/LoadingIcon.tsx';
 import DarkModeButton from '../../components/settings/DarkModeButton.tsx';
+import {
+  useSystemSettings,
+  useUpdateSystemSettings,
+} from '../../hooks/useSystemSettings.ts';
 import { useVersion } from '../../hooks/useVersion.ts';
 import { setBackendUri } from '../../store/settings/actions.ts';
 import { useSettings } from '../../store/settings/selectors.ts';
-import { useSystemSettings } from '../../hooks/useSystemSettings.ts';
-import { LogLevel, LogLevels, SystemSettings } from '@tunarr/types';
+import { UpdateSystemSettingsRequest } from '@tunarr/types/api';
 
 type GeneralSettingsFormData = {
   backendUri: string;
-  logLevel: LogLevel;
+  logLevel: LogLevel | 'env';
 };
 
 type GeneralSetingsFormProps = {
   systemSettings: SystemSettings;
 };
+
+const LogLevelChoices = [
+  {
+    description: 'Use environment settings',
+    value: 'env',
+  },
+  ...map(LogLevels, (level) => ({
+    description: level,
+    value: level,
+  })),
+];
 
 function isValidUrl(url: string) {
   const sanitized = trim(url);
@@ -48,6 +63,17 @@ function GeneralSettingsForm({ systemSettings }: GeneralSetingsFormProps) {
 
   const { isLoading, isError } = versionInfo;
 
+  const updateSystemSettings = useUpdateSystemSettings();
+
+  const getBaseFormValues = (
+    systemSettings: SystemSettings,
+  ): GeneralSettingsFormData => ({
+    backendUri: settings.backendUri,
+    logLevel: systemSettings.logging.useEnvVarLevel
+      ? 'env'
+      : systemSettings.logging.logLevel,
+  });
+
   const {
     control,
     handleSubmit,
@@ -55,15 +81,22 @@ function GeneralSettingsForm({ systemSettings }: GeneralSetingsFormProps) {
     formState: { isDirty, isValid, isSubmitting },
   } = useForm<GeneralSettingsFormData>({
     reValidateMode: 'onBlur',
-    defaultValues: {
-      backendUri: settings.backendUri,
-      logLevel: systemSettings.logging.logLevel,
-    },
+    defaultValues: getBaseFormValues(systemSettings),
   });
 
   const onSave = (data: GeneralSettingsFormData) => {
-    setBackendUri(trimEnd(trim(data.backendUri), '/'));
+    const newBackendUri = trimEnd(trim(data.backendUri), '/');
+    setBackendUri(newBackendUri);
     setSnackStatus(true);
+    const updateReq: UpdateSystemSettingsRequest = {
+      logLevel: data.logLevel === 'env' ? undefined : data.logLevel,
+      useEnvVarLevel: data.logLevel === 'env',
+    };
+    updateSystemSettings.mutate(updateReq, {
+      onSuccess(data) {
+        reset(getBaseFormValues(data), { keepDirty: false });
+      },
+    });
   };
 
   return (
@@ -75,11 +108,11 @@ function GeneralSettingsForm({ systemSettings }: GeneralSetingsFormProps) {
         onClose={() => setSnackStatus(false)}
         message="Settings Saved!"
       />
-      <Stack spacing={2}>
+      <Stack gap={2} spacing={2}>
+        <Typography variant="h5" sx={{ mb: 1 }}>
+          Server Settings
+        </Typography>
         <Box>
-          <Typography variant="h5" sx={{ mb: 2 }}>
-            Server Settings
-          </Typography>
           <Controller
             control={control}
             name="backendUri"
@@ -124,12 +157,19 @@ function GeneralSettingsForm({ systemSettings }: GeneralSetingsFormProps) {
                   label="Log Level"
                   {...field}
                 >
-                  {map(LogLevels, (level) => (
-                    <MenuItem value={level}>{level}</MenuItem>
+                  {map(LogLevelChoices, ({ value, description }) => (
+                    <MenuItem value={value}>{description}</MenuItem>
                   ))}
                 </Select>
               )}
             />
+            <FormHelperText>
+              Set the log level for the Tunarr server.
+              <br />
+              Selecting <strong>"Use environment settings"</strong> will
+              instruct the server to use the <code>LOG_LEVEL</code> environment
+              variable, if set, or system default "info".
+            </FormHelperText>
           </FormControl>
         </Box>
       </Stack>

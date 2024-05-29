@@ -14,7 +14,7 @@ import pretty from 'pino-pretty';
 import type ThreadStream from 'thread-stream';
 import { isNonEmptyString, isProduction } from '..';
 import { SettingsDB, getSettings } from '../../dao/settings';
-import { TupleToUnion } from '../../types/util';
+import { Maybe, TupleToUnion } from '../../types/util';
 import { isDocker } from '../isDocker';
 
 export const LogConfigEnvVars = {
@@ -22,10 +22,27 @@ export const LogConfigEnvVars = {
   directory: 'LOG_DIRECTORY',
 } as const;
 
-export function getDefaultLogLevel(): LevelWithSilent | ExtraLogLevels {
-  const env = process.env[LogConfigEnvVars.level];
-  if (isNonEmptyString(env) && ValidLogLevels.includes(env)) {
-    return env as LevelWithSilent;
+export function getEnvironmentLogLevel(): Maybe<LogLevels> {
+  const envLevel = trim(toLower(process.env[LogConfigEnvVars.level]));
+  if (isNonEmptyString(envLevel)) {
+    if (ValidLogLevels.includes(envLevel)) {
+      return envLevel as LogLevels;
+    } else {
+      console.warn(
+        `Invalid log level provided in env var: %s. Ignoring`,
+        envLevel,
+      );
+    }
+  }
+  return;
+}
+
+export function getDefaultLogLevel(useEnvVar: boolean = true): LogLevels {
+  if (useEnvVar) {
+    const level = getEnvironmentLogLevel();
+    if (!isUndefined(level)) {
+      return level;
+    }
   }
 
   return isProduction ? 'info' : 'debug';
@@ -90,15 +107,7 @@ class LoggerFactoryImpl {
           return;
         }
 
-        const newLevel = this.settingsDB.systemSettings().logging.logLevel;
-        const { source } = this.logLevel;
-        if (source === 'env') {
-          this.rootLogger.debug(
-            'Ignoring log level change because it is set as environment variable',
-          );
-          // Ignore settings file changes if the level is set on the env
-          return;
-        }
+        const { level: newLevel } = this.logLevel;
 
         if (this.rootLogger[symbols.getLevelSym] !== newLevel) {
           this.updateLevel(newLevel);
@@ -178,15 +187,10 @@ class LoggerFactoryImpl {
     level: LogLevels;
     source: 'env' | 'settings';
   } {
-    const envLevel = trim(toLower(process.env[LogConfigEnvVars.level]));
-    if (isNonEmptyString(envLevel)) {
-      if (ValidLogLevels.includes(envLevel)) {
-        return { source: 'env', level: envLevel as LogLevels };
-      } else {
-        console.warn(
-          `Invalid log level provided in env var: %s. Ignoring`,
-          envLevel,
-        );
+    if (this.settingsDB?.systemSettings().logging.useEnvVarLevel) {
+      const envLevel = getEnvironmentLogLevel();
+      if (!isUndefined(envLevel)) {
+        return { source: 'env', level: envLevel };
       }
     }
 
@@ -194,7 +198,7 @@ class LoggerFactoryImpl {
   }
 
   private get systemSettingsLogLevel() {
-    if (this.initialized && !isUndefined(this.settingsDB)) {
+    if (!isUndefined(this.settingsDB)) {
       return this.settingsDB.systemSettings().logging
         .logLevel as LevelWithSilent;
     } else {

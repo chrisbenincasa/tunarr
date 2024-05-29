@@ -14,7 +14,7 @@ import {
 import { isUndefined, merge, once } from 'lodash-es';
 import { Low, LowSync } from 'lowdb';
 import path from 'path';
-import fs from 'node:fs/promises';
+import chokidar from 'chokidar';
 import { DeepReadonly } from 'ts-essentials';
 import { v4 as uuidv4 } from 'uuid';
 import { globalOptions } from '../globals.js';
@@ -90,6 +90,7 @@ export const defaultSchema = (dbBasePath: string): SettingsFile => ({
     logging: {
       logLevel: getDefaultLogLevel(),
       logsDirectory: getDefaultLogDirectory(),
+      useEnvVarLevel: true,
     },
   },
 });
@@ -103,12 +104,11 @@ abstract class ITypedEventEmitter extends (events.EventEmitter as new () => Type
 export class SettingsDB extends ITypedEventEmitter {
   private logger: Logger;
   private db: Low<SettingsFile>;
-  private watcherController = new AbortController();
 
   constructor(dbPath: string, db: Low<SettingsFile>) {
     super();
     this.db = db;
-    this.handleFileChanges(dbPath).catch(console.error);
+    this.handleFileChanges(dbPath);
     setImmediate(() => {
       this.logger = LoggerFactory.child(import.meta);
     });
@@ -171,15 +171,22 @@ export class SettingsDB extends ITypedEventEmitter {
     return this.db.write();
   }
 
-  private async handleFileChanges(path: string) {
-    const watcher = fs.watch(path, { signal: this.watcherController.signal });
-    for await (const event of watcher) {
-      if (event.eventType === 'change') {
-        this.logger.debug('detected settings DB change on disk, reloading.');
-        await this.db.read();
-        this.emit('change');
-      }
-    }
+  private handleFileChanges(path: string) {
+    const watcher = chokidar.watch(path, {
+      persistent: false,
+      awaitWriteFinish: true,
+    });
+
+    watcher.on('change', () => {
+      this.logger.debug(
+        'Detected change to settings DB file %s on disk. Reloading.',
+        path,
+      );
+      this.db
+        .read()
+        .then(() => this.emit('change'))
+        .catch(console.error);
+    });
   }
 }
 

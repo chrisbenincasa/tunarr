@@ -9,6 +9,11 @@ import {
   RandomSlotScheduleSchema,
   TimeSlotScheduleSchema,
 } from './Scheduling.js';
+import {
+  LogLevelsSchema,
+  LoggingSettingsSchema,
+  SystemSettingsSchema,
+} from '../SystemSettings.js';
 
 export * from './Scheduling.js';
 export * from './plexSearch.js';
@@ -150,3 +155,18 @@ export type VersionApiResponse = z.infer<typeof VersionApiResponseSchema>;
 export const BaseErrorSchema = z.object({
   message: z.string(),
 });
+
+export const SystemSettingsResponseSchema = SystemSettingsSchema.extend({
+  logging: LoggingSettingsSchema.extend({
+    environmentLogLevel: LogLevelsSchema.optional(),
+  }),
+});
+
+export const UpdateSystemSettingsRequestSchema =
+  SystemSettingsSchema.shape.logging
+    .pick({ logLevel: true, useEnvVarLevel: true })
+    .partial();
+
+export type UpdateSystemSettingsRequest = z.infer<
+  typeof UpdateSystemSettingsRequestSchema
+>;

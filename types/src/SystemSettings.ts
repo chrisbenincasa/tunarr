@@ -27,8 +27,8 @@ export type LogLevel = TupleToUnion<typeof LogLevels>;
 
 export const LoggingSettingsSchema = z.object({
   logLevel: LogLevelsSchema,
-  // .default(() => (isProduction ? 'info' : 'debug')),
   logsDirectory: z.string(),
+  useEnvVarLevel: z.boolean().default(true),
 });
 
 export const SystemSettingsSchema = z.object({
