@@ -10,11 +10,11 @@ import EventEmitter from 'events';
 import { isError } from 'lodash-es';
 import { Readable, Writable } from 'stream';
 import { FFMPEG, FfmpegEvents } from '../ffmpeg/ffmpeg.js';
-import { serverOptions } from '../globals.js';
 import { TypedEventEmitter } from '../types/eventEmitter.js';
 import { Maybe } from '../types/util.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
-import { Player, PlayerContext } from './player.js';
+import { Player, PlayerContext } from './Player.js';
+import { makeLocalUrl } from '../util/serverUtil.js';
 
 export class OfflinePlayer extends Player {
   private logger = LoggerFactory.child({ caller: import.meta });
@@ -29,9 +29,7 @@ export class OfflinePlayer extends Player {
     if (context.isLoading === true) {
       context.channel = {
         ...context.channel,
-        offlinePicture: `http://localhost:${
-          serverOptions().port
-        }/images/loading-screen.png`,
+        offlinePicture: makeLocalUrl('/images/loading-screen.png'),
         offlineSoundtrack: undefined,
       };
     }

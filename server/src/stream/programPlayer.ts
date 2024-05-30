@@ -26,8 +26,8 @@ import { FfmpegEvents } from '../ffmpeg/ffmpeg.js';
 import { TypedEventEmitter } from '../types/eventEmitter.js';
 import { Maybe } from '../types/util.js';
 import { isNonEmptyString } from '../util/index.js';
-import { OfflinePlayer } from './offlinePlayer.js';
-import { Player, PlayerContext } from './player.js';
+import { OfflinePlayer } from './OfflinePlayer.js';
+import { Player, PlayerContext } from './Player.js';
 import { PlexPlayer } from './plex/PlexPlayer.js';
 import { StreamContextChannel } from './types.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
@@ -167,7 +167,7 @@ export class ProgramPlayer extends Player {
       disableFillerOverlay = true;
     }
 
-    if (type == 'commercial' && disableFillerOverlay) {
+    if (type === 'commercial' && disableFillerOverlay) {
       return;
     }
 

@@ -2,10 +2,10 @@ import { isNil, isUndefined, once, round } from 'lodash-es';
 import { PassThrough, Readable } from 'node:stream';
 import { v4 } from 'uuid';
 import { ConcatOptions, FFMPEG } from '../ffmpeg/ffmpeg';
-import { serverOptions } from '../globals';
 import { getServerContext } from '../serverContext';
 import { fileExists } from '../util/fsUtil';
 import { LoggerFactory } from '../util/logging/LoggerFactory';
+import { makeLocalUrl } from '../util/serverUtil.js';
 
 export type VideoStreamSuccessResult = {
   type: 'success';
@@ -89,15 +89,14 @@ export class ConcatStream {
       outStream.push(null);
     });
 
-    const concatUrl = new URL(
-      `http://localhost:${serverOptions().port}/playlist`,
-    );
-    concatUrl.searchParams.set('channel', channel.number.toString());
     // TODO: Do we know this is true? We probably need to push a param through
-    concatUrl.searchParams.set('audioOnly', 'false');
-    concatUrl.searchParams.set('hls', `${!!concatOptions?.enableHls}`);
+    const concatUrl = makeLocalUrl('/playlist', {
+      channel: channel.number,
+      audioOnly: false,
+      hls: !!concatOptions?.enableHls,
+    });
 
-    const ff = ffmpeg.spawnConcat(concatUrl.toString(), concatOptions);
+    const ff = ffmpeg.spawnConcat(concatUrl, concatOptions);
 
     if (isUndefined(ff)) {
       return {

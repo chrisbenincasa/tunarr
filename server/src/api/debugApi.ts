@@ -13,10 +13,10 @@ import {
 } from '../dao/derived_types/StreamLineup.js';
 import { Channel } from '../dao/entities/Channel.js';
 import { PlexPlayer } from '../stream/plex/PlexPlayer.js';
-import { PlexTranscoder } from '../stream/plex/plexTranscoder.js';
+import { PlexTranscoder } from '../stream/plex/PlexTranscoder.js';
 import { FillerPicker } from '../services/FillerPicker.js';
 import { StreamContextChannel } from '../stream/types.js';
-import { PlayerContext } from '../stream/player.js';
+import { PlayerContext } from '../stream/Player.js';
 import { Maybe } from '../types/util.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { mapAsyncSeq } from '../util/index.js';

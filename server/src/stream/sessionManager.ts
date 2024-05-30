@@ -4,7 +4,7 @@ import {
   SessionType,
   StreamConnectionDetails,
   StreamSession,
-} from './session.js';
+} from './Session.js';
 import { isNil, isNull } from 'lodash-es';
 import { Mutex } from 'async-mutex';
 import { getEm } from '../dao/dataSource.js';

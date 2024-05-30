@@ -18,11 +18,11 @@ import { PlexServerSettings } from '../../dao/entities/PlexServerSettings';
 import { Plex, PlexApiFactory } from '../../external/plex';
 import { Nullable } from '../../types/util';
 import { Logger, LoggerFactory } from '../../util/logging/LoggerFactory';
-import { PlexStream, StreamDetails } from './plexTranscoder';
+import { PlexStream, StreamDetails } from './PlexTranscoder';
 import { isNonEmptyString } from '../../util';
-import { serverOptions } from '../../globals';
 import { ContentBackedStreamLineupItem } from '../../dao/derived_types/StreamLineup.js';
 import { SettingsDB } from '../../dao/settings.js';
+import { makeLocalUrl } from '../../util/serverUtil.js';
 
 // The minimum fields we need to get stream details about an item
 type PlexItemStreamDetailsQuery = Pick<
@@ -168,9 +168,9 @@ export class PlexStreamDetails {
       });
 
       if (!isNonEmptyString(streamDetails.placeholderImage)) {
-        streamDetails.placeholderImage = `http://localhost:${
-          serverOptions().port
-        }/images/generic-music-screen.png`;
+        streamDetails.placeholderImage = makeLocalUrl(
+          '/images/generic-music-screen.png',
+        );
       }
     }
 

@@ -5,13 +5,14 @@ import { isEmpty, isNil, isString, isUndefined, merge, round } from 'lodash-es';
 import path from 'path';
 import { DeepReadonly, DeepRequired } from 'ts-essentials';
 import { serverOptions } from '../globals.js';
-import { StreamDetails } from '../stream/plex/plexTranscoder.js';
+import { StreamDetails } from '../stream/plex/PlexTranscoder.js';
 import { StreamContextChannel } from '../stream/types.js';
 import { Maybe } from '../types/util.js';
 import { TypedEventEmitter } from '../types/eventEmitter.js';
 import stream from 'stream';
 import { Logger, LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { isNonEmptyString } from '../util/index.js';
+import { makeLocalUrl } from '../util/serverUtil.js';
 
 const spawn = child_process.spawn;
 
@@ -106,9 +107,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       channel: channel.uuid,
     });
     this.opts = opts;
-    this.errorPicturePath = `http://localhost:${
-      serverOptions().port
-    }/images/generic-error-screen.png`;
+    this.errorPicturePath = makeLocalUrl('/images/generic-error-screen.png');
     this.ffmpegName = 'unnamed ffmpeg';
     this.channel = channel;
     this.ffmpegPath = opts.ffmpegExecutablePath;
@@ -475,9 +474,9 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
           pic = streamStats.placeholderImage;
         } else if (!isString(streamUrl) && streamUrl.errorTitle == 'offline') {
           // TODO fix me
-          const defaultOfflinePic = `http://localhost:${
-            serverOptions().port
-          }/images/generic-offline-screen.png`;
+          const defaultOfflinePic = makeLocalUrl(
+            '/images/generic-offline-screen.png',
+          );
           pic = this.channel.offlinePicture ?? defaultOfflinePic;
         } else if (this.opts.errorScreen == 'pic') {
           pic = this.errorPicturePath;

@@ -3,7 +3,7 @@ import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import fs from 'node:fs/promises';
 import { join } from 'node:path';
 import { isNil, isUndefined, map } from 'lodash-es';
-import { sessionManager } from '../stream/sessionManager.js';
+import { sessionManager } from '../stream/SessionManager.js';
 import { z } from 'zod';
 import { TruthyQueryParam } from '../types/schemas.js';
 import { v4 } from 'uuid';

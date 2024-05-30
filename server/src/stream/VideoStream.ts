@@ -20,8 +20,8 @@ import {
   generateChannelContext,
 } from './StreamProgramCalculator';
 import { wereThereTooManyAttempts } from './StreamThrottler';
-import { PlayerContext } from './player';
-import { ProgramPlayer } from './programPlayer';
+import { PlayerContext } from './Player';
+import { ProgramPlayer } from './ProgramPlayer';
 import { StreamContextChannel } from './types';
 
 type VideoStreamSuccessResult = {

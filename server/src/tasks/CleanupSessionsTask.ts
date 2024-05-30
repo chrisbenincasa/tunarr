@@ -1,5 +1,5 @@
 import ld, { filter, forEach, isEmpty, keys } from 'lodash-es';
-import { sessionManager } from '../stream/sessionManager.js';
+import { sessionManager } from '../stream/SessionManager.js';
 import { Maybe } from '../types/util.js';
 import { Task, TaskId } from './Task.js';
 

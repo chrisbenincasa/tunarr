@@ -29,7 +29,7 @@ import { getSettings } from './dao/settings.js';
 import { ServerOptions, serverOptions } from './globals.js';
 import { ServerRequestContext, serverContext } from './serverContext.js';
 import { GlobalScheduler, scheduleJobs } from './services/scheduler.js';
-import { initPersistentStreamCache } from './stream/channelCache.js';
+import { initPersistentStreamCache } from './stream/ChannelCache.js';
 import { runFixers } from './tasks/fixers/index.js';
 import { UpdateXmlTvTask } from './tasks/UpdateXmlTvTask.js';
 import { filename, isProduction, run } from './util/index.js';

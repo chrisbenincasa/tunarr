@@ -4,16 +4,16 @@ import * as fsSync from 'node:fs';
 import { Readable } from 'stream';
 import { z } from 'zod';
 import { FfmpegText } from '../ffmpeg/ffmpegText.js';
-import { serverOptions } from '../globals.js';
 import { ConcatStream } from '../stream/ConcatStream.js';
 import { VideoStream } from '../stream/VideoStream.js';
 import { StreamQueryStringSchema, TruthyQueryParam } from '../types/schemas.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
-import { sessionManager } from '../stream/sessionManager.js';
+import { sessionManager } from '../stream/SessionManager.js';
 import { v4 } from 'uuid';
 import { run } from '../util/index.js';
 import { PassThrough } from 'node:stream';
+import { makeLocalUrl } from '../util/serverUtil.js';
 
 let StreamCount = 0;
 
@@ -344,13 +344,15 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
       // We only need 2 entries + stream_loop on the concat command for an infinite
       // stream. See https://trac.ffmpeg.org/wiki/Concatenate#Changingplaylistfilesonthefly
       for (let i = 0; i < 2; i++) {
-        data += `file 'http://localhost:${
-          serverOptions().port
-        }/stream?channel=${
-          req.query.channel
-        }&session=${sessionId}&audioOnly=${audioOnly}&hls=${
-          req.query.hls
-        }&index=${i}'\n`;
+        const url = makeLocalUrl('/stream', {
+          channel: req.query.channel,
+          session: sessionId,
+          audioOnly,
+          hls: req.query.hls,
+          index: i,
+        });
+
+        data += `file '${url}'\n`;
       }
 
       return res.type('text').send(data);

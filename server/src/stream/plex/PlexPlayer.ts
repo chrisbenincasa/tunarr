@@ -11,7 +11,7 @@ import { TypedEventEmitter } from '../../types/eventEmitter.js';
 import { Maybe, Nullable } from '../../types/util.js';
 import { ifDefined } from '../../util/index.js';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
-import { Player, PlayerContext } from '../player.js';
+import { Player, PlayerContext } from '../Player.js';
 import { PlexStreamDetails } from './PlexStreamDetails.js';
 
 const USED_CLIENTS: Record<string, boolean> = {};
