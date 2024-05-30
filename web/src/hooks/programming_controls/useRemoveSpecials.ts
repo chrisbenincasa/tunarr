@@ -10,7 +10,7 @@ export const useRemoveSpecials = () => {
   return () => {
     if (programs.length > 0) {
       const newPrograms = removeSpecials(programs);
-      setCurrentLineup(newPrograms);
+      setCurrentLineup(newPrograms, true);
     }
   };
 };
