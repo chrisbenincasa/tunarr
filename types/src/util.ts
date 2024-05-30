@@ -12,3 +12,5 @@ export const tag = <
 >(
   x: Base,
 ): FinalTagType => x as unknown as FinalTagType;
+
+export type TupleToUnion<T extends ReadonlyArray<unknown>> = T[number];

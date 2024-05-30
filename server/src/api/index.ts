@@ -27,6 +27,7 @@ import { hdhrSettingsRouter } from './hdhrSettingsApi.js';
 import { plexServersRouter } from './plexServersApi.js';
 import { plexSettingsRouter } from './plexSettingsApi.js';
 import { xmlTvSettingsRouter } from './xmltvSettingsApi.js';
+import { systemSettingsRouter } from './systemSettingsApi.js';
 
 export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
   const logger = LoggerFactory.child({ caller: import.meta });
@@ -53,6 +54,7 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
     .register(plexSettingsRouter)
     .register(xmlTvSettingsRouter)
     .register(hdhrSettingsRouter)
+    .register(systemSettingsRouter)
     .register(guideRouter);
 
   fastify.get(

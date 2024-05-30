@@ -269,7 +269,6 @@ export async function initServer(opts: ServerOptions) {
         decorateReply: false,
         serve: false, // Use the interceptor
       });
-      // f.addHook('onRequest', async (req, res) => ctx.cacheImageService.routerInterceptor(req, res));
       f.get<{ Params: { hash: string } }>(
         '/cache/images/:hash',
         {

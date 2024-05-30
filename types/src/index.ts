@@ -12,3 +12,4 @@ export * from './Theme.js';
 export * from './XmlTvSettings.js';
 export * from './misc.js';
 export * from './util.js';
+export * from './SystemSettings.js';

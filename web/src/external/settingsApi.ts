@@ -1,6 +1,8 @@
+import { SystemSettingsSchema } from '@tunarr/types';
 import {
   InsertPlexServerRequestSchema,
   UpdatePlexServerRequestSchema,
+  UpdateSystemSettingsRequestSchema,
 } from '@tunarr/types/api';
 import {
   FfmpegSettingsSchema,
@@ -129,4 +131,21 @@ export const updatePlexStreamSettings = makeEndpoint({
   response: PlexStreamSettingsSchema,
   parameters: parametersBuilder().addBody(PlexStreamSettingsSchema).build(),
   alias: 'updatePlexStreamSettings',
+});
+
+export const getSystemSettings = makeEndpoint({
+  method: 'get',
+  path: '/api/system/settings',
+  response: SystemSettingsSchema,
+  alias: 'getSystemSettings',
+});
+
+export const updateSystemSettings = makeEndpoint({
+  method: 'put',
+  path: '/api/system/settings',
+  parameters: parametersBuilder()
+    .addBody(UpdateSystemSettingsRequestSchema)
+    .build(),
+  alias: 'updateSystemSettings',
+  response: SystemSettingsSchema,
 });

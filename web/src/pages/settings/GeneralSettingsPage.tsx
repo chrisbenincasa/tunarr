@@ -2,32 +2,59 @@ import { CloudDoneOutlined, CloudOff } from '@mui/icons-material';
 import {
   Box,
   Divider,
+  FormControl,
+  FormHelperText,
   InputAdornment,
+  InputLabel,
+  MenuItem,
+  Select,
   Snackbar,
   TextField,
   Typography,
 } from '@mui/material';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
-import { attempt, isEmpty, isError, trim, trimEnd } from 'lodash-es';
+import { LogLevel, LogLevels, SystemSettings } from '@tunarr/types';
+import { attempt, isEmpty, isError, map, trim, trimEnd } from 'lodash-es';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { RotatingLoopIcon } from '../../components/base/LoadingIcon.tsx';
 import DarkModeButton from '../../components/settings/DarkModeButton.tsx';
+import {
+  useSystemSettings,
+  useUpdateSystemSettings,
+} from '../../hooks/useSystemSettings.ts';
 import { useVersion } from '../../hooks/useVersion.ts';
 import { setBackendUri } from '../../store/settings/actions.ts';
 import { useSettings } from '../../store/settings/selectors.ts';
+import { UpdateSystemSettingsRequest } from '@tunarr/types/api';
 
-type GeneralSettingsForm = {
+type GeneralSettingsFormData = {
   backendUri: string;
+  logLevel: LogLevel | 'env';
 };
+
+type GeneralSetingsFormProps = {
+  systemSettings: SystemSettings;
+};
+
+const LogLevelChoices = [
+  {
+    description: 'Use environment settings',
+    value: 'env',
+  },
+  ...map(LogLevels, (level) => ({
+    description: level,
+    value: level,
+  })),
+];
 
 function isValidUrl(url: string) {
   const sanitized = trim(url);
   return isEmpty(sanitized) || !isError(attempt(() => new URL(sanitized)));
 }
 
-export default function GeneralSettingsPage() {
+function GeneralSettingsForm({ systemSettings }: GeneralSetingsFormProps) {
   const settings = useSettings();
   const [snackStatus, setSnackStatus] = useState(false);
   const versionInfo = useVersion({
@@ -36,19 +63,40 @@ export default function GeneralSettingsPage() {
 
   const { isLoading, isError } = versionInfo;
 
+  const updateSystemSettings = useUpdateSystemSettings();
+
+  const getBaseFormValues = (
+    systemSettings: SystemSettings,
+  ): GeneralSettingsFormData => ({
+    backendUri: settings.backendUri,
+    logLevel: systemSettings.logging.useEnvVarLevel
+      ? 'env'
+      : systemSettings.logging.logLevel,
+  });
+
   const {
     control,
     handleSubmit,
     reset,
     formState: { isDirty, isValid, isSubmitting },
-  } = useForm<GeneralSettingsForm>({
+  } = useForm<GeneralSettingsFormData>({
     reValidateMode: 'onBlur',
-    defaultValues: settings,
+    defaultValues: getBaseFormValues(systemSettings),
   });
 
-  const onSave = (data: GeneralSettingsForm) => {
-    setBackendUri(trimEnd(trim(data.backendUri), '/'));
+  const onSave = (data: GeneralSettingsFormData) => {
+    const newBackendUri = trimEnd(trim(data.backendUri), '/');
+    setBackendUri(newBackendUri);
     setSnackStatus(true);
+    const updateReq: UpdateSystemSettingsRequest = {
+      logLevel: data.logLevel === 'env' ? undefined : data.logLevel,
+      useEnvVarLevel: data.logLevel === 'env',
+    };
+    updateSystemSettings.mutate(updateReq, {
+      onSuccess(data) {
+        reset(getBaseFormValues(data), { keepDirty: false });
+      },
+    });
   };
 
   return (
@@ -60,18 +108,11 @@ export default function GeneralSettingsPage() {
         onClose={() => setSnackStatus(false)}
         message="Settings Saved!"
       />
-      <Stack direction="column" gap={2}>
+      <Stack gap={2} spacing={2}>
+        <Typography variant="h5" sx={{ mb: 1 }}>
+          Server Settings
+        </Typography>
         <Box>
-          <Typography variant="h5" sx={{ mb: 2 }}>
-            Theme Settings
-          </Typography>
-          <DarkModeButton />
-        </Box>
-        <Divider />
-        <Box>
-          <Typography variant="h5" sx={{ mb: 2 }}>
-            Server Settings
-          </Typography>
           <Controller
             control={control}
             name="backendUri"
@@ -103,6 +144,34 @@ export default function GeneralSettingsPage() {
             )}
           />
         </Box>
+        <Box>
+          <FormControl sx={{ width: '50%' }}>
+            <InputLabel id="log-level-label">Log Level</InputLabel>
+            <Controller
+              name="logLevel"
+              control={control}
+              render={({ field }) => (
+                <Select
+                  labelId="log-level-label"
+                  id="log-level"
+                  label="Log Level"
+                  {...field}
+                >
+                  {map(LogLevelChoices, ({ value, description }) => (
+                    <MenuItem value={value}>{description}</MenuItem>
+                  ))}
+                </Select>
+              )}
+            />
+            <FormHelperText>
+              Set the log level for the Tunarr server.
+              <br />
+              Selecting <strong>"Use environment settings"</strong> will
+              instruct the server to use the <code>LOG_LEVEL</code> environment
+              variable, if set, or system default "info".
+            </FormHelperText>
+          </FormControl>
+        </Box>
       </Stack>
       <Stack spacing={2} direction="row" justifyContent="right" sx={{ mt: 2 }}>
         {isDirty && (
@@ -125,5 +194,32 @@ export default function GeneralSettingsPage() {
         </Button>
       </Stack>
     </Box>
+  );
+}
+
+export default function GeneralSettingsPage() {
+  const systemSettings = useSystemSettings();
+
+  // TODO: Handle loading and error states.
+
+  return (
+    systemSettings.data && (
+      <Box>
+        <Stack direction="column" gap={2}>
+          <Box>
+            <Typography variant="h5" sx={{ mb: 2 }}>
+              Theme Settings
+            </Typography>
+            <DarkModeButton />
+            <FormHelperText>
+              This setting is stored in your browser and is saved automatically
+              when changed.
+            </FormHelperText>
+          </Box>
+          <Divider />
+          <GeneralSettingsForm systemSettings={systemSettings.data} />
+        </Stack>
+      </Box>
+    )
   );
 }
