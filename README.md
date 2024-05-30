@@ -34,24 +34,22 @@ Tunarr has the following goals:
 ## Features
 
 - **NEW** Stream your channels directly in the [browser using HLS](https://github.com/chrisbenincasa/tunarr/pull/116) (and soon [MPEG-DASH](https://github.com/chrisbenincasa/tunarr/issues/129))
+- **NEW** Improvements to stream stability
 - **NEW** [Dark mode!](https://github.com/chrisbenincasa/tunarr/pull/34)
 - **NEW** Quickly find content you want for your channels with [advanced filtering and sorting](https://github.com/chrisbenincasa/tunarr/pull/210)
-- Spoofed HDHR tuner and a IPTV channel list, providing a large amount of flexibility
-- Ease of setup for xteve and Plex playback by mocking a HDHR server.
-- Deep channel customization. Make channels display a logo, play filler content ("commercials", music videos, prerolls, channel branding videos) at specific times to pad time, and more!
+- Spoofed [HDHR](https://www.silicondust.com/hdhomerun/) tuner and a IPTV channel list, providing a large amount of flexibility and easing integration with [xTeVe](https://github.com/xteve-project/xTeVe) and Plex
+- Customize channels with a logo, filler content ("commercials", music videos, prerolls, channel branding videos) between programming, and more!
 - Docker image and prepackaged binaries for Windows, Linux, and Mac OS
 - Use Nvidia for hardware encoding, including in Docker.
 - Source content from multiple Plex servers
 - Includes a WEB TV Guide where you can even play channels in your desktop by using your local media player.
-- Subtitle support
-- Auto-deinterlace support for Plex media
-- Force Direct Play (with caveats)
+- ~~Subtitle support~~ Subtitle support is currently in flux; it was removed to simplify the backend and stabilize the stream. Bringing this functionality back is tracked in #462.
+- Auto-deinterlace content
 
 ## Limitations
 
 - If you want to play the TV channels in Plex using the spoofed HDHR, Plex pass is required.
 - Like dizqueTV, Tunarr does not currently watch your Plex server for media updates/changes. You must manually remove and re-add your programs for any changes to take effect. Same goes for Plex server changes (changing IP, port, etc).. You&apos;ll have to update the server settings manually in that case. **NOTE** This feature is actively under development! (https://github.com/chrisbenincasa/tunarr/issues/15)
-- Most players (including Plex) will break after switching episodes if video / audio format is too different. Tunarr can be configured to use ffmpeg transcoding to prevent this, at the cost of system resources
 
 ## Releases
 
@@ -59,7 +57,7 @@ Tunarr has the following goals:
 
 ## Wiki
 
-- For setup instructions, check [the wiki](https://github.com/chrisbenincasa/Tunarr/wiki)
+- For setup instructions, check our [documentation site](https://tunarr.com/)
 
 ## Development
 
