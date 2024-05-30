@@ -49,6 +49,9 @@ export type StreamDetails = {
   audioIndex?: string;
 
   placeholderImage?: string;
+
+  serverPath?: string;
+  directFilePath?: string;
 };
 
 export class PlexTranscoder {

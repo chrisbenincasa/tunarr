@@ -113,10 +113,6 @@ export async function upsertContentPrograms(
     .compact()
     .value();
 
-  // We verified this is not nil above.
-
-  // TODO: Probably want to do this step in the background...
-  //
   const programsBySource = ld
     .chain(contentPrograms)
     .filter((p) => p.subtype === 'episode' || p.subtype === 'track')
@@ -128,19 +124,17 @@ export async function upsertContentPrograms(
 
   logger.debug('Upserting %d programs', programsToPersist.length);
 
-  const upsertedPrograms = flatten(
-    await mapAsyncSeq(chunk(programsToPersist, batchSize), (programs) =>
-      em.upsertMany(Program, programs, {
-        onConflictAction: 'merge',
-        onConflictFields: ['sourceType', 'externalSourceId', 'externalKey'],
-        onConflictExcludeFields: ['uuid'],
-      }),
-    ),
-  );
+  const upsertedPrograms = await em.upsertMany(Program, programsToPersist, {
+    onConflictAction: 'merge',
+    onConflictFields: ['sourceType', 'externalSourceId', 'externalKey'],
+    onConflictExcludeFields: ['uuid'],
+    batchSize,
+  });
 
   // Fork a new entity manager here so we don't attempt to persist anything
   // in the parent context. This function potentially does a lot of work
   // but we don't want to accidentally not do an upsert of a program.
+  // TODO: Probably want to do this step in the background...
   const programGroupingsBySource =
     await findAndUpdateProgramRelations(programsBySource);
 

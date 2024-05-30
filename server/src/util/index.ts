@@ -1,5 +1,6 @@
 import _, {
   chunk,
+  compact,
   concat,
   identity,
   isArray,
@@ -19,6 +20,7 @@ import _, {
 import fs from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { isPromise } from 'node:util/types';
+import { Try } from '../types/util';
 
 declare global {
   interface Array<T> {
@@ -203,12 +205,20 @@ export async function mapAsyncSeq<T, U>(
   const parallelism = opts?.parallelism ?? 1;
   const results: U[] = [];
   for (const itemChunk of chunk(seq, parallelism)) {
-    const promises = map(itemChunk, fn);
+    const promises = map(itemChunk, (item) => {
+      return fn(item).catch((err) => {
+        if (opts?.failuresToNull) {
+          return null;
+        } else {
+          throw err;
+        }
+      });
+    });
     const result = await Promise.all(promises);
     if (opts?.ms && opts.ms >= 0) {
       await wait(opts.ms);
     }
-    results.push(...result);
+    results.push(...compact(result));
   }
   return results;
 }
@@ -331,7 +341,6 @@ export async function createDirectoryIfNotExists(
   }
 }
 
-export type Try<T> = T | Error;
 export async function attempt<T>(f: () => T | PromiseLike<T>): Promise<Try<T>> {
   try {
     const res = f();
@@ -429,4 +438,8 @@ export const zipWithIndex = <T>(
 
 export function run<T>(f: () => T): T {
   return f();
+}
+
+export function isSuccess<T>(x: Try<T>): x is T {
+  return !isError(x);
 }

@@ -150,7 +150,7 @@ const BasePlexMediaStreamSchema = z.object({
   default: z.boolean().optional(),
   codec: z.string(),
   index: z.number(),
-  bitrate: z.number(),
+  bitrate: z.number().optional(),
   bitDepth: z.number().optional(),
   displayTitle: z.string().optional(),
 });
@@ -264,14 +264,14 @@ export const PlexMovieSchema = z
     thumb: z.string().optional(),
     art: z.string().optional(),
     duration: z.number(),
-    originallyAvailableAt: z.string(),
+    originallyAvailableAt: z.string().optional(),
     addedAt: z.number(),
     updatedAt: z.number().optional(),
     audienceRatingImage: z.string().optional(),
     chapterSource: z.string().optional(),
     primaryExtraKey: z.string().optional(),
     ratingImage: z.string().optional(),
-    Media: z.array(PlexMediaDescriptionSchema),
+    Media: z.array(PlexMediaDescriptionSchema).optional(),
     Genre: z.array(PlexJoinItemSchema).optional(),
     Country: z.array(PlexJoinItemSchema).optional(),
     Director: z.array(PlexJoinItemSchema).optional(),
@@ -433,7 +433,7 @@ export const PlexMusicTrackSchema = z
     updatedAt: z.number().optional(),
     loudnessAnalysisVersion: z.string().optional(), // "1"
     musicAnalysisVersion: z.string().optional(), // "1"
-    Media: z.array(PlexMediaDescriptionSchema),
+    Media: z.array(PlexMediaDescriptionSchema).optional(),
   })
   .merge(neverDirectory);
 
@@ -529,7 +529,7 @@ export const PlexEpisodeSchema = z
     type: z.literal('episode'),
     updatedAt: z.number().optional(),
     year: z.number().optional(),
-    Media: z.array(PlexMediaDescriptionSchema),
+    Media: z.array(PlexMediaDescriptionSchema).optional(),
     Director: z.array(PlexJoinItemSchema).optional(),
     Writer: z.array(PlexJoinItemSchema).optional(),
     Role: z.array(PlexJoinItemSchema).optional(),
@@ -897,8 +897,10 @@ export type PlexTagResult = z.infer<typeof PlexTagResultSchema>;
 export const PlexMediaContainerResponseSchema = z.object({
   MediaContainer: z.object({
     size: z.number(),
-    librarySectionID: z.number(),
-    librarySectionTitle: z.string(),
+    // These are only defined if we are querying a library directly
+    // and will be omitted if hitting /library/all
+    librarySectionID: z.number().optional(),
+    librarySectionTitle: z.string().optional(),
     Metadata: z.array(PlexMediaSchema),
   }),
 });

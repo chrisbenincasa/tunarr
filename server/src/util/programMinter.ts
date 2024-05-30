@@ -8,6 +8,8 @@ import {
 import { first } from 'lodash-es';
 import { ProgramSourceType } from '../dao/custom_types/ProgramSourceType.js';
 import { Program, ProgramType } from '../dao/entities/Program.js';
+import { ProgramExternalId } from '../dao/entities/ProgramExternalId.js';
+import { ProgramExternalIdType } from '../dao/custom_types/ProgramExternalIdType.js';
 
 class ProgramMinter {
   #em: EntityManager;
@@ -39,7 +41,7 @@ function mintMovieProgram(
   plexMovie: PlexMovie,
 ): Program {
   const file = first(first(plexMovie.Media)?.Part ?? []);
-  return em.create(Program, {
+  const program = em.create(Program, {
     sourceType: ProgramSourceType.PLEX,
     originalAirDate: plexMovie.originallyAvailableAt,
     duration: plexMovie.duration,
@@ -54,6 +56,10 @@ function mintMovieProgram(
     type: ProgramType.Movie,
     year: plexMovie.year,
   });
+
+  program.externalIds.set(mintExternalIds(em, serverName, program, plexMovie));
+
+  return program;
 }
 
 function mintEpisodeProgram(
@@ -62,7 +68,7 @@ function mintEpisodeProgram(
   plexEpisode: PlexEpisode,
 ): Program {
   const file = first(first(plexEpisode.Media)?.Part ?? []);
-  return em.create(Program, {
+  const program = em.create(Program, {
     sourceType: ProgramSourceType.PLEX,
     originalAirDate: plexEpisode.originallyAvailableAt,
     duration: plexEpisode.duration,
@@ -83,6 +89,10 @@ function mintEpisodeProgram(
     parentExternalKey: plexEpisode.parentRatingKey,
     grandparentExternalKey: plexEpisode.grandparentRatingKey,
   });
+  program.externalIds.set(
+    mintExternalIds(em, serverName, program, plexEpisode),
+  );
+  return program;
 }
 
 function mintTrackProgram(
@@ -91,7 +101,7 @@ function mintTrackProgram(
   plexTrack: PlexMusicTrack,
 ) {
   const file = first(first(plexTrack.Media)?.Part ?? []);
-  return em.create(Program, {
+  const program = em.create(Program, {
     sourceType: ProgramSourceType.PLEX,
     duration: plexTrack.duration,
     filePath: file?.file,
@@ -112,4 +122,33 @@ function mintTrackProgram(
     albumName: plexTrack.parentTitle,
     artistName: plexTrack.grandparentTitle,
   });
+  program.externalIds.set(mintExternalIds(em, serverName, program, plexTrack));
+  return program;
+}
+
+function mintExternalIds(
+  em: EntityManager,
+  serverName: string,
+  program: Program,
+  media: PlexTerminalMedia,
+) {
+  const file = first(first(media.Media)?.Part ?? []);
+
+  const ratingId = em.create(ProgramExternalId, {
+    externalKey: media.ratingKey,
+    sourceType: ProgramExternalIdType.PLEX,
+    program,
+    externalSourceId: serverName,
+    externalFilePath: file?.key,
+    directFilePath: file?.file,
+  });
+
+  const guidId = em.create(ProgramExternalId, {
+    externalKey: media.guid,
+    sourceType: ProgramExternalIdType.PLEX_GUID,
+    program,
+    externalSourceId: serverName,
+  });
+
+  return [ratingId, guidId];
 }
