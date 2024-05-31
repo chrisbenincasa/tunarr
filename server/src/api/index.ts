@@ -1,7 +1,7 @@
 import constants from '@tunarr/shared/constants';
 import { VersionApiResponseSchema } from '@tunarr/types/api';
 import { createWriteStream, promises as fsPromises } from 'fs';
-import { isNil } from 'lodash-es';
+import { isError, isNil } from 'lodash-es';
 import path from 'path';
 import { pipeline } from 'stream/promises';
 import { z } from 'zod';
@@ -27,6 +27,7 @@ import { hdhrSettingsRouter } from './hdhrSettingsApi.js';
 import { plexServersRouter } from './plexServersApi.js';
 import { plexSettingsRouter } from './plexSettingsApi.js';
 import { xmlTvSettingsRouter } from './xmltvSettingsApi.js';
+import { run } from '../util/index.js';
 import { systemSettingsRouter } from './systemSettingsApi.js';
 
 export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
@@ -82,6 +83,26 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
       }
     },
   );
+
+  fastify.get('/ffmpeg-info', async (req, res) => {
+    const info = new FFMPEGInfo(req.serverCtx.settings.ffmpegSettings());
+    const [audioEncoders, videoEncoders] = await Promise.all([
+      run(async () => {
+        const res = await info.getAvailableAudioEncoders();
+        return isError(res) ? [] : res;
+      }),
+      run(async () => {
+        const res = await info.getAvailableVideoEncoders();
+        return isError(res) ? [] : res;
+      }),
+    ]);
+    const hwAccels = await info.getHwAccels();
+    return res.send({
+      audioEncoders,
+      videoEncoders,
+      hardwareAccelerationTypes: hwAccels,
+    });
+  });
 
   fastify.post('/upload/image', async (req, res) => {
     try {

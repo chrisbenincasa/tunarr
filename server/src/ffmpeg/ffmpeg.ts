@@ -13,6 +13,10 @@ import stream from 'stream';
 import { Logger, LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { isNonEmptyString } from '../util/index.js';
 import { makeLocalUrl } from '../util/serverUtil.js';
+import {
+  SupportedHardwareAccels,
+  SupportedVideoFormats,
+} from '@tunarr/types/schemas';
 
 const spawn = child_process.spawn;
 
@@ -74,6 +78,37 @@ const defaultConcatOptions: DeepRequired<ConcatOptions> = {
     fragType: 'auto',
   },
   logOutput: false,
+};
+
+const hardwareAccelToEncoder: Record<
+  SupportedHardwareAccels,
+  Record<SupportedVideoFormats, string>
+> = {
+  none: {
+    h264: 'libx264',
+    hevc: 'libx265',
+    mpeg2: 'mpeg2video',
+  },
+  cuda: {
+    h264: 'h264_nvenc',
+    hevc: 'hevc_nvenc',
+    mpeg2: 'h264_nvenc', // No mpeg2 video encoder
+  },
+  qsv: {
+    h264: 'h264_qsv',
+    hevc: 'hevc_qsv',
+    mpeg2: 'mpeg2_qsv',
+  },
+  vaapi: {
+    h264: 'h264_vaapi',
+    hevc: 'hevc_vaapi',
+    mpeg2: 'mpeg2_vaapi',
+  },
+  videotoolbox: {
+    h264: 'h264_videotoolbox',
+    hevc: 'hevc_videotoolbox',
+    mpeg2: 'h264_videotoolbox',
+  },
 };
 
 export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<FfmpegEvents>) {
@@ -217,11 +252,20 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       );
     }
 
+    // Right now we're just going to use a simple combo of videoFormat + hwAccel
+    // to specify an encoder. There's a lot more we can do with these settings,
+    // but we're going to hold off for the new ffmpeg pipeline implementation
+    // and just keep existing behavior here.
+    const videoEncoder =
+      hardwareAccelToEncoder[this.opts.hardwareAccelerationMode][
+        this.opts.videoFormat
+      ];
+
     ffmpegArgs.push(
       `-map`,
       `0:a`,
       '-c:v',
-      this.opts.videoEncoder,
+      videoEncoder,
       '-c:a',
       this.opts.audioEncoder,
       `-b:v`,

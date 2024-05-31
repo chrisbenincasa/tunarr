@@ -32,6 +32,7 @@ export class SchemaBackedDbAdapter<T extends z.ZodTypeAny, Out = z.infer<T>>
     const parsed: unknown = JSON.parse(data);
     let parseResult: z.SafeParseReturnType<unknown, Out> =
       await this.schema.safeParseAsync(parsed);
+    let needsWriteFlush = false;
     while (!parseResult.success) {
       if (this.defaultValue !== null) {
         const mergedData = merge({}, this.defaultValue, parsed);
@@ -39,6 +40,8 @@ export class SchemaBackedDbAdapter<T extends z.ZodTypeAny, Out = z.infer<T>>
         this.logger.debug(
           'Attempting to merge with defaults to obtain valid object',
         );
+        console.log('hey');
+        needsWriteFlush = parseResult.success;
         continue;
       }
 
@@ -48,6 +51,11 @@ export class SchemaBackedDbAdapter<T extends z.ZodTypeAny, Out = z.infer<T>>
       );
       return null;
     }
+
+    if (needsWriteFlush) {
+      await this.write(parseResult.data);
+    }
+
     return parseResult.data as Out | null;
   }
 

@@ -23,7 +23,7 @@ import {
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { FfmpegSettings, defaultFfmpegSettings } from '@tunarr/types';
-import _ from 'lodash-es';
+import _, { chain, isEqual, some } from 'lodash-es';
 import { useEffect, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert.tsx';
@@ -39,6 +39,7 @@ import {
 } from '../../helpers/util.ts';
 import { useFfmpegSettings } from '../../hooks/settingsHooks.ts';
 import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
+import { useApiQuery } from '../../hooks/useApiQuery.ts';
 
 const supportedVideoBuffer = [
   { value: 0, string: '0 Seconds' },
@@ -65,7 +66,7 @@ const supportedMaxFPS = [
 const supportedErrorScreens = [
   {
     value: 'pic',
-    string: 'images/generic-error-screen.png',
+    string: 'Default Generic Error Image',
   },
   { value: 'blank', string: 'Blank Screen' },
   { value: 'static', string: 'Static' },
@@ -93,7 +94,7 @@ const supportedDeinterlaceFilters: {
   value: DeinterlaceFilterValue;
   string: string;
 }[] = [
-  { value: 'none', string: 'do not deinterlace' },
+  { value: 'none', string: 'Disabled' },
   { value: 'bwdif=0', string: 'bwdif send frame' },
   { value: 'bwdif=1', string: 'bwdif send field' },
   { value: 'w3fdif', string: 'w3fdif' },
@@ -131,9 +132,51 @@ type DeinterlaceFilterValue =
   | 'yadif=0'
   | 'yadif=1';
 
+const VideoFormats = [
+  {
+    description: 'H.264',
+    value: 'h264',
+  },
+  {
+    description: 'HEVC (H.265)',
+    value: 'hevc',
+  },
+  {
+    description: 'MPEG-2',
+    value: 'mpeg2',
+  },
+] as const;
+
+const VideoHardwareAccelerationOptions = [
+  {
+    description: 'Software (no GPU)',
+    value: 'none',
+  },
+  {
+    description: 'Nvidia (CUDA)',
+    value: 'cuda',
+  },
+  {
+    description: 'Video Acceleration API (VAAPI) (Best Effort)',
+    value: 'vaapi',
+  },
+  {
+    description: 'Intel QuickSync (Best Effort)',
+    value: 'qsv',
+  },
+  {
+    description: 'VideoToolbox',
+    value: 'videotoolbox',
+  },
+] as const;
+
 export default function FfmpegSettingsPage() {
   const apiClient = useTunarrApi();
   const { data, isPending, error } = useFfmpegSettings();
+  const ffmpegInfo = useApiQuery({
+    queryKey: ['ffmpeg-info'],
+    queryFn: (apiClient) => apiClient.getFfmpegInfo(),
+  });
 
   const {
     reset,
@@ -163,7 +206,12 @@ export default function FfmpegSettingsPage() {
       setSnackStatus(true);
       reset(data, { keepValues: true });
       return queryClient.invalidateQueries({
-        queryKey: ['settings', 'ffmpeg-settings'],
+        predicate(query) {
+          return some(
+            [['settings', 'ffmpeg-settings'], ['ffmpeg-info']],
+            (key) => isEqual(query.queryKey, key),
+          );
+        },
       });
     },
   });
@@ -181,14 +229,53 @@ export default function FfmpegSettingsPage() {
     setSnackStatus(false);
   };
 
-  if (isPending || error) {
+  if (isPending || error || ffmpegInfo.isPending || ffmpegInfo.isError) {
     return <div></div>;
   }
 
   const videoFfmpegSettings = () => {
     return (
       <>
-        <Controller
+        <FormControl fullWidth sx={{ mb: 2 }}>
+          <InputLabel>Video Codec</InputLabel>
+          <Controller
+            control={control}
+            name="videoFormat"
+            render={({ field }) => (
+              <Select label="Video Codec" {...field}>
+                {chain(VideoFormats)
+                  .map((opt) => (
+                    <MenuItem value={opt.value}>{opt.description}</MenuItem>
+                  ))
+                  .value()}
+              </Select>
+            )}
+          />
+          <FormHelperText></FormHelperText>
+        </FormControl>
+        <FormControl fullWidth sx={{ mb: 2 }}>
+          <InputLabel>Hardware Acceleration</InputLabel>
+          <Controller
+            control={control}
+            name="hardwareAccelerationMode"
+            render={({ field }) => (
+              <Select label="Hardware Acceleration" {...field}>
+                {chain(VideoHardwareAccelerationOptions)
+                  .filter(
+                    ({ value }) =>
+                      value === 'none' ||
+                      ffmpegInfo.data.hardwareAccelerationTypes.includes(value),
+                  )
+                  .map((opt) => (
+                    <MenuItem value={opt.value}>{opt.description}</MenuItem>
+                  ))
+                  .value()}
+              </Select>
+            )}
+          />
+          <FormHelperText></FormHelperText>
+        </FormControl>
+        {/* <Controller
           control={control}
           name="videoEncoder"
           render={({ field }) => (
@@ -228,7 +315,7 @@ export default function FfmpegSettingsPage() {
               {...field}
             />
           )}
-        />
+        /> */}
 
         <Grid container columns={{ sm: 8, md: 16 }} columnSpacing={2}>
           <Grid item sm={16} md={8}>
@@ -238,9 +325,14 @@ export default function FfmpegSettingsPage() {
               prettyFieldName="Video Bitrate"
               TextFieldProps={{
                 id: 'video-bitrate',
-                label: 'Video Bitrate (Kbps)',
+                label: 'Video Bitrate',
                 fullWidth: true,
                 sx: { my: 1 },
+                InputProps: {
+                  endAdornment: (
+                    <InputAdornment position="end">kbps</InputAdornment>
+                  ),
+                },
               }}
             />
           </Grid>
@@ -251,9 +343,14 @@ export default function FfmpegSettingsPage() {
               prettyFieldName="Video Buffer Size"
               TextFieldProps={{
                 id: 'video-buffer-size',
-                label: 'Video Buffer Size (kb)',
+                label: 'Video Buffer Size',
                 fullWidth: true,
                 sx: { my: 1 },
+                InputProps: {
+                  endAdornment: (
+                    <InputAdornment position="end">kb</InputAdornment>
+                  ),
+                },
                 helperText: (
                   <>
                     Buffer size effects how frequently ffmpeg reconsiders the
@@ -270,152 +367,162 @@ export default function FfmpegSettingsPage() {
             />
           </Grid>
         </Grid>
-        <FormControl sx={{ mt: 2 }} fullWidth>
-          <InputLabel id="video-max-frame-rate-label">
-            Max Frame Rate
-          </InputLabel>
-          <TypedController
-            control={control}
-            name="maxFPS"
-            toFormType={(v) => v && handleNumericFormValue(v, true)}
-            render={({ field }) => (
-              <Select
-                labelId="video-max-frame-rate-label"
-                id="video-max-frame-rate"
-                sx={{ my: 1 }}
-                label="Max Frame Rate"
-                {...field}
-              >
-                {supportedMaxFPS.map((fps) => (
-                  <MenuItem key={fps.value} value={fps.value}>
-                    {fps.string}
-                  </MenuItem>
-                ))}
-              </Select>
-            )}
-          />
+        <Stack gap={1}>
+          <FormControl sx={{ mt: 2 }} fullWidth>
+            <InputLabel id="video-max-frame-rate-label">
+              Max Frame Rate
+            </InputLabel>
+            <TypedController
+              control={control}
+              name="maxFPS"
+              toFormType={(v) => v && handleNumericFormValue(v, true)}
+              render={({ field }) => (
+                <Select
+                  labelId="video-max-frame-rate-label"
+                  id="video-max-frame-rate"
+                  label="Max Frame Rate"
+                  {...field}
+                >
+                  {supportedMaxFPS.map((fps) => (
+                    <MenuItem key={fps.value} value={fps.value}>
+                      {fps.string}
+                    </MenuItem>
+                  ))}
+                </Select>
+              )}
+            />
 
-          <FormHelperText>
-            Will transcode videos that have FPS higher than this.
-          </FormHelperText>
-        </FormControl>
-        <FormControl sx={{ mt: 2 }} fullWidth>
-          <InputLabel id="video-scaling-algorithm-label">
-            Scaling Algorithm
-          </InputLabel>
-          <Controller
-            control={control}
-            name="scalingAlgorithm"
-            render={({ field }) => (
-              <Select
-                labelId="video-scaling-algorithm-label"
-                id="video-scaling-algorithm"
-                sx={{ my: 1 }}
-                label="Scaling Algorithm"
-                {...field}
+            <FormHelperText>
+              Maximum FPS of a video before the transcoding is enabled
+            </FormHelperText>
+          </FormControl>
+          <FormControl sx={{ mt: 2 }} fullWidth>
+            <InputLabel id="video-scaling-algorithm-label">
+              Scaling Algorithm
+            </InputLabel>
+            <Controller
+              control={control}
+              name="scalingAlgorithm"
+              render={({ field }) => (
+                <Select
+                  labelId="video-scaling-algorithm-label"
+                  id="video-scaling-algorithm"
+                  label="Scaling Algorithm"
+                  {...field}
+                >
+                  {supportedScalingAlgorithm.map((algorithm) => (
+                    <MenuItem key={algorithm} value={algorithm}>
+                      {algorithm}
+                    </MenuItem>
+                  ))}
+                </Select>
+              )}
+            />
+            <FormHelperText>
+              Scaling algorithm to use when the transcoder needs to change the
+              video size.{' '}
+              <MuiLink
+                target="_blank"
+                href="https://ffmpeg.org/ffmpeg-filters.html#Scaling"
               >
-                {supportedScalingAlgorithm.map((algorithm) => (
-                  <MenuItem key={algorithm} value={algorithm}>
-                    {algorithm}
-                  </MenuItem>
-                ))}
-              </Select>
-            )}
-          />
-          <FormHelperText>
-            Scaling algorithm to use when the transcoder needs to change the
-            video size.
-          </FormHelperText>
-        </FormControl>
-        <FormControl sx={{ mt: 2 }} fullWidth>
-          <InputLabel id="video-deinterlace-filter-label">
-            Deinterlace Filter
-          </InputLabel>
-          <Controller
-            control={control}
-            name="deinterlaceFilter"
-            render={({ field }) => (
-              <Select
-                labelId="video-deinterlace-filter-label"
-                id="video-deinterlace-filter"
-                sx={{ my: 1 }}
-                label="Scaling Algorithm"
-                {...field}
-              >
-                {supportedDeinterlaceFilters.map((filter) => (
-                  <MenuItem key={filter.value} value={filter.value}>
-                    {filter.string}
-                  </MenuItem>
-                ))}
-              </Select>
-            )}
-          />
+                Read more
+              </MuiLink>
+            </FormHelperText>
+          </FormControl>
+          <FormControl sx={{ mt: 2 }} fullWidth>
+            <InputLabel id="video-deinterlace-filter-label">
+              Deinterlace Filter
+            </InputLabel>
+            <Controller
+              control={control}
+              name="deinterlaceFilter"
+              render={({ field }) => (
+                <Select
+                  labelId="video-deinterlace-filter-label"
+                  id="video-deinterlace-filter"
+                  label="Scaling Algorithm"
+                  {...field}
+                >
+                  {supportedDeinterlaceFilters.map((filter) => (
+                    <MenuItem key={filter.value} value={filter.value}>
+                      {filter.string}
+                    </MenuItem>
+                  ))}
+                </Select>
+              )}
+            />
 
-          <FormHelperText>
-            Deinterlace filter to use when video is interlaced. This is only
-            needed when Plex transcoding is not used.
-          </FormHelperText>
-        </FormControl>
-        <FormControl sx={{ mt: 2 }} fullWidth>
-          <InputLabel id="target-resolution-label">
-            Preferred Resolution
-          </InputLabel>
-          <TypedController
-            control={control}
-            name="targetResolution"
-            toFormType={resolutionFromAnyString}
-            valueExtractor={(e) => (e as SelectChangeEvent).target.value}
-            render={({ field }) => (
-              <Select
-                labelId="target-resolution-label"
-                id="target-resolution"
-                sx={{ my: 1 }}
-                label="Preferred Resolution"
-                {...field}
-                value={resolutionToString(field.value)}
+            <FormHelperText>
+              Deinterlace filter to use when video is interlaced. This is only
+              needed when Plex transcoding is not used.{' '}
+              <MuiLink
+                target="_blank"
+                href="https://github.com/kfrn/ffmpeg-things/blob/master/deinterlacing.md"
               >
-                {supportTargetResolution.map((resolution) => (
-                  <MenuItem key={resolution.value} value={resolution.value}>
-                    {resolution.string}
-                  </MenuItem>
-                ))}
-              </Select>
-            )}
-          />
-        </FormControl>
-        <FormControl fullWidth>
-          <FormControlLabel
-            control={
-              <CheckboxFormController
-                control={control}
-                name="normalizeResolution"
-              />
-            }
-            label="Normalize Resolution"
-          />
-          <FormHelperText>
-            Some clients experience issues when the video stream changes
-            resolution. This option will make Tunarr convert all videos to the
-            preferred resolution selected above. Otherwise, the preferred
-            resolution will be used as a maximum resolution for transcoding.
-          </FormHelperText>
-        </FormControl>
-        <FormControl>
-          <FormControlLabel
-            control={
-              <CheckboxFormController
-                control={control}
-                name="normalizeVideoCodec"
-              />
-            }
-            label="Normalize Video Codec"
-          />
-          <FormHelperText>
-            Some clients experience issues when the stream's codecs change.
-            Enable these so that any videos with different codecs than the ones
-            specified above are forcefully transcoded.
-          </FormHelperText>
-        </FormControl>
+                Read more
+              </MuiLink>
+            </FormHelperText>
+          </FormControl>
+          <FormControl sx={{ mt: 2 }} fullWidth>
+            <InputLabel id="target-resolution-label">
+              Preferred Resolution
+            </InputLabel>
+            <TypedController
+              control={control}
+              name="targetResolution"
+              toFormType={resolutionFromAnyString}
+              valueExtractor={(e) => (e as SelectChangeEvent).target.value}
+              render={({ field }) => (
+                <Select
+                  labelId="target-resolution-label"
+                  id="target-resolution"
+                  label="Preferred Resolution"
+                  {...field}
+                  value={resolutionToString(field.value)}
+                >
+                  {supportTargetResolution.map((resolution) => (
+                    <MenuItem key={resolution.value} value={resolution.value}>
+                      {resolution.string}
+                    </MenuItem>
+                  ))}
+                </Select>
+              )}
+            />
+          </FormControl>
+          <FormControl fullWidth>
+            <FormControlLabel
+              control={
+                <CheckboxFormController
+                  control={control}
+                  name="normalizeResolution"
+                />
+              }
+              label="Normalize Resolution"
+            />
+            <FormHelperText>
+              Some clients experience issues when the video stream changes
+              resolution. This option will make Tunarr convert all videos to the
+              preferred resolution selected above. Otherwise, the preferred
+              resolution will be used as a maximum resolution for transcoding.
+            </FormHelperText>
+          </FormControl>
+          <FormControl>
+            <FormControlLabel
+              control={
+                <CheckboxFormController
+                  control={control}
+                  name="normalizeVideoCodec"
+                />
+              }
+              label="Normalize Video Codec"
+            />
+            <FormHelperText>
+              Some clients experience issues when the stream's codecs change.
+              Enable these so that any videos with different codecs than the
+              ones specified above are forcefully transcoded.
+            </FormHelperText>
+          </FormControl>
+        </Stack>
       </>
     );
   };
@@ -469,9 +576,14 @@ export default function FfmpegSettingsPage() {
               prettyFieldName="Audio Bitrate"
               TextFieldProps={{
                 id: 'audio-bitrate',
-                label: 'Audio Bitrate (Kbps)',
+                label: 'Audio Bitrate',
                 fullWidth: true,
                 sx: { my: 1 },
+                InputProps: {
+                  endAdornment: (
+                    <InputAdornment position="end">kbps</InputAdornment>
+                  ),
+                },
               }}
             />
           </Grid>
@@ -482,9 +594,14 @@ export default function FfmpegSettingsPage() {
               prettyFieldName="Audio Buffer Size"
               TextFieldProps={{
                 id: 'audio-buffer-size',
-                label: 'Audio Buffer Size (kb)',
+                label: 'Audio Buffer Size',
                 fullWidth: true,
                 sx: { my: 1 },
+                InputProps: {
+                  endAdornment: (
+                    <InputAdornment position="end">kb</InputAdornment>
+                  ),
+                },
               }}
             />
           </Grid>
@@ -497,7 +614,7 @@ export default function FfmpegSettingsPage() {
               prettyFieldName="Audio Volume Percent"
               TextFieldProps={{
                 id: 'audio-volume',
-                label: 'Audio Volume (%)',
+                label: 'Audio Volume',
                 fullWidth: true,
                 sx: { my: 1 },
                 helperText: 'Values higher than 100 will boost the audio.',
@@ -529,9 +646,12 @@ export default function FfmpegSettingsPage() {
           prettyFieldName="Audio Sample Rate"
           TextFieldProps={{
             id: 'audio-sample-rate',
-            label: 'Audio Sample Rate (k)',
+            label: 'Audio Sample Rate',
             fullWidth: true,
             sx: { my: 1 },
+            InputProps: {
+              endAdornment: <InputAdornment position="end">kHz</InputAdornment>,
+            },
           }}
         />
 
@@ -638,18 +758,18 @@ export default function FfmpegSettingsPage() {
         </FormHelperText>
       </FormControl>
       <Divider sx={{ mt: 2 }} />
-      <Typography variant="h6" sx={{ my: 2 }}>
+      <Typography variant="h5" sx={{ mt: 2, mb: 1 }}>
         Transcoding Options
       </Typography>
       <Grid container spacing={2} columns={16}>
         <Grid item sm={16} md={8}>
-          <Typography component="h6" variant="h6" sx={{ pt: 2, pb: 1 }}>
+          <Typography component="h6" variant="h6" sx={{ mb: 2 }}>
             Video Options
           </Typography>
           {videoFfmpegSettings()}
         </Grid>
         <Grid item sm={16} md={8}>
-          <Typography component="h6" variant="h6" sx={{ pt: 2, pb: 1 }}>
+          <Typography component="h6" variant="h6" sx={{ pb: 1 }}>
             Audio Options
           </Typography>
           {audioFfmpegSettings()}
@@ -690,7 +810,7 @@ export default function FfmpegSettingsPage() {
           </FormControl>
         </Grid>
         <Grid item sm={16} md={8}>
-          <FormControl sx={{ mt: 2 }}>
+          <FormControl sx={{ mt: 2 }} fullWidth>
             <InputLabel id="error-audio-label">Error Audio</InputLabel>
             <Controller
               control={control}
