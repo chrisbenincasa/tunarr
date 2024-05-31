@@ -392,12 +392,11 @@ export function Root({ children }: { children?: React.ReactNode }) {
                     {link.name}
                   </Button>
                 ) : (
-                  <Tooltip title={link.name}>
+                  <Tooltip title={link.name} key={link.name}>
                     <IconButton
                       href={link.path}
                       target="_blank"
                       color="inherit"
-                      key={link.name}
                     >
                       {link.icon}
                     </IconButton>

@@ -4,6 +4,7 @@ import { Channel } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { useCallback, useEffect, useRef } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
+import { useChannels } from '../../hooks/useChannels.ts';
 import useStore from '../../store/index.ts';
 import TunarrLogo from '../TunarrLogo.tsx';
 import { ImageUploadInput } from '../settings/ImageUploadInput.tsx';
@@ -19,7 +20,8 @@ type Props = {
 export default function ChannelPropertiesEditor({ isNew }: Props) {
   const imgRef = useRef<HTMLImageElement | null>(null);
   const channel = useStore((s) => s.channelEditor.currentEntity);
-  const { control, watch } = useFormContext<Channel>();
+  const { control, watch, getValues, setValue } = useFormContext<Channel>();
+  const { data: channels } = useChannels();
 
   const onloadstart = () => {
     console.log('on load start');
@@ -50,7 +52,52 @@ export default function ChannelPropertiesEditor({ isNew }: Props) {
     },
     [channel],
   );
+
   const imagePath = watch('icon.path');
+
+  const isChannelFormat = (str: string) => {
+    // Regex to match "Channel 123" format
+    const regex = /\bChannel\s\d+\b/;
+    return regex.test(str);
+  };
+
+  const updateChannelNumber = (str: string, newNumber: number) => {
+    // Check if the string matches the channel format
+    if (!isChannelFormat(str)) {
+      return str; // Return original string if not a channel format
+    }
+
+    // Capture the existing number using a capturing group
+    const regex = /\bChannel\s(\d+)\b/;
+    const match = regex.exec(str);
+
+    if (match) {
+      // Replace the captured number with the new number
+      const updatedStr = str.replace(regex, `Channel ${newNumber}`);
+      return updatedStr;
+    }
+
+    // No match found, return original string
+    return str;
+  };
+
+  const handleChannelNumberChange = (value: number) => {
+    const allValues = getValues(); // Get all form values
+
+    if (isChannelFormat(allValues.name)) {
+      const channelName = updateChannelNumber(allValues.name, value);
+      setValue('name', channelName);
+    }
+  };
+
+  const validateNumber = (value: number) => {
+    if (!value || !isNaN(value)) {
+      // Check if value is a number
+      return channels.find((channel) => channel.number === Number(value))
+        ? 'This channel number has already been used'
+        : undefined;
+    }
+  };
 
   return (
     <>
@@ -60,14 +107,16 @@ export default function ChannelPropertiesEditor({ isNew }: Props) {
           <NumericFormControllerText
             name="number"
             control={control}
-            rules={{ required: true }}
+            rules={{
+              required: true,
+              validate: validateNumber,
+              onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+                handleChannelNumberChange(Number(e.target.value)),
+            }}
             TextFieldProps={{
               fullWidth: true,
               label: 'Channel Number',
-              type: 'number',
               margin: 'normal',
-              helperText: ({ formState: { errors } }) =>
-                errors.number ? 'Channel number is required' : null,
             }}
           />
           <Controller

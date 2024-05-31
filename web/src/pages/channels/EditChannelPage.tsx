@@ -251,7 +251,7 @@ export default function EditChannelPage({ isNew, initialTab }: Props) {
       {workingChannel && (
         <div>
           <Typography variant="h4" sx={{ mb: 2 }}>
-            {channel.name}
+            {isNew ? 'New Channel' : channel.name}
           </Typography>
           <Paper sx={{ p: 2 }}>
             <Box sx={{ borderColor: 'primary', borderBottom: 1 }}>

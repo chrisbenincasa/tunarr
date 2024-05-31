@@ -219,10 +219,7 @@ export default function ChannelsPage() {
         <TableCell>{channel.name}</TableCell>
         <TableCell>{startTime.isBefore(now) ? 'Yes' : 'No'}</TableCell>
         <TableCell>{channel.stealth ? 'Yes' : 'No'}</TableCell>
-        <TableCell
-          sx={{ textAlign: 'right' }}
-          onClick={(event) => event.stopPropagation()}
-        >
+        <TableCell sx={{ textAlign: 'right' }}>
           {mediumViewport ? (
             <>
               <IconButton

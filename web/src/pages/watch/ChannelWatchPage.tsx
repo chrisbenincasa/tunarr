@@ -7,7 +7,8 @@ import { roundCurrentTime } from '../../helpers/util.ts';
 import { usePreloadedChannel } from '../../hooks/usePreloadedChannel.ts';
 
 export default function ChannelWatchPage() {
-  const channel = usePreloadedChannel();
+  const channelData = usePreloadedChannel();
+  const channel = channelData.data;
   // Unclear whether these need to be state values right now
   // TODO: We probably want common hooks pulled from the GuidePage
   // that install the useInterval, updaters to start/end time, etc.
