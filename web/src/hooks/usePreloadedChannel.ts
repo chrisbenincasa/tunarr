@@ -12,27 +12,38 @@ import {
 } from '../store/channelEditor/actions.ts';
 import { useChannelEditor } from '../store/selectors.ts';
 import { usePreloadedData } from './preloadedDataHook.ts';
-import { useChannelProgramming } from './useChannelLineup.ts';
+import {
+  useChannelAndProgramming,
+  useChannelProgramming,
+} from './useChannelLineup.ts';
+import { useChannelWithInitialData } from './useChannels.ts';
 
 export const usePreloadedChannel = () => {
   const channel = usePreloadedData(channelLoader);
   // Channel loader should've already set the state.
-  return channel;
+  return useChannelWithInitialData(channel.id, channel);
 };
 
 export const usePreloadedChannelEdit = () => {
   const { channel: preloadChannel, programming: preloadLineup } =
     usePreloadedData(editProgrammingLoader);
+
+  const {
+    data: { channel, lineup },
+  } = useChannelAndProgramming(preloadChannel.id, true, {
+    channel: preloadChannel,
+    lineup: preloadLineup,
+  });
   const channelEditor = useChannelEditor();
 
   useEffect(() => {
     if (
       isUndefined(channelEditor.originalEntity) ||
-      preloadChannel.id !== channelEditor.originalEntity.id
+      channel.id !== channelEditor.originalEntity.id
     ) {
-      setCurrentChannel(preloadChannel, preloadLineup);
+      setCurrentChannel(channel, lineup);
     }
-  }, [channelEditor, preloadChannel, preloadLineup]);
+  }, [channelEditor, channel, lineup]);
 
   return channelEditor;
 };
@@ -46,7 +57,6 @@ export const useResetCurrentLineup = () => {
 
   useEffect(() => {
     if (lineup && isReset) {
-      console.log(lineup.lineup);
       resetCurrentLineup(lineup.lineup, lineup.programs);
       setIsReset(false);
     }
@@ -62,5 +72,5 @@ export const useResetCurrentLineup = () => {
         })
         .catch(console.error);
     }
-  }, [setIsReset, queryClient, isReset]);
+  }, [isReset, queryClient, id]);
 };
