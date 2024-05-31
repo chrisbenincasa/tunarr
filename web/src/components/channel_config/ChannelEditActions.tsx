@@ -29,7 +29,8 @@ export default function ChannelEditActions() {
   });
 
   useEffect(() => {
-    if (isSubmitSuccessful) {
+    // new channels are automatically navigated to programming page so no need for snackbar there
+    if (isSubmitSuccessful && !channelEditorState.isNewChannel) {
       setSnackStatus({
         display: true,
         message: 'Channel settings saved!',

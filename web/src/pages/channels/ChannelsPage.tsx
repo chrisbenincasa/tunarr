@@ -83,6 +83,10 @@ export default function ChannelsPage() {
     setChannelMenu(null);
   }, [channelsFetching]);
 
+  useEffect(() => {
+    window.scrollTo(0, 0); // Scroll to top on route change
+  }, [navigate]); // Run on navigate change
+
   const handleChannelNavigation = (
     _: React.MouseEvent<HTMLTableRowElement, MouseEvent>,
     id: string,
@@ -219,10 +223,7 @@ export default function ChannelsPage() {
         <TableCell>{channel.name}</TableCell>
         <TableCell>{startTime.isBefore(now) ? 'Yes' : 'No'}</TableCell>
         <TableCell>{channel.stealth ? 'Yes' : 'No'}</TableCell>
-        <TableCell
-          sx={{ textAlign: 'right' }}
-          onClick={(event) => event.stopPropagation()}
-        >
+        <TableCell sx={{ textAlign: 'right' }}>
           {mediumViewport ? (
             <>
               <IconButton

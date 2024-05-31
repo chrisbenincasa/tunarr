@@ -12,7 +12,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
 import { ZodiosError } from '@zodios/core';
 import { chain, findIndex, first, isUndefined, map } from 'lodash-es';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import { ChannelProgrammingConfig } from '../../components/channel_config/ChannelProgrammingConfig.tsx';
 import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert.tsx';
@@ -58,6 +58,13 @@ export default function ChannelProgrammingPage() {
   });
 
   const updateChannelMutation = useUpdateChannel(/*isNewChannel=*/ false);
+
+  // Force this page to load at the top
+  // Fixes issue where some browsers maintain previous page scroll position
+  // To do: find better solution
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const updateLineupMutation = useMutation({
     mutationFn: ({ channelId, lineupRequest }: MutateArgs) => {

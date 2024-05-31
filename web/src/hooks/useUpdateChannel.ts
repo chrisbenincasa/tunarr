@@ -19,13 +19,13 @@ export const useUpdateChannel = (isNewChannel: boolean) => {
         });
       }
     },
-    onSuccess: async () => {
+    onSuccess: async (data) => {
       await queryClient.invalidateQueries({
         exact: false,
         queryKey: ['channels'],
       });
       if (isNewChannel) {
-        navigate('/channels');
+        navigate(`/channels/${data.id}/programming`);
       } else {
         updateChannel.reset();
       }
