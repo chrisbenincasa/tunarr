@@ -83,10 +83,6 @@ export default function ChannelsPage() {
     setChannelMenu(null);
   }, [channelsFetching]);
 
-  useEffect(() => {
-    window.scrollTo(0, 0); // Scroll to top on route change
-  }, [navigate]); // Run on navigate change
-
   const handleChannelNavigation = (
     _: React.MouseEvent<HTMLTableRowElement, MouseEvent>,
     id: string,
