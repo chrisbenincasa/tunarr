@@ -1,6 +1,7 @@
 import { EntityDTO, Loaded, wrap } from '@mikro-orm/core';
 import constants from '@tunarr/shared/constants';
-import { every, first, isNil, isNull, negate, pick } from 'lodash-es';
+import { find, first, isNil, isNull, isUndefined, pick } from 'lodash-es';
+import { ProgramExternalIdType } from '../dao/custom_types/ProgramExternalIdType.js';
 import { getEm } from '../dao/dataSource.js';
 import {
   Lineup,
@@ -19,7 +20,7 @@ import { getServerContext } from '../serverContext.js';
 import { FillerPicker } from '../services/FillerPicker.js';
 import { Nullable } from '../types/util.js';
 import { binarySearchRange } from '../util/binarySearch.js';
-import { zipWithIndex } from '../util/index.js';
+import { isNonEmptyString, zipWithIndex } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { random } from '../util/random.js';
 import { STREAM_CHANNEL_CONTEXT_KEYS, StreamContextChannel } from './types.js';
@@ -32,10 +33,6 @@ export type ProgramAndTimeElapsed = {
   timeElapsed: number;
   programIndex: number;
 };
-
-function programHasRequiredStreamingFields(program: Loaded<ProgramEntity>) {
-  return every([program.plexFilePath, program.filePath], negate(isNil));
-}
 
 // any channel thing used here should be added to channel context
 export function generateChannelContext(
@@ -134,32 +131,51 @@ export class StreamProgramCalculator {
     let program: StreamLineupItem;
     if (isContentItem(lineupItem)) {
       // Defer program lookup
-      const backingItem = await getEm().findOne(ProgramEntity, {
-        uuid: lineupItem.id,
-      });
+      const backingItem = await getEm().findOne(
+        ProgramEntity,
+        {
+          uuid: lineupItem.id,
+        },
+        {
+          populate: ['externalIds'],
+          populateWhere: {
+            externalIds: {
+              sourceType: ProgramExternalIdType.PLEX,
+            },
+          },
+        },
+      );
 
       program = {
         duration: lineupItem.durationMs,
         type: 'offline',
       };
 
-      if (
-        !isNil(backingItem) &&
-        programHasRequiredStreamingFields(backingItem)
-      ) {
-        // TODO put a logger warning here
-        program = {
-          type: 'program',
-          plexFilePath: backingItem.plexFilePath!,
-          externalKey: backingItem.externalKey,
-          filePath: backingItem.filePath!,
-          externalSourceId: backingItem.externalSourceId,
-          duration: backingItem.duration,
-          programId: backingItem.uuid,
-          title: backingItem.title,
-          id: backingItem.uuid,
-          programType: backingItem.type,
-        };
+      if (!isNil(backingItem)) {
+        // Will play this item on the first found server... unsure if that is
+        // what we want
+        const plexInfo = find(
+          backingItem.externalIds,
+          (eid) => eid.sourceType === ProgramExternalIdType.PLEX,
+        );
+
+        if (
+          !isUndefined(plexInfo) &&
+          isNonEmptyString(plexInfo.externalSourceId)
+        ) {
+          program = {
+            type: 'program',
+            plexFilePath: plexInfo.externalFilePath,
+            externalKey: plexInfo.externalKey,
+            filePath: plexInfo.directFilePath,
+            externalSourceId: plexInfo.externalSourceId,
+            duration: backingItem.duration,
+            programId: backingItem.uuid,
+            title: backingItem.title,
+            id: backingItem.uuid,
+            programType: backingItem.type,
+          };
+        }
       }
     } else if (isOfflineItem(lineupItem)) {
       program = {

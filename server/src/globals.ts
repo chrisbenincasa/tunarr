@@ -73,12 +73,12 @@ export const serverOptions = () => {
 };
 
 export const dbOptions = (): Options => {
-  if (isUndefined(_serverOptions)) {
-    throw new Error('Accessing server options before they were set!');
+  if (isUndefined(_globalOptions)) {
+    throw new Error('Accessing global options before they were set!');
   }
 
   return {
     ...dbConfig,
-    dbName: path.join(_serverOptions.databaseDirectory, 'db.db'),
+    dbName: path.join(_globalOptions.databaseDirectory, 'db.db'),
   };
 };

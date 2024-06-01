@@ -14,11 +14,15 @@ import { FillerListContent } from './src/dao/entities/FillerListContent.js';
 import { FillerShow } from './src/dao/entities/FillerShow.js';
 import { PlexServerSettings } from './src/dao/entities/PlexServerSettings.js';
 import { Program } from './src/dao/entities/Program.js';
+import { DATABASE_LOCATION_ENV_VAR } from './src/util/constants.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const dbPath = path.join(process.env.DB_PATH ?? '.tunarr', 'db.db');
+const dbPath = path.join(
+  process.env[DATABASE_LOCATION_ENV_VAR] ?? '.tunarr',
+  'db.db',
+);
 
 export default defineConfig({
   dbName: dbPath,

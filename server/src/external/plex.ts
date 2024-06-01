@@ -15,18 +15,28 @@ import axios, {
   isAxiosError,
 } from 'axios';
 import { XMLParser } from 'fast-xml-parser';
-import { first, flatMap, forEach, isNil, isUndefined, map } from 'lodash-es';
+import {
+  first,
+  flatMap,
+  forEach,
+  isEmpty,
+  isError,
+  isString,
+  isUndefined,
+  map,
+} from 'lodash-es';
 import NodeCache from 'node-cache';
 import querystring, { ParsedUrlQueryInput } from 'querystring';
 import { MarkOptional } from 'ts-essentials';
+import { z } from 'zod';
 import { PlexServerSettings } from '../dao/entities/PlexServerSettings.js';
 import {
   PlexMediaContainer,
   PlexMediaContainerResponse,
 } from '../types/plexApiTypes.js';
-import { Maybe } from '../types/util.js';
+import { Maybe, Try } from '../types/util.js';
 import { Logger, LoggerFactory } from '../util/logging/LoggerFactory.js';
-import { z } from 'zod';
+import { isSuccess } from '../util/index.js';
 
 type AxiosConfigWithMetadata = InternalAxiosRequestConfig & {
   metadata: {
@@ -41,6 +51,55 @@ type PlexApiOptions = MarkOptional<
   >,
   'clientIdentifier'
 >;
+
+type PlexQuerySuccessResult<T> = {
+  type: 'success';
+  data: T;
+};
+
+type PlexQueryErrorCode =
+  | 'not_found'
+  | 'no_access_token'
+  | 'parse_error'
+  | 'generic_request_error';
+
+type PlexQueryErrorResult = {
+  type: 'error';
+  code: PlexQueryErrorCode;
+  message?: string;
+};
+
+type PlexQueryResult<T> = PlexQuerySuccessResult<T> | PlexQueryErrorResult;
+
+export function isPlexQueryError(
+  x: PlexQueryResult<unknown>,
+): x is PlexQueryErrorResult {
+  return x.type === 'error';
+}
+
+export function isPlexQuerySuccess<T>(
+  x: PlexQueryResult<T>,
+): x is PlexQuerySuccessResult<T> {
+  return x.type === 'success';
+}
+
+function makeErrorResult(
+  code: PlexQueryErrorCode,
+  message?: string,
+): PlexQueryErrorResult {
+  return {
+    type: 'error',
+    code,
+    message,
+  };
+}
+
+function makeSuccessResult<T>(data: T): PlexQuerySuccessResult<T> {
+  return {
+    type: 'success',
+    data,
+  };
+}
 
 class PlexApiFactoryImpl {
   #cache: NodeCache;
@@ -127,7 +186,7 @@ export class Plex {
     return this.opts.name;
   }
 
-  private async doRequest<T>(req: AxiosRequestConfig): Promise<Maybe<T>> {
+  private async doRequest<T>(req: AxiosRequestConfig): Promise<Try<T>> {
     try {
       const response = await this.axiosInstance.request<T>(req);
       return response.data;
@@ -153,15 +212,30 @@ export class Plex {
         } else {
           this.logger.error(error, 'Error requesting Plex: %s', error.message);
         }
+        return error;
+      } else if (isError(error)) {
+        this.logger.error(error);
+        return error;
+      } else if (isString(error)) {
+        // Wrap it
+        const err = new Error(error);
+        this.logger.error(err);
+        return err;
+      } else {
+        // At this point we have no idea what the object is... attempt to log
+        // and just return a generic error. Something is probably fatally wrong
+        // at this point.
+        this.logger.error('Unknown error type thrown: %O', error);
+        return new Error('Unknown error when requesting Plex');
       }
-      return;
     }
   }
 
-  async doGet<T>(
+  // TODO: make all callers use this
+  async doGetResult<T>(
     path: string,
     optionalHeaders: RawAxiosRequestHeaders = {},
-  ): Promise<Maybe<PlexMediaContainer<T>>> {
+  ): Promise<PlexQueryResult<PlexMediaContainer<T>>> {
     const req: AxiosRequestConfig = {
       method: 'get',
       url: path,
@@ -175,36 +249,69 @@ export class Plex {
     }
 
     const res = await this.doRequest<PlexMediaContainerResponse<T>>(req);
-    if (!res?.MediaContainer) {
-      this.logger.error(res, 'Expected MediaContainer, got %O');
+    if (isSuccess(res)) {
+      if (isUndefined(res?.MediaContainer)) {
+        this.logger.error(res, 'Expected MediaContainer, got %O', res);
+        return makeErrorResult('parse_error');
+      }
+
+      return makeSuccessResult(res?.MediaContainer);
     }
 
-    return res?.MediaContainer;
+    if (isAxiosError(res) && res.response?.status === 404) {
+      return makeErrorResult('not_found');
+    }
+
+    return makeErrorResult('generic_request_error', res.message);
+  }
+
+  // We're just keeping the old contract here right now...
+  async doGet<T>(
+    path: string,
+    optionalHeaders: RawAxiosRequestHeaders = {},
+  ): Promise<Maybe<PlexMediaContainer<T>>> {
+    const result = await this.doGetResult<PlexMediaContainer<T>>(
+      path,
+      optionalHeaders,
+    );
+    if (isPlexQuerySuccess(result)) {
+      return result.data;
+    } else {
+      return;
+    }
   }
 
   async doTypeCheckedGet<T extends z.ZodTypeAny, Out = z.infer<T>>(
     path: string,
     schema: T,
-    optionalHeaders: RawAxiosRequestHeaders = {},
-  ): Promise<Maybe<Out>> {
+    extraConfig: Partial<AxiosRequestConfig> = {},
+  ): Promise<PlexQueryResult<Out>> {
     const req: AxiosRequestConfig = {
+      ...extraConfig,
       method: 'get',
       url: path,
-      headers: optionalHeaders,
     };
 
-    if (this.accessToken === '') {
-      throw new Error(
+    if (isEmpty(this.accessToken)) {
+      return makeErrorResult(
+        'no_access_token',
         'No Plex token provided. Please use the SignIn method or provide a X-Plex-Token in the Plex constructor.',
       );
     }
 
     const response = await this.doRequest<unknown>(req);
 
+    if (isError(response)) {
+      if (isAxiosError(response) && response.response?.status === 404) {
+        return makeErrorResult('not_found');
+      }
+      return makeErrorResult('generic_request_error', response.message);
+    }
+
     const parsed = await schema.safeParseAsync(response);
 
     if (parsed.success) {
-      return parsed.data as Out;
+      return makeSuccessResult(parsed.data as Out);
     }
 
     this.logger.error(
@@ -212,18 +319,31 @@ export class Plex {
       'Unable to parse schema from Plex response. Path: %s',
       path,
     );
-    return;
+
+    return makeErrorResult('parse_error');
+
+    // if (isAxiosError(response) && response.res)
   }
 
-  async getItemMetadata(key: string): Promise<Maybe<PlexMedia>> {
+  async getItemMetadata(key: string): Promise<PlexQueryResult<PlexMedia>> {
     const parsedResponse = await this.doTypeCheckedGet(
       `/library/metadata/${key}`,
       PlexMediaContainerResponseSchema,
     );
-    if (!isUndefined(parsedResponse)) {
-      return first(parsedResponse.MediaContainer.Metadata);
+
+    if (isPlexQuerySuccess(parsedResponse)) {
+      const media = first(parsedResponse.data.MediaContainer.Metadata);
+      if (!isUndefined(media)) {
+        return makeSuccessResult(media);
+      }
+      this.logger.error(
+        'Could not extract Metadata object for Plex media, key = %s',
+        key,
+      );
+      return makeErrorResult('parse_error');
     }
-    return;
+
+    return parsedResponse;
   }
 
   doPut(
@@ -260,7 +380,8 @@ export class Plex {
     };
 
     if (this.accessToken === '') {
-      throw Error(
+      return makeErrorResult(
+        'no_access_token',
         'No Plex token provided. Please use the SignIn method or provide a X-Plex-Token in the Plex constructor.',
       );
     }
@@ -331,7 +452,8 @@ export class Plex {
       url: '/devices.xml',
     });
 
-    if (isNil(response)) {
+    if (isError(response)) {
+      this.logger.error(response);
       return;
     }
 

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
 import constants from '@tunarr/shared/constants';
 import chalk from 'chalk';
-import { isArray, isString } from 'lodash-es';
+import { isArray, isString, keys } from 'lodash-es';
 import { existsSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
@@ -13,14 +13,24 @@ import {
   LegacyDbMigrator,
   MigratableEntities,
 } from './dao/legacy_migration/legacyDbMigration.js';
-import { setGlobalOptions, setServerOptions } from './globals.js';
-import { initServer } from './server.js';
-import { ServerOptions } from './globals.js';
-import { isProduction } from './util/index.js';
 import { getSettings } from './dao/settings.js';
+import {
+  ServerOptions,
+  setGlobalOptions,
+  setServerOptions,
+} from './globals.js';
+import { initServer } from './server.js';
+import { getDefaultLogLevel } from './util/logging/LoggerFactory.js';
+import {
+  DATABASE_LOCATION_ENV_VAR,
+  SERVER_PORT_ENV_VAR,
+} from './util/constants.js';
+import { initOrm, withDb } from './dao/dataSource.js';
+import { FixersByName } from './tasks/fixers/index.js';
+import { isNonEmptyString } from './util/index.js';
 
 const maybeEnvPort = () => {
-  const port = process.env['TUNARR_SERVER_PORT'];
+  const port = process.env[SERVER_PORT_ENV_VAR];
   if (!port) {
     return;
   }
@@ -33,7 +43,7 @@ yargs(hideBin(process.argv))
   .scriptName('tunarr')
   .option('log_level', {
     type: 'string',
-    default: isProduction ? 'info' : 'debug',
+    default: getDefaultLogLevel(),
   })
   .option('verbose', {
     alias: 'v',
@@ -43,7 +53,9 @@ yargs(hideBin(process.argv))
     alias: 'd',
     type: 'string',
     desc: 'Path to the database directory',
-    default: path.join('.', constants.DEFAULT_DATA_DIR),
+    default:
+      process.env[DATABASE_LOCATION_ENV_VAR] ??
+      path.join('.', constants.DEFAULT_DATA_DIR),
     normalize: true,
     coerce: (db: string) => fileURLToPath(new URL(db, import.meta.url)),
   })
@@ -161,6 +173,63 @@ ${chalk.blue('  |_| ')}${chalk.green(' \\___/')}${chalk.yellow(
         getSettings(),
         argv.entities,
       );
+    },
+  )
+  .command(
+    'db [sub]',
+    'Run database commands',
+    (yargs) => {
+      return yargs.positional('sub', {
+        type: 'string',
+        choices: ['generate-migration'],
+        demandOption: true,
+      });
+    },
+    async (args: ArgumentsCamelCase<ServerOptions & { sub: string }>) => {
+      setServerOptions(args);
+      switch (args.sub) {
+        case 'generate-migration': {
+          const orm = await initOrm();
+
+          const result = await orm.migrator.createMigration();
+
+          console.log(result.code);
+
+          break;
+        }
+        default: {
+          console.error('Invalid subcommand: %s', args.sub);
+          process.exit(1);
+        }
+      }
+      process.exit(0);
+    },
+  )
+  .command(
+    'fixer [sub]',
+    'Run a specific fixer task',
+    (yargs) =>
+      yargs.positional('sub', {
+        type: 'string',
+        choices: keys(FixersByName),
+        demandOption: true,
+      }),
+    async (args: ArgumentsCamelCase<ServerOptions & { sub: string }>) => {
+      setServerOptions(args);
+      if (isNonEmptyString(args.sub)) {
+        try {
+          await withDb(async () => {
+            await FixersByName[args.sub].run();
+          });
+          process.exit(0);
+        } catch (e) {
+          console.error('Fixer failed', e);
+          process.exit(1);
+        }
+      } else {
+        console.error('Specify a fixer to run');
+        process.exit(1);
+      }
     },
   )
   .help()

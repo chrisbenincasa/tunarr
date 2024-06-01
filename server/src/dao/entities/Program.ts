@@ -7,6 +7,7 @@ import {
   Index,
   ManyToMany,
   ManyToOne,
+  OneToMany,
   OptionalProps,
   Property,
   Unique,
@@ -23,6 +24,7 @@ import { CustomShow } from './CustomShow.js';
 import { FillerShow } from './FillerShow.js';
 import { ProgramGrouping } from './ProgramGrouping.js';
 import { createExternalId } from '@tunarr/shared';
+import { ProgramExternalId } from './ProgramExternalId.js';
 
 /**
  * Program represents a 'playable' entity. A movie, episode, or music track
@@ -70,6 +72,7 @@ export class Program extends BaseEntity {
 
   /**
    * Previously "key"
+   * @deprecated Use the external key selected from the external IDs relation
    */
   @Property()
   externalKey!: string;
@@ -83,6 +86,7 @@ export class Program extends BaseEntity {
 
   /**
    * Previously "plexFile"
+   * @deprecated Use the file path on the associated external ID
    */
   @Property({ nullable: true })
   plexFilePath?: string;
@@ -163,6 +167,9 @@ export class Program extends BaseEntity {
 
   @ManyToOne(() => ProgramGrouping, { nullable: true })
   artist?: Rel<ProgramGrouping>;
+
+  @OneToMany(() => ProgramExternalId, (eid) => eid.program)
+  externalIds = new Collection<ProgramExternalId>(this);
 
   toDTO(): ProgramDTO {
     return programDaoToDto(serialize(this as Program, { skipNull: true }));

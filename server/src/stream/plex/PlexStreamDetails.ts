@@ -1,6 +1,7 @@
 import {
   PlexEpisode,
   PlexMediaAudioStream,
+  PlexMediaContainerResponseSchema,
   PlexMediaVideoStream,
   PlexMovie,
   PlexMusicTrack,
@@ -15,7 +16,12 @@ import {
   trimEnd,
 } from 'lodash-es';
 import { PlexServerSettings } from '../../dao/entities/PlexServerSettings';
-import { Plex, PlexApiFactory } from '../../external/plex';
+import {
+  Plex,
+  PlexApiFactory,
+  isPlexQueryError,
+  isPlexQuerySuccess,
+} from '../../external/plex';
 import { Nullable } from '../../types/util';
 import { Logger, LoggerFactory } from '../../util/logging/LoggerFactory';
 import { PlexStream, StreamDetails } from './PlexTranscoder';
@@ -23,11 +29,13 @@ import { isNonEmptyString } from '../../util';
 import { ContentBackedStreamLineupItem } from '../../dao/derived_types/StreamLineup.js';
 import { SettingsDB } from '../../dao/settings.js';
 import { makeLocalUrl } from '../../util/serverUtil.js';
+import { ProgramDB } from '../../dao/programDB';
+import { ProgramExternalIdType } from '../../dao/custom_types/ProgramExternalIdType';
 
 // The minimum fields we need to get stream details about an item
 type PlexItemStreamDetailsQuery = Pick<
   ContentBackedStreamLineupItem,
-  'programType' | 'externalKey' | 'plexFilePath' | 'filePath'
+  'programType' | 'externalKey' | 'plexFilePath' | 'filePath' | 'programId'
 >;
 
 /**
@@ -42,6 +50,7 @@ export class PlexStreamDetails {
   constructor(
     private server: PlexServerSettings,
     private settings: SettingsDB,
+    private programDB: ProgramDB,
   ) {
     this.logger = LoggerFactory.child({
       plexServer: server.name,
@@ -50,17 +59,92 @@ export class PlexStreamDetails {
     });
   }
 
-  async getStream(
+  async getStream(item: PlexItemStreamDetailsQuery) {
+    return this.getStreamInternal(item);
+  }
+
+  private async getStreamInternal(
     item: PlexItemStreamDetailsQuery,
+    depth: number = 0,
   ): Promise<Nullable<PlexStream>> {
+    if (depth > 1) {
+      return null;
+    }
+
     const plex = PlexApiFactory.get(this.server);
     const expectedItemType = item.programType;
-    const itemMetadata = await plex.getItemMetadata(item.externalKey);
+    const itemMetadataResult = await plex.getItemMetadata(item.externalKey);
 
-    if (isUndefined(itemMetadata)) {
+    if (isPlexQueryError(itemMetadataResult)) {
+      if (itemMetadataResult.code === 'not_found') {
+        this.logger.debug(
+          'Could not find item %s in Plex. Rating key may have changed. Attempting to update.',
+          item.externalKey,
+        );
+        const externalIds = await this.programDB.getProgramExternalIds(
+          item.programId,
+        );
+        const plexGuid = find(
+          externalIds,
+          (eid) => eid.sourceType === ProgramExternalIdType.PLEX_GUID,
+        )?.externalKey;
+        if (isNonEmptyString(plexGuid)) {
+          const byGuidResult = await plex.doTypeCheckedGet(
+            '/library/all',
+            PlexMediaContainerResponseSchema,
+            {
+              params: {
+                guid: plexGuid,
+              },
+            },
+          );
+
+          if (isPlexQuerySuccess(byGuidResult)) {
+            if (byGuidResult.data.MediaContainer.size > 0) {
+              this.logger.debug(
+                'Found %d matching items in library. Using the first',
+                byGuidResult.data.MediaContainer.size,
+              );
+              const metadata = first(
+                byGuidResult.data.MediaContainer.Metadata,
+              )!;
+              const newRatingKey = metadata.ratingKey;
+              this.logger.debug(
+                'Updating program %s with new Plex rating key %s',
+                item.programId,
+                newRatingKey,
+              );
+              await this.programDB.updateProgramPlexRatingKey(
+                item.programId,
+                this.server.name,
+                { externalKey: newRatingKey },
+              );
+              return this.getStreamInternal(
+                {
+                  ...item,
+                  externalKey: newRatingKey,
+                },
+                depth + 1,
+              );
+            } else {
+              this.logger.debug(
+                'Plex item with guid %s no longer in library',
+                plexGuid,
+              );
+            }
+          } else {
+            this.logger.error(
+              byGuidResult,
+              'Error while querying Plex by GUID',
+            );
+          }
+        }
+      }
       // This will have to throw somewhere!
       return null;
     }
+
+    const itemMetadata = itemMetadataResult.data;
 
     if (expectedItemType !== itemMetadata.type) {
       this.logger.warn(
@@ -78,10 +162,30 @@ export class PlexStreamDetails {
       return null;
     }
 
+    if (
+      isNonEmptyString(details.serverPath) &&
+      details.serverPath !== item.plexFilePath
+    ) {
+      this.programDB
+        .updateProgramPlexRatingKey(item.programId, this.server.name, {
+          externalKey: item.externalKey,
+          externalFilePath: details.serverPath,
+          directFilePath: details.directFilePath,
+        })
+        .catch((err) => {
+          this.logger.error(
+            err,
+            'Error while updating Plex file path for program %s',
+            item.programId,
+          );
+        });
+    }
+
     const streamSettings = this.settings.plexSettings();
 
     let streamUrl: string;
-    const filePath = first(first(itemMetadata.Media)?.Part)?.file;
+    const filePath =
+      details.directFilePath ?? first(first(itemMetadata.Media)?.Part)?.file;
     if (streamSettings.streamPath === 'direct' && isNonEmptyString(filePath)) {
       streamUrl = replace(
         filePath,
@@ -89,12 +193,15 @@ export class PlexStreamDetails {
         streamSettings.pathReplaceWith,
       );
     } else {
-      const path = item.plexFilePath.startsWith('/')
-        ? item.plexFilePath
-        : `/${item.plexFilePath}`;
-      streamUrl = `${trimEnd(this.server.uri, '/')}${path}?X-Plex-Token=${
-        this.server.accessToken
-      }`;
+      let path = details.serverPath ?? item.plexFilePath;
+      if (isNonEmptyString(path)) {
+        path = path.startsWith('/') ? path : `/${path}`;
+        streamUrl = `${trimEnd(this.server.uri, '/')}${path}?X-Plex-Token=${
+          this.server.accessToken
+        }`;
+      } else {
+        throw new Error('Could not resolve stream URL');
+      }
     }
 
     return {
@@ -109,7 +216,11 @@ export class PlexStreamDetails {
     media: PlexMovie | PlexEpisode | PlexMusicTrack,
   ): Nullable<StreamDetails> {
     const streamDetails: StreamDetails = {};
-    const firstStream = first(first(media.Media)?.Part)?.Stream;
+    const firstPart = first(first(media.Media)?.Part);
+    streamDetails.serverPath = firstPart?.key;
+    streamDetails.directFilePath = firstPart?.file;
+
+    const firstStream = firstPart?.Stream;
     if (isUndefined(firstStream)) {
       this.logger.error(
         'Could not extract a stream for Plex item ID = %s',

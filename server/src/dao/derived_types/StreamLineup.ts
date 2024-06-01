@@ -65,9 +65,9 @@ const BaseContentBackedStreamLineupItemSchema =
   baseStreamLineupItemSchema.extend({
     programId: z.string().uuid(),
     // These are taken from the Program DB entity
-    plexFilePath: z.string(),
+    plexFilePath: z.string().optional(),
     externalSourceId: z.string(),
-    filePath: z.string(),
+    filePath: z.string().optional(),
     externalKey: z.string(),
     programType: ProgramTypeEnum,
   });

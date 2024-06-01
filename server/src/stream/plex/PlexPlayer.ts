@@ -13,6 +13,7 @@ import { ifDefined } from '../../util/index.js';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
 import { Player, PlayerContext } from '../Player.js';
 import { PlexStreamDetails } from './PlexStreamDetails.js';
+import { ProgramDB } from '../../dao/programDB.js';
 
 const USED_CLIENTS: Record<string, boolean> = {};
 
@@ -77,6 +78,7 @@ export class PlexPlayer extends Player {
     const plexStreamDetails = new PlexStreamDetails(
       server,
       this.context.settings,
+      new ProgramDB(),
     );
 
     const watermark = this.context.watermark;
