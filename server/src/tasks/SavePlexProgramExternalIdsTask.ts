@@ -9,7 +9,6 @@ import { isNonEmptyString } from '../util/index.js';
 import { Task } from './Task.js';
 import { PlexTerminalMedia } from '@tunarr/types/plex';
 import { parsePlexExternalGuid } from '../util/externalIds.js';
-import { raw } from '@mikro-orm/core';
 
 export class SavePlexProgramExternalIdsTask extends Task {
   ID = SavePlexProgramExternalIdsTask.name;
@@ -81,11 +80,13 @@ export class SavePlexProgramExternalIdsTask extends Task {
       .qb(ProgramExternalId)
       .insert(eids)
       .onConflict(
-        raw(
-          '(`program_uuid`, `source_type`) where `external_source_id` IS NULL',
-        ),
+        ['program', 'sourceType'],
+        // raw(
+        //   '(`program_uuid`, `source_type`) where `external_source_id` IS NULL',
+        // ),
       )
       .merge(['externalKey'])
+      .where({ externalSourceId: null })
       .returning(['uuid'])
       .execute();
 

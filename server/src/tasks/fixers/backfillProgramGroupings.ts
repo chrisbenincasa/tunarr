@@ -26,6 +26,7 @@ import { ProgramGroupingExternalId } from '../../dao/entities/ProgramGroupingExt
 import { PlexApiFactory } from '../../external/plex';
 import { LoggerFactory } from '../../util/logging/LoggerFactory';
 import Fixer from './fixer';
+import { ProgramExternalIdType } from '../../dao/custom_types/ProgramExternalIdType';
 
 export class BackfillProgramGroupings extends Fixer {
   private logger = LoggerFactory.child({
@@ -56,7 +57,7 @@ export class BackfillProgramGroupings extends Fixer {
       const existing = await em.findOne(ProgramGrouping, {
         type: ProgramGroupingType.TvShow,
         externalRefs: {
-          sourceType: ProgramSourceType.PLEX,
+          sourceType: ProgramExternalIdType.PLEX,
           externalKey: grandparentExternalKey,
           externalSourceId,
         },
@@ -101,7 +102,7 @@ export class BackfillProgramGroupings extends Fixer {
       });
 
       const refs = em.create(ProgramGroupingExternalId, {
-        sourceType: ProgramSourceType.PLEX,
+        sourceType: ProgramExternalIdType.PLEX,
         externalSourceId: server.name, // clientIdentifier would be better
         externalKey: show.ratingKey,
         group: grouping,
@@ -118,7 +119,7 @@ export class BackfillProgramGroupings extends Fixer {
         parentExternalKey: { $ne: null },
         season: null,
         // At the time this was written, this was the only source type
-        sourceType: ProgramSourceType.PLEX,
+        sourceType: ProgramExternalIdType.PLEX,
       })
       .execute();
 
@@ -126,7 +127,7 @@ export class BackfillProgramGroupings extends Fixer {
       const existing = await em.findOne(ProgramGrouping, {
         type: ProgramGroupingType.TvShowSeason,
         externalRefs: {
-          sourceType: ProgramSourceType.PLEX,
+          sourceType: ProgramExternalIdType.PLEX,
           externalKey: parentExternalKey,
           externalSourceId,
         },
@@ -170,7 +171,7 @@ export class BackfillProgramGroupings extends Fixer {
       });
 
       const refs = em.create(ProgramGroupingExternalId, {
-        sourceType: ProgramSourceType.PLEX,
+        sourceType: ProgramExternalIdType.PLEX,
         externalSourceId: server.name, // clientIdentifier would be better
         externalKey: season.ratingKey,
         group: grouping,
@@ -216,7 +217,7 @@ export class BackfillProgramGroupings extends Fixer {
       {
         populateWhere: {
           externalRefs: {
-            sourceType: ProgramSourceType.PLEX,
+            sourceType: ProgramExternalIdType.PLEX,
           },
         },
         populate: ['externalRefs'],
@@ -226,7 +227,7 @@ export class BackfillProgramGroupings extends Fixer {
     // Backfill missing season numbers
     for (const season of seasonsMissingIndexes) {
       const ref = season.externalRefs.$.find(
-        (ref) => ref.sourceType === ProgramSourceType.PLEX,
+        (ref) => ref.sourceType === ProgramExternalIdType.PLEX,
       );
       if (isUndefined(ref)) {
         continue;
@@ -365,7 +366,7 @@ export class BackfillProgramGroupings extends Fixer {
         );
 
         const plexInfo = find(show.externalRefs, {
-          sourceType: ProgramSourceType.PLEX,
+          sourceType: ProgramExternalIdType.PLEX,
         });
         if (plexInfo) {
           const seasonIds = showsToSeasons[plexInfo.externalKey];

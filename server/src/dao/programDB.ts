@@ -1,5 +1,5 @@
 import { chunk, flatten, groupBy, isNil, keys, map } from 'lodash-es';
-import { isNonEmptyString, mapAsyncSeq } from '../util/index.js';
+import { groupByAndMapAsync, isNonEmptyString } from '../util/index.js';
 import { ProgramConverter } from './converters/programConverters.js';
 import { getEm } from './dataSource';
 import { Program } from './entities/Program';
@@ -103,12 +103,24 @@ export class ProgramDB {
       flatten(await unfurlPool(tasks)),
       (x) => x.program.uuid,
     );
-    return await mapAsyncSeq(keys(externalIdsdByProgram), (programId) => {
-      const eids = externalIdsdByProgram[programId];
-      return converter.entityToContentProgram(eids[0].program, eids, {
-        skipPopulate: true,
-      });
-    });
+
+    return groupByAndMapAsync(
+      keys(externalIdsdByProgram),
+      (programId) => programId,
+      (programId) => {
+        const eids = externalIdsdByProgram[programId];
+        return converter.entityToContentProgram(eids[0].program, eids, {
+          skipPopulate: true,
+        });
+      },
+    );
+
+    // return await mapAsyncSeq(keys(externalIdsdByProgram), (programId) => {
+    //   const eids = externalIdsdByProgram[programId];
+    //   return converter.entityToContentProgram(eids[0].program, eids, {
+    //     skipPopulate: true,
+    //   });
+    // });
     // return groupByAndMapAsync(
     //   ,
     //   (r) => r.uniqueId(),

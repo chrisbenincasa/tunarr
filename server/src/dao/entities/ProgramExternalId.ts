@@ -4,7 +4,6 @@ import {
   Index,
   ManyToOne,
   Property,
-  Unique,
   type Rel,
 } from '@mikro-orm/core';
 import { ExternalId } from '@tunarr/types';
@@ -41,7 +40,6 @@ import { Program } from './Program.js';
   expression:
     'create unique index `unique_program_multiple_external_id` on `program_external_id` (`program_uuid`, `source_type`) WHERE `external_source_id` IS NOT NULL',
 })
-@Unique({ properties: ['uuid', 'sourceType'] })
 export class ProgramExternalId extends BaseEntity {
   @Enum({ items: [...SingleExternalIdType, ...MultiExternalIdType] })
   sourceType!: SingleExternalIdType | MultiExternalIdType;
