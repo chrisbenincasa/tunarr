@@ -66,12 +66,14 @@ export default function ChannelsPage() {
     event: React.MouseEvent<HTMLElement>,
     channel: Channel,
   ) => {
+    event.stopPropagation();
     setOpen(true);
     setChannelMenu(channel);
     setAnchorEl(event.currentTarget);
   };
 
-  const handleClose = () => {
+  const handleClose = (e: React.SyntheticEvent) => {
+    e.stopPropagation();
     setOpen(false);
   };
 
@@ -152,10 +154,25 @@ export default function ChannelsPage() {
           }}
         >
           <MenuItem
+            to={`/channels/${channelMenu.id}/edit`}
+            component={RouterLink}
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
+          >
+            <ListItemIcon>
+              <EditIcon />
+            </ListItemIcon>
+            <ListItemText>Edit Channel Settings</ListItemText>
+          </MenuItem>
+          <MenuItem
             to={`${
               isNonEmptyString(backendUri) ? `${backendUri}/` : ''
             }media-player/${channelMenu.number}.m3u`}
             component={RouterLink}
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
           >
             <ListItemIcon>
               <TextSnippetIcon />
@@ -165,20 +182,14 @@ export default function ChannelsPage() {
           <MenuItem
             component={RouterLink}
             to={`/channels/${channelMenu.id}/watch`}
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
           >
             <ListItemIcon>
               <WatchIcon />
             </ListItemIcon>
             <ListItemText>Watch Channel</ListItemText>
-          </MenuItem>
-          <MenuItem
-            to={`/channels/${channelMenu.id}/edit`}
-            component={RouterLink}
-          >
-            <ListItemIcon>
-              <EditIcon />
-            </ListItemIcon>
-            <ListItemText>Edit Channel Settings</ListItemText>
           </MenuItem>
           <MenuItem
             onClick={(e) => {
@@ -235,6 +246,15 @@ export default function ChannelsPage() {
             </>
           ) : (
             <>
+              <Tooltip title="Edit Channel Settings" placement="top">
+                <IconButton
+                  to={`/channels/${channel.id}/edit`}
+                  component={RouterLink}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <EditIcon />
+                </IconButton>
+              </Tooltip>
               <Tooltip title="Get Channel M3U File" placement="top">
                 <IconButton
                   href={`${
@@ -252,15 +272,6 @@ export default function ChannelsPage() {
                   onClick={(e) => e.stopPropagation()}
                 >
                   <WatchIcon />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Edit Channel Settings" placement="top">
-                <IconButton
-                  to={`/channels/${channel.id}/edit`}
-                  component={RouterLink}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <EditIcon />
                 </IconButton>
               </Tooltip>
               <Tooltip title="Delete Channel" placement="top">

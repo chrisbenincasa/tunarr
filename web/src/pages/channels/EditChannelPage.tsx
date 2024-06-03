@@ -15,7 +15,7 @@ import {
   SubmitHandler,
   useForm,
 } from 'react-hook-form';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import ChannelEpgConfig from '../../components/channel_config/ChannelEpgConfig.tsx';
 import { ChannelFlexConfig } from '../../components/channel_config/ChannelFlexConfig.tsx';
@@ -103,12 +103,30 @@ export default function EditChannelPage({ isNew, initialTab }: Props) {
   const { currentEntity: workingChannel } = useStore((s) => s.channelEditor);
   const previousChannel = usePrevious(workingChannel);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [channelEditorState, setChannelEditorState] =
     useState<ChannelEditContextState>({
       currentTabValid: true,
       isNewChannel: isNew,
     });
+
+  function getLastPathSegment(url: string) {
+    const pathSegments = url.split('/');
+    return pathSegments[pathSegments.length - 1];
+  }
+
+  // This is a workaround
+  // Previously when you would navigate to the "Edit" page via the breadcrumb it would stay on the same tab and break future navigation
+  // see https://github.com/chrisbenincasa/tunarr/issues/466
+  useEffect(() => {
+    const currentPath = location.pathname;
+    const lastSegment = getLastPathSegment(currentPath);
+
+    if (lastSegment === 'edit' && currentTab !== 'properties') {
+      setCurrentTab('properties');
+    }
+  }, [location]);
 
   const handleChange = (_: React.SyntheticEvent, newValue: TabValues) => {
     if (newValue !== currentTab) {
