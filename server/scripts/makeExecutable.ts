@@ -1,8 +1,10 @@
 import { compile } from 'nexe';
 import fs from 'node:fs/promises';
+import { createWriteStream, existsSync } from 'node:fs';
 import path from 'node:path';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
+import archiver from 'archiver';
 
 const NODE_VERSION = '20.11.1';
 const OSX_TARGET = `macos-x64-${NODE_VERSION}`;
@@ -36,12 +38,17 @@ const args = await yargs(hideBin(process.argv))
 // Copy over the bundled webapp for packaging. We could
 // probably symlink this but the compiled webapp is so
 // lightweight that this isn't a huge deal.
+if (existsSync('./build/web')) {
+  await fs.rm('./build/web', { recursive: true });
+}
+
 await fs.cp(path.resolve(process.cwd(), '../web/dist'), './build/web', {
   recursive: true,
 });
 
 for (const target of args.target) {
   let binaryName: string;
+  let shortArch = target.split('-', 2).join('-');
   switch (target) {
     case 'macos-x64-20.11.1':
       binaryName = 'tunarr-macos-x64';
@@ -66,19 +73,36 @@ for (const target of args.target) {
     loglevel: 'verbose',
     bundle: false,
     resources: [
-      './migrations/**/*',
-      // NOTE: When building the executable, we need to make sure that
-      // we are on the same arch type as the target so we copy in the
-      // correct native bindings.
-      './build/better_sqlite3.node',
+      'package.json',
       './resources/**/*',
       './static/**/*', // Swagger -- TODO: Change this path
       './web/**',
     ],
     python: args.python,
     temp: args.tempdir,
-    verbose: true, //target === 'windows-x64-20.11.1',
+    verbose: true,
     remote:
       'https://github.com/chrisbenincasa/tunarr/releases/download/nexe-prebuild/',
   });
+
+  console.log(
+    `Creating Tunarr executable archive: ./build/tunarr-${shortArch}.zip`,
+  );
+
+  const outputArchive = createWriteStream(`./build/tunarr-${shortArch}.zip`);
+  const archive = archiver('zip');
+  const outStreamEnd = new Promise((resolve, reject) => {
+    outputArchive.on('close', resolve);
+    outputArchive.on('error', reject);
+  });
+
+  archive.pipe(outputArchive);
+
+  archive.file(`./build/${binaryName}`, { name: binaryName });
+  archive.directory('./build/build', 'build');
+  archive.finalize();
+
+  await outStreamEnd;
+
+  console.log('Finished writing zip.');
 }

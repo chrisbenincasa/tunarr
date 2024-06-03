@@ -1,5 +1,0 @@
-{
-  "scripts": "build/bundle.js",
-  "targets": ["node18-linux-arm64"],
-  "outputPath": "dist"
-}

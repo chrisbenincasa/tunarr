@@ -93,6 +93,7 @@
     "@types/uuid": "^9.0.6",
     "@types/yargs": "^17.0.29",
     "@yao-pkg/pkg": "^5.11.5",
+    "archiver": "^7.0.1",
     "copyfiles": "^2.2.0",
     "del-cli": "^3.0.0",
     "dotenv-cli": "^7.4.1",

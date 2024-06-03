@@ -71,4 +71,4 @@ jobs:
           tag_name: edge
           prerelease: true
           files: |
-            ./server/build/tunarr-${{ matrix.os.target_name }}-x64*
+            ./server/build/tunarr-${{ matrix.os.target_name }}-x64.zip*
