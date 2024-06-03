@@ -57,43 +57,54 @@ export default defineConfig({
     // and because we are bundling these.
     migrationsList: [
       {
-        name: 'Initial migration',
+        // We cannot rename existing migrations because it breaks the world
+        // 'Initial migration',
+        name: 'Migration20240124115044',
         class: Migration20240124115044,
       },
       {
-        name: 'Add index to filler content',
+        // 'Add index to filler content',
+        name: 'Migration20240126165808',
         class: Migration20240126165808,
       },
       {
-        name: 'Filler context index fix',
+        // 'Filler context index fix',
+        name: 'Migration20240221201014',
         class: Migration20240221201014,
       },
       {
-        name: 'Add Plex client identifier column',
+        // 'Add Plex client identifier column',
+        name: 'Migration20240308184352',
         class: Migration20240308184352,
       },
       {
-        name: 'Add artist and album name fields to Program',
+        // 'Add artist and album name fields to Program',
+        name: 'Migration20240319192121',
         class: Migration20240319192121,
       },
       {
-        name: 'Implement program grouping table and hierarchy',
+        // 'Implement program grouping table and hierarchy',
+        name: 'Migration20240404182303',
         class: Migration20240404182303,
       },
       {
-        name: 'Deprecate plex_rating_key field on Program',
+        // 'Deprecate plex_rating_key field on Program',
+        name: 'Migration20240411104034',
         class: Migration20240411104034,
       },
       {
-        name: 'Add guide_flex_title field',
+        // 'Add guide_flex_title field',
+        name: 'Migration20240416113447',
         class: Migration20240416113447,
       },
       {
-        name: 'Rename season column to season_number on Program',
+        // 'Rename season column to season_number on Program',
+        name: 'Migration20240423195250',
         class: Migration20240423195250,
       },
       {
-        name: 'Add program_external_id table',
+        // 'Add program_external_id table',
+        name: 'Migration20240531155641',
         class: Migration20240531155641,
       },
     ],
