@@ -1283,7 +1283,7 @@
           "keyName": "program_external_id_uuid_source_type_unique",
           "columnNames": ["uuid", "source_type"],
           "composite": true,
-          "constraint": true,
+          "constraint": false,
           "primary": false,
           "unique": true
         },

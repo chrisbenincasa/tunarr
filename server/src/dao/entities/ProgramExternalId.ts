@@ -8,13 +8,12 @@ import {
 } from '@mikro-orm/core';
 import { ExternalId } from '@tunarr/types';
 import {
-  MultiExternalIdType,
-  SingleExternalIdType,
   isValidMultiExternalIdType,
   isValidSingleExternalIdType,
 } from '@tunarr/types/schemas';
 import { Maybe } from '../../types/util.js';
 import { isNonEmptyString } from '../../util/index.js';
+import { ProgramExternalIdType } from '../custom_types/ProgramExternalIdType.js';
 import { BaseEntity } from './BaseEntity.js';
 import { Program } from './Program.js';
 
@@ -41,8 +40,8 @@ import { Program } from './Program.js';
     'create unique index `unique_program_multiple_external_id` on `program_external_id` (`program_uuid`, `source_type`) WHERE `external_source_id` IS NOT NULL',
 })
 export class ProgramExternalId extends BaseEntity {
-  @Enum({ items: [...SingleExternalIdType, ...MultiExternalIdType] })
-  sourceType!: SingleExternalIdType | MultiExternalIdType;
+  @Enum(() => ProgramExternalIdType)
+  sourceType!: ProgramExternalIdType;
 
   // Mappings:
   // - Plex = server name
@@ -69,20 +68,25 @@ export class ProgramExternalId extends BaseEntity {
   program!: Rel<Program>;
 
   toExternalId(): Maybe<ExternalId> {
+    const sourceTypeString = this.sourceType.toString();
+
     if (
       isNonEmptyString(this.externalSourceId) &&
-      isValidMultiExternalIdType(this.sourceType)
+      isValidMultiExternalIdType(sourceTypeString)
     ) {
       return {
         type: 'multi',
-        source: this.sourceType,
+        source: sourceTypeString,
         sourceId: this.externalSourceId,
         id: this.externalKey,
       };
-    } else if (isValidSingleExternalIdType(this.sourceType)) {
+    } else if (
+      isValidSingleExternalIdType(sourceTypeString) &&
+      !isNonEmptyString(this.externalSourceId)
+    ) {
       return {
         type: 'single',
-        source: this.sourceType,
+        source: sourceTypeString,
         id: this.externalKey,
       };
     }

@@ -19,12 +19,12 @@
     "make-exec:linux": "tsx scripts/makeExecutable.ts --target linux-x64-20.11.1",
     "make-exec:macos": "tsx scripts/makeExecutable.ts --target macos-x64-20.11.1",
     "make-exec:windows": "tsx scripts/makeExecutable.ts --target windows-x64-20.11.1 --python python",
-    "generate-db-migration": "pnpm run mikro-orm migration:create",
-    "generate-db-migration2": "dotenv -e .env.development -- tsx src/index.ts db generate-migration",
-    "generate-db-cache": "mikro-orm-esm cache:generate --combined --ts",
+    "generate-db-migration": "dotenv -e .env.development -- tsx --tsconfig ./tsconfig.build.json src/index.ts db generate-migration",
+    "generate-db-cache": "dotenv -e .env.development -- mikro-orm-esm cache:generate --combined --ts",
     "mikro-orm": "mikro-orm-esm",
     "preinstall": "npx only-allow pnpm",
     "run-fixer": "dotenv -e .env.development -- tsx src/index.ts fixer",
+    "tunarr": "dotenv -e .env.development -- tsx src/index.ts",
     "test": "vitest"
   },
   "dependencies": {

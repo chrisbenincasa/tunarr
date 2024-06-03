@@ -41,7 +41,7 @@ const currentDirectory = dirname(filename(import.meta.url));
  * subdirectories
  * @returns True if an existing database directory was found
  */
-async function initDbDirectories() {
+export async function initDbDirectories() {
   // Early init, have to use the non-settings-based root Logger
   const logger = LoggerFactory.root;
   const opts = serverOptions();
