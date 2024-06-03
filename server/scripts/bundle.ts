@@ -25,15 +25,11 @@ console.log('Bundling app...');
 const result = await esbuild.build({
   entryPoints: {
     bundle: 'src/index.ts',
-    basicPrettyTransport: 'src/util/logging/basicPrettyTransport.ts',
   },
   bundle: true,
   minify: false,
   outdir: 'build',
   logLevel: 'info',
-  // outExtension: {
-  //   '.js': '.mjs',
-  // },
   // We can't make this mjs yet because mikro-orm breaks
   // when using cached metadata w/ not js/ts suffixes:
   // https://github.com/mikro-orm/mikro-orm/blob/e005cc22ef4e247f9741bdcaf1af012337977b7e/packages/core/src/cache/GeneratedCacheAdapter.ts#L16
