@@ -1,4 +1,5 @@
 import { QueryClient } from '@tanstack/react-query';
+import { map } from 'lodash-es';
 import { createBrowserRouter } from 'react-router-dom';
 import { Root } from './App.tsx';
 import { ErrorPage } from './pages/ErrorPage.tsx';
@@ -39,7 +40,6 @@ import {
   newFillerListLoader,
 } from './preloaders/fillerListLoader.ts';
 import { queryCache } from './queryClient.ts';
-import { map } from 'lodash-es';
 
 const queryClient = new QueryClient({ queryCache });
 
