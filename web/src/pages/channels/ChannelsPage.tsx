@@ -67,7 +67,6 @@ export default function ChannelsPage() {
     channel: Channel,
   ) => {
     event.stopPropagation();
-    event.preventDefault();
     setOpen(true);
     setChannelMenu(channel);
     setAnchorEl(event.currentTarget);
@@ -149,7 +148,7 @@ export default function ChannelsPage() {
           id="channel-options-menu"
           anchorEl={anchorEl}
           open={open}
-          onClose={(e) => handleClose(e as React.SyntheticEvent)}
+          onClose={handleClose}
           MenuListProps={{
             'aria-labelledby': 'channel-options-button',
           }}
