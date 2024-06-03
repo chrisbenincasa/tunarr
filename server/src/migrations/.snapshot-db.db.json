@@ -1299,7 +1299,10 @@
           "nullable": false,
           "enumItems": [
             "plex",
-            "plex-guid"
+            "plex-guid",
+            "tmdb",
+            "imdb",
+            "tvdb"
           ],
           "mappedType": "enum"
         },
@@ -1360,6 +1363,31 @@
           "constraint": false,
           "primary": false,
           "unique": false
+        },
+        {
+          "keyName": "unique_program_multi_external_id",
+          "columnNames": [
+            "program_uuid",
+            "source_type",
+            "external_source_id"
+          ],
+          "composite": true,
+          "constraint": false,
+          "primary": false,
+          "unique": false,
+          "expression": "create unique index `unique_program_multiple_external_id` on `program_external_id` (`program_uuid`, `source_type`) WHERE `external_source_id` IS NOT NULL"
+        },
+        {
+          "keyName": "unique_program_single_external_id",
+          "columnNames": [
+            "program_uuid",
+            "source_type"
+          ],
+          "composite": true,
+          "constraint": false,
+          "primary": false,
+          "unique": false,
+          "expression": "create unique index `unique_program_single_external_id` on `program_external_id` (`program_uuid`, `source_type`) WHERE `external_source_id` IS NULL"
         },
         {
           "keyName": "program_external_id_uuid_source_type_unique",
