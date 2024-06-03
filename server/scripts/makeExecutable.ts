@@ -66,6 +66,7 @@ for (const target of args.target) {
     loglevel: 'verbose',
     bundle: false,
     resources: [
+      'package.json',
       './migrations/**/*',
       // NOTE: When building the executable, we need to make sure that
       // we are on the same arch type as the target so we copy in the
