@@ -3,6 +3,7 @@ import { isError, isString, round } from 'lodash-es';
 import { Maybe } from '../types/util.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { Logger } from 'pino';
+import { withDb } from '../dao/dataSource.js';
 
 // Set of all of the possible Task IDs
 export type TaskId =
@@ -30,7 +31,7 @@ export abstract class Task<Data = unknown> {
     this.running_ = true;
     const start = performance.now();
     try {
-      this.result = await this.runInternal();
+      this.result = await withDb(() => this.runInternal());
       const duration = round(performance.now() - start, 2);
       this.logger.info('Task %s ran in %d ms', this.constructor.name, duration);
     } catch (e) {

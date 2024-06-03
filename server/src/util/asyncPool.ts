@@ -8,6 +8,9 @@ type AsyncPoolOpts = {
 // Based on https://github.com/rxaviers/async-pool
 // Notable changes:
 // 1. Types
+
+import { LoggerFactory } from './logging/LoggerFactory.js';
+
 // 2. Single failed promise doesn't abort the whole operation
 export async function* asyncPool<T, R>(
   iterable: Iterable<T>,
@@ -58,6 +61,21 @@ export async function* asyncPool<T, R>(
   while (executing.size) {
     yield await consume();
   }
+}
+
+export async function unfurlPool<T, R>(poolGen: AsyncGenerator<Result<T, R>>) {
+  const results: R[] = [];
+  for await (const result of poolGen) {
+    if (result.type === 'success') {
+      results.push(result.result);
+    } else {
+      LoggerFactory.root.error(
+        result.error,
+        'Error processing async pool task',
+      );
+    }
+  }
+  return results;
 }
 
 type Failure<In> = {

@@ -2,11 +2,11 @@ import { Loaded } from '@mikro-orm/core';
 import {
   ChannelProgram,
   ContentProgram,
+  ExternalId,
   FlexProgram,
   RedirectProgram,
 } from '@tunarr/types';
-import { find, isNil, merge } from 'lodash-es';
-import { MarkRequired } from 'ts-essentials';
+import { compact, find, isNil, map, merge } from 'lodash-es';
 import { isPromise } from 'util/types';
 import { getEm } from '../dataSource.js';
 import {
@@ -20,6 +20,8 @@ import { Channel } from '../entities/Channel.js';
 import { Program, ProgramType } from '../entities/Program.js';
 import { createPlexExternalId } from '../../util/externalIds.js';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
+import { ProgramExternalId } from '../entities/ProgramExternalId.js';
+import { isDefined } from '../../util/index.js';
 
 type ContentProgramConversionOptions = {
   skipPopulate: boolean;
@@ -80,6 +82,7 @@ export class ProgramConverter {
 
       return this.entityToContentProgram(
         program,
+        undefined,
         opts?.contentProgramConversionOptions,
       );
     }
@@ -91,9 +94,10 @@ export class ProgramConverter {
    */
   async entityToContentProgram(
     program: Loaded<Program>,
+    externalIds: Loaded<ProgramExternalId>[] | undefined = undefined,
     opts: Partial<ContentProgramConversionOptions> = defaultContentProgramConversionOptions,
   ) {
-    return this.partialEntityToContentProgram(program, opts);
+    return this.partialEntityToContentProgram(program, externalIds, opts);
   }
 
   /**
@@ -102,16 +106,8 @@ export class ProgramConverter {
    * strict checks.
    */
   async partialEntityToContentProgram(
-    program: MarkRequired<
-      Partial<Program>,
-      | 'uuid'
-      | 'title'
-      | 'duration'
-      | 'type'
-      | 'externalKey'
-      | 'externalSourceId'
-      | 'sourceType'
-    >,
+    program: Loaded<Program>,
+    externalIds: Loaded<ProgramExternalId>[] | undefined = undefined,
     opts: Partial<ContentProgramConversionOptions> = defaultContentProgramConversionOptions,
   ): Promise<ContentProgram> {
     const mergedOpts = merge({}, defaultContentProgramConversionOptions, opts);
@@ -119,21 +115,29 @@ export class ProgramConverter {
     // This will ensure extra fields are populated for join types
     // It won't reissue queries if the loaded program already has these popualted
     if (program.type === ProgramType.Episode) {
-      const shouldFetch =
-        mergedOpts.forcePopulate ||
-        ((isNil(program.tvShow) || isNil(program.season)) &&
-          !mergedOpts.skipPopulate);
-      const populatedProgram = shouldFetch
-        ? await getEm().populate(program, ['tvShow', 'season'])
-        : program;
       extraFields = {
-        seasonNumber: populatedProgram.season?.index,
-        episodeNumber: populatedProgram.episode,
-        episodeTitle: populatedProgram.title,
-        icon: populatedProgram.episodeIcon ?? populatedProgram.showIcon,
-        showId: populatedProgram.tvShow?.uuid,
-        seasonId: populatedProgram.season?.uuid,
+        ...extraFields,
+        icon: program.episodeIcon ?? program.showIcon,
+        showId: program.tvShow?.uuid,
+        seasonId: program.season?.uuid,
+        episodeNumber: program.episode,
       };
+
+      if (
+        mergedOpts.forcePopulate ||
+        (!program.season?.isInitialized() && !mergedOpts.skipPopulate)
+      ) {
+        const season = await program.season?.load();
+        extraFields = {
+          ...extraFields,
+          seasonNumber: season?.index,
+        };
+      } else if (program.season?.isInitialized()) {
+        extraFields = {
+          ...extraFields,
+          seasonNumber: program.season?.getEntity().index,
+        };
+      }
     } else if (program.type === ProgramType.Track) {
       const shouldFetch =
         mergedOpts.forcePopulate ||
@@ -149,6 +153,19 @@ export class ProgramConverter {
         albumId: populatedProgram.album?.uuid,
         artistId: populatedProgram.artist?.uuid,
       };
+    }
+
+    const eids: ExternalId[] = [];
+    if (isDefined(externalIds)) {
+      eids.push(...compact(map(externalIds, (eid) => eid.toExternalId())));
+    } else {
+      if (!program.externalIds.isInitialized() && !mergedOpts.skipPopulate) {
+        await program.externalIds.init();
+      }
+
+      eids.push(
+        ...compact(map(program.externalIds, (eid) => eid.toExternalId())),
+      );
     }
 
     return {

@@ -1,4 +1,4 @@
-import { Loaded } from '@mikro-orm/core';
+import { Loaded, ref } from '@mikro-orm/core';
 import { createExternalId } from '@tunarr/shared';
 import {
   ChannelProgram,
@@ -49,7 +49,7 @@ import {
   mapReduceAsyncSeq,
 } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
-import { ProgramMinterFactory } from '../util/programMinter.js';
+import { ProgramMinterFactory } from '../util/ProgramMinter.js';
 import { ProgramSourceType } from './custom_types/ProgramSourceType.js';
 import { getEm } from './dataSource.js';
 import { PlexServerSettings } from './entities/PlexServerSettings.js';
@@ -59,6 +59,7 @@ import {
   ProgramGroupingType,
 } from './entities/ProgramGrouping.js';
 import { ProgramGroupingExternalId } from './entities/ProgramGroupingExternalId.js';
+import { ProgramExternalIdType } from './custom_types/ProgramExternalIdType.js';
 
 type ProgramsBySource = Record<
   NonNullable<ContentProgram['externalSourceType']>,
@@ -159,7 +160,9 @@ export async function upsertContentPrograms(
                 program.grandparentExternalKey,
               ),
               (show) => {
-                program.tvShow = em.getReference(ProgramGrouping, show.uuid);
+                program.tvShow = ref(
+                  em.getReference(ProgramGrouping, show.uuid),
+                );
               },
             );
           }
@@ -173,7 +176,9 @@ export async function upsertContentPrograms(
                 program.parentExternalKey,
               ),
               (season) => {
-                program.season = em.getReference(ProgramGrouping, season.uuid);
+                program.season = ref(
+                  em.getReference(ProgramGrouping, season.uuid),
+                );
               },
             );
           }
@@ -190,7 +195,9 @@ export async function upsertContentPrograms(
                 program.grandparentExternalKey,
               ),
               (artist) => {
-                program.artist = em.getReference(ProgramGrouping, artist.uuid);
+                program.artist = ref(
+                  em.getReference(ProgramGrouping, artist.uuid),
+                );
               },
             );
           }
@@ -204,7 +211,9 @@ export async function upsertContentPrograms(
                 program.parentExternalKey,
               ),
               (album) => {
-                program.album = em.getReference(ProgramGrouping, album.uuid);
+                program.album = ref(
+                  em.getReference(ProgramGrouping, album.uuid),
+                );
               },
             );
           }
@@ -349,7 +358,7 @@ async function findAndUpdatePlexServerPrograms(
       chunk(allIds, 25),
       (chunk) => {
         const ors = map(chunk, (id) => ({
-          sourceType: ProgramSourceType.PLEX,
+          sourceType: ProgramExternalIdType.PLEX,
           externalKey: id,
           externalSourceId: plexServerName,
         }));
@@ -394,7 +403,7 @@ async function findAndUpdatePlexServerPrograms(
           // This must exist because we just queried on it above
           eg.externalRefs.find(
             (er) =>
-              er.sourceType === ProgramSourceType.PLEX &&
+              er.sourceType === ProgramExternalIdType.PLEX &&
               er.externalSourceId === plexServerName,
           )!.externalKey,
       ),
@@ -472,7 +481,7 @@ async function findAndUpdatePlexServerPrograms(
         const ref = em.create(ProgramGroupingExternalId, {
           externalKey: item.ratingKey,
           externalSourceId: plexServerName,
-          sourceType: ProgramSourceType.PLEX,
+          sourceType: ProgramExternalIdType.PLEX,
           group: grouping,
         });
 

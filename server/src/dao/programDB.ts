@@ -1,15 +1,14 @@
-import { chunk, isNil, map } from 'lodash-es';
-import {
-  flatMapAsyncSeq,
-  groupByAndMapAsync,
-  isNonEmptyString,
-} from '../util/index.js';
+import { chunk, flatten, groupBy, isNil, keys, map } from 'lodash-es';
+import { isNonEmptyString, mapAsyncSeq } from '../util/index.js';
 import { ProgramConverter } from './converters/programConverters.js';
-import { programSourceTypeFromString } from './custom_types/ProgramSourceType';
 import { getEm } from './dataSource';
 import { Program } from './entities/Program';
 import { ProgramExternalId } from './entities/ProgramExternalId.js';
-import { ProgramExternalIdType } from './custom_types/ProgramExternalIdType.js';
+import {
+  ProgramExternalIdType,
+  programExternalIdTypeFromString,
+} from './custom_types/ProgramExternalIdType.js';
+import { asyncPool, unfurlPool } from '../util/asyncPool.js';
 
 export class ProgramDB {
   async lookupByExternalIds(
@@ -18,14 +17,15 @@ export class ProgramDB {
   ) {
     const em = getEm();
     const converter = new ProgramConverter();
-    const results = await flatMapAsyncSeq(
+
+    const tasks = asyncPool(
       chunk([...ids], chunkSize),
       async (idChunk) => {
-        return em.find(
-          Program,
+        return await em.find(
+          ProgramExternalId,
           {
             $or: map(idChunk, ([ps, es, ek]) => ({
-              sourceType: programSourceTypeFromString(ps)!,
+              sourceType: programExternalIdTypeFromString(ps)!,
               externalSourceId: es,
               $or: [
                 {
@@ -39,33 +39,81 @@ export class ProgramDB {
           },
           {
             populate: [
-              'artist.uuid',
-              'artist.title',
-              'album.title',
-              'album.uuid',
-              'tvShow.uuid',
-              'tvShow.title',
-              'season.uuid',
-              'season.title',
+              'program.uuid',
+              'program.duration',
+              'program.title',
+              'program.type',
+              'program.artist.uuid',
+              'program.artist.title',
+              'program.album.title',
+              'program.album.uuid',
             ],
-            fields: [
-              'uuid',
-              'sourceType',
-              'externalSourceId',
-              'externalKey',
-              'duration',
-              'title',
-              'type',
-            ],
+            // fields: ['sourceType', 'externalKey', 'externalSourceId'],
           },
         );
       },
+      2,
     );
-    return groupByAndMapAsync(
-      results,
-      (r) => r.uniqueId(),
-      (r) => converter.partialEntityToContentProgram(r, { skipPopulate: true }),
+
+    // const results = await flatMapAsyncSeq(
+    //   chunk([...ids], chunkSize),
+    //   async (idChunk) => {
+    //     return em.find(
+    //       Program,
+    //       {
+    //         $or: map(idChunk, ([ps, es, ek]) => ({
+    //           sourceType: programSourceTypeFromString(ps)!,
+    //           externalSourceId: es,
+    //           $or: [
+    //             {
+    //               externalKey: ek,
+    //             },
+    //             {
+    //               plexRatingKey: ek,
+    //             },
+    //           ],
+    //         })),
+    //       },
+    //       {
+    //         populate: [
+    //           'artist.uuid',
+    //           'artist.title',
+    //           'album.title',
+    //           'album.uuid',
+    //           'tvShow.uuid',
+    //           'tvShow.title',
+    //           'season.uuid',
+    //           'season.title',
+    //         ],
+    //         fields: [
+    //           'uuid',
+    //           'sourceType',
+    //           'externalSourceId',
+    //           'externalKey',
+    //           'duration',
+    //           'title',
+    //           'type',
+    //         ],
+    //       },
+    //     );
+    //   },
+    // );
+
+    const externalIdsdByProgram = groupBy(
+      flatten(await unfurlPool(tasks)),
+      (x) => x.program.uuid,
     );
+    return await mapAsyncSeq(keys(externalIdsdByProgram), (programId) => {
+      const eids = externalIdsdByProgram[programId];
+      return converter.entityToContentProgram(eids[0].program, eids, {
+        skipPopulate: true,
+      });
+    });
+    // return groupByAndMapAsync(
+    //   ,
+    //   (r) => r.uniqueId(),
+    //   (r) => converter.partialEntityToContentProgram(r, { skipPopulate: true }),
+    // );
   }
 
   async getProgramExternalIds(programId: string) {
