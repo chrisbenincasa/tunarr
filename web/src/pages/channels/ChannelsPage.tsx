@@ -66,12 +66,15 @@ export default function ChannelsPage() {
     event: React.MouseEvent<HTMLElement>,
     channel: Channel,
   ) => {
+    event.stopPropagation();
+    event.preventDefault();
     setOpen(true);
     setChannelMenu(channel);
     setAnchorEl(event.currentTarget);
   };
 
-  const handleClose = () => {
+  const handleClose = (e: React.SyntheticEvent) => {
+    e.stopPropagation();
     setOpen(false);
   };
 
@@ -146,7 +149,7 @@ export default function ChannelsPage() {
           id="channel-options-menu"
           anchorEl={anchorEl}
           open={open}
-          onClose={handleClose}
+          onClose={(e) => handleClose(e as React.SyntheticEvent)}
           MenuListProps={{
             'aria-labelledby': 'channel-options-button',
           }}
@@ -156,6 +159,9 @@ export default function ChannelsPage() {
               isNonEmptyString(backendUri) ? `${backendUri}/` : ''
             }media-player/${channelMenu.number}.m3u`}
             component={RouterLink}
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
           >
             <ListItemIcon>
               <TextSnippetIcon />
@@ -165,6 +171,9 @@ export default function ChannelsPage() {
           <MenuItem
             component={RouterLink}
             to={`/channels/${channelMenu.id}/watch`}
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
           >
             <ListItemIcon>
               <WatchIcon />
@@ -174,6 +183,9 @@ export default function ChannelsPage() {
           <MenuItem
             to={`/channels/${channelMenu.id}/edit`}
             component={RouterLink}
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
           >
             <ListItemIcon>
               <EditIcon />
