@@ -13,7 +13,7 @@ import {
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
@@ -22,17 +22,11 @@ import { useCurrentFillerList } from '../../hooks/useFillerLists.ts';
 import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 import { removeFillerListProgram } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
-import { UIFillerListProgram } from '../../types/index.ts';
-
-type Props = { isNew: boolean };
-
-type FillerListMutationArgs = {
-  id?: string;
-  name: string;
-  programs: UIFillerListProgram[];
-};
-
-type FillerListFormType = Omit<FillerListMutationArgs, 'id'>;
+import {
+  FillerListFormType,
+  FillerListMutationArgs,
+  Props,
+} from './EditFillerPage.tsx';
 
 export default function EditFillerPage({ isNew }: Props) {
   const apiClient = useTunarrApi();
@@ -40,7 +34,8 @@ export default function EditFillerPage({ isNew }: Props) {
   const fillerListPrograms = useStore((s) => s.fillerListEditor.programList);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  console.log(fillerListPrograms);
+  const [addProgrammingOpen, setAddProgrammingOpen] = useState(false);
+
   const {
     control,
     setValue,
@@ -208,7 +203,7 @@ export default function EditFillerPage({ isNew }: Props) {
               <Button onClick={() => onCancel()}>Cancel</Button>
               <Button
                 // disabled={!isValid || fillerListPrograms.length === 0}
-                disabled={!isValid}
+                // disabled={!isValid || fillerListPrograms.length === 0}
                 variant="contained"
                 type="submit"
               >
@@ -217,6 +212,30 @@ export default function EditFillerPage({ isNew }: Props) {
             </Stack>
           </Stack>
         </PaddedPaper>
+        {/* <Accordion
+              expanded={addProgrammingOpen}
+              onChange={(_, expanded) => setAddProgrammingOpen(expanded)}
+            >
+              <AccordionSummary>Add Programming</AccordionSummary>
+              <AccordionDetails>
+                <ProgrammingSelector />
+                <Divider />
+                <Box
+                  sx={{
+                    width: '100%',
+                    display: 'flex',
+                    justifyContent: 'flex-end',
+                    mt: 2,
+                  }}
+                >
+                  <AddSelectedMediaButton
+                    onAdd={addMediaToCurrentFillerList}
+                    onSuccess={() => {}}
+                    variant="contained"
+                  />
+                </Box>
+              </AccordionDetails>
+            </Accordion> */}
       </Box>
     </Box>
   );

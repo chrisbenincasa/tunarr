@@ -56,7 +56,11 @@ import VersionFooter from './components/VersionFooter.tsx';
 import SelectedProgrammingList from './components/channel_config/SelectedProgrammingList.tsx';
 import DarkModeButton from './components/settings/DarkModeButton.tsx';
 import { useVersion } from './hooks/useVersion.ts';
-import { addMediaToCurrentChannel } from './store/channelEditor/actions.ts';
+import {
+  addMediaToCurrentChannel,
+  addMediaToCurrentCustomShow,
+  addMediaToCurrentFillerList,
+} from './store/channelEditor/actions.ts';
 import useStore from './store/index.ts';
 import { useSettings } from './store/settings/selectors.ts';
 import { setDarkModeState } from './store/themeEditor/actions.ts';
@@ -124,14 +128,26 @@ export function Root({ children }: { children?: React.ReactNode }) {
   const location = useLocation();
 
   const displayPaths = [
-    '/programming/add',
-    'library/custom-shows/new',
-    'library/fillers/new',
+    {
+      path: 'fillers/programming/add',
+      onMediaAdd: addMediaToCurrentFillerList,
+    },
+    {
+      path: 'custom-shows/programming/add',
+      onMediaAdd: addMediaToCurrentCustomShow,
+    },
+    {
+      path: 'channels/:id/programming/add',
+      onMediaAdd: addMediaToCurrentChannel,
+    },
   ];
 
-  const displaySelectedProgramming = displayPaths.some((path) =>
-    location.pathname.match(new RegExp(path)),
-  );
+  const displaySelectedProgramming = displayPaths.find((pathObject) => {
+    const { path } = pathObject; // Destructure path from the object
+    return location.pathname.match(new RegExp(path));
+  });
+
+  console.log(displaySelectedProgramming);
 
   const toggleDrawerOpen = () => {
     setOpen(true);
@@ -556,7 +572,7 @@ export function Root({ children }: { children?: React.ReactNode }) {
 
         {displaySelectedProgramming && (
           <SelectedProgrammingList
-            onAddSelectedMedia={addMediaToCurrentChannel}
+            onAddSelectedMedia={displaySelectedProgramming.onMediaAdd}
             onAddMediaSuccess={() => navigate(-1)}
           />
         )}
