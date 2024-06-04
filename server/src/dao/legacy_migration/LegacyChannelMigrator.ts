@@ -15,10 +15,8 @@ import path from 'path';
 import { v4 } from 'uuid';
 import { Maybe } from '../../types/util.js';
 import {
-  createDirectoryIfNotExists,
   emptyStringToUndefined,
   groupByUniqAndMap,
-  isNodeError,
   isNonEmptyString,
   mapAsyncSeq,
 } from '../../util/index.js';
@@ -385,24 +383,6 @@ export class LegacyChannelMigrator {
   }
 
   async migrateChannels(dbPath: string) {
-    const channelLineupsPath = path.resolve(dbPath, 'channel-lineups');
-    await createDirectoryIfNotExists(channelLineupsPath);
-
-    const channelsBackupPath = path.resolve(dbPath, 'channels-backup');
-
-    let backupExists = false;
-
-    try {
-      await fs.mkdir(channelsBackupPath);
-    } catch (e) {
-      if (isNodeError(e) && e.code !== 'EEXIST') {
-        this.logger.error(e, 'Error creating channel backup path');
-        return;
-      } else {
-        backupExists = (await fs.readdir(channelsBackupPath)).length > 0;
-      }
-    }
-
     const channelPath = path.resolve(dbPath, 'channels');
 
     this.logger.info(`Using channel directory: ${channelPath}`);
@@ -414,15 +394,7 @@ export class LegacyChannelMigrator {
     const migratedChannels = compact(
       await mapAsyncSeq(channelFiles, async (channel) => {
         try {
-          // Create a backup of the channel file
           const fullPath = path.join(channelPath, channel);
-          if (!backupExists) {
-            this.logger.info('Creating channel backup...');
-            await fs.copyFile(
-              fullPath,
-              path.join(channelsBackupPath, channel + '.bak'),
-            );
-          }
           return await this.migrateChannel(fullPath);
         } catch (e) {
           this.logger.error(`Unable to migrate channel ${channel}`, e);
