@@ -6,15 +6,7 @@ import {
   PlexMovie,
   PlexMusicTrack,
 } from '@tunarr/types/plex';
-import {
-  find,
-  first,
-  indexOf,
-  isNull,
-  isUndefined,
-  replace,
-  trimEnd,
-} from 'lodash-es';
+import { find, first, isNull, isUndefined, replace, trimEnd } from 'lodash-es';
 import { PlexServerSettings } from '../../dao/entities/PlexServerSettings';
 import {
   Plex,
@@ -258,9 +250,7 @@ export class PlexStreamDetails {
     if (!isUndefined(audioStream)) {
       streamDetails.audioChannels = audioStream.channels;
       streamDetails.audioCodec = audioStream.codec;
-      // TODO: I dont love calling indexOf when we already searched for this
-      // stream in the list in the first place
-      streamDetails.audioIndex = indexOf(firstStream, audioStream)?.toString();
+      streamDetails.audioIndex = audioStream?.index.toString() ?? 'a';
     }
 
     if (isUndefined(videoStream) && isUndefined(audioStream)) {
