@@ -28,7 +28,10 @@ import { LoggerFactory } from '../../util/logging/LoggerFactory';
 import Fixer from './fixer';
 
 export class BackfillProgramGroupings extends Fixer {
-  private logger = LoggerFactory.child({ caller: import.meta });
+  private logger = LoggerFactory.child({
+    caller: import.meta,
+    className: BackfillProgramGroupings.name,
+  });
 
   protected async runInternal(em: EntityManager): Promise<void> {
     const plexServers = await em.findAll(PlexServerSettings);

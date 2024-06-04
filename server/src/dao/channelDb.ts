@@ -711,7 +711,7 @@ export class ChannelDB {
             where: { content: { $in: chunk } },
           });
       },
-      2,
+      { concurrency: 2 },
     );
 
     const allCustomShowContent: CustomShowContent[] = [];
@@ -822,7 +822,7 @@ export class ChannelDB {
           return this.saveLineup(channel.uuid, { ...lineup, items: newLineup });
         }
       },
-      2,
+      { concurrency: 2 },
     );
 
     for await (const updateResult of ops) {

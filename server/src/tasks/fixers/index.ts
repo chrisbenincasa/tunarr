@@ -27,14 +27,25 @@ const allFixers: Fixer[] = values(FixersByName);
 export const runFixers = async () => {
   for (const fixer of allFixers) {
     try {
-      LoggerFactory.root.debug('Running fixer %s', fixer.constructor.name);
-      await fixer.run();
-    } catch (e) {
-      LoggerFactory.root.error(
-        'Fixer %s failed to run %O',
+      LoggerFactory.root.debug(
+        'Running fixer %s [background = %O]',
         fixer.constructor.name,
-        e,
+        fixer.canRunInBackground,
       );
+      const fixerPromise = fixer.run();
+      if (!fixer.canRunInBackground) {
+        await fixerPromise;
+      } else {
+        fixerPromise.catch((e) => {
+          logFixerError(fixer.constructor.name, e);
+        });
+      }
+    } catch (e) {
+      logFixerError(fixer.constructor.name, e);
     }
   }
 };
+
+function logFixerError(fixer: string, error: unknown) {
+  LoggerFactory.root.error(error, 'Fixer %s failed to run', fixer);
+}

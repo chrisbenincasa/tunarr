@@ -152,12 +152,14 @@ class LoggerFactoryImpl {
     );
   }
 
-  child(opts: { caller?: ImportMeta } & Bindings = {}) {
-    const { caller, ...rest } = opts;
-    const newChild = this.rootLogger.child({
+  child(opts: { caller?: ImportMeta; className?: string } & Bindings = {}) {
+    const { caller, className, ...rest } = opts;
+    const childOpts = {
       ...rest,
-      caller: isProduction ? undefined : caller ? getCaller(caller) : undefined,
-    });
+      caller: isProduction ? className : caller ? getCaller(caller) : undefined,
+      className: isProduction ? undefined : className, // Don't include this twice in production
+    };
+    const newChild = this.rootLogger.child(childOpts);
     this.children.push(newChild);
     return newChild;
   }
