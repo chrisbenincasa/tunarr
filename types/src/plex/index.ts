@@ -147,6 +147,7 @@ export type PlexLibraryCollections = z.infer<
 >;
 
 const BasePlexMediaStreamSchema = z.object({
+  id: z.number().optional(),
   default: z.boolean().optional(),
   codec: z.string(),
   index: z.number(),
@@ -203,6 +204,15 @@ export const PlexMediaSubtitleStreamSchema = BasePlexMediaStreamSchema.extend({
   index: true,
 });
 
+export const PlexMediaLyricsStreamSchema = BasePlexMediaStreamSchema.extend({
+  streamType: z.literal(4),
+  minLines: z.string().optional(),
+  provider: z.string().optional(),
+  timed: z.string().optional(), // Boolean indicator string
+}).partial({
+  index: true,
+});
+
 export type PlexMediaSubtitleStream = z.infer<
   typeof PlexMediaSubtitleStreamSchema
 >;
@@ -211,6 +221,7 @@ export const PlexMediaStreamSchema = z.discriminatedUnion('streamType', [
   PlexMediaVideoStreamSchema,
   PlexMediaAudioStreamSchema,
   PlexMediaSubtitleStreamSchema,
+  PlexMediaLyricsStreamSchema,
 ]);
 
 export const PlexMediaDescriptionSchema = z.object({
