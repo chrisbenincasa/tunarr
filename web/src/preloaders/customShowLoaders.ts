@@ -1,6 +1,8 @@
 import { QueryClient } from '@tanstack/react-query';
-import { CustomShow, CustomShowProgramming } from '@tunarr/types';
+import { CustomProgram, CustomShow } from '@tunarr/types';
 import { LoaderFunctionArgs } from 'react-router-dom';
+import { getApiClient } from '../components/TunarrApiContext.tsx';
+import { UnsavedId } from '../helpers/constants.ts';
 import { createPreloader } from '../helpers/preloaderUtil.ts';
 import {
   customShowProgramsQuery,
@@ -9,28 +11,25 @@ import {
 } from '../hooks/useCustomShows.ts';
 import { setCurrentCustomShow } from '../store/channelEditor/actions.ts';
 import { Preloader } from '../types/index.ts';
-import { getApiClient } from '../components/TunarrApiContext.tsx';
 
 export type CustomShowPreload = {
   show: CustomShow;
-  programs: CustomShowProgramming;
+  programs: CustomProgram[];
 };
 
 export const customShowLoader = (isNew: boolean): Preloader<CustomShow> => {
   if (!isNew) {
-    return createPreloader(
-      (apiClient, { params }) => customShowQuery(apiClient, params.id!),
-      (show) => setCurrentCustomShow(show, []),
+    return createPreloader((apiClient, { params }) =>
+      customShowQuery(apiClient, params.id!),
     );
   } else {
     return () => () => {
       const customShow = {
-        id: 'unsaved',
-        name: 'New',
+        id: UnsavedId,
+        name: 'New Custom Show',
         contentCount: 0,
         totalDuration: 0,
       };
-      setCurrentCustomShow(customShow, []);
       return Promise.resolve(customShow);
     };
   }
