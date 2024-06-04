@@ -12,7 +12,7 @@ import TimeSlotEditorPage from './pages/channels/TimeSlotEditorPage.tsx';
 import GuidePage from './pages/guide/GuidePage.tsx';
 import CustomShowsPage from './pages/library/CustomShowsPage.tsx';
 import EditCustomShowPage from './pages/library/EditCustomShowPage.tsx';
-import EditFillerPage from './pages/library/EditFillerPage.tsx';
+import EditFillerPage from './pages/library/EditFillerPage.1.tsx';
 import FillerListsPage from './pages/library/FillerListsPage.tsx';
 import LibraryIndexPage from './pages/library/LibraryIndexPage.tsx';
 import FfmpegSettingsPage from './pages/settings/FfmpegSettingsPage.tsx';
@@ -165,6 +165,10 @@ export const router = createBrowserRouter(
               loader: customShowsLoader(queryClient),
             },
             {
+              path: '/library/custom-shows/programming/add',
+              element: <ProgrammingSelectorPage />,
+            },
+            {
               path: '/library/custom-shows/new',
               element: <EditCustomShowPage isNew={true} />,
               loader: newCustomShowLoader(queryClient),
@@ -178,6 +182,10 @@ export const router = createBrowserRouter(
               path: '/library/fillers',
               element: <FillerListsPage />,
               loader: fillerListsLoader(queryClient),
+            },
+            {
+              path: '/library/fillers/programming/add',
+              element: <ProgrammingSelectorPage />,
             },
             {
               path: '/library/fillers/new',

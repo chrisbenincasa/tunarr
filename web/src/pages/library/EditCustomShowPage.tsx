@@ -1,38 +1,30 @@
+import { Tv } from '@mui/icons-material';
 import DeleteIcon from '@mui/icons-material/Delete';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import {
   Button,
-  Divider,
   IconButton,
   List,
   ListItem,
   ListItemText,
   Stack,
   TextField,
+  Tooltip,
 } from '@mui/material';
-import Accordion from '@mui/material/Accordion';
-import AccordionDetails from '@mui/material/AccordionDetails';
-import AccordionSummary from '@mui/material/AccordionSummary';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
-import AddSelectedMediaButton from '../../components/channel_config/AddSelectedMediaButton.tsx';
-import ProgrammingSelector from '../../components/channel_config/ProgrammingSelector.tsx';
 import { usePreloadedData } from '../../hooks/preloadedDataHook.ts';
 import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 import {
   existingCustomShowLoader,
   newCustomShowLoader,
 } from '../../preloaders/customShowLoaders.ts';
-import {
-  addMediaToCurrentCustomShow,
-  removeCustomShowProgram,
-} from '../../store/channelEditor/actions.ts';
+import { removeCustomShowProgram } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
 import { UICustomShowProgram } from '../../types/index.ts';
 
@@ -48,6 +40,8 @@ export default function EditCustomShowPage({ isNew }: Props) {
     isNew ? existingCustomShowLoader : newCustomShowLoader,
   );
   const customShowPrograms = useStore((s) => s.customShowEditor.programList);
+  console.log(customShowPrograms);
+
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [addProgrammingOpen, setAddProgrammingOpen] = useState(false);
@@ -63,11 +57,11 @@ export default function EditCustomShowPage({ isNew }: Props) {
     },
   });
 
-  useEffect(() => {
-    reset({
-      name: customShow.name,
-    });
-  }, [customShow, reset]);
+  // useEffect(() => {
+  //   reset({
+  //     name: customShow.name,
+  //   });
+  // }, [customShow, reset]);
 
   const saveShowMutation = useMutation({
     mutationKey: ['custom-shows', isNew ? 'new' : customShow.id],
@@ -95,7 +89,7 @@ export default function EditCustomShowPage({ isNew }: Props) {
   const saveCustomShow: SubmitHandler<CustomShowForm> = (
     data: CustomShowForm,
   ) => {
-    saveShowMutation.mutate({ ...data, programs: customShowPrograms });
+    // saveShowMutation.mutate({ ...data, programs: customShowPrograms });
   };
 
   const deleteProgramAtIndex = useCallback((idx: number) => {
@@ -167,6 +161,22 @@ export default function EditCustomShowPage({ isNew }: Props) {
             )}
           />
           <Box>
+            <Tooltip
+              title="Add TV Shows or Movies to custom show"
+              placement="right"
+            >
+              <Button
+                disableRipple
+                component={Link}
+                to="../custom-shows/programming/add"
+                startIcon={<Tv />}
+                variant="contained"
+              >
+                Add Media
+              </Button>
+            </Tooltip>
+          </Box>
+          <Box>
             <Typography>Programming</Typography>
             <Box display="flex">
               <Box sx={{ flex: 1, maxHeight: 400, overflowY: 'auto' }}>
@@ -182,10 +192,14 @@ export default function EditCustomShowPage({ isNew }: Props) {
           >
             <Button onClick={() => onCancel()}>Cancel</Button>
             <Button
+              // disabled={
+              //   saveShowMutation.isPending ||
+              //   !isValid ||
+              //   customShowPrograms.length === 0
+              // }
               disabled={
-                saveShowMutation.isPending ||
-                !isValid ||
-                customShowPrograms.length === 0
+                saveShowMutation.isPending || !isValid
+                // customShowPrograms.length === 0
               }
               variant="contained"
               type="submit"
@@ -195,7 +209,7 @@ export default function EditCustomShowPage({ isNew }: Props) {
           </Stack>
         </Stack>
       </PaddedPaper>
-      <Accordion
+      {/* <Accordion
         expanded={addProgrammingOpen}
         onChange={(_, expanded) => setAddProgrammingOpen(expanded)}
       >
@@ -220,7 +234,7 @@ export default function EditCustomShowPage({ isNew }: Props) {
             />
           </Box>
         </AccordionDetails>
-      </Accordion>
+      </Accordion> */}
     </Box>
   );
 }
