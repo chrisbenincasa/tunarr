@@ -56,8 +56,14 @@ export const SettingsSchema = z.object({
 export type Settings = z.infer<typeof SettingsSchema>;
 
 export const MigrationStateSchema = z.object({
-  legacyMigration: z.boolean(),
+  legacyMigration: z
+    .boolean()
+    .default(false)
+    .describe('Whether a legacy migration was performed'),
+  isFreshSettings: z.boolean().default(true).optional(),
 });
+
+export type MigrationState = z.infer<typeof MigrationStateSchema>;
 
 export const SettingsFileSchema = z.object({
   version: z.number(),
@@ -74,7 +80,7 @@ export const SettingsFileSchema = z.object({
 
 export type SettingsFile = z.infer<typeof SettingsFileSchema>;
 
-export const defaultSchema = (dbBasePath: string): SettingsFile => ({
+export const defaultSettings = (dbBasePath: string): SettingsFile => ({
   version: 1,
   migration: {
     legacyMigration: false,
@@ -116,6 +122,10 @@ export class SettingsDB extends ITypedEventEmitter {
 
   needsLegacyMigration() {
     return !this.db.data.migration.legacyMigration;
+  }
+
+  get migrationState(): DeepReadonly<MigrationState> {
+    return this.db.data.migration;
   }
 
   clientId(): string {
@@ -200,9 +210,9 @@ export const getSettings = once((dbPath?: string) => {
   const actualPath =
     dbPath ?? path.resolve(globalOptions().databaseDirectory, 'settings.json');
 
-  const needsFlush = !existsSync(actualPath);
+  const freshSettings = !existsSync(actualPath);
 
-  const defaultValue = defaultSchema(globalOptions().databaseDirectory);
+  const defaultValue = defaultSettings(globalOptions().databaseDirectory);
   // Load this synchronously, but then give the DB instance an async version
   const db = new LowSync<SettingsFile>(
     new SyncSchemaBackedDbAdapter(SettingsFileSchema, actualPath, defaultValue),
@@ -210,9 +220,14 @@ export const getSettings = once((dbPath?: string) => {
   );
 
   db.read();
-  if (needsFlush) {
-    db.write();
-  }
+  db.update((data) => {
+    data.migration.isFreshSettings = freshSettings;
+    // Redefine thie variable... it came before "isFreshSettings".
+    // If this is a fresh run, mark legacyMigration as false
+    if (freshSettings) {
+      data.migration.legacyMigration = false;
+    }
+  });
 
   settingsDbInstance = new SettingsDB(
     actualPath,

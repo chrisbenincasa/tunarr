@@ -16,6 +16,8 @@ import { PlexTerminalMedia } from '@tunarr/types/plex';
 export class BackfillProgramExternalIds extends Fixer {
   #logger = LoggerFactory.child({ caller: import.meta });
 
+  canRunInBackground: boolean = true;
+
   async runInternal(): Promise<void> {
     const em = getEm();
 
@@ -64,7 +66,7 @@ export class BackfillProgramExternalIds extends Fixer {
             program,
             plexConnections[program.externalSourceId],
           ),
-        2,
+        { concurrency: 1, waitAfterEachMs: 50 },
       )) {
         if (result.type === 'error') {
           this.#logger.error(

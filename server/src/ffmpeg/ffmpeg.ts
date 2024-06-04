@@ -826,6 +826,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       return;
     }
 
+    // TODO: Redact Plex tokens here
     this.logger.debug(`Starting ffmpeg with args: "${ffmpegArgs.join(' ')}"`);
 
     this.ffmpeg = spawn(this.ffmpegPath, ffmpegArgs, {

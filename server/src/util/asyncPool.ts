@@ -1,3 +1,10 @@
+import { wait } from './index.js';
+
+type AsyncPoolOpts = {
+  concurrency: number;
+  waitAfterEachMs?: number;
+};
+
 // Based on https://github.com/rxaviers/async-pool
 // Notable changes:
 // 1. Types
@@ -5,7 +12,7 @@
 export async function* asyncPool<T, R>(
   iterable: Iterable<T>,
   iteratorFn: (item: T, iterable: Iterable<T>) => PromiseLike<R> | R,
-  concurrency: number,
+  opts: AsyncPoolOpts,
 ): AsyncGenerator<Result<T, R>> {
   const executing = new Set<Promise<readonly [T, Awaited<R>]>>();
 
@@ -28,6 +35,9 @@ export async function* asyncPool<T, R>(
     const promise = (async () => {
       try {
         const r = await iteratorFn(item, iterable);
+        if (opts.waitAfterEachMs && opts.waitAfterEachMs > 0) {
+          await wait(opts.waitAfterEachMs);
+        }
         return [item, r] as const;
       } catch (e) {
         throw {
@@ -39,7 +49,7 @@ export async function* asyncPool<T, R>(
     })().finally(() => executing.delete(promise));
 
     executing.add(promise);
-    if (executing.size >= concurrency) {
+    if (executing.size >= opts.concurrency) {
       yield await consume();
     }
   }

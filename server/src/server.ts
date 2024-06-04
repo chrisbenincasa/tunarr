@@ -37,19 +37,18 @@ import { LoggerFactory } from './util/logging/LoggerFactory.js';
 
 const currentDirectory = dirname(filename(import.meta.url));
 
+/**
+ * Initializes the Tunarr "database" directory at the configured location, including
+ * subdirectories
+ * @returns True if an existing database directory was found
+ */
 async function initDbDirectories() {
   // Early init, have to use the non-settings-based root Logger
   const logger = LoggerFactory.root;
   const opts = serverOptions();
   const hasTunarrDb = fs.existsSync(opts.databaseDirectory);
-  const hasLegacyDb = fs.existsSync(path.resolve(process.cwd(), '.dizquetv'));
   if (!hasTunarrDb) {
     logger.debug(`Existing database at ${opts.databaseDirectory} not found`);
-    if (hasLegacyDb) {
-      logger.info(
-        `DB configured at location ${opts.databaseDirectory} was not found, but a legacy .dizquetv database was located. A migration will be attempted`,
-      );
-    }
     fs.mkdirSync(opts.databaseDirectory, { recursive: true });
     await getSettings().flush();
   }
@@ -69,11 +68,22 @@ async function initDbDirectories() {
     fs.mkdirSync(path.join(process.cwd(), 'streams'));
   }
 
-  return !hasTunarrDb && hasLegacyDb;
+  return hasTunarrDb;
+}
+
+function hasLegacyDizquetvDirectory() {
+  const logger = LoggerFactory.root;
+  const legacyDbLocation = path.resolve(process.cwd(), '.dizquetv');
+  logger.info(`Searching for legacy dizquetv directory at ${legacyDbLocation}`);
+  const hasLegacyDb = fs.existsSync(legacyDbLocation);
+  if (hasLegacyDb) {
+    logger.info(`A legacy .dizquetv database was located.`);
+  }
+  return hasLegacyDb;
 }
 
 export async function initServer(opts: ServerOptions) {
-  const hadLegacyDb = await initDbDirectories();
+  await initDbDirectories();
   const settingsDb = getSettings();
   LoggerFactory.initialize(settingsDb);
 
@@ -84,19 +94,12 @@ export async function initServer(opts: ServerOptions) {
   const ctx = serverContext();
 
   if (
-    hadLegacyDb &&
-    (ctx.settings.needsLegacyMigration() || opts.force_migration)
+    (ctx.settings.migrationState.isFreshSettings || opts.force_migration) &&
+    hasLegacyDizquetvDirectory()
   ) {
     logger.info('Migrating from legacy database folder...');
     await new LegacyDbMigrator().migrateFromLegacyDb(settingsDb).catch((e) => {
       logger.error('Failed to migrate from legacy DB: %O', e);
-    });
-  } else if (ctx.settings.needsLegacyMigration()) {
-    // Mark the settings as if we migrated, even when there were no
-    // legacy settings present. This will prevent us from trying
-    // again on subsequent runs
-    await ctx.settings.updateBaseSettings('migration', {
-      legacyMigration: true,
     });
   }
 

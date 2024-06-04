@@ -138,7 +138,7 @@ export class LegacyDbMigrator {
           };
         }
       } catch (e) {
-        this.logger.error('Unable to migrate HDHR settings', e);
+        this.logger.error(e, 'Unable to migrate HDHR settings');
       }
     }
 
@@ -167,7 +167,7 @@ export class LegacyDbMigrator {
           };
         }
       } catch (e) {
-        this.logger.error('Unable to migrate XMLTV settings', e);
+        this.logger.error(e, 'Unable to migrate XMLTV settings');
       }
     }
 
@@ -270,7 +270,7 @@ export class LegacyDbMigrator {
           };
         }
       } catch (e) {
-        this.logger.error('Unable to migrate Plex settings', e);
+        this.logger.error(e, 'Unable to migrate Plex settings');
       }
     }
 
@@ -341,7 +341,7 @@ export class LegacyDbMigrator {
           await em.persistAndFlush(entities);
         }
       } catch (e) {
-        this.logger.error('Unable to migrate Plex server settings', e);
+        this.logger.error(e, 'Unable to migrate Plex server settings');
       }
     }
 
@@ -443,7 +443,7 @@ export class LegacyDbMigrator {
           };
         }
       } catch (e) {
-        this.logger.error('Unable to migrate ffmpeg settings', e);
+        this.logger.error(e, 'Unable to migrate ffmpeg settings');
       }
     }
 
@@ -455,7 +455,7 @@ export class LegacyDbMigrator {
         clientId: clientId['clientId'] as string,
       };
     } catch (e) {
-      this.logger.error('Unable to migrate client ID', e);
+      this.logger.error(e, 'Unable to migrate client ID');
     }
 
     const libraryMigrator = new LegacyLibraryMigrator();
@@ -468,7 +468,7 @@ export class LegacyDbMigrator {
           'custom-shows',
         );
       } catch (e) {
-        this.logger.error('Unable to migrate all custom shows', e);
+        this.logger.error(e, 'Unable to migrate all custom shows');
       }
     }
 
@@ -480,7 +480,7 @@ export class LegacyDbMigrator {
           'filler',
         );
       } catch (e) {
-        this.logger.error('Unable to migrate all filler shows', e);
+        this.logger.error(e, 'Unable to migrate all filler shows');
       }
     }
 
@@ -508,7 +508,7 @@ export class LegacyDbMigrator {
           }),
         );
       } catch (e) {
-        this.logger.error('Unable to migrate channels', e);
+        this.logger.error(e, 'Unable to migrate channels');
       }
     }
 
@@ -517,7 +517,7 @@ export class LegacyDbMigrator {
         this.logger.debug('Migrating cached images');
         await this.migrateCachedImages();
       } catch (e) {
-        this.logger.error('Unable to migrate cached images', e);
+        this.logger.error(e, 'Unable to migrate cached images');
       }
     }
 

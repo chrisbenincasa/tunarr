@@ -26,7 +26,10 @@ import {
 import { ProgramGroupingExternalId } from '../entities/ProgramGroupingExternalId';
 
 export class LegacyMetadataBackfiller {
-  private logger = LoggerFactory.child({ caller: import.meta });
+  private logger = LoggerFactory.child({
+    caller: import.meta,
+    className: LegacyMetadataBackfiller.name,
+  });
 
   // It requires valid PlexServerSettings, program metadata, etc
   async backfillParentMetadata() {
@@ -114,7 +117,7 @@ export class LegacyMetadataBackfiller {
             uuid: grandparentUUID,
           });
           if (!isNull(existingGrandparent)) {
-            this.logger.debug('Using existing grandparent grouping!');
+            this.logger.trace('Using existing grandparent grouping!');
             updatedGrandparent = true;
             if (type === ProgramType.Episode) {
               existingGrandparent.showEpisodes.add(
@@ -142,7 +145,7 @@ export class LegacyMetadataBackfiller {
           uuid: parentUUID,
         });
         if (!isNull(existingParent)) {
-          this.logger.debug('Using existing parent!');
+          this.logger.trace('Using existing parent!');
           updatedParent = true;
           if (type === ProgramType.Episode) {
             existingParent.seasonEpisodes.add(em.getReference(Program, uuid));

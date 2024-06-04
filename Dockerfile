@@ -28,6 +28,7 @@ RUN corepack enable
 EXPOSE 8000
 RUN ln -s /usr/local/bin/ffmpeg /usr/bin/ffmpeg
 ENTRYPOINT [ "node" ]
+CMD [ "/tunarr/bundle.js" ]
 
 # Add Tunarr sources
 FROM ffmpeg-base as sources
@@ -85,9 +86,21 @@ COPY --from=build-server /tunarr/server/build /tunarr/server/build
 # user, such as volume mapping their legacy DBs, while not interrupting the
 # other assumptions that Tunarr makes about its working directory
 RUN ln -s /tunarr/server/build/bundle.js /tunarr/bundle.js
-CMD [ "/tunarr/bundle.js" ]
+# CMD [ "/tunarr/bundle.js" ]
 ### Begin server run
 
 ### Full stack ###
-FROM server AS full-stack
+FROM ffmpeg-base AS full-stack
+# Duplicate the COPY statements from server build to ensure we don't bundle
+# twice, needlessly
+COPY --from=prod-deps /tunarr/node_modules /tunarr/node_modules
+COPY --from=prod-deps /tunarr/server/node_modules /tunarr/server/node_modules
+COPY --from=build-full-stack /tunarr/types /tunarr/types
+COPY --from=build-full-stack /tunarr/shared /tunarr/shared
+COPY --from=build-full-stack /tunarr/server/package.json /tunarr/server/package.json
+COPY --from=build-full-stack /tunarr/server/build /tunarr/server/build
 COPY --from=build-full-stack /tunarr/web/dist /tunarr/server/build/web
+# Create a symlink to the bundle at /tunarr. This simplifies things for the
+# user, such as volume mapping their legacy DBs, while not interrupting the
+# other assumptions that Tunarr makes about its working directory
+RUN ln -s /tunarr/server/build/bundle.js /tunarr/bundle.js
