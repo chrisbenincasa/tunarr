@@ -3,6 +3,9 @@ import { enumKeys } from '../../util/enumUtil.js';
 export enum ProgramExternalIdType {
   PLEX = 'plex',
   PLEX_GUID = 'plex-guid',
+  TMDB = 'tmdb',
+  IMDB = 'imdb',
+  TVDB = 'tvdb',
 }
 
 export function programExternalIdTypeFromString(
