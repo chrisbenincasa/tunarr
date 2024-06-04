@@ -32,7 +32,7 @@ import { GlobalScheduler, scheduleJobs } from './services/scheduler.js';
 import { initPersistentStreamCache } from './stream/ChannelCache.js';
 import { runFixers } from './tasks/fixers/index.js';
 import { UpdateXmlTvTask } from './tasks/UpdateXmlTvTask.js';
-import { filename, isProduction, run } from './util/index.js';
+import { filename, isNonEmptyString, isProduction, run } from './util/index.js';
 import { LoggerFactory } from './util/logging/LoggerFactory.js';
 
 const currentDirectory = dirname(filename(import.meta.url));
@@ -71,15 +71,17 @@ async function initDbDirectories() {
   return hasTunarrDb;
 }
 
-function hasLegacyDizquetvDirectory() {
+function legacyDizquetvDirectoryPath() {
   const logger = LoggerFactory.root;
-  const legacyDbLocation = path.resolve(process.cwd(), '.dizquetv');
+  const legacyDbLocation = path.join(process.cwd(), '.dizquetv');
   logger.info(`Searching for legacy dizquetv directory at ${legacyDbLocation}`);
   const hasLegacyDb = fs.existsSync(legacyDbLocation);
   if (hasLegacyDb) {
     logger.info(`A legacy .dizquetv database was located.`);
+    return legacyDbLocation;
   }
-  return hasLegacyDb;
+
+  return;
 }
 
 export async function initServer(opts: ServerOptions) {
@@ -93,14 +95,17 @@ export async function initServer(opts: ServerOptions) {
 
   const ctx = serverContext();
 
+  const legacyDbPath = legacyDizquetvDirectoryPath();
   if (
     (ctx.settings.migrationState.isFreshSettings || opts.force_migration) &&
-    hasLegacyDizquetvDirectory()
+    isNonEmptyString(legacyDbPath)
   ) {
     logger.info('Migrating from legacy database folder...');
-    await new LegacyDbMigrator().migrateFromLegacyDb(settingsDb).catch((e) => {
-      logger.error('Failed to migrate from legacy DB: %O', e);
-    });
+    await new LegacyDbMigrator(settingsDb, legacyDbPath)
+      .migrateFromLegacyDb()
+      .catch((e) => {
+        logger.error('Failed to migrate from legacy DB: %O', e);
+      });
   }
 
   scheduleJobs(ctx);

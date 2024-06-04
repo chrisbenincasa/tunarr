@@ -151,28 +151,39 @@ ${chalk.blue('  |_| ')}${chalk.green(' \\___/')}${chalk.yellow(
   )
   .command(
     'legacy-migrate',
-    'Migrate from the legacy .dizquetv/ database',
+    'Migrate from the legacy .dizquetv database',
     (yargs) => {
-      return yargs.option('entities', {
-        type: 'array',
-        choices: MigratableEntities,
-        coerce(arg) {
-          if (isArray(arg)) {
-            return arg as string[];
-          } else if (isString(arg)) {
-            return arg.split(',');
-          } else {
-            throw new Error('Bad arg');
-          }
-        },
-      });
+      return yargs
+        .option('legacy_path', {
+          type: 'string',
+          default: path.join(process.cwd(), '.dizquetv'),
+          coerce(arg: string) {
+            if (!existsSync(arg)) {
+              throw new Error(`No directory found at ${arg}`);
+            }
+            return arg;
+          },
+        })
+        .option('entities', {
+          type: 'array',
+          choices: MigratableEntities,
+          coerce(arg) {
+            if (isArray(arg)) {
+              return arg as string[];
+            } else if (isString(arg)) {
+              return arg.split(',');
+            } else {
+              throw new Error('Bad arg');
+            }
+          },
+        });
     },
     async (argv) => {
       console.log('Migrating DB from legacy schema...');
-      return await new LegacyDbMigrator().migrateFromLegacyDb(
+      return await new LegacyDbMigrator(
         getSettings(),
-        argv.entities,
-      );
+        argv.legacy_path,
+      ).migrateFromLegacyDb(argv.entities);
     },
   )
   .command(

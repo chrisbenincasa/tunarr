@@ -17,6 +17,7 @@ import fs from 'fs/promises';
 import {
   find,
   isArray,
+  isEmpty,
   isError,
   isNaN,
   isNil,
@@ -97,15 +98,17 @@ function parseIntOrDefault(s: JSONValue, defaultValue: number): number {
 export class LegacyDbMigrator {
   private logger = LoggerFactory.child({ caller: import.meta });
 
-  migrateFromLegacyDb(settings: SettingsDB, entities?: string[]) {
-    return withDb((em) =>
-      this.migrateFromLegacyDbInner(em, settings, entities),
-    );
+  constructor(
+    private settings: SettingsDB,
+    private legacyDbPath: string,
+  ) {}
+
+  migrateFromLegacyDb(entities?: string[]) {
+    return withDb((em) => this.migrateFromLegacyDbInner(em, entities));
   }
 
   private async migrateFromLegacyDbInner(
     em: EntityManager,
-    db: SettingsDB,
     entities?: string[],
   ) {
     const entitiesToMigrate = entities ?? MigratableEntities;
@@ -464,7 +467,7 @@ export class LegacyDbMigrator {
       try {
         this.logger.debug('Migrating custom shows');
         await libraryMigrator.migrateCustomShows(
-          path.join(process.cwd(), '.dizquetv'),
+          this.legacyDbPath,
           'custom-shows',
         );
       } catch (e) {
@@ -475,10 +478,7 @@ export class LegacyDbMigrator {
     if (entitiesToMigrate.includes('filler-shows')) {
       try {
         this.logger.debug('Migrating filler shows');
-        await libraryMigrator.migrateCustomShows(
-          path.join(process.cwd(), '.dizquetv'),
-          'filler',
-        );
+        await libraryMigrator.migrateCustomShows(this.legacyDbPath, 'filler');
       } catch (e) {
         this.logger.error(e, 'Unable to migrate all filler shows');
       }
@@ -487,9 +487,7 @@ export class LegacyDbMigrator {
     if (entitiesToMigrate.includes('channels')) {
       try {
         this.logger.debug('Migraing channels...');
-        await new LegacyChannelMigrator().migrateChannels(
-          path.join(process.cwd(), '.dizquetv'),
-        );
+        await new LegacyChannelMigrator().migrateChannels(this.legacyDbPath);
         // Finish this process in the background, since it could take a while
         GlobalScheduler.scheduleOneOffTask(
           'BackfillParentMetadata',
@@ -515,22 +513,32 @@ export class LegacyDbMigrator {
     if (entitiesToMigrate.includes('cached-images')) {
       try {
         this.logger.debug('Migrating cached images');
-        await this.migrateCachedImages();
+        const result = await this.migrateCachedImages();
+        if (!isEmpty(result)) {
+          this.logger.info(
+            'Successfully migrated %d cached images',
+            result.length,
+          );
+        }
       } catch (e) {
-        this.logger.error(e, 'Unable to migrate cached images');
+        this.logger.error('Unable to migrate cached images', e);
       }
     }
 
-    return await db.directUpdate((existingSettings) => {
-      return {
-        ...existingSettings,
-        settings: settings as Required<Settings>,
-        migration: {
-          ...existingSettings.migration,
-          legacyMigration: true,
-        },
-      };
-    });
+    return await this.settings
+      .directUpdate((existingSettings) => {
+        return {
+          ...existingSettings,
+          settings: settings as Required<Settings>,
+          migration: {
+            ...existingSettings.migration,
+            legacyMigration: true,
+          },
+        };
+      })
+      .then(() => {
+        this.logger.info('Completed legacy migration from dizquetv');
+      });
   }
 
   private async readAllOldDbFile(
@@ -539,7 +547,7 @@ export class LegacyDbMigrator {
     // We make an assumption about the location of the legacy db file, because
     // we know how the server discovered it...
     const data = await fs.readFile(
-      path.join(process.cwd(), '.dizquetv', file + '.json'),
+      path.join(this.legacyDbPath, file + '.json'),
     );
     const str = data.toString('utf-8');
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
