@@ -654,33 +654,6 @@ export default function FfmpegSettingsPage() {
             },
           }}
         />
-
-        <FormControl fullWidth>
-          <FormControlLabel
-            control={
-              <CheckboxFormController
-                control={control}
-                name="normalizeAudioCodec"
-              />
-            }
-            label="Normalize Audio Codec"
-          />
-        </FormControl>
-
-        <FormControl fullWidth>
-          <FormControlLabel
-            control={
-              <CheckboxFormController control={control} name="normalizeAudio" />
-            }
-            label="Normalize Audio"
-          />
-          <FormHelperText>
-            This will force the preferred number of audio channels and sample
-            rate, in addition it will align the lengths of the audio and video
-            channels. This will prevent audio-related episode transition issues
-            in many clients. Audio will always be transcoded.
-          </FormHelperText>
-        </FormControl>
       </>
     );
   };

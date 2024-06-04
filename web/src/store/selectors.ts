@@ -70,3 +70,14 @@ export const useChannelEditor = () => {
     };
   });
 };
+
+export const useCustomShowEditor = () => {
+  return useStore((s) => {
+    const editor = s.customShowEditor;
+    return {
+      ...editor,
+      programList: editor.programList,
+      originalProgramList: editor.originalProgramList,
+    };
+  });
+};

@@ -18,14 +18,9 @@ import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
-import { usePreloadedData } from '../../hooks/preloadedDataHook.ts';
+import { usePreloadedCustomShow } from '../../hooks/usePreloadedCustomShow.ts';
 import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
-import {
-  existingCustomShowLoader,
-  newCustomShowLoader,
-} from '../../preloaders/customShowLoaders.ts';
 import { removeCustomShowProgram } from '../../store/channelEditor/actions.ts';
-import useStore from '../../store/index.ts';
 import { UICustomShowProgram } from '../../types/index.ts';
 
 type Props = { isNew: boolean };
@@ -36,11 +31,8 @@ type CustomShowForm = {
 
 export default function EditCustomShowPage({ isNew }: Props) {
   const apiClient = useTunarrApi();
-  const { show: customShow } = usePreloadedData(
-    isNew ? existingCustomShowLoader : newCustomShowLoader,
-  );
-  const customShowPrograms = useStore((s) => s.customShowEditor.programList);
-  console.log(customShowPrograms);
+  const { currentEntity: customShow, programList: customShowPrograms } =
+    usePreloadedCustomShow();
 
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -53,7 +45,7 @@ export default function EditCustomShowPage({ isNew }: Props) {
     formState: { isValid },
   } = useForm<CustomShowForm>({
     defaultValues: {
-      name: '',
+      name: customShow?.name ?? '',
     },
   });
 
@@ -64,7 +56,7 @@ export default function EditCustomShowPage({ isNew }: Props) {
   // }, [customShow, reset]);
 
   const saveShowMutation = useMutation({
-    mutationKey: ['custom-shows', isNew ? 'new' : customShow.id],
+    mutationKey: ['custom-shows', isNew ? 'new' : customShow?.id],
     mutationFn: async (
       data: CustomShowForm & { programs: UICustomShowProgram[] },
     ) => {
