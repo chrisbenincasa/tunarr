@@ -4,7 +4,10 @@ import {
   ContentProgramSchema,
   CustomProgramSchema,
 } from '../schemas/programmingSchema.js';
-import { PlexServerSettingsSchema } from '../schemas/settingsSchemas.js';
+import {
+  BackupSettingsSchema,
+  PlexServerSettingsSchema,
+} from '../schemas/settingsSchemas.js';
 import {
   RandomSlotScheduleSchema,
   TimeSlotScheduleSchema,
@@ -173,11 +176,19 @@ export const SystemSettingsResponseSchema = SystemSettingsSchema.extend({
   }),
 });
 
-export const UpdateSystemSettingsRequestSchema =
-  SystemSettingsSchema.shape.logging
-    .pick({ logLevel: true, useEnvVarLevel: true })
-    .partial();
+export type SystemSettingsResponse = z.infer<
+  typeof SystemSettingsResponseSchema
+>;
+
+export const UpdateSystemSettingsRequestSchema = z.object({
+  logging: LoggingSettingsSchema.pick({ logLevel: true, useEnvVarLevel: true })
+    .partial()
+    .optional(),
+  backup: BackupSettingsSchema.optional(),
+});
 
 export type UpdateSystemSettingsRequest = z.infer<
   typeof UpdateSystemSettingsRequestSchema
 >;
+
+export const UpdateBackupSettingsRequestSchema = BackupSettingsSchema;

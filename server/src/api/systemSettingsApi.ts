@@ -1,13 +1,19 @@
+import { LoggingSettings, SystemSettings } from '@tunarr/types';
 import {
+  SystemSettingsResponse,
   SystemSettingsResponseSchema,
+  UpdateBackupSettingsRequestSchema,
   UpdateSystemSettingsRequestSchema,
 } from '@tunarr/types/api';
+import { BackupSettings, BackupSettingsSchema } from '@tunarr/types/schemas';
+import { isUndefined } from 'lodash-es';
+import { DeepReadonly, Writable } from 'ts-essentials';
+import { scheduleBackupJobs } from '../services/scheduler';
 import { RouterPluginAsyncCallback } from '../types/serverType';
 import {
   getDefaultLogLevel,
   getEnvironmentLogLevel,
 } from '../util/logging/LoggerFactory';
-import { SystemSettings } from '@tunarr/types';
 
 export const systemSettingsRouter: RouterPluginAsyncCallback = async (
   fastify,
@@ -39,30 +45,66 @@ export const systemSettingsRouter: RouterPluginAsyncCallback = async (
       },
     },
     async (req, res) => {
+      let backupSettingsPotentiallyChanged = false;
       await req.serverCtx.settings.directUpdate((file) => {
         const { system } = file;
-        system.logging.useEnvVarLevel = req.body.useEnvVarLevel ?? true;
+        system.logging.useEnvVarLevel =
+          req.body.logging?.useEnvVarLevel ?? true;
         if (system.logging.useEnvVarLevel) {
           system.logging.logLevel = getDefaultLogLevel(false);
         } else {
           system.logging.logLevel =
-            req.body.logLevel ?? getDefaultLogLevel(false);
+            req.body.logging?.logLevel ?? getDefaultLogLevel(false);
         }
+
+        if (!isUndefined(req.body.backup)) {
+          backupSettingsPotentiallyChanged = true;
+          system.backup = req.body.backup;
+        }
+
         return file;
       });
 
+      const refreshedSettings = req.serverCtx.settings.systemSettings();
+
+      if (backupSettingsPotentiallyChanged) {
+        scheduleBackupJobs(refreshedSettings.backup);
+      }
+
+      return res.send(getSystemSettingsResponse(refreshedSettings));
+    },
+  );
+
+  fastify.put(
+    '/system/settings/backup',
+    {
+      schema: {
+        body: UpdateBackupSettingsRequestSchema,
+        response: {
+          200: BackupSettingsSchema,
+        },
+      },
+    },
+    async (req, res) => {
+      await req.serverCtx.settings.directUpdate((settings) => {
+        settings.system.backup = req.body;
+        return settings;
+      });
+
       return res.send(
-        getSystemSettingsResponse(req.serverCtx.settings.systemSettings()),
+        req.serverCtx.settings.backup as Writable<BackupSettings>,
       );
     },
   );
 
-  function getSystemSettingsResponse(settings: SystemSettings) {
+  function getSystemSettingsResponse(
+    settings: DeepReadonly<SystemSettings>,
+  ): SystemSettingsResponse {
     const envLogLevel = getEnvironmentLogLevel();
     return {
-      ...settings,
+      ...(settings as Writable<SystemSettings>),
       logging: {
-        ...settings.logging,
+        ...(settings.logging as Writable<LoggingSettings>),
         environmentLogLevel: envLogLevel,
       },
     };

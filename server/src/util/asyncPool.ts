@@ -18,10 +18,11 @@ export async function* asyncPool<T, R>(
 
   async function consume() {
     try {
-      const [, result] = await Promise.race(executing);
+      const [input, result] = await Promise.race(executing);
       return {
         type: 'success' as const,
         result,
+        input,
       };
     } catch (e) {
       return e as Failure<T>;
@@ -65,9 +66,10 @@ type Failure<In> = {
   input: In;
 };
 
-type Success<R> = {
+type Success<R, In> = {
   type: 'success';
   result: R;
+  input: In;
 };
 
-type Result<In, R> = Success<R> | Failure<In>;
+type Result<In, R> = Success<R, In> | Failure<In>;

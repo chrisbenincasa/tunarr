@@ -17,7 +17,6 @@ export class ScheduleDynamicChannelsTask extends Task<void> {
   #taskFactory: DynamicChannelUpdaterFactory;
 
   public ID = ScheduleDynamicChannelsTask.ID;
-  public taskName = ScheduleDynamicChannelsTask.name;
 
   static create(channelsDb: ChannelDB) {
     return new ScheduleDynamicChannelsTask(channelsDb);
@@ -66,7 +65,6 @@ class DynamicChannelUpdaterFactory {
     // This won't always be anonymous
     return new (class extends Task<unknown> {
       public ID = contentSourceDef.updater._id;
-      public taskName = `AnonymousTest_` + contentSourceDef.updater._id;
       // eslint-disable-next-line @typescript-eslint/require-await
       protected async runInternal() {
         return ContentSourceUpdaterFactory.getUpdater(

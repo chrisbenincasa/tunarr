@@ -41,3 +41,34 @@ export const ChannelIconSchema = z.object({
   duration: z.number(),
   position: z.string(),
 });
+
+export const TimeUnitSchema = z.union([
+  z.literal('second'),
+  z.literal('minute'),
+  z.literal('hour'),
+  z.literal('day'),
+  z.literal('week'),
+]);
+
+export const CronScheduleSchema = z.object({
+  type: z.literal('cron'),
+  cron: z.string(),
+});
+
+export const EveryScheduleSchema = z.object({
+  type: z.literal('every'),
+  increment: z.number().positive(),
+  unit: TimeUnitSchema,
+  offsetMs: z
+    .number()
+    .min(0)
+    .max(1000 * 60 * 60 * 24 - 1)
+    .default(0),
+});
+
+export type EverySchedule = z.infer<typeof EveryScheduleSchema>;
+
+export const ScheduleSchema = z.discriminatedUnion('type', [
+  CronScheduleSchema,
+  EveryScheduleSchema,
+]);

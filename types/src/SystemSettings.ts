@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { TupleToUnion } from './util.js';
+import { BackupSettingsSchema } from './schemas/settingsSchemas.js';
 
 export const LogLevelsSchema = z.union([
   z.literal('silent'),
@@ -31,7 +32,10 @@ export const LoggingSettingsSchema = z.object({
   useEnvVarLevel: z.boolean().default(true),
 });
 
+export type LoggingSettings = z.infer<typeof LoggingSettingsSchema>;
+
 export const SystemSettingsSchema = z.object({
+  backup: BackupSettingsSchema,
   logging: LoggingSettingsSchema,
 });
 

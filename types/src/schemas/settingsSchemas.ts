@@ -1,6 +1,7 @@
 import z from 'zod';
 import { ResolutionSchema } from './miscSchemas.js';
 import { TupleToUnion } from '../util.js';
+import { ScheduleSchema } from './utilSchemas.js';
 
 export const XmlTvSettingsSchema = z.object({
   programmingHours: z.number().default(12),
@@ -132,3 +133,37 @@ export const HdhrSettingsSchema = z.object({
   autoDiscoveryEnabled: z.boolean().default(true),
   tunerCount: z.number().default(2),
 });
+
+export const FileBackupOutputSchema = z.object({
+  type: z.literal('file'),
+  outputPath: z.string(),
+  archiveFormat: z.union([z.literal('zip'), z.literal('tar')]).default('tar'),
+  gzip: z.boolean().optional(), // Only valid if archive format is tar
+  tempDir: z.string().optional(), // Defaults to OS-specific temp dir, can be relative path
+  maxBackups: z.number().positive().default(3),
+});
+
+export type FileBackupOutput = z.infer<typeof FileBackupOutputSchema>;
+
+export const BackupOutputSchema = z.discriminatedUnion('type', [
+  FileBackupOutputSchema,
+]);
+
+export const BackupConfigurationSchema = z.object({
+  enabled: z.boolean().default(true),
+  schedule: ScheduleSchema.default({
+    type: 'every',
+    increment: 1,
+    unit: 'day',
+    offsetMs: 4 * 60 * 60 * 1000,
+  }),
+  outputs: z.array(BackupOutputSchema),
+});
+
+export type BackupConfiguration = z.infer<typeof BackupConfigurationSchema>;
+
+export const BackupSettingsSchema = z.object({
+  configurations: z.array(BackupConfigurationSchema),
+});
+
+export type BackupSettings = z.infer<typeof BackupSettingsSchema>;

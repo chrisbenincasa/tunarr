@@ -1,7 +1,7 @@
 import { BaseErrorSchema } from '@tunarr/types/api';
 import { TaskSchema } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
-import ld, { isNil } from 'lodash-es';
+import ld, { isEmpty, isNil } from 'lodash-es';
 import { z } from 'zod';
 import { GlobalScheduler } from '../services/scheduler.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
@@ -23,10 +23,14 @@ export const tasksApiRouter: RouterPluginAsyncCallback = async (fastify) => {
     async (_, res) => {
       const result = ld
         .chain(GlobalScheduler.scheduledJobsById)
-        .map((task, id) => {
-          if (isNil(task)) {
+        .map((tasks, id) => {
+          if (isNil(tasks) || isEmpty(tasks)) {
             return;
           }
+
+          // TODO: We're goingn to have to figure out a better way
+          // to represnt this in the API
+          const task = tasks[0];
 
           const lastExecution = task.lastExecution
             ? dayjs(task.lastExecution)
@@ -70,14 +74,12 @@ export const tasksApiRouter: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      const task = GlobalScheduler.getScheduledJob(req.params.id);
-      if (isNil(task)) {
+      const tasks = GlobalScheduler.getScheduledJobs(req.params.id);
+      if (isNil(tasks) || isEmpty(tasks)) {
         return res.status(404).send();
       }
 
-      if (isNil(task)) {
-        return res.status(404).send();
-      }
+      const task = tasks[0];
 
       if (task.running) {
         return res.status(400).send({ message: 'Task already running' });
