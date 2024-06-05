@@ -28,6 +28,13 @@ GHCR:
 - `ghcr.io/chrisbenincasa/tunarr:edge-nvidia`
 - `ghcr.io/chrisbenincasa/tunarr:edge-vaapi`
 
+### Unraid
+
+Tunarr is available in the [Community Apps](https://unraid.net/community/apps) store on Unraid. After [installing the Community Apps plugin](https://forums.unraid.net/topic/38582-plug-in-community-applications/) on your Unraid machine, simply search for "tunarr" and select the resulting app (provided by grtgbln's repository).
+
+Follow the on-screen instructions to set up the container, including mapping the Web UI port. You can optionally pass in an Nvidia GPU or Intel iGPU for hardware transcoding (use the proper corresponding Docker tag), and optionally map an existing dizqueTV configuration directory to migrate.
+
+
 ## Binaries
 
 Tunarr is released in pre-built binaries for Windows (x64), macOS (x64), and Linux (x64).
