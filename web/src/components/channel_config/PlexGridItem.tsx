@@ -30,7 +30,7 @@ import {
   prettyItemDuration,
   toggle,
 } from '../../helpers/util.ts';
-import { usePlexTyped } from '../../hooks/plexHooks.ts';
+import { usePlexTyped } from '../../hooks/plex/usePlex.ts';
 import useStore from '../../store/index.ts';
 import {
   addKnownMediaForServer,

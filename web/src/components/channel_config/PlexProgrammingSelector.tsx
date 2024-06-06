@@ -1,3 +1,4 @@
+import { usePlexSearchInfinite } from '@/hooks/plex/usePlexSearch.ts';
 import FilterAlt from '@mui/icons-material/FilterAlt';
 import GridView from '@mui/icons-material/GridView';
 import ViewList from '@mui/icons-material/ViewList';
@@ -13,12 +14,7 @@ import {
   ToggleButton,
   ToggleButtonGroup,
 } from '@mui/material';
-import { DataTag, useInfiniteQuery } from '@tanstack/react-query';
 import {
-  PlexLibraryCollections,
-  PlexLibraryMovies,
-  PlexLibraryMusic,
-  PlexLibraryShows,
   PlexMedia,
   PlexMovie,
   PlexMusicArtist,
@@ -31,7 +27,6 @@ import _, {
   compact,
   first,
   flatMap,
-  forEach,
   isNil,
   isUndefined,
   map,
@@ -56,9 +51,8 @@ import {
   isNewModalAbove,
 } from '../../helpers/inlineModalUtil';
 import { isNonEmptyString, toggle } from '../../helpers/util';
-import { fetchPlexPath, usePlex } from '../../hooks/plexHooks';
+import { usePlex } from '../../hooks/plex/usePlex.ts';
 import { usePlexServerSettings } from '../../hooks/settingsHooks';
-import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 import useStore from '../../store';
 import { addKnownMediaForServer } from '../../store/programmingSelector/actions';
 import { setProgrammingSelectorViewState } from '../../store/themeEditor/actions';
@@ -71,6 +65,7 @@ import { PlexFilterBuilder } from './PlexFilterBuilder.tsx';
 import { PlexGridItem } from './PlexGridItem';
 import { PlexListItem } from './PlexListItem';
 import { PlexSortField } from './PlexSortField.tsx';
+import { usePlexCollectionsInfinite } from '@/hooks/plex/usePlexCollections.ts';
 
 function a11yProps(index: number) {
   return {
@@ -89,7 +84,6 @@ type Size = {
 };
 
 export default function PlexProgrammingSelector() {
-  const apiClient = useTunarrApi();
   const { data: plexServers } = usePlexServerSettings();
   const selectedServer = useStore((s) => s.currentServer);
   const selectedLibrary = useStore((s) =>
@@ -228,38 +222,7 @@ export default function PlexProgrammingSelector() {
     fetchNextPage: fetchNextCollectionsPage,
     isFetchingNextPage: isFetchingNextCollectionsPage,
     hasNextPage: hasNextCollectionsPage,
-  } = useInfiniteQuery({
-    queryKey: [
-      'plex',
-      selectedServer?.name,
-      selectedLibrary?.library.key,
-      'collections',
-    ],
-    queryFn: ({ pageParam }) => {
-      const plexQuery = new URLSearchParams({
-        'X-Plex-Container-Start': pageParam.toString(),
-        'X-Plex-Container-Size': (rowSize * 4).toString(),
-      });
-
-      return fetchPlexPath<PlexLibraryCollections>(
-        apiClient,
-        selectedServer!.name,
-        `/library/sections/${selectedLibrary?.library
-          .key}/collections?${plexQuery.toString()}`,
-      )();
-    },
-    enabled: !isNil(selectedServer) && !isNil(selectedLibrary),
-    initialPageParam: 0,
-    getNextPageParam: (res, all, last) => {
-      const total = sumBy(all, (page) => page.size);
-      if (total >= (res.totalSize ?? res.size)) {
-        return null;
-      }
-
-      // Next offset is the last + how many items we got back.
-      return last + res.size;
-    },
-  });
+  } = usePlexCollectionsInfinite(selectedServer, selectedLibrary, rowSize * 4);
 
   useEffect(() => {
     // When switching between Libraries, if a collection doesn't exist switch back to 'Library' tab
@@ -278,51 +241,12 @@ export default function PlexProgrammingSelector() {
     fetchNextPage: fetchNextItemsPage,
     hasNextPage: hasNextItemsPage,
     isFetchingNextPage: isFetchingNextItemsPage,
-  } = useInfiniteQuery({
-    queryKey: [
-      'plex-search',
-      selectedServer?.name,
-      selectedLibrary?.library.key,
-      searchKey,
-    ] as DataTag<
-      ['plex-search', string, string, string],
-      PlexLibraryMovies | PlexLibraryShows | PlexLibraryMusic
-    >,
-    enabled: !isNil(selectedServer) && !isNil(selectedLibrary),
-    initialPageParam: 0,
-    queryFn: ({ pageParam }) => {
-      const plexQuery = new URLSearchParams({
-        'X-Plex-Container-Start': pageParam.toString(),
-        'X-Plex-Container-Size': (rowSize * 4).toString(),
-      });
-      // HACK for now
-      forEach(searchKey?.split('&'), (keyval) => {
-        const idx = keyval.lastIndexOf('=');
-        if (idx !== -1) {
-          plexQuery.append(keyval.substring(0, idx), keyval.substring(idx + 1));
-        }
-      });
-
-      return fetchPlexPath<
-        PlexLibraryMovies | PlexLibraryShows | PlexLibraryMusic
-      >(
-        apiClient,
-        selectedServer!.name,
-        `/library/sections/${
-          selectedLibrary!.library.key
-        }/all?${plexQuery.toString()}`,
-      )();
-    },
-    getNextPageParam: (res, all, last) => {
-      const total = sumBy(all, (page) => page.size);
-      if (total >= (res.totalSize ?? res.size)) {
-        return null;
-      }
-
-      // Next offset is the last + how many items we got back.
-      return last + res.size;
-    },
-  });
+  } = usePlexSearchInfinite(
+    selectedServer,
+    selectedLibrary,
+    searchKey,
+    rowSize * 4,
+  );
 
   useEffect(() => {
     if (searchData?.pages.length === 1) {

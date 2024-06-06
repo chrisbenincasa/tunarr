@@ -2,12 +2,12 @@ import { AddCircle } from '@mui/icons-material';
 import { CircularProgress, Tooltip } from '@mui/material';
 import Button, { ButtonProps } from '@mui/material/Button';
 import { flattenDeep, map } from 'lodash-es';
-import { MouseEventHandler, useState } from 'react';
+import { MouseEventHandler, ReactNode, useState } from 'react';
 import {
   forSelectedMediaType,
   sequentialPromises,
 } from '../../helpers/util.ts';
-import { enumeratePlexItem } from '../../hooks/plexHooks.ts';
+import { enumeratePlexItem } from '../../hooks/plex/plexHookUtil.ts';
 import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 import useStore from '../../store/index.ts';
 import { clearSelectedMedia } from '../../store/programmingSelector/actions.ts';
@@ -17,11 +17,15 @@ import { AddedCustomShowProgram, AddedMedia } from '../../types/index.ts';
 type Props = {
   onAdd: (items: AddedMedia[]) => void;
   onSuccess: () => void;
+  buttonText?: string;
+  tooltipTitle?: ReactNode;
 } & ButtonProps;
 
 export default function AddSelectedMediaButton({
   onAdd,
   onSuccess,
+  buttonText,
+  tooltipTitle,
   ...rest
 }: Props) {
   const apiClient = useTunarrApi();
@@ -71,7 +75,7 @@ export default function AddSelectedMediaButton({
   };
 
   return (
-    <Tooltip title="Add all programs to channel">
+    <Tooltip title={tooltipTitle ?? 'Add all programs to channel'}>
       <span>
         <Button
           onClick={(e) => addSelectedItems(e)}
@@ -85,7 +89,7 @@ export default function AddSelectedMediaButton({
             )
           }
         >
-          Add All
+          {buttonText ?? 'Add All'}
         </Button>
       </span>
     </Tooltip>

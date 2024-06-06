@@ -43,20 +43,13 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { isNull, isUndefined } from 'lodash-es';
 import React, { ReactNode, useCallback, useMemo, useState } from 'react';
-import {
-  Outlet,
-  Link as RouterLink,
-  useLocation,
-  useNavigate,
-} from 'react-router-dom';
+import { Outlet, Link as RouterLink } from 'react-router-dom';
 import './App.css';
 import ServerEvents from './components/ServerEvents.tsx';
 import TunarrLogo from './components/TunarrLogo.tsx';
 import VersionFooter from './components/VersionFooter.tsx';
-import SelectedProgrammingList from './components/channel_config/SelectedProgrammingList.tsx';
 import DarkModeButton from './components/settings/DarkModeButton.tsx';
 import { useVersion } from './hooks/useVersion.ts';
-import { addMediaToCurrentChannel } from './store/channelEditor/actions.ts';
 import useStore from './store/index.ts';
 import { useSettings } from './store/settings/selectors.ts';
 import { setDarkModeState } from './store/themeEditor/actions.ts';
@@ -120,18 +113,6 @@ export function Root({ children }: { children?: React.ReactNode }) {
   );
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const mobileLinksOpen = !isNull(anchorEl);
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  const displayPaths = [
-    '/programming/add',
-    'library/custom-shows/new',
-    'library/fillers/new',
-  ];
-
-  const displaySelectedProgramming = displayPaths.some((path) =>
-    location.pathname.match(new RegExp(path)),
-  );
 
   const toggleDrawerOpen = () => {
     setOpen(true);
@@ -297,7 +278,7 @@ export function Root({ children }: { children?: React.ReactNode }) {
         icon: <TextSnippetIcon />,
       },
     ],
-    [mobileLinksOpen],
+    [settings.backendUri],
   );
 
   const handleOpenClick = useCallback((itemName: string) => {
@@ -553,13 +534,6 @@ export function Root({ children }: { children?: React.ReactNode }) {
             {children ?? <Outlet />}
           </Container>
         </Box>
-
-        {displaySelectedProgramming && (
-          <SelectedProgrammingList
-            onAddSelectedMedia={addMediaToCurrentChannel}
-            onAddMediaSuccess={() => navigate(-1)}
-          />
-        )}
       </Box>
       <ReactQueryDevtools initialIsOpen={false} />
     </ThemeProvider>

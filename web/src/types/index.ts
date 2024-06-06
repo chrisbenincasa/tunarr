@@ -15,7 +15,7 @@ import {
 } from '@zodios/core/lib/zodios.types';
 import { LoaderFunctionArgs } from 'react-router-dom';
 import { type ApiClient } from '../external/api.ts';
-import { EnrichedPlexMedia } from '../hooks/plexHooks.ts';
+import { EnrichedPlexMedia } from '../hooks/plex/plexHookUtil.ts';
 
 // A program that may or may not exist in the DB yet
 export type EphemeralProgram = Omit<Program, 'id'>;
@@ -123,4 +123,7 @@ export type AddedPlexMedia = {
   media: EnrichedPlexMedia;
 };
 
+/**
+ * Media type going from "selected" -> "added to entity".
+ */
 export type AddedMedia = AddedPlexMedia | AddedCustomShowProgram;
