@@ -40,10 +40,8 @@ import {
   useForm,
   useFormContext,
 } from 'react-hook-form';
-import {
-  usePlexTags,
-  useSelectedLibraryPlexFilters,
-} from '../../hooks/plexHooks.ts';
+import { usePlexTags } from '../../hooks/plex/usePlexTags.ts';
+import { useSelectedLibraryPlexFilters } from '../../hooks/plex/usePlexFilters.ts';
 import useStore from '../../store/index.ts';
 import { setPlexFilter } from '../../store/programmingSelector/actions.ts';
 
@@ -110,7 +108,7 @@ export function PlexValueNode({
   }, [selfValue.field, findPlexField]);
 
   const { data: plexTags, isLoading: plexTagsLoading } = usePlexTags(
-    plexFilter?.type === 'tag' ? plexFilter.key : '',
+    plexFilter?.type === 'tag' ? plexFilter.key.replace('show.', '') : '',
   );
 
   const lookupFieldOperators = useCallback(
@@ -459,11 +457,12 @@ export function PlexFilterBuilder(
       formMethods.reset({
         type: 'value',
         op: '=',
-        field: 'title',
+        field:
+          selectedLibrary?.library.type === 'show' ? 'show.title' : 'title',
         value: '',
       });
     }
-  }, [advanced, formMethods, formMethods.reset]);
+  }, [advanced, formMethods, formMethods.reset, selectedLibrary?.library.type]);
 
   return (
     <FilterMetadataContext.Provider

@@ -33,7 +33,7 @@ import {
   unwrapNil,
   zipWithIndex,
 } from '../../helpers/util.ts';
-import { EnrichedPlexMedia } from '../../hooks/plexHooks.ts';
+import { EnrichedPlexMedia } from '../../hooks/plex/plexHookUtil.ts';
 import { AddedMedia, UIChannelProgram, UIIndex } from '../../types/index.ts';
 import useStore from '../index.ts';
 import { ChannelEditorState, initialChannelEditorState } from './store.ts';

@@ -60,7 +60,7 @@ import {
   TypedController,
 } from '../../components/util/TypedController.tsx';
 import { toggle } from '../../helpers/util.ts';
-import { usePlexServerStatus } from '../../hooks/plexHooks.ts';
+import { usePlexServerStatus } from '../../hooks/plex/usePlexServerStatus.ts';
 import {
   usePlexServerSettings,
   usePlexStreamSettings,

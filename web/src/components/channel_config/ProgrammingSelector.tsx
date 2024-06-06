@@ -11,7 +11,7 @@ import {
 import { PlexMedia, isPlexDirectory } from '@tunarr/types/plex';
 import { find, isEmpty, isNil, isUndefined, map } from 'lodash-es';
 import React, { useCallback, useEffect, useState } from 'react';
-import { usePlexLibraries } from '../../hooks/plexHooks.ts';
+import { usePlexLibraries } from '../../hooks/plex/usePlex.ts';
 import { usePlexServerSettings } from '../../hooks/settingsHooks.ts';
 import { useCustomShows } from '../../hooks/useCustomShows.ts';
 import useStore from '../../store/index.ts';
@@ -149,58 +149,62 @@ export default function ProgrammingSelector() {
     (plexServers && plexServers.length > 0) || customShows.length > 0;
 
   return (
-    <Box sx={{ p: 1 }}>
-      <Stack
-        direction={{ xs: 'column', sm: 'row' }}
-        sx={{
-          display: 'flex',
-          columnGap: 1,
-          justifyContent: 'flex-start',
-          flexGrow: 1,
-        }}
-      >
-        {hasAnySources && (
-          <FormControl size="small" sx={{ minWidth: { sm: 200 } }}>
-            <InputLabel>Media Source</InputLabel>
-            <Select
-              label="Media Source"
-              value={
-                viewingCustomShows ? 'custom-shows' : selectedServer?.name ?? ''
-              }
-              onChange={(e) => onMediaSourceChange(e.target.value)}
-            >
-              {map(plexServers, (server) => (
-                <MenuItem key={server.name} value={server.name}>
-                  Plex: {server.name}
-                </MenuItem>
-              ))}
-              {customShows.length > 0 && (
-                <MenuItem value="custom-shows">Custom Shows</MenuItem>
-              )}
-            </Select>
-          </FormControl>
-        )}
-
-        {!isNil(plexLibraryChildren) &&
-          plexLibraryChildren.size > 0 &&
-          selectedPlexLibrary && (
+    <Box>
+      <Box sx={{ p: 1 }}>
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          sx={{
+            display: 'flex',
+            columnGap: 1,
+            justifyContent: 'flex-start',
+            flexGrow: 1,
+          }}
+        >
+          {hasAnySources && (
             <FormControl size="small" sx={{ minWidth: { sm: 200 } }}>
-              <InputLabel>Library</InputLabel>
+              <InputLabel>Media Source</InputLabel>
               <Select
-                label="Library"
-                value={selectedPlexLibrary.uuid}
-                onChange={(e) => onLibraryChange(e.target.value)}
+                label="Media Source"
+                value={
+                  viewingCustomShows
+                    ? 'custom-shows'
+                    : selectedServer?.name ?? ''
+                }
+                onChange={(e) => onMediaSourceChange(e.target.value)}
               >
-                {plexLibraryChildren.Directory.map((dir) => (
-                  <MenuItem key={dir.key} value={dir.uuid}>
-                    {dir.title}
+                {map(plexServers, (server) => (
+                  <MenuItem key={server.name} value={server.name}>
+                    Plex: {server.name}
                   </MenuItem>
                 ))}
+                {customShows.length > 0 && (
+                  <MenuItem value="custom-shows">Custom Shows</MenuItem>
+                )}
               </Select>
             </FormControl>
           )}
-      </Stack>
-      {renderMediaSourcePrograms()}
+
+          {!isNil(plexLibraryChildren) &&
+            plexLibraryChildren.size > 0 &&
+            selectedPlexLibrary && (
+              <FormControl size="small" sx={{ minWidth: { sm: 200 } }}>
+                <InputLabel>Library</InputLabel>
+                <Select
+                  label="Library"
+                  value={selectedPlexLibrary.uuid}
+                  onChange={(e) => onLibraryChange(e.target.value)}
+                >
+                  {plexLibraryChildren.Directory.map((dir) => (
+                    <MenuItem key={dir.key} value={dir.uuid}>
+                      {dir.title}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+        </Stack>
+        {renderMediaSourcePrograms()}
+      </Box>
     </Box>
   );
 }

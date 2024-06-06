@@ -20,7 +20,7 @@ import {
 } from '@tunarr/types/plex';
 import { take } from 'lodash-es';
 import { MouseEvent, useCallback, useEffect, useRef, useState } from 'react';
-import { usePlexTyped2 } from '../../hooks/plexHooks.ts';
+import { usePlexTyped2 } from '../../hooks/plex/usePlex.ts';
 import useStore from '../../store/index.ts';
 import {
   addKnownMediaForServer,
