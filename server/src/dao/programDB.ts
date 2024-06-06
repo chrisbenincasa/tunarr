@@ -52,7 +52,7 @@ export class ProgramDB {
           },
         );
       },
-      2,
+      { concurrency: 2 },
     );
 
     // const results = await flatMapAsyncSeq(

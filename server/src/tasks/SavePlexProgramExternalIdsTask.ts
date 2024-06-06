@@ -1,4 +1,12 @@
-import { compact, isEmpty, isError, isNull, isUndefined, map } from 'lodash-es';
+import {
+  compact,
+  isEmpty,
+  isError,
+  isNull,
+  isUndefined,
+  map,
+  partition,
+} from 'lodash-es';
 import { getEm } from '../dao/dataSource.js';
 import { PlexServerSettings } from '../dao/entities/PlexServerSettings.js';
 import { Program } from '../dao/entities/Program.js';
@@ -9,6 +17,7 @@ import { isNonEmptyString } from '../util/index.js';
 import { Task } from './Task.js';
 import { PlexTerminalMedia } from '@tunarr/types/plex';
 import { parsePlexExternalGuid } from '../util/externalIds.js';
+import { isValidSingleExternalIdType } from '@tunarr/types/schemas';
 
 export class SavePlexProgramExternalIdsTask extends Task {
   ID = SavePlexProgramExternalIdsTask.name;
@@ -76,19 +85,40 @@ export class SavePlexProgramExternalIdsTask extends Task {
       }),
     );
 
-    const res = await em
-      .qb(ProgramExternalId)
-      .insert(eids)
+    const [singleEids, multiEids] = partition(
+      eids,
+      (eid) =>
+        isValidSingleExternalIdType(eid.sourceType) &&
+        isUndefined(eid.externalSourceId),
+    );
+    const qb = em.qb(ProgramExternalId);
+    const knex = qb.getKnex();
+    const singles = qb
+      .insert(singleEids)
+      .getKnex()
       .onConflict(
-        ['program', 'sourceType'],
-        // raw(
-        //   '(`program_uuid`, `source_type`) where `external_source_id` IS NULL',
-        // ),
+        knex.client.raw(
+          '(program_uuid, source_type) WHERE external_source_id IS NULL',
+        ),
       )
-      .merge(['externalKey'])
-      .where({ externalSourceId: null })
-      .returning(['uuid'])
-      .execute();
+      .merge()
+      .returning('uuid');
+    // const multis = qb.insert(multiEids).getKnex().onConflict(knex.client.raw('(program_uuid, source_type, external_source_id) WHERE external_source_id IS NOT NULL')).merge().returning('uuid');
+
+    // const res = await em
+    //   .qb(ProgramExternalId)
+    //   .insert(eids)
+    //   .onConflict(
+    //     ['program', 'sourceType'],
+    //     // raw(
+    //     //   '(`program_uuid`, `source_type`) where `external_source_id` IS NULL',
+    //     // ),
+    //   )
+    //   .merge(['externalKey'])
+    //   .where({ externalSourceId: null })
+    //   .returning(['uuid'])
+    //   .execute();
+    const res = await singles;
 
     console.log(res);
 

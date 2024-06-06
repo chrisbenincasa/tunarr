@@ -4,6 +4,7 @@ import { ProgramExternalId } from '../dao/entities/ProgramExternalId.js';
 import { attemptSync } from './index.js';
 import { Try } from '../types/util.js';
 import { isValidSingleExternalIdType } from '@tunarr/types/schemas';
+import { programExternalIdTypeFromExternalIdType } from '../dao/custom_types/ProgramExternalIdType.js';
 
 export const createPlexExternalId = (
   serverName: string,
@@ -29,7 +30,7 @@ export const parsePlexExternalGuid = (guid: string): Try<ProgramExternalId> => {
     const idType = trimEnd(parsed.protocol, ':');
     if (isValidSingleExternalIdType(idType)) {
       const eid = new ProgramExternalId();
-      eid.sourceType = idType;
+      eid.sourceType = programExternalIdTypeFromExternalIdType(idType);
       eid.externalKey = parsed.hostname;
       return eid;
     }
