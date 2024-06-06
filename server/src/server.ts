@@ -1,5 +1,4 @@
 import cors from '@fastify/cors';
-import middie from '@fastify/middie';
 import fastifyMultipart from '@fastify/multipart';
 import fpStatic from '@fastify/static';
 import fastifySwagger from '@fastify/swagger';
@@ -173,7 +172,6 @@ export async function initServer(opts: ServerOptions) {
           ? join(dirname(process.argv[1]), 'static')
           : undefined,
     })
-    .register(middie)
     .register(cors, {
       origin: '*', // Testing
     })

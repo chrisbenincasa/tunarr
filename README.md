@@ -37,13 +37,14 @@ Tunarr has the following goals:
 - **NEW** Improvements to stream stability
 - **NEW** [Dark mode!](https://github.com/chrisbenincasa/tunarr/pull/34)
 - **NEW** Quickly find content you want for your channels with [advanced filtering and sorting](https://github.com/chrisbenincasa/tunarr/pull/210)
+- **NEW** Scheduled, configurable backups - never lose your channels and configuration!
 - Spoofed [HDHR](https://www.silicondust.com/hdhomerun/) tuner and a IPTV channel list, providing a large amount of flexibility and easing integration with [xTeVe](https://github.com/xteve-project/xTeVe) and Plex
 - Customize channels with a logo, filler content ("commercials", music videos, prerolls, channel branding videos) between programming, and more!
 - Docker image and prepackaged binaries for Windows, Linux, and Mac OS
 - Use Nvidia for hardware encoding, including in Docker.
 - Source content from multiple Plex servers
 - Includes a WEB TV Guide where you can even play channels in your desktop by using your local media player.
-- ~~Subtitle support~~ Subtitle support is currently in flux; it was removed to simplify the backend and stabilize the stream. Bringing this functionality back is tracked in #462.
+- ~~Subtitle support~~ Subtitle support is currently in flux; it was removed to simplify the backend and stabilize the stream. Bringing this functionality back is tracked in [#462](https://github.com/chrisbenincasa/tunarr/issues/462).
 - Auto-deinterlace content
 
 ## Limitations

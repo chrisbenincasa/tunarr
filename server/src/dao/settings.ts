@@ -20,6 +20,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { globalOptions } from '../globals.js';
 import { z } from 'zod';
 import {
+  BackupSettings,
   FfmpegSettingsSchema,
   HdhrSettingsSchema,
   PlexStreamSettingsSchema,
@@ -93,6 +94,9 @@ export const defaultSettings = (dbBasePath: string): SettingsFile => ({
     ffmpeg: defaultFfmpegSettings,
   },
   system: {
+    backup: {
+      configurations: [],
+    },
     logging: {
       logLevel: getDefaultLogLevel(),
       logsDirectory: getDefaultLogDirectory(),
@@ -126,6 +130,10 @@ export class SettingsDB extends ITypedEventEmitter {
 
   get migrationState(): DeepReadonly<MigrationState> {
     return this.db.data.migration;
+  }
+
+  get backup(): DeepReadonly<BackupSettings> {
+    return this.db.data.system.backup;
   }
 
   clientId(): string {

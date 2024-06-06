@@ -1,50 +1,72 @@
 import type { Tag } from '@tunarr/types';
 import dayjs, { type Dayjs } from 'dayjs';
-import ld, { isString, once, pickBy, values } from 'lodash-es';
+import ld, { filter, forEach, isString, once, reject, values } from 'lodash-es';
 import { v4 } from 'uuid';
 import { ServerContext } from '../serverContext.js';
+import { BackupTask } from '../tasks/BackupTask.js';
+import { CleanupSessionsTask } from '../tasks/CleanupSessionsTask.js';
 import { OneOffTask } from '../tasks/OneOffTask.js';
 import { ReconcileProgramDurationsTask } from '../tasks/ReconcileProgramDurationsTask.js';
+import { ScheduleDynamicChannelsTask } from '../tasks/ScheduleDynamicChannelsTask.js';
 import { ScheduledTask } from '../tasks/ScheduledTask.js';
 import { Task, TaskId } from '../tasks/Task.js';
-import { CleanupSessionsTask } from '../tasks/CleanupSessionsTask.js';
-import { ScheduleDynamicChannelsTask } from '../tasks/ScheduleDynamicChannelsTask.js';
 import { UpdateXmlTvTask } from '../tasks/UpdateXmlTvTask.js';
 import { typedProperty } from '../types/path.js';
 import { Maybe } from '../types/util.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
+import { parseEveryScheduleRule } from '../util/schedulingUtil.js';
+import { BackupSettings } from '@tunarr/types/schemas';
+import { DeepReadonly } from 'ts-essentials';
 
 const { isDayjs } = dayjs;
 
 class Scheduler {
-  #scheduledJobsById: Record<string, ScheduledTask> = {};
+  #scheduledJobsById: Record<string, ScheduledTask[]> = {};
 
   // TaskId values always have an associated task (after server startup)
-  getScheduledJob<
+  getScheduledJobs<
     Id extends TaskId,
     OutType = Id extends Tag<TaskId, infer Out> ? Out : unknown,
-  >(id: TaskId): ScheduledTask<OutType>;
-  getScheduledJob<OutType = unknown>(id: string): Maybe<ScheduledTask<OutType>>;
-  getScheduledJob<OutType = unknown>(
+  >(id: TaskId): ScheduledTask<OutType>[];
+  getScheduledJobs<OutType = unknown>(
+    id: string,
+  ): Maybe<ScheduledTask<OutType>[]>;
+  getScheduledJobs<OutType = unknown>(
     id: Task<OutType> | string,
-  ): Maybe<ScheduledTask<OutType>> {
+  ): Maybe<ScheduledTask<OutType>[]> {
     if (isString(id)) {
-      return this.#scheduledJobsById[id] as Maybe<ScheduledTask<OutType>>;
+      return this.#scheduledJobsById[id] as Maybe<ScheduledTask<OutType>[]>;
     } else {
-      return this.getScheduledJob(id.ID);
+      return this.getScheduledJobs(id.ID);
     }
   }
 
-  scheduleTask(
-    id: string,
-    task: ScheduledTask,
-    overwrite: boolean = true,
-  ): boolean {
-    if (!overwrite && this.#scheduledJobsById[id]) {
-      return false;
-    }
+  // Used for jobs where we know:
+  // 1. there is only one instance of them
+  // 2. they are always scheduled (below)
+  // TODO: There is probably a better way to handle the jobs that always
+  // exists with a single instance vs. one-off jobs that are triggered
+  // around the codebase (dynamic jobs)
+  getScheduledJob<
+    Id extends TaskId,
+    OutType = Id extends Tag<TaskId, infer Out> ? Out : unknown,
+  >(id: TaskId): ScheduledTask<OutType> {
+    return this.getScheduledJobs<Id, OutType>(id)[0];
+  }
 
-    this.#scheduledJobsById[id] = task;
+  // Clears all scheduled tasks for an ID and cancels them
+  clearTasks(id: string) {
+    if (this.#scheduledJobsById[id]) {
+      forEach(this.#scheduledJobsById[id], (task) => {
+        task.cancel();
+      });
+
+      this.#scheduledJobsById[id] = [];
+    }
+  }
+
+  scheduleTask(id: string, task: ScheduledTask): boolean {
+    this.insertTask(id, task);
     return true;
   }
 
@@ -53,16 +75,34 @@ class Scheduler {
     when: Dayjs | Date | number,
     task: Task<OutType>,
   ) {
-    const id = `one_off_${name}_${v4()}`;
+    const id = `one_off_${name}`;
+    const scheduledTaskName = `${name}_${v4()}`;
     task.addOnCompleteListener(() => {
-      delete this.#scheduledJobsById[id];
+      this.#scheduledJobsById[id] = reject(
+        this.#scheduledJobsById[id] ?? [],
+        (j) => j.name === scheduledTaskName,
+      );
     });
     const ts = isDayjs(when) ? when.toDate() : when;
-    this.#scheduledJobsById[id] = new OneOffTask(name, ts, () => task);
+    this.insertTask(id, new OneOffTask(scheduledTaskName, ts, () => task));
   }
 
-  get scheduledJobsById(): Record<string, ScheduledTask> {
-    return pickBy(this.#scheduledJobsById, typedProperty('visible'));
+  private insertTask(id: string, task: ScheduledTask) {
+    if (!this.#scheduledJobsById[id]) {
+      this.#scheduledJobsById[id] = [];
+    }
+    this.#scheduledJobsById[id].push(task);
+  }
+
+  get scheduledJobsById(): Record<string, ScheduledTask[]> {
+    const ret: Record<string, ScheduledTask[]> = {};
+    forEach(this.#scheduledJobsById, (tasks, key) => {
+      const visibleTasks = filter(tasks, typedProperty('visible'));
+      if (visibleTasks.length > 0) {
+        ret[key] = visibleTasks;
+      }
+    });
+    return ret;
   }
 }
 
@@ -112,7 +152,10 @@ export const scheduleJobs = once((serverContext: ServerContext) => {
     ),
   );
 
+  scheduleBackupJobs(serverContext.settings.backup);
+
   ld.chain(values(GlobalScheduler.scheduledJobsById))
+    .flatten()
     .filter((job) => job.runAtStartup)
     .forEach((job) => {
       job
@@ -126,6 +169,41 @@ export const scheduleJobs = once((serverContext: ServerContext) => {
         );
     });
 });
+
+export function scheduleBackupJobs(
+  backupConfig: BackupSettings | DeepReadonly<BackupSettings>,
+) {
+  GlobalScheduler.clearTasks(BackupTask.name);
+  const backupConfigs = backupConfig.configurations;
+  forEach(
+    filter(
+      backupConfigs,
+      (config) => config.enabled && config.outputs.length > 0,
+    ),
+    (config) => {
+      let cronSchedule: string;
+      switch (config.schedule.type) {
+        case 'every': {
+          cronSchedule = parseEveryScheduleRule(config.schedule);
+          break;
+        }
+        case 'cron': {
+          cronSchedule = config.schedule.cron;
+          break;
+        }
+      }
+
+      GlobalScheduler.scheduleTask(
+        BackupTask.name,
+        new ScheduledTask(
+          BackupTask.name,
+          cronSchedule,
+          () => new BackupTask(config),
+        ),
+      );
+    },
+  );
+}
 
 function hoursCrontab(hours: number): string {
   return `0 0 */${hours} * * *`;

@@ -25,7 +25,6 @@ export class ReconcileProgramDurationsTask extends Task {
   static ID = ReconcileProgramDurationsTask.name;
 
   ID = ReconcileProgramDurationsTask.ID;
-  taskName = ReconcileProgramDurationsTask.name;
 
   // Optionally provide the channel ID that was updated on the triggering
   // operation, since theoretically we don't have to check it.

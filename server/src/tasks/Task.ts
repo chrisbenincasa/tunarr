@@ -37,10 +37,10 @@ export abstract class Task<Data = unknown> {
       const error = isError(e) ? e : new Error(isString(e) ? e : 'Unknown');
       const duration = round(performance.now() - start, 2);
       this.logger.warn(
+        error,
         'Task %s ran in %d ms and failed. Error = %O',
         this.constructor.name,
         duration,
-        error,
       );
       return;
     } finally {
@@ -59,7 +59,9 @@ export abstract class Task<Data = unknown> {
     return this.running_;
   }
 
-  abstract get taskName(): string;
+  get taskName(): string {
+    return this.ID;
+  }
 
   addOnCompleteListener(listener: () => void) {
     return this.onCompleteListeners.add(listener);
@@ -72,7 +74,11 @@ export function AnonymousTask<OutType = unknown>(
 ): Task<OutType> {
   return new (class extends Task<OutType> {
     public ID = id;
-    public taskName = `AnonymousTest_` + id;
+
+    get taskName() {
+      return `AnonymousTest_` + id;
+    }
+
     // eslint-disable-next-line @typescript-eslint/require-await
     protected async runInternal() {
       return runnable();

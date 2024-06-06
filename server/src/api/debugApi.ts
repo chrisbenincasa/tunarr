@@ -25,6 +25,8 @@ import {
   StreamProgramCalculator,
   generateChannelContext,
 } from '../stream/StreamProgramCalculator.js';
+import { ArchiveDatabaseBackup } from '../dao/backup/ArchiveDatabaseBackup.js';
+import os from 'node:os';
 
 const ChannelQuerySchema = {
   querystring: z.object({
@@ -341,4 +343,15 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
       );
     },
   );
+
+  fastify.get('/debug/db/backup', async (req, res) => {
+    await new ArchiveDatabaseBackup(req.serverCtx.settings, {
+      type: 'file',
+      outputPath: os.tmpdir(),
+      archiveFormat: 'tar',
+      gzip: true,
+      maxBackups: 3,
+    }).backup();
+    return res.send();
+  });
 };
