@@ -4,6 +4,7 @@ import {
   CreateCustomShowRequestSchema,
   CreateFillerListRequestSchema,
   UpdateChannelProgrammingRequestSchema,
+  UpdateCustomShowRequestSchema,
   UpdateFillerListRequestSchema,
   VersionApiResponseSchema,
 } from '@tunarr/types/api';
@@ -163,6 +164,18 @@ export const api = makeApi([
       .addPaths({
         id: z.string(),
       })
+      .build(),
+  },
+  {
+    method: 'put',
+    path: '/api/custom-shows/:id',
+    alias: 'updateCustomShow',
+    response: CustomShowSchema,
+    parameters: parametersBuilder()
+      .addPaths({
+        id: z.string(),
+      })
+      .addBody(UpdateCustomShowRequestSchema)
       .build(),
   },
   {

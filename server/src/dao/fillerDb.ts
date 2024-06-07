@@ -5,7 +5,7 @@ import {
 } from '@tunarr/types/api';
 import { filter, isNil, isString, map } from 'lodash-es';
 import { ChannelCache } from '../stream/ChannelCache.js';
-import { mapAsyncSeq } from '../util/index.js';
+import { isNonEmptyString, mapAsyncSeq } from '../util/index.js';
 import { ProgramConverter } from './converters/programConverters.js';
 import { getEm } from './dataSource.js';
 import { Channel as ChannelEntity } from './entities/Channel.js';
@@ -44,7 +44,10 @@ export class FillerDB {
         updateRequest.programs,
       );
 
-      const persisted = filter(updateRequest.programs, (p) => p.persisted);
+      const persisted = filter(
+        updateRequest.programs,
+        (p) => p.persisted && isNonEmptyString(p.id),
+      );
 
       const upsertedPrograms = await upsertContentPrograms(
         updateRequest.programs,
@@ -70,25 +73,15 @@ export class FillerDB {
         ...persistedCustomShowContent,
         ...newCustomShowContent,
       ]);
-
-      console.log('programs update');
     }
 
     if (updateRequest.name) {
-      console.log('assigning filter');
       em.assign(filler, { name: updateRequest.name });
-      em.persist(filler);
     }
-
-    console.log('flushing filler', filler);
 
     await em.flush();
 
-    return em.findOne(
-      FillerShow,
-      { uuid: filler.uuid },
-      { populate: ['*', 'content.uuid'] },
-    );
+    return await em.refresh(filler);
   }
 
   async createFiller(createRequest: CreateFillerListRequest): Promise<string> {

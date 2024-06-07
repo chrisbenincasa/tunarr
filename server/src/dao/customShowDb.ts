@@ -1,9 +1,11 @@
 import { CustomProgram } from '@tunarr/types';
-import { CreateCustomShowRequest } from '@tunarr/types/api';
-import { filter, isUndefined, map } from 'lodash-es';
+import {
+  CreateCustomShowRequest,
+  UpdateCustomShowRequest,
+} from '@tunarr/types/api';
+import { filter, isNil, map } from 'lodash-es';
 import { MarkOptional } from 'ts-essentials';
-import { Maybe } from '../types/util.js';
-import { mapAsyncSeq } from '../util/index.js';
+import { isNonEmptyString, mapAsyncSeq } from '../util/index.js';
 import { ProgramConverter } from './converters/programConverters.js';
 import { getEm } from './dataSource.js';
 import { CustomShow } from './entities/CustomShow.js';
@@ -61,12 +63,59 @@ export class CustomShowDB {
     }));
   }
 
-  async saveShow(id: Maybe<string>, customShow: CustomShowUpdate) {
-    if (isUndefined(id)) {
-      throw Error('Mising custom show id');
+  async saveShow(id: string, updateRequest: UpdateCustomShowRequest) {
+    const em = getEm();
+    const show = await this.getShow(id);
+
+    if (isNil(show)) {
+      return null;
     }
 
-    return getEm().repo(CustomShow).upsert(customShow);
+    if (updateRequest.programs) {
+      const programIndexById = createPendingProgramIndexMap(
+        updateRequest.programs,
+      );
+
+      const persisted = filter(
+        updateRequest.programs,
+        (p) => p.persisted && isNonEmptyString(p.id),
+      );
+
+      const upsertedPrograms = await upsertContentPrograms(
+        updateRequest.programs,
+      );
+
+      const persistedCustomShowContent = map(persisted, (p) =>
+        em.create(CustomShowContent, {
+          customShow: show.uuid,
+          content: p.id!,
+          index: programIndexById[p.id!],
+        }),
+      );
+      const newCustomShowContent = map(upsertedPrograms, (p) =>
+        em.create(CustomShowContent, {
+          customShow: show.uuid,
+          content: p.uuid,
+          index: programIndexById[p.uniqueId()],
+        }),
+      );
+
+      await em.transactional(async (em) => {
+        await em.nativeDelete(CustomShowContent, { customShow: show.uuid });
+        await em.persistAndFlush([
+          ...persistedCustomShowContent,
+          ...newCustomShowContent,
+        ]);
+      });
+    }
+
+    if (updateRequest.name) {
+      em.assign(show, { name: updateRequest.name });
+    }
+
+    await em.flush();
+
+    return await em.refresh(show);
   }
 
   async createShow(createRequest: CreateCustomShowRequest) {
