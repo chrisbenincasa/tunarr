@@ -1,5 +1,8 @@
 import path from 'path';
 import { Plugin } from 'esbuild';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
 
 // Copied from https://github.com/evanw/esbuild/issues/1051#issuecomment-806325487
 export const nativeNodeModulesPlugin = (): Plugin => {
