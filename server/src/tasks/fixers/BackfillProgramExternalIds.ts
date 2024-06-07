@@ -1,4 +1,11 @@
-import { difference, first, forEach, isUndefined, keys } from 'lodash-es';
+import {
+  difference,
+  first,
+  forEach,
+  isUndefined,
+  keys,
+  trimEnd,
+} from 'lodash-es';
 import { ProgramExternalIdType } from '../../dao/custom_types/ProgramExternalIdType';
 import { ProgramSourceType } from '../../dao/custom_types/ProgramSourceType.js';
 import { getEm } from '../../dao/dataSource';
@@ -8,7 +15,7 @@ import { ProgramExternalId } from '../../dao/entities/ProgramExternalId.js';
 import { Plex, PlexApiFactory, isPlexQueryError } from '../../external/plex.js';
 import { Maybe } from '../../types/util.js';
 import { asyncPool } from '../../util/asyncPool.js';
-import { groupByUniq, wait } from '../../util/index.js';
+import { attemptSync, groupByUniq, wait } from '../../util/index.js';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
 import Fixer from './fixer';
 import { PlexTerminalMedia } from '@tunarr/types/plex';
@@ -123,21 +130,34 @@ export class BackfillProgramExternalIds extends Fixer {
     // We're here, might as well use the real thing.
     const firstPart = first(first(metadata.Media)?.Part);
 
-    const ratingKeyId = em.create(ProgramExternalId, {
-      externalFilePath: firstPart?.key ?? program.plexFilePath,
-      directFilePath: firstPart?.file ?? program.filePath,
-      externalKey: metadata.ratingKey,
-      externalSourceId: plex.serverName,
-      program,
-      sourceType: ProgramExternalIdType.PLEX,
+    const entities = [
+      em.create(ProgramExternalId, {
+        externalFilePath: firstPart?.key ?? program.plexFilePath,
+        directFilePath: firstPart?.file ?? program.filePath,
+        externalKey: metadata.ratingKey,
+        externalSourceId: plex.serverName,
+        program,
+        sourceType: ProgramExternalIdType.PLEX,
+      }),
+    ];
+
+    attemptSync(() => {
+      // Matched example: plex://movie/5d7768313c3c2a001fbcd1cf
+      // Unmatched example: com.plexapp.agents.none://20297/2022/1499?lang=xn
+      const parsed = new URL(metadata.guid);
+      if (trimEnd(parsed.protocol, ':') !== 'plex') {
+        return;
+      }
+
+      const eid = em.create(ProgramExternalId, {
+        externalKey: metadata.guid,
+        program,
+        sourceType: ProgramExternalIdType.PLEX_GUID,
+      });
+
+      entities.push(eid);
     });
 
-    const guidId = em.create(ProgramExternalId, {
-      externalKey: metadata.guid,
-      program,
-      sourceType: ProgramExternalIdType.PLEX_GUID,
-    });
-
-    program.externalIds.add([ratingKeyId, guidId]);
+    program.externalIds.add(entities);
   }
 }

@@ -13,11 +13,13 @@ import { Program } from '../dao/entities/Program.js';
 import { ProgramExternalId } from '../dao/entities/ProgramExternalId.js';
 import { PlexApiFactory, isPlexQueryError } from '../external/plex.js';
 import { Maybe } from '../types/util.js';
-import { isNonEmptyString } from '../util/index.js';
+import { isNonEmptyString, mapAsyncSeq } from '../util/index.js';
 import { Task } from './Task.js';
 import { PlexTerminalMedia } from '@tunarr/types/plex';
 import { parsePlexExternalGuid } from '../util/externalIds.js';
 import { isValidSingleExternalIdType } from '@tunarr/types/schemas';
+import { ProgramExternalIdType } from '../dao/custom_types/ProgramExternalIdType.js';
+import { ref } from '@mikro-orm/core';
 
 export class SavePlexProgramExternalIdsTask extends Task {
   ID = SavePlexProgramExternalIdsTask.name;
@@ -33,7 +35,8 @@ export class SavePlexProgramExternalIdsTask extends Task {
 
     const plexIds = program.externalIds.filter(
       (eid) =>
-        eid.sourceType === 'plex' && isNonEmptyString(eid.externalSourceId),
+        eid.sourceType === ProgramExternalIdType.PLEX &&
+        isNonEmptyString(eid.externalSourceId),
     );
 
     if (isEmpty(plexIds)) {
@@ -75,7 +78,7 @@ export class SavePlexProgramExternalIdsTask extends Task {
       map(metadata.Guid, (guid) => {
         const parsed = parsePlexExternalGuid(guid.id);
         if (!isError(parsed)) {
-          parsed.program = program;
+          parsed.program = ref(program);
           parsed.externalSourceId = undefined;
           return parsed;
         } else {
@@ -91,36 +94,74 @@ export class SavePlexProgramExternalIdsTask extends Task {
         isValidSingleExternalIdType(eid.sourceType) &&
         isUndefined(eid.externalSourceId),
     );
-    const qb = em.qb(ProgramExternalId);
-    const knex = qb.getKnex();
-    const singles = qb
-      .insert(singleEids)
-      .getKnex()
-      .onConflict(
-        knex.client.raw(
-          '(program_uuid, source_type) WHERE external_source_id IS NULL',
-        ),
-      )
-      .merge()
-      .returning('uuid');
-    // const multis = qb.insert(multiEids).getKnex().onConflict(knex.client.raw('(program_uuid, source_type, external_source_id) WHERE external_source_id IS NOT NULL')).merge().returning('uuid');
+    const knex = em.getConnection().getKnex();
 
-    // const res = await em
+    const eidInserts = mapAsyncSeq(singleEids, async (id) => {
+      return knex
+        .insert(id.toKnexInsertData())
+        .into('program_external_id')
+        .onConflict(
+          knex.raw(
+            '(program_uuid, source_type) WHERE external_source_id IS NULL',
+          ),
+        )
+        .merge()
+        .returning('uuid');
+    });
+
+    const multiInserts = mapAsyncSeq(multiEids, async (id) => {
+      return knex
+        .insert(id.toKnexInsertData())
+        .into('program_external_id')
+        .onConflict(
+          knex.raw(
+            '(program_uuid, source_type) WHERE external_source_id IS NOT NULL',
+          ),
+        )
+        .merge()
+        .returning('uuid');
+    });
+
+    // const singles = em
     //   .qb(ProgramExternalId)
-    //   .insert(eids)
+    //   .insert(singleEids)
+    //   .getKnex()
     //   .onConflict(
-    //     ['program', 'sourceType'],
-    //     // raw(
-    //     //   '(`program_uuid`, `source_type`) where `external_source_id` IS NULL',
-    //     // ),
+    //     '(program_uuid, source_type) WHERE external_source_id IS NULL',
     //   )
-    //   .merge(['externalKey'])
-    //   .where({ externalSourceId: null })
-    //   .returning(['uuid'])
-    //   .execute();
-    const res = await singles;
+    //   .merge()
+    //   .returning('uuid');
 
-    console.log(res);
+    // console.log(singles.toQuery());
+
+    // const multis = em
+    //   .qb(ProgramExternalId)
+    //   .insert(multiEids)
+    //   .getKnex()
+    //   .onConflict(
+    //     '(program_uuid, source_type) WHERE external_source_id IS NOT NULL',
+    //   )
+    //   .merge()
+    //   .returning('uuid');
+
+    const [singleResult, multiResult] = await Promise.allSettled([
+      eidInserts,
+      multiInserts,
+    ]);
+
+    if (singleResult.status === 'rejected') {
+      this.logger.error(
+        singleResult.reason,
+        'Unable to save single external IDs',
+      );
+    }
+
+    if (multiResult.status === 'rejected') {
+      this.logger.error(
+        multiResult.reason,
+        'Unable to save multi external IDs',
+      );
+    }
 
     return;
   }

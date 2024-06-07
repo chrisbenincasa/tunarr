@@ -24,7 +24,6 @@ export const createPlexExternalId = (
  * @returns
  */
 export const parsePlexExternalGuid = (guid: string): Try<ProgramExternalId> => {
-  console.debug('parsing guid %s', guid);
   const parsed = attemptSync(() => new URL(guid));
   if (!isError(parsed)) {
     const idType = trimEnd(parsed.protocol, ':');

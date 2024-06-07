@@ -1,4 +1,4 @@
-import { EntityManager } from '@mikro-orm/better-sqlite';
+import { EntityManager, ref } from '@mikro-orm/better-sqlite';
 import {
   PlexEpisode,
   PlexMovie,
@@ -146,7 +146,7 @@ class ProgramMinter {
         // Plex returns these in a URI form, so we can attempt to parse them
         const parsed = parsePlexExternalGuid(externalGuid.id);
         if (!isError(parsed)) {
-          parsed.program = program;
+          parsed.program = ref(program);
           return parsed;
         } else {
           this.#logger.error(parsed, 'Error while extracting Plex Guids');
