@@ -6,6 +6,7 @@ settings:
 
 overrides:
   eslint: 8.56.0
+  better-sqlite3: 9.4.5
 
 patchedDependencies:
   thread-stream@3.0.0:
@@ -71,8 +72,8 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@fastify/multipart':
-        specifier: ^8.1.0
-        version: 8.1.0
+        specifier: ^8.3.0
+        version: 8.3.0
       '@fastify/static':
         specifier: ^6.12.0
         version: 6.12.0
@@ -93,7 +94,7 @@ importers:
         version: 6.2.0
       '@mikro-orm/migrations':
         specifier: 6.2.0
-        version: 6.2.0(@mikro-orm/core@6.2.0)(@types/node@20.8.9)(better-sqlite3@9.1.1)
+        version: 6.2.0(@mikro-orm/core@6.2.0)(@types/node@20.8.9)(better-sqlite3@9.4.5)
       '@tunarr/shared':
         specifier: workspace:*
         version: link:../shared
@@ -113,8 +114,8 @@ importers:
         specifier: ^1.6.0
         version: 1.6.0
       better-sqlite3:
-        specifier: ^9.1.1
-        version: 9.1.1
+        specifier: 9.4.5
+        version: 9.4.5
       chalk:
         specifier: ^5.3.0
         version: 5.3.0
@@ -193,7 +194,7 @@ importers:
     devDependencies:
       '@mikro-orm/cli':
         specifier: ^6.2.0
-        version: 6.2.0(better-sqlite3@9.1.1)
+        version: 6.2.0(better-sqlite3@9.4.5)
       '@mikro-orm/reflection':
         specifier: ^6.2.0
         version: 6.2.0(@mikro-orm/core@6.2.0)
@@ -1667,11 +1668,9 @@ packages:
       fast-uri: 2.3.0
     dev: false
 
-  /@fastify/busboy@1.2.1:
-    resolution: {integrity: sha512-7PQA7EH43S0CxcOa9OeAnaeA0oQ+e/DHNPZwSQM9CQHW76jle5+OvLdibRp/Aafs9KXbLhxyjOTkRjWUbQEd3Q==}
+  /@fastify/busboy@2.1.1:
+    resolution: {integrity: sha512-vBZP4NlzfOlerQTnba4aqZoMhE/a9HY7HRqoOPaETQcSQuWEIyZMHGfVu6w9wGtGK5fED5qRs2DteVCjOH60sA==}
     engines: {node: '>=14'}
-    dependencies:
-      text-decoding: 1.0.0
     dev: false
 
   /@fastify/cors@8.4.1:
@@ -1695,10 +1694,10 @@ packages:
       fast-json-stringify: 5.9.1
     dev: false
 
-  /@fastify/multipart@8.1.0:
-    resolution: {integrity: sha512-sRX9X4ZhAqRbe2kDvXY2NK7i6Wf1Rm2g/CjpGYYM7+Np8E6uWQXcj761j08qPfPO8PJXM+vJ7yrKbK1GPB+OeQ==}
+  /@fastify/multipart@8.3.0:
+    resolution: {integrity: sha512-A8h80TTyqUzaMVH0Cr9Qcm6RxSkVqmhK/MVBYHYeRRSUbUYv08WecjWKSlG2aSnD4aGI841pVxAjC+G1GafUeQ==}
     dependencies:
-      '@fastify/busboy': 1.2.1
+      '@fastify/busboy': 2.1.1
       '@fastify/deepmerge': 1.3.0
       '@fastify/error': 3.4.1
       fastify-plugin: 4.5.1
@@ -1985,14 +1984,14 @@ packages:
       - tedious
     dev: false
 
-  /@mikro-orm/cli@6.2.0(better-sqlite3@9.1.1):
+  /@mikro-orm/cli@6.2.0(better-sqlite3@9.4.5):
     resolution: {integrity: sha512-R3JwXOdCT0YOMjoPckxW45izIYhA/9+WvFNXlzA5p58lUzQ3eGgITaPPTuZkf0/j7t1uwGM5fq7UD2tpGorz8Q==}
     engines: {node: '>= 18.12.0'}
     hasBin: true
     dependencies:
       '@jercle/yargonaut': 1.1.5
       '@mikro-orm/core': 6.2.0
-      '@mikro-orm/knex': 6.2.0(@mikro-orm/core@6.2.0)(better-sqlite3@9.1.1)
+      '@mikro-orm/knex': 6.2.0(@mikro-orm/core@6.2.0)(better-sqlite3@9.4.5)
       fs-extra: 11.2.0
       tsconfig-paths: 4.2.0
       yargs: 17.7.2
@@ -2019,26 +2018,6 @@ packages:
       mikro-orm: 6.2.0
       reflect-metadata: 0.2.2
 
-  /@mikro-orm/knex@6.2.0(@mikro-orm/core@6.2.0)(better-sqlite3@9.1.1):
-    resolution: {integrity: sha512-jo/KKtIkwqCrfBmU0TLe4Y6kCQIbyio8PcvLtphBiMoLca6Utd8cEednsLYW5OdNyzTF3Vw/XHkm7T68MiT/cQ==}
-    engines: {node: '>= 18.12.0'}
-    peerDependencies:
-      '@mikro-orm/core': ^6.0.0
-    dependencies:
-      '@mikro-orm/core': 6.2.0
-      fs-extra: 11.2.0
-      knex: 3.1.0(better-sqlite3@9.1.1)
-      sqlstring: 2.3.3
-    transitivePeerDependencies:
-      - better-sqlite3
-      - mysql
-      - mysql2
-      - pg
-      - pg-native
-      - sqlite3
-      - supports-color
-      - tedious
-
   /@mikro-orm/knex@6.2.0(@mikro-orm/core@6.2.0)(better-sqlite3@9.4.5):
     resolution: {integrity: sha512-jo/KKtIkwqCrfBmU0TLe4Y6kCQIbyio8PcvLtphBiMoLca6Utd8cEednsLYW5OdNyzTF3Vw/XHkm7T68MiT/cQ==}
     engines: {node: '>= 18.12.0'}
@@ -2058,16 +2037,15 @@ packages:
       - sqlite3
       - supports-color
       - tedious
-    dev: false
 
-  /@mikro-orm/migrations@6.2.0(@mikro-orm/core@6.2.0)(@types/node@20.8.9)(better-sqlite3@9.1.1):
+  /@mikro-orm/migrations@6.2.0(@mikro-orm/core@6.2.0)(@types/node@20.8.9)(better-sqlite3@9.4.5):
     resolution: {integrity: sha512-9Nl46QdHBto0fWXdpdfF8rqqG416uc7csA+wi0H+qvY3m4cjiCWYQcsRcmI7FkMbpJq/USkmcDS5yUSU8Sic9Q==}
     engines: {node: '>= 18.12.0'}
     peerDependencies:
       '@mikro-orm/core': ^6.0.0
     dependencies:
       '@mikro-orm/core': 6.2.0
-      '@mikro-orm/knex': 6.2.0(@mikro-orm/core@6.2.0)(better-sqlite3@9.1.1)
+      '@mikro-orm/knex': 6.2.0(@mikro-orm/core@6.2.0)(better-sqlite3@9.4.5)
       fs-extra: 11.2.0
       umzug: 3.8.0(@types/node@20.8.9)
     transitivePeerDependencies:
@@ -4226,20 +4204,12 @@ packages:
   /base64-js@1.5.1:
     resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
 
-  /better-sqlite3@9.1.1:
-    resolution: {integrity: sha512-FhW7bS7cXwkB2SFnPJrSGPmQerVSCzwBgmQ1cIRcYKxLsyiKjljzCbyEqqhYXo5TTBqt5BISiBj2YE2Sy2ynaA==}
-    requiresBuild: true
-    dependencies:
-      bindings: 1.5.0
-      prebuild-install: 7.1.1
-
   /better-sqlite3@9.4.5:
     resolution: {integrity: sha512-uFVyoyZR9BNcjSca+cp3MWCv6upAv+tbMC4SWM51NIMhoQOm4tjIkyxFO/ZsYdGAF61WJBgdzyJcz4OokJi0gQ==}
     requiresBuild: true
     dependencies:
       bindings: 1.5.0
       prebuild-install: 7.1.1
-    dev: false
 
   /big.js@5.2.2:
     resolution: {integrity: sha512-vyL2OymJxmarO8gxMr0mhChsO9QGwhynfuu4+MHTAW6czfq9humCB7rKpUjDd9YUiDPU4mzpyupFSvOClAwbmQ==}
@@ -7397,52 +7367,6 @@ packages:
     engines: {node: '>=0.10.0'}
     dev: true
 
-  /knex@3.1.0(better-sqlite3@9.1.1):
-    resolution: {integrity: sha512-GLoII6hR0c4ti243gMs5/1Rb3B+AjwMOfjYm97pu0FOQa7JH56hgBxYf5WK2525ceSbBY1cjeZ9yk99GPMB6Kw==}
-    engines: {node: '>=16'}
-    hasBin: true
-    peerDependencies:
-      better-sqlite3: '*'
-      mysql: '*'
-      mysql2: '*'
-      pg: '*'
-      pg-native: '*'
-      sqlite3: '*'
-      tedious: '*'
-    peerDependenciesMeta:
-      better-sqlite3:
-        optional: true
-      mysql:
-        optional: true
-      mysql2:
-        optional: true
-      pg:
-        optional: true
-      pg-native:
-        optional: true
-      sqlite3:
-        optional: true
-      tedious:
-        optional: true
-    dependencies:
-      better-sqlite3: 9.1.1
-      colorette: 2.0.19
-      commander: 10.0.1
-      debug: 4.3.4(supports-color@5.5.0)
-      escalade: 3.1.1
-      esm: 3.2.25
-      get-package-type: 0.1.0
-      getopts: 2.3.0
-      interpret: 2.2.0
-      lodash: 4.17.21
-      pg-connection-string: 2.6.2
-      rechoir: 0.8.0
-      resolve-from: 5.0.0
-      tarn: 3.0.2
-      tildify: 2.0.0
-    transitivePeerDependencies:
-      - supports-color
-
   /knex@3.1.0(better-sqlite3@9.4.5):
     resolution: {integrity: sha512-GLoII6hR0c4ti243gMs5/1Rb3B+AjwMOfjYm97pu0FOQa7JH56hgBxYf5WK2525ceSbBY1cjeZ9yk99GPMB6Kw==}
     engines: {node: '>=16'}
@@ -7488,7 +7412,6 @@ packages:
       tildify: 2.0.0
     transitivePeerDependencies:
       - supports-color
-    dev: false
 
   /labeled-stream-splicer@2.0.2:
     resolution: {integrity: sha512-Ca4LSXFFZUjPScRaqOcFxneA0VpKZr4MMYCljyQr4LIewTLb3Y0IUTIsnBBsVubIeEfxeSZpSjSsRM8APEQaAw==}
@@ -10317,10 +10240,6 @@ packages:
     resolution: {integrity: sha512-TmLJNj6UgX8xcUZo4UDStGQtDiTzF7BzWlzn9g7UWrjkpHr5uJTK1ld16wZ3LXb2vb6jH8qU89dW5whuMdXYdw==}
     dependencies:
       b4a: 1.6.6
-    dev: false
-
-  /text-decoding@1.0.0:
-    resolution: {integrity: sha512-/0TJD42KDnVwKmDK6jj3xP7E2MG7SHAOG4tyTgyUCRPdHwvkquYNLEQltmdMa3owq3TkddCVcTsoctJI8VQNKA==}
     dev: false
 
   /text-table@0.2.0:

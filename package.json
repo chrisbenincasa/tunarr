@@ -38,7 +38,8 @@
       "thread-stream@3.0.0": "patches/thread-stream@3.0.0.patch"
     },
     "overrides": {
-      "eslint": "8.56.0"
+      "eslint": "8.56.0",
+      "better-sqlite3": "9.4.5"
     }
   },
   "lint-staged": {
