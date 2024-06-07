@@ -33,6 +33,7 @@ import ld, {
   keys,
   map,
   mapValues,
+  partition,
   reduce,
   reject,
   values,
@@ -60,6 +61,9 @@ import {
 } from './entities/ProgramGrouping.js';
 import { ProgramGroupingExternalId } from './entities/ProgramGroupingExternalId.js';
 import { ProgramExternalIdType } from './custom_types/ProgramExternalIdType.js';
+import { PlexTaskQueue } from '../tasks/TaskQueue.js';
+import { SavePlexProgramExternalIdsTask } from '../tasks/SavePlexProgramExternalIdsTask.js';
+import { upsertProgramExternalIds } from './programExternalIdHelpers.js';
 
 type ProgramsBySource = Record<
   NonNullable<ContentProgram['externalSourceType']>,
@@ -92,8 +96,8 @@ export async function upsertContentPrograms(
   // TODO: Wrap all of this stuff in a class and use its own logger
   const logger = LoggerFactory.root;
   const em = getEm();
-  const nonPersisted = filter(programs, (p) => !p.persisted);
-  const minter = ProgramMinterFactory.create(em);
+  const [persisted, nonPersisted] = partition(programs, (p) => p.persisted);
+  const minter = ProgramMinterFactory.createPlexMinter(em);
 
   const contentPrograms = ld
     .chain(nonPersisted)
@@ -110,10 +114,60 @@ export async function upsertContentPrograms(
   // TODO handle custom shows
   const programsToPersist = ld
     .chain(contentPrograms)
-    .map((p) => minter.mint(p.externalSourceName!, p.originalProgram!))
-    .compact()
+    .map((p) => {
+      const program = minter.mint(p.externalSourceName!, p.originalProgram!);
+      const externalIds = minter.mintExternalIds(
+        p.externalSourceName!,
+        program,
+        p.originalProgram!,
+      );
+      return { program, externalIds };
+    })
     .value();
 
+  const programInfoByUniqueId = groupByUniqFunc(
+    programsToPersist,
+    ({ program }) => program.uniqueId(),
+  );
+
+  logger.debug('Upserting %d programs', programsToPersist.length);
+
+  // NOTE: upsert will not handle any relations. That's why we need to do
+  // these manually below. Relations all have IDs generated application side
+  // so we can't get proper diffing on 1:M Program:X, etc.
+  // TODO: The way we deal with uniqueness right now makes a Program entity
+  // exist 1:1 with its "external" entity, i.e. the same logical movie will
+  // have duplicate entries in the DB across different servers and sources.
+  // This isn't ideal.
+  const upsertedPrograms = await em.upsertMany(
+    Program,
+    map(programsToPersist, 'program'),
+    {
+      onConflictAction: 'merge',
+      onConflictFields: ['sourceType', 'externalSourceId', 'externalKey'],
+      onConflictExcludeFields: ['uuid'],
+      batchSize,
+    },
+  );
+
+  // We're dealing specifically with Plex items right now. We want to treat
+  // _at least_ the rating key / GUID as invariants in the program_external_id
+  // table for each program.
+  const programExternalIds = ld
+    .chain(upsertedPrograms)
+    .flatMap((program) => {
+      const eids = programInfoByUniqueId[program.uniqueId()]?.externalIds ?? [];
+      forEach(eids, (eid) => {
+        eid.program = ref(program);
+      });
+      return eids;
+    })
+    .value();
+
+  // Fail hard on not saving Plex external IDs. We need them for streaming
+  await upsertProgramExternalIds(programExternalIds);
+
+  // Deal with program groupings
   const programsBySource = ld
     .chain(contentPrograms)
     .filter((p) => p.subtype === 'episode' || p.subtype === 'track')
@@ -123,17 +177,7 @@ export async function upsertContentPrograms(
     .mapValues((programs) => groupBy(programs, (p) => p.externalSourceName!))
     .value() as ProgramsBySource;
 
-  logger.debug('Upserting %d programs', programsToPersist.length);
-
-  const upsertedPrograms = await em.upsertMany(Program, programsToPersist, {
-    onConflictAction: 'merge',
-    onConflictFields: ['sourceType', 'externalSourceId', 'externalKey'],
-    onConflictExcludeFields: ['uuid'],
-    batchSize,
-  });
-
-  // Fork a new entity manager here so we don't attempt to persist anything
-  // in the parent context. This function potentially does a lot of work
+  // This function potentially does a lot of work
   // but we don't want to accidentally not do an upsert of a program.
   // TODO: Probably want to do this step in the background...
   const programGroupingsBySource =
@@ -232,6 +276,22 @@ export async function upsertContentPrograms(
     dayjs().add(500, 'ms'),
     new ReconcileProgramDurationsTask(),
   );
+
+  forEach(filter(persisted, isContentProgram), (program) => {
+    try {
+      PlexTaskQueue.add(new SavePlexProgramExternalIdsTask(program.id!)).catch(
+        (e) => {
+          logger.error(e, 'Error saving external IDs for program %s', program);
+        },
+      );
+    } catch (e) {
+      logger.error(
+        e,
+        'Failed to schedule external IDs task for persisted program: %O',
+        program,
+      );
+    }
+  });
 
   return upsertedPrograms;
 }

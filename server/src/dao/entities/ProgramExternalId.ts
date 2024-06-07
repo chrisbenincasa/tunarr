@@ -84,6 +84,7 @@ export class ProgramExternalId extends BaseEntity {
       };
     }
 
+    console.log('toExternalId fail', this);
     return;
   }
 

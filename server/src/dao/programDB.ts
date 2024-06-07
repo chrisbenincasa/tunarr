@@ -1,12 +1,4 @@
-import {
-  chunk,
-  difference,
-  flatten,
-  groupBy,
-  isNil,
-  keys,
-  map,
-} from 'lodash-es';
+import { chunk, flatten, groupBy, isNil, keys, map, union } from 'lodash-es';
 import {
   groupByAndMapAsync,
   groupByUniq,
@@ -60,12 +52,12 @@ export class ProgramDB {
 
     return groupByAndMapAsync(
       // Silently drop programs we can't find.
-      difference(keys(externalIdsdByProgram), keys(programs)),
+      union(keys(externalIdsdByProgram), keys(programs)),
       (programId) => programId,
       (programId) => {
         const eids = externalIdsdByProgram[programId];
         return converter.entityToContentProgram(programs[programId], eids, {
-          skipPopulate: true,
+          skipPopulate: { externalIds: false },
         });
       },
     );

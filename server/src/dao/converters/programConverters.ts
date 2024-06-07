@@ -5,8 +5,17 @@ import {
   ExternalId,
   FlexProgram,
   RedirectProgram,
+  externalIdEquals,
 } from '@tunarr/types';
-import { compact, find, isNil, map, merge } from 'lodash-es';
+import {
+  compact,
+  find,
+  isNil,
+  isObject,
+  map,
+  merge,
+  uniqWith,
+} from 'lodash-es';
 import { isPromise } from 'util/types';
 import { getEm } from '../dataSource.js';
 import {
@@ -18,13 +27,12 @@ import {
 } from '../derived_types/Lineup.js';
 import { Channel } from '../entities/Channel.js';
 import { Program, ProgramType } from '../entities/Program.js';
-import { createPlexExternalId } from '../../util/externalIds.js';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
 import { ProgramExternalId } from '../entities/ProgramExternalId.js';
 import { isDefined } from '../../util/index.js';
 
 type ContentProgramConversionOptions = {
-  skipPopulate: boolean;
+  skipPopulate: boolean | Partial<Record<'externalIds' | 'grouping', boolean>>;
   forcePopulate: boolean;
 };
 
@@ -96,7 +104,7 @@ export class ProgramConverter {
     program: Loaded<Program>,
     externalIds: Loaded<ProgramExternalId>[] | undefined = undefined,
     opts: Partial<ContentProgramConversionOptions> = defaultContentProgramConversionOptions,
-  ) {
+  ): Promise<ContentProgram> {
     return this.partialEntityToContentProgram(program, externalIds, opts);
   }
 
@@ -114,6 +122,13 @@ export class ProgramConverter {
     let extraFields: Partial<ContentProgram> = {};
     // This will ensure extra fields are populated for join types
     // It won't reissue queries if the loaded program already has these popualted
+    const skipGroupings = isObject(mergedOpts.skipPopulate)
+      ? mergedOpts.skipPopulate.grouping
+      : !!mergedOpts.skipPopulate;
+    const skipExternalIds = isObject(mergedOpts.skipPopulate)
+      ? mergedOpts.skipPopulate.externalIds
+      : !!mergedOpts.skipPopulate;
+
     if (program.type === ProgramType.Episode) {
       extraFields = {
         ...extraFields,
@@ -125,7 +140,7 @@ export class ProgramConverter {
 
       if (
         mergedOpts.forcePopulate ||
-        (!program.season?.isInitialized() && !mergedOpts.skipPopulate)
+        (!program.season?.isInitialized() && !skipGroupings)
       ) {
         const season = await program.season?.load();
         extraFields = {
@@ -141,8 +156,7 @@ export class ProgramConverter {
     } else if (program.type === ProgramType.Track) {
       const shouldFetch =
         mergedOpts.forcePopulate ||
-        ((isNil(program.album) || isNil(program.artist)) &&
-          !mergedOpts.skipPopulate);
+        ((isNil(program.album) || isNil(program.artist)) && !skipGroupings);
       const populatedProgram = shouldFetch
         ? await getEm().populate(program, ['artist', 'album'])
         : program;
@@ -158,15 +172,15 @@ export class ProgramConverter {
     const eids: ExternalId[] = [];
     if (isDefined(externalIds)) {
       eids.push(...compact(map(externalIds, (eid) => eid.toExternalId())));
-    } else {
-      if (!program.externalIds.isInitialized() && !mergedOpts.skipPopulate) {
-        await program.externalIds.init();
-      }
-
-      eids.push(
-        ...compact(map(program.externalIds, (eid) => eid.toExternalId())),
-      );
     }
+
+    if (!program.externalIds.isInitialized() && !skipExternalIds) {
+      await program.externalIds.init();
+    }
+
+    eids.push(
+      ...compact(map(program.externalIds, (eid) => eid.toExternalId())),
+    );
 
     return {
       persisted: true, // Explicit since we're dealing with db loaded entities
@@ -183,9 +197,7 @@ export class ProgramConverter {
       type: 'content',
       id: program.uuid,
       subtype: program.type,
-      externalIds: [
-        createPlexExternalId(program.externalSourceId, program.externalKey),
-      ],
+      externalIds: uniqWith(eids, externalIdEquals),
       ...extraFields,
     };
   }

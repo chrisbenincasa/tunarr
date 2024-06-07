@@ -168,7 +168,12 @@ export class Program extends BaseEntity {
   @ManyToOne(() => ProgramGrouping, { nullable: true, ref: true })
   artist?: Ref<ProgramGrouping>;
 
-  @OneToMany(() => ProgramExternalId, (eid) => eid.program, { eager: true })
+  @OneToMany(() => ProgramExternalId, (eid) => eid.program, {
+    eager: true,
+    // Disable cascade persist because of the unique partial indexes here
+    // We have to manage this manually.
+    cascade: [],
+  })
   externalIds = new Collection<ProgramExternalId>(this);
 
   toDTO(): ProgramDTO {

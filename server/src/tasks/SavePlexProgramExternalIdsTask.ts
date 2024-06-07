@@ -1,25 +1,17 @@
-import {
-  compact,
-  isEmpty,
-  isError,
-  isNull,
-  isUndefined,
-  map,
-  partition,
-} from 'lodash-es';
+import { compact, isEmpty, isError, isNull, isUndefined, map } from 'lodash-es';
 import { getEm } from '../dao/dataSource.js';
 import { PlexServerSettings } from '../dao/entities/PlexServerSettings.js';
 import { Program } from '../dao/entities/Program.js';
 import { ProgramExternalId } from '../dao/entities/ProgramExternalId.js';
 import { PlexApiFactory, isPlexQueryError } from '../external/plex.js';
 import { Maybe } from '../types/util.js';
-import { isNonEmptyString, mapAsyncSeq } from '../util/index.js';
+import { isNonEmptyString } from '../util/index.js';
 import { Task } from './Task.js';
 import { PlexTerminalMedia } from '@tunarr/types/plex';
 import { parsePlexExternalGuid } from '../util/externalIds.js';
-import { isValidSingleExternalIdType } from '@tunarr/types/schemas';
 import { ProgramExternalIdType } from '../dao/custom_types/ProgramExternalIdType.js';
 import { ref } from '@mikro-orm/core';
+import { upsertProgramExternalIds } from '../dao/programExternalIdHelpers.js';
 
 export class SavePlexProgramExternalIdsTask extends Task {
   ID = SavePlexProgramExternalIdsTask.name;
@@ -49,6 +41,7 @@ export class SavePlexProgramExternalIdsTask extends Task {
       const s = await em.findOne(PlexServerSettings, {
         name: id.externalSourceId,
       });
+
       if (!isNull(s)) {
         server = s;
         chosenId = id;
@@ -88,82 +81,7 @@ export class SavePlexProgramExternalIdsTask extends Task {
       }),
     );
 
-    const [singleEids, multiEids] = partition(
-      eids,
-      (eid) =>
-        isValidSingleExternalIdType(eid.sourceType) &&
-        isUndefined(eid.externalSourceId),
-    );
-    const knex = em.getConnection().getKnex();
-
-    const eidInserts = mapAsyncSeq(singleEids, async (id) => {
-      return knex
-        .insert(id.toKnexInsertData())
-        .into('program_external_id')
-        .onConflict(
-          knex.raw(
-            '(program_uuid, source_type) WHERE external_source_id IS NULL',
-          ),
-        )
-        .merge()
-        .returning('uuid');
-    });
-
-    const multiInserts = mapAsyncSeq(multiEids, async (id) => {
-      return knex
-        .insert(id.toKnexInsertData())
-        .into('program_external_id')
-        .onConflict(
-          knex.raw(
-            '(program_uuid, source_type) WHERE external_source_id IS NOT NULL',
-          ),
-        )
-        .merge()
-        .returning('uuid');
-    });
-
-    // const singles = em
-    //   .qb(ProgramExternalId)
-    //   .insert(singleEids)
-    //   .getKnex()
-    //   .onConflict(
-    //     '(program_uuid, source_type) WHERE external_source_id IS NULL',
-    //   )
-    //   .merge()
-    //   .returning('uuid');
-
-    // console.log(singles.toQuery());
-
-    // const multis = em
-    //   .qb(ProgramExternalId)
-    //   .insert(multiEids)
-    //   .getKnex()
-    //   .onConflict(
-    //     '(program_uuid, source_type) WHERE external_source_id IS NOT NULL',
-    //   )
-    //   .merge()
-    //   .returning('uuid');
-
-    const [singleResult, multiResult] = await Promise.allSettled([
-      eidInserts,
-      multiInserts,
-    ]);
-
-    if (singleResult.status === 'rejected') {
-      this.logger.error(
-        singleResult.reason,
-        'Unable to save single external IDs',
-      );
-    }
-
-    if (multiResult.status === 'rejected') {
-      this.logger.error(
-        multiResult.reason,
-        'Unable to save multi external IDs',
-      );
-    }
-
-    return;
+    return await upsertProgramExternalIds(eids);
   }
 
   get taskName() {

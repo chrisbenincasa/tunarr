@@ -13,7 +13,10 @@ import { ProgramExternalIdType } from '../dao/custom_types/ProgramExternalIdType
 import { LoggerFactory } from './logging/LoggerFactory.js';
 import { parsePlexExternalGuid } from './externalIds.js';
 
-class ProgramMinter {
+/**
+ * Generates Program DB entities for Plex media
+ */
+class PlexProgramMinter {
   #logger = LoggerFactory.child({ caller: import.meta });
   #em: EntityManager;
 
@@ -34,7 +37,7 @@ class ProgramMinter {
 
   private mintMovieProgram(serverName: string, plexMovie: PlexMovie): Program {
     const file = first(first(plexMovie.Media)?.Part ?? []);
-    const program = this.#em.create(Program, {
+    return this.#em.create(Program, {
       sourceType: ProgramSourceType.PLEX,
       originalAirDate: plexMovie.originallyAvailableAt,
       duration: plexMovie.duration,
@@ -49,12 +52,6 @@ class ProgramMinter {
       type: ProgramType.Movie,
       year: plexMovie.year,
     });
-
-    program.externalIds.set(
-      this.mintExternalIds(serverName, program, plexMovie),
-    );
-
-    return program;
   }
 
   private mintEpisodeProgram(
@@ -83,15 +80,13 @@ class ProgramMinter {
       parentExternalKey: plexEpisode.parentRatingKey,
       grandparentExternalKey: plexEpisode.grandparentRatingKey,
     });
-    program.externalIds.set(
-      this.mintExternalIds(serverName, program, plexEpisode),
-    );
+
     return program;
   }
 
   private mintTrackProgram(serverName: string, plexTrack: PlexMusicTrack) {
     const file = first(first(plexTrack.Media)?.Part ?? []);
-    const program = this.#em.create(Program, {
+    return this.#em.create(Program, {
       sourceType: ProgramSourceType.PLEX,
       duration: plexTrack.duration,
       filePath: file?.file,
@@ -112,34 +107,37 @@ class ProgramMinter {
       albumName: plexTrack.parentTitle,
       artistName: plexTrack.grandparentTitle,
     });
-    program.externalIds.set(
-      this.mintExternalIds(serverName, program, plexTrack),
-    );
-    return program;
   }
 
-  private mintExternalIds(
+  mintExternalIds(
     serverName: string,
     program: Program,
     media: PlexTerminalMedia,
   ) {
     const file = first(first(media.Media)?.Part ?? []);
 
-    const ratingId = this.#em.create(ProgramExternalId, {
-      externalKey: media.ratingKey,
-      sourceType: ProgramExternalIdType.PLEX,
-      program,
-      externalSourceId: serverName,
-      externalFilePath: file?.key,
-      directFilePath: file?.file,
-    });
+    const ratingId = this.#em.create(
+      ProgramExternalId,
+      {
+        externalKey: media.ratingKey,
+        sourceType: ProgramExternalIdType.PLEX,
+        program,
+        externalSourceId: serverName,
+        externalFilePath: file?.key,
+        directFilePath: file?.file,
+      },
+      { persist: false },
+    );
 
-    const guidId = this.#em.create(ProgramExternalId, {
-      externalKey: media.guid,
-      sourceType: ProgramExternalIdType.PLEX_GUID,
-      program,
-      externalSourceId: serverName,
-    });
+    const guidId = this.#em.create(
+      ProgramExternalId,
+      {
+        externalKey: media.guid,
+        sourceType: ProgramExternalIdType.PLEX_GUID,
+        program,
+      },
+      { persist: false },
+    );
 
     const externalGuids = compact(
       map(media.Guid, (externalGuid) => {
@@ -160,7 +158,7 @@ class ProgramMinter {
 }
 
 export class ProgramMinterFactory {
-  static create(em: EntityManager): ProgramMinter {
-    return new ProgramMinter(em);
+  static createPlexMinter(em: EntityManager): PlexProgramMinter {
+    return new PlexProgramMinter(em);
   }
 }

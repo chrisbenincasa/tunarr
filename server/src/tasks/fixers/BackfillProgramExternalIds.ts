@@ -2,6 +2,7 @@ import {
   difference,
   first,
   forEach,
+  isError,
   isUndefined,
   keys,
   trimEnd,
@@ -15,10 +16,11 @@ import { ProgramExternalId } from '../../dao/entities/ProgramExternalId.js';
 import { Plex, PlexApiFactory, isPlexQueryError } from '../../external/plex.js';
 import { Maybe } from '../../types/util.js';
 import { asyncPool } from '../../util/asyncPool.js';
-import { attemptSync, groupByUniq, wait } from '../../util/index.js';
+import { attempt, attemptSync, groupByUniq, wait } from '../../util/index.js';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
 import Fixer from './fixer';
 import { PlexTerminalMedia } from '@tunarr/types/plex';
+import { upsertProgramExternalIds } from '../../dao/programExternalIdHelpers';
 
 export class BackfillProgramExternalIds extends Fixer {
   #logger = LoggerFactory.child({ caller: import.meta });
@@ -43,6 +45,11 @@ export class BackfillProgramExternalIds extends Fixer {
         populate: ['externalIds'],
         orderBy: { uuid: 'asc' },
       },
+    );
+
+    this.#logger.debug(
+      'Found %d items missing plex-guid external IDs!',
+      cursor.totalCount,
     );
 
     const plexConnections: Record<string, Plex> = {};
@@ -75,19 +82,28 @@ export class BackfillProgramExternalIds extends Fixer {
           ),
         { concurrency: 1, waitAfterEachMs: 50 },
       )) {
+        console.log(result);
         if (result.type === 'error') {
           this.#logger.error(
             result.error,
             'Error while attempting to get external IDs for program %s',
             result.input.uuid,
           );
+        } else {
+          const upsertResult = await attempt(() =>
+            upsertProgramExternalIds(result.result),
+          );
+          if (isError(upsertResult)) {
+            this.#logger.warn(
+              upsertResult,
+              'Failed to upsert external IDs: %O',
+              result,
+            );
+          }
         }
       }
 
-      await em.flush();
-
       // next
-
       cursor = await em.findByCursor(
         Program,
         {
@@ -131,14 +147,18 @@ export class BackfillProgramExternalIds extends Fixer {
     const firstPart = first(first(metadata.Media)?.Part);
 
     const entities = [
-      em.create(ProgramExternalId, {
-        externalFilePath: firstPart?.key ?? program.plexFilePath,
-        directFilePath: firstPart?.file ?? program.filePath,
-        externalKey: metadata.ratingKey,
-        externalSourceId: plex.serverName,
-        program,
-        sourceType: ProgramExternalIdType.PLEX,
-      }),
+      em.create(
+        ProgramExternalId,
+        {
+          externalFilePath: firstPart?.key ?? program.plexFilePath,
+          directFilePath: firstPart?.file ?? program.filePath,
+          externalKey: metadata.ratingKey,
+          externalSourceId: plex.serverName,
+          program,
+          sourceType: ProgramExternalIdType.PLEX,
+        },
+        { persist: false },
+      ),
     ];
 
     attemptSync(() => {
@@ -149,15 +169,19 @@ export class BackfillProgramExternalIds extends Fixer {
         return;
       }
 
-      const eid = em.create(ProgramExternalId, {
-        externalKey: metadata.guid,
-        program,
-        sourceType: ProgramExternalIdType.PLEX_GUID,
-      });
+      const eid = em.create(
+        ProgramExternalId,
+        {
+          externalKey: metadata.guid,
+          program,
+          sourceType: ProgramExternalIdType.PLEX_GUID,
+        },
+        { persist: false },
+      );
 
       entities.push(eid);
     });
 
-    program.externalIds.add(entities);
+    return entities;
   }
 }
