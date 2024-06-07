@@ -106,7 +106,7 @@
     "prettier": "^3.0.3",
     "rimraf": "^5.0.5",
     "temp": "^0.9.4",
-    "thread-stream": "^3.0.0",
+    "thread-stream": "^3.0.2",
     "tmp": "^0.2.1",
     "tmp-promise": "^3.0.3",
     "ts-essentials": "^9.4.2",
@@ -125,5 +125,8 @@
       "./mikro-orm.config.ts",
       "./build/mikro-orm.config.js"
     ]
+  },
+  "pnpm": {
+    "allowNonAppliedPatches": true
   }
 }
