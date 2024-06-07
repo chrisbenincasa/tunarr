@@ -125,5 +125,8 @@
       "./mikro-orm.config.ts",
       "./build/mikro-orm.config.js"
     ]
+  },
+  "pnpm": {
+    "allowNonAppliedPatches": true
   }
 }
