@@ -56,6 +56,13 @@ export type CreateCustomShowRequest = z.infer<
   typeof CreateCustomShowRequestSchema
 >;
 
+export const UpdateCustomShowRequestSchema =
+  CreateCustomShowRequestSchema.partial();
+
+export type UpdateCustomShowRequest = z.infer<
+  typeof UpdateCustomShowRequestSchema
+>;
+
 export const CreateFillerListRequestSchema = z.object({
   name: z.string(),
   programs: z.array(

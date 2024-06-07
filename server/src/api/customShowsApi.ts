@@ -1,6 +1,7 @@
 import {
   CreateCustomShowRequestSchema,
   IdPathParamSchema,
+  UpdateCustomShowRequestSchema,
 } from '@tunarr/types/api';
 import { CustomProgramSchema, CustomShowSchema } from '@tunarr/types/schemas';
 import { isNull, map, sumBy } from 'lodash-es';
@@ -58,6 +59,37 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
       const customShow = await req.serverCtx.customShowDB.getShow(
         req.params.id,
       );
+      if (isNull(customShow)) {
+        return res.status(404).send();
+      }
+
+      return res.status(200).send({
+        id: customShow.uuid,
+        name: customShow.name,
+        contentCount: customShow.content.length,
+        totalDuration: sumBy(customShow.content, (c) => c.duration),
+      });
+    },
+  );
+
+  fastify.put(
+    '/custom-shows/:id',
+    {
+      schema: {
+        params: IdPathParamSchema,
+        body: UpdateCustomShowRequestSchema,
+        response: {
+          200: CustomShowSchema,
+          404: z.void(),
+        },
+      },
+    },
+    async (req, res) => {
+      const customShow = await req.serverCtx.customShowDB.saveShow(
+        req.params.id,
+        req.body,
+      );
+
       if (isNull(customShow)) {
         return res.status(404).send();
       }
