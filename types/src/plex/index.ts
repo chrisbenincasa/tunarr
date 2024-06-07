@@ -235,7 +235,7 @@ export const PlexMediaDescriptionSchema = z.object({
   audioCodec: z.string().optional(),
   videoCodec: z.string().optional(), // Video only
   videoResolution: z.string().optional(), // Video only
-  container: z.string().optional(),
+  container: z.string(),
   videoFrameRate: z.string().optional(), // Video only
   audioProfile: z.string().optional(),
   videoProfile: z.string().optional(), // Video only
@@ -247,7 +247,7 @@ export const PlexMediaDescriptionSchema = z.object({
       file: z.string(),
       size: z.number(),
       audioProfile: z.string().optional(),
-      container: z.string().optional(),
+      container: z.string(),
       videoProfile: z.string().optional(), // video only
       Stream: z.array(PlexMediaStreamSchema).optional(),
     }),
