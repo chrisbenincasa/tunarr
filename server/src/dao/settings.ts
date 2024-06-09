@@ -30,6 +30,8 @@ import { globalOptions } from '../globals.js';
 import { TypedEventEmitter } from '../types/eventEmitter.js';
 import { isProduction } from '../util/index.js';
 import {
+  Logger,
+  LoggerFactory,
   getDefaultLogDirectory,
   getDefaultLogLevel,
 } from '../util/logging/LoggerFactory.js';
@@ -109,11 +111,18 @@ type SettingsChangeEvents = {
 abstract class ITypedEventEmitter extends (events.EventEmitter as new () => TypedEventEmitter<SettingsChangeEvents>) {}
 
 export class SettingsDB extends ITypedEventEmitter {
+  private logger: Logger;
   private db: Low<SettingsFile>;
 
   constructor(db: Low<SettingsFile>) {
     super();
     this.db = db;
+    setImmediate(() => {
+      this.logger = LoggerFactory.child({
+        caller: import.meta,
+        className: SettingsDB.name,
+      });
+    });
   }
 
   needsLegacyMigration() {
@@ -156,16 +165,23 @@ export class SettingsDB extends ITypedEventEmitter {
     return this.updateSettings('ffmpeg', { ...ffmpegSettings });
   }
 
-  async directUpdate(fn: (settings: SettingsFile) => SettingsFile) {
-    return await this.db.update(fn);
+  async directUpdate(fn: (settings: SettingsFile) => SettingsFile | void) {
+    return await this.db.update(fn).then(() => {
+      this.logger?.debug(
+        'Detected change to settings DB file %s on disk. Reloading.',
+        path,
+      );
+      this.emit('change');
+    });
   }
 
   async updateSettings<K extends keyof Settings>(
     key: K,
     settings: Settings[K],
   ) {
-    this.db.data.settings[key] = settings;
-    return await this.db.write();
+    return await this.directUpdate((oldSettings) => {
+      oldSettings.settings[key] = settings;
+    });
   }
 
   // Be careful!!!
@@ -173,8 +189,9 @@ export class SettingsDB extends ITypedEventEmitter {
     key: K,
     settings: Partial<SettingsFile[K]>,
   ) {
-    this.db.data[key] = merge(this.db.data[key], settings);
-    return await this.db.write();
+    return await this.db.update((olDsettings) => {
+      olDsettings[key] = merge(olDsettings[key], settings);
+    });
   }
 
   async flush() {
@@ -188,10 +205,10 @@ export class SettingsDB extends ITypedEventEmitter {
   //   });
 
   //   watcher.on('change', () => {
-  //     this.logger.debug(
-  //       'Detected change to settings DB file %s on disk. Reloading.',
-  //       path,
-  //     );
+  // this.logger.debug(
+  //   'Detected change to settings DB file %s on disk. Reloading.',
+  //   path,
+  // );
   //     this.db
   //       .read()
   //       .then(() => this.emit('change'))
