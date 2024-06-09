@@ -319,28 +319,6 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
       const sessionId = StreamCount++;
       const audioOnly = req.query.audioOnly;
 
-      // We're disabling the loading screen for now.
-      // loading screen is pointless in audio mode (also for some reason it makes it fail when codec is aac, and I can't figure out why)
-      // if (
-      //   ffmpegSettings.enableTranscoding &&
-      //   ffmpegSettings.normalizeVideoCodec &&
-      //   ffmpegSettings.normalizeAudioCodec &&
-      //   ffmpegSettings.normalizeResolution &&
-      //   ffmpegSettings.normalizeAudio &&
-      //   !audioOnly
-      // ) {
-      //   //loading screen
-      //   data += `file 'http://localhost:${
-      //     serverOptions().port
-      //   }/stream?channel=${
-      //     req.query.channel
-      //   }&first=0&session=${sessionId}&audioOnly=${audioOnly}'\n`;
-      // }
-
-      // data += `file 'http://localhost:${serverOptions().port}/stream?channel=${
-      //   req.query.channel
-      // }&first=1&session=${sessionId}&audioOnly=${audioOnly}'\n`;
-
       // We only need 2 entries + stream_loop on the concat command for an infinite
       // stream. See https://trac.ffmpeg.org/wiki/Concatenate#Changingplaylistfilesonthefly
       for (let i = 0; i < 2; i++) {

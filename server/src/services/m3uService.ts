@@ -1,6 +1,8 @@
 import { sortBy } from 'lodash-es';
 import { ChannelDB } from '../dao/channelDb.js';
 import { FileCacheService } from './fileCacheService.js';
+import { M3uChannel, M3uHeaders, writeM3U } from '@tunarr/playlist';
+import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 
 /**
  * Manager and Generate M3U content
@@ -8,6 +10,7 @@ import { FileCacheService } from './fileCacheService.js';
  * @class M3uService
  */
 export class M3uService {
+  #logger = LoggerFactory.child({ className: M3uService.name });
   #channelDB: ChannelDB;
   #fileCacheService: FileCacheService;
   #cacheReady: boolean;
@@ -44,36 +47,57 @@ export class M3uService {
         return this.replaceHostOnM3u(host, cachedM3U);
       }
     }
+
     const channels = sortBy(await this.#channelDB.getAllChannels(), 'number');
 
     const tvg = `{{host}}/api/xmltv.xml`;
 
-    let data = `#EXTM3U url-tvg="${tvg}" x-tvg-url="${tvg}"\n`;
+    // let data = `#EXTM3U url-tvg="${tvg}" x-tvg-url="${tvg}"\n`;
+    const channelsOut: M3uChannel[] = [];
 
-    for (let i = 0; i < channels.length; i++) {
-      if (channels[i].stealth !== true) {
-        data += `#EXTINF:0 tvg-id="${channels[i].number}" CUID="${
-          channels[i].number
-        }" tvg-chno="${channels[i].number}" tvg-name="${
-          channels[i].name
-        }" tvg-logo="${channels[i].icon?.path ?? ''}" group-title="${
-          channels[i].groupTitle
-        }",${channels[i].name}\n`;
+    for (const channel of channels) {
+      if (channel.stealth) {
+        continue;
+      }
+
+      channelsOut.push({
+        tvgId: channel.number.toString(),
+        tvgChno: channel.number.toString(),
+        tvgName: channel.name,
+        tvgLogo: channel.icon?.path ?? '',
+        groupTitle: channel.groupTitle,
+        name: channel.name,
         // Do not use query params here, because Plex doesn't handle them well (as they might append
         // query params themselves...)
-        data += `{{host}}/channels/${channels[i].number}/video\n`;
-      }
+        url: `{{host}}/channels/${channel.number}/video`,
+      });
     }
-    if (channels.length === 0) {
-      data += `#EXTINF:0 tvg-id="1" tvg-chno="1" tvg-name="tunarr" tvg-logo="{{host}}/images/tunarr.png" group-title="tunarr",tunarr\n`;
-      data += `{{host}}/setup\n`;
+
+    if (channelsOut.length === 0) {
+      channelsOut.push({
+        tvgId: '1',
+        tvgChno: '1',
+        tvgName: 'tunarr',
+        tvgLogo: '{{host}}/images/tunarr.png',
+        groupTitle: 'tunarr',
+        name: 'tunarr',
+        url: '{{host}}/setup',
+      });
     }
+
+    const headers: M3uHeaders = {
+      // Workaround bug with named keys
+      'url-tvg': tvg,
+      'x-tvg-url': tvg,
+    };
+
+    const data = writeM3U({ channels: channelsOut, headers });
 
     try {
       await this.#fileCacheService.setCache('channels.m3u', data);
       this.#cacheReady = true;
     } catch (err) {
-      console.error(err);
+      this.#logger.error(err, 'Error generating m3u');
     }
 
     return this.replaceHostOnM3u(host, data);
