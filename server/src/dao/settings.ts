@@ -11,14 +11,6 @@ import {
   defaultPlexStreamSettings,
   defaultXmlTvSettings as defaultXmlTvSettingsSchema,
 } from '@tunarr/types';
-import { isUndefined, merge, once } from 'lodash-es';
-import { Low, LowSync } from 'lowdb';
-import path from 'path';
-import chokidar from 'chokidar';
-import { DeepReadonly } from 'ts-essentials';
-import { v4 as uuidv4 } from 'uuid';
-import { globalOptions } from '../globals.js';
-import { z } from 'zod';
 import {
   BackupSettings,
   FfmpegSettingsSchema,
@@ -26,18 +18,23 @@ import {
   PlexStreamSettingsSchema,
   XmlTvSettingsSchema,
 } from '@tunarr/types/schemas';
-import { SchemaBackedDbAdapter } from './SchemaBackedDbAdapter.js';
-import { SyncSchemaBackedDbAdapter } from './SyncSchemaBackedDbAdapter.js';
+import events from 'events';
+import { isUndefined, merge, once } from 'lodash-es';
+import { Low, LowSync } from 'lowdb';
+import { existsSync } from 'node:fs';
+import path from 'path';
+import { DeepReadonly } from 'ts-essentials';
+import { v4 as uuidv4 } from 'uuid';
+import { z } from 'zod';
+import { globalOptions } from '../globals.js';
+import { TypedEventEmitter } from '../types/eventEmitter.js';
 import { isProduction } from '../util/index.js';
-import { Logger } from 'pino';
 import {
-  LoggerFactory,
   getDefaultLogDirectory,
   getDefaultLogLevel,
 } from '../util/logging/LoggerFactory.js';
-import events from 'events';
-import { TypedEventEmitter } from '../types/eventEmitter.js';
-import { existsSync } from 'node:fs';
+import { SchemaBackedDbAdapter } from './SchemaBackedDbAdapter.js';
+import { SyncSchemaBackedDbAdapter } from './SyncSchemaBackedDbAdapter.js';
 
 const CURRENT_VERSION = 1;
 
@@ -112,16 +109,11 @@ type SettingsChangeEvents = {
 abstract class ITypedEventEmitter extends (events.EventEmitter as new () => TypedEventEmitter<SettingsChangeEvents>) {}
 
 export class SettingsDB extends ITypedEventEmitter {
-  private logger: Logger;
   private db: Low<SettingsFile>;
 
-  constructor(dbPath: string, db: Low<SettingsFile>) {
+  constructor(db: Low<SettingsFile>) {
     super();
     this.db = db;
-    this.handleFileChanges(dbPath);
-    setImmediate(() => {
-      this.logger = LoggerFactory.child(import.meta);
-    });
   }
 
   needsLegacyMigration() {
@@ -189,23 +181,23 @@ export class SettingsDB extends ITypedEventEmitter {
     return this.db.write();
   }
 
-  private handleFileChanges(path: string) {
-    const watcher = chokidar.watch(path, {
-      persistent: false,
-      awaitWriteFinish: true,
-    });
+  // private handleFileChanges(path: string) {
+  //   const watcher = chokidar.watch(path, {
+  //     persistent: false,
+  //     awaitWriteFinish: true,
+  //   });
 
-    watcher.on('change', () => {
-      this.logger.debug(
-        'Detected change to settings DB file %s on disk. Reloading.',
-        path,
-      );
-      this.db
-        .read()
-        .then(() => this.emit('change'))
-        .catch(console.error);
-    });
-  }
+  //   watcher.on('change', () => {
+  //     this.logger.debug(
+  //       'Detected change to settings DB file %s on disk. Reloading.',
+  //       path,
+  //     );
+  //     this.db
+  //       .read()
+  //       .then(() => this.emit('change'))
+  //       .catch(console.error);
+  //   });
+  // }
 }
 
 let settingsDbInstance: SettingsDB | undefined;
@@ -238,7 +230,6 @@ export const getSettings = once((dbPath?: string) => {
   });
 
   settingsDbInstance = new SettingsDB(
-    actualPath,
     new Low<SettingsFile>(
       new SchemaBackedDbAdapter(SettingsFileSchema, actualPath, defaultValue),
       db.data,
