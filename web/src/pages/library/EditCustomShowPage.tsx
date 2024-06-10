@@ -26,6 +26,7 @@ import { UICustomShowProgram } from '../../types/index.ts';
 type Props = { isNew: boolean };
 
 type CustomShowForm = {
+  id?: string;
   name: string;
 };
 
@@ -61,10 +62,17 @@ export default function EditCustomShowPage({ isNew }: Props) {
     mutationFn: async (
       data: CustomShowForm & { programs: UICustomShowProgram[] },
     ) => {
-      return apiClient.createCustomShow({
-        name: data.name,
-        programs: data.programs,
-      });
+      if (isNew) {
+        return apiClient.createCustomShow({
+          name: data.name,
+          programs: data.programs,
+        });
+      } else {
+        return apiClient.updateCustomShow(
+          { name: data.name, programs: data.programs },
+          { params: { id: data.id! } },
+        );
+      }
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({

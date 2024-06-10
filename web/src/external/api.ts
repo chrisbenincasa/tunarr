@@ -6,7 +6,6 @@ import {
   UpdateChannelProgrammingRequestSchema,
   UpdateCustomShowRequestSchema,
   UpdateFillerListRequestSchema,
-  // UpdateCustomShowRequestSchema,
   VersionApiResponseSchema,
 } from '@tunarr/types/api';
 import {
@@ -200,16 +199,6 @@ export const api = makeApi([
       .addBody(CreateCustomShowRequestSchema)
       .build(),
   },
-  // {
-  //   method: 'put',
-  //   path: '/api/custom-shows/:id',
-  //   alias: 'updateCustomShow',
-  //   parameters: parametersBuilder()
-  //     .addPath('id', z.string())
-  //     .addBody(UpdateCustomShowRequestSchema)
-  //     .build(),
-  //   response: CustomShowSchema,
-  // },
   {
     method: 'get',
     path: '/api/custom-shows/:id/programs',
