@@ -1,3 +1,5 @@
+import { usePlexCollectionsInfinite } from '@/hooks/plex/usePlexCollections.ts';
+import { usePlexPlaylistsInfinite } from '@/hooks/plex/usePlexPlaylists.ts';
 import { usePlexSearchInfinite } from '@/hooks/plex/usePlexSearch.ts';
 import FilterAlt from '@mui/icons-material/FilterAlt';
 import GridView from '@mui/icons-material/GridView';
@@ -65,12 +67,11 @@ import { PlexFilterBuilder } from './PlexFilterBuilder.tsx';
 import { PlexGridItem } from './PlexGridItem';
 import { PlexListItem } from './PlexListItem';
 import { PlexSortField } from './PlexSortField.tsx';
-import { usePlexCollectionsInfinite } from '@/hooks/plex/usePlexCollections.ts';
 
 function a11yProps(index: number) {
   return {
-    id: `simple-tab-${index}`,
-    'aria-controls': `simple-tabpanel-${index}`,
+    id: `plex-programming-tab-${index}`,
+    'aria-controls': `plex-programming-tabpanel-${index}`,
   };
 }
 
@@ -83,6 +84,12 @@ type Size = {
   height?: number;
 };
 
+enum TabValues {
+  Library = 0,
+  Collections = 1,
+  Playlists = 2,
+}
+
 export default function PlexProgrammingSelector() {
   const { data: plexServers } = usePlexServerSettings();
   const selectedServer = useStore((s) => s.currentServer);
@@ -90,8 +97,8 @@ export default function PlexProgrammingSelector() {
     s.currentLibrary?.type === 'plex' ? s.currentLibrary : null,
   );
   const viewType = useStore((state) => state.theme.programmingSelectorView);
-  const [tabValue, setTabValue] = useState(0);
-  const [rowSize, setRowSize] = useState(16);
+  const [tabValue, setTabValue] = useState(TabValues.Library);
+  const [rowSize, setRowSize] = useState(9);
   const [modalIndex, setModalIndex] = useState(-1);
   const [modalGuid, setModalGuid] = useState<string>('');
   const [scrollParams, setScrollParams] = useState({ limit: 0, max: -1 });
@@ -132,7 +139,7 @@ export default function PlexProgrammingSelector() {
       const imageWidth = imageRef?.getBoundingClientRect().width;
 
       // 16 is additional padding available in the parent container
-      const rowSize = getImagesPerRow(width ? width + 16 : 0, imageWidth || 0);
+      const rowSize = getImagesPerRow(width ? width + 16 : 0, imageWidth ?? 0);
       setRowSize(rowSize);
       setScrollParams(({ max }) => ({ max, limit: rowSize * 4 }));
     }
@@ -147,7 +154,7 @@ export default function PlexProgrammingSelector() {
     setModalGuid('');
   }, [tabValue, selectedLibrary]);
 
-  const handleChange = (_: React.SyntheticEvent, newValue: number) => {
+  const handleChange = (_: React.SyntheticEvent, newValue: TabValues) => {
     setTabValue(newValue);
   };
 
@@ -224,12 +231,37 @@ export default function PlexProgrammingSelector() {
     hasNextPage: hasNextCollectionsPage,
   } = usePlexCollectionsInfinite(selectedServer, selectedLibrary, rowSize * 4);
 
+  const {
+    isLoading: isPlaylistLoading,
+    data: playlistData,
+    fetchNextPage: fetchNextPlaylistPage,
+    isFetchingNextPage: isFetchingNextPlaylistPage,
+    hasNextPage: hasNextPlaylistPage,
+  } = usePlexPlaylistsInfinite(selectedServer, selectedLibrary, rowSize * 4);
+
   useEffect(() => {
     // When switching between Libraries, if a collection doesn't exist switch back to 'Library' tab
-    if (!collectionsData && !isCollectionLoading && tabValue === 1) {
-      setTabValue(0);
+    if (
+      tabValue === TabValues.Playlists &&
+      isUndefined(playlistData) &&
+      !isPlaylistLoading
+    ) {
+      setTabValue(TabValues.Library);
+    } else if (
+      tabValue === TabValues.Collections &&
+      isUndefined(collectionsData) &&
+      !isCollectionLoading
+    ) {
+      setTabValue(TabValues.Library);
     }
-  }, [collectionsData, isCollectionLoading, tabValue]);
+  }, [
+    collectionsData,
+    isCollectionLoading,
+    isPlaylistLoading,
+    playlistData,
+    selectedLibrary?.library.type,
+    tabValue,
+  ]);
 
   const { urlFilter: searchKey } = useStore(
     ({ plexSearch: plexQuery }) => plexQuery,
@@ -299,22 +331,36 @@ export default function PlexProgrammingSelector() {
             limit: prevLimit + rowSize * 4,
           }));
         }
-        if (tabValue === 0 && hasNextItemsPage && !isFetchingNextItemsPage) {
+
+        if (
+          tabValue === TabValues.Library &&
+          hasNextItemsPage &&
+          !isFetchingNextItemsPage
+        ) {
           fetchNextItemsPage().catch(console.error);
         }
+
         if (
-          tabValue === 1 &&
+          tabValue === TabValues.Collections &&
           hasNextCollectionsPage &&
           !isFetchingNextCollectionsPage
         ) {
           fetchNextCollectionsPage().catch(console.error);
+        }
+
+        if (
+          tabValue === TabValues.Playlists &&
+          hasNextPlaylistPage &&
+          !isFetchingNextPlaylistPage
+        ) {
+          fetchNextPlaylistPage().catch(console.error);
         }
       }
     },
     threshold: 0.5,
   });
 
-  const firstItemInNexLibraryRowIndex = useMemo(
+  const firstItemInNextLibraryRowIndex = useMemo(
     () =>
       findFirstItemInNextRowIndex(
         modalIndex,
@@ -334,23 +380,44 @@ export default function PlexProgrammingSelector() {
     [collectionsData, rowSize, modalIndex],
   );
 
+  const firstItemInNextPlaylistRowIndex = useMemo(
+    () =>
+      findFirstItemInNextRowIndex(
+        modalIndex,
+        rowSize,
+        sumBy(playlistData?.pages, (p) => p.size) ?? 0,
+      ),
+    [playlistData, rowSize, modalIndex],
+  );
+
   const renderGridItems = (item: PlexMedia, index: number) => {
-    const isOpen =
-      index ===
-      (tabValue === 0
-        ? firstItemInNexLibraryRowIndex
-        : firstItemInNextCollectionRowIndex);
+    let firstItemIndex: number;
+    switch (tabValue) {
+      case TabValues.Library:
+        firstItemIndex = firstItemInNextLibraryRowIndex;
+        break;
+      case TabValues.Collections:
+        firstItemIndex = firstItemInNextCollectionRowIndex;
+        break;
+      case TabValues.Playlists:
+        firstItemIndex = firstItemInNextPlaylistRowIndex;
+        break;
+    }
+
+    const isOpen = index === firstItemIndex;
+
     return (
       <React.Fragment key={item.guid}>
-        {isPlexParentItem(item) && (
-          <InlineModal
-            itemGuid={modalGuid}
-            modalIndex={modalIndex}
-            rowSize={rowSize}
-            open={isOpen}
-            type={item.type}
-          />
-        )}
+        {isPlexParentItem(item) &&
+          (item.type === 'playlist' ? (item.leafCount ?? 0) < 500 : true) && (
+            <InlineModal
+              itemGuid={modalGuid}
+              modalIndex={modalIndex}
+              rowSize={rowSize}
+              open={isOpen}
+              type={item.type}
+            />
+          )}
         {/* TODO: Consider forking this to a separate component for non-parent items, because
         currently it erroneously creates a lot of tracked queries in react-query that will never be enabled */}
         <PlexGridItem
@@ -366,14 +433,16 @@ export default function PlexProgrammingSelector() {
 
   const renderFinalRowInlineModal = (arr: PlexMedia[]) => {
     // /This Modal is for last row items because they can't be inserted using the above inline modal
+    const open = extractLastIndexes(arr, arr.length % rowSize).includes(
+      modalIndex,
+    );
+
     return (
       <InlineModal
-        itemGuid=""
+        itemGuid={modalGuid}
         modalIndex={modalIndex}
         rowSize={rowSize}
-        open={extractLastIndexes(arr, arr.length % rowSize).includes(
-          modalIndex,
-        )}
+        open={open}
         type={'season'}
       />
     );
@@ -383,15 +452,19 @@ export default function PlexProgrammingSelector() {
     const elements: JSX.Element[] = [];
 
     if (
+      tabValue === TabValues.Collections &&
       collectionsData &&
-      (first(collectionsData.pages)?.size ?? 0) > 0 &&
-      tabValue === 1
+      (first(collectionsData.pages)?.size ?? 0) > 0
     ) {
       elements.push(
-        <CustomTabPanel value={tabValue} index={1} key="Collections">
+        <CustomTabPanel
+          value={tabValue}
+          index={TabValues.Collections}
+          key="Collections"
+        >
           {map(
-            flatMap(collectionsData.pages, (page) => page.Metadata),
-            (item: PlexMovie | PlexTvShow | PlexMusicArtist, index: number) =>
+            compact(flatMap(collectionsData.pages, (page) => page.Metadata)),
+            (item, index: number) =>
               viewType === 'list' ? (
                 <PlexListItem key={item.guid} item={item} />
               ) : (
@@ -400,6 +473,32 @@ export default function PlexProgrammingSelector() {
           )}
           {renderFinalRowInlineModal(
             compact(flatMap(collectionsData.pages, (page) => page.Metadata)),
+          )}
+        </CustomTabPanel>,
+      );
+    }
+
+    if (
+      tabValue === TabValues.Playlists &&
+      (first(playlistData?.pages)?.size ?? 0) > 0
+    ) {
+      elements.push(
+        <CustomTabPanel
+          value={tabValue}
+          index={TabValues.Playlists}
+          key="Playlists"
+        >
+          {map(
+            compact(flatMap(playlistData?.pages, (page) => page.Metadata)),
+            (item, index: number) =>
+              viewType === 'list' ? (
+                <PlexListItem key={item.guid} item={item} />
+              ) : (
+                renderGridItems(item, index)
+              ),
+          )}
+          {renderFinalRowInlineModal(
+            compact(flatMap(playlistData?.pages, (page) => page.Metadata)),
           )}
         </CustomTabPanel>,
       );
@@ -523,10 +622,26 @@ export default function PlexProgrammingSelector() {
               variant="scrollable"
               allowScrollButtonsMobile
             >
-              <Tab label="Library" {...a11yProps(0)} />
+              <Tab
+                value={TabValues.Library}
+                label="Library"
+                {...a11yProps(0)}
+              />
               {!isUndefined(collectionsData) &&
                 sumBy(collectionsData.pages, (page) => page.size) > 0 && (
-                  <Tab label="Collections" {...a11yProps(1)} />
+                  <Tab
+                    value={TabValues.Collections}
+                    label="Collections"
+                    {...a11yProps(1)}
+                  />
+                )}
+              {!isUndefined(playlistData) &&
+                sumBy(playlistData.pages, 'size') > 0 && (
+                  <Tab
+                    value={TabValues.Playlists}
+                    label="Playlists"
+                    {...a11yProps(1)}
+                  />
                 )}
             </Tabs>
           </Box>

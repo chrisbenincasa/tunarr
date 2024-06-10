@@ -1,19 +1,22 @@
 import { CheckCircle, RadioButtonUnchecked } from '@mui/icons-material';
 import {
+  Box,
   Fade,
   Unstable_Grid2 as Grid,
   IconButton,
   ImageListItem,
   ImageListItemBar,
   Skeleton,
+  alpha,
+  useTheme,
 } from '@mui/material';
 import {
   PlexChildMediaApiType,
   PlexMedia,
-  isPlexCollection,
+  isPlexPlaylist,
   isTerminalItem,
 } from '@tunarr/types/plex';
-import { filter, isNaN, isNull, isUndefined } from 'lodash-es';
+import { filter, isNaN, isNil, isUndefined } from 'lodash-es';
 import pluralize from 'pluralize';
 import React, {
   ForwardedRef,
@@ -50,21 +53,68 @@ export interface PlexGridItemProps<T extends PlexMedia> {
   ref?: React.RefObject<HTMLDivElement>;
 }
 
+const genPlexChildPath = forPlexMedia({
+  collection: (collection) =>
+    `/library/collections/${collection.ratingKey}/children`,
+  playlist: (playlist) => `/playlists/${playlist.ratingKey}/items`,
+  default: (item) => `/library/metadata/${item.ratingKey}/children`,
+});
+
+const extractChildCount = forPlexMedia({
+  season: (s) => s.leafCount,
+  show: (s) => s.childCount,
+  collection: (s) => parseInt(s.childCount),
+  playlist: (s) => s.leafCount,
+});
+
+const childItemType = forPlexMedia({
+  season: 'episode',
+  show: 'season',
+  collection: (coll) => (coll.subtype === 'movie' ? 'movie' : 'show'),
+  playlist: 'track',
+  artist: 'album',
+  album: 'track',
+});
+
+const subtitle = forPlexMedia({
+  movie: (item) => <span>{prettyItemDuration(item.duration)}</span>,
+  default: (item) => {
+    const childCount = extractChildCount(item);
+    if (isNil(childCount)) {
+      return null;
+    }
+
+    return (
+      <span>{`${childCount} ${pluralize(
+        childItemType(item) ?? 'item',
+        childCount,
+      )}`}</span>
+    );
+  },
+});
+
 export const PlexGridItem = forwardRef(
   <T extends PlexMedia>(
     props: PlexGridItemProps<T>,
     ref: ForwardedRef<HTMLDivElement>,
   ) => {
+    const theme = useTheme();
+    const skeletonBgColor = alpha(
+      theme.palette.text.primary,
+      theme.palette.mode === 'light' ? 0.11 : 0.13,
+    );
     const server = useStore((s) => s.currentServer!); // We have to have a server at this point
     const darkMode = useStore((state) => state.theme.darkMode);
     const [open, setOpen] = useState(false);
-    const [imageLoaded, setImageLoaded] = useState(false);
     const { item, index, style, moveModal } = props;
+    const hasThumb = isNonEmptyString(
+      isPlexPlaylist(props.item) ? props.item.composite : props.item.thumb,
+    );
+    const [imageLoaded, setImageLoaded] = useState(!hasThumb);
     const hasChildren = !isTerminalItem(item);
-    const childPath = isPlexCollection(item) ? 'collections' : 'metadata';
     const { data: children } = usePlexTyped<PlexChildMediaApiType<T>>(
       server.name,
-      `/library/${childPath}/${props.item.ratingKey}/children`,
+      genPlexChildPath(props.item),
       hasChildren && open,
     );
     const selectedServer = useStore((s) => s.currentServer);
@@ -118,13 +168,21 @@ export const PlexGridItem = forwardRef(
       childCount = null;
     }
 
+    const isMusicItem = ['artist', 'album', 'track', 'playlist'].includes(
+      item.type,
+    );
+
+    let thumbSrc: string;
+    if (isPlexPlaylist(item)) {
+      thumbSrc = `${server.uri}${item.composite}?X-Plex-Token=${server.accessToken}`;
+    } else {
+      // TODO: Use server endpoint for plex metdata
+      thumbSrc = `${server.uri}${item.thumb}?X-Plex-Token=${server.accessToken}`;
+    }
+
     return (
       <Fade
-        in={
-          isInViewport &&
-          !isUndefined(item) &&
-          (imageLoaded || !isNonEmptyString(item.thumb))
-        }
+        in={isInViewport && !isUndefined(item) && (imageLoaded || hasThumb)}
         timeout={500}
         ref={imageContainerRef}
       >
@@ -161,42 +219,55 @@ export const PlexGridItem = forwardRef(
             ref={ref}
           >
             {isInViewport && // TODO: Eventually turn this itno isNearViewport so images load before they hit the viewport
-              (isNonEmptyString(item.thumb) ? (
-                // TODO: Use server endpoint for plex metdata
-                <img
-                  src={`${server.uri}${item.thumb}?X-Plex-Token=${server.accessToken}`}
-                  style={{ borderRadius: '5%', height: 'auto' }}
-                  onLoad={() => setImageLoaded(true)}
-                />
+              (hasThumb ? (
+                <Box
+                  sx={{
+                    position: 'relative',
+                    minHeight: isMusicItem ? 100 : 200,
+                    maxHeight: '100%',
+                  }}
+                >
+                  <img
+                    src={thumbSrc}
+                    style={{
+                      borderRadius: '5%',
+                      height: 'auto',
+                      width: '100%',
+                      visibility: imageLoaded ? 'visible' : 'hidden',
+                      zIndex: 2,
+                    }}
+                    onLoad={() => setImageLoaded(true)}
+                    onError={() => setImageLoaded(true)}
+                  />
+                  <Box
+                    component="div"
+                    sx={{
+                      background: skeletonBgColor,
+                      borderRadius: '5%',
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      aspectRatio: isMusicItem ? '1/1' : '2/3',
+                      width: '100%',
+                      height: 'auto',
+                      zIndex: 1,
+                      opacity: imageLoaded ? 0 : 1,
+                      visibility: imageLoaded ? 'hidden' : 'visible',
+                      minHeight: isMusicItem ? 100 : 200,
+                    }}
+                  ></Box>
+                </Box>
               ) : (
                 <Skeleton
-                  variant="rectangular"
                   animation={false}
+                  variant="rounded"
                   sx={{ borderRadius: '5%' }}
-                  height={250}
+                  height={isMusicItem ? 144 : 250}
                 />
               ))}
-            {!imageLoaded && (
-              <Skeleton
-                variant="rectangular"
-                sx={{ borderRadius: '5%' }}
-                height={250}
-              />
-            )}
             <ImageListItemBar
               title={item.title}
-              subtitle={
-                item.type !== 'movie' ? (
-                  !isNull(childCount) ? (
-                    <span>{`${childCount} ${pluralize(
-                      'item',
-                      childCount,
-                    )}`}</span>
-                  ) : null
-                ) : (
-                  <span>{prettyItemDuration(item.duration)}</span>
-                )
-              }
+              subtitle={subtitle(item)}
               position="below"
               actionIcon={
                 <IconButton

@@ -23,6 +23,7 @@ import { grey } from '@mui/material/colors';
 import {
   isPlexDirectory,
   isPlexMovie,
+  isPlexPlaylist,
   isPlexSeason,
   isPlexShow,
 } from '@tunarr/types/plex';
@@ -116,6 +117,11 @@ export default function SelectedProgrammingList({
         )})`;
       } else if (isPlexMovie(media)) {
         secondary = `Movie${media.year ? ', ' + media.year : ''}`;
+      } else if (isPlexPlaylist(media) && !isUndefined(media.leafCount)) {
+        secondary = `Playlist with ${media.leafCount} ${pluralize(
+          'tracks',
+          media.leafCount,
+        )}`;
       }
 
       return (

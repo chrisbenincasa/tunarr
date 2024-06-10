@@ -33,7 +33,8 @@ export interface PlexListItemProps<T extends PlexMedia> {
 }
 
 export default function ProgrammingSelector() {
-  const { data: plexServers } = usePlexServerSettings();
+  const { data: plexServers, isLoading: plexServersLoading } =
+    usePlexServerSettings();
   const selectedServer = useStore((s) => s.currentServer);
   const selectedLibrary = useStore((s) => s.currentLibrary);
   const knownMedia = useStore((s) => s.knownMediaByServer);
@@ -119,7 +120,7 @@ export default function ProgrammingSelector() {
       return <PlexProgrammingSelector />;
     }
 
-    if (!selectedServer) {
+    if (!plexServersLoading && !selectedServer) {
       return (
         <>
           <Typography variant="h6" fontWeight={600} align="left" sx={{ mt: 3 }}>
