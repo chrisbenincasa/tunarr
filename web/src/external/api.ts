@@ -6,6 +6,7 @@ import {
   UpdateChannelProgrammingRequestSchema,
   UpdateCustomShowRequestSchema,
   UpdateFillerListRequestSchema,
+  // UpdateCustomShowRequestSchema,
   VersionApiResponseSchema,
 } from '@tunarr/types/api';
 import {
@@ -27,7 +28,9 @@ import {
   makeErrors,
   parametersBuilder,
 } from '@zodios/core';
+import { isEmpty } from 'lodash-es';
 import { z } from 'zod';
+import { getFfmpegInfoEndpoint } from './ffmpegApi.ts';
 import {
   createPlexServerEndpoint,
   deletePlexServerEndpoint,
@@ -45,8 +48,6 @@ import {
   updateSystemSettings,
   updateXmlTvSettings,
 } from './settingsApi.ts';
-import { isEmpty } from 'lodash-es';
-import { getFfmpegInfoEndpoint } from './ffmpegApi.ts';
 
 export const api = makeApi([
   {
@@ -199,6 +200,16 @@ export const api = makeApi([
       .addBody(CreateCustomShowRequestSchema)
       .build(),
   },
+  // {
+  //   method: 'put',
+  //   path: '/api/custom-shows/:id',
+  //   alias: 'updateCustomShow',
+  //   parameters: parametersBuilder()
+  //     .addPath('id', z.string())
+  //     .addBody(UpdateCustomShowRequestSchema)
+  //     .build(),
+  //   response: CustomShowSchema,
+  // },
   {
     method: 'get',
     path: '/api/custom-shows/:id/programs',

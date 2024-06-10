@@ -13,7 +13,7 @@ import {
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
@@ -36,7 +36,6 @@ export default function EditCustomShowPage({ isNew }: Props) {
 
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const [addProgrammingOpen, setAddProgrammingOpen] = useState(false);
 
   const {
     control,
@@ -49,11 +48,13 @@ export default function EditCustomShowPage({ isNew }: Props) {
     },
   });
 
-  // useEffect(() => {
-  //   reset({
-  //     name: customShow.name,
-  //   });
-  // }, [customShow, reset]);
+  useEffect(() => {
+    reset({
+      name: customShow?.name,
+    });
+  }, [customShow, reset]);
+
+  console.log(customShow?.id);
 
   const saveShowMutation = useMutation({
     mutationKey: ['custom-shows', isNew ? 'new' : customShow?.id],
@@ -81,7 +82,7 @@ export default function EditCustomShowPage({ isNew }: Props) {
   const saveCustomShow: SubmitHandler<CustomShowForm> = (
     data: CustomShowForm,
   ) => {
-    // saveShowMutation.mutate({ ...data, programs: customShowPrograms });
+    saveShowMutation.mutate({ ...data, programs: customShowPrograms });
   };
 
   const deleteProgramAtIndex = useCallback((idx: number) => {
@@ -184,14 +185,10 @@ export default function EditCustomShowPage({ isNew }: Props) {
           >
             <Button onClick={() => onCancel()}>Cancel</Button>
             <Button
-              // disabled={
-              //   saveShowMutation.isPending ||
-              //   !isValid ||
-              //   customShowPrograms.length === 0
-              // }
               disabled={
-                saveShowMutation.isPending || !isValid
-                // customShowPrograms.length === 0
+                saveShowMutation.isPending ||
+                !isValid ||
+                customShowPrograms.length === 0
               }
               variant="contained"
               type="submit"
@@ -201,32 +198,6 @@ export default function EditCustomShowPage({ isNew }: Props) {
           </Stack>
         </Stack>
       </PaddedPaper>
-      {/* <Accordion
-        expanded={addProgrammingOpen}
-        onChange={(_, expanded) => setAddProgrammingOpen(expanded)}
-      >
-        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          Add Programming
-        </AccordionSummary>
-        <AccordionDetails>
-          <ProgrammingSelector />
-          <Divider />
-          <Box
-            sx={{
-              width: '100%',
-              display: 'flex',
-              justifyContent: 'flex-end',
-              mt: 2,
-            }}
-          >
-            <AddSelectedMediaButton
-              onAdd={addMediaToCurrentCustomShow}
-              onSuccess={() => {}}
-              variant="contained"
-            />
-          </Box>
-        </AccordionDetails>
-      </Accordion> */}
     </Box>
   );
 }

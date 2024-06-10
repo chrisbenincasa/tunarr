@@ -24,15 +24,15 @@ import { removeFillerListProgram } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
 import { UIFillerListProgram } from '../../types/index.ts';
 
-type Props = { isNew: boolean };
+export type Props = { isNew: boolean };
 
-type FillerListMutationArgs = {
+export type FillerListMutationArgs = {
   id?: string;
   name: string;
   programs: UIFillerListProgram[];
 };
 
-type FillerListFormType = Omit<FillerListMutationArgs, 'id'>;
+export type FillerListFormType = Omit<FillerListMutationArgs, 'id'>;
 
 export default function EditFillerPage({ isNew }: Props) {
   const apiClient = useTunarrApi();

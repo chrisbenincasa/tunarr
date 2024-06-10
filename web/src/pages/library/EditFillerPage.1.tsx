@@ -13,7 +13,7 @@ import {
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
@@ -34,7 +34,7 @@ export default function EditFillerPage({ isNew }: Props) {
   const fillerListPrograms = useStore((s) => s.fillerListEditor.programList);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const [addProgrammingOpen, setAddProgrammingOpen] = useState(false);
+  // const [addProgrammingOpen, setAddProgrammingOpen] = useState(false);
 
   const {
     control,
@@ -202,8 +202,7 @@ export default function EditFillerPage({ isNew }: Props) {
             >
               <Button onClick={() => onCancel()}>Cancel</Button>
               <Button
-                // disabled={!isValid || fillerListPrograms.length === 0}
-                // disabled={!isValid || fillerListPrograms.length === 0}
+                disabled={!isValid || fillerListPrograms.length === 0}
                 variant="contained"
                 type="submit"
               >
@@ -212,30 +211,6 @@ export default function EditFillerPage({ isNew }: Props) {
             </Stack>
           </Stack>
         </PaddedPaper>
-        {/* <Accordion
-              expanded={addProgrammingOpen}
-              onChange={(_, expanded) => setAddProgrammingOpen(expanded)}
-            >
-              <AccordionSummary>Add Programming</AccordionSummary>
-              <AccordionDetails>
-                <ProgrammingSelector />
-                <Divider />
-                <Box
-                  sx={{
-                    width: '100%',
-                    display: 'flex',
-                    justifyContent: 'flex-end',
-                    mt: 2,
-                  }}
-                >
-                  <AddSelectedMediaButton
-                    onAdd={addMediaToCurrentFillerList}
-                    onSuccess={() => {}}
-                    variant="contained"
-                  />
-                </Box>
-              </AccordionDetails>
-            </Accordion> */}
       </Box>
     </Box>
   );
