@@ -141,7 +141,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
             if (isAxiosError(e) && e.response?.status === 404) {
               logger.error(
                 'Error retrieving thumb from Plex at url: %s. Status: 404',
-                result,
+                result.replaceAll(server.accessToken, 'REDACTED_TOKEN'),
               );
               return res.status(404).send();
             }
