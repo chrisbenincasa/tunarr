@@ -14,6 +14,7 @@ import { ApiClient } from '../../external/api.ts';
 import { sequentialPromises } from '../../helpers/util.ts';
 import { createExternalId } from '@tunarr/shared';
 import { fetchPlexPath } from '../../helpers/plexUtil.ts';
+import { ContentProgram } from '@tunarr/types';
 
 export type PlexPathMappings = [
   ['/library/sections', PlexLibrarySections],
@@ -77,8 +78,12 @@ export const enumeratePlexItem = (
     // This is best effort - if the user saves these IDs later, the upsert
     // logic should figure out what is new/existing
     try {
-      const existingIdsByExternalId =
-        await apiClient.batchGetProgramsByExternalIds({ externalIds });
+      const existingIdsByExternalId = await apiClient
+        .batchGetProgramsByExternalIds({ externalIds })
+        .catch((e) => {
+          console.warn('Error requesting item lookup', e);
+          return {} as Record<string, ContentProgram>;
+        });
       return map(res, (media) => {
         const existing =
           existingIdsByExternalId[

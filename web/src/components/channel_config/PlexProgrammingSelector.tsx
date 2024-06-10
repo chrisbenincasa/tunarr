@@ -66,6 +66,9 @@ import { PlexGridItem } from './PlexGridItem';
 import { PlexListItem } from './PlexListItem';
 import { PlexSortField } from './PlexSortField.tsx';
 import { usePlexCollectionsInfinite } from '@/hooks/plex/usePlexCollections.ts';
+import { useTunarrApi } from '@/hooks/useTunarrApi.ts';
+import { createExternalId } from '@tunarr/shared';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 function a11yProps(index: number) {
   return {
@@ -248,6 +251,37 @@ export default function PlexProgrammingSelector() {
     rowSize * 4,
   );
 
+  const externalIds = flatMap(searchData?.pages, (page) =>
+    map(page.Metadata, (item) =>
+      createExternalId('plex', selectedServer?.name ?? '', item.ratingKey),
+    ),
+  );
+
+  const apiClient = useTunarrApi();
+  const queryClient = useQueryClient();
+  const result = useQuery({
+    queryKey: ['program', 'batch', 'lookup'],
+    queryFn: () => {
+      return apiClient.batchGetProgramsByExternalIds({ externalIds });
+    },
+    gcTime: 0,
+    enabled: externalIds.length > 0,
+  });
+
+  // console.log(result);
+
+  // const lookupIds = useDebounceCallback(() => {
+
+  //   if (externalIds.length > 0) {
+  //     apiClient
+  //       .batchGetProgramsByExternalIds({ externalIds })
+  //       .then((result) => {
+  //         console.log(result);
+  //       })
+  //       .catch(console.warn);
+  //   }
+  // });
+
   useEffect(() => {
     if (searchData?.pages.length === 1) {
       const size = searchData.pages[0].totalSize ?? searchData.pages[0].size;
@@ -300,7 +334,9 @@ export default function PlexProgrammingSelector() {
           }));
         }
         if (tabValue === 0 && hasNextItemsPage && !isFetchingNextItemsPage) {
-          fetchNextItemsPage().catch(console.error);
+          fetchNextItemsPage()
+            .then(() => lookupIds())
+            .catch(console.error);
         }
         if (
           tabValue === 1 &&
