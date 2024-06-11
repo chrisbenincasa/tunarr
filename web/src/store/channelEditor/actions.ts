@@ -390,12 +390,10 @@ export const addMediaToCurrentCustomShow = (programs: AddedMedia[]) =>
           'custom-show': ({ program }) => program,
         }),
       );
-      console.log('tester');
 
       customShowEditor.programList = customShowEditor.programList.concat(
         zipWithIndex(allNewPrograms, customShowEditor.programList.length),
       );
-      console.log(customShowEditor.programList);
     }
   });
 
@@ -415,8 +413,6 @@ export const setCurrentFillerList = (
 export const addMediaToCurrentFillerList = (programs: AddedMedia[]) =>
   useStore.setState(({ fillerListEditor }) => {
     if (fillerListEditor.currentEntity && programs.length > 0) {
-      console.log(fillerListEditor.currentEntity);
-
       fillerListEditor.dirty.programs = true;
       const convertedPrograms = map(
         programs,
@@ -425,13 +421,9 @@ export const addMediaToCurrentFillerList = (programs: AddedMedia[]) =>
           'custom-show': ({ program }) => program,
         }),
       );
-      console.log('tester');
-
-      console.log(convertedPrograms);
 
       fillerListEditor.programList = fillerListEditor.programList.concat(
         zipWithIndex(convertedPrograms, fillerListEditor.programList.length),
       );
-      console.log(fillerListEditor.programList.length);
     }
   });

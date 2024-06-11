@@ -1,10 +1,10 @@
 import { useLoaderData } from 'react-router-dom';
-import { CustomShowPreload } from '../preloaders/customShowLoaders';
-import { useCustomShowWithInitialData } from './useCustomShows';
 import { UnsavedId } from '../helpers/constants';
-import { useTunarrApi } from './useTunarrApi';
-import { useCustomShowEditor } from '../store/selectors';
+import { CustomShowPreload } from '../preloaders/customShowLoaders';
 import { setCurrentCustomShow } from '../store/channelEditor/actions';
+import { useCustomShowEditor } from '../store/selectors';
+import { useCustomShowWithInitialData } from './useCustomShows';
+import { useTunarrApi } from './useTunarrApi';
 
 export const usePreloadedCustomShow = () => {
   const apiClient = useTunarrApi();

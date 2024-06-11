@@ -55,8 +55,6 @@ export default function EditCustomShowPage({ isNew }: Props) {
     });
   }, [customShow, reset]);
 
-  console.log(customShow?.id);
-
   const saveShowMutation = useMutation({
     mutationKey: ['custom-shows', isNew ? 'new' : customShow?.id],
     mutationFn: async (
@@ -70,7 +68,7 @@ export default function EditCustomShowPage({ isNew }: Props) {
       } else {
         return apiClient.updateCustomShow(
           { name: data.name, programs: data.programs },
-          { params: { id: data.id! } },
+          { params: { id: customShow!.id } },
         );
       }
     },
@@ -101,10 +99,17 @@ export default function EditCustomShowPage({ isNew }: Props) {
     return customShowPrograms.map((p, idx) => {
       let id: string;
       let title: string;
+
       switch (p.type) {
         case 'custom':
           id = p.id;
-          title = 'Custom';
+
+          // Display the program title when available
+          if (p.program && p.program.title) {
+            title = p.program.title;
+          } else {
+            title = 'Custom';
+          }
           break;
         case 'content':
           if (p.episodeTitle) {
