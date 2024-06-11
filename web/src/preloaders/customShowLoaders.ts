@@ -9,7 +9,6 @@ import {
   customShowQuery,
   customShowsQuery,
 } from '../hooks/useCustomShows.ts';
-import { setCurrentCustomShow } from '../store/channelEditor/actions.ts';
 import { Preloader } from '../types/index.ts';
 
 export type CustomShowPreload = {
@@ -59,7 +58,6 @@ export const existingCustomShowLoader: Preloader<CustomShowPreload> = (
 
     return await Promise.all([showLoaderPromise, programsPromise]).then(
       ([show, programs]) => {
-        setCurrentCustomShow(show, programs);
         return {
           show,
           programs,

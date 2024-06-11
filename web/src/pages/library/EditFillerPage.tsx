@@ -1,3 +1,4 @@
+import { usePreloadedFiller } from '@/hooks/usePreloadedFiller.ts';
 import { Tv } from '@mui/icons-material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import {
@@ -18,10 +19,8 @@ import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
-import { useCurrentFillerList } from '../../hooks/useFillerLists.ts';
 import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 import { removeFillerListProgram } from '../../store/channelEditor/actions.ts';
-import useStore from '../../store/index.ts';
 import { UIFillerListProgram } from '../../types/index.ts';
 
 export type Props = { isNew: boolean };
@@ -36,8 +35,12 @@ export type FillerListFormType = Omit<FillerListMutationArgs, 'id'>;
 
 export default function EditFillerPage({ isNew }: Props) {
   const apiClient = useTunarrApi();
-  const fillerList = useCurrentFillerList()!;
-  const fillerListPrograms = useStore((s) => s.fillerListEditor.programList);
+  const { currentEntity: fillerList, programList: fillerListPrograms } =
+    usePreloadedFiller();
+
+  // const fillerList = useCurrentFillerList()!;
+
+  // const fillerListPrograms = useStore((s) => s.fillerListEditor.programList);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -58,9 +61,9 @@ export default function EditFillerPage({ isNew }: Props) {
 
   useEffect(() => {
     reset({
-      name: fillerList.name,
+      name: fillerList?.name,
     });
-  }, [fillerList.name, reset]);
+  }, [fillerList?.name, reset]);
 
   const saveShowMutation = useMutation({
     mutationFn: async ({ id, name, programs }: FillerListMutationArgs) => {
@@ -89,7 +92,7 @@ export default function EditFillerPage({ isNew }: Props) {
 
   const saveFiller: SubmitHandler<FillerListFormType> = (data) => {
     return saveShowMutation.mutateAsync({
-      id: fillerList.id,
+      id: fillerList?.id,
       name: data.name,
       programs: data.programs,
     });

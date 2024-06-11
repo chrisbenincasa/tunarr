@@ -15,6 +15,11 @@ import {
 import { setCurrentFillerList } from '../store/channelEditor/actions.ts';
 import { Preloader } from '../types/index.ts';
 
+export type FillerPreload = {
+  filler: FillerList;
+  programs: FillerListProgramming;
+};
+
 export const fillerListsLoader = createPreloader((apiClient) =>
   fillerListsQuery(apiClient),
 );
