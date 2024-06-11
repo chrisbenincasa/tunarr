@@ -207,7 +207,7 @@ export default function EditFillerPage({ isNew }: Props) {
             >
               <Button onClick={() => onCancel()}>Cancel</Button>
               <Button
-                // disabled={!isValid || fillerListPrograms.length === 0}
+                disabled={!isValid || fillerListPrograms.length === 0}
                 disabled={!isValid}
                 variant="contained"
                 type="submit"
