@@ -12,7 +12,7 @@ import TimeSlotEditorPage from './pages/channels/TimeSlotEditorPage.tsx';
 import GuidePage from './pages/guide/GuidePage.tsx';
 import CustomShowsPage from './pages/library/CustomShowsPage.tsx';
 import EditCustomShowPage from './pages/library/EditCustomShowPage.tsx';
-import EditFillerPage from './pages/library/EditFillerPage.1.tsx';
+import EditFillerPage from './pages/library/EditFillerPage.tsx';
 import FillerListsPage from './pages/library/FillerListsPage.tsx';
 import LibraryIndexPage from './pages/library/LibraryIndexPage.tsx';
 import FfmpegSettingsPage from './pages/settings/FfmpegSettingsPage.tsx';
