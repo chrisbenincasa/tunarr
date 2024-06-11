@@ -3,7 +3,7 @@ name: Push Docker Edge
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 * * * *' # Hourly
+    - cron: '0 13-21/2 * * MON-FRI' # every hour, during working hours (UTC)
 
 jobs:
   build_and_push:
@@ -13,6 +13,8 @@ jobs:
         builds:
           - base_tag: '7.0'
             tag: edge
+          - base_tag: '7.0'
+            tag: latest
           - base_tag: 7.0-nvidia
             tag: edge-nvidia
           - base_tag: 7.0-vaapi
