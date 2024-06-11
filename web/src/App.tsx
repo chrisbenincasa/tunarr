@@ -43,7 +43,7 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { isNull, isUndefined } from 'lodash-es';
 import React, { ReactNode, useCallback, useMemo, useState } from 'react';
-import { Outlet, Link as RouterLink } from 'react-router-dom';
+import { Outlet, Link as RouterLink } from '@tanstack/react-router';
 import './App.css';
 import TunarrLogo from './components/TunarrLogo.tsx';
 import VersionFooter from './components/VersionFooter.tsx';

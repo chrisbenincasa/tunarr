@@ -1,6 +1,6 @@
 import SettingsRemoteIcon from '@mui/icons-material/SettingsRemote';
 import { Box, Button, Typography } from '@mui/material';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from '@tanstack/react-router';
 import { useChannels } from '../../hooks/useChannels';
 import PaddedPaper from '../base/PaddedPaper';
 

@@ -33,7 +33,7 @@ import { Channel } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { isEmpty } from 'lodash-es';
 import React, { useEffect, useState } from 'react';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from '@tanstack/react-router';
 import TunarrLogo from '../../components/TunarrLogo.tsx';
 import NoChannelsCreated from '../../components/channel_config/NoChannelsCreated.tsx';
 import { isNonEmptyString } from '../../helpers/util.ts';
@@ -89,7 +89,10 @@ export default function ChannelsPage() {
     _: React.MouseEvent<HTMLTableRowElement, MouseEvent>,
     id: string,
   ) => {
-    navigate(`/channels/${id}/programming`);
+    navigate({
+      to: `/channels/$channelId/programming`,
+      params: { channelId: id },
+    }).catch(console.error);
   };
 
   const removeChannelMutation = useMutation({

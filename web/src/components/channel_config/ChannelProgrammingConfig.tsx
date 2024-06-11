@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers';
 import dayjs, { Dayjs } from 'dayjs';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from '@tanstack/react-router';
 import { useSlideSchedule } from '@/hooks/programming_controls/useSlideSchedule.ts';
 import { usePreloadedChannelEdit } from '@/hooks/usePreloadedChannel.ts';
 import {

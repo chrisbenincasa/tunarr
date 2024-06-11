@@ -21,7 +21,7 @@ import {
 } from '@mui/material';
 import { isNull } from 'lodash-es';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '@tanstack/react-router';
 import AddBreaksModal from '../programming_controls/AddBreaksModal';
 import AddFlexModal from '../programming_controls/AddFlexModal';
 import AddPaddingModal from '../programming_controls/AddPaddingModal';

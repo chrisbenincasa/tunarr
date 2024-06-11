@@ -5,7 +5,7 @@ import {
 } from '@mui/icons-material';
 import { MenuItem, Tooltip } from '@mui/material';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '@tanstack/react-router';
 import AddReplicateModal from '../programming_controls/AddReplicateModal';
 import AddRerunBlockModal from '../programming_controls/AddRerunBlockModal';
 import AdjustWeightsModal from '../programming_controls/AdjustWeightsModal';

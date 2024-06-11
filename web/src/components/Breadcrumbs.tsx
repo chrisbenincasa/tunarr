@@ -5,7 +5,7 @@ import {
   Typography,
 } from '@mui/material';
 import { isEmpty, map, reject } from 'lodash-es';
-import { Link as RouterLink, useLocation } from 'react-router-dom';
+import { Link as RouterLink, useLocation } from '@tanstack/react-router';
 import { useGetRouteName } from '../hooks/useRouteName.ts';
 
 export default function Breadcrumbs(props: BreadcrumbsProps) {

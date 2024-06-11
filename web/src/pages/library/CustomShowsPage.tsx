@@ -13,18 +13,14 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Link } from '@tanstack/react-router';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
-import { usePreloadedData } from '../../hooks/preloadedDataHook.ts';
 import { useCustomShows } from '../../hooks/useCustomShows.ts';
-import { customShowsLoader } from '../../preloaders/customShowLoaders.ts';
 import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 
 export default function CustomShowsPage() {
   const apiClient = useTunarrApi();
-  const { data: customShows } = useCustomShows(
-    usePreloadedData(customShowsLoader),
-  );
+  const { data: customShows } = useCustomShows();
   const queryClient = useQueryClient();
 
   const deleteShowMutation = useMutation({

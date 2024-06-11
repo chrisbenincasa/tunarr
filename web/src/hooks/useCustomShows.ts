@@ -5,6 +5,7 @@ import {
   UseQueryResult,
   useQueries,
   useQuery,
+  useSuspenseQuery,
 } from '@tanstack/react-query';
 import { CustomProgram, CustomShow } from '@tunarr/types';
 import { ApiClient } from '../external/api.ts';
@@ -39,7 +40,7 @@ export const useCustomShows = (
   opts?: CustomShowsQueryOpts,
 ) => {
   const apiClient = useTunarrApi();
-  return useQuery(customShowsQuery(apiClient, initialData, opts ?? {}));
+  return useSuspenseQuery(customShowsQuery(apiClient, initialData, opts ?? {}));
 };
 
 export const customShowQuery = (apiClient: ApiClient, id: string) => ({

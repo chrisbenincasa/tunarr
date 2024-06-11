@@ -1,30 +1,39 @@
-import { useQueries } from '@tanstack/react-query';
-import { useApiQuery } from './useApiQuery.ts';
+import { queryOptions, useQueries } from '@tanstack/react-query';
+import { apiQueryOptions, useApiSuspenseQuery } from './useApiQuery.ts';
 import { useTunarrApi } from './useTunarrApi.ts';
+import { ApiClient } from '@/external/api.ts';
 
 export const useXmlTvSettings = () =>
-  useApiQuery({
+  useApiSuspenseQuery({
     queryKey: ['settings', 'xmltv'],
     queryFn: (apiClient) => apiClient.getXmlTvSettings(),
   });
 
 export const useFfmpegSettings = () =>
-  useApiQuery({
+  useApiSuspenseQuery({
     queryKey: ['settings', 'ffmpeg'],
     queryFn: (apiClient) => apiClient.getFfmpegSettings(),
   });
 
 export const usePlexServerSettings = () =>
-  useApiQuery({
+  useApiSuspenseQuery({
     queryKey: ['settings', 'plex-servers'],
     queryFn: (apiClient) => apiClient.getPlexServers(),
   });
 
-export const usePlexStreamSettings = () =>
-  useApiQuery({
+export const plexStreamSettingsQuery = apiQueryOptions({
+  queryKey: ['settings', 'plex-stream'],
+  queryFn: (apiClient) => apiClient.getPlexStreamSettings(),
+});
+
+export const plexStreamSettingsQueryWithApi = (apiClient: ApiClient) =>
+  queryOptions({
     queryKey: ['settings', 'plex-stream'],
-    queryFn: (apiClient) => apiClient.getPlexStreamSettings(),
+    queryFn: () => apiClient.getPlexStreamSettings(),
   });
+
+export const usePlexStreamSettings = () =>
+  useApiSuspenseQuery(plexStreamSettingsQuery);
 
 export const usePlexSettings = () => {
   const apiClient = useTunarrApi();
@@ -61,7 +70,7 @@ export const usePlexSettings = () => {
 };
 
 export const useHdhrSettings = () =>
-  useApiQuery({
+  useApiSuspenseQuery({
     queryKey: ['settings', 'hdhr'],
     queryFn: (apiClient) => apiClient.getHdhrSettings(),
   });

@@ -8,7 +8,6 @@ import {
 } from '@mui/material';
 import { isUndefined } from 'lodash-es';
 import { useEffect } from 'react';
-import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import { ChannelProgrammingConfig } from '../../components/channel_config/ChannelProgrammingConfig.tsx';
 import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert.tsx';
 import { usePreloadedChannelEdit } from '../../hooks/usePreloadedChannel.ts';

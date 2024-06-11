@@ -5,6 +5,7 @@ import Paper from '@mui/material/Paper';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
+import { useLocation, useNavigate } from '@tanstack/react-router';
 import { SaveChannelRequest } from '@tunarr/types';
 import { usePrevious } from '@uidotdev/usehooks';
 import { keys, some } from 'lodash-es';
@@ -16,20 +17,16 @@ import {
   SubmitHandler,
   useForm,
 } from 'react-hook-form';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import ChannelEpgConfig from '../../components/channel_config/ChannelEpgConfig.tsx';
 import { ChannelFlexConfig } from '../../components/channel_config/ChannelFlexConfig.tsx';
 import { ChannelPropertiesEditor } from '../../components/channel_config/ChannelPropertiesEditor.tsx';
 import ChannelTranscodingConfig from '../../components/channel_config/ChannelTranscodingConfig.tsx';
-import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert.tsx';
 import { isNonEmptyString } from '../../helpers/util.ts';
-import { usePreloadedData } from '../../hooks/preloadedDataHook.ts';
 import { useUpdateChannel } from '../../hooks/useUpdateChannel.ts';
 import {
   DefaultChannel,
   defaultNewChannel,
-  editChannelLoader,
 } from '../../preloaders/channelLoaders.ts';
 import { setCurrentChannel } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
@@ -37,6 +34,7 @@ import {
   ChannelEditContext,
   ChannelEditContextState,
 } from './EditChannelContext.ts';
+import { usePreloadedChannelEdit } from '@/hooks/usePreloadedChannel.ts';
 
 type TabValues = 'properties' | 'flex' | 'epg' | 'ffmpeg';
 
@@ -97,7 +95,7 @@ type Props = {
 };
 
 export default function EditChannelPage({ isNew, initialTab }: Props) {
-  const channel = usePreloadedData(editChannelLoader(isNew));
+  const { currentEntity: channel } = usePreloadedChannelEdit();
   const [currentTab, setCurrentTab] = useState<TabValues>(
     initialTab ?? 'properties',
   );
@@ -140,7 +138,7 @@ export default function EditChannelPage({ isNew, initialTab }: Props) {
           path = `${path}/${newValue}`;
         }
 
-        navigate(path, { relative: 'path', replace: true });
+        // navigate(path, { relative: 'path', replace: true });
       }
     }
   };
@@ -333,7 +331,7 @@ export default function EditChannelPage({ isNew, initialTab }: Props) {
             <UnsavedNavigationAlert
               isDirty={formIsDirty && !formSubmit}
               exemptPath="channels/:id/edit/*"
-            />
+            /> */}
           </Paper>
         </div>
       )}
