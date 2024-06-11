@@ -20,16 +20,10 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"]
     }
   },
-  "files": [
-    "vite.config.ts",
-    "vitest.config.ts",
-    "./src/pages/library/EditFillerPage.1.tsx"
-  ],
+  "files": ["vite.config.ts", "vitest.config.ts"],
   "include": ["./src/**/*.ts", "./src/**/*.tsx"],
   "exclude": ["./build/**/*", "./dist/**/*", "./src/**/*.ignore.ts"],
   "references": [
