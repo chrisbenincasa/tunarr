@@ -40,7 +40,7 @@ export default function EditFillerPage({ isNew }: Props) {
   const fillerListPrograms = useStore((s) => s.fillerListEditor.programList);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  console.log(fillerListPrograms);
+
   const {
     control,
     setValue,
