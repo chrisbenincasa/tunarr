@@ -50,6 +50,7 @@ const plexTypeString = forPlexMedia({
   track: 'Track',
   album: 'Album',
   artist: 'Artist',
+  playlist: 'Playlist',
   default: 'All',
 });
 

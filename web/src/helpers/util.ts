@@ -27,6 +27,7 @@ import {
 import { Path, PathValue } from 'react-hook-form';
 import { SelectedMedia } from '../store/programmingSelector/store';
 import { AddedMedia, UIChannelProgram } from '../types';
+import { Nullable } from '@/types/util';
 
 dayjs.extend(duration);
 
@@ -293,7 +294,19 @@ export const forTvGuideProgram = <T>(
   };
 };
 
-export const forPlexMedia = <T>(choices: PerTypeCallback<PlexMedia, T>) => {
+export function forPlexMedia<T>(
+  choices:
+    | Omit<Required<PerTypeCallback<PlexMedia, T>>, 'default'>
+    | MakeRequired<PerTypeCallback<PlexMedia, T>, 'default'>,
+): (m: PlexMedia) => NonNullable<T>;
+export function forPlexMedia<T>(
+  choices: PerTypeCallback<PlexMedia, T>,
+): (m: PlexMedia) => Nullable<T>;
+export function forPlexMedia<T>(
+  choices:
+    | PerTypeCallback<PlexMedia, T>
+    | MakeRequired<PerTypeCallback<PlexMedia, T>, 'default'>,
+) {
   return (m: PlexMedia) => {
     switch (m.type) {
       case 'movie':
@@ -321,6 +334,9 @@ export const forPlexMedia = <T>(choices: PerTypeCallback<PlexMedia, T>) => {
         if (choices.collection)
           return applyOrValueNoRest(choices.collection, m);
         break;
+      case 'playlist':
+        if (choices.playlist) return applyOrValueNoRest(choices.playlist, m);
+        break;
     }
 
     if (choices.default) {
@@ -329,7 +345,7 @@ export const forPlexMedia = <T>(choices: PerTypeCallback<PlexMedia, T>) => {
 
     return null;
   };
-};
+}
 
 export function forAddedMediaType<T>(
   choices:

@@ -42,6 +42,7 @@ export function InlineModal(props: InlineModalProps) {
       if (children) {
         return _.chain(children)
           .map((id) => s.knownMediaByServer[s.currentServer!.name][id])
+          .compact()
           .filter(isPlexMedia)
           .value();
       }

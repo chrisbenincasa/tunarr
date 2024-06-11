@@ -90,6 +90,12 @@ export const PlexLibraryCollectionSchema = z
 
 export type PlexLibraryCollection = z.infer<typeof PlexLibraryCollectionSchema>;
 
+const basePlexMediaContainerSchema = z.object({
+  size: z.number(),
+  totalSize: z.number().optional(), // Present when paging
+  offset: z.number().optional(), // Present when paging
+});
+
 const basePlexCollectionSchema = z.object({
   allowSync: z.boolean(),
   art: z.string(),
@@ -145,6 +151,35 @@ export const PlexLibraryCollectionsSchema = makePlexLibraryCollectionsSchema(
 export type PlexLibraryCollections = z.infer<
   typeof PlexLibraryCollectionsSchema
 >;
+
+// /playlists
+export const PlexPlaylistSchema = z.object({
+  ratingKey: z.string(),
+  key: z.string(),
+  guid: z.string(),
+  type: z.literal('playlist'),
+  title: z.string(),
+  titleSort: z.string().optional(),
+  summary: z.string().optional(),
+  smart: z.boolean().optional(),
+  playlistType: z.literal('audio').optional(), // Add new known types here
+  composite: z.string().optional(), // Thumb path
+  icon: z.string().optional(),
+  viewCount: z.number().optional(),
+  lastViewedAt: z.number().optional(),
+  duration: z.number().optional(),
+  leafCount: z.number().optional(),
+  addedAt: z.number().optional(),
+  updatedAt: z.number().optional(),
+});
+
+export type PlexPlaylist = z.infer<typeof PlexPlaylistSchema>;
+
+export const PlexPlaylistsSchema = basePlexMediaContainerSchema.extend({
+  Metadata: z.array(PlexPlaylistSchema).default([]),
+});
+
+export type PlexPlaylists = z.infer<typeof PlexPlaylistsSchema>;
 
 const BasePlexMediaStreamSchema = z.object({
   id: z.number().optional(),
@@ -583,9 +618,9 @@ export type PlexLibraryListing =
   | PlexLibraryMusic;
 
 export function isPlexDirectory(
-  item: PlexLibrarySection | PlexMedia | undefined,
+  item: PlexLibrarySection | PlexMedia | PlexPlaylist | undefined,
 ): item is PlexLibrarySection {
-  return item?.directory === true;
+  return item?.type !== 'playlist' && item?.directory === true;
 }
 
 export function isPlexMoviesLibrary(
@@ -621,6 +656,7 @@ export const isPlexCollection =
 export const isPlexMusicArtist = isPlexMediaType<PlexMusicArtist>('artist');
 export const isPlexMusicAlbum = isPlexMediaType<PlexMusicAlbum>('album');
 export const isPlexMusicTrack = isPlexMediaType<PlexMusicTrack>('track');
+export const isPlexPlaylist = isPlexMediaType<PlexPlaylist>('playlist');
 const funcs = [
   isPlexMovie,
   isPlexShow,
@@ -630,6 +666,7 @@ const funcs = [
   isPlexMusicArtist,
   isPlexMusicAlbum,
   isPlexMusicTrack,
+  isPlexPlaylist,
 ];
 export const isPlexMedia = (
   media: PlexLibrarySection | PlexMedia | undefined,
@@ -704,6 +741,7 @@ export type PlexMedia = Alias<
   | PlexMusicArtist
   | PlexMusicAlbum
   | PlexMusicTrack
+  | PlexPlaylist
 >;
 export type PlexTerminalMedia = PlexMovie | PlexEpisode | PlexMusicTrack; // Media that has no children
 
@@ -718,7 +756,8 @@ export type PlexParentMediaType =
   | PlexTvShow
   | PlexTvSeason
   | PlexMusicArtist
-  | PlexMusicAlbum;
+  | PlexMusicAlbum
+  | PlexPlaylist;
 
 type PlexMediaApiChildType = [
   [PlexTvShow, PlexSeasonView],
