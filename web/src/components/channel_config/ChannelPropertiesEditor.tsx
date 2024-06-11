@@ -17,15 +17,19 @@ type Props = {
   isNew: boolean;
 };
 
-export default function ChannelPropertiesEditor({ isNew }: Props) {
+export function ChannelPropertiesEditor({ isNew }: Props) {
   const imgRef = useRef<HTMLImageElement | null>(null);
   const channel = useStore((s) => s.channelEditor.currentEntity);
-  const { control, watch, getValues, setValue } = useFormContext<Channel>();
+  const {
+    control,
+    watch,
+    getValues,
+    setValue,
+    formState: { defaultValues },
+  } = useFormContext<Channel>();
   const { data: channels } = useChannels();
 
-  const onloadstart = () => {
-    console.log('on load start');
-  };
+  const onloadstart = () => {};
 
   useEffect(() => {
     if (imgRef.current) {
@@ -91,12 +95,22 @@ export default function ChannelPropertiesEditor({ isNew }: Props) {
   };
 
   const validateNumber = (value: number) => {
-    if (!value || !isNaN(value)) {
-      // Check if value is a number
-      return channels.find((channel) => channel.number === Number(value))
-        ? 'This channel number has already been used'
-        : undefined;
+    if (isNaN(value)) {
+      return 'Not a valid number';
     }
+
+    if (value <= 0) {
+      return 'Cannot use a channel number <= 0';
+    }
+
+    // TODO: We could probably use the touched fields property of the form here.
+    if (value === defaultValues?.number) {
+      return;
+    }
+
+    return channels.find((channel) => channel.number === Number(value))
+      ? 'This channel number has already been used'
+      : undefined;
   };
 
   return (

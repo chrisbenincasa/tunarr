@@ -19,7 +19,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import ChannelEpgConfig from '../../components/channel_config/ChannelEpgConfig.tsx';
 import { ChannelFlexConfig } from '../../components/channel_config/ChannelFlexConfig.tsx';
-import ChannelPropertiesEditor from '../../components/channel_config/ChannelPropertiesEditor.tsx';
+import { ChannelPropertiesEditor } from '../../components/channel_config/ChannelPropertiesEditor.tsx';
 import ChannelTranscodingConfig from '../../components/channel_config/ChannelTranscodingConfig.tsx';
 import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert.tsx';
 import { isNonEmptyString } from '../../helpers/util.ts';

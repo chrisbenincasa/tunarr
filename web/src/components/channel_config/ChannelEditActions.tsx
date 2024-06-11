@@ -37,7 +37,11 @@ export default function ChannelEditActions() {
         color: theme.palette.success.main,
       });
     }
-  }, [isSubmitSuccessful, theme.palette.success.main]);
+  }, [
+    channelEditorState.isNewChannel,
+    isSubmitSuccessful,
+    theme.palette.success.main,
+  ]);
 
   const handleSnackClose = () => {
     setSnackStatus({ display: false, message: '', color: '' });
