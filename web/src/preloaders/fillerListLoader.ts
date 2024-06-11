@@ -1,3 +1,4 @@
+import { UnsavedId } from '@/helpers/constants.ts';
 import { QueryClient } from '@tanstack/react-query';
 import {
   CustomShowProgramming,
@@ -12,7 +13,6 @@ import {
   fillerListQuery,
   fillerListsQuery,
 } from '../hooks/useFillerLists.ts';
-import { setCurrentFillerList } from '../store/channelEditor/actions.ts';
 import { Preloader } from '../types/index.ts';
 
 export type FillerPreload = {
@@ -26,18 +26,16 @@ export const fillerListsLoader = createPreloader((apiClient) =>
 
 const fillerListLoader = (isNew: boolean) => {
   if (!isNew) {
-    return createPreloader(
-      (apiClient, { params }) => fillerListQuery(apiClient, params.id!),
-      (filler) => setCurrentFillerList(filler, []),
+    return createPreloader((apiClient, { params }) =>
+      fillerListQuery(apiClient, params.id!),
     );
   } else {
     return () => () => {
       const filler = {
-        id: 'unsaved',
+        id: UnsavedId,
         name: 'New Filler List',
         contentCount: 0,
       };
-      setCurrentFillerList(filler, []);
       return Promise.resolve(filler);
     };
   }
@@ -74,7 +72,6 @@ export const existingFillerListLoader: Preloader<{
 
     return await Promise.all([showLoaderPromise, programsPromise]).then(
       ([filler, programs]) => {
-        setCurrentFillerList(filler, programs);
         return {
           filler,
           programs,

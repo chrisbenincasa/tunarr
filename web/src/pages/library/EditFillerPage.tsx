@@ -38,9 +38,6 @@ export default function EditFillerPage({ isNew }: Props) {
   const { currentEntity: fillerList, programList: fillerListPrograms } =
     usePreloadedFiller();
 
-  // const fillerList = useCurrentFillerList()!;
-
-  // const fillerListPrograms = useStore((s) => s.fillerListEditor.programList);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -54,8 +51,7 @@ export default function EditFillerPage({ isNew }: Props) {
   } = useForm<FillerListFormType>({
     mode: 'onChange',
     defaultValues: {
-      name: '',
-      programs: [],
+      name: fillerList?.name ?? '',
     },
   });
 
@@ -66,13 +62,14 @@ export default function EditFillerPage({ isNew }: Props) {
   }, [fillerList?.name, reset]);
 
   const saveShowMutation = useMutation({
-    mutationFn: async ({ id, name, programs }: FillerListMutationArgs) => {
+    mutationKey: ['fillers', isNew ? 'new' : fillerList?.id],
+    mutationFn: async ({ name, programs }: FillerListMutationArgs) => {
       if (isNew) {
         return apiClient.createFillerList({ name, programs });
       } else {
         return apiClient.updateFillerList(
           { name, programs },
-          { params: { id: id! } },
+          { params: { id: fillerList!.id } },
         );
       }
     },
@@ -107,7 +104,7 @@ export default function EditFillerPage({ isNew }: Props) {
   }, [fillerListPrograms, setValue]);
 
   const renderPrograms = () => {
-    return fillerListPrograms.length < 0 ? (
+    return fillerListPrograms.length > 0 ? (
       fillerListPrograms.map((p, idx) => {
         let id: string;
         let title: string;
@@ -122,6 +119,7 @@ export default function EditFillerPage({ isNew }: Props) {
             } else {
               title = p.title;
             }
+
             id = p.persisted
               ? p.id!
               : `${p.externalSourceType}|${p.externalSourceName}|${
