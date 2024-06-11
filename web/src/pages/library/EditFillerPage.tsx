@@ -1,54 +1,45 @@
+import { usePreloadedFiller } from '@/hooks/usePreloadedFiller.ts';
+import { Tv } from '@mui/icons-material';
 import DeleteIcon from '@mui/icons-material/Delete';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import {
   Button,
-  Divider,
   IconButton,
   List,
   ListItem,
   ListItemText,
   Stack,
   TextField,
+  Tooltip,
 } from '@mui/material';
-import Accordion from '@mui/material/Accordion';
-import AccordionDetails from '@mui/material/AccordionDetails';
-import AccordionSummary from '@mui/material/AccordionSummary';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
-import AddSelectedMediaButton from '../../components/channel_config/AddSelectedMediaButton.tsx';
-import ProgrammingSelector from '../../components/channel_config/ProgrammingSelector.tsx';
-import { useCurrentFillerList } from '../../hooks/useFillerLists.ts';
 import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
-import {
-  addMediaToCurrentFillerList,
-  removeFillerListProgram,
-} from '../../store/channelEditor/actions.ts';
-import useStore from '../../store/index.ts';
+import { removeFillerListProgram } from '../../store/channelEditor/actions.ts';
 import { UIFillerListProgram } from '../../types/index.ts';
 
-type Props = { isNew: boolean };
+export type Props = { isNew: boolean };
 
-type FillerListMutationArgs = {
+export type FillerListMutationArgs = {
   id?: string;
   name: string;
   programs: UIFillerListProgram[];
 };
 
-type FillerListFormType = Omit<FillerListMutationArgs, 'id'>;
+export type FillerListFormType = Omit<FillerListMutationArgs, 'id'>;
 
 export default function EditFillerPage({ isNew }: Props) {
   const apiClient = useTunarrApi();
-  const fillerList = useCurrentFillerList()!;
-  const fillerListPrograms = useStore((s) => s.fillerListEditor.programList);
+  const { currentEntity: fillerList, programList: fillerListPrograms } =
+    usePreloadedFiller();
+
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const [addProgrammingOpen, setAddProgrammingOpen] = useState(false);
 
   const {
     control,
@@ -60,25 +51,25 @@ export default function EditFillerPage({ isNew }: Props) {
   } = useForm<FillerListFormType>({
     mode: 'onChange',
     defaultValues: {
-      name: '',
-      programs: [],
+      name: fillerList?.name ?? '',
     },
   });
 
   useEffect(() => {
     reset({
-      name: fillerList.name,
+      name: fillerList?.name,
     });
-  }, [fillerList.name, reset]);
+  }, [fillerList?.name, reset]);
 
   const saveShowMutation = useMutation({
-    mutationFn: async ({ id, name, programs }: FillerListMutationArgs) => {
+    mutationKey: ['fillers', isNew ? 'new' : fillerList?.id],
+    mutationFn: async ({ name, programs }: FillerListMutationArgs) => {
       if (isNew) {
         return apiClient.createFillerList({ name, programs });
       } else {
         return apiClient.updateFillerList(
           { name, programs },
-          { params: { id: id! } },
+          { params: { id: fillerList!.id } },
         );
       }
     },
@@ -98,7 +89,7 @@ export default function EditFillerPage({ isNew }: Props) {
 
   const saveFiller: SubmitHandler<FillerListFormType> = (data) => {
     return saveShowMutation.mutateAsync({
-      id: fillerList.id,
+      id: fillerList?.id,
       name: data.name,
       programs: data.programs,
     });
@@ -113,50 +104,55 @@ export default function EditFillerPage({ isNew }: Props) {
   }, [fillerListPrograms, setValue]);
 
   const renderPrograms = () => {
-    return fillerListPrograms.map((p, idx) => {
-      let id: string;
-      let title: string;
-      switch (p.type) {
-        case 'custom':
-          id = p.id;
-          title = 'Custom';
-          break;
-        case 'content':
-          if (p.episodeTitle) {
-            title = `${p.title} - ${p.episodeTitle}`;
-          } else {
-            title = p.title;
-          }
-          id = p.persisted
-            ? p.id!
-            : `${p.externalSourceType}|${p.externalSourceName}|${
-                p.originalProgram!.key
-              }`;
-          break;
-      }
+    return fillerListPrograms.length > 0 ? (
+      fillerListPrograms.map((p, idx) => {
+        let id: string;
+        let title: string;
+        switch (p.type) {
+          case 'custom':
+            id = p.id;
+            title = 'Custom';
+            break;
+          case 'content':
+            if (p.episodeTitle) {
+              title = `${p.title} - ${p.episodeTitle}`;
+            } else {
+              title = p.title;
+            }
 
-      const key = `${p.type}|${id}`;
+            id = p.persisted
+              ? p.id!
+              : `${p.externalSourceType}|${p.externalSourceName}|${
+                  p.originalProgram!.key
+                }`;
+            break;
+        }
 
-      return (
-        <ListItem
-          key={key}
-          secondaryAction={
-            <IconButton
-              onClick={() => deleteProgramAtIndex(idx)}
-              edge="end"
-              aria-label="delete"
-            >
-              <DeleteIcon />
-            </IconButton>
-          }
-        >
-          <ListItemText
-            primary={title}
-            sx={{ fontStyle: p.persisted ? 'normal' : 'italic' }}
-          />
-        </ListItem>
-      );
-    });
+        const key = `${p.type}|${id}`;
+
+        return (
+          <ListItem
+            key={key}
+            secondaryAction={
+              <IconButton
+                onClick={() => deleteProgramAtIndex(idx)}
+                edge="end"
+                aria-label="delete"
+              >
+                <DeleteIcon />
+              </IconButton>
+            }
+          >
+            <ListItemText
+              primary={title}
+              sx={{ fontStyle: p.persisted ? 'normal' : 'italic' }}
+            />
+          </ListItem>
+        );
+      })
+    ) : (
+      <Typography align="center">No media added yet.</Typography>
+    );
   };
 
   return (
@@ -177,6 +173,22 @@ export default function EditFillerPage({ isNew }: Props) {
                 <TextField margin="normal" fullWidth label="Name" {...field} />
               )}
             />
+            <Box>
+              <Tooltip
+                title="Add TV Shows or Movies to filler"
+                placement="right"
+              >
+                <Button
+                  disableRipple
+                  component={Link}
+                  to="../fillers/programming/add"
+                  startIcon={<Tv />}
+                  variant="contained"
+                >
+                  Add Media
+                </Button>
+              </Tooltip>
+            </Box>
 
             <Box>
               <Typography>Programming</Typography>
@@ -205,32 +217,6 @@ export default function EditFillerPage({ isNew }: Props) {
             </Stack>
           </Stack>
         </PaddedPaper>
-        <Accordion
-          expanded={addProgrammingOpen}
-          onChange={(_, expanded) => setAddProgrammingOpen(expanded)}
-        >
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            Add Programming
-          </AccordionSummary>
-          <AccordionDetails>
-            <ProgrammingSelector />
-            <Divider />
-            <Box
-              sx={{
-                width: '100%',
-                display: 'flex',
-                justifyContent: 'flex-end',
-                mt: 2,
-              }}
-            >
-              <AddSelectedMediaButton
-                onAdd={addMediaToCurrentFillerList}
-                onSuccess={() => {}}
-                variant="contained"
-              />
-            </Box>
-          </AccordionDetails>
-        </Accordion>
       </Box>
     </Box>
   );

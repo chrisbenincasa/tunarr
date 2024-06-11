@@ -27,7 +27,9 @@ import {
   makeErrors,
   parametersBuilder,
 } from '@zodios/core';
+import { isEmpty } from 'lodash-es';
 import { z } from 'zod';
+import { getFfmpegInfoEndpoint } from './ffmpegApi.ts';
 import {
   createPlexServerEndpoint,
   deletePlexServerEndpoint,
@@ -45,8 +47,6 @@ import {
   updateSystemSettings,
   updateXmlTvSettings,
 } from './settingsApi.ts';
-import { isEmpty } from 'lodash-es';
-import { getFfmpegInfoEndpoint } from './ffmpegApi.ts';
 
 export const api = makeApi([
   {

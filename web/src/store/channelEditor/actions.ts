@@ -421,6 +421,7 @@ export const addMediaToCurrentFillerList = (programs: AddedMedia[]) =>
           'custom-show': ({ program }) => program,
         }),
       );
+
       fillerListEditor.programList = fillerListEditor.programList.concat(
         zipWithIndex(convertedPrograms, fillerListEditor.programList.length),
       );

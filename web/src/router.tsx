@@ -165,6 +165,10 @@ export const router = createBrowserRouter(
               loader: customShowsLoader(queryClient),
             },
             {
+              path: '/library/custom-shows/programming/add',
+              element: <ProgrammingSelectorPage />,
+            },
+            {
               path: '/library/custom-shows/new',
               element: <EditCustomShowPage isNew={true} />,
               loader: newCustomShowLoader(queryClient),
@@ -178,6 +182,10 @@ export const router = createBrowserRouter(
               path: '/library/fillers',
               element: <FillerListsPage />,
               loader: fillerListsLoader(queryClient),
+            },
+            {
+              path: '/library/fillers/programming/add',
+              element: <ProgrammingSelectorPage />,
             },
             {
               path: '/library/fillers/new',

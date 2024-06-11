@@ -1,10 +1,12 @@
 import {
   DataTag,
   DefinedInitialDataOptions,
+  QueriesResults,
+  UseQueryResult,
   useQueries,
   useQuery,
 } from '@tanstack/react-query';
-import { CustomShow } from '@tunarr/types';
+import { CustomProgram, CustomShow } from '@tunarr/types';
 import { ApiClient } from '../external/api.ts';
 import { ZodiosAliasReturnType } from '../types/index.ts';
 import { makeQueryOptionsInitialData } from './useQueryHelpers.ts';
@@ -56,19 +58,51 @@ export const customShowProgramsQuery = (apiClient: ApiClient, id: string) => ({
   queryFn: () => apiClient.getCustomShowPrograms({ params: { id } }),
 });
 
-export const useCustomShow = (
+// Tried to do a clever overload here but it's easier to just blow out the  method
+// and get the rid type inference...
+export function useCustomShowWithInitialData(
+  apiClient: ApiClient,
+  id: string,
+  enabled: boolean,
+  initialData: { customShow: CustomShow; programs: CustomProgram[] },
+) {
+  return useQueries({
+    queries: [
+      {
+        ...customShowQuery(apiClient, id),
+        enabled,
+        initialData: initialData?.customShow,
+      },
+      {
+        ...customShowProgramsQuery(apiClient, id),
+        enabled: enabled,
+        initialData: initialData?.programs,
+      },
+    ],
+  });
+}
+
+export function useCustomShow(
   apiClient: ApiClient,
   id: string,
   enabled: boolean,
   includePrograms: boolean,
-) => {
+  initialData: { customShow?: CustomShow; programs?: CustomProgram[] } = {},
+): QueriesResults<
+  [UseQueryResult<CustomShow>, UseQueryResult<CustomProgram[]>]
+> {
   return useQueries({
     queries: [
-      { ...customShowQuery(apiClient, id), enabled },
+      {
+        ...customShowQuery(apiClient, id),
+        enabled,
+        initialData: initialData?.customShow,
+      },
       {
         ...customShowProgramsQuery(apiClient, id),
         enabled: enabled && includePrograms,
+        initialData: initialData?.programs,
       },
     ],
   });
-};
+}
