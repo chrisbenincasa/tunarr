@@ -4,8 +4,18 @@ import { setCurrentChannel } from '@/store/channelEditor/actions';
 import useStore from '@/store/index.ts';
 import { createFileRoute, notFound } from '@tanstack/react-router';
 import { isUndefined } from 'lodash-es';
+import { z } from 'zod';
+
+// TODO: Share this schema between new and edit routes
+const editChannelParamsSchema = z.object({
+  tab: z
+    .union([z.literal('flex'), z.literal('epg'), z.literal('ffmpeg')])
+    .optional()
+    .catch(undefined),
+});
 
 export const Route = createFileRoute('/channels/$channelId/edit/')({
+  validateSearch: (search) => editChannelParamsSchema.parse(search),
   loader: async ({ params, context }) => {
     const channel = await context.queryClient.ensureQueryData(
       channelQuery(context.tunarrApiClientProvider(), params.channelId),
@@ -17,11 +27,15 @@ export const Route = createFileRoute('/channels/$channelId/edit/')({
 
     const currentChannel = useStore.getState().channelEditor.currentEntity;
     if (currentChannel?.id !== channel.id) {
-      console.log('set', currentChannel);
       setCurrentChannel(channel);
     }
 
     return channel;
   },
-  component: () => <EditChannelPage isNew={false} />,
+  component: EditChannelPageWrapper,
 });
+
+function EditChannelPageWrapper() {
+  const { tab } = Route.useSearch();
+  return <EditChannelPage initialTab={tab ?? 'properties'} />;
+}

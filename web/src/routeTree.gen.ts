@@ -10,372 +10,332 @@
 
 // Import Routes
 
-import { Route as rootRoute } from './routes/__root';
-import { Route as WelcomeImport } from './routes/welcome';
-import { Route as SettingsImport } from './routes/settings';
-import { Route as GuideImport } from './routes/guide';
-import { Route as IndexImport } from './routes/index';
-import { Route as LibraryIndexImport } from './routes/library/index';
-import { Route as ChannelsIndexImport } from './routes/channels/index';
-import { Route as SettingsXmltvImport } from './routes/settings/xmltv';
-import { Route as SettingsTasksImport } from './routes/settings/tasks';
-import { Route as SettingsPlexImport } from './routes/settings/plex';
-import { Route as SettingsHdhrImport } from './routes/settings/hdhr';
-import { Route as SettingsGeneralImport } from './routes/settings/general';
-import { Route as SettingsFfmpegImport } from './routes/settings/ffmpeg';
-import { Route as LibraryCustomShowsImport } from './routes/library/custom-shows';
-import { Route as ChannelsTestImport } from './routes/channels/test';
-import { Route as ChannelsNewImport } from './routes/channels/new';
-import { Route as ChannelsChannelIdImport } from './routes/channels/$channelId';
-import { Route as LibraryIdEditImport } from './routes/library_/$id/edit';
-import { Route as LibraryCustomShowsNewImport } from './routes/library/custom-shows.new';
-import { Route as ChannelsChannelIdWatchImport } from './routes/channels_/$channelId/watch';
-import { Route as ChannelsChannelIdProgrammingIndexImport } from './routes/channels_/$channelId/programming/index';
-import { Route as ChannelsChannelIdEditIndexImport } from './routes/channels_/$channelId/edit/index';
-import { Route as ChannelsChannelIdProgrammingTimeSlotEditorImport } from './routes/channels_/$channelId/programming/time-slot-editor';
-import { Route as ChannelsChannelIdProgrammingRandomSlotEditorImport } from './routes/channels_/$channelId/programming/random-slot-editor';
-import { Route as ChannelsChannelIdProgrammingAddImport } from './routes/channels_/$channelId/programming/add';
-import { Route as ChannelsChannelIdEditFlexImport } from './routes/channels_/$channelId/edit/flex';
-import { Route as ChannelsChannelIdEditFfmpegImport } from './routes/channels_/$channelId/edit/ffmpeg';
-import { Route as ChannelsChannelIdEditEpgImport } from './routes/channels_/$channelId/edit/epg';
+import { Route as rootRoute } from './routes/__root'
+import { Route as WelcomeImport } from './routes/welcome'
+import { Route as SettingsImport } from './routes/settings'
+import { Route as GuideImport } from './routes/guide'
+import { Route as IndexImport } from './routes/index'
+import { Route as LibraryIndexImport } from './routes/library/index'
+import { Route as ChannelsIndexImport } from './routes/channels/index'
+import { Route as SettingsXmltvImport } from './routes/settings/xmltv'
+import { Route as SettingsTasksImport } from './routes/settings/tasks'
+import { Route as SettingsPlexImport } from './routes/settings/plex'
+import { Route as SettingsHdhrImport } from './routes/settings/hdhr'
+import { Route as SettingsGeneralImport } from './routes/settings/general'
+import { Route as SettingsFfmpegImport } from './routes/settings/ffmpeg'
+import { Route as LibraryCustomShowsImport } from './routes/library/custom-shows'
+import { Route as ChannelsTestImport } from './routes/channels/test'
+import { Route as ChannelsNewImport } from './routes/channels/new'
+import { Route as ChannelsChannelIdImport } from './routes/channels/$channelId'
+import { Route as LibraryIdEditImport } from './routes/library_/$id/edit'
+import { Route as LibraryCustomShowsNewImport } from './routes/library/custom-shows.new'
+import { Route as ChannelsChannelIdWatchImport } from './routes/channels_/$channelId/watch'
+import { Route as ChannelsChannelIdProgrammingIndexImport } from './routes/channels_/$channelId/programming/index'
+import { Route as ChannelsChannelIdEditIndexImport } from './routes/channels_/$channelId/edit/index'
+import { Route as ChannelsChannelIdProgrammingTimeSlotEditorImport } from './routes/channels_/$channelId/programming/time-slot-editor'
+import { Route as ChannelsChannelIdProgrammingRandomSlotEditorImport } from './routes/channels_/$channelId/programming/random-slot-editor'
+import { Route as ChannelsChannelIdProgrammingAddImport } from './routes/channels_/$channelId/programming/add'
 
 // Create/Update Routes
 
 const WelcomeRoute = WelcomeImport.update({
   path: '/welcome',
   getParentRoute: () => rootRoute,
-} as any);
+} as any)
 
 const SettingsRoute = SettingsImport.update({
   path: '/settings',
   getParentRoute: () => rootRoute,
-} as any);
+} as any)
 
 const GuideRoute = GuideImport.update({
   path: '/guide',
   getParentRoute: () => rootRoute,
-} as any);
+} as any)
 
 const IndexRoute = IndexImport.update({
   path: '/',
   getParentRoute: () => rootRoute,
-} as any);
+} as any)
 
 const LibraryIndexRoute = LibraryIndexImport.update({
   path: '/library/',
   getParentRoute: () => rootRoute,
-} as any);
+} as any)
 
 const ChannelsIndexRoute = ChannelsIndexImport.update({
   path: '/channels/',
   getParentRoute: () => rootRoute,
-} as any);
+} as any)
 
 const SettingsXmltvRoute = SettingsXmltvImport.update({
   path: '/xmltv',
   getParentRoute: () => SettingsRoute,
-} as any);
+} as any)
 
 const SettingsTasksRoute = SettingsTasksImport.update({
   path: '/tasks',
   getParentRoute: () => SettingsRoute,
-} as any);
+} as any)
 
 const SettingsPlexRoute = SettingsPlexImport.update({
   path: '/plex',
   getParentRoute: () => SettingsRoute,
-} as any);
+} as any)
 
 const SettingsHdhrRoute = SettingsHdhrImport.update({
   path: '/hdhr',
   getParentRoute: () => SettingsRoute,
-} as any);
+} as any)
 
 const SettingsGeneralRoute = SettingsGeneralImport.update({
   path: '/general',
   getParentRoute: () => SettingsRoute,
-} as any);
+} as any)
 
 const SettingsFfmpegRoute = SettingsFfmpegImport.update({
   path: '/ffmpeg',
   getParentRoute: () => SettingsRoute,
-} as any);
+} as any)
 
 const LibraryCustomShowsRoute = LibraryCustomShowsImport.update({
   path: '/library/custom-shows',
   getParentRoute: () => rootRoute,
-} as any);
+} as any)
 
 const ChannelsTestRoute = ChannelsTestImport.update({
   path: '/channels/test',
   getParentRoute: () => rootRoute,
-} as any);
+} as any)
 
 const ChannelsNewRoute = ChannelsNewImport.update({
   path: '/channels/new',
   getParentRoute: () => rootRoute,
-} as any);
+} as any)
 
 const ChannelsChannelIdRoute = ChannelsChannelIdImport.update({
   path: '/channels/$channelId',
   getParentRoute: () => rootRoute,
-} as any);
+} as any)
 
 const LibraryIdEditRoute = LibraryIdEditImport.update({
   path: '/library/$id/edit',
   getParentRoute: () => rootRoute,
-} as any);
+} as any)
 
 const LibraryCustomShowsNewRoute = LibraryCustomShowsNewImport.update({
   path: '/new',
   getParentRoute: () => LibraryCustomShowsRoute,
-} as any);
+} as any)
 
 const ChannelsChannelIdWatchRoute = ChannelsChannelIdWatchImport.update({
   path: '/channels/$channelId/watch',
   getParentRoute: () => rootRoute,
-} as any);
+} as any)
 
 const ChannelsChannelIdProgrammingIndexRoute =
   ChannelsChannelIdProgrammingIndexImport.update({
     path: '/channels/$channelId/programming/',
     getParentRoute: () => rootRoute,
-  } as any);
+  } as any)
 
 const ChannelsChannelIdEditIndexRoute = ChannelsChannelIdEditIndexImport.update(
   {
     path: '/channels/$channelId/edit/',
     getParentRoute: () => rootRoute,
   } as any,
-);
+)
 
 const ChannelsChannelIdProgrammingTimeSlotEditorRoute =
   ChannelsChannelIdProgrammingTimeSlotEditorImport.update({
     path: '/channels/$channelId/programming/time-slot-editor',
     getParentRoute: () => rootRoute,
-  } as any);
+  } as any)
 
 const ChannelsChannelIdProgrammingRandomSlotEditorRoute =
   ChannelsChannelIdProgrammingRandomSlotEditorImport.update({
     path: '/channels/$channelId/programming/random-slot-editor',
     getParentRoute: () => rootRoute,
-  } as any);
+  } as any)
 
 const ChannelsChannelIdProgrammingAddRoute =
   ChannelsChannelIdProgrammingAddImport.update({
     path: '/channels/$channelId/programming/add',
     getParentRoute: () => rootRoute,
-  } as any);
-
-const ChannelsChannelIdEditFlexRoute = ChannelsChannelIdEditFlexImport.update({
-  path: '/channels/$channelId/edit/flex',
-  getParentRoute: () => rootRoute,
-} as any);
-
-const ChannelsChannelIdEditFfmpegRoute =
-  ChannelsChannelIdEditFfmpegImport.update({
-    path: '/channels/$channelId/edit/ffmpeg',
-    getParentRoute: () => rootRoute,
-  } as any);
-
-const ChannelsChannelIdEditEpgRoute = ChannelsChannelIdEditEpgImport.update({
-  path: '/channels/$channelId/edit/epg',
-  getParentRoute: () => rootRoute,
-} as any);
+  } as any)
 
 // Populate the FileRoutesByPath interface
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
     '/': {
-      id: '/';
-      path: '/';
-      fullPath: '/';
-      preLoaderRoute: typeof IndexImport;
-      parentRoute: typeof rootRoute;
-    };
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexImport
+      parentRoute: typeof rootRoute
+    }
     '/guide': {
-      id: '/guide';
-      path: '/guide';
-      fullPath: '/guide';
-      preLoaderRoute: typeof GuideImport;
-      parentRoute: typeof rootRoute;
-    };
+      id: '/guide'
+      path: '/guide'
+      fullPath: '/guide'
+      preLoaderRoute: typeof GuideImport
+      parentRoute: typeof rootRoute
+    }
     '/settings': {
-      id: '/settings';
-      path: '/settings';
-      fullPath: '/settings';
-      preLoaderRoute: typeof SettingsImport;
-      parentRoute: typeof rootRoute;
-    };
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsImport
+      parentRoute: typeof rootRoute
+    }
     '/welcome': {
-      id: '/welcome';
-      path: '/welcome';
-      fullPath: '/welcome';
-      preLoaderRoute: typeof WelcomeImport;
-      parentRoute: typeof rootRoute;
-    };
+      id: '/welcome'
+      path: '/welcome'
+      fullPath: '/welcome'
+      preLoaderRoute: typeof WelcomeImport
+      parentRoute: typeof rootRoute
+    }
     '/channels/$channelId': {
-      id: '/channels/$channelId';
-      path: '/channels/$channelId';
-      fullPath: '/channels/$channelId';
-      preLoaderRoute: typeof ChannelsChannelIdImport;
-      parentRoute: typeof rootRoute;
-    };
+      id: '/channels/$channelId'
+      path: '/channels/$channelId'
+      fullPath: '/channels/$channelId'
+      preLoaderRoute: typeof ChannelsChannelIdImport
+      parentRoute: typeof rootRoute
+    }
     '/channels/new': {
-      id: '/channels/new';
-      path: '/channels/new';
-      fullPath: '/channels/new';
-      preLoaderRoute: typeof ChannelsNewImport;
-      parentRoute: typeof rootRoute;
-    };
+      id: '/channels/new'
+      path: '/channels/new'
+      fullPath: '/channels/new'
+      preLoaderRoute: typeof ChannelsNewImport
+      parentRoute: typeof rootRoute
+    }
     '/channels/test': {
-      id: '/channels/test';
-      path: '/channels/test';
-      fullPath: '/channels/test';
-      preLoaderRoute: typeof ChannelsTestImport;
-      parentRoute: typeof rootRoute;
-    };
+      id: '/channels/test'
+      path: '/channels/test'
+      fullPath: '/channels/test'
+      preLoaderRoute: typeof ChannelsTestImport
+      parentRoute: typeof rootRoute
+    }
     '/library/custom-shows': {
-      id: '/library/custom-shows';
-      path: '/library/custom-shows';
-      fullPath: '/library/custom-shows';
-      preLoaderRoute: typeof LibraryCustomShowsImport;
-      parentRoute: typeof rootRoute;
-    };
+      id: '/library/custom-shows'
+      path: '/library/custom-shows'
+      fullPath: '/library/custom-shows'
+      preLoaderRoute: typeof LibraryCustomShowsImport
+      parentRoute: typeof rootRoute
+    }
     '/settings/ffmpeg': {
-      id: '/settings/ffmpeg';
-      path: '/ffmpeg';
-      fullPath: '/settings/ffmpeg';
-      preLoaderRoute: typeof SettingsFfmpegImport;
-      parentRoute: typeof SettingsImport;
-    };
+      id: '/settings/ffmpeg'
+      path: '/ffmpeg'
+      fullPath: '/settings/ffmpeg'
+      preLoaderRoute: typeof SettingsFfmpegImport
+      parentRoute: typeof SettingsImport
+    }
     '/settings/general': {
-      id: '/settings/general';
-      path: '/general';
-      fullPath: '/settings/general';
-      preLoaderRoute: typeof SettingsGeneralImport;
-      parentRoute: typeof SettingsImport;
-    };
+      id: '/settings/general'
+      path: '/general'
+      fullPath: '/settings/general'
+      preLoaderRoute: typeof SettingsGeneralImport
+      parentRoute: typeof SettingsImport
+    }
     '/settings/hdhr': {
-      id: '/settings/hdhr';
-      path: '/hdhr';
-      fullPath: '/settings/hdhr';
-      preLoaderRoute: typeof SettingsHdhrImport;
-      parentRoute: typeof SettingsImport;
-    };
+      id: '/settings/hdhr'
+      path: '/hdhr'
+      fullPath: '/settings/hdhr'
+      preLoaderRoute: typeof SettingsHdhrImport
+      parentRoute: typeof SettingsImport
+    }
     '/settings/plex': {
-      id: '/settings/plex';
-      path: '/plex';
-      fullPath: '/settings/plex';
-      preLoaderRoute: typeof SettingsPlexImport;
-      parentRoute: typeof SettingsImport;
-    };
+      id: '/settings/plex'
+      path: '/plex'
+      fullPath: '/settings/plex'
+      preLoaderRoute: typeof SettingsPlexImport
+      parentRoute: typeof SettingsImport
+    }
     '/settings/tasks': {
-      id: '/settings/tasks';
-      path: '/tasks';
-      fullPath: '/settings/tasks';
-      preLoaderRoute: typeof SettingsTasksImport;
-      parentRoute: typeof SettingsImport;
-    };
+      id: '/settings/tasks'
+      path: '/tasks'
+      fullPath: '/settings/tasks'
+      preLoaderRoute: typeof SettingsTasksImport
+      parentRoute: typeof SettingsImport
+    }
     '/settings/xmltv': {
-      id: '/settings/xmltv';
-      path: '/xmltv';
-      fullPath: '/settings/xmltv';
-      preLoaderRoute: typeof SettingsXmltvImport;
-      parentRoute: typeof SettingsImport;
-    };
+      id: '/settings/xmltv'
+      path: '/xmltv'
+      fullPath: '/settings/xmltv'
+      preLoaderRoute: typeof SettingsXmltvImport
+      parentRoute: typeof SettingsImport
+    }
     '/channels/': {
-      id: '/channels/';
-      path: '/channels';
-      fullPath: '/channels';
-      preLoaderRoute: typeof ChannelsIndexImport;
-      parentRoute: typeof rootRoute;
-    };
+      id: '/channels/'
+      path: '/channels'
+      fullPath: '/channels'
+      preLoaderRoute: typeof ChannelsIndexImport
+      parentRoute: typeof rootRoute
+    }
     '/library/': {
-      id: '/library/';
-      path: '/library';
-      fullPath: '/library';
-      preLoaderRoute: typeof LibraryIndexImport;
-      parentRoute: typeof rootRoute;
-    };
+      id: '/library/'
+      path: '/library'
+      fullPath: '/library'
+      preLoaderRoute: typeof LibraryIndexImport
+      parentRoute: typeof rootRoute
+    }
     '/channels/$channelId/watch': {
-      id: '/channels/$channelId/watch';
-      path: '/channels/$channelId/watch';
-      fullPath: '/channels/$channelId/watch';
-      preLoaderRoute: typeof ChannelsChannelIdWatchImport;
-      parentRoute: typeof rootRoute;
-    };
+      id: '/channels/$channelId/watch'
+      path: '/channels/$channelId/watch'
+      fullPath: '/channels/$channelId/watch'
+      preLoaderRoute: typeof ChannelsChannelIdWatchImport
+      parentRoute: typeof rootRoute
+    }
     '/library/custom-shows/new': {
-      id: '/library/custom-shows/new';
-      path: '/new';
-      fullPath: '/library/custom-shows/new';
-      preLoaderRoute: typeof LibraryCustomShowsNewImport;
-      parentRoute: typeof LibraryCustomShowsImport;
-    };
+      id: '/library/custom-shows/new'
+      path: '/new'
+      fullPath: '/library/custom-shows/new'
+      preLoaderRoute: typeof LibraryCustomShowsNewImport
+      parentRoute: typeof LibraryCustomShowsImport
+    }
     '/library/$id/edit': {
-      id: '/library/$id/edit';
-      path: '/library/$id/edit';
-      fullPath: '/library/$id/edit';
-      preLoaderRoute: typeof LibraryIdEditImport;
-      parentRoute: typeof rootRoute;
-    };
-    '/channels/$channelId/edit/epg': {
-      id: '/channels/$channelId/edit/epg';
-      path: '/channels/$channelId/edit/epg';
-      fullPath: '/channels/$channelId/edit/epg';
-      preLoaderRoute: typeof ChannelsChannelIdEditEpgImport;
-      parentRoute: typeof rootRoute;
-    };
-    '/channels/$channelId/edit/ffmpeg': {
-      id: '/channels/$channelId/edit/ffmpeg';
-      path: '/channels/$channelId/edit/ffmpeg';
-      fullPath: '/channels/$channelId/edit/ffmpeg';
-      preLoaderRoute: typeof ChannelsChannelIdEditFfmpegImport;
-      parentRoute: typeof rootRoute;
-    };
-    '/channels/$channelId/edit/flex': {
-      id: '/channels/$channelId/edit/flex';
-      path: '/channels/$channelId/edit/flex';
-      fullPath: '/channels/$channelId/edit/flex';
-      preLoaderRoute: typeof ChannelsChannelIdEditFlexImport;
-      parentRoute: typeof rootRoute;
-    };
+      id: '/library/$id/edit'
+      path: '/library/$id/edit'
+      fullPath: '/library/$id/edit'
+      preLoaderRoute: typeof LibraryIdEditImport
+      parentRoute: typeof rootRoute
+    }
     '/channels/$channelId/programming/add': {
-      id: '/channels/$channelId/programming/add';
-      path: '/channels/$channelId/programming/add';
-      fullPath: '/channels/$channelId/programming/add';
-      preLoaderRoute: typeof ChannelsChannelIdProgrammingAddImport;
-      parentRoute: typeof rootRoute;
-    };
+      id: '/channels/$channelId/programming/add'
+      path: '/channels/$channelId/programming/add'
+      fullPath: '/channels/$channelId/programming/add'
+      preLoaderRoute: typeof ChannelsChannelIdProgrammingAddImport
+      parentRoute: typeof rootRoute
+    }
     '/channels/$channelId/programming/random-slot-editor': {
-      id: '/channels/$channelId/programming/random-slot-editor';
-      path: '/channels/$channelId/programming/random-slot-editor';
-      fullPath: '/channels/$channelId/programming/random-slot-editor';
-      preLoaderRoute: typeof ChannelsChannelIdProgrammingRandomSlotEditorImport;
-      parentRoute: typeof rootRoute;
-    };
+      id: '/channels/$channelId/programming/random-slot-editor'
+      path: '/channels/$channelId/programming/random-slot-editor'
+      fullPath: '/channels/$channelId/programming/random-slot-editor'
+      preLoaderRoute: typeof ChannelsChannelIdProgrammingRandomSlotEditorImport
+      parentRoute: typeof rootRoute
+    }
     '/channels/$channelId/programming/time-slot-editor': {
-      id: '/channels/$channelId/programming/time-slot-editor';
-      path: '/channels/$channelId/programming/time-slot-editor';
-      fullPath: '/channels/$channelId/programming/time-slot-editor';
-      preLoaderRoute: typeof ChannelsChannelIdProgrammingTimeSlotEditorImport;
-      parentRoute: typeof rootRoute;
-    };
+      id: '/channels/$channelId/programming/time-slot-editor'
+      path: '/channels/$channelId/programming/time-slot-editor'
+      fullPath: '/channels/$channelId/programming/time-slot-editor'
+      preLoaderRoute: typeof ChannelsChannelIdProgrammingTimeSlotEditorImport
+      parentRoute: typeof rootRoute
+    }
     '/channels/$channelId/edit/': {
-      id: '/channels/$channelId/edit/';
-      path: '/channels/$channelId/edit';
-      fullPath: '/channels/$channelId/edit';
-      preLoaderRoute: typeof ChannelsChannelIdEditIndexImport;
-      parentRoute: typeof rootRoute;
-    };
+      id: '/channels/$channelId/edit/'
+      path: '/channels/$channelId/edit'
+      fullPath: '/channels/$channelId/edit'
+      preLoaderRoute: typeof ChannelsChannelIdEditIndexImport
+      parentRoute: typeof rootRoute
+    }
     '/channels/$channelId/programming/': {
-      id: '/channels/$channelId/programming/';
-      path: '/channels/$channelId/programming';
-      fullPath: '/channels/$channelId/programming';
-      preLoaderRoute: typeof ChannelsChannelIdProgrammingIndexImport;
-      parentRoute: typeof rootRoute;
-    };
+      id: '/channels/$channelId/programming/'
+      path: '/channels/$channelId/programming'
+      fullPath: '/channels/$channelId/programming'
+      preLoaderRoute: typeof ChannelsChannelIdProgrammingIndexImport
+      parentRoute: typeof rootRoute
+    }
   }
 }
 
@@ -403,15 +363,12 @@ export const routeTree = rootRoute.addChildren({
   LibraryIndexRoute,
   ChannelsChannelIdWatchRoute,
   LibraryIdEditRoute,
-  ChannelsChannelIdEditEpgRoute,
-  ChannelsChannelIdEditFfmpegRoute,
-  ChannelsChannelIdEditFlexRoute,
   ChannelsChannelIdProgrammingAddRoute,
   ChannelsChannelIdProgrammingRandomSlotEditorRoute,
   ChannelsChannelIdProgrammingTimeSlotEditorRoute,
   ChannelsChannelIdEditIndexRoute,
   ChannelsChannelIdProgrammingIndexRoute,
-});
+})
 
 /* prettier-ignore-end */
 
@@ -433,9 +390,6 @@ export const routeTree = rootRoute.addChildren({
         "/library/",
         "/channels/$channelId/watch",
         "/library/$id/edit",
-        "/channels/$channelId/edit/epg",
-        "/channels/$channelId/edit/ffmpeg",
-        "/channels/$channelId/edit/flex",
         "/channels/$channelId/programming/add",
         "/channels/$channelId/programming/random-slot-editor",
         "/channels/$channelId/programming/time-slot-editor",
@@ -517,15 +471,6 @@ export const routeTree = rootRoute.addChildren({
     },
     "/library/$id/edit": {
       "filePath": "library_/$id/edit.tsx"
-    },
-    "/channels/$channelId/edit/epg": {
-      "filePath": "channels_/$channelId/edit/epg.tsx"
-    },
-    "/channels/$channelId/edit/ffmpeg": {
-      "filePath": "channels_/$channelId/edit/ffmpeg.tsx"
-    },
-    "/channels/$channelId/edit/flex": {
-      "filePath": "channels_/$channelId/edit/flex.tsx"
     },
     "/channels/$channelId/programming/add": {
       "filePath": "channels_/$channelId/programming/add.tsx"
