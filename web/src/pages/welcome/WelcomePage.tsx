@@ -9,7 +9,7 @@ import {
   Typography,
 } from '@mui/material';
 import React, { useEffect } from 'react';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from '@tanstack/react-router';
 import TunarrLogo from '../../components/TunarrLogo.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import AddPlexServer from '../../components/settings/AddPlexServer.tsx';

@@ -56,7 +56,7 @@ import {
   useForm,
   useWatch,
 } from 'react-hook-form';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from '@tanstack/react-router';
 import { useDebounceCallback } from 'usehooks-ts';
 import Breadcrumbs from '../../components/Breadcrumbs';
 import PaddedPaper from '../../components/base/PaddedPaper';

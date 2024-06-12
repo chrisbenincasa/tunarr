@@ -47,7 +47,7 @@ import {
   useForm,
   useWatch,
 } from 'react-hook-form';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from '@tanstack/react-router';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import ChannelProgrammingList from '../../components/channel_config/ChannelProgrammingList.tsx';

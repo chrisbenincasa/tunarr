@@ -5,7 +5,7 @@ import {
   FillerList,
   FillerListProgramming,
 } from '@tunarr/types';
-import { LoaderFunctionArgs } from 'react-router-dom';
+import { LoaderFunctionArgs } from '@tanstack/react-router';
 import { getApiClient } from '../components/TunarrApiContext.tsx';
 import { createPreloader } from '../helpers/preloaderUtil.ts';
 import {

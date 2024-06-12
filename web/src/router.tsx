@@ -1,6 +1,6 @@
 import { QueryClient } from '@tanstack/react-query';
 import { map } from 'lodash-es';
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter } from '@tanstack/react-router';
 import { Root } from './App.tsx';
 import { ErrorPage } from './pages/ErrorPage.tsx';
 import ChannelProgrammingPage from './pages/channels/ChannelProgrammingPage.tsx';

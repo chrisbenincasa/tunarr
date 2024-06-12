@@ -15,6 +15,8 @@ export const Route = createFileRoute('/channels/$channelId/edit/')({
     }
 
     setCurrentChannel(channel);
+
+    return channel;
   },
   component: () => <EditChannelPage isNew={false} />,
 });

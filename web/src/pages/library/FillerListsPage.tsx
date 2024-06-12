@@ -13,7 +13,7 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Link } from '@tanstack/react-router';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import { useFillerLists } from '../../hooks/useFillerLists.ts';
 import { useTunarrApi } from '../../hooks/useTunarrApi.ts';

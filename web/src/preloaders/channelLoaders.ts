@@ -2,7 +2,7 @@ import { QueryClient } from '@tanstack/react-query';
 import { Channel, CondensedChannelProgramming } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { isNil, maxBy } from 'lodash-es';
-import { LoaderFunctionArgs } from 'react-router-dom';
+import { LoaderFunctionArgs } from '@tanstack/react-router';
 import { v4 as uuidv4 } from 'uuid';
 import { getApiClient } from '../components/TunarrApiContext.tsx';
 import { createPreloader } from '../helpers/preloaderUtil.ts';

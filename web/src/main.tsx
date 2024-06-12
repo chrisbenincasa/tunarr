@@ -5,7 +5,7 @@ import React from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import ReactDOM from 'react-dom/client';
-// import { RouterProvider } from 'react-router-dom';
+// import { RouterProvider } from '@tanstack/react-router';
 import './helpers/dayjs.ts';
 import './index.css';
 import { queryClient } from './queryClient.ts';

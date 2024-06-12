@@ -4,7 +4,7 @@ import {
   QueryKey,
   UseQueryOptions,
 } from '@tanstack/react-query';
-import { LoaderFunctionArgs } from 'react-router-dom';
+import { LoaderFunctionArgs } from '@tanstack/react-router';
 import { Preloader } from '../types/index.ts';
 import { ApiClient } from '../external/api.ts';
 import { getApiClient } from '../components/TunarrApiContext.tsx';

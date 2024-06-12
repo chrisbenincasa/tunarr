@@ -34,7 +34,8 @@ import {
   ChannelEditContext,
   ChannelEditContextState,
 } from './EditChannelContext.ts';
-import { usePreloadedChannelEdit } from '@/hooks/usePreloadedChannel.ts';
+import { usePreloadedChannel } from '@/hooks/usePreloadedChannel.ts';
+import { FormatColorReset } from '@mui/icons-material';
 
 type TabValues = 'properties' | 'flex' | 'epg' | 'ffmpeg';
 
@@ -95,7 +96,8 @@ type Props = {
 };
 
 export default function EditChannelPage({ isNew, initialTab }: Props) {
-  const { currentEntity: channel } = usePreloadedChannelEdit();
+  // const { currentEntity: channel } = usePreloadedChannelEdit();
+  const channel = usePreloadedChannel(isNew);
   const [currentTab, setCurrentTab] = useState<TabValues>(
     initialTab ?? 'properties',
   );
@@ -138,7 +140,7 @@ export default function EditChannelPage({ isNew, initialTab }: Props) {
           path = `${path}/${newValue}`;
         }
 
-        // navigate(path, { relative: 'path', replace: true });
+        navigate({ replace: false, to: path }).catch(console.warn);
       }
     }
   };

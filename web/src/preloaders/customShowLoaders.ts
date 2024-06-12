@@ -19,7 +19,7 @@ export type CustomShowPreload = {
 export const customShowLoader = (isNew: boolean): Preloader<CustomShow> => {
   if (!isNew) {
     return createPreloader((apiClient, { params }) =>
-      customShowQuery(apiClient, params.id!),
+      customShowQuery(apiClient, params.id),
     );
   } else {
     return () => () => {
@@ -51,7 +51,7 @@ export const existingCustomShowLoader: Preloader<CustomShowPreload> = (
     const showLoaderPromise = showLoader(args);
     const programQuery = customShowProgramsQuery(
       getApiClient(),
-      args.params.id!,
+      args.params.id,
     );
 
     const programsPromise = queryClient.ensureQueryData(programQuery);

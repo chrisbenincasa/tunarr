@@ -32,12 +32,12 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Channel } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { isEmpty } from 'lodash-es';
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useState } from 'react';
 import { Link as RouterLink, useNavigate } from '@tanstack/react-router';
 import TunarrLogo from '../../components/TunarrLogo.tsx';
 import NoChannelsCreated from '../../components/channel_config/NoChannelsCreated.tsx';
 import { isNonEmptyString } from '../../helpers/util.ts';
-import { useChannels } from '../../hooks/useChannels.ts';
+import { useSuspenseChannels } from '../../hooks/useChannels.ts';
 import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 import { useSettings } from '../../store/settings/selectors.ts';
 
@@ -45,11 +45,7 @@ export default function ChannelsPage() {
   const { backendUri } = useSettings();
   const apiClient = useTunarrApi();
   const now = dayjs();
-  const {
-    isFetching: channelsFetching,
-    error: channelsError,
-    data: channels,
-  } = useChannels();
+  const { data: channels } = useSuspenseChannels();
   const theme = useTheme();
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
   const mediumViewport = useMediaQuery(theme.breakpoints.down('md'));
@@ -80,10 +76,10 @@ export default function ChannelsPage() {
   // To do: figure out better solution.  This is a temp workaround
   // Without this if user naviages away from tab then back, react query refetches and destroys exisitng ref
   // this moves menu to the top left of the screen.
-  useEffect(() => {
-    setAnchorEl(null);
-    setChannelMenu(null);
-  }, [channelsFetching]);
+  // useEffect(() => {
+  //   setAnchorEl(null);
+  //   setChannelMenu(null);
+  // }, [channelsFetching]);
 
   const handleChannelNavigation = (
     _: React.MouseEvent<HTMLTableRowElement, MouseEvent>,
@@ -295,29 +291,29 @@ export default function ChannelsPage() {
   };
 
   const getTableRows = () => {
-    if (channelsFetching) {
-      return (
-        <TableRow key="pending">
-          <TableCell
-            colSpan={smallViewport ? 5 : 6}
-            sx={{ my: 2, textAlign: 'center' }}
-          >
-            <CircularProgress />
-          </TableCell>
-        </TableRow>
-      );
-    } else if (channelsError) {
-      return (
-        <TableRow key="error">
-          <TableCell
-            colSpan={smallViewport ? 5 : 6}
-            sx={{ my: 2, textAlign: 'center' }}
-          >{`Error: ${channelsError.message}`}</TableCell>
-        </TableRow>
-      );
-    } else {
-      return channels?.map(getDataTableRow);
-    }
+    // if (channelsFetching) {
+    //   return (
+    //     <TableRow key="pending">
+    //       <TableCell
+    //         colSpan={smallViewport ? 5 : 6}
+    //         sx={{ my: 2, textAlign: 'center' }}
+    //       >
+    //         <CircularProgress />
+    //       </TableCell>
+    //     </TableRow>
+    //   );
+    // } else if (channelsError) {
+    //   return (
+    //     <TableRow key="error">
+    //       <TableCell
+    //         colSpan={smallViewport ? 5 : 6}
+    //         sx={{ my: 2, textAlign: 'center' }}
+    //       >{`Error: ${channelsError.message}`}</TableCell>
+    //     </TableRow>
+    //   );
+    // } else {
+    // }
+    return channels?.map(getDataTableRow);
   };
 
   return (
@@ -350,7 +346,20 @@ export default function ChannelsPage() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {channels && channels.length > 0 && getTableRows()}
+            <Suspense
+              fallback={
+                <TableRow key="pending">
+                  <TableCell
+                    colSpan={smallViewport ? 5 : 6}
+                    sx={{ my: 2, textAlign: 'center' }}
+                  >
+                    <CircularProgress />
+                  </TableCell>
+                </TableRow>
+              }
+            >
+              {channels && channels.length > 0 && getTableRows()}
+            </Suspense>
           </TableBody>
         </Table>
       </TableContainer>

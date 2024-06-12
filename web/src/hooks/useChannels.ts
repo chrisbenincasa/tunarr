@@ -17,6 +17,11 @@ export const useChannels = (initialData: Channel[] = []) => {
   return useQuery(channelsQuery(apiClient, initialData));
 };
 
+export const useSuspenseChannels = () => {
+  const apiClient = useTunarrApi();
+  return useSuspenseQuery(channelsQuery(apiClient));
+};
+
 export const channelQuery = (
   apiClient: ApiClient,
   id: string,
@@ -39,9 +44,9 @@ export const useChannel = (
   return useQuery({ ...channelQuery(apiClient, id, enabled), initialData });
 };
 
-export const useChannelSuspense = (id: string) => {
+export const useChannelSuspense = (id: string, enabled: boolean = true) => {
   const apiClient = useTunarrApi();
-  return useSuspenseQuery(channelQuery(apiClient, id));
+  return useSuspenseQuery(channelQuery(apiClient, id, enabled));
 };
 
 // If we absolutely have initialData defined, we can use this hook instead,

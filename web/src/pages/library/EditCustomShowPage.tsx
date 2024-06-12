@@ -15,7 +15,7 @@ import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from '@tanstack/react-router';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import { usePreloadedCustomShow } from '../../hooks/usePreloadedCustomShow.ts';

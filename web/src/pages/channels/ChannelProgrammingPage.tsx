@@ -1,3 +1,4 @@
+import Edit from '@mui/icons-material/Edit';
 import {
   Box,
   Button,
@@ -8,16 +9,20 @@ import {
 } from '@mui/material';
 import { isUndefined } from 'lodash-es';
 import { useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { ChannelProgrammingConfig } from '../../components/channel_config/ChannelProgrammingConfig.tsx';
 import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert.tsx';
-import { usePreloadedChannelEdit } from '../../hooks/usePreloadedChannel.ts';
 import { resetLineup } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
-import { Link } from 'react-router-dom';
-import Edit from '@mui/icons-material/Edit';
 
 export default function ChannelProgrammingPage() {
-  const { currentEntity: channel } = usePreloadedChannelEdit();
+  const { channelId } = Route.useParams();
+  const {
+    data: { channel },
+    isPending,
+  } = useChannelAndProgramming(channelId);
+  const { originalEntity: originalChannel, programList: newLineup } =
+    useChannelEditor();
 
   const programsDirty = useStore((s) => s.channelEditor.dirty.programs);
 
@@ -28,7 +33,7 @@ export default function ChannelProgrammingPage() {
     window.scrollTo(0, 0);
   }, []);
 
-  return isUndefined(channel) ? (
+  return isUndefined(channel) || isPending ? (
     <div>
       <CircularProgress />
     </div>

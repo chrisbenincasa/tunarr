@@ -1,4 +1,6 @@
 import { useChannelEditor } from '../store/selectors.ts';
+import { useParams } from '@tanstack/react-router';
+import { useChannel } from './useChannels.ts';
 
 // export const usePreloadedChannel = () => {
 //   const channel = usePreloadedData(channelLoader);
@@ -27,6 +29,21 @@ export const usePreloadedChannelEdit = () => {
   // }, [channelEditor, channel, lineup]);
 
   return channelEditor;
+};
+
+export const usePreloadedChannel = (isNew: boolean) => {
+  const { originalEntity } = useChannelEditor();
+  const { channelId } = useParams({ strict: false });
+  const { data } = useChannel(channelId ?? '', !isNew);
+  // TODO: Unclear whether we can universally make this assumption
+  // let's follow up here to see if there is a better way to handle
+  // this. Perhaps separating out the entrypoints for new / update channels
+  // and having them feed the selected channel into a subcomponent
+  if (isNew) {
+    return originalEntity!;
+  } else {
+    return data!;
+  }
 };
 
 // export const useResetCurrentLineup = () => {

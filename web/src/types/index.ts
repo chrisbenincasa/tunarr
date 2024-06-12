@@ -13,7 +13,7 @@ import {
   ZodiosAliases,
   ZodiosResponseByAlias,
 } from '@zodios/core/lib/zodios.types';
-import { LoaderFunctionArgs } from 'react-router-dom';
+import { LoaderFunctionArgs } from '@tanstack/react-router';
 import { type ApiClient } from '../external/api.ts';
 import { EnrichedPlexMedia } from '../hooks/plex/plexHookUtil.ts';
 
