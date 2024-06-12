@@ -1,3 +1,4 @@
+import { usePreloadedChannel } from '@/hooks/usePreloadedChannel.ts';
 import Edit from '@mui/icons-material/Edit';
 import { Badge, Button, Stack, alpha, useTheme } from '@mui/material';
 import Box from '@mui/material/Box';
@@ -34,8 +35,7 @@ import {
   ChannelEditContext,
   ChannelEditContextState,
 } from './EditChannelContext.ts';
-import { usePreloadedChannel } from '@/hooks/usePreloadedChannel.ts';
-import { FormatColorReset } from '@mui/icons-material';
+import UnsavedNavigationAlert from '@/components/settings/UnsavedNavigationAlert.tsx';
 
 type TabValues = 'properties' | 'flex' | 'epg' | 'ffmpeg';
 
@@ -95,6 +95,8 @@ type Props = {
   initialTab?: TabValues;
 };
 
+function EditChannelForm() {}
+
 export default function EditChannelPage({ isNew, initialTab }: Props) {
   // const { currentEntity: channel } = usePreloadedChannelEdit();
   const channel = usePreloadedChannel(isNew);
@@ -140,7 +142,7 @@ export default function EditChannelPage({ isNew, initialTab }: Props) {
           path = `${path}/${newValue}`;
         }
 
-        navigate({ replace: false, to: path }).catch(console.warn);
+        // navigate({ replace: false, to: path }).catch(console.warn);
       }
     }
   };
@@ -160,6 +162,7 @@ export default function EditChannelPage({ isNew, initialTab }: Props) {
   });
 
   useEffect(() => {
+    console.log('resettttt');
     setCurrentChannel(channel);
     formMethods.reset({
       ...channel,

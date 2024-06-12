@@ -1,60 +1,84 @@
+import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogContentText from '@mui/material/DialogContentText';
+import DialogTitle from '@mui/material/DialogTitle';
+import {
+  RegisteredRouter,
+  RouteIds,
+  useBlocker,
+  useLocation,
+  useRouterState,
+} from '@tanstack/react-router';
+import { usePrevious } from '@uidotdev/usehooks';
+
 type Props = {
   isDirty: boolean;
-  exemptPath?: string;
   onProceed?: CallableFunction;
+  exemptPath?: RouteIds<RegisteredRouter['routeTree']>;
 };
 
 // Exempt paths are used in situations where the form spans multiple tabs or pages.
 // This ensures the Alert is not activated in the middle of a form navigation.
 
-export default function UnsavedNavigationAlert(props: Props) {
-  const { isDirty, exemptPath, onProceed } = props;
+export default function UnsavedNavigationAlert({
+  isDirty,
+  onProceed,
+  exemptPath,
+}: Props) {
+  const location = useLocation();
+  const previousLocation = usePrevious(location.pathname);
+  const [isTransitioning, pendingMatches, resolvedLocation] = useRouterState({
+    select: (state) =>
+      [
+        state.isTransitioning,
+        state.pendingMatches,
+        state.resolvedLocation,
+      ] as const,
+  });
 
-  // const shouldBlock = React.useCallback<BlockerFunction>(
-  //   ({ currentLocation, nextLocation }) => {
-  //     const isExemptPath = matchPath(exemptPath || '', nextLocation.pathname);
+  // console.log(previousLocation, location.pathname);
 
-  //     return (
-  //       isDirty &&
-  //       !isExemptPath &&
-  //       currentLocation.pathname !== nextLocation.pathname
-  //     );
-  //   },
-  //   [isDirty],
-  // );
-  // const blocker = useBlocker(shouldBlock);
+  // const pathnameMismatch = previousLocation !==
 
-  // const handleProceed = () => {
-  //   blocker.proceed?.();
-  //   if (onProceed) {
-  //     onProceed();
-  //   }
-  // };
+  const { proceed, status, reset } = useBlocker({
+    blockerFn: () => {
+      console.log(isTransitioning, pendingMatches, resolvedLocation);
+      return true;
+    },
+    condition: isDirty && (pendingMatches?.length ?? 0) > 0,
+  });
 
-  // return blocker && blocker.state === 'blocked' ? (
-  //   <Dialog
-  //     open={blocker.state === 'blocked'}
-  //     onClose={() => blocker.reset?.()}
-  //     aria-labelledby="alert-dialog-title"
-  //     aria-describedby="alert-dialog-description"
-  //   >
-  //     <DialogTitle id="alert-dialog-title">
-  //       {'You have unsaved changes!'}
-  //     </DialogTitle>
-  //     <DialogContent>
-  //       <DialogContentText id="alert-dialog-description">
-  //         If you proceed, all unsaved changes will be lost. Are you sure you
-  //         want to proceed?
-  //       </DialogContentText>
-  //     </DialogContent>
-  //     <DialogActions>
-  //       <Button onClick={() => blocker.reset?.()}>Cancel</Button>
-  //       <Button onClick={handleProceed} autoFocus variant="contained">
-  //         Proceed
-  //       </Button>
-  //     </DialogActions>
-  //   </Dialog>
-  // ) : null;
+  const handleProceed = () => {
+    proceed();
+    if (onProceed) {
+      onProceed();
+    }
+  };
 
-  return null;
+  return status === 'blocked' ? (
+    <Dialog
+      open={status === 'blocked'}
+      onClose={reset}
+      aria-labelledby="alert-dialog-title"
+      aria-describedby="alert-dialog-description"
+    >
+      <DialogTitle id="alert-dialog-title">
+        {'You have unsaved changes!'}
+      </DialogTitle>
+      <DialogContent>
+        <DialogContentText id="alert-dialog-description">
+          If you proceed, all unsaved changes will be lost. Are you sure you
+          want to proceed?
+        </DialogContentText>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={reset}>Cancel</Button>
+        <Button onClick={handleProceed} autoFocus variant="contained">
+          Proceed
+        </Button>
+      </DialogActions>
+    </Dialog>
+  ) : null;
 }
