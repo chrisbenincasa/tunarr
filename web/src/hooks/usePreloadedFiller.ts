@@ -3,7 +3,7 @@ import { setCurrentFillerList } from '@/store/channelEditor/actions';
 import { useLoaderData } from 'react-router-dom';
 import { UnsavedId } from '../helpers/constants';
 import { useFillerListEditor } from '../store/selectors';
-import { useFillersWithInitialData } from './useFillerLists';
+import { useFillerListWithProgramming } from './useFillerLists';
 import { useTunarrApi } from './useTunarrApi';
 
 export const usePreloadedFiller = () => {
@@ -11,7 +11,7 @@ export const usePreloadedFiller = () => {
   const { filler: preloadFiller, programs: preloadPrograms } =
     useLoaderData() as FillerPreload;
 
-  const [filler, fillerPrograms] = useFillersWithInitialData(
+  const [filler, fillerPrograms] = useFillerListWithProgramming(
     apiClient,
     preloadFiller.id,
     preloadFiller.id !== UnsavedId,
