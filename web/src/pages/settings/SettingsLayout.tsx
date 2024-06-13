@@ -10,30 +10,7 @@ import { Link, Outlet, useMatches } from '@tanstack/react-router';
 import { last } from 'lodash-es';
 import { Suspense } from 'react';
 
-// const useRouteMatch = (
-//   patterns: ReadonlyArray<string>,
-// ): PathMatch<string> | undefined => {
-//   const { pathname } = useLocation();
-//   for (let i = 0; i < patterns.length; i++) {
-//     const pattern = patterns[i];
-//     const match = matchPath(pattern, pathname);
-//     if (!isNil(match)) {
-//       return match;
-//     }
-//   }
-//   return;
-// };
-
 export default function SettingsLayout() {
-  // const routeMatch = useRouteMatch([
-  //   '/settings/general',
-  //   '/settings/xmltv',
-  //   '/settings/ffmpeg',
-  //   '/settings/plex',
-  //   '/settings/hdhr',
-  //   '/settings/tasks',
-  // ]);
-  // const currentTab = routeMatch?.pattern?.path;
   const match = useMatches();
   const currentTab = last(match)?.routeId;
 
