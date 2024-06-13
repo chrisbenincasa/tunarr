@@ -90,6 +90,16 @@ export const api = makeApi([
     path: '/api/channels/:id',
     parameters: parametersBuilder().addPath('id', z.string()).build(),
     response: ChannelSchema,
+    errors: makeErrors([
+      {
+        status: 404,
+        schema: BaseErrorSchema,
+      },
+      {
+        status: 500,
+        schema: BaseErrorSchema,
+      },
+    ]),
   },
   {
     method: 'get',

@@ -1,5 +1,10 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { preloadChannelAndProgramming } from '@/helpers/routeLoaders';
+import TimeSlotEditorPage from '@/pages/channels/TimeSlotEditorPage';
+import { createFileRoute } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/channels/$channelId/programming/time-slot-editor')({
-  component: () => <div>Hello /channels/$channelId/programming/time-slot-editor!</div>
-})
+export const Route = createFileRoute(
+  '/channels/$channelId/programming/time-slot-editor',
+)({
+  loader: preloadChannelAndProgramming,
+  component: TimeSlotEditorPage,
+});
