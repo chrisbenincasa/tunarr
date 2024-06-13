@@ -1,9 +1,6 @@
 import {
   DataTag,
   DefinedInitialDataOptions,
-  QueriesResults,
-  UseQueryResult,
-  queryOptions,
   useQueries,
   useSuspenseQueries,
   useSuspenseQuery,
@@ -12,6 +9,7 @@ import { CustomProgram, CustomShow } from '@tunarr/types';
 import { ApiClient } from '../external/api.ts';
 import { ZodiosAliasReturnType } from '../types/index.ts';
 import { useTunarrApi } from './useTunarrApi.ts';
+import { makeQueryOptions } from './useQueryHelpers.ts';
 
 export type CustomShowsQueryOpts = Omit<
   DefinedInitialDataOptions<
@@ -26,12 +24,7 @@ export type CustomShowsQueryOpts = Omit<
 export const customShowsQuery = (
   apiClient: ApiClient,
   opts?: CustomShowsQueryOpts,
-) =>
-  queryOptions({
-    ...opts,
-    queryKey: ['custom-shows'] as DataTag<['custom-shows'], CustomShow[]>,
-    queryFn: () => apiClient.getCustomShows(),
-  });
+) => makeQueryOptions(['custom-shows'], () => apiClient.getCustomShows(), opts);
 
 export const useCustomShows = (opts?: CustomShowsQueryOpts) => {
   const apiClient = useTunarrApi();

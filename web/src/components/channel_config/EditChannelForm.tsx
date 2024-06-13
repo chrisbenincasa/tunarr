@@ -1,4 +1,5 @@
 import UnsavedNavigationAlert from '@/components/settings/UnsavedNavigationAlert.tsx';
+import { DefaultChannel } from '@/helpers/constants.ts';
 import { Badge } from '@mui/material';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
@@ -16,7 +17,6 @@ import {
 } from 'react-hook-form';
 import { isNonEmptyString } from '../../helpers/util.ts';
 import { useUpdateChannel } from '../../hooks/useUpdateChannel.ts';
-import { DefaultChannel } from '../../preloaders/channelLoaders.ts';
 import ChannelEpgConfig from './ChannelEpgConfig.tsx';
 import { ChannelFlexConfig } from './ChannelFlexConfig.tsx';
 import { ChannelPropertiesEditor } from './ChannelPropertiesEditor.tsx';
@@ -170,10 +170,7 @@ export function EditChannelForm({
           </EditChannelTabPanel>
         </Box>
       </FormProvider>
-      <UnsavedNavigationAlert
-        isDirty={formIsDirty}
-        exemptPath="/channels/.*/edit.*"
-      />
+      <UnsavedNavigationAlert isDirty={formIsDirty} />
     </Paper>
   );
 }

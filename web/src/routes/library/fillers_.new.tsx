@@ -1,7 +1,7 @@
 import { UnsavedId } from '@/helpers/constants';
 import { NewFillerPage } from '@/pages/library/NewFillerPage';
 import useStore from '@/store';
-import { setCurrentFillerList } from '@/store/channelEditor/actions';
+import { setCurrentFillerList } from '@/store/fillerListEditor/action';
 import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/library/fillers/new')({

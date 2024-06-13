@@ -1,30 +1,22 @@
+import { DefaultChannel } from '@/helpers/constants';
 import { channelsQuery } from '@/hooks/useChannels';
 import { NewChannelPage } from '@/pages/channels/NewChannelPage';
-import { defaultNewChannel } from '@/preloaders/channelLoaders';
-import useStore from '@/store';
-import { setCurrentChannel } from '@/store/channelEditor/actions';
+import { safeSetCurrentChannel } from '@/store/channelEditor/actions';
 import { createFileRoute } from '@tanstack/react-router';
-import { Channel, CondensedChannelProgramming } from '@tunarr/types';
-import { isNil, maxBy } from 'lodash-es';
+import { Channel } from '@tunarr/types';
+import { maxBy } from 'lodash-es';
+import { v4 } from 'uuid';
 import { z } from 'zod';
+import dayjs from 'dayjs';
 
-// Returns whether the state was updated
-function updateChannelState(
-  channel: Channel,
-  programming?: CondensedChannelProgramming,
-): boolean {
-  const currentState = useStore.getState().channelEditor;
-
-  // Only set state on initial load
-  if (
-    isNil(currentState.originalEntity) ||
-    channel.id !== currentState.originalEntity.id
-  ) {
-    setCurrentChannel(channel, programming);
-    return true;
-  }
-
-  return false;
+function defaultNewChannel(num: number): Channel {
+  return {
+    id: v4(),
+    name: `Channel ${num}`,
+    number: num,
+    startTime: dayjs().add(1, 'h').startOf('h').unix() * 1000,
+    ...DefaultChannel,
+  };
 }
 
 // TODO: Share this schema between new and edit routes
@@ -45,7 +37,7 @@ export const Route = createFileRoute('/channels/new')({
       (maxBy(channels, (c) => c.number)?.number ?? 0) + 1,
     );
 
-    updateChannelState(newChannel);
+    safeSetCurrentChannel(newChannel);
 
     return newChannel;
   },

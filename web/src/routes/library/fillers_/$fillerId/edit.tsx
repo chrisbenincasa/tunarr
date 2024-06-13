@@ -4,7 +4,7 @@ import {
 } from '@/hooks/useFillerLists';
 import EditFillerPage from '@/pages/library/EditFillerPage';
 import useStore from '@/store';
-import { setCurrentFillerList } from '@/store/channelEditor/actions';
+import { setCurrentFillerList } from '@/store/fillerListEditor/action';
 import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/library/fillers/$fillerId/edit')({

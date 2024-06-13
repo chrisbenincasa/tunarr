@@ -4,11 +4,12 @@ import Button from '@mui/material/Button';
 import Hls from 'hls.js';
 import { isError, isNil } from 'lodash-es';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useBlocker, useLocation, useSearch } from '@tanstack/react-router';
+import { useBlocker, useLocation } from '@tanstack/react-router';
 import { useFfmpegSettings } from '../hooks/settingsHooks.ts';
 import { useHls } from '../hooks/useHls.ts';
 import { useTunarrApi } from '../hooks/useTunarrApi.ts';
 import { useSettings } from '../store/settings/selectors.ts';
+import { Route } from '@/routes/channels_/$channelId/watch.tsx';
 
 type VideoProps = {
   channelId: string;
@@ -23,12 +24,11 @@ export default function Video({ channelId }: VideoProps) {
   const [loadedStream, setLoadedStream] = useState<boolean | Error>(false);
   const { data: ffmpegSettings, isLoading: ffmpegSettingsLoading } =
     useFfmpegSettings();
-  const searchParams = useSearch({ strict: false });
+  const { noAutoPlay } = Route.useSearch();
   const [manuallyStarted, setManuallyStarted] = useState(false);
   const location = useLocation();
 
-  console.log(searchParams);
-  const autoPlayEnabled = !!searchParams['noAutoPlay'];
+  const autoPlayEnabled = !noAutoPlay;
 
   const canLoadStream = useMemo(() => {
     const initialized = !isNil(videoRef.current) && !isNil(hls);

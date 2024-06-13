@@ -9,8 +9,10 @@ import { DynamicContentConfig, LineupSchedule } from '@tunarr/types/api';
 import { StateCreator } from 'zustand';
 import { UICondensedChannelProgram, UIIndex } from '../../types/index.ts';
 
+export type HasId = { id: string };
+
 // Represents a program listing in the editor
-export interface ProgrammingEditorState<EntityType, ProgramType> {
+export interface ProgrammingEditorState<EntityType extends HasId, ProgramType> {
   // Original state of the working entity. Used to reset state
   originalEntity?: EntityType;
   // The working entity - edits should be made directly here

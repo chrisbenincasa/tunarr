@@ -1,7 +1,7 @@
 import { channelProgrammingQuery } from '@/hooks/useChannelLineup';
 import { channelQuery } from '@/hooks/useChannels';
 import ChannelProgrammingPage from '@/pages/channels/ChannelProgrammingPage';
-import { setCurrentChannel } from '@/store/channelEditor/actions';
+import { safeSetCurrentChannel } from '@/store/channelEditor/actions';
 import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/channels/$channelId/programming/')({
@@ -19,7 +19,7 @@ export const Route = createFileRoute('/channels/$channelId/programming/')({
       ),
     ]);
 
-    setCurrentChannel(channel, programming);
+    safeSetCurrentChannel(channel, programming);
   },
   component: () => <ChannelProgrammingPage />,
 });

@@ -80,7 +80,7 @@ export default function ProgrammingSelector() {
   /**
    * Load custom shows
    */
-  const { data: customShows } = useCustomShows([]);
+  const { data: customShows } = useCustomShows();
 
   const onMediaSourceChange = useCallback(
     (newMediaSource: string) => {

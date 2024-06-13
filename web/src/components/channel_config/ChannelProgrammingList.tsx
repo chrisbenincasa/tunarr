@@ -34,10 +34,8 @@ import {
   channelProgramUniqueId,
   isNonEmptyString,
 } from '../../helpers/util.ts';
-import {
-  deleteProgram,
-  moveProgramInCurrentChannel,
-} from '../../store/channelEditor/actions.ts';
+import { moveProgramInCurrentChannel } from '../../store/channelEditor/actions.ts';
+import { deleteProgram } from '@/store/entityEditor/util.ts';
 import useStore, { State } from '../../store/index.ts';
 import { materializedProgramListSelector } from '../../store/selectors.ts';
 import {
@@ -48,6 +46,7 @@ import {
 import ProgramDetailsDialog from '../ProgramDetailsDialog.tsx';
 import AddFlexModal from '../programming_controls/AddFlexModal.tsx';
 import AddRedirectModal from '../programming_controls/AddRedirectModal.tsx';
+import { useSuspendedStoreList } from '@/hooks/useSuspendedStore.ts';
 
 const ListItemTimeFormatter = new Intl.DateTimeFormat(undefined, {
   dateStyle: 'medium',
@@ -336,7 +335,7 @@ export default function ChannelProgrammingList({
   enableDnd = defaultProps.enableDnd,
 }: Props) {
   const channel = useStore((s) => s.channelEditor.currentEntity);
-  const storeProgramList = useStore(programListSelector!);
+  const storeProgramList = useSuspendedStoreList(programListSelector!);
   const programList = passedProgramList ?? storeProgramList;
   const [focusedProgramDetails, setFocusedProgramDetails] = useState<
     ChannelProgram | undefined

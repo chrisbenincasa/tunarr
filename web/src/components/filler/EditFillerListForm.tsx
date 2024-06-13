@@ -19,7 +19,7 @@ import { FillerList } from '@tunarr/types';
 import { useCallback, useEffect } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
-import { removeFillerListProgram } from '../../store/channelEditor/actions.ts';
+import { removeFillerListProgram } from '@/store/entityEditor/util.ts';
 import { UIFillerListProgram } from '../../types/index.ts';
 
 export type FillerListMutationArgs = {
@@ -81,7 +81,7 @@ export function EditFillerListForm({
   });
 
   const onCancel = useCallback(() => {
-    navigate({ to: '/library/fillers' });
+    navigate({ to: '/library/fillers' }).catch(console.warn);
   }, [navigate]);
 
   const saveFiller: SubmitHandler<FillerListFormType> = (data) => {

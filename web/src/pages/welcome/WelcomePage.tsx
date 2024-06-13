@@ -79,7 +79,7 @@ export default function WelcomePage() {
 
   const handleFinish = () => {
     updateShowWelcomeState();
-    navigate('/channels/new');
+    navigate({ to: '/channels/new' }).catch(console.warn);
   };
 
   const handleBack = () => {

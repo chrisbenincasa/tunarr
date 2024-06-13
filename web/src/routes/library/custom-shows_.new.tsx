@@ -1,7 +1,7 @@
 import { UnsavedId } from '@/helpers/constants';
 import { NewCustomShowPage } from '@/pages/library/NewCustomShowPage';
 import useStore from '@/store';
-import { setCurrentCustomShow } from '@/store/channelEditor/actions';
+import { setCurrentCustomShow } from '@/store/customShowEditor/actions';
 import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/library/custom-shows/new')({

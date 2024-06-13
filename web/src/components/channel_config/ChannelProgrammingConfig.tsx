@@ -1,3 +1,4 @@
+import { useChannelEditor } from '@/store/selectors.ts';
 import {
   Alert,
   Box,
@@ -11,15 +12,16 @@ import {
   useTheme,
 } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers';
-import dayjs, { Dayjs } from 'dayjs';
 import { Link as RouterLink } from '@tanstack/react-router';
 import { useSlideSchedule } from '@/hooks/programming_controls/useSlideSchedule.ts';
-import { usePreloadedChannelEdit } from '@/hooks/usePreloadedChannel.ts';
 import {
   resetCurrentLineup,
   resetLineup,
   setChannelStartTime,
 } from '@/store/channelEditor/actions.ts';
+import dayjs, { Dayjs } from 'dayjs';
+import { useSlideSchedule } from '../../hooks/programming_controls/useSlideSchedule.ts';
+import { setChannelStartTime } from '../../store/channelEditor/actions.ts';
 import AddProgrammingButton from './AddProgrammingButton.tsx';
 import ChannelProgrammingList from './ChannelProgrammingList.tsx';
 import { ChannelProgrammingSort } from './ChannelProgrammingSort.tsx';
@@ -49,7 +51,7 @@ export function ChannelProgrammingConfig() {
     originalEntity: originalChannel,
     schedule,
     programList: newLineup,
-  } = usePreloadedChannelEdit();
+  } = useChannelEditor();
   const theme = useTheme();
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
   const mediumViewport = useMediaQuery(theme.breakpoints.between('md', 'lg'));

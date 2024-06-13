@@ -1,5 +1,4 @@
 import { EditChannelTabs } from '@/components/channel_config/EditChannelTabPanel.tsx';
-import { usePreloadedChannel } from '@/hooks/usePreloadedChannel.ts';
 import Typography from '@mui/material/Typography';
 import { useState } from 'react';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
@@ -10,6 +9,7 @@ import {
   ChannelEditContextState,
 } from './EditChannelContext.ts';
 import { Route } from '@/routes/channels_/$channelId/edit/index.tsx';
+import { useChannelSuspense } from '@/hooks/useChannels.ts';
 
 type Props = {
   initialTab?: EditChannelTabs;
@@ -17,7 +17,7 @@ type Props = {
 
 export default function EditChannelPage({ initialTab }: Props) {
   const { channelId } = Route.useParams();
-  const channel = usePreloadedChannel(channelId);
+  const { data: channel } = useChannelSuspense(channelId);
   const { currentEntity: workingChannel } = useStore((s) => s.channelEditor);
   const theme = useTheme();
 

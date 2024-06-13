@@ -2,7 +2,7 @@ import { Tv } from '@mui/icons-material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useTunarrApi } from '@/hooks/useTunarrApi';
 import { queryClient } from '@/queryClient';
-import { removeCustomShowProgram } from '@/store/channelEditor/actions';
+import { removeCustomShowProgram } from '@/store/entityEditor/util';
 import { UICustomShowProgram } from '@/types';
 import {
   ListItem,
@@ -71,7 +71,7 @@ export function EditCustomShowsForm({
       } else {
         return apiClient.updateCustomShow(
           { name: data.name, programs: data.programs },
-          { params: { id: customShow!.id } },
+          { params: { id: customShow.id } },
         );
       }
     },
@@ -80,12 +80,12 @@ export function EditCustomShowsForm({
         queryKey: ['custom-shows'],
         exact: false,
       });
-      navigate({ to: '/library/custom-shows' });
+      navigate({ to: '/library/custom-shows' }).catch(console.warn);
     },
   });
 
   const onCancel = useCallback(() => {
-    navigate({ to: '/library/custom-shows' });
+    navigate({ to: '/library/custom-shows' }).catch(console.warn);
   }, [navigate]);
 
   const saveCustomShow: SubmitHandler<CustomShowForm> = (

@@ -141,7 +141,7 @@ function CustomShowListItem({
 
 export function CustomShowProgrammingSelector() {
   const apiClient = useTunarrApi();
-  const { data: customShows, isPending } = useCustomShows([]);
+  const { data: customShows, isPending } = useCustomShows();
   const viewType = useStore((state) => state.theme.programmingSelectorView);
   const [scrollParams, setScrollParams] = useState({ limit: 0, max: -1 });
   const queryClient = useQueryClient();

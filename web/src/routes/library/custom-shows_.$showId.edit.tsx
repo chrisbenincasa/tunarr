@@ -4,7 +4,7 @@ import {
 } from '@/hooks/useCustomShows';
 import EditCustomShowPage from '@/pages/library/EditCustomShowPage';
 import useStore from '@/store';
-import { setCurrentCustomShow } from '@/store/channelEditor/actions';
+import { setCurrentCustomShow } from '@/store/customShowEditor/actions';
 import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/library/custom-shows/$showId/edit')({
