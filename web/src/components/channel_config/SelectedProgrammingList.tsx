@@ -1,3 +1,4 @@
+import { SelectedMedia } from '@/store/programmingSelector/store.ts';
 import {
   KeyboardArrowLeft,
   KeyboardArrowRight,
@@ -30,16 +31,15 @@ import {
 import { first, groupBy, isUndefined, mapValues, reduce } from 'lodash-es';
 import pluralize from 'pluralize';
 import { ReactNode, useState } from 'react';
+import { FixedSizeList, ListChildComponentProps } from 'react-window';
+import { useWindowSize } from 'usehooks-ts';
 import { forSelectedMediaType, toggle, unwrapNil } from '../../helpers/util.ts';
 import { useCustomShows } from '../../hooks/useCustomShows.ts';
 import useStore from '../../store/index.ts';
 import { removeSelectedMedia } from '../../store/programmingSelector/actions.ts';
 import { AddedMedia } from '../../types/index.ts';
-import SelectedProgrammingActions from './SelectedProgrammingActions.tsx';
 import AddSelectedMediaButton from './AddSelectedMediaButton.tsx';
-import { SelectedMedia } from '@/store/programmingSelector/store.ts';
-import { FixedSizeList, ListChildComponentProps } from 'react-window';
-import { useWindowSize } from 'usehooks-ts';
+import SelectedProgrammingActions from './SelectedProgrammingActions.tsx';
 
 type Props = {
   onAddSelectedMedia: (media: AddedMedia[]) => void;
@@ -185,6 +185,8 @@ export default function SelectedProgrammingList({
   };
 
   const renderSelectedItems = () => {
+    console.log(windowSize.height);
+
     return (
       <FixedSizeList
         itemCount={selectedMedia.length}

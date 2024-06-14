@@ -307,7 +307,7 @@ export function Root({ children }: { children?: React.ReactNode }) {
             <Link
               underline="none"
               color="inherit"
-              to="/guide"
+              to="/"
               component={RouterLink}
             >
               <TunarrLogo style={{ marginTop: '0.4em', width: '40px' }} />

@@ -40,8 +40,14 @@ import {
   newFillerListLoader,
 } from './preloaders/fillerListLoader.ts';
 import { queryCache } from './queryClient.ts';
+import useStore from './store/index.ts';
 
 const queryClient = new QueryClient({ queryCache });
+
+const DefaultRoute = () => {
+  const showWelcome = useStore((state) => state.theme.showWelcome);
+  return showWelcome ? <WelcomePage /> : <GuidePage channelId="all" />;
+};
 
 export const router = createBrowserRouter(
   [
@@ -59,7 +65,7 @@ export const router = createBrowserRouter(
           errorElement: <ErrorPage />,
         },
         {
-          element: <GuidePage channelId="all" />,
+          element: <DefaultRoute />,
           index: true,
         },
         {
