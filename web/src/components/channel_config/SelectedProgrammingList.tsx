@@ -185,8 +185,6 @@ export default function SelectedProgrammingList({
   };
 
   const renderSelectedItems = () => {
-    console.log(windowSize.height);
-
     return (
       <FixedSizeList
         itemCount={selectedMedia.length}
