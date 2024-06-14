@@ -47,6 +47,8 @@ nav:
     - Clients:
       - configure/clients/index.md
       - Plex: configure/clients/plex.md
+  - Misc.:
+    - Common Issues: misc/common-issues.md
   - Development:
     - Contributing: dev/contributing.md
 
