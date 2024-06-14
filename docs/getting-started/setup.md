@@ -10,7 +10,7 @@ Upon first launch, Tunarr will look for a `.dizquetv` folder relative to its wor
 
 When using Docker, you can mount your a directory named `.dizquetv` when launching Tunarr to initiate the migration.
 
-```bash
+```
 docker run \
     -v "$(pwd)"/.dizquetv:/.dizquetv \
     -p 8000:8000 \
@@ -46,6 +46,22 @@ services:
 
     You can force a legacy migration on subsequent launches of Tunarr using the `--force_migration` flag. But be careful! This can be destructive if you've done any additional configuration in Tunarr.
 
-## Configuring Plex server sources
+## Initial Setup
 
-## Configuring FFMPEG
+Upon first launching Tunarr, you will see the Welcome page with a few required setup steps.
+
+![Welcome Page No Plex](/assets/welcome_page_not_connected.png)
+
+### Plex
+
+Currently, Tunarr supports a single media source, Plex. In order to add programming to your channels, you must connect at least one Plex server. Plex acts as the metadata source for your programming, and optionally, the streaming source. Click the "Connect Plex" button to start Plex authentication and add your first Plex server to Tunarr.
+
+!!! info
+
+    We plan on implementing other media source types, including [Jellyfin](https://github.com/chrisbenincasa/tunarr/issues/24) and [Local Media](https://github.com/chrisbenincasa/tunarr/issues/26). Upvote and follow the issues you'd like to see us implement!
+
+### FFMPEG
+
+Tunarr also requires [FFMPEG](https://ffmpeg.org/). FFMPEG is used to normalize channel video / audio streams for seamless playback, interleave your "flex" content, and more. Tunarr defaults to looking for the FFMPEG executable at `/usr/bin/ffmpeg`. If no executable is found, you can change the path in the FFMPEG settings page.
+
+![Welcome Page With FFMPEG](/assets/welcome_page_ffmpeg_installed.png)

@@ -34,7 +34,6 @@ Tunarr is available in the [Community Apps](https://unraid.net/community/apps) s
 
 Follow the on-screen instructions to set up the container, including mapping the Web UI port. You can optionally pass in an Nvidia GPU or Intel iGPU for hardware transcoding (use the proper corresponding Docker tag; enable "Advanced View" for more details), and optionally map an existing dizqueTV configuration directory to migrate (click "Show more settings...").
 
-
 ## Binaries
 
 Tunarr is released in pre-built binaries for Windows (x64), macOS (x64), and Linux (x64).
@@ -42,3 +41,7 @@ Tunarr is released in pre-built binaries for Windows (x64), macOS (x64), and Lin
 Like Docker images, we currently have a single release, `edge` that updates hourly.
 
 Prebuilt binaries can be found at [https://github.com/chrisbenincasa/tunarr/releases/tag/edge](https://github.com/chrisbenincasa/tunarr/releases/tag/edge)
+
+!!! info
+
+    Pre-built ARM binaries are tracked at [chrisbenincasa/tunarr#363](https://github.com/chrisbenincasa/tunarr/issues/363)

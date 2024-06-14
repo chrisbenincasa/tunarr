@@ -4,14 +4,33 @@ repo_url: https://github.com/chrisbenincasa/tunarr
 theme:
   name: material
   palette: 
-    scheme: slate
-    primary: teal
-    accent: indigo
+  # Palette toggle for automatic mode
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      toggle:
+        icon: material/brightness-4
+        name: Switch to system preference
   logo: assets/tunarr.png
   features:
     - navigation.tracking
     - navigation.path
     - navigation.sections
+    - navigation.indexes
     - content.code.copy
     - content.code.select
 
@@ -22,6 +41,14 @@ nav:
     - Setup: getting-started/setup.md
   - Configure:
     - Channels: configure/channels.md
+    - Programming: configure/programming.md
+    - Flex: configure/flex.md
+    - System: configure/system.md
+    - Clients:
+      - configure/clients/index.md
+      - Plex: configure/clients/plex.md
+  - Development:
+    - Contributing: dev/contributing.md
 
 markdown_extensions:
   - admonition
@@ -33,3 +60,6 @@ markdown_extensions:
       pygments_lang_class: true
   - pymdownx.inlinehilite
   - pymdownx.snippets
+
+extra_css:
+  - stylesheets/extra.css
