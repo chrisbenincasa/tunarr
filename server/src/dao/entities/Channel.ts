@@ -1,6 +1,7 @@
 import {
   Collection,
   Entity,
+  IType,
   ManyToMany,
   Property,
   Unique,
@@ -13,13 +14,39 @@ import { ChannelFillerShow } from './ChannelFillerShow.js';
 import { CustomShow } from './CustomShow.js';
 import { FillerShow } from './FillerShow.js';
 import { Program } from './Program.js';
+import { z } from 'zod';
+import { SchemaBackedDbType } from '../custom_types/SchemaBackedDbType.js';
 
-type ChannelIcon = {
-  path: string;
-  width: number;
-  duration: number;
-  position: string;
-};
+const ChannelIconSchema = z
+  .object({
+    path: z.string().catch(''),
+    width: z.number().nonnegative().catch(0),
+    duration: z.number().catch(0),
+    position: z
+      .union([
+        z.literal('top-left'),
+        z.literal('top-right'),
+        z.literal('bottom-left'),
+        z.literal('bottom-right'),
+      ])
+      .catch('bottom-right'),
+  })
+  .catch({
+    path: '',
+    width: 0,
+    duration: 0,
+    position: 'bottom-right',
+  });
+
+const DefaultChannelIcon = ChannelIconSchema.parse({});
+
+type ChannelIcon = z.infer<typeof ChannelIconSchema>;
+
+class ChannelIconType extends SchemaBackedDbType<typeof ChannelIconSchema> {
+  constructor() {
+    super(ChannelIconSchema);
+  }
+}
 
 export type ChannelTranscodingSettings = {
   targetResolution?: Resolution;
@@ -77,8 +104,8 @@ export class Channel extends BaseEntity {
   @Property()
   number!: number;
 
-  @Property({ type: 'json', nullable: true })
-  icon?: ChannelIcon;
+  @Property({ type: ChannelIconType, columnType: 'json', nullable: true })
+  icon?: IType<ChannelIcon, string>;
 
   @ManyToMany(() => Program, 'channels', { owner: true })
   programs = new Collection<Program>(this);
@@ -149,12 +176,7 @@ export class Channel extends BaseEntity {
       // filler
       // programs
       // fallback
-      icon: this.icon ?? {
-        path: '',
-        duration: 0,
-        position: '',
-        width: 0,
-      },
+      icon: this.icon ?? DefaultChannelIcon,
       guideMinimumDuration: this.guideMinimumDuration,
       groupTitle: this.groupTitle || '',
       disableFillerOverlay: this.disableFillerOverlay,

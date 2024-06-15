@@ -4,7 +4,16 @@ import {
   TextField,
   TextFieldProps,
 } from '@mui/material';
-import { get, has, isFunction, isNil, isUndefined, mapValues } from 'lodash-es';
+import {
+  get,
+  has,
+  isFunction,
+  isNil,
+  isObject,
+  isRegExp,
+  isUndefined,
+  mapValues,
+} from 'lodash-es';
 import { useCallback } from 'react';
 import {
   Controller,
@@ -14,11 +23,17 @@ import {
   FieldPath,
   FieldPathValue,
   FieldValues,
+  RegisterOptions,
   UseControllerProps,
   UseFormStateReturn,
   Validate,
+  ValidationRule,
 } from 'react-hook-form';
-import { handleNumericFormValue } from '../../helpers/util.ts';
+import { Primitive, type DeepRequired } from 'ts-essentials';
+import {
+  handleNumericFormValue,
+  isNonEmptyString,
+} from '../../helpers/util.ts';
 
 type RenderFunc<
   TFieldValues extends FieldValues = FieldValues,
@@ -177,6 +192,28 @@ type TextFieldPropsWithFuncs<
     | RenderFunc<TFieldValues, TName, TextFieldProps[Key]>;
 };
 
+type ControllerRegisterOptions = Omit<
+  RegisterOptions<FieldValues>,
+  'valueAsNumber' | 'valueAsDate' | 'setValueAs' | 'disabled'
+>;
+
+type NativeRuleTypes = Pick<
+  RegisterOptions<FieldValues>,
+  keyof ControllerRegisterOptions
+>;
+
+type FmtFunc<RuleValue> = (fieldName: string, value: RuleValue) => string;
+
+type ErrorMessageMap = {
+  [K in keyof NativeRuleTypes]-?: FmtFunc<
+    DeepRequired<Extract<NativeRuleTypes[K], Primitive>>
+  >;
+};
+
+const DefaultErrorMessageMap: Partial<ErrorMessageMap> = {
+  min: (fieldName: string, value) => `${fieldName} must be >= ${value}`,
+} as const;
+
 export const NumericFormControllerText = <
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
@@ -189,6 +226,12 @@ export const NumericFormControllerText = <
     TextFieldProps?: TextFieldPropsWithFuncs<TFieldValues, TName>;
   },
 ) => {
+  const prettyName =
+    props.prettyFieldName ??
+    (isNonEmptyString(props.TextFieldProps?.label)
+      ? props.TextFieldProps?.label
+      : undefined) ??
+    props.name;
   return (
     <NumericFormController
       {...props}
@@ -199,7 +242,7 @@ export const NumericFormControllerText = <
           displayValue,
         } = renderProps;
 
-        const fieldError = errors[props.name] as FieldError | undefined;
+        const fieldError = get(errors, props.name) as FieldError | undefined;
         let helperText: React.ReactNode = null;
         const helperTextValue = props.TextFieldProps?.helperText;
         let passedHelperText: React.ReactNode = null;
@@ -209,7 +252,31 @@ export const NumericFormControllerText = <
           passedHelperText = helperTextValue;
         }
 
-        if (fieldError?.message && helperTextValue) {
+        let fieldErrorMessage = fieldError?.message;
+        if (!isNil(fieldError) && !isNonEmptyString(fieldErrorMessage)) {
+          const errorType = fieldError.type as keyof NativeRuleTypes;
+          const defaultError = DefaultErrorMessageMap[errorType];
+          if (defaultError && !isUndefined(props.rules)) {
+            const value = props.rules[errorType] as ValidationRule<
+              string | number | boolean | RegExp
+            >;
+            let finalValue: string | number | boolean | undefined;
+            if (!isObject(value)) {
+              finalValue = value;
+            } else if (isRegExp(value)) {
+              finalValue = value.toString();
+            } else {
+              finalValue = isRegExp(value.value)
+                ? value.value.toString()
+                : value.value;
+            }
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
+            fieldErrorMessage = defaultError(prettyName, finalValue as any);
+          }
+        }
+
+        if (isNonEmptyString(fieldErrorMessage) && helperTextValue) {
           helperText = (
             <>
               {fieldError?.message}
@@ -217,8 +284,8 @@ export const NumericFormControllerText = <
               {passedHelperText}
             </>
           );
-        } else if (fieldError?.message) {
-          helperText = fieldError?.message;
+        } else if (fieldErrorMessage) {
+          helperText = fieldErrorMessage;
         } else if (helperTextValue) {
           helperText = passedHelperText;
         }
@@ -238,7 +305,7 @@ export const NumericFormControllerText = <
 
         return (
           <TextField
-            error={!isNil(errors[props.name])}
+            error={!isNil(fieldError)}
             {...field}
             {...fieldProps}
             value={displayValue ?? field.value}
