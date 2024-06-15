@@ -17,7 +17,7 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Grid2 from '@mui/material/Unstable_Grid2/Grid2';
 import { SaveChannelRequest, Watermark } from '@tunarr/types';
-import { isNil, isUndefined, map, round } from 'lodash-es';
+import { isNil, isUndefined, map, round, get } from 'lodash-es';
 import { useState } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 import {
@@ -73,7 +73,8 @@ export default function ChannelTranscodingConfig() {
     useFfmpegSettings();
   const channel = useStore((s) => s.channelEditor.currentEntity);
 
-  const { control, watch, setValue } = useFormContext<SaveChannelRequest>();
+  const { control, watch, setValue, getValues } =
+    useFormContext<SaveChannelRequest>();
 
   const [targetRes, watermark] = watch([
     'transcoding.targetResolution',
@@ -91,6 +92,22 @@ export default function ChannelTranscodingConfig() {
       }
       return 'global';
     });
+
+  const [uiVideoBitrate, setUiVideoBitrate] = useState<string>(() => {
+    const value = getValues('transcoding.videoBitrate');
+    if (isUndefined(value) || value === 'global') {
+      return 'global';
+    }
+    return value.toString();
+  });
+
+  const [uiVideoBufferSize, setUiVideoBufferSize] = useState<string>(() => {
+    const value = getValues('transcoding.videoBufferSize');
+    if (isUndefined(value) || value === 'global') {
+      return 'global';
+    }
+    return value.toString();
+  });
 
   if (ffmpegSettingsLoading) {
     return <CircularProgress />;
@@ -128,6 +145,30 @@ export default function ChannelTranscodingConfig() {
         'transcoding.targetResolution',
         resolutionFromAnyString(e.target.value),
       );
+    }
+  };
+
+  const handleGlobalOrNumber = (
+    field: 'transcoding.videoBitrate' | 'transcoding.videoBufferSize',
+    value: string,
+    originalOnChange: (...event: unknown[]) => void,
+  ) => {
+    if (field === 'transcoding.videoBitrate') {
+      setUiVideoBitrate(value);
+    } else {
+      setUiVideoBufferSize(value);
+    }
+
+    const num = parseInt(value);
+
+    if (!isNaN(num)) {
+      originalOnChange(num);
+    } else {
+      // Explicitly set "wrong" values off so we trigger validation
+      // and show the error message. This pattern SUCKS and it's react-hook-form's fault
+      // https://github.com/orgs/react-hook-form/discussions/8068
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
+      originalOnChange(value);
     }
   };
 
@@ -366,16 +407,31 @@ export default function ChannelTranscodingConfig() {
                 control={control}
                 name="transcoding.videoBitrate"
                 disabled={isNil(ffmpegSettings)}
-                rules={{ pattern: globalOrNumber }}
+                rules={{
+                  pattern: {
+                    value: globalOrNumber,
+                    message: "Must be a number or 'global'",
+                  },
+                  min: 0,
+                }}
                 render={({ field, formState: { errors } }) => (
                   <TextField
                     label="Video Bitrate (kbps)"
+                    error={!isNil(get(errors, 'transcoding.videoBitrate'))}
                     helperText={
                       errors.transcoding && errors.transcoding.videoBitrate
                         ? "Must be a number or 'global'"
                         : null
                     }
                     {...field}
+                    value={uiVideoBitrate}
+                    onChange={(e) =>
+                      handleGlobalOrNumber(
+                        'transcoding.videoBitrate',
+                        e.target.value,
+                        field.onChange,
+                      )
+                    }
                   />
                 )}
               />
@@ -391,16 +447,31 @@ export default function ChannelTranscodingConfig() {
                 control={control}
                 name="transcoding.videoBufferSize"
                 disabled={isNil(ffmpegSettings)}
-                rules={{ pattern: globalOrNumber }}
+                rules={{
+                  pattern: {
+                    value: globalOrNumber,
+                    message: "Must be a number or 'global'",
+                  },
+                  min: 0,
+                }}
                 render={({ field, formState: { errors } }) => (
                   <TextField
                     label="Video Buffer Size (kbps)"
+                    error={!isNil(get(errors, 'transcoding.videoBufferSize'))}
                     helperText={
                       errors.transcoding && errors.transcoding.videoBufferSize
                         ? "Must be a number or 'global'"
                         : null
                     }
                     {...field}
+                    value={uiVideoBufferSize}
+                    onChange={(e) =>
+                      handleGlobalOrNumber(
+                        'transcoding.videoBufferSize',
+                        e.target.value,
+                        field.onChange,
+                      )
+                    }
                   />
                 )}
               />

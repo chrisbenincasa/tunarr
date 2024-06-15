@@ -33,7 +33,7 @@ export const useUpdateChannel = (isNewChannel: boolean) => {
     onError: (error) => {
       if (error instanceof ZodiosError) {
         console.error(error.data);
-        console.error(error, error.cause);
+        console.error(error, error.cause, error.message);
       }
     },
   });

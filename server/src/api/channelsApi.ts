@@ -90,7 +90,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
           return res.status(404).send();
         }
       } catch (err) {
-        logger.error(req.routeConfig.url, err);
+        logger.error(err, req.routeConfig.url);
         return res.status(500).send();
       }
     },
@@ -155,7 +155,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
           return res.status(404).send();
         }
       } catch (err) {
-        logger.error(req.routeConfig.url, err);
+        logger.error(err, req.routeConfig.url);
         return res.status(500).send();
       }
     },
@@ -187,9 +187,9 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
       try {
         GlobalScheduler.getScheduledJob(UpdateXmlTvTask.ID)
           .runNow()
-          .catch((err) => logger.error('Error regenerating guide: %O', err));
+          .catch((err) => logger.error(err, 'Error regenerating guide'));
       } catch (e) {
-        logger.error('Unable to update guide after lineup update %O', e);
+        logger.error(e, 'Unable to update guide after lineup update %O');
       }
 
       return res.send();
@@ -220,7 +220,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
           return res.status(404).send();
         }
       } catch (err) {
-        logger.error('%s, %s', req.routeOptions.url, err);
+        logger.error(err, req.routeOptions.url);
         return res.status(500).send();
       }
     },
@@ -299,9 +299,9 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
       try {
         GlobalScheduler.getScheduledJob(UpdateXmlTvTask.ID)
           .runNow(true)
-          .catch((err) => logger.error('Error regenerating guide: %O', err));
+          .catch((err) => logger.error(err, 'Error regenerating guide'));
       } catch (e) {
-        logger.error('Unable to update guide after lineup update %O', e);
+        logger.error(e, 'Unable to update guide after lineup update');
       }
 
       // Potentially more DB queries than just building from the result,

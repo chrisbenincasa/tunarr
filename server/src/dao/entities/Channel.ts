@@ -6,7 +6,7 @@ import {
   Property,
   Unique,
 } from '@mikro-orm/core';
-import { Channel as ChannelDTO, Resolution } from '@tunarr/types';
+import { Channel as ChannelDTO } from '@tunarr/types';
 import { type Tag } from '@tunarr/types';
 import { nilToUndefined } from '../../util/index.js';
 import { BaseEntity } from './BaseEntity.js';
@@ -16,6 +16,7 @@ import { FillerShow } from './FillerShow.js';
 import { Program } from './Program.js';
 import { z } from 'zod';
 import { SchemaBackedDbType } from '../custom_types/SchemaBackedDbType.js';
+import { ResolutionSchema } from '@tunarr/types/schemas';
 
 const ChannelIconSchema = z
   .object({
@@ -48,29 +49,72 @@ class ChannelIconType extends SchemaBackedDbType<typeof ChannelIconSchema> {
   }
 }
 
-export type ChannelTranscodingSettings = {
-  targetResolution?: Resolution;
-  videoBitrate?: number;
-  videoBufferSize?: number;
-};
+const ChannelTranscodingSettingsSchema = z.object({
+  targetResolution: ResolutionSchema.optional().catch(undefined),
+  videoBitrate: z.number().nonnegative().optional().catch(undefined),
+  videoBufferSize: z.number().nonnegative().optional().catch(undefined),
+});
 
-type ChannelWatermark = {
-  url?: string;
-  enabled: boolean;
-  position: 'bottom-left' | 'bottom-right' | 'top-right' | 'top-left';
-  width: number;
-  verticalMargin: number;
-  horizontalMargin: number;
-  duration: number;
-  fixedSize?: boolean;
-  animated?: boolean;
-};
+export type ChannelTranscodingSettings = z.infer<
+  typeof ChannelTranscodingSettingsSchema
+>;
 
-type ChannelOfflineSettings = {
-  picture?: string;
-  soundtrack?: string;
-  mode: 'pic' | 'clip';
-};
+class ChannelTranscodingSettingsType extends SchemaBackedDbType<
+  typeof ChannelTranscodingSettingsSchema
+> {
+  constructor() {
+    super(ChannelTranscodingSettingsSchema);
+  }
+}
+
+const ChannelWatermarkSchema = z.object({
+  url: z.string().optional().catch(undefined),
+  enabled: z.boolean().catch(false),
+  position: z
+    .union([
+      z.literal('bottom-left'),
+      z.literal('bottom-right'),
+      z.literal('top-right'),
+      z.literal('top-left'),
+    ])
+    .catch('bottom-right'),
+  width: z.number().nonnegative().catch(2), // percentage
+  verticalMargin: z.number().nonnegative().catch(0),
+  horizontalMargin: z.number().nonnegative().catch(0),
+  duration: z.number().nonnegative().catch(0),
+  fixedSize: z.boolean().optional().catch(undefined),
+  animated: z.boolean().optional().catch(undefined),
+});
+
+type ChannelWatermark = z.infer<typeof ChannelWatermarkSchema>;
+
+class ChannelWatermarkType extends SchemaBackedDbType<
+  typeof ChannelWatermarkSchema
+> {
+  constructor() {
+    super(ChannelWatermarkSchema);
+  }
+}
+
+const ChannelOfflineSettingsSchema = z.object({
+  picture: z.string().optional(),
+  soundtrack: z.string().optional(),
+  mode: z.union([z.literal('pic'), z.literal('clip')]).catch('clip'),
+});
+
+const DefaultChannelOfflineSettingsSchema = ChannelOfflineSettingsSchema.parse(
+  {},
+);
+
+type ChannelOfflineSettings = z.infer<typeof ChannelOfflineSettingsSchema>;
+
+class ChannelOfflineSettingsType extends SchemaBackedDbType<
+  typeof ChannelOfflineSettingsSchema
+> {
+  constructor() {
+    super(ChannelOfflineSettingsSchema);
+  }
+}
 
 const ChannelIdTag = 'ChannelId';
 
@@ -138,11 +182,12 @@ export class Channel extends BaseEntity {
   guideFlexTitle?: string;
 
   @Property({
-    type: 'json',
+    columnType: 'json',
+    type: ChannelOfflineSettingsType,
     nullable: true,
-    default: JSON.stringify({ mode: 'clip' } as ChannelOfflineSettings),
+    default: JSON.stringify(DefaultChannelOfflineSettingsSchema),
   })
-  offline!: ChannelOfflineSettings;
+  offline!: IType<ChannelOfflineSettings, string>;
 
   // Filler collections
   @ManyToMany({
@@ -158,12 +203,16 @@ export class Channel extends BaseEntity {
   customShows = new Collection<CustomShow>(this);
 
   // Watermark
-  @Property({ type: 'json', nullable: true })
-  watermark?: ChannelWatermark;
+  @Property({ type: ChannelWatermarkType, columnType: 'json', nullable: true })
+  watermark?: IType<ChannelWatermark, string>;
 
   // Transcoding
-  @Property({ type: 'json', nullable: true })
-  transcoding?: ChannelTranscodingSettings;
+  @Property({
+    type: ChannelTranscodingSettingsType,
+    columnType: 'json',
+    nullable: true,
+  })
+  transcoding?: IType<ChannelTranscodingSettings, string>;
 
   @ManyToMany(() => Program)
   fallback = new Collection<Program>(this);
