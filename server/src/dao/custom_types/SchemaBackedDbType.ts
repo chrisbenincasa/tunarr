@@ -1,6 +1,6 @@
 import { Type } from '@mikro-orm/core';
 import { z } from 'zod';
-import { Logger, LoggerFactory } from '../../util/logging/LoggerFactory.js';
+import { Logger, LoggerFactory } from '../../util/logging/LoggerFactory';
 
 let _logger: Logger;
 
