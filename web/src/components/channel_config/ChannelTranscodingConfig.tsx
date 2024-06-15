@@ -239,7 +239,10 @@ export default function ChannelTranscodingConfig() {
                     control={control}
                     name="watermark.width"
                     float
-                    rules={{ min: 0, max: 100 }}
+                    rules={{
+                      min: 0, //{ value: 0, message: 'Width must be >= 0' },
+                      max: 100,
+                    }}
                     TextFieldProps={{ label: 'Width %', fullWidth: true }}
                   />
                 </Grid2>

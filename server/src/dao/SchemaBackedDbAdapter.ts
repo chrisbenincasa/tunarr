@@ -40,7 +40,6 @@ export class SchemaBackedDbAdapter<T extends z.ZodTypeAny, Out = z.infer<T>>
         this.logger.debug(
           'Attempting to merge with defaults to obtain valid object',
         );
-        console.log('hey');
         needsWriteFlush = parseResult.success;
         continue;
       }
