@@ -10,16 +10,27 @@ import { SettingsDB } from '../settings';
 import { BackupResult, DatabaseBackup } from './DatabaseBackup';
 import { SqliteDatabaseBackup } from './SqliteDatabaseBackup';
 import { getDatabasePath } from '../databaseDirectoryUtil';
-import { compact, isNull, map, sortBy, take } from 'lodash-es';
+import { compact, isEmpty, isNull, map, sortBy, take } from 'lodash-es';
 import { asyncPool } from '../../util/asyncPool';
+import { fileExists } from '../../util/fsUtil.js';
+import { isDocker } from '../../util/isDocker.js';
 
 export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
   #logger = LoggerFactory.child({ className: ArchiveDatabaseBackup.name });
   #config: FileBackupOutput;
+  #normalizedOutputPath: string;
 
   constructor(settings: SettingsDB, config: FileBackupOutput) {
     super(settings);
     this.#config = config;
+    if (isEmpty(config.outputPath) && isDocker()) {
+      this.#normalizedOutputPath = '/config/tunarr/backups';
+    } else {
+      this.#normalizedOutputPath = path.resolve(
+        process.cwd(),
+        this.#config.outputPath,
+      );
+    }
   }
 
   async backup(): Promise<BackupResult<string>> {
@@ -44,8 +55,16 @@ export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
 
     const isGzip = !!this.#config.gzip && this.#config.archiveFormat === 'tar';
 
+    if (!(await fileExists(this.#normalizedOutputPath))) {
+      this.#logger.debug(
+        'Backup path at %s does not exist. Creating it now.',
+        this.#normalizedOutputPath,
+      );
+      await fs.mkdir(this.#normalizedOutputPath, { recursive: true });
+    }
+
     const backupFileName = path.join(
-      this.outputPath,
+      this.#normalizedOutputPath,
       `tunarr-backup-${dayjs().format('YYYYMMDD_HHmmss')}.${
         this.#config.archiveFormat
       }${isGzip ? '.gz' : ''}`,
@@ -58,6 +77,9 @@ export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
     const finishedPromise = new Promise<void>((resolve, reject) => {
       archive.on('end', () => resolve(void 0));
       archive.on('error', reject);
+      archive.on('entry', (entry) => {
+        this.#logger.debug('Added entry to backup: %s', entry.name);
+      });
     });
 
     archive.pipe(outStream);
@@ -91,7 +113,7 @@ export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
       return;
     }
 
-    const listings = await fs.readdir(this.outputPath);
+    const listings = await fs.readdir(this.#normalizedOutputPath);
     const relevantListings = sortBy(
       compact(
         map(listings, (file) => {
@@ -127,7 +149,7 @@ export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
 
       for await (const result of asyncPool(
         listingsToDelete,
-        async ([file]) => fs.rm(path.join(this.outputPath, file)),
+        async ([file]) => fs.rm(path.join(this.#normalizedOutputPath, file)),
         { concurrency: 3 },
       )) {
         if (result.type === 'error') {
@@ -143,9 +165,5 @@ export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
         }
       }
     }
-  }
-
-  private get outputPath() {
-    return path.resolve(this.#config.outputPath);
   }
 }

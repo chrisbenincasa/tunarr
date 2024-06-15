@@ -168,8 +168,7 @@ export class SettingsDB extends ITypedEventEmitter {
   async directUpdate(fn: (settings: SettingsFile) => SettingsFile | void) {
     return await this.db.update(fn).then(() => {
       this.logger?.debug(
-        'Detected change to settings DB file %s on disk. Reloading.',
-        path,
+        'Detected change to settings DB file on disk. Reloading.',
       );
       this.emit('change');
     });
