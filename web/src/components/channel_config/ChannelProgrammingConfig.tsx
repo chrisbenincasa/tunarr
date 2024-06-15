@@ -3,6 +3,7 @@ import {
   Box,
   Button,
   CircularProgress,
+  IconButton,
   Link,
   Stack,
   Tooltip,
@@ -24,7 +25,7 @@ import ChannelProgrammingList from './ChannelProgrammingList.tsx';
 import { ChannelProgrammingSort } from './ChannelProgrammingSort.tsx';
 import { ChannelProgrammingTools } from './ChannelProgrammingTools.tsx';
 import useStore from '@/store/index.ts';
-import { Save } from '@mui/icons-material';
+import { Save, Undo } from '@mui/icons-material';
 import { useState } from 'react';
 import { channelProgramUniqueId } from '@/helpers/util.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -51,6 +52,7 @@ export function ChannelProgrammingConfig() {
   } = usePreloadedChannelEdit();
   const theme = useTheme();
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
+  const mediumViewport = useMediaQuery(theme.breakpoints.between('md', 'lg'));
   const programsDirty = useStore((s) => s.channelEditor.dirty.programs);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const snackbar = useSnackbar();
@@ -147,7 +149,6 @@ export function ChannelProgrammingConfig() {
         channelId: channel!.id,
         lineupRequest: { type: 'manual', lineup, programs: uniquePrograms },
       })
-      .then(console.log)
       .catch(console.error);
   };
 
@@ -198,35 +199,55 @@ export function ChannelProgrammingConfig() {
           <AddProgrammingButton />
           {programsDirty && (
             <Tooltip
-              title="Reset any changes made to the channel's lineup"
+              title="Reset changes made to the channel's lineup"
               placement="top"
             >
-              <Button
-                variant="contained"
-                onClick={() => resetLineup()}
-                disabled={!programsDirty}
-              >
-                Reset
-              </Button>
+              {mediumViewport ? (
+                <IconButton
+                  onClick={() => resetLineup()}
+                  disabled={!programsDirty}
+                  color="primary"
+                >
+                  <Undo />
+                </IconButton>
+              ) : (
+                <Button
+                  variant="contained"
+                  onClick={() => resetLineup()}
+                  disabled={!programsDirty}
+                  startIcon={<Undo />}
+                >
+                  Reset
+                </Button>
+              )}
             </Tooltip>
           )}
-          <Button
-            variant="contained"
-            onClick={() => onSave()}
-            disabled={!programsDirty || isSubmitting}
-            startIcon={
-              isSubmitting ? (
-                <CircularProgress
-                  size="20px"
-                  sx={{ mx: 1, color: 'inherit' }}
-                />
-              ) : (
-                <Save />
-              )
-            }
-          >
-            Save
-          </Button>
+          {mediumViewport ? (
+            <IconButton
+              onClick={() => onSave()}
+              disabled={!programsDirty || isSubmitting}
+            >
+              <Save />
+            </IconButton>
+          ) : (
+            <Button
+              variant="contained"
+              onClick={() => onSave()}
+              disabled={!programsDirty || isSubmitting}
+              startIcon={
+                isSubmitting ? (
+                  <CircularProgress
+                    size="20px"
+                    sx={{ mx: 1, color: 'inherit' }}
+                  />
+                ) : (
+                  <Save />
+                )
+              }
+            >
+              Save
+            </Button>
+          )}
         </Stack>
 
         <ChannelProgrammingList

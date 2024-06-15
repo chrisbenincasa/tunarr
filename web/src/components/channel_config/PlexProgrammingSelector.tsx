@@ -237,7 +237,12 @@ export default function PlexProgrammingSelector() {
     fetchNextPage: fetchNextPlaylistPage,
     isFetchingNextPage: isFetchingNextPlaylistPage,
     hasNextPage: hasNextPlaylistPage,
-  } = usePlexPlaylistsInfinite(selectedServer, selectedLibrary, rowSize * 4);
+  } = usePlexPlaylistsInfinite(
+    selectedServer,
+    selectedLibrary,
+    rowSize * 4,
+    // selectedLibrary?.library.type === 'artist',
+  );
 
   useEffect(() => {
     // When switching between Libraries, if a collection doesn't exist switch back to 'Library' tab

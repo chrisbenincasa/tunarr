@@ -7,16 +7,8 @@ import {
   ProgramSourceType,
   programSourceTypeFromString,
 } from '../dao/custom_types/ProgramSourceType';
-import { withDb } from '../dao/dataSource';
-import { PlexServerSettings } from '../dao/entities/PlexServerSettings';
-import { Plex } from '../external/plex';
+import { PlexApiFactory } from '../external/plex';
 import { RouterPluginAsyncCallback } from '../types/serverType';
-
-type ExternalId = {
-  externalSourceType: ProgramSourceType;
-  externalSourceId: string;
-  externalItemId: string;
-};
 
 const externalIdSchema = z
   .string()
@@ -45,28 +37,39 @@ const externalIdSchema = z
     };
   });
 
+const thumbOptsSchema = z.object({
+  width: z.number().optional(),
+  height: z.number().optional(),
+});
+
+const ExternalMetadataQuerySchema = z.object({
+  id: externalIdSchema,
+  asset: z.union([z.literal('thumb'), z.literal('external-link')]),
+  mode: z.union([z.literal('json'), z.literal('redirect'), z.literal('proxy')]),
+  thumbOptions: z
+    .string()
+    .transform((s) => JSON.parse(s) as unknown)
+    .pipe(thumbOptsSchema)
+    .optional(),
+});
+
+type ExternalMetadataQuery = z.infer<typeof ExternalMetadataQuerySchema>;
+
 // eslint-disable-next-line @typescript-eslint/require-await
 export const metadataApiRouter: RouterPluginAsyncCallback = async (fastify) => {
   fastify.get(
     '/metadata/external',
     {
       schema: {
-        querystring: z.object({
-          id: externalIdSchema,
-          asset: z.union([z.literal('thumb'), z.literal('external-link')]),
-          mode: z.union([
-            z.literal('json'),
-            z.literal('redirect'),
-            z.literal('proxy'),
-          ]),
-        }),
+        querystring: ExternalMetadataQuerySchema,
       },
     },
     async (req, res) => {
+      req.logRequestAtLevel = 'debug';
       let result: string | null = null;
       switch (req.query.id.externalSourceType) {
         case ProgramSourceType.PLEX: {
-          result = await handlePlexItem(req.query.id, req.query.asset);
+          result = await handlePlexItem(req.query);
         }
       }
 
@@ -109,23 +112,18 @@ export const metadataApiRouter: RouterPluginAsyncCallback = async (fastify) => {
     },
   );
 
-  async function handlePlexItem(
-    id: ExternalId,
-    asset: 'thumb' | 'external-link',
-  ) {
-    const plexServer = await withDb((em) => {
-      return em.findOne(PlexServerSettings, { name: id.externalSourceId });
-    });
+  async function handlePlexItem(query: ExternalMetadataQuery) {
+    const plexApi = await PlexApiFactory.getOrSet(query.id.externalSourceId);
 
-    if (isNil(plexServer)) {
+    if (isNil(plexApi)) {
       return null;
     }
 
-    if (asset === 'thumb') {
-      return Plex.getThumbUrl({
-        uri: plexServer.uri,
-        accessToken: plexServer.accessToken,
-        itemKey: id.externalItemId,
+    if (query.asset === 'thumb') {
+      return plexApi.getThumbUrl({
+        itemKey: query.id.externalItemId,
+        width: query.thumbOptions?.width,
+        height: query.thumbOptions?.height,
       });
     }
 

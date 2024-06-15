@@ -21,6 +21,7 @@ import {
   forEach,
   isEmpty,
   isError,
+  isNull,
   isString,
   isUndefined,
   map,
@@ -37,6 +38,7 @@ import {
 import { Maybe, Try } from '../types/util.js';
 import { Logger, LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { isSuccess } from '../util/index.js';
+import { getEm } from '../dao/dataSource.js';
 
 type AxiosConfigWithMetadata = InternalAxiosRequestConfig & {
   metadata: {
@@ -105,7 +107,24 @@ class PlexApiFactoryImpl {
   #cache: NodeCache;
 
   constructor() {
-    this.#cache = new NodeCache({ useClones: false });
+    this.#cache = new NodeCache({
+      useClones: false,
+      deleteOnExpire: true,
+      checkperiod: 60,
+    });
+  }
+
+  async getOrSet(name: string) {
+    let client = this.#cache.get<Plex>(name);
+    if (isUndefined(client)) {
+      const em = getEm();
+      const server = await em.repo(PlexServerSettings).findOne({ name });
+      if (!isNull(server)) {
+        client = new Plex(server);
+        this.#cache.set(server.name, client);
+      }
+    }
+    return client;
   }
 
   get(opts: PlexApiOptions) {
@@ -462,6 +481,22 @@ export class Plex {
       attributeNamePrefix: '',
     }).parse(response) as PlexTvDevicesResponse;
     return parsed;
+  }
+
+  getThumbUrl(opts: {
+    itemKey: string;
+    width?: number;
+    height?: number;
+    upscale?: string;
+  }) {
+    return Plex.getThumbUrl({
+      uri: this.opts.uri,
+      accessToken: this.opts.accessToken,
+      itemKey: opts.itemKey,
+      width: opts.width,
+      height: opts.height,
+      upscale: opts.upscale,
+    });
   }
 
   static getThumbUrl(opts: {

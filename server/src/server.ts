@@ -213,7 +213,7 @@ export async function initServer(opts: ServerOptions) {
 
     const roundedTime = round(rep.elapsedTime, 4);
 
-    logger.http(
+    logger[req['logRequestAtLevel'] ?? 'http'](
       `${req.method} ${req.url} ${rep.statusCode} -${lengthStr}${roundedTime}ms`,
       {
         req: {
