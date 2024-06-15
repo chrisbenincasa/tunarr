@@ -75,7 +75,13 @@ export default function AddSelectedMediaButton({
   };
 
   return (
-    <Tooltip title={tooltipTitle ?? 'Add all programs to channel'}>
+    <Tooltip
+      title={
+        selectedMedia.length === 0
+          ? 'No programs selected'
+          : tooltipTitle ?? 'Add all selected programs to channel'
+      }
+    >
       <span>
         <Button
           onClick={(e) => addSelectedItems(e)}
