@@ -206,7 +206,7 @@ function GeneralSettingsForm({ systemSettings }: GeneralSetingsFormProps) {
                     fullWidth
                     label="Output Path"
                     {...field}
-                    helperText="By default, saves backups in the server's run directory"
+                    helperText="By default, saves backups in the server's run directory, or, if running in Docker, to /config/tunarr/backups"
                   />
                 )}
               />
