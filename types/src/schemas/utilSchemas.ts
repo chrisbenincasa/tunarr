@@ -1,14 +1,65 @@
 import { z } from 'zod';
+import { TupleToUnion } from '../util.js';
+import { constructZodLiteralUnionType } from './util.js';
 
-// When we have these, we can implement them.
-export const GlobalExternalSourceSchema = z.never();
+// Should match the DB schema...
+export const ExternalIdType = [
+  'plex',
+  'plex-guid',
+  'imdb',
+  'tmdb',
+  'tvdb',
+] as const;
+
+export type ExternalIdType = TupleToUnion<typeof ExternalIdType>;
+
+export const SingleExternalIdType = [
+  'plex-guid',
+  'imdb',
+  'tmdb',
+  'tvdb',
+] as const;
+
+export type SingleExternalIdType = TupleToUnion<typeof SingleExternalIdType>;
+
+export const SingleExternalIdSourceSchema = constructZodLiteralUnionType(
+  SingleExternalIdType.map((typ) => z.literal(typ)),
+);
+
+export const MultiExternalIdType = ['plex'] as const;
+export type MultiExternalIdType = TupleToUnion<typeof MultiExternalIdType>;
+
+function inConstArr<Arr extends readonly string[], S extends string>(
+  arr: Arr,
+  typ: S,
+): boolean {
+  for (const value of arr) {
+    if (value === typ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+export function isValidSingleExternalIdType(
+  s: string,
+): s is SingleExternalIdType {
+  return inConstArr(SingleExternalIdType, s);
+}
+
+export function isValidMultiExternalIdType(
+  s: string,
+): s is MultiExternalIdType {
+  return inConstArr(MultiExternalIdType, s);
+}
 
 // Represents an external ID that has a single
 // source-of-truth (i.e. the 'id' field is global)
 // to the source, e.g. IMDB
-export const GlobalExternalIdSchema = z.object({
+export const SingleExternalIdSchema = z.object({
   type: z.literal('single'),
-  source: GlobalExternalSourceSchema,
+  source: SingleExternalIdSourceSchema,
   id: z.string(),
 });
 
@@ -18,7 +69,7 @@ export const MultiExternalSourceSchema = z.literal('plex');
 // Represents components of an ID that can be
 // used to address an object (program or grouping) in
 // an external source  e.g. Plex. This differs from
-// a GlobalExternalId in that there is not a 'single'
+// a SingleExternalId in that there is not a 'single'
 // source; we include the sourceId to know which
 // 'source' to address, e.g. Plex server ID
 export const MultiExternalIdSchema = z.object({
@@ -31,7 +82,7 @@ export const MultiExternalIdSchema = z.object({
 
 // ExternalIds are either global or multi IDs.
 export const ExternalIdSchema = z.discriminatedUnion('type', [
-  GlobalExternalIdSchema,
+  SingleExternalIdSchema,
   MultiExternalIdSchema,
 ]);
 

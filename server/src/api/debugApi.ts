@@ -5,28 +5,30 @@ import { ChannelLineupSchema } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import { FastifyRequest } from 'fastify';
 import { compact, first, isNil, isUndefined } from 'lodash-es';
+import os from 'node:os';
 import z from 'zod';
+import { ArchiveDatabaseBackup } from '../dao/backup/ArchiveDatabaseBackup.js';
 import { getEm } from '../dao/dataSource.js';
 import {
   StreamLineupItem,
   isContentBackedLineupIteam,
 } from '../dao/derived_types/StreamLineup.js';
 import { Channel } from '../dao/entities/Channel.js';
-import { PlexPlayer } from '../stream/plex/PlexPlayer.js';
-import { PlexTranscoder } from '../stream/plex/PlexTranscoder.js';
 import { FillerPicker } from '../services/FillerPicker.js';
-import { StreamContextChannel } from '../stream/types.js';
 import { PlayerContext } from '../stream/Player.js';
-import { Maybe } from '../types/util.js';
-import { RouterPluginAsyncCallback } from '../types/serverType.js';
-import { mapAsyncSeq } from '../util/index.js';
-import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import {
   StreamProgramCalculator,
   generateChannelContext,
 } from '../stream/StreamProgramCalculator.js';
-import { ArchiveDatabaseBackup } from '../dao/backup/ArchiveDatabaseBackup.js';
-import os from 'node:os';
+import { PlexPlayer } from '../stream/plex/PlexPlayer.js';
+import { PlexTranscoder } from '../stream/plex/PlexTranscoder.js';
+import { StreamContextChannel } from '../stream/types.js';
+import { SavePlexProgramExternalIdsTask } from '../tasks/SavePlexProgramExternalIdsTask.js';
+import { PlexTaskQueue } from '../tasks/TaskQueue.js';
+import { RouterPluginAsyncCallback } from '../types/serverType.js';
+import { Maybe } from '../types/util.js';
+import { mapAsyncSeq } from '../util/index.js';
+import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 
 const ChannelQuerySchema = {
   querystring: z.object({
@@ -354,4 +356,24 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
     }).backup();
     return res.send();
   });
+
+  fastify.post(
+    '/debug/plex/:programId/update_external_ids',
+    {
+      schema: {
+        params: z.object({
+          programId: z.string(),
+        }),
+      },
+    },
+    async (req, res) => {
+      const result = await PlexTaskQueue.add(
+        new SavePlexProgramExternalIdsTask(req.params.programId),
+      );
+
+      console.log(result);
+
+      return res.send();
+    },
+  );
 };

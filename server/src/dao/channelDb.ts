@@ -514,6 +514,7 @@ export class ChannelDB {
             'programs.season',
             'programs.album',
             'programs.artist',
+            'programs.externalIds',
           ],
         },
       );

@@ -291,197 +291,176 @@ export const PlexMediaDescriptionSchema = z.object({
 
 export type PlexMediaDescription = z.infer<typeof PlexMediaDescriptionSchema>;
 
-export const PlexMovieSchema = z
-  .object({
-    ratingKey: z.string(),
-    key: z.string(),
-    guid: z.string(),
-    editionTitle: z.string().optional(),
-    studio: z.string().optional(),
-    type: z.literal('movie'),
-    title: z.string(),
-    titleSort: z.string().optional(),
-    contentRating: z.string().optional(),
-    summary: z.string().optional(),
-    rating: z.number().optional(),
-    audienceRating: z.number().optional(),
-    year: z.number().optional(),
-    tagline: z.string().optional(),
-    thumb: z.string().optional(),
-    art: z.string().optional(),
-    duration: z.number(),
-    originallyAvailableAt: z.string().optional(),
-    addedAt: z.number(),
-    updatedAt: z.number().optional(),
-    audienceRatingImage: z.string().optional(),
-    chapterSource: z.string().optional(),
-    primaryExtraKey: z.string().optional(),
-    ratingImage: z.string().optional(),
-    Media: z.array(PlexMediaDescriptionSchema).optional(),
-    Genre: z.array(PlexJoinItemSchema).optional(),
-    Country: z.array(PlexJoinItemSchema).optional(),
-    Director: z.array(PlexJoinItemSchema).optional(),
-    Writer: z.array(PlexJoinItemSchema).optional(),
-    Role: z.array(PlexJoinItemSchema).optional(),
-  })
-  .merge(neverDirectory);
+// We have to be totally sure these fields apply to ALL media types before
+// adding here.
+const BasePlexMediaSchema = z.object({
+  ratingKey: z.string(),
+  key: z.string(),
+  guid: z.string(),
+  Guid: z.array(z.object({ id: z.string() })).optional(),
+});
+
+export const PlexMovieSchema = BasePlexMediaSchema.extend({
+  editionTitle: z.string().optional(),
+  studio: z.string().optional(),
+  type: z.literal('movie'),
+  title: z.string(),
+  titleSort: z.string().optional(),
+  contentRating: z.string().optional(),
+  summary: z.string().optional(),
+  rating: z.number().optional(),
+  audienceRating: z.number().optional(),
+  year: z.number().optional(),
+  tagline: z.string().optional(),
+  thumb: z.string().optional(),
+  art: z.string().optional(),
+  duration: z.number(),
+  originallyAvailableAt: z.string().optional(),
+  addedAt: z.number(),
+  updatedAt: z.number().optional(),
+  audienceRatingImage: z.string().optional(),
+  chapterSource: z.string().optional(),
+  primaryExtraKey: z.string().optional(),
+  ratingImage: z.string().optional(),
+  Media: z.array(PlexMediaDescriptionSchema).optional(),
+  Genre: z.array(PlexJoinItemSchema).optional(),
+  Country: z.array(PlexJoinItemSchema).optional(),
+  Director: z.array(PlexJoinItemSchema).optional(),
+  Writer: z.array(PlexJoinItemSchema).optional(),
+  Role: z.array(PlexJoinItemSchema).optional(),
+}).merge(neverDirectory);
 
 export type PlexMovie = z.infer<typeof PlexMovieSchema>;
 
-export const PlexTvShowSchema = z
-  .object({
-    addedAt: z.number(),
-    art: z.string().optional(),
-    audienceRating: z.number().optional(),
-    audienceRatingImage: z.string().optional(),
-    childCount: z.number(),
-    Collection: z.array(PlexJoinItemSchema).optional(),
-    contentRating: z.string(),
-    Country: z.array(PlexJoinItemSchema),
-    duration: z.number(),
-    Genre: z.array(PlexJoinItemSchema),
-    guid: z.string(),
-    index: z.number(),
-    key: z.string(),
-    leafCount: z.number(),
-    originallyAvailableAt: z.string(),
-    primaryExtraKey: z.string(),
-    ratingKey: z.string(),
-    Role: z.array(PlexJoinItemSchema),
-    studio: z.string(),
-    summary: z.string(),
-    tagline: z.string(),
-    theme: z.string(),
-    thumb: z.string(),
-    title: z.string(),
-    type: z.literal('show'),
-    updatedAt: z.number().optional(),
-    viewedLeafCount: z.number(),
-    year: z.number(),
-  })
-  .merge(neverDirectory);
+export const PlexTvShowSchema = BasePlexMediaSchema.extend({
+  addedAt: z.number(),
+  art: z.string().optional(),
+  audienceRating: z.number().optional(),
+  audienceRatingImage: z.string().optional(),
+  childCount: z.number(),
+  Collection: z.array(PlexJoinItemSchema).optional(),
+  contentRating: z.string(),
+  Country: z.array(PlexJoinItemSchema),
+  duration: z.number(),
+  Genre: z.array(PlexJoinItemSchema),
+  index: z.number(),
+  leafCount: z.number(),
+  originallyAvailableAt: z.string(),
+  primaryExtraKey: z.string(),
+  Role: z.array(PlexJoinItemSchema),
+  studio: z.string(),
+  summary: z.string(),
+  tagline: z.string(),
+  theme: z.string(),
+  thumb: z.string(),
+  title: z.string(),
+  type: z.literal('show'),
+  updatedAt: z.number().optional(),
+  viewedLeafCount: z.number(),
+  year: z.number(),
+}).merge(neverDirectory);
 
 export type PlexTvShow = Alias<z.infer<typeof PlexTvShowSchema>>;
 
-export const PlexTvSeasonSchema = z
-  .object({
-    ratingKey: z.string(),
-    key: z.string(),
-    parentRatingKey: z.string(),
-    guid: z.string(),
-    parentGuid: z.string(),
-    parentStudio: z.string(),
-    type: z.literal('season'),
-    title: z.string(),
-    parentKey: z.string(),
-    parentTitle: z.string(),
-    summary: z.string(),
-    index: z.number(),
-    parentIndex: z.number(),
-    parentYear: z.number(),
-    thumb: z.string(),
-    art: z.string(),
-    parentThumb: z.string(),
-    parentTheme: z.string(),
-    leafCount: z.number(),
-    viewedLeafCount: z.number(),
-    addedAt: z.number(),
-    updatedAt: z.number().optional(),
-  })
-  .merge(neverDirectory);
+export const PlexTvSeasonSchema = BasePlexMediaSchema.extend({
+  parentRatingKey: z.string(),
+  parentGuid: z.string(),
+  parentStudio: z.string(),
+  type: z.literal('season'),
+  title: z.string(),
+  parentKey: z.string(),
+  parentTitle: z.string(),
+  summary: z.string(),
+  index: z.number(),
+  parentIndex: z.number(),
+  parentYear: z.number(),
+  thumb: z.string(),
+  art: z.string(),
+  parentThumb: z.string(),
+  parentTheme: z.string(),
+  leafCount: z.number(),
+  viewedLeafCount: z.number(),
+  addedAt: z.number(),
+  updatedAt: z.number().optional(),
+}).merge(neverDirectory);
 
 export type PlexTvSeason = Alias<z.infer<typeof PlexTvSeasonSchema>>;
 
-export const PlexMusicArtistSchema = z
-  .object({
-    ratingKey: z.string(),
-    key: z.string(),
-    guid: z.string(),
-    type: z.literal('artist'),
-    title: z.string(),
-    summary: z.string().optional(),
-    index: z.number(),
-    viewCount: z.number(),
-    skipCount: z.number(),
-    lastViewedAt: z.number().optional(),
-    thumb: z.string().optional(),
-    art: z.string().optional(),
-    addedAt: z.number(),
-    updatedAt: z.number().optional(),
-    Genre: z.array(PlexJoinItemSchema).optional(),
-    Country: z.array(PlexJoinItemSchema).optional(),
-  })
-  .merge(neverDirectory);
+export const PlexMusicArtistSchema = BasePlexMediaSchema.extend({
+  type: z.literal('artist'),
+  title: z.string(),
+  summary: z.string().optional(),
+  index: z.number(),
+  viewCount: z.number(),
+  skipCount: z.number(),
+  lastViewedAt: z.number().optional(),
+  thumb: z.string().optional(),
+  art: z.string().optional(),
+  addedAt: z.number(),
+  updatedAt: z.number().optional(),
+  Genre: z.array(PlexJoinItemSchema).optional(),
+  Country: z.array(PlexJoinItemSchema).optional(),
+}).merge(neverDirectory);
 
 export type PlexMusicArtist = Alias<z.infer<typeof PlexMusicArtistSchema>>;
 
-export const PlexMusicAlbumSchema = z
-  .object({
-    ratingKey: z.string(),
-    key: z.string(),
-    parentRatingKey: z.string(),
-    guid: z.string(),
-    parentGuid: z.string(),
-    studio: z.string().optional(),
-    type: z.literal('album'),
-    title: z.string(),
-    parentKey: z.string(), // Artist key
-    parentTitle: z.string(), // Artist name
-    summary: z.string().optional(),
-    index: z.number(),
-    viewCount: z.number(),
-    skipCount: z.number(),
-    lastViewedAt: z.number().optional(),
-    year: z.number().optional(),
-    thumb: z.string().optional(),
-    art: z.string().optional(),
-    parentThumb: z.string().optional(),
-    originallyAvailableAt: z.string().optional(), // YYYY-mm-dd
-    addedAt: z.number(),
-    updatedAt: z.number().optional(),
-    loudnessAnalysisVersion: z.string().optional(), // "1"
-    musicAnalysisVersion: z.string().optional(), // "1"
-    Genre: z.array(PlexJoinItemSchema).optional(),
-  })
-  .merge(neverDirectory);
+export const PlexMusicAlbumSchema = BasePlexMediaSchema.extend({
+  parentRatingKey: z.string(),
+  parentGuid: z.string(),
+  studio: z.string().optional(),
+  type: z.literal('album'),
+  title: z.string(),
+  parentKey: z.string(), // Artist key
+  parentTitle: z.string(), // Artist name
+  summary: z.string().optional(),
+  index: z.number(),
+  viewCount: z.number(),
+  skipCount: z.number(),
+  lastViewedAt: z.number().optional(),
+  year: z.number().optional(),
+  thumb: z.string().optional(),
+  art: z.string().optional(),
+  parentThumb: z.string().optional(),
+  originallyAvailableAt: z.string().optional(), // YYYY-mm-dd
+  addedAt: z.number(),
+  updatedAt: z.number().optional(),
+  loudnessAnalysisVersion: z.string().optional(), // "1"
+  musicAnalysisVersion: z.string().optional(), // "1"
+  Genre: z.array(PlexJoinItemSchema).optional(),
+}).merge(neverDirectory);
 
 export type PlexMusicAlbum = Alias<z.infer<typeof PlexMusicAlbumSchema>>;
 
-export const PlexMusicTrackSchema = z
-  .object({
-    ratingKey: z.string(),
-    key: z.string(),
-    parentRatingKey: z.string(),
-    guid: z.string(),
-    parentGuid: z.string(),
-    grandparentGuid: z.string(),
-    parentStudio: z.string().optional(),
-    type: z.literal('track'),
-    title: z.string(),
-    grandparentKey: z.string(),
-    grandparentRatingKey: z.string(),
-    parentKey: z.string(),
-    grandparentTitle: z.string(),
-    parentTitle: z.string(),
-    summary: z.string().optional(),
-    index: z.number(),
-    parentIndex: z.number(),
-    ratingCount: z.number().optional(),
-    viewCount: z.number().optional(),
-    skipCount: z.number().optional(),
-    lastViewedAt: z.number().optional(),
-    thumb: z.string().optional(),
-    parentYear: z.number().optional(),
-    grandparentThumb: z.string().optional(),
-    parentThumb: z.string().optional(),
-    duration: z.number(),
-    addedAt: z.number(),
-    updatedAt: z.number().optional(),
-    loudnessAnalysisVersion: z.string().optional(), // "1"
-    musicAnalysisVersion: z.string().optional(), // "1"
-    Media: z.array(PlexMediaDescriptionSchema).optional(),
-  })
-  .merge(neverDirectory);
+export const PlexMusicTrackSchema = BasePlexMediaSchema.extend({
+  parentRatingKey: z.string(),
+  parentGuid: z.string(),
+  grandparentGuid: z.string(),
+  parentStudio: z.string().optional(),
+  type: z.literal('track'),
+  title: z.string(),
+  grandparentKey: z.string(),
+  grandparentRatingKey: z.string(),
+  parentKey: z.string(),
+  grandparentTitle: z.string(),
+  parentTitle: z.string(),
+  summary: z.string().optional(),
+  index: z.number(),
+  parentIndex: z.number(),
+  ratingCount: z.number().optional(),
+  viewCount: z.number().optional(),
+  skipCount: z.number().optional(),
+  lastViewedAt: z.number().optional(),
+  thumb: z.string().optional(),
+  parentYear: z.number().optional(),
+  grandparentThumb: z.string().optional(),
+  parentThumb: z.string().optional(),
+  duration: z.number(),
+  addedAt: z.number(),
+  updatedAt: z.number().optional(),
+  loudnessAnalysisVersion: z.string().optional(), // "1"
+  musicAnalysisVersion: z.string().optional(), // "1"
+  Media: z.array(PlexMediaDescriptionSchema).optional(),
+}).merge(neverDirectory);
 
 export type PlexMusicTrack = Alias<z.infer<typeof PlexMusicTrackSchema>>;
 
@@ -541,46 +520,41 @@ export const PlexSeasonViewSchema = z.object({
 
 export type PlexSeasonView = Alias<z.infer<typeof PlexSeasonViewSchema>>;
 
-export const PlexEpisodeSchema = z
-  .object({
-    addedAt: z.number(),
-    art: z.string().optional(),
-    audienceRating: z.number().optional(),
-    audienceRatingImage: z.string().optional(),
-    chapterSource: z.string().optional(),
-    contentRating: z.string().optional(),
-    duration: z.number(),
-    grandparentArt: z.string().optional(),
-    grandparentGuid: z.string(),
-    grandparentKey: z.string(),
-    grandparentRatingKey: z.string(),
-    grandparentTheme: z.string().optional(),
-    grandparentThumb: z.string().optional(),
-    grandparentTitle: z.string(),
-    guid: z.string(),
-    index: z.number().optional(),
-    key: z.string(),
-    originallyAvailableAt: z.string().optional(),
-    parentGuid: z.string(),
-    parentIndex: z.number(),
-    parentKey: z.string(),
-    parentRatingKey: z.string(),
-    parentThumb: z.string().optional(),
-    parentTitle: z.string(),
-    ratingKey: z.string(),
-    summary: z.string().optional(),
-    thumb: z.string().optional(),
-    title: z.string(),
-    titleSort: z.string().optional(),
-    type: z.literal('episode'),
-    updatedAt: z.number().optional(),
-    year: z.number().optional(),
-    Media: z.array(PlexMediaDescriptionSchema).optional(),
-    Director: z.array(PlexJoinItemSchema).optional(),
-    Writer: z.array(PlexJoinItemSchema).optional(),
-    Role: z.array(PlexJoinItemSchema).optional(),
-  })
-  .merge(neverDirectory);
+export const PlexEpisodeSchema = BasePlexMediaSchema.extend({
+  addedAt: z.number(),
+  art: z.string().optional(),
+  audienceRating: z.number().optional(),
+  audienceRatingImage: z.string().optional(),
+  chapterSource: z.string().optional(),
+  contentRating: z.string().optional(),
+  duration: z.number(),
+  grandparentArt: z.string().optional(),
+  grandparentGuid: z.string(),
+  grandparentKey: z.string(),
+  grandparentRatingKey: z.string(),
+  grandparentTheme: z.string().optional(),
+  grandparentThumb: z.string().optional(),
+  grandparentTitle: z.string(),
+  index: z.number().optional(),
+  originallyAvailableAt: z.string().optional(),
+  parentGuid: z.string(),
+  parentIndex: z.number(),
+  parentKey: z.string(),
+  parentRatingKey: z.string(),
+  parentThumb: z.string().optional(),
+  parentTitle: z.string(),
+  summary: z.string().optional(),
+  thumb: z.string().optional(),
+  title: z.string(),
+  titleSort: z.string().optional(),
+  type: z.literal('episode'),
+  updatedAt: z.number().optional(),
+  year: z.number().optional(),
+  Media: z.array(PlexMediaDescriptionSchema).optional(),
+  Director: z.array(PlexJoinItemSchema).optional(),
+  Writer: z.array(PlexJoinItemSchema).optional(),
+  Role: z.array(PlexJoinItemSchema).optional(),
+}).merge(neverDirectory);
 
 export type PlexEpisode = Alias<z.infer<typeof PlexEpisodeSchema>>;
 

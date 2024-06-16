@@ -19,7 +19,7 @@ import {
   setGlobalOptions,
   setServerOptions,
 } from './globals.js';
-import { initServer } from './server.js';
+import { initDbDirectories, initServer } from './server.js';
 import { getDefaultLogLevel } from './util/logging/LoggerFactory.js';
 import {
   DATABASE_LOCATION_ENV_VAR,
@@ -192,13 +192,17 @@ ${chalk.blue('  |_| ')}${chalk.green(' \\___/')}${chalk.yellow(
     (yargs) => {
       return yargs.positional('sub', {
         type: 'string',
-        choices: ['generate-migration'],
+        choices: ['generate-migration', 'init'],
         demandOption: true,
       });
     },
     async (args: ArgumentsCamelCase<ServerOptions & { sub: string }>) => {
       setServerOptions(args);
       switch (args.sub) {
+        case 'init': {
+          await initDbDirectories();
+          break;
+        }
         case 'generate-migration': {
           const orm = await initOrm();
 

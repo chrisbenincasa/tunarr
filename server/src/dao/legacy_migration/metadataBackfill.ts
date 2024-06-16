@@ -24,6 +24,7 @@ import {
   ProgramGroupingType,
 } from '../entities/ProgramGrouping';
 import { ProgramGroupingExternalId } from '../entities/ProgramGroupingExternalId';
+import { ProgramExternalIdType } from '../custom_types/ProgramExternalIdType';
 
 export class LegacyMetadataBackfiller {
   private logger = LoggerFactory.child({
@@ -215,7 +216,7 @@ export class LegacyMetadataBackfiller {
         const existingSeason = await em.findOne(ProgramGrouping, {
           type: ProgramGroupingType.TvShowSeason,
           externalRefs: {
-            sourceType: ProgramSourceType.PLEX,
+            sourceType: ProgramExternalIdType.PLEX,
             externalSourceId: server.name,
             externalKey: episode.parentRatingKey,
           },
@@ -252,7 +253,7 @@ export class LegacyMetadataBackfiller {
         const existingShow = await em.findOne(ProgramGrouping, {
           type: ProgramGroupingType.TvShow,
           externalRefs: {
-            sourceType: ProgramSourceType.PLEX,
+            sourceType: ProgramExternalIdType.PLEX,
             externalSourceId: server.name,
             externalKey: episode.grandparentRatingKey,
           },
@@ -334,7 +335,7 @@ export class LegacyMetadataBackfiller {
         const existingAlbum = await em.findOne(ProgramGrouping, {
           type: ProgramGroupingType.MusicAlbum,
           externalRefs: {
-            sourceType: ProgramSourceType.PLEX,
+            sourceType: ProgramExternalIdType.PLEX,
             externalSourceId: server.name,
             externalKey: track.parentRatingKey,
           },
@@ -372,7 +373,7 @@ export class LegacyMetadataBackfiller {
         const existingArtist = await em.findOne(ProgramGrouping, {
           type: ProgramGroupingType.MusicArtist,
           externalRefs: {
-            sourceType: ProgramSourceType.PLEX,
+            sourceType: ProgramExternalIdType.PLEX,
             externalSourceId: server.name,
             externalKey: track.grandparentRatingKey,
           },
@@ -441,7 +442,7 @@ export class LegacyMetadataBackfiller {
 
     if (!isUndefined(grouping)) {
       const refs = em.create(ProgramGroupingExternalId, {
-        sourceType: ProgramSourceType.PLEX,
+        sourceType: ProgramExternalIdType.PLEX,
         externalSourceId: plex.serverName, // clientIdentifier would be better
         externalKey: ratingKey,
         group: grouping,

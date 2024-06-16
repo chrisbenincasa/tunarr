@@ -25,6 +25,8 @@ import { Migration20240411104034 } from './src/migrations/Migration2024041110403
 import { Migration20240416113447 } from './src/migrations/Migration20240416113447.js';
 import { Migration20240423195250 } from './src/migrations/Migration20240423195250.js';
 import { Migration20240531155641 } from './src/migrations/Migration20240531155641.js';
+import { Migration20240603204620 } from './src/migrations/Migration20240603204620.js';
+import { Migration20240603204638 } from './src/migrations/Migration20240603204638.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -106,6 +108,14 @@ export default defineConfig({
         // 'Add program_external_id table',
         name: 'Migration20240531155641',
         class: Migration20240531155641,
+      },
+      {
+        name: 'Add new external ID types to program_external_id',
+        class: Migration20240603204638,
+      },
+      {
+        name: 'Program External ID partial indexes',
+        class: Migration20240603204620,
       },
     ],
   },

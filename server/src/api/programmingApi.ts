@@ -26,6 +26,7 @@ import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { ProgramGrouping } from '../dao/entities/ProgramGrouping.js';
 import { ifDefined } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
+import { ProgramExternalIdType } from '../dao/custom_types/ProgramExternalIdType.js';
 
 const LookupExternalProgrammingSchema = z.object({
   externalId: z
@@ -159,9 +160,9 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
             if (program.type === ProgramType.Track && !isNil(program.album)) {
               ifDefined(
                 find(
-                  program.album.externalRefs,
+                  program.album.$.externalRefs,
                   (ref) =>
-                    ref.sourceType === ProgramSourceType.PLEX &&
+                    ref.sourceType === ProgramExternalIdType.PLEX &&
                     ref.externalSourceId === program.externalSourceId,
                 ),
                 (ref) => {
@@ -178,12 +179,12 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         // We can assume that we have a grouping here...
         // We only support Plex now
         const source = find(grouping!.externalRefs, {
-          sourceType: ProgramSourceType.PLEX,
+          sourceType: ProgramExternalIdType.PLEX,
         });
         if (isNil(source)) {
           return res.status(500).send();
         }
-        return handlePlexItem(source.externalKey, source.externalSourceId);
+        return handlePlexItem(source.externalKey, source.externalSourceId!);
       }
     },
   );

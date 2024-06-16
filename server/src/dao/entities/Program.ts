@@ -10,9 +10,9 @@ import {
   OneToMany,
   OptionalProps,
   Property,
+  Ref,
   Unique,
   serialize,
-  type Rel,
 } from '@mikro-orm/core';
 import { Program as ProgramDTO } from '@tunarr/types';
 import type { Duration } from 'dayjs/plugin/duration.js';
@@ -153,22 +153,27 @@ export class Program extends BaseEntity {
   })
   fillerShows = new Collection<FillerShow>(this);
 
-  @ManyToOne(() => ProgramGrouping, { nullable: true })
-  season?: Rel<ProgramGrouping>;
+  @ManyToOne(() => ProgramGrouping, { nullable: true, ref: true })
+  season?: Ref<ProgramGrouping>;
 
   @ManyToOne(() => ProgramGrouping, {
     nullable: true,
     cascade: [Cascade.PERSIST],
   })
-  tvShow?: Rel<ProgramGrouping>;
+  tvShow?: Ref<ProgramGrouping>;
 
-  @ManyToOne(() => ProgramGrouping, { nullable: true })
-  album?: Rel<ProgramGrouping>;
+  @ManyToOne(() => ProgramGrouping, { nullable: true, ref: true })
+  album?: Ref<ProgramGrouping>;
 
-  @ManyToOne(() => ProgramGrouping, { nullable: true })
-  artist?: Rel<ProgramGrouping>;
+  @ManyToOne(() => ProgramGrouping, { nullable: true, ref: true })
+  artist?: Ref<ProgramGrouping>;
 
-  @OneToMany(() => ProgramExternalId, (eid) => eid.program)
+  @OneToMany(() => ProgramExternalId, (eid) => eid.program, {
+    eager: true,
+    // Disable cascade persist because of the unique partial indexes here
+    // We have to manage this manually.
+    cascade: [],
+  })
   externalIds = new Collection<ProgramExternalId>(this);
 
   toDTO(): ProgramDTO {

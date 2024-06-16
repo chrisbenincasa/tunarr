@@ -1,12 +1,11 @@
+import { Entity, Enum, Index, ManyToOne, Property, Ref } from '@mikro-orm/core';
+import { ExternalId } from '@tunarr/types';
 import {
-  Entity,
-  Enum,
-  Index,
-  ManyToOne,
-  Property,
-  Unique,
-  type Rel,
-} from '@mikro-orm/core';
+  isValidMultiExternalIdType,
+  isValidSingleExternalIdType,
+} from '@tunarr/types/schemas';
+import { Maybe } from '../../types/util.js';
+import { isNonEmptyString } from '../../util/index.js';
 import { ProgramExternalIdType } from '../custom_types/ProgramExternalIdType.js';
 import { BaseEntity } from './BaseEntity.js';
 import { Program } from './Program.js';
@@ -33,7 +32,6 @@ import { Program } from './Program.js';
   expression:
     'create unique index `unique_program_multiple_external_id` on `program_external_id` (`program_uuid`, `source_type`) WHERE `external_source_id` IS NOT NULL',
 })
-@Unique({ properties: ['uuid', 'sourceType'] })
 export class ProgramExternalId extends BaseEntity {
   @Enum(() => ProgramExternalIdType)
   sourceType!: ProgramExternalIdType;
@@ -60,5 +58,47 @@ export class ProgramExternalId extends BaseEntity {
   directFilePath?: string;
 
   @ManyToOne(() => Program)
-  program!: Rel<Program>;
+  program!: Ref<Program>;
+
+  toExternalId(): Maybe<ExternalId> {
+    const sourceTypeString = this.sourceType.toString();
+
+    if (
+      isNonEmptyString(this.externalSourceId) &&
+      isValidMultiExternalIdType(sourceTypeString)
+    ) {
+      return {
+        type: 'multi',
+        source: sourceTypeString,
+        sourceId: this.externalSourceId,
+        id: this.externalKey,
+      };
+    } else if (
+      isValidSingleExternalIdType(sourceTypeString) &&
+      !isNonEmptyString(this.externalSourceId)
+    ) {
+      return {
+        type: 'single',
+        source: sourceTypeString,
+        id: this.externalKey,
+      };
+    }
+
+    console.log('toExternalId fail', this);
+    return;
+  }
+
+  toKnexInsertData() {
+    return {
+      uuid: this.uuid,
+      created_at: this.createdAt,
+      updated_at: this.updatedAt,
+      source_type: this.sourceType,
+      external_source_id: this.externalSourceId,
+      external_key: this.externalKey,
+      external_file_path: this.externalFilePath,
+      direct_file_path: this.directFilePath,
+      program_uuid: this.program.uuid,
+    };
+  }
 }

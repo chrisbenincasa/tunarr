@@ -19,6 +19,7 @@ import _, {
 } from 'lodash-es';
 import fs from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
+import { format } from 'node:util';
 import { isPromise } from 'node:util/types';
 import { Try } from '../types/util';
 
@@ -341,6 +342,20 @@ export async function createDirectoryIfNotExists(
   }
 }
 
+export function attemptSync<T>(f: () => T): Try<T> {
+  try {
+    return f();
+  } catch (e) {
+    if (isError(e)) {
+      return e;
+    } else if (isString(e)) {
+      return new Error(e);
+    }
+
+    return new Error(format('Unknown error thrown: %O', e));
+  }
+}
+
 export async function attempt<T>(f: () => T | PromiseLike<T>): Promise<Try<T>> {
   try {
     const res = f();
@@ -442,4 +457,8 @@ export function run<T>(f: () => T): T {
 
 export function isSuccess<T>(x: Try<T>): x is T {
   return !isError(x);
+}
+
+export function isDefined<T>(x: T | undefined): x is T {
+  return !isUndefined(x);
 }
