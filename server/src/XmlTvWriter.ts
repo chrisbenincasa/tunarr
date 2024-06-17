@@ -47,7 +47,7 @@ export class XmlTvWriter {
 
   private makeXmlTvChannel(channel: Channel): XmltvChannel {
     const partial: XmltvChannel = {
-      id: channel.number.toString(),
+      id: `${channel.number}.tunarr`,
       displayName: [
         {
           _value: escape(channel.name),
@@ -79,7 +79,7 @@ export class XmlTvWriter {
       stop: new Date(program.stop),
       title: [{ _value: escape(XmlTvWriter.titleExtractor(program)) }],
       previouslyShown: {},
-      channel: channel.number.toString(),
+      channel: `${channel.number}.tunarr`,
     };
 
     if (isContentProgram(program)) {
