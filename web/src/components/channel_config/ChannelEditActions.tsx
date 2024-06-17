@@ -1,13 +1,11 @@
 import { Save } from '@mui/icons-material';
-import { CircularProgress, Snackbar } from '@mui/material';
+import { CircularProgress } from '@mui/material';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
-import { useTheme } from '@mui/material/styles';
 import { SaveChannelRequest } from '@tunarr/types';
 import { useContext, useEffect, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { ChannelEditContext } from '../../pages/channels/EditChannelContext.ts';
-import { useUpdateChannel } from '@/hooks/useUpdateChannel.ts';
 import {
   Mutation,
   MutationState,
@@ -16,26 +14,18 @@ import {
 } from '@tanstack/react-query';
 import { useChannelEditor } from '@/store/selectors.ts';
 import { isUndefined, last } from 'lodash-es';
-
-type SnackBar = {
-  display: boolean;
-  message: string;
-  color: string;
-};
+import { useSnackbar } from 'notistack';
 
 export default function ChannelEditActions() {
   const { currentEntity: channel } = useChannelEditor();
   const { channelEditorState } = useContext(ChannelEditContext)!;
   const {
-    formState: { isValid, isDirty, isSubmitting, isSubmitSuccessful },
+    formState: { isValid, isDirty, isSubmitting },
     reset,
   } = useFormContext<SaveChannelRequest>();
-  const updateChannelMutation = useUpdateChannel(
-    channelEditorState.isNewChannel,
-  );
   const [lastState, setLastState] = useState<MutationStatus>('idle');
+  const snackbar = useSnackbar();
 
-  // console.log(updateChannelMutation);
   const mutationState = useMutationState<
     MutationState<unknown, Error, SaveChannelRequest>
   >({
@@ -50,48 +40,34 @@ export default function ChannelEditActions() {
   });
   const currentState = last(mutationState)?.status;
 
-  if (!isUndefined(currentState) && currentState !== lastState) {
-    console.log('setting');
-    setLastState(currentState);
-  }
-
-  const theme = useTheme();
-
-  const [snackStatus, setSnackStatus] = useState<SnackBar>({
-    display: false,
-    color: '',
-    message: '',
-  });
-
   useEffect(() => {
-    // new channels are automatically navigated to programming page so no need for snackbar there
-    if (isSubmitSuccessful && !channelEditorState.isNewChannel) {
-      setSnackStatus({
-        display: true,
-        message: 'Channel settings saved!',
-        color: theme.palette.success.main,
-      });
-    }
-  }, [
-    channelEditorState.isNewChannel,
-    isSubmitSuccessful,
-    theme.palette.success.main,
-  ]);
+    if (!isUndefined(currentState) && currentState !== lastState) {
+      setLastState(currentState);
 
-  const handleSnackClose = () => {
-    setSnackStatus({ display: false, message: '', color: '' });
-  };
+      if (lastState === 'pending') {
+        if (currentState === 'success' && !channelEditorState.isNewChannel) {
+          snackbar.enqueueSnackbar('Channel settings saved!', {
+            variant: 'success',
+          });
+        } else if (currentState === 'error') {
+          snackbar.enqueueSnackbar(
+            <span>
+              Error updating channel.
+              <br />
+              Check browser console for details
+            </span>,
+            {
+              variant: 'error',
+              autoHideDuration: 6000,
+            },
+          );
+        }
+      }
+    }
+  }, [channelEditorState.isNewChannel, currentState, lastState, snackbar]);
 
   return (
     <Stack spacing={2} direction="row" justifyContent="right" sx={{ mt: 2 }}>
-      <Snackbar
-        open={snackStatus.display}
-        autoHideDuration={6000}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        onClose={handleSnackClose}
-        message={snackStatus.message}
-        sx={{ backgroundColor: snackStatus.color }}
-      />
       {!channelEditorState.isNewChannel ? (
         <>
           {isDirty && (

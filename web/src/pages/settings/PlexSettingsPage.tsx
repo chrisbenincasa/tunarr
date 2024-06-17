@@ -31,7 +31,6 @@ import {
   OutlinedInput,
   Select,
   Skeleton,
-  Snackbar,
   Stack,
   Table,
   TableBody,
@@ -50,7 +49,8 @@ import {
   defaultPlexStreamSettings,
 } from '@tunarr/types';
 import _, { fill, isNil, isNull, isUndefined, map } from 'lodash-es';
-import React, { useCallback, useEffect, useState } from 'react';
+import { useSnackbar } from 'notistack';
+import { useCallback, useEffect, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { RotatingLoopIcon } from '../../components/base/LoadingIcon.tsx';
 import AddPlexServer from '../../components/settings/AddPlexServer.tsx';
@@ -373,8 +373,7 @@ function PlexServerRow({ server }: PlexServerRowProps) {
 
 export default function PlexSettingsPage() {
   const apiClient = useTunarrApi();
-  const [restoreTunarrDefaults, setRestoreTunarrDefaults] =
-    React.useState<boolean>(false);
+  const [restoreTunarrDefaults, setRestoreTunarrDefaults] = useState(false);
 
   const {
     data: servers,
@@ -383,6 +382,8 @@ export default function PlexSettingsPage() {
   } = usePlexServerSettings();
 
   const { data: streamSettings, error: streamsError } = usePlexStreamSettings();
+
+  const snackbar = useSnackbar();
 
   const {
     reset,
@@ -403,13 +404,14 @@ export default function PlexSettingsPage() {
     }
   }, [streamSettings, reset]);
 
-  const [snackStatus, setSnackStatus] = React.useState<boolean>(false);
   const queryClient = useQueryClient();
 
   const updatePlexStreamingSettingsMutation = useMutation({
     mutationFn: apiClient.updatePlexStreamSettings,
     onSuccess: (data) => {
-      setSnackStatus(true);
+      snackbar.enqueueSnackbar('Settings Saved!', {
+        variant: 'success',
+      });
       setRestoreTunarrDefaults(false);
       reset(data, { keepValues: true });
       return queryClient.invalidateQueries({
@@ -436,10 +438,6 @@ export default function PlexSettingsPage() {
         .split(',')
         .filter((value) => value.trim() !== ''), // handle empty value after commas
     });
-  };
-
-  const handleSnackClose = () => {
-    setSnackStatus(false);
   };
 
   const [deletePlexConfirmation, setDeletePlexConfirmation] = useState<
@@ -612,13 +610,6 @@ export default function PlexSettingsPage() {
 
   return (
     <Box component="form" onSubmit={handleSubmit(updatePlexStreamSettings)}>
-      <Snackbar
-        open={snackStatus}
-        autoHideDuration={6000}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        onClose={handleSnackClose}
-        message="Settings Saved!"
-      />
       {renderConfirmationDialog()}
       <Box>
         <Box mb={2}>

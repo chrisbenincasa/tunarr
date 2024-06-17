@@ -15,7 +15,6 @@ import {
   Link as MuiLink,
   Select,
   SelectChangeEvent,
-  Snackbar,
   Stack,
   TextField,
   Tooltip,
@@ -40,6 +39,7 @@ import {
 import { useFfmpegSettings } from '../../hooks/settingsHooks.ts';
 import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 import { useApiQuery } from '../../hooks/useApiQuery.ts';
+import { useSnackbar } from 'notistack';
 
 const supportedVideoBuffer = [
   { value: 0, string: '0 Seconds' },
@@ -194,16 +194,18 @@ export default function FfmpegSettingsPage() {
     }
   }, [data, reset]);
 
-  const [snackStatus, setSnackStatus] = useState(false);
   const [restoreTunarrDefaults, setRestoreTunarrDefaults] = useState(false);
 
+  const snackbar = useSnackbar();
   const queryClient = useQueryClient();
 
   const updateFfmpegSettingsMutation = useMutation({
     mutationFn: apiClient.updateFfmpegSettings,
     onSuccess: (data) => {
       setRestoreTunarrDefaults(false);
-      setSnackStatus(true);
+      snackbar.enqueueSnackbar('Settings Saved!', {
+        variant: 'success',
+      });
       reset(data, { keepValues: true });
       return queryClient.invalidateQueries({
         predicate(query) {
@@ -223,10 +225,6 @@ export default function FfmpegSettingsPage() {
       configVersion: defaultFfmpegSettings.configVersion,
       ...data,
     });
-  };
-
-  const handleSnackClose = () => {
-    setSnackStatus(false);
   };
 
   if (isPending || error || ffmpegInfo.isPending || ffmpegInfo.isError) {
@@ -660,13 +658,6 @@ export default function FfmpegSettingsPage() {
 
   return (
     <Box component="form" onSubmit={handleSubmit(updateFfmpegSettings)}>
-      <Snackbar
-        open={snackStatus}
-        autoHideDuration={6000}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        onClose={handleSnackClose}
-        message="Settings Saved!"
-      />
       <FormControl fullWidth>
         <Controller
           control={control}

@@ -4,7 +4,6 @@ import {
   Button,
   CircularProgress,
   Link,
-  Snackbar,
   Stack,
   Tooltip,
   useMediaQuery,
@@ -34,6 +33,7 @@ import { isUndefined, chain, first, findIndex, map } from 'lodash-es';
 import { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
 import { useTunarrApi } from '@/hooks/useTunarrApi.ts';
 import { useUpdateChannel } from '@/hooks/useUpdateChannel.ts';
+import { useSnackbar } from 'notistack';
 
 type MutateArgs = {
   channelId: string;
@@ -53,15 +53,7 @@ export function ChannelProgrammingConfig() {
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
   const programsDirty = useStore((s) => s.channelEditor.dirty.programs);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [snackStatus, setSnackStatus] = useState({
-    display: false,
-    color: '',
-    message: '',
-  });
-
-  const handleSnackClose = () => {
-    setSnackStatus({ display: false, message: '', color: '' });
-  };
+  const snackbar = useSnackbar();
 
   const slideSchedule = useSlideSchedule();
 
@@ -83,25 +75,25 @@ export function ChannelProgrammingConfig() {
         params: { id: channelId },
       });
     },
+    onSettled: () => {
+      setIsSubmitting(false);
+    },
     onSuccess: async (data, { channelId: channelNumber }) => {
       resetCurrentLineup(data.lineup, data.programs);
-      setIsSubmitting(false);
-      setSnackStatus({
-        display: true,
-        message: 'Programs Saved!',
-        color: theme.palette.success.main,
+
+      snackbar.enqueueSnackbar('Programs saved!', {
+        variant: 'success',
       });
+
       await queryClient.invalidateQueries({
         queryKey: ['channels', channelNumber],
       });
     },
     onError: (error) => {
-      setIsSubmitting(false);
-      setSnackStatus({
-        display: true,
-        message: error.message,
-        color: theme.palette.error.main,
+      snackbar.enqueueSnackbar('Error saving programs. ' + error.message, {
+        variant: 'error',
       });
+
       if (error instanceof ZodiosError) {
         console.error(error.data);
         console.error(error, error.cause);
@@ -162,14 +154,6 @@ export function ChannelProgrammingConfig() {
   const startTime = channel ? dayjs(channel.startTime) : dayjs();
   return (
     <>
-      <Snackbar
-        open={snackStatus.display}
-        autoHideDuration={6000}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        onClose={handleSnackClose}
-        message={snackStatus.message}
-        sx={{ backgroundColor: snackStatus.color }}
-      />
       <Box display="flex" flexDirection="column">
         {schedule && (
           <Alert sx={{ mb: 2 }} severity="info">

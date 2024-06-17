@@ -254,8 +254,11 @@ export default function EditChannelPage({ isNew, initialTab }: Props) {
         : undefined,
     };
 
-    formMethods.reset(dataTransform);
-    updateChannelMutation.mutate(dataTransform);
+    updateChannelMutation.mutate(dataTransform, {
+      onSuccess: () => {
+        formMethods.reset(dataTransform);
+      },
+    });
   };
 
   const onInvalid: SubmitErrorHandler<SaveChannelRequest> = (data) => {

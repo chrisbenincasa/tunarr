@@ -12,7 +12,6 @@ export const useUpdateChannel = (isNewChannel: boolean) => {
   const updateChannel = useMutation({
     mutationKey: ['channels', isNewChannel ? 'create' : 'update'],
     mutationFn: async (channelUpdates: SaveChannelRequest) => {
-      return Promise.reject(new Error('bad'));
       if (isNewChannel) {
         return apiClient.createChannel(channelUpdates);
       } else {
