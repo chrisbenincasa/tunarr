@@ -443,6 +443,8 @@ export const currentEnv = once(() => {
 export const isProduction = currentEnv() === 'production';
 export const isDev = currentEnv() === 'development';
 export const isTest = currentEnv() === 'test';
+export const isEdgeBuild = process.env['TUNARR_EDGE_BUILD'] === 'true';
+export const tunarrBuild = process.env['TUNARR_BUILD'];
 
 export const zipWithIndex = <T>(
   seq: readonly T[],

@@ -11,7 +11,7 @@
     "build": "tsc -p tsconfig.build.json",
     "build-dev": "NODE_ENV=development tsc -p tsconfig.build.json --noEmit --watch",
     "typecheck": "tsc -p tsconfig.build.json --noEmit",
-    "bundle": "tsx scripts/bundle.ts",
+    "bundle": "dotenv -- tsx scripts/bundle.ts",
     "clean": "rimraf build",
     "debug": "tsx watch --tsconfig ./tsconfig.build.json --ignore 'src/streams' --inspect-brk src",
     "dev": "dotenv -e .env.development -- tsx watch --tsconfig ./tsconfig.build.json --ignore 'build' --ignore 'src/streams' src",

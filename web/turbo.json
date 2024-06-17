@@ -9,7 +9,7 @@
       "dependsOn": ["^build"]
     },
     "bundle": {
-      "dependsOn": ["^bundle"]
+      "dependsOn": ["^bundle", "@tunarr/server#typecheck"]
     },
     "typecheck": {
       "dependsOn": ["^build"]

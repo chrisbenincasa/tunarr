@@ -1,5 +1,6 @@
 ARG base_image=jasongdove/ersatztv-ffmpeg
 ARG base_image_tag=7.0
+
 # Setup a node + ffmpeg + nvidia base
 FROM ${base_image}:${base_image_tag} AS ffmpeg-base
 ENV NODE_MAJOR=20
@@ -71,7 +72,15 @@ RUN pnpm turbo --filter=@tunarr/web bundle
 FROM sources as build-full-stack
 # Install deps
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+ARG is_edge_build
+ARG tunarr_build
 # Build common modules
+RUN <<EOF
+touch server/.env
+echo TUNARR_BUILD=${tunarr_build} >> server/.env
+echo TUNARR_EDGE_BUILD=${is_edge_build} >> server/.env
+cat server/.env
+EOF
 RUN pnpm turbo bundle
 
 ### Begin server run ###

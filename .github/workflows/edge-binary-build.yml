@@ -58,6 +58,13 @@ jobs:
       - name: Bundle web
         run: pnpm turbo -vv bundle --filter=@tunarr/web
 
+      - name: 'Create env file'
+        run: |
+          touch server/.env
+          echo TUNARR_BUILD="$(git rev-parse --short ${{ github.sha }})" >> server/.env
+          echo TUNARR_EDGE_BUILD=true
+          cat server/.env
+
       - name: Bundle server
         run: pnpm turbo -vv bundle --filter=@tunarr/server
 

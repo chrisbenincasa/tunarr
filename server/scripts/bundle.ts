@@ -21,6 +21,8 @@ fs.cpSync('src/resources/images', 'build/resources/images', {
   recursive: true,
 });
 
+const isEdgeBuild = process.env.TUNARR_EDGE_BUILD === 'true';
+
 console.log('Bundling app...');
 const result = await esbuild.build({
   entryPoints: {
@@ -74,6 +76,8 @@ const result = await esbuild.build({
     // We know we have matching versions, so just override this for "prod"
     'process.env.MIKRO_ORM_ALLOW_VERSION_MISMATCH': 'true',
     'process.env.NODE_ENV': '"production"',
+    'process.env.TUNARR_BUILD': `"${process.env.TUNARR_BUILD}"`,
+    'process.env.TUNARR_EDGE_BUILD': `"${isEdgeBuild}"`,
   },
 });
 

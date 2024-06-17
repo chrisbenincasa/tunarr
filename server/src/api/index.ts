@@ -27,7 +27,13 @@ import { hdhrSettingsRouter } from './hdhrSettingsApi.js';
 import { plexServersRouter } from './plexServersApi.js';
 import { plexSettingsRouter } from './plexSettingsApi.js';
 import { xmlTvSettingsRouter } from './xmltvSettingsApi.js';
-import { run } from '../util/index.js';
+import {
+  isEdgeBuild,
+  isNonEmptyString,
+  isProduction,
+  run,
+  tunarrBuild,
+} from '../util/index.js';
 import { systemSettingsRouter } from './systemSettingsApi.js';
 
 export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
@@ -72,8 +78,14 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
       try {
         const ffmpegSettings = req.serverCtx.settings.ffmpegSettings();
         const v = await new FFMPEGInfo(ffmpegSettings).getVersion();
+        let tunarrVersion: string = constants.VERSION_NAME;
+        if (!isProduction) {
+          tunarrVersion += `-dev`;
+        } else if (isEdgeBuild && isNonEmptyString(tunarrBuild)) {
+          tunarrVersion += `-${tunarrBuild}`;
+        }
         return res.send({
-          tunarr: constants.VERSION_NAME,
+          tunarr: tunarrVersion,
           ffmpeg: v,
           nodejs: process.version.replace('v', ''),
         });
