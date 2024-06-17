@@ -1,4 +1,11 @@
-import { CircularProgress, Paper, Typography } from '@mui/material';
+import {
+  Box,
+  Button,
+  CircularProgress,
+  Paper,
+  Stack,
+  Typography,
+} from '@mui/material';
 import { isUndefined } from 'lodash-es';
 import { useEffect } from 'react';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
@@ -7,6 +14,8 @@ import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationA
 import { usePreloadedChannelEdit } from '../../hooks/usePreloadedChannel.ts';
 import { resetLineup } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
+import { Link } from 'react-router-dom';
+import Edit from '@mui/icons-material/Edit';
 
 export default function ChannelProgrammingPage() {
   const { currentEntity: channel } = usePreloadedChannelEdit();
@@ -27,9 +36,22 @@ export default function ChannelProgrammingPage() {
   ) : (
     <div>
       <Breadcrumbs />
-      <Typography variant="h4" sx={{ mb: 2 }}>
-        {channel.name}
-      </Typography>
+      <Stack direction="row">
+        <Typography variant="h4" sx={{ mb: 2, flex: 1 }}>
+          {channel.name}
+        </Typography>
+        <Box>
+          <Button
+            component={Link}
+            to="../edit"
+            relative="path"
+            variant="outlined"
+            startIcon={<Edit />}
+          >
+            Edit
+          </Button>
+        </Box>
+      </Stack>
       <Paper sx={{ p: 2 }}>
         <ChannelProgrammingConfig />
         <UnsavedNavigationAlert
