@@ -167,3 +167,14 @@ export const BackupSettingsSchema = z.object({
 });
 
 export type BackupSettings = z.infer<typeof BackupSettingsSchema>;
+
+// Subtitle preferences are matched in the following order:
+// 1. Hearing impaired
+// 2. Language
+// 3. Codec
+export const SubtitleConfigurationSchema = z.object({
+  // ordered list of preferred subtitle languages using the ISO-639-2 code
+  preferredLanguages: z.array(z.string()).catch(['eng']),
+  preferHearingImpaired: z.boolean().catch(false),
+  codecPreference: z.union([z.literal('pgs'), z.literal('srt')]).catch('srt'),
+});
