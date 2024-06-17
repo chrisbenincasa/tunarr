@@ -7,6 +7,15 @@ import { SaveChannelRequest } from '@tunarr/types';
 import { useContext, useEffect, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { ChannelEditContext } from '../../pages/channels/EditChannelContext.ts';
+import { useUpdateChannel } from '@/hooks/useUpdateChannel.ts';
+import {
+  Mutation,
+  MutationState,
+  useMutationState,
+  MutationStatus,
+} from '@tanstack/react-query';
+import { useChannelEditor } from '@/store/selectors.ts';
+import { isUndefined, last } from 'lodash-es';
 
 type SnackBar = {
   display: boolean;
@@ -15,11 +24,37 @@ type SnackBar = {
 };
 
 export default function ChannelEditActions() {
+  const { currentEntity: channel } = useChannelEditor();
   const { channelEditorState } = useContext(ChannelEditContext)!;
   const {
     formState: { isValid, isDirty, isSubmitting, isSubmitSuccessful },
     reset,
   } = useFormContext<SaveChannelRequest>();
+  const updateChannelMutation = useUpdateChannel(
+    channelEditorState.isNewChannel,
+  );
+  const [lastState, setLastState] = useState<MutationStatus>('idle');
+
+  // console.log(updateChannelMutation);
+  const mutationState = useMutationState<
+    MutationState<unknown, Error, SaveChannelRequest>
+  >({
+    filters: {
+      mutationKey: [
+        'channels',
+        channelEditorState.isNewChannel ? 'create' : 'update',
+      ],
+      predicate: (mutation: Mutation<unknown, Error, SaveChannelRequest>) =>
+        mutation.state.variables?.id === channel?.id,
+    },
+  });
+  const currentState = last(mutationState)?.status;
+
+  if (!isUndefined(currentState) && currentState !== lastState) {
+    console.log('setting');
+    setLastState(currentState);
+  }
+
   const theme = useTheme();
 
   const [snackStatus, setSnackStatus] = useState<SnackBar>({
