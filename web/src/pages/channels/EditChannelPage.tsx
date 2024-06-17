@@ -1,4 +1,4 @@
-import { Badge } from '@mui/material';
+import { Badge, Button, Stack } from '@mui/material';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 import Tab from '@mui/material/Tab';
@@ -15,7 +15,7 @@ import {
   SubmitHandler,
   useForm,
 } from 'react-hook-form';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import ChannelEpgConfig from '../../components/channel_config/ChannelEpgConfig.tsx';
 import { ChannelFlexConfig } from '../../components/channel_config/ChannelFlexConfig.tsx';
@@ -36,6 +36,7 @@ import {
   ChannelEditContext,
   ChannelEditContextState,
 } from './EditChannelContext.ts';
+import Edit from '@mui/icons-material/Edit';
 
 type TabValues = 'properties' | 'flex' | 'epg' | 'ffmpeg';
 
@@ -253,8 +254,11 @@ export default function EditChannelPage({ isNew, initialTab }: Props) {
         : undefined,
     };
 
-    formMethods.reset(dataTransform);
-    updateChannelMutation.mutate(dataTransform);
+    updateChannelMutation.mutate(dataTransform, {
+      onSuccess: () => {
+        formMethods.reset(dataTransform);
+      },
+    });
   };
 
   const onInvalid: SubmitErrorHandler<SaveChannelRequest> = (data) => {
@@ -268,9 +272,24 @@ export default function EditChannelPage({ isNew, initialTab }: Props) {
       <Breadcrumbs />
       {workingChannel && (
         <div>
-          <Typography variant="h4" sx={{ mb: 2 }}>
-            {isNew ? 'New Channel' : channel.name}
-          </Typography>
+          <Stack direction="row">
+            <Typography variant="h4" sx={{ mb: 2, flex: 1 }}>
+              {isNew ? 'New Channel' : channel.name}
+            </Typography>
+            {!isNew && (
+              <Box>
+                <Button
+                  component={Link}
+                  to="../programming"
+                  relative="path"
+                  variant="outlined"
+                  startIcon={<Edit />}
+                >
+                  Programming
+                </Button>
+              </Box>
+            )}
+          </Stack>
           <Paper sx={{ p: 2 }}>
             <Box sx={{ borderColor: 'primary', borderBottom: 1 }}>
               <Tabs

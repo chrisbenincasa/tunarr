@@ -45,7 +45,6 @@ import { isNull, isUndefined } from 'lodash-es';
 import React, { ReactNode, useCallback, useMemo, useState } from 'react';
 import { Outlet, Link as RouterLink } from 'react-router-dom';
 import './App.css';
-import ServerEvents from './components/ServerEvents.tsx';
 import TunarrLogo from './components/TunarrLogo.tsx';
 import VersionFooter from './components/VersionFooter.tsx';
 import DarkModeButton from './components/settings/DarkModeButton.tsx';
@@ -53,6 +52,9 @@ import { useVersion } from './hooks/useVersion.ts';
 import useStore from './store/index.ts';
 import { useSettings } from './store/settings/selectors.ts';
 import { setDarkModeState } from './store/themeEditor/actions.ts';
+import {
+  useServerEventsSnackbar,
+} from './hooks/useServerEvents.ts';
 
 interface NavItem {
   name: string;
@@ -106,6 +108,7 @@ const StyledMenu = styled((props: MenuProps) => (
 }));
 
 export function Root({ children }: { children?: React.ReactNode }) {
+  useServerEventsSnackbar();
   const [open, setOpen] = useState(false);
 
   const [sublistStates, setSublistStates] = useState<Record<string, boolean>>(
@@ -292,7 +295,7 @@ export function Root({ children }: { children?: React.ReactNode }) {
 
   return (
     <ThemeProvider theme={theme}>
-      <ServerEvents />
+      {/* <ServerEvents /> */}
       <Box sx={{ display: 'flex' }}>
         <CssBaseline />
         <AppBar
@@ -416,7 +419,10 @@ export function Root({ children }: { children?: React.ReactNode }) {
                 }}
               ></Toolbar>
               <Divider />
-              <List component="nav" sx={{ flex: '1 1 0%' }}>
+              <List
+                component="nav"
+                sx={{ flex: '1 1 0%', overflowX: 'hidden' }}
+              >
                 {navItems
                   .filter((item) => item.visible)
                   .map((item) => (

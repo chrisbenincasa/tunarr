@@ -1,7 +1,6 @@
 import { ArrowBack, Autorenew, Delete } from '@mui/icons-material';
 import AddIcon from '@mui/icons-material/Add';
 import {
-  Alert,
   Box,
   Button,
   Divider,
@@ -14,7 +13,6 @@ import {
   MenuItem,
   Select,
   SelectChangeEvent,
-  Snackbar,
   Typography,
   useMediaQuery,
   useTheme,
@@ -34,7 +32,6 @@ import {
   chain,
   filter,
   first,
-  isNull,
   isUndefined,
   map,
   maxBy,
@@ -70,6 +67,8 @@ import {
   updateCurrentChannel,
 } from '../../store/channelEditor/actions.ts';
 import { UIChannelProgram, isUIRedirectProgram } from '../../types/index.ts';
+import pluralize from 'pluralize';
+import { useSnackbar } from 'notistack';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -420,6 +419,7 @@ export default function TimeSlotEditorPage() {
     channel?.startTime ?? dayjs().unix() * 1000,
   );
 
+  const snackbar = useSnackbar();
   const updateLineupMutation = useUpdateLineup();
   const theme = useTheme();
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
@@ -479,11 +479,6 @@ export default function TimeSlotEditorPage() {
   // Have to use a watch here because rendering depends on this value
   const currentPeriod = watch('period');
   const currentSlots = watch('slots');
-
-  const [perfSnackbarDetails, setPerfSnackbarDetails] = useState<{
-    ms: number;
-    numShows: number;
-  } | null>(null);
 
   const [generatedList, setGeneratedList] = useState<
     UIChannelProgram[] | undefined
@@ -594,6 +589,18 @@ export default function TimeSlotEditorPage() {
     );
   };
 
+  const showPerfSnackbar = (duration: number, numShows: number) => {
+    const message = `Calculated ${dayjs
+      .duration(getValues('maxDays'), 'days')
+      .humanize()} (${numShows} ${pluralize(
+      'program',
+      numShows,
+    )}) of programming in ${duration}ms`;
+    snackbar.enqueueSnackbar(message, {
+      variant: 'info',
+    });
+  };
+
   const calculateSlots = () => {
     performance.mark('guide-start');
     scheduleTimeSlots(
@@ -611,10 +618,7 @@ export default function TimeSlotEditorPage() {
           'guide-start',
           'guide-end',
         );
-        setPerfSnackbarDetails({
-          ms: Math.round(ms),
-          numShows: res.programs.length,
-        });
+        showPerfSnackbar(Math.round(ms), res.programs.length);
         // TODO Adjust for timezone
         setStartTime(res.startTime);
         updateCurrentChannel({ startTime: res.startTime });
@@ -642,22 +646,6 @@ export default function TimeSlotEditorPage() {
 
   return (
     <div>
-      <Snackbar
-        open={!isNull(perfSnackbarDetails)}
-        autoHideDuration={5000}
-        onClose={() => setPerfSnackbarDetails(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      >
-        <Alert variant="filled" color="success">
-          {perfSnackbarDetails
-            ? `Calculated ${dayjs
-                .duration(getValues('maxDays'), 'days')
-                .humanize()} (${
-                perfSnackbarDetails.numShows
-              } programs) of programming in ${perfSnackbarDetails.ms}ms`
-            : null}
-        </Alert>
-      </Snackbar>
       <Breadcrumbs />
       <Typography variant="h4" sx={{ mb: 2 }}>
         Edit Time Slots (Channel {channel?.number})

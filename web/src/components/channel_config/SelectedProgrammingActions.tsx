@@ -1,13 +1,5 @@
 import { Delete, DoneAll, Grading } from '@mui/icons-material';
-import {
-  Alert,
-  Button,
-  Paper,
-  Snackbar,
-  Tooltip,
-  useMediaQuery,
-  useTheme,
-} from '@mui/material';
+import { Button, Paper, Tooltip, useMediaQuery, useTheme } from '@mui/material';
 import { useCallback, useState } from 'react';
 import useStore from '../../store/index.ts';
 import {
@@ -16,11 +8,11 @@ import {
   clearSelectedMedia,
 } from '../../store/programmingSelector/actions.ts';
 import { AddedMedia } from '../../types/index.ts';
-import { isNil, isNull } from 'lodash-es';
+import { isNil } from 'lodash-es';
 import { useDirectPlexSearch } from '@/hooks/plex/usePlexSearch.ts';
 import { RotatingLoopIcon } from '../base/LoadingIcon.tsx';
-import { Nullable } from 'vitest';
 import AddSelectedMediaButton from './AddSelectedMediaButton.tsx';
+import { useSnackbar } from 'notistack';
 
 type Props = {
   onAddSelectedMedia: (media: AddedMedia[]) => void;
@@ -49,10 +41,7 @@ export default function SelectedProgrammingActions({
   const theme = useTheme();
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
   const [selectAllLoading, setSelectAllLoading] = useState(false);
-  // TODO: Have a centralized place where these fire off and
-  // use a hook to just send a message to the queue.
-  const [errorSnackbarMessage, setErrorSnackbarMessage] =
-    useState<Nullable<string>>(null);
+  const snackbar = useSnackbar();
 
   const removeAllItems = useCallback(() => {
     toggleOrSetSelectedProgramsDrawer(false);
@@ -80,8 +69,11 @@ export default function SelectedProgrammingActions({
         })
         .catch((e) => {
           console.error('Error while attempting to select all Plex items', e);
-          setErrorSnackbarMessage(
+          snackbar.enqueueSnackbar(
             'Error querying Plex. Check console log and consider reporting a bug!',
+            {
+              variant: 'error',
+            },
           );
         })
         .finally(() => setSelectAllLoading(false));
@@ -90,17 +82,6 @@ export default function SelectedProgrammingActions({
 
   return (
     <>
-      <Snackbar
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-        autoHideDuration={5000}
-        resumeHideDuration={50}
-        open={!isNull(errorSnackbarMessage)}
-        onClose={() => setErrorSnackbarMessage(null)}
-      >
-        <Alert variant="filled" severity="error">
-          {errorSnackbarMessage}
-        </Alert>
-      </Snackbar>
       <Paper
         elevation={2}
         sx={{

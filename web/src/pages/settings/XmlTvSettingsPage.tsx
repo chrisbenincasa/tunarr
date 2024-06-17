@@ -4,7 +4,6 @@ import {
   FormControl,
   FormControlLabel,
   FormHelperText,
-  Snackbar,
   Stack,
   TextField,
 } from '@mui/material';
@@ -20,12 +19,14 @@ import {
 } from '../../components/util/TypedController.tsx';
 import { useXmlTvSettings } from '../../hooks/settingsHooks.ts';
 import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
+import { useSnackbar } from 'notistack';
 
 export default function XmlTvSettingsPage() {
   const apiClient = useTunarrApi();
   const [restoreTunarrDefaults, setRestoreTunarrDefaults] =
     React.useState<boolean>(false);
   const { data, isPending, error } = useXmlTvSettings();
+  const snackbar = useSnackbar();
 
   const {
     reset,
@@ -43,13 +44,14 @@ export default function XmlTvSettingsPage() {
     }
   }, [data, reset]);
 
-  const [snackStatus, setSnackStatus] = React.useState<boolean>(false);
   const queryClient = useQueryClient();
 
   const updateXmlTvSettingsMutation = useMutation({
     mutationFn: apiClient.updateXmlTvSettings,
     onSuccess: (data) => {
-      setSnackStatus(true);
+      snackbar.enqueueSnackbar('Settings Saved!', {
+        variant: 'success',
+      });
       setRestoreTunarrDefaults(false);
       reset(data, { keepValues: true });
       return queryClient.invalidateQueries({
@@ -64,10 +66,6 @@ export default function XmlTvSettingsPage() {
     });
   };
 
-  const handleSnackClose = () => {
-    setSnackStatus(false);
-  };
-
   if (isPending) {
     return <h1>XML: Loading...</h1>;
   } else if (error) {
@@ -76,13 +74,6 @@ export default function XmlTvSettingsPage() {
 
   return (
     <Box component="form" onSubmit={handleSubmit(updateXmlTvSettings)}>
-      <Snackbar
-        open={snackStatus}
-        autoHideDuration={6000}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        onClose={handleSnackClose}
-        message="Settings Saved!"
-      />
       <FormControl fullWidth>
         <Controller
           control={control}

@@ -14,7 +14,6 @@ import {
   MenuItem,
   Select,
   Slider,
-  Snackbar,
   Stack,
   TextField,
   Tooltip,
@@ -35,7 +34,6 @@ import {
   fill,
   filter,
   isNil,
-  isNull,
   isNumber,
   isUndefined,
   map,
@@ -78,6 +76,8 @@ import {
   updateCurrentChannel,
 } from '../../store/channelEditor/actions';
 import { UIChannelProgram, isUIRedirectProgram } from '../../types';
+import { useSnackbar } from 'notistack';
+import pluralize from 'pluralize';
 
 dayjs.extend(duration);
 
@@ -556,6 +556,7 @@ export default function RandomSlotEditorPage() {
   } = usePreloadedChannelEdit();
 
   const updateLineupMutation = useUpdateLineup();
+  const snackbar = useSnackbar();
 
   const programOptions: ProgramOption[] = useMemo(() => {
     const contentPrograms = filter(newLineup, isContentProgram);
@@ -614,14 +615,21 @@ export default function RandomSlotEditorPage() {
         : defaultRandomSlotSchedule,
   });
 
-  const [perfSnackbarDetails, setPerfSnackbarDetails] = useState<{
-    ms: number;
-    numShows: number;
-  } | null>(null);
-
   const [generatedList, setGeneratedList] = useState<
     UIChannelProgram[] | undefined
   >(undefined);
+
+  const showPerfSnackbar = (duration: number, numShows: number) => {
+    const message = `Calculated ${dayjs
+      .duration(getValues('maxDays'), 'days')
+      .humanize()} (${numShows} ${pluralize(
+      'program',
+      numShows,
+    )}) of programming in ${duration}ms`;
+    snackbar.enqueueSnackbar(message, {
+      variant: 'info',
+    });
+  };
 
   const resetLineupToSaved = useCallback(() => {
     setGeneratedList(undefined);
@@ -668,10 +676,7 @@ export default function RandomSlotEditorPage() {
           'guide-start',
           'guide-end',
         );
-        setPerfSnackbarDetails({
-          ms: Math.round(ms),
-          numShows: res.programs.length,
-        });
+        showPerfSnackbar(Math.round(ms), res.programs.length);
         // TODO Adjust for timezone
         setStartTime(res.startTime);
         updateCurrentChannel({ startTime: res.startTime });
@@ -699,22 +704,6 @@ export default function RandomSlotEditorPage() {
 
   return (
     <>
-      <Snackbar
-        open={!isNull(perfSnackbarDetails)}
-        autoHideDuration={5000}
-        onClose={() => setPerfSnackbarDetails(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      >
-        <Alert variant="filled" color="success">
-          {perfSnackbarDetails
-            ? `Calculated ${dayjs
-                .duration(getValues('maxDays'), 'days')
-                .humanize()} (${
-                perfSnackbarDetails.numShows
-              } programs) of programming in ${perfSnackbarDetails.ms}ms`
-            : null}
-        </Alert>
-      </Snackbar>
       {hasExistingTimeSlotSchedule && (
         <Alert variant="filled" severity="warning">
           This channel has an existing time slot schedule

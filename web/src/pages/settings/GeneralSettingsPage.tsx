@@ -11,7 +11,6 @@ import {
   MenuItem,
   Select,
   SelectChangeEvent,
-  Snackbar,
   TextField,
   Typography,
 } from '@mui/material';
@@ -28,7 +27,7 @@ import {
   trim,
   trimEnd,
 } from 'lodash-es';
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import { RotatingLoopIcon } from '../../components/base/LoadingIcon.tsx';
 import DarkModeButton from '../../components/settings/DarkModeButton.tsx';
@@ -46,6 +45,7 @@ import { NumericFormControllerText } from '../../components/util/TypedController
 import Grid2 from '@mui/material/Unstable_Grid2/Grid2';
 import pluralize from 'pluralize';
 import { TimePicker } from '@mui/x-date-pickers';
+import { useSnackbar } from 'notistack';
 
 type GeneralSettingsFormData = {
   backendUri: string;
@@ -75,7 +75,7 @@ function isValidUrl(url: string) {
 
 function GeneralSettingsForm({ systemSettings }: GeneralSetingsFormProps) {
   const settings = useSettings();
-  const [snackStatus, setSnackStatus] = useState(false);
+  const snackbar = useSnackbar();
   const versionInfo = useVersion({
     retry: 0,
   });
@@ -120,7 +120,9 @@ function GeneralSettingsForm({ systemSettings }: GeneralSetingsFormProps) {
   const onSave = (data: GeneralSettingsFormData) => {
     const newBackendUri = trimEnd(trim(data.backendUri), '/');
     setBackendUri(newBackendUri);
-    setSnackStatus(true);
+    snackbar.enqueueSnackbar('Settings Saved!', {
+      variant: 'success',
+    });
     const updateReq: UpdateSystemSettingsRequest = {
       logging: {
         logLevel: data.logLevel === 'env' ? undefined : data.logLevel,
@@ -312,13 +314,6 @@ function GeneralSettingsForm({ systemSettings }: GeneralSetingsFormProps) {
 
   return (
     <Box component="form" onSubmit={handleSubmit(onSave, console.error)}>
-      <Snackbar
-        open={snackStatus}
-        autoHideDuration={6000}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        onClose={() => setSnackStatus(false)}
-        message="Settings Saved!"
-      />
       <Stack gap={2} spacing={2}>
         <Typography variant="h5" sx={{ mb: 1 }}>
           Server Settings

@@ -10,6 +10,7 @@ export const useUpdateChannel = (isNewChannel: boolean) => {
   const apiClient = useTunarrApi();
 
   const updateChannel = useMutation({
+    mutationKey: ['channels', isNewChannel ? 'create' : 'update'],
     mutationFn: async (channelUpdates: SaveChannelRequest) => {
       if (isNewChannel) {
         return apiClient.createChannel(channelUpdates);
@@ -34,6 +35,8 @@ export const useUpdateChannel = (isNewChannel: boolean) => {
       if (error instanceof ZodiosError) {
         console.error(error.data);
         console.error(error, error.cause, error.message);
+      } else {
+        console.error(error);
       }
     },
   });

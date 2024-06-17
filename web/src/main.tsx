@@ -11,6 +11,8 @@ import './index.css';
 import { queryCache } from './queryClient.ts';
 import { router } from './router.tsx';
 import { TunarrApiProvider } from './components/TunarrApiContext.tsx';
+import { SnackbarProvider } from 'notistack';
+import { ServerEventsProvider } from './components/server_events/ServerEventsProvider.tsx';
 
 const queryClient = new QueryClient({ queryCache });
 
@@ -19,9 +21,13 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <TunarrApiProvider queryClient={queryClient}>
       <LocalizationProvider dateAdapter={AdapterDayjs}>
         <DndProvider backend={HTML5Backend}>
-          <QueryClientProvider client={queryClient}>
-            <RouterProvider router={router} />
-          </QueryClientProvider>
+          <ServerEventsProvider>
+            <QueryClientProvider client={queryClient}>
+              <SnackbarProvider maxSnack={2} autoHideDuration={5000}>
+                <RouterProvider router={router} />
+              </SnackbarProvider>
+            </QueryClientProvider>
+          </ServerEventsProvider>
         </DndProvider>
       </LocalizationProvider>
     </TunarrApiProvider>

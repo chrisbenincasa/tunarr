@@ -54,6 +54,11 @@ const ListItemTimeFormatter = new Intl.DateTimeFormat(undefined, {
   timeStyle: 'short',
 });
 
+const MobileListItemTimeFormatter = new Intl.DateTimeFormat(undefined, {
+  dateStyle: 'short',
+  timeStyle: 'short',
+});
+
 type Props = {
   // The caller can pass the list of programs to render, if they don't
   // want to render them from state
@@ -132,12 +137,15 @@ const programListItemTitleFormatter = (() => {
 
   return (program: ChannelProgram) => {
     let title = itemTitle(program);
+
     if (program.type === 'custom' && program.program) {
       title += ` ${itemTitle(program.program)}`;
     }
     const dur = betterHumanize(
       dayjs.duration({ milliseconds: program.duration }),
+      true,
     );
+
     return `${title} - (${dur})`;
   };
 })();
@@ -184,7 +192,9 @@ const ProgramListItem = ({
   const theme = useTheme();
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const startTime = ListItemTimeFormatter.format(startTimeDate);
+  const startTime = smallViewport
+    ? MobileListItemTimeFormatter.format(startTimeDate)
+    : ListItemTimeFormatter.format(startTimeDate);
   // console.log(ListItemTimeFormatter.formatToParts(startTimeDate));
 
   const handleInfoButtonClick = (e: React.MouseEvent) => {
@@ -194,7 +204,10 @@ const ProgramListItem = ({
 
   // const dayBoundary = startTimes[idx + 1].isAfter(startTimes[idx], 'day');
 
-  const title = `${startTime} - ${programListItemTitleFormatter(program)}`;
+  let title = `${programListItemTitleFormatter(program)}`;
+  if (!smallViewport) {
+    title += ` - ${startTime}`;
+  }
 
   let icon: React.ReactElement | null = null;
   if (program.type === 'content') {
@@ -298,6 +311,7 @@ const ProgramListItem = ({
 
           <ListItemText
             primary={title}
+            secondary={smallViewport ? startTime : null}
             sx={{
               fontStyle: program.persisted ? 'normal' : 'italic',
             }}

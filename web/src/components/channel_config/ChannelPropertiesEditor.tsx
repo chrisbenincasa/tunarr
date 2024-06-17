@@ -1,4 +1,4 @@
-import { Box, Snackbar, TextField } from '@mui/material';
+import { Box, TextField } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { Channel } from '@tunarr/types';
 import dayjs from 'dayjs';
@@ -115,7 +115,6 @@ export function ChannelPropertiesEditor({ isNew }: Props) {
 
   return (
     <>
-      <Snackbar />
       {channel && (
         <>
           <NumericFormControllerText

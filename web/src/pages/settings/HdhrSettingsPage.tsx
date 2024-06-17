@@ -5,7 +5,6 @@ import {
   FormControlLabel,
   FormHelperText,
   Grid,
-  Snackbar,
   Stack,
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -20,6 +19,7 @@ import {
 } from '../../components/util/TypedController.tsx';
 import { useHdhrSettings } from '../../hooks/settingsHooks.ts';
 import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
+import { useSnackbar } from 'notistack';
 
 export default function HdhrSettingsPage() {
   const apiClient = useTunarrApi();
@@ -44,13 +44,15 @@ export default function HdhrSettingsPage() {
     }
   }, [data, reset]);
 
-  const [snackStatus, setSnackStatus] = React.useState<boolean>(false);
+  const snackbar = useSnackbar();
   const queryClient = useQueryClient();
 
   const updateHdhrSettingsMutation = useMutation({
     mutationFn: apiClient.updateHdhrSettings,
     onSuccess: (data) => {
-      setSnackStatus(true);
+      snackbar.enqueueSnackbar('Settings Saved!', {
+        variant: 'success',
+      });
       setRestoreTunarrDefaults(false);
       reset(data, { keepValues: true });
       return queryClient.invalidateQueries({
@@ -67,25 +69,14 @@ export default function HdhrSettingsPage() {
     });
   };
 
-  const handleSnackClose = () => {
-    setSnackStatus(false);
-  };
-
   if (isPending) {
-    return <h1>XML: Loading...</h1>;
+    return <h1>HDHR: Loading...</h1>;
   } else if (error) {
-    return <h1>XML: {error.message}</h1>;
+    return <h1>HDHR: {error.message}</h1>;
   }
 
   return (
     <Box component="form" onSubmit={handleSubmit(updateHdhrSettings)}>
-      <Snackbar
-        open={snackStatus}
-        autoHideDuration={6000}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        onClose={handleSnackClose}
-        message="Settings Saved!"
-      />
       <Grid item xs={12} sm={6}>
         <FormControl fullWidth>
           <FormControlLabel
