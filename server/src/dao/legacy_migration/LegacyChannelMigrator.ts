@@ -1,4 +1,4 @@
-import { Channel, Program, Watermark } from '@tunarr/types';
+import { Channel, Program, TupleToUnion } from '@tunarr/types';
 import dayjs from 'dayjs';
 import ld, {
   compact,
@@ -44,12 +44,21 @@ import {
 import { ChannelDB } from '../channelDb.js';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
 
-const validWatermarkPositions = [
+const validPositions = [
   'bottom-left',
   'bottom-right',
   'top-left',
   'top-right',
-];
+] as const;
+
+function isValidPosition(s: string): s is TupleToUnion<typeof validPositions> {
+  for (const position of validPositions) {
+    if (s === position) {
+      return true;
+    }
+  }
+  return false;
+}
 
 export type LegacyProgram = Omit<Program, 'channel'> & {
   isOffline: boolean;
@@ -252,6 +261,7 @@ export class LegacyChannelMigrator {
     );
 
     const watermark = parsed['watermark'] as JSONObject;
+    const iconPosition = parsed['iconPosition'] as string;
 
     const channel = {
       id: v4(),
@@ -266,7 +276,7 @@ export class LegacyChannelMigrator {
       icon: {
         path: parsed['icon'] as string,
         duration: parsed['iconDuration'] as number,
-        position: parsed['iconPosition'] as string,
+        position: isValidPosition(iconPosition) ? iconPosition : 'bottom-right',
         width: parsed['iconWidth'] as number,
       },
       startTime: dayjs(parsed['startTime'] as string).unix() * 1000,
@@ -301,8 +311,8 @@ export class LegacyChannelMigrator {
             duration: watermark['duration'] as number,
             position:
               isNonEmptyString(watermark['position']) &&
-              validWatermarkPositions.includes(watermark['position'])
-                ? (watermark['position'] as Watermark['position'])
+              isValidPosition(watermark['position'])
+                ? watermark['position']
                 : 'bottom-right',
             width: watermark['width'] as number,
             verticalMargin: watermark['verticalMargin'] as number,
@@ -338,7 +348,12 @@ export class LegacyChannelMigrator {
       em.assign(channelEntity, {
         disableFillerOverlay: channel.disableFillerOverlay,
         groupTitle: channel.groupTitle,
-        icon: channel.icon,
+        icon: {
+          ...channel.icon,
+          position: !isValidPosition(channel.icon.position)
+            ? ('bottom-right' as const)
+            : channel.icon.position,
+        },
         name: channel.name,
         number: channel.number,
         startTime: channel.startTime,
@@ -353,7 +368,12 @@ export class LegacyChannelMigrator {
         duration: channel.duration,
         disableFillerOverlay: channel.disableFillerOverlay,
         groupTitle: channel.groupTitle,
-        icon: channel.icon,
+        icon: {
+          ...channel.icon,
+          position: !isValidPosition(channel.icon.position)
+            ? ('bottom-right' as const)
+            : channel.icon.position,
+        },
         name: channel.name,
         number: channel.number,
         startTime: channel.startTime,

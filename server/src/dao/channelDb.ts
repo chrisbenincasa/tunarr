@@ -205,7 +205,7 @@ export class ChannelDB {
     const update = updateRequestToChannel(updateReq);
     const loadedChannel = wrap(channel).assign(update, {
       merge: true,
-      convertCustomTypes: true,
+      // convertCustomTypes: true,
       onlyProperties: true,
     });
     await em.flush();

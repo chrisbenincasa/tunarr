@@ -21,7 +21,7 @@ export const DefaultChannel = {
   icon: {
     duration: 0,
     path: '',
-    position: 'bottom',
+    position: 'bottom-right',
     width: 0,
   },
   guideMinimumDuration: 30000,

@@ -87,10 +87,17 @@ export const ExternalIdSchema = z.discriminatedUnion('type', [
 ]);
 
 export const ChannelIconSchema = z.object({
-  path: z.string(),
-  width: z.number(),
-  duration: z.number(),
-  position: z.string(),
+  path: z.string().catch(''),
+  width: z.number().nonnegative().catch(0),
+  duration: z.number().catch(0),
+  position: z
+    .union([
+      z.literal('top-left'),
+      z.literal('top-right'),
+      z.literal('bottom-left'),
+      z.literal('bottom-right'),
+    ])
+    .catch('bottom-right'),
 });
 
 export const TimeUnitSchema = z.union([

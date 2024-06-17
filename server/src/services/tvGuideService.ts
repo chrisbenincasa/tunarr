@@ -691,7 +691,7 @@ export class TVGuideService {
         path: FALLBACK_ICON,
         width: 0,
         duration: 0,
-        position: 'bottom',
+        position: 'bottom-right',
       };
       channel.disableFillerOverlay = false;
       channel.number = 0;
