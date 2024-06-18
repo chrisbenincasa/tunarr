@@ -84,8 +84,8 @@ importers:
         specifier: ^8.12.1
         version: 8.12.1
       '@fastify/swagger-ui':
-        specifier: ^2.0.1
-        version: 2.0.1
+        specifier: ^4.0.0
+        version: 4.0.0
       '@iptv/xmltv':
         specifier: ^1.0.1
         version: 1.0.1
@@ -1732,10 +1732,21 @@ packages:
       p-limit: 3.1.0
     dev: false
 
-  /@fastify/swagger-ui@2.0.1:
-    resolution: {integrity: sha512-sQnufSdQ5kJxaTxBisWYQjkunECuRymYRZYEZEEPpmLUzzZoS22tDLVumb3c1TV4MAlD3L1LTLpxLSXcFL+OZw==}
+  /@fastify/static@7.0.4:
+    resolution: {integrity: sha512-p2uKtaf8BMOZWLs6wu+Ihg7bWNBdjNgCwDza4MJtTqg+5ovKmcbgbR9Xs5/smZ1YISfzKOCNYmZV8LaCj+eJ1Q==}
     dependencies:
-      '@fastify/static': 6.12.0
+      '@fastify/accept-negotiator': 1.1.0
+      '@fastify/send': 2.1.0
+      content-disposition: 0.5.4
+      fastify-plugin: 4.5.1
+      fastq: 1.17.1
+      glob: 10.3.10
+    dev: false
+
+  /@fastify/swagger-ui@4.0.0:
+    resolution: {integrity: sha512-ZbVJg4bQHNyd10f6DZftMMuSPKpkh6ePB5TfbZLSjUQmfIDnNYBWhGv8o0iUxYbLAyIz1oa5xqp2e/Z9B7wlFg==}
+    dependencies:
+      '@fastify/static': 7.0.4
       fastify-plugin: 4.5.1
       openapi-types: 12.1.3
       rfdc: 1.3.0

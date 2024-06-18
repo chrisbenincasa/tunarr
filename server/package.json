@@ -32,7 +32,7 @@
     "@fastify/multipart": "^8.3.0",
     "@fastify/static": "^6.12.0",
     "@fastify/swagger": "^8.12.1",
-    "@fastify/swagger-ui": "^2.0.1",
+    "@fastify/swagger-ui": "^4.0.0",
     "@iptv/xmltv": "^1.0.1",
     "@mikro-orm/better-sqlite": "^6.2.0",
     "@mikro-orm/core": "^6.2.0",
