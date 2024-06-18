@@ -1,12 +1,10 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { SaveChannelRequest } from '@tunarr/types';
 import { ZodiosError } from '@zodios/core';
-import { useNavigate } from 'react-router-dom';
 import { useTunarrApi } from './useTunarrApi';
 
 export const useUpdateChannel = (isNewChannel: boolean) => {
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
   const apiClient = useTunarrApi();
 
   const updateChannel = useMutation({
@@ -20,14 +18,12 @@ export const useUpdateChannel = (isNewChannel: boolean) => {
         });
       }
     },
-    onSuccess: async (data) => {
+    onSuccess: async () => {
       await queryClient.invalidateQueries({
         exact: false,
         queryKey: ['channels'],
       });
-      if (isNewChannel) {
-        navigate(`/channels/${data.id}/programming`);
-      } else {
+      if (!isNewChannel) {
         updateChannel.reset();
       }
     },
