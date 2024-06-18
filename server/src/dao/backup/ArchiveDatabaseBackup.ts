@@ -9,11 +9,11 @@ import { LoggerFactory } from '../../util/logging/LoggerFactory';
 import { SettingsDB } from '../settings';
 import { BackupResult, DatabaseBackup } from './DatabaseBackup';
 import { SqliteDatabaseBackup } from './SqliteDatabaseBackup';
-import { getDatabasePath } from '../databaseDirectoryUtil';
 import { compact, isEmpty, isNull, map, sortBy, take } from 'lodash-es';
 import { asyncPool } from '../../util/asyncPool';
 import { fileExists } from '../../util/fsUtil.js';
 import { isDocker } from '../../util/isDocker.js';
+import { getDatabasePath } from '../databaseDirectoryUtil';
 
 export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
   #logger = LoggerFactory.child({ className: ArchiveDatabaseBackup.name });
@@ -93,10 +93,14 @@ export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
       .directory(getDatabasePath('channel-lineups'), 'channel-lineups')
       .directory(getDatabasePath('images'), 'images')
       .directory(getDatabasePath('cache'), 'cache')
-      .glob(getDatabasePath('*.xml'));
+      .glob('*.xml', { cwd: getDatabasePath('') });
     await archive.finalize();
 
+    this.#logger.trace('Finalized archive stream %s', backupFileName);
+
     await fs.rm(tempDir, { recursive: true });
+
+    this.#logger.trace('Deleted temp backup directory');
 
     await this.deleteOldBackupIfNecessary();
 
