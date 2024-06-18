@@ -12,7 +12,6 @@ export const upsertProgramExternalIds = async (
   const logger = LoggerFactory.root;
   const em = getEm();
 
-  console.log(externalIds);
   if (isEmpty(externalIds)) {
     return;
   }
@@ -45,7 +44,7 @@ export const upsertProgramExternalIds = async (
       .into('program_external_id')
       .onConflict(
         knex.raw(
-          '(program_uuid, source_type) WHERE external_source_id IS NOT NULL',
+          '(program_uuid, source_type, external_source_id) WHERE external_source_id IS NOT NULL',
         ),
       )
       .merge()

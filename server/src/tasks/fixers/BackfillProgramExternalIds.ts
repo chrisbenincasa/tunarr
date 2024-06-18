@@ -82,7 +82,6 @@ export class BackfillProgramExternalIds extends Fixer {
           ),
         { concurrency: 1, waitAfterEachMs: 50 },
       )) {
-        console.log(result);
         if (result.type === 'error') {
           this.#logger.error(
             result.error,
