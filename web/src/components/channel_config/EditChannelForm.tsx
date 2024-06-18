@@ -97,8 +97,17 @@ export function EditChannelForm({
         : undefined,
     };
 
-    formMethods.reset(dataTransform);
-    updateChannelMutation.mutate(dataTransform);
+    updateChannelMutation.mutate(dataTransform, {
+      onSuccess: (data) => {
+        formMethods.reset(dataTransform);
+        if (isNew) {
+          navigate({
+            to: `/channels/$channelId/programming`,
+            params: { channelId: data.id },
+          }).catch(console.warn);
+        }
+      },
+    });
   };
 
   const onInvalid: SubmitErrorHandler<SaveChannelRequest> = (data) => {

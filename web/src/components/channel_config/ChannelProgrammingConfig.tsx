@@ -1,4 +1,15 @@
+import { channelProgramUniqueId } from '@/helpers/util.ts';
+import { useSlideSchedule } from '@/hooks/programming_controls/useSlideSchedule.ts';
+import { useTunarrApi } from '@/hooks/useTunarrApi.ts';
+import { useUpdateChannel } from '@/hooks/useUpdateChannel.ts';
+import {
+  resetCurrentLineup,
+  resetLineup,
+  setChannelStartTime,
+} from '@/store/channelEditor/actions.ts';
+import useStore from '@/store/index.ts';
 import { useChannelEditor } from '@/store/selectors.ts';
+import { Save, Undo } from '@mui/icons-material';
 import {
   Alert,
   Box,
@@ -12,31 +23,18 @@ import {
   useTheme,
 } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link as RouterLink } from '@tanstack/react-router';
-import { useSlideSchedule } from '@/hooks/programming_controls/useSlideSchedule.ts';
-import {
-  resetCurrentLineup,
-  resetLineup,
-  setChannelStartTime,
-} from '@/store/channelEditor/actions.ts';
+import { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
+import { ZodiosError } from '@zodios/core';
 import dayjs, { Dayjs } from 'dayjs';
-import { useSlideSchedule } from '../../hooks/programming_controls/useSlideSchedule.ts';
-import { setChannelStartTime } from '../../store/channelEditor/actions.ts';
+import { chain, findIndex, first, isUndefined, map } from 'lodash-es';
+import { useSnackbar } from 'notistack';
+import { useState } from 'react';
 import AddProgrammingButton from './AddProgrammingButton.tsx';
 import ChannelProgrammingList from './ChannelProgrammingList.tsx';
 import { ChannelProgrammingSort } from './ChannelProgrammingSort.tsx';
 import { ChannelProgrammingTools } from './ChannelProgrammingTools.tsx';
-import useStore from '@/store/index.ts';
-import { Save, Undo } from '@mui/icons-material';
-import { useState } from 'react';
-import { channelProgramUniqueId } from '@/helpers/util.ts';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { ZodiosError } from '@zodios/core';
-import { isUndefined, chain, first, findIndex, map } from 'lodash-es';
-import { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
-import { useTunarrApi } from '@/hooks/useTunarrApi.ts';
-import { useUpdateChannel } from '@/hooks/useUpdateChannel.ts';
-import { useSnackbar } from 'notistack';
 
 type MutateArgs = {
   channelId: string;
