@@ -41,6 +41,8 @@ import {
   removePlexSelectedMedia,
 } from '../../store/programmingSelector/actions.ts';
 import { PlexSelectedMedia } from '../../store/programmingSelector/store.ts';
+import { useSettings } from '@/store/settings/selectors.ts';
+import { createExternalId } from '@tunarr/shared';
 
 export interface PlexGridItemProps<T extends PlexMedia> {
   item: T;
@@ -71,7 +73,7 @@ const childItemType = forPlexMedia({
   season: 'episode',
   show: 'season',
   collection: (coll) => (coll.subtype === 'movie' ? 'movie' : 'show'),
-  playlist: 'track',
+  playlist: (pl) => (pl.playlistType === 'audio' ? 'track' : 'video'),
   artist: 'album',
   album: 'track',
 });
@@ -98,6 +100,7 @@ export const PlexGridItem = forwardRef(
     props: PlexGridItemProps<T>,
     ref: ForwardedRef<HTMLDivElement>,
   ) => {
+    const settings = useSettings();
     const theme = useTheme();
     const skeletonBgColor = alpha(
       theme.palette.text.primary,
@@ -176,8 +179,16 @@ export const PlexGridItem = forwardRef(
     if (isPlexPlaylist(item)) {
       thumbSrc = `${server.uri}${item.composite}?X-Plex-Token=${server.accessToken}`;
     } else {
-      // TODO: Use server endpoint for plex metdata
-      thumbSrc = `${server.uri}${item.thumb}?X-Plex-Token=${server.accessToken}`;
+      const query = new URLSearchParams({
+        mode: 'proxy',
+        asset: 'thumb',
+        id: createExternalId('plex', server.name, item.ratingKey),
+        thumbOptions: JSON.stringify({ width: 480, height: 720 }),
+      });
+
+      thumbSrc = `${
+        settings.backendUri
+      }/api/metadata/external?${query.toString()}`;
     }
 
     return (

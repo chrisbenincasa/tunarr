@@ -18,6 +18,7 @@ export const usePlexPlaylistsInfinite = (
   plexServer: Maybe<PlexServerSettings>,
   currentLibrary: Nilable<PlexLibrary>,
   pageSize: number,
+  enabled: boolean = true,
 ) => {
   const apiClient = useTunarrApi();
 
@@ -42,10 +43,7 @@ export const usePlexPlaylistsInfinite = (
         `/playlists?${plexQuery.toString()}`,
       )();
     },
-    enabled:
-      !isNil(plexServer) &&
-      !isNil(currentLibrary) &&
-      currentLibrary.library.type === 'artist',
+    enabled: !isNil(plexServer) && !isNil(currentLibrary) && enabled,
     initialPageParam: 0,
     getNextPageParam: (res, all, last) => {
       const total = sumBy(all, (page) => page.size);

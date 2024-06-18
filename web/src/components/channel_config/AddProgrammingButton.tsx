@@ -1,8 +1,8 @@
 import {
+  AddToQueue,
   FreeBreakfast as BreaksIcon,
   Expand as FlexIcon,
   KeyboardArrowDown as KeyboardArrowDownIcon,
-  Tv as MediaIcon,
   Expand as PaddingIcon,
   Directions as RedirectIcon,
   Nightlight as RestrictHoursIcon,
@@ -16,6 +16,8 @@ import {
   Tooltip,
   alpha,
   styled,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { isNull } from 'lodash-es';
 import { useState } from 'react';
@@ -77,6 +79,8 @@ export default function AddProgrammingButton() {
     useState(false);
   const [addBreaksModalOpen, setAddBreaksModalOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const theme = useTheme();
+  const mediumViewport = useMediaQuery(theme.breakpoints.between('md', 'lg'));
 
   const open = !isNull(anchorEl);
 
@@ -116,9 +120,9 @@ export default function AddProgrammingButton() {
           variant="contained"
           component={Link}
           to="add"
-          startIcon={<MediaIcon />}
+          startIcon={<AddToQueue />}
         >
-          Add Media
+          {mediumViewport ? 'Add' : 'Add Media'}
         </Button>
         <Button onClick={handleClick}>
           <KeyboardArrowDownIcon />
@@ -140,7 +144,7 @@ export default function AddProgrammingButton() {
           placement="right"
         >
           <MenuItem disableRipple component={Link} to="add">
-            <MediaIcon /> Add Media
+            <AddToQueue /> Add Media
           </MenuItem>
         </Tooltip>
         <Tooltip
