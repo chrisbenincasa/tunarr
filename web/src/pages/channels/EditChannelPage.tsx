@@ -217,6 +217,7 @@ export default function EditChannelPage({ isNew, initialTab }: Props) {
     formMethods.formState.errors,
   ) as (keyof SaveChannelRequest)[];
   const formIsDirty = formMethods.formState.isDirty;
+  const formSubmit = formMethods.formState.isSubmitSuccessful;
 
   const updateChannelMutation = useUpdateChannel(isNew);
 
@@ -255,8 +256,12 @@ export default function EditChannelPage({ isNew, initialTab }: Props) {
     };
 
     updateChannelMutation.mutate(dataTransform, {
-      onSuccess: () => {
+      onSuccess: (result) => {
         formMethods.reset(dataTransform);
+        navigate(`/channels/${result.id}/programming`);
+      },
+      onSettled(data) {
+        console.log(data);
       },
     });
   };
@@ -321,7 +326,7 @@ export default function EditChannelPage({ isNew, initialTab }: Props) {
               </Box>
             </FormProvider>
             <UnsavedNavigationAlert
-              isDirty={formIsDirty}
+              isDirty={formIsDirty && !formSubmit}
               exemptPath="channels/:id/edit/*"
             />
           </Paper>
