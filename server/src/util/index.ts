@@ -23,13 +23,6 @@ import { format } from 'node:util';
 import { isPromise } from 'node:util/types';
 import { Try } from '../types/util';
 
-declare global {
-  interface Array<T> {
-    // async
-    mapAsyncSeq<U>(fn: (item: T) => Promise<U>, ms?: number): Promise<Array<U>>;
-  }
-}
-
 export type IsStringOrNumberValue<T, K extends keyof T> = T[K] extends
   | string
   | number
@@ -184,14 +177,17 @@ type mapAsyncSeq2Opts = {
   failuresToNull?: boolean;
 };
 
-export async function mapReduceAsyncSeq<T, U, Res>(
+export async function mapReduceAsyncSeq<T, U, Res = U>(
   seq: T[] | null | undefined,
   fn: (item: T) => Promise<U>,
   reduce: (res: Res, item: U) => Res,
-  empty: Res,
+  empty?: Res,
   opts?: mapAsyncSeq2Opts,
 ): Promise<Res> {
-  return (await mapAsyncSeq(seq, fn, opts)).reduce(reduce, empty);
+  return (await mapAsyncSeq(seq, fn, opts)).reduce(
+    reduce,
+    empty ?? ([] as Res),
+  );
 }
 
 export async function mapAsyncSeq<T, U>(
@@ -264,13 +260,6 @@ export function firstDefined(obj: object, ...args: string[]): string {
 
   return 'missing';
 }
-
-Array.prototype.mapAsyncSeq = async function <T, U>(
-  itemFn: (item: T) => Promise<U>,
-  ms: number | undefined,
-) {
-  return mapAsyncSeq_old(this as T[], ms, itemFn);
-};
 
 export function time<T>(
   key: string,

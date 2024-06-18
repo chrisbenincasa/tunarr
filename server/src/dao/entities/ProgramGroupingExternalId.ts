@@ -36,4 +36,10 @@ export class ProgramGroupingExternalId extends BaseEntity {
 
   @ManyToOne(() => ProgramGrouping)
   group!: Rel<ProgramGrouping>;
+
+  toExternalIdString(): string {
+    return `${this.sourceType.toString()}|${this.externalSourceId ?? ''}|${
+      this.externalKey
+    }`;
+  }
 }

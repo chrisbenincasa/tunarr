@@ -12,6 +12,7 @@ import {
   ChannelProgramming,
   CondensedChannelProgram,
   CondensedChannelProgramming,
+  ContentProgram,
   SaveChannelRequest,
 } from '@tunarr/types';
 import { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
@@ -22,6 +23,8 @@ import ld, {
   compact,
   filter,
   find,
+  flatten,
+  forEach,
   groupBy,
   isEmpty,
   isNil,
@@ -35,6 +38,7 @@ import ld, {
   reject,
   sumBy,
   take,
+  uniqBy,
 } from 'lodash-es';
 import { Low } from 'lowdb';
 import fs from 'node:fs/promises';
@@ -46,11 +50,11 @@ import { fileExists } from '../util/fsUtil.js';
 import {
   groupByFunc,
   groupByUniq,
-  groupByUniqAndMapAsync,
   mapAsyncSeq,
   mapReduceAsyncSeq,
 } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
+import { Timer, timeNamedAsync } from '../util/perf.js';
 import { SchemaBackedDbAdapter } from './SchemaBackedDbAdapter.js';
 import { ProgramConverter } from './converters/programConverters.js';
 import { getEm } from './dataSource.js';
@@ -159,6 +163,7 @@ const fileDbCache: Record<string | number, Low<Lineup>> = {};
 
 export class ChannelDB {
   private logger = LoggerFactory.child({ caller: import.meta });
+  private timer = new Timer(this.logger);
   #programConverter = new ProgramConverter();
 
   getChannelByNumber(channelNumber: number) {
@@ -285,13 +290,14 @@ export class ChannelDB {
   }
 
   async updateLineup(id: string, req: UpdateChannelProgrammingRequest) {
-    const channel = await this.getChannelAndPrograms(id);
+    const em = getEm();
+    const channel = await em.findOne(Channel, id, {
+      populate: ['programs:ref'],
+    });
 
     if (isNil(channel)) {
       return null;
     }
-
-    const em = getEm();
 
     const updateChannel = async (
       lineup: readonly LineupItem[],
@@ -358,7 +364,7 @@ export class ChannelDB {
       programs: ChannelProgram[],
       lineup: ChannelProgram[] = programs,
     ) => {
-      const upsertedPrograms = await upsertContentPrograms(programs);
+      const upsertedPrograms = await upsertContentPrograms(programs, 50);
       const dbIdByUniqueId = groupByFunc(
         upsertedPrograms,
         (p) => p.uniqueId(),
@@ -382,14 +388,18 @@ export class ChannelDB {
         }),
       );
 
-      const newLineup = await createNewLineup(programs, lineup);
-      const updatedChannel = await updateChannel(
-        newLineup,
-        dayjs().unix() * 1000,
+      const newLineup = await this.timer.timeAsync('createNewLineup', () =>
+        createNewLineup(programs, lineup),
       );
-      await this.saveLineup(id, {
-        items: newLineup,
-      });
+      const updatedChannel = await this.timer.timeAsync('updateChannel', () =>
+        updateChannel(newLineup, dayjs().unix() * 1000),
+      );
+
+      await this.timer.timeAsync('saveLineup', () =>
+        this.saveLineup(id, {
+          items: newLineup,
+        }),
+      );
 
       return {
         channel: updatedChannel,
@@ -449,6 +459,23 @@ export class ChannelDB {
     );
   }
 
+  async loadAllLineupConfigs() {
+    return mapReduceAsyncSeq(
+      await this.getAllChannels(),
+      async (channel) => {
+        return {
+          channel,
+          lineup: await this.loadLineup(channel.uuid),
+        };
+      },
+      (prev, { channel, lineup }) => ({
+        ...prev,
+        [channel.uuid]: { channel, lineup },
+      }),
+      {} as Record<string, { channel: Loaded<Channel>; lineup: Lineup }>,
+    );
+  }
+
   async loadChannelAndLineup(channelId: string) {
     const channel = await this.getChannelById(channelId);
     if (isNull(channel)) {
@@ -463,7 +490,6 @@ export class ChannelDB {
 
   async loadLineup(channelId: string) {
     const db = await this.getFileDb(channelId);
-    await db.read();
     return db.data;
   }
 
@@ -502,33 +528,10 @@ export class ChannelDB {
     offset: number = 0,
     limit: number = -1,
   ): Promise<CondensedChannelProgramming | null> {
-    // TODO: Don't load all of the programs upfront
-    // We can get away with:
-    // 1. Waiting until we've applied offset/limit to the lineup
-    //    and then only load what we need AND
-    // 2. Loading these incrementally as we materialize so we don't
-    //    potentially pull a ton of crap into memory at once
-    const channel = await getEm()
-      .repo(Channel)
-      .findOne(
-        { uuid: channelId },
-        {
-          populate: [
-            'programs',
-            'programs.customShows.uuid',
-            'programs.tvShow',
-            'programs.season',
-            'programs.album',
-            'programs.artist',
-            'programs.externalIds',
-          ],
-        },
-      );
-    if (isNil(channel)) {
-      return null;
-    }
+    const lineup = await timeNamedAsync('loadLineup', this.logger, () =>
+      this.loadLineup(channelId),
+    );
 
-    const lineup = await this.loadLineup(channelId);
     const len = lineup.items.length;
     const cleanOffset = offset < 0 ? 0 : offset;
     const cleanLimit = limit < 0 ? len : limit;
@@ -538,20 +541,62 @@ export class ChannelDB {
       .take(cleanLimit)
       .value();
 
-    const materializedPrograms = await groupByUniqAndMapAsync(
-      filter(pagedLineup, isContentItem),
-      'id',
-      async (item) => {
-        const program = channel.programs.find((p) => p.uuid === item.id);
-        if (!program) {
-          return null;
-        }
-        return this.#programConverter.entityToContentProgram(program);
-      },
+    const channel = await timeNamedAsync('select channel', this.logger, () =>
+      getEm().repo(Channel).findOne({ uuid: channelId }),
     );
 
-    const { lineup: condensedLineup, offsets } =
-      await this.buildCondensedLineup(channel, pagedLineup);
+    if (isNil(channel)) {
+      return null;
+    }
+
+    const contentItems = filter(pagedLineup, isContentItem);
+
+    const uniqueProgramIds = uniqBy(contentItems, (item) => item.id);
+    const programs = flatten(
+      await this.timer.timeAsync('gather programs', () =>
+        Promise.all(
+          map(chunk(uniqueProgramIds, 500), (chunk) =>
+            getEm().find(
+              Program,
+              { uuid: { $in: map(chunk, 'id') } },
+              {
+                populate: [
+                  'tvShow',
+                  'season',
+                  'album',
+                  'artist',
+                  'externalIds',
+                ],
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+
+    const programsById = groupByUniq(programs, 'uuid');
+
+    const materializedPrograms = this.timer.timeSync('program convert', () => {
+      const ret: Record<string, ContentProgram> = {};
+      forEach(uniqBy(contentItems, 'id'), (item) => {
+        const program = programsById[item.id];
+        if (!program) {
+          return;
+        }
+
+        const converted =
+          this.#programConverter.partialEntityToContentProgramSync(program);
+
+        ret[converted.id!] = converted;
+      });
+
+      return ret;
+    });
+
+    const { lineup: condensedLineup, offsets } = await this.timer.timeAsync(
+      'build condensed lineup',
+      () => this.buildCondensedLineup(channel, programs, pagedLineup),
+    );
 
     let apiOffsets: number[];
     if (lineup.startTimeOffsets) {
@@ -702,36 +747,41 @@ export class ChannelDB {
   }
 
   private async buildCondensedLineup(
-    channel: Loaded<Channel, 'programs' | 'programs.customShows.uuid'>,
+    channel: Loaded<Channel>,
+    dbPrograms: Loaded<Program>[],
     lineup: LineupItem[],
   ): Promise<{ lineup: CondensedChannelProgram[]; offsets: number[] }> {
     let lastOffset = 0;
     const offsets: number[] = [];
 
-    const programIds = channel.programs.map((p) => p.uuid);
-    const gen = asyncPool(
-      chunk(programIds, 100),
-      async (chunk) => {
-        return await getEm()
-          .repo(CustomShowContent)
-          .findAll({
-            where: { content: { $in: chunk } },
-          });
-      },
-      { concurrency: 2 },
-    );
+    const programById = groupByUniq(dbPrograms, 'uuid');
+
+    // const gen = asyncPool(
+    //   chunk(programIds, 100),
+    //   async (chunk) => {
+    //     return await getEm()
+    //       .repo(CustomShowContent)
+    //       .findAll({
+    //         where: { content: { $in: chunk } },
+    //       });
+    //   },
+    //   { concurrency: 2 },
+    // );
 
     const allCustomShowContent: CustomShowContent[] = [];
-    for await (const selectedChunkResult of gen) {
-      if (selectedChunkResult.type === 'success') {
-        allCustomShowContent.push(...selectedChunkResult.result);
-      } else {
-        this.logger.warn(
-          selectedChunkResult.error,
-          'Error while selecting custom show content',
-        );
-      }
-    }
+    // const start = performance.now();
+    // for await (const selectedChunkResult of gen) {
+    //   if (selectedChunkResult.type === 'success') {
+    //     allCustomShowContent.push(...selectedChunkResult.result);
+    //   } else {
+    //     this.logger.warn(
+    //       selectedChunkResult.error,
+    //       'Error while selecting custom show content',
+    //     );
+    //   }
+    // }
+    // const end = performance.now();
+    // this.logger.debug('Custom show select %d ms', end - start);
 
     const customShowContent = groupBy(
       allCustomShowContent,
@@ -743,6 +793,7 @@ export class ChannelDB {
       .findAll({
         fields: ['name', 'number'],
       });
+
     const channelsById = groupByUniq(allChannels, 'uuid');
 
     const programs = ld
@@ -773,18 +824,17 @@ export class ChannelDB {
             customShowContent[item.customShowId],
             (csc) => csc.content.uuid === item.id,
           );
-          if (csc) {
-            p = {
-              persisted: true,
-              type: 'custom',
-              customShowId: item.customShowId,
-              duration: item.durationMs,
-              index: csc.index,
-              id: item.id,
-            };
-          }
+          p = {
+            persisted: true,
+            type: 'custom',
+            customShowId: item.customShowId,
+            duration: item.durationMs,
+            index: csc?.index ?? -1, // TODO: We need a faster way to find this
+            id: item.id,
+          };
         } else {
-          if (channel.programs.exists((p) => p.uuid === item.id)) {
+          const program = programById[item.id];
+          if (program) {
             p = {
               persisted: true,
               type: 'content',

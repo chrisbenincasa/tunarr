@@ -30,7 +30,7 @@ export class ScheduleDynamicChannelsTask extends Task<void> {
 
   // eslint-disable-next-line @typescript-eslint/require-await
   protected async runInternal(): Promise<Maybe<void>> {
-    const lineups = await this.#channelsDb.loadAllLineups();
+    const lineups = await this.#channelsDb.loadAllLineupConfigs();
     const dynamicLineups = filter(
       lineups,
       ({ lineup }) =>

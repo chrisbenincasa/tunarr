@@ -63,6 +63,58 @@ export async function* asyncPool<T, R>(
   }
 }
 
+export async function* asyncPoolGen<T, R>(
+  iterable: AsyncIterable<T>,
+  iteratorFn: (item: T) => PromiseLike<R> | R,
+  opts: AsyncPoolOpts,
+): AsyncGenerator<Result<T, R>> {
+  const executing = new Set<Promise<readonly [T, Awaited<R>]>>();
+
+  async function consume() {
+    try {
+      const [input, result] = await Promise.race(executing);
+      return {
+        type: 'success' as const,
+        result,
+        input,
+      };
+    } catch (e) {
+      return e as Failure<T>;
+    }
+  }
+
+  // TODO This doesn't work
+  for await (const item of iterable) {
+    // Wrap iteratorFn() in an async fn to ensure we get a promise.
+    // Then expose such promise, so it's possible to later reference and
+    // remove it from the executing pool.
+    const promise = (async () => {
+      try {
+        const r = await iteratorFn(item);
+        if (opts.waitAfterEachMs && opts.waitAfterEachMs > 0) {
+          await wait(opts.waitAfterEachMs);
+        }
+        return [item, r] as const;
+      } catch (e) {
+        throw {
+          type: 'failure',
+          error: e as unknown,
+          input: item,
+        };
+      }
+    })().finally(() => executing.delete(promise));
+
+    executing.add(promise);
+    if (executing.size >= opts.concurrency) {
+      yield await consume();
+    }
+  }
+
+  while (executing.size) {
+    yield await consume();
+  }
+}
+
 export async function unfurlPool<T, R>(poolGen: AsyncGenerator<Result<T, R>>) {
   const results: R[] = [];
   for await (const result of poolGen) {

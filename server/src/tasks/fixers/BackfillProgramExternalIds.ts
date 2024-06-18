@@ -20,7 +20,7 @@ import { attempt, attemptSync, groupByUniq, wait } from '../../util/index.js';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
 import Fixer from './fixer';
 import { PlexTerminalMedia } from '@tunarr/types/plex';
-import { upsertProgramExternalIds } from '../../dao/programExternalIdHelpers';
+import { upsertProgramExternalIds_deprecated } from '../../dao/programExternalIdHelpers';
 
 export class BackfillProgramExternalIds extends Fixer {
   #logger = LoggerFactory.child({ caller: import.meta });
@@ -90,7 +90,7 @@ export class BackfillProgramExternalIds extends Fixer {
           );
         } else {
           const upsertResult = await attempt(() =>
-            upsertProgramExternalIds(result.result),
+            upsertProgramExternalIds_deprecated(result.result),
           );
           if (isError(upsertResult)) {
             this.#logger.warn(

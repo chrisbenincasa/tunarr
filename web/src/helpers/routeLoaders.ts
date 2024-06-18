@@ -1,8 +1,8 @@
 import { channelProgrammingQuery } from '@/hooks/useChannelLineup';
 import { channelQuery } from '@/hooks/useChannels';
+import useStore from '@/store';
 import { safeSetCurrentChannel } from '@/store/channelEditor/actions';
 import { RouterContext } from '@/types/RouterContext';
-import useStore from '@/store';
 import { notFound } from '@tanstack/react-router';
 
 type Args = {

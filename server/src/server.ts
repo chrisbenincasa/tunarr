@@ -28,8 +28,8 @@ import { ServerOptions, serverOptions } from './globals.js';
 import { ServerRequestContext, serverContext } from './serverContext.js';
 import { GlobalScheduler, scheduleJobs } from './services/scheduler.js';
 import { initPersistentStreamCache } from './stream/ChannelCache.js';
-import { runFixers } from './tasks/fixers/index.js';
 import { UpdateXmlTvTask } from './tasks/UpdateXmlTvTask.js';
+import { runFixers } from './tasks/fixers/index.js';
 import { filename, isNonEmptyString, run } from './util/index.js';
 import { LoggerFactory } from './util/logging/LoggerFactory.js';
 

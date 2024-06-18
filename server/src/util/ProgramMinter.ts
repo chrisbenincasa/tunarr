@@ -37,21 +37,25 @@ class PlexProgramMinter {
 
   private mintMovieProgram(serverName: string, plexMovie: PlexMovie): Program {
     const file = first(first(plexMovie.Media)?.Part ?? []);
-    return this.#em.create(Program, {
-      sourceType: ProgramSourceType.PLEX,
-      originalAirDate: plexMovie.originallyAvailableAt,
-      duration: plexMovie.duration,
-      filePath: file?.file,
-      externalSourceId: serverName,
-      externalKey: plexMovie.ratingKey,
-      plexRatingKey: plexMovie.ratingKey,
-      plexFilePath: file?.key,
-      rating: plexMovie.contentRating,
-      summary: plexMovie.summary,
-      title: plexMovie.title,
-      type: ProgramType.Movie,
-      year: plexMovie.year,
-    });
+    return this.#em.create(
+      Program,
+      {
+        sourceType: ProgramSourceType.PLEX,
+        originalAirDate: plexMovie.originallyAvailableAt,
+        duration: plexMovie.duration,
+        filePath: file?.file,
+        externalSourceId: serverName,
+        externalKey: plexMovie.ratingKey,
+        plexRatingKey: plexMovie.ratingKey,
+        plexFilePath: file?.key,
+        rating: plexMovie.contentRating,
+        summary: plexMovie.summary,
+        title: plexMovie.title,
+        type: ProgramType.Movie,
+        year: plexMovie.year,
+      },
+      { persist: false },
+    );
   }
 
   private mintEpisodeProgram(
@@ -59,54 +63,62 @@ class PlexProgramMinter {
     plexEpisode: PlexEpisode,
   ): Program {
     const file = first(first(plexEpisode.Media)?.Part ?? []);
-    const program = this.#em.create(Program, {
-      sourceType: ProgramSourceType.PLEX,
-      originalAirDate: plexEpisode.originallyAvailableAt,
-      duration: plexEpisode.duration,
-      filePath: file?.file,
-      externalSourceId: serverName,
-      externalKey: plexEpisode.ratingKey,
-      plexRatingKey: plexEpisode.ratingKey,
-      plexFilePath: file?.key,
-      rating: plexEpisode.contentRating,
-      summary: plexEpisode.summary,
-      title: plexEpisode.title,
-      type: ProgramType.Episode,
-      year: plexEpisode.year,
-      showTitle: plexEpisode.grandparentTitle,
-      showIcon: plexEpisode.grandparentThumb,
-      seasonNumber: plexEpisode.parentIndex,
-      episode: plexEpisode.index,
-      parentExternalKey: plexEpisode.parentRatingKey,
-      grandparentExternalKey: plexEpisode.grandparentRatingKey,
-    });
+    const program = this.#em.create(
+      Program,
+      {
+        sourceType: ProgramSourceType.PLEX,
+        originalAirDate: plexEpisode.originallyAvailableAt,
+        duration: plexEpisode.duration,
+        filePath: file?.file,
+        externalSourceId: serverName,
+        externalKey: plexEpisode.ratingKey,
+        plexRatingKey: plexEpisode.ratingKey,
+        plexFilePath: file?.key,
+        rating: plexEpisode.contentRating,
+        summary: plexEpisode.summary,
+        title: plexEpisode.title,
+        type: ProgramType.Episode,
+        year: plexEpisode.year,
+        showTitle: plexEpisode.grandparentTitle,
+        showIcon: plexEpisode.grandparentThumb,
+        seasonNumber: plexEpisode.parentIndex,
+        episode: plexEpisode.index,
+        parentExternalKey: plexEpisode.parentRatingKey,
+        grandparentExternalKey: plexEpisode.grandparentRatingKey,
+      },
+      { persist: false },
+    );
 
     return program;
   }
 
   private mintTrackProgram(serverName: string, plexTrack: PlexMusicTrack) {
     const file = first(first(plexTrack.Media)?.Part ?? []);
-    return this.#em.create(Program, {
-      sourceType: ProgramSourceType.PLEX,
-      duration: plexTrack.duration,
-      filePath: file?.file,
-      externalSourceId: serverName,
-      externalKey: plexTrack.ratingKey,
-      plexRatingKey: plexTrack.ratingKey,
-      plexFilePath: file?.key,
-      summary: plexTrack.summary,
-      title: plexTrack.title,
-      type: ProgramType.Track,
-      year: plexTrack.parentYear,
-      showTitle: plexTrack.grandparentTitle,
-      showIcon: plexTrack.grandparentThumb,
-      seasonNumber: plexTrack.parentIndex,
-      episode: plexTrack.index,
-      parentExternalKey: plexTrack.parentRatingKey,
-      grandparentExternalKey: plexTrack.grandparentRatingKey,
-      albumName: plexTrack.parentTitle,
-      artistName: plexTrack.grandparentTitle,
-    });
+    return this.#em.create(
+      Program,
+      {
+        sourceType: ProgramSourceType.PLEX,
+        duration: plexTrack.duration,
+        filePath: file?.file,
+        externalSourceId: serverName,
+        externalKey: plexTrack.ratingKey,
+        plexRatingKey: plexTrack.ratingKey,
+        plexFilePath: file?.key,
+        summary: plexTrack.summary,
+        title: plexTrack.title,
+        type: ProgramType.Track,
+        year: plexTrack.parentYear,
+        showTitle: plexTrack.grandparentTitle,
+        showIcon: plexTrack.grandparentThumb,
+        seasonNumber: plexTrack.parentIndex,
+        episode: plexTrack.index,
+        parentExternalKey: plexTrack.parentRatingKey,
+        grandparentExternalKey: plexTrack.grandparentRatingKey,
+        albumName: plexTrack.parentTitle,
+        artistName: plexTrack.grandparentTitle,
+      },
+      { persist: false },
+    );
   }
 
   mintExternalIds(

@@ -22,6 +22,7 @@ import { UpdateXmlTvTask } from '../tasks/UpdateXmlTvTask.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { attempt, mapAsyncSeq } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
+import { timeNamedAsync } from '../util/perf.js';
 
 dayjs.extend(duration);
 
@@ -230,7 +231,8 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     '/channels/:id/programming',
     {
       schema: {
-        params: BasicIdParamSchema.merge(BasicPagingSchema),
+        params: BasicIdParamSchema,
+        querystring: BasicPagingSchema,
         tags: ['Channels'],
         response: {
           200: CondensedChannelProgrammingSchema,
@@ -249,8 +251,8 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
 
       const apiLineup = await req.serverCtx.channelDB.loadCondensedLineup(
         req.params.id,
-        req.params.offset ?? 0,
-        req.params.limit ?? -1,
+        req.query.offset ?? 0,
+        req.query.limit ?? -1,
       );
 
       if (isNil(apiLineup)) {
@@ -259,7 +261,14 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
           .send({ error: 'Could not find channel lineup.' });
       }
 
-      return res.send(apiLineup);
+      return res
+        .serializer((x) => {
+          console.time('stringify');
+          const res = JSON.stringify(x);
+          console.timeEnd('stringify');
+          return res;
+        })
+        .send(apiLineup);
     },
   );
 
@@ -279,11 +288,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      if (
-        isNil(
-          await req.serverCtx.channelDB.getChannelAndPrograms(req.params.id),
-        )
-      ) {
+      if (isNil(await req.serverCtx.channelDB.getChannel(req.params.id))) {
         return res.status(404).send();
       }
 
@@ -313,8 +318,10 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
       //     from the updateLineup call above. If performance suffers we can look into this
       //  2. We can just remove this completely and invalidate the lineup on the frontend
       //     and make it reload. Also not very clean, but not the end of the world.
-      const newLineup = await req.serverCtx.channelDB.loadCondensedLineup(
-        req.params.id,
+      const newLineup = await timeNamedAsync(
+        'build fresh lineup',
+        LoggerFactory.root,
+        () => req.serverCtx.channelDB.loadCondensedLineup(req.params.id),
       );
 
       if (isNil(newLineup)) {

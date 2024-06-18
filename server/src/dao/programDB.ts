@@ -1,4 +1,13 @@
-import { chunk, flatten, groupBy, isNil, keys, map, union } from 'lodash-es';
+import {
+  chunk,
+  flatten,
+  groupBy,
+  isNil,
+  keys,
+  map,
+  union,
+  uniq,
+} from 'lodash-es';
 import {
   groupByAndMapAsync,
   groupByUniq,
@@ -17,6 +26,21 @@ import { asyncPool, unfurlPool } from '../util/asyncPool.js';
 import { Loaded } from '@mikro-orm/better-sqlite';
 
 export class ProgramDB {
+  async getProgramById(id: string) {
+    return getEm().findOne(Program, id, { populate: ['externalIds'] });
+  }
+
+  async getProgramsByIds(ids: string[], batchSize: number = 50) {
+    const em = getEm();
+    return mapReduceAsyncSeq(
+      chunk(uniq(ids), batchSize),
+      (ids) =>
+        em.find(Program, { uuid: { $in: ids } }, { populate: ['externalIds'] }),
+      (acc, curr) => [...acc, ...curr],
+      [] as Loaded<Program, 'externalIds', '*', never>[],
+    );
+  }
+
   async lookupByExternalIds(
     ids: Set<[string, string, string]>,
     chunkSize: number = 25,
