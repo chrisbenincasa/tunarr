@@ -190,13 +190,23 @@ ${chalk.blue('  |_| ')}${chalk.green(' \\___/')}${chalk.yellow(
     'db [sub]',
     'Run database commands',
     (yargs) => {
-      return yargs.positional('sub', {
-        type: 'string',
-        choices: ['generate-migration', 'init'],
-        demandOption: true,
-      });
+      return yargs
+        .positional('sub', {
+          type: 'string',
+          choices: ['generate-migration', 'init'],
+          demandOption: true,
+        })
+        .option('blank', {
+          type: 'boolean',
+          alias: 'b',
+          default: false,
+        });
     },
-    async (args: ArgumentsCamelCase<ServerOptions & { sub: string }>) => {
+    async (
+      args: ArgumentsCamelCase<
+        ServerOptions & { sub: string; blank?: boolean }
+      >,
+    ) => {
       setServerOptions(args);
       switch (args.sub) {
         case 'init': {
@@ -206,7 +216,10 @@ ${chalk.blue('  |_| ')}${chalk.green(' \\___/')}${chalk.yellow(
         case 'generate-migration': {
           const orm = await initOrm();
 
-          const result = await orm.migrator.createMigration();
+          const result = await orm.migrator.createMigration(
+            undefined,
+            args.blank,
+          );
 
           console.log(result.code);
 

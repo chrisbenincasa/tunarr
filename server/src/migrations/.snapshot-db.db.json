@@ -1280,14 +1280,6 @@
           "expression": "create unique index `unique_program_single_external_id` on `program_external_id` (`program_uuid`, `source_type`) WHERE `external_source_id` IS NULL"
         },
         {
-          "keyName": "program_external_id_uuid_source_type_unique",
-          "columnNames": ["uuid", "source_type"],
-          "composite": true,
-          "constraint": false,
-          "primary": false,
-          "unique": true
-        },
-        {
           "keyName": "primary",
           "columnNames": ["uuid"],
           "composite": false,
@@ -1661,7 +1653,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
-          "enumItems": ["plex", "plex-guid", "imdb", "tmdb", "tvdb"],
+          "enumItems": ["plex", "plex-guid", "tmdb", "imdb", "tvdb"],
           "mappedType": "enum"
         },
         "external_source_id": {

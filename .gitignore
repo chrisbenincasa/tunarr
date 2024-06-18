@@ -16,3 +16,4 @@ log.txt
 .DS_Store
 .turbo/
 *.env*
+*.tar*
