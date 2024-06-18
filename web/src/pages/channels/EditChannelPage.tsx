@@ -1,4 +1,5 @@
-import { Badge, Button, Stack } from '@mui/material';
+import Edit from '@mui/icons-material/Edit';
+import { Badge, Button, Stack, alpha, useTheme } from '@mui/material';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 import Tab from '@mui/material/Tab';
@@ -36,7 +37,6 @@ import {
   ChannelEditContext,
   ChannelEditContextState,
 } from './EditChannelContext.ts';
-import Edit from '@mui/icons-material/Edit';
 
 type TabValues = 'properties' | 'flex' | 'epg' | 'ffmpeg';
 
@@ -105,6 +105,7 @@ export default function EditChannelPage({ isNew, initialTab }: Props) {
   const previousChannel = usePrevious(workingChannel);
   const navigate = useNavigate();
   const location = useLocation();
+  const theme = useTheme();
 
   const [channelEditorState, setChannelEditorState] =
     useState<ChannelEditContextState>({
@@ -296,7 +297,11 @@ export default function EditChannelPage({ isNew, initialTab }: Props) {
             )}
           </Stack>
           <Paper sx={{ p: 2 }}>
-            <Box sx={{ borderColor: 'primary', borderBottom: 1 }}>
+            <Box
+              sx={{
+                borderBottom: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
+              }}
+            >
               <Tabs
                 value={currentTab}
                 onChange={handleChange}
