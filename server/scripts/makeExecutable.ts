@@ -75,7 +75,7 @@ for (const target of args.target) {
     resources: [
       'package.json',
       './resources/**/*',
-      './static/**/*', // Swagger -- TODO: Change this path
+      // './static/**/*', // Swagger -- TODO: Change this path
       './web/**',
     ],
     python: args.python,
