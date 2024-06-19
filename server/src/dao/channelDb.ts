@@ -1,4 +1,10 @@
-import { Loaded, QueryOrder, RequiredEntityData, wrap } from '@mikro-orm/core';
+import {
+  Loaded,
+  OrderDefinition,
+  QueryOrder,
+  RequiredEntityData,
+  wrap,
+} from '@mikro-orm/core';
 import { scheduleRandomSlots, scheduleTimeSlots } from '@tunarr/shared';
 import { forProgramType } from '@tunarr/shared/util';
 import {
@@ -259,9 +265,9 @@ export class ChannelDB {
     return channels.map((channel) => channel.number);
   }
 
-  async getAllChannels() {
+  async getAllChannels(orderBy?: OrderDefinition<Channel>) {
     // TODO return all programs
-    return getEm().repo(Channel).findAll();
+    return getEm().repo(Channel).findAll({ orderBy });
   }
 
   async getAllChannelsAndPrograms(): Promise<LoadedChannelWithGroupRefs[]> {
