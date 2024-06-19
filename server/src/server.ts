@@ -2,7 +2,6 @@ import cors from '@fastify/cors';
 import fastifyMultipart from '@fastify/multipart';
 import fpStatic from '@fastify/static';
 import fastifySwagger from '@fastify/swagger';
-import fastifySwaggerUi from '@fastify/swagger-ui';
 import { RequestContext } from '@mikro-orm/core';
 import fastify, { FastifySchema } from 'fastify';
 import fp from 'fastify-plugin';
@@ -17,7 +16,7 @@ import { FastifyRouteConfig } from 'fastify/types/route.js';
 import fs from 'fs';
 import { isArray, isNumber, isString, isUndefined, round } from 'lodash-es';
 import schedule from 'node-schedule';
-import path, { dirname, join } from 'path';
+import path, { dirname } from 'path';
 import { HdhrApiRouter } from './api/hdhrApi.js';
 import { hlsApi } from './api/hlsApi.js';
 import { apiRouter } from './api/index.js';
@@ -31,7 +30,7 @@ import { GlobalScheduler, scheduleJobs } from './services/scheduler.js';
 import { initPersistentStreamCache } from './stream/ChannelCache.js';
 import { runFixers } from './tasks/fixers/index.js';
 import { UpdateXmlTvTask } from './tasks/UpdateXmlTvTask.js';
-import { filename, isNonEmptyString, isProduction, run } from './util/index.js';
+import { filename, isNonEmptyString, run } from './util/index.js';
 import { LoggerFactory } from './util/logging/LoggerFactory.js';
 
 const currentDirectory = dirname(filename(import.meta.url));
@@ -165,13 +164,13 @@ export async function initServer(opts: ServerOptions) {
       },
       transform: jsonSchemaTransform,
     })
-    .register(fastifySwaggerUi, {
-      routePrefix: '/docs',
-      baseDir:
-        isProduction && process.argv.length > 1
-          ? join(dirname(process.argv[1]), 'static')
-          : undefined,
-    })
+    // .register(fastifySwaggerUi, {
+    //   routePrefix: '/docs',
+    //   baseDir:
+    //     isProduction && process.argv.length > 1
+    //       ? join(dirname(process.argv[1]), 'static')
+    //       : undefined,
+    // })
     .register(cors, {
       origin: '*', // Testing
     })

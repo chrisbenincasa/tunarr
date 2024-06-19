@@ -3,7 +3,8 @@
         "target": "ESNext",
         "module": "ESNext",
         "lib": [
-            "ES2022"
+            "ESNext",
+            "DOM" // We have to declare this so vitest doesn't explode
         ],
         "moduleResolution": "Bundler",
         "rootDir": ".",
