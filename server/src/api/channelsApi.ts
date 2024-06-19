@@ -337,7 +337,9 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      const allChannels = await req.serverCtx.channelDB.getAllChannels();
+      const allChannels = await req.serverCtx.channelDB.getAllChannels({
+        number: 'ASC',
+      });
 
       const startTime = dayjs(req.query.from);
       const endTime = dayjs(req.query.to);
