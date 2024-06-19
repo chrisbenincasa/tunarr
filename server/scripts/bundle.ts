@@ -56,13 +56,13 @@ const result = await esbuild.build({
     nativeNodeModulesPlugin(),
     nodeProtocolPlugin(),
     mikroOrmProdPlugin(),
-    copy({
-      resolveFrom: 'cwd',
-      assets: {
-        from: ['node_modules/@fastify/swagger-ui/static/*'],
-        to: ['build/static'],
-      },
-    }),
+    // copy({
+    //   resolveFrom: 'cwd',
+    //   assets: {
+    //     from: ['node_modules/@fastify/swagger-ui/static/*'],
+    //     to: ['build/static'],
+    //   },
+    // }),
     esbuildPluginPino({
       transports: ['pino-pretty', 'pino-roll'],
     }),

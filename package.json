@@ -19,7 +19,7 @@
     "@eslint/js": "^9.0.0",
     "@typescript-eslint/eslint-plugin": "7.5.0",
     "@typescript-eslint/parser": "7.5.0",
-    "esbuild": "^0.19.5",
+    "esbuild": "^0.21.5",
     "eslint": "8.56.0",
     "eslint-plugin-react": "^7.34.1",
     "eslint-plugin-react-hooks": "^4.6.0",
@@ -35,12 +35,12 @@
   "packageManager": "pnpm@8.15.4+sha256.cea6d0bdf2de3a0549582da3983c70c92ffc577ff4410cbf190817ddc35137c2",
   "pnpm": {
     "patchedDependencies": {
-      "ts-essentials@9.4.1": "patches/ts-essentials@9.4.1.patch",
-      "thread-stream@3.0.0": "patches/thread-stream@3.0.0.patch"
+      "ts-essentials@9.4.1": "patches/ts-essentials@9.4.1.patch"
     },
     "overrides": {
       "eslint": "8.56.0",
-      "better-sqlite3": "9.4.5"
+      "better-sqlite3": "9.4.5",
+      "@types/node": "20.11.1"
     }
   },
   "lint-staged": {
