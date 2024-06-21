@@ -554,22 +554,25 @@ export default function PlexProgrammingSelector() {
               >
                 <FilterAlt />
               </StandaloneToggleButton>
-              <Grow in={searchVisible}>
-                <ToggleButtonGroup
-                  size="small"
-                  color="primary"
-                  exclusive
-                  value={useAdvancedSearch ? 'advanced' : 'basic'}
-                  onChange={() => setUseAdvancedSearch(toggle)}
-                >
-                  <ToggleButton value="basic">Basic</ToggleButton>
-                  <ToggleButton value="advanced">Advanced</ToggleButton>
-                </ToggleButtonGroup>
-              </Grow>
+              {searchVisible && (
+                <Grow in={searchVisible}>
+                  <ToggleButtonGroup
+                    size="small"
+                    color="primary"
+                    exclusive
+                    value={useAdvancedSearch ? 'advanced' : 'basic'}
+                    onChange={() => setUseAdvancedSearch(toggle)}
+                  >
+                    <ToggleButton value="basic">Basic</ToggleButton>
+                    <ToggleButton value="advanced">Advanced</ToggleButton>
+                  </ToggleButtonGroup>
+                </Grow>
+              )}
+
               <PlexSortField />
             </Stack>
             <Collapse in={searchVisible} mountOnEnter>
-              <Box sx={{ py: 2 }}>
+              <Box sx={{ py: 1 }}>
                 <PlexFilterBuilder advanced={useAdvancedSearch} />
               </Box>
             </Collapse>
@@ -580,7 +583,7 @@ export default function PlexProgrammingSelector() {
                 display: 'flex',
                 pt: 1,
                 columnGap: 1,
-                alignItems: 'center',
+                alignItems: 'flex-end',
                 justifyContent: 'flex-end',
                 flexGrow: 1,
               }}
