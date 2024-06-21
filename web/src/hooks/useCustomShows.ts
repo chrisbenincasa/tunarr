@@ -1,16 +1,15 @@
 import {
   DataTag,
   DefinedInitialDataOptions,
-  QueriesResults,
-  UseQueryResult,
   useQueries,
-  useQuery,
+  useSuspenseQueries,
+  useSuspenseQuery,
 } from '@tanstack/react-query';
 import { CustomProgram, CustomShow } from '@tunarr/types';
 import { ApiClient } from '../external/api.ts';
 import { ZodiosAliasReturnType } from '../types/index.ts';
-import { makeQueryOptionsInitialData } from './useQueryHelpers.ts';
 import { useTunarrApi } from './useTunarrApi.ts';
+import { makeQueryOptions } from './useQueryHelpers.ts';
 
 export type CustomShowsQueryOpts = Omit<
   DefinedInitialDataOptions<
@@ -24,22 +23,12 @@ export type CustomShowsQueryOpts = Omit<
 
 export const customShowsQuery = (
   apiClient: ApiClient,
-  initialData: CustomShow[] = [],
   opts?: CustomShowsQueryOpts,
-) =>
-  makeQueryOptionsInitialData(
-    ['custom-shows'],
-    () => apiClient.getCustomShows(),
-    initialData,
-    opts ?? {},
-  );
+) => makeQueryOptions(['custom-shows'], () => apiClient.getCustomShows(), opts);
 
-export const useCustomShows = (
-  initialData: CustomShow[] = [],
-  opts?: CustomShowsQueryOpts,
-) => {
+export const useCustomShows = (opts?: CustomShowsQueryOpts) => {
   const apiClient = useTunarrApi();
-  return useQuery(customShowsQuery(apiClient, initialData, opts ?? {}));
+  return useSuspenseQuery(customShowsQuery(apiClient, opts ?? {}));
 };
 
 export const customShowQuery = (apiClient: ApiClient, id: string) => ({
@@ -82,26 +71,14 @@ export function useCustomShowWithInitialData(
   });
 }
 
-export function useCustomShow(
-  apiClient: ApiClient,
-  id: string,
-  enabled: boolean,
-  includePrograms: boolean,
-  initialData: { customShow?: CustomShow; programs?: CustomProgram[] } = {},
-): QueriesResults<
-  [UseQueryResult<CustomShow>, UseQueryResult<CustomProgram[]>]
-> {
-  return useQueries({
+export function useCustomShowWithProgramming(apiClient: ApiClient, id: string) {
+  return useSuspenseQueries({
     queries: [
       {
         ...customShowQuery(apiClient, id),
-        enabled,
-        initialData: initialData?.customShow,
       },
       {
         ...customShowProgramsQuery(apiClient, id),
-        enabled: enabled && includePrograms,
-        initialData: initialData?.programs,
       },
     ],
   });

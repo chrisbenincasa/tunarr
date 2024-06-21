@@ -13,7 +13,7 @@ import {
   TableHead,
   TableRow,
 } from '@mui/material';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from '@tanstack/react-router';
 import plexSvg from '../../assets/plex.svg';
 import { usePlexServerSettings } from '../../hooks/settingsHooks.ts';
 import AddPlexServer from './AddPlexServer.tsx';

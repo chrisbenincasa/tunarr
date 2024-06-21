@@ -3,7 +3,11 @@
     "rootDir": ".",
     "target": "ES2020",
     "useDefineForClassFields": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2020",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "module": "ESNext",
     "skipLibCheck": true,
     "sourceMap": true,
@@ -20,12 +24,24 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": [
+        "./src/*"
+      ]
     }
   },
-  "files": ["vite.config.ts", "vitest.config.ts"],
-  "include": ["./src/**/*.ts", "./src/**/*.tsx"],
-  "exclude": ["./build/**/*", "./dist/**/*", "./src/**/*.ignore.ts"],
+  "files": [
+    "vite.config.ts",
+    "vitest.config.ts",
+  ],
+  "include": [
+    "./src/**/*.ts",
+    "./src/**/*.tsx"
+  ],
+  "exclude": [
+    "./build/**/*",
+    "./dist/**/*",
+    "./src/**/*.ignore.ts"
+  ],
   "references": [
     {
       "path": "./tsconfig.node.json"

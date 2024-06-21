@@ -1,3 +1,5 @@
+import { useChannelAndProgramming } from '@/hooks/useChannelLineup.ts';
+import Edit from '@mui/icons-material/Edit';
 import {
   Box,
   Button,
@@ -8,17 +10,20 @@ import {
 } from '@mui/material';
 import { isUndefined } from 'lodash-es';
 import { useEffect } from 'react';
-import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import { ChannelProgrammingConfig } from '../../components/channel_config/ChannelProgrammingConfig.tsx';
 import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert.tsx';
-import { usePreloadedChannelEdit } from '../../hooks/usePreloadedChannel.ts';
 import { resetLineup } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
-import { Link } from 'react-router-dom';
-import Edit from '@mui/icons-material/Edit';
+import { Route } from '@/routes/channels_/$channelId/programming/index.tsx';
+import { Link } from '@tanstack/react-router';
+import Breadcrumbs from '@/components/Breadcrumbs.tsx';
 
 export default function ChannelProgrammingPage() {
-  const { currentEntity: channel } = usePreloadedChannelEdit();
+  const { channelId } = Route.useParams();
+  const {
+    data: { channel },
+    isPending,
+  } = useChannelAndProgramming(channelId);
 
   const programsDirty = useStore((s) => s.channelEditor.dirty.programs);
 
@@ -29,7 +34,7 @@ export default function ChannelProgrammingPage() {
     window.scrollTo(0, 0);
   }, []);
 
-  return isUndefined(channel) ? (
+  return isUndefined(channel) || isPending ? (
     <div>
       <CircularProgress />
     </div>
@@ -44,7 +49,6 @@ export default function ChannelProgrammingPage() {
           <Button
             component={Link}
             to="../edit"
-            relative="path"
             variant="outlined"
             startIcon={<Edit />}
           >

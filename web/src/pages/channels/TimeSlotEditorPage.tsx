@@ -47,7 +47,7 @@ import {
   useForm,
   useWatch,
 } from 'react-hook-form';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from '@tanstack/react-router';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import ChannelProgrammingList from '../../components/channel_config/ChannelProgrammingList.tsx';
@@ -60,13 +60,13 @@ import {
 } from '../../components/slot_scheduler/commonSlotSchedulerOptions.ts';
 import { NumericFormControllerText } from '../../components/util/TypedController.tsx';
 import { zipWithIndex } from '../../helpers/util.ts';
-import { usePreloadedChannelEdit } from '../../hooks/usePreloadedChannel.ts';
 import { useUpdateLineup } from '../../hooks/useUpdateLineup.ts';
 import {
   resetLineup,
   updateCurrentChannel,
 } from '../../store/channelEditor/actions.ts';
 import { UIChannelProgram, isUIRedirectProgram } from '../../types/index.ts';
+import { useChannelEditor } from '@/store/selectors.ts';
 import pluralize from 'pluralize';
 import { useSnackbar } from 'notistack';
 
@@ -413,7 +413,7 @@ export default function TimeSlotEditorPage() {
     currentEntity: channel,
     programList: newLineup,
     schedule: loadedSchedule,
-  } = usePreloadedChannelEdit();
+  } = useChannelEditor();
 
   const [, setStartTime] = useState(
     channel?.startTime ?? dayjs().unix() * 1000,
@@ -827,7 +827,6 @@ export default function TimeSlotEditorPage() {
           <Button
             variant="outlined"
             to=".."
-            relative="path"
             component={RouterLink}
             startIcon={<ArrowBack />}
             sx={{ justifyContent: 'flex-start' }}

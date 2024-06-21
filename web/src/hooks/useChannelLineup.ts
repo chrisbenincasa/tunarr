@@ -1,4 +1,4 @@
-import { DataTag, useQueries, useQuery } from '@tanstack/react-query';
+import { DataTag, useQuery, useSuspenseQueries } from '@tanstack/react-query';
 import { Channel, CondensedChannelProgramming } from '@tunarr/types';
 import { channelQuery } from './useChannels.ts';
 import { ApiClient } from '../external/api.ts';
@@ -33,7 +33,7 @@ export const useChannelAndProgramming = (
   initialData?: { channel?: Channel; lineup?: CondensedChannelProgramming },
 ) => {
   const apiClient = useTunarrApi();
-  return useQueries({
+  return useSuspenseQueries({
     queries: [
       {
         ...channelQuery(apiClient, id, enabled),

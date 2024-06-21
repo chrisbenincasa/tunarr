@@ -22,6 +22,7 @@
     "@mui/x-date-pickers": "^6.19.2",
     "@tanstack/react-query": "^5.18.1",
     "@tanstack/react-query-devtools": "^5.18.1",
+    "@tanstack/react-router": "^1.35.6",
     "@tunarr/shared": "workspace:*",
     "@tunarr/types": "workspace:*",
     "@uidotdev/usehooks": "^2.4.1",
@@ -42,7 +43,6 @@
     "react-dnd-html5-backend": "^16.0.1",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.48.2",
-    "react-router-dom": "^6.22.0",
     "react-window": "^1.8.9",
     "sort-by": "^1.2.0",
     "usehooks-ts": "^2.14.0",
@@ -51,6 +51,9 @@
     "zustand": "^4.4.6"
   },
   "devDependencies": {
+    "@tanstack/router-cli": "^1.35.4",
+    "@tanstack/router-devtools": "^1.36.0",
+    "@tanstack/router-vite-plugin": "^1.35.4",
     "@types/lodash-es": "^4.17.10",
     "@types/pluralize": "^0.0.33",
     "@types/react": "^18.2.15",

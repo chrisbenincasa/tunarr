@@ -70,6 +70,14 @@ const namedRoutes: Route[] = [
     name: 'Fillers',
   },
   {
+    matcher: /^\/library\/fillers\/programming\/add$/g,
+    name: 'Add Programming',
+  },
+  {
+    matcher: entityPageMatcher('library/fillers', 'edit'),
+    name: 'Edit',
+  },
+  {
     matcher: /^\/library\/fillers\/new$/g,
     name: 'New',
   },
@@ -80,6 +88,10 @@ const namedRoutes: Route[] = [
   {
     matcher: /^\/library\/custom-shows\/new$/g,
     name: 'New',
+  },
+  {
+    matcher: /^\/library\/custom-shows\/programming\/add$/g,
+    name: 'Add Programming',
   },
 ];
 
