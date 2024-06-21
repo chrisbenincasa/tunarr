@@ -5,6 +5,7 @@ import {
   Close as RemoveIcon,
 } from '@mui/icons-material';
 import {
+  Chip,
   ClickAwayListener,
   Drawer,
   IconButton,
@@ -280,7 +281,7 @@ export default function SelectedProgrammingList({
       {selectedMedia.length > 0 && (
         <Paper
           sx={{
-            position: 'absolute',
+            position: 'fixed',
             top: 64,
             right: open ? drawerWidth : 0,
             mt: 1,
@@ -296,6 +297,7 @@ export default function SelectedProgrammingList({
           >
             <IconButton disableRipple onClick={() => setOpen(toggle)}>
               {open ? <KeyboardArrowRight /> : <KeyboardArrowLeft />}
+              {!open && <Chip label={selectedMedia.length} />}
             </IconButton>
           </Tooltip>
         </Paper>
