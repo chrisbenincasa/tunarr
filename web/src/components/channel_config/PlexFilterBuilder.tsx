@@ -40,8 +40,8 @@ import {
   useForm,
   useFormContext,
 } from 'react-hook-form';
-import { usePlexTags } from '../../hooks/plex/usePlexTags.ts';
 import { useSelectedLibraryPlexFilters } from '../../hooks/plex/usePlexFilters.ts';
+import { usePlexTags } from '../../hooks/plex/usePlexTags.ts';
 import useStore from '../../store/index.ts';
 import { setPlexFilter } from '../../store/programmingSelector/actions.ts';
 
@@ -233,7 +233,10 @@ export function PlexValueNode({
   return (
     libraryFilterMetadata &&
     libraryFilterMetadata.Field.length > 0 && (
-      <Stack direction="row" gap={2} sx={{ pl: 4 * depth }}>
+      <Stack
+        gap={1}
+        sx={{ pl: 4 * depth, flexDirection: { xs: 'column', md: 'row' } }}
+      >
         <Controller
           control={control}
           name={getFieldName('field')}
@@ -486,7 +489,9 @@ export function PlexFilterBuilder(
               />
             )}
 
-            <Button type="submit">Search</Button>
+            <Button type="submit" variant="contained" sx={{ my: 2 }}>
+              Search
+            </Button>
           </Box>
         </Box>
       </FormProvider>

@@ -159,6 +159,7 @@ export default function ProgrammingSelector() {
             columnGap: 1,
             justifyContent: 'flex-start',
             flexGrow: 1,
+            rowGap: 2,
           }}
         >
           {hasAnySources && (
