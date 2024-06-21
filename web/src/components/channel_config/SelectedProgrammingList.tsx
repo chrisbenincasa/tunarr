@@ -11,17 +11,12 @@ import {
   IconButton,
   ListItemText,
   Paper,
-  SwipeableDrawer,
   Toolbar,
   Tooltip,
   Typography,
-  styled,
-  useMediaQuery,
-  useTheme,
 } from '@mui/material';
 import ListItem from '@mui/material/ListItem';
 import ListItemIcon from '@mui/material/ListItemIcon';
-import { grey } from '@mui/material/colors';
 import {
   isPlexDirectory,
   isPlexMovie,
@@ -48,20 +43,6 @@ type Props = {
   selectAllEnabled?: boolean;
 };
 
-const StyledBox = styled('div')(({ theme }) => ({
-  backgroundColor: theme.palette.mode === 'light' ? '#fff' : grey[800],
-}));
-
-const Puller = styled('div')(({ theme }) => ({
-  width: 30,
-  height: 6,
-  backgroundColor: theme.palette.mode === 'light' ? grey[300] : grey[900],
-  borderRadius: 3,
-  position: 'absolute',
-  top: 8,
-  left: 'calc(50% - 15px)',
-}));
-
 export default function SelectedProgrammingList({
   onAddSelectedMedia,
   onAddMediaSuccess,
@@ -70,8 +51,6 @@ export default function SelectedProgrammingList({
   const { data: customShows } = useCustomShows();
   const knownMedia = useStore((s) => s.knownMediaByServer);
   const selectedMedia = useStore((s) => s.selectedMedia);
-  const theme = useTheme();
-  const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
   const [open, setOpen] = useState(false);
   const windowSize = useWindowSize();
 
@@ -211,71 +190,7 @@ export default function SelectedProgrammingList({
     />
   );
 
-  const MobileProgrammingList = () => (
-    <>
-      <ActionsBar />
-      <SwipeableDrawer
-        anchor="right"
-        open={selectedMedia.length > 0 && open}
-        onClose={() => setOpen(false)}
-        onOpen={() => setOpen(true)}
-        disableSwipeToOpen={false}
-        swipeAreaWidth={50}
-        ModalProps={{
-          keepMounted: true,
-        }}
-        sx={{
-          '& .MuiDrawer-paper': {
-            boxSizing: 'border-box',
-            px: 1,
-            py: 0,
-          },
-        }}
-      >
-        <Toolbar
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'flex-end',
-            px: [1],
-          }}
-        ></Toolbar>
-        <Typography textAlign={'left'} sx={{ my: 2, ml: 1, fontWeight: 600 }}>
-          Selected {pluralize('Item', totalCount)} ({totalCount}):
-        </Typography>
-        <AddSelectedMediaButton
-          onAdd={onAddSelectedMedia}
-          onSuccess={onAddMediaSuccess}
-          buttonText={`Add ${pluralize('Item', selectedMedia.length)}`}
-          sx={{
-            color: theme.palette.primary.contrastText,
-            border: `1px solid ${theme.palette.primary.contrastText}`,
-            borderRadius: '10px',
-            width: '100%',
-          }}
-        />
-        <StyledBox
-          sx={{
-            position: 'absolute',
-            top: 0,
-            borderTopLeftRadius: 8,
-            borderTopRightRadius: 8,
-            visibility: 'visible',
-            right: 0,
-            left: 0,
-          }}
-        >
-          <Puller />
-          <Typography sx={{ p: 2, color: 'text.secondary' }}>
-            {totalCount} Selected {pluralize('Item', totalCount)}
-          </Typography>
-        </StyledBox>
-        {selectedMedia.length > 0 && renderSelectedItems()}
-      </SwipeableDrawer>
-    </>
-  );
-
-  const DesktopProgrammingList = () => (
+  const ProgrammingList = () => (
     <>
       <ActionsBar />
       {selectedMedia.length > 0 && (
@@ -340,9 +255,9 @@ export default function SelectedProgrammingList({
             onAdd={onAddSelectedMedia}
             onSuccess={onAddMediaSuccess}
             buttonText={`Add ${pluralize('Item', selectedMedia.length)}`}
+            variant="contained"
+            color={'primary'}
             sx={{
-              color: theme.palette.primary.contrastText,
-              border: `1px solid ${theme.palette.primary.contrastText}`,
               borderRadius: '10px',
               width: '100%',
             }}
@@ -353,5 +268,5 @@ export default function SelectedProgrammingList({
     </>
   );
 
-  return smallViewport ? <MobileProgrammingList /> : <DesktopProgrammingList />;
+  return <ProgrammingList />;
 }

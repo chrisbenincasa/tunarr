@@ -234,7 +234,6 @@ export function PlexValueNode({
     libraryFilterMetadata &&
     libraryFilterMetadata.Field.length > 0 && (
       <Stack
-        // direction="row"
         gap={1}
         sx={{ pl: 4 * depth, flexDirection: { xs: 'column', md: 'row' } }}
       >
