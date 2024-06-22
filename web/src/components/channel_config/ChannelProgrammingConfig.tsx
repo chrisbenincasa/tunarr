@@ -35,6 +35,7 @@ import AddProgrammingButton from './AddProgrammingButton.tsx';
 import ChannelProgrammingList from './ChannelProgrammingList.tsx';
 import { ChannelProgrammingSort } from './ChannelProgrammingSort.tsx';
 import { ChannelProgrammingTools } from './ChannelProgrammingTools.tsx';
+import { ZodError } from 'zod';
 
 type MutateArgs = {
   channelId: string;
@@ -96,9 +97,12 @@ export function ChannelProgrammingConfig() {
         variant: 'error',
       });
 
+      console.error(error);
       if (error instanceof ZodiosError) {
-        console.error(error.data);
-        console.error(error, error.cause);
+        console.error(error.cause, error.message);
+        if (error.cause instanceof ZodError) {
+          console.error(error.cause.message, error.cause.issues);
+        }
       }
     },
   });
@@ -144,12 +148,10 @@ export function ChannelProgrammingConfig() {
       return { duration: lineupItem.duration, index };
     });
 
-    updateLineupMutation
-      .mutateAsync({
-        channelId: channel!.id,
-        lineupRequest: { type: 'manual', lineup, programs: uniquePrograms },
-      })
-      .catch(console.error);
+    updateLineupMutation.mutate({
+      channelId: channel!.id,
+      lineupRequest: { type: 'manual', lineup, programs: uniquePrograms },
+    });
   };
 
   const startTime = channel ? dayjs(channel.startTime) : dayjs();
