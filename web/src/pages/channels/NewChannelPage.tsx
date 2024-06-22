@@ -28,7 +28,7 @@ export function NewChannelPage() {
           <ChannelEditContext.Provider
             value={{ channelEditorState, setChannelEditorState }}
           >
-            <EditChannelForm channel={workingChannel} isNew={false} />
+            <EditChannelForm channel={workingChannel} isNew={true} />
           </ChannelEditContext.Provider>
         </div>
       )}

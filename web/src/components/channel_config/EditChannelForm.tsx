@@ -179,7 +179,7 @@ export function EditChannelForm({
           </EditChannelTabPanel>
         </Box>
       </FormProvider>
-      <UnsavedNavigationAlert isDirty={formIsDirty} />
+      {!isNew && <UnsavedNavigationAlert isDirty={formIsDirty} />}
     </Paper>
   );
 }
