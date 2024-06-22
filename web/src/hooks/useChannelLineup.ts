@@ -7,7 +7,8 @@ import { useTunarrApi } from './useTunarrApi.ts';
 export const channelProgrammingQuery = (
   apiClient: ApiClient,
   id: string,
-  enabled: boolean,
+  enabled: boolean = true,
+  pageParams: { offset: number; limit: number } | undefined = undefined,
 ) => {
   return {
     queryKey: ['channels', id, 'programming'] as DataTag<
@@ -17,6 +18,7 @@ export const channelProgrammingQuery = (
     queryFn: async () =>
       apiClient.get('/api/channels/:id/programming', {
         params: { id },
+        queries: pageParams,
       }),
     enabled: id.length > 0 && enabled,
   };

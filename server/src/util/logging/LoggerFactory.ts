@@ -79,7 +79,7 @@ export type ExtraLogLevels = TupleToUnion<typeof ExtraLogLevels>;
 
 export type Logger = PinoLogger<ExtraLogLevels>;
 
-type LogLevels = LevelWithSilent | ExtraLogLevels;
+export type LogLevels = LevelWithSilent | ExtraLogLevels;
 
 class LoggerFactoryImpl {
   private settingsDB: SettingsDB;
@@ -178,7 +178,7 @@ class LoggerFactoryImpl {
       {
         level,
         customLevels: {
-          http: 25,
+          http: 15,
         },
       },
       this.createLogStreams(),

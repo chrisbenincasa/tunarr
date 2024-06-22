@@ -104,7 +104,13 @@ export const api = makeApi([
   {
     method: 'get',
     path: '/api/channels/:id/programming',
-    parameters: parametersBuilder().addPath('id', z.string()).build(),
+    parameters: parametersBuilder()
+      .addPath('id', z.string())
+      .addQueries({
+        offset: z.number().optional(),
+        limit: z.number().optional(),
+      })
+      .build(),
     response: CondensedChannelProgrammingSchema,
   },
   {

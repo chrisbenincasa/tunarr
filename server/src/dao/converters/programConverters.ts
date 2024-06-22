@@ -17,6 +17,8 @@ import {
   uniqWith,
 } from 'lodash-es';
 import { isPromise } from 'util/types';
+import { isDefined } from '../../util/index.js';
+import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
 import { getEm } from '../dataSource.js';
 import {
   LineupItem,
@@ -27,9 +29,7 @@ import {
 } from '../derived_types/Lineup.js';
 import { Channel } from '../entities/Channel.js';
 import { Program, ProgramType } from '../entities/Program.js';
-import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
 import { ProgramExternalId } from '../entities/ProgramExternalId.js';
-import { isDefined } from '../../util/index.js';
 
 type ContentProgramConversionOptions = {
   skipPopulate: boolean | Partial<Record<'externalIds' | 'grouping', boolean>>;
@@ -50,7 +50,10 @@ type LineupItemConversionOptions = {
  * Converts DB types to API types
  */
 export class ProgramConverter {
-  private logger = LoggerFactory.child({ caller: import.meta });
+  private logger = LoggerFactory.child({
+    caller: import.meta,
+    className: ProgramConverter.name,
+  });
 
   /**
    * Converts a LineupItem to a ChannelProgram
@@ -112,6 +115,11 @@ export class ProgramConverter {
    * Convert a Program entity to a ContentProgram, disregarding which fields
    * were loaded on the Program. Prefer {@link entityToContentProgram} for more
    * strict checks.
+   *
+   * NOTE: This method is not really suitable for converting large amounts of items,
+   * even if we disable all fetching/population, simply because it will create a promise.
+   * TODO: Put type guards on the loaded program so we can force callers to pre-populate
+   * the necessary fields.
    */
   async partialEntityToContentProgram(
     program: Loaded<Program>,
@@ -120,6 +128,7 @@ export class ProgramConverter {
   ): Promise<ContentProgram> {
     const mergedOpts = merge({}, defaultContentProgramConversionOptions, opts);
     let extraFields: Partial<ContentProgram> = {};
+
     // This will ensure extra fields are populated for join types
     // It won't reissue queries if the loaded program already has these popualted
     const skipGroupings = isObject(mergedOpts.skipPopulate)
@@ -135,7 +144,12 @@ export class ProgramConverter {
         icon: program.episodeIcon ?? program.showIcon,
         showId: program.tvShow?.uuid,
         seasonId: program.season?.uuid,
+        seasonNumber: program.season?.isInitialized()
+          ? program.season.unwrap().index
+          : undefined,
         episodeNumber: program.episode,
+        episodeTitle: program.title,
+        title: program.showTitle ?? program.title,
       };
 
       if (
@@ -189,15 +203,67 @@ export class ProgramConverter {
       date: program.originalAirDate,
       rating: program.rating,
       icon: program.icon,
-      title:
-        program.type === ProgramType.Episode
-          ? program.showTitle ?? program.title
-          : program.title,
+      title: program.title,
+      // program.type === ProgramType.Episode
+      // ? program.showTitle ?? program.title
+      // : program.title,
       duration: program.duration,
       type: 'content',
       id: program.uuid,
       subtype: program.type,
       externalIds: uniqWith(eids, externalIdEquals),
+      ...extraFields,
+    };
+  }
+
+  preloadedEntityToContentProgramSync(
+    program: Loaded<Program, 'season' | 'album' | 'artist' | 'tvShow'>,
+  ): ContentProgram {
+    return this.partialEntityToContentProgramSync(program);
+  }
+
+  partialEntityToContentProgramSync(
+    program: Loaded<Program, 'season' | 'album' | 'artist'>,
+  ): ContentProgram {
+    let extraFields: Partial<ContentProgram> = {};
+    if (program.type === ProgramType.Episode) {
+      extraFields = {
+        ...extraFields,
+        icon: program.episodeIcon ?? program.showIcon,
+        showId: program.tvShow?.uuid,
+        seasonId: program.season?.uuid,
+        seasonNumber: program.season?.$.index,
+        episodeNumber: program.episode,
+        episodeTitle: program.title,
+        title:
+          (program.tvShow?.isInitialized()
+            ? program.tvShow?.unwrap().title
+            : program.showTitle) ?? program.title,
+      };
+    } else if (program.type === ProgramType.Track) {
+      extraFields = {
+        albumName: program.album?.$.title,
+        artistName: program.artist?.$.title,
+        albumId: program.album?.uuid,
+        artistId: program.artist?.uuid,
+      };
+    }
+
+    return {
+      persisted: true, // Explicit since we're dealing with db loaded entities
+      uniqueId: program.uuid,
+      summary: program.summary,
+      date: program.originalAirDate,
+      rating: program.rating,
+      icon: program.icon,
+      title: program.title,
+      duration: program.duration,
+      type: 'content',
+      id: program.uuid,
+      subtype: program.type,
+      externalIds: compact(
+        map(program.externalIds, (eid) => eid.toExternalId()),
+      ),
       ...extraFields,
     };
   }

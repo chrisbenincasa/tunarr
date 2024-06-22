@@ -9,6 +9,9 @@ import {
 import { BaseEntity } from './BaseEntity.js';
 import { Program } from './Program.js';
 import { ProgramGroupingExternalId } from './ProgramGroupingExternalId.js';
+import { Maybe } from '../../types/util.js';
+import { find } from 'lodash-es';
+import { enumKeys } from '../../util/enumUtil.js';
 
 /**
  * A ProgramGrouping represents some logical collection of Programs.
@@ -73,4 +76,17 @@ export enum ProgramGroupingType {
   TvShowSeason = 'season',
   MusicArtist = 'artist',
   MusicAlbum = 'album',
+}
+
+export function programGroupingTypeForString(
+  s: string,
+): Maybe<ProgramGroupingType> {
+  const key = find(
+    enumKeys(ProgramGroupingType),
+    (key) => ProgramGroupingType[key].toString() === s,
+  );
+  if (key) {
+    return ProgramGroupingType[key];
+  }
+  return;
 }

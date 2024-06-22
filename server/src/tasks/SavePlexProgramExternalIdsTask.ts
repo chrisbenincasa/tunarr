@@ -1,17 +1,16 @@
-import { compact, isEmpty, isError, isNull, isUndefined, map } from 'lodash-es';
+import { ref } from '@mikro-orm/core';
+import { PlexTerminalMedia } from '@tunarr/types/plex';
+import { compact, isEmpty, isError, isUndefined, map } from 'lodash-es';
+import { ProgramExternalIdType } from '../dao/custom_types/ProgramExternalIdType.js';
 import { getEm } from '../dao/dataSource.js';
-import { PlexServerSettings } from '../dao/entities/PlexServerSettings.js';
 import { Program } from '../dao/entities/Program.js';
 import { ProgramExternalId } from '../dao/entities/ProgramExternalId.js';
-import { PlexApiFactory, isPlexQueryError } from '../external/plex.js';
+import { upsertProgramExternalIds_deprecated } from '../dao/programExternalIdHelpers.js';
+import { Plex, PlexApiFactory, isPlexQueryError } from '../external/plex.js';
 import { Maybe } from '../types/util.js';
-import { isNonEmptyString } from '../util/index.js';
-import { Task } from './Task.js';
-import { PlexTerminalMedia } from '@tunarr/types/plex';
 import { parsePlexExternalGuid } from '../util/externalIds.js';
-import { ProgramExternalIdType } from '../dao/custom_types/ProgramExternalIdType.js';
-import { ref } from '@mikro-orm/core';
-import { upsertProgramExternalIds } from '../dao/programExternalIdHelpers.js';
+import { isDefined, isNonEmptyString } from '../util/index.js';
+import { Task } from './Task.js';
 
 export class SavePlexProgramExternalIdsTask extends Task {
   ID = SavePlexProgramExternalIdsTask.name;
@@ -35,25 +34,24 @@ export class SavePlexProgramExternalIdsTask extends Task {
       return;
     }
 
-    let server: Maybe<PlexServerSettings> = undefined;
     let chosenId: Maybe<ProgramExternalId> = undefined;
+    let api: Maybe<Plex>;
     for (const id of plexIds) {
-      const s = await em.findOne(PlexServerSettings, {
-        name: id.externalSourceId,
-      });
+      if (!isNonEmptyString(id.externalSourceId)) {
+        continue;
+      }
 
-      if (!isNull(s)) {
-        server = s;
+      api = await PlexApiFactory.getOrSet(id.externalSourceId);
+
+      if (isDefined(api)) {
         chosenId = id;
         break;
       }
     }
 
-    if (isUndefined(server) || isUndefined(chosenId)) {
+    if (isUndefined(api) || isUndefined(chosenId)) {
       return;
     }
-
-    const api = PlexApiFactory.get(server);
 
     const metadataResult = await api.getItemMetadata(chosenId.externalKey);
 
@@ -81,7 +79,7 @@ export class SavePlexProgramExternalIdsTask extends Task {
       }),
     );
 
-    return await upsertProgramExternalIds(eids);
+    return await upsertProgramExternalIds_deprecated(eids);
   }
 
   get taskName() {

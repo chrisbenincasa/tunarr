@@ -28,6 +28,7 @@ import { Migration20240531155641 } from './src/migrations/Migration2024053115564
 import { Migration20240603204620 } from './src/migrations/Migration20240603204620.js';
 import { Migration20240603204638 } from './src/migrations/Migration20240603204638.js';
 import { Migration20240618005544 } from './src/migrations/Migration20240618005544.js';
+import { LoggerFactory } from './src/util/logging/LoggerFactory.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -51,10 +52,14 @@ export default defineConfig({
     PlexServerSettings,
     Program,
   ],
+  flushMode: 'commit',
   debug: !!process.env['DATABASE_DEBUG_LOGGING'],
   namingStrategy: UnderscoreNamingStrategy,
   forceUndefined: true,
   dynamicImportProvider: (id) => import(id),
+  logger(message) {
+    LoggerFactory.root.debug(message);
+  },
   migrations: {
     // Explicitly list migrations for a smoother dev experience
     // and because we are bundling these.

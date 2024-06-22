@@ -124,6 +124,7 @@ export const metadataApiRouter: RouterPluginAsyncCallback = async (fastify) => {
         itemKey: query.id.externalItemId,
         width: query.thumbOptions?.width,
         height: query.thumbOptions?.height,
+        upscale: '1',
       });
     }
 

@@ -71,7 +71,9 @@ type PlexQueryErrorResult = {
   message?: string;
 };
 
-type PlexQueryResult<T> = PlexQuerySuccessResult<T> | PlexQueryErrorResult;
+export type PlexQueryResult<T> =
+  | PlexQuerySuccessResult<T>
+  | PlexQueryErrorResult;
 
 export function isPlexQueryError(
   x: PlexQueryResult<unknown>,
