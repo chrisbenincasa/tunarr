@@ -261,14 +261,8 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
           .send({ error: 'Could not find channel lineup.' });
       }
 
-      return res
-        .serializer((x) => {
-          console.time('stringify');
-          const res = JSON.stringify(x);
-          console.timeEnd('stringify');
-          return res;
-        })
-        .send(apiLineup);
+      // TODO: get rid of this
+      return res.serializer(JSON.stringify).send(apiLineup);
     },
   );
 
