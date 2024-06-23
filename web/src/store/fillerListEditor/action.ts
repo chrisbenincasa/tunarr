@@ -18,6 +18,11 @@ export const addMediaToCurrentFillerList = (programs: AddedMedia[]) =>
           'custom-show': ({ program }) => program,
         }),
       );
+      console.log(
+        programs,
+        convertedPrograms,
+        zipWithIndex(convertedPrograms, fillerListEditor.programList.length),
+      );
 
       fillerListEditor.programList = fillerListEditor.programList.concat(
         zipWithIndex(convertedPrograms, fillerListEditor.programList.length),

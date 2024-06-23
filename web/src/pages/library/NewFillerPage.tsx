@@ -1,12 +1,15 @@
 import Breadcrumbs from '@/components/Breadcrumbs';
 import PaddedPaper from '@/components/base/PaddedPaper';
 import { EditFillerListForm } from '@/components/filler/EditFillerListForm';
-import { Route } from '@/routes/library/fillers_.new';
+import { useSuspendedStore } from '@/hooks/useSuspendedStore.ts';
+import useStore from '@/store/index.ts';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 
 export function NewFillerPage() {
-  const { fillerList, programming: fillerListPrograms } = Route.useLoaderData();
+  const fillerList = useSuspendedStore((s) => s.fillerListEditor.currentEntity);
+  const fillerListPrograms = useStore((s) => s.fillerListEditor.programList);
+
   return (
     <Box>
       <Breadcrumbs />
