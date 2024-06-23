@@ -170,7 +170,7 @@ export function EditCustomShowsForm({
             <Button
               disableRipple
               component={Link}
-              to="/library/custom-shows/programming/add"
+              to={isNew ? './programming' : '../programming'}
               startIcon={<Tv />}
               variant="contained"
             >

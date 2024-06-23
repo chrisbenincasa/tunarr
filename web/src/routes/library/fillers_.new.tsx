@@ -19,6 +19,7 @@ export const Route = createFileRoute('/library/fillers/new')({
     const existingNewFiller =
       useStore.getState().fillerListEditor.currentEntity;
     if (existingNewFiller?.id !== UnsavedId) {
+      console.log('setting');
       setCurrentFillerList(unsavedData.fillerList, []);
     }
 

@@ -169,7 +169,7 @@ export function EditFillerListForm({
             <Button
               disableRipple
               component={Link}
-              to="/library/fillers/programming/add"
+              to={isNew ? './programming' : '../programming'}
               startIcon={<Tv />}
               variant="contained"
             >

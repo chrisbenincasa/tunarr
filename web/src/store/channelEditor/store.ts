@@ -40,6 +40,11 @@ export type ChannelEditorState = ProgrammingEditorState<
   dynamicContentConfiguration?: DynamicContentConfig;
 };
 
+export type FillerListEditor = ProgrammingEditorState<
+  FillerList,
+  ContentProgram | CustomProgram // You cannot add Flex to custom shows
+>;
+
 export interface EditorsState {
   channelEditor: ChannelEditorState;
   customShowEditor: ProgrammingEditorState<

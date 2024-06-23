@@ -132,9 +132,9 @@ export const zipWithIndex = <T extends object>(
   seq: readonly T[],
   start: number = 0,
 ): (T & { originalIndex: number })[] => {
-  return zipWith(seq, range(start, seq.length), (s, i) => ({
+  return zipWith(seq, range(0, seq.length), (s, i) => ({
     ...s,
-    originalIndex: i,
+    originalIndex: start + i,
   }));
 };
 

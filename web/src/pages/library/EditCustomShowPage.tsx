@@ -1,6 +1,6 @@
 import { EditCustomShowsForm } from '@/components/custom-shows/EditCustomShowForm.tsx';
 import { useCustomShowWithProgramming } from '@/hooks/useCustomShows.ts';
-import { Route } from '@/routes/library/custom-shows_.$showId.edit.tsx';
+import { Route } from '@/routes/library/custom-shows_/$showId/edit.tsx';
 import useStore from '@/store/index.ts';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
