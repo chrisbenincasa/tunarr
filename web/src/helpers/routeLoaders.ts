@@ -1,11 +1,16 @@
 import { channelProgrammingQuery } from '@/hooks/useChannelLineup';
 import { channelQuery } from '@/hooks/useChannels';
 import {
+  customShowProgramsQuery,
+  customShowQuery,
+} from '@/hooks/useCustomShows.ts';
+import {
   fillerListProgramsQuery,
   fillerListQuery,
 } from '@/hooks/useFillerLists.ts';
 import useStore from '@/store';
 import { safeSetCurrentChannel } from '@/store/channelEditor/actions';
+import { setCurrentCustomShow } from '@/store/customShowEditor/actions.ts';
 import { setCurrentFillerList } from '@/store/fillerListEditor/action.ts';
 import { RouterContext } from '@/types/RouterContext';
 import { notFound } from '@tanstack/react-router';
@@ -74,6 +79,38 @@ export async function preloadFillerAndProgramming({
 
   return {
     fillerList,
+    programming,
+  };
+}
+
+type CustomShowArgs = {
+  params: { showId: string };
+  context: RouterContext;
+};
+
+export async function preloadCustomShowAndProgramming({
+  context: { queryClient, tunarrApiClientProvider },
+  params: { showId },
+}: CustomShowArgs) {
+  const apiClient = tunarrApiClientProvider();
+
+  // TODO if this is too slow we can use the router defer method
+  const [customShow, programming] = await Promise.all([
+    queryClient.ensureQueryData(customShowQuery(apiClient, showId)),
+    queryClient.ensureQueryData(customShowProgramsQuery(apiClient, showId)),
+  ]);
+
+  // TODO handle not found
+
+  // Set state
+  const currentShow = useStore.getState().customShowEditor.currentEntity;
+  if (currentShow?.id !== customShow.id) {
+    console.log('srtting');
+    setCurrentCustomShow(customShow, programming);
+  }
+
+  return {
+    customShow,
     programming,
   };
 }

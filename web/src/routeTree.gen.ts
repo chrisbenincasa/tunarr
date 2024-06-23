@@ -36,8 +36,9 @@ import { Route as ChannelsChannelIdEditIndexImport } from './routes/channels_/$c
 import { Route as LibraryFillersNewProgrammingImport } from './routes/library/fillers_.new_.programming'
 import { Route as LibraryFillersFillerIdProgrammingImport } from './routes/library/fillers_/$fillerId/programming'
 import { Route as LibraryFillersFillerIdEditImport } from './routes/library/fillers_/$fillerId/edit'
-import { Route as LibraryCustomShowsProgrammingAddImport } from './routes/library/custom-shows_.programming_.add'
-import { Route as LibraryCustomShowsShowIdEditImport } from './routes/library/custom-shows_.$showId.edit'
+import { Route as LibraryCustomShowsNewProgrammingImport } from './routes/library/custom-shows_.new_.programming'
+import { Route as LibraryCustomShowsShowIdProgrammingImport } from './routes/library/custom-shows_/$showId/programming'
+import { Route as LibraryCustomShowsShowIdEditImport } from './routes/library/custom-shows_/$showId/edit'
 import { Route as ChannelsChannelIdProgrammingTimeSlotEditorImport } from './routes/channels_/$channelId/programming/time-slot-editor'
 import { Route as ChannelsChannelIdProgrammingRandomSlotEditorImport } from './routes/channels_/$channelId/programming/random-slot-editor'
 import { Route as ChannelsChannelIdProgrammingAddImport } from './routes/channels_/$channelId/programming/add'
@@ -176,9 +177,15 @@ const LibraryFillersFillerIdEditRoute = LibraryFillersFillerIdEditImport.update(
   } as any,
 )
 
-const LibraryCustomShowsProgrammingAddRoute =
-  LibraryCustomShowsProgrammingAddImport.update({
-    path: '/library/custom-shows/programming/add',
+const LibraryCustomShowsNewProgrammingRoute =
+  LibraryCustomShowsNewProgrammingImport.update({
+    path: '/library/custom-shows/new/programming',
+    getParentRoute: () => rootRoute,
+  } as any)
+
+const LibraryCustomShowsShowIdProgrammingRoute =
+  LibraryCustomShowsShowIdProgrammingImport.update({
+    path: '/library/custom-shows/$showId/programming',
     getParentRoute: () => rootRoute,
   } as any)
 
@@ -378,11 +385,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LibraryCustomShowsShowIdEditImport
       parentRoute: typeof rootRoute
     }
-    '/library/custom-shows/programming/add': {
-      id: '/library/custom-shows/programming/add'
-      path: '/library/custom-shows/programming/add'
-      fullPath: '/library/custom-shows/programming/add'
-      preLoaderRoute: typeof LibraryCustomShowsProgrammingAddImport
+    '/library/custom-shows/$showId/programming': {
+      id: '/library/custom-shows/$showId/programming'
+      path: '/library/custom-shows/$showId/programming'
+      fullPath: '/library/custom-shows/$showId/programming'
+      preLoaderRoute: typeof LibraryCustomShowsShowIdProgrammingImport
+      parentRoute: typeof rootRoute
+    }
+    '/library/custom-shows/new/programming': {
+      id: '/library/custom-shows/new/programming'
+      path: '/library/custom-shows/new/programming'
+      fullPath: '/library/custom-shows/new/programming'
+      preLoaderRoute: typeof LibraryCustomShowsNewProgrammingImport
       parentRoute: typeof rootRoute
     }
     '/library/fillers/$fillerId/edit': {
@@ -451,7 +465,8 @@ export const routeTree = rootRoute.addChildren({
   ChannelsChannelIdProgrammingRandomSlotEditorRoute,
   ChannelsChannelIdProgrammingTimeSlotEditorRoute,
   LibraryCustomShowsShowIdEditRoute,
-  LibraryCustomShowsProgrammingAddRoute,
+  LibraryCustomShowsShowIdProgrammingRoute,
+  LibraryCustomShowsNewProgrammingRoute,
   LibraryFillersFillerIdEditRoute,
   LibraryFillersFillerIdProgrammingRoute,
   LibraryFillersNewProgrammingRoute,
@@ -485,7 +500,8 @@ export const routeTree = rootRoute.addChildren({
         "/channels/$channelId/programming/random-slot-editor",
         "/channels/$channelId/programming/time-slot-editor",
         "/library/custom-shows/$showId/edit",
-        "/library/custom-shows/programming/add",
+        "/library/custom-shows/$showId/programming",
+        "/library/custom-shows/new/programming",
         "/library/fillers/$fillerId/edit",
         "/library/fillers/$fillerId/programming",
         "/library/fillers/new/programming",
@@ -577,10 +593,13 @@ export const routeTree = rootRoute.addChildren({
       "filePath": "channels_/$channelId/programming/time-slot-editor.tsx"
     },
     "/library/custom-shows/$showId/edit": {
-      "filePath": "library/custom-shows_.$showId.edit.tsx"
+      "filePath": "library/custom-shows_/$showId/edit.tsx"
     },
-    "/library/custom-shows/programming/add": {
-      "filePath": "library/custom-shows_.programming_.add.tsx"
+    "/library/custom-shows/$showId/programming": {
+      "filePath": "library/custom-shows_/$showId/programming.tsx"
+    },
+    "/library/custom-shows/new/programming": {
+      "filePath": "library/custom-shows_.new_.programming.tsx"
     },
     "/library/fillers/$fillerId/edit": {
       "filePath": "library/fillers_/$fillerId/edit.tsx"
