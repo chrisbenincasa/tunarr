@@ -41,20 +41,18 @@ import {
 } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { Outlet, Link as RouterLink } from '@tanstack/react-router';
 import { isNull, isUndefined } from 'lodash-es';
 import React, { ReactNode, useCallback, useMemo, useState } from 'react';
-import { Outlet, Link as RouterLink } from '@tanstack/react-router';
 import './App.css';
 import TunarrLogo from './components/TunarrLogo.tsx';
 import VersionFooter from './components/VersionFooter.tsx';
 import DarkModeButton from './components/settings/DarkModeButton.tsx';
+import { useServerEventsSnackbar } from './hooks/useServerEvents.ts';
 import { useVersion } from './hooks/useVersion.ts';
 import useStore from './store/index.ts';
 import { useSettings } from './store/settings/selectors.ts';
 import { setDarkModeState } from './store/themeEditor/actions.ts';
-import {
-  useServerEventsSnackbar,
-} from './hooks/useServerEvents.ts';
 
 interface NavItem {
   name: string;
@@ -158,7 +156,7 @@ export function Root({ children }: { children?: React.ReactNode }) {
                   main: '#004b79',
                 },
                 error: {
-                  main: '#770A0A',
+                  main: '#ab6253',
                 },
                 warning: {
                   main: '#FF9800',
@@ -182,7 +180,7 @@ export function Root({ children }: { children?: React.ReactNode }) {
                   main: '#004b79',
                 },
                 error: {
-                  main: '#770A0A',
+                  main: '#892d22',
                 },
                 warning: {
                   main: '#FF9800',
@@ -349,8 +347,8 @@ export function Root({ children }: { children?: React.ReactNode }) {
                   {Links.map((link) => (
                     <MenuItem
                       disableRipple
-                      component={RouterLink}
-                      to={link.path}
+                      component={Link}
+                      href={link.path}
                       target="_blank"
                       color="inherit"
                       sx={{ px: 1, ml: 0.5 }}
