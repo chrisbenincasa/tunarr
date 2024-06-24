@@ -5,12 +5,14 @@ import {
   isNil,
   keys,
   map,
+  mapValues,
   union,
   uniq,
 } from 'lodash-es';
 import {
   groupByAndMapAsync,
   groupByUniq,
+  groupByUniqFunc,
   isNonEmptyString,
   mapReduceAsyncSeq,
 } from '../util/index.js';
@@ -84,6 +86,33 @@ export class ProgramDB {
           skipPopulate: { externalIds: false },
         });
       },
+    );
+  }
+
+  async programIdsByExternalIds(
+    ids: Set<[string, string, string]>,
+    chunkSize: number = 50,
+  ) {
+    const em = getEm();
+    const tasks = asyncPool(
+      chunk([...ids], chunkSize),
+      async (idChunk) => {
+        return await em.find(ProgramExternalId, {
+          $or: map(idChunk, ([ps, es, ek]) => ({
+            sourceType: programExternalIdTypeFromString(ps)!,
+            externalSourceId: es,
+            externalKey: ek,
+          })),
+        });
+      },
+      { concurrency: 2 },
+    );
+
+    return mapValues(
+      groupByUniqFunc(flatten(await unfurlPool(tasks)), (eid) =>
+        eid.toExternalIdString(),
+      ),
+      (eid) => eid.program.uuid,
     );
   }
 

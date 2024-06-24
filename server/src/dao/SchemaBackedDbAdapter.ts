@@ -25,8 +25,12 @@ export class SchemaBackedDbAdapter<T extends z.ZodTypeAny, Out = z.infer<T>>
   }
 
   async read(): Promise<Out | null> {
-    const data = await this.adapter.read();
+    const data = await this.adapter.read().catch((e) => {
+      console.error(e);
+      return null;
+    });
     if (data === null) {
+      console.log(this.path, data);
       return null;
     }
     const parsed: unknown = JSON.parse(data);

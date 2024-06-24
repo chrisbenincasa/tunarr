@@ -6,10 +6,12 @@ import { Func } from '../../types/func.js';
 
 export function collapseOfflineTime(lineup: Lineup): Promise<Lineup> {
   const newLineup: LineupItem[] = [];
-  for (let i = 0; i < lineup.items.length; i++) {
+  let i = 0;
+  while (i < lineup.items.length) {
     let item = lineup.items[i];
     if (item.type !== 'offline') {
       newLineup.push(item);
+      i++;
       continue;
     }
 
@@ -41,7 +43,8 @@ export function collapseOfflineTime(lineup: Lineup): Promise<Lineup> {
 export const CollapseOfflineTimeOperator: Func<
   ChannelAndLineup,
   Promise<ChannelAndLineup>
-> = {
+> & { name: string } = {
+  name: 'CollapseOfflineTimeOperator',
   apply: ({ channel, lineup }: ChannelAndLineup) =>
     collapseOfflineTime(lineup).then((newLineup) => ({
       channel,

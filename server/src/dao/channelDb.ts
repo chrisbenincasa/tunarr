@@ -52,6 +52,7 @@ import { fileExists } from '../util/fsUtil.js';
 import {
   groupByFunc,
   groupByUniq,
+  isDefined,
   mapAsyncSeq,
   mapReduceAsyncSeq,
   run,
@@ -74,6 +75,7 @@ import { Channel, ChannelTranscodingSettings } from './entities/Channel.js';
 import { CustomShowContent } from './entities/CustomShowContent.js';
 import { Program } from './entities/Program.js';
 import { upsertContentPrograms } from './programHelpers.js';
+import { MutexMap } from '../util/mutexMap.js';
 
 dayjs.extend(duration);
 
@@ -169,6 +171,7 @@ export type ChannelAndLineup = {
 
 // Let's see if this works... in so we can have many ChannelDb objects flying around.
 const fileDbCache: Record<string | number, Low<Lineup>> = {};
+const fileDbLocks = new MutexMap();
 
 export class ChannelDB {
   private logger = LoggerFactory.child({ caller: import.meta });
@@ -229,6 +232,19 @@ export class ChannelDB {
     });
     await em.flush();
     return loadedChannel;
+  }
+
+  async updateChannelStartTime(id: string, newTime: number) {
+    const ts = dayjs(newTime);
+    return getEm().nativeUpdate(
+      Channel,
+      {
+        uuid: id,
+      },
+      {
+        startTime: ts.unix() * 1000,
+      },
+    );
   }
 
   async deleteChannel(
@@ -693,25 +709,25 @@ export class ChannelDB {
     };
   }
 
-  async saveLineup(channelId: string, lineup: Lineup) {
+  async saveLineup(channelId: string, newLineup: Lineup) {
     const db = await this.getFileDb(channelId);
-    if (lineup.items.length === 0) {
-      lineup.items.push({
+    if (newLineup.items.length === 0) {
+      newLineup.items.push({
         type: 'offline',
         durationMs: 1000 * 60 * 60 * 24 * 30,
       });
     }
-    lineup.startTimeOffsets = reduce(
-      lineup.items,
+    newLineup.startTimeOffsets = reduce(
+      newLineup.items,
       (acc, item, index) => [...acc, acc[index] + item.durationMs],
       [0],
     );
     db.data = {
       ...db.data,
-      items: lineup.items,
-      startTimeOffsets: lineup.startTimeOffsets,
-      schedule: lineup.schedule,
-      pendingPrograms: lineup.pendingPrograms,
+      items: newLineup.items,
+      startTimeOffsets: newLineup.startTimeOffsets,
+      schedule: newLineup.schedule,
+      pendingPrograms: newLineup.pendingPrograms,
     };
     return await db.write();
   }
@@ -742,21 +758,28 @@ export class ChannelDB {
   }
 
   private async getFileDb(channelId: string) {
-    if (!fileDbCache[channelId]) {
-      fileDbCache[channelId] = new Low<Lineup>(
-        new SchemaBackedDbAdapter(
-          LineupSchema,
-          join(
-            globalOptions().databaseDirectory,
-            `channel-lineups/${channelId}.json`,
-          ),
-        ),
-        { items: [], startTimeOffsets: [] },
-      );
-      await fileDbCache[channelId].read();
-    }
+    return await fileDbLocks.getOrCreateLock(channelId).then((lock) =>
+      lock.runExclusive(async () => {
+        const existing = fileDbCache[channelId];
+        if (isDefined(existing)) {
+          return existing;
+        }
 
-    return fileDbCache[channelId];
+        const db = new Low<Lineup>(
+          new SchemaBackedDbAdapter(
+            LineupSchema,
+            join(
+              globalOptions().databaseDirectory,
+              `channel-lineups/${channelId}.json`,
+            ),
+          ),
+          { items: [], startTimeOffsets: [] },
+        );
+        await db.read();
+        fileDbCache[channelId] = db;
+        return db;
+      }),
+    );
   }
 
   private async restoreLineupFile(channelId: string) {

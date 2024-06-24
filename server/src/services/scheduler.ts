@@ -137,6 +137,7 @@ export const scheduleJobs = once((serverContext: ServerContext) => {
       hoursCrontab(1),
       () => ScheduleDynamicChannelsTask.create(serverContext.channelDB),
       {
+        runAtStartup: true,
         runOnSchedule: true,
       },
     ),

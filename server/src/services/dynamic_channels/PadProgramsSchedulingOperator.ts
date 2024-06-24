@@ -1,4 +1,4 @@
-import { AddPaddingSchedulingOperation } from '@tunarr/types/api';
+import { AddPaddingOperation } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import {
   sortBy,
@@ -16,7 +16,7 @@ import { LineupItem } from '../../dao/derived_types/Lineup';
 import { Loaded } from '@mikro-orm/core';
 import { SchedulingOperator } from './SchedulingOperator';
 
-export class PadProgramsSchedulingOperator extends SchedulingOperator<AddPaddingSchedulingOperation> {
+export class PadProgramsSchedulingOperator extends SchedulingOperator<AddPaddingOperation> {
   // eslint-disable-next-line @typescript-eslint/require-await
   public async apply({
     channel,

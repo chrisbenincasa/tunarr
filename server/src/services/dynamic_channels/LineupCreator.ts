@@ -1,14 +1,22 @@
-import { compact, isNull, isUndefined, map, reject, values } from 'lodash-es';
-import { ChannelAndLineup, ChannelDB } from '../../dao/channelDb.js';
-import { asyncPool } from '../../util/asyncPool.js';
-import { Lineup } from '../../dao/derived_types/Lineup.js';
 import { SchedulingOperation } from '@tunarr/types/api';
-import { asyncFlow, intersperse } from '../../util/index.js';
-import { SchedulingOperatorFactory } from './SchedulingOperatorFactory.js';
-import { IntermediateOperator } from './IntermediateOperator.js';
+import { compact, isNull, isUndefined, map, reject, sortBy } from 'lodash-es';
+import { ChannelAndLineup, ChannelDB } from '../../dao/channelDb.js';
+import { Lineup } from '../../dao/derived_types/Lineup.js';
+import { asyncPool } from '../../util/asyncPool.js';
+import { asyncFlow, intersperse, isDefined } from '../../util/index.js';
 import { CollapseOfflineTimeOperator } from './CollapseOfflineTimeOperator.js';
+import { IntermediateOperator } from './IntermediateOperator.js';
+import { SchedulingOperatorFactory } from './SchedulingOperatorFactory.js';
+import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
+import { Func } from '../../types/func.js';
+
+const OperatorToWeight: Record<SchedulingOperation['type'], number> = {
+  ordering: 0,
+  modifier: 10,
+} as const;
 
 export class LineupCreator {
+  #logger = LoggerFactory.child({ className: LineupCreator.name });
   private channelDB = new ChannelDB();
 
   // Right now this is very basic -- we just set the pending items
@@ -19,62 +27,76 @@ export class LineupCreator {
     return await this.resolveLineupInternal(channelId, lineup);
   }
 
+  async promoteLineup(channelId: string) {
+    const lineup = await this.channelDB.loadLineup(channelId);
+    const maybeUpdatedLineup = await this.resolveLineupInternal(
+      channelId,
+      lineup,
+    );
+    if (isDefined(maybeUpdatedLineup)) {
+      const { channel: updatedChannel, lineup: updatedLineup } =
+        maybeUpdatedLineup;
+      // We're only going to allow operations to alter the channel start
+      // time for now...
+
+      await this.channelDB.setChannelPrograms(
+        updatedChannel,
+        updatedLineup.items,
+      );
+
+      await this.channelDB.updateChannelStartTime(
+        channelId,
+        updatedChannel.startTime,
+      );
+
+      await this.channelDB.saveLineup(channelId, {
+        ...lineup,
+        items: updatedLineup.items,
+        startTimeOffsets: updatedLineup.startTimeOffsets,
+        pendingPrograms: [],
+      });
+    }
+  }
+
   // Moves all pending lineups across all channels, applies scheduling rules,
   // and generates a new lineup
   async promoteAllPendingLineups() {
     const pool = asyncPool(
-      values(await this.channelDB.loadAllLineups()),
-      async ({ channel, lineup }) => {
-        console.log('here ya bithc');
-        return await this.resolveLineupInternal(channel.uuid, lineup);
-      },
-      2,
+      map(await this.channelDB.getAllChannels(), 'uuid'),
+      (channel) => this.promoteLineup(channel),
+      { concurrency: 2 },
     );
 
     for await (const result of pool) {
       if (result.type === 'error') {
-        console.error(
-          'Error while promoting lineup for channel: ' +
-            result.input.channel.uuid,
+        this.#logger.error(
           result.error,
+          'Error while promoting lineup for channel: %s',
+          result.input,
         );
       }
     }
   }
 
   private async resolveLineupInternal(channelId: string, lineup: Lineup) {
-    console.log(
-      'Channel ID ' + channelId + ' lineup items ',
-      lineup.items.length,
-      lineup.pendingPrograms?.length,
-    );
     if (
       !isUndefined(lineup.pendingPrograms) &&
       lineup.pendingPrograms.length > 0
     ) {
-      console.log('Resolving lineup for channel ' + channelId);
       const channelAndLineup =
         await this.channelDB.loadChannelAndLineup(channelId);
       if (isNull(channelAndLineup)) {
-        console.warn('Could not load channel and lineup ID = ' + channelId);
+        this.#logger.warn(
+          'Could not load channel and lineup ID = %s',
+          channelId,
+        );
         return;
       }
 
-      const { channel: updatedChannel, lineup: updatedLineup } =
-        await this.applySchedulingOperations(channelAndLineup);
-
-      // We're only going to allow operations to alter the channel start
-      // time for now...
-      await this.channelDB.setChannelPrograms(
-        updatedChannel,
-        updatedLineup.items,
-      );
-      await this.channelDB.saveLineup(channelId, {
-        ...lineup,
-        items: updatedLineup.items,
-        pendingPrograms: [],
-      });
+      return await this.applySchedulingOperations(channelAndLineup);
     }
+
+    return;
   }
 
   private async applySchedulingOperations(channelAndLineup: ChannelAndLineup) {
@@ -104,14 +126,28 @@ export class LineupCreator {
     });
 
     const operations = compact(
-      map(dedupedOps, (op) => SchedulingOperatorFactory.create(op)),
+      map(
+        sortBy(dedupedOps, (op) => OperatorToWeight[op.type]),
+        (op) => SchedulingOperatorFactory.create(op),
+      ),
     );
-    const pipeline = intersperse(
-      [...operations, CollapseOfflineTimeOperator],
-      IntermediateOperator,
+
+    const pipeline = intersperse<
+      Func<ChannelAndLineup, Promise<ChannelAndLineup>>
+    >(
+      operations,
+      // TODO: We may only need to collapse offline time once right before the
+      // the last intermediate operator
+      [CollapseOfflineTimeOperator, IntermediateOperator],
       true,
     );
 
-    return (channelAndLineup) => asyncFlow(pipeline, channelAndLineup);
+    console.log(pipeline);
+
+    return ({ channel, lineup }) =>
+      asyncFlow(pipeline, {
+        channel,
+        lineup: { ...lineup, items: lineup.pendingPrograms ?? [] },
+      });
   }
 }

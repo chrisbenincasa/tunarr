@@ -173,7 +173,7 @@ export type DynamicContentUpdaterConfig = z.infer<
 >;
 
 const WithEnabledSchema = z.object({
-  enabled: z.boolean().default(true),
+  enabled: z.boolean().default(true).catch(true),
 });
 
 export const DynamicContentConfigPlexSourceSchema = z
@@ -224,6 +224,15 @@ const BaseSchedulingOpertionSchema = z.object({
   allowMultiple: z.boolean().default(true).optional(),
 });
 
+const RandomSortOrderOperationSchema = BaseSchedulingOpertionSchema.extend({
+  type: z.literal('ordering'),
+  id: z.literal('random_sort'),
+});
+
+export type RandomSortOrderOperation = z.infer<
+  typeof RandomSortOrderOperationSchema
+>;
+
 const ScheduledRedirectOperationSchema = BaseSchedulingOpertionSchema.extend({
   type: z.literal('modifier'),
   id: z.literal('scheduled_redirect'),
@@ -255,6 +264,7 @@ export type AddPaddingOperation = z.infer<typeof AddPaddingOperationSchema>;
 export const SchedulingOperationSchema = z.union([
   AddPaddingOperationSchema,
   ScheduledRedirectOperationSchema,
+  RandomSortOrderOperationSchema,
 ]);
 
 export type SchedulingOperation = z.infer<typeof SchedulingOperationSchema>;

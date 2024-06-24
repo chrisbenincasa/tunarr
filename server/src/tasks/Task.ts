@@ -7,6 +7,7 @@ import {
   LoggerFactory,
 } from '../util/logging/LoggerFactory.js';
 import { withDb } from '../dao/dataSource.js';
+import { isNonEmptyString } from '../util/index.js';
 
 // Set of all of the possible Task IDs
 export type TaskId =
@@ -39,7 +40,9 @@ export abstract class Task<Data = unknown> {
       const duration = round(performance.now() - start, 2);
       this.logger[this._logLevel](
         'Task %s ran in %d ms',
-        this.constructor.name,
+        isNonEmptyString(this.constructor.name)
+          ? this.constructor.name
+          : this.taskName,
         duration,
       );
     } catch (e) {

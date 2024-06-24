@@ -1,6 +1,6 @@
 import { last, reduce } from 'lodash-es';
 import { ChannelAndLineup } from '../../dao/channelDb';
-import { Func } from '../../types/func';
+import { NamedFunc } from '../../types/func';
 
 function fix(channelAndLineup: ChannelAndLineup): Promise<ChannelAndLineup> {
   const { channel, lineup } = channelAndLineup;
@@ -20,9 +20,10 @@ function fix(channelAndLineup: ChannelAndLineup): Promise<ChannelAndLineup> {
 // It's responsibility is to fix up internal data structures so that
 // each operator as an updated and correct view of the current state
 // of the channel lineup
-export const IntermediateOperator: Func<
+export const IntermediateOperator: NamedFunc<
   ChannelAndLineup,
   Promise<ChannelAndLineup>
 > = {
+  name: 'FixStartTimeOffsets',
   apply: fix,
 };

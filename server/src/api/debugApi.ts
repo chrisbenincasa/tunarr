@@ -27,8 +27,9 @@ import { SavePlexProgramExternalIdsTask } from '../tasks/SavePlexProgramExternal
 import { PlexTaskQueue } from '../tasks/TaskQueue.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { Maybe } from '../types/util.js';
-import { mapAsyncSeq } from '../util/index.js';
+import { ifDefined, mapAsyncSeq } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
+import { LineupCreator } from '../services/dynamic_channels/LineupCreator.js';
 
 const ChannelQuerySchema = {
   querystring: z.object({
@@ -374,6 +375,26 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
       console.log(result);
 
       return res.send();
+    },
+  );
+
+  fastify.get(
+    '/debug/helpers/promote_lineup',
+    {
+      schema: {
+        querystring: z.object({
+          channelId: z.string().uuid(),
+        }),
+      },
+    },
+    async (req, res) => {
+      const result = await new LineupCreator().resolveLineup(
+        req.query.channelId,
+      );
+      ifDefined(result, (r) => {
+        console.log(r.lineup.items.length);
+      });
+      return res.send(result);
     },
   );
 };

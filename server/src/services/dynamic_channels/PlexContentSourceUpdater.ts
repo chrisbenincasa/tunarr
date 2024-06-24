@@ -18,8 +18,14 @@ import { ContentSourceUpdater } from './ContentSourceUpdater.js';
 import { upsertContentPrograms } from '../../dao/programHelpers.js';
 import { ContentProgram } from '@tunarr/types';
 import { PendingProgram } from '../../dao/derived_types/Lineup.js';
+import { Logger, LoggerFactory } from '../../util/logging/LoggerFactory.js';
+import { Timer } from '../../util/perf.js';
 
 export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicContentConfigPlexSource> {
+  #logger: Logger = LoggerFactory.child({
+    className: PlexContentSourceUpdater.name,
+  });
+  #timer = new Timer(this.#logger);
   #plex: Plex;
   #channelDB: ChannelDB;
 
@@ -46,14 +52,18 @@ export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicConten
     const filter = buildPlexFilterKey(this.config.search?.filter);
 
     // TODO page through the results
-    const plexResult = await this.#plex.doGet<PlexLibraryListing>(
-      `/library/sections/${this.config.plexLibraryKey}/all?${filter.join('&')}`,
+    const plexResult = await this.#timer.timeAsync('plex search', () =>
+      this.#plex.doGet<PlexLibraryListing>(
+        `/library/sections/${this.config.plexLibraryKey}/all?${filter.join(
+          '&',
+        )}`,
+      ),
     );
 
     const enumerator = new PlexItemEnumerator(this.#plex, new ProgramDB());
 
-    const enumeratedItems = await enumerator.enumerateItems(
-      plexResult?.Metadata ?? [],
+    const enumeratedItems = await this.#timer.timeAsync('enumerate items', () =>
+      enumerator.enumerateItems(plexResult?.Metadata ?? []),
     );
 
     const channelPrograms: ContentProgram[] = map(enumeratedItems, (media) => {
@@ -76,8 +86,6 @@ export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicConten
       this.channel.uuid,
       pendingPrograms,
     );
-
-    // await new LineupCreator().resolveLineup(this.channel.uuid);
   }
 }
 

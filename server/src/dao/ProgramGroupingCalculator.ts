@@ -126,7 +126,7 @@ export class ProgramGroupingCalculator {
 
     if (isEmpty(validPrograms)) {
       return;
-    } else if (invalidPrograms) {
+    } else if (invalidPrograms.length > 0) {
       this.#logger.debug(
         "Found %d programs that don't have the correct type: %O",
         invalidPrograms.length,
