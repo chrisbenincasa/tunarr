@@ -156,7 +156,7 @@ export function Root({ children }: { children?: React.ReactNode }) {
                   main: '#004b79',
                 },
                 error: {
-                  main: '#770A0A',
+                  main: '#ab6253',
                 },
                 warning: {
                   main: '#FF9800',
@@ -180,7 +180,7 @@ export function Root({ children }: { children?: React.ReactNode }) {
                   main: '#004b79',
                 },
                 error: {
-                  main: '#770A0A',
+                  main: '#892d22',
                 },
                 warning: {
                   main: '#FF9800',
