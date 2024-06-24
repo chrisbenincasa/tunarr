@@ -1,5 +1,8 @@
+import { useDirectPlexSearch } from '@/hooks/plex/usePlexSearch.ts';
 import { Delete, DoneAll, Grading } from '@mui/icons-material';
 import { Button, Paper, Tooltip, useMediaQuery, useTheme } from '@mui/material';
+import { isNil } from 'lodash-es';
+import { useSnackbar } from 'notistack';
 import { useCallback, useState } from 'react';
 import useStore from '../../store/index.ts';
 import {
@@ -8,11 +11,8 @@ import {
   clearSelectedMedia,
 } from '../../store/programmingSelector/actions.ts';
 import { AddedMedia } from '../../types/index.ts';
-import { isNil } from 'lodash-es';
-import { useDirectPlexSearch } from '@/hooks/plex/usePlexSearch.ts';
 import { RotatingLoopIcon } from '../base/LoadingIcon.tsx';
 import AddSelectedMediaButton from './AddSelectedMediaButton.tsx';
-import { useSnackbar } from 'notistack';
 
 type Props = {
   onAddSelectedMedia: (media: AddedMedia[]) => void;
@@ -165,7 +165,11 @@ export default function SelectedProgrammingActions({
             onSuccess={onAddMediaSuccess}
             sx={{
               color: theme.palette.primary.contrastText,
-              border: `1px solid ${theme.palette.primary.contrastText}`,
+              border: `1px solid ${
+                selectedMedia.length > 0
+                  ? theme.palette.primary.contrastText
+                  : theme.palette.action.disabled
+              }`,
               borderRadius: '10px',
             }}
           />
