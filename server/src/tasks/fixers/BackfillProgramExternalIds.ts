@@ -13,7 +13,8 @@ import { getEm } from '../../dao/dataSource';
 import { PlexServerSettings } from '../../dao/entities/PlexServerSettings.js';
 import { Program } from '../../dao/entities/Program';
 import { ProgramExternalId } from '../../dao/entities/ProgramExternalId.js';
-import { Plex, PlexApiFactory, isPlexQueryError } from '../../external/plex.js';
+import { Plex, isPlexQueryError } from '../../external/plex.js';
+import { PlexApiFactory } from '../../external/PlexApiFactory';
 import { Maybe } from '../../types/util.js';
 import { asyncPool } from '../../util/asyncPool.js';
 import { attempt, attemptSync, groupByUniq, wait } from '../../util/index.js';
@@ -70,7 +71,7 @@ export class BackfillProgramExternalIds extends Fixer {
       });
 
       forEach(serverSettings, (server) => {
-        plexConnections[server.name] = PlexApiFactory.get(server);
+        plexConnections[server.name] = PlexApiFactory().get(server);
       });
 
       for await (const result of asyncPool(

@@ -101,6 +101,9 @@ export const defaultSettings = (dbBasePath: string): SettingsFile => ({
       logsDirectory: getDefaultLogDirectory(),
       useEnvVarLevel: true,
     },
+    cache: {
+      enablePlexRequestCache: false,
+    },
   },
 });
 

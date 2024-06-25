@@ -12,7 +12,8 @@ import {
   PlexTvShow,
 } from '@tunarr/types/plex';
 import { first, groupBy, isNil, isNull, isUndefined, keys } from 'lodash-es';
-import { Plex, PlexApiFactory } from '../../external/plex';
+import { Plex } from '../../external/plex';
+import { PlexApiFactory } from '../../external/PlexApiFactory';
 import { isNonEmptyString, wait } from '../../util';
 import { LoggerFactory } from '../../util/logging/LoggerFactory';
 import { ProgramSourceType } from '../custom_types/ProgramSourceType';
@@ -162,7 +163,7 @@ export class LegacyMetadataBackfiller {
       }
 
       // Otherwise, we need to go and find details...
-      const plex = PlexApiFactory.get(server);
+      const plex = PlexApiFactory().get(server);
 
       // This where the types have to diverge, because the Plex
       // API types differ.

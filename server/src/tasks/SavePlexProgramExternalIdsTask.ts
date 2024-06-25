@@ -6,7 +6,8 @@ import { getEm } from '../dao/dataSource.js';
 import { Program } from '../dao/entities/Program.js';
 import { ProgramExternalId } from '../dao/entities/ProgramExternalId.js';
 import { upsertProgramExternalIds_deprecated } from '../dao/programExternalIdHelpers.js';
-import { Plex, PlexApiFactory, isPlexQueryError } from '../external/plex.js';
+import { Plex, isPlexQueryError } from '../external/plex.js';
+import { PlexApiFactory } from '../external/PlexApiFactory.js';
 import { Maybe } from '../types/util.js';
 import { parsePlexExternalGuid } from '../util/externalIds.js';
 import { isDefined, isNonEmptyString } from '../util/index.js';
@@ -41,7 +42,7 @@ export class SavePlexProgramExternalIdsTask extends Task {
         continue;
       }
 
-      api = await PlexApiFactory.getOrSet(id.externalSourceId);
+      api = await PlexApiFactory().getOrSet(id.externalSourceId);
 
       if (isDefined(api)) {
         chosenId = id;

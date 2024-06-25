@@ -8,7 +8,8 @@ import { PlexServerSettingsSchema } from '@tunarr/types/schemas';
 import { isError, isNil, isObject } from 'lodash-es';
 import z from 'zod';
 import { PlexServerSettings } from '../dao/entities/PlexServerSettings.js';
-import { Plex, PlexApiFactory } from '../external/plex.js';
+import { Plex } from '../external/plex.js';
+import { PlexApiFactory } from '../external/PlexApiFactory.js';
 import { GlobalScheduler } from '../services/scheduler.js';
 import { UpdateXmlTvTask } from '../tasks/UpdateXmlTvTask.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
@@ -319,7 +320,7 @@ export const plexServersRouter: RouterPluginAsyncCallback = async (
           return res.status(404).send({ message: 'Plex server not found.' });
         }
 
-        const plex = PlexApiFactory.get(server);
+        const plex = PlexApiFactory().get(server);
 
         const s = await Promise.race([
           plex.checkServerStatus().then((res) => res === 1),

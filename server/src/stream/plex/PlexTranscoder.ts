@@ -9,6 +9,7 @@ import { ContentBackedStreamLineupItem } from '../../dao/derived_types/StreamLin
 import { PlexServerSettings } from '../../dao/entities/PlexServerSettings.js';
 import { serverOptions } from '../../globals.js';
 import { Plex } from '../../external/plex.js';
+import { PlexApiFactory } from '../../external/PlexApiFactory.js';
 import { StreamContextChannel } from '../types.js';
 import { Maybe } from '../../types/util.js';
 import {
@@ -108,7 +109,7 @@ export class PlexTranscoder {
       this.log('Debug logging enabled');
     }
 
-    this.plex = new Plex(server);
+    this.plex = PlexApiFactory().get(server);
     // this.metadataPath = `${lineupItem.key}?X-Plex-Token=${server.accessToken}`;
     this.plexFile = `${server.uri}${lineupItem.plexFilePath}?X-Plex-Token=${server.accessToken}`;
     if (!isUndefined(lineupItem.filePath)) {

@@ -16,7 +16,8 @@ import {
   map,
   partition,
 } from 'lodash-es';
-import { PlexApiFactory, PlexQueryResult } from '../external/plex.js';
+import { PlexQueryResult } from '../external/plex.js';
+import { PlexApiFactory } from '../external/PlexApiFactory.js';
 import { Maybe } from '../types/util.js';
 import { asyncPool } from '../util/asyncPool.js';
 import { groupByUniqAndMap, mapAsyncSeq } from '../util/index.js';
@@ -133,7 +134,7 @@ export class ProgramGroupingCalculator {
       );
     }
 
-    const plexApi = await PlexApiFactory.getOrSet(plexServerName);
+    const plexApi = await PlexApiFactory().getOrSet(plexServerName);
 
     if (!plexApi) {
       return;

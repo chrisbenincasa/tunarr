@@ -1,6 +1,6 @@
 import { RecurrenceRule } from 'node-schedule';
 import { PlexServerSettings } from '../dao/entities/PlexServerSettings';
-import { PlexApiFactory } from '../external/plex';
+import { PlexApiFactory } from '../external/PlexApiFactory';
 import { run } from '../util';
 import { ScheduledTask } from './ScheduledTask';
 import { Task } from './Task';
@@ -103,7 +103,7 @@ class UpdatePlexPlayStatusTask extends Task {
   }
 
   protected async runInternal(): Promise<boolean> {
-    const plex = PlexApiFactory.get(this.plexServer);
+    const plex = PlexApiFactory().get(this.plexServer);
 
     const deviceName = `tunarr-channel-${this.request.channelNumber}`;
     const params = {
