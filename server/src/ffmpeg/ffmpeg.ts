@@ -818,7 +818,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       ffmpegArgs.push(`-t`, `${duration}`);
     }
 
-    ffmpegArgs.push(`-f`, 'matroska', `pipe:1`);
+    ffmpegArgs.push(`-f`, 'nut', `pipe:1`);
 
     const doLogs = this.opts.enableLogging;
     if (this.hasBeenKilled) {
