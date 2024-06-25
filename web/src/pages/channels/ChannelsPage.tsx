@@ -12,6 +12,7 @@ import {
   DialogContentText,
   DialogTitle,
   IconButton,
+  Link,
   ListItemIcon,
   ListItemText,
   Menu,
@@ -165,10 +166,11 @@ export default function ChannelsPage() {
             <ListItemText>Edit Channel Settings</ListItemText>
           </MenuItem>
           <MenuItem
-            to={`${
+            href={`${
               isNonEmptyString(backendUri) ? `${backendUri}/` : ''
             }media-player/${channelMenu.number}.m3u`}
-            component={RouterLink}
+            target="_blank"
+            component={Link}
             onClick={(e) => {
               e.stopPropagation();
             }}
