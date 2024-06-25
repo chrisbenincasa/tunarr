@@ -2,7 +2,7 @@ name: Public Docs
 on:
   push:
     branches:
-      - main
+      - dev
 permissions:
   contents: write
 jobs:
