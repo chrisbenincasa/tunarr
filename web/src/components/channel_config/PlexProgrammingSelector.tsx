@@ -438,9 +438,11 @@ export default function PlexProgrammingSelector() {
 
   const renderFinalRowInlineModal = (arr: PlexMedia[]) => {
     // /This Modal is for last row items because they can't be inserted using the above inline modal
-    const open = extractLastIndexes(arr, arr.length % rowSize).includes(
-      modalIndex,
-    );
+    // Check how many items are in the last row
+    const remainingItems =
+      arr.length % rowSize === 0 ? rowSize : arr.length % rowSize;
+
+    const open = extractLastIndexes(arr, remainingItems).includes(modalIndex);
 
     return (
       <InlineModal
