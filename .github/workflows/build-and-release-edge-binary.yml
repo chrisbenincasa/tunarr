@@ -10,7 +10,7 @@ jobs:
     strategy:
       matrix:
         os:
-          - name: macos-latest
+          - name: macos-13
             target_name: macos
           - name: ubuntu-latest
             target_name: linux
