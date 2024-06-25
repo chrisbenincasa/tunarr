@@ -8,9 +8,6 @@
     "clean-build": {
       "dependsOn": ["^build"]
     },
-    "bundle": {
-      "dependsOn": ["^bundle", "@tunarr/server#typecheck"]
-    },
     "typecheck": {
       "dependsOn": ["^build"]
     }
