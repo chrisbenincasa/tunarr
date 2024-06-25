@@ -12,7 +12,7 @@
     },
     "bundle": {
       "dependsOn": ["build"],
-      "outputs": ["build/**", "dist/**"]
+      "outputs": ["build/**"]
     },
     "build-dev": {},
     "lint": {},

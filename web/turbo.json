@@ -10,6 +10,10 @@
     },
     "typecheck": {
       "dependsOn": ["^build"]
+    },
+    "bundle": {
+      "dependsOn": ["^bundle"],
+      "outputs": ["dist/**"]
     }
   }
 }
