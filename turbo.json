@@ -11,7 +11,7 @@
       "outputs": ["build/**", "dist/**"]
     },
     "bundle": {
-      "dependsOn": ["clean", "build"],
+      "dependsOn": ["build"],
       "outputs": ["build/**", "dist/**"]
     },
     "build-dev": {},
