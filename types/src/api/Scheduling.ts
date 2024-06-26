@@ -224,6 +224,12 @@ const BaseSchedulingOpertionSchema = z.object({
   allowMultiple: z.boolean().default(true).optional(),
 });
 
+const BaseSortOperationSchema = (defaultAsc: boolean = true) =>
+  z.object({
+    type: z.literal('ordering'),
+    ascending: z.boolean().optional().default(defaultAsc).catch(defaultAsc),
+  });
+
 const RandomSortOrderOperationSchema = BaseSchedulingOpertionSchema.extend({
   type: z.literal('ordering'),
   id: z.literal('random_sort'),
@@ -233,12 +239,11 @@ export type RandomSortOrderOperation = z.infer<
   typeof RandomSortOrderOperationSchema
 >;
 
-const ReleaseDateSortOrderOperationSchema = BaseSchedulingOpertionSchema.extend(
-  {
-    type: z.literal('ordering'),
-    id: z.literal('release_date_sort'),
-  },
-);
+const ReleaseDateSortOrderOperationSchema = BaseSchedulingOpertionSchema.merge(
+  BaseSortOperationSchema(),
+).extend({
+  id: z.literal('release_date_sort'),
+});
 
 export type ReleaseDateSortOrderOperation = z.infer<
   typeof ReleaseDateSortOrderOperationSchema
@@ -276,6 +281,7 @@ export const SchedulingOperationSchema = z.union([
   AddPaddingOperationSchema,
   ScheduledRedirectOperationSchema,
   RandomSortOrderOperationSchema,
+  ReleaseDateSortOrderOperationSchema,
 ]);
 
 export type SchedulingOperation = z.infer<typeof SchedulingOperationSchema>;

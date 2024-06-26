@@ -60,6 +60,8 @@ export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicConten
       ),
     );
 
+    console.log(filter.join('&'));
+
     const enumerator = new PlexItemEnumerator(this.#plex, new ProgramDB());
 
     const enumeratedItems = await this.#timer.timeAsync('enumerate items', () =>

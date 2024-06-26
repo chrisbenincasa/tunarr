@@ -543,13 +543,13 @@ export class ChannelDB {
     );
   }
 
-  async loadAllLineupConfigs() {
+  async loadAllLineupConfigs(forceRead: boolean = false) {
     return mapReduceAsyncSeq(
       await this.getAllChannels(),
       async (channel) => {
         return {
           channel,
-          lineup: await this.loadLineup(channel.uuid),
+          lineup: await this.loadLineup(channel.uuid, forceRead),
         };
       },
       (prev, { channel, lineup }) => ({
@@ -572,8 +572,8 @@ export class ChannelDB {
     };
   }
 
-  async loadLineup(channelId: string) {
-    const db = await this.getFileDb(channelId);
+  async loadLineup(channelId: string, forceRead: boolean = false) {
+    const db = await this.getFileDb(channelId, forceRead);
     return db.data;
   }
 
@@ -757,11 +757,14 @@ export class ChannelDB {
     await db.write();
   }
 
-  private async getFileDb(channelId: string) {
+  private async getFileDb(channelId: string, forceRead: boolean = false) {
     return await fileDbLocks.getOrCreateLock(channelId).then((lock) =>
       lock.runExclusive(async () => {
         const existing = fileDbCache[channelId];
         if (isDefined(existing)) {
+          if (forceRead) {
+            await existing.read();
+          }
           return existing;
         }
 

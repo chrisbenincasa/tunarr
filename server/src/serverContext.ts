@@ -1,7 +1,7 @@
 import { AsyncLocalStorage } from 'async_hooks';
 import { isUndefined, once } from 'lodash-es';
 import path from 'path';
-import { ChannelCache } from './stream/ChannelCache.js';
+import { XmlTvWriter } from './XmlTvWriter.js';
 import { ChannelDB } from './dao/channelDb.js';
 import { CustomShowDB } from './dao/customShowDb.js';
 import { FillerDB } from './dao/fillerDb.js';
@@ -15,7 +15,7 @@ import { EventService } from './services/eventService.js';
 import { FileCacheService } from './services/fileCacheService.js';
 import { M3uService } from './services/m3uService.js';
 import { TVGuideService } from './services/tvGuideService.js';
-import { XmlTvWriter } from './XmlTvWriter.js';
+import { ChannelCache } from './stream/ChannelCache.js';
 
 export type ServerContext = {
   channelDB: ChannelDB;

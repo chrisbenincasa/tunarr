@@ -1,14 +1,32 @@
 import { SchedulingOperation } from '@tunarr/types/api';
-import { compact, isNull, isUndefined, map, reject, sortBy } from 'lodash-es';
+import {
+  compact,
+  filter,
+  isNull,
+  isUndefined,
+  map,
+  reject,
+  sortBy,
+} from 'lodash-es';
 import { ChannelAndLineup, ChannelDB } from '../../dao/channelDb.js';
-import { Lineup } from '../../dao/derived_types/Lineup.js';
+import { Lineup, isContentItem } from '../../dao/derived_types/Lineup.js';
 import { asyncPool } from '../../util/asyncPool.js';
-import { asyncFlow, intersperse, isDefined } from '../../util/index.js';
+import {
+  asyncFlow,
+  groupByUniq,
+  intersperse,
+  isDefined,
+} from '../../util/index.js';
 import { CollapseOfflineTimeOperator } from './CollapseOfflineTimeOperator.js';
 import { IntermediateOperator } from './IntermediateOperator.js';
 import { SchedulingOperatorFactory } from './SchedulingOperatorFactory.js';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
 import { Func } from '../../types/func.js';
+import {
+  LineupBuilderContext,
+  LineupCreatorContext,
+} from './LineupCreatorContext.js';
+import { directDbAccess } from '../../dao/direct/directDbAccess.js';
 
 const OperatorToWeight: Record<SchedulingOperation['type'], number> = {
   ordering: 0,
@@ -142,12 +160,33 @@ export class LineupCreator {
       true,
     );
 
-    console.log(pipeline);
+    return async ({ channel, lineup }) => {
+      const db = directDbAccess();
+      const programs = await db
+        .selectFrom('program')
+        .where(
+          'uuid',
+          'in',
+          map(filter(lineup.pendingPrograms, isContentItem), (item) => item.id),
+        )
+        .selectAll()
+        .execute();
 
-    return ({ channel, lineup }) =>
-      asyncFlow(pipeline, {
-        channel,
-        lineup: { ...lineup, items: lineup.pendingPrograms ?? [] },
+      const context: LineupBuilderContext = {
+        channelId: channel.uuid,
+        programById: groupByUniq(programs, 'uuid'),
+      };
+
+      return new Promise((res, rej) => {
+        LineupCreatorContext.create(context, () =>
+          asyncFlow(pipeline, {
+            channel,
+            lineup: { ...lineup, items: lineup.pendingPrograms ?? [] },
+          })
+            .then(res)
+            .catch(rej),
+        );
       });
+    };
   }
 }

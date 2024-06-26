@@ -397,4 +397,23 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
       return res.send(result);
     },
   );
+
+  fastify.get('/debug/channels/reload_all_lineups', async (req, res) => {
+    await req.serverCtx.channelDB.loadAllLineupConfigs(true);
+    return res.send();
+  });
+
+  fastify.get('/debug/db/test_direct_access', async (_req, res) => {
+    // const result = await directDbAccess()
+    //   .selectFrom('channel_programs')
+    //   .where('channel_uuid', '=', '0ff3ec64-1022-4afd-9178-3f27f1121d47')
+    //   .innerJoin('program', 'channel_programs.program_uuid', 'program.uuid')
+    //   .leftJoin('program_grouping', join => {
+    //     join.onRef('')
+    //   })
+    //   .select(['program'])
+    //   .execute();
+    // return res.send(result);
+    return res.send();
+  });
 };
