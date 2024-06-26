@@ -233,6 +233,17 @@ export type RandomSortOrderOperation = z.infer<
   typeof RandomSortOrderOperationSchema
 >;
 
+const ReleaseDateSortOrderOperationSchema = BaseSchedulingOpertionSchema.extend(
+  {
+    type: z.literal('ordering'),
+    id: z.literal('release_date_sort'),
+  },
+);
+
+export type ReleaseDateSortOrderOperation = z.infer<
+  typeof ReleaseDateSortOrderOperationSchema
+>;
+
 const ScheduledRedirectOperationSchema = BaseSchedulingOpertionSchema.extend({
   type: z.literal('modifier'),
   id: z.literal('scheduled_redirect'),
