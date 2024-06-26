@@ -513,10 +513,8 @@ export default function PlexProgrammingSelector() {
 
     if (searchData) {
       const items = chain(searchData.pages)
-        .reject((page) => page.size === 0)
         .map((page) => page.Metadata)
         .flatten()
-        .take(scrollParams.limit)
         .value();
 
       elements.push(
