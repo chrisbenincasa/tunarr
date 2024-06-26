@@ -9,8 +9,28 @@ import { isUndefined, once } from 'lodash-es';
 import 'reflect-metadata';
 import { dbOptions } from '../globals.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
+import { isDocker } from '../util/isDocker.js';
+import { DATABASE_LOCATION_ENV_VAR } from '../util/constants.js';
+import { isNonEmptyString } from '../util/index.js';
+import path from 'node:path';
+import constants from '@tunarr/shared/constants';
 
 export type EntityManager = BetterSqlite3EntityManager;
+
+export function getDefaultDatabaseDirectory() {
+  const envSetting = process.env[DATABASE_LOCATION_ENV_VAR];
+  if (isNonEmptyString(envSetting)) {
+    return envSetting;
+  }
+
+  if (isDocker()) {
+    return '/config/tunarr/data';
+  }
+
+  // TODO Should we use common OS locations like the log directory?
+  // Then everything would be together
+  return path.join(process.cwd(), constants.DEFAULT_DATA_DIR);
+}
 
 export const initOrm = once(async (mikroOrmOptions?: Options) => {
   const logger = LoggerFactory.root;

@@ -21,11 +21,12 @@ import {
 } from './globals.js';
 import { initDbDirectories, initServer } from './server.js';
 import { getDefaultLogLevel } from './util/logging/LoggerFactory.js';
+import { SERVER_PORT_ENV_VAR } from './util/constants.js';
 import {
-  DATABASE_LOCATION_ENV_VAR,
-  SERVER_PORT_ENV_VAR,
-} from './util/constants.js';
-import { initOrm, withDb } from './dao/dataSource.js';
+  getDefaultDatabaseDirectory,
+  initOrm,
+  withDb,
+} from './dao/dataSource.js';
 import { FixersByName } from './tasks/fixers/index.js';
 import { isNonEmptyString } from './util/index.js';
 
@@ -53,12 +54,13 @@ yargs(hideBin(process.argv))
     alias: 'd',
     type: 'string',
     desc: 'Path to the database directory',
-    default:
-      process.env[DATABASE_LOCATION_ENV_VAR] ??
-      path.join('.', constants.DEFAULT_DATA_DIR),
+    // default:
+    //   process.env[DATABASE_LOCATION_ENV_VAR] ??
+    //   path.join('.', constants.DEFAULT_DATA_DIR),
     normalize: true,
     coerce: (db: string) => fileURLToPath(new URL(db, import.meta.url)),
   })
+  .default('database', () => getDefaultDatabaseDirectory())
   .option('force_migration', {
     type: 'boolean',
     desc: 'Forces a migration from a legacy dizquetv database. Useful for development and debugging. NOTE: This WILL override any settings you have!',

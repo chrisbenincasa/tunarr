@@ -88,7 +88,6 @@
     "@types/temp": "^0.9.4",
     "@types/tmp": "^0.2.6",
     "@types/uuid": "^9.0.6",
-    "@types/yargs": "^17.0.29",
     "@yao-pkg/pkg": "^5.11.5",
     "copyfiles": "^2.2.0",
     "del-cli": "^3.0.0",
