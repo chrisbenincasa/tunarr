@@ -517,6 +517,9 @@ export default function PlexProgrammingSelector() {
         .flatten()
         .value();
 
+      const totalSearchDataSize =
+        searchData.pages[0].totalSize || searchData.pages[0].size;
+
       elements.push(
         <CustomTabPanel value={tabValue} index={0} key="Library">
           {map(
@@ -528,7 +531,9 @@ export default function PlexProgrammingSelector() {
                 renderGridItems(item, index)
               ),
           )}
-          {renderFinalRowInlineModal(items)}
+
+          {items.length >= totalSearchDataSize &&
+            renderFinalRowInlineModal(items)}
         </CustomTabPanel>,
       );
     }
