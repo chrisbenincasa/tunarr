@@ -18,7 +18,12 @@ import {
 } from '@mui/material';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
-import { LogLevel, LogLevels, SystemSettings } from '@tunarr/types';
+import {
+  CacheSettings,
+  LogLevel,
+  LogLevels,
+  SystemSettings,
+} from '@tunarr/types';
 import {
   attempt,
   first,
@@ -53,6 +58,7 @@ type GeneralSettingsFormData = {
   backendUri: string;
   logLevel: LogLevel | 'env';
   backup: BackupSettings;
+  cache: CacheSettings;
 };
 
 type GeneralSetingsFormProps = {
@@ -95,6 +101,9 @@ function GeneralSettingsForm({ systemSettings }: GeneralSetingsFormProps) {
       ? 'env'
       : systemSettings.logging.logLevel,
     backup: systemSettings.backup,
+    cache: systemSettings.cache ?? {
+      enablePlexRequestCache: false,
+    },
   });
 
   const {
@@ -132,6 +141,7 @@ function GeneralSettingsForm({ systemSettings }: GeneralSetingsFormProps) {
         useEnvVarLevel: data.logLevel === 'env',
       },
       backup: data.backup,
+      cache: data.cache,
     };
     updateSystemSettings.mutate(updateReq, {
       onSuccess(data) {
@@ -397,9 +407,12 @@ function GeneralSettingsForm({ systemSettings }: GeneralSetingsFormProps) {
             <FormControl sx={{ width: '50%' }}>
               <FormControlLabel
                 control={
-                  <Checkbox
-                    checked={backupsEnabled}
-                    onChange={toggleBackupEnabled}
+                  <Controller
+                    control={control}
+                    name="cache.enablePlexRequestCache"
+                    render={({ field }) => (
+                      <Checkbox checked={field.value} {...field} />
+                    )}
                   />
                 }
                 label={

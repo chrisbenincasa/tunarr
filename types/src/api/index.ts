@@ -13,6 +13,7 @@ import {
   TimeSlotScheduleSchema,
 } from './Scheduling.js';
 import {
+  CacheSettingsSchema,
   LogLevelsSchema,
   LoggingSettingsSchema,
   SystemSettingsSchema,
@@ -192,6 +193,7 @@ export const UpdateSystemSettingsRequestSchema = z.object({
     .partial()
     .optional(),
   backup: BackupSettingsSchema.optional(),
+  cache: CacheSettingsSchema.optional(),
 });
 
 export type UpdateSystemSettingsRequest = z.infer<
