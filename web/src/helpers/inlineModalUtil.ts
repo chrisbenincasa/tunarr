@@ -30,8 +30,6 @@ export function getEstimatedModalHeight(
   listSize: number,
   type: PlexMedia['type'] | 'all',
 ): number {
-  console.log(type);
-
   // Episode modals have smaller height, short circuit for  now
   if (type === 'season') {
     return SeasonModalHeight;
