@@ -3,7 +3,7 @@ import { range } from 'lodash-es';
 
 // Magic Numbers
 // TODO: eventually grab this data via refs just in case it changes in the future
-const SeasonModalHeight = 143;
+const SeasonModalHeight = 204;
 const DefaultSingleRowModalHeight = 294;
 const inlineModalTopPadding = 16;
 const imageContainerXPadding = 8;
@@ -30,6 +30,8 @@ export function getEstimatedModalHeight(
   listSize: number,
   type: PlexMedia['type'] | 'all',
 ): number {
+  console.log(type);
+
   // Episode modals have smaller height, short circuit for  now
   if (type === 'season') {
     return SeasonModalHeight;
