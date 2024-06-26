@@ -513,16 +513,18 @@ export default function PlexProgrammingSelector() {
 
     if (searchData) {
       const items = chain(searchData.pages)
-        .reject((page) => page.size === 0)
+        // .reject((page) => page.size === 0)
         .map((page) => page.Metadata)
         .flatten()
-        .take(scrollParams.limit)
+        // .take(scrollParams.limit)
         .value();
+
+      console.log(searchData);
 
       elements.push(
         <CustomTabPanel value={tabValue} index={0} key="Library">
           {map(
-            items,
+            compact(flatMap(searchData.pages, (page) => page.Metadata)),
             (item: PlexMovie | PlexTvShow | PlexMusicArtist, index: number) =>
               viewType === 'list' ? (
                 <PlexListItem key={item.guid} item={item} />
@@ -531,6 +533,10 @@ export default function PlexProgrammingSelector() {
               ),
           )}
           {renderFinalRowInlineModal(items)}
+
+          {/* {renderFinalRowInlineModal(
+            compact(flatMap(searchData.pages, (page) => page.Metadata)),
+          )} */}
         </CustomTabPanel>,
       );
     }
