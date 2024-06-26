@@ -229,6 +229,13 @@ export class Plex {
     return this.opts.name;
   }
 
+  getFullUrl(path: string): string {
+    const sanitizedPath = path.startsWith('/') ? path : `/${path}`;
+    const url = new URL(`${this.opts.uri}${sanitizedPath}`);
+    url.searchParams.set('X-Plex-Token', this.opts.accessToken);
+    return url.toString();
+  }
+
   private async doRequest<T>(req: AxiosRequestConfig): Promise<Try<T>> {
     try {
       const response = await this.axiosInstance.request<T>(req);
@@ -272,6 +279,14 @@ export class Plex {
         return new Error('Unknown error when requesting Plex');
       }
     }
+  }
+
+  async doHead(path: string, optionalHeaders: RawAxiosRequestHeaders = {}) {
+    return await this.doRequest({
+      method: 'head',
+      url: path,
+      headers: optionalHeaders,
+    });
   }
 
   // TODO: make all callers use this

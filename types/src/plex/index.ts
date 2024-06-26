@@ -414,8 +414,8 @@ export const PlexMusicAlbumSchema = BasePlexMediaSchema.extend({
   parentTitle: z.string(), // Artist name
   summary: z.string().optional(),
   index: z.number(),
-  viewCount: z.number(),
-  skipCount: z.number(),
+  viewCount: z.number().optional(),
+  skipCount: z.number().optional(),
   lastViewedAt: z.number().optional(),
   year: z.number().optional(),
   thumb: z.string().optional(),
