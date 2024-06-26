@@ -3,7 +3,7 @@ import { range } from 'lodash-es';
 
 // Magic Numbers
 // TODO: eventually grab this data via refs just in case it changes in the future
-const SeasonModalHeight = 143;
+const SeasonModalHeight = 204;
 const DefaultSingleRowModalHeight = 294;
 const inlineModalTopPadding = 16;
 const imageContainerXPadding = 8;
