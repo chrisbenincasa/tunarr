@@ -520,7 +520,7 @@ export default function PlexProgrammingSelector() {
       elements.push(
         <CustomTabPanel value={tabValue} index={0} key="Library">
           {map(
-            compact(flatMap(searchData.pages, (page) => page.Metadata)),
+            items,
             (item: PlexMovie | PlexTvShow | PlexMusicArtist, index: number) =>
               viewType === 'list' ? (
                 <PlexListItem key={item.guid} item={item} />
