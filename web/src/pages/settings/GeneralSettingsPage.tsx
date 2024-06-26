@@ -12,11 +12,18 @@ import {
   Select,
   SelectChangeEvent,
   TextField,
+  Tooltip,
   Typography,
+  useTheme,
 } from '@mui/material';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
-import { LogLevel, LogLevels, SystemSettings } from '@tunarr/types';
+import {
+  CacheSettings,
+  LogLevel,
+  LogLevels,
+  SystemSettings,
+} from '@tunarr/types';
 import {
   attempt,
   first,
@@ -51,6 +58,7 @@ type GeneralSettingsFormData = {
   backendUri: string;
   logLevel: LogLevel | 'env';
   backup: BackupSettings;
+  cache: CacheSettings;
 };
 
 type GeneralSetingsFormProps = {
@@ -79,6 +87,7 @@ function GeneralSettingsForm({ systemSettings }: GeneralSetingsFormProps) {
   const versionInfo = useVersion({
     retry: 0,
   });
+  const theme = useTheme();
 
   const { isLoading, isError } = versionInfo;
 
@@ -92,6 +101,9 @@ function GeneralSettingsForm({ systemSettings }: GeneralSetingsFormProps) {
       ? 'env'
       : systemSettings.logging.logLevel,
     backup: systemSettings.backup,
+    cache: systemSettings.cache ?? {
+      enablePlexRequestCache: false,
+    },
   });
 
   const {
@@ -129,6 +141,7 @@ function GeneralSettingsForm({ systemSettings }: GeneralSetingsFormProps) {
         useEnvVarLevel: data.logLevel === 'env',
       },
       backup: data.backup,
+      cache: data.cache,
     };
     updateSystemSettings.mutate(updateReq, {
       onSuccess(data) {
@@ -381,10 +394,47 @@ function GeneralSettingsForm({ systemSettings }: GeneralSetingsFormProps) {
           </FormControl>
         </Box>
         <Box>
-          <Typography variant="h5" sx={{ mb: 1 }}>
+          <Typography variant="h6" sx={{ mb: 1 }}>
             Backups
           </Typography>
           {renderBackupsForm()}
+        </Box>
+        <Box>
+          <Typography variant="h6" sx={{ mb: 1 }}>
+            Caching
+          </Typography>
+          <Box>
+            <FormControl sx={{ width: '50%' }}>
+              <FormControlLabel
+                control={
+                  <Controller
+                    control={control}
+                    name="cache.enablePlexRequestCache"
+                    render={({ field }) => (
+                      <Checkbox checked={field.value} {...field} />
+                    )}
+                  />
+                }
+                label={
+                  <span>
+                    <strong>Experimental:</strong> Enable Plex Request Cache{' '}
+                    <Tooltip
+                      title="Temporarily caches responses from Plex based by request path. Could potentially speed up channel editing."
+                      placement="top"
+                    >
+                      <sup style={{ color: theme.palette.primary.main }}>
+                        [?]
+                      </sup>
+                    </Tooltip>
+                  </span>
+                }
+              />
+              <FormHelperText>
+                This feature is currently experimental. Proceed with caution and
+                if you experience an issue, try disabling caching.
+              </FormHelperText>
+            </FormControl>
+          </Box>
         </Box>
       </Stack>
       <Stack spacing={2} direction="row" justifyContent="right" sx={{ mt: 2 }}>

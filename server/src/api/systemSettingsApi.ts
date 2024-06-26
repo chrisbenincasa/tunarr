@@ -14,6 +14,7 @@ import {
   getDefaultLogLevel,
   getEnvironmentLogLevel,
 } from '../util/logging/LoggerFactory';
+import { ifDefined } from '../util/index.js';
 
 export const systemSettingsRouter: RouterPluginAsyncCallback = async (
   fastify,
@@ -61,6 +62,10 @@ export const systemSettingsRouter: RouterPluginAsyncCallback = async (
           backupSettingsPotentiallyChanged = true;
           system.backup = req.body.backup;
         }
+
+        ifDefined(req.body.cache, (cache) => {
+          system.cache = cache;
+        });
 
         return file;
       });

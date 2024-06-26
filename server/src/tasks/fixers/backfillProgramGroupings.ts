@@ -23,7 +23,7 @@ import {
   ProgramGroupingType,
 } from '../../dao/entities/ProgramGrouping';
 import { ProgramGroupingExternalId } from '../../dao/entities/ProgramGroupingExternalId';
-import { PlexApiFactory } from '../../external/plex';
+import { PlexApiFactory } from '../../external/PlexApiFactory';
 import { LoggerFactory } from '../../util/logging/LoggerFactory';
 import Fixer from './fixer';
 import { ProgramExternalIdType } from '../../dao/custom_types/ProgramExternalIdType';
@@ -77,7 +77,7 @@ export class BackfillProgramGroupings extends Fixer {
         continue;
       }
 
-      const plex = PlexApiFactory.get(server);
+      const plex = PlexApiFactory().get(server);
       const plexResult = await plex.doGet<PlexLibraryShows>(
         '/library/metadata/' + grandparentExternalKey,
       );
@@ -147,7 +147,7 @@ export class BackfillProgramGroupings extends Fixer {
         continue;
       }
 
-      const plex = PlexApiFactory.get(server);
+      const plex = PlexApiFactory().get(server);
       const plexResult = await plex.doGet<PlexSeasonView>(
         '/library/metadata/' + parentExternalKey,
       );
@@ -245,7 +245,7 @@ export class BackfillProgramGroupings extends Fixer {
         continue;
       }
 
-      const plex = PlexApiFactory.get(server);
+      const plex = PlexApiFactory().get(server);
       const plexResult = await plex.doGet<PlexSeasonView>(
         '/library/metadata/' + ref.externalKey,
       );

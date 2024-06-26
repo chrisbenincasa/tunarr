@@ -34,9 +34,17 @@ export const LoggingSettingsSchema = z.object({
 
 export type LoggingSettings = z.infer<typeof LoggingSettingsSchema>;
 
+export const CacheSettingsSchema = z.object({
+  // Preserve previous behavior
+  enablePlexRequestCache: z.boolean().optional().default(false).catch(false),
+});
+
+export type CacheSettings = z.infer<typeof CacheSettingsSchema>;
+
 export const SystemSettingsSchema = z.object({
   backup: BackupSettingsSchema,
   logging: LoggingSettingsSchema,
+  cache: CacheSettingsSchema.optional(),
 });
 
 export type SystemSettings = z.infer<typeof SystemSettingsSchema>;

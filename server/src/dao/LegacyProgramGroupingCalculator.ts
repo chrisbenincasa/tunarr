@@ -30,7 +30,7 @@ import {
   round,
   values,
 } from 'lodash-es';
-import { PlexApiFactory } from '../external/plex.js';
+import { PlexApiFactory } from '../external/PlexApiFactory.js';
 import {
   flipMap,
   groupByUniqFunc,
@@ -279,7 +279,7 @@ export class LegacyProgramGroupingCalculator {
       return;
     }
 
-    const plexApi = PlexApiFactory.get(plexServer);
+    const plexApi = PlexApiFactory().get(plexServer);
 
     const parentIdsByGrandparent = ld
       .chain(programs)

@@ -48,8 +48,8 @@ export class TaskQueue {
   }
 }
 
-// Assume each task makes one request to Plex, limit tasks to 5 QPS on Plex
 export const PlexTaskQueue = new TaskQueue('PlexTaskQueue', {
+  concurrency: 2,
   intervalCap: 5,
   interval: 2000,
 });

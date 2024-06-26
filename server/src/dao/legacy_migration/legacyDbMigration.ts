@@ -31,7 +31,7 @@ import {
   sortBy,
 } from 'lodash-es';
 import path from 'path';
-import { PlexApiFactory } from '../../external/plex.js';
+import { PlexApiFactory } from '../../external/PlexApiFactory.js';
 import { globalOptions } from '../../globals.js';
 import { serverContext } from '../../serverContext.js';
 import { GlobalScheduler } from '../../services/scheduler.js';
@@ -320,7 +320,7 @@ export class LegacyDbMigrator {
           // will take care of that -- we may want to do it here if we want
           // to remove the fixer eventually, though.
           for (const entity of entities) {
-            const plexApi = PlexApiFactory.get(entity);
+            const plexApi = PlexApiFactory().get(entity);
             const status = await plexApi.checkServerStatus();
             if (status === 1) {
               this.logger.debug(

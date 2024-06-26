@@ -10,10 +10,10 @@ import { find, first, isNull, isUndefined, replace, trimEnd } from 'lodash-es';
 import { PlexServerSettings } from '../../dao/entities/PlexServerSettings';
 import {
   Plex,
-  PlexApiFactory,
   isPlexQueryError,
   isPlexQuerySuccess,
 } from '../../external/plex';
+import { PlexApiFactory } from '../../external/PlexApiFactory';
 import { Nullable } from '../../types/util';
 import { Logger, LoggerFactory } from '../../util/logging/LoggerFactory';
 import { PlexStream, StreamDetails } from './PlexTranscoder';
@@ -63,7 +63,7 @@ export class PlexStreamDetails {
       return null;
     }
 
-    const plex = PlexApiFactory.get(this.server);
+    const plex = PlexApiFactory().get(this.server);
     const expectedItemType = item.programType;
     const itemMetadataResult = await plex.getItemMetadata(item.externalKey);
 

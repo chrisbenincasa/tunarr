@@ -613,7 +613,7 @@ export default function PlexSettingsPage() {
       {renderConfirmationDialog()}
       <Box>
         <Box mb={2}>
-          <Box sx={{ display: 'flex', mb: 2 }}>
+          <Box sx={{ display: 'flex', mb: 1 }}>
             <Typography variant="h6" sx={{ flexGrow: 1 }}>
               Plex Servers
             </Typography>
@@ -621,7 +621,7 @@ export default function PlexSettingsPage() {
           </Box>
           {renderServersTable()}
         </Box>
-        <Typography component="h6" variant="h6" sx={{ pt: 2, pb: 2 }}>
+        <Typography component="h6" variant="h6" sx={{ mb: 2 }}>
           Plex Streaming
         </Typography>
 
@@ -660,17 +660,6 @@ export default function PlexSettingsPage() {
             </FormControl>
           </Grid>
           <Grid item xs={12} sm={6}>
-            <FormControl fullWidth>
-              <FormControlLabel
-                control={
-                  <CheckboxFormController
-                    control={control}
-                    name="enableDebugLogging"
-                  />
-                }
-                label="Debug Logging"
-              />
-            </FormControl>
             <FormControl fullWidth>
               <FormControlLabel
                 control={
