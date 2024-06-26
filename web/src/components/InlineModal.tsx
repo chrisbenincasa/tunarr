@@ -1,19 +1,24 @@
 import { Box, Collapse, List } from '@mui/material';
 import { PlexMedia, isPlexMedia, isPlexParentItem } from '@tunarr/types/plex';
 import { usePrevious } from '@uidotdev/usehooks';
-import { useEffect, useCallback, useRef, useState, useMemo } from 'react';
+import _ from 'lodash-es';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import { useIntersectionObserver } from 'usehooks-ts';
 import {
   extractLastIndexes,
   findFirstItemInNextRowIndex,
   getEstimatedModalHeight,
   getImagesPerRow,
 } from '../helpers/inlineModalUtil';
-import _ from 'lodash-es';
+import { toggle } from '../helpers/util.ts';
 import useStore from '../store';
 import { PlexGridItem } from './channel_config/PlexGridItem';
-import { toggle } from '../helpers/util.ts';
-import React from 'react';
-import { useIntersectionObserver } from 'usehooks-ts';
 
 type InlineModalProps = {
   itemGuid: string;
@@ -114,7 +119,9 @@ export function InlineModal(props: InlineModalProps) {
   const isFinalChildModalOpen = modalChildren
     ? extractLastIndexes(
         modalChildren,
-        modalChildren.length % rowSize,
+        modalChildren.length % rowSize === 0
+          ? rowSize
+          : modalChildren.length % rowSize,
       ).includes(childModalIndex)
     : false;
 

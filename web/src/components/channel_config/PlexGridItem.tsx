@@ -1,3 +1,4 @@
+import { useSettings } from '@/store/settings/selectors.ts';
 import { CheckCircle, RadioButtonUnchecked } from '@mui/icons-material';
 import {
   Box,
@@ -10,6 +11,7 @@ import {
   alpha,
   useTheme,
 } from '@mui/material';
+import { createExternalId } from '@tunarr/shared';
 import {
   PlexChildMediaApiType,
   PlexMedia,
@@ -41,8 +43,6 @@ import {
   removePlexSelectedMedia,
 } from '../../store/programmingSelector/actions.ts';
 import { PlexSelectedMedia } from '../../store/programmingSelector/store.ts';
-import { useSettings } from '@/store/settings/selectors.ts';
-import { createExternalId } from '@tunarr/shared';
 
 export interface PlexGridItemProps<T extends PlexMedia> {
   item: T;
@@ -175,6 +175,8 @@ export const PlexGridItem = forwardRef(
       item.type,
     );
 
+    const isEpisodeItem = ['episode'].includes(item.type);
+
     let thumbSrc: string;
     if (isPlexPlaylist(item)) {
       thumbSrc = `${server.uri}${item.composite}?X-Plex-Token=${server.accessToken}`;
@@ -229,12 +231,12 @@ export const PlexGridItem = forwardRef(
             }
             ref={ref}
           >
-            {isInViewport && // TODO: Eventually turn this itno isNearViewport so images load before they hit the viewport
+            {isInViewport && // TODO: Eventually turn this into isNearViewport so images load before they hit the viewport
               (hasThumb ? (
                 <Box
                   sx={{
                     position: 'relative',
-                    minHeight: isMusicItem ? 100 : 200,
+                    minHeight: isMusicItem ? 100 : isEpisodeItem ? 84 : 200, // 84 accomodates episode img height
                     maxHeight: '100%',
                   }}
                 >
@@ -258,13 +260,17 @@ export const PlexGridItem = forwardRef(
                       position: 'absolute',
                       top: 0,
                       left: 0,
-                      aspectRatio: isMusicItem ? '1/1' : '2/3',
+                      aspectRatio: isMusicItem
+                        ? '1/1'
+                        : isEpisodeItem
+                        ? '1.77/1'
+                        : '2/3',
                       width: '100%',
                       height: 'auto',
                       zIndex: 1,
                       opacity: imageLoaded ? 0 : 1,
                       visibility: imageLoaded ? 'hidden' : 'visible',
-                      minHeight: isMusicItem ? 100 : 200,
+                      minHeight: isMusicItem ? 100 : isEpisodeItem ? 84 : 200,
                     }}
                   ></Box>
                 </Box>
@@ -273,7 +279,7 @@ export const PlexGridItem = forwardRef(
                   animation={false}
                   variant="rounded"
                   sx={{ borderRadius: '5%' }}
-                  height={isMusicItem ? 144 : 250}
+                  height={isMusicItem ? 144 : isEpisodeItem ? 84 : 250}
                 />
               ))}
             <ImageListItemBar
