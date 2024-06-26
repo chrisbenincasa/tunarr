@@ -17,6 +17,7 @@ export const usePlexServerStatus = (server: PlexServerSettings) => {
         });
         return true;
       } catch (e) {
+        console.error('Error querying Plex from frontend', e);
         return false;
       }
     },
