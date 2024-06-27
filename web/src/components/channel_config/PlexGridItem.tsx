@@ -185,7 +185,8 @@ export const PlexGridItem = forwardRef(
         mode: 'proxy',
         asset: 'thumb',
         id: createExternalId('plex', server.name, item.ratingKey),
-        thumbOptions: JSON.stringify({ width: 480, height: 720 }),
+        // Commenting this out for now as temporary solution for image loading issue
+        // thumbOptions: JSON.stringify({ width: 480, height: 720 }),
       });
 
       thumbSrc = `${
