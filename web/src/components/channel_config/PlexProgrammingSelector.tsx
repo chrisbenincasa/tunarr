@@ -511,7 +511,7 @@ export default function PlexProgrammingSelector() {
       );
     }
 
-    if (searchData) {
+    if (searchData && (first(searchData.pages)?.size ?? 0) > 0) {
       const items = chain(searchData.pages)
         .map((page) => page.Metadata)
         .flatten()
