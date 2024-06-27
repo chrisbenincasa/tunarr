@@ -23,7 +23,6 @@ import ld, {
   compact,
   filter,
   find,
-  flatten,
   forEach,
   groupBy,
   isEmpty,
@@ -76,6 +75,14 @@ import { CustomShowContent } from './entities/CustomShowContent.js';
 import { Program } from './entities/Program.js';
 import { upsertContentPrograms } from './programHelpers.js';
 import { MutexMap } from '../util/mutexMap.js';
+import { directDbAccess } from './direct/directDbAccess.js';
+import { seq } from '@tunarr/shared/util';
+import {
+  withTrackAlbum,
+  withTrackArtist,
+  withTvSeason,
+  withTvShow,
+} from './direct/programQueryHelpers.js';
 
 dayjs.extend(duration);
 
@@ -177,6 +184,16 @@ export class ChannelDB {
   private logger = LoggerFactory.child({ caller: import.meta });
   private timer = new Timer(this.logger);
   #programConverter = new ProgramConverter();
+
+  async channelExists(channelId: string) {
+    const channel = await directDbAccess()
+      .selectFrom('channel')
+      .where('channel.uuid', '=', channelId)
+      .select('uuid')
+      .executeTakeFirst();
+    console.timeLog('req');
+    return !isNil(channel);
+  }
 
   getChannelByNumber(channelNumber: number) {
     return getEm().repo(Channel).findOne({ number: channelNumber });
@@ -300,6 +317,25 @@ export class ChannelDB {
   }
 
   async getAllChannelsAndPrograms(): Promise<LoadedChannelWithGroupRefs[]> {
+    // TODO: Replace this slow query...
+    // const p = await directDbAccess()
+    //   .selectFrom('channel')
+    //   .leftJoin(
+    //     'channel_programs',
+    //     'channel_programs.channel_uuid',
+    //     'channel.uuid',
+    //   )
+    //   .selectAll('channel')
+    //   .select((eb) => [
+    //     withPrograms(eb, {
+    //       trackAlbum: true,
+    //       trackArtist: true,
+    //       tvShow: true,
+    //       tvSeason: true,
+    //     }),
+    //   ])
+    //   .execute();
+
     return getEm()
       .repo(Channel)
       .findAll({
@@ -612,9 +648,11 @@ export class ChannelDB {
     offset: number = 0,
     limit: number = -1,
   ): Promise<CondensedChannelProgramming | null> {
+    console.timeLog('req', 'before loadLineup');
     const lineup = await timeNamedAsync('loadLineup', this.logger, () =>
       this.loadLineup(channelId),
     );
+    console.timeLog('req', 'after loadLineup');
 
     const len = lineup.items.length;
     const cleanOffset = offset < 0 ? 0 : offset;
@@ -625,9 +663,11 @@ export class ChannelDB {
       .take(cleanLimit)
       .value();
 
+    console.timeLog('req', 'before channel');
     const channel = await timeNamedAsync('select channel', this.logger, () =>
       getEm().repo(Channel).findOne({ uuid: channelId }),
     );
+    console.timeLog('req', 'after channel');
 
     if (isNil(channel)) {
       return null;
@@ -635,31 +675,49 @@ export class ChannelDB {
 
     const contentItems = filter(pagedLineup, isContentItem);
 
-    const uniqueProgramIds = uniqBy(contentItems, (item) => item.id);
-    const programs = flatten(
-      await this.timer.timeAsync('gather programs', () =>
-        Promise.all(
-          map(chunk(uniqueProgramIds, 500), (chunk) =>
-            getEm().find(
-              Program,
-              { uuid: { $in: map(chunk, 'id') } },
-              {
-                populate: [
-                  'tvShow',
-                  'season',
-                  'album',
-                  'artist',
-                  'externalIds',
-                ],
-              },
-            ),
-          ),
-        ),
-      ),
+    console.timeLog('req', 'before programs');
+    const directPrograms = await this.timer.timeAsync('direct', () =>
+      directDbAccess()
+        .selectFrom('channel_programs')
+        .where('channel_uuid', '=', channelId)
+        .innerJoin('program', 'channel_programs.program_uuid', 'program.uuid')
+        .selectAll('program')
+        .select((eb) => [
+          withTvShow(eb),
+          withTvSeason(eb),
+          withTrackAlbum(eb),
+          withTrackArtist(eb),
+        ])
+        .execute(),
+    );
+    console.timeLog('req', 'after programs');
+    console.timeLog('req', 'before eids');
+
+    const externalIds = await this.timer.timeAsync('eids', () =>
+      directDbAccess()
+        .selectFrom('channel_programs')
+        .where('channel_uuid', '=', channelId)
+        .innerJoin(
+          'program_external_id',
+          'channel_programs.program_uuid',
+          'program_external_id.program_uuid',
+        )
+        .selectAll('program_external_id')
+        .execute(),
+    );
+    console.timeLog('req', 'after eids');
+
+    const externalIdsByProgramId = groupBy(
+      externalIds,
+      (eid) => eid.program_uuid,
     );
 
-    const programsById = groupByUniq(programs, 'uuid');
+    console.timeLog('req', 'before group by');
+    const programsById = groupByUniq(directPrograms, 'uuid');
 
+    console.timeLog('req', 'after group by');
+
+    console.timeLog('req', 'before convert');
     const materializedPrograms = this.timer.timeSync('program convert', () => {
       const ret: Record<string, ContentProgram> = {};
       forEach(uniqBy(contentItems, 'id'), (item) => {
@@ -669,18 +727,29 @@ export class ChannelDB {
         }
 
         const converted =
-          this.#programConverter.partialEntityToContentProgramSync(program);
+          this.#programConverter.directEntityToContentProgramSync(
+            program,
+            externalIdsByProgramId[program.uuid] ?? [],
+          );
 
         ret[converted.id!] = converted;
       });
 
       return ret;
     });
+    console.timeLog('req', 'after convert');
 
+    console.timeLog('req', 'before build lineup');
     const { lineup: condensedLineup, offsets } = await this.timer.timeAsync(
       'build condensed lineup',
-      () => this.buildCondensedLineup(channel, programs, pagedLineup),
+      () =>
+        this.buildCondensedLineup(
+          channel,
+          new Set([...seq.collect(directPrograms, (p) => p.uuid)]),
+          pagedLineup,
+        ),
     );
+    console.timeLog('req', 'after build lineup');
 
     let apiOffsets: number[];
     if (lineup.startTimeOffsets) {
@@ -848,13 +917,11 @@ export class ChannelDB {
 
   private async buildCondensedLineup(
     channel: Loaded<Channel>,
-    dbPrograms: Loaded<Program>[],
+    dbProgramIds: Set<string>,
     lineup: LineupItem[],
   ): Promise<{ lineup: CondensedChannelProgram[]; offsets: number[] }> {
     let lastOffset = 0;
     const offsets: number[] = [];
-
-    const programById = groupByUniq(dbPrograms, 'uuid');
 
     // const gen = asyncPool(
     //   chunk(programIds, 100),
@@ -933,8 +1000,7 @@ export class ChannelDB {
             id: item.id,
           };
         } else {
-          const program = programById[item.id];
-          if (program) {
+          if (dbProgramIds.has(item.id)) {
             p = {
               persisted: true,
               type: 'content',

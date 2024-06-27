@@ -55,31 +55,41 @@ export const upsertProgramExternalIds_deprecated = async (
       isUndefined(id.externalSourceId),
   );
 
-  const singlesPromise = mapAsyncSeq(chunk(singles, 50), (singleIds) => {
-    return knex
-      .insert(singleIds.map((id) => id.toKnexInsertData()))
-      .into('program_external_id')
-      .onConflict(
-        knex.raw(
-          '(program_uuid, source_type) WHERE external_source_id IS NULL',
-        ),
-      )
-      .merge()
-      .returning('uuid');
-  });
+  const singlesPromise =
+    singles.length > 0
+      ? mapAsyncSeq(chunk(singles, 200), (singleIds) => {
+          return knex.transaction((tx) =>
+            tx
+              .insert(singleIds.map((id) => id.toKnexInsertData()))
+              .into('program_external_id')
+              .onConflict(
+                knex.raw(
+                  '(program_uuid, source_type) WHERE external_source_id IS NULL',
+                ),
+              )
+              .merge()
+              .returning('uuid'),
+          );
+        })
+      : Promise.resolve([[]]);
 
-  const multiplesPromise = mapAsyncSeq(chunk(multiples, 50), (multipleIds) => {
-    return knex
-      .insert(multipleIds.map((id) => id.toKnexInsertData()))
-      .into('program_external_id')
-      .onConflict(
-        knex.raw(
-          '(program_uuid, source_type, external_source_id) WHERE external_source_id IS NOT NULL',
-        ),
-      )
-      .merge()
-      .returning('uuid');
-  });
+  const multiplesPromise =
+    multiples.length > 0
+      ? mapAsyncSeq(chunk(multiples, 200), (multipleIds) => {
+          return knex.transaction((tx) =>
+            tx
+              .insert(multipleIds.map((id) => id.toKnexInsertData()))
+              .into('program_external_id')
+              .onConflict(
+                knex.raw(
+                  '(program_uuid, source_type, external_source_id) WHERE external_source_id IS NOT NULL',
+                ),
+              )
+              .merge()
+              .returning('uuid'),
+          );
+        })
+      : Promise.resolve([[]]);
 
   const [singleResult, multiResult] = await Promise.allSettled([
     singlesPromise,

@@ -9,13 +9,13 @@ import _, {
   isError,
   isFunction,
   isNil,
+  isNull,
   isPlainObject,
   isString,
   isUndefined,
   map,
   once,
   range,
-  reduce,
   zipWith,
 } from 'lodash-es';
 import fs from 'node:fs/promises';
@@ -45,27 +45,29 @@ export function mapToObj<T, U, O extends Record<string | number, U>>(
     .reduce((prev, curr) => ({ ...prev, ...curr }), {} as O);
 }
 
+// Last wins - could add an option, but generally this should
+// only be used when the array is known to be unique
 export function groupByUniq<
   T,
   K extends KeysOfType<T>,
   Key extends IsStringOrNumberValue<T, K>,
 >(data: T[], member: K): Record<Key, T> {
-  return reduce(
-    data,
-    (prev, t) => ({ ...prev, [t[member] as Key]: t }),
-    {} as Record<Key, T>,
-  );
+  const out: Record<Key, T> = {} as Record<Key, T>;
+  for (const t of data) {
+    out[t[member] as Key] = t;
+  }
+  return out;
 }
 
 export function groupByUniqFunc<T, Key extends string | number>(
   data: T[],
   func: (item: T) => Key,
 ): Record<Key, T> {
-  return reduce(
-    data,
-    (prev, t) => ({ ...prev, [func(t)]: t }),
-    {} as Record<Key, T>,
-  );
+  const out: Record<Key, T> = {} as Record<Key, T>;
+  for (const t of data) {
+    out[func(t)] = t;
+  }
+  return out;
 }
 
 export function groupByFunc<T, Key extends string | number | symbol, Value>(
@@ -73,11 +75,11 @@ export function groupByFunc<T, Key extends string | number | symbol, Value>(
   func: (val: T) => Key,
   mapper: (val: T) => Value = identity,
 ): Record<Key, Value> {
-  return reduce(
-    data,
-    (prev, t) => ({ ...prev, [func(t)]: mapper(t) }),
-    {} as Record<Key, Value>,
-  );
+  const out: Record<Key, Value> = {} as Record<Key, Value>;
+  for (const t of data) {
+    out[func(t)] = mapper(t);
+  }
+  return out;
 }
 
 export function groupByUniqAndMap<
@@ -90,14 +92,11 @@ export function groupByUniqAndMap<
   member: K | ((item: T) => K),
   mapper: (val: T) => Value,
 ): Record<Key, Value> {
-  return reduce(
-    data,
-    (prev, t) => ({
-      ...prev,
-      [t[isFunction(member) ? member(t) : member] as Key]: mapper(t),
-    }),
-    {} as Record<Key, Value>,
-  );
+  const out: Record<Key, Value> = {} as Record<Key, Value>;
+  for (const t of data) {
+    out[t[isFunction(member) ? member(t) : member] as Key] = mapper(t);
+  }
+  return out;
 }
 
 // This will fail if any mapping function fails
@@ -155,12 +154,12 @@ type mapAsyncSeq2Opts = {
 export async function mapReduceAsyncSeq<T, U, Res = U>(
   seq: T[] | null | undefined,
   fn: (item: T) => Promise<U>,
-  reduce: (res: Res, item: U) => Res,
+  reducer: (res: Res, item: U) => Res,
   empty?: Res,
   opts?: mapAsyncSeq2Opts,
 ): Promise<Res> {
   return (await mapAsyncSeq(seq, fn, opts)).reduce(
-    reduce,
+    reducer,
     empty ?? ([] as Res),
   );
 }
@@ -457,4 +456,11 @@ export function isSuccess<T>(x: Try<T>): x is T {
 
 export function isDefined<T>(x: T | undefined): x is T {
   return !isUndefined(x);
+}
+
+export function nullToUndefined<T>(x: T | null | undefined): T | undefined {
+  if (isNull(x)) {
+    return undefined;
+  }
+  return x;
 }

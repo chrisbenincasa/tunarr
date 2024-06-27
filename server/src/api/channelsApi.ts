@@ -241,11 +241,9 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      const channel = await req.serverCtx.channelDB.getChannelById(
-        req.params.id,
-      );
+      const exists = await req.serverCtx.channelDB.channelExists(req.params.id);
 
-      if (!channel) {
+      if (!exists) {
         return res.status(404).send({ error: 'Channel Not Found' });
       }
 
@@ -322,7 +320,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         return res.status(500).send();
       }
 
-      return res.status(200).send(newLineup);
+      return res.status(200).serializer(JSON.stringify).send(newLineup);
     },
   );
 

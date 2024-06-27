@@ -114,12 +114,14 @@ export async function upsertContentPrograms(
     'upsertProgramsDB',
     logger,
     () =>
-      em.upsertMany(Program, map(programsToPersist, 'program'), {
-        onConflictAction: 'merge',
-        onConflictFields: ['sourceType', 'externalSourceId', 'externalKey'],
-        onConflictExcludeFields: ['uuid'],
-        batchSize,
-      }),
+      em.transactional((em) =>
+        em.upsertMany(Program, map(programsToPersist, 'program'), {
+          onConflictAction: 'merge',
+          onConflictFields: ['sourceType', 'externalSourceId', 'externalKey'],
+          onConflictExcludeFields: ['uuid'],
+          batchSize,
+        }),
+      ),
   );
 
   // We're dealing specifically with Plex items right now. We want to treat
