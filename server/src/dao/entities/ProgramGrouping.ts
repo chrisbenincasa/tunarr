@@ -1,5 +1,4 @@
 import {
-  Cascade,
   Collection,
   Entity,
   ManyToOne,
@@ -57,7 +56,7 @@ export class ProgramGrouping extends BaseEntity {
   @OneToMany(() => Program, (p) => p.season)
   seasonEpisodes = new Collection<Program>(this);
 
-  @OneToMany(() => Program, (p) => p.tvShow, { cascade: [Cascade.PERSIST] })
+  @OneToMany(() => Program, (p) => p.tvShow)
   showEpisodes = new Collection<Program>(this);
 
   @OneToMany(() => Program, (p) => p.album)

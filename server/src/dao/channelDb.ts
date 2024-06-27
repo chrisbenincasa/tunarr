@@ -30,6 +30,8 @@ import ld, {
   isNil,
   isNull,
   isNumber,
+  isString,
+  isUndefined,
   map,
   nth,
   omitBy,
@@ -50,8 +52,10 @@ import { fileExists } from '../util/fsUtil.js';
 import {
   groupByFunc,
   groupByUniq,
+  isDefined,
   mapAsyncSeq,
   mapReduceAsyncSeq,
+  run,
 } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { Timer, timeNamedAsync } from '../util/perf.js';
@@ -62,6 +66,7 @@ import {
   Lineup,
   LineupItem,
   LineupSchema,
+  PendingProgram,
   isContentItem,
   isOfflineItem,
   isRedirectItem,
@@ -70,6 +75,7 @@ import { Channel, ChannelTranscodingSettings } from './entities/Channel.js';
 import { CustomShowContent } from './entities/CustomShowContent.js';
 import { Program } from './entities/Program.js';
 import { upsertContentPrograms } from './programHelpers.js';
+import { MutexMap } from '../util/mutexMap.js';
 
 dayjs.extend(duration);
 
@@ -158,8 +164,14 @@ export type LoadedChannelWithGroupRefs = Loaded<
   | 'programs.season'
 >;
 
+export type ChannelAndLineup = {
+  channel: Loaded<Channel>;
+  lineup: Lineup;
+};
+
 // Let's see if this works... in so we can have many ChannelDb objects flying around.
 const fileDbCache: Record<string | number, Low<Lineup>> = {};
+const fileDbLocks = new MutexMap();
 
 export class ChannelDB {
   private logger = LoggerFactory.child({ caller: import.meta });
@@ -202,8 +214,7 @@ export class ChannelDB {
       );
     }
 
-    const channel = new Channel();
-    wrap(channel).assign(createRequestToChannel(createReq), { em });
+    const channel = em.create(Channel, createRequestToChannel(createReq));
     em.persist(channel);
     await this.createLineup(channel.uuid);
     await em.flush();
@@ -221,6 +232,19 @@ export class ChannelDB {
     });
     await em.flush();
     return loadedChannel;
+  }
+
+  async updateChannelStartTime(id: string, newTime: number) {
+    const ts = dayjs(newTime);
+    return getEm().nativeUpdate(
+      Channel,
+      {
+        uuid: id,
+      },
+      {
+        startTime: ts.unix() * 1000,
+      },
+    );
   }
 
   async deleteChannel(
@@ -439,6 +463,66 @@ export class ChannelDB {
     return null;
   }
 
+  async setChannelPrograms(
+    channel: Loaded<Channel>,
+    lineup: readonly LineupItem[],
+  ): Promise<Loaded<Channel> | null>;
+  async setChannelPrograms(
+    channel: string | Loaded<Channel>,
+    lineup: readonly LineupItem[],
+    startTime?: number,
+  ): Promise<Loaded<Channel> | null> {
+    const loadedChannel = await run(async () => {
+      if (isString(channel)) {
+        return await this.getChannelById(channel);
+      } else {
+        return channel;
+      }
+    });
+
+    if (isNull(loadedChannel)) {
+      return null;
+    }
+
+    return await getEm().transactional(async (em) => {
+      if (!isUndefined(startTime)) {
+        loadedChannel.startTime = startTime;
+      }
+      loadedChannel.duration = sumBy(lineup, typedProperty('durationMs'));
+
+      const allIds = ld
+        .chain(lineup)
+        .filter(isContentItem)
+        .map((p) => p.id)
+        .uniq()
+        .value();
+      loadedChannel.programs.removeAll();
+      await em.persistAndFlush(loadedChannel);
+      const refs = allIds.map((id) => em.getReference(Program, id));
+      loadedChannel.programs.set(refs);
+      await em.persistAndFlush(loadedChannel);
+      return loadedChannel;
+    });
+  }
+
+  async addPendingPrograms(
+    channelId: string,
+    pendingPrograms: PendingProgram[],
+  ) {
+    if (pendingPrograms.length === 0) {
+      return;
+    }
+
+    const db = await this.getFileDb(channelId);
+    return await db.update((data) => {
+      if (isUndefined(data.pendingPrograms)) {
+        data.pendingPrograms = [...pendingPrograms];
+      } else {
+        data.pendingPrograms.push(...pendingPrograms);
+      }
+    });
+  }
+
   async loadAllLineups() {
     return mapReduceAsyncSeq(
       await this.getAllChannelsAndPrograms(),
@@ -459,13 +543,13 @@ export class ChannelDB {
     );
   }
 
-  async loadAllLineupConfigs() {
+  async loadAllLineupConfigs(forceRead: boolean = false) {
     return mapReduceAsyncSeq(
       await this.getAllChannels(),
       async (channel) => {
         return {
           channel,
-          lineup: await this.loadLineup(channel.uuid),
+          lineup: await this.loadLineup(channel.uuid, forceRead),
         };
       },
       (prev, { channel, lineup }) => ({
@@ -488,8 +572,8 @@ export class ChannelDB {
     };
   }
 
-  async loadLineup(channelId: string) {
-    const db = await this.getFileDb(channelId);
+  async loadLineup(channelId: string, forceRead: boolean = false) {
+    const db = await this.getFileDb(channelId, forceRead);
     return db.data;
   }
 
@@ -625,20 +709,26 @@ export class ChannelDB {
     };
   }
 
-  async saveLineup(channelId: string, lineup: Lineup) {
+  async saveLineup(channelId: string, newLineup: Lineup) {
     const db = await this.getFileDb(channelId);
-    if (lineup.items.length === 0) {
-      lineup.items.push({
+    if (newLineup.items.length === 0) {
+      newLineup.items.push({
         type: 'offline',
         durationMs: 1000 * 60 * 60 * 24 * 30,
       });
     }
-    lineup.startTimeOffsets = reduce(
-      lineup.items,
+    newLineup.startTimeOffsets = reduce(
+      newLineup.items,
       (acc, item, index) => [...acc, acc[index] + item.durationMs],
       [0],
     );
-    db.data = lineup;
+    db.data = {
+      ...db.data,
+      items: newLineup.items,
+      startTimeOffsets: newLineup.startTimeOffsets,
+      schedule: newLineup.schedule,
+      pendingPrograms: newLineup.pendingPrograms,
+    };
     return await db.write();
   }
 
@@ -667,22 +757,32 @@ export class ChannelDB {
     await db.write();
   }
 
-  private async getFileDb(channelId: string) {
-    if (!fileDbCache[channelId]) {
-      fileDbCache[channelId] = new Low<Lineup>(
-        new SchemaBackedDbAdapter(
-          LineupSchema,
-          join(
-            globalOptions().databaseDirectory,
-            `channel-lineups/${channelId}.json`,
-          ),
-        ),
-        { items: [], startTimeOffsets: [] },
-      );
-      await fileDbCache[channelId].read();
-    }
+  private async getFileDb(channelId: string, forceRead: boolean = false) {
+    return await fileDbLocks.getOrCreateLock(channelId).then((lock) =>
+      lock.runExclusive(async () => {
+        const existing = fileDbCache[channelId];
+        if (isDefined(existing)) {
+          if (forceRead) {
+            await existing.read();
+          }
+          return existing;
+        }
 
-    return fileDbCache[channelId];
+        const db = new Low<Lineup>(
+          new SchemaBackedDbAdapter(
+            LineupSchema,
+            join(
+              globalOptions().databaseDirectory,
+              `channel-lineups/${channelId}.json`,
+            ),
+          ),
+          { items: [], startTimeOffsets: [] },
+        );
+        await db.read();
+        fileDbCache[channelId] = db;
+        return db;
+      }),
+    );
   }
 
   private async restoreLineupFile(channelId: string) {

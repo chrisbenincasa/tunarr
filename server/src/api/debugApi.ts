@@ -27,8 +27,9 @@ import { SavePlexProgramExternalIdsTask } from '../tasks/SavePlexProgramExternal
 import { PlexTaskQueue } from '../tasks/TaskQueue.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { Maybe } from '../types/util.js';
-import { mapAsyncSeq } from '../util/index.js';
+import { ifDefined, mapAsyncSeq } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
+import { LineupCreator } from '../services/dynamic_channels/LineupCreator.js';
 
 const ChannelQuerySchema = {
   querystring: z.object({
@@ -376,4 +377,43 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
       return res.send();
     },
   );
+
+  fastify.get(
+    '/debug/helpers/promote_lineup',
+    {
+      schema: {
+        querystring: z.object({
+          channelId: z.string().uuid(),
+        }),
+      },
+    },
+    async (req, res) => {
+      const result = await new LineupCreator().resolveLineup(
+        req.query.channelId,
+      );
+      ifDefined(result, (r) => {
+        console.log(r.lineup.items.length);
+      });
+      return res.send(result);
+    },
+  );
+
+  fastify.get('/debug/channels/reload_all_lineups', async (req, res) => {
+    await req.serverCtx.channelDB.loadAllLineupConfigs(true);
+    return res.send();
+  });
+
+  fastify.get('/debug/db/test_direct_access', async (_req, res) => {
+    // const result = await directDbAccess()
+    //   .selectFrom('channel_programs')
+    //   .where('channel_uuid', '=', '0ff3ec64-1022-4afd-9178-3f27f1121d47')
+    //   .innerJoin('program', 'channel_programs.program_uuid', 'program.uuid')
+    //   .leftJoin('program_grouping', join => {
+    //     join.onRef('')
+    //   })
+    //   .select(['program'])
+    //   .execute();
+    // return res.send(result);
+    return res.send();
+  });
 };

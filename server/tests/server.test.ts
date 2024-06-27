@@ -1,11 +1,10 @@
-import fc from 'fast-check';
+import { ChannelSchema } from '@tunarr/types/schemas';
 import { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, expect, test } from 'vitest';
-import { initTestApp } from './testServer.js';
+import { z } from 'zod';
 import { initOrm } from '../src/dao/dataSource.js';
 import { Channel } from '../src/dao/entities/Channel.js';
-import { z } from 'zod';
-import { ChannelSchema } from '@tunarr/types/schemas';
+import { initTestApp } from './testServer.js';
 
 let app: FastifyInstance;
 

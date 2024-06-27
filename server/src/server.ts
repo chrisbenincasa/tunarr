@@ -32,6 +32,7 @@ import { UpdateXmlTvTask } from './tasks/UpdateXmlTvTask.js';
 import { runFixers } from './tasks/fixers/index.js';
 import { filename, isNonEmptyString, run } from './util/index.js';
 import { LoggerFactory } from './util/logging/LoggerFactory.js';
+import { initDirectDbAccess } from './dao/direct/directDbAccess.js';
 
 const currentDirectory = dirname(filename(import.meta.url));
 
@@ -90,6 +91,7 @@ export async function initServer(opts: ServerOptions) {
   const logger = LoggerFactory.child({ caller: import.meta });
 
   const orm = await initOrm();
+  initDirectDbAccess(opts);
 
   const ctx = serverContext();
 

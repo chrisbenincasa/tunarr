@@ -7,18 +7,23 @@ import {
   isPlexDirectory,
   isTerminalItem,
 } from '@tunarr/types/plex';
-import { isNil, uniqBy } from 'lodash-es';
+import { flatten, isNil, uniqBy } from 'lodash-es';
 import map from 'lodash-es/map';
 import { ProgramDB } from '../dao/programDB';
 import { Plex } from '../external/plex';
 import { typedProperty } from '../types/path';
-import { flatMapAsyncSeq } from '../util/index.js';
+import { flatMapAsyncSeq, wait } from '../util/index.js';
+import { Logger, LoggerFactory } from '../util/logging/LoggerFactory';
+import { Timer } from '../util/perf';
+import { asyncPool, unfurlPool } from '../util/asyncPool';
 
-type EnrichedPlexTerminalMedia = PlexTerminalMedia & {
+export type EnrichedPlexTerminalMedia = PlexTerminalMedia & {
   id?: string;
 };
 
 export class PlexItemEnumerator {
+  #logger: Logger = LoggerFactory.child({ className: PlexItemEnumerator.name });
+  #timer = new Timer(this.#logger);
   #plex: Plex;
   #programDB: ProgramDB;
 
@@ -28,6 +33,10 @@ export class PlexItemEnumerator {
   }
 
   async enumerateItems(initialItems: (PlexMedia | PlexLibrarySection)[]) {
+    this.#logger.debug(
+      'enumerating items: %O',
+      map(initialItems, (item) => item.key),
+    );
     const allItems = await flatMapAsyncSeq(initialItems, (item) =>
       this.enumerateItem(item),
     );
@@ -40,6 +49,7 @@ export class PlexItemEnumerator {
     const loopInner = async (
       item: PlexMedia | PlexLibrarySection,
     ): Promise<PlexTerminalMedia[]> => {
+      await wait(50);
       if (isTerminalItem(item)) {
         return [item];
       } else if (isPlexDirectory(item)) {
@@ -54,16 +64,28 @@ export class PlexItemEnumerator {
           return [];
         }
 
-        const results: EnrichedPlexTerminalMedia[] = [];
-        for (const listing of plexResult.Metadata) {
-          results.push(...(await loopInner(listing)));
-        }
-
-        return results;
+        // TODO: we could use a single pqueue here
+        return flatten(
+          await unfurlPool(
+            asyncPool<
+              PlexMedia | PlexLibrarySection,
+              EnrichedPlexTerminalMedia[]
+            >(plexResult.Metadata, (listing) => loopInner(listing), {
+              concurrency: 3,
+            }),
+          ),
+        );
       }
     };
 
-    const res = await loopInner(initialItem);
+    // q.add(async () => {
+    //   return await
+    // })
+
+    const res = await this.#timer.timeAsync('loop ' + initialItem.key, () =>
+      loopInner(initialItem),
+    );
+
     const externalIds: [string, string, string][] = res.map(
       (m) => ['plex', this.#plex.serverName, m.key] as const,
     );
@@ -71,14 +93,15 @@ export class PlexItemEnumerator {
     // This is best effort - if the user saves these IDs later, the upsert
     // logic should figure out what is new/existing
     try {
-      const existingIdsByExternalId = await this.#programDB.lookupByExternalIds(
-        new Set(externalIds),
+      const existingIdsByExternalId = await this.#timer.timeAsync(
+        'programIdsByExternalIds',
+        () => this.#programDB.programIdsByExternalIds(new Set(externalIds)),
       );
       return map(res, (media) => ({
         ...media,
         id: existingIdsByExternalId[
           createExternalId('plex', this.#plex.serverName, media.key)
-        ]?.id,
+        ],
       }));
     } catch (e) {
       console.error('Unable to retrieve IDs in batch', e);

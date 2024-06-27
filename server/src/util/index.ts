@@ -2,6 +2,7 @@ import _, {
   chunk,
   compact,
   concat,
+  flatMap,
   identity,
   isArray,
   isEmpty,
@@ -21,6 +22,7 @@ import fs from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { format } from 'node:util';
 import { isPromise } from 'node:util/types';
+import { Func } from '../types/func';
 import { Try } from '../types/util';
 
 export type IsStringOrNumberValue<T, K extends keyof T> = T[K] extends
@@ -144,33 +146,6 @@ export function groupByAndMapAsync<
   );
 }
 
-export async function mapAsyncSeq_old<T, U>(
-  seq: T[] | null | undefined,
-  ms: number | undefined,
-  itemFn: (item: T) => Promise<U>,
-): Promise<U[]> {
-  if (isNil(seq)) {
-    return [];
-  }
-
-  const all = await seq.reduce(
-    async (prev, item) => {
-      const last = await prev;
-
-      const result = await itemFn(item);
-
-      if (ms) {
-        await wait(ms);
-      }
-
-      return [...last, result];
-    },
-    Promise.resolve([] as U[]),
-  );
-
-  return Promise.all(all);
-}
-
 type mapAsyncSeq2Opts = {
   ms?: number;
   parallelism?: number;
@@ -259,6 +234,19 @@ export function firstDefined(obj: object, ...args: string[]): string {
   }
 
   return 'missing';
+}
+
+type NativeFuncOrApply<In, Out> = ((input: In) => Out) | Func<In, Out>;
+
+export async function asyncFlow<T>(
+  ops: NativeFuncOrApply<T, Promise<T>>[],
+  initial: T,
+): Promise<T> {
+  let res: T = initial;
+  for (const op of ops) {
+    res = await (isFunction(op) ? op(res) : op.apply(res));
+  }
+  return res;
 }
 
 export function time<T>(
@@ -442,8 +430,25 @@ export const zipWithIndex = <T>(
   return zipWith(seq, range(start, seq.length), (s, i) => [s, i]);
 };
 
+export function scale(
+  coll: readonly number[] | null | undefined,
+  factor: number,
+): number[] {
+  return map(coll, (c) => c * factor);
+}
+
 export function run<T>(f: () => T): T {
   return f();
+}
+
+// If makeLast == true, value will be inserted on a one-element array
+// If makeLast == false, value will only be inserted in between 2 array values
+export function intersperse<T>(
+  arr: T[],
+  v: T[],
+  makeLast: boolean = false,
+): T[] {
+  return flatMap(arr, (x, i) => (i === 0 && !makeLast ? [x] : [x, ...v]));
 }
 
 export function isSuccess<T>(x: Try<T>): x is T {

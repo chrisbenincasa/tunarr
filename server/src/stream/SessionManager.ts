@@ -6,17 +6,14 @@ import {
   StreamSession,
 } from './Session.js';
 import { isNil, isNull } from 'lodash-es';
-import { Mutex } from 'async-mutex';
 import { getEm } from '../dao/dataSource.js';
 import { ConcatSession } from './ConcatSession.js';
 import { HlsSession, HlsSessionOptions } from './HlsSession.js';
 import { Maybe, Nullable } from '../types/util.js';
+import { MutexMap } from '../util/mutexMap.js';
 
 class SessionManager {
-  // A little janky, but we have the global lock which protects the locks map
-  // Then the locks map protects the get/create of each session per channel.
-  #mu = new Mutex();
-  #locks: Record<string, Mutex> = {};
+  #sessionLocker = new MutexMap();
   #sessions: Record<string, StreamSession> = {};
 
   private constructor() {}
@@ -42,7 +39,7 @@ class SessionManager {
   }
 
   async endSession(id: string, sessionType: SessionType) {
-    const lock = await this.getOrCreateLock(id);
+    const lock = await this.#sessionLocker.getOrCreateLock(id);
     return await lock.runExclusive(() => {
       const session = this.getSession(id, sessionType);
       if (isNil(session)) {
@@ -92,7 +89,7 @@ class SessionManager {
     sessionType: SessionType,
     sessionFactory: (channel: Channel) => Session,
   ): Promise<Nullable<Session>> {
-    const lock = await this.getOrCreateLock(channelId);
+    const lock = await this.#sessionLocker.getOrCreateLock(channelId);
     const session = await lock.runExclusive(async () => {
       const channel = await getEm().findOne(Channel, { uuid: channelId });
       if (isNil(channel)) {
@@ -131,16 +128,6 @@ class SessionManager {
     session: StreamSession,
   ) {
     this.#sessions[sessionCacheKey(id, sessionType)] = session;
-  }
-
-  private async getOrCreateLock(id: string) {
-    return await this.#mu.runExclusive(() => {
-      let lock = this.#locks[id];
-      if (!lock) {
-        this.#locks[id] = lock = new Mutex();
-      }
-      return lock;
-    });
   }
 }
 

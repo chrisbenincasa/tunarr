@@ -14,6 +14,7 @@ import { fileExists } from '../util/fsUtil.js';
 import { mapAsyncSeq } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { Task } from './Task.js';
+import { LineupCreator } from '../services/dynamic_channels/LineupCreator.js';
 
 export class UpdateXmlTvTask extends Task<void> {
   public static ID = 'update-xmltv' as Tag<'update-xmltv', void>;
@@ -71,6 +72,8 @@ export class UpdateXmlTvTask extends Task<void> {
         // Re-read
         xmltvSettings = this.#settingsDB.xmlTvSettings();
       }
+
+      await new LineupCreator().promoteAllPendingLineups();
 
       await this.#guideService.refreshGuide(
         dayjs.duration({ hours: xmltvSettings.programmingHours }),

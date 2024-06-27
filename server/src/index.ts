@@ -28,6 +28,14 @@ import {
 import { initOrm, withDb } from './dao/dataSource.js';
 import { FixersByName } from './tasks/fixers/index.js';
 import { isNonEmptyString } from './util/index.js';
+import dayjs from 'dayjs';
+import duration from 'dayjs/plugin/duration.js';
+import { dayjsMod } from '@tunarr/shared/util';
+
+// Extend this here once so we don't have to worry about
+// it elsewhere in the app.
+dayjs.extend(duration);
+dayjs.extend(dayjsMod);
 
 const maybeEnvPort = () => {
   const port = process.env[SERVER_PORT_ENV_VAR];

@@ -1,6 +1,7 @@
 import {
   DynamicContentConfigSchema,
   LineupScheduleSchema,
+  SchedulingOperationSchema,
 } from '@tunarr/types/api';
 import { z } from 'zod';
 
@@ -57,6 +58,13 @@ export const isContentItem = isItemOfType<ContentItem>('content');
 export const isOfflineItem = isItemOfType<OfflineItem>('offline');
 export const isRedirectItem = isItemOfType<RedirectItem>('redirect');
 
+const PendingProgramSchema = ContentLineupItemSchema.extend({
+  updaterId: z.string(),
+  addedAt: z.number(),
+});
+
+export type PendingProgram = z.infer<typeof PendingProgramSchema>;
+
 export const LineupSchema = z.object({
   // The current lineup of a single cycle of this channel
   items: LineupItemSchema.array(),
@@ -76,7 +84,19 @@ export const LineupSchema = z.object({
   // a "start" time timestamp.
   startTimeOffsets: z.array(z.number()).optional(),
 
+  //
   dynamicContentConfig: DynamicContentConfigSchema.optional(),
+
+  // Pending items are items that were found by dynamic content
+  // updaters. They are a listing of the 'next' set of programs
+  // that will be part of a channel once the channel's schedule is
+  // updated.
+  pendingPrograms: z.array(PendingProgramSchema).optional(),
+
+  schedulingOperations: z
+    .array(SchedulingOperationSchema)
+    .nonempty()
+    .optional(),
 });
 
 export type Lineup = z.infer<typeof LineupSchema>;
