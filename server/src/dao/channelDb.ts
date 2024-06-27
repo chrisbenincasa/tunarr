@@ -191,7 +191,6 @@ export class ChannelDB {
       .where('channel.uuid', '=', channelId)
       .select('uuid')
       .executeTakeFirst();
-    console.timeLog('req');
     return !isNil(channel);
   }
 
@@ -648,11 +647,9 @@ export class ChannelDB {
     offset: number = 0,
     limit: number = -1,
   ): Promise<CondensedChannelProgramming | null> {
-    console.timeLog('req', 'before loadLineup');
     const lineup = await timeNamedAsync('loadLineup', this.logger, () =>
       this.loadLineup(channelId),
     );
-    console.timeLog('req', 'after loadLineup');
 
     const len = lineup.items.length;
     const cleanOffset = offset < 0 ? 0 : offset;
@@ -663,11 +660,9 @@ export class ChannelDB {
       .take(cleanLimit)
       .value();
 
-    console.timeLog('req', 'before channel');
     const channel = await timeNamedAsync('select channel', this.logger, () =>
       getEm().repo(Channel).findOne({ uuid: channelId }),
     );
-    console.timeLog('req', 'after channel');
 
     if (isNil(channel)) {
       return null;
@@ -675,7 +670,6 @@ export class ChannelDB {
 
     const contentItems = filter(pagedLineup, isContentItem);
 
-    console.timeLog('req', 'before programs');
     const directPrograms = await this.timer.timeAsync('direct', () =>
       directDbAccess()
         .selectFrom('channel_programs')
@@ -690,8 +684,6 @@ export class ChannelDB {
         ])
         .execute(),
     );
-    console.timeLog('req', 'after programs');
-    console.timeLog('req', 'before eids');
 
     const externalIds = await this.timer.timeAsync('eids', () =>
       directDbAccess()
@@ -705,19 +697,14 @@ export class ChannelDB {
         .selectAll('program_external_id')
         .execute(),
     );
-    console.timeLog('req', 'after eids');
 
     const externalIdsByProgramId = groupBy(
       externalIds,
       (eid) => eid.program_uuid,
     );
 
-    console.timeLog('req', 'before group by');
     const programsById = groupByUniq(directPrograms, 'uuid');
 
-    console.timeLog('req', 'after group by');
-
-    console.timeLog('req', 'before convert');
     const materializedPrograms = this.timer.timeSync('program convert', () => {
       const ret: Record<string, ContentProgram> = {};
       forEach(uniqBy(contentItems, 'id'), (item) => {
@@ -737,9 +724,7 @@ export class ChannelDB {
 
       return ret;
     });
-    console.timeLog('req', 'after convert');
 
-    console.timeLog('req', 'before build lineup');
     const { lineup: condensedLineup, offsets } = await this.timer.timeAsync(
       'build condensed lineup',
       () =>
@@ -749,7 +734,6 @@ export class ChannelDB {
           pagedLineup,
         ),
     );
-    console.timeLog('req', 'after build lineup');
 
     let apiOffsets: number[];
     if (lineup.startTimeOffsets) {
