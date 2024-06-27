@@ -34,6 +34,12 @@ export abstract class Task<Data = unknown> {
 
   async run(): Promise<Maybe<Data>> {
     this.running_ = true;
+    this.logger[this._logLevel](
+      'Running task %s',
+      isNonEmptyString(this.constructor.name)
+        ? this.constructor.name
+        : this.taskName,
+    );
     const start = performance.now();
     try {
       this.result = await withDb(() => this.runInternal());

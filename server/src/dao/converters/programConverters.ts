@@ -17,7 +17,11 @@ import {
   uniqWith,
 } from 'lodash-es';
 import { isPromise } from 'util/types';
-import { isDefined } from '../../util/index.js';
+import {
+  isDefined,
+  isNonEmptyString,
+  nullToUndefined,
+} from '../../util/index.js';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
 import { getEm } from '../dataSource.js';
 import {
@@ -29,7 +33,14 @@ import {
 } from '../derived_types/Lineup.js';
 import { Channel } from '../entities/Channel.js';
 import { Program, ProgramType } from '../entities/Program.js';
+import { Program as RawProgram } from '../direct/derivedTypes.js';
+import { ProgramExternalId as RawProgramExternalId } from '../direct/types.gen.js';
 import { ProgramExternalId } from '../entities/ProgramExternalId.js';
+import {
+  isValidMultiExternalIdType,
+  isValidSingleExternalIdType,
+} from '@tunarr/types/schemas';
+import { seq } from '@tunarr/shared/util';
 
 type ContentProgramConversionOptions = {
   skipPopulate: boolean | Partial<Record<'externalIds' | 'grouping', boolean>>;
@@ -268,6 +279,51 @@ export class ProgramConverter {
     };
   }
 
+  directEntityToContentProgramSync(
+    program: RawProgram,
+    externalIds: RawProgramExternalId[],
+  ): ContentProgram {
+    let extraFields: Partial<ContentProgram> = {};
+    if (program.type === ProgramType.Episode.toString()) {
+      extraFields = {
+        ...extraFields,
+        icon: nullToUndefined(program.episode_icon ?? program.show_icon),
+        showId: nullToUndefined(program.tv_show?.uuid ?? program.tv_show_uuid),
+        seasonId: nullToUndefined(
+          program.tv_season?.uuid ?? program.season_uuid,
+        ),
+        seasonNumber: nullToUndefined(program.tv_season?.index),
+        episodeNumber: nullToUndefined(program.episode),
+        episodeTitle: program.title,
+        title: nullToUndefined(program.tv_show?.title ?? program.show_title),
+      };
+    } else if (program.type === ProgramType.Track.toString()) {
+      // extraFields = {
+      //   albumName: program.album?.$.title,
+      //   artistName: program.artist?.$.title,
+      //   albumId: program.album?.uuid,
+      //   artistId: program.artist?.uuid,
+      // };
+    }
+
+    return {
+      persisted: true, // Explicit since we're dealing with db loaded entities
+      uniqueId: program.uuid,
+      summary: nullToUndefined(program.summary),
+      date: nullToUndefined(program.original_air_date),
+      rating: nullToUndefined(program.rating),
+      icon: nullToUndefined(program.icon),
+      title: program.title,
+      duration: program.duration,
+      type: 'content',
+      id: program.uuid,
+      // TODO: Fix this type!!!
+      subtype: program.type as 'movie' | 'episode' | 'track',
+      externalIds: seq.collect(externalIds, (eid) => this.toExternalId(eid)),
+      ...extraFields,
+    };
+  }
+
   offlineLineupItemToProgram(
     channel: Loaded<Channel>,
     p: OfflineItem,
@@ -311,5 +367,30 @@ export class ProgramConverter {
       channelNumber: channel.number,
       duration: item.durationMs,
     };
+  }
+
+  private toExternalId(rawExternalId: RawProgramExternalId) {
+    if (
+      isNonEmptyString(rawExternalId.external_source_id) &&
+      isValidMultiExternalIdType(rawExternalId.source_type)
+    ) {
+      return {
+        type: 'multi' as const,
+        source: rawExternalId.source_type,
+        sourceId: rawExternalId.external_source_id,
+        id: rawExternalId.external_key,
+      };
+    } else if (
+      isValidSingleExternalIdType(rawExternalId.source_type) &&
+      !isNonEmptyString(rawExternalId.external_source_id)
+    ) {
+      return {
+        type: 'single' as const,
+        source: rawExternalId.source_type,
+        id: rawExternalId.external_key,
+      };
+    }
+
+    return;
   }
 }

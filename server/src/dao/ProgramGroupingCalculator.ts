@@ -191,12 +191,14 @@ export class ProgramGroupingCalculator {
       ...newOrUpdatedParents,
     ];
 
-    await em.upsertMany(ProgramGrouping, entities, {
-      batchSize: 50,
-      onConflictFields: ['uuid'],
-      onConflictAction: 'merge',
-      onConflictExcludeFields: ['uuid'],
-    });
+    await em.transactional((em) =>
+      em.upsertMany(ProgramGrouping, entities, {
+        batchSize: 50,
+        onConflictFields: ['uuid'],
+        onConflictAction: 'merge',
+        onConflictExcludeFields: ['uuid'],
+      }),
+    );
 
     // Create the relations...
     forEach(programs, (program) => {
@@ -219,7 +221,22 @@ export class ProgramGroupingCalculator {
           }
           break;
         }
-        // case ProgramType.Track:
+        case ProgramType.Track: {
+          if (newOrUpdatedGrandparent) {
+            program.artist = ref(newOrUpdatedGrandparent);
+          }
+          const parentKey = parentKeyByProgramId[program.uuid];
+          if (parentKey) {
+            const grouping =
+              parentGroupingsByRef[
+                createExternalId('plex', plexServerName, parentKey)
+              ];
+            if (grouping) {
+              program.album = ref(em.getReference(ProgramGrouping, grouping));
+            }
+          }
+          break;
+        }
         default:
           break;
       }
