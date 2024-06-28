@@ -233,6 +233,7 @@ export class ChannelDB {
       )
       .select((eb) => withPrograms(eb, { joins: { customShows: true } }))
       .groupBy('channel.uuid')
+      .orderBy('channel.number asc')
       .executeTakeFirst();
     // return getEm()
     //   .repo(Channel)
@@ -363,6 +364,7 @@ export class ChannelDB {
         }),
       ])
       .groupBy('channel.uuid')
+      .orderBy('channel.number asc')
       .execute();
 
     // return getEm()
