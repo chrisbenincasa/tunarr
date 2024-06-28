@@ -6,54 +6,54 @@ import { DB } from './types.gen';
 export function withTvShow(eb: ExpressionBuilder<DB, 'program'>) {
   return jsonObjectFrom(
     eb
-      .selectFrom('program_grouping as pg')
+      .selectFrom('programGrouping as pg')
       .select(['pg.uuid', 'pg.title', 'pg.year'])
-      .whereRef('pg.uuid', '=', 'program.tv_show_uuid')
+      .whereRef('pg.uuid', '=', 'program.tvShowUuid')
       .where('program.type', '=', ProgramType.Episode)
       .orderBy('uuid'),
-  ).as('tv_show');
+  ).as('tvShow');
 }
 
 export function withTvSeason(eb: ExpressionBuilder<DB, 'program'>) {
   return jsonObjectFrom(
     eb
-      .selectFrom('program_grouping as pg')
+      .selectFrom('programGrouping as pg')
       .select(['pg.uuid', 'pg.title', 'pg.year'])
-      .whereRef('pg.uuid', '=', 'program.season_uuid')
+      .whereRef('pg.uuid', '=', 'program.seasonUuid')
       .where('program.type', '=', ProgramType.Episode)
       .orderBy('uuid'),
-  ).as('tv_season');
+  ).as('tvSeason');
 }
 
 export function withTrackArtist(eb: ExpressionBuilder<DB, 'program'>) {
   return jsonObjectFrom(
     eb
-      .selectFrom('program_grouping as pg')
+      .selectFrom('programGrouping as pg')
       .select(['pg.uuid', 'pg.title', 'pg.year'])
-      .whereRef('pg.uuid', '=', 'program.artist_uuid')
+      .whereRef('pg.uuid', '=', 'program.artistUuid')
       .where('program.type', '=', ProgramType.Track)
       .orderBy('uuid'),
-  ).as('track_artist');
+  ).as('trackArtist');
 }
 
 export function withTrackAlbum(eb: ExpressionBuilder<DB, 'program'>) {
   return jsonObjectFrom(
     eb
-      .selectFrom('program_grouping as pg')
+      .selectFrom('programGrouping as pg')
       .select(['pg.uuid', 'pg.title', 'pg.year'])
-      .whereRef('pg.uuid', '=', 'program.album_uuid')
+      .whereRef('pg.uuid', '=', 'program.albumUuid')
       .where('program.type', '=', ProgramType.Track)
       .orderBy('uuid'),
-  ).as('track_album');
+  ).as('trackAlbum');
 }
 
 export function withProgramExternalIds(eb: ExpressionBuilder<DB, 'program'>) {
   return jsonArrayFrom(
     eb
-      .selectFrom('program_external_id as eid')
-      .select(['eid.source_type', 'eid.external_source_id', 'eid.external_key'])
-      .whereRef('eid.program_uuid', '=', 'program.uuid'),
-  ).as('external_ids');
+      .selectFrom('programExternalId as eid')
+      .select(['eid.sourceType', 'eid.externalSourceId', 'eid.externalKey'])
+      .whereRef('eid.programUuid', '=', 'program.uuid'),
+  ).as('externalIds');
 }
 
 type ProgramJoins = {
@@ -71,42 +71,42 @@ const defaultProgramJoins: ProgramJoins = {
 };
 
 export function withPrograms(
-  eb: ExpressionBuilder<DB, 'channel_programs'>,
+  eb: ExpressionBuilder<DB, 'channelPrograms'>,
   programJoins: ProgramJoins = defaultProgramJoins,
 ) {
   return jsonArrayFrom(
     eb
       .selectFrom('program')
       .select([
-        'program.album_name',
-        'program.album_uuid',
-        'program.artist_name',
-        'program.artist_uuid',
-        'program.created_at',
+        'program.albumName',
+        'program.albumUuid',
+        'program.artistName',
+        'program.artistUuid',
+        'program.createdAt',
         'program.duration',
         'program.episode',
-        'program.episode_icon',
-        'program.external_key',
-        'program.external_source_id',
-        'program.file_path',
-        'program.grandparent_external_key',
+        'program.episodeIcon',
+        'program.externalKey',
+        'program.externalSourceId',
+        'program.filePath',
+        'program.grandparentExternalKey',
         'program.icon',
-        'program.original_air_date',
-        'program.parent_external_key',
-        'program.plex_file_path',
-        'program.plex_rating_key',
+        'program.originalAirDate',
+        'program.parentExternalKey',
+        'program.plexFilePath',
+        'program.plexRatingKey',
         'program.rating',
-        'program.season_icon',
-        'program.season_number',
-        'program.season_uuid',
-        'program.show_icon',
-        'program.show_title',
-        'program.source_type',
+        'program.seasonIcon',
+        'program.seasonNumber',
+        'program.seasonUuid',
+        'program.showIcon',
+        'program.showTitle',
+        'program.sourceType',
         'program.summary',
         'program.title',
-        'program.tv_show_uuid',
+        'program.tvShowUuid',
         'program.type',
-        'program.updated_at',
+        'program.updatedAt',
         'program.uuid',
         'program.year',
       ])
@@ -114,6 +114,6 @@ export function withPrograms(
       .$if(programJoins.trackArtist, (qb) => qb.select(withTrackArtist))
       .$if(programJoins.tvSeason, (qb) => qb.select(withTvSeason))
       .$if(programJoins.tvSeason, (qb) => qb.select(withTvShow))
-      .whereRef('program.uuid', '=', 'channel_programs.program_uuid'),
+      .whereRef('program.uuid', '=', 'channelPrograms.programUuid'),
   ).as('programs');
 }

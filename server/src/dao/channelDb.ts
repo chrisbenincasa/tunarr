@@ -78,11 +78,13 @@ import { MutexMap } from '../util/mutexMap.js';
 import { directDbAccess } from './direct/directDbAccess.js';
 import { seq } from '@tunarr/shared/util';
 import {
+  withPrograms,
   withTrackAlbum,
   withTrackArtist,
   withTvSeason,
   withTvShow,
 } from './direct/programQueryHelpers.js';
+import { Channel as RawChannel } from '../dao/direct/derivedTypes.js';
 
 dayjs.extend(duration);
 
@@ -315,37 +317,37 @@ export class ChannelDB {
     return getEm().repo(Channel).findAll({ orderBy });
   }
 
-  async getAllChannelsAndPrograms(): Promise<LoadedChannelWithGroupRefs[]> {
+  async getAllChannelsAndPrograms(): Promise<RawChannel[]> {
     // TODO: Replace this slow query...
-    // const p = await directDbAccess()
-    //   .selectFrom('channel')
-    //   .leftJoin(
-    //     'channel_programs',
-    //     'channel_programs.channel_uuid',
-    //     'channel.uuid',
-    //   )
-    //   .selectAll('channel')
-    //   .select((eb) => [
-    //     withPrograms(eb, {
-    //       trackAlbum: true,
-    //       trackArtist: true,
-    //       tvShow: true,
-    //       tvSeason: true,
-    //     }),
-    //   ])
-    //   .execute();
+    return await directDbAccess()
+      .selectFrom('channel')
+      .leftJoin(
+        'channelPrograms',
+        'channelPrograms.channelUuid',
+        'channel.uuid',
+      )
+      .selectAll('channel')
+      .select((eb) => [
+        withPrograms(eb, {
+          trackAlbum: true,
+          trackArtist: true,
+          tvShow: true,
+          tvSeason: true,
+        }),
+      ])
+      .execute();
 
-    return getEm()
-      .repo(Channel)
-      .findAll({
-        populate: [
-          'programs',
-          'programs.artist',
-          'programs.album',
-          'programs.tvShow',
-          'programs.season',
-        ],
-      });
+    // return getEm()
+    //   .repo(Channel)
+    //   .findAll({
+    //     populate: [
+    //       'programs',
+    //       'programs.artist',
+    //       'programs.album',
+    //       'programs.tvShow',
+    //       'programs.season',
+    //     ],
+    //   });
   }
 
   async updateLineup(id: string, req: UpdateChannelProgrammingRequest) {
@@ -571,10 +573,7 @@ export class ChannelDB {
         ...prev,
         [channel.uuid]: { channel, lineup },
       }),
-      {} as Record<
-        string,
-        { channel: LoadedChannelWithGroupRefs; lineup: Lineup }
-      >,
+      {} as Record<string, { channel: RawChannel; lineup: Lineup }>,
     );
   }
 
@@ -672,9 +671,9 @@ export class ChannelDB {
 
     const directPrograms = await this.timer.timeAsync('direct', () =>
       directDbAccess()
-        .selectFrom('channel_programs')
-        .where('channel_uuid', '=', channelId)
-        .innerJoin('program', 'channel_programs.program_uuid', 'program.uuid')
+        .selectFrom('channelPrograms')
+        .where('channelUuid', '=', channelId)
+        .innerJoin('program', 'channelPrograms.programUuid', 'program.uuid')
         .selectAll('program')
         .select((eb) => [
           withTvShow(eb),
@@ -687,20 +686,20 @@ export class ChannelDB {
 
     const externalIds = await this.timer.timeAsync('eids', () =>
       directDbAccess()
-        .selectFrom('channel_programs')
-        .where('channel_uuid', '=', channelId)
+        .selectFrom('channelPrograms')
+        .where('channelUuid', '=', channelId)
         .innerJoin(
-          'program_external_id',
-          'channel_programs.program_uuid',
-          'program_external_id.program_uuid',
+          'programExternalId',
+          'channelPrograms.programUuid',
+          'programExternalId.programUuid',
         )
-        .selectAll('program_external_id')
+        .selectAll('programExternalId')
         .execute(),
     );
 
     const externalIdsByProgramId = groupBy(
       externalIds,
-      (eid) => eid.program_uuid,
+      (eid) => eid.programUuid,
     );
 
     const programsById = groupByUniq(directPrograms, 'uuid');

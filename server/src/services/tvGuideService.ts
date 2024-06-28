@@ -30,7 +30,7 @@ import {
 import * as syncRetry from 'retry';
 import { v4 } from 'uuid';
 import { XmlTvWriter } from '../XmlTvWriter.js';
-import { ChannelDB, LoadedChannelWithGroupRefs } from '../dao/channelDb.js';
+import { ChannelDB } from '../dao/channelDb.js';
 import { ProgramConverter } from '../dao/converters/programConverters.js';
 import { Lineup } from '../dao/derived_types/Lineup.js';
 import { Channel } from '../dao/entities/Channel.js';
@@ -44,6 +44,7 @@ import {
 } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { EventService } from './eventService.js';
+import { Channel as RawChannel } from '../dao/direct/derivedTypes.js';
 
 dayjs.extend(duration);
 
@@ -70,7 +71,7 @@ export type ChannelPrograms = {
 };
 
 type ChannelWithLineup = {
-  channel: LoadedChannelWithGroupRefs;
+  channel: RawChannel;
   lineup: Lineup;
 };
 

@@ -287,15 +287,13 @@ export class ProgramConverter {
     if (program.type === ProgramType.Episode.toString()) {
       extraFields = {
         ...extraFields,
-        icon: nullToUndefined(program.episode_icon ?? program.show_icon),
-        showId: nullToUndefined(program.tv_show?.uuid ?? program.tv_show_uuid),
-        seasonId: nullToUndefined(
-          program.tv_season?.uuid ?? program.season_uuid,
-        ),
-        seasonNumber: nullToUndefined(program.tv_season?.index),
+        icon: nullToUndefined(program.episodeIcon ?? program.showIcon),
+        showId: nullToUndefined(program.tvShow?.uuid ?? program.tvShowUuid),
+        seasonId: nullToUndefined(program.tvSeason?.uuid ?? program.seasonUuid),
+        seasonNumber: nullToUndefined(program.tvSeason?.index),
         episodeNumber: nullToUndefined(program.episode),
         episodeTitle: program.title,
-        title: nullToUndefined(program.tv_show?.title ?? program.show_title),
+        title: nullToUndefined(program.tvShow?.title ?? program.showTitle),
       };
     } else if (program.type === ProgramType.Track.toString()) {
       // extraFields = {
@@ -310,7 +308,7 @@ export class ProgramConverter {
       persisted: true, // Explicit since we're dealing with db loaded entities
       uniqueId: program.uuid,
       summary: nullToUndefined(program.summary),
-      date: nullToUndefined(program.original_air_date),
+      date: nullToUndefined(program.originalAirDate),
       rating: nullToUndefined(program.rating),
       icon: nullToUndefined(program.icon),
       title: program.title,
@@ -371,23 +369,23 @@ export class ProgramConverter {
 
   private toExternalId(rawExternalId: RawProgramExternalId) {
     if (
-      isNonEmptyString(rawExternalId.external_source_id) &&
-      isValidMultiExternalIdType(rawExternalId.source_type)
+      isNonEmptyString(rawExternalId.externalSourceId) &&
+      isValidMultiExternalIdType(rawExternalId.sourceType)
     ) {
       return {
         type: 'multi' as const,
-        source: rawExternalId.source_type,
-        sourceId: rawExternalId.external_source_id,
-        id: rawExternalId.external_key,
+        source: rawExternalId.sourceType,
+        sourceId: rawExternalId.externalSourceId,
+        id: rawExternalId.externalKey,
       };
     } else if (
-      isValidSingleExternalIdType(rawExternalId.source_type) &&
-      !isNonEmptyString(rawExternalId.external_source_id)
+      isValidSingleExternalIdType(rawExternalId.sourceType) &&
+      !isNonEmptyString(rawExternalId.externalSourceId)
     ) {
       return {
         type: 'single' as const,
-        source: rawExternalId.source_type,
-        id: rawExternalId.external_key,
+        source: rawExternalId.sourceType,
+        id: rawExternalId.externalKey,
       };
     }
 
