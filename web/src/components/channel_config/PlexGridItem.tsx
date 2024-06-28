@@ -156,7 +156,7 @@ export const PlexGridItem = forwardRef(
     const { isIntersecting: isInViewport, ref: imageContainerRef } =
       useIntersectionObserver({
         threshold: 0,
-        rootMargin: '500px 0px 0px 0px',
+        rootMargin: '0px',
         freezeOnceVisible: true,
       });
 
