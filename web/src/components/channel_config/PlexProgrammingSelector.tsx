@@ -365,7 +365,6 @@ export default function PlexProgrammingSelector() {
       }
     },
     threshold: 0.5,
-    rootMargin: '150px 0px 0px',
   });
 
   const firstItemInNextLibraryRowIndex = useMemo(
