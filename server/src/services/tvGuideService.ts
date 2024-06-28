@@ -1,4 +1,3 @@
-import { Loaded } from '@mikro-orm/core';
 import constants from '@tunarr/shared/constants';
 import {
   ChannelIcon,
@@ -30,10 +29,9 @@ import {
 import * as syncRetry from 'retry';
 import { v4 } from 'uuid';
 import { XmlTvWriter } from '../XmlTvWriter.js';
-import { ChannelDB, LoadedChannelWithGroupRefs } from '../dao/channelDb.js';
+import { ChannelDB } from '../dao/channelDb.js';
 import { ProgramConverter } from '../dao/converters/programConverters.js';
 import { Lineup } from '../dao/derived_types/Lineup.js';
-import { Channel } from '../dao/entities/Channel.js';
 import { Maybe } from '../types/util.js';
 import { binarySearchRange } from '../util/binarySearch.js';
 import {
@@ -44,6 +42,7 @@ import {
 } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { EventService } from './eventService.js';
+import { ChannelWithPrograms as RawChannel } from '../dao/direct/derivedTypes.js';
 
 dayjs.extend(duration);
 
@@ -65,12 +64,12 @@ export type TvGuideChannel = {
 };
 
 export type ChannelPrograms = {
-  channel: Channel;
+  channel: RawChannel;
   programs: TvGuideProgram[];
 };
 
 type ChannelWithLineup = {
-  channel: LoadedChannelWithGroupRefs;
+  channel: RawChannel;
   lineup: Lineup;
 };
 
@@ -219,13 +218,28 @@ export class TVGuideService {
   // If we updated channel metadata, we should push it to this cache
   // and rewrite xmltv. This should be very fast since we're not altering
   // programming details or the schedule
-  async updateCachedChannel(updatedChannel: Loaded<Channel>) {
-    const cachedLineup = this.cachedGuide[updatedChannel.uuid];
+  async updateCachedChannel(updatedChannelId: string) {
+    const channel = await this.channelDb.getChannelDirect(updatedChannelId);
+    if (isNil(channel)) {
+      this.logger.warn(
+        'Could not find channel with id %s when attempting to update cached XMLTV channels',
+        updatedChannelId,
+      );
+      return;
+    }
+
+    const cachedLineup = this.cachedGuide[channel.uuid];
     if (isUndefined(cachedLineup)) {
       return;
     }
 
-    this.cachedGuide[updatedChannel.uuid].channel = updatedChannel;
+    const existingChannel = this.cachedGuide[channel.uuid].channel;
+    // Keep the refs to the existing programs since they didn't change
+    // as part of this operation.
+    this.cachedGuide[channel.uuid].channel = {
+      ...channel,
+      programs: existingChannel.programs,
+    };
 
     return await this.refreshXML();
   }
@@ -239,10 +253,10 @@ export class TVGuideService {
     );
   }
 
-  private async getCurrentPlayingIndex(
+  private getCurrentPlayingIndex(
     { channel, lineup }: ChannelWithLineup,
     currentUpdateTimeMs: number,
-  ): Promise<CurrentPlayingProgram> {
+  ): CurrentPlayingProgram {
     const channelStartTime = new Date(channel.startTime).getTime();
     if (currentUpdateTimeMs < channelStartTime) {
       //it's flex time
@@ -290,7 +304,6 @@ export class TVGuideService {
         !inRange(targetIndex, 0, accumulate.length) ||
         !inRange(targetIndex, 0, lineup.items.length)
       ) {
-        console.log(accumulate, channelProgress);
         throw new Error(
           `General algorithm error, completely unexpected. Channel: ${channel.uuid} ${channel.name}`,
         );
@@ -298,7 +311,7 @@ export class TVGuideService {
 
       const lineupItem = lineup.items[targetIndex];
       let lineupProgram =
-        await this.programConverter.lineupItemToChannelProgram(
+        this.programConverter.directLineupItemToChannelProgram(
           channel,
           lineupItem,
           map(this.currentChannels, 'channel'),
@@ -347,7 +360,7 @@ export class TVGuideService {
       // the schedule.
       const index = (previousProgram.programIndex + 1) % lineup.items.length;
       const lineupItem = lineup.items[index];
-      const program = await this.programConverter.lineupItemToChannelProgram(
+      const program = this.programConverter.directLineupItemToChannelProgram(
         channel,
         lineupItem,
         map(this.currentChannels, 'channel'),
@@ -370,7 +383,7 @@ export class TVGuideService {
         startTimeMs: currentUpdateTimeMs,
       };
     } else {
-      playing = await this.getCurrentPlayingIndex(
+      playing = this.getCurrentPlayingIndex(
         channelWithLineup,
         currentUpdateTimeMs,
       );
@@ -684,25 +697,34 @@ export class TVGuideService {
     const result: Record<string, ChannelPrograms> = {};
     if (channels.length === 0) {
       const fakeChannelId = v4();
-      const channel = new Channel();
-      channel.uuid = fakeChannelId;
-      channel.name = 'Tunarr';
-      channel.icon = {
-        path: FALLBACK_ICON,
-        width: 0,
+      const channel: RawChannel = {
+        uuid: fakeChannelId,
+        name: 'Tunarr',
+        icon: {
+          path: FALLBACK_ICON,
+          width: 0,
+          duration: 0,
+          position: 'bottom-right',
+        },
+        disableFillerOverlay: 0, //false, cast?
+        number: 0,
+        guideMinimumDuration: 0,
         duration: 0,
-        position: 'bottom-right',
-      };
-      channel.disableFillerOverlay = false;
-      channel.number = 0;
-      channel.guideMinimumDuration = 0;
-      channel.duration = 0;
-      channel.stealth = false;
-      channel.startTime = 0;
-      channel.offline = {
-        picture: undefined,
-        soundtrack: undefined,
-        mode: 'pic',
+        stealth: 0, //false, cast?
+        startTime: 0,
+        offline: {
+          picture: undefined,
+          soundtrack: undefined,
+          mode: 'pic',
+        },
+        guideFlexTitle: null,
+        createdAt: null,
+        updatedAt: null,
+        fillerRepeatCooldown: null,
+        groupTitle: null,
+        watermark: null,
+        transcoding: null,
+        programs: [],
       };
 
       // Placeholder channel with random ID.
@@ -786,7 +808,7 @@ export class TVGuideService {
 
 function isProgramFlex(
   program: ChannelProgram | undefined,
-  channel: Loaded<Channel>,
+  channel: RawChannel,
 ): boolean {
   return (
     !isUndefined(program) &&
@@ -798,7 +820,7 @@ function isProgramFlex(
 }
 
 function programToTvGuideProgram(
-  channel: Loaded<Channel>,
+  channel: RawChannel,
   currentProgram: CurrentPlayingProgram,
 ): TvGuideProgram {
   const baseItem: Partial<TvGuideProgram> = {

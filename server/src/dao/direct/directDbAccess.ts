@@ -1,9 +1,14 @@
 import { once } from 'lodash-es';
 import { GlobalOptions } from '../../globals';
-import { Kysely, ParseJSONResultsPlugin, SqliteDialect } from 'kysely';
+import {
+  CamelCasePlugin,
+  Kysely,
+  ParseJSONResultsPlugin,
+  SqliteDialect,
+} from 'kysely';
 import path from 'path';
 import Sqlite from 'better-sqlite3';
-import { DB } from './types.gen';
+import { DB } from './derivedTypes.js';
 import { LoggerFactory } from '../../util/logging/LoggerFactory';
 
 let _directDbAccess: Kysely<DB>;
@@ -30,7 +35,7 @@ export const initDirectDbAccess = once((opts: GlobalOptions) => {
           return;
       }
     },
-    plugins: [new ParseJSONResultsPlugin()],
+    plugins: [new ParseJSONResultsPlugin(), new CamelCasePlugin()],
   });
 });
 

@@ -78,11 +78,18 @@ import { MutexMap } from '../util/mutexMap.js';
 import { directDbAccess } from './direct/directDbAccess.js';
 import { seq } from '@tunarr/shared/util';
 import {
+  MinimalProgramGroupingFields,
+  withPrograms,
   withTrackAlbum,
   withTrackArtist,
   withTvSeason,
   withTvShow,
 } from './direct/programQueryHelpers.js';
+import {
+  Channel as RawChannel,
+  ChannelWithPrograms as RawChannelWithPrograms,
+} from '../dao/direct/derivedTypes.js';
+import { MarkRequired } from 'ts-essentials';
 
 dayjs.extend(duration);
 
@@ -202,11 +209,57 @@ export class ChannelDB {
     return getEm().repo(Channel).findOne({ uuid: id });
   }
 
+  getChannelDirect(id: string) {
+    return directDbAccess()
+      .selectFrom('channel')
+      .where('channel.uuid', '=', id)
+      .selectAll()
+      .executeTakeFirst();
+  }
+
   getChannel(id: string | number) {
     return isNumber(id) ? this.getChannelByNumber(id) : this.getChannelById(id);
   }
 
-  getChannelAndPrograms(uuid: string) {
+  getChannelAndPrograms(
+    uuid: string,
+  ): Promise<RawChannelWithPrograms | undefined> {
+    return directDbAccess()
+      .selectFrom('channel')
+      .selectAll(['channel'])
+      .where('channel.uuid', '=', uuid)
+      .innerJoin(
+        'channelPrograms',
+        'channel.uuid',
+        'channelPrograms.channelUuid',
+      )
+      .select((eb) => withPrograms(eb, { joins: { customShows: true } }))
+      .groupBy('channel.uuid')
+      .orderBy('channel.number asc')
+      .executeTakeFirst();
+  }
+
+  getChannelProgramExternalIds(uuid: string) {
+    return directDbAccess()
+      .selectFrom('channelPrograms')
+      .where('channelUuid', '=', uuid)
+      .innerJoin(
+        'programExternalId',
+        'channelPrograms.programUuid',
+        'programExternalId.programUuid',
+      )
+      .selectAll('programExternalId')
+      .execute();
+  }
+
+  /**
+   * The old implementation using the ORM, which is super slow for
+   * huge channels. This WILL be removed, but we're keeping it around
+   * so that we can ship the perf improvements now without changing the
+   * whole world.
+   * @deprecated
+   */
+  getChannelAndProgramsSLOW(uuid: string) {
     return getEm()
       .repo(Channel)
       .findOne(
@@ -315,37 +368,28 @@ export class ChannelDB {
     return getEm().repo(Channel).findAll({ orderBy });
   }
 
-  async getAllChannelsAndPrograms(): Promise<LoadedChannelWithGroupRefs[]> {
-    // TODO: Replace this slow query...
-    // const p = await directDbAccess()
-    //   .selectFrom('channel')
-    //   .leftJoin(
-    //     'channel_programs',
-    //     'channel_programs.channel_uuid',
-    //     'channel.uuid',
-    //   )
-    //   .selectAll('channel')
-    //   .select((eb) => [
-    //     withPrograms(eb, {
-    //       trackAlbum: true,
-    //       trackArtist: true,
-    //       tvShow: true,
-    //       tvSeason: true,
-    //     }),
-    //   ])
-    //   .execute();
-
-    return getEm()
-      .repo(Channel)
-      .findAll({
-        populate: [
-          'programs',
-          'programs.artist',
-          'programs.album',
-          'programs.tvShow',
-          'programs.season',
-        ],
-      });
+  async getAllChannelsAndPrograms(): Promise<RawChannelWithPrograms[]> {
+    return await directDbAccess()
+      .selectFrom('channel')
+      .selectAll(['channel'])
+      .leftJoin(
+        'channelPrograms',
+        'channelPrograms.channelUuid',
+        'channel.uuid',
+      )
+      .select((eb) => [
+        withPrograms(eb, {
+          joins: {
+            trackAlbum: MinimalProgramGroupingFields,
+            trackArtist: MinimalProgramGroupingFields,
+            tvShow: MinimalProgramGroupingFields,
+            tvSeason: MinimalProgramGroupingFields,
+          },
+        }),
+      ])
+      .groupBy('channel.uuid')
+      .orderBy('channel.number asc')
+      .execute();
   }
 
   async updateLineup(id: string, req: UpdateChannelProgrammingRequest) {
@@ -571,10 +615,7 @@ export class ChannelDB {
         ...prev,
         [channel.uuid]: { channel, lineup },
       }),
-      {} as Record<
-        string,
-        { channel: LoadedChannelWithGroupRefs; lineup: Lineup }
-      >,
+      {} as Record<string, { channel: RawChannelWithPrograms; lineup: Lineup }>,
     );
   }
 
@@ -672,9 +713,9 @@ export class ChannelDB {
 
     const directPrograms = await this.timer.timeAsync('direct', () =>
       directDbAccess()
-        .selectFrom('channel_programs')
-        .where('channel_uuid', '=', channelId)
-        .innerJoin('program', 'channel_programs.program_uuid', 'program.uuid')
+        .selectFrom('channelPrograms')
+        .where('channelUuid', '=', channelId)
+        .innerJoin('program', 'channelPrograms.programUuid', 'program.uuid')
         .selectAll('program')
         .select((eb) => [
           withTvShow(eb),
@@ -686,21 +727,12 @@ export class ChannelDB {
     );
 
     const externalIds = await this.timer.timeAsync('eids', () =>
-      directDbAccess()
-        .selectFrom('channel_programs')
-        .where('channel_uuid', '=', channelId)
-        .innerJoin(
-          'program_external_id',
-          'channel_programs.program_uuid',
-          'program_external_id.program_uuid',
-        )
-        .selectAll('program_external_id')
-        .execute(),
+      this.getChannelProgramExternalIds(channelId),
     );
 
     const externalIdsByProgramId = groupBy(
       externalIds,
-      (eid) => eid.program_uuid,
+      (eid) => eid.programUuid,
     );
 
     const programsById = groupByUniq(directPrograms, 'uuid');
@@ -873,17 +905,18 @@ export class ChannelDB {
   }
 
   private async buildApiLineup(
-    channel: Loaded<Channel, 'programs' | 'programs.customShows.uuid'>,
+    channel: MarkRequired<RawChannel, 'programs'>,
     lineup: LineupItem[],
   ): Promise<{ lineup: ChannelProgram[]; offsets: number[] }> {
-    const allChannels = getEm().findAll(Channel, {
-      fields: ['name', 'number'],
-    });
+    const allChannels = directDbAccess()
+      .selectFrom('channel')
+      .select(['channel.uuid', 'channel.number', 'channel.name'])
+      .execute();
     let lastOffset = 0;
     const offsets: number[] = [];
     const programs = compact(
       await mapAsyncSeq(lineup, async (item) => {
-        const apiItem = await this.#programConverter.lineupItemToChannelProgram(
+        const apiItem = this.#programConverter.directLineupItemToChannelProgram(
           channel,
           item,
           await allChannels,

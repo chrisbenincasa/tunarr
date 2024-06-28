@@ -41,7 +41,7 @@ const ChannelIconSchema = z
 
 const DefaultChannelIcon = ChannelIconSchema.parse({});
 
-type ChannelIcon = z.infer<typeof ChannelIconSchema>;
+export type ChannelIcon = z.infer<typeof ChannelIconSchema>;
 
 class ChannelIconType extends SchemaBackedDbType<typeof ChannelIconSchema> {
   constructor() {
@@ -86,7 +86,7 @@ const ChannelWatermarkSchema = z.object({
   animated: z.boolean().optional().catch(undefined),
 });
 
-type ChannelWatermark = z.infer<typeof ChannelWatermarkSchema>;
+export type ChannelWatermark = z.infer<typeof ChannelWatermarkSchema>;
 
 class ChannelWatermarkType extends SchemaBackedDbType<
   typeof ChannelWatermarkSchema
@@ -106,7 +106,9 @@ const DefaultChannelOfflineSettingsSchema = ChannelOfflineSettingsSchema.parse(
   {},
 );
 
-type ChannelOfflineSettings = z.infer<typeof ChannelOfflineSettingsSchema>;
+export type ChannelOfflineSettings = z.infer<
+  typeof ChannelOfflineSettingsSchema
+>;
 
 class ChannelOfflineSettingsType extends SchemaBackedDbType<
   typeof ChannelOfflineSettingsSchema

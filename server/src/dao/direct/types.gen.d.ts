@@ -6,183 +6,183 @@ export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
 
 export interface CachedImage {
   hash: string;
-  mime_type: string | null;
+  mimeType: string | null;
   url: string;
 }
 
 export interface Channel {
-  created_at: string | null;
-  disable_filler_overlay: Generated<number>;
+  createdAt: string | null;
+  disableFillerOverlay: Generated<number>;
   duration: number;
-  filler_repeat_cooldown: number | null;
-  group_title: string | null;
-  guide_flex_title: string | null;
-  guide_minimum_duration: number;
+  fillerRepeatCooldown: number | null;
+  groupTitle: string | null;
+  guideFlexTitle: string | null;
+  guideMinimumDuration: number;
   icon: string | null;
   name: string;
   number: number;
   offline: Generated<string | null>;
-  start_time: number;
+  startTime: number;
   stealth: Generated<number>;
   transcoding: string | null;
-  updated_at: string | null;
+  updatedAt: string | null;
   uuid: string;
   watermark: string | null;
 }
 
 export interface ChannelCustomShows {
-  channel_uuid: string;
-  custom_show_uuid: string;
+  channelUuid: string;
+  customShowUuid: string;
 }
 
 export interface ChannelFallback {
-  channel_uuid: string;
-  program_uuid: string;
+  channelUuid: string;
+  programUuid: string;
 }
 
 export interface ChannelFillerShow {
-  channel_uuid: string;
+  channelUuid: string;
   cooldown: number;
-  filler_show_uuid: string;
+  fillerShowUuid: string;
   weight: number;
 }
 
 export interface ChannelPrograms {
-  channel_uuid: string;
-  program_uuid: string;
+  channelUuid: string;
+  programUuid: string;
 }
 
 export interface CustomShow {
-  created_at: string | null;
+  createdAt: string | null;
   name: string;
-  updated_at: string | null;
+  updatedAt: string | null;
   uuid: string;
 }
 
 export interface CustomShowContent {
-  content_uuid: string;
-  custom_show_uuid: string;
+  contentUuid: string;
+  customShowUuid: string;
   index: number;
 }
 
 export interface FillerShow {
-  created_at: string | null;
+  createdAt: string | null;
   name: string;
-  updated_at: string | null;
+  updatedAt: string | null;
   uuid: string;
 }
 
 export interface FillerShowContent {
-  filler_show_uuid: string;
+  fillerShowUuid: string;
   index: number;
-  program_uuid: string;
+  programUuid: string;
 }
 
 export interface MikroOrmMigrations {
-  executed_at: Generated<string | null>;
+  executedAt: Generated<string | null>;
   id: Generated<number>;
   name: string | null;
 }
 
 export interface PlexServerSettings {
-  access_token: string;
-  client_identifier: string | null;
-  created_at: string | null;
+  accessToken: string;
+  clientIdentifier: string | null;
+  createdAt: string | null;
   index: number;
   name: string;
-  send_channel_updates: Generated<number>;
-  send_guide_updates: Generated<number>;
-  updated_at: string | null;
+  sendChannelUpdates: Generated<number>;
+  sendGuideUpdates: Generated<number>;
+  updatedAt: string | null;
   uri: string;
   uuid: string;
 }
 
 export interface Program {
-  album_name: string | null;
-  album_uuid: string | null;
-  artist_name: string | null;
-  artist_uuid: string | null;
-  created_at: string | null;
+  albumName: string | null;
+  albumUuid: string | null;
+  artistName: string | null;
+  artistUuid: string | null;
+  createdAt: string | null;
   duration: number;
   episode: number | null;
-  episode_icon: string | null;
-  external_key: string;
-  external_source_id: string;
-  file_path: string | null;
-  grandparent_external_key: string | null;
+  episodeIcon: string | null;
+  externalKey: string;
+  externalSourceId: string;
+  filePath: string | null;
+  grandparentExternalKey: string | null;
   icon: string | null;
-  original_air_date: string | null;
-  parent_external_key: string | null;
-  plex_file_path: string | null;
-  plex_rating_key: string | null;
+  originalAirDate: string | null;
+  parentExternalKey: string | null;
+  plexFilePath: string | null;
+  plexRatingKey: string | null;
   rating: string | null;
-  season_icon: string | null;
-  season_number: number | null;
-  season_uuid: string | null;
-  show_icon: string | null;
-  show_title: string | null;
-  source_type: string;
+  seasonIcon: string | null;
+  seasonNumber: number | null;
+  seasonUuid: string | null;
+  showIcon: string | null;
+  showTitle: string | null;
+  sourceType: string;
   summary: string | null;
   title: string;
-  tv_show_uuid: string | null;
+  tvShowUuid: string | null;
   type: string;
-  updated_at: string | null;
+  updatedAt: string | null;
   uuid: string;
   year: number | null;
 }
 
 export interface ProgramExternalId {
-  created_at: string | null;
-  direct_file_path: string | null;
-  external_file_path: string | null;
-  external_key: string;
-  external_source_id: string | null;
-  program_uuid: string;
-  source_type: string;
-  updated_at: string | null;
+  createdAt: string | null;
+  directFilePath: string | null;
+  externalFilePath: string | null;
+  externalKey: string;
+  externalSourceId: string | null;
+  programUuid: string;
+  sourceType: string;
+  updatedAt: string | null;
   uuid: string;
 }
 
 export interface ProgramGrouping {
-  artist_uuid: string | null;
-  created_at: string | null;
+  artistUuid: string | null;
+  createdAt: string | null;
   icon: string | null;
   index: number | null;
-  show_uuid: string | null;
+  showUuid: string | null;
   summary: string | null;
   title: string;
   type: string;
-  updated_at: string | null;
+  updatedAt: string | null;
   uuid: string;
   year: number | null;
 }
 
 export interface ProgramGroupingExternalId {
-  created_at: string | null;
-  external_file_path: string | null;
-  external_key: string;
-  external_source_id: string;
-  group_uuid: string;
-  source_type: string;
-  updated_at: string | null;
+  createdAt: string | null;
+  externalFilePath: string | null;
+  externalKey: string;
+  externalSourceId: string | null;
+  groupUuid: string;
+  sourceType: string;
+  updatedAt: string | null;
   uuid: string;
 }
 
 export interface DB {
-  cached_image: CachedImage;
+  cachedImage: CachedImage;
   channel: Channel;
-  channel_custom_shows: ChannelCustomShows;
-  channel_fallback: ChannelFallback;
-  channel_filler_show: ChannelFillerShow;
-  channel_programs: ChannelPrograms;
-  custom_show: CustomShow;
-  custom_show_content: CustomShowContent;
-  filler_show: FillerShow;
-  filler_show_content: FillerShowContent;
-  mikro_orm_migrations: MikroOrmMigrations;
-  plex_server_settings: PlexServerSettings;
+  channelCustomShows: ChannelCustomShows;
+  channelFallback: ChannelFallback;
+  channelFillerShow: ChannelFillerShow;
+  channelPrograms: ChannelPrograms;
+  customShow: CustomShow;
+  customShowContent: CustomShowContent;
+  fillerShow: FillerShow;
+  fillerShowContent: FillerShowContent;
+  mikroOrmMigrations: MikroOrmMigrations;
+  plexServerSettings: PlexServerSettings;
   program: Program;
-  program_external_id: ProgramExternalId;
-  program_grouping: ProgramGrouping;
-  program_grouping_external_id: ProgramGroupingExternalId;
+  programExternalId: ProgramExternalId;
+  programGrouping: ProgramGrouping;
+  programGroupingExternalId: ProgramGroupingExternalId;
 }

@@ -22,8 +22,8 @@ export class ReleaseDateSortOperator extends SchedulingOperator<ReleaseDateSortO
           return Number.MAX_SAFE_INTEGER;
         }
 
-        const date = details.original_air_date
-          ? new Date(details.original_air_date).getTime()
+        const date = details.originalAirDate
+          ? new Date(details.originalAirDate).getTime()
           : 0;
         return date;
       },
@@ -34,8 +34,8 @@ export class ReleaseDateSortOperator extends SchedulingOperator<ReleaseDateSortO
         }
 
         let n = 1;
-        if (!isNull(details.season_number)) {
-          n *= details.season_number * 1e4;
+        if (!isNull(details.seasonNumber)) {
+          n *= details.seasonNumber * 1e4;
         }
 
         if (!isNull(details.episode)) {
