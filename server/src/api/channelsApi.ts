@@ -15,7 +15,7 @@ import {
 } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
-import { compact, isError, isNil, map, omit, sortBy } from 'lodash-es';
+import { compact, isError, isNil, omit, sortBy } from 'lodash-es';
 import z from 'zod';
 import { GlobalScheduler } from '../services/scheduler.js';
 import { UpdateXmlTvTask } from '../tasks/UpdateXmlTvTask.js';
@@ -150,7 +150,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
             channel.uuid,
             channelUpdate,
           );
-          await req.serverCtx.guideService.updateCachedChannel(updatedChannel);
+          await req.serverCtx.guideService.updateCachedChannel(channel.uuid);
           return res.send(omit(updatedChannel.toDTO(), 'programs'));
         } else {
           return res.status(404).send();
@@ -216,7 +216,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         );
 
         if (!isNil(channel)) {
-          return res.send(map(channel.programs, (p) => p.toDTO()));
+          return res.send(channel.programs);
         } else {
           return res.status(404).send();
         }

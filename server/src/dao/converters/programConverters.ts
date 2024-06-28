@@ -33,7 +33,10 @@ import {
 } from '../derived_types/Lineup.js';
 import { Channel } from '../entities/Channel.js';
 import { Program, ProgramType } from '../entities/Program.js';
-import { Program as RawProgram } from '../direct/derivedTypes.js';
+import {
+  Program as RawProgram,
+  Channel as RawChannel,
+} from '../direct/derivedTypes.js';
 import { ProgramExternalId as RawProgramExternalId } from '../direct/types.gen.js';
 import { ProgramExternalId } from '../entities/ProgramExternalId.js';
 import {
@@ -41,6 +44,7 @@ import {
   isValidSingleExternalIdType,
 } from '@tunarr/types/schemas';
 import { seq } from '@tunarr/shared/util';
+import { DeepPartial, MarkRequired } from 'ts-essentials';
 
 type ContentProgramConversionOptions = {
   skipPopulate: boolean | Partial<Record<'externalIds' | 'grouping', boolean>>;
@@ -106,6 +110,43 @@ export class ProgramConverter {
         program,
         undefined,
         opts?.contentProgramConversionOptions,
+      );
+    }
+  }
+
+  directLineupItemToChannelProgram(
+    channel: MarkRequired<RawChannel, 'programs'>,
+    item: LineupItem,
+    channelReferences: MarkRequired<
+      DeepPartial<RawChannel>,
+      'uuid' | 'number'
+    >[], // TODO fix this up...
+  ) {
+    if (isOfflineItem(item)) {
+      return this.directOfflineLineupItemToProgram(channel, item);
+    } else if (isRedirectItem(item)) {
+      const redirectChannel = find(channelReferences, { uuid: item.channel });
+      if (isNil(redirectChannel)) {
+        this.logger.warn(
+          'Dangling redirect channel reference. Source channel = %s, target channel = %s',
+          channel.uuid,
+          item.channel,
+        );
+        return this.directOfflineLineupItemToProgram(channel, {
+          type: 'offline',
+          durationMs: item.durationMs,
+        });
+      }
+      return this.directRedirectLineupItemToProgram(item, redirectChannel);
+    } else {
+      const program = channel.programs.find((p) => p.uuid === item.id);
+      if (isNil(program)) {
+        return null;
+      }
+
+      return this.directEntityToContentProgramSync(
+        program,
+        program.externalIds ?? [], // TODO fill in external IDs here
       );
     }
   }
@@ -296,12 +337,14 @@ export class ProgramConverter {
         title: nullToUndefined(program.tvShow?.title ?? program.showTitle),
       };
     } else if (program.type === ProgramType.Track.toString()) {
-      // extraFields = {
-      //   albumName: program.album?.$.title,
-      //   artistName: program.artist?.$.title,
-      //   albumId: program.album?.uuid,
-      //   artistId: program.artist?.uuid,
-      // };
+      extraFields = {
+        albumName: nullToUndefined(program.trackAlbum?.title),
+        artistName: nullToUndefined(program.trackArtist?.title),
+        albumId: nullToUndefined(program.trackAlbum?.uuid ?? program.albumUuid),
+        artistId: nullToUndefined(
+          program.trackArtist?.uuid ?? program.artistUuid,
+        ),
+      };
     }
 
     return {
@@ -335,6 +378,19 @@ export class ProgramConverter {
     };
   }
 
+  directOfflineLineupItemToProgram(
+    channel: RawChannel,
+    program: OfflineItem,
+    persisted: boolean = true,
+  ): FlexProgram {
+    return {
+      persisted,
+      type: 'flex',
+      icon: channel.icon?.path,
+      duration: program.durationMs,
+    };
+  }
+
   redirectLineupItemToProgram(
     item: RedirectItem,
     channel: Loaded<Channel, never, 'name' | 'number'>,
@@ -351,6 +407,20 @@ export class ProgramConverter {
     } else {
       return this.toRedirectChannelInternal(item, loadedChannel);
     }
+  }
+
+  directRedirectLineupItemToProgram(
+    item: RedirectItem,
+    channel: MarkRequired<DeepPartial<RawChannel>, 'uuid' | 'number'>,
+  ): RedirectProgram {
+    return {
+      persisted: true,
+      type: 'redirect',
+      channel: item.channel,
+      channelName: channel.name,
+      channelNumber: channel.number,
+      duration: item.durationMs,
+    };
   }
 
   private toRedirectChannelInternal(
