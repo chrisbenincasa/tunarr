@@ -156,7 +156,7 @@ export const PlexGridItem = forwardRef(
     const { isIntersecting: isInViewport, ref: imageContainerRef } =
       useIntersectionObserver({
         threshold: 0,
-        rootMargin: '0px',
+        rootMargin: '500px 0px 0px 0px',
         freezeOnceVisible: true,
       });
 
@@ -196,8 +196,12 @@ export const PlexGridItem = forwardRef(
 
     return (
       <Fade
-        in={isInViewport && !isUndefined(item) && (imageLoaded || hasThumb)}
-        timeout={500}
+        in={
+          isInViewport &&
+          !isUndefined(item) &&
+          ((imageLoaded && hasThumb) || (!imageLoaded && !hasThumb))
+        }
+        timeout={750}
         ref={imageContainerRef}
       >
         <div>
@@ -212,8 +216,6 @@ export const PlexGridItem = forwardRef(
               paddingLeft: '8px !important',
               paddingRight: '8px',
               paddingTop: '8px',
-              borderRadiusTopLeft: '10px',
-              borderRadiusTopRight: '10px',
               height: 'auto',
               backgroundColor: (theme) =>
                 props.modalIndex === props.index
@@ -221,8 +223,6 @@ export const PlexGridItem = forwardRef(
                     ? theme.palette.grey[800]
                     : theme.palette.grey[400]
                   : 'transparent',
-              borderTopLeftRadius: '0.5em',
-              borderTopRightRadius: '0.5em',
               ...style,
             }}
             onClick={
@@ -237,7 +237,7 @@ export const PlexGridItem = forwardRef(
                 <Box
                   sx={{
                     position: 'relative',
-                    minHeight: isMusicItem ? 100 : isEpisodeItem ? 84 : 200, // 84 accomodates episode img height
+                    minHeight: isMusicItem ? 100 : isEpisodeItem ? 84 : 225, // 84 accomodates episode img height
                     maxHeight: '100%',
                   }}
                 >
@@ -271,7 +271,7 @@ export const PlexGridItem = forwardRef(
                       zIndex: 1,
                       opacity: imageLoaded ? 0 : 1,
                       visibility: imageLoaded ? 'hidden' : 'visible',
-                      minHeight: isMusicItem ? 100 : isEpisodeItem ? 84 : 200,
+                      minHeight: isMusicItem ? 100 : isEpisodeItem ? 84 : 225,
                     }}
                   ></Box>
                 </Box>

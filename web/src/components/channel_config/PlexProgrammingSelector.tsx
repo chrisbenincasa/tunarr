@@ -6,6 +6,7 @@ import GridView from '@mui/icons-material/GridView';
 import ViewList from '@mui/icons-material/ViewList';
 import {
   Box,
+  CircularProgress,
   Collapse,
   Divider,
   Grow,
@@ -15,6 +16,7 @@ import {
   Tabs,
   ToggleButton,
   ToggleButtonGroup,
+  Typography,
 } from '@mui/material';
 import {
   PlexMedia,
@@ -363,6 +365,7 @@ export default function PlexProgrammingSelector() {
       }
     },
     threshold: 0.5,
+    rootMargin: '150px 0px 0px',
   });
 
   const firstItemInNextLibraryRowIndex = useMemo(
@@ -658,11 +661,21 @@ export default function PlexProgrammingSelector() {
                 )}
             </Tabs>
           </Box>
-
           <Box ref={gridContainerRef} sx={{ width: '100%' }}>
             {renderListItems()}
           </Box>
           {!searchLoading && <div style={{ height: 96 }} ref={ref}></div>}
+          {isFetchingNextItemsPage && (
+            <CircularProgress
+              color="primary"
+              sx={{ display: 'block', margin: '2em auto' }}
+            />
+          )}
+          {searchData && !hasNextItemsPage && (
+            <Typography fontStyle={'italic'} sx={{ textAlign: 'center' }}>
+              fin.
+            </Typography>
+          )}
           <Divider sx={{ mt: 3, mb: 2 }} />
         </>
       )}
