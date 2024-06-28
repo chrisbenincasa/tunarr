@@ -221,7 +221,9 @@ export class ChannelDB {
     return isNumber(id) ? this.getChannelByNumber(id) : this.getChannelById(id);
   }
 
-  getChannelAndPrograms(uuid: string) {
+  getChannelAndPrograms(
+    uuid: string,
+  ): Promise<RawChannelWithPrograms | undefined> {
     return directDbAccess()
       .selectFrom('channel')
       .selectAll(['channel'])
@@ -235,12 +237,35 @@ export class ChannelDB {
       .groupBy('channel.uuid')
       .orderBy('channel.number asc')
       .executeTakeFirst();
-    // return getEm()
-    //   .repo(Channel)
-    //   .findOne(
-    //     { uuid },
-    //     { populate: ['programs', 'programs.customShows.uuid'] },
-    //   );
+  }
+
+  getChannelProgramExternalIds(uuid: string) {
+    return directDbAccess()
+      .selectFrom('channelPrograms')
+      .where('channelUuid', '=', uuid)
+      .innerJoin(
+        'programExternalId',
+        'channelPrograms.programUuid',
+        'programExternalId.programUuid',
+      )
+      .selectAll('programExternalId')
+      .execute();
+  }
+
+  /**
+   * The old implementation using the ORM, which is super slow for
+   * huge channels. This WILL be removed, but we're keeping it around
+   * so that we can ship the perf improvements now without changing the
+   * whole world.
+   * @deprecated
+   */
+  getChannelAndProgramsSLOW(uuid: string) {
+    return getEm()
+      .repo(Channel)
+      .findOne(
+        { uuid },
+        { populate: ['programs', 'programs.customShows.uuid'] },
+      );
   }
 
   getChannelAndProgramsByNumber(number: number) {
@@ -343,8 +368,7 @@ export class ChannelDB {
     return getEm().repo(Channel).findAll({ orderBy });
   }
 
-  async getAllChannelsAndPrograms(): Promise<RawChannel[]> {
-    // TODO: Replace this slow query...
+  async getAllChannelsAndPrograms(): Promise<RawChannelWithPrograms[]> {
     return await directDbAccess()
       .selectFrom('channel')
       .selectAll(['channel'])
@@ -366,18 +390,6 @@ export class ChannelDB {
       .groupBy('channel.uuid')
       .orderBy('channel.number asc')
       .execute();
-
-    // return getEm()
-    //   .repo(Channel)
-    //   .findAll({
-    //     populate: [
-    //       'programs',
-    //       'programs.artist',
-    //       'programs.album',
-    //       'programs.tvShow',
-    //       'programs.season',
-    //     ],
-    //   });
   }
 
   async updateLineup(id: string, req: UpdateChannelProgrammingRequest) {
@@ -715,16 +727,7 @@ export class ChannelDB {
     );
 
     const externalIds = await this.timer.timeAsync('eids', () =>
-      directDbAccess()
-        .selectFrom('channelPrograms')
-        .where('channelUuid', '=', channelId)
-        .innerJoin(
-          'programExternalId',
-          'channelPrograms.programUuid',
-          'programExternalId.programUuid',
-        )
-        .selectAll('programExternalId')
-        .execute(),
+      this.getChannelProgramExternalIds(channelId),
     );
 
     const externalIdsByProgramId = groupBy(
@@ -907,7 +910,7 @@ export class ChannelDB {
   ): Promise<{ lineup: ChannelProgram[]; offsets: number[] }> {
     const allChannels = directDbAccess()
       .selectFrom('channel')
-      .select(['channel.uuid', 'channel.number'])
+      .select(['channel.uuid', 'channel.number', 'channel.name'])
       .execute();
     let lastOffset = 0;
     const offsets: number[] = [];

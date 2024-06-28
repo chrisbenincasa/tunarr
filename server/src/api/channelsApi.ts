@@ -10,13 +10,14 @@ import {
   ChannelProgramSchema,
   ChannelSchema,
   CondensedChannelProgrammingSchema,
-  ProgramSchema,
+  ContentProgramSchema,
   SaveChannelRequestSchema,
 } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
-import { compact, isError, isNil, omit, sortBy } from 'lodash-es';
+import { compact, groupBy, isError, isNil, map, omit, sortBy } from 'lodash-es';
 import z from 'zod';
+import { ProgramConverter } from '../dao/converters/programConverters.js';
 import { GlobalScheduler } from '../services/scheduler.js';
 import { UpdateXmlTvTask } from '../tasks/UpdateXmlTvTask.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
@@ -204,7 +205,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         params: BasicIdParamSchema,
         tags: ['Channels'],
         response: {
-          200: z.array(ProgramSchema).readonly(),
+          200: z.array(ContentProgramSchema).readonly(),
           404: z.void(),
         },
       },
@@ -216,7 +217,20 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         );
 
         if (!isNil(channel)) {
-          return res.send(channel.programs);
+          const converter = new ProgramConverter();
+          const externalIds =
+            await req.serverCtx.channelDB.getChannelProgramExternalIds(
+              channel.uuid,
+            );
+          const externalIdsByProgramId = groupBy(externalIds, 'programUuid');
+          return res.send(
+            map(channel.programs, (program) =>
+              converter.directEntityToContentProgramSync(
+                program,
+                externalIdsByProgramId[program.uuid] ?? [],
+              ),
+            ),
+          );
         } else {
           return res.status(404).send();
         }

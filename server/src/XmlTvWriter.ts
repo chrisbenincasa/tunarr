@@ -11,7 +11,7 @@ import { forProgramType } from '@tunarr/shared/util';
 import { flatMap, isNil, map, round, escape } from 'lodash-es';
 import { isNonEmptyString } from './util';
 import { writeFile } from 'fs/promises';
-import { Channel } from './dao/entities/Channel.js';
+import { Channel } from './dao/direct/derivedTypes';
 import { LoggerFactory } from './util/logging/LoggerFactory';
 
 const lock = new Mutex();

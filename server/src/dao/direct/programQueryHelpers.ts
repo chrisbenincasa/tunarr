@@ -203,6 +203,5 @@ export function withPrograms(
           .onRef('channelPrograms.programUuid', '=', 'program.uuid')
           .onRef('channel.uuid', '=', 'channelPrograms.channelUuid'),
       ),
-    // .whereRef('program.uuid', '=', 'channelPrograms.programUuid'),
   ).as('programs');
 }

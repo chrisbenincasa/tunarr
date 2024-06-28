@@ -119,7 +119,7 @@ export class ProgramConverter {
     item: LineupItem,
     channelReferences: MarkRequired<
       DeepPartial<RawChannel>,
-      'uuid' | 'number'
+      'uuid' | 'number' | 'name'
     >[], // TODO fix this up...
   ) {
     if (isOfflineItem(item)) {
@@ -411,7 +411,7 @@ export class ProgramConverter {
 
   directRedirectLineupItemToProgram(
     item: RedirectItem,
-    channel: MarkRequired<DeepPartial<RawChannel>, 'uuid' | 'number'>,
+    channel: MarkRequired<DeepPartial<RawChannel>, 'uuid' | 'number' | 'name'>,
   ): RedirectProgram {
     return {
       persisted: true,

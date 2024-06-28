@@ -44,13 +44,20 @@ export function generateChannelContext(
   );
 }
 
+// Taking advantage of structural typing for transition
+// to Kysely querying...
+type MinimalChannelDetails = {
+  startTime: number;
+  duration: number;
+};
+
 export class StreamProgramCalculator {
   private logger = LoggerFactory.child({ caller: import.meta });
 
   // This code is almost identical to TvGuideService#getCurrentPlayingIndex
   async getCurrentProgramAndTimeElapsed(
     timestamp: number,
-    channel: Loaded<Channel>,
+    channel: MinimalChannelDetails,
     channelLineup: Lineup,
   ): Promise<ProgramAndTimeElapsed> {
     if (channel.startTime > timestamp) {

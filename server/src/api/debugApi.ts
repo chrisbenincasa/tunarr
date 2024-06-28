@@ -47,7 +47,7 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
     async (req, res) => {
       void res.hijack();
       const t0 = new Date().getTime();
-      const channel = await req.serverCtx.channelDB.getChannelAndPrograms(
+      const channel = await req.serverCtx.channelDB.getChannelAndProgramsSLOW(
         req.query.channelId,
       );
 
@@ -94,7 +94,7 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
     '/debug/plex-transcoder/video-stats',
     { schema: ChannelQuerySchema },
     async (req, res) => {
-      const channel = await req.serverCtx.channelDB.getChannelAndPrograms(
+      const channel = await req.serverCtx.channelDB.getChannelAndProgramsSLOW(
         req.query.channelId,
       );
 
@@ -303,7 +303,10 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
           channel,
           await req.serverCtx.channelDB.loadLineup(channel.uuid),
         ),
-        channel,
+        // HACK until we remove much of the old DB code
+        await req.serverCtx.channelDB
+          .getChannel(req.query.channelId)
+          .then((x) => x!),
         false,
       );
 
