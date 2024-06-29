@@ -261,8 +261,8 @@ export const PlexMediaStreamSchema = z.discriminatedUnion('streamType', [
 
 export const PlexMediaDescriptionSchema = z.object({
   id: z.number(),
-  duration: z.number(),
-  bitrate: z.number(),
+  duration: z.number().optional(),
+  bitrate: z.number().optional(),
   width: z.number().optional(), // Video only
   height: z.number().optional(), // Video only
   aspectRatio: z.number().optional(), // Video only
@@ -280,7 +280,7 @@ export const PlexMediaDescriptionSchema = z.object({
       key: z.string(),
       duration: z.number().optional(),
       file: z.string(),
-      size: z.number(),
+      size: z.number().optional(),
       audioProfile: z.string().optional(),
       container: z.string().optional(),
       videoProfile: z.string().optional(), // video only
