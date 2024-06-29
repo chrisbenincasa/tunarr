@@ -1,19 +1,13 @@
 # Setup
 
-## Migrating from dizqueTV
+## Running in a container
 
-!!! tip
-
-    We highly recommend that you use a copy of your `.dizquetv` database directory when starting out with Tunarr. While Tunarr does not alter or overwrite the `.dizquetv` database directory, it is still considered pre-release software and should be treated as such!
-
-Upon first launch, Tunarr will look for a `.dizquetv` folder relative to its working directory and attempt a migration. Tunarr will try and migrate all legacy dizqueTV settings, including channels, programs, Plex servers, etc.
-
-When using Docker, you can mount your a directory named `.dizquetv` when launching Tunarr to initiate the migration.
+The simplest way to run Tunarr is using Docker.
 
 ```
 docker run \
-    -v "$(pwd)"/.dizquetv:/.dizquetv \
     -p 8000:8000 \
+    --name tunarr
     chrisbenincasa/tunarr:edge
 ```
 
@@ -42,9 +36,53 @@ services:
     # - ./.dizquetv:/.dizquetv
 ```
 
+## Running in Standalone Mode
+
+As mentioned in the [installation](./installation.md) instructions, Tunarr is also available as an executable
+
+!!! warning
+
+    There is a known issue where the Tunarr binary does not work properly on macOS without enabling exremely permissive security options in the OS. This is because we cannot feasibly codesign the application. A workaround is tracked in [chrisbenincasa/tunarr#599](https://github.com/chrisbenincasa/tunarr/issues/599).
+
+## Migrating from dizqueTV
+
+!!! tip
+
+    We highly recommend that you use a copy of your `.dizquetv` database directory when starting out with Tunarr. While Tunarr does not alter or overwrite the `.dizquetv` database directory, it is still considered pre-release software and should be treated as such!
+
+Upon first launch, Tunarr will look for a `.dizquetv` folder relative to its working directory and attempt a migration. Tunarr will try and migrate all legacy dizqueTV settings, including channels, programs, Plex servers, etc.
+
+When using Docker, you can mount your a directory named `.dizquetv` when launching Tunarr to initiate the migration.
+
+```
+docker run \
+    -v "$(pwd)"/.dizquetv:/.dizquetv \
+    -p 8000:8000 \
+    chrisbenincasa/tunarr:edge
+```
+
+Or if using `docker compose`...
+
+```yaml title="docker-compose.yml"
+version: '3.8'
+services:
+  tunarr:
+    image: chrisbenincasa/tunarr:edge
+    container_name: tunarr
+    ports:
+      - ${TUNARR_SERVER_PORT:-8000}:8000
+    environment:
+      - LOG_LEVEL=${TUNARR_LOG_LEVEL:-INFO}
+    volumes:
+      # Mount your .dizquetv directory
+      - /path/to/dizquetv/.dizquetv:/.dizquetv
+```
+
 !!! note
 
     You can force a legacy migration on subsequent launches of Tunarr using the `--force_migration` flag. But be careful! This can be destructive if you've done any additional configuration in Tunarr.
+
+If running in standalone mode, you just have to ensure that a `.dizquetv` folder exists in the same directory as your Tunarr executable.
 
 ## Initial Setup
 
