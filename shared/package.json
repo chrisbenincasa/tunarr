@@ -1,6 +1,6 @@
 {
   "name": "@tunarr/shared",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Utility functions shared between server and web",
   "keywords": [],
   "license": "Zlib",

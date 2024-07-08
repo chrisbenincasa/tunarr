@@ -5,7 +5,7 @@ const constants = {
   TVGUIDE_MAXIMUM_FLEX_DURATION: 6 * 60 * 60 * 1000,
   TOO_FREQUENT: 100,
 
-  VERSION_NAME: '0.1.0',
+  VERSION_NAME: '0.2.0',
 
   DEFAULT_DATA_DIR: '.tunarr',
 };
