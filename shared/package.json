@@ -2,6 +2,7 @@
   "name": "@tunarr/shared",
   "version": "0.2.0",
   "description": "Utility functions shared between server and web",
+  "private": true,
   "keywords": [],
   "license": "Zlib",
   "author": "chrisbenincasa",
