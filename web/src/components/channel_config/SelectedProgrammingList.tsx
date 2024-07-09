@@ -4,7 +4,9 @@ import {
   KeyboardArrowRight,
   Close as RemoveIcon,
 } from '@mui/icons-material';
+import JellyfinLogo from '@/assets/jellyfin.svg';
 import {
+  Box,
   Chip,
   ClickAwayListener,
   Drawer,
@@ -24,7 +26,14 @@ import {
   isPlexSeason,
   isPlexShow,
 } from '@tunarr/types/plex';
-import { first, groupBy, isUndefined, mapValues, reduce } from 'lodash-es';
+import {
+  find,
+  first,
+  groupBy,
+  isUndefined,
+  mapValues,
+  reduce,
+} from 'lodash-es';
 import pluralize from 'pluralize';
 import { ReactNode, useState } from 'react';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
@@ -36,6 +45,8 @@ import { removeSelectedMedia } from '../../store/programmingSelector/actions.ts'
 import { AddedMedia } from '../../types/index.ts';
 import AddSelectedMediaButton from './AddSelectedMediaButton.tsx';
 import SelectedProgrammingActions from './SelectedProgrammingActions.tsx';
+import { useKnownMedia } from '@/store/programmingSelector/selectors.ts';
+import { useMediaSources } from '@/hooks/settingsHooks.ts';
 
 type Props = {
   onAddSelectedMedia: (media: AddedMedia[]) => void;
@@ -48,8 +59,9 @@ export default function SelectedProgrammingList({
   onAddMediaSuccess,
   selectAllEnabled = true,
 }: Props) {
+  const { data: mediaSources } = useMediaSources();
   const { data: customShows } = useCustomShows();
-  const knownMedia = useStore((s) => s.knownMediaByServer);
+  const knownMedia = useKnownMedia();
   const selectedMedia = useStore((s) => s.selectedMedia);
   const [open, setOpen] = useState(false);
   const windowSize = useWindowSize();
@@ -74,7 +86,11 @@ export default function SelectedProgrammingList({
     [ListChildComponentProps]
   >({
     plex: (selected, { style }) => {
-      const media = knownMedia[selected.server][selected.guid];
+      const media = knownMedia.getMediaOfType(
+        selected.serverId,
+        selected.id,
+        'plex',
+      )!;
 
       let title: string = media.title;
       let secondary: ReactNode = null;
@@ -105,13 +121,69 @@ export default function SelectedProgrammingList({
       }
 
       return (
-        <ListItem
-          divider
-          sx={{ px: 1 }}
-          dense
-          key={selected.guid}
-          style={style}
-        >
+        <ListItem divider sx={{ px: 1 }} dense key={selected.id} style={style}>
+          <ListItemText primary={title} secondary={secondary} />
+          <ListItemIcon sx={{ minWidth: 40 }}>
+            <IconButton onClick={() => removeSelectedMedia([selected])}>
+              <RemoveIcon />
+            </IconButton>
+          </ListItemIcon>
+        </ListItem>
+      );
+    },
+    jellyfin: (selected, { style }) => {
+      const media = knownMedia.getMediaOfType(
+        selected.serverId,
+        selected.id,
+        'jellyfin',
+      )!;
+
+      let title: string = media.Name ?? '';
+      let secondary: ReactNode = null;
+      if (media.Type === 'CollectionFolder') {
+        // TODO: Show the size
+        title = `Media - ${media.Name}`;
+      } else if (media.Type === 'Series') {
+        secondary = `${media.ChildCount ?? 0} ${pluralize(
+          'season',
+          media.ChildCount ?? 0,
+        )}, ${media.RecursiveItemCount ?? 0} total ${pluralize(
+          'episode',
+          media.RecursiveItemCount ?? 0,
+        )}`;
+      } else if (media.Type === 'Season') {
+        secondary = `eh help - ${media.Name} (${
+          media.ChildCount ?? 0
+        } ${pluralize('episode', media.ChildCount ?? 0)})`;
+        // } else if (media.Type === '') {
+        //   secondary = `${media.title} (${media.childCount} ${pluralize(
+        //     'item',
+        //     parseInt(media.childCount),
+        //   )})`;
+        // }
+      } else if (media.Type === 'Movie') {
+        secondary = `Movie${
+          media.ProductionYear ? ', ' + media.ProductionYear : ''
+        }`;
+      }
+      // else if (isPlexPlaylist(media) && !isUndefined(media.leafCount)) {
+      //   secondary = `Playlist with ${media.leafCount} ${pluralize(
+      //     'tracks',
+      //     media.leafCount,
+      //   )}`;
+      // }
+
+      return (
+        <ListItem divider sx={{ px: 1 }} dense key={media.Id} style={style}>
+          <Tooltip
+            placement="left"
+            title={
+              find(mediaSources, { id: selected.serverId })?.name ??
+              'Jellyfin Server'
+            }
+          >
+            <Box component="img" src={JellyfinLogo} width={30} sx={{ pr: 1 }} />
+          </Tooltip>
           <ListItemText primary={title} secondary={secondary} />
           <ListItemIcon sx={{ minWidth: 40 }}>
             <IconButton onClick={() => removeSelectedMedia([selected])}>
@@ -154,7 +226,9 @@ export default function SelectedProgrammingList({
     const item = data[index];
     switch (item.type) {
       case 'plex':
-        return item.guid;
+        return `plex.${item.serverId}.${item.id}`;
+      case 'jellyfin':
+        return `jellyfin.${item.serverId}.${item.id}`;
       case 'custom-show':
         return `custom_${item.customShowId}_${index}`;
     }

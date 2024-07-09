@@ -6,6 +6,7 @@ import {
 } from '../schemas/programmingSchema.js';
 import {
   BackupSettingsSchema,
+  JellyfinServerSettingsSchema,
   PlexServerSettingsSchema,
 } from '../schemas/settingsSchemas.js';
 import {
@@ -118,17 +119,34 @@ export const RandomSlotProgramLineupSchema = z.object({
   schedule: RandomSlotScheduleSchema,
 });
 
-export const UpdateChannelProgrammingRequestSchema = z.discriminatedUnion(
+export const UpdateChannelProgrammingRequestSchema: z.ZodDiscriminatedUnion<
   'type',
   [
-    ManualProgramLineupSchema,
-    TimeBasedProgramLineupSchema,
-    RandomSlotProgramLineupSchema,
-  ],
-);
+    typeof ManualProgramLineupSchema,
+    typeof TimeBasedProgramLineupSchema,
+    typeof RandomSlotProgramLineupSchema,
+  ]
+> = z.discriminatedUnion('type', [
+  ManualProgramLineupSchema,
+  TimeBasedProgramLineupSchema,
+  RandomSlotProgramLineupSchema,
+]);
 
 export type UpdateChannelProgrammingRequest = z.infer<
   typeof UpdateChannelProgrammingRequestSchema
+>;
+
+export const UpdateMediaSourceRequestSchema = z.discriminatedUnion('type', [
+  PlexServerSettingsSchema.partial({
+    sendChannelUpdates: true,
+    sendGuideUpdates: true,
+    clientIdentifier: true,
+  }),
+  JellyfinServerSettingsSchema,
+]);
+
+export type UpdateMediaSourceRequest = z.infer<
+  typeof UpdateMediaSourceRequestSchema
 >;
 
 export const UpdatePlexServerRequestSchema = PlexServerSettingsSchema.partial({
@@ -142,17 +160,18 @@ export type UpdatePlexServerRequest = z.infer<
   typeof UpdatePlexServerRequestSchema
 >;
 
-export const InsertPlexServerRequestSchema = PlexServerSettingsSchema.partial({
-  sendChannelUpdates: true,
-  sendGuideUpdates: true,
-  index: true,
-  clientIdentifier: true,
-}).omit({
-  id: true,
-});
+export const InsertMediaSourceRequestSchema = z.discriminatedUnion('type', [
+  PlexServerSettingsSchema.partial({
+    sendChannelUpdates: true,
+    sendGuideUpdates: true,
+    index: true,
+    clientIdentifier: true,
+  }).omit({ id: true }),
+  JellyfinServerSettingsSchema.omit({ id: true }),
+]);
 
-export type InsertPlexServerRequest = z.infer<
-  typeof InsertPlexServerRequestSchema
+export type InsertMediaSourceRequest = z.infer<
+  typeof InsertMediaSourceRequestSchema
 >;
 
 export const VersionApiResponseSchema = z.object({
@@ -201,3 +220,9 @@ export type UpdateSystemSettingsRequest = z.infer<
 >;
 
 export const UpdateBackupSettingsRequestSchema = BackupSettingsSchema;
+
+export const JellyfinLoginRequest = z.object({
+  url: z.string().url(),
+  username: z.string().min(1),
+  password: z.string().min(1),
+});

@@ -5,6 +5,7 @@ import { ExtractTypeKeys, FindChild } from '../../types/util.ts';
 import { useApiQuery } from '../useApiQuery.ts';
 import { useTunarrApi } from '../useTunarrApi.ts';
 import { plexQueryOptions } from './plexHookUtil.ts';
+import { MediaSourceId } from '@tunarr/types/schemas';
 
 export type PlexPathMappings = [
   ['/library/sections', PlexLibrarySections],
@@ -14,7 +15,7 @@ export type PlexPathMappings = [
 declare const plexQueryArgsSymbol: unique symbol;
 
 type PlexQueryArgs<T> = {
-  serverName: string;
+  serverId: MediaSourceId;
   path: string;
   enabled: boolean;
   [plexQueryArgsSymbol]?: T;
@@ -24,23 +25,23 @@ export const usePlex = <
   T extends ExtractTypeKeys<PlexPathMappings>,
   OutType = FindChild<T, PlexPathMappings>,
 >(
-  serverName: string,
+  serverId: MediaSourceId,
   path: string,
   enabled: boolean = true,
-) =>
-  useApiQuery({
-    queryKey: ['plex', serverName, path],
-    queryFn: (apiClient) =>
-      fetchPlexPath<OutType>(apiClient, serverName, path)(),
+) => {
+  return useApiQuery({
+    queryKey: ['plex', serverId, path],
+    queryFn: (apiClient) => fetchPlexPath<OutType>(apiClient, serverId, path)(),
     enabled,
   });
+};
 export const usePlexTyped = <T>(
-  serverName: string,
+  serverId: MediaSourceId,
   path: string,
   enabled: boolean = true,
 ) => {
   const apiClient = useTunarrApi();
-  return useQuery(plexQueryOptions<T>(apiClient, serverName, path, enabled));
+  return useQuery(plexQueryOptions<T>(apiClient, serverId, path, enabled));
 }; /**
  * Like {@link usePlexTyped} but accepts two queries that each return
  * a typed Plex object. NOTE - uses casting and not schema validation!!
@@ -52,10 +53,10 @@ export const usePlexTyped2 = <T = unknown, U = unknown>(
   const apiClient = useTunarrApi();
   return useQueries({
     queries: args.map((query) => ({
-      queryKey: ['plex', query.serverName, query.path],
+      queryKey: ['plex', query.serverId, query.path],
       queryFn: fetchPlexPath<(typeof query)[typeof plexQueryArgsSymbol]>(
         apiClient,
-        query.serverName,
+        query.serverId,
         query.path,
       ),
       enabled: query.enabled,
@@ -70,5 +71,7 @@ export const usePlexTyped2 = <T = unknown, U = unknown>(
     },
   });
 };
-export const usePlexLibraries = (serverName: string, enabled: boolean = true) =>
-  usePlex<'/library/sections'>(serverName, '/library/sections', enabled);
+export const usePlexLibraries = (
+  serverId: MediaSourceId,
+  enabled: boolean = true,
+) => usePlex<'/library/sections'>(serverId, '/library/sections', enabled);

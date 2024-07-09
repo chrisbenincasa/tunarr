@@ -22,6 +22,7 @@ import { CustomShow } from './CustomShow.js';
 import { FillerShow } from './FillerShow.js';
 import { ProgramExternalId } from './ProgramExternalId.js';
 import { ProgramGrouping } from './ProgramGrouping.js';
+import { JellyfinItemKind } from '@tunarr/types/jellyfin';
 
 /**
  * Program represents a 'playable' entity. A movie, episode, or music track
@@ -256,6 +257,20 @@ export function programTypeFromString(str: string): ProgramType | undefined {
     if (key.toLowerCase() === str) {
       return value;
     }
+  }
+  return;
+}
+
+export function programTypeFromJellyfinType(
+  kind: JellyfinItemKind,
+): ProgramType | undefined {
+  switch (kind) {
+    case 'Audio':
+      return ProgramType.Track;
+    case 'Episode':
+      return ProgramType.Episode;
+    case 'Movie':
+      return ProgramType.Movie;
   }
   return;
 }

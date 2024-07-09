@@ -11,6 +11,7 @@ import { ProgramGroupingExternalId } from './ProgramGroupingExternalId.js';
 import { Maybe } from '../../types/util.js';
 import { find } from 'lodash-es';
 import { enumKeys } from '../../util/enumUtil.js';
+import { JellyfinItemKind } from '@tunarr/types/jellyfin';
 
 /**
  * A ProgramGrouping represents some logical collection of Programs.
@@ -88,4 +89,21 @@ export function programGroupingTypeForString(
     return ProgramGroupingType[key];
   }
   return;
+}
+
+export function programGroupingTypeForJellyfinType(
+  t: JellyfinItemKind,
+): Maybe<ProgramGroupingType> {
+  switch (t) {
+    case 'Season':
+      return ProgramGroupingType.TvShowSeason;
+    case 'Series':
+      return ProgramGroupingType.TvShow;
+    case 'MusicArtist':
+      return ProgramGroupingType.MusicArtist;
+    case 'MusicAlbum':
+      return ProgramGroupingType.MusicAlbum;
+    default:
+      return;
+  }
 }

@@ -340,7 +340,7 @@ export default function ChannelProgrammingList({
   const [focusedProgramDetails, setFocusedProgramDetails] = useState<
     ChannelProgram | undefined
   >();
-  const [startStop, setStartStop] = useState<GuideTime>({});
+  const [, setStartStop] = useState<GuideTime>({});
   const [editProgram, setEditProgram] = useState<
     ((UIFlexProgram | UIRedirectProgram) & { index: number }) | undefined
   >();
@@ -474,8 +474,6 @@ export default function ChannelProgrammingList({
           open={!isUndefined(focusedProgramDetails)}
           onClose={() => setFocusedProgramDetails(undefined)}
           program={focusedProgramDetails}
-          start={startStop.start}
-          stop={startStop.stop}
         />
         <AddFlexModal
           open={!isUndefined(editProgram) && editProgram.type === 'flex'}

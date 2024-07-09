@@ -15,7 +15,6 @@ import { fileExists } from '../util/fsUtil';
 import { deepCopy } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory';
 import {
-  ProgramAndTimeElapsed,
   StreamProgramCalculator,
   generateChannelContext,
 } from './StreamProgramCalculator';
@@ -107,80 +106,75 @@ export class VideoStream {
     }
 
     let lineupItem: Maybe<StreamLineupItem>;
-    let currentProgram: ProgramAndTimeElapsed | undefined;
     let channelContext: Loaded<Channel> = channel;
     const redirectChannels: string[] = [];
     const upperBounds: number[] = [];
 
-    if (isUndefined(lineupItem)) {
-      const lineup = await serverCtx.channelDB.loadLineup(channel.uuid);
-      currentProgram = await this.calculator.getCurrentProgramAndTimeElapsed(
-        startTimestamp,
-        channel,
-        lineup,
+    let currentProgram = await this.calculator.getCurrentProgramAndTimeElapsed(
+      startTimestamp,
+      channel,
+      lineup,
+    );
+
+    while (
+      !isUndefined(currentProgram) &&
+      currentProgram.program.type === 'redirect'
+    ) {
+      redirectChannels.push(channelContext.uuid);
+      upperBounds.push(
+        currentProgram.program.duration - currentProgram.timeElapsed,
       );
 
-      while (
-        !isUndefined(currentProgram) &&
-        currentProgram.program.type === 'redirect'
-      ) {
-        redirectChannels.push(channelContext.uuid);
-        upperBounds.push(
-          currentProgram.program.duration - currentProgram.timeElapsed,
-        );
-
-        if (redirectChannels.includes(currentProgram.program.channel)) {
-          await serverCtx.channelCache.recordPlayback(
-            channelContext.uuid,
-            startTimestamp,
-            {
-              type: 'error',
-              title: 'Error',
-              error:
-                'Recursive channel redirect found: ' +
-                redirectChannels.join(', '),
-              duration: 60000,
-              start: 0,
-            },
-          );
-        }
-
-        const nextChannelId = currentProgram.program.channel;
-        const newChannelAndLineup =
-          await serverCtx.channelDB.loadChannelAndLineup(nextChannelId);
-
-        if (isNil(newChannelAndLineup)) {
-          const msg = "Invalid redirect to a channel that doesn't exist";
-          this.logger.error(msg);
-          currentProgram = {
-            program: {
-              ...createOfflineStreamLineupIteam(60000),
-              type: 'error',
-              error: msg,
-            },
-            timeElapsed: 0,
-            programIndex: -1,
-          };
-          continue;
-        }
-
-        channelContext = newChannelAndLineup.channel;
-        lineupItem = serverCtx.channelCache.getCurrentLineupItem(
+      if (redirectChannels.includes(currentProgram.program.channel)) {
+        await serverCtx.channelCache.recordPlayback(
           channelContext.uuid,
           startTimestamp,
+          {
+            type: 'error',
+            title: 'Error',
+            error:
+              'Recursive channel redirect found: ' +
+              redirectChannels.join(', '),
+            duration: 60000,
+            start: 0,
+          },
         );
+      }
 
-        if (!isUndefined(lineupItem)) {
-          lineupItem = deepCopy(lineupItem);
-          break;
-        } else {
-          currentProgram =
-            await this.calculator.getCurrentProgramAndTimeElapsed(
-              startTimestamp,
-              channelContext,
-              newChannelAndLineup.lineup,
-            );
-        }
+      const nextChannelId = currentProgram.program.channel;
+      const newChannelAndLineup =
+        await serverCtx.channelDB.loadChannelAndLineup(nextChannelId);
+
+      if (isNil(newChannelAndLineup)) {
+        const msg = "Invalid redirect to a channel that doesn't exist";
+        this.logger.error(msg);
+        currentProgram = {
+          program: {
+            ...createOfflineStreamLineupIteam(60000),
+            type: 'error',
+            error: msg,
+          },
+          timeElapsed: 0,
+          programIndex: -1,
+        };
+        continue;
+      }
+
+      channelContext = newChannelAndLineup.channel;
+      lineupItem = serverCtx.channelCache.getCurrentLineupItem(
+        channelContext.uuid,
+        startTimestamp,
+      );
+
+      if (!isUndefined(lineupItem)) {
+        lineupItem = deepCopy(lineupItem);
+        break;
+      } else {
+        currentProgram = await this.calculator.getCurrentProgramAndTimeElapsed(
+          startTimestamp,
+          channelContext,
+          newChannelAndLineup.lineup,
+        );
       }
     }
 
@@ -246,7 +240,6 @@ export class VideoStream {
       for (let i = redirectChannels.length - 1; i >= 0; i--) {
         const thisUpperBound = nth(upperBounds, i);
         if (!isNil(thisUpperBound)) {
-          console.log('adjusting upper bound....');
           const nextBound = thisUpperBound + beginningOffset;
           const prevBound = isNil(lineupItem.streamDuration)
             ? upperBound
@@ -310,10 +303,10 @@ export class VideoStream {
     };
 
     const playerContext: PlayerContext = {
-      lineupItem: lineupItem,
-      ffmpegSettings: ffmpegSettings,
+      lineupItem,
+      ffmpegSettings,
       channel: combinedChannel,
-      m3u8: m3u8,
+      m3u8,
       audioOnly: audioOnly,
       // A little hacky...
       entityManager: (
@@ -322,7 +315,7 @@ export class VideoStream {
       settings: serverCtx.settings,
     };
 
-    const player: ProgramPlayer = new ProgramPlayer(playerContext);
+    const player = new ProgramPlayer(playerContext);
     let stopped = false;
 
     const stop = () => {
@@ -343,11 +336,10 @@ export class VideoStream {
       });
 
       ffmpegEmitter?.on('end', () => {
-        this.logger.trace('playObj.end');
         stop();
       });
     } catch (err) {
-      this.logger.error('Error when attempting to play video: %O', err);
+      this.logger.error(err, 'Error when attempting to play video');
       stop();
       return {
         type: 'error',

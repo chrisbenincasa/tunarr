@@ -9,11 +9,15 @@ import ProgrammingSelector from '../../components/channel_config/ProgrammingSele
 type Props = {
   onAddSelectedMedia: (programs: AddedMedia[]) => void;
   onAddMediaSuccess: () => void;
+  initialMediaSourceId?: string;
+  initialLibraryId?: string;
 };
 
 export default function ProgrammingSelectorPage({
   onAddMediaSuccess,
   onAddSelectedMedia,
+  initialMediaSourceId,
+  initialLibraryId,
 }: Props) {
   const selectedLibrary = useStore((s) => s.currentLibrary);
 
@@ -21,7 +25,10 @@ export default function ProgrammingSelectorPage({
     <>
       <Breadcrumbs />
       <PaddedPaper>
-        <ProgrammingSelector />
+        <ProgrammingSelector
+          initialMediaSourceId={initialMediaSourceId}
+          initialLibraryId={initialLibraryId}
+        />
         <SelectedProgrammingList
           onAddSelectedMedia={onAddSelectedMedia}
           onAddMediaSuccess={onAddMediaSuccess}

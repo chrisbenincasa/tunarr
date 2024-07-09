@@ -16,6 +16,7 @@ import _, {
   map,
   once,
   range,
+  reject,
   zipWith,
 } from 'lodash-es';
 import fs from 'node:fs/promises';
@@ -463,4 +464,8 @@ export function nullToUndefined<T>(x: T | null | undefined): T | undefined {
     return undefined;
   }
   return x;
+}
+
+export function removeErrors<T>(coll: Try<T>[] | null | undefined): T[] {
+  return reject(coll, isError) satisfies T[] as T[];
 }

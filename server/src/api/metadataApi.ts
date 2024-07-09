@@ -7,7 +7,7 @@ import {
   ProgramSourceType,
   programSourceTypeFromString,
 } from '../dao/custom_types/ProgramSourceType';
-import { PlexApiFactory } from '../external/PlexApiFactory';
+import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory';
 import { RouterPluginAsyncCallback } from '../types/serverType';
 
 const externalIdSchema = z
@@ -70,6 +70,11 @@ export const metadataApiRouter: RouterPluginAsyncCallback = async (fastify) => {
       switch (req.query.id.externalSourceType) {
         case ProgramSourceType.PLEX: {
           result = await handlePlexItem(req.query);
+          break;
+        }
+        case ProgramSourceType.JELLYFIN: {
+          result = await handleJellyfishItem(req.query);
+          break;
         }
       }
 
@@ -113,7 +118,9 @@ export const metadataApiRouter: RouterPluginAsyncCallback = async (fastify) => {
   );
 
   async function handlePlexItem(query: ExternalMetadataQuery) {
-    const plexApi = await PlexApiFactory().getOrSet(query.id.externalSourceId);
+    const plexApi = await MediaSourceApiFactory().getOrSet(
+      query.id.externalSourceId,
+    );
 
     if (isNil(plexApi)) {
       return null;
@@ -126,6 +133,28 @@ export const metadataApiRouter: RouterPluginAsyncCallback = async (fastify) => {
         height: query.thumbOptions?.height,
         upscale: '1',
       });
+    }
+
+    return null;
+  }
+
+  async function handleJellyfishItem(query: ExternalMetadataQuery) {
+    const jellyfinClient = await MediaSourceApiFactory().getJellyfinByName(
+      query.id.externalSourceId,
+    );
+
+    if (isNil(jellyfinClient)) {
+      return null;
+    }
+
+    if (query.asset === 'thumb') {
+      return jellyfinClient.getThumbUrl(query.id.externalItemId);
+      // return jellyfinClient.getThumbUrl({
+      //   itemKey: query.id.externalItemId,
+      //   width: query.thumbOptions?.width,
+      //   height: query.thumbOptions?.height,
+      //   upscale: '1',
+      // });
     }
 
     return null;

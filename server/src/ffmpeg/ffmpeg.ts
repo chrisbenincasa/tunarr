@@ -13,7 +13,7 @@ import {
 import path from 'path';
 import { DeepReadonly, DeepRequired } from 'ts-essentials';
 import { serverOptions } from '../globals.js';
-import { StreamDetails } from '../stream/plex/PlexTranscoder.js';
+import { StreamDetails } from '../stream/types.js';
 import { StreamContextChannel } from '../stream/types.js';
 import { Maybe } from '../types/util.js';
 import { TypedEventEmitter } from '../types/eventEmitter.js';
@@ -365,6 +365,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     startTime: number,
     duration: Maybe<string>,
     enableIcon: Maybe<Watermark>,
+    extraInnputHeaders: Record<string, string> = {},
   ) {
     return this.spawn(
       streamUrl,
@@ -373,6 +374,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       duration,
       true,
       enableIcon,
+      extraInnputHeaders,
     );
   }
 
@@ -430,6 +432,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     duration: Maybe<string>,
     limitRead: boolean,
     watermark: Maybe<Watermark>,
+    extraInnputHeaders: Record<string, string> = {},
   ) {
     const ffmpegArgs: string[] = [
       '-hide_banner',
@@ -461,6 +464,9 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     let videoFile = -1;
     let overlayFile = -1;
     if (isNonEmptyString(streamUrl)) {
+      for (const [key, value] of Object.entries(extraInnputHeaders)) {
+        ffmpegArgs.push('-headers', `'${key}: ${value}'`);
+      }
       ffmpegArgs.push(`-i`, streamUrl);
       videoFile = inputFiles++;
       audioFile = videoFile;
@@ -880,7 +886,8 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
 
     const argsWithTokenRedacted = ffmpegArgs
       .join(' ')
-      .replaceAll(/(.*X-Plex-Token=)([A-z0-9_\\-]+)(.*)/g, '$1REDACTED$3');
+      .replaceAll(/(.*X-Plex-Token=)([A-z0-9_\\-]+)(.*)/g, '$1REDACTED$3')
+      .replaceAll(/(.*X-Emby-Token:\s)([A-z0-9_\\-]+)(.*)/g, '$1REDACTED$3');
     this.logger.debug(`Starting ffmpeg with args: "%s"`, argsWithTokenRedacted);
 
     this.ffmpeg = spawn(this.ffmpegPath, ffmpegArgs, {

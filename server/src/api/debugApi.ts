@@ -4,28 +4,29 @@ import { ChannelLineupQuery } from '@tunarr/types/api';
 import { ChannelLineupSchema } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import { FastifyRequest } from 'fastify';
-import { compact, first, isNil, isUndefined } from 'lodash-es';
+import { compact, isNil, reject, some, map } from 'lodash-es';
 import os from 'node:os';
 import z from 'zod';
 import { ArchiveDatabaseBackup } from '../dao/backup/ArchiveDatabaseBackup.js';
 import { getEm } from '../dao/dataSource.js';
-import {
-  StreamLineupItem,
-  isContentBackedLineupIteam,
-} from '../dao/derived_types/StreamLineup.js';
+import { StreamLineupItem } from '../dao/derived_types/StreamLineup.js';
 import { Channel } from '../dao/entities/Channel.js';
 import { LineupCreator } from '../services/dynamic_channels/LineupCreator.js';
 import { PlayerContext } from '../stream/Player.js';
 import { generateChannelContext } from '../stream/StreamProgramCalculator.js';
 import { PlexPlayer } from '../stream/plex/PlexPlayer.js';
-import { PlexTranscoder } from '../stream/plex/PlexTranscoder.js';
 import { StreamContextChannel } from '../stream/types.js';
-import { SavePlexProgramExternalIdsTask } from '../tasks/SavePlexProgramExternalIdsTask.js';
+import { SavePlexProgramExternalIdsTask } from '../tasks/plex/SavePlexProgramExternalIdsTask.js';
 import { PlexTaskQueue } from '../tasks/TaskQueue.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { Maybe } from '../types/util.js';
 import { ifDefined, mapAsyncSeq } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
+import { DebugJellyfinApiRouter } from './debug/debugJellyfinApi.js';
+import { jsonArrayFrom } from 'kysely/helpers/sqlite';
+import { directDbAccess } from '../dao/direct/directDbAccess.js';
+import { MediaSourceType } from '../dao/entities/MediaSource.js';
+import { enumValues } from '../util/enumUtil.js';
 
 const ChannelQuerySchema = {
   querystring: z.object({
@@ -33,9 +34,12 @@ const ChannelQuerySchema = {
   }),
 };
 
-// eslint-disable-next-line @typescript-eslint/require-await
 export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
   const logger = LoggerFactory.child({ caller: import.meta });
+
+  await fastify.register(DebugJellyfinApiRouter, {
+    prefix: '/debug',
+  });
 
   fastify.get(
     '/debug/plex',
@@ -83,67 +87,6 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
         res.raw.writeHead(500, 'no emitter');
         res.raw.end();
       }
-    },
-  );
-
-  fastify.get(
-    '/debug/plex-transcoder/video-stats',
-    { schema: ChannelQuerySchema },
-    async (req, res) => {
-      const channel = await req.serverCtx.channelDB.getChannelAndProgramsSLOW(
-        req.query.channelId,
-      );
-
-      if (!channel) {
-        return res.status(404).send('No channel found');
-      }
-
-      const lineupItem = await getLineupItemForDebug(
-        req,
-        channel,
-        new Date().getTime(),
-      );
-
-      if (isUndefined(lineupItem)) {
-        return res
-          .status(500)
-          .send('Couldnt get a lineup item for this channel');
-      }
-
-      if (!isContentBackedLineupIteam(lineupItem)) {
-        return res
-          .status(500)
-          .send(
-            `Needed lineup item of type commercial or program, but got "${lineupItem.type}"`,
-          );
-      }
-
-      // TODO use plex server from item.
-      const plexServer = await req.serverCtx.plexServerDB.getAll().then(first);
-
-      if (isNil(plexServer)) {
-        return res.status(404).send('Could not find plex server');
-      }
-
-      const plexSettings = req.serverCtx.settings.plexSettings();
-
-      const combinedChannel: StreamContextChannel = {
-        ...generateChannelContext(channel),
-        transcoding: channel?.transcoding,
-      };
-
-      const transcoder = new PlexTranscoder(
-        `debug-${new Date().getTime()}`,
-        plexServer,
-        plexSettings,
-        combinedChannel,
-        lineupItem,
-      );
-
-      transcoder.setTranscodingArgs(false, true, false, false);
-      await transcoder.getDecision(false);
-
-      return res.send(transcoder.getVideoStats());
     },
   );
 
@@ -403,17 +346,54 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
     return res.send();
   });
 
-  fastify.get('/debug/db/test_direct_access', async (_req, res) => {
-    // const result = await directDbAccess()
-    //   .selectFrom('channel_programs')
-    //   .where('channel_uuid', '=', '0ff3ec64-1022-4afd-9178-3f27f1121d47')
-    //   .innerJoin('program', 'channel_programs.program_uuid', 'program.uuid')
-    //   .leftJoin('program_grouping', join => {
-    //     join.onRef('')
-    //   })
-    //   .select(['program'])
-    //   .execute();
-    // return res.send(result);
-    return res.send();
-  });
+  fastify.get(
+    '/debug/db/test_direct_access',
+    {
+      schema: {
+        querystring: z.object({
+          id: z.string(),
+        }),
+      },
+    },
+    async (_req, res) => {
+      const mediaSource = (await _req.serverCtx.mediaSourceDB.getById(
+        _req.query.id,
+      ))!;
+
+      const knownProgramIds = await directDbAccess()
+        .selectFrom('programExternalId as p1')
+        .where(({ eb, and }) =>
+          and([
+            eb('p1.externalSourceId', '=', mediaSource.name),
+            eb('p1.sourceType', '=', mediaSource.type),
+          ]),
+        )
+        .selectAll('p1')
+        .select((eb) =>
+          jsonArrayFrom(
+            eb
+              .selectFrom('programExternalId as p2')
+              .whereRef('p2.programUuid', '=', 'p1.programUuid')
+              .whereRef('p2.uuid', '!=', 'p1.uuid')
+              .select([
+                'p2.sourceType',
+                'p2.externalSourceId',
+                'p2.externalKey',
+              ]),
+          ).as('otherExternalIds'),
+        )
+        .groupBy('p1.uuid')
+        .execute();
+
+      const mediaSourceTypes = map(enumValues(MediaSourceType), (typ) =>
+        typ.toString(),
+      );
+      const danglingPrograms = reject(knownProgramIds, (program) => {
+        some(program.otherExternalIds, (eid) =>
+          mediaSourceTypes.includes(eid.sourceType),
+        );
+      });
+      return res.send(danglingPrograms);
+    },
+  );
 };

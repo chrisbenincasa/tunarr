@@ -1,14 +1,6 @@
 import { Loaded } from '@mikro-orm/core';
 import constants from '@tunarr/shared/constants';
-import {
-  find,
-  first,
-  isEmpty,
-  isNil,
-  isNull,
-  isUndefined,
-  pick,
-} from 'lodash-es';
+import { first, isEmpty, isNil, isNull, isUndefined, pick } from 'lodash-es';
 import { ProgramExternalIdType } from '../dao/custom_types/ProgramExternalIdType.js';
 import { getEm } from '../dao/dataSource.js';
 import {
@@ -34,8 +26,10 @@ import { binarySearchRange } from '../util/binarySearch.js';
 import { isNonEmptyString, zipWithIndex } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { STREAM_CHANNEL_CONTEXT_KEYS, StreamContextChannel } from './types.js';
-import { FillerDB } from '../dao/fillerDb.js';
+import { FillerDB } from '../dao/fillerDB.js';
 import { ChannelDB } from '../dao/channelDb.js';
+import { MediaSourceType } from '../dao/entities/MediaSource.js';
+import { ProgramExternalId } from '../dao/entities/ProgramExternalId.js';
 
 const SLACK = constants.SLACK;
 
@@ -164,7 +158,12 @@ export class StreamProgramCalculator {
           populate: ['externalIds'],
           populateWhere: {
             externalIds: {
-              sourceType: ProgramExternalIdType.PLEX,
+              sourceType: {
+                $in: [
+                  ProgramExternalIdType.PLEX,
+                  ProgramExternalIdType.JELLYFIN,
+                ],
+              },
             },
           },
         },
@@ -178,21 +177,26 @@ export class StreamProgramCalculator {
       if (!isNil(backingItem)) {
         // Will play this item on the first found server... unsure if that is
         // what we want
-        const plexInfo = find(
-          backingItem.externalIds,
-          (eid) => eid.sourceType === ProgramExternalIdType.PLEX,
+        const externalInfo = backingItem.externalIds.find(
+          (eid) =>
+            eid.sourceType === ProgramExternalIdType.PLEX ||
+            eid.sourceType === ProgramExternalIdType.JELLYFIN,
         );
 
         if (
-          !isUndefined(plexInfo) &&
-          isNonEmptyString(plexInfo.externalSourceId)
+          !isUndefined(externalInfo) &&
+          isNonEmptyString(externalInfo.externalSourceId)
         ) {
           program = {
             type: 'program',
-            plexFilePath: plexInfo.externalFilePath,
-            externalKey: plexInfo.externalKey,
-            filePath: plexInfo.directFilePath,
-            externalSourceId: plexInfo.externalSourceId,
+            externalSource:
+              externalInfo.sourceType === ProgramExternalIdType.JELLYFIN
+                ? MediaSourceType.Jellyfin
+                : MediaSourceType.Plex,
+            plexFilePath: externalInfo.externalFilePath,
+            externalKey: externalInfo.externalKey,
+            filePath: externalInfo.directFilePath,
+            externalSourceId: externalInfo.externalSourceId,
             duration: backingItem.duration,
             programId: backingItem.uuid,
             title: backingItem.title,
@@ -302,24 +306,38 @@ export class StreamProgramCalculator {
           }
         }
 
-        return {
-          // just add the video, starting at 0, playing the entire duration
-          type: 'commercial',
-          title: filler.title,
-          filePath: filler.filePath!,
-          externalKey: filler.externalKey,
-          start: fillerstart,
-          streamDuration: Math.max(
-            1,
-            Math.min(filler.duration - fillerstart, remaining),
-          ),
-          duration: filler.duration,
-          programId: filler.uuid,
-          beginningOffset: beginningOffset,
-          externalSourceId: filler.externalSourceId,
-          plexFilePath: filler.plexFilePath!,
-          programType: filler.type as ProgramType,
-        };
+        const externalInfos = await getEm().find(ProgramExternalId, {
+          program: { uuid: filler.uuid },
+          sourceType: {
+            $in: [ProgramExternalIdType.PLEX, ProgramExternalIdType.JELLYFIN],
+          },
+        });
+
+        if (!isEmpty(externalInfos)) {
+          const externalInfo = first(externalInfos)!;
+          return {
+            // just add the video, starting at 0, playing the entire duration
+            type: 'commercial',
+            title: filler.title,
+            filePath: externalInfo.directFilePath,
+            externalKey: externalInfo.externalKey,
+            externalSource:
+              externalInfo.sourceType === ProgramExternalIdType.JELLYFIN
+                ? MediaSourceType.Jellyfin
+                : MediaSourceType.Plex,
+            start: fillerstart,
+            streamDuration: Math.max(
+              1,
+              Math.min(filler.duration - fillerstart, remaining),
+            ),
+            duration: filler.duration,
+            programId: filler.uuid,
+            beginningOffset: beginningOffset,
+            externalSourceId: externalInfo.externalSourceId!,
+            plexFilePath: externalInfo.externalFilePath,
+            programType: filler.type as ProgramType,
+          };
+        }
       }
       // pick the offline screen
       remaining = Math.min(remaining, 10 * 60 * 1000);

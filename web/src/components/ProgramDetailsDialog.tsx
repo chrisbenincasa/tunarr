@@ -1,3 +1,6 @@
+import JellyfinIcon from '@/assets/jellyfin.svg?react';
+import PlexIcon from '@/assets/plex.svg?react';
+import { Maybe } from '@/types/util.ts';
 import { Close as CloseIcon, OpenInNew } from '@mui/icons-material';
 import {
   Box,
@@ -9,15 +12,20 @@ import {
   IconButton,
   Skeleton,
   Stack,
+  SvgIcon,
   Typography,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
 import { createExternalId } from '@tunarr/shared';
 import { forProgramType } from '@tunarr/shared/util';
-import { ChannelProgram, TvGuideProgram } from '@tunarr/types';
+import {
+  ChannelProgram,
+  TvGuideProgram,
+  isContentProgram,
+} from '@tunarr/types';
 import dayjs, { Dayjs } from 'dayjs';
-import { isUndefined } from 'lodash-es';
+import { capitalize, compact, find, isUndefined } from 'lodash-es';
 import {
   ReactEventHandler,
   useCallback,
@@ -94,9 +102,10 @@ export default function ProgramDetailsDialog({
       forProgramType({
         content: (program) => (
           <Chip
+            key="duration"
             color="primary"
             label={prettyItemDuration(program.duration)}
-            sx={{ mt: 1 }}
+            sx={{ mt: 1, mr: 1 }}
           />
         ),
       }),
@@ -107,11 +116,82 @@ export default function ProgramDetailsDialog({
     (program: ChannelProgram) => {
       const ratingString = rating(program);
       return ratingString ? (
-        <Chip color="primary" label={ratingString} sx={{ mx: 1, mt: 1 }} />
+        <Chip
+          key="rating"
+          color="primary"
+          label={ratingString}
+          sx={{ mr: 1, mt: 1 }}
+        />
       ) : null;
     },
     [rating],
   );
+
+  const sourceChip = useCallback((program: ChannelProgram) => {
+    if (isContentProgram(program)) {
+      const id = find(
+        program.externalIds,
+        (eid) =>
+          eid.type === 'multi' &&
+          (eid.source === 'jellyfin' || eid.source === 'plex'),
+      );
+      if (!id) {
+        return null;
+      }
+
+      let icon: Maybe<JSX.Element> = undefined;
+      switch (id.source) {
+        case 'jellyfin':
+          icon = <JellyfinIcon />;
+          break;
+        case 'plex':
+          icon = <PlexIcon />;
+          break;
+        default:
+          break;
+      }
+
+      if (icon) {
+        return (
+          <Chip
+            key="source"
+            color="primary"
+            icon={<SvgIcon>{icon}</SvgIcon>}
+            label={capitalize(id.source)}
+            sx={{ mr: 1, mt: 1 }}
+          />
+        );
+      }
+    }
+
+    return null;
+  }, []);
+
+  const timeChip = () => {
+    if (start && stop) {
+      return (
+        <Chip
+          key="time"
+          label={`${dayjs(start).format('h:mm')} - ${dayjs(stop).format(
+            'h:mma',
+          )}`}
+          sx={{ mt: 1, mr: 1 }}
+          color="primary"
+        />
+      );
+    }
+
+    return null;
+  };
+
+  const chips = (program: ChannelProgram) => {
+    return compact([
+      durationChip(program),
+      ratingChip(program),
+      timeChip(),
+      sourceChip(program),
+    ]);
+  };
 
   const thumbnailImage = useMemo(
     () =>
@@ -131,16 +211,35 @@ export default function ProgramDetailsDialog({
           }
 
           let key = p.uniqueId;
-          if (
-            p.subtype === 'track' &&
-            p.originalProgram?.type === 'track' &&
-            isNonEmptyString(p.originalProgram.parentRatingKey)
-          ) {
-            key = createExternalId(
-              'plex',
-              p.externalSourceName!,
-              p.originalProgram.parentRatingKey,
-            );
+          if (p.subtype === 'track' && p.originalProgram) {
+            switch (p.originalProgram.sourceType) {
+              case 'plex': {
+                if (
+                  p.originalProgram.program.type === 'track' &&
+                  isNonEmptyString(p.originalProgram.program.parentRatingKey)
+                ) {
+                  key = createExternalId(
+                    p.originalProgram?.sourceType,
+                    p.externalSourceName!,
+                    p.originalProgram.program.parentRatingKey,
+                  );
+                }
+                break;
+              }
+              case 'jellyfin': {
+                if (
+                  p.originalProgram.program.Type === 'Audio' &&
+                  isNonEmptyString(p.originalProgram.program.AlbumId)
+                ) {
+                  key = createExternalId(
+                    p.originalProgram.sourceType,
+                    p.externalSourceName!,
+                    p.originalProgram.program.AlbumId,
+                  );
+                }
+                break;
+              }
+            }
           }
 
           return `${settings.backendUri}/api/metadata/external?id=${key}&mode=proxy&asset=thumb`;
@@ -181,8 +280,33 @@ export default function ProgramDetailsDialog({
   const isEpisode =
     program && program.type === 'content' && program.subtype === 'episode';
   const imageWidth = smallViewport ? (isEpisode ? '100%' : '55%') : 240;
-  const programStart = dayjs(start);
-  const programEnd = dayjs(stop);
+
+  let externalSourceName: string = '';
+  if (program) {
+    switch (program.type) {
+      case 'content': {
+        const eid = find(
+          program.externalIds,
+          (eid) =>
+            eid.type === 'multi' &&
+            (eid.source === 'plex' || eid.source === 'jellyfin'),
+        );
+        if (eid) {
+          switch (eid.source) {
+            case 'plex':
+              externalSourceName = 'Plex';
+              break;
+            case 'jellyfin':
+              externalSourceName = 'Jellyfin';
+              break;
+          }
+        }
+        break;
+      }
+      default:
+        break;
+    }
+  }
 
   return (
     program && (
@@ -206,17 +330,7 @@ export default function ProgramDetailsDialog({
         </DialogTitle>
         <DialogContent>
           <Stack spacing={2}>
-            <Box>
-              {durationChip(program)}
-              {ratingChip(program)}
-              <Chip
-                label={`${programStart.format('h:mm')} - ${programEnd.format(
-                  'h:mma',
-                )}`}
-                sx={{ mt: 1 }}
-                color="primary"
-              />
-            </Box>
+            <Box>{chips(program)}</Box>
             <Stack
               direction="row"
               spacing={smallViewport ? 0 : 2}
@@ -241,7 +355,13 @@ export default function ProgramDetailsDialog({
                   <Skeleton
                     variant="rectangular"
                     width={smallViewport ? '100%' : imageWidth}
-                    height={500}
+                    height={
+                      program.type === 'content' && program.subtype === 'movie'
+                        ? 500
+                        : smallViewport
+                        ? undefined
+                        : 140
+                    }
                     animation={thumbLoadState === 'loading' ? 'pulse' : false}
                   ></Skeleton>
                 )}
@@ -267,7 +387,7 @@ export default function ProgramDetailsDialog({
                     width={imageWidth}
                   />
                 )}
-                {externalUrl && (
+                {externalUrl && isNonEmptyString(externalSourceName) && (
                   <Button
                     component="a"
                     target="_blank"
@@ -276,7 +396,7 @@ export default function ProgramDetailsDialog({
                     endIcon={<OpenInNew />}
                     variant="contained"
                   >
-                    View in Plex
+                    View in {externalSourceName}
                   </Button>
                 )}
               </Box>

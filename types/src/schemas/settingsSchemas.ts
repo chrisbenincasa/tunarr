@@ -1,6 +1,6 @@
 import z from 'zod';
 import { ResolutionSchema } from './miscSchemas.js';
-import { TupleToUnion } from '../util.js';
+import { Tag, TupleToUnion } from '../util.js';
 import { ScheduleSchema } from './utilSchemas.js';
 
 export const XmlTvSettingsSchema = z.object({
@@ -88,19 +88,42 @@ export const FfmpegSettingsSchema = z.object({
   disableChannelPrelude: z.boolean().default(false),
 });
 
-export const PlexServerSettingsSchema = z.object({
-  id: z.string(),
+const mediaSourceId = z.custom<MediaSourceId>((val) => {
+  return typeof val === 'string';
+});
+
+export type MediaSourceId = Tag<string, 'mediaSourceId'>;
+
+const BaseMediaSourceSettingsSchema = z.object({
+  id: mediaSourceId,
   name: z.string(),
   uri: z.string(),
   accessToken: z.string(),
+});
+
+export const PlexServerSettingsSchema = BaseMediaSourceSettingsSchema.extend({
+  type: z.literal('plex'),
   sendGuideUpdates: z.boolean(),
   sendChannelUpdates: z.boolean(),
   index: z.number(),
   clientIdentifier: z.string().optional(),
 });
 
+export const JellyfinServerSettingsSchema =
+  BaseMediaSourceSettingsSchema.extend({
+    type: z.literal('jellyfin'),
+  });
+
+export const MediaSourceSettingsSchema = z.discriminatedUnion('type', [
+  PlexServerSettingsSchema,
+  JellyfinServerSettingsSchema,
+]);
+
 export const PlexStreamSettingsSchema = z.object({
-  streamPath: z.union([z.literal('plex'), z.literal('direct')]).default('plex'),
+  // Plex is deprecated here
+  streamPath: z
+    .union([z.literal('plex'), z.literal('direct'), z.literal('network')])
+    .default('network'),
   enableDebugLogging: z.boolean().default(false),
   directStreamBitrate: z.number().default(20000),
   transcodeBitrate: z.number().default(2000),

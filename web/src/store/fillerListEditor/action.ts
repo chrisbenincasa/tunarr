@@ -2,7 +2,10 @@ import { ContentProgram, CustomProgram } from '@tunarr/types';
 import { map } from 'lodash-es';
 import { forAddedMediaType, zipWithIndex } from '../../helpers/util.ts';
 import { AddedMedia } from '../../types/index.ts';
-import { plexMediaToContentProgram } from '../channelEditor/actions';
+import {
+  jellyfinItemToContentProgram,
+  plexMediaToContentProgram,
+} from '../channelEditor/actions';
 import useStore from '../index.ts';
 
 import { FillerList, FillerListProgramming } from '@tunarr/types';
@@ -15,6 +18,7 @@ export const addMediaToCurrentFillerList = (programs: AddedMedia[]) =>
         programs,
         forAddedMediaType<ContentProgram | CustomProgram>({
           plex: ({ media }) => plexMediaToContentProgram(media),
+          jellyfin: ({ media }) => jellyfinItemToContentProgram(media),
           'custom-show': ({ program }) => program,
         }),
       );

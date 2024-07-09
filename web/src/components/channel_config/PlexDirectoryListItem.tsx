@@ -23,7 +23,7 @@ import { MouseEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { usePlexTyped2 } from '../../hooks/plex/usePlex.ts';
 import useStore from '../../store/index.ts';
 import {
-  addKnownMediaForServer,
+  addKnownMediaForPlexServer,
   addPlexSelectedMedia,
 } from '../../store/programmingSelector/actions.ts';
 import { PlexListItem } from './PlexListItem.tsx';
@@ -43,20 +43,20 @@ export function PlexDirectoryListItem(props: {
     PlexLibraryCollections
   >([
     {
-      serverName: props.server.name,
+      serverId: props.server.id,
       path: `/library/sections/${item.key}/all`,
       enabled: open,
     },
     {
-      serverName: props.server.name,
+      serverId: props.server.id,
       path: `/library/sections/${item.key}/collections`,
       enabled: open,
     },
   ]);
 
-  const listings = useStore((s) => s.knownMediaByServer[server.name]);
+  const listings = useStore((s) => s.knownMediaByServer[server.id]);
   const hierarchy = useStore(
-    (s) => s.contentHierarchyByServer[server.name][item.uuid],
+    (s) => s.contentHierarchyByServer[server.id][item.uuid],
   );
 
   const observerTarget = useRef(null);
@@ -86,13 +86,13 @@ export function PlexDirectoryListItem(props: {
 
   useEffect(() => {
     if (children && children.Metadata) {
-      addKnownMediaForServer(server.name, children.Metadata, item.uuid);
+      addKnownMediaForPlexServer(server.id, children.Metadata, item.uuid);
     }
 
     if (collections && collections.Metadata) {
-      addKnownMediaForServer(server.name, collections.Metadata, item.uuid);
+      addKnownMediaForPlexServer(server.id, collections.Metadata, item.uuid);
     }
-  }, [item.uuid, item.key, server.name, children, collections]);
+  }, [item.uuid, item.key, server.id, children, collections]);
 
   const handleClick = () => {
     setLimit(Math.min(hierarchy.length, 20));
@@ -102,17 +102,17 @@ export function PlexDirectoryListItem(props: {
   const addItems = useCallback(
     (e: MouseEvent<HTMLButtonElement>) => {
       e.stopPropagation();
-      addPlexSelectedMedia(server.name, [item]);
+      addPlexSelectedMedia(server, [item]);
     },
-    [item, server.name],
+    [item, server],
   );
 
   const renderCollectionRow = (id: string) => {
-    const media = listings[id];
+    const { type, item } = listings[id];
 
-    if (isPlexMedia(media)) {
+    if (type === 'plex' && isPlexMedia(item)) {
       return (
-        <PlexListItem key={media.guid} item={media} length={hierarchy.length} />
+        <PlexListItem key={item.guid} item={item} length={hierarchy.length} />
       );
     }
   };

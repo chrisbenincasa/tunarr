@@ -9,6 +9,7 @@ export const ExternalIdType = [
   'imdb',
   'tmdb',
   'tvdb',
+  'jellyfin',
 ] as const;
 
 export type ExternalIdType = TupleToUnion<typeof ExternalIdType>;
@@ -26,7 +27,7 @@ export const SingleExternalIdSourceSchema = constructZodLiteralUnionType(
   SingleExternalIdType.map((typ) => z.literal(typ)),
 );
 
-export const MultiExternalIdType = ['plex'] as const;
+export const MultiExternalIdType = ['plex', 'jellyfin'] as const;
 export type MultiExternalIdType = TupleToUnion<typeof MultiExternalIdType>;
 
 function inConstArr<Arr extends readonly string[], S extends string>(
@@ -64,7 +65,10 @@ export const SingleExternalIdSchema = z.object({
 });
 
 // When we have more sources, this will be a union
-export const MultiExternalSourceSchema = z.literal('plex');
+export const MultiExternalSourceSchema = z.union([
+  z.literal('plex'),
+  z.literal('jellyfin'),
+]);
 
 // Represents components of an ID that can be
 // used to address an object (program or grouping) in

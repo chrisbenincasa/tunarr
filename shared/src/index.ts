@@ -1,17 +1,27 @@
 import { ExternalId, SingleExternalId, MultiExternalId } from '@tunarr/types';
 import { PlexMedia } from '@tunarr/types/plex';
-import { type ExternalIdType } from '@tunarr/types/schemas';
+import {
+  SingleExternalIdType,
+  type ExternalIdType,
+} from '@tunarr/types/schemas';
 export { scheduleRandomSlots } from './services/randomSlotsService.js';
 export { scheduleTimeSlots } from './services/timeSlotService.js';
 export { mod as dayjsMod } from './util/dayjsExtensions.js';
 
 // TODO replace first arg with shared type
 export function createExternalId(
-  sourceType: ExternalIdType,
+  sourceType: ExternalIdType, //StrictExclude<ExternalIdType, SingleExternalIdType>,
   sourceId: string,
   itemId: string,
 ): `${string}|${string}|${string}` {
   return `${sourceType}|${sourceId}|${itemId}`;
+}
+
+export function createGlobalExternalIdString(
+  sourceType: SingleExternalIdType,
+  id: string,
+): `${string}|${string}` {
+  return `${sourceType}|${id}`;
 }
 
 export function createExternalIdFromMulti(multi: MultiExternalId) {
@@ -19,7 +29,7 @@ export function createExternalIdFromMulti(multi: MultiExternalId) {
 }
 
 export function createExternalIdFromGlobal(global: SingleExternalId) {
-  return createExternalId(global.source, '', global.id);
+  return createGlobalExternalIdString(global.source, global.id);
 }
 
 // We could type this better if we reuse the other ExternalId

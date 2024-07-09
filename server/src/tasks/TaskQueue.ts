@@ -53,3 +53,9 @@ export const PlexTaskQueue = new TaskQueue('PlexTaskQueue', {
   intervalCap: 5,
   interval: 2000,
 });
+
+export const JellyfinTaskQueue = new TaskQueue('JellyfinTaskQueue', {
+  concurrency: 2,
+  intervalCap: 5,
+  interval: 2000,
+});

@@ -1,15 +1,16 @@
+import { MediaSourceId } from '@tunarr/types/schemas';
 import { ApiClient } from '../external/api.ts';
 
 export const fetchPlexPath = <T>(
   apiClient: ApiClient,
-  serverName: string,
+  serverId: MediaSourceId,
   path: string,
 ) => {
   return async () => {
     return apiClient
       .getPlexPath({
         queries: {
-          name: serverName,
+          id: serverId,
           path,
         },
       })

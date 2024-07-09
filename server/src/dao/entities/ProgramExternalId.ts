@@ -9,6 +9,7 @@ import { isNonEmptyString } from '../../util/index.js';
 import { ProgramExternalIdType } from '../custom_types/ProgramExternalIdType.js';
 import { BaseEntity } from './BaseEntity.js';
 import { Program } from './Program.js';
+import { createExternalId } from '@tunarr/shared';
 
 /**
  * References to external sources for a {@link Program}
@@ -30,7 +31,7 @@ import { Program } from './Program.js';
   name: 'unique_program_multi_external_id',
   properties: ['program', 'sourceType', 'externalSourceId'],
   expression:
-    'create unique index `unique_program_multiple_external_id` on `program_external_id` (`program_uuid`, `source_type`) WHERE `external_source_id` IS NOT NULL',
+    'create unique index `unique_program_multiple_external_id` on `program_external_id` (`program_uuid`, `source_type`, `external_source_id`) WHERE `external_source_id` IS NOT NULL',
 })
 export class ProgramExternalId extends BaseEntity {
   @Enum(() => ProgramExternalIdType)
@@ -88,9 +89,11 @@ export class ProgramExternalId extends BaseEntity {
   }
 
   toExternalIdString(): string {
-    return `${this.sourceType.toString()}|${this.externalSourceId ?? ''}|${
-      this.externalKey
-    }`;
+    return createExternalId(
+      this.sourceType,
+      this.externalSourceId ?? '',
+      this.externalKey,
+    );
   }
 
   toKnexInsertData() {

@@ -14,7 +14,7 @@ import TunarrLogo from '../../components/TunarrLogo.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import AddPlexServer from '../../components/settings/AddPlexServer.tsx';
 import ConnectPlex from '../../components/settings/ConnectPlex.tsx';
-import { usePlexServerSettings } from '../../hooks/settingsHooks.ts';
+import { useMediaSources } from '../../hooks/settingsHooks.ts';
 import { useVersion } from '../../hooks/useVersion.ts';
 import { updateShowWelcomeState } from '../../store/themeEditor/actions.ts';
 
@@ -27,8 +27,7 @@ export default function WelcomePage() {
   const navigate = useNavigate();
 
   const { data: version } = useVersion();
-  const { data: plexServers, isLoading: isPlexLoading } =
-    usePlexServerSettings();
+  const { data: plexServers, isLoading: isPlexLoading } = useMediaSources();
 
   useEffect(() => {
     if (plexServers && plexServers.length > 0 && !isPlexLoading) {

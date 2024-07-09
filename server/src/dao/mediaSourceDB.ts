@@ -1,13 +1,20 @@
 import {
-  InsertPlexServerRequest,
-  UpdatePlexServerRequest,
+  InsertMediaSourceRequest,
+  UpdateMediaSourceRequest,
 } from '@tunarr/types/api';
 import ld, { isNil, isUndefined, keys, map, mapValues } from 'lodash-es';
 import { groupByUniq } from '../util/index.js';
 import { ChannelDB } from './channelDb.js';
-import { ProgramSourceType } from './custom_types/ProgramSourceType.js';
+import {
+  ProgramSourceType,
+  programSourceTypeFromMediaSource,
+} from './custom_types/ProgramSourceType.js';
 import { getEm } from './dataSource.js';
-import { PlexServerSettings as PlexServerSettingsEntity } from './entities/PlexServerSettings.js';
+import {
+  MediaSource,
+  MediaSourceType,
+  mediaSourceTypeFromApi,
+} from './entities/MediaSource.js';
 import { Program } from './entities/Program.js';
 
 //hmnn this is more of a "PlexServerService"...
@@ -22,7 +29,8 @@ type Report = {
   destroyedPrograms: number;
   modifiedPrograms: number;
 };
-export class PlexServerDB {
+
+export class MediaSourceDB {
   #channelDb: ChannelDB;
 
   constructor(channelDb: ChannelDB) {
@@ -31,25 +39,33 @@ export class PlexServerDB {
 
   async getAll() {
     const em = getEm();
-    return em.repo(PlexServerSettingsEntity).findAll();
+    return em.repo(MediaSource).findAll();
   }
 
   async getById(id: string) {
-    return getEm().repo(PlexServerSettingsEntity).findOne({ uuid: id });
+    return getEm().repo(MediaSource).findOne({ uuid: id });
   }
 
-  async getByExternalid(nameOrClientId: string) {
+  async getByExternalId(sourceType: MediaSourceType, nameOrClientId: string) {
     return getEm()
-      .repo(PlexServerSettingsEntity)
+      .repo(MediaSource)
       .findOne({
-        $or: [{ name: nameOrClientId }, { clientIdentifier: nameOrClientId }],
+        $and: [
+          {
+            $or: [
+              { name: nameOrClientId },
+              { clientIdentifier: nameOrClientId },
+            ],
+          },
+          { type: sourceType },
+        ],
       });
   }
 
-  async deleteServer(id: string, removePrograms: boolean = true) {
+  async deleteMediaSource(id: string, removePrograms: boolean = true) {
     const deletedServer = await getEm().transactional(async (em) => {
-      const ref = em.getReference(PlexServerSettingsEntity, id);
-      const existing = await em.findOneOrFail(PlexServerSettingsEntity, ref, {
+      const ref = em.getReference(MediaSource, id);
+      const existing = await em.findOneOrFail(MediaSource, ref, {
         populate: ['uuid', 'name'],
       });
       em.remove(ref);
@@ -60,39 +76,51 @@ export class PlexServerDB {
     if (!removePrograms) {
       reports = [];
     } else {
-      reports = await this.fixupProgramReferences(deletedServer.name);
+      reports = await this.fixupProgramReferences(
+        deletedServer.name,
+        programSourceTypeFromMediaSource(deletedServer.type),
+      );
     }
 
     return { deletedServer, reports };
   }
 
-  async updateServer(server: UpdatePlexServerRequest) {
+  async updateMediaSource(server: UpdateMediaSourceRequest) {
     const em = getEm();
-    const repo = em.repo(PlexServerSettingsEntity);
+    const repo = em.repo(MediaSource);
     const id = server.id;
 
     if (isNil(id)) {
       throw Error('Missing server id from request');
     }
 
-    const s = await repo.findOne(id);
+    const s = await repo.findOne({ uuid: id });
 
     if (isNil(s)) {
       throw Error("Server doesn't exist.");
     }
 
+    const sendGuideUpdates =
+      server.type === 'plex' ? server.sendGuideUpdates ?? false : false;
+    const sendChannelUpdates =
+      server.type === 'plex' ? server.sendChannelUpdates ?? false : false;
+
     em.assign(s, {
       name: server.name,
       uri: server.uri,
       accessToken: server.accessToken,
-      sendGuideUpdates: server.sendGuideUpdates ?? false,
-      sendChannelUpdates: server.sendChannelUpdates ?? false,
+      sendGuideUpdates,
+      sendChannelUpdates,
       updatedAt: new Date(),
     });
 
     this.normalizeServer(s);
 
-    const report = await this.fixupProgramReferences(id, s);
+    const report = await this.fixupProgramReferences(
+      id,
+      programSourceTypeFromMediaSource(s.type),
+      s,
+    );
 
     await repo.upsert(s);
     await em.flush();
@@ -100,45 +128,77 @@ export class PlexServerDB {
     return report;
   }
 
-  async addServer(server: InsertPlexServerRequest): Promise<string> {
+  async addMediaSource(server: InsertMediaSourceRequest): Promise<string> {
     const em = getEm();
-    const repo = em.repo(PlexServerSettingsEntity);
+    const repo = em.repo(MediaSource);
     const name = isUndefined(server.name) ? 'plex' : server.name;
-    // let i = 2;
-    // const prefix = name;
-    // let resultName = name;
-    // while (this.doesNameExist(resultName)) {
-    //   resultName = `${prefix}${i}`;
-    //   i += 1;
-    // }
-    // name = resultName;
-
-    const sendGuideUpdates = server.sendGuideUpdates ?? false;
-    const sendChannelUpdates = server.sendChannelUpdates ?? false;
+    const sendGuideUpdates =
+      server.type === 'plex' ? server.sendGuideUpdates ?? false : false;
+    const sendChannelUpdates =
+      server.type === 'plex' ? server.sendChannelUpdates ?? false : false;
     const index = await repo.count();
 
-    const newServer = em.create(PlexServerSettingsEntity, {
+    const newServer = em.create(MediaSource, {
       ...server,
       name,
       sendGuideUpdates,
       sendChannelUpdates,
       index,
+      type: mediaSourceTypeFromApi(server.type),
     });
 
     this.normalizeServer(newServer);
 
-    return await em.insert(PlexServerSettingsEntity, newServer);
+    return await em.insert(MediaSource, newServer);
   }
+
+  // private async removeDanglingPrograms(mediaSource: MediaSource) {
+  //   const knownProgramIds = await directDbAccess()
+  //     .selectFrom('programExternalId as p1')
+  //     .where(({ eb, and }) =>
+  //       and([
+  //         eb('p1.externalSourceId', '=', mediaSource.name),
+  //         eb('p1.sourceType', '=', mediaSource.type),
+  //       ]),
+  //     )
+  //     .selectAll('p1')
+  //     .select((eb) =>
+  //       jsonArrayFrom(
+  //         eb
+  //           .selectFrom('programExternalId as p2')
+  //           .whereRef('p2.programUuid', '=', 'p1.programUuid')
+  //           .whereRef('p2.uuid', '!=', 'p1.uuid')
+  //           .select(['p2.sourceType', 'p2.externalSourceId', 'p2.externalKey']),
+  //       ).as('otherExternalIds'),
+  //     )
+  //     .groupBy('p1.uuid')
+  //     .execute();
+
+  //   const mediaSourceTypes = map(enumValues(MediaSourceType), (typ) =>
+  //     typ.toString(),
+  //   );
+  //   const danglingPrograms = reject(knownProgramIds, (program) => {
+  //     some(program.otherExternalIds, (eid) =>
+  //       mediaSourceTypes.includes(eid.sourceType),
+  //     );
+  //   });
+  // }
 
   private async fixupProgramReferences(
     serverName: string,
-    newServer?: PlexServerSettingsEntity,
+    serverType: ProgramSourceType,
+    newServer?: MediaSource,
   ) {
+    // TODO: We need to update this to:
+    // 1. handle different source types
+    // 2. use program_external_id table
+    // 3. not delete programs if they still have another reference via
+    //    the external id table (program that exists on 2 servers)
     const em = getEm();
     const allPrograms = await em
       .repo(Program)
       .find(
-        { sourceType: ProgramSourceType.PLEX, externalSourceId: serverName },
+        { sourceType: serverType, externalSourceId: serverName },
         { populate: ['fillerShows', 'channels', 'customShows'] },
       );
 
@@ -234,7 +294,7 @@ export class PlexServerDB {
     return [...channelReports, ...fillerReports, ...customShowReports];
   }
 
-  private fixupProgram(program: Program, newServer: PlexServerSettingsEntity) {
+  private fixupProgram(program: Program, newServer: MediaSource) {
     let modified = false;
     const fixIcon = (icon: string | undefined) => {
       if (
@@ -261,7 +321,7 @@ export class PlexServerDB {
     return modified;
   }
 
-  private normalizeServer(server: PlexServerSettingsEntity) {
+  private normalizeServer(server: MediaSource) {
     while (server.uri.endsWith('/')) {
       server.uri = server.uri.slice(0, -1);
     }

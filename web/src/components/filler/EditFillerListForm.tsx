@@ -21,6 +21,8 @@ import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 import { removeFillerListProgram } from '@/store/entityEditor/util.ts';
 import { UIFillerListProgram } from '../../types/index.ts';
+import { isNonEmptyString } from '@/helpers/util.ts';
+import { createExternalId } from '@tunarr/shared';
 
 export type FillerListMutationArgs = {
   id?: string;
@@ -117,11 +119,22 @@ export function EditFillerListForm({
               title = p.title;
             }
 
-            id = p.persisted
-              ? p.id!
-              : `${p.externalSourceType}|${p.externalSourceName}|${
-                  p.originalProgram!.key
-                }`;
+            if (p.persisted) {
+              id = p.id!;
+            } else if (
+              isNonEmptyString(p.externalSourceType) &&
+              isNonEmptyString(p.externalSourceName) &&
+              isNonEmptyString(p.externalKey)
+            ) {
+              id = createExternalId(
+                p.externalSourceType,
+                p.externalSourceName,
+                p.externalKey,
+              );
+            } else {
+              id = 'unknown';
+            }
+
             break;
         }
 

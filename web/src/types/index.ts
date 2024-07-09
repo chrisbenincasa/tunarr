@@ -1,3 +1,5 @@
+/// <reference types="vite-plugin-svgr/client" />
+
 import {
   ChannelProgram,
   CondensedChannelProgram,
@@ -14,6 +16,7 @@ import {
 } from '@zodios/core/lib/zodios.types';
 import { type ApiClient } from '../external/api.ts';
 import { EnrichedPlexMedia } from '../hooks/plex/plexHookUtil.ts';
+import { EnrichedJellyfinItem } from '@/hooks/jellyfin/jellyfinHookUtil.ts';
 
 // A program that may or may not exist in the DB yet
 export type EphemeralProgram = Omit<Program, 'id'>;
@@ -117,7 +120,15 @@ export type AddedPlexMedia = {
   media: EnrichedPlexMedia;
 };
 
+export type AddedJellyfinMedia = {
+  type: 'jellyfin';
+  media: EnrichedJellyfinItem;
+};
+
 /**
  * Media type going from "selected" -> "added to entity".
  */
-export type AddedMedia = AddedPlexMedia | AddedCustomShowProgram;
+export type AddedMedia =
+  | AddedPlexMedia
+  | AddedJellyfinMedia
+  | AddedCustomShowProgram;

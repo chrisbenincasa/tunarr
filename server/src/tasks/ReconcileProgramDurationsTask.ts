@@ -81,7 +81,7 @@ export class ReconcileProgramDurationsTask extends Task {
             !isUndefined(dbItemDuration) &&
             dbItemDuration !== item.durationMs
           ) {
-            console.debug('Found duration mismatch: %s', item.id);
+            this.logger.debug('Found duration mismatch: %s', item.id);
             changed = true;
             return {
               ...item,

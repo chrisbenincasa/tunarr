@@ -31,7 +31,7 @@ import {
   sortBy,
 } from 'lodash-es';
 import path from 'path';
-import { PlexApiFactory } from '../../external/PlexApiFactory.js';
+import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.js';
 import { globalOptions } from '../../globals.js';
 import { serverContext } from '../../serverContext.js';
 import { GlobalScheduler } from '../../services/scheduler.js';
@@ -41,7 +41,7 @@ import { attempt } from '../../util/index.js';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
 import { EntityManager, withDb } from '../dataSource.js';
 import { CachedImage } from '../entities/CachedImage.js';
-import { PlexServerSettings as PlexServerSettingsEntity } from '../entities/PlexServerSettings.js';
+import { MediaSource as PlexServerSettingsEntity } from '../entities/MediaSource.js';
 import { Settings, SettingsDB, defaultXmlTvSettings } from '../settings.js';
 import {
   LegacyChannelMigrator,
@@ -320,9 +320,9 @@ export class LegacyDbMigrator {
           // will take care of that -- we may want to do it here if we want
           // to remove the fixer eventually, though.
           for (const entity of entities) {
-            const plexApi = PlexApiFactory().get(entity);
-            const status = await plexApi.checkServerStatus();
-            if (status === 1) {
+            const plexApi = MediaSourceApiFactory().get(entity);
+            const healthy = await plexApi.checkServerStatus();
+            if (healthy) {
               this.logger.debug(
                 'Plex server name: %s url: %s healthy',
                 entity.name,

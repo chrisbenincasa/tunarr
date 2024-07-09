@@ -153,7 +153,7 @@ const defaultProgramJoins: ProgramJoins = {
 
 type ProgramFields = readonly `program.${keyof RawProgram}`[];
 
-const AllProgramFields: ProgramFields = [
+export const AllProgramFields: ProgramFields = [
   'program.albumName',
   'program.albumUuid',
   'program.artistName',
