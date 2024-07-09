@@ -116,6 +116,10 @@ export const checkNewPlexServers =
 
         if (status === 1) {
           return { server, connection };
+        } else {
+          console.warn(
+            `Unable to reach Plex server "${server.name}" via ${connection.uri}`,
+          );
         }
       }
     }).then(compact);
