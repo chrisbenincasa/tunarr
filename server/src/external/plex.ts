@@ -27,7 +27,7 @@ import {
   map,
 } from 'lodash-es';
 import NodeCache from 'node-cache';
-import querystring, { ParsedUrlQueryInput } from 'querystring';
+import { ParsedUrlQueryInput } from 'querystring';
 import { MarkOptional } from 'ts-essentials';
 import { z } from 'zod';
 import { PlexServerSettings } from '../dao/entities/PlexServerSettings.js';
@@ -38,6 +38,7 @@ import {
 import { Maybe, Try } from '../types/util.js';
 import { isDefined, isSuccess } from '../util/index.js';
 import { Logger, LoggerFactory } from '../util/logging/LoggerFactory.js';
+import { configureAxiosLogging } from '../util/axios.js';
 
 type AxiosConfigWithMetadata = InternalAxiosRequestConfig & {
   metadata: {
@@ -186,42 +187,7 @@ export class Plex {
       },
     });
 
-    this.axiosInstance.interceptors.request.use((req) => {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      (req as AxiosConfigWithMetadata).metadata = {
-        startTime: new Date().getTime(),
-      };
-      return req;
-    });
-
-    const logAxiosRequest = (req: AxiosConfigWithMetadata, status: number) => {
-      const query = req.params
-        ? // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-          `?${querystring.stringify(req.params)}`
-        : '';
-      const elapsedTime = new Date().getTime() - req.metadata.startTime;
-      this.logger.http(
-        `[Axios Request]: ${req.method?.toUpperCase()} ${req.baseURL}${
-          req.url
-        }${query} - (${status}) ${elapsedTime}ms`,
-      );
-    };
-
-    this.axiosInstance.interceptors.response.use(
-      (resp) => {
-        logAxiosRequest(resp.config as AxiosConfigWithMetadata, resp.status);
-        return resp;
-      },
-      (err) => {
-        if (isAxiosError(err) && err.config) {
-          logAxiosRequest(
-            err.config as AxiosConfigWithMetadata,
-            err.status ?? -1,
-          );
-        }
-        throw err;
-      },
-    );
+    configureAxiosLogging(this.axiosInstance, this.logger);
   }
 
   get serverName() {
