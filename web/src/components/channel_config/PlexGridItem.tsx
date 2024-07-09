@@ -196,11 +196,7 @@ export const PlexGridItem = forwardRef(
 
     return (
       <Fade
-        in={
-          isInViewport &&
-          !isUndefined(item) &&
-          ((imageLoaded && hasThumb) || (!imageLoaded && !hasThumb))
-        }
+        in={isInViewport && !isUndefined(item) && hasThumb === imageLoaded}
         timeout={750}
         ref={imageContainerRef}
       >
