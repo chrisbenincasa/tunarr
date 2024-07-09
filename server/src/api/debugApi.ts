@@ -26,6 +26,7 @@ import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { Maybe } from '../types/util.js';
 import { ifDefined, mapAsyncSeq } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
+import { DebugJellyfinApiRouter } from './debug/debugJellyfinApi.js';
 
 const ChannelQuerySchema = {
   querystring: z.object({
@@ -33,9 +34,12 @@ const ChannelQuerySchema = {
   }),
 };
 
-// eslint-disable-next-line @typescript-eslint/require-await
 export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
   const logger = LoggerFactory.child({ caller: import.meta });
+
+  await fastify.register(DebugJellyfinApiRouter, {
+    prefix: '/debug',
+  });
 
   fastify.get(
     '/debug/plex',
