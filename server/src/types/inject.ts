@@ -57,6 +57,9 @@ const KEYS = {
   LocalFolderCanonicalizer: Symbol.for('LocalFolderCanonicalizer'),
   LocalMediaCanonicalizer: Symbol.for('LocalMediaCanonicalizer'),
   ContentSourceUpdateFactory: Symbol.for('ContentSourceUpdateFactory'),
+  TaskQueueFactory: Symbol.for('TaskQueueFactory'),
+  PlexTaskQueue: Symbol.for('PlexTaskQueue'),
+  JellyfinTaskQueue: Symbol.for('JellyfinTaskQueue'),
 
   FillerPicker: Symbol.for('FillerPicker'),
   ChannelCache: Symbol.for('ChannelCache'),
