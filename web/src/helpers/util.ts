@@ -331,3 +331,20 @@ export function difference<T>(
 }
 
 export const noop = () => {};
+
+const k = 1024;
+const units = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB'];
+
+export function formatBytes(bytes: number, decimals: number = 2): string {
+  if (bytes === 0) return '0 B';
+
+  const isNegative = bytes < 0;
+  bytes = Math.abs(bytes);
+
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  const value = bytes / Math.pow(k, i);
+
+  const formatted = value.toFixed(decimals);
+
+  return `${isNegative ? '-' : ''}${formatted} ${units[i]}`;
+}

@@ -62,5 +62,5 @@ export interface ISettingsDB extends TypedEventEmitter<SettingsChangeEvents> {
 
 export type ReadableFfmpegSettings = DeepReadonly<FfmpegSettings>;
 export type SettingsChangeEvents = {
-  change(): void;
+  change(prevSettings?: SettingsFile): void;
 };

@@ -4,7 +4,7 @@ import type { StateCreator } from 'zustand';
 // Only these 2 are supported currently
 export type SupportedLocales = 'en' | 'en-gb';
 
-interface SettingsStateInternal {
+export interface SettingsStateInternal {
   backendUri: string;
   ui: {
     channelTablePagination: PaginationState;

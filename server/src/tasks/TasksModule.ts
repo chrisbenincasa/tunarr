@@ -29,6 +29,7 @@ import type {
 import { UpdatePlexPlayStatusScheduledTask } from './plex/UpdatePlexPlayStatusTask.ts';
 import { RefreshMediaSourceLibraryTask } from './RefreshMediaSourceLibraryTask.ts';
 import { RemoveDanglingProgramsFromSearchTask } from './RemoveDanglingProgramsFromSearchTask.ts';
+import { RollLogFileTask } from './RollLogFileTask.ts';
 import { ScanLibrariesTask } from './ScanLibrariesTask.ts';
 import { SubtitleExtractorTask } from './SubtitleExtractorTask.ts';
 
@@ -84,6 +85,8 @@ const TasksModule = new ContainerModule((bind) => {
   bind<ArchiveDatabaseBackupFactory>(ArchiveDatabaseBackupKey).toAutoFactory(
     ArchiveDatabaseBackup,
   );
+
+  bind(RollLogFileTask).toSelf();
 
   bindFactoryFunc<BackupTaskFactory>(
     bind,

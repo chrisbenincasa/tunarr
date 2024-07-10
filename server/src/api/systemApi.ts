@@ -189,8 +189,16 @@ export const systemApiRouter: RouterPluginAsyncCallback = async (
           system.server = server;
         });
 
+        ifDefined(req.body.logging?.logRollConfig, (logging) => {
+          system.logging.logRollConfig = logging;
+        });
+
         return file;
       });
+
+      if (req.body.logging?.logRollConfig) {
+        LoggerFactory.rollLogsNow();
+      }
 
       const refreshedSettings = req.serverCtx.settings.systemSettings();
 
