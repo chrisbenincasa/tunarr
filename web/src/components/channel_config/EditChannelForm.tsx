@@ -85,7 +85,8 @@ export function EditChannelForm({
   const formIsDirty = formMethods.formState.isDirty;
 
   const onSubmit: SubmitHandler<SaveChannelRequest> = (data) => {
-    const dataTransform = {
+    console.log(data);
+    const dataTransform: SaveChannelRequest = {
       ...data,
       // Transform this to milliseconds before we send it over
       guideMinimumDuration: data.guideMinimumDuration * 1000,
@@ -95,6 +96,7 @@ export function EditChannelForm({
       guideFlexTitle: isNonEmptyString(data.guideFlexTitle)
         ? data.guideFlexTitle
         : undefined,
+      fillerCollections: data.fillerCollections,
     };
 
     updateChannelMutation.mutate(dataTransform, {

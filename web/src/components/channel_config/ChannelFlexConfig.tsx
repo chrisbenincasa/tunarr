@@ -30,7 +30,7 @@ import {
   sumBy,
 } from 'lodash-es';
 import { useCallback, useState } from 'react';
-import { Controller, useFormContext } from 'react-hook-form';
+import { Controller, useFieldArray, useFormContext } from 'react-hook-form';
 import { Link as RouterLink } from '@tanstack/react-router';
 import { useDebounceCallback } from 'usehooks-ts';
 import { typedProperty } from '../../helpers/util.ts';
@@ -42,11 +42,17 @@ import ChannelEditActions from './ChannelEditActions.tsx';
 export function ChannelFlexConfig() {
   const channel = useStore((s) => s.channelEditor.currentEntity);
   const { data: fillerLists, isPending: fillerListsLoading } = useFillerLists();
-  const { control, setValue, watch } = useFormContext<SaveChannelRequest>();
+  const { control, watch } = useFormContext<SaveChannelRequest>();
+  const collectionControls = useFieldArray({
+    control,
+    name: 'fillerCollections',
+    keyName: 'formId', // Filler lists already claim the "id" field
+  });
+  const channelFillerLists = collectionControls.fields;
 
-  const [offlineMode, channelFillerLists, offlinePicture] = watch([
+  const [offlineMode, offlinePicture] = watch([
     'offline.mode',
-    'fillerCollections',
+    // 'fillerCollections',
     'offline.picture',
   ]);
   const [weights, setWeights] = useState<number[]>(
@@ -55,14 +61,13 @@ export function ChannelFlexConfig() {
 
   const updateFormWeights = useDebounceCallback(
     useCallback(() => {
-      setValue(
-        'fillerCollections',
+      collectionControls.replace(
         map(channelFillerLists, (cfl, idx) => ({
           ...cfl,
           weight: weights[idx],
         })),
       );
-    }, [channelFillerLists, setValue, weights]),
+    }, [channelFillerLists, collectionControls, weights]),
     100,
   );
 
@@ -88,9 +93,9 @@ export function ChannelFlexConfig() {
       ];
 
       setWeights(map(newLists, 'weight'));
-      setValue('fillerCollections', newLists);
+      collectionControls.replace(newLists);
     },
-    [setValue, channelFillerLists, setWeights],
+    [channelFillerLists, collectionControls],
   );
 
   const removeSelectedFillerList = useCallback(
@@ -111,9 +116,9 @@ export function ChannelFlexConfig() {
       }));
 
       setWeights(map(newLists, 'weight'));
-      setValue('fillerCollections', newLists);
+      collectionControls.replace(newLists);
     },
-    [channelFillerLists, setValue, setWeights],
+    [channelFillerLists, collectionControls],
   );
 
   const adjustWeights = useCallback(
