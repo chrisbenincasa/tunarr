@@ -49,7 +49,7 @@ export class FillerPicker {
     let listM = 0;
     let fillerId: Maybe<string>;
     for (const filler of fillers) {
-      const fillerPrograms = filler.fillerShow.content.$.toArray();
+      const fillerPrograms = filler.fillerShow.$.content.$.toArray();
       let pickedList = false;
       let n = 0;
 

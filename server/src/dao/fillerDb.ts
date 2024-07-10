@@ -1,9 +1,8 @@
-import { Loaded } from '@mikro-orm/core';
 import {
   CreateFillerListRequest,
   UpdateFillerListRequest,
 } from '@tunarr/types/api';
-import { filter, isNil, isString, map } from 'lodash-es';
+import { filter, isNil, map } from 'lodash-es';
 import { ChannelCache } from '../stream/ChannelCache.js';
 import { isNonEmptyString, mapAsyncSeq } from '../util/index.js';
 import { ProgramConverter } from './converters/programConverters.js';
@@ -16,6 +15,7 @@ import {
   createPendingProgramIndexMap,
   upsertContentPrograms,
 } from './programHelpers.js';
+import { Loaded } from '@mikro-orm/core';
 
 export class FillerDB {
   private channelCache: ChannelCache;
@@ -199,15 +199,31 @@ export class FillerDB {
   }
 
   async getFillersFromChannel(
-    channelId: string | number,
+    channelId: string,
   ): Promise<Loaded<ChannelFillerShow, 'fillerShow' | 'fillerShow.content'>[]> {
     const em = getEm();
+    // TODO Rewrite as direct query
+    // return directDbAccess()
+    //   .selectFrom('channelFillerShow')
+    //   .where('channelFillerShow.channelUuid', '=', channelId)
+    //   .innerJoin(
+    //     'fillerShow',
+    //     'channelFillerShow.fillerShowUuid',
+    //     'fillerShow.uuid',
+    //   )
+    //   .innerJoin(
+    //     'fillerShowContent',
+    //     'fillerShowContent.fillerShowUuid',
+    //     'fillerShow.uuid',
+    //   )
+    //   .selectAll(['fillerShowContent'])
+    //   .orderBy('fillerShowContent.index asc')
+    //   .execute();
+
     return await em.find(
       ChannelFillerShow,
       {
-        channel: isString(channelId)
-          ? { uuid: channelId }
-          : { number: channelId },
+        channel: { uuid: channelId },
       },
       { populate: ['fillerShow', 'fillerShow.content'] },
     );

@@ -14,7 +14,6 @@ import {
   isContentBackedLineupIteam,
 } from '../dao/derived_types/StreamLineup.js';
 import { Channel } from '../dao/entities/Channel.js';
-import { FillerPicker } from '../services/FillerPicker.js';
 import { PlayerContext } from '../stream/Player.js';
 import {
   StreamProgramCalculator,
@@ -337,16 +336,18 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
       }
 
       const fillers = await req.serverCtx.fillerDB.getFillersFromChannel(
-        channel.number,
+        channel.uuid,
       );
 
-      return res.send(
-        new FillerPicker().pickRandomWithMaxDuration(
-          channel,
-          fillers,
-          req.query.maxDuration,
-        ),
-      );
+      return res.send(fillers);
+
+      // return res.send(
+      //   new FillerPicker().pickRandomWithMaxDuration(
+      //     channel,
+      //     fillers,
+      //     req.query.maxDuration,
+      //   ),
+      // );
     },
   );
 

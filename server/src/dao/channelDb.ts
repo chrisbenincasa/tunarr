@@ -6,7 +6,7 @@ import {
   wrap,
 } from '@mikro-orm/core';
 import { scheduleRandomSlots, scheduleTimeSlots } from '@tunarr/shared';
-import { forProgramType } from '@tunarr/shared/util';
+import { forProgramType, seq } from '@tunarr/shared/util';
 import {
   ChannelProgram,
   ChannelProgramming,
@@ -14,6 +14,7 @@ import {
   CondensedChannelProgramming,
   ContentProgram,
   SaveChannelRequest,
+  tag,
 } from '@tunarr/types';
 import { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
 import dayjs from 'dayjs';
@@ -44,6 +45,11 @@ import ld, {
 import { Low } from 'lowdb';
 import fs from 'node:fs/promises';
 import { join } from 'path';
+import { MarkRequired } from 'ts-essentials';
+import {
+  Channel as RawChannel,
+  ChannelWithPrograms as RawChannelWithPrograms,
+} from '../dao/direct/derivedTypes.js';
 import { globalOptions } from '../globals.js';
 import { typedProperty } from '../types/path.js';
 import { asyncPool } from '../util/asyncPool.js';
@@ -57,6 +63,7 @@ import {
   run,
 } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
+import { MutexMap } from '../util/mutexMap.js';
 import { Timer, timeNamedAsync } from '../util/perf.js';
 import { SchemaBackedDbAdapter } from './SchemaBackedDbAdapter.js';
 import { ProgramConverter } from './converters/programConverters.js';
@@ -70,13 +77,7 @@ import {
   isOfflineItem,
   isRedirectItem,
 } from './derived_types/Lineup.js';
-import { Channel, ChannelTranscodingSettings } from './entities/Channel.js';
-import { CustomShowContent } from './entities/CustomShowContent.js';
-import { Program } from './entities/Program.js';
-import { upsertContentPrograms } from './programHelpers.js';
-import { MutexMap } from '../util/mutexMap.js';
 import { directDbAccess } from './direct/directDbAccess.js';
-import { seq } from '@tunarr/shared/util';
 import {
   MinimalProgramGroupingFields,
   withPrograms,
@@ -85,11 +86,12 @@ import {
   withTvSeason,
   withTvShow,
 } from './direct/programQueryHelpers.js';
-import {
-  Channel as RawChannel,
-  ChannelWithPrograms as RawChannelWithPrograms,
-} from '../dao/direct/derivedTypes.js';
-import { MarkRequired } from 'ts-essentials';
+import { Channel, ChannelTranscodingSettings } from './entities/Channel.js';
+import { ChannelFillerShow } from './entities/ChannelFillerShow.js';
+import { CustomShowContent } from './entities/CustomShowContent.js';
+import { FillerShow, FillerShowId } from './entities/FillerShow.js';
+import { Program } from './entities/Program.js';
+import { upsertContentPrograms } from './programHelpers.js';
 
 dayjs.extend(duration);
 
@@ -299,6 +301,31 @@ export class ChannelDB {
       // convertCustomTypes: true,
       onlyProperties: true,
     });
+    if (isDefined(updateReq.fillerCollections))
+      [
+        await em.transactional(async (em) => {
+          await em.repo(ChannelFillerShow).nativeDelete({
+            channel: { uuid: id },
+          });
+
+          const channelFillerShows = map(
+            updateReq.fillerCollections,
+            (filler) => {
+              return em.create(ChannelFillerShow, {
+                cooldown: filler.cooldownSeconds,
+                channel: em.getReference(Channel, id),
+                fillerShow: em.getReference(
+                  FillerShow,
+                  tag<FillerShowId>(filler.id),
+                ),
+                weight: filler.weight,
+              });
+            },
+          );
+
+          await em.insertMany(ChannelFillerShow, channelFillerShows);
+        }),
+      ];
     await em.flush();
     return loadedChannel;
   }
