@@ -4,6 +4,7 @@ import { ProgramType } from '../entities/Program';
 import {
   Program as RawProgram,
   ProgramGrouping as RawProgramGrouping,
+  FillerShow as RawFillerShow,
   DB,
 } from './types.gen';
 import { isBoolean, merge } from 'lodash-es';
@@ -30,6 +31,15 @@ export const MinimalProgramGroupingFields: ProgramGroupingFields = [
   'programGrouping.uuid',
   'programGrouping.title',
   'programGrouping.year',
+];
+
+type FillerShowFields = readonly `fillerShow.${keyof RawFillerShow}`[];
+
+export const AllFillerShowFields: FillerShowFields = [
+  'fillerShow.createdAt',
+  'fillerShow.name',
+  'fillerShow.updatedAt',
+  'fillerShow.uuid',
 ];
 
 export function withTvShow(
@@ -111,6 +121,20 @@ export function withProgramCustomShows(eb: ExpressionBuilder<DB, 'program'>) {
   ).as('customShows');
 }
 
+export function withFillerShow(eb: ExpressionBuilder<DB, 'channelFillerShow'>) {
+  return jsonObjectFrom(
+    eb
+      .selectFrom('fillerShow')
+      .select(AllFillerShowFields)
+      .whereRef('channelFillerShow.fillerShowUuid', '=', 'fillerShow.uuid')
+      .innerJoin(
+        'fillerShow',
+        'channelFillerShow.fillerShowUuid',
+        'fillerShow.uuid',
+      ),
+  ).as('fillerShow');
+}
+
 type ProgramJoins = {
   trackAlbum: boolean | ProgramGroupingFields;
   trackArtist: boolean | ProgramGroupingFields;
@@ -173,35 +197,80 @@ const defaultWithProgramOptions: DeepRequired<WithProgramsOptions> = {
   fields: AllProgramFields,
 };
 
+function baseWithProgamsExpressionBuilder(
+  eb: ExpressionBuilder<
+    DB,
+    | 'channel'
+    | 'channelPrograms'
+    | 'channelFallback'
+    | 'fillerShowContent'
+    | 'fillerShow'
+  >,
+  opts: DeepRequired<WithProgramsOptions>,
+) {
+  return eb
+    .selectFrom('program')
+    .select(opts.fields)
+    .$if(!!opts.joins.trackAlbum, (qb) =>
+      qb.select((eb) =>
+        withTrackAlbum(
+          eb,
+          isBoolean(opts.joins.trackAlbum)
+            ? AllProgramGroupingFields
+            : opts.joins.trackAlbum,
+        ),
+      ),
+    )
+    .$if(!!opts.joins.trackArtist, (qb) => qb.select(withTrackArtist))
+    .$if(!!opts.joins.tvSeason, (qb) => qb.select(withTvSeason))
+    .$if(!!opts.joins.tvSeason, (qb) => qb.select(withTvShow))
+    .$if(!!opts.joins.customShows, (qb) => qb.select(withProgramCustomShows));
+}
+
 export function withPrograms(
   eb: ExpressionBuilder<DB, 'channel' | 'channelPrograms'>,
   options: WithProgramsOptions = defaultWithProgramOptions,
 ) {
   const mergedOpts = merge({}, defaultWithProgramOptions, options);
   return jsonArrayFrom(
-    eb
-      .selectFrom('program')
-      .select(mergedOpts.fields)
-      .$if(!!mergedOpts.joins.trackAlbum, (qb) =>
-        qb.select((eb) =>
-          withTrackAlbum(
-            eb,
-            isBoolean(mergedOpts.joins.trackAlbum)
-              ? AllProgramGroupingFields
-              : mergedOpts.joins.trackAlbum,
-          ),
-        ),
-      )
-      .$if(!!mergedOpts.joins.trackArtist, (qb) => qb.select(withTrackArtist))
-      .$if(!!mergedOpts.joins.tvSeason, (qb) => qb.select(withTvSeason))
-      .$if(!!mergedOpts.joins.tvSeason, (qb) => qb.select(withTvShow))
-      .$if(!!mergedOpts.joins.customShows, (qb) =>
-        qb.select(withProgramCustomShows),
-      )
-      .innerJoin('channelPrograms', (join) =>
+    baseWithProgamsExpressionBuilder(eb, mergedOpts).innerJoin(
+      'channelPrograms',
+      (join) =>
         join
           .onRef('channelPrograms.programUuid', '=', 'program.uuid')
           .onRef('channel.uuid', '=', 'channelPrograms.channelUuid'),
-      ),
+    ),
   ).as('programs');
+}
+
+export function withFallbackPrograms(
+  eb: ExpressionBuilder<DB, 'channelFallback' | 'channel'>,
+  options: WithProgramsOptions = defaultWithProgramOptions,
+) {
+  const mergedOpts = merge({}, defaultWithProgramOptions, options);
+  return jsonArrayFrom(
+    baseWithProgamsExpressionBuilder(eb, mergedOpts).innerJoin(
+      'channelFallback',
+      (join) =>
+        join
+          .onRef('channelFallback.programUuid', '=', 'program.uuid')
+          .onRef('channel.uuid', '=', 'channelFallback.channelUuid'),
+    ),
+  ).as('programs');
+}
+
+export function withFillerPrograms(
+  eb: ExpressionBuilder<DB, 'fillerShow' | 'fillerShowContent'>,
+  options: WithProgramsOptions = defaultWithProgramOptions,
+) {
+  const mergedOpts = merge({}, defaultWithProgramOptions, options);
+  return jsonArrayFrom(
+    baseWithProgamsExpressionBuilder(eb, mergedOpts)
+      .select(['fillerShowContent.index'])
+      .innerJoin('fillerShowContent', (join) =>
+        join
+          .onRef('fillerShowContent.programUuid', '=', 'program.uuid')
+          .onRef('fillerShow.uuid', '=', 'fillerShowContent.fillerShowUuid'),
+      ),
+  ).as('fillerContent');
 }

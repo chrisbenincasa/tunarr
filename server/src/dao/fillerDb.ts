@@ -2,20 +2,23 @@ import {
   CreateFillerListRequest,
   UpdateFillerListRequest,
 } from '@tunarr/types/api';
+import { jsonArrayFrom, jsonBuildObject } from 'kysely/helpers/sqlite';
 import { filter, isNil, map } from 'lodash-es';
 import { ChannelCache } from '../stream/ChannelCache.js';
 import { isNonEmptyString, mapAsyncSeq } from '../util/index.js';
 import { ProgramConverter } from './converters/programConverters.js';
 import { getEm } from './dataSource.js';
 import { Channel as ChannelEntity } from './entities/Channel.js';
-import { ChannelFillerShow } from './entities/ChannelFillerShow.js';
 import { FillerListContent } from './entities/FillerListContent.js';
 import { FillerShow, FillerShowId } from './entities/FillerShow.js';
 import {
   createPendingProgramIndexMap,
   upsertContentPrograms,
 } from './programHelpers.js';
-import { Loaded } from '@mikro-orm/core';
+import { directDbAccess } from './direct/directDbAccess.js';
+import { withFillerPrograms } from './direct/programQueryHelpers.js';
+import { ChannelFillerShow as RawChannelFillerShow } from './direct/derivedTypes.js';
+import { MarkRequired } from 'ts-essentials';
 
 export class FillerDB {
   private channelCache: ChannelCache;
@@ -163,17 +166,31 @@ export class FillerDB {
   }
 
   // Specifically cast these down for now because our TaggedType type is not portable
-  getAllFillerIds(): Promise<string[]> {
-    return getEm()
-      .repo(FillerShow)
-      .findAll({ fields: ['uuid'] })
-      .then((shows) => map(shows, 'uuid'));
+  async getAllFillerIds(): Promise<string[]> {
+    const ids = await directDbAccess()
+      .selectFrom('fillerShow')
+      .select(['uuid'])
+      .execute();
+    return map(ids, 'uuid');
   }
 
-  getAllFillers() {
-    return getEm()
-      .repo(FillerShow)
-      .findAll({ populate: ['*', 'content.uuid'] });
+  async getAllFillers() {
+    return await directDbAccess()
+      .selectFrom('fillerShow')
+      .selectAll()
+      .select((eb) =>
+        jsonArrayFrom(
+          eb
+            .selectFrom('fillerShowContent')
+            .select('programUuid as uuid')
+            .leftJoin(
+              'fillerShowContent',
+              'fillerShowContent.fillerShowUuid',
+              'fillerShow.uuid',
+            ),
+        ).as('content'),
+      )
+      .execute();
   }
 
   async getFillerPrograms(id: FillerShowId) {
@@ -200,32 +217,36 @@ export class FillerDB {
 
   async getFillersFromChannel(
     channelId: string,
-  ): Promise<Loaded<ChannelFillerShow, 'fillerShow' | 'fillerShow.content'>[]> {
-    const em = getEm();
-    // TODO Rewrite as direct query
-    // return directDbAccess()
-    //   .selectFrom('channelFillerShow')
-    //   .where('channelFillerShow.channelUuid', '=', channelId)
-    //   .innerJoin(
-    //     'fillerShow',
-    //     'channelFillerShow.fillerShowUuid',
-    //     'fillerShow.uuid',
-    //   )
-    //   .innerJoin(
-    //     'fillerShowContent',
-    //     'fillerShowContent.fillerShowUuid',
-    //     'fillerShow.uuid',
-    //   )
-    //   .selectAll(['fillerShowContent'])
-    //   .orderBy('fillerShowContent.index asc')
-    //   .execute();
+  ): Promise<MarkRequired<RawChannelFillerShow, 'fillerContent'>[]> {
+    const result = await directDbAccess()
+      .selectFrom('channelFillerShow')
+      .where('channelFillerShow.channelUuid', '=', channelId)
+      .innerJoin(
+        'fillerShow',
+        'channelFillerShow.fillerShowUuid',
+        'fillerShow.uuid',
+      )
+      .select((eb) =>
+        // Build the JSON object manually so we don't have to deal with
+        // nulls down the line from a nested select query
+        jsonBuildObject({
+          uuid: eb.ref('fillerShow.uuid'),
+          name: eb.ref('fillerShow.name'),
+          createdAt: eb.ref('fillerShow.createdAt'),
+          updatedAt: eb.ref('fillerShow.updatedAt'),
+        }).as('fillerShow'),
+      )
+      .innerJoin(
+        'fillerShowContent',
+        'fillerShowContent.fillerShowUuid',
+        'fillerShow.uuid',
+      )
+      .selectAll(['channelFillerShow'])
+      .select(withFillerPrograms)
+      .groupBy('fillerShow.uuid')
+      .orderBy('fillerShowContent.index asc')
+      .execute();
 
-    return await em.find(
-      ChannelFillerShow,
-      {
-        channel: { uuid: channelId },
-      },
-      { populate: ['fillerShow', 'fillerShow.content'] },
-    );
+    return result;
   }
 }

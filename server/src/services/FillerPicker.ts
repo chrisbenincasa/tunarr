@@ -1,13 +1,13 @@
-import { EntityDTO, Loaded } from '@mikro-orm/core';
+import { Loaded } from '@mikro-orm/core';
 import constants from '@tunarr/shared/constants';
 import { isEmpty, isNil, isUndefined } from 'lodash-es';
 import { ChannelCache } from '../stream/ChannelCache';
 import { Channel } from '../dao/entities/Channel';
-import { ChannelFillerShow } from '../dao/entities/ChannelFillerShow';
-import { Program } from '../dao/entities/Program';
 import { Nullable } from '../types/util';
 import { Maybe } from '../types/util';
 import { random } from '../util/random';
+import { ChannelFillerShow, Program } from '../dao/direct/derivedTypes';
+import { MarkRequired } from 'ts-essentials';
 
 const DefaultFillerCooldownMillis = 30 * 60 * 1000;
 const OneDayMillis = 7 * 24 * 60 * 60 * 1000;
@@ -22,11 +22,11 @@ export class FillerPicker {
 
   pickRandomWithMaxDuration(
     channel: Loaded<Channel>,
-    fillers: Loaded<ChannelFillerShow, 'fillerShow' | 'fillerShow.content'>[],
+    fillers: MarkRequired<ChannelFillerShow, 'fillerContent'>[],
     maxDuration: number,
   ): {
     fillerId: Nullable<string>;
-    filler: Nullable<EntityDTO<Program>>;
+    filler: Nullable<Program>;
     minimumWait: number;
   } {
     if (isEmpty(fillers)) {
@@ -37,7 +37,7 @@ export class FillerPicker {
       };
     }
 
-    let pick1: Maybe<EntityDTO<Loaded<Program, never>>>;
+    let pick1: Maybe<Program>;
     const t0 = new Date().getTime();
     let minimumWait = 1000000000;
 
@@ -49,7 +49,7 @@ export class FillerPicker {
     let listM = 0;
     let fillerId: Maybe<string>;
     for (const filler of fillers) {
-      const fillerPrograms = filler.fillerShow.$.content.$.toArray();
+      const fillerPrograms = filler.fillerContent;
       let pickedList = false;
       let n = 0;
 
