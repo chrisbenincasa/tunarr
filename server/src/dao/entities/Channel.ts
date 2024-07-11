@@ -8,7 +8,6 @@ import {
 } from '@mikro-orm/core';
 import { Channel as ChannelDTO } from '@tunarr/types';
 import { type Tag } from '@tunarr/types';
-import { nilToUndefined } from '../../util/index.js';
 import { BaseEntity } from './BaseEntity.js';
 import { ChannelFillerShow } from './ChannelFillerShow.js';
 import { CustomShow } from './CustomShow.js';
@@ -39,7 +38,7 @@ const ChannelIconSchema = z
     position: 'bottom-right',
   });
 
-const DefaultChannelIcon = ChannelIconSchema.parse({});
+export const DefaultChannelIcon = ChannelIconSchema.parse({});
 
 export type ChannelIcon = z.infer<typeof ChannelIconSchema>;
 
@@ -218,25 +217,4 @@ export class Channel extends BaseEntity {
 
   @ManyToMany(() => Program)
   fallback = new Collection<Program>(this);
-
-  toDTO(): ChannelDTO {
-    return {
-      id: this.uuid,
-      number: this.number,
-      watermark: nilToUndefined(this.watermark),
-      // filler
-      // programs
-      // fallback
-      icon: this.icon ?? DefaultChannelIcon,
-      guideMinimumDuration: this.guideMinimumDuration,
-      groupTitle: this.groupTitle || '',
-      disableFillerOverlay: this.disableFillerOverlay,
-      startTime: this.startTime,
-      offline: this.offline,
-      name: this.name,
-      transcoding: nilToUndefined(this.transcoding),
-      duration: this.duration,
-      stealth: this.stealth,
-    };
-  }
 }

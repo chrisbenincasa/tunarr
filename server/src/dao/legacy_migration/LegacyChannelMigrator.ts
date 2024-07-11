@@ -9,6 +9,7 @@ import ld, {
   values,
   reduce,
   keys,
+  isBoolean,
 } from 'lodash-es';
 import fs from 'node:fs/promises';
 import path from 'path';
@@ -19,6 +20,7 @@ import {
   groupByUniqAndMap,
   isNonEmptyString,
   mapAsyncSeq,
+  run,
 } from '../../util/index.js';
 import { getEm } from '../dataSource.js';
 import {
@@ -117,6 +119,7 @@ export class LegacyChannelMigrator {
       .value();
 
     return {
+      lastUpdated: dayjs().valueOf(),
       items: lineupItems,
     };
   }
@@ -130,6 +133,10 @@ export class LegacyChannelMigrator {
     ) as JSONObject;
 
     const channelNumber = parsed['number'] as number;
+    const isOnDemand = run(() => {
+      const rawValue = get(parsed, 'onDemand.isOnDemand');
+      return isBoolean(rawValue) ? rawValue : false;
+    });
 
     const em = getEm();
 
@@ -228,10 +235,15 @@ export class LegacyChannelMigrator {
 
     this.logger.debug('Saving channel lineup %s', channelEntity.uuid);
     const channelDB = new ChannelDB();
-    await channelDB.saveLineup(
-      channelEntity.uuid,
-      await this.createLineup(programs, dbProgramById),
-    );
+    await channelDB.saveLineup(channelEntity.uuid, {
+      ...(await this.createLineup(programs, dbProgramById)),
+      onDemandConfig: isOnDemand
+        ? {
+            state: 'paused',
+            cursor: 0,
+          }
+        : undefined,
+    });
 
     return {
       legacyPrograms: programs,
@@ -262,8 +274,12 @@ export class LegacyChannelMigrator {
 
     const watermark = parsed['watermark'] as JSONObject;
     const iconPosition = parsed['iconPosition'] as string;
+    const isOnDemand = run(() => {
+      const rawValue = get(parsed, 'onDemand.isOnDemand');
+      return isBoolean(rawValue) ? rawValue : false;
+    });
 
-    const channel = {
+    const channel: Channel = {
       id: v4(),
       disableFillerOverlay: parsed['disableFillerOverlay'] as boolean,
       duration: parsed['duration'] as number,
@@ -330,6 +346,9 @@ export class LegacyChannelMigrator {
       guideFlexTitle: emptyStringToUndefined(
         parsed['guideFlexPlaceholder'] as string,
       ),
+      onDemand: {
+        enabled: isOnDemand,
+      },
     };
 
     const em = getEm();

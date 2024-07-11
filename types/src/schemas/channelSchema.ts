@@ -56,6 +56,9 @@ export const ChannelSchema = z.object({
   stealth: z.boolean(),
   transcoding: ChannelTranscodingOptionsSchema.optional(),
   watermark: WatermarkSchema.optional(),
+  onDemand: z.object({
+    enabled: z.boolean(),
+  }),
 });
 
 function addOrTransform<T extends ZodTypeAny>(x: T) {
@@ -71,10 +74,14 @@ function addOrTransform<T extends ZodTypeAny>(x: T) {
 export const SaveChannelRequestSchema = ChannelSchema.omit({
   programs: true,
   fallback: true, // Figure out how to update this
-}).extend({
-  transcoding: ChannelTranscodingOptionsSchema.extend({
-    targetResolution: addOrTransform(ResolutionSchema.optional()),
-    videoBitrate: addOrTransform(z.number().optional()),
-    videoBufferSize: addOrTransform(z.number().optional()),
-  }),
-});
+})
+  .partial({
+    onDemand: true,
+  })
+  .extend({
+    transcoding: ChannelTranscodingOptionsSchema.extend({
+      targetResolution: addOrTransform(ResolutionSchema.optional()),
+      videoBitrate: addOrTransform(z.number().optional()),
+      videoBufferSize: addOrTransform(z.number().optional()),
+    }),
+  });

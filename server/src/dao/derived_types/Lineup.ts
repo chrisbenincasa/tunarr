@@ -65,7 +65,24 @@ const PendingProgramSchema = ContentLineupItemSchema.extend({
 
 export type PendingProgram = z.infer<typeof PendingProgramSchema>;
 
+export const OnDemandChannelConfigSchema = z.object({
+  state: z
+    .union([z.literal('paused'), z.literal('playing')])
+    .default('paused')
+    .catch('paused'),
+  // Timestamp. Empty implies the channel has never been played
+  lastResumed: z.number().positive().optional(),
+  lastPaused: z.number().positive().optional(),
+  cursor: z.number().nonnegative().default(0).catch(0),
+});
+
+export type OnDemandChannelConfig = z.infer<typeof OnDemandChannelConfigSchema>;
+
 export const LineupSchema = z.object({
+  // The last time the lineup was updated. For migration, this is defaulted
+  // to when the config is loaded from disk on startup.
+  lastUpdated: z.number().catch(() => new Date().getTime()),
+
   // The current lineup of a single cycle of this channel
   items: LineupItemSchema.array(),
 
@@ -97,6 +114,10 @@ export const LineupSchema = z.object({
     .array(SchedulingOperationSchema)
     .nonempty()
     .optional(),
+
+  // OnDemand configuration for this channel. If empty, the channel
+  // is not configured as on-demand.
+  onDemandConfig: OnDemandChannelConfigSchema.optional(),
 });
 
 export type Lineup = z.infer<typeof LineupSchema>;

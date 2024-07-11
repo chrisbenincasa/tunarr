@@ -10,7 +10,7 @@ import {
   isNull,
 } from 'lodash-es';
 import { Channel } from '../../dao/entities/Channel';
-import { ChannelAndLineup } from '../../dao/channelDb';
+import { ChannelAndLineup } from '../../types/internal.js';
 import { scale } from '../../util';
 import { LineupItem } from '../../dao/derived_types/Lineup';
 import { Loaded } from '@mikro-orm/core';

@@ -4,7 +4,7 @@ import {
   SessionType,
   StreamConnectionDetails,
   StreamSession,
-} from './Session.js';
+} from './StreamSession.js';
 import { isNil, isNull } from 'lodash-es';
 import { getEm } from '../dao/dataSource.js';
 import { ConcatSession } from './ConcatSession.js';

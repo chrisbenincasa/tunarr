@@ -75,6 +75,9 @@ export function EditChannelForm({
         duration: channel.watermark?.duration ?? 0,
         position: channel.watermark?.position ?? 'bottom-right',
       },
+      onDemand: {
+        enabled: channel.onDemand.enabled,
+      },
     },
   });
 
@@ -85,7 +88,6 @@ export function EditChannelForm({
   const formIsDirty = formMethods.formState.isDirty;
 
   const onSubmit: SubmitHandler<SaveChannelRequest> = (data) => {
-    console.log(data);
     const dataTransform: SaveChannelRequest = {
       ...data,
       // Transform this to milliseconds before we send it over

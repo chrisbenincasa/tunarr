@@ -24,6 +24,7 @@ import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { attempt, mapAsyncSeq } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { timeNamedAsync } from '../util/perf.js';
+import { dbChannelToApiChannel } from '../dao/converters/channelConverters.js';
 
 dayjs.extend(duration);
 
@@ -56,13 +57,18 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     },
     async (req, res) => {
       try {
-        const channels = sortBy(
-          await req.serverCtx.channelDB.getAllChannels(),
+        const channelsAndLineups =
+          await req.serverCtx.channelDB.loadAllLineupConfigs();
+
+        const result = sortBy(
+          map(channelsAndLineups, (channelAndLineup) => {
+            return dbChannelToApiChannel(channelAndLineup);
+          }),
           'number',
         );
-        return res.send(channels.map((c) => c.toDTO()));
+
+        return res.send(result);
       } catch (err) {
-        console.error(err);
         return res.status(500).send('error');
       }
     },
@@ -84,10 +90,11 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     },
     async (req, res) => {
       try {
-        const channel = await req.serverCtx.channelDB.getChannel(req.params.id);
+        const channelAndLineup =
+          await req.serverCtx.channelDB.loadChannelAndLineup(req.params.id);
 
-        if (!isNil(channel)) {
-          return res.send(channel.toDTO());
+        if (!isNil(channelAndLineup)) {
+          return res.send(dbChannelToApiChannel(channelAndLineup));
         } else {
           return res.status(404).send();
         }
@@ -152,7 +159,9 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
             channelUpdate,
           );
           await req.serverCtx.guideService.updateCachedChannel(channel.uuid);
-          return res.send(omit(updatedChannel.toDTO(), 'programs'));
+          return res.send(
+            omit(dbChannelToApiChannel(updatedChannel), 'programs'),
+          );
         } else {
           return res.status(404).send();
         }

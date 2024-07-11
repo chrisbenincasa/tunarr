@@ -1,6 +1,6 @@
 import { ReleaseDateSortOrderOperation } from '@tunarr/types/api';
 import { filter, isNull, sortBy } from 'lodash-es';
-import { ChannelAndLineup } from '../../dao/channelDb';
+import { ChannelAndLineup } from '../../types/internal.js';
 import { LineupCreatorContext } from './LineupCreatorContext';
 import { SchedulingOperator } from './SchedulingOperator';
 import { isContentItem } from '../../dao/derived_types/Lineup';
