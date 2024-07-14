@@ -14,7 +14,6 @@ import {
 } from '@mikro-orm/core';
 import { createExternalId } from '@tunarr/shared';
 import { Program as ProgramDTO } from '@tunarr/types';
-import type { Duration } from 'dayjs/plugin/duration.js';
 import { enumKeys } from '../../util/enumUtil.js';
 import { ProgramSourceType } from '../custom_types/ProgramSourceType.js';
 import { BaseEntity } from './BaseEntity.js';
@@ -32,27 +31,31 @@ import { ProgramGrouping } from './ProgramGrouping.js';
 @Unique({ properties: ['sourceType', 'externalSourceId', 'externalKey'] })
 @Index({ properties: ['sourceType', 'externalSourceId', 'plexRatingKey'] })
 export class Program extends BaseEntity {
+  /**
+   * @deprecated Programs will soon be able to have multiple sources
+   */
   @Enum(() => ProgramSourceType)
   sourceType!: ProgramSourceType;
 
   @Property({ nullable: true })
   originalAirDate?: string;
 
+  /**
+   * Program duration in milliseconds.
+   */
   @Property()
   duration!: number;
-
-  set durationObj(duration: Duration) {
-    this.duration = duration.asMilliseconds();
-  }
 
   @Property({ nullable: true })
   episode?: number;
 
+  // TODO: This should probably be factored into the source-specific table
   @Property({ nullable: true })
   episodeIcon?: string;
 
   /**
    * Previously "file"
+   * @deprecated Do not read from this field. Use the program_external_id table instead
    */
   @Property({ nullable: true })
   filePath?: string;
@@ -62,6 +65,7 @@ export class Program extends BaseEntity {
 
   /**
    * Previously "serverKey"
+   * @deprecated Do not read from this field. Use the apporpriate entry from the `program_external_id` table instead
    */
   @Property()
   externalSourceId!: string; // e.g., Plex server name
@@ -87,11 +91,17 @@ export class Program extends BaseEntity {
   @Property({ nullable: true })
   plexFilePath?: string;
 
-  // For TV Shows, this is the season key
+  /**
+   * For TV Shows, this is the season key
+   * @deprecated Prefer joining on the relevant `program_grouping` + `program_grouping_external_id` entries
+   */
   @Property({ nullable: true })
   parentExternalKey?: string;
 
-  // For TV shows, this is the show key
+  /**
+   * For TV shows, this is the show key
+   * @deprecated Prefer joining on the relevant `program_grouping` + `program_grouping_external_id` entries
+   */
   @Property({ nullable: true })
   grandparentExternalKey?: string;
 

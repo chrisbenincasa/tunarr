@@ -80,6 +80,7 @@ import {
 import { directDbAccess } from './direct/directDbAccess.js';
 import {
   MinimalProgramGroupingFields,
+  withFallbackPrograms,
   withPrograms,
   withTrackAlbum,
   withTrackArtist,
@@ -252,6 +253,16 @@ export class ChannelDB {
       )
       .selectAll('programExternalId')
       .execute();
+  }
+
+  async getChannelFallbackPrograms(uuid: string) {
+    const result = await directDbAccess()
+      .selectFrom('channelFallback')
+      .where('channelFallback.channelUuid', '=', uuid)
+      .select(withFallbackPrograms)
+      .groupBy('channelFallback.channelUuid')
+      .executeTakeFirst();
+    return result?.programs ?? [];
   }
 
   /**

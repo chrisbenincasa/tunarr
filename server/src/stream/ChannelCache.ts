@@ -6,7 +6,6 @@ import {
   StreamLineupItemSchema,
   isCommercialLineupItem,
 } from '../dao/derived_types/StreamLineup.js';
-import { FillerShowId } from '../dao/entities/FillerShow.js';
 import { SchemaBackedDbAdapter } from '../dao/SchemaBackedDbAdapter.js';
 import { join } from 'node:path';
 import { Low } from 'lowdb';
@@ -176,7 +175,7 @@ export class ChannelCache {
     );
   }
 
-  getFillerLastPlayTime(channelId: string, fillerId: FillerShowId) {
+  getFillerLastPlayTime(channelId: string, fillerId: string) {
     return (
       persistentChannelCache.getFillerPlayTime(
         this.getKey(channelId, fillerId),

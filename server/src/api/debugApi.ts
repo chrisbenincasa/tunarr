@@ -14,11 +14,9 @@ import {
   isContentBackedLineupIteam,
 } from '../dao/derived_types/StreamLineup.js';
 import { Channel } from '../dao/entities/Channel.js';
+import { LineupCreator } from '../services/dynamic_channels/LineupCreator.js';
 import { PlayerContext } from '../stream/Player.js';
-import {
-  StreamProgramCalculator,
-  generateChannelContext,
-} from '../stream/StreamProgramCalculator.js';
+import { generateChannelContext } from '../stream/StreamProgramCalculator.js';
 import { PlexPlayer } from '../stream/plex/PlexPlayer.js';
 import { PlexTranscoder } from '../stream/plex/PlexTranscoder.js';
 import { StreamContextChannel } from '../stream/types.js';
@@ -28,7 +26,6 @@ import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { Maybe } from '../types/util.js';
 import { ifDefined, mapAsyncSeq } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
-import { LineupCreator } from '../services/dynamic_channels/LineupCreator.js';
 
 const ChannelQuerySchema = {
   querystring: z.object({
@@ -160,7 +157,7 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
 
     logger.info('lineupItem: %O', lineupItem);
 
-    const calculator = new StreamProgramCalculator();
+    const calculator = req.serverCtx.streamProgramCalculator();
     if (isNil(lineupItem)) {
       lineupItem = await calculator.createLineupItem(
         await calculator.getCurrentProgramAndTimeElapsed(
@@ -191,8 +188,9 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
           .send({ error: 'No channel with ID ' + req.query.channelId });
       }
 
-      const result =
-        new StreamProgramCalculator().getCurrentProgramAndTimeElapsed(
+      const result = req.serverCtx
+        .streamProgramCalculator()
+        .getCurrentProgramAndTimeElapsed(
           new Date().getTime(),
           channel,
           await req.serverCtx.channelDB.loadLineup(channel.uuid),
@@ -295,7 +293,7 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
           .send({ error: 'No channel with ID ' + req.query.channelId });
       }
 
-      const calculator = new StreamProgramCalculator();
+      const calculator = req.serverCtx.streamProgramCalculator();
       const lineup = await calculator.createLineupItem(
         await calculator.getCurrentProgramAndTimeElapsed(
           new Date().getTime(),

@@ -45,7 +45,11 @@ type VideoStreamResult = VideoStreamSuccessResult | VideoStreamErrorResult;
  */
 export class VideoStream {
   private logger = LoggerFactory.child({ caller: import.meta });
-  private calculator = new StreamProgramCalculator();
+  private calculator: StreamProgramCalculator;
+
+  constructor() {
+    this.calculator = getServerContext().streamProgramCalculator();
+  }
 
   async startStream(
     req: StreamQueryString,
