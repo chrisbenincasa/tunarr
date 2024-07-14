@@ -8,8 +8,11 @@ import {
   reject,
   sortBy,
 } from 'lodash-es';
-import { ChannelAndLineup, ChannelDB } from '../../dao/channelDb.js';
+import { ChannelDB } from '../../dao/channelDb.js';
 import { Lineup, isContentItem } from '../../dao/derived_types/Lineup.js';
+import { directDbAccess } from '../../dao/direct/directDbAccess.js';
+import { Func } from '../../types/func.js';
+import { ChannelAndLineup } from '../../types/internal.js';
 import { asyncPool } from '../../util/asyncPool.js';
 import {
   asyncFlow,
@@ -17,16 +20,14 @@ import {
   intersperse,
   isDefined,
 } from '../../util/index.js';
+import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
 import { CollapseOfflineTimeOperator } from './CollapseOfflineTimeOperator.js';
 import { IntermediateOperator } from './IntermediateOperator.js';
-import { SchedulingOperatorFactory } from './SchedulingOperatorFactory.js';
-import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
-import { Func } from '../../types/func.js';
 import {
   LineupBuilderContext,
   LineupCreatorContext,
 } from './LineupCreatorContext.js';
-import { directDbAccess } from '../../dao/direct/directDbAccess.js';
+import { SchedulingOperatorFactory } from './SchedulingOperatorFactory.js';
 
 const OperatorToWeight: Record<SchedulingOperation['type'], number> = {
   ordering: 0,

@@ -33,6 +33,7 @@ import { runFixers } from './tasks/fixers/index.js';
 import { filename, isNonEmptyString, run } from './util/index.js';
 import { LoggerFactory } from './util/logging/LoggerFactory.js';
 import { initDirectDbAccess } from './dao/direct/directDbAccess.js';
+import { OnDemandChannelService } from './services/OnDemandChannelService.js';
 
 const currentDirectory = dirname(filename(import.meta.url));
 
@@ -354,6 +355,8 @@ export async function initServer(opts: ServerOptions) {
       });
 
       logger.info('Received exit signal, attempting graceful shutdown');
+
+      await new OnDemandChannelService(ctx.channelDB).pauseAllChannels();
 
       try {
         logger.info('Waiting for pending jobs to complete');

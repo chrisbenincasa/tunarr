@@ -1,5 +1,5 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { isNil, isNumber, isUndefined, map } from 'lodash-es';
+import { isNil, isNull, isNumber, isUndefined, map } from 'lodash-es';
 import * as fsSync from 'node:fs';
 import { Readable } from 'stream';
 import { z } from 'zod';
@@ -11,9 +11,12 @@ import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { sessionManager } from '../stream/SessionManager.js';
 import { v4 } from 'uuid';
-import { run } from '../util/index.js';
+import { isDefined, run } from '../util/index.js';
 import { PassThrough } from 'node:stream';
 import { makeLocalUrl } from '../util/serverUtil.js';
+import { ActiveChannelManager } from '../stream/ActiveChannelManager.js';
+import { OnDemandChannelService } from '../services/OnDemandChannelService.js';
+import dayjs from 'dayjs';
 
 let StreamCount = 0;
 
@@ -126,6 +129,7 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
+      // TODO Make this a settings opt-in for experimental behavior
       if (req.query.useSessions) {
         const channel = await req.serverCtx.channelDB.getChannel(req.params.id);
         if (isNil(channel)) {
@@ -153,6 +157,8 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
         // and the response so that nothing messes up the backing raw stream
         // when the request closes (i.e. anything that might happen internal
         // in fastify on the send).
+        // TODO: We could probably record periodic heartbeats by listening
+        // to the data event on this piped stream. Just debounce them!
         const piped = session.rawStream.pipe(new PassThrough());
 
         req.raw.on('close', () => {
@@ -170,10 +176,20 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
 
         return res.header('Content-Type', 'video/mp2t').send(piped);
       } else {
+        const channel = await req.serverCtx.channelDB.getChannel(req.params.id);
+        if (isNull(channel)) {
+          return res.status(404).send(`Channel ${req.params.id} not found`);
+        }
+
+        const lineup = await req.serverCtx.channelDB.loadLineup(channel.uuid);
+
+        const token = v4();
+
         const result = await new ConcatStream().startStream(
           req.params.id,
           false,
         );
+
         if (result.type === 'error') {
           return res.send(result.httpStatus).send(result.message);
         }
@@ -181,6 +197,7 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
         req.raw.on('close', () => {
           logger.debug('Concat request closed.');
           if (req.raw.destroyed) {
+            ActiveChannelManager.removeChannelConnection(channel.uuid, token);
             logger.debug(
               'Detected client initiated concat close, stopping stream...',
             );
@@ -188,6 +205,18 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
           }
           res.raw.end();
         });
+
+        ActiveChannelManager.addChannelConnection(channel.uuid, token, {
+          ipAddress: req.ip,
+        });
+
+        if (isDefined(lineup.onDemandConfig)) {
+          // TODO: Don't instantiate this every time...
+          const onDemandService = new OnDemandChannelService(
+            req.serverCtx.channelDB,
+          );
+          await onDemandService.resumeChannel(channel.uuid);
+        }
 
         return res.header('Content-Type', 'video/mp2t').send(result.stream);
       }
@@ -228,8 +257,32 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      const t0 = new Date().getTime();
+      // const t0 = new Date().getTime();
       const videoStream = new VideoStream();
+
+      const channelAndLineup = isNumber(req.query.channel)
+        ? await req.serverCtx.channelDB
+            .channelIdForNumber(req.query.channel)
+            .then((id) =>
+              id ? req.serverCtx.channelDB.loadChannelAndLineup(id) : null,
+            )
+        : await req.serverCtx.channelDB.loadChannelAndLineup(req.query.channel);
+
+      if (isNil(channelAndLineup)) {
+        return res.status(404).send();
+      }
+
+      const { channel, lineup } = channelAndLineup;
+
+      let t0 = req.query.startTime ?? new Date().getTime();
+      // For on-demand channels, we resume where the last streamer left
+      // off.
+      if (isDefined(lineup.onDemandConfig)) {
+        t0 = channel.startTime + lineup.onDemandConfig.cursor;
+      }
+
+      logger.debug('Starting stream timestamp: %s', dayjs(t0).format());
+
       const rawStreamResult = await videoStream.startStream(
         req.query,
         t0,
@@ -254,7 +307,7 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
       });
 
       return res
-        .header('Content-Type', 'video/mp2t')
+        .header('Content-Type', 'video/nut')
         .send(rawStreamResult.stream);
     },
   );

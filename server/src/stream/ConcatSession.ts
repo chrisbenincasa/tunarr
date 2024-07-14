@@ -1,7 +1,7 @@
 import { isUndefined } from 'lodash-es';
 import { Maybe } from '../types/util';
 import { ConcatStream, VideoStreamResult } from './ConcatStream';
-import { SessionOptions, StreamSession } from './Session';
+import { SessionOptions, StreamSession } from './StreamSession';
 import { Channel } from '../dao/entities/Channel';
 
 export class ConcatSession extends StreamSession {

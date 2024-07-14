@@ -66,8 +66,8 @@ export class SchemaBackedDbAdapter<T extends z.ZodTypeAny, Out = z.infer<T>>
     const parseResult = await this.schema.safeParseAsync(data);
     if (!parseResult.success) {
       this.logger.warn(
-        'Could not verify schema before saving to DB - the given type does not match the expected schema.',
         parseResult.error,
+        'Could not verify schema before saving to DB - the given type does not match the expected schema.',
       );
       throw new Error(
         'Could not verify schema before saving to DB - the given type does not match the expected schema.',

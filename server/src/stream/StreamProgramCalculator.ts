@@ -33,7 +33,6 @@ import { Nullable } from '../types/util.js';
 import { binarySearchRange } from '../util/binarySearch.js';
 import { isNonEmptyString, zipWithIndex } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
-import { random } from '../util/random.js';
 import { STREAM_CHANNEL_CONTEXT_KEYS, StreamContextChannel } from './types.js';
 import { FillerDB } from '../dao/fillerDb.js';
 import { ChannelDB } from '../dao/channelDb.js';
@@ -231,7 +230,6 @@ export class StreamProgramCalculator {
   async createLineupItem(
     obj: ProgramAndTimeElapsed,
     channel: Loaded<Channel>,
-    isFirst: boolean,
   ): Promise<StreamLineupItem> {
     let timeElapsed = obj.timeElapsed;
     // Start time of a file is never consistent unless 0. Run time of an episode can vary.
@@ -276,7 +274,7 @@ export class StreamProgramCalculator {
       const randomResult = new FillerPicker().pickRandomWithMaxDuration(
         channel,
         fillerPrograms,
-        remaining + (isFirst ? 7 * 24 * 60 * 60 * 1000 : 0),
+        remaining,
       );
       filler = randomResult.filler;
 
@@ -302,17 +300,6 @@ export class StreamProgramCalculator {
           } else {
             fillerstart = 0;
           }
-
-          // Otherwise, if we're dealing with the first item in the lineup,
-        } else if (isFirst) {
-          fillerstart = Math.max(0, filler.duration - remaining);
-          //it's boring and odd to tune into a channel and it's always
-          //the start of a commercial.
-          const more = Math.max(
-            0,
-            filler.duration - fillerstart - 15000 - SLACK,
-          );
-          fillerstart += random.integer(0, more);
         }
 
         return {

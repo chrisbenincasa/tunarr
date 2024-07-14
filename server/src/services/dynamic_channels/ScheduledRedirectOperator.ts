@@ -1,6 +1,6 @@
 import { ScheduledRedirectOperation } from '@tunarr/types/api';
 import { SchedulingOperator } from './SchedulingOperator';
-import { ChannelAndLineup } from '../../dao/channelDb';
+import { ChannelAndLineup } from '../../types/internal.js';
 import dayjs from 'dayjs';
 import { LineupItem } from '../../dao/derived_types/Lineup';
 import { binarySearchRange } from '../../util/binarySearch';

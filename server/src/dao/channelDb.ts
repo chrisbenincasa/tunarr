@@ -181,11 +181,6 @@ export type LoadedChannelWithGroupRefs = Loaded<
   | 'programs.season'
 >;
 
-export type ChannelAndLineup = {
-  channel: Loaded<Channel>;
-  lineup: Lineup;
-};
-
 // Let's see if this works... in so we can have many ChannelDb objects flying around.
 const fileDbCache: Record<string | number, Low<Lineup>> = {};
 const fileDbLocks = new MutexMap();
@@ -206,6 +201,15 @@ export class ChannelDB {
 
   getChannelByNumber(channelNumber: number) {
     return getEm().repo(Channel).findOne({ number: channelNumber });
+  }
+
+  async channelIdForNumber(channelNumber: number) {
+    const result = await directDbAccess()
+      .selectFrom('channel')
+      .where('number', '=', channelNumber)
+      .select('uuid')
+      .executeTakeFirst();
+    return result?.uuid;
   }
 
   getChannelById(id: string) {
@@ -298,7 +302,18 @@ export class ChannelDB {
 
     const channel = em.create(Channel, createRequestToChannel(createReq));
     em.persist(channel);
+
     await this.createLineup(channel.uuid);
+    if (isDefined(createReq.onDemand) && createReq.onDemand.enabled) {
+      const db = await this.getFileDb(channel.uuid);
+      await db.update((lineup) => {
+        lineup.onDemandConfig = {
+          state: 'paused',
+          cursor: 0,
+        };
+      });
+    }
+
     await em.flush();
     return channel.uuid;
   }
@@ -309,9 +324,9 @@ export class ChannelDB {
     const update = updateRequestToChannel(updateReq);
     const loadedChannel = wrap(channel).assign(update, {
       merge: true,
-      // convertCustomTypes: true,
       onlyProperties: true,
     });
+
     if (isDefined(updateReq.fillerCollections))
       [
         await em.transactional(async (em) => {
@@ -337,8 +352,27 @@ export class ChannelDB {
           await em.insertMany(ChannelFillerShow, channelFillerShows);
         }),
       ];
+
+    if (isDefined(updateReq.onDemand)) {
+      const db = await this.getFileDb(id);
+      await db.update((lineup) => {
+        if (updateReq.onDemand?.enabled ?? false) {
+          lineup.onDemandConfig = {
+            state: 'paused',
+            cursor: 0,
+          };
+        } else {
+          delete lineup['onDemandConfig'];
+        }
+      });
+    }
+
     await em.flush();
-    return loadedChannel;
+
+    return {
+      channel: loadedChannel,
+      lineup: await this.loadLineup(id),
+    };
   }
 
   async updateChannelStartTime(id: string, newTime: number) {
@@ -435,6 +469,7 @@ export class ChannelDB {
     const channel = await em.findOne(Channel, id, {
       populate: ['programs:ref'],
     });
+    const lineup = await this.loadLineup(id);
 
     if (isNil(channel)) {
       return null;
@@ -516,7 +551,7 @@ export class ChannelDB {
 
     if (req.type === 'manual') {
       const programs = req.programs;
-      const lineup = compact(
+      const lineupItems = compact(
         map(req.lineup, ({ index, duration }) => {
           const program = nth(programs, index);
           if (program) {
@@ -529,22 +564,28 @@ export class ChannelDB {
         }),
       );
 
-      const newLineup = await this.timer.timeAsync('createNewLineup', () =>
-        createNewLineup(programs, lineup),
+      const newLineupItems = await this.timer.timeAsync('createNewLineup', () =>
+        createNewLineup(programs, lineupItems),
       );
       const updatedChannel = await this.timer.timeAsync('updateChannel', () =>
-        updateChannel(newLineup, dayjs().unix() * 1000),
+        updateChannel(newLineupItems, dayjs().unix() * 1000),
       );
 
       await this.timer.timeAsync('saveLineup', () =>
         this.saveLineup(id, {
-          items: newLineup,
+          items: newLineupItems,
+          onDemandConfig: isDefined(lineup.onDemandConfig)
+            ? {
+                ...lineup.onDemandConfig,
+                cursor: 0,
+              }
+            : undefined,
         }),
       );
 
       return {
         channel: updatedChannel,
-        newLineup,
+        newLineup: newLineupItems,
       };
     } else if (req.type === 'time' || req.type === 'random') {
       // const programs = req.body.programs;
@@ -578,6 +619,21 @@ export class ChannelDB {
     }
 
     return null;
+  }
+
+  /**
+   * Like {@link ChannelDB#saveLineup} but only allows updating config-based information in the lineup
+   */
+  async updateLineupConfig<
+    Key extends keyof Omit<
+      Lineup,
+      'items' | 'startTimeOffsets' | 'pendingPrograms'
+    >,
+  >(id: string, key: Key, conf: Lineup[Key]) {
+    const lineupDb = await this.getFileDb(id);
+    return await lineupDb.update((existing) => {
+      existing[key] = conf;
+    });
   }
 
   async setChannelPrograms(
@@ -832,7 +888,7 @@ export class ChannelDB {
     };
   }
 
-  async saveLineup(channelId: string, newLineup: Lineup) {
+  async saveLineup(channelId: string, newLineup: Omit<Lineup, 'lastUpdated'>) {
     const db = await this.getFileDb(channelId);
     if (newLineup.items.length === 0) {
       newLineup.items.push({
@@ -851,8 +907,11 @@ export class ChannelDB {
       startTimeOffsets: newLineup.startTimeOffsets,
       schedule: newLineup.schedule,
       pendingPrograms: newLineup.pendingPrograms,
+      onDemandConfig: newLineup.onDemandConfig,
+      lastUpdated: dayjs().valueOf(),
     };
-    return await db.write();
+    await db.write();
+    return db.data;
   }
 
   async removeProgramsFromLineup(channelId: string, programIds: string[]) {
@@ -899,7 +958,7 @@ export class ChannelDB {
               `channel-lineups/${channelId}.json`,
             ),
           ),
-          { items: [], startTimeOffsets: [] },
+          { items: [], startTimeOffsets: [], lastUpdated: dayjs().valueOf() },
         );
         await db.read();
         fileDbCache[channelId] = db;
@@ -1099,6 +1158,7 @@ export class ChannelDB {
         if (changed) {
           return this.saveLineup(channel.uuid, { ...lineup, items: newLineup });
         }
+        return;
       },
       { concurrency: 2 },
     );

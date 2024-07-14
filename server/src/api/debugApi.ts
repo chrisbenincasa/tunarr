@@ -166,7 +166,6 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
           await req.serverCtx.channelDB.loadLineup(channel.uuid),
         ),
         channel,
-        false,
       );
     }
     return lineupItem;
@@ -304,7 +303,6 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
         await req.serverCtx.channelDB
           .getChannel(req.query.channelId)
           .then((x) => x!),
-        false,
       );
 
       return res.send(lineup);

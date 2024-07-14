@@ -13,7 +13,8 @@ import { isNonEmptyString } from '../util/index.js';
 export type TaskId =
   | 'update-xmltv'
   | 'cleanup-sessions'
-  | 'schedule-dynamic-channels';
+  | 'schedule-dynamic-channels'
+  | 'on-demand-channel-state';
 
 export abstract class Task<Data = unknown> {
   protected logger: Logger;

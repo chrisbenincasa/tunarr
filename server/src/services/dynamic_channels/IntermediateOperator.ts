@@ -1,6 +1,6 @@
 import { last, reduce } from 'lodash-es';
-import { ChannelAndLineup } from '../../dao/channelDb';
 import { NamedFunc } from '../../types/func';
+import { ChannelAndLineup } from '../../types/internal.js';
 
 function fix(channelAndLineup: ChannelAndLineup): Promise<ChannelAndLineup> {
   const { channel, lineup } = channelAndLineup;

@@ -1,6 +1,4 @@
-// import { SchedulingOperator } from "./SchedulingOperator";
-
-import { ChannelAndLineup } from '../../dao/channelDb.js';
+import { ChannelAndLineup } from '../../types/internal.js';
 import { Lineup, LineupItem } from '../../dao/derived_types/Lineup.js';
 import { Func } from '../../types/func.js';
 

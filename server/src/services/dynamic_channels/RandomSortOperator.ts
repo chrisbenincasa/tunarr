@@ -1,6 +1,6 @@
 import { RandomSortOrderOperation } from '@tunarr/types/api';
 import { SchedulingOperator } from './SchedulingOperator';
-import { ChannelAndLineup } from '../../dao/channelDb';
+import { ChannelAndLineup } from '../../types/internal.js';
 import { random } from '../../util/random';
 
 export class RandomSortOperator extends SchedulingOperator<RandomSortOrderOperation> {
