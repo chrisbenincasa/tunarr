@@ -349,6 +349,7 @@ export class LegacyChannelMigrator {
       onDemand: {
         enabled: isOnDemand,
       },
+      programCount: 0, // Not really needed here
     };
 
     const em = getEm();

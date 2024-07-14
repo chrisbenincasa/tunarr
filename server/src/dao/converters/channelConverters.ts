@@ -1,4 +1,5 @@
 import { Channel } from '@tunarr/types';
+import { filter } from 'lodash-es';
 import { ChannelAndLineup } from '../../types/internal.js';
 import { isDefined, nilToUndefined } from '../../util/index.js';
 import { DefaultChannelIcon } from '../entities/Channel.js';
@@ -27,5 +28,6 @@ export const dbChannelToApiChannel = ({
     onDemand: {
       enabled: isDefined(lineup.onDemandConfig),
     },
+    programCount: filter(lineup.items, { type: 'content' }).length,
   };
 };
