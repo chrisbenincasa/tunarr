@@ -18,6 +18,7 @@
     "dev": "dotenv -e .env.development -- tsx watch --tsconfig ./tsconfig.build.json --ignore 'build' --ignore 'src/streams' src",
     "make-exec": "tsx scripts/makeExecutable.ts",
     "make-exec:linux": "tsx scripts/makeExecutable.ts --target linux-x64-20.11.1",
+    "make-exec:linux-arm64v8": "tsx scripts/makeExecutable.ts --target linux-arm64v8-20.11.1",
     "make-exec:macos": "tsx scripts/makeExecutable.mac.ts",
     "make-exec:windows": "tsx scripts/makeExecutable.ts --target windows-x64-20.11.1 --python python",
     "generate-db-migration": "dotenv -e .env.development -- tsx --tsconfig ./tsconfig.build.json src/index.ts db generate-migration",

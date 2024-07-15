@@ -19,6 +19,10 @@ jobs:
             tag: edge-nvidia
           - base_tag: 7.0-vaapi
             tag: edge-vaapi
+          - base_tag: 7.0-arm64
+            tag: edge-arm64
+          - base_tag: 7.0-arm
+            tag: edge-arm
 
     steps:
       - uses: actions/checkout@v4
