@@ -142,7 +142,7 @@ const programListItemTitleFormatter = (() => {
     }
     const dur = betterHumanize(
       dayjs.duration({ milliseconds: program.duration }),
-      true,
+      { exact: true },
     );
 
     return `${title} - (${dur})`;

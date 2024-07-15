@@ -32,4 +32,5 @@ export const DefaultChannel: MarkOptional<
   onDemand: {
     enabled: false,
   },
+  programCount: 0,
 } as const;

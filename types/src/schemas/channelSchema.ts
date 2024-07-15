@@ -59,6 +59,7 @@ export const ChannelSchema = z.object({
   onDemand: z.object({
     enabled: z.boolean(),
   }),
+  programCount: z.number(),
 });
 
 function addOrTransform<T extends ZodTypeAny>(x: T) {
@@ -74,6 +75,7 @@ function addOrTransform<T extends ZodTypeAny>(x: T) {
 export const SaveChannelRequestSchema = ChannelSchema.omit({
   programs: true,
   fallback: true, // Figure out how to update this
+  programCount: true,
 })
   .partial({
     onDemand: true,

@@ -41,11 +41,11 @@ import { isNonEmptyString } from '../../helpers/util.ts';
 import { useSuspenseChannels } from '../../hooks/useChannels.ts';
 import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 import { useSettings } from '../../store/settings/selectors.ts';
+import { betterHumanize } from '@/helpers/dayjs.ts';
 
 export default function ChannelsPage() {
   const { backendUri } = useSettings();
   const apiClient = useTunarrApi();
-  const now = dayjs();
   const { data: channels } = useSuspenseChannels();
   const theme = useTheme();
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
@@ -210,7 +210,6 @@ export default function ChannelsPage() {
 
   // TODO properly define types from API
   const getDataTableRow = (channel: Channel) => {
-    const startTime = dayjs(channel.startTime);
     return (
       <TableRow
         key={channel.number}
@@ -229,7 +228,11 @@ export default function ChannelsPage() {
           </TableCell>
         )}
         <TableCell>{channel.name}</TableCell>
-        <TableCell>{startTime.isBefore(now) ? 'Yes' : 'No'}</TableCell>
+        <TableCell>{channel.programCount.toLocaleString()}</TableCell>
+        <TableCell>
+          {betterHumanize(dayjs.duration(channel.duration), { style: 'short' })}
+        </TableCell>
+        {/* <TableCell>{startTime.isBefore(now) ? 'Yes' : 'No'}</TableCell> */}
         <TableCell>{channel.stealth ? 'Yes' : 'No'}</TableCell>
         <TableCell sx={{ textAlign: 'right' }}>
           {mediumViewport ? (
@@ -342,7 +345,8 @@ export default function ChannelsPage() {
               <TableCell>Number</TableCell>
               {!smallViewport && <TableCell>Icon</TableCell>}
               <TableCell>Name</TableCell>
-              <TableCell>Live?</TableCell>
+              <TableCell># Programs</TableCell>
+              <TableCell>Duration</TableCell>
               <TableCell>Stealth?</TableCell>
               <TableCell></TableCell>
             </TableRow>
