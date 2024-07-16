@@ -10,6 +10,7 @@ import {
   Select,
   SelectChangeEvent,
   Skeleton,
+  Slider,
   Stack,
   TextField,
 } from '@mui/material';
@@ -17,7 +18,7 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Grid2 from '@mui/material/Unstable_Grid2/Grid2';
 import { SaveChannelRequest, Watermark } from '@tunarr/types';
-import { isNil, isUndefined, map, round, get } from 'lodash-es';
+import { isNil, isUndefined, map, round, get, range } from 'lodash-es';
 import { useState } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 import {
@@ -32,7 +33,6 @@ import {
   CheckboxFormController,
   NumericFormControllerText,
 } from '../util/TypedController.tsx';
-import ChannelEditActions from './ChannelEditActions.tsx';
 
 const resolutionOptions = [
   { value: '420x420', label: '420x420 (1:1)' },
@@ -108,6 +108,9 @@ export default function ChannelTranscodingConfig() {
     }
     return value.toString();
   });
+
+  console.log(getValues('watermark.opacity'));
+  const [opacity, setOpacity] = useState(getValues('watermark.opacity'));
 
   if (ffmpegSettingsLoading) {
     return <CircularProgress />;
@@ -223,6 +226,7 @@ export default function ChannelTranscodingConfig() {
                         watermark?.width && !watermark?.fixedSize
                           ? `${watermark.width}%`
                           : null,
+                      opacity: opacity / 100,
                       [isBottom ? 'bottom' : 'top']: watermark?.verticalMargin,
                       [isRight ? 'right' : 'left']: watermark?.horizontalMargin,
                     }}
@@ -310,6 +314,33 @@ export default function ChannelTranscodingConfig() {
                       fullWidth: true,
                     }}
                   />
+                </Grid2>
+                <Grid2 xs={12}>
+                  <FormControl fullWidth>
+                    <Typography gutterBottom>Opacity</Typography>
+                    <Box sx={{ px: 2 }}>
+                      <Slider
+                        min={0}
+                        max={100}
+                        value={opacity}
+                        marks={range(0, 100, 10).map((i) => ({ value: i }))}
+                        valueLabelDisplay="auto"
+                        sx={{ width: '100%' }}
+                        onChange={(_, newValue) =>
+                          setOpacity(newValue as number)
+                        }
+                        onChangeCommitted={(_, newValue) =>
+                          setValue('watermark.opacity', newValue as number, {
+                            shouldDirty: true,
+                          })
+                        }
+                        step={1}
+                      />
+                    </Box>
+                  </FormControl>
+                </Grid2>
+                <Grid2 xs={12}>
+                  <Divider />
                 </Grid2>
                 <Grid2>
                   <FormControl fullWidth>
@@ -478,7 +509,6 @@ export default function ChannelTranscodingConfig() {
             )}
           </FormControl>
         </Stack>
-        <ChannelEditActions />
       </Box>
     )
   );

@@ -315,7 +315,7 @@ export class ChannelDB {
     }
 
     await em.flush();
-    return channel.uuid;
+    return { channel, lineup: (await this.getFileDb(channel.uuid)).data };
   }
 
   async updateChannel(id: string, updateReq: SaveChannelRequest) {

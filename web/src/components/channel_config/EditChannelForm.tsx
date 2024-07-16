@@ -27,6 +27,7 @@ import {
   EditChannelTabs,
   EditChannelTabsProps,
 } from './EditChannelTabPanel.tsx';
+import ChannelEditActions from './ChannelEditActions.tsx';
 
 export function EditChannelForm({
   channel,
@@ -37,8 +38,6 @@ export function EditChannelForm({
   const [currentTab, setCurrentTab] = useState<EditChannelTabs>(
     initialTab ?? 'properties',
   );
-
-  const updateChannelMutation = useUpdateChannel(isNew);
 
   const formMethods = useForm<SaveChannelRequest>({
     mode: 'onChange',
@@ -74,10 +73,24 @@ export function EditChannelForm({
         animated: channel.watermark?.animated ?? false,
         duration: channel.watermark?.duration ?? 0,
         position: channel.watermark?.position ?? 'bottom-right',
+        opacity: channel.watermark?.opacity ?? 100,
       },
       onDemand: {
         enabled: channel.onDemand.enabled,
       },
+    },
+  });
+
+  const updateChannelMutation = useUpdateChannel(isNew, {
+    onSuccess: (data) => {
+      console.log('resetting some bullshit');
+      formMethods.reset(data, { keepDefaultValues: false });
+      if (isNew) {
+        navigate({
+          to: `/channels/$channelId/programming`,
+          params: { channelId: data.id },
+        }).catch(console.warn);
+      }
     },
   });
 
@@ -101,17 +114,7 @@ export function EditChannelForm({
       fillerCollections: data.fillerCollections,
     };
 
-    updateChannelMutation.mutate(dataTransform, {
-      onSuccess: (data) => {
-        formMethods.reset(dataTransform);
-        if (isNew) {
-          navigate({
-            to: `/channels/$channelId/programming`,
-            params: { channelId: data.id },
-          }).catch(console.warn);
-        }
-      },
-    });
+    updateChannelMutation.mutate(dataTransform);
   };
 
   const onInvalid: SubmitErrorHandler<SaveChannelRequest> = (data) => {
@@ -181,6 +184,7 @@ export function EditChannelForm({
           <EditChannelTabPanel value="ffmpeg" currentValue={currentTab}>
             <ChannelTranscodingConfig />
           </EditChannelTabPanel>
+          <ChannelEditActions isNewChannel={isNew} />
         </Box>
       </FormProvider>
       {!isNew && <UnsavedNavigationAlert isDirty={formIsDirty} />}

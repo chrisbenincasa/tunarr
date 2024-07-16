@@ -17,7 +17,6 @@ import useStore from '../../store/index.ts';
 import TunarrLogo from '../TunarrLogo.tsx';
 import { ImageUploadInput } from '../settings/ImageUploadInput.tsx';
 import { NumericFormControllerText } from '../util/TypedController.tsx';
-import ChannelEditActions from './ChannelEditActions.tsx';
 
 const DefaultIconPath = '';
 
@@ -258,7 +257,6 @@ export function ChannelPropertiesEditor({ isNew }: Props) {
             </Box>
           </Stack>
         </Box>
-        <ChannelEditActions />
       </>
     )
   );

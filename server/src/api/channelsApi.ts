@@ -113,7 +113,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         tags: ['Channels'],
         body: SaveChannelRequestSchema,
         response: {
-          201: z.object({ id: z.string() }),
+          201: ChannelSchema,
           500: z.object({}),
         },
       },
@@ -128,7 +128,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
       if (isError(inserted)) {
         return res.status(500).send(inserted);
       }
-      return res.status(201).send({ id: inserted });
+      return res.status(201).send(dbChannelToApiChannel(inserted));
     },
   );
 

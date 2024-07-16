@@ -66,7 +66,7 @@ export const api = makeApi([
     path: '/api/channels',
     alias: 'createChannel',
     status: 201,
-    response: z.object({ id: z.string() }),
+    response: ChannelSchema,
   },
   {
     method: 'put',

@@ -6,18 +6,21 @@ import { ChannelIconSchema } from './utilSchemas.js';
 export const WatermarkSchema = z.object({
   url: z.string().optional(),
   enabled: z.boolean(),
-  position: z.union([
-    z.literal('top-left'),
-    z.literal('top-right'),
-    z.literal('bottom-left'),
-    z.literal('bottom-right'),
-  ]),
-  width: z.number(),
-  verticalMargin: z.number(),
-  horizontalMargin: z.number(),
-  duration: z.number(),
+  position: z
+    .union([
+      z.literal('top-left'),
+      z.literal('top-right'),
+      z.literal('bottom-left'),
+      z.literal('bottom-right'),
+    ])
+    .default('bottom-right'),
+  width: z.number().positive(),
+  verticalMargin: z.number().min(0).max(100),
+  horizontalMargin: z.number().min(0).max(100),
+  duration: z.number().min(0).default(0),
   fixedSize: z.boolean().optional(),
   animated: z.boolean().optional(),
+  opacity: z.number().min(0).max(100).int().optional().catch(100).default(100),
 });
 
 export const FillerCollectionSchema = z.object({
