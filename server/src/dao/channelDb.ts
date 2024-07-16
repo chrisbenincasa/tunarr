@@ -14,6 +14,7 @@ import {
   CondensedChannelProgramming,
   ContentProgram,
   SaveChannelRequest,
+  Watermark,
   tag,
 } from '@tunarr/types';
 import { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
@@ -93,6 +94,7 @@ import { CustomShowContent } from './entities/CustomShowContent.js';
 import { FillerShow, FillerShowId } from './entities/FillerShow.js';
 import { Program } from './entities/Program.js';
 import { upsertContentPrograms } from './programHelpers.js';
+import { Maybe } from '../types/util.js';
 
 dayjs.extend(duration);
 
@@ -103,6 +105,24 @@ dayjs.extend(duration);
 const SqliteMaxDepthLimit = 1000;
 
 type ProgramRelationOperation = { operation: 'add' | 'remove'; id: Program };
+
+function sanitizeChannelWatermark(
+  watermark: Maybe<Watermark>,
+): Maybe<Watermark> {
+  if (isUndefined(watermark)) {
+    return;
+  }
+
+  const validFadePoints = filter(
+    watermark.fadeConfig,
+    (conf) => conf.periodMins > 0,
+  );
+
+  return {
+    ...watermark,
+    fadeConfig: isEmpty(validFadePoints) ? undefined : validFadePoints,
+  };
+}
 
 function updateRequestToChannel(
   updateReq: SaveChannelRequest,
@@ -115,7 +135,7 @@ function updateRequestToChannel(
   return omitBy<Partial<Channel>>(
     {
       number: updateReq.number,
-      watermark: updateReq.watermark,
+      watermark: sanitizeChannelWatermark(updateReq.watermark),
       icon: updateReq.icon,
       guideMinimumDuration: updateReq.guideMinimumDuration,
       groupTitle: updateReq.groupTitle,

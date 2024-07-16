@@ -93,6 +93,12 @@ export const CondensedContentProgramSchema = BaseProgramSchema.extend({
     .optional(),
 });
 
+export const ContentProgramTypeSchema = z.union([
+  z.literal('movie'),
+  z.literal('episode'),
+  z.literal('track'),
+]);
+
 // Unfortunately we can't make this a discrim union, or even a regular union,
 // because it is used in other discriminatedUnions and zod cannot handle this
 // See:
@@ -100,11 +106,7 @@ export const CondensedContentProgramSchema = BaseProgramSchema.extend({
 // https://github.com/colinhacks/zod/issues/1884
 // This stuff makes me wanna just redefine all of this...
 export const ContentProgramSchema = CondensedContentProgramSchema.extend({
-  subtype: z.union([
-    z.literal('movie'),
-    z.literal('episode'),
-    z.literal('track'),
-  ]),
+  subtype: ContentProgramTypeSchema,
   summary: z.string().optional(),
   date: z.string().optional(),
   rating: z.string().optional(),

@@ -7,7 +7,7 @@ import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import { useNavigate } from '@tanstack/react-router';
 import { Channel, SaveChannelRequest } from '@tunarr/types';
-import { keys, some } from 'lodash-es';
+import { isEmpty, keys, reject, some } from 'lodash-es';
 import { useState } from 'react';
 import {
   FormProvider,
@@ -101,6 +101,11 @@ export function EditChannelForm({
   const formIsDirty = formMethods.formState.isDirty;
 
   const onSubmit: SubmitHandler<SaveChannelRequest> = (data) => {
+    const fadeConfigs = reject(
+      data.watermark?.fadeConfig,
+      (conf) => conf.periodMins <= 0,
+    );
+
     const dataTransform: SaveChannelRequest = {
       ...data,
       // Transform this to milliseconds before we send it over
@@ -112,6 +117,12 @@ export function EditChannelForm({
         ? data.guideFlexTitle
         : undefined,
       fillerCollections: data.fillerCollections,
+      watermark: data.watermark
+        ? {
+            ...data.watermark,
+            fadeConfig: isEmpty(fadeConfigs) ? undefined : fadeConfigs,
+          }
+        : undefined,
     };
 
     updateChannelMutation.mutate(dataTransform);

@@ -7,6 +7,7 @@ import {
   Unique,
 } from '@mikro-orm/core';
 import { Channel as ChannelDTO } from '@tunarr/types';
+import { ContentProgramTypeSchema } from '@tunarr/types/schemas';
 import { type Tag } from '@tunarr/types';
 import { BaseEntity } from './BaseEntity.js';
 import { ChannelFillerShow } from './ChannelFillerShow.js';
@@ -84,6 +85,17 @@ const ChannelWatermarkSchema = z.object({
   fixedSize: z.boolean().optional().catch(undefined),
   animated: z.boolean().optional().catch(undefined),
   opacity: z.number().min(0).max(100).int().optional().catch(100).default(100),
+  fadeConfig: z
+    .array(
+      z.object({
+        programType: ContentProgramTypeSchema.optional().catch(undefined),
+        // Encodes on/off period of displaying the watermark in mins.
+        // e.g. a 5m period fades in the watermark every 5th min and displays it
+        // for 5 mins.
+        periodMins: z.number().positive().min(1),
+      }),
+    )
+    .optional(),
 });
 
 export type ChannelWatermark = z.infer<typeof ChannelWatermarkSchema>;

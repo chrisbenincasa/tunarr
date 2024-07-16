@@ -172,6 +172,8 @@ export class ProgramPlayer extends Player {
       return;
     }
 
+    console.log(channel, channel.watermark);
+
     if (!isUndefined(channel.watermark) && channel.watermark.enabled) {
       const watermark = { ...channel.watermark };
       let icon: string;
@@ -183,6 +185,7 @@ export class ProgramPlayer extends Player {
         icon = `http://localhost:${serverOptions().port}/images/tunarr.png`;
       }
 
+      console.log(watermark);
       return {
         ...watermark,
         enabled: true,
