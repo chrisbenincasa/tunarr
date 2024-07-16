@@ -83,6 +83,7 @@ const ChannelWatermarkSchema = z.object({
   duration: z.number().nonnegative().catch(0),
   fixedSize: z.boolean().optional().catch(undefined),
   animated: z.boolean().optional().catch(undefined),
+  opacity: z.number().min(0).max(100).int().optional().catch(100).default(100),
 });
 
 export type ChannelWatermark = z.infer<typeof ChannelWatermarkSchema>;

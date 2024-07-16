@@ -11,7 +11,7 @@ import { Maybe } from '../types/util.js';
 import { TypedEventEmitter } from '../types/eventEmitter.js';
 import stream from 'stream';
 import { Logger, LoggerFactory } from '../util/logging/LoggerFactory.js';
-import { isNonEmptyString } from '../util/index.js';
+import { isDefined, isNonEmptyString } from '../util/index.js';
 import { makeLocalUrl } from '../util/serverUtil.js';
 import {
   SupportedHardwareAccels,
@@ -699,8 +699,22 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
           ? `:enable='between(t,0,${watermark.duration})'`
           : '';
       let waterVideo = `[${overlayFile}:v]`;
+      const watermarkFilters: string[] = [];
       if (!watermark.fixedSize) {
-        videoComplex += `;${waterVideo}scale=${w}:-1[icn]`;
+        watermarkFilters.push(`scale=${w}:-1`);
+      }
+
+      if (isDefined(watermark.opacity) && watermark.opacity < 100) {
+        watermarkFilters.push(
+          `format=argb,colorchannelmixer=aa=${round(
+            watermark.opacity / 100,
+            2,
+          )}`,
+        );
+      }
+
+      if (!isEmpty(watermarkFilters)) {
+        videoComplex += `;${waterVideo}${watermarkFilters.join(',')}[icn]`;
         waterVideo = '[icn]';
       }
 

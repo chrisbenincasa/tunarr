@@ -338,6 +338,7 @@ export class LegacyChannelMigrator {
               ? false
               : (watermark['animated'] as boolean),
             fixedSize: watermark['fixedSize'] as boolean,
+            opacity: 100,
           }
         : undefined,
       stealth: isUndefined(parsed['stealth'])
