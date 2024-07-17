@@ -32,7 +32,6 @@
     "globals": "^15.0.0",
     "husky": "^9.0.11",
     "lint-staged": "^15.2.2",
-    "standard-version": "^9.5.0",
     "turbo": "^2.0.6",
     "typescript": "5.4.3",
     "vitest": "^1.6.0"
