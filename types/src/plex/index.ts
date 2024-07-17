@@ -928,3 +928,7 @@ export const PlexMediaContainerResponseSchema = z.object({
     Metadata: z.array(PlexMediaSchema),
   }),
 });
+
+export const PlexGenericMediaContainerResponseSchema = z.object({
+  MediaContainer: z.record(z.any()),
+});
