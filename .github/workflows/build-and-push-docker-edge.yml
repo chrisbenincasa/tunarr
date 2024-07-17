@@ -13,16 +13,22 @@ jobs:
         builds:
           - base_tag: '7.0'
             tag: edge
+            platform: linux/amd64
           - base_tag: '7.0'
             tag: latest
+            platform: linux/amd64
           - base_tag: 7.0-nvidia
             tag: edge-nvidia
+            platform: linux/amd64
           - base_tag: 7.0-vaapi
             tag: edge-vaapi
+            platform: linux/amd64
           - base_tag: 7.0-arm64
             tag: edge-arm64
+            platform: linux/arm64
           - base_tag: 7.0-arm
             tag: edge-arm
+            platform: linux/arm/v7
 
     steps:
       - uses: actions/checkout@v4
@@ -75,6 +81,7 @@ jobs:
         with:
           context: .
           push: true
+          platforms: ${{matrix.builds.platform}}
           build-args: |
             base_image_tag=${{ matrix.builds.base_tag }}
             is_edge_build=true
