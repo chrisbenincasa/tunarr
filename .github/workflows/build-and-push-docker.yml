@@ -122,6 +122,7 @@ jobs:
             is_edge_build=true
             tunarr_build="${TUNARR_VERSION}"
           target: full-stack
-          tags: ${{matrix.builds.tags}}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
