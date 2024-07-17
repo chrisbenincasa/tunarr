@@ -1,10 +1,10 @@
-name: Build & Push Docker Edge
+name: Build & Push Docker
 
 on:
   workflow_dispatch:
   push:
     tags:
-      - 'v**'
+      - 'v*'
   schedule:
     - cron: '0 13-21/2 * * MON-FRI' # every hour, during working hours (UTC)
 
