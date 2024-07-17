@@ -1,6 +1,7 @@
 site_name: Tunarr
 repo_name: chrisbenincasa/tunarr
 repo_url: https://github.com/chrisbenincasa/tunarr
+site_url: https://tunarr.com/
 theme:
   name: material
   palette: 
@@ -65,3 +66,7 @@ markdown_extensions:
 
 extra_css:
   - stylesheets/extra.css
+
+extra:
+  version:
+    provider: mike
