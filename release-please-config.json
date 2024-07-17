@@ -3,7 +3,7 @@
     ".": {
       "changelog-path": "CHANGELOG.md",
       "release-type": "node",
-      "bump-minor-pre-major": false,
+      "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": false,
       "draft": false,
       "prerelease": false
