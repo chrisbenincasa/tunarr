@@ -8,26 +8,37 @@ on:
 jobs:
   build_and_push:
     runs-on: ubuntu-latest
+    continue-on-error: true
     strategy:
+      max-parallel: 2
       matrix:
         builds:
           - base_tag: '7.0'
-            tag: edge
-            platform: linux/amd64
-          - base_tag: '7.0'
-            tag: latest
+            tags: |
+              chrisbenincasa/tunarr:edge
+              ghcr.io/chrisbenincasa/tunarr:edge
+              chrisbenincasa/tunarr:latest
+              ghcr.io/chrisbenincasa/tunarr:latest
             platform: linux/amd64
           - base_tag: 7.0-nvidia
-            tag: edge-nvidia
+            tags: |
+              chrisbenincasa/tunarr:edge-nvidia
+              ghcr.io/chrisbenincasa/tunarr:edge-nvidia
             platform: linux/amd64
           - base_tag: 7.0-vaapi
-            tag: edge-vaapi
+            tags: |
+              chrisbenincasa/tunarr:edge-vaapi
+              ghcr.io/chrisbenincasa/tunarr:edge-vaapi
             platform: linux/amd64
           - base_tag: 7.0-arm64
-            tag: edge-arm64
+            tags: |
+              chrisbenincasa/tunarr:edge-arm64
+              ghcr.io/chrisbenincasa/tunarr:edge-arm64
             platform: linux/arm64
           - base_tag: 7.0-arm
-            tag: edge-arm
+            tags: |
+              chrisbenincasa/tunarr:edge-arm
+              ghcr.io/chrisbenincasa/tunarr:edge-arm
             platform: linux/arm/v7
 
     steps:
@@ -87,8 +98,6 @@ jobs:
             is_edge_build=true
             tunarr_build="${TUNARR_VERSION}"
           target: full-stack
-          tags: |
-            chrisbenincasa/tunarr:${{ matrix.builds.tag }}
-            ghcr.io/chrisbenincasa/tunarr:${{ matrix.builds.tag }}
+          tags: ${{matrix.builds.tags}}
           cache-from: type=gha
           cache-to: type=gha,mode=max
