@@ -35,7 +35,6 @@ import {
   deletePlexServerEndpoint,
   getFffmpegSettings,
   getHdhrSettings,
-  getPlexBackendStatus,
   getPlexServersEndpoint,
   getPlexStreamSettings,
   getSystemSettings,
@@ -262,6 +261,33 @@ export const api = makeApi([
     ]),
   },
   {
+    method: 'post',
+    path: '/api/plex-servers/foreignstatus',
+    alias: 'getUnknownPlexServerStatus',
+    parameters: parametersBuilder()
+      .addBody(
+        z.object({
+          name: z.string().optional(),
+          accessToken: z.string(),
+          uri: z.string(),
+        }),
+      )
+      .build(),
+    response: z.object({
+      healthy: z.boolean(),
+    }),
+    errors: makeErrors([
+      {
+        status: 404,
+        schema: BaseErrorSchema,
+      },
+      {
+        status: 500,
+        schema: BaseErrorSchema,
+      },
+    ]),
+  },
+  {
     method: 'get',
     path: '/api/jobs',
     alias: 'getTasks',
@@ -378,7 +404,6 @@ export const api = makeApi([
   createPlexServerEndpoint,
   updatePlexServerEndpoint,
   deletePlexServerEndpoint,
-  getPlexBackendStatus,
   getXmlTvSettings,
   updateXmlTvSettings,
   getHdhrSettings,

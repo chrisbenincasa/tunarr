@@ -3,6 +3,7 @@ import { DefaultPlexHeaders } from '@tunarr/shared/constants';
 import {
   PlexDvr,
   PlexDvrsResponse,
+  PlexGenericMediaContainerResponseSchema,
   PlexMedia,
   PlexMediaContainerResponseSchema,
   PlexResource,
@@ -125,7 +126,6 @@ class PlexQueryCache {
     const key = this.getCacheKey(serverName, path);
     const existing = this.#cache.get<T>(key);
     if (isDefined(existing)) {
-      console.log('cache hit ', path);
       return existing;
     }
 
@@ -143,7 +143,6 @@ class PlexQueryCache {
     const key = this.getCacheKey(serverName, path);
     const existing = this.#cache.get<PlexQueryResult<T>>(key);
     if (isDefined(existing)) {
-      console.log('cache hit ', path);
       return existing;
     }
 
@@ -293,6 +292,7 @@ export class Plex {
   async doGetResult<T>(
     path: string,
     optionalHeaders: RawAxiosRequestHeaders = {},
+    skipCache: boolean = false,
   ): Promise<PlexQueryResult<PlexMediaContainer<T>>> {
     const getter = async () => {
       const req: AxiosRequestConfig = {
@@ -324,7 +324,7 @@ export class Plex {
       return makeErrorResult('generic_request_error', res.message);
     };
 
-    return this.opts.enableRequestCache
+    return this.opts.enableRequestCache && !skipCache
       ? await PlexCache.getOrSetPlexResult(this.opts.name, path, getter)
       : await getter();
   }
@@ -333,10 +333,12 @@ export class Plex {
   async doGet<T>(
     path: string,
     optionalHeaders: RawAxiosRequestHeaders = {},
+    skipCache: boolean = false,
   ): Promise<Maybe<PlexMediaContainer<T>>> {
     const result = await this.doGetResult<PlexMediaContainer<T>>(
       path,
       optionalHeaders,
+      skipCache,
     );
     if (isPlexQuerySuccess(result)) {
       return result.data;
@@ -459,10 +461,19 @@ export class Plex {
 
   async checkServerStatus() {
     try {
-      await this.doGet('/');
+      const result = await this.doTypeCheckedGet(
+        '/',
+        PlexGenericMediaContainerResponseSchema,
+      );
+      if (isPlexQueryError(result)) {
+        throw result;
+      } else if (isUndefined(result)) {
+        // Parse error - indicates that the URL is probably not a Plex server
+        return -1;
+      }
       return 1;
     } catch (err) {
-      console.error('Error getting Plex server status', err);
+      this.logger.error(err, 'Error getting Plex server status');
       return -1;
     }
   }

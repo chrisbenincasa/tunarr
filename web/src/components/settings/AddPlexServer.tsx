@@ -1,4 +1,4 @@
-import { AddCircle } from '@mui/icons-material';
+import { AddCircle, SvgIconComponent } from '@mui/icons-material';
 import { Button } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { InsertPlexServerRequest } from '@tunarr/types/api';
@@ -10,6 +10,7 @@ import { useSnackbar } from 'notistack';
 type AddPlexServer = {
   title?: string;
   variant?: 'text' | 'contained' | 'outlined' | undefined;
+  icon?: SvgIconComponent;
 };
 
 export default function AddPlexServer(props: AddPlexServer) {
@@ -58,12 +59,14 @@ export default function AddPlexServer(props: AddPlexServer) {
       .catch(console.error);
   };
 
+  const IconComponent = props.icon ?? AddCircle;
+
   return (
     <Button
       color="inherit"
       onClick={() => addPlexServer()}
       variant={variant}
-      startIcon={<AddCircle />}
+      startIcon={<IconComponent />}
       {...restProps}
     >
       {title}

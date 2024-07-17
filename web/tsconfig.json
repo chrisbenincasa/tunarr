@@ -32,6 +32,8 @@
   "files": [
     "vite.config.ts",
     "vitest.config.ts",
+    "src/components/settings/plex/PlexServerRow.tsx",
+    "./src/components/settings/plex/PlexServerDeleteDialog.tsx",
   ],
   "include": [
     "./src/**/*.ts",

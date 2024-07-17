@@ -54,25 +54,6 @@ export const deletePlexServerEndpoint = makeEndpoint({
   response: z.void(),
 });
 
-export const getPlexBackendStatus = makeEndpoint({
-  method: 'post',
-  path: '/api/plex-servers/foreignstatus',
-  parameters: parametersBuilder()
-    .addBody(
-      z.object({
-        name: z.string(),
-        accessToken: z.string(),
-        uri: z.string(),
-      }),
-    )
-    .build(),
-  alias: 'getPlexBackendStatus',
-  response: z.object({
-    // TODO Change this, this is very stupid
-    status: z.union([z.literal(1), z.literal(-1)]),
-  }),
-});
-
 export const getXmlTvSettings = makeEndpoint({
   method: 'get',
   path: '/api/xmltv-settings',

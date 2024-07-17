@@ -1,19 +1,7 @@
-import {
-  CancelOutlined,
-  CloudDoneOutlined,
-  CloudOff,
-  Delete,
-  Edit,
-  HelpOutline,
-  Save,
-  Visibility,
-  VisibilityOff,
-} from '@mui/icons-material';
+import { Add, AutoFixHigh, HelpOutline } from '@mui/icons-material';
 import {
   Box,
   Button,
-  Checkbox,
-  Collapse,
   Dialog,
   DialogActions,
   DialogContent,
@@ -24,11 +12,8 @@ import {
   FormHelperText,
   Grid,
   IconButton,
-  InputAdornment,
   InputLabel,
-  Link,
   MenuItem,
-  OutlinedInput,
   Select,
   Skeleton,
   Stack,
@@ -42,338 +27,35 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  PlexServerSettings,
-  PlexStreamSettings,
-  defaultPlexStreamSettings,
-} from '@tunarr/types';
-import _, { fill, isNil, isNull, isUndefined, map } from 'lodash-es';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { PlexStreamSettings, defaultPlexStreamSettings } from '@tunarr/types';
+import _, { fill, map } from 'lodash-es';
 import { useSnackbar } from 'notistack';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
-import { RotatingLoopIcon } from '../../components/base/LoadingIcon.tsx';
-import AddPlexServer from '../../components/settings/AddPlexServer.tsx';
-import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert.tsx';
+import AddPlexServer from '@/components/settings/AddPlexServer.tsx';
+import UnsavedNavigationAlert from '@/components/settings/UnsavedNavigationAlert.tsx';
 import {
   CheckboxFormController,
   TypedController,
-} from '../../components/util/TypedController.tsx';
-import { toggle } from '../../helpers/util.ts';
-import { usePlexServerStatus } from '../../hooks/plex/usePlexServerStatus.ts';
+} from '@/components/util/TypedController.tsx';
 import {
   usePlexServerSettings,
   usePlexStreamSettings,
-} from '../../hooks/settingsHooks.ts';
-import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
+} from '@/hooks/settingsHooks.ts';
+import { useTunarrApi } from '@/hooks/useTunarrApi.ts';
+import { PlexServerRow } from '@/components/settings/plex/PlexServerRow.tsx';
+import { PlexServerEditDialog } from '@/components/settings/plex/PlexServerEditDialog.tsx';
 
 const supportedPaths = [
   { value: 'plex', string: 'Plex' },
   { value: 'direct', string: 'Direct' },
 ];
 
-type PlexServerDeleteDialogProps = {
-  open: boolean;
-  onClose: () => void;
-  serverId: string;
-};
-
-function PlexServerDeleteDialog({
-  open,
-  onClose,
-  serverId,
-}: PlexServerDeleteDialogProps) {
-  const apiClient = useTunarrApi();
-  const queryClient = useQueryClient();
-  const removePlexServerMutation = useMutation({
-    mutationFn: (id: string) => {
-      return apiClient.deletePlexServer(null, { params: { id } });
-    },
-    onSuccess: () => {
-      return queryClient.invalidateQueries({
-        queryKey: ['settings', 'plex-servers'],
-      });
-    },
-  });
-
-  const titleId = `delete-plex-server-${serverId}-title`;
-  const descId = `delete-plex-server-${serverId}-description`;
-
-  return (
-    <Dialog open={open} aria-labelledby={titleId} aria-describedby={descId}>
-      <DialogTitle id={titleId}>Delete Plex Server?</DialogTitle>
-      <DialogContent>
-        <DialogContentText id={descId}>
-          Deleting a Plex server will remove all programming from your channels
-          associated with this plex server. Missing programming will be replaced
-          with Flex time. This action cannot be undone.
-        </DialogContentText>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} autoFocus>
-          Cancel
-        </Button>
-        <Button
-          onClick={() => removePlexServerMutation.mutate(serverId)}
-          variant="contained"
-        >
-          Delete
-        </Button>
-      </DialogActions>
-    </Dialog>
-  );
-}
-
-type PlexServerRowProps = {
-  server: PlexServerSettings;
-  // isEditing: boolean,
-};
-
-function PlexServerRow({ server }: PlexServerRowProps) {
-  const apiClient = useTunarrApi();
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [showAccessToken, setShowAccessToken] = useState(false);
-  const {
-    data: uiStatus,
-    isLoading: uisStatusLoading,
-    error: uiStatusError,
-  } = usePlexServerStatus(server);
-  const {
-    data: backendStatus,
-    isLoading: backendStatusLoading,
-    error: backendStatusError,
-  } = useQuery({
-    queryKey: ['plex-servers', server.id, 'status'],
-    queryFn: () => apiClient.getPlexServerStatus({ params: { id: server.id } }),
-    staleTime: 1000 * 60 * 5,
-  });
-
-  const uiHealthy = isNull(uiStatusError) && !isUndefined(uiStatus) && uiStatus;
-  const backendHealthy =
-    isNull(backendStatusError) &&
-    !isUndefined(backendStatus) &&
-    backendStatus.healthy;
-
-  const queryClient = useQueryClient();
-
-  const {
-    reset,
-    control,
-    formState: { isValid },
-    handleSubmit,
-  } = useForm<Omit<PlexServerSettings, 'id'>>({
-    mode: 'onChange',
-    defaultValues: {
-      accessToken: '',
-      index: 0,
-      name: '',
-      sendChannelUpdates: false,
-      sendGuideUpdates: false,
-      uri: '',
-    },
-  });
-
-  const updatePlexServerMutation = useMutation({
-    mutationFn: (updatedServer: PlexServerSettings) => {
-      return apiClient.updatePlexServer(updatedServer, {
-        params: { id: updatedServer.id },
-      });
-    },
-    onSuccess: () => {
-      setIsEditing(false);
-      return queryClient.invalidateQueries({
-        queryKey: ['settings', 'plex-servers'],
-      });
-    },
-  });
-
-  const savePlexServer: SubmitHandler<Omit<PlexServerSettings, 'id'>> =
-    useCallback(
-      (data) => {
-        if (isEditing) {
-          updatePlexServerMutation.mutate({ id: server.id, ...data });
-        }
-      },
-      [isEditing, server, updatePlexServerMutation],
-    );
-
-  useEffect(() => {
-    reset(server);
-  }, []);
-
-  return (
-    <>
-      <TableRow>
-        <TableCell>{server.name}</TableCell>
-        <TableCell width="60%">
-          {!isEditing ? (
-            <Link href={server.uri} target={'_blank'}>
-              {server.uri}
-            </Link>
-          ) : (
-            <Controller
-              control={control}
-              name="uri"
-              rules={{ required: true, minLength: 1 }}
-              render={({ field, formState: { errors } }) => (
-                <TextField
-                  label="URL"
-                  size="small"
-                  fullWidth
-                  error={!isNil(errors.uri)}
-                  {...field}
-                  helperText={errors.uri?.message ?? null}
-                />
-              )}
-            />
-          )}
-        </TableCell>
-        <TableCell align="center">
-          {uisStatusLoading ? (
-            <RotatingLoopIcon />
-          ) : uiHealthy ? (
-            <CloudDoneOutlined color="success" />
-          ) : (
-            <CloudOff color="error" />
-          )}
-        </TableCell>
-        <TableCell align="center">
-          {backendStatusLoading ? (
-            <RotatingLoopIcon />
-          ) : backendHealthy ? (
-            <CloudDoneOutlined color="success" />
-          ) : (
-            <CloudOff color="error" />
-          )}
-        </TableCell>
-        <TableCell width="10%" align="right">
-          {isEditing ? (
-            <>
-              <IconButton
-                color="primary"
-                disabled={!isValid}
-                onClick={handleSubmit(savePlexServer)}
-              >
-                <Save />
-              </IconButton>
-              <IconButton color="primary" onClick={() => setIsEditing(false)}>
-                <CancelOutlined />
-              </IconButton>
-            </>
-          ) : (
-            <>
-              <IconButton color="primary" onClick={() => setIsEditing(true)}>
-                <Edit />
-              </IconButton>
-              <IconButton
-                color="primary"
-                onClick={() => setDeleteDialogOpen(true)}
-              >
-                <Delete />
-              </IconButton>
-            </>
-          )}
-        </TableCell>
-      </TableRow>
-      <TableRow>
-        <TableCell
-          sx={{ py: 0, borderBottom: isEditing ? null : 0 }}
-          colSpan={6}
-        >
-          <Collapse in={isEditing} timeout="auto" unmountOnExit>
-            <Stack
-              direction="row"
-              spacing={2}
-              useFlexGap
-              sx={{ m: 1, display: 'flex', alignItems: 'center' }}
-            >
-              <Controller
-                control={control}
-                name="accessToken"
-                rules={{
-                  required: true,
-                  minLength: 1,
-                }}
-                render={({ field, formState: { errors } }) => (
-                  <FormControl sx={{ m: 1, width: '25ch' }} variant="outlined">
-                    <InputLabel htmlFor="access-token" size="small">
-                      Access Token
-                    </InputLabel>
-                    <OutlinedInput
-                      size="small"
-                      id="access-token"
-                      type={showAccessToken ? 'text' : 'password'}
-                      endAdornment={
-                        <InputAdornment position="end">
-                          <IconButton
-                            aria-label="toggle access token visibility"
-                            onClick={() => setShowAccessToken(toggle)}
-                            edge="end"
-                          >
-                            {showAccessToken ? (
-                              <VisibilityOff />
-                            ) : (
-                              <Visibility />
-                            )}
-                          </IconButton>
-                        </InputAdornment>
-                      }
-                      label="Access Token"
-                      {...field}
-                    />
-                    {errors.accessToken && (
-                      <FormHelperText>
-                        {errors.accessToken.message}
-                      </FormHelperText>
-                    )}
-                  </FormControl>
-                )}
-              />
-              <FormControl>
-                <FormControlLabel
-                  control={
-                    <Controller
-                      control={control}
-                      name="sendGuideUpdates"
-                      render={({ field }) => (
-                        <Checkbox {...field} checked={field.value} />
-                      )}
-                    />
-                  }
-                  label="Auto-Update Guide"
-                />
-              </FormControl>
-              <FormControl>
-                <FormControlLabel
-                  control={
-                    <Controller
-                      control={control}
-                      name="sendChannelUpdates"
-                      render={({ field }) => (
-                        <Checkbox {...field} checked={field.value} />
-                      )}
-                    />
-                  }
-                  label="Auto-Update Channels"
-                />
-              </FormControl>
-            </Stack>
-          </Collapse>
-        </TableCell>
-      </TableRow>
-      <PlexServerDeleteDialog
-        open={deleteDialogOpen}
-        onClose={() => setDeleteDialogOpen(false)}
-        serverId={server.id}
-      />
-    </>
-  );
-}
-
 export default function PlexSettingsPage() {
   const apiClient = useTunarrApi();
   const [restoreTunarrDefaults, setRestoreTunarrDefaults] = useState(false);
+  const [plexEditDialogOpen, setPlexEditDialogOpen] = useState(false);
 
   const {
     data: servers,
@@ -534,7 +216,7 @@ export default function PlexSettingsPage() {
             <TableRow>
               <TableCell>Name</TableCell>
               <TableCell>URL</TableCell>
-              <TableCell align="center">
+              {/* <TableCell align="center">
                 UI
                 <Tooltip
                   placement="top"
@@ -544,12 +226,12 @@ export default function PlexSettingsPage() {
                     <HelpOutline sx={{ opacity: 0.75 }} />
                   </IconButton>
                 </Tooltip>
-              </TableCell>
+              </TableCell> */}
               <TableCell align="center">
-                Backend
+                Healthy?
                 <Tooltip
                   placement="top"
-                  title="The connection to Plex from the server. Affects the ability to stream."
+                  title="The connection to Plex from the Tunarr server."
                 >
                   <IconButton size="small" edge="end">
                     <HelpOutline sx={{ opacity: 0.75 }} />
@@ -613,12 +295,33 @@ export default function PlexSettingsPage() {
       {renderConfirmationDialog()}
       <Box>
         <Box mb={2}>
-          <Box sx={{ display: 'flex', mb: 1 }}>
+          <Stack
+            spacing={1}
+            direction="row"
+            useFlexGap
+            sx={{ flexWrap: 'wrap' }}
+          >
             <Typography variant="h6" sx={{ flexGrow: 1 }}>
               Plex Servers
             </Typography>
-            <AddPlexServer />
-          </Box>
+            <AddPlexServer title="Discover" icon={AutoFixHigh} />
+            <Button
+              color="inherit"
+              onClick={() => setPlexEditDialogOpen(true)}
+              variant="contained"
+              startIcon={<Add />}
+            >
+              Manual Add
+            </Button>
+            <Box sx={{ flexBasis: '100%', width: 0 }}></Box>
+            <Typography variant="caption" sx={{ width: '60%' }}>
+              Add Plex Servers as content sources for your channel. "Discover"
+              will use the Plex login flow to discover servers associated with
+              your account, however you can also manually add Plex server
+              details using the "Manual Add" button.
+            </Typography>
+          </Stack>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', mb: 1 }}></Box>
           {renderServersTable()}
         </Box>
         <Typography component="h6" variant="h6" sx={{ mb: 2 }}>
@@ -728,6 +431,10 @@ export default function PlexSettingsPage() {
           </Stack>
         </Stack>
       </Box>
+      <PlexServerEditDialog
+        open={plexEditDialogOpen}
+        onClose={() => setPlexEditDialogOpen(false)}
+      />
     </Box>
   );
 }

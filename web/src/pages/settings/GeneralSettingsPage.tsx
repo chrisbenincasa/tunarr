@@ -24,16 +24,7 @@ import {
   LogLevels,
   SystemSettings,
 } from '@tunarr/types';
-import {
-  attempt,
-  first,
-  isEmpty,
-  isError,
-  isNull,
-  map,
-  trim,
-  trimEnd,
-} from 'lodash-es';
+import { first, isNull, map, trim, trimEnd } from 'lodash-es';
 import { useCallback } from 'react';
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import { RotatingLoopIcon } from '../../components/base/LoadingIcon.tsx';
@@ -53,6 +44,7 @@ import Grid2 from '@mui/material/Unstable_Grid2/Grid2';
 import pluralize from 'pluralize';
 import { TimePicker } from '@mui/x-date-pickers';
 import { useSnackbar } from 'notistack';
+import { isValidUrl } from '@/helpers/util.ts';
 
 type GeneralSettingsFormData = {
   backendUri: string;
@@ -75,11 +67,6 @@ const LogLevelChoices = [
     value: level,
   })),
 ];
-
-function isValidUrl(url: string) {
-  const sanitized = trim(url);
-  return isEmpty(sanitized) || !isError(attempt(() => new URL(sanitized)));
-}
 
 function GeneralSettingsForm({ systemSettings }: GeneralSetingsFormProps) {
   const settings = useSettings();
