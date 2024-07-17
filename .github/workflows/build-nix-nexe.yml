@@ -9,10 +9,15 @@ jobs:
     strategy:
       matrix:
         os:
-          - name: macos-13
-            binary_name: macos-x64
-          - name: macos-14
-            binary_name: macos-arm64
+          # TODO: Is there a way to get these working?
+          # We don't build macOS Nexe binaries anymore because
+          # of code signing.
+          # - name: macos-13
+          #   binary_name: macos-x64
+          # - name: macos-14
+          #   binary_name: macos-arm64
+          # TODO: We can build ARM binaries, but we have to
+          # use a docker container and extract them
           - name: ubuntu-latest
             binary_name: linux-x64
         node_version: [20.11.1]

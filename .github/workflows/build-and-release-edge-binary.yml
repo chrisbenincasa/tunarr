@@ -1,4 +1,4 @@
-name: Build Edge Binaries
+name: Build & Publish Edge Binaries
 
 on:
   workflow_dispatch:

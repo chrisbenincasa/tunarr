@@ -1,7 +1,10 @@
-name: Push Docker Edge
+name: Build & Push Docker Edge
 
 on:
   workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
   schedule:
     - cron: '0 13-21/2 * * MON-FRI' # every hour, during working hours (UTC)
 
@@ -20,31 +23,50 @@ jobs:
               chrisbenincasa/tunarr:latest
               ghcr.io/chrisbenincasa/tunarr:latest
             platform: linux/amd64
+            suffix:
           - base_tag: 7.0-nvidia
             tags: |
               chrisbenincasa/tunarr:edge-nvidia
               ghcr.io/chrisbenincasa/tunarr:edge-nvidia
             platform: linux/amd64
+            suffix: -nvidia
           - base_tag: 7.0-vaapi
             tags: |
               chrisbenincasa/tunarr:edge-vaapi
               ghcr.io/chrisbenincasa/tunarr:edge-vaapi
             platform: linux/amd64
+            suffix: -vaapi
           - base_tag: 7.0-arm64
             tags: |
               chrisbenincasa/tunarr:edge-arm64
               ghcr.io/chrisbenincasa/tunarr:edge-arm64
             platform: linux/arm64
+            suffix: -arm64
           - base_tag: 7.0-arm
             tags: |
               chrisbenincasa/tunarr:edge-arm
               ghcr.io/chrisbenincasa/tunarr:edge-arm
             platform: linux/arm/v7
+            suffix: -arm
 
     steps:
       - uses: actions/checkout@v4
         with:
           ref: dev
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          flavor: |
+            suffix=${{ matrix.builds.suffix }}
+          images: |
+            chrisbenincasa/tunarr
+            ghcr.io/chrisbenincasa/tunarr
+          tags: |
+            type=schedule,pattern=edge
+            type=semver,pattern={{version}}
+            type=raw,value=edge,enable=${{github.ref == format('refs/heads/{0}', 'dev') && github.event_name == 'workflow_dispatch'}}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -83,6 +105,8 @@ jobs:
             exit 0  # Exit without pushing the image
           fi
           echo "PREVIOUS_HEAD_SHA=$HEAD_SHA" >> previous_head_sha  # Save current SHA for next run
+        if: github.event_name == 'schedule'
+
       - name: Generate Version Number
         run: |
           echo "TUNARR_VERSION=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
