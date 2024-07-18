@@ -16,6 +16,8 @@ jobs:
             target_name: linux
           - name: windows-latest
             target_name: windows
+          - name: armv8-latest
+            target_name: linux-arm64v8
         node_version: [20.11.1]
     runs-on: ${{matrix.os.name}}
     continue-on-error: true
@@ -58,7 +60,7 @@ jobs:
       # because building/bundling web and server simultaneously
       # can destroy a machine...
       - name: Bundle web
-        run: pnpm turbo -vv bundle --filter=@tunarr/web
+        run: pnpm turbo bundle --filter=@tunarr/web
 
       - name: 'Create env file'
         run: |
@@ -68,7 +70,7 @@ jobs:
           cat server/.env
 
       - name: Bundle server
-        run: pnpm turbo -vv bundle --filter=@tunarr/server
+        run: pnpm turbo bundle --filter=@tunarr/server
 
       - name: Build Executable
         run: pnpm run --filter=server make-exec:${{ matrix.os.target_name }}

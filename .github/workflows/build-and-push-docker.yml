@@ -17,35 +17,18 @@ jobs:
       matrix:
         builds:
           - base_tag: '7.0'
-            tags: |
-              chrisbenincasa/tunarr:edge
-              ghcr.io/chrisbenincasa/tunarr:edge
-              chrisbenincasa/tunarr:latest
-              ghcr.io/chrisbenincasa/tunarr:latest
             platform: linux/amd64
             suffix:
           - base_tag: 7.0-nvidia
-            tags: |
-              chrisbenincasa/tunarr:edge-nvidia
-              ghcr.io/chrisbenincasa/tunarr:edge-nvidia
             platform: linux/amd64
             suffix: -nvidia
           - base_tag: 7.0-vaapi
-            tags: |
-              chrisbenincasa/tunarr:edge-vaapi
-              ghcr.io/chrisbenincasa/tunarr:edge-vaapi
             platform: linux/amd64
             suffix: -vaapi
           - base_tag: 7.0-arm64
-            tags: |
-              chrisbenincasa/tunarr:edge-arm64
-              ghcr.io/chrisbenincasa/tunarr:edge-arm64
             platform: linux/arm64
             suffix: -arm64
           - base_tag: 7.0-arm
-            tags: |
-              chrisbenincasa/tunarr:edge-arm
-              ghcr.io/chrisbenincasa/tunarr:edge-arm
             platform: linux/arm/v7
             suffix: -arm
 
