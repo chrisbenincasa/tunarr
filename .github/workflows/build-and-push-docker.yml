@@ -9,7 +9,44 @@ on:
     - cron: '0 13-21/2 * * MON-FRI' # every hour, during working hours (UTC)
 
 jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.11.1
+
+      - uses: pnpm/action-setup@v3
+        name: Install pnpm
+        with:
+          version: 8.15.4
+          run_install: false
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - uses: actions/cache@v3
+        name: Setup pnpm cache
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build server
+        run: pnpm turbo typecheck --filter=@tunarr/server
+
+      - name: Build web
+        run: pnpm turbo build --filter=@tunarr/web
+
   build_and_push:
+    needs: typecheck
     runs-on: ubuntu-latest
     continue-on-error: true
     strategy:
@@ -17,42 +54,23 @@ jobs:
       matrix:
         builds:
           - base_tag: '7.0'
-            tags: |
-              chrisbenincasa/tunarr:edge
-              ghcr.io/chrisbenincasa/tunarr:edge
-              chrisbenincasa/tunarr:latest
-              ghcr.io/chrisbenincasa/tunarr:latest
             platform: linux/amd64
             suffix:
           - base_tag: 7.0-nvidia
-            tags: |
-              chrisbenincasa/tunarr:edge-nvidia
-              ghcr.io/chrisbenincasa/tunarr:edge-nvidia
             platform: linux/amd64
             suffix: -nvidia
           - base_tag: 7.0-vaapi
-            tags: |
-              chrisbenincasa/tunarr:edge-vaapi
-              ghcr.io/chrisbenincasa/tunarr:edge-vaapi
             platform: linux/amd64
             suffix: -vaapi
           - base_tag: 7.0-arm64
-            tags: |
-              chrisbenincasa/tunarr:edge-arm64
-              ghcr.io/chrisbenincasa/tunarr:edge-arm64
             platform: linux/arm64
             suffix: -arm64
           - base_tag: 7.0-arm
-            tags: |
-              chrisbenincasa/tunarr:edge-arm
-              ghcr.io/chrisbenincasa/tunarr:edge-arm
             platform: linux/arm/v7
             suffix: -arm
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: dev
 
       - name: Docker meta
         id: meta
