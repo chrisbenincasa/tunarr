@@ -12,7 +12,7 @@
       "dependsOn": ["^build"]
     },
     "bundle": {
-      "dependsOn": ["^bundle"],
+      "dependsOn": ["@tunarr/types#build", "@tunarr/shared#build"],
       "outputs": ["dist/**"]
     }
   }

@@ -10,7 +10,7 @@
       "outputs": ["temp/metadata.json"]
     },
     "bundle": {
-      "dependsOn": ["generate-db-cache", "typecheck", "^bundle"]
+      "dependsOn": ["generate-db-cache", "^bundle"]
     },
     "build-dev": {
       "dependsOn": ["^build"]
