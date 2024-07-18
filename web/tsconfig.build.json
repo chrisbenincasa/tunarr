@@ -5,6 +5,8 @@
         "./src/**/*.tsx",
     ],
     "exclude": [
+        "vite.config.ts",
+        "vitest.config.ts",
         "./build/**/*",
         "./dist/**/*",
         "./src/**/*.test.ts",
