@@ -4,6 +4,7 @@ import { configureAxiosLogging } from '../../util/axios';
 import {
   JellyfinLibraryItemsResponse,
   JellyfinLibraryResponse,
+  JellyfinAuthenticationResult,
 } from '@tunarr/types/jellyfin';
 import { union } from 'lodash-es';
 import { Nilable } from '../../types/util';
@@ -78,12 +79,13 @@ export class JellyfinApiClient {
           },
         },
       );
-      console.log(response.data);
-      return response.data;
+
+      return await JellyfinAuthenticationResult.parseAsync(response.data);
     } catch (e) {
       LoggerFactory.root.error(e, 'Error logging into Jellyfin', {
         className: JellyfinApiClient.name,
       });
+      throw e;
     }
   }
 

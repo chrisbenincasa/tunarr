@@ -16,10 +16,11 @@ import {
   FormHelperText,
   Box,
   Typography,
+  Divider,
 } from '@mui/material';
 import { JellyfinServerSettings } from '@tunarr/types';
-import { isUndefined } from 'lodash-es';
-import { useEffect, FormEvent, useState } from 'react';
+import { isEqual, isUndefined } from 'lodash-es';
+import { useEffect, useState } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 import { useDebounceValue } from 'usehooks-ts';
 import {
@@ -45,13 +46,12 @@ const emptyDefaults: JellyfinServerSettingsForm = {
 export function EditJellyfinServerForm({ server }: Props) {
   // const apiClient = useTunarrApi();
   const [showAccessToken, setShowAccessToken] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     control,
     watch,
-    reset,
-    formState: { isDirty, isValid, defaultValues },
-    handleSubmit,
+    formState: { isDirty, defaultValues },
   } = useFormContext<FormType>();
   const jellyfinDefaultValues = defaultValues?.jellyfin ?? emptyDefaults;
 
@@ -86,15 +86,7 @@ export function EditJellyfinServerForm({ server }: Props) {
     },
     500,
     {
-      equalityFn(left, right) {
-        return (
-          left.id === right.id &&
-          left.uri === right.uri &&
-          left.accessToken === right.accessToken &&
-          left.username === right.username &&
-          left.password === right.password
-        );
-      },
+      equalityFn: isEqual,
     },
   );
 
@@ -112,7 +104,6 @@ export function EditJellyfinServerForm({ server }: Props) {
         name === 'jellyfin.username' ||
         name === 'jellyfin.accessToken'
       ) {
-        console.log(value);
         updateServerStatusDetails({
           id: server?.id && !isDirty ? server.id : undefined,
           accessToken:
@@ -138,14 +129,6 @@ export function EditJellyfinServerForm({ server }: Props) {
       serverStatusDetails,
       true /* TODO is this right */,
     );
-
-  const onSubmit = (e: FormEvent<HTMLButtonElement>) => {
-    e.stopPropagation();
-    void handleSubmit(
-      (data) => updatePlexServerMutation.mutate(data),
-      console.error,
-    )(e);
-  };
 
   return (
     <>
@@ -192,6 +175,32 @@ export function EditJellyfinServerForm({ server }: Props) {
           />
         )}
       />
+      <Controller
+        control={control}
+        name="jellyfin.name"
+        rules={{
+          required: true,
+          minLength: 1,
+          pattern: {
+            value: /[A-z0-9_-]+/,
+            message:
+              'Name can only contain alphanumeric characters, dashes, and underscores',
+          },
+        }}
+        render={({ field, fieldState: { error } }) => (
+          <TextField
+            label="Name"
+            fullWidth
+            {...field}
+            error={!isUndefined(error)}
+            helperText={
+              error && isNonEmptyString(error.message)
+                ? error.message
+                : 'Optional. If left blank, the name will be derived from the server'
+            }
+          />
+        )}
+      />
       <Box sx={{ mb: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
         <Controller
           control={control}
@@ -201,38 +210,20 @@ export function EditJellyfinServerForm({ server }: Props) {
             minLength: 1,
           }}
           render={({ field, fieldState: { error } }) => (
-            <FormControl sx={{ flex: 1, mb: 1 }} variant="outlined">
-              <InputLabel htmlFor="jellyfin-password">Username </InputLabel>
+            <FormControl sx={{ flex: 1 }} variant="outlined">
+              <InputLabel htmlFor="jellyfin-username">Username </InputLabel>
               <OutlinedInput
-                id="jellyfin-password"
-                type={showAccessToken ? 'text' : 'password'}
+                id="jellyfin-username"
+                type="text"
                 error={!isUndefined(error)}
-                endAdornment={
-                  <InputAdornment position="end">
-                    <IconButton
-                      aria-label="toggle access token visibility"
-                      onClick={() => setShowAccessToken(toggle)}
-                      edge="end"
-                    >
-                      {showAccessToken ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                }
                 label="Access Token"
                 {...field}
               />
-              {/* <FormHelperText>
+              <FormHelperText>
                 {error && isNonEmptyString(error.message) && (
-                  <>
-                    <span>{error.message}</span>
-                    <br />
-                  </>
+                  <span>{error.message}</span>
                 )}
-                <span>
-                  Enter your Jellyfin password to generate a new access token,
-                  or enter the token you want to use below.
-                </span>
-              </FormHelperText> */}
+              </FormHelperText>
             </FormControl>
           )}
         />
@@ -248,16 +239,16 @@ export function EditJellyfinServerForm({ server }: Props) {
               <InputLabel htmlFor="jellyfin-password">Password </InputLabel>
               <OutlinedInput
                 id="jellyfin-password"
-                type={showAccessToken ? 'text' : 'password'}
+                type={showPassword ? 'text' : 'password'}
                 error={!isUndefined(error)}
                 endAdornment={
                   <InputAdornment position="end">
                     <IconButton
                       aria-label="toggle access token visibility"
-                      onClick={() => setShowAccessToken(toggle)}
+                      onClick={() => setShowPassword(toggle)}
                       edge="end"
                     >
-                      {showAccessToken ? <VisibilityOff /> : <Visibility />}
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
                   </InputAdornment>
                 }
@@ -283,6 +274,11 @@ export function EditJellyfinServerForm({ server }: Props) {
           Enter your Jellyfin password to generate a new access token, or enter
           the token you want to use below.
         </Typography>
+      </Box>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+        <Divider sx={{ flex: 1 }} />
+        <Typography variant="caption">OR</Typography>
+        <Divider sx={{ flex: 1 }} />
       </Box>
       <Controller
         control={control}
@@ -323,30 +319,7 @@ export function EditJellyfinServerForm({ server }: Props) {
           </FormControl>
         )}
       />
-      <Controller
-        control={control}
-        name="jellyfin.name"
-        rules={{
-          required: true,
-          minLength: 1,
-          pattern: {
-            value: /[A-z0-9_-]+/,
-            message:
-              'Name can only contain alphanumeric characters, dashes, and underscores',
-          },
-        }}
-        render={({ field, fieldState: { error } }) => (
-          <TextField
-            label="Name"
-            fullWidth
-            {...field}
-            error={!isUndefined(error)}
-            helperText={
-              error && isNonEmptyString(error.message) ? error.message : null
-            }
-          />
-        )}
-      />
+
       {/* <Box sx={{ display: 'flex' }}>
         <FormControl sx={{ flexGrow: 0.5 }}>
           <FormControlLabel

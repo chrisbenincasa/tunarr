@@ -13,6 +13,7 @@ import {
   Grid,
   IconButton,
   InputLabel,
+  Menu,
   MenuItem,
   Select,
   Skeleton,
@@ -29,7 +30,7 @@ import {
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { PlexStreamSettings, defaultPlexStreamSettings } from '@tunarr/types';
-import _, { fill, map } from 'lodash-es';
+import _, { fill, isNull, map } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import { useEffect, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
@@ -46,6 +47,7 @@ import {
 import { useTunarrApi } from '@/hooks/useTunarrApi.ts';
 import { PlexServerRow } from '@/components/settings/plex/PlexServerRow.tsx';
 import { PlexServerEditDialog } from '@/components/settings/plex/PlexServerEditDialog.tsx';
+import { JellyfinServerEditDialog } from '@/components/settings/media_source/JelllyfinServerEditDialog.tsx';
 
 const supportedPaths = [
   { value: 'plex', string: 'Plex' },
@@ -56,6 +58,23 @@ export default function PlexSettingsPage() {
   const apiClient = useTunarrApi();
   const [restoreTunarrDefaults, setRestoreTunarrDefaults] = useState(false);
   const [plexEditDialogOpen, setPlexEditDialogOpen] = useState(false);
+  const [jellyfinEditDialogOpen, setJellyfinEditDialogOpen] = useState(false);
+
+  const [manualAddPopoverRef, setManualAddPopoverRef] =
+    useState<HTMLButtonElement | null>(null);
+
+  const openManualAddButtonMenu = (
+    event: React.MouseEvent<HTMLButtonElement>,
+  ) => {
+    setManualAddPopoverRef(event.currentTarget);
+  };
+
+  const closeManualAddButtonMenu = () => {
+    setManualAddPopoverRef(null);
+  };
+
+  const open = !isNull(manualAddPopoverRef);
+  const id = open ? 'simple-popover' : undefined;
 
   const {
     data: servers,
@@ -290,6 +309,18 @@ export default function PlexSettingsPage() {
     );
   };
 
+  const handleOpenMediaSourceDialog = (source: 'plex' | 'jellyfin') => {
+    switch (source) {
+      case 'plex':
+        setPlexEditDialogOpen(true);
+        break;
+      case 'jellyfin':
+        setJellyfinEditDialogOpen(true);
+        break;
+    }
+    closeManualAddButtonMenu();
+  };
+
   return (
     <Box component="form" onSubmit={handleSubmit(updatePlexStreamSettings)}>
       {renderConfirmationDialog()}
@@ -305,14 +336,41 @@ export default function PlexSettingsPage() {
               Plex Servers
             </Typography>
             <AddPlexServer title="Discover" icon={AutoFixHigh} />
-            <Button
-              color="inherit"
-              onClick={() => setPlexEditDialogOpen(true)}
-              variant="contained"
-              startIcon={<Add />}
-            >
-              Manual Add
-            </Button>
+
+            <div>
+              <Button
+                color="inherit"
+                onClick={openManualAddButtonMenu}
+                variant="contained"
+                startIcon={<Add />}
+              >
+                Manual Add
+              </Button>
+              <Menu
+                id={id}
+                open={open}
+                anchorEl={manualAddPopoverRef}
+                onClose={closeManualAddButtonMenu}
+                anchorOrigin={{
+                  vertical: 'bottom',
+                  horizontal: 'left',
+                }}
+                slotProps={{
+                  paper: {
+                    sx: { minWidth: 150 },
+                  },
+                }}
+              >
+                <MenuItem onClick={() => handleOpenMediaSourceDialog('plex')}>
+                  Plex
+                </MenuItem>
+                <MenuItem
+                  onClick={() => handleOpenMediaSourceDialog('jellyfin')}
+                >
+                  Jellyfin
+                </MenuItem>
+              </Menu>
+            </div>
             <Box sx={{ flexBasis: '100%', width: 0 }}></Box>
             <Typography variant="caption" sx={{ width: '60%' }}>
               Add Plex Servers as content sources for your channel. "Discover"
@@ -434,6 +492,10 @@ export default function PlexSettingsPage() {
       <PlexServerEditDialog
         open={plexEditDialogOpen}
         onClose={() => setPlexEditDialogOpen(false)}
+      />
+      <JellyfinServerEditDialog
+        open={jellyfinEditDialogOpen}
+        onClose={() => setJellyfinEditDialogOpen(false)}
       />
     </Box>
   );

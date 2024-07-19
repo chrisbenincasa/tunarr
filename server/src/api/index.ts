@@ -35,6 +35,7 @@ import {
   tunarrBuild,
 } from '../util/index.js';
 import { systemSettingsRouter } from './systemSettingsApi.js';
+import { jellyfinApiRouter } from './jellyfinApi.js';
 
 export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
   const logger = LoggerFactory.child({ caller: import.meta });
@@ -62,7 +63,8 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
     .register(xmlTvSettingsRouter)
     .register(hdhrSettingsRouter)
     .register(systemSettingsRouter)
-    .register(guideRouter);
+    .register(guideRouter)
+    .register(jellyfinApiRouter);
 
   fastify.get(
     '/version',

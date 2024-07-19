@@ -53,6 +53,7 @@ export default function AddPlexServer(props: AddPlexServer) {
             uri: connection.uri,
             accessToken: server.accessToken,
             clientIdentifier: server.clientIdentifier,
+            type: 'plex',
           }),
         );
       })

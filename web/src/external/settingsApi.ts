@@ -1,6 +1,7 @@
 import { SystemSettingsSchema } from '@tunarr/types';
 import {
   InsertPlexServerRequestSchema,
+  JellyfinLoginRequest,
   UpdatePlexServerRequestSchema,
   UpdateSystemSettingsRequestSchema,
 } from '@tunarr/types/api';
@@ -129,4 +130,12 @@ export const updateSystemSettings = makeEndpoint({
     .build(),
   alias: 'updateSystemSettings',
   response: SystemSettingsSchema,
+});
+
+export const jellyfinLogin = makeEndpoint({
+  method: 'post',
+  path: '/api/jellyfin/login',
+  parameters: parametersBuilder().addBody(JellyfinLoginRequest).build(),
+  alias: 'jellyfinUserLogin',
+  response: z.object({ accessToken: z.string().optional() }),
 });
