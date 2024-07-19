@@ -39,6 +39,7 @@ import {
   getPlexStreamSettings,
   getSystemSettings,
   getXmlTvSettings,
+  jellyfinLogin,
   updateFfmpegSettings,
   updateHdhrSettings,
   updatePlexServerEndpoint,
@@ -416,6 +417,7 @@ export const api = makeApi([
   updateFfmpegSettings,
   getSystemSettings,
   updateSystemSettings,
+  jellyfinLogin,
 ]);
 
 export type ApiClient = ZodiosInstance<typeof api>;

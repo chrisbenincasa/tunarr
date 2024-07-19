@@ -112,6 +112,7 @@ export const checkNewPlexServers =
           name: server.name,
           accessToken: server.accessToken,
           uri: connection.uri,
+          type: 'plex',
         });
 
         if (healthy) {

@@ -201,3 +201,9 @@ export type UpdateSystemSettingsRequest = z.infer<
 >;
 
 export const UpdateBackupSettingsRequestSchema = BackupSettingsSchema;
+
+export const JellyfinLoginRequest = z.object({
+  url: z.string().url(),
+  username: z.string().min(1),
+  password: z.string().min(1),
+});
