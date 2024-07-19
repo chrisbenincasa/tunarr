@@ -2,7 +2,7 @@ import { plexStreamSettingsQueryWithApi } from '@/hooks/settingsHooks';
 import PlexSettingsPage from '@/pages/settings/PlexSettingsPage';
 import { createFileRoute } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/settings/plex')({
+export const Route = createFileRoute('/settings/sources')({
   loader: ({ context }) =>
     context.queryClient.ensureQueryData(
       plexStreamSettingsQueryWithApi(context.tunarrApiClientProvider()),

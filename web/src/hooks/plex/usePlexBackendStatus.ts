@@ -24,7 +24,11 @@ export const usePlexBackendStatus = (
   const unknownServerStatusResult = useApiQuery({
     queryKey: ['unknown-plex-server', { id, uri, accessToken }, 'status'],
     queryFn(apiClient) {
-      return apiClient.getUnknownPlexServerStatus({ uri, accessToken });
+      return apiClient.getUnknownPlexServerStatus({
+        uri,
+        accessToken,
+        type: 'plex',
+      });
     },
     enabled:
       enabled &&

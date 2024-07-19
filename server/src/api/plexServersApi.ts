@@ -15,6 +15,7 @@ import { UpdateXmlTvTask } from '../tasks/UpdateXmlTvTask.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { firstDefined, wait } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
+import { JellyfinApiClient } from '../external/jellyfin/JellyfinApiClient.js';
 
 export const plexServersRouter: RouterPluginAsyncCallback = async (
   fastify,
@@ -97,6 +98,8 @@ export const plexServersRouter: RouterPluginAsyncCallback = async (
           name: z.string().optional(),
           accessToken: z.string(),
           uri: z.string(),
+          type: z.union([z.literal('plex'), z.literal('jellyfin')]),
+          username: z.string().optional(),
         }),
         response: {
           200: z.object({
@@ -108,31 +111,44 @@ export const plexServersRouter: RouterPluginAsyncCallback = async (
       },
     },
     async (req, res) => {
-      try {
-        const plex = new Plex({
-          ...req.body,
-          name: req.body.name ?? 'unknown',
-        });
+      let healthy = false;
 
-        const s: boolean = await Promise.race([
-          (async () => {
-            const res = await plex.checkServerStatus();
-            return res === 1;
-          })(),
-          new Promise<false>((resolve) => {
-            setTimeout(() => {
-              resolve(false);
-            }, 60000);
-          }),
-        ]);
+      switch (req.body.type) {
+        case 'plex':
+          try {
+            const plex = new Plex({
+              ...req.body,
+              name: req.body.name ?? 'unknown',
+            });
 
-        return res.send({
-          healthy: s,
-        });
-      } catch (err) {
-        logger.error('%O', err);
-        return res.status(500).send();
+            healthy = await Promise.race([
+              (async () => {
+                const res = await plex.checkServerStatus();
+                return res === 1;
+              })(),
+              new Promise<false>((resolve) => {
+                setTimeout(() => {
+                  resolve(false);
+                }, 60000);
+              }),
+            ]);
+          } catch (err) {
+            logger.error('%O', err);
+            return res.status(500).send();
+          }
+          break;
+        case 'jellyfin':
+          await JellyfinApiClient.login(
+            { uri: req.body.uri, type: 'jellyfin', name: req.body.name },
+            req.body.username ?? '',
+            req.body.accessToken,
+          );
+          break;
       }
+
+      return res.send({
+        healthy,
+      });
     },
   );
 

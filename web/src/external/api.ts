@@ -270,6 +270,8 @@ export const api = makeApi([
           name: z.string().optional(),
           accessToken: z.string(),
           uri: z.string(),
+          username: z.string().optional(),
+          type: z.union([z.literal('plex'), z.literal('jellyfin')]),
         }),
       )
       .build(),

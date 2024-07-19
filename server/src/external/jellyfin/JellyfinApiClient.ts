@@ -7,6 +7,8 @@ import {
 } from '@tunarr/types/jellyfin';
 import { union } from 'lodash-es';
 import { Nilable } from '../../types/util';
+import { v4 } from 'uuid';
+import constants from '@tunarr/shared/constants';
 
 type RemoteMediaSourceOptions = {
   name?: string;
@@ -54,6 +56,35 @@ export class JellyfinApiClient {
     });
 
     configureAxiosLogging(this.axiosInstance, this.logger);
+  }
+
+  static async login(
+    server: Omit<RemoteMediaSourceOptions, 'apiKey'>,
+    username: string,
+    password: string,
+  ) {
+    try {
+      const response = await axios.post(
+        `${server.uri}/Users/AuthenticateByName`,
+        {
+          Username: username,
+          Pw: password,
+        },
+        {
+          headers: {
+            Authorization: `MediaBrowser Client="Tunarr", Device="Web Browser", DeviceId=${v4()}, Version=${
+              constants.VERSION_NAME
+            }`,
+          },
+        },
+      );
+      console.log(response.data);
+      return response.data;
+    } catch (e) {
+      LoggerFactory.root.error(e, 'Error logging into Jellyfin', {
+        className: JellyfinApiClient.name,
+      });
+    }
   }
 
   async getUserLibraries(userId: string) {

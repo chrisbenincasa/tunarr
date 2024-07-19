@@ -68,7 +68,7 @@ export function PlexServerRow({ server }: PlexServerRowProps) {
       <PlexServerEditDialog
         open={editDialogOpen}
         onClose={() => setEditDialogOpen(false)}
-        server={server}
+        existingSource={server}
       />
     </>
   );
