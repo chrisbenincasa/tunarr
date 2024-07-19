@@ -17,7 +17,7 @@ import {
   replace,
   trimEnd,
 } from 'lodash-es';
-import { PlexServerSettings } from '../../dao/entities/PlexServerSettings';
+import { MediaSource } from '../../dao/entities/PlexServerSettings';
 import {
   Plex,
   isPlexQueryError,
@@ -51,7 +51,7 @@ export class PlexStreamDetails {
   private plex: Plex;
 
   constructor(
-    private server: PlexServerSettings,
+    private server: MediaSource,
     private settings: SettingsDB,
     private programDB: ProgramDB,
   ) {

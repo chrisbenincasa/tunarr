@@ -7,7 +7,7 @@ import {
 import { PlexServerSettingsSchema } from '@tunarr/types/schemas';
 import { isError, isNil, isObject } from 'lodash-es';
 import z from 'zod';
-import { PlexServerSettings } from '../dao/entities/PlexServerSettings.js';
+import { MediaSource } from '../dao/entities/PlexServerSettings.js';
 import { Plex } from '../external/plex.js';
 import { PlexApiFactory } from '../external/PlexApiFactory.js';
 import { GlobalScheduler } from '../services/scheduler.js';
@@ -332,7 +332,7 @@ export const plexServersRouter: RouterPluginAsyncCallback = async (
     async (req, res) => {
       try {
         const server = await req.entityManager
-          .repo(PlexServerSettings)
+          .repo(MediaSource)
           .findOne({ name: req.query.serverName });
 
         if (isNil(server)) {

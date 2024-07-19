@@ -3,7 +3,7 @@ import EventEmitter from 'events';
 import { isNil, isNull, isUndefined } from 'lodash-es';
 import { Writable } from 'stream';
 import { isContentBackedLineupIteam } from '../../dao/derived_types/StreamLineup.js';
-import { PlexServerSettings } from '../../dao/entities/PlexServerSettings.js';
+import { MediaSource } from '../../dao/entities/PlexServerSettings.js';
 import { FFMPEG, FfmpegEvents } from '../../ffmpeg/ffmpeg.js';
 import { GlobalScheduler } from '../../services/scheduler.js';
 import { UpdatePlexPlayStatusScheduledTask } from '../../tasks/UpdatePlexPlayStatusTask.js';
@@ -61,7 +61,7 @@ export class PlexPlayer extends Player {
     }
 
     const ffmpegSettings = this.context.ffmpegSettings;
-    const db = this.context.entityManager.repo(PlexServerSettings);
+    const db = this.context.entityManager.repo(MediaSource);
     const channel = this.context.channel;
     const server = await db.findOne({ name: lineupItem.externalSourceId });
     if (isNil(server)) {

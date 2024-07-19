@@ -4,7 +4,7 @@ import { BaseEntity } from './BaseEntity.js';
 
 @Entity()
 @Unique({ properties: ['name', 'uri'] })
-export class PlexServerSettings extends BaseEntity {
+export class MediaSource extends BaseEntity {
   @Property()
   name!: string;
 

@@ -6,7 +6,7 @@ import { stringify } from 'node:querystring';
 import { DeepReadonly } from 'ts-essentials';
 import { v4 as uuidv4 } from 'uuid';
 import { ContentBackedStreamLineupItem } from '../../dao/derived_types/StreamLineup.js';
-import { PlexServerSettings } from '../../dao/entities/PlexServerSettings.js';
+import { MediaSource } from '../../dao/entities/PlexServerSettings.js';
 import { serverOptions } from '../../globals.js';
 import { Plex } from '../../external/plex.js';
 import { PlexApiFactory } from '../../external/PlexApiFactory.js';
@@ -70,7 +70,7 @@ export class PlexTranscoder {
   private currTimeMs: number;
   public currTimeS: number;
   private duration: number;
-  private server: PlexServerSettings;
+  private server: MediaSource;
   private transcodingArgs: string | undefined;
   private decisionJson: Maybe<PlexMediaContainer<TranscodeDecision>>;
   private updateInterval: number;
@@ -85,7 +85,7 @@ export class PlexTranscoder {
 
   constructor(
     clientId: string,
-    server: PlexServerSettings,
+    server: MediaSource,
     settings: DeepReadonly<PlexStreamSettings>,
     channel: StreamContextChannel,
     lineupItem: ContentBackedStreamLineupItem,

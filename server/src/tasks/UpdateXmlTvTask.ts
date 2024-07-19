@@ -3,7 +3,7 @@ import { PlexDvr } from '@tunarr/types/plex';
 import dayjs from 'dayjs';
 import { ChannelDB } from '../dao/channelDb.js';
 import { withDb } from '../dao/dataSource.js';
-import { PlexServerSettings } from '../dao/entities/PlexServerSettings.js';
+import { MediaSource } from '../dao/entities/PlexServerSettings.js';
 import { SettingsDB, defaultXmlTvSettings } from '../dao/settings.js';
 import { Plex } from '../external/plex.js';
 import { globalOptions } from '../globals.js';
@@ -88,7 +88,7 @@ export class UpdateXmlTvTask extends Task<void> {
     const channels = await this.#channelDB.getAllChannels();
 
     const allPlexServers = await withDb((em) => {
-      return em.find(PlexServerSettings, {});
+      return em.find(MediaSource, {});
     });
 
     await mapAsyncSeq(allPlexServers, async (plexServer) => {

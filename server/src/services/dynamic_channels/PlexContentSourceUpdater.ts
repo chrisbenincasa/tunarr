@@ -7,7 +7,7 @@ import { isNil, map } from 'lodash-es';
 import { ChannelDB } from '../../dao/channelDb.js';
 import { EntityManager } from '../../dao/dataSource.js';
 import { Channel } from '../../dao/entities/Channel.js';
-import { PlexServerSettings } from '../../dao/entities/PlexServerSettings.js';
+import { MediaSource } from '../../dao/entities/PlexServerSettings.js';
 import { ProgramDB } from '../../dao/programDB.js';
 import { Plex } from '../../external/plex.js';
 import {
@@ -38,7 +38,7 @@ export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicConten
   }
 
   protected async prepare(em: EntityManager) {
-    const server = await em.repo(PlexServerSettings).findOneOrFail({
+    const server = await em.repo(MediaSource).findOneOrFail({
       $or: [
         { name: this.config.plexServerId },
         { clientIdentifier: this.config.plexServerId },

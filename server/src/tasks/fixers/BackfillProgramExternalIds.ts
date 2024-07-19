@@ -10,7 +10,7 @@ import {
 import { ProgramExternalIdType } from '../../dao/custom_types/ProgramExternalIdType';
 import { ProgramSourceType } from '../../dao/custom_types/ProgramSourceType.js';
 import { getEm } from '../../dao/dataSource';
-import { PlexServerSettings } from '../../dao/entities/PlexServerSettings.js';
+import { MediaSource } from '../../dao/entities/PlexServerSettings.js';
 import { Program } from '../../dao/entities/Program';
 import { ProgramExternalId } from '../../dao/entities/ProgramExternalId.js';
 import { Plex, isPlexQueryError } from '../../external/plex.js';
@@ -66,7 +66,7 @@ export class BackfillProgramExternalIds extends Fixer {
         keys(plexConnections),
       );
 
-      const serverSettings = await em.find(PlexServerSettings, {
+      const serverSettings = await em.find(MediaSource, {
         name: { $in: missingServers },
       });
 

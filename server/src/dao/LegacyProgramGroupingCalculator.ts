@@ -44,7 +44,7 @@ import { timeAsync } from '../util/perf.js';
 import { ProgramExternalIdType } from './custom_types/ProgramExternalIdType.js';
 import { ProgramSourceType } from './custom_types/ProgramSourceType.js';
 import { getEm } from './dataSource.js';
-import { PlexServerSettings } from './entities/PlexServerSettings.js';
+import { MediaSource } from './entities/PlexServerSettings.js';
 import { Program, ProgramType } from './entities/Program.js';
 import {
   ProgramGrouping,
@@ -266,7 +266,7 @@ export class LegacyProgramGroupingCalculator {
     const logger = LoggerFactory.root;
     const em = getEm().fork();
 
-    const plexServer = await em.findOne(PlexServerSettings, {
+    const plexServer = await em.findOne(MediaSource, {
       name: plexServerName,
     });
 
