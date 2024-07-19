@@ -1,13 +1,13 @@
 import { find, isNil } from 'lodash-es';
 import { EntityManager } from '../../dao/dataSource.js';
-import { PlexServerSettings } from '../../dao/entities/PlexServerSettings.js';
+import { MediaSource } from '../../dao/entities/PlexServerSettings.js';
 import { Plex } from '../../external/plex.js';
 import Fixer from './fixer.js';
 
 export class AddPlexServerIdsFixer extends Fixer {
   async runInternal(em: EntityManager): Promise<void> {
     const plexServers = await em
-      .repo(PlexServerSettings)
+      .repo(MediaSource)
       .find({ clientIdentifier: null });
 
     for (const server of plexServers) {

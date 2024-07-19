@@ -41,7 +41,7 @@ import { attempt } from '../../util/index.js';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
 import { EntityManager, withDb } from '../dataSource.js';
 import { CachedImage } from '../entities/CachedImage.js';
-import { PlexServerSettings as PlexServerSettingsEntity } from '../entities/PlexServerSettings.js';
+import { MediaSource as PlexServerSettingsEntity } from '../entities/PlexServerSettings.js';
 import { Settings, SettingsDB, defaultXmlTvSettings } from '../settings.js';
 import {
   LegacyChannelMigrator,

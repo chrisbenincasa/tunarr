@@ -7,7 +7,7 @@ import { groupByUniq } from '../util/index.js';
 import { ChannelDB } from './channelDb.js';
 import { ProgramSourceType } from './custom_types/ProgramSourceType.js';
 import { getEm } from './dataSource.js';
-import { PlexServerSettings as PlexServerSettingsEntity } from './entities/PlexServerSettings.js';
+import { MediaSource as PlexServerSettingsEntity } from './entities/PlexServerSettings.js';
 import { Program } from './entities/Program.js';
 
 //hmnn this is more of a "PlexServerService"...

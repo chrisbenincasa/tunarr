@@ -18,7 +18,7 @@ import { isNonEmptyString, wait } from '../../util';
 import { LoggerFactory } from '../../util/logging/LoggerFactory';
 import { ProgramSourceType } from '../custom_types/ProgramSourceType';
 import { getEm } from '../dataSource';
-import { PlexServerSettings } from '../entities/PlexServerSettings';
+import { MediaSource } from '../entities/PlexServerSettings';
 import { Program, ProgramType } from '../entities/Program';
 import {
   ProgramGrouping,
@@ -84,7 +84,7 @@ export class LegacyMetadataBackfiller {
     programs: Program[],
   ) {
     const em = getEm();
-    const server = await em.findOne(PlexServerSettings, { name: serverName });
+    const server = await em.findOne(MediaSource, { name: serverName });
     if (isNil(server)) {
       this.logger.warn(
         'Could not find plex server details for server %s',

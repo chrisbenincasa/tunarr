@@ -5,7 +5,7 @@ import { isError, isNil } from 'lodash-es';
 import path from 'path';
 import { pipeline } from 'stream/promises';
 import { z } from 'zod';
-import { PlexServerSettings } from '../dao/entities/PlexServerSettings.js';
+import { MediaSource } from '../dao/entities/PlexServerSettings.js';
 import { Plex } from '../external/plex.js';
 import { FFMPEGInfo } from '../ffmpeg/ffmpegInfo.js';
 import { serverOptions } from '../globals.js';
@@ -221,7 +221,7 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
     },
     async (req, res) => {
       const server = await req.entityManager
-        .repo(PlexServerSettings)
+        .repo(MediaSource)
         .findOne({ name: req.query.name });
       if (isNil(server)) {
         return res

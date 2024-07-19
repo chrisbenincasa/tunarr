@@ -1,5 +1,5 @@
 import { RecurrenceRule } from 'node-schedule';
-import { PlexServerSettings } from '../dao/entities/PlexServerSettings';
+import { MediaSource } from '../dao/entities/PlexServerSettings';
 import { PlexApiFactory } from '../external/PlexApiFactory';
 import { run } from '../util';
 import { ScheduledTask } from './ScheduledTask';
@@ -33,7 +33,7 @@ export class UpdatePlexPlayStatusScheduledTask extends ScheduledTask {
   private playState: PlayState = 'playing';
 
   constructor(
-    private plexServer: PlexServerSettings,
+    private plexServer: MediaSource,
     private request: UpdatePlexPlayStatusScheduleRequest,
     public sessionId: string = v4(),
   ) {
@@ -96,7 +96,7 @@ class UpdatePlexPlayStatusTask extends Task {
   }
 
   constructor(
-    private plexServer: PlexServerSettings,
+    private plexServer: MediaSource,
     private request: UpdatePlexPlayStatusInvocation,
   ) {
     super();

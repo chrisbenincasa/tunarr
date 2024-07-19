@@ -2,7 +2,7 @@ import { EntityManager } from '@mikro-orm/better-sqlite';
 import { Cursor } from '@mikro-orm/core';
 import { PlexEpisodeView, PlexSeasonView } from '@tunarr/types/plex';
 import { first, forEach, groupBy, mapValues, pickBy } from 'lodash-es';
-import { PlexServerSettings } from '../../dao/entities/PlexServerSettings.js';
+import { MediaSource } from '../../dao/entities/PlexServerSettings.js';
 import { Program, ProgramType } from '../../dao/entities/Program.js';
 import { Plex } from '../../external/plex.js';
 import { Maybe } from '../../types/util.js';
@@ -14,7 +14,7 @@ export class MissingSeasonNumbersFixer extends Fixer {
   private logger = LoggerFactory.child({ caller: import.meta });
 
   async runInternal(em: EntityManager): Promise<void> {
-    const allPlexServers = await em.findAll(PlexServerSettings);
+    const allPlexServers = await em.findAll(MediaSource);
 
     if (allPlexServers.length === 0) {
       return;

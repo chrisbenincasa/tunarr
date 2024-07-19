@@ -12,7 +12,7 @@ import { CustomShow } from './src/dao/entities/CustomShow.js';
 import { CustomShowContent } from './src/dao/entities/CustomShowContent.js';
 import { FillerListContent } from './src/dao/entities/FillerListContent.js';
 import { FillerShow } from './src/dao/entities/FillerShow.js';
-import { PlexServerSettings } from './src/dao/entities/PlexServerSettings.js';
+import { MediaSource } from './src/dao/entities/PlexServerSettings.js';
 import { Program } from './src/dao/entities/Program.js';
 import { DATABASE_LOCATION_ENV_VAR } from './src/util/constants.js';
 import { Migration20240124115044 } from './src/migrations/Migration20240124115044.js';
@@ -49,7 +49,7 @@ export default defineConfig({
     CustomShowContent,
     FillerListContent,
     FillerShow,
-    PlexServerSettings,
+    MediaSource,
     Program,
   ],
   flushMode: 'commit',

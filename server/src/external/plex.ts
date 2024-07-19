@@ -30,7 +30,7 @@ import NodeCache from 'node-cache';
 import { ParsedUrlQueryInput } from 'querystring';
 import { MarkOptional } from 'ts-essentials';
 import { z } from 'zod';
-import { PlexServerSettings } from '../dao/entities/PlexServerSettings.js';
+import { MediaSource } from '../dao/entities/PlexServerSettings.js';
 import {
   PlexMediaContainer,
   PlexMediaContainerResponse,
@@ -48,7 +48,7 @@ type AxiosConfigWithMetadata = InternalAxiosRequestConfig & {
 
 export type PlexApiOptions = MarkOptional<
   Pick<
-    EntityDTO<PlexServerSettings>,
+    EntityDTO<MediaSource>,
     'accessToken' | 'uri' | 'name' | 'clientIdentifier'
   >,
   'clientIdentifier'

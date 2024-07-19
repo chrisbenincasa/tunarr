@@ -16,7 +16,7 @@ import ld, {
 } from 'lodash-es';
 import { ProgramSourceType } from '../../dao/custom_types/ProgramSourceType';
 import { getEm } from '../../dao/dataSource';
-import { PlexServerSettings } from '../../dao/entities/PlexServerSettings';
+import { MediaSource } from '../../dao/entities/PlexServerSettings';
 import { Program, ProgramType } from '../../dao/entities/Program';
 import {
   ProgramGrouping,
@@ -35,7 +35,7 @@ export class BackfillProgramGroupings extends Fixer {
   });
 
   protected async runInternal(em: EntityManager): Promise<void> {
-    const plexServers = await em.findAll(PlexServerSettings);
+    const plexServers = await em.findAll(MediaSource);
 
     // Update shows first, then seasons, so we can relate them
     const serversAndShows = await em
