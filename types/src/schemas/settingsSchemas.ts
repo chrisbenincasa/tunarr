@@ -88,16 +88,30 @@ export const FfmpegSettingsSchema = z.object({
   disableChannelPrelude: z.boolean().default(false),
 });
 
-export const PlexServerSettingsSchema = z.object({
+const BaseMediaSourceSettingsSchema = z.object({
   id: z.string(),
   name: z.string(),
   uri: z.string(),
   accessToken: z.string(),
+});
+
+export const PlexServerSettingsSchema = BaseMediaSourceSettingsSchema.extend({
+  type: z.literal('plex'),
   sendGuideUpdates: z.boolean(),
   sendChannelUpdates: z.boolean(),
   index: z.number(),
   clientIdentifier: z.string().optional(),
 });
+
+export const JellyfinServerSettingsSchema =
+  BaseMediaSourceSettingsSchema.extend({
+    type: z.literal('jellyfin'),
+  });
+
+export const MediaSourceSettingsSchema = z.discriminatedUnion('type', [
+  PlexServerSettingsSchema,
+  JellyfinServerSettingsSchema,
+]);
 
 export const PlexStreamSettingsSchema = z.object({
   streamPath: z.union([z.literal('plex'), z.literal('direct')]).default('plex'),

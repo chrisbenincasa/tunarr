@@ -5,7 +5,7 @@ export * from './FfmpegSettings.js';
 export * from './FillerList.js';
 export * from './GuideApi.js';
 export * from './HdhrSettings.js';
-export * from './PlexSettings.js';
+export * from './MediaSourceSettings.js';
 export * from './Program.js';
 export * from './Tasks.js';
 export * from './Theme.js';

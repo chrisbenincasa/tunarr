@@ -45,9 +45,9 @@ export default function SettingsLayout() {
               component={Link}
             />
             <Tab
-              label="Plex"
-              value="/settings/plex"
-              to="/settings/plex"
+              label="Sources"
+              value="/settings/sources"
+              to="/settings/sources"
               component={Link}
             />
             <Tab
