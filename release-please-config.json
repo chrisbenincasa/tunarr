@@ -11,5 +11,27 @@
       "include-v-in-tag": true
     }
   },
+  "extra-files": [
+    {
+      "type": "json",
+      "path": "server/package.json",
+      "jsonpath": "$.version"
+    },
+    {
+      "type": "json",
+      "path": "web/package.json",
+      "jsonpath": "$.version"
+    },
+    {
+      "type": "json",
+      "path": "types/package.json",
+      "jsonpath": "$.version"
+    },
+    {
+      "type": "json",
+      "path": "shared/package.json",
+      "jsonpath": "$.version"
+    }
+  ],
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json"
 }

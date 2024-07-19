@@ -1,4 +1,4 @@
-import constants from '@tunarr/shared/constants';
+import { getTunarrVersion } from '@tunarr/shared/constants';
 import { VersionApiResponseSchema } from '@tunarr/types/api';
 import { createWriteStream, promises as fsPromises } from 'fs';
 import { isError, isNil } from 'lodash-es';
@@ -78,7 +78,7 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
       try {
         const ffmpegSettings = req.serverCtx.settings.ffmpegSettings();
         const v = await new FFMPEGInfo(ffmpegSettings).getVersion();
-        let tunarrVersion: string = constants.VERSION_NAME;
+        let tunarrVersion: string = getTunarrVersion();
         if (!isProduction) {
           tunarrVersion += `-dev`;
         } else if (isEdgeBuild && isNonEmptyString(tunarrBuild)) {
