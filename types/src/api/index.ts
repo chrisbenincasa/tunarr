@@ -6,6 +6,7 @@ import {
 } from '../schemas/programmingSchema.js';
 import {
   BackupSettingsSchema,
+  JellyfinServerSettingsSchema,
   PlexServerSettingsSchema,
 } from '../schemas/settingsSchemas.js';
 import {
@@ -131,6 +132,15 @@ export type UpdateChannelProgrammingRequest = z.infer<
   typeof UpdateChannelProgrammingRequestSchema
 >;
 
+export const UpdateMediaSourceRequestSchema = z.discriminatedUnion('type', [
+  PlexServerSettingsSchema.partial({
+    sendChannelUpdates: true,
+    sendGuideUpdates: true,
+    clientIdentifier: true,
+  }),
+  JellyfinServerSettingsSchema,
+]);
+
 export const UpdatePlexServerRequestSchema = PlexServerSettingsSchema.partial({
   sendChannelUpdates: true,
   sendGuideUpdates: true,
@@ -142,17 +152,18 @@ export type UpdatePlexServerRequest = z.infer<
   typeof UpdatePlexServerRequestSchema
 >;
 
-export const InsertPlexServerRequestSchema = PlexServerSettingsSchema.partial({
-  sendChannelUpdates: true,
-  sendGuideUpdates: true,
-  index: true,
-  clientIdentifier: true,
-}).omit({
-  id: true,
-});
+export const InsertMediaSourceRequestSchema = z.discriminatedUnion('type', [
+  PlexServerSettingsSchema.partial({
+    sendChannelUpdates: true,
+    sendGuideUpdates: true,
+    index: true,
+    clientIdentifier: true,
+  }).omit({ id: true }),
+  JellyfinServerSettingsSchema.omit({ id: true }),
+]);
 
-export type InsertPlexServerRequest = z.infer<
-  typeof InsertPlexServerRequestSchema
+export type InsertMediaSourceRequest = z.infer<
+  typeof InsertMediaSourceRequestSchema
 >;
 
 export const VersionApiResponseSchema = z.object({

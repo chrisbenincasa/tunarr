@@ -5,7 +5,7 @@ import { isError, isNil } from 'lodash-es';
 import path from 'path';
 import { pipeline } from 'stream/promises';
 import { z } from 'zod';
-import { MediaSource } from '../dao/entities/PlexServerSettings.js';
+import { MediaSource } from '../dao/entities/MediaSource.js';
 import { Plex } from '../external/plex.js';
 import { FFMPEGInfo } from '../ffmpeg/ffmpegInfo.js';
 import { serverOptions } from '../globals.js';
@@ -24,7 +24,7 @@ import { tasksApiRouter } from './tasksApi.js';
 import { ffmpegSettingsRouter } from './ffmpegSettingsApi.js';
 import { guideRouter } from './guideApi.js';
 import { hdhrSettingsRouter } from './hdhrSettingsApi.js';
-import { plexServersRouter } from './plexServersApi.js';
+import { mediaSourceRouter } from './mediaSourceApi.js';
 import { plexSettingsRouter } from './plexSettingsApi.js';
 import { xmlTvSettingsRouter } from './xmltvSettingsApi.js';
 import {
@@ -57,7 +57,7 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
     .register(programmingApi)
     .register(debugApi)
     .register(metadataApiRouter)
-    .register(plexServersRouter)
+    .register(mediaSourceRouter)
     .register(ffmpegSettingsRouter)
     .register(plexSettingsRouter)
     .register(xmlTvSettingsRouter)

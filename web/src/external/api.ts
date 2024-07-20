@@ -30,23 +30,7 @@ import {
 import { isEmpty } from 'lodash-es';
 import { z } from 'zod';
 import { getFfmpegInfoEndpoint } from './ffmpegApi.ts';
-import {
-  createPlexServerEndpoint,
-  deletePlexServerEndpoint,
-  getFffmpegSettings,
-  getHdhrSettings,
-  getPlexServersEndpoint,
-  getPlexStreamSettings,
-  getSystemSettings,
-  getXmlTvSettings,
-  jellyfinLogin,
-  updateFfmpegSettings,
-  updateHdhrSettings,
-  updatePlexServerEndpoint,
-  updatePlexStreamSettings,
-  updateSystemSettings,
-  updateXmlTvSettings,
-} from './settingsApi.ts';
+import { endpoints as settingsEndpoints } from './settingsApi.ts';
 
 export const api = makeApi([
   {
@@ -240,8 +224,8 @@ export const api = makeApi([
   },
   {
     method: 'get',
-    path: '/api/plex-servers/:id/status',
-    alias: 'getPlexServerStatus',
+    path: '/api/media-sources/:id/status',
+    alias: 'getMediaSourceStatus',
     parameters: parametersBuilder()
       .addPaths({
         id: z.string(),
@@ -263,8 +247,8 @@ export const api = makeApi([
   },
   {
     method: 'post',
-    path: '/api/plex-servers/foreignstatus',
-    alias: 'getUnknownPlexServerStatus',
+    path: '/api/media-sources/foreignstatus',
+    alias: 'getUnknownMediaSourceStatus',
     parameters: parametersBuilder()
       .addBody(
         z.object({
@@ -403,21 +387,7 @@ export const api = makeApi([
       }),
     }),
   },
-  getPlexServersEndpoint,
-  createPlexServerEndpoint,
-  updatePlexServerEndpoint,
-  deletePlexServerEndpoint,
-  getXmlTvSettings,
-  updateXmlTvSettings,
-  getHdhrSettings,
-  updateHdhrSettings,
-  getPlexStreamSettings,
-  updatePlexStreamSettings,
-  getFffmpegSettings,
-  updateFfmpegSettings,
-  getSystemSettings,
-  updateSystemSettings,
-  jellyfinLogin,
+  ...settingsEndpoints,
 ]);
 
 export type ApiClient = ZodiosInstance<typeof api>;

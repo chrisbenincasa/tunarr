@@ -1,5 +1,5 @@
 import { RecurrenceRule } from 'node-schedule';
-import { MediaSource } from '../dao/entities/PlexServerSettings';
+import { MediaSource } from '../dao/entities/MediaSource';
 import { PlexApiFactory } from '../external/PlexApiFactory';
 import { run } from '../util';
 import { ScheduledTask } from './ScheduledTask';

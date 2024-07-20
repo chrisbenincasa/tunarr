@@ -1,6 +1,6 @@
 import { RotatingLoopIcon } from '@/components/base/LoadingIcon';
 import { isValidUrl, isNonEmptyString, toggle } from '@/helpers/util';
-import { usePlexBackendStatus } from '@/hooks/plex/usePlexBackendStatus';
+import { useMediaSourceBackendStatus } from '@/hooks/media-sources/usePlexBackendStatus';
 import {
   CloudDoneOutlined,
   CloudOff,
@@ -127,7 +127,10 @@ export function AddPlexServerForm({ server }: Props) {
   ]);
 
   const { data: serverStatus, isLoading: serverStatusLoading } =
-    usePlexBackendStatus(serverStatusDetails, true /* TODO is this right */);
+    useMediaSourceBackendStatus(
+      serverStatusDetails,
+      true /* TODO is this right */,
+    );
 
   const onSubmit = (e: FormEvent<HTMLButtonElement>) => {
     e.stopPropagation();

@@ -1,10 +1,18 @@
-import { Entity, Property, Unique } from '@mikro-orm/core';
+import { Entity, Enum, Property, Unique } from '@mikro-orm/core';
 import { PlexServerSettings as PlexServerSettingsDTO } from '@tunarr/types';
 import { BaseEntity } from './BaseEntity.js';
 
+export enum MediaSourceType {
+  Plex = 'plex',
+  Jellyfin = 'jellyfin',
+}
+
 @Entity()
-@Unique({ properties: ['name', 'uri'] })
+@Unique({ properties: ['type', 'name', 'uri'] })
 export class MediaSource extends BaseEntity {
+  @Enum({ items: () => MediaSourceType, default: MediaSourceType.Plex })
+  type!: MediaSourceType;
+
   @Property()
   name!: string;
 

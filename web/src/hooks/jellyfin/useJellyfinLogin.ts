@@ -3,7 +3,7 @@ import { useApiQuery } from '../useApiQuery.ts';
 import { ApiClient } from '@/external/api.ts';
 
 type Opts = {
-  url: string;
+  uri: string;
   username: string;
   password: string;
 };
@@ -11,6 +11,7 @@ type Opts = {
 export const jellyfinLogin = (apiClient: ApiClient, opts: Opts) => {
   return apiClient.jellyfinUserLogin({
     ...opts,
+    url: opts.uri,
   });
 };
 
@@ -22,8 +23,10 @@ export const useJellyinLogin = (opts: Opts, enabled: boolean = true) => {
     },
     enabled:
       enabled &&
-      isNonEmptyString(opts.url) &&
+      isNonEmptyString(opts.uri) &&
       isNonEmptyString(opts.username) &&
       isNonEmptyString(opts.password),
+    retry: false,
+    refetchOnWindowFocus: false,
   });
 };

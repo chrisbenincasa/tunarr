@@ -18,11 +18,11 @@ export function PlexServerDeleteDialog({
   const queryClient = useQueryClient();
   const removePlexServerMutation = useMutation({
     mutationFn: (id: string) => {
-      return apiClient.deletePlexServer(null, { params: { id } });
+      return apiClient.deleteMediaSource(null, { params: { id } });
     },
     onSuccess: () => {
       return queryClient.invalidateQueries({
-        queryKey: ['settings', 'plex-servers'],
+        queryKey: ['settings', 'media-sources'],
       });
     },
   });

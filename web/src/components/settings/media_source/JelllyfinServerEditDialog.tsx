@@ -28,12 +28,13 @@ import {
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { JellyfinServerSettings, PlexServerSettings } from '@tunarr/types';
-import { isEqual, isNull, isUndefined } from 'lodash-es';
+import { isEmpty, isEqual, isNull, isUndefined } from 'lodash-es';
 import { FormEvent, useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { MarkOptional } from 'ts-essentials';
 import { useDebounceValue } from 'usehooks-ts';
 import { useJellyinLogin } from '@/hooks/jellyfin/useJellyfinLogin.ts';
+import { useMediaSourceBackendStatus } from '@/hooks/media-sources/useMediaSourceBackendStatus';
 
 type Props = {
   open: boolean;
@@ -86,29 +87,64 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
     control,
     watch,
     reset,
-    formState: { isDirty, isValid, defaultValues },
+    formState: { isDirty, isValid, defaultValues, touchedFields, errors },
     handleSubmit,
     setValue,
     getValues,
+    setError,
+    clearErrors,
   } = useForm<JellyfinServerSettingsForm>({
-    mode: 'onChange',
+    // mode: 'onChange',
     defaultValues: server ?? emptyDefaults,
   });
 
-  const updatePlexServerMutation = useMutation({
-    mutationFn: async (newOrUpdatedServer: PlexServerSettingsForm) => {
+  const [username, password, accessToken] = watch([
+    'username',
+    'password',
+    'accessToken',
+  ]);
+
+  useEffect(() => {
+    const sub = watch((value, { name }) => {
+      if (
+        name !== 'accessToken' &&
+        name !== 'username' &&
+        name !== 'password'
+      ) {
+        return;
+      }
+
+      if (
+        isNonEmptyString(value.accessToken) ||
+        (isNonEmptyString(value.username) && isNonEmptyString(value.password))
+      ) {
+        clearErrors('root.auth');
+      } else {
+        setError('root.auth', { message: 'No' });
+      }
+    });
+    return () => sub.unsubscribe();
+  }, [watch, setError, clearErrors]);
+
+  const accessTokenTouched = touchedFields.accessToken ?? false;
+
+  const updateSourceMutation = useMutation({
+    mutationFn: async (newOrUpdatedServer: JellyfinServerSettingsForm) => {
       if (isNonEmptyString(newOrUpdatedServer.id)) {
-        await apiClient.updatePlexServer(newOrUpdatedServer, {
-          params: { id: newOrUpdatedServer.id },
-        });
+        await apiClient.updateMediaSource(
+          { ...newOrUpdatedServer, id: newOrUpdatedServer.id },
+          {
+            params: { id: newOrUpdatedServer.id },
+          },
+        );
         return { id: newOrUpdatedServer.id };
       } else {
-        return apiClient.createPlexServer(newOrUpdatedServer);
+        return apiClient.createMediaSource(newOrUpdatedServer);
       }
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ['settings', 'plex-servers'],
+        queryKey: ['settings', 'media-sources'],
       });
       handleClose();
     },
@@ -116,8 +152,13 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
 
   const onSubmit = (e: FormEvent<HTMLButtonElement>) => {
     e.stopPropagation();
+
+    if (isNonEmptyString(accessToken)) {
+    } else if (isNonEmptyString(username) && isNonEmptyString(password)) {
+    }
+
     void handleSubmit(
-      (data) => updatePlexServerMutation.mutate(data),
+      (data) => updateSourceMutation.mutate(data),
       console.error,
     )(e);
   };
@@ -127,14 +168,23 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
   const [serverStatusDetails, updateServerStatusDetails] = useDebounceValue(
     {
       id: server?.id && !isDirty ? server.id : undefined,
-      accessToken: defaultValues!.accessToken!,
-      url: defaultValues!.uri!,
-      username: defaultValues!.username ?? '',
-      password: defaultValues!.password ?? '',
+      accessToken: defaultValues?.accessToken ?? '',
+      uri: defaultValues?.uri ?? '',
+      username: defaultValues?.username ?? '',
+      password: defaultValues?.password ?? '',
+      type: 'jellyfin' as const,
     },
-    500,
+    5000,
     {
-      equalityFn: isEqual,
+      equalityFn: (left, right) => {
+        const res = isEqual(left, right);
+        console.log(left, right, res);
+        return (
+          left.id === right.id &&
+          left.uri === right.uri &&
+          left.accessToken === right.accessToken
+        );
+      },
     },
   );
 
@@ -148,16 +198,17 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
     const sub = watch((value, { name }) => {
       if (
         name === 'uri' ||
-        name === 'password' ||
-        name === 'username' ||
+        // name === 'password' ||
+        // name === 'username' ||
         name === 'accessToken'
       ) {
         updateServerStatusDetails({
           id: server?.id && !isDirty ? server.id : undefined,
           accessToken: value.accessToken ?? value.password ?? '',
-          url: value.uri ?? '',
+          uri: value.uri ?? '',
           username: value.username ?? '',
           password: value.password ?? '',
+          type: 'jellyfin' as const,
         });
       }
     });
@@ -172,15 +223,59 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
   ]);
 
   const {
-    data: serverStatus,
-    isLoading: serverStatusLoading,
-    error: serverError,
-  } = useJellyinLogin(serverStatusDetails, true /* TODO is this right */);
+    data: derivedAccessToken,
+    isLoading: derivedAccessTokenLoading,
+    error: derivedAccessTokenError,
+    refetch: refetchAccessToken,
+  } = useJellyinLogin(serverStatusDetails, false /* TODO is this right */);
+
+  // useEffect(() => {
+  //   if (
+  //     isNonEmptyString(serverStatusDetails.url) &&
+  //     isNonEmptyString(serverStatusDetails.username) &&
+  //     isNonEmptyString(serverStatusDetails.password)
+  //   ) {
+  //     jellyfinLogin(apiClient, serverStatusDetails)
+  //       .then(({ accessToken }) => {
+  //         if (isNonEmptyString(accessToken) && !accessTokenTouched) {
+  //           setValue('accessToken', derivedAccessToken?.accessToken ?? '', {
+  //             shouldValidate: true,
+  //           });
+  //         }
+  //       })
+  //       .catch(console.error);
+  //   }
+  // }, [
+  //   serverStatusDetails,
+  //   apiClient,
+  //   accessTokenTouched,
+  //   setValue,
+  //   derivedAccessToken?.accessToken,
+  // ]);
+
+  const { data: serverStatus, isLoading: serverStatusLoading } =
+    useMediaSourceBackendStatus(
+      serverStatusDetails,
+      open && isNonEmptyString(accessToken),
+    );
+  console.log(serverStatusDetails);
 
   useEffect(() => {
-    if (!isUndefined(serverStatus)) {
+    if (!isUndefined(derivedAccessToken) && !accessTokenTouched) {
+      setValue('accessToken', derivedAccessToken?.accessToken ?? '', {
+        shouldValidate: true,
+      });
     }
-  }, [serverStatus, setValue, getValues]);
+    //  else if (!isUndefined(serverError) && !accessTokenTouched) {
+    //   setValue('accessToken', '');
+    // }
+  }, [
+    derivedAccessToken,
+    derivedAccessTokenError,
+    setValue,
+    getValues,
+    accessTokenTouched,
+  ]);
 
   // TODO: Block creation if an existing server with the same URL/name
   // already exist
@@ -190,21 +285,6 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
       <DialogContent sx={{ p: 2 }}>
         <Box component="form">
           <Stack sx={{ py: 2 }} spacing={2}>
-            {/* <FormControl>
-              <Select
-                disabled={!isUndefined(server)}
-                labelId="media-source-input-label"
-                label="Source"
-                value={source}
-                onChange={(e) =>
-                  setSource(e.target.value as ExistingSource['type'])
-                }
-              >
-                <MenuItem value="plex">Plex</MenuItem>
-                <MenuItem value="jellyfin">Jellyfin</MenuItem>
-              </Select>
-              <InputLabel id="media-source-input-label">Source</InputLabel>
-            </FormControl> */}
             <Controller
               control={control}
               name="uri"
@@ -220,11 +300,13 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
                   label="URL"
                   fullWidth
                   {...field}
-                  error={!isUndefined(error) || !isNull(serverError)}
+                  error={
+                    !isUndefined(error) || !isNull(derivedAccessTokenError)
+                  }
                   helperText={
                     error?.message ? (
                       <span>{error.message}</span>
-                    ) : !isNull(serverError) &&
+                    ) : !isNull(derivedAccessTokenError) &&
                       isNonEmptyString(field.value) ? (
                       <>
                         <span>Server is unreachable</span>
@@ -233,9 +315,10 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
                     ) : null
                   }
                   InputProps={{
-                    endAdornment: serverStatusLoading ? (
+                    endAdornment: derivedAccessTokenLoading ? (
                       <RotatingLoopIcon />
-                    ) : !isUndefined(serverStatus) && isNull(serverError) ? (
+                    ) : !isUndefined(derivedAccessToken) &&
+                      isNull(derivedAccessTokenError) ? (
                       <CloudDoneOutlined color="success" />
                     ) : (
                       <CloudOff color="error" />
@@ -275,11 +358,15 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
                 control={control}
                 name="username"
                 rules={{
-                  required: true,
+                  required: false,
                   minLength: 1,
                 }}
                 render={({ field, fieldState: { error } }) => (
-                  <FormControl sx={{ flex: 1 }} variant="outlined">
+                  <FormControl
+                    sx={{ flex: 1 }}
+                    variant="outlined"
+                    disabled={isNonEmptyString(accessToken)}
+                  >
                     <InputLabel htmlFor="jellyfin-username">
                       Username{' '}
                     </InputLabel>
@@ -302,11 +389,15 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
                 control={control}
                 name="password"
                 rules={{
-                  required: true,
+                  required: false,
                   minLength: 1,
                 }}
                 render={({ field, fieldState: { error } }) => (
-                  <FormControl sx={{ flex: 1 }} variant="outlined">
+                  <FormControl
+                    sx={{ flex: 1 }}
+                    variant="outlined"
+                    disabled={isNonEmptyString(accessToken)}
+                  >
                     <InputLabel htmlFor="jellyfin-password">
                       Password{' '}
                     </InputLabel>
@@ -343,10 +434,9 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
                   </FormControl>
                 )}
               />
-              <Typography variant="caption" sx={{ px: 2 }}>
-                Enter your Jellyfin password to generate a new access token, or
-                enter the token you want to use below.
-              </Typography>
+              <FormHelperText sx={{ ml: '14px', mt: -1, flexBasis: '100%' }}>
+                Enter your Jellyfin password to generate a new access token.
+              </FormHelperText>
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
               <Divider sx={{ flex: 1 }} />
@@ -356,12 +446,21 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
             <Controller
               control={control}
               name="accessToken"
-              rules={{
-                required: true,
-                minLength: 1,
-              }}
+              rules={
+                {
+                  // required: true,
+                  // minLength: 1,
+                }
+              }
               render={({ field, fieldState: { error } }) => (
-                <FormControl sx={{ m: 1 }} fullWidth variant="outlined">
+                <FormControl
+                  sx={{ m: 1 }}
+                  fullWidth
+                  variant="outlined"
+                  disabled={
+                    isNonEmptyString(username) && isNonEmptyString(password)
+                  }
+                >
                   <InputLabel htmlFor="access-token">Access Token </InputLabel>
                   <OutlinedInput
                     id="access-token"
@@ -382,12 +481,17 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
                     {...field}
                   />
                   <FormHelperText>
-                    {error && isNonEmptyString(error.message) && (
-                      <>
-                        <span>{error.message}</span>
-                        <br />
-                      </>
-                    )}
+                    <>
+                      {error && isNonEmptyString(error.message) && (
+                        <>
+                          <span>{error.message}</span>
+                          <br />
+                        </>
+                      )}
+                      <span>
+                        Manually add an access token from your Jellyfin server
+                      </span>
+                    </>
                   </FormHelperText>
                 </FormControl>
               )}
@@ -401,7 +505,7 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
         </Button>
         <Button
           variant="contained"
-          disabled={!isDirty || !isValid}
+          disabled={!isDirty || !isValid || !isEmpty(errors)}
           type="submit"
           onClick={onSubmit}
         >

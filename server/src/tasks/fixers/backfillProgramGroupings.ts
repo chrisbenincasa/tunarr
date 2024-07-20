@@ -16,7 +16,7 @@ import ld, {
 } from 'lodash-es';
 import { ProgramSourceType } from '../../dao/custom_types/ProgramSourceType';
 import { getEm } from '../../dao/dataSource';
-import { MediaSource } from '../../dao/entities/PlexServerSettings';
+import { MediaSource } from '../../dao/entities/MediaSource';
 import { Program, ProgramType } from '../../dao/entities/Program';
 import {
   ProgramGrouping,

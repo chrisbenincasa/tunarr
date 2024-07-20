@@ -3,7 +3,7 @@ import EventEmitter from 'events';
 import { isNil, isNull, isUndefined } from 'lodash-es';
 import { Writable } from 'stream';
 import { isContentBackedLineupIteam } from '../../dao/derived_types/StreamLineup.js';
-import { MediaSource } from '../../dao/entities/PlexServerSettings.js';
+import { MediaSource } from '../../dao/entities/MediaSource.js';
 import { FFMPEG, FfmpegEvents } from '../../ffmpeg/ffmpeg.js';
 import { GlobalScheduler } from '../../services/scheduler.js';
 import { UpdatePlexPlayStatusScheduledTask } from '../../tasks/UpdatePlexPlayStatusTask.js';

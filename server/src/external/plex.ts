@@ -30,7 +30,7 @@ import NodeCache from 'node-cache';
 import { ParsedUrlQueryInput } from 'querystring';
 import { MarkOptional } from 'ts-essentials';
 import { z } from 'zod';
-import { MediaSource } from '../dao/entities/PlexServerSettings.js';
+import { MediaSource } from '../dao/entities/MediaSource.js';
 import {
   PlexMediaContainer,
   PlexMediaContainerResponse,
@@ -435,12 +435,12 @@ export class Plex {
         throw result;
       } else if (isUndefined(result)) {
         // Parse error - indicates that the URL is probably not a Plex server
-        return -1;
+        return false;
       }
-      return 1;
+      return true;
     } catch (err) {
       this.logger.error(err, 'Error getting Plex server status');
-      return -1;
+      return false;
     }
   }
 

@@ -17,7 +17,7 @@ import {
   replace,
   trimEnd,
 } from 'lodash-es';
-import { MediaSource } from '../../dao/entities/PlexServerSettings';
+import { MediaSource } from '../../dao/entities/MediaSource';
 import {
   Plex,
   isPlexQueryError,

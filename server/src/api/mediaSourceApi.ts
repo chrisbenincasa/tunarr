@@ -1,13 +1,13 @@
 import {
   BaseErrorSchema,
   BasicIdParamSchema,
-  InsertPlexServerRequestSchema,
+  InsertMediaSourceRequestSchema,
   UpdatePlexServerRequestSchema,
 } from '@tunarr/types/api';
-import { PlexServerSettingsSchema } from '@tunarr/types/schemas';
+import { MediaSourceSettingsSchema } from '@tunarr/types/schemas';
 import { isError, isNil, isObject } from 'lodash-es';
 import z from 'zod';
-import { MediaSource } from '../dao/entities/PlexServerSettings.js';
+import { MediaSource, MediaSourceType } from '../dao/entities/MediaSource.js';
 import { Plex } from '../external/plex.js';
 import { PlexApiFactory } from '../external/PlexApiFactory.js';
 import { GlobalScheduler } from '../services/scheduler.js';
@@ -17,18 +17,18 @@ import { firstDefined, wait } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { JellyfinApiClient } from '../external/jellyfin/JellyfinApiClient.js';
 
-export const plexServersRouter: RouterPluginAsyncCallback = async (
+export const mediaSourceRouter: RouterPluginAsyncCallback = async (
   fastify,
   // eslint-disable-next-line @typescript-eslint/require-await
 ) => {
   const logger = LoggerFactory.child({ caller: import.meta });
 
   fastify.get(
-    '/plex-servers',
+    '/media-sources',
     {
       schema: {
         response: {
-          200: z.array(PlexServerSettingsSchema),
+          200: z.array(MediaSourceSettingsSchema),
           500: z.string(),
         },
       },
@@ -46,7 +46,7 @@ export const plexServersRouter: RouterPluginAsyncCallback = async (
   );
 
   fastify.get(
-    '/plex-servers/:id/status',
+    '/media-sources/:id/status',
     {
       schema: {
         params: BasicIdParamSchema,
@@ -67,21 +67,28 @@ export const plexServersRouter: RouterPluginAsyncCallback = async (
           return res.status(404).send();
         }
 
-        const plex = new Plex(server);
-
-        const s: 1 | -1 = await Promise.race([
-          (async () => {
-            return await plex.checkServerStatus();
-          })(),
-          new Promise<-1>((resolve) => {
-            setTimeout(() => {
-              resolve(-1);
-            }, 60000);
-          }),
-        ]);
+        let status: boolean = false;
+        switch (server.type) {
+          case MediaSourceType.Plex: {
+            const plex = new Plex(server);
+            status = await Promise.race([
+              (async () => {
+                return await plex.checkServerStatus();
+              })(),
+              new Promise<false>((resolve) => {
+                setTimeout(() => {
+                  resolve(false);
+                }, 60000);
+              }),
+            ]);
+            break;
+          }
+          case MediaSourceType.Jellyfin:
+            return res.status(405).send();
+        }
 
         return res.send({
-          healthy: s === 1,
+          healthy: status,
         });
       } catch (err) {
         logger.error(err);
@@ -91,7 +98,7 @@ export const plexServersRouter: RouterPluginAsyncCallback = async (
   );
 
   fastify.post(
-    '/plex-servers/foreignstatus',
+    '/media-sources/foreignstatus',
     {
       schema: {
         body: z.object({
@@ -122,10 +129,7 @@ export const plexServersRouter: RouterPluginAsyncCallback = async (
             });
 
             healthy = await Promise.race([
-              (async () => {
-                const res = await plex.checkServerStatus();
-                return res === 1;
-              })(),
+              plex.checkServerStatus(),
               new Promise<false>((resolve) => {
                 setTimeout(() => {
                   resolve(false);
@@ -153,7 +157,7 @@ export const plexServersRouter: RouterPluginAsyncCallback = async (
   );
 
   fastify.delete(
-    '/plex-servers/:id',
+    '/media-sources/:id',
     {
       schema: {
         params: BasicIdParamSchema,
@@ -212,7 +216,7 @@ export const plexServersRouter: RouterPluginAsyncCallback = async (
   );
 
   fastify.put(
-    '/plex-servers/:id',
+    '/media-sources/:id',
     {
       schema: {
         params: BasicIdParamSchema,
@@ -265,10 +269,10 @@ export const plexServersRouter: RouterPluginAsyncCallback = async (
   );
 
   fastify.post(
-    '/plex-servers',
+    '/media-sources',
     {
       schema: {
-        body: InsertPlexServerRequestSchema,
+        body: InsertMediaSourceRequestSchema,
         response: {
           201: z.object({
             id: z.string(),
@@ -342,7 +346,7 @@ export const plexServersRouter: RouterPluginAsyncCallback = async (
         const plex = PlexApiFactory().get(server);
 
         const s = await Promise.race([
-          plex.checkServerStatus().then((res) => res === 1),
+          plex.checkServerStatus(),
           wait(15000).then(() => false),
         ]);
 

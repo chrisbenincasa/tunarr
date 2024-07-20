@@ -10,7 +10,7 @@ import {
 import { ProgramExternalIdType } from '../../dao/custom_types/ProgramExternalIdType';
 import { ProgramSourceType } from '../../dao/custom_types/ProgramSourceType.js';
 import { getEm } from '../../dao/dataSource';
-import { MediaSource } from '../../dao/entities/PlexServerSettings.js';
+import { MediaSource } from '../../dao/entities/MediaSource.js';
 import { Program } from '../../dao/entities/Program';
 import { ProgramExternalId } from '../../dao/entities/ProgramExternalId.js';
 import { Plex, isPlexQueryError } from '../../external/plex.js';

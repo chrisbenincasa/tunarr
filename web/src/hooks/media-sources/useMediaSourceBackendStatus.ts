@@ -1,20 +1,24 @@
-import { PlexServerSettings } from '@tunarr/types';
+import { isNonEmptyString, isValidUrl } from '@/helpers/util';
+import { MediaSourceSettings } from '@tunarr/types';
 import { MarkOptional } from 'ts-essentials';
 import { useApiQuery } from '../useApiQuery';
-import { isNonEmptyString, isValidUrl } from '@/helpers/util';
 
-export const usePlexBackendStatus = (
+export const useMediaSourceBackendStatus = (
   {
+    type,
     id,
     uri,
     accessToken,
-  }: MarkOptional<Pick<PlexServerSettings, 'id' | 'accessToken' | 'uri'>, 'id'>,
+  }: MarkOptional<
+    Pick<MediaSourceSettings, 'id' | 'type' | 'accessToken' | 'uri'>,
+    'id'
+  >,
   enabled: boolean = true,
 ) => {
   const serverStatusResult = useApiQuery({
-    queryKey: ['plex-server', { id, uri, accessToken }, 'status'],
+    queryKey: ['media-sources', { id, uri, accessToken, type }, 'status'],
     queryFn(apiClient) {
-      return apiClient.getPlexServerStatus({ params: { id: id! } });
+      return apiClient.getMediaSourceStatus({ params: { id: id! } });
     },
     enabled: enabled && isNonEmptyString(id),
     retry: false,
@@ -22,12 +26,16 @@ export const usePlexBackendStatus = (
   });
 
   const unknownServerStatusResult = useApiQuery({
-    queryKey: ['unknown-plex-server', { id, uri, accessToken }, 'status'],
+    queryKey: [
+      'unknown-media-source',
+      { type, id, uri, accessToken },
+      'status',
+    ],
     queryFn(apiClient) {
-      return apiClient.getUnknownPlexServerStatus({
+      return apiClient.getUnknownMediaSourceStatus({
         uri,
         accessToken,
-        type: 'plex',
+        type,
       });
     },
     enabled:

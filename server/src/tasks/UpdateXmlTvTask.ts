@@ -3,7 +3,7 @@ import { PlexDvr } from '@tunarr/types/plex';
 import dayjs from 'dayjs';
 import { ChannelDB } from '../dao/channelDb.js';
 import { withDb } from '../dao/dataSource.js';
-import { MediaSource } from '../dao/entities/PlexServerSettings.js';
+import { MediaSource } from '../dao/entities/MediaSource.js';
 import { SettingsDB, defaultXmlTvSettings } from '../dao/settings.js';
 import { Plex } from '../external/plex.js';
 import { globalOptions } from '../globals.js';
