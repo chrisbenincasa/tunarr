@@ -1,6 +1,6 @@
 import { find, isNil } from 'lodash-es';
 import { EntityManager } from '../../dao/dataSource.js';
-import { MediaSource } from '../../dao/entities/PlexServerSettings.js';
+import { MediaSource } from '../../dao/entities/MediaSource.js';
 import { Plex } from '../../external/plex.js';
 import Fixer from './fixer.js';
 

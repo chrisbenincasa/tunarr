@@ -7,7 +7,10 @@ import { groupByUniq } from '../util/index.js';
 import { ChannelDB } from './channelDb.js';
 import { ProgramSourceType } from './custom_types/ProgramSourceType.js';
 import { getEm } from './dataSource.js';
-import { MediaSource as PlexServerSettingsEntity } from './entities/PlexServerSettings.js';
+import {
+  MediaSourceType,
+  MediaSource as PlexServerSettingsEntity,
+} from './entities/MediaSource.js';
 import { Program } from './entities/Program.js';
 
 //hmnn this is more of a "PlexServerService"...
@@ -31,7 +34,9 @@ export class PlexServerDB {
 
   async getAll() {
     const em = getEm();
-    return em.repo(PlexServerSettingsEntity).findAll();
+    return em
+      .repo(PlexServerSettingsEntity)
+      .find({ type: MediaSourceType.Plex });
   }
 
   async getById(id: string) {
@@ -75,7 +80,7 @@ export class PlexServerDB {
       throw Error('Missing server id from request');
     }
 
-    const s = await repo.findOne(id);
+    const s = await repo.findOne({ uuid: id, type: MediaSourceType.Plex });
 
     if (isNil(s)) {
       throw Error("Server doesn't exist.");
@@ -123,6 +128,7 @@ export class PlexServerDB {
       sendGuideUpdates,
       sendChannelUpdates,
       index,
+      type: MediaSourceType.Plex,
     });
 
     this.normalizeServer(newServer);
@@ -134,6 +140,11 @@ export class PlexServerDB {
     serverName: string,
     newServer?: PlexServerSettingsEntity,
   ) {
+    // TODO: We need to update this to:
+    // 1. handle different source types
+    // 2. use program_external_id table
+    // 3. not delete programs if they still have another reference via
+    //    the external id table (program that exists on 2 servers)
     const em = getEm();
     const allPrograms = await em
       .repo(Program)

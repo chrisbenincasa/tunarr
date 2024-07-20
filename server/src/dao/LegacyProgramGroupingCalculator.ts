@@ -44,7 +44,7 @@ import { timeAsync } from '../util/perf.js';
 import { ProgramExternalIdType } from './custom_types/ProgramExternalIdType.js';
 import { ProgramSourceType } from './custom_types/ProgramSourceType.js';
 import { getEm } from './dataSource.js';
-import { MediaSource } from './entities/PlexServerSettings.js';
+import { MediaSource } from './entities/MediaSource.js';
 import { Program, ProgramType } from './entities/Program.js';
 import {
   ProgramGrouping,

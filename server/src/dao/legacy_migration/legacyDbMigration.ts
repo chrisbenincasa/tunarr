@@ -41,7 +41,7 @@ import { attempt } from '../../util/index.js';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
 import { EntityManager, withDb } from '../dataSource.js';
 import { CachedImage } from '../entities/CachedImage.js';
-import { MediaSource as PlexServerSettingsEntity } from '../entities/PlexServerSettings.js';
+import { MediaSource as PlexServerSettingsEntity } from '../entities/MediaSource.js';
 import { Settings, SettingsDB, defaultXmlTvSettings } from '../settings.js';
 import {
   LegacyChannelMigrator,
@@ -321,8 +321,8 @@ export class LegacyDbMigrator {
           // to remove the fixer eventually, though.
           for (const entity of entities) {
             const plexApi = PlexApiFactory().get(entity);
-            const status = await plexApi.checkServerStatus();
-            if (status === 1) {
+            const healthy = await plexApi.checkServerStatus();
+            if (healthy) {
               this.logger.debug(
                 'Plex server name: %s url: %s healthy',
                 entity.name,

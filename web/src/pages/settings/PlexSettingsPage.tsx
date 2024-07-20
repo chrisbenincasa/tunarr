@@ -45,7 +45,7 @@ import {
   usePlexStreamSettings,
 } from '@/hooks/settingsHooks.ts';
 import { useTunarrApi } from '@/hooks/useTunarrApi.ts';
-import { PlexServerRow } from '@/components/settings/plex/PlexServerRow.tsx';
+import { MediaSourceTableRow } from '@/components/settings/plex/MediaSourceTableRow';
 import { PlexServerEditDialog } from '@/components/settings/plex/PlexServerEditDialog.tsx';
 import { JellyfinServerEditDialog } from '@/components/settings/media_source/JelllyfinServerEditDialog.tsx';
 
@@ -147,11 +147,11 @@ export default function PlexSettingsPage() {
 
   const removePlexServerMutation = useMutation({
     mutationFn: (id: string) => {
-      return apiClient.deletePlexServer(null, { params: { id } });
+      return apiClient.deleteMediaSource(null, { params: { id } });
     },
     onSuccess: () => {
       return queryClient.invalidateQueries({
-        queryKey: ['settings', 'plex-servers'],
+        queryKey: ['settings', 'media-sources'],
       });
     },
   });
@@ -204,7 +204,7 @@ export default function PlexSettingsPage() {
 
   const getTableRows = () => {
     return map(servers, (server) => {
-      return <PlexServerRow key={server.id} server={server} />;
+      return <MediaSourceTableRow key={server.id} server={server} />;
     });
   };
 
@@ -233,19 +233,9 @@ export default function PlexSettingsPage() {
         <Table>
           <TableHead>
             <TableRow>
+              <TableCell>Type</TableCell>
               <TableCell>Name</TableCell>
               <TableCell>URL</TableCell>
-              {/* <TableCell align="center">
-                UI
-                <Tooltip
-                  placement="top"
-                  title="The connection to Plex from the browser. Affects the ability to edit channel programming."
-                >
-                  <IconButton size="small" edge="end">
-                    <HelpOutline sx={{ opacity: 0.75 }} />
-                  </IconButton>
-                </Tooltip>
-              </TableCell> */}
               <TableCell align="center">
                 Healthy?
                 <Tooltip
@@ -333,7 +323,7 @@ export default function PlexSettingsPage() {
             sx={{ flexWrap: 'wrap' }}
           >
             <Typography variant="h6" sx={{ flexGrow: 1 }}>
-              Plex Servers
+              Media Sources
             </Typography>
             <AddPlexServer title="Discover" icon={AutoFixHigh} />
 
@@ -373,10 +363,10 @@ export default function PlexSettingsPage() {
             </div>
             <Box sx={{ flexBasis: '100%', width: 0 }}></Box>
             <Typography variant="caption" sx={{ width: '60%' }}>
-              Add Plex Servers as content sources for your channel. "Discover"
-              will use the Plex login flow to discover servers associated with
-              your account, however you can also manually add Plex server
-              details using the "Manual Add" button.
+              Add content sources for your channels. "Discover" will use the
+              Plex login flow to discover servers associated with your account,
+              however you can also manually add Plex server details using the
+              "Manual Add" button.
             </Typography>
           </Stack>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', mb: 1 }}></Box>

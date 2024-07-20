@@ -6,7 +6,7 @@ import { stringify } from 'node:querystring';
 import { DeepReadonly } from 'ts-essentials';
 import { v4 as uuidv4 } from 'uuid';
 import { ContentBackedStreamLineupItem } from '../../dao/derived_types/StreamLineup.js';
-import { MediaSource } from '../../dao/entities/PlexServerSettings.js';
+import { MediaSource } from '../../dao/entities/MediaSource.js';
 import { serverOptions } from '../../globals.js';
 import { Plex } from '../../external/plex.js';
 import { PlexApiFactory } from '../../external/PlexApiFactory.js';

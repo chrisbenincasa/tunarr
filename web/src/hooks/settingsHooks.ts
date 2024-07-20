@@ -17,8 +17,8 @@ export const useFfmpegSettings = () =>
 
 export const usePlexServerSettings = () =>
   useApiSuspenseQuery({
-    queryKey: ['settings', 'plex-servers'],
-    queryFn: (apiClient) => apiClient.getPlexServers(),
+    queryKey: ['settings', 'media-sources'],
+    queryFn: (apiClient) => apiClient.getMediaSources(),
   });
 
 export const plexStreamSettingsQuery = apiQueryOptions({
@@ -40,8 +40,8 @@ export const usePlexSettings = () => {
   return useQueries({
     queries: [
       {
-        queryKey: ['settings', 'plex-servers'],
-        queryFn: () => apiClient.getPlexServers(),
+        queryKey: ['settings', 'media-sources'],
+        queryFn: () => apiClient.getMediaSources(),
       },
       {
         queryKey: ['settings', 'plex-stream'],

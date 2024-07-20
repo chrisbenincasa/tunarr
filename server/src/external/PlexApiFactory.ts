@@ -1,7 +1,7 @@
 import { forEach, isBoolean, isNull, isUndefined } from 'lodash-es';
 import NodeCache from 'node-cache';
 import { getEm } from '../dao/dataSource.js';
-import { MediaSource } from '../dao/entities/PlexServerSettings.js';
+import { MediaSource } from '../dao/entities/MediaSource.js';
 import { Plex, PlexApiOptions } from './plex.js';
 import { SettingsDB, getSettings } from '../dao/settings.js';
 import { isDefined } from '../util/index.js';

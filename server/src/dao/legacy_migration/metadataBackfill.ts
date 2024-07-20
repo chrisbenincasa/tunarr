@@ -18,7 +18,7 @@ import { isNonEmptyString, wait } from '../../util';
 import { LoggerFactory } from '../../util/logging/LoggerFactory';
 import { ProgramSourceType } from '../custom_types/ProgramSourceType';
 import { getEm } from '../dataSource';
-import { MediaSource } from '../entities/PlexServerSettings';
+import { MediaSource } from '../entities/MediaSource';
 import { Program, ProgramType } from '../entities/Program';
 import {
   ProgramGrouping,

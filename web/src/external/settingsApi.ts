@@ -1,68 +1,68 @@
 import { SystemSettingsSchema } from '@tunarr/types';
 import {
-  InsertPlexServerRequestSchema,
+  InsertMediaSourceRequestSchema,
   JellyfinLoginRequest,
-  UpdatePlexServerRequestSchema,
+  UpdateMediaSourceRequestSchema,
   UpdateSystemSettingsRequestSchema,
 } from '@tunarr/types/api';
 import {
   FfmpegSettingsSchema,
   HdhrSettingsSchema,
-  PlexServerSettingsSchema,
+  MediaSourceSettingsSchema,
   PlexStreamSettingsSchema,
   XmlTvSettingsSchema,
 } from '@tunarr/types/schemas';
 import { makeEndpoint, parametersBuilder } from '@zodios/core';
 import { z } from 'zod';
 
-export const getPlexServersEndpoint = makeEndpoint({
+const getMediaSourcesEndpoint = makeEndpoint({
   method: 'get',
-  path: '/api/plex-servers',
-  response: z.array(PlexServerSettingsSchema),
-  alias: 'getPlexServers',
+  path: '/api/media-sources',
+  response: z.array(MediaSourceSettingsSchema),
+  alias: 'getMediaSources',
 });
 
-export const createPlexServerEndpoint = makeEndpoint({
+const createMediaSourceEndpoint = makeEndpoint({
   method: 'post',
-  path: '/api/plex-servers',
+  path: '/api/media-sources',
   parameters: parametersBuilder()
-    .addBody(InsertPlexServerRequestSchema)
+    .addBody(InsertMediaSourceRequestSchema)
     .build(),
-  alias: 'createPlexServer',
+  alias: 'createMediaSource',
   status: 201,
   response: z.object({ id: z.string() }),
 });
 
-export const updatePlexServerEndpoint = makeEndpoint({
+const updateMediaSourceEndpoint = makeEndpoint({
   method: 'put',
-  path: '/api/plex-servers/:id',
+  path: '/api/media-sources/:id',
   parameters: parametersBuilder()
     .addPath('id', z.string())
-    .addBody(UpdatePlexServerRequestSchema)
+    .addBody(UpdateMediaSourceRequestSchema)
     .build(),
-  alias: 'updatePlexServer',
+  alias: 'updateMediaSource',
   response: z.void(),
 });
 
-export const deletePlexServerEndpoint = makeEndpoint({
+const deleteMediaSourceEndpoint = makeEndpoint({
   method: 'delete',
-  path: '/api/plex-servers/:id',
+  path: '/api/media-sources/:id',
   parameters: parametersBuilder()
     .addPath('id', z.string())
     .addBody(z.null())
     .build(),
-  alias: 'deletePlexServer',
+  alias: 'deleteMediaSource',
   response: z.void(),
 });
 
-export const getXmlTvSettings = makeEndpoint({
+const getXmlTvSettings = makeEndpoint({
   method: 'get',
   path: '/api/xmltv-settings',
   response: XmlTvSettingsSchema,
   alias: 'getXmlTvSettings',
 });
 
-export const updateXmlTvSettings = makeEndpoint({
+const updateXmlTvSettings = makeEndpoint({
   method: 'put',
   path: '/api/xmltv-settings',
   response: XmlTvSettingsSchema,
@@ -70,14 +70,14 @@ export const updateXmlTvSettings = makeEndpoint({
   alias: 'updateXmlTvSettings',
 });
 
-export const getFffmpegSettings = makeEndpoint({
+const getFffmpegSettings = makeEndpoint({
   method: 'get',
   path: '/api/ffmpeg-settings',
   response: FfmpegSettingsSchema,
   alias: 'getFfmpegSettings',
 });
 
-export const updateFfmpegSettings = makeEndpoint({
+const updateFfmpegSettings = makeEndpoint({
   method: 'put',
   path: '/api/ffmpeg-settings',
   response: FfmpegSettingsSchema,
@@ -85,14 +85,14 @@ export const updateFfmpegSettings = makeEndpoint({
   alias: 'updateFfmpegSettings',
 });
 
-export const getHdhrSettings = makeEndpoint({
+const getHdhrSettings = makeEndpoint({
   method: 'get',
   path: '/api/hdhr-settings',
   response: HdhrSettingsSchema,
   alias: 'getHdhrSettings',
 });
 
-export const updateHdhrSettings = makeEndpoint({
+const updateHdhrSettings = makeEndpoint({
   method: 'put',
   path: '/api/hdhr-settings',
   response: HdhrSettingsSchema,
@@ -100,14 +100,14 @@ export const updateHdhrSettings = makeEndpoint({
   alias: 'updateHdhrSettings',
 });
 
-export const getPlexStreamSettings = makeEndpoint({
+const getPlexStreamSettings = makeEndpoint({
   method: 'get',
   path: '/api/plex-settings',
   response: PlexStreamSettingsSchema,
   alias: 'getPlexStreamSettings',
 });
 
-export const updatePlexStreamSettings = makeEndpoint({
+const updatePlexStreamSettings = makeEndpoint({
   method: 'put',
   path: '/api/plex-settings',
   response: PlexStreamSettingsSchema,
@@ -115,14 +115,14 @@ export const updatePlexStreamSettings = makeEndpoint({
   alias: 'updatePlexStreamSettings',
 });
 
-export const getSystemSettings = makeEndpoint({
+const getSystemSettings = makeEndpoint({
   method: 'get',
   path: '/api/system/settings',
   response: SystemSettingsSchema,
   alias: 'getSystemSettings',
 });
 
-export const updateSystemSettings = makeEndpoint({
+const updateSystemSettings = makeEndpoint({
   method: 'put',
   path: '/api/system/settings',
   parameters: parametersBuilder()
@@ -132,10 +132,28 @@ export const updateSystemSettings = makeEndpoint({
   response: SystemSettingsSchema,
 });
 
-export const jellyfinLogin = makeEndpoint({
+const jellyfinLogin = makeEndpoint({
   method: 'post',
   path: '/api/jellyfin/login',
   parameters: parametersBuilder().addBody(JellyfinLoginRequest).build(),
   alias: 'jellyfinUserLogin',
   response: z.object({ accessToken: z.string().optional() }),
 });
+
+export const endpoints = [
+  getMediaSourcesEndpoint,
+  createMediaSourceEndpoint,
+  updateMediaSourceEndpoint,
+  deleteMediaSourceEndpoint,
+  getXmlTvSettings,
+  updateXmlTvSettings,
+  getFffmpegSettings,
+  updateFfmpegSettings,
+  getHdhrSettings,
+  updateHdhrSettings,
+  getPlexStreamSettings,
+  updatePlexStreamSettings,
+  getSystemSettings,
+  updateSystemSettings,
+  jellyfinLogin,
+] as const;

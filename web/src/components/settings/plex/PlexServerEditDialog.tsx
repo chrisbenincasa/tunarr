@@ -1,6 +1,6 @@
 import { RotatingLoopIcon } from '@/components/base/LoadingIcon';
 import { isNonEmptyString, isValidUrl, toggle } from '@/helpers/util';
-import { usePlexBackendStatus } from '@/hooks/plex/usePlexBackendStatus';
+import { useMediaSourceBackendStatus } from '@/hooks/media-sources/useMediaSourceBackendStatus';
 import { useTunarrApi } from '@/hooks/useTunarrApi';
 import {
   VisibilityOff,
@@ -83,12 +83,15 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
   const updatePlexServerMutation = useMutation({
     mutationFn: async (newOrUpdatedServer: PlexServerSettingsForm) => {
       if (isNonEmptyString(newOrUpdatedServer.id)) {
-        await apiClient.updatePlexServer(newOrUpdatedServer, {
-          params: { id: newOrUpdatedServer.id },
-        });
+        await apiClient.updateMediaSource(
+          { ...newOrUpdatedServer, id: newOrUpdatedServer.id },
+          {
+            params: { id: newOrUpdatedServer.id },
+          },
+        );
         return { id: newOrUpdatedServer.id };
       } else {
-        return apiClient.createPlexServer(newOrUpdatedServer);
+        return apiClient.createMediaSource(newOrUpdatedServer);
       }
     },
     onSuccess: async () => {
@@ -144,7 +147,7 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
   ]);
 
   const { data: serverStatus, isLoading: serverStatusLoading } =
-    usePlexBackendStatus(serverStatusDetails, open);
+    useMediaSourceBackendStatus({ ...serverStatusDetails, type: 'plex' }, open);
 
   const onSubmit = (e: FormEvent<HTMLDivElement>) => {
     e.stopPropagation();
@@ -163,6 +166,7 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
       component="form"
       onSubmit={onSubmit}
       keepMounted={false}
+      onClose={() => onClose()}
     >
       <DialogTitle>{title}</DialogTitle>
       <DialogContent sx={{ p: 2 }}>
