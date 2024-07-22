@@ -10,7 +10,7 @@ import {
 import { flatten, isNil, uniqBy } from 'lodash-es';
 import map from 'lodash-es/map';
 import { ProgramDB } from '../dao/programDB';
-import { Plex } from '../external/plex';
+import { PlexApiClient } from '../external/plex/PlexApiClient';
 import { typedProperty } from '../types/path';
 import { flatMapAsyncSeq, wait } from '../util/index.js';
 import { Logger, LoggerFactory } from '../util/logging/LoggerFactory';
@@ -24,10 +24,10 @@ export type EnrichedPlexTerminalMedia = PlexTerminalMedia & {
 export class PlexItemEnumerator {
   #logger: Logger = LoggerFactory.child({ className: PlexItemEnumerator.name });
   #timer = new Timer(this.#logger);
-  #plex: Plex;
+  #plex: PlexApiClient;
   #programDB: ProgramDB;
 
-  constructor(plex: Plex, programDB: ProgramDB) {
+  constructor(plex: PlexApiClient, programDB: ProgramDB) {
     this.#plex = plex;
     this.#programDB = programDB;
   }
@@ -55,7 +55,7 @@ export class PlexItemEnumerator {
       } else if (isPlexDirectory(item)) {
         return [];
       } else {
-        const plexResult = await this.#plex.doGet<PlexChildMediaViewType>(
+        const plexResult = await this.#plex.doGetPath<PlexChildMediaViewType>(
           item.key,
         );
 

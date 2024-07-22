@@ -5,28 +5,14 @@ import { isError, isNil } from 'lodash-es';
 import path from 'path';
 import { pipeline } from 'stream/promises';
 import { z } from 'zod';
-import { MediaSource } from '../dao/entities/MediaSource.js';
-import { Plex } from '../external/plex.js';
+import { MediaSource, MediaSourceType } from '../dao/entities/MediaSource.js';
+import { PlexApiFactory } from '../external/plex/PlexApiFactory.js';
 import { FFMPEGInfo } from '../ffmpeg/ffmpegInfo.js';
 import { serverOptions } from '../globals.js';
 import { GlobalScheduler } from '../services/scheduler.js';
 import { UpdateXmlTvTask } from '../tasks/UpdateXmlTvTask.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { fileExists } from '../util/fsUtil.js';
-import { LoggerFactory } from '../util/logging/LoggerFactory.js';
-import { channelsApi } from './channelsApi.js';
-import { customShowsApiV2 } from './customShowsApi.js';
-import { debugApi } from './debugApi.js';
-import { fillerListsApi } from './fillerListsApi.js';
-import { metadataApiRouter } from './metadataApi.js';
-import { programmingApi } from './programmingApi.js';
-import { tasksApiRouter } from './tasksApi.js';
-import { ffmpegSettingsRouter } from './ffmpegSettingsApi.js';
-import { guideRouter } from './guideApi.js';
-import { hdhrSettingsRouter } from './hdhrSettingsApi.js';
-import { mediaSourceRouter } from './mediaSourceApi.js';
-import { plexSettingsRouter } from './plexSettingsApi.js';
-import { xmlTvSettingsRouter } from './xmltvSettingsApi.js';
 import {
   isEdgeBuild,
   isNonEmptyString,
@@ -34,8 +20,22 @@ import {
   run,
   tunarrBuild,
 } from '../util/index.js';
-import { systemSettingsRouter } from './systemSettingsApi.js';
+import { LoggerFactory } from '../util/logging/LoggerFactory.js';
+import { channelsApi } from './channelsApi.js';
+import { customShowsApiV2 } from './customShowsApi.js';
+import { debugApi } from './debugApi.js';
+import { ffmpegSettingsRouter } from './ffmpegSettingsApi.js';
+import { fillerListsApi } from './fillerListsApi.js';
+import { guideRouter } from './guideApi.js';
+import { hdhrSettingsRouter } from './hdhrSettingsApi.js';
 import { jellyfinApiRouter } from './jellyfinApi.js';
+import { mediaSourceRouter } from './mediaSourceApi.js';
+import { metadataApiRouter } from './metadataApi.js';
+import { plexSettingsRouter } from './plexSettingsApi.js';
+import { programmingApi } from './programmingApi.js';
+import { systemSettingsRouter } from './systemSettingsApi.js';
+import { tasksApiRouter } from './tasksApi.js';
+import { xmlTvSettingsRouter } from './xmltvSettingsApi.js';
 
 export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
   const logger = LoggerFactory.child({ caller: import.meta });
@@ -222,15 +222,15 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
     async (req, res) => {
       const server = await req.entityManager
         .repo(MediaSource)
-        .findOne({ name: req.query.name });
+        .findOne({ name: req.query.name, type: MediaSourceType.Plex });
       if (isNil(server)) {
         return res
           .status(404)
           .send({ error: 'No server found with name: ' + req.query.name });
       }
 
-      const plex = new Plex(server);
-      return res.send(await plex.doGet(req.query.path));
+      const plex = PlexApiFactory().get(server);
+      return res.send(await plex.doGetPath(req.query.path));
     },
   );
 };

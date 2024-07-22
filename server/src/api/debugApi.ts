@@ -123,7 +123,7 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
       }
 
       // TODO use plex server from item.
-      const plexServer = await req.serverCtx.plexServerDB.getAll().then(first);
+      const plexServer = await req.serverCtx.mediaSourceDB.getAll().then(first);
 
       if (isNil(plexServer)) {
         return res.status(404).send('Could not find plex server');

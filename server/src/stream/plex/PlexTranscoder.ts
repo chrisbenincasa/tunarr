@@ -8,8 +8,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { ContentBackedStreamLineupItem } from '../../dao/derived_types/StreamLineup.js';
 import { MediaSource } from '../../dao/entities/MediaSource.js';
 import { serverOptions } from '../../globals.js';
-import { Plex } from '../../external/plex.js';
-import { PlexApiFactory } from '../../external/PlexApiFactory.js';
+import { PlexApiClient } from '../../external/plex/PlexApiClient.js';
+import { PlexApiFactory } from '../../external/plex/PlexApiFactory.js';
 import { StreamContextChannel } from '../types.js';
 import { Maybe } from '../../types/util.js';
 import {
@@ -78,7 +78,7 @@ export class PlexTranscoder {
   private playState: string;
   private mediaHasNoVideo: boolean;
   private albumArt: { path?: string; attempted: boolean };
-  private plex: Plex;
+  private plex: PlexApiClient;
   private directInfo?: PlexItemMetadata;
   private videoIsDirect: boolean = false;
   private cachedItemMetadata: Maybe<PlexItemMetadata>;
@@ -565,7 +565,7 @@ lang=en`;
   }
 
   async getDecisionUnmanaged(directPlay: boolean) {
-    this.decisionJson = await this.plex.doGet<TranscodeDecision>(
+    this.decisionJson = await this.plex.doGetPath<TranscodeDecision>(
       `/video/:/transcode/universal/decision?${this.transcodingArgs}`,
     );
 
@@ -638,7 +638,7 @@ lang=en`;
       return this.cachedItemMetadata;
     }
 
-    this.cachedItemMetadata = await this.plex.doGet<PlexItemMetadata>(
+    this.cachedItemMetadata = await this.plex.doGetPath<PlexItemMetadata>(
       `/library/metadata/${this.ratingKey}`,
     );
     return this.cachedItemMetadata;
@@ -668,7 +668,7 @@ lang=en`;
     this.log('Updating plex status');
     const { path: statusUrl, params } = this.getStatusUrl();
     try {
-      await this.plex.doPost(statusUrl, params);
+      await this.plex.doPost({ url: statusUrl, params });
     } catch (error) {
       this.logger.warn(
         `Problem updating Plex status using status URL ${statusUrl}: `,

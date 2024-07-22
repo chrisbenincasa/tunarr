@@ -5,7 +5,7 @@ import { ChannelDB } from '../dao/channelDb.js';
 import { withDb } from '../dao/dataSource.js';
 import { MediaSource } from '../dao/entities/MediaSource.js';
 import { SettingsDB, defaultXmlTvSettings } from '../dao/settings.js';
-import { Plex } from '../external/plex.js';
+import { PlexApiClient } from '../external/plex/PlexApiClient.js';
 import { globalOptions } from '../globals.js';
 import { ServerContext } from '../serverContext.js';
 import { TVGuideService } from '../services/tvGuideService.js';
@@ -92,7 +92,7 @@ export class UpdateXmlTvTask extends Task<void> {
     });
 
     await mapAsyncSeq(allPlexServers, async (plexServer) => {
-      const plex = new Plex(plexServer);
+      const plex = new PlexApiClient(plexServer);
       let dvrs: PlexDvr[] = [];
 
       if (!plexServer.sendGuideUpdates && !plexServer.sendChannelUpdates) {

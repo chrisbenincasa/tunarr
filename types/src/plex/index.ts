@@ -1,4 +1,5 @@
 import z from 'zod';
+import { FindChild } from '../util.js';
 
 export * from './dvr.js';
 
@@ -757,21 +758,12 @@ export type PlexMetadataType<
   T extends { Metadata: M[] } = { Metadata: M[] },
 > = T['Metadata'][0];
 
-type FindChild0<Target, Arr extends unknown[] = []> = Arr extends [
-  [infer Head, infer Child],
-  ...infer Tail,
-]
-  ? Head extends Target
-    ? Child
-    : FindChild0<Target, Tail>
-  : never;
-
 export type PlexChildMediaType<Target extends PlexMedia> =
   Target extends PlexTerminalMedia
     ? Target
-    : FindChild0<Target, PlexMediaToChildType>;
+    : FindChild<Target, PlexMediaToChildType>;
 
-export type PlexChildMediaApiType<Target extends PlexMedia> = FindChild0<
+export type PlexChildMediaApiType<Target extends PlexMedia> = FindChild<
   Target,
   PlexMediaApiChildType
 >;

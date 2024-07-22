@@ -141,6 +141,10 @@ export const UpdateMediaSourceRequestSchema = z.discriminatedUnion('type', [
   JellyfinServerSettingsSchema,
 ]);
 
+export type UpdateMediaSourceRequest = z.infer<
+  typeof UpdateMediaSourceRequestSchema
+>;
+
 export const UpdatePlexServerRequestSchema = PlexServerSettingsSchema.partial({
   sendChannelUpdates: true,
   sendGuideUpdates: true,

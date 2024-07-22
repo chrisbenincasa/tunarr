@@ -23,7 +23,7 @@ import {
   ProgramGroupingType,
 } from '../../dao/entities/ProgramGrouping';
 import { ProgramGroupingExternalId } from '../../dao/entities/ProgramGroupingExternalId';
-import { PlexApiFactory } from '../../external/PlexApiFactory';
+import { PlexApiFactory } from '../../external/plex/PlexApiFactory';
 import { LoggerFactory } from '../../util/logging/LoggerFactory';
 import Fixer from './fixer';
 import { ProgramExternalIdType } from '../../dao/custom_types/ProgramExternalIdType';
@@ -78,7 +78,7 @@ export class BackfillProgramGroupings extends Fixer {
       }
 
       const plex = PlexApiFactory().get(server);
-      const plexResult = await plex.doGet<PlexLibraryShows>(
+      const plexResult = await plex.doGetPath<PlexLibraryShows>(
         '/library/metadata/' + grandparentExternalKey,
       );
 
@@ -148,7 +148,7 @@ export class BackfillProgramGroupings extends Fixer {
       }
 
       const plex = PlexApiFactory().get(server);
-      const plexResult = await plex.doGet<PlexSeasonView>(
+      const plexResult = await plex.doGetPath<PlexSeasonView>(
         '/library/metadata/' + parentExternalKey,
       );
 
@@ -246,7 +246,7 @@ export class BackfillProgramGroupings extends Fixer {
       }
 
       const plex = PlexApiFactory().get(server);
-      const plexResult = await plex.doGet<PlexSeasonView>(
+      const plexResult = await plex.doGetPath<PlexSeasonView>(
         '/library/metadata/' + ref.externalKey,
       );
 

@@ -30,7 +30,7 @@ import {
   round,
   values,
 } from 'lodash-es';
-import { PlexApiFactory } from '../external/PlexApiFactory.js';
+import { PlexApiFactory } from '../external/plex/PlexApiFactory.js';
 import {
   flipMap,
   groupByUniqFunc,
@@ -397,7 +397,7 @@ export class LegacyProgramGroupingCalculator {
     const newGroupings = await mapReduceAsyncSeq(
       reject(allIds, (id) => has(existingGroupingsByPlexId, id) || isEmpty(id)),
       async (id) => {
-        const metadata = await plexApi.doGet<
+        const metadata = await plexApi.doGetPath<
           | PlexLibraryShows
           | PlexSeasonView
           | PlexLibraryMusic

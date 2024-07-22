@@ -2,14 +2,14 @@ import {
   BaseErrorSchema,
   BasicIdParamSchema,
   InsertMediaSourceRequestSchema,
-  UpdatePlexServerRequestSchema,
+  UpdateMediaSourceRequestSchema,
 } from '@tunarr/types/api';
 import { MediaSourceSettingsSchema } from '@tunarr/types/schemas';
 import { isError, isNil, isObject } from 'lodash-es';
 import z from 'zod';
 import { MediaSource, MediaSourceType } from '../dao/entities/MediaSource.js';
-import { Plex } from '../external/plex.js';
-import { PlexApiFactory } from '../external/PlexApiFactory.js';
+import { PlexApiClient } from '../external/plex/PlexApiClient.js';
+import { PlexApiFactory } from '../external/plex/PlexApiFactory.js';
 import { GlobalScheduler } from '../services/scheduler.js';
 import { UpdateXmlTvTask } from '../tasks/UpdateXmlTvTask.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
@@ -35,7 +35,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
     },
     async (req, res) => {
       try {
-        const servers = await req.serverCtx.plexServerDB.getAll();
+        const servers = await req.serverCtx.mediaSourceDB.getAll();
         const dtos = servers.map((server) => server.toDTO());
         return res.send(dtos);
       } catch (err) {
@@ -61,31 +61,41 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
     },
     async (req, res) => {
       try {
-        const server = await req.serverCtx.plexServerDB.getById(req.params.id);
+        const server = await req.serverCtx.mediaSourceDB.getById(req.params.id);
 
         if (isNil(server)) {
           return res.status(404).send();
         }
 
-        let status: boolean = false;
+        let healthyPromise: Promise<boolean>;
         switch (server.type) {
           case MediaSourceType.Plex: {
-            const plex = new Plex(server);
-            status = await Promise.race([
-              (async () => {
-                return await plex.checkServerStatus();
-              })(),
-              new Promise<false>((resolve) => {
-                setTimeout(() => {
-                  resolve(false);
-                }, 60000);
-              }),
-            ]);
+            const plex = new PlexApiClient(server);
+            healthyPromise = plex.checkServerStatus();
             break;
           }
-          case MediaSourceType.Jellyfin:
-            return res.status(405).send();
+          case MediaSourceType.Jellyfin: {
+            const jellyfin = new JellyfinApiClient({
+              uri: server.uri,
+              apiKey: server.accessToken,
+              name: server.name,
+            });
+            healthyPromise = jellyfin
+              .getSystemInfo()
+              .then(() => true)
+              .catch(() => false);
+            break;
+          }
         }
+
+        const status = await Promise.race([
+          healthyPromise,
+          new Promise<false>((resolve) => {
+            setTimeout(() => {
+              resolve(false);
+            }, 60000);
+          }),
+        ]);
 
         return res.send({
           healthy: status,
@@ -118,37 +128,37 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
       },
     },
     async (req, res) => {
-      let healthy = false;
-
+      let healthyPromise: Promise<boolean>;
       switch (req.body.type) {
-        case 'plex':
-          try {
-            const plex = new Plex({
-              ...req.body,
-              name: req.body.name ?? 'unknown',
-            });
+        case 'plex': {
+          const plex = new PlexApiClient({
+            ...req.body,
+            name: req.body.name ?? 'unknown',
+          });
 
-            healthy = await Promise.race([
-              plex.checkServerStatus(),
-              new Promise<false>((resolve) => {
-                setTimeout(() => {
-                  resolve(false);
-                }, 60000);
-              }),
-            ]);
-          } catch (err) {
-            logger.error('%O', err);
-            return res.status(500).send();
-          }
+          healthyPromise = plex.checkServerStatus();
           break;
-        case 'jellyfin':
-          await JellyfinApiClient.login(
-            { uri: req.body.uri, type: 'jellyfin', name: req.body.name },
-            req.body.username ?? '',
-            req.body.accessToken,
-          );
+        }
+        case 'jellyfin': {
+          const jellyfin = new JellyfinApiClient({
+            uri: req.body.uri,
+            name: req.body.name ?? 'unknown',
+            apiKey: req.body.accessToken,
+          });
+
+          healthyPromise = jellyfin.ping();
           break;
+        }
       }
+
+      const healthy = await Promise.race([
+        healthyPromise,
+        new Promise<false>((resolve) => {
+          setTimeout(() => {
+            resolve(false);
+          }, 60000);
+        }),
+      ]);
 
       return res.send({
         healthy,
@@ -169,15 +179,14 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
     },
     async (req, res) => {
       try {
-        const { deletedServer } = await req.serverCtx.plexServerDB.deleteServer(
-          req.params.id,
-        );
+        const { deletedServer } =
+          await req.serverCtx.mediaSourceDB.deleteMediaSource(req.params.id);
 
         // Are these useful? What do they even do?
         req.serverCtx.eventService.push({
           type: 'settings-update',
-          message: `Plex server ${deletedServer.name} removed.`,
-          module: 'plex-server',
+          message: `Media source ${deletedServer.name} removed.`,
+          module: 'media-source',
           detail: {
             serverId: req.params.id,
             serverName: deletedServer.name,
@@ -200,8 +209,8 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
         logger.error('Error %O', err);
         req.serverCtx.eventService.push({
           type: 'settings-update',
-          message: 'Error deleting plex server.',
-          module: 'plex-server',
+          message: 'Error deleting media-source.',
+          module: 'media-source',
           detail: {
             action: 'delete',
             serverId: req.params.id,
@@ -220,7 +229,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
     {
       schema: {
         params: BasicIdParamSchema,
-        body: UpdatePlexServerRequestSchema,
+        body: UpdateMediaSourceRequestSchema,
         response: {
           200: z.void(),
           500: z.void(),
@@ -229,7 +238,9 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
     },
     async (req, res) => {
       try {
-        const report = await req.serverCtx.plexServerDB.updateServer(req.body);
+        const report = await req.serverCtx.mediaSourceDB.updateMediaSource(
+          req.body,
+        );
         let modifiedPrograms = 0;
         let destroyedPrograms = 0;
         report.forEach((r) => {
@@ -240,8 +251,8 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
         });
         req.serverCtx.eventService.push({
           type: 'settings-update',
-          message: `Plex server ${req.body.name} updated. ${modifiedPrograms} programs modified, ${destroyedPrograms} programs deleted`,
-          module: 'plex-server',
+          message: `Media source ${req.body.name} updated. ${modifiedPrograms} programs modified, ${destroyedPrograms} programs deleted`,
+          module: 'media-source',
           detail: {
             serverName: req.body.name,
             action: 'update',
@@ -251,11 +262,11 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
 
         return res.status(200).send();
       } catch (err) {
-        logger.error('Could not update plex server. ', err);
+        logger.error(err, 'Could not update plex server. ');
         req.serverCtx.eventService.push({
           type: 'settings-update',
-          message: 'Error updating plex server.',
-          module: 'plex-server',
+          message: 'Error updating media source.',
+          module: 'media-source',
           detail: {
             action: 'update',
             serverName: firstDefined(req, 'body', 'name'),
@@ -284,13 +295,13 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
     },
     async (req, res) => {
       try {
-        const newServerId = await req.serverCtx.plexServerDB.addServer(
+        const newServerId = await req.serverCtx.mediaSourceDB.addMediaSource(
           req.body,
         );
         req.serverCtx.eventService.push({
           type: 'settings-update',
-          message: `Plex server ${req.body.name} added.`,
-          module: 'plex-server',
+          message: `Media source "${req.body.name}" added.`,
+          module: 'media-source',
           detail: {
             serverId: newServerId,
             serverName: req.body.name,
@@ -300,19 +311,19 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
         });
         return res.status(201).send({ id: newServerId });
       } catch (err) {
-        logger.error('Could not add plex server.', err);
+        logger.error(err, 'Could not add media source');
         req.serverCtx.eventService.push({
           type: 'settings-update',
-          message: 'Error adding plex server.',
+          message: 'Error adding media source.',
           module: 'plex-server',
           detail: {
             action: 'add',
-            serverName: firstDefined(req, 'body', 'name'),
+            serverName: req.body.name,
             error: isError(err) ? firstDefined(err, 'message') : 'unknown',
           },
           level: 'error',
         });
-        return res.status(400).send('Could not add plex server.');
+        return res.status(500).send('Could not add media source.');
       }
     },
   );

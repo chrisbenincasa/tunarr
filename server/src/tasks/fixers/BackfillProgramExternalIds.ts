@@ -13,8 +13,8 @@ import { getEm } from '../../dao/dataSource';
 import { MediaSource } from '../../dao/entities/MediaSource.js';
 import { Program } from '../../dao/entities/Program';
 import { ProgramExternalId } from '../../dao/entities/ProgramExternalId.js';
-import { Plex, isPlexQueryError } from '../../external/plex.js';
-import { PlexApiFactory } from '../../external/PlexApiFactory';
+import { PlexApiClient } from '../../external/plex/PlexApiClient.js';
+import { PlexApiFactory } from '../../external/plex/PlexApiFactory';
 import { Maybe } from '../../types/util.js';
 import { asyncPool } from '../../util/asyncPool.js';
 import { attempt, attemptSync, groupByUniq, wait } from '../../util/index.js';
@@ -22,6 +22,7 @@ import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
 import Fixer from './fixer';
 import { PlexTerminalMedia } from '@tunarr/types/plex';
 import { upsertProgramExternalIds_deprecated } from '../../dao/programExternalIdHelpers';
+import { isQueryError } from '../../external/BaseApiClient.js';
 
 export class BackfillProgramExternalIds extends Fixer {
   #logger = LoggerFactory.child({ caller: import.meta });
@@ -53,7 +54,7 @@ export class BackfillProgramExternalIds extends Fixer {
       cursor.totalCount,
     );
 
-    const plexConnections: Record<string, Plex> = {};
+    const plexConnections: Record<string, PlexApiClient> = {};
     while (cursor.length > 0) {
       await wait(50);
       // process
@@ -123,7 +124,7 @@ export class BackfillProgramExternalIds extends Fixer {
     }
   }
 
-  private async handleProgram(program: Program, plex: Maybe<Plex>) {
+  private async handleProgram(program: Program, plex: Maybe<PlexApiClient>) {
     if (isUndefined(plex)) {
       throw new Error(
         'No Plex server connection found for server ' +
@@ -133,7 +134,7 @@ export class BackfillProgramExternalIds extends Fixer {
 
     const metadataResult = await plex.getItemMetadata(program.externalKey);
 
-    if (isPlexQueryError(metadataResult)) {
+    if (isQueryError(metadataResult)) {
       throw new Error(
         `Could not retrieve metadata for program ID ${program.uuid}, rating key = ${program.externalKey}`,
       );

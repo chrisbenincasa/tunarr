@@ -1,6 +1,6 @@
 import { RecurrenceRule } from 'node-schedule';
 import { MediaSource } from '../dao/entities/MediaSource';
-import { PlexApiFactory } from '../external/PlexApiFactory';
+import { PlexApiFactory } from '../external/plex/PlexApiFactory';
 import { run } from '../util';
 import { ScheduledTask } from './ScheduledTask';
 import { Task } from './Task';
@@ -119,7 +119,7 @@ class UpdatePlexPlayStatusTask extends Task {
     };
 
     try {
-      await plex.doPost('/:/timeline', params);
+      await plex.doPost({ url: '/:/timeline', params });
     } catch (error) {
       this.logger.warn(
         error,

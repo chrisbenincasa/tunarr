@@ -31,6 +31,7 @@ import { isEmpty } from 'lodash-es';
 import { z } from 'zod';
 import { getFfmpegInfoEndpoint } from './ffmpegApi.ts';
 import { endpoints as settingsEndpoints } from './settingsApi.ts';
+import { jellyfinEndpoints } from './jellyfinApi.ts';
 
 export const api = makeApi([
   {
@@ -388,6 +389,7 @@ export const api = makeApi([
     }),
   },
   ...settingsEndpoints,
+  ...jellyfinEndpoints,
 ]);
 
 export type ApiClient = ZodiosInstance<typeof api>;

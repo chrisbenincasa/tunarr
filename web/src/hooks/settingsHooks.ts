@@ -15,7 +15,7 @@ export const useFfmpegSettings = () =>
     queryFn: (apiClient) => apiClient.getFfmpegSettings(),
   });
 
-export const usePlexServerSettings = () =>
+export const useMediaSources = () =>
   useApiSuspenseQuery({
     queryKey: ['settings', 'media-sources'],
     queryFn: (apiClient) => apiClient.getMediaSources(),

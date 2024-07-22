@@ -1,5 +1,5 @@
 import { Entity, Enum, Property, Unique } from '@mikro-orm/core';
-import { PlexServerSettings as PlexServerSettingsDTO } from '@tunarr/types';
+import { MediaSourceSettings } from '@tunarr/types';
 import { BaseEntity } from './BaseEntity.js';
 
 export enum MediaSourceType {
@@ -35,7 +35,7 @@ export class MediaSource extends BaseEntity {
   @Property({ nullable: true })
   clientIdentifier?: string;
 
-  toDTO(): PlexServerSettingsDTO {
+  toDTO(): MediaSourceSettings {
     return {
       id: this.uuid,
       name: this.name,
@@ -45,7 +45,16 @@ export class MediaSource extends BaseEntity {
       sendGuideUpdates: this.sendGuideUpdates,
       index: this.index,
       clientIdentifier: this.clientIdentifier,
-      type: 'plex',
+      type: this.type,
     };
+  }
+}
+
+export function mediaSourceTypeFromApi(f: MediaSourceSettings['type']) {
+  switch (f) {
+    case 'plex':
+      return MediaSourceType.Plex;
+    case 'jellyfin':
+      return MediaSourceType.Jellyfin;
   }
 }

@@ -34,7 +34,7 @@ import { binarySearchRange } from '../util/binarySearch.js';
 import { isNonEmptyString, zipWithIndex } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { STREAM_CHANNEL_CONTEXT_KEYS, StreamContextChannel } from './types.js';
-import { FillerDB } from '../dao/fillerDb.js';
+import { FillerDB } from '../dao/fillerDB.js';
 import { ChannelDB } from '../dao/channelDb.js';
 
 const SLACK = constants.SLACK;

@@ -21,7 +21,6 @@ export const DebugJellyfinApiRouter: RouterPluginAsyncCallback = async (
       const client = new JellyfinApiClient({
         uri: 'http://192.168.0.118:8096',
         apiKey: '2ff5473bf66c407f8c60baf39120d8e7',
-        type: 'jellyfin',
       });
 
       await res.send(await client.getUserLibraries(req.query.userId));
@@ -47,7 +46,6 @@ export const DebugJellyfinApiRouter: RouterPluginAsyncCallback = async (
       const client = new JellyfinApiClient({
         uri: 'http://192.168.0.118:8096',
         apiKey: '2ff5473bf66c407f8c60baf39120d8e7',
-        type: 'jellyfin',
       });
 
       let pageParams: Nilable<{ offset: number; limit: number }> = null;
