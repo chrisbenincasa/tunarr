@@ -7,7 +7,7 @@ import {
   ProgramSourceType,
   programSourceTypeFromString,
 } from '../dao/custom_types/ProgramSourceType';
-import { PlexApiFactory } from '../external/PlexApiFactory';
+import { PlexApiFactory } from '../external/plex/PlexApiFactory';
 import { RouterPluginAsyncCallback } from '../types/serverType';
 
 const externalIdSchema = z

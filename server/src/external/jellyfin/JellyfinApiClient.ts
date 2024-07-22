@@ -1,15 +1,16 @@
-import axios, { AxiosInstance } from 'axios';
-import { Logger, LoggerFactory } from '../../util/logging/LoggerFactory';
-import { configureAxiosLogging } from '../../util/axios';
+import constants from '@tunarr/shared/constants';
 import {
+  JellyfinAuthenticationResult,
   JellyfinLibraryItemsResponse,
   JellyfinLibraryResponse,
-  JellyfinAuthenticationResult,
+  JellyfinSystemInfo,
 } from '@tunarr/types/jellyfin';
-import { union } from 'lodash-es';
-import { Nilable } from '../../types/util';
+import axios, { AxiosRequestConfig } from 'axios';
+import { isEmpty, union } from 'lodash-es';
 import { v4 } from 'uuid';
-import constants from '@tunarr/shared/constants';
+import { Maybe, Nilable } from '../../types/util';
+import { LoggerFactory } from '../../util/logging/LoggerFactory';
+import { BaseApiClient, QueryErrorResult } from '../BaseApiClient.js';
 
 type RemoteMediaSourceOptions = {
   name?: string;
@@ -34,33 +35,20 @@ const RequiredLibraryFields = [
   'MediaStreams',
 ];
 
-export class JellyfinApiClient {
-  private logger: Logger;
-  private axiosInstance: AxiosInstance;
-
-  constructor(options: RemoteMediaSourceOptions) {
-    this.logger = LoggerFactory.child({
-      className: JellyfinApiClient.name,
-      serverName: options.name,
-    });
-
-    const uri = options.uri.endsWith('/')
-      ? options.uri.slice(0, options.uri.length - 1)
-      : options.uri;
-
-    this.axiosInstance = axios.create({
-      baseURL: uri,
-      headers: {
+export class JellyfinApiClient extends BaseApiClient {
+  constructor(private options: Omit<RemoteMediaSourceOptions, 'type'>) {
+    super({
+      name: options.name,
+      url: options.uri,
+      extraHeaders: {
         Accept: 'application/json',
         'X-Emby-Token': options.apiKey,
       },
     });
-
-    configureAxiosLogging(this.axiosInstance, this.logger);
   }
 
   static async login(
-    server: Omit<RemoteMediaSourceOptions, 'apiKey'>,
+    server: Omit<RemoteMediaSourceOptions, 'apiKey' | 'type'>,
     username: string,
     password: string,
   ) {
@@ -89,16 +77,28 @@ export class JellyfinApiClient {
     }
   }
 
-  async getUserLibraries(userId: string) {
-    const response = await this.axiosInstance.request({
-      method: 'get',
-      url: '/Library/VirtualFolders',
-      params: {
-        userId,
-      },
-    });
+  async ping() {
+    try {
+      await this.doGet({
+        url: '/System/Ping',
+      });
+      return true;
+    } catch (e) {
+      this.logger.error(e);
+      return false;
+    }
+  }
 
-    return await JellyfinLibraryResponse.parseAsync(response.data);
+  async getSystemInfo() {
+    return this.doTypeCheckedGet('/System/Info', JellyfinSystemInfo);
+  }
+
+  async getUserLibraries(userId?: string) {
+    return this.doTypeCheckedGet(
+      '/Library/VirtualFolders',
+      JellyfinLibraryResponse,
+      { params: { userId } },
+    );
   }
 
   async getLibrary(
@@ -107,14 +107,11 @@ export class JellyfinApiClient {
     extraFields: string[] = [],
     pageParams: Nilable<{ offset: number; limit: number }> = null,
   ) {
-    const allFields = union(extraFields, RequiredLibraryFields);
-    const response = await this.axiosInstance.request({
-      method: 'get',
-      url: '/Items',
+    return this.doTypeCheckedGet('/Items', JellyfinLibraryItemsResponse, {
       params: {
         userId,
         parentId: libraryId,
-        fields: allFields.join(','),
+        fields: union(extraFields, RequiredLibraryFields).join(','),
         startIndex: pageParams?.offset,
         limit: pageParams?.limit,
         // These will be configurable eventually
@@ -122,7 +119,17 @@ export class JellyfinApiClient {
         sortBy: 'SortName',
       },
     });
+  }
 
-    return await JellyfinLibraryItemsResponse.parseAsync(response.data);
+  protected override preRequestValidate(
+    req: AxiosRequestConfig,
+  ): Maybe<QueryErrorResult> {
+    if (isEmpty(this.options.apiKey)) {
+      return this.makeErrorResult(
+        'no_access_token',
+        'No Plex token provided. Please use the SignIn method or provide a X-Plex-Token in the Plex constructor.',
+      );
+    }
+    return super.preRequestValidate(req);
   }
 }

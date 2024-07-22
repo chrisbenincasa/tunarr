@@ -1,4 +1,3 @@
-import { PlexServerSettings } from '@tunarr/types';
 import { PlexFilter, PlexSort } from '@tunarr/types/api';
 import {
   PlexLibrarySection,
@@ -15,9 +14,11 @@ import {
 import { forSelectedMediaType, groupSelectedMedia } from '../../helpers/util';
 import { SelectedLibrary, SelectedMedia } from './store';
 import { forPlexMedia } from '@tunarr/shared/util';
+import { Maybe } from '@/types/util.ts';
+import { MediaSourceSettings } from '@tunarr/types';
 
 export const setProgrammingListingServer = (
-  server: PlexServerSettings | undefined,
+  server: Maybe<MediaSourceSettings>,
 ) =>
   useStore.setState((state) => {
     state.currentServer = server;

@@ -53,6 +53,7 @@ const emptyDefaults: PlexServerSettingsForm = {
   sendChannelUpdates: false,
   sendGuideUpdates: false,
   index: 0,
+  type: 'plex',
 };
 
 export function PlexServerEditDialog({ open, onClose, server }: Props) {
@@ -138,13 +139,7 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
     });
 
     return () => sub.unsubscribe();
-  }, [
-    watch,
-    updateServerStatusDetails,
-    serverStatusDetails,
-    server?.id,
-    isDirty,
-  ]);
+  }, [watch, updateServerStatusDetails, server?.id, isDirty]);
 
   const { data: serverStatus, isLoading: serverStatusLoading } =
     useMediaSourceBackendStatus({ ...serverStatusDetails, type: 'plex' }, open);

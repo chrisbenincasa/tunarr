@@ -31,7 +31,7 @@ import {
   sortBy,
 } from 'lodash-es';
 import path from 'path';
-import { PlexApiFactory } from '../../external/PlexApiFactory.js';
+import { PlexApiFactory } from '../../external/plex/PlexApiFactory.js';
 import { globalOptions } from '../../globals.js';
 import { serverContext } from '../../serverContext.js';
 import { GlobalScheduler } from '../../services/scheduler.js';

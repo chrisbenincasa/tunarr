@@ -41,7 +41,7 @@ import {
   TypedController,
 } from '@/components/util/TypedController.tsx';
 import {
-  usePlexServerSettings,
+  useMediaSources,
   usePlexStreamSettings,
 } from '@/hooks/settingsHooks.ts';
 import { useTunarrApi } from '@/hooks/useTunarrApi.ts';
@@ -80,7 +80,7 @@ export default function PlexSettingsPage() {
     data: servers,
     isPending: serversPending,
     error: serversError,
-  } = usePlexServerSettings();
+  } = useMediaSources();
 
   const { data: streamSettings, error: streamsError } = usePlexStreamSettings();
 

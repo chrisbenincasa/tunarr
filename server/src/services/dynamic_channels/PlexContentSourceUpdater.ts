@@ -9,7 +9,7 @@ import { EntityManager } from '../../dao/dataSource.js';
 import { Channel } from '../../dao/entities/Channel.js';
 import { MediaSource } from '../../dao/entities/MediaSource.js';
 import { ProgramDB } from '../../dao/programDB.js';
-import { Plex } from '../../external/plex.js';
+import { PlexApiClient } from '../../external/plex/PlexApiClient.js';
 import {
   EnrichedPlexTerminalMedia,
   PlexItemEnumerator,
@@ -26,7 +26,7 @@ export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicConten
     className: PlexContentSourceUpdater.name,
   });
   #timer = new Timer(this.#logger);
-  #plex: Plex;
+  #plex: PlexApiClient;
   #channelDB: ChannelDB;
 
   constructor(
@@ -45,7 +45,7 @@ export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicConten
       ],
     });
 
-    this.#plex = new Plex(server);
+    this.#plex = new PlexApiClient(server);
   }
 
   protected async run() {
@@ -53,7 +53,7 @@ export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicConten
 
     // TODO page through the results
     const plexResult = await this.#timer.timeAsync('plex search', () =>
-      this.#plex.doGet<PlexLibraryListing>(
+      this.#plex.doGetPath<PlexLibraryListing>(
         `/library/sections/${this.config.plexLibraryKey}/all?${filter.join(
           '&',
         )}`,

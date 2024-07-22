@@ -18,12 +18,8 @@ import {
   trimEnd,
 } from 'lodash-es';
 import { MediaSource } from '../../dao/entities/MediaSource';
-import {
-  Plex,
-  isPlexQueryError,
-  isPlexQuerySuccess,
-} from '../../external/plex';
-import { PlexApiFactory } from '../../external/PlexApiFactory';
+import { PlexApiClient } from '../../external/plex/PlexApiClient';
+import { PlexApiFactory } from '../../external/plex/PlexApiFactory';
 import { Nullable } from '../../types/util';
 import { Logger, LoggerFactory } from '../../util/logging/LoggerFactory';
 import { PlexStream, StreamDetails } from './PlexTranscoder';
@@ -33,6 +29,7 @@ import { SettingsDB } from '../../dao/settings.js';
 import { makeLocalUrl } from '../../util/serverUtil.js';
 import { ProgramDB } from '../../dao/programDB';
 import { ProgramExternalIdType } from '../../dao/custom_types/ProgramExternalIdType';
+import { isQueryError, isQuerySuccess } from '../../external/BaseApiClient.js';
 
 // The minimum fields we need to get stream details about an item
 type PlexItemStreamDetailsQuery = Pick<
@@ -48,7 +45,7 @@ type PlexItemStreamDetailsQuery = Pick<
  */
 export class PlexStreamDetails {
   private logger: Logger;
-  private plex: Plex;
+  private plex: PlexApiClient;
 
   constructor(
     private server: MediaSource,
@@ -81,7 +78,7 @@ export class PlexStreamDetails {
       item.externalKey,
     );
 
-    if (isPlexQueryError(itemMetadataResult)) {
+    if (isQueryError(itemMetadataResult)) {
       if (itemMetadataResult.code === 'not_found') {
         this.logger.debug(
           'Could not find item %s in Plex. Rating key may have changed. Attempting to update.',
@@ -105,7 +102,7 @@ export class PlexStreamDetails {
             },
           );
 
-          if (isPlexQuerySuccess(byGuidResult)) {
+          if (isQuerySuccess(byGuidResult)) {
             if (byGuidResult.data.MediaContainer.size > 0) {
               this.logger.debug(
                 'Found %d matching items in library. Using the first',

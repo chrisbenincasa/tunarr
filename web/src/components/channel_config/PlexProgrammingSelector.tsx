@@ -55,8 +55,8 @@ import {
   isNewModalAbove,
 } from '../../helpers/inlineModalUtil';
 import { isNonEmptyString, toggle } from '../../helpers/util';
-import { usePlex } from '../../hooks/plex/usePlex.ts';
-import { usePlexServerSettings } from '../../hooks/settingsHooks';
+import { usePlexLibraries } from '../../hooks/plex/usePlex.ts';
+import { useMediaSources } from '../../hooks/settingsHooks';
 import useStore from '../../store';
 import { addKnownMediaForServer } from '../../store/programmingSelector/actions';
 import { setProgrammingSelectorViewState } from '../../store/themeEditor/actions';
@@ -93,8 +93,10 @@ enum TabValues {
 }
 
 export default function PlexProgrammingSelector() {
-  const { data: plexServers } = usePlexServerSettings();
-  const selectedServer = useStore((s) => s.currentServer);
+  const { data: plexServers } = useMediaSources();
+  const selectedServer = useStore((s) =>
+    s.currentServer?.type === 'plex' ? s.currentServer : undefined,
+  );
   const selectedLibrary = useStore((s) =>
     s.currentLibrary?.type === 'plex' ? s.currentLibrary : null,
   );
@@ -208,10 +210,9 @@ export default function PlexProgrammingSelector() {
     [modalIndex],
   );
 
-  const { data: directoryChildren } = usePlex(
+  const { data: directoryChildren } = usePlexLibraries(
     selectedServer?.name ?? '',
-    '/library/sections',
-    !isUndefined(selectedServer),
+    selectedServer?.type === 'plex',
   );
 
   const setViewType = (view: ProgramSelectorViewType) => {

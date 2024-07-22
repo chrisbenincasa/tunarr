@@ -28,13 +28,14 @@ import {
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { JellyfinServerSettings, PlexServerSettings } from '@tunarr/types';
-import { isEmpty, isEqual, isNull, isUndefined } from 'lodash-es';
+import { isEmpty, isUndefined } from 'lodash-es';
 import { FormEvent, useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { MarkOptional } from 'ts-essentials';
-import { useDebounceValue } from 'usehooks-ts';
-import { useJellyinLogin } from '@/hooks/jellyfin/useJellyfinLogin.ts';
+import { useDebounceCallback, useDebounceValue } from 'usehooks-ts';
 import { useMediaSourceBackendStatus } from '@/hooks/media-sources/useMediaSourceBackendStatus';
+import { jellyfinLogin } from '@/hooks/jellyfin/useJellyfinLogin.ts';
+import { useSnackbar } from 'notistack';
 
 type Props = {
   open: boolean;
@@ -72,6 +73,7 @@ const emptyDefaults: JellyfinServerSettingsForm = {
 export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
   const apiClient = useTunarrApi();
   const queryClient = useQueryClient();
+  const snackbar = useSnackbar();
 
   const [showAccessToken, setShowAccessToken] = useState(false);
 
@@ -87,46 +89,22 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
     control,
     watch,
     reset,
-    formState: { isDirty, isValid, defaultValues, touchedFields, errors },
+    formState: { isDirty, isValid, defaultValues, errors },
     handleSubmit,
-    setValue,
-    getValues,
     setError,
     clearErrors,
+    getValues,
   } = useForm<JellyfinServerSettingsForm>({
-    // mode: 'onChange',
+    mode: 'onChange',
     defaultValues: server ?? emptyDefaults,
   });
 
-  const [username, password, accessToken] = watch([
-    'username',
-    'password',
-    'accessToken',
-  ]);
-
-  useEffect(() => {
-    const sub = watch((value, { name }) => {
-      if (
-        name !== 'accessToken' &&
-        name !== 'username' &&
-        name !== 'password'
-      ) {
-        return;
-      }
-
-      if (
-        isNonEmptyString(value.accessToken) ||
-        (isNonEmptyString(value.username) && isNonEmptyString(value.password))
-      ) {
-        clearErrors('root.auth');
-      } else {
-        setError('root.auth', { message: 'No' });
-      }
-    });
-    return () => sub.unsubscribe();
-  }, [watch, setError, clearErrors]);
-
-  const accessTokenTouched = touchedFields.accessToken ?? false;
+  // These are updated in a watch callback, so we debounce them
+  // along with the details we use to check server status. Otherwise
+  // setting the error will cause us to check server status on every
+  // keystroke due to re-renders
+  const debounceSetError = useDebounceCallback(setError);
+  const debounceClearError = useDebounceCallback(clearErrors);
 
   const updateSourceMutation = useMutation({
     mutationFn: async (newOrUpdatedServer: JellyfinServerSettingsForm) => {
@@ -150,17 +128,56 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
     },
   });
 
-  const onSubmit = (e: FormEvent<HTMLButtonElement>) => {
+  // const {
+  //   data: derivedAccessToken,
+  //   isLoading: derivedAccessTokenLoading,
+  //   error: derivedAccessTokenError,
+  //   refetch: refetchAccessToken,
+  // } = useJellyinLogin(serverStatusDetails, false /* TODO is this right */);
+
+  const showErrorSnack = (e: unknown) => {
+    snackbar.enqueueSnackbar({
+      variant: 'error',
+      message:
+        'Error saving new Jellyfin server. See browser console and server logs for details',
+    });
+    console.error(e);
+  };
+
+  const onSubmit = async (e: FormEvent<HTMLButtonElement>) => {
     e.stopPropagation();
 
-    if (isNonEmptyString(accessToken)) {
-    } else if (isNonEmptyString(username) && isNonEmptyString(password)) {
-    }
+    const { accessToken, username, password, uri } = getValues();
 
-    void handleSubmit(
-      (data) => updateSourceMutation.mutate(data),
-      console.error,
-    )(e);
+    if (isNonEmptyString(accessToken)) {
+      void handleSubmit(
+        (data) => updateSourceMutation.mutate(data),
+        showErrorSnack,
+      )(e);
+    } else if (isNonEmptyString(username) && isNonEmptyString(password)) {
+      try {
+        const result = await jellyfinLogin(apiClient, {
+          username,
+          password,
+          uri,
+        });
+
+        if (isNonEmptyString(result.accessToken)) {
+          void handleSubmit(
+            (data) =>
+              updateSourceMutation.mutate({
+                ...data,
+                accessToken: result.accessToken!,
+              }),
+            showErrorSnack,
+          )(e);
+        } else {
+          // Pop snackbar
+        }
+      } catch (e) {
+        showErrorSnack(e);
+      }
+    }
   };
 
   const [showPassword, setShowPassword] = useState(false);
@@ -170,15 +187,11 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
       id: server?.id && !isDirty ? server.id : undefined,
       accessToken: defaultValues?.accessToken ?? '',
       uri: defaultValues?.uri ?? '',
-      username: defaultValues?.username ?? '',
-      password: defaultValues?.password ?? '',
-      type: 'jellyfin' as const,
+      // type: 'jellyfin' as const,
     },
-    5000,
+    1000,
     {
       equalityFn: (left, right) => {
-        const res = isEqual(left, right);
-        console.log(left, right, res);
         return (
           left.id === right.id &&
           left.uri === right.uri &&
@@ -197,18 +210,22 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
   useEffect(() => {
     const sub = watch((value, { name }) => {
       if (
-        name === 'uri' ||
-        // name === 'password' ||
-        // name === 'username' ||
-        name === 'accessToken'
+        isNonEmptyString(value.accessToken) ||
+        (isNonEmptyString(value.username) && isNonEmptyString(value.password))
       ) {
+        debounceClearError('root.auth');
+      } else {
+        debounceSetError('root.auth', {
+          message: 'Must provide either access token or username/password',
+        });
+      }
+
+      if (name === 'uri' || name === 'accessToken') {
         updateServerStatusDetails({
           id: server?.id && !isDirty ? server.id : undefined,
-          accessToken: value.accessToken ?? value.password ?? '',
+          accessToken: value.accessToken ?? '',
           uri: value.uri ?? '',
-          username: value.username ?? '',
-          password: value.password ?? '',
-          type: 'jellyfin' as const,
+          // type: 'jellyfin' as const,
         });
       }
     });
@@ -217,17 +234,12 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
   }, [
     watch,
     updateServerStatusDetails,
-    serverStatusDetails,
     server?.id,
     isDirty,
+    debounceClearError,
+    debounceSetError,
+    errors,
   ]);
-
-  const {
-    data: derivedAccessToken,
-    isLoading: derivedAccessTokenLoading,
-    error: derivedAccessTokenError,
-    refetch: refetchAccessToken,
-  } = useJellyinLogin(serverStatusDetails, false /* TODO is this right */);
 
   // useEffect(() => {
   //   if (
@@ -255,27 +267,28 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
 
   const { data: serverStatus, isLoading: serverStatusLoading } =
     useMediaSourceBackendStatus(
-      serverStatusDetails,
-      open && isNonEmptyString(accessToken),
+      { ...serverStatusDetails, type: 'jellyfin' },
+      open, // && isNonEmptyString(accessToken),
     );
-  console.log(serverStatusDetails);
 
-  useEffect(() => {
-    if (!isUndefined(derivedAccessToken) && !accessTokenTouched) {
-      setValue('accessToken', derivedAccessToken?.accessToken ?? '', {
-        shouldValidate: true,
-      });
-    }
-    //  else if (!isUndefined(serverError) && !accessTokenTouched) {
-    //   setValue('accessToken', '');
-    // }
-  }, [
-    derivedAccessToken,
-    derivedAccessTokenError,
-    setValue,
-    getValues,
-    accessTokenTouched,
-  ]);
+  console.log(serverStatus);
+
+  // useEffect(() => {
+  //   if (!isUndefined(derivedAccessToken) && !accessTokenTouched) {
+  //     setValue('accessToken', derivedAccessToken?.accessToken ?? '', {
+  //       shouldValidate: true,
+  //     });
+  //   }
+  //   //  else if (!isUndefined(serverError) && !accessTokenTouched) {
+  //   //   setValue('accessToken', '');
+  //   // }
+  // }, [
+  //   derivedAccessToken,
+  //   derivedAccessTokenError,
+  //   setValue,
+  //   getValues,
+  //   accessTokenTouched,
+  // ]);
 
   // TODO: Block creation if an existing server with the same URL/name
   // already exist
@@ -301,12 +314,14 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
                   fullWidth
                   {...field}
                   error={
-                    !isUndefined(error) || !isNull(derivedAccessTokenError)
+                    !isUndefined(error) ||
+                    (!isUndefined(serverStatus) && !serverStatus.healthy)
                   }
                   helperText={
                     error?.message ? (
                       <span>{error.message}</span>
-                    ) : !isNull(derivedAccessTokenError) &&
+                    ) : !isUndefined(serverStatus) &&
+                      !serverStatus.healthy &&
                       isNonEmptyString(field.value) ? (
                       <>
                         <span>Server is unreachable</span>
@@ -315,10 +330,9 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
                     ) : null
                   }
                   InputProps={{
-                    endAdornment: derivedAccessTokenLoading ? (
+                    endAdornment: serverStatusLoading ? (
                       <RotatingLoopIcon />
-                    ) : !isUndefined(derivedAccessToken) &&
-                      isNull(derivedAccessTokenError) ? (
+                    ) : !isUndefined(serverStatus) && serverStatus.healthy ? (
                       <CloudDoneOutlined color="success" />
                     ) : (
                       <CloudOff color="error" />
@@ -365,7 +379,7 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
                   <FormControl
                     sx={{ flex: 1 }}
                     variant="outlined"
-                    disabled={isNonEmptyString(accessToken)}
+                    // disabled={isNonEmptyString(accessToken)}
                   >
                     <InputLabel htmlFor="jellyfin-username">
                       Username{' '}
@@ -396,7 +410,7 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
                   <FormControl
                     sx={{ flex: 1 }}
                     variant="outlined"
-                    disabled={isNonEmptyString(accessToken)}
+                    // disabled={isNonEmptyString(accessToken)}
                   >
                     <InputLabel htmlFor="jellyfin-password">
                       Password{' '}
@@ -457,9 +471,9 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
                   sx={{ m: 1 }}
                   fullWidth
                   variant="outlined"
-                  disabled={
-                    isNonEmptyString(username) && isNonEmptyString(password)
-                  }
+                  // disabled={
+                  //   // isNonEmptyString(username) && isNonEmptyString(password)
+                  // }
                 >
                   <InputLabel htmlFor="access-token">Access Token </InputLabel>
                   <OutlinedInput
@@ -505,7 +519,12 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
         </Button>
         <Button
           variant="contained"
-          disabled={!isDirty || !isValid || !isEmpty(errors)}
+          disabled={
+            !isDirty ||
+            !isValid ||
+            !isEmpty(errors) ||
+            serverStatus?.healthy === false
+          }
           type="submit"
           onClick={onSubmit}
         >
