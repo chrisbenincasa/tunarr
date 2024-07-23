@@ -14,6 +14,7 @@ import { ApiClient } from '../../external/api.ts';
 import { sequentialPromises } from '../../helpers/util.ts';
 import { createExternalId } from '@tunarr/shared';
 import { fetchPlexPath } from '../../helpers/plexUtil.ts';
+import { MediaSourceId } from '@tunarr/types/schemas';
 
 export type PlexPathMappings = [
   ['/library/sections', PlexLibrarySections],
@@ -32,6 +33,8 @@ export const plexQueryOptions = <T>(
 });
 
 export type EnrichedPlexMedia = PlexTerminalMedia & {
+  // The internal Tunarr ID of the media source
+  serverId: MediaSourceId;
   // This is the Plex server name that the info was retrieved from
   serverName: string;
   // If we found an existing reference to this item on the server, we add it here

@@ -74,7 +74,7 @@ export default function SelectedProgrammingList({
     [ListChildComponentProps]
   >({
     plex: (selected, { style }) => {
-      const media = knownMedia[selected.server][selected.guid];
+      const media = knownMedia[selected.serverId][selected.guid];
 
       let title: string = media.title;
       let secondary: ReactNode = null;

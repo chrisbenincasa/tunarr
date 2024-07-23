@@ -38,11 +38,12 @@ import {
 import { usePlexTyped } from '../../hooks/plex/usePlex.ts';
 import useStore from '../../store/index.ts';
 import {
-  addKnownMediaForServer,
+  addKnownMediaForPlexServer,
   addPlexSelectedMedia,
   removePlexSelectedMedia,
 } from '../../store/programmingSelector/actions.ts';
 import { PlexSelectedMedia } from '../../store/programmingSelector/store.ts';
+import { useCurrentMediaSource } from '@/store/programmingSelector/selectors.ts';
 
 export interface PlexGridItemProps<T extends PlexMedia> {
   item: T;
@@ -106,7 +107,7 @@ export const PlexGridItem = forwardRef(
       theme.palette.text.primary,
       theme.palette.mode === 'light' ? 0.11 : 0.13,
     );
-    const server = useStore((s) => s.currentServer!); // We have to have a server at this point
+    const server = useCurrentMediaSource('plex')!; // We have to have a server at this point
     const darkMode = useStore((state) => state.theme.darkMode);
     const [open, setOpen] = useState(false);
     const { item, index, style, moveModal } = props;
@@ -120,7 +121,7 @@ export const PlexGridItem = forwardRef(
       genPlexChildPath(props.item),
       hasChildren && open,
     );
-    const selectedServer = useStore((s) => s.currentServer);
+    const selectedServer = useCurrentMediaSource('plex');
     const selectedMedia = useStore((s) =>
       filter(s.selectedMedia, (p): p is PlexSelectedMedia => p.type === 'plex'),
     );
@@ -136,18 +137,18 @@ export const PlexGridItem = forwardRef(
 
     useEffect(() => {
       if (!isUndefined(children?.Metadata)) {
-        addKnownMediaForServer(server.name, children.Metadata, item.guid);
+        addKnownMediaForPlexServer(server.id, children.Metadata, item.guid);
       }
-    }, [item.guid, server.name, children]);
+    }, [item.guid, server.id, children]);
 
     const handleItem = useCallback(
       (e: MouseEvent<HTMLDivElement | HTMLButtonElement>) => {
         e.stopPropagation();
 
         if (selectedMediaIds.includes(item.guid)) {
-          removePlexSelectedMedia(selectedServer!.name, [item.guid]);
+          removePlexSelectedMedia(selectedServer!.id, [item.guid]);
         } else {
-          addPlexSelectedMedia(selectedServer!.name, [item]);
+          addPlexSelectedMedia(selectedServer!, [item]);
         }
       },
       [item, selectedServer, selectedMediaIds],

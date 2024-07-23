@@ -1,16 +1,16 @@
-import { CustomProgram } from '@tunarr/types';
+import { CustomProgram, MediaSourceSettings } from '@tunarr/types';
 import { PlexSearch } from '@tunarr/types/api';
+import { JellyfinItem } from '@tunarr/types/jellyfin';
 import { PlexLibrarySection, PlexMedia } from '@tunarr/types/plex';
+import { MediaSourceId } from '@tunarr/types/schemas';
 import { StateCreator } from 'zustand';
-import { MediaSourceSettings } from '@tunarr/types';
-import { JellyfinLibrary as ApiJellyfinLibrary } from '@tunarr/types/jellyfin';
 
-type ServerName = string;
+type ItemUuid = string;
 type PlexItemGuid = string;
 
 export type PlexSelectedMedia = {
   type: 'plex';
-  server: ServerName;
+  serverId: MediaSourceId;
   guid: PlexItemGuid;
   childCount?: number;
 };
@@ -32,7 +32,7 @@ export type PlexLibrary = {
 
 export type JellyfinLibrary = {
   type: 'jellyfin';
-  library: ApiJellyfinLibrary;
+  library: JellyfinItem;
 };
 
 export type CustomShowLibrary = {
@@ -41,19 +41,32 @@ export type CustomShowLibrary = {
 
 export type SelectedLibrary = PlexLibrary | JellyfinLibrary | CustomShowLibrary;
 
+export type PlexMediaItems = {
+  type: 'plex';
+  item: PlexLibrarySection | PlexMedia;
+};
+
+export type JellyfinItems = {
+  type: 'jellyfin';
+  item: JellyfinItem;
+};
+
+export type MediaItems = PlexMediaItems | JellyfinItems;
+
+export type KnownMediaMap = Record<MediaSourceId, Record<ItemUuid, MediaItems>>;
+
+export type ContentHierarchyMap = Record<
+  MediaSourceId,
+  Record<ItemUuid, ItemUuid[]>
+>;
+
 export interface ProgrammingListingsState {
   currentServer?: MediaSourceSettings;
   currentLibrary?: SelectedLibrary;
   // Tracks the parent-child mappings of library items
-  contentHierarchyByServer: Record<
-    ServerName,
-    Record<PlexItemGuid, PlexItemGuid[]>
-  >;
+  contentHierarchyByServer: ContentHierarchyMap;
   // Holds the actual metadata for items, including directories (i.e. Plex libraries)
-  knownMediaByServer: Record<
-    ServerName,
-    Record<PlexItemGuid, PlexLibrarySection | PlexMedia>
-  >;
+  knownMediaByServer: KnownMediaMap;
   selectedMedia: SelectedMedia[];
   plexSearch: PlexSearch & {
     urlFilter?: string; // Validated PlexFilter ready to be used as a request query param

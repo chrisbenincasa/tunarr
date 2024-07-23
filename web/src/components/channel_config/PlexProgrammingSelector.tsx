@@ -29,6 +29,7 @@ import { usePrevious } from '@uidotdev/usehooks';
 import _, {
   chain,
   compact,
+  filter,
   first,
   flatMap,
   isNil,
@@ -58,7 +59,7 @@ import { isNonEmptyString, toggle } from '../../helpers/util';
 import { usePlexLibraries } from '../../hooks/plex/usePlex.ts';
 import { useMediaSources } from '../../hooks/settingsHooks';
 import useStore from '../../store';
-import { addKnownMediaForServer } from '../../store/programmingSelector/actions';
+import { addKnownMediaForPlexServer } from '../../store/programmingSelector/actions';
 import { setProgrammingSelectorViewState } from '../../store/themeEditor/actions';
 import { ProgramSelectorViewType } from '../../types';
 import { InlineModal } from '../InlineModal';
@@ -69,6 +70,10 @@ import { PlexFilterBuilder } from './PlexFilterBuilder.tsx';
 import { PlexGridItem } from './PlexGridItem';
 import { PlexListItem } from './PlexListItem';
 import { PlexSortField } from './PlexSortField.tsx';
+import {
+  useCurrentMediaSource,
+  useCurrentSourceLibrary,
+} from '@/store/programmingSelector/selectors.ts';
 
 function a11yProps(index: number) {
   return {
@@ -93,13 +98,10 @@ enum TabValues {
 }
 
 export default function PlexProgrammingSelector() {
-  const { data: plexServers } = useMediaSources();
-  const selectedServer = useStore((s) =>
-    s.currentServer?.type === 'plex' ? s.currentServer : undefined,
-  );
-  const selectedLibrary = useStore((s) =>
-    s.currentLibrary?.type === 'plex' ? s.currentLibrary : null,
-  );
+  const { data: mediaSources } = useMediaSources();
+  const plexServers = filter(mediaSources, { type: 'plex' });
+  const selectedServer = useCurrentMediaSource('plex');
+  const selectedLibrary = useCurrentSourceLibrary('plex');
   const viewType = useStore((state) => state.theme.programmingSelectorView);
   const [tabValue, setTabValue] = useState(TabValues.Library);
   const [rowSize, setRowSize] = useState(9);
@@ -310,25 +312,22 @@ export default function PlexProgrammingSelector() {
           .map((page) => page.Metadata)
           .flatten()
           .value();
-        addKnownMediaForServer(selectedServer.name, allMedia);
+        addKnownMediaForPlexServer(selectedServer.id, allMedia);
       }
     }
   }, [scrollParams, selectedServer, searchData, rowSize]);
 
   useEffect(() => {
-    if (
-      isNonEmptyString(selectedServer?.name) &&
-      !isUndefined(collectionsData)
-    ) {
+    if (isNonEmptyString(selectedServer?.id) && !isUndefined(collectionsData)) {
       const allCollections = chain(collectionsData.pages)
         .reject((page) => page.size === 0)
         .map((page) => page.Metadata)
         .compact()
         .flatten()
         .value();
-      addKnownMediaForServer(selectedServer.name, allCollections);
+      addKnownMediaForPlexServer(selectedServer.id, allCollections);
     }
-  }, [selectedServer?.name, collectionsData]);
+  }, [selectedServer?.id, collectionsData]);
 
   const { ref } = useIntersectionObserver({
     onChange: (_, entry) => {

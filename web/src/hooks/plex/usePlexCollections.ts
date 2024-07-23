@@ -1,5 +1,5 @@
 import { PlexLibrary } from '@/store/programmingSelector/store.ts';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { PlexServerSettings } from '@tunarr/types';
 import { PlexLibraryCollections } from '@tunarr/types/plex';
 import { isNil, sumBy } from 'lodash-es';
@@ -13,6 +13,14 @@ export const usePlexCollectionsInfinite = (
   pageSize: number,
 ) => {
   const apiClient = useTunarrApi();
+  console.log(
+    useQueryClient().getQueryState([
+      'plex',
+      plexServer?.name,
+      currentLibrary?.library.key,
+      'collections',
+    ]),
+  );
 
   return useInfiniteQuery({
     queryKey: [
