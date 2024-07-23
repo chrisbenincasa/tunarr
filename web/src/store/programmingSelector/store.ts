@@ -23,7 +23,17 @@ export type CustomShowSelectedMedia = {
   programs: CustomProgram[];
 };
 
-export type SelectedMedia = PlexSelectedMedia | CustomShowSelectedMedia;
+export type JellyfinSelectedMedia = {
+  type: 'jellyfin';
+  serverId: MediaSourceId;
+  id: ItemUuid;
+  childCount?: number;
+};
+
+export type SelectedMedia =
+  | PlexSelectedMedia
+  | JellyfinSelectedMedia
+  | CustomShowSelectedMedia;
 
 export type PlexLibrary = {
   type: 'plex';

@@ -32,6 +32,7 @@ import { Path, PathValue } from 'react-hook-form';
 import { SelectedMedia } from '../store/programmingSelector/store';
 import { AddedMedia, UIChannelProgram } from '../types';
 import { Nullable } from '@/types/util';
+import { JellyfinItem } from '@tunarr/types/jellyfin';
 
 dayjs.extend(duration);
 
@@ -341,6 +342,36 @@ export function forPlexMedia<T>(
       case 'playlist':
         if (choices.playlist) return applyOrValueNoRest(choices.playlist, m);
         break;
+    }
+
+    if (choices.default) {
+      return applyOrValueNoRest(choices.default, m);
+    }
+
+    return null;
+  };
+}
+
+type JellyfinCallback<T, Args extends unknown[] = []> = {
+  [X in JellyfinItem['Type']]?: ((m: JellyfinItem, ...rest: Args) => T) | T;
+} & {
+  default?: ((m: JellyfinItem, ...rest: Args) => T) | T;
+};
+
+export function forJellyfinItem<T>(
+  choices:
+    | Omit<Required<JellyfinCallback<T>>, 'default'>
+    | MakeRequired<JellyfinCallback<T>, 'default'>,
+): (m: JellyfinItem) => NonNullable<T>;
+export function forJellyfinItem<T>(
+  choices: JellyfinCallback<T>,
+): (m: JellyfinItem) => Nullable<T>;
+export function forJellyfinItem<T>(
+  choices: JellyfinCallback<T> | MakeRequired<JellyfinCallback<T>, 'default'>,
+) {
+  return (m: JellyfinItem) => {
+    if (choices[m.Type]) {
+      return applyOrValueNoRest(choices[m.Type], m);
     }
 
     if (choices.default) {

@@ -5,8 +5,10 @@ import {
   PlexLibrary,
   JellyfinLibrary,
   SelectedLibrary,
+  SelectedMedia,
 } from './store';
 import { KnownMedia } from './KnownMedia';
+import { filter } from 'lodash-es';
 
 export function useCurrentMediaSource<
   TypeFilter extends MediaSourceSettings['type'] | undefined = undefined,
@@ -66,4 +68,19 @@ export function useCurrentMediaSourceAndLibrary<
 
 export function useKnownMedia() {
   return new KnownMedia(useStore((s) => s.knownMediaByServer));
+}
+
+export function useSelectedMedia<
+  TypeFilter extends SelectedMedia['type'] | undefined = undefined,
+  OutType = TypeFilter extends undefined
+    ? SelectedMedia
+    : Extract<SelectedMedia, { type: TypeFilter }>,
+>(type?: TypeFilter): OutType[] | undefined {
+  return useStore((s) => {
+    const media = s.selectedMedia;
+    if (type) {
+      return filter(media, { type }) as OutType[];
+    }
+    return media as OutType[];
+  });
 }

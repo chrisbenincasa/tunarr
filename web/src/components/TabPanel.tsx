@@ -9,7 +9,7 @@ type TabPanelProps = {
   ref?: React.RefObject<HTMLDivElement>;
 };
 
-const CustomTabPanel = forwardRef(
+export const GridContainerTabPanel = forwardRef(
   (props: TabPanelProps, ref: ForwardedRef<HTMLDivElement>) => {
     const { children, value, index, ...other } = props;
 
@@ -47,5 +47,3 @@ const CustomTabPanel = forwardRef(
     );
   },
 );
-
-export default CustomTabPanel;
