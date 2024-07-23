@@ -91,6 +91,7 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
         const response = await api.getLibrary(
           null,
           req.params.libraryId,
+          ['Movie'],
           [],
           pageParams,
         );

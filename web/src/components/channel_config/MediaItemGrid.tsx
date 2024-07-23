@@ -10,6 +10,13 @@ import {
   useIntersectionObserver,
   useResizeObserver,
 } from 'usehooks-ts';
+import { GridContainerTabPanel } from '../GridContainerTabPanel';
+
+type GridItemProps<ItemType> = {
+  item: ItemType;
+  index: number;
+  modalIndex: number;
+};
 
 type Props<PageDataType, ItemType> = {
   // modalIndex: number;
@@ -17,7 +24,7 @@ type Props<PageDataType, ItemType> = {
   // viewType: 'grid' | 'list';
   getPageDataSize: (page: PageDataType) => { total?: number; size: number };
   extractItems: (page: PageDataType) => ItemType[];
-  renderGridItem: (item: ItemType, index: number) => JSX.Element;
+  renderGridItem: (props: GridItemProps<ItemType>) => JSX.Element;
   renderListItem: (item: ItemType, index: number) => JSX.Element;
   infiniteQuery: UseInfiniteQueryResult<InfiniteData<PageDataType>>;
 };
@@ -136,13 +143,15 @@ export function MediaItemGrid<PageDataType, ItemType>({
     return map(compact(flatMap(data?.pages, extractItems)), (item, index) =>
       viewType === 'list'
         ? renderListItem(item, index)
-        : renderGridItem(item, index),
+        : renderGridItem({ item, index, modalIndex }),
     );
   };
 
   return (
     <>
-      {renderItems()}
+      <GridContainerTabPanel index={0} value={0} key="Library">
+        {renderItems()}
+      </GridContainerTabPanel>
       {!isLoading && <div style={{ height: 96 }} ref={ref}></div>}
       {isFetchingNextPage && (
         <CircularProgress

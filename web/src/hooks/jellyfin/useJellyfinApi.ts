@@ -1,8 +1,11 @@
 import { isNonEmptyString } from '@/helpers/util.ts';
 import { useApiQuery } from '../useApiQuery.ts';
-import { every, sumBy } from 'lodash-es';
+import { every, flatMap, isUndefined, sumBy } from 'lodash-es';
 import { useTunarrApi } from '../useTunarrApi.ts';
 import { useInfiniteQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import { addKnownMediaForJellyfinServer } from '@/store/programmingSelector/actions.ts';
+import { MediaSourceId } from '@tunarr/types/schemas';
 
 export const useJellyfinUserLibraries = (
   mediaSourceId: string,
@@ -45,7 +48,7 @@ export const useJellyfinLibraryItems = (
 };
 
 export const useInfiniteJellyfinLibraryItems = (
-  mediaSourceId: string,
+  mediaSourceId: MediaSourceId,
   libraryId: string,
   pageParams: { offset: number; limit: number } | null = null,
   enabled: boolean = true,
@@ -81,6 +84,13 @@ export const useInfiniteJellyfinLibraryItems = (
       return last + res.Items.length;
     },
   });
+
+  useEffect(() => {
+    if (!isUndefined(result.data)) {
+      const allItems = flatMap(result.data.pages, (page) => page.Items);
+      addKnownMediaForJellyfinServer(mediaSourceId, allItems, libraryId);
+    }
+  }, [libraryId, mediaSourceId, result.data]);
 
   return { ...result, queryKey: key };
 };

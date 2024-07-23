@@ -10,10 +10,7 @@ type PlexItemGuid = string;
 
 export type PlexSelectedMedia = {
   type: 'plex';
-  serverId: MediaSourceId;
-  guid: PlexItemGuid;
-  childCount?: number;
-};
+} & ExternalSourceSelectedMedia;
 
 export type CustomShowSelectedMedia = {
   type: 'custom-show';
@@ -25,6 +22,9 @@ export type CustomShowSelectedMedia = {
 
 export type JellyfinSelectedMedia = {
   type: 'jellyfin';
+} & ExternalSourceSelectedMedia;
+
+export type ExternalSourceSelectedMedia = {
   serverId: MediaSourceId;
   id: ItemUuid;
   childCount?: number;

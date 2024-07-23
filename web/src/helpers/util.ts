@@ -198,6 +198,8 @@ export function forSelectedMediaType<T, Args extends unknown[] = []>(
       return applyOrValue(choices['custom-show'], m, rest);
     } else if (m.type === 'plex' && choices['plex']) {
       return applyOrValue(choices['plex'], m, rest);
+    } else if (m.type === 'jellyfin' && choices.jellyfin) {
+      return applyOrValue(choices.jellyfin, m, rest);
     } else if (choices.default) {
       return applyOrValue(choices['default'], m, rest);
     }

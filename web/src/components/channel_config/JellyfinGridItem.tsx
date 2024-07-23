@@ -4,18 +4,21 @@ import React, { ForwardedRef, forwardRef, useCallback } from 'react';
 import {
   forJellyfinItem,
   forPlexMedia,
+  isNonEmptyString,
   prettyItemDuration,
 } from '../../helpers/util.ts';
 
 import { JellyfinItem } from '@tunarr/types/jellyfin';
 import { MediaGridItem } from './MediaGridItem.tsx';
+import { useCurrentMediaSource } from '@/store/programmingSelector/selectors.ts';
+import { addJellyfinSelectedMedia } from '@/store/programmingSelector/actions.ts';
 
-export interface JellyfinGridItemProps<T extends JellyfinItem> {
-  item: T;
+export interface JellyfinGridItemProps {
+  item: JellyfinItem;
   style?: React.CSSProperties;
   index?: number;
   parent?: string;
-  moveModal?: (index: number, item: T) => void;
+  moveModal?: (index: number, item: JellyfinItem) => void;
   modalIndex?: number;
   onClick?: () => void;
   ref?: React.RefObject<HTMLDivElement>;
@@ -47,7 +50,7 @@ const childItemType = forJellyfinItem({
 
 const subtitle = forJellyfinItem({
   Movie: (item) => (
-    <span>{prettyItemDuration((item.RunTimeTicks ?? 0) / 1000)}</span>
+    <span>{prettyItemDuration((item.RunTimeTicks ?? 0) / 10_000)}</span>
   ),
   default: (item) => {
     const childCount = extractChildCount(item);
@@ -64,45 +67,69 @@ const subtitle = forJellyfinItem({
   },
 });
 
+// // These never change -- keep a stable reference
+// const jellyfinExtractors: GridItemMetadataExtractors<JellyfinItem> = {
+//   id: item => item.Id,
+//   isPlaylist: (item) => item.Type === 'Playlist',
+//   hasThumbnail: (item) =>
+//     isNonEmptyString((item.ImageTags ?? {})['Primary']),
+//   childCount: extractChildCount,
+//   isMusicItem: item => ['MusicArtist', 'MusicAlbum', 'Audio'].includes(item.Type),
+//   isEpisode: item => item.Type === 'Episode',
+//   title: (item) => item.Name ?? '',
+//   subtitle: subtitle,
+//   thumbnailUrl: (item) =>
+//     `${currentServer.uri}/Items/${
+//       item.Id
+//     }/Images/Primary?fillHeight=300&fillWidth=200&quality=96&tag=${
+//       (item.ImageTags ?? {})['Primary']
+//     }`,
+// }
+
 export const JellyfinGridItem = forwardRef(
-  <T extends JellyfinItem>(
-    props: JellyfinGridItemProps<T>,
-    ref: ForwardedRef<HTMLDivElement>,
-  ) => {
+  (props: JellyfinGridItemProps, ref: ForwardedRef<HTMLDivElement>) => {
+    const currentServer = useCurrentMediaSource('jellyfin');
+    const extractId = useCallback((item: JellyfinItem) => item.Id, []);
+
+    const isMusicItem = useCallback(
+      (item: JellyfinItem) =>
+        ['MusicArtist', 'MusicAlbum', 'Audio'].includes(item.Type),
+      [],
+    );
+
+    const isEpisode = useCallback(
+      (item: JellyfinItem) => item.Type === 'Episode',
+      [],
+    );
+
     return (
-      <MediaGridItem<JellyfinItem>
-        imgListItemRef={ref}
-        item={props.item}
-        extractors={{
-          id: useCallback((item) => item.Id, []),
-          isPlaylist: function (item: unknown): boolean {
-            throw new Error('Function not implemented.');
-          },
-          hasThumbnail: function (item: unknown): boolean {
-            throw new Error('Function not implemented.');
-          },
-          childCount: extractChildCount,
-          isMusicItem: useCallback(
-            (item) =>
-              ['MusicArtist', 'MusicAlbum', 'Audio'].includes(item.Type),
-            [],
-          ),
-          isEpisode: useCallback((item) => item.Type === 'Episode', []),
-          title: function (item: unknown): string {
-            throw new Error('Function not implemented.');
-          },
-          subtitle: subtitle,
-          thumbnailUrl: function (item: unknown): string {
-            throw new Error('Function not implemented.');
-          },
-        }}
-        onClick={function (item: unknown): void {
-          throw new Error('Function not implemented.');
-        }}
-        onSelect={function (item: unknown): void {
-          throw new Error('Function not implemented.');
-        }}
-      />
+      currentServer && (
+        <MediaGridItem<JellyfinItem>
+          {...props}
+          itemSource="jellyfin"
+          ref={ref}
+          // item={props.item}
+          extractors={{
+            id: extractId,
+            isPlaylist: (item) => item.Type === 'Playlist',
+            hasThumbnail: (item) =>
+              isNonEmptyString((item.ImageTags ?? {})['Primary']),
+            childCount: extractChildCount,
+            isMusicItem,
+            isEpisode,
+            title: (item) => item.Name ?? '',
+            subtitle: subtitle,
+            thumbnailUrl: (item) =>
+              `${currentServer.uri}/Items/${
+                item.Id
+              }/Images/Primary?fillHeight=300&fillWidth=200&quality=96&tag=${
+                (item.ImageTags ?? {})['Primary']
+              }`,
+          }}
+          onClick={() => {}}
+          onSelect={(item) => addJellyfinSelectedMedia(currentServer, item)}
+        />
+      )
     );
   },
 );

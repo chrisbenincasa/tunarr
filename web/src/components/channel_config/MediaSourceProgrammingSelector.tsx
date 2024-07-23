@@ -28,7 +28,7 @@ import {
   useIntersectionObserver,
   useResizeObserver,
 } from 'usehooks-ts';
-import GridContainerTabPanel from '../TabPanel';
+import GridContainerTabPanel from '../GridContainerTabPanel';
 import { PlexListItem } from './PlexListItem';
 import { findFirstItemInNextRowIndex } from '@/helpers/inlineModalUtil';
 import React from 'react';

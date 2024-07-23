@@ -12,10 +12,19 @@ import {
   buildPlexSortKey,
 } from '../../helpers/plexSearchUtil.ts';
 import { forSelectedMediaType, groupSelectedMedia } from '../../helpers/util';
-import { SelectedLibrary, SelectedMedia } from './store';
+import {
+  JellyfinItems,
+  PlexMediaItems,
+  SelectedLibrary,
+  SelectedMedia,
+} from './store';
 import { forPlexMedia } from '@tunarr/shared/util';
 import { Maybe } from '@/types/util.ts';
-import { MediaSourceSettings, PlexServerSettings } from '@tunarr/types';
+import {
+  JellyfinServerSettings,
+  MediaSourceSettings,
+  PlexServerSettings,
+} from '@tunarr/types';
 import { MediaSourceId } from '@tunarr/types/schemas';
 import { JellyfinItem } from '@tunarr/types/jellyfin';
 
@@ -55,8 +64,11 @@ export const addKnownMediaForPlexServer = (
     }
 
     const byGuid = media.reduce(
-      (prev, media) => ({ ...prev, [uniqueId(media)]: media }),
-      {},
+      (prev, media) => ({
+        ...prev,
+        [uniqueId(media)]: { type: 'plex' as const, item: media },
+      }),
+      {} as Record<string, PlexMediaItems>,
     );
 
     // known media is an overwrite operation, not dealing with
@@ -113,9 +125,12 @@ export const addKnownMediaForJellyfinServer = (
       state.knownMediaByServer[serverId] = {};
     }
 
-    const byGuid = media.reduce(
-      (prev, media) => ({ ...prev, [media.Id]: media }),
-      {},
+    const newItems: Record<string, JellyfinItems> = media.reduce(
+      (prev, media) => ({
+        ...prev,
+        [media.Id]: { type: 'jellyfin' as const, item: media },
+      }),
+      {} as Record<string, JellyfinItems>,
     );
 
     // known media is an overwrite operation, not dealing with
@@ -123,7 +138,7 @@ export const addKnownMediaForJellyfinServer = (
     // an item
     state.knownMediaByServer[serverId] = {
       ...state.knownMediaByServer[serverId],
-      ...byGuid,
+      ...newItems,
     };
   });
 
@@ -145,10 +160,26 @@ export const addPlexSelectedMedia = (
     const newSelectedMedia: SelectedMedia[] = map(media, (m) => ({
       type: 'plex',
       serverId: server.id,
-      guid: isPlexDirectory(m) ? m.uuid : m.guid,
+      id: isPlexDirectory(m) ? m.uuid : m.guid,
       childCount: isPlexDirectory(m) ? 1 : plexChildCount(m),
     }));
     state.selectedMedia = [...state.selectedMedia, ...newSelectedMedia];
+  });
+
+export const addJellyfinSelectedMedia = (
+  server: JellyfinServerSettings,
+  media: JellyfinItem,
+) =>
+  useStore.setState((state) => {
+    state.selectedMedia = [
+      ...state.selectedMedia,
+      {
+        type: 'jellyfin',
+        serverId: server.id,
+        id: media.Id,
+        childCount: media.ChildCount ?? 0,
+      },
+    ];
   });
 
 export const addSelectedMedia = (media: SelectedMedia | SelectedMedia[]) =>
@@ -161,7 +192,9 @@ export const removeSelectedMedia = (media: SelectedMedia[]) =>
     const grouped = groupSelectedMedia(media);
     const it = forSelectedMediaType({
       plex: (plex) =>
-        some(grouped.plex, { serverId: plex.serverId, guid: plex.guid }),
+        some(grouped.plex, { serverId: plex.serverId, id: plex.id }),
+      jellyfin: (jf) =>
+        some(grouped.jellyfin, { serverId: jf.serverId, id: jf.id }),
       'custom-show': (cs) =>
         some(grouped['custom-show'], {
           customShowId: cs.customShowId,
@@ -174,14 +207,13 @@ export const removeSelectedMedia = (media: SelectedMedia[]) =>
 
 export const removePlexSelectedMedia = (
   serverId: MediaSourceId,
-  guids: string[],
+  ids: string[],
 ) =>
   useStore.setState((state) => {
-    const guidsSet = new Set([...guids]);
+    const idsSet = new Set([...ids]);
     state.selectedMedia = reject(
       state.selectedMedia,
-      (m) =>
-        m.type === 'plex' && m.serverId === serverId && guidsSet.has(m.guid),
+      (m) => m.type === 'plex' && m.serverId === serverId && idsSet.has(m.id),
     );
   });
 
