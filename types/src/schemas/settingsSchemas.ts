@@ -1,6 +1,6 @@
 import z from 'zod';
 import { ResolutionSchema } from './miscSchemas.js';
-import { TupleToUnion } from '../util.js';
+import { Tag, TupleToUnion } from '../util.js';
 import { ScheduleSchema } from './utilSchemas.js';
 
 export const XmlTvSettingsSchema = z.object({
@@ -88,8 +88,14 @@ export const FfmpegSettingsSchema = z.object({
   disableChannelPrelude: z.boolean().default(false),
 });
 
+const mediaSourceId = z.custom<MediaSourceId>((val) => {
+  return typeof val === 'string';
+});
+
+export type MediaSourceId = Tag<string, 'mediaSourceId'>;
+
 const BaseMediaSourceSettingsSchema = z.object({
-  id: z.string(),
+  id: mediaSourceId,
   name: z.string(),
   uri: z.string(),
   accessToken: z.string(),

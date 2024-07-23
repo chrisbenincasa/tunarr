@@ -16,7 +16,8 @@ import { useMediaSources } from '../../hooks/settingsHooks.ts';
 import { useCustomShows } from '../../hooks/useCustomShows.ts';
 import useStore from '../../store/index.ts';
 import {
-  addKnownMediaForServer,
+  addKnownMediaForJellyfinServer,
+  addKnownMediaForPlexServer,
   setProgrammingListLibrary,
   setProgrammingListingServer,
 } from '../../store/programmingSelector/actions.ts';
@@ -24,6 +25,7 @@ import AddPlexServer from '../settings/AddPlexServer.tsx';
 import { CustomShowProgrammingSelector } from './CustomShowProgrammingSelector.tsx';
 import PlexProgrammingSelector from './PlexProgrammingSelector.tsx';
 import { useJellyfinUserLibraries } from '@/hooks/jellyfin/useJellyfinApi.ts';
+import { JellyfinProgrammingSelector } from './JellyfinProgrammingSelector.tsx';
 
 export interface PlexListItemProps<T extends PlexMedia> {
   item: T;
@@ -49,11 +51,9 @@ export default function ProgrammingSelector() {
 
   const viewingCustomShows = mediaSource === 'custom-shows';
 
-  console.log(selectedServer?.type === 'plex', 'plex type', selectedServer);
   const { data: plexLibraryChildren } = usePlexLibraries(
     selectedServer?.name ?? '',
-    // selectedServer?.type === 'plex',
-    false,
+    selectedServer?.type === 'plex',
   );
 
   const {
@@ -82,17 +82,19 @@ export default function ProgrammingSelector() {
           library: plexLibraryChildren.Directory[0],
         });
       }
-      addKnownMediaForServer(selectedServer.name, [
+      addKnownMediaForPlexServer(selectedServer.id, [
         ...plexLibraryChildren.Directory,
       ]);
     } else if (selectedServer?.type === 'jellyfin' && jellyfinLibraries) {
-      if (jellyfinLibraries.length > 0) {
+      if (jellyfinLibraries.Items.length > 0) {
         setProgrammingListLibrary({
           type: 'jellyfin',
-          library: jellyfinLibraries[0],
+          library: jellyfinLibraries.Items[0],
         });
       }
-      // Add known media... needs a rewrite
+      addKnownMediaForJellyfinServer(selectedServer.id, [
+        ...jellyfinLibraries.Items,
+      ]);
     }
   }, [selectedServer, plexLibraryChildren, jellyfinLibraries]);
 
@@ -109,8 +111,10 @@ export default function ProgrammingSelector() {
         setProgrammingListingServer(undefined);
         setMediaSource(newMediaSourceId);
       } else {
-        const server = find(mediaSources, { id: newMediaSourceId });
-        console.log(server);
+        const server = find(
+          mediaSources,
+          (source) => source.id === newMediaSourceId,
+        );
         if (server) {
           setProgrammingListingServer(server);
           setMediaSource(server.name);
@@ -123,23 +127,35 @@ export default function ProgrammingSelector() {
   const onLibraryChange = useCallback(
     (libraryUuid: string) => {
       if (selectedServer?.type === 'plex') {
-        const known = knownMedia[selectedServer.name] ?? {};
+        const known = knownMedia[selectedServer.id] ?? {};
         const library = known[libraryUuid];
         if (library && isPlexDirectory(library)) {
           setProgrammingListLibrary({ type: 'plex', library });
         }
+      } else if (selectedServer?.type === 'jellyfin') {
+        const known = knownMedia[selectedServer.id] ?? {};
+        const library = known[libraryUuid];
+        // if (library && library.) {
+        //   setProgrammingListLibrary({ type: 'plex', library });
+        // }
       }
     },
     [knownMedia, selectedServer],
   );
 
   const renderMediaSourcePrograms = () => {
-    if (selectedLibrary?.type === 'custom-show') {
-      return <CustomShowProgrammingSelector />;
-    } else if (selectedLibrary?.type === 'plex') {
-      return <PlexProgrammingSelector />;
+    if (selectedLibrary) {
+      switch (selectedLibrary.type) {
+        case 'plex':
+          return <PlexProgrammingSelector />;
+        case 'jellyfin':
+          return <JellyfinProgrammingSelector />;
+        case 'custom-show':
+          return <CustomShowProgrammingSelector />;
+      }
     }
 
+    // TODO: change the wording here to not be Plex-specific
     if (!mediaSourcesLoading && !selectedServer) {
       return (
         <>
@@ -197,17 +213,17 @@ export default function ProgrammingSelector() {
       case 'jellyfin': {
         return (
           !isNil(jellyfinLibraries) &&
-          jellyfinLibraries.length > 0 &&
+          jellyfinLibraries.Items.length > 0 &&
           selectedJellyfinLibrary && (
             <FormControl size="small" sx={{ minWidth: { sm: 200 } }}>
               <InputLabel>Library</InputLabel>
               <Select
                 label="Library"
-                value={selectedJellyfinLibrary.ItemId}
+                value={selectedJellyfinLibrary.Id}
                 onChange={(e) => onLibraryChange(e.target.value)}
               >
-                {jellyfinLibraries.map((lib) => (
-                  <MenuItem key={lib.ItemId} value={lib.ItemId}>
+                {jellyfinLibraries.Items.map((lib) => (
+                  <MenuItem key={lib.Id} value={lib.Id}>
                     {lib.Name}
                   </MenuItem>
                 ))}

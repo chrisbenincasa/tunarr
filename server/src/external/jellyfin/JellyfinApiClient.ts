@@ -101,6 +101,16 @@ export class JellyfinApiClient extends BaseApiClient {
     );
   }
 
+  async getUserViews(userId?: string) {
+    return this.doTypeCheckedGet('/UserViews', JellyfinLibraryItemsResponse, {
+      params: {
+        userId,
+        includeExternalContent: false,
+        presetViews: ['movies', 'tvshows', 'music', 'playlists', 'folders'],
+      },
+    });
+  }
+
   async getLibrary(
     userId: Nilable<string>, // Not required if we are using an access token
     libraryId: Nilable<string>,

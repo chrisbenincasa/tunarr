@@ -15,7 +15,9 @@ import { forSelectedMediaType, groupSelectedMedia } from '../../helpers/util';
 import { SelectedLibrary, SelectedMedia } from './store';
 import { forPlexMedia } from '@tunarr/shared/util';
 import { Maybe } from '@/types/util.ts';
-import { MediaSourceSettings } from '@tunarr/types';
+import { MediaSourceSettings, PlexServerSettings } from '@tunarr/types';
+import { MediaSourceId } from '@tunarr/types/schemas';
+import { JellyfinItem } from '@tunarr/types/jellyfin';
 
 export const setProgrammingListingServer = (
   server: Maybe<MediaSourceSettings>,
@@ -37,22 +39,22 @@ function uniqueId(item: PlexLibrarySection | PlexMedia): string {
   }
 }
 
-export const addKnownMediaForServer = (
-  serverName: string,
-  plexMedia: PlexLibrarySection[] | PlexMedia[],
+export const addKnownMediaForPlexServer = (
+  serverId: MediaSourceId,
+  media: PlexLibrarySection[] | PlexMedia[],
   parentId?: string,
 ) =>
   useStore.setState((state) => {
-    if (plexMedia.length === 0) {
+    if (media.length === 0) {
       return state;
     }
 
     // Add new media
-    if (!state.knownMediaByServer[serverName]) {
-      state.knownMediaByServer[serverName] = {};
+    if (!state.knownMediaByServer[serverId]) {
+      state.knownMediaByServer[serverId] = {};
     }
 
-    const byGuid = plexMedia.reduce(
+    const byGuid = media.reduce(
       (prev, media) => ({ ...prev, [uniqueId(media)]: media }),
       {},
     );
@@ -60,40 +62,69 @@ export const addKnownMediaForServer = (
     // known media is an overwrite operation, not dealing with
     // lists here. we always want the most up-to-date view of
     // an item
-    state.knownMediaByServer[serverName] = {
-      ...state.knownMediaByServer[serverName],
+    state.knownMediaByServer[serverId] = {
+      ...state.knownMediaByServer[serverId],
       ...byGuid,
     };
 
     // Add relations
-    let hierarchy = state.contentHierarchyByServer[serverName];
+    let hierarchy = state.contentHierarchyByServer[serverId];
     if (!hierarchy) {
-      state.contentHierarchyByServer[serverName] = {};
-      hierarchy = state.contentHierarchyByServer[serverName];
+      state.contentHierarchyByServer[serverId] = {};
+      hierarchy = state.contentHierarchyByServer[serverId];
     }
 
-    plexMedia
+    media
       .filter(isPlexParentItem)
       .map(uniqueId)
       .forEach((id) => {
-        if (!has(state.contentHierarchyByServer[serverName], id)) {
-          state.contentHierarchyByServer[serverName][id] = [];
+        if (!has(state.contentHierarchyByServer[serverId], id)) {
+          state.contentHierarchyByServer[serverId][id] = [];
         }
       });
 
     if (parentId) {
-      if (!state.contentHierarchyByServer[serverName][parentId]) {
-        state.contentHierarchyByServer[serverName][parentId] = [];
+      if (!state.contentHierarchyByServer[serverId][parentId]) {
+        state.contentHierarchyByServer[serverId][parentId] = [];
       }
 
       // Append only - take unique
-      state.contentHierarchyByServer[serverName][parentId] = uniq([
-        ...state.contentHierarchyByServer[serverName][parentId],
-        ...plexMedia.map(uniqueId),
+      state.contentHierarchyByServer[serverId][parentId] = uniq([
+        ...state.contentHierarchyByServer[serverId][parentId],
+        ...media.map(uniqueId),
       ]);
     }
 
     return state;
+  });
+
+export const addKnownMediaForJellyfinServer = (
+  serverId: MediaSourceId,
+  media: JellyfinItem[],
+  parentId?: string,
+) =>
+  useStore.setState((state) => {
+    if (media.length === 0) {
+      return state;
+    }
+
+    // Add new media
+    if (!state.knownMediaByServer[serverId]) {
+      state.knownMediaByServer[serverId] = {};
+    }
+
+    const byGuid = media.reduce(
+      (prev, media) => ({ ...prev, [media.Id]: media }),
+      {},
+    );
+
+    // known media is an overwrite operation, not dealing with
+    // lists here. we always want the most up-to-date view of
+    // an item
+    state.knownMediaByServer[serverId] = {
+      ...state.knownMediaByServer[serverId],
+      ...byGuid,
+    };
   });
 
 const plexChildCount = forPlexMedia({
@@ -107,25 +138,15 @@ const plexChildCount = forPlexMedia({
 });
 
 export const addPlexSelectedMedia = (
-  serverName: string,
+  server: PlexServerSettings,
   media: (PlexLibrarySection | PlexMedia)[],
 ) =>
   useStore.setState((state) => {
     const newSelectedMedia: SelectedMedia[] = map(media, (m) => ({
       type: 'plex',
-      server: serverName,
+      serverId: server.id,
       guid: isPlexDirectory(m) ? m.uuid : m.guid,
       childCount: isPlexDirectory(m) ? 1 : plexChildCount(m),
-    }));
-    state.selectedMedia = [...state.selectedMedia, ...newSelectedMedia];
-  });
-
-export const addPlexSelectedMediaById = (serverName: string, ids: string[]) =>
-  useStore.setState((state) => {
-    const newSelectedMedia: SelectedMedia[] = map(ids, (m) => ({
-      type: 'plex',
-      server: serverName,
-      guid: m,
     }));
     state.selectedMedia = [...state.selectedMedia, ...newSelectedMedia];
   });
@@ -140,7 +161,7 @@ export const removeSelectedMedia = (media: SelectedMedia[]) =>
     const grouped = groupSelectedMedia(media);
     const it = forSelectedMediaType({
       plex: (plex) =>
-        some(grouped.plex, { server: plex.server, guid: plex.guid }),
+        some(grouped.plex, { serverId: plex.serverId, guid: plex.guid }),
       'custom-show': (cs) =>
         some(grouped['custom-show'], {
           customShowId: cs.customShowId,
@@ -151,13 +172,16 @@ export const removeSelectedMedia = (media: SelectedMedia[]) =>
     state.selectedMedia = reject(state.selectedMedia, it);
   });
 
-export const removePlexSelectedMedia = (serverName: string, guids: string[]) =>
+export const removePlexSelectedMedia = (
+  serverId: MediaSourceId,
+  guids: string[],
+) =>
   useStore.setState((state) => {
     const guidsSet = new Set([...guids]);
     state.selectedMedia = reject(
       state.selectedMedia,
       (m) =>
-        m.type === 'plex' && m.server === serverName && guidsSet.has(m.guid),
+        m.type === 'plex' && m.serverId === serverId && guidsSet.has(m.guid),
     );
   });
 

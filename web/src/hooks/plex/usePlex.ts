@@ -28,7 +28,6 @@ export const usePlex = <
   path: string,
   enabled: boolean = true,
 ) => {
-  console.log(serverName, path, enabled);
   return useApiQuery({
     queryKey: ['plex', serverName, path],
     queryFn: (apiClient) =>

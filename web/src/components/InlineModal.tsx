@@ -41,14 +41,15 @@ export function InlineModal(props: InlineModalProps) {
   const [childLimit, setChildLimit] = useState(9);
   const [imagesPerRow, setImagesPerRow] = useState(0);
   const modalChildren: PlexMedia[] = useStore((s) => {
-    const known = s.contentHierarchyByServer[s.currentServer!.name];
+    const known = s.contentHierarchyByServer[s.currentServer!.id];
     if (known) {
       const children = known[itemGuid];
       if (children) {
         return _.chain(children)
-          .map((id) => s.knownMediaByServer[s.currentServer!.name][id])
+          .map((id) => s.knownMediaByServer[s.currentServer!.id][id])
           .compact()
-          .filter(isPlexMedia)
+          .filter((m) => m.type === 'plex' && isPlexMedia(m.item))
+          .map((m) => m.item as PlexMedia)
           .value();
       }
     }
