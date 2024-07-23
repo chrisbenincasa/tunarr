@@ -63,7 +63,7 @@ import { addKnownMediaForPlexServer } from '../../store/programmingSelector/acti
 import { setProgrammingSelectorViewState } from '../../store/themeEditor/actions';
 import { ProgramSelectorViewType } from '../../types';
 import { InlineModal } from '../InlineModal';
-import { GridContainerTabPanel } from '../TabPanel';
+import { GridContainerTabPanel } from '../GridContainerTabPanel.tsx';
 import StandaloneToggleButton from '../base/StandaloneToggleButton.tsx';
 import ConnectPlex from '../settings/ConnectPlex';
 import { PlexFilterBuilder } from './PlexFilterBuilder.tsx';

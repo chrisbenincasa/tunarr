@@ -22,7 +22,7 @@ export class KnownMedia {
 
   getMediaOfType<
     MediaItemType extends MediaItems['type'],
-    OutType = Extract<MediaItems, { type: MediaItemType }>,
+    OutType = Extract<MediaItems, { type: MediaItemType }>['item'],
   >(
     sourceId: MediaSourceId,
     itemId: string,
@@ -37,6 +37,6 @@ export class KnownMedia {
       return;
     }
 
-    return media as OutType;
+    return media.item as OutType;
   }
 }

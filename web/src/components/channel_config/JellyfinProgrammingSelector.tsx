@@ -5,26 +5,32 @@ import {
   useCurrentSourceLibrary,
 } from '@/store/programmingSelector/selectors';
 import { filter } from 'lodash-es';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { MediaItemGrid } from './MediaItemGrid.tsx';
 import { Box, Tab, Tabs } from '@mui/material';
+import { JellyfinGridItem } from './JellyfinGridItem.tsx';
+import { tag } from '@tunarr/types';
+import { MediaSourceId } from '@tunarr/types/schemas';
 
 enum TabValues {
   Library = 0,
 }
+
+type RefMap = {
+  [k: string]: HTMLDivElement | null;
+};
 
 export function JellyfinProgrammingSelector() {
   const { data: mediaSources } = useMediaSources();
   const jellyfinServers = filter(mediaSources, { type: 'jellyfin' });
   const selectedServer = useCurrentMediaSource('jellyfin');
   const selectedLibrary = useCurrentSourceLibrary('jellyfin');
+  const gridImageRefs = useRef<RefMap>({});
 
   const [tabValue, setTabValue] = useState(TabValues.Library);
 
-  console.log(selectedServer, selectedLibrary);
-
   const jellyfinItemsQuery = useInfiniteJellyfinLibraryItems(
-    selectedServer?.id ?? '',
+    selectedServer?.id ?? tag<MediaSourceId>(''),
     selectedLibrary?.library.Id ?? '',
     { offset: 0, limit: 10 },
   );
@@ -68,7 +74,12 @@ export function JellyfinProgrammingSelector() {
           size: page.Items.length,
         })}
         extractItems={(page) => page.Items}
-        renderGridItem={(item) => <div key={item.Id}>{item.Name}</div>}
+        renderGridItem={(props) => (
+          <JellyfinGridItem
+            {...props}
+            ref={(element) => (gridImageRefs.current[props.item.Id] = element)}
+          />
+        )}
         renderListItem={(item) => <div key={item.Id} />}
         infiniteQuery={jellyfinItemsQuery}
       />

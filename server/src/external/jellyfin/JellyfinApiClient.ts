@@ -1,6 +1,7 @@
 import constants from '@tunarr/shared/constants';
 import {
   JellyfinAuthenticationResult,
+  JellyfinItemKind,
   JellyfinLibraryItemsResponse,
   JellyfinLibraryResponse,
   JellyfinSystemInfo,
@@ -114,6 +115,7 @@ export class JellyfinApiClient extends BaseApiClient {
   async getLibrary(
     userId: Nilable<string>, // Not required if we are using an access token
     libraryId: Nilable<string>,
+    itemTypes: Nilable<JellyfinItemKind[]> = null,
     extraFields: string[] = [],
     pageParams: Nilable<{ offset: number; limit: number }> = null,
   ) {
@@ -126,7 +128,9 @@ export class JellyfinApiClient extends BaseApiClient {
         limit: pageParams?.limit,
         // These will be configurable eventually
         sortOrder: 'Ascending',
-        sortBy: 'SortName',
+        sortBy: 'SortName,ProductionYear',
+        recursive: true,
+        includeItemTypes: itemTypes ? itemTypes.join(',') : undefined,
       },
     });
   }

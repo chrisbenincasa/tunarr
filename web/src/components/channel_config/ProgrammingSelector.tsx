@@ -9,7 +9,16 @@ import {
   Typography,
 } from '@mui/material';
 import { PlexMedia, isPlexDirectory } from '@tunarr/types/plex';
-import { capitalize, find, isEmpty, isNil, isUndefined, map } from 'lodash-es';
+import {
+  capitalize,
+  chain,
+  find,
+  isEmpty,
+  isNil,
+  isUndefined,
+  map,
+  sortBy,
+} from 'lodash-es';
 import React, { useCallback, useEffect, useState } from 'react';
 import { usePlexLibraries } from '../../hooks/plex/usePlex.ts';
 import { useMediaSources } from '../../hooks/settingsHooks.ts';
@@ -26,6 +35,33 @@ import { CustomShowProgrammingSelector } from './CustomShowProgrammingSelector.t
 import PlexProgrammingSelector from './PlexProgrammingSelector.tsx';
 import { useJellyfinUserLibraries } from '@/hooks/jellyfin/useJellyfinApi.ts';
 import { JellyfinProgrammingSelector } from './JellyfinProgrammingSelector.tsx';
+import { useKnownMedia } from '@/store/programmingSelector/selectors.ts';
+import { JellyfinItem } from '@tunarr/types/jellyfin';
+
+const sortJellyfinLibraries = (item: JellyfinItem) => {
+  console.log(item);
+  if (item.CollectionType) {
+    switch (item.CollectionType) {
+      case 'tvshows':
+      case 'movies':
+      case 'music':
+        return 1;
+      case 'unknown':
+      case 'musicvideos':
+      case 'trailers':
+      case 'homevideos':
+      case 'boxsets':
+      case 'books':
+      case 'photos':
+      case 'livetv':
+      case 'playlists':
+      case 'folders':
+        return 2;
+    }
+  }
+
+  return Number.MAX_SAFE_INTEGER;
+};
 
 export interface PlexListItemProps<T extends PlexMedia> {
   item: T;
@@ -40,7 +76,7 @@ export default function ProgrammingSelector() {
     useMediaSources();
   const selectedServer = useStore((s) => s.currentServer);
   const selectedLibrary = useStore((s) => s.currentLibrary);
-  const knownMedia = useStore((s) => s.knownMediaByServer);
+  const knownMedia = useKnownMedia();
   const [mediaSource, setMediaSource] = useState(selectedServer?.name);
 
   // Convenience sub-selectors for specific library types
@@ -89,7 +125,7 @@ export default function ProgrammingSelector() {
       if (jellyfinLibraries.Items.length > 0) {
         setProgrammingListLibrary({
           type: 'jellyfin',
-          library: jellyfinLibraries.Items[0],
+          library: sortBy(jellyfinLibraries.Items, sortJellyfinLibraries)[0],
         });
       }
       addKnownMediaForJellyfinServer(selectedServer.id, [
@@ -127,17 +163,24 @@ export default function ProgrammingSelector() {
   const onLibraryChange = useCallback(
     (libraryUuid: string) => {
       if (selectedServer?.type === 'plex') {
-        const known = knownMedia[selectedServer.id] ?? {};
-        const library = known[libraryUuid];
+        const library = knownMedia.getMediaOfType(
+          selectedServer.id,
+          libraryUuid,
+          'plex',
+        );
         if (library && isPlexDirectory(library)) {
           setProgrammingListLibrary({ type: 'plex', library });
         }
       } else if (selectedServer?.type === 'jellyfin') {
-        const known = knownMedia[selectedServer.id] ?? {};
-        const library = known[libraryUuid];
-        // if (library && library.) {
-        //   setProgrammingListLibrary({ type: 'plex', library });
-        // }
+        const library = knownMedia.getMediaOfType(
+          selectedServer.id,
+          libraryUuid,
+          'jellyfin',
+        );
+        console.log(libraryUuid, library);
+        if (library) {
+          setProgrammingListLibrary({ type: 'jellyfin', library });
+        }
       }
     },
     [knownMedia, selectedServer],
@@ -222,11 +265,15 @@ export default function ProgrammingSelector() {
                 value={selectedJellyfinLibrary.Id}
                 onChange={(e) => onLibraryChange(e.target.value)}
               >
-                {jellyfinLibraries.Items.map((lib) => (
-                  <MenuItem key={lib.Id} value={lib.Id}>
-                    {lib.Name}
-                  </MenuItem>
-                ))}
+                {chain(jellyfinLibraries.Items)
+                  .sortBy(sortJellyfinLibraries)
+                  .tap(console.dir)
+                  .map((lib) => (
+                    <MenuItem key={lib.Id} value={lib.Id}>
+                      {lib.Name}
+                    </MenuItem>
+                  ))
+                  .value()}
               </Select>
             </FormControl>
           )

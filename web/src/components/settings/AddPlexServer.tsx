@@ -1,11 +1,11 @@
 import { AddCircle, SvgIconComponent } from '@mui/icons-material';
 import { Button } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { InsertPlexServerRequest } from '@tunarr/types/api';
-import { checkNewPlexServers, plexLoginFlow } from '../../helpers/plexLogin.ts';
-import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
+import { InsertMediaSourceRequest } from '@tunarr/types/api';
 import { isEmpty } from 'lodash-es';
 import { useSnackbar } from 'notistack';
+import { checkNewPlexServers, plexLoginFlow } from '../../helpers/plexLogin.ts';
+import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 
 type AddPlexServer = {
   title?: string;
@@ -20,12 +20,12 @@ export default function AddPlexServer(props: AddPlexServer) {
   const snackbar = useSnackbar();
 
   const addPlexServerMutation = useMutation({
-    mutationFn: (newServer: InsertPlexServerRequest) => {
-      return apiClient.createPlexServer(newServer);
+    mutationFn: (newServer: InsertMediaSourceRequest) => {
+      return apiClient.createMediaSource(newServer);
     },
     onSuccess: () => {
       return queryClient.invalidateQueries({
-        queryKey: ['settings', 'plex-servers'],
+        queryKey: ['settings', 'media-sources'],
       });
     },
   });

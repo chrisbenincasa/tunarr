@@ -108,7 +108,7 @@ export const checkNewPlexServers =
       );
 
       for (const connection of [...localConnections, ...remoteConnections]) {
-        const { healthy } = await apiClient.getUnknownPlexServerStatus({
+        const { healthy } = await apiClient.getUnknownMediaSourceStatus({
           name: server.name,
           accessToken: server.accessToken,
           uri: connection.uri,

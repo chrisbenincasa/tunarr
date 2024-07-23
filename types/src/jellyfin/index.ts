@@ -334,7 +334,7 @@ type MediaStreamType =
 
 type SubtitleDeliveryMethod = 'Encode' | 'Embed' | 'External' | 'Hls' | 'Drop';
 
-const BaseItemKind = z.enum([
+export const JellyfinItemKind = z.enum([
   'AggregateFolder',
   'Audio',
   'AudioBook',
@@ -374,7 +374,7 @@ const BaseItemKind = z.enum([
   'Year',
 ]);
 
-type BaseItemKind = z.infer<typeof BaseItemKind>;
+export type JellyfinItemKind = z.infer<typeof JellyfinItemKind>;
 
 export type PersonKind =
   | 'Unknown'
@@ -689,7 +689,7 @@ const JellyfinBaseItemSchema = z.object({
   IsHD: z.boolean().nullable().optional(),
   IsFolder: z.boolean().nullable().optional(),
   ParentId: z.string().nullable().optional(),
-  Type: BaseItemKind,
+  Type: JellyfinItemKind,
   // People: z.array(BaseItemPerson).nullable().optional(),
   Studios: z.array(NameGuidPair).nullable().optional(),
   GenreItems: z.array(NameGuidPair).nullable().optional(),

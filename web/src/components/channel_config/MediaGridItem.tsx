@@ -11,12 +11,22 @@ import {
   useTheme,
 } from '@mui/material';
 import { PlexMedia } from '@tunarr/types/plex';
-import { filter, isNaN, isUndefined } from 'lodash-es';
-import React, { ForwardedRef, MouseEvent, useCallback, useState } from 'react';
+import { filter, groupBy, isNaN, isUndefined, map, mapValues } from 'lodash-es';
+import React, {
+  ForwardedRef,
+  MouseEvent,
+  forwardRef,
+  useCallback,
+  useState,
+} from 'react';
 import { useIntersectionObserver } from 'usehooks-ts';
 import { toggle } from '../../helpers/util.ts';
 import useStore from '../../store/index.ts';
-import { PlexSelectedMedia } from '../../store/programmingSelector/store.ts';
+import {
+  JellyfinSelectedMedia,
+  PlexSelectedMedia,
+} from '../../store/programmingSelector/store.ts';
+import { MediaSourceSettings } from '@tunarr/types';
 
 export interface PlexGridItemProps<T extends PlexMedia> {
   item: T;
@@ -29,7 +39,7 @@ export interface PlexGridItemProps<T extends PlexMedia> {
   ref?: React.RefObject<HTMLDivElement>;
 }
 
-type Extractors<T> = {
+export type GridItemMetadataExtractors<T> = {
   id: (item: T) => string;
   isPlaylist: (item: T) => boolean;
   hasThumbnail: (item: T) => boolean;
@@ -43,18 +53,20 @@ type Extractors<T> = {
 
 type Props<T> = {
   item: T;
-  extractors: Extractors<T>;
+  itemSource: MediaSourceSettings['type'];
+  extractors: GridItemMetadataExtractors<T>;
   style?: React.CSSProperties;
   index?: number;
   moveModal?: (index: number, item: T) => void;
   modalIndex?: number;
-  ref?: React.RefObject<HTMLDivElement>;
   onClick: (item: T) => void;
   onSelect: (item: T) => void;
-  imgListItemRef: ForwardedRef<HTMLDivElement>;
 };
 
-export function MediaGridItem<T>(props: Props<T>) {
+const MediaGridItemInner = <T,>(
+  props: Props<T>,
+  ref: ForwardedRef<HTMLDivElement>,
+) => {
   // const settings = useSettings();
   const theme = useTheme();
   const skeletonBgColor = alpha(
@@ -75,9 +87,16 @@ export function MediaGridItem<T>(props: Props<T>) {
   // );
   // const selectedServer = useCurrentMediaSource('plex');
   const selectedMedia = useStore((s) =>
-    filter(s.selectedMedia, (p): p is PlexSelectedMedia => p.type === 'plex'),
+    filter(
+      s.selectedMedia,
+      (p): p is PlexSelectedMedia | JellyfinSelectedMedia =>
+        p.type !== 'custom-show',
+    ),
   );
-  const selectedMediaIds = selectedMedia.map((item) => item.guid);
+  const selectedMediaByType = mapValues(
+    groupBy(selectedMedia, (sm) => sm.type),
+    (v) => map(v, 'id'),
+  );
 
   const handleClick = () => {
     setOpen(toggle);
@@ -184,7 +203,7 @@ export function MediaGridItem<T>(props: Props<T>) {
             //   ? handleClick
             //   : (event: MouseEvent<HTMLDivElement>) => handleItem(event)
           }
-          ref={imgListItemRef}
+          ref={ref}
         >
           {isInViewport && // TODO: Eventually turn this into isNearViewport so images load before they hit the viewport
             (hasThumb ? (
@@ -248,7 +267,9 @@ export function MediaGridItem<T>(props: Props<T>) {
                   handleItem(event)
                 }
               >
-                {selectedMediaIds.includes(props.extractors.id(item)) ? (
+                {selectedMediaByType[props.itemSource]?.includes(
+                  props.extractors.id(item),
+                ) ? (
                   <CheckCircle />
                 ) : (
                   <RadioButtonUnchecked />
@@ -261,5 +282,9 @@ export function MediaGridItem<T>(props: Props<T>) {
       </div>
     </Fade>
   );
-}
+};
 // );
+
+export const MediaGridItem = forwardRef(MediaGridItemInner) as <T>(
+  props: Props<T> & { ref?: ForwardedRef<HTMLDivElement> },
+) => ReturnType<typeof MediaGridItemInner>;
