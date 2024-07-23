@@ -1,4 +1,4 @@
-import { useJellyfinLibraryItems } from '@/hooks/jellyfin/useJellyfinApi';
+import { useInfiniteJellyfinLibraryItems } from '@/hooks/jellyfin/useJellyfinApi';
 import { useMediaSources } from '@/hooks/settingsHooks';
 import {
   useCurrentMediaSource,
@@ -6,7 +6,8 @@ import {
 } from '@/store/programmingSelector/selectors';
 import { filter } from 'lodash-es';
 import { useState } from 'react';
-import { MediaSourceProgrammingSelector } from './MediaSourceProgrammingSelector';
+import { MediaItemGrid } from './MediaItemGrid.tsx';
+import { Box, Tab, Tabs } from '@mui/material';
 
 enum TabValues {
   Library = 0,
@@ -22,28 +23,54 @@ export function JellyfinProgrammingSelector() {
 
   console.log(selectedServer, selectedLibrary);
 
-  const {
-    data: libraryItems,
-    isLoading: libraryItemsLoading,
-    queryKey,
-  } = useJellyfinLibraryItems(
+  const jellyfinItemsQuery = useInfiniteJellyfinLibraryItems(
     selectedServer?.id ?? '',
     selectedLibrary?.library.Id ?? '',
     { offset: 0, limit: 10 },
   );
 
-  const fetchNextPageForTab = (tab: number) => {
-    console.log('tab');
-  };
-
   return (
     <>
-      <MediaSourceProgrammingSelector
-        mediaSourceType="jellyfin"
-        tabs={[0]}
-        queryKeyForTab={{ 0: queryKey }}
-        defaultTab={0}
-        fetchNextPageOnTab={fetchNextPageForTab}
+      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+        <Tabs
+          value={tabValue}
+          onChange={(_, value: number) => setTabValue(value)}
+          aria-label="Plex media selector tabs"
+          variant="scrollable"
+          allowScrollButtonsMobile
+        >
+          <Tab
+            value={TabValues.Library}
+            label="Library"
+            // {...a11yProps(0)}
+          />
+          {/* {!isUndefined(collectionsData) &&
+                sumBy(collectionsData.pages, (page) => page.size) > 0 && (
+                  <Tab
+                    value={TabValues.Collections}
+                    label="Collections"
+                    {...a11yProps(1)}
+                  />
+                )}
+              {!isUndefined(playlistData) &&
+                sumBy(playlistData.pages, 'size') > 0 && (
+                  <Tab
+                    value={TabValues.Playlists}
+                    label="Playlists"
+                    {...a11yProps(1)}
+                  />
+                )} */}
+        </Tabs>
+      </Box>
+      <MediaItemGrid
+        getPageDataSize={(page) => ({
+          total: page.TotalRecordCount,
+          size: page.Items.length,
+        })}
+        extractItems={(page) => page.Items}
+        renderGridItem={(item) => <div key={item.Id}>{item.Name}</div>}
+        renderListItem={(item) => <div key={item.Id} />}
+        infiniteQuery={jellyfinItemsQuery}
       />
     </>
   );

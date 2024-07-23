@@ -28,7 +28,7 @@ import {
   useIntersectionObserver,
   useResizeObserver,
 } from 'usehooks-ts';
-import CustomTabPanel from '../TabPanel';
+import GridContainerTabPanel from '../TabPanel';
 import { PlexListItem } from './PlexListItem';
 import { findFirstItemInNextRowIndex } from '@/helpers/inlineModalUtil';
 import React from 'react';
@@ -194,7 +194,7 @@ export function MediaSourceProgrammingSelector({
         searchData.pages[0].totalSize || searchData.pages[0].size;
 
       elements.push(
-        <CustomTabPanel value={tabValue} index={0} key="Library">
+        <GridContainerTabPanel value={tabValue} index={0} key="Library">
           {map(
             items,
             (item: PlexMovie | PlexTvShow | PlexMusicArtist, index: number) =>
@@ -207,7 +207,7 @@ export function MediaSourceProgrammingSelector({
 
           {/* {items.length >= totalSearchDataSize &&
             renderFinalRowInlineModal(items)} */}
-        </CustomTabPanel>,
+        </GridContainerTabPanel>,
       );
     }
   };

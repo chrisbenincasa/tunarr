@@ -63,7 +63,7 @@ import { addKnownMediaForPlexServer } from '../../store/programmingSelector/acti
 import { setProgrammingSelectorViewState } from '../../store/themeEditor/actions';
 import { ProgramSelectorViewType } from '../../types';
 import { InlineModal } from '../InlineModal';
-import CustomTabPanel from '../TabPanel';
+import { GridContainerTabPanel } from '../TabPanel';
 import StandaloneToggleButton from '../base/StandaloneToggleButton.tsx';
 import ConnectPlex from '../settings/ConnectPlex';
 import { PlexFilterBuilder } from './PlexFilterBuilder.tsx';
@@ -466,7 +466,7 @@ export default function PlexProgrammingSelector() {
       (first(collectionsData.pages)?.size ?? 0) > 0
     ) {
       elements.push(
-        <CustomTabPanel
+        <GridContainerTabPanel
           value={tabValue}
           index={TabValues.Collections}
           key="Collections"
@@ -483,7 +483,7 @@ export default function PlexProgrammingSelector() {
           {renderFinalRowInlineModal(
             compact(flatMap(collectionsData.pages, (page) => page.Metadata)),
           )}
-        </CustomTabPanel>,
+        </GridContainerTabPanel>,
       );
     }
 
@@ -492,7 +492,7 @@ export default function PlexProgrammingSelector() {
       (first(playlistData?.pages)?.size ?? 0) > 0
     ) {
       elements.push(
-        <CustomTabPanel
+        <GridContainerTabPanel
           value={tabValue}
           index={TabValues.Playlists}
           key="Playlists"
@@ -509,7 +509,7 @@ export default function PlexProgrammingSelector() {
           {renderFinalRowInlineModal(
             compact(flatMap(playlistData?.pages, (page) => page.Metadata)),
           )}
-        </CustomTabPanel>,
+        </GridContainerTabPanel>,
       );
     }
 
@@ -523,7 +523,7 @@ export default function PlexProgrammingSelector() {
         searchData.pages[0].totalSize || searchData.pages[0].size;
 
       elements.push(
-        <CustomTabPanel value={tabValue} index={0} key="Library">
+        <GridContainerTabPanel value={tabValue} index={0} key="Library">
           {map(
             items,
             (item: PlexMovie | PlexTvShow | PlexMusicArtist, index: number) =>
@@ -536,7 +536,7 @@ export default function PlexProgrammingSelector() {
 
           {items.length >= totalSearchDataSize &&
             renderFinalRowInlineModal(items)}
-        </CustomTabPanel>,
+        </GridContainerTabPanel>,
       );
     }
 
