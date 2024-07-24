@@ -1,11 +1,12 @@
 import { isNonEmptyString } from '@/helpers/util.ts';
 import { useApiQuery } from '../useApiQuery.ts';
-import { every, flatMap, isUndefined, sumBy } from 'lodash-es';
+import { every, flatMap, isEmpty, isUndefined, sumBy } from 'lodash-es';
 import { useTunarrApi } from '../useTunarrApi.ts';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { addKnownMediaForJellyfinServer } from '@/store/programmingSelector/actions.ts';
 import { MediaSourceId } from '@tunarr/types/schemas';
+import { JellyfinItemKind } from '@tunarr/types/jellyfin';
 
 export const useJellyfinUserLibraries = (
   mediaSourceId: string,
@@ -35,7 +36,7 @@ export const useJellyfinLibraryItems = (
   const result = useApiQuery({
     queryKey: key,
     queryFn: (apiClient) =>
-      apiClient.getJellyfinLibraryMovies({
+      apiClient.getJellyfinItems({
         params: { mediaSourceId, libraryId },
         queries: {
           offset: pageParams?.offset,
@@ -50,6 +51,7 @@ export const useJellyfinLibraryItems = (
 export const useInfiniteJellyfinLibraryItems = (
   mediaSourceId: MediaSourceId,
   libraryId: string,
+  itemTypes: JellyfinItemKind[],
   pageParams: { offset: number; limit: number } | null = null,
   enabled: boolean = true,
 ) => {
@@ -65,11 +67,12 @@ export const useInfiniteJellyfinLibraryItems = (
   const result = useInfiniteQuery({
     queryKey: key,
     queryFn: ({ pageParam }) =>
-      apiClient.getJellyfinLibraryMovies({
+      apiClient.getJellyfinItems({
         params: { mediaSourceId, libraryId },
         queries: {
           offset: pageParam,
           limit: 20,
+          itemTypes: isEmpty(itemTypes) ? undefined : itemTypes,
         },
       }),
     enabled: enabled && every([mediaSourceId, libraryId], isNonEmptyString),

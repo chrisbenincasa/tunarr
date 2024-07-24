@@ -10,7 +10,10 @@ import { PlexApiFactory } from '../external/plex/PlexApiFactory.js';
 import { MediaSource, MediaSourceType } from '../dao/entities/MediaSource.js';
 import { isNull } from 'lodash-es';
 import { isQueryError } from '../external/BaseApiClient.js';
-import { JellyfinLibraryItemsResponse } from '@tunarr/types/jellyfin';
+import {
+  JellyfinItemKind,
+  JellyfinLibraryItemsResponse,
+} from '@tunarr/types/jellyfin';
 import { FastifyReply } from 'fastify/types/reply.js';
 
 const mediaSourceParams = z.object({
@@ -62,7 +65,7 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
   );
 
   fastify.get(
-    '/jellyfin/:mediaSourceId/libraries/:libraryId/movies',
+    '/jellyfin/:mediaSourceId/libraries/:libraryId/items',
     {
       schema: {
         params: mediaSourceParams.extend({
@@ -71,6 +74,11 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
         querystring: z.object({
           offset: z.coerce.number().nonnegative().optional(),
           limit: z.coerce.number().positive().optional(),
+          itemTypes: z
+            .string()
+            .optional()
+            .transform((s) => s?.split(','))
+            .pipe(JellyfinItemKind.array()),
         }),
         response: {
           200: JellyfinLibraryItemsResponse,
@@ -79,6 +87,7 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
     },
     (req, res) =>
       withJellyfinMediaSource(req, res, async (mediaSource) => {
+        console.log(req.query.itemTypes);
         const api = PlexApiFactory().getJellyfinClient({
           ...mediaSource,
           apiKey: mediaSource.accessToken,
@@ -88,10 +97,10 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
           isDefined(req.query.offset) && isDefined(req.query.limit)
             ? { offset: req.query.offset, limit: req.query.limit }
             : null;
-        const response = await api.getLibrary(
+        const response = await api.getItems(
           null,
           req.params.libraryId,
-          ['Movie'],
+          req.query.itemTypes ?? [],
           [],
           pageParams,
         );
