@@ -39,7 +39,6 @@ import { useKnownMedia } from '@/store/programmingSelector/selectors.ts';
 import { JellyfinItem } from '@tunarr/types/jellyfin';
 
 const sortJellyfinLibraries = (item: JellyfinItem) => {
-  console.log(item);
   if (item.CollectionType) {
     switch (item.CollectionType) {
       case 'tvshows':
@@ -177,7 +176,6 @@ export default function ProgrammingSelector() {
           libraryUuid,
           'jellyfin',
         );
-        console.log(libraryUuid, library);
         if (library) {
           setProgrammingListLibrary({ type: 'jellyfin', library });
         }
@@ -267,7 +265,6 @@ export default function ProgrammingSelector() {
               >
                 {chain(jellyfinLibraries.Items)
                   .sortBy(sortJellyfinLibraries)
-                  .tap(console.dir)
                   .map((lib) => (
                     <MenuItem key={lib.Id} value={lib.Id}>
                       {lib.Name}

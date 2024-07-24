@@ -101,7 +101,7 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
           null,
           req.params.libraryId,
           req.query.itemTypes ?? [],
-          [],
+          ['ChildCount', 'RecursiveItemCount'],
           pageParams,
         );
 

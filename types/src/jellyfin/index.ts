@@ -65,6 +65,8 @@ export const JellyfinItemFields = z.enum([
   'SpecialFeatureCount',
 ]);
 
+export type JellyfinItemFields = z.infer<typeof JellyfinItemFields>;
+
 export const JellyfinBaseItemKind = z.enum([
   'AggregateFolder',
   'Audio',

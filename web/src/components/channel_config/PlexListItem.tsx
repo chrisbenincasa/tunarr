@@ -70,7 +70,7 @@ export function PlexListItem<T extends PlexMedia>(props: PlexListItemProps<T>) {
   const selectedMedia = useStore((s) =>
     filter(s.selectedMedia, (m): m is PlexSelectedMedia => m.type === 'plex'),
   );
-  const selectedMediaIds = map(selectedMedia, typedProperty('guid'));
+  const selectedMediaIds = map(selectedMedia, typedProperty('id'));
 
   const handleClick = () => {
     setOpen(!open);

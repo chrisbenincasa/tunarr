@@ -125,7 +125,7 @@ export const PlexGridItem = forwardRef(
     const selectedMedia = useStore((s) =>
       filter(s.selectedMedia, (p): p is PlexSelectedMedia => p.type === 'plex'),
     );
-    const selectedMediaIds = selectedMedia.map((item) => item.guid);
+    const selectedMediaIds = selectedMedia.map((item) => item.id);
 
     const handleClick = () => {
       setOpen(toggle);

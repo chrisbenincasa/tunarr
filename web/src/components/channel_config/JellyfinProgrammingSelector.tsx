@@ -93,12 +93,8 @@ export function JellyfinProgrammingSelector() {
           size: page.Items.length,
         })}
         extractItems={(page) => page.Items}
-        renderGridItem={(props) => (
-          <JellyfinGridItem
-            {...props}
-            ref={(element) => (gridImageRefs.current[props.item.Id] = element)}
-          />
-        )}
+        getItemKey={(item) => item.Id}
+        renderGridItem={(props) => <JellyfinGridItem {...props} />}
         renderListItem={(item) => <div key={item.Id} />}
         infiniteQuery={jellyfinItemsQuery}
       />

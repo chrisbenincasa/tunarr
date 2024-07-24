@@ -50,9 +50,8 @@ export const useJellyfinLibraryItems = (
 
 export const useInfiniteJellyfinLibraryItems = (
   mediaSourceId: MediaSourceId,
-  libraryId: string,
+  parentId: string,
   itemTypes: JellyfinItemKind[],
-  pageParams: { offset: number; limit: number } | null = null,
   enabled: boolean = true,
 ) => {
   const apiClient = useTunarrApi();
@@ -60,22 +59,22 @@ export const useInfiniteJellyfinLibraryItems = (
     'jellyfin',
     mediaSourceId,
     'library_items',
-    libraryId,
-    pageParams,
+    parentId,
+    'infinite',
   ];
 
   const result = useInfiniteQuery({
     queryKey: key,
     queryFn: ({ pageParam }) =>
       apiClient.getJellyfinItems({
-        params: { mediaSourceId, libraryId },
+        params: { mediaSourceId, libraryId: parentId },
         queries: {
           offset: pageParam,
           limit: 20,
           itemTypes: isEmpty(itemTypes) ? undefined : itemTypes,
         },
       }),
-    enabled: enabled && every([mediaSourceId, libraryId], isNonEmptyString),
+    enabled: enabled && every([mediaSourceId, parentId], isNonEmptyString),
     initialPageParam: 0,
     getNextPageParam: (res, all, last) => {
       const total = sumBy(all, (page) => page.Items.length);
@@ -91,9 +90,9 @@ export const useInfiniteJellyfinLibraryItems = (
   useEffect(() => {
     if (!isUndefined(result.data)) {
       const allItems = flatMap(result.data.pages, (page) => page.Items);
-      addKnownMediaForJellyfinServer(mediaSourceId, allItems, libraryId);
+      addKnownMediaForJellyfinServer(mediaSourceId, allItems, parentId);
     }
-  }, [libraryId, mediaSourceId, result.data]);
+  }, [parentId, mediaSourceId, result.data]);
 
   return { ...result, queryKey: key };
 };

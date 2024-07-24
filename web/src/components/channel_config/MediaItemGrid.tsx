@@ -1,21 +1,35 @@
-import { getImagesPerRow } from '@/helpers/inlineModalUtil.ts';
+import {
+  findFirstItemInNextRowIndex,
+  getImagesPerRow,
+} from '@/helpers/inlineModalUtil.ts';
 import useStore from '@/store/index.ts';
-import { CircularProgress, Divider, Typography } from '@mui/material';
+import { Box, CircularProgress, Divider, Typography } from '@mui/material';
 import { InfiniteData, UseInfiniteQueryResult } from '@tanstack/react-query';
 import { usePrevious } from '@uidotdev/usehooks';
-import { compact, flatMap, map } from 'lodash-es';
-import { useEffect, useRef, useState } from 'react';
+import { compact, flatMap, get, isEmpty, map, sumBy } from 'lodash-es';
+import {
+  ForwardedRef,
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   useDebounceCallback,
   useIntersectionObserver,
   useResizeObserver,
 } from 'usehooks-ts';
 import { GridContainerTabPanel } from '../GridContainerTabPanel';
+import { InlineModal } from '../InlineModal.tsx';
 
 type GridItemProps<ItemType> = {
   item: ItemType;
   index: number;
   modalIndex: number;
+  moveModal: (index: number, item: ItemType) => void;
+  ref: ForwardedRef<HTMLDivElement>;
 };
 
 type Props<PageDataType, ItemType> = {
@@ -26,6 +40,7 @@ type Props<PageDataType, ItemType> = {
   extractItems: (page: PageDataType) => ItemType[];
   renderGridItem: (props: GridItemProps<ItemType>) => JSX.Element;
   renderListItem: (item: ItemType, index: number) => JSX.Element;
+  getItemKey: (item: ItemType) => string;
   infiniteQuery: UseInfiniteQueryResult<InfiniteData<PageDataType>>;
 };
 
@@ -43,6 +58,7 @@ export function MediaItemGrid<PageDataType, ItemType>({
   getPageDataSize,
   renderGridItem,
   renderListItem,
+  getItemKey,
   extractItems,
   infiniteQuery: {
     data,
@@ -60,16 +76,6 @@ export function MediaItemGrid<PageDataType, ItemType>({
   const gridContainerRef = useRef<HTMLDivElement>(null);
   const gridImageRefs = useRef<RefMap>({});
   const previousModalIndex = usePrevious(modalIndex);
-  // const [rowSize, setRowSize] = useState(9);
-  // const firstItemInNextRowIndex = useMemo(
-  //   () =>
-  //     findFirstItemInNextRowIndex(
-  //       modalIndex,
-  //       rowSize,
-  //       sumBy(data?.pages, getPageDataSize) ?? 0,
-  //     ),
-  //   [modalIndex, rowSize, data?.pages, getPageDataSize],
-  // );
 
   const [{ width }, setSize] = useState<Size>({
     width: undefined,
@@ -82,6 +88,44 @@ export function MediaItemGrid<PageDataType, ItemType>({
     ref: gridContainerRef,
     onResize,
   });
+
+  useEffect(() => {
+    if (viewType === 'grid') {
+      let imageRef: HTMLDivElement | null = null;
+
+      if (isEmpty(modalGuid)) {
+        // Grab the first non-null ref for an image
+        for (const key in gridImageRefs.current) {
+          if (gridImageRefs.current[key] !== null) {
+            imageRef = gridImageRefs.current[key];
+            break;
+          }
+        }
+      } else {
+        imageRef = get(gridImageRefs.current, modalGuid);
+      }
+
+      const imageWidth = imageRef?.getBoundingClientRect().width;
+
+      // 16 is additional padding available in the parent container
+      const rowSize = getImagesPerRow(width ? width + 16 : 0, imageWidth ?? 0);
+      setRowSize(rowSize);
+      setScrollParams(({ max }) => ({ max, limit: rowSize * 4 }));
+    }
+  }, [width, viewType, modalGuid]);
+
+  const handleMoveModal = useCallback(
+    (index: number, item: ItemType) => {
+      if (index === modalIndex) {
+        setModalIndex(-1);
+        setModalGuid('');
+      } else {
+        setModalIndex(index);
+        setModalGuid(getItemKey(item));
+      }
+    },
+    [modalIndex, getItemKey],
+  );
 
   useEffect(() => {
     if (data?.pages.length === 1) {
@@ -109,7 +153,7 @@ export function MediaItemGrid<PageDataType, ItemType>({
           }
         }
       } else {
-        imageRef = _.get(gridImageRefs.current, modalGuid);
+        imageRef = get(gridImageRefs.current, modalGuid);
       }
 
       const imageWidth = imageRef?.getBoundingClientRect().width;
@@ -139,19 +183,50 @@ export function MediaItemGrid<PageDataType, ItemType>({
     threshold: 0.5,
   });
 
+  const firstItemIndex = useMemo(
+    () =>
+      findFirstItemInNextRowIndex(
+        modalIndex,
+        rowSize,
+        sumBy(data?.pages, (page) => getPageDataSize(page).size) ?? 0,
+      ),
+    [modalIndex, rowSize, data?.pages, getPageDataSize],
+  );
+
   const renderItems = () => {
-    return map(compact(flatMap(data?.pages, extractItems)), (item, index) =>
-      viewType === 'list'
-        ? renderListItem(item, index)
-        : renderGridItem({ item, index, modalIndex }),
-    );
+    return map(compact(flatMap(data?.pages, extractItems)), (item, index) => {
+      const isOpen = index === firstItemIndex;
+      return viewType === 'list' ? (
+        renderListItem(item, index)
+      ) : (
+        <Fragment key={getItemKey(item)}>
+          <InlineModal
+            itemGuid={modalGuid}
+            modalIndex={modalIndex}
+            rowSize={rowSize}
+            open={isOpen}
+            type={'season'}
+          />
+          {renderGridItem({
+            item,
+            index,
+            modalIndex,
+            moveModal: () => handleMoveModal(index, item),
+            ref: (element) =>
+              (gridImageRefs.current[getItemKey(item)] = element),
+          })}
+        </Fragment>
+      );
+    });
   };
 
   return (
     <>
-      <GridContainerTabPanel index={0} value={0} key="Library">
-        {renderItems()}
-      </GridContainerTabPanel>
+      <Box ref={gridContainerRef} sx={{ width: '100%' }}>
+        <GridContainerTabPanel index={0} value={0} key="Library">
+          {renderItems()}
+        </GridContainerTabPanel>
+      </Box>
       {!isLoading && <div style={{ height: 96 }} ref={ref}></div>}
       {isFetchingNextPage && (
         <CircularProgress

@@ -1,35 +1,29 @@
 import { isNil } from 'lodash-es';
 import pluralize from 'pluralize';
-import React, { ForwardedRef, forwardRef, useCallback } from 'react';
+import React, { ForwardedRef, forwardRef, useCallback, useState } from 'react';
 import {
   forJellyfinItem,
-  forPlexMedia,
   isNonEmptyString,
   prettyItemDuration,
+  toggle,
 } from '../../helpers/util.ts';
 
+import { addJellyfinSelectedMedia } from '@/store/programmingSelector/actions.ts';
+import { useCurrentMediaSource } from '@/store/programmingSelector/selectors.ts';
 import { JellyfinItem } from '@tunarr/types/jellyfin';
 import { MediaGridItem } from './MediaGridItem.tsx';
-import { useCurrentMediaSource } from '@/store/programmingSelector/selectors.ts';
-import { addJellyfinSelectedMedia } from '@/store/programmingSelector/actions.ts';
+import { useInfiniteJellyfinLibraryItems } from '@/hooks/jellyfin/useJellyfinApi.ts';
 
 export interface JellyfinGridItemProps {
   item: JellyfinItem;
   style?: React.CSSProperties;
-  index?: number;
+  index: number;
   parent?: string;
-  moveModal?: (index: number, item: JellyfinItem) => void;
+  moveModal: /*(index: number, item: JellyfinItem)*/ () => void;
   modalIndex?: number;
   onClick?: () => void;
   ref?: React.RefObject<HTMLDivElement>;
 }
-
-const genPlexChildPath = forPlexMedia({
-  collection: (collection) =>
-    `/library/collections/${collection.ratingKey}/children`,
-  playlist: (playlist) => `/playlists/${playlist.ratingKey}/items`,
-  default: (item) => `/library/metadata/${item.ratingKey}/children`,
-});
 
 const extractChildCount = forJellyfinItem({
   Season: (s) => s.ChildCount,
@@ -67,27 +61,9 @@ const subtitle = forJellyfinItem({
   },
 });
 
-// // These never change -- keep a stable reference
-// const jellyfinExtractors: GridItemMetadataExtractors<JellyfinItem> = {
-//   id: item => item.Id,
-//   isPlaylist: (item) => item.Type === 'Playlist',
-//   hasThumbnail: (item) =>
-//     isNonEmptyString((item.ImageTags ?? {})['Primary']),
-//   childCount: extractChildCount,
-//   isMusicItem: item => ['MusicArtist', 'MusicAlbum', 'Audio'].includes(item.Type),
-//   isEpisode: item => item.Type === 'Episode',
-//   title: (item) => item.Name ?? '',
-//   subtitle: subtitle,
-//   thumbnailUrl: (item) =>
-//     `${currentServer.uri}/Items/${
-//       item.Id
-//     }/Images/Primary?fillHeight=300&fillWidth=200&quality=96&tag=${
-//       (item.ImageTags ?? {})['Primary']
-//     }`,
-// }
-
 export const JellyfinGridItem = forwardRef(
   (props: JellyfinGridItemProps, ref: ForwardedRef<HTMLDivElement>) => {
+    const [modalOpen, setModalOpen] = useState(false);
     const currentServer = useCurrentMediaSource('jellyfin');
     const extractId = useCallback((item: JellyfinItem) => item.Id, []);
 
@@ -102,13 +78,28 @@ export const JellyfinGridItem = forwardRef(
       [],
     );
 
+    const hasChildren = ['Series', 'Season'].includes(props.item.Type);
+
+    const result = useInfiniteJellyfinLibraryItems(
+      currentServer!.id,
+      props.item.Id,
+      ['Season'],
+      hasChildren && modalOpen,
+    );
+    console.log(result);
+
+    const handleItemClick = useCallback(() => {
+      setModalOpen(toggle);
+      props.moveModal();
+    }, [props]);
+
     return (
       currentServer && (
         <MediaGridItem<JellyfinItem>
           {...props}
+          key={props.item.Id}
           itemSource="jellyfin"
           ref={ref}
-          // item={props.item}
           extractors={{
             id: extractId,
             isPlaylist: (item) => item.Type === 'Playlist',
@@ -125,8 +116,14 @@ export const JellyfinGridItem = forwardRef(
               }/Images/Primary?fillHeight=300&fillWidth=200&quality=96&tag=${
                 (item.ImageTags ?? {})['Primary']
               }`,
+            selectedMedia: (item) => ({
+              type: 'jellyfin',
+              serverId: currentServer.id,
+              childCount: extractChildCount(item),
+              id: item.Id,
+            }),
           }}
-          onClick={() => {}}
+          onClick={handleItemClick}
           onSelect={(item) => addJellyfinSelectedMedia(currentServer, item)}
         />
       )

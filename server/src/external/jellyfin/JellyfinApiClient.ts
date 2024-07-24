@@ -1,6 +1,7 @@
 import constants from '@tunarr/shared/constants';
 import {
   JellyfinAuthenticationResult,
+  JellyfinItemFields,
   JellyfinItemKind,
   JellyfinLibraryItemsResponse,
   JellyfinLibraryResponse,
@@ -116,7 +117,7 @@ export class JellyfinApiClient extends BaseApiClient {
     userId: Nilable<string>, // Not required if we are using an access token
     libraryId: Nilable<string>,
     itemTypes: Nilable<JellyfinItemKind[]> = null,
-    extraFields: string[] = [],
+    extraFields: JellyfinItemFields[] = [],
     pageParams: Nilable<{ offset: number; limit: number }> = null,
   ) {
     return this.doTypeCheckedGet('/Items', JellyfinLibraryItemsResponse, {
