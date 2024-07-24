@@ -182,12 +182,17 @@ export class FillerDB {
         jsonArrayFrom(
           eb
             .selectFrom('fillerShowContent')
-            .select('programUuid as uuid')
+            .whereRef(
+              'fillerShowContent.fillerShowUuid',
+              '=',
+              'fillerShow.uuid',
+            )
             .leftJoin(
-              'fillerShowContent',
+              'fillerShow',
               'fillerShowContent.fillerShowUuid',
               'fillerShow.uuid',
-            ),
+            )
+            .select('fillerShowContent.programUuid'),
         ).as('content'),
       )
       .execute();
