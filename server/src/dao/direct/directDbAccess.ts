@@ -31,7 +31,7 @@ export const initDirectDbAccess = once((opts: GlobalOptions) => {
           }
           return;
         case 'error':
-          logger.error(event.error, 'Query error', event.query);
+          logger.error(event.error, 'Query error: %s', event.query);
           return;
       }
     },
