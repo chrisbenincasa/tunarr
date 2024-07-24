@@ -13,14 +13,6 @@ export const usePlexCollectionsInfinite = (
   pageSize: number,
 ) => {
   const apiClient = useTunarrApi();
-  console.log(
-    useQueryClient().getQueryState([
-      'plex',
-      plexServer?.name,
-      currentLibrary?.library.key,
-      'collections',
-    ]),
-  );
 
   return useInfiniteQuery({
     queryKey: [

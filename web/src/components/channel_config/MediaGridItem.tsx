@@ -1,3 +1,7 @@
+import {
+  addSelectedMedia,
+  removeSelectedMedia,
+} from '@/store/programmingSelector/actions.ts';
 import { CheckCircle, RadioButtonUnchecked } from '@mui/icons-material';
 import {
   Box,
@@ -10,8 +14,9 @@ import {
   alpha,
   useTheme,
 } from '@mui/material';
+import { MediaSourceSettings } from '@tunarr/types';
 import { PlexMedia } from '@tunarr/types/plex';
-import { filter, groupBy, isNaN, isUndefined, map, mapValues } from 'lodash-es';
+import { filter, isNaN, isUndefined, some } from 'lodash-es';
 import React, {
   ForwardedRef,
   MouseEvent,
@@ -25,8 +30,8 @@ import useStore from '../../store/index.ts';
 import {
   JellyfinSelectedMedia,
   PlexSelectedMedia,
+  SelectedMedia,
 } from '../../store/programmingSelector/store.ts';
-import { MediaSourceSettings } from '@tunarr/types';
 
 export interface PlexGridItemProps<T extends PlexMedia> {
   item: T;
@@ -49,6 +54,7 @@ export type GridItemMetadataExtractors<T> = {
   title: (item: T) => string;
   subtitle: (item: T) => JSX.Element | string | null;
   thumbnailUrl: (item: T) => string;
+  selectedMedia: (item: T) => SelectedMedia;
 };
 
 type Props<T> = {
@@ -93,10 +99,6 @@ const MediaGridItemInner = <T,>(
         p.type !== 'custom-show',
     ),
   );
-  const selectedMediaByType = mapValues(
-    groupBy(selectedMedia, (sm) => sm.type),
-    (v) => map(v, 'id'),
-  );
 
   const handleClick = () => {
     setOpen(toggle);
@@ -112,18 +114,21 @@ const MediaGridItemInner = <T,>(
   //   }
   // }, [item.guid, server.id, children]);
 
+  const isSelected = some(
+    selectedMedia,
+    (sm) => sm.type === props.itemSource && sm.id === props.extractors.id(item),
+  );
+
   const handleItem = useCallback(
     (e: MouseEvent<HTMLDivElement | HTMLButtonElement>) => {
       e.stopPropagation();
-      // const id = props.extractors.id(item);
-      // if (selectedMediaIds.includes(id)) {
-      //   removePlexSelectedMedia(selectedServer!.id, [id]);
-      // } else {
-      //   addPlexSelectedMedia(selectedServer!, [item]);
-      // }
-      props.onSelect(item);
+      if (isSelected) {
+        removeSelectedMedia([props.extractors.selectedMedia(props.item)]);
+      } else {
+        addSelectedMedia(props.extractors.selectedMedia(props.item));
+      }
     },
-    [props, item],
+    [props, item, isSelected],
   );
 
   const { isIntersecting: isInViewport, ref: imageContainerRef } =
@@ -267,13 +272,7 @@ const MediaGridItemInner = <T,>(
                   handleItem(event)
                 }
               >
-                {selectedMediaByType[props.itemSource]?.includes(
-                  props.extractors.id(item),
-                ) ? (
-                  <CheckCircle />
-                ) : (
-                  <RadioButtonUnchecked />
-                )}
+                {isSelected ? <CheckCircle /> : <RadioButtonUnchecked />}
               </IconButton>
             }
             actionPosition="right"
