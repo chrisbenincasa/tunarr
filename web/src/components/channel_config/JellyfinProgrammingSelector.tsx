@@ -11,6 +11,7 @@ import { Box, Tab, Tabs } from '@mui/material';
 import { JellyfinGridItem } from './JellyfinGridItem.tsx';
 import { tag } from '@tunarr/types';
 import { MediaSourceId } from '@tunarr/types/schemas';
+import { JellyfinItemKind } from '@tunarr/types/jellyfin';
 
 enum TabValues {
   Library = 0,
@@ -29,9 +30,27 @@ export function JellyfinProgrammingSelector() {
 
   const [tabValue, setTabValue] = useState(TabValues.Library);
 
+  const itemTypes: JellyfinItemKind[] = [];
+  if (selectedLibrary?.library.CollectionType) {
+    switch (selectedLibrary.library.CollectionType) {
+      case 'movies':
+        itemTypes.push('Movie');
+        break;
+      case 'tvshows':
+        itemTypes.push('Series');
+        break;
+      case 'music':
+        itemTypes.push('MusicArtist');
+        break;
+      default:
+        break;
+    }
+  }
+
   const jellyfinItemsQuery = useInfiniteJellyfinLibraryItems(
     selectedServer?.id ?? tag<MediaSourceId>(''),
     selectedLibrary?.library.Id ?? '',
+    itemTypes,
     { offset: 0, limit: 10 },
   );
 

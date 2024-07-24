@@ -112,7 +112,7 @@ export class JellyfinApiClient extends BaseApiClient {
     });
   }
 
-  async getLibrary(
+  async getItems(
     userId: Nilable<string>, // Not required if we are using an access token
     libraryId: Nilable<string>,
     itemTypes: Nilable<JellyfinItemKind[]> = null,

@@ -1,5 +1,8 @@
 import { makeEndpoint, parametersBuilder } from '@zodios/core';
-import { JellyfinLibraryItemsResponse } from '@tunarr/types/jellyfin';
+import {
+  JellyfinItemKind,
+  JellyfinLibraryItemsResponse,
+} from '@tunarr/types/jellyfin';
 import { z } from 'zod';
 
 export const jellyfinEndpoints = [
@@ -15,7 +18,7 @@ export const jellyfinEndpoints = [
   }),
   makeEndpoint({
     method: 'get',
-    path: '/api/jellyfin/:mediaSourceId/libraries/:libraryId/movies',
+    path: '/api/jellyfin/:mediaSourceId/libraries/:libraryId/items',
     parameters: parametersBuilder()
       .addPaths({
         mediaSourceId: z.string(),
@@ -24,9 +27,12 @@ export const jellyfinEndpoints = [
       .addQueries({
         offset: z.coerce.number().nonnegative().optional(),
         limit: z.coerce.number().positive().optional(),
+        itemTypes: JellyfinItemKind.array()
+          .optional()
+          .transform((arr) => arr?.join(',')),
       })
       .build(),
     response: JellyfinLibraryItemsResponse,
-    alias: 'getJellyfinLibraryMovies',
+    alias: 'getJellyfinItems',
   }),
 ] as const;

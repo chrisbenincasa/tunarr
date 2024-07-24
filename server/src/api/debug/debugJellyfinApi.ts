@@ -54,7 +54,7 @@ export const DebugJellyfinApiRouter: RouterPluginAsyncCallback = async (
       }
 
       await res.send(
-        await client.getLibrary(null, req.query.parentId, [], pageParams),
+        await client.getItems(null, req.query.parentId, [], pageParams),
       );
     },
   );
