@@ -140,6 +140,34 @@ export const addKnownMediaForJellyfinServer = (
       ...state.knownMediaByServer[serverId],
       ...newItems,
     };
+
+    // Add relations
+    let hierarchy = state.contentHierarchyByServer[serverId];
+    if (!hierarchy) {
+      state.contentHierarchyByServer[serverId] = {};
+      hierarchy = state.contentHierarchyByServer[serverId];
+    }
+
+    media
+      // .filter(isPlexParentItem)
+      .map((m) => m.Id)
+      .forEach((id) => {
+        if (!has(state.contentHierarchyByServer[serverId], id)) {
+          state.contentHierarchyByServer[serverId][id] = [];
+        }
+      });
+
+    if (parentId) {
+      if (!state.contentHierarchyByServer[serverId][parentId]) {
+        state.contentHierarchyByServer[serverId][parentId] = [];
+      }
+
+      // Append only - take unique
+      state.contentHierarchyByServer[serverId][parentId] = uniq([
+        ...state.contentHierarchyByServer[serverId][parentId],
+        ...media.map((m) => m.Id),
+      ]);
+    }
   });
 
 const plexChildCount = forPlexMedia({

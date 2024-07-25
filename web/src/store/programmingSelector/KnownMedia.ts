@@ -1,12 +1,16 @@
 import { MediaSourceId } from '@tunarr/types/schemas';
-import { KnownMediaMap, MediaItems } from './store';
+import { ContentHierarchyMap, KnownMediaMap, MediaItems } from './store';
+import { chain } from 'lodash-es';
 
 /**
  * Thin wrapper around raw store state. This exposes friendly
  * getters for dealing with locally stored media source metadata
  */
 export class KnownMedia {
-  constructor(private raw: KnownMediaMap) {}
+  constructor(
+    private raw: KnownMediaMap,
+    private contentHierarchy: ContentHierarchyMap,
+  ) {}
 
   getMediaForSourceId(sourceId: MediaSourceId) {
     const found = this.raw[sourceId];
@@ -38,5 +42,16 @@ export class KnownMedia {
     }
 
     return media.item as OutType;
+  }
+
+  getChildren(sourceId: MediaSourceId, parentId: string) {
+    const hierarchyForSource = this.contentHierarchy[sourceId];
+    if (hierarchyForSource) {
+      return chain(hierarchyForSource[parentId] ?? [])
+        .map((id) => this.getMedia(sourceId, id))
+        .compact()
+        .value();
+    }
+    return [];
   }
 }

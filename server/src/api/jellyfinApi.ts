@@ -78,7 +78,7 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
             .string()
             .optional()
             .transform((s) => s?.split(','))
-            .pipe(JellyfinItemKind.array()),
+            .pipe(JellyfinItemKind.array().optional()),
         }),
         response: {
           200: JellyfinLibraryItemsResponse,

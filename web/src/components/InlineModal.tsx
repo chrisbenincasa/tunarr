@@ -1,7 +1,6 @@
 import { Box, Collapse, List } from '@mui/material';
-import { PlexMedia, isPlexMedia, isPlexParentItem } from '@tunarr/types/plex';
 import { usePrevious } from '@uidotdev/usehooks';
-import _ from 'lodash-es';
+import _, { first } from 'lodash-es';
 import React, {
   useCallback,
   useEffect,
@@ -18,18 +17,34 @@ import {
 } from '../helpers/inlineModalUtil';
 import { toggle } from '../helpers/util.ts';
 import useStore from '../store';
-import { PlexGridItem } from './channel_config/PlexGridItem';
+import { MediaSourceSettings } from '@tunarr/types';
+import { GridInlineModalProps } from './channel_config/MediaItemGrid.tsx';
+import {
+  useCurrentMediaSource,
+  useKnownMedia,
+} from '@/store/programmingSelector/selectors.ts';
 
-type InlineModalProps = {
-  itemGuid: string;
-  modalIndex: number;
-  open?: boolean;
-  rowSize: number;
-  type: PlexMedia['type'] | 'all';
-};
+interface InlineModalProps<ItemType, ItemKind extends string>
+  extends GridInlineModalProps<ItemType> {
+  getItemType: (item: ItemType) => ItemKind; // Tmp change //PlexMedia['type'] | 'all';
+  getChildItemType: (item: ItemType) => ItemKind;
+  sourceType: MediaSourceSettings['type'];
+  extractItemId: (item: ItemType) => string;
+}
 
-export function InlineModal(props: InlineModalProps) {
-  const { itemGuid, modalIndex, open, rowSize, type } = props;
+export function InlineModal<ItemType, ItemKind extends string>(
+  props: InlineModalProps<ItemType, ItemKind>,
+) {
+  const {
+    itemGuid,
+    modalIndex,
+    open,
+    rowSize,
+    getItemType,
+    getChildItemType,
+    extractItemId,
+    renderChildren,
+  } = props;
   const previousItemGuid = usePrevious(itemGuid);
   const [containerWidth, setContainerWidth] = useState(0);
   const [itemWidth, setItemWidth] = useState(0);
@@ -40,22 +55,11 @@ export function InlineModal(props: InlineModalProps) {
   const darkMode = useStore((state) => state.theme.darkMode);
   const [childLimit, setChildLimit] = useState(9);
   const [imagesPerRow, setImagesPerRow] = useState(0);
-  const modalChildren: PlexMedia[] = useStore((s) => {
-    const known = s.contentHierarchyByServer[s.currentServer!.id];
-    if (known) {
-      const children = known[itemGuid];
-      if (children) {
-        return _.chain(children)
-          .map((id) => s.knownMediaByServer[s.currentServer!.id][id])
-          .compact()
-          .filter((m) => m.type === 'plex' && isPlexMedia(m.item))
-          .map((m) => m.item as PlexMedia)
-          .value();
-      }
-    }
-
-    return [];
-  });
+  const currentMediaSource = useCurrentMediaSource(props.sourceType);
+  const knownMedia = useKnownMedia();
+  const modalChildren = knownMedia
+    .getChildren(currentMediaSource!.id, itemGuid)
+    .map((media) => media.item) as ItemType[];
 
   const modalHeight = useMemo(
     () =>
@@ -64,12 +68,13 @@ export function InlineModal(props: InlineModalProps) {
         containerWidth,
         itemWidth,
         modalChildren.length,
-        type,
+        first(modalChildren) ? getItemType(first(modalChildren)!) : 'unknown',
       ),
-    [containerWidth, itemWidth, modalChildren?.length, rowSize, type],
+    [containerWidth, itemWidth, modalChildren, rowSize, getItemType],
   );
 
   const toggleModal = useCallback(() => {
+    console.log('hell');
     setIsOpen(toggle);
   }, []);
 
@@ -86,8 +91,13 @@ export function InlineModal(props: InlineModalProps) {
     }
   }, [ref, gridItemRef, previousItemGuid, itemGuid]);
 
-  const [childItemGuid, setChildItemGuid] = useState<string | null>(null);
-  const [childModalIndex, setChildModalIndex] = useState(-1);
+  const [{ childModalIndex, childItemGuid }, setChildModalInfo] = useState<{
+    childItemGuid: string | null;
+    childModalIndex: number;
+  }>({
+    childItemGuid: null,
+    childModalIndex: -1,
+  });
 
   const firstItemInNextRowIndex = useMemo(
     () =>
@@ -99,10 +109,26 @@ export function InlineModal(props: InlineModalProps) {
     [childModalIndex, modalChildren?.length, rowSize],
   );
 
-  const handleMoveModal = useCallback((index: number, item: PlexMedia) => {
-    setChildItemGuid((prev) => (prev === item.guid ? null : item.guid));
-    setChildModalIndex((prev) => (prev === index ? -1 : index));
-  }, []);
+  const handleMoveModal = useCallback(
+    (index: number, item: ItemType) => {
+      console.log('opening child model', index, item);
+      const id = extractItemId(item);
+      setChildModalInfo((prev) => {
+        if (prev.childItemGuid === id) {
+          return {
+            childItemGuid: null,
+            childModalIndex: -1,
+          };
+        } else {
+          return {
+            childItemGuid: id,
+            childModalIndex: index,
+          };
+        }
+      });
+    },
+    [extractItemId],
+  );
 
   // TODO: Complete this by updating the limit below, not doing this
   // right now because already working with a huge changeset.
@@ -126,10 +152,83 @@ export function InlineModal(props: InlineModalProps) {
       ).includes(childModalIndex)
     : false;
 
+  if (isOpen) {
+    const item = knownMedia.getMediaOfType(
+      currentMediaSource!.id,
+      itemGuid,
+      'jellyfin',
+    );
+    console.log(
+      item?.Name,
+      itemGuid,
+      open,
+      childItemGuid,
+      childModalIndex,
+      modalChildren,
+      isFinalChildModalOpen,
+      extractLastIndexes(
+        modalChildren,
+        modalChildren.length % rowSize === 0
+          ? rowSize
+          : modalChildren.length % rowSize,
+      ),
+    );
+  }
+
+  // const getChildModalProps = useCallback(
+  //   (idx: number) => {
+  //     return {
+  //       itemGuid: childItemGuid ?? '',
+  //       modalIndex: childModalIndex,
+  //       open: idx === firstItemInNextRowIndex,
+  //       renderChildren,
+  //       rowSize: rowSize,
+  //     };
+  //   },
+  //   [
+  //     childItemGuid,
+  //     childModalIndex,
+  //     firstItemInNextRowIndex,
+  //     renderChildren,
+  //     rowSize,
+  //   ],
+  // );
+
+  const renderChild = useCallback(
+    (idx: number, item: ItemType) => {
+      return renderChildren(
+        {
+          index: idx,
+          item: item,
+          modalIndex: modalIndex,
+          moveModal: handleMoveModal,
+          ref: gridItemRef,
+        },
+        {
+          itemGuid: childItemGuid ?? '',
+          modalIndex: childModalIndex,
+          open: idx === firstItemInNextRowIndex,
+          renderChildren,
+          rowSize: rowSize,
+        },
+      );
+    },
+    [
+      childItemGuid,
+      childModalIndex,
+      firstItemInNextRowIndex,
+      handleMoveModal,
+      modalIndex,
+      renderChildren,
+      rowSize,
+    ],
+  );
+
   return (
     <Box
       ref={inlineModalRef}
       component="div"
+      className={'inline-modal-' + itemGuid}
       sx={{
         display: isOpen ? 'grid' : 'none',
         gridColumn: isOpen ? '1 / -1' : undefined,
@@ -168,36 +267,16 @@ export function InlineModal(props: InlineModalProps) {
           ref={ref}
         >
           {_.chain(modalChildren)
-            .filter(isPlexMedia)
             .take(childLimit)
-            .map((child: PlexMedia, idx: number) => (
-              <React.Fragment key={child.guid}>
-                {isPlexParentItem(child) && (
-                  <InlineModal
-                    itemGuid={childItemGuid ?? ''}
-                    modalIndex={childModalIndex}
-                    open={idx === firstItemInNextRowIndex}
-                    rowSize={rowSize}
-                    type={child.type}
-                  />
-                )}
-                <PlexGridItem
-                  item={child}
-                  index={idx}
-                  modalIndex={modalIndex ?? childModalIndex}
-                  ref={gridItemRef}
-                  moveModal={handleMoveModal}
-                />
-              </React.Fragment>
-            ))
+            .map((item, idx) => renderChild(idx, item))
             .value()}
           {/* This Modal is for last row items because they can't be inserted using the above inline modal */}
           <InlineModal
+            {...props}
+            getItemType={getChildItemType}
             itemGuid={childItemGuid ?? ''}
             modalIndex={childModalIndex}
-            rowSize={rowSize}
             open={isFinalChildModalOpen}
-            type={'season'}
           />
           <li style={{ height: 40 }} ref={intersectionRef}></li>
         </List>

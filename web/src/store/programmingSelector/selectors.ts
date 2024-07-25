@@ -67,7 +67,11 @@ export function useCurrentMediaSourceAndLibrary<
 }
 
 export function useKnownMedia() {
-  return new KnownMedia(useStore((s) => s.knownMediaByServer));
+  const [rawKnownMedia, rawHierarchy] = useStore((s) => [
+    s.knownMediaByServer,
+    s.contentHierarchyByServer,
+  ]);
+  return new KnownMedia(rawKnownMedia, rawHierarchy);
 }
 
 export function useSelectedMedia<

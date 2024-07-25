@@ -1,4 +1,3 @@
-import { PlexMedia } from '@tunarr/types/plex';
 import { range } from 'lodash-es';
 
 // Magic Numbers
@@ -28,10 +27,11 @@ export function getEstimatedModalHeight(
   containerWidth: number,
   imageContainerWidth: number,
   listSize: number,
-  type: PlexMedia['type'] | 'all',
+  type: string, // temporary
+  // type: PlexMedia['type'] | 'all',
 ): number {
   // Episode modals have smaller height, short circuit for  now
-  if (type === 'season') {
+  if (type.toLowerCase() === 'season') {
     return SeasonModalHeight;
   }
   // Exit with defaults if container & image width are not provided
@@ -79,13 +79,13 @@ export function findFirstItemInNextRowIndex(
   itemsPerRow: number,
   numberOfItems: number,
 ): number {
-  // Calculate the row number of the current item
-  const rowNumber = Math.floor(modalIndex / itemsPerRow);
-
   // Modal is closed or collection has no data, exit
   if (modalIndex === -1 || numberOfItems === 0) {
     return -1;
   }
+
+  // Calculate the row number of the current item
+  const rowNumber = Math.floor(modalIndex / itemsPerRow);
 
   // If the item clicked is on the last row and the last row isn't full, adjust where modal is inserted
   // for now the final rows modal will be inserted above these items
@@ -111,7 +111,7 @@ export function findFirstItemInNextRowIndex(
   return -1;
 }
 
-export function extractLastIndexes(arr: PlexMedia[], x: number): number[] {
+export function extractLastIndexes(arr: unknown[], x: number): number[] {
   const indexes = range(0, arr.length);
   if (x > arr.length) {
     return indexes;

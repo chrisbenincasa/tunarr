@@ -28,8 +28,8 @@ export const jellyfinEndpoints = [
         offset: z.coerce.number().nonnegative().optional(),
         limit: z.coerce.number().positive().optional(),
         itemTypes: JellyfinItemKind.array()
-          .optional()
-          .transform((arr) => arr?.join(',')),
+          .transform((arr) => arr?.join(','))
+          .optional(),
       })
       .build(),
     response: JellyfinLibraryItemsResponse,

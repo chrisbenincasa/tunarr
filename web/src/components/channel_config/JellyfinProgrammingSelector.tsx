@@ -1,32 +1,57 @@
 import { useInfiniteJellyfinLibraryItems } from '@/hooks/jellyfin/useJellyfinApi';
-import { useMediaSources } from '@/hooks/settingsHooks';
 import {
   useCurrentMediaSource,
   useCurrentSourceLibrary,
 } from '@/store/programmingSelector/selectors';
-import { filter } from 'lodash-es';
-import { useRef, useState } from 'react';
-import { MediaItemGrid } from './MediaItemGrid.tsx';
+import React, { useCallback, useMemo, useState } from 'react';
+import {
+  GridInlineModalProps,
+  GridItemProps,
+  MediaItemGrid,
+} from './MediaItemGrid.tsx';
 import { Box, Tab, Tabs } from '@mui/material';
 import { JellyfinGridItem } from './JellyfinGridItem.tsx';
 import { tag } from '@tunarr/types';
 import { MediaSourceId } from '@tunarr/types/schemas';
-import { JellyfinItemKind } from '@tunarr/types/jellyfin';
+import { JellyfinItem, JellyfinItemKind } from '@tunarr/types/jellyfin';
+import { InlineModal } from '../InlineModal.tsx';
+import { extractLastIndexes } from '@/helpers/inlineModalUtil.ts';
+import { first, flatMap } from 'lodash-es';
+import { forJellyfinItem } from '@/helpers/util.ts';
 
 enum TabValues {
   Library = 0,
 }
 
-type RefMap = {
-  [k: string]: HTMLDivElement | null;
-};
+// TODO move this somewhere common
+function isParentItem(item: JellyfinItem) {
+  switch (item.Type) {
+    // These are the currently supported item types
+    case 'AggregateFolder':
+    case 'Season':
+    case 'Series':
+    case 'CollectionFolder':
+    case 'MusicAlbum':
+    case 'MusicArtist':
+    case 'MusicGenre':
+    case 'Genre':
+    case 'Playlist':
+    case 'PlaylistsFolder':
+      return true;
+    default:
+      return false;
+  }
+}
+
+const childJellyfinType = forJellyfinItem<JellyfinItemKind>({
+  Season: 'Episode',
+  Series: 'Season',
+  default: 'Video',
+});
 
 export function JellyfinProgrammingSelector() {
-  const { data: mediaSources } = useMediaSources();
-  const jellyfinServers = filter(mediaSources, { type: 'jellyfin' });
   const selectedServer = useCurrentMediaSource('jellyfin');
   const selectedLibrary = useCurrentSourceLibrary('jellyfin');
-  const gridImageRefs = useRef<RefMap>({});
 
   const [tabValue, setTabValue] = useState(TabValues.Library);
 
@@ -51,7 +76,79 @@ export function JellyfinProgrammingSelector() {
     selectedServer?.id ?? tag<MediaSourceId>(''),
     selectedLibrary?.library.Id ?? '',
     itemTypes,
-    { offset: 0, limit: 10 },
+    true,
+    50,
+  );
+
+  const totalItems = useMemo(() => {
+    return first(jellyfinItemsQuery.data?.pages)?.TotalRecordCount ?? 0;
+  }, [jellyfinItemsQuery.data]);
+
+  const renderGridItem = (
+    gridItemProps: GridItemProps<JellyfinItem>,
+    modalProps: GridInlineModalProps<JellyfinItem>,
+  ) => {
+    // const numRows = Math.floor(totalItems / modalProps.rowSize);
+    // console.log('num rows', numRows, gridItemProps.index / modalProps.rowSize);
+    // const isLastRow = gridItemProps.index / modalProps.rowSize > numRows;
+    const isLast = gridItemProps.index === totalItems - 1;
+
+    let extraInlineModal: JSX.Element | null = null;
+    if (isLast) {
+      extraInlineModal = renderFinalRowInlineModal(modalProps);
+    }
+
+    return (
+      <React.Fragment key={gridItemProps.item.Id}>
+        {isParentItem(gridItemProps.item) && (
+          /*gridItemProps.index % modalProps.rowSize === 0 &&*/ <InlineModal
+            {...modalProps}
+            extractItemId={(item) => item.Id}
+            sourceType="jellyfin"
+            getItemType={(item) => item.Type}
+            getChildItemType={childJellyfinType}
+          />
+        )}
+        <JellyfinGridItem {...gridItemProps} />
+        {extraInlineModal}
+      </React.Fragment>
+    );
+  };
+
+  const renderFinalRowInlineModal = useCallback(
+    (modalProps: GridInlineModalProps<JellyfinItem>) => {
+      const { rowSize, modalIndex } = modalProps;
+      const allItems = flatMap(
+        jellyfinItemsQuery.data?.pages,
+        (page) => page.Items,
+      );
+      // This Modal is for last row items because they can't be inserted using the above inline modal
+      // Check how many items are in the last row
+      const remainingItems =
+        allItems.length % rowSize === 0 ? rowSize : allItems.length % rowSize;
+
+      const open = extractLastIndexes(allItems, remainingItems).includes(
+        modalIndex,
+      );
+
+      console.log(
+        open,
+        extractLastIndexes(allItems, remainingItems),
+        modalIndex,
+      );
+
+      return (
+        <InlineModal
+          {...modalProps}
+          extractItemId={(item) => item.Id}
+          sourceType="jellyfin"
+          open={open}
+          getItemType={(item) => item.Type}
+          getChildItemType={childJellyfinType}
+        />
+      );
+    },
+    [jellyfinItemsQuery.data],
   );
 
   return (
@@ -94,8 +191,9 @@ export function JellyfinProgrammingSelector() {
         })}
         extractItems={(page) => page.Items}
         getItemKey={(item) => item.Id}
-        renderGridItem={(props) => <JellyfinGridItem {...props} />}
+        renderGridItem={renderGridItem}
         renderListItem={(item) => <div key={item.Id} />}
+        // renderFinalRow={renderFinalRowInlineModal}
         infiniteQuery={jellyfinItemsQuery}
       />
     </>
