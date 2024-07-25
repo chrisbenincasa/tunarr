@@ -418,7 +418,7 @@ export default function PlexProgrammingSelector() {
         {isPlexParentItem(item) &&
           (item.type === 'playlist' ? (item.leafCount ?? 0) < 500 : true) && (
             <InlineModal
-              itemGuid={modalGuid}
+              modalItemGuid={modalGuid}
               modalIndex={modalIndex}
               rowSize={rowSize}
               open={isOpen}
@@ -448,7 +448,7 @@ export default function PlexProgrammingSelector() {
 
     return (
       <InlineModal
-        itemGuid={modalGuid}
+        modalItemGuid={modalGuid}
         modalIndex={modalIndex}
         rowSize={rowSize}
         open={open}

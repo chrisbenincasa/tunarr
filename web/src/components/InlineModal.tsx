@@ -30,7 +30,7 @@ export function InlineModal<ItemType, ItemKind extends string>(
   props: InlineModalProps<ItemType, ItemKind>,
 ) {
   const {
-    itemGuid,
+    modalItemGuid: itemGuid,
     modalIndex,
     open,
     rowSize,
@@ -52,7 +52,7 @@ export function InlineModal<ItemType, ItemKind extends string>(
   const currentMediaSource = useCurrentMediaSource(props.sourceType);
   const knownMedia = useKnownMedia();
   const modalChildren = knownMedia
-    .getChildren(currentMediaSource!.id, itemGuid)
+    .getChildren(currentMediaSource!.id, itemGuid ?? '')
     .map((media) => media.item) as ItemType[];
 
   const modalHeight = useMemo(
@@ -68,7 +68,6 @@ export function InlineModal<ItemType, ItemKind extends string>(
   );
 
   const toggleModal = useCallback(() => {
-    console.log('hell');
     setIsOpen(toggle);
   }, []);
 
@@ -147,28 +146,28 @@ export function InlineModal<ItemType, ItemKind extends string>(
       ).includes(childModalIndex)
     : false;
 
-  if (isOpen) {
-    const item = knownMedia.getMediaOfType(
-      currentMediaSource!.id,
-      itemGuid,
-      'jellyfin',
-    );
-    console.log(
-      item?.Name,
-      itemGuid,
-      `open=${open}`,
-      `childItemGuid=${childItemGuid}`,
-      `childModalIndex=${childModalIndex}`,
-      modalChildren.length,
-      `isFinalChildModalOpen=${isFinalChildModalOpen}`,
-      extractLastIndexes(
-        modalChildren,
-        modalChildren.length % rowSize === 0
-          ? rowSize
-          : modalChildren.length % rowSize,
-      ),
-    );
-  }
+  // if (isOpen) {
+  //   const item = knownMedia.getMediaOfType(
+  //     currentMediaSource!.id,
+  //     itemGuid ?? '',
+  //     'jellyfin',
+  //   );
+  //   console.log(
+  //     item?.Name,
+  //     itemGuid,
+  //     `open=${open}`,
+  //     `childItemGuid=${childItemGuid}`,
+  //     `childModalIndex=${childModalIndex}`,
+  //     modalChildren.length,
+  //     `isFinalChildModalOpen=${isFinalChildModalOpen}`,
+  //     extractLastIndexes(
+  //       modalChildren,
+  //       modalChildren.length % rowSize === 0
+  //         ? rowSize
+  //         : modalChildren.length % rowSize,
+  //     ),
+  //   );
+  // }
 
   // const getChildModalProps = useCallback(
   //   (idx: number) => {
@@ -200,7 +199,7 @@ export function InlineModal<ItemType, ItemKind extends string>(
           ref: gridItemRef,
         },
         {
-          itemGuid: childItemGuid ?? '',
+          modalItemGuid: childItemGuid ?? '',
           modalIndex: childModalIndex,
           open: idx === firstItemInNextRowIndex,
           renderChildren,
@@ -271,7 +270,7 @@ export function InlineModal<ItemType, ItemKind extends string>(
           <InlineModal
             {...props}
             getItemType={getChildItemType}
-            itemGuid={childItemGuid ?? ''}
+            modalItemGuid={childItemGuid ?? ''}
             modalIndex={childModalIndex}
             open={isFinalChildModalOpen}
           />
