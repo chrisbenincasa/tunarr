@@ -21,8 +21,9 @@ export const useJellyfinUserLibraries = (
 };
 
 export const useJellyfinLibraryItems = (
-  mediaSourceId: string,
-  libraryId: string,
+  mediaSourceId: MediaSourceId,
+  parentId: string,
+  itemTypes: JellyfinItemKind[],
   pageParams: { offset: number; limit: number } | null = null,
   enabled: boolean = true,
 ) => {
@@ -30,21 +31,33 @@ export const useJellyfinLibraryItems = (
     'jellyfin',
     mediaSourceId,
     'library_items',
-    libraryId,
+    parentId,
     pageParams,
   ];
   const result = useApiQuery({
     queryKey: key,
     queryFn: (apiClient) =>
       apiClient.getJellyfinItems({
-        params: { mediaSourceId, libraryId },
+        params: { mediaSourceId, libraryId: parentId },
         queries: {
           offset: pageParams?.offset,
           limit: pageParams?.limit,
+          itemTypes: isEmpty(itemTypes) ? undefined : itemTypes,
         },
       }),
-    enabled: enabled && every([mediaSourceId, libraryId], isNonEmptyString),
+    enabled: enabled && every([mediaSourceId, parentId], isNonEmptyString),
   });
+
+  useEffect(() => {
+    if (!isUndefined(result.data)) {
+      addKnownMediaForJellyfinServer(
+        mediaSourceId,
+        result.data.Items,
+        parentId,
+      );
+    }
+  }, [mediaSourceId, parentId, result.data]);
+
   return { ...result, queryKey: key };
 };
 
@@ -53,6 +66,7 @@ export const useInfiniteJellyfinLibraryItems = (
   parentId: string,
   itemTypes: JellyfinItemKind[],
   enabled: boolean = true,
+  chunkSize: number = 20,
 ) => {
   const apiClient = useTunarrApi();
   const key = [
@@ -70,7 +84,7 @@ export const useInfiniteJellyfinLibraryItems = (
         params: { mediaSourceId, libraryId: parentId },
         queries: {
           offset: pageParam,
-          limit: 20,
+          limit: chunkSize,
           itemTypes: isEmpty(itemTypes) ? undefined : itemTypes,
         },
       }),

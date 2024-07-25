@@ -9,7 +9,6 @@ import { usePrevious } from '@uidotdev/usehooks';
 import { compact, flatMap, get, isEmpty, map, sumBy } from 'lodash-es';
 import {
   ForwardedRef,
-  Fragment,
   useCallback,
   useEffect,
   useMemo,
@@ -22,15 +21,25 @@ import {
   useResizeObserver,
 } from 'usehooks-ts';
 import { GridContainerTabPanel } from '../GridContainerTabPanel';
-import { InlineModal } from '../InlineModal.tsx';
 
-type GridItemProps<ItemType> = {
+export interface GridItemProps<ItemType> {
   item: ItemType;
   index: number;
   modalIndex: number;
   moveModal: (index: number, item: ItemType) => void;
   ref: ForwardedRef<HTMLDivElement>;
-};
+}
+
+export interface GridInlineModalProps<ItemType> {
+  open: boolean;
+  itemGuid: string;
+  modalIndex: number;
+  rowSize: number;
+  renderChildren: (
+    gridItemProps: GridItemProps<ItemType>,
+    modalProps: GridInlineModalProps<ItemType>,
+  ) => JSX.Element;
+}
 
 type Props<PageDataType, ItemType> = {
   // modalIndex: number;
@@ -38,8 +47,12 @@ type Props<PageDataType, ItemType> = {
   // viewType: 'grid' | 'list';
   getPageDataSize: (page: PageDataType) => { total?: number; size: number };
   extractItems: (page: PageDataType) => ItemType[];
-  renderGridItem: (props: GridItemProps<ItemType>) => JSX.Element;
+  renderGridItem: (
+    gridItemProps: GridItemProps<ItemType>,
+    modalProps: GridInlineModalProps<ItemType>,
+  ) => JSX.Element;
   renderListItem: (item: ItemType, index: number) => JSX.Element;
+  renderFinalRow?: (modalProps: GridInlineModalProps<ItemType>) => JSX.Element;
   getItemKey: (item: ItemType) => string;
   infiniteQuery: UseInfiniteQueryResult<InfiniteData<PageDataType>>;
 };
@@ -58,6 +71,7 @@ export function MediaItemGrid<PageDataType, ItemType>({
   getPageDataSize,
   renderGridItem,
   renderListItem,
+  renderFinalRow,
   getItemKey,
   extractItems,
   infiniteQuery: {
@@ -116,6 +130,7 @@ export function MediaItemGrid<PageDataType, ItemType>({
 
   const handleMoveModal = useCallback(
     (index: number, item: ItemType) => {
+      console.log('top level', index, item, modalIndex);
       if (index === modalIndex) {
         setModalIndex(-1);
         setModalGuid('');
@@ -196,27 +211,25 @@ export function MediaItemGrid<PageDataType, ItemType>({
   const renderItems = () => {
     return map(compact(flatMap(data?.pages, extractItems)), (item, index) => {
       const isOpen = index === firstItemIndex;
-      return viewType === 'list' ? (
-        renderListItem(item, index)
-      ) : (
-        <Fragment key={getItemKey(item)}>
-          <InlineModal
-            itemGuid={modalGuid}
-            modalIndex={modalIndex}
-            rowSize={rowSize}
-            open={isOpen}
-            type={'season'}
-          />
-          {renderGridItem({
-            item,
-            index,
-            modalIndex,
-            moveModal: () => handleMoveModal(index, item),
-            ref: (element) =>
-              (gridImageRefs.current[getItemKey(item)] = element),
-          })}
-        </Fragment>
-      );
+      return viewType === 'list'
+        ? renderListItem(item, index)
+        : renderGridItem(
+            {
+              item,
+              index,
+              modalIndex,
+              moveModal: () => handleMoveModal(index, item),
+              ref: (element) =>
+                (gridImageRefs.current[getItemKey(item)] = element),
+            },
+            {
+              open: isOpen,
+              itemGuid: modalGuid,
+              modalIndex: modalIndex,
+              rowSize: rowSize,
+              renderChildren: renderGridItem,
+            },
+          );
     });
   };
 
@@ -225,6 +238,14 @@ export function MediaItemGrid<PageDataType, ItemType>({
       <Box ref={gridContainerRef} sx={{ width: '100%' }}>
         <GridContainerTabPanel index={0} value={0} key="Library">
           {renderItems()}
+          {renderFinalRow &&
+            renderFinalRow({
+              open: false,
+              itemGuid: modalGuid,
+              modalIndex: modalIndex,
+              rowSize: rowSize,
+              renderChildren: renderGridItem,
+            })}
         </GridContainerTabPanel>
       </Box>
       {!isLoading && <div style={{ height: 96 }} ref={ref}></div>}

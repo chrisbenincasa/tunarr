@@ -1,6 +1,12 @@
-import { isNil } from 'lodash-es';
+import { isEmpty, isNil, isUndefined } from 'lodash-es';
 import pluralize from 'pluralize';
-import React, { ForwardedRef, forwardRef, useCallback, useState } from 'react';
+import React, {
+  ForwardedRef,
+  forwardRef,
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
 import {
   forJellyfinItem,
   isNonEmptyString,
@@ -8,21 +14,21 @@ import {
   toggle,
 } from '../../helpers/util.ts';
 
-import { addJellyfinSelectedMedia } from '@/store/programmingSelector/actions.ts';
+import {
+  addJellyfinSelectedMedia,
+  addKnownMediaForJellyfinServer,
+} from '@/store/programmingSelector/actions.ts';
 import { useCurrentMediaSource } from '@/store/programmingSelector/selectors.ts';
-import { JellyfinItem } from '@tunarr/types/jellyfin';
+import { JellyfinItem, JellyfinItemKind } from '@tunarr/types/jellyfin';
 import { MediaGridItem } from './MediaGridItem.tsx';
-import { useInfiniteJellyfinLibraryItems } from '@/hooks/jellyfin/useJellyfinApi.ts';
+import { useJellyfinLibraryItems } from '@/hooks/jellyfin/useJellyfinApi.ts';
+import { GridItemProps } from './MediaItemGrid.tsx';
 
-export interface JellyfinGridItemProps {
-  item: JellyfinItem;
+export interface JellyfinGridItemProps extends GridItemProps<JellyfinItem> {
+  // item: JellyfinItem;
   style?: React.CSSProperties;
-  index: number;
   parent?: string;
-  moveModal: /*(index: number, item: JellyfinItem)*/ () => void;
-  modalIndex?: number;
   onClick?: () => void;
-  ref?: React.RefObject<HTMLDivElement>;
 }
 
 const extractChildCount = forJellyfinItem({
@@ -40,6 +46,11 @@ const childItemType = forJellyfinItem({
   Playlist: (pl) => (pl.MediaType === 'Audio' ? 'track' : 'video'),
   MusicArtist: 'album',
   MusicAlbum: 'track',
+});
+
+const childJellyfinType = forJellyfinItem<JellyfinItemKind>({
+  Season: 'Episode',
+  Series: 'Season',
 });
 
 const subtitle = forJellyfinItem({
@@ -63,6 +74,7 @@ const subtitle = forJellyfinItem({
 
 export const JellyfinGridItem = forwardRef(
   (props: JellyfinGridItemProps, ref: ForwardedRef<HTMLDivElement>) => {
+    const { item, index, moveModal } = props;
     const [modalOpen, setModalOpen] = useState(false);
     const currentServer = useCurrentMediaSource('jellyfin');
     const extractId = useCallback((item: JellyfinItem) => item.Id, []);
@@ -78,24 +90,39 @@ export const JellyfinGridItem = forwardRef(
       [],
     );
 
-    const hasChildren = ['Series', 'Season'].includes(props.item.Type);
+    const hasChildren = ['Series', 'Season'].includes(item.Type);
+    const childKind = childJellyfinType(item);
 
-    const result = useInfiniteJellyfinLibraryItems(
+    const { data: childItems } = useJellyfinLibraryItems(
       currentServer!.id,
-      props.item.Id,
-      ['Season'],
+      item.Id,
+      childKind ? [childKind] : [],
+      null,
       hasChildren && modalOpen,
     );
-    console.log(result);
+
+    useEffect(() => {
+      if (
+        !isUndefined(childItems) &&
+        !isEmpty(childItems.Items) &&
+        isNonEmptyString(currentServer?.id)
+      ) {
+        addKnownMediaForJellyfinServer(currentServer.id, childItems.Items);
+      }
+    }, [childItems, currentServer?.id]);
+
+    const moveModalToItem = useCallback(() => {
+      moveModal(index, item);
+    }, [index, item, moveModal]);
 
     const handleItemClick = useCallback(() => {
       setModalOpen(toggle);
-      props.moveModal();
-    }, [props]);
+      moveModalToItem();
+    }, [moveModalToItem]);
 
     return (
       currentServer && (
-        <MediaGridItem<JellyfinItem>
+        <MediaGridItem
           {...props}
           key={props.item.Id}
           itemSource="jellyfin"
@@ -116,7 +143,7 @@ export const JellyfinGridItem = forwardRef(
               }/Images/Primary?fillHeight=300&fillWidth=200&quality=96&tag=${
                 (item.ImageTags ?? {})['Primary']
               }`,
-            selectedMedia: (item) => ({
+            selectedMedia: (item: JellyfinItem) => ({
               type: 'jellyfin',
               serverId: currentServer.id,
               childCount: extractChildCount(item),

@@ -84,7 +84,7 @@ const MediaGridItemInner = <T,>(
   const [open, setOpen] = useState(false);
   const { item, extractors, index, style, moveModal } = props;
   const hasThumb = extractors.hasThumbnail(item);
-  const [imageLoaded, setImageLoaded] = useState(!hasThumb);
+  const [imageLoaded, setImageLoaded] = useState(false);
   // const hasChildren = !isTerminalItem(item);
   // const { data: children } = usePlexTyped<PlexChildMediaApiType<T>>(
   //   server.name,
@@ -128,7 +128,7 @@ const MediaGridItemInner = <T,>(
         addSelectedMedia(props.extractors.selectedMedia(props.item));
       }
     },
-    [props, item, isSelected],
+    [props, isSelected],
   );
 
   const { isIntersecting: isInViewport, ref: imageContainerRef } =
@@ -181,7 +181,7 @@ const MediaGridItemInner = <T,>(
       timeout={750}
       ref={imageContainerRef}
     >
-      <div>
+      <div className="testtesteststestes">
         <ImageListItem
           component={Grid}
           key={props.extractors.id(item)}
