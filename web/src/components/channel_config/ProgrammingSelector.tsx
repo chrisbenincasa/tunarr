@@ -42,6 +42,7 @@ const sortJellyfinLibraries = (item: JellyfinItem) => {
   if (item.CollectionType) {
     switch (item.CollectionType) {
       case 'tvshows':
+        return 0;
       case 'movies':
       case 'music':
         return 1;
@@ -70,7 +71,13 @@ export interface PlexListItemProps<T extends PlexMedia> {
   parent?: string;
 }
 
-export default function ProgrammingSelector() {
+type Props = {
+  initialMediaSourceId?: string;
+  initialLibraryId?: string;
+};
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export default function ProgrammingSelector(_: Props) {
   const { data: mediaSources, isLoading: mediaSourcesLoading } =
     useMediaSources();
   const selectedServer = useStore((s) => s.currentServer);
