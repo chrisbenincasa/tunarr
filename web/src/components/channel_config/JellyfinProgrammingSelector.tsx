@@ -15,8 +15,7 @@ import { tag } from '@tunarr/types';
 import { MediaSourceId } from '@tunarr/types/schemas';
 import { JellyfinItem, JellyfinItemKind } from '@tunarr/types/jellyfin';
 import { InlineModal } from '../InlineModal.tsx';
-import { extractLastIndexes } from '@/helpers/inlineModalUtil.ts';
-import { first, flatMap } from 'lodash-es';
+import { first } from 'lodash-es';
 import { forJellyfinItem } from '@/helpers/util.ts';
 
 enum TabValues {
@@ -88,32 +87,12 @@ export function JellyfinProgrammingSelector() {
     gridItemProps: GridItemProps<JellyfinItem>,
     modalProps: GridInlineModalProps<JellyfinItem>,
   ) => {
-    // const numRows = Math.floor(totalItems / modalProps.rowSize);
-    // console.log('num rows', numRows, gridItemProps.index / modalProps.rowSize);
-    // const isLastRow = gridItemProps.index / modalProps.rowSize > numRows;
     const isLast = gridItemProps.index === totalItems - 1;
 
-    // let extraInlineModal: JSX.Element | null = null;
-    // if (isLast) {
-    //   extraInlineModal = renderFinalRowInlineModal(modalProps);
-    // }
-
-    if (modalProps.open) {
-      console.log(
-        '%O',
-        modalProps,
-        gridItemProps.index,
-        (gridItemProps.index + 1) % modalProps.rowSize === 0,
-        isLast,
-      );
-    }
     const renderModal =
       isParentItem(gridItemProps.item) &&
       ((gridItemProps.index + 1) % modalProps.rowSize === 0 || isLast);
-    /*gridItemProps.index % modalProps.rowSize === 0 &&*/
-    if (isLast) {
-      console.log('last', gridItemProps.index);
-    }
+
     return (
       <React.Fragment key={gridItemProps.item.Id}>
         <JellyfinGridItem {...gridItemProps} />
@@ -126,46 +105,9 @@ export function JellyfinProgrammingSelector() {
             getChildItemType={childJellyfinType}
           />
         )}
-        {/* {extraInlineModal} */}
       </React.Fragment>
     );
   };
-
-  const renderFinalRowInlineModal = useCallback(
-    (modalProps: GridInlineModalProps<JellyfinItem>) => {
-      const { rowSize, modalIndex } = modalProps;
-      const allItems = flatMap(
-        jellyfinItemsQuery.data?.pages,
-        (page) => page.Items,
-      );
-      // This Modal is for last row items because they can't be inserted using the above inline modal
-      // Check how many items are in the last row
-      const remainingItems =
-        allItems.length % rowSize === 0 ? rowSize : allItems.length % rowSize;
-
-      const open = extractLastIndexes(allItems, remainingItems).includes(
-        modalIndex,
-      );
-
-      console.log(
-        open,
-        extractLastIndexes(allItems, remainingItems),
-        modalIndex,
-      );
-
-      return (
-        <InlineModal
-          {...modalProps}
-          extractItemId={(item) => item.Id}
-          sourceType="jellyfin"
-          open={open}
-          getItemType={(item) => item.Type}
-          getChildItemType={childJellyfinType}
-        />
-      );
-    },
-    [jellyfinItemsQuery.data],
-  );
 
   return (
     <>
@@ -206,7 +148,7 @@ export function JellyfinProgrammingSelector() {
           size: page.Items.length,
         })}
         extractItems={(page) => page.Items}
-        getItemKey={(item) => item.Id}
+        getItemKey={useCallback((item: JellyfinItem) => item.Id, [])}
         renderGridItem={renderGridItem}
         renderListItem={(item) => <div key={item.Id} />}
         // renderFinalRow={renderFinalRowInlineModal}

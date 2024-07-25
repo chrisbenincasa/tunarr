@@ -122,10 +122,17 @@ export function findLastItemInRowIndex(
   const totalRows = Math.floor(totalItems / itemsPerRow);
   const currentRow = Math.floor(selectedItemIndex / itemsPerRow);
 
-  // Last row special case
+  // Return the last index
   if (currentRow === totalRows) {
     return totalItems - 1;
   }
+
+  // Return the nearest end index of each row. The calculation
+  // rounds to the nearest itemsPerRow (i.e. the end of the row)
+  // and then subtracts one to be used to index the array directly.
+  const nearestEndIndex =
+    Math.ceil((selectedItemIndex + 1) / itemsPerRow) * itemsPerRow;
+  return nearestEndIndex === 0 ? itemsPerRow - 1 : nearestEndIndex - 1;
 }
 
 export function extractLastIndexes(arr: unknown[], x: number): number[] {

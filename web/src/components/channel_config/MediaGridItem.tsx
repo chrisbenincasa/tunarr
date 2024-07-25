@@ -15,7 +15,6 @@ import {
   useTheme,
 } from '@mui/material';
 import { MediaSourceSettings } from '@tunarr/types';
-import { PlexMedia } from '@tunarr/types/plex';
 import { filter, isNaN, isUndefined, some } from 'lodash-es';
 import React, {
   ForwardedRef,
@@ -25,24 +24,12 @@ import React, {
   useState,
 } from 'react';
 import { useIntersectionObserver } from 'usehooks-ts';
-import { toggle } from '../../helpers/util.ts';
 import useStore from '../../store/index.ts';
 import {
   JellyfinSelectedMedia,
   PlexSelectedMedia,
   SelectedMedia,
 } from '../../store/programmingSelector/store.ts';
-
-export interface PlexGridItemProps<T extends PlexMedia> {
-  item: T;
-  style?: React.CSSProperties;
-  index?: number;
-  parent?: string;
-  moveModal?: (index: number, item: T) => void;
-  modalIndex?: number;
-  onClick?: () => void;
-  ref?: React.RefObject<HTMLDivElement>;
-}
 
 export type GridItemMetadataExtractors<T> = {
   id: (item: T) => string;
@@ -62,9 +49,8 @@ type Props<T> = {
   itemSource: MediaSourceSettings['type'];
   extractors: GridItemMetadataExtractors<T>;
   style?: React.CSSProperties;
-  index?: number;
-  moveModal?: (index: number, item: T) => void;
-  modalIndex?: number;
+  index: number;
+  isModalOpen: boolean;
   onClick: (item: T) => void;
   onSelect: (item: T) => void;
 };
@@ -81,8 +67,7 @@ const MediaGridItemInner = <T,>(
   );
   // const server = useCurrentMediaSource('plex')!; // We have to have a server at this point
   const darkMode = useStore((state) => state.theme.darkMode);
-  const [open, setOpen] = useState(false);
-  const { item, extractors, index, style, moveModal } = props;
+  const { item, extractors, style, isModalOpen, onClick } = props;
   const hasThumb = extractors.hasThumbnail(item);
   const [imageLoaded, setImageLoaded] = useState(false);
   // const hasChildren = !isTerminalItem(item);
@@ -100,13 +85,10 @@ const MediaGridItemInner = <T,>(
     ),
   );
 
-  const handleClick = () => {
-    setOpen(toggle);
-
-    if (!isUndefined(index) && !isUndefined(moveModal)) {
-      moveModal(index, item);
-    }
-  };
+  const handleClick = useCallback(() => {
+    // moveModal(index, item);
+    onClick(item);
+  }, [item, onClick]);
 
   // useEffect(() => {
   //   if (!isUndefined(children?.Metadata)) {
@@ -195,7 +177,7 @@ const MediaGridItemInner = <T,>(
             paddingTop: '8px',
             height: 'auto',
             backgroundColor: (theme) =>
-              props.modalIndex === props.index
+              isModalOpen
                 ? darkMode
                   ? theme.palette.grey[800]
                   : theme.palette.grey[400]
@@ -203,7 +185,7 @@ const MediaGridItemInner = <T,>(
             ...style,
           }}
           onClick={
-            () => props.onClick(item)
+            handleClick
             // hasChildren
             //   ? handleClick
             //   : (event: MouseEvent<HTMLDivElement>) => handleItem(event)

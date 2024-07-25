@@ -1,12 +1,12 @@
 import {
-  findFirstItemInNextRowIndex,
+  findLastItemInRowIndex,
   getImagesPerRow,
 } from '@/helpers/inlineModalUtil.ts';
 import useStore from '@/store/index.ts';
 import { Box, CircularProgress, Divider, Typography } from '@mui/material';
 import { InfiniteData, UseInfiniteQueryResult } from '@tanstack/react-query';
 import { usePrevious } from '@uidotdev/usehooks';
-import { compact, flatMap, get, isEmpty, map, sumBy } from 'lodash-es';
+import { compact, flatMap, map, sumBy } from 'lodash-es';
 import {
   ForwardedRef,
   useCallback,
@@ -21,18 +21,20 @@ import {
   useResizeObserver,
 } from 'usehooks-ts';
 import { GridContainerTabPanel } from '../GridContainerTabPanel';
+import { Nullable } from '@/types/util';
+import useDebouncedState from '@/hooks/useDebouncedState';
 
 export interface GridItemProps<ItemType> {
   item: ItemType;
   index: number;
-  modalIndex: number;
+  isModalOpen: boolean;
   moveModal: (index: number, item: ItemType) => void;
   ref: ForwardedRef<HTMLDivElement>;
 }
 
 export interface GridInlineModalProps<ItemType> {
   open: boolean;
-  itemGuid: string;
+  modalItemGuid: Nullable<string>;
   modalIndex: number;
   rowSize: number;
   renderChildren: (
@@ -66,6 +68,11 @@ type Size = {
   height?: number;
 };
 
+type ModalState = {
+  modalIndex: number;
+  modalGuid: Nullable<string>;
+};
+
 export function MediaItemGrid<PageDataType, ItemType>({
   // modalIndex,
   getPageDataSize,
@@ -85,10 +92,17 @@ export function MediaItemGrid<PageDataType, ItemType>({
   const viewType = useStore((state) => state.theme.programmingSelectorView);
   const [scrollParams, setScrollParams] = useState({ limit: 0, max: -1 });
   const [rowSize, setRowSize] = useState(9);
-  const [modalIndex, setModalIndex] = useState(-1);
-  const [modalGuid, setModalGuid] = useState('');
+  // const [modalIndex, setModalIndex] = useState(-1);
+  // const [modalGuid, setModalGuid] = useState('');
+  const [{ modalIndex, modalGuid }, setModalState] = useState<ModalState>({
+    modalGuid: null,
+    modalIndex: -1,
+  });
   const gridContainerRef = useRef<HTMLDivElement>(null);
   const gridImageRefs = useRef<RefMap>({});
+  const test = useRef<HTMLDivElement>(null);
+  // const [theWidth, setTheWidth] = useState(0);
+
   const previousModalIndex = usePrevious(modalIndex);
 
   const [{ width }, setSize] = useState<Size>({
@@ -103,43 +117,57 @@ export function MediaItemGrid<PageDataType, ItemType>({
     onResize,
   });
 
+  // We keep the state of a grid image's width by utilizing a ref callback
+  // We pass this stable callback function to every
+  const [, singleImageWidth, , setSingleImageWidthDebounced] =
+    useDebouncedState<number>(-1, 500);
+  const updateSingleImageWidthRefCallback = useCallback(
+    (el: Nullable<HTMLDivElement>) => {
+      console.log('single image width');
+      setSingleImageWidthDebounced(el?.getBoundingClientRect()?.width ?? -1);
+    },
+    [setSingleImageWidthDebounced],
+  );
+
   useEffect(() => {
     if (viewType === 'grid') {
-      let imageRef: HTMLDivElement | null = null;
+      // let imageRef: HTMLDivElement | null = null;
 
-      if (isEmpty(modalGuid)) {
-        // Grab the first non-null ref for an image
-        for (const key in gridImageRefs.current) {
-          if (gridImageRefs.current[key] !== null) {
-            imageRef = gridImageRefs.current[key];
-            break;
-          }
-        }
-      } else {
-        imageRef = get(gridImageRefs.current, modalGuid);
-      }
-
-      const imageWidth = imageRef?.getBoundingClientRect().width;
+      // if (!isNonEmptyString(modalGuid)) {
+      //   // Grab the first non-null ref for an image
+      //   for (const key in gridImageRefs.current) {
+      //     if (gridImageRefs.current[key] !== null) {
+      //       imageRef = gridImageRefs.current[key];
+      //       break;
+      //     }
+      //   }
+      // } else {
+      //   imageRef = get(gridImageRefs.current, modalGuid);
+      // }
 
       // 16 is additional padding available in the parent container
-      const rowSize = getImagesPerRow(width ? width + 16 : 0, imageWidth ?? 0);
+      const rowSize = getImagesPerRow(
+        width ? width + 16 : 0,
+        test.current?.getBoundingClientRect().width ?? 0,
+      );
+      console.log('rowSize', rowSize);
       setRowSize(rowSize);
       setScrollParams(({ max }) => ({ max, limit: rowSize * 4 }));
     }
-  }, [width, viewType, modalGuid]);
+  }, [width, viewType, modalGuid, test]);
 
   const handleMoveModal = useCallback(
     (index: number, item: ItemType) => {
-      console.log('top level', index, item, modalIndex);
-      if (index === modalIndex) {
-        setModalIndex(-1);
-        setModalGuid('');
-      } else {
-        setModalIndex(index);
-        setModalGuid(getItemKey(item));
-      }
+      const key = getItemKey(item);
+      setModalState((prev) => {
+        if (prev.modalIndex === index) {
+          return { modalGuid: null, modalIndex: -1 };
+        } else {
+          return { modalGuid: key, modalIndex: index };
+        }
+      });
     },
-    [modalIndex, getItemKey],
+    [getItemKey],
   );
 
   useEffect(() => {
@@ -154,31 +182,6 @@ export function MediaItemGrid<PageDataType, ItemType>({
       }
     }
   }, [data?.pages, getPageDataSize, scrollParams.max]);
-
-  useEffect(() => {
-    if (viewType === 'grid') {
-      let imageRef: HTMLDivElement | null = null;
-
-      if (modalGuid === '') {
-        // Grab the first non-null ref for an image
-        for (const key in gridImageRefs.current) {
-          if (gridImageRefs.current[key] !== null) {
-            imageRef = gridImageRefs.current[key];
-            break;
-          }
-        }
-      } else {
-        imageRef = get(gridImageRefs.current, modalGuid);
-      }
-
-      const imageWidth = imageRef?.getBoundingClientRect().width;
-
-      // 16 is additional padding available in the parent container
-      const rowSize = getImagesPerRow(width ? width + 16 : 0, imageWidth ?? 0);
-      setRowSize(rowSize);
-      setScrollParams(({ max }) => ({ max, limit: rowSize * 4 }));
-    }
-  }, [width, viewType, modalGuid]);
 
   const { ref } = useIntersectionObserver({
     onChange: (_, entry) => {
@@ -198,33 +201,45 @@ export function MediaItemGrid<PageDataType, ItemType>({
     threshold: 0.5,
   });
 
-  const firstItemIndex = useMemo(
+  // InlineModals are only potentially rendered for the last item in each row
+  // As such, we need to find the index of the last item in a given row, relative
+  // to the index of the selected item, row size, and total items.
+  const lastItemIndex = useMemo(
     () =>
-      findFirstItemInNextRowIndex(
+      findLastItemInRowIndex(
         modalIndex,
         rowSize,
         sumBy(data?.pages, (page) => getPageDataSize(page).size) ?? 0,
-      ) - 1,
+      ),
     [modalIndex, rowSize, data?.pages, getPageDataSize],
   );
 
+  const makeSetGridItemRef = useMemo(() => {
+    return (item: ItemType) => {
+      const key = getItemKey(item);
+      return (el: Nullable<HTMLDivElement>) => {
+        gridImageRefs.current[key] = el;
+      };
+    };
+  }, [getItemKey, gridImageRefs]);
+
   const renderItems = () => {
     return map(compact(flatMap(data?.pages, extractItems)), (item, index) => {
-      const isOpen = index === firstItemIndex;
+      const isOpen = index === lastItemIndex;
       return viewType === 'list'
         ? renderListItem(item, index)
         : renderGridItem(
             {
               item,
               index,
-              modalIndex,
-              moveModal: () => handleMoveModal(index, item),
-              ref: (element) =>
-                (gridImageRefs.current[getItemKey(item)] = element),
+              isModalOpen: modalIndex === index,
+              // modalIndex,
+              moveModal: handleMoveModal,
+              ref: index === 0 ? test : null, //updateSingleImageWidthRefCallback,
             },
             {
               open: isOpen,
-              itemGuid: modalGuid,
+              modalItemGuid: modalGuid,
               modalIndex: modalIndex,
               rowSize: rowSize,
               renderChildren: renderGridItem,
@@ -241,7 +256,7 @@ export function MediaItemGrid<PageDataType, ItemType>({
           {renderFinalRow &&
             renderFinalRow({
               open: false,
-              itemGuid: modalGuid,
+              modalItemGuid: modalGuid,
               modalIndex: modalIndex,
               rowSize: rowSize,
               renderChildren: renderGridItem,
