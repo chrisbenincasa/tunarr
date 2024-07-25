@@ -85,17 +85,16 @@ export function findFirstItemInNextRowIndex(
   }
 
   // Calculate the row number of the current item
+  const numRows = Math.floor(numberOfItems / itemsPerRow);
   const rowNumber = Math.floor(modalIndex / itemsPerRow);
 
   // If the item clicked is on the last row and the last row isn't full, adjust where modal is inserted
   // for now the final rows modal will be inserted above these items
   const numberOfItemsLastRow = numberOfItems % itemsPerRow;
 
-  if (
-    modalIndex >= numberOfItems - numberOfItemsLastRow &&
-    numberOfItemsLastRow < itemsPerRow
-  ) {
-    return -1;
+  if (rowNumber === numRows) {
+    console.log(numberOfItems);
+    return numberOfItems;
   }
 
   // If the current item is not in the last row, return the index of the first item in the next row
@@ -109,6 +108,24 @@ export function findFirstItemInNextRowIndex(
 
   // Otherwise, return -1 to indicate modal is closed
   return -1;
+}
+
+export function findLastItemInRowIndex(
+  selectedItemIndex: number,
+  itemsPerRow: number,
+  totalItems: number,
+) {
+  if (selectedItemIndex < 0 || totalItems <= 0) {
+    return -1;
+  }
+
+  const totalRows = Math.floor(totalItems / itemsPerRow);
+  const currentRow = Math.floor(selectedItemIndex / itemsPerRow);
+
+  // Last row special case
+  if (currentRow === totalRows) {
+    return totalItems - 1;
+  }
 }
 
 export function extractLastIndexes(arr: unknown[], x: number): number[] {

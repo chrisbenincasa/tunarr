@@ -77,7 +77,7 @@ export function JellyfinProgrammingSelector() {
     selectedLibrary?.library.Id ?? '',
     itemTypes,
     true,
-    50,
+    20,
   );
 
   const totalItems = useMemo(() => {
@@ -93,15 +93,32 @@ export function JellyfinProgrammingSelector() {
     // const isLastRow = gridItemProps.index / modalProps.rowSize > numRows;
     const isLast = gridItemProps.index === totalItems - 1;
 
-    let extraInlineModal: JSX.Element | null = null;
-    if (isLast) {
-      extraInlineModal = renderFinalRowInlineModal(modalProps);
-    }
+    // let extraInlineModal: JSX.Element | null = null;
+    // if (isLast) {
+    //   extraInlineModal = renderFinalRowInlineModal(modalProps);
+    // }
 
+    if (modalProps.open) {
+      console.log(
+        '%O',
+        modalProps,
+        gridItemProps.index,
+        (gridItemProps.index + 1) % modalProps.rowSize === 0,
+        isLast,
+      );
+    }
+    const renderModal =
+      isParentItem(gridItemProps.item) &&
+      ((gridItemProps.index + 1) % modalProps.rowSize === 0 || isLast);
+    /*gridItemProps.index % modalProps.rowSize === 0 &&*/
+    if (isLast) {
+      console.log('last', gridItemProps.index);
+    }
     return (
       <React.Fragment key={gridItemProps.item.Id}>
-        {isParentItem(gridItemProps.item) && (
-          /*gridItemProps.index % modalProps.rowSize === 0 &&*/ <InlineModal
+        <JellyfinGridItem {...gridItemProps} />
+        {renderModal && (
+          <InlineModal
             {...modalProps}
             extractItemId={(item) => item.Id}
             sourceType="jellyfin"
@@ -109,8 +126,7 @@ export function JellyfinProgrammingSelector() {
             getChildItemType={childJellyfinType}
           />
         )}
-        <JellyfinGridItem {...gridItemProps} />
-        {extraInlineModal}
+        {/* {extraInlineModal} */}
       </React.Fragment>
     );
   };

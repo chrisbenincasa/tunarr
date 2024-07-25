@@ -1,13 +1,12 @@
+import {
+  useCurrentMediaSource,
+  useKnownMedia,
+} from '@/store/programmingSelector/selectors.ts';
 import { Box, Collapse, List } from '@mui/material';
+import { MediaSourceSettings } from '@tunarr/types';
 import { usePrevious } from '@uidotdev/usehooks';
 import _, { first } from 'lodash-es';
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useIntersectionObserver } from 'usehooks-ts';
 import {
   extractLastIndexes,
@@ -17,12 +16,7 @@ import {
 } from '../helpers/inlineModalUtil';
 import { toggle } from '../helpers/util.ts';
 import useStore from '../store';
-import { MediaSourceSettings } from '@tunarr/types';
 import { GridInlineModalProps } from './channel_config/MediaItemGrid.tsx';
-import {
-  useCurrentMediaSource,
-  useKnownMedia,
-} from '@/store/programmingSelector/selectors.ts';
 
 interface InlineModalProps<ItemType, ItemKind extends string>
   extends GridInlineModalProps<ItemType> {
@@ -88,6 +82,7 @@ export function InlineModal<ItemType, ItemKind extends string>(
       setItemWidth(itemWidth);
       setContainerWidth(containerWidth);
       setImagesPerRow(imagesPerRow);
+      setChildModalInfo({ childItemGuid: '', childModalIndex: -1 });
     }
   }, [ref, gridItemRef, previousItemGuid, itemGuid]);
 
@@ -161,11 +156,11 @@ export function InlineModal<ItemType, ItemKind extends string>(
     console.log(
       item?.Name,
       itemGuid,
-      open,
-      childItemGuid,
-      childModalIndex,
-      modalChildren,
-      isFinalChildModalOpen,
+      `open=${open}`,
+      `childItemGuid=${childItemGuid}`,
+      `childModalIndex=${childModalIndex}`,
+      modalChildren.length,
+      `isFinalChildModalOpen=${isFinalChildModalOpen}`,
       extractLastIndexes(
         modalChildren,
         modalChildren.length % rowSize === 0
@@ -228,7 +223,9 @@ export function InlineModal<ItemType, ItemKind extends string>(
     <Box
       ref={inlineModalRef}
       component="div"
-      className={'inline-modal-' + itemGuid}
+      className={
+        `inline-modal-${itemGuid} ` + (open ? 'inline-modal-open' : '')
+      }
       sx={{
         display: isOpen ? 'grid' : 'none',
         gridColumn: isOpen ? '1 / -1' : undefined,

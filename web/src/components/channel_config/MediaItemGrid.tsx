@@ -204,7 +204,7 @@ export function MediaItemGrid<PageDataType, ItemType>({
         modalIndex,
         rowSize,
         sumBy(data?.pages, (page) => getPageDataSize(page).size) ?? 0,
-      ),
+      ) - 1,
     [modalIndex, rowSize, data?.pages, getPageDataSize],
   );
 
