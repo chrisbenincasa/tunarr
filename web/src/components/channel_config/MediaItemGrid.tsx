@@ -162,9 +162,9 @@ export function MediaItemGrid<PageDataType, ItemType>({
 
   // Scroll to new selected item when modalIndex changes
   // Doing this on modalIndex change negates the need to calc inline modal height since it's collapsed at this time
-  useEffect(() => {
-    scrollToGridItem(modalIndex);
-  }, [modalIndex, scrollToGridItem]);
+  // useEffect(() => {
+  //   scrollToGridItem(modalIndex);
+  // }, [modalIndex, scrollToGridItem]);
 
   const handleMoveModal = useCallback(
     (index: number, item: ItemType) => {
@@ -227,8 +227,9 @@ export function MediaItemGrid<PageDataType, ItemType>({
   const renderItems = () => {
     return map(compact(flatMap(data?.pages, extractItems)), (item, index) => {
       const isOpen = index === lastItemIndex;
-      const shouldAttachRef =
-        (modalIndex >= 0 && modalIndex === index) || index === 0;
+      // const shouldAttachRef =
+      //   (modalIndex >= 0 && modalIndex === index) || index === 0;
+
       return viewType === 'list'
         ? renderListItem(item, index)
         : renderGridItem(
@@ -237,7 +238,7 @@ export function MediaItemGrid<PageDataType, ItemType>({
               index,
               isModalOpen: modalIndex === index,
               moveModal: handleMoveModal,
-              ref: shouldAttachRef ? gridItemRef : null,
+              ref: index === 0 ? gridItemRef : null,
             },
             {
               open: isOpen,

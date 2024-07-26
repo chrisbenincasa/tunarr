@@ -5,7 +5,7 @@ import {
 import { Box, Collapse, List } from '@mui/material';
 import { MediaSourceSettings } from '@tunarr/types';
 import { usePrevious } from '@uidotdev/usehooks';
-import _, { first } from 'lodash-es';
+import { chain, first } from 'lodash-es';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useBoolean, useIntersectionObserver } from 'usehooks-ts';
 import {
@@ -215,10 +215,10 @@ export function InlineModal<ItemType, ItemKind extends string>(
           enter: 'easeInSine',
           exit: 'easeOutSine',
         }}
-        // mountOnEnter
-        // unmountOnExit
+        mountOnEnter
+        unmountOnExit
         sx={{ width: '100%', display: 'grid', gridColumn: '1 / -1' }}
-        onEntered={show}
+        onEnter={show}
         onExited={hide}
       >
         <List
@@ -240,9 +240,9 @@ export function InlineModal<ItemType, ItemKind extends string>(
           }}
           ref={ref}
         >
-          {open && (
+          {isOpen && (
             <>
-              {_.chain(modalChildren)
+              {chain(modalChildren)
                 .take(childLimit)
                 .map((item, idx) => renderChild(idx, item))
                 .value()}
@@ -256,7 +256,7 @@ export function InlineModal<ItemType, ItemKind extends string>(
               <li style={{ height: 40 }} ref={intersectionRef}></li>
             </>
           )}
-          {}
+          {/* {} */}
           {/* This Modal is for last row items because they can't be inserted using the above inline modal */}
         </List>
       </Collapse>
