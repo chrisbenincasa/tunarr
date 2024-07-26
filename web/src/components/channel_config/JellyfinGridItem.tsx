@@ -100,7 +100,6 @@ export const JellyfinGridItem = memo(
       }, [index, item, moveModal]);
 
       const handleItemClick = useCallback(() => {
-        console.log('here');
         setModalOpen(toggle);
         moveModalToItem();
       }, [moveModalToItem]);

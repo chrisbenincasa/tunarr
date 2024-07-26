@@ -39,7 +39,7 @@ import {
   MediaItemGrid,
 } from './MediaItemGrid.tsx';
 import { PlexFilterBuilder } from './PlexFilterBuilder.tsx';
-import { PlexGridItem } from './PlexGridItem2.tsx';
+import { PlexGridItem } from './PlexGridItem.tsx';
 import { PlexSortField } from './PlexSortField.tsx';
 
 function a11yProps(index: number) {

@@ -7,14 +7,13 @@ import { MediaSourceSettings } from '@tunarr/types';
 import { usePrevious } from '@uidotdev/usehooks';
 import _, { first } from 'lodash-es';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useIntersectionObserver } from 'usehooks-ts';
+import { useBoolean, useIntersectionObserver } from 'usehooks-ts';
 import {
   extractLastIndexes,
   findFirstItemInNextRowIndex,
   getEstimatedModalHeight,
   getImagesPerRow,
 } from '../helpers/inlineModalUtil';
-import { toggle } from '../helpers/util.ts';
 import useStore from '../store';
 import { GridInlineModalProps } from './channel_config/MediaItemGrid.tsx';
 
@@ -42,7 +41,13 @@ export function InlineModal<ItemType, ItemKind extends string>(
   const previousItemGuid = usePrevious(itemGuid);
   const [containerWidth, setContainerWidth] = useState(0);
   const [itemWidth, setItemWidth] = useState(0);
-  const [isOpen, setIsOpen] = useState(false);
+  const {
+    value: isOpen,
+    setValue: setIsOpen,
+    setTrue: setOpen,
+    setFalse: setClosed,
+    // toggle: toggleOpen,
+  } = useBoolean(false);
   const ref = useRef<HTMLUListElement>(null);
   const gridItemRef = useRef<HTMLDivElement>(null);
   const inlineModalRef = useRef<HTMLDivElement>(null);
@@ -67,9 +72,9 @@ export function InlineModal<ItemType, ItemKind extends string>(
     [containerWidth, itemWidth, modalChildren, rowSize, getItemType],
   );
 
-  const toggleModal = useCallback(() => {
-    setIsOpen(toggle);
-  }, []);
+  if (modalIndex === 5) {
+    console.log('open', open, modalIndex);
+  }
 
   useEffect(() => {
     if (ref.current && previousItemGuid !== itemGuid) {
@@ -175,12 +180,28 @@ export function InlineModal<ItemType, ItemKind extends string>(
     ],
   );
 
+  if (open) {
+    console.log(open, props);
+  }
+
+  const show = useCallback(() => {
+    console.log('show!!!');
+    setOpen();
+  }, [setOpen]);
+
+  const hide = useCallback(() => {
+    console.log('hide!!!');
+    setClosed();
+  }, [setClosed]);
+
   return (
     <Box
       ref={inlineModalRef}
       component="div"
       className={
-        `inline-modal-${itemGuid} ` + (open ? 'inline-modal-open' : '')
+        `inline-modal-${itemGuid} ` +
+        (open ? 'inline-modal-open ' : ' ') +
+        (isOpen ? 'animation-done' : '')
       }
       sx={{
         display: isOpen ? 'grid' : 'none',
@@ -189,16 +210,16 @@ export function InlineModal<ItemType, ItemKind extends string>(
     >
       <Collapse
         in={open}
-        timeout={100}
+        timeout={150}
         easing={{
           enter: 'easeInSine',
           exit: 'easeOutSine',
         }}
-        mountOnEnter
-        unmountOnExit
+        // mountOnEnter
+        // unmountOnExit
         sx={{ width: '100%', display: 'grid', gridColumn: '1 / -1' }}
-        onEnter={toggleModal}
-        onExited={toggleModal}
+        onEntered={show}
+        onExited={hide}
       >
         <List
           component="ul"
@@ -219,19 +240,24 @@ export function InlineModal<ItemType, ItemKind extends string>(
           }}
           ref={ref}
         >
-          {_.chain(modalChildren)
-            .take(childLimit)
-            .map((item, idx) => renderChild(idx, item))
-            .value()}
+          {open && (
+            <>
+              {_.chain(modalChildren)
+                .take(childLimit)
+                .map((item, idx) => renderChild(idx, item))
+                .value()}
+              <InlineModal
+                {...props}
+                getItemType={getChildItemType}
+                modalItemGuid={childItemGuid ?? ''}
+                modalIndex={childModalIndex}
+                open={isFinalChildModalOpen}
+              />
+              <li style={{ height: 40 }} ref={intersectionRef}></li>
+            </>
+          )}
+          {}
           {/* This Modal is for last row items because they can't be inserted using the above inline modal */}
-          <InlineModal
-            {...props}
-            getItemType={getChildItemType}
-            modalItemGuid={childItemGuid ?? ''}
-            modalIndex={childModalIndex}
-            open={isFinalChildModalOpen}
-          />
-          <li style={{ height: 40 }} ref={intersectionRef}></li>
         </List>
       </Collapse>
     </Box>
