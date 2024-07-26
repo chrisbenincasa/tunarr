@@ -16,7 +16,7 @@ import { MediaSourceId } from '@tunarr/types/schemas';
 import { JellyfinItem, JellyfinItemKind } from '@tunarr/types/jellyfin';
 import { InlineModal } from '../InlineModal.tsx';
 import { first } from 'lodash-es';
-import { forJellyfinItem } from '@/helpers/util.ts';
+import { forJellyfinItem, typedProperty } from '@/helpers/util.ts';
 
 enum TabValues {
   Library = 0,
@@ -99,9 +99,9 @@ export function JellyfinProgrammingSelector() {
         {renderModal && (
           <InlineModal
             {...modalProps}
-            extractItemId={(item) => item.Id}
+            extractItemId={typedProperty('Id')}
             sourceType="jellyfin"
-            getItemType={(item) => item.Type}
+            getItemType={typedProperty('Type')}
             getChildItemType={childJellyfinType}
           />
         )}
@@ -115,7 +115,7 @@ export function JellyfinProgrammingSelector() {
         <Tabs
           value={tabValue}
           onChange={(_, value: number) => setTabValue(value)}
-          aria-label="Plex media selector tabs"
+          aria-label="Jellyfin media selector tabs"
           variant="scrollable"
           allowScrollButtonsMobile
         >

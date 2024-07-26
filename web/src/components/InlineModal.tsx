@@ -105,7 +105,6 @@ export function InlineModal<ItemType, ItemKind extends string>(
 
   const handleMoveModal = useCallback(
     (index: number, item: ItemType) => {
-      console.log('opening child model', index, item);
       const id = extractItemId(item);
       setChildModalInfo((prev) => {
         if (prev.childItemGuid === id) {
@@ -146,55 +145,13 @@ export function InlineModal<ItemType, ItemKind extends string>(
       ).includes(childModalIndex)
     : false;
 
-  // if (isOpen) {
-  //   const item = knownMedia.getMediaOfType(
-  //     currentMediaSource!.id,
-  //     itemGuid ?? '',
-  //     'jellyfin',
-  //   );
-  //   console.log(
-  //     item?.Name,
-  //     itemGuid,
-  //     `open=${open}`,
-  //     `childItemGuid=${childItemGuid}`,
-  //     `childModalIndex=${childModalIndex}`,
-  //     modalChildren.length,
-  //     `isFinalChildModalOpen=${isFinalChildModalOpen}`,
-  //     extractLastIndexes(
-  //       modalChildren,
-  //       modalChildren.length % rowSize === 0
-  //         ? rowSize
-  //         : modalChildren.length % rowSize,
-  //     ),
-  //   );
-  // }
-
-  // const getChildModalProps = useCallback(
-  //   (idx: number) => {
-  //     return {
-  //       itemGuid: childItemGuid ?? '',
-  //       modalIndex: childModalIndex,
-  //       open: idx === firstItemInNextRowIndex,
-  //       renderChildren,
-  //       rowSize: rowSize,
-  //     };
-  //   },
-  //   [
-  //     childItemGuid,
-  //     childModalIndex,
-  //     firstItemInNextRowIndex,
-  //     renderChildren,
-  //     rowSize,
-  //   ],
-  // );
-
   const renderChild = useCallback(
     (idx: number, item: ItemType) => {
       return renderChildren(
         {
           index: idx,
           item: item,
-          modalIndex: modalIndex,
+          isModalOpen: modalIndex === idx,
           moveModal: handleMoveModal,
           ref: gridItemRef,
         },

@@ -1,9 +1,16 @@
 import {
   findLastItemInRowIndex,
   getImagesPerRow,
+  isNewModalAbove,
 } from '@/helpers/inlineModalUtil.ts';
 import useStore from '@/store/index.ts';
-import { Box, CircularProgress, Divider, Typography } from '@mui/material';
+import {
+  Box,
+  CircularProgress,
+  Divider,
+  Grid,
+  Typography,
+} from '@mui/material';
 import { InfiniteData, UseInfiniteQueryResult } from '@tanstack/react-query';
 import { usePrevious } from '@uidotdev/usehooks';
 import { compact, flatMap, map, sumBy } from 'lodash-es';
@@ -20,9 +27,7 @@ import {
   useIntersectionObserver,
   useResizeObserver,
 } from 'usehooks-ts';
-import { GridContainerTabPanel } from '../GridContainerTabPanel';
 import { Nullable } from '@/types/util';
-import useDebouncedState from '@/hooks/useDebouncedState';
 
 export interface GridItemProps<ItemType> {
   item: ItemType;
@@ -44,9 +49,6 @@ export interface GridInlineModalProps<ItemType> {
 }
 
 type Props<PageDataType, ItemType> = {
-  // modalIndex: number;
-  // rowSize: number;
-  // viewType: 'grid' | 'list';
   getPageDataSize: (page: PageDataType) => { total?: number; size: number };
   extractItems: (page: PageDataType) => ItemType[];
   renderGridItem: (
@@ -54,13 +56,8 @@ type Props<PageDataType, ItemType> = {
     modalProps: GridInlineModalProps<ItemType>,
   ) => JSX.Element;
   renderListItem: (item: ItemType, index: number) => JSX.Element;
-  renderFinalRow?: (modalProps: GridInlineModalProps<ItemType>) => JSX.Element;
   getItemKey: (item: ItemType) => string;
   infiniteQuery: UseInfiniteQueryResult<InfiniteData<PageDataType>>;
-};
-
-type RefMap = {
-  [k: string]: HTMLDivElement | null;
 };
 
 type Size = {
@@ -73,12 +70,13 @@ type ModalState = {
   modalGuid: Nullable<string>;
 };
 
+// magic number for top bar padding; TODO: calc it off ref
+const TopBarPadddingPx = 64;
+
 export function MediaItemGrid<PageDataType, ItemType>({
-  // modalIndex,
   getPageDataSize,
   renderGridItem,
   renderListItem,
-  renderFinalRow,
   getItemKey,
   extractItems,
   infiniteQuery: {
@@ -92,16 +90,18 @@ export function MediaItemGrid<PageDataType, ItemType>({
   const viewType = useStore((state) => state.theme.programmingSelectorView);
   const [scrollParams, setScrollParams] = useState({ limit: 0, max: -1 });
   const [rowSize, setRowSize] = useState(9);
-  // const [modalIndex, setModalIndex] = useState(-1);
-  // const [modalGuid, setModalGuid] = useState('');
   const [{ modalIndex, modalGuid }, setModalState] = useState<ModalState>({
     modalGuid: null,
     modalIndex: -1,
   });
   const gridContainerRef = useRef<HTMLDivElement>(null);
-  const gridImageRefs = useRef<RefMap>({});
-  const test = useRef<HTMLDivElement>(null);
-  // const [theWidth, setTheWidth] = useState(0);
+
+  // We only need a single grid item ref because all grid items are the same
+  // width. This ref is simply used to determine the width of grid items based
+  // on window/container size in order to derive other details about the grid.
+  // If the modal is open, this ref points to the selected dmain grid element,
+  // otherwise, it uses the first element in the grid
+  const gridItemRef = useRef<HTMLDivElement>(null);
 
   const previousModalIndex = usePrevious(modalIndex);
 
@@ -117,44 +117,50 @@ export function MediaItemGrid<PageDataType, ItemType>({
     onResize,
   });
 
-  // We keep the state of a grid image's width by utilizing a ref callback
-  // We pass this stable callback function to every
-  const [, singleImageWidth, , setSingleImageWidthDebounced] =
-    useDebouncedState<number>(-1, 500);
-  const updateSingleImageWidthRefCallback = useCallback(
-    (el: Nullable<HTMLDivElement>) => {
-      console.log('single image width');
-      setSingleImageWidthDebounced(el?.getBoundingClientRect()?.width ?? -1);
-    },
-    [setSingleImageWidthDebounced],
-  );
-
   useEffect(() => {
     if (viewType === 'grid') {
-      // let imageRef: HTMLDivElement | null = null;
-
-      // if (!isNonEmptyString(modalGuid)) {
-      //   // Grab the first non-null ref for an image
-      //   for (const key in gridImageRefs.current) {
-      //     if (gridImageRefs.current[key] !== null) {
-      //       imageRef = gridImageRefs.current[key];
-      //       break;
-      //     }
-      //   }
-      // } else {
-      //   imageRef = get(gridImageRefs.current, modalGuid);
-      // }
-
       // 16 is additional padding available in the parent container
       const rowSize = getImagesPerRow(
         width ? width + 16 : 0,
-        test.current?.getBoundingClientRect().width ?? 0,
+        gridItemRef.current?.getBoundingClientRect().width ?? 0,
       );
-      console.log('rowSize', rowSize);
       setRowSize(rowSize);
       setScrollParams(({ max }) => ({ max, limit: rowSize * 4 }));
     }
-  }, [width, viewType, modalGuid, test]);
+  }, [width, viewType, modalGuid, gridItemRef]);
+
+  const scrollToGridItem = useCallback(
+    (index: number) => {
+      const selectedElement = gridItemRef.current;
+      const includeModalInHeightCalc = isNewModalAbove(
+        previousModalIndex,
+        index,
+        rowSize,
+      );
+
+      if (selectedElement) {
+        // New modal is opening in a row above previous modal
+        const modalMovesUp = selectedElement.offsetTop - TopBarPadddingPx;
+        // New modal is opening in the same row or a row below the current modal
+        const modalMovesDown =
+          selectedElement.offsetTop -
+          selectedElement.offsetHeight -
+          TopBarPadddingPx;
+
+        window.scrollTo({
+          top: includeModalInHeightCalc ? modalMovesDown : modalMovesUp,
+          behavior: 'smooth',
+        });
+      }
+    },
+    [previousModalIndex, rowSize],
+  );
+
+  // Scroll to new selected item when modalIndex changes
+  // Doing this on modalIndex change negates the need to calc inline modal height since it's collapsed at this time
+  useEffect(() => {
+    scrollToGridItem(modalIndex);
+  }, [modalIndex, scrollToGridItem]);
 
   const handleMoveModal = useCallback(
     (index: number, item: ItemType) => {
@@ -214,18 +220,11 @@ export function MediaItemGrid<PageDataType, ItemType>({
     [modalIndex, rowSize, data?.pages, getPageDataSize],
   );
 
-  const makeSetGridItemRef = useMemo(() => {
-    return (item: ItemType) => {
-      const key = getItemKey(item);
-      return (el: Nullable<HTMLDivElement>) => {
-        gridImageRefs.current[key] = el;
-      };
-    };
-  }, [getItemKey, gridImageRefs]);
-
   const renderItems = () => {
     return map(compact(flatMap(data?.pages, extractItems)), (item, index) => {
       const isOpen = index === lastItemIndex;
+      const shouldAttachRef =
+        (modalIndex >= 0 && modalIndex === index) || index === 0;
       return viewType === 'list'
         ? renderListItem(item, index)
         : renderGridItem(
@@ -233,9 +232,8 @@ export function MediaItemGrid<PageDataType, ItemType>({
               item,
               index,
               isModalOpen: modalIndex === index,
-              // modalIndex,
               moveModal: handleMoveModal,
-              ref: index === 0 ? test : null, //updateSingleImageWidthRefCallback,
+              ref: shouldAttachRef ? gridItemRef : null,
             },
             {
               open: isOpen,
@@ -251,17 +249,23 @@ export function MediaItemGrid<PageDataType, ItemType>({
   return (
     <>
       <Box ref={gridContainerRef} sx={{ width: '100%' }}>
-        <GridContainerTabPanel index={0} value={0} key="Library">
+        <Grid
+          container
+          component="div"
+          spacing={2}
+          sx={{
+            display: viewType === 'grid' ? 'grid' : 'flex',
+            gridTemplateColumns:
+              viewType === 'grid'
+                ? 'repeat(auto-fill, minmax(160px, 1fr))'
+                : 'none',
+            justifyContent: viewType === 'grid' ? 'space-around' : 'normal',
+            mt: 2,
+          }}
+          ref={ref}
+        >
           {renderItems()}
-          {renderFinalRow &&
-            renderFinalRow({
-              open: false,
-              modalItemGuid: modalGuid,
-              modalIndex: modalIndex,
-              rowSize: rowSize,
-              renderChildren: renderGridItem,
-            })}
-        </GridContainerTabPanel>
+        </Grid>
       </Box>
       {!isLoading && <div style={{ height: 96 }} ref={ref}></div>}
       {isFetchingNextPage && (

@@ -132,7 +132,7 @@ export function findLastItemInRowIndex(
   // and then subtracts one to be used to index the array directly.
   const nearestEndIndex =
     Math.ceil((selectedItemIndex + 1) / itemsPerRow) * itemsPerRow;
-  return nearestEndIndex === 0 ? itemsPerRow - 1 : nearestEndIndex - 1;
+  return nearestEndIndex - 1;
 }
 
 export function extractLastIndexes(arr: unknown[], x: number): number[] {
