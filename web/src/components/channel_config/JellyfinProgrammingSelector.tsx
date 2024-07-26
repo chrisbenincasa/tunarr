@@ -93,6 +93,10 @@ export function JellyfinProgrammingSelector() {
       isParentItem(gridItemProps.item) &&
       ((gridItemProps.index + 1) % modalProps.rowSize === 0 || isLast);
 
+    if (renderModal) {
+      console.log(gridItemProps, modalProps);
+    }
+
     return (
       <React.Fragment key={gridItemProps.item.Id}>
         <JellyfinGridItem {...gridItemProps} />
