@@ -98,11 +98,7 @@ export default function ProgrammingSelector(_: Props) {
     selectedServer?.type === 'plex',
   );
 
-  const {
-    data: jellyfinLibraries,
-    isLoading: jellyfinLoading,
-    error: jellyfinError,
-  } = useJellyfinUserLibraries(
+  const { data: jellyfinLibraries } = useJellyfinUserLibraries(
     selectedServer?.id ?? '',
     selectedServer?.type === 'jellyfin',
   );

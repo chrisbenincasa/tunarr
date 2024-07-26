@@ -1,14 +1,16 @@
 import { usePlexCollectionsInfinite } from '@/hooks/plex/usePlexCollections.ts';
 import { usePlexPlaylistsInfinite } from '@/hooks/plex/usePlexPlaylists.ts';
 import { usePlexSearchInfinite } from '@/hooks/plex/usePlexSearch.ts';
+import {
+  useCurrentMediaSource,
+  useCurrentSourceLibrary,
+} from '@/store/programmingSelector/selectors.ts';
 import FilterAlt from '@mui/icons-material/FilterAlt';
 import GridView from '@mui/icons-material/GridView';
 import ViewList from '@mui/icons-material/ViewList';
 import {
   Box,
-  CircularProgress,
   Collapse,
-  Divider,
   Grow,
   LinearProgress,
   Stack,
@@ -16,64 +18,29 @@ import {
   Tabs,
   ToggleButton,
   ToggleButtonGroup,
-  Typography,
 } from '@mui/material';
-import {
-  PlexMedia,
-  PlexMovie,
-  PlexMusicArtist,
-  PlexTvShow,
-  isPlexParentItem,
-} from '@tunarr/types/plex';
-import { usePrevious } from '@uidotdev/usehooks';
-import _, {
-  chain,
-  compact,
-  filter,
-  first,
-  flatMap,
-  isNil,
-  isUndefined,
-  map,
-  sumBy,
-} from 'lodash-es';
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
-import {
-  useDebounceCallback,
-  useIntersectionObserver,
-  useResizeObserver,
-} from 'usehooks-ts';
-import {
-  extractLastIndexes,
-  findFirstItemInNextRowIndex,
-  getImagesPerRow,
-  isNewModalAbove,
-} from '../../helpers/inlineModalUtil';
-import { isNonEmptyString, toggle } from '../../helpers/util';
+import { PlexMedia, isPlexParentItem } from '@tunarr/types/plex';
+import { chain, filter, first, isNil, isUndefined, sumBy } from 'lodash-es';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { isNonEmptyString, toggle } from '../../helpers/util.ts';
 import { usePlexLibraries } from '../../hooks/plex/usePlex.ts';
-import { useMediaSources } from '../../hooks/settingsHooks';
-import useStore from '../../store';
-import { addKnownMediaForPlexServer } from '../../store/programmingSelector/actions';
-import { setProgrammingSelectorViewState } from '../../store/themeEditor/actions';
-import { ProgramSelectorViewType } from '../../types';
-import { InlineModal } from '../InlineModal';
-import { GridContainerTabPanel } from '../GridContainerTabPanel.tsx';
+import { useMediaSources } from '../../hooks/settingsHooks.ts';
+import useStore from '../../store/index.ts';
+import { addKnownMediaForPlexServer } from '../../store/programmingSelector/actions.ts';
+import { setProgrammingSelectorViewState } from '../../store/themeEditor/actions.ts';
+import { ProgramSelectorViewType } from '../../types/index.ts';
+import { InlineModal } from '../InlineModal.tsx';
+import { TabPanel } from '../TabPanel.tsx';
 import StandaloneToggleButton from '../base/StandaloneToggleButton.tsx';
-import ConnectPlex from '../settings/ConnectPlex';
-import { PlexFilterBuilder } from './PlexFilterBuilder.tsx';
-import { PlexGridItem } from './PlexGridItem';
-import { PlexListItem } from './PlexListItem';
-import { PlexSortField } from './PlexSortField.tsx';
+import ConnectPlex from '../settings/ConnectPlex.tsx';
 import {
-  useCurrentMediaSource,
-  useCurrentSourceLibrary,
-} from '@/store/programmingSelector/selectors.ts';
+  GridInlineModalProps,
+  GridItemProps,
+  MediaItemGrid,
+} from './MediaItemGrid.tsx';
+import { PlexFilterBuilder } from './PlexFilterBuilder.tsx';
+import { PlexGridItem } from './PlexGridItem2.tsx';
+import { PlexSortField } from './PlexSortField.tsx';
 
 function a11yProps(index: number) {
   return {
@@ -81,15 +48,6 @@ function a11yProps(index: number) {
     'aria-controls': `plex-programming-tabpanel-${index}`,
   };
 }
-
-type RefMap = {
-  [k: string]: HTMLDivElement | null;
-};
-
-type Size = {
-  width?: number;
-  height?: number;
-};
 
 enum TabValues {
   Library = 0,
@@ -104,113 +62,13 @@ export default function PlexProgrammingSelector() {
   const selectedLibrary = useCurrentSourceLibrary('plex');
   const viewType = useStore((state) => state.theme.programmingSelectorView);
   const [tabValue, setTabValue] = useState(TabValues.Library);
-  const [rowSize, setRowSize] = useState(9);
-  const [modalIndex, setModalIndex] = useState(-1);
-  const [modalGuid, setModalGuid] = useState<string>('');
   const [scrollParams, setScrollParams] = useState({ limit: 0, max: -1 });
   const [searchVisible, setSearchVisible] = useState(false);
   const [useAdvancedSearch, setUseAdvancedSearch] = useState(false);
-  const gridContainerRef = useRef<HTMLDivElement>(null);
-  const gridImageRefs = useRef<RefMap>({});
-  const previousModalIndex = usePrevious(modalIndex);
-
-  const [{ width }, setSize] = useState<Size>({
-    width: undefined,
-    height: undefined,
-  });
-
-  const onResize = useDebounceCallback(setSize, 200);
-
-  useResizeObserver({
-    ref: gridContainerRef,
-    onResize,
-  });
-
-  useEffect(() => {
-    if (viewType === 'grid') {
-      let imageRef: HTMLDivElement | null = null;
-
-      if (modalGuid === '') {
-        // Grab the first non-null ref for an image
-        for (const key in gridImageRefs.current) {
-          if (gridImageRefs.current[key] !== null) {
-            imageRef = gridImageRefs.current[key];
-            break;
-          }
-        }
-      } else {
-        imageRef = _.get(gridImageRefs.current, modalGuid);
-      }
-
-      const imageWidth = imageRef?.getBoundingClientRect().width;
-
-      // 16 is additional padding available in the parent container
-      const rowSize = getImagesPerRow(width ? width + 16 : 0, imageWidth ?? 0);
-      setRowSize(rowSize);
-      setScrollParams(({ max }) => ({ max, limit: rowSize * 4 }));
-    }
-  }, [width, tabValue, viewType, modalGuid]);
-
-  useEffect(() => {
-    setTabValue(0);
-  }, [selectedLibrary]);
-
-  useEffect(() => {
-    setModalIndex(-1);
-    setModalGuid('');
-  }, [tabValue, selectedLibrary]);
 
   const handleChange = (_: React.SyntheticEvent, newValue: TabValues) => {
     setTabValue(newValue);
   };
-
-  const scrollToGridItem = useCallback(
-    (guid: string, index: number) => {
-      const selectedElement = gridImageRefs.current[guid];
-      const includeModalInHeightCalc = isNewModalAbove(
-        previousModalIndex,
-        index,
-        rowSize,
-      );
-
-      if (selectedElement) {
-        // magic number for top bar padding; to do: calc it off ref
-        const topBarPadding = 64;
-        // New modal is opening in a row above previous modal
-        const modalMovesUp = selectedElement.offsetTop - topBarPadding;
-        // New modal is opening in the same row or a row below the current modal
-        const modalMovesDown =
-          selectedElement.offsetTop -
-          selectedElement.offsetHeight -
-          topBarPadding;
-
-        window.scrollTo({
-          top: includeModalInHeightCalc ? modalMovesDown : modalMovesUp,
-          behavior: 'smooth',
-        });
-      }
-    },
-    [previousModalIndex, rowSize],
-  );
-
-  // Scroll to new selected item when modalIndex changes
-  // Doing this on modalIndex change negates the need to calc inline modal height since it's collapsed at this time
-  useEffect(() => {
-    scrollToGridItem(modalGuid, modalIndex);
-  }, [modalGuid, modalIndex, scrollToGridItem]);
-
-  const handleMoveModal = useCallback(
-    (index: number, item: PlexMedia) => {
-      if (index === modalIndex) {
-        setModalIndex(-1);
-        setModalGuid('');
-      } else {
-        setModalIndex(index);
-        setModalGuid(item.guid);
-      }
-    },
-    [modalIndex],
-  );
 
   const { data: directoryChildren } = usePlexLibraries(
     selectedServer?.name ?? '',
@@ -228,26 +86,23 @@ export default function PlexProgrammingSelector() {
     setViewType(newFormats);
   };
 
-  const {
-    isLoading: isCollectionLoading,
-    data: collectionsData,
-    fetchNextPage: fetchNextCollectionsPage,
-    isFetchingNextPage: isFetchingNextCollectionsPage,
-    hasNextPage: hasNextCollectionsPage,
-  } = usePlexCollectionsInfinite(selectedServer, selectedLibrary, rowSize * 4);
-
-  const {
-    isLoading: isPlaylistLoading,
-    data: playlistData,
-    fetchNextPage: fetchNextPlaylistPage,
-    isFetchingNextPage: isFetchingNextPlaylistPage,
-    hasNextPage: hasNextPlaylistPage,
-  } = usePlexPlaylistsInfinite(
+  const plexCollectionsQuery = usePlexCollectionsInfinite(
     selectedServer,
     selectedLibrary,
-    rowSize * 4,
-    // selectedLibrary?.library.type === 'artist',
+    24,
   );
+
+  const { isLoading: isCollectionLoading, data: collectionsData } =
+    plexCollectionsQuery;
+
+  const plexPlaylistsQuery = usePlexPlaylistsInfinite(
+    selectedServer,
+    selectedLibrary,
+    24,
+  );
+
+  const { isLoading: isPlaylistLoading, data: playlistData } =
+    plexPlaylistsQuery;
 
   useEffect(() => {
     // When switching between Libraries, if a collection doesn't exist switch back to 'Library' tab
@@ -277,18 +132,14 @@ export default function PlexProgrammingSelector() {
     ({ plexSearch: plexQuery }) => plexQuery,
   );
 
-  const {
-    isLoading: searchLoading,
-    data: searchData,
-    fetchNextPage: fetchNextItemsPage,
-    hasNextPage: hasNextItemsPage,
-    isFetchingNextPage: isFetchingNextItemsPage,
-  } = usePlexSearchInfinite(
+  const plexSearchQuery = usePlexSearchInfinite(
     selectedServer,
     selectedLibrary,
     searchKey,
-    rowSize * 4,
+    24,
   );
+
+  const { isLoading: searchLoading, data: searchData } = plexSearchQuery;
 
   useEffect(() => {
     if (searchData?.pages.length === 1) {
@@ -315,7 +166,7 @@ export default function PlexProgrammingSelector() {
         addKnownMediaForPlexServer(selectedServer.id, allMedia);
       }
     }
-  }, [scrollParams, selectedServer, searchData, rowSize]);
+  }, [scrollParams, selectedServer, searchData]);
 
   useEffect(() => {
     if (isNonEmptyString(selectedServer?.id) && !isUndefined(collectionsData)) {
@@ -329,215 +180,106 @@ export default function PlexProgrammingSelector() {
     }
   }, [selectedServer?.id, collectionsData]);
 
-  const { ref } = useIntersectionObserver({
-    onChange: (_, entry) => {
-      if (entry.isIntersecting) {
-        if (scrollParams.limit < scrollParams.max) {
-          setScrollParams(({ limit: prevLimit, max }) => ({
-            max,
-            limit: prevLimit + rowSize * 4,
-          }));
-        }
+  const totalItems = useMemo(() => {
+    return first(plexSearchQuery.data?.pages)?.totalSize ?? 0;
+  }, [plexSearchQuery.data]);
 
-        if (
-          tabValue === TabValues.Library &&
-          hasNextItemsPage &&
-          !isFetchingNextItemsPage
-        ) {
-          fetchNextItemsPage().catch(console.error);
-        }
+  const getPlexItemKey = useCallback((item: PlexMedia) => item.guid, []);
 
-        if (
-          tabValue === TabValues.Collections &&
-          hasNextCollectionsPage &&
-          !isFetchingNextCollectionsPage
-        ) {
-          fetchNextCollectionsPage().catch(console.error);
-        }
+  const renderGridItem = (
+    gridItemProps: GridItemProps<PlexMedia>,
+    modalProps: GridInlineModalProps<PlexMedia>,
+  ) => {
+    const isLast = gridItemProps.index === totalItems - 1;
 
-        if (
-          tabValue === TabValues.Playlists &&
-          hasNextPlaylistPage &&
-          !isFetchingNextPlaylistPage
-        ) {
-          fetchNextPlaylistPage().catch(console.error);
-        }
-      }
-    },
-    threshold: 0.5,
-  });
-
-  const firstItemInNextLibraryRowIndex = useMemo(
-    () =>
-      findFirstItemInNextRowIndex(
-        modalIndex,
-        rowSize,
-        sumBy(searchData?.pages, (p) => p.size) ?? 0,
-      ),
-    [searchData, rowSize, modalIndex],
-  );
-
-  const firstItemInNextCollectionRowIndex = useMemo(
-    () =>
-      findFirstItemInNextRowIndex(
-        modalIndex,
-        rowSize,
-        sumBy(collectionsData?.pages, (p) => p.size) ?? 0,
-      ),
-    [collectionsData, rowSize, modalIndex],
-  );
-
-  const firstItemInNextPlaylistRowIndex = useMemo(
-    () =>
-      findFirstItemInNextRowIndex(
-        modalIndex,
-        rowSize,
-        sumBy(playlistData?.pages, (p) => p.size) ?? 0,
-      ),
-    [playlistData, rowSize, modalIndex],
-  );
-
-  const renderGridItems = (item: PlexMedia, index: number) => {
-    let firstItemIndex: number;
-    switch (tabValue) {
-      case TabValues.Library:
-        firstItemIndex = firstItemInNextLibraryRowIndex;
-        break;
-      case TabValues.Collections:
-        firstItemIndex = firstItemInNextCollectionRowIndex;
-        break;
-      case TabValues.Playlists:
-        firstItemIndex = firstItemInNextPlaylistRowIndex;
-        break;
-    }
-
-    const isOpen = index === firstItemIndex;
+    const renderModal =
+      isPlexParentItem(gridItemProps.item) &&
+      ((gridItemProps.index + 1) % modalProps.rowSize === 0 || isLast);
 
     return (
-      <React.Fragment key={item.guid}>
-        {isPlexParentItem(item) &&
-          (item.type === 'playlist' ? (item.leafCount ?? 0) < 500 : true) && (
-            <InlineModal
-              modalItemGuid={modalGuid}
-              modalIndex={modalIndex}
-              rowSize={rowSize}
-              open={isOpen}
-              type={item.type}
-            />
-          )}
-        {/* TODO: Consider forking this to a separate component for non-parent items, because
-        currently it erroneously creates a lot of tracked queries in react-query that will never be enabled */}
-        <PlexGridItem
-          item={item}
-          index={index}
-          modalIndex={modalIndex}
-          moveModal={handleMoveModal}
-          ref={(element) => (gridImageRefs.current[item.guid] = element)}
-        />
+      <React.Fragment key={gridItemProps.item.guid}>
+        <PlexGridItem {...gridItemProps} />
+        {renderModal && (
+          <InlineModal
+            {...modalProps}
+            extractItemId={(item) => item.guid}
+            sourceType="plex"
+            getItemType={(item) => item.type}
+            getChildItemType={() => 'season'}
+          />
+        )}
       </React.Fragment>
     );
   };
 
-  const renderFinalRowInlineModal = (arr: PlexMedia[]) => {
-    // /This Modal is for last row items because they can't be inserted using the above inline modal
-    // Check how many items are in the last row
-    const remainingItems =
-      arr.length % rowSize === 0 ? rowSize : arr.length % rowSize;
-
-    const open = extractLastIndexes(arr, remainingItems).includes(modalIndex);
-
-    return (
-      <InlineModal
-        modalItemGuid={modalGuid}
-        modalIndex={modalIndex}
-        rowSize={rowSize}
-        open={open}
-        type={'season'}
-      />
-    );
-  };
-
-  const renderListItems = () => {
+  const renderPanels = () => {
     const elements: JSX.Element[] = [];
+    if ((first(searchData?.pages)?.size ?? 0) > 0) {
+      elements.push(
+        <TabPanel index={TabValues.Library} value={tabValue} key="Library">
+          <MediaItemGrid
+            getPageDataSize={(page) => ({
+              total: page.totalSize,
+              size: page.size,
+            })}
+            extractItems={(page) => page.Metadata}
+            getItemKey={getPlexItemKey}
+            renderGridItem={renderGridItem}
+            renderListItem={(item) => <div key={item.guid} />}
+            infiniteQuery={plexSearchQuery}
+          />
+        </TabPanel>,
+      );
+    }
 
     if (
-      tabValue === TabValues.Collections &&
-      collectionsData &&
-      (first(collectionsData.pages)?.size ?? 0) > 0
+      // tabValue === TabValues.Collections &&
+      (first(collectionsData?.pages)?.size ?? 0) > 0
     ) {
       elements.push(
-        <GridContainerTabPanel
-          value={tabValue}
+        <TabPanel
           index={TabValues.Collections}
+          value={tabValue}
           key="Collections"
         >
-          {map(
-            compact(flatMap(collectionsData.pages, (page) => page.Metadata)),
-            (item, index: number) =>
-              viewType === 'list' ? (
-                <PlexListItem key={item.guid} item={item} />
-              ) : (
-                renderGridItems(item, index)
-              ),
-          )}
-          {renderFinalRowInlineModal(
-            compact(flatMap(collectionsData.pages, (page) => page.Metadata)),
-          )}
-        </GridContainerTabPanel>,
+          <MediaItemGrid
+            getPageDataSize={(page) => ({
+              total: page.totalSize,
+              size: page.size,
+            })}
+            extractItems={(page) => page.Metadata ?? []}
+            getItemKey={getPlexItemKey}
+            renderGridItem={renderGridItem}
+            renderListItem={(item) => <div key={item.guid} />}
+            infiniteQuery={plexCollectionsQuery}
+          />
+        </TabPanel>,
       );
-    }
 
-    if (
-      tabValue === TabValues.Playlists &&
-      (first(playlistData?.pages)?.size ?? 0) > 0
-    ) {
-      elements.push(
-        <GridContainerTabPanel
-          value={tabValue}
-          index={TabValues.Playlists}
-          key="Playlists"
-        >
-          {map(
-            compact(flatMap(playlistData?.pages, (page) => page.Metadata)),
-            (item, index: number) =>
-              viewType === 'list' ? (
-                <PlexListItem key={item.guid} item={item} />
-              ) : (
-                renderGridItems(item, index)
-              ),
-          )}
-          {renderFinalRowInlineModal(
-            compact(flatMap(playlistData?.pages, (page) => page.Metadata)),
-          )}
-        </GridContainerTabPanel>,
-      );
-    }
-
-    if (searchData && (first(searchData.pages)?.size ?? 0) > 0) {
-      const items = chain(searchData.pages)
-        .map((page) => page.Metadata)
-        .flatten()
-        .value();
-
-      const totalSearchDataSize =
-        searchData.pages[0].totalSize || searchData.pages[0].size;
-
-      elements.push(
-        <GridContainerTabPanel value={tabValue} index={0} key="Library">
-          {map(
-            items,
-            (item: PlexMovie | PlexTvShow | PlexMusicArtist, index: number) =>
-              viewType === 'list' ? (
-                <PlexListItem key={item.guid} item={item} />
-              ) : (
-                renderGridItems(item, index)
-              ),
-          )}
-
-          {items.length >= totalSearchDataSize &&
-            renderFinalRowInlineModal(items)}
-        </GridContainerTabPanel>,
-      );
+      if (
+        // tabValue === TabValues.Collections &&
+        (first(playlistData?.pages)?.size ?? 0) > 0
+      ) {
+        elements.push(
+          <TabPanel
+            index={TabValues.Playlists}
+            value={tabValue}
+            key="Playlists"
+          >
+            <MediaItemGrid
+              getPageDataSize={(page) => ({
+                total: page.totalSize,
+                size: page.size,
+              })}
+              extractItems={(page) => page.Metadata ?? []}
+              getItemKey={getPlexItemKey}
+              renderGridItem={renderGridItem}
+              renderListItem={(item) => <div key={item.guid} />}
+              infiniteQuery={plexPlaylistsQuery}
+            />
+          </TabPanel>,
+        );
+      }
     }
 
     return elements;
@@ -640,42 +382,25 @@ export default function PlexProgrammingSelector() {
               <Tab
                 value={TabValues.Library}
                 label="Library"
-                {...a11yProps(0)}
+                {...a11yProps(TabValues.Library)}
               />
-              {!isUndefined(collectionsData) &&
-                sumBy(collectionsData.pages, (page) => page.size) > 0 && (
-                  <Tab
-                    value={TabValues.Collections}
-                    label="Collections"
-                    {...a11yProps(1)}
-                  />
-                )}
-              {!isUndefined(playlistData) &&
-                sumBy(playlistData.pages, 'size') > 0 && (
-                  <Tab
-                    value={TabValues.Playlists}
-                    label="Playlists"
-                    {...a11yProps(1)}
-                  />
-                )}
+              {sumBy(collectionsData?.pages, (page) => page.size) > 0 && (
+                <Tab
+                  value={TabValues.Collections}
+                  label="Collections"
+                  {...a11yProps(TabValues.Collections)}
+                />
+              )}
+              {sumBy(playlistData?.pages, 'size') > 0 && (
+                <Tab
+                  value={TabValues.Playlists}
+                  label="Playlists"
+                  {...a11yProps(TabValues.Playlists)}
+                />
+              )}
             </Tabs>
           </Box>
-          <Box ref={gridContainerRef} sx={{ width: '100%' }}>
-            {renderListItems()}
-          </Box>
-          {!searchLoading && <div style={{ height: 96 }} ref={ref}></div>}
-          {isFetchingNextItemsPage && (
-            <CircularProgress
-              color="primary"
-              sx={{ display: 'block', margin: '2em auto' }}
-            />
-          )}
-          {searchData && !hasNextItemsPage && (
-            <Typography fontStyle={'italic'} sx={{ textAlign: 'center' }}>
-              fin.
-            </Typography>
-          )}
-          <Divider sx={{ mt: 3, mb: 2 }} />
+          {renderPanels()}
         </>
       )}
     </>

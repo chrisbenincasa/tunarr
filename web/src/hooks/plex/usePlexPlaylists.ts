@@ -28,6 +28,7 @@ export const usePlexPlaylistsInfinite = (
       plexServer?.name,
       currentLibrary?.library.key,
       'playlists',
+      'infinite',
     ],
     queryFn: ({ pageParam }) => {
       const plexQuery = new URLSearchParams({

@@ -15,7 +15,7 @@ import {
   useTheme,
 } from '@mui/material';
 import { MediaSourceSettings } from '@tunarr/types';
-import { filter, isNaN, isUndefined, some } from 'lodash-es';
+import { filter, isUndefined, some } from 'lodash-es';
 import React, {
   ForwardedRef,
   MouseEvent,
@@ -44,10 +44,24 @@ export type GridItemMetadataExtractors<T> = {
   selectedMedia: (item: T) => SelectedMedia;
 };
 
+export type GridItemMetadata = {
+  itemId: string;
+  isPlaylist: boolean;
+  hasThumbnail: boolean;
+  childCount: number | null;
+  isMusicItem: boolean;
+  isEpisode: boolean;
+  title: string;
+  subtitle: JSX.Element | string | null;
+  thumbnailUrl: string;
+  selectedMedia: SelectedMedia;
+};
+
 type Props<T> = {
   item: T;
   itemSource: MediaSourceSettings['type'];
-  extractors: GridItemMetadataExtractors<T>;
+  // extractors: GridItemMetadataExtractors<T>;
+  metadata: GridItemMetadata;
   style?: React.CSSProperties;
   index: number;
   isModalOpen: boolean;
@@ -67,16 +81,25 @@ const MediaGridItemInner = <T,>(
   );
   // const server = useCurrentMediaSource('plex')!; // We have to have a server at this point
   const darkMode = useStore((state) => state.theme.darkMode);
-  const { item, extractors, style, isModalOpen, onClick } = props;
-  const hasThumb = extractors.hasThumbnail(item);
+  const {
+    item,
+    metadata: {
+      hasThumbnail,
+      thumbnailUrl,
+      itemId,
+      selectedMedia: selectedMediaItem,
+      isMusicItem,
+      isEpisode: isEpisodeItem,
+      title,
+      subtitle,
+      childCount,
+    },
+    style,
+    isModalOpen,
+    onClick,
+  } = props;
   const [imageLoaded, setImageLoaded] = useState(false);
-  // const hasChildren = !isTerminalItem(item);
-  // const { data: children } = usePlexTyped<PlexChildMediaApiType<T>>(
-  //   server.name,
-  //   genPlexChildPath(props.item),
-  //   hasChildren && open,
-  // );
-  // const selectedServer = useCurrentMediaSource('plex');
+
   const selectedMedia = useStore((s) =>
     filter(
       s.selectedMedia,
@@ -90,27 +113,22 @@ const MediaGridItemInner = <T,>(
     onClick(item);
   }, [item, onClick]);
 
-  // useEffect(() => {
-  //   if (!isUndefined(children?.Metadata)) {
-  //     addKnownMediaForPlexServer(server.id, children.Metadata, item.guid);
-  //   }
-  // }, [item.guid, server.id, children]);
-
   const isSelected = some(
     selectedMedia,
-    (sm) => sm.type === props.itemSource && sm.id === props.extractors.id(item),
+    (sm) => sm.type === props.itemSource && sm.id === itemId,
   );
 
   const handleItem = useCallback(
     (e: MouseEvent<HTMLDivElement | HTMLButtonElement>) => {
+      console.log('handle');
       e.stopPropagation();
       if (isSelected) {
-        removeSelectedMedia([props.extractors.selectedMedia(props.item)]);
+        removeSelectedMedia([selectedMediaItem]);
       } else {
-        addSelectedMedia(props.extractors.selectedMedia(props.item));
+        addSelectedMedia(selectedMediaItem);
       }
     },
-    [props, isSelected],
+    [isSelected, selectedMediaItem],
   );
 
   const { isIntersecting: isInViewport, ref: imageContainerRef } =
@@ -120,53 +138,16 @@ const MediaGridItemInner = <T,>(
       freezeOnceVisible: true,
     });
 
-  // const extractChildCount = forPlexMedia({
-  //   season: (s) => s.leafCount,
-  //   show: (s) => s.childCount,
-  //   collection: (s) => parseInt(s.childCount),
-  // });
-
-  let childCount = isUndefined(item) ? null : props.extractors.childCount(item);
-  if (isNaN(childCount)) {
-    childCount = null;
-  }
-
-  // const isMusicItem = ['artist', 'album', 'track', 'playlist'].includes(
-  //   item.type,
-  // );
-  const isMusicItem = props.extractors.isMusicItem(item);
-  const isEpisodeItem = props.extractors.isEpisode(item);
-
-  // const isEpisodeItem = ['episode'].includes(item.type);
-  // const isMusicItem =
-
-  const thumbSrc: string = props.extractors.thumbnailUrl(item);
-  // if (props.extractors.isPlaylist(item)) {
-  //   thumbSrc = `${server.uri}${item.composite}?X-Plex-Token=${server.accessToken}`;
-  // } else {
-  //   const query = new URLSearchParams({
-  //     mode: 'proxy',
-  //     asset: 'thumb',
-  //     id: createExternalId('plex', server.name, item.ratingKey),
-  //     // Commenting this out for now as temporary solution for image loading issue
-  //     // thumbOptions: JSON.stringify({ width: 480, height: 720 }),
-  //   });
-
-  //   thumbSrc = `${
-  //     settings.backendUri
-  //   }/api/metadata/external?${query.toString()}`;
-  // }
-
   return (
     <Fade
-      in={isInViewport && !isUndefined(item) && hasThumb === imageLoaded}
+      in={isInViewport && !isUndefined(item) && hasThumbnail === imageLoaded}
       timeout={750}
       ref={imageContainerRef}
     >
       <div className="testtesteststestes">
         <ImageListItem
           component={Grid}
-          key={props.extractors.id(item)}
+          key={itemId}
           sx={{
             cursor: 'pointer',
             display: 'flex',
@@ -184,16 +165,13 @@ const MediaGridItemInner = <T,>(
                 : 'transparent',
             ...style,
           }}
-          onClick={
-            handleClick
-            // hasChildren
-            //   ? handleClick
-            //   : (event: MouseEvent<HTMLDivElement>) => handleItem(event)
+          onClick={(e) =>
+            (childCount ?? 0) === 0 ? handleItem(e) : handleClick()
           }
           ref={ref}
         >
           {isInViewport && // TODO: Eventually turn this into isNearViewport so images load before they hit the viewport
-            (hasThumb ? (
+            (hasThumbnail ? (
               <Box
                 sx={{
                   position: 'relative',
@@ -202,7 +180,7 @@ const MediaGridItemInner = <T,>(
                 }}
               >
                 <img
-                  src={thumbSrc}
+                  src={thumbnailUrl}
                   style={{
                     borderRadius: '5%',
                     height: 'auto',
@@ -244,12 +222,12 @@ const MediaGridItemInner = <T,>(
               />
             ))}
           <ImageListItemBar
-            title={props.extractors.title(item)}
-            subtitle={props.extractors.subtitle(item)}
+            title={title}
+            subtitle={subtitle}
             position="below"
             actionIcon={
               <IconButton
-                aria-label={`star ${props.extractors.title(item)}`}
+                aria-label={`star ${title}`}
                 onClick={(event: MouseEvent<HTMLButtonElement>) =>
                   handleItem(event)
                 }
