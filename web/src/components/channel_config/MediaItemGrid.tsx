@@ -131,6 +131,10 @@ export function MediaItemGrid<PageDataType, ItemType>({
 
   const scrollToGridItem = useCallback(
     (index: number) => {
+      if (index === -1) {
+        return;
+      }
+
       const selectedElement = gridItemRef.current;
       const includeModalInHeightCalc = isNewModalAbove(
         previousModalIndex,
