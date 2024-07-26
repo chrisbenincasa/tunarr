@@ -253,7 +253,9 @@ export function InlineModal<ItemType, ItemKind extends string>(
                 modalIndex={childModalIndex}
                 open={isFinalChildModalOpen}
               />
-              <li style={{ height: 40 }} ref={intersectionRef}></li>
+              {childLimit < modalChildren.length && (
+                <li style={{ height: 40 }} ref={intersectionRef}></li>
+              )}
             </>
           )}
           {/* {} */}

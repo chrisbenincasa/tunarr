@@ -181,8 +181,20 @@ export default function PlexProgrammingSelector() {
   }, [selectedServer?.id, collectionsData]);
 
   const totalItems = useMemo(() => {
-    return first(plexSearchQuery.data?.pages)?.totalSize ?? 0;
-  }, [plexSearchQuery.data]);
+    switch (tabValue) {
+      case TabValues.Library:
+        return first(plexSearchQuery.data?.pages)?.totalSize ?? 0;
+      case TabValues.Collections:
+        return first(collectionsData?.pages)?.totalSize ?? 0;
+      case TabValues.Playlists:
+        return first(playlistData?.pages)?.totalSize ?? 0;
+    }
+  }, [
+    collectionsData?.pages,
+    playlistData?.pages,
+    plexSearchQuery.data?.pages,
+    tabValue,
+  ]);
 
   const getPlexItemKey = useCallback((item: PlexMedia) => item.guid, []);
 
@@ -191,6 +203,7 @@ export default function PlexProgrammingSelector() {
     modalProps: GridInlineModalProps<PlexMedia>,
   ) => {
     const isLast = gridItemProps.index === totalItems - 1;
+    console.log(gridItemProps.index, totalItems);
 
     const renderModal =
       isPlexParentItem(gridItemProps.item) &&
