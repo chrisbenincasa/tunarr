@@ -95,6 +95,7 @@ export function MediaItemGrid<PageDataType, ItemType>({
     modalIndex: -1,
   });
   const gridContainerRef = useRef<HTMLDivElement>(null);
+  const selectedModalItemRef = useRef<HTMLDivElement>(null);
 
   // We only need a single grid item ref because all grid items are the same
   // width. This ref is simply used to determine the width of grid items based
@@ -135,7 +136,7 @@ export function MediaItemGrid<PageDataType, ItemType>({
         return;
       }
 
-      const selectedElement = gridItemRef.current;
+      const selectedElement = selectedModalItemRef.current;
       const includeModalInHeightCalc = isNewModalAbove(
         previousModalIndex,
         index,
@@ -162,9 +163,9 @@ export function MediaItemGrid<PageDataType, ItemType>({
 
   // Scroll to new selected item when modalIndex changes
   // Doing this on modalIndex change negates the need to calc inline modal height since it's collapsed at this time
-  // useEffect(() => {
-  //   scrollToGridItem(modalIndex);
-  // }, [modalIndex, scrollToGridItem]);
+  useEffect(() => {
+    scrollToGridItem(modalIndex);
+  }, [modalIndex, scrollToGridItem]);
 
   const handleMoveModal = useCallback(
     (index: number, item: ItemType) => {
@@ -238,7 +239,12 @@ export function MediaItemGrid<PageDataType, ItemType>({
               index,
               isModalOpen: modalIndex === index,
               moveModal: handleMoveModal,
-              ref: index === 0 ? gridItemRef : null,
+              ref:
+                index === 0
+                  ? gridItemRef
+                  : modalIndex === index
+                  ? selectedModalItemRef
+                  : null,
             },
             {
               open: isOpen,
