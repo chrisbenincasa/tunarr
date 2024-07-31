@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
-import constants from '@tunarr/shared/constants';
 import chalk from 'chalk';
 import { isArray, isString, keys } from 'lodash-es';
 import { existsSync } from 'node:fs';
@@ -20,11 +19,11 @@ import {
   setServerOptions,
 } from './globals.js';
 import { initDbDirectories, initServer } from './server.js';
-import { getDefaultLogLevel } from './util/logging/LoggerFactory.js';
 import {
-  DATABASE_LOCATION_ENV_VAR,
-  SERVER_PORT_ENV_VAR,
-} from './util/constants.js';
+  getDefaultDatabaseDirectory,
+  getDefaultLogLevel,
+  getDefaultServerPort,
+} from './util/defaults.js';
 import { initOrm, withDb } from './dao/dataSource.js';
 import { FixersByName } from './tasks/fixers/index.js';
 import { isNonEmptyString } from './util/index.js';
@@ -37,16 +36,6 @@ import { getTunarrVersion } from './util/version.js';
 // it elsewhere in the app.
 dayjs.extend(duration);
 dayjs.extend(dayjsMod);
-
-const maybeEnvPort = () => {
-  const port = process.env[SERVER_PORT_ENV_VAR];
-  if (!port) {
-    return;
-  }
-
-  const parsed = parseInt(port);
-  return isNaN(parsed) ? undefined : parsed;
-};
 
 yargs(hideBin(process.argv))
   .scriptName('tunarr')
@@ -62,9 +51,7 @@ yargs(hideBin(process.argv))
     alias: 'd',
     type: 'string',
     desc: 'Path to the database directory',
-    default:
-      process.env[DATABASE_LOCATION_ENV_VAR] ??
-      path.join('.', constants.DEFAULT_DATA_DIR),
+    default: getDefaultDatabaseDirectory(),
     normalize: true,
     coerce: (db: string) => fileURLToPath(new URL(db, import.meta.url)),
   })
@@ -73,12 +60,10 @@ yargs(hideBin(process.argv))
     desc: 'Forces a migration from a legacy dizquetv database. Useful for development and debugging. NOTE: This WILL override any settings you have!',
     default: false,
   })
-  .middleware((opts) =>
-    setGlobalOptions({ ...opts, databaseDirectory: opts.database }),
-  )
-  .command('version', 'Print the current version', () => {
-    console.log(getTunarrVersion());
-  })
+  .middleware([
+    (opts) => setGlobalOptions({ ...opts, databaseDirectory: opts.database }),
+  ])
+  .version(getTunarrVersion())
   .command(
     ['server', '$0'],
     'Run the Tunarr server',
@@ -88,7 +73,7 @@ yargs(hideBin(process.argv))
           alias: 'p',
           type: 'number',
           desc: 'The port to run the Tunarr server on',
-          default: maybeEnvPort() ?? 8000,
+          default: getDefaultServerPort(),
         })
         .option('printRoutes', {
           type: 'boolean',
@@ -136,7 +121,7 @@ ${chalk.blue('  |_| ')}${chalk.green(' \\___/')}${chalk.yellow(
           alias: 'p',
           type: 'number',
           desc: 'The port to run the Tunarr server on',
-          default: maybeEnvPort() ?? 8000,
+          default: getDefaultServerPort(),
         })
         .option('printRoutes', {
           type: 'boolean',

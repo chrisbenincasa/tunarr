@@ -15,7 +15,7 @@ import type ThreadStream from 'thread-stream';
 import { isNonEmptyString, isProduction } from '..';
 import { SettingsDB, getSettings } from '../../dao/settings';
 import { Maybe, TupleToUnion } from '../../types/util';
-import { isDocker } from '../isDocker';
+import { getDefaultLogLevel } from '../defaults';
 
 export const LogConfigEnvVars = {
   level: 'LOG_LEVEL',
@@ -35,40 +35,6 @@ export function getEnvironmentLogLevel(): Maybe<LogLevels> {
     }
   }
   return;
-}
-
-export function getDefaultLogLevel(useEnvVar: boolean = true): LogLevels {
-  if (useEnvVar) {
-    const level = getEnvironmentLogLevel();
-    if (!isUndefined(level)) {
-      return level;
-    }
-  }
-
-  return isProduction ? 'info' : 'debug';
-}
-
-export function getDefaultLogDirectory(): string {
-  const env = process.env[LogConfigEnvVars.directory];
-  if (isNonEmptyString(env)) {
-    return env;
-  }
-
-  // Making a lot of assumptions here...
-  if (isDocker()) {
-    return '/config/tunarr/logs';
-  }
-
-  let prefix = '';
-  if (process.env.APPDATA) {
-    prefix = `${process.env.APPDATA}`;
-  } else if (process.platform === 'darwin') {
-    prefix = `${process.env.HOME}/Library/Preferences`;
-  } else {
-    prefix = `${process.env.HOME}/.local/share`;
-  }
-
-  return `${prefix}/tunarr/logs`;
 }
 
 const ExtraLogLevels = ['http'] as const;
@@ -287,3 +253,5 @@ const getCaller = (callingModule: ImportMeta) => {
 };
 
 export const LoggerFactory = new LoggerFactoryImpl();
+
+export const RootLogger = LoggerFactory.root;
