@@ -1,4 +1,3 @@
-import { getTunarrVersion } from '@tunarr/shared/constants';
 import { VersionApiResponseSchema } from '@tunarr/types/api';
 import { createWriteStream, promises as fsPromises } from 'fs';
 import { isError, isNil } from 'lodash-es';
@@ -35,6 +34,7 @@ import {
   tunarrBuild,
 } from '../util/index.js';
 import { systemSettingsRouter } from './systemSettingsApi.js';
+import { getTunarrVersion } from '../util/version.js';
 
 export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
   const logger = LoggerFactory.child({ caller: import.meta });

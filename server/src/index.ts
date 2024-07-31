@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
-import constants, { getTunarrVersion } from '@tunarr/shared/constants';
+import constants from '@tunarr/shared/constants';
 import chalk from 'chalk';
 import { isArray, isString, keys } from 'lodash-es';
 import { existsSync } from 'node:fs';
@@ -31,6 +31,7 @@ import { isNonEmptyString } from './util/index.js';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
 import { dayjsMod } from '@tunarr/shared/util';
+import { getTunarrVersion } from './util/version.js';
 
 // Extend this here once so we don't have to worry about
 // it elsewhere in the app.
