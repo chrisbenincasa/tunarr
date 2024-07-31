@@ -217,7 +217,7 @@ export const api = makeApi([
     alias: 'getPlexPath',
     parameters: parametersBuilder()
       .addQueries({
-        name: z.string(),
+        id: z.string(),
         path: z.string(),
       })
       .build(),

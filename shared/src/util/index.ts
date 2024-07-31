@@ -4,6 +4,7 @@ import { PlexMedia } from '@tunarr/types/plex';
 import isFunction from 'lodash-es/isFunction.js';
 import { MarkRequired } from 'ts-essentials';
 import type { PerTypeCallback } from '../types/index.js';
+import { isNull } from 'lodash-es';
 export { mod as dayjsMod } from './dayjsExtensions.js';
 export * as seq from './seq.js';
 
@@ -110,4 +111,11 @@ export function forPlexMedia<T>(choices: PerTypeCallback<PlexMedia, T>) {
 
     return null;
   };
+}
+
+export function nullToUndefined<T>(x: T | null | undefined): T | undefined {
+  if (isNull(x)) {
+    return undefined;
+  }
+  return x;
 }

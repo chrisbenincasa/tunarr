@@ -53,10 +53,6 @@ export class PlexApiFactoryImpl {
     const key = `${typ}|${opts.uri}|${opts.apiKey}`;
     let client = this.#cache.get<ApiClient>(key);
     if (!client) {
-      // client = new PlexApiClient({
-      //   ...opts,
-      //   enableRequestCache: this.requestCacheEnabledForServer(opts.name),
-      // });
       client = factory(opts);
       this.#cache.set(key, client);
     }
@@ -82,6 +78,27 @@ export class PlexApiFactoryImpl {
           ...server,
           enableRequestCache: this.requestCacheEnabledForServer(server.name),
         });
+        this.#cache.set(server.name, client);
+      }
+    }
+    return client;
+  }
+
+  async getTypedByName<
+    X extends MediaSourceType,
+    ApiClient = FindChild<X, TypeToClient>,
+  >(
+    type: X,
+    name: string,
+    factory: (opts: RemoteMediaSourceOptions) => ApiClient,
+  ): ApiClient {
+    const key = `${type}|${name}`;
+    let client = this.#cache.get<ApiClient>(key);
+    if (isUndefined(client)) {
+      const em = getEm();
+      const server = await em.repo(MediaSource).findOne({ name, type });
+      if (!isNull(server)) {
+        client = factor;
         this.#cache.set(server.name, client);
       }
     }

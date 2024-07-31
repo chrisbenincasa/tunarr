@@ -1,4 +1,8 @@
-import { EntityManager, ref } from '@mikro-orm/better-sqlite';
+import {
+  EntityManager,
+  RequiredEntityData,
+  ref,
+} from '@mikro-orm/better-sqlite';
 import {
   PlexEpisode,
   PlexMovie,
@@ -12,6 +16,9 @@ import { ProgramExternalId } from '../dao/entities/ProgramExternalId.js';
 import { ProgramExternalIdType } from '../dao/custom_types/ProgramExternalIdType.js';
 import { LoggerFactory } from './logging/LoggerFactory.js';
 import { parsePlexExternalGuid } from './externalIds.js';
+import { ContentProgramOriginalProgram } from '@tunarr/types/schemas';
+import { JellyfinItem } from '@tunarr/types/jellyfin';
+import { nullToUndefined } from '@tunarr/shared/util';
 
 /**
  * Generates Program DB entities for Plex media
@@ -24,18 +31,37 @@ class PlexProgramMinter {
     this.#em = em;
   }
 
-  mint(serverName: string, plexItem: PlexTerminalMedia) {
-    switch (plexItem.type) {
-      case 'movie':
-        return this.mintMovieProgram(serverName, plexItem);
-      case 'episode':
-        return this.mintEpisodeProgram(serverName, plexItem);
-      case 'track':
-        return this.mintTrackProgram(serverName, plexItem);
+  mint(serverName: string, program: ContentProgramOriginalProgram) {
+    switch (program.sourceType) {
+      case 'plex':
+        switch (program.program.type) {
+          case 'movie':
+            return this.mintMovieProgramForPlex(serverName, program.program);
+          case 'episode':
+            return this.mintEpisodeProgramForPlex(serverName, program.program);
+          case 'track':
+            return this.mintTrackProgramForPlex(serverName, program.program);
+        }
+      case 'jellyfin':
+        switch (program.program.Type) {
+          case 'Movie':
+            return this.mintMovieProgramForJellyfin(
+              serverName,
+              program.program,
+            );
+          case 'Episode':
+
+          case 'Audio':
+          default:
+            return null;
+        }
     }
   }
 
-  private mintMovieProgram(serverName: string, plexMovie: PlexMovie): Program {
+  private mintMovieProgramForPlex(
+    serverName: string,
+    plexMovie: PlexMovie,
+  ): Program {
     const file = first(first(plexMovie.Media)?.Part ?? []);
     return this.#em.create(
       Program,
@@ -58,7 +84,34 @@ class PlexProgramMinter {
     );
   }
 
-  private mintEpisodeProgram(
+  private mintMovieProgramForJellyfin(
+    serverName: string,
+    item: JellyfinItem,
+  ): Program {
+    // const file = first(first(plexMovie.Media)?.Part ?? []);
+    return this.#em.create(
+      Program,
+      {
+        sourceType: ProgramSourceType.PLEX,
+        originalAirDate: nullToUndefined(item.PremiereDate),
+        duration: (item.RunTimeTicks ?? 0) / 10_000,
+        filePath: nullToUndefined(item.Path),
+        externalSourceId: serverName,
+        externalKey: item.Id,
+        plexRatingKey: item.Id,
+        plexFilePath: '',
+        // plexFilePath: file?.key,
+        rating: nullToUndefined(item.OfficialRating),
+        summary: nullToUndefined(item.Overview),
+        title: nullToUndefined(item.Name) ?? '',
+        type: ProgramType.Movie,
+        year: nullToUndefined(item.ProductionYear),
+      } satisfies RequiredEntityData<Program>,
+      { persist: false },
+    );
+  }
+
+  private mintEpisodeProgramForPlex(
     serverName: string,
     plexEpisode: PlexEpisode,
   ): Program {
@@ -92,7 +145,10 @@ class PlexProgramMinter {
     return program;
   }
 
-  private mintTrackProgram(serverName: string, plexTrack: PlexMusicTrack) {
+  private mintTrackProgramForPlex(
+    serverName: string,
+    plexTrack: PlexMusicTrack,
+  ) {
     const file = first(first(plexTrack.Media)?.Part ?? []);
     return this.#em.create(
       Program,
@@ -121,7 +177,7 @@ class PlexProgramMinter {
     );
   }
 
-  mintExternalIds(
+  mintExternalIdsForPlex(
     serverName: string,
     program: Program,
     media: PlexTerminalMedia,

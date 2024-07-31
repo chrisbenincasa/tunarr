@@ -26,6 +26,8 @@ export type JellyfinSelectedMedia = {
 
 export type ExternalSourceSelectedMedia = {
   serverId: MediaSourceId;
+  // This is needed for "legacy" reasons right now
+  serverName: string;
   id: ItemUuid;
   childCount?: number;
 };

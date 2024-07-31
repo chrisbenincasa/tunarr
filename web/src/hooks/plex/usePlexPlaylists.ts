@@ -25,7 +25,7 @@ export const usePlexPlaylistsInfinite = (
   const queryResult = useInfiniteQuery({
     queryKey: [
       'plex',
-      plexServer?.name,
+      plexServer?.id,
       currentLibrary?.library.key,
       'playlists',
       'infinite',
@@ -40,7 +40,7 @@ export const usePlexPlaylistsInfinite = (
 
       return fetchPlexPath<PlexPlaylists>(
         apiClient,
-        plexServer!.name,
+        plexServer!.id,
         `/playlists?${plexQuery.toString()}`,
       )();
     },

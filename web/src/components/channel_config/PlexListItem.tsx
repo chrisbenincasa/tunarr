@@ -62,7 +62,7 @@ export function PlexListItem<T extends PlexMedia>(props: PlexListItemProps<T>) {
   const hasChildren = !isTerminalItem(item);
   const childPath = isPlexCollection(item) ? 'collections' : 'metadata';
   const { isPending, data: children } = usePlexTyped<PlexChildMediaApiType<T>>(
-    server.name,
+    server.id,
     `/library/${childPath}/${props.item.ratingKey}/children`,
     hasChildren && open,
   );

@@ -16,6 +16,7 @@ import {
 import { forEach, isNil, isUndefined, sumBy } from 'lodash-es';
 import { fetchPlexPath } from '../../helpers/plexUtil.ts';
 import { useTunarrApi } from '../useTunarrApi.ts';
+import { MediaSourceId } from '@tunarr/types/schemas';
 
 const usePlexSearchQueryFn = () => {
   const apiClient = useTunarrApi();
@@ -45,7 +46,7 @@ const usePlexSearchQueryFn = () => {
       PlexLibraryMovies | PlexLibraryShows | PlexLibraryMusic
     >(
       apiClient,
-      plexServer.name,
+      plexServer.id,
       `/library/sections/${
         plexLibrary.library.key
       }/all?${plexQuery.toString()}`,
@@ -63,11 +64,11 @@ const usePlexSearchQueryOptions = (
   return queryOptions({
     queryKey: [
       'plex-search',
-      plexServer?.name,
+      plexServer?.id,
       currentLibrary?.library.key,
       searchParam,
     ] as DataTag<
-      ['plex-search', string, string, string],
+      ['plex-search', MediaSourceId, string, string],
       PlexLibraryMovies | PlexLibraryShows | PlexLibraryMusic
     >,
     enabled: enabled && !isNil(plexServer) && !isNil(currentLibrary),

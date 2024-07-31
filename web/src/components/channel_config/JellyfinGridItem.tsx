@@ -120,6 +120,7 @@ export const JellyfinGridItem = memo(
           return {
             type: 'jellyfin',
             serverId: currentServer!.id,
+            serverName: currentServer!.name,
             childCount: extractChildCount(item),
             id: item.Id,
           };

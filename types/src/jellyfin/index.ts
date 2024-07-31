@@ -632,7 +632,7 @@ const MediaSourceInfo = z
   })
   .partial();
 
-const JellyfinBaseItemSchema = z.object({
+export const JellyfinItem = z.object({
   Name: z.string().nullable().optional(),
   OriginalTitle: z.string().nullable().optional(),
   ServerId: z.string().nullable().optional(),
@@ -812,7 +812,7 @@ const JellyfinBaseItemSchema = z.object({
 });
 // );
 
-export type JellyfinItem = z.infer<typeof JellyfinBaseItemSchema>;
+export type JellyfinItem = z.infer<typeof JellyfinItem>;
 
 // export const JellyfinLibraryItem = z.object({
 //   Name: z.string(),
@@ -854,7 +854,7 @@ export type JellyfinItem = z.infer<typeof JellyfinBaseItemSchema>;
 // });
 
 export const JellyfinLibraryItemsResponse = z.object({
-  Items: z.array(JellyfinBaseItemSchema),
+  Items: z.array(JellyfinItem),
   TotalRecordCount: z.number(),
   StartIndex: z.number().nullable().optional(),
 });

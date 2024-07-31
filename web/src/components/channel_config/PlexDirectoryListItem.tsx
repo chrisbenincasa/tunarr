@@ -43,12 +43,12 @@ export function PlexDirectoryListItem(props: {
     PlexLibraryCollections
   >([
     {
-      serverName: props.server.name,
+      serverId: props.server.id,
       path: `/library/sections/${item.key}/all`,
       enabled: open,
     },
     {
-      serverName: props.server.name,
+      serverId: props.server.id,
       path: `/library/sections/${item.key}/collections`,
       enabled: open,
     },

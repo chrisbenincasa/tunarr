@@ -130,4 +130,6 @@ export const metadataApiRouter: RouterPluginAsyncCallback = async (fastify) => {
 
     return null;
   }
+
+  async function handleJellyfishItem(query: ExternalMetadataQuery) {}
 };

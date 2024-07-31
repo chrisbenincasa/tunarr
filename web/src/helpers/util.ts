@@ -402,6 +402,9 @@ export function forAddedMediaType<T>(
       case 'plex':
         if (choices.plex) return applyOrValueNoRest(choices.plex, m);
         break;
+      case 'jellyfin':
+        if (choices.jellyfin) return applyOrValueNoRest(choices.jellyfin, m);
+        break;
       case 'custom-show':
         if (choices['custom-show'])
           return applyOrValueNoRest(choices['custom-show'], m);

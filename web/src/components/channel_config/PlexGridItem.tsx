@@ -109,7 +109,7 @@ export const PlexGridItem = memo(
       );
 
       const { data: childItems } = usePlexTyped<PlexChildMediaApiType<T>>(
-        server.name,
+        server.id,
         genPlexChildPath(props.item),
         !isTerminalItem(item) && modalOpen,
       );
@@ -163,6 +163,7 @@ export const PlexGridItem = memo(
           return {
             type: 'plex',
             serverId: currentServer!.id,
+            serverName: currentServer!.name,
             childCount: extractChildCount(item) ?? 0,
             id: item.guid,
           };

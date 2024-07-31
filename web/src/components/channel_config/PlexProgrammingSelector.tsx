@@ -41,6 +41,9 @@ import {
 import { PlexFilterBuilder } from './PlexFilterBuilder.tsx';
 import { PlexGridItem } from './PlexGridItem.tsx';
 import { PlexSortField } from './PlexSortField.tsx';
+import { PlexListItem } from './PlexListItem.tsx';
+import { tag } from '@tunarr/types';
+import { MediaSourceId } from '@tunarr/types/schemas';
 
 function a11yProps(index: number) {
   return {
@@ -71,7 +74,7 @@ export default function PlexProgrammingSelector() {
   };
 
   const { data: directoryChildren } = usePlexLibraries(
-    selectedServer?.name ?? '',
+    selectedServer?.id ?? tag<MediaSourceId>(''),
     selectedServer?.type === 'plex',
   );
 
@@ -203,7 +206,6 @@ export default function PlexProgrammingSelector() {
     modalProps: GridInlineModalProps<PlexMedia>,
   ) => {
     const isLast = gridItemProps.index === totalItems - 1;
-    console.log(gridItemProps.index, totalItems);
 
     const renderModal =
       isPlexParentItem(gridItemProps.item) &&
@@ -238,7 +240,9 @@ export default function PlexProgrammingSelector() {
             extractItems={(page) => page.Metadata}
             getItemKey={getPlexItemKey}
             renderGridItem={renderGridItem}
-            renderListItem={(item) => <div key={item.guid} />}
+            renderListItem={(item) => (
+              <PlexListItem key={item.guid} item={item} />
+            )}
             infiniteQuery={plexSearchQuery}
           />
         </TabPanel>,
@@ -263,7 +267,9 @@ export default function PlexProgrammingSelector() {
             extractItems={(page) => page.Metadata ?? []}
             getItemKey={getPlexItemKey}
             renderGridItem={renderGridItem}
-            renderListItem={(item) => <div key={item.guid} />}
+            renderListItem={(item) => (
+              <PlexListItem key={item.guid} item={item} />
+            )}
             infiniteQuery={plexCollectionsQuery}
           />
         </TabPanel>,
@@ -287,7 +293,9 @@ export default function PlexProgrammingSelector() {
               extractItems={(page) => page.Metadata ?? []}
               getItemKey={getPlexItemKey}
               renderGridItem={renderGridItem}
-              renderListItem={(item) => <div key={item.guid} />}
+              renderListItem={(item) => (
+                <PlexListItem key={item.guid} item={item} />
+              )}
               infiniteQuery={plexPlaylistsQuery}
             />
           </TabPanel>,

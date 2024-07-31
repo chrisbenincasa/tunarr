@@ -94,7 +94,7 @@ export default function ProgrammingSelector(_: Props) {
   const viewingCustomShows = mediaSource === 'custom-shows';
 
   const { data: plexLibraryChildren } = usePlexLibraries(
-    selectedServer?.name ?? '',
+    selectedServer?.id ?? '',
     selectedServer?.type === 'plex',
   );
 

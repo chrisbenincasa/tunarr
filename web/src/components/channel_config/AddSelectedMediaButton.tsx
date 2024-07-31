@@ -14,6 +14,7 @@ import { clearSelectedMedia } from '../../store/programmingSelector/actions.ts';
 import { CustomShowSelectedMedia } from '../../store/programmingSelector/store.ts';
 import { AddedCustomShowProgram, AddedMedia } from '../../types/index.ts';
 import { useKnownMedia } from '@/store/programmingSelector/selectors.ts';
+import { enumerateJellyfinItem } from '@/hooks/jellyfin/jellyfinHookUtil.ts';
 
 type Props = {
   onAdd: (items: AddedMedia[]) => void;
@@ -44,9 +45,10 @@ export default function AddSelectedMediaButton({
         plex: async (selected) => {
           const media = knownMedia.getMediaOfType(
             selected.serverId,
-            selected.guid,
+            selected.id,
             'plex',
           );
+
           if (!media) {
             return [];
           }
@@ -54,10 +56,31 @@ export default function AddSelectedMediaButton({
           const items = await enumeratePlexItem(
             apiClient,
             selected.serverId,
-            media.item,
+            selected.serverName,
+            media,
           )();
 
           return map(items, (item) => ({ media: item, type: 'plex' }));
+        },
+        jellyfin: async (selected) => {
+          const media = knownMedia.getMediaOfType(
+            selected.serverId,
+            selected.id,
+            'jellyfin',
+          );
+
+          if (!media) {
+            return [];
+          }
+
+          const items = await enumerateJellyfinItem(
+            apiClient,
+            selected.serverId,
+            selected.serverName,
+            media,
+          )();
+
+          return map(items, (item) => ({ media: item, type: 'jellyfin' }));
         },
         'custom-show': (
           selected: CustomShowSelectedMedia,

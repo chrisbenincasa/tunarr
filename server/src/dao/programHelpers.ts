@@ -62,7 +62,7 @@ export async function upsertContentPrograms(
     .chain(contentPrograms)
     .map((p) => {
       const program = minter.mint(p.externalSourceName!, p.originalProgram!);
-      const externalIds = minter.mintExternalIds(
+      const externalIds = minter.mintExternalIdsForPlex(
         p.externalSourceName!,
         program,
         p.originalProgram!,

@@ -216,17 +216,17 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
     '/plex',
     {
       schema: {
-        querystring: z.object({ name: z.string(), path: z.string() }),
+        querystring: z.object({ id: z.string(), path: z.string() }),
       },
     },
     async (req, res) => {
       const server = await req.entityManager
         .repo(MediaSource)
-        .findOne({ name: req.query.name, type: MediaSourceType.Plex });
+        .findOne({ uuid: req.query.id, type: MediaSourceType.Plex });
       if (isNil(server)) {
         return res
           .status(404)
-          .send({ error: 'No server found with name: ' + req.query.name });
+          .send({ error: 'No server found with id: ' + req.query.id });
       }
 
       const plex = PlexApiFactory().get(server);
