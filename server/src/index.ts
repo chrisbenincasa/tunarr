@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
-import constants from '@tunarr/shared/constants';
+import constants, { getTunarrVersion } from '@tunarr/shared/constants';
 import chalk from 'chalk';
 import { isArray, isString, keys } from 'lodash-es';
 import { existsSync } from 'node:fs';
@@ -76,7 +76,7 @@ yargs(hideBin(process.argv))
     setGlobalOptions({ ...opts, databaseDirectory: opts.database }),
   )
   .command('version', 'Print the current version', () => {
-    console.log(constants.VERSION_NAME);
+    console.log(getTunarrVersion());
   })
   .command(
     ['server', '$0'],
@@ -119,7 +119,7 @@ ${chalk.blue('  |_| ')}${chalk.green(' \\___/')}${chalk.yellow(
         )}${chalk.magentaBright('_/ \\_\\')}${chalk.red('_|_\\')}${chalk.cyan(
           '_|_\\',
         )}
-\n\t\t${constants.VERSION_NAME}
+\n\t\t${getTunarrVersion()}
 `,
         /* eslint-enable max-len */
       );
