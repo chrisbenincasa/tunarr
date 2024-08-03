@@ -205,6 +205,8 @@ function baseWithProgamsExpressionBuilder(
     | 'channelFallback'
     | 'fillerShowContent'
     | 'fillerShow'
+    | 'customShow'
+    | 'customShowContent'
   >,
   opts: DeepRequired<WithProgramsOptions>,
 ) {
@@ -273,4 +275,21 @@ export function withFillerPrograms(
           .onRef('fillerShow.uuid', '=', 'fillerShowContent.fillerShowUuid'),
       ),
   ).as('fillerContent');
+}
+
+export function withCustomShowPrograms(
+  eb: ExpressionBuilder<DB, 'customShow' | 'customShowContent'>,
+  options: WithProgramsOptions = defaultWithProgramOptions,
+) {
+  const mergedOpts = merge({}, defaultWithProgramOptions, options);
+  return jsonArrayFrom(
+    baseWithProgamsExpressionBuilder(eb, mergedOpts)
+      .select(['customShowContent.index'])
+      .innerJoin('customShowContent', (join) =>
+        join
+          .onRef('customShowContent.contentUuid', '=', 'program.uuid')
+          .onRef('fillerShow.uuid', '=', 'customShowContent.customShowUuid'),
+      )
+      .orderBy('customShowContent.index asc'),
+  ).as('customShowContent');
 }

@@ -1,7 +1,6 @@
 import {
   Loaded,
   OrderDefinition,
-  QueryOrder,
   RequiredEntityData,
   wrap,
 } from '@mikro-orm/core';
@@ -269,28 +268,6 @@ export class ChannelDB {
     return result?.programs ?? [];
   }
 
-  /**
-   * The old implementation using the ORM, which is super slow for
-   * huge channels. This WILL be removed, but we're keeping it around
-   * so that we can ship the perf improvements now without changing the
-   * whole world.
-   * @deprecated
-   */
-  getChannelAndProgramsSLOW(uuid: string) {
-    return getEm()
-      .repo(Channel)
-      .findOne(
-        { uuid },
-        { populate: ['programs', 'programs.customShows.uuid'] },
-      );
-  }
-
-  getChannelAndProgramsByNumber(number: number) {
-    return getEm()
-      .repo(Channel)
-      .findOne({ number }, { populate: ['programs'] });
-  }
-
   async saveChannel(createReq: SaveChannelRequest) {
     const em = getEm();
     const existing = await em.findOne(Channel, { number: createReq.number });
@@ -425,14 +402,6 @@ export class ChannelDB {
         e,
       );
     }
-  }
-
-  async getAllChannelNumbers() {
-    const channels = await getEm().findAll(Channel, {
-      fields: ['number'],
-      orderBy: { number: QueryOrder.DESC },
-    });
-    return channels.map((channel) => channel.number);
   }
 
   async getAllChannels(orderBy?: OrderDefinition<Channel>) {
@@ -1037,32 +1006,7 @@ export class ChannelDB {
     let lastOffset = 0;
     const offsets: number[] = [];
 
-    // const gen = asyncPool(
-    //   chunk(programIds, 100),
-    //   async (chunk) => {
-    //     return await getEm()
-    //       .repo(CustomShowContent)
-    //       .findAll({
-    //         where: { content: { $in: chunk } },
-    //       });
-    //   },
-    //   { concurrency: 2 },
-    // );
-
     const allCustomShowContent: CustomShowContent[] = [];
-    // const start = performance.now();
-    // for await (const selectedChunkResult of gen) {
-    //   if (selectedChunkResult.type === 'success') {
-    //     allCustomShowContent.push(...selectedChunkResult.result);
-    //   } else {
-    //     this.logger.warn(
-    //       selectedChunkResult.error,
-    //       'Error while selecting custom show content',
-    //     );
-    //   }
-    // }
-    // const end = performance.now();
-    // this.logger.debug('Custom show select %d ms', end - start);
 
     const customShowContent = groupBy(
       allCustomShowContent,

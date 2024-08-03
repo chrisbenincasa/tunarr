@@ -5,7 +5,7 @@ import {
 } from '@tunarr/types/api';
 import { filter, isNil, map } from 'lodash-es';
 import { MarkOptional } from 'ts-essentials';
-import { isNonEmptyString, mapAsyncSeq } from '../util/index.js';
+import { isNonEmptyString } from '../util/index.js';
 import { ProgramConverter } from './converters/programConverters.js';
 import { getEm } from './dataSource.js';
 import { CustomShow } from './entities/CustomShow.js';
@@ -14,6 +14,8 @@ import {
   createPendingProgramIndexMap,
   upsertContentPrograms,
 } from './programHelpers.js';
+import { directDbAccess } from './direct/directDbAccess.js';
+import { withCustomShowPrograms } from './direct/programQueryHelpers.js';
 
 export type CustomShowUpdate = MarkOptional<CustomShow, 'content'>;
 export type CustomShowInsert = {
@@ -35,31 +37,41 @@ export class CustomShowDB {
   }
 
   async getShowPrograms(id: string): Promise<CustomProgram[]> {
-    const customShowContent = await getEm()
-      .repo(CustomShowContent)
-      .find(
-        { customShow: id },
-        {
-          // Preload relations
-          populate: [
-            'content',
-            'content.album',
-            'content.artist',
-            'content.tvShow',
-            'content.season',
-          ],
-          orderBy: { index: 'desc' },
-        },
-      );
+    const queryResult = await directDbAccess()
+      .selectFrom('customShowContent')
+      .where('customShowContent.customShowUuid', '=', id)
+      .select((eb) => withCustomShowPrograms(eb))
+      .execute();
+    // const p = queryResult[0]
+    // return map(queryResult, 'customShowContent');
+    // const customShowContent = await getEm()
+    //   .repo(CustomShowContent)
+    //   .find(
+    //     { customShow: id },
+    //     {
+    //       // Preload relations
+    //       populate: [
+    //         'content',
+    //         'content.album',
+    //         'content.artist',
+    //         'content.tvShow',
+    //         'content.season',
+    //       ],
+    //       orderBy: { index: 'desc' },
+    //     },
+    //   );
 
-    return mapAsyncSeq(customShowContent, async (csc) => ({
+    return map(queryResult, ({ customShowContent }) => ({
       type: 'custom',
       persisted: true,
-      duration: csc.content.duration,
-      program: await this.#programConverter.entityToContentProgram(csc.content),
+      duration: customShowContent.duration,
+      program: this.#programConverter.directEntityToContentProgramSync(
+        customShowContent,
+        [],
+      ),
       customShowId: id,
-      index: csc.index,
-      id: csc.content.uuid,
+      index: customShowContent.index,
+      id: customShowContent.uuid,
     }));
   }
 
@@ -173,17 +185,6 @@ export class CustomShowDB {
     });
 
     return true;
-  }
-
-  async getAllShowIds() {
-    const res = await getEm()
-      .repo(CustomShow)
-      .findAll({ fields: ['uuid'] });
-    return res.map((s) => s.uuid);
-  }
-
-  getAllShows() {
-    return getEm().repo(CustomShow).findAll();
   }
 
   async getAllShowsInfo() {
