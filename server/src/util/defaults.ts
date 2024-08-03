@@ -1,11 +1,12 @@
 import { LogConfigEnvVars } from './logging/LoggerFactory';
-import { isUndefined } from 'lodash-es';
+import { isNull, isUndefined } from 'lodash-es';
 import { Nullable } from '../types/util.js';
 import { DATABASE_LOCATION_ENV_VAR, SERVER_PORT_ENV_VAR } from './constants.js';
 import { isNonEmptyString, isProduction } from './index.js';
 import { isDocker } from './isDocker.js';
 import { LogLevels, getEnvironmentLogLevel } from './logging/LoggerFactory';
 import constants from '@tunarr/shared/constants';
+import path from 'node:path';
 
 function getRuntimeSpecificPrefix() {
   let prefix: Nullable<string> = null;
@@ -28,7 +29,7 @@ export function getDefaultLogDirectory(): string {
     return env;
   }
 
-  return `${getRuntimeSpecificPrefix() ?? ''}/tunarr/logs`;
+  return path.join(getRuntimeSpecificPrefix() ?? '', 'tunarr', 'logs');
 }
 
 export function getDefaultLogLevel(useEnvVar: boolean = true): LogLevels {
@@ -48,9 +49,13 @@ export function getDefaultDatabaseDirectory(): string {
     return env;
   }
 
-  return `${getDefaultDatabaseDirectory() ?? process.cwd()}/${
-    constants.DEFAULT_DATA_DIR
-  }`;
+  const prefix = getRuntimeSpecificPrefix();
+
+  if (!isNull(prefix)) {
+    return path.join(prefix, 'tunarr');
+  }
+
+  return path.join(process.cwd(), constants.DEFAULT_DATA_DIR);
 }
 
 export function getDefaultServerPort() {

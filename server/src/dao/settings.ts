@@ -28,13 +28,12 @@ import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 import { globalOptions } from '../globals.js';
 import { TypedEventEmitter } from '../types/eventEmitter.js';
-import { isProduction } from '../util/index.js';
 import {
-  Logger,
-  LoggerFactory,
   getDefaultLogDirectory,
   getDefaultLogLevel,
-} from '../util/logging/LoggerFactory.js';
+} from '../util/defaults.js';
+import { isProduction } from '../util/index.js';
+import { Logger, LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { SchemaBackedDbAdapter } from './SchemaBackedDbAdapter.js';
 import { SyncSchemaBackedDbAdapter } from './SyncSchemaBackedDbAdapter.js';
 

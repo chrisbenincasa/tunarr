@@ -10,10 +10,8 @@ import { isUndefined } from 'lodash-es';
 import { DeepReadonly, Writable } from 'ts-essentials';
 import { scheduleBackupJobs } from '../services/scheduler';
 import { RouterPluginAsyncCallback } from '../types/serverType';
-import {
-  getDefaultLogLevel,
-  getEnvironmentLogLevel,
-} from '../util/logging/LoggerFactory';
+import { getEnvironmentLogLevel } from '../util/logging/LoggerFactory';
+import { getDefaultLogLevel } from '../util/defaults';
 import { ifDefined } from '../util/index.js';
 
 export const systemSettingsRouter: RouterPluginAsyncCallback = async (

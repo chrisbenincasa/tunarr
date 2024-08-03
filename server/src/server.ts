@@ -13,7 +13,7 @@ import {
   validatorCompiler,
 } from 'fastify-type-provider-zod';
 import { FastifyRouteConfig } from 'fastify/types/route.js';
-import fs from 'fs';
+import fs from 'node:fs/promises';
 import { isArray, isNumber, isString, isUndefined, round } from 'lodash-es';
 import schedule from 'node-schedule';
 import path, { dirname } from 'path';
@@ -31,11 +31,24 @@ import { initPersistentStreamCache } from './stream/ChannelCache.js';
 import { UpdateXmlTvTask } from './tasks/UpdateXmlTvTask.js';
 import { runFixers } from './tasks/fixers/index.js';
 import { filename, isNonEmptyString, run } from './util/index.js';
-import { LoggerFactory } from './util/logging/LoggerFactory.js';
+import { LoggerFactory, RootLogger } from './util/logging/LoggerFactory.js';
 import { initDirectDbAccess } from './dao/direct/directDbAccess.js';
 import { OnDemandChannelService } from './services/OnDemandChannelService.js';
+import constants from '@tunarr/shared/constants';
+import { copyDirectoryContents, fileExists } from './util/fsUtil.js';
 
 const currentDirectory = dirname(filename(import.meta.url));
+
+async function migrateFromPreAlphaDefaultDb(targetDir: string) {
+  // In versions <=0.3.2, the default database directory was located
+  // at process.cwd()/.tunarr
+  const preAlphaPath = path.join(process.cwd(), constants.DEFAULT_DATA_DIR);
+  const hasPreAlphaDefaultDb = await fileExists(preAlphaPath);
+  if (hasPreAlphaDefaultDb) {
+    console.log('has', hasPreAlphaDefaultDb);
+    await copyDirectoryContents(preAlphaPath, targetDir);
+  }
+}
 
 /**
  * Initializes the Tunarr "database" directory at the configured location, including
@@ -44,40 +57,46 @@ const currentDirectory = dirname(filename(import.meta.url));
  */
 export async function initDbDirectories() {
   // Early init, have to use the non-settings-based root Logger
-  const logger = LoggerFactory.root;
   const opts = serverOptions();
-  const hasTunarrDb = fs.existsSync(opts.databaseDirectory);
+  const hasTunarrDb = await fileExists(opts.databaseDirectory);
   if (!hasTunarrDb) {
-    logger.debug(`Existing database at ${opts.databaseDirectory} not found`);
-    fs.mkdirSync(opts.databaseDirectory, { recursive: true });
+    RootLogger.debug(
+      `Existing database at ${opts.databaseDirectory} not found`,
+    );
+    await fs.mkdir(opts.databaseDirectory, { recursive: true });
+    await migrateFromPreAlphaDefaultDb(opts.databaseDirectory);
     await getSettings().flush();
   }
 
-  [['channel-lineups'], ['images'], ['cache'], ['cache', 'images']].forEach(
-    (pathParts) => {
-      const pathToCheck = path.join(opts.databaseDirectory, ...pathParts);
-      if (!fs.existsSync(pathToCheck)) {
-        logger.debug(`Creating path at ${pathToCheck}`);
-        fs.mkdirSync(pathToCheck);
-      }
-    },
-  );
+  for (const subpaths of [
+    ['channel-lineups'],
+    ['images'],
+    ['cache'],
+    ['cache', 'images'],
+  ]) {
+    const pathToCheck = path.join(opts.databaseDirectory, ...subpaths);
+    if (!(await fileExists(pathToCheck))) {
+      RootLogger.debug(`Creating path at ${pathToCheck}`);
+      await fs.mkdir(pathToCheck);
+    }
+  }
 
   // TODO: This will be an option that the user can set...
-  if (!fs.existsSync(path.join(process.cwd(), 'streams'))) {
-    fs.mkdirSync(path.join(process.cwd(), 'streams'));
+  if (!(await fileExists(path.join(process.cwd(), 'streams')))) {
+    await fs.mkdir(path.join(process.cwd(), 'streams'));
   }
 
   return hasTunarrDb;
 }
 
-function legacyDizquetvDirectoryPath() {
-  const logger = LoggerFactory.root;
+async function legacyDizquetvDirectoryPath() {
   const legacyDbLocation = path.join(process.cwd(), '.dizquetv');
-  logger.info(`Searching for legacy dizquetv directory at ${legacyDbLocation}`);
-  const hasLegacyDb = fs.existsSync(legacyDbLocation);
+  RootLogger.info(
+    `Searching for legacy dizquetv directory at ${legacyDbLocation}`,
+  );
+  const hasLegacyDb = await fileExists(legacyDbLocation);
   if (hasLegacyDb) {
-    logger.info(`A legacy .dizquetv database was located.`);
+    RootLogger.info(`A legacy .dizquetv database was located.`);
     return legacyDbLocation;
   }
 
@@ -96,7 +115,7 @@ export async function initServer(opts: ServerOptions) {
 
   const ctx = serverContext();
 
-  const legacyDbPath = legacyDizquetvDirectoryPath();
+  const legacyDbPath = await legacyDizquetvDirectoryPath();
   if (
     (ctx.settings.migrationState.isFreshSettings || opts.force_migration) &&
     isNonEmptyString(legacyDbPath)
