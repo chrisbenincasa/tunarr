@@ -20,7 +20,7 @@ export function NewCustomShowPage() {
       </Box>
       <PaddedPaper sx={{ mb: 2 }}>
         <EditCustomShowsForm
-          isNew={false}
+          isNew={true}
           customShow={customShow}
           customShowPrograms={customShowPrograms}
         />
