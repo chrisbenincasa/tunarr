@@ -109,7 +109,6 @@ export default function ChannelTranscodingConfig() {
     return value.toString();
   });
 
-  console.log(getValues('watermark.opacity'));
   const [opacity, setOpacity] = useState(getValues('watermark.opacity'));
 
   if (ffmpegSettingsLoading) {
@@ -156,6 +155,7 @@ export default function ChannelTranscodingConfig() {
     value: string,
     originalOnChange: (...event: unknown[]) => void,
   ) => {
+    console.log(field, value);
     if (field === 'transcoding.videoBitrate') {
       setUiVideoBitrate(value);
     } else {

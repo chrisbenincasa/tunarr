@@ -29,6 +29,47 @@ import {
 } from './EditChannelTabPanel.tsx';
 import ChannelEditActions from './ChannelEditActions.tsx';
 
+function getDefaultFormValues(channel: Channel): SaveChannelRequest {
+  return {
+    ...channel,
+    fillerCollections: channel.fillerCollections ?? [],
+    fillerRepeatCooldown: channel.fillerRepeatCooldown
+      ? channel.fillerRepeatCooldown / 1000
+      : DefaultChannel.fillerRepeatCooldown,
+    guideFlexTitle: channel.guideFlexTitle ?? '',
+    guideMinimumDuration: channel.guideMinimumDuration / 1000,
+    transcoding: {
+      targetResolution:
+        channel.transcoding?.targetResolution ?? ('global' as const),
+      videoBitrate: channel.transcoding?.videoBitrate ?? ('global' as const),
+      videoBufferSize:
+        channel.transcoding?.videoBufferSize ?? ('global' as const),
+    },
+    offline: {
+      ...channel.offline,
+      picture: channel.offline.picture ?? DefaultChannel.offline.picture,
+      soundtrack:
+        channel.offline.soundtrack ?? DefaultChannel.offline.soundtrack,
+    },
+    watermark: {
+      ...(channel.watermark ?? {}),
+      enabled: channel.watermark?.enabled ?? false,
+      url: channel.watermark?.url ?? '',
+      width: channel.watermark?.width ?? 10,
+      horizontalMargin: channel.watermark?.horizontalMargin ?? 1,
+      verticalMargin: channel.watermark?.verticalMargin ?? 1,
+      fixedSize: channel.watermark?.fixedSize ?? false,
+      animated: channel.watermark?.animated ?? false,
+      duration: channel.watermark?.duration ?? 0,
+      position: channel.watermark?.position ?? 'bottom-right',
+      opacity: channel.watermark?.opacity ?? 100,
+    },
+    onDemand: {
+      enabled: channel.onDemand.enabled,
+    },
+  };
+}
+
 export function EditChannelForm({
   channel,
   isNew,
@@ -43,48 +84,15 @@ export function EditChannelForm({
     mode: 'onChange',
     // Change this so we only load the form on initial...
     // eslint-disable-next-line @typescript-eslint/require-await
-    defaultValues: {
-      ...channel,
-      fillerCollections: channel.fillerCollections ?? [],
-      fillerRepeatCooldown: channel.fillerRepeatCooldown
-        ? channel.fillerRepeatCooldown / 1000
-        : DefaultChannel.fillerRepeatCooldown,
-      guideFlexTitle: channel.guideFlexTitle ?? '',
-      guideMinimumDuration: channel.guideMinimumDuration / 1000,
-      transcoding: {
-        targetResolution: channel.transcoding?.targetResolution ?? 'global',
-        videoBitrate: channel.transcoding?.videoBitrate ?? 'global',
-        videoBufferSize: channel.transcoding?.videoBufferSize ?? 'global',
-      },
-      offline: {
-        ...channel.offline,
-        picture: channel.offline.picture ?? DefaultChannel.offline.picture,
-        soundtrack:
-          channel.offline.soundtrack ?? DefaultChannel.offline.soundtrack,
-      },
-      watermark: {
-        ...(channel.watermark ?? {}),
-        enabled: channel.watermark?.enabled ?? false,
-        url: channel.watermark?.url ?? '',
-        width: channel.watermark?.width ?? 10,
-        horizontalMargin: channel.watermark?.horizontalMargin ?? 1,
-        verticalMargin: channel.watermark?.verticalMargin ?? 1,
-        fixedSize: channel.watermark?.fixedSize ?? false,
-        animated: channel.watermark?.animated ?? false,
-        duration: channel.watermark?.duration ?? 0,
-        position: channel.watermark?.position ?? 'bottom-right',
-        opacity: channel.watermark?.opacity ?? 100,
-      },
-      onDemand: {
-        enabled: channel.onDemand.enabled,
-      },
-    },
+    defaultValues: getDefaultFormValues(channel),
   });
 
   const updateChannelMutation = useUpdateChannel(isNew, {
     onSuccess: (data) => {
-      console.log('resetting some bullshit');
-      formMethods.reset(data, { keepDefaultValues: false });
+      formMethods.reset(getDefaultFormValues(data), {
+        keepDefaultValues: false,
+        keepDirty: false,
+      });
       if (isNew) {
         navigate({
           to: `/channels/$channelId/programming`,
