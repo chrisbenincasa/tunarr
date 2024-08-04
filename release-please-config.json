@@ -1,4 +1,5 @@
 {
+  "bootstrap-sha": "3f92f16fb02166239bc33b0f9b4ca5727b3be52b",
   "packages": {
     ".": {
       "changelog-path": "CHANGELOG.md",
@@ -9,6 +10,7 @@
       "prerelease": false,
       "bootstrap-sha": "3f92f16fb02166239bc33b0f9b4ca5727b3be52b",
       "include-v-in-tag": true,
+      "include-component-in-tag": false,
       "extra-files": [
         {
           "type": "json",
