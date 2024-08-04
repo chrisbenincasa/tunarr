@@ -90,8 +90,9 @@ jobs:
             type=semver,pattern={{version}}
             # Update edge tag when we manually trigger the releawe
             type=raw,value=edge,enable=${{github.ref == format('refs/heads/{0}', 'dev') && github.event_name == 'workflow_dispatch'}}
-            # Only tag latest for non-hwaccel builds
+            # Tag latest for each specific build type
             type=raw,value=latest,enable=${{ matrix.builds.suffix == '' }}
+            type=raw,value=latest${{ matrix.builds.suffix }},enable=${{ matrix.builds.suffix != '' }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3

@@ -19,4 +19,3 @@ jobs:
         with:
           token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
           release-type: node
-          config-file: release-please-config.json
