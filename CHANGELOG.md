@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.2](https://github.com/chrisbenincasa/tunarr/compare/v0.4.1...v0.4.2) (2024-08-04)
+
+
+### Miscellaneous Chores
+
+* manual release ([b24c231](https://github.com/chrisbenincasa/tunarr/commit/b24c2316788c34f71c490549b4e6299a3329ba47))
+
 ## [0.4.1](https://github.com/chrisbenincasa/tunarr/compare/v0.4.0...v0.4.1) (2024-08-03)
 
 
