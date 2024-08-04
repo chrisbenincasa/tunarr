@@ -1,7 +1,15 @@
 import { FfmpegSettings, Watermark } from '@tunarr/types';
 import child_process, { ChildProcessByStdio } from 'child_process';
 import events from 'events';
-import { isEmpty, isNil, isString, isUndefined, merge, round } from 'lodash-es';
+import {
+  first,
+  isEmpty,
+  isNil,
+  isString,
+  isUndefined,
+  merge,
+  round,
+} from 'lodash-es';
 import path from 'path';
 import { DeepReadonly, DeepRequired } from 'ts-essentials';
 import { serverOptions } from '../globals.js';
@@ -354,7 +362,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
   spawnStream(
     streamUrl: string,
     streamStats: Maybe<StreamDetails>,
-    startTime: Maybe<number>,
+    startTime: number,
     duration: Maybe<string>,
     enableIcon: Maybe<Watermark>,
   ) {
@@ -617,6 +625,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       if (watermark.animated) {
         ffmpegArgs.push('-ignore_loop', '0');
       }
+      ffmpegArgs.push('-loop', '1');
       ffmpegArgs.push(`-i`, `${watermark.url}`);
       overlayFile = inputFiles++;
       this.ensureResolution = true;
@@ -694,10 +703,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       const horz = Math.round((mpHorz * iW) / 100.0);
       const vert = Math.round((mpVert * iH) / 100.0);
 
-      const icnDur =
-        watermark.duration > 0
-          ? `:enable='between(t,0,${watermark.duration})'`
-          : '';
+      // TODO: do not enable this if we are using fade points
       let waterVideo = `[${overlayFile}:v]`;
       const watermarkFilters: string[] = [];
       if (!watermark.fixedSize) {
@@ -706,12 +712,44 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
 
       if (isDefined(watermark.opacity) && watermark.opacity < 100) {
         watermarkFilters.push(
-          `format=argb,colorchannelmixer=aa=${round(
+          `format=yuva420p,colorchannelmixer=aa=${round(
             watermark.opacity / 100,
             2,
           )}`,
         );
       }
+
+      if (!isEmpty(watermark?.fadeConfig) && isDefined(streamStats?.duration)) {
+        // Pick the first for now
+        const periodMins = first(watermark?.fadeConfig)!.periodMins;
+        if (periodMins > 0) {
+          const start = startTime ?? 0;
+          const streamDur =
+            streamStats.duration > start
+              ? streamStats.duration - start
+              : streamStats.duration;
+          const periodSeconds = periodMins * 60;
+          const cycles = streamDur / (periodSeconds * 1000);
+          for (let cycle = 0, t = 0; cycle < cycles; cycle++) {
+            watermarkFilters.push(
+              `fade=in:st=${t}:d=1:alpha=1:enable='between(t,${t},${
+                t + (periodSeconds - 1)
+              })'`,
+            );
+            watermarkFilters.push(
+              `fade=out:st=${t + periodSeconds}:d=1:alpha=1:enable='between(t,${
+                t + periodSeconds
+              },${t + periodSeconds * 2})'`,
+            );
+            t += periodSeconds * 2;
+          }
+        }
+      }
+
+      const icnDur =
+        watermark.duration > 0
+          ? `:enable='between(t,0,${watermark.duration})'`
+          : '';
 
       if (!isEmpty(watermarkFilters)) {
         videoComplex += `;${waterVideo}${watermarkFilters.join(',')}[icn]`;

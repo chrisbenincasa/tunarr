@@ -1,6 +1,9 @@
 import z, { ZodTypeAny } from 'zod';
 import { ResolutionSchema } from './miscSchemas.js';
-import { ProgramSchema } from './programmingSchema.js';
+import {
+  ContentProgramTypeSchema,
+  ProgramSchema,
+} from './programmingSchema.js';
 import { ChannelIconSchema } from './utilSchemas.js';
 
 export const WatermarkSchema = z.object({
@@ -21,6 +24,17 @@ export const WatermarkSchema = z.object({
   fixedSize: z.boolean().optional(),
   animated: z.boolean().optional(),
   opacity: z.number().min(0).max(100).int().optional().catch(100).default(100),
+  fadeConfig: z
+    .array(
+      z.object({
+        programType: ContentProgramTypeSchema.optional().catch(undefined),
+        // Encodes on/off period of displaying the watermark in mins.
+        // e.g. a 5m period fades in the watermark every 5th min and displays it
+        // for 5 mins.
+        periodMins: z.number().positive().min(1),
+      }),
+    )
+    .optional(),
 });
 
 export const FillerCollectionSchema = z.object({

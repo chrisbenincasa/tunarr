@@ -238,6 +238,7 @@ export default function ChannelTranscodingConfig() {
                 container
                 rowSpacing={1}
                 columnSpacing={2}
+                rowGap={1}
                 sx={{ flexGrow: 1, height: 'fit-content' }}
               >
                 <Grid2 xs={12}>
@@ -251,18 +252,18 @@ export default function ChannelTranscodingConfig() {
                         label="Watermark Picture URL"
                         onFormValueChange={(newPath) => field.onChange(newPath)}
                         onUploadError={console.error}
-                        FormControlProps={{ fullWidth: true, sx: { mb: 1 } }}
+                        FormControlProps={{ fullWidth: true }}
                         value={field.value ?? ''}
                       >
                         <FormHelperText>
-                          If blank, the channel icon will be used
+                          Leave blank to use the channel's icon.
                         </FormHelperText>
                       </ImageUploadInput>
                     )}
                   />
                 </Grid2>
                 <Grid2 xs={12}>
-                  <FormControl fullWidth sx={{ mb: 1 }}>
+                  <FormControl fullWidth>
                     <InputLabel>Position</InputLabel>
                     <Controller
                       name="watermark.position"
@@ -342,7 +343,7 @@ export default function ChannelTranscodingConfig() {
                 <Grid2 xs={12}>
                   <Divider />
                 </Grid2>
-                <Grid2>
+                <Grid2 xs={12} lg={6}>
                   <FormControl fullWidth>
                     <FormControlLabel
                       control={
@@ -354,13 +355,13 @@ export default function ChannelTranscodingConfig() {
                       label="Disable Image Scaling"
                     />
                     <FormHelperText>
-                      The image will be rendered at its actual size without
-                      applying any scaling to it.
+                      The image will be rendered at its actual size without any
+                      scaling applied.
                     </FormHelperText>
                   </FormControl>
                 </Grid2>
-                <Grid2>
-                  <FormControl fullWidth sx={{ mb: 1 }}>
+                <Grid2 xs={12} lg={6}>
+                  <FormControl fullWidth>
                     <FormControlLabel
                       control={
                         <CheckboxFormController
@@ -372,13 +373,13 @@ export default function ChannelTranscodingConfig() {
                     />
                     <FormHelperText>
                       Enable if the watermark is an animated GIF or PNG. The
-                      watermark will loop or not loop according to the image's
-                      configuration. If this option is enable and the image is
+                      watermark will loop according to the image's
+                      configuration. If this option is enabled and the image is
                       not animated, there will be playback errors.
                     </FormHelperText>
                   </FormControl>
                 </Grid2>
-                <Grid2 xs={12}>
+                <Grid2 xs={12} lg={6}>
                   <NumericFormControllerText
                     control={control}
                     name="watermark.duration"
@@ -386,7 +387,21 @@ export default function ChannelTranscodingConfig() {
                     TextFieldProps={{
                       label: 'Overlay Duration (seconds)',
                       fullWidth: true,
-                      helperText: 'Set to 0 to make the overlay permanent',
+                      helperText:
+                        "Sets the absolute duration of the watermark on the channel's stream. Set to 0 to make the overlay permantently visible.",
+                    }}
+                  />
+                </Grid2>
+                <Grid2 xs={12} lg={6}>
+                  <NumericFormControllerText
+                    control={control}
+                    name="watermark.fadeConfig.0.periodMins"
+                    rules={{ min: 0 }}
+                    TextFieldProps={{
+                      label: 'Overlay Period (mins)',
+                      fullWidth: true,
+                      helperText:
+                        'Display/hide the watermark via a fade animation every N minutes. Set to 0 to disable.',
                     }}
                   />
                 </Grid2>
