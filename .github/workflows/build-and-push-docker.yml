@@ -91,8 +91,7 @@ jobs:
             # Update edge tag when we manually trigger the releawe
             type=raw,value=edge,enable=${{github.ref == format('refs/heads/{0}', 'dev') && github.event_name == 'workflow_dispatch'}}
             # Tag latest for each specific build type
-            type=raw,value=latest,enable=${{ matrix.builds.suffix == '' }}
-            type=raw,value=latest${{ matrix.builds.suffix }},enable=${{ matrix.builds.suffix != '' }}
+            type=raw,value=latest
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -145,7 +144,7 @@ jobs:
           platforms: ${{matrix.builds.platform}}
           build-args: |
             base_image_tag=${{ matrix.builds.base_tag }}
-            is_edge_build=true
+            is_edge_build=${{github.ref == format('refs/heads/{0}', 'dev') && github.event_name == 'workflow_dispatch'}}
             tunarr_build="${TUNARR_VERSION}"
           target: full-stack
           tags: ${{ steps.meta.outputs.tags }}
