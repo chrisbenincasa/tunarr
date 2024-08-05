@@ -6,10 +6,48 @@ on:
     tags:
       - v[0-9]+.[0-9]+.[0-9]+
   schedule:
-    - cron: '0 13-21/2 * * MON-FRI' # every hour, during working hours (UTC)
+    - cron: '0 13-21/2 * * *' # every 2 hours during US Eastern daytime
 
 jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.11.1
+
+      - uses: pnpm/action-setup@v3
+        name: Install pnpm
+        with:
+          version: 8.15.4
+          run_install: false
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - uses: actions/cache@v3
+        name: Setup pnpm cache
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build server
+        run: pnpm turbo typecheck --filter=@tunarr/server
+
+      - name: Build web
+        run: pnpm turbo build --filter=@tunarr/web
   build:
+    needs: typecheck
     strategy:
       matrix:
         os:
@@ -57,12 +95,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      # Apparently we have to do this in a few separate steps
-      # because building/bundling web and server simultaneously
-      # can destroy a machine...
-      - name: Bundle web
-        run: pnpm turbo -vv bundle --filter=@tunarr/web
-
       - name: 'Create env file'
         run: |
           touch server/.env
@@ -72,7 +104,7 @@ jobs:
         if: github.ref == format('refs/heads/{0}', 'dev') && (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule')
 
       - name: Bundle server
-        run: pnpm turbo -vv bundle --filter=@tunarr/server
+        run: pnpm turbo bundle --filter=@tunarr/server
 
       - name: Build Executable
         run: pnpm run --filter=server make-exec:${{ matrix.os.target_name }}
