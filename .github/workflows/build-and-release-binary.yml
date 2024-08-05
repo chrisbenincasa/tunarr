@@ -45,7 +45,7 @@ jobs:
         run: pnpm turbo typecheck --filter=@tunarr/server
 
       - name: Build web
-        run: pnpm turbo build --filter=@tunarr/web
+        run: pnpm turbo typecheck --filter=@tunarr/web
   build:
     needs: typecheck
     strategy:
@@ -105,6 +105,9 @@ jobs:
 
       - name: Bundle server
         run: pnpm turbo bundle --filter=@tunarr/server
+
+      - name: Bundle web
+        run: pnpm turbo bundle --filter=@tunarr/web
 
       - name: Build Executable
         run: pnpm run --filter=server make-exec:${{ matrix.os.target_name }}
