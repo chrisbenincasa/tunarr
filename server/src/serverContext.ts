@@ -17,8 +17,11 @@ import { M3uService } from './services/m3uService.js';
 import { TVGuideService } from './services/tvGuideService.js';
 import { ChannelCache } from './stream/ChannelCache.js';
 import { StreamProgramCalculator } from './stream/StreamProgramCalculator.js';
+import { ProgramConverter } from './dao/converters/programConverters.js';
 
 export class ServerContext {
+  public programConverter = new ProgramConverter();
+
   constructor(
     public channelDB: ChannelDB,
     public fillerDB: FillerDB,

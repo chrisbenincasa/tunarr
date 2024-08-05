@@ -251,10 +251,7 @@ export function withFallbackPrograms(
   return jsonArrayFrom(
     baseWithProgamsExpressionBuilder(eb, mergedOpts).innerJoin(
       'channelFallback',
-      (join) =>
-        join
-          .onRef('channelFallback.programUuid', '=', 'program.uuid')
-          .onRef('channel.uuid', '=', 'channelFallback.channelUuid'),
+      (join) => join.onRef('channelFallback.programUuid', '=', 'program.uuid'),
     ),
   ).as('programs');
 }
