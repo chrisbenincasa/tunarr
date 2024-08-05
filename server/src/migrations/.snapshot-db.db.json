@@ -10,6 +10,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "url": {
@@ -19,6 +20,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "mime_type": {
@@ -28,6 +30,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         }
       },
@@ -57,6 +60,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "created_at": {
@@ -66,7 +70,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
-          "length": 0,
+          "length": null,
           "mappedType": "datetime"
         },
         "updated_at": {
@@ -76,7 +80,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
-          "length": 0,
+          "length": null,
           "mappedType": "datetime"
         },
         "number": {
@@ -86,6 +90,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "integer"
         },
         "icon": {
@@ -95,6 +100,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "json"
         },
         "guide_minimum_duration": {
@@ -104,6 +110,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "integer"
         },
         "disable_filler_overlay": {
@@ -113,6 +120,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "default": "false",
           "mappedType": "integer"
         },
@@ -123,6 +131,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "duration": {
@@ -132,6 +141,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "integer"
         },
         "stealth": {
@@ -141,6 +151,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "default": "false",
           "mappedType": "integer"
         },
@@ -151,6 +162,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "start_time": {
@@ -160,6 +172,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "integer"
         },
         "guide_flex_title": {
@@ -169,6 +182,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "offline": {
@@ -178,6 +192,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "default": "'{\"mode\":\"clip\"}'",
           "mappedType": "json"
         },
@@ -188,6 +203,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "integer"
         },
         "watermark": {
@@ -197,6 +213,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "json"
         },
         "transcoding": {
@@ -206,6 +223,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "json"
         }
       },
@@ -245,6 +263,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "created_at": {
@@ -254,7 +273,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
-          "length": 0,
+          "length": null,
           "mappedType": "datetime"
         },
         "updated_at": {
@@ -264,7 +283,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
-          "length": 0,
+          "length": null,
           "mappedType": "datetime"
         },
         "name": {
@@ -274,6 +293,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         }
       },
@@ -303,6 +323,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "custom_show_uuid": {
@@ -312,6 +333,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         }
       },
@@ -389,6 +411,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "created_at": {
@@ -398,7 +421,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
-          "length": 0,
+          "length": null,
           "mappedType": "datetime"
         },
         "updated_at": {
@@ -408,7 +431,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
-          "length": 0,
+          "length": null,
           "mappedType": "datetime"
         },
         "name": {
@@ -418,6 +441,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         }
       },
@@ -447,6 +471,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "filler_show_uuid": {
@@ -456,6 +481,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "weight": {
@@ -465,6 +491,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "integer"
         },
         "cooldown": {
@@ -474,6 +501,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "integer"
         }
       },
@@ -549,6 +577,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "created_at": {
@@ -558,7 +587,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
-          "length": 0,
+          "length": null,
           "mappedType": "datetime"
         },
         "updated_at": {
@@ -568,7 +597,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
-          "length": 0,
+          "length": null,
           "mappedType": "datetime"
         },
         "type": {
@@ -578,6 +607,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "default": "'plex'",
           "enumItems": [
             "plex",
@@ -592,6 +622,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "uri": {
@@ -601,6 +632,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "access_token": {
@@ -610,6 +642,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "send_guide_updates": {
@@ -619,6 +652,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "default": "true",
           "mappedType": "integer"
         },
@@ -629,6 +663,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "default": "true",
           "mappedType": "integer"
         },
@@ -639,6 +674,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "integer"
         },
         "client_identifier": {
@@ -648,6 +684,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         }
       },
@@ -689,6 +726,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "created_at": {
@@ -698,7 +736,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
-          "length": 0,
+          "length": null,
           "mappedType": "datetime"
         },
         "updated_at": {
@@ -708,17 +746,18 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
-          "length": 0,
+          "length": null,
           "mappedType": "datetime"
         },
         "type": {
           "name": "type",
-          "type": "text",
+          "type": "ProgramGroupingType",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
           "nullable": false,
-          "mappedType": "text"
+          "length": null,
+          "mappedType": "unknown"
         },
         "title": {
           "name": "title",
@@ -727,6 +766,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "summary": {
@@ -736,6 +776,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "icon": {
@@ -745,6 +786,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "year": {
@@ -754,6 +796,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "integer"
         },
         "index": {
@@ -763,6 +806,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "integer"
         },
         "show_uuid": {
@@ -772,6 +816,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "artist_uuid": {
@@ -781,6 +826,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         }
       },
@@ -857,6 +903,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "created_at": {
@@ -866,7 +913,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
-          "length": 0,
+          "length": null,
           "mappedType": "datetime"
         },
         "updated_at": {
@@ -876,7 +923,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
-          "length": 0,
+          "length": null,
           "mappedType": "datetime"
         },
         "source_type": {
@@ -886,8 +933,10 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "enumItems": [
-            "plex"
+            "plex",
+            "jellyfin"
           ],
           "mappedType": "enum"
         },
@@ -898,6 +947,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "duration": {
@@ -907,6 +957,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "integer"
         },
         "episode": {
@@ -916,6 +967,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "integer"
         },
         "episode_icon": {
@@ -925,6 +977,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "file_path": {
@@ -934,6 +987,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "icon": {
@@ -943,6 +997,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "external_source_id": {
@@ -952,6 +1007,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "external_key": {
@@ -961,6 +1017,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "plex_rating_key": {
@@ -970,6 +1027,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "plex_file_path": {
@@ -979,6 +1037,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "parent_external_key": {
@@ -988,6 +1047,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "grandparent_external_key": {
@@ -997,6 +1057,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "rating": {
@@ -1006,6 +1067,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "season_number": {
@@ -1015,6 +1077,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "integer"
         },
         "season_icon": {
@@ -1024,6 +1087,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "show_icon": {
@@ -1033,6 +1097,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "show_title": {
@@ -1042,6 +1107,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "summary": {
@@ -1051,6 +1117,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "title": {
@@ -1060,6 +1127,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "type": {
@@ -1069,6 +1137,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "enumItems": [
             "movie",
             "episode",
@@ -1083,6 +1152,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "integer"
         },
         "artist_name": {
@@ -1092,6 +1162,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "album_name": {
@@ -1101,6 +1172,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "season_uuid": {
@@ -1110,6 +1182,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "tv_show_uuid": {
@@ -1119,6 +1192,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "album_uuid": {
@@ -1128,6 +1202,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "artist_uuid": {
@@ -1137,6 +1212,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         }
       },
@@ -1279,6 +1355,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "created_at": {
@@ -1288,7 +1365,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
-          "length": 0,
+          "length": null,
           "mappedType": "datetime"
         },
         "updated_at": {
@@ -1298,7 +1375,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
-          "length": 0,
+          "length": null,
           "mappedType": "datetime"
         },
         "source_type": {
@@ -1308,12 +1385,14 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "enumItems": [
             "plex",
             "plex-guid",
             "tmdb",
             "imdb",
-            "tvdb"
+            "tvdb",
+            "jellyfin"
           ],
           "mappedType": "enum"
         },
@@ -1324,6 +1403,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "external_key": {
@@ -1333,6 +1413,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "external_file_path": {
@@ -1342,6 +1423,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "direct_file_path": {
@@ -1351,6 +1433,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "program_uuid": {
@@ -1360,6 +1443,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         }
       },
@@ -1437,6 +1521,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "program_uuid": {
@@ -1446,6 +1531,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "index": {
@@ -1455,6 +1541,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "integer"
         }
       },
@@ -1542,6 +1629,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "content_uuid": {
@@ -1551,6 +1639,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "index": {
@@ -1560,6 +1649,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "integer"
         }
       },
@@ -1647,6 +1737,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "program_uuid": {
@@ -1656,6 +1747,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         }
       },
@@ -1733,6 +1825,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "program_uuid": {
@@ -1742,6 +1835,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         }
       },
@@ -1819,6 +1913,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "created_at": {
@@ -1828,7 +1923,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
-          "length": 0,
+          "length": null,
           "mappedType": "datetime"
         },
         "updated_at": {
@@ -1838,7 +1933,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
-          "length": 0,
+          "length": null,
           "mappedType": "datetime"
         },
         "source_type": {
@@ -1848,12 +1943,14 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "enumItems": [
             "plex",
             "plex-guid",
             "tmdb",
             "imdb",
-            "tvdb"
+            "tvdb",
+            "jellyfin"
           ],
           "mappedType": "enum"
         },
@@ -1864,6 +1961,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "external_key": {
@@ -1873,6 +1971,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "external_file_path": {
@@ -1882,6 +1981,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "group_uuid": {
@@ -1891,6 +1991,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         }
       },

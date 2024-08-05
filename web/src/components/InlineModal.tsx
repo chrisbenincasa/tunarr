@@ -72,10 +72,6 @@ export function InlineModal<ItemType, ItemKind extends string>(
     [containerWidth, itemWidth, modalChildren, rowSize, getItemType],
   );
 
-  if (modalIndex === 5) {
-    console.log('open', open, modalIndex);
-  }
-
   useEffect(() => {
     if (ref.current && previousItemGuid !== itemGuid) {
       const containerWidth = ref?.current?.getBoundingClientRect().width || 0;
@@ -179,18 +175,11 @@ export function InlineModal<ItemType, ItemKind extends string>(
       rowSize,
     ],
   );
-
-  if (open) {
-    console.log(open, props);
-  }
-
   const show = useCallback(() => {
-    console.log('show!!!');
     setOpen();
   }, [setOpen]);
 
   const hide = useCallback(() => {
-    console.log('hide!!!');
     setClosed();
   }, [setClosed]);
 

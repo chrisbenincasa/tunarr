@@ -62,7 +62,7 @@ export async function upsertContentPrograms(
     .chain(contentPrograms)
     .map((p) => {
       const program = minter.mint(p.externalSourceName!, p.originalProgram!);
-      const externalIds = minter.mintExternalIdsForPlex(
+      const externalIds = minter.mintExternalIds(
         p.externalSourceName!,
         program,
         p.originalProgram!,
@@ -80,19 +80,24 @@ export async function upsertContentPrograms(
           externalSourceId: apiProgram.externalSourceName!,
         });
 
+        if (apiProgram.originalProgram?.sourceType !== 'plex') {
+          return acc;
+        }
+
         return {
           ...acc,
           ...reduce(
             flattened,
             (acc2, eid) => ({
               ...acc2,
-              [eid.toExternalIdString()]: apiProgram.originalProgram!,
+              [eid.toExternalIdString()]: apiProgram.originalProgram!
+                .program as PlexMedia,
             }),
-            {} as Record<string, PlexMedia>,
+            {} satisfies Record<string, PlexMedia> as Record<string, PlexMedia>,
           ),
         };
       },
-      {} as Record<string, PlexMedia>,
+      {} satisfies Record<string, PlexMedia> as Record<string, PlexMedia>,
     )
     .value();
 
@@ -138,7 +143,7 @@ export async function upsertContentPrograms(
     })
     .value();
 
-  const externalIdsByGrandparentId = ld
+  const plexExternalIdsByGrandparentId = ld
     .chain(programExternalIds)
     .map((externalId) => {
       const plexMedia =
@@ -180,7 +185,7 @@ export async function upsertContentPrograms(
     .value();
 
   setImmediate(() => {
-    forEach(externalIdsByGrandparentId, (externalIds, grandparentId) => {
+    forEach(plexExternalIdsByGrandparentId, (externalIds, grandparentId) => {
       const parentIds = map(
         externalIds,
         (eid) => eid.plexMedia.parentRatingKey,
@@ -207,7 +212,8 @@ export async function upsertContentPrograms(
     programExternalIds,
     (p) =>
       p.sourceType === ProgramExternalIdType.PLEX ||
-      p.sourceType === ProgramExternalIdType.PLEX_GUID,
+      p.sourceType === ProgramExternalIdType.PLEX_GUID ||
+      p.sourceType === ProgramExternalIdType.JELLYFIN,
   );
 
   // Fail hard on not saving Plex external IDs. We need them for streaming
@@ -265,18 +271,6 @@ export async function upsertContentPrograms(
   );
 
   return upsertedPrograms;
-}
-
-// Creates a unique ID that matches the output of the entity Program#uniqueId
-// function. Useful to matching non-persisted API programs with persisted programs
-export function contentProgramUniqueId(p: ContentProgram) {
-  // ID should always be defined in the persistent case
-  if (p.persisted) {
-    return p.id!;
-  }
-
-  // These should always be defined for the non-persisted case
-  return `${p.externalSourceType}|${p.externalSourceName}|${p.originalProgram?.key}`;
 }
 
 // Takes a listing of programs and makes a mapping of a unique identifier,

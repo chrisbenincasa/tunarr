@@ -188,6 +188,7 @@ export const addPlexSelectedMedia = (
     const newSelectedMedia: SelectedMedia[] = map(media, (m) => ({
       type: 'plex',
       serverId: server.id,
+      serverName: server.name,
       id: isPlexDirectory(m) ? m.uuid : m.guid,
       childCount: isPlexDirectory(m) ? 1 : plexChildCount(m),
     }));
@@ -204,6 +205,7 @@ export const addJellyfinSelectedMedia = (
       {
         type: 'jellyfin',
         serverId: server.id,
+        serverName: server.name,
         id: media.Id,
         childCount: media.ChildCount ?? 0,
       },

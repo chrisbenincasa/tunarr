@@ -9,7 +9,14 @@ import {
   GridItemProps,
   MediaItemGrid,
 } from './MediaItemGrid.tsx';
-import { Box, Tab, Tabs } from '@mui/material';
+import {
+  Box,
+  Stack,
+  Tab,
+  Tabs,
+  ToggleButton,
+  ToggleButtonGroup,
+} from '@mui/material';
 import { JellyfinGridItem } from './JellyfinGridItem.tsx';
 import { tag } from '@tunarr/types';
 import { MediaSourceId } from '@tunarr/types/schemas';
@@ -17,6 +24,11 @@ import { JellyfinItem, JellyfinItemKind } from '@tunarr/types/jellyfin';
 import { InlineModal } from '../InlineModal.tsx';
 import { first } from 'lodash-es';
 import { forJellyfinItem, typedProperty } from '@/helpers/util.ts';
+import { JellyfinListItem } from './JellyfinListItem.tsx';
+import { ViewList, GridView } from '@mui/icons-material';
+import { setProgrammingSelectorViewState } from '@/store/themeEditor/actions.ts';
+import { ProgramSelectorViewType } from '@/types/index.ts';
+import useStore from '@/store/index.ts';
 
 enum TabValues {
   Library = 0,
@@ -49,10 +61,22 @@ const childJellyfinType = forJellyfinItem<JellyfinItemKind>({
 });
 
 export function JellyfinProgrammingSelector() {
+  const viewType = useStore((state) => state.theme.programmingSelectorView);
   const selectedServer = useCurrentMediaSource('jellyfin');
   const selectedLibrary = useCurrentSourceLibrary('jellyfin');
 
   const [tabValue, setTabValue] = useState(TabValues.Library);
+
+  const setViewType = (view: ProgramSelectorViewType) => {
+    setProgrammingSelectorViewState(view);
+  };
+
+  const handleFormat = (
+    _event: React.MouseEvent<HTMLElement>,
+    newFormats: ProgramSelectorViewType,
+  ) => {
+    setViewType(newFormats);
+  };
 
   const itemTypes: JellyfinItemKind[] = [];
   if (selectedLibrary?.library.CollectionType) {
@@ -112,6 +136,26 @@ export function JellyfinProgrammingSelector() {
   return (
     <>
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          sx={{
+            display: 'flex',
+            pt: 1,
+            columnGap: 1,
+            alignItems: 'flex-end',
+            justifyContent: 'flex-end',
+            flexGrow: 1,
+          }}
+        >
+          <ToggleButtonGroup value={viewType} onChange={handleFormat} exclusive>
+            <ToggleButton value="list">
+              <ViewList />
+            </ToggleButton>
+            <ToggleButton value="grid">
+              <GridView />
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </Stack>
         <Tabs
           value={tabValue}
           onChange={(_, value: number) => setTabValue(value)}
@@ -150,7 +194,9 @@ export function JellyfinProgrammingSelector() {
         extractItems={(page) => page.Items}
         getItemKey={useCallback((item: JellyfinItem) => item.Id, [])}
         renderGridItem={renderGridItem}
-        renderListItem={(item) => <div key={item.Id} />}
+        renderListItem={(item, index) => (
+          <JellyfinListItem item={item} index={index} />
+        )}
         // renderFinalRow={renderFinalRowInlineModal}
         infiniteQuery={jellyfinItemsQuery}
       />

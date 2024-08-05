@@ -35,6 +35,7 @@ const RequiredLibraryFields = [
   'ProviderIds',
   'Chapters',
   'MediaStreams',
+  'MediaSources',
 ];
 
 export class JellyfinApiClient extends BaseApiClient {

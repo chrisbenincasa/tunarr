@@ -977,3 +977,7 @@ export const JellyfinSystemInfo = z
     SystemArchitecture: z.string().nullable().optional().default('X64'),
   })
   .partial();
+
+export function isTerminalJellyfinItem(item: JellyfinItem): boolean {
+  return ['Movie', 'Episode', 'Audio'].includes(item.Type);
+}

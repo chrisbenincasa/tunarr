@@ -119,14 +119,18 @@ export const RandomSlotProgramLineupSchema = z.object({
   schedule: RandomSlotScheduleSchema,
 });
 
-export const UpdateChannelProgrammingRequestSchema = z.discriminatedUnion(
+export const UpdateChannelProgrammingRequestSchema: z.ZodDiscriminatedUnion<
   'type',
   [
-    ManualProgramLineupSchema,
-    TimeBasedProgramLineupSchema,
-    RandomSlotProgramLineupSchema,
-  ],
-);
+    typeof ManualProgramLineupSchema,
+    typeof TimeBasedProgramLineupSchema,
+    typeof RandomSlotProgramLineupSchema,
+  ]
+> = z.discriminatedUnion('type', [
+  ManualProgramLineupSchema,
+  TimeBasedProgramLineupSchema,
+  RandomSlotProgramLineupSchema,
+]);
 
 export type UpdateChannelProgrammingRequest = z.infer<
   typeof UpdateChannelProgrammingRequestSchema

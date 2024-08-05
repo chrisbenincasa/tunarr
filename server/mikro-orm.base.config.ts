@@ -30,6 +30,7 @@ import { Migration20240603204638 } from './src/migrations/Migration2024060320463
 import { Migration20240618005544 } from './src/migrations/Migration20240618005544.js';
 import { LoggerFactory } from './src/util/logging/LoggerFactory.js';
 import { Migration20240719145409 } from './src/migrations/Migration20240719145409.js';
+import { Migration20240805185042 } from './src/migrations/Migration20240805185042.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -131,6 +132,10 @@ export default defineConfig({
       {
         name: 'rename_plex_server_settings_table',
         class: Migration20240719145409,
+      },
+      {
+        name: 'add_jellyfin_sources',
+        class: Migration20240805185042,
       },
     ],
   },

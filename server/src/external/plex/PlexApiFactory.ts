@@ -36,10 +36,9 @@ export class PlexApiFactoryImpl {
     this.settings.addListener('change', () => {
       this.#requestCacheEnabled =
         settings.systemSettings().cache?.enablePlexRequestCache ?? false;
-      forEach(this.#cache.data, (data, key) => {
-        const plex = data.v as PlexApiClient;
-        if (isDefined(plex)) {
-          plex.setEnableRequestCache(this.requestCacheEnabledForServer(key));
+      forEach(this.#cache.data, ({ v: value }, key) => {
+        if (isDefined(value) && value instanceof PlexApiClient) {
+          value.setEnableRequestCache(this.requestCacheEnabledForServer(key));
         }
       });
     });
