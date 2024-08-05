@@ -3,12 +3,14 @@ import {
   HdhrSettings,
   LoggingSettingsSchema,
   PlexStreamSettings,
+  SubtitleSettings,
   SystemSettings,
   SystemSettingsSchema,
   XmlTvSettings,
   defaultFfmpegSettings,
   defaultHdhrSettings,
   defaultPlexStreamSettings,
+  defaultSubtitleSettings,
   defaultXmlTvSettings as defaultXmlTvSettingsSchema,
 } from '@tunarr/types';
 import {
@@ -16,6 +18,7 @@ import {
   FfmpegSettingsSchema,
   HdhrSettingsSchema,
   PlexStreamSettingsSchema,
+  SubtitleConfigurationSchema,
   XmlTvSettingsSchema,
 } from '@tunarr/types/schemas';
 import events from 'events';
@@ -50,6 +53,7 @@ export const SettingsSchema = z.object({
   xmltv: XmlTvSettingsSchema,
   plexStream: PlexStreamSettingsSchema,
   ffmpeg: FfmpegSettingsSchema,
+  subtitles: SubtitleConfigurationSchema,
 });
 
 export type Settings = z.infer<typeof SettingsSchema>;
@@ -90,6 +94,7 @@ export const defaultSettings = (dbBasePath: string): SettingsFile => ({
     xmltv: defaultXmlTvSettings(dbBasePath),
     plexStream: defaultPlexStreamSettings,
     ffmpeg: defaultFfmpegSettings,
+    subtitles: defaultSubtitleSettings,
   },
   system: {
     backup: {
@@ -137,6 +142,10 @@ export class SettingsDB extends ITypedEventEmitter {
 
   get backup(): DeepReadonly<BackupSettings> {
     return this.db.data.system.backup;
+  }
+
+  get subtitles(): DeepReadonly<SubtitleSettings> {
+    return this.db.data.settings.subtitles;
   }
 
   clientId(): string {

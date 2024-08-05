@@ -176,5 +176,7 @@ export const SubtitleConfigurationSchema = z.object({
   // ordered list of preferred subtitle languages using the ISO-639-2 code
   preferredLanguages: z.array(z.string()).catch(['eng']),
   preferHearingImpaired: z.boolean().catch(false),
-  codecPreference: z.union([z.literal('pgs'), z.literal('srt')]).catch('srt'),
+  codecPreference: z
+    .union([z.literal('pgs'), z.literal('srt'), z.literal('ass')])
+    .catch('srt'),
 });
