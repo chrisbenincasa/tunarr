@@ -69,6 +69,7 @@ jobs:
           echo TUNARR_BUILD="$(git rev-parse --short ${{ github.sha }})" >> server/.env
           echo TUNARR_EDGE_BUILD=true
           cat server/.env
+        if: github.ref == format('refs/heads/{0}', 'dev') && (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule')
 
       - name: Bundle server
         run: pnpm turbo -vv bundle --filter=@tunarr/server
@@ -76,7 +77,7 @@ jobs:
       - name: Build Executable
         run: pnpm run --filter=server make-exec:${{ matrix.os.target_name }}
 
-      - name: Upload Release
+      - name: Upload Edge Binary
         uses: softprops/action-gh-release@v2
         with:
           name: Tunarr Edge
@@ -84,3 +85,11 @@ jobs:
           prerelease: true
           files: |
             ./server/build/tunarr-${{ matrix.os.target_name }}-x64.zip*
+        if: github.ref == format('refs/heads/{0}', 'dev') && (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule')
+
+      - name: Upload Binaries
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ./server/build/tunarr-${{ matrix.os.target_name }}-x64-${{ github.ref_name }}.zip*
+        if: github.ref == format('refs/heads/{0}', 'dev') && (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule')
