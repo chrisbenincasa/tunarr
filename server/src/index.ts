@@ -53,7 +53,8 @@ yargs(hideBin(process.argv))
     desc: 'Path to the database directory',
     default: getDefaultDatabaseDirectory(),
     normalize: true,
-    coerce: (db: string) => fileURLToPath(new URL(db, import.meta.url)),
+    coerce: (db: string) =>
+      fileURLToPath(new URL(`file://${db}`, import.meta.url)),
   })
   .option('force_migration', {
     type: 'boolean',
