@@ -297,7 +297,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     // We could offer a parameter to auto-convert to AAC...or offer a backup configuration
     // or just try and detect what the client supports and go from there.
     if (opts.enableHls) {
-      const hlsOpts = merge(defaultConcatOptions, opts).hlsOptions;
+      const hlsOpts = merge({}, defaultConcatOptions, opts).hlsOptions;
 
       ffmpegArgs.push(
         '-f',
