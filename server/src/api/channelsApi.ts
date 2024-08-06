@@ -348,6 +348,29 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
   );
 
   fastify.get(
+    '/channels/:id/fallbacks',
+    {
+      schema: {
+        params: BasicIdParamSchema,
+        tags: ['Channels'],
+        querystring: ChannelLineupQuery,
+        response: {
+          200: z.array(ContentProgramSchema),
+          404: z.object({ error: z.string() }),
+        },
+      },
+    },
+    async (req, res) => {
+      const fallbacks =
+        await req.serverCtx.channelDB.getChannelFallbackPrograms(req.params.id);
+      const converted = map(fallbacks, (p) =>
+        req.serverCtx.programConverter.directEntityToContentProgramSync(p, []),
+      );
+      return res.send(converted);
+    },
+  );
+
+  fastify.get(
     '/channels/all/lineups',
     {
       schema: {
