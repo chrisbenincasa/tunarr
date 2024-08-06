@@ -12,6 +12,7 @@ When using Docker, you can mount your a directory named `.dizquetv` when launchi
 
 ```
 docker run \
+    -v "$(pwd)"/tunarr:/config/tunarr \
     -v "$(pwd)"/.dizquetv:/.dizquetv \
     -p 8000:8000 \
     chrisbenincasa/tunarr:edge
@@ -45,6 +46,18 @@ services:
 !!! note
 
     You can force a legacy migration on subsequent launches of Tunarr using the `--force_migration` flag. But be careful! This can be destructive if you've done any additional configuration in Tunarr.
+
+## Hardware Encoding
+
+For QSV compatability in Docker, you must mount /dev/dri the container:
+
+```
+docker run \
+    -v "$(pwd)"/tunarr:/config/tunarr \
+    --device /dev/dri/:/dev/dri/
+    -p 8000:8000 \
+    chrisbenincasa/tunarr:edge-vaapi
+```
 
 ## Initial Setup
 
