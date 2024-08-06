@@ -1,0 +1,18 @@
+[data-md-color-scheme='tunarr'] {
+  --md-primary-fg-color: #008c93;
+  --md-primary-fg-color--light: #ecb7b7;
+  --md-primary-fg-color--dark: #90030c;
+}
+
+[data-md-color-scheme='tunarr-dark'] {
+  color-scheme: dark;
+  --md-hue: 182;
+  --md-primary-fg-color: #008c93;
+  /* --md-primary-fg-color--light: #ecb7b7; */
+  /* --md-primary-fg-color--dark: #90030c; */
+}
+
+:root {
+  --md-primary-fg-color: #008c93;
+  --md-accent-fg-color: #004b79;
+}
