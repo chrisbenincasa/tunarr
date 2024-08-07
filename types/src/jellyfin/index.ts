@@ -582,6 +582,8 @@ const MediaStream = z
   })
   .partial();
 
+export type JellyfinMediaStream = z.infer<typeof MediaStream>;
+
 const MediaSourceInfo = z
   .object({
     Protocol: MediaProtocol,

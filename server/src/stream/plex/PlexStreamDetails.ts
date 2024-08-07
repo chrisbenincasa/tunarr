@@ -22,7 +22,8 @@ import { PlexApiClient } from '../../external/plex/PlexApiClient';
 import { PlexApiFactory } from '../../external/plex/PlexApiFactory';
 import { Nullable } from '../../types/util';
 import { Logger, LoggerFactory } from '../../util/logging/LoggerFactory';
-import { PlexStream, StreamDetails } from './PlexTranscoder';
+import { PlexStream } from '../types';
+import { StreamDetails } from '../types';
 import { attempt, isNonEmptyString } from '../../util';
 import { ContentBackedStreamLineupItem } from '../../dao/derived_types/StreamLineup.js';
 import { SettingsDB } from '../../dao/settings.js';
@@ -283,7 +284,7 @@ export class PlexStreamDetails {
       // We have to check that we can hit this URL or the stream will not work
       if (isNonEmptyString(placeholderThumbPath)) {
         const result = await attempt(() =>
-          this.plex.doHead(placeholderThumbPath),
+          this.plex.doHead({ url: placeholderThumbPath }),
         );
         if (!isError(result)) {
           streamDetails.placeholderImage =

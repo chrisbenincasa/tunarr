@@ -13,7 +13,7 @@ import {
 import path from 'path';
 import { DeepReadonly, DeepRequired } from 'ts-essentials';
 import { serverOptions } from '../globals.js';
-import { StreamDetails } from '../stream/plex/PlexTranscoder.js';
+import { StreamDetails } from '../stream/types.js';
 import { StreamContextChannel } from '../stream/types.js';
 import { Maybe } from '../types/util.js';
 import { TypedEventEmitter } from '../types/eventEmitter.js';

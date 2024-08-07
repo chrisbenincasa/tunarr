@@ -4,21 +4,17 @@ import { ChannelLineupQuery } from '@tunarr/types/api';
 import { ChannelLineupSchema } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import { FastifyRequest } from 'fastify';
-import { compact, first, isNil, isUndefined } from 'lodash-es';
+import { compact, isNil } from 'lodash-es';
 import os from 'node:os';
 import z from 'zod';
 import { ArchiveDatabaseBackup } from '../dao/backup/ArchiveDatabaseBackup.js';
 import { getEm } from '../dao/dataSource.js';
-import {
-  StreamLineupItem,
-  isContentBackedLineupIteam,
-} from '../dao/derived_types/StreamLineup.js';
+import { StreamLineupItem } from '../dao/derived_types/StreamLineup.js';
 import { Channel } from '../dao/entities/Channel.js';
 import { LineupCreator } from '../services/dynamic_channels/LineupCreator.js';
 import { PlayerContext } from '../stream/Player.js';
 import { generateChannelContext } from '../stream/StreamProgramCalculator.js';
 import { PlexPlayer } from '../stream/plex/PlexPlayer.js';
-import { PlexTranscoder } from '../stream/plex/PlexTranscoder.js';
 import { StreamContextChannel } from '../stream/types.js';
 import { SavePlexProgramExternalIdsTask } from '../tasks/SavePlexProgramExternalIdsTask.js';
 import { PlexTaskQueue } from '../tasks/TaskQueue.js';
@@ -87,67 +83,6 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
         res.raw.writeHead(500, 'no emitter');
         res.raw.end();
       }
-    },
-  );
-
-  fastify.get(
-    '/debug/plex-transcoder/video-stats',
-    { schema: ChannelQuerySchema },
-    async (req, res) => {
-      const channel = await req.serverCtx.channelDB.getChannelAndProgramsSLOW(
-        req.query.channelId,
-      );
-
-      if (!channel) {
-        return res.status(404).send('No channel found');
-      }
-
-      const lineupItem = await getLineupItemForDebug(
-        req,
-        channel,
-        new Date().getTime(),
-      );
-
-      if (isUndefined(lineupItem)) {
-        return res
-          .status(500)
-          .send('Couldnt get a lineup item for this channel');
-      }
-
-      if (!isContentBackedLineupIteam(lineupItem)) {
-        return res
-          .status(500)
-          .send(
-            `Needed lineup item of type commercial or program, but got "${lineupItem.type}"`,
-          );
-      }
-
-      // TODO use plex server from item.
-      const plexServer = await req.serverCtx.mediaSourceDB.getAll().then(first);
-
-      if (isNil(plexServer)) {
-        return res.status(404).send('Could not find plex server');
-      }
-
-      const plexSettings = req.serverCtx.settings.plexSettings();
-
-      const combinedChannel: StreamContextChannel = {
-        ...generateChannelContext(channel),
-        transcoding: channel?.transcoding,
-      };
-
-      const transcoder = new PlexTranscoder(
-        `debug-${new Date().getTime()}`,
-        plexServer,
-        plexSettings,
-        combinedChannel,
-        lineupItem,
-      );
-
-      transcoder.setTranscodingArgs(false, true, false, false);
-      await transcoder.getDecision(false);
-
-      return res.send(transcoder.getVideoStats());
     },
   );
 

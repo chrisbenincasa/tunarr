@@ -7,6 +7,7 @@ import {
   MediaSource,
   MediaSourceType,
 } from '../../dao/entities/MediaSource.js';
+import { ProgramDB } from '../../dao/programDB.js';
 import { FFMPEG, FfmpegEvents } from '../../ffmpeg/ffmpeg.js';
 import { GlobalScheduler } from '../../services/scheduler.js';
 import { UpdatePlexPlayStatusScheduledTask } from '../../tasks/UpdatePlexPlayStatusTask.js';
@@ -15,13 +16,15 @@ import { Maybe, Nullable } from '../../types/util.js';
 import { ifDefined } from '../../util/index.js';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
 import { Player, PlayerContext } from '../Player.js';
-import { PlexStreamDetails } from './PlexStreamDetails.js';
-import { ProgramDB } from '../../dao/programDB.js';
+import { JellyfinStreamDetails } from './JellyfinStreamDetails.js';
 
 const USED_CLIENTS: Record<string, boolean> = {};
 
-export class PlexPlayer extends Player {
-  private logger = LoggerFactory.child({ caller: import.meta });
+export class JellyfinPlayer extends Player {
+  private logger = LoggerFactory.child({
+    caller: import.meta,
+    className: JellyfinPlayer.name,
+  });
   private ffmpeg: Nullable<FFMPEG> = null;
   private killed: boolean = false;
   private clientId: string;
@@ -29,14 +32,6 @@ export class PlexPlayer extends Player {
 
   constructor(private context: PlayerContext) {
     super();
-    // TODO: Is this even useful??
-    const coreClientId = this.context.settings.clientId();
-    let i = 0;
-    while (USED_CLIENTS[coreClientId + '-' + i] === true) {
-      i++;
-    }
-    this.clientId = coreClientId + '-' + i;
-    USED_CLIENTS[this.clientId] = true;
   }
 
   cleanUp() {
@@ -67,8 +62,8 @@ export class PlexPlayer extends Player {
     const db = this.context.entityManager.repo(MediaSource);
     const channel = this.context.channel;
     const server = await db.findOne({
+      type: MediaSourceType.Jellyfin,
       name: lineupItem.externalSourceId,
-      type: MediaSourceType.Plex,
     });
     if (isNil(server)) {
       throw Error(
@@ -81,7 +76,7 @@ export class PlexPlayer extends Player {
     }
 
     const plexSettings = this.context.settings.plexSettings();
-    const plexStreamDetails = new PlexStreamDetails(
+    const jellyfinStreamDetails = new JellyfinStreamDetails(
       server,
       this.context.settings,
       new ProgramDB(),
@@ -101,7 +96,7 @@ export class PlexPlayer extends Player {
       streamDuration = lineupItem.streamDuration / 1000;
     }
 
-    const stream = await plexStreamDetails.getStream(lineupItem);
+    const stream = await jellyfinStreamDetails.getStream(lineupItem);
     if (isNull(stream)) {
       this.logger.error('Unable to retrieve stream details from Plex');
       return;

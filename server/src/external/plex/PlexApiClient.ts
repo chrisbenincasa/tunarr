@@ -72,18 +72,10 @@ export class PlexApiClient extends BaseApiClient {
   }
 
   getFullUrl(path: string): string {
-    const sanitizedPath = path.startsWith('/') ? path : `/${path}`;
-    const url = new URL(`${this.opts.uri}${sanitizedPath}`);
-    url.searchParams.set('X-Plex-Token', this.opts.accessToken);
-    return url.toString();
-  }
-
-  async doHead(path: string, optionalHeaders: RawAxiosRequestHeaders = {}) {
-    return await this.doRequest({
-      method: 'head',
-      url: path,
-      headers: optionalHeaders,
-    });
+    const url = super.getFullUrl(path);
+    const parsed = new URL(url);
+    parsed.searchParams.set('X-Plex-Token', this.opts.accessToken);
+    return parsed.toString();
   }
 
   // TODO: make all callers use this

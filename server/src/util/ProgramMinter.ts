@@ -357,11 +357,15 @@ class PlexProgramMinter {
 
         const typ = programExternalIdTypeFromJellyfinProvider(guidType);
         if (typ) {
-          return this.#em.create(ProgramExternalId, {
-            externalKey: externalGuid,
-            sourceType: typ,
-            program,
-          });
+          return this.#em.create(
+            ProgramExternalId,
+            {
+              externalKey: externalGuid,
+              sourceType: typ,
+              program,
+            },
+            { persist: false },
+          );
         }
 
         return;

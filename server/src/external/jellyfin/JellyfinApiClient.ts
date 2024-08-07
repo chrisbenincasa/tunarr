@@ -1,4 +1,3 @@
-import constants from '@tunarr/shared/constants';
 import {
   JellyfinAuthenticationResult,
   JellyfinItemFields,
@@ -8,11 +7,16 @@ import {
   JellyfinSystemInfo,
 } from '@tunarr/types/jellyfin';
 import axios, { AxiosRequestConfig } from 'axios';
-import { isEmpty, union } from 'lodash-es';
+import { first, isEmpty, union } from 'lodash-es';
 import { v4 } from 'uuid';
 import { Maybe, Nilable } from '../../types/util';
 import { LoggerFactory } from '../../util/logging/LoggerFactory';
-import { BaseApiClient, QueryErrorResult } from '../BaseApiClient.js';
+import {
+  BaseApiClient,
+  QueryErrorResult,
+  isQueryError,
+} from '../BaseApiClient.js';
+import { getTunarrVersion } from '../../util/version.js';
 
 type RemoteMediaSourceOptions = {
   name?: string;
@@ -64,9 +68,7 @@ export class JellyfinApiClient extends BaseApiClient {
         },
         {
           headers: {
-            Authorization: `MediaBrowser Client="Tunarr", Device="Web Browser", DeviceId=${v4()}, Version=${
-              constants.VERSION_NAME
-            }`,
+            Authorization: `MediaBrowser Client="Tunarr", Device="Web Browser", DeviceId=${v4()}, Version=${getTunarrVersion()}`,
           },
         },
       );
@@ -114,12 +116,32 @@ export class JellyfinApiClient extends BaseApiClient {
     });
   }
 
+  async getItem(itemId: string, extraFields: JellyfinItemFields[] = []) {
+    const result = await this.getItems(
+      null,
+      null,
+      null,
+      ['MediaStreams', ...extraFields],
+      null,
+      {
+        ids: itemId,
+      },
+    );
+
+    if (isQueryError(result)) {
+      return result;
+    }
+
+    return this.makeSuccessResult(first(result.data.Items));
+  }
+
   async getItems(
     userId: Nilable<string>, // Not required if we are using an access token
     libraryId: Nilable<string>,
     itemTypes: Nilable<JellyfinItemKind[]> = null,
     extraFields: JellyfinItemFields[] = [],
     pageParams: Nilable<{ offset: number; limit: number }> = null,
+    extraParams: object = {},
   ) {
     return this.doTypeCheckedGet('/Items', JellyfinLibraryItemsResponse, {
       params: {
@@ -133,6 +155,7 @@ export class JellyfinApiClient extends BaseApiClient {
         sortBy: 'SortName,ProductionYear',
         recursive: true,
         includeItemTypes: itemTypes ? itemTypes.join(',') : undefined,
+        ...extraParams,
       },
     });
   }

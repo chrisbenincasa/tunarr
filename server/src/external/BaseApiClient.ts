@@ -59,7 +59,7 @@ export abstract class BaseApiClient {
   protected logger: Logger;
   protected axiosInstance: AxiosInstance;
 
-  constructor(options: ApiClientOptions) {
+  constructor(protected options: ApiClientOptions) {
     this.logger = LoggerFactory.child({
       className: this.constructor.name,
       serverName: options.name,
@@ -157,6 +157,16 @@ export abstract class BaseApiClient {
 
   doPut<T>(req: Omit<AxiosRequestConfig, 'method'>) {
     return this.doRequest<T>({ method: 'put', ...req });
+  }
+
+  doHead(req: Omit<AxiosRequestConfig, 'method'>) {
+    return this.doRequest({ method: 'head', ...req });
+  }
+
+  getFullUrl(path: string): string {
+    const sanitizedPath = path.startsWith('/') ? path : `/${path}`;
+    const url = new URL(`${this.options.url}${sanitizedPath}`);
+    return url.toString();
   }
 
   protected async doRequest<T>(req: AxiosRequestConfig): Promise<Try<T>> {

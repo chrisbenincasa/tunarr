@@ -30,7 +30,7 @@ import { Program } from './Program.js';
   name: 'unique_program_multi_external_id',
   properties: ['program', 'sourceType', 'externalSourceId'],
   expression:
-    'create unique index `unique_program_multiple_external_id` on `program_external_id` (`program_uuid`, `source_type`) WHERE `external_source_id` IS NOT NULL',
+    'create unique index `unique_program_multiple_external_id` on `program_external_id` (`program_uuid`, `source_type`, `external_source_id`) WHERE `external_source_id` IS NOT NULL',
 })
 export class ProgramExternalId extends BaseEntity {
   @Enum(() => ProgramExternalIdType)

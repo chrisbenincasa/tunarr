@@ -61,7 +61,7 @@ export class Migration20240805185042 extends Migration {
       'create index `program_external_id_program_uuid_index` on `program_external_id` (`program_uuid`);',
     );
     this.addSql(
-      'create unique index `unique_program_multiple_external_id` on `program_external_id` (`program_uuid`, `source_type`) WHERE `external_source_id` IS NOT NULL;',
+      'create unique index `unique_program_multiple_external_id` on `program_external_id` (`program_uuid`, `source_type`, `external_source_id`) WHERE `external_source_id` IS NOT NULL;',
     );
     this.addSql(
       'create unique index `unique_program_single_external_id` on `program_external_id` (`program_uuid`, `source_type`) WHERE `external_source_id` IS NULL;',
