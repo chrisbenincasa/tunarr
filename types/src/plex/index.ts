@@ -340,7 +340,7 @@ export const PlexTvShowSchema = BasePlexMediaSchema.extend({
   childCount: z.number(),
   Collection: z.array(PlexJoinItemSchema).optional(),
   contentRating: z.string(),
-  Country: z.array(PlexJoinItemSchema),
+  Country: z.array(PlexJoinItemSchema).optional(),
   duration: z.number(),
   Genre: z.array(PlexJoinItemSchema),
   index: z.number(),
