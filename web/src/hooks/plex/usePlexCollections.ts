@@ -17,7 +17,7 @@ export const usePlexCollectionsInfinite = (
   return useInfiniteQuery({
     queryKey: [
       'plex',
-      plexServer?.name,
+      plexServer?.id,
       currentLibrary?.library.key,
       'collections',
     ],
@@ -29,7 +29,7 @@ export const usePlexCollectionsInfinite = (
 
       return fetchPlexPath<PlexLibraryCollections>(
         apiClient,
-        plexServer!.name,
+        plexServer!.id,
         `/library/sections/${currentLibrary?.library
           .key}/collections?${plexQuery.toString()}`,
       )();

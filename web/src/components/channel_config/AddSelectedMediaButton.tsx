@@ -13,6 +13,8 @@ import useStore from '../../store/index.ts';
 import { clearSelectedMedia } from '../../store/programmingSelector/actions.ts';
 import { CustomShowSelectedMedia } from '../../store/programmingSelector/store.ts';
 import { AddedCustomShowProgram, AddedMedia } from '../../types/index.ts';
+import { useKnownMedia } from '@/store/programmingSelector/selectors.ts';
+import { enumerateJellyfinItem } from '@/hooks/jellyfin/jellyfinHookUtil.ts';
 
 type Props = {
   onAdd: (items: AddedMedia[]) => void;
@@ -29,7 +31,7 @@ export default function AddSelectedMediaButton({
   ...rest
 }: Props) {
   const apiClient = useTunarrApi();
-  const knownMedia = useStore((s) => s.knownMediaByServer);
+  const knownMedia = useKnownMedia();
   const selectedMedia = useStore((s) => s.selectedMedia);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -41,13 +43,44 @@ export default function AddSelectedMediaButton({
       selectedMedia,
       forSelectedMediaType<Promise<AddedMedia[]>>({
         plex: async (selected) => {
-          const media = knownMedia[selected.server][selected.guid];
+          const media = knownMedia.getMediaOfType(
+            selected.serverId,
+            selected.id,
+            'plex',
+          );
+
+          if (!media) {
+            return [];
+          }
+
           const items = await enumeratePlexItem(
             apiClient,
-            selected.server,
+            selected.serverId,
+            selected.serverName,
             media,
           )();
+
           return map(items, (item) => ({ media: item, type: 'plex' }));
+        },
+        jellyfin: async (selected) => {
+          const media = knownMedia.getMediaOfType(
+            selected.serverId,
+            selected.id,
+            'jellyfin',
+          );
+
+          if (!media) {
+            return [];
+          }
+
+          const items = await enumerateJellyfinItem(
+            apiClient,
+            selected.serverId,
+            selected.serverName,
+            media,
+          )();
+
+          return map(items, (item) => ({ media: item, type: 'jellyfin' }));
         },
         'custom-show': (
           selected: CustomShowSelectedMedia,

@@ -8,9 +8,9 @@ import find from 'lodash-es/find';
 import isUndefined from 'lodash-es/isUndefined';
 import map from 'lodash-es/map';
 import { useCallback, useEffect, useState } from 'react';
-import { usePlexFilters } from '../../hooks/plex/usePlexFilters';
-import useStore from '../../store';
+import { useSelectedLibraryPlexFilters } from '../../hooks/plex/usePlexFilters';
 import { setPlexSort } from '../../store/programmingSelector/actions';
+import { useCurrentSourceLibrary } from '@/store/programmingSelector/selectors.ts';
 
 type PlexSort = {
   key: string;
@@ -19,10 +19,7 @@ type PlexSort = {
 };
 
 export function PlexSortField() {
-  const selectedServer = useStore((s) => s.currentServer);
-  const selectedLibrary = useStore((s) =>
-    s.currentLibrary?.type === 'plex' ? s.currentLibrary : null,
-  );
+  const selectedLibrary = useCurrentSourceLibrary('plex');
 
   const [sort, setSort] = useState<PlexSort>({
     key: '',
@@ -31,10 +28,7 @@ export function PlexSortField() {
   });
 
   const { data: plexFilterMetadata, isLoading: filterMetadataLoading } =
-    usePlexFilters(
-      selectedServer?.name ?? '',
-      selectedLibrary?.library.key ?? '',
-    );
+    useSelectedLibraryPlexFilters();
 
   const libraryFilterMetadata = find(
     plexFilterMetadata?.Type,

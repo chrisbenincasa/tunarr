@@ -30,22 +30,8 @@ import {
 import { isEmpty } from 'lodash-es';
 import { z } from 'zod';
 import { getFfmpegInfoEndpoint } from './ffmpegApi.ts';
-import {
-  createPlexServerEndpoint,
-  deletePlexServerEndpoint,
-  getFffmpegSettings,
-  getHdhrSettings,
-  getPlexServersEndpoint,
-  getPlexStreamSettings,
-  getSystemSettings,
-  getXmlTvSettings,
-  updateFfmpegSettings,
-  updateHdhrSettings,
-  updatePlexServerEndpoint,
-  updatePlexStreamSettings,
-  updateSystemSettings,
-  updateXmlTvSettings,
-} from './settingsApi.ts';
+import { endpoints as settingsEndpoints } from './settingsApi.ts';
+import { jellyfinEndpoints } from './jellyfinApi.ts';
 
 export const api = makeApi([
   {
@@ -231,7 +217,7 @@ export const api = makeApi([
     alias: 'getPlexPath',
     parameters: parametersBuilder()
       .addQueries({
-        name: z.string(),
+        id: z.string(),
         path: z.string(),
       })
       .build(),
@@ -239,8 +225,8 @@ export const api = makeApi([
   },
   {
     method: 'get',
-    path: '/api/plex-servers/:id/status',
-    alias: 'getPlexServerStatus',
+    path: '/api/media-sources/:id/status',
+    alias: 'getMediaSourceStatus',
     parameters: parametersBuilder()
       .addPaths({
         id: z.string(),
@@ -262,14 +248,16 @@ export const api = makeApi([
   },
   {
     method: 'post',
-    path: '/api/plex-servers/foreignstatus',
-    alias: 'getUnknownPlexServerStatus',
+    path: '/api/media-sources/foreignstatus',
+    alias: 'getUnknownMediaSourceStatus',
     parameters: parametersBuilder()
       .addBody(
         z.object({
           name: z.string().optional(),
           accessToken: z.string(),
           uri: z.string(),
+          username: z.string().optional(),
+          type: z.union([z.literal('plex'), z.literal('jellyfin')]),
         }),
       )
       .build(),
@@ -400,20 +388,8 @@ export const api = makeApi([
       }),
     }),
   },
-  getPlexServersEndpoint,
-  createPlexServerEndpoint,
-  updatePlexServerEndpoint,
-  deletePlexServerEndpoint,
-  getXmlTvSettings,
-  updateXmlTvSettings,
-  getHdhrSettings,
-  updateHdhrSettings,
-  getPlexStreamSettings,
-  updatePlexStreamSettings,
-  getFffmpegSettings,
-  updateFfmpegSettings,
-  getSystemSettings,
-  updateSystemSettings,
+  ...settingsEndpoints,
+  ...jellyfinEndpoints,
 ]);
 
 export type ApiClient = ZodiosInstance<typeof api>;

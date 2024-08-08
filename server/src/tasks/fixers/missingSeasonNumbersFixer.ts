@@ -2,9 +2,9 @@ import { EntityManager } from '@mikro-orm/better-sqlite';
 import { Cursor } from '@mikro-orm/core';
 import { PlexEpisodeView, PlexSeasonView } from '@tunarr/types/plex';
 import { first, forEach, groupBy, mapValues, pickBy } from 'lodash-es';
-import { PlexServerSettings } from '../../dao/entities/PlexServerSettings.js';
+import { MediaSource } from '../../dao/entities/MediaSource.js';
 import { Program, ProgramType } from '../../dao/entities/Program.js';
-import { Plex } from '../../external/plex.js';
+import { PlexApiClient } from '../../external/plex/PlexApiClient.js';
 import { Maybe } from '../../types/util.js';
 import { groupByUniqAndMap, wait } from '../../util/index.js';
 import Fixer from './fixer.js';
@@ -14,7 +14,7 @@ export class MissingSeasonNumbersFixer extends Fixer {
   private logger = LoggerFactory.child({ caller: import.meta });
 
   async runInternal(em: EntityManager): Promise<void> {
-    const allPlexServers = await em.findAll(PlexServerSettings);
+    const allPlexServers = await em.findAll(MediaSource);
 
     if (allPlexServers.length === 0) {
       return;
@@ -23,7 +23,7 @@ export class MissingSeasonNumbersFixer extends Fixer {
     const plexByName = groupByUniqAndMap(
       allPlexServers,
       'name',
-      (server) => new Plex(server),
+      (server) => new PlexApiClient(server),
     );
 
     let cursor: Maybe<Cursor<Program>> = undefined;
@@ -122,9 +122,12 @@ export class MissingSeasonNumbersFixer extends Fixer {
     } while (cursor.hasNextPage);
   }
 
-  private async findSeasonNumberUsingEpisode(episodeId: string, plex: Plex) {
+  private async findSeasonNumberUsingEpisode(
+    episodeId: string,
+    plex: PlexApiClient,
+  ) {
     try {
-      const episode = await plex.doGet<PlexEpisodeView>(
+      const episode = await plex.doGetPath<PlexEpisodeView>(
         `/library/metadata/${episodeId}`,
       );
       return episode?.parentIndex;
@@ -134,11 +137,14 @@ export class MissingSeasonNumbersFixer extends Fixer {
     }
   }
 
-  private async findSeasonNumberUsingParent(seasonId: string, plex: Plex) {
+  private async findSeasonNumberUsingParent(
+    seasonId: string,
+    plex: PlexApiClient,
+  ) {
     // We get the parent because we're dealing with an episode and we want the
     // season index.
     try {
-      const season = await plex.doGet<PlexSeasonView>(
+      const season = await plex.doGetPath<PlexSeasonView>(
         `/library/metadata/${seasonId}`,
       );
       return first(season?.Metadata ?? [])?.index;

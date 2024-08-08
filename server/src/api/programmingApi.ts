@@ -20,7 +20,7 @@ import {
 } from '../dao/custom_types/ProgramSourceType.js';
 import { getEm } from '../dao/dataSource.js';
 import { Program, ProgramType } from '../dao/entities/Program.js';
-import { Plex } from '../external/plex.js';
+import { PlexApiClient } from '../external/plex/PlexApiClient.js';
 import { TruthyQueryParam } from '../types/schemas.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { ProgramGrouping } from '../dao/entities/ProgramGrouping.js';
@@ -103,13 +103,13 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         }
 
         const server =
-          await req.serverCtx.plexServerDB.getByExternalid(externalSourceId);
+          await req.serverCtx.mediaSourceDB.getByExternalid(externalSourceId);
 
         if (isNil(server)) {
           return res.status(404).send();
         }
 
-        const result = Plex.getThumbUrl({
+        const result = PlexApiClient.getThumbUrl({
           uri: server.uri,
           itemKey: externalKey,
           accessToken: server.accessToken,
@@ -211,7 +211,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         return res.status(404).send();
       }
 
-      const plexServers = await req.serverCtx.plexServerDB.getAll();
+      const plexServers = await req.serverCtx.mediaSourceDB.getAll();
 
       switch (program.sourceType) {
         case ProgramSourceType.PLEX: {

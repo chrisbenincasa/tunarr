@@ -16,8 +16,7 @@ import {
   map,
   partition,
 } from 'lodash-es';
-import { PlexQueryResult } from '../external/plex.js';
-import { PlexApiFactory } from '../external/PlexApiFactory.js';
+import { PlexApiFactory } from '../external/plex/PlexApiFactory.js';
 import { Maybe } from '../types/util.js';
 import { asyncPool } from '../util/asyncPool.js';
 import { groupByUniqAndMap, mapAsyncSeq } from '../util/index.js';
@@ -31,6 +30,7 @@ import {
 } from './entities/ProgramGrouping.js';
 import { ProgramGroupingExternalId } from './entities/ProgramGroupingExternalId.js';
 import { ProgramDB } from './programDB.js';
+import { QueryResult } from '../external/BaseApiClient.js';
 
 export class ProgramGroupingCalculator {
   #logger = LoggerFactory.child({ className: ProgramGroupingCalculator.name });
@@ -252,7 +252,7 @@ export class ProgramGroupingCalculator {
       'uuid' | 'type',
       never
     > | null,
-    queryResult: PlexQueryResult<PlexMedia>,
+    queryResult: QueryResult<PlexMedia>,
     plexServerName: string,
   ): Maybe<[ProgramGrouping, ProgramGroupingExternalId]> {
     if (queryResult.type === 'error') {

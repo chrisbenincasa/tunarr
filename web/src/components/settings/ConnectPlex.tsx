@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import { Link as RouterLink } from '@tanstack/react-router';
 import plexSvg from '../../assets/plex.svg';
-import { usePlexServerSettings } from '../../hooks/settingsHooks.ts';
+import { useMediaSources } from '../../hooks/settingsHooks.ts';
 import AddPlexServer from './AddPlexServer.tsx';
 
 export default function ConnectPlex(props: CardProps) {
@@ -28,7 +28,7 @@ export default function ConnectPlex(props: CardProps) {
     ...restProps
   } = props;
 
-  const { data: plexServers } = usePlexServerSettings();
+  const { data: plexServers } = useMediaSources();
   const isPlexConnected = plexServers && plexServers.length > 0;
   const title = isPlexConnected ? 'Add Plex Library' : 'Connect Plex Now';
 

@@ -4,6 +4,8 @@ export type Maybe<T> = T | undefined;
 
 export type Nullable<T> = T | null;
 
+export type Nilable<T> = Maybe<T> | Nullable<T>;
+
 export type TupleToUnion<T extends ReadonlyArray<unknown>> = T[number];
 
 export type Intersection<X, Y> = {

@@ -19,7 +19,7 @@ import { Route as LibraryIndexImport } from './routes/library/index';
 import { Route as ChannelsIndexImport } from './routes/channels/index';
 import { Route as SettingsXmltvImport } from './routes/settings/xmltv';
 import { Route as SettingsTasksImport } from './routes/settings/tasks';
-import { Route as SettingsPlexImport } from './routes/settings/plex';
+import { Route as SettingsSourcesImport } from './routes/settings/sources';
 import { Route as SettingsHdhrImport } from './routes/settings/hdhr';
 import { Route as SettingsGeneralImport } from './routes/settings/general';
 import { Route as SettingsFfmpegImport } from './routes/settings/ffmpeg';
@@ -85,8 +85,8 @@ const SettingsTasksRoute = SettingsTasksImport.update({
   getParentRoute: () => SettingsRoute,
 } as any);
 
-const SettingsPlexRoute = SettingsPlexImport.update({
-  path: '/plex',
+const SettingsSourcesRoute = SettingsSourcesImport.update({
+  path: '/sources',
   getParentRoute: () => SettingsRoute,
 } as any);
 
@@ -301,11 +301,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsHdhrImport;
       parentRoute: typeof SettingsImport;
     };
-    '/settings/plex': {
-      id: '/settings/plex';
-      path: '/plex';
-      fullPath: '/settings/plex';
-      preLoaderRoute: typeof SettingsPlexImport;
+    '/settings/sources': {
+      id: '/settings/sources';
+      path: '/sources';
+      fullPath: '/settings/sources';
+      preLoaderRoute: typeof SettingsSourcesImport;
       parentRoute: typeof SettingsImport;
     };
     '/settings/tasks': {
@@ -446,7 +446,7 @@ export const routeTree = rootRoute.addChildren({
     SettingsFfmpegRoute,
     SettingsGeneralRoute,
     SettingsHdhrRoute,
-    SettingsPlexRoute,
+    SettingsSourcesRoute,
     SettingsTasksRoute,
     SettingsXmltvRoute,
   }),
@@ -521,7 +521,7 @@ export const routeTree = rootRoute.addChildren({
         "/settings/ffmpeg",
         "/settings/general",
         "/settings/hdhr",
-        "/settings/plex",
+        "/settings/sources",
         "/settings/tasks",
         "/settings/xmltv"
       ]
@@ -556,8 +556,8 @@ export const routeTree = rootRoute.addChildren({
       "filePath": "settings/hdhr.tsx",
       "parent": "/settings"
     },
-    "/settings/plex": {
-      "filePath": "settings/plex.tsx",
+    "/settings/sources": {
+      "filePath": "settings/sources.tsx",
       "parent": "/settings"
     },
     "/settings/tasks": {

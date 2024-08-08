@@ -3,6 +3,7 @@
 // active streaming session
 
 import { z } from 'zod';
+import { MediaSourceType } from '../entities/MediaSource.js';
 
 const baseStreamLineupItemSchema = z.object({
   originalTimestamp: z.number().nonnegative().optional(),
@@ -63,6 +64,7 @@ const ProgramTypeEnum = z.enum(['movie', 'episode', 'track']);
 
 const BaseContentBackedStreamLineupItemSchema =
   baseStreamLineupItemSchema.extend({
+    // ID in the program DB table
     programId: z.string().uuid(),
     // These are taken from the Program DB entity
     plexFilePath: z.string().optional(),
@@ -70,6 +72,7 @@ const BaseContentBackedStreamLineupItemSchema =
     filePath: z.string().optional(),
     externalKey: z.string(),
     programType: ProgramTypeEnum,
+    externalSource: z.nativeEnum(MediaSourceType),
   });
 
 const CommercialStreamLineupItemSchema =

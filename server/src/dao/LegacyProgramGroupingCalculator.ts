@@ -30,7 +30,7 @@ import {
   round,
   values,
 } from 'lodash-es';
-import { PlexApiFactory } from '../external/PlexApiFactory.js';
+import { PlexApiFactory } from '../external/plex/PlexApiFactory.js';
 import {
   flipMap,
   groupByUniqFunc,
@@ -44,7 +44,7 @@ import { timeAsync } from '../util/perf.js';
 import { ProgramExternalIdType } from './custom_types/ProgramExternalIdType.js';
 import { ProgramSourceType } from './custom_types/ProgramSourceType.js';
 import { getEm } from './dataSource.js';
-import { PlexServerSettings } from './entities/PlexServerSettings.js';
+import { MediaSource } from './entities/MediaSource.js';
 import { Program, ProgramType } from './entities/Program.js';
 import {
   ProgramGrouping,
@@ -266,7 +266,7 @@ export class LegacyProgramGroupingCalculator {
     const logger = LoggerFactory.root;
     const em = getEm().fork();
 
-    const plexServer = await em.findOne(PlexServerSettings, {
+    const plexServer = await em.findOne(MediaSource, {
       name: plexServerName,
     });
 
@@ -397,7 +397,7 @@ export class LegacyProgramGroupingCalculator {
     const newGroupings = await mapReduceAsyncSeq(
       reject(allIds, (id) => has(existingGroupingsByPlexId, id) || isEmpty(id)),
       async (id) => {
-        const metadata = await plexApi.doGet<
+        const metadata = await plexApi.doGetPath<
           | PlexLibraryShows
           | PlexSeasonView
           | PlexLibraryMusic

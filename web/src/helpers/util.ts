@@ -32,6 +32,7 @@ import { Path, PathValue } from 'react-hook-form';
 import { SelectedMedia } from '../store/programmingSelector/store';
 import { AddedMedia, UIChannelProgram } from '../types';
 import { Nullable } from '@/types/util';
+import { JellyfinItem } from '@tunarr/types/jellyfin';
 
 dayjs.extend(duration);
 
@@ -197,6 +198,8 @@ export function forSelectedMediaType<T, Args extends unknown[] = []>(
       return applyOrValue(choices['custom-show'], m, rest);
     } else if (m.type === 'plex' && choices['plex']) {
       return applyOrValue(choices['plex'], m, rest);
+    } else if (m.type === 'jellyfin' && choices.jellyfin) {
+      return applyOrValue(choices.jellyfin, m, rest);
     } else if (choices.default) {
       return applyOrValue(choices['default'], m, rest);
     }
@@ -351,6 +354,36 @@ export function forPlexMedia<T>(
   };
 }
 
+type JellyfinCallback<T, Args extends unknown[] = []> = {
+  [X in JellyfinItem['Type']]?: ((m: JellyfinItem, ...rest: Args) => T) | T;
+} & {
+  default?: ((m: JellyfinItem, ...rest: Args) => T) | T;
+};
+
+export function forJellyfinItem<T>(
+  choices:
+    | Omit<Required<JellyfinCallback<T>>, 'default'>
+    | MakeRequired<JellyfinCallback<T>, 'default'>,
+): (m: JellyfinItem) => NonNullable<T>;
+export function forJellyfinItem<T>(
+  choices: JellyfinCallback<T>,
+): (m: JellyfinItem) => Nullable<T>;
+export function forJellyfinItem<T>(
+  choices: JellyfinCallback<T> | MakeRequired<JellyfinCallback<T>, 'default'>,
+) {
+  return (m: JellyfinItem) => {
+    if (choices[m.Type]) {
+      return applyOrValueNoRest(choices[m.Type], m);
+    }
+
+    if (choices.default) {
+      return applyOrValueNoRest(choices.default, m);
+    }
+
+    return null;
+  };
+}
+
 export function forAddedMediaType<T>(
   choices:
     | Omit<Required<PerTypeCallback<AddedMedia, T>>, 'default'>
@@ -368,6 +401,9 @@ export function forAddedMediaType<T>(
     switch (m.type) {
       case 'plex':
         if (choices.plex) return applyOrValueNoRest(choices.plex, m);
+        break;
+      case 'jellyfin':
+        if (choices.jellyfin) return applyOrValueNoRest(choices.jellyfin, m);
         break;
       case 'custom-show':
         if (choices['custom-show'])

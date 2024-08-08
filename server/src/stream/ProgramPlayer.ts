@@ -32,6 +32,8 @@ import { PlexPlayer } from './plex/PlexPlayer.js';
 import { StreamContextChannel } from './types.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { serverOptions } from '../globals.js';
+import { MediaSourceType } from '../dao/entities/MediaSource.js';
+import { JellyfinPlayer } from './jellyfin/JellyfinPlayer.js';
 
 export class ProgramPlayer extends Player {
   private logger = LoggerFactory.child({ caller: import.meta });
@@ -60,10 +62,17 @@ export class ProgramPlayer extends Player {
       this.logger.debug('About to play offline stream');
       /* offline */
       this.delegate = new OfflinePlayer(false, context);
-    } else if (isContentBackedLineupIteam(program) && program) {
-      this.logger.debug('About to play plex stream');
-      /* plex */
-      this.delegate = new PlexPlayer(context);
+    } else if (isContentBackedLineupIteam(program)) {
+      switch (program.externalSource) {
+        case MediaSourceType.Plex:
+          this.logger.debug('About to play plex stream');
+          this.delegate = new PlexPlayer(context);
+          break;
+        case MediaSourceType.Jellyfin:
+          this.logger.debug('About to play plex stream');
+          this.delegate = new JellyfinPlayer(context);
+          break;
+      }
     }
     this.context.watermark = this.getWatermark(
       context.ffmpegSettings,

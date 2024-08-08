@@ -4,8 +4,8 @@ import path from 'path';
 import { XmlTvWriter } from './XmlTvWriter.js';
 import { ChannelDB } from './dao/channelDb.js';
 import { CustomShowDB } from './dao/customShowDb.js';
-import { FillerDB } from './dao/fillerDb.js';
-import { PlexServerDB } from './dao/plexServerDb.js';
+import { FillerDB } from './dao/fillerDB.js';
+import { MediaSourceDB } from './dao/mediaSourceDB.js';
 import { ProgramDB } from './dao/programDB.js';
 import { SettingsDB, getSettings } from './dao/settings.js';
 import { serverOptions } from './globals.js';
@@ -33,7 +33,7 @@ export class ServerContext {
     public hdhrService: HdhrService,
     public customShowDB: CustomShowDB,
     public channelCache: ChannelCache,
-    public plexServerDB: PlexServerDB,
+    public mediaSourceDB: MediaSourceDB,
     public settings: SettingsDB,
     public programDB: ProgramDB,
   ) {}
@@ -77,7 +77,7 @@ export const serverContext: () => ServerContext = once(() => {
     new HdhrService(settings),
     customShowDB,
     channelCache,
-    new PlexServerDB(channelDB),
+    new MediaSourceDB(channelDB),
     settings,
     new ProgramDB(),
   );

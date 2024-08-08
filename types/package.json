@@ -42,6 +42,10 @@
       "types": "./build/plex/index.d.ts",
       "default": "./build/plex/index.js"
     },
+    "./jellyfin": {
+      "types": "./build/jellyfin/index.d.ts",
+      "default": "./build/jellyfin/index.js"
+    },
     "./api": {
       "types": "./build/api/index.d.ts",
       "default": "./build/api/index.js"

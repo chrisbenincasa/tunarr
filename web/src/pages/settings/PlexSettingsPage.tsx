@@ -13,6 +13,7 @@ import {
   Grid,
   IconButton,
   InputLabel,
+  Menu,
   MenuItem,
   Select,
   Skeleton,
@@ -29,7 +30,7 @@ import {
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { PlexStreamSettings, defaultPlexStreamSettings } from '@tunarr/types';
-import _, { fill, map } from 'lodash-es';
+import _, { fill, isNull, map } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import { useEffect, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
@@ -40,12 +41,13 @@ import {
   TypedController,
 } from '@/components/util/TypedController.tsx';
 import {
-  usePlexServerSettings,
+  useMediaSources,
   usePlexStreamSettings,
 } from '@/hooks/settingsHooks.ts';
 import { useTunarrApi } from '@/hooks/useTunarrApi.ts';
-import { PlexServerRow } from '@/components/settings/plex/PlexServerRow.tsx';
+import { MediaSourceTableRow } from '@/components/settings/plex/MediaSourceTableRow';
 import { PlexServerEditDialog } from '@/components/settings/plex/PlexServerEditDialog.tsx';
+import { JellyfinServerEditDialog } from '@/components/settings/media_source/JelllyfinServerEditDialog.tsx';
 
 const supportedPaths = [
   { value: 'plex', string: 'Plex' },
@@ -56,12 +58,29 @@ export default function PlexSettingsPage() {
   const apiClient = useTunarrApi();
   const [restoreTunarrDefaults, setRestoreTunarrDefaults] = useState(false);
   const [plexEditDialogOpen, setPlexEditDialogOpen] = useState(false);
+  const [jellyfinEditDialogOpen, setJellyfinEditDialogOpen] = useState(false);
+
+  const [manualAddPopoverRef, setManualAddPopoverRef] =
+    useState<HTMLButtonElement | null>(null);
+
+  const openManualAddButtonMenu = (
+    event: React.MouseEvent<HTMLButtonElement>,
+  ) => {
+    setManualAddPopoverRef(event.currentTarget);
+  };
+
+  const closeManualAddButtonMenu = () => {
+    setManualAddPopoverRef(null);
+  };
+
+  const open = !isNull(manualAddPopoverRef);
+  const id = open ? 'simple-popover' : undefined;
 
   const {
     data: servers,
     isPending: serversPending,
     error: serversError,
-  } = usePlexServerSettings();
+  } = useMediaSources();
 
   const { data: streamSettings, error: streamsError } = usePlexStreamSettings();
 
@@ -128,11 +147,11 @@ export default function PlexSettingsPage() {
 
   const removePlexServerMutation = useMutation({
     mutationFn: (id: string) => {
-      return apiClient.deletePlexServer(null, { params: { id } });
+      return apiClient.deleteMediaSource(null, { params: { id } });
     },
     onSuccess: () => {
       return queryClient.invalidateQueries({
-        queryKey: ['settings', 'plex-servers'],
+        queryKey: ['settings', 'media-sources'],
       });
     },
   });
@@ -185,7 +204,7 @@ export default function PlexSettingsPage() {
 
   const getTableRows = () => {
     return map(servers, (server) => {
-      return <PlexServerRow key={server.id} server={server} />;
+      return <MediaSourceTableRow key={server.id} server={server} />;
     });
   };
 
@@ -214,19 +233,9 @@ export default function PlexSettingsPage() {
         <Table>
           <TableHead>
             <TableRow>
+              <TableCell>Type</TableCell>
               <TableCell>Name</TableCell>
               <TableCell>URL</TableCell>
-              {/* <TableCell align="center">
-                UI
-                <Tooltip
-                  placement="top"
-                  title="The connection to Plex from the browser. Affects the ability to edit channel programming."
-                >
-                  <IconButton size="small" edge="end">
-                    <HelpOutline sx={{ opacity: 0.75 }} />
-                  </IconButton>
-                </Tooltip>
-              </TableCell> */}
               <TableCell align="center">
                 Healthy?
                 <Tooltip
@@ -290,6 +299,18 @@ export default function PlexSettingsPage() {
     );
   };
 
+  const handleOpenMediaSourceDialog = (source: 'plex' | 'jellyfin') => {
+    switch (source) {
+      case 'plex':
+        setPlexEditDialogOpen(true);
+        break;
+      case 'jellyfin':
+        setJellyfinEditDialogOpen(true);
+        break;
+    }
+    closeManualAddButtonMenu();
+  };
+
   return (
     <Box component="form" onSubmit={handleSubmit(updatePlexStreamSettings)}>
       {renderConfirmationDialog()}
@@ -302,23 +323,50 @@ export default function PlexSettingsPage() {
             sx={{ flexWrap: 'wrap' }}
           >
             <Typography variant="h6" sx={{ flexGrow: 1 }}>
-              Plex Servers
+              Media Sources
             </Typography>
             <AddPlexServer title="Discover" icon={AutoFixHigh} />
-            <Button
-              color="inherit"
-              onClick={() => setPlexEditDialogOpen(true)}
-              variant="contained"
-              startIcon={<Add />}
-            >
-              Manual Add
-            </Button>
+
+            <div>
+              <Button
+                color="inherit"
+                onClick={openManualAddButtonMenu}
+                variant="contained"
+                startIcon={<Add />}
+              >
+                Manual Add
+              </Button>
+              <Menu
+                id={id}
+                open={open}
+                anchorEl={manualAddPopoverRef}
+                onClose={closeManualAddButtonMenu}
+                anchorOrigin={{
+                  vertical: 'bottom',
+                  horizontal: 'left',
+                }}
+                slotProps={{
+                  paper: {
+                    sx: { minWidth: 150 },
+                  },
+                }}
+              >
+                <MenuItem onClick={() => handleOpenMediaSourceDialog('plex')}>
+                  Plex
+                </MenuItem>
+                <MenuItem
+                  onClick={() => handleOpenMediaSourceDialog('jellyfin')}
+                >
+                  Jellyfin
+                </MenuItem>
+              </Menu>
+            </div>
             <Box sx={{ flexBasis: '100%', width: 0 }}></Box>
             <Typography variant="caption" sx={{ width: '60%' }}>
-              Add Plex Servers as content sources for your channel. "Discover"
-              will use the Plex login flow to discover servers associated with
-              your account, however you can also manually add Plex server
-              details using the "Manual Add" button.
+              Add content sources for your channels. "Discover" will use the
+              Plex login flow to discover servers associated with your account,
+              however you can also manually add Plex server details using the
+              "Manual Add" button.
             </Typography>
           </Stack>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', mb: 1 }}></Box>
@@ -434,6 +482,10 @@ export default function PlexSettingsPage() {
       <PlexServerEditDialog
         open={plexEditDialogOpen}
         onClose={() => setPlexEditDialogOpen(false)}
+      />
+      <JellyfinServerEditDialog
+        open={jellyfinEditDialogOpen}
+        onClose={() => setJellyfinEditDialogOpen(false)}
       />
     </Box>
   );

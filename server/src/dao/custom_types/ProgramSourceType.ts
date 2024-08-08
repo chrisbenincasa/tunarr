@@ -2,6 +2,7 @@ import { enumKeys } from '../../util/enumUtil.js';
 
 export enum ProgramSourceType {
   PLEX = 'plex',
+  JELLYFIN = 'jellyfin',
 }
 
 export function programSourceTypeFromString(

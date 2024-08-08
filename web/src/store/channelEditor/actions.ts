@@ -1,5 +1,5 @@
 import { createExternalId } from '@tunarr/shared';
-import { forProgramType } from '@tunarr/shared/util';
+import { forProgramType, nullToUndefined } from '@tunarr/shared/util';
 import {
   Channel,
   ChannelProgram,
@@ -24,6 +24,7 @@ import {
 } from 'lodash-es';
 import {
   forAddedMediaType,
+  isNonEmptyString,
   typedProperty,
   unwrapNil,
 } from '../../helpers/util.ts';
@@ -31,6 +32,7 @@ import { EnrichedPlexMedia } from '../../hooks/plex/plexHookUtil.ts';
 import { AddedMedia, UIChannelProgram, UIIndex } from '../../types/index.ts';
 import useStore from '../index.ts';
 import { ChannelEditorState, initialChannelEditorState } from './store.ts';
+import { EnrichedJellyfinItem } from '@/hooks/jellyfin/jellyfinHookUtil.ts';
 
 export const resetChannelEditorState = () =>
   useStore.setState((state) => {
@@ -243,7 +245,7 @@ export const plexMediaToContentProgram = (
   return {
     id: media.id ?? uniqueId,
     persisted: !isNil(media.id),
-    originalProgram: media,
+    originalProgram: { sourceType: 'plex', program: media },
     duration: media.duration,
     externalSourceName: media.serverName,
     externalSourceType: 'plex',
@@ -278,6 +280,62 @@ export const plexMediaToContentProgram = (
   };
 };
 
+export const jellyfinItemToContentProgram = (
+  media: EnrichedJellyfinItem,
+): ContentProgram => {
+  const uniqueId = createExternalId('jellyfin', media.serverName, media.Id);
+  return {
+    id: media.id ?? uniqueId,
+    persisted: !isNil(media.id),
+    originalProgram: { sourceType: 'jellyfin', program: media },
+    duration: (media.RunTimeTicks ?? 0) / 10_000,
+    externalSourceName: media.serverName,
+    externalSourceType: 'jellyfin',
+    externalKey: media.Id,
+    uniqueId,
+    type: 'content',
+    subtype:
+      media.Type === 'Movie'
+        ? 'movie'
+        : media.Type === 'Episode'
+        ? 'episode'
+        : 'track',
+    title: (media.Type === 'Episode' ? media.SeriesName : media.Name) ?? '',
+    episodeTitle:
+      media.Type === 'Episode' ? nullToUndefined(media.Name) : undefined,
+    episodeNumber:
+      media.Type === 'Episode'
+        ? nullToUndefined(media.EpisodeCount)
+        : undefined,
+    seasonNumber:
+      media.Type === 'Episode'
+        ? nullToUndefined(media.ParentIndexNumber)
+        : undefined,
+    artistName:
+      media.Type === 'Audio' ? nullToUndefined(media.AlbumArtist) : undefined,
+    albumName:
+      media.Type === 'Audio' ? nullToUndefined(media.Album) : undefined,
+    showId:
+      media.showId ??
+      (media.Type === 'Episode' && isNonEmptyString(media.SeriesId)
+        ? createExternalId('jellyfin', media.serverName, media.SeriesId)
+        : undefined),
+    seasonId:
+      media.seasonId ??
+      (media.Type === 'Episode' && isNonEmptyString(media.SeasonId)
+        ? createExternalId('plex', media.serverName, media.SeasonId)
+        : undefined),
+    externalIds: [
+      {
+        type: 'multi',
+        source: 'jellyfin',
+        sourceId: media.serverName,
+        id: media.Id,
+      },
+    ],
+  };
+};
+
 export const addMediaToCurrentChannel = (programs: AddedMedia[]) =>
   useStore.setState(({ channelEditor }) => {
     if (channelEditor.currentEntity && programs.length > 0) {
@@ -286,6 +344,7 @@ export const addMediaToCurrentChannel = (programs: AddedMedia[]) =>
         programs,
         forAddedMediaType({
           plex: ({ media }) => media.duration,
+          jellyfin: ({ media }) => (media.RunTimeTicks ?? 0) / 10_000,
           'custom-show': ({ program }) => program.duration,
         }),
       );
@@ -295,6 +354,7 @@ export const addMediaToCurrentChannel = (programs: AddedMedia[]) =>
         programs,
         forAddedMediaType<ChannelProgram>({
           plex: ({ media }) => plexMediaToContentProgram(media),
+          jellyfin: ({ media }) => jellyfinItemToContentProgram(media),
           'custom-show': ({ program }) => program,
         }),
       );

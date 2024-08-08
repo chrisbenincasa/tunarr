@@ -12,7 +12,7 @@ import { CustomShow } from './src/dao/entities/CustomShow.js';
 import { CustomShowContent } from './src/dao/entities/CustomShowContent.js';
 import { FillerListContent } from './src/dao/entities/FillerListContent.js';
 import { FillerShow } from './src/dao/entities/FillerShow.js';
-import { PlexServerSettings } from './src/dao/entities/PlexServerSettings.js';
+import { MediaSource } from './src/dao/entities/MediaSource.js';
 import { Program } from './src/dao/entities/Program.js';
 import { DATABASE_LOCATION_ENV_VAR } from './src/util/constants.js';
 import { Migration20240124115044 } from './src/migrations/Migration20240124115044.js';
@@ -29,6 +29,8 @@ import { Migration20240603204620 } from './src/migrations/Migration2024060320462
 import { Migration20240603204638 } from './src/migrations/Migration20240603204638.js';
 import { Migration20240618005544 } from './src/migrations/Migration20240618005544.js';
 import { LoggerFactory } from './src/util/logging/LoggerFactory.js';
+import { Migration20240719145409 } from './src/migrations/Migration20240719145409.js';
+import { Migration20240805185042 } from './src/migrations/Migration20240805185042.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -49,7 +51,7 @@ export default defineConfig({
     CustomShowContent,
     FillerListContent,
     FillerShow,
-    PlexServerSettings,
+    MediaSource,
     Program,
   ],
   flushMode: 'commit',
@@ -126,6 +128,14 @@ export default defineConfig({
       {
         name: 'Force regenerate program_external_id table',
         class: Migration20240618005544,
+      },
+      {
+        name: 'rename_plex_server_settings_table',
+        class: Migration20240719145409,
+      },
+      {
+        name: 'add_jellyfin_sources',
+        class: Migration20240805185042,
       },
     ],
   },

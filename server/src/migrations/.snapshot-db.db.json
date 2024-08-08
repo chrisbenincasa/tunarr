@@ -10,6 +10,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "url": {
@@ -19,6 +20,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "mime_type": {
@@ -28,6 +30,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         }
       },
@@ -35,7 +38,9 @@
       "indexes": [
         {
           "keyName": "primary",
-          "columnNames": ["hash"],
+          "columnNames": [
+            "hash"
+          ],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -55,6 +60,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "created_at": {
@@ -63,8 +69,8 @@
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
-          "nullable": true,
-          "length": 0,
+          "nullable": false,
+          "length": null,
           "mappedType": "datetime"
         },
         "updated_at": {
@@ -73,8 +79,8 @@
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
-          "nullable": true,
-          "length": 0,
+          "nullable": false,
+          "length": null,
           "mappedType": "datetime"
         },
         "number": {
@@ -84,6 +90,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "integer"
         },
         "icon": {
@@ -93,6 +100,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "json"
         },
         "guide_minimum_duration": {
@@ -102,6 +110,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "integer"
         },
         "disable_filler_overlay": {
@@ -111,6 +120,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "default": "false",
           "mappedType": "integer"
         },
@@ -121,6 +131,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "duration": {
@@ -130,6 +141,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "integer"
         },
         "stealth": {
@@ -139,6 +151,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "default": "false",
           "mappedType": "integer"
         },
@@ -149,6 +162,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "start_time": {
@@ -158,6 +172,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "integer"
         },
         "guide_flex_title": {
@@ -167,6 +182,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "offline": {
@@ -176,6 +192,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "default": "'{\"mode\":\"clip\"}'",
           "mappedType": "json"
         },
@@ -186,6 +203,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "integer"
         },
         "watermark": {
@@ -195,6 +213,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "json"
         },
         "transcoding": {
@@ -204,6 +223,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "json"
         }
       },
@@ -211,7 +231,9 @@
       "indexes": [
         {
           "keyName": "channel_number_unique",
-          "columnNames": ["number"],
+          "columnNames": [
+            "number"
+          ],
           "composite": false,
           "constraint": true,
           "primary": false,
@@ -219,7 +241,9 @@
         },
         {
           "keyName": "primary",
-          "columnNames": ["uuid"],
+          "columnNames": [
+            "uuid"
+          ],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -239,6 +263,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "created_at": {
@@ -247,8 +272,8 @@
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
-          "nullable": true,
-          "length": 0,
+          "nullable": false,
+          "length": null,
           "mappedType": "datetime"
         },
         "updated_at": {
@@ -257,8 +282,8 @@
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
-          "nullable": true,
-          "length": 0,
+          "nullable": false,
+          "length": null,
           "mappedType": "datetime"
         },
         "name": {
@@ -268,6 +293,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         }
       },
@@ -275,7 +301,9 @@
       "indexes": [
         {
           "keyName": "primary",
-          "columnNames": ["uuid"],
+          "columnNames": [
+            "uuid"
+          ],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -295,6 +323,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "custom_show_uuid": {
@@ -304,13 +333,16 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         }
       },
       "name": "channel_custom_shows",
       "indexes": [
         {
-          "columnNames": ["channel_uuid"],
+          "columnNames": [
+            "channel_uuid"
+          ],
           "composite": false,
           "keyName": "channel_custom_shows_channel_uuid_index",
           "constraint": false,
@@ -318,7 +350,9 @@
           "unique": false
         },
         {
-          "columnNames": ["custom_show_uuid"],
+          "columnNames": [
+            "custom_show_uuid"
+          ],
           "composite": false,
           "keyName": "channel_custom_shows_custom_show_uuid_index",
           "constraint": false,
@@ -327,7 +361,10 @@
         },
         {
           "keyName": "primary",
-          "columnNames": ["channel_uuid", "custom_show_uuid"],
+          "columnNames": [
+            "channel_uuid",
+            "custom_show_uuid"
+          ],
           "composite": true,
           "constraint": true,
           "primary": true,
@@ -338,18 +375,26 @@
       "foreignKeys": {
         "channel_custom_shows_channel_uuid_foreign": {
           "constraintName": "channel_custom_shows_channel_uuid_foreign",
-          "columnNames": ["channel_uuid"],
+          "columnNames": [
+            "channel_uuid"
+          ],
           "localTableName": "channel_custom_shows",
-          "referencedColumnNames": ["uuid"],
+          "referencedColumnNames": [
+            "uuid"
+          ],
           "referencedTableName": "channel",
           "deleteRule": "cascade",
           "updateRule": "cascade"
         },
         "channel_custom_shows_custom_show_uuid_foreign": {
           "constraintName": "channel_custom_shows_custom_show_uuid_foreign",
-          "columnNames": ["custom_show_uuid"],
+          "columnNames": [
+            "custom_show_uuid"
+          ],
           "localTableName": "channel_custom_shows",
-          "referencedColumnNames": ["uuid"],
+          "referencedColumnNames": [
+            "uuid"
+          ],
           "referencedTableName": "custom_show",
           "deleteRule": "cascade",
           "updateRule": "cascade"
@@ -366,6 +411,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "created_at": {
@@ -375,7 +421,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
-          "length": 0,
+          "length": null,
           "mappedType": "datetime"
         },
         "updated_at": {
@@ -385,7 +431,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
-          "length": 0,
+          "length": null,
           "mappedType": "datetime"
         },
         "name": {
@@ -395,6 +441,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         }
       },
@@ -402,7 +449,9 @@
       "indexes": [
         {
           "keyName": "primary",
-          "columnNames": ["uuid"],
+          "columnNames": [
+            "uuid"
+          ],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -422,6 +471,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "filler_show_uuid": {
@@ -431,6 +481,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "weight": {
@@ -440,6 +491,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "integer"
         },
         "cooldown": {
@@ -449,13 +501,16 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "integer"
         }
       },
       "name": "channel_filler_show",
       "indexes": [
         {
-          "columnNames": ["channel_uuid"],
+          "columnNames": [
+            "channel_uuid"
+          ],
           "composite": false,
           "keyName": "channel_filler_show_channel_uuid_index",
           "constraint": false,
@@ -463,7 +518,9 @@
           "unique": false
         },
         {
-          "columnNames": ["filler_show_uuid"],
+          "columnNames": [
+            "filler_show_uuid"
+          ],
           "composite": false,
           "keyName": "channel_filler_show_filler_show_uuid_index",
           "constraint": false,
@@ -472,7 +529,10 @@
         },
         {
           "keyName": "primary",
-          "columnNames": ["channel_uuid", "filler_show_uuid"],
+          "columnNames": [
+            "channel_uuid",
+            "filler_show_uuid"
+          ],
           "composite": true,
           "constraint": true,
           "primary": true,
@@ -483,17 +543,25 @@
       "foreignKeys": {
         "channel_filler_show_channel_uuid_foreign": {
           "constraintName": "channel_filler_show_channel_uuid_foreign",
-          "columnNames": ["channel_uuid"],
+          "columnNames": [
+            "channel_uuid"
+          ],
           "localTableName": "channel_filler_show",
-          "referencedColumnNames": ["uuid"],
+          "referencedColumnNames": [
+            "uuid"
+          ],
           "referencedTableName": "channel",
           "updateRule": "cascade"
         },
         "channel_filler_show_filler_show_uuid_foreign": {
           "constraintName": "channel_filler_show_filler_show_uuid_foreign",
-          "columnNames": ["filler_show_uuid"],
+          "columnNames": [
+            "filler_show_uuid"
+          ],
           "localTableName": "channel_filler_show",
-          "referencedColumnNames": ["uuid"],
+          "referencedColumnNames": [
+            "uuid"
+          ],
           "referencedTableName": "filler_show",
           "updateRule": "cascade"
         }
@@ -509,6 +577,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "created_at": {
@@ -517,8 +586,8 @@
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
-          "nullable": true,
-          "length": 0,
+          "nullable": false,
+          "length": null,
           "mappedType": "datetime"
         },
         "updated_at": {
@@ -527,9 +596,24 @@
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
-          "nullable": true,
-          "length": 0,
+          "nullable": false,
+          "length": null,
           "mappedType": "datetime"
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": null,
+          "default": "'plex'",
+          "enumItems": [
+            "plex",
+            "jellyfin"
+          ],
+          "mappedType": "enum"
         },
         "name": {
           "name": "name",
@@ -538,6 +622,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "uri": {
@@ -547,6 +632,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "access_token": {
@@ -556,6 +642,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "send_guide_updates": {
@@ -565,6 +652,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "default": "true",
           "mappedType": "integer"
         },
@@ -575,6 +663,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "default": "true",
           "mappedType": "integer"
         },
@@ -585,6 +674,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "integer"
         },
         "client_identifier": {
@@ -594,14 +684,19 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         }
       },
-      "name": "plex_server_settings",
+      "name": "media_source",
       "indexes": [
         {
-          "keyName": "plex_server_settings_name_uri_unique",
-          "columnNames": ["name", "uri"],
+          "keyName": "media_source_type_name_uri_unique",
+          "columnNames": [
+            "type",
+            "name",
+            "uri"
+          ],
           "composite": true,
           "constraint": true,
           "primary": false,
@@ -609,7 +704,9 @@
         },
         {
           "keyName": "primary",
-          "columnNames": ["uuid"],
+          "columnNames": [
+            "uuid"
+          ],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -629,6 +726,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "created_at": {
@@ -637,8 +735,8 @@
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
-          "nullable": true,
-          "length": 0,
+          "nullable": false,
+          "length": null,
           "mappedType": "datetime"
         },
         "updated_at": {
@@ -647,18 +745,19 @@
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
-          "nullable": true,
-          "length": 0,
+          "nullable": false,
+          "length": null,
           "mappedType": "datetime"
         },
         "type": {
           "name": "type",
-          "type": "text",
+          "type": "ProgramGroupingType",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
           "nullable": false,
-          "mappedType": "text"
+          "length": null,
+          "mappedType": "unknown"
         },
         "title": {
           "name": "title",
@@ -667,6 +766,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "summary": {
@@ -676,6 +776,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "icon": {
@@ -685,6 +786,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "year": {
@@ -694,6 +796,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "integer"
         },
         "index": {
@@ -703,6 +806,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "integer"
         },
         "show_uuid": {
@@ -712,6 +816,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "artist_uuid": {
@@ -721,13 +826,16 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         }
       },
       "name": "program_grouping",
       "indexes": [
         {
-          "columnNames": ["show_uuid"],
+          "columnNames": [
+            "show_uuid"
+          ],
           "composite": false,
           "keyName": "program_grouping_show_uuid_index",
           "constraint": false,
@@ -735,7 +843,9 @@
           "unique": false
         },
         {
-          "columnNames": ["artist_uuid"],
+          "columnNames": [
+            "artist_uuid"
+          ],
           "composite": false,
           "keyName": "program_grouping_artist_uuid_index",
           "constraint": false,
@@ -744,7 +854,9 @@
         },
         {
           "keyName": "primary",
-          "columnNames": ["uuid"],
+          "columnNames": [
+            "uuid"
+          ],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -755,18 +867,26 @@
       "foreignKeys": {
         "program_grouping_show_uuid_foreign": {
           "constraintName": "program_grouping_show_uuid_foreign",
-          "columnNames": ["show_uuid"],
+          "columnNames": [
+            "show_uuid"
+          ],
           "localTableName": "program_grouping",
-          "referencedColumnNames": ["uuid"],
+          "referencedColumnNames": [
+            "uuid"
+          ],
           "referencedTableName": "program_grouping",
           "deleteRule": "set null",
           "updateRule": "cascade"
         },
         "program_grouping_artist_uuid_foreign": {
           "constraintName": "program_grouping_artist_uuid_foreign",
-          "columnNames": ["artist_uuid"],
+          "columnNames": [
+            "artist_uuid"
+          ],
           "localTableName": "program_grouping",
-          "referencedColumnNames": ["uuid"],
+          "referencedColumnNames": [
+            "uuid"
+          ],
           "referencedTableName": "program_grouping",
           "deleteRule": "set null",
           "updateRule": "cascade"
@@ -783,6 +903,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "created_at": {
@@ -791,8 +912,8 @@
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
-          "nullable": true,
-          "length": 0,
+          "nullable": false,
+          "length": null,
           "mappedType": "datetime"
         },
         "updated_at": {
@@ -801,8 +922,8 @@
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
-          "nullable": true,
-          "length": 0,
+          "nullable": false,
+          "length": null,
           "mappedType": "datetime"
         },
         "source_type": {
@@ -812,7 +933,11 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
-          "enumItems": ["plex"],
+          "length": null,
+          "enumItems": [
+            "plex",
+            "jellyfin"
+          ],
           "mappedType": "enum"
         },
         "original_air_date": {
@@ -822,6 +947,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "duration": {
@@ -831,6 +957,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "integer"
         },
         "episode": {
@@ -840,6 +967,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "integer"
         },
         "episode_icon": {
@@ -849,6 +977,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "file_path": {
@@ -858,6 +987,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "icon": {
@@ -867,6 +997,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "external_source_id": {
@@ -876,6 +1007,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "external_key": {
@@ -885,6 +1017,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "plex_rating_key": {
@@ -894,6 +1027,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "plex_file_path": {
@@ -903,6 +1037,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "parent_external_key": {
@@ -912,6 +1047,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "grandparent_external_key": {
@@ -921,6 +1057,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "rating": {
@@ -930,6 +1067,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "season_number": {
@@ -939,6 +1077,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "integer"
         },
         "season_icon": {
@@ -948,6 +1087,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "show_icon": {
@@ -957,6 +1097,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "show_title": {
@@ -966,6 +1107,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "summary": {
@@ -975,6 +1117,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "title": {
@@ -984,6 +1127,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "type": {
@@ -993,7 +1137,12 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
-          "enumItems": ["movie", "episode", "track"],
+          "length": null,
+          "enumItems": [
+            "movie",
+            "episode",
+            "track"
+          ],
           "mappedType": "enum"
         },
         "year": {
@@ -1003,6 +1152,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "integer"
         },
         "artist_name": {
@@ -1012,6 +1162,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "album_name": {
@@ -1021,6 +1172,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "season_uuid": {
@@ -1030,6 +1182,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "tv_show_uuid": {
@@ -1039,6 +1192,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "album_uuid": {
@@ -1048,6 +1202,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "artist_uuid": {
@@ -1057,13 +1212,16 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         }
       },
       "name": "program",
       "indexes": [
         {
-          "columnNames": ["season_uuid"],
+          "columnNames": [
+            "season_uuid"
+          ],
           "composite": false,
           "keyName": "program_season_uuid_index",
           "constraint": false,
@@ -1071,7 +1229,9 @@
           "unique": false
         },
         {
-          "columnNames": ["tv_show_uuid"],
+          "columnNames": [
+            "tv_show_uuid"
+          ],
           "composite": false,
           "keyName": "program_tv_show_uuid_index",
           "constraint": false,
@@ -1079,7 +1239,9 @@
           "unique": false
         },
         {
-          "columnNames": ["album_uuid"],
+          "columnNames": [
+            "album_uuid"
+          ],
           "composite": false,
           "keyName": "program_album_uuid_index",
           "constraint": false,
@@ -1087,7 +1249,9 @@
           "unique": false
         },
         {
-          "columnNames": ["artist_uuid"],
+          "columnNames": [
+            "artist_uuid"
+          ],
           "composite": false,
           "keyName": "program_artist_uuid_index",
           "constraint": false,
@@ -1108,7 +1272,11 @@
         },
         {
           "keyName": "program_source_type_external_source_id_external_key_unique",
-          "columnNames": ["source_type", "external_source_id", "external_key"],
+          "columnNames": [
+            "source_type",
+            "external_source_id",
+            "external_key"
+          ],
           "composite": true,
           "constraint": true,
           "primary": false,
@@ -1116,7 +1284,9 @@
         },
         {
           "keyName": "primary",
-          "columnNames": ["uuid"],
+          "columnNames": [
+            "uuid"
+          ],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -1127,39 +1297,51 @@
       "foreignKeys": {
         "program_season_uuid_foreign": {
           "constraintName": "program_season_uuid_foreign",
-          "columnNames": ["season_uuid"],
+          "columnNames": [
+            "season_uuid"
+          ],
           "localTableName": "program",
-          "referencedColumnNames": ["uuid"],
+          "referencedColumnNames": [
+            "uuid"
+          ],
           "referencedTableName": "program_grouping",
-          "deleteRule": "set null",
-          "updateRule": "cascade"
+          "deleteRule": "set null"
         },
         "program_tv_show_uuid_foreign": {
           "constraintName": "program_tv_show_uuid_foreign",
-          "columnNames": ["tv_show_uuid"],
+          "columnNames": [
+            "tv_show_uuid"
+          ],
           "localTableName": "program",
-          "referencedColumnNames": ["uuid"],
+          "referencedColumnNames": [
+            "uuid"
+          ],
           "referencedTableName": "program_grouping",
-          "deleteRule": "set null",
-          "updateRule": "cascade"
+          "deleteRule": "set null"
         },
         "program_album_uuid_foreign": {
           "constraintName": "program_album_uuid_foreign",
-          "columnNames": ["album_uuid"],
+          "columnNames": [
+            "album_uuid"
+          ],
           "localTableName": "program",
-          "referencedColumnNames": ["uuid"],
+          "referencedColumnNames": [
+            "uuid"
+          ],
           "referencedTableName": "program_grouping",
-          "deleteRule": "set null",
-          "updateRule": "cascade"
+          "deleteRule": "set null"
         },
         "program_artist_uuid_foreign": {
           "constraintName": "program_artist_uuid_foreign",
-          "columnNames": ["artist_uuid"],
+          "columnNames": [
+            "artist_uuid"
+          ],
           "localTableName": "program",
-          "referencedColumnNames": ["uuid"],
+          "referencedColumnNames": [
+            "uuid"
+          ],
           "referencedTableName": "program_grouping",
-          "deleteRule": "set null",
-          "updateRule": "cascade"
+          "deleteRule": "set null"
         }
       },
       "nativeEnums": {}
@@ -1173,6 +1355,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "created_at": {
@@ -1181,8 +1364,8 @@
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
-          "nullable": true,
-          "length": 0,
+          "nullable": false,
+          "length": null,
           "mappedType": "datetime"
         },
         "updated_at": {
@@ -1191,8 +1374,8 @@
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
-          "nullable": true,
-          "length": 0,
+          "nullable": false,
+          "length": null,
           "mappedType": "datetime"
         },
         "source_type": {
@@ -1202,7 +1385,15 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
-          "enumItems": ["plex", "plex-guid", "tmdb", "imdb", "tvdb"],
+          "length": null,
+          "enumItems": [
+            "plex",
+            "plex-guid",
+            "tmdb",
+            "imdb",
+            "tvdb",
+            "jellyfin"
+          ],
           "mappedType": "enum"
         },
         "external_source_id": {
@@ -1212,6 +1403,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "external_key": {
@@ -1221,6 +1413,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "external_file_path": {
@@ -1230,6 +1423,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "direct_file_path": {
@@ -1239,6 +1433,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "program_uuid": {
@@ -1248,13 +1443,16 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         }
       },
       "name": "program_external_id",
       "indexes": [
         {
-          "columnNames": ["program_uuid"],
+          "columnNames": [
+            "program_uuid"
+          ],
           "composite": false,
           "keyName": "program_external_id_program_uuid_index",
           "constraint": false,
@@ -1263,7 +1461,11 @@
         },
         {
           "keyName": "unique_program_multi_external_id",
-          "columnNames": ["program_uuid", "source_type", "external_source_id"],
+          "columnNames": [
+            "program_uuid",
+            "source_type",
+            "external_source_id"
+          ],
           "composite": true,
           "constraint": false,
           "primary": false,
@@ -1272,7 +1474,10 @@
         },
         {
           "keyName": "unique_program_single_external_id",
-          "columnNames": ["program_uuid", "source_type"],
+          "columnNames": [
+            "program_uuid",
+            "source_type"
+          ],
           "composite": true,
           "constraint": false,
           "primary": false,
@@ -1281,7 +1486,9 @@
         },
         {
           "keyName": "primary",
-          "columnNames": ["uuid"],
+          "columnNames": [
+            "uuid"
+          ],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -1292,9 +1499,13 @@
       "foreignKeys": {
         "program_external_id_program_uuid_foreign": {
           "constraintName": "program_external_id_program_uuid_foreign",
-          "columnNames": ["program_uuid"],
+          "columnNames": [
+            "program_uuid"
+          ],
           "localTableName": "program_external_id",
-          "referencedColumnNames": ["uuid"],
+          "referencedColumnNames": [
+            "uuid"
+          ],
           "referencedTableName": "program",
           "updateRule": "cascade"
         }
@@ -1310,6 +1521,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "program_uuid": {
@@ -1319,6 +1531,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "index": {
@@ -1328,13 +1541,16 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "integer"
         }
       },
       "name": "filler_show_content",
       "indexes": [
         {
-          "columnNames": ["filler_show_uuid"],
+          "columnNames": [
+            "filler_show_uuid"
+          ],
           "composite": false,
           "keyName": "filler_show_content_filler_show_uuid_index",
           "constraint": false,
@@ -1342,7 +1558,9 @@
           "unique": false
         },
         {
-          "columnNames": ["program_uuid"],
+          "columnNames": [
+            "program_uuid"
+          ],
           "composite": false,
           "keyName": "filler_show_content_program_uuid_index",
           "constraint": false,
@@ -1351,7 +1569,11 @@
         },
         {
           "keyName": "filler_show_content_filler_show_uuid_program_uuid_index_unique",
-          "columnNames": ["filler_show_uuid", "program_uuid", "index"],
+          "columnNames": [
+            "filler_show_uuid",
+            "program_uuid",
+            "index"
+          ],
           "composite": true,
           "constraint": true,
           "primary": false,
@@ -1359,7 +1581,10 @@
         },
         {
           "keyName": "primary",
-          "columnNames": ["filler_show_uuid", "program_uuid"],
+          "columnNames": [
+            "filler_show_uuid",
+            "program_uuid"
+          ],
           "composite": true,
           "constraint": true,
           "primary": true,
@@ -1370,17 +1595,25 @@
       "foreignKeys": {
         "filler_show_content_filler_show_uuid_foreign": {
           "constraintName": "filler_show_content_filler_show_uuid_foreign",
-          "columnNames": ["filler_show_uuid"],
+          "columnNames": [
+            "filler_show_uuid"
+          ],
           "localTableName": "filler_show_content",
-          "referencedColumnNames": ["uuid"],
+          "referencedColumnNames": [
+            "uuid"
+          ],
           "referencedTableName": "filler_show",
           "updateRule": "cascade"
         },
         "filler_show_content_program_uuid_foreign": {
           "constraintName": "filler_show_content_program_uuid_foreign",
-          "columnNames": ["program_uuid"],
+          "columnNames": [
+            "program_uuid"
+          ],
           "localTableName": "filler_show_content",
-          "referencedColumnNames": ["uuid"],
+          "referencedColumnNames": [
+            "uuid"
+          ],
           "referencedTableName": "program",
           "updateRule": "cascade"
         }
@@ -1396,6 +1629,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "content_uuid": {
@@ -1405,6 +1639,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "index": {
@@ -1414,13 +1649,16 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "integer"
         }
       },
       "name": "custom_show_content",
       "indexes": [
         {
-          "columnNames": ["custom_show_uuid"],
+          "columnNames": [
+            "custom_show_uuid"
+          ],
           "composite": false,
           "keyName": "custom_show_content_custom_show_uuid_index",
           "constraint": false,
@@ -1428,7 +1666,9 @@
           "unique": false
         },
         {
-          "columnNames": ["content_uuid"],
+          "columnNames": [
+            "content_uuid"
+          ],
           "composite": false,
           "keyName": "custom_show_content_content_uuid_index",
           "constraint": false,
@@ -1437,7 +1677,11 @@
         },
         {
           "keyName": "custom_show_content_custom_show_uuid_content_uuid_index_unique",
-          "columnNames": ["custom_show_uuid", "content_uuid", "index"],
+          "columnNames": [
+            "custom_show_uuid",
+            "content_uuid",
+            "index"
+          ],
           "composite": true,
           "constraint": true,
           "primary": false,
@@ -1445,7 +1689,10 @@
         },
         {
           "keyName": "primary",
-          "columnNames": ["custom_show_uuid", "content_uuid"],
+          "columnNames": [
+            "custom_show_uuid",
+            "content_uuid"
+          ],
           "composite": true,
           "constraint": true,
           "primary": true,
@@ -1456,17 +1703,25 @@
       "foreignKeys": {
         "custom_show_content_custom_show_uuid_foreign": {
           "constraintName": "custom_show_content_custom_show_uuid_foreign",
-          "columnNames": ["custom_show_uuid"],
+          "columnNames": [
+            "custom_show_uuid"
+          ],
           "localTableName": "custom_show_content",
-          "referencedColumnNames": ["uuid"],
+          "referencedColumnNames": [
+            "uuid"
+          ],
           "referencedTableName": "custom_show",
           "updateRule": "cascade"
         },
         "custom_show_content_content_uuid_foreign": {
           "constraintName": "custom_show_content_content_uuid_foreign",
-          "columnNames": ["content_uuid"],
+          "columnNames": [
+            "content_uuid"
+          ],
           "localTableName": "custom_show_content",
-          "referencedColumnNames": ["uuid"],
+          "referencedColumnNames": [
+            "uuid"
+          ],
           "referencedTableName": "program",
           "updateRule": "cascade"
         }
@@ -1482,6 +1737,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "program_uuid": {
@@ -1491,13 +1747,16 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         }
       },
       "name": "channel_programs",
       "indexes": [
         {
-          "columnNames": ["channel_uuid"],
+          "columnNames": [
+            "channel_uuid"
+          ],
           "composite": false,
           "keyName": "channel_programs_channel_uuid_index",
           "constraint": false,
@@ -1505,7 +1764,9 @@
           "unique": false
         },
         {
-          "columnNames": ["program_uuid"],
+          "columnNames": [
+            "program_uuid"
+          ],
           "composite": false,
           "keyName": "channel_programs_program_uuid_index",
           "constraint": false,
@@ -1514,7 +1775,10 @@
         },
         {
           "keyName": "primary",
-          "columnNames": ["channel_uuid", "program_uuid"],
+          "columnNames": [
+            "channel_uuid",
+            "program_uuid"
+          ],
           "composite": true,
           "constraint": true,
           "primary": true,
@@ -1525,18 +1789,26 @@
       "foreignKeys": {
         "channel_programs_channel_uuid_foreign": {
           "constraintName": "channel_programs_channel_uuid_foreign",
-          "columnNames": ["channel_uuid"],
+          "columnNames": [
+            "channel_uuid"
+          ],
           "localTableName": "channel_programs",
-          "referencedColumnNames": ["uuid"],
+          "referencedColumnNames": [
+            "uuid"
+          ],
           "referencedTableName": "channel",
           "deleteRule": "cascade",
           "updateRule": "cascade"
         },
         "channel_programs_program_uuid_foreign": {
           "constraintName": "channel_programs_program_uuid_foreign",
-          "columnNames": ["program_uuid"],
+          "columnNames": [
+            "program_uuid"
+          ],
           "localTableName": "channel_programs",
-          "referencedColumnNames": ["uuid"],
+          "referencedColumnNames": [
+            "uuid"
+          ],
           "referencedTableName": "program",
           "deleteRule": "cascade",
           "updateRule": "cascade"
@@ -1553,6 +1825,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "program_uuid": {
@@ -1562,13 +1835,16 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         }
       },
       "name": "channel_fallback",
       "indexes": [
         {
-          "columnNames": ["channel_uuid"],
+          "columnNames": [
+            "channel_uuid"
+          ],
           "composite": false,
           "keyName": "channel_fallback_channel_uuid_index",
           "constraint": false,
@@ -1576,7 +1852,9 @@
           "unique": false
         },
         {
-          "columnNames": ["program_uuid"],
+          "columnNames": [
+            "program_uuid"
+          ],
           "composite": false,
           "keyName": "channel_fallback_program_uuid_index",
           "constraint": false,
@@ -1585,7 +1863,10 @@
         },
         {
           "keyName": "primary",
-          "columnNames": ["channel_uuid", "program_uuid"],
+          "columnNames": [
+            "channel_uuid",
+            "program_uuid"
+          ],
           "composite": true,
           "constraint": true,
           "primary": true,
@@ -1596,18 +1877,26 @@
       "foreignKeys": {
         "channel_fallback_channel_uuid_foreign": {
           "constraintName": "channel_fallback_channel_uuid_foreign",
-          "columnNames": ["channel_uuid"],
+          "columnNames": [
+            "channel_uuid"
+          ],
           "localTableName": "channel_fallback",
-          "referencedColumnNames": ["uuid"],
+          "referencedColumnNames": [
+            "uuid"
+          ],
           "referencedTableName": "channel",
           "deleteRule": "cascade",
           "updateRule": "cascade"
         },
         "channel_fallback_program_uuid_foreign": {
           "constraintName": "channel_fallback_program_uuid_foreign",
-          "columnNames": ["program_uuid"],
+          "columnNames": [
+            "program_uuid"
+          ],
           "localTableName": "channel_fallback",
-          "referencedColumnNames": ["uuid"],
+          "referencedColumnNames": [
+            "uuid"
+          ],
           "referencedTableName": "program",
           "deleteRule": "cascade",
           "updateRule": "cascade"
@@ -1624,6 +1913,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "created_at": {
@@ -1632,8 +1922,8 @@
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
-          "nullable": true,
-          "length": 0,
+          "nullable": false,
+          "length": null,
           "mappedType": "datetime"
         },
         "updated_at": {
@@ -1642,8 +1932,8 @@
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
-          "nullable": true,
-          "length": 0,
+          "nullable": false,
+          "length": null,
           "mappedType": "datetime"
         },
         "source_type": {
@@ -1653,7 +1943,15 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
-          "enumItems": ["plex", "plex-guid", "tmdb", "imdb", "tvdb"],
+          "length": null,
+          "enumItems": [
+            "plex",
+            "plex-guid",
+            "tmdb",
+            "imdb",
+            "tvdb",
+            "jellyfin"
+          ],
           "mappedType": "enum"
         },
         "external_source_id": {
@@ -1663,6 +1961,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "external_key": {
@@ -1672,6 +1971,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         },
         "external_file_path": {
@@ -1681,6 +1981,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "mappedType": "text"
         },
         "group_uuid": {
@@ -1690,13 +1991,16 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "text"
         }
       },
       "name": "program_grouping_external_id",
       "indexes": [
         {
-          "columnNames": ["group_uuid"],
+          "columnNames": [
+            "group_uuid"
+          ],
           "composite": false,
           "keyName": "program_grouping_external_id_group_uuid_index",
           "constraint": false,
@@ -1705,7 +2009,10 @@
         },
         {
           "keyName": "program_grouping_external_id_uuid_source_type_unique",
-          "columnNames": ["uuid", "source_type"],
+          "columnNames": [
+            "uuid",
+            "source_type"
+          ],
           "composite": true,
           "constraint": true,
           "primary": false,
@@ -1713,7 +2020,9 @@
         },
         {
           "keyName": "primary",
-          "columnNames": ["uuid"],
+          "columnNames": [
+            "uuid"
+          ],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -1724,9 +2033,13 @@
       "foreignKeys": {
         "program_grouping_external_id_group_uuid_foreign": {
           "constraintName": "program_grouping_external_id_group_uuid_foreign",
-          "columnNames": ["group_uuid"],
+          "columnNames": [
+            "group_uuid"
+          ],
           "localTableName": "program_grouping_external_id",
-          "referencedColumnNames": ["uuid"],
+          "referencedColumnNames": [
+            "uuid"
+          ],
           "referencedTableName": "program_grouping",
           "updateRule": "cascade"
         }

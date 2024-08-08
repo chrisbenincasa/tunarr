@@ -7,7 +7,7 @@ export { mod as dayjsMod } from './util/dayjsExtensions.js';
 
 // TODO replace first arg with shared type
 export function createExternalId(
-  sourceType: ExternalIdType,
+  sourceType: ExternalIdType, //StrictExclude<ExternalIdType, SingleExternalIdType>,
   sourceId: string,
   itemId: string,
 ): `${string}|${string}|${string}` {
