@@ -195,6 +195,9 @@ importers:
       retry:
         specifier: ^0.13.1
         version: 0.13.1
+      sonic-boom:
+        specifier: 3.7.0
+        version: 3.7.0
       tslib:
         specifier: ^2.6.2
         version: 2.6.2
@@ -10135,7 +10138,7 @@ packages:
       pump: 3.0.0
       readable-stream: 4.4.2
       secure-json-parse: 2.7.0
-      sonic-boom: 3.7.0
+      sonic-boom: 3.8.1
       strip-json-comments: 3.1.1
     dev: false
 
@@ -10162,7 +10165,7 @@ packages:
       quick-format-unescaped: 4.0.4
       real-require: 0.2.0
       safe-stable-stringify: 2.4.3
-      sonic-boom: 3.7.0
+      sonic-boom: 3.8.1
       thread-stream: 2.7.0
     dev: false
 
@@ -10179,7 +10182,7 @@ packages:
       quick-format-unescaped: 4.0.4
       real-require: 0.2.0
       safe-stable-stringify: 2.4.3
-      sonic-boom: 3.7.0
+      sonic-boom: 3.8.1
       thread-stream: 2.7.0
     dev: false
 

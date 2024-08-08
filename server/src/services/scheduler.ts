@@ -14,7 +14,7 @@ import { UpdateXmlTvTask } from '../tasks/UpdateXmlTvTask.js';
 import { typedProperty } from '../types/path.js';
 import { Maybe } from '../types/util.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
-import { parseEveryScheduleRule } from '../util/schedulingUtil.js';
+import { scheduleRuleToCronString } from '../util/schedulingUtil.js';
 import { BackupSettings } from '@tunarr/types/schemas';
 import { DeepReadonly } from 'ts-essentials';
 import { OnDemandChannelStateTask } from '../tasks/OnDemandChannelStateTask.js';
@@ -196,7 +196,7 @@ export function scheduleBackupJobs(
       let cronSchedule: string;
       switch (config.schedule.type) {
         case 'every': {
-          cronSchedule = parseEveryScheduleRule(config.schedule);
+          cronSchedule = scheduleRuleToCronString(config.schedule);
           break;
         }
         case 'cron': {
