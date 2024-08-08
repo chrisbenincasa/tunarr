@@ -11,7 +11,7 @@ import { configureAxiosLogging } from '../util/axios.js';
 import { isDefined } from '../util/index.js';
 import { Logger, LoggerFactory } from '../util/logging/LoggerFactory.js';
 
-type ApiClientOptions = {
+export type ApiClientOptions = {
   name?: string;
   url: string;
   extraHeaders?: {
@@ -19,9 +19,7 @@ type ApiClientOptions = {
   };
 };
 
-export type RemoteMediaSourceOptions = {
-  name?: string;
-  uri: string;
+export type RemoteMediaSourceOptions = ApiClientOptions & {
   apiKey: string;
   type: 'plex' | 'jellyfin';
 };
@@ -55,11 +53,13 @@ export function isQuerySuccess<T>(
   return x.type === 'success';
 }
 
-export abstract class BaseApiClient {
+export abstract class BaseApiClient<
+  OptionsType extends ApiClientOptions = ApiClientOptions,
+> {
   protected logger: Logger;
   protected axiosInstance: AxiosInstance;
 
-  constructor(protected options: ApiClientOptions) {
+  constructor(protected options: OptionsType) {
     this.logger = LoggerFactory.child({
       className: this.constructor.name,
       serverName: options.name,

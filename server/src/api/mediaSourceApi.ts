@@ -76,7 +76,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
           }
           case MediaSourceType.Jellyfin: {
             const jellyfin = new JellyfinApiClient({
-              uri: server.uri,
+              url: server.uri,
               apiKey: server.accessToken,
               name: server.name,
             });
@@ -141,7 +141,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
         }
         case 'jellyfin': {
           const jellyfin = new JellyfinApiClient({
-            uri: req.body.uri,
+            url: req.body.uri,
             name: req.body.name ?? 'unknown',
             apiKey: req.body.accessToken,
           });

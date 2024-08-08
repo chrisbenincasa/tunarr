@@ -19,7 +19,7 @@ export const DebugJellyfinApiRouter: RouterPluginAsyncCallback = async (
     },
     async (req, res) => {
       const client = new JellyfinApiClient({
-        uri: 'http://192.168.0.118:8096',
+        url: 'http://192.168.0.118:8096',
         apiKey: '2ff5473bf66c407f8c60baf39120d8e7',
       });
 
@@ -44,7 +44,7 @@ export const DebugJellyfinApiRouter: RouterPluginAsyncCallback = async (
     },
     async (req, res) => {
       const client = new JellyfinApiClient({
-        uri: 'http://192.168.0.118:8096',
+        url: 'http://192.168.0.118:8096',
         apiKey: '2ff5473bf66c407f8c60baf39120d8e7',
       });
 

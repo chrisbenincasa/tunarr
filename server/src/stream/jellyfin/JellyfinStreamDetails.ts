@@ -8,6 +8,7 @@ import {
   attempt,
   isError,
   isEmpty,
+  trimStart,
 } from 'lodash-es';
 import { MediaSource } from '../../dao/entities/MediaSource.js';
 import { ProgramDB } from '../../dao/programDB.js';
@@ -54,7 +55,7 @@ export class JellyfinStreamDetails {
     this.jellyfin = PlexApiFactory().getJellyfinClient({
       apiKey: server.accessToken,
       type: 'jellyfin',
-      uri: server.uri,
+      url: server.uri,
       name: server.name,
     });
   }
@@ -134,12 +135,12 @@ export class JellyfinStreamDetails {
         streamSettings.pathReplaceWith,
       );
     } else {
-      let path = details.serverPath ?? item.plexFilePath;
+      const path = details.serverPath ?? item.plexFilePath;
       if (isNonEmptyString(path)) {
-        path = path.startsWith('/') ? path : `/${path}`;
-        streamUrl = `${trimEnd(this.server.uri, '/')}${path}?X-Plex-Token=${
-          this.server.accessToken
-        }`;
+        streamUrl = `${trimEnd(this.server.uri, '/')}/Videos/${trimStart(
+          path,
+          '/',
+        )}/stream`;
       } else {
         throw new Error('Could not resolve stream URL');
       }

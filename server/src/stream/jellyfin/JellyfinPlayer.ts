@@ -9,16 +9,12 @@ import {
 } from '../../dao/entities/MediaSource.js';
 import { ProgramDB } from '../../dao/programDB.js';
 import { FFMPEG, FfmpegEvents } from '../../ffmpeg/ffmpeg.js';
-import { GlobalScheduler } from '../../services/scheduler.js';
-import { UpdatePlexPlayStatusScheduledTask } from '../../tasks/UpdatePlexPlayStatusTask.js';
 import { TypedEventEmitter } from '../../types/eventEmitter.js';
-import { Maybe, Nullable } from '../../types/util.js';
-import { ifDefined } from '../../util/index.js';
+import { Nullable } from '../../types/util.js';
+import { isDefined } from '../../util/index.js';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
 import { Player, PlayerContext } from '../Player.js';
 import { JellyfinStreamDetails } from './JellyfinStreamDetails.js';
-
-const USED_CLIENTS: Record<string, boolean> = {};
 
 export class JellyfinPlayer extends Player {
   private logger = LoggerFactory.child({
@@ -27,8 +23,6 @@ export class JellyfinPlayer extends Player {
   });
   private ffmpeg: Nullable<FFMPEG> = null;
   private killed: boolean = false;
-  private clientId: string;
-  private updatePlexStatusTask: Maybe<UpdatePlexPlayStatusScheduledTask>;
 
   constructor(private context: PlayerContext) {
     super();
@@ -36,11 +30,10 @@ export class JellyfinPlayer extends Player {
 
   cleanUp() {
     super.cleanUp();
-    USED_CLIENTS[this.clientId] = false;
     this.killed = true;
-    ifDefined(this.updatePlexStatusTask, (task) => {
-      task.stop();
-    });
+    // ifDefined(this.updatePlexStatusTask, (task) => {
+    //   task.stop();
+    // });
 
     if (this.ffmpeg !== null) {
       this.ffmpeg.kill();
@@ -66,16 +59,12 @@ export class JellyfinPlayer extends Player {
       name: lineupItem.externalSourceId,
     });
     if (isNil(server)) {
-      throw Error(
+      throw new Error(
         `Unable to find server "${lineupItem.externalSourceId}" specified by program.`,
       );
     }
 
-    if (server.uri.endsWith('/')) {
-      server.uri = server.uri.slice(0, server.uri.length - 1);
-    }
-
-    const plexSettings = this.context.settings.plexSettings();
+    // const plexSettings = this.context.settings.plexSettings();
     const jellyfinStreamDetails = new JellyfinStreamDetails(
       server,
       this.context.settings,
@@ -98,28 +87,37 @@ export class JellyfinPlayer extends Player {
 
     const stream = await jellyfinStreamDetails.getStream(lineupItem);
     if (isNull(stream)) {
-      this.logger.error('Unable to retrieve stream details from Plex');
+      this.logger.error('Unable to retrieve stream details from Jellyfin');
       return;
     }
 
     if (this.killed) {
-      this.logger.warn('Plex stream was killed already, returning');
+      this.logger.warn('Stream was killed already, returning');
       return;
     }
 
-    const streamStart = (lineupItem.start ?? 0) / 1000;
-    const streamStats = stream.streamDetails;
-    if (streamStats) {
-      streamStats.duration = lineupItem.streamDuration;
+    if (isDefined(stream.streamDetails)) {
+      stream.streamDetails.duration = lineupItem.streamDuration;
     }
+
+    const streamUrl = new URL(stream.streamUrl);
+    streamUrl.searchParams.append(
+      'startTimeTicks',
+      ((lineupItem.start ?? 0) * 1000).toString(),
+    );
 
     const emitter = new EventEmitter() as TypedEventEmitter<FfmpegEvents>;
     let ffmpegOutStream = this.ffmpeg.spawnStream(
-      stream.streamUrl,
+      streamUrl.toString(),
       stream.streamDetails,
-      streamStart,
+      // Don't use FFMPEG's -ss parameter for Jellyfin since we need to request
+      // the seek against their API instead
+      0,
       streamDuration?.toString(),
       watermark,
+      {
+        'X-Emby-Token': server.accessToken,
+      },
     ); // Spawn the ffmpeg process
 
     if (isUndefined(ffmpegOutStream)) {
@@ -128,30 +126,28 @@ export class JellyfinPlayer extends Player {
 
     ffmpegOutStream.pipe(outStream, { end: false });
 
-    if (plexSettings.updatePlayStatus) {
-      this.updatePlexStatusTask = new UpdatePlexPlayStatusScheduledTask(
-        server,
-        {
-          channelNumber: channel.number,
-          duration: lineupItem.duration,
-          ratingKey: lineupItem.externalKey,
-          startTime: lineupItem.start ?? 0,
-        },
-      );
+    // if (plexSettings.updatePlayStatus) {
+    //   this.updatePlexStatusTask = new UpdatePlexPlayStatusScheduledTask(
+    //     server,
+    //     {
+    //       channelNumber: channel.number,
+    //       duration: lineupItem.duration,
+    //       ratingKey: lineupItem.externalKey,
+    //       startTime: lineupItem.start ?? 0,
+    //     },
+    //   );
 
-      GlobalScheduler.scheduleTask(
-        this.updatePlexStatusTask.id,
-        this.updatePlexStatusTask,
-      );
-    }
+    //   GlobalScheduler.scheduleTask(
+    //     this.updatePlexStatusTask.id,
+    //     this.updatePlexStatusTask,
+    //   );
+    // }
 
     this.ffmpeg.on('end', () => {
-      this.logger.trace('ffmpeg end');
       emitter.emit('end');
     });
 
     this.ffmpeg.on('close', () => {
-      this.logger.trace('ffmpeg close');
       emitter.emit('close');
     });
 
@@ -177,7 +173,7 @@ export class JellyfinPlayer extends Player {
         ffmpegOutStream = this.ffmpeg.spawnError(
           'oops',
           'oops',
-          Math.min(streamStats?.duration ?? 30000, 60000),
+          Math.min(stream.streamDetails?.duration ?? 30000, 60000),
         );
         if (isUndefined(ffmpegOutStream)) {
           throw new Error('Unable to spawn ffmpeg...what is going on here');

@@ -11,6 +11,7 @@ import { isDefined } from '../../util/index.js';
 import { JellyfinApiClient } from '../jellyfin/JellyfinApiClient.js';
 import { FindChild } from '@tunarr/types';
 import { RemoteMediaSourceOptions } from '../BaseApiClient.js';
+import { Maybe } from '../../types/util.js';
 
 type TypeToClient = [
   [MediaSourceType.Plex, PlexApiClient],
@@ -49,7 +50,7 @@ export class PlexApiFactoryImpl {
     opts: RemoteMediaSourceOptions,
     factory: (opts: RemoteMediaSourceOptions) => ApiClient,
   ): ApiClient {
-    const key = `${typ}|${opts.uri}|${opts.apiKey}`;
+    const key = `${typ}|${opts.url}|${opts.apiKey}`;
     let client = this.#cache.get<ApiClient>(key);
     if (!client) {
       client = factory(opts);
@@ -90,14 +91,19 @@ export class PlexApiFactoryImpl {
     type: X,
     name: string,
     factory: (opts: RemoteMediaSourceOptions) => ApiClient,
-  ): ApiClient {
+  ): Promise<Maybe<ApiClient>> {
     const key = `${type}|${name}`;
     let client = this.#cache.get<ApiClient>(key);
     if (isUndefined(client)) {
       const em = getEm();
       const server = await em.repo(MediaSource).findOne({ name, type });
       if (!isNull(server)) {
-        client = factor;
+        client = factory({
+          apiKey: server.accessToken,
+          url: server.uri,
+          name: server.name,
+          type: type,
+        });
         this.#cache.set(server.name, client);
       }
     }

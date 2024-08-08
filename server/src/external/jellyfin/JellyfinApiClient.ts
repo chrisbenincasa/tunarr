@@ -14,16 +14,10 @@ import { LoggerFactory } from '../../util/logging/LoggerFactory';
 import {
   BaseApiClient,
   QueryErrorResult,
+  RemoteMediaSourceOptions,
   isQueryError,
 } from '../BaseApiClient.js';
 import { getTunarrVersion } from '../../util/version.js';
-
-type RemoteMediaSourceOptions = {
-  name?: string;
-  uri: string;
-  apiKey: string;
-  type: 'plex' | 'jellyfin';
-};
 
 const RequiredLibraryFields = [
   'Path',
@@ -42,12 +36,14 @@ const RequiredLibraryFields = [
   'MediaSources',
 ];
 
-export class JellyfinApiClient extends BaseApiClient {
-  constructor(private options: Omit<RemoteMediaSourceOptions, 'type'>) {
+export class JellyfinApiClient extends BaseApiClient<
+  Omit<RemoteMediaSourceOptions, 'type'>
+> {
+  constructor(options: Omit<RemoteMediaSourceOptions, 'type'>) {
     super({
-      name: options.name,
-      url: options.uri,
+      ...options,
       extraHeaders: {
+        ...options.extraHeaders,
         Accept: 'application/json',
         'X-Emby-Token': options.apiKey,
       },
@@ -61,7 +57,7 @@ export class JellyfinApiClient extends BaseApiClient {
   ) {
     try {
       const response = await axios.post(
-        `${server.uri}/Users/AuthenticateByName`,
+        `${server.url}/Users/AuthenticateByName`,
         {
           Username: username,
           Pw: password,
