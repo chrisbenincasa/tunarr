@@ -1,3 +1,6 @@
 #!/bin/sh
 
-exec ./bin/node ./bundle.js
+SCRIPTPATH=$(dirname "$(realpath "$0")")
+cd $SCRIPTPATH
+shift
+eval ./bin/node ./bundle.js "$@"
