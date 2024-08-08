@@ -385,7 +385,7 @@ export default function ChannelTranscodingConfig() {
                     name="watermark.duration"
                     rules={{ min: 0 }}
                     TextFieldProps={{
-                      label: 'Overlay Duration (seconds)',
+                      label: 'Total Overlay Duration (seconds)',
                       fullWidth: true,
                       helperText:
                         "Sets the absolute duration of the watermark on the channel's stream. Set to 0 to make the overlay permantently visible.",
@@ -401,7 +401,7 @@ export default function ChannelTranscodingConfig() {
                       label: 'Overlay Period (mins)',
                       fullWidth: true,
                       helperText:
-                        'Display/hide the watermark via a fade animation every N minutes. Set to 0 to disable.',
+                        'Display/hide the watermark via a fade animation every N minutes. Set to 0 to disable. Note that "',
                     }}
                   />
                 </Grid2>
