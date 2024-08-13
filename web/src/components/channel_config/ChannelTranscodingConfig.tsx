@@ -33,6 +33,7 @@ import {
   CheckboxFormController,
   NumericFormControllerText,
 } from '../util/TypedController.tsx';
+import { useSettings } from '@/store/settings/selectors.ts';
 
 const resolutionOptions = [
   { value: '420x420', label: '420x420 (1:1)' },
@@ -69,6 +70,7 @@ const watermarkPositionOptions: {
 const globalOrNumber = /^(global|\d+|)+$/;
 
 export default function ChannelTranscodingConfig() {
+  const { backendUri } = useSettings();
   const { data: ffmpegSettings, isPending: ffmpegSettingsLoading } =
     useFfmpegSettings();
   const channel = useStore((s) => s.channelEditor.currentEntity);
@@ -230,7 +232,7 @@ export default function ChannelTranscodingConfig() {
                       [isBottom ? 'bottom' : 'top']: watermark?.verticalMargin,
                       [isRight ? 'right' : 'left']: watermark?.horizontalMargin,
                     }}
-                    src={watermarkPath || '/tunarr.png'}
+                    src={watermarkPath || `${backendUri}/images/tunarr.png`}
                   />
                 </Box>
               </Box>
