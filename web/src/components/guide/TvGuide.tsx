@@ -262,8 +262,9 @@ export function TvGuide({ channelId, start, end }: Props) {
         </MenuItem>
         <MenuItem
           disableRipple
-          to={`${backendUri}/media-player/${channelMenu.number}.m3u`}
-          component={RouterLink}
+          target="_blank"
+          href={`${backendUri}/media-player/${channelMenu.number}.m3u`}
+          component="a"
         >
           <TextSnippet />
           M3U Link
