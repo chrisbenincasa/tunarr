@@ -63,6 +63,11 @@ function getDefaultFormValues(channel: Channel): SaveChannelRequest {
       duration: channel.watermark?.duration ?? 0,
       position: channel.watermark?.position ?? 'bottom-right',
       opacity: channel.watermark?.opacity ?? 100,
+      fadeConfig: channel.watermark?.fadeConfig ?? [
+        {
+          periodMins: 0,
+        },
+      ],
     },
     onDemand: {
       enabled: channel.onDemand.enabled,

@@ -23,7 +23,6 @@ export default function ChannelEditActions({
   isNewChannel,
 }: ChannelEditActionsProps) {
   const { currentEntity: channel } = useChannelEditor();
-  // const { channelEditorState } = useContext(ChannelEditContext)!;
   const {
     formState: { isValid, isDirty, isSubmitting },
     reset,
