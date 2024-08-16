@@ -1,11 +1,17 @@
-import { Delete, MoreVert, PlayArrow as WatchIcon } from '@mui/icons-material';
+import { betterHumanize } from '@/helpers/dayjs.ts';
+import {
+  Check,
+  Close,
+  Delete,
+  MoreVert,
+  PlayArrow as WatchIcon,
+} from '@mui/icons-material';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import EditIcon from '@mui/icons-material/Edit';
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import {
   Box,
   Button,
-  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -18,37 +24,37 @@ import {
   Menu,
   MenuItem,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
   TableContainer,
-  TableHead,
-  TableRow,
   Tooltip,
   Typography,
   useMediaQuery,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Channel } from '@tunarr/types';
-import dayjs from 'dayjs';
-import { isEmpty } from 'lodash-es';
-import React, { Suspense, useState } from 'react';
 import { Link as RouterLink, useNavigate } from '@tanstack/react-router';
+import { Channel, ChannelIcon } from '@tunarr/types';
+import dayjs from 'dayjs';
+import {
+  MRT_Row,
+  MaterialReactTable,
+  useMaterialReactTable,
+  type MRT_ColumnDef, //if using TypeScript (optional, but recommended)
+} from 'material-react-table';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import TunarrLogo from '../../components/TunarrLogo.tsx';
 import NoChannelsCreated from '../../components/channel_config/NoChannelsCreated.tsx';
 import { isNonEmptyString } from '../../helpers/util.ts';
 import { useSuspenseChannels } from '../../hooks/useChannels.ts';
 import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 import { useSettings } from '../../store/settings/selectors.ts';
-import { betterHumanize } from '@/helpers/dayjs.ts';
+import { VisibilityState } from '@tanstack/react-table';
+import { setChannelTableColumnModel } from '@/store/settings/actions.ts';
 
 export default function ChannelsPage() {
   const { backendUri } = useSettings();
   const apiClient = useTunarrApi();
   const { data: channels } = useSuspenseChannels();
   const theme = useTheme();
-  const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
   const mediumViewport = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -58,6 +64,15 @@ export default function ChannelsPage() {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const [open, setOpen] = React.useState(false);
   const [channelMenu, setChannelMenu] = useState<Channel | null>(null);
+  const settings = useSettings();
+
+  const initialColumnModel = settings.ui.channelTableColumnModel;
+  const [columnVisibility, setColumnVisibility] =
+    useState<VisibilityState>(initialColumnModel);
+
+  useEffect(() => {
+    setChannelTableColumnModel(columnVisibility);
+  }, [columnVisibility]);
 
   const handleClick = (
     event: React.MouseEvent<HTMLElement>,
@@ -141,7 +156,7 @@ export default function ChannelsPage() {
     );
   };
 
-  const renderChannelMenu = () => {
+  const renderChannelMenu = useCallback(() => {
     return (
       channelMenu && (
         <Menu
@@ -206,120 +221,162 @@ export default function ChannelsPage() {
         </Menu>
       )
     );
-  };
+  }, [anchorEl, backendUri, channelMenu, open]);
 
-  // TODO properly define types from API
-  const getDataTableRow = (channel: Channel) => {
-    return (
-      <TableRow
-        key={channel.number}
-        onClick={(event) => handleChannelNavigation(event, channel.id)}
-        sx={{ cursor: 'pointer' }}
-        hover={true}
-      >
-        <TableCell>{channel.number}</TableCell>
-        {!smallViewport && (
-          <TableCell>
-            {isEmpty(channel.icon.path) ? (
-              <TunarrLogo style={{ width: '40px', height: '32px' }} />
-            ) : (
-              <img style={{ maxHeight: '40px' }} src={channel.icon.path} />
-            )}
-          </TableCell>
-        )}
-        <TableCell>{channel.name}</TableCell>
-        <TableCell>{channel.programCount.toLocaleString()}</TableCell>
-        <TableCell>
-          {betterHumanize(dayjs.duration(channel.duration), { style: 'short' })}
-        </TableCell>
-        {/* <TableCell>{startTime.isBefore(now) ? 'Yes' : 'No'}</TableCell> */}
-        <TableCell>{channel.stealth ? 'Yes' : 'No'}</TableCell>
-        <TableCell sx={{ textAlign: 'right' }}>
-          {mediumViewport ? (
-            <>
-              <IconButton
-                id="channel-options-button"
-                aria-controls={open ? 'channel-options-menu' : undefined}
-                aria-haspopup="true"
-                aria-expanded={open ? 'true' : undefined}
-                onClick={(event) => handleClick(event, channel)}
-              >
-                <MoreVert />
-              </IconButton>
-              {renderChannelMenu()}
-            </>
+  const renderActionCell = useCallback(
+    ({ row: { original: channel } }: { row: MRT_Row<Channel> }) => {
+      return mediumViewport ? (
+        <>
+          <IconButton
+            id="channel-options-button"
+            aria-controls={open ? 'channel-options-menu' : undefined}
+            aria-haspopup="true"
+            aria-expanded={open ? 'true' : undefined}
+            onClick={(event) => handleClick(event, channel)}
+          >
+            <MoreVert />
+          </IconButton>
+          {renderChannelMenu()}
+        </>
+      ) : (
+        <Box>
+          <Tooltip title="Edit Channel Settings" placement="top">
+            <IconButton
+              to={`/channels/${channel.id}/edit`}
+              component={RouterLink}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <EditIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Get Channel M3U File" placement="top">
+            <IconButton
+              href={`${
+                isNonEmptyString(backendUri) ? `${backendUri}/` : ''
+              }media-player/${channel.number}.m3u`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <TextSnippetIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Watch Channel" placement="top">
+            <IconButton
+              component={RouterLink}
+              to={`/channels/${channel.id}/watch`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <WatchIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Delete Channel" placement="top">
+            <IconButton
+              onClick={(e) => {
+                e.stopPropagation();
+                setDeleteChannelConfirmation(channel.id);
+              }}
+            >
+              <Delete />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      );
+    },
+    [backendUri, mediumViewport, open, renderChannelMenu],
+  );
+
+  const columnsNew = useMemo<MRT_ColumnDef<Channel>[]>(
+    () => [
+      {
+        header: 'Number',
+        accessorKey: 'number',
+        minSize: 120,
+        size: 120,
+      },
+      {
+        header: 'Icon',
+        accessorKey: 'icon',
+        size: 100,
+        Cell: ({ cell }) => {
+          const value = cell.getValue<ChannelIcon>();
+          return isNonEmptyString(value?.path) ? (
+            <img style={{ maxHeight: '40px' }} src={value.path} />
           ) : (
-            <>
-              <Tooltip title="Edit Channel Settings" placement="top">
-                <IconButton
-                  to={`/channels/${channel.id}/edit`}
-                  component={RouterLink}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <EditIcon />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Get Channel M3U File" placement="top">
-                <IconButton
-                  href={`${
-                    isNonEmptyString(backendUri) ? `${backendUri}/` : ''
-                  }media-player/${channel.number}.m3u`}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <TextSnippetIcon />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Watch Channel" placement="top">
-                <IconButton
-                  component={RouterLink}
-                  to={`/channels/${channel.id}/watch`}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <WatchIcon />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Delete Channel" placement="top">
-                <IconButton
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setDeleteChannelConfirmation(channel.id);
-                  }}
-                >
-                  <Delete />
-                </IconButton>
-              </Tooltip>
-            </>
-          )}
-        </TableCell>
-      </TableRow>
-    );
-  };
+            <TunarrLogo style={{ width: '40px', height: '32px' }} />
+          );
+        },
+        enableColumnFilter: false,
+        enableSorting: false,
+      },
+      {
+        header: 'Name',
+        accessorKey: 'name',
+        size: 250,
+      },
+      {
+        header: '# Programs',
+        accessorKey: 'programCount',
+      },
+      {
+        header: 'Duration',
+        accessorKey: 'duration',
+        Cell: ({ cell }) =>
+          betterHumanize(dayjs.duration(cell.getValue<number>()), {
+            style: 'short',
+          }),
+      },
+      {
+        header: 'Stealth?',
+        accessorKey: 'stealth',
+        Cell: ({ cell }) => (cell.getValue<boolean>() ? <Check /> : <Close />),
+        muiTableBodyCellProps: {
+          align: 'justify',
+        },
+        filterVariant: 'checkbox',
+        enableSorting: false,
+        size: 150,
+      },
+      {
+        header: 'On-Demand?',
+        accessorKey: 'onDemand.enabled',
+        Cell: ({ cell }) => (cell.getValue<boolean>() ? <Check /> : <Close />),
+        filterVariant: 'checkbox',
+        enableSorting: false,
+        id: 'onDemand',
+      },
+    ],
+    [],
+  );
 
-  const getTableRows = () => {
-    // if (channelsFetching) {
-    //   return (
-    //     <TableRow key="pending">
-    //       <TableCell
-    //         colSpan={smallViewport ? 5 : 6}
-    //         sx={{ my: 2, textAlign: 'center' }}
-    //       >
-    //         <CircularProgress />
-    //       </TableCell>
-    //     </TableRow>
-    //   );
-    // } else if (channelsError) {
-    //   return (
-    //     <TableRow key="error">
-    //       <TableCell
-    //         colSpan={smallViewport ? 5 : 6}
-    //         sx={{ my: 2, textAlign: 'center' }}
-    //       >{`Error: ${channelsError.message}`}</TableCell>
-    //     </TableRow>
-    //   );
-    // } else {
-    // }
-    return channels?.map(getDataTableRow);
-  };
+  const table = useMaterialReactTable({
+    columns: columnsNew,
+    data: channels,
+    enableRowActions: true,
+    layoutMode: 'grid',
+    state: {
+      columnVisibility,
+    },
+    muiTableBodyRowProps: ({ row }) => ({
+      sx: {
+        cursor: 'pointer',
+      },
+      onClick: (event) => {
+        handleChannelNavigation(event, row.original.id);
+      },
+    }),
+    displayColumnDefOptions: {
+      'mrt-row-actions': {
+        size: mediumViewport ? 60 : 200,
+        grow: false,
+        Header: '',
+        visibleInShowHideMenu: false,
+      },
+    },
+    positionActionsColumn: 'last',
+    renderRowActions: renderActionCell,
+    onColumnVisibilityChange: (updater) => {
+      setColumnVisibility(updater);
+    },
+  });
 
   return (
     <div>
@@ -338,36 +395,8 @@ export default function ChannelsPage() {
         </Button>
       </Box>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Number</TableCell>
-              {!smallViewport && <TableCell>Icon</TableCell>}
-              <TableCell>Name</TableCell>
-              <TableCell># Programs</TableCell>
-              <TableCell>Duration</TableCell>
-              <TableCell>Stealth?</TableCell>
-              <TableCell></TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            <Suspense
-              fallback={
-                <TableRow key="pending">
-                  <TableCell
-                    colSpan={smallViewport ? 5 : 6}
-                    sx={{ my: 2, textAlign: 'center' }}
-                  >
-                    <CircularProgress />
-                  </TableCell>
-                </TableRow>
-              }
-            >
-              {channels && channels.length > 0 && getTableRows()}
-            </Suspense>
-          </TableBody>
-        </Table>
+      <TableContainer component={Paper} sx={{ width: '100%' }}>
+        <MaterialReactTable table={table} />
       </TableContainer>
 
       <NoChannelsCreated />
