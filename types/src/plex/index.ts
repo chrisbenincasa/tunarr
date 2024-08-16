@@ -121,8 +121,8 @@ const basePlexLibrarySchema = basePlexCollectionSchema.extend({
 });
 
 const basePlexChildCollectionSchema = basePlexCollectionSchema.extend({
-  parentIndex: z.number(),
-  parentTitle: z.string(),
+  parentIndex: z.number().optional(),
+  parentTitle: z.string().optional(),
   parentThumb: z.string().optional(),
 });
 
@@ -130,7 +130,7 @@ const basePlexGrandchildCollectionSchema = basePlexChildCollectionSchema.extend(
   {
     grandparentRatingKey: z.number().optional(),
     grandparentThumb: z.string().optional(),
-    grandparentTitle: z.string(),
+    grandparentTitle: z.string().optional(),
     parentYear: z.number().optional(),
   },
 );
@@ -363,20 +363,20 @@ export const PlexTvShowSchema = BasePlexMediaSchema.extend({
 export type PlexTvShow = Alias<z.infer<typeof PlexTvShowSchema>>;
 
 export const PlexTvSeasonSchema = BasePlexMediaSchema.extend({
-  parentRatingKey: z.string(),
-  parentGuid: z.string(),
-  parentStudio: z.string(),
+  parentRatingKey: z.string().optional(),
+  parentGuid: z.string().optional(),
+  parentStudio: z.string().optional(),
   type: z.literal('season'),
   title: z.string(),
-  parentKey: z.string(),
-  parentTitle: z.string(),
+  parentKey: z.string().optional(),
+  parentTitle: z.string().optional(),
   summary: z.string(),
   index: z.number(),
-  parentIndex: z.number(),
+  parentIndex: z.number().optional(),
   parentYear: z.number().optional(),
   thumb: z.string(),
   art: z.string(),
-  parentThumb: z.string(),
+  parentThumb: z.string().optional(),
   parentTheme: z.string().optional(),
   leafCount: z.number(),
   viewedLeafCount: z.number().optional(),
@@ -405,13 +405,13 @@ export const PlexMusicArtistSchema = BasePlexMediaSchema.extend({
 export type PlexMusicArtist = Alias<z.infer<typeof PlexMusicArtistSchema>>;
 
 export const PlexMusicAlbumSchema = BasePlexMediaSchema.extend({
-  parentRatingKey: z.string(),
-  parentGuid: z.string(),
+  parentRatingKey: z.string().optional(),
+  parentGuid: z.string().optional(),
   studio: z.string().optional(),
   type: z.literal('album'),
   title: z.string(),
-  parentKey: z.string(), // Artist key
-  parentTitle: z.string(), // Artist name
+  parentKey: z.string().optional(), // Artist key
+  parentTitle: z.string().optional(), // Artist name
   summary: z.string().optional(),
   index: z.number(),
   viewCount: z.number().optional(),
@@ -432,20 +432,20 @@ export const PlexMusicAlbumSchema = BasePlexMediaSchema.extend({
 export type PlexMusicAlbum = Alias<z.infer<typeof PlexMusicAlbumSchema>>;
 
 export const PlexMusicTrackSchema = BasePlexMediaSchema.extend({
-  parentRatingKey: z.string(),
-  parentGuid: z.string(),
-  grandparentGuid: z.string(),
+  parentRatingKey: z.string().optional(),
+  parentGuid: z.string().optional(),
+  grandparentGuid: z.string().optional(),
   parentStudio: z.string().optional(),
   type: z.literal('track'),
   title: z.string(),
-  grandparentKey: z.string(),
-  grandparentRatingKey: z.string(),
-  parentKey: z.string(),
+  grandparentKey: z.string().optional(),
+  grandparentRatingKey: z.string().optional(),
+  parentKey: z.string().optional(),
   grandparentTitle: z.string(),
-  parentTitle: z.string(),
+  parentTitle: z.string().optional(),
   summary: z.string().optional(),
   index: z.number(),
-  parentIndex: z.number(),
+  parentIndex: z.number().optional(),
   ratingCount: z.number().optional(),
   viewCount: z.number().optional(),
   skipCount: z.number().optional(),
@@ -505,9 +505,9 @@ export const PlexSeasonViewSchema = z.object({
   mediaTagPrefix: z.string(),
   mediaTagVersion: z.number(),
   nocache: z.boolean(),
-  parentIndex: z.number(),
-  parentTitle: z.string(),
-  parentYear: z.number(),
+  parentIndex: z.number().optional(),
+  parentTitle: z.string().optional(),
+  parentYear: z.number().optional(),
   summary: z.string(),
   theme: z.string(),
   thumb: z.string(),
@@ -529,20 +529,20 @@ export const PlexEpisodeSchema = BasePlexMediaSchema.extend({
   contentRating: z.string().optional(),
   duration: z.number(),
   grandparentArt: z.string().optional(),
-  grandparentGuid: z.string(),
-  grandparentKey: z.string(),
-  grandparentRatingKey: z.string(),
+  grandparentGuid: z.string().optional(),
+  grandparentKey: z.string().optional(),
+  grandparentRatingKey: z.string().optional(),
   grandparentTheme: z.string().optional(),
   grandparentThumb: z.string().optional(),
-  grandparentTitle: z.string(),
+  grandparentTitle: z.string().optional(),
   index: z.number().optional(),
   originallyAvailableAt: z.string().optional(),
-  parentGuid: z.string(),
-  parentIndex: z.number(),
-  parentKey: z.string(),
-  parentRatingKey: z.string(),
+  parentGuid: z.string().optional(),
+  parentIndex: z.number().optional(),
+  parentKey: z.string().optional(),
+  parentRatingKey: z.string().optional(),
   parentThumb: z.string().optional(),
-  parentTitle: z.string(),
+  parentTitle: z.string().optional(),
   summary: z.string().optional(),
   thumb: z.string().optional(),
   title: z.string(),
