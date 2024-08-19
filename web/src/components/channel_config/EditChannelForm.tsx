@@ -119,6 +119,8 @@ export function EditChannelForm({
       (conf) => conf.periodMins <= 0,
     );
 
+    console.log(data.fillerCollections);
+
     const dataTransform: SaveChannelRequest = {
       ...data,
       // Transform this to milliseconds before we send it over

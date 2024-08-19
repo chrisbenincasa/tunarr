@@ -94,7 +94,22 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
           await req.serverCtx.channelDB.loadChannelAndLineup(req.params.id);
 
         if (!isNil(channelAndLineup)) {
-          return res.send(dbChannelToApiChannel(channelAndLineup));
+          const apiChannel = dbChannelToApiChannel(channelAndLineup);
+          // TODO: This is super gnarly and we're doing this sorta custom everywhere.
+          // We need a centralized way to either load ALL of the relevant metadata
+          // for channels OR have the frontend request which fields it needs and we
+          // service that.
+          const loadedFillers =
+            await channelAndLineup.channel.channelFillers.load();
+          const channelWithFillers = {
+            ...apiChannel,
+            fillerCollections: loadedFillers.$.map((cf) => ({
+              id: cf.fillerShow.uuid,
+              cooldownSeconds: cf.cooldown,
+              weight: cf.weight,
+            })),
+          };
+          return res.send(channelWithFillers);
         } else {
           return res.status(404).send();
         }
@@ -159,9 +174,21 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
             channelUpdate,
           );
           await req.serverCtx.guideService.updateCachedChannel(channel.uuid);
-          return res.send(
-            omit(dbChannelToApiChannel(updatedChannel), 'programs'),
+          const apiChannel = omit(
+            dbChannelToApiChannel(updatedChannel),
+            'programs',
           );
+
+          return res.send({
+            ...apiChannel,
+            fillerCollections: updatedChannel.channel.channelFillers.$.map(
+              (cf) => ({
+                id: cf.fillerShow.uuid,
+                cooldownSeconds: cf.cooldown,
+                weight: cf.weight,
+              }),
+            ),
+          });
         } else {
           return res.status(404).send();
         }

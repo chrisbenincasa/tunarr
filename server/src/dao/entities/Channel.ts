@@ -3,6 +3,7 @@ import {
   Entity,
   IType,
   ManyToMany,
+  OneToMany,
   Property,
   Unique,
 } from '@mikro-orm/core';
@@ -209,6 +210,12 @@ export class Channel extends BaseEntity {
     pivotEntity: () => ChannelFillerShow,
   })
   fillers = new Collection<FillerShow>(this);
+
+  @OneToMany({
+    entity: () => ChannelFillerShow,
+    mappedBy: 'channel',
+  })
+  channelFillers = new Collection<ChannelFillerShow>(this);
 
   @Property({ nullable: true })
   fillerRepeatCooldown?: number; // Seconds

@@ -6,6 +6,7 @@ import {
 import { Channel, SaveChannelRequest } from '@tunarr/types';
 import { ZodiosError } from '@zodios/core';
 import { useTunarrApi } from './useTunarrApi';
+import { z } from 'zod';
 
 export const useUpdateChannel = (
   isNewChannel: boolean,
@@ -41,8 +42,11 @@ export const useUpdateChannel = (
     },
     onError: (error, vars, ctx) => {
       if (error instanceof ZodiosError) {
-        console.error(error.data);
-        console.error(error, error.cause, error.message);
+        console.error(error.message, error.data, error.cause);
+        if (error.cause instanceof z.ZodError) {
+          console.error(error.cause.message);
+        }
+        console.error(error.cause);
       } else {
         console.error(error);
       }
