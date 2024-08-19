@@ -173,7 +173,10 @@ export const clearSelectedMedia = () =>
     state.selectedMedia = [];
   });
 
-export const setPlexFilter = (plexFilter: PlexFilter | undefined) =>
+export const setPlexFilter = (
+  plexFilter: PlexFilter | undefined,
+  plexFilterLimit?: number,
+) =>
   useStore.setState((state) => {
     state.plexSearch = {
       ...state.plexSearch,
@@ -181,6 +184,7 @@ export const setPlexFilter = (plexFilter: PlexFilter | undefined) =>
       urlFilter: [
         ...buildPlexFilterKey(plexFilter),
         ...buildPlexSortKey(state.plexSearch.sort),
+        ...(plexFilterLimit ? [`limit=${plexFilterLimit}`] : []),
       ].join('&'),
     };
   });
@@ -193,6 +197,7 @@ export const setPlexSort = (plexSort: PlexSort | undefined) =>
       urlFilter: [
         ...buildPlexFilterKey(state.plexSearch.filter),
         ...buildPlexSortKey(plexSort),
+        ...(state.plexSearch.limit ? [`limit=${state.plexSearch.limit}`] : []),
       ].join('&'),
     };
   });
