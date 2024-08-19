@@ -142,12 +142,13 @@ export default function ChannelTranscodingConfig() {
   ) => {
     if (e.target.value === 'global') {
       setTargetResString('global');
-      setValue('transcoding.targetResolution', 'global');
+      setValue('transcoding.targetResolution', 'global', { shouldDirty: true });
     } else if (resolutionValues.has(e.target.value)) {
       setTargetResString(e.target.value as ResolutionOptionValues);
       setValue(
         'transcoding.targetResolution',
         resolutionFromAnyString(e.target.value),
+        { shouldDirty: true },
       );
     }
   };

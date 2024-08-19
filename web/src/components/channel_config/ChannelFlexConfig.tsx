@@ -37,6 +37,7 @@ import { typedProperty } from '../../helpers/util.ts';
 import { useFillerLists } from '../../hooks/useFillerLists.ts';
 import useStore from '../../store/index.ts';
 import { ImageUploadInput } from '../settings/ImageUploadInput.tsx';
+import { NumericFormController } from '../util/TypedController.tsx';
 
 export function ChannelFlexConfig() {
   const channel = useStore((s) => s.channelEditor.currentEntity);
@@ -175,7 +176,7 @@ export function ChannelFlexConfig() {
 
       return (
         <Grid container key={cfl.id} sx={{ mb: 2 }} columnSpacing={2}>
-          <Grid item xs={2}>
+          <Grid item xs={3}>
             <FormControl key={cfl.id} sx={{ width: '100%' }}>
               <Select value={cfl.id} disabled={unclaimedLists.length === 0}>
                 {listOpts}
@@ -183,7 +184,7 @@ export function ChannelFlexConfig() {
             </FormControl>
           </Grid>
           <Grid item>
-            <Controller
+            <NumericFormController
               control={control}
               name={`fillerCollections.${index}.cooldownSeconds`}
               rules={{ min: 0, max: 525600 }}
@@ -341,7 +342,7 @@ export function ChannelFlexConfig() {
               render={({ field }) => (
                 <FormControl fullWidth margin="normal">
                   <FormControlLabel
-                    control={<Checkbox {...field} />}
+                    control={<Checkbox {...field} checked={field.value} />}
                     label="Hide watermark during filler"
                   />
                 </FormControl>

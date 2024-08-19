@@ -390,7 +390,7 @@ export class ChannelDB {
     await em.flush();
 
     return {
-      channel: loadedChannel,
+      channel: await loadedChannel.populate(['fillers', 'channelFillers']),
       lineup: await this.loadLineup(id),
     };
   }

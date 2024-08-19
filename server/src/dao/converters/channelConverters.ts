@@ -12,9 +12,15 @@ export const dbChannelToApiChannel = ({
     id: channel.uuid,
     number: channel.number,
     watermark: nilToUndefined(channel.watermark),
-    // filler
-    // programs
+    fillerCollections: channel.channelFillers.isInitialized()
+      ? channel.channelFillers.map((filler) => ({
+          id: filler.fillerShow.uuid,
+          cooldownSeconds: filler.cooldown,
+          weight: filler.weight,
+        }))
+      : undefined,
     // fallback
+    guideFlexTitle: channel.guideFlexTitle,
     icon: channel.icon ?? DefaultChannelIcon,
     guideMinimumDuration: channel.guideMinimumDuration,
     groupTitle: channel.groupTitle || '',
