@@ -317,6 +317,7 @@ export class LegacyProgramGroupingCalculator {
       )
       .flatMap((p) => [p.grandparentRatingKey, p.parentRatingKey])
       .uniq()
+      .compact()
       .value();
 
     const existingGroupings = flatten(

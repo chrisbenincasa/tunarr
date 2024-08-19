@@ -131,7 +131,11 @@ export default function ProgramDetailsDialog({
           }
 
           let key = p.uniqueId;
-          if (p.subtype === 'track' && p.originalProgram?.type === 'track') {
+          if (
+            p.subtype === 'track' &&
+            p.originalProgram?.type === 'track' &&
+            isNonEmptyString(p.originalProgram.parentRatingKey)
+          ) {
             key = createExternalId(
               'plex',
               p.externalSourceName!,
@@ -142,7 +146,7 @@ export default function ProgramDetailsDialog({
           return `${settings.backendUri}/api/metadata/external?id=${key}&mode=proxy&asset=thumb`;
         },
       }),
-    [],
+    [settings.backendUri],
   );
 
   const externalLink = useMemo(
@@ -153,7 +157,7 @@ export default function ProgramDetailsDialog({
             ? `${settings.backendUri}/api/programs/${p.id}/external-link`
             : null,
       }),
-    [],
+    [settings.backendUri],
   );
 
   const thumbUrl = program ? thumbnailImage(program) : null;

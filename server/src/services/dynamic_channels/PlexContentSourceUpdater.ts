@@ -108,7 +108,10 @@ const plexMediaToContentProgram = (
     uniqueId,
     type: 'content',
     subtype: media.type,
-    title: media.type === 'episode' ? media.grandparentTitle : media.title,
+    title:
+      media.type === 'episode'
+        ? media.grandparentTitle ?? media.title
+        : media.title,
     episodeTitle: media.type === 'episode' ? media.title : undefined,
     episodeNumber: media.type === 'episode' ? media.index : undefined,
     seasonNumber: media.type === 'episode' ? media.parentIndex : undefined,

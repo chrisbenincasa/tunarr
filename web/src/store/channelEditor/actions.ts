@@ -24,6 +24,7 @@ import {
 } from 'lodash-es';
 import {
   forAddedMediaType,
+  isNonEmptyString,
   typedProperty,
   unwrapNil,
 } from '../../helpers/util.ts';
@@ -251,7 +252,10 @@ export const plexMediaToContentProgram = (
     uniqueId,
     type: 'content',
     subtype: media.type,
-    title: media.type === 'episode' ? media.grandparentTitle : media.title,
+    title:
+      media.type === 'episode'
+        ? media.grandparentTitle ?? media.title
+        : media.title,
     episodeTitle: media.type === 'episode' ? media.title : undefined,
     episodeNumber: media.type === 'episode' ? media.index : undefined,
     seasonNumber: media.type === 'episode' ? media.parentIndex : undefined,
@@ -259,12 +263,12 @@ export const plexMediaToContentProgram = (
     albumName: media.type === 'track' ? media.parentTitle : undefined,
     showId:
       media.showId ??
-      (media.type === 'episode'
+      (media.type === 'episode' && isNonEmptyString(media.grandparentRatingKey)
         ? createExternalId('plex', media.serverName, media.grandparentRatingKey)
         : undefined),
     seasonId:
       media.seasonId ??
-      (media.type === 'episode'
+      (media.type === 'episode' && isNonEmptyString(media.parentRatingKey)
         ? createExternalId('plex', media.serverName, media.parentRatingKey)
         : undefined),
     externalIds: [

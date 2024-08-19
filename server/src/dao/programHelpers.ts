@@ -9,6 +9,7 @@ import {
 import { PlexEpisode, PlexMedia, PlexMusicTrack } from '@tunarr/types/plex';
 import dayjs from 'dayjs';
 import ld, {
+  compact,
   filter,
   forEach,
   isNil,
@@ -194,7 +195,7 @@ export async function upsertContentPrograms(
       PlexTaskQueue.add(
         new SavePlexProgramGroupingsTask({
           grandparentKey: grandparentId,
-          parentKeys: parentIds,
+          parentKeys: compact(parentIds),
           programAndPlexIds,
           programType: programTypeFromString(externalIds[0].plexMedia.type)!,
           plexServerName: externalIds[0].externalId.externalSourceId!,
