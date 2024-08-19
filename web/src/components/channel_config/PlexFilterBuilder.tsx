@@ -23,7 +23,7 @@ import {
 } from '@tunarr/types/api';
 import { PlexFilterResponseMeta, PlexFilterType } from '@tunarr/types/plex';
 import dayjs from 'dayjs';
-import { find, first, isUndefined, map, size } from 'lodash-es';
+import { find, first, isEmpty, isUndefined, map, size } from 'lodash-es';
 import {
   createContext,
   useCallback,
@@ -433,6 +433,7 @@ export function PlexFilterBuilder(
       type: 'op',
     },
   });
+  const [limitTo, setLimitTo] = useState('');
   const rootNodeType = formMethods.watch('type');
 
   const { data: plexFilterMetadata } = useSelectedLibraryPlexFilters();
@@ -446,7 +447,8 @@ export function PlexFilterBuilder(
   );
 
   const handleSearch: SubmitHandler<PlexFilter> = (data) => {
-    setPlexFilter(data);
+    const limitInt = parseInt(limitTo);
+    setPlexFilter(data, isNaN(limitInt) ? undefined : limitInt);
   };
 
   useEffect(() => {
@@ -477,21 +479,48 @@ export function PlexFilterBuilder(
           onSubmit={formMethods.handleSubmit(handleSearch, console.error)}
         >
           <Box sx={{ my: 2 }}>
-            {rootNodeType === 'op' ? (
-              <PlexGroupNode depth={0} formKey="" index={0} remove={() => {}} />
-            ) : (
-              <PlexValueNode
-                only
-                depth={0}
-                formKey=""
-                index={0}
-                remove={() => {}}
-              />
-            )}
+            <Stack gap={2} useFlexGap>
+              {rootNodeType === 'op' ? (
+                <PlexGroupNode
+                  depth={0}
+                  formKey=""
+                  index={0}
+                  remove={() => {}}
+                />
+              ) : (
+                <PlexValueNode
+                  only
+                  depth={0}
+                  formKey=""
+                  index={0}
+                  remove={() => {}}
+                />
+              )}
 
-            <Button type="submit" variant="contained" sx={{ my: 2 }}>
-              Search
-            </Button>
+              <TextField
+                error={!isEmpty(limitTo) && isNaN(parseInt(limitTo))}
+                sx={{ width: 200 }}
+                value={limitTo}
+                onChange={(e) => setLimitTo(e.target.value)}
+                label="Limit"
+                size="small"
+                helperText={
+                  !isEmpty(limitTo) && isNaN(parseInt(limitTo))
+                    ? 'Limit must be numeric'
+                    : null
+                }
+              />
+
+              <Box>
+                <Button
+                  sx={{ maxWidth: 200 }}
+                  type="submit"
+                  variant="contained"
+                >
+                  Search
+                </Button>
+              </Box>
+            </Stack>
           </Box>
         </Box>
       </FormProvider>

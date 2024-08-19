@@ -49,6 +49,7 @@ export type PlexSort = z.infer<typeof PlexSortSchema>;
 export const PlexSearchSchema = z.object({
   filter: PlexFilterSchema.optional(),
   sort: PlexSortSchema.optional(),
+  limit: z.number().nonnegative().optional().catch(undefined),
 });
 
 export type PlexSearch = z.infer<typeof PlexSearchSchema>;
