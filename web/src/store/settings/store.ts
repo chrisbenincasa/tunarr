@@ -2,6 +2,9 @@ import { StateCreator } from 'zustand';
 
 interface SettingsStateInternal {
   backendUri: string;
+  ui: {
+    channelTableColumnModel: Record<string, boolean>;
+  };
 }
 
 export interface SettingsState {
@@ -19,5 +22,10 @@ export const DefaultBackendUri = import.meta.env.DEV
 export const createSettingsSlice: StateCreator<SettingsState> = () => ({
   settings: {
     backendUri: DefaultBackendUri,
+    ui: {
+      channelTableColumnModel: {
+        onDemand: false,
+      },
+    },
   },
 });

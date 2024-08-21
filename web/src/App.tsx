@@ -293,7 +293,6 @@ export function Root({ children }: { children?: React.ReactNode }) {
 
   return (
     <ThemeProvider theme={theme}>
-      {/* <ServerEvents /> */}
       <Box sx={{ display: 'flex' }}>
         <CssBaseline />
         <AppBar

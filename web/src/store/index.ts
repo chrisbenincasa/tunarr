@@ -18,6 +18,7 @@ import {
   ThemeEditorState,
   createThemeEditorState,
 } from './themeEditor/store.ts';
+import { get, isNil, isObject, merge } from 'lodash-es';
 
 export type State = ThemeEditorState &
   SettingsState &
@@ -45,6 +46,35 @@ const useStore = create<State>()(
               theme: state.theme,
               settings: state.settings,
             },
+          merge(persistedState, currentState) {
+            if (isNil(persistedState)) {
+              return currentState;
+            }
+
+            if (!isObject(persistedState)) {
+              return currentState;
+            }
+
+            const persistedTheme = get(persistedState, 'theme') as unknown;
+            const persistedSettings = get(
+              persistedState,
+              'settings',
+            ) as unknown;
+
+            return {
+              ...currentState,
+              theme: merge(
+                {},
+                currentState.theme ?? {},
+                isObject(persistedTheme) ? persistedTheme : {},
+              ),
+              settings: merge(
+                {},
+                currentState.settings ?? {},
+                isObject(persistedSettings) ? persistedSettings : {},
+              ),
+            };
+          },
         },
       ),
     ),
