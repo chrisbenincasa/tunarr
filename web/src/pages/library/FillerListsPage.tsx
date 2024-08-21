@@ -1,27 +1,29 @@
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 
 import { Delete, Edit } from '@mui/icons-material';
-import { IconButton, LinearProgress, Tooltip } from '@mui/material';
+import { IconButton, Tooltip } from '@mui/material';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Paper from '@mui/material/Paper';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import { useFillerLists } from '../../hooks/useFillerLists.ts';
 import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
-import { Suspense } from 'react';
+import { useCallback, useMemo } from 'react';
+import { FillerList } from '@tunarr/types';
+import {
+  MRT_ColumnDef,
+  MRT_Row,
+  MaterialReactTable,
+  useMaterialReactTable,
+} from 'material-react-table';
 
 type DeleteFillerListRequest = { id: string };
 
-function FillerListTableRows() {
+export default function FillerListsPage() {
   const apiClient = useTunarrApi();
   const queryClient = useQueryClient();
 
@@ -38,22 +40,10 @@ function FillerListTableRows() {
 
   const { data: fillerLists } = useFillerLists();
 
-  if (fillerLists.length === 0) {
-    return (
-      <TableRow>
-        <TableCell sx={{ py: 3, textAlign: 'center' }} colSpan={3}>
-          No Filler Lists!
-        </TableCell>
-      </TableRow>
-    );
-  }
-
-  return fillerLists.map((filler) => {
-    return (
-      <TableRow key={filler.id}>
-        <TableCell>{filler.name}</TableCell>
-        <TableCell>{filler.contentCount}</TableCell>
-        <TableCell width="10%">
+  const renderActionCell = useCallback(
+    ({ row: { original: filler } }: { row: MRT_Row<FillerList> }) => {
+      return (
+        <Box sx={{ display: 'flex', justifyContent: 'end', width: '100%' }}>
           <Tooltip title="Edit" placement="top">
             <IconButton
               color="primary"
@@ -71,22 +61,48 @@ function FillerListTableRows() {
               <Delete />
             </IconButton>
           </Tooltip>
-        </TableCell>
-      </TableRow>
-    );
-  });
-}
+        </Box>
+      );
+    },
+    [deleteFillerList],
+  );
 
-export default function FillerListsPage() {
-  const getFallback = () => {
-    return (
-      <TableRow>
-        <TableCell sx={{ py: 3, textAlign: 'center' }} colSpan={3}>
-          <LinearProgress />
-        </TableCell>
-      </TableRow>
-    );
-  };
+  const columns = useMemo<MRT_ColumnDef<FillerList>[]>(
+    () => [
+      {
+        header: 'Name',
+        accessorKey: 'name',
+      },
+      {
+        header: '# Programs',
+        accessorKey: 'contentCount',
+        filterVariant: 'range',
+      },
+    ],
+    [],
+  );
+
+  const table = useMaterialReactTable({
+    columns: columns,
+    data: fillerLists,
+    enableRowActions: true,
+    layoutMode: 'grid',
+    renderRowActions: renderActionCell,
+    muiTableBodyRowProps: () => ({
+      sx: {
+        cursor: 'pointer',
+      },
+    }),
+    displayColumnDefOptions: {
+      'mrt-row-actions': {
+        size: 200,
+        grow: false,
+        Header: '',
+        visibleInShowHideMenu: false,
+      },
+    },
+    positionActionsColumn: 'last',
+  });
 
   return (
     <Box>
@@ -104,21 +120,8 @@ export default function FillerListsPage() {
           New
         </Button>
       </Box>
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell># Clips</TableCell>
-              <TableCell></TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            <Suspense fallback={getFallback()}>
-              <FillerListTableRows />
-            </Suspense>
-          </TableBody>
-        </Table>
+      <TableContainer component={Paper} sx={{ width: '100%' }}>
+        <MaterialReactTable table={table} />
       </TableContainer>
     </Box>
   );

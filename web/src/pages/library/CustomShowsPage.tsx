@@ -1,22 +1,24 @@
 import AddCircleIcon from '@mui/icons-material/AddCircle';
-import DeleteIcon from '@mui/icons-material/Delete';
-import EditIcon from '@mui/icons-material/Edit';
 import { IconButton, Tooltip } from '@mui/material';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Paper from '@mui/material/Paper';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import { useCustomShows } from '../../hooks/useCustomShows.ts';
 import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
+import { CustomShow } from '@tunarr/types';
+import { Edit, Delete } from '@mui/icons-material';
+import {
+  MRT_Row,
+  MRT_ColumnDef,
+  useMaterialReactTable,
+  MaterialReactTable,
+} from 'material-react-table';
+import { useCallback, useMemo } from 'react';
 
 export default function CustomShowsPage() {
   const apiClient = useTunarrApi();
@@ -34,44 +36,69 @@ export default function CustomShowsPage() {
     },
   });
 
-  const getTableRows = () => {
-    if (customShows.length === 0) {
+  const renderActionCell = useCallback(
+    ({ row: { original: show } }: { row: MRT_Row<CustomShow> }) => {
       return (
-        <TableRow>
-          <TableCell sx={{ py: 3, textAlign: 'center' }} colSpan={3}>
-            No Custom Shows!
-          </TableCell>
-        </TableRow>
+        <Box sx={{ display: 'flex', justifyContent: 'end', width: '100%' }}>
+          <Tooltip title="Edit" placement="top">
+            <IconButton
+              color="primary"
+              to={`/library/custom-shows/${show.id}/edit`}
+              component={Link}
+            >
+              <Edit />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Delete" placement="top">
+            <IconButton
+              color="error"
+              onClick={() => deleteShowMutation.mutate(show.id)}
+            >
+              <Delete />
+            </IconButton>
+          </Tooltip>
+        </Box>
       );
-    }
-    return customShows.map((cs) => {
-      return (
-        <TableRow key={cs.id}>
-          <TableCell>{cs.name}</TableCell>
-          <TableCell>{cs.contentCount}</TableCell>
-          <TableCell width="10%">
-            <Tooltip title="Edit" placement="top">
-              <IconButton
-                color="primary"
-                to={`/library/custom-shows/${cs.id}/edit`}
-                component={Link}
-              >
-                <EditIcon />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Delete" placement="top">
-              <IconButton
-                color="error"
-                onClick={() => deleteShowMutation.mutate(cs.id)}
-              >
-                <DeleteIcon />
-              </IconButton>
-            </Tooltip>
-          </TableCell>
-        </TableRow>
-      );
-    });
-  };
+    },
+    [deleteShowMutation],
+  );
+
+  const columns = useMemo<MRT_ColumnDef<CustomShow>[]>(
+    () => [
+      {
+        header: 'Name',
+        accessorKey: 'name',
+      },
+      {
+        header: '# Programs',
+        accessorKey: 'contentCount',
+        filterVariant: 'range',
+      },
+    ],
+    [],
+  );
+
+  const table = useMaterialReactTable({
+    columns,
+    data: customShows,
+    enableRowActions: true,
+    layoutMode: 'grid',
+    renderRowActions: renderActionCell,
+    muiTableBodyRowProps: () => ({
+      sx: {
+        cursor: 'pointer',
+      },
+    }),
+    displayColumnDefOptions: {
+      'mrt-row-actions': {
+        size: 200,
+        grow: false,
+        Header: '',
+        visibleInShowHideMenu: false,
+      },
+    },
+    positionActionsColumn: 'last',
+  });
 
   return (
     <Box>
@@ -89,17 +116,8 @@ export default function CustomShowsPage() {
           New
         </Button>
       </Box>
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell width={'75%'}>Name</TableCell>
-              <TableCell># Clips</TableCell>
-              <TableCell></TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>{getTableRows()}</TableBody>
-        </Table>
+      <TableContainer component={Paper} sx={{ width: '100%' }}>
+        <MaterialReactTable table={table} />
       </TableContainer>
     </Box>
   );
