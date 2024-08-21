@@ -34,27 +34,15 @@ import {
   NumericFormControllerText,
 } from '../util/TypedController.tsx';
 import { useSettings } from '@/store/settings/selectors.ts';
-
-const resolutionOptions = [
-  { value: '420x420', label: '420x420 (1:1)' },
-  { value: '480x270', label: '480x270 (HD1080/16 16:9)' },
-  { value: '576x320', label: '576x320 (18:10)' },
-  { value: '640x360', label: '640x360 (nHD 16:9)' },
-  { value: '720x480', label: '720x480 (WVGA 3:2)' },
-  { value: '800x600', label: '800x600 (SVGA 4:3)' },
-  { value: '1024x768', label: '1024x768 (WXGA 4:3)' },
-  { value: '1280x720', label: '1280x720 (HD 16:9)' },
-  { value: '1920x1080', label: '1920x1080 (FHD 16:9)' },
-  { value: '3840x2160', label: '3840x2160 (4K 16:9)' },
-] as const;
+import { TranscodeResolutionOptions } from '@/helpers/constants.ts';
 
 type ResolutionOptionValues =
-  | (typeof resolutionOptions)[number]['value']
+  | (typeof TranscodeResolutionOptions)[number]['value']
   | 'global';
 
 const resolutionValues = new Set<string>([
   'global',
-  ...map(resolutionOptions, 'value'),
+  ...map(TranscodeResolutionOptions, 'value'),
 ]);
 
 const watermarkPositionOptions: {
@@ -126,7 +114,7 @@ export default function ChannelTranscodingConfig() {
           : 'Unset'
       }`,
     },
-    ...resolutionOptions,
+    ...TranscodeResolutionOptions,
   ];
 
   const targetResForPreview = (targetRes === 'global'
