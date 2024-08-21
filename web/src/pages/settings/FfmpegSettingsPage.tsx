@@ -40,6 +40,7 @@ import { useFfmpegSettings } from '../../hooks/settingsHooks.ts';
 import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 import { useApiQuery } from '../../hooks/useApiQuery.ts';
 import { useSnackbar } from 'notistack';
+import { TranscodeResolutionOptions } from '@/helpers/constants.ts';
 
 const supportedVideoBuffer = [
   { value: 0, string: '0 Seconds' },
@@ -100,19 +101,6 @@ const supportedDeinterlaceFilters: {
   { value: 'w3fdif', string: 'w3fdif' },
   { value: 'yadif=0', string: 'yadif send frame' },
   { value: 'yadif=1', string: 'yadif send field' },
-];
-
-const supportTargetResolution = [
-  { value: '420x420', string: '420x420 (1:1)' },
-  { value: '480x270', string: '480x270 (HD1080/16 16:9)' },
-  { value: '576x320', string: '576x320 (18:10)' },
-  { value: '640x360', string: '640x360 (nHD 16:9)' },
-  { value: '720x480', string: '720x480 (WVGA 3:2)' },
-  { value: '800x600', string: '800x600 (SVGA 4:3)' },
-  { value: '1024x768', string: '1024x768 (WXGA 4:3)' },
-  { value: '1280x720', string: '1280x720 (HD 16:9)' },
-  { value: '1920x1080', string: '1920x1080 (FHD 16:9)' },
-  { value: '3840x2160', string: '3840x2160 (4K 16:9)' },
 ];
 
 type ScalingAlgorithmValue = 'bicubic' | 'fast_bilinear' | 'lanczos' | 'spline';
@@ -478,9 +466,9 @@ export default function FfmpegSettingsPage() {
                   {...field}
                   value={resolutionToString(field.value)}
                 >
-                  {supportTargetResolution.map((resolution) => (
+                  {TranscodeResolutionOptions.map((resolution) => (
                     <MenuItem key={resolution.value} value={resolution.value}>
-                      {resolution.string}
+                      {resolution.label}
                     </MenuItem>
                   ))}
                 </Select>
