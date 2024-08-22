@@ -73,6 +73,7 @@
     "ts-essentials": "^9.4.1",
     "typescript": "5.4.3",
     "vite": "^5.4.1",
+    "vite-plugin-svgr": "^4.2.0",
     "vitest": "^2.0.5"
   }
 }

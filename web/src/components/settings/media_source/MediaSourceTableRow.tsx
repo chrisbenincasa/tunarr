@@ -2,14 +2,15 @@ import { useTunarrApi } from '@/hooks/useTunarrApi.ts';
 import { CloudDoneOutlined, CloudOff, Delete, Edit } from '@mui/icons-material';
 import { IconButton, Link, TableCell, TableRow } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { PlexServerSettings } from '@tunarr/types';
-import { isNull, isUndefined } from 'lodash-es';
+import { MediaSourceSettings } from '@tunarr/types';
+import { capitalize, isNull, isUndefined } from 'lodash-es';
 import { useState } from 'react';
 import { RotatingLoopIcon } from '../../base/LoadingIcon.tsx';
-import { PlexServerDeleteDialog } from './PlexServerDeleteDialog.tsx';
+import { MediaSourceDeleteDialog } from './MediaSourceDeleteDialog.tsx';
 import { PlexServerEditDialog } from './PlexServerEditDialog.tsx';
+import { JellyfinServerEditDialog } from './JelllyfinServerEditDialog.tsx';
 
-export function PlexServerRow({ server }: PlexServerRowProps) {
+export function MediaSourceTableRow({ server }: MediaSourceTableRowProps) {
   const apiClient = useTunarrApi();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -19,7 +20,8 @@ export function PlexServerRow({ server }: PlexServerRowProps) {
     error: backendStatusError,
   } = useQuery({
     queryKey: ['plex-servers', server.id, 'status'],
-    queryFn: () => apiClient.getPlexServerStatus({ params: { id: server.id } }),
+    queryFn: () =>
+      apiClient.getMediaSourceStatus({ params: { id: server.id } }),
     staleTime: 1000 * 60 * 5,
   });
 
@@ -28,9 +30,31 @@ export function PlexServerRow({ server }: PlexServerRowProps) {
     !isUndefined(backendStatus) &&
     backendStatus.healthy;
 
+  const renderEditDialog = () => {
+    switch (server.type) {
+      case 'plex':
+        return (
+          <PlexServerEditDialog
+            open={editDialogOpen}
+            onClose={() => setEditDialogOpen(false)}
+            server={server}
+          />
+        );
+      case 'jellyfin':
+        return (
+          <JellyfinServerEditDialog
+            open={editDialogOpen}
+            onClose={() => setEditDialogOpen(false)}
+            server={server}
+          />
+        );
+    }
+  };
+
   return (
     <>
       <TableRow>
+        <TableCell>{capitalize(server.type)}</TableCell>
         <TableCell width="1%">{server.name}</TableCell>
         <TableCell width="60%">
           <Link href={server.uri} target={'_blank'}>
@@ -60,19 +84,15 @@ export function PlexServerRow({ server }: PlexServerRowProps) {
           </>
         </TableCell>
       </TableRow>
-      <PlexServerDeleteDialog
+      <MediaSourceDeleteDialog
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
         serverId={server.id}
       />
-      <PlexServerEditDialog
-        open={editDialogOpen}
-        onClose={() => setEditDialogOpen(false)}
-        server={server}
-      />
+      {renderEditDialog()}
     </>
   );
 }
-export type PlexServerRowProps = {
-  server: PlexServerSettings;
+export type MediaSourceTableRowProps = {
+  server: MediaSourceSettings;
 };

@@ -1,14 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
 import { DefaultPlexHeaders } from '@tunarr/shared/constants';
-import { PlexServerSettings } from '@tunarr/types';
+import { MediaSourceSettings } from '@tunarr/types';
 import axios from 'axios';
 
-export const usePlexServerStatus = ({
+export const useMediaSourceStatus = ({
+  type,
   uri,
   accessToken,
-}: Pick<PlexServerSettings, 'uri' | 'accessToken'>) => {
+}: Pick<MediaSourceSettings, 'type' | 'uri' | 'accessToken'>) => {
   return useQuery({
-    queryKey: ['plex-servers', { uri, accessToken }, 'status-local'],
+    queryKey: ['media-sources', { type, uri, accessToken }, 'status-local'],
     queryFn: async () => {
       try {
         await axios.get(`${uri}`, {

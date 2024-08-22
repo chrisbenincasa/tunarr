@@ -21,6 +21,8 @@ import { useNavigate, Link } from '@tanstack/react-router';
 import { CustomShow } from '@tunarr/types';
 import { useEffect, useCallback } from 'react';
 import { useForm, SubmitHandler, Controller } from 'react-hook-form';
+import { createExternalId } from '@tunarr/shared';
+import { isNonEmptyString } from '@/helpers/util.ts';
 
 type CustomShowForm = {
   id?: string;
@@ -120,11 +122,21 @@ export function EditCustomShowsForm({
           } else {
             title = p.title;
           }
-          id = p.persisted
-            ? p.id!
-            : `${p.externalSourceType}|${p.externalSourceName}|${
-                p.originalProgram!.key
-              }`;
+          if (p.persisted) {
+            id = p.id!;
+          } else if (
+            isNonEmptyString(p.externalSourceType) &&
+            isNonEmptyString(p.externalSourceName) &&
+            isNonEmptyString(p.externalKey)
+          ) {
+            id = createExternalId(
+              p.externalSourceType,
+              p.externalSourceName,
+              p.externalKey,
+            );
+          } else {
+            id = 'unknown';
+          }
           break;
       }
 

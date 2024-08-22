@@ -14,6 +14,10 @@ import { ApiClient } from '../../external/api.ts';
 import { sequentialPromises } from '../../helpers/util.ts';
 import { createExternalId } from '@tunarr/shared';
 import { fetchPlexPath } from '../../helpers/plexUtil.ts';
+import { MediaSourceId } from '@tunarr/types/schemas';
+import { tag } from '@tunarr/types';
+
+export const emptyMediaSourceId = tag<MediaSourceId>('');
 
 export type PlexPathMappings = [
   ['/library/sections', PlexLibrarySections],
@@ -22,16 +26,18 @@ export type PlexPathMappings = [
 
 export const plexQueryOptions = <T>(
   apiClient: ApiClient,
-  serverName: string,
+  serverId: MediaSourceId,
   path: string,
   enabled: boolean = true,
 ) => ({
-  queryKey: ['plex', serverName, path],
-  queryFn: fetchPlexPath<T>(apiClient, serverName, path),
-  enabled: enabled && serverName.length > 0 && path.length > 0,
+  queryKey: ['plex', serverId, path],
+  queryFn: fetchPlexPath<T>(apiClient, serverId, path),
+  enabled: enabled && serverId.length > 0 && path.length > 0,
 });
 
 export type EnrichedPlexMedia = PlexTerminalMedia & {
+  // The internal Tunarr ID of the media source
+  serverId: MediaSourceId;
   // This is the Plex server name that the info was retrieved from
   serverName: string;
   // If we found an existing reference to this item on the server, we add it here
@@ -42,17 +48,18 @@ export type EnrichedPlexMedia = PlexTerminalMedia & {
 
 export const enumeratePlexItem = (
   apiClient: ApiClient,
+  serverId: MediaSourceId,
   serverName: string,
   initialItem: PlexMedia | PlexLibrarySection,
 ): (() => Promise<EnrichedPlexMedia[]>) => {
   const fetchPlexPathFunc = <T>(path: string) =>
-    fetchPlexPath<T>(apiClient, serverName, path)();
+    fetchPlexPath<T>(apiClient, serverId, path)();
 
   async function loopInner(
     item: PlexMedia | PlexLibrarySection,
   ): Promise<EnrichedPlexMedia[]> {
     if (isTerminalItem(item)) {
-      return [{ ...item, serverName }];
+      return [{ ...item, serverName, serverId }];
     } else {
       const path = isPlexDirectory(item)
         ? `/library/sections/${item.key}/all`

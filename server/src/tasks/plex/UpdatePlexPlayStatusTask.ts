@@ -1,11 +1,11 @@
 import { RecurrenceRule } from 'node-schedule';
-import { PlexServerSettings } from '../dao/entities/PlexServerSettings';
-import { PlexApiFactory } from '../external/PlexApiFactory';
-import { run } from '../util';
-import { ScheduledTask } from './ScheduledTask';
-import { Task } from './Task';
+import { MediaSource } from '../../dao/entities/MediaSource';
+import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory';
+import { run } from '../../util';
+import { ScheduledTask } from '../ScheduledTask';
+import { Task } from '../Task';
 import dayjs from 'dayjs';
-import { GlobalScheduler } from '../services/scheduler';
+import { GlobalScheduler } from '../../services/scheduler';
 import { v4 } from 'uuid';
 
 type UpdatePlexPlayStatusScheduleRequest = {
@@ -33,7 +33,7 @@ export class UpdatePlexPlayStatusScheduledTask extends ScheduledTask {
   private playState: PlayState = 'playing';
 
   constructor(
-    private plexServer: PlexServerSettings,
+    private plexServer: MediaSource,
     private request: UpdatePlexPlayStatusScheduleRequest,
     public sessionId: string = v4(),
   ) {
@@ -96,14 +96,14 @@ class UpdatePlexPlayStatusTask extends Task {
   }
 
   constructor(
-    private plexServer: PlexServerSettings,
+    private plexServer: MediaSource,
     private request: UpdatePlexPlayStatusInvocation,
   ) {
     super();
   }
 
   protected async runInternal(): Promise<boolean> {
-    const plex = PlexApiFactory().get(this.plexServer);
+    const plex = MediaSourceApiFactory().get(this.plexServer);
 
     const deviceName = `tunarr-channel-${this.request.channelNumber}`;
     const params = {
@@ -119,7 +119,7 @@ class UpdatePlexPlayStatusTask extends Task {
     };
 
     try {
-      await plex.doPost('/:/timeline', params);
+      await plex.doPost({ url: '/:/timeline', params });
     } catch (error) {
       this.logger.warn(
         error,

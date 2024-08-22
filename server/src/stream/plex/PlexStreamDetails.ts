@@ -17,22 +17,20 @@ import {
   replace,
   trimEnd,
 } from 'lodash-es';
-import { PlexServerSettings } from '../../dao/entities/PlexServerSettings';
-import {
-  Plex,
-  isPlexQueryError,
-  isPlexQuerySuccess,
-} from '../../external/plex';
-import { PlexApiFactory } from '../../external/PlexApiFactory';
+import { MediaSource } from '../../dao/entities/MediaSource';
+import { PlexApiClient } from '../../external/plex/PlexApiClient';
+import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory';
 import { Nullable } from '../../types/util';
 import { Logger, LoggerFactory } from '../../util/logging/LoggerFactory';
-import { PlexStream, StreamDetails } from './PlexTranscoder';
+import { PlexStream } from '../types';
+import { StreamDetails } from '../types';
 import { attempt, isNonEmptyString } from '../../util';
 import { ContentBackedStreamLineupItem } from '../../dao/derived_types/StreamLineup.js';
 import { SettingsDB } from '../../dao/settings.js';
 import { makeLocalUrl } from '../../util/serverUtil.js';
 import { ProgramDB } from '../../dao/programDB';
 import { ProgramExternalIdType } from '../../dao/custom_types/ProgramExternalIdType';
+import { isQueryError, isQuerySuccess } from '../../external/BaseApiClient.js';
 
 // The minimum fields we need to get stream details about an item
 type PlexItemStreamDetailsQuery = Pick<
@@ -48,10 +46,10 @@ type PlexItemStreamDetailsQuery = Pick<
  */
 export class PlexStreamDetails {
   private logger: Logger;
-  private plex: Plex;
+  private plex: PlexApiClient;
 
   constructor(
-    private server: PlexServerSettings,
+    private server: MediaSource,
     private settings: SettingsDB,
     private programDB: ProgramDB,
   ) {
@@ -61,7 +59,7 @@ export class PlexStreamDetails {
       caller: import.meta,
     });
 
-    this.plex = PlexApiFactory().get(this.server);
+    this.plex = MediaSourceApiFactory().get(this.server);
   }
 
   async getStream(item: PlexItemStreamDetailsQuery) {
@@ -81,7 +79,7 @@ export class PlexStreamDetails {
       item.externalKey,
     );
 
-    if (isPlexQueryError(itemMetadataResult)) {
+    if (isQueryError(itemMetadataResult)) {
       if (itemMetadataResult.code === 'not_found') {
         this.logger.debug(
           'Could not find item %s in Plex. Rating key may have changed. Attempting to update.',
@@ -105,7 +103,7 @@ export class PlexStreamDetails {
             },
           );
 
-          if (isPlexQuerySuccess(byGuidResult)) {
+          if (isQuerySuccess(byGuidResult)) {
             if (byGuidResult.data.MediaContainer.size > 0) {
               this.logger.debug(
                 'Found %d matching items in library. Using the first',
@@ -286,7 +284,7 @@ export class PlexStreamDetails {
       // We have to check that we can hit this URL or the stream will not work
       if (isNonEmptyString(placeholderThumbPath)) {
         const result = await attempt(() =>
-          this.plex.doHead(placeholderThumbPath),
+          this.plex.doHead({ url: placeholderThumbPath }),
         );
         if (!isError(result)) {
           streamDetails.placeholderImage =

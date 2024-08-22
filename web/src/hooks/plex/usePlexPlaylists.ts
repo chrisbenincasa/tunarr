@@ -8,7 +8,7 @@ import { useTunarrApi } from '../useTunarrApi.ts';
 import { PlexPlaylists } from '@tunarr/types/plex';
 import { useEffect } from 'react';
 import { isNonEmptyString } from '@/helpers/util.ts';
-import { addKnownMediaForServer } from '@/store/programmingSelector/actions.ts';
+import { addKnownMediaForPlexServer } from '@/store/programmingSelector/actions.ts';
 
 /**
  * Currently makes the assumption that are operating on an a music library
@@ -25,9 +25,10 @@ export const usePlexPlaylistsInfinite = (
   const queryResult = useInfiniteQuery({
     queryKey: [
       'plex',
-      plexServer?.name,
+      plexServer?.id,
       currentLibrary?.library.key,
       'playlists',
+      'infinite',
     ],
     queryFn: ({ pageParam }) => {
       const plexQuery = new URLSearchParams({
@@ -39,7 +40,7 @@ export const usePlexPlaylistsInfinite = (
 
       return fetchPlexPath<PlexPlaylists>(
         apiClient,
-        plexServer!.name,
+        plexServer!.id,
         `/playlists?${plexQuery.toString()}`,
       )();
     },
@@ -57,16 +58,16 @@ export const usePlexPlaylistsInfinite = (
   });
 
   useEffect(() => {
-    if (isNonEmptyString(plexServer?.name) && !isUndefined(queryResult.data)) {
+    if (isNonEmptyString(plexServer?.id) && !isUndefined(queryResult.data)) {
       const playlists = chain(queryResult.data.pages)
         .reject((page) => page.size === 0)
         .map((page) => page.Metadata)
         .compact()
         .flatten()
         .value();
-      addKnownMediaForServer(plexServer.name, playlists);
+      addKnownMediaForPlexServer(plexServer.id, playlists);
     }
-  }, [plexServer?.name, queryResult.data]);
+  }, [plexServer?.id, queryResult.data]);
 
   return queryResult;
 };

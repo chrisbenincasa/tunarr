@@ -17,16 +17,23 @@ import z from 'zod';
 import {
   ProgramSourceType,
   programSourceTypeFromString,
+  programSourceTypeToMediaSource,
 } from '../dao/custom_types/ProgramSourceType.js';
 import { getEm } from '../dao/dataSource.js';
 import { Program, ProgramType } from '../dao/entities/Program.js';
-import { Plex } from '../external/plex.js';
+import { PlexApiClient } from '../external/plex/PlexApiClient.js';
 import { TruthyQueryParam } from '../types/schemas.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { ProgramGrouping } from '../dao/entities/ProgramGrouping.js';
-import { ifDefined } from '../util/index.js';
+import { ifDefined, isNonEmptyString } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
-import { ProgramExternalIdType } from '../dao/custom_types/ProgramExternalIdType.js';
+import {
+  ProgramExternalIdType,
+  programExternalIdTypeFromSourceType,
+  programExternalIdTypeToMediaSourceType,
+} from '../dao/custom_types/ProgramExternalIdType.js';
+import { MediaSource } from '../dao/entities/MediaSource.js';
+import { JellyfinApiClient } from '../external/jellyfin/JellyfinApiClient.js';
 
 const LookupExternalProgrammingSchema = z.object({
   externalId: z
@@ -94,30 +101,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         return res.status(404).send();
       }
 
-      const handlePlexItem = async (
-        externalKey: string | undefined,
-        externalSourceId: string,
-      ) => {
-        if (isNil(externalKey)) {
-          return res.status(500).send();
-        }
-
-        const server =
-          await req.serverCtx.plexServerDB.getByExternalid(externalSourceId);
-
-        if (isNil(server)) {
-          return res.status(404).send();
-        }
-
-        const result = Plex.getThumbUrl({
-          uri: server.uri,
-          itemKey: externalKey,
-          accessToken: server.accessToken,
-          height: req.query.height,
-          width: req.query.width,
-          upscale: req.query.upscale.toString(),
-        });
-
+      const handleResult = async (mediaSource: MediaSource, result: string) => {
         if (req.query.proxy) {
           try {
             const proxyRes = await axios.request<stream.Readable>({
@@ -141,8 +125,9 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
           } catch (e) {
             if (isAxiosError(e) && e.response?.status === 404) {
               logger.error(
-                'Error retrieving thumb from Plex at url: %s. Status: 404',
-                result.replaceAll(server.accessToken, 'REDACTED_TOKEN'),
+                'Error retrieving thumb from %s at url: %s. Status: 404',
+                mediaSource.type,
+                result.replaceAll(mediaSource.accessToken, 'REDACTED_TOKEN'),
               );
               return res.status(404).send();
             }
@@ -154,37 +139,118 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
       };
 
       if (!isNil(program)) {
+        const mediaSource = await req.serverCtx.mediaSourceDB.getByExternalId(
+          programSourceTypeToMediaSource(program.sourceType),
+          program.externalSourceId,
+        );
+
+        if (isNil(mediaSource)) {
+          return res.status(404).send();
+        }
+
+        let keyToUse = program.externalKey;
+        if (program.type === ProgramType.Track && !isNil(program.album)) {
+          ifDefined(
+            find(
+              program.album.$.externalRefs,
+              (ref) =>
+                ref.sourceType ===
+                  programExternalIdTypeFromSourceType(program.sourceType) &&
+                ref.externalSourceId === program.externalSourceId,
+            ),
+            (ref) => {
+              keyToUse = ref.externalKey;
+            },
+          );
+        }
+
+        if (isNil(keyToUse)) {
+          return res.status(500).send();
+        }
+
         switch (program.sourceType) {
           case ProgramSourceType.PLEX: {
-            let keyToUse = program.externalKey;
-            if (program.type === ProgramType.Track && !isNil(program.album)) {
-              ifDefined(
-                find(
-                  program.album.$.externalRefs,
-                  (ref) =>
-                    ref.sourceType === ProgramExternalIdType.PLEX &&
-                    ref.externalSourceId === program.externalSourceId,
-                ),
-                (ref) => {
-                  keyToUse = ref.externalKey;
-                },
-              );
-            }
-            return handlePlexItem(keyToUse, program.externalSourceId);
+            return handleResult(
+              mediaSource,
+              PlexApiClient.getThumbUrl({
+                uri: mediaSource.uri,
+                itemKey: keyToUse,
+                accessToken: mediaSource.accessToken,
+                height: req.query.height,
+                width: req.query.width,
+                upscale: req.query.upscale.toString(),
+              }),
+            );
           }
+          case ProgramSourceType.JELLYFIN:
+            return handleResult(
+              mediaSource,
+              JellyfinApiClient.getThumbUrl({
+                uri: mediaSource.uri,
+                itemKey: keyToUse,
+                accessToken: mediaSource.accessToken,
+                height: req.query.height,
+                width: req.query.width,
+                upscale: req.query.upscale.toString(),
+              }),
+            );
           default:
             return res.status(405).send();
         }
       } else {
         // We can assume that we have a grouping here...
         // We only support Plex now
-        const source = find(grouping!.externalRefs, {
-          sourceType: ProgramExternalIdType.PLEX,
-        });
+        const source = find(
+          grouping!.externalRefs,
+          (ref) =>
+            ref.sourceType === ProgramExternalIdType.PLEX ||
+            ref.sourceType === ProgramExternalIdType.JELLYFIN,
+        );
+
         if (isNil(source)) {
           return res.status(500).send();
+        } else if (!isNonEmptyString(source.externalSourceId)) {
+          return res.status(500).send();
         }
-        return handlePlexItem(source.externalKey, source.externalSourceId!);
+
+        const mediaSource = await req.serverCtx.mediaSourceDB.getByExternalId(
+          programExternalIdTypeToMediaSourceType(source.sourceType)!,
+          source.externalSourceId,
+        );
+
+        if (isNil(mediaSource)) {
+          return res.status(404).send();
+        }
+
+        switch (source.sourceType) {
+          case ProgramExternalIdType.PLEX:
+            return handleResult(
+              mediaSource,
+              PlexApiClient.getThumbUrl({
+                uri: mediaSource.uri,
+                itemKey: source.externalSourceId,
+                accessToken: mediaSource.accessToken,
+                height: req.query.height,
+                width: req.query.width,
+                upscale: req.query.upscale.toString(),
+              }),
+            );
+          case ProgramExternalIdType.JELLYFIN:
+            return handleResult(
+              mediaSource,
+              JellyfinApiClient.getThumbUrl({
+                uri: mediaSource.uri,
+                itemKey: source.externalSourceId,
+                accessToken: mediaSource.accessToken,
+                height: req.query.height,
+                width: req.query.width,
+                upscale: req.query.upscale.toString(),
+              }),
+            );
+          default:
+            // Impossible
+            return res.status(500).send();
+        }
       }
     },
   );
@@ -206,21 +272,39 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
     },
     async (req, res) => {
       const em = getEm();
-      const program = await em.repo(Program).findOne({ uuid: req.params.id });
+      const program = await em
+        .repo(Program)
+        .findOne({ uuid: req.params.id }, { populate: ['externalIds'] });
       if (isNil(program)) {
         return res.status(404).send();
       }
 
-      const plexServers = await req.serverCtx.plexServerDB.getAll();
+      const mediaSources = await req.serverCtx.mediaSourceDB.getAll();
 
-      switch (program.sourceType) {
-        case ProgramSourceType.PLEX: {
-          if (isNil(program.externalKey)) {
-            return res.status(500).send();
-          }
+      const externalId = program.externalIds.$.find(
+        (eid) =>
+          eid.sourceType === ProgramExternalIdType.JELLYFIN ||
+          eid.sourceType === ProgramExternalIdType.PLEX,
+      );
 
-          const server = find(plexServers, { name: program.externalSourceId });
-          if (isNil(server) || isNil(server.clientIdentifier)) {
+      if (!externalId) {
+        return res.status(404).send();
+      }
+
+      const server = find(
+        mediaSources,
+        (source) =>
+          source.uuid === externalId.externalSourceId ||
+          source.name === externalId.externalSourceId,
+      );
+
+      if (isNil(server)) {
+        return res.status(404).send();
+      }
+
+      switch (externalId.sourceType) {
+        case ProgramExternalIdType.PLEX: {
+          if (isNil(server.clientIdentifier)) {
             return res.status(404).send();
           }
 
@@ -230,6 +314,14 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
             `/library/metadata/${program.externalKey}`,
           )}&X-Plex-Token=${server.accessToken}`;
 
+          if (!req.query.forward) {
+            return res.send({ url });
+          }
+
+          return res.redirect(302, url).send();
+        }
+        case ProgramExternalIdType.JELLYFIN: {
+          const url = `${server.uri}/web/#/details?id=${externalId.externalKey}`;
           if (!req.query.forward) {
             return res.send({ url });
           }

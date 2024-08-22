@@ -1,17 +1,18 @@
 import { ref } from '@mikro-orm/core';
 import { PlexTerminalMedia } from '@tunarr/types/plex';
 import { compact, isEmpty, isError, isUndefined, map } from 'lodash-es';
-import { ProgramExternalIdType } from '../dao/custom_types/ProgramExternalIdType.js';
-import { getEm } from '../dao/dataSource.js';
-import { Program } from '../dao/entities/Program.js';
-import { ProgramExternalId } from '../dao/entities/ProgramExternalId.js';
-import { upsertProgramExternalIds_deprecated } from '../dao/programExternalIdHelpers.js';
-import { Plex, isPlexQueryError } from '../external/plex.js';
-import { PlexApiFactory } from '../external/PlexApiFactory.js';
-import { Maybe } from '../types/util.js';
-import { parsePlexExternalGuid } from '../util/externalIds.js';
-import { isDefined, isNonEmptyString } from '../util/index.js';
-import { Task } from './Task.js';
+import { ProgramExternalIdType } from '../../dao/custom_types/ProgramExternalIdType.js';
+import { getEm } from '../../dao/dataSource.js';
+import { Program } from '../../dao/entities/Program.js';
+import { ProgramExternalId } from '../../dao/entities/ProgramExternalId.js';
+import { upsertProgramExternalIds_deprecated } from '../../dao/programExternalIdHelpers.js';
+import { PlexApiClient } from '../../external/plex/PlexApiClient.js';
+import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.js';
+import { Maybe } from '../../types/util.js';
+import { parsePlexExternalGuid } from '../../util/externalIds.js';
+import { isDefined, isNonEmptyString } from '../../util/index.js';
+import { Task } from '../Task.js';
+import { isQueryError } from '../../external/BaseApiClient.js';
 
 export class SavePlexProgramExternalIdsTask extends Task {
   ID = SavePlexProgramExternalIdsTask.name;
@@ -36,13 +37,13 @@ export class SavePlexProgramExternalIdsTask extends Task {
     }
 
     let chosenId: Maybe<ProgramExternalId> = undefined;
-    let api: Maybe<Plex>;
+    let api: Maybe<PlexApiClient>;
     for (const id of plexIds) {
       if (!isNonEmptyString(id.externalSourceId)) {
         continue;
       }
 
-      api = await PlexApiFactory().getOrSet(id.externalSourceId);
+      api = await MediaSourceApiFactory().getOrSet(id.externalSourceId);
 
       if (isDefined(api)) {
         chosenId = id;
@@ -56,7 +57,7 @@ export class SavePlexProgramExternalIdsTask extends Task {
 
     const metadataResult = await api.getItemMetadata(chosenId.externalKey);
 
-    if (isPlexQueryError(metadataResult)) {
+    if (isQueryError(metadataResult)) {
       this.logger.error(
         'Error querying Plex for item %s',
         chosenId.externalKey,

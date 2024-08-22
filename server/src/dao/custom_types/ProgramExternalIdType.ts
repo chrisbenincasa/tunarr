@@ -1,5 +1,7 @@
 import { ExternalIdType } from '@tunarr/types/schemas';
 import { enumKeys } from '../../util/enumUtil.js';
+import { ProgramSourceType } from './ProgramSourceType.js';
+import { MediaSourceType } from '../entities/MediaSource.js';
 
 export enum ProgramExternalIdType {
   PLEX = 'plex',
@@ -7,12 +9,37 @@ export enum ProgramExternalIdType {
   TMDB = 'tmdb',
   IMDB = 'imdb',
   TVDB = 'tvdb',
+  JELLYFIN = 'jellyfin',
 }
 
 export function programExternalIdTypeFromExternalIdType(
   str: ExternalIdType,
 ): ProgramExternalIdType {
   return programExternalIdTypeFromString(str)!;
+}
+
+export function programExternalIdTypeFromSourceType(
+  src: ProgramSourceType,
+): ProgramExternalIdType {
+  switch (src) {
+    case ProgramSourceType.PLEX:
+      return ProgramExternalIdType.PLEX;
+    case ProgramSourceType.JELLYFIN:
+      return ProgramExternalIdType.JELLYFIN;
+  }
+}
+
+export function programExternalIdTypeToMediaSourceType(
+  src: ProgramExternalIdType,
+) {
+  switch (src) {
+    case ProgramExternalIdType.PLEX:
+      return MediaSourceType.Plex;
+    case ProgramExternalIdType.JELLYFIN:
+      return MediaSourceType.Jellyfin;
+    default:
+      return;
+  }
 }
 
 export function programExternalIdTypeFromString(
@@ -25,4 +52,17 @@ export function programExternalIdTypeFromString(
     }
   }
   return;
+}
+
+export function programExternalIdTypeFromJellyfinProvider(provider: string) {
+  switch (provider.toLowerCase()) {
+    case 'tmdb':
+      return ProgramExternalIdType.TMDB;
+    case 'imdb':
+      return ProgramExternalIdType.IMDB;
+    case 'tvdb':
+      return ProgramExternalIdType.TVDB;
+    default:
+      return null;
+  }
 }

@@ -7,9 +7,9 @@ import { isNil, map } from 'lodash-es';
 import { ChannelDB } from '../../dao/channelDb.js';
 import { EntityManager } from '../../dao/dataSource.js';
 import { Channel } from '../../dao/entities/Channel.js';
-import { PlexServerSettings } from '../../dao/entities/PlexServerSettings.js';
+import { MediaSource } from '../../dao/entities/MediaSource.js';
 import { ProgramDB } from '../../dao/programDB.js';
-import { Plex } from '../../external/plex.js';
+import { PlexApiClient } from '../../external/plex/PlexApiClient.js';
 import {
   EnrichedPlexTerminalMedia,
   PlexItemEnumerator,
@@ -26,7 +26,7 @@ export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicConten
     className: PlexContentSourceUpdater.name,
   });
   #timer = new Timer(this.#logger);
-  #plex: Plex;
+  #plex: PlexApiClient;
   #channelDB: ChannelDB;
 
   constructor(
@@ -38,14 +38,14 @@ export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicConten
   }
 
   protected async prepare(em: EntityManager) {
-    const server = await em.repo(PlexServerSettings).findOneOrFail({
+    const server = await em.repo(MediaSource).findOneOrFail({
       $or: [
         { name: this.config.plexServerId },
         { clientIdentifier: this.config.plexServerId },
       ],
     });
 
-    this.#plex = new Plex(server);
+    this.#plex = new PlexApiClient(server);
   }
 
   protected async run() {
@@ -53,7 +53,7 @@ export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicConten
 
     // TODO page through the results
     const plexResult = await this.#timer.timeAsync('plex search', () =>
-      this.#plex.doGet<PlexLibraryListing>(
+      this.#plex.doGetPath<PlexLibraryListing>(
         `/library/sections/${this.config.plexLibraryKey}/all?${filter.join(
           '&',
         )}`,
@@ -100,7 +100,7 @@ const plexMediaToContentProgram = (
   return {
     id: media.id ?? uniqueId,
     persisted: !isNil(media.id),
-    originalProgram: media,
+    originalProgram: { sourceType: 'plex', program: media },
     duration: media.duration,
     externalSourceName: serverName,
     externalSourceType: 'plex',

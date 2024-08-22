@@ -9,6 +9,7 @@ import {
   PlexMusicTrackSchema,
 } from '../plex/index.js';
 import { ChannelIconSchema, ExternalIdSchema } from './utilSchemas.js';
+import { JellyfinItem } from '../jellyfin/index.js';
 
 export const ProgramTypeSchema = z.union([
   z.literal('movie'),
@@ -19,7 +20,10 @@ export const ProgramTypeSchema = z.union([
   z.literal('flex'),
 ]);
 
-export const ExternalSourceTypeSchema = z.literal('plex');
+export const ExternalSourceTypeSchema = z.union([
+  z.literal('plex'),
+  z.literal('jellyfin'),
+]);
 
 export const ProgramSchema = z.object({
   artistName: z.string().optional(),
@@ -80,17 +84,30 @@ export const RedirectProgramSchema = BaseProgramSchema.extend({
   channelName: z.string(),
 });
 
+const OriginalProgramSchema = z.discriminatedUnion('sourceType', [
+  z.object({
+    sourceType: z.literal('plex'),
+    program: z.discriminatedUnion('type', [
+      PlexEpisodeSchema,
+      PlexMovieSchema,
+      PlexMusicTrackSchema,
+    ]),
+  }),
+  z.object({
+    sourceType: z.literal('jellyfin'),
+    program: JellyfinItem,
+  }),
+]);
+
+export type ContentProgramOriginalProgram = z.infer<
+  typeof OriginalProgramSchema
+>;
+
 export const CondensedContentProgramSchema = BaseProgramSchema.extend({
   type: z.literal('content'),
   id: z.string().optional(), // Populated if persisted
   // Only populated on client requests to the server
-  originalProgram: z
-    .discriminatedUnion('type', [
-      PlexEpisodeSchema,
-      PlexMovieSchema,
-      PlexMusicTrackSchema,
-    ])
-    .optional(),
+  originalProgram: OriginalProgramSchema.optional(),
 });
 
 export const ContentProgramTypeSchema = z.union([

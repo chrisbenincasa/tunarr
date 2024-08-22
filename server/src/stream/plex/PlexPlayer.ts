@@ -3,10 +3,13 @@ import EventEmitter from 'events';
 import { isNil, isNull, isUndefined } from 'lodash-es';
 import { Writable } from 'stream';
 import { isContentBackedLineupIteam } from '../../dao/derived_types/StreamLineup.js';
-import { PlexServerSettings } from '../../dao/entities/PlexServerSettings.js';
+import {
+  MediaSource,
+  MediaSourceType,
+} from '../../dao/entities/MediaSource.js';
 import { FFMPEG, FfmpegEvents } from '../../ffmpeg/ffmpeg.js';
 import { GlobalScheduler } from '../../services/scheduler.js';
-import { UpdatePlexPlayStatusScheduledTask } from '../../tasks/UpdatePlexPlayStatusTask.js';
+import { UpdatePlexPlayStatusScheduledTask } from '../../tasks/plex/UpdatePlexPlayStatusTask.js';
 import { TypedEventEmitter } from '../../types/eventEmitter.js';
 import { Maybe, Nullable } from '../../types/util.js';
 import { ifDefined } from '../../util/index.js';
@@ -61,9 +64,12 @@ export class PlexPlayer extends Player {
     }
 
     const ffmpegSettings = this.context.ffmpegSettings;
-    const db = this.context.entityManager.repo(PlexServerSettings);
+    const db = this.context.entityManager.repo(MediaSource);
     const channel = this.context.channel;
-    const server = await db.findOne({ name: lineupItem.externalSourceId });
+    const server = await db.findOne({
+      name: lineupItem.externalSourceId,
+      type: MediaSourceType.Plex,
+    });
     if (isNil(server)) {
       throw Error(
         `Unable to find server "${lineupItem.externalSourceId}" specified by program.`,

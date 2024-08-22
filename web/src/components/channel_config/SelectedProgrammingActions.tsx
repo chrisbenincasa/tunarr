@@ -6,13 +6,14 @@ import { useSnackbar } from 'notistack';
 import { useCallback, useState } from 'react';
 import useStore from '../../store/index.ts';
 import {
-  addKnownMediaForServer,
+  addKnownMediaForPlexServer,
   addPlexSelectedMedia,
   clearSelectedMedia,
 } from '../../store/programmingSelector/actions.ts';
 import { AddedMedia } from '../../types/index.ts';
 import { RotatingLoopIcon } from '../base/LoadingIcon.tsx';
 import AddSelectedMediaButton from './AddSelectedMediaButton.tsx';
+import { useCurrentMediaSourceAndLibrary } from '@/store/programmingSelector/selectors.ts';
 
 type Props = {
   onAddSelectedMedia: (media: AddedMedia[]) => void;
@@ -28,10 +29,8 @@ export default function SelectedProgrammingActions({
   selectAllEnabled = true,
   toggleOrSetSelectedProgramsDrawer, // onSelectionModalClose,
 }: Props) {
-  const [selectedServer, selectedLibrary] = useStore((s) => [
-    s.currentServer,
-    s.currentLibrary?.type === 'plex' ? s.currentLibrary : null,
-  ]);
+  const [selectedServer, selectedLibrary] =
+    useCurrentMediaSourceAndLibrary('plex');
 
   const { urlFilter: plexSearch } = useStore(
     ({ plexSearch: plexQuery }) => plexQuery,
@@ -64,8 +63,11 @@ export default function SelectedProgrammingActions({
       setSelectAllLoading(true);
       directPlexSearchFn()
         .then((response) => {
-          addKnownMediaForServer(selectedServer.name, response.Metadata ?? []);
-          addPlexSelectedMedia(selectedServer.name, response.Metadata);
+          addKnownMediaForPlexServer(
+            selectedServer.id,
+            response.Metadata ?? [],
+          );
+          addPlexSelectedMedia(selectedServer, response.Metadata);
         })
         .catch((e) => {
           console.error('Error while attempting to select all Plex items', e);

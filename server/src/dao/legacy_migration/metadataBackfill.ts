@@ -12,13 +12,13 @@ import {
   PlexTvShow,
 } from '@tunarr/types/plex';
 import { first, groupBy, isNil, isNull, isUndefined, keys } from 'lodash-es';
-import { Plex } from '../../external/plex';
-import { PlexApiFactory } from '../../external/PlexApiFactory';
+import { PlexApiClient } from '../../external/plex/PlexApiClient';
+import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory';
 import { isNonEmptyString, wait } from '../../util';
 import { LoggerFactory } from '../../util/logging/LoggerFactory';
 import { ProgramSourceType } from '../custom_types/ProgramSourceType';
 import { getEm } from '../dataSource';
-import { PlexServerSettings } from '../entities/PlexServerSettings';
+import { MediaSource } from '../entities/MediaSource';
 import { Program, ProgramType } from '../entities/Program';
 import {
   ProgramGrouping,
@@ -84,7 +84,7 @@ export class LegacyMetadataBackfiller {
     programs: Program[],
   ) {
     const em = getEm();
-    const server = await em.findOne(PlexServerSettings, { name: serverName });
+    const server = await em.findOne(MediaSource, { name: serverName });
     if (isNil(server)) {
       this.logger.warn(
         'Could not find plex server details for server %s',
@@ -163,14 +163,14 @@ export class LegacyMetadataBackfiller {
       }
 
       // Otherwise, we need to go and find details...
-      const plex = PlexApiFactory().get(server);
+      const plex = MediaSourceApiFactory().get(server);
 
       // This where the types have to diverge, because the Plex
       // API types differ.
 
       if (type === ProgramType.Episode) {
         // Lookup the episode in Plex
-        const plexResult = await plex.doGet<PlexEpisodeView>(
+        const plexResult = await plex.doGetPath<PlexEpisodeView>(
           '/library/metadata/' + externalKey,
         );
 
@@ -197,10 +197,10 @@ export class LegacyMetadataBackfiller {
           // These will be used on subsequent iterations to identify matches
           // without hitting Plex.
           if (!isUndefined(show)) {
-            const seasons = await plex.doGet<PlexSeasonView>(show.key);
+            const seasons = await plex.doGetPath<PlexSeasonView>(show.key);
             if (!isUndefined(seasons?.Metadata)) {
               for (const season of seasons.Metadata) {
-                const seasonEpisodes = await plex.doGet<PlexEpisodeView>(
+                const seasonEpisodes = await plex.doGetPath<PlexEpisodeView>(
                   season.key,
                 );
                 if (!isUndefined(seasonEpisodes?.Metadata)) {
@@ -302,7 +302,7 @@ export class LegacyMetadataBackfiller {
         }
       } else {
         // Lookup the episode in Plex
-        const plexResult = await plex.doGet<PlexMusicTrackView>(
+        const plexResult = await plex.doGetPath<PlexMusicTrackView>(
           '/library/metadata/' + externalKey,
         );
 
@@ -329,10 +329,10 @@ export class LegacyMetadataBackfiller {
           // These will be used on subsequent iterations to identify matches
           // without hitting Plex.
           if (!isUndefined(artist)) {
-            const albums = await plex.doGet<PlexMusicAlbumView>(artist.key);
+            const albums = await plex.doGetPath<PlexMusicAlbumView>(artist.key);
             if (!isUndefined(albums?.Metadata)) {
               for (const album of albums.Metadata) {
-                const albumTracks = await plex.doGet<PlexMusicTrackView>(
+                const albumTracks = await plex.doGetPath<PlexMusicTrackView>(
                   album.key,
                 );
                 if (!isUndefined(albumTracks?.Metadata)) {
@@ -443,7 +443,7 @@ export class LegacyMetadataBackfiller {
       Metadata: InferredMetadataType[];
     },
   >(
-    plex: Plex,
+    plex: PlexApiClient,
     ratingKey: string,
     cb: (item: InferredMetadataType) => ProgramGrouping | undefined,
   ) {
@@ -485,8 +485,11 @@ export class LegacyMetadataBackfiller {
     InferredPlexType extends { Metadata: InferredMetadataType[] } = {
       Metadata: InferredMetadataType[];
     },
-  >(plex: Plex, ratingKey: string): Promise<InferredMetadataType | undefined> {
-    const plexResult = await plex.doGet<InferredPlexType>(
+  >(
+    plex: PlexApiClient,
+    ratingKey: string,
+  ): Promise<InferredMetadataType | undefined> {
+    const plexResult = await plex.doGetPath<InferredPlexType>(
       '/library/metadata/' + ratingKey,
     );
 

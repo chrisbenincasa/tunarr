@@ -1,7 +1,9 @@
 import { enumKeys } from '../../util/enumUtil.js';
+import { MediaSourceType } from '../entities/MediaSource.js';
 
 export enum ProgramSourceType {
   PLEX = 'plex',
+  JELLYFIN = 'jellyfin',
 }
 
 export function programSourceTypeFromString(
@@ -14,4 +16,22 @@ export function programSourceTypeFromString(
     }
   }
   return;
+}
+
+export function programSourceTypeToMediaSource(src: ProgramSourceType) {
+  switch (src) {
+    case ProgramSourceType.PLEX:
+      return MediaSourceType.Plex;
+    case ProgramSourceType.JELLYFIN:
+      return MediaSourceType.Jellyfin;
+  }
+}
+
+export function programSourceTypeFromMediaSource(src: MediaSourceType) {
+  switch (src) {
+    case MediaSourceType.Plex:
+      return ProgramSourceType.PLEX;
+    case MediaSourceType.Jellyfin:
+      return ProgramSourceType.JELLYFIN;
+  }
 }

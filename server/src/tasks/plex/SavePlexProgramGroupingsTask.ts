@@ -7,7 +7,7 @@ import { ProgramType } from '../../dao/entities/Program.js';
 type SavePlexProgramGroupingsRequest = {
   programType: ProgramType;
   plexServerName: string;
-  programAndPlexIds: { programId: string; plexId: string, parentKey }[];
+  programAndPlexIds: { programId: string; plexId: string; parentKey }[];
   parentKeys: string[];
   grandparentKey: string;
 };
@@ -23,8 +23,9 @@ export class SavePlexProgramGroupingsTask extends Task {
   }
 
   protected async runInternal(): Promise<unknown> {
-    const calculator = new ProgramGroupingCalculator(this.programDB);
-    await calculator.createHierarchyForManyFromPlex(
+    await new ProgramGroupingCalculator(
+      this.programDB,
+    ).createHierarchyForManyFromPlex(
       this.request.programType,
       this.request.plexServerName,
       this.request.programAndPlexIds,

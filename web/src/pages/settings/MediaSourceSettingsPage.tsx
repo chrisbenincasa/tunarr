@@ -2,21 +2,20 @@ import { Add, AutoFixHigh, HelpOutline } from '@mui/icons-material';
 import {
   Box,
   Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
   FormControl,
   FormControlLabel,
   FormHelperText,
   Grid,
   IconButton,
   InputLabel,
+  ListItemIcon,
+  ListItemText,
+  Menu,
   MenuItem,
   Select,
   Skeleton,
   Stack,
+  SvgIcon,
   Table,
   TableBody,
   TableCell,
@@ -29,7 +28,7 @@ import {
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { PlexStreamSettings, defaultPlexStreamSettings } from '@tunarr/types';
-import _, { fill, map } from 'lodash-es';
+import _, { fill, isNull, map } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import { useEffect, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
@@ -40,28 +39,48 @@ import {
   TypedController,
 } from '@/components/util/TypedController.tsx';
 import {
-  usePlexServerSettings,
+  useMediaSources,
   usePlexStreamSettings,
 } from '@/hooks/settingsHooks.ts';
 import { useTunarrApi } from '@/hooks/useTunarrApi.ts';
-import { PlexServerRow } from '@/components/settings/plex/PlexServerRow.tsx';
-import { PlexServerEditDialog } from '@/components/settings/plex/PlexServerEditDialog.tsx';
+import { MediaSourceTableRow } from '@/components/settings/media_source/MediaSourceTableRow';
+import { PlexServerEditDialog } from '@/components/settings/media_source/PlexServerEditDialog';
+import { JellyfinServerEditDialog } from '@/components/settings/media_source/JelllyfinServerEditDialog.tsx';
+import PlexIcon from '@/assets/plex.svg?react';
+import JellyfinIcon from '@/assets/jellyfin.svg?react';
 
 const supportedPaths = [
-  { value: 'plex', string: 'Plex' },
+  { value: 'network', string: 'Network' },
   { value: 'direct', string: 'Direct' },
 ];
 
-export default function PlexSettingsPage() {
+export default function MediaSourceSettingsPage() {
   const apiClient = useTunarrApi();
   const [restoreTunarrDefaults, setRestoreTunarrDefaults] = useState(false);
   const [plexEditDialogOpen, setPlexEditDialogOpen] = useState(false);
+  const [jellyfinEditDialogOpen, setJellyfinEditDialogOpen] = useState(false);
+
+  const [manualAddPopoverRef, setManualAddPopoverRef] =
+    useState<HTMLButtonElement | null>(null);
+
+  const openManualAddButtonMenu = (
+    event: React.MouseEvent<HTMLButtonElement>,
+  ) => {
+    setManualAddPopoverRef(event.currentTarget);
+  };
+
+  const closeManualAddButtonMenu = () => {
+    setManualAddPopoverRef(null);
+  };
+
+  const open = !isNull(manualAddPopoverRef);
+  const id = open ? 'simple-popover' : undefined;
 
   const {
     data: servers,
     isPending: serversPending,
     error: serversError,
-  } = usePlexServerSettings();
+  } = useMediaSources();
 
   const { data: streamSettings, error: streamsError } = usePlexStreamSettings();
 
@@ -82,7 +101,13 @@ export default function PlexSettingsPage() {
 
   useEffect(() => {
     if (streamSettings) {
-      reset(streamSettings);
+      reset({
+        ...streamSettings,
+        streamPath:
+          streamSettings.streamPath === 'plex'
+            ? 'network'
+            : streamSettings.streamPath,
+      });
     }
   }, [streamSettings, reset]);
 
@@ -122,70 +147,14 @@ export default function PlexSettingsPage() {
     });
   };
 
-  const [deletePlexConfirmation, setDeletePlexConfirmation] = useState<
-    string | undefined
-  >(undefined);
-
-  const removePlexServerMutation = useMutation({
-    mutationFn: (id: string) => {
-      return apiClient.deletePlexServer(null, { params: { id } });
-    },
-    onSuccess: () => {
-      return queryClient.invalidateQueries({
-        queryKey: ['settings', 'plex-servers'],
-      });
-    },
-  });
-
   // This is messy, lets consider getting rid of combine, it probably isnt useful here
   if (serversError || streamsError) {
     return <h1>XML: {(serversError ?? streamsError)!.message}</h1>;
   }
 
-  const renderConfirmationDialog = () => {
-    return (
-      <Dialog
-        open={!!deletePlexConfirmation}
-        onClose={() => setDeletePlexConfirmation(undefined)}
-        aria-labelledby="delete-plex-server-title"
-        aria-describedby="delete-plex-server-description"
-      >
-        <DialogTitle id="delete-plex-server-title">
-          {'Delete Plex Server?'}
-        </DialogTitle>
-        <DialogContent>
-          <DialogContentText id="delete-plex-server-description">
-            Deleting a Plex server will remove all programming from your
-            channels associated with this plex server. Missing programming will
-            be replaced with Flex time. This action cannot be undone.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => setDeletePlexConfirmation(undefined)}
-            autoFocus
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={() => removePlexServer(deletePlexConfirmation!)}
-            variant="contained"
-          >
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
-    );
-  };
-
-  const removePlexServer = (id: string) => {
-    removePlexServerMutation.mutate(id);
-    setDeletePlexConfirmation(undefined);
-  };
-
   const getTableRows = () => {
     return map(servers, (server) => {
-      return <PlexServerRow key={server.id} server={server} />;
+      return <MediaSourceTableRow key={server.id} server={server} />;
     });
   };
 
@@ -214,31 +183,32 @@ export default function PlexSettingsPage() {
         <Table>
           <TableHead>
             <TableRow>
+              <TableCell>Type</TableCell>
               <TableCell>Name</TableCell>
               <TableCell>URL</TableCell>
-              {/* <TableCell align="center">
-                UI
-                <Tooltip
-                  placement="top"
-                  title="The connection to Plex from the browser. Affects the ability to edit channel programming."
-                >
-                  <IconButton size="small" edge="end">
-                    <HelpOutline sx={{ opacity: 0.75 }} />
-                  </IconButton>
-                </Tooltip>
-              </TableCell> */}
-              <TableCell align="center">
+              <TableCell align="center" sx={{ minWidth: 125 }}>
                 Healthy?
                 <Tooltip
                   placement="top"
-                  title="The connection to Plex from the Tunarr server."
+                  componentsProps={{
+                    popper: {
+                      sx: { textAlign: 'center' },
+                    },
+                  }}
+                  title={
+                    <span>
+                      The connection to the media source
+                      <br />
+                      from the Tunarr server.
+                    </span>
+                  }
                 >
                   <IconButton size="small" edge="end">
                     <HelpOutline sx={{ opacity: 0.75 }} />
                   </IconButton>
                 </Tooltip>
               </TableCell>
-              <TableCell></TableCell>
+              <TableCell sx={{ minWidth: 125 }}></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -290,9 +260,20 @@ export default function PlexSettingsPage() {
     );
   };
 
+  const handleOpenMediaSourceDialog = (source: 'plex' | 'jellyfin') => {
+    switch (source) {
+      case 'plex':
+        setPlexEditDialogOpen(true);
+        break;
+      case 'jellyfin':
+        setJellyfinEditDialogOpen(true);
+        break;
+    }
+    closeManualAddButtonMenu();
+  };
+
   return (
     <Box component="form" onSubmit={handleSubmit(updatePlexStreamSettings)}>
-      {renderConfirmationDialog()}
       <Box>
         <Box mb={2}>
           <Stack
@@ -301,31 +282,74 @@ export default function PlexSettingsPage() {
             useFlexGap
             sx={{ flexWrap: 'wrap' }}
           >
-            <Typography variant="h6" sx={{ flexGrow: 1 }}>
-              Plex Servers
+            <Typography
+              variant="h6"
+              sx={(theme) => ({
+                flexGrow: 1,
+                [theme.breakpoints.down('sm')]: {
+                  width: '100%',
+                },
+              })}
+            >
+              Media Sources
             </Typography>
             <AddPlexServer title="Discover" icon={AutoFixHigh} />
-            <Button
-              color="inherit"
-              onClick={() => setPlexEditDialogOpen(true)}
-              variant="contained"
-              startIcon={<Add />}
-            >
-              Manual Add
-            </Button>
+            <Box>
+              <Button
+                color="inherit"
+                onClick={openManualAddButtonMenu}
+                variant="contained"
+                startIcon={<Add />}
+              >
+                Add
+              </Button>
+              <Menu
+                id={id}
+                open={open}
+                anchorEl={manualAddPopoverRef}
+                onClose={closeManualAddButtonMenu}
+                anchorOrigin={{
+                  vertical: 'bottom',
+                  horizontal: 'left',
+                }}
+                slotProps={{
+                  paper: {
+                    sx: { minWidth: 150 },
+                  },
+                }}
+              >
+                <MenuItem onClick={() => handleOpenMediaSourceDialog('plex')}>
+                  <ListItemIcon>
+                    <SvgIcon>
+                      <PlexIcon />
+                    </SvgIcon>
+                  </ListItemIcon>
+                  <ListItemText>Plex</ListItemText>
+                </MenuItem>
+                <MenuItem
+                  onClick={() => handleOpenMediaSourceDialog('jellyfin')}
+                >
+                  <ListItemIcon>
+                    <SvgIcon>
+                      <JellyfinIcon />
+                    </SvgIcon>
+                  </ListItemIcon>
+                  <ListItemText>Jellyfin</ListItemText>
+                </MenuItem>
+              </Menu>
+            </Box>
             <Box sx={{ flexBasis: '100%', width: 0 }}></Box>
             <Typography variant="caption" sx={{ width: '60%' }}>
-              Add Plex Servers as content sources for your channel. "Discover"
-              will use the Plex login flow to discover servers associated with
-              your account, however you can also manually add Plex server
-              details using the "Manual Add" button.
+              Add sources of content for your channels. <br /> "Discover" will
+              attempt to automatically find sources and is supported for Plex
+              only.
             </Typography>
           </Stack>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', mb: 1 }}></Box>
           {renderServersTable()}
         </Box>
         <Typography component="h6" variant="h6" sx={{ mb: 2 }}>
-          Plex Streaming
+          Streaming Options
         </Typography>
 
         <Grid flex="1 0 50%" container spacing={3}>
@@ -339,7 +363,6 @@ export default function PlexSettingsPage() {
                   <Select
                     labelId="stream-path-label"
                     id="stream-path"
-                    sx={{ my: 1 }}
                     label="Stream Path"
                     {...field}
                   >
@@ -352,8 +375,8 @@ export default function PlexSettingsPage() {
                 )}
               />
               <FormHelperText>
-                <strong>Plex</strong>: This option will initialize the stream
-                over the network, i.e. stream from the Plex server
+                <strong>Network</strong>: This option will initialize the stream
+                over the network, e.g. stream from the Plex server
                 <br />
                 <strong>Direct</strong>: This option attempts to open the file
                 from the filesystem, using the file path provided by Plex. This
@@ -371,10 +394,11 @@ export default function PlexSettingsPage() {
                     name="updatePlayStatus"
                   />
                 }
-                label="Send play status to Plex"
+                label="Send play status to Media Srouce"
               />
               <FormHelperText>
-                Note: This affects the "on deck" for your plex account.
+                Note: This affects the "continue watching" section of the media
+                source.
               </FormHelperText>
             </FormControl>
           </Grid>
@@ -434,6 +458,10 @@ export default function PlexSettingsPage() {
       <PlexServerEditDialog
         open={plexEditDialogOpen}
         onClose={() => setPlexEditDialogOpen(false)}
+      />
+      <JellyfinServerEditDialog
+        open={jellyfinEditDialogOpen}
+        onClose={() => setJellyfinEditDialogOpen(false)}
       />
     </Box>
   );

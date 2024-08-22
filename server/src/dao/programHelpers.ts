@@ -1,4 +1,5 @@
 import { ref } from '@mikro-orm/core';
+import { createExternalId } from '@tunarr/shared';
 import {
   ChannelProgram,
   ContentProgram,
@@ -6,13 +7,15 @@ import {
   isContentProgram,
   isCustomProgram,
 } from '@tunarr/types';
-import { PlexEpisode, PlexMedia, PlexMusicTrack } from '@tunarr/types/plex';
+import { PlexEpisode, PlexMusicTrack } from '@tunarr/types/plex';
 import dayjs from 'dayjs';
 import ld, {
   compact,
   filter,
+  find,
   forEach,
   isNil,
+  isUndefined,
   map,
   partition,
   reduce,
@@ -21,8 +24,8 @@ import ld, {
 import { performance } from 'perf_hooks';
 import { GlobalScheduler } from '../services/scheduler.js';
 import { ReconcileProgramDurationsTask } from '../tasks/ReconcileProgramDurationsTask.js';
-import { SavePlexProgramExternalIdsTask } from '../tasks/SavePlexProgramExternalIdsTask.js';
-import { PlexTaskQueue } from '../tasks/TaskQueue.js';
+import { SavePlexProgramExternalIdsTask } from '../tasks/plex/SavePlexProgramExternalIdsTask.js';
+import { JellyfinTaskQueue, PlexTaskQueue } from '../tasks/TaskQueue.js';
 import { SavePlexProgramGroupingsTask } from '../tasks/plex/SavePlexProgramGroupingsTask.js';
 import { ProgramMinterFactory } from '../util/ProgramMinter.js';
 import { groupByUniqFunc, isNonEmptyString } from '../util/index.js';
@@ -30,10 +33,19 @@ import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { time, timeNamedAsync } from '../util/perf.js';
 import { ProgramExternalIdType } from './custom_types/ProgramExternalIdType.js';
 import { getEm } from './dataSource.js';
-import { Program, programTypeFromString } from './entities/Program.js';
+import {
+  Program,
+  programTypeFromJellyfinType,
+  programTypeFromString,
+} from './entities/Program.js';
 import { ProgramExternalId } from './entities/ProgramExternalId.js';
 import { upsertProgramExternalIds_deprecated } from './programExternalIdHelpers.js';
-import { createExternalId } from '@tunarr/shared';
+import { ContentProgramOriginalProgram } from '@tunarr/types/schemas';
+import { seq } from '@tunarr/shared/util';
+import { JellyfinItem } from '@tunarr/types/jellyfin';
+import { SaveJellyfinProgramGroupingsTask } from '../tasks/jellyfin/SaveJellyfinProgramGroupingsTask.js';
+import { ProgramSourceType } from './custom_types/ProgramSourceType.js';
+import { SaveJellyfinProgramExternalIdsTask } from '../tasks/jellyfin/SaveJellyfinProgramExternalIdsTask.js';
 
 export async function upsertContentPrograms(
   programs: ChannelProgram[],
@@ -58,7 +70,102 @@ export async function upsertContentPrograms(
     )
     .value();
 
-  // TODO handle custom shows
+  // This code dedupes incoming programs using their external (IMDB, TMDB, etc) IDs.
+  // Eventually, it could be used to save source-agnostic programs, but it's unclear
+  // if that gives us benefit yet.
+  // const pMap = reduce(
+  //   contentPrograms,
+  //   (acc, program) => {
+  //     const externalIds: {
+  //       type: ProgramExternalIdType;
+  //       id: string;
+  //       program: ContentProgram;
+  //     }[] = [];
+  //     switch (program.originalProgram!.sourceType) {
+  //       case 'plex': {
+  //         const x = ld
+  //           .chain(program.originalProgram!.program.Guid ?? [])
+  //           .map((guid) => parsePlexExternalGuid(guid.id))
+  //           .thru(removeErrors)
+  //           .map((eid) => ({
+  //             type: eid.sourceType,
+  //             id: eid.externalKey,
+  //             program,
+  //           }))
+  //           .value();
+  //         externalIds.push(...x);
+  //         break;
+  //       }
+  //       case 'jellyfin': {
+  //         const p = compact(
+  //           map(program.originalProgram!.program.ProviderIds, (value, key) => {
+  //             const typ = programExternalIdTypeFromString(key.toLowerCase());
+  //             return isNil(value) || isUndefined(typ)
+  //               ? null
+  //               : { type: typ, id: value, program };
+  //           }),
+  //         );
+  //         externalIds.push(...p);
+  //         break;
+  //       }
+  //     }
+
+  //     forEach(externalIds, ({ type, id, program }) => {
+  //       if (!isValidSingleExternalIdType(type)) {
+  //         return;
+  //       }
+
+  //       const key = createGlobalExternalIdString(type, id);
+  //       const last = acc[key];
+  //       if (last) {
+  //         acc[key] = { type, id, programs: [...last.programs, program] };
+  //       } else {
+  //         acc[key] = { type, id, programs: [program] };
+  //       }
+  //     });
+
+  //     return acc;
+  //   },
+  //   {} as Record<
+  //     `${string}|${string}`,
+  //     {
+  //       type: ProgramExternalIdType;
+  //       id: string;
+  //       programs: ContentProgram[];
+  //     }
+  //   >,
+  // );
+
+  // const existingPrograms = flatten(
+  //   await mapAsyncSeq(chunk(values(pMap), 500), (items) => {
+  //     return directDbAccess()
+  //       .selectFrom('programExternalId')
+  //       .where(({ or, eb }) => {
+  //         const clauses = map(items, (item) =>
+  //           eb('programExternalId.sourceType', '=', item.type).and(
+  //             'programExternalId.externalKey',
+  //             '=',
+  //             item.id,
+  //           ),
+  //         );
+  //         return or(clauses);
+  //       })
+  //       .selectAll('programExternalId')
+  //       .select((eb) =>
+  //         jsonArrayFrom(
+  //           eb
+  //             .selectFrom('program')
+  //             .whereRef('programExternalId.programUuid', '=', 'program.uuid')
+  //             .select(AllProgramFields),
+  //         ).as('program'),
+  //       )
+  //       .groupBy('programExternalId.programUuid')
+  //       .execute();
+  //   }),
+  // );
+  // console.log('results!!!!', existingPrograms);
+
+  // TODO: handle custom shows
   const programsToPersist = ld
     .chain(contentPrograms)
     .map((p) => {
@@ -70,31 +177,6 @@ export async function upsertContentPrograms(
       );
       return { program, externalIds, apiProgram: p };
     })
-    .value();
-
-  const plexRatingExternalIdToMedia = ld
-    .chain(programsToPersist)
-    .reduce(
-      (acc, { apiProgram, externalIds }) => {
-        const flattened = filter(externalIds, {
-          sourceType: ProgramExternalIdType.PLEX,
-          externalSourceId: apiProgram.externalSourceName!,
-        });
-
-        return {
-          ...acc,
-          ...reduce(
-            flattened,
-            (acc2, eid) => ({
-              ...acc2,
-              [eid.toExternalIdString()]: apiProgram.originalProgram!,
-            }),
-            {} as Record<string, PlexMedia>,
-          ),
-        };
-      },
-      {} as Record<string, PlexMedia>,
-    )
     .value();
 
   const programInfoByUniqueId = groupByUniqFunc(
@@ -125,9 +207,6 @@ export async function upsertContentPrograms(
       ),
   );
 
-  // We're dealing specifically with Plex items right now. We want to treat
-  // _at least_ the rating key / GUID as invariants in the program_external_id
-  // table for each program.
   const programExternalIds = ld
     .chain(upsertedPrograms)
     .flatMap((program) => {
@@ -139,19 +218,113 @@ export async function upsertContentPrograms(
     })
     .value();
 
-  const externalIdsByGrandparentId = ld
+  const sourceExternalIdToOriginalProgram: Record<
+    string,
+    ContentProgramOriginalProgram
+  > = ld
+    .chain(programsToPersist)
+    .reduce((acc, { apiProgram, externalIds }) => {
+      if (isUndefined(apiProgram.originalProgram)) {
+        return acc;
+      }
+
+      const itemId = find(
+        externalIds,
+        (eid) =>
+          eid.sourceType === apiProgram.originalProgram!.sourceType &&
+          eid.externalSourceId === apiProgram.externalSourceName!,
+      );
+
+      if (!itemId) {
+        return acc;
+      }
+
+      return {
+        ...acc,
+        [itemId.toExternalIdString()]: apiProgram.originalProgram,
+      };
+    }, {})
+    .value();
+
+  schedulePlexProgramGroupingTasks(
+    programExternalIds,
+    sourceExternalIdToOriginalProgram,
+  );
+
+  scheduleJellyfinProgramGroupingTasks(
+    programExternalIds,
+    sourceExternalIdToOriginalProgram,
+  );
+
+  const [requiredExternalIds, backgroundExternalIds] = partition(
+    programExternalIds,
+    (p) =>
+      p.sourceType === ProgramExternalIdType.PLEX ||
+      p.sourceType === ProgramExternalIdType.PLEX_GUID ||
+      p.sourceType === ProgramExternalIdType.JELLYFIN,
+  );
+
+  // Fail hard on not saving Plex external IDs. We need them for streaming
+  // TODO: We could optimize further here by only saving IDs necessary for streaming
+  await timeNamedAsync('upsert external ids', logger, () =>
+    upsertProgramExternalIds_deprecated(requiredExternalIds),
+  );
+
+  setImmediate(() => {
+    upsertProgramExternalIds_deprecated(backgroundExternalIds).catch((e) => {
+      logger.error(
+        e,
+        'Error saving non-essential external IDs. A fixer will run for these',
+      );
+    });
+  });
+
+  await em.flush();
+
+  schedulePlexExternalIdsTask(upsertedPrograms);
+  scheduleJellyfinExternalIdsTask(upsertedPrograms);
+
+  setImmediate(() => {
+    GlobalScheduler.scheduleOneOffTask(
+      ReconcileProgramDurationsTask.name,
+      dayjs().add(500, 'ms'),
+      new ReconcileProgramDurationsTask(),
+    );
+    PlexTaskQueue.resume();
+    JellyfinTaskQueue.resume();
+  });
+
+  const end = performance.now();
+  logger.debug(
+    'upsertContentPrograms to %d millis. %d upsertedPrograms',
+    round(end - start, 3),
+    upsertedPrograms.length,
+  );
+
+  return upsertedPrograms;
+}
+
+function schedulePlexProgramGroupingTasks(
+  programExternalIds: ProgramExternalId[],
+  sourceExternalIdToOriginalProgram: Record<
+    string,
+    ContentProgramOriginalProgram
+  >,
+) {
+  const plexExternalIdsByGrandparentId = ld
     .chain(programExternalIds)
     .map((externalId) => {
-      const plexMedia =
-        plexRatingExternalIdToMedia[externalId.toExternalIdString()];
+      const media =
+        sourceExternalIdToOriginalProgram[externalId.toExternalIdString()];
 
       if (
-        plexMedia &&
-        (plexMedia.type === 'track' || plexMedia.type === 'episode')
+        media &&
+        media.sourceType === 'plex' &&
+        (media.program.type === 'track' || media.program.type === 'episode')
       ) {
         return {
           externalId,
-          plexMedia,
+          plexMedia: media.program,
         };
       }
 
@@ -180,8 +353,9 @@ export async function upsertContentPrograms(
     )
     .value();
 
+  // TODO Need to implement this for Jellyfin
   setImmediate(() => {
-    forEach(externalIdsByGrandparentId, (externalIds, grandparentId) => {
+    forEach(plexExternalIdsByGrandparentId, (externalIds, grandparentId) => {
       const parentIds = map(
         externalIds,
         (eid) => eid.plexMedia.parentRatingKey,
@@ -203,81 +377,162 @@ export async function upsertContentPrograms(
       ).catch((e) => console.error(e));
     });
   });
+}
 
-  const [requiredExternalIds, backgroundExternalIds] = partition(
-    programExternalIds,
-    (p) =>
-      p.sourceType === ProgramExternalIdType.PLEX ||
-      p.sourceType === ProgramExternalIdType.PLEX_GUID,
-  );
+function scheduleJellyfinProgramGroupingTasks(
+  programExternalIds: ProgramExternalId[],
+  sourceExternalIdToOriginalProgram: Record<
+    string,
+    ContentProgramOriginalProgram
+  >,
+) {
+  const externalIdsByGrandparentId = ld
+    .chain(programExternalIds)
+    .map((externalId) => {
+      const media =
+        sourceExternalIdToOriginalProgram[externalId.toExternalIdString()];
 
-  // Fail hard on not saving Plex external IDs. We need them for streaming
-  // TODO: We could optimize further here by only saving IDs necessary for streaming
-  await timeNamedAsync('upsert external ids', logger, () =>
-    upsertProgramExternalIds_deprecated(requiredExternalIds),
-  );
+      if (
+        media &&
+        media.sourceType === 'jellyfin' &&
+        (media.program.Type === 'Audio' || media.program.Type === 'Episode')
+      ) {
+        return {
+          externalId,
+          item: media.program,
+        };
+      }
+
+      return;
+    })
+    .compact()
+    .reduce(
+      (acc, { item, externalId }) => {
+        const grandparentKey = item.SeriesId ?? item.AlbumArtist;
+        if (isNonEmptyString(grandparentKey)) {
+          const existing = acc[grandparentKey] ?? [];
+          return {
+            ...acc,
+            [grandparentKey]: [...existing, { externalId, item }],
+          };
+        }
+        return acc;
+      },
+      {} as Record<
+        string,
+        {
+          externalId: ProgramExternalId;
+          item: JellyfinItem;
+        }[]
+      >,
+    )
+    .value();
+
+  console.log('SCHEDULING a bunchhhh of things: ', externalIdsByGrandparentId);
 
   setImmediate(() => {
-    upsertProgramExternalIds_deprecated(backgroundExternalIds).catch((e) => {
-      logger.error(
-        e,
-        'Error saving non-essential external IDs. A fixer will run for these',
+    forEach(externalIdsByGrandparentId, (externalIds, grandparentId) => {
+      const parentIds = compact(
+        map(externalIds, ({ item }) =>
+          item.Type === 'Audio'
+            ? item.AlbumId
+            : item.Type === 'Episode'
+            ? item.SeasonId
+            : null,
+        ),
       );
+
+      const programAndParentIds = seq.collect(externalIds, (eid) => {
+        const parentKey = eid.item.AlbumId ?? eid.item.SeasonId;
+        if (!isNonEmptyString(parentKey)) {
+          return;
+        }
+
+        return {
+          jellyfinItemId: eid.item.Id,
+          programId: eid.externalId.program.uuid,
+          parentKey,
+        };
+      });
+
+      JellyfinTaskQueue.add(
+        new SaveJellyfinProgramGroupingsTask({
+          grandparentKey: grandparentId,
+          parentKeys: compact(parentIds),
+          programAndJellyfinIds: programAndParentIds,
+          programType: programTypeFromJellyfinType(externalIds[0].item.Type)!,
+          jellyfinServerName: externalIds[0].externalId.externalSourceId!,
+        }),
+      ).catch((e) => console.error(e));
     });
   });
+}
 
-  await em.flush();
+function schedulePlexExternalIdsTask(upsertedPrograms: Program[]) {
+  const logger = LoggerFactory.root;
 
   PlexTaskQueue.pause();
   const [, pQueueTime] = time(() => {
-    forEach(upsertedPrograms, (program) => {
-      try {
-        const task = new SavePlexProgramExternalIdsTask(program.uuid);
-        task.logLevel = 'trace';
-        PlexTaskQueue.add(task).catch((e) => {
-          logger.error(e, 'Error saving external IDs for program %s', program);
-        });
-      } catch (e) {
-        logger.error(
-          e,
-          'Failed to schedule external IDs task for persisted program: %O',
-          program,
-        );
-      }
-    });
+    forEach(
+      filter(upsertedPrograms, (p) => p.sourceType === ProgramSourceType.PLEX),
+      (program) => {
+        try {
+          const task = new SavePlexProgramExternalIdsTask(program.uuid);
+          task.logLevel = 'trace';
+          PlexTaskQueue.add(task).catch((e) => {
+            logger.error(
+              e,
+              'Error saving external IDs for program %s',
+              program,
+            );
+          });
+        } catch (e) {
+          logger.error(
+            e,
+            'Failed to schedule external IDs task for persisted program: %O',
+            program,
+          );
+        }
+      },
+    );
   });
 
   logger.debug('Took %d ms to schedule tasks', pQueueTime);
-
-  setImmediate(() => {
-    GlobalScheduler.scheduleOneOffTask(
-      ReconcileProgramDurationsTask.name,
-      dayjs().add(500, 'ms'),
-      new ReconcileProgramDurationsTask(),
-    );
-    PlexTaskQueue.resume();
-  });
-
-  const end = performance.now();
-  logger.debug(
-    'upsertContentPrograms to %d millis. %d upsertedPrograms',
-    round(end - start, 3),
-    upsertedPrograms.length,
-  );
-
-  return upsertedPrograms;
 }
 
-// Creates a unique ID that matches the output of the entity Program#uniqueId
-// function. Useful to matching non-persisted API programs with persisted programs
-export function contentProgramUniqueId(p: ContentProgram) {
-  // ID should always be defined in the persistent case
-  if (p.persisted) {
-    return p.id!;
-  }
+function scheduleJellyfinExternalIdsTask(upsertedPrograms: Program[]) {
+  const logger = LoggerFactory.root;
 
-  // These should always be defined for the non-persisted case
-  return `${p.externalSourceType}|${p.externalSourceName}|${p.originalProgram?.key}`;
+  JellyfinTaskQueue.pause();
+  const [, pQueueTime] = time(() => {
+    forEach(
+      filter(
+        upsertedPrograms,
+        (p) => p.sourceType === ProgramSourceType.JELLYFIN,
+      ),
+      (program) => {
+        try {
+          const task = new SaveJellyfinProgramExternalIdsTask(program.uuid);
+          task.logLevel = 'trace';
+          JellyfinTaskQueue.add(task).catch((e) => {
+            logger.error(
+              e,
+              'Error saving external IDs for program %s',
+              program,
+            );
+          });
+        } catch (e) {
+          logger.error(
+            e,
+            'Failed to schedule external IDs task for persisted program: %O',
+            program,
+          );
+        }
+      },
+    );
+  });
+
+  logger.debug('Took %d ms to schedule tasks', pQueueTime);
 }
 
 // Takes a listing of programs and makes a mapping of a unique identifier,

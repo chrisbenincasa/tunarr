@@ -22,16 +22,18 @@ import { FfmpegSettings, Watermark } from '@tunarr/types';
 import { isError, isString, isUndefined } from 'lodash-es';
 import { Writable } from 'stream';
 import { isContentBackedLineupIteam } from '../dao/derived_types/StreamLineup.js';
+import { MediaSourceType } from '../dao/entities/MediaSource.js';
 import { FfmpegEvents } from '../ffmpeg/ffmpeg.js';
 import { TypedEventEmitter } from '../types/eventEmitter.js';
 import { Maybe } from '../types/util.js';
 import { isNonEmptyString } from '../util/index.js';
+import { LoggerFactory } from '../util/logging/LoggerFactory.js';
+import { makeLocalUrl } from '../util/serverUtil.js';
 import { OfflinePlayer } from './OfflinePlayer.js';
 import { Player, PlayerContext } from './Player.js';
+import { JellyfinPlayer } from './jellyfin/JellyfinPlayer.js';
 import { PlexPlayer } from './plex/PlexPlayer.js';
 import { StreamContextChannel } from './types.js';
-import { LoggerFactory } from '../util/logging/LoggerFactory.js';
-import { serverOptions } from '../globals.js';
 
 export class ProgramPlayer extends Player {
   private logger = LoggerFactory.child({ caller: import.meta });
@@ -53,17 +55,22 @@ export class ProgramPlayer extends Player {
       this.delegate = new OfflinePlayer(true, context);
     } else if (program.type === 'loading') {
       this.logger.debug('About to play loading stream');
-      /* loading */
       context.isLoading = true;
       this.delegate = new OfflinePlayer(false, context);
     } else if (program.type === 'offline') {
       this.logger.debug('About to play offline stream');
-      /* offline */
       this.delegate = new OfflinePlayer(false, context);
-    } else if (isContentBackedLineupIteam(program) && program) {
-      this.logger.debug('About to play plex stream');
-      /* plex */
-      this.delegate = new PlexPlayer(context);
+    } else if (isContentBackedLineupIteam(program)) {
+      switch (program.externalSource) {
+        case MediaSourceType.Plex:
+          this.logger.debug('About to play plex stream');
+          this.delegate = new PlexPlayer(context);
+          break;
+        case MediaSourceType.Jellyfin:
+          this.logger.debug('About to play plex stream');
+          this.delegate = new JellyfinPlayer(context);
+          break;
+      }
     }
     this.context.watermark = this.getWatermark(
       context.ffmpegSettings,
@@ -137,8 +144,8 @@ export class ProgramPlayer extends Player {
         );
       }
       this.logger.error(
-        'Error when attempting to play video. Fallback to error stream: ' +
-          actualError.stack,
+        actualError,
+        'Error when attempting to play video. Fallback to error stream',
       );
       //Retry once with an error stream:
       this.context.lineupItem = {
@@ -182,7 +189,7 @@ export class ProgramPlayer extends Player {
       } else if (isNonEmptyString(channel.icon?.path)) {
         icon = channel.icon.path;
       } else {
-        icon = `http://localhost:${serverOptions().port}/images/tunarr.png`;
+        icon = makeLocalUrl('/images/tunarr.png');
       }
 
       console.log(watermark);

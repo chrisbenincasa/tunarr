@@ -28,11 +28,12 @@ import {
 import { usePlexTyped } from '../../hooks/plex/usePlex.ts';
 import useStore from '../../store/index.ts';
 import {
-  addKnownMediaForServer,
+  addKnownMediaForPlexServer,
   addPlexSelectedMedia,
   removePlexSelectedMedia,
 } from '../../store/programmingSelector/actions.ts';
 import { PlexSelectedMedia } from '../../store/programmingSelector/store.ts';
+import { useCurrentMediaSource } from '@/store/programmingSelector/selectors.ts';
 
 export interface PlexListItemProps<T extends PlexMedia> {
   item: T;
@@ -61,15 +62,15 @@ export function PlexListItem<T extends PlexMedia>(props: PlexListItemProps<T>) {
   const hasChildren = !isTerminalItem(item);
   const childPath = isPlexCollection(item) ? 'collections' : 'metadata';
   const { isPending, data: children } = usePlexTyped<PlexChildMediaApiType<T>>(
-    server.name,
+    server.id,
     `/library/${childPath}/${props.item.ratingKey}/children`,
     hasChildren && open,
   );
-  const selectedServer = useStore((s) => s.currentServer);
+  const selectedServer = useCurrentMediaSource('plex');
   const selectedMedia = useStore((s) =>
     filter(s.selectedMedia, (m): m is PlexSelectedMedia => m.type === 'plex'),
   );
-  const selectedMediaIds = map(selectedMedia, typedProperty('guid'));
+  const selectedMediaIds = map(selectedMedia, typedProperty('id'));
 
   const handleClick = () => {
     setOpen(!open);
@@ -77,18 +78,18 @@ export function PlexListItem<T extends PlexMedia>(props: PlexListItemProps<T>) {
 
   useEffect(() => {
     if (children) {
-      addKnownMediaForServer(server.name, children.Metadata, item.guid);
+      addKnownMediaForPlexServer(server.id, children.Metadata, item.guid);
     }
-  }, [item.guid, server.name, children]);
+  }, [item.guid, server.id, children]);
 
   const handleItem = useCallback(
     (e: MouseEvent<HTMLButtonElement>) => {
       e.stopPropagation();
 
       if (selectedMediaIds.includes(item.guid)) {
-        removePlexSelectedMedia(selectedServer!.name, [item.guid]);
+        removePlexSelectedMedia(selectedServer!.id, [item.guid]);
       } else {
-        addPlexSelectedMedia(selectedServer!.name, [item]);
+        addPlexSelectedMedia(selectedServer!, [item]);
       }
     },
     [item, selectedServer, selectedMediaIds],

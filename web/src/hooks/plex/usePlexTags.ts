@@ -3,10 +3,12 @@ import { PlexTagResult } from '@tunarr/types/plex';
 import useStore from '../../store/index.ts';
 import { useTunarrApi } from '../useTunarrApi.ts';
 import { plexQueryOptions } from './plexHookUtil.ts';
+import { tag } from '@tunarr/types';
+import { useCurrentMediaSource } from '@/store/programmingSelector/selectors.ts';
 
 export const usePlexTags = (key: string) => {
   const apiClient = useTunarrApi();
-  const selectedServer = useStore((s) => s.currentServer);
+  const selectedServer = useCurrentMediaSource();
   const selectedLibrary = useStore((s) =>
     s.currentLibrary?.type === 'plex' ? s.currentLibrary : null,
   );
@@ -15,6 +17,6 @@ export const usePlexTags = (key: string) => {
     : '';
 
   return useQuery<PlexTagResult>({
-    ...plexQueryOptions(apiClient, selectedServer?.name ?? '', path),
+    ...plexQueryOptions(apiClient, selectedServer?.id ?? tag(''), path),
   });
 };
