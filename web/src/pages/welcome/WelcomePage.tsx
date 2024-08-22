@@ -12,32 +12,35 @@ import React, { useEffect } from 'react';
 import { Link as RouterLink, useNavigate } from '@tanstack/react-router';
 import TunarrLogo from '../../components/TunarrLogo.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
-import AddPlexServer from '../../components/settings/AddPlexServer.tsx';
-import ConnectPlex from '../../components/settings/ConnectPlex.tsx';
+import ConnectMediaSources from '../../components/settings/ConnectMediaSources.tsx';
 import { useMediaSources } from '../../hooks/settingsHooks.ts';
 import { useVersion } from '../../hooks/useVersion.ts';
 import { updateShowWelcomeState } from '../../store/themeEditor/actions.ts';
+import { isEmpty } from 'lodash-es';
+import pluralize from 'pluralize';
+import { AddMediaSourceButton } from '@/components/settings/media_source/AddMediaSourceButton.tsx';
 
-const steps = ['Connect Plex', 'Install FFMPEG', 'All Set!'];
+const steps = ['Connect Sources', 'Install FFMPEG', 'All Set!'];
 
 export default function WelcomePage() {
-  const [isPlexConnected, setIsPlexConnected] = React.useState<boolean>(false);
+  const [hasMediaSource, setHasMediaSource] = React.useState<boolean>(false);
   const [isFfmpegInstalled, setIsFfmpegInstalled] =
     React.useState<boolean>(false);
   const navigate = useNavigate();
 
   const { data: version } = useVersion();
-  const { data: plexServers, isLoading: isPlexLoading } = useMediaSources();
+  const { data: mediaSources, isLoading: mediaSourcesLoading } =
+    useMediaSources();
 
   useEffect(() => {
-    if (plexServers && plexServers.length > 0 && !isPlexLoading) {
-      setIsPlexConnected(true);
+    if (!isEmpty(mediaSources) && !mediaSourcesLoading) {
+      setHasMediaSource(true);
     }
 
     if (version && version.ffmpeg != 'Error') {
       setIsFfmpegInstalled(true);
     }
-  }, [plexServers, version, isPlexLoading]);
+  }, [mediaSources, mediaSourcesLoading, version]);
 
   const header = (
     <>
@@ -56,10 +59,6 @@ export default function WelcomePage() {
 
   const [activeStep, setActiveStep] = React.useState(0);
   const [skipped, setSkipped] = React.useState(new Set<number>());
-
-  const isStepOptional = (step: number) => {
-    return step === 1;
-  };
 
   const isStepSkipped = (step: number) => {
     return skipped.has(step);
@@ -85,36 +84,19 @@ export default function WelcomePage() {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
 
-  const handleSkip = () => {
-    setActiveStep((prevActiveStep) => prevActiveStep + 1);
-    setSkipped((prevSkipped) => {
-      const newSkipped = new Set(prevSkipped.values());
-      newSkipped.add(activeStep);
-      return newSkipped;
-    });
-  };
-
   const getStarted = (
     <>
       <Typography variant="body1">Let's get started...</Typography>
       <Box sx={{ width: '100%', maxWidth: '750px', margin: '0 auto', mt: 4 }}>
-        <Stepper activeStep={activeStep}>
+        <Stepper alternativeLabel activeStep={activeStep}>
           {steps.map((label, index) => {
             const stepProps: { completed?: boolean } = {};
-            const labelProps: {
-              optional?: React.ReactNode;
-            } = {};
-            if (isStepOptional(index)) {
-              labelProps.optional = (
-                <Typography variant="caption">(Optional)</Typography>
-              );
-            }
             if (isStepSkipped(index)) {
               stepProps.completed = false;
             }
             return (
               <Step key={label} {...stepProps}>
-                <StepLabel {...labelProps}>{label}</StepLabel>
+                <StepLabel>{label}</StepLabel>
               </Step>
             );
           })}
@@ -129,30 +111,40 @@ export default function WelcomePage() {
                 align="left"
                 sx={{ mt: 3 }}
               >
-                Connect Plex
+                Connect Media Sources
               </Typography>
               <Typography sx={{ mb: 3 }} align="left">
-                To use Tunarr, you need to first connect your Plex library. This
-                will allow you to build custom channels with any of your plex
-                content.
+                To use Tunarr, you must first connect at least one media source.
+                Media sources provide all content used to create channels in
+                Tunarr. Plex and Jellyfin are currently supported.
               </Typography>
 
-              {!isPlexConnected ? (
+              {!hasMediaSource ? (
                 <Alert
+                  sx={{
+                    alignItems: 'center',
+                  }}
                   variant="filled"
                   severity="error"
                   action={
-                    <AddPlexServer title={'Connect Plex'} variant="outlined" />
+                    <AddMediaSourceButton
+                      ButtonProps={{
+                        variant: 'outlined',
+                        color: 'inherit',
+                        size: 'small',
+                      }}
+                    />
                   }
                 >
-                  Plex is not connected.
+                  <Typography>No media sources connected.</Typography>
                 </Alert>
               ) : (
                 <Alert variant="filled" severity="success">
-                  Plex is connected.
+                  {mediaSources.length}{' '}
+                  {pluralize('source', mediaSources.length)} connected.
                 </Alert>
               )}
-              {isPlexConnected && <ConnectPlex />}
+              {hasMediaSource && <ConnectMediaSources />}
             </>
           )}
           {activeStep === 1 && (
@@ -168,8 +160,7 @@ export default function WelcomePage() {
               <Typography sx={{ mb: 3 }} align="left">
                 FFMPEG transcoding is required for some features like channel
                 overlay, subtitles, and measures to prevent issues when
-                switching episodes. While FFMPEG is optional, we recommend using
-                it for the best Tunnar experience.
+                switching episodes.
               </Typography>
 
               {isFfmpegInstalled ? (
@@ -233,16 +224,12 @@ export default function WelcomePage() {
               Back
             </Button>
             <Box sx={{ flex: '1 1 auto' }} />
-            {isStepOptional(activeStep) && (
-              <Button color="inherit" onClick={handleSkip} sx={{ mr: 1 }}>
-                Skip
-              </Button>
-            )}
+
             {activeStep !== steps.length - 1 ? (
               <Button
                 onClick={handleNext}
                 variant="contained"
-                disabled={activeStep === 0 && !isPlexConnected}
+                disabled={activeStep === 0 && !hasMediaSource}
                 endIcon={<ArrowForward />}
               >
                 Next

@@ -97,7 +97,7 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ['settings', 'plex-servers'],
+        queryKey: ['settings', 'media-sources'],
       });
       handleClose();
     },

@@ -128,13 +128,6 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
     },
   });
 
-  // const {
-  //   data: derivedAccessToken,
-  //   isLoading: derivedAccessTokenLoading,
-  //   error: derivedAccessTokenError,
-  //   refetch: refetchAccessToken,
-  // } = useJellyinLogin(serverStatusDetails, false /* TODO is this right */);
-
   const showErrorSnack = (e: unknown) => {
     snackbar.enqueueSnackbar({
       variant: 'error',
@@ -187,7 +180,6 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
       id: server?.id && !isDirty ? server.id : undefined,
       accessToken: defaultValues?.accessToken ?? '',
       uri: defaultValues?.uri ?? '',
-      // type: 'jellyfin' as const,
     },
     1000,
     {
@@ -241,54 +233,11 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
     errors,
   ]);
 
-  // useEffect(() => {
-  //   if (
-  //     isNonEmptyString(serverStatusDetails.url) &&
-  //     isNonEmptyString(serverStatusDetails.username) &&
-  //     isNonEmptyString(serverStatusDetails.password)
-  //   ) {
-  //     jellyfinLogin(apiClient, serverStatusDetails)
-  //       .then(({ accessToken }) => {
-  //         if (isNonEmptyString(accessToken) && !accessTokenTouched) {
-  //           setValue('accessToken', derivedAccessToken?.accessToken ?? '', {
-  //             shouldValidate: true,
-  //           });
-  //         }
-  //       })
-  //       .catch(console.error);
-  //   }
-  // }, [
-  //   serverStatusDetails,
-  //   apiClient,
-  //   accessTokenTouched,
-  //   setValue,
-  //   derivedAccessToken?.accessToken,
-  // ]);
-
   const { data: serverStatus, isLoading: serverStatusLoading } =
     useMediaSourceBackendStatus(
       { ...serverStatusDetails, type: 'jellyfin' },
-      open, // && isNonEmptyString(accessToken),
+      open,
     );
-
-  console.log(serverStatus);
-
-  // useEffect(() => {
-  //   if (!isUndefined(derivedAccessToken) && !accessTokenTouched) {
-  //     setValue('accessToken', derivedAccessToken?.accessToken ?? '', {
-  //       shouldValidate: true,
-  //     });
-  //   }
-  //   //  else if (!isUndefined(serverError) && !accessTokenTouched) {
-  //   //   setValue('accessToken', '');
-  //   // }
-  // }, [
-  //   derivedAccessToken,
-  //   derivedAccessTokenError,
-  //   setValue,
-  //   getValues,
-  //   accessTokenTouched,
-  // ]);
 
   // TODO: Block creation if an existing server with the same URL/name
   // already exist
@@ -440,10 +389,6 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
                           <br />
                         </>
                       )}
-                      {/* <span>
-                  Enter your Jellyfin password to generate a new access token,
-                  or enter the token you want to use below.
-                </span> */}
                     </FormHelperText>
                   </FormControl>
                 )}

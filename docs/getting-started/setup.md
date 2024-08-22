@@ -67,7 +67,7 @@ Upon first launching Tunarr, you will see the Welcome page with a few required s
 
 ### Media Sources
 
-Currently, Tunarr supports streaming media from Plex or Jellyfin servers. In order to add programming to your channels, you must connect at least one media source. These sources also act as the metadata sources for your programming. Click the "Add" button to configure a media source to use with your instance of Tunarr.
+Currently, Tunarr supports Plex and Jellyfin as media sources. In order to add programming to your channels, you must connect at least media source. Each media source acts as a metadata source for your programming, and optionally, the streaming source. Click the "Connect Plex" button to start Plex authentication and add your first Plex server to Tunarr.
 
 !!! info
 

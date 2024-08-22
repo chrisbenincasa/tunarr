@@ -32,7 +32,7 @@ import { ProgramSelectorViewType } from '../../types/index.ts';
 import { InlineModal } from '../InlineModal.tsx';
 import { TabPanel } from '../TabPanel.tsx';
 import StandaloneToggleButton from '../base/StandaloneToggleButton.tsx';
-import ConnectPlex from '../settings/ConnectPlex.tsx';
+import ConnectMediaSources from '../settings/ConnectMediaSources.tsx';
 import {
   GridInlineModalProps,
   GridItemProps,
@@ -381,7 +381,7 @@ export default function PlexProgrammingSelector() {
             m: 4,
           }}
         >
-          <ConnectPlex />
+          <ConnectMediaSources />
         </Box>
       ) : (
         <>
