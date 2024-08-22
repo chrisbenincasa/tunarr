@@ -1,15 +1,10 @@
 # Tunarr
 
-Create live TV channels from media on your Plex servers, and more!
+Create live TV channels from media on your Plex/Jellyfin servers, and more!
 
 Configure your channels, programs, commercials, and settings using the Tunarr web UI.
 
-Access your channels by adding the spoofed Tunarr HDHomerun tuner to Plex, Jellyfin, or Emby. Or utilize generated M3U files with any 3rd party IPTV player app.
-
-<!-- <p align="center">
-<img src="./design/tunarr-guide.png">
-<img src="./design/tunarr-channels.png">
-</p> -->
+Watch your channels by adding the spoofed Tunarr HDHomerun tuner to Plex, Jellyfin, or Emby. Or utilize generated M3U files with any 3rd party IPTV player app.
 
 ## What is this?
 

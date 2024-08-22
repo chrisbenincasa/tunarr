@@ -10,23 +10,35 @@ Tunarr is available on [Docker Hub](https://hub.docker.com/r/chrisbenincasa/tuna
 
 The general format of tags is: `{release}{-encoder}?`.
 
-Since Tunarr is currently pre-release, there is a single tag: `edge`. The edge tag is pushed hourly from the `main` branch. We also support a specialized image builds which include support for hardware-accelerated encoding with Nvidia, QSV, and VAAPI.
+Since Tunarr is currently pre-release. There are a few tags to choose from which have different releae cadences:
+
+- `x.x.x` (versioned): These are release cuts. Because we are pre-1.0.0, breaking changes cause major version bumps and bug fixes are patch version bumps. Once we achieve 1.0.0, we will use proper semver.
+- `latest`: The latest tag points at the most recent release version.
+- `edge`: Pushed every 2 hours off of the "dev" branch. This build can be very unstable.
+
+Each tag can also use specialized image builds which include support for hardware-accelerated encoding with Nvidia, QSV, and VAAPI.
 
 !!! info
 
     Tunarr has experimental support for QSV / VAAPI. This issue is tracked here: [chrisbenincasa/tunarr#23](https://github.com/chrisbenincasa/tunarr/issues/23)
 
-Docker:
+Image tags are in the form `TAG(-HWACCEL)?`. For example, with the `latest` tag:
 
-- `chrisbenincasa/tunarr:edge`
-- `chrisbenincasa/tunarr:edge-nvidia`
-- `chrisbenincasa/tunarr:edge-vaapi`
+[Docker](https://hub.docker.com/r/chrisbenincasa/tunarr/):
 
-GHCR:
+- `chrisbenincasa/tunarr:latest`
+- `chrisbenincasa/tunarr:latest-nvidia`
+- `chrisbenincasa/tunarr:latest-vaapi`
 
-- `ghcr.io/chrisbenincasa/tunarr:edge`
-- `ghcr.io/chrisbenincasa/tunarr:edge-nvidia`
-- `ghcr.io/chrisbenincasa/tunarr:edge-vaapi`
+[GHCR](https://github.com/chrisbenincasa/tunarr/pkgs/container/tunarr):
+
+- `ghcr.io/chrisbenincasa/tunarr:latest`
+- `ghcr.io/chrisbenincasa/tunarr:latest-nvidia`
+- `ghcr.io/chrisbenincasa/tunarr:latest-vaapi`
+
+!!! info
+
+    We are still working on a proper build workflow for ARM images. See [chrisbenincasa/tunarr#648](https://github.com/chrisbenincasa/tunarr/issues/648) for details.
 
 ### Unraid
 
@@ -38,9 +50,9 @@ Follow the on-screen instructions to set up the container, including mapping the
 
 Tunarr is released in pre-built binaries for Windows (x64), macOS (x64), and Linux (x64).
 
-Like Docker images, we currently have a single release, `edge` that updates hourly.
+Like Docker images, binaries are released with versions as well as a singular 'edge' build which is released bihourly.
 
-Prebuilt binaries can be found at [https://github.com/chrisbenincasa/tunarr/releases/tag/edge](https://github.com/chrisbenincasa/tunarr/releases/tag/edge)
+Prebuilt edge binaries can be found at [https://github.com/chrisbenincasa/tunarr/releases/tag/edge](https://github.com/chrisbenincasa/tunarr/releases/tag/edge)
 
 !!! info
 

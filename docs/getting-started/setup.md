@@ -15,7 +15,7 @@ docker run \
     -v "$(pwd)"/tunarr:/config/tunarr \
     -v "$(pwd)"/.dizquetv:/.dizquetv \
     -p 8000:8000 \
-    chrisbenincasa/tunarr:edge
+    chrisbenincasa/tunarr
 ```
 
 Or if using `docker compose`...
@@ -24,9 +24,9 @@ Or if using `docker compose`...
 version: '3.8'
 services:
   tunarr:
-    image: chrisbenincasa/tunarr:edge
+    image: chrisbenincasa/tunarr
     # Uncomment along with runtime below to enable HW accel
-    # image: chrisbenincasa/tunarr:edge-nvidia
+    # image: chrisbenincasa/tunarr:latest-nvidia
     container_name: tunarr
     ports:
       - ${TUNARR_SERVER_PORT:-8000}:8000
@@ -49,14 +49,14 @@ services:
 
 ## Hardware Encoding
 
-For QSV compatability in Docker, you must mount /dev/dri the container:
+For QSV compatability in Docker, you must mount `/dev/dri` the container:
 
 ```
 docker run \
     -v "$(pwd)"/tunarr:/config/tunarr \
     --device /dev/dri/:/dev/dri/
     -p 8000:8000 \
-    chrisbenincasa/tunarr:edge-vaapi
+    chrisbenincasa/tunarr:latest-vaapi
 ```
 
 ## Initial Setup
@@ -65,13 +65,13 @@ Upon first launching Tunarr, you will see the Welcome page with a few required s
 
 ![Welcome Page No Plex](/assets/welcome_page_not_connected.png)
 
-### Plex
+### Media Sources
 
-Currently, Tunarr supports a single media source, Plex. In order to add programming to your channels, you must connect at least one Plex server. Plex acts as the metadata source for your programming, and optionally, the streaming source. Click the "Connect Plex" button to start Plex authentication and add your first Plex server to Tunarr.
+Currently, Tunarr supports streaming media from Plex or Jellyfin servers. In order to add programming to your channels, you must connect at least one media source. These sources also act as the metadata sources for your programming. Click the "Add" button to configure a media source to use with your instance of Tunarr.
 
 !!! info
 
-    We plan on implementing other media source types, including [Jellyfin](https://github.com/chrisbenincasa/tunarr/issues/24) and [Local Media](https://github.com/chrisbenincasa/tunarr/issues/26). Upvote and follow the issues you'd like to see us implement!
+    We plan on implementing other media source types, including [Emby](https://github.com/chrisbenincasa/tunarr/issues/25) and [Local Media](https://github.com/chrisbenincasa/tunarr/issues/26). Upvote and follow the issues you'd like to see us implement!
 
 ### FFMPEG
 

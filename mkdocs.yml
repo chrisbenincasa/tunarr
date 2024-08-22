@@ -43,6 +43,7 @@ nav:
   - Configure:
     - Channels: configure/channels.md
     - Programming: configure/programming.md
+    - Scheduling: configure/scheduling.md
     - Flex: configure/flex.md
     - System: configure/system.md
     - Clients:
