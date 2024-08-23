@@ -1,4 +1,18 @@
-import { Add, AutoFixHigh, HelpOutline } from '@mui/icons-material';
+import UnsavedNavigationAlert from '@/components/settings/UnsavedNavigationAlert.tsx';
+import { AddMediaSourceButton } from '@/components/settings/media_source/AddMediaSourceButton.tsx';
+import { JellyfinServerEditDialog } from '@/components/settings/media_source/JelllyfinServerEditDialog.tsx';
+import { MediaSourceTableRow } from '@/components/settings/media_source/MediaSourceTableRow';
+import { PlexServerEditDialog } from '@/components/settings/media_source/PlexServerEditDialog';
+import {
+  CheckboxFormController,
+  TypedController,
+} from '@/components/util/TypedController.tsx';
+import {
+  useMediaSources,
+  usePlexStreamSettings,
+} from '@/hooks/settingsHooks.ts';
+import { useTunarrApi } from '@/hooks/useTunarrApi.ts';
+import { HelpOutline } from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -8,14 +22,10 @@ import {
   Grid,
   IconButton,
   InputLabel,
-  ListItemIcon,
-  ListItemText,
-  Menu,
   MenuItem,
   Select,
   Skeleton,
   Stack,
-  SvgIcon,
   Table,
   TableBody,
   TableCell,
@@ -28,26 +38,10 @@ import {
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { PlexStreamSettings, defaultPlexStreamSettings } from '@tunarr/types';
-import _, { fill, isNull, map } from 'lodash-es';
+import _, { fill, map } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import { useEffect, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
-import AddPlexServer from '@/components/settings/AddPlexServer.tsx';
-import UnsavedNavigationAlert from '@/components/settings/UnsavedNavigationAlert.tsx';
-import {
-  CheckboxFormController,
-  TypedController,
-} from '@/components/util/TypedController.tsx';
-import {
-  useMediaSources,
-  usePlexStreamSettings,
-} from '@/hooks/settingsHooks.ts';
-import { useTunarrApi } from '@/hooks/useTunarrApi.ts';
-import { MediaSourceTableRow } from '@/components/settings/media_source/MediaSourceTableRow';
-import { PlexServerEditDialog } from '@/components/settings/media_source/PlexServerEditDialog';
-import { JellyfinServerEditDialog } from '@/components/settings/media_source/JelllyfinServerEditDialog.tsx';
-import PlexIcon from '@/assets/plex.svg?react';
-import JellyfinIcon from '@/assets/jellyfin.svg?react';
 
 const supportedPaths = [
   { value: 'network', string: 'Network' },
@@ -59,22 +53,6 @@ export default function MediaSourceSettingsPage() {
   const [restoreTunarrDefaults, setRestoreTunarrDefaults] = useState(false);
   const [plexEditDialogOpen, setPlexEditDialogOpen] = useState(false);
   const [jellyfinEditDialogOpen, setJellyfinEditDialogOpen] = useState(false);
-
-  const [manualAddPopoverRef, setManualAddPopoverRef] =
-    useState<HTMLButtonElement | null>(null);
-
-  const openManualAddButtonMenu = (
-    event: React.MouseEvent<HTMLButtonElement>,
-  ) => {
-    setManualAddPopoverRef(event.currentTarget);
-  };
-
-  const closeManualAddButtonMenu = () => {
-    setManualAddPopoverRef(null);
-  };
-
-  const open = !isNull(manualAddPopoverRef);
-  const id = open ? 'simple-popover' : undefined;
 
   const {
     data: servers,
@@ -260,18 +238,6 @@ export default function MediaSourceSettingsPage() {
     );
   };
 
-  const handleOpenMediaSourceDialog = (source: 'plex' | 'jellyfin') => {
-    switch (source) {
-      case 'plex':
-        setPlexEditDialogOpen(true);
-        break;
-      case 'jellyfin':
-        setJellyfinEditDialogOpen(true);
-        break;
-    }
-    closeManualAddButtonMenu();
-  };
-
   return (
     <Box component="form" onSubmit={handleSubmit(updatePlexStreamSettings)}>
       <Box>
@@ -293,56 +259,10 @@ export default function MediaSourceSettingsPage() {
             >
               Media Sources
             </Typography>
-            <AddPlexServer title="Discover" icon={AutoFixHigh} />
-            <Box>
-              <Button
-                color="inherit"
-                onClick={openManualAddButtonMenu}
-                variant="contained"
-                startIcon={<Add />}
-              >
-                Add
-              </Button>
-              <Menu
-                id={id}
-                open={open}
-                anchorEl={manualAddPopoverRef}
-                onClose={closeManualAddButtonMenu}
-                anchorOrigin={{
-                  vertical: 'bottom',
-                  horizontal: 'left',
-                }}
-                slotProps={{
-                  paper: {
-                    sx: { minWidth: 150 },
-                  },
-                }}
-              >
-                <MenuItem onClick={() => handleOpenMediaSourceDialog('plex')}>
-                  <ListItemIcon>
-                    <SvgIcon>
-                      <PlexIcon />
-                    </SvgIcon>
-                  </ListItemIcon>
-                  <ListItemText>Plex</ListItemText>
-                </MenuItem>
-                <MenuItem
-                  onClick={() => handleOpenMediaSourceDialog('jellyfin')}
-                >
-                  <ListItemIcon>
-                    <SvgIcon>
-                      <JellyfinIcon />
-                    </SvgIcon>
-                  </ListItemIcon>
-                  <ListItemText>Jellyfin</ListItemText>
-                </MenuItem>
-              </Menu>
-            </Box>
+            <AddMediaSourceButton />
             <Box sx={{ flexBasis: '100%', width: 0 }}></Box>
             <Typography variant="caption" sx={{ width: '60%' }}>
-              Add sources of content for your channels. <br /> "Discover" will
-              attempt to automatically find sources and is supported for Plex
-              only.
+              Add sources of content for your channels.
             </Typography>
           </Stack>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', mb: 1 }}></Box>

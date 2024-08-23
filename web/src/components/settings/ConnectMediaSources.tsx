@@ -1,8 +1,10 @@
+import jellyfinSvg from '@/assets/jellyfin.svg';
+import plexSvg from '@/assets/plex.svg';
+import { useMediaSources } from '@/hooks/settingsHooks.ts';
 import { Edit } from '@mui/icons-material';
 import {
   Box,
   Card,
-  CardActions,
   CardContent,
   CardProps,
   IconButton,
@@ -14,11 +16,8 @@ import {
   TableRow,
 } from '@mui/material';
 import { Link as RouterLink } from '@tanstack/react-router';
-import plexSvg from '../../assets/plex.svg';
-import { useMediaSources } from '../../hooks/settingsHooks.ts';
-import AddPlexServer from './AddPlexServer.tsx';
 
-export default function ConnectPlex(props: CardProps) {
+export default function ConnectMediaSources(props: CardProps) {
   const {
     sx = {
       py: 2,
@@ -28,23 +27,16 @@ export default function ConnectPlex(props: CardProps) {
     ...restProps
   } = props;
 
-  const { data: plexServers } = useMediaSources();
-  const isPlexConnected = plexServers && plexServers.length > 0;
-  const title = isPlexConnected ? 'Add Plex Library' : 'Connect Plex Now';
+  const { data: mediaSources } = useMediaSources();
+  const hasMediaSources = mediaSources && mediaSources.length > 0;
 
   return (
     <Box sx={sx} {...restProps}>
       <Card raised>
         <CardContent>
-          {!isPlexConnected && (
-            <>
-              <img src={plexSvg} width="75" />
-            </>
-          )}
-
-          {isPlexConnected ? (
+          {hasMediaSources ? (
             <TableContainer>
-              <Table>
+              <Table size="small">
                 <TableHead>
                   <TableRow>
                     <TableCell></TableCell>
@@ -53,17 +45,20 @@ export default function ConnectPlex(props: CardProps) {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {plexServers.map((server) => {
+                  {mediaSources.map((server) => {
                     return (
                       <TableRow key={server.id}>
                         <TableCell sx={{ maxWidth: 25 }}>
-                          <img src={plexSvg} width="25" />
+                          <img
+                            src={server.type === 'plex' ? plexSvg : jellyfinSvg}
+                            width="25"
+                          />
                         </TableCell>
                         <TableCell>{server.name}</TableCell>
                         <TableCell>
                           <IconButton
                             component={RouterLink}
-                            to={`/settings/plex`}
+                            to={`/settings/sources`}
                             color="primary"
                           >
                             <Edit />
@@ -75,11 +70,6 @@ export default function ConnectPlex(props: CardProps) {
                 </TableBody>
               </Table>
             </TableContainer>
-          ) : null}
-          {!isPlexConnected ? (
-            <CardActions sx={{ justifyContent: 'center' }}>
-              <AddPlexServer title={title} />
-            </CardActions>
           ) : null}
         </CardContent>
       </Card>
