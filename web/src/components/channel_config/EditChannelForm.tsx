@@ -33,9 +33,10 @@ function getDefaultFormValues(channel: Channel): SaveChannelRequest {
   return {
     ...channel,
     fillerCollections: channel.fillerCollections ?? [],
-    fillerRepeatCooldown: channel.fillerRepeatCooldown
-      ? channel.fillerRepeatCooldown / 1000
-      : DefaultChannel.fillerRepeatCooldown,
+    fillerRepeatCooldown:
+      (channel.fillerRepeatCooldown
+        ? channel.fillerRepeatCooldown
+        : DefaultChannel.fillerRepeatCooldown!) / 1000,
     guideFlexTitle: channel.guideFlexTitle ?? '',
     guideMinimumDuration: channel.guideMinimumDuration / 1000,
     transcoding: {
