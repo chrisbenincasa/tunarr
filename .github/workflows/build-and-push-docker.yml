@@ -88,10 +88,8 @@ jobs:
             type=schedule,pattern=edge
             # Update version tags on proper releases
             type=semver,pattern={{version}}
-            # Update edge tag when we manually trigger the releawe
+            # Update edge tag when we manually trigger the release
             type=raw,value=edge,enable=${{github.ref == format('refs/heads/{0}', 'dev') && github.event_name == 'workflow_dispatch'}}
-            # Tag latest for each specific build type
-            type=raw,value=latest
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
