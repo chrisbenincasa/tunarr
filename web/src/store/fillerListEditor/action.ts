@@ -1,14 +1,18 @@
-import { ContentProgram, CustomProgram } from '@tunarr/types';
-import { map } from 'lodash-es';
-import { forAddedMediaType, zipWithIndex } from '../../helpers/util.ts';
-import { AddedMedia } from '../../types/index.ts';
+import { forAddedMediaType, zipWithIndex } from '@/helpers/util.ts';
 import {
   jellyfinItemToContentProgram,
   plexMediaToContentProgram,
-} from '../channelEditor/actions';
-import useStore from '../index.ts';
-
-import { FillerList, FillerListProgramming } from '@tunarr/types';
+} from '@/store/channelEditor/actions';
+import { emptyEntityEditor } from '@/store/entityEditor/util.ts';
+import useStore from '@/store/index.ts';
+import { AddedMedia } from '@/types/index.ts';
+import {
+  ContentProgram,
+  CustomProgram,
+  FillerList,
+  FillerListProgramming,
+} from '@tunarr/types';
+import { map, merge } from 'lodash-es';
 
 export const addMediaToCurrentFillerList = (programs: AddedMedia[]) =>
   useStore.setState(({ fillerListEditor }) => {
@@ -21,11 +25,6 @@ export const addMediaToCurrentFillerList = (programs: AddedMedia[]) =>
           jellyfin: ({ media }) => jellyfinItemToContentProgram(media),
           'custom-show': ({ program }) => program,
         }),
-      );
-      console.log(
-        programs,
-        convertedPrograms,
-        zipWithIndex(convertedPrograms, fillerListEditor.programList.length),
       );
 
       fillerListEditor.programList = fillerListEditor.programList.concat(
@@ -45,4 +44,18 @@ export const setCurrentFillerList = (
     const zippedPrograms = zipWithIndex(programs);
     fillerListEditor.originalProgramList = [...zippedPrograms];
     fillerListEditor.programList = [...zippedPrograms];
+  });
+
+export const updateCurrentFillerList = (show: Partial<FillerList>) =>
+  useStore.setState(({ fillerListEditor }) => {
+    fillerListEditor.currentEntity = merge(
+      {},
+      fillerListEditor.currentEntity,
+      show,
+    );
+  });
+
+export const clearCurrentFillerList = () =>
+  useStore.setState((state) => {
+    state.fillerListEditor = emptyEntityEditor();
   });

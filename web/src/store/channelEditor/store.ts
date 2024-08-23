@@ -1,3 +1,5 @@
+import { emptyEntityEditor } from '@/store/entityEditor/util.ts';
+import { UICondensedChannelProgram, UIIndex } from '@/types/index.ts';
 import {
   Channel,
   ContentProgram,
@@ -7,7 +9,6 @@ import {
 } from '@tunarr/types';
 import { DynamicContentConfig, LineupSchedule } from '@tunarr/types/api';
 import { StateCreator } from 'zustand';
-import { UICondensedChannelProgram, UIIndex } from '../../types/index.ts';
 
 export type HasId = { id: string };
 
@@ -57,20 +58,10 @@ export interface EditorsState {
   >;
 }
 
-const empty = () => ({
-  originalProgramList: [],
-  programList: [],
-  schedulePreviewList: [],
-  programsLoaded: false,
-  dirty: {
-    programs: false,
-  },
-});
-
 export const initialChannelEditorState: EditorsState = {
-  channelEditor: { ...empty(), programLookup: {} },
-  customShowEditor: empty(),
-  fillerListEditor: empty(),
+  channelEditor: { ...emptyEntityEditor(), programLookup: {} },
+  customShowEditor: emptyEntityEditor(),
+  fillerListEditor: emptyEntityEditor(),
 };
 
 export const createChannelEditorState: StateCreator<EditorsState> = () => {
