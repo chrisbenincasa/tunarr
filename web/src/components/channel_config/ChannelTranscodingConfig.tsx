@@ -240,7 +240,7 @@ export default function ChannelTranscodingConfig() {
                       <ImageUploadInput
                         // TODO: This should be something like {channel.id}_fallback_picture.ext
                         fileRenamer={typedProperty('name')}
-                        label="Watermark Picture URL"
+                        label="Watermark Image URL"
                         onFormValueChange={(newPath) => field.onChange(newPath)}
                         onUploadError={console.error}
                         FormControlProps={{ fullWidth: true }}
@@ -370,29 +370,48 @@ export default function ChannelTranscodingConfig() {
                     </FormHelperText>
                   </FormControl>
                 </Grid2>
-                <Grid2 xs={12} lg={6}>
-                  <NumericFormControllerText
-                    control={control}
-                    name="watermark.duration"
-                    rules={{ min: 0 }}
-                    TextFieldProps={{
-                      label: 'Overlay Duration (seconds)',
-                      fullWidth: true,
-                      helperText:
-                        "Sets the absolute duration of the watermark on the channel's stream. Set to 0 to make the overlay permantently visible.",
-                    }}
-                  />
-                </Grid2>
+
                 <Grid2 xs={12} lg={6}>
                   <NumericFormControllerText
                     control={control}
                     name="watermark.fadeConfig.0.periodMins"
                     rules={{ min: 0 }}
                     TextFieldProps={{
-                      label: 'Overlay Period (mins)',
+                      label: 'Watermark Period (mins)',
                       fullWidth: true,
                       helperText:
                         'Display/hide the watermark via a fade animation every N minutes. Set to 0 to disable.',
+                    }}
+                  />
+                </Grid2>
+                <Grid2 xs={12} lg={6}>
+                  <FormControl fullWidth>
+                    <FormControlLabel
+                      control={
+                        <CheckboxFormController
+                          control={control}
+                          name="watermark.fadeConfig.0.leadingEdge"
+                        />
+                      }
+                      label="Display Watermark on Leading Edge"
+                    />
+                    <FormHelperText>
+                      When enabled, intermittent watermarks fade in immediately
+                      when a stream is initialized. When disabled, the first
+                      watermark fade-in occurs after a full period.
+                    </FormHelperText>
+                  </FormControl>
+                </Grid2>
+                <Grid2 xs={12} lg={6}>
+                  <NumericFormControllerText
+                    control={control}
+                    name="watermark.duration"
+                    rules={{ min: 0 }}
+                    TextFieldProps={{
+                      label: 'Total Watermark Duration (seconds)',
+                      fullWidth: true,
+                      helperText:
+                        "Sets the absolute duration of the watermark on the channel's stream. Set to 0 to make the overlay permantently visible.",
                     }}
                   />
                 </Grid2>

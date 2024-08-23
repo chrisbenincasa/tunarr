@@ -32,6 +32,9 @@ export const WatermarkSchema = z.object({
         // e.g. a 5m period fades in the watermark every 5th min and displays it
         // for 5 mins.
         periodMins: z.number().positive().min(1),
+        // If true, the watermark will fade in immediately on channel stream start.
+        // If false, the watermark will start not visible and fade in after periodMins.
+        leadingEdge: z.boolean().optional().catch(true),
       }),
     )
     .optional(),
