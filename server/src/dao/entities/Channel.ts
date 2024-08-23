@@ -94,6 +94,7 @@ const ChannelWatermarkSchema = z.object({
         // e.g. a 5m period fades in the watermark every 5th min and displays it
         // for 5 mins.
         periodMins: z.number().positive().min(1),
+        leadingEdge: z.boolean().optional().catch(true),
       }),
     )
     .optional(),

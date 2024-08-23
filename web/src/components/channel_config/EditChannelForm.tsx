@@ -66,6 +66,7 @@ function getDefaultFormValues(channel: Channel): SaveChannelRequest {
       fadeConfig: channel.watermark?.fadeConfig ?? [
         {
           periodMins: 0,
+          leadingEdge: true,
         },
       ],
     },
@@ -118,8 +119,6 @@ export function EditChannelForm({
       data.watermark?.fadeConfig,
       (conf) => conf.periodMins <= 0,
     );
-
-    console.log(data.fillerCollections);
 
     const dataTransform: SaveChannelRequest = {
       ...data,

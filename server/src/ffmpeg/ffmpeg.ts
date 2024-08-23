@@ -723,11 +723,17 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
             2,
           )}`,
         );
+      } else if (
+        !isEmpty(watermark?.fadeConfig) &&
+        isDefined(streamStats?.duration)
+      ) {
+        watermarkFilters.push(`format=yuva420p`);
       }
 
       if (!isEmpty(watermark?.fadeConfig) && isDefined(streamStats?.duration)) {
         // Pick the first for now
-        const periodMins = first(watermark?.fadeConfig)!.periodMins;
+        const fadeConfig = first(watermark?.fadeConfig)!;
+        const periodMins = fadeConfig.periodMins;
         if (periodMins > 0) {
           const start = startTime ?? 0;
           const streamDur =
@@ -736,7 +742,16 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
               : streamStats.duration;
           const periodSeconds = periodMins * 60;
           const cycles = streamDur / (periodSeconds * 1000);
-          for (let cycle = 0, t = 0; cycle < cycles; cycle++) {
+
+          // If leading edge, fade in the watermark after the first second of programming
+          // otherwise, wait a full period
+          const fadeStartTime = fadeConfig.leadingEdge ? 1 : periodSeconds;
+          // Make the watermark transparent before the first fade in
+          watermarkFilters.push(
+            `colorchannelmixer=aa=0:enable='between(t,0,${fadeStartTime})'`,
+          );
+
+          for (let cycle = 0, t = fadeStartTime; cycle < cycles; cycle++) {
             watermarkFilters.push(
               `fade=in:st=${t}:d=1:alpha=1:enable='between(t,${t},${
                 t + (periodSeconds - 1)
