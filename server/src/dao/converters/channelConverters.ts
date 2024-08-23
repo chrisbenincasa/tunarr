@@ -25,6 +25,7 @@ export const dbChannelToApiChannel = ({
     guideMinimumDuration: channel.guideMinimumDuration,
     groupTitle: channel.groupTitle || '',
     disableFillerOverlay: channel.disableFillerOverlay,
+    fillerRepeatCooldown: channel.fillerRepeatCooldown,
     startTime: channel.startTime,
     offline: channel.offline,
     name: channel.name,

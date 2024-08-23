@@ -33,13 +33,16 @@ import { useCallback, useState } from 'react';
 import { Controller, useFieldArray, useFormContext } from 'react-hook-form';
 import { Link as RouterLink } from '@tanstack/react-router';
 import { useDebounceCallback } from 'usehooks-ts';
-import { typedProperty } from '../../helpers/util.ts';
+import { isNonEmptyString, typedProperty } from '../../helpers/util.ts';
 import { useFillerLists } from '../../hooks/useFillerLists.ts';
 import useStore from '../../store/index.ts';
 import { ImageUploadInput } from '../settings/ImageUploadInput.tsx';
 import { NumericFormController } from '../util/TypedController.tsx';
+import { DefaultFallbackPicturePath } from '@/helpers/constants.ts';
+import { useSettings } from '@/store/settings/selectors.ts';
 
 export function ChannelFlexConfig() {
+  const { backendUri } = useSettings();
   const channel = useStore((s) => s.channelEditor.currentEntity);
   const { data: fillerLists, isPending: fillerListsLoading } = useFillerLists();
   const { control, watch } = useFormContext<SaveChannelRequest>();
@@ -52,9 +55,13 @@ export function ChannelFlexConfig() {
 
   const [offlineMode, offlinePicture] = watch([
     'offline.mode',
-    // 'fillerCollections',
     'offline.picture',
   ]);
+
+  const offlinePictureSrc = isNonEmptyString(offlinePicture)
+    ? offlinePicture
+    : `${backendUri}${DefaultFallbackPicturePath}`;
+
   const [weights, setWeights] = useState<number[]>(
     map(channelFillerLists, 'weight'),
   );
@@ -295,11 +302,9 @@ export function ChannelFlexConfig() {
                 Filler Content
               </Typography>
               <Typography variant="body1" sx={{ mb: 2 }}>
-                Videos from filler lists will be picked randomly to play during
-                channel offline time. Videos from the filler list will be
-                randomly picked to play unless there are cooldown restrictions
-                to place or if no videos are short enough for the remaining Flex
-                time.
+                Videos from the filler list will be randomly picked to play
+                unless there are cooldown restrictions to place or if no videos
+                are short enough for the remaining Flex time.
               </Typography>
               {!fillerListsLoading && renderFillerLists()}
               {fillerListsLoading ? <Skeleton /> : renderAddFillerListEditor()}
@@ -307,10 +312,6 @@ export function ChannelFlexConfig() {
             <Divider sx={{ my: 2 }} />
             <Typography variant="h5" sx={{ mb: 1 }}>
               Filler Options
-            </Typography>
-            <Typography variant="body1">
-              Select content to use as filler content in between programs on the
-              channel's schedule.
             </Typography>
             <Controller
               name="fillerRepeatCooldown"
@@ -320,7 +321,7 @@ export function ChannelFlexConfig() {
                 <>
                   <TextField
                     fullWidth
-                    label="Filler Cooldown"
+                    label="Filler Cooldown (seconds)"
                     margin="normal"
                     helperText={
                       errors.fillerRepeatCooldown?.type === 'validate'
@@ -331,7 +332,7 @@ export function ChannelFlexConfig() {
                     onChange={(e) => field.onChange(parseInt(e.target.value))}
                   />
                   <Typography variant="caption" sx={{ ml: 1 }}>
-                    Minimum time (minutes) before replaying a filler
+                    Minimum time (seconds) before replaying a filler
                   </Typography>
                 </>
               )}
@@ -364,7 +365,7 @@ export function ChannelFlexConfig() {
                 <Box
                   component="img"
                   width="100%"
-                  src={offlinePicture}
+                  src={offlinePictureSrc}
                   sx={{ mr: 1 }}
                 />
               </Box>
@@ -377,7 +378,7 @@ export function ChannelFlexConfig() {
                   <FormControl fullWidth sx={{ mb: 1 }}>
                     <InputLabel>Fallback Mode</InputLabel>
                     <Select fullWidth label="Fallback Mode" {...field}>
-                      <MenuItem value={'pic'}>Picture</MenuItem>
+                      <MenuItem value={'pic'}>Image</MenuItem>
                       <MenuItem disabled value={'clip'}>
                         Library Clip (not yet implemented)
                       </MenuItem>
@@ -392,7 +393,7 @@ export function ChannelFlexConfig() {
                   <ImageUploadInput
                     // TODO: This should be something like {channel.id}_fallback_picture.ext
                     fileRenamer={typedProperty('name')}
-                    label="Picture"
+                    label="Image URL"
                     onFormValueChange={(newPath) => {
                       field.onChange(newPath);
                     }}
