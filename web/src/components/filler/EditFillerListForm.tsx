@@ -1,3 +1,9 @@
+import { isNonEmptyString } from '@/helpers/util.ts';
+import { removeFillerListProgram } from '@/store/entityEditor/util.ts';
+import {
+  clearCurrentFillerList,
+  updateCurrentFillerList,
+} from '@/store/fillerListEditor/action.ts';
 import { Tv } from '@mui/icons-material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import {
@@ -14,15 +20,13 @@ import {
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
+import { createExternalId } from '@tunarr/shared';
 import { FillerList } from '@tunarr/types';
 import { useCallback, useEffect } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
-import { removeFillerListProgram } from '@/store/entityEditor/util.ts';
 import { UIFillerListProgram } from '../../types/index.ts';
-import { isNonEmptyString } from '@/helpers/util.ts';
-import { createExternalId } from '@tunarr/shared';
 
 export type FillerListMutationArgs = {
   id?: string;
@@ -51,6 +55,7 @@ export function EditFillerListForm({
     control,
     setValue,
     handleSubmit,
+    getValues,
     formState: { isValid },
     register,
   } = useForm<FillerListFormType>({
@@ -77,6 +82,7 @@ export function EditFillerListForm({
         queryKey: ['fillers'],
         exact: false,
       });
+      clearCurrentFillerList();
       navigate({ to: '/library/fillers' }).catch(console.warn);
     },
     onError: (e) => console.error(e),
@@ -101,6 +107,18 @@ export function EditFillerListForm({
   useEffect(() => {
     setValue('programs', fillerListPrograms);
   }, [fillerListPrograms, setValue]);
+
+  const navToProgramming = () => {
+    if (isNew) {
+      updateCurrentFillerList(getValues());
+    }
+    navigate({
+      to: isNew
+        ? '/library/fillers/new/programming'
+        : `/library/fillers/$fillerId/programming`,
+      params: { fillerId: fillerList?.id },
+    }).catch(console.warn);
+  };
 
   const renderPrograms = () => {
     return fillerListPrograms.length > 0 ? (
@@ -181,8 +199,10 @@ export function EditFillerListForm({
           <Tooltip title="Add TV Shows or Movies to filler" placement="right">
             <Button
               disableRipple
-              component={Link}
-              to={isNew ? './programming' : '../programming'}
+              component="button"
+              // component={Link}
+              onClick={() => navToProgramming()}
+              // to={isNew ? './programming' : '../programming'}
               startIcon={<Tv />}
               variant="contained"
             >

@@ -29,3 +29,13 @@ export const removeFillerListProgram = (idx: number) =>
   useStore.setState(({ fillerListEditor }) => {
     deleteProgramAtIndex(fillerListEditor, idx);
   });
+
+export const emptyEntityEditor = () => ({
+  originalProgramList: [],
+  programList: [],
+  schedulePreviewList: [],
+  programsLoaded: false,
+  dirty: {
+    programs: false,
+  },
+});
