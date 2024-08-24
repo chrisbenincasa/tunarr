@@ -33,6 +33,7 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
         { url: req.body.url, name: 'Unknown' },
         req.body.username,
         req.body.password,
+        req.serverCtx.settings.clientId(),
       );
 
       return res.send({ accessToken: nullToUndefined(response.AccessToken) });
