@@ -107,7 +107,7 @@ export class JellyfinPlayer extends Player {
     const streamUrl = new URL(stream.streamUrl);
     streamUrl.searchParams.append(
       'startTimeTicks',
-      Math.round((lineupItem.start ?? 0) * 1000).toString(),
+      Math.round((lineupItem.start ?? 0) * 10000).toString(),
     );
 
     const emitter = new EventEmitter() as TypedEventEmitter<FfmpegEvents>;
