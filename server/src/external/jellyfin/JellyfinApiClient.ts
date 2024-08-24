@@ -56,6 +56,7 @@ export class JellyfinApiClient extends BaseApiClient<
     server: Omit<RemoteMediaSourceOptions, 'apiKey' | 'type'>,
     username: string,
     password: string,
+    clientId: string = v4(),
   ) {
     try {
       const response = await axios.post(
@@ -66,7 +67,7 @@ export class JellyfinApiClient extends BaseApiClient<
         },
         {
           headers: {
-            Authorization: `MediaBrowser Client="Tunarr", Device="Web Browser", DeviceId=${v4()}, Version=${getTunarrVersion()}`,
+            Authorization: `MediaBrowser Client="Tunarr", Device="Web Browser", DeviceId=${clientId}, Version=${getTunarrVersion()}`,
           },
         },
       );
@@ -164,6 +165,50 @@ export class JellyfinApiClient extends BaseApiClient<
   getThumbUrl(id: string) {
     // Naive impl for now...
     return `${this.options.url}/Items/${id}/Images/Primary`;
+  }
+
+  async recordPlaybackStart(itemId: string, deviceId: string) {
+    return this.doPost({
+      url: '/Sessions/Playing',
+      headers: {
+        Authorization: `MediaBrowser Client="Tunarr", Device="Web Browser", DeviceId=${deviceId}, Version=${getTunarrVersion()}`,
+      },
+      data: {
+        ItemId: itemId,
+        PlayMethod: 'DirectStream',
+        PositionTicks: 0,
+        CanSeek: false,
+      },
+    });
+  }
+
+  async updateUserItemPlayback(itemId: string, elapsedMs: number) {
+    return this.doPost({
+      url: `/UserItems/${itemId}/UserData`,
+      data: {
+        PlaybackPositionTicks: elapsedMs * 10000,
+      },
+    });
+  }
+
+  async recordPlaybackProgress(
+    itemId: string,
+    elapsedMs: number,
+    deviceId: string,
+    isStopped: boolean = false,
+  ) {
+    return this.doPost({
+      url: `/Sessions/Playing/${isStopped ? 'Stopped' : 'Progress'}`,
+      headers: {
+        Authorization: `MediaBrowser Client="Tunarr", Device="Web Browser", DeviceId=${deviceId}, Version=${getTunarrVersion()}`,
+      },
+      data: {
+        ItemId: itemId,
+        PlayMethod: 'DirectStream',
+        PositionTicks: elapsedMs * 10000,
+        CanSeek: false,
+      },
+    });
   }
 
   static getThumbUrl(opts: {

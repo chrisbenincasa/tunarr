@@ -10,11 +10,13 @@ import {
 import { ProgramDB } from '../../dao/programDB.js';
 import { FFMPEG, FfmpegEvents } from '../../ffmpeg/ffmpeg.js';
 import { TypedEventEmitter } from '../../types/eventEmitter.js';
-import { Nullable } from '../../types/util.js';
-import { isDefined } from '../../util/index.js';
+import { Maybe, Nullable } from '../../types/util.js';
+import { ifDefined, isDefined } from '../../util/index.js';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
 import { Player, PlayerContext } from '../Player.js';
 import { JellyfinStreamDetails } from './JellyfinStreamDetails.js';
+import { UpdateJellyfinPlayStatusScheduledTask } from '../../tasks/jellyfin/UpdateJellyfinPlayStatusTask.js';
+import { GlobalScheduler } from '../../services/scheduler.js';
 
 export class JellyfinPlayer extends Player {
   private logger = LoggerFactory.child({
@@ -23,6 +25,7 @@ export class JellyfinPlayer extends Player {
   });
   private ffmpeg: Nullable<FFMPEG> = null;
   private killed: boolean = false;
+  private updatePlayStatusTask: Maybe<UpdateJellyfinPlayStatusScheduledTask>;
 
   constructor(private context: PlayerContext) {
     super();
@@ -31,9 +34,9 @@ export class JellyfinPlayer extends Player {
   cleanUp() {
     super.cleanUp();
     this.killed = true;
-    // ifDefined(this.updatePlexStatusTask, (task) => {
-    //   task.stop();
-    // });
+    ifDefined(this.updatePlayStatusTask, (task) => {
+      task.stop();
+    });
 
     if (!isNull(this.ffmpeg)) {
       this.ffmpeg.kill();
@@ -127,22 +130,24 @@ export class JellyfinPlayer extends Player {
 
     ffmpegOutStream.pipe(outStream, { end: false });
 
-    // if (plexSettings.updatePlayStatus) {
-    //   this.updatePlexStatusTask = new UpdatePlexPlayStatusScheduledTask(
-    //     server,
-    //     {
-    //       channelNumber: channel.number,
-    //       duration: lineupItem.duration,
-    //       ratingKey: lineupItem.externalKey,
-    //       startTime: lineupItem.start ?? 0,
-    //     },
-    //   );
+    // TODO: Generalize media source settings
+    if (this.context.settings.plexSettings().updatePlayStatus) {
+      this.updatePlayStatusTask = new UpdateJellyfinPlayStatusScheduledTask(
+        server,
+        {
+          first: true,
+          channelNumber: channel.number,
+          itemDuration: lineupItem.duration,
+          itemId: lineupItem.externalKey,
+          itemStartPositionMs: lineupItem.start ?? 0,
+        },
+      );
 
-    //   GlobalScheduler.scheduleTask(
-    //     this.updatePlexStatusTask.id,
-    //     this.updatePlexStatusTask,
-    //   );
-    // }
+      GlobalScheduler.scheduleTask(
+        this.updatePlayStatusTask.id,
+        this.updatePlayStatusTask,
+      );
+    }
 
     this.ffmpeg.on('end', () => {
       emitter.emit('end');
