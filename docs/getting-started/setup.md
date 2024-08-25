@@ -1,14 +1,6 @@
 # Setup
 
-## Migrating from dizqueTV
-
-!!! tip
-
-    We highly recommend that you use a copy of your `.dizquetv` database directory when starting out with Tunarr. While Tunarr does not alter or overwrite the `.dizquetv` database directory, it is still considered pre-release software and should be treated as such!
-
-Upon first launch, Tunarr will look for a `.dizquetv` folder relative to its working directory and attempt a migration. Tunarr will try and migrate all legacy dizqueTV settings, including channels, programs, Plex servers, etc.
-
-When using Docker, you can mount your a directory named `.dizquetv` when launching Tunarr to initiate the migration.
+## Running Tunarr in Docker
 
 ```
 docker run \
@@ -43,20 +35,38 @@ services:
     # - ./.dizquetv:/.dizquetv
 ```
 
+## Migrating from dizqueTV
+
+!!! tip
+
+    We highly recommend that you use a copy of your `.dizquetv` database directory when starting out with Tunarr. While Tunarr does not alter or overwrite the `.dizquetv` database directory, it is still considered pre-release software and should be treated as such!
+
+Upon first launch, Tunarr will look for a `.dizquetv` folder relative to its working directory and attempt a migration. Tunarr will try and migrate all legacy dizqueTV settings, including channels, programs, Plex servers, etc.
+
+When using Docker, you can mount your a directory named `.dizquetv` when launching Tunarr to initiate the migration.
+
 !!! note
 
     You can force a legacy migration on subsequent launches of Tunarr using the `--force_migration` flag. But be careful! This can be destructive if you've done any additional configuration in Tunarr.
 
 ## Hardware Encoding
 
+### Nvidia
+
+There are many ways to enable usage of an Nvidia GPU in a Docker container. The latest, and arguably simplest, method is to install and configure the [Nvidia Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html).
+
+### QSV (Intel iGPUs)
+
 For QSV compatability in Docker, you must mount `/dev/dri` the container:
 
 ```
+
 docker run \
-    -v "$(pwd)"/tunarr:/config/tunarr \
-    --device /dev/dri/:/dev/dri/
-    -p 8000:8000 \
-    chrisbenincasa/tunarr:latest-vaapi
+ -v "$(pwd)"/tunarr:/config/tunarr \
+ --device /dev/dri/:/dev/dri/
+-p 8000:8000 \
+ chrisbenincasa/tunarr:latest-vaapi
+
 ```
 
 ## Initial Setup
@@ -78,3 +88,7 @@ Currently, Tunarr supports Plex and Jellyfin as media sources. In order to add p
 Tunarr also requires [FFMPEG](https://ffmpeg.org/). FFMPEG is used to normalize channel video / audio streams for seamless playback, interleave your "flex" content, and more. Tunarr defaults to looking for the FFMPEG executable at `/usr/bin/ffmpeg`. If no executable is found, you can change the path in the FFMPEG settings page.
 
 ![Welcome Page With FFMPEG](/assets/welcome_page_ffmpeg_installed.png)
+
+```
+
+```
