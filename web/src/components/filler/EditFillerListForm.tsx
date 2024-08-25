@@ -194,25 +194,24 @@ export function EditFillerListForm({
           )}
         />
         <Divider />
-        {/* TODO put this on the same line as the Programming header and push it to the right. */}
-        <Box alignSelf={'flex-end'} gap={0}>
-          <Tooltip title="Add TV Shows or Movies to filler" placement="right">
-            <Button
-              disableRipple
-              component="button"
-              // component={Link}
-              onClick={() => navToProgramming()}
-              // to={isNew ? './programming' : '../programming'}
-              startIcon={<Tv />}
-              variant="contained"
-            >
-              Add Media
-            </Button>
-          </Tooltip>
-        </Box>
 
         <Box>
-          <Typography>Programming</Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Typography variant="h6" sx={{ flex: 1 }}>
+              Programming
+            </Typography>
+            <Tooltip title="Add TV Shows or Movies to filler" placement="right">
+              <Button
+                disableRipple
+                component="button"
+                onClick={() => navToProgramming()}
+                startIcon={<Tv />}
+                variant="contained"
+              >
+                Add Media
+              </Button>
+            </Tooltip>
+          </Box>
           <Box display="flex">
             <Box sx={{ flex: 1, maxHeight: 400, overflowY: 'auto' }}>
               <List {...register('programs', { minLength: 1 })} dense>

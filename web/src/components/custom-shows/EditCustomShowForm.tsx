@@ -1,28 +1,34 @@
-import { Tv } from '@mui/icons-material';
-import DeleteIcon from '@mui/icons-material/Delete';
+import { isNonEmptyString } from '@/helpers/util.ts';
 import { useTunarrApi } from '@/hooks/useTunarrApi';
 import { queryClient } from '@/queryClient';
+import {
+  clearCurrentCustomShow,
+  updateCurrentCustomShow,
+} from '@/store/customShowEditor/actions.ts';
 import { removeCustomShowProgram } from '@/store/entityEditor/util';
 import { UICustomShowProgram } from '@/types';
+import { Tv } from '@mui/icons-material';
+import DeleteIcon from '@mui/icons-material/Delete';
 import {
-  ListItem,
-  IconButton,
-  ListItemText,
   Box,
+  Button,
+  Divider,
+  IconButton,
+  List,
+  ListItem,
+  ListItemText,
   Stack,
   TextField,
   Tooltip,
   Typography,
-  List,
-  Button,
 } from '@mui/material';
 import { useMutation } from '@tanstack/react-query';
-import { useNavigate, Link } from '@tanstack/react-router';
-import { CustomShow } from '@tunarr/types';
-import { useEffect, useCallback } from 'react';
-import { useForm, SubmitHandler, Controller } from 'react-hook-form';
+import { useNavigate } from '@tanstack/react-router';
 import { createExternalId } from '@tunarr/shared';
-import { isNonEmptyString } from '@/helpers/util.ts';
+import { CustomShow } from '@tunarr/types';
+import { isEmpty } from 'lodash-es';
+import { useCallback, useEffect } from 'react';
+import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 
 type CustomShowForm = {
   id?: string;
@@ -47,6 +53,7 @@ export function EditCustomShowsForm({
     control,
     reset,
     handleSubmit,
+    getValues,
     formState: { isValid },
   } = useForm<CustomShowForm>({
     defaultValues: {
@@ -82,6 +89,7 @@ export function EditCustomShowsForm({
         queryKey: ['custom-shows'],
         exact: false,
       });
+      clearCurrentCustomShow();
       navigate({ to: '/library/custom-shows' }).catch(console.warn);
     },
   });
@@ -100,73 +108,89 @@ export function EditCustomShowsForm({
     removeCustomShowProgram(idx);
   }, []);
 
+  const navToProgramming = () => {
+    if (isNew) {
+      updateCurrentCustomShow(getValues());
+    }
+    navigate({
+      to: isNew
+        ? '/library/custom-shows/new/programming'
+        : `/library/custom-shows/$customShowId/programming`,
+      params: { customShowId: customShow?.id },
+    }).catch(console.warn);
+  };
+
   const renderPrograms = () => {
-    return customShowPrograms.map((p, idx) => {
-      let id: string;
-      let title: string;
+    return !isEmpty(customShowPrograms) ? (
+      customShowPrograms.map((p, idx) => {
+        let id: string;
+        let title: string;
 
-      switch (p.type) {
-        case 'custom':
-          id = p.id;
+        switch (p.type) {
+          case 'custom':
+            id = p.id;
 
-          // Display the program title when available
-          if (p.program && p.program.title) {
-            title = p.program.title;
-          } else {
-            title = 'Custom';
-          }
-          break;
-        case 'content':
-          if (p.episodeTitle) {
-            title = `${p.title} - ${p.episodeTitle}`;
-          } else {
-            title = p.title;
-          }
-          if (p.persisted) {
-            id = p.id!;
-          } else if (
-            isNonEmptyString(p.externalSourceType) &&
-            isNonEmptyString(p.externalSourceName) &&
-            isNonEmptyString(p.externalKey)
-          ) {
-            id = createExternalId(
-              p.externalSourceType,
-              p.externalSourceName,
-              p.externalKey,
-            );
-          } else {
-            id = 'unknown';
-          }
-          break;
-      }
+            // Display the program title when available
+            if (p.program && p.program.title) {
+              title = p.program.title;
+            } else {
+              title = 'Custom';
+            }
+            break;
+          case 'content':
+            if (p.episodeTitle) {
+              title = `${p.title} - ${p.episodeTitle}`;
+            } else {
+              title = p.title;
+            }
+            if (p.persisted) {
+              id = p.id!;
+            } else if (
+              isNonEmptyString(p.externalSourceType) &&
+              isNonEmptyString(p.externalSourceName) &&
+              isNonEmptyString(p.externalKey)
+            ) {
+              id = createExternalId(
+                p.externalSourceType,
+                p.externalSourceName,
+                p.externalKey,
+              );
+            } else {
+              id = 'unknown';
+            }
+            break;
+        }
 
-      const key = `${p.type}|${id}`;
+        const key = `${p.type}|${id}`;
 
-      return (
-        <ListItem
-          key={key}
-          secondaryAction={
-            <IconButton
-              onClick={() => deleteProgramAtIndex(idx)}
-              edge="end"
-              aria-label="delete"
-            >
-              <DeleteIcon />
-            </IconButton>
-          }
-        >
-          <ListItemText
-            primary={title}
-            sx={{ fontStyle: p.persisted ? 'normal' : 'italic' }}
-          />
-        </ListItem>
-      );
-    });
+        return (
+          <ListItem
+            key={key}
+            secondaryAction={
+              <IconButton
+                onClick={() => deleteProgramAtIndex(idx)}
+                edge="end"
+                aria-label="delete"
+              >
+                <DeleteIcon />
+              </IconButton>
+            }
+          >
+            <ListItemText
+              primary={title}
+              sx={{ fontStyle: p.persisted ? 'normal' : 'italic' }}
+            />
+          </ListItem>
+        );
+      })
+    ) : (
+      <Typography align="center">No media added yet.</Typography>
+    );
   };
 
   return (
     <Box component="form" onSubmit={handleSubmit(saveCustomShow)}>
-      <Stack>
+      <Stack gap={2}>
         <Controller
           control={control}
           name="name"
@@ -174,24 +198,27 @@ export function EditCustomShowsForm({
             <TextField margin="normal" fullWidth label="Name" {...field} />
           )}
         />
+        <Divider />
         <Box>
-          <Tooltip
-            title="Add TV Shows or Movies to custom show"
-            placement="right"
-          >
-            <Button
-              disableRipple
-              component={Link}
-              to={isNew ? './programming' : '../programming'}
-              startIcon={<Tv />}
-              variant="contained"
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Typography variant="h6" sx={{ flex: 1 }}>
+              Programming
+            </Typography>
+            <Tooltip
+              title="Add TV Shows or Movies to custom show"
+              placement="right"
             >
-              Add Media
-            </Button>
-          </Tooltip>
-        </Box>
-        <Box>
-          <Typography>Programming</Typography>
+              <Button
+                disableRipple
+                component="button"
+                onClick={() => navToProgramming()}
+                startIcon={<Tv />}
+                variant="contained"
+              >
+                Add Media
+              </Button>
+            </Tooltip>
+          </Box>
           <Box display="flex">
             <Box sx={{ flex: 1, maxHeight: 400, overflowY: 'auto' }}>
               <List dense>{renderPrograms()}</List>

@@ -1,5 +1,6 @@
+import { emptyEntityEditor } from '@/store/entityEditor/util.ts';
 import { ContentProgram, CustomProgram } from '@tunarr/types';
-import { map } from 'lodash-es';
+import { map, merge } from 'lodash-es';
 import { forAddedMediaType, zipWithIndex } from '../../helpers/util.ts';
 import { AddedMedia } from '../../types/index.ts';
 import {
@@ -40,4 +41,18 @@ export const setCurrentCustomShow = (
     const zippedPrograms = zipWithIndex(programs);
     customShowEditor.originalProgramList = [...zippedPrograms];
     customShowEditor.programList = [...zippedPrograms];
+  });
+
+export const updateCurrentCustomShow = (show: Partial<CustomShow>) =>
+  useStore.setState(({ customShowEditor }) => {
+    customShowEditor.currentEntity = merge(
+      {},
+      customShowEditor.currentEntity,
+      show,
+    );
+  });
+
+export const clearCurrentCustomShow = () =>
+  useStore.setState((state) => {
+    state.customShowEditor = emptyEntityEditor();
   });
