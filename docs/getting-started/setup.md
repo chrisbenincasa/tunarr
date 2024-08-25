@@ -73,7 +73,7 @@ docker run \
 
 Upon first launching Tunarr, you will see the Welcome page with a few required setup steps.
 
-![Welcome Page No Plex](/assets/welcome_page_not_connected.png)
+![Welcome Page No Plex](../assets/welcome_page_not_connected.png)
 
 ### Media Sources
 
@@ -87,7 +87,7 @@ Currently, Tunarr supports Plex and Jellyfin as media sources. In order to add p
 
 Tunarr also requires [FFMPEG](https://ffmpeg.org/). FFMPEG is used to normalize channel video / audio streams for seamless playback, interleave your "flex" content, and more. Tunarr defaults to looking for the FFMPEG executable at `/usr/bin/ffmpeg`. If no executable is found, you can change the path in the FFMPEG settings page.
 
-![Welcome Page With FFMPEG](/assets/welcome_page_ffmpeg_installed.png)
+![Welcome Page With FFMPEG](../assets/welcome_page_ffmpeg_installed.png)
 
 ```
 
