@@ -23,9 +23,25 @@ export class Migration20240805185042 extends Migration {
     this.addSql(
       "create table `program__temp_alter` (`uuid` text not null, `created_at` datetime not null, `updated_at` datetime not null, `source_type` text check (`source_type` in ('plex', 'jellyfin')) not null, `original_air_date` text null, `duration` integer not null, `episode` integer null, `episode_icon` text null, `file_path` text null, `icon` text null, `external_source_id` text not null, `external_key` text not null, `plex_rating_key` text null, `plex_file_path` text null, `parent_external_key` text null, `grandparent_external_key` text null, `rating` text null, `season_number` integer null, `season_icon` text null, `show_icon` text null, `show_title` text null, `summary` text null, `title` text not null, `type` text check (`type` in ('movie', 'episode', 'track')) not null, `year` integer null, `artist_name` text null, `album_name` text null, `season_uuid` text null, `tv_show_uuid` text null, `album_uuid` text null, `artist_uuid` text null, constraint `program_season_uuid_foreign` foreign key(`season_uuid`) references `program_grouping`(`uuid`) on delete set null, constraint `program_tv_show_uuid_foreign` foreign key(`tv_show_uuid`) references `program_grouping`(`uuid`) on delete set null, constraint `program_album_uuid_foreign` foreign key(`album_uuid`) references `program_grouping`(`uuid`) on delete set null, constraint `program_artist_uuid_foreign` foreign key(`artist_uuid`) references `program_grouping`(`uuid`) on delete set null, primary key (`uuid`));",
     );
+
+    // Create a channel_programs table without a foreign key reference as a backup.
+    // Deleting the program table in the migration deletes all of the references
+    this.addSql(
+      'CREATE TABLE `channel_programs__temp_alter` (`channel_uuid` text not null, `program_uuid` text not null, constraint `channel_programs_channel_uuid_foreign` foreign key(`channel_uuid`) references `channel`(`uuid`) on delete cascade on update cascade, constraint `channel_programs_program_uuid_foreign` foreign key(`program_uuid`) references `program__temp_alter`(`uuid`) on delete cascade on update cascade primary key (`channel_uuid`, `program_uuid`));',
+    );
+
     this.addSql('insert into `program__temp_alter` select * from `program`;');
+    this.addSql(
+      'insert into `channel_programs__temp_alter` select * from `channel_programs`;',
+    );
+
     this.addSql('drop table `program`;');
+    this.addSql('drop table `channel_programs`;');
     this.addSql('alter table `program__temp_alter` rename to `program`;');
+    this.addSql(
+      'alter table `channel_programs__temp_alter` rename to `channel_programs`;',
+    );
+
     this.addSql(
       'create index `program_season_uuid_index` on `program` (`season_uuid`);',
     );
