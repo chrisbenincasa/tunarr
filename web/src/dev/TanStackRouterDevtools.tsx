@@ -3,11 +3,23 @@ import React from 'react';
 export const TanStackRouterDevtools =
   process.env.NODE_ENV === 'production' || import.meta.env.PROD
     ? () => null // Render nothing in production
-    : React.lazy(() =>
+    : React.lazy(async () => {
+        const TanStackRouterDevtoolsComponent = (
+          await import('@tanstack/router-devtools')
+        ).TanStackRouterDevtools;
+        const TanStackQueryDevtoolsComponent = (
+          await import('@tanstack/react-query-devtools')
+        ).ReactQueryDevtools;
         // Lazy load in development
-        import('@tanstack/router-devtools').then((res) => ({
-          default: res.TanStackRouterDevtools,
-          // For Embedded Mode
-          // default: res.TanStackRouterDevtoolsPanel
-        })),
-      );
+        return {
+          default: () => (
+            <>
+              <TanStackRouterDevtoolsComponent
+                position="bottom-right"
+                toggleButtonProps={{}}
+              />
+              <TanStackQueryDevtoolsComponent initialIsOpen={false} />
+            </>
+          ),
+        };
+      });

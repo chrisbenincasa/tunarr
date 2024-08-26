@@ -40,7 +40,6 @@ import {
   styled,
 } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { Outlet, Link as RouterLink } from '@tanstack/react-router';
 import { isNull, isUndefined } from 'lodash-es';
 import React, { ReactNode, useCallback, useMemo, useState } from 'react';
@@ -396,10 +395,19 @@ export function Root({ children }: { children?: React.ReactNode }) {
                 width: drawerWidth,
                 boxSizing: 'border-box',
                 p: 0,
+                transition: (theme) =>
+                  theme.transitions.create('width', {
+                    easing: 'cubic-bezier(0.4,0,0.2,1)',
+                    duration: '.15s',
+                  }),
               },
               WebkitTransitionDuration: '.15s',
               WebkitTransitionTimingFunction: 'cubic-bezier(0.4,0,0.2,1)',
               overflowX: 'hidden',
+              position: 'absolute',
+            }}
+            PaperProps={{
+              elevation: 4,
             }}
             variant="permanent"
             anchor="left"
@@ -505,6 +513,7 @@ export function Root({ children }: { children?: React.ReactNode }) {
             flexGrow: 1,
             // height: '100vh', // Uncommenting this breaks any use of scrollTo()
             overflow: 'auto',
+            ml: '60px',
           }}
         >
           <Toolbar />
@@ -538,7 +547,7 @@ export function Root({ children }: { children?: React.ReactNode }) {
           </Container>
         </Box>
       </Box>
-      <ReactQueryDevtools initialIsOpen={false} />
+      {/* <ReactQueryDevtools initialIsOpen={false} /> */}
     </ThemeProvider>
   );
 }

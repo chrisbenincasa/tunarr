@@ -5,11 +5,9 @@ import React from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import ReactDOM from 'react-dom/client';
-// import { RouterProvider } from '@tanstack/react-router';
 import './helpers/dayjs.ts';
 import './index.css';
 import { queryClient } from './queryClient.ts';
-// import { router } from './router.tsx';
 import { routeTree } from '@/routeTree.gen';
 import { RouterProvider, createRouter } from '@tanstack/react-router';
 import {
@@ -18,8 +16,6 @@ import {
 } from './components/TunarrApiContext.tsx';
 import { SnackbarProvider } from 'notistack';
 import { ServerEventsProvider } from './components/server_events/ServerEventsProvider.tsx';
-
-// Import the generated route tree
 
 // Create a new router instance
 const router = createRouter({
