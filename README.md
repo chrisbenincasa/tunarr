@@ -32,6 +32,7 @@ Tunarr has the following goals:
 
 ## Features
 
+- **NEW** Jellyfin library support!
 - **NEW** Stream your channels directly in the [browser using HLS](https://github.com/chrisbenincasa/tunarr/pull/116) (and soon [MPEG-DASH](https://github.com/chrisbenincasa/tunarr/issues/129))
 - **NEW** Improvements to stream stability
 - **NEW** [Dark mode!](https://github.com/chrisbenincasa/tunarr/pull/34)
