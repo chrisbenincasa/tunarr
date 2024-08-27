@@ -1,3 +1,20 @@
+import { ProgramConverter } from '@/dao/converters/programConverters.js';
+import {
+  ProgramExternalIdType,
+  programExternalIdTypeFromString,
+} from '@/dao/custom_types/ProgramExternalIdType.js';
+import { getEm } from '@/dao/dataSource';
+import { Program } from '@/dao/entities/Program';
+import { ProgramExternalId } from '@/dao/entities/ProgramExternalId.js';
+import { asyncPool, unfurlPool } from '@/util/asyncPool.js';
+import {
+  groupByAndMapAsync,
+  groupByUniq,
+  groupByUniqFunc,
+  isNonEmptyString,
+  mapReduceAsyncSeq,
+} from '@/util/index.js';
+import { Loaded } from '@mikro-orm/better-sqlite';
 import {
   chunk,
   flatten,
@@ -9,23 +26,6 @@ import {
   union,
   uniq,
 } from 'lodash-es';
-import {
-  groupByAndMapAsync,
-  groupByUniq,
-  groupByUniqFunc,
-  isNonEmptyString,
-  mapReduceAsyncSeq,
-} from '../util/index.js';
-import { ProgramConverter } from './converters/programConverters.js';
-import { getEm } from './dataSource';
-import { Program } from './entities/Program';
-import { ProgramExternalId } from './entities/ProgramExternalId.js';
-import {
-  ProgramExternalIdType,
-  programExternalIdTypeFromString,
-} from './custom_types/ProgramExternalIdType.js';
-import { asyncPool, unfurlPool } from '../util/asyncPool.js';
-import { Loaded } from '@mikro-orm/better-sqlite';
 
 export class ProgramDB {
   async getProgramById(id: string) {
