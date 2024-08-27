@@ -1,4 +1,5 @@
 import {
+  Cascade,
   Collection,
   Entity,
   IType,
@@ -7,17 +8,18 @@ import {
   Property,
   Unique,
 } from '@mikro-orm/core';
-import { Channel as ChannelDTO } from '@tunarr/types';
-import { ContentProgramTypeSchema } from '@tunarr/types/schemas';
-import { type Tag } from '@tunarr/types';
+import { Channel as ChannelDTO, type Tag } from '@tunarr/types';
+import {
+  ContentProgramTypeSchema,
+  ResolutionSchema,
+} from '@tunarr/types/schemas';
+import { z } from 'zod';
+import { SchemaBackedDbType } from '../custom_types/SchemaBackedDbType.js';
 import { BaseEntity } from './BaseEntity.js';
 import { ChannelFillerShow } from './ChannelFillerShow.js';
 import { CustomShow } from './CustomShow.js';
 import { FillerShow } from './FillerShow.js';
 import { Program } from './Program.js';
-import { z } from 'zod';
-import { SchemaBackedDbType } from '../custom_types/SchemaBackedDbType.js';
-import { ResolutionSchema } from '@tunarr/types/schemas';
 
 const ChannelIconSchema = z
   .object({
@@ -205,10 +207,12 @@ export class Channel extends BaseEntity {
   })
   offline!: IType<ChannelOfflineSettings, string>;
 
-  // Filler collections
+  // Fillers
   @ManyToMany({
     entity: () => FillerShow,
     pivotEntity: () => ChannelFillerShow,
+    mappedBy: (filler) => filler.channels,
+    cascade: [Cascade.PERSIST, Cascade.REMOVE],
   })
   fillers = new Collection<FillerShow>(this);
 

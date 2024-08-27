@@ -3,22 +3,35 @@ import {
   UpdateFillerListRequest,
 } from '@tunarr/types/api';
 import { jsonArrayFrom, jsonBuildObject } from 'kysely/helpers/sqlite';
-import { filter, isNil, map } from 'lodash-es';
+import {
+  filter,
+  find,
+  forEach,
+  groupBy,
+  isNil,
+  isUndefined,
+  map,
+  reject,
+  round,
+  uniq,
+  values,
+} from 'lodash-es';
+import { MarkRequired } from 'ts-essentials';
 import { ChannelCache } from '../stream/ChannelCache.js';
 import { isNonEmptyString, mapAsyncSeq } from '../util/index.js';
 import { ProgramConverter } from './converters/programConverters.js';
 import { getEm } from './dataSource.js';
+import { ChannelFillerShow as RawChannelFillerShow } from './direct/derivedTypes.js';
+import { directDbAccess } from './direct/directDbAccess.js';
+import { withFillerPrograms } from './direct/programQueryHelpers.js';
 import { Channel as ChannelEntity } from './entities/Channel.js';
+import { ChannelFillerShow } from './entities/ChannelFillerShow.js';
 import { FillerListContent } from './entities/FillerListContent.js';
 import { FillerShow, FillerShowId } from './entities/FillerShow.js';
 import {
   createPendingProgramIndexMap,
   upsertContentPrograms,
 } from './programHelpers.js';
-import { directDbAccess } from './direct/directDbAccess.js';
-import { withFillerPrograms } from './direct/programQueryHelpers.js';
-import { ChannelFillerShow as RawChannelFillerShow } from './direct/derivedTypes.js';
-import { MarkRequired } from 'ts-essentials';
 
 export class FillerDB {
   private channelCache: ChannelCache;
@@ -141,26 +154,45 @@ export class FillerDB {
   }
 
   async deleteFiller(id: FillerShowId): Promise<void> {
-    // const channels = await this.getFillerChannels(id);
-
     const em = getEm();
-    // await em.nativeDelete(ChannelFillerShow, {fillerShow: id});
 
-    // Remove references to filler collection.
-    // await sequentialPromises(channels, undefined, async (channel) => {
-    //   logger.debug(`Updating channel ${channel.number}, remove filler ${id}`);
-    //   const fullChannel = await this.channelDB.getChannel(channel.number);
-    //   await fullChannel?.fillers.init();
+    await em.transactional(async (em) => {
+      const relevantChannelFillers = await em.find(ChannelFillerShow, {
+        fillerShow: id,
+      });
+      const allRelevantChannelFillers = await em.find(ChannelFillerShow, {
+        channel: {
+          $in: uniq(map(relevantChannelFillers, (cf) => cf.channel.uuid)),
+        },
+      });
+      const fillersByChannel = groupBy(
+        allRelevantChannelFillers,
+        (cf) => cf.channel.uuid,
+      );
 
-    //   if (!isNil(fullChannel) && !isEmpty(fullChannel.fillers)) {
-    //     fullChannel.fillers.remove((filler) => filler.uuid === id);
-    //     return this.channelDB.saveChannel(fullChannel);
-    //   }
+      forEach(values(fillersByChannel), (cfs) => {
+        const removedWeight = find(cfs, (cf) => cf.fillerShow.uuid === id)
+          ?.weight;
+        if (isUndefined(removedWeight)) {
+          return;
+        }
+        const remainingFillers = reject(cfs, (cf) => cf.fillerShow.uuid === id);
+        const distributeWeight =
+          remainingFillers.length > 0
+            ? round(removedWeight / remainingFillers.length, 2)
+            : 0;
+        forEach(remainingFillers, (filler) => {
+          filler.weight += distributeWeight;
+        });
+      });
 
-    //   return;
-    // });
+      await em.removeAndFlush([
+        ...relevantChannelFillers,
+        em.getReference(FillerShow, id),
+      ]);
+      await em.flush();
+    });
 
-    await em.removeAndFlush(em.getReference(FillerShow, id));
     this.channelCache.clear();
     return;
   }

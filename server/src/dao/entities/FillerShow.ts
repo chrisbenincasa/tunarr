@@ -1,9 +1,10 @@
 import { Collection, Entity, ManyToMany, Property } from '@mikro-orm/core';
+import type { Tag } from '@tunarr/types';
 import { TaggedIdBaseEntity } from './BaseEntity2.js';
 import { Channel } from './Channel.js';
+import { ChannelFillerShow } from './ChannelFillerShow.js';
 import { FillerListContent } from './FillerListContent.js';
 import { Program } from './Program.js';
-import type { Tag } from '@tunarr/types';
 
 const FillerShowIdTag = 'FillerShowId';
 
@@ -17,6 +18,10 @@ export class FillerShow extends TaggedIdBaseEntity<typeof FillerShowIdTag> {
   @ManyToMany({ entity: () => Program, pivotEntity: () => FillerListContent })
   content = new Collection<Program>(this);
 
-  @ManyToMany({ entity: () => Channel, mappedBy: (channel) => channel.fillers })
+  @ManyToMany({
+    entity: () => Channel,
+    pivotEntity: () => ChannelFillerShow,
+    owner: true,
+  })
   channels = new Collection<Channel>(this);
 }
