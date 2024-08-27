@@ -1,3 +1,5 @@
+import { DefaultFallbackPicturePath } from '@/helpers/constants.ts';
+import { useSettings } from '@/store/settings/selectors.ts';
 import { Delete } from '@mui/icons-material';
 import {
   Checkbox,
@@ -17,11 +19,13 @@ import {
   Typography,
 } from '@mui/material';
 import Box from '@mui/material/Box';
+import { Link as RouterLink } from '@tanstack/react-router';
 import { SaveChannelRequest } from '@tunarr/types';
 import {
   chain,
   find,
   isNumber,
+  isUndefined,
   map,
   pullAt,
   range,
@@ -31,15 +35,12 @@ import {
 } from 'lodash-es';
 import { useCallback, useState } from 'react';
 import { Controller, useFieldArray, useFormContext } from 'react-hook-form';
-import { Link as RouterLink } from '@tanstack/react-router';
 import { useDebounceCallback } from 'usehooks-ts';
 import { isNonEmptyString, typedProperty } from '../../helpers/util.ts';
 import { useFillerLists } from '../../hooks/useFillerLists.ts';
 import useStore from '../../store/index.ts';
 import { ImageUploadInput } from '../settings/ImageUploadInput.tsx';
 import { NumericFormController } from '../util/TypedController.tsx';
-import { DefaultFallbackPicturePath } from '@/helpers/constants.ts';
-import { useSettings } from '@/store/settings/selectors.ts';
 
 export function ChannelFlexConfig() {
   const { backendUri } = useSettings();
@@ -139,18 +140,32 @@ export function ChannelFlexConfig() {
         return;
       }
       newWeight /= upscaleAmt;
-
+      const oldWeight = weights[idx];
+      const scale = round((newWeight - oldWeight) / oldWeight, 2);
+      if (scale === 0) {
+        return;
+      }
       const newRemainingWeight = 100 - newWeight;
-      const distributedWeight = round(
-        newRemainingWeight / (channelFillerLists.length - 1),
-        4,
-      );
+      const oldRemainingWeight = 100 - oldWeight;
 
-      setWeights(
-        map(range(channelFillerLists.length), (i) =>
-          i === idx ? newWeight : distributedWeight,
-        ),
-      );
+      const newWeights = map(range(channelFillerLists.length), (i) => {
+        if (idx === i) {
+          return newWeight;
+        } else if (weights[i] === 0) {
+          // If the adjusted slot is coming down from 100% weight
+          // just distribute the remaining weight among the other slots
+          return round(newRemainingWeight / (channelFillerLists.length - 1), 2);
+        } else {
+          // Take the percentage portion of the old weight
+          // from the newRemainingWeight. This scales the weights
+          // relative to their existing proportion.
+          const prevWeight = weights[i];
+          const prevPortion = round(prevWeight / oldRemainingWeight, 4);
+          return round(newRemainingWeight * prevPortion, 2);
+        }
+      });
+
+      setWeights(newWeights);
 
       updateFormWeights();
     },
@@ -172,7 +187,11 @@ export function ChannelFlexConfig() {
       .value();
 
     return map(channelFillerLists, (cfl, index) => {
-      const actualList = find(fillerLists, { id: cfl.id })!;
+      const actualList = find(fillerLists, { id: cfl.id });
+      if (isUndefined(actualList)) {
+        return null;
+      }
+
       const thisListOpt = (
         <MenuItem key={cfl.id} value={cfl.id}>
           {actualList.name}
