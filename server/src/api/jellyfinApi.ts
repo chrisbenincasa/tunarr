@@ -89,7 +89,6 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
     },
     (req, res) =>
       withJellyfinMediaSource(req, res, async (mediaSource) => {
-        console.log(req.query.itemTypes);
         const api = MediaSourceApiFactory().getJellyfinClient({
           ...mediaSource,
           url: mediaSource.uri,

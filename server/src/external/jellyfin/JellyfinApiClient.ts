@@ -47,7 +47,9 @@ export class JellyfinApiClient extends BaseApiClient<
       extraHeaders: {
         ...options.extraHeaders,
         Accept: 'application/json',
-        'X-Emby-Token': options.apiKey,
+        Authorization: `MediaBrowser Token="${
+          options.apiKey
+        }", Client="Tunarr", Device="Web Browser", Version=${getTunarrVersion()}`,
       },
     });
   }
