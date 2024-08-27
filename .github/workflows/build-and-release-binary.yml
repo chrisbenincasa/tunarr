@@ -53,10 +53,16 @@ jobs:
         os:
           - name: macos-13
             target_name: macos
+            binary_name: macos-x64
           - name: ubuntu-latest
             target_name: linux
+            binary_name: linux-x64
           - name: windows-latest
             target_name: windows
+            binary_name: windows-x64
+          - name: ubuntu-latest
+            target_name: linux-arm64v8
+            binary_name: linux-arm64v8
         node_version: [20.11.1]
     runs-on: ${{matrix.os.name}}
     continue-on-error: true
@@ -119,12 +125,12 @@ jobs:
           tag_name: edge
           prerelease: true
           files: |
-            ./server/build/tunarr-${{ matrix.os.target_name }}-x64.zip*
+            ./server/build/tunarr-${{ matrix.os.binary_name }}.zip*
         if: github.ref == format('refs/heads/{0}', 'dev') && (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule')
 
       - name: Upload Binaries
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            ./server/build/tunarr-${{ matrix.os.target_name }}-x64.zip*
+            ./server/build/tunarr-${{ matrix.os.binary_name }}.zip*
         if: startsWith(github.ref, 'refs/tags/')
