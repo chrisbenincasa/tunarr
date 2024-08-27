@@ -1,7 +1,9 @@
-import { isNonEmptyString, isValidUrl, toggle } from '@/helpers/util';
+import { isNonEmptyString, isValidUrlWithError, toggle } from '@/helpers/util';
 import { useTunarrApi } from '@/hooks/useTunarrApi';
 
 import { RotatingLoopIcon } from '@/components/base/LoadingIcon.tsx';
+import { jellyfinLogin } from '@/hooks/jellyfin/useJellyfinLogin.ts';
+import { useMediaSourceBackendStatus } from '@/hooks/media-sources/useMediaSourceBackendStatus';
 import {
   CloudDoneOutlined,
   CloudOff,
@@ -29,13 +31,11 @@ import {
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { JellyfinServerSettings, PlexServerSettings } from '@tunarr/types';
 import { isEmpty, isUndefined } from 'lodash-es';
+import { useSnackbar } from 'notistack';
 import { FormEvent, useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { MarkOptional } from 'ts-essentials';
 import { useDebounceCallback, useDebounceValue } from 'usehooks-ts';
-import { useMediaSourceBackendStatus } from '@/hooks/media-sources/useMediaSourceBackendStatus';
-import { jellyfinLogin } from '@/hooks/jellyfin/useJellyfinLogin.ts';
-import { useSnackbar } from 'notistack';
 
 type Props = {
   open: boolean;
@@ -253,7 +253,20 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
               rules={{
                 validate: {
                   url: (value) => {
-                    return isValidUrl(value) ? undefined : 'Not a valid URL';
+                    // TODO: dedupe this function
+                    const err = isValidUrlWithError(value);
+                    if (isUndefined(err)) {
+                      return undefined;
+                    }
+
+                    switch (err) {
+                      case 'empty':
+                        return 'Cannot be empty';
+                      case 'not_parseable':
+                        return 'Not a valid URL';
+                      case 'wrong_protocol':
+                        return 'Protocol must be HTTP or HTTPS';
+                    }
                   },
                 },
               }}

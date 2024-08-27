@@ -21,6 +21,7 @@ import {
   isError,
   isNumber,
   isString,
+  isUndefined,
   map,
   property,
   range,
@@ -465,7 +466,27 @@ export const roundNearestMultiple = (num: number, multiple: number): number => {
   return Math.floor(num / multiple) * multiple;
 };
 
-export function isValidUrl(url: string) {
+export function isValidUrlWithError(url: string) {
   const sanitized = trim(url);
-  return isEmpty(sanitized) || !isError(attempt(() => new URL(sanitized)));
+  if (isEmpty(sanitized)) {
+    return 'empty';
+  }
+
+  const result = attempt(() => new URL(url));
+  if (isError(result)) {
+    return 'not_parseable';
+  }
+
+  const hasProtocol =
+    result.protocol === 'http:' || result.protocol === 'https:';
+
+  if (!hasProtocol) {
+    return 'wrong_protocol';
+  }
+
+  return;
+}
+
+export function isValidUrl(url: string) {
+  return isUndefined(isValidUrlWithError(url));
 }
