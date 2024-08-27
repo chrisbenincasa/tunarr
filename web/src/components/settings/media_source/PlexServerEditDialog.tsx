@@ -1,31 +1,31 @@
 import { RotatingLoopIcon } from '@/components/base/LoadingIcon';
-import { isNonEmptyString, isValidUrl, toggle } from '@/helpers/util';
+import { isNonEmptyString, isValidUrlWithError, toggle } from '@/helpers/util';
 import { useMediaSourceBackendStatus } from '@/hooks/media-sources/useMediaSourceBackendStatus';
 import { useTunarrApi } from '@/hooks/useTunarrApi';
 import {
-  VisibilityOff,
-  Visibility,
   CloudDoneOutlined,
   CloudOff,
+  Visibility,
+  VisibilityOff,
 } from '@mui/icons-material';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
   Box,
-  Stack,
-  TextField,
-  FormHelperText,
+  Button,
+  Checkbox,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   FormControl,
+  FormControlLabel,
+  FormHelperText,
   IconButton,
   InputAdornment,
   InputLabel,
-  OutlinedInput,
-  Checkbox,
-  FormControlLabel,
   Link,
+  OutlinedInput,
+  Stack,
+  TextField,
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { PlexServerSettings } from '@tunarr/types';
@@ -173,7 +173,19 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
               rules={{
                 validate: {
                   url: (value) => {
-                    return isValidUrl(value) ? undefined : 'Not a valid URL';
+                    const err = isValidUrlWithError(value);
+                    if (isUndefined(err)) {
+                      return undefined;
+                    }
+
+                    switch (err) {
+                      case 'empty':
+                        return 'Cannot be empty';
+                      case 'not_parseable':
+                        return 'Not a valid URL';
+                      case 'wrong_protocol':
+                        return 'Protocol must be HTTP or HTTPS';
+                    }
                   },
                 },
               }}
