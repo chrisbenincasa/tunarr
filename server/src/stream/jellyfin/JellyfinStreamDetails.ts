@@ -51,13 +51,6 @@ export class JellyfinStreamDetails {
       // channel: channel.uuid,
       caller: import.meta,
     });
-
-    this.jellyfin = MediaSourceApiFactory().getJellyfinClient({
-      apiKey: server.accessToken,
-      type: 'jellyfin',
-      url: server.uri,
-      name: server.name,
-    });
   }
 
   async getStream(item: JellyfinItemStreamDetailsQuery) {
@@ -71,6 +64,12 @@ export class JellyfinStreamDetails {
     if (depth > 1) {
       return null;
     }
+
+    this.jellyfin = await MediaSourceApiFactory().getJellyfinClient({
+      apiKey: this.server.accessToken,
+      url: this.server.uri,
+      name: this.server.name,
+    });
 
     const expectedItemType = item.programType;
     const itemMetadataResult = await this.jellyfin.getItem(item.externalKey);

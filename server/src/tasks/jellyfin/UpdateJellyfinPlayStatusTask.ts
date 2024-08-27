@@ -108,9 +108,8 @@ class UpdateJellyfinPlayStatusTask extends Task {
   }
 
   protected async runInternal(): Promise<boolean> {
-    const jellyfin = MediaSourceApiFactory().getJellyfinClient({
+    const jellyfin = await MediaSourceApiFactory().getJellyfinClient({
       apiKey: this.jellyfinServer.accessToken,
-      type: 'jellyfin',
       url: this.jellyfinServer.uri,
       name: this.jellyfinServer.name,
     });

@@ -6,9 +6,10 @@ import {
   JellyfinLibraryItemsResponse,
   JellyfinLibraryResponse,
   JellyfinSystemInfo,
+  JellyfinUser,
 } from '@tunarr/types/jellyfin';
 import axios, { AxiosRequestConfig } from 'axios';
-import { first, isEmpty, union } from 'lodash-es';
+import { find, first, isEmpty, union } from 'lodash-es';
 import { v4 } from 'uuid';
 import { Maybe, Nilable } from '../../types/util';
 import { LoggerFactory } from '../../util/logging/LoggerFactory';
@@ -20,6 +21,8 @@ import {
   isQueryError,
 } from '../BaseApiClient.js';
 import { getTunarrVersion } from '../../util/version.js';
+import { isNonEmptyString } from '../../util/index.js';
+import { z } from 'zod';
 
 const RequiredLibraryFields = [
   'Path',
@@ -36,20 +39,67 @@ const RequiredLibraryFields = [
   'Chapters',
 ];
 
-export class JellyfinApiClient extends BaseApiClient<
-  Omit<RemoteMediaSourceOptions, 'type'>
-> {
-  constructor(options: Omit<RemoteMediaSourceOptions, 'type'>) {
+function getJellyfinAuthorization(
+  apiKey: Maybe<string>,
+  clientId: Maybe<string>,
+) {
+  const parts: string[] = [];
+  if (isNonEmptyString(apiKey)) {
+    parts.push(`Token="${apiKey}"`);
+  }
+  if (isNonEmptyString(clientId)) {
+    parts.push(`DeviceId="${clientId}"`);
+  }
+  parts.push('Device="Web Browser"', `Version="${getTunarrVersion()}"`);
+
+  return `MediaBrowser ${parts.join(', ')}`;
+}
+
+export type JellyfinApiClientOptions = Omit<
+  RemoteMediaSourceOptions,
+  'type'
+> & {
+  userId?: string;
+};
+
+export class JellyfinApiClient extends BaseApiClient<JellyfinApiClientOptions> {
+  constructor(options: JellyfinApiClientOptions) {
     super({
       ...options,
       extraHeaders: {
         ...options.extraHeaders,
         Accept: 'application/json',
-        Authorization: `MediaBrowser Token="${
-          options.apiKey
-        }", Client="Tunarr", Device="Web Browser", Version=${getTunarrVersion()}`,
+        Authorization: getJellyfinAuthorization(options.apiKey, undefined),
       },
     });
+  }
+
+  static async findAdminUser(
+    server: Omit<RemoteMediaSourceOptions, 'apiKey' | 'type'>,
+    apiKey: string,
+  ) {
+    try {
+      const response = await axios.get(`${server.url}/Users`, {
+        headers: {
+          Authorization: getJellyfinAuthorization(apiKey, undefined),
+        },
+      });
+
+      const users = await z.array(JellyfinUser).parseAsync(response.data);
+
+      return find(
+        users,
+        (user) =>
+          !!user.Policy?.IsAdministrator &&
+          !user.Policy?.IsDisabled &&
+          !!user.Policy?.EnableAllFolders,
+      );
+    } catch (e) {
+      LoggerFactory.root.error(e, 'Error retrieving Jellyfin users', {
+        className: JellyfinApiClient.name,
+      });
+      return;
+    }
   }
 
   static async login(
@@ -67,7 +117,7 @@ export class JellyfinApiClient extends BaseApiClient<
         },
         {
           headers: {
-            Authorization: `MediaBrowser Client="Tunarr", Device="Web Browser", DeviceId=${clientId}, Version=${getTunarrVersion()}`,
+            Authorization: getJellyfinAuthorization(undefined, clientId),
           },
         },
       );
@@ -108,7 +158,7 @@ export class JellyfinApiClient extends BaseApiClient<
   async getUserViews(userId?: string) {
     return this.doTypeCheckedGet('/UserViews', JellyfinLibraryItemsResponse, {
       params: {
-        userId,
+        userId: userId ?? this.options.userId,
         includeExternalContent: false,
         presetViews: ['movies', 'tvshows', 'music', 'playlists', 'folders'],
       },
@@ -147,7 +197,7 @@ export class JellyfinApiClient extends BaseApiClient<
   ): Promise<QueryResult<JellyfinLibraryItemsResponse>> {
     return this.doTypeCheckedGet('/Items', JellyfinLibraryItemsResponse, {
       params: {
-        userId,
+        userId: userId ?? this.options.userId,
         parentId: libraryId,
         fields: union(extraFields, RequiredLibraryFields).join(','),
         startIndex: pageParams?.offset,
@@ -170,8 +220,11 @@ export class JellyfinApiClient extends BaseApiClient<
   async recordPlaybackStart(itemId: string, deviceId: string) {
     return this.doPost({
       url: '/Sessions/Playing',
+      params: {
+        userId: this.options.userId,
+      },
       headers: {
-        Authorization: `MediaBrowser Client="Tunarr", Device="Web Browser", DeviceId=${deviceId}, Version=${getTunarrVersion()}`,
+        Authorization: getJellyfinAuthorization(this.options.apiKey, deviceId),
       },
       data: {
         ItemId: itemId,
@@ -185,6 +238,9 @@ export class JellyfinApiClient extends BaseApiClient<
   async updateUserItemPlayback(itemId: string, elapsedMs: number) {
     return this.doPost({
       url: `/UserItems/${itemId}/UserData`,
+      params: {
+        userId: this.options.userId,
+      },
       data: {
         PlaybackPositionTicks: elapsedMs * 10000,
       },
@@ -199,8 +255,11 @@ export class JellyfinApiClient extends BaseApiClient<
   ) {
     return this.doPost({
       url: `/Sessions/Playing/${isStopped ? 'Stopped' : 'Progress'}`,
+      params: {
+        userId: this.options.userId,
+      },
       headers: {
-        Authorization: `MediaBrowser Client="Tunarr", Device="Web Browser", DeviceId=${deviceId}, Version=${getTunarrVersion()}`,
+        Authorization: getJellyfinAuthorization(this.options.apiKey, deviceId),
       },
       data: {
         ItemId: itemId,

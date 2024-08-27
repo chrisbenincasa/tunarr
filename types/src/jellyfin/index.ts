@@ -907,6 +907,52 @@ export const JellyfinUserConfiguration = z
   })
   .partial();
 
+const JellyfinUserPolicy = z.object({
+  IsAdministrator: z.boolean().optional(),
+  IsHidden: z.boolean().optional(),
+  EnableCollectionManagement: z.boolean().optional().default(false),
+  EnableSubtitleManagement: z.boolean().optional().default(false),
+  EnableLyricManagement: z.boolean().optional().default(false),
+  IsDisabled: z.boolean().optional(),
+  MaxParentalRating: z.number().int().nullish(),
+  BlockedTags: z.array(z.string()).nullish(),
+  AllowedTags: z.array(z.string()).nullish(),
+  EnableUserPreferenceAccess: z.boolean().optional(),
+  // AccessSchedules: z.array(AccessSchedule).nullish(),
+  // BlockUnratedItems: z.array(UnratedItem).nullish(),
+  EnableRemoteControlOfOtherUsers: z.boolean().optional(),
+  EnableSharedDeviceControl: z.boolean().optional(),
+  EnableRemoteAccess: z.boolean().optional(),
+  EnableLiveTvManagement: z.boolean().optional(),
+  EnableLiveTvAccess: z.boolean().optional(),
+  EnableMediaPlayback: z.boolean().optional(),
+  EnableAudioPlaybackTranscoding: z.boolean().optional(),
+  EnableVideoPlaybackTranscoding: z.boolean().optional(),
+  EnablePlaybackRemuxing: z.boolean().optional(),
+  ForceRemoteSourceTranscoding: z.boolean().optional(),
+  EnableContentDeletion: z.boolean().optional(),
+  EnableContentDeletionFromFolders: z.array(z.string()).nullish(),
+  EnableContentDownloading: z.boolean().optional(),
+  EnableSyncTranscoding: z.boolean().optional(),
+  EnableMediaConversion: z.boolean().optional(),
+  EnabledDevices: z.array(z.string()).nullish(),
+  EnableAllDevices: z.boolean().optional(),
+  EnabledChannels: z.array(z.string().uuid()).nullish(),
+  EnableAllChannels: z.boolean().optional(),
+  EnabledFolders: z.array(z.string().uuid()).nullish(),
+  EnableAllFolders: z.boolean().optional(),
+  InvalidLoginAttemptCount: z.number().int().optional(),
+  LoginAttemptsBeforeLockout: z.number().int().optional(),
+  MaxActiveSessions: z.number().int().optional(),
+  EnablePublicSharing: z.boolean().optional(),
+  BlockedMediaFolders: z.array(z.string().uuid()).nullish(),
+  BlockedChannels: z.array(z.string().uuid()).nullish(),
+  RemoteClientBitrateLimit: z.number().int().optional(),
+  AuthenticationProviderId: z.string(),
+  PasswordResetProviderId: z.string(),
+  // SyncPlayAccess: SyncPlayUserAccessType.optional(),
+});
+
 export const JellyfinUser = z
   .object({
     Name: z.string().nullable().optional(),
@@ -925,7 +971,7 @@ export const JellyfinUser = z
       .nullable()
       .optional(),
     Configuration: JellyfinUserConfiguration.nullable().optional(),
-    // Policy: UserPolicy.nullable().optional(),
+    Policy: JellyfinUserPolicy.nullable().optional(),
     PrimaryImageAspectRatio: z.number().nullable().optional(),
   })
   .partial();
