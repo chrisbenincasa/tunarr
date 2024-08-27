@@ -64,12 +64,12 @@ jobs:
           - base_tag: 7.0-vaapi
             platform: linux/amd64
             suffix: -vaapi
-          # - base_tag: 7.0-arm64
-          #   platform: linux/arm64
-          #   suffix: -arm64
-          # - base_tag: 7.0-arm
-          #   platform: linux/arm/v7
-          #   suffix: -arm
+          - base_tag: 7.0-arm64
+            platform: linux/arm64
+            suffix: -arm64
+          - base_tag: 7.0-arm
+            platform: linux/arm/v7
+            suffix: -arm
 
     steps:
       - uses: actions/checkout@v4
