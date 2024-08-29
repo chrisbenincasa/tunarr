@@ -2,8 +2,8 @@ import { ExpandLess, ExpandMore } from '@mui/icons-material';
 import {
   Button,
   Collapse,
-  Divider,
   List,
+  ListItem,
   ListItemButton,
   ListItemIcon,
   ListItemText,
@@ -15,11 +15,18 @@ import {
   isPlexCollection,
   isPlexMusicAlbum,
   isPlexMusicArtist,
+  isPlexSeason,
   isPlexShow,
   isTerminalItem,
 } from '@tunarr/types/plex';
 import { filter, first, map } from 'lodash-es';
-import React, { MouseEvent, useCallback, useEffect, useState } from 'react';
+import React, {
+  Fragment,
+  MouseEvent,
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
 import {
   forPlexMedia,
   prettyItemDuration,
@@ -34,6 +41,7 @@ import {
 } from '../../store/programmingSelector/actions.ts';
 import { PlexSelectedMedia } from '../../store/programmingSelector/store.ts';
 import { useCurrentMediaSource } from '@/store/programmingSelector/selectors.ts';
+import pluralize from 'pluralize';
 
 export interface PlexListItemProps<T extends PlexMedia> {
   item: T;
@@ -97,7 +105,7 @@ export function PlexListItem<T extends PlexMedia>(props: PlexListItemProps<T>) {
 
   const renderChildren = () => {
     return isPending ? (
-      <Skeleton />
+      <Skeleton height={45} />
     ) : (
       <List sx={{ pl: 4 }}>
         {children?.Metadata.map((child, idx, arr) => (
@@ -125,30 +133,37 @@ export function PlexListItem<T extends PlexMedia>(props: PlexListItemProps<T>) {
       return first(item.Genre)?.tag ?? ' ';
     } else if (isPlexMusicAlbum(item)) {
       return item.year ?? ' ';
+    } else if (isPlexSeason(item)) {
+      return `${item.leafCount} ${pluralize('episode', item.leafCount)}`;
     } else {
       return ' ';
     }
   };
 
   return (
-    <React.Fragment key={item.guid}>
-      <ListItemButton onClick={handleClick} dense sx={{ width: '100%' }}>
-        {hasChildren && (
-          <ListItemIcon>{open ? <ExpandLess /> : <ExpandMore />}</ListItemIcon>
-        )}
-        <ListItemText primary={item.title} secondary={getSecondaryText()} />
-        <Button onClick={(e) => handleItem(e)} variant="contained">
-          {hasChildren
-            ? `Add ${plexTypeString(item)}`
-            : selectedMediaIds.includes(item.guid)
-            ? 'Remove'
-            : `Add ${plexTypeString(item)}`}
-        </Button>
-      </ListItemButton>
-      <Collapse in={open} timeout="auto" unmountOnExit sx={{ width: '100%' }}>
-        {renderChildren()}
-      </Collapse>
-      <Divider variant="fullWidth" />
-    </React.Fragment>
+    <Fragment key={item.guid}>
+      <ListItem divider disablePadding>
+        <ListItemButton onClick={handleClick} dense sx={{ width: '100%' }}>
+          {hasChildren && (
+            <ListItemIcon>
+              {open ? <ExpandLess /> : <ExpandMore />}
+            </ListItemIcon>
+          )}
+          <ListItemText primary={item.title} secondary={getSecondaryText()} />
+          <Button onClick={(e) => handleItem(e)} variant="contained">
+            {hasChildren
+              ? `Add ${plexTypeString(item)}`
+              : selectedMediaIds.includes(item.guid)
+              ? 'Remove'
+              : `Add ${plexTypeString(item)}`}
+          </Button>
+        </ListItemButton>
+      </ListItem>
+      {hasChildren && (
+        <Collapse in={open} timeout="auto" unmountOnExit sx={{ width: '100%' }}>
+          {renderChildren()}
+        </Collapse>
+      )}
+    </Fragment>
   );
 }

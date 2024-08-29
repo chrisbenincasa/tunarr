@@ -1,4 +1,4 @@
-import { typedProperty } from '@/helpers/util.ts';
+import { prettyItemDuration, typedProperty } from '@/helpers/util.ts';
 import { useJellyfinLibraryItems } from '@/hooks/jellyfin/useJellyfinApi.ts';
 import {
   addJellyfinSelectedMedia,
@@ -13,8 +13,8 @@ import { ExpandLess, ExpandMore } from '@mui/icons-material';
 import {
   Button,
   Collapse,
-  Divider,
   List,
+  ListItem,
   ListItemButton,
   ListItemIcon,
   ListItemText,
@@ -25,8 +25,15 @@ import {
   JellyfinItemKind,
   isTerminalJellyfinItem,
 } from '@tunarr/types/jellyfin';
-import { isNull, map } from 'lodash-es';
-import React, { MouseEvent, useCallback, useEffect, useState } from 'react';
+import { first, isNull, map } from 'lodash-es';
+import pluralize from 'pluralize';
+import React, {
+  Fragment,
+  MouseEvent,
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
 
 export interface JellyfinListItemProps {
   item: JellyfinItem;
@@ -114,7 +121,7 @@ export function JellyfinListItem(props: JellyfinListItemProps) {
 
   const renderChildren = () => {
     return isPending ? (
-      <Skeleton />
+      <Skeleton height={60} />
     ) : (
       <List sx={{ pl: 4 }}>
         {children?.Items.map((child, idx, arr) => (
@@ -130,43 +137,61 @@ export function JellyfinListItem(props: JellyfinListItemProps) {
   };
 
   const getSecondaryText = () => {
-    // if (isPlexShow(item)) {
-    //   return `${prettyItemDuration(item.duration)} each`;
-    // } else if (isTerminalItem(item)) {
-    //   return prettyItemDuration(item.duration);
-    // } else if (isPlexCollection(item)) {
-    //   const childCount = parseInt(item.childCount);
-    //   const count = isNaN(childCount) ? 0 : childCount;
-    //   return `${count} item${count === 0 || count > 1 ? 's' : ''}`;
-    // } else if (isPlexMusicArtist(item)) {
-    //   return first(item.Genre)?.tag ?? ' ';
-    // } else if (isPlexMusicAlbum(item)) {
-    //   return item.year ?? ' ';
-    // } else {
-    //   return ' ';
-    // }
-    return ' ';
+    switch (item.Type) {
+      case 'Audio':
+      case 'Episode':
+      case 'Movie':
+        return prettyItemDuration((item.RunTimeTicks ?? 0) / 10_000);
+      case 'MusicAlbum':
+        return item.ProductionYear?.toString() ?? '';
+      case 'MusicArtist':
+        return first(item.Genres) ?? '';
+      case 'MusicGenre':
+      case 'Playlist':
+      case 'PlaylistsFolder':
+        return item.ChildCount ?? 0;
+      case 'Season':
+        return `${item.ChildCount} ${pluralize(
+          'episode',
+          item.ChildCount ?? 0,
+        )}`;
+      case 'Series':
+        if (item.RecursiveItemCount) {
+          return `${item.RecursiveItemCount} total ${pluralize(
+            'episode',
+            item.RecursiveItemCount,
+          )}`;
+        }
+        return '';
+      default:
+        return '';
+    }
   };
 
   return (
-    <React.Fragment key={item.Id}>
-      <ListItemButton onClick={handleClick} dense sx={{ width: '100%' }}>
-        {hasChildren && (
-          <ListItemIcon>{open ? <ExpandLess /> : <ExpandMore />}</ListItemIcon>
-        )}
-        <ListItemText primary={item.Name} secondary={getSecondaryText()} />
-        <Button onClick={(e) => handleItem(e)} variant="contained">
-          {hasChildren
-            ? `Add ${item.Type}`
-            : selectedMediaIds.includes(item.Id)
-            ? 'Remove'
-            : `Add ${item.Type}`}
-        </Button>
-      </ListItemButton>
-      <Collapse in={open} timeout="auto" unmountOnExit sx={{ width: '100%' }}>
-        {renderChildren()}
-      </Collapse>
-      <Divider variant="fullWidth" />
-    </React.Fragment>
+    <Fragment key={item.Id}>
+      <ListItem divider disablePadding>
+        <ListItemButton onClick={handleClick} dense sx={{ width: '100%' }}>
+          {hasChildren && (
+            <ListItemIcon>
+              {open ? <ExpandLess /> : <ExpandMore />}
+            </ListItemIcon>
+          )}
+          <ListItemText primary={item.Name} secondary={getSecondaryText()} />
+          <Button onClick={(e) => handleItem(e)} variant="contained">
+            {hasChildren
+              ? `Add ${item.Type}`
+              : selectedMediaIds.includes(item.Id)
+              ? 'Remove'
+              : `Add ${item.Type}`}
+          </Button>
+        </ListItemButton>
+      </ListItem>
+      {hasChildren && (
+        <Collapse in={open} timeout="auto" unmountOnExit sx={{ width: '100%' }}>
+          {renderChildren()}
+        </Collapse>
+      )}
+    </Fragment>
   );
 }
