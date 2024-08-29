@@ -9,6 +9,7 @@ import {
   CircularProgress,
   Divider,
   Grid,
+  List,
   Typography,
 } from '@mui/material';
 import { InfiniteData, UseInfiniteQueryResult } from '@tanstack/react-query';
@@ -260,23 +261,27 @@ export function MediaItemGrid<PageDataType, ItemType>({
   return (
     <>
       <Box ref={gridContainerRef} sx={{ width: '100%' }}>
-        <Grid
-          container
-          component="div"
-          spacing={2}
-          sx={{
-            display: viewType === 'grid' ? 'grid' : 'flex',
-            gridTemplateColumns:
-              viewType === 'grid'
-                ? 'repeat(auto-fill, minmax(160px, 1fr))'
-                : 'none',
-            justifyContent: viewType === 'grid' ? 'space-around' : 'normal',
-            mt: 2,
-          }}
-          ref={ref}
-        >
-          {renderItems()}
-        </Grid>
+        {viewType === 'grid' ? (
+          <Grid
+            container
+            component="div"
+            spacing={2}
+            sx={{
+              display: viewType === 'grid' ? 'grid' : 'flex',
+              gridTemplateColumns:
+                viewType === 'grid'
+                  ? 'repeat(auto-fill, minmax(160px, 1fr))'
+                  : 'none',
+              justifyContent: viewType === 'grid' ? 'space-around' : 'normal',
+              mt: 2,
+            }}
+            ref={ref}
+          >
+            {renderItems()}
+          </Grid>
+        ) : (
+          <List>{renderItems()}</List>
+        )}
       </Box>
       {!isLoading && <div style={{ height: 96 }} ref={ref}></div>}
       {isFetchingNextPage && (
