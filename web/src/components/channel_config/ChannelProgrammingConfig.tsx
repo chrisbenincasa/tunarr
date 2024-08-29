@@ -28,7 +28,7 @@ import { Link as RouterLink } from '@tanstack/react-router';
 import { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
 import { ZodiosError } from '@zodios/core';
 import dayjs, { Dayjs } from 'dayjs';
-import { chain, findIndex, first, isUndefined, map } from 'lodash-es';
+import { chain, findIndex, first, isUndefined, map, reject } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import { useState } from 'react';
 import AddProgrammingButton from './AddProgrammingButton.tsx';
@@ -92,12 +92,12 @@ export function ChannelProgrammingConfig() {
         queryKey: ['channels', channelNumber],
       });
     },
-    onError: (error) => {
+    onError: (error, vars) => {
       snackbar.enqueueSnackbar('Error saving programs. ' + error.message, {
         variant: 'error',
       });
 
-      console.error(error);
+      console.error(error, vars.lineupRequest);
       if (error instanceof ZodiosError) {
         console.error(error.cause, error.message);
         if (error.cause instanceof ZodError) {
@@ -139,14 +139,17 @@ export function ChannelProgrammingConfig() {
     // Create the in-order lineup which is a lookup array - we have the index
     // to the actual program (in the unique programs list) and then the
     // duration of the lineup item.
-    const lineup = map(newLineup, (lineupItem) => {
-      const index = findIndex(
-        uniquePrograms,
-        (uniq) =>
-          channelProgramUniqueId(lineupItem) === channelProgramUniqueId(uniq),
-      );
-      return { duration: lineupItem.duration, index };
-    });
+    const lineup = map(
+      reject(newLineup, (lineupItem) => lineupItem.duration <= 0),
+      (lineupItem) => {
+        const index = findIndex(
+          uniquePrograms,
+          (uniq) =>
+            channelProgramUniqueId(lineupItem) === channelProgramUniqueId(uniq),
+        );
+        return { duration: lineupItem.duration, index };
+      },
+    );
 
     updateLineupMutation.mutate({
       channelId: channel!.id,
@@ -229,7 +232,14 @@ export function ChannelProgrammingConfig() {
               onClick={() => onSave()}
               disabled={!programsDirty || isSubmitting}
             >
-              <Save />
+              {isSubmitting ? (
+                <CircularProgress
+                  size="20px"
+                  sx={{ mx: 1, color: 'inherit' }}
+                />
+              ) : (
+                <Save />
+              )}
             </IconButton>
           ) : (
             <Button

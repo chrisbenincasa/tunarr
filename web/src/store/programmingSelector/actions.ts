@@ -1,32 +1,26 @@
+import { Maybe } from '@/types/util.ts';
+import { forPlexMedia } from '@tunarr/shared/util';
+import {
+  JellyfinServerSettings,
+  MediaSourceSettings,
+  PlexServerSettings,
+} from '@tunarr/types';
 import { PlexFilter, PlexSort } from '@tunarr/types/api';
+import { JellyfinItem } from '@tunarr/types/jellyfin';
 import {
   PlexLibrarySection,
   PlexMedia,
   isPlexDirectory,
-  isPlexParentItem,
 } from '@tunarr/types/plex';
-import { has, map, reject, some, uniq } from 'lodash-es';
+import { MediaSourceId } from '@tunarr/types/schemas';
+import { has, isArray, map, reject, some, uniq } from 'lodash-es';
 import useStore from '..';
 import {
   buildPlexFilterKey,
   buildPlexSortKey,
 } from '../../helpers/plexSearchUtil.ts';
 import { forSelectedMediaType, groupSelectedMedia } from '../../helpers/util';
-import {
-  JellyfinItems,
-  PlexMediaItems,
-  SelectedLibrary,
-  SelectedMedia,
-} from './store';
-import { forPlexMedia } from '@tunarr/shared/util';
-import { Maybe } from '@/types/util.ts';
-import {
-  JellyfinServerSettings,
-  MediaSourceSettings,
-  PlexServerSettings,
-} from '@tunarr/types';
-import { MediaSourceId } from '@tunarr/types/schemas';
-import { JellyfinItem } from '@tunarr/types/jellyfin';
+import { MediaItems, SelectedLibrary, SelectedMedia } from './store';
 
 export const setProgrammingListingServer = (
   server: Maybe<MediaSourceSettings>,
@@ -48,13 +42,15 @@ function uniqueId(item: PlexLibrarySection | PlexMedia): string {
   }
 }
 
-export const addKnownMediaForPlexServer = (
+export const addKnownMediaForServer = (
   serverId: MediaSourceId,
-  media: PlexLibrarySection[] | PlexMedia[],
+  media:
+    | { type: 'plex'; items: PlexLibrarySection[] | PlexMedia[] }
+    | { type: 'jellyfin'; items: JellyfinItem[] },
   parentId?: string,
 ) =>
   useStore.setState((state) => {
-    if (media.length === 0) {
+    if (media.items.length === 0) {
       return state;
     }
 
@@ -63,13 +59,20 @@ export const addKnownMediaForPlexServer = (
       state.knownMediaByServer[serverId] = {};
     }
 
-    const byGuid = media.reduce(
-      (prev, media) => ({
-        ...prev,
-        [uniqueId(media)]: { type: 'plex' as const, item: media },
-      }),
-      {} as Record<string, PlexMediaItems>,
-    );
+    const byGuid: Record<string, MediaItems> = {};
+    switch (media.type) {
+      case 'plex': {
+        for (const item of media.items) {
+          byGuid[uniqueId(item)] = { type: media.type, item };
+        }
+        break;
+      }
+      case 'jellyfin':
+        for (const item of media.items) {
+          byGuid[item.Id] = { type: media.type, item };
+        }
+        break;
+    }
 
     // known media is an overwrite operation, not dealing with
     // lists here. we always want the most up-to-date view of
@@ -86,14 +89,21 @@ export const addKnownMediaForPlexServer = (
       hierarchy = state.contentHierarchyByServer[serverId];
     }
 
-    media
-      .filter(isPlexParentItem)
-      .map(uniqueId)
-      .forEach((id) => {
-        if (!has(state.contentHierarchyByServer[serverId], id)) {
-          state.contentHierarchyByServer[serverId][id] = [];
-        }
-      });
+    let ids: string[];
+    switch (media.type) {
+      case 'plex':
+        ids = map(media.items, uniqueId);
+        break;
+      case 'jellyfin':
+        ids = map(media.items, 'Id');
+        break;
+    }
+
+    ids.forEach((id) => {
+      if (!has(state.contentHierarchyByServer[serverId], id)) {
+        state.contentHierarchyByServer[serverId][id] = [];
+      }
+    });
 
     if (parentId) {
       if (!state.contentHierarchyByServer[serverId][parentId]) {
@@ -103,72 +113,29 @@ export const addKnownMediaForPlexServer = (
       // Append only - take unique
       state.contentHierarchyByServer[serverId][parentId] = uniq([
         ...state.contentHierarchyByServer[serverId][parentId],
-        ...media.map(uniqueId),
+        ...ids,
       ]);
     }
 
     return state;
   });
 
+export const addKnownMediaForPlexServer = (
+  serverId: MediaSourceId,
+  media: PlexLibrarySection[] | PlexMedia[],
+  parentId?: string,
+) => addKnownMediaForServer(serverId, { type: 'plex', items: media }, parentId);
+
 export const addKnownMediaForJellyfinServer = (
   serverId: MediaSourceId,
   media: JellyfinItem[],
   parentId?: string,
 ) =>
-  useStore.setState((state) => {
-    if (media.length === 0) {
-      return state;
-    }
-
-    // Add new media
-    if (!state.knownMediaByServer[serverId]) {
-      state.knownMediaByServer[serverId] = {};
-    }
-
-    const newItems: Record<string, JellyfinItems> = media.reduce(
-      (prev, media) => ({
-        ...prev,
-        [media.Id]: { type: 'jellyfin' as const, item: media },
-      }),
-      {} as Record<string, JellyfinItems>,
-    );
-
-    // known media is an overwrite operation, not dealing with
-    // lists here. we always want the most up-to-date view of
-    // an item
-    state.knownMediaByServer[serverId] = {
-      ...state.knownMediaByServer[serverId],
-      ...newItems,
-    };
-
-    // Add relations
-    let hierarchy = state.contentHierarchyByServer[serverId];
-    if (!hierarchy) {
-      state.contentHierarchyByServer[serverId] = {};
-      hierarchy = state.contentHierarchyByServer[serverId];
-    }
-
-    media
-      // .filter(isPlexParentItem)
-      .map((m) => m.Id)
-      .forEach((id) => {
-        if (!has(state.contentHierarchyByServer[serverId], id)) {
-          state.contentHierarchyByServer[serverId][id] = [];
-        }
-      });
-
-    if (parentId) {
-      if (!state.contentHierarchyByServer[serverId][parentId]) {
-        state.contentHierarchyByServer[serverId][parentId] = [];
-      }
-
-      // Append only - take unique
-      state.contentHierarchyByServer[serverId][parentId] = uniq([
-        ...state.contentHierarchyByServer[serverId][parentId],
-        ...media.map((m) => m.Id),
-      ]);
-    }
-  });
+  addKnownMediaForServer(
+    serverId,
+    { type: 'jellyfin', items: media },
+    parentId,
+  );
 
 const plexChildCount = forPlexMedia({
   default: 1,
@@ -197,18 +164,28 @@ export const addPlexSelectedMedia = (
 
 export const addJellyfinSelectedMedia = (
   server: JellyfinServerSettings,
-  media: JellyfinItem,
+  media: JellyfinItem | JellyfinItem[],
 ) =>
   useStore.setState((state) => {
     state.selectedMedia = [
       ...state.selectedMedia,
-      {
-        type: 'jellyfin',
-        serverId: server.id,
-        serverName: server.name,
-        id: media.Id,
-        childCount: media.ChildCount ?? 0,
-      },
+      ...(isArray(media)
+        ? map(media, (m) => ({
+            type: 'jellyfin' as const,
+            serverId: server.id,
+            serverName: server.name,
+            id: m.Id,
+            childCount: m.ChildCount ?? 0,
+          }))
+        : [
+            {
+              type: 'jellyfin' as const,
+              serverId: server.id,
+              serverName: server.name,
+              id: media.Id,
+              childCount: media.ChildCount ?? 0,
+            },
+          ]),
     ];
   });
 

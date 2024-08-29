@@ -34,8 +34,6 @@ const RequiredLibraryFields = [
   'OfficialRating',
   'ProviderIds',
   'Chapters',
-  'MediaStreams',
-  'MediaSources',
 ];
 
 export class JellyfinApiClient extends BaseApiClient<
@@ -125,7 +123,7 @@ export class JellyfinApiClient extends BaseApiClient<
       null,
       null,
       null,
-      ['MediaStreams', ...extraFields],
+      ['MediaStreams', 'MediaSources', ...extraFields],
       null,
       {
         ids: itemId,

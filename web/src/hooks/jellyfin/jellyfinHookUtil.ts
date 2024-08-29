@@ -28,28 +28,29 @@ export const enumerateJellyfinItem = (
       item: JellyfinItem,
     ): Promise<EnrichedJellyfinItem[]> {
       if (TerminalTypes.has(item.Type)) {
-        return [{ ...item, serverName, serverId }];
+        // Only reliable way to filter out programs that were deleted
+        // from disk but not updated in JF
+        if (item.RunTimeTicks && item.RunTimeTicks > 0) {
+          return [{ ...item, serverName, serverId }];
+        } else {
+          return [];
+        }
       } else {
-        // const path = isPlexDirectory(item)
-        //   ? `/library/sections/${item.key}/all`
-        //   : item.key;
-
-        // return fetchPlexPathFunc<
-        //   PlexLibraryListing | PlexSeasonView | PlexEpisodeView
-        // >(path)
-        //   .then(async (result) => {
-        //     return sequentialPromises(result.Metadata, loopInner);
-        //   })
-        //   .then((allResults) => flattenDeep(allResults));
-        return apiClient
-          .getJellyfinItems({
-            params: {
-              mediaSourceId: serverId,
-              libraryId: item.Id,
-            },
-          })
-          .then((result) => sequentialPromises(result.Items, loopInner))
-          .then(flattenDeep);
+        return (
+          apiClient
+            .getJellyfinItems({
+              params: {
+                mediaSourceId: serverId,
+                libraryId: item.Id,
+              },
+              queries: {
+                itemTypes: [...TerminalTypes],
+              },
+            })
+            // TODO: Use p-queue here to parallelize a bit
+            .then((result) => sequentialPromises(result.Items, loopInner))
+            .then(flattenDeep)
+        );
       }
     }
 

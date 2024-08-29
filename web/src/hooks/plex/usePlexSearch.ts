@@ -7,7 +7,7 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
-import { PlexServerSettings } from '@tunarr/types';
+import { MediaSourceSettings, PlexServerSettings } from '@tunarr/types';
 import {
   PlexLibraryMovies,
   PlexLibraryMusic,
@@ -55,7 +55,7 @@ const usePlexSearchQueryFn = () => {
 };
 
 const usePlexSearchQueryOptions = (
-  plexServer: Maybe<PlexServerSettings>,
+  plexServer: Maybe<MediaSourceSettings>,
   currentLibrary: Nilable<PlexLibrary>,
   searchParam: Maybe<string>,
   enabled: boolean = true,
@@ -71,22 +71,30 @@ const usePlexSearchQueryOptions = (
       ['plex-search', MediaSourceId, string, string],
       PlexLibraryMovies | PlexLibraryShows | PlexLibraryMusic
     >,
-    enabled: enabled && !isNil(plexServer) && !isNil(currentLibrary),
+    enabled:
+      enabled &&
+      !isNil(plexServer) &&
+      plexServer.type === 'plex' &&
+      !isNil(currentLibrary),
     queryFn: () => {
-      return plexQueryFn(plexServer!, currentLibrary!, searchParam);
+      return plexQueryFn(
+        plexServer! as PlexServerSettings,
+        currentLibrary!,
+        searchParam,
+      );
     },
   });
 };
 
 export const useDirectPlexSearch = (
-  plexServer: Maybe<PlexServerSettings>,
+  server: Maybe<MediaSourceSettings>,
   currentLibrary: Nilable<PlexLibrary>,
   searchParam: Maybe<string>,
   enabled: boolean = true,
 ) => {
   const queryClient = useQueryClient();
   const options = usePlexSearchQueryOptions(
-    plexServer,
+    server,
     currentLibrary,
     searchParam,
     enabled,

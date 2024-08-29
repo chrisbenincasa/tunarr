@@ -178,7 +178,7 @@ export const JellyfinItemSortBy = z.enum([
   'SearchScore',
 ]);
 
-const CollectionType = z.enum([
+export const JellyfinCollectionType = z.enum([
   'unknown',
   'movies',
   'tvshows',
@@ -193,6 +193,8 @@ const CollectionType = z.enum([
   'playlists',
   'folders',
 ]);
+
+export type JellyfinCollectionType = z.infer<typeof JellyfinCollectionType>;
 
 export const JellyfinSortOrder = z.enum(['Ascending', 'Descending']);
 
@@ -410,21 +412,6 @@ const NameGuidPair = z
   .partial();
 
 type NameGuidPair = z.infer<typeof NameGuidPair>;
-
-type CollectionType =
-  | 'unknown'
-  | 'movies'
-  | 'tvshows'
-  | 'music'
-  | 'musicvideos'
-  | 'trailers'
-  | 'homevideos'
-  | 'boxsets'
-  | 'books'
-  | 'photos'
-  | 'livetv'
-  | 'playlists'
-  | 'folders';
 
 type ChapterInfo = Partial<{
   StartPositionTicks: number;
@@ -717,7 +704,7 @@ export const JellyfinItem = z.object({
   Artists: z.array(z.string()).nullable().optional(),
   ArtistItems: z.array(NameGuidPair).nullable().optional(),
   Album: z.string().nullable().optional(),
-  CollectionType: CollectionType.nullable().optional(),
+  CollectionType: JellyfinCollectionType.nullable().optional(),
   DisplayOrder: z.string().nullable().optional(),
   AlbumId: z.string().nullable().optional(),
   AlbumPrimaryImageTag: z.string().nullable().optional(),

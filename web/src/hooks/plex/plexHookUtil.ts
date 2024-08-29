@@ -59,6 +59,9 @@ export const enumeratePlexItem = (
     item: PlexMedia | PlexLibrarySection,
   ): Promise<EnrichedPlexMedia[]> {
     if (isTerminalItem(item)) {
+      if (item.duration <= 0) {
+        return [];
+      }
       return [{ ...item, serverName, serverId }];
     } else {
       const path = isPlexDirectory(item)

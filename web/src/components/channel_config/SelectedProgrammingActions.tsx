@@ -1,4 +1,10 @@
 import { useDirectPlexSearch } from '@/hooks/plex/usePlexSearch.ts';
+import { useTunarrApi } from '@/hooks/useTunarrApi.ts';
+import { useCurrentMediaSourceAndLibrary } from '@/store/programmingSelector/selectors.ts';
+import {
+  JellyfinLibrary,
+  PlexLibrary,
+} from '@/store/programmingSelector/store.ts';
 import { Delete, DoneAll, Grading } from '@mui/icons-material';
 import { Button, Paper, Tooltip, useMediaQuery, useTheme } from '@mui/material';
 import { isNil } from 'lodash-es';
@@ -6,14 +12,19 @@ import { useSnackbar } from 'notistack';
 import { useCallback, useState } from 'react';
 import useStore from '../../store/index.ts';
 import {
-  addKnownMediaForPlexServer,
+  addJellyfinSelectedMedia,
+  addKnownMediaForServer,
   addPlexSelectedMedia,
   clearSelectedMedia,
 } from '../../store/programmingSelector/actions.ts';
 import { AddedMedia } from '../../types/index.ts';
 import { RotatingLoopIcon } from '../base/LoadingIcon.tsx';
 import AddSelectedMediaButton from './AddSelectedMediaButton.tsx';
-import { useCurrentMediaSourceAndLibrary } from '@/store/programmingSelector/selectors.ts';
+import {
+  JellyfinItemKind,
+  JellyfinCollectionType,
+} from '@tunarr/types/jellyfin';
+import { nullToUndefined } from '@tunarr/shared/util';
 
 type Props = {
   onAddSelectedMedia: (media: AddedMedia[]) => void;
@@ -23,14 +34,33 @@ type Props = {
   selectAllEnabled?: boolean;
 };
 
+function collectionTypeToItemTypes(
+  collectionType?: JellyfinCollectionType,
+): JellyfinItemKind[] {
+  if (!collectionType) {
+    return ['Movie', 'Series', 'MusicArtist'];
+  }
+
+  switch (collectionType) {
+    case 'movies':
+      return ['Movie'];
+    case 'tvshows':
+      return ['Series'];
+    case 'music':
+      return ['MusicArtist'];
+    default:
+      return ['Movie', 'Series', 'MusicArtist'];
+  }
+}
+
 export default function SelectedProgrammingActions({
   onAddSelectedMedia,
   onAddMediaSuccess,
   selectAllEnabled = true,
   toggleOrSetSelectedProgramsDrawer, // onSelectionModalClose,
 }: Props) {
-  const [selectedServer, selectedLibrary] =
-    useCurrentMediaSourceAndLibrary('plex');
+  const apiClient = useTunarrApi();
+  const [selectedServer, selectedLibrary] = useCurrentMediaSourceAndLibrary();
 
   const { urlFilter: plexSearch } = useStore(
     ({ plexSearch: plexQuery }) => plexQuery,
@@ -49,26 +79,54 @@ export default function SelectedProgrammingActions({
 
   const directPlexSearchFn = useDirectPlexSearch(
     selectedServer,
-    selectedLibrary,
+    selectedServer?.type === 'plex' ? (selectedLibrary as PlexLibrary) : null,
     plexSearch,
     true,
   );
 
   const selectAllItems = () => {
-    if (
-      !isNil(selectedServer) &&
-      !isNil(selectedLibrary) &&
-      selectedLibrary.type === 'plex'
-    ) {
+    if (!isNil(selectedServer) && !isNil(selectedLibrary)) {
       setSelectAllLoading(true);
-      directPlexSearchFn()
-        .then((response) => {
-          addKnownMediaForPlexServer(
-            selectedServer.id,
-            response.Metadata ?? [],
-          );
-          addPlexSelectedMedia(selectedServer, response.Metadata);
-        })
+      let prom: Promise<void>;
+      switch (selectedServer.type) {
+        case 'plex':
+          prom = directPlexSearchFn().then((response) => {
+            addPlexSelectedMedia(selectedServer, response.Metadata);
+            addKnownMediaForServer(selectedServer.id, {
+              type: 'plex' as const,
+              items: response.Metadata ?? [],
+            });
+          });
+          break;
+        case 'jellyfin': {
+          const library = selectedLibrary as JellyfinLibrary;
+
+          prom = apiClient
+            .getJellyfinItems({
+              params: {
+                mediaSourceId: selectedServer.id,
+                libraryId: library.library.Id,
+              },
+              queries: {
+                // offset: pageParams?.offset,
+                // limit: pageParams?.limit,
+                itemTypes: collectionTypeToItemTypes(
+                  nullToUndefined(library.library.CollectionType),
+                ),
+              },
+            })
+            .then((response) => {
+              addJellyfinSelectedMedia(selectedServer, response.Items);
+              addKnownMediaForServer(selectedServer.id, {
+                type: 'jellyfin' as const,
+                items: response.Items,
+              });
+            });
+          break;
+        }
+      }
+
+      prom
         .catch((e) => {
           console.error('Error while attempting to select all Plex items', e);
           snackbar.enqueueSnackbar(

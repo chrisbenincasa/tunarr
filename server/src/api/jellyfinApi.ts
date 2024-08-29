@@ -8,9 +8,10 @@ import { isDefined, nullToUndefined } from '../util/index.js';
 import { z } from 'zod';
 import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.js';
 import { MediaSource, MediaSourceType } from '../dao/entities/MediaSource.js';
-import { isNull } from 'lodash-es';
+import { isNull, uniq } from 'lodash-es';
 import { isQueryError } from '../external/BaseApiClient.js';
 import {
+  JellyfinItemFields,
   JellyfinItemKind,
   JellyfinLibraryItemsResponse,
 } from '@tunarr/types/jellyfin';
@@ -45,7 +46,6 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
     {
       schema: {
         params: mediaSourceParams,
-        // querystring: z.object({})
       },
     },
     (req, res) =>
@@ -81,6 +81,11 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
             .optional()
             .transform((s) => s?.split(','))
             .pipe(JellyfinItemKind.array().optional()),
+          extraFields: z
+            .string()
+            .optional()
+            .transform((s) => s?.split(','))
+            .pipe(JellyfinItemFields.array().optional()),
         }),
         response: {
           200: JellyfinLibraryItemsResponse,
@@ -103,8 +108,15 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
           null,
           req.params.libraryId,
           req.query.itemTypes ?? [],
-          ['ChildCount', 'RecursiveItemCount'],
+          uniq([
+            'ChildCount',
+            'RecursiveItemCount',
+            ...(req.query.extraFields ?? []),
+          ]),
           pageParams,
+          {
+            filters: 'IsFolder=false',
+          },
         );
 
         if (isQueryError(response)) {
