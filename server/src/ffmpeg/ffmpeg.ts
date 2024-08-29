@@ -5,6 +5,7 @@ import {
   first,
   isEmpty,
   isNil,
+  isObject,
   isString,
   isUndefined,
   merge,
@@ -467,6 +468,8 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       for (const [key, value] of Object.entries(extraInnputHeaders)) {
         ffmpegArgs.push('-headers', `'${key}: ${value}'`);
       }
+      ffmpegArgs.push('-hwaccel', 'videotoolbox');
+      // ffmpegArgs.push('-c:v', 'hevc_videotoolbox');
       ffmpegArgs.push(`-i`, streamUrl);
       videoFile = inputFiles++;
       audioFile = videoFile;
@@ -541,7 +544,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
         }
 
         if (!isNil(pic) && !isEmpty(pic)) {
-          ffmpegArgs.push('-i', pic);
+          ffmpegArgs.push('-copyts', '-i', pic);
           if (isUndefined(duration) && !isUndefined(streamStats?.duration)) {
             //add 150 milliseconds just in case, exact duration seems to cut out the last bits of music some times.
             duration = `${streamStats.duration + 150}ms`;
@@ -591,9 +594,10 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
         }
       }
       const durstr = `duration=${streamStats?.duration}ms`;
-      if (!isNonEmptyString(streamUrl)) {
+      if (!isString(streamUrl) && isObject(streamUrl)) {
         // silent
-        audioComplex = `;aevalsrc=0:${durstr}:s=48000,aresample=async=1:first_pts=0[audioy]`;
+        // audioComplex = `;aevalsrc=0:${durstr}:s=48000,aresample=async=1:first_pts=0[audioy]`;
+        audioComplex = `;aresample=async=1:first_pts=0[audioy]`;
         if (streamUrl.errorTitle === 'offline') {
           if (
             !isUndefined(this.channel.offlineSoundtrack) &&
@@ -603,6 +607,8 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
             // I don't really understand why, but you need to use this
             // 'size' in order to make the soundtrack actually loop
             audioComplex = `;[${inputFiles++}:a]aloop=loop=-1:size=2147483647[audioy]`;
+          } else {
+            ffmpegArgs.push('-f', 'lavfi', '-i', 'anullsrc');
           }
         } else if (
           this.opts.errorAudio === 'whitenoise' ||
@@ -613,6 +619,9 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
         } else if (this.opts.errorAudio === 'sine') {
           audioComplex = `;sine=f=440[audioy]`;
           this.volumePercent = Math.min(70, this.volumePercent);
+        } else {
+          ffmpegArgs.push('-f', 'lavfi', '-i', 'anullsrc');
+          audioComplex = `;[${inputFiles++}:a]aresample=async=1:first_pts=0[audioy]`;
         }
         if (!this.audioOnly) {
           ffmpegArgs.push('-pix_fmt', 'yuv420p');
@@ -852,6 +861,8 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
         currentVideo,
         `-c:v`,
         'rawvideo',
+        '-pix_fmt',
+        'yuv420p',
         `-sc_threshold`,
         `0`,
         '-video_track_timescale',
@@ -869,6 +880,9 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       'cgop+ilme',
       `-c:a`,
       'pcm_s16le',
+      // '-dither_method',
+      // 'modified_e_weighted',
+      // 'pcm_f32le',
       '-map_metadata',
       '-1',
       '-movflags',
@@ -892,6 +906,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
     }
 
     ffmpegArgs.push(`-f`, 'nut', `pipe:1`);
+    // ffmpegArgs.push(`-f`, 'matroska', `pipe:1`);
 
     const doLogs = this.opts.enableLogging;
     if (this.hasBeenKilled) {

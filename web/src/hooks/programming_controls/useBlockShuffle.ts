@@ -1,8 +1,24 @@
-import _, { chain, chunk, concat, forEach, max, range } from 'lodash-es';
+import {
+  chain,
+  chunk,
+  concat,
+  filter,
+  forEach,
+  map,
+  max,
+  range,
+  shuffle,
+  sortBy,
+  values,
+} from 'lodash-es';
 import { setCurrentLineup } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
 import { materializedProgramListSelector } from '../../store/selectors.ts';
-import { UIChannelProgram, isUIContentProgram } from '../../types/index.ts';
+import {
+  UIChannelProgram,
+  UIContentProgram,
+  UICustomProgram,
+} from '../../types/index.ts';
 
 export type BlockShuffleProgramCount = number;
 
@@ -25,26 +41,49 @@ export function useBlockShuffle() {
   // Alternate through all shows
 
   return function (options: BlockShuffleOptions | null) {
-    const movieList = programs.filter(
-      (program) => program.type === 'content' && program.subtype === 'movie',
+    const movieList = sortBy(
+      filter(
+        programs,
+        (program): program is UIContentProgram =>
+          program.type === 'content' && program.subtype === 'movie',
+      ),
+      (program) => {
+        const ts = program.date ? new Date(program.date).getTime() : 0;
+        return ts;
+      },
     );
 
-    let showList = chain(programs)
-      .filter(isUIContentProgram)
-      .filter((program) => program.subtype === 'episode')
+    const x = filter(
+      programs,
+      (program) => program.type === 'custom' && program.program?.subtype,
+    );
+
+    const nonMovieList = chain(programs)
+      .filter((program): program is UIContentProgram | UICustomProgram => {
+        if (program.type === 'content') {
+          return program.subtype !== 'movie';
+        } else if (program.type === 'custom') {
+          return program.program?.subtype === 'movie';
+        } else {
+          return false;
+        }
+      })
+      .thru((list) => {
+        if (options?.type === 'Random') {
+          return shuffle(list);
+        } else {
+          return list;
+        }
+      })
       .value();
 
-    if (options?.type === 'Random') {
-      showList = _.shuffle(showList);
-    }
-
-    const groupByShow = chain(showList)
+    const groupByShow = chain(nonMovieList)
       .groupBy((program) => program.title)
       .mapValues((value) => chunk(value, options?.programCount))
       .value();
 
     // See which show has the most episodes in the program list
-    const maxLength = max(Object.values(groupByShow).map((a) => a.length)) || 0;
+    const maxLength = max(map(values(groupByShow), (a) => a.length)) ?? 0;
 
     const alternatingShows: UIChannelProgram[] = [];
 

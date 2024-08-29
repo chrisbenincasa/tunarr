@@ -397,6 +397,14 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
       // We only need 2 entries + stream_loop on the concat command for an infinite
       // stream. See https://trac.ffmpeg.org/wiki/Concatenate#Changingplaylistfilesonthefly
       for (let i = 0; i < 2; i++) {
+        const loadingUrl = makeLocalUrl('/stream', {
+          channel: req.query.channel,
+          session: sessionId,
+          audioOnly,
+          hls: req.query.hls,
+          index: i,
+          loading: true,
+        });
         const url = makeLocalUrl('/stream', {
           channel: req.query.channel,
           session: sessionId,
@@ -405,6 +413,7 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
           index: i,
         });
 
+        // data += `file '${loadingUrl}'\n`;
         data += `file '${url}'\n`;
       }
 

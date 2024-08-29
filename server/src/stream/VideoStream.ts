@@ -116,65 +116,78 @@ export class VideoStream {
       lineup,
     );
 
-    while (
-      !isUndefined(currentProgram) &&
-      currentProgram.program.type === 'redirect'
-    ) {
-      redirectChannels.push(channelContext.uuid);
-      upperBounds.push(
-        currentProgram.program.duration - currentProgram.timeElapsed,
-      );
+    if (req.loading) {
+      lineupItem = {
+        type: 'loading',
+        title: 'Loading Screen',
+        // noRealTime: true,
+        streamDuration: 420,
+        duration: 420,
+        // redirectChannels: [channel],
+        start: 0,
+      };
+    } else {
+      while (
+        !isUndefined(currentProgram) &&
+        currentProgram.program.type === 'redirect'
+      ) {
+        redirectChannels.push(channelContext.uuid);
+        upperBounds.push(
+          currentProgram.program.duration - currentProgram.timeElapsed,
+        );
 
-      if (redirectChannels.includes(currentProgram.program.channel)) {
-        await serverCtx.channelCache.recordPlayback(
+        if (redirectChannels.includes(currentProgram.program.channel)) {
+          await serverCtx.channelCache.recordPlayback(
+            channelContext.uuid,
+            startTimestamp,
+            {
+              type: 'error',
+              title: 'Error',
+              error:
+                'Recursive channel redirect found: ' +
+                redirectChannels.join(', '),
+              duration: 60000,
+              start: 0,
+            },
+          );
+        }
+
+        const nextChannelId = currentProgram.program.channel;
+        const newChannelAndLineup =
+          await serverCtx.channelDB.loadChannelAndLineup(nextChannelId);
+
+        if (isNil(newChannelAndLineup)) {
+          const msg = "Invalid redirect to a channel that doesn't exist";
+          this.logger.error(msg);
+          currentProgram = {
+            program: {
+              ...createOfflineStreamLineupIteam(60000),
+              type: 'error',
+              error: msg,
+            },
+            timeElapsed: 0,
+            programIndex: -1,
+          };
+          continue;
+        }
+
+        channelContext = newChannelAndLineup.channel;
+        lineupItem = serverCtx.channelCache.getCurrentLineupItem(
           channelContext.uuid,
           startTimestamp,
-          {
-            type: 'error',
-            title: 'Error',
-            error:
-              'Recursive channel redirect found: ' +
-              redirectChannels.join(', '),
-            duration: 60000,
-            start: 0,
-          },
         );
-      }
 
-      const nextChannelId = currentProgram.program.channel;
-      const newChannelAndLineup =
-        await serverCtx.channelDB.loadChannelAndLineup(nextChannelId);
-
-      if (isNil(newChannelAndLineup)) {
-        const msg = "Invalid redirect to a channel that doesn't exist";
-        this.logger.error(msg);
-        currentProgram = {
-          program: {
-            ...createOfflineStreamLineupIteam(60000),
-            type: 'error',
-            error: msg,
-          },
-          timeElapsed: 0,
-          programIndex: -1,
-        };
-        continue;
-      }
-
-      channelContext = newChannelAndLineup.channel;
-      lineupItem = serverCtx.channelCache.getCurrentLineupItem(
-        channelContext.uuid,
-        startTimestamp,
-      );
-
-      if (!isUndefined(lineupItem)) {
-        lineupItem = deepCopy(lineupItem);
-        break;
-      } else {
-        currentProgram = await this.calculator.getCurrentProgramAndTimeElapsed(
-          startTimestamp,
-          channelContext,
-          newChannelAndLineup.lineup,
-        );
+        if (!isUndefined(lineupItem)) {
+          lineupItem = deepCopy(lineupItem);
+          break;
+        } else {
+          currentProgram =
+            await this.calculator.getCurrentProgramAndTimeElapsed(
+              startTimestamp,
+              channelContext,
+              newChannelAndLineup.lineup,
+            );
+        }
       }
     }
 
