@@ -104,22 +104,17 @@ export class JellyfinPlayer extends Player {
       stream.streamDetails.duration = lineupItem.streamDuration;
     }
 
-    const streamUrl = new URL(stream.streamUrl);
-    streamUrl.searchParams.append(
-      'startTimeTicks',
-      Math.round((lineupItem.start ?? 0) * 10000).toString(),
-    );
-
     const emitter = new EventEmitter() as TypedEventEmitter<FfmpegEvents>;
     let ffmpegOutStream = this.ffmpeg.spawnStream(
-      streamUrl.toString(),
+      stream.streamUrl,
       stream.streamDetails,
       // Don't use FFMPEG's -ss parameter for Jellyfin since we need to request
       // the seek against their API instead
-      0,
+      (lineupItem.start ?? 0) / 1000,
       streamDuration?.toString(),
       watermark,
       {
+        // TODO: Use the real authorization string
         'X-Emby-Token': server.accessToken,
       },
     ); // Spawn the ffmpeg process
