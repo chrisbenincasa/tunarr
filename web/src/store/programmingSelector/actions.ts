@@ -13,7 +13,7 @@ import {
   isPlexDirectory,
 } from '@tunarr/types/plex';
 import { MediaSourceId } from '@tunarr/types/schemas';
-import { has, isArray, map, reject, some, uniq } from 'lodash-es';
+import { has, isArray, isUndefined, map, reject, some, uniq } from 'lodash-es';
 import useStore from '..';
 import {
   buildPlexFilterKey,
@@ -27,11 +27,17 @@ export const setProgrammingListingServer = (
 ) =>
   useStore.setState((state) => {
     state.currentServer = server;
+    state.currentLibrary = undefined;
   });
 
 export const setProgrammingListLibrary = (library: SelectedLibrary) =>
   useStore.setState((state) => {
     state.currentLibrary = library;
+  });
+
+export const clearProgrammingListLibrary = () =>
+  useStore.setState((state) => {
+    state.currentLibrary = undefined;
   });
 
 function uniqueId(item: PlexLibrarySection | PlexMedia): string {
@@ -63,6 +69,9 @@ export const addKnownMediaForServer = (
     switch (media.type) {
       case 'plex': {
         for (const item of media.items) {
+          if (isUndefined(item)) {
+            continue;
+          }
           byGuid[uniqueId(item)] = { type: media.type, item };
         }
         break;

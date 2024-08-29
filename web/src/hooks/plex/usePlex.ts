@@ -6,6 +6,7 @@ import { useApiQuery } from '../useApiQuery.ts';
 import { useTunarrApi } from '../useTunarrApi.ts';
 import { plexQueryOptions } from './plexHookUtil.ts';
 import { MediaSourceId } from '@tunarr/types/schemas';
+import { identity, reject } from 'lodash-es';
 
 export type PlexPathMappings = [
   ['/library/sections', PlexLibrarySections],
@@ -23,16 +24,20 @@ type PlexQueryArgs<T> = {
 
 export const usePlex = <
   T extends ExtractTypeKeys<PlexPathMappings>,
-  OutType = FindChild<T, PlexPathMappings>,
+  ResponseType = FindChild<T, PlexPathMappings>,
+  OutType = ResponseType,
 >(
   serverId: MediaSourceId,
   path: string,
   enabled: boolean = true,
+  select: (response: ResponseType) => OutType = identity,
 ) => {
   return useApiQuery({
     queryKey: ['plex', serverId, path],
-    queryFn: (apiClient) => fetchPlexPath<OutType>(apiClient, serverId, path)(),
+    queryFn: (apiClient) =>
+      fetchPlexPath<ResponseType>(apiClient, serverId, path)(),
     enabled,
+    select,
   });
 };
 export const usePlexTyped = <T>(
@@ -74,4 +79,13 @@ export const usePlexTyped2 = <T = unknown, U = unknown>(
 export const usePlexLibraries = (
   serverId: MediaSourceId,
   enabled: boolean = true,
-) => usePlex<'/library/sections'>(serverId, '/library/sections', enabled);
+) =>
+  usePlex<'/library/sections'>(
+    serverId,
+    '/library/sections',
+    enabled,
+    (response) => ({
+      ...response,
+      Directory: reject(response.Directory, { type: 'photo' }),
+    }),
+  );

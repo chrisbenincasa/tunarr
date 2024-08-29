@@ -21,6 +21,7 @@ export const PlexMediaTypeSchema = z.union([
   z.literal('movie'),
   z.literal('show'),
   z.literal('artist'),
+  z.literal('photo'),
 ]);
 
 export const PlexLibrarySectionSchema = z.object({

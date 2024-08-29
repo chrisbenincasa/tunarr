@@ -195,7 +195,7 @@ export function JellyfinProgrammingSelector() {
         getItemKey={useCallback((item: JellyfinItem) => item.Id, [])}
         renderGridItem={renderGridItem}
         renderListItem={(item, index) => (
-          <JellyfinListItem item={item} index={index} />
+          <JellyfinListItem key={item.Id} item={item} index={index} />
         )}
         // renderFinalRow={renderFinalRowInlineModal}
         infiniteQuery={jellyfinItemsQuery}
