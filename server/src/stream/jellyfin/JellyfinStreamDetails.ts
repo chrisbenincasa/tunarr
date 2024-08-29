@@ -90,7 +90,7 @@ export class JellyfinStreamDetails {
 
     if (expectedItemType !== jellyfinItemTypeToProgramType(itemMetadata)) {
       this.logger.warn(
-        'Got unexpected item type %s from Plex (ID = %s) when starting stream. Expected item type %s',
+        'Got unexpected item type %s from Jellyfin (ID = %s) when starting stream. Expected item type %s',
         itemMetadata.Type,
         item.externalKey,
         expectedItemType,
@@ -117,7 +117,7 @@ export class JellyfinStreamDetails {
         .catch((err) => {
           this.logger.error(
             err,
-            'Error while updating Plex file path for program %s',
+            'Error while updating Jellyfin file path for program %s',
             item.programId,
           );
         });
@@ -140,7 +140,7 @@ export class JellyfinStreamDetails {
         streamUrl = `${trimEnd(this.server.uri, '/')}/Videos/${trimStart(
           path,
           '/',
-        )}/stream`;
+        )}/stream?static=true`;
       } else {
         throw new Error('Could not resolve stream URL');
       }
