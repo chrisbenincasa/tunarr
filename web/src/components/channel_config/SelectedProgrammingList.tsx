@@ -152,7 +152,7 @@ export default function SelectedProgrammingList({
           media.RecursiveItemCount ?? 0,
         )}`;
       } else if (media.Type === 'Season') {
-        secondary = `eh help - ${media.Name} (${
+        secondary = `${media.SeriesName} - ${media.Name} (${
           media.ChildCount ?? 0
         } ${pluralize('episode', media.ChildCount ?? 0)})`;
         // } else if (media.Type === '') {
