@@ -21,7 +21,6 @@ export type ApiClientOptions = {
 
 export type RemoteMediaSourceOptions = ApiClientOptions & {
   apiKey: string;
-  type: 'plex' | 'jellyfin';
 };
 
 export type QuerySuccessResult<T> = {
@@ -109,7 +108,7 @@ export abstract class BaseApiClient<
 
       this.logger.error(
         parsed.error,
-        'Unable to parse schema from Plex response. Path: %s',
+        'Unable to parse schema from response. Path: %s',
         path,
       );
 
@@ -185,15 +184,21 @@ export abstract class BaseApiClient<
           // The request was made and the server responded with a status code
           // that falls out of the range of 2xx
           this.logger.warn(
-            'Plex response error: status %d, data: %O, headers: %O',
+            'API client esponse error: path: %O, status %d, params: %O, data: %O, headers: %O',
+            error.config?.url ?? '',
             status,
+            error.config?.params,
             error.response.data,
             headers,
           );
         } else if (error.request) {
-          this.logger.error(error, 'Plex request error: %s', error.message);
+          this.logger.error(
+            error,
+            'API client request error: %s',
+            error.message,
+          );
         } else {
-          this.logger.error(error, 'Error requesting Plex: %s', error.message);
+          this.logger.error(error, 'Request error: %s', error.message);
         }
         return error;
       } else if (isError(error)) {
@@ -209,7 +214,7 @@ export abstract class BaseApiClient<
         // and just return a generic error. Something is probably fatally wrong
         // at this point.
         this.logger.error('Unknown error type thrown: %O', error);
-        return new Error('Unknown error when requesting Plex');
+        return new Error('Unknown error');
       }
     }
   }

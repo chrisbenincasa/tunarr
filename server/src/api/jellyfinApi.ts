@@ -50,7 +50,7 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
     },
     (req, res) =>
       withJellyfinMediaSource(req, res, async (mediaSource) => {
-        const api = MediaSourceApiFactory().getJellyfinClient({
+        const api = await MediaSourceApiFactory().getJellyfinClient({
           ...mediaSource,
           url: mediaSource.uri,
           apiKey: mediaSource.accessToken,
@@ -94,7 +94,7 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
     },
     (req, res) =>
       withJellyfinMediaSource(req, res, async (mediaSource) => {
-        const api = MediaSourceApiFactory().getJellyfinClient({
+        const api = await MediaSourceApiFactory().getJellyfinClient({
           ...mediaSource,
           url: mediaSource.uri,
           apiKey: mediaSource.accessToken,

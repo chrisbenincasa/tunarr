@@ -1,14 +1,18 @@
-import { forEach, isBoolean, isNull, isUndefined } from 'lodash-es';
+import { forEach, isBoolean, isEmpty, isNull, isUndefined } from 'lodash-es';
 import NodeCache from 'node-cache';
 import { getEm } from '../dao/dataSource.js';
 import { MediaSource, MediaSourceType } from '../dao/entities/MediaSource.js';
 import { PlexApiClient, PlexApiOptions } from './plex/PlexApiClient.js';
 import { SettingsDB, getSettings } from '../dao/settings.js';
 import { isDefined } from '../util/index.js';
-import { JellyfinApiClient } from './jellyfin/JellyfinApiClient.js';
+import {
+  JellyfinApiClient,
+  JellyfinApiClientOptions,
+} from './jellyfin/JellyfinApiClient.js';
 import { FindChild } from '@tunarr/types';
-import { RemoteMediaSourceOptions } from './BaseApiClient.js';
+import { BaseApiClient, RemoteMediaSourceOptions } from './BaseApiClient.js';
 import { Maybe } from '../types/util.js';
+import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 
 type TypeToClient = [
   [MediaSourceType.Plex, PlexApiClient],
@@ -18,6 +22,7 @@ type TypeToClient = [
 let instance: MediaSourceApiFactoryImpl;
 
 export class MediaSourceApiFactoryImpl {
+  #logger = LoggerFactory.child({ className: MediaSourceApiFactoryImpl.name });
   #cache: NodeCache;
   #requestCacheEnabled: boolean | Record<string, boolean> = false;
 
@@ -42,27 +47,50 @@ export class MediaSourceApiFactoryImpl {
     });
   }
 
-  getTyped<X extends MediaSourceType, ApiClient = FindChild<X, TypeToClient>>(
-    typ: X,
-    opts: RemoteMediaSourceOptions,
-    factory: (opts: RemoteMediaSourceOptions) => ApiClient,
-  ): ApiClient {
+  async getTyped<
+    Typ extends MediaSourceType,
+    ApiClient = FindChild<Typ, TypeToClient>,
+    ApiClientOptions extends
+      RemoteMediaSourceOptions = ApiClient extends BaseApiClient<infer Opts>
+      ? Opts extends RemoteMediaSourceOptions
+        ? Opts
+        : never
+      : never,
+  >(
+    typ: Typ,
+    opts: ApiClientOptions,
+    factory: (opts: ApiClientOptions) => Promise<ApiClient>,
+  ): Promise<ApiClient> {
     const key = `${typ}|${opts.url}|${opts.apiKey}`;
     let client = this.#cache.get<ApiClient>(key);
     if (!client) {
-      client = factory(opts);
+      client = await factory(opts);
       this.#cache.set(key, client);
     }
 
     return client;
   }
 
-  getJellyfinClient(opts: RemoteMediaSourceOptions) {
-    return this.getTyped(
-      MediaSourceType.Jellyfin,
-      opts,
-      (opts) => new JellyfinApiClient(opts),
-    );
+  getJellyfinClient(opts: JellyfinApiClientOptions) {
+    return this.getTyped(MediaSourceType.Jellyfin, opts, async (opts) => {
+      if (isEmpty(opts.userId)) {
+        console.log('JELLYFINNNN');
+        // We might have an admin token, so attempt to exchange it.
+        try {
+          const adminUser = await JellyfinApiClient.findAdminUser(
+            opts,
+            opts.apiKey,
+          );
+          return new JellyfinApiClient({ ...opts, userId: adminUser?.Id });
+        } catch (e) {
+          this.#logger.warn(
+            e,
+            'Could not retrieve admin user for Jellyfin server',
+          );
+        }
+      }
+      return new JellyfinApiClient(opts);
+    });
   }
 
   async getOrSet(name: string) {
@@ -99,7 +127,6 @@ export class MediaSourceApiFactoryImpl {
           apiKey: server.accessToken,
           url: server.uri,
           name: server.name,
-          type: type,
         });
         this.#cache.set(server.name, client);
       }
