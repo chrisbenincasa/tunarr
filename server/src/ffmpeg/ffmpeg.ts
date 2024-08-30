@@ -232,6 +232,8 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       scThreshold,
       '-movflags',
       '+faststart',
+      '-bf',
+      '0',
     );
 
     if (!this.audioOnly) {
@@ -447,6 +449,8 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
 
     if (limitRead && (!this.audioOnly || isNonEmptyString(streamUrl))) {
       ffmpegArgs.push(`-re`);
+      // TODO: look into this - initial burst needs a version check.
+      // ffmpegArgs.push(`-readrate`, '1.0', '-readrate_initial_burst', '45');
     }
 
     if (!isUndefined(startTime)) {
@@ -593,7 +597,9 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       const durstr = `duration=${streamStats?.duration}ms`;
       if (!isNonEmptyString(streamUrl)) {
         // silent
-        audioComplex = `;aevalsrc=0:${durstr}:s=48000,aresample=async=1:first_pts=0[audioy]`;
+        audioComplex = `;aevalsrc=0:${durstr}:s=${
+          this.opts.audioSampleRate * 1000
+        },aresample=async=1:first_pts=0[audioy]`;
         if (streamUrl.errorTitle === 'offline') {
           if (
             !isUndefined(this.channel.offlineSoundtrack) &&
@@ -620,6 +626,7 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
         audioComplex += ';[audioy]arealtime[audiox]';
         currentAudio = '[audiox]';
       }
+      ffmpegArgs.push('-ac', `${this.opts.audioChannels}`);
       currentVideo = '[videox]';
     } else {
       // HACK: We know these will be defined already if we get this far
@@ -868,7 +875,10 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       '-flags',
       'cgop+ilme',
       `-c:a`,
-      'pcm_s16le',
+      'flac',
+      // TODO: Figure out why transitioning between still image streams
+      // with generated audio and real streams causes PCM to break.
+      // 'pcm_s16le',
       '-map_metadata',
       '-1',
       '-movflags',
@@ -877,6 +887,8 @@ export class FFMPEG extends (events.EventEmitter as new () => TypedEventEmitter<
       `0`,
       `-muxpreload`,
       `0`,
+      '-fps_mode',
+      'cfr',
     );
 
     ffmpegArgs.push(
