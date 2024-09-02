@@ -314,7 +314,7 @@ export default function MediaSourceSettingsPage() {
                     name="updatePlayStatus"
                   />
                 }
-                label="Send play status to Media Srouce"
+                label="Send play status to Media Source"
               />
               <FormHelperText>
                 Note: This affects the "continue watching" section of the media
