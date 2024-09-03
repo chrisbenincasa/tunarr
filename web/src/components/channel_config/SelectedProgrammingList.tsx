@@ -1,10 +1,12 @@
+import JellyfinLogo from '@/assets/jellyfin.svg';
+import { useMediaSources } from '@/hooks/settingsHooks.ts';
+import { useKnownMedia } from '@/store/programmingSelector/selectors.ts';
 import { SelectedMedia } from '@/store/programmingSelector/store.ts';
 import {
   KeyboardArrowLeft,
   KeyboardArrowRight,
   Close as RemoveIcon,
 } from '@mui/icons-material';
-import JellyfinLogo from '@/assets/jellyfin.svg';
 import {
   Box,
   Chip,
@@ -26,55 +28,42 @@ import {
   isPlexSeason,
   isPlexShow,
 } from '@tunarr/types/plex';
-import {
-  find,
-  first,
-  groupBy,
-  isUndefined,
-  mapValues,
-  reduce,
-} from 'lodash-es';
+import { find, first, groupBy, isUndefined, mapValues } from 'lodash-es';
 import pluralize from 'pluralize';
-import { ReactNode, useState } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
 import { useWindowSize } from 'usehooks-ts';
-import { forSelectedMediaType, toggle, unwrapNil } from '../../helpers/util.ts';
+import { forSelectedMediaType, unwrapNil } from '../../helpers/util.ts';
 import { useCustomShows } from '../../hooks/useCustomShows.ts';
 import useStore from '../../store/index.ts';
 import { removeSelectedMedia } from '../../store/programmingSelector/actions.ts';
 import { AddedMedia } from '../../types/index.ts';
 import AddSelectedMediaButton from './AddSelectedMediaButton.tsx';
-import SelectedProgrammingActions from './SelectedProgrammingActions.tsx';
-import { useKnownMedia } from '@/store/programmingSelector/selectors.ts';
-import { useMediaSources } from '@/hooks/settingsHooks.ts';
 
 type Props = {
   onAddSelectedMedia: (media: AddedMedia[]) => void;
   onAddMediaSuccess: () => void;
   selectAllEnabled?: boolean;
+  isOpen: boolean;
+  toggleOrSetSelectedProgramsDrawer: (open: boolean) => void;
 };
 
 export default function SelectedProgrammingList({
   onAddSelectedMedia,
   onAddMediaSuccess,
-  selectAllEnabled = true,
+  isOpen,
+  toggleOrSetSelectedProgramsDrawer,
 }: Props) {
   const { data: mediaSources } = useMediaSources();
   const { data: customShows } = useCustomShows();
   const knownMedia = useKnownMedia();
   const selectedMedia = useStore((s) => s.selectedMedia);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(isOpen);
   const windowSize = useWindowSize();
 
-  const toggleDrawer = (open?: boolean) => {
-    setOpen(isUndefined(open) ? toggle : open);
-  };
-
-  const totalCount = reduce(
-    selectedMedia,
-    (acc, media) => acc + (media.childCount ?? 1),
-    0,
-  );
+  useEffect(() => {
+    setOpen(isOpen);
+  }, [isOpen]);
 
   const customShowById = mapValues(
     mapValues(groupBy(customShows, 'id'), first),
@@ -255,18 +244,8 @@ export default function SelectedProgrammingList({
 
   const drawerWidth = 240;
 
-  const ActionsBar = () => (
-    <SelectedProgrammingActions
-      onAddSelectedMedia={onAddSelectedMedia}
-      onAddMediaSuccess={onAddMediaSuccess}
-      toggleOrSetSelectedProgramsDrawer={toggleDrawer}
-      selectAllEnabled={selectAllEnabled}
-    />
-  );
-
   const ProgrammingList = () => (
     <>
-      <ActionsBar />
       {selectedMedia.length > 0 && (
         <Paper
           sx={{
@@ -284,7 +263,10 @@ export default function SelectedProgrammingList({
             }
             placement="left"
           >
-            <IconButton disableRipple onClick={() => setOpen(toggle)}>
+            <IconButton
+              disableRipple
+              onClick={() => toggleOrSetSelectedProgramsDrawer(!open)}
+            >
               {open ? <KeyboardArrowRight /> : <KeyboardArrowLeft />}
               {!open && <Chip label={selectedMedia.length} />}
             </IconButton>
@@ -292,12 +274,14 @@ export default function SelectedProgrammingList({
         </Paper>
       )}
 
-      <ClickAwayListener onClickAway={() => setOpen(false)}>
+      <ClickAwayListener
+        onClickAway={() => toggleOrSetSelectedProgramsDrawer(false)}
+      >
         <Drawer
           anchor="right"
           open={open}
           variant="persistent"
-          onClose={() => setOpen(false)}
+          onClose={() => toggleOrSetSelectedProgramsDrawer(false)}
           PaperProps={{ elevation: 2 }}
           sx={{
             width: drawerWidth,
@@ -323,7 +307,8 @@ export default function SelectedProgrammingList({
             }}
           ></Toolbar>
           <Typography textAlign={'left'} sx={{ my: 2, ml: 1, fontWeight: 600 }}>
-            Selected {pluralize('Item', totalCount)} ({totalCount}):
+            Selected {pluralize('Item', selectedMedia.length)} (
+            {selectedMedia.length}):
           </Typography>
           <AddSelectedMediaButton
             onAdd={onAddSelectedMedia}
