@@ -1,28 +1,51 @@
-import fs from 'node:fs/promises';
 import retry from 'async-retry';
-import {
-  SessionOptions,
-  StreamReadyResult,
-  StreamSession,
-} from './StreamSession';
+import dayjs from 'dayjs';
+import { filter, isError, isString, some } from 'lodash-es';
+import fs from 'node:fs/promises';
+import { basename, extname, join, resolve } from 'node:path';
+import { StrictOmit } from 'ts-essentials';
+import { Channel } from '../dao/direct/derivedTypes';
+import { getSettings } from '../dao/settings';
+import { VideoStreamResult } from '../ffmpeg/FfmpegOutputStream.js';
+import { serverContext } from '../serverContext';
+import { Result } from '../types/result';
 import { isNodeError } from '../util';
-import { isError, isString } from 'lodash-es';
 import { ConcatStream } from './ConcatStream';
-import { Channel } from '../dao/entities/Channel';
-import { join, resolve } from 'node:path';
+import { GetPlayerContextRequest, PlayerContext } from './PlayerStreamContext';
+import { ProgramStream } from './ProgramStream';
+import { ProgramStreamFactory } from './ProgramStreamFactory';
+import { StreamProgramCalculator } from './StreamProgramCalculator';
+import { SessionOptions, StreamSession } from './StreamSession';
 
 export type HlsSessionOptions = SessionOptions & {
   sessionType: 'hls';
+  // The number of segments to wait for before returning
+  // the stream to the consumer.
+  initialSegmentCount: number;
 };
 
-export class HlsSession extends StreamSession {
+/**
+ * Initializes an ffmpeg process that concatenates via the /playlist
+ * endpoint and outputs an HLS format + segments
+ */
+export class HlsSession extends StreamSession<HlsSessionOptions> {
   #outPath: string;
   // Absolute path to the stream directory
   #streamPath: string;
   // The path to request streaming assets from the server
   #serverPath: string;
+  #transcodedUntil: number;
+  // Start in lookahead mode
+  #realtimeTranscode: boolean = false;
+  #programCalculator: StreamProgramCalculator;
+  #stream: VideoStreamResult;
 
-  constructor(channel: Channel, options: HlsSessionOptions) {
+  constructor(
+    channel: Channel,
+    options: HlsSessionOptions,
+    programCalculator: StreamProgramCalculator = serverContext().streamProgramCalculator(),
+    private settingsDB = getSettings(),
+  ) {
     super(channel, options);
     this.#outPath = resolve(
       process.cwd(),
@@ -32,6 +55,7 @@ export class HlsSession extends StreamSession {
     this.#streamPath = join(this.#outPath, 'stream.m3u8');
     // Direct players back to the /hls URL which will return the playlist
     this.#serverPath = `/media-player/${this.channel.uuid}/hls`;
+    this.#programCalculator = programCalculator;
   }
 
   get workingDirectory() {
@@ -46,6 +70,53 @@ export class HlsSession extends StreamSession {
     return this.#serverPath;
   }
 
+  async getNextItemStream(
+    request: StrictOmit<GetPlayerContextRequest, 'channelId'>,
+  ): Promise<Result<ProgramStream>> {
+    const { startTime: now, session } = request;
+
+    const lineupItemResult = await this.#programCalculator.getCurrentLineupItem(
+      {
+        allowSkip: true,
+        channelId: this.channel.uuid,
+        startTime: this.#transcodedUntil,
+        session,
+      },
+    );
+
+    return lineupItemResult.mapAsync(async (result) => {
+      const { lineupItem } = result;
+      const transcodeBuffer = dayjs
+        .duration(dayjs(this.#transcodedUntil).diff(now))
+        .asSeconds();
+
+      if (transcodeBuffer < 30) {
+        this.#realtimeTranscode = false;
+      } else {
+        this.#realtimeTranscode = true;
+      }
+
+      const context = new PlayerContext(
+        result.lineupItem,
+        result.channelContext,
+        request.audioOnly,
+        lineupItem.type === 'loading',
+        this.#realtimeTranscode,
+      );
+
+      const programStream = ProgramStreamFactory.create(
+        context,
+        this.settingsDB,
+      );
+
+      const transcodeSession = await programStream.setup();
+
+      this.#transcodedUntil = transcodeSession.streamEndTime;
+
+      return programStream;
+    });
+  }
+
   protected async initializeStream() {
     this.logger.debug(`Creating stream directory: ${this.#outPath}`);
 
@@ -54,42 +125,63 @@ export class HlsSession extends StreamSession {
       await this.cleanupDirectory();
     } catch (e) {
       if (isNodeError(e) && e.code === 'ENOENT') {
-        this.logger.debug("[Session %s]: Stream directory doesn't exist.");
+        this.logger.debug(
+          "[Session %s]: Stream directory doesn't exist.",
+          this.channel.uuid,
+        );
       }
     } finally {
       await fs.mkdir(this.#outPath);
     }
 
-    return await new ConcatStream().startStream(
-      this.channel.uuid,
-      /* audioOnly */ false,
-      {
-        enableHls: true,
-        hlsOptions: {
-          streamBasePath: `stream_${this.channel.uuid}`,
-          hlsTime: 3,
-          hlsListSize: 8,
-        },
-        logOutput: false,
+    this.#transcodedUntil = dayjs().valueOf();
+
+    return (this.#stream = await new ConcatStream({
+      enableHls: true,
+      hlsOptions: {
+        streamBasePath: `stream_${this.channel.uuid}`,
+        hlsTime: 4,
+        hlsListSize: 25,
       },
-    );
+      logOutput: false,
+      parentProcessType: 'hls',
+    }).startStream(this.channel.uuid, /* audioOnly */ false));
   }
 
-  protected override async waitForStreamReady(): Promise<StreamReadyResult> {
+  protected override async waitForStreamReady(): Promise<Result<void>> {
     // Wait for the stream to become ready
     try {
       await retry(
         async (bail) => {
-          try {
-            await fs.stat(this.#streamPath);
-          } catch (e) {
+          const workingDirectoryFiles = await Result.attemptAsync(() =>
+            fs.readdir(this.#outPath),
+          );
+
+          if (workingDirectoryFiles.isFailure()) {
+            const e = workingDirectoryFiles.error;
             if (isNodeError(e) && e.code === 'ENOENT') {
               this.logger.debug('Still waiting for stream session to start.');
               throw e; // Retry
             } else {
               this.state === 'error';
-              bail(isError(e) ? e : new Error('Unexplained error: ' + e));
+              bail(e);
             }
+          }
+
+          const numSegments = filter(
+            workingDirectoryFiles.get(),
+            (f) => extname(f) === '.ts',
+          ).length;
+          const playlistExists = some(
+            workingDirectoryFiles.get(),
+            (f) => f === basename(this.#streamPath),
+          );
+          if (
+            numSegments < this.sessionOptions.initialSegmentCount ||
+            !playlistExists
+          ) {
+            this.logger.debug('Still waiting for stream session to start.');
+            throw new Error('Stream not ready yet. Retry');
           }
         },
         {
@@ -97,20 +189,20 @@ export class HlsSession extends StreamSession {
           factor: 1.2,
         },
       );
-      return {
-        type: 'success',
-      };
+      return Result.success(void 0);
     } catch (e) {
       this.logger.error(e, 'Error starting stream after retrying');
       this.state = 'error';
-      return {
-        type: 'error',
-        error: isError(e) ? e : new Error(isString(e) ? e : 'Unknown error'),
-      };
+      return Result.failure(
+        isError(e) ? e : new Error(isString(e) ? e : 'Unknown error'),
+      );
     }
   }
 
   protected async stopStream(): Promise<void> {
+    if (this.#stream?.type === 'success') {
+      this.#stream?.stop();
+    }
     this.logger.debug(
       `Cleaning out stream path for session: %s`,
       this.#outPath,

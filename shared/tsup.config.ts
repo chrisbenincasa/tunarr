@@ -1,15 +1,15 @@
 import { defineConfig } from 'tsup';
 
-export default defineConfig({
+export default defineConfig((opts) => ({
   entry: {
     index: 'src/index.ts',
     'constants/index': 'src/util/constants.ts',
     'util/index': 'src/util/index.ts',
     'types/index': 'src/types/index.ts',
   },
-  dts: true,
+  dts: !!opts.dts,
   splitting: false,
   format: 'esm',
   outDir: 'build',
   sourcemap: true,
-});
+}));

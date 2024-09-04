@@ -1,13 +1,14 @@
-import { Loaded } from '@mikro-orm/core';
 import constants from '@tunarr/shared/constants';
 import { isEmpty, isNil, isUndefined } from 'lodash-es';
-import { ChannelCache } from '../stream/ChannelCache';
-import { Channel } from '../dao/entities/Channel';
-import { Nullable } from '../types/util';
-import { Maybe } from '../types/util';
-import { random } from '../util/random';
-import { ChannelFillerShow, Program } from '../dao/direct/derivedTypes';
 import { MarkRequired } from 'ts-essentials';
+import {
+  Channel,
+  ChannelFillerShow,
+  Program,
+} from '../dao/direct/derivedTypes';
+import { ChannelCache } from '../stream/ChannelCache';
+import { Maybe, Nullable } from '../types/util';
+import { random } from '../util/random';
 
 const DefaultFillerCooldownMillis = 30 * 60 * 1000;
 const OneDayMillis = 7 * 24 * 60 * 60 * 1000;
@@ -21,7 +22,7 @@ export class FillerPicker {
   }
 
   pickRandomWithMaxDuration(
-    channel: Loaded<Channel>,
+    channel: Channel,
     fillers: MarkRequired<ChannelFillerShow, 'fillerContent'>[],
     maxDuration: number,
   ): {

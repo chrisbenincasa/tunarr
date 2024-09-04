@@ -22,6 +22,7 @@ export class UpdateXmlTvTask extends Task<void> {
   protected logger = LoggerFactory.child({
     caller: import.meta,
     task: UpdateXmlTvTask.ID as string,
+    className: this.constructor.name,
   });
   #channelDB: ChannelDB;
   #settingsDB: SettingsDB;

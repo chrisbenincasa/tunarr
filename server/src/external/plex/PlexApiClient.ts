@@ -1,4 +1,3 @@
-import { EntityDTO } from '@mikro-orm/core';
 import {
   PlexDvr,
   PlexDvrsResponse,
@@ -22,13 +21,11 @@ import {
   isUndefined,
   map,
 } from 'lodash-es';
-import { MarkOptional } from 'ts-essentials';
-import { MediaSource } from '../../dao/entities/MediaSource.js';
 import {
   PlexMediaContainer,
   PlexMediaContainerResponse,
 } from '../../types/plexApiTypes.js';
-import { Maybe } from '../../types/util.js';
+import { Maybe, Nilable } from '../../types/util.js';
 import { isSuccess } from '../../util/index.js';
 import {
   BaseApiClient,
@@ -39,13 +36,11 @@ import {
 } from '../BaseApiClient.js';
 import { PlexQueryCache } from './PlexQueryCache.js';
 
-export type PlexApiOptions = MarkOptional<
-  Pick<
-    EntityDTO<MediaSource>,
-    'accessToken' | 'uri' | 'name' | 'clientIdentifier'
-  >,
-  'clientIdentifier'
-> & {
+export type PlexApiOptions = {
+  accessToken: string;
+  uri: string;
+  name: string;
+  clientIdentifier?: Nilable<string>;
   enableRequestCache?: boolean;
 };
 

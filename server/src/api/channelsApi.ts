@@ -17,6 +17,7 @@ import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
 import { compact, groupBy, isError, isNil, map, omit, sortBy } from 'lodash-es';
 import z from 'zod';
+import { dbChannelToApiChannel } from '../dao/converters/channelConverters.js';
 import { ProgramConverter } from '../dao/converters/programConverters.js';
 import { GlobalScheduler } from '../services/scheduler.js';
 import { UpdateXmlTvTask } from '../tasks/UpdateXmlTvTask.js';
@@ -24,7 +25,6 @@ import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { attempt, mapAsyncSeq } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { timeNamedAsync } from '../util/perf.js';
-import { dbChannelToApiChannel } from '../dao/converters/channelConverters.js';
 
 dayjs.extend(duration);
 
@@ -36,7 +36,10 @@ const ChannelLineupQuery = z.object({
 
 // eslint-disable-next-line @typescript-eslint/require-await
 export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
-  const logger = LoggerFactory.child({ caller: import.meta });
+  const logger = LoggerFactory.child({
+    caller: import.meta,
+    className: 'ChannelsApi',
+  });
 
   fastify.addHook('onError', (req, _, error, done) => {
     logger.error(error, '%s %s', req.routerMethod, req.routeOptions.url);

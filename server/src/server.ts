@@ -3,6 +3,7 @@ import fastifyMultipart from '@fastify/multipart';
 import fpStatic from '@fastify/static';
 import fastifySwagger from '@fastify/swagger';
 import { RequestContext } from '@mikro-orm/core';
+import constants from '@tunarr/shared/constants';
 import fastify, { FastifySchema } from 'fastify';
 import fp from 'fastify-plugin';
 import fastifyPrintRoutes from 'fastify-print-routes';
@@ -13,29 +14,33 @@ import {
   validatorCompiler,
 } from 'fastify-type-provider-zod';
 import { FastifyRouteConfig } from 'fastify/types/route.js';
-import fs from 'node:fs/promises';
 import { isArray, isNumber, isString, isUndefined, round } from 'lodash-es';
 import schedule from 'node-schedule';
+import fs from 'node:fs/promises';
 import path, { dirname } from 'path';
 import { HdhrApiRouter } from './api/hdhrApi.js';
 import { hlsApi } from './api/hlsApi.js';
 import { apiRouter } from './api/index.js';
 import { videoRouter } from './api/videoApi.js';
 import { EntityManager, initOrm } from './dao/dataSource.js';
+import { initDirectDbAccess } from './dao/direct/directDbAccess.js';
 import { LegacyDbMigrator } from './dao/legacy_migration/legacyDbMigration.js';
 import { getSettings } from './dao/settings.js';
-import { ServerOptions, serverOptions } from './globals.js';
+import { FFMPEGInfo } from './ffmpeg/ffmpegInfo.js';
+import {
+  ServerOptions,
+  initializeSingletons,
+  serverOptions,
+} from './globals.js';
 import { ServerRequestContext, serverContext } from './serverContext.js';
+import { OnDemandChannelService } from './services/OnDemandChannelService.js';
 import { GlobalScheduler, scheduleJobs } from './services/scheduler.js';
 import { initPersistentStreamCache } from './stream/ChannelCache.js';
 import { UpdateXmlTvTask } from './tasks/UpdateXmlTvTask.js';
 import { runFixers } from './tasks/fixers/index.js';
+import { copyDirectoryContents, fileExists } from './util/fsUtil.js';
 import { filename, isNonEmptyString, run } from './util/index.js';
 import { LoggerFactory, RootLogger } from './util/logging/LoggerFactory.js';
-import { initDirectDbAccess } from './dao/direct/directDbAccess.js';
-import { OnDemandChannelService } from './services/OnDemandChannelService.js';
-import constants from '@tunarr/shared/constants';
-import { copyDirectoryContents, fileExists } from './util/fsUtil.js';
 
 const currentDirectory = dirname(filename(import.meta.url));
 
@@ -45,7 +50,6 @@ async function migrateFromPreAlphaDefaultDb(targetDir: string) {
   const preAlphaPath = path.join(process.cwd(), constants.DEFAULT_DATA_DIR);
   const hasPreAlphaDefaultDb = await fileExists(preAlphaPath);
   if (hasPreAlphaDefaultDb) {
-    console.log('has', hasPreAlphaDefaultDb);
     await copyDirectoryContents(preAlphaPath, targetDir);
   }
 }
@@ -108,10 +112,14 @@ export async function initServer(opts: ServerOptions) {
   const settingsDb = getSettings();
   LoggerFactory.initialize(settingsDb);
 
-  const logger = LoggerFactory.child({ caller: import.meta });
+  const logger = LoggerFactory.child({
+    caller: import.meta,
+    className: 'TunarrServer',
+  });
 
   const orm = await initOrm();
   initDirectDbAccess(opts);
+  initializeSingletons();
 
   const ctx = serverContext();
 
@@ -126,6 +134,10 @@ export async function initServer(opts: ServerOptions) {
       .catch((e) => {
         logger.error('Failed to migrate from legacy DB: %O', e);
       });
+  }
+
+  if (await fileExists(settingsDb.ffmpegSettings().ffmpegExecutablePath)) {
+    new FFMPEGInfo(settingsDb.ffmpegSettings()).seed().catch(() => {});
   }
 
   scheduleJobs(ctx);

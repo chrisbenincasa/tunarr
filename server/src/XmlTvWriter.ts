@@ -1,23 +1,26 @@
-import { TvGuideProgram, isContentProgram } from '@tunarr/types';
-import { getSettings } from './dao/settings';
-import { Mutex } from 'async-mutex';
 import {
-  type XmltvProgramme,
   writeXmltv,
   type XmltvChannel,
+  type XmltvProgramme,
 } from '@iptv/xmltv';
-import { ChannelPrograms } from './services/tvGuideService';
 import { forProgramType } from '@tunarr/shared/util';
-import { flatMap, isNil, map, round, escape } from 'lodash-es';
-import { isNonEmptyString } from './util';
+import { TvGuideProgram, isContentProgram } from '@tunarr/types';
+import { Mutex } from 'async-mutex';
 import { writeFile } from 'fs/promises';
+import { escape, flatMap, isNil, map, round } from 'lodash-es';
 import { Channel } from './dao/direct/derivedTypes';
+import { getSettings } from './dao/settings';
+import { ChannelPrograms } from './services/tvGuideService';
+import { isNonEmptyString } from './util';
 import { LoggerFactory } from './util/logging/LoggerFactory';
 
 const lock = new Mutex();
 
 export class XmlTvWriter {
-  private logger = LoggerFactory.child({ caller: import.meta });
+  private logger = LoggerFactory.child({
+    caller: import.meta,
+    className: this.constructor.name,
+  });
 
   async write(channels: ChannelPrograms[]) {
     const start = performance.now();

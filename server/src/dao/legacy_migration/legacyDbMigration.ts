@@ -7,8 +7,8 @@ import {
   defaultPlexStreamSettings,
 } from '@tunarr/types';
 import {
-  DefaultVideoFormat,
   DefaultHardwareAccel,
+  DefaultVideoFormat,
   SupportedHardwareAccels,
   SupportedVideoFormats,
 } from '@tunarr/types/schemas';
@@ -96,7 +96,10 @@ function parseIntOrDefault(s: JSONValue, defaultValue: number): number {
 }
 
 export class LegacyDbMigrator {
-  private logger = LoggerFactory.child({ caller: import.meta });
+  private logger = LoggerFactory.child({
+    caller: import.meta,
+    className: this.constructor.name,
+  });
 
   constructor(
     private settings: SettingsDB,
@@ -320,7 +323,12 @@ export class LegacyDbMigrator {
           // will take care of that -- we may want to do it here if we want
           // to remove the fixer eventually, though.
           for (const entity of entities) {
-            const plexApi = MediaSourceApiFactory().get(entity);
+            const plexApi = MediaSourceApiFactory().get({
+              accessToken: entity.accessToken,
+              clientIdentifier: entity.clientIdentifier,
+              name: entity.name,
+              uri: entity.uri,
+            });
             const healthy = await plexApi.checkServerStatus();
             if (healthy) {
               this.logger.debug(

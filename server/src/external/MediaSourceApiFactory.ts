@@ -74,7 +74,6 @@ export class MediaSourceApiFactoryImpl {
   getJellyfinClient(opts: JellyfinApiClientOptions) {
     return this.getTyped(MediaSourceType.Jellyfin, opts, async (opts) => {
       if (isEmpty(opts.userId)) {
-        console.log('JELLYFINNNN');
         // We might have an admin token, so attempt to exchange it.
         try {
           const adminUser = await JellyfinApiClient.findAdminUser(
@@ -101,6 +100,7 @@ export class MediaSourceApiFactoryImpl {
       if (!isNull(server)) {
         client = new PlexApiClient({
           ...server,
+          clientIdentifier: server.clientIdentifier,
           enableRequestCache: this.requestCacheEnabledForServer(server.name),
         });
         this.#cache.set(server.name, client);

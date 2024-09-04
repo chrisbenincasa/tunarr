@@ -12,7 +12,10 @@ export const hdhrSettingsRouter: RouterPluginCallback = (
   _opts,
   done,
 ) => {
-  const logger = LoggerFactory.child({ caller: import.meta });
+  const logger = LoggerFactory.child({
+    caller: import.meta,
+    className: 'HdhrSettingsApi',
+  });
 
   fastify.get(
     '/hdhr-settings',

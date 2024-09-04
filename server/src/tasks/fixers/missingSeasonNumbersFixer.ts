@@ -11,7 +11,10 @@ import Fixer from './fixer.js';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
 
 export class MissingSeasonNumbersFixer extends Fixer {
-  private logger = LoggerFactory.child({ caller: import.meta });
+  private logger = LoggerFactory.child({
+    caller: import.meta,
+    className: this.constructor.name,
+  });
 
   async runInternal(em: EntityManager): Promise<void> {
     const allPlexServers = await em.findAll(MediaSource);

@@ -1,8 +1,14 @@
-import { DeepNullable, MarkRequired } from 'ts-essentials';
-import * as RawType from './types.gen';
 import { Selectable } from 'kysely';
-import { ChannelIcon, ChannelOfflineSettings } from '../entities/Channel.js';
+import { DeepNullable, MarkRequired } from 'ts-essentials';
 import { MarkNonNullable } from '../../types/util';
+import {
+  ChannelIcon,
+  ChannelOfflineSettings,
+  ChannelTranscodingSettings,
+  ChannelWatermark,
+} from '../entities/Channel.js';
+import { MediaSourceType } from '../entities/MediaSource';
+import * as RawType from './types.gen';
 
 export type ProgramType = 'movie' | 'episode' | 'track';
 
@@ -21,9 +27,11 @@ export type Program = Selectable<RawType.Program> & {
 };
 
 export type Channel = Selectable<
-  Omit<RawType.Channel, 'icon' | 'offline'> & {
+  Omit<RawType.Channel, 'icon' | 'offline' | 'watermark' | 'transcoding'> & {
     icon?: ChannelIcon;
     offline?: ChannelOfflineSettings;
+    watermark?: ChannelWatermark;
+    transcoding?: ChannelTranscodingSettings;
   }
 > & {
   programs?: Program[];
@@ -39,6 +47,11 @@ export type ChannelFillerShow = Selectable<RawType.ChannelFillerShow> & {
 
 export type ChannelWithPrograms = MarkRequired<Channel, 'programs'>;
 
-export type DB = Omit<RawType.DB, 'channel'> & {
+export type MediaSource = Omit<Selectable<RawType.MediaSource>, 'type'> & {
+  type: MediaSourceType;
+};
+
+export type DB = Omit<RawType.DB, 'channel' | 'mediaSource'> & {
   channel: Channel;
+  mediaSource: MediaSource;
 };

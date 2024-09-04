@@ -31,12 +31,13 @@ import { Migration20240618005544 } from './src/migrations/Migration2024061800554
 import { LoggerFactory } from './src/util/logging/LoggerFactory.js';
 import { Migration20240719145409 } from './src/migrations/Migration20240719145409.js';
 import { Migration20240805185042 } from './src/migrations/Migration20240805185042.js';
+import { getDefaultDatabaseDirectory } from './src/util/defaults.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const dbPath = path.join(
-  process.env[DATABASE_LOCATION_ENV_VAR] ?? '.tunarr',
+  process.env[DATABASE_LOCATION_ENV_VAR] ?? getDefaultDatabaseDirectory(),
   'db.db',
 );
 

@@ -17,7 +17,7 @@ import {
   replace,
   trimEnd,
 } from 'lodash-es';
-import { MediaSource } from '../../dao/entities/MediaSource';
+import { MediaSource } from '../../dao/direct/types.gen';
 import { PlexApiClient } from '../../external/plex/PlexApiClient';
 import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory';
 import { Nullable } from '../../types/util';
@@ -26,11 +26,12 @@ import { PlexStream } from '../types';
 import { StreamDetails } from '../types';
 import { attempt, isNonEmptyString } from '../../util';
 import { ContentBackedStreamLineupItem } from '../../dao/derived_types/StreamLineup.js';
-import { SettingsDB } from '../../dao/settings.js';
+import { SettingsDB, getSettings } from '../../dao/settings.js';
 import { makeLocalUrl } from '../../util/serverUtil.js';
 import { ProgramDB } from '../../dao/programDB';
 import { ProgramExternalIdType } from '../../dao/custom_types/ProgramExternalIdType';
 import { isQueryError, isQuerySuccess } from '../../external/BaseApiClient.js';
+import { Selectable } from 'kysely';
 
 // The minimum fields we need to get stream details about an item
 type PlexItemStreamDetailsQuery = Pick<
@@ -49,14 +50,14 @@ export class PlexStreamDetails {
   private plex: PlexApiClient;
 
   constructor(
-    private server: MediaSource,
-    private settings: SettingsDB,
-    private programDB: ProgramDB,
+    private server: Selectable<MediaSource>,
+    private settings: SettingsDB = getSettings(),
+    private programDB: ProgramDB = new ProgramDB(),
   ) {
     this.logger = LoggerFactory.child({
       plexServer: server.name,
-      // channel: channel.uuid,
       caller: import.meta,
+      className: this.constructor.name,
     });
 
     this.plex = MediaSourceApiFactory().get(this.server);

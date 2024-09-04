@@ -19,7 +19,7 @@ export const initDirectDbAccess = once((opts: GlobalOptions) => {
       database: new Sqlite(path.join(opts.databaseDirectory, 'db.db')),
     }),
     log: (event) => {
-      const logger = LoggerFactory.root;
+      const logger = LoggerFactory.child({ className: 'DirectDBAccess' });
       switch (event.level) {
         case 'query':
           if (process.env['DATABASE_DEBUG_LOGGING']) {

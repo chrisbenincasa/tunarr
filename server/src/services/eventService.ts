@@ -12,7 +12,10 @@ type Events = {
 };
 
 export class EventService {
-  private logger = LoggerFactory.child({ caller: import.meta });
+  private logger = LoggerFactory.child({
+    caller: import.meta,
+    className: this.constructor.name,
+  });
   private stream: TypedEventEmitter<Events>;
   private _heartbeat: NodeJS.Timeout;
 

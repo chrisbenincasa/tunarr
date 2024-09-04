@@ -226,3 +226,18 @@ export const JellyfinLoginRequest = z.object({
   username: z.string().min(1),
   password: z.string().min(1),
 });
+
+export const ChannelSessionsResponseSchema = z.object({
+  type: z.union([
+    z.literal('hls'),
+    z.literal('concat'),
+    z.literal('concat_hls'),
+  ]),
+  numConnections: z.number().nonnegative(),
+  connections: z.array(
+    z.object({
+      ip: z.string().ip(),
+      lastHeartbeat: z.number().nonnegative().optional(),
+    }),
+  ),
+});

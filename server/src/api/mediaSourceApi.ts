@@ -7,21 +7,24 @@ import {
 import { MediaSourceSettingsSchema } from '@tunarr/types/schemas';
 import { isError, isNil, isObject } from 'lodash-es';
 import z from 'zod';
-import { MediaSource, MediaSourceType } from '../dao/entities/MediaSource.js';
-import { PlexApiClient } from '../external/plex/PlexApiClient.js';
+import { MediaSourceType } from '../dao/entities/MediaSource.js';
 import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.js';
+import { JellyfinApiClient } from '../external/jellyfin/JellyfinApiClient.js';
+import { PlexApiClient } from '../external/plex/PlexApiClient.js';
 import { GlobalScheduler } from '../services/scheduler.js';
 import { UpdateXmlTvTask } from '../tasks/UpdateXmlTvTask.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { firstDefined, wait } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
-import { JellyfinApiClient } from '../external/jellyfin/JellyfinApiClient.js';
 
 export const mediaSourceRouter: RouterPluginAsyncCallback = async (
   fastify,
   // eslint-disable-next-line @typescript-eslint/require-await
 ) => {
-  const logger = LoggerFactory.child({ caller: import.meta });
+  const logger = LoggerFactory.child({
+    caller: import.meta,
+    className: 'MediaSourceApi',
+  });
 
   fastify.get(
     '/media-sources',
@@ -61,7 +64,9 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
     },
     async (req, res) => {
       try {
-        const server = await req.serverCtx.mediaSourceDB.getById(req.params.id);
+        const server = await req.serverCtx.mediaSourceDB.getByIdDirect(
+          req.params.id,
+        );
 
         if (isNil(server)) {
           return res.status(404).send();
@@ -134,6 +139,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
           const plex = new PlexApiClient({
             ...req.body,
             name: req.body.name ?? 'unknown',
+            clientIdentifier: null,
           });
 
           healthyPromise = plex.checkServerStatus();
@@ -346,9 +352,10 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
     },
     async (req, res) => {
       try {
-        const server = await req.entityManager
-          .repo(MediaSource)
-          .findOne({ name: req.query.serverName });
+        const server = await req.serverCtx.mediaSourceDB.findByType(
+          MediaSourceType.Plex,
+          req.query.serverName,
+        );
 
         if (isNil(server)) {
           return res.status(404).send({ message: 'Plex server not found.' });

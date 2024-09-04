@@ -10,7 +10,7 @@ import {
   isEmpty,
   trimStart,
 } from 'lodash-es';
-import { MediaSource } from '../../dao/entities/MediaSource.js';
+import { MediaSource } from '../../dao/direct/types.gen.js';
 import { ProgramDB } from '../../dao/programDB.js';
 import { SettingsDB } from '../../dao/settings.js';
 import { JellyfinApiClient } from '../../external/jellyfin/JellyfinApiClient.js';
@@ -29,6 +29,7 @@ import { Nullable } from '../../types/util.js';
 import { isQueryError } from '../../external/BaseApiClient.js';
 import { JellyfinItem } from '@tunarr/types/jellyfin';
 import { ProgramType } from '../../dao/entities/Program.js';
+import { Selectable } from 'kysely';
 
 // The minimum fields we need to get stream details about an item
 // TODO: See if we need separate types for JF and Plex and what is really necessary here
@@ -42,14 +43,14 @@ export class JellyfinStreamDetails {
   private jellyfin: JellyfinApiClient;
 
   constructor(
-    private server: MediaSource,
+    private server: Selectable<MediaSource>,
     private settings: SettingsDB,
     private programDB: ProgramDB,
   ) {
     this.logger = LoggerFactory.child({
       jellyfinServer: server.name,
-      // channel: channel.uuid,
       caller: import.meta,
+      className: this.constructor.name,
     });
   }
 

@@ -1,18 +1,20 @@
 import { once, round } from 'lodash-es';
 import { Readable } from 'node:stream';
 import { v4 } from 'uuid';
-import { Channel } from '../dao/entities/Channel.js';
+import { Channel } from '../dao/direct/derivedTypes.js';
+import { VideoStreamResult } from '../ffmpeg/FfmpegOutputStream.js';
+import { Result } from '../types/result.js';
 import { Logger, LoggerFactory } from '../util/logging/LoggerFactory.js';
-import { VideoStreamResult } from './ConcatStream.js';
 import { ConnectionTracker } from './ConnectionTracker.js';
 
 type SessionState = 'starting' | 'started' | 'error' | 'stopped' | 'init';
 
 export type StreamConnectionDetails = {
   ip: string;
+  userAgent?: string;
 };
 
-export type SessionType = 'hls' | 'concat';
+export type SessionType = 'hls' | 'concat' | 'concat_hls';
 
 export type SessionOptions = {
   sessionType: SessionType;
@@ -22,9 +24,11 @@ export type SessionOptions = {
  * Base class for a shared stream session where all participants share
  * the same underlying stream resource (e.g. HLS segment files, raw FFMPEG concat output)
  */
-export abstract class StreamSession {
+export abstract class StreamSession<
+  TOpts extends SessionOptions = SessionOptions,
+> {
   protected logger: Logger;
-  protected sessionOptions: SessionOptions;
+  protected sessionOptions: TOpts;
   protected channel: Channel;
   protected state: SessionState = 'init';
   protected connectionTracker: ConnectionTracker<StreamConnectionDetails>;
@@ -32,13 +36,16 @@ export abstract class StreamSession {
   #uniqueId: string;
   #stream: Readable;
 
-  protected constructor(channel: Channel, opts: SessionOptions) {
+  error?: Error;
+
+  protected constructor(channel: Channel, opts: TOpts) {
     this.#uniqueId = v4();
     this.logger = LoggerFactory.child({
       caller: import.meta,
       sessionId: this.#uniqueId,
       sessionType: opts.sessionType,
       channel: channel.uuid,
+      className: this.constructor.name,
     });
     this.sessionOptions = opts;
     this.channel = channel;
@@ -164,15 +171,16 @@ export abstract class StreamSession {
   protected abstract initializeStream(): Promise<VideoStreamResult>;
 
   // Override if there are conditions to wait for until the stream is ready to return
-  protected waitForStreamReady(): Promise<StreamReadyResult> {
-    return Promise.resolve({ type: 'success' });
+  protected waitForStreamReady(): Promise<Result<void>> {
+    return Promise.resolve(Result.success(void 0));
   }
 
   private async waitForStreamReadyInternal() {
     const waitResult = await this.waitForStreamReady();
 
-    if (waitResult.type === 'error') {
+    if (waitResult.isFailure()) {
       this.state = 'error';
+      this.error = waitResult.error;
     } else {
       this.state = 'started';
     }

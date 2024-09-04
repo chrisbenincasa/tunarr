@@ -24,7 +24,10 @@ import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
 
 // Migrates flex and custom shows
 export class LegacyLibraryMigrator {
-  private logger = LoggerFactory.child({ caller: import.meta });
+  private logger = LoggerFactory.child({
+    caller: import.meta,
+    className: this.constructor.name,
+  });
 
   async convertCustomShow(
     id: string,

@@ -6,7 +6,10 @@ import { RouterPluginCallback } from '../types/serverType.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 
 export const guideRouter: RouterPluginCallback = (fastify, _opts, done) => {
-  const logger = LoggerFactory.child({ caller: import.meta });
+  const logger = LoggerFactory.child({
+    caller: import.meta,
+    className: 'GuideApi',
+  });
 
   fastify.get('/guide/status', async (req, res) => {
     try {

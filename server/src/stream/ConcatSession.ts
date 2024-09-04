@@ -1,36 +1,36 @@
-import { isUndefined } from 'lodash-es';
-import { Maybe } from '../types/util';
-import { ConcatStream, VideoStreamResult } from './ConcatStream';
+import { Channel } from '../dao/direct/derivedTypes.js';
+import { VideoStreamResult } from '../ffmpeg/FfmpegOutputStream.js';
+import { ConcatOptions } from '../ffmpeg/ffmpeg.js';
+import { isDefined } from '../util';
+import { ConcatStream } from './ConcatStream';
 import { SessionOptions, StreamSession } from './StreamSession';
-import { Channel } from '../dao/entities/Channel';
 
-export class ConcatSession extends StreamSession {
-  private streamStopFunc: Maybe<() => void>;
+export interface ConcatSessionOptions extends SessionOptions, ConcatOptions {
+  audioOnly: boolean;
+}
 
-  protected constructor(channel: Channel, options: SessionOptions) {
+export class ConcatSession extends StreamSession<ConcatSessionOptions> {
+  #stream: VideoStreamResult;
+
+  protected constructor(channel: Channel, options: ConcatSessionOptions) {
     super(channel, options);
   }
 
-  static create(channel: Channel, options: SessionOptions) {
+  static create(channel: Channel, options: ConcatSessionOptions) {
     return new ConcatSession(channel, options);
   }
 
   protected async initializeStream(): Promise<VideoStreamResult> {
-    const result = await new ConcatStream().startStream(
+    this.#stream = await new ConcatStream(this.sessionOptions).startStream(
       this.channel.uuid,
-      /* audioOnly */ false,
+      /* audioOnly */ this.sessionOptions.audioOnly,
     );
-
-    if (result.type === 'success') {
-      this.streamStopFunc = result.stop.bind(result) as () => void;
-    }
-
-    return result;
+    return this.#stream;
   }
 
   protected stopStream(): Promise<void> {
-    if (!isUndefined(this.streamStopFunc)) {
-      return Promise.resolve(this.streamStopFunc());
+    if (isDefined(this.#stream) && this.#stream.type === 'success') {
+      this.#stream.stop();
     }
 
     return Promise.resolve(void 0);

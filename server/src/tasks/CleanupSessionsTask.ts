@@ -1,5 +1,5 @@
 import ld, { filter, forEach, isEmpty, keys } from 'lodash-es';
-import { sessionManager } from '../stream/SessionManager.js';
+import { serverContext } from '../serverContext.js';
 import { Maybe } from '../types/util.js';
 import { Task, TaskId } from './Task.js';
 
@@ -13,7 +13,7 @@ export class CleanupSessionsTask extends Task<void> {
   // eslint-disable-next-line @typescript-eslint/require-await
   protected async runInternal(): Promise<Maybe<void>> {
     const sessions = filter(
-      sessionManager.allSessions(),
+      serverContext().sessionManager.allSessions(),
       (session) => session.started,
     );
 
@@ -38,11 +38,11 @@ export class CleanupSessionsTask extends Task<void> {
 
         if (isEmpty(aliveConnections)) {
           this.logger.debug(
-            'Scheduled cleanup on session (%s) %s in 40 seconds',
+            'Scheduled cleanup on session (%s) %s in 10 seconds',
             session.sessionType,
             session.id,
           );
-          session.scheduleCleanup(30000);
+          session.scheduleCleanup(10000);
         }
 
         return;

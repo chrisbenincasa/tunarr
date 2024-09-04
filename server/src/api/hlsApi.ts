@@ -1,12 +1,11 @@
 import fastifyStatic from '@fastify/static';
-import { RouterPluginAsyncCallback } from '../types/serverType.js';
+import { isNil, isUndefined, map } from 'lodash-es';
 import fs from 'node:fs/promises';
 import { join } from 'node:path';
-import { isNil, isUndefined, map } from 'lodash-es';
-import { sessionManager } from '../stream/SessionManager.js';
+import { v4 } from 'uuid';
 import { z } from 'zod';
 import { TruthyQueryParam } from '../types/schemas.js';
-import { v4 } from 'uuid';
+import { RouterPluginAsyncCallback } from '../types/serverType.js';
 
 // eslint-disable-next-line @typescript-eslint/require-await
 export const hlsApi: RouterPluginAsyncCallback = async (fastify) => {
@@ -24,7 +23,7 @@ export const hlsApi: RouterPluginAsyncCallback = async (fastify) => {
         const channelId = matches[1];
         req.streamChannel = channelId;
         const token = query['token'];
-        const session = sessionManager.getHlsSession(channelId);
+        const session = req.serverCtx.sessionManager.getHlsSession(channelId);
         if (isNil(session)) {
           void res.status(404).send();
           return;
@@ -54,7 +53,9 @@ export const hlsApi: RouterPluginAsyncCallback = async (fastify) => {
         !isNil(token) &&
         !isNil(req.streamChannel)
       ) {
-        const session = sessionManager.getHlsSession(req.streamChannel);
+        const session = req.serverCtx.sessionManager.getHlsSession(
+          req.streamChannel,
+        );
         session?.recordHeartbeat(req.ip);
         if (!isNil(session) && session.isKnownConnection(token)) {
           session.recordHeartbeat(token);
@@ -81,7 +82,9 @@ export const hlsApi: RouterPluginAsyncCallback = async (fastify) => {
         },
       },
       async (req, res) => {
-        const session = sessionManager.getHlsSession(req.params.id);
+        const session = req.serverCtx.sessionManager.getHlsSession(
+          req.params.id,
+        );
         if (isUndefined(session)) {
           return res.status(404).send();
         }
@@ -101,7 +104,7 @@ export const hlsApi: RouterPluginAsyncCallback = async (fastify) => {
           id: z.string().uuid(),
         }),
         querystring: z.object({
-          direct: TruthyQueryParam.optional().default('0'),
+          direct: TruthyQueryParam.optional().default(false),
           token: z.string().uuid().optional(),
         }),
       },
@@ -118,24 +121,25 @@ export const hlsApi: RouterPluginAsyncCallback = async (fastify) => {
       // How should we handle this...
       // const token = req.query.token ?? v4();
 
-      const session = await sessionManager.getOrCreateHlsSession(
+      const session = await req.serverCtx.sessionManager.getOrCreateHlsSession(
         req.params.id,
         req.ip,
         {
           ip: req.ip,
+          userAgent: req.headers['user-agent'],
         },
         {
           sessionType: 'hls',
         },
       );
 
-      if (isNil(session)) {
+      if (session.isFailure()) {
         return res.status(500).send('Error starting session');
       }
 
       return res
         .type('application/vnd.apple.mpegurl')
-        .send(await fs.readFile(session.streamPath));
+        .send(await fs.readFile(session.get().streamPath));
     },
   );
 
@@ -159,23 +163,24 @@ export const hlsApi: RouterPluginAsyncCallback = async (fastify) => {
 
       const token = v4();
 
-      const session = await sessionManager.getOrCreateHlsSession(
+      const session = await req.serverCtx.sessionManager.getOrCreateHlsSession(
         channel.uuid,
         token,
         {
           ip: req.ip,
+          userAgent: req.headers['user-agent'],
         },
         {
           sessionType: 'hls',
         },
       );
 
-      if (isNil(session)) {
+      if (session.isFailure()) {
         return res.status(500).send('Error starting session');
       }
 
       return res.send({
-        streamPath: `${session.serverPath}?token=${token}`,
+        streamPath: `${session.get().serverPath}?token=${token}`,
       });
     },
   );
@@ -197,7 +202,7 @@ export const hlsApi: RouterPluginAsyncCallback = async (fastify) => {
         return res.status(404).send("Channel doesn't exist");
       }
 
-      const session = sessionManager.getHlsSession(channel.uuid);
+      const session = req.serverCtx.sessionManager.getHlsSession(channel.uuid);
 
       return res.send({
         channelId: channel.uuid,
@@ -228,7 +233,7 @@ export const hlsApi: RouterPluginAsyncCallback = async (fastify) => {
         return res.status(404).send("Channel doesn't exist");
       }
 
-      const session = sessionManager.getHlsSession(channel.uuid);
+      const session = req.serverCtx.sessionManager.getHlsSession(channel.uuid);
 
       if (isNil(session)) {
         return res.status(404).send('No sessions for channel');

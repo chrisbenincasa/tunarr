@@ -12,7 +12,10 @@ import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 
 // eslint-disable-next-line @typescript-eslint/require-await
 export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
-  const logger = LoggerFactory.child({ caller: import.meta });
+  const logger = LoggerFactory.child({
+    caller: import.meta,
+    className: 'CustomShowsApi',
+  });
 
   fastify.addHook('onError', (req, _, error, done) => {
     logger.error({ error, url: req.routeOptions.config.url });

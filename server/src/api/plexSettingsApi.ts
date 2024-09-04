@@ -12,7 +12,10 @@ export const plexSettingsRouter: RouterPluginCallback = (
   _opts,
   done,
 ) => {
-  const logger = LoggerFactory.child({ caller: import.meta });
+  const logger = LoggerFactory.child({
+    caller: import.meta,
+    className: 'PlexSettingsApi',
+  });
 
   fastify.get(
     '/plex-settings',

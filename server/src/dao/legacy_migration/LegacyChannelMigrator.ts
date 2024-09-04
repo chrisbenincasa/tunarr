@@ -69,7 +69,10 @@ export type LegacyProgram = Omit<Program, 'channel'> & {
 };
 
 export class LegacyChannelMigrator {
-  private logger = LoggerFactory.child({ caller: import.meta });
+  private logger = LoggerFactory.child({
+    caller: import.meta,
+    className: this.constructor.name,
+  });
 
   async createLineup(
     rawPrograms: LegacyProgram[],

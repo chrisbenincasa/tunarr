@@ -4,6 +4,7 @@ import {
   Close,
   Delete,
   MoreVert,
+  Stop,
   PlayArrow as WatchIcon,
 } from '@mui/icons-material';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
@@ -49,11 +50,21 @@ import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 import { useSettings } from '../../store/settings/selectors.ts';
 import { VisibilityState } from '@tanstack/react-table';
 import { setChannelTableColumnModel } from '@/store/settings/actions.ts';
+import { useApiQuery } from '@/hooks/useApiQuery.ts';
+import { isEmpty, isUndefined } from 'lodash-es';
 
 export default function ChannelsPage() {
   const { backendUri } = useSettings();
   const apiClient = useTunarrApi();
   const { data: channels } = useSuspenseChannels();
+  const { data: channelSessions, isLoading: channelSessionsLoading } =
+    useApiQuery({
+      queryKey: ['channels', 'sessions'],
+      queryFn(apiClient) {
+        return apiClient.getAllChannelSessions();
+      },
+      staleTime: 10_000,
+    });
   const theme = useTheme();
   const mediumViewport = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
@@ -96,6 +107,23 @@ export default function ChannelsPage() {
   //   setAnchorEl(null);
   //   setChannelMenu(null);
   // }, [channelsFetching]);
+
+  const stopSessionsMutation = useMutation({
+    mutationKey: ['channels', 'stop-sessions'],
+    mutationFn: ({ id }: { id: string }) => {
+      return apiClient.stopChannelSessions(undefined, { params: { id } });
+    },
+    onSuccess: () => {
+      return queryClient.invalidateQueries({
+        queryKey: ['channels', 'sessions'],
+        exact: true,
+      });
+    },
+  });
+
+  const handleStopSessions = (channelId: string) => {
+    stopSessionsMutation.mutate({ id: channelId });
+  };
 
   const handleChannelNavigation = (
     _: React.MouseEvent<HTMLTableRowElement, MouseEvent>,
@@ -268,6 +296,21 @@ export default function ChannelsPage() {
               <WatchIcon />
             </IconButton>
           </Tooltip>
+          <Tooltip title="Stop Transcode Session" placement="top">
+            <IconButton
+              onClick={(e) => {
+                e.stopPropagation();
+                handleStopSessions(channel.id);
+              }}
+              disabled={
+                channelSessionsLoading ||
+                isUndefined(channelSessions) ||
+                isEmpty(channelSessions[channel.id])
+              }
+            >
+              <Stop />
+            </IconButton>
+          </Tooltip>
           <Tooltip title="Delete Channel" placement="top">
             <IconButton
               onClick={(e) => {
@@ -281,7 +324,14 @@ export default function ChannelsPage() {
         </Box>
       );
     },
-    [backendUri, mediumViewport, open, renderChannelMenu],
+    [
+      backendUri,
+      channelSessions,
+      channelSessionsLoading,
+      mediumViewport,
+      open,
+      renderChannelMenu,
+    ],
   );
 
   const columnsNew = useMemo<MRT_ColumnDef<Channel>[]>(

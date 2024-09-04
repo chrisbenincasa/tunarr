@@ -26,7 +26,8 @@
   },
   "main": "index.ts",
   "scripts": {
-    "build": "tsup",
+    "bundle": "tsup",
+    "build": "tsup --dts",
     "clean": "rimraf build/",
     "dev": "tsup --watch"
   },

@@ -45,6 +45,7 @@ export type TypedEventEmitter<Events extends EventMap> = {
   getMaxListeners(): number;
   setMaxListeners(maxListeners: number): TypedEventEmitter<Events>;
 };
+
 export type EventMap = {
   [key: string]: (...args: unknown[]) => void;
 };

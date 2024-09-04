@@ -1,4 +1,4 @@
-import { sortBy } from 'lodash-es';
+import { isNil, sortBy } from 'lodash-es';
 import { ChannelDB } from '../dao/channelDb.js';
 import { FileCacheService } from './fileCacheService.js';
 
@@ -114,6 +114,30 @@ export class M3uService {
     }
 
     return lines.join('\n');
+  }
+
+  async channelMediaPlayerM3u(
+    channelNum: number,
+    path: 'video' | 'radio' | 'm3u8',
+    protocol: string,
+    hostname: string,
+    // req: FastifyRequest,
+    // res: FastifyReply,
+  ) {
+    if (isNil(await this.#channelDB.getChannel(channelNum))) {
+      return null;
+    }
+
+    const content = [
+      '#EXTM3U',
+      '#EXT-X-VERSION:3',
+      '#EXT-X-MEDIA-SEQUENCE:0',
+      '#EXT-X-ALLOW-CACHE:YES',
+      '#EXT-X-TARGETDURATION:60',
+      '#EXT-X-PLAYLIST-TYPE:VOD',
+      `${protocol}://${hostname}/channels/${channelNum}/${path}`,
+    ];
+    return content.join('\n');
   }
 
   /**

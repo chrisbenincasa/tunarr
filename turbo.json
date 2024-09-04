@@ -9,15 +9,11 @@
       "dependsOn": ["^build"],
       "outputs": ["build/**", "dist/**"]
     },
-    "bundle": {
-      "dependsOn": ["build"],
-      "outputs": ["build/**"]
-    },
+    "bundle": {},
     "build-dev": {},
     "lint": {},
     "lint-fix": {},
     "dev": {
-      "dependsOn": ["@tunarr/shared#build", "@tunarr/types#build"],
       "cache": false,
       "persistent": true
     }

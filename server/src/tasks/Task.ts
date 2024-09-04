@@ -28,7 +28,10 @@ export abstract class Task<Data = unknown> {
   public abstract ID: string | Tag<TaskId, Data>;
 
   constructor() {
-    this.logger = LoggerFactory.child({ caller: import.meta });
+    this.logger = LoggerFactory.child({
+      caller: import.meta,
+      className: this.constructor.name,
+    });
   }
 
   protected abstract runInternal(): Promise<Maybe<Data>>;
