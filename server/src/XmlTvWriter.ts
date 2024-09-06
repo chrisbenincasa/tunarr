@@ -1,17 +1,17 @@
-import { TvGuideProgram, isContentProgram } from '@tunarr/types';
-import { getSettings } from './dao/settings';
-import { Mutex } from 'async-mutex';
 import {
-  type XmltvProgramme,
   writeXmltv,
   type XmltvChannel,
+  type XmltvProgramme,
 } from '@iptv/xmltv';
-import { ChannelPrograms } from './services/tvGuideService';
 import { forProgramType } from '@tunarr/shared/util';
-import { flatMap, isNil, map, round, escape } from 'lodash-es';
-import { isNonEmptyString } from './util';
+import { TvGuideProgram, isContentProgram } from '@tunarr/types';
+import { Mutex } from 'async-mutex';
 import { writeFile } from 'fs/promises';
+import { escape, flatMap, isNil, map, round } from 'lodash-es';
 import { Channel } from './dao/direct/derivedTypes';
+import { getSettings } from './dao/settings';
+import { ChannelPrograms } from './services/tvGuideService';
+import { isNonEmptyString } from './util';
 import { LoggerFactory } from './util/logging/LoggerFactory';
 
 const lock = new Mutex();
@@ -62,7 +62,7 @@ export class XmlTvWriter {
           src: isNonEmptyString(channel.icon.path)
             ? escape(channel.icon.path)
             : '{{host}}/images/tunarr.png',
-          width: channel.icon.width,
+          width: channel.icon.width <= 0 ? undefined : channel.icon.width,
         },
       ];
     }
