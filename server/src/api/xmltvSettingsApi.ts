@@ -16,7 +16,10 @@ export const xmlTvSettingsRouter: RouterPluginCallback = (
   _opts,
   done,
 ) => {
-  const logger = LoggerFactory.child({ caller: import.meta });
+  const logger = LoggerFactory.child({
+    caller: import.meta,
+    className: 'XmlTvSettingsRouter',
+  });
 
   fastify.get(
     '/xmltv-settings',

@@ -137,7 +137,7 @@ export const EnrichedLineupItemSchema = z.discriminatedUnion('type', [
 
 export type EnrichedLineupItem = z.infer<typeof EnrichedLineupItemSchema>;
 
-export function createOfflineStreamLineupIteam(
+export function createOfflineStreamLineupItem(
   duration: number,
 ): OfflineStreamLineupItem {
   return {

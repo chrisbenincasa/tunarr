@@ -206,7 +206,10 @@ const fileDbCache: Record<string | number, Low<Lineup>> = {};
 const fileDbLocks = new MutexMap();
 
 export class ChannelDB {
-  private logger = LoggerFactory.child({ caller: import.meta });
+  private logger = LoggerFactory.child({
+    caller: import.meta,
+    className: this.constructor.name,
+  });
   private timer = new Timer(this.logger);
   #programConverter = new ProgramConverter();
 
@@ -236,10 +239,11 @@ export class ChannelDB {
     return getEm().repo(Channel).findOne({ uuid: id });
   }
 
-  getChannelDirect(id: string) {
+  getChannelDirect(id: string | number) {
     return directDbAccess()
       .selectFrom('channel')
-      .where('channel.uuid', '=', id)
+      .$if(isString(id), (eb) => eb.where('channel.uuid', '=', id as string))
+      .$if(isNumber(id), (eb) => eb.where('channel.number', '=', id as number))
       .selectAll()
       .executeTakeFirst();
   }
@@ -753,6 +757,18 @@ export class ChannelDB {
   async loadChannelAndLineup(channelId: string) {
     const channel = await this.getChannelById(channelId);
     if (isNull(channel)) {
+      return null;
+    }
+
+    return {
+      channel,
+      lineup: await this.loadLineup(channelId),
+    };
+  }
+
+  async loadDirectChannelAndLineup(channelId: string) {
+    const channel = await this.getChannelDirect(channelId);
+    if (isNil(channel)) {
       return null;
     }
 

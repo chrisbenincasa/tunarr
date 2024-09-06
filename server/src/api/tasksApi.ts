@@ -9,7 +9,10 @@ import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 
 // eslint-disable-next-line @typescript-eslint/require-await
 export const tasksApiRouter: RouterPluginAsyncCallback = async (fastify) => {
-  const logger = LoggerFactory.child({ caller: import.meta });
+  const logger = LoggerFactory.child({
+    caller: import.meta,
+    className: 'TasksApi',
+  });
 
   fastify.get(
     '/jobs',

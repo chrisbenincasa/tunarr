@@ -1,6 +1,7 @@
 import {
   BaseErrorSchema,
   BatchLookupExternalProgrammingSchema,
+  ChannelSessionsResponseSchema,
   CreateCustomShowRequestSchema,
   CreateFillerListRequestSchema,
   UpdateChannelProgrammingRequestSchema,
@@ -114,6 +115,30 @@ export const api = makeApi([
     response: ChannelLineupSchema,
     parameters: parametersBuilder().addPath('id', z.string()).build(),
     alias: 'getChannelLineup',
+  },
+  {
+    method: 'get',
+    path: '/api/channels/:id/sessions',
+    response: z.array(ChannelSessionsResponseSchema),
+    parameters: parametersBuilder()
+      .addPath('id', z.string().or(z.coerce.number()))
+      .build(),
+    alias: 'getChannelSessions',
+  },
+  {
+    method: 'delete',
+    path: '/api/channels/:id/sessions',
+    response: z.void(),
+    parameters: parametersBuilder()
+      .addPath('id', z.string().or(z.coerce.number()))
+      .build(),
+    alias: 'stopChannelSessions',
+  },
+  {
+    method: 'get',
+    path: '/api/sessions',
+    response: z.record(z.array(ChannelSessionsResponseSchema)),
+    alias: 'getAllChannelSessions',
   },
   {
     method: 'get',

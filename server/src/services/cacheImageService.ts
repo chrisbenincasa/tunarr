@@ -17,7 +17,10 @@ import { LoggerFactory } from '../util/logging/LoggerFactory.js';
  * @class CacheImageService
  */
 export class CacheImageService {
-  private logger = LoggerFactory.child({ caller: import.meta });
+  private logger = LoggerFactory.child({
+    caller: import.meta,
+    className: this.constructor.name,
+  });
   private cacheService: FileCacheService;
   private imageCacheFolder: string;
 

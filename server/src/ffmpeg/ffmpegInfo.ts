@@ -10,15 +10,20 @@ import { cacheGetOrSet } from '../util/cache.js';
 const CacheKeys = {
   ENCODERS: 'encoders',
   HWACCELS: 'hwaccels',
+  OPTIONS: 'options',
 } as const;
 
 const execQueue = new PQueue({ concurrency: 2 });
 
 const VersionExtractionPattern = /version\s+([^\s]+)\s+.*Copyright/;
 const CoderExtractionPattern = /[A-Z.]+\s([a-z0-9_-]+)\s*(.*)$/;
+const OptionsExtractionPattern = /^-([a-z_]+)\s+.*/;
 
 export class FFMPEGInfo {
-  private logger = LoggerFactory.child({ caller: import.meta });
+  private logger = LoggerFactory.child({
+    caller: import.meta,
+    className: this.constructor.name,
+  });
 
   private static resultCache: NodeCache = new NodeCache({ stdTTL: 5 * 6000 });
 
@@ -30,8 +35,23 @@ export class FFMPEGInfo {
   }
 
   private ffmpegPath: string;
+
   constructor(opts: FfmpegSettings) {
     this.ffmpegPath = opts.ffmpegExecutablePath;
+  }
+
+  async seed() {
+    try {
+      return await Promise.allSettled([
+        this.getAvailableAudioEncoders(),
+        this.getAvailableVideoEncoders(),
+        this.getHwAccels(),
+        this.getOptions(),
+      ]);
+    } catch (e) {
+      this.logger.error(e, 'Unexpected error during ffmpeg info seed');
+      return;
+    }
   }
 
   async getVersion() {
@@ -108,6 +128,42 @@ export class FFMPEGInfo {
       return _.chain(out).split('\n').drop(1).map(trim).reject(isEmpty).value();
     });
     return isError(res) ? [] : res;
+  }
+
+  async getOptions() {
+    return attempt(async () => {
+      const out = await cacheGetOrSet(
+        FFMPEGInfo.resultCache,
+        this.cacheKey('OPTIONS'),
+        () => this.getFfmpegStdout(['-hide_banner', '-help', 'long']),
+      );
+
+      return _.chain(out)
+        .split('\n')
+        .drop(1)
+        .map(trim)
+        .reject(isEmpty)
+        .map((line) => {
+          return line.match(OptionsExtractionPattern);
+        })
+        .compact()
+        .map((match) => {
+          return match[1];
+        })
+        .value();
+    });
+  }
+
+  async hasOption(
+    option: string,
+    defaultOnMissing: boolean = false,
+    defaultOnError: boolean = false,
+  ) {
+    const opts = await this.getOptions();
+    if (isError(opts)) {
+      return defaultOnError;
+    }
+    return opts.includes(option) ? true : defaultOnMissing;
   }
 
   private getFfmpegStdout(args: string[]): Promise<string> {

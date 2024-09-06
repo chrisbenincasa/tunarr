@@ -3,32 +3,35 @@ import {
   RequiredEntityData,
   ref,
 } from '@mikro-orm/better-sqlite';
+import { nullToUndefined } from '@tunarr/shared/util';
+import { JellyfinItem } from '@tunarr/types/jellyfin';
 import {
   PlexEpisode,
   PlexMovie,
   PlexMusicTrack,
   PlexTerminalMedia,
 } from '@tunarr/types/plex';
+import { ContentProgramOriginalProgram } from '@tunarr/types/schemas';
+import dayjs from 'dayjs';
 import { compact, first, isError, isNil, map } from 'lodash-es';
-import { ProgramSourceType } from '../dao/custom_types/ProgramSourceType.js';
-import { Program, ProgramType } from '../dao/entities/Program.js';
-import { ProgramExternalId } from '../dao/entities/ProgramExternalId.js';
 import {
   ProgramExternalIdType,
   programExternalIdTypeFromJellyfinProvider,
 } from '../dao/custom_types/ProgramExternalIdType.js';
-import { LoggerFactory } from './logging/LoggerFactory.js';
+import { ProgramSourceType } from '../dao/custom_types/ProgramSourceType.js';
+import { Program, ProgramType } from '../dao/entities/Program.js';
+import { ProgramExternalId } from '../dao/entities/ProgramExternalId.js';
 import { parsePlexExternalGuid } from './externalIds.js';
-import { ContentProgramOriginalProgram } from '@tunarr/types/schemas';
-import { JellyfinItem } from '@tunarr/types/jellyfin';
-import { nullToUndefined } from '@tunarr/shared/util';
-import dayjs from 'dayjs';
+import { LoggerFactory } from './logging/LoggerFactory.js';
 
 /**
  * Generates Program DB entities for Plex media
  */
 class PlexProgramMinter {
-  #logger = LoggerFactory.child({ caller: import.meta });
+  #logger = LoggerFactory.child({
+    caller: import.meta,
+    className: this.constructor.name,
+  });
   #em: EntityManager;
 
   constructor(em: EntityManager) {

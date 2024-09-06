@@ -11,7 +11,10 @@ const HdhrLineupSchema = z.object({
 type HdhrLineupItem = z.infer<typeof HdhrLineupSchema>;
 
 export class HdhrApiRouter {
-  private logger = LoggerFactory.child({ caller: import.meta });
+  private logger = LoggerFactory.child({
+    caller: import.meta,
+    className: 'HdhrApi',
+  });
 
   // eslint-disable-next-line @typescript-eslint/require-await
   router: FastifyPluginAsync = async (fastify) => {

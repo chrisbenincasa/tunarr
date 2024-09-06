@@ -1,6 +1,6 @@
 import { defineConfig } from 'tsup';
 
-export default defineConfig({
+export default defineConfig((opts) => ({
   entry: {
     index: 'src/index.ts',
     'schemas/index': 'src/schemas/index.ts',
@@ -9,9 +9,9 @@ export default defineConfig({
     'jellyfin/index': 'src/jellyfin/index.ts',
   },
   format: 'esm',
-  dts: true,
+  dts: !!opts.dts,
   outDir: 'build',
   splitting: false,
   sourcemap: false,
   target: 'esnext',
-});
+}));

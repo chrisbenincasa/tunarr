@@ -51,7 +51,7 @@ class LoggerFactoryImpl {
   private settingsDB: SettingsDB;
   private rootLogger: PinoLogger<ExtraLogLevels>;
   private initialized = false;
-  private children: Logger[] = [];
+  private children: Record<string, Logger> = {};
   private currentStreams: MultiStreamRes<LogLevels>;
 
   constructor() {
@@ -118,15 +118,20 @@ class LoggerFactoryImpl {
     );
   }
 
-  child(opts: { caller?: ImportMeta; className?: string } & Bindings = {}) {
+  child(opts: { caller?: ImportMeta; className: string } & Bindings) {
     const { caller, className, ...rest } = opts;
+
+    if (this.children[className]) {
+      return this.children[className];
+    }
+
     const childOpts = {
       ...rest,
-      caller: isProduction ? className : caller ? getCaller(caller) : undefined,
-      className: isProduction ? undefined : className, // Don't include this twice in production
+      file: isProduction ? undefined : caller ? getCaller(caller) : undefined,
+      caller: isProduction ? undefined : className, // Don't include this twice in production
     };
     const newChild = this.rootLogger.child(childOpts);
-    this.children.push(newChild);
+    this.children[className] = newChild;
     return newChild;
   }
 
@@ -199,7 +204,7 @@ class LoggerFactoryImpl {
           singleLine: true,
           ignore: 'pid,hostname',
           customLevels: {
-            http: 25,
+            http: 15,
           },
           customColors: {
             http: 'blue',
@@ -217,7 +222,7 @@ class LoggerFactoryImpl {
               return `[${labelColorized.toLowerCase()}]`;
             },
             caller: (caller) => {
-              return isProduction ? '' : chalk.green(caller as string);
+              return chalk.green(caller as string);
             },
           },
         }),

@@ -17,7 +17,10 @@ import { LoggerFactory } from './util/logging/LoggerFactory';
 const lock = new Mutex();
 
 export class XmlTvWriter {
-  private logger = LoggerFactory.child({ caller: import.meta });
+  private logger = LoggerFactory.child({
+    caller: import.meta,
+    className: this.constructor.name,
+  });
 
   async write(channels: ChannelPrograms[]) {
     const start = performance.now();

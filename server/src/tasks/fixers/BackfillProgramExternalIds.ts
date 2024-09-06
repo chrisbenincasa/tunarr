@@ -25,7 +25,10 @@ import { upsertProgramExternalIds_deprecated } from '../../dao/programExternalId
 import { isQueryError } from '../../external/BaseApiClient.js';
 
 export class BackfillProgramExternalIds extends Fixer {
-  #logger = LoggerFactory.child({ caller: import.meta });
+  #logger = LoggerFactory.child({
+    caller: import.meta,
+    className: this.constructor.name,
+  });
 
   canRunInBackground: boolean = true;
 

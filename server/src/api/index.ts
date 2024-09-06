@@ -4,7 +4,7 @@ import { isError, isNil } from 'lodash-es';
 import path from 'path';
 import { pipeline } from 'stream/promises';
 import { z } from 'zod';
-import { MediaSource, MediaSourceType } from '../dao/entities/MediaSource.js';
+import { MediaSourceType } from '../dao/entities/MediaSource.js';
 import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.js';
 import { FFMPEGInfo } from '../ffmpeg/ffmpegInfo.js';
 import { serverOptions } from '../globals.js';
@@ -20,6 +20,7 @@ import {
   tunarrBuild,
 } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
+import { getTunarrVersion } from '../util/version.js';
 import { channelsApi } from './channelsApi.js';
 import { customShowsApiV2 } from './customShowsApi.js';
 import { debugApi } from './debugApi.js';
@@ -35,10 +36,9 @@ import { programmingApi } from './programmingApi.js';
 import { systemSettingsRouter } from './systemSettingsApi.js';
 import { tasksApiRouter } from './tasksApi.js';
 import { xmlTvSettingsRouter } from './xmltvSettingsApi.js';
-import { getTunarrVersion } from '../util/version.js';
 
 export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
-  const logger = LoggerFactory.child({ caller: import.meta });
+  const logger = LoggerFactory.child({ caller: import.meta, className: 'Api' });
 
   fastify.addContentTypeParser(/^image\/.*/, function (_, payload, done) {
     done(null, payload);
@@ -220,9 +220,11 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      const server = await req.entityManager
-        .repo(MediaSource)
-        .findOne({ uuid: req.query.id, type: MediaSourceType.Plex });
+      const server = await req.serverCtx.mediaSourceDB.findByType(
+        MediaSourceType.Plex,
+        req.query.id,
+      );
+
       if (isNil(server)) {
         return res
           .status(404)

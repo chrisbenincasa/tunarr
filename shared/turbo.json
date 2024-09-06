@@ -2,6 +2,10 @@
   "$schema": "https://turbo.build/schema.json",
   "extends": ["//"],
   "tasks": {
+    "bundle": {
+      "dependsOn": ["@tunarr/types#bundle"],
+      "outputs": ["build/**"]
+    },
     "build": {
       "dependsOn": ["@tunarr/types#build"],
       "outputs": ["build/**"]

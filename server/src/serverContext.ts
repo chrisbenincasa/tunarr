@@ -3,6 +3,7 @@ import { isUndefined, once } from 'lodash-es';
 import path from 'path';
 import { XmlTvWriter } from './XmlTvWriter.js';
 import { ChannelDB } from './dao/channelDb.js';
+import { ProgramConverter } from './dao/converters/programConverters.js';
 import { CustomShowDB } from './dao/customShowDb.js';
 import { FillerDB } from './dao/fillerDB.js';
 import { MediaSourceDB } from './dao/mediaSourceDB.js';
@@ -16,11 +17,12 @@ import { FileCacheService } from './services/fileCacheService.js';
 import { M3uService } from './services/m3uService.js';
 import { TVGuideService } from './services/tvGuideService.js';
 import { ChannelCache } from './stream/ChannelCache.js';
+import { SessionManager } from './stream/SessionManager.js';
 import { StreamProgramCalculator } from './stream/StreamProgramCalculator.js';
-import { ProgramConverter } from './dao/converters/programConverters.js';
 
 export class ServerContext {
-  public programConverter = new ProgramConverter();
+  public readonly programConverter = new ProgramConverter();
+  public readonly sessionManager: SessionManager;
 
   constructor(
     public channelDB: ChannelDB,
@@ -36,10 +38,16 @@ export class ServerContext {
     public mediaSourceDB: MediaSourceDB,
     public settings: SettingsDB,
     public programDB: ProgramDB,
-  ) {}
+  ) {
+    this.sessionManager = SessionManager.create(this.channelDB);
+  }
 
   streamProgramCalculator() {
-    return new StreamProgramCalculator(this.fillerDB, this.channelDB);
+    return new StreamProgramCalculator(
+      this.fillerDB,
+      this.channelDB,
+      this.channelCache,
+    );
   }
 }
 

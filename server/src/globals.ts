@@ -1,9 +1,9 @@
-import { findKey, merge } from 'lodash-es';
+import { Options } from '@mikro-orm/better-sqlite';
+import { findKey, forEach, merge } from 'lodash-es';
 import isUndefined from 'lodash-es/isUndefined.js';
 import once from 'lodash-es/once.js';
 import path, { resolve } from 'node:path';
 import dbConfig from '../mikro-orm.config.js';
-import { Options } from '@mikro-orm/better-sqlite';
 
 export type ServerOptions = GlobalOptions & {
   port: number;
@@ -82,3 +82,22 @@ export const dbOptions = (): Options => {
     dbName: path.join(_globalOptions.databaseDirectory, 'db.db'),
   };
 };
+
+type Initializer = () => unknown;
+let initalized = false;
+const initializers: Initializer[] = [];
+
+export const registerSingletonInitializer = <T>(f: () => T) => {
+  if (initalized) {
+    throw new Error(
+      'Attempted to register singleton after intialization. This singleton will never be initialized!!',
+    );
+  }
+
+  initializers.push(f);
+};
+
+export const initializeSingletons = once(() => {
+  forEach(initializers, (f) => f());
+  initalized = true;
+});

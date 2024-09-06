@@ -1,28 +1,41 @@
-import { FastifyReply, FastifyRequest } from 'fastify';
-import { isNil, isNull, isNumber, isUndefined, map } from 'lodash-es';
+import { ChannelSessionsResponseSchema } from '@tunarr/types/api';
+import dayjs from 'dayjs';
+import {
+  forEach,
+  isEmpty,
+  isNil,
+  isNull,
+  isNumber,
+  isUndefined,
+  map,
+} from 'lodash-es';
 import * as fsSync from 'node:fs';
+import { PassThrough } from 'node:stream';
 import { Readable } from 'stream';
+import { v4 } from 'uuid';
 import { z } from 'zod';
+import { defaultConcatOptions } from '../ffmpeg/ffmpeg.js';
 import { FfmpegText } from '../ffmpeg/ffmpegText.js';
+import { OnDemandChannelService } from '../services/OnDemandChannelService.js';
+import { ActiveChannelManager } from '../stream/ActiveChannelManager.js';
 import { ConcatStream } from '../stream/ConcatStream.js';
+import { SessionKey } from '../stream/SessionManager.js';
+import { SessionType } from '../stream/StreamSession.js';
 import { VideoStream } from '../stream/VideoStream.js';
 import { StreamQueryStringSchema, TruthyQueryParam } from '../types/schemas.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
-import { LoggerFactory } from '../util/logging/LoggerFactory.js';
-import { sessionManager } from '../stream/SessionManager.js';
-import { v4 } from 'uuid';
 import { isDefined, run } from '../util/index.js';
-import { PassThrough } from 'node:stream';
+import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '../util/serverUtil.js';
-import { ActiveChannelManager } from '../stream/ActiveChannelManager.js';
-import { OnDemandChannelService } from '../services/OnDemandChannelService.js';
-import dayjs from 'dayjs';
 
 let StreamCount = 0;
 
 // eslint-disable-next-line @typescript-eslint/require-await
 export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
-  const logger = LoggerFactory.child({ caller: import.meta });
+  const logger = LoggerFactory.child({
+    caller: import.meta,
+    className: 'VideoApi',
+  });
 
   fastify.get('/setup', async (req, res) => {
     const ffmpegSettings = req.serverCtx.settings.ffmpegSettings();
@@ -74,13 +87,56 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
     return res.send(buffer);
   });
 
+  /**
+   * List all active sessions by channel ID
+   */
   fastify.get(
-    '/channels/:id/sessions',
+    '/api/sessions',
+    {
+      schema: {
+        response: {
+          200: z.record(z.array(ChannelSessionsResponseSchema)),
+        },
+      },
+    },
+    async (req, res) => {
+      const sessions: Record<
+        string,
+        z.infer<typeof ChannelSessionsResponseSchema>[]
+      > = {};
+      const allSessions = req.serverCtx.sessionManager.allSessions();
+      for (const sessionKey of Object.keys(allSessions)) {
+        const session = allSessions[sessionKey as SessionKey];
+        const [id, type] = sessionKey.split(/_(.+)?/, 2);
+        sessions[id] ??= [];
+        sessions[id].push({
+          type: type as SessionType,
+          numConnections: session?.numConnections() ?? 0,
+          connections: map(session?.connections(), (connection, token) => ({
+            ...connection,
+            lastHeartbeat: session?.lastHeartbeat(token),
+          })),
+        });
+      }
+
+      return res.send(sessions);
+    },
+  );
+
+  /**
+   * Returns a list of active sessions for the given channel ID (or channel number)
+   */
+  fastify.get(
+    '/api/channels/:id/sessions',
     {
       schema: {
         params: z.object({
-          id: z.coerce.number().or(z.string()),
+          id: z.coerce.number().or(z.string().uuid()),
         }),
+        response: {
+          200: z.array(ChannelSessionsResponseSchema),
+          404: z.string(),
+        },
       },
     },
     async (req, res) => {
@@ -98,24 +154,73 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
         return res.status(404).send('Could not derive channel ID');
       }
 
-      const session = sessionManager.getConcatSession(channelId);
+      const sessions =
+        req.serverCtx.sessionManager.getAllConcatSessions(channelId);
 
-      if (isNil(session)) {
+      if (isEmpty(sessions)) {
         return res.status(404).send('No session found for channel ID');
       }
 
-      return res.send({
-        // channelId: channel.uuid,
-        // channelNumber: channel.number,
-        numConnections: session?.numConnections() ?? 0,
-        connections: map(session?.connections(), (connection, token) => ({
-          ...connection,
-          lastHeartbeat: session?.lastHeartbeat(token),
+      return res.send(
+        map(sessions, (session) => ({
+          type: session.sessionType,
+          numConnections: session?.numConnections() ?? 0,
+          connections: map(session?.connections(), (connection, token) => ({
+            ...connection,
+            lastHeartbeat: session?.lastHeartbeat(token),
+          })),
         })),
-      });
+      );
     },
   );
 
+  /**
+   * Stop all transcode sessions for a channel
+   */
+  fastify.delete(
+    '/api/channels/:id/sessions',
+    {
+      schema: {
+        params: z.object({
+          id: z.coerce.number().or(z.string().uuid()),
+        }),
+        response: {
+          200: ChannelSessionsResponseSchema,
+          404: z.string(),
+        },
+      },
+    },
+    async (req, res) => {
+      const channelId = await run(async () => {
+        if (isNumber(req.params.id)) {
+          return (
+            await req.serverCtx.channelDB.getChannelByNumber(req.params.id)
+          )?.uuid;
+        } else {
+          return req.params.id;
+        }
+      });
+
+      if (isNil(channelId)) {
+        return res.status(404).send('Could not derive channel ID');
+      }
+
+      const sessions =
+        req.serverCtx.sessionManager.getAllConcatSessions(channelId);
+
+      if (isEmpty(sessions)) {
+        return res.status(404).send('No session found for channel ID');
+      }
+
+      forEach(sessions, (session) => session.stop());
+
+      return res.status(201).send();
+    },
+  );
+
+  /**
+   * Returns a continuous, direct MPEGTS video stream for the given channel
+   */
   fastify.get(
     '/channels/:id/video',
     {
@@ -124,34 +229,53 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
           id: z.coerce.number().or(z.string()),
         }),
         querystring: z.object({
-          useSessions: TruthyQueryParam.optional().default('false'),
+          useSessions: TruthyQueryParam.optional().default(true),
+          streamMode: z
+            .union([z.literal('hls'), z.literal('legacy')])
+            .catch('hls'),
+          token: z.string().uuid().optional(),
         }),
+      },
+      onError(_req, _res, err, done) {
+        console.error(err);
+        done();
       },
     },
     async (req, res) => {
       // TODO Make this a settings opt-in for experimental behavior
+      const channel = await req.serverCtx.channelDB.getChannel(req.params.id);
+      if (isNil(channel)) {
+        return res.status(404).send();
+      }
+
       if (req.query.useSessions) {
-        const channel = await req.serverCtx.channelDB.getChannel(req.params.id);
-        if (isNil(channel)) {
-          return res.status(404).send();
+        const token = req.query.token ?? v4();
+
+        const sessionResult =
+          await req.serverCtx.sessionManager.getOrCreateConcatSession(
+            channel.uuid,
+            token,
+            {
+              ip: req.ip,
+              userAgent: req.headers['user-agent'],
+            },
+            {
+              ...defaultConcatOptions,
+              audioOnly: false,
+              mode: req.query.streamMode === 'hls' ? 'hls' : 'direct',
+            },
+          );
+
+        if (sessionResult.isFailure()) {
+          switch (sessionResult.error.type) {
+            case 'channel_not_found':
+              return res.status(404).send('Channel not found.');
+            case 'generic_error':
+              return res.status(500).send('Unable to start session');
+          }
         }
 
-        const token = v4();
-
-        const session = await sessionManager.getOrCreateConcatSession(
-          channel.uuid,
-          token,
-          {
-            ip: req.ip,
-          },
-          {
-            sessionType: 'concat',
-          },
-        );
-
-        if (isNil(session)) {
-          return res.status(500).send();
-        }
+        const session = sessionResult.get();
 
         // We have to create an intermediate stream between the raw one
         // and the response so that nothing messes up the backing raw stream
@@ -167,7 +291,6 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
             logger.debug(
               'Detected client initiated concat close, stopping stream...',
             );
-            //TODO Not ideal to key each connectionon req.ip -- rethink this!
             session.removeConnection(token);
             piped.end();
           }
@@ -176,19 +299,13 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
 
         return res.header('Content-Type', 'video/mp2t').send(piped);
       } else {
-        const channel = await req.serverCtx.channelDB.getChannel(req.params.id);
-        if (isNull(channel)) {
-          return res.status(404).send(`Channel ${req.params.id} not found`);
-        }
-
         const lineup = await req.serverCtx.channelDB.loadLineup(channel.uuid);
 
         const token = v4();
 
-        const result = await new ConcatStream().startStream(
-          req.params.id,
-          false,
-        );
+        const result = await new ConcatStream({
+          mode: req.query.streamMode === 'hls' ? 'hls' : 'direct',
+        }).startStream(req.params.id, false);
 
         if (result.type === 'error') {
           return res.send(result.httpStatus).send(result.message);
@@ -223,6 +340,9 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
     },
   );
 
+  /**
+   * Initiates an audio only stream for the given channel
+   */
   fastify.get(
     '/channels/:id/radio',
     {
@@ -233,7 +353,7 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      const result = await new ConcatStream().startStream(req.params.id, false);
+      const result = await new ConcatStream().startStream(req.params.id, true);
       if (result.type === 'error') {
         return res.send(result.httpStatus).send(result.message);
       }
@@ -246,6 +366,10 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
     },
   );
 
+  /**
+   * Internal endpoint which returns the single, raw stream for a video
+   * at the given time, or "now"
+   */
   fastify.get(
     '/stream',
     {
@@ -257,7 +381,6 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      // const t0 = new Date().getTime();
       const videoStream = new VideoStream();
 
       const channelAndLineup = isNumber(req.query.channel)
@@ -284,7 +407,12 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
       logger.debug('Starting stream timestamp: %s', dayjs(t0).format());
 
       const rawStreamResult = await videoStream.startStream(
-        req.query,
+        {
+          channel: req.query.channel,
+          session: req.query.session ?? 0,
+          audioOnly: req.query.audioOnly ?? false,
+          sessionType: req.query.hls ? 'hls' : 'direct',
+        },
         t0,
         true,
       );
@@ -312,6 +440,9 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
     },
   );
 
+  /**
+   * Return an m3u8 playlist for a given channel ID (or channel number)
+   */
   fastify.get(
     '/channels/:id/m3u8',
     {
@@ -346,23 +477,21 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
     },
   );
 
+  /**
+   * Return a playlist in ffconcat file format for the given channel number
+   */
   fastify.get(
     '/playlist',
     {
       schema: {
         querystring: z.object({
-          channel: z.coerce.number().optional(),
-          audioOnly: TruthyQueryParam.optional().default('0'),
-          hls: TruthyQueryParam.default('0'),
+          channel: z.coerce.number().or(z.string().uuid()),
+          audioOnly: TruthyQueryParam.optional().default(false),
+          hls: TruthyQueryParam.default(false),
         }),
       },
     },
     async (req, res) => {
-      // Check if channel queried is valid
-      if (isUndefined(req.query.channel)) {
-        return res.status(400).send('No Channel Specified');
-      }
-
       if (isNil(await req.serverCtx.channelDB.getChannel(req.query.channel))) {
         return res.status(404).send("Channel doesn't exist");
       }
@@ -412,32 +541,10 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
     },
   );
 
-  const mediaPlayer = async (
-    channelNum: number,
-    path: string,
-    req: FastifyRequest,
-    res: FastifyReply,
-  ) => {
-    if (isNil(await req.serverCtx.channelDB.getChannel(channelNum))) {
-      return res.status(404).send("Channel doesn't exist");
-    }
-
-    const content = [
-      '#EXTM3U',
-      '#EXT-X-VERSION:3',
-      '#EXT-X-MEDIA-SEQUENCE:0',
-      '#EXT-X-ALLOW-CACHE:YES',
-      '#EXT-X-TARGETDURATION:60',
-      '#EXT-X-PLAYLIST-TYPE:VOD',
-      `${req.protocol}://${req.hostname}/channels/${channelNum}/${path}`,
-    ];
-
-    return res
-      .type('video/x-mpegurl')
-      .status(200)
-      .send(content.join('\n') + '\n');
-  };
-
+  /**
+   * Returns a "master" m3u playlist file for the given channel. The playlist
+   * contains a single entry which initiates the underlying concat stream
+   */
   fastify.get(
     '/media-player/:number.m3u',
     {
@@ -452,11 +559,16 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
     },
     async (req, res) => {
       try {
-        let path = 'video';
-        if (req.query.fast) {
-          path = 'm3u8';
+        const m3u = await req.serverCtx.m3uService.channelMediaPlayerM3u(
+          req.params.number,
+          req.query.fast ? 'm3u8' : 'video',
+          req.protocol,
+          req.hostname,
+        );
+        if (isNull(m3u)) {
+          return res.status(404).send("Channel doesn't exist");
         }
-        return await mediaPlayer(req.params.number, path, req, res);
+        return res.type('video/x-mpegurl').status(200).send(m3u);
       } catch (err) {
         logger.error(err);
         return res.status(500).send('There was an error.');
@@ -464,6 +576,9 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
     },
   );
 
+  /**
+   *
+   */
   fastify.get(
     '/media-player/radio/:number.m3u',
     {
@@ -475,8 +590,16 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
     },
     async (req, res) => {
       try {
-        const path = 'radio';
-        return await mediaPlayer(req.params.number, path, req, res);
+        const m3u = await req.serverCtx.m3uService.channelMediaPlayerM3u(
+          req.params.number,
+          'radio',
+          req.protocol,
+          req.hostname,
+        );
+        if (isNull(m3u)) {
+          return res.status(404).send("Channel doesn't exist");
+        }
+        return res.type('video/x-mpegurl').status(200).send(m3u);
       } catch (err) {
         logger.error(err);
         return res.status(500).send('There was an error.');

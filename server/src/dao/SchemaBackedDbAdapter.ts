@@ -10,7 +10,10 @@ import { LoggerFactory } from '../util/logging/LoggerFactory';
 export class SchemaBackedDbAdapter<T extends z.ZodTypeAny, Out = z.infer<T>>
   implements Adapter<Out>
 {
-  private logger = LoggerFactory.child({ caller: import.meta });
+  private logger = LoggerFactory.child({
+    caller: import.meta,
+    className: this.constructor.name,
+  });
   private path: PathLike;
   private adapter: TextFile;
 

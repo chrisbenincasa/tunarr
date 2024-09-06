@@ -299,8 +299,8 @@ importers:
         specifier: ^15.0.0
         version: 15.0.0
       kysely-codegen:
-        specifier: ^0.15.0
-        version: 0.15.0(better-sqlite3@9.4.5)(kysely@0.27.3)
+        specifier: ^0.16.0
+        version: 0.16.5(better-sqlite3@9.4.5)(kysely@0.27.3)
       nexe:
         specifier: 5.0.0-beta.1
         version: 5.0.0-beta.1(esbuild@0.21.5)
@@ -5306,6 +5306,13 @@ packages:
     dependencies:
       fill-range: 7.0.1
 
+  /braces@3.0.3:
+    resolution: {integrity: sha512-yQbXgO/OSZVD2IsiLlro+7Hf6Q18EJrKSEsdoMzKePKXct3gvD8oLcOQdIzGupr5Fj+EDe8gO/lxc1BzfMpxvA==}
+    engines: {node: '>=8'}
+    dependencies:
+      fill-range: 7.1.1
+    dev: true
+
   /brorand@1.1.0:
     resolution: {integrity: sha512-cKV8tMCEpQs4hK/ik71d6LrPOnpkpGBR0wzxqr68g2m/LB2GxVYQroAjMJZRVM1Y4BCjCKc3vAamxSzOY2RP+w==}
     dev: true
@@ -7391,6 +7398,13 @@ packages:
     dependencies:
       to-regex-range: 5.0.1
 
+  /fill-range@7.1.1:
+    resolution: {integrity: sha512-YsGpe3WHLK8ZYi4tWDg2Jy3ebRz2rXowDxnld4bkQB00cc/1Zw9AWnC0i9ztDJitivtQvaI9KaLyKrc+hBW0yg==}
+    engines: {node: '>=8'}
+    dependencies:
+      to-regex-range: 5.0.1
+    dev: true
+
   /find-my-way@8.1.0:
     resolution: {integrity: sha512-41QwjCGcVTODUmLLqTMeoHeiozbMXYMAE1CKFiDyi9zVZ2Vjh0yz3MF0WQZoIb+cmzP/XlbFjlF2NtJmvZHznA==}
     engines: {node: '>=14'}
@@ -8761,25 +8775,28 @@ packages:
     transitivePeerDependencies:
       - supports-color
 
-  /kysely-codegen@0.15.0(better-sqlite3@9.4.5)(kysely@0.27.3):
-    resolution: {integrity: sha512-LPta2nQOyoEPDQ3w/Gsplc+2iyZPAsGvtWoS21VzOB0NDQ0B38Xy1gS8WlbGef542Zdw2eLJHxekud9DzVdNRw==}
+  /kysely-codegen@0.16.5(better-sqlite3@9.4.5)(kysely@0.27.3):
+    resolution: {integrity: sha512-TiGbwsqdnGR/2vcd072NRNIbyPQYDlnJg/IMas+xgCMEqp2M2T+f6Xonx4I9APXOWl4Mcv1nPMnG/lQT5Yty3A==}
     hasBin: true
     peerDependencies:
       '@libsql/kysely-libsql': ^0.3.0
       '@tediousjs/connection-string': ^0.5.0
       better-sqlite3: 9.4.5
       kysely: ^0.27.0
+      kysely-bun-sqlite: ^0.3.2
       kysely-bun-worker: ^0.5.3
       mysql2: ^2.3.3 || ^3.0.0
       pg: ^8.8.0
       tarn: ^3.0.0
-      tedious: ^16.6.0 || ^17.0.0
+      tedious: ^18.0.0
     peerDependenciesMeta:
       '@libsql/kysely-libsql':
         optional: true
       '@tediousjs/connection-string':
         optional: true
       better-sqlite3:
+        optional: true
+      kysely-bun-sqlite:
         optional: true
       kysely-bun-worker:
         optional: true
@@ -8798,8 +8815,9 @@ packages:
       dotenv-expand: 11.0.6
       git-diff: 2.0.6
       kysely: 0.27.3
-      micromatch: 4.0.5
+      micromatch: 4.0.8
       minimist: 1.2.8
+      pluralize: 8.0.0
     dev: true
 
   /kysely@0.27.3:
@@ -9290,6 +9308,14 @@ packages:
     dependencies:
       braces: 3.0.2
       picomatch: 2.3.1
+
+  /micromatch@4.0.8:
+    resolution: {integrity: sha512-PXwfBhYu0hBCPw8Dn0E+WDYb7af3dSLVWKi3HGv84IdF4TyFoC0ysxFd0Goxw7nSv4T/PzEJQxsYsEiFCKo2BA==}
+    engines: {node: '>=8.6'}
+    dependencies:
+      braces: 3.0.3
+      picomatch: 2.3.1
+    dev: true
 
   /mikro-orm@6.3.3:
     resolution: {integrity: sha512-Hpm/LdpU8c0jNSJNnp6hJ+zwB13Db/fDCni95SJvuR3H4tFtixTrvxPRtz8iIWdLHXt/7kVdbBZdOLKj249r5A==}
@@ -10386,7 +10412,6 @@ packages:
   /pluralize@8.0.0:
     resolution: {integrity: sha512-Nc3IT5yHzflTfbjgqWcCPpo7DaKy4FnpB0l/zCAW0Tc7jxAiuqSxHasntB3D7887LSrA93kDJ9IXovxJYxyLCA==}
     engines: {node: '>=4'}
-    dev: false
 
   /pony-cause@2.1.10:
     resolution: {integrity: sha512-3IKLNXclQgkU++2fSi93sQ6BznFuxSLB11HdvZQ6JW/spahf/P1pAHBQEahr20rs0htZW0UDkM1HmA+nZkXKsw==}

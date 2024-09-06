@@ -1,113 +1,66 @@
-/******************
- * Offline player is for special screens, like the error
- * screen or the Flex Fallback screen.
- *
- * This module has to follow the program-player contract.
- * Asynchronous call to return a stream. Then the stream
- * can be used to play the program.
- **/
-import EventEmitter from 'events';
-import { isError } from 'lodash-es';
-import { Readable, Writable } from 'stream';
-import { FFMPEG, FfmpegEvents } from '../ffmpeg/ffmpeg.js';
-import { TypedEventEmitter } from '../types/eventEmitter.js';
-import { Maybe } from '../types/util.js';
+import { isError, isUndefined } from 'lodash-es';
+import { SettingsDB, getSettings } from '../dao/settings.js';
+import { FfmpegTranscodeSession } from '../ffmpeg/FfmpegTrancodeSession.js';
+import { FFMPEG } from '../ffmpeg/ffmpeg.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
-import { Player, PlayerContext } from './Player.js';
 import { makeLocalUrl } from '../util/serverUtil.js';
+import { PlayerContext } from './PlayerStreamContext.js';
+import { ProgramStream } from './ProgramStream.js';
 
-export class OfflinePlayer extends Player {
-  private logger = LoggerFactory.child({ caller: import.meta });
-  private context: PlayerContext;
-  private error: boolean;
-  private ffmpeg: FFMPEG;
+/**
+ * Player for flex, error, and other misc non-content streams.
+ */
+export class OfflineProgramStream extends ProgramStream {
+  protected logger = LoggerFactory.child({
+    caller: import.meta,
+    className: this.constructor.name,
+  });
 
-  constructor(error: boolean, context: PlayerContext) {
-    super();
-    this.context = context;
-    this.error = error;
+  constructor(
+    private error: boolean,
+    context: PlayerContext,
+    settingsDB: SettingsDB = getSettings(),
+  ) {
+    super(context, settingsDB);
     if (context.isLoading === true) {
       context.channel = {
         ...context.channel,
-        offlinePicture: makeLocalUrl('/images/loading-screen.png'),
-        offlineSoundtrack: undefined,
+        offline: {
+          ...context.channel.offline,
+          mode: 'pic',
+          picture: makeLocalUrl('/images/loading-screen.png'),
+          soundtrack: undefined,
+        },
       };
     }
-    this.ffmpeg = new FFMPEG(context.ffmpegSettings, context.channel);
-    this.ffmpeg.setAudioOnly(this.context.audioOnly);
   }
 
-  cleanUp() {
-    super.cleanUp();
-    this.ffmpeg.kill();
-  }
+  protected shutdownInternal() {}
 
-  play(outStream: Writable): Promise<Maybe<TypedEventEmitter<FfmpegEvents>>> {
+  async setupInternal(): Promise<FfmpegTranscodeSession> {
     try {
-      const emitter = new EventEmitter() as TypedEventEmitter<FfmpegEvents>;
-      let ffmpeg = this.ffmpeg;
+      const ffmpeg = new FFMPEG(
+        this.settingsDB.ffmpegSettings(),
+        this.context.channel,
+        this.context.audioOnly,
+      );
       const lineupItem = this.context.lineupItem;
       const duration = lineupItem.streamDuration ?? 0 - (lineupItem.start ?? 0);
 
-      let ff: Maybe<Readable>;
-      if (this.error) {
-        ff = ffmpeg.spawnError('Error', undefined, duration);
-      } else {
-        ff = ffmpeg.spawnOffline(duration);
+      const ff = this.error
+        ? await ffmpeg.createErrorSession('Error', undefined, duration)
+        : await ffmpeg.createOfflineSession(duration);
+
+      if (isUndefined(ff)) {
+        throw new Error('Unable to start ffmpeg transcode session');
       }
 
-      ff?.pipe(outStream, { end: false });
-
-      ffmpeg.on('end', () => {
-        this.logger.trace('offline player end');
-        emitter.emit('end');
-      });
-
-      ffmpeg.on('close', () => {
-        this.logger.trace('offline player close');
-        emitter.emit('close');
-      });
-
-      ffmpeg.on('error', (err) => {
-        this.logger.error('offline player error: %O', err);
-
-        //wish this code wasn't repeated.
-        if (!this.error) {
-          this.logger.debug('Replacing failed stream with error stream');
-          ff?.unpipe(outStream);
-          // ffmpeg.removeAllListeners('data'); Type inference says this is never actually used...
-          ffmpeg.removeAllListeners('end');
-          ffmpeg.removeAllListeners('error');
-          ffmpeg.removeAllListeners('close');
-          ffmpeg = new FFMPEG(
-            this.context.ffmpegSettings,
-            this.context.channel,
-          ); // Set the transcoder options
-          ffmpeg.setAudioOnly(this.context.audioOnly);
-          ffmpeg.on('close', () => {
-            emitter.emit('close');
-          });
-          ffmpeg.on('end', () => {
-            emitter.emit('end');
-          });
-          ffmpeg.on('error', (err) => {
-            this.logger.error('Emitting error ... %O', err);
-            emitter.emit('error', err);
-          });
-
-          ff = ffmpeg.spawnError('oops', 'oops', Math.min(duration, 60000));
-
-          ff?.pipe(outStream);
-        } else {
-          emitter.emit('error', err);
-        }
-      });
-      return Promise.resolve(emitter);
+      return ff;
     } catch (err) {
       if (isError(err)) {
         throw err;
       } else {
-        throw Error(
+        throw new Error(
           'Error when attempting to play offline screen: ' +
             JSON.stringify(err),
         );

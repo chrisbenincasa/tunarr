@@ -12,26 +12,31 @@ import {
   PlexTvShow,
 } from '@tunarr/types/plex';
 import { first, groupBy, isNil, isNull, isUndefined, keys } from 'lodash-es';
-import { PlexApiClient } from '../../external/plex/PlexApiClient';
 import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory';
+import { PlexApiClient } from '../../external/plex/PlexApiClient';
 import { isNonEmptyString, wait } from '../../util';
 import { LoggerFactory } from '../../util/logging/LoggerFactory';
+import { ChannelDB } from '../channelDb';
+import { ProgramExternalIdType } from '../custom_types/ProgramExternalIdType';
 import { ProgramSourceType } from '../custom_types/ProgramSourceType';
 import { getEm } from '../dataSource';
-import { MediaSource } from '../entities/MediaSource';
 import { Program, ProgramType } from '../entities/Program';
 import {
   ProgramGrouping,
   ProgramGroupingType,
 } from '../entities/ProgramGrouping';
 import { ProgramGroupingExternalId } from '../entities/ProgramGroupingExternalId';
-import { ProgramExternalIdType } from '../custom_types/ProgramExternalIdType';
+import { MediaSourceDB } from '../mediaSourceDB';
 
 export class LegacyMetadataBackfiller {
   private logger = LoggerFactory.child({
     caller: import.meta,
     className: LegacyMetadataBackfiller.name,
   });
+
+  constructor(
+    private mediaSourceDB: MediaSourceDB = new MediaSourceDB(new ChannelDB()),
+  ) {}
 
   // It requires valid PlexServerSettings, program metadata, etc
   async backfillParentMetadata() {
@@ -84,7 +89,7 @@ export class LegacyMetadataBackfiller {
     programs: Program[],
   ) {
     const em = getEm();
-    const server = await em.findOne(MediaSource, { name: serverName });
+    const server = await this.mediaSourceDB.getByNameDirect(serverName);
     if (isNil(server)) {
       this.logger.warn(
         'Could not find plex server details for server %s',

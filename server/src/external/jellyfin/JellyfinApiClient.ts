@@ -124,9 +124,10 @@ export class JellyfinApiClient extends BaseApiClient<JellyfinApiClientOptions> {
 
       return await JellyfinAuthenticationResult.parseAsync(response.data);
     } catch (e) {
-      LoggerFactory.root.error(e, 'Error logging into Jellyfin', {
-        className: JellyfinApiClient.name,
-      });
+      LoggerFactory.root.error(
+        { error: e as unknown, className: JellyfinApiClient.name },
+        'Error logging into Jellyfin',
+      );
       throw e;
     }
   }

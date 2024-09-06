@@ -15,25 +15,25 @@ import {
 import stream from 'stream';
 import z from 'zod';
 import {
+  ProgramExternalIdType,
+  programExternalIdTypeFromSourceType,
+  programExternalIdTypeToMediaSourceType,
+} from '../dao/custom_types/ProgramExternalIdType.js';
+import {
   ProgramSourceType,
   programSourceTypeFromString,
   programSourceTypeToMediaSource,
 } from '../dao/custom_types/ProgramSourceType.js';
 import { getEm } from '../dao/dataSource.js';
+import { MediaSource } from '../dao/entities/MediaSource.js';
 import { Program, ProgramType } from '../dao/entities/Program.js';
+import { ProgramGrouping } from '../dao/entities/ProgramGrouping.js';
+import { JellyfinApiClient } from '../external/jellyfin/JellyfinApiClient.js';
 import { PlexApiClient } from '../external/plex/PlexApiClient.js';
 import { TruthyQueryParam } from '../types/schemas.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
-import { ProgramGrouping } from '../dao/entities/ProgramGrouping.js';
 import { ifDefined, isNonEmptyString } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
-import {
-  ProgramExternalIdType,
-  programExternalIdTypeFromSourceType,
-  programExternalIdTypeToMediaSourceType,
-} from '../dao/custom_types/ProgramExternalIdType.js';
-import { MediaSource } from '../dao/entities/MediaSource.js';
-import { JellyfinApiClient } from '../external/jellyfin/JellyfinApiClient.js';
 
 const LookupExternalProgrammingSchema = z.object({
   externalId: z
@@ -60,7 +60,10 @@ const BatchLookupExternalProgrammingSchema = z.object({
 
 // eslint-disable-next-line @typescript-eslint/require-await
 export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
-  const logger = LoggerFactory.child({ caller: import.meta });
+  const logger = LoggerFactory.child({
+    caller: import.meta,
+    className: 'ProgrammingApi',
+  });
 
   // Image proxy for a program based on its source. Only works for persisted programs
   fastify.get(
@@ -76,7 +79,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
             .optional()
             .default(true)
             .transform((p) => (p ? 1 : 0)),
-          proxy: TruthyQueryParam.default('0'),
+          proxy: TruthyQueryParam.default(false),
         }),
       },
     },

@@ -33,7 +33,11 @@ export class ScheduledTask<OutType = unknown> {
     taskFactory: TaskFactoryFn<OutType>,
     options?: ScheduledTaskOptions,
   ) {
-    this.logger = LoggerFactory.child({ task: jobName });
+    this.logger = LoggerFactory.child({
+      task: jobName,
+      className: this.constructor.name,
+      caller: import.meta,
+    });
     this.schedule = scheduleRule;
     this.factory = taskFactory;
     this.scheduledJob = schedule.scheduleJob(jobName, scheduleRule, () =>

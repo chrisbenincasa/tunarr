@@ -16,7 +16,11 @@ export class TaskQueue {
       concurrency: 2,
     },
   ) {
-    this.#logger = LoggerFactory.child({ caller: import.meta, queue: name });
+    this.#logger = LoggerFactory.child({
+      caller: import.meta,
+      queue: name,
+      className: this.constructor.name,
+    });
     this.#queue = new PQueue({ ...opts });
   }
 

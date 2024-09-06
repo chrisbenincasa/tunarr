@@ -4,7 +4,8 @@
   "description": "Type definitions and schemas shared between server and web",
   "private": true,
   "scripts": {
-    "build": "tsup",
+    "bundle": "tsup",
+    "build": "tsup --dts",
     "clean": "rimraf build",
     "dev": "tsup --watch",
     "build-dev": "tsup --watch"

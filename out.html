@@ -1,0 +1,32 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Graph</title>
+</head>
+<body>
+  <script src="https://cdn.jsdelivr.net/npm/viz.js@2.1.2-pre.1/viz.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/viz.js@2.1.2-pre.1/full.render.js"></script>
+  <script>
+const s = `
+digraph {
+	compound = "true"
+	newrank = "true"
+	subgraph "root" {
+		"[root] @tunarr/server#bundle" -> "[root] @tunarr/server#generate-db-cache"
+		"[root] @tunarr/server#bundle" -> "[root] @tunarr/shared#bundle"
+		"[root] @tunarr/server#bundle" -> "[root] @tunarr/types#bundle"
+		"[root] @tunarr/server#generate-db-cache" -> "[root] @tunarr/shared#bundle"
+		"[root] @tunarr/server#generate-db-cache" -> "[root] @tunarr/types#bundle"
+		"[root] @tunarr/shared#bundle" -> "[root] @tunarr/types#bundle"
+		"[root] @tunarr/types#bundle" -> "[root] ___ROOT___"
+		"[root] @tunarr/web#bundle" -> "[root] @tunarr/shared#bundle"
+		"[root] @tunarr/web#bundle" -> "[root] @tunarr/types#bundle"
+	}
+}
+
+`.replace(/\_\_\_ROOT\_\_\_/g, "Root").replace(/\[root\]/g, "");new Viz().renderSVGElement(s).then(el => document.body.appendChild(el)).catch(e => console.error(e));
+  </script>
+</body>
+</html>

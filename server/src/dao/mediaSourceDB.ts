@@ -3,13 +3,14 @@ import {
   UpdateMediaSourceRequest,
 } from '@tunarr/types/api';
 import ld, { isNil, isUndefined, keys, map, mapValues } from 'lodash-es';
-import { groupByUniq } from '../util/index.js';
+import { groupByUniq, isNonEmptyString } from '../util/index.js';
 import { ChannelDB } from './channelDb.js';
 import {
   ProgramSourceType,
   programSourceTypeFromMediaSource,
 } from './custom_types/ProgramSourceType.js';
 import { getEm } from './dataSource.js';
+import { directDbAccess } from './direct/directDbAccess.js';
 import {
   MediaSource,
   MediaSourceType,
@@ -44,6 +45,38 @@ export class MediaSourceDB {
 
   async getById(id: string) {
     return getEm().repo(MediaSource).findOne({ uuid: id });
+  }
+
+  async getByIdDirect(id: string) {
+    return directDbAccess()
+      .selectFrom('mediaSource')
+      .selectAll()
+      .where('mediaSource.uuid', '=', id)
+      .executeTakeFirst();
+  }
+
+  async getByNameDirect(name: string) {
+    return directDbAccess()
+      .selectFrom('mediaSource')
+      .selectAll()
+      .where('mediaSource.name', '=', name)
+      .executeTakeFirst();
+  }
+
+  async findByType(type: MediaSourceType, nameOrId?: string) {
+    return directDbAccess()
+      .selectFrom('mediaSource')
+      .selectAll()
+      .where('mediaSource.type', '=', type)
+      .$if(isNonEmptyString(nameOrId), (qb) =>
+        qb.where((eb) =>
+          eb.or([
+            eb('mediaSource.name', '=', nameOrId!),
+            eb('mediaSource.uuid', '=', nameOrId!),
+          ]),
+        ),
+      )
+      .executeTakeFirst();
   }
 
   async getByExternalId(sourceType: MediaSourceType, nameOrClientId: string) {

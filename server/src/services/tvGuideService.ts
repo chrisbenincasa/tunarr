@@ -32,6 +32,7 @@ import { XmlTvWriter } from '../XmlTvWriter.js';
 import { ChannelDB } from '../dao/channelDb.js';
 import { ProgramConverter } from '../dao/converters/programConverters.js';
 import { Lineup } from '../dao/derived_types/Lineup.js';
+import { ChannelWithPrograms as RawChannel } from '../dao/direct/derivedTypes.js';
 import { Maybe } from '../types/util.js';
 import { binarySearchRange } from '../util/binarySearch.js';
 import {
@@ -42,7 +43,6 @@ import {
 } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { EventService } from './eventService.js';
-import { ChannelWithPrograms as RawChannel } from '../dao/direct/derivedTypes.js';
 
 dayjs.extend(duration);
 
@@ -76,7 +76,10 @@ type ChannelWithLineup = {
 type ChannelId = string;
 
 export class TVGuideService {
-  private logger = LoggerFactory.child({ caller: import.meta });
+  private logger = LoggerFactory.child({
+    caller: import.meta,
+    className: this.constructor.name,
+  });
   private xmltv: XmlTvWriter;
   private channelDb: ChannelDB;
   private eventService: EventService;
@@ -722,8 +725,8 @@ export class TVGuideService {
         updatedAt: null,
         fillerRepeatCooldown: null,
         groupTitle: null,
-        watermark: null,
-        transcoding: null,
+        watermark: undefined,
+        transcoding: undefined,
         programs: [],
       };
 

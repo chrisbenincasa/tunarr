@@ -1,28 +1,70 @@
-import { Channel } from '../dao/entities/Channel.js';
+import { compact, isError, isNil, isString } from 'lodash-es';
+import { ChannelDB } from '../dao/channelDb.js';
+import { Channel } from '../dao/direct/derivedTypes.js';
+import { Result } from '../types/result.js';
+import { Maybe } from '../types/util.js';
+import { MutexMap } from '../util/mutexMap.js';
+import { ConcatSession, ConcatSessionOptions } from './ConcatSession.js';
+import { HlsSession, HlsSessionOptions } from './HlsSession.js';
 import {
-  SessionOptions,
   SessionType,
   StreamConnectionDetails,
   StreamSession,
 } from './StreamSession.js';
-import { isNil, isNull } from 'lodash-es';
-import { getEm } from '../dao/dataSource.js';
-import { ConcatSession } from './ConcatSession.js';
-import { HlsSession, HlsSessionOptions } from './HlsSession.js';
-import { Maybe, Nullable } from '../types/util.js';
-import { MutexMap } from '../util/mutexMap.js';
 
-class SessionManager {
-  #sessionLocker = new MutexMap();
-  #sessions: Record<string, StreamSession> = {};
+export type SessionKey = `${string}_${SessionType}`;
 
-  private constructor() {}
+type KnownErrorTypes = 'channel_not_found' | 'generic_error';
+abstract class TypedError extends Error {
+  readonly type: KnownErrorTypes;
 
-  static create() {
-    return new SessionManager();
+  constructor(public message: string) {
+    super(message);
   }
 
-  allSessions(): Record<string, StreamSession> {
+  static fromError(e: Error): TypedError {
+    if (e instanceof TypedError) {
+      return e;
+    }
+
+    return new GenericError(e.message);
+  }
+
+  static fromAny(e: unknown): TypedError {
+    if (isError(e)) {
+      return this.fromError(e);
+    }
+
+    if (isString(e)) {
+      return new GenericError(e);
+    }
+
+    return new GenericError(JSON.stringify(e));
+  }
+}
+
+class GenericError extends TypedError {
+  readonly type = 'generic_error';
+}
+
+class ChannelNotFoundError extends TypedError {
+  readonly type = 'channel_not_found';
+  constructor(channelId: string) {
+    super(`Channel ${channelId} not found`);
+  }
+}
+
+export class SessionManager {
+  #sessionLocker = new MutexMap();
+  #sessions: Record<SessionKey, StreamSession> = {};
+
+  private constructor(private channelDB: ChannelDB) {}
+
+  static create(channelDB: ChannelDB) {
+    return new SessionManager(channelDB);
+  }
+
+  allSessions(): Record<SessionKey, StreamSession> {
     return this.#sessions;
   }
 
@@ -32,6 +74,14 @@ class SessionManager {
 
   getConcatSession(id: string): Maybe<ConcatSession> {
     return this.getSession(id, 'concat') as Maybe<ConcatSession>;
+  }
+
+  getConcatHlsSession(id: string): Maybe<ConcatSession> {
+    return this.getSession(id, 'concat_hls') as Maybe<ConcatSession>;
+  }
+
+  getAllConcatSessions(id: string): ConcatSession[] {
+    return compact([this.getConcatSession(id), this.getConcatHlsSession(id)]);
   }
 
   getSession(id: string, sessionType: SessionType): Maybe<StreamSession> {
@@ -53,15 +103,16 @@ class SessionManager {
     channelId: string,
     token: string,
     connection: StreamConnectionDetails,
-    options: Omit<SessionOptions, 'sessionType'>,
+    options: Omit<ConcatSessionOptions, 'sessionType'>,
   ) {
+    const sessionType: SessionType =
+      options.mode === 'hls' ? 'concat_hls' : 'concat';
     return this.getOrCreateSession(
       channelId,
       token,
       connection,
-      'concat',
-      (channel) =>
-        ConcatSession.create(channel, { ...options, sessionType: 'concat' }),
+      sessionType,
+      (channel) => ConcatSession.create(channel, { ...options, sessionType }),
     );
   }
 
@@ -71,14 +122,19 @@ class SessionManager {
     channelId: string,
     token: string,
     connection: StreamConnectionDetails,
-    options: Omit<HlsSessionOptions, 'sessionType'>,
+    options: Omit<HlsSessionOptions, 'sessionType' | 'initialSegmentCount'>,
   ) {
     return this.getOrCreateSession(
       channelId,
       token,
       connection,
       'hls',
-      (channel) => new HlsSession(channel, { ...options, sessionType: 'hls' }),
+      (channel) =>
+        new HlsSession(channel, {
+          ...options,
+          initialSegmentCount: 2, // 8 seconds of content
+          sessionType: 'hls',
+        }),
     );
   }
 
@@ -88,38 +144,41 @@ class SessionManager {
     connection: StreamConnectionDetails,
     sessionType: SessionType,
     sessionFactory: (channel: Channel) => Session,
-  ): Promise<Nullable<Session>> {
+  ): Promise<Result<Session, TypedError>> {
     const lock = await this.#sessionLocker.getOrCreateLock(channelId);
-    const session = await lock.runExclusive(async () => {
-      const channel = await getEm().findOne(Channel, { uuid: channelId });
-      if (isNil(channel)) {
-        return null;
+    try {
+      const session = await lock.runExclusive(async () => {
+        const channel = await this.channelDB.getChannelDirect(channelId);
+        if (isNil(channel)) {
+          throw new ChannelNotFoundError(channelId);
+        }
+
+        let session = this.getSession(channelId, sessionType) as Maybe<Session>;
+        if (isNil(session)) {
+          session = sessionFactory(channel);
+          this.addSession(channel.uuid, session.sessionType, session);
+        }
+
+        if (!session.started || session.hasError) {
+          await session.start();
+        }
+
+        return session;
+      });
+
+      if (session.hasError) {
+        throw (
+          session.error ??
+          new GenericError('Session reported error but had none set.')
+        );
       }
 
-      let session = this.getSession(channelId, sessionType) as Maybe<Session>;
-      if (isNil(session)) {
-        session = sessionFactory(channel);
-        this.addSession(channel.uuid, session.sessionType, session);
-      }
+      session.addConnection(token, connection);
 
-      if (!session.started || session.hasError) {
-        await session.start();
-      }
-
-      return session;
-    });
-
-    if (isNull(session)) {
-      return null;
+      return Result.success(session);
+    } catch (e) {
+      return Result.failure(TypedError.fromAny(e));
     }
-
-    if (session.hasError) {
-      return null;
-    }
-
-    session.addConnection(token, connection);
-
-    return session;
   }
 
   private addSession(
@@ -131,8 +190,6 @@ class SessionManager {
   }
 }
 
-function sessionCacheKey(id: string, sessionType: SessionType): string {
+function sessionCacheKey(id: string, sessionType: SessionType): SessionKey {
   return `${id}_${sessionType}`;
 }
-
-export const sessionManager = SessionManager.create();
