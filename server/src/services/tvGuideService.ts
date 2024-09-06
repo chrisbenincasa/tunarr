@@ -783,7 +783,7 @@ export class TVGuideService {
             round(diff, 3),
           );
         } catch (err) {
-          this.logger.error('Unable to update internal guide data', err);
+          this.logger.error(err, 'Unable to update internal guide data');
         }
       },
       {

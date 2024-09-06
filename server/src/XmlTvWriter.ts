@@ -65,7 +65,7 @@ export class XmlTvWriter {
           src: isNonEmptyString(channel.icon.path)
             ? escape(channel.icon.path)
             : '{{host}}/images/tunarr.png',
-          width: channel.icon.width <= 0 ? undefined : channel.icon.width,
+          width: channel.icon.width <= 0 ? 250 : channel.icon.width,
         },
       ];
     }
