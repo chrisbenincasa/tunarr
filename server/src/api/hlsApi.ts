@@ -63,7 +63,6 @@ export const hlsApi: RouterPluginAsyncCallback = async (fastify) => {
         // Keep track of active clients.
         // Parse out the channel ID from the request path
         // If we get an ID, reset the counter
-        // console.log(req.url);
       }
       done();
     })
@@ -110,17 +109,6 @@ export const hlsApi: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      // const channel = await req.serverCtx.channelCache.getChannelConfig(
-      //   req.params.number,
-      // );
-
-      // if (isNil(channel)) {
-      //   return res.status(404).send("Channel doesn't exist");
-      // }
-
-      // How should we handle this...
-      // const token = req.query.token ?? v4();
-
       const session = await req.serverCtx.sessionManager.getOrCreateHlsSession(
         req.params.id,
         req.ip,
