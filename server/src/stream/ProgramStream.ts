@@ -105,7 +105,7 @@ export abstract class ProgramStream implements ProgramStream {
     return ffmpeg.createErrorSession(
       'Playback Error',
       'Check server logs for details',
-      duration.asMilliseconds(),
+      duration,
     );
   }
 

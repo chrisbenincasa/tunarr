@@ -1,4 +1,4 @@
-import constants from '@tunarr/shared/constants';
+import dayjs from 'dayjs';
 import { isNil, isNull, isUndefined } from 'lodash-es';
 import { ChannelDB } from '../../dao/channelDb.js';
 import { isContentBackedLineupIteam } from '../../dao/derived_types/StreamLineup.js';
@@ -10,7 +10,7 @@ import { FfmpegTranscodeSession } from '../../ffmpeg/FfmpegTrancodeSession.js';
 import { FFMPEG } from '../../ffmpeg/ffmpeg.js';
 import { UpdateJellyfinPlayStatusScheduledTask } from '../../tasks/jellyfin/UpdateJellyfinPlayStatusTask.js';
 import { Maybe, Nullable } from '../../types/util.js';
-import { ifDefined, isDefined } from '../../util/index.js';
+import { ifDefined } from '../../util/index.js';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
 import { PlayerContext } from '../PlayerStreamContext.js';
 import { ProgramStream } from '../ProgramStream.js';
@@ -72,16 +72,6 @@ export class JellyfinProgramStreama extends ProgramStream {
     this.ffmpeg = new FFMPEG(ffmpegSettings, channel); // Set the transcoder options
     this.ffmpeg.setAudioOnly(this.context.audioOnly);
 
-    let streamDuration: number | undefined;
-
-    if (
-      !isUndefined(lineupItem.streamDuration) &&
-      (lineupItem.start ?? 0) + lineupItem.streamDuration + constants.SLACK <
-        lineupItem.duration
-    ) {
-      streamDuration = lineupItem.streamDuration / 1000;
-    }
-
     const stream = await jellyfinStreamDetails.getStream(lineupItem);
     if (isNull(stream)) {
       throw new Error('Unable to retrieve stream details from Jellyfin');
@@ -91,17 +81,22 @@ export class JellyfinProgramStreama extends ProgramStream {
       throw new Error('Stream was killed already, returning');
     }
 
-    if (isDefined(stream.streamDetails)) {
-      stream.streamDetails.duration = lineupItem.streamDuration;
+    const streamStats = stream.streamDetails;
+    if (streamStats) {
+      streamStats.duration = lineupItem.streamDuration
+        ? dayjs.duration(lineupItem.streamDuration)
+        : undefined;
     }
+
+    const start = dayjs.duration(lineupItem.start ?? 0);
 
     const ffmpegOutStream = await this.ffmpeg.createStreamSession(
       stream.streamUrl,
       stream.streamDetails,
-      // Don't use FFMPEG's -ss parameter for Jellyfin since we need to request
-      // the seek against their API instead
-      (lineupItem.start ?? 0) / 1000,
-      streamDuration ?? lineupItem.duration,
+      start,
+      +start === 0
+        ? dayjs.duration(lineupItem.duration)
+        : dayjs.duration(lineupItem.streamDuration ?? lineupItem.duration),
       watermark,
       this.context.realtime,
       {
