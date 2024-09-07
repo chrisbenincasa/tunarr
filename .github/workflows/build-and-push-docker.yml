@@ -142,7 +142,7 @@ jobs:
           platforms: ${{matrix.builds.platform}}
           build-args: |
             base_image_tag=${{ matrix.builds.base_tag }}
-            is_edge_build=${{github.ref == format('refs/heads/{0}', 'dev') && github.event_name == 'workflow_dispatch'}}
+            is_edge_build=${{github.ref == format('refs/heads/{0}', 'dev') && github.event_name == 'schedule'}}
             tunarr_build="${TUNARR_VERSION}"
           target: full-stack
           tags: ${{ steps.meta.outputs.tags }}
