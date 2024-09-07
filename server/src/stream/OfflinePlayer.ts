@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { isError, isUndefined } from 'lodash-es';
 import { SettingsDB, getSettings } from '../dao/settings.js';
 import { FfmpegTranscodeSession } from '../ffmpeg/FfmpegTrancodeSession.js';
@@ -45,7 +46,11 @@ export class OfflineProgramStream extends ProgramStream {
         this.context.audioOnly,
       );
       const lineupItem = this.context.lineupItem;
-      const duration = lineupItem.streamDuration ?? 0 - (lineupItem.start ?? 0);
+      let duration = dayjs.duration(lineupItem.streamDuration ?? 0);
+      const start = dayjs.duration(lineupItem.start ?? 0);
+      if (+duration > +start) {
+        duration = duration.subtract(start);
+      }
 
       const ff = this.error
         ? await ffmpeg.createErrorSession('Error', undefined, duration)

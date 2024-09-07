@@ -1,5 +1,7 @@
+import { Duration } from 'dayjs/plugin/duration.js';
+
 export type StreamDetails = {
-  duration?: number;
+  duration?: Duration;
   anamorphic?: boolean;
   pixelP?: number;
   pixelQ?: number;

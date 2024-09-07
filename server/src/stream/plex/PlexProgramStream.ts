@@ -1,4 +1,4 @@
-import constants from '@tunarr/shared/constants';
+import dayjs from 'dayjs';
 import { isNil, isNull, isUndefined } from 'lodash-es';
 import { ChannelDB } from '../../dao/channelDb.js';
 import { isContentBackedLineupIteam } from '../../dao/derived_types/StreamLineup.js';
@@ -70,16 +70,6 @@ export class PlexProgramStream extends ProgramStream {
     const watermark = this.getWatermark();
     const ffmpeg = new FFMPEG(ffmpegSettings, channel, this.context.audioOnly); // Set the transcoder options
 
-    let streamDuration: number | undefined;
-
-    if (
-      !isUndefined(lineupItem.streamDuration) &&
-      (lineupItem.start ?? 0) + lineupItem.streamDuration + constants.SLACK <
-        lineupItem.duration
-    ) {
-      streamDuration = lineupItem.streamDuration / 1000;
-    }
-
     const stream = await plexStreamDetails.getStream(lineupItem);
     if (isNull(stream)) {
       throw new Error('Unable to retrieve stream details from Plex');
@@ -90,17 +80,22 @@ export class PlexProgramStream extends ProgramStream {
       throw new Error('Plex stream was killed already');
     }
 
-    const streamStart = (lineupItem.start ?? 0) / 1000;
     const streamStats = stream.streamDetails;
     if (streamStats) {
-      streamStats.duration = lineupItem.streamDuration;
+      streamStats.duration = lineupItem.streamDuration
+        ? dayjs.duration(lineupItem.streamDuration)
+        : undefined;
     }
+
+    const start = dayjs.duration(lineupItem.start ?? 0);
 
     const transcodeSession = await ffmpeg.createStreamSession(
       stream.streamUrl,
       stream.streamDetails,
-      streamStart,
-      streamDuration ?? lineupItem.duration,
+      start,
+      +start === 0
+        ? dayjs.duration(lineupItem.duration)
+        : dayjs.duration(lineupItem.streamDuration ?? lineupItem.duration),
       watermark,
       this.context.realtime,
     );

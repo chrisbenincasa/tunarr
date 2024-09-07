@@ -4,6 +4,7 @@ import {
   SupportedVideoFormats,
 } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
+import { Duration } from 'dayjs/plugin/duration.js';
 import {
   first,
   isEmpty,
@@ -356,10 +357,11 @@ export class FFMPEG {
       );
     }
 
-    return this.createProcess(ffmpegArgs, -1);
+    return this.createProcess(ffmpegArgs);
   }
 
   createHlsConcatSession(streamUrl: string) {
+    this.ffmpegName = 'HLS Concat FFMPEG';
     const ffmpegArgs = [
       '-nostdin',
       '-threads',
@@ -381,18 +383,19 @@ export class FFMPEG {
     ];
 
     // Stream is potentially infinite
-    return this.createProcess(ffmpegArgs, -1);
+    return this.createProcess(ffmpegArgs);
   }
 
   createStreamSession(
     streamUrl: string,
     streamStats: Maybe<StreamDetails>,
-    startTime: number,
-    duration: number,
+    startTime: Duration,
+    duration: Duration,
     enableIcon: Maybe<Watermark>,
     realtime: boolean = true,
     extraInnputHeaders: Record<string, string> = {},
   ) {
+    this.ffmpegName = 'Raw Stream FFMPEG';
     return this.createSession(
       streamUrl,
       streamStats,
@@ -404,17 +407,24 @@ export class FFMPEG {
     );
   }
 
-  createErrorSession(title: string, subtitle: Maybe<string>, duration: number) {
+  createErrorSession(
+    title: string,
+    subtitle: Maybe<string>,
+    duration: Duration,
+  ) {
+    this.ffmpegName = 'Error Stream FFMPEG';
     if (this.opts.errorScreen === 'kill') {
       throw new Error('Error screen configured to end stream. Ending now.');
     }
 
     if (isUndefined(duration)) {
       this.logger.warn('No duration found for error stream, using placeholder');
-      duration = MAXIMUM_ERROR_DURATION_MS;
+      duration = dayjs.duration(MAXIMUM_ERROR_DURATION_MS);
     }
 
-    duration = Math.min(MAXIMUM_ERROR_DURATION_MS, duration);
+    duration = dayjs.duration(
+      Math.min(MAXIMUM_ERROR_DURATION_MS, duration.asMilliseconds()),
+    );
     const streamStats: StreamDetails = {
       videoWidth: this.wantedW,
       videoHeight: this.wantedH,
@@ -431,7 +441,8 @@ export class FFMPEG {
     );
   }
 
-  createOfflineSession(duration: number) {
+  createOfflineSession(duration: Duration) {
+    this.ffmpegName = 'Offline Stream FFMPEG';
     const streamStats = {
       videoWidth: this.wantedW,
       videoHeight: this.wantedH,
@@ -451,8 +462,8 @@ export class FFMPEG {
   async createSession(
     streamSrc: string | { errorTitle: string; subtitle?: string },
     streamStats: Maybe<StreamDetails>,
-    startTime: Maybe<number>,
-    duration: number,
+    startTime: Maybe<Duration>,
+    duration: Duration,
     realtime: boolean,
     watermark: Maybe<Watermark>,
     extraInnputHeaders: Record<string, string> = {},
@@ -477,7 +488,9 @@ export class FFMPEG {
 
       if (!realtime) {
         if (supportsBurst) {
-          const burst = duration ? round(Math.min(45, duration / 2)) : 45;
+          const burst = duration
+            ? round(Math.min(45, duration.asSeconds() / 2))
+            : 45;
           ffmpegArgs.push(
             '-readrate',
             '1.0',
@@ -495,7 +508,7 @@ export class FFMPEG {
     }
 
     if (!isUndefined(startTime)) {
-      ffmpegArgs.push(`-ss`, startTime.toString());
+      ffmpegArgs.push(`-ss`, `${startTime.asSeconds()}`);
     }
 
     // Map correct audio index. '?' so doesn't fail if no stream available.
@@ -588,7 +601,7 @@ export class FFMPEG {
         if (!isNil(pic) && !isEmpty(pic)) {
           ffmpegArgs.push('-i', pic);
           //add 150 milliseconds just in case, exact duration seems to cut out the last bits of music some times.
-          duration += 150;
+          duration = duration.add(150);
           videoComplex = `;[${inputFiles++}:0]format=yuv420p[formatted]`;
           videoComplex += `;[formatted]scale=w=${iW}:h=${iH}:force_original_aspect_ratio=1[scaled]`;
           videoComplex += `;[scaled]pad=${iW}:${iH}:(ow-iw)/2:(oh-ih)/2[padded]`;
@@ -633,7 +646,7 @@ export class FFMPEG {
           videoComplex = `;realtime[videox]`;
         }
       }
-      const durstr = `duration=${streamStats?.duration}ms`;
+      const durstr = `duration=${duration.asMilliseconds()}ms`;
       if (!isNonEmptyString(streamSrc)) {
         // silent
         audioComplex = `;aevalsrc=0:${durstr}:s=${
@@ -773,18 +786,18 @@ export class FFMPEG {
         watermarkFilters.push(`format=yuva420p`);
       }
 
-      if (!isEmpty(watermark?.fadeConfig) && isDefined(streamStats?.duration)) {
+      if (!isEmpty(watermark?.fadeConfig)) {
         // Pick the first for now
         const fadeConfig = first(watermark?.fadeConfig)!;
         const periodMins = fadeConfig.periodMins;
         if (periodMins > 0) {
-          const start = startTime ?? 0;
+          const start = startTime ?? dayjs.duration(0);
           const streamDur =
-            streamStats.duration > start
-              ? streamStats.duration - start
-              : streamStats.duration;
+            duration.asMilliseconds() > start.asMilliseconds()
+              ? duration.subtract(start)
+              : duration;
           const periodSeconds = periodMins * 60;
-          const cycles = streamDur / (periodSeconds * 1000);
+          const cycles = streamDur.asMilliseconds() / (periodSeconds * 1000);
 
           // If leading edge, fade in the watermark after the first second of programming
           // otherwise, wait a full period
@@ -853,7 +866,7 @@ export class FFMPEG {
       const filters = [
         'aresample=48000',
         'aresample=async=1:first_pts=0',
-        `apad=whole_dur=${streamStats?.duration}ms`,
+        `apad=whole_dur=${duration.asMilliseconds()}ms`,
       ].join(',');
       audioComplex += `;${currentAudio}${filters}[padded]`;
       currentAudio = '[padded]';
@@ -938,10 +951,14 @@ export class FFMPEG {
     if (artificialBurst) {
       ffmpegArgs.push(
         '-t',
-        `${isDefined(duration) && duration < 45 ? duration : 45}`,
+        `${
+          isDefined(duration) && duration.asMilliseconds() < 45_000
+            ? duration.asMilliseconds()
+            : 45_000
+        }ms`,
       );
     } else if (!isUndefined(duration)) {
-      ffmpegArgs.push(`-t`, `${duration}`);
+      ffmpegArgs.push(`-t`, `${duration.asMilliseconds()}ms`);
     }
 
     ffmpegArgs.push(`-f`, 'nut', `pipe:1`);
@@ -956,7 +973,7 @@ export class FFMPEG {
 
   private createProcess(
     ffmpegArgs: string[],
-    streamDuration: number,
+    streamDuration?: Duration,
   ): FfmpegTranscodeSession {
     const process = new FfmpegProcess(this.opts, this.ffmpegName, ffmpegArgs);
 
@@ -965,7 +982,7 @@ export class FFMPEG {
     // a short amount of time before the stream is actually started...
     return new FfmpegTranscodeSession(
       process,
-      streamDuration === -1 ? -1 : dayjs().add(streamDuration).valueOf(),
+      streamDuration ? dayjs().add(streamDuration).valueOf() : -1,
     );
   }
 }
