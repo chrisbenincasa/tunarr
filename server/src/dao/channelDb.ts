@@ -53,6 +53,7 @@ import {
 } from '../dao/direct/derivedTypes.js';
 import { globalOptions } from '../globals.js';
 import { typedProperty } from '../types/path.js';
+import { Maybe } from '../types/util.js';
 import { asyncPool } from '../util/asyncPool.js';
 import { fileExists } from '../util/fsUtil.js';
 import {
@@ -94,7 +95,6 @@ import { CustomShowContent } from './entities/CustomShowContent.js';
 import { FillerShow, FillerShowId } from './entities/FillerShow.js';
 import { Program } from './entities/Program.js';
 import { upsertContentPrograms } from './programHelpers.js';
-import { Maybe } from '../types/util.js';
 
 dayjs.extend(duration);
 
@@ -926,12 +926,12 @@ export class ChannelDB {
 
   async saveLineup(channelId: string, newLineup: Omit<Lineup, 'lastUpdated'>) {
     const db = await this.getFileDb(channelId);
-    if (newLineup.items.length === 0) {
-      newLineup.items.push({
-        type: 'offline',
-        durationMs: 1000 * 60 * 60 * 24 * 30,
-      });
-    }
+    // if (newLineup.items.length === 0) {
+    //   newLineup.items.push({
+    //     type: 'offline',
+    //     durationMs: 1000 * 60 * 60 * 24 * 30,
+    //   });
+    // }
     newLineup.startTimeOffsets = reduce(
       newLineup.items,
       (acc, item, index) => [...acc, acc[index] + item.durationMs],
