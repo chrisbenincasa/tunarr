@@ -285,16 +285,13 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
         // to the data event on this piped stream. Just debounce them!
         const piped = session.rawStream.pipe(new PassThrough());
 
-        req.raw.on('close', () => {
-          logger.debug('Concat request closed.');
-          if (req.raw.destroyed) {
-            logger.debug(
-              'Detected client initiated concat close, stopping stream...',
-            );
-            session.removeConnection(token);
-            piped.end();
-          }
-          res.raw.end();
+        piped.on('close', () => {
+          logger.debug(
+            { token, ip: req.ip, channel: req.params.id },
+            'Concat request closed.',
+          );
+
+          session.removeConnection(token);
         });
 
         return res.header('Content-Type', 'video/mp2t').send(piped);
@@ -311,15 +308,12 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
           return res.send(result.httpStatus).send(result.message);
         }
 
-        req.raw.on('close', () => {
-          logger.debug('Concat request closed.');
-          if (req.raw.destroyed) {
-            ActiveChannelManager.removeChannelConnection(channel.uuid, token);
-            logger.debug(
-              'Detected client initiated concat close, stopping stream...',
-            );
-            result.stop();
-          }
+        result.stream.on('close', () => {
+          logger.debug('Concat request closed.', {
+            token,
+            ip: req.ip,
+            channel: req.params.id,
+          });
           res.raw.end();
         });
 
