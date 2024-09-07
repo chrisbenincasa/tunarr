@@ -1,12 +1,12 @@
+import { FfmpegSettings } from '@tunarr/types';
 import { ChildProcessByStdio, spawn } from 'node:child_process';
 import events from 'node:events';
 import stream from 'node:stream';
-import { FfmpegEvents } from './ffmpeg.js';
 import { TypedEventEmitter } from '../types/eventEmitter.js';
 import { Maybe } from '../types/util.js';
 import { isDefined } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
-import { FfmpegSettings } from '@tunarr/types';
+import { FfmpegEvents } from './ffmpeg.js';
 
 /**
  * Wrapper for an ffmpeg process with the given arguments
@@ -15,6 +15,7 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
   #logger = LoggerFactory.child({ className: FfmpegProcess.name });
   #processHandle: ChildProcessByStdio<null, stream.Readable, stream.Readable>;
   #processKilled = false;
+  #running = false;
   #sentData = false;
 
   constructor(
@@ -59,6 +60,8 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
       stdio: ['ignore', 'pipe', 'pipe'],
     });
 
+    this.#running = true;
+
     // Pipe to our own stderr if enabled
     if (this.ffmpegSettings.enableLogging) {
       this.#processHandle.stderr.pipe(process.stderr);
@@ -94,7 +97,16 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
       this.#logger.error(error, `${this.ffmpegName} received error event`);
     });
 
+    this.#processHandle.on('close', () => {
+      this.#running = false;
+    });
+
     this.#processHandle.on('exit', (code, signal) => {
+      this.#logger.info(
+        `${this.ffmpegName} exited. (signal=%s, code=%d)`,
+        signal,
+        code,
+      );
       if (code === null) {
         if (!this.#processKilled) {
           this.#logger.info(
@@ -147,11 +159,24 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
   kill() {
     this.#logger.debug(`${this.ffmpegName} RECEIVED kill() command`);
     this.#processKilled = true;
-    // if (isDefined(this.#processHandle)) {
-    //   // TODO - maybe send SIGTERM here and give it some time before
-    //   // dropping the hammer.
-    // }
-    this.#processHandle?.kill('SIGKILL');
+
+    if (this.#processHandle.killed || !this.#running) {
+      this.#logger.debug(`${this.ffmpegName} already killed.`);
+      return;
+    }
+
+    if (isDefined(this.#processHandle)) {
+      this.#logger.debug(`${this.ffmpegName} sending SIGTERM`);
+      this.#processHandle?.kill();
+      setTimeout(() => {
+        if (this.#running) {
+          this.#logger.info(
+            `${this.ffmpegName} still running after SIGTERM. Sending SIGKILL`,
+          );
+          this.#processHandle?.kill('SIGKILL');
+        }
+      }, 15_000);
+    }
   }
 
   get ffmpegPath() {
