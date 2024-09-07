@@ -1,13 +1,13 @@
 import type { Tag } from '@tunarr/types';
 import { isError, isString, round } from 'lodash-es';
+import { withDb } from '../dao/dataSource.js';
 import { Maybe } from '../types/util.js';
+import { isNonEmptyString } from '../util/index.js';
 import {
   LogLevels,
   Logger,
   LoggerFactory,
 } from '../util/logging/LoggerFactory.js';
-import { withDb } from '../dao/dataSource.js';
-import { isNonEmptyString } from '../util/index.js';
 
 // Set of all of the possible Task IDs
 export type TaskId =
@@ -20,7 +20,7 @@ export abstract class Task<Data = unknown> {
   protected logger: Logger;
   private onCompleteListeners = new Set<() => void>();
   private running_ = false;
-  private _logLevel: LogLevels = 'debug';
+  private _logLevel: LogLevels = 'trace';
 
   protected hasRun: boolean = false;
   protected result: Maybe<Data>;
