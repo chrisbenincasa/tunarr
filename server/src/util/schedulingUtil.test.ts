@@ -1,6 +1,6 @@
 import { EverySchedule } from '@tunarr/types/schemas';
 import dayjs from './dayjs';
-import { parseEveryScheduleRule } from './schedulingUtil';
+import { scheduleRuleToCronString } from './schedulingUtil';
 test('should parse every schedules', () => {
   const schedule: EverySchedule = {
     type: 'every',
@@ -9,5 +9,5 @@ test('should parse every schedules', () => {
     unit: 'hour',
   };
 
-  expect(parseEveryScheduleRule(schedule)).toEqual('0 4-23 * * *');
+  expect(scheduleRuleToCronString(schedule)).toEqual('0 4-23 * * *');
 });

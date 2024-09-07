@@ -69,6 +69,7 @@
     "random-js": "2.1.0",
     "reflect-metadata": "^0.2.2",
     "retry": "^0.13.1",
+    "sonic-boom": "3.7.0",
     "tslib": "^2.6.2",
     "uuid": "^9.0.1",
     "yargs": "^17.7.2",

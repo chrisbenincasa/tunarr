@@ -134,3 +134,5 @@ export const ScheduleSchema = z.discriminatedUnion('type', [
   CronScheduleSchema,
   EveryScheduleSchema,
 ]);
+
+export type Schedule = z.infer<typeof ScheduleSchema>;

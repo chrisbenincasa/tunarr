@@ -233,6 +233,27 @@ class LoggerFactoryImpl {
     // We can only add these streams post-initialization because they
     // require configuration.
     if (!isUndefined(this.settingsDB)) {
+      // TODO Expose this in the UI with configuration
+      // const dest = new RollingLogDestination({
+      //   fileName: join(
+      //     this.settingsDB.systemSettings().logging.logsDirectory,
+      //     'tunarr.log',
+      //   ),
+      //   maxSizeBytes: 10000,
+      //   fileLimit: {
+      //     count: 3,
+      //   },
+      //   destinationOpts: {
+      //     mkdir: true,
+      //     append: true,
+      //   },
+      // });
+
+      // streams.push({
+      //   stream: dest.initDestination(),
+      //   level: logLevel,
+      // });
+
       streams.push({
         stream: pino.destination({
           dest: join(
