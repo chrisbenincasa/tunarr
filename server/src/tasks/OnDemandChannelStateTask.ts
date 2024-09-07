@@ -1,10 +1,10 @@
 import { Tag } from '@tunarr/types';
-import { Task, TaskId } from './Task';
-import { ChannelDB } from '../dao/channelDb';
-import { values } from 'lodash-es';
-import { ActiveChannelManager } from '../stream/ActiveChannelManager';
-import { OnDemandChannelService } from '../services/OnDemandChannelService';
 import dayjs from 'dayjs';
+import { values } from 'lodash-es';
+import { ChannelDB } from '../dao/channelDb';
+import { OnDemandChannelService } from '../services/OnDemandChannelService';
+import { ActiveChannelManager } from '../stream/ActiveChannelManager';
+import { Task, TaskId } from './Task';
 
 /**
  * Checks all on-demand channels for whether there are active watchers.
@@ -21,7 +21,6 @@ export class OnDemandChannelStateTask extends Task {
     super();
     this.#channelDB = channelDB;
     this.#onDemandService = new OnDemandChannelService(this.#channelDB);
-    this.logLevel = 'debug';
   }
 
   protected async runInternal(): Promise<unknown> {
