@@ -7,6 +7,7 @@ import {
   PlexMusicTrack,
   isPlexMusicTrack,
 } from '@tunarr/types/plex';
+import { Selectable } from 'kysely';
 import {
   find,
   first,
@@ -17,21 +18,19 @@ import {
   replace,
   trimEnd,
 } from 'lodash-es';
-import { MediaSource } from '../../dao/direct/types.gen';
-import { PlexApiClient } from '../../external/plex/PlexApiClient';
-import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory';
-import { Nullable } from '../../types/util';
-import { Logger, LoggerFactory } from '../../util/logging/LoggerFactory';
-import { PlexStream } from '../types';
-import { StreamDetails } from '../types';
-import { attempt, isNonEmptyString } from '../../util';
-import { ContentBackedStreamLineupItem } from '../../dao/derived_types/StreamLineup.js';
-import { SettingsDB, getSettings } from '../../dao/settings.js';
-import { makeLocalUrl } from '../../util/serverUtil.js';
-import { ProgramDB } from '../../dao/programDB';
 import { ProgramExternalIdType } from '../../dao/custom_types/ProgramExternalIdType';
+import { ContentBackedStreamLineupItem } from '../../dao/derived_types/StreamLineup.js';
+import { MediaSource } from '../../dao/direct/types.gen';
+import { ProgramDB } from '../../dao/programDB';
+import { SettingsDB, getSettings } from '../../dao/settings.js';
 import { isQueryError, isQuerySuccess } from '../../external/BaseApiClient.js';
-import { Selectable } from 'kysely';
+import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory';
+import { PlexApiClient } from '../../external/plex/PlexApiClient';
+import { Nullable } from '../../types/util';
+import { attempt, isNonEmptyString } from '../../util';
+import { Logger, LoggerFactory } from '../../util/logging/LoggerFactory';
+import { makeLocalUrl } from '../../util/serverUtil.js';
+import { PlexStream, StreamDetails } from '../types';
 
 // The minimum fields we need to get stream details about an item
 type PlexItemStreamDetailsQuery = Pick<
@@ -256,6 +255,7 @@ export class PlexStreamDetails {
       streamDetails.videoHeight = videoStream.height;
       streamDetails.videoWidth = videoStream.width;
       streamDetails.videoBitDepth = videoStream.bitDepth;
+      streamDetails.videoStreamIndex = videoStream.index?.toString() ?? '0';
       streamDetails.pixelP = 1;
       streamDetails.pixelQ = 1;
     }

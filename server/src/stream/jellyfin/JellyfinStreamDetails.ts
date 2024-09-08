@@ -1,20 +1,27 @@
+import { JellyfinItem } from '@tunarr/types/jellyfin';
+import { Selectable } from 'kysely';
 import {
+  attempt,
   find,
   first,
-  isNull,
-  replace,
-  trimEnd,
-  isUndefined,
-  attempt,
-  isError,
   isEmpty,
+  isError,
+  isNull,
+  isUndefined,
+  replace,
+  takeWhile,
+  trimEnd,
   trimStart,
 } from 'lodash-es';
+import { ContentBackedStreamLineupItem } from '../../dao/derived_types/StreamLineup.js';
 import { MediaSource } from '../../dao/direct/types.gen.js';
+import { ProgramType } from '../../dao/entities/Program.js';
 import { ProgramDB } from '../../dao/programDB.js';
 import { SettingsDB } from '../../dao/settings.js';
-import { JellyfinApiClient } from '../../external/jellyfin/JellyfinApiClient.js';
+import { isQueryError } from '../../external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.js';
+import { JellyfinApiClient } from '../../external/jellyfin/JellyfinApiClient.js';
+import { Nullable } from '../../types/util.js';
 import {
   isDefined,
   isNonEmptyString,
@@ -22,14 +29,7 @@ import {
 } from '../../util/index.js';
 import { Logger, LoggerFactory } from '../../util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '../../util/serverUtil.js';
-import { PlexStream } from '../types.js';
-import { StreamDetails } from '../types.js';
-import { ContentBackedStreamLineupItem } from '../../dao/derived_types/StreamLineup.js';
-import { Nullable } from '../../types/util.js';
-import { isQueryError } from '../../external/BaseApiClient.js';
-import { JellyfinItem } from '@tunarr/types/jellyfin';
-import { ProgramType } from '../../dao/entities/Program.js';
-import { Selectable } from 'kysely';
+import { PlexStream, StreamDetails } from '../types.js';
 
 // The minimum fields we need to get stream details about an item
 // TODO: See if we need separate types for JF and Plex and what is really necessary here
@@ -162,13 +162,13 @@ export class JellyfinStreamDetails {
     streamDetails.serverPath = nullToUndefined(firstMediaSource?.Id);
     streamDetails.directFilePath = nullToUndefined(firstMediaSource?.Path);
 
-    // const firstStream = firstPart?.Stream;
-    // if (isUndefined(firstStream)) {
-    //   this.logger.error(
-    //     'Could not extract a stream for Jellyfin item ID = %s',
-    //     item.externalKey,
-    //   );
-    // }
+    // Jellyfin orders media streams with external ones first
+    // We count these and then use the count as the offset for the
+    // actual indexes of the embedded streams.
+    const externalStreamCount = takeWhile(
+      firstMediaSource?.MediaStreams,
+      (s) => s.IsExternal,
+    ).length;
 
     const videoStream = find(
       firstMediaSource?.MediaStreams,
@@ -193,6 +193,12 @@ export class JellyfinStreamDetails {
       streamDetails.videoHeight = nullToUndefined(videoStream.Height);
       streamDetails.videoWidth = nullToUndefined(videoStream.Width);
       streamDetails.videoBitDepth = nullToUndefined(videoStream.BitDepth);
+      if (isDefined(videoStream.Index)) {
+        const index = videoStream.Index - externalStreamCount;
+        if (index >= 0) {
+          streamDetails.videoStreamIndex = index.toString();
+        }
+      }
       streamDetails.pixelP = 1;
       streamDetails.pixelQ = 1;
     }
@@ -200,8 +206,13 @@ export class JellyfinStreamDetails {
     if (isDefined(audioStream)) {
       streamDetails.audioChannels = nullToUndefined(audioStream.Channels);
       streamDetails.audioCodec = nullToUndefined(audioStream.Codec);
-      streamDetails.audioIndex =
-        nullToUndefined(audioStream.Index?.toString()) ?? 'a';
+      if (isDefined(audioStream.Index)) {
+        const index = audioStream.Index - externalStreamCount;
+        if (index >= 0) {
+          streamDetails.audioIndex = index.toString();
+        }
+      }
+      streamDetails.audioIndex ??= 'a';
     }
 
     if (isUndefined(videoStream) && isUndefined(audioStream)) {

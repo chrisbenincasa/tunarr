@@ -926,12 +926,6 @@ export class ChannelDB {
 
   async saveLineup(channelId: string, newLineup: Omit<Lineup, 'lastUpdated'>) {
     const db = await this.getFileDb(channelId);
-    // if (newLineup.items.length === 0) {
-    //   newLineup.items.push({
-    //     type: 'offline',
-    //     durationMs: 1000 * 60 * 60 * 24 * 30,
-    //   });
-    // }
     newLineup.startTimeOffsets = reduce(
       newLineup.items,
       (acc, item, index) => [...acc, acc[index] + item.durationMs],
