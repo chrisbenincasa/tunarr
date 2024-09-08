@@ -369,6 +369,9 @@ export class FFMPEG {
       '-hide_banner',
       '-loglevel',
       'error',
+      '-nostats',
+      '-fflags',
+      '+genpts+discardcorrupt+igndts',
       '-readrate',
       '1',
       '-i',
@@ -884,7 +887,11 @@ export class FFMPEG {
       if (currentVideo !== '[video]') {
         filterComplex += videoComplex;
       } else {
-        currentVideo = `${videoFile}:${videoIndex}`;
+        currentVideo = `${videoFile}:${videoIndex}${
+          isNonEmptyString(streamStats?.videoStreamIndex)
+            ? ':' + streamStats.videoStreamIndex
+            : ''
+        }`;
       }
     }
     // same with audio:
