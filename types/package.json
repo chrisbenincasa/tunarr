@@ -4,11 +4,11 @@
   "description": "Type definitions and schemas shared between server and web",
   "private": true,
   "scripts": {
-    "bundle": "tsup",
-    "build": "tsup --dts",
+    "bundle": "tsc --emitDeclarationOnly --declaration",
+    "build": "tsc",
     "clean": "rimraf build",
-    "dev": "tsup --watch",
-    "build-dev": "tsup --watch"
+    "dev": "tsc --emitDeclarationOnly --declaration --watch",
+    "build-dev": "tsc --emitDeclarationOnly --declaration --watch"
   },
   "main": "./build/src/index.js",
   "module": "./build/src/index.js",
@@ -31,25 +31,25 @@
   },
   "exports": {
     ".": {
-      "types": "./build/index.d.ts",
-      "default": "./build/index.js"
+      "types": "./build/src/index.d.ts",
+      "default": "./build/src/index.js"
     },
     "./package.json": "./package.json",
     "./schemas": {
-      "types": "./build/schemas/index.d.ts",
-      "default": "./build/schemas/index.js"
+      "types": "./build/src/schemas/index.d.ts",
+      "default": "./build/src/schemas/index.js"
     },
     "./plex": {
-      "types": "./build/plex/index.d.ts",
-      "default": "./build/plex/index.js"
+      "types": "./build/src/plex/index.d.ts",
+      "default": "./build/src/plex/index.js"
     },
     "./jellyfin": {
-      "types": "./build/jellyfin/index.d.ts",
-      "default": "./build/jellyfin/index.js"
+      "types": "./build/src/jellyfin/index.d.ts",
+      "default": "./build/src/jellyfin/index.js"
     },
     "./api": {
-      "types": "./build/api/index.d.ts",
-      "default": "./build/api/index.js"
+      "types": "./build/src/api/index.d.ts",
+      "default": "./build/src/api/index.js"
     }
   }
 }
