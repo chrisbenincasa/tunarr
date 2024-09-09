@@ -31,11 +31,11 @@ import dayjs, { Dayjs } from 'dayjs';
 import { chain, findIndex, first, isUndefined, map, reject } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import { useState } from 'react';
+import { ZodError } from 'zod';
 import AddProgrammingButton from './AddProgrammingButton.tsx';
 import ChannelProgrammingList from './ChannelProgrammingList.tsx';
 import { ChannelProgrammingSort } from './ChannelProgrammingSort.tsx';
 import { ChannelProgrammingTools } from './ChannelProgrammingTools.tsx';
-import { ZodError } from 'zod';
 
 type MutateArgs = {
   channelId: string;
@@ -263,6 +263,7 @@ export function ChannelProgrammingConfig() {
         </Stack>
 
         <ChannelProgrammingList
+          type="selector"
           virtualListProps={{
             width: '100%',
             height: 600,

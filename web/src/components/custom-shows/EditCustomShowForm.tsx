@@ -1,22 +1,19 @@
-import { isNonEmptyString } from '@/helpers/util.ts';
 import { useTunarrApi } from '@/hooks/useTunarrApi';
 import { queryClient } from '@/queryClient';
+import useStore from '@/store';
 import {
   clearCurrentCustomShow,
+  moveProgramInCustomShow,
   updateCurrentCustomShow,
 } from '@/store/customShowEditor/actions.ts';
 import { removeCustomShowProgram } from '@/store/entityEditor/util';
 import { UICustomShowProgram } from '@/types';
 import { Tv } from '@mui/icons-material';
-import DeleteIcon from '@mui/icons-material/Delete';
 import {
   Box,
   Button,
   Divider,
-  IconButton,
-  List,
-  ListItem,
-  ListItemText,
+  Paper,
   Stack,
   TextField,
   Tooltip,
@@ -24,11 +21,10 @@ import {
 } from '@mui/material';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { createExternalId } from '@tunarr/shared';
 import { CustomShow } from '@tunarr/types';
-import { isEmpty } from 'lodash-es';
 import { useCallback, useEffect } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import ChannelProgrammingList from '../channel_config/ChannelProgrammingList';
 
 type CustomShowForm = {
   id?: string;
@@ -48,13 +44,16 @@ export function EditCustomShowsForm({
 }: Props) {
   const apiClient = useTunarrApi();
   const navigate = useNavigate();
+  const customShowProgrammingChanged = useStore(
+    (s) => s.customShowEditor.dirty.programs,
+  );
 
   const {
     control,
     reset,
     handleSubmit,
     getValues,
-    formState: { isValid },
+    formState: { isValid, isDirty },
   } = useForm<CustomShowForm>({
     defaultValues: {
       name: customShow.name ?? '',
@@ -104,10 +103,6 @@ export function EditCustomShowsForm({
     saveShowMutation.mutate({ ...data, programs: customShowPrograms });
   };
 
-  const deleteProgramAtIndex = useCallback((idx: number) => {
-    removeCustomShowProgram(idx);
-  }, []);
-
   const navToProgramming = () => {
     if (isNew) {
       updateCurrentCustomShow(getValues());
@@ -118,74 +113,6 @@ export function EditCustomShowsForm({
         : `/library/custom-shows/$customShowId/programming`,
       params: { customShowId: customShow?.id },
     }).catch(console.warn);
-  };
-
-  const renderPrograms = () => {
-    return !isEmpty(customShowPrograms) ? (
-      customShowPrograms.map((p, idx) => {
-        let id: string;
-        let title: string;
-
-        switch (p.type) {
-          case 'custom':
-            id = p.id;
-
-            // Display the program title when available
-            if (p.program && p.program.title) {
-              title = p.program.title;
-            } else {
-              title = 'Custom';
-            }
-            break;
-          case 'content':
-            if (p.episodeTitle) {
-              title = `${p.title} - ${p.episodeTitle}`;
-            } else {
-              title = p.title;
-            }
-            if (p.persisted) {
-              id = p.id!;
-            } else if (
-              isNonEmptyString(p.externalSourceType) &&
-              isNonEmptyString(p.externalSourceName) &&
-              isNonEmptyString(p.externalKey)
-            ) {
-              id = createExternalId(
-                p.externalSourceType,
-                p.externalSourceName,
-                p.externalKey,
-              );
-            } else {
-              id = 'unknown';
-            }
-            break;
-        }
-
-        const key = `${p.type}|${id}`;
-
-        return (
-          <ListItem
-            key={key}
-            secondaryAction={
-              <IconButton
-                onClick={() => deleteProgramAtIndex(idx)}
-                edge="end"
-                aria-label="delete"
-              >
-                <DeleteIcon />
-              </IconButton>
-            }
-          >
-            <ListItemText
-              primary={title}
-              sx={{ fontStyle: p.persisted ? 'normal' : 'italic' }}
-            />
-          </ListItem>
-        );
-      })
-    ) : (
-      <Typography align="center">No media added yet.</Typography>
-    );
   };
 
   return (
@@ -219,11 +146,19 @@ export function EditCustomShowsForm({
               </Button>
             </Tooltip>
           </Box>
-          <Box display="flex">
-            <Box sx={{ flex: 1, maxHeight: 400, overflowY: 'auto' }}>
-              <List dense>{renderPrograms()}</List>
-            </Box>
-          </Box>
+          <Paper>
+            <ChannelProgrammingList
+              type="selector"
+              programListSelector={(s) => s.customShowEditor.programList}
+              moveProgram={moveProgramInCustomShow}
+              deleteProgram={removeCustomShowProgram}
+              virtualListProps={{
+                width: '100%',
+                height: 600,
+                itemSize: 35, //smallViewport ? 70 : 35,
+              }}
+            />
+          </Paper>
         </Box>
         <Stack
           spacing={2}
@@ -236,6 +171,7 @@ export function EditCustomShowsForm({
             disabled={
               saveShowMutation.isPending ||
               !isValid ||
+              (!isDirty && !customShowProgrammingChanged) ||
               customShowPrograms.length === 0
             }
             variant="contained"
