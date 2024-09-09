@@ -13,7 +13,16 @@ import {
   isPlexDirectory,
 } from '@tunarr/types/plex';
 import { MediaSourceId } from '@tunarr/types/schemas';
-import { has, isArray, isUndefined, map, reject, some, uniq } from 'lodash-es';
+import {
+  flatMap,
+  has,
+  isArray,
+  isUndefined,
+  map,
+  reject,
+  some,
+  uniq,
+} from 'lodash-es';
 import useStore from '..';
 import {
   buildPlexFilterKey,
@@ -206,19 +215,37 @@ export const addSelectedMedia = (media: SelectedMedia | SelectedMedia[]) =>
 export const removeSelectedMedia = (media: SelectedMedia[]) =>
   useStore.setState((state) => {
     const grouped = groupSelectedMedia(media);
-    const it = forSelectedMediaType({
-      plex: (plex) =>
-        some(grouped.plex, { serverId: plex.serverId, id: plex.id }),
-      jellyfin: (jf) =>
-        some(grouped.jellyfin, { serverId: jf.serverId, id: jf.id }),
-      'custom-show': (cs) =>
-        some(grouped['custom-show'], {
-          customShowId: cs.customShowId,
-        }),
-      default: false,
-    });
 
-    state.selectedMedia = reject(state.selectedMedia, it);
+    const children = new Set<string>(
+      flatMap(
+        media,
+        forSelectedMediaType<string[]>({
+          plex: (plex) => {
+            const items = state.contentHierarchyByServer[plex.serverId];
+            if (items) {
+              return items[plex.id];
+            }
+            return [];
+          },
+          default: [] as string[],
+        }),
+      ),
+    );
+    console.log(children);
+    state.selectedMedia = reject(
+      state.selectedMedia,
+      forSelectedMediaType({
+        plex: (plex) =>
+          some(grouped.plex, { serverId: plex.serverId, id: plex.id }),
+        jellyfin: (jf) =>
+          some(grouped.jellyfin, { serverId: jf.serverId, id: jf.id }),
+        'custom-show': (cs) =>
+          some(grouped['custom-show'], {
+            customShowId: cs.customShowId,
+          }),
+        default: false,
+      }),
+    );
   });
 
 export const removePlexSelectedMedia = (

@@ -1,3 +1,4 @@
+import { useIsSelected } from '@/hooks/useIsSelected.ts';
 import {
   addSelectedMedia,
   removeSelectedMedia,
@@ -15,6 +16,7 @@ import {
   useTheme,
 } from '@mui/material';
 import { MediaSourceSettings } from '@tunarr/types';
+import { MediaSourceId } from '@tunarr/types/schemas';
 import { filter, isUndefined, some } from 'lodash-es';
 import React, {
   ForwardedRef,
@@ -60,6 +62,7 @@ export type GridItemMetadata = {
 type Props<T> = {
   item: T;
   itemSource: MediaSourceSettings['type'];
+  mediaSourceId: MediaSourceId;
   // extractors: GridItemMetadataExtractors<T>;
   metadata: GridItemMetadata;
   style?: React.CSSProperties;
@@ -109,7 +112,6 @@ const MediaGridItemInner = <T,>(
   );
 
   const handleClick = useCallback(() => {
-    // moveModal(index, item);
     onClick(item);
   }, [item, onClick]);
 
@@ -118,9 +120,14 @@ const MediaGridItemInner = <T,>(
     (sm) => sm.type === props.itemSource && sm.id === itemId,
   );
 
+  const isSelected2 = useIsSelected(
+    props.mediaSourceId,
+    props.itemSource,
+    itemId,
+  );
+
   const handleItem = useCallback(
     (e: MouseEvent<HTMLDivElement | HTMLButtonElement>) => {
-      console.log('handle');
       e.stopPropagation();
       if (isSelected) {
         removeSelectedMedia([selectedMediaItem]);
@@ -232,7 +239,7 @@ const MediaGridItemInner = <T,>(
                   handleItem(event)
                 }
               >
-                {isSelected ? <CheckCircle /> : <RadioButtonUnchecked />}
+                {isSelected2 ? <CheckCircle /> : <RadioButtonUnchecked />}
               </IconButton>
             }
             actionPosition="right"

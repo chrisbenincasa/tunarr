@@ -195,6 +195,7 @@ export const PlexGridItem = memo(
             {...props}
             key={props.item.guid}
             itemSource="plex"
+            mediaSourceId={currentServer.id}
             ref={ref}
             metadata={metadata}
             onClick={handleItemClick}

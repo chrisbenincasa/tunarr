@@ -79,6 +79,9 @@ export interface ProgrammingListingsState {
   // Holds the actual metadata for items, including directories (i.e. Plex libraries)
   knownMediaByServer: KnownMediaMap;
   selectedMedia: SelectedMedia[];
+  // List of fully enumerated selected media.
+  // This list is unique by ID, per media source
+  flattenedSelectedMedia: SelectedMedia[];
   plexSearch: PlexSearch & {
     urlFilter?: string; // Validated PlexFilter ready to be used as a request query param
   };
@@ -89,6 +92,7 @@ export const createProgrammingListingsState: StateCreator<
 > = () => ({
   knownMediaByServer: {},
   selectedMedia: [],
+  flattenedSelectedMedia: [],
   contentHierarchyByServer: {},
   plexSearch: {},
 });
