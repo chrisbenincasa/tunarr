@@ -350,14 +350,13 @@ export default function ProgramDetailsDialog({
                   }}
                   onError={onError}
                 />
-                {(thumbLoadState === 'loading' ||
-                  thumbLoadState === 'error') && (
+                {thumbLoadState !== 'success' && (
                   <Skeleton
                     variant="rectangular"
                     width={smallViewport ? '100%' : imageWidth}
                     height={
                       program.type === 'content' && program.subtype === 'movie'
-                        ? 500
+                        ? 360
                         : smallViewport
                         ? undefined
                         : 140
