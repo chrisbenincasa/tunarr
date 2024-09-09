@@ -48,7 +48,7 @@ export class CustomShowDB {
             'content.tvShow',
             'content.season',
           ],
-          orderBy: { index: 'desc' },
+          orderBy: { index: 'asc' },
         },
       );
 
