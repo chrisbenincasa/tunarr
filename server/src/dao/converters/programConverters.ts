@@ -1,4 +1,5 @@
 import { Loaded } from '@mikro-orm/core';
+import { seq } from '@tunarr/shared/util';
 import {
   ChannelProgram,
   ContentProgram,
@@ -8,6 +9,10 @@ import {
   externalIdEquals,
 } from '@tunarr/types';
 import {
+  isValidMultiExternalIdType,
+  isValidSingleExternalIdType,
+} from '@tunarr/types/schemas';
+import {
   compact,
   find,
   isNil,
@@ -16,6 +21,7 @@ import {
   merge,
   uniqWith,
 } from 'lodash-es';
+import { DeepPartial, MarkRequired } from 'ts-essentials';
 import { isPromise } from 'util/types';
 import {
   isDefined,
@@ -31,20 +37,14 @@ import {
   isOfflineItem,
   isRedirectItem,
 } from '../derived_types/Lineup.js';
-import { Channel } from '../entities/Channel.js';
-import { Program, ProgramType } from '../entities/Program.js';
 import {
-  Program as RawProgram,
   Channel as RawChannel,
+  Program as RawProgram,
 } from '../direct/derivedTypes.js';
 import { ProgramExternalId as RawProgramExternalId } from '../direct/types.gen.js';
+import { Channel } from '../entities/Channel.js';
+import { Program, ProgramType } from '../entities/Program.js';
 import { ProgramExternalId } from '../entities/ProgramExternalId.js';
-import {
-  isValidMultiExternalIdType,
-  isValidSingleExternalIdType,
-} from '@tunarr/types/schemas';
-import { seq } from '@tunarr/shared/util';
-import { DeepPartial, MarkRequired } from 'ts-essentials';
 
 type ContentProgramConversionOptions = {
   skipPopulate: boolean | Partial<Record<'externalIds' | 'grouping', boolean>>;
@@ -335,6 +335,9 @@ export class ProgramConverter {
         episodeNumber: nullToUndefined(program.episode),
         episodeTitle: program.title,
         title: nullToUndefined(program.tvShow?.title ?? program.showTitle),
+        index: nullToUndefined(program.episode),
+        parentIndex: nullToUndefined(program.tvSeason?.index),
+        grandparentIndex: nullToUndefined(program.tvShow?.index),
       };
     } else if (program.type === ProgramType.Track.toString()) {
       extraFields = {
@@ -344,6 +347,10 @@ export class ProgramConverter {
         artistId: nullToUndefined(
           program.trackArtist?.uuid ?? program.artistUuid,
         ),
+        // HACK: Tracks save their index under the episode field
+        index: nullToUndefined(program.episode),
+        parentIndex: nullToUndefined(program.trackAlbum?.index),
+        grandparentIndex: nullToUndefined(program.trackArtist?.index),
       };
     }
 

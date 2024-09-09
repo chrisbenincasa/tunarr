@@ -30,6 +30,7 @@ import {
   FixedSizeListProps,
   ListChildComponentProps,
 } from 'react-window';
+import { MarkRequired } from 'ts-essentials';
 import { betterHumanize } from '../../helpers/dayjs.ts';
 import {
   alternateColors,
@@ -58,32 +59,50 @@ const MobileListItemTimeFormatter = new Intl.DateTimeFormat(undefined, {
   timeStyle: 'short',
 });
 
-type Props = {
-  // The caller can pass the list of programs to render, if they don't
-  // want to render them from state
-  programList?: UIChannelProgram[];
-  // Otherwise, we can render programs from state given a selector function
-  programListSelector?: (s: State) => UIChannelProgram[];
+type CommonProps = {
+  moveProgram?: (originalIndex: number, toIndex: number) => void;
+  deleteProgram?: (index: number) => void;
   // If given, the list will be rendered using react-window
   virtualListProps?: Omit<FixedSizeListProps, 'itemCount' | 'children'>;
   enableDnd?: boolean;
   showProgramCount?: boolean;
 };
 
-const defaultProps: Props = {
+type DirectPassedProgramProps = {
+  type: 'direct';
+  programList: UIChannelProgram[];
+} & CommonProps;
+
+type SelectorBasedProgramListProps = {
+  type: 'selector';
+  programListSelector?: (s: State) => UIChannelProgram[];
+} & CommonProps;
+
+// The caller can pass the list of programs to render, if they don't
+// want to render them from state
+// Otherwise, we can render programs from state given a selector function
+type Props = DirectPassedProgramProps | SelectorBasedProgramListProps;
+
+const defaultProps: MarkRequired<
+  SelectorBasedProgramListProps,
+  'moveProgram' | 'type' | 'programListSelector' | 'deleteProgram'
+> = {
+  type: 'selector',
   programListSelector: materializedProgramListSelector,
+  moveProgram: moveProgramInCurrentChannel,
+  deleteProgram: deleteProgram,
   enableDnd: true,
   showProgramCount: true,
 };
 
 type ListItemProps = {
-  // originalIndex: number;
   index: number;
   program: UIChannelProgram;
-  startTimeDate: Date;
+  startTimeDate?: Date;
   style?: CSSProperties;
   moveProgram: (id: number, to: number) => void;
   findProgram: (id: number) => { index: number };
+  deleteProgram: (index: number) => void;
   enableDrag: boolean;
   onInfoClicked: (program: ChannelProgram) => void;
   onEditClicked: (
@@ -155,6 +174,7 @@ const ProgramListItem = ({
   index,
   startTimeDate,
   moveProgram,
+  deleteProgram,
   findProgram,
   enableDrag,
   onInfoClicked,
@@ -191,10 +211,11 @@ const ProgramListItem = ({
   const theme = useTheme();
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const startTime = smallViewport
-    ? MobileListItemTimeFormatter.format(startTimeDate)
-    : ListItemTimeFormatter.format(startTimeDate);
-  // console.log(ListItemTimeFormatter.formatToParts(startTimeDate));
+  const startTime = startTimeDate
+    ? smallViewport
+      ? MobileListItemTimeFormatter.format(startTimeDate)
+      : ListItemTimeFormatter.format(startTimeDate)
+    : null;
 
   const handleInfoButtonClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -204,7 +225,7 @@ const ProgramListItem = ({
   // const dayBoundary = startTimes[idx + 1].isAfter(startTimes[idx], 'day');
 
   let title = `${programListItemTitleFormatter(program)}`;
-  if (!smallViewport) {
+  if (!smallViewport && startTime) {
     title += ` - ${startTime}`;
   }
 
@@ -327,16 +348,23 @@ type GuideTime = {
   stop?: Dayjs;
 };
 
-export default function ChannelProgrammingList({
-  programList: passedProgramList,
-  programListSelector = defaultProps.programListSelector,
-  virtualListProps,
-  showProgramCount = defaultProps.showProgramCount,
-  enableDnd = defaultProps.enableDnd,
-}: Props) {
+export default function ChannelProgrammingList(props: Props) {
+  const {
+    deleteProgram = defaultProps.deleteProgram,
+    moveProgram = defaultProps.moveProgram,
+    virtualListProps,
+    showProgramCount = defaultProps.showProgramCount,
+    enableDnd = defaultProps.enableDnd,
+  } = props;
   const channel = useStore((s) => s.channelEditor.currentEntity);
-  const storeProgramList = useSuspendedStore(programListSelector!);
-  const programList = passedProgramList ?? storeProgramList;
+  // We have to use props.type here to get proper type narrowing
+  const selector =
+    props.type === 'selector'
+      ? props.programListSelector ?? defaultProps.programListSelector
+      : () => [];
+  const storeProgramList = useSuspendedStore(selector);
+  const programList =
+    props.type === 'selector' ? storeProgramList : props.programList;
   const [focusedProgramDetails, setFocusedProgramDetails] = useState<
     ChannelProgram | undefined
   >();
@@ -352,28 +380,14 @@ export default function ChannelProgrammingList({
     [programList],
   );
 
-  const moveProgram = useCallback(
-    (originalIndex: number, toIndex: number) => {
-      if (passedProgramList) {
-        // Not sure if this works right or what
-        const currIndex = findIndex(passedProgramList, { originalIndex });
-        if (currIndex >= 0) {
-          const items = passedProgramList.splice(currIndex, 1);
-          passedProgramList.splice(toIndex, 1, ...items);
-        }
-      } else {
-        moveProgramInCurrentChannel(originalIndex, toIndex);
-      }
-    },
-    [passedProgramList],
-  );
-
   const openDetailsDialog = useCallback(
-    (program: ChannelProgram, startTimeDate: Date) => {
+    (program: ChannelProgram, startTimeDate?: Date) => {
       setFocusedProgramDetails(program);
       const start = dayjs(startTimeDate);
-      const stop = start.add(program.duration);
-      setStartStop({ start, stop });
+      if (startTimeDate) {
+        const stop = start.add(program.duration);
+        setStartStop({ start, stop });
+      }
     },
     [],
   );
@@ -389,9 +403,9 @@ export default function ChannelProgrammingList({
 
   const renderProgram = (idx: number, style?: CSSProperties) => {
     const program = programList[idx];
-    const startTimeDate = dayjs(
-      channel!.startTime + program.startTimeOffset,
-    ).toDate();
+    const startTimeDate = program.startTimeOffset
+      ? dayjs(channel!.startTime + program.startTimeOffset).toDate()
+      : undefined;
     return (
       <ProgramListItem
         index={idx}
@@ -400,6 +414,7 @@ export default function ChannelProgrammingList({
         startTimeDate={startTimeDate}
         moveProgram={moveProgram}
         findProgram={findProgram}
+        deleteProgram={deleteProgram}
         enableDrag={!!enableDnd}
         onInfoClicked={() => openDetailsDialog(program, startTimeDate)}
         onEditClicked={openEditDialog}

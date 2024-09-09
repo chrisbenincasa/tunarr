@@ -19,6 +19,8 @@ import {
   TextField,
   Tooltip,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { Link as RouterLink } from '@tanstack/react-router';
 import { scheduleRandomSlots } from '@tunarr/shared';
@@ -44,6 +46,8 @@ import {
   round,
   some,
 } from 'lodash-es';
+import { useSnackbar } from 'notistack';
+import pluralize from 'pluralize';
 import React, {
   Fragment,
   useCallback,
@@ -76,8 +80,6 @@ import {
   updateCurrentChannel,
 } from '../../store/channelEditor/actions';
 import { UIChannelProgram, isUIRedirectProgram } from '../../types';
-import { useSnackbar } from 'notistack';
-import pluralize from 'pluralize';
 
 dayjs.extend(duration);
 
@@ -557,6 +559,8 @@ export default function RandomSlotEditorPage() {
 
   const updateLineupMutation = useUpdateLineup();
   const snackbar = useSnackbar();
+  const theme = useTheme();
+  const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
 
   const programOptions: ProgramOption[] = useMemo(() => {
     const contentPrograms = filter(newLineup, isContentProgram);
@@ -853,16 +857,30 @@ export default function RandomSlotEditorPage() {
         <Typography sx={{ pb: 1 }}>Programming Preview</Typography>
 
         <Divider />
-        <ChannelProgrammingList
-          programList={generatedList ? zipWithIndex(generatedList) : undefined}
-          enableDnd={false}
-          virtualListProps={{
-            width: '100%',
-            height: 400,
-            itemSize: 35,
-            overscanCount: 5,
-          }}
-        />
+        {generatedList ? (
+          <ChannelProgrammingList
+            type={'direct'}
+            programList={zipWithIndex(generatedList)}
+            enableDnd={false}
+            virtualListProps={{
+              width: '100%',
+              height: 400,
+              itemSize: smallViewport ? 70 : 35,
+              overscanCount: 5,
+            }}
+          />
+        ) : (
+          <ChannelProgrammingList
+            type="selector"
+            enableDnd={false}
+            virtualListProps={{
+              width: '100%',
+              height: 400,
+              itemSize: smallViewport ? 70 : 35,
+              overscanCount: 5,
+            }}
+          />
+        )}
       </PaddedPaper>
       <UnsavedNavigationAlert isDirty={isDirty} />
       <Box sx={{ display: 'flex', justifyContent: 'end', pt: 1, columnGap: 1 }}>

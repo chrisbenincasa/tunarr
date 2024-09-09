@@ -1,3 +1,5 @@
+import { useJellyfinUserLibraries } from '@/hooks/jellyfin/useJellyfinApi.ts';
+import { useKnownMedia } from '@/store/programmingSelector/selectors.ts';
 import {
   Alert,
   Box,
@@ -8,6 +10,8 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
+import { tag } from '@tunarr/types';
+import { JellyfinItem } from '@tunarr/types/jellyfin';
 import { PlexMedia, isPlexDirectory } from '@tunarr/types/plex';
 import {
   capitalize,
@@ -30,14 +34,10 @@ import {
   setProgrammingListLibrary,
   setProgrammingListingServer,
 } from '../../store/programmingSelector/actions.ts';
-import AddPlexServer from '../settings/AddPlexServer.tsx';
+import { AddMediaSourceButton } from '../settings/media_source/AddMediaSourceButton.tsx';
 import { CustomShowProgrammingSelector } from './CustomShowProgrammingSelector.tsx';
-import PlexProgrammingSelector from './PlexProgrammingSelector.tsx';
-import { useJellyfinUserLibraries } from '@/hooks/jellyfin/useJellyfinApi.ts';
 import { JellyfinProgrammingSelector } from './JellyfinProgrammingSelector.tsx';
-import { useKnownMedia } from '@/store/programmingSelector/selectors.ts';
-import { JellyfinItem } from '@tunarr/types/jellyfin';
-import { tag } from '@tunarr/types';
+import PlexProgrammingSelector from './PlexProgrammingSelector.tsx';
 
 const sortJellyfinLibraries = (item: JellyfinItem) => {
   if (item.CollectionType) {
@@ -152,8 +152,8 @@ export default function ProgrammingSelector(_: Props) {
     (newMediaSourceId: string) => {
       if (newMediaSourceId === 'custom-shows') {
         // Not dealing with a server
-        setProgrammingListLibrary({ type: 'custom-show' });
         setProgrammingListingServer(undefined);
+        setProgrammingListLibrary({ type: 'custom-show' });
         setMediaSource(newMediaSourceId);
       } else {
         const server = find(
@@ -207,24 +207,23 @@ export default function ProgrammingSelector(_: Props) {
     }
 
     // TODO: change the wording here to not be Plex-specific
-    if (!mediaSourcesLoading && !selectedServer) {
+    if (!mediaSourcesLoading && !selectedServer && !viewingCustomShows) {
       return (
         <>
           <Typography variant="h6" fontWeight={600} align="left" sx={{ mt: 3 }}>
-            Connect Plex
+            Connect Media Source
           </Typography>
           <Typography sx={{ mb: 3 }} align="left">
-            To use Tunarr, you need to first connect your Plex library. This
-            will allow you to build custom channels with any of your plex
-            content.
+            To use Tunarr, you need to first connect a Plex or Jellyfin library.
+            This will allow you to build custom channels with your content.
           </Typography>
 
           <Alert
             variant="filled"
             severity="error"
-            action={<AddPlexServer title={'Connect Plex'} variant="outlined" />}
+            action={<AddMediaSourceButton />}
           >
-            Plex is not connected.
+            No Media Sources detected.
           </Alert>
         </>
       );
@@ -289,8 +288,7 @@ export default function ProgrammingSelector(_: Props) {
     }
   };
 
-  const hasAnySources =
-    (mediaSources && mediaSources.length > 0) || customShows.length > 0;
+  const hasAnySources = !isEmpty(mediaSources) || !isEmpty(customShows);
 
   return (
     <Box>

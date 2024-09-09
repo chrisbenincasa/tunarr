@@ -1,6 +1,6 @@
 import { emptyEntityEditor } from '@/store/entityEditor/util.ts';
 import { ContentProgram, CustomProgram } from '@tunarr/types';
-import { map, merge } from 'lodash-es';
+import { findIndex, forEach, inRange, map, merge } from 'lodash-es';
 import { forAddedMediaType, zipWithIndex } from '../../helpers/util.ts';
 import { AddedMedia } from '../../types/index.ts';
 import {
@@ -41,6 +41,27 @@ export const setCurrentCustomShow = (
     const zippedPrograms = zipWithIndex(programs);
     customShowEditor.originalProgramList = [...zippedPrograms];
     customShowEditor.programList = [...zippedPrograms];
+  });
+
+export const moveProgramInCustomShow = (
+  originalIndex: number,
+  toIndex: number,
+) =>
+  useStore.setState(({ customShowEditor }) => {
+    const programIdx = findIndex(customShowEditor.programList, {
+      originalIndex,
+    });
+    if (
+      inRange(toIndex, customShowEditor.programList.length) &&
+      programIdx >= 0
+    ) {
+      const item = customShowEditor.programList.splice(programIdx, 1);
+      customShowEditor.programList.splice(toIndex, 0, ...item);
+      forEach(customShowEditor.programList, (program, i) => {
+        program.index = i;
+      });
+      customShowEditor.dirty.programs = true;
+    }
   });
 
 export const updateCurrentCustomShow = (show: Partial<CustomShow>) =>

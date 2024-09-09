@@ -1,3 +1,4 @@
+import { EnrichedJellyfinItem } from '@/hooks/jellyfin/jellyfinHookUtil.ts';
 import { createExternalId } from '@tunarr/shared';
 import { forProgramType, nullToUndefined } from '@tunarr/shared/util';
 import {
@@ -32,7 +33,6 @@ import { EnrichedPlexMedia } from '../../hooks/plex/plexHookUtil.ts';
 import { AddedMedia, UIChannelProgram, UIIndex } from '../../types/index.ts';
 import useStore from '../index.ts';
 import { ChannelEditorState, initialChannelEditorState } from './store.ts';
-import { EnrichedJellyfinItem } from '@/hooks/jellyfin/jellyfinHookUtil.ts';
 
 export const resetChannelEditorState = () =>
   useStore.setState((state) => {
@@ -253,6 +253,7 @@ export const plexMediaToContentProgram = (
     uniqueId,
     type: 'content',
     subtype: media.type,
+    summary: media.summary,
     title:
       media.type === 'episode'
         ? media.grandparentTitle ?? media.title

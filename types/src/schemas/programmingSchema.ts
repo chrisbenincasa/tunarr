@@ -3,13 +3,13 @@ import {
   DynamicContentConfigSchema,
   LineupScheduleSchema,
 } from '../api/Scheduling.js';
+import { JellyfinItem } from '../jellyfin/index.js';
 import {
   PlexEpisodeSchema,
   PlexMovieSchema,
   PlexMusicTrackSchema,
 } from '../plex/index.js';
 import { ChannelIconSchema, ExternalIdSchema } from './utilSchemas.js';
-import { JellyfinItem } from '../jellyfin/index.js';
 
 export const ProgramTypeSchema = z.union([
   z.literal('movie'),
@@ -140,6 +140,10 @@ export const ContentProgramSchema = CondensedContentProgramSchema.extend({
   artistId: z.string().optional(),
   artistName: z.string().optional(),
   albumName: z.string().optional(),
+  // These will eventually replace season/track specific stuff
+  index: z.number().nonnegative().optional(),
+  parentIndex: z.number().nonnegative().optional(),
+  grandparentIndex: z.number().nonnegative().optional(),
   // External source metadata
   externalSourceType: ExternalSourceTypeSchema.optional(),
   externalSourceName: z.string().optional(),

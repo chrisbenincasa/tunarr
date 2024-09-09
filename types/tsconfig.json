@@ -1,5 +1,8 @@
 {
     "compilerOptions": {
+        "rootDirs": [
+            "./src"
+        ],
         "target": "es2022",
         "module": "node16",
         "lib": [
@@ -13,8 +16,7 @@
         "allowSyntheticDefaultImports": true,
         "importHelpers": true,
         "alwaysStrict": true,
-        "sourceMap": false,
-        "inlineSourceMap": true,
+        "sourceMap": true,
         "forceConsistentCasingInFileNames": true,
         "noFallthroughCasesInSwitch": true,
         "noImplicitReturns": true,
@@ -22,11 +24,10 @@
         "noUnusedParameters": true,
         "noImplicitAny": false,
         "noImplicitThis": false,
-        "strictNullChecks": true
+        "strictNullChecks": true,
     },
     "include": [
         "./src/**/*.ts",
-        "__tests__/**/*"
     ],
     "exclude": [
         "./**/*.test.ts",

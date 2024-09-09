@@ -1,5 +1,6 @@
 /// <reference types="vite-plugin-svgr/client" />
 
+import { EnrichedJellyfinItem } from '@/hooks/jellyfin/jellyfinHookUtil.ts';
 import {
   ChannelProgram,
   CondensedChannelProgram,
@@ -16,7 +17,6 @@ import {
 } from '@zodios/core/lib/zodios.types';
 import { type ApiClient } from '../external/api.ts';
 import { EnrichedPlexMedia } from '../hooks/plex/plexHookUtil.ts';
-import { EnrichedJellyfinItem } from '@/hooks/jellyfin/jellyfinHookUtil.ts';
 
 // A program that may or may not exist in the DB yet
 export type EphemeralProgram = Omit<Program, 'id'>;
@@ -42,11 +42,11 @@ export type RequestMethodForAlias<T extends ApiAliases> =
 
 export type UIIndex = { originalIndex: number };
 
-export type HasStartTimeOffset = { startTimeOffset: number };
+export type MaybeHasStartTimeOffset = { startTimeOffset?: number };
 
 export type UICondensedChannelProgram<
   T extends CondensedChannelProgram = CondensedChannelProgram,
-> = T & UIIndex & HasStartTimeOffset;
+> = T & UIIndex & Required<MaybeHasStartTimeOffset>;
 
 export type UICondensedContentProgram =
   UICondensedChannelProgram<CondensedChannelProgram>;
@@ -78,7 +78,7 @@ export const isUICondensedRedirectProgram = (
 // to more specific program types when doing list operations.
 export type UIChannelProgram<T extends ChannelProgram = ChannelProgram> = T &
   UIIndex &
-  HasStartTimeOffset;
+  MaybeHasStartTimeOffset;
 
 export type UIContentProgram = UIChannelProgram<ContentProgram>;
 export type UIFlexProgram = UIChannelProgram<FlexProgram>;

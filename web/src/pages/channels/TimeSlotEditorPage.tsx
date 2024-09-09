@@ -1,3 +1,4 @@
+import { useChannelEditor } from '@/store/selectors.ts';
 import { ArrowBack, Autorenew, Delete } from '@mui/icons-material';
 import AddIcon from '@mui/icons-material/Add';
 import {
@@ -18,6 +19,7 @@ import {
   useTheme,
 } from '@mui/material';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
+import { Link as RouterLink } from '@tanstack/react-router';
 import { dayjsMod, scheduleTimeSlots } from '@tunarr/shared';
 import { ChannelProgram, isContentProgram } from '@tunarr/types';
 import {
@@ -39,6 +41,8 @@ import {
   reject,
   some,
 } from 'lodash-es';
+import { useSnackbar } from 'notistack';
+import pluralize from 'pluralize';
 import { Fragment, useCallback, useMemo, useState } from 'react';
 import {
   Control,
@@ -47,7 +51,6 @@ import {
   useForm,
   useWatch,
 } from 'react-hook-form';
-import { Link as RouterLink } from '@tanstack/react-router';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import ChannelProgrammingList from '../../components/channel_config/ChannelProgrammingList.tsx';
@@ -66,9 +69,6 @@ import {
   updateCurrentChannel,
 } from '../../store/channelEditor/actions.ts';
 import { UIChannelProgram, isUIRedirectProgram } from '../../types/index.ts';
-import { useChannelEditor } from '@/store/selectors.ts';
-import pluralize from 'pluralize';
-import { useSnackbar } from 'notistack';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -810,16 +810,30 @@ export default function TimeSlotEditorPage() {
       <PaddedPaper>
         <Typography sx={{ pb: 1 }}>Programming Preview</Typography>
         <Divider />
-        <ChannelProgrammingList
-          programList={generatedList ? zipWithIndex(generatedList) : undefined}
-          enableDnd={false}
-          virtualListProps={{
-            width: '100%',
-            height: 400,
-            itemSize: smallViewport ? 70 : 35,
-            overscanCount: 5,
-          }}
-        />
+        {generatedList ? (
+          <ChannelProgrammingList
+            type={'direct'}
+            programList={zipWithIndex(generatedList)}
+            enableDnd={false}
+            virtualListProps={{
+              width: '100%',
+              height: 400,
+              itemSize: smallViewport ? 70 : 35,
+              overscanCount: 5,
+            }}
+          />
+        ) : (
+          <ChannelProgrammingList
+            type="selector"
+            enableDnd={false}
+            virtualListProps={{
+              width: '100%',
+              height: 400,
+              itemSize: smallViewport ? 70 : 35,
+              overscanCount: 5,
+            }}
+          />
+        )}
       </PaddedPaper>
       <UnsavedNavigationAlert isDirty={isDirty} />
       <Box sx={{ display: 'flex', justifyContent: 'end', pt: 1, columnGap: 1 }}>
