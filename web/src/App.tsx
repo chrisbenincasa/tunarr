@@ -297,7 +297,7 @@ export function Root({ children }: { children?: React.ReactNode }) {
         <AppBar
           position="fixed"
           sx={{
-            ml: `${drawerWidth}px`,
+            ml: [undefined, `${drawerWidth}px`],
             p: 0,
             zIndex: theme.zIndex.drawer + 1,
           }}
@@ -513,7 +513,7 @@ export function Root({ children }: { children?: React.ReactNode }) {
             flexGrow: 1,
             // height: '100vh', // Uncommenting this breaks any use of scrollTo()
             overflow: 'auto',
-            ml: '60px',
+            ml: [undefined, '60px'],
           }}
         >
           <Toolbar />
