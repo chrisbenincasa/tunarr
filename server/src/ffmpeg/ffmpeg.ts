@@ -956,14 +956,11 @@ export class FFMPEG {
 
     //t should be before -f
     if (artificialBurst) {
-      ffmpegArgs.push(
-        '-t',
-        `${
-          isDefined(duration) && duration.asMilliseconds() < 45_000
-            ? duration.asMilliseconds()
-            : 45_000
-        }ms`,
-      );
+      duration =
+        isDefined(duration) && duration.asMilliseconds() < 45_000
+          ? duration
+          : dayjs.duration({ seconds: 45 });
+      ffmpegArgs.push('-t', `${duration.asMilliseconds()}ms`);
     } else if (!isUndefined(duration)) {
       ffmpegArgs.push(`-t`, `${duration.asMilliseconds()}ms`);
     }
