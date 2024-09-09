@@ -117,14 +117,14 @@ export class M3uService {
   }
 
   async channelMediaPlayerM3u(
-    channelNum: number,
+    channelIdOrNumber: string | number,
     path: 'video' | 'radio' | 'm3u8',
     protocol: string,
     hostname: string,
     // req: FastifyRequest,
     // res: FastifyReply,
   ) {
-    if (isNil(await this.#channelDB.getChannel(channelNum))) {
+    if (isNil(await this.#channelDB.getChannel(channelIdOrNumber))) {
       return null;
     }
 
@@ -135,7 +135,7 @@ export class M3uService {
       '#EXT-X-ALLOW-CACHE:YES',
       '#EXT-X-TARGETDURATION:60',
       '#EXT-X-PLAYLIST-TYPE:VOD',
-      `${protocol}://${hostname}/channels/${channelNum}/${path}`,
+      `${protocol}://${hostname}/channels/${channelIdOrNumber}/${path}`,
     ];
     return content.join('\n');
   }

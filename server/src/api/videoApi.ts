@@ -540,11 +540,11 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
    * contains a single entry which initiates the underlying concat stream
    */
   fastify.get(
-    '/media-player/:number.m3u',
+    '/media-player/:idOrNumber.m3u',
     {
       schema: {
         params: z.object({
-          number: z.coerce.number(),
+          idOrNumber: z.coerce.number().or(z.string().uuid()),
         }),
         querystring: z.object({
           fast: TruthyQueryParam.optional(),
@@ -554,7 +554,7 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
     async (req, res) => {
       try {
         const m3u = await req.serverCtx.m3uService.channelMediaPlayerM3u(
-          req.params.number,
+          req.params.idOrNumber,
           req.query.fast ? 'm3u8' : 'video',
           req.protocol,
           req.hostname,
