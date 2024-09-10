@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.10.0](https://github.com/chrisbenincasa/tunarr/compare/v0.9.1...v0.10.0) (2024-09-10)
+
+
+### Features
+
+* enable drag'n'drop on custom show page editor ([7c46753](https://github.com/chrisbenincasa/tunarr/commit/7c467532b27a9cf571903a300e8bb63f682855d5))
+* major streaming overhaul ([#749](https://github.com/chrisbenincasa/tunarr/issues/749)) ([5ef1fc8](https://github.com/chrisbenincasa/tunarr/commit/5ef1fc8bb872d92f527b784f86aef09e2556b174))
+* support movies and custom shows in block shuffle ([c74ba91](https://github.com/chrisbenincasa/tunarr/commit/c74ba9128d4a314ba6d3f4037b120caefa66d699))
+
+
+### Bug Fixes
+
+* add more structure around sensitive info redaction ([deb8319](https://github.com/chrisbenincasa/tunarr/commit/deb8319f5c42116010508f97cdfaaad88679aa46)), closes [#732](https://github.com/chrisbenincasa/tunarr/issues/732)
+* add more structure around sensitive info redaction ([#764](https://github.com/chrisbenincasa/tunarr/issues/764)) ([dfa0820](https://github.com/chrisbenincasa/tunarr/commit/dfa082039beaa6978ebb4ee9fa578c7ecdbcd081)), closes [#732](https://github.com/chrisbenincasa/tunarr/issues/732)
+* artificial readrate burst now returns the correct duration for the HLS session ([f47da60](https://github.com/chrisbenincasa/tunarr/commit/f47da608f25eba2a8a9abec50dd691744a4ebcee))
+* do not add flex program when channel lineup is cleared ([49253fc](https://github.com/chrisbenincasa/tunarr/commit/49253fc94ae04d283ea2128a7aadd018cec4b979)), closes [#745](https://github.com/chrisbenincasa/tunarr/issues/745)
+* do not include width for icons if it is &lt;=0 ([#750](https://github.com/chrisbenincasa/tunarr/issues/750)) ([e4d4ef8](https://github.com/chrisbenincasa/tunarr/commit/e4d4ef86f04c83b2c776fb14e0f22289096c684e))
+* fix custom shows in programming selector ([4be7c34](https://github.com/chrisbenincasa/tunarr/commit/4be7c349c306437d3b929002fe393d0a5b335934))
+* provide hardcoded width for invalid thumb widths in XMLTV ([#753](https://github.com/chrisbenincasa/tunarr/issues/753)) ([bd40f53](https://github.com/chrisbenincasa/tunarr/commit/bd40f539e3684a9d1ddb1248b04dbb9b73b12ba4))
+* remove unnecessary left margin from main content on mobile ([3f4c380](https://github.com/chrisbenincasa/tunarr/commit/3f4c3802c4bdfe83618bdafbe4d4291fdf56875e))
+* return custom show programs sorted by index asc ([05e1db3](https://github.com/chrisbenincasa/tunarr/commit/05e1db30aa7870098ef0b39584306d8a4f817846))
+* run session cleanup job every minute now that we are defaulting to session based streams ([165327f](https://github.com/chrisbenincasa/tunarr/commit/165327fb69a6f800ff125ea1727ebba090eacbb5))
+* set video stream index to account for files with &gt;1 video stream ([065f87c](https://github.com/chrisbenincasa/tunarr/commit/065f87c3f7aa1f11c48332453627c6a22aca61d2)), closes [#758](https://github.com/chrisbenincasa/tunarr/issues/758)
+* use correct stream duration value for Plex/Jellyfin streams ([8d559b7](https://github.com/chrisbenincasa/tunarr/commit/8d559b78f6f8e4315a8858bd3988e26c8270411c))
+* use stream end event in order to remove session token ([4094dd9](https://github.com/chrisbenincasa/tunarr/commit/4094dd98d7f06ea038d0d46f5df1153afb258c1b))
+
 ## [0.9.1](https://github.com/chrisbenincasa/tunarr/compare/v0.9.0...v0.9.1) (2024-08-31)
 
 
