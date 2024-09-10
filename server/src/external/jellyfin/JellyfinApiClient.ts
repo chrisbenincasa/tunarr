@@ -8,11 +8,18 @@ import {
   JellyfinSystemInfo,
   JellyfinUser,
 } from '@tunarr/types/jellyfin';
-import axios, { AxiosRequestConfig } from 'axios';
-import { find, first, isEmpty, union } from 'lodash-es';
+import axios, {
+  AxiosRequestConfig,
+  InternalAxiosRequestConfig,
+  isAxiosError,
+} from 'axios';
+import { find, first, isEmpty, isObject, union } from 'lodash-es';
 import { v4 } from 'uuid';
+import { z } from 'zod';
 import { Maybe, Nilable } from '../../types/util';
+import { isNonEmptyString } from '../../util/index.js';
 import { LoggerFactory } from '../../util/logging/LoggerFactory';
+import { getTunarrVersion } from '../../util/version.js';
 import {
   BaseApiClient,
   QueryErrorResult,
@@ -20,9 +27,6 @@ import {
   RemoteMediaSourceOptions,
   isQueryError,
 } from '../BaseApiClient.js';
-import { getTunarrVersion } from '../../util/version.js';
-import { isNonEmptyString } from '../../util/index.js';
-import { z } from 'zod';
 
 const RequiredLibraryFields = [
   'Path',
@@ -124,6 +128,9 @@ export class JellyfinApiClient extends BaseApiClient<JellyfinApiClientOptions> {
 
       return await JellyfinAuthenticationResult.parseAsync(response.data);
     } catch (e) {
+      if (isAxiosError(e) && e.config) {
+        this.redactRequestInfo(e.config);
+      }
       LoggerFactory.root.error(
         { error: e as unknown, className: JellyfinApiClient.name },
         'Error logging into Jellyfin',
@@ -139,7 +146,6 @@ export class JellyfinApiClient extends BaseApiClient<JellyfinApiClientOptions> {
       });
       return true;
     } catch (e) {
-      this.logger.error(e);
       return false;
     }
   }
@@ -292,5 +298,26 @@ export class JellyfinApiClient extends BaseApiClient<JellyfinApiClientOptions> {
       );
     }
     return super.preRequestValidate(req);
+  }
+
+  protected static override redactRequestInfo(
+    conf: InternalAxiosRequestConfig<unknown>,
+  ): void {
+    super.redactRequestInfo(conf);
+    if (conf.url?.includes('/AuthenticateByName')) {
+      conf.data = '<REDACTED>';
+    }
+
+    if (conf.headers) {
+      if (conf.headers['X-Emby-Token']) {
+        conf.headers['X-Emby-Token'] = '<REDACTED>';
+      }
+    }
+
+    if (conf.params && isObject(conf.params)) {
+      if (conf.params['X-Emby-Token']) {
+        conf.headers['X-Emby-Token'] = '<REDACTED>';
+      }
+    }
   }
 }
