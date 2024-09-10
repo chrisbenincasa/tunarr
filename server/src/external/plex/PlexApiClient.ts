@@ -8,6 +8,7 @@ import {
 } from '@tunarr/types/plex';
 import {
   AxiosRequestConfig,
+  InternalAxiosRequestConfig,
   RawAxiosRequestHeaders,
   isAxiosError,
 } from 'axios';
@@ -18,6 +19,7 @@ import {
   forEach,
   isEmpty,
   isError,
+  isObject,
   isUndefined,
   map,
 } from 'lodash-es';
@@ -271,6 +273,27 @@ export class PlexApiClient extends BaseApiClient {
       );
     }
     return super.preRequestValidate(req);
+  }
+
+  protected static override redactRequestInfo(
+    conf: InternalAxiosRequestConfig<unknown>,
+  ): void {
+    super.redactRequestInfo(conf);
+    if (conf.headers) {
+      if (conf.headers.Authorization) {
+        conf.headers.Authorization = '<REDACTED>';
+      }
+
+      if (conf.headers['X-Plex-Token']) {
+        conf.headers['X-Plex-Token'] = '<REDACTED>';
+      }
+    }
+
+    if (conf.params && isObject(conf.params)) {
+      if (conf.params['X-Plex-Token']) {
+        conf.params['X-Plex-Token'] = '<REDACTED>';
+      }
+    }
   }
 
   static getThumbUrl(opts: {

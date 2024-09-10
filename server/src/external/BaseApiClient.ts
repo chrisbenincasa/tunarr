@@ -2,6 +2,7 @@ import axios, {
   AxiosHeaderValue,
   AxiosInstance,
   AxiosRequestConfig,
+  InternalAxiosRequestConfig,
   isAxiosError,
 } from 'axios';
 import { isError, isString } from 'lodash-es';
@@ -84,41 +85,34 @@ export abstract class BaseApiClient<
     schema: T,
     extraConfig: Partial<AxiosRequestConfig> = {},
   ): Promise<QueryResult<Out>> {
-    const getter = async () => {
-      const req: AxiosRequestConfig = {
-        ...extraConfig,
-        method: 'get',
-        url: path,
-      };
-
-      const response = await this.doRequest<unknown>(req);
-
-      if (isError(response)) {
-        if (isAxiosError(response) && response.response?.status === 404) {
-          return this.makeErrorResult('not_found');
-        }
-        return this.makeErrorResult('generic_request_error', response.message);
-      }
-
-      const parsed = await schema.safeParseAsync(response);
-
-      if (parsed.success) {
-        return this.makeSuccessResult(parsed.data as Out);
-      }
-
-      this.logger.error(
-        parsed.error,
-        'Unable to parse schema from response. Path: %s',
-        path,
-      );
-
-      return this.makeErrorResult('parse_error');
+    const req: AxiosRequestConfig = {
+      ...extraConfig,
+      method: 'get',
+      url: path,
     };
 
-    // return this.opts.enableRequestCache
-    //   ? await PlexCache.getOrSetPlexResult(this.opts.name, path, getter)
-    //   : await getter();
-    return await getter();
+    const response = await this.doRequest<unknown>(req);
+
+    if (isError(response)) {
+      if (isAxiosError(response) && response.response?.status === 404) {
+        return this.makeErrorResult('not_found');
+      }
+      return this.makeErrorResult('generic_request_error', response.message);
+    }
+
+    const parsed = await schema.safeParseAsync(response);
+
+    if (parsed.success) {
+      return this.makeSuccessResult(parsed.data as Out);
+    }
+
+    this.logger.error(
+      parsed.error,
+      'Unable to parse schema from response. Path: %s',
+      path,
+    );
+
+    return this.makeErrorResult('parse_error');
   }
 
   protected preRequestValidate(
@@ -174,6 +168,9 @@ export abstract class BaseApiClient<
       return response.data;
     } catch (error) {
       if (isAxiosError(error)) {
+        if (error.config) {
+          this.redactRequestInfo(error.config);
+        }
         if (error.response?.status === 404) {
           this.logger.warn(
             `Not found: ${this.axiosInstance.defaults.baseURL}${req.url}`,
@@ -215,6 +212,18 @@ export abstract class BaseApiClient<
         // at this point.
         this.logger.error('Unknown error type thrown: %O', error);
         return new Error('Unknown error');
+      }
+    }
+  }
+
+  protected redactRequestInfo(conf: InternalAxiosRequestConfig): void {
+    BaseApiClient.redactRequestInfo(conf);
+  }
+
+  protected static redactRequestInfo(conf: InternalAxiosRequestConfig): void {
+    if (conf.headers) {
+      if (conf.headers.Authorization) {
+        conf.headers.Authorization = '<REDACTED>';
       }
     }
   }
