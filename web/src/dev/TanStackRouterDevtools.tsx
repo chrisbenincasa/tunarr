@@ -15,10 +15,13 @@ export const TanStackRouterDevtools =
           default: () => (
             <>
               <TanStackRouterDevtoolsComponent
-                position="bottom-right"
+                position="bottom-left"
                 toggleButtonProps={{}}
               />
-              <TanStackQueryDevtoolsComponent initialIsOpen={false} />
+              <TanStackQueryDevtoolsComponent
+                initialIsOpen={false}
+                buttonPosition="bottom-left"
+              />
             </>
           ),
         };

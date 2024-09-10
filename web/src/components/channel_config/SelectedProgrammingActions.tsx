@@ -1,12 +1,31 @@
 import { useDirectPlexSearch } from '@/hooks/plex/usePlexSearch.ts';
+import { useAddSelectedItems } from '@/hooks/programming_controls/useAddProgramming.ts';
 import { useTunarrApi } from '@/hooks/useTunarrApi.ts';
 import { useCurrentMediaSourceAndLibrary } from '@/store/programmingSelector/selectors.ts';
 import {
   JellyfinLibrary,
   PlexLibrary,
 } from '@/store/programmingSelector/store.ts';
-import { Delete, DoneAll, Grading } from '@mui/icons-material';
-import { Button, Paper, Tooltip, useMediaQuery, useTheme } from '@mui/material';
+import {
+  AddCircle,
+  CheckBoxOutlineBlank,
+  CheckBoxOutlined,
+  Grading,
+} from '@mui/icons-material';
+import {
+  Backdrop,
+  SpeedDial,
+  SpeedDialAction,
+  SpeedDialIcon,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material';
+import { nullToUndefined } from '@tunarr/shared/util';
+import {
+  JellyfinCollectionType,
+  JellyfinItemKind,
+} from '@tunarr/types/jellyfin';
 import { isNil } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import { useCallback, useState } from 'react';
@@ -19,17 +38,11 @@ import {
 } from '../../store/programmingSelector/actions.ts';
 import { AddedMedia } from '../../types/index.ts';
 import { RotatingLoopIcon } from '../base/LoadingIcon.tsx';
-import AddSelectedMediaButton from './AddSelectedMediaButton.tsx';
-import {
-  JellyfinItemKind,
-  JellyfinCollectionType,
-} from '@tunarr/types/jellyfin';
-import { nullToUndefined } from '@tunarr/shared/util';
 
 type Props = {
   onAddSelectedMedia: (media: AddedMedia[]) => void;
   onAddMediaSuccess: () => void;
-  toggleOrSetSelectedProgramsDrawer: (open?: boolean) => void;
+  toggleOrSetSelectedProgramsDrawer: (open: boolean) => void;
   onSelectionModalClose?: () => void;
   selectAllEnabled?: boolean;
 };
@@ -61,7 +74,6 @@ export default function SelectedProgrammingActions({
 }: Props) {
   const apiClient = useTunarrApi();
   const [selectedServer, selectedLibrary] = useCurrentMediaSourceAndLibrary();
-
   const { urlFilter: plexSearch } = useStore(
     ({ plexSearch: plexQuery }) => plexQuery,
   );
@@ -70,12 +82,17 @@ export default function SelectedProgrammingActions({
   const theme = useTheme();
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
   const [selectAllLoading, setSelectAllLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+  const handleOpen = () => setOpen(true);
+  const handleClose = () => setOpen(false);
   const snackbar = useSnackbar();
-
+  const { addSelectedItems, isLoading } = useAddSelectedItems(
+    onAddSelectedMedia,
+    onAddMediaSuccess,
+  );
   const removeAllItems = useCallback(() => {
-    toggleOrSetSelectedProgramsDrawer(false);
     clearSelectedMedia();
-  }, [toggleOrSetSelectedProgramsDrawer]);
+  }, []);
 
   const directPlexSearchFn = useDirectPlexSearch(
     selectedServer,
@@ -142,99 +159,72 @@ export default function SelectedProgrammingActions({
 
   return (
     <>
-      <Paper
-        elevation={2}
+      <Backdrop open={open} />
+      <SpeedDial
+        ariaLabel="Media Action Options"
         sx={{
-          borderRadius: '10px',
-          backgroundColor: theme.palette.primary.main,
-          color: theme.palette.primary.contrastText,
           position: 'fixed',
-          bottom: smallViewport ? '3em' : '1em',
-          width: 'fit-content',
-          maxWidth: smallViewport ? '425px' : '525px',
-          margin: '1em auto',
-          left: 0,
-          right: 0,
-          display: 'flex',
-          py: '5px',
-          px: 1,
-          justifyContent: 'space-evenly',
-          zIndex: 2,
-          gap: 1,
+          bottom: smallViewport ? 64 : 32,
+          right: 32,
         }}
+        icon={<SpeedDialIcon />}
+        onClose={handleClose}
+        onOpen={handleOpen}
+        open={open}
       >
         {selectedMedia.length > 0 && (
-          <Tooltip
-            title={smallViewport ? 'Unselect All' : 'Unselect all programs'}
-          >
-            <Button
-              startIcon={smallViewport ? null : <Delete />}
-              sx={{
-                color: theme.palette.primary.contrastText,
-                border: `1px solid ${theme.palette.primary.contrastText}`,
-                borderRadius: '10px',
-              }}
-              onClick={() => removeAllItems()}
-            >
-              Clear
-            </Button>
-          </Tooltip>
-        )}
-        {selectAllEnabled && (
-          <Tooltip title={smallViewport ? 'Select All' : 'Select all programs'}>
-            <Button
-              startIcon={
-                smallViewport ? null : selectAllLoading ? (
-                  <RotatingLoopIcon />
-                ) : (
-                  <DoneAll />
-                )
-              }
-              disabled={selectAllLoading}
-              sx={{
-                color: theme.palette.primary.contrastText,
-                border: `1px solid ${theme.palette.primary.contrastText}`,
-                borderRadius: '10px',
-              }}
-              onClick={() => selectAllItems()}
-            >
-              Select All
-            </Button>
-          </Tooltip>
+          <SpeedDialAction
+            key={'add-selected-media'}
+            icon={smallViewport ? null : <AddCircle />}
+            tooltipTitle={<Typography noWrap>Add Media</Typography>}
+            disableInteractive={isLoading}
+            tooltipOpen
+            delay={250}
+            onClick={(e) => addSelectedItems(e)}
+          />
         )}
 
         {selectedMedia.length > 0 && (
-          <Tooltip title="Review Selections">
-            <Button
-              startIcon={smallViewport ? null : <Grading />}
-              sx={{
-                color: theme.palette.primary.contrastText,
-                border: `1px solid ${theme.palette.primary.contrastText}`,
-                borderRadius: '10px',
-              }}
-              onClick={() => toggleOrSetSelectedProgramsDrawer()}
-            >
-              Review
-            </Button>
-          </Tooltip>
-        )}
-
-        {!smallViewport && (
-          <AddSelectedMediaButton
-            onAdd={onAddSelectedMedia}
-            onSuccess={onAddMediaSuccess}
-            sx={{
-              color: theme.palette.primary.contrastText,
-              border: `1px solid ${
-                selectedMedia.length > 0
-                  ? theme.palette.primary.contrastText
-                  : theme.palette.action.disabled
-              }`,
-              borderRadius: '10px',
-            }}
+          <SpeedDialAction
+            key={'review-selections'}
+            icon={smallViewport ? null : <Grading />}
+            tooltipTitle={<Typography noWrap>Review</Typography>}
+            tooltipOpen
+            delay={750}
+            onClick={() => toggleOrSetSelectedProgramsDrawer(true)}
           />
         )}
-      </Paper>
+
+        {selectAllEnabled && (
+          <SpeedDialAction
+            key={'select-all-programs'}
+            icon={
+              smallViewport ? null : selectAllLoading ? (
+                <RotatingLoopIcon />
+              ) : (
+                <CheckBoxOutlined />
+              )
+            }
+            tooltipTitle={<Typography noWrap>Select All</Typography>}
+            tooltipOpen
+            delay={500}
+            disableInteractive={selectAllLoading}
+            onClick={() => selectAllItems()}
+          />
+        )}
+
+        {selectedMedia.length > 0 && (
+          <SpeedDialAction
+            key={'unselect-all-programs'}
+            icon={<CheckBoxOutlineBlank />}
+            tooltipTitle={<Typography noWrap>Unselect All</Typography>}
+            tooltipOpen
+            delay={1000}
+            arrow={true}
+            onClick={() => removeAllItems()}
+          />
+        )}
+      </SpeedDial>
     </>
   );
 }

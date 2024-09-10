@@ -1,5 +1,7 @@
+import SelectedProgrammingActions from '@/components/channel_config/SelectedProgrammingActions.tsx';
 import SelectedProgrammingList from '@/components/channel_config/SelectedProgrammingList.tsx';
 import { AddedMedia } from '@/types/index.ts';
+import { useState } from 'react';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import ProgrammingSelector from '../../components/channel_config/ProgrammingSelector.tsx';
@@ -18,6 +20,12 @@ export default function ProgrammingSelectorPage({
   initialMediaSourceId,
   initialLibraryId,
 }: Props) {
+  const [open, setOpen] = useState(false);
+
+  const toggleDrawer = (open: boolean) => {
+    setOpen(open);
+  };
+
   return (
     <>
       <Breadcrumbs />
@@ -29,6 +37,13 @@ export default function ProgrammingSelectorPage({
         <SelectedProgrammingList
           onAddSelectedMedia={onAddSelectedMedia}
           onAddMediaSuccess={onAddMediaSuccess}
+          toggleOrSetSelectedProgramsDrawer={toggleDrawer}
+          isOpen={open}
+        />
+        <SelectedProgrammingActions
+          onAddSelectedMedia={onAddSelectedMedia}
+          onAddMediaSuccess={onAddMediaSuccess}
+          toggleOrSetSelectedProgramsDrawer={toggleDrawer}
         />
       </PaddedPaper>
     </>
