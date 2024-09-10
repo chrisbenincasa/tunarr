@@ -3,7 +3,7 @@
   "extends": ["//"],
   "tasks": {
     "bundle": {
-      "dependsOn": ["@tunarr/types#bundle"],
+      "dependsOn": ["@tunarr/types#build"],
       "outputs": ["build/**"]
     },
     "build": {

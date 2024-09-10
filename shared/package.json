@@ -28,7 +28,7 @@
   "scripts": {
     "bundle": "tsup",
     "build": "tsup --dts",
-    "clean": "rimraf build/",
+    "clean": "rimraf ./build/",
     "dev": "tsup --watch"
   },
   "dependencies": {

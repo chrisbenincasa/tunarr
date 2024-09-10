@@ -14,6 +14,7 @@
     "lint": {},
     "lint-fix": {},
     "dev": {
+      "dependsOn": ["@tunarr/types#build", "@tunarr/shared#bundle"],
       "cache": false,
       "persistent": true
     }

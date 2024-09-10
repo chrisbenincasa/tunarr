@@ -13,7 +13,7 @@
     "build-dev": "NODE_ENV=development tsc -p tsconfig.build.json --noEmit --watch",
     "typecheck": "tsc -p tsconfig.build.json --noEmit",
     "bundle": "dotenv -- tsx scripts/bundle.ts",
-    "clean": "rimraf build",
+    "clean": "rimraf ./build/",
     "debug": "dotenv -e .env.development -- tsx watch --tsconfig ./tsconfig.build.json --ignore 'src/streams' --inspect-brk src",
     "dev": "dotenv -e .env.development -- tsx watch --tsconfig ./tsconfig.build.json --ignore 'build' --ignore 'src/streams' src",
     "make-exec": "tsx scripts/makeExecutable.ts",

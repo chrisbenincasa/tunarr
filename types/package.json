@@ -6,7 +6,7 @@
   "scripts": {
     "bundle": "tsc --emitDeclarationOnly --declaration",
     "build": "tsc",
-    "clean": "rimraf build",
+    "clean": "rimraf ./build/",
     "dev": "tsc --emitDeclarationOnly --declaration --watch",
     "build-dev": "tsc --emitDeclarationOnly --declaration --watch"
   },
