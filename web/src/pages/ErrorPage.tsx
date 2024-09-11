@@ -15,7 +15,7 @@ type Props = {
   resetRoute: () => void;
 };
 
-export function ErrorPage({ error, resetRoute }: Props) {
+export function ErrorPage({ error }: Props) {
   const { data: version, isLoading: versionLoading } = useVersion();
   const stack = (isError(error) ? error.stack : '') ?? '';
 
@@ -38,7 +38,7 @@ export function ErrorPage({ error, resetRoute }: Props) {
   }, [stack, version?.tunarr]);
 
   const handleRefresh = () => {
-    resetRoute();
+    location.reload();
   };
 
   return (
