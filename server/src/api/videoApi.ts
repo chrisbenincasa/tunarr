@@ -16,6 +16,7 @@ import { SessionType } from '../stream/StreamSession.js';
 import { VideoStream } from '../stream/VideoStream.js';
 import { StreamQueryStringSchema, TruthyQueryParam } from '../types/schemas.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
+import { getHttpCodeForError } from '../util/errors.js';
 import { isDefined, run } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '../util/serverUtil.js';
@@ -231,7 +232,7 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
         }),
       },
       onError(_req, _res, err, done) {
-        console.error(err);
+        logger.error(err);
         done();
       },
     },
@@ -297,11 +298,14 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
           mode: req.query.streamMode === 'hls' ? 'hls' : 'direct',
         }).startStream(req.params.id, false);
 
-        if (result.type === 'error') {
-          return res.send(result.httpStatus).send(result.message);
+        if (result.isFailure()) {
+          logger.error(result.error);
+          return res
+            .send(getHttpCodeForError(result.error))
+            .send(result.error.message);
         }
 
-        result.stream.on('close', () => {
+        result.get().on('close', () => {
           logger.debug('Concat request closed.', {
             token,
             ip: req.ip,
@@ -322,7 +326,9 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
           await onDemandService.resumeChannel(channel.uuid);
         }
 
-        return res.header('Content-Type', 'video/mp2t').send(result.stream);
+        const outStream = result.get().start(new PassThrough());
+
+        return res.header('Content-Type', 'video/mp2t').send(outStream);
       }
     },
   );
@@ -341,15 +347,19 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
     },
     async (req, res) => {
       const result = await new ConcatStream().startStream(req.params.id, true);
-      if (result.type === 'error') {
-        return res.send(result.httpStatus).send(result.message);
+      if (result.isFailure()) {
+        return res
+          .send(getHttpCodeForError(result.error))
+          .send(result.error.message);
       }
 
-      req.raw.on('close', () => {
-        result.stop();
-      });
+      // req.raw.on('close', () => {
+      //   result.stop();
+      // });
 
-      return res.header('Content-Type', 'video/mp2t').send(result.stream);
+      return res
+        .header('Content-Type', 'video/mp2t')
+        .send(result.get().start(new PassThrough()));
     },
   );
 

@@ -6,10 +6,10 @@ import { basename, extname, join, resolve } from 'node:path';
 import { StrictOmit } from 'ts-essentials';
 import { Channel } from '../dao/direct/derivedTypes';
 import { getSettings } from '../dao/settings';
-import { VideoStreamResult } from '../ffmpeg/FfmpegOutputStream.js';
+import { FfmpegTranscodeSession } from '../ffmpeg/FfmpegTrancodeSession';
 import { serverContext } from '../serverContext';
 import { Result } from '../types/result';
-import { isNodeError } from '../util';
+import { isDefined, isNodeError } from '../util';
 import { ConcatStream } from './ConcatStream';
 import { GetPlayerContextRequest, PlayerContext } from './PlayerStreamContext';
 import { ProgramStream } from './ProgramStream';
@@ -38,7 +38,7 @@ export class HlsSession extends StreamSession<HlsSessionOptions> {
   // Start in lookahead mode
   #realtimeTranscode: boolean = false;
   #programCalculator: StreamProgramCalculator;
-  #stream: VideoStreamResult;
+  #stream: FfmpegTranscodeSession;
 
   constructor(
     channel: Channel,
@@ -141,7 +141,7 @@ export class HlsSession extends StreamSession<HlsSessionOptions> {
 
     this.#transcodedUntil = dayjs().valueOf();
 
-    return (this.#stream = await new ConcatStream({
+    const sessionResult = await new ConcatStream({
       enableHls: true,
       hlsOptions: {
         streamBasePath: `stream_${this.channel.uuid}`,
@@ -150,7 +150,15 @@ export class HlsSession extends StreamSession<HlsSessionOptions> {
       },
       logOutput: false,
       parentProcessType: 'hls',
-    }).startStream(this.channel.uuid, /* audioOnly */ false));
+    }).startStream(this.channel.uuid, /* audioOnly */ false);
+
+    if (sessionResult.isFailure()) {
+      return sessionResult;
+    }
+
+    this.#stream = sessionResult.get();
+
+    return sessionResult;
   }
 
   protected override async waitForStreamReady(): Promise<Result<void>> {
@@ -205,13 +213,15 @@ export class HlsSession extends StreamSession<HlsSessionOptions> {
   }
 
   protected async stopStream(): Promise<void> {
-    if (this.#stream?.type === 'success') {
-      this.#stream?.stop();
+    if (isDefined(this.#stream)) {
+      this.#stream.kill();
     }
+
     this.logger.debug(
       `Cleaning out stream path for session: %s`,
       this.#outPath,
     );
+
     return await this.cleanupDirectory();
   }
 

@@ -2,9 +2,10 @@ import dayjs from 'dayjs';
 import events from 'events';
 import ld, { forEach, keys, once, round } from 'lodash-es';
 import { Readable } from 'node:stream';
+import { PassThrough } from 'stream';
 import { v4 } from 'uuid';
 import { Channel } from '../dao/direct/derivedTypes.js';
-import { VideoStreamResult } from '../ffmpeg/FfmpegOutputStream.js';
+import { FfmpegTranscodeSession } from '../ffmpeg/FfmpegTrancodeSession.js';
 import { TypedEventEmitter } from '../types/eventEmitter.js';
 import { Result } from '../types/result.js';
 import { Logger, LoggerFactory } from '../util/logging/LoggerFactory.js';
@@ -128,7 +129,7 @@ export abstract class StreamSession<
 
     const streamInitResult = await this.initializeStream();
 
-    if (streamInitResult.type === 'error') {
+    if (streamInitResult.isFailure()) {
       const oldState = this.state;
       this.state = 'error';
       this.emit('state', 'error', oldState);
@@ -136,7 +137,7 @@ export abstract class StreamSession<
       return;
     }
 
-    this.#stream = streamInitResult.stream;
+    this.#stream = streamInitResult.get().start(new PassThrough());
 
     const onceListener = once(() => {
       const end = performance.now();
@@ -225,7 +226,9 @@ export abstract class StreamSession<
 
   abstract isStale(): boolean;
 
-  protected abstract initializeStream(): Promise<VideoStreamResult>;
+  protected abstract initializeStream(): Promise<
+    Result<FfmpegTranscodeSession>
+  >;
 
   // Override if there are conditions to wait for until the stream is ready to return
   protected waitForStreamReady(): Promise<Result<void>> {

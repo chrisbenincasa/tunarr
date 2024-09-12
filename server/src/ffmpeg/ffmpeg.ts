@@ -573,7 +573,7 @@ export class FFMPEG {
 
     // prepare input streams
     if (!isString(streamSrc) || isEmpty(streamSrc) || streamStats?.audioOnly) {
-      doOverlay = false; //never show icon in the error screen
+      doOverlay = false; // never show icon in the error screen
       // for error stream, we have to generate the input as well
       this.apad = false; //all of these generate audio correctly-aligned to video so there is no need for apad
       this.audioChannelsSampleRate = true; //we'll need these
@@ -591,17 +591,19 @@ export class FFMPEG {
         //does an image to play exist?
         if (isString(streamSrc) && streamStats?.audioOnly) {
           pic = streamStats.placeholderImage;
-        } else if (!isString(streamSrc) && streamSrc.errorTitle == 'offline') {
+        } else if (!isString(streamSrc) && streamSrc.errorTitle === 'offline') {
           // TODO fix me
           const defaultOfflinePic = makeLocalUrl(
             '/images/generic-offline-screen.png',
           );
-          pic = this.channel.offline?.picture ?? defaultOfflinePic;
+          pic = isNonEmptyString(this.channel.offline?.picture)
+            ? this.channel.offline.picture
+            : defaultOfflinePic;
         } else if (this.opts.errorScreen == 'pic') {
           pic = this.errorPicturePath;
         }
 
-        if (!isNil(pic) && !isEmpty(pic)) {
+        if (isNonEmptyString(pic)) {
           ffmpegArgs.push('-i', pic);
           //add 150 milliseconds just in case, exact duration seems to cut out the last bits of music some times.
           duration = duration.add(150);
@@ -649,6 +651,7 @@ export class FFMPEG {
           videoComplex = `;realtime[videox]`;
         }
       }
+
       const durstr = `duration=${duration.asMilliseconds()}ms`;
       if (!isNonEmptyString(streamSrc)) {
         // silent
@@ -671,9 +674,6 @@ export class FFMPEG {
         } else if (this.opts.errorAudio === 'sine') {
           audioComplex = `;sine=f=440[audioy]`;
           this.volumePercent = Math.min(70, this.volumePercent);
-        }
-        if (!this.audioOnly) {
-          ffmpegArgs.push('-pix_fmt', 'yuv420p');
         }
         audioComplex += ';[audioy]arealtime[audiox]';
         currentAudio = '[audiox]';
@@ -708,7 +708,7 @@ export class FFMPEG {
           iH !== this.wantedH)) ||
         isLargerResolution(iW, iH, this.wantedW, this.wantedH))
     ) {
-      //scaler stuff, need to change the size of the video and also add bars
+      // scaler stuff, need to change the size of the video and also add bars
       // calculate wanted aspect ratio
       let p = iW * streamStats!.pixelP!;
       let q = iH * streamStats!.pixelQ!;
@@ -727,9 +727,11 @@ export class FFMPEG {
         cw = hypotheticalW2;
         ch = hypotheticalH2;
       }
+
       videoComplex += `;${currentVideo}scale=${cw}:${ch}:flags=${algo},format=yuv420p[scaled]`;
       currentVideo = 'scaled';
       resizeMsg = `Stretch to ${cw} x ${ch}. To fit target resolution of ${this.wantedW} x ${this.wantedH}.`;
+
       if (this.ensureResolution) {
         this.logger.info(
           `First stretch to ${cw} x ${ch}. Then add padding to make it ${this.wantedW} x ${this.wantedH} `,
@@ -744,15 +746,18 @@ export class FFMPEG {
       } else {
         resizeMsg = `Stretch to ${cw} x ${ch}. To fit target resolution of ${this.wantedW} x ${this.wantedH}.`;
       }
+
       if (this.wantedW !== cw || this.wantedH !== ch) {
         // also add black bars, because in this case it HAS to be this resolution
         videoComplex += `;[${currentVideo}]pad=${this.wantedW}:${this.wantedH}:(ow-iw)/2:(oh-ih)/2[blackpadded]`;
         currentVideo = 'blackpadded';
       }
+
       let name = 'siz';
       if (!this.ensureResolution && beforeSizeChange != '[fpchange]') {
         name = 'minsiz';
       }
+
       videoComplex += `;[${currentVideo}]setsar=1,format=yuv420p[${name}]`;
       currentVideo = `[${name}]`;
       iW = this.wantedW;
@@ -883,7 +888,8 @@ export class FFMPEG {
     } else {
       this.logger.debug(resizeMsg);
     }
-    if (this.audioOnly !== true) {
+
+    if (!this.audioOnly) {
       if (currentVideo !== '[video]') {
         filterComplex += videoComplex;
       } else {
@@ -894,6 +900,7 @@ export class FFMPEG {
         }`;
       }
     }
+
     // same with audio:
     if (currentAudio !== '[audio]') {
       filterComplex += audioComplex;
@@ -915,6 +922,9 @@ export class FFMPEG {
         currentVideo,
         `-c:v`,
         'rawvideo',
+        // Hardcode this for now...
+        '-pix_fmt',
+        'yuv420p',
         `-sc_threshold`,
         `0`,
         '-video_track_timescale',
