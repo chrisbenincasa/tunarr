@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.10.1](https://github.com/chrisbenincasa/tunarr/compare/v0.10.0...v0.10.1) (2024-09-12)
+
+
+### Bug Fixes
+
+* sessions unable to start after cleaned up ([b84df2f](https://github.com/chrisbenincasa/tunarr/commit/b84df2f8fcdf5a9f953cc0d1a35485cb6ed770a9))
+* track channel menu open state per-channel ([2b0a30b](https://github.com/chrisbenincasa/tunarr/commit/2b0a30b5c1d407daf9c70f4909f1b81378aa293b))
+* use location.reload over resetRoute until we properly setup error boundaries ([4e44839](https://github.com/chrisbenincasa/tunarr/commit/4e44839457a3571009a7865a63f76fc039a2835e))
+
 ## [0.10.0](https://github.com/chrisbenincasa/tunarr/compare/v0.9.1...v0.10.0) (2024-09-10)
 
 
