@@ -1,8 +1,9 @@
-import { compact, isError, isNil, isString } from 'lodash-es';
+import { compact, isError, isNil, isString, isUndefined } from 'lodash-es';
 import { ChannelDB } from '../dao/channelDb.js';
 import { Channel } from '../dao/direct/derivedTypes.js';
 import { Result } from '../types/result.js';
 import { Maybe } from '../types/util.js';
+import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { MutexMap } from '../util/mutexMap.js';
 import { ConcatSession, ConcatSessionOptions } from './ConcatSession.js';
 import { HlsSession, HlsSessionOptions } from './HlsSession.js';
@@ -55,6 +56,7 @@ class ChannelNotFoundError extends TypedError {
 }
 
 export class SessionManager {
+  #logger = LoggerFactory.child({ className: this.constructor.name });
   #sessionLocker = new MutexMap();
   #sessions: Record<SessionKey, StreamSession> = {};
 
@@ -88,7 +90,25 @@ export class SessionManager {
     return this.#sessions[sessionCacheKey(id, sessionType)];
   }
 
-  async endSession(id: string, sessionType: SessionType) {
+  async endSession(session: StreamSession): Promise<void>;
+  async endSession(
+    idOrSession: string | StreamSession,
+    maybeSessionType?: SessionType,
+  ): Promise<void> {
+    let id: string;
+    let sessionType: SessionType;
+    if (idOrSession instanceof StreamSession) {
+      id = idOrSession.keyObj.id;
+      sessionType = idOrSession.keyObj.sessionType;
+    } else {
+      if (isUndefined(maybeSessionType)) {
+        throw new Error('Must pass session type if ending stream by ID');
+      } else {
+        id = idOrSession;
+        sessionType = maybeSessionType;
+      }
+    }
+
     const lock = await this.#sessionLocker.getOrCreateLock(id);
     return await lock.runExclusive(() => {
       const session = this.getSession(id, sessionType);
@@ -96,7 +116,20 @@ export class SessionManager {
         return;
       }
       session.stop();
+      delete this.#sessions[sessionCacheKey(id, sessionType)];
     });
+  }
+
+  cleanupStaleSessions() {
+    for (const session of Object.values(this.#sessions)) {
+      if (session.isStale() && session.scheduleCleanup()) {
+        this.#logger.debug(
+          'Scheduled cleanup on session (type=%s, id=%s)',
+          session.sessionType,
+          session.id,
+        );
+      }
+    }
   }
 
   async getOrCreateConcatSession(
@@ -156,6 +189,9 @@ export class SessionManager {
         let session = this.getSession(channelId, sessionType) as Maybe<Session>;
         if (isNil(session)) {
           session = sessionFactory(channel);
+          session.on('cleanup', () => {
+            delete this.#sessions[sessionCacheKey(channelId, sessionType)];
+          });
           this.addSession(channel.uuid, session.sessionType, session);
         }
 

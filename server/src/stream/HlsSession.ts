@@ -1,6 +1,6 @@
 import retry from 'async-retry';
 import dayjs from 'dayjs';
-import { filter, isError, isString, some } from 'lodash-es';
+import { filter, isEmpty, isError, isString, some } from 'lodash-es';
 import fs from 'node:fs/promises';
 import { basename, extname, join, resolve } from 'node:path';
 import { StrictOmit } from 'ts-essentials';
@@ -117,6 +117,11 @@ export class HlsSession extends StreamSession<HlsSessionOptions> {
     });
   }
 
+  isStale(): boolean {
+    const remainingConnections = this.removeStaleConnections();
+    return isEmpty(remainingConnections);
+  }
+
   protected async initializeStream() {
     this.logger.debug(`Creating stream directory: ${this.#outPath}`);
 
@@ -212,9 +217,8 @@ export class HlsSession extends StreamSession<HlsSessionOptions> {
 
   private async cleanupDirectory() {
     try {
-      return await fs.rm(this.#outPath, {
+      return await fs.rmdir(this.#outPath, {
         recursive: true,
-        force: true,
       });
     } catch (err) {
       return this.logger.error(

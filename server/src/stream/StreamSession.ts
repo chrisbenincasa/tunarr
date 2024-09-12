@@ -1,8 +1,11 @@
-import { once, round } from 'lodash-es';
+import dayjs from 'dayjs';
+import events from 'events';
+import ld, { forEach, keys, once, round } from 'lodash-es';
 import { Readable } from 'node:stream';
 import { v4 } from 'uuid';
 import { Channel } from '../dao/direct/derivedTypes.js';
 import { VideoStreamResult } from '../ffmpeg/FfmpegOutputStream.js';
+import { TypedEventEmitter } from '../types/eventEmitter.js';
 import { Result } from '../types/result.js';
 import { Logger, LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { ConnectionTracker } from './ConnectionTracker.js';
@@ -18,6 +21,15 @@ export type SessionType = 'hls' | 'concat' | 'concat_hls';
 
 export type SessionOptions = {
   sessionType: SessionType;
+  cleanupDelay?: number;
+};
+
+type StreamSessionEvents = {
+  state: (newState: SessionState, oldState: SessionState) => void;
+  start: () => void;
+  stop: () => void;
+  cleanup: () => void;
+  error: (e: unknown) => void;
 };
 
 /**
@@ -26,7 +38,7 @@ export type SessionOptions = {
  */
 export abstract class StreamSession<
   TOpts extends SessionOptions = SessionOptions,
-> {
+> extends (events.EventEmitter as new () => TypedEventEmitter<StreamSessionEvents>) {
   protected logger: Logger;
   protected sessionOptions: TOpts;
   protected channel: Channel;
@@ -39,6 +51,7 @@ export abstract class StreamSession<
   error?: Error;
 
   protected constructor(channel: Channel, opts: TOpts) {
+    super();
     this.#uniqueId = v4();
     this.logger = LoggerFactory.child({
       caller: import.meta,
@@ -49,8 +62,22 @@ export abstract class StreamSession<
     });
     this.sessionOptions = opts;
     this.channel = channel;
-    this.connectionTracker = new ConnectionTracker();
-    this.connectionTracker.on('cleanup', () => this.stop());
+    this.connectionTracker = new ConnectionTracker(this.channel.uuid);
+    this.connectionTracker.on('cleanup', () => {
+      this.stop();
+      this.emit('cleanup');
+    });
+  }
+
+  get key() {
+    return `${this.channel.uuid}_${this.sessionOptions.sessionType}`;
+  }
+
+  get keyObj() {
+    return {
+      id: this.channel.uuid,
+      sessionType: this.sessionOptions.sessionType,
+    };
   }
 
   /**
@@ -58,7 +85,10 @@ export abstract class StreamSession<
    */
   async start() {
     if (this.state !== 'starting') {
+      const oldState = this.state;
       this.state = 'starting';
+      this.emit('state', 'started', oldState);
+      this.emit('start');
       await this.startStream();
     }
   }
@@ -71,12 +101,18 @@ export abstract class StreamSession<
     if (this.state === 'started') {
       this.logger.debug('Stopping stream session', this.channel.uuid);
       setImmediate(() => {
-        this.stopStream().catch((e) => {
-          this.logger.error(e, 'Error while cleaning up stream session');
-          this.state = 'error';
-        });
+        this.stopStream()
+          .catch((e) => {
+            this.logger.error(e, 'Error while cleaning up stream session');
+            this.state = 'error';
+          })
+          .finally(() => {
+            const oldState = this.state;
+            this.state = 'stopped';
+            this.emit('stop');
+            this.emit('state', 'stopped', oldState);
+          });
       });
-      this.state = 'stopped';
     } else {
       this.logger.debug(
         'Wanted to shutdown session but state was %s',
@@ -93,7 +129,10 @@ export abstract class StreamSession<
     const streamInitResult = await this.initializeStream();
 
     if (streamInitResult.type === 'error') {
+      const oldState = this.state;
       this.state = 'error';
+      this.emit('state', 'error', oldState);
+      this.emit('error', streamInitResult.error);
       return;
     }
 
@@ -164,9 +203,27 @@ export abstract class StreamSession<
     return this.connectionTracker.lastHeartbeat(token);
   }
 
-  scheduleCleanup(delay: number) {
-    this.connectionTracker.scheduleCleanup(delay);
+  scheduleCleanup(delay: number = this.sessionOptions.cleanupDelay ?? 15_000) {
+    return this.connectionTracker.scheduleCleanup(delay);
   }
+
+  /**
+   * @returns the remaining active sessions
+   */
+  removeStaleConnections() {
+    const now = dayjs().valueOf();
+    const [aliveConnections, staleConnections] = ld
+      .chain(keys(this.connections()))
+      .partition((token) => now - this.lastHeartbeat(token) < 30_000)
+      .value();
+
+    // Cleanup stale connections
+    forEach(staleConnections, (conn) => this.removeConnection(conn));
+
+    return aliveConnections;
+  }
+
+  abstract isStale(): boolean;
 
   protected abstract initializeStream(): Promise<VideoStreamResult>;
 
@@ -178,12 +235,16 @@ export abstract class StreamSession<
   private async waitForStreamReadyInternal() {
     const waitResult = await this.waitForStreamReady();
 
+    const oldState = this.state;
     if (waitResult.isFailure()) {
       this.state = 'error';
       this.error = waitResult.error;
+      this.emit('error', this.error);
     } else {
       this.state = 'started';
+      this.emit('start');
     }
+    this.emit('state', this.state, oldState);
   }
 }
 
