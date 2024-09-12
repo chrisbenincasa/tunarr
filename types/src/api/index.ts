@@ -1,5 +1,11 @@
 import { z } from 'zod';
 import {
+  CacheSettingsSchema,
+  LogLevelsSchema,
+  LoggingSettingsSchema,
+  SystemSettingsSchema,
+} from '../SystemSettings.js';
+import {
   ChannelProgramSchema,
   ContentProgramSchema,
   CustomProgramSchema,
@@ -13,12 +19,6 @@ import {
   RandomSlotScheduleSchema,
   TimeSlotScheduleSchema,
 } from './Scheduling.js';
-import {
-  CacheSettingsSchema,
-  LogLevelsSchema,
-  LoggingSettingsSchema,
-  SystemSettingsSchema,
-} from '../SystemSettings.js';
 
 export * from './Scheduling.js';
 export * from './plexSearch.js';
@@ -241,3 +241,7 @@ export const ChannelSessionsResponseSchema = z.object({
     }),
   ),
 });
+
+export type ChannelSessionsResponse = z.infer<
+  typeof ChannelSessionsResponseSchema
+>;

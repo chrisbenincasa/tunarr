@@ -25,7 +25,7 @@ class ActiveChannelManagerImpl {
     details: ChannelConnectionDetails,
   ) {
     if (!this.#channelTrackers[channelId]) {
-      this.#channelTrackers[channelId] = new ConnectionTracker();
+      this.#channelTrackers[channelId] = new ConnectionTracker(channelId);
     }
 
     this.#channelTrackers[channelId].addConnection(token, details);

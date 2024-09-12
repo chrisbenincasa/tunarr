@@ -1,14 +1,6 @@
 import { ChannelSessionsResponseSchema } from '@tunarr/types/api';
 import dayjs from 'dayjs';
-import {
-  forEach,
-  isEmpty,
-  isNil,
-  isNull,
-  isNumber,
-  isUndefined,
-  map,
-} from 'lodash-es';
+import { isEmpty, isNil, isNull, isNumber, isUndefined, map } from 'lodash-es';
 import * as fsSync from 'node:fs';
 import { PassThrough } from 'node:stream';
 import { Readable } from 'stream';
@@ -212,7 +204,9 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
         return res.status(404).send('No session found for channel ID');
       }
 
-      forEach(sessions, (session) => session.stop());
+      for (const session of sessions) {
+        await req.serverCtx.sessionManager.endSession(session);
+      }
 
       return res.status(201).send();
     },
@@ -242,7 +236,6 @@ export const videoRouter: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      // TODO Make this a settings opt-in for experimental behavior
       const channel = await req.serverCtx.channelDB.getChannel(req.params.id);
       if (isNil(channel)) {
         return res.status(404).send();

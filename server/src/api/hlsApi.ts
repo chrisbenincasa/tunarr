@@ -116,9 +116,7 @@ export const hlsApi: RouterPluginAsyncCallback = async (fastify) => {
           ip: req.ip,
           userAgent: req.headers['user-agent'],
         },
-        {
-          sessionType: 'hls',
-        },
+        {},
       );
 
       if (session.isFailure()) {
@@ -158,9 +156,7 @@ export const hlsApi: RouterPluginAsyncCallback = async (fastify) => {
           ip: req.ip,
           userAgent: req.headers['user-agent'],
         },
-        {
-          sessionType: 'hls',
-        },
+        {},
       );
 
       if (session.isFailure()) {

@@ -1,3 +1,4 @@
+import { isEmpty } from 'lodash-es';
 import { Channel } from '../dao/direct/derivedTypes.js';
 import { VideoStreamResult } from '../ffmpeg/FfmpegOutputStream.js';
 import { ConcatOptions } from '../ffmpeg/ffmpeg.js';
@@ -18,6 +19,10 @@ export class ConcatSession extends StreamSession<ConcatSessionOptions> {
 
   static create(channel: Channel, options: ConcatSessionOptions) {
     return new ConcatSession(channel, options);
+  }
+
+  isStale(): boolean {
+    return isEmpty(this.connections());
   }
 
   protected async initializeStream(): Promise<VideoStreamResult> {

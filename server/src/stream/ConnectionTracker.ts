@@ -1,7 +1,7 @@
-import { isEmpty, isUndefined, keys } from 'lodash-es';
-import { Logger, LoggerFactory } from '../util/logging/LoggerFactory';
 import events from 'events';
+import { isEmpty, isUndefined, keys } from 'lodash-es';
 import { TypedEventEmitter } from '../types/eventEmitter';
+import { Logger, LoggerFactory } from '../util/logging/LoggerFactory';
 
 type ConnectionTrackerEvents = {
   cleanup: () => void;
@@ -14,6 +14,10 @@ export class ConnectionTracker<
   #cleanupFunc: NodeJS.Timeout | null = null;
   #connections: Record<string, ConnectionDetails> = {};
   #heartbeats: Record<string, number> = {};
+
+  constructor(private id: string) {
+    super();
+  }
 
   addConnection(token: string, connection: ConnectionDetails) {
     this.#connections[token] = { ...connection };
@@ -50,18 +54,22 @@ export class ConnectionTracker<
 
   scheduleCleanup(delay: number) {
     if (this.#cleanupFunc) {
-      this.#logger.debug('Cleanup already scheduled');
+      this.#logger.debug('Cleanup already scheduled (id=%s)', this.id);
       // We already scheduled shutdown
-      return;
+      return false;
     }
-    this.#logger.debug('Scheduling session shutdown');
+    this.#logger.debug('Scheduling session shutdown (id=%s)', this.id);
     this.#cleanupFunc = setTimeout(() => {
-      this.#logger.debug('Shutting down session');
+      this.#logger.debug('Shutting down connection tracker (id=%s)', this.id);
       if (isEmpty(this.#connections)) {
         this.emit('cleanup');
       } else {
-        this.#logger.debug(`Got new connections: %O`, this.#connections);
+        this.#logger.debug(
+          `Aborting shutdown. Got new connections in grace period: %O`,
+          this.#connections,
+        );
       }
     }, delay);
+    return true;
   }
 }
