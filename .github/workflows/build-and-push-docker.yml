@@ -79,7 +79,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           flavor: |
-            suffix=${{ matrix.builds.suffix }}
+            suffix=${{ matrix.builds.suffix }},onlatest=true
           images: |
             chrisbenincasa/tunarr
             ghcr.io/chrisbenincasa/tunarr
