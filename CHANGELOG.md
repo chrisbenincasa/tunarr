@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.2](https://github.com/chrisbenincasa/tunarr/compare/v0.10.1...v0.10.2) (2024-09-12)
+
+
+### Bug Fixes
+
+* ensure that latest tags receive hwaccel build suffix ([9c2e806](https://github.com/chrisbenincasa/tunarr/commit/9c2e806164ece6e621744981d8bcb9d6749e0f5a))
+
 ## [0.10.1](https://github.com/chrisbenincasa/tunarr/compare/v0.10.0...v0.10.1) (2024-09-12)
 
 
