@@ -30,7 +30,10 @@ export class StreamSeekInputOption extends InputOption {
   }
 
   appliesToInput = constant(true);
-  options = () => ['-ss', this.start];
+
+  options() {
+    return ['-ss', this.start];
+  }
 }
 
 // export function StreamSeekOption(start: string): InputOption {

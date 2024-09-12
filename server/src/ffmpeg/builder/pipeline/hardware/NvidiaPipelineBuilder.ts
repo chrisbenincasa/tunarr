@@ -1,31 +1,34 @@
-import util from 'node:util';
 import { isNil, isNull } from 'lodash-es';
+import util from 'node:util';
 import { Nullable } from '../../../../types/util';
+import { isNonEmptyString } from '../../../../util';
 import { VideoFormats } from '../../constants';
 import { Decoder } from '../../decoder/Decoder';
-import { CudaHardwareAccelerationOption } from '../../options/hardwareAcceleration/NvidiaOptions';
-import { isVideoPipelineContext } from '../BasePIpelineBuilder';
 import { DecoderFactory } from '../../decoder/DecoderFactory';
-import { FrameState } from '../../state/FrameState';
-import { DeinterlaceFilter } from '../../filter/DeinterlaceFilter';
-import { YadifCudaFilter } from '../../filter/nvidia/YadifCudaFilter';
-import { Filter } from '../../filter/FilterBase';
-import { ScaleFilter } from '../../filter/ScaleFilter';
-import { ScaleCudaFilter } from '../../filter/nvidia/ScaleCudaFilter';
-import { isNonEmptyString } from '../../../../util';
-import { PixelFormat, PixelFormatYuv420P } from '../../format/PixelFormat';
-import { PadFilter } from '../../filter/PadFilter';
-import { EncoderFactory } from '../../encoder/EncoderFactory';
 import { VideoEncoder } from '../../encoder/BaseEncoder';
-import { SoftwarePipelineBuilder } from '../software/SoftwarePipelineBuilder';
-import { OverlayWatermarkCudaFilter } from '../../filter/nvidia/OverlayWatermarkCudaFilter';
-import { HardwareUploadCudaFilter } from '../../filter/nvidia/HardwareUploadCudaFilter';
-import { PixelFormatFilter } from '../../filter/PixelFormatFilter';
-import { PixelFormatNv12 } from '../../format/PixelFormat';
-import { HardwareDownloadCudaFilter } from '../../filter/nvidia/HardwareDownloadCudaFilter';
+import { EncoderFactory } from '../../encoder/EncoderFactory';
+import { DeinterlaceFilter } from '../../filter/DeinterlaceFilter';
+import { Filter } from '../../filter/FilterBase';
+import { PadFilter } from '../../filter/PadFilter';
 import { PipelineFilterStep } from '../../filter/PipelineFilterStep';
+import { PixelFormatFilter } from '../../filter/PixelFormatFilter';
+import { ScaleFilter } from '../../filter/ScaleFilter';
 import { FormatCudaFilter } from '../../filter/nvidia/FormatCudaFilter';
+import { HardwareDownloadCudaFilter } from '../../filter/nvidia/HardwareDownloadCudaFilter';
+import { HardwareUploadCudaFilter } from '../../filter/nvidia/HardwareUploadCudaFilter';
+import { OverlayWatermarkCudaFilter } from '../../filter/nvidia/OverlayWatermarkCudaFilter';
+import { ScaleCudaFilter } from '../../filter/nvidia/ScaleCudaFilter';
+import { YadifCudaFilter } from '../../filter/nvidia/YadifCudaFilter';
 import { OverlayWatermarkFilter } from '../../filter/watermark/OverlayWatermarkFilter';
+import {
+  PixelFormat,
+  PixelFormatNv12,
+  PixelFormatYuv420P,
+} from '../../format/PixelFormat';
+import { CudaHardwareAccelerationOption } from '../../options/hardwareAcceleration/NvidiaOptions';
+import { FrameState } from '../../state/FrameState';
+import { isVideoPipelineContext } from '../BasePipelineBuilder';
+import { SoftwarePipelineBuilder } from '../software/SoftwarePipelineBuilder';
 
 export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
   protected setHardwareAccelState(): void {
@@ -64,8 +67,8 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       pipelineSteps.push(new CudaHardwareAccelerationOption());
     }
 
-    ffmpegState.decoderHwAccelMode = canDecode ? 'nvenc' : 'none';
-    ffmpegState.encoderHwAccelMode = canEncode ? 'nvenc' : 'none';
+    ffmpegState.decoderHwAccelMode = canDecode ? 'cuda' : 'none';
+    ffmpegState.encoderHwAccelMode = canEncode ? 'cuda' : 'none';
   }
 
   protected setupDecoder(): Nullable<Decoder> {
@@ -75,8 +78,8 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
 
     const { videoStream, ffmpegState } = this.context;
     let decoder: Nullable<Decoder> = null;
-    if (ffmpegState.decoderHwAccelMode === 'nvenc') {
-      decoder = DecoderFactory.getNvidiaDecoder(videoStream, 'nvenc');
+    if (ffmpegState.decoderHwAccelMode === 'cuda') {
+      decoder = DecoderFactory.getNvidiaDecoder(videoStream, 'cuda');
       if (!isNull(decoder)) {
         this.videoInputFile.addOption(decoder);
       } else {
@@ -100,7 +103,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       scaledSize: videoStream.frameSize,
       paddedSize: videoStream.frameSize,
       pixelFormat:
-        ffmpegState.decoderHwAccelMode === 'nvenc' && videoStream.bitDepth === 8
+        ffmpegState.decoderHwAccelMode === 'cuda' && videoStream.bitDepth === 8
           ? new PixelFormatNv12()
           : desiredState.pixelFormat,
     });
@@ -151,7 +154,8 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
     currentState = this.setWatermark(currentState);
 
     let encoder: Nullable<VideoEncoder> = null;
-    if (ffmpegState.encoderHwAccelMode === 'nvenc') {
+    console.log(ffmpegState.encoderHwAccelMode);
+    if (ffmpegState.encoderHwAccelMode === 'cuda') {
       encoder = EncoderFactory.getNvidiaEncoder(videoStream);
     }
 
@@ -243,7 +247,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
     if (currentState.paddedSize.equals(this.desiredState.paddedSize) == false) {
       // TODO: move this into current/desired state, but see if it works here for now
       const pixelFormat: Nullable<PixelFormat> =
-        this.ffmpegState.decoderHwAccelMode == 'nvenc' &&
+        this.ffmpegState.decoderHwAccelMode == 'cuda' &&
         this.context.videoStream.pixelFormat?.bitDepth === 8
           ? new PixelFormatNv12()
           : this.context.videoStream.pixelFormat;

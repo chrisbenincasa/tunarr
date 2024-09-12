@@ -1,33 +1,41 @@
 import { FfmpegSettings } from '@tunarr/types';
 import { exec } from 'child_process';
-import _, { isEmpty, isError, some, trim } from 'lodash-es';
+import _, { isEmpty, isError, nth, some, trim } from 'lodash-es';
 import NodeCache from 'node-cache';
 import PQueue from 'p-queue';
 import { cacheGetOrSet } from '../util/cache.js';
-import { attempt } from '../util/index.js';
+import dayjs from '../util/dayjs.js';
+import { attempt, isNonEmptyString } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory';
+import { DefaultHardwareCapabilities } from './builder/capabilities/DefaultHardwareCapabilities.js';
+import { NoHardwareCapabilities } from './builder/capabilities/NoHardwareCapabilities.js';
+import { NvidiaHardwareCapabilities } from './builder/capabilities/NvidiaHardwareCapabilities.js';
+import { HardwareAccelerationMode } from './builder/types.js';
 
 const CacheKeys = {
   ENCODERS: 'encoders',
   HWACCELS: 'hwaccels',
   OPTIONS: 'options',
+  NVIDIA: 'nvidia',
 } as const;
 
-const execQueue = new PQueue({ concurrency: 2 });
+const execQueue = new PQueue({ concurrency: 3 });
 
 const VersionExtractionPattern = /version\s+([^\s]+)\s+.*Copyright/;
 const CoderExtractionPattern = /[A-Z.]+\s([a-z0-9_-]+)\s*(.*)$/;
 const OptionsExtractionPattern = /^-([a-z_]+)\s+.*/;
+const NvidiaGpuArchPattern = /SM\s+(\d\.\d)/;
+const NvidiaGpuModelPattern = /(GTX\s+[0-9a-zA-Z]+[\sTtIi]+)/;
 
-const versionMutex = new Mutex();
-const versionCacheByPath = new NodeCache({ stdTTL: 60 * 5 });
 export class FFMPEGInfo {
   private logger = LoggerFactory.child({
     caller: import.meta,
     className: this.constructor.name,
   });
 
-  private static resultCache: NodeCache = new NodeCache({ stdTTL: 5 * 6000 });
+  private static resultCache: NodeCache = new NodeCache({
+    stdTTL: dayjs.duration({ hours: 1 }).asSeconds(),
+  });
 
   private static makeCacheKey(
     path: string,
@@ -38,7 +46,7 @@ export class FFMPEGInfo {
 
   private ffmpegPath: string;
 
-  constructor(opts: FfmpegSettings) {
+  constructor(private opts: FfmpegSettings) {
     this.ffmpegPath = opts.ffmpegExecutablePath;
   }
 
@@ -49,6 +57,9 @@ export class FFMPEGInfo {
         this.getAvailableVideoEncoders(),
         this.getHwAccels(),
         this.getOptions(),
+        ...(this.opts.hardwareAccelerationMode === 'cuda'
+          ? [this.getNvidiaCapabilities()]
+          : []),
       ]);
     } catch (e) {
       this.logger.error(e, 'Unexpected error during ffmpeg info seed');
@@ -132,6 +143,19 @@ export class FFMPEGInfo {
     return isError(res) ? [] : res;
   }
 
+  async getHardwareCapabilities(hwMode: HardwareAccelerationMode) {
+    switch (hwMode) {
+      case 'none':
+        return new NoHardwareCapabilities(this);
+      case 'cuda':
+        return await this.getNvidiaCapabilities();
+      case 'qsv':
+      case 'vaapi':
+      case 'videotoolbox':
+        return new DefaultHardwareCapabilities(this);
+    }
+  }
+
   async getOptions() {
     return attempt(async () => {
       const out = await cacheGetOrSet(
@@ -168,17 +192,70 @@ export class FFMPEGInfo {
     return opts.includes(option) ? true : defaultOnMissing;
   }
 
-  private getFfmpegStdout(args: string[]): Promise<string> {
+  async getNvidiaCapabilities() {
+    return attempt(async () => {
+      const out = await cacheGetOrSet(
+        FFMPEGInfo.resultCache,
+        this.cacheKey('NVIDIA'),
+        () =>
+          this.getFfmpegStdout(
+            [
+              '-hide_banner',
+              '-f',
+              'lavfi',
+              '-i',
+              'nullsrc',
+              '-c:v',
+              'h264_nvenc',
+              '-gpu',
+              'list',
+              '-f',
+              'null',
+              '-',
+            ],
+            true,
+          ),
+      );
+
+      const lines = _.chain(out)
+        .split('\n')
+        .drop(1)
+        .map(trim)
+        .reject(isEmpty)
+        .value();
+
+      for (const line of lines) {
+        const archMatch = line.match(NvidiaGpuArchPattern);
+        if (archMatch) {
+          const archString = archMatch[1];
+          const archNum = parseInt(archString.replaceAll('.', ''));
+          const model =
+            nth(line.match(NvidiaGpuModelPattern), 1)?.trim() ?? 'unknown';
+          this.logger.debug(
+            `Detected NVIDIA GPU (model = "${model}", arch = "${archString}")`,
+          );
+          return new NvidiaHardwareCapabilities(model, archNum, this);
+        }
+      }
+
+      throw new Error('Could not parse ffmepg output for Nvidia capabilities');
+    });
+  }
+
+  private getFfmpegStdout(
+    args: string[],
+    swallowError: boolean = false,
+  ): Promise<string> {
     return execQueue.add(
       async () =>
         await new Promise((resolve, reject) => {
           exec(
             `"${this.ffmpegPath}" ${args.join(' ')}`,
-            function (error, stdout) {
-              if (error !== null) {
+            function (error, stdout, stderr) {
+              if (error !== null && !swallowError) {
                 reject(error);
               }
-              resolve(stdout);
+              resolve(isNonEmptyString(stdout) ? stdout : stderr);
             },
           );
         }),

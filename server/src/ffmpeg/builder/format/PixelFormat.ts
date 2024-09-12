@@ -11,7 +11,7 @@ export interface PixelFormat extends PixelFormatEquals {
   bitDepth: number;
 }
 
-abstract class BasePixelFormat implements PixelFormat {
+export abstract class BasePixelFormat implements PixelFormat {
   name: string;
   ffmpegName: string;
   bitDepth: number;
@@ -28,12 +28,14 @@ abstract class BasePixelFormat implements PixelFormat {
 export const PixelFormats = {
   ARGB: 'argb',
   YUV420P: 'yuv420p',
+  YUV420PLe: 'yuv240ple',
   NV12: 'nv12',
 } as const;
 
 export const FfmpegPixelFormats = {
   ARGB: 'argb',
   YUV420P: 'yuv420p',
+  YUV420PLe: 'yuv240ple',
   NV12: 'nv12',
 } as const;
 
@@ -48,6 +50,12 @@ export function PixelFormatUnknown(bitDepth: number = 8): BasePixelFormat {
 export class PixelFormatYuv420P extends BasePixelFormat {
   readonly name: string = PixelFormats.YUV420P;
   readonly ffmpegName: string = FfmpegPixelFormats.YUV420P;
+  readonly bitDepth: number = 8;
+}
+
+export class PixelFormatYuv420P10Le extends BasePixelFormat {
+  readonly name: string = PixelFormats.YUV420PLe;
+  readonly ffmpegName: string = FfmpegPixelFormats.YUV420PLe;
   readonly bitDepth: number = 8;
 }
 
