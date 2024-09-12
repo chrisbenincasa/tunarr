@@ -37,8 +37,9 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link as RouterLink, useNavigate } from '@tanstack/react-router';
 import { VisibilityState } from '@tanstack/react-table';
 import { Channel, ChannelIcon } from '@tunarr/types';
+import { ChannelSessionsResponse } from '@tunarr/types/api';
 import dayjs from 'dayjs';
-import { isEmpty, isUndefined } from 'lodash-es';
+import { isEmpty, map } from 'lodash-es';
 import {
   MRT_Row,
   MaterialReactTable,
@@ -55,27 +56,32 @@ import { useSuspenseChannels } from '../../hooks/useChannels.ts';
 import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 import { useSettings } from '../../store/settings/selectors.ts';
 
+type ChannelRow = Channel & {
+  sessions: ChannelSessionsResponse[] | undefined;
+};
+
 export default function ChannelsPage() {
   const { backendUri } = useSettings();
   const apiClient = useTunarrApi();
   const { data: channels } = useSuspenseChannels();
-  const { data: channelSessions, isLoading: channelSessionsLoading } =
-    useApiQuery({
-      queryKey: ['channels', 'sessions'],
-      queryFn(apiClient) {
-        return apiClient.getAllChannelSessions();
-      },
-      staleTime: 10_000,
-    });
+  const { data: channelSessions } = useApiQuery({
+    queryKey: ['channels', 'sessions'],
+    queryFn(apiClient) {
+      return apiClient.getAllChannelSessions();
+    },
+    staleTime: 10_000,
+  });
   const theme = useTheme();
   const mediumViewport = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [deleteChannelConfirmation, setDeleteChannelConfirmation] = useState<
-    string | undefined
+    Channel | undefined
   >(undefined);
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
-  const [open, setOpen] = React.useState(false);
+  const [channelMenuOpen, setChannelMenuOpen] = React.useState<string | null>(
+    null,
+  );
   const settings = useSettings();
 
   const initialColumnModel = settings.ui.channelTableColumnModel;
@@ -86,9 +92,12 @@ export default function ChannelsPage() {
     setChannelTableColumnModel(columnVisibility);
   }, [columnVisibility]);
 
-  const handleOpenMenu = (event: React.MouseEvent<HTMLElement>) => {
+  const handleOpenMenu = (
+    event: React.MouseEvent<HTMLElement>,
+    channelId: string,
+  ) => {
     event.stopPropagation();
-    setOpen(true);
+    setChannelMenuOpen(channelId);
     setAnchorEl(event.currentTarget);
   };
 
@@ -96,9 +105,9 @@ export default function ChannelsPage() {
 
   const [, copyToClipboard] = useCopyToClipboard();
 
-  const handleClose = (e: React.SyntheticEvent) => {
+  const handleChannelMenuClose = (e: React.SyntheticEvent) => {
     e.stopPropagation();
-    setOpen(false);
+    setChannelMenuOpen(null);
     setAnchorEl(null);
   };
 
@@ -164,184 +173,176 @@ export default function ChannelsPage() {
         aria-labelledby="delete-channel-title"
         aria-describedby="delete-channel-description"
       >
-        <DialogTitle id="delete-channel-title">{'Delete Channel?'}</DialogTitle>
-        <DialogContent>
-          <DialogContentText id="delete-channel-description">
-            Deleting a Channel will remove all programming from the channel.
-            This action cannot be undone.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => setDeleteChannelConfirmation(undefined)}
-            autoFocus
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={() => removeChannel(deleteChannelConfirmation!)}
-            variant="contained"
-          >
-            Delete
-          </Button>
-        </DialogActions>
+        {deleteChannelConfirmation && (
+          <>
+            <DialogTitle id="delete-channel-title">
+              Delete Channel "{deleteChannelConfirmation.name}"?
+            </DialogTitle>
+            <DialogContent>
+              <DialogContentText id="delete-channel-description">
+                Deleting a Channel will remove all programming from the channel.
+                This action cannot be undone.
+              </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+              <Button
+                onClick={() => setDeleteChannelConfirmation(undefined)}
+                autoFocus
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => removeChannel(deleteChannelConfirmation.id)}
+                variant="contained"
+              >
+                Delete
+              </Button>
+            </DialogActions>
+          </>
+        )}
       </Dialog>
     );
   };
 
-  const renderChannelMenu = useCallback(
-    ({ id: channelId, name: channelName }: Channel) => {
-      return (
-        <Menu
-          id="channel-options-menu"
-          anchorEl={anchorEl}
-          open={open}
-          onClose={handleClose}
-          anchorOrigin={{
-            vertical: 'bottom',
-            horizontal: 'right',
-          }}
-          transformOrigin={{
-            vertical: 'top',
-            horizontal: 'right',
-          }}
-          MenuListProps={{
-            'aria-labelledby': 'channel-options-button',
+  const renderChannelMenu = (row: ChannelRow) => {
+    const { id: channelId, name: channelName, sessions } = row;
+    return (
+      <Menu
+        id="channel-options-menu"
+        anchorEl={anchorEl}
+        open={channelMenuOpen === row.id}
+        onClose={handleChannelMenuClose}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+        MenuListProps={{
+          'aria-labelledby': 'channel-options-button',
+        }}
+      >
+        {mediumViewport ? (
+          <MenuItem
+            to={`/channels/${channelId}/edit`}
+            component={RouterLink}
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
+          >
+            <ListItemIcon>
+              <EditIcon />
+            </ListItemIcon>
+            <ListItemText>Edit</ListItemText>
+          </MenuItem>
+        ) : null}
+
+        <MenuItem
+          onClick={(e) => {
+            e.stopPropagation();
+            copyToClipboard(
+              `${
+                isNonEmptyString(backendUri) ? `${backendUri}/` : ''
+              }media-player/${channelId}.m3u`,
+            )
+              .then(() =>
+                snackbar.enqueueSnackbar(
+                  `Copied channel "${channelName}" m3u link to clipboard`,
+                  { variant: 'success' },
+                ),
+              )
+              .catch((e) => {
+                snackbar.enqueueSnackbar(
+                  'Error copying channel m3u link to clipboard',
+                  {
+                    variant: 'error',
+                  },
+                );
+                console.error(e);
+              })
+              .finally(() => setChannelMenuOpen(null));
           }}
         >
-          {mediumViewport ? (
-            <MenuItem
-              to={`/channels/${channelId}/edit`}
+          <ListItemIcon>
+            <TextSnippetIcon />
+          </ListItemIcon>
+          <ListItemText>Copy M3U URL</ListItemText>
+        </MenuItem>
+        <MenuItem
+          component={RouterLink}
+          to={`/channels/${channelId}/watch`}
+          onClick={(e) => {
+            e.stopPropagation();
+          }}
+        >
+          <ListItemIcon>
+            <WatchIcon />
+          </ListItemIcon>
+          <ListItemText>Watch Channel</ListItemText>
+        </MenuItem>
+        <MenuItem
+          onClick={(e) => {
+            e.stopPropagation();
+            handleStopSessions(channelId);
+            handleChannelMenuClose(e);
+          }}
+          disabled={isEmpty(sessions)}
+        >
+          <ListItemIcon>
+            <Stop />
+          </ListItemIcon>
+          <ListItemText primary={`Stop Transcode Session`} />
+        </MenuItem>
+        <MenuItem
+          onClick={(e) => {
+            e.stopPropagation();
+            setDeleteChannelConfirmation(row);
+          }}
+        >
+          <ListItemIcon>
+            <Delete />
+          </ListItemIcon>
+          <ListItemText>Delete Channel</ListItemText>
+        </MenuItem>
+      </Menu>
+    );
+  };
+
+  const renderActionCell = ({
+    row: { original: channel },
+  }: {
+    row: MRT_Row<ChannelRow>;
+  }) => {
+    return (
+      <>
+        {renderChannelMenu(channel)}
+        {!mediumViewport && (
+          <Tooltip title="Edit Channel Settings" placement="top">
+            <IconButton
+              to={`/channels/${channel.id}/edit`}
               component={RouterLink}
-              onClick={(e) => {
-                e.stopPropagation();
-              }}
+              onClick={(e) => e.stopPropagation()}
             >
-              <ListItemIcon>
-                <EditIcon />
-              </ListItemIcon>
-              <ListItemText>Edit</ListItemText>
-            </MenuItem>
-          ) : null}
+              <Settings />
+            </IconButton>
+          </Tooltip>
+        )}
+        <IconButton
+          id="channel-options-button"
+          aria-controls={channelMenuOpen ? 'channel-options-menu' : undefined}
+          aria-haspopup="true"
+          aria-expanded={channelMenuOpen ? 'true' : undefined}
+          onClick={(e) => handleOpenMenu(e, channel.id)}
+        >
+          <MoreVert />
+        </IconButton>
+      </>
+    );
+  };
 
-          <MenuItem
-            onClick={(e) => {
-              e.stopPropagation();
-              copyToClipboard(
-                `${
-                  isNonEmptyString(backendUri) ? `${backendUri}/` : ''
-                }media-player/${channelId}.m3u`,
-              )
-                .then(() =>
-                  snackbar.enqueueSnackbar(
-                    `Copied channel "${channelName}" m3u link to clipboard`,
-                    { variant: 'success' },
-                  ),
-                )
-                .catch((e) => {
-                  snackbar.enqueueSnackbar(
-                    'Error copying channel m3u link to clipboard',
-                    {
-                      variant: 'error',
-                    },
-                  );
-                  console.error(e);
-                })
-                .finally(() => setOpen(false));
-            }}
-          >
-            <ListItemIcon>
-              <TextSnippetIcon />
-            </ListItemIcon>
-            <ListItemText>Copy M3U URL</ListItemText>
-          </MenuItem>
-          <MenuItem
-            component={RouterLink}
-            to={`/channels/${channelId}/watch`}
-            onClick={(e) => {
-              e.stopPropagation();
-            }}
-          >
-            <ListItemIcon>
-              <WatchIcon />
-            </ListItemIcon>
-            <ListItemText>Watch Channel</ListItemText>
-          </MenuItem>
-          <MenuItem
-            onClick={(e) => {
-              e.stopPropagation();
-              handleStopSessions(channelId);
-            }}
-            disabled={
-              channelSessionsLoading ||
-              isUndefined(channelSessions) ||
-              isEmpty(channelSessions[channelId])
-            }
-          >
-            <ListItemIcon>
-              <Stop />
-            </ListItemIcon>
-            <ListItemText primary="Stop Transcode Session" />
-          </MenuItem>
-          <MenuItem
-            onClick={(e) => {
-              e.stopPropagation();
-              setDeleteChannelConfirmation(channelId);
-            }}
-          >
-            <ListItemIcon>
-              <Delete />
-            </ListItemIcon>
-            <ListItemText>Delete Channel</ListItemText>
-          </MenuItem>
-        </Menu>
-      );
-    },
-    [
-      anchorEl,
-      backendUri,
-      channelSessions,
-      channelSessionsLoading,
-      copyToClipboard,
-      handleStopSessions,
-      mediumViewport,
-      open,
-      snackbar,
-    ],
-  );
-
-  const renderActionCell = useCallback(
-    ({ row: { original: channel } }: { row: MRT_Row<Channel> }) => {
-      return (
-        <>
-          {renderChannelMenu(channel)}
-          {!mediumViewport && (
-            <Tooltip title="Edit Channel Settings" placement="top">
-              <IconButton
-                to={`/channels/${channel.id}/edit`}
-                component={RouterLink}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <Settings />
-              </IconButton>
-            </Tooltip>
-          )}
-          <IconButton
-            id="channel-options-button"
-            aria-controls={open ? 'channel-options-menu' : undefined}
-            aria-haspopup="true"
-            aria-expanded={open ? 'true' : undefined}
-            onClick={handleOpenMenu}
-          >
-            <MoreVert />
-          </IconButton>
-        </>
-      );
-    },
-    [mediumViewport, open, renderChannelMenu],
-  );
-
-  const columnsNew = useMemo<MRT_ColumnDef<Channel>[]>(
+  const columnsNew = useMemo<MRT_ColumnDef<ChannelRow>[]>(
     () => [
       {
         header: 'Number',
@@ -404,9 +405,18 @@ export default function ChannelsPage() {
     [],
   );
 
+  const channelTableData = useMemo(() => {
+    return map(channels, (channel) => {
+      return {
+        ...channel,
+        sessions: channelSessions ? channelSessions[channel.id] : undefined,
+      };
+    });
+  }, [channels, channelSessions]);
+
   const table = useMaterialReactTable({
     columns: columnsNew,
-    data: channels,
+    data: channelTableData,
     enableRowActions: true,
     layoutMode: 'grid',
     state: {
