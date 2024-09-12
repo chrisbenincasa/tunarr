@@ -1,15 +1,15 @@
 import { isNull } from 'lodash-es';
+import { VideoFormats } from '../../constants';
 import { DeinterlaceFilter } from '../../filter/DeinterlaceFilter';
 import { PadFilter } from '../../filter/PadFilter';
 import { ScaleFilter } from '../../filter/ScaleFilter';
+import { OverlayWatermarkFilter } from '../../filter/watermark/OverlayWatermarkFilter';
+import { PixelFormatYuv420P } from '../../format/PixelFormat';
 import { FrameState } from '../../state/FrameState';
 import {
   BasePipelineBuilder,
   isVideoPipelineContext,
-} from '../BasePIpelineBuilder';
-import { OverlayWatermarkFilter } from '../../filter/watermark/OverlayWatermarkFilter';
-import { VideoFormats } from '../../constants';
-import { PixelFormatYuv420P } from '../../format/PixelFormat';
+} from '../BasePipelineBuilder';
 
 export class SoftwarePipelineBuilder extends BasePipelineBuilder {
   protected setupVideoFilters() {

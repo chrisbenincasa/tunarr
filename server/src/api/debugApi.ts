@@ -3,18 +3,50 @@ import { ChannelLineupQuery } from '@tunarr/types/api';
 import { ChannelLineupSchema } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import { jsonArrayFrom } from 'kysely/helpers/sqlite';
-import { compact, map, reject, some } from 'lodash-es';
+import {
+  compact,
+  isNil,
+  isNull,
+  isUndefined,
+  map,
+  reject,
+  some,
+} from 'lodash-es';
 import os from 'node:os';
 import z from 'zod';
 import { ArchiveDatabaseBackup } from '../dao/backup/ArchiveDatabaseBackup.js';
 import { directDbAccess } from '../dao/direct/directDbAccess.js';
 import { MediaSourceType } from '../dao/entities/MediaSource.js';
+import { FfmpegCommandGenerator } from '../ffmpeg/builder/FfmpegCommandGenerator.js';
+import { AudioStream, VideoStream } from '../ffmpeg/builder/MediaStream.js';
+import {
+  AudioFormats,
+  OutputFormats,
+  VideoFormats,
+} from '../ffmpeg/builder/constants.js';
+import {
+  PixelFormatUnknown,
+  PixelFormatYuv420P,
+  PixelFormatYuv420P10Le,
+} from '../ffmpeg/builder/format/PixelFormat.js';
+import { PipelineBuilderFactory } from '../ffmpeg/builder/pipeline/PipelineBuilderFactory.js';
+import { AudioState } from '../ffmpeg/builder/state/AudioState.js';
+import { FfmpegState } from '../ffmpeg/builder/state/FfmpegState.js';
+import { FrameState } from '../ffmpeg/builder/state/FrameState.js';
+import {
+  AudioInputSource,
+  FrameSize,
+  VideoInputSource,
+} from '../ffmpeg/builder/types.js';
+import { FFMPEGInfo } from '../ffmpeg/ffmpegInfo.js';
 import { LineupCreator } from '../services/dynamic_channels/LineupCreator.js';
+import { PlexStreamDetails } from '../stream/plex/PlexStreamDetails.js';
 import { PlexTaskQueue } from '../tasks/TaskQueue.js';
 import { SavePlexProgramExternalIdsTask } from '../tasks/plex/SavePlexProgramExternalIdsTask.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
+import { Nullable } from '../types/util.js';
 import { enumValues } from '../util/enumUtil.js';
-import { ifDefined, mapAsyncSeq } from '../util/index.js';
+import { ifDefined, mapAsyncSeq, run } from '../util/index.js';
 import { DebugJellyfinApiRouter } from './debug/debugJellyfinApi.js';
 import { debugStreamApiRouter } from './debug/debugStreamApi.js';
 
@@ -272,6 +304,197 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
         );
       });
       return res.send(danglingPrograms);
+    },
+  );
+
+  fastify.get(
+    '/debug/ffmpeg_pipeline',
+    {
+      schema: {
+        querystring: z.object({ id: z.string().uuid() }),
+      },
+    },
+    async (req, res) => {
+      const program = await req.serverCtx.programDB.getProgramById(
+        req.query.id,
+      );
+      if (isNil(program)) {
+        return res.status(404).send();
+      }
+      const serverName = program.externalSourceId;
+      const server =
+        await req.serverCtx.mediaSourceDB.getByNameDirect(serverName);
+
+      if (isNil(server)) {
+        return res
+          .status(404)
+          .send('Could not find plex server with name ' + serverName);
+      }
+
+      const plexStream = await new PlexStreamDetails(
+        server,
+        req.serverCtx.settings,
+      ).getStream({
+        ...program,
+        programType: program.type,
+        programId: program.uuid,
+      });
+
+      if (isNil(plexStream) || isNil(plexStream?.streamDetails)) {
+        return res
+          .status(404)
+          .send(
+            'Could not find program in plex with rating key ' +
+              program.externalKey,
+          );
+      }
+
+      const { streamUrl, streamDetails } = plexStream;
+
+      const ffmpegOpts = req.serverCtx.settings.ffmpegSettings();
+
+      let videoStream: Nullable<VideoStream> = null;
+      let videoInput: Nullable<VideoInputSource> = null;
+      if (
+        !streamDetails.audioOnly &&
+        !isUndefined(streamDetails.videoHeight) &&
+        !isUndefined(streamDetails.videoWidth)
+      ) {
+        // TODO: Use stream pixel format.
+        const pixelFormat = run(() => {
+          switch (streamDetails.videoBitDepth) {
+            case 8:
+              return new PixelFormatYuv420P();
+            case 10:
+              return new PixelFormatYuv420P10Le();
+            default:
+              return PixelFormatUnknown(streamDetails.videoBitDepth ?? 8);
+          }
+        });
+
+        videoStream = VideoStream.create({
+          index: 0, // stream index 0 on input index 0
+          codec: streamDetails.videoCodec ?? '',
+          pixelFormat,
+          frameSize: FrameSize.create({
+            width: streamDetails.videoWidth,
+            height: streamDetails.videoHeight,
+          }),
+          isAnamorphic: streamDetails.anamorphic ?? false,
+          pixelAspectRatio:
+            !isUndefined(streamDetails.pixelP) &&
+            !isUndefined(streamDetails.pixelQ)
+              ? `${streamDetails.pixelP}:${streamDetails.pixelQ}`
+              : null,
+          inputKind: 'video',
+          bitDepth: streamDetails.videoBitDepth ?? null,
+        });
+        videoInput = new VideoInputSource(streamUrl, [videoStream]);
+      }
+
+      const audioInput = new AudioInputSource(
+        streamUrl,
+        [
+          AudioStream.create({
+            index: 1, // stream index 1 on input index 0
+            codec: streamDetails.audioCodec ?? '',
+            channels: streamDetails.audioChannels ?? 2,
+          }),
+        ],
+        AudioState.create({
+          // audioEncoder: ffmpegOpts.audioEncoder,
+          audioEncoder: AudioFormats.Flac,
+          // audioBitrate: this.opts.audioBitrate,
+          // audioBufferSize: this.opts.audioBufferSize,
+          // audioChannels: this.opts.audioChannels,
+          // audioVolume: this.opts.audioVolumePercent,
+          // audioSampleRate: this.opts.audioSampleRate,
+        }),
+      );
+
+      // HACK: It'd be better to just expose HW Aceel mode as an option and let
+      // the pipeline builder decide on the right encoders, etc.
+      // const hwAccel =
+      //   find(HardwareAccelerationModes, (mode) =>
+      //     ffmpegOpts..includes(mode),
+      //   ) ?? 'none';
+
+      // const watermarkSource =
+      //   ifDefined(enableIcon, (watermark) => {
+      //     if (isNonEmptyString(watermark.url)) {
+      //       return new WatermarkInputSource(
+      //         watermark.url,
+      //         StillImageStream.create({
+      //           frameSize: FrameSize.create({
+      //             width: watermark.width,
+      //             height: -1,
+      //           }),
+      //           index: 0,
+      //         }),
+      //         watermark,
+      //       );
+      //     }
+
+      //     return null;
+      //   }) ?? null;
+      const targetResolution = ffmpegOpts.targetResolution;
+      // if (!isUndefined(channel.transcoding?.targetResolution)) {
+      //   targetResolution = channel.transcoding.targetResolution;
+      // }
+
+      const builder = await new PipelineBuilderFactory()
+        .builder()
+        .setHardwareAccelerationMode(ffmpegOpts.hardwareAccelerationMode)
+        .setVideoInputSource(videoInput)
+        .setAudioInputSource(audioInput)
+        // .setWatermarkInputSource(watermarkSource)
+        .build();
+
+      if (!isNull(videoInput)) {
+        const args = new FfmpegCommandGenerator().generateArgs(
+          videoInput,
+          audioInput,
+          null,
+          // watermarkSource,
+          builder.build(
+            FfmpegState.create({
+              version: await new FFMPEGInfo(ffmpegOpts).getVersion(),
+              threadCount: ffmpegOpts.numThreads,
+              softwareScalingAlgorithm: ffmpegOpts.scalingAlgorithm,
+              decoderHwAccelMode: ffmpegOpts.hardwareAccelerationMode,
+              encoderHwAccelMode: ffmpegOpts.hardwareAccelerationMode,
+              softwareDeinterlaceFilter: ffmpegOpts.deinterlaceFilter,
+              outputFormat: OutputFormats.Mkv,
+            }),
+            new FrameState({
+              videoFormat: VideoFormats.H264,
+              scaledSize: FrameSize.create({
+                width: targetResolution.widthPx,
+                height: targetResolution.heightPx,
+              }),
+              paddedSize: FrameSize.create({
+                width: targetResolution.widthPx,
+                height: targetResolution.heightPx,
+              }),
+              isAnamorphic: false,
+              pixelFormat: new PixelFormatYuv420P(),
+            }),
+          ),
+        );
+
+        console.debug(
+          'Generated FFMPEG args by pipeline v2: \n%s',
+          args.join(' '),
+        );
+      } else {
+        console.debug(
+          'Audio-only streams are not supported by ffmpeg pipeline v2 yet',
+        );
+      }
+
+      return res.send({
+        ...streamDetails,
+      });
     },
   );
 };

@@ -1,8 +1,8 @@
 import { merge, trimStart } from 'lodash-es';
-import { Nullable } from '../../../types/util';
-import { DataProps, HardwareAccelerationMode } from '../types';
 import { MarkRequired } from 'ts-essentials';
+import { Nullable } from '../../../types/util';
 import { OutputFormats } from '../constants';
+import { DataProps, HardwareAccelerationMode } from '../types';
 
 export const DefaultFfmpegState: Partial<DataProps<FfmpegState>> = {
   threadCount: null,
@@ -58,7 +58,10 @@ export class FfmpegState {
 
 function parseVersion(version: string): number {
   const versionNum = parseInt(
-    trimStart(version, 'n').replaceAll('.', '').replace(/-.+$/, ''),
+    trimStart(version, 'n')
+      .replaceAll(/ubuntu[0-9.]+$/g, '')
+      .replaceAll('.', '')
+      .replace(/-.+$/, ''),
     10,
   );
   if (versionNum < 100) {

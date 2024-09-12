@@ -1,6 +1,9 @@
+import tmp from 'tmp';
+import { setGlobalOptions } from '../../globals';
 import { FfmpegCommandGenerator } from './FfmpegCommandGenerator';
 import { AudioStream, StillImageStream, VideoStream } from './MediaStream';
 import { VideoFormats } from './constants';
+import { PixelFormat, PixelFormatYuv420P } from './format/PixelFormat';
 import { PipelineBuilderFactory } from './pipeline/PipelineBuilderFactory';
 import { AudioState } from './state/AudioState';
 import { FfmpegState } from './state/FfmpegState';
@@ -11,10 +14,24 @@ import {
   VideoInputSource,
   WatermarkInputSource,
 } from './types';
-import { PixelFormat, PixelFormatYuv420P } from './format/PixelFormat';
+
+let dbDir: tmp.DirResult;
+beforeAll(async () => {
+  // const dir =  path.join(os.tmpdir(),
+  dbDir = tmp.dirSync({ unsafeCleanup: true });
+  setGlobalOptions({
+    databaseDirectory: dbDir.name,
+    force_migration: false,
+    log_level: 'debug',
+  });
+});
+
+afterAll(() => {
+  dbDir?.removeCallback();
+});
 
 describe('FfmpegCommandGenerator', () => {
-  test('args', () => {
+  test('args', async () => {
     const pixelFormat: PixelFormat = new PixelFormatYuv420P();
 
     const videoStream = VideoStream.create({
@@ -24,6 +41,7 @@ describe('FfmpegCommandGenerator', () => {
       frameSize: FrameSize.create({ width: 640, height: 480 }),
       isAnamorphic: false,
       pixelAspectRatio: null,
+      bitDepth: 8,
     });
 
     const audioState = AudioState.create({
@@ -66,6 +84,7 @@ describe('FfmpegCommandGenerator', () => {
       StillImageStream.create({
         index: 0,
         frameSize: FrameSize.create({ width: 19, height: -1 }),
+        bitDepth: 8,
       }),
       {
         duration: 0,
@@ -74,18 +93,20 @@ describe('FfmpegCommandGenerator', () => {
         verticalMargin: 10,
         position: 'bottom-right',
         width: 19,
+        opacity: 1.0,
       },
     );
 
-    const builder = PipelineBuilderFactory.builder()
-      .setHardwareAccelerationMode('nvenc')
+    const builder = await new PipelineBuilderFactory()
+      .builder()
+      .setHardwareAccelerationMode('cuda')
       .setVideoInputSource(videoInputFile)
       .setAudioInputSource(audioInputFile)
       .setWatermarkInputSource(watermarkInputFile)
       .build();
 
     const steps = builder.build(
-      FfmpegState.defaultWithVersion('4.3.1'),
+      FfmpegState.defaultWithVersion('6.0-6ubuntu1.1'),
       desiredState,
     );
 

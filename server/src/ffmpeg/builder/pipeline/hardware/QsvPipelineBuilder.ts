@@ -1,22 +1,19 @@
 import { isNull } from 'lodash-es';
 import { Nullable } from '../../../../types/util';
+import { isNonEmptyString } from '../../../../util';
 import { VideoFormats } from '../../constants';
 import { Decoder } from '../../decoder/Decoder';
 import { DecoderFactory } from '../../decoder/DecoderFactory';
-import { QsvHardwareAccelerationOption } from '../../options/hardwareAcceleration/QsvOptions';
-import { isVideoPipelineContext } from '../BasePIpelineBuilder';
-import { FrameState } from '../../state/FrameState';
-import { DeinterlaceFilter } from '../../filter/DeinterlaceFilter';
-import { DeinterlaceQsvFilter } from '../../filter/qsv/DeinterlaceQsvFilter';
-import { Filter } from '../../filter/FilterBase';
-import { ScaleFilter } from '../../filter/ScaleFilter';
-import { ScaleQsvFilter } from '../../filter/qsv/ScaleQsvFilter';
-import { isNonEmptyString } from '../../../../util';
-import { PixelFormat } from '../../format/PixelFormat';
-import { PadFilter } from '../../filter/PadFilter';
-import { PixelFormatNv12 } from '../../format/PixelFormat';
 import { Encoder } from '../../encoder/Encoder';
 import { EncoderFactory } from '../../encoder/EncoderFactory';
+import { DeinterlaceFilter } from '../../filter/DeinterlaceFilter';
+import { Filter } from '../../filter/FilterBase';
+import { ScaleFilter } from '../../filter/ScaleFilter';
+import { DeinterlaceQsvFilter } from '../../filter/qsv/DeinterlaceQsvFilter';
+import { ScaleQsvFilter } from '../../filter/qsv/ScaleQsvFilter';
+import { QsvHardwareAccelerationOption } from '../../options/hardwareAcceleration/QsvOptions';
+import { FrameState } from '../../state/FrameState';
+import { isVideoPipelineContext } from '../BasePipelineBuilder';
 import { SoftwarePipelineBuilder } from '../software/SoftwarePipelineBuilder';
 
 export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
@@ -180,19 +177,19 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
     const { desiredState, videoStream } = this.context;
 
     if (!currentState.paddedSize.equals(desiredState.paddedSize)) {
-      // TODO: move this into current/desired state, but see if it works here for now
-      const pixelFormat: Nullable<PixelFormat> =
-        !isNull(videoStream.pixelFormat) &&
-        videoStream.pixelFormat.bitDepth == 8
-          ? new PixelFormatNv12(videoStream.pixelFormat.name)
-          : videoStream.pixelFormat;
+      //   // TODO: move this into current/desired state, but see if it works here for now
+      //   const pixelFormat: Nullable<PixelFormat> =
+      //     !isNull(videoStream.pixelFormat) &&
+      //     videoStream.pixelFormat.bitDepth == 8
+      //       ? new PixelFormatNv12(videoStream.pixelFormat.name)
+      //       : videoStream.pixelFormat;
 
-      const padStep = new PadFilter(currentState, desiredState, pixelFormat);
+      //   const padStep = new PadFilter(currentState, desiredState, pixelFormat);
 
-      this.videoInputFile.filterSteps.push(padStep);
-      if (padStep.affectsFrameState) {
-        return padStep.nextState(currentState);
-      }
+      //   this.videoInputFile.filterSteps.push(padStep);
+      //   if (padStep.affectsFrameState) {
+      //     return padStep.nextState(currentState);
+      //   }
 
       return currentState;
     } else {

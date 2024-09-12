@@ -1,22 +1,22 @@
+import { Watermark } from '@tunarr/types';
+import { flatMap } from 'lodash-es';
+import { AnyFunction } from 'ts-essentials';
 import { ExcludeByValueType, TupleToUnion } from '../../types/util';
-import { InputOption } from './options/InputOption';
 import { AudioStream, StillImageStream, VideoStream } from './MediaStream';
+import { PipelineFilterStep } from './filter/PipelineFilterStep';
+import { InputOption } from './options/InputOption';
 import { AudioState } from './state/AudioState';
 import { FrameState } from './state/FrameState';
-import { AnyFunction } from 'ts-essentials';
-import { flatMap } from 'lodash-es';
-import { PipelineFilterStep } from './filter/PipelineFilterStep';
-import { Watermark } from '@tunarr/types';
 
 export type DataProps<T> = ExcludeByValueType<T, AnyFunction>;
 
 export const HardwareAccelerationModes = [
   'none',
   'qsv',
-  'nvenc',
+  'cuda',
   'vaapi',
   'videotoolbox',
-  'amf',
+  // 'amf',
 ] as const;
 
 export type HardwareAccelerationMode = TupleToUnion<

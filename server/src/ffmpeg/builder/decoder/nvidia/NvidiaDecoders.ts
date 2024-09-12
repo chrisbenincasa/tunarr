@@ -58,7 +58,7 @@ export class NvidiaMpeg2Decoder extends NvidiaDecoder {
 
 export class NvidiaImplicitDecoder extends NvidiaDecoder {
   constructor() {
-    super('nvenc');
+    super('cuda');
   }
 
   readonly name = '';

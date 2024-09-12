@@ -1,16 +1,17 @@
 import { first, isNull, isUndefined } from 'lodash-es';
-import { Nullable } from '../../../types/util';
+import { MarkRequired } from 'ts-essentials';
+import { Nilable, Nullable } from '../../../types/util';
 import { ifDefined, isNonEmptyString } from '../../../util';
+import { Logger, LoggerFactory } from '../../../util/logging/LoggerFactory';
 import { AudioStream, VideoStream } from '../MediaStream';
 import { OutputFormats, VideoFormats } from '../constants';
 import { Decoder } from '../decoder/Decoder';
 import { DecoderFactory } from '../decoder/DecoderFactory';
-import { AudioEncoder } from '../encoder/BaseEncoder';
+import { AudioEncoder, VideoEncoder } from '../encoder/BaseEncoder';
 import { CopyAudioEncoder, CopyVideoEncoder } from '../encoder/CopyEncoders';
 import { EncoderFactory } from '../encoder/EncoderFactory';
 import { AudioPadFilter } from '../filter/AudioPadFilter';
 import { ComplexFilter } from '../filter/ComplexFilter';
-import { VideoEncoder } from '../encoder/BaseEncoder';
 import { FilterChain } from '../filter/FilterChain';
 import {
   AudioBitrateOutputOption,
@@ -50,8 +51,6 @@ import {
   WatermarkInputSource,
 } from '../types';
 import { PipelineBuilder } from './PipelineBuilder';
-import { MarkRequired } from 'ts-essentials';
-import { Logger, LoggerFactory } from '../../../util/logging/LoggerFactory';
 
 // Args passed to each setter -- we use an object here so we
 // 1. can deconstruct args in each implementor to use only what we need
@@ -107,7 +106,10 @@ export function isAudioPipelineContext(
 }
 
 export abstract class BasePipelineBuilder implements PipelineBuilder {
-  protected logger: Logger = LoggerFactory.child({ caller: import.meta });
+  protected logger: Logger = LoggerFactory.child({
+    caller: import.meta,
+    className: this.constructor.name,
+  });
   protected decoder: Nullable<Decoder> = null;
   protected context: PipelineBuilderContext;
 
@@ -239,16 +241,17 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       ),
     );
 
-    ifDefined(this.context.desiredAudioState.audioBitrate, (br) =>
-      this.pipelineSteps.push(AudioBitrateOutputOption(br)),
+    this.pushSettingIfDefined(
+      this.context.desiredAudioState.audioBitrate,
+      AudioBitrateOutputOption,
     );
-
-    ifDefined(this.context.desiredAudioState.audioBufferSize, (buf) =>
-      this.pipelineSteps.push(AudioBufferSizeOutputOption(buf)),
+    this.pushSettingIfDefined(
+      this.context.desiredAudioState.audioBufferSize,
+      AudioBufferSizeOutputOption,
     );
-
-    ifDefined(this.context.desiredAudioState.audioSampleRate, (rate) =>
-      this.pipelineSteps.push(AudioSampleRateOutputOption(rate)),
+    this.pushSettingIfDefined(
+      this.context.desiredAudioState.audioSampleRate,
+      AudioSampleRateOutputOption,
     );
 
     // TODO Audio volumne
@@ -344,5 +347,12 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     }
 
     return [];
+  }
+
+  protected pushSettingIfDefined<T>(
+    setting: Nilable<T>,
+    factory: (value: T) => PipelineStep,
+  ) {
+    ifDefined(setting, (v) => this.pipelineSteps.push(factory(v)));
   }
 }

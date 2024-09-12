@@ -1,5 +1,8 @@
+import { FfmpegSettings } from '@tunarr/types';
 import { isNull, isUndefined } from 'lodash-es';
+import { SettingsDB, getSettings } from '../../../dao/settings';
 import { Nullable } from '../../../types/util';
+import { FFMPEGInfo } from '../../ffmpegInfo';
 import {
   AudioInputSource,
   HardwareAccelerationMode,
@@ -12,8 +15,10 @@ import { QsvPipelineBuilder } from './hardware/QsvPipelineBuilder';
 import { SoftwarePipelineBuilder } from './software/SoftwarePipelineBuilder';
 
 export class PipelineBuilderFactory {
-  static builder(): PipelineBuilderFactory$Builder {
-    return new PipelineBuilderFactory$Builder();
+  constructor(private settingsDB: SettingsDB = getSettings()) {}
+
+  builder(): PipelineBuilderFactory$Builder {
+    return new PipelineBuilderFactory$Builder(this.settingsDB.ffmpegSettings());
   }
 }
 
@@ -22,6 +27,8 @@ class PipelineBuilderFactory$Builder {
   private audioInputFile: Nullable<AudioInputSource> = null;
   private watermarkInputFile: Nullable<WatermarkInputSource> = null;
   private hardwareAccelerationMode: HardwareAccelerationMode = 'none';
+
+  constructor(private ffmpegSettings: FfmpegSettings) {}
 
   setVideoInputSource(
     videoInputSource: Nullable<VideoInputSource>,
@@ -51,10 +58,17 @@ class PipelineBuilderFactory$Builder {
     return this;
   }
 
-  build(): PipelineBuilder {
+  async build(): Promise<PipelineBuilder> {
     if (isUndefined(this.videoInputFile)) {
       throw new Error();
     }
+
+    const info = new FFMPEGInfo(this.ffmpegSettings);
+    const hardwareCapabilities = await info.getHardwareCapabilities(
+      this.hardwareAccelerationMode,
+    );
+
+    console.log(hardwareCapabilities);
 
     if (isNull(this.videoInputFile)) {
       // Audio-only pipeline builder??
@@ -63,7 +77,7 @@ class PipelineBuilderFactory$Builder {
     }
 
     switch (this.hardwareAccelerationMode) {
-      case 'nvenc':
+      case 'cuda':
         return new NvidiaPipelineBuilder(
           this.videoInputFile,
           this.audioInputFile,

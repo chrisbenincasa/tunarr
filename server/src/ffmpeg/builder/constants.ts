@@ -19,6 +19,7 @@ export const AudioFormats = {
   Ac3: 'ac3',
   Copy: 'copy',
   PCMS16LE: 'pcm_s16le',
+  Flac: 'flac',
 } as const;
 
 export const OutputFormats = {

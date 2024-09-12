@@ -12,6 +12,7 @@ export type StreamDetails = {
   videoFramerate?: number;
   videoDecision?: string;
   videoScanType?: string;
+  videoPixelFormat?: string;
   videoBitDepth?: number;
   videoStreamIndex?: string;
 
