@@ -29,7 +29,8 @@
     "bundle": "tsup",
     "build": "tsup --dts",
     "clean": "rimraf ./build/",
-    "dev": "tsup --watch"
+    "dev": "tsup --watch",
+    "test": "vitest"
   },
   "dependencies": {
     "@tunarr/types": "workspace:*",
@@ -42,8 +43,9 @@
     "@types/lodash-es": "^4.17.10",
     "@types/node": "18.18.0",
     "rimraf": "^5.0.5",
+    "ts-essentials": "^9.4.1",
     "tsup": "^8.0.2",
     "typescript": "^5.3.3",
-    "ts-essentials": "^9.4.1"
+    "vitest": "^2.1.0"
   }
 }

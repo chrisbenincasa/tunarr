@@ -1,14 +1,18 @@
-import inst, { Dayjs, ManipulateType, PluginFunc } from 'dayjs';
-import duration from 'dayjs/plugin/duration.js';
+import { Dayjs, PluginFunc } from 'dayjs';
+import duration, { DurationUnitsObjectType } from 'dayjs/plugin/duration.js';
+import { isNumber } from 'lodash-es';
 
 declare module 'dayjs' {
   interface Dayjs {
-    mod(value: number, unit?: inst.ManipulateType): duration.Duration;
-    mod(value: duration.Duration): duration.Duration;
+    mod(
+      value: DurationUnitsObjectType | duration.Duration | number,
+      tzAware?: boolean,
+    ): duration.Duration;
   }
 }
 
 export const mod: PluginFunc = (_opts, dayjsClass, dayjsFactory) => {
+  // Mod requires duration.
   dayjsFactory.extend(duration);
 
   // Returns the remaining duration in milliseconds of
@@ -19,19 +23,29 @@ export const mod: PluginFunc = (_opts, dayjsClass, dayjsFactory) => {
   // be timezone adjusted (i.e. duration - new Date().getTimezoneOffset())
   // before being used with new timestamps.
   dayjsClass.prototype['mod'] = function (
-    value: number | duration.Duration,
-    unit?: ManipulateType,
+    value: DurationUnitsObjectType | duration.Duration | number,
+    tzAware: boolean = false,
   ) {
     let dur: duration.Duration;
     if (dayjsFactory.isDuration(value)) {
       dur = value;
+    } else if (isNumber(value)) {
+      dur = dayjsFactory.duration(value, 'milliseconds');
     } else {
-      dur = dayjsFactory.duration(value, unit ?? 'milliseconds');
+      dur = dayjsFactory.duration(value);
     }
 
     const djs = this as Dayjs;
 
-    return dayjsFactory.duration((djs.unix() * 1000) % dur.asMilliseconds());
+    const outDur = dayjsFactory.duration(
+      (djs.unix() * 1000) % dur.asMilliseconds(),
+    );
+
+    if (tzAware) {
+      return outDur.add(djs.utcOffset(), 'minutes');
+    }
+
+    return outDur;
   };
 };
 
