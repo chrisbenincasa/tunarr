@@ -1,12 +1,12 @@
+export { mod as dayjsMod } from './dayjsExtensions.js';
 export * from './plexSearchUtil.js';
+export * as seq from './seq.js';
 import { ChannelProgram } from '@tunarr/types';
 import { PlexMedia } from '@tunarr/types/plex';
+import { isNull } from 'lodash-es';
 import isFunction from 'lodash-es/isFunction.js';
 import { MarkRequired } from 'ts-essentials';
 import type { PerTypeCallback } from '../types/index.js';
-import { isNull } from 'lodash-es';
-export { mod as dayjsMod } from './dayjsExtensions.js';
-export * as seq from './seq.js';
 
 export function applyOrValueNoRest<Super, X extends Super, T>(
   f: ((m: X) => T) | T,
@@ -23,44 +23,44 @@ export function applyOrValue<
   return isFunction(f) ? f(arg, ...rest) : f;
 }
 
-export function forProgramType<T>(
+export function forProgramType<T, Args extends unknown[] = []>(
   choices:
-    | Omit<Required<PerTypeCallback<ChannelProgram, T>>, 'default'>
-    | MarkRequired<PerTypeCallback<ChannelProgram, T>, 'default'>,
-): (m: ChannelProgram) => NonNullable<T>;
-export function forProgramType<T>(
-  choices: PerTypeCallback<ChannelProgram, T>,
-): (m: ChannelProgram) => T | null;
-export function forProgramType<T>(
-  choices: PerTypeCallback<ChannelProgram, T>,
-): (m: ChannelProgram) => T | null {
-  return (m: ChannelProgram) => {
+    | Omit<Required<PerTypeCallback<ChannelProgram, T, Args>>, 'default'>
+    | MarkRequired<PerTypeCallback<ChannelProgram, T, Args>, 'default'>,
+): (m: ChannelProgram, ...rest: Args) => NonNullable<T>;
+export function forProgramType<T, Args extends unknown[] = []>(
+  choices: PerTypeCallback<ChannelProgram, T, Args>,
+): (m: ChannelProgram, ...rest: Args) => T | null;
+export function forProgramType<T, Args extends unknown[] = []>(
+  choices: PerTypeCallback<ChannelProgram, T, Args>,
+): (m: ChannelProgram, ...rest: Args) => T | null {
+  return (m: ChannelProgram, ...rest: Args) => {
     switch (m.type) {
       case 'content':
         if (choices.content) {
-          return applyOrValue(choices.content, m, []);
+          return applyOrValue(choices.content, m, rest);
         }
         break;
       case 'custom':
         if (choices.custom) {
-          return applyOrValue(choices.custom, m, []);
+          return applyOrValue(choices.custom, m, rest);
         }
         break;
       case 'redirect':
         if (choices.redirect) {
-          return applyOrValue(choices.redirect, m, []);
+          return applyOrValue(choices.redirect, m, rest);
         }
         break;
       case 'flex':
         if (choices.flex) {
-          return applyOrValue(choices.flex, m, []);
+          return applyOrValue(choices.flex, m, rest);
         }
         break;
     }
 
     // If we made it this far try to do the default
     if (choices.default) {
-      return applyOrValue(choices.default, m, []);
+      return applyOrValue(choices.default, m, rest);
     }
 
     return null;

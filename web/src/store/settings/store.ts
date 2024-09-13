@@ -1,9 +1,13 @@
 import { StateCreator } from 'zustand';
 
+export interface ProgramListDisplayOptions {
+  showFullEpisodeNames: boolean;
+}
 interface SettingsStateInternal {
   backendUri: string;
   ui: {
     channelTableColumnModel: Record<string, boolean>;
+    programListDisplayOptions: ProgramListDisplayOptions;
   };
 }
 
@@ -25,6 +29,9 @@ export const createSettingsSlice: StateCreator<SettingsState> = () => ({
     ui: {
       channelTableColumnModel: {
         onDemand: false,
+      },
+      programListDisplayOptions: {
+        showFullEpisodeNames: true,
       },
     },
   },

@@ -1,5 +1,10 @@
 import { useSuspendedStore } from '@/hooks/useSuspendedStore.ts';
+import { randomGradient, useThemeGradient } from '@/hooks/useThemeGradient.ts';
 import { deleteProgram } from '@/store/entityEditor/util.ts';
+import { updateProgramListDisplayOptions } from '@/store/settings/actions.ts';
+import { useProgramListDisplayOptions } from '@/store/settings/selectors.ts';
+import { ProgramListDisplayOptions } from '@/store/settings/store.ts';
+import { DisplaySettings } from '@mui/icons-material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import Edit from '@mui/icons-material/Edit';
@@ -8,6 +13,10 @@ import MusicNote from '@mui/icons-material/MusicNote';
 import TheatersIcon from '@mui/icons-material/Theaters';
 import TvIcon from '@mui/icons-material/Tv';
 import {
+  Checkbox,
+  Collapse,
+  FormControl,
+  FormControlLabel,
   ListItemIcon,
   Typography,
   lighten,
@@ -22,7 +31,17 @@ import ListItemText from '@mui/material/ListItemText';
 import { forProgramType } from '@tunarr/shared/util';
 import { ChannelProgram } from '@tunarr/types';
 import dayjs, { Dayjs } from 'dayjs';
-import { findIndex, isUndefined, join, map, negate, reject } from 'lodash-es';
+import {
+  findIndex,
+  isUndefined,
+  join,
+  map,
+  maxBy,
+  negate,
+  reject,
+  split,
+} from 'lodash-es';
+import pluralize from 'pluralize';
 import { CSSProperties, useCallback, useState } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
 import {
@@ -108,6 +127,8 @@ type ListItemProps = {
   enableDrag: boolean;
   enableEdit: boolean;
   enableDelete: boolean;
+  showFullEpisodeName: boolean;
+  durationWidthPct: number;
   onInfoClicked: (program: ChannelProgram) => void;
   onEditClicked: (
     program: (UIFlexProgram | UIRedirectProgram) & { index: number },
@@ -120,57 +141,63 @@ type ListDragItem = {
   program: ChannelProgram;
 };
 
-const programListItemTitleFormatter = (() => {
-  const itemTitle = forProgramType({
-    custom: () => `Custom Show - `,
-    redirect: (p) => `Redirect to "${p.channelName}"`,
-    flex: 'Flex',
-    content: (p) => {
-      switch (p.subtype) {
-        case 'movie':
-          return p.title;
-        case 'episode': {
-          // TODO: this makes some assumptions about number of seasons
-          // and episodes... it may break
-          const epPart =
-            p.seasonNumber && p.episodeNumber
-              ? ` S${p.seasonNumber
-                  .toString()
-                  .padStart(2, '0')}E${p.episodeNumber
-                  .toString()
-                  .padStart(2, '0')}`
-              : '';
-          return p.episodeTitle
-            ? `${p.title}${epPart} - ${p.episodeTitle}`
-            : p.title;
+const itemTitle = forProgramType<string, [ProgramListDisplayOptions]>({
+  custom: () => `Custom Show - `,
+  redirect: (p) => `Redirect to "${p.channelName}"`,
+  flex: 'Flex',
+  content: (p, opts) => {
+    switch (p.subtype) {
+      case 'movie':
+        return p.title;
+      case 'episode': {
+        // TODO: this makes some assumptions about number of seasons
+        // and episodes... it may break
+        const epPart =
+          p.seasonNumber && p.episodeNumber
+            ? ` S${p.seasonNumber.toString().padStart(2, '0')}E${p.episodeNumber
+                .toString()
+                .padStart(2, '0')}`
+            : '';
+
+        let title = p.title;
+        if (isNonEmptyString(epPart)) {
+          title += epPart;
         }
-        case 'track': {
-          return join(
-            reject(
-              [p.artistName, p.albumName, p.title],
-              negate(isNonEmptyString),
-            ),
-            ' - ',
-          );
+
+        if (isNonEmptyString(p.episodeTitle) && opts.showFullEpisodeNames) {
+          title += ` - ${p.episodeTitle}`;
         }
+
+        return title;
       }
-    },
-  });
-
-  return (program: ChannelProgram) => {
-    let title = itemTitle(program);
-
-    if (program.type === 'custom' && program.program) {
-      title += ` ${itemTitle(program.program)}`;
+      case 'track': {
+        return join(
+          reject(
+            [p.artistName, p.albumName, p.title],
+            negate(isNonEmptyString),
+          ),
+          ' - ',
+        );
+      }
     }
-    const dur = betterHumanize(
-      dayjs.duration({ milliseconds: program.duration }),
-      { exact: true },
-    );
+  },
+});
+const programListItemTitleFormatter = (
+  program: ChannelProgram,
+  options: ProgramListDisplayOptions,
+) => {
+  let title = itemTitle(program, options);
 
-    return `${title} - (${dur})`;
-  };
-})();
+  if (program.type === 'custom' && program.program) {
+    title += ` ${itemTitle(program.program, options)}`;
+  }
+  const dur = betterHumanize(
+    dayjs.duration({ milliseconds: program.duration }),
+    { exact: true },
+  );
+
+  return `${title} - (${dur})`;
+};
 
 const ProgramListItem = ({
   style,
@@ -185,7 +212,10 @@ const ProgramListItem = ({
   onEditClicked,
   enableEdit,
   enableDelete,
+  showFullEpisodeName,
+  durationWidthPct,
 }: ListItemProps) => {
+  useThemeGradient();
   const [{ isDragging }, drag] = useDrag(
     () => ({
       type: 'Program',
@@ -230,7 +260,9 @@ const ProgramListItem = ({
 
   // const dayBoundary = startTimes[idx + 1].isAfter(startTimes[idx], 'day');
 
-  let title = `${programListItemTitleFormatter(program)}`;
+  let title = `${programListItemTitleFormatter(program, {
+    showFullEpisodeNames: showFullEpisodeName,
+  })}`;
   if (!smallViewport && startTime) {
     title += ` - ${startTime}`;
   }
@@ -252,6 +284,8 @@ const ProgramListItem = ({
   if (icon !== null) {
     icon = <ListItemIcon sx={{ minWidth: 0, pr: 1 }}>{icon}</ListItemIcon>;
   }
+
+  const [gradientFrom, gradientTo] = randomGradient();
 
   return (
     <ListItem
@@ -334,18 +368,22 @@ const ProgramListItem = ({
             </ListItemIcon>
           )}
 
-          {/* {!smallViewport ? (
-            program.type === 'content' ? (
-              <ListItemIcon
-                onClick={handleInfoButtonClick}
-                sx={{ cursor: 'pointer', minWidth: 0, pr: 1 }}
-              >
-                <InfoOutlined />
-              </ListItemIcon>
-            ) : (
-              <Box sx={{ mr: 1, width: 24, height: '100%' }} />
-            )
-          ) : null} */}
+          <Box
+            sx={{
+              width: '100px',
+              height: '100%',
+              mr: 1,
+            }}
+          >
+            <Box
+              sx={{
+                width: `${durationWidthPct}%`,
+                height: '100%',
+                background: `linear-gradient(to right, ${gradientFrom}, ${gradientTo})`,
+                border: `thin solid rgba(0, 0, 0, 0.5)`,
+              }}
+            ></Box>
+          </Box>
 
           {!smallViewport
             ? icon ?? <Box sx={{ mr: 1, width: 24, height: '100%' }} />
@@ -395,6 +433,9 @@ export default function ChannelProgrammingList(props: Props) {
     ((UIFlexProgram | UIRedirectProgram) & { index: number }) | undefined
   >();
 
+  const listDisplayOptions = useProgramListDisplayOptions();
+  const maxDuration = maxBy(programList, (p) => p.duration)?.duration ?? 0;
+
   const findProgram = useCallback(
     (originalIndex: number) => {
       return { index: findIndex(programList, { originalIndex }) };
@@ -428,6 +469,7 @@ export default function ChannelProgrammingList(props: Props) {
     const startTimeDate = !isUndefined(program.startTimeOffset)
       ? dayjs(channel!.startTime + program.startTimeOffset).toDate()
       : undefined;
+    const width = 100.0 * (program.duration / maxDuration);
     return (
       <ProgramListItem
         index={idx}
@@ -442,6 +484,8 @@ export default function ChannelProgrammingList(props: Props) {
         enableEdit={props.enableRowEdit ?? true}
         onInfoClicked={() => openDetailsDialog(program, startTimeDate)}
         onEditClicked={openEditDialog}
+        showFullEpisodeName={listDisplayOptions.showFullEpisodeNames}
+        durationWidthPct={width}
       />
     );
   };
@@ -483,18 +527,78 @@ export default function ChannelProgrammingList(props: Props) {
 
     return (
       <Box width="100%">
-        {showProgramCount && (
-          <Box sx={{ width: '100%', mb: 1, textAlign: 'right' }}>
-            <Typography variant="caption" sx={{ flexGrow: 1, mr: 2 }}>
-              {programList.length} program{programList.length === 1 ? '' : 's'}
-            </Typography>
-            {channel?.duration && (
-              <Typography variant="caption">
-                {dayjs.duration(channel.duration).humanize()}
+        <Box
+          sx={{
+            width: '100%',
+            mb: 1,
+            display: 'flex',
+            justifyContent: 'end',
+            alignItems: 'center',
+            gap: 1,
+          }}
+        >
+          {showProgramCount && (
+            <Box>
+              <Typography variant="caption" sx={{ flexGrow: 1, mr: 2 }}>
+                {programList.length} {pluralize('program', programList.length)}
               </Typography>
-            )}
-          </Box>
-        )}
+              {channel?.duration && (
+                <Typography variant="caption">
+                  {dayjs.duration(channel.duration).humanize()}
+                </Typography>
+              )}
+            </Box>
+          )}
+          <IconButton size="small">
+            <DisplaySettings />
+          </IconButton>
+        </Box>
+        <Collapse
+          appear
+          in
+          sx={{
+            backgroundColor: (theme) => theme.palette.grey[700],
+            boxShadow: (theme) =>
+              join(
+                map(
+                  split(theme.shadows[1], /,(?![^()]*\))/),
+                  (shadow) => `${shadow} inset`,
+                ),
+                ',',
+              ),
+            mb: 2,
+            p: 1,
+          }}
+        >
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={listDisplayOptions.showFullEpisodeNames}
+                onChange={(e) =>
+                  updateProgramListDisplayOptions(
+                    (prev) => (prev.showFullEpisodeNames = e.target.checked),
+                  )
+                }
+              />
+            }
+            label="Show episode names"
+          />
+          <FormControl fullWidth>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={listDisplayOptions.showFullEpisodeNames}
+                  onChange={(e) =>
+                    updateProgramListDisplayOptions(
+                      (prev) => (prev.showFullEpisodeNames = e.target.checked),
+                    )
+                  }
+                />
+              }
+              label="Show duration bars"
+            />
+          </FormControl>
+        </Collapse>
         {virtualListProps ? (
           <FixedSizeList
             {...virtualListProps}
