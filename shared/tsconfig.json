@@ -23,15 +23,16 @@
         "declaration": true,
         "experimentalDecorators": true,
         "emitDecoratorMetadata": true,
-        "esModuleInterop": true
+        "esModuleInterop": true,
+        "types": [
+            "vitest/globals",
+        ]
     },
     "include": [
         "./src/**/*.ts",
-        "__tests__/**/*"
     ],
     "exclude": [
         "./build/**/*",
-        "./**/*.test.ts",
         "./**/*.ignore.ts"
-    ]
+    ],
 }

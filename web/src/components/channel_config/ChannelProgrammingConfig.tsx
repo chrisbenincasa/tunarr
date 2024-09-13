@@ -1,9 +1,8 @@
 import { channelProgramUniqueId } from '@/helpers/util.ts';
 import { useSlideSchedule } from '@/hooks/programming_controls/useSlideSchedule.ts';
-import { useTunarrApi } from '@/hooks/useTunarrApi.ts';
 import { useUpdateChannel } from '@/hooks/useUpdateChannel.ts';
+import { useUpdateLineup } from '@/hooks/useUpdateLineup.ts';
 import {
-  resetCurrentLineup,
   resetLineup,
   setChannelStartTime,
 } from '@/store/channelEditor/actions.ts';
@@ -23,9 +22,7 @@ import {
   useTheme,
 } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link as RouterLink } from '@tanstack/react-router';
-import { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
 import { ZodiosError } from '@zodios/core';
 import dayjs, { Dayjs } from 'dayjs';
 import { chain, findIndex, first, isUndefined, map, reject } from 'lodash-es';
@@ -37,14 +34,7 @@ import ChannelProgrammingList from './ChannelProgrammingList.tsx';
 import { ChannelProgrammingSort } from './ChannelProgrammingSort.tsx';
 import { ChannelProgrammingTools } from './ChannelProgrammingTools.tsx';
 
-type MutateArgs = {
-  channelId: string;
-  lineupRequest: UpdateChannelProgrammingRequest;
-};
-
 export function ChannelProgrammingConfig() {
-  const apiClient = useTunarrApi();
-  const queryClient = useQueryClient();
   const {
     currentEntity: channel,
     originalEntity: originalChannel,
@@ -72,24 +62,13 @@ export function ChannelProgrammingConfig() {
     }
   };
 
-  const updateLineupMutation = useMutation({
-    mutationFn: ({ channelId, lineupRequest }: MutateArgs) => {
-      return apiClient.post('/api/channels/:id/programming', lineupRequest, {
-        params: { id: channelId },
-      });
-    },
+  const updateLineupMutation = useUpdateLineup({
     onSettled: () => {
       setIsSubmitting(false);
     },
-    onSuccess: async (data, { channelId: channelNumber }) => {
-      resetCurrentLineup(data.lineup, data.programs);
-
+    onSuccess: () => {
       snackbar.enqueueSnackbar('Programs saved!', {
         variant: 'success',
-      });
-
-      await queryClient.invalidateQueries({
-        queryKey: ['channels', channelNumber],
       });
     },
     onError: (error, vars) => {

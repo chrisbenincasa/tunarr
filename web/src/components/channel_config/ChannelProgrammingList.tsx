@@ -65,6 +65,8 @@ type CommonProps = {
   // If given, the list will be rendered using react-window
   virtualListProps?: Omit<FixedSizeListProps, 'itemCount' | 'children'>;
   enableDnd?: boolean;
+  enableRowEdit?: boolean;
+  enableRowDelete?: boolean;
   showProgramCount?: boolean;
 };
 
@@ -104,6 +106,8 @@ type ListItemProps = {
   findProgram: (id: number) => { index: number };
   deleteProgram: (index: number) => void;
   enableDrag: boolean;
+  enableEdit: boolean;
+  enableDelete: boolean;
   onInfoClicked: (program: ChannelProgram) => void;
   onEditClicked: (
     program: (UIFlexProgram | UIRedirectProgram) & { index: number },
@@ -179,6 +183,8 @@ const ProgramListItem = ({
   enableDrag,
   onInfoClicked,
   onEditClicked,
+  enableEdit,
+  enableDelete,
 }: ListItemProps) => {
   const [{ isDragging }, drag] = useDrag(
     () => ({
@@ -277,25 +283,41 @@ const ProgramListItem = ({
       secondaryAction={
         enableDrag && isDragging ? null : (
           <>
-            {(!smallViewport && program.type === 'flex') ||
+            {!smallViewport ? (
+              program.type === 'content' ? (
+                <IconButton
+                  edge="end"
+                  onClick={handleInfoButtonClick}
+                  sx={{ cursor: 'pointer', minWidth: 0 }}
+                  size="small"
+                >
+                  <InfoOutlined />
+                </IconButton>
+              ) : (
+                <Box sx={{ mr: 1, width: 24, height: '100%' }} />
+              )
+            ) : null}
+            {(!smallViewport && enableEdit && program.type === 'flex') ||
             program.type === 'redirect' ? (
               <IconButton
                 onClick={() => onEditClicked({ ...program, index })}
                 edge="end"
                 aria-label="delete"
+                size="small"
               >
                 <Edit />
               </IconButton>
             ) : null}
-            <IconButton
-              onClick={() => deleteProgram(index)}
-              edge="end"
-              aria-label="delete"
-              size="small"
-              sx={{ maxHeight: '25px' }}
-            >
-              <DeleteIcon fontSize="small" />
-            </IconButton>
+            {enableDelete && (
+              <IconButton
+                onClick={() => deleteProgram(index)}
+                edge="end"
+                aria-label="delete"
+                size="small"
+              >
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            )}
           </>
         )
       }
@@ -306,15 +328,13 @@ const ProgramListItem = ({
         false
       ) : (
         <>
-          <ListItemIcon
-            sx={{
-              minWidth: smallViewport || program.type === 'content' ? 35 : null,
-            }}
-          >
-            <DragIndicatorIcon />
-          </ListItemIcon>
+          {enableDrag && (
+            <ListItemIcon sx={{ width: 24, minWidth: 0, mr: 2 }}>
+              <DragIndicatorIcon />
+            </ListItemIcon>
+          )}
 
-          {!smallViewport ? (
+          {/* {!smallViewport ? (
             program.type === 'content' ? (
               <ListItemIcon
                 onClick={handleInfoButtonClick}
@@ -323,11 +343,13 @@ const ProgramListItem = ({
                 <InfoOutlined />
               </ListItemIcon>
             ) : (
-              <Box sx={{ pr: 1, width: 20 }} />
+              <Box sx={{ mr: 1, width: 24, height: '100%' }} />
             )
-          ) : null}
+          ) : null} */}
 
-          {!smallViewport ? icon ?? <Box sx={{ pr: 1, width: 20 }} /> : null}
+          {!smallViewport
+            ? icon ?? <Box sx={{ mr: 1, width: 24, height: '100%' }} />
+            : null}
 
           <ListItemText
             primary={title}
@@ -403,7 +425,7 @@ export default function ChannelProgrammingList(props: Props) {
 
   const renderProgram = (idx: number, style?: CSSProperties) => {
     const program = programList[idx];
-    const startTimeDate = program.startTimeOffset
+    const startTimeDate = !isUndefined(program.startTimeOffset)
       ? dayjs(channel!.startTime + program.startTimeOffset).toDate()
       : undefined;
     return (
@@ -416,6 +438,8 @@ export default function ChannelProgrammingList(props: Props) {
         findProgram={findProgram}
         deleteProgram={deleteProgram}
         enableDrag={!!enableDnd}
+        enableDelete={props.enableRowDelete ?? true}
+        enableEdit={props.enableRowEdit ?? true}
         onInfoClicked={() => openDetailsDialog(program, startTimeDate)}
         onEditClicked={openEditDialog}
       />

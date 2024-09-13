@@ -12,4 +12,5 @@ export default defineConfig((opts) => ({
   format: 'esm',
   outDir: 'build',
   sourcemap: true,
+  tsconfig: 'tsconfig.prod.json',
 }));

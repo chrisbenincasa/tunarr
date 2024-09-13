@@ -4,6 +4,7 @@ import { TimeSlot, TimeSlotSchedule } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import duration, { Duration } from 'dayjs/plugin/duration.js';
 import relativeTime from 'dayjs/plugin/relativeTime.js';
+import tz from 'dayjs/plugin/timezone.js';
 import utc from 'dayjs/plugin/utc.js';
 import {
   chain,
@@ -27,6 +28,7 @@ dayjs.extend(duration);
 dayjs.extend(relativeTime);
 dayjs.extend(mod);
 dayjs.extend(utc);
+dayjs.extend(tz);
 
 type PaddedProgram = {
   program: ChannelProgram;
@@ -133,21 +135,25 @@ export async function scheduleTimeSlots(
     .sortBy((slot) => slot.startTime)
     .map((slot) => ({
       ...slot,
-      startTime:
-        slot.startTime +
-        dayjs.duration(schedule.timeZoneOffset, 'minutes').asMilliseconds(),
+      startTime: slot.startTime,
+      //  -
+      // dayjs.duration(schedule.timeZoneOffset, 'minutes').asMilliseconds(),
     }))
     .value();
 
-  const now = dayjs.utc();
+  console.log(sortedSlots);
+
+  const now = dayjs.tz();
   const startOfCurrentPeriod = now.startOf(schedule.period);
   let t0 = startOfCurrentPeriod.add(
     first(sortedSlots)!.startTime,
     'millisecond',
   );
+
   if (schedule.startTomorrow) {
     t0 = t0.add(1, 'day');
   }
+
   const upperLimit = t0.add(schedule.maxDays + 1, 'day');
 
   let timeCursor = t0;
@@ -159,17 +165,8 @@ export async function scheduleTimeSlots(
     channelPrograms = newPrograms;
   };
 
-  // if (t0.isAfter(startOfCurrentPeriod)) {
-  //   const d = dayjs.duration(t0.diff(startOfCurrentPeriod));
-  //   pushFlex(d);
-  // }
-
-  // const dayTime = timeCursor.subtract(
-  //   (timeCursor.unix() * 1000) % schedule.padMs,
-  // );
-
   while (timeCursor.isBefore(upperLimit)) {
-    let dayTime = timeCursor.mod(periodDuration).asMilliseconds();
+    let dayTime = timeCursor.mod(periodDuration, true).asMilliseconds();
 
     let currSlot: TimeSlot | null = null;
     let remaining: number = 0;
@@ -220,12 +217,6 @@ export async function scheduleTimeSlots(
       remaining,
     );
 
-    // if (isNull(program)) {
-    // pushFlex()
-    // continue;
-    // }
-
-    // TODO Late?
     if (
       !isNull(lateMillis) &&
       lateMillis >= schedule.latenessMs + constants.SLACK
@@ -240,7 +231,7 @@ export async function scheduleTimeSlots(
     }
 
     // Program longer than we have left? Add it and move on...
-    if (program && program.duration > remaining) {
+    if (program.duration > remaining) {
       channelPrograms.push(program);
       advanceIterator(currSlot, contentProgramIteratorsById);
       timeCursor = timeCursor.add(program.duration);
@@ -292,6 +283,6 @@ export async function scheduleTimeSlots(
 
   return {
     programs: channelPrograms,
-    startTime: t0.unix() * 1000,
+    startTime: t0.valueOf(),
   };
 }

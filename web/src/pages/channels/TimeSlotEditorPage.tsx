@@ -18,6 +18,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import { Link as RouterLink } from '@tanstack/react-router';
 import { dayjsMod, scheduleTimeSlots } from '@tunarr/shared';
@@ -191,7 +192,8 @@ const AddTimeSlotButton = ({ control, setValue }: AddTimeSlotButtonProps) => {
     const maxSlot = maxBy(currentSlots, (p) => p.startTime);
     const newStartTime = maxSlot
       ? dayjs.duration(maxSlot.startTime).add(1, 'hour')
-      : dayjs.duration(new Date().getTimezoneOffset(), 'minutes');
+      : dayjs.duration(0);
+
     const newSlots: TimeSlot[] = [
       ...currentSlots,
       {
@@ -238,7 +240,10 @@ const TimeSlotRow = ({
     (idx: number, time: dayjs.Dayjs) => {
       setValue(
         `slots.${idx}.startTime`,
-        time.mod(dayjs.duration(1, 'day')).asMilliseconds(),
+        time
+          .mod(dayjs.duration(1, 'day'))
+          .subtract({ minutes: new Date().getTimezoneOffset() })
+          .asMilliseconds(),
         { shouldDirty: true },
       );
     },
@@ -308,9 +313,8 @@ const TimeSlotRow = ({
     [currentSlots, setValue],
   );
 
-  const startTime = start
-    .add(slot.startTime)
-    .subtract(new Date().getTimezoneOffset(), 'minutes');
+  const startTime = start.add(slot.startTime);
+  // .subtract(new Date().getTimezoneOffset(), 'minutes');
   let selectValue: string;
   switch (slot.programming.type) {
     case 'show': {
@@ -415,12 +419,11 @@ export default function TimeSlotEditorPage() {
     schedule: loadedSchedule,
   } = useChannelEditor();
 
-  const [, setStartTime] = useState(
-    channel?.startTime ?? dayjs().unix() * 1000,
+  const [startTime, setStartTime] = useState(
+    channel?.startTime ? dayjs(channel?.startTime) : dayjs(),
   );
 
   const snackbar = useSnackbar();
-  const updateLineupMutation = useUpdateLineup();
   const theme = useTheme();
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -476,6 +479,15 @@ export default function TimeSlotEditorPage() {
         : defaultTimeSlotSchedule,
   });
 
+  const updateLineupMutation = useUpdateLineup({
+    onSuccess(data) {
+      reset(data.schedule ?? defaultTimeSlotSchedule, {
+        keepDefaultValues: false,
+        keepDirty: false,
+      });
+    },
+  });
+
   // Have to use a watch here because rendering depends on this value
   const currentPeriod = watch('period');
   const currentSlots = watch('slots');
@@ -488,7 +500,7 @@ export default function TimeSlotEditorPage() {
     setGeneratedList(undefined);
     resetLineup();
     reset();
-  }, [setGeneratedList]);
+  }, [reset]);
 
   const onSave = () => {
     const schedule: TimeSlotSchedule = {
@@ -619,8 +631,7 @@ export default function TimeSlotEditorPage() {
           'guide-end',
         );
         showPerfSnackbar(Math.round(ms), res.programs.length);
-        // TODO Adjust for timezone
-        setStartTime(res.startTime);
+        setStartTime(dayjs(res.startTime));
         updateCurrentChannel({ startTime: res.startTime });
         let offset = 0;
         const uiPrograms: UIChannelProgram[] = map(
@@ -808,13 +819,21 @@ export default function TimeSlotEditorPage() {
         </Box>
       </PaddedPaper>
       <PaddedPaper>
-        <Typography sx={{ pb: 1 }}>Programming Preview</Typography>
-        <Divider />
+        <Typography sx={{ mb: 1 }}>Programming Preview</Typography>
+        <Divider sx={{ mb: 1 }} />
+        <DateTimePicker
+          label="Programming Start"
+          value={startTime}
+          disabled
+          slotProps={{ textField: { size: 'small' } }}
+        />
         {generatedList ? (
           <ChannelProgrammingList
             type={'direct'}
             programList={zipWithIndex(generatedList)}
             enableDnd={false}
+            enableRowDelete={false}
+            enableRowEdit={false}
             virtualListProps={{
               width: '100%',
               height: 400,
@@ -826,6 +845,8 @@ export default function TimeSlotEditorPage() {
           <ChannelProgrammingList
             type="selector"
             enableDnd={false}
+            enableRowDelete={false}
+            enableRowEdit={false}
             virtualListProps={{
               width: '100%',
               height: 400,
