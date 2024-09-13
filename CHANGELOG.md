@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.10.3](https://github.com/chrisbenincasa/tunarr/compare/v0.10.2...v0.10.3) (2024-09-13)
+
+
+### Bug Fixes
+
+* do not block navigation on time slot editor page after successful save ([a5731cf](https://github.com/chrisbenincasa/tunarr/commit/a5731cfe206a23308c25e7603f4beabbe0a3d3fb))
+* properly adjust for timezones in time slot generation/preview ([60f0664](https://github.com/chrisbenincasa/tunarr/commit/60f06645cb83fa427a54edcefef2052b50668f2a))
+
 ## [0.10.2](https://github.com/chrisbenincasa/tunarr/compare/v0.10.1...v0.10.2) (2024-09-12)
 
 
