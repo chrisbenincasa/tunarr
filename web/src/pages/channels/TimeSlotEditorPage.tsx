@@ -424,7 +424,6 @@ export default function TimeSlotEditorPage() {
   );
 
   const snackbar = useSnackbar();
-  const updateLineupMutation = useUpdateLineup();
   const theme = useTheme();
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -478,6 +477,15 @@ export default function TimeSlotEditorPage() {
       !isUndefined(loadedSchedule) && loadedSchedule.type === 'time'
         ? loadedSchedule
         : defaultTimeSlotSchedule,
+  });
+
+  const updateLineupMutation = useUpdateLineup({
+    onSuccess(data) {
+      reset(data.schedule ?? defaultTimeSlotSchedule, {
+        keepDefaultValues: false,
+        keepDirty: false,
+      });
+    },
   });
 
   // Have to use a watch here because rendering depends on this value

@@ -283,6 +283,6 @@ export async function scheduleTimeSlots(
 
   return {
     programs: channelPrograms,
-    startTime: t0.unix() * 1000,
+    startTime: t0.valueOf(),
   };
 }

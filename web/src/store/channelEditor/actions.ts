@@ -126,16 +126,14 @@ export const setCurrentLineup = (
     }
   });
 
-export const resetCurrentLineup = (
-  lineup: CondensedChannelProgram[],
-  programs: Record<string, ContentProgram>,
-) =>
+export const resetCurrentLineup = (programming: CondensedChannelProgramming) =>
   useStore.setState((state) => {
-    const zippedLineup = addIndexesAndCalculateOffsets(lineup);
+    const zippedLineup = addIndexesAndCalculateOffsets(programming.lineup);
     state.channelEditor.programList = [...zippedLineup];
     state.channelEditor.originalProgramList = [...zippedLineup];
-    state.channelEditor.programLookup = { ...programs };
+    state.channelEditor.programLookup = { ...programming.programs };
     state.channelEditor.dirty.programs = false;
+    state.channelEditor.schedule = programming.schedule;
   });
 
 export const resetLineup = () =>
