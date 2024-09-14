@@ -698,7 +698,6 @@ export class FFMPEG {
 
     // Resolution fix: Add scale filter, current stream becomes [siz]
     const beforeSizeChange = currentVideo;
-    const algo = this.opts.scalingAlgorithm;
     let resizeMsg = '';
     if (
       !streamStats?.audioOnly &&
@@ -727,17 +726,17 @@ export class FFMPEG {
         cw = hypotheticalW2;
         ch = hypotheticalH2;
       }
-      videoComplex += `;${currentVideo}scale=${cw}:${ch}:flags=${algo},format=yuv420p[scaled]`;
+      videoComplex += `;${currentVideo}scale=${cw}:${ch}:flags=${this.opts.scalingAlgorithm},format=yuv420p[scaled]`;
       currentVideo = 'scaled';
       resizeMsg = `Stretch to ${cw} x ${ch}. To fit target resolution of ${this.wantedW} x ${this.wantedH}.`;
       if (this.ensureResolution) {
-        this.logger.info(
+        this.logger.debug(
           `First stretch to ${cw} x ${ch}. Then add padding to make it ${this.wantedW} x ${this.wantedH} `,
         );
       } else if (cw % 2 === 1 || ch % 2 === 1) {
         //we need to add padding so that the video dimensions are even
-        const xw = cw + (cw % 2);
-        const xh = ch + (ch % 2);
+        const xw = cw + 1;
+        const xh = ch + 1;
         resizeMsg = `Stretch to ${cw} x ${ch}. To fit target resolution of ${this.wantedW} x ${this.wantedH}. Then add 1 pixel of padding so that dimensions are not odd numbers, because they are frowned upon. The final resolution will be ${xw} x ${xh}`;
         this.wantedW = xw;
         this.wantedH = xh;

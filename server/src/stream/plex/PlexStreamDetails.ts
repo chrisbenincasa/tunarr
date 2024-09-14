@@ -27,7 +27,7 @@ import { isQueryError, isQuerySuccess } from '../../external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory';
 import { PlexApiClient } from '../../external/plex/PlexApiClient';
 import { Nullable } from '../../types/util';
-import { attempt, isNonEmptyString } from '../../util';
+import { attempt, isNonEmptyString, run } from '../../util';
 import { Logger, LoggerFactory } from '../../util/logging/LoggerFactory';
 import { makeLocalUrl } from '../../util/serverUtil.js';
 import { PlexStream, StreamDetails } from '../types';
@@ -256,6 +256,21 @@ export class PlexStreamDetails {
       streamDetails.videoWidth = videoStream.width;
       streamDetails.videoBitDepth = videoStream.bitDepth;
       streamDetails.videoStreamIndex = videoStream.index?.toString() ?? '0';
+      streamDetails.videoSampleAspectRatio = isNonEmptyString(
+        videoStream.pixelAspectRatio,
+      )
+        ? videoStream.pixelAspectRatio
+        : '1:1';
+      streamDetails.videoDisplayAspectRatio = first(media.Media)?.aspectRatio;
+      streamDetails.videoScanType = run(() => {
+        switch (videoStream.scanType) {
+          case 'interlacted':
+          case 'progressive':
+            return videoStream.scanType;
+          default:
+            return;
+        }
+      });
       streamDetails.pixelP = 1;
       streamDetails.pixelQ = 1;
     }
