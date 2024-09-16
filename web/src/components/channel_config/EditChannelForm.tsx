@@ -17,6 +17,7 @@ import {
 } from 'react-hook-form';
 import { isNonEmptyString } from '../../helpers/util.ts';
 import { useUpdateChannel } from '../../hooks/useUpdateChannel.ts';
+import ChannelEditActions from './ChannelEditActions.tsx';
 import ChannelEpgConfig from './ChannelEpgConfig.tsx';
 import { ChannelFlexConfig } from './ChannelFlexConfig.tsx';
 import { ChannelPropertiesEditor } from './ChannelPropertiesEditor.tsx';
@@ -27,7 +28,6 @@ import {
   EditChannelTabs,
   EditChannelTabsProps,
 } from './EditChannelTabPanel.tsx';
-import ChannelEditActions from './ChannelEditActions.tsx';
 
 function getDefaultFormValues(channel: Channel): SaveChannelRequest {
   return {

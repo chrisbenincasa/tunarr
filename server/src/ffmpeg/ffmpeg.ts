@@ -1,4 +1,4 @@
-import { FfmpegSettings, Watermark } from '@tunarr/types';
+import { ChannelStreamMode, FfmpegSettings, Watermark } from '@tunarr/types';
 import {
   SupportedHardwareAccels,
   SupportedVideoFormats,
@@ -18,13 +18,20 @@ import path from 'path';
 import { DeepReadonly, DeepRequired } from 'ts-essentials';
 import { Channel } from '../dao/direct/derivedTypes.js';
 import { serverOptions } from '../globals.js';
+import { ConcatSessionType } from '../stream/Session.js';
 import { StreamDetails } from '../stream/types.js';
-import { Maybe } from '../types/util.js';
+import { Maybe, Nullable } from '../types/util.js';
 import { isDefined, isNonEmptyString } from '../util/index.js';
 import { Logger, LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '../util/serverUtil.js';
+import { getTunarrVersion } from '../util/version.js';
 import { FfmpegProcess } from './FfmpegProcess.js';
 import { FfmpegTranscodeSession } from './FfmpegTrancodeSession.js';
+import {
+  MpegTsOutputFormat,
+  NutOutputFormat,
+  OutputFormat,
+} from './OutputFormat.js';
 import { FFMPEGInfo } from './ffmpegInfo.js';
 
 const MAXIMUM_ERROR_DURATION_MS = 60000;
@@ -39,18 +46,23 @@ export type FfmpegEvents = {
   end: (obj?: { code: number; cmd: string }) => void;
   error: (obj?: { code: number; cmd: string }) => void;
   close: (code?: number) => void;
+  // Fired when the process exited, for any reason.
+  exit: (code: Nullable<number>, signal: Nullable<NodeJS.Signals>) => void;
 };
 
-type HlsOptions = {
+export type HlsOptions = {
   hlsTime: number; // Duration of each clip in seconds,
   hlsListSize: number; // Number of clips to have in the list
   hlsDeleteThreshold: number;
   streamBasePath: string;
+  streamBaseUrl: string;
   segmentNameFormat: string;
   streamNameFormat: string;
+  deleteThreshold: Nullable<number>;
+  appendSegments: boolean;
 };
 
-type DashOptions = {
+export type MpegDashOptions = {
   windowSize: number; // number of segments kept in the manifest
   segmentDuration: number; // segment duration in secodns
   segmentType: 'auto' | 'mp4' | 'webm';
@@ -63,34 +75,39 @@ export type ConcatOptions = {
   // hls = starts an underlying HLS session. The concat process takes
   // the HLS m3u playlist as input and stitches the generated mpeg-ts
   // files back together into a continuous stream
-  mode: 'direct' | 'hls';
-  enableHls: boolean;
-  enableDash: boolean;
+  mode: ConcatSessionType;
+  // enableHls: boolean;
+  // enableDash: boolean;
+  outputFormat: OutputFormat;
   numThreads: number;
-  hlsOptions?: Partial<HlsOptions>;
-  dashOptions?: Partial<DashOptions>;
+  // hlsOptions?: Partial<HlsOptions>;
+  // dashOptions?: Partial<MpegDashOptions>;
   logOutput: boolean;
 };
 
+export const defaultHlsOptions: DeepRequired<HlsOptions> = {
+  hlsTime: 2,
+  hlsListSize: 3,
+  hlsDeleteThreshold: 3,
+  streamBasePath: 'stream_%v',
+  segmentNameFormat: 'data%05d.ts',
+  streamNameFormat: 'stream.m3u8',
+  streamBaseUrl: 'hls/',
+  deleteThreshold: 3,
+  appendSegments: false,
+};
+
+export const defaultMpegDashOptions: DeepRequired<MpegDashOptions> = {
+  segmentDuration: 2,
+  windowSize: 3,
+  segmentType: 'auto',
+  fragType: 'auto',
+};
+
 export const defaultConcatOptions: DeepRequired<ConcatOptions> = {
-  mode: 'direct',
-  enableHls: false,
-  enableDash: false,
+  mode: 'hls_concat',
   numThreads: 2,
-  hlsOptions: {
-    hlsTime: 2,
-    hlsListSize: 3,
-    hlsDeleteThreshold: 3,
-    streamBasePath: 'stream_%v',
-    segmentNameFormat: 'data%05d.ts',
-    streamNameFormat: 'stream.m3u8',
-  },
-  dashOptions: {
-    segmentDuration: 2,
-    windowSize: 3,
-    segmentType: 'auto',
-    fragType: 'auto',
-  },
+  outputFormat: MpegTsOutputFormat,
   logOutput: false,
 };
 
@@ -125,6 +142,21 @@ const hardwareAccelToEncoder: Record<
   },
 };
 
+export type StreamOptions = {
+  startTime: Duration;
+  duration: Duration;
+  watermark?: Watermark;
+  realtime?: boolean; // = true,
+  extraInputHeaders?: Record<string, string>;
+  outputFormat?: OutputFormat;
+  ptsOffset?: number;
+};
+
+export type StreamSessionOptions = StreamOptions & {
+  streamUrl: string;
+  streamDetails?: Maybe<StreamDetails>;
+};
+
 export class FFMPEG {
   private logger: Logger;
   private errorPicturePath: string;
@@ -133,7 +165,6 @@ export class FFMPEG {
   private wantedW: number;
   private wantedH: number;
   private apad: boolean;
-  private audioChannelsSampleRate: boolean; // ? what
   private ensureResolution: boolean;
   private volumePercent: number;
   private hasBeenKilled: boolean = false;
@@ -183,25 +214,23 @@ export class FFMPEG {
     this.wantedH = targetResolution.heightPx;
 
     this.apad = this.opts.normalizeAudio;
-    this.audioChannelsSampleRate = this.opts.normalizeAudio;
     this.ensureResolution = this.opts.normalizeResolution;
     this.volumePercent = this.opts.audioVolumePercent;
   }
 
-  setAudioOnly(audioOnly: boolean) {
-    this.audioOnly = audioOnly;
-  }
-
   createConcatSession(
     streamUrl: string,
-    opts: Partial<ConcatOptions> = defaultConcatOptions,
+    opts: DeepReadonly<Partial<ConcatOptions>> = defaultConcatOptions,
   ) {
     this.ffmpegName = 'Concat FFMPEG';
     const ffmpegArgs: string[] = [
       '-hide_banner',
       `-threads`,
-      // (opts.numThreads ?? defaultConcatOptions.numThreads).toFixed(),
       '1',
+      '-loglevel',
+      'error',
+      '-user_agent',
+      `Ffmpeg Tunarr/${getTunarrVersion()}`,
       `-fflags`,
       `+genpts+discardcorrupt+igndts`,
       // '-re', // Research this https://stackoverflow.com/a/48479202
@@ -239,51 +268,17 @@ export class FFMPEG {
       ffmpegArgs.push(`-map`, `0:v`);
     }
 
-    const audioOutputOpts = [
-      '-b:a',
-      `${this.opts.audioBitrate}k`,
-      '-maxrate:a',
-      `${this.opts.audioBitrate}k`,
-      '-bufsize:a',
-      `${this.opts.audioBufferSize}k`,
+    ffmpegArgs.push(
+      `-map`,
+      `0:a`,
+      ...this.getVideoOutputOptions(),
+      '-c:a',
+      this.opts.audioEncoder,
+      ...this.getAudioOutputOptions(),
       // This _seems_ to quell issues with non-monotonous DTS coming
       // from the input audio stream
       '-af',
       'aselect=concatdec_select,aresample=async=1',
-    ];
-
-    if (this.audioChannelsSampleRate) {
-      audioOutputOpts.push(
-        '-ac',
-        `${this.opts.audioChannels}`,
-        '-ar',
-        `${this.opts.audioSampleRate}k`,
-      );
-    }
-
-    // Right now we're just going to use a simple combo of videoFormat + hwAccel
-    // to specify an encoder. There's a lot more we can do with these settings,
-    // but we're going to hold off for the new ffmpeg pipeline implementation
-    // and just keep existing behavior here.
-    const videoEncoder =
-      hardwareAccelToEncoder[this.opts.hardwareAccelerationMode][
-        this.opts.videoFormat
-      ];
-
-    ffmpegArgs.push(
-      `-map`,
-      `0:a`,
-      '-c:v',
-      videoEncoder,
-      '-c:a',
-      this.opts.audioEncoder,
-      `-b:v`,
-      `${this.opts.videoBitrate}k`,
-      `-maxrate:v`,
-      `${this.opts.videoBitrate}k`,
-      `-bufsize:v`,
-      `${this.opts.videoBufferSize}k`,
-      ...audioOutputOpts,
       `-muxdelay`,
       this.opts.concatMuxDelay.toString(),
       `-muxpreload`,
@@ -297,71 +292,34 @@ export class FFMPEG {
     // NOTE: Most browsers don't support playback of AC3 audio due to licensing issues
     // We could offer a parameter to auto-convert to AAC...or offer a backup configuration
     // or just try and detect what the client supports and go from there.
-    if (opts.enableHls) {
-      const hlsOpts = merge({}, defaultConcatOptions, opts).hlsOptions;
-
-      ffmpegArgs.push(
-        '-f',
-        'hls',
-        '-hls_time',
-        hlsOpts.hlsTime.toString(),
-        '-hls_list_size',
-        hlsOpts.hlsListSize.toString(),
-        '-segment_list_flags',
-        '+live',
-        '-force_key_frames',
-        // Force a key frame every N seconds
-        // TODO consider using the GOP parameter here as stated in the docs
-        `expr:gte(t,n_forced*${hlsOpts.hlsTime}/2)`,
-        '-hls_delete_threshold',
-        '3', // Num unreferenced segments
-        '-hls_flags',
-        'delete_segments+program_date_time+omit_endlist+discont_start+independent_segments',
-        // '-hls_flags',
-        // 'split_by_time',
-        '-hls_segment_type',
-        'mpegts',
-        '-hls_base_url',
-        'hls/',
-        '-hls_segment_filename',
-        path.join('streams', hlsOpts.streamBasePath, hlsOpts.segmentNameFormat),
-        '-master_pl_name',
-        'master.m3u8',
-        path.join('streams', hlsOpts.streamBasePath, hlsOpts.streamNameFormat),
-      );
-    } else if (opts.enableDash) {
-      const dashOpts = merge(defaultConcatOptions, opts).dashOptions;
-      ffmpegArgs.push(
-        '-f',
-        'dash',
-        '-seg_duration',
-        dashOpts.segmentDuration.toString(),
-        '-window_size',
-        dashOpts.windowSize.toString(),
-        '-extra_window_size',
-        '3',
-        '-dash_segment_type',
-        dashOpts.segmentType,
-        '-frag_type',
-        dashOpts.fragType,
-        '-hls_playlist',
-        'true',
-      );
-    } else {
-      ffmpegArgs.push(
-        `-f`,
-        `mpegts`,
-        '-mpegts_flags',
-        '+initial_discontinuity',
-        `pipe:1`,
-      );
+    const outputFormat = opts.outputFormat ?? MpegTsOutputFormat;
+    switch (outputFormat.type) {
+      case 'mpegts':
+        ffmpegArgs.push(
+          `-f`,
+          `mpegts`,
+          '-mpegts_flags',
+          '+initial_discontinuity',
+          `pipe:1`,
+        );
+        break;
+      case 'hls':
+        ffmpegArgs.push(...this.getHlsOptions(outputFormat.hlsOptions));
+        break;
+      case 'dash':
+        ffmpegArgs.push(...this.getDashOptions(outputFormat.options));
+        break;
+      default:
+        throw new Error(
+          `Unsupported output format for concat: ${outputFormat.type}`,
+        );
     }
 
     return this.createProcess(ffmpegArgs);
   }
 
-  createHlsConcatSession(streamUrl: string) {
-    this.ffmpegName = 'HLS Concat FFMPEG';
+  createWrapperConcatSession(streamUrl: string, streamMode: ChannelStreamMode) {
+    this.ffmpegName = 'Concat Wrapper FFMPEG';
     const ffmpegArgs = [
       '-nostdin',
       '-threads',
@@ -369,11 +327,25 @@ export class FFMPEG {
       '-hide_banner',
       '-loglevel',
       'error',
+      '-user_agent',
+      `Ffmpeg Tunarr/${getTunarrVersion()}`,
       '-nostats',
       '-fflags',
       '+genpts+discardcorrupt+igndts',
       '-readrate',
       '1',
+      ...(streamMode === 'mpegts'
+        ? [
+            '-safe',
+            '0',
+            '-stream_loop',
+            '-1',
+            `-protocol_whitelist`,
+            `file,http,tcp,https,tcp,tls`,
+            `-probesize`,
+            '32',
+          ]
+        : []),
       '-i',
       streamUrl,
       '-map',
@@ -389,15 +361,17 @@ export class FFMPEG {
     return this.createProcess(ffmpegArgs);
   }
 
-  createStreamSession(
-    streamUrl: string,
-    streamStats: Maybe<StreamDetails>,
-    startTime: Duration,
-    duration: Duration,
-    enableIcon: Maybe<Watermark>,
-    realtime: boolean = true,
-    extraInnputHeaders: Record<string, string> = {},
-  ) {
+  createStreamSession({
+    streamUrl,
+    streamDetails: streamStats,
+    startTime,
+    duration,
+    watermark: enableIcon,
+    realtime = true,
+    extraInputHeaders = {},
+    outputFormat = NutOutputFormat,
+    ptsOffset,
+  }: StreamSessionOptions) {
     this.ffmpegName = 'Raw Stream FFMPEG';
     return this.createSession(
       streamUrl,
@@ -406,7 +380,9 @@ export class FFMPEG {
       duration,
       realtime,
       enableIcon,
-      extraInnputHeaders,
+      extraInputHeaders,
+      outputFormat,
+      ptsOffset,
     );
   }
 
@@ -414,6 +390,7 @@ export class FFMPEG {
     title: string,
     subtitle: Maybe<string>,
     duration: Duration,
+    outputFormat: OutputFormat = NutOutputFormat,
   ) {
     this.ffmpegName = 'Error Stream FFMPEG';
     if (this.opts.errorScreen === 'kill') {
@@ -441,10 +418,15 @@ export class FFMPEG {
       streamStats.duration!,
       true,
       /*watermark=*/ undefined,
+      {},
+      outputFormat,
     );
   }
 
-  createOfflineSession(duration: Duration) {
+  createOfflineSession(
+    duration: Duration,
+    outputFormat: OutputFormat = NutOutputFormat,
+  ) {
     this.ffmpegName = 'Offline Stream FFMPEG';
     const streamStats = {
       videoWidth: this.wantedW,
@@ -459,6 +441,8 @@ export class FFMPEG {
       duration,
       true,
       undefined,
+      {},
+      outputFormat,
     );
   }
 
@@ -469,7 +453,9 @@ export class FFMPEG {
     duration: Duration,
     realtime: boolean,
     watermark: Maybe<Watermark>,
-    extraInnputHeaders: Record<string, string> = {},
+    extraInputHeaders: Record<string, string> = {},
+    outputFormat: OutputFormat = NutOutputFormat,
+    ptsOffset: Nullable<number> = null,
   ): Promise<Maybe<FfmpegTranscodeSession>> {
     const ffmpegArgs: string[] = [
       '-hide_banner',
@@ -525,7 +511,7 @@ export class FFMPEG {
     let videoFile = -1;
     let overlayFile = -1;
     if (isNonEmptyString(streamSrc)) {
-      for (const [key, value] of Object.entries(extraInnputHeaders)) {
+      for (const [key, value] of Object.entries(extraInputHeaders)) {
         ffmpegArgs.push('-headers', `'${key}: ${value}'`);
       }
       ffmpegArgs.push(`-i`, streamSrc);
@@ -576,7 +562,7 @@ export class FFMPEG {
       doOverlay = false; //never show icon in the error screen
       // for error stream, we have to generate the input as well
       this.apad = false; //all of these generate audio correctly-aligned to video so there is no need for apad
-      this.audioChannelsSampleRate = true; //we'll need these
+      // this.audioChannelsSampleRate = true; //we'll need these
 
       //all of the error strings already choose the resolution to
       //match iW x iH , so with this we save ourselves a second
@@ -909,17 +895,42 @@ export class FFMPEG {
       }
     }
 
+    const videoOutputOptions: string[] = [];
+    switch (outputFormat.type) {
+      case 'hls':
+        videoOutputOptions.push(...this.getVideoOutputOptions());
+        break;
+      case 'nut':
+        videoOutputOptions.push('-c:v', 'rawvideo');
+        break;
+    }
+
+    const audioOutputOptions: string[] = [];
+    switch (outputFormat.type) {
+      case 'hls':
+        audioOutputOptions.push(...this.getAudioOutputOptions());
+        break;
+      case 'nut':
+        audioOutputOptions.push('-c:a', 'flac');
+        break;
+    }
+
     if (!this.audioOnly) {
       ffmpegArgs.push(
         '-map',
         currentVideo,
-        `-c:v`,
-        'rawvideo',
+        ...videoOutputOptions,
         `-sc_threshold`,
         `0`,
         '-video_track_timescale',
         '90000',
       );
+
+      // We probably need this even if we're not audio only...
+      if (ptsOffset !== null && ptsOffset > 0) {
+        ffmpegArgs.push('-output_ts_offset', `${ptsOffset / 90_000}`);
+      }
+
       if (useStillImageTune) {
         ffmpegArgs.push('-tune', 'stillimage');
       }
@@ -930,8 +941,7 @@ export class FFMPEG {
       currentAudio,
       '-flags',
       'cgop+ilme',
-      `-c:a`,
-      'flac',
+      ...audioOutputOptions,
       // TODO: Figure out why transitioning between still image streams
       // with generated audio and real streams causes PCM to break.
       // 'pcm_s16le',
@@ -965,7 +975,16 @@ export class FFMPEG {
       ffmpegArgs.push(`-t`, `${duration.asMilliseconds()}ms`);
     }
 
-    ffmpegArgs.push(`-f`, 'nut', `pipe:1`);
+    switch (outputFormat.type) {
+      case 'hls':
+        ffmpegArgs.push(
+          ...this.getHlsOptions(outputFormat.hlsOptions, streamStats),
+        );
+        break;
+      case 'nut':
+        ffmpegArgs.push(`-f`, 'nut', `pipe:1`);
+        break;
+    }
 
     if (this.hasBeenKilled) {
       this.logger.info('ffmpeg preemptively killed');
@@ -986,8 +1005,129 @@ export class FFMPEG {
     // a short amount of time before the stream is actually started...
     return new FfmpegTranscodeSession(
       process,
-      streamDuration ? dayjs().add(streamDuration).valueOf() : -1,
+      streamDuration ?? dayjs.duration(-1),
+      streamDuration ? dayjs().add(streamDuration) : dayjs(-1),
     );
+  }
+
+  private getHlsOptions(
+    opts?: Partial<HlsOptions>,
+    streamStats?: StreamDetails,
+  ) {
+    const hlsOpts = merge({}, defaultHlsOptions, opts);
+    const baseUrl = hlsOpts.streamBaseUrl.endsWith('/')
+      ? hlsOpts.streamBaseUrl
+      : `${hlsOpts.streamBaseUrl}/`;
+
+    const hlsFlags = ['program_date_time', 'omit_endlist', 'discont_start'];
+    if (hlsOpts.hlsListSize > 0) {
+      hlsFlags.push('delete_segments');
+    }
+
+    if (hlsOpts.appendSegments) {
+      hlsFlags.push('append_list');
+    }
+
+    const frameRate = streamStats?.videoFramerate ?? 24;
+
+    return [
+      '-g',
+      this.opts.hardwareAccelerationMode === 'qsv'
+        ? `${frameRate}`
+        : `${frameRate * hlsOpts.hlsTime}`,
+      '-keyint_min',
+      `${frameRate * hlsOpts.hlsTime}`,
+      '-force_key_frames',
+      // Force a key frame every N seconds
+      // TODO consider using the GOP parameter here as stated in the docs
+      `expr:gte(t,n_forced*${hlsOpts.hlsTime / 2})`,
+      '-f',
+      'hls',
+      '-hls_time',
+      hlsOpts.hlsTime.toString(),
+      '-hls_list_size',
+      hlsOpts.hlsListSize.toString(),
+      '-segment_list_flags',
+      '+live',
+      ...(hlsOpts.deleteThreshold && hlsOpts.deleteThreshold >= 0
+        ? ['-hls_delete_threshold', `${hlsOpts.deleteThreshold}`]
+        : []),
+      '-hls_flags',
+      `${hlsFlags.join('+')}`,
+      '-hls_segment_type',
+      'mpegts',
+      '-hls_base_url',
+      baseUrl,
+      '-hls_segment_filename',
+      path.join('streams', hlsOpts.streamBasePath, hlsOpts.segmentNameFormat),
+      '-master_pl_name',
+      'master.m3u8',
+      path.join('streams', hlsOpts.streamBasePath, hlsOpts.streamNameFormat),
+    ];
+  }
+
+  private getDashOptions(opts?: Partial<MpegDashOptions>): string[] {
+    const dashOpts = merge({}, defaultMpegDashOptions, opts);
+    return [
+      '-f',
+      'dash',
+      '-seg_duration',
+      dashOpts.segmentDuration.toString(),
+      '-window_size',
+      dashOpts.windowSize.toString(),
+      '-extra_window_size',
+      '3',
+      '-dash_segment_type',
+      dashOpts.segmentType,
+      '-frag_type',
+      dashOpts.fragType,
+      '-hls_playlist',
+      'true',
+    ];
+  }
+
+  private getVideoOutputOptions() {
+    // Right now we're just going to use a simple combo of videoFormat + hwAccel
+    // to specify an encoder. There's a lot more we can do with these settings,
+    // but we're going to hold off for the new ffmpeg pipeline implementation
+    // and just keep existing behavior here.
+    const videoEncoder =
+      hardwareAccelToEncoder[this.opts.hardwareAccelerationMode][
+        this.opts.videoFormat
+      ];
+
+    return [
+      '-c:v',
+      videoEncoder,
+      `-b:v`,
+      `${this.opts.videoBitrate}k`,
+      `-maxrate:v`,
+      `${this.opts.videoBitrate}k`,
+      `-bufsize:v`,
+      `${this.opts.videoBufferSize}k`,
+    ];
+  }
+
+  private getAudioOutputOptions() {
+    const audioOutputOpts = [
+      '-b:a',
+      `${this.opts.audioBitrate}k`,
+      '-maxrate:a',
+      `${this.opts.audioBitrate}k`,
+      '-bufsize:a',
+      `${this.opts.audioBufferSize}k`,
+    ];
+
+    if (this.opts.normalizeAudio) {
+      audioOutputOpts.push(
+        '-ac',
+        `${this.opts.audioChannels}`,
+        '-ar',
+        `${this.opts.audioSampleRate}k`,
+      );
+    }
+
+    return audioOutputOpts;
   }
 }
 

@@ -1,9 +1,9 @@
 import { Tag } from '@tunarr/types';
 import dayjs from 'dayjs';
-import { values } from 'lodash-es';
+import { every, values } from 'lodash-es';
 import { ChannelDB } from '../dao/channelDb';
+import { serverContext } from '../serverContext';
 import { OnDemandChannelService } from '../services/OnDemandChannelService';
-import { ActiveChannelManager } from '../stream/ActiveChannelManager';
 import { Task, TaskId } from './Task';
 
 /**
@@ -27,17 +27,18 @@ export class OnDemandChannelStateTask extends Task {
     const configs = await this.#channelDB.loadAllLineupConfigs();
     // TODO filter down to on-demand only...
     // const onDemandConfigs = filter(configs, ({lineup}) => isDefined(lineup.onDemandConfig));
-    const stopTime = dayjs().unix() * 1000;
+    const stopTime = +dayjs();
     for (const { channel } of values(configs)) {
-      if (ActiveChannelManager.numConnectionsForChannel(channel.uuid) === 0) {
-        ActiveChannelManager.scheduleChannelCleanup(channel.uuid, () => {
-          this.#onDemandService
-            .pauseChannel(channel.uuid, stopTime)
-            .catch((e) => {
-              this.logger.warn(e, 'Error pausing channel %s', channel.uuid);
-            });
-          this.logger.debug('Cleaning up on-demand channel: %s', channel.uuid);
-        });
+      const allChannelSessions =
+        serverContext().sessionManager.getAllSessionsForChannel(channel.uuid);
+      if (
+        every(allChannelSessions, (session) => session.numConnections() === 0)
+      ) {
+        this.#onDemandService
+          .pauseChannel(channel.uuid, stopTime)
+          .catch((e) => {
+            this.logger.warn(e, 'Error pausing channel %s', channel.uuid);
+          });
       }
     }
 

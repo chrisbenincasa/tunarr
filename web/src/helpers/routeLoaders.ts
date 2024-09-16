@@ -24,9 +24,12 @@ export async function preloadChannelAndProgramming({
   params,
   context,
 }: ChannelArgs) {
-  const currentProgram = useStore.getState().channelEditor.currentEntity;
+  const channelEditor = useStore.getState().channelEditor;
 
-  if (currentProgram?.id === params.channelId) {
+  if (
+    channelEditor?.currentEntity?.id === params.channelId &&
+    channelEditor.programsLoaded
+  ) {
     return;
   }
 

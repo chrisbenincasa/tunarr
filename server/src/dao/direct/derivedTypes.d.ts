@@ -1,3 +1,4 @@
+import { ChannelStreamMode } from '@tunarr/types';
 import { Selectable } from 'kysely';
 import { DeepNullable, MarkRequired } from 'ts-essentials';
 import { MarkNonNullable } from '../../types/util';
@@ -27,11 +28,15 @@ export type Program = Selectable<RawType.Program> & {
 };
 
 export type Channel = Selectable<
-  Omit<RawType.Channel, 'icon' | 'offline' | 'watermark' | 'transcoding'> & {
+  Omit<
+    RawType.Channel,
+    'icon' | 'offline' | 'watermark' | 'transcoding' | 'streamMode'
+  > & {
     icon?: ChannelIcon;
     offline?: ChannelOfflineSettings;
     watermark?: ChannelWatermark;
     transcoding?: ChannelTranscodingSettings;
+    streamMode: ChannelStreamMode;
   }
 > & {
   programs?: Program[];

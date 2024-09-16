@@ -170,7 +170,7 @@ function createRequestToChannel(
     (val) => val === 'global' || isNil(val),
   );
 
-  const c: RequiredEntityData<Channel> = {
+  return {
     number: saveReq.number,
     watermark: saveReq.watermark,
     icon: saveReq.icon,
@@ -191,8 +191,8 @@ function createRequestToChannel(
     stealth: saveReq.stealth,
     fillerRepeatCooldown: saveReq.fillerRepeatCooldown,
     guideFlexTitle: saveReq.guideFlexTitle,
-  };
-  return c;
+    streamMode: 'hls', // TODO: Let users choose
+  } satisfies RequiredEntityData<Channel>;
 }
 
 export type LoadedChannelWithGroupRefs = Loaded<

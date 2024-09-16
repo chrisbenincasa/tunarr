@@ -1,4 +1,5 @@
 import z, { ZodTypeAny } from 'zod';
+import { TupleToUnion } from '../util.js';
 import { ResolutionSchema } from './miscSchemas.js';
 import {
   ContentProgramTypeSchema,
@@ -58,6 +59,24 @@ export const ChannelTranscodingOptionsSchema = z.object({
   videoBufferSize: z.number().optional(),
 });
 
+export const HlsChannelStreamMode = 'hls';
+export const HlsSlowerChannelStreamMode = 'hls_slower';
+export const MpegTsChannelStreamMode = 'mpegts';
+export const ChannelStreamMode = {
+  Hls: HlsChannelStreamMode,
+  HlsSlower: HlsSlowerChannelStreamMode,
+  MpegTs: MpegTsChannelStreamMode,
+} as const;
+
+export const ChannelStreamModes = [
+  ChannelStreamMode.Hls,
+  ChannelStreamMode.HlsSlower,
+  ChannelStreamMode.MpegTs,
+] as const;
+
+export type ChannelStreamMode = TupleToUnion<typeof ChannelStreamModes>;
+export const ChannelStreamModeSchema = z.enum(ChannelStreamModes);
+
 export const ChannelSchema = z.object({
   disableFillerOverlay: z.boolean(),
   duration: z.number(),
@@ -80,6 +99,7 @@ export const ChannelSchema = z.object({
     enabled: z.boolean(),
   }),
   programCount: z.number(),
+  streamMode: ChannelStreamModeSchema,
 });
 
 function addOrTransform<T extends ZodTypeAny>(x: T) {

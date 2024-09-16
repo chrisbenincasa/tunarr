@@ -19,11 +19,11 @@ import {
   XmlTvSettingsSchema,
 } from '@tunarr/types/schemas';
 import events from 'events';
-import { isUndefined, merge, once } from 'lodash-es';
+import { merge } from 'lodash-es';
 import { Low, LowSync } from 'lowdb';
 import { existsSync } from 'node:fs';
-import path from 'path';
-import { DeepReadonly } from 'ts-essentials';
+import path, { dirname, join } from 'path';
+import { DeepPartial, DeepReadonly } from 'ts-essentials';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 import { globalOptions } from '../globals.js';
@@ -141,6 +141,10 @@ export class SettingsDB extends ITypedEventEmitter {
     return this.db.data.system.backup;
   }
 
+  getAll(): DeepReadonly<SettingsFile> {
+    return this.db.data;
+  }
+
   clientId(): string {
     return this.db.data.settings.clientId;
   }
@@ -159,6 +163,12 @@ export class SettingsDB extends ITypedEventEmitter {
 
   ffmpegSettings(): DeepReadonly<FfmpegSettings> {
     return this.db.data.settings.ffmpeg;
+  }
+
+  get ffprobePath(): string {
+    // This is kinda hacky...we may want to let this be configurable
+    const ffmpegSettings = this.ffmpegSettings();
+    return join(dirname(ffmpegSettings.ffmpegExecutablePath), 'ffprobe');
   }
 
   systemSettings(): DeepReadonly<SystemSettings> {
@@ -220,20 +230,28 @@ export class SettingsDB extends ITypedEventEmitter {
   // }
 }
 
-let settingsDbInstance: SettingsDB | undefined;
+// let settingsDbInstance: SettingsDB | undefined;
+const settingsDbInstances: Record<string, SettingsDB> = {};
 
-export const getSettings = once((dbPath?: string) => {
-  if (!isUndefined(settingsDbInstance)) {
-    return settingsDbInstance;
-  }
-
+export const getSettings = (
+  dbPath?: string,
+  initialSettings?: DeepPartial<SettingsFile>,
+) => {
   const actualPath =
     dbPath ?? path.resolve(globalOptions().databaseDirectory, 'settings.json');
 
+  const instance = settingsDbInstances[actualPath];
+  if (instance) {
+    return instance;
+  }
+
   const freshSettings = !existsSync(actualPath);
 
-  const defaultValue = defaultSettings(globalOptions().databaseDirectory);
-  console.log(defaultValue);
+  const defaultValue = merge(
+    {},
+    defaultSettings(globalOptions().databaseDirectory),
+    initialSettings,
+  );
   // Load this synchronously, but then give the DB instance an async version
   const db = new LowSync<SettingsFile>(
     new SyncSchemaBackedDbAdapter(SettingsFileSchema, actualPath, defaultValue),
@@ -250,7 +268,7 @@ export const getSettings = once((dbPath?: string) => {
     }
   });
 
-  settingsDbInstance = new SettingsDB(
+  settingsDbInstances[actualPath] = new SettingsDB(
     new Low<SettingsFile>(
       new SchemaBackedDbAdapter(SettingsFileSchema, actualPath, defaultValue),
       db.data,
@@ -261,5 +279,5 @@ export const getSettings = once((dbPath?: string) => {
     // We need to perform a migration
   }
 
-  return settingsDbInstance;
-});
+  return settingsDbInstances[actualPath];
+};

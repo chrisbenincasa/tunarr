@@ -1,3 +1,5 @@
+import { TranscodeResolutionOptions } from '@/helpers/constants.ts';
+import { useSettings } from '@/store/settings/selectors.ts';
 import {
   CircularProgress,
   Divider,
@@ -6,6 +8,7 @@ import {
   FormHelperText,
   Input,
   InputLabel,
+  Link,
   MenuItem,
   Select,
   SelectChangeEvent,
@@ -17,8 +20,12 @@ import {
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Grid2 from '@mui/material/Unstable_Grid2/Grid2';
-import { SaveChannelRequest, Watermark } from '@tunarr/types';
-import { isNil, isUndefined, map, round, get, range } from 'lodash-es';
+import {
+  ChannelStreamMode,
+  SaveChannelRequest,
+  Watermark,
+} from '@tunarr/types';
+import { get, isNil, isUndefined, map, range, round } from 'lodash-es';
 import { useState } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 import {
@@ -33,8 +40,6 @@ import {
   CheckboxFormController,
   NumericFormControllerText,
 } from '../util/TypedController.tsx';
-import { useSettings } from '@/store/settings/selectors.ts';
-import { TranscodeResolutionOptions } from '@/helpers/constants.ts';
 
 type ResolutionOptionValues =
   | (typeof TranscodeResolutionOptions)[number]['value']
@@ -56,6 +61,24 @@ const watermarkPositionOptions: {
 ];
 
 const globalOrNumber = /^(global|\d+|)+$/;
+
+const ChannelStreamModeOptions: {
+  value: ChannelStreamMode;
+  label: string;
+}[] = [
+  {
+    value: 'hls',
+    label: 'HLS (recommended)',
+  },
+  {
+    value: 'hls_slower',
+    label: 'HLS Alt',
+  },
+  {
+    value: 'mpegts',
+    label: 'MPEG-TS',
+  },
+];
 
 export default function ChannelTranscodingConfig() {
   const { backendUri } = useSettings();
@@ -146,7 +169,6 @@ export default function ChannelTranscodingConfig() {
     value: string,
     originalOnChange: (...event: unknown[]) => void,
   ) => {
-    console.log(field, value);
     if (field === 'transcoding.videoBitrate') {
       setUiVideoBitrate(value);
     } else {
@@ -178,7 +200,155 @@ export default function ChannelTranscodingConfig() {
     channel && (
       <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <Box>
-          <Typography>Watermark</Typography>
+          <Typography variant="h5">Transcoding Settings</Typography>
+          <Typography variant="caption">
+            Use these settings to override global ffmpeg settings for this
+            channel.
+          </Typography>
+          <Box>
+            <FormControl margin="normal" sx={{ width: '33%' }}>
+              <InputLabel>Channel Stream Mode</InputLabel>
+              <Controller
+                control={control}
+                name="streamMode"
+                render={({ field }) => (
+                  <Select<ChannelStreamMode>
+                    label="Channel Resolution"
+                    {...field}
+                  >
+                    {ChannelStreamModeOptions.map((opt) => (
+                      <MenuItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                )}
+              />
+              <FormHelperText>
+                The streaming mode affects the type of underlying transcoding
+                process used to create the channel's video stream.
+                <br />
+                Learn more about Tunarr's stream modes{' '}
+                <Link target="_blank" href="https://tunarr.com/">
+                  here
+                </Link>
+                !
+              </FormHelperText>
+            </FormControl>
+          </Box>
+          <Stack direction="row" gap={2} justifyContent={'space-between'}>
+            <FormControl margin="normal" sx={{ flex: 1 }}>
+              <InputLabel>Channel Resolution</InputLabel>
+              {ffmpegSettingsLoading ? (
+                <Skeleton>
+                  <Input />
+                </Skeleton>
+              ) : (
+                <Controller
+                  control={control}
+                  name="transcoding.targetResolution"
+                  render={() => (
+                    <Select<ResolutionOptionValues>
+                      disabled={isNil(ffmpegSettings)}
+                      label="Channel Resolution"
+                      value={targetResString}
+                      onChange={(e) => handleResolutionChange(e)}
+                    >
+                      {allResolutionOptions.map((opt) => (
+                        <MenuItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  )}
+                />
+              )}
+            </FormControl>
+            <FormControl margin="normal" sx={{ flex: 1 }}>
+              {ffmpegSettingsLoading ? (
+                <Skeleton>
+                  <Input />
+                </Skeleton>
+              ) : (
+                <Controller
+                  control={control}
+                  name="transcoding.videoBitrate"
+                  disabled={isNil(ffmpegSettings)}
+                  rules={{
+                    pattern: {
+                      value: globalOrNumber,
+                      message: "Must be a number or 'global'",
+                    },
+                    min: 0,
+                  }}
+                  render={({ field, formState: { errors } }) => (
+                    <TextField
+                      label="Video Bitrate (kbps)"
+                      error={!isNil(get(errors, 'transcoding.videoBitrate'))}
+                      helperText={
+                        errors.transcoding && errors.transcoding.videoBitrate
+                          ? "Must be a number or 'global'"
+                          : null
+                      }
+                      {...field}
+                      value={uiVideoBitrate}
+                      onChange={(e) =>
+                        handleGlobalOrNumber(
+                          'transcoding.videoBitrate',
+                          e.target.value,
+                          field.onChange,
+                        )
+                      }
+                    />
+                  )}
+                />
+              )}
+            </FormControl>
+            <FormControl margin="normal" sx={{ flex: 1 }}>
+              {ffmpegSettingsLoading ? (
+                <Skeleton>
+                  <Input />
+                </Skeleton>
+              ) : (
+                <Controller
+                  control={control}
+                  name="transcoding.videoBufferSize"
+                  disabled={isNil(ffmpegSettings)}
+                  rules={{
+                    pattern: {
+                      value: globalOrNumber,
+                      message: "Must be a number or 'global'",
+                    },
+                    min: 0,
+                  }}
+                  render={({ field, formState: { errors } }) => (
+                    <TextField
+                      label="Video Buffer Size (kbps)"
+                      error={!isNil(get(errors, 'transcoding.videoBufferSize'))}
+                      helperText={
+                        errors.transcoding && errors.transcoding.videoBufferSize
+                          ? "Must be a number or 'global'"
+                          : null
+                      }
+                      {...field}
+                      value={uiVideoBufferSize}
+                      onChange={(e) =>
+                        handleGlobalOrNumber(
+                          'transcoding.videoBufferSize',
+                          e.target.value,
+                          field.onChange,
+                        )
+                      }
+                    />
+                  )}
+                />
+              )}
+            </FormControl>
+          </Stack>
+        </Box>
+        <Divider sx={{ my: 2 }} />
+        <Box>
+          <Typography variant="h5">Watermark</Typography>
           <FormControl fullWidth>
             <FormControlLabel
               control={
@@ -419,121 +589,6 @@ export default function ChannelTranscodingConfig() {
             </Stack>
           )}
         </Box>
-        <Divider sx={{ my: 2 }} />
-        <Typography>Transcoding Settings</Typography>
-        <Typography variant="caption">
-          Use these settings to override global ffmpeg settings for this
-          channel.
-        </Typography>
-        <Stack direction="row" gap={2}>
-          <FormControl margin="normal">
-            <InputLabel>Channel Resolution</InputLabel>
-            {ffmpegSettingsLoading ? (
-              <Skeleton>
-                <Input />
-              </Skeleton>
-            ) : (
-              <Controller
-                control={control}
-                name="transcoding.targetResolution"
-                render={() => (
-                  <Select<ResolutionOptionValues>
-                    disabled={isNil(ffmpegSettings)}
-                    label="Channel Resolution"
-                    value={targetResString}
-                    onChange={(e) => handleResolutionChange(e)}
-                  >
-                    {allResolutionOptions.map((opt) => (
-                      <MenuItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                )}
-              />
-            )}
-          </FormControl>
-          <FormControl margin="normal">
-            {ffmpegSettingsLoading ? (
-              <Skeleton>
-                <Input />
-              </Skeleton>
-            ) : (
-              <Controller
-                control={control}
-                name="transcoding.videoBitrate"
-                disabled={isNil(ffmpegSettings)}
-                rules={{
-                  pattern: {
-                    value: globalOrNumber,
-                    message: "Must be a number or 'global'",
-                  },
-                  min: 0,
-                }}
-                render={({ field, formState: { errors } }) => (
-                  <TextField
-                    label="Video Bitrate (kbps)"
-                    error={!isNil(get(errors, 'transcoding.videoBitrate'))}
-                    helperText={
-                      errors.transcoding && errors.transcoding.videoBitrate
-                        ? "Must be a number or 'global'"
-                        : null
-                    }
-                    {...field}
-                    value={uiVideoBitrate}
-                    onChange={(e) =>
-                      handleGlobalOrNumber(
-                        'transcoding.videoBitrate',
-                        e.target.value,
-                        field.onChange,
-                      )
-                    }
-                  />
-                )}
-              />
-            )}
-          </FormControl>
-          <FormControl margin="normal">
-            {ffmpegSettingsLoading ? (
-              <Skeleton>
-                <Input />
-              </Skeleton>
-            ) : (
-              <Controller
-                control={control}
-                name="transcoding.videoBufferSize"
-                disabled={isNil(ffmpegSettings)}
-                rules={{
-                  pattern: {
-                    value: globalOrNumber,
-                    message: "Must be a number or 'global'",
-                  },
-                  min: 0,
-                }}
-                render={({ field, formState: { errors } }) => (
-                  <TextField
-                    label="Video Buffer Size (kbps)"
-                    error={!isNil(get(errors, 'transcoding.videoBufferSize'))}
-                    helperText={
-                      errors.transcoding && errors.transcoding.videoBufferSize
-                        ? "Must be a number or 'global'"
-                        : null
-                    }
-                    {...field}
-                    value={uiVideoBufferSize}
-                    onChange={(e) =>
-                      handleGlobalOrNumber(
-                        'transcoding.videoBufferSize',
-                        e.target.value,
-                        field.onChange,
-                      )
-                    }
-                  />
-                )}
-              />
-            )}
-          </FormControl>
-        </Stack>
       </Box>
     )
   );

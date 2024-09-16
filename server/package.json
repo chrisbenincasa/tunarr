@@ -54,6 +54,7 @@
     "dayjs": "^1.11.10",
     "fast-xml-parser": "^4.3.5",
     "fastify": "^4.26.0",
+    "fastify-graceful-shutdown": "^4.0.1",
     "fastify-plugin": "^4.5.1",
     "fastify-print-routes": "^3.2.0",
     "fastify-type-provider-zod": "^1.1.9",

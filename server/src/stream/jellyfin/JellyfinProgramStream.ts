@@ -7,6 +7,7 @@ import { MediaSourceDB } from '../../dao/mediaSourceDB.js';
 import { ProgramDB } from '../../dao/programDB.js';
 import { SettingsDB, getSettings } from '../../dao/settings.js';
 import { FfmpegTranscodeSession } from '../../ffmpeg/FfmpegTrancodeSession.js';
+import { OutputFormat } from '../../ffmpeg/OutputFormat.js';
 import { FFMPEG } from '../../ffmpeg/ffmpeg.js';
 import { UpdateJellyfinPlayStatusScheduledTask } from '../../tasks/jellyfin/UpdateJellyfinPlayStatusTask.js';
 import { Maybe, Nullable } from '../../types/util.js';
@@ -16,10 +17,10 @@ import { PlayerContext } from '../PlayerStreamContext.js';
 import { ProgramStream } from '../ProgramStream.js';
 import { JellyfinStreamDetails } from './JellyfinStreamDetails.js';
 
-export class JellyfinProgramStreama extends ProgramStream {
+export class JellyfinProgramStream extends ProgramStream {
   protected logger = LoggerFactory.child({
     caller: import.meta,
-    className: JellyfinProgramStreama.name,
+    className: JellyfinProgramStream.name,
   });
   private ffmpeg: Nullable<FFMPEG> = null;
   private killed: boolean = false;
@@ -27,10 +28,11 @@ export class JellyfinProgramStreama extends ProgramStream {
 
   constructor(
     context: PlayerContext,
+    outputFormat: OutputFormat,
     settingsDB: SettingsDB = getSettings(),
     private mediaSourceDB: MediaSourceDB = new MediaSourceDB(new ChannelDB()),
   ) {
-    super(context, settingsDB);
+    super(context, outputFormat, settingsDB);
   }
 
   protected shutdownInternal() {
@@ -69,8 +71,7 @@ export class JellyfinProgramStreama extends ProgramStream {
     );
 
     const watermark = this.getWatermark();
-    this.ffmpeg = new FFMPEG(ffmpegSettings, channel); // Set the transcoder options
-    this.ffmpeg.setAudioOnly(this.context.audioOnly);
+    this.ffmpeg = new FFMPEG(ffmpegSettings, channel, this.context.audioOnly); // Set the transcoder options
 
     const stream = await jellyfinStreamDetails.getStream(lineupItem);
     if (isNull(stream)) {
@@ -90,20 +91,22 @@ export class JellyfinProgramStreama extends ProgramStream {
 
     const start = dayjs.duration(lineupItem.start ?? 0);
 
-    const ffmpegOutStream = await this.ffmpeg.createStreamSession(
-      stream.streamUrl,
-      stream.streamDetails,
-      start,
-      +start === 0
-        ? dayjs.duration(lineupItem.duration)
-        : dayjs.duration(lineupItem.streamDuration ?? lineupItem.duration),
+    const ffmpegOutStream = await this.ffmpeg.createStreamSession({
+      streamUrl: stream.streamUrl,
+      streamDetails: stream.streamDetails,
+      startTime: start,
+      duration:
+        +start === 0
+          ? dayjs.duration(lineupItem.duration)
+          : dayjs.duration(lineupItem.streamDuration ?? lineupItem.duration),
       watermark,
-      this.context.realtime,
-      {
+      realtime: this.context.realtime,
+      extraInputHeaders: {
         // TODO: Use the real authorization string
         'X-Emby-Token': server.accessToken,
       },
-    );
+      outputFormat: this.outputFormat,
+    });
 
     if (isUndefined(ffmpegOutStream)) {
       throw new Error('Unable to spawn ffmpeg');

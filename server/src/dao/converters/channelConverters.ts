@@ -36,5 +36,6 @@ export const dbChannelToApiChannel = ({
       enabled: isDefined(lineup.onDemandConfig),
     },
     programCount: filter(lineup.items, { type: 'content' }).length,
+    streamMode: channel.streamMode,
   };
 };

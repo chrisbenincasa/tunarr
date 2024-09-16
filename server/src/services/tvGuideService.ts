@@ -728,6 +728,7 @@ export class TVGuideService {
         watermark: undefined,
         transcoding: undefined,
         programs: [],
+        streamMode: 'hls',
       };
 
       // Placeholder channel with random ID.

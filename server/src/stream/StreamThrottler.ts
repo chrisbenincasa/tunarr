@@ -1,8 +1,8 @@
 import constants from '@tunarr/shared/constants';
 import { isUndefined } from 'lodash-es';
+import util from 'node:util';
 import { StreamLineupItem } from '../dao/derived_types/StreamLineup';
 import { Maybe } from '../types/util';
-import util from 'node:util';
 
 type CacheEntry = {
   t0: number;
@@ -10,7 +10,7 @@ type CacheEntry = {
   lineupItem?: StreamLineupItem;
 };
 
-const cache: Record<number, CacheEntry> = {};
+const cache: Record<string, CacheEntry> = {};
 let previous: CacheEntry;
 
 // WTF is this
@@ -37,21 +37,21 @@ function equalItems(a: Maybe<StreamLineupItem>, b: Maybe<StreamLineupItem>) {
 
 // TODO: Rewrite this...it's brutal
 export function wereThereTooManyAttempts(
-  sessionId: number,
+  sessionToken: string,
   lineupItem: Maybe<StreamLineupItem>,
 ) {
-  const obj = cache[sessionId];
+  const obj = cache[sessionToken];
   const t1 = new Date().getTime();
   if (isUndefined(obj)) {
-    previous = cache[sessionId] = {
+    previous = cache[sessionToken] = {
       t0: t1 - constants.TOO_FREQUENT * 5,
     };
   } else if (obj.timer) {
     clearTimeout(obj.timer);
   }
   previous.timer = setTimeout(() => {
-    cache[sessionId].timer = null;
-    delete cache[sessionId];
+    cache[sessionToken].timer = null;
+    delete cache[sessionToken];
   }, constants.TOO_FREQUENT * 5);
 
   let result = false;
@@ -60,7 +60,7 @@ export function wereThereTooManyAttempts(
     //certainly too frequent
     result = equalItems(previous.lineupItem, lineupItem);
   }
-  cache[sessionId].t0 = t1;
-  cache[sessionId].lineupItem = lineupItem;
+  cache[sessionToken].t0 = t1;
+  cache[sessionToken].lineupItem = lineupItem;
   return result;
 }

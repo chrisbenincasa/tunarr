@@ -1,10 +1,11 @@
 import { MediaSourceType } from '../dao/entities/MediaSource.js';
 import { SettingsDB, getSettings } from '../dao/settings.js';
+import { NutOutputFormat, OutputFormat } from '../ffmpeg/OutputFormat.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { OfflineProgramStream } from './OfflinePlayer.js';
 import { PlayerContext } from './PlayerStreamContext.js';
 import { ProgramStream } from './ProgramStream.js';
-import { JellyfinProgramStreama } from './jellyfin/JellyfinProgramStream.js';
+import { JellyfinProgramStream } from './jellyfin/JellyfinProgramStream.js';
 import { PlexProgramStream } from './plex/PlexProgramStream.js';
 
 /**
@@ -17,45 +18,67 @@ export class ProgramStreamFactory {
 
   static create(
     context: PlayerContext,
+    outputFormat: OutputFormat = NutOutputFormat,
     settingsDB: SettingsDB = getSettings(),
   ): ProgramStream {
+    let streamType: string;
     let programStream: ProgramStream;
     switch (context.lineupItem.type) {
       case 'error':
-        this.#logger.debug('About to play error stream');
-        programStream = new OfflineProgramStream(true, context, settingsDB);
+        streamType = 'error';
+        programStream = new OfflineProgramStream(
+          true,
+          context,
+          outputFormat,
+          settingsDB,
+        );
         break;
       case 'loading':
-        this.#logger.debug('About to play loading stream');
+        streamType = 'loading';
         programStream = new OfflineProgramStream(
           false,
           {
             ...context,
             isLoading: true,
           },
+          outputFormat,
           settingsDB,
         );
         break;
       case 'offline':
-        this.#logger.debug('About to play offline stream');
-        programStream = new OfflineProgramStream(false, context, settingsDB);
+        streamType = 'offline';
+        programStream = new OfflineProgramStream(
+          false,
+          context,
+          outputFormat,
+          settingsDB,
+        );
         break;
       case 'commercial':
       case 'program':
         switch (context.lineupItem.externalSource) {
           case MediaSourceType.Plex:
-            this.#logger.debug('About to play plex stream');
-            programStream = new PlexProgramStream(context, settingsDB);
+            streamType = 'plex';
+            programStream = new PlexProgramStream(
+              context,
+              outputFormat,
+              settingsDB,
+            );
             break;
           case MediaSourceType.Jellyfin:
-            this.#logger.debug('About to play plex stream');
-            programStream = new JellyfinProgramStreama(context, settingsDB);
+            streamType = 'jellyfin';
+            programStream = new JellyfinProgramStream(
+              context,
+              outputFormat,
+              settingsDB,
+            );
         }
         break;
       case 'redirect':
         throw new Error('Impossible');
     }
 
+    this.#logger.debug('About to play %s stream', streamType);
     return programStream;
   }
 }

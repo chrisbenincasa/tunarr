@@ -5,6 +5,7 @@ import fastifySwagger from '@fastify/swagger';
 import { RequestContext } from '@mikro-orm/core';
 import constants from '@tunarr/shared/constants';
 import fastify, { FastifySchema } from 'fastify';
+import fastifyGracefulShutdown from 'fastify-graceful-shutdown';
 import fp from 'fastify-plugin';
 import fastifyPrintRoutes from 'fastify-print-routes';
 import {
@@ -13,17 +14,23 @@ import {
   serializerCompiler,
   validatorCompiler,
 } from 'fastify-type-provider-zod';
-import { FastifyRouteConfig } from 'fastify/types/route.js';
-import { isArray, isNumber, isString, isUndefined, round } from 'lodash-es';
-import schedule from 'node-schedule';
+import { RouteOptions } from 'fastify/types/route.js';
+import {
+  isArray,
+  isNumber,
+  isString,
+  isUndefined,
+  round,
+  values,
+} from 'lodash-es';
 import fs from 'node:fs/promises';
 import path, { dirname } from 'path';
 import { HdhrApiRouter } from './api/hdhrApi.js';
-import { hlsApi } from './api/hlsApi.js';
 import { apiRouter } from './api/index.js';
-import { videoRouter } from './api/videoApi.js';
+import { streamApi } from './api/streamApi.js';
+import { videoApiRouter } from './api/videoApi.js';
 import { ChannelLineupMigrator } from './dao/ChannelLineupMigrator.js';
-import { EntityManager, initOrm } from './dao/dataSource.js';
+import { EntityManager, initOrm, withDb } from './dao/dataSource.js';
 import { initDirectDbAccess } from './dao/direct/directDbAccess.js';
 import { LegacyDbMigrator } from './dao/legacy_migration/legacyDbMigration.js';
 import { getSettings } from './dao/settings.js';
@@ -34,7 +41,6 @@ import {
   serverOptions,
 } from './globals.js';
 import { ServerRequestContext, serverContext } from './serverContext.js';
-import { OnDemandChannelService } from './services/OnDemandChannelService.js';
 import { GlobalScheduler, scheduleJobs } from './services/scheduler.js';
 import { initPersistentStreamCache } from './stream/ChannelCache.js';
 import { UpdateXmlTvTask } from './tasks/UpdateXmlTvTask.js';
@@ -166,11 +172,12 @@ export async function initServer(opts: ServerOptions) {
           {
             ...opts,
             querystring: false,
-            filter(route: FastifyRouteConfig) {
+            filter(route: RouteOptions) {
               return (
                 route.method !== 'HEAD' &&
                 route.method !== 'OPTIONS' &&
-                !route.url.startsWith('/docs')
+                !route.url.startsWith('/docs') &&
+                !route.schema?.hide
               );
             },
             compact: true,
@@ -344,21 +351,22 @@ export async function initServer(opts: ServerOptions) {
         .register(new HdhrApiRouter().router)
         .register(apiRouter, { prefix: '/api' });
     })
-    .register(videoRouter)
-    .register(hlsApi)
+    .register(videoApiRouter)
+    .register(streamApi)
     // Serve the webapp
     .register(
       async (f) => {
         // For assets that exist...
         await f.register(fpStatic, {
           root: path.join(currentDirectory, 'web'),
+          schemaHide: true,
         });
         f.addHook('onRequest', (req, _, done) => {
           req.disableRequestLogging = true;
           done();
         });
         // Make it work with just '/web' and not '/web/;
-        f.get('/', async (_, res) => {
+        f.get('/', { schema: { hide: true } }, async (_, res) => {
           return res.sendFile('index.html', path.join(currentDirectory, 'web'));
         });
         // client side routing 'hack'. This makes navigating to other client-side
@@ -368,40 +376,87 @@ export async function initServer(opts: ServerOptions) {
         });
       },
       { prefix: '/web' },
-    );
+    )
+    .register(fastifyGracefulShutdown);
 
   await updateXMLPromise;
 
   const host = process.env['TUNARR_BIND_ADDR'] ?? '0.0.0.0';
 
-  const url = await app
-    .addHook('onClose', async () => {
+  app.after(() => {
+    app.gracefulShutdown(async (signal) => {
+      logger.info(
+        'Received exit signal %s, attempting graceful shutdown',
+        signal,
+      );
+
       const ctx = serverContext();
       const t = new Date().getTime();
-      ctx.eventService.push({
-        type: 'lifecycle',
-        message: `Initiated Server Shutdown`,
-        detail: {
-          time: t,
-        },
-        level: 'warning',
-      });
-
-      logger.info('Received exit signal, attempting graceful shutdown');
-
-      await new OnDemandChannelService(ctx.channelDB).pauseAllChannels();
 
       try {
-        logger.info('Waiting for pending jobs to complete');
-        await schedule.gracefulShutdown();
+        ctx.eventService.push({
+          type: 'lifecycle',
+          message: `Initiated Server Shutdown`,
+          detail: {
+            time: t,
+          },
+          level: 'warning',
+        });
       } catch (e) {
-        logger.error('Scheduled job graceful shutdown failed.', e);
+        logger.debug(e, 'Error sending shutdown signal to frontend');
       }
-    })
-    .listen({
-      host,
-      port: opts.port,
+
+      await withDb(async () => {
+        try {
+          logger.debug('Pausing all on-demand channels');
+          await ctx.onDemandChannelService.pauseAllChannels();
+        } catch (e) {
+          logger.error(e, 'Error pausing on-demand channels');
+        }
+
+        logger.debug('Shutting down all sessions');
+        for (const session of values(ctx.sessionManager.allSessions())) {
+          try {
+            await session.stop();
+          } catch (e) {
+            logger.error(
+              e,
+              'Error shutting down session (id=%s, type%s)',
+              session.id,
+              session.sessionType,
+            );
+          }
+        }
+
+        /*
+        This always hangs...
+        try {
+          logger.debug('Waiting for pending jobs to complete!');
+          await Promise.race([
+            schedule.gracefulShutdown(),
+            new Promise<boolean>((resolve) => {
+              setTimeout(() => {
+                console.log('here!');
+                resolve(false);
+              }, 1000);
+            }).then(() => {
+              throw new Error(
+                'Scheduled job graceful shutdown timeout reached.',
+              );
+            }),
+          ]);
+        } catch (e) {
+          logger.error(e, 'Scheduled job graceful shutdown failed.');
+        }
+          */
+      });
     });
+  });
+
+  const url = await app.listen({
+    host,
+    port: opts.port,
+  });
 
   logger.info(
     `HTTP server listening on host:port: http://${host}:${opts.port}`,

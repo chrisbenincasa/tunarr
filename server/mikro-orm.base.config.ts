@@ -29,6 +29,7 @@ import { Migration20240603204638 } from './src/migrations/Migration2024060320463
 import { Migration20240618005544 } from './src/migrations/Migration20240618005544.js';
 import { Migration20240719145409 } from './src/migrations/Migration20240719145409.js';
 import { Migration20240805185042 } from './src/migrations/Migration20240805185042.js';
+import { Migration20240917191535 } from './src/migrations/Migration20240917191535.js';
 import { DATABASE_LOCATION_ENV_VAR } from './src/util/constants.js';
 import { getDefaultDatabaseDirectory } from './src/util/defaults.js';
 import { LoggerFactory } from './src/util/logging/LoggerFactory.js';
@@ -137,6 +138,10 @@ export default defineConfig({
       {
         name: 'add_jellyfin_sources',
         class: Migration20240805185042,
+      },
+      {
+        name: 'add_channel_stream_mode',
+        class: Migration20240917191535,
       },
     ],
   },

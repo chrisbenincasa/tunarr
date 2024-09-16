@@ -91,8 +91,6 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
       return;
     }
 
-    // this.ffmpegName = isConcatPlaylist ? 'Concat FFMPEG' : 'Stream FFMPEG';
-
     this.#processHandle.on('error', (error) => {
       this.#logger.error(error, `${this.ffmpegName} received error event`);
     });
@@ -103,46 +101,33 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
 
     this.#processHandle.on('exit', (code, signal) => {
       this.#logger.info(
-        `${this.ffmpegName} exited. (signal=%s, code=%d)`,
+        { args: argsWithTokenRedacted },
+        `${this.ffmpegName} exited. (signal=%s, code=%d, expected?=%s)`,
         signal,
-        code,
+        code ?? -1,
+        this.#processKilled && (code === null || signal === 'SIGTERM'),
       );
-      if (code === null) {
-        if (!this.#processKilled) {
-          this.#logger.info(
-            `${this.ffmpegName} exited due to signal: ${signal}`,
-            {
-              cmd: `${this.ffmpegPath} ${this.ffmpegArgs.join(' ')}`,
-            },
-          );
-        } else {
-          this.#logger.info(
-            `${this.ffmpegName} exited due to signal: ${signal} as expected.`,
-          );
-        }
+      this.emit('exit', code, signal);
+      if (code === null || signal === 'SIGTERM') {
         this.emit('close', undefined);
       } else if (code === 0) {
-        this.#logger.info(`${this.ffmpegName} exited normally.`);
         this.emit('end');
       } else if (code === 255) {
         if (this.#processHandle) {
-          this.#logger.info(`${this.ffmpegName} finished with code 255.`);
           this.emit('close', code);
           return;
         }
         if (!this.#sentData) {
           this.emit('error', {
             code: code,
-            cmd: `${this.ffmpegPath} ${this.ffmpegArgs.join(' ')}`,
+            cmd: `${this.ffmpegPath} ${argsWithTokenRedacted}`,
           });
         }
-        this.#logger.info(`${this.ffmpegName} exited with code 255.`);
         this.emit('close', code);
       } else {
-        this.#logger.info(`${this.ffmpegName} exited with code ${code}.`);
         this.emit('error', {
           code: code,
-          cmd: `${this.ffmpegPath} ${this.ffmpegArgs.join(' ')}`,
+          cmd: `${this.ffmpegPath} ${argsWithTokenRedacted}`,
         });
       }
     });
@@ -157,12 +142,15 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
   }
 
   kill() {
-    this.#logger.debug(`${this.ffmpegName} RECEIVED kill() command`);
     this.#processKilled = true;
 
     if (this.#processHandle.killed || !this.#running) {
-      this.#logger.debug(`${this.ffmpegName} already killed.`);
+      this.#logger.debug(
+        `${this.ffmpegName} received kill command but was already killed.`,
+      );
       return;
+    } else {
+      this.#logger.debug(`${this.ffmpegName} received kill command`);
     }
 
     if (isDefined(this.#processHandle)) {
@@ -181,5 +169,9 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
 
   get ffmpegPath() {
     return this.ffmpegSettings.ffmpegExecutablePath;
+  }
+
+  get args() {
+    return this.ffmpegArgs;
   }
 }

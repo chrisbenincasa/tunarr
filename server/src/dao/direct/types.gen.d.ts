@@ -29,6 +29,7 @@ export interface Channel {
   offline: Generated<string | null>;
   startTime: number;
   stealth: Generated<number>;
+  streamMode: Generated<string>;
   transcoding: string | null;
   updatedAt: string | null;
   uuid: string;
