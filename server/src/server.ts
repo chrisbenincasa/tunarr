@@ -370,7 +370,7 @@ export async function initServer(opts: ServerOptions) {
 
   await updateXMLPromise;
 
-  const host = process.env['TUNARR_BIND_ADDR'] ?? 'localhost';
+  const host = process.env['TUNARR_BIND_ADDR'] ?? '0.0.0.0';
 
   const url = await app
     .addHook('onClose', async () => {
@@ -401,7 +401,9 @@ export async function initServer(opts: ServerOptions) {
       port: opts.port,
     });
 
-  logger.info(`HTTP server running on port: http://${host}:${opts.port}`);
+  logger.info(
+    `HTTP server listening on host:port: http://${host}:${opts.port}`,
+  );
   const hdhrSettings = ctx.settings.hdhrSettings();
   if (hdhrSettings.autoDiscoveryEnabled) {
     await ctx.hdhrService.ssdp.start();
