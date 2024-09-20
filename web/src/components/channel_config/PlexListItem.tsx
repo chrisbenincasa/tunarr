@@ -1,3 +1,4 @@
+import { useCurrentMediaSource } from '@/store/programmingSelector/selectors.ts';
 import { ExpandLess, ExpandMore } from '@mui/icons-material';
 import {
   Button,
@@ -10,7 +11,7 @@ import {
   Skeleton,
 } from '@mui/material';
 import {
-  PlexChildMediaApiType,
+  PlexChildListing,
   PlexMedia,
   isPlexCollection,
   isPlexMusicAlbum,
@@ -19,7 +20,8 @@ import {
   isPlexShow,
   isTerminalItem,
 } from '@tunarr/types/plex';
-import { filter, first, map } from 'lodash-es';
+import { filter, first, isEmpty, map } from 'lodash-es';
+import pluralize from 'pluralize';
 import React, {
   Fragment,
   MouseEvent,
@@ -40,8 +42,6 @@ import {
   removePlexSelectedMedia,
 } from '../../store/programmingSelector/actions.ts';
 import { PlexSelectedMedia } from '../../store/programmingSelector/store.ts';
-import { useCurrentMediaSource } from '@/store/programmingSelector/selectors.ts';
-import pluralize from 'pluralize';
 
 export interface PlexListItemProps<T extends PlexMedia> {
   item: T;
@@ -69,10 +69,16 @@ export function PlexListItem<T extends PlexMedia>(props: PlexListItemProps<T>) {
   const { item } = props;
   const hasChildren = !isTerminalItem(item);
   const childPath = isPlexCollection(item) ? 'collections' : 'metadata';
-  const { isPending, data: children } = usePlexTyped<PlexChildMediaApiType<T>>(
+  const { isPending, data: children } = usePlexTyped<
+    PlexChildListing,
+    PlexMedia[]
+  >(
     server.id,
-    `/library/${childPath}/${props.item.ratingKey}/children`,
+    item.type === 'playlist'
+      ? `/playlists/${props.item.ratingKey}/items`
+      : `/library/${childPath}/${props.item.ratingKey}/children`,
     hasChildren && open,
+    (c) => c.Metadata ?? [],
   );
   const selectedServer = useCurrentMediaSource('plex');
   const selectedMedia = useStore((s) =>
@@ -85,8 +91,8 @@ export function PlexListItem<T extends PlexMedia>(props: PlexListItemProps<T>) {
   };
 
   useEffect(() => {
-    if (children) {
-      addKnownMediaForPlexServer(server.id, children.Metadata, item.guid);
+    if (children && !isEmpty(children)) {
+      addKnownMediaForPlexServer(server.id, children, item.guid);
     }
   }, [item.guid, server.id, children]);
 
@@ -108,7 +114,7 @@ export function PlexListItem<T extends PlexMedia>(props: PlexListItemProps<T>) {
       <Skeleton height={45} />
     ) : (
       <List sx={{ pl: 4 }}>
-        {children?.Metadata.map((child, idx, arr) => (
+        {map(children ?? [], (child, idx, arr) => (
           <PlexListItem
             key={child.guid}
             item={child}
