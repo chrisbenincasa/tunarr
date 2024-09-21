@@ -56,7 +56,7 @@ archive.pipe(outputArchive);
 archive
   .file('./build/bundle.js', { name: 'bundle.js' })
   .file('./build/package.json', { name: 'package.json' })
-  .file('./scripts/macos-entrypoint.sh', { name: 'macos-entrypoint.sh' })
+  .file('./scripts/tunarr.sh', { name: 'tunarr.sh' })
   .directory(tmp, '')
   .directory('./build/migrations', 'migrations')
   .directory('./build/resources', 'resources')
