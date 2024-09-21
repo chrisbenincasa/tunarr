@@ -1,12 +1,12 @@
 import { useQueries, useQuery } from '@tanstack/react-query';
 import { PlexLibrarySections } from '@tunarr/types/plex';
+import { MediaSourceId } from '@tunarr/types/schemas';
+import { identity, reject } from 'lodash-es';
 import { fetchPlexPath } from '../../helpers/plexUtil.ts';
 import { ExtractTypeKeys, FindChild } from '../../types/util.ts';
 import { useApiQuery } from '../useApiQuery.ts';
 import { useTunarrApi } from '../useTunarrApi.ts';
 import { plexQueryOptions } from './plexHookUtil.ts';
-import { MediaSourceId } from '@tunarr/types/schemas';
-import { identity, reject } from 'lodash-es';
 
 export type PlexPathMappings = [
   ['/library/sections', PlexLibrarySections],
@@ -40,13 +40,17 @@ export const usePlex = <
     select,
   });
 };
-export const usePlexTyped = <T>(
+export const usePlexTyped = <T, OutType = T>(
   serverId: MediaSourceId,
   path: string,
   enabled: boolean = true,
+  select: (response: T) => OutType = identity,
 ) => {
   const apiClient = useTunarrApi();
-  return useQuery(plexQueryOptions<T>(apiClient, serverId, path, enabled));
+  return useQuery({
+    ...plexQueryOptions<T>(apiClient, serverId, path, enabled),
+    select,
+  });
 }; /**
  * Like {@link usePlexTyped} but accepts two queries that each return
  * a typed Plex object. NOTE - uses casting and not schema validation!!

@@ -1,5 +1,5 @@
 import {
-  PlexChildMediaApiType,
+  PlexChildListing,
   PlexMedia,
   isPlexPlaylist,
   isTerminalItem,
@@ -108,7 +108,7 @@ export const PlexGridItem = memo(
         [server],
       );
 
-      const { data: childItems } = usePlexTyped<PlexChildMediaApiType<T>>(
+      const { data: childItems } = usePlexTyped<PlexChildListing>(
         server.id,
         genPlexChildPath(props.item),
         !isTerminalItem(item) && modalOpen,

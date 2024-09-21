@@ -588,6 +588,16 @@ export type PlexMusicTrackView = Alias<
   z.infer<typeof PlexMusicTrackViewSchema>
 >;
 
+export const PlexPlaylistViewSchema = basePlexGrandchildCollectionSchema.extend(
+  {
+    Metadata: z.array(
+      z.union([PlexMusicTrackSchema, PlexEpisodeSchema, PlexMovieSchema]),
+    ),
+  },
+);
+
+export type PlexPlaylistView = z.infer<typeof PlexPlaylistViewSchema>;
+
 export type PlexLibraryListing =
   | PlexLibraryMovies
   | PlexLibraryShows
@@ -708,6 +718,12 @@ export const PlexMediaSchema = z.discriminatedUnion('type', [
   PlexMusicTrackSchema,
 ]);
 
+export const PlexChildListingSchema = basePlexCollectionSchema.extend({
+  Metadata: z.array(PlexMediaSchema),
+});
+
+export type PlexChildListing = z.infer<typeof PlexChildListingSchema>;
+
 export type PlexMedia = Alias<
   | PlexMovie
   | PlexTvShow
@@ -744,7 +760,10 @@ type PlexMediaApiChildType = [
   ],
   [PlexMusicArtist, PlexMusicAlbumView],
   [PlexMusicAlbum, PlexMusicTrackView],
+  [PlexPlaylist, PlexPlaylistView],
 ];
+
+export type PlexMediaApiChildTypes = PlexMediaApiChildType[number][1];
 
 type PlexMediaToChildType = [
   [PlexTvShow, PlexTvSeason],
@@ -752,6 +771,7 @@ type PlexMediaToChildType = [
   [PlexMusicAlbum, PlexMusicArtist],
   [PlexMusicTrack, PlexMusicAlbum],
   [PlexLibraryCollection, PlexMovie | PlexTvShow],
+  [PlexPlaylist, PlexMovie | PlexEpisode | PlexMusicTrack],
 ];
 
 export type PlexMetadataType<
