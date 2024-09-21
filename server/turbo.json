@@ -22,7 +22,10 @@
     "make-exec:linux": {
       "dependsOn": ["make-exec-base"]
     },
-    "make-exec:linux-arm64v8": {
+    "make-exec:linux-x64": {
+      "dependsOn": ["make-exec-base"]
+    },
+    "make-exec:linux-arm64": {
       "dependsOn": ["make-exec-base"]
     },
     "make-exec:windows": {
