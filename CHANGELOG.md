@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.10.4](https://github.com/chrisbenincasa/tunarr/compare/v0.10.3...v0.10.4) (2024-09-21)
+
+
+### Bug Fixes
+
+* listen on all interfaces (0.0.0.0) by default ([aeddfd5](https://github.com/chrisbenincasa/tunarr/commit/aeddfd59a47dfa2b964c5a42db8516276fb9c8f3)), closes [#777](https://github.com/chrisbenincasa/tunarr/issues/777)
+* listen on all interfaces (0.0.0.0) by default ([#778](https://github.com/chrisbenincasa/tunarr/issues/778)) ([f093bc2](https://github.com/chrisbenincasa/tunarr/commit/f093bc2d75b1fd0bdbb065340272c876cbcc2f22))
+* macos packaging script pointed to wrong file ([57c02a5](https://github.com/chrisbenincasa/tunarr/commit/57c02a58f822940a12c6d379d6b6edd6d2510826))
+* plex playlist children now load in list view ([5f06ae0](https://github.com/chrisbenincasa/tunarr/commit/5f06ae02c23a6096b53c84a378d5b67cc37762a7)), closes [#782](https://github.com/chrisbenincasa/tunarr/issues/782)
+* plex playlist children now load in list view ([#783](https://github.com/chrisbenincasa/tunarr/issues/783)) ([f9fdaff](https://github.com/chrisbenincasa/tunarr/commit/f9fdaffc26202175ac77d4afd3013697e53e0a25))
+
 ## [0.10.3](https://github.com/chrisbenincasa/tunarr/compare/v0.10.2...v0.10.3) (2024-09-13)
 
 
