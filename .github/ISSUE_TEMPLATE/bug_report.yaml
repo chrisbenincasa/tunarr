@@ -33,6 +33,18 @@ body:
       placeholder: "1.0.0"
     validations:
       required: true
+  - type: dropdown
+    id: version
+    attributes:
+      label: FFMPEG encoder type
+      description: If this issue is related to streaming, please provide which type of encoder family you are using
+      options:
+        - Software
+        - CUDA (Nvidia)
+        - VAAPI
+        - VideoToolbox (macOS)
+    validations:
+      required: true
   - type: input
     id: browser
     attributes:
