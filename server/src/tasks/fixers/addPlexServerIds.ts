@@ -1,5 +1,5 @@
 import { find, isNil } from 'lodash-es';
-import { EntityManager } from '../../dao/dataSource.js';
+import { getEm } from '../../dao/dataSource.js';
 import {
   MediaSource,
   MediaSourceType,
@@ -8,7 +8,8 @@ import { PlexApiClient } from '../../external/plex/PlexApiClient.js';
 import Fixer from './fixer.js';
 
 export class AddPlexServerIdsFixer extends Fixer {
-  async runInternal(em: EntityManager): Promise<void> {
+  async runInternal(): Promise<void> {
+    const em = getEm();
     const plexServers = await em
       .repo(MediaSource)
       .find({ clientIdentifier: null, type: MediaSourceType.Plex });
