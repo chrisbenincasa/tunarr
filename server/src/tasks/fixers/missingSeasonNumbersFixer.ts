@@ -1,14 +1,14 @@
-import { EntityManager } from '@mikro-orm/better-sqlite';
 import { Cursor } from '@mikro-orm/core';
 import { PlexEpisodeView, PlexSeasonView } from '@tunarr/types/plex';
 import { first, forEach, groupBy, mapValues, pickBy } from 'lodash-es';
+import { getEm } from '../../dao/dataSource.js';
 import { MediaSource } from '../../dao/entities/MediaSource.js';
 import { Program, ProgramType } from '../../dao/entities/Program.js';
 import { PlexApiClient } from '../../external/plex/PlexApiClient.js';
 import { Maybe } from '../../types/util.js';
 import { groupByUniqAndMap, wait } from '../../util/index.js';
-import Fixer from './fixer.js';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
+import Fixer from './fixer.js';
 
 export class MissingSeasonNumbersFixer extends Fixer {
   private logger = LoggerFactory.child({
@@ -16,7 +16,8 @@ export class MissingSeasonNumbersFixer extends Fixer {
     className: this.constructor.name,
   });
 
-  async runInternal(em: EntityManager): Promise<void> {
+  async runInternal(): Promise<void> {
+    const em = getEm();
     const allPlexServers = await em.findAll(MediaSource);
 
     if (allPlexServers.length === 0) {

@@ -1,4 +1,4 @@
-import { EntityManager, Loaded } from '@mikro-orm/better-sqlite';
+import { Loaded, ref } from '@mikro-orm/better-sqlite';
 import { PlexLibraryShows, PlexSeasonView } from '@tunarr/types/plex';
 import ld, {
   chunk,
@@ -6,6 +6,7 @@ import ld, {
   filter,
   find,
   first,
+  forEach,
   isEmpty,
   isNil,
   isUndefined,
@@ -14,6 +15,7 @@ import ld, {
   some,
   uniq,
 } from 'lodash-es';
+import { ProgramExternalIdType } from '../../dao/custom_types/ProgramExternalIdType';
 import { ProgramSourceType } from '../../dao/custom_types/ProgramSourceType';
 import { getEm } from '../../dao/dataSource';
 import { MediaSource } from '../../dao/entities/MediaSource';
@@ -26,7 +28,6 @@ import { ProgramGroupingExternalId } from '../../dao/entities/ProgramGroupingExt
 import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory';
 import { LoggerFactory } from '../../util/logging/LoggerFactory';
 import Fixer from './fixer';
-import { ProgramExternalIdType } from '../../dao/custom_types/ProgramExternalIdType';
 
 export class BackfillProgramGroupings extends Fixer {
   private logger = LoggerFactory.child({
@@ -34,8 +35,9 @@ export class BackfillProgramGroupings extends Fixer {
     className: BackfillProgramGroupings.name,
   });
 
-  protected async runInternal(em: EntityManager): Promise<void> {
-    const plexServers = await em.findAll(MediaSource);
+  protected async runInternal(): Promise<void> {
+    const em = getEm();
+    const plexServers = await getEm().findAll(MediaSource);
 
     // Update shows first, then seasons, so we can relate them
     const serversAndShows = await em
@@ -274,6 +276,7 @@ export class BackfillProgramGroupings extends Fixer {
       .map((p) => ({ sourceId: p.externalSourceId, id: p.parentExternalKey }))
       .uniqBy('id')
       .value();
+
     const showIds = ld
       .chain(episodes)
       .map((p) => ({
@@ -283,17 +286,11 @@ export class BackfillProgramGroupings extends Fixer {
       .uniqBy('id')
       .value();
 
-    const showAndSeasonGroupings: Loaded<
-      ProgramGrouping,
-      | 'externalRefs'
-      | 'seasonEpisodes.uuid'
-      | 'seasons.uuid'
-      | 'showEpisodes.uuid',
-      '*',
-      never
-    >[] = [];
+    const showAndSeasonGroupings: Loaded<ProgramGrouping, 'externalRefs'>[] =
+      [];
 
     for (const idChunk of chunk(concat(seasonIds, showIds), 50)) {
+      // TODO:: Replace with direct query
       showAndSeasonGroupings.push(
         ...(await em.find(
           ProgramGrouping,
@@ -310,12 +307,7 @@ export class BackfillProgramGroupings extends Fixer {
             ),
           },
           {
-            populate: [
-              'externalRefs',
-              'seasonEpisodes.uuid',
-              'seasons.uuid',
-              'showEpisodes.uuid',
-            ],
+            populate: ['uuid', 'externalRefs'],
           },
         )),
       );
@@ -338,36 +330,33 @@ export class BackfillProgramGroupings extends Fixer {
         const matchingEps = ld
           .chain(episodes)
           .filter((e) =>
-            some(season.externalRefs, {
+            some(season.externalRefs.$, {
               externalSourceId: e.externalSourceId,
               externalKey: e.parentExternalKey,
             }),
           )
-          .map('uuid')
           .value();
 
-        season.seasonEpisodes.remove((p) => matchingEps.includes(p.uuid));
-        season.seasonEpisodes.add(
-          map(matchingEps, (ep) => em.getReference(Program, ep)),
-        );
-
-        em.persist(season);
+        forEach(matchingEps, (ep) => {
+          ep.season = ref(season);
+        });
       })
       .value();
 
     ld.chain(showAndSeasonGroupings)
       .filter({ type: ProgramGroupingType.TvShow })
       .forEach((show) => {
-        const matchingEps = episodes.filter((e) =>
-          some(show.externalRefs, {
+        const matchingEps = filter(episodes, (e) =>
+          some(show.externalRefs.$, {
             externalSourceId: e.externalSourceId,
             externalKey: e.grandparentExternalKey,
           }),
         );
 
-        const plexInfo = find(show.externalRefs, {
+        const plexInfo = find(show.externalRefs.$, {
           sourceType: ProgramExternalIdType.PLEX,
         });
+
         if (plexInfo) {
           const seasonIds = showsToSeasons[plexInfo.externalKey];
           const matchingSeasons = filter(
@@ -375,22 +364,21 @@ export class BackfillProgramGroupings extends Fixer {
             (g) =>
               g.type === ProgramGroupingType.TvShowSeason &&
               some(
-                g.externalRefs,
+                g.externalRefs.$,
                 (ref) =>
                   ref.externalSourceId === plexInfo.externalSourceId &&
                   seasonIds.includes(ref.externalKey),
               ),
           );
-          const matchingSeasonIds = map(matchingSeasons, 'uuid');
-          show.seasons.remove((s) => matchingSeasonIds.includes(s.uuid));
-          show.seasons.add(matchingSeasons);
+
+          forEach(matchingSeasons, (season) => {
+            season.show = ref(show);
+          });
         }
 
-        // Should be safe because in theory no real users are going to
-        // run this
-        show.showEpisodes.set(matchingEps);
-
-        em.persist(show);
+        forEach(matchingEps, (e) => {
+          e.tvShow = ref(show);
+        });
       })
       .value();
 

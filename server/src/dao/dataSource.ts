@@ -49,9 +49,7 @@ export async function withDb<T>(
     const orm = await initOrm();
     return await RequestContext.create(
       orm.em.fork(),
-      () => {
-        return f(RequestContext.currentRequestContext()!.em as EntityManager);
-      },
+      () => f(RequestContext.currentRequestContext()!.em as EntityManager),
       options,
     );
   }

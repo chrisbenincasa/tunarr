@@ -4,14 +4,15 @@ import {
   ManyToOne,
   OneToMany,
   Property,
+  Ref,
 } from '@mikro-orm/core';
+import { JellyfinItemKind } from '@tunarr/types/jellyfin';
+import { find } from 'lodash-es';
+import { Maybe } from '../../types/util.js';
+import { enumKeys } from '../../util/enumUtil.js';
 import { BaseEntity } from './BaseEntity.js';
 import { Program } from './Program.js';
 import { ProgramGroupingExternalId } from './ProgramGroupingExternalId.js';
-import { Maybe } from '../../types/util.js';
-import { find } from 'lodash-es';
-import { enumKeys } from '../../util/enumUtil.js';
-import { JellyfinItemKind } from '@tunarr/types/jellyfin';
 
 /**
  * A ProgramGrouping represents some logical collection of Programs.
@@ -42,13 +43,13 @@ export class ProgramGrouping extends BaseEntity {
   // are neither the root nor the leaf (Program)
   // of a hierarchy, e.g. a season or album
   @ManyToOne()
-  show?: ProgramGrouping;
+  show?: Ref<ProgramGrouping>;
 
   @OneToMany(() => ProgramGrouping, (group) => group.show)
   seasons = new Collection<ProgramGrouping>(this);
 
   @ManyToOne()
-  artist?: ProgramGrouping;
+  artist?: Ref<ProgramGrouping>;
 
   @OneToMany(() => ProgramGrouping, (group) => group.artist)
   albums = new Collection<ProgramGrouping>(this);
