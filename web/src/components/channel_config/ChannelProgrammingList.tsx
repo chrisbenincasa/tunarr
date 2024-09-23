@@ -1,3 +1,4 @@
+import { useProgramTitleFormatter } from '@/hooks/useProgramTitleFormatter.ts';
 import { useSuspendedStore } from '@/hooks/useSuspendedStore.ts';
 import { deleteProgram } from '@/store/entityEditor/util.ts';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -19,10 +20,9 @@ import IconButton from '@mui/material/IconButton';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
-import { forProgramType } from '@tunarr/shared/util';
 import { ChannelProgram } from '@tunarr/types';
 import dayjs, { Dayjs } from 'dayjs';
-import { findIndex, isUndefined, join, map, negate, reject } from 'lodash-es';
+import { findIndex, isUndefined, map, sumBy } from 'lodash-es';
 import { CSSProperties, useCallback, useState } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
 import {
@@ -31,12 +31,7 @@ import {
   ListChildComponentProps,
 } from 'react-window';
 import { MarkRequired } from 'ts-essentials';
-import { betterHumanize } from '../../helpers/dayjs.ts';
-import {
-  alternateColors,
-  channelProgramUniqueId,
-  isNonEmptyString,
-} from '../../helpers/util.ts';
+import { alternateColors, channelProgramUniqueId } from '../../helpers/util.ts';
 import { moveProgramInCurrentChannel } from '../../store/channelEditor/actions.ts';
 import useStore, { State } from '../../store/index.ts';
 import { materializedProgramListSelector } from '../../store/selectors.ts';
@@ -120,58 +115,6 @@ type ListDragItem = {
   program: ChannelProgram;
 };
 
-const programListItemTitleFormatter = (() => {
-  const itemTitle = forProgramType({
-    custom: () => `Custom Show - `,
-    redirect: (p) => `Redirect to "${p.channelName}"`,
-    flex: 'Flex',
-    content: (p) => {
-      switch (p.subtype) {
-        case 'movie':
-          return p.title;
-        case 'episode': {
-          // TODO: this makes some assumptions about number of seasons
-          // and episodes... it may break
-          const epPart =
-            p.seasonNumber && p.episodeNumber
-              ? ` S${p.seasonNumber
-                  .toString()
-                  .padStart(2, '0')}E${p.episodeNumber
-                  .toString()
-                  .padStart(2, '0')}`
-              : '';
-          return p.episodeTitle
-            ? `${p.title}${epPart} - ${p.episodeTitle}`
-            : p.title;
-        }
-        case 'track': {
-          return join(
-            reject(
-              [p.artistName, p.albumName, p.title],
-              negate(isNonEmptyString),
-            ),
-            ' - ',
-          );
-        }
-      }
-    },
-  });
-
-  return (program: ChannelProgram) => {
-    let title = itemTitle(program);
-
-    if (program.type === 'custom' && program.program) {
-      title += ` ${itemTitle(program.program)}`;
-    }
-    const dur = betterHumanize(
-      dayjs.duration({ milliseconds: program.duration }),
-      { exact: true },
-    );
-
-    return `${title} - (${dur})`;
-  };
-})();
-
 const ProgramListItem = ({
   style,
   program,
@@ -214,6 +157,8 @@ const ProgramListItem = ({
     },
   }));
 
+  const titleFormatter = useProgramTitleFormatter();
+
   const theme = useTheme();
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -230,14 +175,21 @@ const ProgramListItem = ({
 
   // const dayBoundary = startTimes[idx + 1].isAfter(startTimes[idx], 'day');
 
-  let title = `${programListItemTitleFormatter(program)}`;
+  let title = `${titleFormatter(program)}`;
   if (!smallViewport && startTime) {
     title += ` - ${startTime}`;
   }
 
   let icon: React.ReactElement | null = null;
-  if (program.type === 'content') {
-    switch (program.subtype) {
+  const underlyingProgram =
+    program.type === 'content'
+      ? program
+      : program.type === 'custom'
+      ? program.program
+      : null;
+
+  if (underlyingProgram) {
+    switch (underlyingProgram.subtype) {
       case 'movie':
         icon = <TheatersIcon />;
         break;
@@ -249,6 +201,7 @@ const ProgramListItem = ({
         break;
     }
   }
+
   if (icon !== null) {
     icon = <ListItemIcon sx={{ minWidth: 0, pr: 1 }}>{icon}</ListItemIcon>;
   }
@@ -284,7 +237,8 @@ const ProgramListItem = ({
         enableDrag && isDragging ? null : (
           <>
             {!smallViewport ? (
-              program.type === 'content' ? (
+              program.type === 'content' ||
+              (program.type === 'custom' && program.program) ? (
                 <IconButton
                   edge="end"
                   onClick={handleInfoButtonClick}
@@ -387,6 +341,7 @@ export default function ChannelProgrammingList(props: Props) {
   const storeProgramList = useSuspendedStore(selector);
   const programList =
     props.type === 'selector' ? storeProgramList : props.programList;
+  const duration = sumBy(programList, 'duration');
   const [focusedProgramDetails, setFocusedProgramDetails] = useState<
     ChannelProgram | undefined
   >();
@@ -488,11 +443,9 @@ export default function ChannelProgrammingList(props: Props) {
             <Typography variant="caption" sx={{ flexGrow: 1, mr: 2 }}>
               {programList.length} program{programList.length === 1 ? '' : 's'}
             </Typography>
-            {channel?.duration && (
-              <Typography variant="caption">
-                {dayjs.duration(channel.duration).humanize()}
-              </Typography>
-            )}
+            <Typography variant="caption">
+              {dayjs.duration(duration).humanize()}
+            </Typography>
           </Box>
         )}
         {virtualListProps ? (

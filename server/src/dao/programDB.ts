@@ -1,3 +1,4 @@
+import { Loaded } from '@mikro-orm/better-sqlite';
 import {
   chunk,
   flatten,
@@ -9,6 +10,7 @@ import {
   union,
   uniq,
 } from 'lodash-es';
+import { asyncPool, unfurlPool } from '../util/asyncPool.js';
 import {
   groupByAndMapAsync,
   groupByUniq,
@@ -17,19 +19,30 @@ import {
   mapReduceAsyncSeq,
 } from '../util/index.js';
 import { ProgramConverter } from './converters/programConverters.js';
-import { getEm } from './dataSource';
-import { Program } from './entities/Program';
-import { ProgramExternalId } from './entities/ProgramExternalId.js';
 import {
   ProgramExternalIdType,
   programExternalIdTypeFromString,
 } from './custom_types/ProgramExternalIdType.js';
-import { asyncPool, unfurlPool } from '../util/asyncPool.js';
-import { Loaded } from '@mikro-orm/better-sqlite';
+import { getEm } from './dataSource';
+import { directDbAccess } from './direct/directDbAccess.js';
+import { Program } from './entities/Program';
+import { ProgramExternalId } from './entities/ProgramExternalId.js';
+import { ProgramGroupingType } from './entities/ProgramGrouping.js';
 
 export class ProgramDB {
   async getProgramById(id: string) {
     return getEm().findOne(Program, id, { populate: ['externalIds'] });
+  }
+
+  async getShowIdFromTitle(title: string) {
+    const matchedGrouping = await directDbAccess()
+      .selectFrom('programGrouping')
+      .select('uuid')
+      .where('title', '=', title)
+      .where('type', '=', ProgramGroupingType.TvShow)
+      .executeTakeFirst();
+
+    return matchedGrouping?.uuid;
   }
 
   async getProgramsByIds(ids: string[], batchSize: number = 50) {

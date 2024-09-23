@@ -37,6 +37,8 @@ import { Logger, LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { SchemaBackedDbAdapter } from './SchemaBackedDbAdapter.js';
 import { SyncSchemaBackedDbAdapter } from './SyncSchemaBackedDbAdapter.js';
 
+// Version 1 -> 2: slot show ids changed to be the program_grouping ID
+//   rather than the show name.
 const CURRENT_VERSION = 1;
 
 export const defaultXmlTvSettings = (dbBasePath: string): XmlTvSettings => ({

@@ -1,3 +1,4 @@
+import { useSlotProgramOptions } from '@/hooks/programming_controls/useSlotProgramOptions';
 import { useChannelEditor } from '@/store/selectors';
 import { ArrowBack, Autorenew, Delete } from '@mui/icons-material';
 import Add from '@mui/icons-material/Add';
@@ -24,7 +25,7 @@ import {
 } from '@mui/material';
 import { Link as RouterLink } from '@tanstack/react-router';
 import { scheduleRandomSlots } from '@tunarr/shared';
-import { ChannelProgram, isContentProgram } from '@tunarr/types';
+import { ChannelProgram } from '@tunarr/types';
 import {
   RandomSlot,
   RandomSlotProgramming,
@@ -34,7 +35,6 @@ import { usePrevious } from '@uidotdev/usehooks';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import {
-  chain,
   fill,
   filter,
   isNil,
@@ -48,13 +48,7 @@ import {
 } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import pluralize from 'pluralize';
-import React, {
-  Fragment,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import React, { Fragment, useCallback, useEffect, useState } from 'react';
 import {
   Control,
   Controller,
@@ -79,7 +73,7 @@ import {
   resetLineup,
   updateCurrentChannel,
 } from '../../store/channelEditor/actions';
-import { UIChannelProgram, isUIRedirectProgram } from '../../types';
+import { UIChannelProgram } from '../../types';
 
 dayjs.extend(duration);
 
@@ -197,6 +191,11 @@ const RandomSlotRow = React.memo(
             type: 'redirect',
             channelId: slotId.split('.')[1],
           };
+        } else if (slotId.startsWith('custom-show')) {
+          slotProgram = {
+            type: 'custom-show',
+            customShowId: slotId.split('.')[1],
+          };
         } else {
           return;
         }
@@ -220,7 +219,7 @@ const RandomSlotRow = React.memo(
           { shouldDirty: true },
         );
       },
-      [setValue],
+      [setValue, slot],
     );
 
     let selectValue: string;
@@ -233,6 +232,9 @@ const RandomSlotRow = React.memo(
         selectValue = `redirect.${slot.programming.channelId}`;
         break;
       }
+      case 'custom-show':
+        selectValue = `custom-show.${slot.programming.customShowId}`;
+        break;
       default: {
         selectValue = slot.programming.type;
         break;
@@ -293,7 +295,8 @@ const RandomSlotRow = React.memo(
           </Select>
         </Grid>
         <Grid item xs={2}>
-          {slot.programming.type === 'show' ? (
+          {slot.programming.type === 'show' ||
+          slot.programming.type === 'custom-show' ? (
             <Select<'next' | 'shuffle'>
               fullWidth
               value={slot.order ?? 'next'}
@@ -360,7 +363,7 @@ const RandomSlots = ({
         { shouldDirty: true },
       );
     }
-  }, [prevDistribution, distribution]);
+  }, [prevDistribution, distribution]); // NOTE: Adding 'currentSlots' and 'setValue' here causes infinite render loop
 
   const updateSlotWeights = useDebounceCallback(
     useCallback(() => {
@@ -549,8 +552,6 @@ const RandomSlots = ({
 };
 
 export default function RandomSlotEditorPage() {
-  // Requires that the channel was already loaded... not the case if
-  // we navigated directly, so we need to handle that
   const {
     currentEntity: channel,
     programList: newLineup,
@@ -561,50 +562,12 @@ export default function RandomSlotEditorPage() {
   const snackbar = useSnackbar();
   const theme = useTheme();
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
-
-  const programOptions: ProgramOption[] = useMemo(() => {
-    const contentPrograms = filter(newLineup, isContentProgram);
-    const opts: ProgramOption[] = [{ value: 'flex', description: 'Flex' }];
-
-    if (contentPrograms.length) {
-      if (some(contentPrograms, (p) => p.subtype === 'movie')) {
-        opts.push({ description: 'Movies', value: 'movie' });
-      }
-
-      const showOptions = chain(contentPrograms)
-        .filter((p) => p.subtype === 'episode')
-        .groupBy((p) => p.title)
-        .reduce(
-          (acc, _, title) => [
-            ...acc,
-            { description: title, value: `show.${title}` },
-          ],
-          [] as ProgramOption[],
-        )
-        .value();
-      opts.push(...showOptions);
-    }
-
-    opts.push(
-      ...chain(newLineup)
-        .filter(isUIRedirectProgram)
-        .uniqBy((p) => p.channel)
-        .map((p) => ({
-          description: `Redirect to "${p.channelName}"`,
-          value: `redirect.${p.channel}`,
-        }))
-        .value(),
-    );
-
-    return opts;
-  }, [newLineup]);
+  const programOptions = useSlotProgramOptions();
 
   const hasExistingTimeSlotSchedule =
     !isNil(loadedSchedule) && loadedSchedule.type === 'time';
 
-  const [, setStartTime] = useState(
-    channel?.startTime ?? dayjs().unix() * 1000,
-  );
+  const [, setStartTime] = useState(channel?.startTime ?? +dayjs());
 
   const {
     control,

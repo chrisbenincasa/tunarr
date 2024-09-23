@@ -1,4 +1,4 @@
-import { ChannelProgram, ContentProgram } from '@tunarr/types';
+import { ChannelProgram, ContentProgram, CustomProgram } from '@tunarr/types';
 import { nth, shuffle, slice, sortBy } from 'lodash-es';
 import { SlotLike } from './slotSchedulerUtil.js';
 
@@ -63,7 +63,6 @@ export class ProgramOrderer implements ProgramIterator {
     orderer: (program: ContentProgram) => string | number = getProgramOrder,
   ) {
     this.#programs = sortBy(programs, orderer);
-    console.log(this.#programs);
   }
 
   current(): ChannelProgram | null {
@@ -71,6 +70,22 @@ export class ProgramOrderer implements ProgramIterator {
   }
   next(): void {
     this.#position = (this.#position + 1) % this.#programs.length;
+  }
+}
+
+export class CustomProgramOrderer implements ProgramIterator {
+  #position: number = 0;
+
+  constructor(private programs: CustomProgram[]) {
+    this.programs = sortBy(programs, (p) => p.index);
+  }
+
+  current(): ChannelProgram | null {
+    return nth(this.programs, this.#position) ?? null;
+  }
+
+  next(): void {
+    this.#position = (this.#position + 1) % this.programs.length;
   }
 }
 
@@ -98,6 +113,8 @@ export function slotIteratorKey(slot: SlotLike) {
       return `tv_${slot.programming.showId}_${slot.order}`;
     case 'redirect':
       return `redirect_${slot.programming.channelId}_${slot.order}`;
+    case 'custom-show':
+      return `custom-show_${slot.programming.customShowId}_${slot.order}`;
     case 'flex':
       return null;
   }
@@ -112,6 +129,7 @@ export function getNextProgramForSlot(
     case 'movie':
     case 'show':
     case 'redirect':
+    case 'custom-show':
       return iterators[slotIteratorKey(slot)!].current();
     case 'flex':
       return {
@@ -130,9 +148,10 @@ export function advanceIterator(
     case 'movie':
     case 'show':
     case 'redirect':
+    case 'custom-show':
       iterators[slotIteratorKey(slot)!].next();
       return;
-    default:
+    case 'flex':
       return;
   }
 }

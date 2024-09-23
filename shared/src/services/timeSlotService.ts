@@ -121,10 +121,9 @@ export async function scheduleTimeSlots(
   // Load programs
   // TODO include redirects and custom programs!
   const allPrograms = reject<ChannelProgram>(channelProgramming, isFlexProgram);
-  const programBySlotType = createProgramMap(allPrograms);
   const contentProgramIteratorsById = createProgramIterators(
     schedule.slots,
-    programBySlotType,
+    createProgramMap(allPrograms),
   );
 
   const periodDuration = dayjs.duration(1, schedule.period);
@@ -140,8 +139,6 @@ export async function scheduleTimeSlots(
       // dayjs.duration(schedule.timeZoneOffset, 'minutes').asMilliseconds(),
     }))
     .value();
-
-  console.log(sortedSlots);
 
   const now = dayjs.tz();
   const startOfCurrentPeriod = now.startOf(schedule.period);

@@ -4,12 +4,12 @@ import { UIChannelProgram, UIIndex } from '../types/index.ts';
 import useStore, { State } from './index.ts';
 
 const materializeProgramList = (
-  programList: (CondensedChannelProgram & UIIndex)[],
+  lineup: (CondensedChannelProgram & UIIndex)[],
   programLookup: Record<string, ContentProgram>,
 ): UIChannelProgram[] => {
   // TODO: Use the offsets from the network call
   let offset = 0;
-  return chain(programList)
+  return chain(lineup)
     .map((p) => {
       let content: UIChannelProgram | null = null;
       if (p.type === 'content') {

@@ -27,3 +27,21 @@ export function collect<T, U>(
 
   return results;
 }
+
+export function groupBy<T, Key extends string | number | symbol>(
+  arr: T[] | null | undefined,
+  f: (t: T) => Key,
+): Record<Key, T[]> {
+  if (isNil(arr)) {
+    return {} as Record<Key, T[]>;
+  }
+
+  const ret: Record<Key, T[]> = {} as Record<Key, T[]>;
+
+  for (const t of arr) {
+    const key = f(t);
+    ret[key] ? ret[key].push(t) : (ret[key] = [t]);
+  }
+
+  return ret;
+}

@@ -3,6 +3,7 @@ import {
   LineupScheduleSchema,
   SchedulingOperationSchema,
 } from '@tunarr/types/api';
+import { first } from 'lodash-es';
 import { z } from 'zod';
 
 const BaseLineupItemSchema = z.object({
@@ -78,7 +79,25 @@ export const OnDemandChannelConfigSchema = z.object({
 
 export type OnDemandChannelConfig = z.infer<typeof OnDemandChannelConfigSchema>;
 
+export const CurrentLineupSchemaVersion = 1;
+
 export const LineupSchema = z.object({
+  version: z
+    .number()
+    .min(1)
+    // .default(CurrentLineupSchemaVersion)
+    .catch(({ error }) => {
+      // Initialize undefined versions at 0 to force migrations
+      const issue = first(error.issues);
+      if (
+        first(issue?.path) === 'version' &&
+        issue?.code === 'invalid_type' &&
+        issue?.received === 'undefined'
+      ) {
+        return 0;
+      }
+      return CurrentLineupSchemaVersion;
+    }),
   // The last time the lineup was updated. For migration, this is defaulted
   // to when the config is loaded from disk on startup.
   lastUpdated: z.number().catch(() => new Date().getTime()),

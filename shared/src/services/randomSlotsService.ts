@@ -142,7 +142,7 @@ export async function scheduleRandomSlots(
   //   }))
   //   .value();
 
-  const now = dayjs.utc();
+  const now = dayjs.tz();
   const t0 = now;
   // if (schedule.startTomorrow) {
   // t0 = t0.add(1, 'day');
@@ -188,7 +188,7 @@ export async function scheduleRandomSlots(
       const slot = schedule.slots[i];
       const slotLastPlayed = slotsLastPlayedMap[i];
       if (!isNil(slotLastPlayed)) {
-        const nextPlay = dayjs(slotLastPlayed + slot.cooldownMs);
+        const nextPlay = dayjs.tz(slotLastPlayed + slot.cooldownMs);
         minNextTime = minNextTime.isBefore(nextPlay) ? minNextTime : nextPlay;
         if (
           dayjs.duration(timeCursor.diff(slotLastPlayed)).asMilliseconds() <
@@ -208,13 +208,12 @@ export async function scheduleRandomSlots(
     }
 
     if (isNull(currSlot)) {
+      const duration = dayjs.duration(+minNextTime.subtract(+timeCursor));
       pushFlex(
         // Weird
-        dayjs.duration(
-          minNextTime.subtract(timeCursor.unix(), 'seconds').unix(),
-          'seconds',
-        ),
+        duration,
       );
+      timeCursor = timeCursor.add(duration);
       continue;
     }
 
@@ -241,6 +240,7 @@ export async function scheduleRandomSlots(
 
     if (isNull(program) || isFlexProgram(program)) {
       pushFlex(dayjs.duration(remaining));
+      timeCursor = timeCursor.add(remaining);
       continue;
     }
 

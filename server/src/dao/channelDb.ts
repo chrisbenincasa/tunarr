@@ -23,8 +23,8 @@ import duration from 'dayjs/plugin/duration.js';
 import ld, {
   chunk,
   compact,
+  entries,
   filter,
-  find,
   forEach,
   groupBy,
   isEmpty,
@@ -34,6 +34,7 @@ import ld, {
   isString,
   isUndefined,
   map,
+  mapValues,
   nth,
   omitBy,
   partition,
@@ -46,7 +47,7 @@ import ld, {
 import { Low } from 'lowdb';
 import fs from 'node:fs/promises';
 import { join } from 'path';
-import { MarkRequired } from 'ts-essentials';
+import { MarkOptional, MarkRequired } from 'ts-essentials';
 import {
   Channel as RawChannel,
   ChannelWithPrograms as RawChannelWithPrograms,
@@ -60,17 +61,20 @@ import {
   groupByFunc,
   groupByUniq,
   isDefined,
+  isNonEmptyString,
   mapAsyncSeq,
   mapReduceAsyncSeq,
   run,
 } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { MutexMap } from '../util/mutexMap.js';
-import { Timer, timeNamedAsync } from '../util/perf.js';
+import { Timer } from '../util/perf.js';
 import { SchemaBackedDbAdapter } from './SchemaBackedDbAdapter.js';
 import { ProgramConverter } from './converters/programConverters.js';
 import { getEm } from './dataSource.js';
 import {
+  ContentItem,
+  CurrentLineupSchemaVersion,
   Lineup,
   LineupItem,
   LineupSchema,
@@ -91,7 +95,6 @@ import {
 } from './direct/programQueryHelpers.js';
 import { Channel, ChannelTranscodingSettings } from './entities/Channel.js';
 import { ChannelFillerShow } from './entities/ChannelFillerShow.js';
-import { CustomShowContent } from './entities/CustomShowContent.js';
 import { FillerShow, FillerShowId } from './entities/FillerShow.js';
 import { Program } from './entities/Program.js';
 import { upsertContentPrograms } from './programHelpers.js';
@@ -210,7 +213,7 @@ export class ChannelDB {
     caller: import.meta,
     className: this.constructor.name,
   });
-  private timer = new Timer(this.logger);
+  private timer = new Timer(this.logger, 'trace');
   #programConverter = new ProgramConverter();
 
   async channelExists(channelId: string) {
@@ -818,7 +821,7 @@ export class ChannelDB {
     offset: number = 0,
     limit: number = -1,
   ): Promise<CondensedChannelProgramming | null> {
-    const lineup = await timeNamedAsync('loadLineup', this.logger, () =>
+    const lineup = await this.timer.timeAsync('loadLineup', () =>
       this.loadLineup(channelId),
     );
 
@@ -831,7 +834,7 @@ export class ChannelDB {
       .take(cleanLimit)
       .value();
 
-    const channel = await timeNamedAsync('select channel', this.logger, () =>
+    const channel = await this.timer.timeAsync('select channel', () =>
       getEm().repo(Channel).findOne({ uuid: channelId }),
     );
 
@@ -924,7 +927,10 @@ export class ChannelDB {
     };
   }
 
-  async saveLineup(channelId: string, newLineup: Omit<Lineup, 'lastUpdated'>) {
+  async saveLineup(
+    channelId: string,
+    newLineup: MarkOptional<Omit<Lineup, 'lastUpdated'>, 'version'>,
+  ) {
     const db = await this.getFileDb(channelId);
     newLineup.startTimeOffsets = reduce(
       newLineup.items,
@@ -933,6 +939,7 @@ export class ChannelDB {
     );
     db.data = {
       ...db.data,
+      version: newLineup?.version ?? db.data.version,
       items: newLineup.items,
       startTimeOffsets: newLineup.startTimeOffsets,
       schedule: newLineup.schedule,
@@ -988,7 +995,12 @@ export class ChannelDB {
               `channel-lineups/${channelId}.json`,
             ),
           ),
-          { items: [], startTimeOffsets: [], lastUpdated: dayjs().valueOf() },
+          {
+            items: [],
+            startTimeOffsets: [],
+            lastUpdated: dayjs().valueOf(),
+            version: CurrentLineupSchemaVersion,
+          },
         );
         await db.read();
         fileDbCache[channelId] = db;
@@ -1067,37 +1079,39 @@ export class ChannelDB {
     let lastOffset = 0;
     const offsets: number[] = [];
 
-    // const gen = asyncPool(
-    //   chunk(programIds, 100),
-    //   async (chunk) => {
-    //     return await getEm()
-    //       .repo(CustomShowContent)
-    //       .findAll({
-    //         where: { content: { $in: chunk } },
-    //       });
-    //   },
-    //   { concurrency: 2 },
-    // );
-
-    const allCustomShowContent: CustomShowContent[] = [];
-    // const start = performance.now();
-    // for await (const selectedChunkResult of gen) {
-    //   if (selectedChunkResult.type === 'success') {
-    //     allCustomShowContent.push(...selectedChunkResult.result);
-    //   } else {
-    //     this.logger.warn(
-    //       selectedChunkResult.error,
-    //       'Error while selecting custom show content',
-    //     );
-    //   }
-    // }
-    // const end = performance.now();
-    // this.logger.debug('Custom show select %d ms', end - start);
-
-    const customShowContent = groupBy(
-      allCustomShowContent,
-      (csc) => csc.customShow.uuid,
+    const customShowLineupItemsByShowId = mapValues(
+      groupBy(
+        filter(
+          lineup,
+          (l): l is MarkRequired<ContentItem, 'customShowId'> =>
+            l.type === 'content' && isNonEmptyString(l.customShowId),
+        ),
+        (i) => i.customShowId,
+      ),
+      (items) => uniqBy(items, 'id'),
     );
+
+    const customShowIndexes: Record<string, Record<string, number>> = {};
+    for (const [customShowId, items] of entries(
+      customShowLineupItemsByShowId,
+    )) {
+      customShowIndexes[customShowId] = {};
+
+      const results = await directDbAccess()
+        .selectFrom('customShowContent')
+        .select(['customShowContent.contentUuid', 'customShowContent.index'])
+        .where('customShowContent.contentUuid', 'in', map(items, 'id'))
+        .where('customShowContent.customShowUuid', '=', customShowId)
+        .groupBy('customShowContent.contentUuid')
+        .execute();
+
+      const byItemId: Record<string, number> = {};
+      for (const { contentUuid, index } of results) {
+        byItemId[contentUuid] = index;
+      }
+
+      customShowIndexes[customShowId] = byItemId;
+    }
 
     const allChannels = await getEm()
       .repo(Channel)
@@ -1131,16 +1145,12 @@ export class ChannelDB {
             };
           }
         } else if (item.customShowId) {
-          const csc = find(
-            customShowContent[item.customShowId],
-            (csc) => csc.content.uuid === item.id,
-          );
           p = {
             persisted: true,
             type: 'custom',
             customShowId: item.customShowId,
             duration: item.durationMs,
-            index: csc?.index ?? -1, // TODO: We need a faster way to find this
+            index: customShowIndexes[item.customShowId][item.id] ?? -1,
             id: item.id,
           };
         } else {

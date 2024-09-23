@@ -29,11 +29,11 @@ export class SchemaBackedDbAdapter<T extends z.ZodTypeAny, Out = z.infer<T>>
 
   async read(): Promise<Out | null> {
     const data = await this.adapter.read().catch((e) => {
-      console.error(e);
+      this.logger.error(e);
       return null;
     });
     if (data === null) {
-      console.log(this.path, data);
+      this.logger.debug('Unexpected null data at %s; %O', this.path, data);
       return null;
     }
     const parsed: unknown = JSON.parse(data);

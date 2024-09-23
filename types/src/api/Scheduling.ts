@@ -23,6 +23,11 @@ export const RedirectProgrammingTimeSlotSchema = z.object({
   channelId: z.string(),
 });
 
+export const CustomShowProgrammingTimeSlotSchema = z.object({
+  type: z.literal('custom-show'),
+  customShowId: z.string().uuid(),
+});
+
 export type MovieProgrammingTimeSlot = z.infer<
   typeof MovieProgrammingTimeSlotSchema
 >;
@@ -36,12 +41,16 @@ export type FlexProgrammingTimeSlot = z.infer<
 >;
 
 export function slotProgrammingId(slot: TimeSlotProgramming) {
-  if (slot.type === 'movie' || slot.type === 'flex') {
-    return slot.type;
-  } else if (slot.type === 'redirect') {
-    return `redirect.${slot.channelId}`;
-  } else {
-    return `show.${slot.showId}`;
+  switch (slot.type) {
+    case 'movie':
+    case 'flex':
+      return slot.type;
+    case 'show':
+      return `${slot.type}.${slot.showId}`;
+    case 'redirect':
+      return `${slot.type}.${slot.channelId}`;
+    case 'custom-show':
+      return `${slot.type}.${slot.customShowId}`;
   }
 }
 
@@ -50,6 +59,7 @@ export const TimeSlotProgrammingSchema = z.discriminatedUnion('type', [
   ShowProgrammingTimeSlotSchema,
   FlexProgrammingTimeSlotSchema,
   RedirectProgrammingTimeSlotSchema,
+  CustomShowProgrammingTimeSlotSchema,
 ]);
 
 export type TimeSlotProgramming = z.infer<typeof TimeSlotProgrammingSchema>;
@@ -114,11 +124,21 @@ export type RedirectProgrammingRandomSlot = z.infer<
   typeof RedirectProgrammingRandomSlotSchema
 >;
 
+export const CustomShowProgrammingRandomSchema = z.object({
+  type: z.literal('custom-show'),
+  customShowId: z.string().uuid(),
+});
+
+export type CustomShowProgrammingRandom = z.infer<
+  typeof CustomShowProgrammingRandomSchema
+>;
+
 export const RandomSlotProgrammingSchema = z.discriminatedUnion('type', [
   MovieProgrammingRandomSlotSchema,
   ShowProgrammingRandomSlotSchema,
   FlexProgrammingRandomSlotSchema,
   RedirectProgrammingRandomSlotSchema,
+  CustomShowProgrammingRandomSchema,
 ]);
 
 export type RandomSlotProgramming = z.infer<typeof RandomSlotProgrammingSchema>;

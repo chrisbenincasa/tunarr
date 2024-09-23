@@ -63,10 +63,10 @@ export function timeNamedSync<T>(
 ): T {
   return timeSync(f, {
     onSuccess(ms) {
-      logger[opts.level]('%s took %d (success)', name, round(ms, 3));
+      logger[opts.level]('%s took %dms (success)', name, round(ms, 3));
     },
     onFailure(ms) {
-      logger[opts.level]('%s took %d (failure)', name, round(ms, 3));
+      logger[opts.level]('%s took %dms (failure)', name, round(ms, 3));
     },
   });
 }
@@ -79,21 +79,24 @@ export function timeNamedAsync<T>(
 ): Promise<T> {
   return timeAsync(f, {
     onSuccess(ms) {
-      logger[opts.level]('%s took %d (success)', name, round(ms, 3));
+      logger[opts.level]('%s took %dms (success)', name, round(ms, 3));
     },
     onFailure(ms) {
-      logger[opts.level]('%s took %d (failure)', name, round(ms, 3));
+      logger[opts.level]('%s took %dms (failure)', name, round(ms, 3));
     },
   });
 }
 
 export class Timer {
-  constructor(private logger: Logger) {}
+  constructor(
+    private logger: Logger,
+    private defaultLevel: LogLevels = 'debug',
+  ) {}
 
   timeSync<T>(
     name: string,
     f: () => T,
-    opts: { level: LogLevels } = { level: 'debug' },
+    opts: { level: LogLevels } = { level: this.defaultLevel },
   ): T {
     return timeNamedSync(name, this.logger, f, opts);
   }
@@ -101,7 +104,7 @@ export class Timer {
   timeAsync<T>(
     name: string,
     f: () => Promise<T>,
-    opts: { level: LogLevels } = { level: 'debug' },
+    opts: { level: LogLevels } = { level: this.defaultLevel },
   ): Promise<T> {
     return timeNamedAsync(name, this.logger, f, opts);
   }

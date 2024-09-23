@@ -22,6 +22,7 @@ import { HdhrApiRouter } from './api/hdhrApi.js';
 import { hlsApi } from './api/hlsApi.js';
 import { apiRouter } from './api/index.js';
 import { videoRouter } from './api/videoApi.js';
+import { ChannelLineupMigrator } from './dao/ChannelLineupMigrator.js';
 import { EntityManager, initOrm } from './dao/dataSource.js';
 import { initDirectDbAccess } from './dao/direct/directDbAccess.js';
 import { LegacyDbMigrator } from './dao/legacy_migration/legacyDbMigration.js';
@@ -122,6 +123,7 @@ export async function initServer(opts: ServerOptions) {
   initializeSingletons();
 
   const ctx = serverContext();
+  await new ChannelLineupMigrator(ctx.channelDB).run();
 
   const legacyDbPath = await legacyDizquetvDirectoryPath();
   if (
