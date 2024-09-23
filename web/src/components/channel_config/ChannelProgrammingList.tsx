@@ -22,7 +22,7 @@ import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import { ChannelProgram } from '@tunarr/types';
 import dayjs, { Dayjs } from 'dayjs';
-import { findIndex, isUndefined, map } from 'lodash-es';
+import { findIndex, isUndefined, map, sumBy } from 'lodash-es';
 import { CSSProperties, useCallback, useState } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
 import {
@@ -341,6 +341,7 @@ export default function ChannelProgrammingList(props: Props) {
   const storeProgramList = useSuspendedStore(selector);
   const programList =
     props.type === 'selector' ? storeProgramList : props.programList;
+  const duration = sumBy(programList, 'duration');
   const [focusedProgramDetails, setFocusedProgramDetails] = useState<
     ChannelProgram | undefined
   >();
@@ -442,11 +443,9 @@ export default function ChannelProgrammingList(props: Props) {
             <Typography variant="caption" sx={{ flexGrow: 1, mr: 2 }}>
               {programList.length} program{programList.length === 1 ? '' : 's'}
             </Typography>
-            {channel?.duration && (
-              <Typography variant="caption">
-                {dayjs.duration(channel.duration).humanize()}
-              </Typography>
-            )}
+            <Typography variant="caption">
+              {dayjs.duration(duration).humanize()}
+            </Typography>
           </Box>
         )}
         {virtualListProps ? (
