@@ -7,7 +7,7 @@
     "bundle": "tsc --emitDeclarationOnly --declaration",
     "build": "tsc",
     "clean": "rimraf ./build/",
-    "dev": "tsc --watch",
+    "dev": "tsc --emitDeclarationOnly --declaration --watch",
     "build-dev": "tsc --emitDeclarationOnly --declaration --watch"
   },
   "main": "./build/src/index.js",

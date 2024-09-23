@@ -9,7 +9,7 @@ import { Mutex } from 'async-mutex';
 import { writeFile } from 'fs/promises';
 import { escape, flatMap, isNil, map, round } from 'lodash-es';
 import { Channel } from './dao/direct/derivedTypes';
-import { SettingsDB, getSettings } from './dao/settings';
+import { getSettings } from './dao/settings';
 import { ChannelPrograms } from './services/tvGuideService';
 import { isNonEmptyString } from './util';
 import { LoggerFactory } from './util/logging/LoggerFactory';
@@ -21,8 +21,6 @@ export class XmlTvWriter {
     caller: import.meta,
     className: this.constructor.name,
   });
-
-  constructor(private settingsDB: SettingsDB = getSettings()) {}
 
   async write(channels: ChannelPrograms[]) {
     const start = performance.now();
@@ -37,6 +35,7 @@ export class XmlTvWriter {
   }
 
   private async writeInternal(channels: ChannelPrograms[]) {
+    const xmlTvSettings = getSettings().xmlTvSettings();
     const content = writeXmltv({
       generatorInfoName: 'tunarr',
       date: new Date(),
@@ -46,7 +45,7 @@ export class XmlTvWriter {
       ),
     });
 
-    return await writeFile(this.settingsDB.xmlTvSettings().outputPath, content);
+    return await writeFile(xmlTvSettings.outputPath, content);
   }
 
   private makeXmlTvChannel(channel: Channel): XmltvChannel {
@@ -134,21 +133,9 @@ export class XmlTvWriter {
         //   const imgUrl = await cacheImageService.registerImageOnDatabase(icon);
         //   icon = `{{host}}/cache/images/${imgUrl}`;
         // }
-        const query = ['proxy=true'];
-        const useShowPoster =
-          this.settingsDB.xmlTvSettings().useShowPoster ?? false;
-        if (
-          program.type === 'content' &&
-          program.subtype === 'episode' &&
-          useShowPoster
-        ) {
-          query.push(`useShowPoster=${useShowPoster}`);
-        }
         partial.icon = [
           {
-            src: `{{host}}/api/programs/${program.id}/thumb?${query.join(
-              '&amp;',
-            )}`,
+            src: `{{host}}/api/programs/${program.id}/thumb?proxy=true`,
           },
         ];
       }

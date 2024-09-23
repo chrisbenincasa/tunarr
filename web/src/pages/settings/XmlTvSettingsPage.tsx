@@ -1,8 +1,6 @@
-import { useSettings } from '@/store/settings/selectors.ts';
 import {
   Box,
   Button,
-  Divider,
   FormControl,
   FormControlLabel,
   FormHelperText,
@@ -11,9 +9,8 @@ import {
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { XmlTvSettings, defaultXmlTvSettings } from '@tunarr/types';
-import _, { isEmpty } from 'lodash-es';
-import { useSnackbar } from 'notistack';
-import { useEffect, useState } from 'react';
+import _ from 'lodash-es';
+import React, { useEffect } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert.tsx';
 import {
@@ -22,12 +19,13 @@ import {
 } from '../../components/util/TypedController.tsx';
 import { useXmlTvSettings } from '../../hooks/settingsHooks.ts';
 import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
+import { useSnackbar } from 'notistack';
 
 export default function XmlTvSettingsPage() {
   const apiClient = useTunarrApi();
-  const [restoreTunarrDefaults, setRestoreTunarrDefaults] = useState(false);
-  const { backendUri } = useSettings();
-  const { data, error } = useXmlTvSettings();
+  const [restoreTunarrDefaults, setRestoreTunarrDefaults] =
+    React.useState<boolean>(false);
+  const { data, isPending, error } = useXmlTvSettings();
   const snackbar = useSnackbar();
 
   const {
@@ -68,8 +66,9 @@ export default function XmlTvSettingsPage() {
     });
   };
 
-  // TODO: Handle this better - show the bug page.
-  if (error) {
+  if (isPending) {
+    return <h1>XML: Loading...</h1>;
+  } else if (error) {
     return <h1>XML: {error.message}</h1>;
   }
 
@@ -88,20 +87,7 @@ export default function XmlTvSettingsPage() {
                 disabled: true,
               }}
               helperText={
-                <span>
-                  You can edit this location in your settings.json within your
-                  Tunarr data directory
-                  <br />
-                  <strong>NOTE:</strong> When manually adding the XMLTV location
-                  to a client like Plex, do not use this file directly. Instead,
-                  use the generated XMLTV from the Tunarr API endpoint:{' '}
-                  {
-                    new URL(
-                      '/api/xmltv.xml',
-                      isEmpty(backendUri) ? document.location.href : backendUri,
-                    ).href
-                  }
-                </span>
+                'You can edit this location in file xmltv-settings.json.'
               }
               {...field}
             />
@@ -116,7 +102,8 @@ export default function XmlTvSettingsPage() {
           TextFieldProps={{
             id: 'epg-hours',
             label: 'EPG (Hours)',
-            helperText: 'Number of hours to include in the XMLTV file',
+            helperText:
+              'How many hours of programming to include in the xmltv file.',
           }}
         />
         <NumericFormControllerText
@@ -126,11 +113,11 @@ export default function XmlTvSettingsPage() {
           TextFieldProps={{
             id: 'refresh-hours',
             label: 'Refresh Timer (Hours)',
-            helperText: 'How often the XMLTV file is regenerated',
+            helperText: 'How often should the xmltv file be updated.',
           }}
         />
       </Stack>
-      {/* <FormControl>
+      <FormControl>
         <FormControlLabel
           control={
             <CheckboxFormController control={control} name="enableImageCache" />
@@ -143,19 +130,6 @@ export default function XmlTvSettingsPage() {
           server instead of requiring calls to Plex. Note that using fixed xmltv
           location in Plex (as opposed to url) will not work correctly in this
           case.
-        </FormHelperText>
-      </FormControl> */}
-      <Divider sx={{ my: 2 }} />
-      <FormControl>
-        <FormControlLabel
-          control={
-            <CheckboxFormController control={control} name="useShowPoster" />
-          }
-          label="Use Show Poster"
-        />
-        <FormHelperText>
-          If enabled, TV show episodes will use the poster of their show,
-          instead of the individual episode poster.
         </FormHelperText>
       </FormControl>
       <UnsavedNavigationAlert isDirty={isDirty} />

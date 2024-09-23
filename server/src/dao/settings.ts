@@ -233,7 +233,6 @@ export const getSettings = once((dbPath?: string) => {
   const freshSettings = !existsSync(actualPath);
 
   const defaultValue = defaultSettings(globalOptions().databaseDirectory);
-  console.log(defaultValue);
   // Load this synchronously, but then give the DB instance an async version
   const db = new LowSync<SettingsFile>(
     new SyncSchemaBackedDbAdapter(SettingsFileSchema, actualPath, defaultValue),
