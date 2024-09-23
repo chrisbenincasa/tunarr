@@ -15,6 +15,7 @@ import {
 import {
   compact,
   find,
+  isEmpty,
   isNil,
   isObject,
   map,
@@ -339,6 +340,12 @@ export class ProgramConverter {
         parentIndex: nullToUndefined(program.tvSeason?.index),
         grandparentIndex: nullToUndefined(program.tvShow?.index),
       };
+      if (isEmpty(extraFields.showId)) {
+        this.logger.warn(
+          'Empty show UUID when converting program ID = %s. This may lead to broken frontend features. Please file a bug!',
+          program.uuid,
+        );
+      }
     } else if (program.type === ProgramType.Track.toString()) {
       extraFields = {
         albumName: nullToUndefined(program.trackAlbum?.title),

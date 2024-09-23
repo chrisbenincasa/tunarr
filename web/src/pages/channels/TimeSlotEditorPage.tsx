@@ -1,3 +1,4 @@
+import { useSlotProgramOptions } from '@/hooks/programming_controls/useSlotProgramOptions.ts';
 import { useChannelEditor } from '@/store/selectors.ts';
 import { ArrowBack, Autorenew, Delete } from '@mui/icons-material';
 import AddIcon from '@mui/icons-material/Add';
@@ -22,7 +23,7 @@ import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import { Link as RouterLink } from '@tanstack/react-router';
 import { dayjsMod, scheduleTimeSlots } from '@tunarr/shared';
-import { ChannelProgram, isContentProgram } from '@tunarr/types';
+import { ChannelProgram } from '@tunarr/types';
 import {
   TimeSlot,
   TimeSlotProgramming,
@@ -44,7 +45,7 @@ import {
 } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import pluralize from 'pluralize';
-import { Fragment, useCallback, useMemo, useState } from 'react';
+import { Fragment, useCallback, useState } from 'react';
 import {
   Control,
   Controller,
@@ -69,7 +70,7 @@ import {
   resetLineup,
   updateCurrentChannel,
 } from '../../store/channelEditor/actions.ts';
-import { UIChannelProgram, isUIRedirectProgram } from '../../types/index.ts';
+import { UIChannelProgram } from '../../types/index.ts';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -318,6 +319,7 @@ const TimeSlotRow = ({
   let selectValue: string;
   switch (slot.programming.type) {
     case 'show': {
+      console.log(slot.programming);
       selectValue = `show.${slot.programming.showId}`;
       break;
     }
@@ -426,44 +428,7 @@ export default function TimeSlotEditorPage() {
   const snackbar = useSnackbar();
   const theme = useTheme();
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
-
-  // TODO: This can be shared between random / time slots
-  const programOptions: ProgramOption[] = useMemo(() => {
-    const contentPrograms = filter(newLineup, isContentProgram);
-    const opts: ProgramOption[] = [{ value: 'flex', description: 'Flex' }];
-
-    if (contentPrograms.length) {
-      if (some(contentPrograms, (p) => p.subtype === 'movie')) {
-        opts.push({ description: 'Movies', value: 'movie' });
-      }
-
-      const showOptions = chain(contentPrograms)
-        .filter((p) => p.subtype === 'episode')
-        .groupBy((p) => p.title)
-        .reduce(
-          (acc, _, title) => [
-            ...acc,
-            { description: title, value: `show.${title}` },
-          ],
-          [] as ProgramOption[],
-        )
-        .value();
-      opts.push(...showOptions);
-    }
-
-    opts.push(
-      ...chain(newLineup)
-        .filter(isUIRedirectProgram)
-        .uniqBy((p) => p.channel)
-        .map((p) => ({
-          description: `Redirect to "${p.channelName}"`,
-          value: `redirect.${p.channel}`,
-        }))
-        .value(),
-    );
-
-    return opts;
-  }, [newLineup]);
+  const programOptions = useSlotProgramOptions();
 
   const {
     control,

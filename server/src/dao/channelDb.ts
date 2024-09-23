@@ -46,7 +46,7 @@ import ld, {
 import { Low } from 'lowdb';
 import fs from 'node:fs/promises';
 import { join } from 'path';
-import { MarkRequired } from 'ts-essentials';
+import { MarkOptional, MarkRequired } from 'ts-essentials';
 import {
   Channel as RawChannel,
   ChannelWithPrograms as RawChannelWithPrograms,
@@ -66,11 +66,12 @@ import {
 } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { MutexMap } from '../util/mutexMap.js';
-import { Timer, timeNamedAsync } from '../util/perf.js';
+import { Timer } from '../util/perf.js';
 import { SchemaBackedDbAdapter } from './SchemaBackedDbAdapter.js';
 import { ProgramConverter } from './converters/programConverters.js';
 import { getEm } from './dataSource.js';
 import {
+  CurrentLineupSchemaVersion,
   Lineup,
   LineupItem,
   LineupSchema,
@@ -210,7 +211,7 @@ export class ChannelDB {
     caller: import.meta,
     className: this.constructor.name,
   });
-  private timer = new Timer(this.logger);
+  private timer = new Timer(this.logger, 'trace');
   #programConverter = new ProgramConverter();
 
   async channelExists(channelId: string) {
@@ -818,7 +819,7 @@ export class ChannelDB {
     offset: number = 0,
     limit: number = -1,
   ): Promise<CondensedChannelProgramming | null> {
-    const lineup = await timeNamedAsync('loadLineup', this.logger, () =>
+    const lineup = await this.timer.timeAsync('loadLineup', () =>
       this.loadLineup(channelId),
     );
 
@@ -831,7 +832,7 @@ export class ChannelDB {
       .take(cleanLimit)
       .value();
 
-    const channel = await timeNamedAsync('select channel', this.logger, () =>
+    const channel = await this.timer.timeAsync('select channel', () =>
       getEm().repo(Channel).findOne({ uuid: channelId }),
     );
 
@@ -924,7 +925,10 @@ export class ChannelDB {
     };
   }
 
-  async saveLineup(channelId: string, newLineup: Omit<Lineup, 'lastUpdated'>) {
+  async saveLineup(
+    channelId: string,
+    newLineup: MarkOptional<Omit<Lineup, 'lastUpdated'>, 'version'>,
+  ) {
     const db = await this.getFileDb(channelId);
     newLineup.startTimeOffsets = reduce(
       newLineup.items,
@@ -933,6 +937,7 @@ export class ChannelDB {
     );
     db.data = {
       ...db.data,
+      version: newLineup?.version ?? db.data.version,
       items: newLineup.items,
       startTimeOffsets: newLineup.startTimeOffsets,
       schedule: newLineup.schedule,
@@ -988,7 +993,12 @@ export class ChannelDB {
               `channel-lineups/${channelId}.json`,
             ),
           ),
-          { items: [], startTimeOffsets: [], lastUpdated: dayjs().valueOf() },
+          {
+            items: [],
+            startTimeOffsets: [],
+            lastUpdated: dayjs().valueOf(),
+            version: CurrentLineupSchemaVersion,
+          },
         );
         await db.read();
         fileDbCache[channelId] = db;
