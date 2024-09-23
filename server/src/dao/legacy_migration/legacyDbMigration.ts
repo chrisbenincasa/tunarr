@@ -153,23 +153,26 @@ export class LegacyDbMigrator {
         const xmltvSettings = await attempt(() =>
           this.readOldDbFile('xmltv-settings'),
         );
+
+        const defaultSettings = defaultXmlTvSettings(
+          globalOptions().databaseDirectory,
+        );
+
         if (isError(xmltvSettings)) {
           settings = {
             ...settings,
-            xmltv: {
-              ...defaultXmlTvSettings(globalOptions().databaseDirectory),
-            },
+            xmltv: defaultSettings,
           };
         } else {
           this.logger.debug('Migrating XMLTV settings', xmltvSettings);
           settings = {
             ...settings,
-            xmltv: {
+            xmltv: merge({}, defaultSettings, {
               enableImageCache: xmltvSettings['enableImageCache'] as boolean,
               outputPath: xmltvSettings['file'] as string,
               programmingHours: xmltvSettings['cache'] as number,
               refreshHours: xmltvSettings['refresh'] as number,
-            },
+            }),
           };
         }
       } catch (e) {
