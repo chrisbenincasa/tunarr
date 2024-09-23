@@ -1,25 +1,14 @@
-import {
-  Box,
-  Button,
-  FormControl,
-  FormControlLabel,
-  FormHelperText,
-  Stack,
-  TextField,
-} from '@mui/material';
+import { Box, Button, FormControl, Stack, TextField } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { XmlTvSettings, defaultXmlTvSettings } from '@tunarr/types';
 import _ from 'lodash-es';
+import { useSnackbar } from 'notistack';
 import React, { useEffect } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert.tsx';
-import {
-  CheckboxFormController,
-  NumericFormControllerText,
-} from '../../components/util/TypedController.tsx';
+import { NumericFormControllerText } from '../../components/util/TypedController.tsx';
 import { useXmlTvSettings } from '../../hooks/settingsHooks.ts';
 import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
-import { useSnackbar } from 'notistack';
 
 export default function XmlTvSettingsPage() {
   const apiClient = useTunarrApi();
@@ -117,7 +106,7 @@ export default function XmlTvSettingsPage() {
           }}
         />
       </Stack>
-      <FormControl>
+      {/* <FormControl>
         <FormControlLabel
           control={
             <CheckboxFormController control={control} name="enableImageCache" />
@@ -131,7 +120,7 @@ export default function XmlTvSettingsPage() {
           location in Plex (as opposed to url) will not work correctly in this
           case.
         </FormHelperText>
-      </FormControl>
+      </FormControl> */}
       <UnsavedNavigationAlert isDirty={isDirty} />
       <Stack spacing={2} direction="row" sx={{ mt: 2 }}>
         <Stack
