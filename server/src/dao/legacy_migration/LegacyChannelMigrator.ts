@@ -4,12 +4,12 @@ import ld, {
   compact,
   difference,
   get,
-  isUndefined,
-  map,
-  values,
-  reduce,
-  keys,
   isBoolean,
+  isUndefined,
+  keys,
+  map,
+  reduce,
+  values,
 } from 'lodash-es';
 import fs from 'node:fs/promises';
 import path from 'path';
@@ -22,9 +22,12 @@ import {
   mapAsyncSeq,
   run,
 } from '../../util/index.js';
+import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
+import { ChannelDB } from '../channelDb.js';
 import { getEm } from '../dataSource.js';
 import {
   ContentItem,
+  CurrentLineupSchemaVersion,
   Lineup,
   LineupItem,
   OfflineItem,
@@ -43,8 +46,6 @@ import {
   tryParseResolution,
   uniqueProgramId,
 } from './migrationUtil.js';
-import { ChannelDB } from '../channelDb.js';
-import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
 
 const validPositions = [
   'bottom-left',
@@ -124,6 +125,7 @@ export class LegacyChannelMigrator {
     return {
       lastUpdated: dayjs().valueOf(),
       items: lineupItems,
+      version: CurrentLineupSchemaVersion,
     };
   }
 

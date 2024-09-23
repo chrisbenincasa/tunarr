@@ -294,6 +294,11 @@ const TimeSlotRow = ({
           type: 'redirect',
           channelId: slotId.split('.')[1],
         };
+      } else if (slotId.startsWith('custom-show')) {
+        slotProgram = {
+          type: 'custom-show',
+          customShowId: slotId.split('.')[1],
+        };
       } else {
         return;
       }
@@ -319,12 +324,15 @@ const TimeSlotRow = ({
   let selectValue: string;
   switch (slot.programming.type) {
     case 'show': {
-      console.log(slot.programming);
       selectValue = `show.${slot.programming.showId}`;
       break;
     }
     case 'redirect': {
       selectValue = `redirect.${slot.programming.channelId}`;
+      break;
+    }
+    case 'custom-show': {
+      selectValue = `${slot.programming.type}.${slot.programming.customShowId}`;
       break;
     }
     default: {

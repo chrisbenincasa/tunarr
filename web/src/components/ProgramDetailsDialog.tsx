@@ -193,7 +193,7 @@ export default function ProgramDetailsDialog({
     ]);
   };
 
-  const thumbnailImage = useMemo(
+  const thumbnailImage: (m: ChannelProgram) => string | null = useMemo(
     () =>
       forProgramType({
         content: (p) => {
@@ -244,6 +244,7 @@ export default function ProgramDetailsDialog({
 
           return `${settings.backendUri}/api/metadata/external?id=${key}&mode=proxy&asset=thumb`;
         },
+        custom: (p) => (p.program ? thumbnailImage(p.program) : null),
       }),
     [settings.backendUri],
   );

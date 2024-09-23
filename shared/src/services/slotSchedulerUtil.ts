@@ -1,14 +1,10 @@
-import {
-  ChannelProgram,
-  MultiExternalId,
-  isContentProgram,
-  isRedirectProgram,
-} from '@tunarr/types';
+import { ChannelProgram, MultiExternalId } from '@tunarr/types';
 import { RandomSlot, TimeSlot } from '@tunarr/types/api';
 import {
   filter,
   first,
   forEach,
+  isEmpty,
   isNull,
   isUndefined,
   map,
@@ -17,6 +13,7 @@ import {
 } from 'lodash-es';
 import { createExternalIdFromMulti } from '../index.js';
 import {
+  CustomProgramOrderer,
   ProgramIterator,
   ProgramOrderer,
   ProgramShuffler,
@@ -30,7 +27,7 @@ export type SlotLike = {
 };
 
 type ProgramMapping = {
-  [K in 'content' | 'redirect']: Record<
+  [K in 'content' | 'redirect' | 'custom']: Record<
     string,
     Extract<ChannelProgram, { type: K }>[]
   >;
@@ -45,23 +42,44 @@ export function createProgramMap(programs: ChannelProgram[]): ProgramMapping {
   return reduce(
     programs,
     (acc, program) => {
-      if (isContentProgram(program)) {
-        let id: string | null = null;
-        // TODO handle music
-        if (program.subtype === 'movie') {
-          id = 'movie';
-        } else if (program.subtype === 'episode') {
-          id = `tv.${program.title}`;
-        }
+      switch (program.type) {
+        case 'content': {
+          let id: string | null = null;
+          // TODO handle music
+          if (program.subtype === 'movie') {
+            id = 'movie';
+          } else if (
+            program.subtype === 'episode' &&
+            !isEmpty(program.showId)
+          ) {
+            id = `tv.${program.showId}`;
+          } else if (
+            program.subtype === 'track' &&
+            !isEmpty(program.artistId)
+          ) {
+            id = `artist.${program.artistId}`;
+          }
 
-        if (!isNull(id)) {
-          const existing = acc['content'][id] ?? [];
-          acc['content'][id] = [...existing, program];
+          if (!isNull(id)) {
+            const existing = acc.content[id] ?? [];
+            acc.content[id] = [...existing, program];
+          }
+          break;
         }
-      } else if (isRedirectProgram(program)) {
-        const id = `redirect.${program.channel}`;
-        const existing = acc['redirect'][id] ?? [];
-        acc['redirect'][id] = [...existing, program];
+        case 'redirect': {
+          const id = `redirect.${program.channel}`;
+          const existing = acc.redirect[id] ?? [];
+          acc.redirect[id] = [...existing, program];
+          break;
+        }
+        case 'custom': {
+          const id = `custom-show.${program.customShowId}`;
+          const existing = acc.custom[id] ?? [];
+          acc.custom[id] = [...existing, program];
+          break;
+        }
+        case 'flex':
+          break;
       }
 
       return acc;
@@ -69,6 +87,7 @@ export function createProgramMap(programs: ChannelProgram[]): ProgramMapping {
     {
       content: {},
       redirect: {},
+      custom: {},
     } as ProgramMapping,
   );
 }
@@ -88,17 +107,24 @@ export function createProgramIterators(
   return reduce(
     slots,
     (acc, slot) => {
-      let id: string | null = null,
-        slotId: string | null = null;
-      if (slot.programming.type === 'movie') {
-        id = slotIteratorKey(slot)!;
-        slotId = 'movie';
-      } else if (slot.programming.type === 'show') {
-        id = slotIteratorKey(slot)!;
-        slotId = `tv.${slot.programming.showId}`;
-      } else if (slot.programming.type === 'redirect') {
-        id = slotIteratorKey(slot)!;
-        slotId = `redirect.${slot.programming.channelId}`;
+      const id = slotIteratorKey(slot);
+      let slotId: string | null = null;
+
+      switch (slot.programming.type) {
+        case 'movie':
+          slotId = 'movie';
+          break;
+        case 'show':
+          slotId = `tv.${slot.programming.showId}`;
+          break;
+        case 'redirect':
+          slotId = `redirect.${slot.programming.channelId}`;
+          break;
+        case 'custom-show':
+          slotId = `custom-show.${slot.programming.customShowId}`;
+          break;
+        case 'flex':
+          break;
       }
 
       if (id && slotId && !acc[id]) {
@@ -106,12 +132,17 @@ export function createProgramIterators(
         if (slot.programming.type === 'redirect') {
           // Slot order is disregarded for redirect because we don't
           // know what will be playing anyway!
-          const program = first(programBySlotType['redirect'][slotId] ?? []);
+          const program = first(programBySlotType.redirect[slotId] ?? []);
           if (program) {
             acc[id] = new StaticProgramIterator(program);
           }
+        } else if (slot.programming.type === 'custom-show') {
+          acc[id] =
+            slot.order === 'next'
+              ? new CustomProgramOrderer(programBySlotType.custom[slotId] ?? [])
+              : new ProgramShuffler(programBySlotType.custom[slotId] ?? []);
         } else {
-          const programs = programBySlotType['content'][slotId] ?? [];
+          const programs = programBySlotType.content[slotId] ?? [];
           // Remove any duplicates.
           // We don't need to go through and remove flex since
           // they will just be ignored during schedule generation

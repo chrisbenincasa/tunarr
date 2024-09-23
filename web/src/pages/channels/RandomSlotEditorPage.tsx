@@ -191,6 +191,11 @@ const RandomSlotRow = React.memo(
             type: 'redirect',
             channelId: slotId.split('.')[1],
           };
+        } else if (slotId.startsWith('custom-show')) {
+          slotProgram = {
+            type: 'custom-show',
+            customShowId: slotId.split('.')[1],
+          };
         } else {
           return;
         }
@@ -227,6 +232,9 @@ const RandomSlotRow = React.memo(
         selectValue = `redirect.${slot.programming.channelId}`;
         break;
       }
+      case 'custom-show':
+        selectValue = `custom-show.${slot.programming.customShowId}`;
+        break;
       default: {
         selectValue = slot.programming.type;
         break;
@@ -287,7 +295,8 @@ const RandomSlotRow = React.memo(
           </Select>
         </Grid>
         <Grid item xs={2}>
-          {slot.programming.type === 'show' ? (
+          {slot.programming.type === 'show' ||
+          slot.programming.type === 'custom-show' ? (
             <Select<'next' | 'shuffle'>
               fullWidth
               value={slot.order ?? 'next'}
@@ -354,7 +363,7 @@ const RandomSlots = ({
         { shouldDirty: true },
       );
     }
-  }, [prevDistribution, distribution, currentSlots, setValue]);
+  }, [prevDistribution, distribution]); // NOTE: Adding 'currentSlots' and 'setValue' here causes infinite render loop
 
   const updateSlotWeights = useDebounceCallback(
     useCallback(() => {
@@ -543,8 +552,6 @@ const RandomSlots = ({
 };
 
 export default function RandomSlotEditorPage() {
-  // Requires that the channel was already loaded... not the case if
-  // we navigated directly, so we need to handle that
   const {
     currentEntity: channel,
     programList: newLineup,
@@ -560,9 +567,7 @@ export default function RandomSlotEditorPage() {
   const hasExistingTimeSlotSchedule =
     !isNil(loadedSchedule) && loadedSchedule.type === 'time';
 
-  const [, setStartTime] = useState(
-    channel?.startTime ?? dayjs().unix() * 1000,
-  );
+  const [, setStartTime] = useState(channel?.startTime ?? +dayjs());
 
   const {
     control,

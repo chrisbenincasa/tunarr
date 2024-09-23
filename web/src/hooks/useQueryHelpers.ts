@@ -11,14 +11,15 @@ export function makeQueryOptions<
   Fn extends QueryFunction,
   Err = Error,
   T = Fn extends QueryFunction<infer T> ? T : unknown,
+  OutT = T,
 >(
   key: K,
   func: QueryFunction<T>,
   opts: Omit<
-    UseQueryOptions<T, Err, T, DataTag<K, T>>,
+    UseQueryOptions<T, Err, OutT, DataTag<K, T>>,
     'queryKey' | 'queryFn'
   > = {},
-): UseQueryOptions<T, Err, T, DataTag<K, T>> {
+): UseQueryOptions<T, Err, OutT, DataTag<K, T>> {
   return {
     queryKey: key as DataTag<K, T>,
     queryFn: func,
