@@ -80,12 +80,10 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
             .default(true)
             .transform((p) => (p ? 1 : 0)),
           proxy: TruthyQueryParam.default(false),
-          useShowPoster: TruthyQueryParam.default(false),
         }),
       },
     },
     async (req, res) => {
-      const xmltvSettings = req.serverCtx.settings.xmlTvSettings();
       const em = getEm();
       // Unfortunately these don't have unique ID spaces, since we have separate tables
       // so we'll just prefer program matches over group matches and hope all works out
@@ -95,7 +93,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
           .repo(Program)
           .findOne(
             { uuid: req.params.id },
-            { populate: ['album.externalRefs', 'tvShow.externalRefs'] },
+            { populate: ['album', 'album.externalRefs'] },
           ),
         em
           .repo(ProgramGrouping)
@@ -158,22 +156,6 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
           ifDefined(
             find(
               program.album.$.externalRefs,
-              (ref) =>
-                ref.sourceType ===
-                  programExternalIdTypeFromSourceType(program.sourceType) &&
-                ref.externalSourceId === program.externalSourceId,
-            ),
-            (ref) => {
-              keyToUse = ref.externalKey;
-            },
-          );
-        } else if (
-          (req.query.useShowPoster || xmltvSettings.useShowPoster) &&
-          program.type === ProgramType.Episode
-        ) {
-          ifDefined(
-            find(
-              program.tvShow?.$.externalRefs,
               (ref) =>
                 ref.sourceType ===
                   programExternalIdTypeFromSourceType(program.sourceType) &&
