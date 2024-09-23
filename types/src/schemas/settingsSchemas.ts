@@ -1,6 +1,6 @@
 import z from 'zod';
-import { ResolutionSchema } from './miscSchemas.js';
 import { Tag, TupleToUnion } from '../util.js';
+import { ResolutionSchema } from './miscSchemas.js';
 import { ScheduleSchema } from './utilSchemas.js';
 
 export const XmlTvSettingsSchema = z.object({
@@ -8,6 +8,9 @@ export const XmlTvSettingsSchema = z.object({
   refreshHours: z.number().default(4),
   outputPath: z.string().default(''),
   enableImageCache: z.boolean().default(false),
+  // If true, episodes will use the poster for their show in
+  // the XMLTV file
+  useShowPoster: z.boolean().default(false).catch(false),
 });
 
 export const SupportedVideoFormats = ['h264', 'hevc', 'mpeg2'] as const;
