@@ -1,4 +1,5 @@
 import { XmlTvSettings } from '@tunarr/types';
+import { BaseErrorSchema } from '@tunarr/types/api';
 import { XmlTvSettingsSchema } from '@tunarr/types/schemas';
 import { isError } from 'lodash-es';
 import { z } from 'zod';
@@ -9,7 +10,6 @@ import { UpdateXmlTvTask } from '../tasks/UpdateXmlTvTask.js';
 import { RouterPluginCallback } from '../types/serverType.js';
 import { firstDefined } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
-import { BaseErrorSchema } from '@tunarr/types/api';
 
 export const xmlTvSettingsRouter: RouterPluginCallback = (
   fastify,
@@ -60,6 +60,7 @@ export const xmlTvSettingsRouter: RouterPluginCallback = (
           enableImageCache: settings.enableImageCache === true,
           outputPath: xmltv.outputPath,
           programmingHours: settings.programmingHours ?? 12,
+          useShowPoster: settings.useShowPoster ?? false,
         });
         xmltv = req.serverCtx.settings.xmlTvSettings();
         req.serverCtx.eventService.push({
