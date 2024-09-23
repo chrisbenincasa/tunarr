@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.11.0](https://github.com/chrisbenincasa/tunarr/compare/v0.10.4...v0.11.0) (2024-09-23)
+
+
+### Features
+
+* add option to use show's poster instead of episode poster ([4f661d5](https://github.com/chrisbenincasa/tunarr/commit/4f661d5c0b0aa01edcb7ad4a9c10fce3faf246ac)), closes [#655](https://github.com/chrisbenincasa/tunarr/issues/655)
+* **parity:** support custom shows in time/random slots ([24b5a97](https://github.com/chrisbenincasa/tunarr/commit/24b5a972c3f139168825f5ca55c2f5b7f4891649)), closes [#785](https://github.com/chrisbenincasa/tunarr/issues/785)
+
+
+### Bug Fixes
+
+* calcuate channel list runtime by selected programs ([24b5a97](https://github.com/chrisbenincasa/tunarr/commit/24b5a972c3f139168825f5ca55c2f5b7f4891649)), closes [#786](https://github.com/chrisbenincasa/tunarr/issues/786)
+* hide image cache settings in xmltv as the feature is currently disabled ([4f661d5](https://github.com/chrisbenincasa/tunarr/commit/4f661d5c0b0aa01edcb7ad4a9c10fce3faf246ac))
+* simplify query in BackfillProgramGroupings fixer which could cause OOMs ([29956a8](https://github.com/chrisbenincasa/tunarr/commit/29956a81fe7fe5368bcbd3eced86f3829b5acb32)), closes [#788](https://github.com/chrisbenincasa/tunarr/issues/788)
+* simplify query in BackfillProgramGroupings fixer which could cause OOMs ([#789](https://github.com/chrisbenincasa/tunarr/issues/789)) ([fd36e38](https://github.com/chrisbenincasa/tunarr/commit/fd36e3850135061e6d82bb8e76fad2d73b9688f0))
+* use correct timezone for start time in random slot editor ([24b5a97](https://github.com/chrisbenincasa/tunarr/commit/24b5a972c3f139168825f5ca55c2f5b7f4891649))
+* use program_grouping.uuid value as slot program showId, rather than show title ([#792](https://github.com/chrisbenincasa/tunarr/issues/792)) ([24b5a97](https://github.com/chrisbenincasa/tunarr/commit/24b5a972c3f139168825f5ca55c2f5b7f4891649))
+
 ## [0.10.4](https://github.com/chrisbenincasa/tunarr/compare/v0.10.3...v0.10.4) (2024-09-21)
 
 
