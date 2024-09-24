@@ -72,7 +72,7 @@ export class HdhrApiRouter {
           lineup.push({
             GuideNumber: channel.number.toString(),
             GuideName: channel.name,
-            URL: `${req.protocol}://${req.hostname}/channels/${channel.number}/video`,
+            URL: `${req.protocol}://${req.hostname}/stream/channels/${channel.uuid}.ts`,
           });
         }
         if (lineup.length === 0)
