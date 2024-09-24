@@ -1,5 +1,6 @@
 import { ref } from '@mikro-orm/core';
 import { createExternalId } from '@tunarr/shared';
+import { seq } from '@tunarr/shared/util';
 import {
   ChannelProgram,
   ContentProgram,
@@ -7,7 +8,9 @@ import {
   isContentProgram,
   isCustomProgram,
 } from '@tunarr/types';
+import { JellyfinItem } from '@tunarr/types/jellyfin';
 import { PlexEpisode, PlexMusicTrack } from '@tunarr/types/plex';
+import { ContentProgramOriginalProgram } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import ld, {
   compact,
@@ -24,14 +27,17 @@ import ld, {
 import { performance } from 'perf_hooks';
 import { GlobalScheduler } from '../services/scheduler.js';
 import { ReconcileProgramDurationsTask } from '../tasks/ReconcileProgramDurationsTask.js';
-import { SavePlexProgramExternalIdsTask } from '../tasks/plex/SavePlexProgramExternalIdsTask.js';
 import { JellyfinTaskQueue, PlexTaskQueue } from '../tasks/TaskQueue.js';
+import { SaveJellyfinProgramExternalIdsTask } from '../tasks/jellyfin/SaveJellyfinProgramExternalIdsTask.js';
+import { SaveJellyfinProgramGroupingsTask } from '../tasks/jellyfin/SaveJellyfinProgramGroupingsTask.js';
+import { SavePlexProgramExternalIdsTask } from '../tasks/plex/SavePlexProgramExternalIdsTask.js';
 import { SavePlexProgramGroupingsTask } from '../tasks/plex/SavePlexProgramGroupingsTask.js';
 import { ProgramMinterFactory } from '../util/ProgramMinter.js';
 import { groupByUniqFunc, isNonEmptyString } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { time, timeNamedAsync } from '../util/perf.js';
 import { ProgramExternalIdType } from './custom_types/ProgramExternalIdType.js';
+import { ProgramSourceType } from './custom_types/ProgramSourceType.js';
 import { getEm } from './dataSource.js';
 import {
   Program,
@@ -40,12 +46,6 @@ import {
 } from './entities/Program.js';
 import { ProgramExternalId } from './entities/ProgramExternalId.js';
 import { upsertProgramExternalIds_deprecated } from './programExternalIdHelpers.js';
-import { ContentProgramOriginalProgram } from '@tunarr/types/schemas';
-import { seq } from '@tunarr/shared/util';
-import { JellyfinItem } from '@tunarr/types/jellyfin';
-import { SaveJellyfinProgramGroupingsTask } from '../tasks/jellyfin/SaveJellyfinProgramGroupingsTask.js';
-import { ProgramSourceType } from './custom_types/ProgramSourceType.js';
-import { SaveJellyfinProgramExternalIdsTask } from '../tasks/jellyfin/SaveJellyfinProgramExternalIdsTask.js';
 
 export async function upsertContentPrograms(
   programs: ChannelProgram[],
@@ -427,8 +427,6 @@ function scheduleJellyfinProgramGroupingTasks(
       >,
     )
     .value();
-
-  console.log('SCHEDULING a bunchhhh of things: ', externalIdsByGrandparentId);
 
   setImmediate(() => {
     forEach(externalIdsByGrandparentId, (externalIds, grandparentId) => {

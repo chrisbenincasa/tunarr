@@ -537,6 +537,9 @@ importers:
       sort-by:
         specifier: ^1.2.0
         version: 1.2.0
+      ts-pattern:
+        specifier: ^5.4.0
+        version: 5.4.0
       usehooks-ts:
         specifier: ^2.14.0
         version: 2.14.0(react@18.2.0)
@@ -9978,7 +9981,7 @@ packages:
       pastable: 2.2.1(react@18.2.0)
       prettier: 2.8.8
       tanu: 0.1.13
-      ts-pattern: 5.0.6
+      ts-pattern: 5.4.0
       whence: 2.0.0
       zod: 3.22.4
     transitivePeerDependencies:
@@ -12393,9 +12396,8 @@ packages:
       yn: 3.1.1
     dev: true
 
-  /ts-pattern@5.0.6:
-    resolution: {integrity: sha512-Y+jOjihlFriWzcBjncPCf2/am+Hgz7LtsWs77pWg5vQQKLQj07oNrJryo/wK2G0ndNaoVn2ownFMeoeAuReu3Q==}
-    dev: true
+  /ts-pattern@5.4.0:
+    resolution: {integrity: sha512-hgfOMfjlrARCnYtGD/xEAkFHDXuSyuqjzFSltyQCbN689uNvoQL20TVN2XFcLMjfNuwSsQGU+xtH6MrjIwhwUg==}
 
   /ts-toolbelt@9.6.0:
     resolution: {integrity: sha512-nsZd8ZeNUzukXPlJmTBwUAuABDe/9qtVDelJeT/qW0ow3ZS3BsQJtNkan1802aM9Uf68/Y8ljw86Hu0h5IUW3w==}

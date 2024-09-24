@@ -1,3 +1,4 @@
+import { isNonEmptyString } from '@/helpers/util.ts';
 import { createExternalId } from '@tunarr/shared';
 import {
   ChannelProgram,
@@ -23,6 +24,7 @@ export const useRemoveDuplicates = () => {
 };
 
 export const removeDuplicatePrograms = (programs: ChannelProgram[]) => {
+  const seenDbIds = new Set<string>();
   const seenIds = new Set<string>();
   const seenRedirects = new Set<string>();
   const seenCustom = new Set<string>();
@@ -47,10 +49,19 @@ export const removeDuplicatePrograms = (programs: ChannelProgram[]) => {
       return true;
     }
 
+    if (p.persisted && isNonEmptyString(p.id)) {
+      if (seenDbIds.has(p.id)) {
+        return true;
+      }
+      seenDbIds.add(p.id);
+      return false;
+    }
+
     const externalIds = chain(p.externalIds)
       .filter((id): id is MultiExternalId => id.type === 'multi')
       .map((id) => createExternalId(id.source, id.sourceId, id.id))
       .value();
+
     const seenAny = some(externalIds, (id) => seenIds.has(id));
     if (!seenAny) {
       forEach(externalIds, (id) => seenIds.add(id));

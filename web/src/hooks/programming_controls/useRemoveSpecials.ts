@@ -1,24 +1,14 @@
-import { ChannelProgram, isContentProgram } from '@tunarr/types';
-import _ from 'lodash-es';
-import { setCurrentLineup } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
 import { materializedProgramListSelector } from '../../store/selectors.ts';
+import { useRemoveProgramming } from './useRemoveProgramming.ts';
 
 export const useRemoveSpecials = () => {
   const programs = useStore(materializedProgramListSelector);
+  const removeProgramming = useRemoveProgramming();
 
   return () => {
     if (programs.length > 0) {
-      const newPrograms = removeSpecials(programs);
-      setCurrentLineup(newPrograms, true);
+      removeProgramming({ specials: true });
     }
   };
-};
-
-export const removeSpecials = (programs: ChannelProgram[]) => {
-  const filteredData = _.filter(programs, (program) => {
-    return !isContentProgram(program) || program.seasonNumber !== 0;
-  });
-
-  return filteredData;
 };
