@@ -1,3 +1,5 @@
+import { StreamConnectionDetails } from '@tunarr/types/api';
+import dayjs from 'dayjs';
 import events from 'events';
 import { isEmpty, isUndefined, keys } from 'lodash-es';
 import { TypedEventEmitter } from '../types/eventEmitter';
@@ -8,7 +10,7 @@ type ConnectionTrackerEvents = {
 };
 
 export class ConnectionTracker<
-  ConnectionDetails extends object,
+  ConnectionDetails extends StreamConnectionDetails,
 > extends (events.EventEmitter as new () => TypedEventEmitter<ConnectionTrackerEvents>) {
   #logger: Logger = LoggerFactory.child({ className: ConnectionTracker.name });
   #cleanupFunc: NodeJS.Timeout | null = null;
@@ -28,8 +30,11 @@ export class ConnectionTracker<
   }
 
   removeConnection(token: string) {
-    delete this.#connections[token];
+    const conn = this.#connections[token];
+    const deleted = delete this.#connections[token];
+    const lastHeartbeat = this.#heartbeats[token] ?? +dayjs();
     delete this.#heartbeats[token];
+    return deleted ? { ...conn, lastHeartbeat } : null;
   }
 
   connections() {

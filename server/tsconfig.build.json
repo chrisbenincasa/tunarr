@@ -10,6 +10,7 @@
         "./tests/**/*",
         "./src/**/*.test.ts",
         "./src/**/*.ignore.ts",
+        "./src/testing/**/*.ts",
         "./**/streams/**/*.ts",
         "./scripts",
         "./esbuild",

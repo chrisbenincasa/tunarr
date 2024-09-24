@@ -1,7 +1,10 @@
+import { Dayjs } from 'dayjs';
+import { Duration } from 'dayjs/plugin/duration.js';
 import { isUndefined } from 'lodash-es';
 import events from 'node:events';
 import { PassThrough } from 'node:stream';
 import { TypedEventEmitter } from '../types/eventEmitter.js';
+import { Nullable } from '../types/util.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { FfmpegProcess } from './FfmpegProcess.js';
 import { FfmpegEvents } from './ffmpeg.js';
@@ -27,7 +30,8 @@ export class FfmpegTranscodeSession extends (events.EventEmitter as new () => Ty
 
   constructor(
     public process: FfmpegProcess,
-    public streamEndTime: number,
+    public streamDuration: Duration,
+    public streamEndTime: Dayjs,
   ) {
     super();
     // Connect the session to the process.
@@ -44,9 +48,14 @@ export class FfmpegTranscodeSession extends (events.EventEmitter as new () => Ty
     this.process.on('error', (...args) => {
       this.emit('error', ...args);
     });
+
+    this.process.on('exit', (...args) => {
+      this.emit('exit', ...args);
+    });
   }
 
-  start(sink: PassThrough) {
+  start(sink?: PassThrough) {
+    const out = sink ?? new PassThrough();
     if (this.state !== State.Idle) {
       throw new Error(
         `Session was already started, or has ended (current state = ${this.state})`,
@@ -63,7 +72,7 @@ export class FfmpegTranscodeSession extends (events.EventEmitter as new () => Ty
     this.process.on('end', () => {
       this.state = State.Ended;
       this.kill();
-      sink.push(null);
+      out.push(null);
     });
 
     this.process.on('error', (err) => {
@@ -72,7 +81,16 @@ export class FfmpegTranscodeSession extends (events.EventEmitter as new () => Ty
       rawStream.unpipe(sink);
     });
 
-    return rawStream.pipe(sink, { end: false });
+    return rawStream.pipe(out, { end: false });
+  }
+
+  wait(): Promise<{
+    code: Nullable<number>;
+    signal: Nullable<NodeJS.Signals>;
+  }> {
+    return new Promise((resolve) => {
+      this.process.once('exit', (code, signal) => resolve({ code, signal }));
+    });
   }
 
   kill() {

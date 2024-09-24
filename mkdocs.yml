@@ -41,9 +41,15 @@ nav:
     - Install: getting-started/installation.md
     - Setup: getting-started/setup.md
   - Configure:
-    - Channels: configure/channels.md
+    - Channels:
+      - configure/channels/index.md
+      - Transcoding: configure/channels/transcoding.md
     - Programming: configure/programming.md
-    - Scheduling: configure/scheduling.md
+    - Scheduling: 
+      - configure/scheduling/index.md
+      - Tools: configure/scheduling/tools.md
+      - Time Slots: configure/scheduling/time-slots.md
+      - Random Slots: configure/scheduling/random-slots.md
     - Flex: configure/flex.md
     - System: configure/system.md
     - Clients:

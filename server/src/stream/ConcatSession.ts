@@ -1,43 +1,46 @@
 import { isEmpty } from 'lodash-es';
 import { Channel } from '../dao/direct/derivedTypes.js';
-import { VideoStreamResult } from '../ffmpeg/FfmpegOutputStream.js';
+import { FfmpegTranscodeSession } from '../ffmpeg/FfmpegTrancodeSession.js';
 import { ConcatOptions } from '../ffmpeg/ffmpeg.js';
-import { isDefined } from '../util';
 import { ConcatStream } from './ConcatStream';
-import { SessionOptions, StreamSession } from './StreamSession';
+import { DirectStreamSession } from './DirectStreamSession.js';
+import { ConcatSessionType, SessionOptions } from './Session.js';
 
-export interface ConcatSessionOptions extends SessionOptions, ConcatOptions {
+export type ConcatSessionOptions = SessionOptions & {
+  sessionType: ConcatSessionType;
   audioOnly: boolean;
-}
+  concatOptions: ConcatOptions;
+};
 
-export class ConcatSession extends StreamSession<ConcatSessionOptions> {
-  #stream: VideoStreamResult;
+export class ConcatSession extends DirectStreamSession<ConcatSessionOptions> {
+  #transcodeSession: FfmpegTranscodeSession;
 
-  protected constructor(channel: Channel, options: ConcatSessionOptions) {
+  constructor(channel: Channel, options: ConcatSessionOptions) {
     super(channel, options);
-  }
-
-  static create(channel: Channel, options: ConcatSessionOptions) {
-    return new ConcatSession(channel, options);
   }
 
   isStale(): boolean {
     return isEmpty(this.connections());
   }
 
-  protected async initializeStream(): Promise<VideoStreamResult> {
-    this.#stream = await new ConcatStream(this.sessionOptions).startStream(
-      this.channel.uuid,
-      /* audioOnly */ this.sessionOptions.audioOnly,
-    );
-    return this.#stream;
+  get sessionType() {
+    return this.sessionOptions.sessionType;
+  }
+
+  protected initializeStream(): FfmpegTranscodeSession {
+    this.#transcodeSession = new ConcatStream(this.channel, {
+      ...this.sessionOptions.concatOptions,
+      mode: this.sessionOptions.sessionType,
+      logOutput: true,
+    }).createSession();
+
+    this.#transcodeSession.on('error', (e) => this.emit('error', e));
+
+    return this.#transcodeSession;
   }
 
   protected stopStream(): Promise<void> {
-    if (isDefined(this.#stream) && this.#stream.type === 'success') {
-      this.#stream.stop();
-    }
-
+    this.#transcodeSession?.kill();
     return Promise.resolve(void 0);
   }
 }

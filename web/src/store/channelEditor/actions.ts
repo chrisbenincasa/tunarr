@@ -98,12 +98,15 @@ export const safeSetCurrentChannel = (
   programming?: CondensedChannelProgramming,
 ) =>
   useStore.setState(({ channelEditor }) => {
+    console.log('here', { ...channelEditor });
     if (channelEditor.currentEntity?.id !== channel.id) {
       channelEditor.currentEntity = channel;
       channelEditor.originalEntity = channel;
       if (programming) {
         updateProgramList(channelEditor, programming);
       }
+    } else if (!channelEditor.programsLoaded && programming) {
+      updateProgramList(channelEditor, programming);
     }
   });
 

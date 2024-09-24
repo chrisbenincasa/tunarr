@@ -1,4 +1,9 @@
-import { Channel, Program, TupleToUnion } from '@tunarr/types';
+import {
+  Channel,
+  ChannelStreamModes,
+  Program,
+  TupleToUnion,
+} from '@tunarr/types';
 import dayjs from 'dayjs';
 import ld, {
   compact,
@@ -356,6 +361,7 @@ export class LegacyChannelMigrator {
         enabled: isOnDemand,
       },
       programCount: 0, // Not really needed here
+      streamMode: ChannelStreamModes.Hls,
     };
 
     const em = getEm();
@@ -408,6 +414,7 @@ export class LegacyChannelMigrator {
         watermark: channel.watermark,
         offline: { mode: 'clip' },
         guideMinimumDuration: channel.guideMinimumDuration,
+        streamMode: 'hls',
       });
     }
 

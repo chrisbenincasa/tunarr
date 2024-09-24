@@ -1,73 +1,53 @@
-import { compact, isError, isNil, isString, isUndefined } from 'lodash-es';
+import { compact, filter, initial, isNil, isUndefined } from 'lodash-es';
 import { ChannelDB } from '../dao/channelDb.js';
 import { Channel } from '../dao/direct/derivedTypes.js';
+import {
+  ChannelNotFoundError,
+  GenericError,
+  TypedError,
+} from '../types/errors.js';
 import { Result } from '../types/result.js';
 import { Maybe } from '../types/util.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { MutexMap } from '../util/mutexMap.js';
 import { ConcatSession, ConcatSessionOptions } from './ConcatSession.js';
-import { HlsSession, HlsSessionOptions } from './HlsSession.js';
+import { ConcatSessionType, HlsConcatSessionType, Session } from './Session.js';
+import { HlsSession, HlsSessionOptions } from './hls/HlsSession.js';
 import {
-  SessionType,
-  StreamConnectionDetails,
-  StreamSession,
-} from './StreamSession.js';
+  HlsSlowerSession,
+  HlsSlowerSessionOptions,
+} from './hls/HlsSlowerSession.js';
+
+import { ChannelStreamMode } from '@tunarr/types';
+import { StreamConnectionDetails } from '@tunarr/types/api';
+import { OnDemandChannelService } from '../services/OnDemandChannelService.js';
+import { SessionType } from './Session.js';
 
 export type SessionKey = `${string}_${SessionType}`;
-
-type KnownErrorTypes = 'channel_not_found' | 'generic_error';
-abstract class TypedError extends Error {
-  readonly type: KnownErrorTypes;
-
-  constructor(public message: string) {
-    super(message);
-  }
-
-  static fromError(e: Error): TypedError {
-    if (e instanceof TypedError) {
-      return e;
-    }
-
-    return new GenericError(e.message);
-  }
-
-  static fromAny(e: unknown): TypedError {
-    if (isError(e)) {
-      return this.fromError(e);
-    }
-
-    if (isString(e)) {
-      return new GenericError(e);
-    }
-
-    return new GenericError(JSON.stringify(e));
-  }
-}
-
-class GenericError extends TypedError {
-  readonly type = 'generic_error';
-}
-
-class ChannelNotFoundError extends TypedError {
-  readonly type = 'channel_not_found';
-  constructor(channelId: string) {
-    super(`Channel ${channelId} not found`);
-  }
-}
 
 export class SessionManager {
   #logger = LoggerFactory.child({ className: this.constructor.name });
   #sessionLocker = new MutexMap();
-  #sessions: Record<SessionKey, StreamSession> = {};
+  #sessions: Record<SessionKey, Session> = {};
 
-  private constructor(private channelDB: ChannelDB) {}
+  private constructor(
+    private channelDB: ChannelDB,
+    private onDemandChannelService: OnDemandChannelService,
+  ) {}
 
-  static create(channelDB: ChannelDB) {
-    return new SessionManager(channelDB);
+  static create(
+    channelDB: ChannelDB,
+    onDemandChannelService: OnDemandChannelService,
+  ) {
+    return new SessionManager(channelDB, onDemandChannelService);
   }
 
-  allSessions(): Record<SessionKey, StreamSession> {
+  allSessions(): Record<SessionKey, Session> {
     return this.#sessions;
+  }
+
+  getHlsSlowerSession(id: string): Maybe<HlsSlowerSession> {
+    return this.getSession(id, 'hls_slower') as Maybe<HlsSlowerSession>;
   }
 
   getHlsSession(id: string): Maybe<HlsSession> {
@@ -75,31 +55,47 @@ export class SessionManager {
   }
 
   getConcatSession(id: string): Maybe<ConcatSession> {
-    return this.getSession(id, 'concat') as Maybe<ConcatSession>;
+    return this.getSession(id, 'mpegts') as Maybe<ConcatSession>;
   }
 
-  getConcatHlsSession(id: string): Maybe<ConcatSession> {
-    return this.getSession(id, 'concat_hls') as Maybe<ConcatSession>;
+  getHlsWrapperSession(
+    id: string,
+    typ: HlsConcatSessionType,
+  ): Maybe<ConcatSession> {
+    return this.getSession(id, typ) as Maybe<ConcatSession>;
   }
 
-  getAllConcatSessions(id: string): ConcatSession[] {
-    return compact([this.getConcatSession(id), this.getConcatHlsSession(id)]);
+  getAllConcatSessions(id: string): Session[] {
+    return compact([
+      this.getConcatSession(id),
+      this.getHlsWrapperSession(id, 'hls_concat'),
+      this.getHlsWrapperSession(id, 'hls_slower_concat'),
+    ]);
   }
 
-  getSession(id: string, sessionType: SessionType): Maybe<StreamSession> {
+  getSession(id: string, sessionType: SessionType): Maybe<Session> {
     return this.#sessions[sessionCacheKey(id, sessionType)];
   }
 
-  async endSession(session: StreamSession): Promise<void>;
+  getAllSessionsForChannel(id: string): Session[] {
+    const sessions: Session[] = [];
+    for (const key of Object.keys(this.#sessions)) {
+      if (key.startsWith(id)) {
+        sessions.push(this.#sessions[key as SessionKey]);
+      }
+    }
+    return sessions;
+  }
+
+  async endSession(session: Session): Promise<void>;
   async endSession(
-    idOrSession: string | StreamSession,
+    idOrSession: string | Session,
     maybeSessionType?: SessionType,
   ): Promise<void> {
     let id: string;
     let sessionType: SessionType;
-    if (idOrSession instanceof StreamSession) {
-      id = idOrSession.keyObj.id;
-      sessionType = idOrSession.keyObj.sessionType;
+    if (idOrSession instanceof Session) {
+      ({ id, sessionType } = idOrSession.keyObj);
     } else {
       if (isUndefined(maybeSessionType)) {
         throw new Error('Must pass session type if ending stream by ID');
@@ -110,12 +106,12 @@ export class SessionManager {
     }
 
     const lock = await this.#sessionLocker.getOrCreateLock(id);
-    return await lock.runExclusive(() => {
+    return await lock.runExclusive(async () => {
       const session = this.getSession(id, sessionType);
       if (isNil(session)) {
         return;
       }
-      session.stop();
+      await session.stop();
       delete this.#sessions[sessionCacheKey(id, sessionType)];
     });
   }
@@ -136,21 +132,42 @@ export class SessionManager {
     channelId: string,
     token: string,
     connection: StreamConnectionDetails,
-    options: Omit<ConcatSessionOptions, 'sessionType'>,
+    options: ConcatSessionOptions,
   ) {
-    const sessionType: SessionType =
-      options.mode === 'hls' ? 'concat_hls' : 'concat';
     return this.getOrCreateSession(
       channelId,
       token,
       connection,
-      sessionType,
-      (channel) => ConcatSession.create(channel, { ...options, sessionType }),
+      options.sessionType,
+      (channel) => new ConcatSession(channel, options),
     );
   }
 
   // TODO Consider using a builder pattern here with generics to control
   // the returned session type
+  async getOrCreateHlsSlowerSession(
+    channelId: string,
+    token: string,
+    connection: StreamConnectionDetails,
+    options: Omit<
+      HlsSlowerSessionOptions,
+      'sessionType' | 'initialSegmentCount'
+    >,
+  ) {
+    return this.getOrCreateSession(
+      channelId,
+      token,
+      connection,
+      'hls_slower',
+      (channel) =>
+        new HlsSlowerSession(channel, {
+          ...options,
+          initialSegmentCount: 2, // 8 seconds of content
+          sessionType: 'hls_slower',
+        }),
+    );
+  }
+
   async getOrCreateHlsSession(
     channelId: string,
     token: string,
@@ -171,13 +188,13 @@ export class SessionManager {
     );
   }
 
-  private async getOrCreateSession<Session extends StreamSession>(
+  private async getOrCreateSession<TSession extends Session>(
     channelId: string,
     token: string,
     connection: StreamConnectionDetails,
     sessionType: SessionType,
-    sessionFactory: (channel: Channel) => Session,
-  ): Promise<Result<Session, TypedError>> {
+    sessionFactory: (channel: Channel) => TSession,
+  ): Promise<Result<TSession, TypedError>> {
     const lock = await this.#sessionLocker.getOrCreateLock(channelId);
     try {
       const session = await lock.runExclusive(async () => {
@@ -186,12 +203,42 @@ export class SessionManager {
           throw new ChannelNotFoundError(channelId);
         }
 
-        let session = this.getSession(channelId, sessionType) as Maybe<Session>;
+        let session = this.getSession(
+          channelId,
+          sessionType,
+        ) as Maybe<TSession>;
+
         if (isNil(session)) {
           session = sessionFactory(channel);
+          session.once('error', (e) => {
+            this.#logger.error(e, 'Received error from session. Shutting down');
+            session?.stop().catch((e) => {
+              this.#logger.error(
+                e,
+                'Error while shutting down session. Things are bad!',
+              );
+            });
+          });
+
+          session.on('stop', () => {
+            delete this.#sessions[sessionCacheKey(channelId, sessionType)];
+          });
+
           session.on('cleanup', () => {
             delete this.#sessions[sessionCacheKey(channelId, sessionType)];
           });
+
+          session.on('removeConnection', (_, connection) => {
+            // Error handled below
+            if (session) {
+              this.pauseChannelIfNecessary(session, connection).catch(() => {});
+            }
+          });
+
+          if (this.getAllSessionsForChannel(channelId).length === 0) {
+            this.resumeChannelIfNecessary(channelId);
+          }
+
           this.addSession(channel.uuid, session.sessionType, session);
         }
 
@@ -217,13 +264,58 @@ export class SessionManager {
     }
   }
 
-  private addSession(
-    id: string,
-    sessionType: SessionType,
-    session: StreamSession,
-  ) {
+  private addSession(id: string, sessionType: SessionType, session: Session) {
     this.#sessions[sessionCacheKey(id, sessionType)] = session;
   }
+
+  private resumeChannelIfNecessary(channelId: string) {
+    this.onDemandChannelService.resumeChannel(channelId).catch((e) => {
+      this.#logger.error(e, 'Error resuming on-demand channel %s', channelId);
+    });
+  }
+
+  private async pauseChannelIfNecessary(
+    session: Session,
+    lastConnection: StreamConnectionDetails,
+  ) {
+    try {
+      let sessionToCheck = session;
+      if (session.isConcatSession()) {
+        const underlyingType = sessionTypeFromConcatType(session.sessionType);
+        const underlyingSession = this.getSession(
+          session.keyObj.id,
+          underlyingType,
+        );
+        if (underlyingSession) {
+          sessionToCheck = underlyingSession;
+        }
+      }
+
+      const nonTunarrConnections = filter(
+        sessionToCheck.connections(),
+        (conn) => !(conn.userAgent?.includes('Tunarr') ?? false),
+      ).length;
+
+      // Pause the channel as soon as there are no connections
+      // other than internal connections
+      if (nonTunarrConnections === 0) {
+        await this.onDemandChannelService.pauseChannel(
+          session.keyObj.id,
+          lastConnection.lastHeartbeat,
+        );
+      }
+    } catch (e) {
+      this.#logger.error(
+        e,
+        'Error while trying to pause channel %s',
+        session.id,
+      );
+    }
+  }
+}
+
+function sessionTypeFromConcatType(typ: ConcatSessionType): ChannelStreamMode {
+  return initial(typ.split('_')).join('_') as ChannelStreamMode;
 }
 
 function sessionCacheKey(id: string, sessionType: SessionType): SessionKey {

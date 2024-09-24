@@ -2,13 +2,14 @@ import {
   Cascade,
   Collection,
   Entity,
+  Enum,
   IType,
   ManyToMany,
   OneToMany,
   Property,
   Unique,
 } from '@mikro-orm/core';
-import { Channel as ChannelDTO, type Tag } from '@tunarr/types';
+import { ChannelStreamMode, ChannelStreamModes, type Tag } from '@tunarr/types';
 import {
   ContentProgramTypeSchema,
   ResolutionSchema,
@@ -141,28 +142,6 @@ export type ChannelId = Tag<string, typeof ChannelIdTag>;
 @Entity()
 @Unique({ properties: ['number'] })
 export class Channel extends BaseEntity {
-  static fromDTO(channel: ChannelDTO): Channel {
-    const entity = new Channel();
-    entity.number = channel.number;
-    entity.icon = channel.icon;
-    entity.guideMinimumDuration = channel.guideMinimumDuration;
-    entity.name = channel.name;
-    entity.duration = channel.duration;
-    entity.stealth = channel.stealth;
-    entity.groupTitle = channel.groupTitle;
-    entity.startTime = channel.startTime;
-    entity.offline = channel.offline;
-    entity.watermark = channel.watermark;
-    entity.transcoding = channel.transcoding;
-    return entity;
-  }
-
-  static fromPartialDTO(channel: Partial<ChannelDTO>): Partial<Channel> {
-    return {
-      ...channel,
-    } as Partial<Channel>;
-  }
-
   @Property()
   number!: number;
 
@@ -242,4 +221,7 @@ export class Channel extends BaseEntity {
 
   @ManyToMany(() => Program)
   fallback = new Collection<Program>(this);
+
+  @Enum({ items: () => ChannelStreamModes, default: 'hls' })
+  streamMode!: ChannelStreamMode;
 }

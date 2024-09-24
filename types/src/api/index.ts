@@ -227,19 +227,28 @@ export const JellyfinLoginRequest = z.object({
   password: z.string().min(1),
 });
 
+export const StreamConnectionDetailsSchema = z.object({
+  ip: z.string().ip(),
+  userAgent: z.string().optional(),
+  lastHeartbeat: z.number().nonnegative().optional(),
+});
+
+export type StreamConnectionDetails = z.infer<
+  typeof StreamConnectionDetailsSchema
+>;
+
 export const ChannelSessionsResponseSchema = z.object({
+  // TODO: Share types with session
   type: z.union([
     z.literal('hls'),
-    z.literal('concat'),
-    z.literal('concat_hls'),
+    z.literal('hls_slower'),
+    z.literal('mpegts'),
+    z.literal('hls_concat'),
+    z.literal('hls_slower_concat'),
+    z.literal('mpegts_concat'),
   ]),
   numConnections: z.number().nonnegative(),
-  connections: z.array(
-    z.object({
-      ip: z.string().ip(),
-      lastHeartbeat: z.number().nonnegative().optional(),
-    }),
-  ),
+  connections: z.array(StreamConnectionDetailsSchema),
 });
 
 export type ChannelSessionsResponse = z.infer<

@@ -225,6 +225,21 @@
           "nullable": true,
           "length": null,
           "mappedType": "json"
+        },
+        "stream_mode": {
+          "name": "stream_mode",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": null,
+          "default": "'hls'",
+          "enumItems": [
+            "hls",
+            "hls_slower"
+          ],
+          "mappedType": "enum"
         }
       },
       "name": "channel",
@@ -464,8 +479,8 @@
     },
     {
       "columns": {
-        "channel_uuid": {
-          "name": "channel_uuid",
+        "filler_show_uuid": {
+          "name": "filler_show_uuid",
           "type": "text",
           "unsigned": false,
           "autoincrement": false,
@@ -474,8 +489,8 @@
           "length": null,
           "mappedType": "text"
         },
-        "filler_show_uuid": {
-          "name": "filler_show_uuid",
+        "channel_uuid": {
+          "name": "channel_uuid",
           "type": "text",
           "unsigned": false,
           "autoincrement": false,
@@ -509,16 +524,6 @@
       "indexes": [
         {
           "columnNames": [
-            "channel_uuid"
-          ],
-          "composite": false,
-          "keyName": "channel_filler_show_channel_uuid_index",
-          "constraint": false,
-          "primary": false,
-          "unique": false
-        },
-        {
-          "columnNames": [
             "filler_show_uuid"
           ],
           "composite": false,
@@ -528,10 +533,20 @@
           "unique": false
         },
         {
+          "columnNames": [
+            "channel_uuid"
+          ],
+          "composite": false,
+          "keyName": "channel_filler_show_channel_uuid_index",
+          "constraint": false,
+          "primary": false,
+          "unique": false
+        },
+        {
           "keyName": "primary",
           "columnNames": [
-            "channel_uuid",
-            "filler_show_uuid"
+            "filler_show_uuid",
+            "channel_uuid"
           ],
           "composite": true,
           "constraint": true,
@@ -541,18 +556,6 @@
       ],
       "checks": [],
       "foreignKeys": {
-        "channel_filler_show_channel_uuid_foreign": {
-          "constraintName": "channel_filler_show_channel_uuid_foreign",
-          "columnNames": [
-            "channel_uuid"
-          ],
-          "localTableName": "channel_filler_show",
-          "referencedColumnNames": [
-            "uuid"
-          ],
-          "referencedTableName": "channel",
-          "updateRule": "cascade"
-        },
         "channel_filler_show_filler_show_uuid_foreign": {
           "constraintName": "channel_filler_show_filler_show_uuid_foreign",
           "columnNames": [
@@ -563,6 +566,18 @@
             "uuid"
           ],
           "referencedTableName": "filler_show",
+          "updateRule": "cascade"
+        },
+        "channel_filler_show_channel_uuid_foreign": {
+          "constraintName": "channel_filler_show_channel_uuid_foreign",
+          "columnNames": [
+            "channel_uuid"
+          ],
+          "localTableName": "channel_filler_show",
+          "referencedColumnNames": [
+            "uuid"
+          ],
+          "referencedTableName": "channel",
           "updateRule": "cascade"
         }
       },
@@ -1470,7 +1485,7 @@
           "constraint": false,
           "primary": false,
           "unique": false,
-          "expression": "create unique index `unique_program_multiple_external_id` on `program_external_id` (`program_uuid`, `source_type`) WHERE `external_source_id` IS NOT NULL"
+          "expression": "create unique index `unique_program_multiple_external_id` on `program_external_id` (`program_uuid`, `source_type`, `external_source_id`) WHERE `external_source_id` IS NOT NULL"
         },
         {
           "keyName": "unique_program_single_external_id",

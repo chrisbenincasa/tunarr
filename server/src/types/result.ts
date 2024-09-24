@@ -6,6 +6,14 @@ export abstract class Result<T, E extends Error = Error> {
 
   abstract get(): T;
 
+  static attempt<T>(f: () => T): Result<T> {
+    try {
+      return this.success(f());
+    } catch (e) {
+      return this.failure(isError(e) ? e : new Error(JSON.stringify(e)));
+    }
+  }
+
   static async attemptAsync<T>(f: () => Promise<T>): Promise<Result<T>> {
     try {
       return this.success(await f());
@@ -28,6 +36,12 @@ export abstract class Result<T, E extends Error = Error> {
     return !this.isSuccess();
   }
 
+  forEach(f: (t: T) => void): void {
+    if (this.isSuccess()) {
+      f(this._data!);
+    }
+  }
+
   map<U>(f: (t: T) => U): Result<U> {
     if (this.isFailure()) {
       return this as unknown as Failure<U>;
@@ -47,6 +61,24 @@ export abstract class Result<T, E extends Error = Error> {
     return f(this._data!)
       .then((u) => Result.success(u))
       .catch((e) => Result.failure(e));
+  }
+
+  async flatMapAsync<U, E2 extends E = E>(
+    f: (t: T) => Promise<Result<U, E2>>,
+  ): Promise<Result<U, E2>> {
+    if (this.isFailure()) {
+      return this as unknown as Failure<U, E2>;
+    }
+
+    return f(this._data!);
+  }
+
+  getOrElse<U, Out = T extends U ? U : never>(f: () => Out): Out {
+    if (this.isSuccess()) {
+      return this._data! as Out;
+    } else {
+      return f();
+    }
   }
 }
 
@@ -82,5 +114,9 @@ export class Failure<T, E extends Error = Error> extends Result<T, E> {
 
   get error(): E {
     return this._error!;
+  }
+
+  static fromString<T>(s: string): Failure<T, Error> {
+    return new Failure(new Error(s));
   }
 }

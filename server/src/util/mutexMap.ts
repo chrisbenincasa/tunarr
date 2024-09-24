@@ -23,4 +23,8 @@ export class MutexMap {
       return lock;
     });
   }
+
+  async runWithLockId<T>(id: string, cb: () => Promise<T>): Promise<T> {
+    return (await this.getOrCreateLock(id)).runExclusive(cb);
+  }
 }

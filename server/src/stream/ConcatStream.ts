@@ -1,37 +1,53 @@
+import { ChannelStreamMode, FfmpegSettings } from '@tunarr/types';
+import { initial } from 'lodash-es';
 import { Channel } from '../dao/direct/derivedTypes';
-import { ConcatOptions } from '../ffmpeg/ffmpeg';
+import { SettingsDB, getSettings } from '../dao/settings';
 import { FfmpegTranscodeSession } from '../ffmpeg/FfmpegTrancodeSession';
-import { makeLocalUrl } from '../util/serverUtil.js';
-import { FfmpegOutputStream } from '../ffmpeg/FfmpegOutputStream.js';
+import { ConcatOptions, FFMPEG } from '../ffmpeg/ffmpeg';
+import { makeFfmpegPlaylistUrl, makeLocalUrl } from '../util/serverUtil.js';
 
 type ConcatStreamOptions = {
   parentProcessType: 'hls' | 'direct';
+  audioOnly?: boolean;
 };
 
-export class ConcatStream extends FfmpegOutputStream {
+export class ConcatStream {
+  #ffmpegSettings: FfmpegSettings;
+
   constructor(
+    private channel: Channel,
     private concatOptions?: Partial<ConcatOptions & ConcatStreamOptions>,
+    settings: SettingsDB = getSettings(),
   ) {
-    super();
+    this.#ffmpegSettings = settings.ffmpegSettings();
   }
 
-  protected initializeStream(
-    channel: Channel,
-  ): Promise<FfmpegTranscodeSession> {
-    const concatUrl =
-      this.concatOptions?.mode === 'hls'
-        ? makeLocalUrl(`/media-player/${channel.uuid}/hls`)
-        : makeLocalUrl('/playlist', {
-            channel: channel.number,
-            audioOnly: false,
-            hls: this.concatOptions?.parentProcessType === 'hls',
-          });
+  createSession(): FfmpegTranscodeSession {
+    const mode = this.concatOptions?.mode ?? 'mpegts_concat';
+    // TODO... this is SO hacky
+    const childStreamMode = initial(mode.split('_')).join(
+      '_',
+    ) as ChannelStreamMode;
+    let concatUrl: string;
+    switch (mode) {
+      // If we're wrapping an HLS stream, direct the concat process to
+      // the m3u8 URL
+      case 'hls_concat':
+      case 'hls_slower_concat':
+        concatUrl = makeLocalUrl(`/stream/channels/${this.channel.uuid}.m3u8`, {
+          mode: childStreamMode,
+        });
+        break;
+      case 'mpegts_concat':
+        concatUrl = makeFfmpegPlaylistUrl({
+          channel: this.channel.uuid,
+          audioOnly: this.concatOptions?.audioOnly ?? false,
+          mode: childStreamMode,
+        });
+        break;
+    }
 
-    const ffmpegSession =
-      this.concatOptions?.mode === 'hls'
-        ? this.ffmpeg.createHlsConcatSession(concatUrl)
-        : this.ffmpeg.createConcatSession(concatUrl, this.concatOptions);
-
-    return Promise.resolve(ffmpegSession);
+    const ffmpeg = new FFMPEG(this.#ffmpegSettings, this.channel);
+    return ffmpeg.createWrapperConcatSession(concatUrl, childStreamMode);
   }
 }

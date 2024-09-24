@@ -50,7 +50,6 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
           startTime: new Date().getTime(),
           channelId: req.query.channelId,
           allowSkip: true,
-          session: 0,
         });
 
       return res.send(result);

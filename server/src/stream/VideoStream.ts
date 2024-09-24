@@ -1,4 +1,5 @@
-import { isNil, isUndefined, once } from 'lodash-es';
+import { ChannelStreamMode } from '@tunarr/types';
+import { isNil, once } from 'lodash-es';
 import { PassThrough, Readable } from 'node:stream';
 import { getServerContext, serverContext } from '../serverContext';
 import { Result } from '../types/result';
@@ -30,8 +31,8 @@ type VideoStreamResult = VideoStreamSuccessResult | VideoStreamErrorResult;
 type StartVideoStreamRequest = {
   channel: string | number;
   audioOnly: boolean;
-  session: number;
-  sessionType: 'hls' | 'direct';
+  sessionType: ChannelStreamMode;
+  sessionToken?: string;
 };
 
 /**
@@ -52,8 +53,8 @@ export class VideoStream {
     {
       channel: reqChannel,
       audioOnly,
-      session,
       sessionType,
+      sessionToken,
     }: StartVideoStreamRequest,
     startTimestamp: number,
     allowSkip: boolean,
@@ -61,14 +62,6 @@ export class VideoStream {
     const start = performance.now();
     const serverCtx = getServerContext();
     const outStream = new PassThrough();
-
-    if (isUndefined(reqChannel)) {
-      return {
-        type: 'error',
-        httpStatus: 400,
-        message: 'No Channel Specified',
-      };
-    }
 
     const channel = await serverCtx.channelDB.getChannelDirect(reqChannel);
 
@@ -97,8 +90,8 @@ export class VideoStream {
 
     let programStreamResult: Result<ProgramStream>;
     switch (sessionType) {
-      case 'hls': {
-        const hlsSession = serverContext().sessionManager.getHlsSession(
+      case 'hls_slower': {
+        const hlsSession = serverContext().sessionManager.getHlsSlowerSession(
           channel.uuid,
         );
         if (!hlsSession) {
@@ -109,7 +102,7 @@ export class VideoStream {
         programStreamResult = await hlsSession.getNextItemStream({
           allowSkip,
           startTime: startTimestamp,
-          session,
+          sessionToken,
           audioOnly,
         });
         break;
@@ -119,7 +112,7 @@ export class VideoStream {
           allowSkip,
           channelId: channel.uuid,
           startTime: startTimestamp,
-          session,
+          sessionToken,
         });
         programStreamResult = lineupItemResult.map((result) => {
           const playerContext = new PlayerContext(

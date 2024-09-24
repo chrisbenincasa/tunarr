@@ -2,6 +2,7 @@ import dayjs from 'dayjs';
 import { isError, isUndefined } from 'lodash-es';
 import { SettingsDB, getSettings } from '../dao/settings.js';
 import { FfmpegTranscodeSession } from '../ffmpeg/FfmpegTrancodeSession.js';
+import { OutputFormat } from '../ffmpeg/OutputFormat.js';
 import { FFMPEG } from '../ffmpeg/ffmpeg.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '../util/serverUtil.js';
@@ -20,9 +21,10 @@ export class OfflineProgramStream extends ProgramStream {
   constructor(
     private error: boolean,
     context: PlayerContext,
+    outputFormat: OutputFormat,
     settingsDB: SettingsDB = getSettings(),
   ) {
-    super(context, settingsDB);
+    super(context, outputFormat, settingsDB);
     if (context.isLoading === true) {
       context.channel = {
         ...context.channel,
@@ -53,8 +55,13 @@ export class OfflineProgramStream extends ProgramStream {
       }
 
       const ff = this.error
-        ? await ffmpeg.createErrorSession('Error', undefined, duration)
-        : await ffmpeg.createOfflineSession(duration);
+        ? await ffmpeg.createErrorSession(
+            'Error',
+            undefined,
+            duration,
+            this.outputFormat,
+          )
+        : await ffmpeg.createOfflineSession(duration, this.outputFormat);
 
       if (isUndefined(ff)) {
         throw new Error('Unable to start ffmpeg transcode session');

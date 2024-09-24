@@ -54,7 +54,7 @@ export type GetCurrentLineupItemRequest = {
   channelId: string | number;
   startTime: number;
   allowSkip: boolean;
-  session: number;
+  sessionToken?: string;
 };
 
 export class StreamProgramCalculatorError extends Error {
@@ -267,7 +267,10 @@ export class StreamProgramCalculator {
       lineupItem,
     );
 
-    if (wereThereTooManyAttempts(req.session, lineupItem)) {
+    if (
+      req.sessionToken &&
+      wereThereTooManyAttempts(req.sessionToken, lineupItem)
+    ) {
       lineupItem = {
         type: 'error',
         error: 'Too many attempts, throttling',

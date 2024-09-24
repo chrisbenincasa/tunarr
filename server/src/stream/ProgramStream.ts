@@ -4,7 +4,8 @@ import { isUndefined } from 'lodash-es';
 import { PassThrough } from 'stream';
 import { SettingsDB, getSettings } from '../dao/settings.js';
 import { FfmpegTranscodeSession } from '../ffmpeg/FfmpegTrancodeSession.js';
-import { FFMPEG } from '../ffmpeg/ffmpeg.js';
+import { OutputFormat } from '../ffmpeg/OutputFormat.js';
+import { FFMPEG, StreamOptions } from '../ffmpeg/ffmpeg.js';
 import { Maybe } from '../types/util.js';
 import { isDefined, isNonEmptyString } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
@@ -21,15 +22,16 @@ export abstract class ProgramStream implements ProgramStream {
 
   constructor(
     public context: PlayerContext,
+    protected outputFormat: OutputFormat,
     protected settingsDB: SettingsDB = getSettings(),
   ) {}
 
-  async setup(): Promise<FfmpegTranscodeSession> {
+  async setup(opts?: Partial<StreamOptions>): Promise<FfmpegTranscodeSession> {
     if (this.isInitialized()) {
       return this._transcodeSession;
     }
 
-    this.transcodeSession = await this.setupInternal();
+    this.transcodeSession = await this.setupInternal(opts);
     return this.transcodeSession;
   }
 
@@ -37,16 +39,18 @@ export abstract class ProgramStream implements ProgramStream {
     return isDefined(this._transcodeSession);
   }
 
-  async start(sink: PassThrough) {
+  async start(sink?: PassThrough) {
     if (!this.isInitialized()) {
       await this.setup();
     }
 
+    const outStream = this._transcodeSession.start(sink);
+
     this._transcodeSession.on('error', () => {
-      this.tryReplaceWithErrorStream(sink).catch(() => {});
+      this.tryReplaceWithErrorStream(outStream).catch(() => {});
     });
 
-    return this._transcodeSession.start(sink);
+    return outStream;
   }
 
   shutdown(): void {
@@ -58,7 +62,9 @@ export abstract class ProgramStream implements ProgramStream {
 
   protected shutdownInternal(): void {}
 
-  protected abstract setupInternal(): Promise<FfmpegTranscodeSession>;
+  protected abstract setupInternal(
+    opts?: Partial<StreamOptions>,
+  ): Promise<FfmpegTranscodeSession>;
 
   get transcodeSession() {
     return this._transcodeSession;
@@ -71,20 +77,21 @@ export abstract class ProgramStream implements ProgramStream {
     this._transcodeSession.on('error', () => this.shutdown());
   }
 
-  private async tryReplaceWithErrorStream(sink: PassThrough) {
+  private async tryReplaceWithErrorStream(sink?: PassThrough) {
+    const out = sink ?? new PassThrough();
     try {
       const errorSession = await this.getErrorStream(this.context);
 
       if (isUndefined(errorSession)) {
-        sink.push(null);
+        out.push(null);
         return;
       }
 
-      errorSession.start(sink);
+      errorSession.start(out);
       this.transcodeSession = errorSession;
 
       this.transcodeSession.on('end', () => {
-        sink.push(null);
+        out.push(null);
       });
     } catch (e) {
       this.logger.error(e, 'Error while trying to spawn error stream! YIKES');

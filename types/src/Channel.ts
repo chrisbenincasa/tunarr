@@ -2,29 +2,31 @@ import z from 'zod';
 import {
   ChannelOfflineSchema,
   ChannelSchema,
-  SaveChannelRequestSchema,
-  FillerCollectionSchema,
-  WatermarkSchema,
+  ChannelStreamMode as ChannelStreamModesArr,
   ChannelTranscodingOptionsSchema,
+  FillerCollectionSchema,
+  SaveChannelRequestSchema,
+  WatermarkSchema,
+  type ChannelStreamMode as ChannelStreamModeType,
 } from './schemas/channelSchema.js';
 import { ChannelIconSchema } from './schemas/index.js';
 
-type Alias<t> = t & { _?: never };
+export type Watermark = z.infer<typeof WatermarkSchema>;
 
-export type Watermark = Alias<z.infer<typeof WatermarkSchema>>;
+export type FillerCollection = z.infer<typeof FillerCollectionSchema>;
 
-export type FillerCollection = Alias<z.infer<typeof FillerCollectionSchema>>;
+export type ChannelOffline = z.infer<typeof ChannelOfflineSchema>;
 
-export type ChannelOffline = Alias<z.infer<typeof ChannelOfflineSchema>>;
+export type ChannelIcon = z.infer<typeof ChannelIconSchema>;
 
-export type ChannelIcon = Alias<z.infer<typeof ChannelIconSchema>>;
-
-export type ChannelTranscodingOptions = Alias<
-  z.infer<typeof ChannelTranscodingOptionsSchema>
+export type ChannelTranscodingOptions = z.infer<
+  typeof ChannelTranscodingOptionsSchema
 >;
 
-export type Channel = Alias<z.infer<typeof ChannelSchema>>;
+export type Channel = z.infer<typeof ChannelSchema>;
 
-export type SaveChannelRequest = Alias<
-  z.infer<typeof SaveChannelRequestSchema>
->;
+export type SaveChannelRequest = z.infer<typeof SaveChannelRequestSchema>;
+
+export const ChannelStreamModes = ChannelStreamModesArr;
+
+export type ChannelStreamMode = ChannelStreamModeType;

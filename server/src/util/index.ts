@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+import duration, { Duration } from 'dayjs/plugin/duration.js';
 import _, {
   chunk,
   compact,
@@ -25,6 +27,8 @@ import { format } from 'node:util';
 import { isPromise } from 'node:util/types';
 import { Func } from '../types/func';
 import { Try } from '../types/util';
+
+dayjs.extend(duration);
 
 export type IsStringOrNumberValue<T, K extends keyof T> = T[K] extends
   | string
@@ -215,9 +219,11 @@ export async function flatMapAsyncSeq<T, U>(
   );
 }
 
-export const wait: (ms?: number) => Promise<void> = (ms: number) => {
+export const wait: (ms?: number | Duration) => Promise<void> = (ms: number) => {
   if (isUndefined(ms)) {
     return new Promise((resolve) => setImmediate(resolve));
+  } else if (dayjs.isDuration(ms)) {
+    return new Promise((resolve) => setTimeout(resolve, ms.asMilliseconds()));
   }
   return new Promise((resolve) => setTimeout(resolve, ms));
 };

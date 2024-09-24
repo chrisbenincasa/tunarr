@@ -6,7 +6,8 @@ import { MediaSourceType } from '../../dao/entities/MediaSource.js';
 import { MediaSourceDB } from '../../dao/mediaSourceDB.js';
 import { SettingsDB, getSettings } from '../../dao/settings.js';
 import { FfmpegTranscodeSession } from '../../ffmpeg/FfmpegTrancodeSession.js';
-import { FFMPEG } from '../../ffmpeg/ffmpeg.js';
+import { OutputFormat } from '../../ffmpeg/OutputFormat.js';
+import { FFMPEG, StreamOptions } from '../../ffmpeg/ffmpeg.js';
 import { GlobalScheduler } from '../../services/scheduler.js';
 import { UpdatePlexPlayStatusScheduledTask } from '../../tasks/plex/UpdatePlexPlayStatusTask.js';
 import { Maybe } from '../../types/util.js';
@@ -27,10 +28,11 @@ export class PlexProgramStream extends ProgramStream {
 
   constructor(
     context: PlayerContext,
+    outputFormat: OutputFormat,
     settingsDB: SettingsDB = getSettings(),
     private mediaSourceDB: MediaSourceDB = new MediaSourceDB(new ChannelDB()),
   ) {
-    super(context, settingsDB);
+    super(context, outputFormat, settingsDB);
   }
 
   protected shutdownInternal() {
@@ -40,7 +42,9 @@ export class PlexProgramStream extends ProgramStream {
     });
   }
 
-  protected async setupInternal(): Promise<FfmpegTranscodeSession> {
+  protected async setupInternal(
+    opts?: Partial<StreamOptions>,
+  ): Promise<FfmpegTranscodeSession> {
     const lineupItem = this.context.lineupItem;
     if (!isContentBackedLineupIteam(lineupItem)) {
       throw new Error(
@@ -89,16 +93,20 @@ export class PlexProgramStream extends ProgramStream {
 
     const start = dayjs.duration(lineupItem.start ?? 0);
 
-    const transcodeSession = await ffmpeg.createStreamSession(
-      stream.streamUrl,
-      stream.streamDetails,
-      start,
-      +start === 0
-        ? dayjs.duration(lineupItem.duration)
-        : dayjs.duration(lineupItem.streamDuration ?? lineupItem.duration),
+    const transcodeSession = await ffmpeg.createStreamSession({
+      streamUrl: stream.streamUrl,
+      streamDetails: stream.streamDetails,
+      startTime: start,
+      duration: dayjs.duration(
+        +start === 0
+          ? lineupItem.duration
+          : lineupItem.streamDuration ?? lineupItem.duration,
+      ),
       watermark,
-      this.context.realtime,
-    );
+      realtime: this.context.realtime,
+      outputFormat: this.outputFormat,
+      ...(opts ?? {}),
+    });
 
     if (isUndefined(transcodeSession)) {
       throw new Error('Unable to create ffmpeg process');

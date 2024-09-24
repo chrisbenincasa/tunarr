@@ -19,12 +19,12 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
+import { Link as RouterLink } from '@tanstack/react-router';
 import { ChannelLineup, TvGuideProgram } from '@tunarr/types';
 import dayjs, { Dayjs } from 'dayjs';
 import { isEmpty, isNull, isUndefined, map, round } from 'lodash-es';
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
-import { Link as RouterLink } from '@tanstack/react-router';
-import { useInterval } from 'usehooks-ts';
+import { useCopyToClipboard, useInterval } from 'usehooks-ts';
 import { alternateColors, forTvGuideProgram } from '../../helpers/util';
 import { useTvGuides, useTvGuidesPrefetch } from '../../hooks/useTvGuide';
 import { useSettings } from '../../store/settings/selectors.ts';
@@ -153,6 +153,8 @@ export function TvGuide({ channelId, start, end }: Props) {
     TvGuideProgram | undefined
   >();
 
+  const [, copyToClipboard] = useCopyToClipboard();
+
   const handleModalOpen = useCallback((program: TvGuideProgram | undefined) => {
     if (program && program.type === 'flex') {
       return;
@@ -243,6 +245,16 @@ export function TvGuide({ channelId, start, end }: Props) {
         >
           <EditIcon />
           Edit Channel
+        </MenuItem>
+        <MenuItem
+          disableRipple
+          onClick={() => {
+            copyToClipboard(channelMenu.id!).catch(console.error);
+            setAnchorEl(null);
+          }}
+        >
+          <EditIcon />
+          Copy Channel ID
         </MenuItem>
         <MenuItem
           disableRipple

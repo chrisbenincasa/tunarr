@@ -11,6 +11,7 @@ import { ProgramDB } from './dao/programDB.js';
 import { SettingsDB, getSettings } from './dao/settings.js';
 import { serverOptions } from './globals.js';
 import { HdhrService } from './hdhr.js';
+import { OnDemandChannelService } from './services/OnDemandChannelService.js';
 import { CacheImageService } from './services/cacheImageService.js';
 import { EventService } from './services/eventService.js';
 import { FileCacheService } from './services/fileCacheService.js';
@@ -23,6 +24,7 @@ import { StreamProgramCalculator } from './stream/StreamProgramCalculator.js';
 export class ServerContext {
   public readonly programConverter = new ProgramConverter();
   public readonly sessionManager: SessionManager;
+  public readonly onDemandChannelService: OnDemandChannelService;
 
   constructor(
     public channelDB: ChannelDB,
@@ -39,7 +41,11 @@ export class ServerContext {
     public settings: SettingsDB,
     public programDB: ProgramDB,
   ) {
-    this.sessionManager = SessionManager.create(this.channelDB);
+    this.onDemandChannelService = new OnDemandChannelService(this.channelDB);
+    this.sessionManager = SessionManager.create(
+      this.channelDB,
+      this.onDemandChannelService,
+    );
   }
 
   streamProgramCalculator() {
