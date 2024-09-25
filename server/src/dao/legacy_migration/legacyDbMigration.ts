@@ -407,6 +407,8 @@ export class LegacyDbMigrator {
                 numThreads: ffmpegSettings['threads'] as number,
                 concatMuxDelay: ffmpegSettings['concatMuxDelay'] as number,
                 enableLogging: ffmpegSettings['logFfmpeg'] as boolean,
+                enableFileLogging: false,
+                logLevel: 'warning',
                 // This is ignored now
                 enableTranscoding: true,
                 audioVolumePercent: ffmpegSettings[

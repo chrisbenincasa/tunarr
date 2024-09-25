@@ -1,7 +1,10 @@
 import { FfmpegSettings } from '@tunarr/types';
+import { FfmpegNumericLogLevels } from '@tunarr/types/schemas';
 import { ChildProcessByStdio, spawn } from 'node:child_process';
 import events from 'node:events';
+import path from 'node:path';
 import stream from 'node:stream';
+import { SettingsDB, getSettings } from '../dao/settings.js';
 import { TypedEventEmitter } from '../types/eventEmitter.js';
 import { Maybe } from '../types/util.js';
 import { isDefined } from '../util/index.js';
@@ -22,6 +25,7 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
     private ffmpegSettings: FfmpegSettings,
     private ffmpegName: string,
     private ffmpegArgs: string[],
+    private settingsDB: SettingsDB = getSettings(),
   ) {
     super();
   }
@@ -55,9 +59,25 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
       argsWithTokenRedacted,
     );
 
+    const env = {
+      ...process.env,
+    };
+
+    if (this.ffmpegSettings.enableFileLogging) {
+      const normalizedName = this.ffmpegName.toLowerCase().replaceAll(' ', '-');
+      const logPath = path.join(
+        this.settingsDB.systemSettings().logging.logsDirectory,
+        `ffmpeg-report-${normalizedName}-%t.log`,
+      );
+      env['FFREPORT'] = `file=${logPath}:level=${
+        FfmpegNumericLogLevels[this.ffmpegSettings.logLevel]
+      }`;
+    }
+
     // const test = createWriteStream('./test.log', { flags: 'a' });
     this.#processHandle = spawn(this.ffmpegPath, this.ffmpegArgs, {
       stdio: ['ignore', 'pipe', 'pipe'],
+      env,
     });
 
     this.#running = true;
@@ -66,24 +86,6 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
     if (this.ffmpegSettings.enableLogging) {
       this.#processHandle.stderr.pipe(process.stderr);
     }
-
-    // Hide this behind a 'flag' for now...
-    // if (process.env.DEBUG_FFMPEG) {
-    //   const ffmpegLogger = createFfmpegProcessLogger(
-    //     `${this.channel.uuid}_${this.ffmpegName}`,
-    //   );
-    //   this.ffmpeg.stderr.on('end', () => ffmpegthis.Logger.close());
-    //   this.ffmpeg.stderr.pipe(
-    //     new Writable({
-    //       write(chunk, _, callback) {
-    //         if (chunk instanceof Buffer) {
-    //           ffmpegthis.Logger.info(chunk.toString());
-    //         }
-    //         callback();
-    //       },
-    //     }),
-    //   );
-    // }
 
     if (this.#processKilled) {
       this.#logger.trace('Sending SIGKILL to ffmpeg');

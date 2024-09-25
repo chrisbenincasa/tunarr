@@ -228,7 +228,7 @@ export class FFMPEG {
       `-threads`,
       '1',
       '-loglevel',
-      'error',
+      this.opts.logLevel,
       '-user_agent',
       `Ffmpeg Tunarr/${getTunarrVersion()}`,
       `-fflags`,
@@ -326,12 +326,16 @@ export class FFMPEG {
       '1',
       '-hide_banner',
       '-loglevel',
-      'error',
+      this.opts.logLevel,
       '-user_agent',
       `Ffmpeg Tunarr/${getTunarrVersion()}`,
       '-nostats',
       '-fflags',
       '+genpts+discardcorrupt+igndts',
+      '-reconnect',
+      '1',
+      '-reconnect_at_eof',
+      '1',
       '-readrate',
       '1',
       ...(streamMode === 'mpegts'
@@ -464,7 +468,17 @@ export class FFMPEG {
       `-fflags`,
       `+genpts+discardcorrupt+igndts`,
       '-loglevel',
-      'error',
+      this.opts.logLevel,
+      '-reconnect',
+      '1',
+      '-reconnect_on_network_error',
+      '1',
+      '-reconnect_streamed',
+      '1',
+      '-multiple_requests',
+      '1',
+      '-chunked_post',
+      '0',
     ];
 
     let useStillImageTune = false;
@@ -487,7 +501,6 @@ export class FFMPEG {
             `${burst}`,
           );
         } else {
-          console.log('using artificial burst');
           ffmpegArgs.push('-readrate', '4.0');
           artificialBurst = true;
         }

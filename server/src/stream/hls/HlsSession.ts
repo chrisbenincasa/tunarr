@@ -240,7 +240,10 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
       if (playlistLines) {
         const dur = dayjs.duration(this.#playlistStart.diff(dayjs()));
         if (dur.asSeconds() <= 60) {
-          this.logger.debug('Skipping trim after short segment');
+          this.logger.trace(
+            'Skipping trim. %d seconds since last',
+            dur.asSeconds(),
+          );
           return;
         }
 
@@ -251,11 +254,11 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
             playlistLines,
           );
 
-        this.logger.debug('writing playlist \n', trimResult.playlist);
+        this.logger.trace('writing playlist\n%O', trimResult.playlist);
 
         await fs.writeFile(this._m3u8PlaylistPath, trimResult.playlist);
 
-        this.logger.debug('Deleting old segments from stream');
+        this.logger.trace('Deleting old segments from stream');
         this.deleteOldSegments(trimResult.sequence).catch((e) => {
           this.logger.error(e);
         });
