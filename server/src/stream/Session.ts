@@ -37,6 +37,7 @@ export type HlsConcatSessionType =
 
 export type SessionType = ChannelStreamMode | ConcatSessionType;
 
+// TODO: sort these all out.... and write docs
 type StreamSessionEvents = {
   state: (newState: SessionState, oldState: SessionState) => void;
   start: () => void;
@@ -49,6 +50,7 @@ type StreamSessionEvents = {
     token: string,
     connection: StreamConnectionDetails,
   ) => void;
+  end: () => void;
 };
 
 export abstract class Session<
@@ -59,9 +61,9 @@ export abstract class Session<
   protected logger: Logger;
   protected sessionOptions: TOpts;
   protected channel: Channel;
-  protected state: SessionState = 'init';
   protected connectionTracker: ConnectionTracker<StreamConnectionDetails>;
 
+  #state: SessionState = 'init';
   #uniqueId: string;
 
   error: Maybe<Error>;
@@ -96,6 +98,19 @@ export abstract class Session<
     };
   }
 
+  get state() {
+    return this.#state;
+  }
+
+  protected set state(next: SessionState) {
+    if (this.#state === next) {
+      return;
+    }
+
+    this.emit('state', next, this.#state);
+    this.#state = next;
+  }
+
   /**
    * Initialize this shared stream session if it hasn't been already.
    */
@@ -119,9 +134,7 @@ export abstract class Session<
       }
 
       try {
-        const oldState = this.state;
         this.state = 'starting';
-        this.emit('state', 'started', oldState);
         this.emit('start');
         await this.startInternal();
         await this.waitForStreamReadyInternal();
@@ -165,7 +178,6 @@ export abstract class Session<
   private async waitForStreamReadyInternal() {
     const waitResult = await this.waitForStreamReady();
 
-    const oldState = this.state;
     if (waitResult.isFailure()) {
       this.state = 'error';
       this.error = waitResult.error;
@@ -174,7 +186,6 @@ export abstract class Session<
       this.state = 'started';
       this.emit('start');
     }
-    this.emit('state', this.state, oldState);
   }
 
   get id() {
@@ -232,8 +243,16 @@ export abstract class Session<
   }
 
   scheduleCleanup(delay: number = this.sessionOptions.cleanupDelay ?? 15_000) {
-    this.emit('cleanupScheduled', delay);
-    return this.connectionTracker.scheduleCleanup(delay);
+    // Trigger cleanup immediately if we're in an error state
+    if (this.state === 'error') {
+      this.stop().catch((e) => {
+        this.logger.error(e);
+      });
+      return;
+    } else {
+      this.emit('cleanupScheduled', delay);
+      return this.connectionTracker.scheduleCleanup(delay);
+    }
   }
 
   /**

@@ -33,6 +33,7 @@ export const sessionApiRouter: RouterPluginAsyncCallback = async (fastify) => {
         sessions[id].push({
           type: type as SessionType,
           numConnections: session?.numConnections() ?? 0,
+          state: session?.state ?? 'unknown',
           connections: map(session?.connections(), (connection, token) => ({
             ...connection,
             lastHeartbeat: session?.lastHeartbeat(token),
@@ -86,6 +87,7 @@ export const sessionApiRouter: RouterPluginAsyncCallback = async (fastify) => {
         map(sessions, (session) => ({
           type: session.sessionType,
           numConnections: session?.numConnections() ?? 0,
+          state: session?.state ?? 'unknown',
           connections: map(session?.connections(), (connection, token) => ({
             ...connection,
             lastHeartbeat: session?.lastHeartbeat(token),

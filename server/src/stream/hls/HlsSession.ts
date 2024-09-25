@@ -107,6 +107,13 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
         await wait(dayjs.duration({ seconds: 5 }));
       }
     }
+
+    this.logger.debug(
+      'HLS worker ended main loop with state = %s. Scheduling cleanup',
+      this.state,
+    );
+
+    this.scheduleCleanup();
   }
 
   protected async stopInternal(): Promise<void> {
@@ -160,6 +167,24 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
           ptsOffset,
         });
 
+        transcodeSession.on('error', (e) => {
+          this.state = 'error';
+          this.error = new Error(
+            `Error in underlying FFMPEG process: (code=${e?.code})`,
+          );
+          this.emit('error', this.error);
+        });
+
+        transcodeSession.on('exit', (code, _signal, expected) => {
+          if (!expected) {
+            this.state = 'error';
+            this.error = new Error(
+              `Unexpected end of underlying FFMPEG process: (code=${code})`,
+            );
+            this.emit('error', this.error);
+          }
+        });
+
         this.transcodedUntil = this.transcodedUntil.add(
           transcodeSession.streamDuration,
         );
@@ -176,7 +201,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
       return programStream.transcodeSession.wait();
     });
 
-    this.logger.debug('Stream ended. ');
+    this.logger.debug('Stream ended.');
   }
 
   private async getPtsOffset() {

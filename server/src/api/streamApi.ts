@@ -33,6 +33,42 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
     decorateReply: true,
   });
 
+  fastify.get(
+    '/stream/channels/:id',
+    {
+      schema: {
+        params: z.object({
+          id: z.coerce.number().or(z.string()),
+        }),
+        querystring: z.object({
+          streamMode: ChannelStreamModeSchema.optional(),
+          token: z.string().uuid().optional(),
+          audioOnly: TruthyQueryParam.optional().default(false),
+        }),
+      },
+    },
+    async (req, res) => {
+      const channel = await req.serverCtx.channelDB.getChannel(req.params.id);
+      if (isNil(channel)) {
+        return res.status(404).send('Channel not found.');
+      }
+
+      const mode = req.query.streamMode ?? channel.streamMode;
+
+      switch (mode) {
+        case 'hls':
+        case 'hls_slower':
+          return res.redirect(
+            `/stream/channels/${channel.uuid}.m3u8?streamMode=${mode}`,
+          );
+        case 'mpegts':
+          return res.redirect(
+            `/stream/channels/${channel.uuid}.ts?streamMode=${mode}`,
+          );
+      }
+    },
+  );
+
   /**
    * Returns a continuous, direct MPEGTS video stream for the given channel
    */
@@ -101,7 +137,9 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
       // in fastify on the send).
       // TODO: We could probably record periodic heartbeats by listening
       // to the data event on this piped stream. Just debounce them!
-      const piped = session.rawStream.pipe(new PassThrough(), { end: false });
+      const piped = session.rawStream.pipe(
+        new PassThrough({ allowHalfOpen: false }),
+      );
 
       piped.on('close', () => {
         logger.debug(
@@ -112,8 +150,11 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
         session.removeConnection(token);
       });
 
+      session.on('end', () => piped.end());
+      session.on('cleanup', () => piped.end());
+
       // Close the request on error.
-      session.on('error', () => piped.push(null));
+      session.on('error', () => piped.end());
 
       return res.header('Content-Type', 'video/mp2t').send(piped);
     },

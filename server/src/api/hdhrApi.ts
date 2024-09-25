@@ -72,6 +72,8 @@ export class HdhrApiRouter {
           lineup.push({
             GuideNumber: channel.number.toString(),
             GuideName: channel.name,
+            // Do not use query params here, because Plex doesn't handle them well (as they might append
+            // query params themselves...)
             URL: `${req.protocol}://${req.hostname}/stream/channels/${channel.uuid}.ts`,
           });
         }

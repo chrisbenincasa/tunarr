@@ -36,20 +36,6 @@ import { FFMPEGInfo } from './ffmpegInfo.js';
 
 const MAXIMUM_ERROR_DURATION_MS = 60000;
 
-const STILLIMAGE_SUPPORTED_ENCODERS = [
-  'mpeg2video',
-  'libx264',
-  'h264_videotoolbox',
-];
-
-export type FfmpegEvents = {
-  end: (obj?: { code: number; cmd: string }) => void;
-  error: (obj?: { code: number; cmd: string }) => void;
-  close: (code?: number) => void;
-  // Fired when the process exited, for any reason.
-  exit: (code: Nullable<number>, signal: Nullable<NodeJS.Signals>) => void;
-};
-
 export type HlsOptions = {
   hlsTime: number; // Duration of each clip in seconds,
   hlsListSize: number; // Number of clips to have in the list
@@ -469,19 +455,21 @@ export class FFMPEG {
       `+genpts+discardcorrupt+igndts`,
       '-loglevel',
       this.opts.logLevel,
-      '-reconnect',
-      '1',
-      '-reconnect_on_network_error',
-      '1',
-      '-reconnect_streamed',
-      '1',
-      '-multiple_requests',
-      '1',
-      '-chunked_post',
-      '0',
     ];
 
-    let useStillImageTune = false;
+    if (isNonEmptyString(streamSrc) && streamSrc.startsWith('http')) {
+      ffmpegArgs.push(
+        '-reconnect',
+        '1',
+        '-reconnect_on_network_error',
+        '1',
+        '-reconnect_streamed',
+        '1',
+        '-multiple_requests',
+        '1',
+      );
+    }
+
     let artificialBurst = false;
 
     if (!this.audioOnly || isNonEmptyString(streamSrc)) {
@@ -590,13 +578,15 @@ export class FFMPEG {
         //does an image to play exist?
         if (isString(streamSrc) && streamStats?.audioOnly) {
           pic = streamStats.placeholderImage;
-        } else if (!isString(streamSrc) && streamSrc.errorTitle == 'offline') {
+        } else if (!isString(streamSrc) && streamSrc.errorTitle === 'offline') {
           // TODO fix me
           const defaultOfflinePic = makeLocalUrl(
             '/images/generic-offline-screen.png',
           );
-          pic = this.channel.offline?.picture ?? defaultOfflinePic;
-        } else if (this.opts.errorScreen == 'pic') {
+          pic = isEmpty(this.channel.offline?.picture)
+            ? defaultOfflinePic
+            : this.channel.offline?.picture;
+        } else if (this.opts.errorScreen === 'pic') {
           pic = this.errorPicturePath;
         }
 
@@ -609,13 +599,6 @@ export class FFMPEG {
           videoComplex += `;[scaled]pad=${iW}:${iH}:(ow-iw)/2:(oh-ih)/2[padded]`;
           videoComplex += `;[padded]loop=loop=-1:size=1:start=0[looped]`;
           videoComplex += `;[looped]realtime[videox]`;
-          // this tune apparently makes the video compress better
-          // when it is the same image
-          // Don't enable this for NVENC...it seems to break with a strange
-          // error. Unclear if this affects other HW encoders
-          if (STILLIMAGE_SUPPORTED_ENCODERS.includes(this.opts.videoEncoder)) {
-            useStillImageTune = true;
-          }
         } else if (this.opts.errorScreen == 'static') {
           ffmpegArgs.push('-f', 'lavfi', '-i', `nullsrc=s=64x36`);
           videoComplex = `;geq=random(1)*255:128:128[videoz];[videoz]scale=${iW}:${iH}[videoy];[videoy]realtime[videox]`;
@@ -677,7 +660,6 @@ export class FFMPEG {
         audioComplex += ';[audioy]arealtime[audiox]';
         currentAudio = '[audiox]';
       }
-      ffmpegArgs.push('-ac', `${this.opts.audioChannels}`);
       currentVideo = '[videox]';
     } else {
       // HACK: We know these will be defined already if we get this far
@@ -942,10 +924,6 @@ export class FFMPEG {
       // We probably need this even if we're not audio only...
       if (ptsOffset !== null && ptsOffset > 0) {
         ffmpegArgs.push('-output_ts_offset', `${ptsOffset / 90_000}`);
-      }
-
-      if (useStillImageTune) {
-        ffmpegArgs.push('-tune', 'stillimage');
       }
     }
 

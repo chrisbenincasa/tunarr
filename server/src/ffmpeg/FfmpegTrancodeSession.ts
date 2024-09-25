@@ -6,8 +6,7 @@ import { PassThrough } from 'node:stream';
 import { TypedEventEmitter } from '../types/eventEmitter.js';
 import { Nullable } from '../types/util.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
-import { FfmpegProcess } from './FfmpegProcess.js';
-import { FfmpegEvents } from './ffmpeg.js';
+import { FfmpegEvents, FfmpegProcess } from './FfmpegProcess.js';
 
 enum State {
   Idle = 'idle',
