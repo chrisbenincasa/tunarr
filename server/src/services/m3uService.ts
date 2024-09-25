@@ -59,9 +59,8 @@ export class M3uService {
         }" tvg-name="${channels[i].name}" tvg-logo="${
           channels[i].icon?.path ?? ''
         }" group-title="${channels[i].groupTitle}",${channels[i].name}\n`;
-        // Do not use query params here, because Plex doesn't handle them well (as they might append
-        // query params themselves...)
-        data += `{{host}}/stream/channels/${channels[i].uuid}.ts\n`;
+
+        data += `{{host}}/stream/channels/${channels[i].uuid}\n`;
       }
     }
     if (channels.length === 0) {

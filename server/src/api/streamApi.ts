@@ -33,6 +33,42 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
     decorateReply: true,
   });
 
+  fastify.get(
+    '/stream/channels/:id',
+    {
+      schema: {
+        params: z.object({
+          id: z.coerce.number().or(z.string()),
+        }),
+        querystring: z.object({
+          streamMode: ChannelStreamModeSchema.optional(),
+          token: z.string().uuid().optional(),
+          audioOnly: TruthyQueryParam.optional().default(false),
+        }),
+      },
+    },
+    async (req, res) => {
+      const channel = await req.serverCtx.channelDB.getChannel(req.params.id);
+      if (isNil(channel)) {
+        return res.status(404).send('Channel not found.');
+      }
+
+      const mode = req.query.streamMode ?? channel.streamMode;
+
+      switch (mode) {
+        case 'hls':
+        case 'hls_slower':
+          return res.redirect(
+            `/stream/channels/${channel.uuid}.m3u8?streamMode=${mode}`,
+          );
+        case 'mpegts':
+          return res.redirect(
+            `/stream/channels/${channel.uuid}.ts?streamMode=${mode}`,
+          );
+      }
+    },
+  );
+
   /**
    * Returns a continuous, direct MPEGTS video stream for the given channel
    */
