@@ -40,6 +40,7 @@ export class ConcatSession extends DirectStreamSession<ConcatSessionOptions> {
     }).createSession();
 
     this.#transcodeSession.on('error', (e) => this.emit('error', e));
+    this.#transcodeSession.on('exit', () => this.emit('end'));
 
     return this.#transcodeSession;
   }

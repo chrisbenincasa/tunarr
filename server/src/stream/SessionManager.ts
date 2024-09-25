@@ -21,6 +21,7 @@ import {
 import { ChannelStreamMode } from '@tunarr/types';
 import { StreamConnectionDetails } from '@tunarr/types/api';
 import { OnDemandChannelService } from '../services/OnDemandChannelService.js';
+import { ifDefined } from '../util/index.js';
 import { SessionType } from './Session.js';
 
 export type SessionKey = `${string}_${SessionType}`;
@@ -134,6 +135,21 @@ export class SessionManager {
     connection: StreamConnectionDetails,
     options: ConcatSessionOptions,
   ) {
+    const lock = await this.#sessionLocker.getOrCreateLock(channelId);
+    await lock.runExclusive(() => {
+      const underlyingSessionType = sessionTypeFromConcatType(
+        options.sessionType,
+      );
+      if (isUndefined(this.getSession(channelId, underlyingSessionType))) {
+        this.#logger.warn(
+          'No underlying session of type %s found for existing concat session (channel id = %s). Removing dangling session and recreating',
+          underlyingSessionType,
+          channelId,
+        );
+        this.deleteSession(channelId, underlyingSessionType);
+      }
+    });
+
     return this.getOrCreateSession(
       channelId,
       token,
@@ -198,18 +214,21 @@ export class SessionManager {
     const lock = await this.#sessionLocker.getOrCreateLock(channelId);
     try {
       const session = await lock.runExclusive(async () => {
-        const channel = await this.channelDB.getChannelDirect(channelId);
-        if (isNil(channel)) {
-          throw new ChannelNotFoundError(channelId);
-        }
-
         let session = this.getSession(
           channelId,
           sessionType,
         ) as Maybe<TSession>;
 
         if (isNil(session)) {
+          const channel = await this.channelDB.getChannelDirect(channelId);
+          if (isNil(channel)) {
+            throw new ChannelNotFoundError(channelId);
+          }
+
           session = sessionFactory(channel);
+
+          this.addSession(channel.uuid, session.sessionType, session);
+
           session.once('error', (e) => {
             this.#logger.error(e, 'Received error from session. Shutting down');
             session?.stop().catch((e) => {
@@ -218,14 +237,17 @@ export class SessionManager {
                 'Error while shutting down session. Things are bad!',
               );
             });
+            this.shutdownChildSessions(channelId, sessionType);
           });
 
           session.on('stop', () => {
-            delete this.#sessions[sessionCacheKey(channelId, sessionType)];
+            this.deleteSession(channelId, sessionType);
+            this.shutdownChildSessions(channelId, sessionType);
           });
 
           session.on('cleanup', () => {
-            delete this.#sessions[sessionCacheKey(channelId, sessionType)];
+            this.deleteSession(channelId, sessionType);
+            this.shutdownChildSessions(channelId, sessionType);
           });
 
           session.on('removeConnection', (_, connection) => {
@@ -238,8 +260,6 @@ export class SessionManager {
           if (this.getAllSessionsForChannel(channelId).length === 0) {
             this.resumeChannelIfNecessary(channelId);
           }
-
-          this.addSession(channel.uuid, session.sessionType, session);
         }
 
         if (!session.started || session.hasError) {
@@ -266,6 +286,16 @@ export class SessionManager {
 
   private addSession(id: string, sessionType: SessionType, session: Session) {
     this.#sessions[sessionCacheKey(id, sessionType)] = session;
+  }
+
+  private deleteSession(id: string, sessionType: SessionType) {
+    const key = sessionCacheKey(id, sessionType);
+    ifDefined(this.#sessions[key], (session) => {
+      session.stop().catch((e) => {
+        this.#logger.error(e, 'Error shutting down session');
+      });
+    });
+    delete this.#sessions[key];
   }
 
   private resumeChannelIfNecessary(channelId: string) {
@@ -312,10 +342,22 @@ export class SessionManager {
       );
     }
   }
+
+  private shutdownChildSessions(id: string, sessionType: SessionType) {
+    this.getSession(id, concatSessionTypeForSessionType(sessionType))
+      ?.stop()
+      .catch((e) => {
+        this.#logger.error(e, 'Error shutting down associated concat session');
+      });
+  }
 }
 
 function sessionTypeFromConcatType(typ: ConcatSessionType): ChannelStreamMode {
   return initial(typ.split('_')).join('_') as ChannelStreamMode;
+}
+
+function concatSessionTypeForSessionType(typ: SessionType): ConcatSessionType {
+  return `${typ}_concat` as ConcatSessionType;
 }
 
 function sessionCacheKey(id: string, sessionType: SessionType): SessionKey {

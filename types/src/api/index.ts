@@ -247,6 +247,7 @@ export const ChannelSessionsResponseSchema = z.object({
     z.literal('hls_slower_concat'),
     z.literal('mpegts_concat'),
   ]),
+  state: z.string(),
   numConnections: z.number().nonnegative(),
   connections: z.array(StreamConnectionDetailsSchema),
 });

@@ -36,14 +36,6 @@ import { FFMPEGInfo } from './ffmpegInfo.js';
 
 const MAXIMUM_ERROR_DURATION_MS = 60000;
 
-export type FfmpegEvents = {
-  end: (obj?: { code: number; cmd: string }) => void;
-  error: (obj?: { code: number; cmd: string }) => void;
-  close: (code?: number) => void;
-  // Fired when the process exited, for any reason.
-  exit: (code: Nullable<number>, signal: Nullable<NodeJS.Signals>) => void;
-};
-
 export type HlsOptions = {
   hlsTime: number; // Duration of each clip in seconds,
   hlsListSize: number; // Number of clips to have in the list
