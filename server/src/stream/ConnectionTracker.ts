@@ -74,6 +74,10 @@ export class ConnectionTracker<
           this.#connections,
         );
       }
+      if (this.#cleanupFunc) {
+        clearTimeout(this.#cleanupFunc);
+        this.#cleanupFunc = null;
+      }
     }, delay);
     return true;
   }

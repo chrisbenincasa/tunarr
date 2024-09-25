@@ -203,6 +203,9 @@ export class PlexStreamDetails {
         streamUrl = `${trimEnd(this.server.uri, '/')}${path}?X-Plex-Token=${
           this.server.accessToken
         }`;
+        // streamUrl = this.getPlexTranscodeStreamUrl(
+        //   `/library/metadata/${item.externalKey}`,
+        // );
       } else {
         throw new Error('Could not resolve stream URL');
       }
@@ -304,4 +307,25 @@ export class PlexStreamDetails {
 
     return streamDetails;
   }
+
+  // private getPlexTranscodeStreamUrl(key: string) {
+  //   const query = querystring.encode({
+  //     ...DefaultPlexHeaders,
+  //     'X-Plex-Token': this.server.accessToken,
+  //     Connection: 'keep-alive',
+  //     path: key,
+  //     mediaIndex: 0,
+  //     partIndex: 0,
+  //     fastSeek: 1,
+  //     directPlay: true,
+  //     directStream: true,
+  //     directStreamAudio: true,
+  //     copyts: false,
+  //   });
+
+  //   return `${trimEnd(
+  //     this.server.uri,
+  //     '/',
+  //   )}/video/:/transcode/universal/start.m3u8?${query}`;
+  // }
 }

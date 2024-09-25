@@ -17,6 +17,11 @@ export class ConcatSession extends DirectStreamSession<ConcatSessionOptions> {
 
   constructor(channel: Channel, options: ConcatSessionOptions) {
     super(channel, options);
+    this.on('removeConnection', () => {
+      if (isEmpty(this.connections())) {
+        this.scheduleCleanup(5_000);
+      }
+    });
   }
 
   isStale(): boolean {

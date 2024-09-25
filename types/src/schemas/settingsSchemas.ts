@@ -31,12 +31,39 @@ export type SupportedHardwareAccels = TupleToUnion<
 
 export const DefaultHardwareAccel = 'none';
 
+export const FfmpegLogLevels = [
+  'panic',
+  'fatal',
+  'error',
+  'warning',
+  'info',
+  'verbose',
+  'debug',
+  'trace',
+] as const;
+
+export const FfmpegNumericLogLevels: Record<
+  TupleToUnion<typeof FfmpegLogLevels>,
+  number
+> = {
+  panic: 0,
+  fatal: 8,
+  error: 16,
+  warning: 24,
+  info: 32,
+  verbose: 40,
+  debug: 48,
+  trace: 56,
+};
+
 export const FfmpegSettingsSchema = z.object({
   configVersion: z.number().default(5),
   ffmpegExecutablePath: z.string().default('/usr/bin/ffmpeg'),
   numThreads: z.number().default(4),
   concatMuxDelay: z.number().default(0),
   enableLogging: z.boolean().default(false),
+  enableFileLogging: z.boolean().default(false),
+  logLevel: z.enum(FfmpegLogLevels).optional().default('warning'),
   // DEPRECATED
   enableTranscoding: z.boolean().default(true).describe('DEPRECATED'),
   audioVolumePercent: z.number().default(100),

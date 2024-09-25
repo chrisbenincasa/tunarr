@@ -1,3 +1,4 @@
+import { TranscodeResolutionOptions } from '@/helpers/constants.ts';
 import { HelpOutline } from '@mui/icons-material';
 import {
   Box,
@@ -11,6 +12,7 @@ import {
   IconButton,
   InputAdornment,
   InputLabel,
+  Link,
   MenuItem,
   Link as MuiLink,
   Select,
@@ -21,8 +23,14 @@ import {
   Typography,
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { FfmpegSettings, defaultFfmpegSettings } from '@tunarr/types';
-import _, { chain, isEqual, some } from 'lodash-es';
+import {
+  FfmpegSettings,
+  TupleToUnion,
+  defaultFfmpegSettings,
+} from '@tunarr/types';
+import { FfmpegLogLevels } from '@tunarr/types/schemas';
+import _, { capitalize, chain, isEqual, map, some } from 'lodash-es';
+import { useSnackbar } from 'notistack';
 import { useEffect, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert.tsx';
@@ -37,10 +45,8 @@ import {
   resolutionToString,
 } from '../../helpers/util.ts';
 import { useFfmpegSettings } from '../../hooks/settingsHooks.ts';
-import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 import { useApiQuery } from '../../hooks/useApiQuery.ts';
-import { useSnackbar } from 'notistack';
-import { TranscodeResolutionOptions } from '@/helpers/constants.ts';
+import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 
 const supportedVideoBuffer = [
   { value: 0, string: '0 Seconds' },
@@ -63,6 +69,9 @@ const supportedMaxFPS = [
   { value: '60', string: '60 frames per second' },
   { value: '120', string: '120 frames per second' },
 ];
+
+const FfmpegLogOptions = ['disable', 'console', 'file'] as const;
+type FfmpegLogOptions = TupleToUnion<typeof FfmpegLogOptions>;
 
 const supportedErrorScreens = [
   {
@@ -168,13 +177,54 @@ export default function FfmpegSettingsPage() {
 
   const {
     reset,
+    setValue,
     control,
     formState: { isDirty, isValid, isSubmitting, defaultValues },
     handleSubmit,
+    watch,
   } = useForm<Omit<FfmpegSettings, 'configVersion'>>({
     defaultValues: defaultFfmpegSettings,
     mode: 'onBlur',
   });
+
+  const [ffmpegConsoleLoggingEnabled, ffmpegFileLoggingEnabled] = watch([
+    'enableLogging',
+    'enableFileLogging',
+  ]);
+  let logSelectValue: FfmpegLogOptions = 'disable';
+  if (ffmpegFileLoggingEnabled) {
+    logSelectValue = 'file';
+  } else if (ffmpegConsoleLoggingEnabled) {
+    logSelectValue = 'console';
+  }
+
+  const handleFfmpegLogChange = (value: string) => {
+    let logValue: FfmpegLogOptions;
+    if (!FfmpegLogOptions.some((v) => v === value)) {
+      logValue = 'disable';
+    } else {
+      logValue = value as FfmpegLogOptions;
+    }
+
+    if (logValue === logSelectValue) {
+      return;
+    }
+
+    switch (logValue) {
+      case 'disable':
+        setValue('enableLogging', false, { shouldDirty: true });
+        setValue('enableFileLogging', false, { shouldDirty: true });
+        break;
+      case 'console':
+        setValue('enableLogging', true, { shouldDirty: true });
+        setValue('enableFileLogging', false, { shouldDirty: true });
+        break;
+      case 'file':
+        setValue('enableLogging', false, { shouldDirty: true });
+        setValue('enableFileLogging', true, { shouldDirty: true });
+        break;
+    }
+  };
 
   useEffect(() => {
     if (data) {
@@ -261,47 +311,6 @@ export default function FfmpegSettingsPage() {
           />
           <FormHelperText></FormHelperText>
         </FormControl>
-        {/* <Controller
-          control={control}
-          name="videoEncoder"
-          render={({ field }) => (
-            <TextField
-              id="video-encoder"
-              label="Video Encoder"
-              fullWidth
-              sx={{ my: 1 }}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <Tooltip
-                      title="Some possible values are:
-    h264 with Intel Quick Sync: h264_qsv
-    MPEG2 with Intel Quick Sync: mpeg2_qsv
-    NVIDIA: h264_nvenc
-    MPEG2: mpeg2video
-    H264: libx264 (default)
-    MacOS: h264_videotoolbox"
-                    >
-                      <IconButton
-                        aria-label="Some possible values are:
-    h264 with Intel Quick Sync: h264_qsv
-    MPEG2 with Intel Quick Sync: mpeg2_qsv
-    NVIDIA: h264_nvenc
-    MPEG2: mpeg2video
-    H264: libx264 (default)
-    MacOS: h264_videotoolbox"
-                        edge="end"
-                      >
-                        <HelpOutline sx={{ opacity: 0.75 }} />
-                      </IconButton>
-                    </Tooltip>
-                  </InputAdornment>
-                ),
-              }}
-              {...field}
-            />
-          )}
-        /> */}
 
         <Grid container columns={{ sm: 8, md: 16 }} columnSpacing={2}>
           <Grid item sm={16} md={8}>
@@ -655,7 +664,7 @@ export default function FfmpegSettingsPage() {
               id="executable-path"
               label="Executable Path"
               helperText={
-                'FFMPEG version 4.2+ required. Check by opening the version tab'
+                'FFMPEG version 4.2+ required. Check your current version in the sidebar'
               }
               {...field}
             />
@@ -665,50 +674,129 @@ export default function FfmpegSettingsPage() {
       <Typography variant="h6" sx={{ my: 2 }}>
         Miscellaneous Options
       </Typography>
-      <Stack spacing={2} direction={{ sm: 'column', md: 'row' }}>
-        <NumericFormControllerText
-          control={control}
-          name="numThreads"
-          prettyFieldName="Threads"
-          TextFieldProps={{ label: 'Threads' }}
-        />
+      <Stack spacing={2} useFlexGap>
+        <Stack spacing={2} useFlexGap direction={{ sm: 'column', md: 'row' }}>
+          <NumericFormControllerText
+            control={control}
+            name="numThreads"
+            prettyFieldName="Threads"
+            TextFieldProps={{
+              label: 'Threads',
+              sx: {
+                maxWidth: {
+                  md: '50%',
+                },
+              },
+              helperText: (
+                <>
+                  Sets the number of threads used to decode the input stream.
+                  Set to 0 to let ffmpeg automatically decide how many threads
+                  to use. Read more about this option{' '}
+                  <Link
+                    target="_blank"
+                    href="https://ffmpeg.org/ffmpeg-codecs.html#:~:text=threads%20integer%20(decoding/encoding%2Cvideo)"
+                  >
+                    here
+                  </Link>
+                </>
+              ),
+            }}
+          />
+          <FormControl sx={{ flex: 1 }}>
+            <InputLabel id="video-concat-mux-delay-label">
+              Video Buffer
+            </InputLabel>
+            <TypedController
+              control={control}
+              name="concatMuxDelay"
+              prettyFieldName="Video Buffer"
+              toFormType={handleNumericFormValue}
+              valueExtractor={(e) =>
+                (e as SelectChangeEvent<number>).target.value
+              }
+              render={({ field }) => (
+                <Select
+                  labelId="video-concat-mux-delay-label"
+                  id="video-concat-mux-delay"
+                  label="Video Buffer"
+                  {...field}
+                >
+                  {supportedVideoBuffer.map((buffer) => (
+                    <MenuItem key={buffer.value} value={buffer.value}>
+                      {buffer.string}
+                    </MenuItem>
+                  ))}
+                </Select>
+              )}
+            />
 
-        <FormControlLabel
-          control={
-            <CheckboxFormController control={control} name="enableLogging" />
-          }
-          label="Log FFMPEG to console"
-        />
-      </Stack>
-      <FormControl sx={{ mt: 2 }}>
-        <InputLabel id="video-concat-mux-delay-label">Video Buffer</InputLabel>
-        <TypedController
-          control={control}
-          name="concatMuxDelay"
-          prettyFieldName="Video Buffer"
-          toFormType={handleNumericFormValue}
-          valueExtractor={(e) => (e as SelectChangeEvent<number>).target.value}
-          render={({ field }) => (
-            <Select
-              labelId="video-concat-mux-delay-label"
-              id="video-concat-mux-delay"
-              label="Video Buffer"
-              {...field}
+            <FormHelperText>
+              Note: If you experience playback issues upon stream start, try
+              increasing this.
+            </FormHelperText>
+          </FormControl>
+        </Stack>
+        <Stack spacing={2} direction={{ sm: 'column', md: 'row' }}>
+          <FormControl sx={{ flexBasis: '50%' }}>
+            <InputLabel id="ffmpeg-logging-label">FFMPEG Log Method</InputLabel>
+            <Select<(typeof FfmpegLogOptions)[number]>
+              labelId="ffmpeg-logging-label"
+              id="ffmpeg-logging"
+              label="FFMPEG Log Method"
+              value={logSelectValue}
+              onChange={(e: SelectChangeEvent<FfmpegLogOptions>) =>
+                handleFfmpegLogChange(e.target.value)
+              }
             >
-              {supportedVideoBuffer.map((buffer) => (
-                <MenuItem key={buffer.value} value={buffer.value}>
-                  {buffer.string}
-                </MenuItem>
-              ))}
+              <MenuItem value="disable">Disabled</MenuItem>
+              <MenuItem value="console">Console</MenuItem>
+              <MenuItem value="file">File</MenuItem>
             </Select>
-          )}
-        />
 
-        <FormHelperText>
-          Note: If you experience playback issues upon stream start, try
-          increasing this.
-        </FormHelperText>
-      </FormControl>
+            <FormHelperText>
+              Enable ffmpeg logging to different sinks. Outputting to a file
+              will create a new log file for every spawned ffmpeg process in the
+              Tunarr log directory. These files are automatically cleaned up by
+              a background process.
+            </FormHelperText>
+          </FormControl>
+          {logSelectValue !== 'disable' && (
+            <FormControl sx={{ flex: 1 }}>
+              <InputLabel id="ffmpeg-logging-level">
+                FFMPEG Log Level
+              </InputLabel>
+              <Controller
+                control={control}
+                name="logLevel"
+                render={({ field }) => (
+                  <Select
+                    labelId="ffmpeg-logging-level"
+                    id="ffmpeg-logging-level"
+                    label="FFMPEG Log Level"
+                    {...field}
+                  >
+                    {map(FfmpegLogLevels, (level) => (
+                      <MenuItem key={level} value={level}>
+                        {capitalize(level)}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                )}
+              />
+
+              <FormHelperText>
+                Log level to pass to ffmpeg. Read more about ffmpeg's log levels{' '}
+                <Link
+                  target="_blank"
+                  href="https://ffmpeg.org/ffmpeg.html#:~:text=%2Dloglevel%20%5Bflags%2B%5Dloglevel%20%7C%20%2Dv%20%5Bflags%2B%5Dloglevel"
+                >
+                  here
+                </Link>
+              </FormHelperText>
+            </FormControl>
+          )}
+        </Stack>
+      </Stack>
       <Divider sx={{ mt: 2 }} />
       <Typography variant="h5" sx={{ mt: 2, mb: 1 }}>
         Transcoding Options
