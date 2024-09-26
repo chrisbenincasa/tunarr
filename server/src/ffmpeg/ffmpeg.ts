@@ -597,15 +597,23 @@ export class FFMPEG {
           videoComplex = `;[${inputFiles++}:0]format=yuv420p[formatted]`;
           videoComplex += `;[formatted]scale=w=${iW}:h=${iH}:force_original_aspect_ratio=1[scaled]`;
           videoComplex += `;[scaled]pad=${iW}:${iH}:(ow-iw)/2:(oh-ih)/2[padded]`;
-          videoComplex += `;[padded]loop=loop=-1:size=1:start=0[looped]`;
-          videoComplex += `;[looped]realtime[videox]`;
+          let realtimePart = '[videox]';
+          if (realtime) {
+            realtimePart = '[looped];[looped]realtime[videox]';
+          }
+          videoComplex += `;[padded]loop=loop=-1:size=1:start=0${realtimePart}`;
         } else if (this.opts.errorScreen == 'static') {
           ffmpegArgs.push('-f', 'lavfi', '-i', `nullsrc=s=64x36`);
-          videoComplex = `;geq=random(1)*255:128:128[videoz];[videoz]scale=${iW}:${iH}[videoy];[videoy]realtime[videox]`;
+          let realtimePart = '[videox]';
+          if (realtime) {
+            realtimePart = '[videoy];[videoy]realtime[videox]';
+          }
+          videoComplex = `;geq=random(1)*255:128:128[videoz];[videoz]scale=${iW}:${iH}${realtimePart}`;
           inputFiles++;
         } else if (this.opts.errorScreen == 'testsrc') {
           ffmpegArgs.push('-f', 'lavfi', '-i', `testsrc=size=${iW}x${iH}`);
-          videoComplex = `;realtime[videox]`;
+
+          videoComplex = `${realtime ? ';realtime' : ''}[videox]`;
           inputFiles++;
         } else if (this.opts.errorScreen == 'text' && !isString(streamSrc)) {
           const sz2 = Math.ceil(iH / 33.0);
@@ -657,8 +665,11 @@ export class FFMPEG {
         if (!this.audioOnly) {
           ffmpegArgs.push('-pix_fmt', 'yuv420p');
         }
-        audioComplex += ';[audioy]arealtime[audiox]';
-        currentAudio = '[audiox]';
+        currentAudio = '[audioy]';
+        if (realtime) {
+          audioComplex += ';[audioy]arealtime[audiox]';
+          currentAudio = '[audiox]';
+        }
       }
       currentVideo = '[videox]';
     } else {
