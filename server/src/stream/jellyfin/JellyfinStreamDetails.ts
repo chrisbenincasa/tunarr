@@ -22,6 +22,7 @@ import { isQueryError } from '../../external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.js';
 import { JellyfinApiClient } from '../../external/jellyfin/JellyfinApiClient.js';
 import { Nullable } from '../../types/util.js';
+import { fileExists } from '../../util/fsUtil.js';
 import {
   isDefined,
   isNonEmptyString,
@@ -134,6 +135,8 @@ export class JellyfinStreamDetails {
         streamSettings.pathReplace,
         streamSettings.pathReplaceWith,
       );
+    } else if (isNonEmptyString(filePath) && (await fileExists(filePath))) {
+      streamUrl = filePath;
     } else {
       const path = details.serverPath ?? item.plexFilePath;
       if (isNonEmptyString(path)) {
