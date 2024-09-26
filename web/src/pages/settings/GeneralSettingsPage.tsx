@@ -428,7 +428,7 @@ function GeneralSettingsForm({ systemSettings }: GeneralSetingsFormProps) {
           <Button
             variant="outlined"
             onClick={() => {
-              reset(settings);
+              reset(getBaseFormValues(systemSettings));
             }}
             disabled={!isValid || isSubmitting || !isDirty}
           >
