@@ -102,7 +102,8 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
 
     this.#processHandle.on('exit', (code, signal) => {
       const expected =
-        (this.#processKilled && (code === null || signal === 'SIGTERM')) ||
+        (this.#processKilled &&
+          (code === null || signal === 'SIGTERM' || signal === 'SIGKILL')) ||
         code === 0;
       this.#logger.info(
         { args: argsWithTokenRedacted },
