@@ -1,3 +1,4 @@
+import { Nullable } from '@/types/util';
 import { Theme } from '@mui/material';
 import { MakeRequired } from '@mui/x-date-pickers/internals/models/helpers';
 import type {
@@ -11,6 +12,7 @@ import {
   Resolution,
   TvGuideProgram,
 } from '@tunarr/types';
+import { JellyfinItem } from '@tunarr/types/jellyfin';
 import { PlexMedia } from '@tunarr/types/plex';
 import dayjs, { Dayjs } from 'dayjs';
 import duration from 'dayjs/plugin/duration';
@@ -32,8 +34,6 @@ import {
 import { Path, PathValue } from 'react-hook-form';
 import { SelectedMedia } from '../store/programmingSelector/store';
 import { AddedMedia, UIChannelProgram } from '../types';
-import { Nullable } from '@/types/util';
-import { JellyfinItem } from '@tunarr/types/jellyfin';
 
 dayjs.extend(duration);
 
@@ -466,10 +466,10 @@ export const roundNearestMultiple = (num: number, multiple: number): number => {
   return Math.floor(num / multiple) * multiple;
 };
 
-export function isValidUrlWithError(url: string) {
+export function isValidUrlWithError(url: string, allowEmpty: boolean = false) {
   const sanitized = trim(url);
   if (isEmpty(sanitized)) {
-    return 'empty';
+    return !allowEmpty ? 'empty' : undefined;
   }
 
   const result = attempt(() => new URL(url));
@@ -487,6 +487,6 @@ export function isValidUrlWithError(url: string) {
   return;
 }
 
-export function isValidUrl(url: string) {
-  return isUndefined(isValidUrlWithError(url));
+export function isValidUrl(url: string, allowEmpty: boolean = false) {
+  return isUndefined(isValidUrlWithError(url, allowEmpty));
 }

@@ -1,3 +1,4 @@
+import { isValidUrl } from '@/helpers/util.ts';
 import { CloudDoneOutlined, CloudOff } from '@mui/icons-material';
 import {
   Box,
@@ -18,17 +19,25 @@ import {
 } from '@mui/material';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
+import Grid2 from '@mui/material/Unstable_Grid2/Grid2';
+import { TimePicker } from '@mui/x-date-pickers';
 import {
   CacheSettings,
   LogLevel,
   LogLevels,
   SystemSettings,
 } from '@tunarr/types';
+import { UpdateSystemSettingsRequest } from '@tunarr/types/api';
+import { BackupSettings, EverySchedule } from '@tunarr/types/schemas';
+import dayjs from 'dayjs';
 import { first, isNull, map, trim, trimEnd } from 'lodash-es';
+import { useSnackbar } from 'notistack';
+import pluralize from 'pluralize';
 import { useCallback } from 'react';
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import { RotatingLoopIcon } from '../../components/base/LoadingIcon.tsx';
 import DarkModeButton from '../../components/settings/DarkModeButton.tsx';
+import { NumericFormControllerText } from '../../components/util/TypedController.tsx';
 import {
   useSystemSettings,
   useUpdateSystemSettings,
@@ -36,15 +45,6 @@ import {
 import { useVersion } from '../../hooks/useVersion.ts';
 import { setBackendUri } from '../../store/settings/actions.ts';
 import { useSettings } from '../../store/settings/selectors.ts';
-import { UpdateSystemSettingsRequest } from '@tunarr/types/api';
-import { BackupSettings, EverySchedule } from '@tunarr/types/schemas';
-import dayjs from 'dayjs';
-import { NumericFormControllerText } from '../../components/util/TypedController.tsx';
-import Grid2 from '@mui/material/Unstable_Grid2/Grid2';
-import pluralize from 'pluralize';
-import { TimePicker } from '@mui/x-date-pickers';
-import { useSnackbar } from 'notistack';
-import { isValidUrl } from '@/helpers/util.ts';
 
 type GeneralSettingsFormData = {
   backendUri: string;
@@ -101,7 +101,6 @@ function GeneralSettingsForm({ systemSettings }: GeneralSetingsFormProps) {
     watch,
     setValue,
   } = useForm<GeneralSettingsFormData>({
-    reValidateMode: 'onChange',
     defaultValues: getBaseFormValues(systemSettings),
   });
 
@@ -322,7 +321,7 @@ function GeneralSettingsForm({ systemSettings }: GeneralSetingsFormProps) {
           <Controller
             control={control}
             name="backendUri"
-            rules={{ validate: { isValidUrl } }}
+            rules={{ validate: { isValidUrl: (s) => isValidUrl(s, true) } }}
             render={({ field, fieldState: { error } }) => (
               <TextField
                 fullWidth
