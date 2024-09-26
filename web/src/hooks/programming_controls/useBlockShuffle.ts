@@ -3,6 +3,7 @@ import {
   chunk,
   forEach,
   isUndefined,
+  mapValues,
   max,
   range,
   shuffle,
@@ -34,6 +35,7 @@ export interface BlockShuffleConfig {
       order: 'asc' | 'desc';
     };
   };
+  loopBlocks?: boolean;
 }
 
 function sortProgram(
@@ -118,16 +120,25 @@ export function useBlockShuffle() {
         });
         return groups;
       })
-      .mapValues((value) => chunk(value, options?.blockSize ?? 3))
       .value();
 
     // See which show has the most episodes in the program list
     const maxLength = max(Object.values(groupByShow).map((a) => a.length)) ?? 0;
 
+    const chunkedShows = mapValues(groupByShow, (programs) => {
+      if (options?.loopBlocks && programs.length < maxLength) {
+        const lengthDiff = maxLength - programs.length;
+        for (let i = 0; i < lengthDiff; i++) {
+          programs.push({ ...programs[i % programs.length] });
+        }
+      }
+      return chunk(programs, options?.blockSize ?? 3);
+    });
+
     const alternatingShows: UIChannelProgram[] = [];
 
     for (const i of range(maxLength)) {
-      forEach(groupByShow, (arr) => {
+      forEach(chunkedShows, (arr) => {
         if (i < arr.length) {
           alternatingShows.push(...arr[i]);
         }

@@ -1,5 +1,8 @@
+import { useConsolidatePrograms } from '@/hooks/programming_controls/useConcolidatePrograms';
 import {
+  Merge,
   ContentCopy as ReplicateIcon,
+  Scale,
   Shuffle as ShuffleIcon,
   AccessTime as TimeIcon,
 } from '@mui/icons-material';
@@ -10,11 +13,22 @@ import { ElevatedTooltip } from '../base/ElevatedTooltip';
 import AddReplicateModal from '../programming_controls/AddReplicateModal';
 import AddRerunBlockModal from '../programming_controls/AddRerunBlockModal';
 import AdjustWeightsModal from '../programming_controls/AdjustWeightsModal';
+import { BalanceProgrammingModal } from '../programming_controls/BalanceProgrammingModal';
 
-export function ChannelProgrammingOrganizeOptions() {
-  const [addReplicateModalOpen, setAddReplicateModalOpen] = useState(false);
-  const [addRerunBlocksModal, setAddRerunBlocksModal] = useState(false);
-  const [adjustWeightsModal, setAdjustWeightsModal] = useState(false);
+type Props = {
+  onClose: () => void;
+};
+
+type OpenModal = 'replicate' | 'rerun' | 'weights' | 'balance';
+
+export function ChannelProgrammingOrganizeOptions({ onClose }: Props) {
+  const [openModal, setOpenModal] = useState<OpenModal | null>(null);
+  const consolidatePrograms = useConsolidatePrograms();
+
+  const handleClose = () => {
+    setOpenModal(null);
+    onClose();
+  };
 
   return (
     <>
@@ -39,20 +53,19 @@ export function ChannelProgrammingOrganizeOptions() {
           <ShuffleIcon /> Random Slots...
         </MenuItem>
       </ElevatedTooltip>
-      {/* <Tooltip
+      <ElevatedTooltip
         title="This allows you to pick the weights for each of the shows, so you can decide that some shows should be less frequent than other shows."
         placement="right"
+        elevation={10}
       >
         <MenuItem
           onClick={() => {
-            // TODO: Fix issue with menu not closing
-            // handleClose();
-            setAdjustWeightsModal(true);
+            setOpenModal('balance');
           }}
         >
-          <TweakWeightsIcon /> Balance Media
+          <Scale /> Balance...
         </MenuItem>
-      </Tooltip> */}
+      </ElevatedTooltip>
       <ElevatedTooltip
         title="Makes multiple copies of the schedule and plays them in sequence. Normally this isn't necessary, because Tunarr will always play the schedule back from the beginning when it finishes. But creating replicas is a useful intermediary step sometimes before applying other transformations. Note that because very large channels can be problematic, the number of replicas will be limited to avoid creating really large channels."
         placement="right"
@@ -60,12 +73,24 @@ export function ChannelProgrammingOrganizeOptions() {
       >
         <MenuItem
           onClick={() => {
-            // TODO: Fix issue with menu not closing
-            // handleClose();
-            setAddReplicateModalOpen(true);
+            setOpenModal('replicate');
           }}
         >
-          <ReplicateIcon /> Replicate Programming...
+          <ReplicateIcon /> Replicate...
+        </MenuItem>
+      </ElevatedTooltip>
+      <ElevatedTooltip
+        title="Consolidates contiguous match flex and redirect blocks into singular spans"
+        placement="right"
+        elevation={10}
+      >
+        <MenuItem
+          onClick={() => {
+            consolidatePrograms();
+            handleClose();
+          }}
+        >
+          <Merge /> Consolidate
         </MenuItem>
       </ElevatedTooltip>
       {/* <Tooltip
@@ -83,16 +108,20 @@ export function ChannelProgrammingOrganizeOptions() {
         </MenuItem>
       </Tooltip> */}
       <AddRerunBlockModal
-        open={addRerunBlocksModal}
-        onClose={() => setAddRerunBlocksModal(false)}
+        open={openModal === 'rerun'}
+        onClose={() => handleClose()}
       />
       <AddReplicateModal
-        open={addReplicateModalOpen}
-        onClose={() => setAddReplicateModalOpen(false)}
+        open={openModal === 'replicate'}
+        onClose={() => handleClose()}
       />
       <AdjustWeightsModal
-        open={adjustWeightsModal}
-        onClose={() => setAdjustWeightsModal(false)}
+        open={openModal === 'weights'}
+        onClose={() => handleClose()}
+      />
+      <BalanceProgrammingModal
+        open={openModal === 'balance'}
+        onClose={() => handleClose()}
       />
     </>
   );

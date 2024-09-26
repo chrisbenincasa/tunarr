@@ -1,11 +1,12 @@
-import { MenuItem, Tooltip } from '@mui/material';
 import { Delete } from '@mui/icons-material';
+import { MenuItem } from '@mui/material';
+import { useState } from 'react';
+import { useRemoveAllProgramming } from '../../hooks/programming_controls/useRemoveAllProgramming';
 import { useRemoveDuplicates } from '../../hooks/programming_controls/useRemoveDuplicates';
 import { useRemoveFlex } from '../../hooks/programming_controls/useRemoveFlex';
-import { useRemoveAllProgramming } from '../../hooks/programming_controls/useRemoveAllProgramming';
 import { useRemoveSpecials } from '../../hooks/programming_controls/useRemoveSpecials';
-import { useState } from 'react';
-import RemoveShowsModal from '../programming_controls/RemoveShowsModal';
+import { ElevatedTooltip } from '../base/ElevatedTooltip.tsx';
+import { RemoveShowsModal } from '../programming_controls/RemoveShowsModal';
 
 type DeleteOptionsProps = {
   onClose: () => void;
@@ -24,14 +25,16 @@ export function ChannelProgrammingDeleteOptions({
   const handleClose = () => {
     onClose();
   };
+
   return (
     <>
       <MenuItem divider disabled>
         Delete
       </MenuItem>
-      <Tooltip
+      <ElevatedTooltip
         title="Removes all Flex periods from the schedule."
         placement="right"
+        elevation={10}
       >
         <MenuItem
           disableRipple
@@ -43,8 +46,12 @@ export function ChannelProgrammingDeleteOptions({
           <Delete />
           Flex
         </MenuItem>
-      </Tooltip>
-      <Tooltip title="Removes repeated videos." placement="right">
+      </ElevatedTooltip>
+      <ElevatedTooltip
+        title="Removes repeated programs."
+        placement="right"
+        elevation={10}
+      >
         <MenuItem
           disableRipple
           onClick={() => {
@@ -55,10 +62,11 @@ export function ChannelProgrammingDeleteOptions({
           <Delete />
           Duplicates
         </MenuItem>
-      </Tooltip>
-      <Tooltip
+      </ElevatedTooltip>
+      <ElevatedTooltip
         title="Removes any specials from the schedule. Specials are episodes with season '00'."
         placement="right"
+        elevation={10}
       >
         <MenuItem
           disableRipple
@@ -70,24 +78,27 @@ export function ChannelProgrammingDeleteOptions({
           <Delete />
           Specials
         </MenuItem>
-      </Tooltip>
-      <Tooltip
-        title="Allows you to pick specific shows to remove from the channel."
+      </ElevatedTooltip>
+      <ElevatedTooltip
+        title="Allows you to pick specific programming to remove from the channel."
         placement="right"
+        elevation={10}
       >
         <MenuItem
           disableRipple
           onClick={() => {
-            // To Do: Fix issue with menu staying open
-            // handleClose();
             setRemoveShowsModalOpen(true);
           }}
         >
           <Delete />
-          Show(s)...
+          Remove...
         </MenuItem>
-      </Tooltip>
-      <Tooltip title="Removes all programs from schedule" placement="right">
+      </ElevatedTooltip>
+      <ElevatedTooltip
+        title="Removes all programs from schedule"
+        placement="right"
+        elevation={10}
+      >
         <MenuItem
           disableRipple
           onClick={() => {
@@ -98,10 +109,13 @@ export function ChannelProgrammingDeleteOptions({
           <Delete />
           Clear Schedule
         </MenuItem>
-      </Tooltip>
+      </ElevatedTooltip>
       <RemoveShowsModal
         open={removeShowsModalOpen}
-        onClose={() => setRemoveShowsModalOpen(false)}
+        onClose={() => {
+          setRemoveShowsModalOpen(false);
+          handleClose();
+        }}
       />
     </>
   );

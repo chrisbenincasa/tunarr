@@ -14,6 +14,7 @@ import {
   DialogTitle,
   Divider,
   FormControl,
+  FormControlLabel,
   FormHelperText,
   InputLabel,
   MenuItem,
@@ -26,7 +27,10 @@ import {
   BlockShuffleConfig,
   useBlockShuffle,
 } from '../../hooks/programming_controls/useBlockShuffle';
-import { NumericFormControllerText } from '../util/TypedController.tsx';
+import {
+  CheckboxFormController,
+  NumericFormControllerText,
+} from '../util/TypedController.tsx';
 
 type AddBlockShuffleModalProps = {
   open: boolean;
@@ -49,6 +53,7 @@ const AddBlockShuffleModal = ({ open, onClose }: AddBlockShuffleModalProps) => {
           order: 'asc',
         },
       },
+      loopBlocks: false,
     },
   });
 
@@ -195,9 +200,19 @@ const AddBlockShuffleModal = ({ open, onClose }: AddBlockShuffleModalProps) => {
               Customize how movie blocks are sorted
             </FormHelperText>
           </Box>
+          <FormControl fullWidth>
+            <FormControlLabel
+              control={
+                <CheckboxFormController control={control} name="loopBlocks" />
+              }
+              label="Loop Short Blocks"
+            />
+            <FormHelperText>
+              If set, any programming group with fewer episodes will be looped
+              in order to make perfectly even blocks.
+            </FormHelperText>
+          </FormControl>
         </Stack>
-        {/* <FormGroup sx={{ my: 3 }}> */}
-        {/* </FormGroup> */}
       </DialogContent>
       <DialogActions>
         <Button onClick={() => onClose()}>Cancel</Button>

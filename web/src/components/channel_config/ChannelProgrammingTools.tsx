@@ -82,7 +82,7 @@ export function ChannelProgrammingTools() {
         open={open}
         onClose={handleClose}
       >
-        <ChannelProgrammingOrganizeOptions />
+        <ChannelProgrammingOrganizeOptions onClose={() => handleClose()} />
         <ChannelProgrammingDeleteOptions onClose={() => handleClose()} />
       </StyledMenu>
     </>
