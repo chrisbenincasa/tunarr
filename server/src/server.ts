@@ -428,6 +428,8 @@ export async function initServer(opts: ServerOptions) {
           }
         }
 
+        logger.debug('All done, shutting down!');
+
         /*
         This always hangs...
         try {
