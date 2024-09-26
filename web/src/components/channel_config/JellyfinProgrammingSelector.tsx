@@ -1,34 +1,24 @@
+import { forJellyfinItem, typedProperty } from '@/helpers/util.ts';
 import { useInfiniteJellyfinLibraryItems } from '@/hooks/jellyfin/useJellyfinApi';
 import {
   useCurrentMediaSource,
   useCurrentSourceLibrary,
 } from '@/store/programmingSelector/selectors';
+import { Box, Stack, Tab, Tabs } from '@mui/material';
+import { tag } from '@tunarr/types';
+import { JellyfinItem, JellyfinItemKind } from '@tunarr/types/jellyfin';
+import { MediaSourceId } from '@tunarr/types/schemas';
+import { first } from 'lodash-es';
 import React, { useCallback, useMemo, useState } from 'react';
+import { InlineModal } from '../InlineModal.tsx';
+import { ProgramViewToggleButton } from '../base/ProgramViewToggleButton.tsx';
+import { JellyfinGridItem } from './JellyfinGridItem.tsx';
+import { JellyfinListItem } from './JellyfinListItem.tsx';
 import {
   GridInlineModalProps,
   GridItemProps,
   MediaItemGrid,
 } from './MediaItemGrid.tsx';
-import {
-  Box,
-  Stack,
-  Tab,
-  Tabs,
-  ToggleButton,
-  ToggleButtonGroup,
-} from '@mui/material';
-import { JellyfinGridItem } from './JellyfinGridItem.tsx';
-import { tag } from '@tunarr/types';
-import { MediaSourceId } from '@tunarr/types/schemas';
-import { JellyfinItem, JellyfinItemKind } from '@tunarr/types/jellyfin';
-import { InlineModal } from '../InlineModal.tsx';
-import { first } from 'lodash-es';
-import { forJellyfinItem, typedProperty } from '@/helpers/util.ts';
-import { JellyfinListItem } from './JellyfinListItem.tsx';
-import { ViewList, GridView } from '@mui/icons-material';
-import { setProgrammingSelectorViewState } from '@/store/themeEditor/actions.ts';
-import { ProgramSelectorViewType } from '@/types/index.ts';
-import useStore from '@/store/index.ts';
 
 enum TabValues {
   Library = 0,
@@ -61,22 +51,10 @@ const childJellyfinType = forJellyfinItem<JellyfinItemKind>({
 });
 
 export function JellyfinProgrammingSelector() {
-  const viewType = useStore((state) => state.theme.programmingSelectorView);
   const selectedServer = useCurrentMediaSource('jellyfin');
   const selectedLibrary = useCurrentSourceLibrary('jellyfin');
 
   const [tabValue, setTabValue] = useState(TabValues.Library);
-
-  const setViewType = (view: ProgramSelectorViewType) => {
-    setProgrammingSelectorViewState(view);
-  };
-
-  const handleFormat = (
-    _event: React.MouseEvent<HTMLElement>,
-    newFormats: ProgramSelectorViewType,
-  ) => {
-    setViewType(newFormats);
-  };
 
   const itemTypes: JellyfinItemKind[] = [];
   if (selectedLibrary?.library.CollectionType) {
@@ -147,14 +125,7 @@ export function JellyfinProgrammingSelector() {
             flexGrow: 1,
           }}
         >
-          <ToggleButtonGroup value={viewType} onChange={handleFormat} exclusive>
-            <ToggleButton value="list">
-              <ViewList />
-            </ToggleButton>
-            <ToggleButton value="grid">
-              <GridView />
-            </ToggleButton>
-          </ToggleButtonGroup>
+          <ProgramViewToggleButton />
         </Stack>
         <Tabs
           value={tabValue}

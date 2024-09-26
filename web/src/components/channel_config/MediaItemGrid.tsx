@@ -4,6 +4,7 @@ import {
   isNewModalAbove,
 } from '@/helpers/inlineModalUtil.ts';
 import useStore from '@/store/index.ts';
+import { Nullable } from '@/types/util';
 import {
   Box,
   CircularProgress,
@@ -28,7 +29,6 @@ import {
   useIntersectionObserver,
   useResizeObserver,
 } from 'usehooks-ts';
-import { Nullable } from '@/types/util';
 
 export interface GridItemProps<ItemType> {
   item: ItemType;
