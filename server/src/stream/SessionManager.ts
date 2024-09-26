@@ -229,7 +229,7 @@ export class SessionManager {
 
           this.addSession(channel.uuid, session.sessionType, session);
 
-          session.once('error', (e) => {
+          session.on('error', (e) => {
             this.#logger.error(e, 'Received error from session. Shutting down');
             session?.stop().catch((e) => {
               this.#logger.error(
