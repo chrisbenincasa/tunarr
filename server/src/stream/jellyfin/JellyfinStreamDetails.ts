@@ -26,6 +26,7 @@ import {
   isDefined,
   isNonEmptyString,
   nullToUndefined,
+  parseFloatToNull,
 } from '../../util/index.js';
 import { Logger, LoggerFactory } from '../../util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '../../util/serverUtil.js';
@@ -193,6 +194,12 @@ export class JellyfinStreamDetails {
       streamDetails.videoHeight = nullToUndefined(videoStream.Height);
       streamDetails.videoWidth = nullToUndefined(videoStream.Width);
       streamDetails.videoBitDepth = nullToUndefined(videoStream.BitDepth);
+      streamDetails.videoSampleAspectRatio = videoStream.IsAnamorphic
+        ? '0:0'
+        : '1:1';
+      streamDetails.videoDisplayAspectRatio = nullToUndefined(
+        parseFloatToNull(videoStream.AspectRatio),
+      );
       if (isDefined(videoStream.Index)) {
         const index = videoStream.Index - externalStreamCount;
         if (index >= 0) {
