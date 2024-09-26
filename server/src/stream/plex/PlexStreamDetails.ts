@@ -28,6 +28,7 @@ import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory';
 import { PlexApiClient } from '../../external/plex/PlexApiClient';
 import { Nullable } from '../../types/util';
 import { attempt, isNonEmptyString } from '../../util';
+import { fileExists } from '../../util/fsUtil';
 import { Logger, LoggerFactory } from '../../util/logging/LoggerFactory';
 import { makeLocalUrl } from '../../util/serverUtil.js';
 import { PlexStream, StreamDetails } from '../types';
@@ -196,8 +197,11 @@ export class PlexStreamDetails {
         streamSettings.pathReplace,
         streamSettings.pathReplaceWith,
       );
+    } else if (isNonEmptyString(filePath) && (await fileExists(filePath))) {
+      streamUrl = filePath;
     } else {
       let path = details.serverPath ?? item.plexFilePath;
+
       if (isNonEmptyString(path)) {
         path = path.startsWith('/') ? path : `/${path}`;
         streamUrl = `${trimEnd(this.server.uri, '/')}${path}?X-Plex-Token=${
