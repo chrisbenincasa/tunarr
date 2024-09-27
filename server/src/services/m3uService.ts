@@ -60,7 +60,7 @@ export class M3uService {
           channels[i].icon?.path ?? ''
         }" group-title="${channels[i].groupTitle}",${channels[i].name}\n`;
 
-        data += `{{host}}/stream/channels/${channels[i].uuid}\n`;
+        data += `{{host}}/stream/channels/${channels[i].uuid}.ts\n`;
       }
     }
     if (channels.length === 0) {
