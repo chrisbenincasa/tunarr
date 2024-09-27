@@ -6,8 +6,6 @@ import {
   useCurrentSourceLibrary,
 } from '@/store/programmingSelector/selectors.ts';
 import FilterAlt from '@mui/icons-material/FilterAlt';
-import GridView from '@mui/icons-material/GridView';
-import ViewList from '@mui/icons-material/ViewList';
 import {
   Box,
   Collapse,
@@ -19,7 +17,9 @@ import {
   ToggleButton,
   ToggleButtonGroup,
 } from '@mui/material';
+import { tag } from '@tunarr/types';
 import { PlexMedia, isPlexParentItem } from '@tunarr/types/plex';
+import { MediaSourceId } from '@tunarr/types/schemas';
 import { chain, filter, first, isNil, isUndefined, sumBy } from 'lodash-es';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { isNonEmptyString, toggle } from '../../helpers/util.ts';
@@ -27,10 +27,9 @@ import { usePlexLibraries } from '../../hooks/plex/usePlex.ts';
 import { useMediaSources } from '../../hooks/settingsHooks.ts';
 import useStore from '../../store/index.ts';
 import { addKnownMediaForPlexServer } from '../../store/programmingSelector/actions.ts';
-import { setProgrammingSelectorViewState } from '../../store/themeEditor/actions.ts';
-import { ProgramSelectorViewType } from '../../types/index.ts';
 import { InlineModal } from '../InlineModal.tsx';
 import { TabPanel } from '../TabPanel.tsx';
+import { ProgramViewToggleButton } from '../base/ProgramViewToggleButton.tsx';
 import StandaloneToggleButton from '../base/StandaloneToggleButton.tsx';
 import ConnectMediaSources from '../settings/ConnectMediaSources.tsx';
 import {
@@ -40,10 +39,8 @@ import {
 } from './MediaItemGrid.tsx';
 import { PlexFilterBuilder } from './PlexFilterBuilder.tsx';
 import { PlexGridItem } from './PlexGridItem.tsx';
-import { PlexSortField } from './PlexSortField.tsx';
 import { PlexListItem } from './PlexListItem.tsx';
-import { tag } from '@tunarr/types';
-import { MediaSourceId } from '@tunarr/types/schemas';
+import { PlexSortField } from './PlexSortField.tsx';
 
 function a11yProps(index: number) {
   return {
@@ -63,7 +60,6 @@ export default function PlexProgrammingSelector() {
   const plexServers = filter(mediaSources, { type: 'plex' });
   const selectedServer = useCurrentMediaSource('plex');
   const selectedLibrary = useCurrentSourceLibrary('plex');
-  const viewType = useStore((state) => state.theme.programmingSelectorView);
   const [tabValue, setTabValue] = useState(TabValues.Library);
   const [scrollParams, setScrollParams] = useState({ limit: 0, max: -1 });
   const [searchVisible, setSearchVisible] = useState(false);
@@ -77,17 +73,6 @@ export default function PlexProgrammingSelector() {
     selectedServer?.id ?? tag<MediaSourceId>(''),
     selectedServer?.type === 'plex',
   );
-
-  const setViewType = (view: ProgramSelectorViewType) => {
-    setProgrammingSelectorViewState(view);
-  };
-
-  const handleFormat = (
-    _event: React.MouseEvent<HTMLElement>,
-    newFormats: ProgramSelectorViewType,
-  ) => {
-    setViewType(newFormats);
-  };
 
   const plexCollectionsQuery = usePlexCollectionsInfinite(
     selectedServer,
@@ -358,18 +343,7 @@ export default function PlexProgrammingSelector() {
                 flexGrow: 1,
               }}
             >
-              <ToggleButtonGroup
-                value={viewType}
-                onChange={handleFormat}
-                exclusive
-              >
-                <ToggleButton value="list">
-                  <ViewList />
-                </ToggleButton>
-                <ToggleButton value="grid">
-                  <GridView />
-                </ToggleButton>
-              </ToggleButtonGroup>
+              <ProgramViewToggleButton />
             </Stack>
           </Box>
         )}
