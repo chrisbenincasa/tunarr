@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.12.0](https://github.com/chrisbenincasa/tunarr/compare/v0.11.0...v0.12.0) (2024-09-27)
+
+
+### Features
+
+* improved program tools around balancing / block scheduling ([#802](https://github.com/chrisbenincasa/tunarr/issues/802)) ([bd65de4](https://github.com/chrisbenincasa/tunarr/commit/bd65de47147ffef3442f80cd4bd661603de23f7f))
+* introduce new default HLS stream mode ([#780](https://github.com/chrisbenincasa/tunarr/issues/780)) ([6e66cfe](https://github.com/chrisbenincasa/tunarr/commit/6e66cfe2f0b7f2b843109f7b5c722c8702c9c027))
+* use local file path for plex/jellyfin media if it exists ([#806](https://github.com/chrisbenincasa/tunarr/issues/806)) ([11ca353](https://github.com/chrisbenincasa/tunarr/commit/11ca3532097d0d6969db7fa874374c6abbd2a0fa)), closes [#804](https://github.com/chrisbenincasa/tunarr/issues/804)
+
+
+### Bug Fixes
+
+* attempts to improve stream stability for mpegts streams ([#801](https://github.com/chrisbenincasa/tunarr/issues/801)) ([ecaddb5](https://github.com/chrisbenincasa/tunarr/commit/ecaddb5c4ca3c72bebc0a83cfee28e83338bae0b))
+* do not set programming selector viewType to null ([#812](https://github.com/chrisbenincasa/tunarr/issues/812)) ([37a9fe7](https://github.com/chrisbenincasa/tunarr/commit/37a9fe78c19a92834c4dd72f724b65e55530dbc6)), closes [#808](https://github.com/chrisbenincasa/tunarr/issues/808)
+* empty backendUri in general settings is allowed to be empty ([#811](https://github.com/chrisbenincasa/tunarr/issues/811)) ([0924b63](https://github.com/chrisbenincasa/tunarr/commit/0924b6320df215a2b3d1139eba6b2c157e13ee9e)), closes [#747](https://github.com/chrisbenincasa/tunarr/issues/747)
+* ensure all tokens are redacted from ffmpeg args, not just the last ([e406cfa](https://github.com/chrisbenincasa/tunarr/commit/e406cfac277e582b6e9a8de930b2e8a2d997c029))
+* ensure readahead works for audio+album art and offline streams ([f2f3053](https://github.com/chrisbenincasa/tunarr/commit/f2f305357667ac54392d8f3033332ba58ab57c4e))
+* fixes for static image streams for offline mode ([d8238cc](https://github.com/chrisbenincasa/tunarr/commit/d8238cc231042bca30068619f17ca3b6fba76b32))
+* handle multiple error events from sessions ([5dfa18f](https://github.com/chrisbenincasa/tunarr/commit/5dfa18f0e4135f52ec2c191ad727be1fb4b8bf1f))
+* improvements to stream error and end handling ([d8238cc](https://github.com/chrisbenincasa/tunarr/commit/d8238cc231042bca30068619f17ca3b6fba76b32))
+* make link to ffprobe in Docker image ([4111106](https://github.com/chrisbenincasa/tunarr/commit/4111106a8da7e83adaf6ee421b2dca875bb07d39))
+* only use reconnect parameters when input source is http(s) ([d8238cc](https://github.com/chrisbenincasa/tunarr/commit/d8238cc231042bca30068619f17ca3b6fba76b32))
+* properly reset general form setting values ([51bc998](https://github.com/chrisbenincasa/tunarr/commit/51bc998b718ee1d4cabd1cda618eaaf00cfdbbef))
+* revert change to m3u generation -- use ts stream always until we have separate endpoints ([52ebc71](https://github.com/chrisbenincasa/tunarr/commit/52ebc71b06840912df3fc99c863c3fdb9fd2d180))
+* use channel's configured streamMode in m3u file; still use mpegts for HDHR ([d8238cc](https://github.com/chrisbenincasa/tunarr/commit/d8238cc231042bca30068619f17ca3b6fba76b32))
+* use new mpegts path in hdhr lineup json generation ([#799](https://github.com/chrisbenincasa/tunarr/issues/799)) ([18592d0](https://github.com/chrisbenincasa/tunarr/commit/18592d01f4e9d6fc7b6da6ead3c93ce1f2c4d6b3))
+* use new mpegts path in m3u generation ([#798](https://github.com/chrisbenincasa/tunarr/issues/798)) ([e31333a](https://github.com/chrisbenincasa/tunarr/commit/e31333a1392ad1118fc643f7ebb337cc71d70717))
+
 ## [0.11.0](https://github.com/chrisbenincasa/tunarr/compare/v0.10.4...v0.11.0) (2024-09-23)
 
 
