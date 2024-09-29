@@ -2,6 +2,7 @@ import { BasicIdParamSchema } from '@tunarr/types/api';
 import { ContentProgramSchema } from '@tunarr/types/schemas';
 import axios, { AxiosHeaders, isAxiosError } from 'axios';
 import { HttpHeader } from 'fastify/types/utils.js';
+import { jsonArrayFrom } from 'kysely/helpers/sqlite';
 import {
   every,
   find,
@@ -9,6 +10,7 @@ import {
   isNil,
   isNull,
   isUndefined,
+  map,
   omitBy,
   values,
 } from 'lodash-es';
@@ -25,9 +27,18 @@ import {
   programSourceTypeToMediaSource,
 } from '../dao/custom_types/ProgramSourceType.js';
 import { getEm } from '../dao/dataSource.js';
+import { directDbAccess } from '../dao/direct/directDbAccess.js';
+import {
+  AllProgramFields,
+  AllProgramGroupingFields,
+  selectProgramsBuilder,
+} from '../dao/direct/programQueryHelpers.js';
 import { MediaSource } from '../dao/entities/MediaSource.js';
 import { Program, ProgramType } from '../dao/entities/Program.js';
-import { ProgramGrouping } from '../dao/entities/ProgramGrouping.js';
+import {
+  ProgramGrouping,
+  ProgramGroupingType,
+} from '../dao/entities/ProgramGrouping.js';
 import { JellyfinApiClient } from '../external/jellyfin/JellyfinApiClient.js';
 import { PlexApiClient } from '../external/plex/PlexApiClient.js';
 import { TruthyQueryParam } from '../types/schemas.js';
@@ -64,6 +75,32 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
     caller: import.meta,
     className: 'ProgrammingApi',
   });
+
+  fastify.get(
+    '/programs/:id',
+    {
+      schema: {
+        params: BasicIdParamSchema,
+      },
+    },
+    async (req, res) => {
+      return res.send(
+        req.serverCtx.programConverter.directEntityToContentProgramSync(
+          await selectProgramsBuilder({
+            joins: {
+              tvSeason: true,
+              tvShow: true,
+              trackAlbum: true,
+              trackArtist: true,
+            },
+          })
+            .where('uuid', '=', req.params.id)
+            .executeTakeFirstOrThrow(),
+          [],
+        ),
+      );
+    },
+  );
 
   // Image proxy for a program based on its source. Only works for persisted programs
   fastify.get(
@@ -403,6 +440,118 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
       return res.send(
         await req.serverCtx.programDB.lookupByExternalIds(req.body.externalIds),
       );
+    },
+  );
+
+  fastify.get(
+    '/programming/shows/:id',
+    {
+      schema: {
+        params: z.object({
+          id: z.string().uuid(),
+        }),
+        querystring: z.object({
+          includeEpisodes: TruthyQueryParam.default(false),
+        }),
+      },
+    },
+    async (req, res) => {
+      const result = await directDbAccess()
+        .selectFrom('programGrouping')
+        .selectAll()
+        .where('programGrouping.uuid', '=', req.params.id)
+        .where('programGrouping.type', '=', ProgramGroupingType.TvShow)
+        .select((eb) => {
+          return jsonArrayFrom(
+            eb
+              .selectFrom('programGrouping as seasons')
+              .select(AllProgramGroupingFields)
+              .select((eb2) =>
+                jsonArrayFrom(
+                  eb2
+                    .selectFrom('program')
+                    .select(AllProgramFields)
+                    .whereRef('program.seasonUuid', '=', 'seasons.uuid'),
+                ).as('episodes'),
+              )
+              // .select(eb => eb.fn('concat', ['/programming/seasons/:id/', '']))
+              .whereRef('seasons.showUuid', '=', 'programGrouping.uuid')
+              .where('seasons.type', '=', ProgramGroupingType.TvShowSeason)
+              .orderBy('seasons.index asc'),
+          ).as('seasons');
+        })
+        .$if(req.query.includeEpisodes, (qb) =>
+          qb.select((eb) =>
+            jsonArrayFrom(
+              eb
+                .selectFrom('program')
+                .select(AllProgramFields)
+                .whereRef('program.tvShowUuid', '=', 'programGrouping.uuid'),
+            ).as('episodes'),
+          ),
+        )
+        .orderBy('programGrouping.index asc')
+        .executeTakeFirstOrThrow();
+      return res.send({
+        ...result,
+        seasons: map(result.seasons, (season) => ({
+          ...season,
+          link: `/api/programming/seasons/${season.uuid}`,
+        })),
+      });
+    },
+  );
+
+  fastify.get(
+    '/programming/seasons/:id',
+    {
+      schema: {
+        params: z.object({
+          id: z.string().uuid(),
+        }),
+      },
+    },
+    async (req, res) => {
+      const result = await directDbAccess()
+        .selectFrom('programGrouping')
+        .selectAll()
+        .where('programGrouping.uuid', '=', req.params.id)
+        .where('programGrouping.type', '=', ProgramGroupingType.TvShowSeason)
+        .select((eb) => {
+          return jsonArrayFrom(
+            eb
+              .selectFrom('programGrouping as seasons')
+              .select(AllProgramGroupingFields)
+              // .select(eb => eb.fn('concat', ['/programming/seasons/:id/', '']))
+              .whereRef('seasons.showUuid', '=', 'programGrouping.uuid')
+              .where('seasons.type', '=', ProgramGroupingType.TvShowSeason)
+              .orderBy('seasons.index asc'),
+          ).as('seasons');
+        })
+        .orderBy('programGrouping.index asc')
+        .executeTakeFirstOrThrow();
+      return res.send(result);
+    },
+  );
+
+  fastify.get(
+    '/programming/shows/:id/seasons',
+    {
+      schema: {
+        params: z.object({
+          id: z.string().uuid(),
+        }),
+      },
+    },
+    async (req, res) => {
+      const result = await directDbAccess()
+        .selectFrom('programGrouping')
+        .selectAll()
+        .where('programGrouping.showUuid', '=', req.params.id)
+        .where('programGrouping.type', '=', ProgramGroupingType.TvShowSeason)
+        .orderBy('programGrouping.index asc')
+        .execute();
+      return res.send(result);
     },
   );
 };

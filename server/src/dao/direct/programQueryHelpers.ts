@@ -1,31 +1,40 @@
 import { ExpressionBuilder } from 'kysely';
 import { jsonArrayFrom, jsonObjectFrom } from 'kysely/helpers/sqlite';
+import { isBoolean, merge } from 'lodash-es';
+import { DeepPartial, DeepRequired } from 'ts-essentials';
 import { ProgramType } from '../entities/Program';
+import { directDbAccess } from './directDbAccess.js';
 import {
+  DB,
+  FillerShow as RawFillerShow,
   Program as RawProgram,
   ProgramGrouping as RawProgramGrouping,
-  FillerShow as RawFillerShow,
-  DB,
 } from './types.gen';
-import { isBoolean, merge } from 'lodash-es';
-import { DeepRequired } from 'ts-essentials';
 
-type ProgramGroupingFields =
-  readonly `programGrouping.${keyof RawProgramGrouping}`[];
+type ProgramGroupingFields<Alias extends string = 'programGrouping'> =
+  readonly `${Alias}.${keyof RawProgramGrouping}`[];
 
-export const AllProgramGroupingFields: ProgramGroupingFields = [
-  'programGrouping.artistUuid',
-  'programGrouping.createdAt',
-  'programGrouping.icon',
-  'programGrouping.index',
-  'programGrouping.showUuid',
-  'programGrouping.summary',
-  'programGrouping.title',
-  'programGrouping.type',
-  'programGrouping.updatedAt',
-  'programGrouping.uuid',
-  'programGrouping.year',
+const ProgramGroupingKeys: (keyof RawProgramGrouping)[] = [
+  'artistUuid',
+  'createdAt',
+  'icon',
+  'index',
+  'showUuid',
+  'summary',
+  'title',
+  'type',
+  'updatedAt',
+  'uuid',
+  'year',
 ];
+
+export const AllProgramGroupingFields: ProgramGroupingFields =
+  ProgramGroupingKeys.map((key) => `programGrouping.${key}` as const);
+
+export const AllProgramGroupingFieldsAliased = <Alias extends string>(
+  alias: Alias,
+): ProgramGroupingFields<Alias> =>
+  ProgramGroupingKeys.map((key) => `${alias}.${key}` as const);
 
 export const MinimalProgramGroupingFields: ProgramGroupingFields = [
   'programGrouping.uuid',
@@ -209,6 +218,34 @@ function baseWithProgamsExpressionBuilder(
   opts: DeepRequired<WithProgramsOptions>,
 ) {
   return eb
+    .selectFrom('program')
+    .select(opts.fields)
+    .$if(!!opts.joins.trackAlbum, (qb) =>
+      qb.select((eb) =>
+        withTrackAlbum(
+          eb,
+          isBoolean(opts.joins.trackAlbum)
+            ? AllProgramGroupingFields
+            : opts.joins.trackAlbum,
+        ),
+      ),
+    )
+    .$if(!!opts.joins.trackArtist, (qb) => qb.select(withTrackArtist))
+    .$if(!!opts.joins.tvSeason, (qb) => qb.select(withTvSeason))
+    .$if(!!opts.joins.tvSeason, (qb) => qb.select(withTvShow))
+    .$if(!!opts.joins.customShows, (qb) => qb.select(withProgramCustomShows));
+}
+
+// TODO: See if there is a way to share the impls here and above
+export function selectProgramsBuilder(
+  optOverides: DeepPartial<WithProgramsOptions> = defaultWithProgramOptions,
+) {
+  const opts: DeepRequired<WithProgramsOptions> = merge(
+    {},
+    defaultWithProgramOptions,
+    optOverides,
+  );
+  return directDbAccess()
     .selectFrom('program')
     .select(opts.fields)
     .$if(!!opts.joins.trackAlbum, (qb) =>

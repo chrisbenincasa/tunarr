@@ -1,5 +1,6 @@
 import { Loaded, ref } from '@mikro-orm/better-sqlite';
 import { createExternalId } from '@tunarr/shared';
+import { JellyfinItem, isJellyfinType } from '@tunarr/types/jellyfin';
 import {
   PlexMedia,
   isPlexMusicAlbum,
@@ -17,6 +18,7 @@ import {
   map,
   partition,
 } from 'lodash-es';
+import { QueryResult } from '../external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.js';
 import { Maybe } from '../types/util.js';
 import { asyncPool } from '../util/asyncPool.js';
@@ -36,8 +38,6 @@ import {
 } from './entities/ProgramGrouping.js';
 import { ProgramGroupingExternalId } from './entities/ProgramGroupingExternalId.js';
 import { ProgramDB } from './programDB.js';
-import { QueryResult } from '../external/BaseApiClient.js';
-import { JellyfinItem, isJellyfinType } from '@tunarr/types/jellyfin';
 
 export class ProgramGroupingCalculator {
   #logger = LoggerFactory.child({ className: ProgramGroupingCalculator.name });
@@ -284,7 +284,7 @@ export class ProgramGroupingCalculator {
 
     const existingParents = flatten(
       await mapAsyncSeq(
-        chunk([...parentKeys], 25),
+        chunk(parentKeys, 25),
         (chunk) => {
           const ors = map(
             chunk,
