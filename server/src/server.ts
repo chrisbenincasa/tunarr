@@ -23,6 +23,7 @@ import {
   round,
   values,
 } from 'lodash-es';
+import schedule from 'node-schedule';
 import fs from 'node:fs/promises';
 import path, { dirname } from 'path';
 import { HdhrApiRouter } from './api/hdhrApi.js';
@@ -428,10 +429,8 @@ export async function initServer(opts: ServerOptions) {
           }
         }
 
-        logger.debug('All done, shutting down!');
+        ctx.eventService.close();
 
-        /*
-        This always hangs...
         try {
           logger.debug('Waiting for pending jobs to complete!');
           await Promise.race([
@@ -450,7 +449,8 @@ export async function initServer(opts: ServerOptions) {
         } catch (e) {
           logger.error(e, 'Scheduled job graceful shutdown failed.');
         }
-          */
+
+        logger.debug('All done, shutting down!');
       });
     });
   });
