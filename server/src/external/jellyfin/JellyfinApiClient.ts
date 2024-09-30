@@ -54,7 +54,10 @@ function getJellyfinAuthorization(
   if (isNonEmptyString(clientId)) {
     parts.push(`DeviceId="${clientId}"`);
   }
-  parts.push('Device="Web Browser"', `Version="${getTunarrVersion()}"`);
+  parts.push(
+    'Client="Tunarr", Device="Web Browser"',
+    `Version="${getTunarrVersion()}"`,
+  );
 
   return `MediaBrowser ${parts.join(', ')}`;
 }
@@ -131,6 +134,7 @@ export class JellyfinApiClient extends BaseApiClient<JellyfinApiClientOptions> {
       if (isAxiosError(e) && e.config) {
         this.redactRequestInfo(e.config);
       }
+
       LoggerFactory.root.error(
         { error: e as unknown, className: JellyfinApiClient.name },
         'Error logging into Jellyfin',
