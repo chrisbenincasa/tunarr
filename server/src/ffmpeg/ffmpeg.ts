@@ -504,7 +504,7 @@ export class FFMPEG {
     // Map correct audio index. '?' so doesn't fail if no stream available.
     const audioIndex = isUndefined(streamStats)
       ? 'a'
-      : `${streamStats.audioIndex}`;
+      : `${streamStats.audioIndex ?? 'a'}`;
 
     //TODO: Do something about missing audio stream
     let inputFiles = 0;
@@ -533,7 +533,9 @@ export class FFMPEG {
     let currentAudio = '[audio]';
     // Initially, videoComplex does nothing besides assigning the label
     // to the input stream
-    const videoIndex = 'v';
+    const videoIndex = isNonEmptyString(streamStats?.videoStreamIndex)
+      ? streamStats.videoStreamIndex
+      : 'v';
     let audioComplex = `;[${audioFile}:${audioIndex}]anull[audio]`;
     let videoComplex = `;[${videoFile}:${videoIndex}]null[video]`;
     // Depending on the options we will apply multiple filters
@@ -879,11 +881,7 @@ export class FFMPEG {
       if (currentVideo !== '[video]') {
         filterComplex += videoComplex;
       } else {
-        currentVideo = `${videoFile}:${videoIndex}${
-          isNonEmptyString(streamStats?.videoStreamIndex)
-            ? ':' + streamStats.videoStreamIndex
-            : ''
-        }`;
+        currentVideo = `${videoFile}:${videoIndex}`;
       }
     }
     // same with audio:
