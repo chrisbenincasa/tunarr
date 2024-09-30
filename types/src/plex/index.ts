@@ -203,7 +203,7 @@ export const PlexMediaVideoStreamSchema = BasePlexMediaStreamSchema.extend({
   colorRange: z.string().optional(),
   colorSpace: z.string().optional(),
   colorTrc: z.string().optional(),
-  frameRate: z.number(),
+  frameRate: z.number().optional(),
   hasScalingMatrix: z.boolean().optional(),
   height: z.number(),
   width: z.number(),

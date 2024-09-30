@@ -258,7 +258,9 @@ export class PlexStreamDetails {
         videoStream.anamorphic === '1' || videoStream.anamorphic === true;
       streamDetails.videoCodec = videoStream.codec;
       // Keeping old behavior here for now
-      streamDetails.videoFramerate = Math.round(videoStream.frameRate);
+      streamDetails.videoFramerate = videoStream.frameRate
+        ? Math.round(videoStream.frameRate)
+        : undefined;
       streamDetails.videoHeight = videoStream.height;
       streamDetails.videoWidth = videoStream.width;
       streamDetails.videoBitDepth = videoStream.bitDepth;
