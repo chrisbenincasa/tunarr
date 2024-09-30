@@ -155,15 +155,22 @@ export abstract class Session<
    */
   async stop() {
     await this.lock.runExclusive(async () => {
-      if (this.state === 'started') {
-        this.logger.debug('Stopping stream session', this.channel.uuid);
-        await this.stopInternal();
-        this.emit('stop');
-      } else {
-        this.logger.debug(
-          'Wanted to shutdown session but state was %s',
-          this.state,
-        );
+      switch (this.state) {
+        case 'starting':
+        case 'started':
+          this.logger.debug('Stopping stream session', this.channel.uuid);
+          await this.stopInternal();
+          return;
+        case 'error':
+          this.logger.debug('Session already in error state. Cleaning it up.');
+          await this.stopInternal();
+          return;
+        default:
+          this.logger.debug(
+            'Wanted to shutdown session but state was %s',
+            this.state,
+          );
+          return;
       }
     });
   }

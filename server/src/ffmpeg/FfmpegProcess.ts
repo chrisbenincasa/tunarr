@@ -101,6 +101,8 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
     });
 
     this.#processHandle.on('exit', (code, signal) => {
+      this.#running = false;
+
       const expected =
         (this.#processKilled &&
           (code === null || signal === 'SIGTERM' || signal === 'SIGKILL')) ||
@@ -153,7 +155,7 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
 
     if (this.#processHandle.killed || !this.#running) {
       this.#logger.debug(
-        `${this.ffmpegName} received kill command but was already killed.`,
+        `${this.ffmpegName} received kill command but process already ended.`,
       );
       return;
     } else {
