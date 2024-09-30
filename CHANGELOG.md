@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.12.2](https://github.com/chrisbenincasa/tunarr/compare/v0.12.1...v0.12.2) (2024-09-30)
+
+
+### Bug Fixes
+
+* improvements to session error state handling / cleanup ([550846e](https://github.com/chrisbenincasa/tunarr/commit/550846e9393fb49f9353c91811b72e12bf1bdbaf))
+* include Client authorization value in Jellyfin auth header ([803faf8](https://github.com/chrisbenincasa/tunarr/commit/803faf8f39f87aa88a01f4b14236dc389a436275))
+* mark plex video frame rate field as optional ([9307a18](https://github.com/chrisbenincasa/tunarr/commit/9307a1846be8f231f0ca187d72ef4023f49f2043)), closes [#819](https://github.com/chrisbenincasa/tunarr/issues/819)
+
 ## [0.12.1](https://github.com/chrisbenincasa/tunarr/compare/v0.12.0...v0.12.1) (2024-09-30)
 
 
