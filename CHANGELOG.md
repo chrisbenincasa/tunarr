@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.12.1](https://github.com/chrisbenincasa/tunarr/compare/v0.12.0...v0.12.1) (2024-09-30)
+
+
+### Bug Fixes
+
+* bail on HLS stream wait if an error occurred on startup ([0a611c3](https://github.com/chrisbenincasa/tunarr/commit/0a611c30d4aab03f6cd276f59bfc77681cfa68c8))
+* **server:** properly close event channels on server shutdown ([b7b2be6](https://github.com/chrisbenincasa/tunarr/commit/b7b2be6616d6745bd0591a6979740ec70290b8cb))
+* **server:** use existing mappings in BackfillProgramGroupings fixer ([b7b2be6](https://github.com/chrisbenincasa/tunarr/commit/b7b2be6616d6745bd0591a6979740ec70290b8cb))
+* treat video stream indexes as absolute ([d7f65ca](https://github.com/chrisbenincasa/tunarr/commit/d7f65ca78fa9c6fde83f4c63d09e91e89a9446fc))
+* **web:** ability to perfectly loop block shuffled shows + other block shuffle fixes ([b7b2be6](https://github.com/chrisbenincasa/tunarr/commit/b7b2be6616d6745bd0591a6979740ec70290b8cb))
+
 ## [0.12.0](https://github.com/chrisbenincasa/tunarr/compare/v0.11.0...v0.12.0) (2024-09-27)
 
 
