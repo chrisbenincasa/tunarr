@@ -1,8 +1,13 @@
 import { enumerateJellyfinItem } from '@/hooks/jellyfin/jellyfinHookUtil.ts';
-import { startProgramAddOperation } from '@/store/entityEditor/actions.ts';
+import {
+  addSelectedMediaToEntityEditor,
+  startProgramAddOperation,
+  stopProgramAddOperation,
+} from '@/store/entityEditor/actions.ts';
 import { useKnownMedia } from '@/store/programmingSelector/selectors.ts';
 import { useCurrentEditor } from '@/store/selectors.ts';
 import { flattenDeep, map } from 'lodash-es';
+import { useSnackbar } from 'notistack';
 import { MouseEventHandler, useState } from 'react';
 import {
   forSelectedMediaType,
@@ -19,12 +24,14 @@ export const useAddSelectedItems = (
   onAddSelectedMedia: (items: AddedMedia[]) => void,
   onAddMediaSuccess: () => void,
 ) => {
+  const [currentEditor] = useState(useStore((s) => s.currentEditor));
   const currentEditorState = useCurrentEditor();
   console.log(currentEditorState);
   const apiClient = useTunarrApi();
   const knownMedia = useKnownMedia();
   const selectedMedia = useStore((s) => s.selectedMedia);
   const [isLoading, setIsLoading] = useState(false);
+  const snackbar = useSnackbar();
 
   const addSelectedItems: MouseEventHandler = (e) => {
     e.preventDefault();
@@ -90,13 +97,26 @@ export const useAddSelectedItems = (
       }),
     )
       .then(flattenDeep)
-      .then(onAddSelectedMedia)
-      .then(() => {
+      .then((flattened) => {
+        // onAddSelectedMedia(flattened);
+        console.log('adding', currentEditor, flattened);
+        addSelectedMediaToEntityEditor(currentEditor!, flattened);
         clearSelectedMedia();
-        setIsLoading(false);
         onAddMediaSuccess();
       })
-      .catch(console.error);
+      .catch((e) => {
+        snackbar.enqueueSnackbar(
+          'Error while adding programs. Check browser console log for details.',
+          {
+            variant: 'error',
+          },
+        );
+        console.error(e);
+      })
+      .finally(() => {
+        setIsLoading(false);
+        stopProgramAddOperation(currentEditor!);
+      });
   };
 
   return { addSelectedItems, isLoading };

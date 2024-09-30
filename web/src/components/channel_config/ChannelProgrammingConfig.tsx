@@ -40,6 +40,7 @@ export function ChannelProgrammingConfig() {
     originalEntity: originalChannel,
     schedule,
     programList: newLineup,
+    addProgramsInProgress,
   } = useChannelEditor();
   const theme = useTheme();
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
@@ -178,7 +179,7 @@ export function ChannelProgrammingConfig() {
               slotProps={{ textField: { size: 'small' } }}
             />
           </Box>
-          <ChannelProgrammingTools />
+          <ChannelProgrammingTools disabled={addProgramsInProgress} />
           <ChannelProgrammingSort />
           <AddProgrammingButton />
           {programsDirty && (

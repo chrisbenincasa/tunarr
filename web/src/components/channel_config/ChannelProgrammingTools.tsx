@@ -52,7 +52,11 @@ const StyledMenu = styled((props: MenuProps) => (
   },
 }));
 
-export function ChannelProgrammingTools() {
+type Props = {
+  disabled: boolean;
+};
+
+export function ChannelProgrammingTools({ disabled }: Props) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -69,6 +73,7 @@ export function ChannelProgrammingTools() {
         endIcon={<KeyboardArrowDownIcon />}
         onClick={handleClick}
         variant="contained"
+        disabled={disabled}
       >
         Tools
       </Button>

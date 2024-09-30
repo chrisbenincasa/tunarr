@@ -31,7 +31,7 @@ import {
 } from '../../helpers/util.ts';
 import { EnrichedPlexMedia } from '../../hooks/plex/plexHookUtil.ts';
 import { AddedMedia, UIChannelProgram, UIIndex } from '../../types/index.ts';
-import { emptyEntityEditor } from '../entityEditor/util.ts';
+import { emptyChannelEditor } from '../entityEditor/util.ts';
 import useStore from '../index.ts';
 import { ChannelEditorState, initialChannelEditorState } from './store.ts';
 
@@ -45,7 +45,7 @@ export const resetChannelEditorState = () =>
     return newState;
   });
 
-function addIndexesAndCalculateOffsets<T extends { duration: number }>(
+export function addIndexesAndCalculateOffsets<T extends { duration: number }>(
   items: T[],
   firstOffset: number = 0,
   firstIndex: number = 0,
@@ -101,7 +101,7 @@ export const safeSetCurrentChannel = (
 ) =>
   useStore.setState((state) => {
     state.currentEditor = { type: 'channel', id: channel.id };
-    state.channels[channel.id] ??= emptyEntityEditor();
+    state.channels[channel.id] ??= emptyChannelEditor();
     const channelState = state.channels[channel.id];
     channelState.currentEntity = channel;
     channelState.originalEntity = channel;

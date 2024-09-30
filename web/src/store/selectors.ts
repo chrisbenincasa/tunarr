@@ -1,7 +1,12 @@
 import { CondensedChannelProgram, ContentProgram } from '@tunarr/types';
 import { chain, isNil, isUndefined } from 'lodash-es';
-import { P, match } from 'ts-pattern';
 import { UIChannelProgram, UIIndex } from '../types/index.ts';
+import {
+  ChannelEditorState,
+  MaterializedChannelEditorState,
+} from './channelEditor/store.ts';
+import { getEditorOfType } from './entityEditor/actions.ts';
+import { emptyEditorOfType } from './entityEditor/util.ts';
 import useStore, { State } from './index.ts';
 
 const materializeProgramList = (
@@ -56,9 +61,17 @@ export const materializedProgramListSelector = ({
 };
 
 // Selects the channel editor but also materializes the program list array
-export const useChannelEditor = () => {
+export const useChannelEditor = (): MaterializedChannelEditorState => {
   return useStore((s) => {
-    const editor = s.channelEditor;
+    const currentEditor = s.currentEditor;
+    if (currentEditor?.type !== 'channel') {
+      return emptyEditorOfType();
+    }
+
+    const editor: ChannelEditorState =
+      (currentEditor.id ? s.channels[currentEditor.id] : emptyEditorOfType()) ??
+      emptyEditorOfType();
+
     return {
       ...editor,
       programList: materializeProgramList(editor.programList, s.programLookup),
@@ -97,13 +110,5 @@ export const useFillerListEditor = () => {
 };
 
 export const useCurrentEditor = () => {
-  return useStore((s) =>
-    match(s.currentEditor)
-      .with({ type: 'channel', id: P.select() }, (id) =>
-        id ? s.channels[id] : null,
-      )
-      .with({ type: 'custom_show' }, () => s.customShowEditor)
-      .with({ type: 'filler_list' }, () => s.fillerListEditor)
-      .otherwise(() => null),
-  );
+  return useStore((s) => getEditorOfType(s));
 };

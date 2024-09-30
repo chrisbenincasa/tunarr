@@ -1,9 +1,13 @@
 import { Draft } from 'immer';
-import { EntityState, HasId } from '../channelEditor/store';
+import {
+  BaseEntityEditorState,
+  ChannelEditorState,
+  HasId,
+} from '../channelEditor/store';
 import useStore from '../index.ts';
 
 export function deleteProgramAtIndex<T extends HasId>(
-  state: Draft<EntityState<T, unknown>>,
+  state: Draft<BaseEntityEditorState<T, unknown>>,
   idx: number,
 ) {
   if (
@@ -30,13 +34,38 @@ export const removeFillerListProgram = (idx: number) =>
     deleteProgramAtIndex(fillerListEditor, idx);
   });
 
-export const emptyEntityEditor = () => ({
+export const emptyEntityEditor = <
+  EntityType extends HasId,
+  ProgramType,
+>(): BaseEntityEditorState<EntityType, ProgramType> => ({
   originalProgramList: [],
   programList: [],
-  schedulePreviewList: [],
   programsLoaded: false,
   dirty: {
     programs: false,
   },
   addProgramsInProgress: false,
+});
+
+export const emptyChannelEditor = (): ChannelEditorState => ({
+  ...emptyEntityEditor(),
+  type: 'channel',
+});
+
+export const emptyEditorOfType = <
+  Editor extends BaseEntityEditorState<HasId, unknown>,
+  EntityType extends HasId = Editor extends BaseEntityEditorState<
+    infer EntityTypeInferred,
+    unknown
+  >
+    ? EntityTypeInferred
+    : never,
+  ProgramType = Editor extends BaseEntityEditorState<
+    HasId,
+    infer ProgramTypeInferred
+  >
+    ? ProgramTypeInferred
+    : never,
+>(): BaseEntityEditorState<EntityType, ProgramType> => ({
+  ...emptyEntityEditor(),
 });
