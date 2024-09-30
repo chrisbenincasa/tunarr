@@ -6,6 +6,7 @@ import {
   JellyfinLibrary,
   PlexLibrary,
 } from '@/store/programmingSelector/store.ts';
+import { useCurrentChannel } from '@/store/selectors.ts';
 import {
   AddCircle,
   CheckBoxOutlineBlank,
@@ -72,6 +73,7 @@ export default function SelectedProgrammingActions({
   selectAllEnabled = true,
   toggleOrSetSelectedProgramsDrawer, // onSelectionModalClose,
 }: Props) {
+  const channel = useCurrentChannel();
   const apiClient = useTunarrApi();
   const [selectedServer, selectedLibrary] = useCurrentMediaSourceAndLibrary();
   const { urlFilter: plexSearch } = useStore(

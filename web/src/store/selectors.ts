@@ -48,7 +48,8 @@ const materializeProgramList = (
 };
 
 export const materializedProgramListSelector = ({
-  channelEditor: { programList, programLookup },
+  channelEditor: { programList },
+  programLookup,
 }: State): UIChannelProgram[] => {
   return materializeProgramList(programList, programLookup);
 };
@@ -59,16 +60,17 @@ export const useChannelEditor = () => {
     const editor = s.channelEditor;
     return {
       ...editor,
-      programList: materializeProgramList(
-        editor.programList,
-        editor.programLookup,
-      ),
+      programList: materializeProgramList(editor.programList, s.programLookup),
       originalProgramList: materializeProgramList(
         editor.originalProgramList,
-        editor.programLookup,
+        s.programLookup,
       ),
     };
   });
+};
+
+export const useCurrentChannel = () => {
+  return useStore((s) => s.channelEditor.currentEntity);
 };
 
 export const useCustomShowEditor = () => {

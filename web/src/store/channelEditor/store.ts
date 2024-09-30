@@ -18,6 +18,7 @@ export interface ProgrammingEditorState<EntityType extends HasId, ProgramType> {
   originalEntity?: EntityType;
   // The working entity - edits should be made directly here
   currentEntity?: EntityType;
+  currentEntityId?: string;
   // The programs in the state they were when we fetched them
   // This can be used to reset the state of the editor and
   // start over changes without having to close/enter the page
@@ -34,9 +35,6 @@ export type ChannelEditorState = ProgrammingEditorState<
   Channel,
   UICondensedChannelProgram
 > & {
-  // Since for channels we deal with 'condensed' programs, we need to have
-  // the lookup record for programs by ID
-  programLookup: Record<string, ContentProgram>;
   schedule?: LineupSchedule;
   dynamicContentConfiguration?: DynamicContentConfig;
 };
@@ -48,6 +46,7 @@ export type FillerListEditor = ProgrammingEditorState<
 
 export interface EditorsState {
   channelEditor: ChannelEditorState;
+  channels: Record<string, ChannelEditorState>;
   customShowEditor: ProgrammingEditorState<
     CustomShow,
     ContentProgram | CustomProgram // You cannot add Flex to custom shows
@@ -56,10 +55,15 @@ export interface EditorsState {
     FillerList,
     ContentProgram | CustomProgram // You cannot add Flex to custom shows
   >;
+  // Since for channels we deal with 'condensed' programs, we need to have
+  // the lookup record for programs by ID
+  programLookup: Record<string, ContentProgram>;
 }
 
 export const initialChannelEditorState: EditorsState = {
-  channelEditor: { ...emptyEntityEditor(), programLookup: {} },
+  channelEditor: { ...emptyEntityEditor() },
+  channels: {},
+  programLookup: {},
   customShowEditor: emptyEntityEditor(),
   fillerListEditor: emptyEntityEditor(),
 };

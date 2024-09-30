@@ -31,6 +31,7 @@ import {
 } from '../../helpers/util.ts';
 import { EnrichedPlexMedia } from '../../hooks/plex/plexHookUtil.ts';
 import { AddedMedia, UIChannelProgram, UIIndex } from '../../types/index.ts';
+import { emptyEntityEditor } from '../entityEditor/util.ts';
 import useStore from '../index.ts';
 import { ChannelEditorState, initialChannelEditorState } from './store.ts';
 
@@ -69,7 +70,6 @@ function updateProgramList(
   channelEditor.programsLoaded = true;
   channelEditor.originalProgramList = [...programs];
   channelEditor.programList = [...programs];
-  channelEditor.programLookup = { ...programming.programs };
   channelEditor.schedule = programming.schedule;
 }
 
@@ -81,11 +81,13 @@ export const setCurrentChannel = (
   channel: Omit<Channel, 'programs'>,
   programming?: CondensedChannelProgramming,
 ) =>
-  useStore.setState(({ channelEditor }) => {
-    channelEditor.currentEntity = channel;
-    channelEditor.originalEntity = channel;
+  useStore.setState((state) => {
+    state.channelEditor.currentEntity = channel;
+    state.channelEditor.originalEntity = channel;
     if (programming) {
-      updateProgramList(channelEditor, programming);
+      updateProgramList(state.channelEditor, programming);
+      state.programLookup = { ...state.programLookup, ...programming.programs };
+      console.log(state.programLookup);
     }
   });
 
@@ -97,24 +99,30 @@ export const safeSetCurrentChannel = (
   channel: Omit<Channel, 'programs'>,
   programming?: CondensedChannelProgramming,
 ) =>
-  useStore.setState(({ channelEditor }) => {
-    console.log('here', { ...channelEditor });
-    if (channelEditor.currentEntity?.id !== channel.id) {
-      channelEditor.currentEntity = channel;
-      channelEditor.originalEntity = channel;
-      if (programming) {
-        updateProgramList(channelEditor, programming);
-      }
-    } else if (!channelEditor.programsLoaded && programming) {
-      updateProgramList(channelEditor, programming);
+  useStore.setState((state) => {
+    state.channels[channel.id] ??= emptyEntityEditor();
+    const channelState = state.channels[channel.id];
+    channelState.currentEntity = channel;
+    channelState.originalEntity = channel;
+    if (programming) {
+      updateProgramList(channelState, programming);
     }
-  });
+    state.channelEditor.currentEntityId = channel.id;
 
-export const setCurrentChannelProgramming = (
-  programming: CondensedChannelProgramming,
-) =>
-  useStore.setState(({ channelEditor }) => {
-    updateProgramList(channelEditor, programming);
+    if (state.channelEditor.currentEntity?.id !== channel.id) {
+      state.channelEditor.currentEntity = channel;
+      state.channelEditor.originalEntity = channel;
+      if (programming) {
+        updateProgramList(state.channelEditor, programming);
+        state.programLookup = {
+          ...state.programLookup,
+          ...programming.programs,
+        };
+      }
+    } else if (!state.channelEditor.programsLoaded && programming) {
+      updateProgramList(state.channelEditor, programming);
+      state.programLookup = { ...state.programLookup, ...programming.programs };
+    }
   });
 
 export const setCurrentLineup = (
@@ -134,7 +142,7 @@ export const resetCurrentLineup = (programming: CondensedChannelProgramming) =>
     const zippedLineup = addIndexesAndCalculateOffsets(programming.lineup);
     state.channelEditor.programList = [...zippedLineup];
     state.channelEditor.originalProgramList = [...zippedLineup];
-    state.channelEditor.programLookup = { ...programming.programs };
+    state.programLookup = { ...state.programLookup, ...programming.programs };
     state.channelEditor.dirty.programs = false;
     state.channelEditor.schedule = programming.schedule;
   });
@@ -344,7 +352,7 @@ export const jellyfinItemToContentProgram = (
 };
 
 export const addMediaToCurrentChannel = (programs: AddedMedia[]) =>
-  useStore.setState(({ channelEditor }) => {
+  useStore.setState(({ channelEditor, programLookup }) => {
     if (channelEditor.currentEntity && programs.length > 0) {
       channelEditor.dirty.programs = true;
       const addedDuration = sumBy(
@@ -402,6 +410,6 @@ export const addMediaToCurrentChannel = (programs: AddedMedia[]) =>
         .mapValues(unwrapNil(first))
         .value();
 
-      extend(channelEditor.programLookup, contentProgramsById);
+      extend(programLookup, contentProgramsById);
     }
   });
