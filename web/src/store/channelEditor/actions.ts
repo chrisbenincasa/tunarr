@@ -82,12 +82,12 @@ export const setCurrentChannel = (
   programming?: CondensedChannelProgramming,
 ) =>
   useStore.setState((state) => {
+    state.currentEditor = { type: 'channel', id: channel.id };
     state.channelEditor.currentEntity = channel;
     state.channelEditor.originalEntity = channel;
     if (programming) {
       updateProgramList(state.channelEditor, programming);
       state.programLookup = { ...state.programLookup, ...programming.programs };
-      console.log(state.programLookup);
     }
   });
 
@@ -100,6 +100,7 @@ export const safeSetCurrentChannel = (
   programming?: CondensedChannelProgramming,
 ) =>
   useStore.setState((state) => {
+    state.currentEditor = { type: 'channel', id: channel.id };
     state.channels[channel.id] ??= emptyEntityEditor();
     const channelState = state.channels[channel.id];
     channelState.currentEntity = channel;

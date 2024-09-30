@@ -1,9 +1,9 @@
 import { Draft } from 'immer';
-import { HasId, ProgrammingEditorState } from '../channelEditor/store';
+import { EntityState, HasId } from '../channelEditor/store';
 import useStore from '../index.ts';
 
 export function deleteProgramAtIndex<T extends HasId>(
-  state: Draft<ProgrammingEditorState<T, unknown>>,
+  state: Draft<EntityState<T, unknown>>,
   idx: number,
 ) {
   if (
@@ -38,4 +38,5 @@ export const emptyEntityEditor = () => ({
   dirty: {
     programs: false,
   },
+  addProgramsInProgress: false,
 });

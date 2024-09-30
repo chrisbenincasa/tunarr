@@ -1,5 +1,6 @@
 import { CondensedChannelProgram, ContentProgram } from '@tunarr/types';
 import { chain, isNil, isUndefined } from 'lodash-es';
+import { P, match } from 'ts-pattern';
 import { UIChannelProgram, UIIndex } from '../types/index.ts';
 import useStore, { State } from './index.ts';
 
@@ -93,4 +94,16 @@ export const useFillerListEditor = () => {
       originalProgramList: editor.originalProgramList,
     };
   });
+};
+
+export const useCurrentEditor = () => {
+  return useStore((s) =>
+    match(s.currentEditor)
+      .with({ type: 'channel', id: P.select() }, (id) =>
+        id ? s.channels[id] : null,
+      )
+      .with({ type: 'custom_show' }, () => s.customShowEditor)
+      .with({ type: 'filler_list' }, () => s.fillerListEditor)
+      .otherwise(() => null),
+  );
 };

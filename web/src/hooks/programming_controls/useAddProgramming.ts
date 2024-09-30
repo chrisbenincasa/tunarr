@@ -1,5 +1,7 @@
 import { enumerateJellyfinItem } from '@/hooks/jellyfin/jellyfinHookUtil.ts';
+import { startProgramAddOperation } from '@/store/entityEditor/actions.ts';
 import { useKnownMedia } from '@/store/programmingSelector/selectors.ts';
+import { useCurrentEditor } from '@/store/selectors.ts';
 import { flattenDeep, map } from 'lodash-es';
 import { MouseEventHandler, useState } from 'react';
 import {
@@ -17,6 +19,8 @@ export const useAddSelectedItems = (
   onAddSelectedMedia: (items: AddedMedia[]) => void,
   onAddMediaSuccess: () => void,
 ) => {
+  const currentEditorState = useCurrentEditor();
+  console.log(currentEditorState);
   const apiClient = useTunarrApi();
   const knownMedia = useKnownMedia();
   const selectedMedia = useStore((s) => s.selectedMedia);
@@ -26,6 +30,7 @@ export const useAddSelectedItems = (
     e.preventDefault();
     e.stopPropagation();
     setIsLoading(true);
+    startProgramAddOperation();
     sequentialPromises(
       selectedMedia,
       forSelectedMediaType<Promise<AddedMedia[]>>({

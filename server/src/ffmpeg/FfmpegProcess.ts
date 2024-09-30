@@ -101,10 +101,13 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
     });
 
     this.#processHandle.on('exit', (code, signal) => {
+      this.#running = false;
+
       const expected =
         (this.#processKilled &&
           (code === null || signal === 'SIGTERM' || signal === 'SIGKILL')) ||
         code === 0;
+
       this.#logger.info(
         { args: argsWithTokenRedacted },
         `${this.ffmpegName} exited. (signal=%s, code=%d, expected?=%s)`,
