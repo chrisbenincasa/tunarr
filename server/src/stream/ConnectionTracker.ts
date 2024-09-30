@@ -17,8 +17,9 @@ export class ConnectionTracker<
   #connections: Record<string, ConnectionDetails> = {};
   #heartbeats: Record<string, number> = {};
 
-  constructor(private id: string) {
+  constructor(id: string) {
     super();
+    this.#logger.setBindings({ id });
   }
 
   addConnection(token: string, connection: ConnectionDetails) {
@@ -59,13 +60,13 @@ export class ConnectionTracker<
 
   scheduleCleanup(delay: number) {
     if (this.#cleanupFunc) {
-      this.#logger.debug('Cleanup already scheduled (id=%s)', this.id);
+      this.#logger.debug('Cleanup already scheduled');
       // We already scheduled shutdown
       return false;
     }
-    this.#logger.debug('Scheduling session shutdown (id=%s)', this.id);
+    this.#logger.debug('Scheduling session shutdown');
     this.#cleanupFunc = setTimeout(() => {
-      this.#logger.debug('Shutting down connection tracker (id=%s)', this.id);
+      this.#logger.debug('Shutting down connection tracker');
       if (isEmpty(this.#connections)) {
         this.emit('cleanup');
       } else {

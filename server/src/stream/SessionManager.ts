@@ -121,9 +121,8 @@ export class SessionManager {
     for (const session of Object.values(this.#sessions)) {
       if (session.isStale() && session.scheduleCleanup()) {
         this.#logger.debug(
-          'Scheduled cleanup on session (type=%s, id=%s)',
-          session.sessionType,
-          session.id,
+          { sessionType: session.sessionType, id: session.id },
+          'Scheduled cleanup on session',
         );
       }
     }
@@ -230,7 +229,10 @@ export class SessionManager {
           this.addSession(channel.uuid, session.sessionType, session);
 
           session.on('error', (e) => {
-            this.#logger.error(e, 'Received error from session. Shutting down');
+            this.#logger.error(
+              { error: e, sessionType, channelId },
+              'Received error from session. Shutting down',
+            );
             session?.stop().catch((e) => {
               this.#logger.error(
                 e,

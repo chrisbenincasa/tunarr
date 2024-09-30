@@ -87,12 +87,23 @@ export abstract class BaseHlsSession<
   protected override async waitForStreamReady(): Promise<Result<void>> {
     // Wait for the stream to become ready
     try {
-      this.logger.debug(
-        'Waiting for HLS stream session to be ready... %s',
-        this.state,
-      );
+      this.logger.debug('Waiting for HLS stream session to be ready...');
       await retry(
         async (bail) => {
+          if (this.hasError) {
+            this.logger.error(
+              this.error,
+              'Bailing on stream start, had error!',
+            );
+            bail(
+              this.error ??
+                new Error(
+                  'Received error while waiting for stream to be ready',
+                ),
+            );
+            return;
+          }
+
           const workingDirectoryFiles = await Result.attemptAsync(() =>
             fs.readdir(this._workingDirectory),
           );
