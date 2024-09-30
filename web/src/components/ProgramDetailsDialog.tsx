@@ -1,5 +1,6 @@
 import JellyfinIcon from '@/assets/jellyfin.svg?react';
 import PlexIcon from '@/assets/plex.svg?react';
+import { ProgramDebugDetailsMenu } from '@/dev/ProgramDebugDetailsMenu.tsx';
 import { Maybe } from '@/types/util.ts';
 import { Close as CloseIcon, OpenInNew } from '@mui/icons-material';
 import {
@@ -19,11 +20,7 @@ import {
 } from '@mui/material';
 import { createExternalId } from '@tunarr/shared';
 import { forProgramType } from '@tunarr/shared/util';
-import {
-  ChannelProgram,
-  TvGuideProgram,
-  isContentProgram,
-} from '@tunarr/types';
+import { ChannelProgram, isContentProgram } from '@tunarr/types';
 import dayjs, { Dayjs } from 'dayjs';
 import { capitalize, compact, find, isUndefined } from 'lodash-es';
 import {
@@ -40,7 +37,7 @@ import { useSettings } from '../store/settings/selectors';
 type Props = {
   open: boolean;
   onClose: () => void;
-  program: TvGuideProgram | ChannelProgram | undefined;
+  program: ChannelProgram | undefined;
   start?: Dayjs;
   stop?: Dayjs;
 };
@@ -316,14 +313,18 @@ export default function ProgramDetailsDialog({
         onClose={onClose}
         fullScreen={smallViewport}
       >
-        <DialogTitle variant="h4" sx={{ marginRight: 3 }}>
-          {formattedTitle(program)}{' '}
+        <DialogTitle
+          variant="h4"
+          sx={{ display: 'flex', alignItems: 'center' }}
+        >
+          <Box sx={{ flex: 1 }}>{formattedTitle(program)} </Box>
+          <ProgramDebugDetailsMenu program={program} />
           <IconButton
             edge="start"
             color="inherit"
             onClick={() => onClose()}
             aria-label="close"
-            sx={{ position: 'absolute', top: 10, right: 10 }}
+            // sx={{ position: 'absolute', top: 10, right: 10 }}
             size="large"
           >
             <CloseIcon />

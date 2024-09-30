@@ -218,8 +218,10 @@ export const moveProgramInCurrentChannel = (
   useStore.setState(({ channelEditor }) => {
     const programIdx = findIndex(channelEditor.programList, { originalIndex });
     if (inRange(toIndex, channelEditor.programList.length) && programIdx >= 0) {
-      const item = channelEditor.programList.splice(programIdx, 1);
-      channelEditor.programList.splice(toIndex, 0, ...item);
+      const fromItem = channelEditor.programList[programIdx];
+      const toItem = channelEditor.programList[toIndex];
+      channelEditor.programList[programIdx] = toItem;
+      channelEditor.programList[toIndex] = fromItem;
       channelEditor.dirty.programs = true;
     }
   });

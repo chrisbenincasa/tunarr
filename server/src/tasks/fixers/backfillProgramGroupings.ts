@@ -1,5 +1,6 @@
 import { Loaded, ref } from '@mikro-orm/better-sqlite';
 import { PlexLibraryShows, PlexSeasonView } from '@tunarr/types/plex';
+import { NotNull } from 'kysely';
 import ld, {
   chunk,
   concat,
@@ -7,17 +8,20 @@ import ld, {
   find,
   first,
   forEach,
+  head,
   isEmpty,
   isNil,
   isUndefined,
   map,
   reduce,
   some,
+  tail,
   uniq,
 } from 'lodash-es';
 import { ProgramExternalIdType } from '../../dao/custom_types/ProgramExternalIdType';
 import { ProgramSourceType } from '../../dao/custom_types/ProgramSourceType';
 import { getEm } from '../../dao/dataSource';
+import { directDbAccess } from '../../dao/direct/directDbAccess.js';
 import { MediaSource } from '../../dao/entities/MediaSource';
 import { Program, ProgramType } from '../../dao/entities/Program';
 import {
@@ -29,6 +33,8 @@ import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory';
 import { LoggerFactory } from '../../util/logging/LoggerFactory';
 import Fixer from './fixer';
 
+// TODO: Handle Jellyfin items
+// Generalize and reuse the calculator
 export class BackfillProgramGroupings extends Fixer {
   private logger = LoggerFactory.child({
     caller: import.meta,
@@ -38,6 +44,49 @@ export class BackfillProgramGroupings extends Fixer {
   protected async runInternal(): Promise<void> {
     const em = getEm();
     const plexServers = await getEm().findAll(MediaSource);
+
+    // We'll try filling using the data we have first...
+    const results = await directDbAccess()
+      .selectFrom('program')
+      .select(['program.uuid', 'program.tvShowUuid'])
+      .where('program.seasonUuid', 'is not', null)
+      .where('program.tvShowUuid', 'is not', null)
+      .innerJoin('programGrouping', (join) =>
+        join
+          .onRef('programGrouping.uuid', '=', 'program.seasonUuid')
+          .on('programGrouping.showUuid', 'is', null),
+      )
+      .select('programGrouping.uuid as seasonId')
+      .groupBy(['program.seasonUuid', 'program.tvShowUuid'])
+      .$narrowType<{ tvShowUuid: NotNull }>()
+      .execute();
+
+    for (const result of chunk(results, 50)) {
+      const first = head(result)!;
+      const rest = tail(result);
+      await directDbAccess()
+        .transaction()
+        .execute((tx) =>
+          tx
+            .updateTable('programGrouping')
+            .set(({ eb }) => {
+              return {
+                showUuid: reduce(
+                  rest,
+                  (ebb, r) =>
+                    ebb
+                      .when('programGrouping.uuid', '=', r.seasonId)
+                      .then(r.tvShowUuid),
+                  eb
+                    .case()
+                    .when('programGrouping.uuid', '=', first.seasonId)
+                    .then(first.tvShowUuid),
+                ).end(),
+              };
+            })
+            .execute(),
+        );
+    }
 
     // Update shows first, then seasons, so we can relate them
     const serversAndShows = await em

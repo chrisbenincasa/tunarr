@@ -38,7 +38,7 @@ type AddBlockShuffleModalProps = {
 };
 
 const AddBlockShuffleModal = ({ open, onClose }: AddBlockShuffleModalProps) => {
-  const blockShuffle = useBlockShuffle();
+  const { blockShuffle, canUsePerfectSync } = useBlockShuffle();
 
   const { control, watch, getValues } = useForm<BlockShuffleConfig>({
     defaultValues: {
@@ -54,6 +54,7 @@ const AddBlockShuffleModal = ({ open, onClose }: AddBlockShuffleModalProps) => {
         },
       },
       loopBlocks: false,
+      perfectSync: false,
     },
   });
 
@@ -61,6 +62,9 @@ const AddBlockShuffleModal = ({ open, onClose }: AddBlockShuffleModalProps) => {
     blockShuffle(getValues());
     onClose();
   };
+
+  const blockSize = watch('blockSize');
+  const usePerfectSyncDisabled = !canUsePerfectSync(blockSize);
 
   const isRandom = watch('shuffleType') === 'Random';
 
@@ -210,6 +214,22 @@ const AddBlockShuffleModal = ({ open, onClose }: AddBlockShuffleModalProps) => {
             <FormHelperText>
               If set, any programming group with fewer episodes will be looped
               in order to make perfectly even blocks.
+            </FormHelperText>
+          </FormControl>
+          <FormControl fullWidth>
+            <FormControlLabel
+              control={
+                <CheckboxFormController control={control} name="perfectSync" />
+              }
+              disabled={usePerfectSyncDisabled}
+              label="Experimental: Make perfect schedule loop"
+            />
+            <FormHelperText>
+              Calculates a schedule where all programs end at the same time,
+              creating a perfectly looping schedule.
+              <br />
+              {usePerfectSyncDisabled &&
+                'This option is disabled because it would calculate a schedule that is too long.'}
             </FormHelperText>
           </FormControl>
         </Stack>

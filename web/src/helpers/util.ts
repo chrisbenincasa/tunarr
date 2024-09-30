@@ -490,3 +490,10 @@ export function isValidUrlWithError(url: string, allowEmpty: boolean = false) {
 export function isValidUrl(url: string, allowEmpty: boolean = false) {
   return isUndefined(isValidUrlWithError(url, allowEmpty));
 }
+
+export const ifProd = <T>(f: () => T): T | null => {
+  if (process.env.NODE_ENV === 'production' || import.meta.env.PROD) {
+    return f();
+  }
+  return null;
+};

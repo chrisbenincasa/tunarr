@@ -23,9 +23,11 @@ export class EventService {
     this.stream = new EventEmitter() as TypedEventEmitter<Events>;
     this._heartbeat = setInterval(() => {
       this.push({ type: 'heartbeat', level: 'info' });
-    }, 5000);
+    }, 5000).unref();
+
     this.stream.on('close', () => {
       clearInterval(this._heartbeat);
+      this.stream.removeAllListeners();
     });
   }
 
@@ -38,7 +40,7 @@ export class EventService {
         },
       },
       (request, response) => {
-        this.logger.info('Open event channel.');
+        this.logger.debug({ ip: request.ip }, 'Open event channel');
         const outStream = new Readable();
         outStream._read = () => {};
 
@@ -54,8 +56,12 @@ export class EventService {
         this.stream.on('push', listener);
 
         request.socket.on('close', () => {
-          this.logger.info('Remove event channel.');
+          this.logger.debug({ ip: request.ip }, 'Remove event channel.');
           this.stream.removeListener('push', listener);
+        });
+
+        this.stream.on('close', () => {
+          response.raw.end();
         });
 
         return response
@@ -74,5 +80,9 @@ export class EventService {
       this.logger.debug('Push event: ' + data['message']); // Why?
     }
     this.stream.emit('push', { ...data });
+  }
+
+  close() {
+    this.stream.emit('close');
   }
 }

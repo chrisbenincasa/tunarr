@@ -1,13 +1,17 @@
 import {
   chain,
   chunk,
+  flatMap,
   forEach,
+  isEmpty,
   isUndefined,
+  map,
   mapValues,
   max,
   range,
   shuffle,
   sortBy,
+  values,
 } from 'lodash-es';
 import { setCurrentLineup } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
@@ -36,6 +40,7 @@ export interface BlockShuffleConfig {
     };
   };
   loopBlocks?: boolean;
+  perfectSync?: boolean;
 }
 
 function sortProgram(
@@ -51,13 +56,14 @@ function sortProgram(
     case 'index': {
       let n = 1;
 
-      if (!isUndefined(p.parentIndex)) {
-        n *= p.parentIndex * 1e4;
+      if (!isUndefined(p.seasonNumber)) {
+        n += p.seasonNumber * 1e4;
       }
 
-      if (!isUndefined(p.index)) {
-        n *= p.index * 1e2;
+      if (!isUndefined(p.episodeNumber)) {
+        n += p.episodeNumber * 1e2;
       }
+
       return asc ? n : -n;
     }
 
@@ -69,82 +75,182 @@ function sortProgram(
 export function useBlockShuffle() {
   const programs = useStore(materializedProgramListSelector);
 
-  return function (options: BlockShuffleConfig | null) {
-    let programList = chain(programs)
-      .filter(
-        (p): p is UIContentProgram | UICustomProgram =>
-          isUIContentProgram(p) || isUICustomProgram(p),
-      )
-      .value();
+  return {
+    canUsePerfectSync: (blockSize: number) =>
+      canUsePerfectSync(programs, blockSize),
+    blockShuffle: (options: BlockShuffleConfig | null) =>
+      blockShuffle(programs, options),
+  };
+}
 
-    if (options?.shuffleType === 'Random') {
-      programList = shuffle(programList);
+function groupProgram(program: UIContentProgram | UICustomProgram) {
+  if (program.type === 'content') {
+    switch (program.subtype) {
+      case 'movie':
+        return 'movie';
+      case 'episode':
+        return `show_${program.title}`;
+      case 'track':
+        return `track_${program.albumId ?? program.title}`;
     }
+  } else {
+    return `custom_${program.customShowId}`;
+  }
+}
 
-    const showsAscending = (options?.sortOptions.show.order ?? 'asc') === 'asc';
-    const moviesAscending =
-      (options?.sortOptions.movies.order ?? 'asc') === 'asc';
+function blockShuffle(
+  programs: UIChannelProgram[],
+  options: BlockShuffleConfig | null,
+) {
+  if (isEmpty(programs)) {
+    return;
+  }
 
-    const groupByShow = chain(programList)
-      .groupBy((program) => {
-        if (program.type === 'content') {
-          switch (program.subtype) {
-            case 'movie':
-              return 'movie';
-            case 'episode':
-              return `show_${program.title}`;
-            case 'track':
-              return `track_${program.albumId ?? program.title}`;
-          }
-        } else {
-          return `custom_${program.customShowId}`;
+  const showsAscending = (options?.sortOptions.show.order ?? 'asc') === 'asc';
+  const moviesAscending =
+    (options?.sortOptions.movies.order ?? 'asc') === 'asc';
+
+  const groupByShow = chain(programs)
+    .filter(
+      (p): p is UIContentProgram | UICustomProgram =>
+        isUIContentProgram(p) || isUICustomProgram(p),
+    )
+    .thru((arr) => {
+      return options?.shuffleType === 'Random' ? shuffle(arr) : arr;
+    })
+    .groupBy(groupProgram)
+    .thru((groups) => {
+      forEach(groups, (programs, key) => {
+        if (key.startsWith('custom_')) {
+          groups[key] = sortBy(programs as UICustomProgram[], (p) => p.index);
+        } else if (key.startsWith('show_') || key.startsWith('track_')) {
+          groups[key] = sortBy(programs as UIContentProgram[], (p) =>
+            sortProgram(p, 'index', showsAscending),
+          );
+        } else if (key.startsWith('movie')) {
+          groups[key] = sortBy(programs as UIContentProgram[], (p) =>
+            sortProgram(
+              p,
+              options?.sortOptions.movies.sort ?? 'release_date',
+              moviesAscending,
+            ),
+          );
         }
-      })
-      .thru((groups) => {
-        forEach(groups, (programs, key) => {
-          if (key.startsWith('custom_')) {
-            groups[key] = sortBy(programs as UICustomProgram[], (p) => p.index);
-          } else if (key.startsWith('show_') || key.startsWith('track_')) {
-            groups[key] = sortBy(programs as UIContentProgram[], (p) =>
-              sortProgram(p, 'index', showsAscending),
-            );
-          } else if (key.startsWith('movie')) {
-            groups[key] = sortBy(programs as UIContentProgram[], (p) =>
-              sortProgram(
-                p,
-                options?.sortOptions.movies.sort ?? 'release_date',
-                moviesAscending,
-              ),
-            );
-          }
-        });
-        return groups;
-      })
-      .value();
+      });
+      return groups;
+    })
+    .value();
 
-    // See which show has the most episodes in the program list
-    const maxLength = max(Object.values(groupByShow).map((a) => a.length)) ?? 0;
+  const blockSize = options?.blockSize ?? 3;
 
-    const chunkedShows = mapValues(groupByShow, (programs) => {
-      if (options?.loopBlocks && programs.length < maxLength) {
+  const [chunks, loops] = options?.perfectSync
+    ? getPerfectSyncChunks(groupByShow, blockSize)
+    : getSimpleChunks(groupByShow, blockSize, options?.loopBlocks ?? false);
+
+  const alternatingShows = flatMap(range(loops), (i) =>
+    flatMap(chunks, (chunk) => (i < chunk.length ? [...chunk[i]] : [])),
+  );
+
+  setCurrentLineup(alternatingShows, true);
+}
+
+function getPerfectSyncChunks(
+  groupByShow: Record<string, (UIChannelProgram | UICustomProgram)[]>,
+  blockSize: number,
+) {
+  const programCountArr = map(values(groupByShow), (programs) => {
+    if (programs.length % blockSize === 0) {
+      return programs.length / blockSize;
+    } else {
+      return programs.length;
+    }
+  });
+  const minimumNumBlocks = leastCommonMultiple(programCountArr);
+
+  const totalProgramsNeeded = minimumNumBlocks * blockSize;
+  return [
+    mapValues(groupByShow, (programs) => {
+      const extraNeeded = totalProgramsNeeded - programs.length;
+      return chunk(
+        [
+          ...programs,
+          ...flatMap(range(0, extraNeeded / programs.length), () => programs),
+        ],
+        blockSize,
+      );
+    }),
+    minimumNumBlocks,
+  ] as const;
+}
+
+function getSimpleChunks(
+  groupByShow: Record<string, (UIChannelProgram | UICustomProgram)[]>,
+  blockSize: number,
+  loopBlocks: boolean,
+) {
+  const maxLength = max(Object.values(groupByShow).map((a) => a.length)) ?? 0;
+  return [
+    mapValues(groupByShow, (programs) => {
+      if (loopBlocks && programs.length < maxLength) {
         const lengthDiff = maxLength - programs.length;
         for (let i = 0; i < lengthDiff; i++) {
           programs.push({ ...programs[i % programs.length] });
         }
       }
-      return chunk(programs, options?.blockSize ?? 3);
-    });
+      return chunk(programs, blockSize);
+    }),
+    maxLength,
+  ] as const;
+}
 
-    const alternatingShows: UIChannelProgram[] = [];
+// Returns true if perfect sync wouldn't create a ridiculously long schedule
+function canUsePerfectSync(programs: UIChannelProgram[], blockSize: number) {
+  const groupByShow = chain(programs)
+    .filter(
+      (p): p is UIContentProgram | UICustomProgram =>
+        isUIContentProgram(p) || isUICustomProgram(p),
+    )
+    .groupBy(groupProgram)
+    .value();
 
-    for (const i of range(maxLength)) {
-      forEach(chunkedShows, (arr) => {
-        if (i < arr.length) {
-          alternatingShows.push(...arr[i]);
-        }
-      });
+  const programCountArr = map(values(groupByShow), (programs) => {
+    if (programs.length % blockSize === 0) {
+      return programs.length / blockSize;
+    } else {
+      return programs.length;
     }
+  });
+  const minimumNumBlocks = leastCommonMultiple(programCountArr);
 
-    setCurrentLineup(alternatingShows, true);
-  };
+  if (minimumNumBlocks > 10_000) {
+    return false;
+  }
+
+  if (minimumNumBlocks * blockSize > 30_000) {
+    return false;
+  }
+
+  return true;
+}
+
+function leastCommonMultiple(arr: number[]) {
+  if (isEmpty(arr)) {
+    return -1;
+  }
+
+  let a = Math.abs(arr[0]);
+  for (let i = 1; i < arr.length; i++) {
+    let b = Math.abs(arr[i]);
+    const c = a;
+    while (a && b) {
+      if (a > b) {
+        a %= b;
+      } else {
+        b %= a;
+      }
+    }
+    a = Math.abs(c * arr[i]) / (a + b);
+  }
+
+  return a;
 }
