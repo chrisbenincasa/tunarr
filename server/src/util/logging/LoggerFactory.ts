@@ -1,4 +1,3 @@
-import chalk from 'chalk';
 import { forEach, isEmpty, isUndefined, nth, toLower, trim } from 'lodash-es';
 import path, { join } from 'node:path';
 import pino, {
@@ -10,7 +9,7 @@ import pino, {
   type LevelWithSilent,
   type Logger as PinoLogger,
 } from 'pino';
-import pretty from 'pino-pretty';
+import pretty, { PrettyOptions } from 'pino-pretty';
 import type ThreadStream from 'thread-stream';
 import { isNonEmptyString, isProduction } from '..';
 import { SettingsDB, getSettings } from '../../dao/settings';
@@ -196,36 +195,38 @@ class LoggerFactoryImpl {
   }
 
   private createStreams(logLevel: LogLevels): StreamEntry<LogLevels>[] {
+    const prettyOpts: PrettyOptions = {
+      // minimumLevel: logLevel === 'silent' ? undefined : logLevel,
+      translateTime: "SYS:yyyy-mm-dd'T'HH:MM:ss.l'Z'",
+      singleLine: true,
+      ignore: 'pid,hostname',
+      customLevels: {
+        http: 15,
+      },
+      customColors: {
+        http: 'blue',
+      },
+      // @ts-expect-error this is not included in the pino pretty type defs
+      useOnlyCustomProps: false,
+      messageFormat: (log, messageKey, _, { colors }) => {
+        return `${colors.white(log[messageKey] as string)}`;
+      },
+      customPrettifiers: {
+        time: (t) => {
+          return t as string;
+        },
+        level: (_level, _key, _log, { labelColorized }) => {
+          return `[${labelColorized.toLowerCase()}]`;
+        },
+        caller: (caller, _key, _log, { colors }) => {
+          return colors.green(caller as string);
+        },
+      },
+    };
+
     const streams: StreamEntry<LogLevels>[] = [
       {
-        stream: pretty({
-          // minimumLevel: logLevel === 'silent' ? undefined : logLevel,
-          translateTime: "UTC:yyyy-mm-dd'T'HH:MM:ss.l'Z'",
-          singleLine: true,
-          ignore: 'pid,hostname',
-          customLevels: {
-            http: 15,
-          },
-          customColors: {
-            http: 'blue',
-          },
-          // @ts-expect-error this is not included in the pino pretty type defs
-          useOnlyCustomProps: false,
-          messageFormat: (log, messageKey, _, { colors }) => {
-            return `${colors.white(log[messageKey] as string)}`;
-          },
-          customPrettifiers: {
-            time: (t) => {
-              return t as string;
-            },
-            level: (_level, _key, _log, { labelColorized }) => {
-              return `[${labelColorized.toLowerCase()}]`;
-            },
-            caller: (caller) => {
-              return chalk.green(caller as string);
-            },
-          },
-        }),
+        stream: pretty(prettyOpts),
         level: logLevel,
       },
     ];
@@ -234,13 +235,23 @@ class LoggerFactoryImpl {
     // require configuration.
     if (!isUndefined(this.settingsDB)) {
       streams.push({
-        stream: pino.destination({
-          dest: join(
+        // stream: pino.destination({
+        // dest: join(
+        //   this.settingsDB.systemSettings().logging.logsDirectory,
+        //   'tunarr.log',
+        // ),
+        //   mkdir: true,
+        //   append: true,
+        // }),
+        stream: pretty({
+          ...prettyOpts,
+          destination: join(
             this.settingsDB.systemSettings().logging.logsDirectory,
             'tunarr.log',
           ),
           mkdir: true,
           append: true,
+          colorize: !!process.env['TUNARR_COLORIZE_LOG_FILE'],
         }),
         level: logLevel,
       });

@@ -66,7 +66,7 @@
     "node-ssdp": "^4.0.0",
     "p-queue": "^8.0.1",
     "pino": "^9.0.0",
-    "pino-pretty": "^11.0.0",
+    "pino-pretty": "^11.2.2",
     "pino-roll": "^1.1.0",
     "random-js": "2.1.0",
     "reflect-metadata": "^0.2.2",

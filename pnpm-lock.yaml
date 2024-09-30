@@ -184,8 +184,8 @@ importers:
         specifier: ^9.0.0
         version: 9.0.0
       pino-pretty:
-        specifier: ^11.0.0
-        version: 11.0.0
+        specifier: ^11.2.2
+        version: 11.2.2
       pino-roll:
         specifier: ^1.1.0
         version: 1.1.0
@@ -10414,8 +10414,8 @@ packages:
       split2: 4.2.0
     dev: false
 
-  /pino-pretty@11.0.0:
-    resolution: {integrity: sha512-YFJZqw59mHIY72wBnBs7XhLGG6qpJMa4pEQTRgEPEbjIYbng2LXEZZF1DoyDg9CfejEy8uZCyzpcBXXG0oOCwQ==}
+  /pino-pretty@11.2.2:
+    resolution: {integrity: sha512-2FnyGir8nAJAqD3srROdrF1J5BIcMT4nwj7hHSc60El6Uxlym00UbCCd8pYIterstVBFlMyF1yFV8XdGIPbj4A==}
     hasBin: true
     dependencies:
       colorette: 2.0.20
@@ -10430,7 +10430,7 @@ packages:
       pump: 3.0.0
       readable-stream: 4.4.2
       secure-json-parse: 2.7.0
-      sonic-boom: 3.7.0
+      sonic-boom: 4.1.0
       strip-json-comments: 3.1.1
     dev: false
 
@@ -11539,6 +11539,12 @@ packages:
 
   /sonic-boom@3.8.1:
     resolution: {integrity: sha512-y4Z8LCDBuum+PBP3lSV7RHrXscqksve/bi0as7mhwVnBW+/wUqKT/2Kb7um8yqcFy0duYbbPxzt89Zy2nOCaxg==}
+    dependencies:
+      atomic-sleep: 1.0.0
+    dev: false
+
+  /sonic-boom@4.1.0:
+    resolution: {integrity: sha512-NGipjjRicyJJ03rPiZCJYjwlsuP2d1/5QUviozRXC7S3WdVWNK5e3Ojieb9CCyfhq2UC+3+SRd9nG3I2lPRvUw==}
     dependencies:
       atomic-sleep: 1.0.0
     dev: false
@@ -13265,7 +13271,7 @@ packages:
       '@webpack-cli/configtest': 2.1.1(webpack-cli@5.1.4)(webpack@5.91.0)
       '@webpack-cli/info': 2.0.2(webpack-cli@5.1.4)(webpack@5.91.0)
       '@webpack-cli/serve': 2.0.5(webpack-cli@5.1.4)(webpack@5.91.0)
-      colorette: 2.0.19
+      colorette: 2.0.20
       commander: 10.0.1
       cross-spawn: 7.0.3
       envinfo: 7.13.0
