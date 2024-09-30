@@ -1,6 +1,10 @@
-#!/bin/sh
+#!/bin/bash
 
 SCRIPTPATH=$(dirname "$(realpath "$0")")
 cd $SCRIPTPATH
-shift
+
+if [[ $# -gt 0 ]]; then
+    shift;
+fi
+
 eval ./bin/node ./bundle.js "$@"
