@@ -206,7 +206,6 @@ class LoggerFactoryImpl {
       customColors: {
         http: 'blue',
       },
-      // @ts-expect-error this is not included in the pino pretty type defs
       useOnlyCustomProps: false,
       messageFormat: (log, messageKey, _, { colors }) => {
         return `${colors.white(log[messageKey] as string)}`;
