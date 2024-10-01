@@ -8,7 +8,7 @@ import {
   FormControl,
   FormControlLabel,
   FormHelperText,
-  Grid,
+  Unstable_Grid2 as Grid,
   IconButton,
   InputAdornment,
   InputLabel,
@@ -272,45 +272,51 @@ export default function FfmpegSettingsPage() {
   const videoFfmpegSettings = () => {
     return (
       <>
-        <FormControl fullWidth sx={{ mb: 2 }}>
-          <InputLabel>Video Codec</InputLabel>
-          <Controller
-            control={control}
-            name="videoFormat"
-            render={({ field }) => (
-              <Select label="Video Codec" {...field}>
-                {chain(VideoFormats)
-                  .map((opt) => (
-                    <MenuItem value={opt.value}>{opt.description}</MenuItem>
-                  ))
-                  .value()}
-              </Select>
-            )}
-          />
-          <FormHelperText></FormHelperText>
-        </FormControl>
-        <FormControl fullWidth sx={{ mb: 2 }}>
-          <InputLabel>Hardware Acceleration</InputLabel>
-          <Controller
-            control={control}
-            name="hardwareAccelerationMode"
-            render={({ field }) => (
-              <Select label="Hardware Acceleration" {...field}>
-                {chain(VideoHardwareAccelerationOptions)
-                  .filter(
-                    ({ value }) =>
-                      value === 'none' ||
-                      ffmpegInfo.data.hardwareAccelerationTypes.includes(value),
-                  )
-                  .map((opt) => (
-                    <MenuItem value={opt.value}>{opt.description}</MenuItem>
-                  ))
-                  .value()}
-              </Select>
-            )}
-          />
-          <FormHelperText></FormHelperText>
-        </FormControl>
+        <Grid xs={12} md={6}>
+          <FormControl fullWidth sx={{ mb: 2 }}>
+            <InputLabel>Video Codec</InputLabel>
+            <Controller
+              control={control}
+              name="videoFormat"
+              render={({ field }) => (
+                <Select label="Video Codec" {...field}>
+                  {chain(VideoFormats)
+                    .map((opt) => (
+                      <MenuItem value={opt.value}>{opt.description}</MenuItem>
+                    ))
+                    .value()}
+                </Select>
+              )}
+            />
+            <FormHelperText></FormHelperText>
+          </FormControl>
+        </Grid>
+        <Grid xs={12} md={6}>
+          <FormControl fullWidth sx={{ mb: 2 }}>
+            <InputLabel>Hardware Acceleration</InputLabel>
+            <Controller
+              control={control}
+              name="hardwareAccelerationMode"
+              render={({ field }) => (
+                <Select label="Hardware Acceleration" {...field}>
+                  {chain(VideoHardwareAccelerationOptions)
+                    .filter(
+                      ({ value }) =>
+                        value === 'none' ||
+                        ffmpegInfo.data.hardwareAccelerationTypes.includes(
+                          value,
+                        ),
+                    )
+                    .map((opt) => (
+                      <MenuItem value={opt.value}>{opt.description}</MenuItem>
+                    ))
+                    .value()}
+                </Select>
+              )}
+            />
+            <FormHelperText></FormHelperText>
+          </FormControl>
+        </Grid>
 
         <Grid container columns={{ sm: 8, md: 16 }} columnSpacing={2}>
           <Grid item sm={16} md={8}>
@@ -801,20 +807,25 @@ export default function FfmpegSettingsPage() {
       <Typography variant="h5" sx={{ mt: 2, mb: 1 }}>
         Transcoding Options
       </Typography>
-      <Grid container spacing={2} columns={16}>
-        <Grid item sm={16} md={8}>
+      <Stack>
+        <Box>
           <Typography component="h6" variant="h6" sx={{ mb: 2 }}>
             Video Options
           </Typography>
+        </Box>
+        <Grid container columnSpacing={2}>
           {videoFfmpegSettings()}
         </Grid>
-        <Grid item sm={16} md={8}>
+      </Stack>
+      <Stack>
+        <Divider />
+        <Box>
           <Typography component="h6" variant="h6" sx={{ pb: 1 }}>
             Audio Options
           </Typography>
           {audioFfmpegSettings()}
-        </Grid>
-      </Grid>
+        </Box>
+      </Stack>
       <Divider sx={{ mt: 2 }} />
       <Typography component="h6" variant="h6" sx={{ pt: 2, pb: 1 }}>
         Error Options
