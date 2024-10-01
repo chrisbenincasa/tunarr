@@ -23,6 +23,7 @@ import {
   isUIContentProgram,
   isUICustomProgram,
 } from '../../types/index.ts';
+import { removeDuplicatePrograms } from './useRemoveDuplicates.ts';
 
 export type BlockShuffleProgramCount = number;
 
@@ -111,6 +112,7 @@ function blockShuffle(
     (options?.sortOptions.movies.order ?? 'asc') === 'asc';
 
   const groupByShow = chain(programs)
+    .thru(removeDuplicatePrograms)
     .filter(
       (p): p is UIContentProgram | UICustomProgram =>
         isUIContentProgram(p) || isUICustomProgram(p),
@@ -145,7 +147,7 @@ function blockShuffle(
 
   const [chunks, loops] = options?.perfectSync
     ? getPerfectSyncChunks(groupByShow, blockSize)
-    : getSimpleChunks(groupByShow, blockSize, options?.loopBlocks ?? false);
+    : getSimpleChunks(groupByShow, blockSize, options?.loopBlocks ?? true);
 
   const alternatingShows = flatMap(range(loops), (i) =>
     flatMap(chunks, (chunk) => (i < chunk.length ? [...chunk[i]] : [])),

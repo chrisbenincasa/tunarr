@@ -53,7 +53,7 @@ const AddBlockShuffleModal = ({ open, onClose }: AddBlockShuffleModalProps) => {
           order: 'asc',
         },
       },
-      loopBlocks: false,
+      loopBlocks: true,
       perfectSync: false,
     },
   });
@@ -209,7 +209,7 @@ const AddBlockShuffleModal = ({ open, onClose }: AddBlockShuffleModalProps) => {
               control={
                 <CheckboxFormController control={control} name="loopBlocks" />
               }
-              label="Loop Short Blocks"
+              label="Loop Short Programs"
             />
             <FormHelperText>
               If set, any programming group with fewer episodes will be looped
