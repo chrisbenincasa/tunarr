@@ -682,9 +682,8 @@ export class FFMPEG {
 
     if (doOverlay && !isNil(watermark?.url)) {
       if (watermark.animated) {
-        ffmpegArgs.push('-ignore_loop', '0');
+        ffmpegArgs.push('-ignore_loop', '0', '-stream_loop', '-1');
       }
-      ffmpegArgs.push('-loop', '1');
       ffmpegArgs.push(`-i`, `${watermark.url}`);
       overlayFile = inputFiles++;
       this.ensureResolution = true;

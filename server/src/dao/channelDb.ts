@@ -53,7 +53,9 @@ import {
   ChannelWithPrograms as RawChannelWithPrograms,
 } from '../dao/direct/derivedTypes.js';
 import { globalOptions } from '../globals.js';
+import { serverContext } from '../serverContext.js';
 import { typedProperty } from '../types/path.js';
+import { Result } from '../types/result.js';
 import { Maybe } from '../types/util.js';
 import { asyncPool } from '../util/asyncPool.js';
 import { fileExists } from '../util/fsUtil.js';
@@ -353,6 +355,27 @@ export class ChannelDB {
       merge: true,
       onlyProperties: true,
     });
+
+    if (
+      isNonEmptyString(updateReq.watermark?.url) &&
+      URL.canParse(updateReq.watermark.url)
+    ) {
+      const url = updateReq.watermark?.url;
+      const parsed = new URL(url);
+      if (!parsed.hostname.includes('localhost')) {
+        // Attempt to download the watermark and cache it.
+        const cacheWatermarkResult = await Result.attemptAsync(() =>
+          serverContext().cacheImageService.getOrDownloadImageUrl(url),
+        );
+        if (cacheWatermarkResult.isFailure()) {
+          this.logger.warn(
+            cacheWatermarkResult.error,
+            'Was unable to cache watermark URL at %s',
+            url,
+          );
+        }
+      }
+    }
 
     if (isDefined(updateReq.fillerCollections))
       [

@@ -6,8 +6,9 @@ import { SettingsDB, getSettings } from '../dao/settings.js';
 import { FfmpegTranscodeSession } from '../ffmpeg/FfmpegTrancodeSession.js';
 import { OutputFormat } from '../ffmpeg/OutputFormat.js';
 import { FFMPEG, StreamOptions } from '../ffmpeg/ffmpeg.js';
+import { serverContext } from '../serverContext.js';
 import { Maybe } from '../types/util.js';
-import { isDefined, isNonEmptyString } from '../util/index.js';
+import { attempt, isDefined, isNonEmptyString } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '../util/serverUtil.js';
 import { PlayerContext } from './PlayerStreamContext.js';
@@ -116,7 +117,7 @@ export abstract class ProgramStream implements ProgramStream {
     );
   }
 
-  protected getWatermark(): Maybe<Watermark> {
+  protected async getWatermark(): Promise<Maybe<Watermark>> {
     const channel = this.context.channel;
 
     if (this.settingsDB.ffmpegSettings().disableChannelOverlay) {
@@ -133,8 +134,24 @@ export abstract class ProgramStream implements ProgramStream {
     if (channel.watermark?.enabled) {
       const watermark = { ...channel.watermark };
       let icon: string;
-      if (isNonEmptyString(watermark.url)) {
-        icon = watermark.url;
+      // Capture this so it can't change asynchronously.
+      const watermarkUrl = watermark.url;
+      if (isNonEmptyString(watermarkUrl) && URL.canParse(watermarkUrl)) {
+        const parsed = new URL(watermarkUrl);
+        if (parsed.host.includes('localhost')) {
+          icon = watermarkUrl;
+        } else {
+          const cachedWatermarkUrl = await attempt(() =>
+            serverContext().cacheImageService.getOrDownloadImageUrl(
+              watermarkUrl,
+            ),
+          );
+          if (isNonEmptyString(cachedWatermarkUrl)) {
+            icon = cachedWatermarkUrl;
+          } else {
+            icon = makeLocalUrl('/images/tunarr.png');
+          }
+        }
       } else if (isNonEmptyString(channel.icon?.path)) {
         icon = channel.icon.path;
       } else {
