@@ -129,7 +129,7 @@ export const sessionApiRouter: RouterPluginAsyncCallback = async (fastify) => {
       }
 
       const sessions =
-        req.serverCtx.sessionManager.getAllConcatSessions(channelId);
+        req.serverCtx.sessionManager.getAllSessionsForChannel(channelId);
 
       if (isEmpty(sessions)) {
         return res.status(404).send('No session found for channel ID');
