@@ -47,6 +47,7 @@ export const useBalancePrograms = () => {
       groups[key].totalDuration += p.duration;
       groups[key].programs.push(p);
     });
+    console.log(dedupedPrograms, groups);
 
     // This is where we'd apply frequencies if we wanted to scale
     // each show
@@ -83,21 +84,17 @@ export const useBalancePrograms = () => {
 };
 
 function programKey(p: Exclude<ChannelProgram, { type: 'flex' }>): string {
-  switch (p.type) {
-    case 'content': {
-      switch (p.subtype) {
-        case 'movie':
-          return `content.movie`;
-        case 'episode':
-          return `content.show.${p.showId}`;
-        case 'track':
-          return `content.track.${p.artistId}`;
-      }
-    }
-    // eslint-disable-next-line no-fallthrough
-    case 'custom':
-      return `custom.${p.customShowId}`;
-    case 'redirect':
-      return `redirect.${p.channel}`;
-  }
+  return match(p)
+    .with({ type: 'content', subtype: 'movie' }, () => 'content.movie')
+    .with(
+      { type: 'content', subtype: 'episode' },
+      (ep) => `content.show.${ep.showId}`,
+    )
+    .with(
+      { type: 'content', subtype: 'track' },
+      (t) => `content.track.${t.artistId}`,
+    )
+    .with({ type: 'custom' }, (c) => `custom.${c.customShowId}`)
+    .with({ type: 'redirect' }, (r) => `redirect.${r.channel}`)
+    .exhaustive();
 }

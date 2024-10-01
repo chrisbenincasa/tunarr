@@ -1,7 +1,7 @@
 import { isNonEmptyString } from '@/helpers/util.ts';
+import { UIChannelProgram } from '@/types/index.ts';
 import { createExternalId } from '@tunarr/shared';
 import {
-  ChannelProgram,
   MultiExternalId,
   isContentProgram,
   isCustomProgram,
@@ -23,7 +23,9 @@ export const useRemoveDuplicates = () => {
   };
 };
 
-export const removeDuplicatePrograms = (programs: ChannelProgram[]) => {
+export const removeDuplicatePrograms = <Programs extends UIChannelProgram[]>(
+  programs: Programs,
+) => {
   const seenDbIds = new Set<string>();
   const seenIds = new Set<string>();
   const seenRedirects = new Set<string>();
