@@ -9,7 +9,6 @@ import {
   first,
   isEmpty,
   isNil,
-  isObject,
   isString,
   isUndefined,
   merge,
@@ -643,7 +642,7 @@ export class FFMPEG {
         }
       }
       const durstr = `duration=${duration.asMilliseconds()}ms`;
-      if (isObject(streamSrc)) {
+      if (!isNonEmptyString(streamSrc)) {
         // silent
         audioComplex = `;aevalsrc=0:${durstr}:s=${
           this.opts.audioSampleRate * 1000
@@ -1098,8 +1097,6 @@ export class FFMPEG {
       ];
 
     return [
-      '-pix_fmt',
-      'yuv420p',
       '-c:v',
       videoEncoder,
       `-b:v`,
