@@ -1,3 +1,4 @@
+import { cyclicSort } from '@/helpers/lineupUtils.ts';
 import {
   chain,
   chunk,
@@ -124,6 +125,7 @@ function blockShuffle(
         if (key.startsWith('custom_')) {
           groups[key] = sortBy(programs as UICustomProgram[], (p) => p.index);
         } else if (key.startsWith('show_') || key.startsWith('track_')) {
+          cyclicSort(programs);
           groups[key] = sortBy(programs as UIContentProgram[], (p) =>
             sortProgram(p, 'index', showsAscending),
           );
