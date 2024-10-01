@@ -6,10 +6,10 @@ import { isString, isUndefined } from 'lodash-es';
 import stream from 'stream';
 // import { CachedImage, DbAccess } from '../dao/db.js';
 import { EntityRepository } from '@mikro-orm/core';
-import { withDb } from '../dao/dataSource.js';
+import { getEm, withDb } from '../dao/dataSource.js';
 import { CachedImage } from '../dao/entities/CachedImage.js';
-import { FileCacheService } from './fileCacheService.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
+import { FileCacheService } from './fileCacheService.js';
 
 /**
  * Manager a cache in disk for external images.
@@ -62,10 +62,36 @@ export class CacheImageService {
     }
   }
 
+  async getOrDownloadImageUrl(url: string) {
+    return this.getOrDownloadImage(await this.registerImageOnDatabase(url));
+  }
+
+  async getOrDownloadImage(hash: string) {
+    const em = getEm();
+    try {
+      const repo = em.repo(CachedImage);
+      const imgItem = await repo.findOne({ hash });
+      if (imgItem) {
+        const file = await this.getImageFromCache(imgItem.hash);
+        if (isUndefined(file) || !file.length) {
+          return await this.requestImageAndStore(imgItem, repo);
+        } else {
+          return {
+            path: `${this.cacheService.cachePath}/${this.imageCacheFolder}/${imgItem.hash}`,
+            mimeType: imgItem.mimeType,
+          };
+        }
+      }
+      return;
+    } finally {
+      await em.flush();
+    }
+  }
+
   private async requestImageAndStore(
     cachedImage: CachedImage,
     repo: EntityRepository<CachedImage>,
-  ): Promise<string | undefined> {
+  ): Promise<{ path: string; mimeType?: string }> {
     const requestConfiguration: AxiosRequestConfig = {
       method: 'get',
       url: cachedImage.url,
@@ -82,14 +108,13 @@ export class CacheImageService {
       await repo.upsert({ ...cachedImage, mimeType });
     }
 
+    const path = `${this.cacheService.cachePath}/${this.imageCacheFolder}/${cachedImage.hash}`;
     return new Promise((resolve, reject) => {
       response.data
-        .pipe(
-          createWriteStream(
-            `${this.cacheService.cachePath}/${this.imageCacheFolder}/${cachedImage.hash}`,
-          ),
+        .pipe(createWriteStream(path))
+        .on('close', () =>
+          resolve({ path, mimeType: mimeType as string | undefined }),
         )
-        .on('close', () => resolve(mimeType as string))
         .on('error', reject);
     });
   }
@@ -97,14 +122,14 @@ export class CacheImageService {
   /**
    * Get image from cache using an filename
    */
-  getImageFromCache(fileName: string): Promise<string | undefined> {
+  async getImageFromCache(fileName: string): Promise<string | undefined> {
     try {
-      return this.cacheService
-        .getCache(`${this.imageCacheFolder}/${fileName}`)
-        .catch(() => void 0);
+      return await this.cacheService.getCache(
+        `${this.imageCacheFolder}/${fileName}`,
+      );
     } catch (e) {
-      this.logger.debug(`Image ${fileName} not found in cache.`);
-      return Promise.resolve(undefined);
+      this.logger.debug(e, `Image ${fileName} not found in cache.`);
+      return;
     }
   }
 
@@ -113,7 +138,7 @@ export class CacheImageService {
    */
   async clearCache() {
     const cachePath = `${this.cacheService.cachePath}/${this.imageCacheFolder}`;
-    await fs.rmdir(cachePath, { recursive: true });
+    await fs.rm(cachePath, { recursive: true, force: true });
     await fs.mkdir(cachePath);
   }
 

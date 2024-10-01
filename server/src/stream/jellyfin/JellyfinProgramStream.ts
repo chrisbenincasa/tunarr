@@ -70,7 +70,7 @@ export class JellyfinProgramStream extends ProgramStream {
       new ProgramDB(),
     );
 
-    const watermark = this.getWatermark();
+    const watermark = await this.getWatermark();
     this.ffmpeg = new FFMPEG(ffmpegSettings, channel, this.context.audioOnly); // Set the transcoder options
 
     const stream = await jellyfinStreamDetails.getStream(lineupItem);

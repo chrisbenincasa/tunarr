@@ -71,7 +71,7 @@ export class PlexProgramStream extends ProgramStream {
     const plexSettings = this.settingsDB.plexSettings();
     const plexStreamDetails = new PlexStreamDetails(server);
 
-    const watermark = this.getWatermark();
+    const watermark = await this.getWatermark();
     const ffmpeg = new FFMPEG(ffmpegSettings, channel, this.context.audioOnly); // Set the transcoder options
 
     const stream = await plexStreamDetails.getStream(lineupItem);
