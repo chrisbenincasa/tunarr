@@ -3,7 +3,11 @@ import { setGlobalOptions } from '../../globals';
 import { FfmpegCommandGenerator } from './FfmpegCommandGenerator';
 import { AudioStream, StillImageStream, VideoStream } from './MediaStream';
 import { VideoFormats } from './constants';
-import { PixelFormat, PixelFormatYuv420P } from './format/PixelFormat';
+import {
+  PixelFormat,
+  PixelFormatYuv420P,
+  PixelFormatYuv420P10Le,
+} from './format/PixelFormat';
 import { PipelineBuilderFactory } from './pipeline/PipelineBuilderFactory';
 import { AudioState } from './state/AudioState';
 import { FfmpegState } from './state/FfmpegState';
@@ -64,6 +68,7 @@ describe('FfmpegCommandGenerator', () => {
       frameRate: 20,
       videoBitrate: 30_000,
       interlaced: true,
+      pixelFormat: new PixelFormatYuv420P10Le(),
     });
 
     const generator = new FfmpegCommandGenerator();

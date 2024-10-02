@@ -68,8 +68,6 @@ class PipelineBuilderFactory$Builder {
       this.hardwareAccelerationMode,
     );
 
-    console.log(hardwareCapabilities);
-
     if (isNull(this.videoInputFile)) {
       // Audio-only pipeline builder??
       throw new Error('Not yet implemented');
