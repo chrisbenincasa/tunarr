@@ -138,8 +138,15 @@ const lineupItemAppearsInSchedule = (
 ) => {
   return some(slots, (slot) => {
     switch (slot.programming.type) {
+      case 'custom-show':
+        return (
+          item.type === 'custom' &&
+          item.customShowId === slot.programming.customShowId
+        );
+      case 'redirect':
+        return item.type === 'redirect';
       case 'flex':
-        return item.type === 'flex' || item.type === 'redirect';
+        return item.type === 'flex';
       case 'movie':
         return (
           (item.type === 'content' && item.subtype === 'movie') ||
@@ -148,12 +155,9 @@ const lineupItemAppearsInSchedule = (
       case 'show': {
         const showTitle = slot.programming.showId;
         return (
-          (item.type === 'content' &&
-            item.subtype === 'episode' &&
-            showTitle === item.title) ||
-          (item.type === 'custom' &&
-            item.program?.subtype === 'episode' &&
-            item.program?.title === showTitle)
+          item.type === 'content' &&
+          item.subtype === 'episode' &&
+          showTitle === (item.showId ?? item.title)
         );
       }
     }
