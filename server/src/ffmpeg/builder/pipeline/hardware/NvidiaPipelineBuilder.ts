@@ -1,5 +1,4 @@
 import { isNil, isNull } from 'lodash-es';
-import util from 'node:util';
 import { Nullable } from '../../../../types/util';
 import { isNonEmptyString } from '../../../../util';
 import { VideoFormats } from '../../constants';
@@ -115,7 +114,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
     currentState = this.setPad(currentState);
 
     if (currentState.bitDepth === 8 && this.watermarkInputSource) {
-      console.log('adding pixel filter format for watermark!!!');
+      this.logger.debug('adding pixel filter format for watermark!!!');
       const desiredPixelFormat = new PixelFormatYuv420P();
       if (
         !isNil(currentState.pixelFormat) &&
@@ -154,7 +153,6 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
     currentState = this.setWatermark(currentState);
 
     let encoder: Nullable<VideoEncoder> = null;
-    console.log(ffmpegState.encoderHwAccelMode);
     if (ffmpegState.encoderHwAccelMode === 'cuda') {
       encoder = EncoderFactory.getNvidiaEncoder(videoStream);
     }
@@ -172,7 +170,6 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       this.videoInputFile.filterSteps.push(encoder);
     }
 
-    this.logger.debug(util.inspect(currentState));
     currentState = this.setPixelFormat(currentState);
 
     // args.filterChain.videoFilterSteps.push(...this.videoInputFile.filterSteps);
@@ -196,7 +193,11 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
     let nextState = currentState;
     const { desiredState, ffmpegState } = this.context;
 
-    console.log('do scale', currentState.scaledSize, desiredState.scaledSize);
+    this.logger.debug(
+      'do scale',
+      currentState.scaledSize,
+      desiredState.scaledSize,
+    );
     if (currentState.scaledSize.equals(desiredState.scaledSize)) {
       return currentState;
     }
@@ -271,9 +272,13 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
     let nextState = currentState;
     const steps: PipelineFilterStep[] = [];
     // TODO ton of stuff to do here
-    if (!isNull(this.desiredState.pixelFormat)) {
+    if (this.desiredState.pixelFormat) {
       // TODO figure out about available pixel formats
       const desiredFormat = this.desiredState.pixelFormat; //.name === PixelFormats.NV12 ? null : this.desiredState.pixelFormat;
+
+      if (desiredFormat instanceof PixelFormatNv12) {
+        // EX
+      }
 
       // TODO vp9
 
@@ -284,7 +289,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
         this.watermarkInputSource &&
         currentState.frameDataLocation === 'hardware'
       ) {
-        this.logger.debug('%O', currentState);
+        this.logger.debug('Using software encoder');
         const hwDownloadFilter = new HardwareDownloadCudaFilter(
           currentState.pixelFormat,
           null,
@@ -293,13 +298,17 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
         steps.push(hwDownloadFilter);
       }
 
-      console.log('pixelFormat', nextState, this.ffmpegState);
+      this.logger.debug('pixelFormat', nextState, this.ffmpegState);
       if (
         nextState.frameDataLocation === 'hardware' &&
         this.ffmpegState.encoderHwAccelMode === 'none'
       ) {
         if (nextState.pixelFormat?.ffmpegName !== desiredFormat?.ffmpegName) {
-          // TODO CUDA format filter
+          this.logger.debug(
+            "Pixel format %s doesn't equal format %s",
+            nextState.pixelFormat?.ffmpegName,
+            desiredFormat?.ffmpegName,
+          );
           const formatFilter = new FormatCudaFilter(desiredFormat);
           nextState = formatFilter.nextState(nextState);
           steps.push(formatFilter);
