@@ -70,7 +70,7 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
         `ffmpeg-report-${normalizedName}-%t.log`,
       );
       if (os.platform() === 'win32') {
-        logPath = logPath.replaceAll(':/', '\\:/').replaceAll('\\', '/');
+        logPath = logPath.replaceAll('\\', '/').replaceAll(':/', '\\:/');
       }
       env['FFREPORT'] = `file=${logPath}:level=${
         FfmpegNumericLogLevels[this.ffmpegSettings.logLevel]
