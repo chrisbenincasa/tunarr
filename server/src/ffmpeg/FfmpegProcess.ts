@@ -2,6 +2,7 @@ import { FfmpegSettings } from '@tunarr/types';
 import { FfmpegNumericLogLevels } from '@tunarr/types/schemas';
 import { ChildProcessByStdio, spawn } from 'node:child_process';
 import events from 'node:events';
+import os from 'node:os';
 import path from 'node:path';
 import stream from 'node:stream';
 import { SettingsDB, getSettings } from '../dao/settings.js';
@@ -64,10 +65,13 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
 
     if (this.ffmpegSettings.enableFileLogging) {
       const normalizedName = this.ffmpegName.toLowerCase().replaceAll(' ', '-');
-      const logPath = path.join(
+      let logPath = path.join(
         this.settingsDB.systemSettings().logging.logsDirectory,
         `ffmpeg-report-${normalizedName}-%t.log`,
       );
+      if (os.platform() === 'win32') {
+        logPath = logPath.replaceAll(':/', '\\:/').replaceAll('\\', '/');
+      }
       env['FFREPORT'] = `file=${logPath}:level=${
         FfmpegNumericLogLevels[this.ffmpegSettings.logLevel]
       }`;
