@@ -72,8 +72,11 @@ export class CacheImageService {
       const repo = em.repo(CachedImage);
       const imgItem = await repo.findOne({ hash });
       if (imgItem) {
-        const file = await this.getImageFromCache(imgItem.hash);
-        if (isUndefined(file) || !file.length) {
+        if (
+          !(await this.cacheService.exists(
+            `${this.imageCacheFolder}/${imgItem.hash}`,
+          ))
+        ) {
           return await this.requestImageAndStore(imgItem, repo);
         } else {
           return {

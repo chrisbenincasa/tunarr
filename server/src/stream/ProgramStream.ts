@@ -8,7 +8,12 @@ import { OutputFormat } from '../ffmpeg/OutputFormat.js';
 import { FFMPEG, StreamOptions } from '../ffmpeg/ffmpeg.js';
 import { serverContext } from '../serverContext.js';
 import { Maybe } from '../types/util.js';
-import { attempt, isDefined, isNonEmptyString } from '../util/index.js';
+import {
+  attempt,
+  isDefined,
+  isNonEmptyString,
+  isSuccess,
+} from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '../util/serverUtil.js';
 import { PlayerContext } from './PlayerStreamContext.js';
@@ -146,8 +151,12 @@ export abstract class ProgramStream implements ProgramStream {
               watermarkUrl,
             ),
           );
-          if (isNonEmptyString(cachedWatermarkUrl)) {
-            icon = cachedWatermarkUrl;
+
+          if (
+            isSuccess(cachedWatermarkUrl) &&
+            isNonEmptyString(cachedWatermarkUrl?.path)
+          ) {
+            icon = cachedWatermarkUrl.path;
           } else {
             icon = makeLocalUrl('/images/tunarr.png');
           }

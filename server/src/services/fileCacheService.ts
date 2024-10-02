@@ -1,6 +1,8 @@
-import path from 'path';
 import { createWriteStream, promises as fs } from 'fs';
+import path from 'path';
 import { serverOptions } from '../globals';
+import { fileExists } from '../util/fsUtil.js';
+import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 
 /**
  * Store files in cache
@@ -8,6 +10,7 @@ import { serverOptions } from '../globals';
  * @class FileCacheService
  */
 export class FileCacheService {
+  #logger = LoggerFactory.child({ className: this.constructor.name });
   private _cachePath: string;
   private cache: Record<string, string>;
 
@@ -40,6 +43,13 @@ export class FileCacheService {
     });
   }
 
+  async exists(fullFilePath: string) {
+    return (
+      fullFilePath in this.cache ||
+      (await fileExists(path.join(this.cachePath, fullFilePath)))
+    );
+  }
+
   /**
    * `get` a File from cache folder
    */
@@ -48,12 +58,14 @@ export class FileCacheService {
       if (fullFilePath in this.cache) {
         return this.cache[fullFilePath];
       } else {
-        return fs
-          .readFile(path.join(this.cachePath, fullFilePath), 'utf8')
-          .catch(() => void 0);
+        return await fs.readFile(
+          path.join(this.cachePath, fullFilePath),
+          'utf8',
+        );
       }
     } catch (error) {
-      return undefined;
+      this.#logger.error(error);
+      return;
     }
   }
 
