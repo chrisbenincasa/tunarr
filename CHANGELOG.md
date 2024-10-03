@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.12.3](https://github.com/chrisbenincasa/tunarr/compare/v0.12.2...v0.12.3) (2024-10-02)
+
+
+### Bug Fixes
+
+* always output yuv420p pixel format (for now) ([4548a3a](https://github.com/chrisbenincasa/tunarr/commit/4548a3adbb8d64109cb7c35010aa664ef47b2b93))
+* external watermark loading fixes ([e324bac](https://github.com/chrisbenincasa/tunarr/commit/e324bac78d005a108a8386b60d46e490c92a6c05))
+* handle Windows ffreport paths ([70f1f9b](https://github.com/chrisbenincasa/tunarr/commit/70f1f9ba394bf70d8e552811bae656ce443c23e7))
+* properly construct program set before saving slot schedules ([ac3f84a](https://github.com/chrisbenincasa/tunarr/commit/ac3f84a11ad38b46374760ed2af22e9930d85b20))
+* remove duplicates before running block shuffler ([9816749](https://github.com/chrisbenincasa/tunarr/commit/98167497be8faaffcadaf002ad764153dcb59ea0))
+* try a different file path pattern for FFREPORT on Windows ([4675ec1](https://github.com/chrisbenincasa/tunarr/commit/4675ec1aa709cecbdc8370bd255ccd52193e0799))
+
 ## [0.12.2](https://github.com/chrisbenincasa/tunarr/compare/v0.12.1...v0.12.2) (2024-09-30)
 
 
