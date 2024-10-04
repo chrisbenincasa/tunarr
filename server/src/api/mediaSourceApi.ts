@@ -6,6 +6,7 @@ import {
 } from '@tunarr/types/api';
 import { MediaSourceSettingsSchema } from '@tunarr/types/schemas';
 import { isError, isNil, isObject } from 'lodash-es';
+import { match } from 'ts-pattern';
 import z from 'zod';
 import { MediaSourceType } from '../dao/entities/MediaSource.js';
 import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.js';
@@ -72,26 +73,21 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
           return res.status(404).send();
         }
 
-        let healthyPromise: Promise<boolean>;
-        switch (server.type) {
-          case MediaSourceType.Plex: {
-            const plex = new PlexApiClient(server);
-            healthyPromise = plex.checkServerStatus();
-            break;
-          }
-          case MediaSourceType.Jellyfin: {
-            const jellyfin = new JellyfinApiClient({
+        const healthyPromise = match(server)
+          .with({ type: 'plex' }, (server) => {
+            return new PlexApiClient(server).checkServerStatus();
+          })
+          .with({ type: 'jellyfin' }, (server) => {
+            return new JellyfinApiClient({
               url: server.uri,
               apiKey: server.accessToken,
               name: server.name,
-            });
-            healthyPromise = jellyfin
+            })
               .getSystemInfo()
               .then(() => true)
               .catch(() => false);
-            break;
-          }
-        }
+          })
+          .exhaustive();
 
         const status = await Promise.race([
           healthyPromise,

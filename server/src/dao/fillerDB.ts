@@ -16,30 +16,28 @@ import {
   uniq,
   values,
 } from 'lodash-es';
-import { MarkRequired } from 'ts-essentials';
 import { ChannelCache } from '../stream/ChannelCache.js';
 import { isNonEmptyString, mapAsyncSeq } from '../util/index.js';
 import { ProgramConverter } from './converters/programConverters.js';
 import { getEm } from './dataSource.js';
-import { ChannelFillerShow as RawChannelFillerShow } from './direct/derivedTypes.js';
+import { ChannelFillerShowWithContent } from './direct/derivedTypes.js';
 import { directDbAccess } from './direct/directDbAccess.js';
 import { withFillerPrograms } from './direct/programQueryHelpers.js';
+import { programExternalIdString } from './direct/schema/Program.js';
 import { Channel as ChannelEntity } from './entities/Channel.js';
 import { ChannelFillerShow } from './entities/ChannelFillerShow.js';
 import { FillerListContent } from './entities/FillerListContent.js';
 import { FillerShow, FillerShowId } from './entities/FillerShow.js';
-import {
-  createPendingProgramIndexMap,
-  upsertContentPrograms,
-} from './programHelpers.js';
+import { ProgramDB } from './programDB.js';
+import { createPendingProgramIndexMap } from './programHelpers.js';
 
 export class FillerDB {
-  private channelCache: ChannelCache;
   #programConverter: ProgramConverter = new ProgramConverter();
 
-  constructor(channelCache: ChannelCache) {
-    this.channelCache = channelCache;
-  }
+  constructor(
+    private channelCache: ChannelCache = new ChannelCache(),
+    private programDB: ProgramDB = new ProgramDB(),
+  ) {}
 
   getFiller(id: FillerShowId) {
     return getEm()
@@ -65,7 +63,7 @@ export class FillerDB {
         (p) => p.persisted && isNonEmptyString(p.id),
       );
 
-      const upsertedPrograms = await upsertContentPrograms(
+      const upsertedPrograms = await this.programDB.upsertContentPrograms(
         updateRequest.programs,
       );
 
@@ -80,7 +78,7 @@ export class FillerDB {
         em.create(FillerListContent, {
           fillerList: filler.uuid,
           content: p.uuid,
-          index: programIndexById[p.uniqueId()],
+          index: programIndexById[programExternalIdString(p)],
         }),
       );
 
@@ -112,7 +110,7 @@ export class FillerDB {
 
     const persisted = filter(createRequest.programs, (p) => p.persisted);
 
-    const upsertedPrograms = await upsertContentPrograms(
+    const upsertedPrograms = await this.programDB.upsertContentPrograms(
       createRequest.programs,
     );
 
@@ -129,7 +127,7 @@ export class FillerDB {
       em.create(FillerListContent, {
         fillerList: filler.uuid,
         content: p.uuid,
-        index: programIndexById[p.uniqueId()],
+        index: programIndexById[programExternalIdString(p)],
       }),
     );
 
@@ -254,8 +252,8 @@ export class FillerDB {
 
   async getFillersFromChannel(
     channelId: string,
-  ): Promise<MarkRequired<RawChannelFillerShow, 'fillerContent'>[]> {
-    const result = await directDbAccess()
+  ): Promise<ChannelFillerShowWithContent[]> {
+    return directDbAccess()
       .selectFrom('channelFillerShow')
       .where('channelFillerShow.channelUuid', '=', channelId)
       .innerJoin(
@@ -283,7 +281,5 @@ export class FillerDB {
       .groupBy('fillerShow.uuid')
       .orderBy('fillerShowContent.index asc')
       .execute();
-
-    return result;
   }
 }

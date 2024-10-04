@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import { RecurrenceRule } from 'node-schedule';
 import { v4 } from 'uuid';
-import { MediaSource } from '../../dao/direct/derivedTypes';
+import { MediaSource } from '../../dao/direct/schema/MediaSource';
 import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory';
 import { GlobalScheduler } from '../../services/scheduler';
 import { run } from '../../util';

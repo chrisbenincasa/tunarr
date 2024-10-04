@@ -6,7 +6,7 @@ import { MediaSource } from '../../dao/entities/MediaSource.js';
 import { Program, ProgramType } from '../../dao/entities/Program.js';
 import { PlexApiClient } from '../../external/plex/PlexApiClient.js';
 import { Maybe } from '../../types/util.js';
-import { groupByUniqAndMap, wait } from '../../util/index.js';
+import { groupByUniqPropAndMap, wait } from '../../util/index.js';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
 import Fixer from './fixer.js';
 
@@ -24,7 +24,7 @@ export class MissingSeasonNumbersFixer extends Fixer {
       return;
     }
 
-    const plexByName = groupByUniqAndMap(
+    const plexByName = groupByUniqPropAndMap(
       allPlexServers,
       'name',
       (server) => new PlexApiClient(server),

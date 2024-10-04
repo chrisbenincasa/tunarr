@@ -24,6 +24,7 @@ import {
 import {
   Zodios,
   ZodiosInstance,
+  ZodiosOptions,
   makeApi,
   makeErrors,
   parametersBuilder,
@@ -418,6 +419,10 @@ export const api = makeApi([
 
 export type ApiClient = ZodiosInstance<typeof api>;
 
+const opts: ZodiosOptions = {
+  validate: 'none',
+};
+
 export const createApiClient = (uri: string) => {
-  return isEmpty(uri) ? new Zodios(api) : new Zodios(uri, api);
+  return isEmpty(uri) ? new Zodios(api, opts) : new Zodios(uri, api, opts);
 };

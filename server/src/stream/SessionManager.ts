@@ -1,6 +1,6 @@
 import { compact, filter, initial, isNil, isUndefined } from 'lodash-es';
 import { ChannelDB } from '../dao/channelDb.js';
-import { Channel } from '../dao/direct/derivedTypes.js';
+import { Channel } from '../dao/direct/schema/Channel.js';
 import {
   ChannelNotFoundError,
   GenericError,

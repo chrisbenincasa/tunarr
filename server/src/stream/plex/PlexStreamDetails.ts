@@ -20,7 +20,7 @@ import {
 } from 'lodash-es';
 import { ProgramExternalIdType } from '../../dao/custom_types/ProgramExternalIdType';
 import { ContentBackedStreamLineupItem } from '../../dao/derived_types/StreamLineup.js';
-import { MediaSource } from '../../dao/direct/types.gen';
+import { MediaSourceTable } from '../../dao/direct/schema/MediaSource';
 import { ProgramDB } from '../../dao/programDB';
 import { SettingsDB, getSettings } from '../../dao/settings.js';
 import { isQueryError, isQuerySuccess } from '../../external/BaseApiClient.js';
@@ -50,7 +50,7 @@ export class PlexStreamDetails {
   private plex: PlexApiClient;
 
   constructor(
-    private server: Selectable<MediaSource>,
+    private server: Selectable<MediaSourceTable>,
     private settings: SettingsDB = getSettings(),
     private programDB: ProgramDB = new ProgramDB(),
   ) {

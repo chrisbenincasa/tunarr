@@ -148,7 +148,7 @@ class LoggerFactoryImpl {
       {
         level,
         customLevels: {
-          http: 15,
+          http: 25,
         },
       },
       this.createLogStreams(),

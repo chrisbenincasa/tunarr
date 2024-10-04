@@ -23,7 +23,7 @@ import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.js';
 import { Maybe } from '../types/util.js';
 import { asyncPool } from '../util/asyncPool.js';
 import {
-  groupByUniqAndMap,
+  groupByUniqPropAndMap,
   mapAsyncSeq,
   nullToUndefined,
 } from '../util/index.js';
@@ -58,7 +58,7 @@ export class ProgramGroupingCalculator {
       return;
     }
 
-    const parentKeyByProgramId = groupByUniqAndMap(
+    const parentKeyByProgramId = groupByUniqPropAndMap(
       programIds,
       'programId',
       ({ parentKey }) => parentKey,
@@ -270,7 +270,7 @@ export class ProgramGroupingCalculator {
       return;
     }
 
-    const parentKeyByProgramId = groupByUniqAndMap(
+    const parentKeyByProgramId = groupByUniqPropAndMap(
       programIds,
       'programId',
       ({ parentKey }) => parentKey,

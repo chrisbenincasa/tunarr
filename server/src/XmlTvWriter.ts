@@ -8,7 +8,7 @@ import { TvGuideProgram, isContentProgram } from '@tunarr/types';
 import { Mutex } from 'async-mutex';
 import { writeFile } from 'fs/promises';
 import { escape, flatMap, isNil, map, round } from 'lodash-es';
-import { Channel } from './dao/direct/derivedTypes';
+import { Channel } from './dao/direct/schema/Channel';
 import { SettingsDB, getSettings } from './dao/settings';
 import { ChannelPrograms } from './services/tvGuideService';
 import { isNonEmptyString } from './util';

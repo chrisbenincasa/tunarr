@@ -65,7 +65,7 @@ export const metadataApiRouter: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      req.logRequestAtLevel = 'debug';
+      req.logRequestAtLevel = 'trace';
       let result: string | null = null;
       switch (req.query.id.externalSourceType) {
         case ProgramSourceType.PLEX: {

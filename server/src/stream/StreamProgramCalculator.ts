@@ -16,11 +16,8 @@ import {
   StreamLineupItem,
   createOfflineStreamLineupItem,
 } from '../dao/derived_types/StreamLineup.js';
-import {
-  ProgramType,
-  Channel as RawChannel,
-  Program as RawProgramEntity,
-} from '../dao/direct/derivedTypes';
+import { ProgramWithRelations as RawProgramEntity } from '../dao/direct/derivedTypes';
+import { Channel } from '../dao/direct/schema/Channel.js';
 import { MediaSourceType } from '../dao/entities/MediaSource.js';
 import { Program as ProgramEntity } from '../dao/entities/Program.js';
 import { ProgramExternalId } from '../dao/entities/ProgramExternalId.js';
@@ -81,7 +78,7 @@ export class StreamProgramCalculator {
   async getCurrentLineupItem(
     req: GetCurrentLineupItemRequest,
   ): Promise<
-    Result<{ lineupItem: StreamLineupItem; channelContext: RawChannel }>
+    Result<{ lineupItem: StreamLineupItem; channelContext: Channel }>
   > {
     const channel = await this.channelDB.getChannelDirect(req.channelId);
 
@@ -97,7 +94,7 @@ export class StreamProgramCalculator {
     const lineup = await this.channelDB.loadLineup(channel.uuid);
 
     let lineupItem: Maybe<StreamLineupItem>;
-    let channelContext: RawChannel = channel;
+    let channelContext: Channel = channel;
     const redirectChannels: string[] = [];
     const upperBounds: number[] = [];
 
@@ -451,7 +448,7 @@ export class StreamProgramCalculator {
   async createLineupItem(
     activeProgram: StrictExclude<EnrichedLineupItem, RedirectStreamLineupItem>,
     timeElapsed: number,
-    channel: RawChannel,
+    channel: Channel,
   ): Promise<StreamLineupItem> {
     // Start time of a file is never consistent unless 0. Run time of an episode can vary.
     // When within 30 seconds of start time, just make the time 0 to smooth things out
@@ -551,7 +548,7 @@ export class StreamProgramCalculator {
             beginningOffset: beginningOffset,
             externalSourceId: externalInfo.externalSourceId!,
             plexFilePath: externalInfo.externalFilePath,
-            programType: filler.type as ProgramType,
+            programType: filler.type,
           };
         }
       }

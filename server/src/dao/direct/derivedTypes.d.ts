@@ -1,62 +1,58 @@
-import { ChannelStreamMode } from '@tunarr/types';
 import { Selectable } from 'kysely';
 import { DeepNullable, MarkRequired } from 'ts-essentials';
 import { MarkNonNullable } from '../../types/util';
-import {
-  ChannelIcon,
-  ChannelOfflineSettings,
-  ChannelTranscodingSettings,
-  ChannelWatermark,
-} from '../entities/Channel.js';
 import { MediaSourceType } from '../entities/MediaSource';
-import * as RawType from './types.gen';
+import * as RawType from './schema/db';
 
-export type ProgramType = 'movie' | 'episode' | 'track';
-
-export type Program = Selectable<RawType.Program> & {
-  // TODO: Encode this in the DB so the generated types are correct
-  // type: 'movie' | 'episode' | 'track';
-  tvShow?: DeepNullable<Partial<Selectable<RawType.ProgramGrouping>>> | null;
-  tvSeason?: DeepNullable<Partial<Selectable<RawType.ProgramGrouping>>> | null;
-  trackArtist?: DeepNullable<
-    Partial<Selectable<RawType.ProgramGrouping>>
-  > | null;
-  trackAlbum?: DeepNullable<
-    Partial<Selectable<RawType.ProgramGrouping>>
-  > | null;
-  externalIds?: Selectable<RawType.ProgramExternalId>[] | null; // Always require that we select the full external ID details
+export type ProgramWithRelations = RawType.Program & {
+  tvShow?: DeepNullable<Partial<RawType.ProgramGrouping>> | null;
+  tvSeason?: DeepNullable<Partial<RawType.ProgramGrouping>> | null;
+  trackArtist?: DeepNullable<Partial<RawType.ProgramGrouping>> | null;
+  trackAlbum?: DeepNullable<Partial<RawType.ProgramGrouping>> | null;
+  externalIds?: RawType.ProgramExternalId[] | null; // Always require that we select the full external ID details
 };
 
-export type Channel = Selectable<
-  Omit<
-    RawType.Channel,
-    'icon' | 'offline' | 'watermark' | 'transcoding' | 'streamMode'
-  > & {
-    icon?: ChannelIcon;
-    offline?: ChannelOfflineSettings;
-    watermark?: ChannelWatermark;
-    transcoding?: ChannelTranscodingSettings;
-    streamMode: ChannelStreamMode;
-  }
-> & {
-  programs?: Program[];
+// export type Channel = Omit<
+//   RawType.Channel,
+//   'icon' | 'offline' | 'watermark' | 'transcoding' | 'streamMode'
+// > & {
+//   icon?: ChannelIcon;
+//   offline?: ChannelOfflineSettings;
+//   watermark?: ChannelWatermark;
+//   transcoding?: ChannelTranscodingSettings;
+//   streamMode: ChannelStreamMode;
+// } & {
+//   programs?: Program[];
+// };
+
+export type ChannelWithRelations = RawType.Channel & {
+  programs?: ProgramWithRelations[];
+  fillerContent?: ProgramWithRelations[];
 };
 
-export type ChannelFillerShow = Selectable<RawType.ChannelFillerShow> & {
-  fillerShow: MarkNonNullable<
-    DeepNullable<Selectable<RawType.FillerShow>>,
-    'uuid'
-  >;
-  fillerContent?: Program[];
+export type ChannelWithRequiredJoins<Joins extends keyof RawType.Channel> =
+  MarkRequired<ChannelWithRelations, Joins>;
+
+export type ChannelWithPrograms = MarkRequired<
+  ChannelWithRelations,
+  'programs'
+>;
+
+export type ChannelFillerShowWithRelations = RawType.ChannelFillerShow & {
+  fillerShow: MarkNonNullable<DeepNullable<RawType.FillerShow>, 'uuid'>;
+  fillerContent?: ProgramWithRelations[];
 };
 
-export type ChannelWithPrograms = MarkRequired<Channel, 'programs'>;
+export type ChannelFillerShowWithContent = MarkRequired<
+  ChannelFillerShowWithRelations,
+  'fillerContent'
+>;
 
 export type MediaSource = Omit<Selectable<RawType.MediaSource>, 'type'> & {
   type: MediaSourceType;
 };
 
-export type DB = Omit<RawType.DB, 'channel' | 'mediaSource'> & {
-  channel: Channel;
-  mediaSource: MediaSource;
-};
+// export type DB = Omit<RawType.DB, 'channel' | 'mediaSource'> & {
+//   channel: Channel;
+//   mediaSource: MediaSource;
+// };

@@ -2,14 +2,17 @@ import fs from 'fs/promises';
 import ld, { isNil, maxBy, partition, reduce } from 'lodash-es';
 import path from 'path';
 import {
-  groupByUniq,
+  groupByUniqProp,
   isNonEmptyString,
   mapAsyncSeq,
 } from '../../util/index.js';
+import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
 import { getEm } from '../dataSource.js';
 import { CustomShow as CustomShowEntity } from '../entities/CustomShow.js';
 import { CustomShowContent } from '../entities/CustomShowContent.js';
+import { FillerListContent } from '../entities/FillerListContent.js';
 import { FillerShow, FillerShowId } from '../entities/FillerShow.js';
+import { Program } from '../entities/Program.js';
 import { CustomShow } from './legacyDbMigration.js';
 import {
   JSONArray,
@@ -18,9 +21,6 @@ import {
   createProgramEntity,
   uniqueProgramId,
 } from './migrationUtil.js';
-import { FillerListContent } from '../entities/FillerListContent.js';
-import { Program } from '../entities/Program.js';
-import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
 
 // Migrates flex and custom shows
 export class LegacyLibraryMigrator {
@@ -125,7 +125,7 @@ export class LegacyLibraryMigrator {
     const entityType = type === 'custom-shows' ? CustomShowEntity : FillerShow;
     const repo = em.getRepository(entityType);
 
-    const customShowById = groupByUniq(newCustomShows, 'id');
+    const customShowById = groupByUniqProp(newCustomShows, 'id');
 
     await mapAsyncSeq(newCustomShows, async (customShow) => {
       // Refresh the entity after inserting programs

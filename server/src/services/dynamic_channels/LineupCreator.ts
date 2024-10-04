@@ -16,7 +16,7 @@ import { ChannelAndLineup } from '../../types/internal.js';
 import { asyncPool } from '../../util/asyncPool.js';
 import {
   asyncFlow,
-  groupByUniq,
+  groupByUniqProp,
   intersperse,
   isDefined,
 } from '../../util/index.js';
@@ -175,7 +175,7 @@ export class LineupCreator {
 
       const context: LineupBuilderContext = {
         channelId: channel.uuid,
-        programById: groupByUniq(programs, 'uuid'),
+        programById: groupByUniqProp(programs, 'uuid'),
       };
 
       return new Promise((res, rej) => {

@@ -16,7 +16,7 @@ import {
 } from 'lodash-es';
 import path from 'path';
 import { DeepReadonly, DeepRequired } from 'ts-essentials';
-import { Channel } from '../dao/direct/derivedTypes.js';
+import { Channel } from '../dao/direct/schema/Channel';
 import { serverOptions } from '../globals.js';
 import { ConcatSessionType } from '../stream/Session.js';
 import { StreamDetails } from '../stream/types.js';

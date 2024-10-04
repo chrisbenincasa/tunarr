@@ -3,7 +3,7 @@ import {
   UpdateMediaSourceRequest,
 } from '@tunarr/types/api';
 import ld, { isNil, isUndefined, keys, map, mapValues } from 'lodash-es';
-import { groupByUniq, isNonEmptyString } from '../util/index.js';
+import { groupByUniqProp, isNonEmptyString } from '../util/index.js';
 import { ChannelDB } from './channelDb.js';
 import {
   ProgramSourceType,
@@ -235,17 +235,17 @@ export class MediaSourceDB {
         { populate: ['fillerShows', 'channels', 'customShows'] },
       );
 
-    const channelById = groupByUniq(
+    const channelById = groupByUniqProp(
       allPrograms.flatMap((p) => p.channels.toArray()),
       'uuid',
     );
 
-    const customShowById = groupByUniq(
+    const customShowById = groupByUniqProp(
       allPrograms.flatMap((p) => p.customShows.toArray()),
       'uuid',
     );
 
-    const fillersById = groupByUniq(
+    const fillersById = groupByUniqProp(
       allPrograms.flatMap((p) => p.fillerShows.toArray()),
       'uuid',
     );

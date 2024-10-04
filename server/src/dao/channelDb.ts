@@ -48,10 +48,8 @@ import { Low } from 'lowdb';
 import fs from 'node:fs/promises';
 import { join } from 'path';
 import { MarkOptional, MarkRequired } from 'ts-essentials';
-import {
-  Channel as RawChannel,
-  ChannelWithPrograms as RawChannelWithPrograms,
-} from '../dao/direct/derivedTypes.js';
+import { match } from 'ts-pattern';
+import { ChannelWithPrograms as RawChannelWithPrograms } from '../dao/direct/derivedTypes.js';
 import { globalOptions } from '../globals.js';
 import { serverContext } from '../serverContext.js';
 import { typedProperty } from '../types/path.js';
@@ -61,7 +59,7 @@ import { asyncPool } from '../util/asyncPool.js';
 import { fileExists } from '../util/fsUtil.js';
 import {
   groupByFunc,
-  groupByUniq,
+  groupByUniqProp,
   isDefined,
   isNonEmptyString,
   mapAsyncSeq,
@@ -95,11 +93,12 @@ import {
   withTvSeason,
   withTvShow,
 } from './direct/programQueryHelpers.js';
+import { programExternalIdString } from './direct/schema/Program.js';
 import { Channel, ChannelTranscodingSettings } from './entities/Channel.js';
 import { ChannelFillerShow } from './entities/ChannelFillerShow.js';
 import { FillerShow, FillerShowId } from './entities/FillerShow.js';
 import { Program } from './entities/Program.js';
-import { upsertContentPrograms } from './programHelpers.js';
+import { ProgramDB } from './programDB.js';
 
 dayjs.extend(duration);
 
@@ -218,6 +217,8 @@ export class ChannelDB {
   private timer = new Timer(this.logger, 'trace');
   #programConverter = new ProgramConverter();
 
+  constructor(private programDB: ProgramDB = new ProgramDB()) {}
+
   async channelExists(channelId: string) {
     const channel = await directDbAccess()
       .selectFrom('channel')
@@ -269,7 +270,37 @@ export class ChannelDB {
         'channel.uuid',
         'channelPrograms.channelUuid',
       )
-      .select((eb) => withPrograms(eb, { joins: { customShows: true } }))
+      .select((eb) =>
+        withPrograms(eb, {
+          joins: {
+            customShows: true,
+            tvShow: [
+              'programGrouping.uuid',
+              'programGrouping.title',
+              'programGrouping.summary',
+              'programGrouping.type',
+            ],
+            tvSeason: [
+              'programGrouping.uuid',
+              'programGrouping.title',
+              'programGrouping.summary',
+              'programGrouping.type',
+            ],
+            trackArtist: [
+              'programGrouping.uuid',
+              'programGrouping.title',
+              'programGrouping.summary',
+              'programGrouping.type',
+            ],
+            trackAlbum: [
+              'programGrouping.uuid',
+              'programGrouping.title',
+              'programGrouping.summary',
+              'programGrouping.type',
+            ],
+          },
+        }),
+      )
       .groupBy('channel.uuid')
       .orderBy('channel.number asc')
       .executeTakeFirst();
@@ -590,10 +621,11 @@ export class ChannelDB {
       programs: ChannelProgram[],
       lineup: ChannelProgram[] = programs,
     ) => {
-      const upsertedPrograms = await upsertContentPrograms(programs, 50);
+      const upsertedPrograms =
+        await this.programDB.upsertContentPrograms(programs);
       const dbIdByUniqueId = groupByFunc(
         upsertedPrograms,
-        (p) => p.uniqueId(),
+        programExternalIdString,
         (p) => p.uuid,
       );
       return map(lineup, channelProgramToLineupItemFunc(dbIdByUniqueId));
@@ -891,7 +923,7 @@ export class ChannelDB {
       (eid) => eid.programUuid,
     );
 
-    const programsById = groupByUniq(directPrograms, 'uuid');
+    const programsById = groupByUniqProp(directPrograms, 'uuid');
 
     const materializedPrograms = this.timer.timeSync('program convert', () => {
       const ret: Record<string, ContentProgram> = {};
@@ -1067,29 +1099,46 @@ export class ChannelDB {
   }
 
   private async buildApiLineup(
-    channel: MarkRequired<RawChannel, 'programs'>,
+    channel: RawChannelWithPrograms,
     lineup: LineupItem[],
   ): Promise<{ lineup: ChannelProgram[]; offsets: number[] }> {
-    const allChannels = directDbAccess()
+    const allChannels = await directDbAccess()
       .selectFrom('channel')
       .select(['channel.uuid', 'channel.number', 'channel.name'])
       .execute();
     let lastOffset = 0;
     const offsets: number[] = [];
-    const programs = compact(
-      await mapAsyncSeq(lineup, async (item) => {
-        const apiItem = this.#programConverter.directLineupItemToChannelProgram(
-          channel,
-          item,
-          await allChannels,
+
+    const programsById = groupByUniqProp(channel.programs, 'uuid');
+
+    const programs: ChannelProgram[] = [];
+
+    for (const item of lineup) {
+      const apiItem = match(item)
+        .with({ type: 'content' }, (contentItem) => {
+          const fullProgram = programsById[contentItem.id];
+          if (!fullProgram) {
+            return null;
+          }
+          return this.#programConverter.directEntityToContentProgramSync(
+            fullProgram,
+            fullProgram.externalIds ?? [],
+          );
+        })
+        .otherwise((item) =>
+          this.#programConverter.directLineupItemToChannelProgram(
+            channel,
+            item,
+            allChannels,
+          ),
         );
-        if (apiItem) {
-          offsets.push(lastOffset);
-          lastOffset += item.durationMs;
-        }
-        return apiItem;
-      }),
-    );
+
+      if (apiItem) {
+        offsets.push(lastOffset);
+        lastOffset += item.durationMs;
+        programs.push(apiItem);
+      }
+    }
 
     return { lineup: programs, offsets };
   }
@@ -1142,7 +1191,7 @@ export class ChannelDB {
         fields: ['name', 'number'],
       });
 
-    const channelsById = groupByUniq(allChannels, 'uuid');
+    const channelsById = groupByUniqProp(allChannels, 'uuid');
 
     const programs = ld
       .chain(lineup)

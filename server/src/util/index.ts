@@ -52,42 +52,15 @@ export function mapToObj<T, U, O extends Record<string | number, U>>(
 
 // Last wins - could add an option, but generally this should
 // only be used when the array is known to be unique
-export function groupByUniq<
+export function groupByUniqProp<
   T,
   K extends KeysOfType<T>,
   Key extends IsStringOrNumberValue<T, K>,
 >(data: T[], member: K): Record<Key, T> {
-  const out: Record<Key, T> = {} as Record<Key, T>;
-  for (const t of data) {
-    out[t[member] as Key] = t;
-  }
-  return out;
+  return groupByUniqPropAndMap(data, member);
 }
 
-export function groupByUniqFunc<T, Key extends string | number>(
-  data: T[],
-  func: (item: T) => Key,
-): Record<Key, T> {
-  const out: Record<Key, T> = {} as Record<Key, T>;
-  for (const t of data) {
-    out[func(t)] = t;
-  }
-  return out;
-}
-
-export function groupByFunc<T, Key extends string | number | symbol, Value>(
-  data: T[],
-  func: (val: T) => Key,
-  mapper: (val: T) => Value = identity,
-): Record<Key, Value> {
-  const out: Record<Key, Value> = {} as Record<Key, Value>;
-  for (const t of data) {
-    out[func(t)] = mapper(t);
-  }
-  return out;
-}
-
-export function groupByUniqAndMap<
+export function groupByUniqPropAndMap<
   T,
   K extends KeysOfType<T>,
   Key extends IsStringOrNumberValue<T, K>,
@@ -95,7 +68,7 @@ export function groupByUniqAndMap<
 >(
   data: T[],
   member: K | ((item: T) => K),
-  mapper: (val: T) => Value,
+  mapper: (val: T) => Value = identity,
 ): Record<Key, Value> {
   const out: Record<Key, Value> = {} as Record<Key, Value>;
   for (const t of data) {
@@ -105,7 +78,7 @@ export function groupByUniqAndMap<
 }
 
 // This will fail if any mapping function fails
-export function groupByUniqAndMapAsync<
+export function groupByUniqPropAndMapAsync<
   T,
   K extends KeysOfType<T>,
   Key extends IsStringOrNumberValue<T, K>,
@@ -131,6 +104,38 @@ export function groupByUniqAndMapAsync<
   );
 }
 
+export function groupByUniq<T, Key extends string | number | symbol>(
+  data: T[],
+  func: (item: T) => Key,
+): Record<Key, T> {
+  return groupByFunc(data, func);
+}
+
+export function groupByFunc<T, Key extends string | number | symbol, Value>(
+  data: T[],
+  func: (val: T) => Key,
+  mapper: (val: T) => Value = identity,
+): Record<Key, Value> {
+  const out: Record<Key, Value> = {} as Record<Key, Value>;
+  for (const t of data) {
+    out[func(t)] = mapper(t);
+  }
+  return out;
+}
+
+export function groupByTyped<T, Key extends string | number | symbol>(
+  data: T[],
+  grouper: (val: T) => Key,
+): Record<Key, T[]> {
+  const out = {} as Record<Key, T[]>;
+  for (const t of data) {
+    const k = grouper(t);
+    out[k] ??= [];
+    out[k].push(t);
+  }
+  return out;
+}
+
 export function groupByAndMapAsync<
   T,
   Key extends string | number | symbol,
@@ -149,6 +154,14 @@ export function groupByAndMapAsync<
     opts,
   );
 }
+
+// export async function forEachAsync<T>(arr: Nilable<ArrayLike<T> | object | string>) {
+//   if (isNil(arr)) {
+//     return;
+//   }
+
+//   for (const c of)
+// }
 
 type mapAsyncSeq2Opts = {
   ms?: number;

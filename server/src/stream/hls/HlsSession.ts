@@ -3,7 +3,7 @@ import ld, { isEmpty } from 'lodash-es';
 import fs from 'node:fs/promises';
 import path, { extname } from 'node:path';
 import { ChannelDB } from '../../dao/channelDb';
-import { Channel } from '../../dao/direct/derivedTypes';
+import { Channel } from '../../dao/direct/schema/Channel';
 import { getSettings } from '../../dao/settings';
 import { FfmpegTranscodeSession } from '../../ffmpeg/FfmpegTrancodeSession';
 import { GetLastPtsDurationTask } from '../../ffmpeg/GetLastPtsDuration';

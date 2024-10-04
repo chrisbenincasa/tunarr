@@ -1,25 +1,24 @@
 import { Loaded } from '@mikro-orm/core';
 import { createExternalId } from '@tunarr/shared';
 import { buildPlexFilterKey } from '@tunarr/shared/util';
+import { ContentProgram } from '@tunarr/types';
 import { DynamicContentConfigPlexSource } from '@tunarr/types/api';
 import { PlexLibraryListing } from '@tunarr/types/plex';
 import { isNil, map } from 'lodash-es';
 import { ChannelDB } from '../../dao/channelDb.js';
 import { EntityManager } from '../../dao/dataSource.js';
+import { PendingProgram } from '../../dao/derived_types/Lineup.js';
 import { Channel } from '../../dao/entities/Channel.js';
 import { MediaSource } from '../../dao/entities/MediaSource.js';
 import { ProgramDB } from '../../dao/programDB.js';
 import { PlexApiClient } from '../../external/plex/PlexApiClient.js';
+import { Logger, LoggerFactory } from '../../util/logging/LoggerFactory.js';
+import { Timer } from '../../util/perf.js';
 import {
   EnrichedPlexTerminalMedia,
   PlexItemEnumerator,
 } from '../PlexItemEnumerator.js';
 import { ContentSourceUpdater } from './ContentSourceUpdater.js';
-import { upsertContentPrograms } from '../../dao/programHelpers.js';
-import { ContentProgram } from '@tunarr/types';
-import { PendingProgram } from '../../dao/derived_types/Lineup.js';
-import { Logger, LoggerFactory } from '../../util/logging/LoggerFactory.js';
-import { Timer } from '../../util/perf.js';
 
 export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicContentConfigPlexSource> {
   #logger: Logger = LoggerFactory.child({
@@ -28,6 +27,7 @@ export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicConten
   #timer = new Timer(this.#logger);
   #plex: PlexApiClient;
   #channelDB: ChannelDB;
+  #programDB: ProgramDB;
 
   constructor(
     channel: Loaded<Channel>,
@@ -35,6 +35,7 @@ export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicConten
   ) {
     super(channel, config);
     this.#channelDB = new ChannelDB();
+    this.#programDB = new ProgramDB();
   }
 
   protected async prepare(em: EntityManager) {
@@ -60,8 +61,6 @@ export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicConten
       ),
     );
 
-    console.log(filter.join('&'));
-
     const enumerator = new PlexItemEnumerator(this.#plex, new ProgramDB());
 
     const enumeratedItems = await this.#timer.timeAsync('enumerate items', () =>
@@ -72,7 +71,8 @@ export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicConten
       return plexMediaToContentProgram(this.#plex.serverName, media);
     });
 
-    const dbPrograms = await upsertContentPrograms(channelPrograms);
+    const dbPrograms =
+      await this.#programDB.upsertContentPrograms(channelPrograms);
 
     const now = new Date().getTime();
 
