@@ -6,7 +6,6 @@ import { CheckCircle, RadioButtonUnchecked } from '@mui/icons-material';
 import {
   Box,
   Fade,
-  Unstable_Grid2 as Grid,
   IconButton,
   ImageListItem,
   ImageListItemBar,
@@ -137,16 +136,16 @@ const MediaGridItemInner = <T,>(
       rootMargin: '0px',
       freezeOnceVisible: true,
     });
-
   return (
     <Fade
       in={isInViewport && !isUndefined(item) && hasThumbnail === imageLoaded}
       timeout={750}
       ref={imageContainerRef}
     >
-      <div className="testtesteststestes">
+      <div>
         <ImageListItem
-          component={Grid}
+          component="div"
+          // component={Grid}
           key={itemId}
           sx={{
             cursor: 'pointer',

@@ -78,7 +78,6 @@ export function JellyfinProgrammingSelector() {
     selectedLibrary?.library.Id ?? '',
     itemTypes,
     true,
-    20,
   );
 
   const totalItems = useMemo(() => {

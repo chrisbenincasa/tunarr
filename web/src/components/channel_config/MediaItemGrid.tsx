@@ -9,13 +9,12 @@ import {
   Box,
   CircularProgress,
   Divider,
-  Grid,
   List,
   Typography,
 } from '@mui/material';
 import { InfiniteData, UseInfiniteQueryResult } from '@tanstack/react-query';
 import { usePrevious } from '@uidotdev/usehooks';
-import { compact, flatMap, map, sumBy } from 'lodash-es';
+import { compact, flatMap, inRange, map, sumBy } from 'lodash-es';
 import {
   ForwardedRef,
   useCallback,
@@ -24,6 +23,10 @@ import {
   useRef,
   useState,
 } from 'react';
+import {
+  GridChildComponentProps,
+  VariableSizeGrid as WindowGrid,
+} from 'react-window';
 import {
   useDebounceCallback,
   useIntersectionObserver,
@@ -36,6 +39,7 @@ export interface GridItemProps<ItemType> {
   isModalOpen: boolean;
   moveModal: (index: number, item: ItemType) => void;
   ref: ForwardedRef<HTMLDivElement>;
+  style?: object;
 }
 
 export interface GridInlineModalProps<ItemType> {
@@ -258,27 +262,105 @@ export function MediaItemGrid<PageDataType, ItemType>({
     });
   };
 
+  const items = compact(flatMap(data?.pages, extractItems));
+
+  const renderVirtualGridItem = ({
+    columnIndex,
+    rowIndex,
+    style,
+  }: GridChildComponentProps<any>) => {
+    const absIndex = rowIndex * rowSize + columnIndex;
+    if (!inRange(absIndex, 0, items.length)) {
+      return null;
+    }
+
+    const isLast = absIndex === items.length - 1;
+
+    const renderModal =
+      // isParentItem(gridItemProps.item) &&
+      (absIndex + 1) % rowSize === 0 || isLast;
+
+    return renderGridItem(
+      {
+        item: renderModal ? items[1] : items[absIndex],
+        index: absIndex,
+        isModalOpen: modalIndex === absIndex,
+        moveModal: handleMoveModal,
+        ref:
+          absIndex === 0
+            ? gridItemRef
+            : modalIndex === absIndex
+            ? selectedModalItemRef
+            : null,
+        style,
+      },
+      {
+        open: absIndex === lastItemIndex,
+        modalItemGuid: modalGuid,
+        modalIndex,
+        rowSize,
+        renderChildren: renderGridItem,
+      },
+    );
+  };
+
+  const getColumnWidth = (index: number) => {
+    const absIndex = index;
+    const isLast = absIndex === items.length - 1;
+
+    const renderModal =
+      // isParentItem(gridItemProps.item) &&
+      (absIndex + 1) % rowSize === 0 || isLast;
+    // if (renderModal) {
+    //   return width!;
+    // } else {
+    //   return 160;
+    // }
+    return 160;
+  };
+
+  const getRowHeight = useCallback(
+    (index: number) => {
+      console.log(modalIndex);
+      return 287;
+    },
+    [modalIndex],
+  );
+
   return (
     <>
       <Box ref={gridContainerRef} sx={{ width: '100%' }}>
         {viewType === 'grid' ? (
-          <Grid
-            container
-            component="div"
-            spacing={2}
-            sx={{
-              display: viewType === 'grid' ? 'grid' : 'flex',
-              gridTemplateColumns:
-                viewType === 'grid'
-                  ? 'repeat(auto-fill, minmax(160px, 1fr))'
-                  : 'none',
-              justifyContent: viewType === 'grid' ? 'space-around' : 'normal',
-              mt: 2,
-            }}
-            ref={ref}
-          >
-            {renderItems()}
-          </Grid>
+          // <Grid
+          //   container
+          //   component="div"
+          //   spacing={2}
+          //   sx={{
+          //     display: viewType === 'grid' ? 'grid' : 'flex',
+          //     gridTemplateColumns:
+          //       viewType === 'grid'
+          //         ? 'repeat(auto-fill, minmax(160px, 1fr))'
+          //         : 'none',
+          //     justifyContent: viewType === 'grid' ? 'space-around' : 'normal',
+          //     mt: 2,
+          //   }}
+          //   ref={ref}
+          // >
+          //   {renderItems()}
+          // </Grid>
+          width && (
+            <WindowGrid
+              columnCount={rowSize}
+              columnWidth={getColumnWidth}
+              height={1000}
+              rowCount={20}
+              rowHeight={getRowHeight}
+              width={width}
+              style={{ overflow: 'auto', scrollbarWidth: 'none' }}
+            >
+              {renderVirtualGridItem}
+            </WindowGrid>
+          )
         ) : (
           <List>{renderItems()}</List>
         )}

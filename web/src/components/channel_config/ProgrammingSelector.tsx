@@ -105,13 +105,15 @@ export default function ProgrammingSelector(_: Props) {
   );
 
   useEffect(() => {
-    const server =
-      !isUndefined(mediaSources) && !isEmpty(mediaSources)
-        ? mediaSources[0]
-        : undefined;
+    if (!selectedServer) {
+      const server =
+        !isUndefined(mediaSources) && !isEmpty(mediaSources)
+          ? mediaSources[0]
+          : undefined;
 
-    setProgrammingListingServer(server);
-  }, [mediaSources]);
+      setProgrammingListingServer(server);
+    }
+  }, [mediaSources, selectedServer]);
 
   useEffect(() => {
     if (selectedServer?.type === 'plex' && plexLibraryChildren) {

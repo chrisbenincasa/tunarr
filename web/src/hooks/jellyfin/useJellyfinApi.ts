@@ -1,12 +1,12 @@
 import { isNonEmptyString } from '@/helpers/util.ts';
-import { useApiQuery } from '../useApiQuery.ts';
-import { every, flatMap, isEmpty, isUndefined, sumBy } from 'lodash-es';
-import { useTunarrApi } from '../useTunarrApi.ts';
-import { useInfiniteQuery } from '@tanstack/react-query';
-import { useEffect } from 'react';
 import { addKnownMediaForJellyfinServer } from '@/store/programmingSelector/actions.ts';
-import { MediaSourceId } from '@tunarr/types/schemas';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { JellyfinItemKind } from '@tunarr/types/jellyfin';
+import { MediaSourceId } from '@tunarr/types/schemas';
+import { every, flatMap, isEmpty, isUndefined, sumBy } from 'lodash-es';
+import { useEffect } from 'react';
+import { useApiQuery } from '../useApiQuery.ts';
+import { useTunarrApi } from '../useTunarrApi.ts';
 
 export const useJellyfinUserLibraries = (
   mediaSourceId: string,
@@ -66,7 +66,7 @@ export const useInfiniteJellyfinLibraryItems = (
   parentId: string,
   itemTypes: JellyfinItemKind[],
   enabled: boolean = true,
-  chunkSize: number = 20,
+  chunkSize: number = 50,
 ) => {
   const apiClient = useTunarrApi();
   const key = [
