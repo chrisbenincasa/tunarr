@@ -241,7 +241,7 @@ export async function initServer(opts: ServerOptions) {
     );
 
   app.addHook('onResponse', (req, rep, done) => {
-    if (req['disableRequestLogging']) {
+    if (req.routeOptions.config.disableRequestLogging) {
       return;
     }
 
@@ -258,7 +258,7 @@ export async function initServer(opts: ServerOptions) {
 
     const roundedTime = round(rep.elapsedTime, 4);
 
-    logger[req['logRequestAtLevel'] ?? 'http'](
+    logger[req.routeOptions.config.logAtLevel ?? 'http'](
       `${req.method} ${req.url} ${rep.statusCode} -${lengthStr}${roundedTime}ms`,
       {
         req: {
@@ -364,14 +364,17 @@ export async function initServer(opts: ServerOptions) {
           root: path.join(currentDirectory, 'web'),
           schemaHide: true,
         });
-        f.addHook('onRequest', (req, _, done) => {
-          req.disableRequestLogging = true;
-          done();
-        });
         // Make it work with just '/web' and not '/web/;
-        f.get('/', { schema: { hide: true } }, async (_, res) => {
-          return res.sendFile('index.html', path.join(currentDirectory, 'web'));
-        });
+        f.get(
+          '/',
+          { schema: { hide: true }, config: { disableRequestLogging: true } },
+          async (_, res) => {
+            return res.sendFile(
+              'index.html',
+              path.join(currentDirectory, 'web'),
+            );
+          },
+        );
         // client side routing 'hack'. This makes navigating to other client-side
         // routes work as expected.
         f.setNotFoundHandler(async (_, res) => {

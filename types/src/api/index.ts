@@ -5,6 +5,7 @@ import {
   LoggingSettingsSchema,
   SystemSettingsSchema,
 } from '../SystemSettings.js';
+import { JellyfinItemFields, JellyfinItemKind } from '../jellyfin/index.js';
 import {
   ChannelProgramSchema,
   ContentProgramSchema,
@@ -255,3 +256,26 @@ export const ChannelSessionsResponseSchema = z.object({
 export type ChannelSessionsResponse = z.infer<
   typeof ChannelSessionsResponseSchema
 >;
+
+export const JellyfinGetLibraryItemsQuerySchema = z.object({
+  offset: z.coerce.number().nonnegative().optional(),
+  limit: z.coerce.number().positive().optional(),
+  itemTypes: z
+    .string()
+    .optional()
+    .transform((s) => s?.split(','))
+    .pipe(JellyfinItemKind.array().optional()),
+  extraFields: z
+    .string()
+    .optional()
+    .transform((s) => s?.split(','))
+    .pipe(JellyfinItemFields.array().optional()),
+  // pipe delimited
+  genres: z
+    .string()
+    .optional()
+    .transform((s) => s?.split('|').filter((s) => s.trim().length > 0)),
+  nameStartsWithOrGreater: z.string().min(1).optional(),
+  nameStartsWith: z.string().min(1).optional(),
+  nameLessThan: z.string().min(1).optional(),
+});

@@ -1,21 +1,21 @@
 import { JellyfinLoginRequest } from '@tunarr/types/api';
 import {
-  RouterPluginCallback,
-  ZodFastifyRequest,
-} from '../types/serverType.js';
-import { JellyfinApiClient } from '../external/jellyfin/JellyfinApiClient.js';
-import { isDefined, nullToUndefined } from '../util/index.js';
-import { z } from 'zod';
-import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.js';
-import { MediaSource, MediaSourceType } from '../dao/entities/MediaSource.js';
-import { isNull, uniq } from 'lodash-es';
-import { isQueryError } from '../external/BaseApiClient.js';
-import {
   JellyfinItemFields,
   JellyfinItemKind,
   JellyfinLibraryItemsResponse,
 } from '@tunarr/types/jellyfin';
 import { FastifyReply } from 'fastify/types/reply.js';
+import { isNull, uniq } from 'lodash-es';
+import { z } from 'zod';
+import { MediaSource, MediaSourceType } from '../dao/entities/MediaSource.js';
+import { isQueryError } from '../external/BaseApiClient.js';
+import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.js';
+import { JellyfinApiClient } from '../external/jellyfin/JellyfinApiClient.js';
+import {
+  RouterPluginCallback,
+  ZodFastifyRequest,
+} from '../types/serverType.js';
+import { isDefined, nullToUndefined } from '../util/index.js';
 
 const mediaSourceParams = z.object({
   mediaSourceId: z.string(),
@@ -80,12 +80,20 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
             .string()
             .optional()
             .transform((s) => s?.split(','))
-            .pipe(JellyfinItemKind.array().optional()),
+            .pipe(JellyfinItemKind.array()),
           extraFields: z
             .string()
             .optional()
             .transform((s) => s?.split(','))
             .pipe(JellyfinItemFields.array().optional()),
+          // pipe delimited
+          genres: z
+            .string()
+            .optional()
+            .transform((s) => s?.split('|').filter((s) => s.trim().length > 0)),
+          nameStartsWithOrGreater: z.string().min(1).optional(),
+          nameStartsWith: z.string().min(1).optional(),
+          nameLessThan: z.string().min(1).optional(),
         }),
         response: {
           200: JellyfinLibraryItemsResponse,
@@ -94,6 +102,7 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
     },
     (req, res) =>
       withJellyfinMediaSource(req, res, async (mediaSource) => {
+        console.log(req.query.itemTypes);
         const api = await MediaSourceApiFactory().getJellyfinClient({
           ...mediaSource,
           url: mediaSource.uri,
@@ -116,6 +125,10 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
           pageParams,
           {
             filters: 'IsFolder=false',
+            nameStartsWithOrGreater: req.query.nameStartsWithOrGreater,
+            nameStartsWith: req.query.nameStartsWith,
+            nameLessThan: req.query.nameLessThan,
+            genres: req.query.genres?.join('|'),
           },
         );
 

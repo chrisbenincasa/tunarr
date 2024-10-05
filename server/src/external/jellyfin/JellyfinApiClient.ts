@@ -13,7 +13,15 @@ import axios, {
   InternalAxiosRequestConfig,
   isAxiosError,
 } from 'axios';
-import { find, first, isEmpty, isObject, union } from 'lodash-es';
+import {
+  find,
+  first,
+  isEmpty,
+  isNil,
+  isObject,
+  omitBy,
+  union,
+} from 'lodash-es';
 import { v4 } from 'uuid';
 import { z } from 'zod';
 import { Maybe, Nilable } from '../../types/util';
@@ -218,7 +226,7 @@ export class JellyfinApiClient extends BaseApiClient<JellyfinApiClientOptions> {
         sortBy: 'SortName,ProductionYear',
         recursive: true,
         includeItemTypes: itemTypes ? itemTypes.join(',') : undefined,
-        ...extraParams,
+        ...omitBy(extraParams, (v) => isNil(v) || isEmpty(v)),
       },
     });
   }

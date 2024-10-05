@@ -73,13 +73,12 @@ const MediaGridItemInner = <T,>(
   props: Props<T>,
   ref: ForwardedRef<HTMLDivElement>,
 ) => {
-  // const settings = useSettings();
   const theme = useTheme();
   const skeletonBgColor = alpha(
     theme.palette.text.primary,
     theme.palette.mode === 'light' ? 0.11 : 0.13,
   );
-  // const server = useCurrentMediaSource('plex')!; // We have to have a server at this point
+
   const darkMode = useStore((state) => state.theme.darkMode);
   const {
     item,
@@ -134,17 +133,17 @@ const MediaGridItemInner = <T,>(
   const { isIntersecting: isInViewport, ref: imageContainerRef } =
     useIntersectionObserver({
       threshold: 0,
-      rootMargin: '0px',
+      rootMargin: '40px 0px 0px 0px',
       freezeOnceVisible: true,
     });
 
   return (
     <Fade
       in={isInViewport && !isUndefined(item) && hasThumbnail === imageLoaded}
-      timeout={750}
+      timeout={400}
       ref={imageContainerRef}
     >
-      <div className="testtesteststestes">
+      <div>
         <ImageListItem
           component={Grid}
           key={itemId}

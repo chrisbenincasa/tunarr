@@ -23,9 +23,11 @@ export class HdhrApiRouter {
         this.logger.error({ url: req.routeOptions.config.url, error });
         done();
       })
-      .addHook('onRequest', (req, _, done) => {
-        req.disableRequestLogging = true;
-        done();
+      .addHook('onRoute', (routeOpts) => {
+        if (!routeOpts.config) {
+          routeOpts.config = {};
+        }
+        routeOpts.config.disableRequestLogging = true;
       });
 
     fastify.get('/device.xml', (req, res) => {

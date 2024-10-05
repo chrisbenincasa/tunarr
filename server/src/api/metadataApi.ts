@@ -1,6 +1,9 @@
 import axios, { AxiosHeaders } from 'axios';
+import { createHash } from 'crypto';
+import dayjs from 'dayjs';
 import { HttpHeader } from 'fastify/types/utils';
 import { isNil, isNull, isString, isUndefined, omitBy } from 'lodash-es';
+import NodeCache from 'node-cache';
 import stream from 'stream';
 import { z } from 'zod';
 import {
@@ -8,6 +11,7 @@ import {
   programSourceTypeFromString,
 } from '../dao/custom_types/ProgramSourceType';
 import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory';
+import { TruthyQueryParam } from '../types/schemas';
 import { RouterPluginAsyncCallback } from '../types/serverType';
 
 const externalIdSchema = z
@@ -46,6 +50,7 @@ const ExternalMetadataQuerySchema = z.object({
   id: externalIdSchema,
   asset: z.union([z.literal('thumb'), z.literal('external-link')]),
   mode: z.union([z.literal('json'), z.literal('redirect'), z.literal('proxy')]),
+  cache: TruthyQueryParam.optional().default(true),
   thumbOptions: z
     .string()
     .transform((s) => JSON.parse(s) as unknown)
@@ -55,6 +60,11 @@ const ExternalMetadataQuerySchema = z.object({
 
 type ExternalMetadataQuery = z.infer<typeof ExternalMetadataQuerySchema>;
 
+const ExternalUrlCache = new NodeCache({
+  maxKeys: 10_000,
+  stdTTL: 1000 * 60 * 60,
+});
+
 // eslint-disable-next-line @typescript-eslint/require-await
 export const metadataApiRouter: RouterPluginAsyncCallback = async (fastify) => {
   fastify.get(
@@ -63,9 +73,11 @@ export const metadataApiRouter: RouterPluginAsyncCallback = async (fastify) => {
       schema: {
         querystring: ExternalMetadataQuerySchema,
       },
+      config: {
+        logAtLevel: 'debug',
+      },
     },
     async (req, res) => {
-      req.logRequestAtLevel = 'trace';
       let result: string | null = null;
       switch (req.query.id.externalSourceType) {
         case ProgramSourceType.PLEX: {
@@ -94,6 +106,12 @@ export const metadataApiRouter: RouterPluginAsyncCallback = async (fastify) => {
           if (!result) {
             return res.status(404).send();
           }
+
+          const key = createHash('md5').update(result).digest('base64');
+          if (req.query.cache && ExternalUrlCache.has(key)) {
+            return res.status(304).send();
+          }
+
           const proxyRes = await axios.request<stream.Readable>({
             url: result,
             responseType: 'stream',
@@ -106,6 +124,13 @@ export const metadataApiRouter: RouterPluginAsyncCallback = async (fastify) => {
             };
           } else {
             headers = { ...omitBy(proxyRes.headers, isNull) };
+          }
+
+          if (req.query.cache) {
+            ExternalUrlCache.set(key, result);
+            headers['cache-control'] = `max-age=${dayjs
+              .duration({ hours: 1 })
+              .asSeconds()}`;
           }
 
           return res

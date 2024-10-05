@@ -1,8 +1,8 @@
-import { makeEndpoint, parametersBuilder } from '@zodios/core';
 import {
   JellyfinItemKind,
   JellyfinLibraryItemsResponse,
 } from '@tunarr/types/jellyfin';
+import { makeEndpoint, parametersBuilder } from '@zodios/core';
 import { z } from 'zod';
 
 export const jellyfinEndpoints = [
@@ -30,6 +30,9 @@ export const jellyfinEndpoints = [
         itemTypes: JellyfinItemKind.array()
           .transform((arr) => arr?.join(','))
           .optional(),
+        nameStartsWithOrGreater: z.string().min(1).optional(),
+        nameStartsWith: z.string().min(1).optional(),
+        nameLessThan: z.string().min(1).optional(),
       })
       .build(),
     response: JellyfinLibraryItemsResponse,

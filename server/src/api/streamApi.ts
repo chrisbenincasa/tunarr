@@ -189,10 +189,6 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
   fastify.get(
     '/stream/channels/:id/:sessionType/:file',
     {
-      onRequest: (req, _, done) => {
-        req.disableRequestLogging = true;
-        done();
-      },
       schema: {
         hide: true,
         params: z.object({
@@ -202,6 +198,9 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
           id: z.string().uuid(),
           file: z.string(),
         }),
+      },
+      config: {
+        disableRequestLogging: true,
       },
     },
     async (req, res) => {

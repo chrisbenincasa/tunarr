@@ -1,7 +1,7 @@
 import { LevelWithSilent } from 'pino';
 import { EntityManager } from '../dao/dataSource.ts';
 import { ServerContext } from '../serverContext.ts';
-import { ExtraLogLevels } from '../util/logging/LoggerFactory.js';
+import { ExtraLogLevels, LogLevels } from '../util/logging/LoggerFactory.js';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -14,5 +14,10 @@ declare module 'fastify' {
 
     disableRequestLogging?: boolean;
     logRequestAtLevel?: LevelWithSilent | ExtraLogLevels;
+  }
+
+  interface FastifyContextConfig {
+    logAtLevel?: LogLevels;
+    disableRequestLogging?: boolean;
   }
 }
