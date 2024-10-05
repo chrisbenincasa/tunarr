@@ -1,15 +1,15 @@
+import { Route } from '@/routes/channels_/$channelId/watch.tsx';
 import { PlayArrow, Replay } from '@mui/icons-material';
 import { Alert, Box } from '@mui/material';
 import Button from '@mui/material/Button';
+import { useBlocker, useLocation } from '@tanstack/react-router';
 import Hls from 'hls.js';
 import { isError, isNil } from 'lodash-es';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useBlocker, useLocation } from '@tanstack/react-router';
 import { useFfmpegSettings } from '../hooks/settingsHooks.ts';
 import { useHls } from '../hooks/useHls.ts';
 import { useTunarrApi } from '../hooks/useTunarrApi.ts';
 import { useSettings } from '../store/settings/selectors.ts';
-import { Route } from '@/routes/channels_/$channelId/watch.tsx';
 
 type VideoProps = {
   channelId: string;
@@ -73,18 +73,8 @@ export default function Video({ channelId }: VideoProps) {
     const video = videoRef.current;
     if ((autoPlayEnabled || manuallyStarted) && video && hls && canLoadStream) {
       setLoadedStream(true);
-      apiClient
-        .startHlsStream(undefined, { params: { channel: channelId } })
-        .then(({ streamPath }) => {
-          hls.loadSource(`${backendUri}${streamPath}`);
-          hls.attachMedia(video);
-        })
-        .catch((err) => {
-          console.error('Unable to fetch stream URL', err);
-          setLoadedStream(
-            isError(err) ? err : new Error('Unable to fetch stream url'),
-          );
-        });
+      hls.loadSource(`${backendUri}/stream/channels/${channelId}.m3u8`);
+      hls.attachMedia(video);
     }
   }, [
     autoPlayEnabled,

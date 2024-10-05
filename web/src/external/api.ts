@@ -31,8 +31,8 @@ import {
 import { isEmpty } from 'lodash-es';
 import { z } from 'zod';
 import { getFfmpegInfoEndpoint } from './ffmpegApi.ts';
-import { endpoints as settingsEndpoints } from './settingsApi.ts';
 import { jellyfinEndpoints } from './jellyfinApi.ts';
+import { endpoints as settingsEndpoints } from './settingsApi.ts';
 
 export const api = makeApi([
   {
@@ -385,15 +385,14 @@ export const api = makeApi([
     response: FillerListSchema,
   },
   {
-    method: 'put',
-    path: '/media-player/:channel/hls',
-    alias: 'startHlsStream',
+    method: 'get',
+    path: '/stream/channels/:channel.m3u8',
+    alias: 'getHlsPlaylist',
     parameters: parametersBuilder()
       .addPath('channel', z.coerce.number().or(z.string().uuid()))
-      .addBody(z.undefined())
       .build(),
     status: 200,
-    response: z.object({ streamPath: z.string() }),
+    response: z.any(),
   },
   getFfmpegInfoEndpoint,
   {
