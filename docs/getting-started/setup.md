@@ -26,6 +26,8 @@ services:
     # runtime: nvidia
     environment:
       - LOG_LEVEL=${TUNARR_LOG_LEVEL:-INFO}
+    # Uncomment if you'd like to adjust default config path
+    # - TUNARR_DATABASE_PATH=/your/path/tunarr
     # volumes:
     # The host path is relative to the location of the compose file
     # This can also use an absolute path.
@@ -73,11 +75,15 @@ docker run \
 
 Upon first launching Tunarr, you will see the Welcome page with a few required setup steps.
 
-![Welcome Page No Plex](../assets/welcome_page_not_connected.png)
+![Welcome Page Plex-Jellyfin](../assets/add-media-source.png)
 
 ### Media Sources
 
-Currently, Tunarr supports Plex and Jellyfin as media sources. In order to add programming to your channels, you must connect at least media source. Each media source acts as a metadata source for your programming, and optionally, the streaming source. Click the "Connect Plex" button to start Plex authentication and add your first Plex server to Tunarr.
+Currently, Tunarr supports Plex and Jellyfin as media sources. In order to add programming to your channels, you must connect at least one media source. Each media source acts as a metadata source for your programming, and optionally, the streaming source. 
+
+Click the "Add" button, followed by your source. For Plex, you can choose Auto to perform automatic web authentication. Alternatively, you can select Manual, input your URL (http://serverIP:32400) and [Access Token](https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/). Unless you have a specific reason for doing so, leave Auto-Update Guide and Auto-Update Channels unchecked. If communication with your server is successful, you should see a green checkmark cloud icon next to your server URL. 
+
+![Manual Plex server](../assets/new-plex-server-manual.png)
 
 !!! info
 
@@ -85,9 +91,15 @@ Currently, Tunarr supports Plex and Jellyfin as media sources. In order to add p
 
 ### FFMPEG
 
-Tunarr also requires [FFMPEG](https://ffmpeg.org/). FFMPEG is used to normalize channel video / audio streams for seamless playback, interleave your "flex" content, and more. Tunarr defaults to looking for the FFMPEG executable at `/usr/bin/ffmpeg`. If no executable is found, you can change the path in the FFMPEG settings page.
+Tunarr also requires [FFMPEG](https://ffmpeg.org/). FFMPEG is used to normalize channel video / audio streams for seamless playback, interleave your "flex" content, and more. Tunarr defaults to looking for the FFMPEG executable at `/usr/bin/ffmpeg`. If no executable is found, you can change the path in the FFMPEG settings page. 
+
+Please note that FFMPEG is built into the Docker image, so Docker users should not need to make any adjustments to this page. 
 
 ![Welcome Page With FFMPEG](../assets/welcome_page_ffmpeg_installed.png)
+
+Click "FINISH" and you will be brought to the new channel page to [create your first channel](/configure/channels/properties). 
+
+![Finish](../assets/setup-finish.png)
 
 ```
 
