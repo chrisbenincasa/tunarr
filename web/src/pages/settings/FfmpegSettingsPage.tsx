@@ -655,22 +655,40 @@ export default function FfmpegSettingsPage() {
 
   return (
     <Box component="form" onSubmit={handleSubmit(updateFfmpegSettings)}>
-      <FormControl fullWidth>
-        <Controller
-          control={control}
-          name="ffmpegExecutablePath"
-          render={({ field }) => (
-            <TextField
-              id="executable-path"
-              label="Executable Path"
-              helperText={
-                'FFMPEG version 4.2+ required. Check your current version in the sidebar'
-              }
-              {...field}
-            />
-          )}
-        />
-      </FormControl>
+      <Stack spacing={2} useFlexGap>
+        <FormControl fullWidth>
+          <Controller
+            control={control}
+            name="ffmpegExecutablePath"
+            render={({ field }) => (
+              <TextField
+                id="ffmpeg-executable-path"
+                label="FFmpeg Executable Path"
+                helperText={
+                  'FFmpeg version 6.0+ recommended. Check your current version in the sidebar'
+                }
+                {...field}
+              />
+            )}
+          />
+        </FormControl>
+        <FormControl fullWidth>
+          <Controller
+            control={control}
+            name="ffprobeExecutablePath"
+            render={({ field }) => (
+              <TextField
+                id="ffprobe-executable-path"
+                label="FFprobe Executable Path"
+                helperText={
+                  'FFprobe version 6.0+ recommended. Check your current version in the sidebar'
+                }
+                {...field}
+              />
+            )}
+          />
+        </FormControl>
+      </Stack>
       <Typography variant="h6" sx={{ my: 2 }}>
         Miscellaneous Options
       </Typography>

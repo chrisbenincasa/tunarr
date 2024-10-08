@@ -22,7 +22,7 @@ import events from 'events';
 import { merge } from 'lodash-es';
 import { Low, LowSync } from 'lowdb';
 import { existsSync } from 'node:fs';
-import path, { dirname, join } from 'path';
+import path from 'path';
 import { DeepPartial, DeepReadonly } from 'ts-essentials';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
@@ -166,9 +166,7 @@ export class SettingsDB extends ITypedEventEmitter {
   }
 
   get ffprobePath(): string {
-    // This is kinda hacky...we may want to let this be configurable
-    const ffmpegSettings = this.ffmpegSettings();
-    return join(dirname(ffmpegSettings.ffmpegExecutablePath), 'ffprobe');
+    return this.ffmpegSettings().ffprobeExecutablePath;
   }
 
   systemSettings(): DeepReadonly<SystemSettings> {
