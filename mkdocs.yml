@@ -43,14 +43,22 @@ nav:
   - Configure:
     - Channels:
       - configure/channels/index.md
+      - Properties: configure/channels/properties.md
+      - Flex: configure/channels/flex.md
+      - EPG: configure/channels/epg.md
       - Transcoding: configure/channels/transcoding.md
     - Programming: configure/programming.md
-    - Scheduling: 
-      - configure/scheduling/index.md
-      - Tools: configure/scheduling/tools.md
-      - Time Slots: configure/scheduling/time-slots.md
-      - Random Slots: configure/scheduling/random-slots.md
-    - Flex: configure/flex.md
+    - Scheduling Tools: 
+      - configure/scheduling-tools/index.md
+      - Time Slots: configure/scheduling-tools/time-slots.md
+      - Random Slots: configure/scheduling-tools/random-slots.md
+      - Balance: configure/scheduling-tools/balance.md
+      - Replicate: configure/scheduling-tools/replicate.md
+      - Consolidate: configure/scheduling-tools/consolidate.md
+    - Library:
+      - configure/library/index.md
+      - Filler: configure/library/filler.md
+      - Custom Shows: configure/library/custom-shows.md
     - System: configure/system.md
     - Clients:
       - configure/clients/index.md
