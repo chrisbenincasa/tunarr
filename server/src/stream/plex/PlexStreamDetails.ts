@@ -1,3 +1,4 @@
+import { DefaultPlexHeaders } from '@tunarr/shared/constants';
 import {
   PlexEpisode,
   PlexMediaAudioStream,
@@ -18,6 +19,7 @@ import {
   replace,
   trimEnd,
 } from 'lodash-es';
+import querystring from 'node:querystring';
 import { ProgramExternalIdType } from '../../dao/custom_types/ProgramExternalIdType';
 import { ContentBackedStreamLineupItem } from '../../dao/derived_types/StreamLineup.js';
 import { MediaSourceTable } from '../../dao/direct/schema/MediaSource';
@@ -82,71 +84,11 @@ export class PlexStreamDetails {
 
     if (isQueryError(itemMetadataResult)) {
       if (itemMetadataResult.code === 'not_found') {
-        this.logger.debug(
-          'Could not find item %s in Plex. Rating key may have changed. Attempting to update.',
-          item.externalKey,
-        );
-        const externalIds = await this.programDB.getProgramExternalIds(
-          item.programId,
-        );
-        const plexGuid = find(
-          externalIds,
-          (eid) => eid.sourceType === ProgramExternalIdType.PLEX_GUID,
-        )?.externalKey;
-        if (isNonEmptyString(plexGuid)) {
-          const byGuidResult = await this.plex.doTypeCheckedGet(
-            '/library/all',
-            PlexMediaContainerResponseSchema,
-            {
-              params: {
-                guid: plexGuid,
-              },
-            },
-          );
-
-          if (isQuerySuccess(byGuidResult)) {
-            if (byGuidResult.data.MediaContainer.size > 0) {
-              this.logger.debug(
-                'Found %d matching items in library. Using the first',
-                byGuidResult.data.MediaContainer.size,
-              );
-              const metadata = first(
-                byGuidResult.data.MediaContainer.Metadata,
-              )!;
-              const newRatingKey = metadata.ratingKey;
-              this.logger.debug(
-                'Updating program %s with new Plex rating key %s',
-                item.programId,
-                newRatingKey,
-              );
-              await this.programDB.updateProgramPlexRatingKey(
-                item.programId,
-                this.server.name,
-                { externalKey: newRatingKey },
-              );
-              return this.getStreamInternal(
-                {
-                  ...item,
-                  externalKey: newRatingKey,
-                },
-                depth + 1,
-              );
-            } else {
-              this.logger.debug(
-                'Plex item with guid %s no longer in library',
-                plexGuid,
-              );
-            }
-          } else {
-            this.logger.error(
-              byGuidResult,
-              'Error while querying Plex by GUID',
-            );
-          }
-        }
+        return await this.tryResolveMissingItem(item, depth);
+      } else {
+        // This will have to throw somewhere!
+        return null;
       }
-      // This will have to throw somewhere!
-      return null;
     }
 
     const itemMetadata = itemMetadataResult.data;
@@ -191,6 +133,7 @@ export class PlexStreamDetails {
     let streamUrl: string;
     const filePath =
       details.directFilePath ?? first(first(itemMetadata.Media)?.Part)?.file;
+
     if (streamSettings.streamPath === 'direct' && isNonEmptyString(filePath)) {
       streamUrl = replace(
         filePath,
@@ -200,16 +143,16 @@ export class PlexStreamDetails {
     } else if (isNonEmptyString(filePath) && (await fileExists(filePath))) {
       streamUrl = filePath;
     } else {
-      let path = details.serverPath ?? item.plexFilePath;
+      const path = details.serverPath ?? item.plexFilePath;
 
       if (isNonEmptyString(path)) {
-        path = path.startsWith('/') ? path : `/${path}`;
-        streamUrl = `${trimEnd(this.server.uri, '/')}${path}?X-Plex-Token=${
-          this.server.accessToken
-        }`;
-        // streamUrl = this.getPlexTranscodeStreamUrl(
-        //   `/library/metadata/${item.externalKey}`,
-        // );
+        // path = path.startsWith('/') ? path : `/${path}`;
+        // streamUrl = `${trimEnd(this.server.uri, '/')}${path}?X-Plex-Token=${
+        //   this.server.accessToken
+        // }`;
+        streamUrl = this.getPlexTranscodeStreamUrl(
+          `/library/metadata/${item.externalKey}`,
+        );
       } else {
         throw new Error('Could not resolve stream URL');
       }
@@ -219,7 +162,74 @@ export class PlexStreamDetails {
       directPlay: true,
       streamUrl,
       streamDetails: details,
+      isPlexTranscode: true,
     };
+  }
+
+  private async tryResolveMissingItem(
+    item: PlexItemStreamDetailsQuery,
+    depth: number,
+  ) {
+    this.logger.debug(
+      'Could not find item %s in Plex. Rating key may have changed. Attempting to update.',
+      item.externalKey,
+    );
+    const externalIds = await this.programDB.getProgramExternalIds(
+      item.programId,
+    );
+    const plexGuid = find(
+      externalIds,
+      (eid) => eid.sourceType === ProgramExternalIdType.PLEX_GUID,
+    )?.externalKey;
+
+    if (isNonEmptyString(plexGuid)) {
+      const byGuidResult = await this.plex.doTypeCheckedGet(
+        '/library/all',
+        PlexMediaContainerResponseSchema,
+        {
+          params: {
+            guid: plexGuid,
+          },
+        },
+      );
+
+      if (isQuerySuccess(byGuidResult)) {
+        if (byGuidResult.data.MediaContainer.size > 0) {
+          this.logger.debug(
+            'Found %d matching items in library. Using the first',
+            byGuidResult.data.MediaContainer.size,
+          );
+          const metadata = first(byGuidResult.data.MediaContainer.Metadata)!;
+          const newRatingKey = metadata.ratingKey;
+          this.logger.debug(
+            'Updating program %s with new Plex rating key %s',
+            item.programId,
+            newRatingKey,
+          );
+          await this.programDB.updateProgramPlexRatingKey(
+            item.programId,
+            this.server.name,
+            { externalKey: newRatingKey },
+          );
+          return this.getStreamInternal(
+            {
+              ...item,
+              externalKey: newRatingKey,
+            },
+            depth + 1,
+          );
+        } else {
+          this.logger.debug(
+            'Plex item with guid %s no longer in library',
+            plexGuid,
+          );
+        }
+      } else {
+        this.logger.error(byGuidResult, 'Error while querying Plex by GUID');
+      }
+    }
+
+    return null;
   }
 
   private async getItemStreamDetails(
@@ -314,24 +324,33 @@ export class PlexStreamDetails {
     return streamDetails;
   }
 
-  // private getPlexTranscodeStreamUrl(key: string) {
-  //   const query = querystring.encode({
-  //     ...DefaultPlexHeaders,
-  //     'X-Plex-Token': this.server.accessToken,
-  //     Connection: 'keep-alive',
-  //     path: key,
-  //     mediaIndex: 0,
-  //     partIndex: 0,
-  //     fastSeek: 1,
-  //     directPlay: true,
-  //     directStream: true,
-  //     directStreamAudio: true,
-  //     copyts: false,
-  //   });
+  private getPlexTranscodeStreamUrl(key: string) {
+    const query = new URLSearchParams({
+      ...DefaultPlexHeaders,
+      'X-Plex-Token': this.server.accessToken,
+      Connection: 'keep-alive',
+      path: key,
+      mediaIndex: '0',
+      partIndex: '0',
+      fastSeek: '1',
+      protocol: 'http',
+      directPlay: 'false',
+      directStream: 'true',
+      directStreamAudio: 'true',
+      copyts: 'true',
+    });
 
-  //   return `${trimEnd(
-  //     this.server.uri,
-  //     '/',
-  //   )}/video/:/transcode/universal/start.m3u8?${query}`;
-  // }
+    const targets = [
+      `add-transcode-target(type=videoProfile&protocol=http&container=mkv&videoCodec=h264,hevc,mpeg2video&audioCodec=aac,ac3&context=streaming&replace=true&CopyMatroskaAttachments=true&BreakNonKeyframes=true)`,
+      `add-transcode-target-audio-codec(type=videoProfile&context=streaming&protocol=http&audioCodec=aac)`,
+      `add-transcode-target-audio-codec(type=videoProfile&context=streaming&protocol=http&audioCodec=ac3)`,
+    ].join('+');
+
+    query.set('X-Plex-Client-Profile-Extra', querystring.escape(targets));
+
+    return `${trimEnd(
+      this.server.uri,
+      '/',
+    )}/video/:/transcode/universal/start.m3u8?${query.toString()}`;
+  }
 }

@@ -93,10 +93,17 @@ export class PlexProgramStream extends ProgramStream {
 
     const start = dayjs.duration(lineupItem.start ?? 0);
 
+    let streamurl = stream.streamUrl;
+    if (stream.isPlexTranscode) {
+      const parsed = new URL(streamurl);
+      parsed.searchParams.set('offset', start.asSeconds().toString());
+      streamurl = parsed.toString();
+    }
+
     const transcodeSession = await ffmpeg.createStreamSession({
-      streamUrl: stream.streamUrl,
+      streamUrl: streamurl,
       streamDetails: stream.streamDetails,
-      startTime: start,
+      startTime: stream.isPlexTranscode ? dayjs.duration(0) : start,
       duration: dayjs.duration(
         +start === 0
           ? lineupItem.duration
