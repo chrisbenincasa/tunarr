@@ -1,4 +1,12 @@
-import { compact, filter, initial, isNil, isUndefined } from 'lodash-es';
+import {
+  compact,
+  filter,
+  initial,
+  isNil,
+  isUndefined,
+  maxBy,
+  values,
+} from 'lodash-es';
 import { ChannelDB } from '../dao/channelDb.js';
 import { Channel } from '../dao/direct/schema/Channel.js';
 import {
@@ -20,6 +28,7 @@ import {
 
 import { ChannelStreamMode } from '@tunarr/types';
 import { StreamConnectionDetails } from '@tunarr/types/api';
+import dayjs from 'dayjs';
 import { OnDemandChannelService } from '../services/OnDemandChannelService.js';
 import { ifDefined } from '../util/index.js';
 import { SessionType } from './Session.js';
@@ -312,6 +321,7 @@ export class SessionManager {
   ) {
     try {
       let sessionToCheck = session;
+      let pauseTime = lastConnection.lastHeartbeat ?? +dayjs();
       if (session.isConcatSession()) {
         const underlyingType = sessionTypeFromConcatType(session.sessionType);
         const underlyingSession = this.getSession(
@@ -320,6 +330,9 @@ export class SessionManager {
         );
         if (underlyingSession) {
           sessionToCheck = underlyingSession;
+          pauseTime =
+            maxBy(values(sessionToCheck.connections()), 'lastHeartbeat')
+              ?.lastHeartbeat ?? +dayjs();
         }
       }
 
@@ -333,7 +346,7 @@ export class SessionManager {
       if (nonTunarrConnections === 0) {
         await this.onDemandChannelService.pauseChannel(
           session.keyObj.id,
-          lastConnection.lastHeartbeat,
+          pauseTime,
         );
       }
     } catch (e) {
