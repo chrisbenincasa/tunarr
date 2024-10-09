@@ -160,8 +160,8 @@ importers:
         specifier: ^1.1.9
         version: 1.1.9(fastify@4.26.2)(zod@3.22.4)
       kysely:
-        specifier: ^0.27.3
-        version: 0.27.3
+        specifier: ^0.27.4
+        version: 0.27.4
       lodash-es:
         specifier: ^4.17.21
         version: 4.17.21
@@ -198,6 +198,9 @@ importers:
       retry:
         specifier: ^0.13.1
         version: 0.13.1
+      ts-pattern:
+        specifier: ^5.4.0
+        version: 5.4.0
       tslib:
         specifier: ^2.6.2
         version: 2.6.2
@@ -306,7 +309,7 @@ importers:
         version: 15.0.0
       kysely-codegen:
         specifier: ^0.16.0
-        version: 0.16.5(better-sqlite3@9.4.5)(kysely@0.27.3)
+        version: 0.16.5(better-sqlite3@9.4.5)(kysely@0.27.4)
       nexe:
         specifier: 5.0.0-beta.1
         version: 5.0.0-beta.1(esbuild@0.21.5)
@@ -8899,7 +8902,7 @@ packages:
     transitivePeerDependencies:
       - supports-color
 
-  /kysely-codegen@0.16.5(better-sqlite3@9.4.5)(kysely@0.27.3):
+  /kysely-codegen@0.16.5(better-sqlite3@9.4.5)(kysely@0.27.4):
     resolution: {integrity: sha512-TiGbwsqdnGR/2vcd072NRNIbyPQYDlnJg/IMas+xgCMEqp2M2T+f6Xonx4I9APXOWl4Mcv1nPMnG/lQT5Yty3A==}
     hasBin: true
     peerDependencies:
@@ -8938,14 +8941,14 @@ packages:
       dotenv: 16.4.5
       dotenv-expand: 11.0.6
       git-diff: 2.0.6
-      kysely: 0.27.3
+      kysely: 0.27.4
       micromatch: 4.0.8
       minimist: 1.2.8
       pluralize: 8.0.0
     dev: true
 
-  /kysely@0.27.3:
-    resolution: {integrity: sha512-lG03Ru+XyOJFsjH3OMY6R/9U38IjDPfnOfDgO3ynhbDr+Dz8fak+X6L62vqu3iybQnj+lG84OttBuU9KY3L9kA==}
+  /kysely@0.27.4:
+    resolution: {integrity: sha512-dyNKv2KRvYOQPLCAOCjjQuCk4YFd33BvGdf/o5bC7FiW+BB6snA81Zt+2wT9QDFzKqxKa5rrOmvlK/anehCcgA==}
     engines: {node: '>=14.0.0'}
 
   /labeled-stream-splicer@2.0.2:

@@ -22,7 +22,7 @@ import { v4 } from 'uuid';
 import { Maybe } from '../../types/util.js';
 import {
   emptyStringToUndefined,
-  groupByUniqAndMap,
+  groupByUniqPropAndMap,
   isNonEmptyString,
   mapAsyncSeq,
   run,
@@ -87,7 +87,7 @@ export class LegacyChannelMigrator {
     const channels = await getEm()
       .repo(ChannelEntity)
       .findAll({ populate: ['uuid', 'number'] });
-    const channelIdsByNumber = groupByUniqAndMap(
+    const channelIdsByNumber = groupByUniqPropAndMap(
       channels,
       'number',
       (c) => c.uuid,

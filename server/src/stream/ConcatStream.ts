@@ -1,6 +1,6 @@
 import { ChannelStreamMode, FfmpegSettings } from '@tunarr/types';
 import { initial } from 'lodash-es';
-import { Channel } from '../dao/direct/derivedTypes';
+import { Channel } from '../dao/direct/schema/Channel';
 import { SettingsDB, getSettings } from '../dao/settings';
 import { FfmpegTranscodeSession } from '../ffmpeg/FfmpegTrancodeSession';
 import { ConcatOptions, FFMPEG } from '../ffmpeg/ffmpeg';

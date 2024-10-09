@@ -3,7 +3,7 @@ import dayjs, { Dayjs } from 'dayjs';
 import { filter, isError, isString, map, some } from 'lodash-es';
 import fs from 'node:fs/promises';
 import path, { basename, extname } from 'node:path';
-import { Channel } from '../../dao/direct/derivedTypes';
+import { Channel } from '../../dao/direct/schema/Channel';
 import { Result } from '../../types/result';
 import { isNodeError } from '../../util';
 import { Session, SessionOptions } from '../Session';

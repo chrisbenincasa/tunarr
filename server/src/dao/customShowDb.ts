@@ -8,12 +8,11 @@ import { MarkOptional } from 'ts-essentials';
 import { isNonEmptyString, mapAsyncSeq } from '../util/index.js';
 import { ProgramConverter } from './converters/programConverters.js';
 import { getEm } from './dataSource.js';
+import { programExternalIdString } from './direct/schema/Program.js';
 import { CustomShow } from './entities/CustomShow.js';
 import { CustomShowContent } from './entities/CustomShowContent.js';
-import {
-  createPendingProgramIndexMap,
-  upsertContentPrograms,
-} from './programHelpers.js';
+import { ProgramDB } from './programDB.js';
+import { createPendingProgramIndexMap } from './programHelpers.js';
 
 export type CustomShowUpdate = MarkOptional<CustomShow, 'content'>;
 export type CustomShowInsert = {
@@ -24,6 +23,8 @@ export type CustomShowInsert = {
 
 export class CustomShowDB {
   #programConverter: ProgramConverter = new ProgramConverter();
+
+  constructor(private programDB: ProgramDB = new ProgramDB()) {}
 
   async getShow(id: string) {
     return getEm()
@@ -81,7 +82,7 @@ export class CustomShowDB {
         (p) => p.persisted && isNonEmptyString(p.id),
       );
 
-      const upsertedPrograms = await upsertContentPrograms(
+      const upsertedPrograms = await this.programDB.upsertContentPrograms(
         updateRequest.programs,
       );
 
@@ -96,7 +97,7 @@ export class CustomShowDB {
         em.create(CustomShowContent, {
           customShow: show.uuid,
           content: p.uuid,
-          index: programIndexById[p.uniqueId()],
+          index: programIndexById[programExternalIdString(p)],
         }),
       );
 
@@ -130,7 +131,7 @@ export class CustomShowDB {
 
     const persisted = filter(createRequest.programs, (p) => p.persisted);
 
-    const upsertedPrograms = await upsertContentPrograms(
+    const upsertedPrograms = await this.programDB.upsertContentPrograms(
       createRequest.programs,
     );
 
@@ -147,7 +148,7 @@ export class CustomShowDB {
       em.create(CustomShowContent, {
         customShow: show.uuid,
         content: p.uuid,
-        index: programIndexById[p.uniqueId()],
+        index: programIndexById[programExternalIdString(p)],
       }),
     );
 

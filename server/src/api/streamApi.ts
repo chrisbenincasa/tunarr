@@ -9,7 +9,7 @@ import { join } from 'node:path';
 import { PassThrough } from 'stream';
 import { v4 } from 'uuid';
 import z from 'zod';
-import { Channel } from '../dao/direct/derivedTypes';
+import { Channel } from '../dao/direct/schema/Channel';
 import { defaultConcatOptions } from '../ffmpeg/ffmpeg';
 import { BaseHlsSession } from '../stream/hls/BaseHlsSession';
 import { Result } from '../types/result';

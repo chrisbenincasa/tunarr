@@ -14,7 +14,7 @@ import {
   trimStart,
 } from 'lodash-es';
 import { ContentBackedStreamLineupItem } from '../../dao/derived_types/StreamLineup.js';
-import { MediaSource } from '../../dao/direct/types.gen.js';
+import { MediaSourceTable } from '../../dao/direct/schema/MediaSource.js';
 import { ProgramType } from '../../dao/entities/Program.js';
 import { ProgramDB } from '../../dao/programDB.js';
 import { SettingsDB } from '../../dao/settings.js';
@@ -44,7 +44,7 @@ export class JellyfinStreamDetails {
   private jellyfin: JellyfinApiClient;
 
   constructor(
-    private server: Selectable<MediaSource>,
+    private server: Selectable<MediaSourceTable>,
     private settings: SettingsDB,
     private programDB: ProgramDB,
   ) {

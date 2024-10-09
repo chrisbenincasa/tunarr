@@ -1,6 +1,6 @@
 import { ChannelStreamMode, FfmpegSettings } from '@tunarr/types';
 import { StrictExtract } from 'ts-essentials';
-import { Channel } from '../dao/direct/derivedTypes.js';
+import { Channel } from '../dao/direct/schema/Channel';
 import { SettingsDB, getSettings } from '../dao/settings.js';
 import { FfmpegTranscodeSession } from '../ffmpeg/FfmpegTrancodeSession.js';
 import { ConcatOptions, FFMPEG } from '../ffmpeg/ffmpeg.js';

@@ -6,13 +6,13 @@ import { getEm } from '../../dao/dataSource.js';
 import { Program } from '../../dao/entities/Program.js';
 import { ProgramExternalId } from '../../dao/entities/ProgramExternalId.js';
 import { upsertProgramExternalIds_deprecated } from '../../dao/programExternalIdHelpers.js';
-import { PlexApiClient } from '../../external/plex/PlexApiClient.js';
+import { isQueryError } from '../../external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.js';
+import { PlexApiClient } from '../../external/plex/PlexApiClient.js';
 import { Maybe } from '../../types/util.js';
-import { parsePlexExternalGuid } from '../../util/externalIds.js';
+import { mintExternalIdForPlexGuid } from '../../util/externalIds.js';
 import { isDefined, isNonEmptyString } from '../../util/index.js';
 import { Task } from '../Task.js';
-import { isQueryError } from '../../external/BaseApiClient.js';
 
 export class SavePlexProgramExternalIdsTask extends Task {
   ID = SavePlexProgramExternalIdsTask.name;
@@ -69,7 +69,7 @@ export class SavePlexProgramExternalIdsTask extends Task {
 
     const eids = compact(
       map(metadata.Guid, (guid) => {
-        const parsed = parsePlexExternalGuid(guid.id);
+        const parsed = mintExternalIdForPlexGuid(guid.id);
         if (!isError(parsed)) {
           parsed.program = ref(program);
           parsed.externalSourceId = undefined;

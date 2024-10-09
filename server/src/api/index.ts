@@ -222,6 +222,7 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
+      req.logRequestAtLevel = 'trace';
       const server = await req.serverCtx.mediaSourceDB.findByType(
         MediaSourceType.Plex,
         req.query.id,

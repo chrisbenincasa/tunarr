@@ -14,6 +14,7 @@ import {
 } from '@mikro-orm/core';
 import { createExternalId } from '@tunarr/shared';
 import { Program as ProgramDTO } from '@tunarr/types';
+import { JellyfinItemKind } from '@tunarr/types/jellyfin';
 import { enumKeys } from '../../util/enumUtil.js';
 import { ProgramSourceType } from '../custom_types/ProgramSourceType.js';
 import { BaseEntity } from './BaseEntity.js';
@@ -22,7 +23,6 @@ import { CustomShow } from './CustomShow.js';
 import { FillerShow } from './FillerShow.js';
 import { ProgramExternalId } from './ProgramExternalId.js';
 import { ProgramGrouping } from './ProgramGrouping.js';
-import { JellyfinItemKind } from '@tunarr/types/jellyfin';
 
 /**
  * Program represents a 'playable' entity. A movie, episode, or music track
@@ -211,7 +211,7 @@ export class Program extends BaseEntity {
     return programDaoToDto(serialize(this as Program, { skipNull: true }));
   }
 
-  uniqueId(): string {
+  externalId(): string {
     return createExternalId(
       this.sourceType,
       this.externalSourceId,

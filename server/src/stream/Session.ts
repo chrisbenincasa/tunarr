@@ -6,7 +6,7 @@ import ld, { forEach, isEmpty, keys } from 'lodash-es';
 import events from 'node:events';
 import { StrictExtract } from 'ts-essentials';
 import { v4 } from 'uuid';
-import { Channel } from '../dao/direct/derivedTypes.js';
+import { Channel } from '../dao/direct/schema/Channel';
 import { TypedEventEmitter } from '../types/eventEmitter';
 import { Result } from '../types/result.js';
 import { Maybe } from '../types/util.js';

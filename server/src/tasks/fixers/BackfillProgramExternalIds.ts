@@ -1,3 +1,4 @@
+import { PlexTerminalMedia } from '@tunarr/types/plex';
 import {
   difference,
   first,
@@ -13,16 +14,20 @@ import { getEm } from '../../dao/dataSource';
 import { MediaSource } from '../../dao/entities/MediaSource.js';
 import { Program } from '../../dao/entities/Program';
 import { ProgramExternalId } from '../../dao/entities/ProgramExternalId.js';
-import { PlexApiClient } from '../../external/plex/PlexApiClient.js';
-import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory';
-import { Maybe } from '../../types/util.js';
-import { asyncPool } from '../../util/asyncPool.js';
-import { attempt, attemptSync, groupByUniq, wait } from '../../util/index.js';
-import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
-import Fixer from './fixer';
-import { PlexTerminalMedia } from '@tunarr/types/plex';
 import { upsertProgramExternalIds_deprecated } from '../../dao/programExternalIdHelpers';
 import { isQueryError } from '../../external/BaseApiClient.js';
+import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory';
+import { PlexApiClient } from '../../external/plex/PlexApiClient.js';
+import { Maybe } from '../../types/util.js';
+import { asyncPool } from '../../util/asyncPool.js';
+import {
+  attempt,
+  attemptSync,
+  groupByUniqProp,
+  wait,
+} from '../../util/index.js';
+import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
+import Fixer from './fixer';
 
 export class BackfillProgramExternalIds extends Fixer {
   #logger = LoggerFactory.child({
@@ -63,7 +68,7 @@ export class BackfillProgramExternalIds extends Fixer {
       // process
       const programs = cursor.items;
 
-      const programsByPlexId = groupByUniq(programs, 'externalSourceId');
+      const programsByPlexId = groupByUniqProp(programs, 'externalSourceId');
 
       const missingServers = difference(
         keys(programsByPlexId),

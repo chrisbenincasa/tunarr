@@ -1,7 +1,6 @@
 import { Loaded } from '@mikro-orm/core';
 import { seq } from '@tunarr/shared/util';
 import {
-  ChannelProgram,
   ContentProgram,
   ExternalId,
   FlexProgram,
@@ -15,7 +14,6 @@ import {
 import {
   compact,
   find,
-  isEmpty,
   isNil,
   isObject,
   map,
@@ -39,10 +37,11 @@ import {
   isRedirectItem,
 } from '../derived_types/Lineup.js';
 import {
-  Channel as RawChannel,
-  Program as RawProgram,
+  ChannelWithRelations as RawChannel,
+  ChannelWithPrograms as RawChannelWithPrograms,
+  ProgramWithRelations as RawProgram,
 } from '../direct/derivedTypes.js';
-import { ProgramExternalId as RawProgramExternalId } from '../direct/types.gen.js';
+import { ProgramExternalId as RawProgramExternalId } from '../direct/schema/ProgramExternalId.js';
 import { Channel } from '../entities/Channel.js';
 import { Program, ProgramType } from '../entities/Program.js';
 import { ProgramExternalId } from '../entities/ProgramExternalId.js';
@@ -58,10 +57,6 @@ const defaultContentProgramConversionOptions: ContentProgramConversionOptions =
     forcePopulate: false,
   };
 
-type LineupItemConversionOptions = {
-  contentProgramConversionOptions?: Partial<ContentProgramConversionOptions>;
-};
-
 /**
  * Converts DB types to API types
  */
@@ -71,52 +66,8 @@ export class ProgramConverter {
     className: ProgramConverter.name,
   });
 
-  /**
-   * Converts a LineupItem to a ChannelProgram
-   *
-   * @param channel
-   * @param item
-   * @param channelReferences
-   * @returns
-   */
-  async lineupItemToChannelProgram(
-    channel: Loaded<Channel, 'programs'>,
-    item: LineupItem,
-    channelReferences: Loaded<Channel, never, 'name' | 'number'>[],
-    opts?: LineupItemConversionOptions,
-  ): Promise<ChannelProgram | null> {
-    if (isOfflineItem(item)) {
-      return this.offlineLineupItemToProgram(channel, item);
-    } else if (isRedirectItem(item)) {
-      const redirectChannel = find(channelReferences, { uuid: item.channel });
-      if (isNil(redirectChannel)) {
-        this.logger.warn(
-          'Dangling redirect channel reference. Source channel = %s, target channel = %s',
-          channel.uuid,
-          item.channel,
-        );
-        return this.offlineLineupItemToProgram(channel, {
-          type: 'offline',
-          durationMs: item.durationMs,
-        });
-      }
-      return this.redirectLineupItemToProgram(item, redirectChannel);
-    } else {
-      const program = channel.programs.find((p) => p.uuid === item.id);
-      if (isNil(program)) {
-        return null;
-      }
-
-      return this.entityToContentProgram(
-        program,
-        undefined,
-        opts?.contentProgramConversionOptions,
-      );
-    }
-  }
-
   directLineupItemToChannelProgram(
-    channel: MarkRequired<RawChannel, 'programs'>,
+    channel: RawChannelWithPrograms,
     item: LineupItem,
     channelReferences: MarkRequired<
       DeepPartial<RawChannel>,
@@ -269,58 +220,6 @@ export class ProgramConverter {
     };
   }
 
-  preloadedEntityToContentProgramSync(
-    program: Loaded<Program, 'season' | 'album' | 'artist' | 'tvShow'>,
-  ): ContentProgram {
-    return this.partialEntityToContentProgramSync(program);
-  }
-
-  partialEntityToContentProgramSync(
-    program: Loaded<Program, 'season' | 'album' | 'artist'>,
-  ): ContentProgram {
-    let extraFields: Partial<ContentProgram> = {};
-    if (program.type === ProgramType.Episode) {
-      extraFields = {
-        ...extraFields,
-        icon: program.episodeIcon ?? program.showIcon,
-        showId: program.tvShow?.uuid,
-        seasonId: program.season?.uuid,
-        seasonNumber: program.season?.$.index,
-        episodeNumber: program.episode,
-        episodeTitle: program.title,
-        title:
-          (program.tvShow?.isInitialized()
-            ? program.tvShow?.unwrap().title
-            : program.showTitle) ?? program.title,
-      };
-    } else if (program.type === ProgramType.Track) {
-      extraFields = {
-        albumName: program.album?.$.title,
-        artistName: program.artist?.$.title,
-        albumId: program.album?.uuid,
-        artistId: program.artist?.uuid,
-      };
-    }
-
-    return {
-      persisted: true, // Explicit since we're dealing with db loaded entities
-      uniqueId: program.uuid,
-      summary: program.summary,
-      date: program.originalAirDate,
-      rating: program.rating,
-      icon: program.icon,
-      title: program.title,
-      duration: program.duration,
-      type: 'content',
-      id: program.uuid,
-      subtype: program.type,
-      externalIds: compact(
-        map(program.externalIds, (eid) => eid.toExternalId()),
-      ),
-      ...extraFields,
-    };
-  }
-
   directEntityToContentProgramSync(
     program: RawProgram,
     externalIds: RawProgramExternalId[],
@@ -340,12 +239,12 @@ export class ProgramConverter {
         parentIndex: nullToUndefined(program.tvSeason?.index),
         grandparentIndex: nullToUndefined(program.tvShow?.index),
       };
-      if (isEmpty(extraFields.showId)) {
-        this.logger.warn(
-          'Empty show UUID when converting program ID = %s. This may lead to broken frontend features. Please file a bug!',
-          program.uuid,
-        );
-      }
+      // if (isEmpty(extraFields.showId)) {
+      //   this.logger.warn(
+      //     'Empty show UUID when converting program ID = %s. This may lead to broken frontend features. Please file a bug!',
+      //     program.uuid,
+      //   );
+      // }
     } else if (program.type === ProgramType.Track.toString()) {
       extraFields = {
         albumName: nullToUndefined(program.trackAlbum?.title),
@@ -373,7 +272,7 @@ export class ProgramConverter {
       type: 'content',
       id: program.uuid,
       // TODO: Fix this type!!!
-      subtype: program.type as 'movie' | 'episode' | 'track',
+      subtype: program.type,
       externalIds: seq.collect(externalIds, (eid) => this.toExternalId(eid)),
       ...extraFields,
     };

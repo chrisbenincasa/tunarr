@@ -243,6 +243,7 @@ export async function initServer(opts: ServerOptions) {
     if (req['disableRequestLogging']) {
       return;
     }
+
     const length = rep.getHeader('content-length');
     const lengthStr = run(() => {
       if (isString(length) || isNumber(length)) {

@@ -1,6 +1,6 @@
 import { values } from 'lodash-es';
 import { withDb } from '../../dao/dataSource.js';
-import { groupByUniqFunc } from '../../util/index.js';
+import { groupByUniq } from '../../util/index.js';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
 import { BackfillProgramExternalIds } from './BackfillProgramExternalIds.js';
 import { AddPlexServerIdsFixer } from './addPlexServerIds.js';
@@ -18,7 +18,7 @@ import { MissingSeasonNumbersFixer } from './missingSeasonNumbersFixer.js';
 // It would be nice to do this with dynamic imports, but I don't
 // feel like going down that road right now
 
-export const FixersByName: Record<string, Fixer> = groupByUniqFunc(
+export const FixersByName: Record<string, Fixer> = groupByUniq(
   [
     new MissingSeasonNumbersFixer(),
     new AddPlexServerIdsFixer(),

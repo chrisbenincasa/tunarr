@@ -32,12 +32,15 @@ import { XmlTvWriter } from '../XmlTvWriter.js';
 import { ChannelDB } from '../dao/channelDb.js';
 import { ProgramConverter } from '../dao/converters/programConverters.js';
 import { Lineup } from '../dao/derived_types/Lineup.js';
-import { ChannelWithPrograms as RawChannel } from '../dao/direct/derivedTypes.js';
+import {
+  ChannelWithPrograms,
+  ChannelWithPrograms as RawChannel,
+} from '../dao/direct/derivedTypes.js';
 import { Maybe } from '../types/util.js';
 import { binarySearchRange } from '../util/binarySearch.js';
 import {
   deepCopy,
-  groupByUniqFunc,
+  groupByUniq,
   isNonEmptyString,
   wait,
 } from '../util/index.js';
@@ -678,7 +681,7 @@ export class TVGuideService {
   > {
     const currentUpdateTimeMs = this.currentUpdateTime;
     const channels = this.currentChannels;
-    this.channelsById = groupByUniqFunc(channels, (c) => c.channel.uuid);
+    this.channelsById = groupByUniq(channels, (c) => c.channel.uuid);
     this.accumulateTable = mapValues(this.channelsById, (channel) => {
       // We have these precalculated!!
       // Fallback just in case...
@@ -700,7 +703,7 @@ export class TVGuideService {
     const result: Record<string, ChannelPrograms> = {};
     if (channels.length === 0) {
       const fakeChannelId = v4();
-      const channel: RawChannel = {
+      const channel: ChannelWithPrograms = {
         uuid: fakeChannelId,
         name: 'Tunarr',
         icon: {
@@ -721,12 +724,12 @@ export class TVGuideService {
           mode: 'pic',
         },
         guideFlexTitle: null,
-        createdAt: null,
-        updatedAt: null,
+        createdAt: +dayjs(),
+        updatedAt: +dayjs(),
         fillerRepeatCooldown: null,
         groupTitle: null,
-        watermark: undefined,
-        transcoding: undefined,
+        watermark: null,
+        transcoding: null,
         programs: [],
         streamMode: 'hls',
       };

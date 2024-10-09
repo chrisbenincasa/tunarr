@@ -1,5 +1,5 @@
 import { isEmpty } from 'lodash-es';
-import { Channel } from '../dao/direct/derivedTypes.js';
+import { Channel } from '../dao/direct/schema/Channel';
 import { FfmpegTranscodeSession } from '../ffmpeg/FfmpegTrancodeSession.js';
 import { ConcatOptions } from '../ffmpeg/ffmpeg.js';
 import { ConcatStream } from './ConcatStream';

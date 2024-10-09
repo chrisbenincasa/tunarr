@@ -1,15 +1,13 @@
 import { ExpressionBuilder } from 'kysely';
 import { jsonArrayFrom, jsonObjectFrom } from 'kysely/helpers/sqlite';
 import { isBoolean, merge } from 'lodash-es';
-import { DeepPartial, DeepRequired } from 'ts-essentials';
+import { DeepPartial, DeepRequired, StrictExclude } from 'ts-essentials';
 import { ProgramType } from '../entities/Program';
 import { directDbAccess } from './directDbAccess.js';
-import {
-  DB,
-  FillerShow as RawFillerShow,
-  Program as RawProgram,
-  ProgramGrouping as RawProgramGrouping,
-} from './types.gen';
+import { FillerShowTable as RawFillerShow } from './schema/FillerShow';
+import { ProgramTable as RawProgram } from './schema/Program';
+import { ProgramGroupingTable as RawProgramGrouping } from './schema/ProgramGrouping';
+import { DB } from './types.gen';
 
 type ProgramGroupingFields<Alias extends string = 'programGrouping'> =
   readonly `${Alias}.${keyof RawProgramGrouping}`[];
@@ -160,7 +158,19 @@ const defaultProgramJoins: ProgramJoins = {
   customShows: false,
 };
 
-type ProgramFields = readonly `program.${keyof RawProgram}`[];
+type Replace<
+  T extends string,
+  S extends string,
+  D extends string,
+  A extends string = '',
+> = T extends `${infer L}${S}${infer R}`
+  ? Replace<R, S, D, `${A}${L}${D}`>
+  : `${A}${T}`;
+
+type ProgramField = `program.${keyof RawProgram}`;
+type ProgramFields = readonly ProgramField[];
+
+// const ProgramUpsertMapping =
 
 export const AllProgramFields: ProgramFields = [
   'program.albumName',
@@ -195,6 +205,16 @@ export const AllProgramFields: ProgramFields = [
   'program.uuid',
   'program.year',
 ];
+
+type ProgramUpsertFields = StrictExclude<
+  Replace<ProgramField, 'program', 'excluded'>,
+  'excluded.uuid' | 'excluded.createdAt'
+>;
+
+export const ProgramUpsertFields: ProgramUpsertFields[] =
+  AllProgramFields.filter(
+    (f) => f !== 'program.uuid' && f !== 'program.createdAt',
+  ).map((v) => v.replace('program.', 'excluded.')) as ProgramUpsertFields[];
 
 type WithProgramsOptions = {
   joins?: Partial<ProgramJoins>;

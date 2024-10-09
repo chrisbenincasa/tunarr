@@ -1,6 +1,6 @@
 import { once, round } from 'lodash-es';
 import { Readable } from 'node:stream';
-import { Channel } from '../dao/direct/derivedTypes.js';
+import { Channel } from '../dao/direct/schema/Channel';
 import { FfmpegTranscodeSession } from '../ffmpeg/FfmpegTrancodeSession.js';
 import { Session, SessionOptions } from './Session.js';
 
