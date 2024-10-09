@@ -59,6 +59,7 @@ export const FfmpegNumericLogLevels: Record<
 export const FfmpegSettingsSchema = z.object({
   configVersion: z.number().default(5),
   ffmpegExecutablePath: z.string().default('/usr/bin/ffmpeg'),
+  ffprobeExecutablePath: z.string().default('/usr/bin/ffprobe'),
   numThreads: z.number().default(4),
   concatMuxDelay: z.number().default(0),
   enableLogging: z.boolean().default(false),

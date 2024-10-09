@@ -30,7 +30,7 @@ import {
   parseInt,
   sortBy,
 } from 'lodash-es';
-import path from 'path';
+import path, { dirname, join } from 'path';
 import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.js';
 import { globalOptions } from '../../globals.js';
 import { serverContext } from '../../serverContext.js';
@@ -404,6 +404,10 @@ export class LegacyDbMigrator {
               {
                 configVersion: ffmpegSettings['configVersion'] as number,
                 ffmpegExecutablePath: ffmpegSettings['ffmpegPath'] as string,
+                ffprobeExecutablePath: join(
+                  dirname(ffmpegSettings['ffmpegPath'] as string),
+                  'ffprobe',
+                ),
                 numThreads: ffmpegSettings['threads'] as number,
                 concatMuxDelay: ffmpegSettings['concatMuxDelay'] as number,
                 enableLogging: ffmpegSettings['logFfmpeg'] as boolean,
