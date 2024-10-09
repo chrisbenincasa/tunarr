@@ -15,3 +15,19 @@ There are a few reasons why your desired hardware acceleration option is not app
 3. The `ffmpeg` executable you are using does not have the necessary libraries compiled in. This can be verified with the hardware accel. command above.
 
 If you've double-checked these things and still are experiencing issues, please open up a [new Q&A discussion topic](https://github.com/chrisbenincasa/tunarr/discussions/new?category=q-a&title=Missing%20Hardware%20Acceleration%20Option) so we can debug.
+
+## Channel mappings being reset in Plex
+
+If you notice your channel guide is blank, open Plex > Settings > Live TV & DVR > Select "Channels (X) X enabled". If you see something similar to the below screenshot where the dropdowns are blank, your channels have lost their mappings. 
+
+![Channel mappings](/assets/misc-commonissues-channelmappings.png)
+
+You can quickly resolve this by selecting the dropdown on the right and manually re-mapping your channels, but this will not resolve the underlying issue. 
+
+Head over to Tunarr > Settings > SOURCES > Select the pencil icon next to your server > Verify Auto-Update Channels is unchecked.
+
+![Edit sources](/assets/settings-sources-edit.png)
+
+![Auto-update channels disabled](/assets/serversettings-autoupdatechannels.png)
+
+If this is already unchecked, see [Issue #818](https://github.com/chrisbenincasa/tunarr/issues/818) to track this issue. 

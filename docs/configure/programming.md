@@ -49,3 +49,5 @@ Please note the perfect schedule loop option does not currently support larger c
 ![Block shuffle loop error](/assets/programming-blockshuffle-noloop.png)
 
 Cyclic Shuffle will alternate between shows while attempting to preserve the episode sequence. So in this example, it will play S00E01 from show 1, then play S00E01-E02 from show 2, then S01E01-E02 from show 1, then S01E01 from show 2, etc. Compared to Block Schedule, Cyclic Shuffle is randomized, so it will not always display the same number of episodes from a show. Cyclic Shuffle also does not support any features to create even blocks, so the end of your schedule will likely be dominated by a few shows with larger episode counts and runtime. 
+
+Once you have a channel created with programming, you are ready to setup your [Client](/configure/clients) and start using Tunarr!

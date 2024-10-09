@@ -65,7 +65,7 @@ For QSV compatability in Docker, you must mount `/dev/dri` the container:
 
 docker run \
  -v "$(pwd)"/tunarr:/config/tunarr \
- --device /dev/dri:/dev/dri
+ --device /dev/dri/:/dev/dri/
 -p 8000:8000 \
  chrisbenincasa/tunarr:latest-vaapi
 
@@ -79,9 +79,9 @@ Upon first launching Tunarr, you will see the Welcome page with a few required s
 
 ### Media Sources
 
-Currently, Tunarr supports Plex and Jellyfin as media sources. In order to add programming to your channels, you must connect at least one media source. Each media source acts as a metadata source for your programming, and optionally, the streaming source.
+Currently, Tunarr supports Plex and Jellyfin as media sources. In order to add programming to your channels, you must connect at least one media source. Each media source acts as a metadata source for your programming, and optionally, the streaming source. 
 
-Click the "Add" button, followed by your source. For Plex, you can choose Auto to perform automatic web authentication. Alternatively, you can select Manual, input your URL (http://serverIP:32400) and [Access Token](https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/). Unless you have a specific reason for doing so, leave Auto-Update Guide and Auto-Update Channels unchecked. If communication with your server is successful, you should see a green checkmark cloud icon next to your server URL.
+Click the "Add" button, followed by your source. For Plex, you can choose Auto to perform automatic web authentication. Alternatively, you can select Manual, input your URL (http://serverIP:32400) and [Access Token](https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/). Unless you have a specific reason for doing so, leave Auto-Update Guide and Auto-Update Channels unchecked. If communication with your server is successful, you should see a green checkmark cloud icon next to your server URL. 
 
 ![Manual Plex server](../assets/new-plex-server-manual.png)
 
@@ -91,13 +91,13 @@ Click the "Add" button, followed by your source. For Plex, you can choose Auto t
 
 ### FFMPEG
 
-Tunarr also requires [FFMPEG](https://ffmpeg.org/). FFMPEG is used to normalize channel video / audio streams for seamless playback, interleave your "flex" content, and more. Tunarr defaults to looking for the FFMPEG executable at `/usr/bin/ffmpeg`. If no executable is found, you can change the path in the FFMPEG settings page.
+Tunarr also requires [FFMPEG](https://ffmpeg.org/). FFMPEG is used to normalize channel video / audio streams for seamless playback, interleave your "flex" content, and more. Tunarr defaults to looking for the FFMPEG executable at `/usr/bin/ffmpeg`. If no executable is found, you can change the path in the FFMPEG settings page. 
 
-Please note that FFMPEG is built into the Docker image, so Docker users should not need to make any adjustments to this page.
+Please note that FFMPEG is built into the Docker image, so Docker users should not need to make any adjustments to this page. 
 
 ![Welcome Page With FFMPEG](../assets/welcome_page_ffmpeg_installed.png)
 
-Click "FINISH" and you will be brought to the new channel page to [create your first channel](/configure/channels/properties).
+Click "FINISH" and you will be brought to the new channel page to [create your first channel](/configure/channels/properties). 
 
 ![Finish](../assets/setup-finish.png)
 
