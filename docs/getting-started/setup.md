@@ -28,7 +28,10 @@ services:
       - LOG_LEVEL=${TUNARR_LOG_LEVEL:-INFO}
     # Uncomment if you'd like to adjust default config path
     # - TUNARR_DATABASE_PATH=/your/path/tunarr
-    # volumes:
+    volumes:
+      # Choose a path on your host to map to /config/tunarr. This ensures
+      # that restarting the container will not delete your settings or DB.
+      - /path/to/tunarr/data:/config/tunarr
     # The host path is relative to the location of the compose file
     # This can also use an absolute path.
     #
