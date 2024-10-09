@@ -5,7 +5,10 @@ ARG base_image_tag=7.0
 FROM ${base_image}:${base_image_tag} AS ffmpeg-base
 ENV NODE_MAJOR=20
 ENV TUNARR_BIND_ADDR=0.0.0.0
+# Expose Tunarr server default port
 EXPOSE 8000
+# Expose SSDP default port
+EXPOSE 1900/udp 
 
 # Install musl for native node bindings (sqlite)
 RUN apt-get update --fix-missing
