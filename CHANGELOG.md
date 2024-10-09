@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.12.4](https://github.com/chrisbenincasa/tunarr/compare/v0.12.3...v0.12.4) (2024-10-09)
+
+
+### Bug Fixes
+
+* allow setting ffprobe path instead of deriving it ([#842](https://github.com/chrisbenincasa/tunarr/issues/842)) ([5771238](https://github.com/chrisbenincasa/tunarr/commit/577123872fd8d0d490b3762b903c7347e0689e6d))
+* fix web video player ([5ff85f5](https://github.com/chrisbenincasa/tunarr/commit/5ff85f5dbfb639f35f45d748c12c33d86296401e))
+* mark 1900/udp as exposed in Dockerfile for UDP server (HDHR auto-discovery) ([4638c70](https://github.com/chrisbenincasa/tunarr/commit/4638c70c5ab1dc04d0367490f1c5754d0369411d))
+* remove eventual consistency for program_grouping upserts ([#843](https://github.com/chrisbenincasa/tunarr/issues/843)) ([d83113b](https://github.com/chrisbenincasa/tunarr/commit/d83113bbaa5a35396a265c98f0399521cf70fb3a)), closes [#825](https://github.com/chrisbenincasa/tunarr/issues/825)
+
 ## [0.12.3](https://github.com/chrisbenincasa/tunarr/compare/v0.12.2...v0.12.3) (2024-10-02)
 
 
