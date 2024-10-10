@@ -1,16 +1,18 @@
 import { FfmpegSettings } from '@tunarr/types';
 import { exec } from 'child_process';
-import { LoggerFactory } from '../util/logging/LoggerFactory';
-import { attempt } from '../util/index.js';
-import _, { isEmpty, isError, some, trim } from 'lodash-es';
+import _, { isEmpty, isError, nth, some, trim } from 'lodash-es';
 import NodeCache from 'node-cache';
 import PQueue from 'p-queue';
 import { cacheGetOrSet } from '../util/cache.js';
+import { attempt, isNonEmptyString } from '../util/index.js';
+import { LoggerFactory } from '../util/logging/LoggerFactory';
+import { NvidiaHardwareCapabilities } from './NvidiaHardwareCapabilities.js';
 
 const CacheKeys = {
   ENCODERS: 'encoders',
   HWACCELS: 'hwaccels',
   OPTIONS: 'options',
+  NVIDIA: 'nvidia',
 } as const;
 
 const execQueue = new PQueue({ concurrency: 2 });
@@ -18,6 +20,8 @@ const execQueue = new PQueue({ concurrency: 2 });
 const VersionExtractionPattern = /version\s+([^\s]+)\s+.*Copyright/;
 const CoderExtractionPattern = /[A-Z.]+\s([a-z0-9_-]+)\s*(.*)$/;
 const OptionsExtractionPattern = /^-([a-z_]+)\s+.*/;
+const NvidiaGpuArchPattern = /SM\s+(\d\.\d)/;
+const NvidiaGpuModelPattern = /(GTX\s+[0-9a-zA-Z]+[\sTtIi]+)/;
 
 export class FFMPEGInfo {
   private logger = LoggerFactory.child({
@@ -41,12 +45,14 @@ export class FFMPEGInfo {
   }
 
   async seed() {
+    this.logger.debug('Seeding ffmpeg info');
     try {
       return await Promise.allSettled([
         this.getAvailableAudioEncoders(),
         this.getAvailableVideoEncoders(),
         this.getHwAccels(),
         this.getOptions(),
+        this.getNvidiaCapabilities(),
       ]);
     } catch (e) {
       this.logger.error(e, 'Unexpected error during ffmpeg info seed');
@@ -154,6 +160,56 @@ export class FFMPEGInfo {
     });
   }
 
+  async getNvidiaCapabilities() {
+    return attempt(async () => {
+      const out = await cacheGetOrSet(
+        FFMPEGInfo.resultCache,
+        this.cacheKey('NVIDIA'),
+        () =>
+          this.getFfmpegStdout(
+            [
+              '-hide_banner',
+              '-f',
+              'lavfi',
+              '-i',
+              'nullsrc',
+              '-c:v',
+              'h264_nvenc',
+              '-gpu',
+              'list',
+              '-f',
+              'null',
+              '-',
+            ],
+            true,
+          ),
+      );
+
+      const lines = _.chain(out)
+        .split('\n')
+        .drop(1)
+        .map(trim)
+        .reject(isEmpty)
+        .value();
+
+      for (const line of lines) {
+        const archMatch = line.match(NvidiaGpuArchPattern);
+        if (archMatch) {
+          const archString = archMatch[1];
+          const archNum = parseInt(archString.replaceAll('.', ''));
+          const model =
+            nth(line.match(NvidiaGpuModelPattern), 1)?.trim() ?? 'unknown';
+          this.logger.debug(
+            `Detected NVIDIA GPU (model = "${model}", arch = "${archString}")`,
+          );
+          return new NvidiaHardwareCapabilities(model, archNum);
+        }
+      }
+
+      throw new Error('Could not parse ffmepg output for Nvidia capabilities');
+    });
+  }
+
   async hasOption(
     option: string,
     defaultOnMissing: boolean = false,
@@ -166,17 +222,20 @@ export class FFMPEGInfo {
     return opts.includes(option) ? true : defaultOnMissing;
   }
 
-  private getFfmpegStdout(args: string[]): Promise<string> {
+  private getFfmpegStdout(
+    args: string[],
+    swallowError: boolean = false,
+  ): Promise<string> {
     return execQueue.add(
       async () =>
         await new Promise((resolve, reject) => {
           exec(
             `"${this.ffmpegPath}" ${args.join(' ')}`,
-            function (error, stdout) {
-              if (error !== null) {
+            function (error, stdout, stderr) {
+              if (error !== null && !swallowError) {
                 reject(error);
               }
-              resolve(stdout);
+              resolve(isNonEmptyString(stdout) ? stdout : stderr);
             },
           );
         }),

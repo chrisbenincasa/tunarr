@@ -21,7 +21,7 @@ import { serverOptions } from '../globals.js';
 import { ConcatSessionType } from '../stream/Session.js';
 import { StreamDetails } from '../stream/types.js';
 import { Maybe, Nullable } from '../types/util.js';
-import { isDefined, isNonEmptyString } from '../util/index.js';
+import { isDefined, isNonEmptyString, isSuccess } from '../util/index.js';
 import { Logger, LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '../util/serverUtil.js';
 import { getTunarrVersion } from '../util/version.js';
@@ -155,6 +155,7 @@ export class FFMPEG {
   private volumePercent: number;
   private hasBeenKilled: boolean = false;
   private alignAudio: boolean;
+  private capabilities: FFMPEGInfo;
 
   constructor(
     private opts: DeepReadonly<FfmpegSettings>,
@@ -170,6 +171,7 @@ export class FFMPEG {
     this.errorPicturePath = makeLocalUrl('/images/generic-error-screen.png');
     this.ffmpegName = 'unnamed ffmpeg';
     this.channel = channel;
+    this.capabilities = new FFMPEGInfo(this.opts);
 
     let targetResolution = opts.targetResolution;
     if (!isUndefined(channel.transcoding?.targetResolution)) {
@@ -473,7 +475,7 @@ export class FFMPEG {
     let artificialBurst = false;
 
     if (!this.audioOnly || isNonEmptyString(streamSrc)) {
-      const supportsBurst = await new FFMPEGInfo(this.opts).hasOption(
+      const supportsBurst = await this.capabilities.hasOption(
         'readrate_initial_burst',
       );
 
@@ -750,6 +752,23 @@ export class FFMPEG {
       currentVideo = `[${name}]`;
       iW = this.wantedW;
       iH = this.wantedH;
+    } else if (this.opts.hardwareAccelerationMode === 'cuda') {
+      const gpuCapabilities = await this.capabilities.getNvidiaCapabilities();
+      // Use this as an analogue for detecting an attempt to encode 10-bit content
+      // ... it might not be totally true, but we'll make this better.
+      let canEncode = false;
+      if (isSuccess(gpuCapabilities)) {
+        canEncode = gpuCapabilities.canEncode(
+          this.opts.videoFormat,
+          streamStats?.videoBitDepth
+            ? { bitDepth: streamStats.videoBitDepth }
+            : undefined,
+        );
+      }
+
+      if (!canEncode) {
+        ffmpegArgs.push('-pix_fmt', 'yuv420p');
+      }
     }
 
     // Channel watermark:
