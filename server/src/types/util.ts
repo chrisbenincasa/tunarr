@@ -17,3 +17,7 @@ export type Try<T> = T | Error;
 export type MarkNonNullable<Type, Keys extends keyof Type> = Type extends Type
   ? Omit<Type, Keys> & DeepNonNullable<Pick<Type, Keys>>
   : never;
+
+export type ExcludeByValueType<T, U> = {
+  [K in keyof T as T[K] extends U ? never : K]: T[K];
+};

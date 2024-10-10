@@ -1,4 +1,12 @@
-import { forEach, isEmpty, isUndefined, nth, toLower, trim } from 'lodash-es';
+import {
+  forEach,
+  isEmpty,
+  isString,
+  isUndefined,
+  nth,
+  toLower,
+  trim,
+} from 'lodash-es';
 import path, { join } from 'node:path';
 import pino, {
   Bindings,
@@ -117,7 +125,7 @@ class LoggerFactoryImpl {
     );
   }
 
-  child(opts: { caller?: ImportMeta; className: string } & Bindings) {
+  child(opts: { caller?: ImportMeta | string; className: string } & Bindings) {
     const { caller, className, ...rest } = opts;
 
     if (this.children[className]) {
@@ -126,7 +134,13 @@ class LoggerFactoryImpl {
 
     const childOpts = {
       ...rest,
-      file: isProduction ? undefined : caller ? getCaller(caller) : undefined,
+      file: isProduction
+        ? undefined
+        : caller
+        ? isString(caller)
+          ? caller
+          : getCaller(caller)
+        : undefined,
       caller: isProduction ? undefined : className, // Don't include this twice in production
     };
     const newChild = this.rootLogger.child(childOpts);
