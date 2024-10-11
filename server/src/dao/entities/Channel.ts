@@ -1,5 +1,4 @@
 import {
-  Cascade,
   Collection,
   Entity,
   Enum,
@@ -191,7 +190,7 @@ export class Channel extends BaseEntity {
     entity: () => FillerShow,
     pivotEntity: () => ChannelFillerShow,
     mappedBy: (filler) => filler.channels,
-    cascade: [Cascade.PERSIST, Cascade.REMOVE],
+    deleteRule: 'cascade',
   })
   fillers = new Collection<FillerShow>(this);
 
@@ -204,7 +203,10 @@ export class Channel extends BaseEntity {
   @Property({ nullable: true })
   fillerRepeatCooldown?: number; // Seconds
 
-  @ManyToMany(() => CustomShow)
+  @ManyToMany({
+    entity: () => CustomShow,
+    deleteRule: 'cascade',
+  })
   customShows = new Collection<CustomShow>(this);
 
   // Watermark
@@ -219,7 +221,10 @@ export class Channel extends BaseEntity {
   })
   transcoding?: IType<ChannelTranscodingSettings, string>;
 
-  @ManyToMany(() => Program)
+  @ManyToMany({
+    entity: () => Program,
+    deleteRule: 'cascade',
+  })
   fallback = new Collection<Program>(this);
 
   @Enum({ items: () => ChannelStreamModes, default: 'hls' })
