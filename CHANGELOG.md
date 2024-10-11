@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.12.5](https://github.com/chrisbenincasa/tunarr/compare/v0.12.4...v0.12.5) (2024-10-11)
+
+
+### Bug Fixes
+
+* convert 10-bit inputs to 8-bit for non-supported NVDA+format combos ([#765](https://github.com/chrisbenincasa/tunarr/issues/765)) ([d02b834](https://github.com/chrisbenincasa/tunarr/commit/d02b834719f1ee8e85fc9cf11c29d9198160429f))
+* fix on-demand channel pause times when watching mpeg-ts streams ([2bececf](https://github.com/chrisbenincasa/tunarr/commit/2bececf75226411aa7ce5baa31411ffb301cbcc5))
+* temporarily raise the body limit for channel lineup updates ([b062dbe](https://github.com/chrisbenincasa/tunarr/commit/b062dbe11c57f85c3bc3763f37c0d895cfe061f6))
+* use proper m3u links in frontend ([#854](https://github.com/chrisbenincasa/tunarr/issues/854)) ([accb0d7](https://github.com/chrisbenincasa/tunarr/commit/accb0d74f7fdbe61e74e0aca2645ce100fc5b0c2))
+
 ## [0.12.4](https://github.com/chrisbenincasa/tunarr/compare/v0.12.3...v0.12.4) (2024-10-09)
 
 
