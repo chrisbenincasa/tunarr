@@ -1,5 +1,6 @@
 import { betterHumanize } from '@/helpers/dayjs.ts';
 import { useApiQuery } from '@/hooks/useApiQuery.ts';
+import { useCopyToClipboard } from '@/hooks/useCopyToClipboard.ts';
 import { setChannelTableColumnModel } from '@/store/settings/actions.ts';
 import {
   Check,
@@ -46,9 +47,7 @@ import {
   useMaterialReactTable,
   type MRT_ColumnDef, //if using TypeScript (optional, but recommended)
 } from 'material-react-table';
-import { useSnackbar } from 'notistack';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useCopyToClipboard } from 'usehooks-ts';
 import TunarrLogo from '../../components/TunarrLogo.tsx';
 import NoChannelsCreated from '../../components/channel_config/NoChannelsCreated.tsx';
 import { isNonEmptyString } from '../../helpers/util.ts';
@@ -101,9 +100,7 @@ export default function ChannelsPage() {
     setAnchorEl(event.currentTarget);
   };
 
-  const snackbar = useSnackbar();
-
-  const [, copyToClipboard] = useCopyToClipboard();
+  const copyToClipboard = useCopyToClipboard();
 
   const handleChannelMenuClose = (e: React.SyntheticEvent) => {
     e.stopPropagation();
@@ -242,27 +239,18 @@ export default function ChannelsPage() {
         <MenuItem
           onClick={(e) => {
             e.stopPropagation();
+            const url = `${
+              isNonEmptyString(backendUri) ? `${backendUri}/` : ''
+            }stream/channels/${channelId}.m3u8`;
             copyToClipboard(
-              `${
-                isNonEmptyString(backendUri) ? `${backendUri}/` : ''
-              }media-player/${channelId}.m3u`,
+              url,
+              `Copied channel "${channelName}" m3u link to clipboard`,
+              'Error copying channel m3u link to clipboard',
             )
-              .then(() =>
-                snackbar.enqueueSnackbar(
-                  `Copied channel "${channelName}" m3u link to clipboard`,
-                  { variant: 'success' },
-                ),
-              )
-              .catch((e) => {
-                snackbar.enqueueSnackbar(
-                  'Error copying channel m3u link to clipboard',
-                  {
-                    variant: 'error',
-                  },
-                );
-                console.error(e);
-              })
-              .finally(() => setChannelMenuOpen(null));
+              .catch(console.error)
+              .finally(() => {
+                setChannelMenuOpen(null);
+              });
           }}
         >
           <ListItemIcon>

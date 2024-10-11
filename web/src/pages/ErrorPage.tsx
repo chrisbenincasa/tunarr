@@ -1,14 +1,12 @@
+import { useBrowserInfo } from '@/hooks/useBrowserInfo';
 import GitHub from '@mui/icons-material/GitHub';
 import Refresh from '@mui/icons-material/Refresh';
 import { Box, Button, Collapse, Stack, Typography } from '@mui/material';
-import Bowser from 'bowser';
 import { isError } from 'lodash-es';
 import { useMemo } from 'react';
 import errorImage from '../assets/error_this_is_fine.png';
 import { RotatingLoopIcon } from '../components/base/LoadingIcon';
 import { useVersion } from '../hooks/useVersion';
-
-const browser = Bowser.getParser(window.navigator.userAgent);
 
 type Props = {
   error: unknown;
@@ -16,6 +14,7 @@ type Props = {
 };
 
 export function ErrorPage({ error }: Props) {
+  const browser = useBrowserInfo();
   const { data: version, isLoading: versionLoading } = useVersion();
   const stack = (isError(error) ? error.stack : '') ?? '';
 
@@ -35,7 +34,7 @@ export function ErrorPage({ error }: Props) {
     url.searchParams.append('version', version?.tunarr ?? '');
     url.searchParams.append('logs', stack);
     return url;
-  }, [stack, version?.tunarr]);
+  }, [browser, stack, version?.tunarr]);
 
   const handleRefresh = () => {
     location.reload();
