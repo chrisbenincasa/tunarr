@@ -320,6 +320,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
   fastify.post(
     '/channels/:id/programming',
     {
+      bodyLimit: 1024 * 1024 * 100,
       schema: {
         params: BasicIdParamSchema,
         tags: ['Channels'],
