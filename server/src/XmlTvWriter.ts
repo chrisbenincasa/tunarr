@@ -16,6 +16,8 @@ import { LoggerFactory } from './util/logging/LoggerFactory';
 
 const lock = new Mutex();
 
+const channelIdCache: Record<string, string> = {};
+
 export class XmlTvWriter {
   private logger = LoggerFactory.child({
     caller: import.meta,
@@ -51,7 +53,7 @@ export class XmlTvWriter {
 
   private makeXmlTvChannel(channel: Channel): XmltvChannel {
     const partial: XmltvChannel = {
-      id: `${channel.number}.tunarr`,
+      id: this.getChannelId(channel),
       displayName: [
         {
           _value: escape(channel.name),
@@ -83,7 +85,7 @@ export class XmlTvWriter {
       stop: new Date(program.stop),
       title: [{ _value: escape(XmlTvWriter.titleExtractor(program)) }],
       previouslyShown: {},
-      channel: `${channel.number}.tunarr`,
+      channel: this.getChannelId(channel),
     };
 
     if (isContentProgram(program)) {
@@ -155,6 +157,27 @@ export class XmlTvWriter {
     }
 
     return partial;
+  }
+
+  private getChannelId(channel: Channel): string {
+    const existing = channelIdCache[channel.uuid];
+    if (existing) {
+      return existing;
+    }
+
+    // Generates a short but unique ID for this channel
+    // in addition to the number. This helps differentiate channels
+    // for some players whose guides can get confused.
+    let num = channel.number;
+    let id = 0;
+    while (num !== 0) {
+      id += (num % 10) + 48;
+      num = Math.floor(num / 10);
+    }
+
+    return (channelIdCache[
+      channel.uuid
+    ] = `C${channel.number}.${id}.tunarr.com`);
   }
 
   private static titleExtractor = forProgramType({
