@@ -15,6 +15,7 @@ export const sessionApiRouter: RouterPluginAsyncCallback = async (fastify) => {
     '/sessions',
     {
       schema: {
+        tags: ['Sessions'],
         response: {
           200: z.record(z.array(ChannelSessionsResponseSchema)),
         },
@@ -52,6 +53,7 @@ export const sessionApiRouter: RouterPluginAsyncCallback = async (fastify) => {
     '/channels/:id/sessions',
     {
       schema: {
+        tags: ['Sessions'],
         params: z.object({
           id: z.coerce.number().or(z.string().uuid()),
         }),
@@ -103,6 +105,7 @@ export const sessionApiRouter: RouterPluginAsyncCallback = async (fastify) => {
     '/channels/:id/sessions',
     {
       schema: {
+        tags: ['Sessions'],
         params: z.object({
           id: z.coerce.number().or(z.string().uuid()),
         }),

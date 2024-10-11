@@ -30,6 +30,7 @@ import {
 import schedule from 'node-schedule';
 import path, { dirname } from 'path';
 import 'reflect-metadata';
+import { z } from 'zod';
 import { HdhrApiRouter } from './api/hdhrApi.js';
 import { apiRouter } from './api/index.js';
 import { streamApi } from './api/streamApi.js';
@@ -76,7 +77,6 @@ export class Server {
   ) {}
 
   async init() {
-    const start = performance.now();
     this.logger.info(
       'Using Tunarr database directory: %s',
       this.serverOptions.databaseDirectory,
@@ -178,6 +178,42 @@ export class Server {
             {
               name: 'Channels',
             },
+            {
+              name: 'Custom Shows',
+            },
+            {
+              name: 'Filler Lists',
+            },
+            {
+              name: 'Guide',
+            },
+            {
+              name: 'Media Source',
+            },
+            {
+              name: 'Programs',
+            },
+            {
+              name: 'Sessions',
+            },
+            {
+              name: 'Streaming',
+            },
+            {
+              name: 'HDHR',
+            },
+            {
+              name: 'Settings',
+            },
+            {
+              name: 'System',
+            },
+            {
+              name: 'Tasks',
+            },
+            {
+              name: 'Debug',
+            },
           ],
         },
         transform: jsonSchemaTransform,
@@ -188,6 +224,16 @@ export class Server {
       //     isProduction && process.argv.length > 1
       //       ? join(dirname(process.argv[1]), 'static')
       //       : undefined,
+      // })
+      // Hitting api docs on local instances of Tunarr is blocked on
+      // https://github.com/scalar/scalar/pull/4528
+      // .register(fastifyApiReference, {
+      //   routePrefix: '/docs',
+      //   configuration: {
+      //     spec: {
+      //       content: () => this.app.swagger(),
+      //     },
+      //   },
       // })
       .register(cors, {
         origin: '*', // Testing
@@ -285,7 +331,7 @@ export class Server {
         done();
       })
 
-      .register(async (f) => {
+      .register(async (f: ServerType) => {
         await f.register(fpStatic, {
           root: path.join(
             this.serverOptions.databaseDirectory,
@@ -295,14 +341,18 @@ export class Server {
           decorateReply: false,
           serve: false, // Use the interceptor
         });
-        f.get<{ Params: { hash: string } }>(
+        f.get(
           '/cache/images/:hash',
           {
+            schema: {
+              hide: true,
+              params: z.object({ hash: z.string() }),
+            },
             // Workaround for https://github.com/fastify/fastify/issues/4859
             // eslint-disable-next-line @typescript-eslint/no-misused-promises
             onRequest: (req, res) => {
               return req.serverCtx.cacheImageService.routerInterceptor(
-                req,
+                req.params.hash,
                 res,
               );
             },
@@ -312,15 +362,24 @@ export class Server {
           },
         );
 
-        f.delete('/api/cache/images', async (req, res) => {
-          try {
-            await req.serverCtx.cacheImageService.clearCache();
-            return res.status(200).send({ msg: 'Cache Image are Cleared' });
-          } catch (error) {
-            this.logger.error('Error deleting cached images', error);
-            return res.status(500).send('error');
-          }
-        });
+        f.delete(
+          '/api/cache/images',
+          {
+            schema: {
+              // TODO: Expose and add button to UI
+              hide: true,
+            },
+          },
+          async (req, res) => {
+            try {
+              await req.serverCtx.cacheImageService.clearCache();
+              return res.status(200).send({ msg: 'Cache Image are Cleared' });
+            } catch (error) {
+              this.logger.error('Error deleting cached images', error);
+              return res.status(500).send('error');
+            }
+          },
+        );
       })
       .register(async (f) => {
         f.addHook('onError', (req, _, error, done) => {
@@ -328,7 +387,9 @@ export class Server {
           done();
         });
         await f
-          .get('/', async (_, res) => res.redirect('/web', 302))
+          .get('/', { schema: { hide: true } }, async (_, res) =>
+            res.redirect('/web', 302),
+          )
           .register(new HdhrApiRouter().router)
           .register(apiRouter, { prefix: '/api' });
       })
@@ -367,8 +428,6 @@ export class Server {
       .register(fastifyGracefulShutdown);
 
     await updateXMLPromise;
-
-    const host = process.env['TUNARR_BIND_ADDR'] ?? '0.0.0.0';
 
     this.app.after(() => {
       this.app.gracefulShutdown(async (signal) => {
@@ -439,8 +498,15 @@ export class Server {
         this.logger.debug('All done, shutting down!');
       });
     });
+  }
 
-    const url = await this.app.listen({
+  async initAndRun() {
+    const start = performance.now();
+    await this.init();
+
+    const host = process.env['TUNARR_BIND_ADDR'] ?? '0.0.0.0';
+
+    await this.app.listen({
       host,
       port: this.serverOptions.port,
     });
@@ -466,7 +532,16 @@ export class Server {
       },
       level: 'success',
     });
+  }
 
-    return { app: this.app, url };
+  getOpenApiDocument() {
+    return this.app.swagger();
+  }
+
+  close() {
+    if (this.app) {
+      return this.app.close();
+    }
+    return Promise.resolve();
   }
 }

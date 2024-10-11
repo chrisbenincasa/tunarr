@@ -24,20 +24,33 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
     className: 'FfmpegSettingsApi',
   });
 
-  fastify.get('/ffmpeg-settings', (req, res) => {
-    try {
-      const ffmpeg = req.serverCtx.settings.ffmpegSettings();
-      return res.send(ffmpeg);
-    } catch (err) {
-      logger.error(err);
-      return res.status(500).send('error');
-    }
-  });
+  fastify.get(
+    '/ffmpeg-settings',
+    {
+      schema: {
+        tags: ['Settings'],
+        response: {
+          200: FfmpegSettingsSchema,
+          500: z.literal('error'),
+        },
+      },
+    },
+    async (req, res) => {
+      try {
+        const ffmpeg = req.serverCtx.settings.ffmpegSettings();
+        return res.send(makeWritable(ffmpeg));
+      } catch (err) {
+        logger.error(err);
+        return res.status(500).send('error');
+      }
+    },
+  );
 
   fastify.put(
     '/ffmpeg-settings',
     {
       schema: {
+        tags: ['Settings'],
         body: FfmpegSettingsSchema,
         response: {
           200: FfmpegSettingsSchema,
@@ -98,8 +111,20 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
     },
   );
 
-  fastify.post<{ Body: { ffmpegPath: string } }>(
+  fastify.post(
     '/ffmpeg-settings',
+    {
+      schema: {
+        tags: ['Settings'],
+        body: z.object({
+          ffmpegPath: z.string(),
+        }),
+        repsonse: {
+          200: FfmpegSettingsSchema,
+          500: z.literal('error'),
+        },
+      },
+    },
     async (req, res) => {
       // RESET
       try {
@@ -137,6 +162,7 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
     '/transcode_configs',
     {
       schema: {
+        tags: ['Settings'],
         response: {
           200: z.array(TranscodeConfigSchema),
         },
@@ -153,6 +179,7 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
     '/transcode_configs/:id',
     {
       schema: {
+        tags: ['Settings'],
         params: z.object({
           id: z.string().uuid(),
         }),
@@ -178,6 +205,7 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
     '/transcode_configs',
     {
       schema: {
+        tags: ['Settings'],
         body: TranscodeConfigSchema.omit({
           id: true,
         }),
@@ -198,6 +226,7 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
     '/transcode_configs/:id',
     {
       schema: {
+        tags: ['Settings'],
         body: TranscodeConfigSchema,
         params: IdPathParamSchema,
         response: {
@@ -218,6 +247,7 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
     '/transcode_configs/:id',
     {
       schema: {
+        tags: ['Settings'],
         params: IdPathParamSchema,
         response: {
           200: z.void(),

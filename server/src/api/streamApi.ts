@@ -41,6 +41,7 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
     '/stream/channels/:id',
     {
       schema: {
+        tags: ['Streaming'],
         params: z.object({
           id: z.coerce.number().or(z.string()),
         }),
@@ -88,6 +89,9 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
     '/stream/channels/:id.ts',
     {
       schema: {
+        tags: ['Streaming'],
+        description:
+          'Returns a continuous, direct MPEGTS video stream for the given channel',
         params: z.object({
           id: z.coerce.number().or(z.string()),
         }),
@@ -198,6 +202,7 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
     '/stream/channels/:id/radio.ts',
     {
       schema: {
+        hide: true,
         params: z.object({
           id: z.coerce.number().or(z.string().uuid()),
         }),
@@ -267,6 +272,7 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
     '/stream/channels/:id.m3u8',
     {
       schema: {
+        tags: ['Streaming'],
         params: z.object({
           id: z.string().uuid().or(z.coerce.number()),
         }),

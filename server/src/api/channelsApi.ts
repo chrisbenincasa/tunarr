@@ -10,6 +10,7 @@ import { scheduleTimeSlots } from '@tunarr/shared';
 import {
   BasicIdParamSchema,
   BasicPagingSchema,
+  GetChannelProgrammingResponseSchema,
   TimeSlotScheduleSchema,
   UpdateChannelProgrammingRequestSchema,
 } from '@tunarr/types/api';
@@ -59,7 +60,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     '/channels',
     {
       schema: {
-        operationId: 'getChannelsV2',
+        operationId: 'getChannels',
         tags: ['Channels'],
         response: {
           200: z.array(ChannelSchema),
@@ -292,7 +293,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         querystring: BasicPagingSchema,
         tags: ['Channels'],
         response: {
-          200: CondensedChannelProgrammingSchema,
+          200: GetChannelProgrammingResponseSchema,
           404: z.object({ error: z.string() }),
         },
       },
@@ -389,6 +390,8 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     {
       schema: {
         params: BasicIdParamSchema,
+        operationId: 'GetChannelFallbacks',
+        description: "Returns a channel's fallback programs.",
         tags: ['Channels'],
         querystring: ChannelLineupQuery,
         response: {

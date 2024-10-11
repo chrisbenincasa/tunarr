@@ -20,6 +20,7 @@ export const plexSettingsRouter: RouterPluginCallback = (
     '/plex-settings',
     {
       schema: {
+        tags: ['Settings'],
         response: {
           200: PlexStreamSettingsSchema,
           500: z.string(),
@@ -43,6 +44,7 @@ export const plexSettingsRouter: RouterPluginCallback = (
     '/plex-settings',
     {
       schema: {
+        tags: ['Settings'],
         body: PlexStreamSettingsSchema,
         response: {
           200: PlexStreamSettingsSchema,
@@ -85,6 +87,7 @@ export const plexSettingsRouter: RouterPluginCallback = (
     '/plex-settings',
     {
       schema: {
+        tags: ['Settings'],
         response: {
           200: PlexStreamSettingsSchema,
           500: z.string(),

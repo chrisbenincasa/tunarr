@@ -21,6 +21,7 @@ export const fillerListsApi: RouterPluginAsyncCallback = async (fastify) => {
     '/filler-lists',
     {
       schema: {
+        tags: ['Filler Lists'],
         response: {
           200: z.array(FillerListSchema),
         },
@@ -43,6 +44,7 @@ export const fillerListsApi: RouterPluginAsyncCallback = async (fastify) => {
     '/filler-lists/:id',
     {
       schema: {
+        tags: ['Filler Lists'],
         params: z.object({ id: fillerShowIdSchema }),
         response: {
           200: FillerListSchema,
@@ -68,6 +70,7 @@ export const fillerListsApi: RouterPluginAsyncCallback = async (fastify) => {
     '/filler-lists/:id',
     {
       schema: {
+        tags: ['Filler Lists'],
         params: z.object({ id: fillerShowIdSchema }),
         response: {
           200: z.void(),
@@ -89,6 +92,7 @@ export const fillerListsApi: RouterPluginAsyncCallback = async (fastify) => {
     '/filler-lists',
     {
       schema: {
+        tags: ['Filler Lists'],
         body: CreateFillerListRequestSchema,
         response: {
           201: z.object({ id: z.string() }),
@@ -105,6 +109,7 @@ export const fillerListsApi: RouterPluginAsyncCallback = async (fastify) => {
     '/filler-lists/:id',
     {
       schema: {
+        tags: ['Filler Lists'],
         params: z.object({
           id: fillerShowIdSchema,
         }),
@@ -124,8 +129,6 @@ export const fillerListsApi: RouterPluginAsyncCallback = async (fastify) => {
         return res.status(404).send();
       }
 
-      console.log('sending response');
-
       return res.send({
         id: result.uuid,
         name: result.name,
@@ -138,6 +141,7 @@ export const fillerListsApi: RouterPluginAsyncCallback = async (fastify) => {
     '/filler-lists/:id/programs',
     {
       schema: {
+        tags: ['Filler Lists'],
         params: IdPathParamSchema.extend({ id: fillerShowIdSchema }),
         response: {
           200: FillerListProgrammingSchema,

@@ -18,6 +18,7 @@ export const tasksApiRouter: RouterPluginAsyncCallback = async (fastify) => {
     '/jobs',
     {
       schema: {
+        tags: ['System', 'Tasks'],
         response: {
           200: z.array(TaskSchema),
         },
@@ -61,6 +62,7 @@ export const tasksApiRouter: RouterPluginAsyncCallback = async (fastify) => {
     '/jobs/:id/run',
     {
       schema: {
+        tags: ['System', 'Tasks'],
         params: z.object({
           id: z.string(),
           background: z.boolean().default(true),

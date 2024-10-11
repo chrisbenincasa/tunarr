@@ -26,11 +26,9 @@ import { debugFfmpegApiRouter } from './debug/debugFfmpegApi.ts';
 import { DebugJellyfinApiRouter } from './debug/debugJellyfinApi.js';
 import { debugStreamApiRouter } from './debug/debugStreamApi.js';
 
-const ChannelQuerySchema = {
-  querystring: z.object({
-    channelId: z.string(),
-  }),
-};
+const ChannelQuerySchema = z.object({
+  channelId: z.string(),
+});
 
 export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
   await fastify
@@ -50,7 +48,10 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
   fastify.get(
     '/debug/helpers/current_program',
     {
-      schema: ChannelQuerySchema,
+      schema: {
+        tags: ['Debug'],
+        querystring: ChannelQuerySchema,
+      },
     },
     async (req, res) => {
       const channel = await req.serverCtx.channelDB.getChannelAndPrograms(
@@ -78,17 +79,20 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
     },
   );
 
-  const CreateLineupSchema = {
-    querystring: ChannelQuerySchema.querystring.extend({
-      live: z.coerce.boolean(),
-      startTime: z.coerce.number().optional(),
-      endTime: z.coerce.number().optional(),
-    }),
-  };
+  const CreateLineupSchema = ChannelQuerySchema.extend({
+    live: z.coerce.boolean(),
+    startTime: z.coerce.number().optional(),
+    endTime: z.coerce.number().optional(),
+  });
 
   fastify.get(
     '/debug/helpers/create_guide',
-    { schema: CreateLineupSchema },
+    {
+      schema: {
+        tags: ['Debug'],
+        querystring: CreateLineupSchema,
+      },
+    },
     async (req, res) => {
       const channel = await req.serverCtx.channelDB.getChannelAndPrograms(
         req.query.channelId,
@@ -123,6 +127,7 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
     '/debug/helpers/channels/:id/build_guide',
     {
       schema: {
+        tags: ['Debug'],
         params: z.object({
           id: z.string(),
         }),
@@ -197,16 +202,17 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
     },
   );
 
-  const RandomFillerSchema = {
-    querystring: CreateLineupSchema.querystring.extend({
-      maxDuration: z.coerce.number(),
-    }),
-  };
+  const RandomFillerSchema = CreateLineupSchema.extend({
+    maxDuration: z.coerce.number(),
+  });
 
   fastify.get(
     '/debug/helpers/random_filler',
     {
-      schema: RandomFillerSchema,
+      schema: {
+        tags: ['Debug'],
+        querystring: RandomFillerSchema,
+      },
     },
     async (req, res) => {
       const channel = await req.serverCtx.channelDB.getChannel(
@@ -227,24 +233,33 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
     },
   );
 
-  fastify.get('/debug/db/backup', async (_, res) => {
-    await container
-      .get<ArchiveDatabaseBackupFactory>(ArchiveDatabaseBackupKey)({
-        type: 'file',
-        outputPath: os.tmpdir(),
-        archiveFormat: 'tar',
-        gzip: true,
-        maxBackups: 3,
-      })
-      .backup();
+  fastify.get(
+    '/debug/db/backup',
+    {
+      schema: {
+        tags: ['Debug'],
+      },
+    },
+    async (_, res) => {
+      await container
+        .get<ArchiveDatabaseBackupFactory>(ArchiveDatabaseBackupKey)({
+          type: 'file',
+          outputPath: os.tmpdir(),
+          archiveFormat: 'tar',
+          gzip: true,
+          maxBackups: 3,
+        })
+        .backup();
 
-    return res.send();
-  });
+      return res.send();
+    },
+  );
 
   fastify.post(
     '/debug/plex/:programId/update_external_ids',
     {
       schema: {
+        tags: ['Debug'],
         params: z.object({
           programId: z.string(),
         }),
@@ -268,6 +283,7 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
     '/debug/helpers/promote_lineup',
     {
       schema: {
+        tags: ['Debug'],
         querystring: z.object({
           channelId: z.string().uuid(),
         }),
@@ -284,15 +300,24 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
     },
   );
 
-  fastify.get('/debug/channels/reload_all_lineups', async (req, res) => {
-    await req.serverCtx.channelDB.loadAllLineupConfigs(true);
-    return res.send();
-  });
+  fastify.get(
+    '/debug/channels/reload_all_lineups',
+    {
+      schema: {
+        tags: ['Debug'],
+      },
+    },
+    async (req, res) => {
+      await req.serverCtx.channelDB.loadAllLineupConfigs(true);
+      return res.send();
+    },
+  );
 
   fastify.get(
     '/debug/db/test_direct_access',
     {
       schema: {
+        tags: ['Debug'],
         querystring: z.object({
           id: z.string(),
         }),

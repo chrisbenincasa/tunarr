@@ -3,7 +3,6 @@ import { FfmpegText } from '@/ffmpeg/ffmpegText.js';
 import { VideoStream } from '@/stream/VideoStream.js';
 import { TruthyQueryParam } from '@/types/schemas.js';
 import { RouterPluginAsyncCallback } from '@/types/serverType.js';
-import { isProduction } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
 import { ChannelStreamModeSchema } from '@tunarr/types/schemas';
@@ -29,55 +28,61 @@ export const videoApiRouter: RouterPluginAsyncCallback = async (fastify) => {
     className: 'VideoApi',
   });
 
-  fastify.get('/setup', async (req, res) => {
-    const ffmpegSettings = req.serverCtx.settings.ffmpegSettings();
-    // Check if ffmpeg path is valid
-    if (!fsSync.existsSync(ffmpegSettings.ffmpegExecutablePath)) {
-      logger.error(
-        `FFMPEG path (${ffmpegSettings.ffmpegExecutablePath}) is invalid. The file (executable) doesn't exist.`,
-      );
-
-      return res
-        .status(500)
-        .send(
+  fastify.get(
+    '/setup',
+    {
+      schema: { hide: true },
+    },
+    async (req, res) => {
+      const ffmpegSettings = req.serverCtx.settings.ffmpegSettings();
+      // Check if ffmpeg path is valid
+      if (!fsSync.existsSync(ffmpegSettings.ffmpegExecutablePath)) {
+        logger.error(
           `FFMPEG path (${ffmpegSettings.ffmpegExecutablePath}) is invalid. The file (executable) doesn't exist.`,
         );
-    }
 
-    logger.info(`\r\nStream starting. Channel: 1 (Tunarr)`);
+        return res
+          .status(500)
+          .send(
+            `FFMPEG path (${ffmpegSettings.ffmpegExecutablePath}) is invalid. The file (executable) doesn't exist.`,
+          );
+      }
 
-    const ffmpeg = new FfmpegText(
-      ffmpegSettings,
-      'Tunarr (No Channels Configured)',
-      'Configure your channels using the Tunarr Web UI',
-    );
+      logger.info(`\r\nStream starting. Channel: 1 (Tunarr)`);
 
-    const buffer = new Readable();
-    buffer._read = () => {};
+      const ffmpeg = new FfmpegText(
+        ffmpegSettings,
+        'Tunarr (No Channels Configured)',
+        'Configure your channels using the Tunarr Web UI',
+      );
 
-    ffmpeg.on('data', (data) => {
-      buffer.push(data);
-    });
+      const buffer = new Readable();
+      buffer._read = () => {};
 
-    ffmpeg.on('error', (err) => {
-      logger.error('FFMPEG ERROR', err);
-      buffer.push(null);
-      void res.status(500).send('FFMPEG ERROR');
-      return;
-    });
+      ffmpeg.on('data', (data) => {
+        buffer.push(data);
+      });
 
-    ffmpeg.on('close', () => {
-      buffer.push(null);
-    });
+      ffmpeg.on('error', (err) => {
+        logger.error('FFMPEG ERROR', err);
+        buffer.push(null);
+        void res.status(500).send('FFMPEG ERROR');
+        return;
+      });
 
-    res.raw.on('close', () => {
-      // on HTTP close, kill ffmpeg
-      ffmpeg.kill();
-      logger.info(`\r\nStream ended. Channel: 1 (Tunarr)`);
-    });
+      ffmpeg.on('close', () => {
+        buffer.push(null);
+      });
 
-    return res.send(buffer);
-  });
+      res.raw.on('close', () => {
+        // on HTTP close, kill ffmpeg
+        ffmpeg.kill();
+        logger.info(`\r\nStream ended. Channel: 1 (Tunarr)`);
+      });
+
+      return res.send(buffer);
+    },
+  );
 
   /**
    * Internal endpoint which returns the single, raw stream for a video
@@ -87,7 +92,7 @@ export const videoApiRouter: RouterPluginAsyncCallback = async (fastify) => {
     '/stream',
     {
       schema: {
-        hide: isProduction,
+        hide: true,
         querystring: z.object({
           channel: z.coerce.number().or(z.string().uuid()),
           audioOnly: TruthyQueryParam.catch(false),
@@ -182,6 +187,9 @@ export const videoApiRouter: RouterPluginAsyncCallback = async (fastify) => {
     '/ffmpeg/playlist',
     {
       schema: {
+        tags: ['Streaming'],
+        description:
+          'Return a playlist in ffconcat file format for the given channel',
         querystring: FfmpegPlaylistQuerySchema,
       },
     },

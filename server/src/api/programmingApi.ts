@@ -71,6 +71,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
     '/programs/:id',
     {
       schema: {
+        tags: ['Programs'],
         params: BasicIdParamSchema,
       },
     },
@@ -98,6 +99,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
     '/programs/:id/thumb',
     {
       schema: {
+        tags: ['Programs'],
         params: BasicIdParamSchema,
         querystring: z.object({
           width: z.number().optional(),
@@ -316,6 +318,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
     '/programs/:id/external-link',
     {
       schema: {
+        tags: ['Programs'],
         params: BasicIdParamSchema,
         querystring: z.object({
           forward: z.coerce.boolean().default(true),
@@ -392,6 +395,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
     '/programming/:externalId',
     {
       schema: {
+        tags: ['Programs'],
         operationId: 'getProgramByExternalId',
         params: LookupExternalProgrammingSchema,
         response: {
@@ -427,6 +431,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
     '/programming/batch/lookup',
     {
       schema: {
+        tags: ['Programs'],
         operationId: 'batchGetProgramsByExternalIds',
         body: BatchLookupExternalProgrammingSchema,
         response: {
@@ -445,6 +450,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
     '/programming/shows/:id',
     {
       schema: {
+        tags: ['Programs'],
         params: z.object({
           id: z.string().uuid(),
         }),
@@ -504,6 +510,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
     '/programming/seasons/:id',
     {
       schema: {
+        tags: ['Programs'],
         params: z.object({
           id: z.string().uuid(),
         }),
@@ -536,6 +543,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
     '/programming/shows/:id/seasons',
     {
       schema: {
+        tags: ['Programs'],
         params: z.object({
           id: z.string().uuid(),
         }),

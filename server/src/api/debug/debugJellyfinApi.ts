@@ -14,6 +14,7 @@ export const DebugJellyfinApiRouter: RouterPluginAsyncCallback = async (
     '/jellyfin/libraries',
     {
       schema: {
+        tags: ['Debug'],
         querystring: z.object({
           userId: z.string(),
           uri: z.string().url(),
@@ -35,6 +36,7 @@ export const DebugJellyfinApiRouter: RouterPluginAsyncCallback = async (
     '/jellyfin/library/items',
     {
       schema: {
+        tags: ['Debug'],
         querystring: z
           .object({
             uri: z.string().url(),
@@ -69,6 +71,7 @@ export const DebugJellyfinApiRouter: RouterPluginAsyncCallback = async (
     '/jellyfin/match_program/:id',
     {
       schema: {
+        tags: ['Debug'],
         params: z.object({
           id: z.string(),
         }),

@@ -12,30 +12,47 @@ export const guideRouter: RouterPluginCallback = (fastify, _opts, done) => {
     className: 'GuideApi',
   });
 
-  fastify.get('/guide/status', async (req, res) => {
-    try {
-      const s = await req.serverCtx.guideService.getStatus();
-      return res.send(s);
-    } catch (err) {
-      logger.error('%s, %O', req.routeOptions.url, err);
-      return res.status(500).send('error');
-    }
-  });
+  fastify.get(
+    '/guide/status',
+    {
+      schema: {
+        tags: ['Guide'],
+      },
+    },
+    async (req, res) => {
+      try {
+        const s = await req.serverCtx.guideService.getStatus();
+        return res.send(s);
+      } catch (err) {
+        logger.error('%s, %O', req.routeOptions.url, err);
+        return res.status(500).send('error');
+      }
+    },
+  );
 
-  fastify.get('/guide/debug', async (req, res) => {
-    try {
-      const s = await req.serverCtx.guideService.get();
-      return res.send(s);
-    } catch (err) {
-      logger.error('%s, %O', req.routeOptions.url, err);
-      return res.status(500).send('error');
-    }
-  });
+  fastify.get(
+    '/guide/debug',
+    {
+      schema: {
+        tags: ['Debug'],
+      },
+    },
+    async (req, res) => {
+      try {
+        const s = await req.serverCtx.guideService.get();
+        return res.send(s);
+      } catch (err) {
+        logger.error('%s, %O', req.routeOptions.url, err);
+        return res.status(500).send('error');
+      }
+    },
+  );
 
   fastify.get(
     '/guide/channels',
     {
       schema: {
+        tags: ['Guide'],
         querystring: z.object({
           dateFrom: z.coerce.date(),
           dateTo: z.coerce.date(),
@@ -61,29 +78,41 @@ export const guideRouter: RouterPluginCallback = (fastify, _opts, done) => {
     },
   );
 
-  fastify.get<{
-    Params: { id: string };
-    Querystring: { dateFrom: string; dateTo: string };
-  }>('/guide/channels/:number', async (req, res) => {
-    try {
-      // TODO determine if these params are numbers or strings
-      const dateFrom = new Date(req.query.dateFrom);
-      const dateTo = new Date(req.query.dateTo);
-      const lineup = await req.serverCtx.guideService.getChannelLineup(
-        req.params.id,
-        dateFrom,
-        dateTo,
-      );
-      if (lineup == null) {
-        return res.status(404).send('Channel not found in TV guide');
-      } else {
-        return res.send(lineup);
+  fastify.get(
+    '/guide/channels/:id',
+    {
+      schema: {
+        tags: ['Guide'],
+        params: z.object({
+          id: z.string(),
+        }),
+        querystring: z.object({
+          dateFrom: z.string().pipe(z.date()),
+          dateTo: z.string().pipe(z.date()),
+        }),
+      },
+    },
+    async (req, res) => {
+      try {
+        // TODO determine if these params are numbers or strings
+        const dateFrom = req.query.dateFrom;
+        const dateTo = req.query.dateTo;
+        const lineup = await req.serverCtx.guideService.getChannelLineup(
+          req.params.id,
+          dateFrom,
+          dateTo,
+        );
+        if (lineup == null) {
+          return res.status(404).send('Channel not found in TV guide');
+        } else {
+          return res.send(lineup);
+        }
+      } catch (err) {
+        logger.error('%s, %O', req.routeOptions.url, err);
+        return res.status(500).send('error');
       }
-    } catch (err) {
-      logger.error('%s, %O', req.routeOptions.url, err);
-      return res.status(500).send('error');
-    }
-  });
+    },
+  );
 
   done();
 };

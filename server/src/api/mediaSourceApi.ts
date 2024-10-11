@@ -32,6 +32,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
     '/media-sources',
     {
       schema: {
+        tags: ['Media Source'],
         response: {
           200: z.array(MediaSourceSettingsSchema),
           500: z.string(),
@@ -70,6 +71,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
     '/media-sources/:id/status',
     {
       schema: {
+        tags: ['Media Source'],
         params: BasicIdParamSchema,
         response: {
           200: z.object({
@@ -129,6 +131,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
     '/media-sources/foreignstatus',
     {
       schema: {
+        tags: ['Media Source'],
         body: z.object({
           name: z.string().optional(),
           accessToken: z.string(),
@@ -189,6 +192,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
     '/media-sources/:id',
     {
       schema: {
+        tags: ['Media Source'],
         params: BasicIdParamSchema,
         response: {
           200: z.void(),
@@ -247,6 +251,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
     '/media-sources/:id',
     {
       schema: {
+        tags: ['Media Source'],
         params: BasicIdParamSchema,
         body: UpdateMediaSourceRequestSchema,
         response: {
@@ -300,6 +305,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
     '/media-sources',
     {
       schema: {
+        tags: ['Media Source'],
         body: InsertMediaSourceRequestSchema,
         response: {
           201: z.object({
@@ -349,6 +355,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
     '/plex/status',
     {
       schema: {
+        tags: ['Media Source'],
         querystring: z.object({
           serverName: z.string(),
         }),
