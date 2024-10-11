@@ -237,7 +237,8 @@
           "default": "'hls'",
           "enumItems": [
             "hls",
-            "hls_slower"
+            "hls_slower",
+            "mpegts"
           ],
           "mappedType": "enum"
         }
@@ -578,6 +579,7 @@
             "uuid"
           ],
           "referencedTableName": "channel",
+          "deleteRule": "cascade",
           "updateRule": "cascade"
         }
       },

@@ -23,6 +23,7 @@
     "make-exec:macos-arm64": "tsx scripts/makeScriptPackage.ts --target macos-arm64",
     "make-exec:windows": "tsx scripts/makeScriptPackage.ts --target windows-x64",
     "generate-db-migration": "dotenv -e .env.development -- tsx --tsconfig ./tsconfig.build.json src/index.ts db generate-migration",
+    "generate-db-migration2": "dotenv -e .env.development -- tsx --tsconfig ./tsconfig.build.json scripts/generateDbMigration.ts",
     "generate-db-cache": "dotenv -e .env.development -- tsx scripts/generateDbCache.ts",
     "generate-db-types": "dotenv -e .env.development -- tsx scripts/genDbTypes.ts",
     "mikro-orm": "mikro-orm-esm",

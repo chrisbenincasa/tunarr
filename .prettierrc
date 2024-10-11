@@ -4,6 +4,7 @@
   "overrides": [
     {
       "files": ["*.ts", "*.mts", "*.tsx"],
+      "excludeFiles": ["server/src/migrations/**/*.ts"],
       "options": {
         "parser": "typescript"
       }

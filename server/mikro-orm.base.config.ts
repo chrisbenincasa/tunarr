@@ -30,6 +30,7 @@ import { Migration20240618005544 } from './src/migrations/Migration2024061800554
 import { Migration20240719145409 } from './src/migrations/Migration20240719145409.js';
 import { Migration20240805185042 } from './src/migrations/Migration20240805185042.js';
 import { Migration20240917191535 } from './src/migrations/Migration20240917191535.js';
+import { Migration20241014205231 } from './src/migrations/Migration20241014205231.js';
 import { DATABASE_LOCATION_ENV_VAR } from './src/util/constants.js';
 import { getDefaultDatabaseDirectory } from './src/util/defaults.js';
 
@@ -142,6 +143,10 @@ export default defineConfig({
       {
         name: 'add_channel_stream_mode',
         class: Migration20240917191535,
+      },
+      {
+        name: 'cascade_channel_filler_show_deletes',
+        class: Migration20241014205231,
       },
     ],
   },
