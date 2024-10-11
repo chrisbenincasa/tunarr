@@ -177,7 +177,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
           }
         }
 
-        return res.redirect(302, result).send();
+        return res.redirect(result, 302).send();
       };
 
       if (!isNil(program)) {
@@ -376,7 +376,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
             return res.send({ url });
           }
 
-          return res.redirect(302, url).send();
+          return res.redirect(url, 302).send();
         }
         case ProgramExternalIdType.JELLYFIN: {
           const url = `${server.uri}/web/#/details?id=${externalId.externalKey}`;
@@ -384,7 +384,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
             return res.send({ url });
           }
 
-          return res.redirect(302, url).send();
+          return res.redirect(url, 302).send();
         }
       }
     },

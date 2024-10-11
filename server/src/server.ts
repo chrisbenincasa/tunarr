@@ -228,7 +228,7 @@ export async function initServer(opts: ServerOptions) {
     .addHook('onClose', async () => await orm.close())
     .register(
       fp((f, _, done) => {
-        f.decorateRequest('serverCtx', null);
+        f.decorateRequest('serverCtx');
         f.addHook('onRequest', (req, _res, done) => {
           req.serverCtx = ServerRequestContext.currentServerContext()!;
           req.entityManager =
@@ -349,7 +349,7 @@ export async function initServer(opts: ServerOptions) {
         done();
       });
       await f
-        .get('/', async (_, res) => res.redirect(302, '/web'))
+        .get('/', async (_, res) => res.redirect('/web', 302))
         .register(new HdhrApiRouter().router)
         .register(apiRouter, { prefix: '/api' });
     })

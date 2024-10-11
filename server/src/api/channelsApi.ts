@@ -42,7 +42,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
   });
 
   fastify.addHook('onError', (req, _, error, done) => {
-    logger.error(error, '%s %s', req.routerMethod, req.routeOptions.url);
+    logger.error(error, '%s %s', req.routeOptions.method, req.routeOptions.url);
     done();
   });
 
@@ -117,7 +117,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
           return res.status(404).send();
         }
       } catch (err) {
-        logger.error(err, req.routeConfig.url);
+        logger.error(err, req.routeOptions.config.url);
         return res.status(500).send();
       }
     },
@@ -196,7 +196,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
           return res.status(404).send();
         }
       } catch (err) {
-        logger.error(err, req.routeConfig.url);
+        logger.error(err, req.routeOptions.config.url);
         return res.status(500).send();
       }
     },

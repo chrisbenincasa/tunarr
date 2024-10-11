@@ -89,7 +89,7 @@ export const metadataApiRouter: RouterPluginAsyncCallback = async (fastify) => {
           if (!result) {
             return res.status(404).send();
           }
-          return res.redirect(302, result).send();
+          return res.redirect(result, 302).send();
         case 'proxy': {
           if (!result) {
             return res.status(404).send();
