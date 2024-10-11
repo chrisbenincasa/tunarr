@@ -63,6 +63,7 @@ nav:
     - Clients:
       - configure/clients/index.md
       - Plex: configure/clients/plex.md
+      - Jellyfin: configure/clients/jellyfin.md
   - Misc.:
     - Common Issues: misc/common-issues.md
   - Development:

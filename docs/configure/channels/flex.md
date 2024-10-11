@@ -7,3 +7,9 @@ There are a few ways to create Flex time such as Time Slots. When you have Flex 
 Please see the [Filler Lists page](/configure/library/filler) for details on creating your first list. 
 
 ![Flex filler content](/assets/flex-filler-content.png)
+
+Once you have a Filler list created, you can select the list you'd like to use on a particular channel.
+
+![Flex Filler](/assets/channels-flex-filler.png)
+
+Once you have a Filler list added to a channel, it will only be used when there is Flex time scheduled, such as when using [Time Slots](/configure/scheduling-tools/time-slots) with the Pad Times feature. 
