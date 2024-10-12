@@ -35,27 +35,44 @@ export class HdhrApiRouter {
         .send(req.serverCtx.hdhrService.getHdhrDeviceXml(host));
     });
 
-    fastify.get('/discover.json', (req, res) => {
-      return res.send(
-        req.serverCtx.hdhrService.getHdhrDevice(
-          req.protocol + '://' + req.hostname,
-        ),
-      );
-    });
+    fastify.get(
+      '/discover.json',
+      {
+        schema: {
+          tags: ['HDHR'],
+        },
+      },
+      (req, res) => {
+        return res.send(
+          req.serverCtx.hdhrService.getHdhrDevice(
+            req.protocol + '://' + req.hostname,
+          ),
+        );
+      },
+    );
 
-    fastify.get('/lineup_status.json', (_, res) => {
-      return res.send({
-        ScanInProgress: 0,
-        ScanPossible: 1,
-        Source: 'Cable',
-        SourceList: ['Cable'],
-      });
-    });
+    fastify.get(
+      '/lineup_status.json',
+      {
+        schema: {
+          tags: ['HDHR'],
+        },
+      },
+      (_, res) => {
+        return res.send({
+          ScanInProgress: 0,
+          ScanPossible: 1,
+          Source: 'Cable',
+          SourceList: ['Cable'],
+        });
+      },
+    );
 
     fastify.get(
       '/lineup.json',
       {
         schema: {
+          tags: ['HDHR'],
           response: {
             200: z.array(HdhrLineupSchema),
           },

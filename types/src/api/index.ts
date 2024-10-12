@@ -7,8 +7,13 @@ import {
 } from '../SystemSettings.js';
 import {
   ChannelProgramSchema,
+  CondensedChannelProgrammingSchema,
+  CondensedContentProgramSchema,
+  CondensedCustomProgramSchema,
   ContentProgramSchema,
   CustomProgramSchema,
+  FlexProgramSchema,
+  RedirectProgramSchema,
 } from '../schemas/programmingSchema.js';
 import {
   BackupSettingsSchema,
@@ -255,3 +260,28 @@ export const ChannelSessionsResponseSchema = z.object({
 export type ChannelSessionsResponse = z.infer<
   typeof ChannelSessionsResponseSchema
 >;
+
+const ContentProgramWithNoOriginalSchema = ContentProgramSchema.omit({
+  originalProgram: true,
+});
+
+const CondensedChannelProgramWithNoOriginalSchema = z.discriminatedUnion(
+  'type',
+  [
+    CondensedContentProgramSchema.omit({ originalProgram: true }),
+    CondensedCustomProgramSchema.extend({
+      program: CondensedContentProgramSchema.omit({
+        originalProgram: true,
+      }).optional(),
+    }),
+    RedirectProgramSchema,
+    FlexProgramSchema,
+  ],
+);
+
+// This is sorta hacky.
+export const GetChannelProgrammingResponseSchema =
+  CondensedChannelProgrammingSchema.extend({
+    lineup: z.array(CondensedChannelProgramWithNoOriginalSchema),
+    programs: z.record(ContentProgramWithNoOriginalSchema),
+  });

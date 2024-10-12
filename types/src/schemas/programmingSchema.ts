@@ -107,7 +107,9 @@ export const CondensedContentProgramSchema = BaseProgramSchema.extend({
   type: z.literal('content'),
   id: z.string().optional(), // Populated if persisted
   // Only populated on client requests to the server
-  originalProgram: OriginalProgramSchema.optional(),
+  originalProgram: OriginalProgramSchema.optional().describe(
+    "The program pulled from the relevant media source's API. This is generally only required on save/update operations",
+  ),
 });
 
 export const ContentProgramTypeSchema = z.union([

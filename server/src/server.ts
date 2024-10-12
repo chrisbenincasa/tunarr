@@ -3,6 +3,7 @@ import fastifyMultipart from '@fastify/multipart';
 import fpStatic from '@fastify/static';
 import fastifySwagger from '@fastify/swagger';
 import { RequestContext } from '@mikro-orm/core';
+import fastifyApiReference from '@scalar/fastify-api-reference';
 import constants from '@tunarr/shared/constants';
 import fastify, { FastifySchema } from 'fastify';
 import fastifyGracefulShutdown from 'fastify-graceful-shutdown';
@@ -49,6 +50,7 @@ import { runFixers } from './tasks/fixers/index.js';
 import { copyDirectoryContents, fileExists } from './util/fsUtil.js';
 import { filename, isNonEmptyString, run } from './util/index.js';
 import { LoggerFactory, RootLogger } from './util/logging/LoggerFactory.js';
+import { getTunarrVersion } from './util/version.js';
 
 const currentDirectory = dirname(filename(import.meta.url));
 
@@ -197,12 +199,24 @@ export async function initServer(opts: ServerOptions) {
         info: {
           title: 'Tunarr',
           description: 'Tunarr API',
-          version: '1.0.0',
+          version: getTunarrVersion(),
         },
         servers: [],
         tags: [
           {
             name: 'Channels',
+          },
+          {
+            name: 'Custom Shows',
+          },
+          {
+            name: 'Filler Lists',
+          },
+          {
+            name: 'HDHR',
+          },
+          {
+            name: 'Settings',
           },
         ],
       },
@@ -215,6 +229,14 @@ export async function initServer(opts: ServerOptions) {
     //       ? join(dirname(process.argv[1]), 'static')
     //       : undefined,
     // })
+    .register(fastifyApiReference, {
+      routePrefix: '/docs',
+      configuration: {
+        spec: {
+          content: () => app.swagger(),
+        },
+      },
+    })
     .register(cors, {
       origin: '*', // Testing
     })
