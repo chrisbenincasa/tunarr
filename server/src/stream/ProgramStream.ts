@@ -119,6 +119,7 @@ export abstract class ProgramStream implements ProgramStream {
       'Playback Error',
       'Check server logs for details',
       duration,
+      this.outputFormat,
     );
   }
 
