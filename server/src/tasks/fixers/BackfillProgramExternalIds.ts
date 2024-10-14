@@ -35,7 +35,7 @@ export class BackfillProgramExternalIds extends Fixer {
     className: this.constructor.name,
   });
 
-  canRunInBackground: boolean = true;
+  canRunInBackground: boolean = false;
 
   async runInternal(): Promise<void> {
     const em = getEm();

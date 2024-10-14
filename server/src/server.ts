@@ -116,6 +116,7 @@ async function legacyDizquetvDirectoryPath() {
 }
 
 export async function initServer(opts: ServerOptions) {
+  const start = performance.now();
   await initDbDirectories();
   const settingsDb = getSettings();
   LoggerFactory.initialize(settingsDb);
@@ -461,9 +462,14 @@ export async function initServer(opts: ServerOptions) {
     port: opts.port,
   });
 
+  logger.debug(
+    'Took %d ms for the server to start',
+    round(performance.now() - start, 2),
+  );
   logger.info(
     `HTTP server listening on host:port: http://${host}:${opts.port}`,
   );
+
   const hdhrSettings = ctx.settings.hdhrSettings();
   if (hdhrSettings.autoDiscoveryEnabled) {
     await ctx.hdhrService.ssdp.start();

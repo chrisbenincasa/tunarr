@@ -32,7 +32,6 @@ import { Migration20240805185042 } from './src/migrations/Migration2024080518504
 import { Migration20240917191535 } from './src/migrations/Migration20240917191535.js';
 import { DATABASE_LOCATION_ENV_VAR } from './src/util/constants.js';
 import { getDefaultDatabaseDirectory } from './src/util/defaults.js';
-import { LoggerFactory } from './src/util/logging/LoggerFactory.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -62,7 +61,8 @@ export default defineConfig({
   forceUndefined: true,
   dynamicImportProvider: (id) => import(id),
   logger(message) {
-    LoggerFactory.root.debug(message);
+    // LoggerFactory.root.debug(message);
+    console.debug(message);
   },
   migrations: {
     // Explicitly list migrations for a smoother dev experience

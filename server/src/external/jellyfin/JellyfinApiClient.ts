@@ -304,7 +304,7 @@ export class JellyfinApiClient extends BaseApiClient<JellyfinApiClientOptions> {
     return super.preRequestValidate(req);
   }
 
-  protected static override redactRequestInfo(
+  protected override redactRequestInfo(
     conf: InternalAxiosRequestConfig<unknown>,
   ): void {
     super.redactRequestInfo(conf);

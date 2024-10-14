@@ -1,9 +1,24 @@
 import { Cursor } from '@mikro-orm/core';
 import { PlexEpisodeView, PlexSeasonView } from '@tunarr/types/plex';
-import { first, forEach, groupBy, mapValues, pickBy } from 'lodash-es';
+import {
+  find,
+  first,
+  forEach,
+  groupBy,
+  isNil,
+  isUndefined,
+  mapValues,
+  pickBy,
+} from 'lodash-es';
+import { ProgramExternalIdType } from '../../dao/custom_types/ProgramExternalIdType.js';
 import { getEm } from '../../dao/dataSource.js';
 import { MediaSource } from '../../dao/entities/MediaSource.js';
 import { Program, ProgramType } from '../../dao/entities/Program.js';
+import {
+  ProgramGrouping,
+  ProgramGroupingType,
+} from '../../dao/entities/ProgramGrouping.js';
+import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.js';
 import { PlexApiClient } from '../../external/plex/PlexApiClient.js';
 import { Maybe } from '../../types/util.js';
 import { groupByUniqPropAndMap, wait } from '../../util/index.js';
@@ -15,6 +30,8 @@ export class MissingSeasonNumbersFixer extends Fixer {
     caller: import.meta,
     className: this.constructor.name,
   });
+
+  canRunInBackground: boolean = true;
 
   async runInternal(): Promise<void> {
     const em = getEm();
@@ -124,6 +141,63 @@ export class MissingSeasonNumbersFixer extends Fixer {
 
       await em.flush();
     } while (cursor.hasNextPage);
+
+    const plexServers = await getEm().findAll(MediaSource);
+
+    const seasonsMissingIndexes = await em.find(
+      ProgramGrouping,
+      { type: ProgramGroupingType.TvShowSeason, index: null },
+      {
+        populateWhere: {
+          externalRefs: {
+            sourceType: ProgramExternalIdType.PLEX,
+          },
+        },
+        populate: ['externalRefs'],
+      },
+    );
+
+    // Backfill missing season numbers
+    for (const season of seasonsMissingIndexes) {
+      const ref = season.externalRefs.$.find(
+        (ref) => ref.sourceType === ProgramExternalIdType.PLEX,
+      );
+      if (isUndefined(ref)) {
+        continue;
+      }
+
+      const server = find(
+        plexServers,
+        (ps) => ps.name === ref.externalSourceId,
+      );
+      if (isNil(server)) {
+        this.logger.warn(
+          'Could not find server with name %s',
+          ref.externalSourceId,
+        );
+        continue;
+      }
+
+      const plex = MediaSourceApiFactory().get(server);
+      const plexResult = await plex.doGetPath<PlexSeasonView>(
+        '/library/metadata/' + ref.externalKey,
+      );
+
+      if (isNil(plexResult) || plexResult.Metadata.length < 1) {
+        this.logger.warn(
+          'Found no result for key %s in plex server %s',
+          ref.externalKey,
+          ref.externalSourceId,
+        );
+        continue;
+      }
+
+      const plexSeason = first(plexResult.Metadata)!;
+      season.index = plexSeason.index;
+      em.persist(season);
+    }
+
+    await em.flush();
   }
 
   private async findSeasonNumberUsingEpisode(
@@ -136,7 +210,7 @@ export class MissingSeasonNumbersFixer extends Fixer {
       );
       return episode?.parentIndex;
     } catch (e) {
-      this.logger.warn('Error grabbing episode %s from plex: %O', episodeId, e);
+      this.logger.warn(e, 'Error grabbing episode %s from plex: %O', episodeId);
       return;
     }
   }
@@ -153,7 +227,7 @@ export class MissingSeasonNumbersFixer extends Fixer {
       );
       return first(season?.Metadata ?? [])?.index;
     } catch (e) {
-      this.logger.warn('Error grabbing season from plex: %O', e);
+      this.logger.warn(e, 'Error grabbing season from plex: %O');
       return;
     }
   }

@@ -1,4 +1,4 @@
-import { values } from 'lodash-es';
+import { round, values } from 'lodash-es';
 import { withDb } from '../../dao/dataSource.js';
 import { groupByUniq } from '../../util/index.js';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
@@ -34,6 +34,7 @@ export const runFixers = async () => {
   return withDb(async () => {
     for (const fixer of allFixers) {
       const name = fixer.constructor.name;
+      const start = performance.now();
       try {
         LoggerFactory.root.debug(
           { background: fixer.canRunInBackground },
@@ -43,27 +44,36 @@ export const runFixers = async () => {
         const fixerPromise = fixer.run();
         if (!fixer.canRunInBackground) {
           await fixerPromise;
-          logFixerSuccess(name);
+          logFixerSuccess(name, performance.now() - start);
         } else {
           fixerPromise
             .then(() => {
-              logFixerSuccess(name);
+              logFixerSuccess(name, performance.now() - start);
             })
             .catch((e) => {
-              logFixerError(name, e);
+              logFixerError(name, e, performance.now() - start);
             });
         }
       } catch (e) {
-        logFixerError(name, e);
+        logFixerError(name, e, performance.now() - start);
       }
     }
   });
 };
 
-function logFixerSuccess(fixer: string) {
-  LoggerFactory.root.debug('Fixer %s completed successfully', fixer);
+function logFixerSuccess(fixer: string, duration: number) {
+  LoggerFactory.root.debug(
+    'Fixer %s completed successfully (%d ms)',
+    fixer,
+    round(duration, 2),
+  );
 }
 
-function logFixerError(fixer: string, error: unknown) {
-  LoggerFactory.root.error(error, 'Fixer %s failed to run', fixer);
+function logFixerError(fixer: string, error: unknown, duration: number) {
+  LoggerFactory.root.error(
+    error,
+    'Fixer %s failed to run (%d ms)',
+    fixer,
+    round(duration, 2),
+  );
 }

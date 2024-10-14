@@ -1,6 +1,11 @@
-import { ExpressionBuilder } from 'kysely';
+import {
+  CaseWhenBuilder,
+  ExpressionBuilder,
+  UpdateQueryBuilder,
+  UpdateResult,
+} from 'kysely';
 import { jsonArrayFrom, jsonObjectFrom } from 'kysely/helpers/sqlite';
-import { isBoolean, merge } from 'lodash-es';
+import { isBoolean, isEmpty, keys, merge, reduce } from 'lodash-es';
 import { DeepPartial, DeepRequired, StrictExclude } from 'ts-essentials';
 import { ProgramType } from '../entities/Program';
 import { directDbAccess } from './directDbAccess.js';
@@ -26,6 +31,7 @@ const ProgramGroupingKeys: (keyof RawProgramGrouping)[] = [
   'year',
 ];
 
+// TODO move this definition to the ProgramGrouping DAO file
 export const AllProgramGroupingFields: ProgramGroupingFields =
   ProgramGroupingKeys.map((key) => `programGrouping.${key}` as const);
 
@@ -327,4 +333,32 @@ export function withFillerPrograms(
           .onRef('fillerShow.uuid', '=', 'fillerShowContent.fillerShowUuid'),
       ),
   ).as('fillerContent');
+}
+
+type ProgramRelationCaseBuilder = CaseWhenBuilder<
+  DB,
+  'program',
+  unknown,
+  string | null
+>;
+
+export function updateProgramTvShowIds(
+  builder: UpdateQueryBuilder<DB, 'program', 'program', UpdateResult>,
+  mappings: Record<string, string>,
+) {
+  const programIds = keys(mappings);
+  if (isEmpty(programIds)) {
+    return builder;
+  }
+  return builder.$if(!isEmpty(programIds), (_) =>
+    _.set((eb) => ({
+      tvShowUuid: reduce(
+        [...programIds],
+        (acc, curr) => acc.when('program.uuid', '=', curr).then(mappings[curr]),
+        eb.case() as unknown as ProgramRelationCaseBuilder,
+      )
+        .else(eb.ref('program.tvShowUuid'))
+        .end(),
+    })),
+  );
 }
