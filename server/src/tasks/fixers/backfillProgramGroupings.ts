@@ -101,20 +101,20 @@ export class BackfillProgramGroupings extends Fixer {
               eb('program.sourceType', '=', ProgramSourceType.PLEX),
             ]),
           )
-          .execute(),
+          .executeTakeFirst(),
       );
 
     this.logger.debug(
       'Fixed %s program->show mappings',
-      reduce(updatedShows, (n, { numUpdatedRows }) => n + numUpdatedRows, 0n),
+      updatedShows.numUpdatedRows,
     );
 
     // Update show -> season mappings with existing information
     // Do this in the background since it is less important.
-    directDbAccess()
+    await directDbAccess()
       .transaction()
-      .execute((tx) =>
-        tx
+      .execute(async (tx) => {
+        const updatedSeasons = await tx
           .updateTable('program')
           .set(({ selectFrom }) => ({
             seasonUuid: selectFrom('programGroupingExternalId')
@@ -144,29 +144,14 @@ export class BackfillProgramGroupings extends Fixer {
               eb('program.sourceType', '=', ProgramSourceType.PLEX),
             ]),
           )
-          .execute(),
-      )
-      .then((updatedSeasons) => {
+          .executeTakeFirst();
+
         this.logger.debug(
           'Fixed %s program->season mappings',
-          reduce(
-            updatedSeasons,
-            (n, { numUpdatedRows }) => n + numUpdatedRows,
-            0n,
-          ),
+          updatedSeasons.numUpdatedRows,
         );
-      })
-      .catch((e) => {
-        this.logger.error(
-          e,
-          'Error while updating season associations. Will try again on restart',
-        );
-      });
 
-    directDbAccess()
-      .transaction()
-      .execute((tx) =>
-        tx
+        const res = await tx
           .updateTable('programGrouping')
           .set(({ selectFrom }) => ({
             showUuid: selectFrom('program')
@@ -196,16 +181,11 @@ export class BackfillProgramGroupings extends Fixer {
           }))
           .where('programGrouping.type', '=', ProgramGroupingType.TvShowSeason)
           .where('programGrouping.showUuid', 'is', null)
-          .executeTakeFirst(),
-      )
-      .then((res) => {
+          .executeTakeFirst();
         this.logger.debug(
           'Fixed %s show->season associations',
           res.numUpdatedRows,
         );
-      })
-      .catch((e) => {
-        this.logger.error(e, 'Error while updating show->season associations');
       });
 
     const stillMissing = await directDbAccess()
