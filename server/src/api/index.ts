@@ -153,7 +153,7 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
         data: {
           name: data.filename,
           size: data.fields.size,
-          fileUrl: `${req.protocol}://${req.hostname}/images/uploads/${data.filename}`,
+          fileUrl: `${req.protocol}://${req.host}/images/uploads/${data.filename}`,
         },
       });
     } catch (err) {
@@ -177,7 +177,7 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
   // XMLTV.XML Download
   fastify.get('/xmltv.xml', async (req, res) => {
     try {
-      const host = `${req.protocol}://${req.hostname}`;
+      const host = `${req.protocol}://${req.host}`;
 
       const xmltvSettings = req.serverCtx.settings.xmlTvSettings();
       const fileContent = await fsPromises.readFile(
@@ -204,7 +204,7 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
   // CHANNELS.M3U Download
   fastify.get('/channels.m3u', async (req, res) => {
     try {
-      const host = `${req.protocol}://${req.hostname}`;
+      const host = `${req.protocol}://${req.host}`;
       const data = await req.serverCtx.m3uService.getChannelList(host);
 
       return res.type('text').send(data);

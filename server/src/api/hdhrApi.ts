@@ -29,7 +29,7 @@ export class HdhrApiRouter {
       });
 
     fastify.get('/device.xml', (req, res) => {
-      const host = req.protocol + '://' + req.hostname;
+      const host = req.protocol + '://' + req.host;
       return res
         .type('application/xml')
         .send(req.serverCtx.hdhrService.getHdhrDeviceXml(host));
@@ -38,7 +38,7 @@ export class HdhrApiRouter {
     fastify.get('/discover.json', (req, res) => {
       return res.send(
         req.serverCtx.hdhrService.getHdhrDevice(
-          req.protocol + '://' + req.hostname,
+          req.protocol + '://' + req.host,
         ),
       );
     });
@@ -74,14 +74,14 @@ export class HdhrApiRouter {
             GuideName: channel.name,
             // Do not use query params here, because Plex doesn't handle them well (as they might append
             // query params themselves...)
-            URL: `${req.protocol}://${req.hostname}/stream/channels/${channel.uuid}.ts`,
+            URL: `${req.protocol}://${req.host}/stream/channels/${channel.uuid}.ts`,
           });
         }
         if (lineup.length === 0)
           lineup.push({
             GuideNumber: '1',
             GuideName: 'Tunarr',
-            URL: `${req.protocol}://${req.hostname}/setup`,
+            URL: `${req.protocol}://${req.host}/setup`,
           });
 
         return res.send(lineup);
