@@ -2,6 +2,7 @@ import { PlexLibrary } from '@/store/programmingSelector/store.ts';
 import { Maybe, Nilable } from '@/types/util.ts';
 import {
   DataTag,
+  infiniteQueryOptions,
   queryOptions,
   useInfiniteQuery,
   useQuery,
@@ -13,10 +14,10 @@ import {
   PlexLibraryMusic,
   PlexLibraryShows,
 } from '@tunarr/types/plex';
+import { MediaSourceId } from '@tunarr/types/schemas';
 import { forEach, isNil, isUndefined, sumBy } from 'lodash-es';
 import { fetchPlexPath } from '../../helpers/plexUtil.ts';
 import { useTunarrApi } from '../useTunarrApi.ts';
-import { MediaSourceId } from '@tunarr/types/schemas';
 
 const usePlexSearchQueryFn = () => {
   const apiClient = useTunarrApi();
@@ -121,7 +122,7 @@ export const usePlexSearch = (
   return useQuery(queryOptions);
 };
 
-export const usePlexSearchInfinite = (
+const usePlexSearchInfiniteQueryOptions = (
   plexServer: Maybe<PlexServerSettings>,
   currentLibrary: Nilable<PlexLibrary>,
   searchParam: Maybe<string>,
@@ -130,14 +131,16 @@ export const usePlexSearchInfinite = (
 ) => {
   const plexQueryFn = usePlexSearchQueryFn();
 
-  return useInfiniteQuery({
-    queryKey: [
-      'plex-search',
-      plexServer?.name,
-      currentLibrary?.library.key,
-      searchParam,
-      'infinite',
-    ],
+  const key = [
+    'plex-search',
+    plexServer?.name,
+    currentLibrary?.library.key,
+    searchParam,
+    'infinite',
+  ] as const;
+
+  const opts = infiniteQueryOptions({
+    queryKey: key,
     enabled: enabled && !isNil(plexServer) && !isNil(currentLibrary),
     initialPageParam: 0,
     queryFn: ({ pageParam }) => {
@@ -155,5 +158,30 @@ export const usePlexSearchInfinite = (
       // Next offset is the last + how many items we got back.
       return last + res.size;
     },
+    // We can toy around with this... it's not great since it's all
+    // on the frontend. Would be cool to have a true cache of library
+    // items on the backend, but it's complicated! We don't want to rebuild
+    // Plex...
+    staleTime: 60_000 * 10,
   });
+
+  return opts;
+};
+
+export const usePlexSearchInfinite = (
+  plexServer: Maybe<PlexServerSettings>,
+  currentLibrary: Nilable<PlexLibrary>,
+  searchParam: Maybe<string>,
+  pageSize: number,
+  enabled: boolean = true,
+) => {
+  const queryOpts = usePlexSearchInfiniteQueryOptions(
+    plexServer,
+    currentLibrary,
+    searchParam,
+    pageSize,
+    enabled,
+  );
+
+  return useInfiniteQuery(queryOpts);
 };

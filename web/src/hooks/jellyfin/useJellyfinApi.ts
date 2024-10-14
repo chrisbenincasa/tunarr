@@ -1,12 +1,21 @@
 import { isNonEmptyString } from '@/helpers/util.ts';
-import { useApiQuery } from '../useApiQuery.ts';
-import { every, flatMap, isEmpty, isUndefined, sumBy } from 'lodash-es';
-import { useTunarrApi } from '../useTunarrApi.ts';
-import { useInfiniteQuery } from '@tanstack/react-query';
-import { useEffect } from 'react';
 import { addKnownMediaForJellyfinServer } from '@/store/programmingSelector/actions.ts';
-import { MediaSourceId } from '@tunarr/types/schemas';
+import { QueryParamTypeForAlias } from '@/types/index.ts';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { JellyfinItemKind } from '@tunarr/types/jellyfin';
+import { MediaSourceId } from '@tunarr/types/schemas';
+import {
+  every,
+  flatMap,
+  isEmpty,
+  isNil,
+  isUndefined,
+  omitBy,
+  sumBy,
+} from 'lodash-es';
+import { useEffect } from 'react';
+import { useApiQuery } from '../useApiQuery.ts';
+import { useTunarrApi } from '../useTunarrApi.ts';
 
 export const useJellyfinUserLibraries = (
   mediaSourceId: string,
@@ -61,12 +70,28 @@ export const useJellyfinLibraryItems = (
   return { ...result, queryKey: key };
 };
 
+function getChunkSize(librarySize: number): number {
+  if (librarySize <= 200) {
+    return 20;
+  } else if (librarySize <= 1000) {
+    return 50;
+  } else {
+    return 100;
+  }
+}
+
 export const useInfiniteJellyfinLibraryItems = (
   mediaSourceId: MediaSourceId,
   parentId: string,
   itemTypes: JellyfinItemKind[],
   enabled: boolean = true,
-  chunkSize: number = 20,
+  initialChunkSize: number = 20,
+  additionalFilters: Partial<
+    Omit<
+      QueryParamTypeForAlias<'getJellyfinItems'>,
+      'offset' | 'limit' | 'itemTypes'
+    >
+  > = {},
 ) => {
   const apiClient = useTunarrApi();
   const key = [
@@ -75,31 +100,37 @@ export const useInfiniteJellyfinLibraryItems = (
     'library_items',
     parentId,
     'infinite',
+    { itemTypes, additionalFilters },
   ];
 
   const result = useInfiniteQuery({
     queryKey: key,
-    queryFn: ({ pageParam }) =>
+    queryFn: ({ pageParam: { offset, pageSize } }) =>
       apiClient.getJellyfinItems({
         params: { mediaSourceId, libraryId: parentId },
         queries: {
-          offset: pageParam,
-          limit: chunkSize,
+          offset,
+          limit: pageSize,
           itemTypes: isEmpty(itemTypes) ? undefined : itemTypes,
+          ...omitBy(additionalFilters, isNil),
         },
       }),
     enabled: enabled && every([mediaSourceId, parentId], isNonEmptyString),
-    initialPageParam: 0,
-    getNextPageParam: (res, all, last) => {
+    initialPageParam: { offset: 0, pageSize: initialChunkSize },
+    getNextPageParam: (res, all, { offset: lastOffset }) => {
       const total = sumBy(all, (page) => page.Items.length);
       if (total >= (res.TotalRecordCount ?? res.Items.length)) {
         return null;
       }
 
       // Next offset is the last + how many items we got back.
-      return last + res.Items.length;
+      return {
+        offset: (lastOffset + res.Items.length) % res.TotalRecordCount,
+        pageSize: getChunkSize(res.TotalRecordCount),
+      };
     },
     refetchOnWindowFocus: false,
+    staleTime: 1000 * 60 * 60 * 10,
   });
 
   useEffect(() => {

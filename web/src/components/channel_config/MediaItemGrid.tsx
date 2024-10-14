@@ -7,15 +7,24 @@ import useStore from '@/store/index.ts';
 import { Nullable } from '@/types/util';
 import {
   Box,
+  Button,
   CircularProgress,
-  Divider,
   Grid,
   List,
   Typography,
 } from '@mui/material';
 import { InfiniteData, UseInfiniteQueryResult } from '@tanstack/react-query';
 import { usePrevious } from '@uidotdev/usehooks';
-import { compact, flatMap, map, sumBy } from 'lodash-es';
+import {
+  compact,
+  first,
+  flatMap,
+  isEmpty,
+  isNil,
+  map,
+  range,
+  sumBy,
+} from 'lodash-es';
 import {
   ForwardedRef,
   useCallback,
@@ -59,6 +68,10 @@ type Props<PageDataType, ItemType> = {
   renderListItem: (item: ItemType, index: number) => JSX.Element;
   getItemKey: (item: ItemType) => string;
   infiniteQuery: UseInfiniteQueryResult<InfiniteData<PageDataType>>;
+  showAlphabetFilter?: boolean;
+  // Generally this applies some filter on the underlying
+  // query, changing the items displayed.
+  handleAlphaNumFilter?: (key: string | null) => void;
 };
 
 type Size = {
@@ -73,6 +86,10 @@ type ModalState = {
 
 // magic number for top bar padding; TODO: calc it off ref
 const TopBarPadddingPx = 64;
+const AlphanumericCharCodes = [
+  '#'.charCodeAt(0),
+  ...range('a'.charCodeAt(0), 'z'.charCodeAt(0) + 1),
+];
 
 export function MediaItemGrid<PageDataType, ItemType>({
   getPageDataSize,
@@ -87,6 +104,8 @@ export function MediaItemGrid<PageDataType, ItemType>({
     fetchNextPage,
     isLoading,
   },
+  showAlphabetFilter = true,
+  handleAlphaNumFilter,
 }: Props<PageDataType, ItemType>) {
   const viewType = useStore((state) => state.theme.programmingSelectorView);
   const [scrollParams, setScrollParams] = useState({ limit: 0, max: -1 });
@@ -97,6 +116,9 @@ export function MediaItemGrid<PageDataType, ItemType>({
   });
   const gridContainerRef = useRef<HTMLDivElement>(null);
   const selectedModalItemRef = useRef<HTMLDivElement>(null);
+  const [alphanumericFilter, setAlphanumericFilter] = useState<string | null>(
+    null,
+  );
 
   // We only need a single grid item ref because all grid items are the same
   // width. This ref is simply used to determine the width of grid items based
@@ -104,6 +126,55 @@ export function MediaItemGrid<PageDataType, ItemType>({
   // If the modal is open, this ref points to the selected dmain grid element,
   // otherwise, it uses the first element in the grid
   const gridItemRef = useRef<HTMLDivElement>(null);
+
+  const loadedItems = compact(flatMap(data?.pages, extractItems));
+
+  const containerHeight = useMemo(() => {
+    const height = gridItemRef?.current?.getBoundingClientRect()?.height;
+    if (isNil(height)) {
+      return;
+    }
+
+    const page = first(data?.pages);
+    if (isNil(page)) {
+      return;
+    }
+
+    const total = getPageDataSize(page)?.total;
+
+    if (isNil(total)) {
+      return;
+    }
+
+    const maxHeight =
+      Math.ceil(total / rowSize) * height + (hasNextPage ? height : 48);
+
+    const numRows = Math.ceil(loadedItems.length / rowSize);
+
+    // Either set the height of the container to 3 extra rows on top of what is loaded
+    // or the max height
+    return Math.min((numRows + 3) * height, maxHeight);
+  }, [data?.pages, getPageDataSize, hasNextPage, loadedItems.length, rowSize]);
+
+  const handleAlphaFilterChange = useCallback(
+    (key: string) => {
+      if (isEmpty(key.trim())) {
+        return;
+      }
+
+      const anum = key[0];
+      if (!AlphanumericCharCodes.includes(anum.charCodeAt(0))) {
+        return;
+      }
+
+      setAlphanumericFilter((prev) => (prev === anum ? null : anum));
+
+      scrollTo();
+
+      handleAlphaNumFilter?.(anum === alphanumericFilter ? null : anum);
+    },
+    [handleAlphaNumFilter, alphanumericFilter],
+  );
 
   const previousModalIndex = usePrevious(modalIndex);
 
@@ -195,22 +266,28 @@ export function MediaItemGrid<PageDataType, ItemType>({
     }
   }, [data?.pages, getPageDataSize, scrollParams.max]);
 
+  const maybeTriggerFetchNext = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      console.log('trigger');
+      fetchNextPage().catch(console.error);
+    }
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+
   const { ref } = useIntersectionObserver({
     onChange: (_, entry) => {
       if (entry.isIntersecting) {
         if (scrollParams.limit < scrollParams.max) {
           setScrollParams(({ limit: prevLimit, max }) => ({
             max,
-            limit: prevLimit + rowSize * 4,
+            limit: Math.ceil((prevLimit + rowSize * 5) / rowSize) * rowSize,
           }));
         }
 
-        if (hasNextPage && !isFetchingNextPage) {
-          fetchNextPage().catch(console.error);
-        }
+        maybeTriggerFetchNext();
       }
     },
-    threshold: 0.5,
+    threshold: 0,
+    rootMargin: '100px 0px 0px 0px',
   });
 
   // InlineModals are only potentially rendered for the last item in each row
@@ -227,7 +304,7 @@ export function MediaItemGrid<PageDataType, ItemType>({
   );
 
   const renderItems = () => {
-    return map(compact(flatMap(data?.pages, extractItems)), (item, index) => {
+    return map(loadedItems, (item, index) => {
       const isOpen = index === lastItemIndex;
       // const shouldAttachRef =
       //   (modalIndex >= 0 && modalIndex === index) || index === 0;
@@ -259,7 +336,38 @@ export function MediaItemGrid<PageDataType, ItemType>({
   };
 
   return (
-    <>
+    <Box sx={{ minHeight: containerHeight }}>
+      {showAlphabetFilter && handleAlphaNumFilter && (
+        <Box
+          sx={{
+            position: 'fixed',
+            display: 'flex',
+            flexDirection: 'column',
+            right: [-8, -4],
+            zIndex: 1000,
+            bottom: {
+              xs: 56 + 8,
+              md: 'auto',
+              // sm: 0,
+            },
+          }}
+        >
+          {map(AlphanumericCharCodes, (code) => {
+            const str = String.fromCharCode(code);
+            return (
+              <Button
+                disableRipple
+                sx={{ py: 0, px: 1, minWidth: '100%' }}
+                key={code}
+                onClick={() => handleAlphaFilterChange(str)}
+                color={alphanumericFilter === str ? 'info' : undefined}
+              >
+                {str}
+              </Button>
+            );
+          })}
+        </Box>
+      )}
       <Box ref={gridContainerRef} sx={{ width: '100%' }}>
         {viewType === 'grid' ? (
           <Grid
@@ -283,7 +391,16 @@ export function MediaItemGrid<PageDataType, ItemType>({
           <List>{renderItems()}</List>
         )}
       </Box>
-      {!isLoading && <div style={{ height: 96 }} ref={ref}></div>}
+
+      {!isLoading && hasNextPage && (
+        <div
+          style={{
+            height:
+              gridItemRef?.current?.getBoundingClientRect()?.height ?? 200,
+          }}
+          ref={ref}
+        ></div>
+      )}
       {isFetchingNextPage && (
         <CircularProgress
           color="primary"
@@ -291,11 +408,14 @@ export function MediaItemGrid<PageDataType, ItemType>({
         />
       )}
       {data && !hasNextPage && (
-        <Typography fontStyle={'italic'} sx={{ textAlign: 'center' }}>
+        <Typography
+          variant="h6"
+          fontStyle={'italic'}
+          sx={{ textAlign: 'center', mt: 2 }}
+        >
           fin.
         </Typography>
       )}
-      <Divider sx={{ mt: 3, mb: 2 }} />
-    </>
+    </Box>
   );
 }

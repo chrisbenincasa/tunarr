@@ -148,6 +148,7 @@ export const PlexGridItem = memo(
               id: createExternalId('plex', server.name, item.ratingKey),
               // Commenting this out for now as temporary solution for image loading issue
               // thumbOptions: JSON.stringify({ width: 480, height: 720 }),
+              cache: import.meta.env.PROD ? 'true' : 'false',
             });
 
             return `${

@@ -15,7 +15,7 @@ import { setCurrentFillerList } from '@/store/fillerListEditor/action.ts';
 import { RouterContext } from '@/types/RouterContext';
 import { notFound } from '@tanstack/react-router';
 
-type ChannelArgs = {
+export type ChannelArgs = {
   params: { channelId: string };
   context: RouterContext;
 };

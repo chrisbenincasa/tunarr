@@ -53,6 +53,9 @@ const childJellyfinType = forJellyfinItem<JellyfinItemKind>({
 export function JellyfinProgrammingSelector() {
   const selectedServer = useCurrentMediaSource('jellyfin');
   const selectedLibrary = useCurrentSourceLibrary('jellyfin');
+  const [alphanumericFilter, setAlphanumericFilter] = useState<string | null>(
+    null,
+  );
 
   const [tabValue, setTabValue] = useState(TabValues.Library);
 
@@ -78,7 +81,14 @@ export function JellyfinProgrammingSelector() {
     selectedLibrary?.library.Id ?? '',
     itemTypes,
     true,
-    20,
+    64,
+    {
+      nameLessThan: alphanumericFilter === '#' ? 'A' : undefined,
+      nameStartsWith:
+        alphanumericFilter !== null && alphanumericFilter !== '#'
+          ? alphanumericFilter.toUpperCase()
+          : undefined,
+    },
   );
 
   const totalItems = useMemo(() => {
@@ -168,8 +178,8 @@ export function JellyfinProgrammingSelector() {
         renderListItem={(item, index) => (
           <JellyfinListItem key={item.Id} item={item} index={index} />
         )}
-        // renderFinalRow={renderFinalRowInlineModal}
         infiniteQuery={jellyfinItemsQuery}
+        handleAlphaNumFilter={setAlphanumericFilter}
       />
     </>
   );

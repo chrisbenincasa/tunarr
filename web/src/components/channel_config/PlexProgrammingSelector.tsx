@@ -16,17 +16,33 @@ import {
   Tabs,
   ToggleButton,
   ToggleButtonGroup,
+  Tooltip,
 } from '@mui/material';
 import { tag } from '@tunarr/types';
+import { PlexFilter } from '@tunarr/types/api';
 import { PlexMedia, isPlexParentItem } from '@tunarr/types/plex';
 import { MediaSourceId } from '@tunarr/types/schemas';
-import { chain, filter, first, isNil, isUndefined, sumBy } from 'lodash-es';
+import {
+  chain,
+  filter,
+  first,
+  isNil,
+  isNull,
+  isUndefined,
+  map,
+  range,
+  sumBy,
+} from 'lodash-es';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useToggle } from 'usehooks-ts';
 import { isNonEmptyString, toggle } from '../../helpers/util.ts';
 import { usePlexLibraries } from '../../hooks/plex/usePlex.ts';
 import { useMediaSources } from '../../hooks/settingsHooks.ts';
 import useStore from '../../store/index.ts';
-import { addKnownMediaForPlexServer } from '../../store/programmingSelector/actions.ts';
+import {
+  addKnownMediaForPlexServer,
+  setPlexFilter,
+} from '../../store/programmingSelector/actions.ts';
 import { InlineModal } from '../InlineModal.tsx';
 import { TabPanel } from '../TabPanel.tsx';
 import { ProgramViewToggleButton } from '../base/ProgramViewToggleButton.tsx';
@@ -62,7 +78,7 @@ export default function PlexProgrammingSelector() {
   const selectedLibrary = useCurrentSourceLibrary('plex');
   const [tabValue, setTabValue] = useState(TabValues.Library);
   const [scrollParams, setScrollParams] = useState({ limit: 0, max: -1 });
-  const [searchVisible, setSearchVisible] = useState(false);
+  const [searchVisible, toggleSearchVisible] = useToggle();
   const [useAdvancedSearch, setUseAdvancedSearch] = useState(false);
 
   const handleChange = (_: React.SyntheticEvent, newValue: TabValues) => {
@@ -116,15 +132,53 @@ export default function PlexProgrammingSelector() {
     tabValue,
   ]);
 
-  const { urlFilter: searchKey } = useStore(
-    ({ plexSearch: plexQuery }) => plexQuery,
+  const { urlFilter: searchKey } = useStore(({ plexSearch }) => plexSearch);
+
+  const filterByFirstLetter = useCallback(
+    (letter: string | null) => {
+      if (isNull(letter)) {
+        setPlexFilter(undefined);
+        return;
+      }
+
+      const field =
+        selectedLibrary?.library.type === 'show' ? 'show.title' : 'title';
+
+      let filter: PlexFilter;
+      if (letter === '#') {
+        filter = {
+          // field,
+          type: 'op',
+          op: 'or',
+          children: map(
+            range('0'.charCodeAt(0), '9'.charCodeAt(0) + 1),
+            (code) => ({
+              field,
+              type: 'value',
+              op: '<=',
+              value: String.fromCharCode(code),
+            }),
+          ),
+        };
+      } else {
+        filter = {
+          field,
+          type: 'value',
+          op: '<=',
+          value: letter.toUpperCase(),
+        };
+      }
+
+      setPlexFilter(filter);
+    },
+    [selectedLibrary?.library.type],
   );
 
   const plexSearchQuery = usePlexSearchInfinite(
     selectedServer,
     selectedLibrary,
     searchKey,
-    24,
+    50,
   );
 
   const { isLoading: searchLoading, data: searchData } = plexSearchQuery;
@@ -214,25 +268,6 @@ export default function PlexProgrammingSelector() {
 
   const renderPanels = () => {
     const elements: JSX.Element[] = [];
-    if ((first(searchData?.pages)?.size ?? 0) > 0) {
-      elements.push(
-        <TabPanel index={TabValues.Library} value={tabValue} key="Library">
-          <MediaItemGrid
-            getPageDataSize={(page) => ({
-              total: page.totalSize,
-              size: page.size,
-            })}
-            extractItems={(page) => page.Metadata}
-            getItemKey={getPlexItemKey}
-            renderGridItem={renderGridItem}
-            renderListItem={(item) => (
-              <PlexListItem key={item.guid} item={item} />
-            )}
-            infiniteQuery={plexSearchQuery}
-          />
-        </TabPanel>,
-      );
-    }
 
     if (
       // tabValue === TabValues.Collections &&
@@ -300,7 +335,10 @@ export default function PlexProgrammingSelector() {
             <Stack direction="row" gap={1} sx={{ mt: 2 }}>
               <StandaloneToggleButton
                 selected={searchVisible}
-                onToggle={() => setSearchVisible(toggle)}
+                onToggle={() => {
+                  toggleSearchVisible();
+                  setPlexFilter(undefined);
+                }}
                 toggleButtonProps={{
                   size: 'small',
                   sx: { mr: 1 },
@@ -379,22 +417,55 @@ export default function PlexProgrammingSelector() {
                 label="Library"
                 {...a11yProps(TabValues.Library)}
               />
-              {sumBy(collectionsData?.pages, (page) => page.size) > 0 && (
-                <Tab
-                  value={TabValues.Collections}
-                  label="Collections"
-                  {...a11yProps(TabValues.Collections)}
-                />
-              )}
-              {sumBy(playlistData?.pages, 'size') > 0 && (
-                <Tab
-                  value={TabValues.Playlists}
-                  label="Playlists"
-                  {...a11yProps(TabValues.Playlists)}
-                />
-              )}
+              <Tab
+                value={TabValues.Collections}
+                label="Collections"
+                disabled={
+                  sumBy(collectionsData?.pages, (page) => page.size) === 0 ||
+                  isCollectionLoading
+                }
+                {...a11yProps(TabValues.Collections)}
+              />
+              <Tooltip
+                title={
+                  sumBy(playlistData?.pages, 'size') === 0 || isPlaylistLoading
+                    ? 'Selected library has no playlists'
+                    : null
+                }
+                placement="top"
+                arrow
+              >
+                <span>
+                  <Tab
+                    value={TabValues.Playlists}
+                    label="Playlists"
+                    disabled={
+                      sumBy(playlistData?.pages, 'size') === 0 ||
+                      isPlaylistLoading
+                    }
+                    {...a11yProps(TabValues.Playlists)}
+                  />
+                </span>
+              </Tooltip>
             </Tabs>
           </Box>
+          <TabPanel index={TabValues.Library} value={tabValue} key="Library">
+            <MediaItemGrid
+              getPageDataSize={(page) => ({
+                total: page.totalSize,
+                size: page.size,
+              })}
+              extractItems={(page) => page.Metadata}
+              getItemKey={getPlexItemKey}
+              renderGridItem={renderGridItem}
+              renderListItem={(item) => (
+                <PlexListItem key={item.guid} item={item} />
+              )}
+              infiniteQuery={plexSearchQuery}
+              showAlphabetFilter={!searchVisible}
+              handleAlphaNumFilter={filterByFirstLetter}
+            />
+          </TabPanel>
           {renderPanels()}
         </>
       )}

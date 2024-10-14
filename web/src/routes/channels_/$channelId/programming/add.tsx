@@ -1,6 +1,10 @@
-import { preloadChannelAndProgramming } from '@/helpers/routeLoaders';
+import {
+  ChannelArgs,
+  preloadChannelAndProgramming,
+} from '@/helpers/routeLoaders';
 import ProgrammingSelectorPage from '@/pages/channels/ProgrammingSelectorPage';
 import { addMediaToCurrentChannel } from '@/store/channelEditor/actions';
+import { setPlexFilter } from '@/store/programmingSelector/actions';
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 
@@ -11,7 +15,10 @@ const channelProgrammingSchema = z.object({
 
 export const Route = createFileRoute('/channels/$channelId/programming/add')({
   validateSearch: (search) => channelProgrammingSchema.parse(search),
-  loader: preloadChannelAndProgramming,
+  loader: (args: ChannelArgs) =>
+    preloadChannelAndProgramming(args).then(() => {
+      setPlexFilter(undefined);
+    }),
   component: ChannelProgrammingSelectorPage,
 });
 

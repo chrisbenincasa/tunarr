@@ -30,6 +30,7 @@ import {
   parametersBuilder,
 } from '@zodios/core';
 import { isEmpty } from 'lodash-es';
+import querystring from 'query-string';
 import { z } from 'zod';
 import { getFfmpegInfoEndpoint } from './ffmpegApi.ts';
 import { jellyfinEndpoints } from './jellyfinApi.ts';
@@ -421,6 +422,12 @@ export type ApiClient = ZodiosInstance<typeof api>;
 
 const opts: ZodiosOptions = {
   validate: 'none',
+  axiosConfig: {
+    paramsSerializer: (params) =>
+      querystring.stringify(params, {
+        arrayFormatSeparator: ',',
+      }),
+  },
 };
 
 export const createApiClient = (uri: string) => {

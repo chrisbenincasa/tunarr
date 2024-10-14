@@ -20,9 +20,12 @@ export function buildPlexFilterKey(query: PlexFilter | undefined): string[] {
         filters.push(...buildPlexFilterKey(query.children[0]));
       } else {
         filters.push('push=1');
-        for (const child of query.children) {
+        for (let i = 0; i < query.children.length; i++) {
+          const child = query.children[i];
           filters.push(...buildPlexFilterKey(child));
-          filters.push(`${query.op}=1`);
+          if (i !== query.children.length - 1) {
+            filters.push(`${query.op}=1`);
+          }
         }
         filters.push('pop=1');
       }

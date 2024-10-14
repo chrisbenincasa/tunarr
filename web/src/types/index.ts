@@ -13,6 +13,7 @@ import {
 import { ApiOf } from '@zodios/core';
 import {
   ZodiosAliases,
+  ZodiosQueryParamsByAlias,
   ZodiosResponseByAlias,
 } from '@zodios/core/lib/zodios.types';
 import { type ApiClient } from '../external/api.ts';
@@ -39,6 +40,9 @@ export type ZodiosAliasReturnType<T extends ApiAliases> = Awaited<
 
 export type RequestMethodForAlias<T extends ApiAliases> =
   ZodiosAliases<ApiType>[T];
+
+export type QueryParamTypeForAlias<T extends ApiAliases> =
+  ZodiosQueryParamsByAlias<ApiType, T>;
 
 export type UIIndex = { originalIndex: number };
 
