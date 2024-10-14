@@ -1,5 +1,6 @@
 import { Watermark } from '@tunarr/types';
 import dayjs from 'dayjs';
+import events from 'events';
 import { isUndefined } from 'lodash-es';
 import { PassThrough } from 'stream';
 import { SettingsDB, getSettings } from '../dao/settings.js';
@@ -7,6 +8,7 @@ import { FfmpegTranscodeSession } from '../ffmpeg/FfmpegTrancodeSession.js';
 import { OutputFormat } from '../ffmpeg/OutputFormat.js';
 import { FFMPEG, StreamOptions } from '../ffmpeg/ffmpeg.js';
 import { serverContext } from '../serverContext.js';
+import { TypedEventEmitter } from '../types/eventEmitter.js';
 import { Maybe } from '../types/util.js';
 import {
   attempt,
@@ -18,27 +20,36 @@ import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '../util/serverUtil.js';
 import { PlayerContext } from './PlayerStreamContext.js';
 
+type ProgramStreamEvents = {
+  // Emitted when the stream has reached a fatal error point
+  // This means that both the program and error stream have failed to play.
+  error: () => void;
+};
+
 /**
  * Base class implementing the functionality of managing an output stream
- * for a given program. This clasas is essentially a lineup item + transcode session
+ * for a given program. This class is essentially a lineup item + transcode session
  */
-export abstract class ProgramStream implements ProgramStream {
+export abstract class ProgramStream extends (events.EventEmitter as new () => TypedEventEmitter<ProgramStreamEvents>) {
   protected logger = LoggerFactory.child({ className: this.constructor.name });
+  private outStream: PassThrough;
+  private hadError: boolean = false;
   private _transcodeSession: FfmpegTranscodeSession;
 
   constructor(
     public context: PlayerContext,
     protected outputFormat: OutputFormat,
     protected settingsDB: SettingsDB = getSettings(),
-  ) {}
+  ) {
+    super();
+  }
 
   async setup(opts?: Partial<StreamOptions>): Promise<FfmpegTranscodeSession> {
     if (this.isInitialized()) {
       return this._transcodeSession;
     }
 
-    this.transcodeSession = await this.setupInternal(opts);
-    return this.transcodeSession;
+    return (this.transcodeSession = await this.setupInternal(opts));
   }
 
   isInitialized(): boolean {
@@ -50,13 +61,7 @@ export abstract class ProgramStream implements ProgramStream {
       await this.setup();
     }
 
-    const outStream = this._transcodeSession.start(sink);
-
-    this._transcodeSession.on('error', () => {
-      this.tryReplaceWithErrorStream(outStream).catch(() => {});
-    });
-
-    return outStream;
+    return (this.outStream = this._transcodeSession.start(sink));
   }
 
   shutdown(): void {
@@ -78,9 +83,22 @@ export abstract class ProgramStream implements ProgramStream {
 
   set transcodeSession(session: FfmpegTranscodeSession) {
     this._transcodeSession = session;
-    this._transcodeSession.on('close', () => this.shutdown());
     this._transcodeSession.on('end', () => this.shutdown());
-    this._transcodeSession.on('error', () => this.shutdown());
+    this._transcodeSession.on('error', () => {
+      if (this.hadError) {
+        // We're streaming the error and something went wrong with that..
+        // time to just bail.
+        this.shutdown();
+        this.emit('error');
+      } else {
+        this.hadError = true;
+        const failedStream = this._transcodeSession;
+        failedStream.kill();
+        this.tryReplaceWithErrorStream(this.outStream).catch((e) => {
+          this.logger.error(e, 'Error while setting up ');
+        });
+      }
+    });
   }
 
   private async tryReplaceWithErrorStream(sink?: PassThrough) {
@@ -101,6 +119,7 @@ export abstract class ProgramStream implements ProgramStream {
       });
     } catch (e) {
       this.logger.error(e, 'Error while trying to spawn error stream! YIKES');
+      throw e;
     }
   }
 

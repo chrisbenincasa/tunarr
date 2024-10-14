@@ -36,10 +36,6 @@ export class FfmpegTranscodeSession extends (events.EventEmitter as new () => Ty
     // Connect the session to the process.
     // The transcode session simply forwards all of the events
     // of the underlying process to consumers
-    this.process.on('close', (...args) => {
-      this.emit('close', ...args);
-    });
-
     this.process.on('end', (...args) => {
       this.emit('end', ...args);
     });

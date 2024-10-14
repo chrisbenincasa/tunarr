@@ -163,26 +163,16 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
           this.settingsDB,
         );
 
-        const transcodeSession = await programStream.setup({
-          ptsOffset,
-        });
-
-        transcodeSession.on('error', (e) => {
+        programStream.on('error', () => {
           this.state = 'error';
           this.error = new Error(
-            `Error in underlying FFMPEG process: (code=${e?.code})`,
+            `Unrecoverable error in underlying FFMPEG process`,
           );
           this.emit('error', this.error);
         });
 
-        transcodeSession.on('exit', (code, _signal, expected) => {
-          if (!expected) {
-            this.state = 'error';
-            this.error = new Error(
-              `Unexpected end of underlying FFMPEG process: (code=${code})`,
-            );
-            this.emit('error', this.error);
-          }
+        const transcodeSession = await programStream.setup({
+          ptsOffset,
         });
 
         this.transcodedUntil = this.transcodedUntil.add(
