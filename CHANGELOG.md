@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.13.0](https://github.com/chrisbenincasa/tunarr/compare/v0.12.4...v0.13.0) (2024-10-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* use new, segmeneted channel IDs in xmltv as wordaround for Plex guide bug ([#855](https://github.com/chrisbenincasa/tunarr/issues/855))
+
+### Features
+
+* improved grid view with alphanumeric quick filter ([#832](https://github.com/chrisbenincasa/tunarr/issues/832)) ([1e50a83](https://github.com/chrisbenincasa/tunarr/commit/1e50a837cd995e9b8c52751cfe3e8783ccdba8fc))
+
+
+### Bug Fixes
+
+* convert 10-bit inputs to 8-bit for non-supported NVDA+format combos ([#765](https://github.com/chrisbenincasa/tunarr/issues/765)) ([d02b834](https://github.com/chrisbenincasa/tunarr/commit/d02b834719f1ee8e85fc9cf11c29d9198160429f))
+* fix on-demand channel pause times when watching mpeg-ts streams ([2bececf](https://github.com/chrisbenincasa/tunarr/commit/2bececf75226411aa7ce5baa31411ffb301cbcc5))
+* reimplement BackfillProgramGroupings fixer ([#864](https://github.com/chrisbenincasa/tunarr/issues/864)) ([0dd8dbc](https://github.com/chrisbenincasa/tunarr/commit/0dd8dbc6ee702375629d0c13aff3f87f66925e0a))
+* temporarily raise the body limit for channel lineup updates ([b062dbe](https://github.com/chrisbenincasa/tunarr/commit/b062dbe11c57f85c3bc3763f37c0d895cfe061f6))
+* use new, segmeneted channel IDs in xmltv as wordaround for Plex guide bug ([#855](https://github.com/chrisbenincasa/tunarr/issues/855)) ([9e10d78](https://github.com/chrisbenincasa/tunarr/commit/9e10d78d3cea202239cdebd231476c69bf635fc7))
+* use proper m3u links in frontend ([#854](https://github.com/chrisbenincasa/tunarr/issues/854)) ([accb0d7](https://github.com/chrisbenincasa/tunarr/commit/accb0d74f7fdbe61e74e0aca2645ce100fc5b0c2))
+* use req.host instead of req.hostname because it includes port ([3acca8e](https://github.com/chrisbenincasa/tunarr/commit/3acca8ee3a20d79c52b9b4a3a489dbc99644ef86)), closes [#861](https://github.com/chrisbenincasa/tunarr/issues/861)
+* wait on other transactions just in case ([#866](https://github.com/chrisbenincasa/tunarr/issues/866)) ([c5d82a5](https://github.com/chrisbenincasa/tunarr/commit/c5d82a52fdf18df5e396aaba44d3f29832d57c55))
+
 ## [0.12.4](https://github.com/chrisbenincasa/tunarr/compare/v0.12.3...v0.12.4) (2024-10-09)
 
 
