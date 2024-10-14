@@ -1042,6 +1042,12 @@ export class ChannelDB {
           return existing;
         }
 
+        const defaultValue = {
+          items: [],
+          startTimeOffsets: [],
+          lastUpdated: dayjs().valueOf(),
+          version: CurrentLineupSchemaVersion,
+        };
         const db = new Low<Lineup>(
           new SchemaBackedDbAdapter(
             LineupSchema,
@@ -1049,13 +1055,9 @@ export class ChannelDB {
               globalOptions().databaseDirectory,
               `channel-lineups/${channelId}.json`,
             ),
+            defaultValue,
           ),
-          {
-            items: [],
-            startTimeOffsets: [],
-            lastUpdated: dayjs().valueOf(),
-            version: CurrentLineupSchemaVersion,
-          },
+          defaultValue,
         );
         await db.read();
         fileDbCache[channelId] = db;

@@ -181,7 +181,7 @@ export abstract class BaseApiClient<
           // The request was made and the server responded with a status code
           // that falls out of the range of 2xx
           this.logger.warn(
-            'API client esponse error: path: %O, status %d, params: %O, data: %O, headers: %O',
+            'API client response error: path: %O, status %d, params: %O, data: %O, headers: %O',
             error.config?.url ?? '',
             status,
             error.config?.params,
