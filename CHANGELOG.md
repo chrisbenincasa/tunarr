@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.13.1](https://github.com/chrisbenincasa/tunarr/compare/v0.13.0...v0.13.1) (2024-10-15)
+
+
+### Bug Fixes
+
+* accept array type in Jellyfin API items extraFields query param ([f511edd](https://github.com/chrisbenincasa/tunarr/commit/f511edd55f594208240f4adee99ff80b23a32d28))
+* accept array type in Jellyfin items API endpoint ([edbef2b](https://github.com/chrisbenincasa/tunarr/commit/edbef2b074377950c275430a967c7be2586b7d53))
+* correctly handle error streams in default HLS mode ([#867](https://github.com/chrisbenincasa/tunarr/issues/867)) ([4f3ae86](https://github.com/chrisbenincasa/tunarr/commit/4f3ae86934a994d146b1030ef0987c56aa3c94b3))
+* handle ffmpeg "unknown" version on welcome screen ([a134cab](https://github.com/chrisbenincasa/tunarr/commit/a134cab237f177143ac89174dca35fca7ca93e23))
+
 ## [0.13.0](https://github.com/chrisbenincasa/tunarr/compare/v0.12.4...v0.13.0) (2024-10-14)
 
 
