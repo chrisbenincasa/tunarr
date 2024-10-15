@@ -64,8 +64,8 @@ export class FFMPEGInfo {
     try {
       const s = await this.getFfmpegStdout(['-hide_banner', '-version']);
       const m = s.match(VersionExtractionPattern);
-      if (m == null) {
-        this.logger.error(
+      if (!m) {
+        this.logger.warn(
           'ffmpeg -version command output not in the expected format: ' + s,
         );
         return s;

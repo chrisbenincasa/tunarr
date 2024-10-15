@@ -1,3 +1,4 @@
+import { AddMediaSourceButton } from '@/components/settings/media_source/AddMediaSourceButton.tsx';
 import { ArrowBack, ArrowForward, Edit } from '@mui/icons-material';
 import {
   Alert,
@@ -8,17 +9,16 @@ import {
   Stepper,
   Typography,
 } from '@mui/material';
-import React, { useEffect } from 'react';
 import { Link as RouterLink, useNavigate } from '@tanstack/react-router';
+import { isEmpty } from 'lodash-es';
+import pluralize from 'pluralize';
+import React, { useEffect } from 'react';
 import TunarrLogo from '../../components/TunarrLogo.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import ConnectMediaSources from '../../components/settings/ConnectMediaSources.tsx';
 import { useMediaSources } from '../../hooks/settingsHooks.ts';
 import { useVersion } from '../../hooks/useVersion.ts';
 import { updateShowWelcomeState } from '../../store/themeEditor/actions.ts';
-import { isEmpty } from 'lodash-es';
-import pluralize from 'pluralize';
-import { AddMediaSourceButton } from '@/components/settings/media_source/AddMediaSourceButton.tsx';
 
 const steps = ['Connect Sources', 'Install FFMPEG', 'All Set!'];
 
@@ -37,7 +37,7 @@ export default function WelcomePage() {
       setHasMediaSource(true);
     }
 
-    if (version && version.ffmpeg != 'Error') {
+    if (version && version.ffmpeg !== 'Error' && version.ffmpeg !== 'unknown') {
       setIsFfmpegInstalled(true);
     }
   }, [mediaSources, mediaSourcesLoading, version]);
