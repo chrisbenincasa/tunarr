@@ -80,7 +80,7 @@ export const PlexLibraryCollectionSchema = z
     content: z.string().optional(),
     ratingCount: z.number(),
     thumb: z.string(),
-    addedAt: z.number(),
+    addedAt: z.number().optional(),
     updatedAt: z.number().optional(),
     childCount: z.string(),
     collectionSort: z.string().optional(),
@@ -318,7 +318,7 @@ export const PlexMovieSchema = BasePlexMediaSchema.extend({
   art: z.string().optional(),
   duration: z.number(),
   originallyAvailableAt: z.string().optional(),
-  addedAt: z.number(),
+  addedAt: z.number().optional(),
   updatedAt: z.number().optional(),
   audienceRatingImage: z.string().optional(),
   chapterSource: z.string().optional(),
@@ -335,7 +335,7 @@ export const PlexMovieSchema = BasePlexMediaSchema.extend({
 export type PlexMovie = z.infer<typeof PlexMovieSchema>;
 
 export const PlexTvShowSchema = BasePlexMediaSchema.extend({
-  addedAt: z.number(),
+  addedAt: z.number().optional(),
   art: z.string().optional(),
   audienceRating: z.number().optional(),
   audienceRatingImage: z.string().optional(),
@@ -382,7 +382,7 @@ export const PlexTvSeasonSchema = BasePlexMediaSchema.extend({
   parentTheme: z.string().optional(),
   leafCount: z.number(),
   viewedLeafCount: z.number().optional(),
-  addedAt: z.number(),
+  addedAt: z.number().optional(),
   updatedAt: z.number().optional(),
 }).merge(neverDirectory);
 
@@ -398,7 +398,7 @@ export const PlexMusicArtistSchema = BasePlexMediaSchema.extend({
   lastViewedAt: z.number().optional(),
   thumb: z.string().optional(),
   art: z.string().optional(),
-  addedAt: z.number(),
+  addedAt: z.number().optional(),
   updatedAt: z.number().optional(),
   Genre: z.array(PlexJoinItemSchema).optional(),
   Country: z.array(PlexJoinItemSchema).optional(),
@@ -424,7 +424,7 @@ export const PlexMusicAlbumSchema = BasePlexMediaSchema.extend({
   art: z.string().optional(),
   parentThumb: z.string().optional(),
   originallyAvailableAt: z.string().optional(), // YYYY-mm-dd
-  addedAt: z.number(),
+  addedAt: z.number().optional(),
   updatedAt: z.number().optional(),
   loudnessAnalysisVersion: z.string().optional(), // "1"
   musicAnalysisVersion: z.string().optional(), // "1"
@@ -457,7 +457,7 @@ export const PlexMusicTrackSchema = BasePlexMediaSchema.extend({
   grandparentThumb: z.string().optional(),
   parentThumb: z.string().optional(),
   duration: z.number(),
-  addedAt: z.number(),
+  addedAt: z.number().optional(),
   updatedAt: z.number().optional(),
   loudnessAnalysisVersion: z.string().optional(), // "1"
   musicAnalysisVersion: z.string().optional(), // "1"
@@ -523,7 +523,7 @@ export const PlexSeasonViewSchema = z.object({
 export type PlexSeasonView = Alias<z.infer<typeof PlexSeasonViewSchema>>;
 
 export const PlexEpisodeSchema = BasePlexMediaSchema.extend({
-  addedAt: z.number(),
+  addedAt: z.number().optional(),
   art: z.string().optional(),
   audienceRating: z.number().optional(),
   audienceRatingImage: z.string().optional(),
