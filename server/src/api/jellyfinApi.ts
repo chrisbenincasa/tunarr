@@ -81,12 +81,13 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
             .optional()
             .transform((s) => s?.split(','))
             .pipe(JellyfinItemKind.array())
-            .or(z.array(JellyfinItemKind)),
+            .or(z.array(JellyfinItemKind).optional()),
           extraFields: z
             .string()
             .optional()
             .transform((s) => s?.split(','))
-            .pipe(JellyfinItemFields.array().optional()),
+            .pipe(JellyfinItemFields.array().optional())
+            .or(z.array(JellyfinItemFields).optional()),
           // pipe delimited
           genres: z
             .string()
