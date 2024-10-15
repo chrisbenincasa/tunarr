@@ -22,6 +22,7 @@ import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
 import ld, {
   chunk,
+  cloneDeep,
   compact,
   entries,
   filter,
@@ -52,6 +53,7 @@ import { match } from 'ts-pattern';
 import { ChannelWithPrograms as RawChannelWithPrograms } from '../dao/direct/derivedTypes.js';
 import { globalOptions } from '../globals.js';
 import { serverContext } from '../serverContext.js';
+import { ChannelNotFoundError, GenericError } from '../types/errors.js';
 import { typedProperty } from '../types/path.js';
 import { Result } from '../types/result.js';
 import { Maybe } from '../types/util.js';
@@ -376,6 +378,31 @@ export class ChannelDB {
 
     await em.flush();
     return { channel, lineup: (await this.getFileDb(channel.uuid)).data };
+  }
+
+  async copyChannel(id: string, newNumber?: number) {
+    const existing = await this.getChannelDirect(id);
+    if (!existing) {
+      return Result.failure(new ChannelNotFoundError(id));
+    }
+
+    let newChannelNumber: number;
+    if (newNumber && newNumber >= 0) {
+      const existingNumberChannel = await this.getChannelDirect(newNumber);
+      if (existingNumberChannel) {
+        return Result.failure(
+          new GenericError(
+            `Channel with requested number ${newNumber} already exists`,
+          ),
+        );
+      }
+      newChannelNumber = existingNumberChannel;
+    } else {
+    }
+
+    const newChannel = cloneDeep(existing);
+    if (newNumber) {
+    }
   }
 
   async updateChannel(id: string, updateReq: SaveChannelRequest) {
