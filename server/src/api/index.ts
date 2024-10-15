@@ -175,24 +175,28 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
   });
 
   // XMLTV.XML Download
-  fastify.get('/xmltv.xml', async (req, res) => {
-    try {
-      const host = `${req.protocol}://${req.host}`;
+  fastify.route({
+    url: '/xmltv.xml',
+    method: ['HEAD', 'GET'],
+    handler: async (req, res) => {
+      try {
+        const host = `${req.protocol}://${req.host}`;
 
-      const xmltvSettings = req.serverCtx.settings.xmlTvSettings();
-      const fileContent = await fsPromises.readFile(
-        xmltvSettings.outputPath,
-        'utf8',
-      );
-      const fileFinal = fileContent.replace(/\{\{host\}\}/g, host);
-      return res
-        .header('Cache-Control', 'no-store')
-        .header('Content-Type', 'application/xml')
-        .send(fileFinal);
-    } catch (err) {
-      logger.error('%O', err);
-      return res.status(500).send('error');
-    }
+        const xmltvSettings = req.serverCtx.settings.xmlTvSettings();
+        const fileContent = await fsPromises.readFile(
+          xmltvSettings.outputPath,
+          'utf8',
+        );
+        const fileFinal = fileContent.replace(/\{\{host\}\}/g, host);
+        return res
+          .header('Cache-Control', 'no-store')
+          .header('Content-Type', 'application/xml')
+          .send(fileFinal);
+      } catch (err) {
+        logger.error('%O', err);
+        return res.status(500).send('error');
+      }
+    },
   });
 
   // Force an XMLTV refresh
@@ -202,16 +206,20 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
   });
 
   // CHANNELS.M3U Download
-  fastify.get('/channels.m3u', async (req, res) => {
-    try {
-      const host = `${req.protocol}://${req.host}`;
-      const data = await req.serverCtx.m3uService.getChannelList(host);
+  fastify.route({
+    url: '/channels.m3u',
+    method: ['HEAD', 'GET'],
+    handler: async (req, res) => {
+      try {
+        const host = `${req.protocol}://${req.host}`;
+        const data = await req.serverCtx.m3uService.getChannelsM3U(host);
 
-      return res.type('text').send(data);
-    } catch (err) {
-      logger.error(err);
-      return res.status(500).send('error');
-    }
+        return res.type('text').send(data);
+      } catch (err) {
+        logger.error(err);
+        return res.status(500).send('error');
+      }
+    },
   });
 
   fastify.get(

@@ -25,19 +25,7 @@ export class M3uService {
   /**
    * Get the channel list in HLS or M3U
    */
-  getChannelList(host: string): Promise<string> {
-    return this.buildM3uList(host);
-  }
-
-  /**
-   *  Build M3U with cache
-   *
-   * @param {string} host
-   * @returns {promise} M3U file content
-   * @memberof M3uService
-   */
-
-  async buildM3uList(host: string): Promise<string> {
+  async getChannelsM3U(host: string): Promise<string> {
     if (this.#cacheReady) {
       const cachedM3U = await this.#fileCacheService.getCache('channels.m3u');
       if (cachedM3U) {
