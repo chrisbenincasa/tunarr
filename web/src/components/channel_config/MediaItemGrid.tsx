@@ -407,13 +407,22 @@ export function MediaItemGrid<PageDataType, ItemType>({
           sx={{ display: 'block', margin: '2em auto' }}
         />
       )}
-      {data && !hasNextPage && (
+      {data && scrollParams.max === 0 && !hasNextPage && (
         <Typography
           variant="h6"
           fontStyle={'italic'}
           sx={{ textAlign: 'center', mt: 2 }}
         >
-          fin.
+          No results
+        </Typography>
+      )}
+      {data && scrollParams.max !== 0 && !hasNextPage && (
+        <Typography
+          variant="h6"
+          fontStyle={'italic'}
+          sx={{ textAlign: 'center', mt: 2 }}
+        >
+          The End.
         </Typography>
       )}
     </Box>
