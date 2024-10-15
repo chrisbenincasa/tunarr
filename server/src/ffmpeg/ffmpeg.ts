@@ -5,21 +5,13 @@ import {
 } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import { Duration } from 'dayjs/plugin/duration.js';
-import {
-  first,
-  isEmpty,
-  isNil,
-  isString,
-  isUndefined,
-  merge,
-  round,
-} from 'lodash-es';
+import { first, isEmpty, isNil, isUndefined, merge, round } from 'lodash-es';
 import path from 'path';
 import { DeepReadonly, DeepRequired } from 'ts-essentials';
 import { Channel } from '../dao/direct/schema/Channel';
 import { serverOptions } from '../globals.js';
 import { ConcatSessionType } from '../stream/Session.js';
-import { StreamDetails } from '../stream/types.js';
+import { StreamDetails, StreamSource } from '../stream/types.js';
 import { Maybe, Nullable } from '../types/util.js';
 import { isDefined, isNonEmptyString, isSuccess } from '../util/index.js';
 import { Logger, LoggerFactory } from '../util/logging/LoggerFactory.js';
@@ -139,7 +131,7 @@ export type StreamOptions = {
 };
 
 export type StreamSessionOptions = StreamOptions & {
-  streamUrl: string;
+  streamSource: StreamSource;
   streamDetails?: Maybe<StreamDetails>;
 };
 
@@ -354,25 +346,23 @@ export class FFMPEG {
   }
 
   createStreamSession({
-    streamUrl,
-    streamDetails: streamStats,
+    streamSource,
+    streamDetails,
     startTime,
     duration,
     watermark: enableIcon,
     realtime = true,
-    extraInputHeaders = {},
     outputFormat = NutOutputFormat,
     ptsOffset,
   }: StreamSessionOptions) {
     this.ffmpegName = 'Raw Stream FFMPEG';
     return this.createSession(
-      streamUrl,
-      streamStats,
+      streamSource,
+      streamDetails,
       startTime,
       duration,
       realtime,
       enableIcon,
-      extraInputHeaders,
       outputFormat,
       ptsOffset,
     );
@@ -404,13 +394,12 @@ export class FFMPEG {
     };
 
     return this.createSession(
-      { errorTitle: title, subtitle: subtitle },
+      { type: 'error', title: title, subtitle: subtitle },
       streamStats,
       undefined,
       streamStats.duration!,
       true,
       /*watermark=*/ undefined,
-      {},
       outputFormat,
     );
   }
@@ -427,25 +416,23 @@ export class FFMPEG {
     };
 
     return this.createSession(
-      { errorTitle: 'offline' },
+      { type: 'offline' },
       streamStats,
       undefined,
       duration,
       true,
       undefined,
-      {},
       outputFormat,
     );
   }
 
   async createSession(
-    streamSrc: string | { errorTitle: string; subtitle?: string },
+    streamSrc: StreamSource,
     streamStats: Maybe<StreamDetails>,
     startTime: Maybe<Duration>,
     duration: Duration,
     realtime: boolean,
     watermark: Maybe<Watermark>,
-    extraInputHeaders: Record<string, string> = {},
     outputFormat: OutputFormat = NutOutputFormat,
     ptsOffset: Nullable<number> = null,
   ): Promise<Maybe<FfmpegTranscodeSession>> {
@@ -513,11 +500,18 @@ export class FFMPEG {
     let audioFile = -1;
     let videoFile = -1;
     let overlayFile = -1;
-    if (isNonEmptyString(streamSrc)) {
-      for (const [key, value] of Object.entries(extraInputHeaders)) {
-        ffmpegArgs.push('-headers', `'${key}: ${value}'`);
+    if (streamSrc.type === 'http' || streamSrc.type === 'file') {
+      if (streamSrc.type === 'http') {
+        ffmpegArgs.push(`-i`, streamSrc.streamUrl);
+        if (!isEmpty(streamSrc.extraHeaders)) {
+          for (const [key, value] of Object.entries(streamSrc.extraHeaders)) {
+            ffmpegArgs.push('-headers', `'${key}: ${value}'`);
+          }
+        }
+      } else if (streamSrc.type === 'file') {
+        ffmpegArgs.push(`-i`, streamSrc.path);
       }
-      ffmpegArgs.push(`-i`, streamSrc);
+
       videoFile = inputFiles++;
       audioFile = videoFile;
     }
@@ -563,7 +557,10 @@ export class FFMPEG {
     }
 
     // prepare input streams
-    if (!isString(streamSrc) || isEmpty(streamSrc) || streamStats?.audioOnly) {
+    if (
+      (streamSrc.type !== 'file' && streamSrc.type !== 'http') ||
+      streamStats?.audioOnly
+    ) {
       doOverlay = false; //never show icon in the error screen
       // for error stream, we have to generate the input as well
       this.apad = false; //all of these generate audio correctly-aligned to video so there is no need for apad
@@ -580,9 +577,12 @@ export class FFMPEG {
         let pic: string | undefined;
 
         //does an image to play exist?
-        if (isString(streamSrc) && streamStats?.audioOnly) {
+        if (
+          (streamSrc.type === 'file' || streamSrc.type === 'http') &&
+          streamStats?.audioOnly
+        ) {
           pic = streamStats.placeholderImage;
-        } else if (!isString(streamSrc) && streamSrc.errorTitle === 'offline') {
+        } else if (streamSrc.type === 'offline') {
           // TODO fix me
           const defaultOfflinePic = makeLocalUrl(
             '/images/generic-offline-screen.png',
@@ -619,7 +619,10 @@ export class FFMPEG {
 
           videoComplex = `${realtime ? ';realtime' : ''}[videox]`;
           inputFiles++;
-        } else if (this.opts.errorScreen == 'text' && !isString(streamSrc)) {
+        } else if (
+          this.opts.errorScreen == 'text' &&
+          streamSrc.type === 'error'
+        ) {
           const sz2 = Math.ceil(iH / 33.0);
           const sz1 = Math.ceil((sz2 * 3) / 2);
           const sz3 = 2 * sz2;
@@ -630,11 +633,11 @@ export class FFMPEG {
           videoComplex = `;drawtext=fontfile=${
             serverOptions().databaseDirectory
           }/font.ttf:fontsize=${sz1}:fontcolor=white:x=(w-text_w)/2:y=(h-text_h)/2:text='${
-            streamSrc.errorTitle
+            streamSrc.title
           }',drawtext=fontfile=${
             serverOptions().databaseDirectory
           }/font.ttf:fontsize=${sz2}:fontcolor=white:x=(w-text_w)/2:y=(h+text_h+${sz3})/2:text='${
-            streamSrc.subtitle
+            streamSrc.subtitle ?? ''
           }'[videoy];[videoy]realtime[videox]`;
         } else {
           //blank
@@ -644,12 +647,12 @@ export class FFMPEG {
         }
       }
       const durstr = `duration=${duration.asMilliseconds()}ms`;
-      if (!isNonEmptyString(streamSrc)) {
+      if (streamSrc.type === 'offline' || streamSrc.type === 'error') {
         // silent
         audioComplex = `;aevalsrc=0:${durstr}:s=${
           this.opts.audioSampleRate * 1000
         },aresample=async=1:first_pts=0[audioy]`;
-        if (streamSrc.errorTitle === 'offline') {
+        if (streamSrc.type === 'offline') {
           if (isNonEmptyString(this.channel.offline?.soundtrack)) {
             ffmpegArgs.push('-i', `${this.channel.offline.soundtrack}`);
             // I don't really understand why, but you need to use this

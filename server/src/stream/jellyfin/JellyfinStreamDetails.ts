@@ -30,7 +30,7 @@ import {
 } from '../../util/index.js';
 import { Logger, LoggerFactory } from '../../util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '../../util/serverUtil.js';
-import { PlexStream, StreamDetails } from '../types.js';
+import { ProgramStream, StreamDetails, StreamSource } from '../types.js';
 
 // The minimum fields we need to get stream details about an item
 // TODO: See if we need separate types for JF and Plex and what is really necessary here
@@ -62,7 +62,7 @@ export class JellyfinStreamDetails {
   private async getStreamInternal(
     item: JellyfinItemStreamDetailsQuery,
     depth: number = 0,
-  ): Promise<Nullable<PlexStream>> {
+  ): Promise<Nullable<ProgramStream>> {
     if (depth > 1) {
       return null;
     }
@@ -126,32 +126,44 @@ export class JellyfinStreamDetails {
 
     const streamSettings = this.settings.plexSettings();
 
-    let streamUrl: string;
+    let streamSource: StreamSource;
     const filePath =
       details.directFilePath ?? first(itemMetadata?.MediaSources)?.Path;
     if (streamSettings.streamPath === 'direct' && isNonEmptyString(filePath)) {
-      streamUrl = replace(
-        filePath,
-        streamSettings.pathReplace,
-        streamSettings.pathReplaceWith,
-      );
+      streamSource = {
+        type: 'file',
+        path: replace(
+          filePath,
+          streamSettings.pathReplace,
+          streamSettings.pathReplaceWith,
+        ),
+      };
     } else if (isNonEmptyString(filePath) && (await fileExists(filePath))) {
-      streamUrl = filePath;
+      streamSource = {
+        type: 'file',
+        path: filePath,
+      };
     } else {
       const path = details.serverPath ?? item.plexFilePath;
       if (isNonEmptyString(path)) {
-        streamUrl = `${trimEnd(this.server.uri, '/')}/Videos/${trimStart(
-          path,
-          '/',
-        )}/stream?static=true`;
+        streamSource = {
+          type: 'http',
+          streamUrl: `${trimEnd(this.server.uri, '/')}/Videos/${trimStart(
+            path,
+            '/',
+          )}/stream?static=true`,
+          extraHeaders: {
+            // TODO: Use the real authorization string
+            'X-Emby-Token': this.server.accessToken,
+          },
+        };
       } else {
         throw new Error('Could not resolve stream URL');
       }
     }
 
     return {
-      directPlay: true,
-      streamUrl,
+      streamSource,
       streamDetails: details,
     };
   }

@@ -27,9 +27,34 @@ export type StreamDetails = {
   directFilePath?: string;
 };
 
-export type PlexStream = {
-  directPlay: boolean;
+export type HttpStreamSource = {
+  type: 'http';
   streamUrl: string;
-  separateVideoStream?: string;
+  extraHeaders?: Record<string, string>;
+};
+
+export type FileStreamSource = {
+  type: 'file';
+  path: string;
+};
+
+export type OfflineStreamSource = {
+  type: 'offline';
+};
+
+export type ErrorStreamSource = {
+  type: 'error';
+  title: string;
+  subtitle?: string;
+};
+
+export type StreamSource =
+  | FileStreamSource
+  | HttpStreamSource
+  | OfflineStreamSource
+  | ErrorStreamSource;
+
+export type ProgramStream = {
+  streamSource: StreamSource;
   streamDetails?: StreamDetails;
 };

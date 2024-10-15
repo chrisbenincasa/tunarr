@@ -31,7 +31,7 @@ import { attempt, isNonEmptyString } from '../../util';
 import { fileExists } from '../../util/fsUtil';
 import { Logger, LoggerFactory } from '../../util/logging/LoggerFactory';
 import { makeLocalUrl } from '../../util/serverUtil.js';
-import { PlexStream, StreamDetails } from '../types';
+import { ProgramStream, StreamDetails, StreamSource } from '../types';
 
 // The minimum fields we need to get stream details about an item
 type PlexItemStreamDetailsQuery = Pick<
@@ -70,7 +70,7 @@ export class PlexStreamDetails {
   private async getStreamInternal(
     item: PlexItemStreamDetailsQuery,
     depth: number = 0,
-  ): Promise<Nullable<PlexStream>> {
+  ): Promise<Nullable<ProgramStream>> {
     if (depth > 1) {
       return null;
     }
@@ -188,25 +188,34 @@ export class PlexStreamDetails {
 
     const streamSettings = this.settings.plexSettings();
 
-    let streamUrl: string;
+    let streamSource: StreamSource;
     const filePath =
       details.directFilePath ?? first(first(itemMetadata.Media)?.Part)?.file;
     if (streamSettings.streamPath === 'direct' && isNonEmptyString(filePath)) {
-      streamUrl = replace(
-        filePath,
-        streamSettings.pathReplace,
-        streamSettings.pathReplaceWith,
-      );
+      streamSource = {
+        type: 'file',
+        path: replace(
+          filePath,
+          streamSettings.pathReplace,
+          streamSettings.pathReplaceWith,
+        ),
+      };
     } else if (isNonEmptyString(filePath) && (await fileExists(filePath))) {
-      streamUrl = filePath;
+      streamSource = {
+        type: 'file',
+        path: filePath,
+      };
     } else {
       let path = details.serverPath ?? item.plexFilePath;
 
       if (isNonEmptyString(path)) {
         path = path.startsWith('/') ? path : `/${path}`;
-        streamUrl = `${trimEnd(this.server.uri, '/')}${path}?X-Plex-Token=${
-          this.server.accessToken
-        }`;
+        streamSource = {
+          type: 'http',
+          streamUrl: `${trimEnd(this.server.uri, '/')}${path}?X-Plex-Token=${
+            this.server.accessToken
+          }`,
+        };
         // streamUrl = this.getPlexTranscodeStreamUrl(
         //   `/library/metadata/${item.externalKey}`,
         // );
@@ -216,8 +225,7 @@ export class PlexStreamDetails {
     }
 
     return {
-      directPlay: true,
-      streamUrl,
+      streamSource,
       streamDetails: details,
     };
   }
