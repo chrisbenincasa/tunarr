@@ -11,6 +11,21 @@ import { Maybe, Nullable } from '../types/util.js';
 import { isDefined } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 
+export type FfmpegEvents = {
+  // Emitted when the process ended with a code === 0, i.e. it exited
+  // normally and cleanly and finished work.
+  end: (obj?: { code: number; cmd: string }) => void;
+  // Emitted when the process exited in an error state
+  error: (obj?: { code: Nullable<number>; cmd: string }) => void;
+  // Fired when the process exited, for any reason.
+  // expected = true when Tunarr itself issued the end of the process
+  exit: (
+    code: Nullable<number>,
+    signal: Nullable<NodeJS.Signals>,
+    expected: boolean,
+  ) => void;
+};
+
 /**
  * Wrapper for an ffmpeg process with the given arguments
  */
@@ -111,6 +126,7 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
         (this.#processKilled &&
           (code === null || signal === 'SIGTERM' || signal === 'SIGKILL')) ||
         code === 0;
+
       this.#logger.info(
         { args: argsWithTokenRedacted },
         `${this.ffmpegName} exited. (signal=%s, code=%d, expected?=%s)`,
@@ -121,22 +137,19 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
 
       this.emit('exit', code, signal, expected);
 
-      if (code === null || signal === 'SIGTERM') {
-        this.emit('close', undefined);
-      } else if (code === 0) {
+      if (code === 0) {
         this.emit('end');
       } else if (code === 255) {
         if (this.#processHandle) {
-          this.emit('close', code);
           return;
         }
+
         if (!this.#sentData) {
           this.emit('error', {
             code: code,
             cmd: `${this.ffmpegPath} ${argsWithTokenRedacted}`,
           });
         }
-        this.emit('close', code);
       } else {
         this.emit('error', {
           code: code,
@@ -188,16 +201,3 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
     return this.ffmpegArgs;
   }
 }
-
-export type FfmpegEvents = {
-  end: (obj?: { code: number; cmd: string }) => void;
-  error: (obj?: { code: number; cmd: string }) => void;
-  close: (code?: number) => void;
-  // Fired when the process exited, for any reason.
-  // expected = true when Tunarr itself issued the end of the process
-  exit: (
-    code: Nullable<number>,
-    signal: Nullable<NodeJS.Signals>,
-    expected: boolean,
-  ) => void;
-};

@@ -394,9 +394,9 @@ export class FFMPEG {
       duration = dayjs.duration(MAXIMUM_ERROR_DURATION_MS);
     }
 
-    duration = dayjs.duration(
-      Math.min(MAXIMUM_ERROR_DURATION_MS, duration.asMilliseconds()),
-    );
+    // duration = dayjs.duration(
+    //   Math.min(MAXIMUM_ERROR_DURATION_MS, duration.asMilliseconds()),
+    // );
     const streamStats: StreamDetails = {
       videoWidth: this.wantedW,
       videoHeight: this.wantedH,
