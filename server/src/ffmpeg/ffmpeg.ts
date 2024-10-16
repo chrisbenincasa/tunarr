@@ -446,7 +446,7 @@ export class FFMPEG {
       this.opts.logLevel,
     ];
 
-    if (isNonEmptyString(streamSrc) && streamSrc.startsWith('http')) {
+    if (streamSrc.type === 'http') {
       ffmpegArgs.push(
         '-reconnect',
         '1',
