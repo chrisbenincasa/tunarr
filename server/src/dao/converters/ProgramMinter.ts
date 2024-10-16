@@ -105,7 +105,16 @@ class ProgramDaoMinter {
       .with(
         {
           sourceType: 'jellyfin',
-          program: { Type: P.union('Movie', 'Audio', 'Episode') },
+          program: {
+            Type: P.union(
+              'Movie',
+              'Audio',
+              'Episode',
+              'MusicVideo',
+              'Video',
+              'Trailer',
+            ),
+          },
         },
         ({ program }) =>
           this.mintRawProgramForJellyfinItem(serverName, program),
@@ -188,7 +197,9 @@ class ProgramDaoMinter {
 
   private mintRawProgramForJellyfinItem(
     serverName: string,
-    item: Omit<JellyfinItem, 'Type'> & { Type: 'Movie' | 'Episode' | 'Audio' },
+    item: Omit<JellyfinItem, 'Type'> & {
+      Type: 'Movie' | 'Episode' | 'Audio' | 'Video' | 'MusicVideo' | 'Trailer';
+    },
   ): NewRawProgram {
     return {
       uuid: v4(),
@@ -203,8 +214,11 @@ class ProgramDaoMinter {
       summary: item.Overview,
       title: item.Name ?? '',
       type: match(item.Type)
-        .with('Movie', () => ProgramType.Movie)
-        .with('Episode', () => ProgramType.Episode)
+        .with(P.union('Movie', 'Trailer'), () => ProgramType.Movie)
+        .with(
+          P.union('Episode', 'Video', 'MusicVideo'),
+          () => ProgramType.Episode,
+        )
         .with('Audio', () => ProgramType.Track)
         .exhaustive(),
       year: item.ProductionYear,

@@ -1,5 +1,6 @@
 import {
   JellyfinItemKind,
+  JellyfinItemSortBy,
   JellyfinLibraryItemsResponse,
 } from '@tunarr/types/jellyfin';
 import { makeEndpoint, parametersBuilder } from '@zodios/core';
@@ -33,6 +34,15 @@ export const jellyfinEndpoints = [
         nameStartsWithOrGreater: z.string().min(1).optional(),
         nameStartsWith: z.string().min(1).optional(),
         nameLessThan: z.string().min(1).optional(),
+        sortBy: JellyfinItemSortBy.array().nonempty().nullish(),
+        recursive: z
+          .union([
+            z.boolean(),
+            z.literal('true'),
+            z.literal('false'),
+            z.coerce.number(),
+          ])
+          .optional(),
       })
       .build(),
     response: JellyfinLibraryItemsResponse,

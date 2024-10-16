@@ -10,12 +10,15 @@ import {
 } from '@tanstack/react-query';
 import { MediaSourceSettings, PlexServerSettings } from '@tunarr/types';
 import {
+  PlexChildListing,
   PlexLibraryMovies,
   PlexLibraryMusic,
   PlexLibraryShows,
+  PlexMedia,
 } from '@tunarr/types/plex';
 import { MediaSourceId } from '@tunarr/types/schemas';
-import { forEach, isNil, isUndefined, sumBy } from 'lodash-es';
+import { forEach, isEmpty, isNil, isUndefined, sumBy } from 'lodash-es';
+import { P, match } from 'ts-pattern';
 import { fetchPlexPath } from '../../helpers/plexUtil.ts';
 import { useTunarrApi } from '../useTunarrApi.ts';
 
@@ -26,6 +29,7 @@ const usePlexSearchQueryFn = () => {
     plexServer: PlexServerSettings,
     plexLibrary: PlexLibrary,
     searchParam: Maybe<string>,
+    parent?: Maybe<{ parentId: string; type: PlexMedia['type'] }>,
     pageParams?: { start: number; size: number },
   ) => {
     const plexQuery = new URLSearchParams();
@@ -35,22 +39,30 @@ const usePlexSearchQueryFn = () => {
       plexQuery.set('X-Plex-Container-Size', pageParams.size.toString());
     }
 
-    // HACK for now
-    forEach(searchParam?.split('&'), (keyval) => {
-      const idx = keyval.lastIndexOf('=');
-      if (idx !== -1) {
-        plexQuery.append(keyval.substring(0, idx), keyval.substring(idx + 1));
-      }
-    });
+    // We cannot search when scoped to a parent
+    if (isEmpty(parent)) {
+      // HACK for now
+      forEach(searchParam?.split('&'), (keyval) => {
+        const idx = keyval.lastIndexOf('=');
+        if (idx !== -1) {
+          plexQuery.append(keyval.substring(0, idx), keyval.substring(idx + 1));
+        }
+      });
+    }
 
-    return fetchPlexPath<
-      PlexLibraryMovies | PlexLibraryShows | PlexLibraryMusic
-    >(
+    const path = match(parent)
+      .with(
+        { type: 'collection' },
+        (p) => `/library/collections/${p.parentId}/children`,
+      )
+      .with({ type: 'playlist' }, (p) => `/playlists/${p.parentId}/items`)
+      .with(P.nonNullable, (p) => `/library/metadata/${p.parentId}/children`)
+      .otherwise(() => `/library/sections/${plexLibrary.library.key}/all`);
+
+    return fetchPlexPath<PlexChildListing>(
       apiClient,
       plexServer.id,
-      `/library/sections/${
-        plexLibrary.library.key
-      }/all?${plexQuery.toString()}`,
+      `${path}?${plexQuery.toString()}`,
     )();
   };
 };
@@ -122,11 +134,12 @@ export const usePlexSearch = (
   return useQuery(queryOptions);
 };
 
-const usePlexSearchInfiniteQueryOptions = (
+const usePlexItemsInfiniteQueryOptions = (
   plexServer: Maybe<PlexServerSettings>,
   currentLibrary: Nilable<PlexLibrary>,
   searchParam: Maybe<string>,
   pageSize: number,
+  parent: Maybe<{ parentId: string; type: PlexMedia['type'] }>,
   enabled: boolean = true,
 ) => {
   const plexQueryFn = usePlexSearchQueryFn();
@@ -135,7 +148,7 @@ const usePlexSearchInfiniteQueryOptions = (
     'plex-search',
     plexServer?.name,
     currentLibrary?.library.key,
-    searchParam,
+    parent ?? searchParam,
     'infinite',
   ] as const;
 
@@ -144,7 +157,7 @@ const usePlexSearchInfiniteQueryOptions = (
     enabled: enabled && !isNil(plexServer) && !isNil(currentLibrary),
     initialPageParam: 0,
     queryFn: ({ pageParam }) => {
-      return plexQueryFn(plexServer!, currentLibrary!, searchParam, {
+      return plexQueryFn(plexServer!, currentLibrary!, searchParam, parent, {
         start: pageParam,
         size: pageSize,
       });
@@ -168,20 +181,35 @@ const usePlexSearchInfiniteQueryOptions = (
   return opts;
 };
 
-export const usePlexSearchInfinite = (
+export const usePlexItemsInfinite = (
   plexServer: Maybe<PlexServerSettings>,
   currentLibrary: Nilable<PlexLibrary>,
   searchParam: Maybe<string>,
   pageSize: number,
+  parent: Maybe<{ parentId: string; type: PlexMedia['type'] }>,
   enabled: boolean = true,
 ) => {
-  const queryOpts = usePlexSearchInfiniteQueryOptions(
+  const queryOpts = usePlexItemsInfiniteQueryOptions(
     plexServer,
     currentLibrary,
     searchParam,
     pageSize,
+    parent,
     enabled,
   );
+  const query = useInfiniteQuery(queryOpts);
 
-  return useInfiniteQuery(queryOpts);
+  // useEffect(() => {
+  //   if (!isUndefined(query.data)) {
+  //     // Not ideal because we're constantly updating items but... oh well
+  //     const allItems = flatMap(query.data.pages, (page) => page.Metadata);
+  //     addKnownMediaForPlexServer(
+  //       plexServer?.id,
+  //       allItems,
+  //       parent?.parentId ?? currentLibrary?.library.,
+  //     );
+  //   }
+  // }, [query]);
+
+  return query;
 };
