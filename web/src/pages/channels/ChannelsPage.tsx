@@ -40,7 +40,7 @@ import { VisibilityState } from '@tanstack/react-table';
 import { Channel, ChannelIcon } from '@tunarr/types';
 import { ChannelSessionsResponse } from '@tunarr/types/api';
 import dayjs from 'dayjs';
-import { isEmpty, map } from 'lodash-es';
+import { isEmpty, map, trimEnd } from 'lodash-es';
 import {
   MRT_Row,
   MaterialReactTable,
@@ -239,9 +239,13 @@ export default function ChannelsPage() {
         <MenuItem
           onClick={(e) => {
             e.stopPropagation();
-            const url = `${
-              isNonEmptyString(backendUri) ? `${backendUri}/` : ''
-            }stream/channels/${channelId}.m3u8`;
+            const base = isNonEmptyString(backendUri)
+              ? backendUri
+              : window.location.origin;
+            const url = `${trimEnd(
+              base,
+              '/',
+            )}/stream/channels/${channelId}.m3u8`;
             copyToClipboard(
               url,
               `Copied channel "${channelName}" m3u link to clipboard`,
