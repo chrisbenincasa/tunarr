@@ -1,16 +1,17 @@
 import { PlexLibrary } from '@/store/programmingSelector/store.ts';
+import { Maybe, Nilable } from '@/types/util.ts';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { PlexServerSettings } from '@tunarr/types';
 import { PlexLibraryCollections } from '@tunarr/types/plex';
 import { isNil, sumBy } from 'lodash-es';
 import { fetchPlexPath } from '../../helpers/plexUtil.ts';
 import { useTunarrApi } from '../useTunarrApi.ts';
-import { Maybe, Nilable } from '@/types/util.ts';
 
 export const usePlexCollectionsInfinite = (
   plexServer: Maybe<PlexServerSettings>,
   currentLibrary: Nilable<PlexLibrary>,
   pageSize: number,
+  enabled: boolean = true,
 ) => {
   const apiClient = useTunarrApi();
 
@@ -35,6 +36,7 @@ export const usePlexCollectionsInfinite = (
       )();
     },
     enabled:
+      enabled &&
       !isNil(plexServer) &&
       !isNil(currentLibrary) &&
       currentLibrary.library.type !== 'artist',

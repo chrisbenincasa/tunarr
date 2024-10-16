@@ -206,7 +206,6 @@ export default function ProgrammingSelector(_: Props) {
       }
     }
 
-    // TODO: change the wording here to not be Plex-specific
     if (!mediaSourcesLoading && !selectedServer && !viewingCustomShows) {
       return (
         <>
