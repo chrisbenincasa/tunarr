@@ -217,14 +217,10 @@ export class FillerDB {
               '=',
               'fillerShow.uuid',
             )
-            .leftJoin(
-              'fillerShow',
-              'fillerShowContent.fillerShowUuid',
-              'fillerShow.uuid',
-            )
             .select('fillerShowContent.programUuid'),
         ).as('content'),
       )
+      .groupBy('fillerShow.uuid')
       .execute();
   }
 
