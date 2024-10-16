@@ -77,7 +77,6 @@ export const useCopyToClipboard = () => {
       // This is only supported by chromium: https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Interact_with_the_clipboard#using_the_clipboard_api
       try {
         if (browser.getEngineName() === 'Blink') {
-          console.log('here');
           const result = await navigator.permissions.query({
             // @ts-expect-error -- clipboard-write not included in PermissionName enum
             name: 'clipboard-write',
