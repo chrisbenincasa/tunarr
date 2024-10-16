@@ -50,6 +50,7 @@ import fs from 'node:fs/promises';
 import { join } from 'path';
 import { MarkOptional, MarkRequired } from 'ts-essentials';
 import { match } from 'ts-pattern';
+import { v4 } from 'uuid';
 import { ChannelWithPrograms as RawChannelWithPrograms } from '../dao/direct/derivedTypes.js';
 import { globalOptions } from '../globals.js';
 import { serverContext } from '../serverContext.js';
@@ -396,13 +397,22 @@ export class ChannelDB {
           ),
         );
       }
-      newChannelNumber = existingNumberChannel;
+      newChannelNumber = newNumber;
     } else {
+      newChannelNumber =
+        (
+          await directDbAccess()
+            .selectFrom('channel')
+            .select((eb) => eb.fn.max<number>('number').as('number'))
+            .executeTakeFirst()
+        )?.number ?? 1;
     }
 
     const newChannel = cloneDeep(existing);
-    if (newNumber) {
-    }
+
+    directDbAccess()
+      .insertInto('channel')
+      .values({ ...newChannel, uuid: v4(), number: newChannelNumber });
   }
 
   async updateChannel(id: string, updateReq: SaveChannelRequest) {
