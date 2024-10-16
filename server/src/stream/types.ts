@@ -32,4 +32,5 @@ export type PlexStream = {
   streamUrl: string;
   separateVideoStream?: string;
   streamDetails?: StreamDetails;
+  isPlexTranscode: boolean;
 };
