@@ -92,7 +92,7 @@ export class JellyfinProgramStream extends ProgramStream {
     const start = dayjs.duration(lineupItem.start ?? 0);
 
     const ffmpegOutStream = await this.ffmpeg.createStreamSession({
-      streamUrl: stream.streamUrl,
+      streamSource: stream.streamSource,
       streamDetails: stream.streamDetails,
       startTime: start,
       duration:
@@ -101,10 +101,7 @@ export class JellyfinProgramStream extends ProgramStream {
           : dayjs.duration(lineupItem.streamDuration ?? lineupItem.duration),
       watermark,
       realtime: this.context.realtime,
-      extraInputHeaders: {
-        // TODO: Use the real authorization string
-        'X-Emby-Token': server.accessToken,
-      },
+      extraInputHeaders: {},
       outputFormat: this.outputFormat,
     });
 
