@@ -1,15 +1,24 @@
+import { jellyfinChildType } from '@/helpers/jellyfinUtil.ts';
 import { forJellyfinItem, typedProperty } from '@/helpers/util.ts';
 import { useInfiniteJellyfinLibraryItems } from '@/hooks/jellyfin/useJellyfinApi';
+import useStore from '@/store/index.ts';
 import {
   useCurrentMediaSource,
   useCurrentSourceLibrary,
 } from '@/store/programmingSelector/selectors';
-import { Box, Stack, Tab, Tabs } from '@mui/material';
+import { Album, Folder, Home, Mic, Tv } from '@mui/icons-material';
+import { Box, Breadcrumbs, Link, Stack, Tab, Tabs } from '@mui/material';
 import { tag } from '@tunarr/types';
-import { JellyfinItem, JellyfinItemKind } from '@tunarr/types/jellyfin';
+import {
+  JellyfinItem,
+  JellyfinItemKind,
+  JellyfinItemSortBy,
+} from '@tunarr/types/jellyfin';
 import { MediaSourceId } from '@tunarr/types/schemas';
-import { first } from 'lodash-es';
-import React, { useCallback, useMemo, useState } from 'react';
+import { usePrevious } from '@uidotdev/usehooks';
+import { first, isEmpty, last, map, slice } from 'lodash-es';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { match } from 'ts-pattern';
 import { InlineModal } from '../InlineModal.tsx';
 import { ProgramViewToggleButton } from '../base/ProgramViewToggleButton.tsx';
 import { JellyfinGridItem } from './JellyfinGridItem.tsx';
@@ -53,32 +62,48 @@ const childJellyfinType = forJellyfinItem<JellyfinItemKind>({
 export function JellyfinProgrammingSelector() {
   const selectedServer = useCurrentMediaSource('jellyfin');
   const selectedLibrary = useCurrentSourceLibrary('jellyfin');
+  const prevSelectedLibrary = usePrevious(selectedLibrary?.library?.Id);
   const [alphanumericFilter, setAlphanumericFilter] = useState<string | null>(
     null,
   );
-
+  const [parentContext, setParentContext] = useState<JellyfinItem[]>([]);
   const [tabValue, setTabValue] = useState(TabValues.Library);
+  const isListView = useStore(
+    (s) => s.theme.programmingSelectorView === 'list',
+  );
 
-  const itemTypes: JellyfinItemKind[] = [];
-  if (selectedLibrary?.library.CollectionType) {
-    switch (selectedLibrary.library.CollectionType) {
-      case 'movies':
-        itemTypes.push('Movie');
-        break;
-      case 'tvshows':
-        itemTypes.push('Series');
-        break;
-      case 'music':
-        itemTypes.push('MusicArtist');
-        break;
-      default:
-        break;
+  const itemTypes: JellyfinItemKind[] = useMemo(() => {
+    if (!isEmpty(parentContext)) {
+      return jellyfinChildType(last(parentContext)!) ?? [];
+    } else if (selectedLibrary?.library.CollectionType) {
+      switch (selectedLibrary.library.CollectionType) {
+        case 'movies':
+          return ['Movie'];
+        case 'tvshows':
+          return ['Series'];
+        case 'music':
+          return ['MusicArtist'];
+        default:
+          return [];
+      }
     }
-  }
+
+    return [];
+  }, [parentContext, selectedLibrary?.library.CollectionType]);
+
+  const sortBy: [JellyfinItemSortBy, ...JellyfinItemSortBy[]] | null =
+    useMemo(() => {
+      return match(selectedLibrary?.library.CollectionType)
+        .returnType<[JellyfinItemSortBy, ...JellyfinItemSortBy[]] | null>()
+        .with('homevideos', () => ['IsFolder', 'SortName'])
+        .otherwise(() => null);
+    }, [selectedLibrary?.library.CollectionType]);
 
   const jellyfinItemsQuery = useInfiniteJellyfinLibraryItems(
     selectedServer?.id ?? tag<MediaSourceId>(''),
-    selectedLibrary?.library.Id ?? '',
+    isEmpty(parentContext)
+      ? selectedLibrary?.library.Id ?? ''
+      : last(parentContext)!.Id,
     itemTypes,
     true,
     64,
@@ -88,8 +113,15 @@ export function JellyfinProgrammingSelector() {
         alphanumericFilter !== null && alphanumericFilter !== '#'
           ? alphanumericFilter.toUpperCase()
           : undefined,
+      sortBy,
     },
   );
+
+  useEffect(() => {
+    if (selectedLibrary?.library.Id !== prevSelectedLibrary) {
+      clearParentContext();
+    }
+  }, [prevSelectedLibrary, selectedLibrary]);
 
   const totalItems = useMemo(() => {
     return first(jellyfinItemsQuery.data?.pages)?.TotalRecordCount ?? 0;
@@ -121,6 +153,64 @@ export function JellyfinProgrammingSelector() {
     );
   };
 
+  const pushParentContext = useCallback((item: JellyfinItem) => {
+    setParentContext((prev) => [...prev, item]);
+  }, []);
+
+  const clearParentContext = () => {
+    setParentContext([]);
+  };
+
+  const popParentContextToIndex = (idx: number) => {
+    setParentContext((prev) => slice(prev, 0, idx + 1));
+  };
+
+  const renderContextBreadcrumbs = () => {
+    const contextLinks = map(parentContext, (item, idx) => {
+      const isLast = idx === parentContext.length - 1;
+      const icon = match(item.Type)
+        .with('Series', () => <Tv sx={{ mr: 0.5 }} fontSize="inherit" />)
+        .with('MusicArtist', () => <Mic sx={{ mr: 0.5 }} fontSize="inherit" />)
+        .with('MusicAlbum', () => <Album sx={{ mr: 0.5 }} fontSize="inherit" />)
+        .with('Folder', () => <Folder sx={{ mr: 0.5 }} fontSize="inherit" />)
+        .otherwise(() => null);
+      return (
+        <Link
+          underline={isLast ? 'none' : 'hover'}
+          color={isLast ? 'text.primary' : 'inherit'}
+          sx={{
+            cursor: isLast ? undefined : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+          }}
+          key={item.Id}
+          onClick={() => (isLast ? () => {} : popParentContextToIndex(idx))}
+        >
+          {icon}
+          {item.Name}
+        </Link>
+      );
+    });
+    return (
+      <Breadcrumbs maxItems={4}>
+        <Link
+          underline="hover"
+          sx={{
+            cursor: isEmpty(parentContext) ? undefined : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+          }}
+          color={isEmpty(parentContext) ? 'text.primary' : 'inherit'}
+          onClick={clearParentContext}
+        >
+          <Home sx={{ mr: 0.5 }} fontSize="inherit" />
+          Root
+        </Link>
+        {contextLinks}
+      </Breadcrumbs>
+    );
+  };
+
   return (
     <>
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
@@ -137,6 +227,7 @@ export function JellyfinProgrammingSelector() {
         >
           <ProgramViewToggleButton />
         </Stack>
+        {isListView && renderContextBreadcrumbs()}
         <Tabs
           value={tabValue}
           onChange={(_, value: number) => setTabValue(value)}
@@ -167,6 +258,7 @@ export function JellyfinProgrammingSelector() {
                 )} */}
         </Tabs>
       </Box>
+
       <MediaItemGrid
         getPageDataSize={(page) => ({
           total: page.TotalRecordCount,
@@ -175,8 +267,14 @@ export function JellyfinProgrammingSelector() {
         extractItems={(page) => page.Items}
         getItemKey={useCallback((item: JellyfinItem) => item.Id, [])}
         renderGridItem={renderGridItem}
-        renderListItem={(item, index) => (
-          <JellyfinListItem key={item.Id} item={item} index={index} />
+        renderListItem={({ item, index, style }) => (
+          <JellyfinListItem
+            key={item.Id}
+            item={item}
+            index={index}
+            style={style}
+            onPushParent={pushParentContext}
+          />
         )}
         infiniteQuery={jellyfinItemsQuery}
         handleAlphaNumFilter={setAlphanumericFilter}

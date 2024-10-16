@@ -119,6 +119,8 @@ export const JellyfinItemFilter = z.enum([
   'IsFavoriteOrLikes',
 ]);
 
+export type JellyfinItemFilter = z.infer<typeof JellyfinItemFilter>;
+
 export const JellyfinMediaType = z.enum([
   'Unknown',
   'Video',
@@ -177,6 +179,8 @@ export const JellyfinItemSortBy = z.enum([
   'SimilarityScore',
   'SearchScore',
 ]);
+
+export type JellyfinItemSortBy = z.infer<typeof JellyfinItemSortBy>;
 
 export const JellyfinCollectionType = z.enum([
   'unknown',
@@ -1018,7 +1022,14 @@ export const JellyfinSystemInfo = z
   .partial();
 
 export function isTerminalJellyfinItem(item: JellyfinItem): boolean {
-  return ['Movie', 'Episode', 'Audio'].includes(item.Type);
+  return [
+    'Movie',
+    'Episode',
+    'Audio',
+    'Video',
+    'Trailer',
+    'MusicVideo',
+  ].includes(item.Type);
 }
 
 export function isJellyfinType(

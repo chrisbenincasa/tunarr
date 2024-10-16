@@ -18,11 +18,11 @@ export const ProgramViewToggleButton = () => {
 
   return (
     <ToggleButtonGroup value={viewType} onChange={handleFormat} exclusive>
-      <ToggleButton value="list">
-        <ViewList />
-      </ToggleButton>
       <ToggleButton value="grid">
         <GridView />
+      </ToggleButton>
+      <ToggleButton value="list">
+        <ViewList />
       </ToggleButton>
     </ToggleButtonGroup>
   );

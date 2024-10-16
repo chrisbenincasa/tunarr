@@ -18,7 +18,7 @@ export const initialThemeEditorState: ThemeEditorState = {
     darkMode: undefined,
     showWelcome: true,
     guideDuration: dayjs.duration(2, 'hour').asMilliseconds(),
-    programmingSelectorView: 'list',
+    programmingSelectorView: 'grid',
   },
 };
 

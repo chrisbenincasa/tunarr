@@ -21,17 +21,12 @@ import {
 } from '@mui/material';
 import ListItem from '@mui/material/ListItem';
 import ListItemIcon from '@mui/material/ListItemIcon';
-import {
-  isPlexDirectory,
-  isPlexMovie,
-  isPlexPlaylist,
-  isPlexSeason,
-  isPlexShow,
-} from '@tunarr/types/plex';
-import { find, first, groupBy, isUndefined, mapValues } from 'lodash-es';
+import { isPlexDirectory } from '@tunarr/types/plex';
+import { find, first, groupBy, mapValues } from 'lodash-es';
 import pluralize from 'pluralize';
 import { ReactNode, useEffect, useState } from 'react';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
+import { P, match } from 'ts-pattern';
 import { useWindowSize } from 'usehooks-ts';
 import { forSelectedMediaType, unwrapNil } from '../../helpers/util.ts';
 import { useCustomShows } from '../../hooks/useCustomShows.ts';
@@ -83,31 +78,55 @@ export default function SelectedProgrammingList({
 
       let title: string = media.title;
       let secondary: ReactNode = null;
-      if (isPlexDirectory(media)) {
-        // TODO: Show the size
-        title = `Library - ${media.title}`;
-      } else if (isPlexShow(media)) {
-        secondary = `${media.childCount} ${pluralize(
-          'season',
-          media.childCount,
-        )}, ${media.leafCount} total ${pluralize('episode', media.leafCount)}`;
-      } else if (isPlexSeason(media)) {
-        secondary = `${media.parentTitle} - ${media.title} (${
-          media.leafCount
-        } ${pluralize('episode', media.leafCount)})`;
-      } else if (media.type === 'collection') {
-        secondary = `${media.title} (${media.childCount} ${pluralize(
-          'item',
-          parseInt(media.childCount),
-        )})`;
-      } else if (isPlexMovie(media)) {
-        secondary = `Movie${media.year ? ', ' + media.year : ''}`;
-      } else if (isPlexPlaylist(media) && !isUndefined(media.leafCount)) {
-        secondary = `Playlist with ${media.leafCount} ${pluralize(
-          'tracks',
-          media.leafCount,
-        )}`;
-      }
+      match(media)
+        .with(
+          P.when(isPlexDirectory),
+          (dir) => (title = `Library - ${dir.title}`),
+        )
+        .with(
+          { type: 'show' },
+          (show) =>
+            (secondary = `${show.childCount} ${pluralize(
+              'season',
+              show.childCount,
+            )}, ${show.leafCount} total ${pluralize(
+              'episode',
+              show.leafCount,
+            )}`),
+        )
+        .with(
+          { type: 'season' },
+          (season) =>
+            (secondary = `${season.parentTitle} - ${season.title} (${
+              season.leafCount
+            } ${pluralize('episode', season.leafCount)})`),
+        )
+        .with(
+          { type: 'collection' },
+          (coll) =>
+            (secondary = `${coll.title} (${coll.childCount} ${pluralize(
+              'item',
+              parseInt(coll.childCount),
+            )})`),
+        )
+        .with(
+          { type: 'movie' },
+          (movie) =>
+            (secondary = `Movie${movie.year ? ', ' + movie.year : ''}`),
+        )
+        .with(
+          { type: 'playlist', leafCount: P.nonNullable },
+          (playlist) =>
+            (secondary = `Playlist with ${playlist.leafCount} ${pluralize(
+              'tracks',
+              playlist.leafCount,
+            )}`),
+        )
+        .with(
+          { type: 'episode' },
+          (ep) => (secondary = `${ep.grandparentTitle}, ${ep.parentTitle}`),
+        )
+        .otherwise(() => {});
 
       return (
         <ListItem divider sx={{ px: 1 }} dense key={selected.id} style={style}>

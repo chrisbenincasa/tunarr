@@ -3,6 +3,7 @@ import {
   JellyfinItem,
   JellyfinItemFields,
   JellyfinItemKind,
+  JellyfinItemSortBy,
   JellyfinLibraryItemsResponse,
   JellyfinLibraryResponse,
   JellyfinSystemInfo,
@@ -213,21 +214,28 @@ export class JellyfinApiClient extends BaseApiClient<JellyfinApiClientOptions> {
     extraFields: JellyfinItemFields[] = [],
     pageParams: Nilable<{ offset: number; limit: number }> = null,
     extraParams: object = {},
+    sortBy: [JellyfinItemSortBy, ...JellyfinItemSortBy[]] = [
+      'SortName',
+      'ProductionYear',
+    ],
   ): Promise<QueryResult<JellyfinLibraryItemsResponse>> {
     return this.doTypeCheckedGet('/Items', JellyfinLibraryItemsResponse, {
-      params: {
-        userId: userId ?? this.options.userId,
-        parentId: libraryId,
-        fields: union(extraFields, RequiredLibraryFields).join(','),
-        startIndex: pageParams?.offset,
-        limit: pageParams?.limit,
-        // These will be configurable eventually
-        sortOrder: 'Ascending',
-        sortBy: 'SortName,ProductionYear',
-        recursive: true,
-        includeItemTypes: itemTypes ? itemTypes.join(',') : undefined,
-        ...omitBy(extraParams, (v) => isNil(v) || isEmpty(v)),
-      },
+      params: omitBy(
+        {
+          userId: userId ?? this.options.userId,
+          parentId: libraryId,
+          fields: union(extraFields, RequiredLibraryFields).join(','),
+          startIndex: pageParams?.offset,
+          limit: pageParams?.limit,
+          // These will be configurable eventually
+          sortOrder: 'Ascending',
+          sortBy: sortBy.join(','),
+          recursive: true,
+          includeItemTypes: itemTypes ? itemTypes.join(',') : undefined,
+          ...extraParams,
+        },
+        (v) => isNil(v) || isEmpty(v),
+      ),
     });
   }
 
