@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.14.0](https://github.com/chrisbenincasa/tunarr/compare/v0.13.2...v0.14.0) (2024-10-17)
+
+
+### Features
+
+* introduce health checks and system status page ([#885](https://github.com/chrisbenincasa/tunarr/issues/885)) ([03f57e0](https://github.com/chrisbenincasa/tunarr/commit/03f57e0ed5bf7e402c2f9d77ce88e48cee96780f))
+
 ## [0.13.2](https://github.com/chrisbenincasa/tunarr/compare/v0.13.1...v0.13.2) (2024-10-16)
 
 
