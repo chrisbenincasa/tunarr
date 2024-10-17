@@ -1,4 +1,9 @@
-import { ChannelStreamMode, FfmpegSettings, Watermark } from '@tunarr/types';
+import {
+  ChannelStreamMode,
+  FfmpegSettings,
+  Resolution,
+  Watermark,
+} from '@tunarr/types';
 import {
   SupportedHardwareAccels,
   SupportedVideoFormats,
@@ -446,6 +451,10 @@ export class FFMPEG {
       this.opts.logLevel,
     ];
 
+    if (this.opts.hardwareAccelerationMode === 'vaapi') {
+      ffmpegArgs.push('-hwaccel', 'vaapi');
+    }
+
     if (streamSrc.type === 'http') {
       ffmpegArgs.push(
         '-reconnect',
@@ -534,6 +543,12 @@ export class FFMPEG {
       : 'v';
     let audioComplex = `;[${audioFile}:${audioIndex}]anull[audio]`;
     let videoComplex = `;[${videoFile}:${videoIndex}]null[video]`;
+
+    if (this.opts.hardwareAccelerationMode === 'vaapi') {
+      videoComplex += `;${currentVideo}format=nv12,hwupload[hwupload]`;
+      currentVideo = '[hwupload]';
+    }
+
     // Depending on the options we will apply multiple filters
     // each filter modifies the current video stream. Adds a filter to
     // the videoComplex variable. The result of the filter becomes the
@@ -704,7 +719,10 @@ export class FFMPEG {
         (streamStats?.anamorphic ||
           iW !== this.wantedW ||
           iH !== this.wantedH)) ||
-        isLargerResolution(iW, iH, this.wantedW, this.wantedH))
+        isLargerResolution(
+          { widthPx: iW, heightPx: iH },
+          { widthPx: this.wantedW, heightPx: this.wantedH },
+        ))
     ) {
       //scaler stuff, need to change the size of the video and also add bars
       // calculate wanted aspect ratio
@@ -725,7 +743,13 @@ export class FFMPEG {
         cw = hypotheticalW2;
         ch = hypotheticalH2;
       }
-      videoComplex += `;${currentVideo}scale=${cw}:${ch}:flags=${algo},format=yuv420p[scaled]`;
+
+      let scaleFilter = `scale=${cw}:${ch}:flags=${algo},format=yuv420p`;
+      if (this.opts.hardwareAccelerationMode === 'vaapi') {
+        scaleFilter = `scale_vaapi=w=${cw}:h=${ch}:mode=fast:format=yuv420p,hwdownload`;
+      }
+
+      videoComplex += `;${currentVideo}${scaleFilter}[scaled]`;
       currentVideo = 'scaled';
       resizeMsg = `Stretch to ${cw} x ${ch}. To fit target resolution of ${this.wantedW} x ${this.wantedH}.`;
       if (this.ensureResolution) {
@@ -1152,8 +1176,19 @@ export class FFMPEG {
   }
 }
 
-function isLargerResolution(w1: number, h1: number, w2: number, h2: number) {
-  return w1 > w2 || h1 > h2 || w1 % 2 == 1 || h1 % 2 == 1;
+/**
+ * True if the first param is a larger resolution than the right OR
+ * if the first param has an odd number width or height.
+ * @param left
+ * @param right
+ */
+function isLargerResolution(left: Resolution, right: Resolution) {
+  return (
+    left.widthPx > right.widthPx ||
+    left.heightPx > right.heightPx ||
+    left.widthPx % 2 === 1 ||
+    left.heightPx % 2 === 1
+  );
 }
 
 function gcd(a: number, b: number) {
