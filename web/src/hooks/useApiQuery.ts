@@ -30,15 +30,7 @@ export function useApiQuery<
   TData = TQueryFnData,
   TQueryKey extends QueryKey = QueryKey,
 >(
-  options: Omit<
-    UseQueryOptions<TQueryFnData, TError, TData, TQueryKey>,
-    'queryFn'
-  > & {
-    queryFn: (
-      apiClient: ApiClient,
-      ...rest: Parameters<QueryFunction<TQueryFnData, TQueryKey, never>>
-    ) => ReturnType<QueryFunction<TQueryFnData, TQueryKey, never>>;
-  },
+  options: ApiQueryOptions<TQueryFnData, TError, TData, TQueryKey>,
   queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> {
   // NOTE that this query also depends on the backendUrl used to

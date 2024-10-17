@@ -1,11 +1,7 @@
-import { NotNull } from 'kysely';
-import { chunk, head, reduce, tail } from 'lodash-es';
-import { ProgramSourceType } from '../../dao/custom_types/ProgramSourceType';
 import { directDbAccess } from '../../dao/direct/directDbAccess.js';
 import { ProgramType } from '../../dao/entities/Program';
 import { ProgramGroupingType } from '../../dao/entities/ProgramGrouping';
 import { LoggerFactory } from '../../util/logging/LoggerFactory';
-import { Timer } from '../../util/perf';
 import Fixer from './fixer';
 
 // TODO: Handle Jellyfin items
@@ -15,57 +11,41 @@ export class BackfillProgramGroupings extends Fixer {
     caller: import.meta,
     className: BackfillProgramGroupings.name,
   });
-  private timer = new Timer(this.logger);
 
   protected async runInternal(): Promise<void> {
-    // We'll try filling using the data we have first...
-    const results = await this.timer.timeAsync(
-      'missing groupiings db query',
-      () =>
-        directDbAccess()
-          .selectFrom('program')
-          .select(['program.uuid', 'program.tvShowUuid'])
-          .where('program.seasonUuid', 'is not', null)
-          .where('program.tvShowUuid', 'is not', null)
-          .innerJoin('programGrouping', (join) =>
-            join
-              .onRef('programGrouping.uuid', '=', 'program.seasonUuid')
-              .on('programGrouping.showUuid', 'is', null),
-          )
-          .select('programGrouping.uuid as seasonId')
-          .groupBy(['program.seasonUuid', 'program.tvShowUuid'])
-          .$narrowType<{ tvShowUuid: NotNull }>()
-          .execute(),
-    );
+    // This clears out mismatches that might have happened on bugged earlier versions
+    // There was a bug where we were setting the season ID to the show ID.
+    // This should only affect seasons since the music album stuff had the fix
+    const clearedSeasons = await directDbAccess()
+      .transaction()
+      .execute((tx) =>
+        tx
+          .updateTable('program')
+          .set(({ selectFrom, eb }) => ({
+            seasonUuid: eb
+              .case()
+              .when(
+                selectFrom('programGrouping')
+                  .whereRef('programGrouping.uuid', '=', 'program.seasonUuid')
+                  .where(
+                    'programGrouping.type',
+                    '=',
+                    ProgramGroupingType.TvShow,
+                  )
+                  .select((eb) => eb.lit(1).as('true'))
+                  .limit(1),
+              )
+              .then(null)
+              .else(eb.ref('seasonUuid'))
+              .end(),
+          }))
+          .executeTakeFirst(),
+      );
 
-    await this.timer.timeAsync('update program groupings 1', async () => {
-      for (const result of chunk(results, 50)) {
-        const first = head(result)!;
-        const rest = tail(result);
-        await directDbAccess()
-          .transaction()
-          .execute((tx) =>
-            tx
-              .updateTable('programGrouping')
-              .set(({ eb }) => {
-                return {
-                  showUuid: reduce(
-                    rest,
-                    (ebb, r) =>
-                      ebb
-                        .when('programGrouping.uuid', '=', r.seasonId)
-                        .then(r.tvShowUuid),
-                    eb
-                      .case()
-                      .when('programGrouping.uuid', '=', first.seasonId)
-                      .then(first.tvShowUuid),
-                  ).end(),
-                };
-              })
-              .executeTakeFirst(),
-          );
-      }
-    });
+    this.logger.debug(
+      'Cleared %s bugged seasons',
+      clearedSeasons.numChangedRows ?? clearedSeasons.numUpdatedRows ?? 0n,
+    );
 
     // Update program -> show mappings with existing information
     const updatedShows = await directDbAccess()
@@ -85,6 +65,12 @@ export class BackfillProgramGroupings extends Fixer {
                 '=',
                 'program.grandparentExternalKey',
               )
+              .whereRef(
+                'programGroupingExternalId.sourceType',
+                '=',
+                'program.sourceType',
+              )
+
               .leftJoin(
                 'programGrouping',
                 'programGroupingExternalId.groupUuid',
@@ -98,7 +84,6 @@ export class BackfillProgramGroupings extends Fixer {
               eb('program.type', '=', ProgramType.Episode),
               eb('program.grandparentExternalKey', 'is not', null),
               eb('program.tvShowUuid', 'is', null),
-              eb('program.sourceType', '=', ProgramSourceType.PLEX),
             ]),
           )
           .executeTakeFirst(),
@@ -106,11 +91,57 @@ export class BackfillProgramGroupings extends Fixer {
 
     this.logger.debug(
       'Fixed %s program->show mappings',
-      updatedShows.numUpdatedRows,
+      updatedShows.numChangedRows ?? 0n,
+    );
+
+    // Update track -> artist mappings with existing information
+    const updatedTrackArtists = await directDbAccess()
+      .transaction()
+      .execute((tx) =>
+        tx
+          .updateTable('program')
+          .set(({ selectFrom }) => ({
+            artistUuid: selectFrom('programGroupingExternalId')
+              .whereRef(
+                'programGroupingExternalId.externalSourceId',
+                '=',
+                'program.externalSourceId',
+              )
+              .whereRef(
+                'programGroupingExternalId.externalKey',
+                '=',
+                'program.grandparentExternalKey',
+              )
+              .whereRef(
+                'programGroupingExternalId.sourceType',
+                '=',
+                'program.sourceType',
+              )
+
+              .leftJoin(
+                'programGrouping',
+                'programGroupingExternalId.groupUuid',
+                'programGrouping.uuid',
+              )
+              .select('programGrouping.uuid')
+              .limit(1),
+          }))
+          .where((eb) =>
+            eb.and([
+              eb('program.type', '=', ProgramType.Track),
+              eb('program.grandparentExternalKey', 'is not', null),
+              eb('program.artistUuid', 'is', null),
+            ]),
+          )
+          .executeTakeFirst(),
+      );
+
+    this.logger.debug(
+      'Fixed %s track->artist mappings',
+      updatedTrackArtists.numChangedRows ?? 0n,
     );
 
     // Update show -> season mappings with existing information
-    // Do this in the background since it is less important.
     await directDbAccess()
       .transaction()
       .execute(async (tx) => {
@@ -126,8 +157,14 @@ export class BackfillProgramGroupings extends Fixer {
               .whereRef(
                 'programGroupingExternalId.externalKey',
                 '=',
-                'program.grandparentExternalKey',
+                'program.parentExternalKey',
               )
+              .whereRef(
+                'programGroupingExternalId.sourceType',
+                '=',
+                'program.sourceType',
+              )
+
               .leftJoin(
                 'programGrouping',
                 'programGroupingExternalId.groupUuid',
@@ -141,14 +178,13 @@ export class BackfillProgramGroupings extends Fixer {
               eb('program.type', '=', ProgramType.Episode),
               eb('program.parentExternalKey', 'is not', null),
               eb('program.seasonUuid', 'is', null),
-              eb('program.sourceType', '=', ProgramSourceType.PLEX),
             ]),
           )
           .executeTakeFirst();
 
         this.logger.debug(
           'Fixed %s program->season mappings',
-          updatedSeasons.numUpdatedRows,
+          updatedSeasons.numChangedRows ?? 0n,
         );
 
         const res = await tx
@@ -163,6 +199,11 @@ export class BackfillProgramGroupings extends Fixer {
                     'programGroupingExternalId.externalSourceId',
                     '=',
                     'program.externalSourceId',
+                  )
+                  .onRef(
+                    'programGroupingExternalId.sourceType',
+                    '=',
+                    'program.sourceType',
                   )
                   .onRef(
                     'programGroupingExternalId.externalKey',
@@ -182,9 +223,98 @@ export class BackfillProgramGroupings extends Fixer {
           .where('programGrouping.type', '=', ProgramGroupingType.TvShowSeason)
           .where('programGrouping.showUuid', 'is', null)
           .executeTakeFirst();
+
         this.logger.debug(
           'Fixed %s show->season associations',
-          res.numUpdatedRows,
+          res.numChangedRows ?? 0n,
+        );
+      });
+
+    // Update track -> album mappings with existing information
+    await directDbAccess()
+      .transaction()
+      .execute(async (tx) => {
+        const updatedTracks = await tx
+          .updateTable('program')
+          .set(({ selectFrom }) => ({
+            albumUuid: selectFrom('programGroupingExternalId')
+              .whereRef(
+                'programGroupingExternalId.externalSourceId',
+                '=',
+                'program.externalSourceId',
+              )
+              .whereRef(
+                'programGroupingExternalId.externalKey',
+                '=',
+                'program.parentExternalKey',
+              )
+              .whereRef(
+                'programGroupingExternalId.sourceType',
+                '=',
+                'program.sourceType',
+              )
+              .leftJoin(
+                'programGrouping',
+                'programGroupingExternalId.groupUuid',
+                'programGrouping.uuid',
+              )
+              .select('programGrouping.uuid')
+              .limit(1),
+          }))
+          .where((eb) =>
+            eb.and([
+              eb('program.type', '=', ProgramType.Track),
+              eb('program.parentExternalKey', 'is not', null),
+              eb('program.albumUuid', 'is', null),
+            ]),
+          )
+          .executeTakeFirst();
+
+        this.logger.debug(
+          'Fixed %s track->album mappings',
+          updatedTracks.numChangedRows ?? 0n,
+        );
+
+        const res = await tx
+          .updateTable('programGrouping')
+          .set(({ selectFrom }) => ({
+            artistUuid: selectFrom('program')
+              .where('program.type', '=', ProgramType.Track)
+              .where('program.grandparentExternalKey', 'is not', null)
+              .innerJoin('programGroupingExternalId', (join) =>
+                join
+                  .onRef(
+                    'programGroupingExternalId.externalSourceId',
+                    '=',
+                    'program.externalSourceId',
+                  )
+                  .onRef(
+                    'programGroupingExternalId.sourceType',
+                    '=',
+                    'program.sourceType',
+                  )
+                  .onRef(
+                    'programGroupingExternalId.externalKey',
+                    '=',
+                    'program.grandparentExternalKey',
+                  ),
+              )
+              .innerJoin(
+                'programGrouping',
+                'programGrouping.uuid',
+                'programGroupingExternalId.groupUuid',
+              )
+              .where('programGrouping.uuid', 'is not', null)
+              .select('programGrouping.uuid')
+              .limit(1),
+          }))
+          .where('programGrouping.type', '=', ProgramGroupingType.MusicAlbum)
+          .where('programGrouping.artistUuid', 'is', null)
+          .executeTakeFirst();
+
+        this.logger.debug(
+          'Fixed %s album->artist associations',
+          res.numChangedRows ?? 0n,
         );
       });
 
@@ -192,13 +322,21 @@ export class BackfillProgramGroupings extends Fixer {
       .selectFrom('program')
       .select(({ fn }) => fn.count<number>('program.uuid').as('count'))
       .where((eb) =>
-        eb.or([eb('tvShowUuid', 'is', null), eb('seasonUuid', 'is', null)]),
+        eb.or([
+          eb.and([
+            eb('type', '=', ProgramType.Episode),
+            eb.or([eb('tvShowUuid', 'is', null), eb('seasonUuid', 'is', null)]),
+          ]),
+          eb.and([
+            eb('type', '=', ProgramType.Track),
+            eb.or([eb('albumUuid', 'is', null), eb('artistUuid', 'is', null)]),
+          ]),
+        ]),
       )
-      .where('type', '=', ProgramType.Episode)
       .executeTakeFirst();
 
     this.logger.debug(
-      'There are still %d episode programs with missing associations',
+      'There are still %d programs with missing associations',
       stillMissing?.count,
     );
   }

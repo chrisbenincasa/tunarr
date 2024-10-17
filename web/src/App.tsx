@@ -207,6 +207,12 @@ export function Root({ children }: { children?: React.ReactNode }) {
         visible: showWelcome,
         icon: <Home />,
       },
+      {
+        name: 'Home',
+        path: '/',
+        visible: !showWelcome,
+        icon: <Home />,
+      },
       { name: 'Guide', path: '/guide', visible: true, icon: <TvIcon /> },
       {
         name: 'Channels',
@@ -321,7 +327,7 @@ export function Root({ children }: { children?: React.ReactNode }) {
               <Link
                 underline="none"
                 color="inherit"
-                to="/guide"
+                to="/"
                 component={RouterLink}
               >
                 Tunarr
@@ -518,7 +524,7 @@ export function Root({ children }: { children?: React.ReactNode }) {
         >
           <Toolbar />
           <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
-            {version?.ffmpeg === 'Error' ? (
+            {version?.ffmpeg === 'unknown' ? (
               <Alert
                 variant="filled"
                 severity="error"

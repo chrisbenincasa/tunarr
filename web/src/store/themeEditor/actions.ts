@@ -20,6 +20,11 @@ export const updateShowWelcomeState = () => {
   });
 };
 
+export const setShowWelcome = (show: boolean) =>
+  useStore.setState((state) => {
+    state.theme.showWelcome = show;
+  });
+
 export const resetShowWelcomeState = () => {
   useStore.setState((state) => {
     state.theme.showWelcome = true;

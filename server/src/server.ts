@@ -41,7 +41,16 @@ import {
   initializeSingletons,
   serverOptions,
 } from './globals.js';
-import { ServerRequestContext, serverContext } from './serverContext.js';
+import {
+  ServerContext,
+  ServerRequestContext,
+  serverContext,
+} from './serverContext.js';
+import { FfmpegDebugLoggingHealthCheck } from './services/health_checks/FfmpegDebugLoggingHealthCheck.js';
+import { FfmpegVersionHealthCheck } from './services/health_checks/FfmpegVersionHealthCheck.js';
+import { HardwareAccelerationHealthCheck } from './services/health_checks/HardwareAccelerationHealthCheck.js';
+import { MissingProgramAssociationsHealthCheck } from './services/health_checks/MissingProgramAssociationsHealthCheck.js';
+import { MissingSeasonNumbersHealthCheck } from './services/health_checks/MissingSeasonNumbersHealthCheck.js';
 import { GlobalScheduler, scheduleJobs } from './services/scheduler.js';
 import { initPersistentStreamCache } from './stream/ChannelCache.js';
 import { UpdateXmlTvTask } from './tasks/UpdateXmlTvTask.js';
@@ -115,6 +124,22 @@ async function legacyDizquetvDirectoryPath() {
   return;
 }
 
+function registerHealthChecks(ctx: ServerContext) {
+  ctx.healthCheckService.registerCheck(new MissingSeasonNumbersHealthCheck());
+  ctx.healthCheckService.registerCheck(
+    new FfmpegVersionHealthCheck(ctx.settings),
+  );
+  ctx.healthCheckService.registerCheck(
+    new HardwareAccelerationHealthCheck(ctx.settings),
+  );
+  ctx.healthCheckService.registerCheck(
+    new FfmpegDebugLoggingHealthCheck(ctx.settings),
+  );
+  ctx.healthCheckService.registerCheck(
+    new MissingProgramAssociationsHealthCheck(),
+  );
+}
+
 export async function initServer(opts: ServerOptions) {
   const start = performance.now();
   await initDbDirectories();
@@ -131,6 +156,7 @@ export async function initServer(opts: ServerOptions) {
   initializeSingletons();
 
   const ctx = serverContext();
+  registerHealthChecks(ctx);
   await new ChannelLineupMigrator(ctx.channelDB).run();
 
   const legacyDbPath = await legacyDizquetvDirectoryPath();

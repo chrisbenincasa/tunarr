@@ -231,7 +231,10 @@ export class ProgramConverter {
         icon: nullToUndefined(program.episodeIcon ?? program.showIcon),
         showId: nullToUndefined(program.tvShow?.uuid ?? program.tvShowUuid),
         seasonId: nullToUndefined(program.tvSeason?.uuid ?? program.seasonUuid),
-        seasonNumber: nullToUndefined(program.tvSeason?.index),
+        // Fallback to the denormalized field, for now
+        seasonNumber: nullToUndefined(
+          program.tvSeason?.index, // ?? program.seasonNumber,
+        ),
         episodeNumber: nullToUndefined(program.episode),
         episodeTitle: program.title,
         title: nullToUndefined(program.tvShow?.title ?? program.showTitle),

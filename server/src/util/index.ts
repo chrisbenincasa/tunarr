@@ -488,3 +488,8 @@ export function nullToUndefined<T>(x: T | null | undefined): T | undefined {
 export function removeErrors<T>(coll: Try<T>[] | null | undefined): T[] {
   return reject(coll, isError) satisfies T[] as T[];
 }
+
+export function parseIntOrNull(s: string): number | null {
+  const parsed = parseInt(s);
+  return isNaN(parsed) ? null : parsed;
+}

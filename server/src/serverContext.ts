@@ -11,6 +11,7 @@ import { ProgramDB } from './dao/programDB.js';
 import { SettingsDB, getSettings } from './dao/settings.js';
 import { serverOptions } from './globals.js';
 import { HdhrService } from './hdhr.js';
+import { HealthCheckService } from './services/HealthCheckService.js';
 import { OnDemandChannelService } from './services/OnDemandChannelService.js';
 import { CacheImageService } from './services/cacheImageService.js';
 import { EventService } from './services/eventService.js';
@@ -25,6 +26,7 @@ export class ServerContext {
   public readonly programConverter = new ProgramConverter();
   public readonly sessionManager: SessionManager;
   public readonly onDemandChannelService: OnDemandChannelService;
+  public readonly healthCheckService: HealthCheckService;
 
   constructor(
     public channelDB: ChannelDB,
@@ -46,6 +48,7 @@ export class ServerContext {
       this.channelDB,
       this.onDemandChannelService,
     );
+    this.healthCheckService = new HealthCheckService();
   }
 
   streamProgramCalculator() {
