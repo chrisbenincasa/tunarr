@@ -1,4 +1,9 @@
-import { ChannelStreamMode, FfmpegSettings, Watermark } from '@tunarr/types';
+import {
+  ChannelStreamMode,
+  FfmpegSettings,
+  Resolution,
+  Watermark,
+} from '@tunarr/types';
 import {
   SupportedHardwareAccels,
   SupportedVideoFormats,
@@ -13,7 +18,12 @@ import { serverOptions } from '../globals.js';
 import { ConcatSessionType } from '../stream/Session.js';
 import { StreamDetails, StreamSource } from '../stream/types.js';
 import { Maybe, Nullable } from '../types/util.js';
-import { isDefined, isNonEmptyString, isSuccess } from '../util/index.js';
+import {
+  isDefined,
+  isLinux,
+  isNonEmptyString,
+  isSuccess,
+} from '../util/index.js';
 import { Logger, LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '../util/serverUtil.js';
 import { getTunarrVersion } from '../util/version.js';
@@ -446,6 +456,26 @@ export class FFMPEG {
       this.opts.logLevel,
     ];
 
+    // Initialize like this because we're not checking whether or not
+    // the input is hardware decodeable, yet.
+    if (this.opts.hardwareAccelerationMode === 'vaapi') {
+      const vaapiDevice = isNonEmptyString(this.opts.vaapiDevice)
+        ? this.opts.vaapiDevice
+        : isLinux()
+        ? '/dev/dri/renderD128'
+        : undefined;
+      ffmpegArgs.push(
+        '-init_hw_device',
+        'vaapi=hw' + (isNonEmptyString(vaapiDevice) ? `:${vaapiDevice}` : ''),
+        '-hwaccel',
+        'vaapi',
+        '-hwaccel_output_format',
+        'vaapi',
+        '-hwaccel_device',
+        'hw',
+      );
+    }
+
     if (streamSrc.type === 'http') {
       ffmpegArgs.push(
         '-reconnect',
@@ -534,6 +564,15 @@ export class FFMPEG {
       : 'v';
     let audioComplex = `;[${audioFile}:${audioIndex}]anull[audio]`;
     let videoComplex = `;[${videoFile}:${videoIndex}]null[video]`;
+
+    // This is only tracked for the vaapi path at the moment
+    let framesOnHardware = false;
+    if (this.opts.hardwareAccelerationMode === 'vaapi') {
+      videoComplex += `;${currentVideo}format=nv12|vaapi,hwupload=extra_hw_frames=64[hwupload]`;
+      currentVideo = '[hwupload]';
+      framesOnHardware = true;
+    }
+
     // Depending on the options we will apply multiple filters
     // each filter modifies the current video stream. Adds a filter to
     // the videoComplex variable. The result of the filter becomes the
@@ -549,10 +588,14 @@ export class FFMPEG {
 
     // deinterlace if desired
     if (
-      streamStats?.videoScanType == 'interlaced' &&
-      this.opts.deinterlaceFilter != 'none'
+      streamStats?.videoScanType === 'interlaced' &&
+      this.opts.deinterlaceFilter !== 'none'
     ) {
-      videoComplex += `;${currentVideo}${this.opts.deinterlaceFilter}[deinterlaced]`;
+      if (framesOnHardware && this.opts.hardwareAccelerationMode === 'vaapi') {
+        videoComplex += `;${currentVideo}deinterlace_vaapi=rate=field:auto=1[deinterlaced]`;
+      } else {
+        videoComplex += `;${currentVideo}${this.opts.deinterlaceFilter}[deinterlaced]`;
+      }
       currentVideo = '[deinterlaced]';
     }
 
@@ -598,14 +641,20 @@ export class FFMPEG {
           ffmpegArgs.push('-i', pic);
           //add 150 milliseconds just in case, exact duration seems to cut out the last bits of music some times.
           duration = duration.add(150);
-          videoComplex = `;[${inputFiles++}:0]format=yuv420p[formatted]`;
-          videoComplex += `;[formatted]scale=w=${iW}:h=${iH}:force_original_aspect_ratio=1[scaled]`;
-          videoComplex += `;[scaled]pad=${iW}:${iH}:(ow-iw)/2:(oh-ih)/2[padded]`;
-          let realtimePart = '[videox]';
+          const filters = [
+            'format=yuv420p',
+            `scale=w=${iW}:h=${iH}:force_original_aspect_ratio=1`,
+            `pad=${iW}:${iH}:(ow-iw)/2:(oh-ih)/2`,
+            'loop=loop=-1:size=1:start=0',
+          ];
+
           if (realtime) {
-            realtimePart = '[looped];[looped]realtime[videox]';
+            filters.push('realtime');
           }
-          videoComplex += `;[padded]loop=loop=-1:size=1:start=0${realtimePart}`;
+          if (this.opts.hardwareAccelerationMode === 'vaapi') {
+            filters.push('format=nv12', 'hwupload=extra_hw_frames=64');
+          }
+          videoComplex = `;[${inputFiles++}:0]${filters.join(',')}[videox]`;
         } else if (this.opts.errorScreen == 'static') {
           ffmpegArgs.push('-f', 'lavfi', '-i', `nullsrc=s=64x36`);
           let realtimePart = '[videox]';
@@ -704,9 +753,12 @@ export class FFMPEG {
         (streamStats?.anamorphic ||
           iW !== this.wantedW ||
           iH !== this.wantedH)) ||
-        isLargerResolution(iW, iH, this.wantedW, this.wantedH))
+        isLargerResolution(
+          { widthPx: iW, heightPx: iH },
+          { widthPx: this.wantedW, heightPx: this.wantedH },
+        ))
     ) {
-      //scaler stuff, need to change the size of the video and also add bars
+      // scaler stuff, need to change the size of the video and also add bars
       // calculate wanted aspect ratio
       let p = iW * streamStats!.pixelP!;
       let q = iH * streamStats!.pixelQ!;
@@ -725,7 +777,13 @@ export class FFMPEG {
         cw = hypotheticalW2;
         ch = hypotheticalH2;
       }
-      videoComplex += `;${currentVideo}scale=${cw}:${ch}:flags=${algo},format=yuv420p[scaled]`;
+
+      let scaleFilter = `scale=${cw}:${ch}:flags=${algo},format=yuv420p`;
+      if (this.opts.hardwareAccelerationMode === 'vaapi') {
+        scaleFilter = `scale_vaapi=w=${cw}:h=${ch}:mode=fast:extra_hw_frames=64`;
+      }
+
+      videoComplex += `;${currentVideo}${scaleFilter}[scaled]`;
       currentVideo = 'scaled';
       resizeMsg = `Stretch to ${cw} x ${ch}. To fit target resolution of ${this.wantedW} x ${this.wantedH}.`;
       if (this.ensureResolution) {
@@ -743,15 +801,27 @@ export class FFMPEG {
         resizeMsg = `Stretch to ${cw} x ${ch}. To fit target resolution of ${this.wantedW} x ${this.wantedH}.`;
       }
       if (this.wantedW !== cw || this.wantedH !== ch) {
+        if (framesOnHardware) {
+          videoComplex += `;[${currentVideo}]hwdownload[hwdownloaded]`;
+          currentVideo = 'hwdownloaded';
+          framesOnHardware = false;
+        }
         // also add black bars, because in this case it HAS to be this resolution
         videoComplex += `;[${currentVideo}]pad=${this.wantedW}:${this.wantedH}:(ow-iw)/2:(oh-ih)/2[blackpadded]`;
         currentVideo = 'blackpadded';
       }
       let name = 'siz';
-      if (!this.ensureResolution && beforeSizeChange != '[fpchange]') {
+      if (!this.ensureResolution && beforeSizeChange !== '[fpchange]') {
         name = 'minsiz';
       }
-      videoComplex += `;[${currentVideo}]setsar=1,format=yuv420p[${name}]`;
+
+      if (framesOnHardware) {
+        videoComplex += `;[${currentVideo}]hwdownload[hwdownloaded]`;
+        currentVideo = 'hwdownloaded';
+        framesOnHardware = false;
+      }
+
+      videoComplex += `;[${currentVideo}]setsar=1[${name}]`;
       currentVideo = `[${name}]`;
       iW = this.wantedW;
       iH = this.wantedH;
@@ -775,7 +845,16 @@ export class FFMPEG {
     }
 
     // Channel watermark:
+    // We're going to force this to cpu for now...
     if (doOverlay && !isNil(watermark) && !this.audioOnly) {
+      const trimmed = videoComplex.slice(
+        0,
+        videoComplex.length - sanitizeFilterName(currentVideo).length,
+      );
+      videoComplex = `${trimmed},format=yuv420p${sanitizeFilterName(
+        currentVideo,
+      )}`;
+
       const pW = watermark.width;
       const w = Math.round((pW * iW) / 100.0);
       const mpHorz = watermark.horizontalMargin;
@@ -785,23 +864,16 @@ export class FFMPEG {
 
       // TODO: do not enable this if we are using fade points
       let waterVideo = `[${overlayFile}:v]`;
-      const watermarkFilters: string[] = [];
+      const watermarkFilters: string[] = ['format=yuva420p'];
+
       if (!watermark.fixedSize) {
         watermarkFilters.push(`scale=${w}:-1`);
       }
 
       if (isDefined(watermark.opacity) && watermark.opacity < 100) {
         watermarkFilters.push(
-          `format=yuva420p,colorchannelmixer=aa=${round(
-            watermark.opacity / 100,
-            2,
-          )}`,
+          `colorchannelmixer=aa=${round(watermark.opacity / 100, 2)}`,
         );
-      } else if (
-        !isEmpty(watermark?.fadeConfig) &&
-        isDefined(streamStats?.duration)
-      ) {
-        watermarkFilters.push(`format=yuva420p`);
       }
 
       if (!isEmpty(watermark?.fadeConfig)) {
@@ -841,11 +913,6 @@ export class FFMPEG {
         }
       }
 
-      const icnDur =
-        watermark.duration > 0
-          ? `:enable='between(t,0,${watermark.duration})'`
-          : '';
-
       if (!isEmpty(watermarkFilters)) {
         videoComplex += `;${waterVideo}${watermarkFilters.join(',')}[icn]`;
         waterVideo = '[icn]';
@@ -867,9 +934,36 @@ export class FFMPEG {
           break;
       }
 
+      const icnDur =
+        watermark.duration > 0
+          ? `:enable='between(t,0,${watermark.duration})'`
+          : '';
       const overlayShortest = watermark.animated ? 'shortest=1:' : '';
-      videoComplex += `;${currentVideo}${waterVideo}overlay=${overlayShortest}${position}${icnDur}[comb]`;
+      const overlayFilters = [`overlay=${overlayShortest}${position}${icnDur}`];
+      if (this.opts.hardwareAccelerationMode === 'vaapi') {
+        overlayFilters.push('format=nv12', 'hwupload=extra_hw_frames=64');
+      }
+      videoComplex += `;${currentVideo}${waterVideo}${overlayFilters.join(
+        ',',
+      )}[comb]`;
       currentVideo = '[comb]';
+    } else {
+      if (this.opts.hardwareAccelerationMode === 'vaapi') {
+        if (!framesOnHardware) {
+          videoComplex += `;${currentVideo}format=nv12,hwupload=extra_hw_frames=64[hwuploaded]`;
+          currentVideo = '[hwuploaded]';
+          framesOnHardware = true;
+        }
+      } else {
+        // HACK
+        const trimmed = videoComplex.slice(
+          0,
+          videoComplex.length - sanitizeFilterName(currentVideo).length,
+        );
+        videoComplex = `${trimmed},format=yuv420p${sanitizeFilterName(
+          currentVideo,
+        )}`;
+      }
     }
 
     if (this.volumePercent !== 100) {
@@ -891,8 +985,8 @@ export class FFMPEG {
     }
 
     let filterComplex = '';
-    if (currentVideo == '[minsiz]') {
-      //do not change resolution if no other transcoding will be done
+    if (currentVideo === '[minsiz]') {
+      // do not change resolution if no other transcoding will be done
       // and resolution normalization is off
       currentVideo = beforeSizeChange;
     } else {
@@ -914,6 +1008,9 @@ export class FFMPEG {
 
     //If there is a filter complex, add it.
     if (isNonEmptyString(filterComplex)) {
+      if (this.opts.hardwareAccelerationMode === 'vaapi') {
+        ffmpegArgs.push('-filter_hw_device', 'hw');
+      }
       ffmpegArgs.push(`-filter_complex`, filterComplex.slice(1));
       if (this.alignAudio) {
         ffmpegArgs.push('-shortest');
@@ -923,6 +1020,7 @@ export class FFMPEG {
     const videoOutputOptions: string[] = [];
     switch (outputFormat.type) {
       case 'hls':
+      case 'mpegts':
         videoOutputOptions.push(...this.getVideoOutputOptions());
         break;
       case 'nut':
@@ -933,6 +1031,7 @@ export class FFMPEG {
     const audioOutputOptions: string[] = [];
     switch (outputFormat.type) {
       case 'hls':
+      case 'mpegts':
         audioOutputOptions.push(...this.getAudioOutputOptions());
         break;
       case 'nut':
@@ -1004,6 +1103,9 @@ export class FFMPEG {
         break;
       case 'nut':
         ffmpegArgs.push(`-f`, 'nut', `pipe:1`);
+        break;
+      case 'mpegts':
+        ffmpegArgs.push(...this.mpegTsOutputFormatOptions());
         break;
     }
 
@@ -1107,6 +1209,16 @@ export class FFMPEG {
     ];
   }
 
+  private mpegTsOutputFormatOptions() {
+    return [
+      `-f`,
+      `mpegts`,
+      '-mpegts_flags',
+      '+initial_discontinuity',
+      `pipe:1`,
+    ];
+  }
+
   private getVideoOutputOptions() {
     // Right now we're just going to use a simple combo of videoFormat + hwAccel
     // to specify an encoder. There's a lot more we can do with these settings,
@@ -1152,8 +1264,19 @@ export class FFMPEG {
   }
 }
 
-function isLargerResolution(w1: number, h1: number, w2: number, h2: number) {
-  return w1 > w2 || h1 > h2 || w1 % 2 == 1 || h1 % 2 == 1;
+/**
+ * True if the first param is a larger resolution than the right OR
+ * if the first param has an odd number width or height.
+ * @param left
+ * @param right
+ */
+function isLargerResolution(left: Resolution, right: Resolution) {
+  return (
+    left.widthPx > right.widthPx ||
+    left.heightPx > right.heightPx ||
+    left.widthPx % 2 === 1 ||
+    left.heightPx % 2 === 1
+  );
 }
 
 function gcd(a: number, b: number) {
@@ -1163,4 +1286,11 @@ function gcd(a: number, b: number) {
     a = c;
   }
   return a;
+}
+
+function sanitizeFilterName(name: string) {
+  if (name.startsWith('[') && name.endsWith(']')) {
+    return name;
+  }
+  return `[${name}]`;
 }

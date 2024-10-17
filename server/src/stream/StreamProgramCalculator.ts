@@ -2,6 +2,7 @@ import constants from '@tunarr/shared/constants';
 import dayjs from 'dayjs';
 import { first, isEmpty, isNil, isNull, isUndefined, nth } from 'lodash-es';
 import { StrictExclude } from 'ts-essentials';
+import { z } from 'zod';
 import { ChannelDB } from '../dao/channelDb.js';
 import { ProgramExternalIdType } from '../dao/custom_types/ProgramExternalIdType.js';
 import { getEm } from '../dao/dataSource.js';
@@ -12,12 +13,14 @@ import {
 } from '../dao/derived_types/Lineup.js';
 import {
   EnrichedLineupItem,
+  ProgramStreamLineupItem,
   RedirectStreamLineupItem,
   StreamLineupItem,
   createOfflineStreamLineupItem,
 } from '../dao/derived_types/StreamLineup.js';
 import { ProgramWithRelations as RawProgramEntity } from '../dao/direct/derivedTypes';
 import { Channel } from '../dao/direct/schema/Channel.js';
+import { Program as RawProgram } from '../dao/direct/schema/Program.js';
 import { MediaSourceType } from '../dao/entities/MediaSource.js';
 import { Program as ProgramEntity } from '../dao/entities/Program.js';
 import { ProgramExternalId } from '../dao/entities/ProgramExternalId.js';
@@ -581,6 +584,20 @@ export class StreamProgramCalculator {
       streamDuration: activeProgram.duration - timeElapsed,
       beginningOffset: beginningOffset,
       id: activeProgram.id,
+    };
+  }
+
+  createStreamItemFromProgram(program: RawProgram): ProgramStreamLineupItem {
+    return {
+      ...program,
+      type: 'program',
+      programType: program.type,
+      programId: program.uuid,
+      id: program.uuid,
+      // HACK
+      externalSource: z.nativeEnum(MediaSourceType).parse(program.sourceType),
+      plexFilePath: program.plexFilePath ?? undefined,
+      filePath: program.filePath ?? undefined,
     };
   }
 }

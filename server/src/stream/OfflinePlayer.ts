@@ -55,6 +55,10 @@ export class OfflineProgramStream extends ProgramStream {
         duration = duration.subtract(start);
       }
 
+      this.logger.debug(
+        'starting offline session of %d ms',
+        duration.asMilliseconds(),
+      );
       const ff = this.error
         ? await ffmpeg.createErrorSession(
             'Error',

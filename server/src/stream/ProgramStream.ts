@@ -92,7 +92,7 @@ export abstract class ProgramStream extends (events.EventEmitter as new () => Ty
 
   set transcodeSession(session: FfmpegTranscodeSession) {
     this._transcodeSession = session;
-    this._transcodeSession.on('end', () => this.shutdown());
+    this._transcodeSession.on('end', () => this.shutdownInternal());
     this._transcodeSession.on('error', () => {
       if (this.hadError) {
         // We're streaming the error and something went wrong with that..

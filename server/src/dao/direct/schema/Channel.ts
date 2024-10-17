@@ -31,6 +31,34 @@ export interface ChannelTable extends WithUuid, WithCreatedAt, WithUpdatedAt {
   watermark: JSONColumnType<ChannelWatermark | null>;
 }
 
+type ChannelFields<Alias extends string = 'channel'> =
+  readonly `${Alias}.${keyof ChannelTable}`[];
+
+const ChannelTableKeys: (keyof ChannelTable)[] = [
+  'createdAt',
+  'disableFillerOverlay',
+  'duration',
+  'fillerRepeatCooldown',
+  'groupTitle',
+  'guideFlexTitle',
+  'guideMinimumDuration',
+  'icon',
+  'name',
+  'number',
+  'offline',
+  'startTime',
+  'stealth',
+  'streamMode',
+  'transcoding',
+  'updatedAt',
+  'uuid',
+  'watermark',
+];
+
+export const AllChannelTableKeys: ChannelFields = ChannelTableKeys.map(
+  (key) => `channel.${key}` as const,
+);
+
 export type Channel = Selectable<ChannelTable>;
 export type NewChannel = Insertable<Channel>;
 

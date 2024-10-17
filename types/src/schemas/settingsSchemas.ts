@@ -117,6 +117,8 @@ export const FfmpegSettingsSchema = z.object({
     .default('none'),
   disableChannelOverlay: z.boolean().default(false),
   disableChannelPrelude: z.boolean().default(false),
+  vaapiDevice: z.string().optional(),
+  vaapiDriver: z.string().optional(),
 });
 
 const mediaSourceId = z.custom<MediaSourceId>((val) => {
