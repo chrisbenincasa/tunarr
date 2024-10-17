@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.13.2](https://github.com/chrisbenincasa/tunarr/compare/v0.13.1...v0.13.2) (2024-10-16)
+
+
+### Bug Fixes
+
+* correct conditional for adding reconnect settings ([8c94af4](https://github.com/chrisbenincasa/tunarr/commit/8c94af4577cc6613b4ff82b126948ce3793d3fcb))
+* differentiate file/http stream source inputs ([#873](https://github.com/chrisbenincasa/tunarr/issues/873)) ([fc836b8](https://github.com/chrisbenincasa/tunarr/commit/fc836b82ba198ae86c5b7764deb709e7834624f0))
+* mark addedAt field as optional in all Plex types ([#874](https://github.com/chrisbenincasa/tunarr/issues/874)) ([f68e89f](https://github.com/chrisbenincasa/tunarr/commit/f68e89f283d1d52fe1bf1a4e0717cc3ae878abd3)), closes [#863](https://github.com/chrisbenincasa/tunarr/issues/863)
+* properly calculate filler show content counts ([#881](https://github.com/chrisbenincasa/tunarr/issues/881)) ([11abbc1](https://github.com/chrisbenincasa/tunarr/commit/11abbc1dcd71011b307951c540c5e3a33c408e44)), closes [#872](https://github.com/chrisbenincasa/tunarr/issues/872)
+* use window location for base URL in m3u clipboard copy when backend url is empty ([#880](https://github.com/chrisbenincasa/tunarr/issues/880)) ([a99d3ca](https://github.com/chrisbenincasa/tunarr/commit/a99d3ca3cd897f82245e86e93bb995fb0816fb32)), closes [#878](https://github.com/chrisbenincasa/tunarr/issues/878)
+
 ## [0.13.1](https://github.com/chrisbenincasa/tunarr/compare/v0.13.0...v0.13.1) (2024-10-15)
 
 
