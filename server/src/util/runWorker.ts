@@ -1,6 +1,8 @@
 import { cpus } from 'os';
 import PQueue from 'p-queue';
-import { Worker } from 'worker_threads';
+import { SHARE_ENV, Worker } from 'worker_threads';
+
+await import('tsx/esm');
 
 const queue = new PQueue({ concurrency: cpus().length });
 
@@ -10,11 +12,14 @@ export function runWorker<T>(
 ): Promise<T> {
   return queue.add<T>(
     async () => {
+      console.log(filenameWithoutExtension);
       const worker =
         process.env.NODE_ENV !== 'production'
-          ? new Worker(new URL(`${filenameWithoutExtension.toString()}.ts`), {
+          ? new Worker(new URL(import.meta.resolve('tsx/cli')), {
               workerData,
-              execArgv: ['--loader', 'ts-node/esm/transpile-only'],
+              // execArgv: ['--import', 'tsx/esm'],
+              env: SHARE_ENV,
+              argv: [`${filenameWithoutExtension.pathname}.ts`],
             })
           : new Worker(new URL(`${filenameWithoutExtension.toString()}.js`), {
               workerData,

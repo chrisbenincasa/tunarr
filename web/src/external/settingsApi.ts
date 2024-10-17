@@ -140,6 +140,44 @@ const jellyfinLogin = makeEndpoint({
   response: z.object({ accessToken: z.string().optional() }),
 });
 
+const systemHealthChecks = makeEndpoint({
+  method: 'get',
+  path: '/api/system/health',
+  alias: 'getSystemHealth',
+  response: z.record(
+    z.union([
+      z.object({ type: z.literal('healthy') }),
+      z.object({
+        type: z.union([
+          z.literal('info'),
+          z.literal('warning'),
+          z.literal('error'),
+        ]),
+        context: z.string(),
+      }),
+    ]),
+  ),
+});
+
+const runSystemFixer = makeEndpoint({
+  method: 'post',
+  path: '/api/system/fixers/:fixerId/run',
+  alias: 'runSystemFixer',
+  parameters: parametersBuilder()
+    .addParameter('fixerId', 'Path', z.string())
+    .build(),
+  response: z.any(),
+});
+
+const systemMigrationState = makeEndpoint({
+  method: 'get',
+  path: '/api/system/state',
+  alias: 'getSystemState',
+  response: z.object({
+    isFreshSettings: z.boolean().optional().default(true),
+  }),
+});
+
 export const endpoints = [
   getMediaSourcesEndpoint,
   createMediaSourceEndpoint,
@@ -156,4 +194,7 @@ export const endpoints = [
   getSystemSettings,
   updateSystemSettings,
   jellyfinLogin,
+  systemHealthChecks,
+  runSystemFixer,
+  systemMigrationState,
 ] as const;

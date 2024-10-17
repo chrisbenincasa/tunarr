@@ -34,7 +34,7 @@ import { metadataApiRouter } from './metadataApi.js';
 import { plexSettingsRouter } from './plexSettingsApi.js';
 import { programmingApi } from './programmingApi.js';
 import { sessionApiRouter } from './sessionApi.js';
-import { systemSettingsRouter } from './systemSettingsApi.js';
+import { systemApiRouter } from './systemApi.js';
 import { tasksApiRouter } from './tasksApi.js';
 import { xmlTvSettingsRouter } from './xmltvSettingsApi.js';
 
@@ -63,7 +63,7 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
     .register(plexSettingsRouter)
     .register(xmlTvSettingsRouter)
     .register(hdhrSettingsRouter)
-    .register(systemSettingsRouter)
+    .register(systemApiRouter)
     .register(guideRouter)
     .register(jellyfinApiRouter)
     .register(sessionApiRouter);
@@ -90,7 +90,7 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
         }
         return res.send({
           tunarr: tunarrVersion,
-          ffmpeg: v,
+          ffmpeg: v.versionString,
           nodejs: process.version.replace('v', ''),
         });
       } catch (err) {

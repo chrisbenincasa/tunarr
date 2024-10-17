@@ -3,8 +3,9 @@ import { exec } from 'child_process';
 import _, { isEmpty, isError, nth, some, trim } from 'lodash-es';
 import NodeCache from 'node-cache';
 import PQueue from 'p-queue';
+import { Nullable } from '../types/util.js';
 import { cacheGetOrSet } from '../util/cache.js';
-import { attempt, isNonEmptyString } from '../util/index.js';
+import { attempt, isNonEmptyString, parseIntOrNull } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory';
 import { NvidiaHardwareCapabilities } from './NvidiaHardwareCapabilities.js';
 
@@ -15,9 +16,18 @@ const CacheKeys = {
   NVIDIA: 'nvidia',
 } as const;
 
+export type FfmpegVersionResult = {
+  versionString: string;
+  majorVersion?: Nullable<number>;
+  minorVersion?: Nullable<number>;
+  patchVersion?: Nullable<number>;
+  versionDetails?: Nullable<string>;
+};
+
 const execQueue = new PQueue({ concurrency: 2 });
 
 const VersionExtractionPattern = /version\s+([^\s]+)\s+.*Copyright/;
+const VersionNumberExtractionPattern = /n?(\d+)\.(\d+)(\.(\d+))?[_\-.]*(.*)/;
 const CoderExtractionPattern = /[A-Z.]+\s([a-z0-9_-]+)\s*(.*)$/;
 const OptionsExtractionPattern = /^-([a-z_]+)\s+.*/;
 const NvidiaGpuArchPattern = /SM\s+(\d\.\d)/;
@@ -39,9 +49,11 @@ export class FFMPEGInfo {
   }
 
   private ffmpegPath: string;
+  private ffprobePath: string;
 
   constructor(opts: FfmpegSettings) {
     this.ffmpegPath = opts.ffmpegExecutablePath;
+    this.ffprobePath = opts.ffprobeExecutablePath;
   }
 
   async seed() {
@@ -60,21 +72,63 @@ export class FFMPEGInfo {
     }
   }
 
-  async getVersion() {
+  async getVersion(): Promise<FfmpegVersionResult> {
     try {
-      const s = await this.getFfmpegStdout(['-hide_banner', '-version']);
-      const m = s.match(VersionExtractionPattern);
-      if (!m) {
-        this.logger.warn(
-          'ffmpeg -version command output not in the expected format: ' + s,
-        );
-        return s;
-      }
-      return m[1];
+      const s = await this.getFfmpegStdout(['-version']);
+      return this.parseVersion(s, 'ffmpeg');
     } catch (err) {
       this.logger.error(err);
-      return 'unknown';
+      return { versionString: 'unknown' };
     }
+  }
+
+  async getFfprobeVersion(): Promise<FfmpegVersionResult> {
+    try {
+      const s = await this.getFfprobeStdout(['-version']);
+      return this.parseVersion(s, 'ffprobe');
+    } catch (err) {
+      this.logger.error(err);
+      return { versionString: 'unknown' };
+    }
+  }
+
+  private parseVersion(output: string, app: string) {
+    const m = output.match(VersionExtractionPattern);
+    if (!m) {
+      this.logger.warn(
+        `${app} -version command output not in the expected format: ${output}`,
+      );
+      return { versionString: output };
+    }
+    const versionString = m[1];
+
+    const extractedNums = versionString.match(VersionNumberExtractionPattern);
+
+    if (!extractedNums) {
+      return { versionString };
+    }
+
+    const majorString = nth(extractedNums, 1);
+    const minorString = nth(extractedNums, 2);
+    const patchString = nth(extractedNums, 4);
+    const rest = nth(extractedNums, 5);
+    const majorNum = isNonEmptyString(majorString)
+      ? parseIntOrNull(majorString)
+      : null;
+    const minorNum = isNonEmptyString(minorString)
+      ? parseIntOrNull(minorString)
+      : null;
+    const patchNum = isNonEmptyString(patchString)
+      ? parseIntOrNull(patchString)
+      : null;
+
+    return {
+      versionString,
+      majorVersion: majorNum,
+      minorVersion: minorNum,
+      patchVersion: patchNum,
+      versionDetails: rest,
+    };
   }
 
   async getAvailableAudioEncoders() {
@@ -226,11 +280,26 @@ export class FFMPEGInfo {
     args: string[],
     swallowError: boolean = false,
   ): Promise<string> {
+    return this.getStdout(this.ffmpegPath, args, swallowError);
+  }
+
+  private getFfprobeStdout(
+    args: string[],
+    swallowError: boolean = false,
+  ): Promise<string> {
+    return this.getStdout(this.ffprobePath, args, swallowError);
+  }
+
+  private getStdout(
+    executable: string,
+    args: string[],
+    swallowError: boolean = false,
+  ): Promise<string> {
     return execQueue.add(
       async () =>
         await new Promise((resolve, reject) => {
           exec(
-            `"${this.ffmpegPath}" ${args.join(' ')}`,
+            `"${executable}" ${args.join(' ')}`,
             function (error, stdout, stderr) {
               if (error !== null && !swallowError) {
                 reject(error);

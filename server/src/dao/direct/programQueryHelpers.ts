@@ -44,6 +44,7 @@ export const MinimalProgramGroupingFields: ProgramGroupingFields = [
   'programGrouping.uuid',
   'programGrouping.title',
   'programGrouping.year',
+  // 'programGrouping.index',
 ];
 
 type FillerShowFields = readonly `fillerShow.${keyof RawFillerShow}`[];
