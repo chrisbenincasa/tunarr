@@ -144,16 +144,6 @@ export class TVGuideService {
       this.currentUpdateTime = now;
       this.currentEndTime = now + guideDuration.asMilliseconds();
 
-      this.eventService.push({
-        type: 'xmltv',
-        message: `Started building tv-guide at = ${dayjs(now).format()}`,
-        module: 'xmltv',
-        detail: {
-          time: now,
-        },
-        level: 'info',
-      });
-
       this.currentChannels = values(
         mapValues(
           await this.channelDb.loadAllLineups(),
@@ -799,11 +789,10 @@ export class TVGuideService {
   }
 
   private async refreshXML() {
-    // const xmltvSettings = (await getSettings()).xmlTvSettings();
     await this.xmltv.write(values(this.cachedGuide));
     this.eventService.push({
       type: 'xmltv',
-      message: `XMLTV updated at server time = ${new Date().toISOString()}`,
+      message: `XMLTV updated at server time = ${dayjs().format()}`,
       module: 'xmltv',
       detail: {
         time: new Date().getTime(),

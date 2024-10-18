@@ -478,6 +478,7 @@ export class ChannelDB {
     try {
       await this.markLineupFileForDeletion(channelId);
       marked = true;
+
       const ref = em.getReference(Channel, channelId);
       await em.remove(ref).flush();
       // Best effort remove references to this channel
@@ -505,6 +506,8 @@ export class ChannelDB {
         channelId,
         e,
       );
+
+      throw e;
     }
   }
 

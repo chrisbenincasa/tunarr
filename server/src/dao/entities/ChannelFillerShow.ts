@@ -8,7 +8,11 @@ export class ChannelFillerShow {
   @ManyToOne({ primary: true, entity: () => FillerShow })
   fillerShow!: Ref<FillerShow>;
 
-  @ManyToOne({ primary: true, entity: () => Channel })
+  @ManyToOne({
+    primary: true,
+    entity: () => Channel,
+    deleteRule: 'cascade',
+  })
   channel!: Ref<Channel>;
 
   @Property()
