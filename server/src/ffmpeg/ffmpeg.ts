@@ -465,14 +465,11 @@ export class FFMPEG {
         ? '/dev/dri/renderD128'
         : undefined;
       ffmpegArgs.push(
-        '-init_hw_device',
-        'vaapi=hw' + (isNonEmptyString(vaapiDevice) ? `:${vaapiDevice}` : ''),
-        '-hwaccel',
-        'vaapi',
-        '-hwaccel_output_format',
-        'vaapi',
-        '-hwaccel_device',
-        'hw',
+        // Crude workaround for no av1 decoding support
+        ...(streamStats?.videoCodec === 'av1' ? [] : ['-hwaccel', 'vaapi']),
+        ...(isNonEmptyString(vaapiDevice)
+          ? ['-vaapi_device', vaapiDevice]
+          : []),
       );
     }
 
@@ -1009,7 +1006,7 @@ export class FFMPEG {
     //If there is a filter complex, add it.
     if (isNonEmptyString(filterComplex)) {
       if (this.opts.hardwareAccelerationMode === 'vaapi') {
-        ffmpegArgs.push('-filter_hw_device', 'hw');
+        // ffmpegArgs.push('-filter_hw_device', 'hw');
       }
       ffmpegArgs.push(`-filter_complex`, filterComplex.slice(1));
       if (this.alignAudio) {

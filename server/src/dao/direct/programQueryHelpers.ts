@@ -11,7 +11,15 @@ import { ProgramType } from '../entities/Program.ts';
 import { directDbAccess } from './directDbAccess.js';
 import type { FillerShowTable as RawFillerShow } from './schema/FillerShow.d.ts';
 import { ProgramTable as RawProgram } from './schema/Program.ts';
+import {
+  ProgramExternalId,
+  ProgramExternalIdFieldsWithAlias,
+} from './schema/ProgramExternalId.js';
 import type { ProgramGroupingTable as RawProgramGrouping } from './schema/ProgramGrouping.d.ts';
+import {
+  ProgramGroupingExternalId,
+  ProgramGroupingExternalIdFieldsWithAlias,
+} from './schema/ProgramGroupingExternalId.js';
 import type { DB } from './schema/db.ts';
 
 type ProgramGroupingFields<Alias extends string = 'programGrouping'> =
@@ -112,11 +120,18 @@ export function withTrackAlbum(
   ).as('trackAlbum');
 }
 
-export function withProgramExternalIds(eb: ExpressionBuilder<DB, 'program'>) {
+export function withProgramExternalIds(
+  eb: ExpressionBuilder<DB, 'program'>,
+  externalIdFields: (keyof ProgramExternalId)[] = [
+    'externalKey',
+    'sourceType',
+    'externalSourceId',
+  ],
+) {
   return jsonArrayFrom(
     eb
       .selectFrom('programExternalId as eid')
-      .select(['eid.sourceType', 'eid.externalSourceId', 'eid.externalKey'])
+      .select(ProgramExternalIdFieldsWithAlias(externalIdFields, 'eid'))
       .whereRef('eid.programUuid', '=', 'program.uuid'),
   ).as('externalIds');
 }
@@ -149,7 +164,23 @@ export function withFillerShow(eb: ExpressionBuilder<DB, 'channelFillerShow'>) {
   ).as('fillerShow');
 }
 
-type ProgramJoins = {
+export function withProgramGroupingExternalIds(
+  eb: ExpressionBuilder<DB, 'programGrouping'>,
+  externalIdFields: (keyof ProgramGroupingExternalId)[] = [
+    'externalKey',
+    'sourceType',
+    'externalSourceId',
+  ],
+) {
+  return jsonArrayFrom(
+    eb
+      .selectFrom('programGroupingExternalId as eid')
+      .select(ProgramGroupingExternalIdFieldsWithAlias(externalIdFields, 'eid'))
+      .whereRef('eid.groupUuid', '=', 'programGrouping.uuid'),
+  ).as('externalIds');
+}
+
+export type ProgramJoins = {
   trackAlbum: boolean | ProgramGroupingFields;
   trackArtist: boolean | ProgramGroupingFields;
   tvShow: boolean | ProgramGroupingFields;
@@ -163,6 +194,14 @@ const defaultProgramJoins: ProgramJoins = {
   tvShow: false,
   tvSeason: false,
   customShows: false,
+};
+
+export const AllProgramJoins: ProgramJoins = {
+  trackAlbum: true,
+  trackArtist: true,
+  tvSeason: true,
+  tvShow: true,
+  customShows: true,
 };
 
 type Replace<
@@ -223,7 +262,7 @@ export const ProgramUpsertFields: ProgramUpsertFields[] =
     (f) => f !== 'program.uuid' && f !== 'program.createdAt',
   ).map((v) => v.replace('program.', 'excluded.')) as ProgramUpsertFields[];
 
-type WithProgramsOptions = {
+export type WithProgramsOptions = {
   joins?: Partial<ProgramJoins>;
   fields?: ProgramFields;
 };
@@ -233,7 +272,7 @@ const defaultWithProgramOptions: DeepRequired<WithProgramsOptions> = {
   fields: AllProgramFields,
 };
 
-function baseWithProgamsExpressionBuilder(
+function baseWithProgramsExpressionBuilder(
   eb: ExpressionBuilder<
     DB,
     | 'channel'
@@ -241,6 +280,9 @@ function baseWithProgamsExpressionBuilder(
     | 'channelFallback'
     | 'fillerShowContent'
     | 'fillerShow'
+    | 'customShow'
+    | 'customShowContent'
+    | 'programExternalId'
   >,
   opts: DeepRequired<WithProgramsOptions>,
 ) {
@@ -297,7 +339,7 @@ export function withPrograms(
 ) {
   const mergedOpts = merge({}, defaultWithProgramOptions, options);
   return jsonArrayFrom(
-    baseWithProgamsExpressionBuilder(eb, mergedOpts).innerJoin(
+    baseWithProgramsExpressionBuilder(eb, mergedOpts).innerJoin(
       'channelPrograms',
       (join) =>
         join
@@ -307,13 +349,51 @@ export function withPrograms(
   ).as('programs');
 }
 
+export function withProgramByExternalId(
+  eb: ExpressionBuilder<DB, 'programExternalId'>,
+  options: WithProgramsOptions = defaultWithProgramOptions,
+) {
+  const mergedOpts = merge({}, defaultWithProgramOptions, options);
+  return jsonObjectFrom(
+    baseWithProgramsExpressionBuilder(eb, mergedOpts).whereRef(
+      'programExternalId.programUuid',
+      '=',
+      'program.uuid',
+    ),
+  ).as('program');
+}
+
+export function withProgramChannels(eb: ExpressionBuilder<DB, 'program'>) {
+  return jsonArrayFrom(
+    eb
+      .selectFrom('channelPrograms')
+      .whereRef('channelPrograms.programUuid', '=', 'program.uuid')
+      .innerJoin('channel', 'channel.uuid', 'channelPrograms.channelUuid')
+      .select(['channel.uuid', 'channel.name', 'channel.number']),
+  ).as('channels');
+}
+
+export function withProgramFillerShows(eb: ExpressionBuilder<DB, 'program'>) {
+  return jsonArrayFrom(
+    eb
+      .selectFrom('fillerShowContent')
+      .whereRef('fillerShowContent.programUuid', '=', 'program.uuid')
+      .innerJoin(
+        'fillerShow',
+        'fillerShow.uuid',
+        'fillerShowContent.fillerShowUuid',
+      )
+      .select(['fillerShow.uuid']),
+  ).as('fillerShows');
+}
+
 export function withFallbackPrograms(
   eb: ExpressionBuilder<DB, 'channelFallback' | 'channel'>,
   options: WithProgramsOptions = defaultWithProgramOptions,
 ) {
   const mergedOpts = merge({}, defaultWithProgramOptions, options);
   return jsonArrayFrom(
-    baseWithProgamsExpressionBuilder(eb, mergedOpts).innerJoin(
+    baseWithProgramsExpressionBuilder(eb, mergedOpts).innerJoin(
       'channelFallback',
       (join) => join.onRef('channelFallback.programUuid', '=', 'program.uuid'),
     ),
@@ -326,14 +406,32 @@ export function withFillerPrograms(
 ) {
   const mergedOpts = merge({}, defaultWithProgramOptions, options);
   return jsonArrayFrom(
-    baseWithProgamsExpressionBuilder(eb, mergedOpts)
+    baseWithProgramsExpressionBuilder(eb, mergedOpts)
       .select(['fillerShowContent.index'])
+      .orderBy('fillerShowContent.index asc')
       .innerJoin('fillerShowContent', (join) =>
         join
           .onRef('fillerShowContent.programUuid', '=', 'program.uuid')
           .onRef('fillerShow.uuid', '=', 'fillerShowContent.fillerShowUuid'),
       ),
   ).as('fillerContent');
+}
+
+export function withCustomShowPrograms(
+  eb: ExpressionBuilder<DB, 'customShow' | 'customShowContent'>,
+  options: WithProgramsOptions = defaultWithProgramOptions,
+) {
+  const mergedOpts = merge({}, defaultWithProgramOptions, options);
+  return jsonArrayFrom(
+    baseWithProgramsExpressionBuilder(eb, mergedOpts)
+      .select(['customShowContent.index as index'])
+      .orderBy('customShowContent.index asc')
+      .innerJoin('customShowContent', (join) =>
+        join
+          .onRef('customShowContent.contentUuid', '=', 'program.uuid')
+          .onRef('customShow.uuid', '=', 'customShowContent.customShowUuid'),
+      ),
+  ).as('customShowContent');
 }
 
 type ProgramRelationCaseBuilder = CaseWhenBuilder<

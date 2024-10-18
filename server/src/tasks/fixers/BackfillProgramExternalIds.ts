@@ -1,20 +1,24 @@
 import { PlexTerminalMedia } from '@tunarr/types/plex';
+import dayjs from 'dayjs';
 import {
   difference,
   first,
   forEach,
+  isEmpty,
   isError,
   isUndefined,
   keys,
+  last,
   trimEnd,
 } from 'lodash-es';
+import { v4 } from 'uuid';
 import { ProgramExternalIdType } from '../../dao/custom_types/ProgramExternalIdType.ts';
 import { ProgramSourceType } from '../../dao/custom_types/ProgramSourceType.js';
-import { getEm } from '../../dao/dataSource.ts';
-import { MediaSource } from '../../dao/entities/MediaSource.js';
-import { Program } from '../../dao/entities/Program.ts';
-import { ProgramExternalId } from '../../dao/entities/ProgramExternalId.js';
-import { upsertProgramExternalIds_deprecated } from '../../dao/programExternalIdHelpers.ts';
+import { directDbAccess } from '../../dao/direct/directDbAccess.ts';
+import { withProgramExternalIds } from '../../dao/direct/programQueryHelpers.ts';
+import { Program } from '../../dao/direct/schema/Program.ts';
+import { NewProgramExternalId } from '../../dao/direct/schema/ProgramExternalId.ts';
+import { upsertRawProgramExternalIds } from '../../dao/programExternalIdHelpers.ts';
 import { isQueryError } from '../../external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.ts';
 import { PlexApiClient } from '../../external/plex/PlexApiClient.js';
@@ -24,6 +28,7 @@ import {
   attempt,
   attemptSync,
   groupByUniqProp,
+  isNonEmptyString,
   wait,
 } from '../../util/index.js';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
@@ -38,36 +43,41 @@ export class BackfillProgramExternalIds extends Fixer {
   canRunInBackground: boolean = false;
 
   async runInternal(): Promise<void> {
-    const em = getEm();
+    const getNextPage = (offset?: string) => {
+      return directDbAccess()
+        .selectFrom('program')
+        .selectAll()
+        .select(withProgramExternalIds)
+        .where('sourceType', '=', ProgramSourceType.PLEX)
+        .$if(isNonEmptyString(offset), (eb) =>
+          eb.where('program.uuid', '>', offset!),
+        )
+        .where((eb) =>
+          eb.not(
+            eb.exists(
+              eb
+                .selectFrom('programExternalId')
+                .select('programExternalId.uuid')
+                .whereRef('programExternalId.programUuid', '=', 'program.uuid')
+                .where(
+                  'programExternalId.sourceType',
+                  '=',
+                  ProgramExternalIdType.PLEX_GUID,
+                ),
+            ),
+          ),
+        )
+        .limit(100)
+        .orderBy('program.uuid asc')
+        .execute();
+    };
 
-    let cursor = await em.findByCursor(
-      Program,
-      {
-        sourceType: ProgramSourceType.PLEX,
-        externalIds: {
-          $none: {
-            sourceType: ProgramExternalIdType.PLEX_GUID,
-          },
-        },
-      },
-      {
-        first: 100,
-        populate: ['externalIds'],
-        orderBy: { uuid: 'asc' },
-      },
-    );
-
-    this.#logger.debug(
-      'Found %d items missing plex-guid external IDs!',
-      cursor.totalCount,
-    );
+    let programs = await getNextPage();
 
     const plexConnections: Record<string, PlexApiClient> = {};
-    while (cursor.length > 0) {
+    while (programs.length > 0) {
       await wait(50);
       // process
-      const programs = cursor.items;
-
       const programsByPlexId = groupByUniqProp(programs, 'externalSourceId');
 
       const missingServers = difference(
@@ -75,9 +85,11 @@ export class BackfillProgramExternalIds extends Fixer {
         keys(plexConnections),
       );
 
-      const serverSettings = await em.find(MediaSource, {
-        name: { $in: missingServers },
-      });
+      const serverSettings = await directDbAccess()
+        .selectFrom('mediaSource')
+        .selectAll()
+        .where('name', 'in', missingServers)
+        .execute();
 
       forEach(serverSettings, (server) => {
         plexConnections[server.name] = MediaSourceApiFactory().get(server);
@@ -100,7 +112,7 @@ export class BackfillProgramExternalIds extends Fixer {
           );
         } else {
           const upsertResult = await attempt(() =>
-            upsertProgramExternalIds_deprecated(result.result),
+            upsertRawProgramExternalIds(result.result),
           );
           if (isError(upsertResult)) {
             this.#logger.warn(
@@ -112,23 +124,12 @@ export class BackfillProgramExternalIds extends Fixer {
         }
       }
 
-      // next
-      cursor = await em.findByCursor(
-        Program,
-        {
-          externalIds: {
-            $none: {
-              sourceType: ProgramExternalIdType.PLEX_GUID,
-            },
-          },
-        },
-        {
-          first: 100,
-          after: cursor.endCursor ?? undefined,
-          populate: ['externalIds'],
-          orderBy: { uuid: 'asc' },
-        },
-      );
+      if (isEmpty(programs)) {
+        // We should've done this already but let's just be safe.
+        break;
+      }
+
+      programs = await getNextPage(last(programs)?.uuid);
     }
   }
 
@@ -150,24 +151,21 @@ export class BackfillProgramExternalIds extends Fixer {
 
     const metadata = metadataResult.data as PlexTerminalMedia;
 
-    const em = getEm();
-
     // We're here, might as well use the real thing.
     const firstPart = first(first(metadata.Media)?.Part);
 
-    const entities = [
-      em.create(
-        ProgramExternalId,
-        {
-          externalFilePath: firstPart?.key ?? program.plexFilePath,
-          directFilePath: firstPart?.file ?? program.filePath,
-          externalKey: metadata.ratingKey,
-          externalSourceId: plex.serverName,
-          program,
-          sourceType: ProgramExternalIdType.PLEX,
-        },
-        { persist: false },
-      ),
+    const entities: NewProgramExternalId[] = [
+      {
+        externalFilePath: firstPart?.key ?? program.plexFilePath,
+        directFilePath: firstPart?.file ?? program.filePath,
+        externalKey: metadata.ratingKey,
+        externalSourceId: plex.serverName,
+        programUuid: program.uuid,
+        sourceType: ProgramExternalIdType.PLEX,
+        uuid: v4(),
+        createdAt: +dayjs(),
+        updatedAt: +dayjs(),
+      },
     ];
 
     attemptSync(() => {
@@ -178,17 +176,14 @@ export class BackfillProgramExternalIds extends Fixer {
         return;
       }
 
-      const eid = em.create(
-        ProgramExternalId,
-        {
-          externalKey: metadata.guid,
-          program,
-          sourceType: ProgramExternalIdType.PLEX_GUID,
-        },
-        { persist: false },
-      );
-
-      entities.push(eid);
+      entities.push({
+        uuid: v4(),
+        createdAt: +dayjs(),
+        updatedAt: +dayjs(),
+        programUuid: program.uuid,
+        sourceType: ProgramExternalIdType.PLEX_GUID,
+        externalKey: metadata.guid,
+      });
     });
 
     return entities;

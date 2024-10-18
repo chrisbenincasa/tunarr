@@ -2,6 +2,8 @@ import {
   CreateFillerListRequest,
   UpdateFillerListRequest,
 } from '@tunarr/types/api';
+import dayjs from 'dayjs';
+import { CaseWhenBuilder } from 'kysely';
 import { jsonArrayFrom, jsonBuildObject } from 'kysely/helpers/sqlite';
 import {
   filter,
@@ -11,23 +13,27 @@ import {
   isNil,
   isUndefined,
   map,
+  mapValues,
+  reduce,
   reject,
   round,
   uniq,
   values,
 } from 'lodash-es';
+import { v4 } from 'uuid';
 import { ChannelCache } from '../stream/ChannelCache.js';
-import { isNonEmptyString, mapAsyncSeq } from '../util/index.js';
+import { isNonEmptyString } from '../util/index.js';
 import { ProgramConverter } from './converters/programConverters.js';
-import { getEm } from './dataSource.js';
 import { ChannelFillerShowWithContent } from './direct/derivedTypes.js';
 import { directDbAccess } from './direct/directDbAccess.js';
 import { withFillerPrograms } from './direct/programQueryHelpers.js';
+import {
+  NewFillerShow,
+  NewFillerShowContent,
+} from './direct/schema/FillerShow.js';
 import { programExternalIdString } from './direct/schema/Program.js';
-import { Channel as ChannelEntity } from './entities/Channel.js';
-import { ChannelFillerShow } from './entities/ChannelFillerShow.js';
-import { FillerListContent } from './entities/FillerListContent.js';
-import { FillerShow, FillerShowId } from './entities/FillerShow.js';
+import { DB } from './direct/schema/db.js';
+import { FillerShowId } from './entities/FillerShow.js';
 import { ProgramDB } from './programDB.js';
 import { createPendingProgramIndexMap } from './programHelpers.js';
 
@@ -40,13 +46,16 @@ export class FillerDB {
   ) {}
 
   getFiller(id: FillerShowId) {
-    return getEm()
-      .repo(FillerShow)
-      .findOne(id, { populate: ['content.uuid'] });
+    return directDbAccess()
+      .selectFrom('fillerShow')
+      .where('uuid', '=', id)
+      .selectAll()
+      .select((eb) => withFillerPrograms(eb, { fields: ['program.uuid'] }))
+      .$narrowType<{ uuid: FillerShowId }>()
+      .executeTakeFirst();
   }
 
   async saveFiller(id: FillerShowId, updateRequest: UpdateFillerListRequest) {
-    const em = getEm();
     const filler = await this.getFiller(id);
 
     if (isNil(filler)) {
@@ -67,42 +76,58 @@ export class FillerDB {
         updateRequest.programs,
       );
 
-      const persistedCustomShowContent = map(persisted, (p) =>
-        em.create(FillerListContent, {
-          fillerList: filler.uuid,
-          content: p.id!,
-          index: programIndexById[p.id!],
-        }),
+      const persistedFillerShowContent = map(
+        persisted,
+        (p) =>
+          ({
+            fillerShowUuid: filler.uuid,
+            programUuid: p.id!,
+            index: programIndexById[p.id!],
+          }) satisfies NewFillerShowContent,
       );
-      const newCustomShowContent = map(upsertedPrograms, (p) =>
-        em.create(FillerListContent, {
-          fillerList: filler.uuid,
-          content: p.uuid,
-          index: programIndexById[programExternalIdString(p)],
-        }),
+      const newFillerShowContent = map(
+        upsertedPrograms,
+        (p) =>
+          ({
+            fillerShowUuid: filler.uuid,
+            programUuid: p.uuid,
+            index: programIndexById[programExternalIdString(p)],
+          }) satisfies NewFillerShowContent,
       );
 
-      await em.nativeDelete(FillerListContent, { fillerList: filler.uuid });
-      await em.persistAndFlush([
-        ...persistedCustomShowContent,
-        ...newCustomShowContent,
-      ]);
+      await directDbAccess()
+        .transaction()
+        .execute(async (tx) => {
+          await tx
+            .deleteFrom('fillerShowContent')
+            .where('fillerShowContent.fillerShowUuid', '=', filler.uuid)
+            .execute();
+          await directDbAccess()
+            .insertInto('fillerShowContent')
+            .values([...persistedFillerShowContent, ...newFillerShowContent])
+            .execute();
+        });
     }
 
     if (updateRequest.name) {
-      em.assign(filler, { name: updateRequest.name });
+      await directDbAccess()
+        .updateTable('fillerShow')
+        .where('uuid', '=', filler.uuid)
+        .set({ name: updateRequest.name })
+        .execute();
     }
 
-    await em.flush();
-
-    return await em.refresh(filler);
+    return await this.getFiller(filler.uuid);
   }
 
   async createFiller(createRequest: CreateFillerListRequest): Promise<string> {
-    const em = getEm();
-    const filler = em.repo(FillerShow).create({
+    const now = +dayjs();
+    const filler = {
+      uuid: v4(),
+      updatedAt: now,
+      createdAt: now,
       name: createRequest.name,
-    });
+    } satisfies NewFillerShow;
 
     const programIndexById = createPendingProgramIndexMap(
       createRequest.programs,
@@ -114,82 +139,137 @@ export class FillerDB {
       createRequest.programs,
     );
 
-    await em.persistAndFlush(filler);
+    await directDbAccess().insertInto('fillerShow').values(filler).execute();
 
-    const persistedCustomShowContent = map(persisted, (p) =>
-      em.create(FillerListContent, {
-        fillerList: filler.uuid,
-        content: p.id!,
-        index: programIndexById[p.id!],
-      }),
+    const persistedFillerShowContent = map(
+      persisted,
+      (p) =>
+        ({
+          fillerShowUuid: filler.uuid,
+          programUuid: p.id!,
+          index: programIndexById[p.id!],
+        }) satisfies NewFillerShowContent,
     );
-    const newCustomShowContent = map(upsertedPrograms, (p) =>
-      em.create(FillerListContent, {
-        fillerList: filler.uuid,
-        content: p.uuid,
-        index: programIndexById[programExternalIdString(p)],
-      }),
+    const newFillerShowContent = map(
+      upsertedPrograms,
+      (p) =>
+        ({
+          fillerShowUuid: filler.uuid,
+          programUuid: p.uuid,
+          index: programIndexById[programExternalIdString(p)],
+        }) satisfies NewFillerShowContent,
     );
 
-    await em
-      .persist([...persistedCustomShowContent, ...newCustomShowContent])
-      .flush();
+    await directDbAccess()
+      .insertInto('fillerShowContent')
+      .values([...persistedFillerShowContent, ...newFillerShowContent])
+      .execute();
 
     return filler.uuid;
   }
 
   // Returns all channels a given filler list is a part of
   async getFillerChannels(id: string) {
-    const channels = await getEm()
-      .createQueryBuilder(ChannelEntity, 'channel')
-      .select(['number', 'name'], true)
-      .where({ fillers: { uuid: id } })
+    return directDbAccess()
+      .selectFrom('channelFillerShow')
+      .where('channelFillerShow.fillerShowUuid', '=', id)
+      .innerJoin('channel', 'channel.uuid', 'channelFillerShow.channelUuid')
+      .select(['channel.name', 'channel.number'])
       .execute();
-    return channels.map((channel) => ({
-      name: channel.name,
-      number: channel.number,
-    }));
   }
 
   async deleteFiller(id: FillerShowId): Promise<void> {
-    const em = getEm();
+    await directDbAccess()
+      .transaction()
+      .execute(async (tx) => {
+        const relevantChannelFillers = await tx
+          .selectFrom('channelFillerShow')
+          .selectAll()
+          .where('fillerShowUuid', '=', id)
+          .execute();
 
-    await em.transactional(async (em) => {
-      const relevantChannelFillers = await em.find(ChannelFillerShow, {
-        fillerShow: id,
-      });
-      const allRelevantChannelFillers = await em.find(ChannelFillerShow, {
-        channel: {
-          $in: uniq(map(relevantChannelFillers, (cf) => cf.channel.uuid)),
-        },
-      });
-      const fillersByChannel = groupBy(
-        allRelevantChannelFillers,
-        (cf) => cf.channel.uuid,
-      );
+        const allRelevantChannelFillers = await tx
+          .selectFrom('channelFillerShow')
+          .selectAll()
+          .where(
+            'channelFillerShow.channelUuid',
+            'in',
+            uniq(map(relevantChannelFillers, (cf) => cf.channelUuid)),
+          )
+          .execute();
 
-      forEach(values(fillersByChannel), (cfs) => {
-        const removedWeight = find(cfs, (cf) => cf.fillerShow.uuid === id)
-          ?.weight;
-        if (isUndefined(removedWeight)) {
-          return;
-        }
-        const remainingFillers = reject(cfs, (cf) => cf.fillerShow.uuid === id);
-        const distributeWeight =
-          remainingFillers.length > 0
-            ? round(removedWeight / remainingFillers.length, 2)
-            : 0;
-        forEach(remainingFillers, (filler) => {
-          filler.weight += distributeWeight;
+        const fillersByChannel = groupBy(
+          allRelevantChannelFillers,
+          (cf) => cf.channelUuid,
+        );
+
+        forEach(values(fillersByChannel), (cfs) => {
+          const removedWeight = find(cfs, (cf) => cf.fillerShowUuid === id)
+            ?.weight;
+          if (isUndefined(removedWeight)) {
+            return;
+          }
+          const remainingFillers = reject(
+            cfs,
+            (cf) => cf.fillerShowUuid === id,
+          );
+          const distributeWeight =
+            remainingFillers.length > 0
+              ? round(removedWeight / remainingFillers.length, 2)
+              : 0;
+          forEach(remainingFillers, (filler) => {
+            filler.weight += distributeWeight;
+          });
         });
-      });
 
-      await em.removeAndFlush([
-        ...relevantChannelFillers,
-        em.getReference(FillerShow, id),
-      ]);
-      await em.flush();
-    });
+        await tx
+          .deleteFrom('channelFillerShow')
+          .where('channelFillerShow.fillerShowUuid', '=', id)
+          .execute();
+
+        await tx
+          .updateTable('channelFillerShow')
+          .set(({ eb }) => {
+            const weight = reduce(
+              mapValues(fillersByChannel, (cfs) =>
+                reject(cfs, (cf) => cf.fillerShowUuid === id),
+              ),
+              (builder, v) => {
+                return reduce(
+                  v,
+                  (b, cf) =>
+                    b
+                      .when(
+                        eb.and([
+                          eb(
+                            'channelFillerShow.fillerShowUuid',
+                            '=',
+                            cf.fillerShowUuid,
+                          ),
+                          eb(
+                            'channelFillerShow.channelUuid',
+                            '=',
+                            cf.channelUuid,
+                          ),
+                        ]),
+                      )
+                      .then(cf.weight),
+                  builder,
+                );
+              },
+              eb.case() as unknown as CaseWhenBuilder<
+                DB,
+                'channelFillerShow',
+                unknown,
+                number
+              >,
+            )
+              .else(eb.ref('channelFillerShow.weight'))
+              .end();
+            return { weight };
+          })
+          .execute();
+      });
 
     this.channelCache.clear();
     return;
@@ -225,24 +305,23 @@ export class FillerDB {
   }
 
   async getFillerPrograms(id: FillerShowId) {
-    const programs = await getEm()
-      .repo(FillerListContent)
-      .find(
-        { fillerList: id },
-        {
-          populate: [
-            'content',
-            'content.album',
-            'content.artist',
-            'content.tvShow',
-            'content.season',
-          ],
-          orderBy: { index: 'DESC' },
-        },
-      );
+    const programs = await directDbAccess()
+      .selectFrom('fillerShow')
+      .where('fillerShow.uuid', '=', id)
+      .select((eb) =>
+        withFillerPrograms(eb, {
+          joins: {
+            trackAlbum: true,
+            trackArtist: true,
+            tvShow: true,
+            tvSeason: true,
+          },
+        }),
+      )
+      .executeTakeFirst();
 
-    return await mapAsyncSeq(programs, async (fillerContent) =>
-      this.#programConverter.entityToContentProgram(fillerContent.content),
+    return map(programs?.fillerContent, (program) =>
+      this.#programConverter.directEntityToContentProgramSync(program, []),
     );
   }
 

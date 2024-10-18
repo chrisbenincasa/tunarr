@@ -29,6 +29,7 @@ export type ProgramWithRelations = RawType.Program & {
 export type ChannelWithRelations = RawType.Channel & {
   programs?: ProgramWithRelations[];
   fillerContent?: ProgramWithRelations[];
+  fillerShows?: RawType.ChannelFillerShow[];
 };
 
 export type ChannelWithRequiredJoins<Joins extends keyof RawType.Channel> =

@@ -1,11 +1,17 @@
 import { jsonObjectFrom } from 'kysely/helpers/sqlite';
+import { first } from 'lodash-es';
 import { PassThrough } from 'stream';
 import { z } from 'zod';
 import { createOfflineStreamLineupItem } from '../../dao/derived_types/StreamLineup.ts';
 import { directDbAccess } from '../../dao/direct/directDbAccess.ts';
-import { AllChannelTableKeys } from '../../dao/direct/schema/Channel.ts';
+import {
+  AllChannelTableKeys,
+  Channel,
+} from '../../dao/direct/schema/Channel.ts';
+import { Program } from '../../dao/direct/schema/Program.ts';
 import { ProgramType } from '../../dao/entities/Program.ts';
 import { MpegTsOutputFormat } from '../../ffmpeg/OutputFormat.ts';
+import { serverContext } from '../../serverContext.ts';
 import { OfflineProgramStream } from '../../stream/OfflinePlayer.ts';
 import { PlayerContext } from '../../stream/PlayerStreamContext.ts';
 import { ProgramStream } from '../../stream/ProgramStream.ts';
@@ -80,7 +86,7 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
     return res.header('Content-Type', 'video/mp2t').send(out);
   });
 
-  fastify.get('/streams/random', async (req, res) => {
+  fastify.get('/streams/random', async (_, res) => {
     const program = await directDbAccess()
       .selectFrom('program')
       .orderBy((ob) => ob.fn('random'))
@@ -108,10 +114,61 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
       return res.status(404);
     }
 
-    const lineupItem = req.serverCtx
+    const out = await initStream(program, firstChannel);
+    return res.header('Content-Type', 'video/mp2t').send(out);
+  });
+
+  fastify.get(
+    '/streams/programs/:id',
+    {
+      schema: {
+        params: z.object({
+          id: z.string(),
+        }),
+      },
+    },
+    async (req, res) => {
+      const program = await req.serverCtx.programDB.getProgramById(
+        req.params.id,
+      );
+      if (!program) {
+        return res.status(404).send();
+      }
+
+      const channels = await directDbAccess()
+        .selectFrom('channelPrograms')
+        .where('programUuid', '=', program.uuid)
+        .select((eb) =>
+          jsonObjectFrom(
+            eb
+              .selectFrom('channel')
+              .whereRef('channel.uuid', '=', 'channelPrograms.channelUuid')
+              .select(AllChannelTableKeys),
+          ).as('channel'),
+        )
+        .execute();
+
+      let firstChannel = channels?.[0].channel;
+
+      if (!firstChannel) {
+        firstChannel = await req.serverCtx.channelDB
+          .getAllChannels()
+          .then((channels) => first(channels) ?? null);
+        if (!firstChannel) {
+          return res.status(404);
+        }
+      }
+
+      const outStream = await initStream(program, firstChannel);
+      return res.header('Content-Type', 'video/mp2t').send(outStream);
+    },
+  );
+
+  async function initStream(program: Program, channel: Channel) {
+    const lineupItem = serverContext()
       .streamProgramCalculator()
       .createStreamItemFromProgram(program);
-    const ctx = new PlayerContext(lineupItem, firstChannel, false, false, true);
+    const ctx = new PlayerContext(lineupItem, channel, false, false, true);
 
     let stream: ProgramStream;
     switch (program.sourceType) {
@@ -127,6 +184,6 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
     stream.on('error', () => out.end());
     out.on('close', () => stream.shutdown());
     await stream.start(out);
-    return res.header('Content-Type', 'video/mp2t').send(out);
-  });
+    return out;
+  }
 };

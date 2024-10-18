@@ -8,9 +8,10 @@ import {
   type JellyfinLibraryItemsResponse as JellyfinLibraryItemsResponseTyp,
 } from '@tunarr/types/jellyfin';
 import { FastifyReply } from 'fastify/types/reply.js';
-import { filter, isEmpty, isNull, uniq } from 'lodash-es';
+import { filter, isEmpty, isNil, uniq } from 'lodash-es';
 import { z } from 'zod';
-import { MediaSource, MediaSourceType } from '../dao/entities/MediaSource.js';
+import { MediaSource } from '../dao/direct/schema/MediaSource.js';
+import { MediaSourceType } from '../dao/entities/MediaSource.js';
 import { isQueryError } from '../external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.js';
 import { JellyfinApiClient } from '../external/jellyfin/JellyfinApiClient.js';
@@ -200,7 +201,7 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
       req.params.mediaSourceId,
     );
 
-    if (isNull(mediaSource)) {
+    if (isNil(mediaSource)) {
       return res
         .status(400)
         .send(`No media source with ID ${req.params.mediaSourceId} found.`);

@@ -1,8 +1,7 @@
-import { Loaded } from '@mikro-orm/core';
 import { DynamicContentConfigSource } from '@tunarr/types/api';
 import { filter } from 'lodash-es';
 import { ChannelDB } from '../dao/channelDb.ts';
-import { Channel } from '../dao/entities/Channel.ts';
+import { Channel } from '../dao/direct/schema/Channel.ts';
 import { ContentSourceUpdaterFactory } from '../services/dynamic_channels/ContentSourceUpdaterFactory.ts';
 import { GlobalScheduler } from '../services/scheduler.ts';
 import { Maybe } from '../types/util.ts';
@@ -56,7 +55,7 @@ export class ScheduleDynamicChannelsTask extends Task<void> {
 
 class DynamicChannelUpdaterFactory {
   getTask(
-    channel: Loaded<Channel>,
+    channel: Channel,
     contentSourceDef: DynamicContentConfigSource,
   ): Task<unknown> {
     // This won't always be anonymous

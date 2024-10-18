@@ -2,19 +2,18 @@ import type { Tag } from '@tunarr/types';
 import { PlexDvr } from '@tunarr/types/plex';
 import dayjs from 'dayjs';
 import { ChannelDB } from '../dao/channelDb.js';
-import { withDb } from '../dao/dataSource.js';
-import { MediaSource } from '../dao/entities/MediaSource.js';
+import { MediaSourceDB } from '../dao/mediaSourceDB.js';
 import { SettingsDB, defaultXmlTvSettings } from '../dao/settings.js';
 import { PlexApiClient } from '../external/plex/PlexApiClient.js';
 import { globalOptions } from '../globals.js';
 import { ServerContext } from '../serverContext.js';
+import { LineupCreator } from '../services/dynamic_channels/LineupCreator.js';
 import { TVGuideService } from '../services/tvGuideService.js';
 import { Maybe } from '../types/util.js';
 import { fileExists } from '../util/fsUtil.js';
 import { mapAsyncSeq } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { Task } from './Task.js';
-import { LineupCreator } from '../services/dynamic_channels/LineupCreator.js';
 
 export class UpdateXmlTvTask extends Task<void> {
   public static ID = 'update-xmltv' as Tag<'update-xmltv', void>;
@@ -35,6 +34,7 @@ export class UpdateXmlTvTask extends Task<void> {
       serverContext.channelDB,
       serverContext.settings,
       serverContext.guideService,
+      serverContext.mediaSourceDB,
     );
   }
 
@@ -42,6 +42,7 @@ export class UpdateXmlTvTask extends Task<void> {
     channelDB: ChannelDB,
     dbAccess: SettingsDB,
     guideService: TVGuideService,
+    private mediaSourceDB: MediaSourceDB,
   ) {
     super();
     this.#channelDB = channelDB;
@@ -88,11 +89,9 @@ export class UpdateXmlTvTask extends Task<void> {
 
     const channels = await this.#channelDB.getAllChannels();
 
-    const allPlexServers = await withDb((em) => {
-      return em.find(MediaSource, {});
-    });
+    const allMediaSources = await this.mediaSourceDB.findByType('plex');
 
-    await mapAsyncSeq(allPlexServers, async (plexServer) => {
+    await mapAsyncSeq(allMediaSources, async (plexServer) => {
       const plex = new PlexApiClient(plexServer);
       let dvrs: PlexDvr[] = [];
 

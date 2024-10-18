@@ -190,7 +190,7 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
       schema: RandomFillerSchema,
     },
     async (req, res) => {
-      const channel = await req.serverCtx.channelDB.getChannelById(
+      const channel = await req.serverCtx.channelDB.getChannel(
         req.query.channelId,
       );
 
@@ -230,7 +230,10 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
     },
     async (req, res) => {
       const result = await PlexTaskQueue.add(
-        new SavePlexProgramExternalIdsTask(req.params.programId),
+        new SavePlexProgramExternalIdsTask(
+          req.params.programId,
+          req.serverCtx.programDB,
+        ),
       );
 
       console.log(result);

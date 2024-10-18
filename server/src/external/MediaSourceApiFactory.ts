@@ -1,18 +1,19 @@
-import { forEach, isBoolean, isEmpty, isNull, isUndefined } from 'lodash-es';
+import { FindChild } from '@tunarr/types';
+import { forEach, isBoolean, isEmpty, isNil, isUndefined } from 'lodash-es';
 import NodeCache from 'node-cache';
-import { getEm } from '../dao/dataSource.js';
-import { MediaSource, MediaSourceType } from '../dao/entities/MediaSource.js';
-import { PlexApiClient, PlexApiOptions } from './plex/PlexApiClient.js';
+import { ChannelDB } from '../dao/channelDb.js';
+import { MediaSourceType } from '../dao/entities/MediaSource.js';
+import { MediaSourceDB } from '../dao/mediaSourceDB.js';
 import { SettingsDB, getSettings } from '../dao/settings.js';
+import { Maybe } from '../types/util.js';
 import { isDefined } from '../util/index.js';
+import { LoggerFactory } from '../util/logging/LoggerFactory.js';
+import { BaseApiClient, RemoteMediaSourceOptions } from './BaseApiClient.js';
 import {
   JellyfinApiClient,
   JellyfinApiClientOptions,
 } from './jellyfin/JellyfinApiClient.js';
-import { FindChild } from '@tunarr/types';
-import { BaseApiClient, RemoteMediaSourceOptions } from './BaseApiClient.js';
-import { Maybe } from '../types/util.js';
-import { LoggerFactory } from '../util/logging/LoggerFactory.js';
+import { PlexApiClient, PlexApiOptions } from './plex/PlexApiClient.js';
 
 type TypeToClient = [
   [MediaSourceType.Plex, PlexApiClient],
@@ -26,7 +27,10 @@ export class MediaSourceApiFactoryImpl {
   #cache: NodeCache;
   #requestCacheEnabled: boolean | Record<string, boolean> = false;
 
-  constructor(private settings: SettingsDB = getSettings()) {
+  constructor(
+    private mediaSourceDB: MediaSourceDB,
+    private settings: SettingsDB = getSettings(),
+  ) {
     this.#cache = new NodeCache({
       useClones: false,
       deleteOnExpire: true,
@@ -95,9 +99,8 @@ export class MediaSourceApiFactoryImpl {
   async getOrSet(name: string) {
     let client = this.#cache.get<PlexApiClient>(name);
     if (isUndefined(client)) {
-      const em = getEm();
-      const server = await em.repo(MediaSource).findOne({ name });
-      if (!isNull(server)) {
+      const server = await this.mediaSourceDB.getByName(name);
+      if (!isNil(server)) {
         client = new PlexApiClient({
           ...server,
           clientIdentifier: server.clientIdentifier,
@@ -120,9 +123,8 @@ export class MediaSourceApiFactoryImpl {
     const key = `${type}|${name}`;
     let client = this.#cache.get<ApiClient>(key);
     if (isUndefined(client)) {
-      const em = getEm();
-      const server = await em.repo(MediaSource).findOne({ name, type });
-      if (!isNull(server)) {
+      const server = await this.mediaSourceDB.findByType(type, name);
+      if (!isNil(server)) {
         client = factory({
           apiKey: server.accessToken,
           url: server.uri,
@@ -163,9 +165,11 @@ export class MediaSourceApiFactoryImpl {
   }
 }
 
-export const MediaSourceApiFactory = () => {
+export const MediaSourceApiFactory = (
+  mediaSourceDB: MediaSourceDB = new MediaSourceDB(new ChannelDB()),
+) => {
   if (!instance) {
-    instance = new MediaSourceApiFactoryImpl();
+    instance = new MediaSourceApiFactoryImpl(mediaSourceDB);
   }
   return instance;
 };

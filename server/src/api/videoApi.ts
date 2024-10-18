@@ -102,9 +102,11 @@ export const videoApiRouter: RouterPluginAsyncCallback = async (fastify) => {
       const videoStream = new VideoStream();
 
       const channelId = isNumber(req.query.channel)
-        ? await req.serverCtx.channelDB.channelIdForNumber(req.query.channel)
+        ? await req.serverCtx.channelDB
+            .getChannel(req.query.channel)
+            .then((c) => c?.uuid)
         : await req.serverCtx.channelDB
-            .getChannelDirect(req.query.channel)
+            .getChannel(req.query.channel)
             .then((channel) => channel?.uuid);
 
       if (isNil(channelId)) {

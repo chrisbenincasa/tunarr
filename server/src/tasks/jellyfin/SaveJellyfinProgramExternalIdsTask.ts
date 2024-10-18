@@ -1,31 +1,39 @@
-import { ref } from '@mikro-orm/core';
+import dayjs from 'dayjs';
 import { compact, isEmpty, isUndefined, map } from 'lodash-es';
+import { v4 } from 'uuid';
 import {
   ProgramExternalIdType,
   programExternalIdTypeFromJellyfinProvider,
 } from '../../dao/custom_types/ProgramExternalIdType.js';
-import { getEm } from '../../dao/dataSource.js';
-import { Program } from '../../dao/entities/Program.js';
-import { ProgramExternalId } from '../../dao/entities/ProgramExternalId.js';
-import { upsertProgramExternalIds_deprecated } from '../../dao/programExternalIdHelpers.js';
+import {
+  NewProgramExternalId,
+  ProgramExternalId,
+} from '../../dao/direct/schema/ProgramExternalId.js';
+import { ProgramDB } from '../../dao/programDB.js';
+import { upsertRawProgramExternalIds } from '../../dao/programExternalIdHelpers.js';
+import { isQueryError } from '../../external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.js';
+import { JellyfinApiClient } from '../../external/jellyfin/JellyfinApiClient.js';
 import { Maybe } from '../../types/util.js';
 import { isDefined, isNonEmptyString } from '../../util/index.js';
 import { Task } from '../Task.js';
-import { isQueryError } from '../../external/BaseApiClient.js';
-import { JellyfinApiClient } from '../../external/jellyfin/JellyfinApiClient.js';
 
 export class SaveJellyfinProgramExternalIdsTask extends Task {
   ID = SaveJellyfinProgramExternalIdsTask.name;
 
-  constructor(private programId: string) {
+  constructor(
+    private programId: string,
+    private programDB: ProgramDB = new ProgramDB(),
+  ) {
     super();
   }
 
   protected async runInternal(): Promise<unknown> {
-    const em = getEm();
+    const program = await this.programDB.getProgramById(this.programId);
 
-    const program = await em.findOneOrFail(Program, this.programId);
+    if (!program) {
+      throw new Error('Program not found: ID = ' + this.programId);
+    }
 
     const jellyfinIds = program.externalIds.filter(
       (eid) =>
@@ -81,16 +89,18 @@ export class SaveJellyfinProgramExternalIdsTask extends Task {
           return;
         }
 
-        const eid = new ProgramExternalId();
-        eid.program = ref(program);
-        eid.externalSourceId = undefined;
-        eid.externalKey = id;
-        eid.sourceType = type;
-        return eid;
+        return {
+          uuid: v4(),
+          createdAt: +dayjs(),
+          updatedAt: +dayjs(),
+          externalKey: id,
+          sourceType: type,
+          programUuid: program.uuid,
+        } satisfies NewProgramExternalId;
       }),
     );
 
-    return await upsertProgramExternalIds_deprecated(eids);
+    return await upsertRawProgramExternalIds(eids);
   }
 
   get taskName() {

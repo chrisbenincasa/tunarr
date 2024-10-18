@@ -1,8 +1,10 @@
 import { MultiExternalId } from '@tunarr/types';
 import { isValidSingleExternalIdType } from '@tunarr/types/schemas';
+import dayjs from 'dayjs';
 import { isError, trimEnd, trimStart } from 'lodash-es';
+import { v4 } from 'uuid';
 import { programExternalIdTypeFromExternalIdType } from '../dao/custom_types/ProgramExternalIdType.js';
-import { ProgramExternalId } from '../dao/entities/ProgramExternalId.js';
+import { NewProgramExternalId } from '../dao/direct/schema/ProgramExternalId.js';
 import { Try } from '../types/util.js';
 import { attemptSync } from './index.js';
 
@@ -25,13 +27,18 @@ export const createPlexExternalId = (
  */
 export const mintExternalIdForPlexGuid = (
   guid: string,
-): Try<ProgramExternalId> => {
+  programId: string,
+): Try<NewProgramExternalId> => {
   const parsed = parsePlexGuid(guid);
   if (!isError(parsed)) {
-    const eid = new ProgramExternalId();
-    eid.sourceType = parsed.sourceType;
-    eid.externalKey = parsed.externalKey;
-    return eid;
+    return {
+      uuid: v4(),
+      createdAt: +dayjs(),
+      updatedAt: +dayjs(),
+      sourceType: parsed.sourceType,
+      externalKey: parsed.externalKey,
+      programUuid: programId,
+    };
   } else {
     return parsed;
   }

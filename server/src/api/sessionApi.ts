@@ -64,9 +64,8 @@ export const sessionApiRouter: RouterPluginAsyncCallback = async (fastify) => {
     async (req, res) => {
       const channelId = await run(async () => {
         if (isNumber(req.params.id)) {
-          return (
-            await req.serverCtx.channelDB.getChannelByNumber(req.params.id)
-          )?.uuid;
+          return (await req.serverCtx.channelDB.getChannel(req.params.id))
+            ?.uuid;
         } else {
           return req.params.id;
         }
@@ -116,9 +115,8 @@ export const sessionApiRouter: RouterPluginAsyncCallback = async (fastify) => {
     async (req, res) => {
       const channelId = await run(async () => {
         if (isNumber(req.params.id)) {
-          return (
-            await req.serverCtx.channelDB.getChannelByNumber(req.params.id)
-          )?.uuid;
+          return (await req.serverCtx.channelDB.getChannel(req.params.id))
+            ?.uuid;
         } else {
           return req.params.id;
         }

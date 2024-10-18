@@ -63,7 +63,7 @@ export class VideoStream {
     const serverCtx = getServerContext();
     const outStream = new PassThrough();
 
-    const channel = await serverCtx.channelDB.getChannelDirect(reqChannel);
+    const channel = await serverCtx.channelDB.getChannel(reqChannel);
 
     if (isNil(channel)) {
       return {

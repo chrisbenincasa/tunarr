@@ -11,7 +11,9 @@ import {
   PlexTvSeason,
   PlexTvShow,
 } from '@tunarr/types/plex';
-import { first, groupBy, isNil, isNull, isUndefined, keys } from 'lodash-es';
+import dayjs from 'dayjs';
+import { first, groupBy, isNil, isUndefined, keys } from 'lodash-es';
+import { v4 } from 'uuid';
 import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.ts';
 import { PlexApiClient } from '../../external/plex/PlexApiClient.ts';
 import { isNonEmptyString, wait } from '../../util/index.ts';
@@ -19,14 +21,14 @@ import { LoggerFactory } from '../../util/logging/LoggerFactory.ts';
 import { ChannelDB } from '../channelDb.ts';
 import { ProgramExternalIdType } from '../custom_types/ProgramExternalIdType.ts';
 import { ProgramSourceType } from '../custom_types/ProgramSourceType.ts';
-import { getEm } from '../dataSource.ts';
-import { Program, ProgramType } from '../entities/Program.ts';
-import {
-  ProgramGrouping,
-  ProgramGroupingType,
-} from '../entities/ProgramGrouping.ts';
-import { ProgramGroupingExternalId } from '../entities/ProgramGroupingExternalId.ts';
+import { directDbAccess } from '../direct/directDbAccess.js';
+import { Program } from '../direct/schema/Program.js';
+import { NewProgramGrouping } from '../direct/schema/ProgramGrouping.ts';
+import { NewProgramGroupingExternalId } from '../direct/schema/ProgramGroupingExternalId.ts';
+import { ProgramType } from '../entities/Program.js';
+import { ProgramGroupingType } from '../entities/ProgramGrouping.ts';
 import { MediaSourceDB } from '../mediaSourceDB.ts';
+import { ProgramDB } from '../programDB.js';
 
 export class LegacyMetadataBackfiller {
   private logger = LoggerFactory.child({
@@ -36,39 +38,46 @@ export class LegacyMetadataBackfiller {
 
   constructor(
     private mediaSourceDB: MediaSourceDB = new MediaSourceDB(new ChannelDB()),
+    private programDB: ProgramDB = new ProgramDB(),
   ) {}
 
   // It requires valid PlexServerSettings, program metadata, etc
   async backfillParentMetadata() {
-    const em = getEm();
-
-    const missingProgramAncestors = await em
-      .createQueryBuilder(Program)
-      .select(['uuid', 'externalSourceId', 'externalKey', 'type'], true)
-      .where({
-        $and: [
-          {
-            $or: [{ type: ProgramType.Episode }, { type: ProgramType.Track }],
-          },
-          {
-            // This will probably be all items during legacy migration...
-            $or: [
-              {
-                grandparentExternalKey: null,
-                tvShow: null,
-              },
-              {
-                parentExternalKey: null,
-                season: null,
-              },
-            ],
-          },
-          {
-            // At the time this was written, this was the only source type
-            sourceType: ProgramSourceType.PLEX,
-          },
-        ],
+    const missingProgramAncestors = await directDbAccess()
+      .selectFrom('program')
+      .selectAll()
+      .where((eb) => {
+        return eb.or([
+          eb.and([
+            eb('program.type', '=', ProgramType.Episode),
+            eb.or([
+              eb.and([
+                eb('program.grandparentExternalKey', 'is', null),
+                eb.or([eb('program.tvShowUuid', 'is', null)]),
+              ]),
+              eb.and([
+                eb('program.parentExternalKey', 'is', null),
+                eb('program.seasonUuid', 'is', null),
+              ]),
+            ]),
+          ]),
+          eb.and([
+            eb('program.type', '=', ProgramType.Track),
+            eb.or([
+              eb.and([
+                eb('program.grandparentExternalKey', 'is', null),
+                eb.or([eb('program.artistUuid', 'is', null)]),
+              ]),
+              eb.and([
+                eb('program.parentExternalKey', 'is', null),
+                eb('program.albumUuid', 'is', null),
+              ]),
+            ]),
+          ]),
+        ]);
+        // TODO: Support JF
       })
+      .where('program.sourceType', '=', ProgramSourceType.PLEX)
       .execute();
 
     const programsMissingAncestorsByServer = groupBy(
@@ -88,8 +97,7 @@ export class LegacyMetadataBackfiller {
     serverName: string,
     programs: Program[],
   ) {
-    const em = getEm();
-    const server = await this.mediaSourceDB.getByNameDirect(serverName);
+    const server = await this.mediaSourceDB.getByName(serverName);
     if (isNil(server)) {
       this.logger.warn(
         'Could not find plex server details for server %s',
@@ -105,6 +113,7 @@ export class LegacyMetadataBackfiller {
 
     for (const { uuid, externalSourceId, externalKey, type } of programs) {
       await wait(250); // Let's not slam Plex
+
       if (isUndefined(server)) {
         this.logger.warn(
           'Somehow found a legacy program with an invalid plex server: %s',
@@ -120,21 +129,23 @@ export class LegacyMetadataBackfiller {
         if (isNonEmptyString(grandparentUUID)) {
           // This was inserted by another program in the list, just update
           // the mappings.
-          const existingGrandparent = await em.findOne(ProgramGrouping, {
-            uuid: grandparentUUID,
-          });
-          if (!isNull(existingGrandparent)) {
+          const existingGrandparent =
+            await this.programDB.getProgramGrouping(grandparentUUID);
+          if (existingGrandparent) {
             this.logger.trace('Using existing grandparent grouping!');
             updatedGrandparent = true;
-            if (type === ProgramType.Episode) {
-              existingGrandparent.showEpisodes.add(
-                em.getReference(Program, uuid),
-              );
-            } else {
-              existingGrandparent.artistTracks.add(
-                em.getReference(Program, uuid),
-              );
-            }
+            await directDbAccess()
+              .updateTable('program')
+              .set({
+                tvShowUuid:
+                  type === ProgramType.Episode
+                    ? existingGrandparent.uuid
+                    : null,
+                artistUuid:
+                  type === ProgramType.Track ? existingGrandparent.uuid : null,
+              })
+              .where('uuid', '=', uuid)
+              .execute();
           }
         }
       }
@@ -148,22 +159,25 @@ export class LegacyMetadataBackfiller {
       ) {
         const parentUUID =
           parentRatingKeyToUUID[programToParentMappings[externalKey]];
-        const existingParent = await em.findOne(ProgramGrouping, {
-          uuid: parentUUID,
-        });
-        if (!isNull(existingParent)) {
+        const existingParent =
+          await this.programDB.getProgramGrouping(parentUUID);
+        if (existingParent) {
           this.logger.trace('Using existing parent!');
           updatedParent = true;
-          if (type === ProgramType.Episode) {
-            existingParent.seasonEpisodes.add(em.getReference(Program, uuid));
-          } else {
-            existingParent.albumTracks.add(em.getReference(Program, uuid));
-          }
+          await directDbAccess()
+            .updateTable('program')
+            .set({
+              seasonUuid:
+                type === ProgramType.Episode ? existingParent.uuid : null,
+              albumUuid:
+                type === ProgramType.Track ? existingParent.uuid : null,
+            })
+            .where('uuid', '=', uuid)
+            .execute();
         }
       }
 
       if (updatedParent && updatedGrandparent) {
-        await em.flush();
         continue;
       }
 
@@ -228,14 +242,13 @@ export class LegacyMetadataBackfiller {
 
         if (isNonEmptyString(episode.parentRatingKey)) {
           // Upsert season mapping
-          const existingSeason = await em.findOne(ProgramGrouping, {
-            type: ProgramGroupingType.TvShowSeason,
-            externalRefs: {
-              sourceType: ProgramExternalIdType.PLEX,
-              externalSourceId: server.name,
-              externalKey: episode.parentRatingKey,
-            },
-          });
+          const parentRatingKey = episode.parentRatingKey;
+
+          const existingSeason = await this.findExistingGroupingOfType(
+            server.name,
+            parentRatingKey,
+            ProgramGroupingType.TvShowSeason,
+          );
 
           if (isNil(existingSeason)) {
             const seasonAndRef =
@@ -243,39 +256,66 @@ export class LegacyMetadataBackfiller {
                 plex,
                 episode.parentRatingKey,
                 (season: PlexTvSeason) => {
-                  return em.create(ProgramGrouping, {
+                  const now = +dayjs();
+                  return {
+                    uuid: v4(),
+                    createdAt: now,
+                    updatedAt: now,
                     title: season.title,
                     type: ProgramGroupingType.TvShowSeason,
                     icon: season.thumb,
                     summary: season.summary,
                     index: season.index,
-                  });
+                  };
                 },
               );
 
             if (seasonAndRef) {
-              const [season] = seasonAndRef;
-              season.showEpisodes.add(em.getReference(Program, uuid));
+              const [season, externalId] = seasonAndRef;
               parentRatingKeyToUUID[episode.parentRatingKey] = season.uuid;
-              em.persist(seasonAndRef);
+              await directDbAccess()
+                .transaction()
+                .execute(async (tx) => {
+                  const groupingId = await tx
+                    .insertInto('programGrouping')
+                    .values(season)
+                    .returning('uuid')
+                    .executeTakeFirst();
+                  await tx
+                    .insertInto('programGroupingExternalId')
+                    .values(externalId)
+                    .executeTakeFirst();
+                  if (groupingId) {
+                    await directDbAccess()
+                      .updateTable('program')
+                      .where('uuid', '=', uuid)
+                      .set({ seasonUuid: groupingId?.uuid })
+                      .execute();
+                  }
+                });
             }
           } else {
-            existingSeason.showEpisodes.add(em.getReference(Program, uuid));
+            await directDbAccess()
+              .updateTable('program')
+              .where('uuid', '=', uuid)
+              .set({
+                seasonUuid: existingSeason.uuid,
+              })
+              .execute();
             parentRatingKeyToUUID[episode.parentRatingKey] =
-              existingSeason.uuid;
+              existingSeason.groupUuid;
           }
         }
 
         if (isNonEmptyString(episode.grandparentRatingKey)) {
           // Upsert show mapping
-          const existingShow = await em.findOne(ProgramGrouping, {
-            type: ProgramGroupingType.TvShow,
-            externalRefs: {
-              sourceType: ProgramExternalIdType.PLEX,
-              externalSourceId: server.name,
-              externalKey: episode.grandparentRatingKey,
-            },
-          });
+          const grandparentExternalKey = episode.grandparentRatingKey;
+
+          const existingShow = await this.findExistingGroupingOfType(
+            server.name,
+            grandparentExternalKey,
+            ProgramGroupingType.TvShow,
+          );
 
           if (isNil(existingShow)) {
             const showAndRef =
@@ -283,24 +323,52 @@ export class LegacyMetadataBackfiller {
                 plex,
                 episode.grandparentRatingKey,
                 (show: PlexTvShow) => {
-                  return em.create(ProgramGrouping, {
+                  const now = +dayjs();
+                  return {
+                    uuid: v4(),
+                    createdAt: now,
+                    updatedAt: now,
                     title: show.title,
                     type: ProgramGroupingType.TvShow,
                     icon: show.thumb,
                     summary: show.summary,
-                    year: show.year,
-                  });
+                    index: show.index,
+                  };
                 },
               );
             if (showAndRef) {
-              const [show] = showAndRef;
-              show.showEpisodes.add(em.getReference(Program, uuid));
+              const [show, externalId] = showAndRef;
               grandparentRatingKeyToUUID[episode.grandparentRatingKey] =
                 show.uuid;
-              em.persist(showAndRef);
+              await directDbAccess()
+                .transaction()
+                .execute(async (tx) => {
+                  const groupingId = await tx
+                    .insertInto('programGrouping')
+                    .values(show)
+                    .returning('uuid')
+                    .executeTakeFirst();
+                  await tx
+                    .insertInto('programGroupingExternalId')
+                    .values(externalId)
+                    .executeTakeFirst();
+                  if (groupingId) {
+                    await directDbAccess()
+                      .updateTable('program')
+                      .where('uuid', '=', uuid)
+                      .set({ tvShowUuid: groupingId?.uuid })
+                      .execute();
+                  }
+                });
             }
           } else {
-            existingShow.showEpisodes.add(em.getReference(Program, uuid));
+            await directDbAccess()
+              .updateTable('program')
+              .where('uuid', '=', uuid)
+              .set({
+                tvShowUuid: existingShow.uuid,
+              })
+              .execute();
             grandparentRatingKeyToUUID[episode.grandparentRatingKey] =
               existingShow.uuid;
           }
@@ -355,14 +423,11 @@ export class LegacyMetadataBackfiller {
 
         if (isNonEmptyString(track.parentRatingKey)) {
           // Upsert season mapping
-          const existingAlbum = await em.findOne(ProgramGrouping, {
-            type: ProgramGroupingType.MusicAlbum,
-            externalRefs: {
-              sourceType: ProgramExternalIdType.PLEX,
-              externalSourceId: server.name,
-              externalKey: track.parentRatingKey,
-            },
-          });
+          const existingAlbum = await this.findExistingGroupingOfType(
+            server.name,
+            track.parentRatingKey,
+            ProgramGroupingType.MusicAlbum,
+          );
 
           if (isNil(existingAlbum)) {
             const albumAndref =
@@ -370,39 +435,65 @@ export class LegacyMetadataBackfiller {
                 plex,
                 track.parentRatingKey,
                 (album) => {
-                  return em.create(ProgramGrouping, {
+                  const now = +dayjs();
+                  return {
+                    uuid: v4(),
+                    createdAt: now,
+                    updatedAt: now,
                     title: album.title,
                     type: ProgramGroupingType.MusicAlbum,
                     icon: album.thumb,
                     summary: album.summary,
                     index: album.index,
                     year: album.year,
-                  });
+                  };
                 },
               );
 
             if (albumAndref) {
-              const [album] = albumAndref;
-              album.albumTracks.add(em.getReference(Program, uuid));
+              const [album, externalId] = albumAndref;
               parentRatingKeyToUUID[track.parentRatingKey] = album.uuid;
-              em.persist(albumAndref);
+              await directDbAccess()
+                .transaction()
+                .execute(async (tx) => {
+                  const groupingId = await tx
+                    .insertInto('programGrouping')
+                    .values(album)
+                    .returning('uuid')
+                    .executeTakeFirst();
+                  await tx
+                    .insertInto('programGroupingExternalId')
+                    .values(externalId)
+                    .executeTakeFirst();
+
+                  if (groupingId) {
+                    await directDbAccess()
+                      .updateTable('program')
+                      .where('uuid', '=', uuid)
+                      .set({ albumUuid: groupingId?.uuid })
+                      .execute();
+                  }
+                });
             }
           } else {
-            existingAlbum.albumTracks.add(em.getReference(Program, uuid));
+            await directDbAccess()
+              .updateTable('program')
+              .where('uuid', '=', uuid)
+              .set({
+                albumUuid: existingAlbum.uuid,
+              })
+              .execute();
             parentRatingKeyToUUID[track.parentRatingKey] = existingAlbum.uuid;
           }
         }
 
         if (isNonEmptyString(track.grandparentRatingKey)) {
           // Upsert show mapping
-          const existingArtist = await em.findOne(ProgramGrouping, {
-            type: ProgramGroupingType.MusicArtist,
-            externalRefs: {
-              sourceType: ProgramExternalIdType.PLEX,
-              externalSourceId: server.name,
-              externalKey: track.grandparentRatingKey,
-            },
-          });
+          const existingArtist = await this.findExistingGroupingOfType(
+            server.name,
+            track.grandparentRatingKey,
+            ProgramGroupingType.MusicArtist,
+          );
 
           if (isNil(existingArtist)) {
             const artistAndRef =
@@ -410,30 +501,58 @@ export class LegacyMetadataBackfiller {
                 plex,
                 track.grandparentRatingKey,
                 (artist: PlexMusicArtist) => {
-                  return em.create(ProgramGrouping, {
+                  const now = +dayjs();
+                  return {
+                    uuid: v4(),
+                    createdAt: now,
+                    updatedAt: now,
                     title: artist.title,
                     type: ProgramGroupingType.MusicArtist,
                     icon: artist.thumb,
                     summary: artist.summary,
-                  });
+                    index: artist.index,
+                  };
                 },
               );
             if (artistAndRef) {
-              const [artist] = artistAndRef;
-              artist.artistTracks.add(em.getReference(Program, uuid));
+              const [artist, externalId] = artistAndRef;
               grandparentRatingKeyToUUID[track.grandparentRatingKey] =
                 artist.uuid;
-              em.persist(artistAndRef);
+
+              await directDbAccess()
+                .transaction()
+                .execute(async (tx) => {
+                  const groupingId = await tx
+                    .insertInto('programGrouping')
+                    .values(artist)
+                    .returning('uuid')
+                    .executeTakeFirst();
+                  await tx
+                    .insertInto('programGroupingExternalId')
+                    .values(externalId)
+                    .executeTakeFirst();
+                  if (groupingId) {
+                    await directDbAccess()
+                      .updateTable('program')
+                      .where('uuid', '=', uuid)
+                      .set({ artistUuid: groupingId?.uuid })
+                      .execute();
+                  }
+                });
             }
           } else {
-            existingArtist.artistTracks.add(em.getReference(Program, uuid));
+            await directDbAccess()
+              .updateTable('program')
+              .where('uuid', '=', uuid)
+              .set({
+                artistUuid: existingArtist.uuid,
+              })
+              .execute();
             grandparentRatingKeyToUUID[track.grandparentRatingKey] =
               existingArtist.uuid;
           }
         }
       }
-
-      await em.flush();
     }
   }
 
@@ -450,10 +569,8 @@ export class LegacyMetadataBackfiller {
   >(
     plex: PlexApiClient,
     ratingKey: string,
-    cb: (item: InferredMetadataType) => ProgramGrouping | undefined,
+    cb: (item: InferredMetadataType) => NewProgramGrouping | undefined,
   ) {
-    const em = getEm();
-
     const metadata = await this.fetchPlexAncestor<
       ExpectedPlexType,
       InferredMetadataType,
@@ -466,13 +583,17 @@ export class LegacyMetadataBackfiller {
 
     const grouping = cb(metadata);
 
+    // TODO use the minter here
     if (!isUndefined(grouping)) {
-      const refs = em.create(ProgramGroupingExternalId, {
+      const refs = {
+        uuid: v4(),
+        createdAt: grouping.createdAt,
+        updatedAt: grouping.updatedAt,
         sourceType: ProgramExternalIdType.PLEX,
         externalSourceId: plex.serverName, // clientIdentifier would be better
         externalKey: ratingKey,
-        group: grouping,
-      });
+        groupUuid: grouping.uuid,
+      } satisfies NewProgramGroupingExternalId;
 
       return [grouping, refs] as const;
     }
@@ -507,5 +628,36 @@ export class LegacyMetadataBackfiller {
     }
 
     return first(plexResult.Metadata)!;
+  }
+
+  private findExistingGroupingOfType(
+    serverName: string,
+    externalKey: string,
+    type: ProgramGroupingType,
+  ) {
+    return directDbAccess()
+      .selectFrom('programGroupingExternalId')
+      .selectAll()
+      .where((eb) =>
+        eb.and([
+          eb(
+            'programGroupingExternalId.sourceType',
+            '=',
+            ProgramExternalIdType.PLEX,
+          ),
+          eb('programGroupingExternalId.externalSourceId', '=', serverName),
+          eb('programGroupingExternalId.externalKey', '=', externalKey),
+        ]),
+      )
+      .innerJoin('programGrouping', (join) =>
+        join
+          .onRef(
+            'programGrouping.uuid',
+            '=',
+            'programGroupingExternalId.groupUuid',
+          )
+          .on('programGrouping.type', '=', type),
+      )
+      .executeTakeFirst();
   }
 }

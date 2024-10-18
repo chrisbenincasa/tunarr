@@ -108,6 +108,9 @@ importers:
       '@scalar/fastify-api-reference':
         specifier: ^1.25.33
         version: 1.25.33
+      '@tunarr/playlist':
+        specifier: ^1.1.0
+        version: 1.1.0
       '@tunarr/shared':
         specifier: workspace:*
         version: link:../shared
@@ -3664,6 +3667,10 @@ packages:
   /@tsconfig/node16@1.0.4:
     resolution: {integrity: sha512-vxhUy4J8lyeyinH7Azl1pdd43GJhZH/tP2weN8TntQblOY+A0XbT8DJk1/oCPuOOyg/Ja757rG0CgHcWC8OfMA==}
     dev: true
+
+  /@tunarr/playlist@1.1.0:
+    resolution: {integrity: sha512-MxwRLHEqEsg+7nmPPnBAVenpi9LjgzUkaS3QxHiHEHW0H0cLagms7EH3fwuW8PQXglRXSHjshVcZBipcwbxTJw==}
+    dev: false
 
   /@types/archiver@6.0.2:
     resolution: {integrity: sha512-KmROQqbQzKGuaAbmK+ZcytkJ51+YqDa7NmbXjmtC5YBLSyQYo21YaUnQ3HbaPFKL1ooo6RQ6OPYPIDyxfpDDXw==}

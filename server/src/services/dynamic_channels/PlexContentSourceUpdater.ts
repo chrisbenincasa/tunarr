@@ -1,4 +1,3 @@
-import { Loaded } from '@mikro-orm/core';
 import { createExternalId } from '@tunarr/shared';
 import { buildPlexFilterKey } from '@tunarr/shared/util';
 import { ContentProgram } from '@tunarr/types';
@@ -6,10 +5,9 @@ import { DynamicContentConfigPlexSource } from '@tunarr/types/api';
 import { PlexLibraryListing } from '@tunarr/types/plex';
 import { isNil, map } from 'lodash-es';
 import { ChannelDB } from '../../dao/channelDb.js';
-import { EntityManager } from '../../dao/dataSource.js';
 import { PendingProgram } from '../../dao/derived_types/Lineup.js';
-import { Channel } from '../../dao/entities/Channel.js';
-import { MediaSource } from '../../dao/entities/MediaSource.js';
+import { Channel } from '../../dao/direct/schema/Channel.js';
+import { MediaSourceDB } from '../../dao/mediaSourceDB.js';
 import { ProgramDB } from '../../dao/programDB.js';
 import { PlexApiClient } from '../../external/plex/PlexApiClient.js';
 import { Logger, LoggerFactory } from '../../util/logging/LoggerFactory.js';
@@ -28,23 +26,23 @@ export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicConten
   #plex: PlexApiClient;
   #channelDB: ChannelDB;
   #programDB: ProgramDB;
+  #mediaSourceDB: MediaSourceDB;
 
-  constructor(
-    channel: Loaded<Channel>,
-    config: DynamicContentConfigPlexSource,
-  ) {
+  constructor(channel: Channel, config: DynamicContentConfigPlexSource) {
     super(channel, config);
     this.#channelDB = new ChannelDB();
     this.#programDB = new ProgramDB();
+    this.#mediaSourceDB = new MediaSourceDB(this.#channelDB);
   }
 
-  protected async prepare(em: EntityManager) {
-    const server = await em.repo(MediaSource).findOneOrFail({
-      $or: [
-        { name: this.config.plexServerId },
-        { clientIdentifier: this.config.plexServerId },
-      ],
-    });
+  protected async prepare() {
+    const server = await this.#mediaSourceDB.findByType(
+      'plex',
+      this.config.plexServerId,
+    );
+    if (!server) {
+      throw new Error('media source not found');
+    }
 
     this.#plex = new PlexApiClient(server);
   }

@@ -1,8 +1,6 @@
-import { Loaded } from '@mikro-orm/core';
 import { DynamicContentConfigSource } from '@tunarr/types/api';
 import { Mutex, withTimeout } from 'async-mutex';
-import { EntityManager, withDb } from '../../dao/dataSource.ts';
-import { Channel } from '../../dao/entities/Channel.ts';
+import { Channel } from '../../dao/direct/schema/Channel.ts';
 
 const locks: Record<DynamicContentConfigSource['type'], Mutex> = {
   plex: new Mutex(),
@@ -12,10 +10,10 @@ export abstract class ContentSourceUpdater<
   T extends DynamicContentConfigSource,
 > {
   protected initialized: boolean = false;
-  protected channel: Loaded<Channel>;
+  protected channel: Channel;
   protected config: T;
 
-  constructor(channel: Loaded<Channel>, config: T) {
+  constructor(channel: Channel, config: T) {
     this.channel = channel;
     this.config = config;
   }
@@ -25,13 +23,8 @@ export abstract class ContentSourceUpdater<
   }
 
   private async runInternal() {
-    return withTimeout(locks[this.config.type], 60 * 1000).runExclusive(
-      async () => {
-        return await withDb(async (em) => {
-          await this.prepare(em);
-          return await this.run();
-        });
-      },
+    return withTimeout(locks[this.config.type], 60 * 1000).runExclusive(() =>
+      this.run(),
     );
   }
 
@@ -41,7 +34,7 @@ export abstract class ContentSourceUpdater<
    * This is run in a DB request context and an entity manager is
    * provided.
    */
-  protected abstract prepare(em: EntityManager): Promise<void>;
+  protected abstract prepare(): Promise<void>;
 
   /**
    * Update the content...

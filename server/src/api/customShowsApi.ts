@@ -4,7 +4,7 @@ import {
   UpdateCustomShowRequestSchema,
 } from '@tunarr/types/api';
 import { CustomProgramSchema, CustomShowSchema } from '@tunarr/types/schemas';
-import { isNull, map, sumBy } from 'lodash-es';
+import { isNil, isNull, map, sumBy } from 'lodash-es';
 import { z } from 'zod';
 import { CustomShow } from '../dao/entities/CustomShow.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
@@ -62,15 +62,16 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
       const customShow = await req.serverCtx.customShowDB.getShow(
         req.params.id,
       );
-      if (isNull(customShow)) {
+
+      if (isNil(customShow)) {
         return res.status(404).send();
       }
 
       return res.status(200).send({
         id: customShow.uuid,
         name: customShow.name,
-        contentCount: customShow.content.length,
-        totalDuration: sumBy(customShow.content, (c) => c.duration),
+        contentCount: customShow.customShowContent.length,
+        totalDuration: sumBy(customShow.customShowContent, (c) => c.duration),
       });
     },
   );
@@ -93,15 +94,15 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
         req.body,
       );
 
-      if (isNull(customShow)) {
+      if (isNil(customShow)) {
         return res.status(404).send();
       }
 
       return res.status(200).send({
         id: customShow.uuid,
         name: customShow.name,
-        contentCount: customShow.content.length,
-        totalDuration: sumBy(customShow.content, (c) => c.duration),
+        contentCount: customShow.customShowContent.length,
+        totalDuration: sumBy(customShow.customShowContent, (c) => c.duration),
       });
     },
   );

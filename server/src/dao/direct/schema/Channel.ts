@@ -4,6 +4,7 @@ import {
   Insertable,
   JSONColumnType,
   Selectable,
+  Updateable,
 } from 'kysely';
 import {
   ChannelOfflineSettings,
@@ -32,8 +33,8 @@ export interface ChannelTable extends WithUuid, WithCreatedAt, WithUpdatedAt {
   startTime: number;
   stealth: ColumnType<number, number | undefined>;
   streamMode: ColumnType<ChannelStreamMode, ChannelStreamMode | undefined>;
-  transcoding: JSONColumnType<ChannelTranscodingSettings | null>;
-  watermark: JSONColumnType<ChannelWatermark | null>;
+  transcoding: JSONColumnType<ChannelTranscodingSettings | null, string | null>;
+  watermark: JSONColumnType<ChannelWatermark | null, string | null>;
 }
 
 type ChannelFields<Alias extends string = 'channel'> =
@@ -65,7 +66,8 @@ export const AllChannelTableKeys: ChannelFields = ChannelTableKeys.map(
 );
 
 export type Channel = Selectable<ChannelTable>;
-export type NewChannel = Insertable<Channel>;
+export type NewChannel = Insertable<ChannelTable>;
+export type ChannelUpdate = Updateable<ChannelTable>;
 
 export interface ChannelFillerShowTable {
   channelUuid: string;
@@ -75,6 +77,7 @@ export interface ChannelFillerShowTable {
 }
 
 export type ChannelFillerShow = Selectable<ChannelFillerShowTable>;
+export type NewChannelFillerShow = Insertable<ChannelFillerShowTable>;
 
 export interface ChannelFallbackTable {
   channelUuid: string;
@@ -96,3 +99,4 @@ export interface ChannelProgramsTable {
 }
 
 export type ChannelPrograms = Selectable<ChannelProgramsTable>;
+export type NewChannelProgram = Insertable<ChannelProgramsTable>;

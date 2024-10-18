@@ -2,25 +2,32 @@ import {
   InsertMediaSourceRequest,
   UpdateMediaSourceRequest,
 } from '@tunarr/types/api';
-import { isNil, isUndefined, keys, map, mapValues, sum } from 'lodash-es';
+import dayjs from 'dayjs';
+import {
+  chunk,
+  first,
+  isNil,
+  isUndefined,
+  keys,
+  map,
+  mapValues,
+  some,
+  trimEnd,
+} from 'lodash-es';
+import { v4 } from 'uuid';
+import { Maybe } from '../types/util.js';
 import { groupByUniqProp, isNonEmptyString } from '../util/index.js';
 import { ChannelDB } from './channelDb.js';
-import {
-  ProgramSourceType,
-  programSourceTypeFromMediaSource,
-} from './custom_types/ProgramSourceType.js';
-import { getEm } from './dataSource.js';
+
 import { directDbAccess } from './direct/directDbAccess.js';
 import {
-  MediaSource,
-  MediaSourceType,
-  mediaSourceTypeFromApi,
-} from './entities/MediaSource.js';
-import { Program } from './entities/Program.js';
-
-//hmnn this is more of a "PlexServerService"...
-const ICON_REGEX =
-  /https?:\/\/.*(\/library\/metadata\/\d+\/thumb\/\d+).X-Plex-Token=.*/;
+  withProgramChannels,
+  withProgramCustomShows,
+  withProgramFillerShows,
+} from './direct/programQueryHelpers.js';
+import { MediaSource, MediaSourceType } from './direct/schema/MediaSource.js';
+import { mediaSourceTypeFromApi } from './entities/MediaSource.js';
+import { booleanToNumber } from './sqliteUtil.js';
 
 type Report = {
   type: 'channel' | 'custom-show' | 'filler';
@@ -38,16 +45,11 @@ export class MediaSourceDB {
     this.#channelDb = channelDb;
   }
 
-  async getAll() {
-    const em = getEm();
-    return em.repo(MediaSource).findAll();
+  async getAll(): Promise<MediaSource[]> {
+    return directDbAccess().selectFrom('mediaSource').selectAll().execute();
   }
 
   async getById(id: string) {
-    return getEm().repo(MediaSource).findOne({ uuid: id });
-  }
-
-  async getByIdDirect(id: string) {
     return directDbAccess()
       .selectFrom('mediaSource')
       .selectAll()
@@ -55,7 +57,7 @@ export class MediaSourceDB {
       .executeTakeFirst();
   }
 
-  async getByNameDirect(name: string) {
+  async getByName(name: string) {
     return directDbAccess()
       .selectFrom('mediaSource')
       .selectAll()
@@ -63,8 +65,16 @@ export class MediaSourceDB {
       .executeTakeFirst();
   }
 
-  async findByType(type: MediaSourceType, nameOrId?: string) {
-    return directDbAccess()
+  async findByType(
+    type: MediaSourceType,
+    nameOrId: string,
+  ): Promise<MediaSource | undefined>;
+  async findByType(type: MediaSourceType): Promise<MediaSource[]>;
+  async findByType(
+    type: MediaSourceType,
+    nameOrId?: string,
+  ): Promise<MediaSource[] | Maybe<MediaSource>> {
+    const found = await directDbAccess()
       .selectFrom('mediaSource')
       .selectAll()
       .where('mediaSource.type', '=', type)
@@ -76,34 +86,45 @@ export class MediaSourceDB {
           ]),
         ),
       )
+      .execute();
+
+    if (isNonEmptyString(nameOrId)) {
+      return first(found);
+    } else {
+      return found;
+    }
+  }
+
+  async getByExternalId(
+    sourceType: MediaSourceType,
+    nameOrClientId: string,
+  ): Promise<Maybe<MediaSource>> {
+    return directDbAccess()
+      .selectFrom('mediaSource')
+      .selectAll()
+      .where((eb) =>
+        eb.and([
+          eb('type', '=', sourceType),
+          eb.or([
+            eb('name', '=', nameOrClientId),
+            eb('clientIdentifier', '=', nameOrClientId),
+          ]),
+        ]),
+      )
       .executeTakeFirst();
   }
 
-  async getByExternalId(sourceType: MediaSourceType, nameOrClientId: string) {
-    return getEm()
-      .repo(MediaSource)
-      .findOne({
-        $and: [
-          {
-            $or: [
-              { name: nameOrClientId },
-              { clientIdentifier: nameOrClientId },
-            ],
-          },
-          { type: sourceType },
-        ],
-      });
-  }
-
   async deleteMediaSource(id: string, removePrograms: boolean = true) {
-    const deletedServer = await getEm().transactional(async (em) => {
-      const ref = em.getReference(MediaSource, id);
-      const existing = await em.findOneOrFail(MediaSource, ref, {
-        populate: ['uuid', 'name'],
-      });
-      em.remove(ref);
-      return existing;
-    });
+    const deletedServer = await this.getById(id);
+    if (isNil(deletedServer)) {
+      throw new Error(`MediaSource not found: ${id}`);
+    }
+
+    await directDbAccess()
+      .deleteFrom('mediaSource')
+      .where('uuid', '=', id)
+      .limit(1)
+      .execute();
 
     let reports: Report[];
     if (!removePrograms) {
@@ -111,7 +132,7 @@ export class MediaSourceDB {
     } else {
       reports = await this.fixupProgramReferences(
         deletedServer.name,
-        programSourceTypeFromMediaSource(deletedServer.type),
+        deletedServer.type,
       );
     }
 
@@ -119,18 +140,12 @@ export class MediaSourceDB {
   }
 
   async updateMediaSource(server: UpdateMediaSourceRequest) {
-    const em = getEm();
-    const repo = em.repo(MediaSource);
     const id = server.id;
 
-    if (isNil(id)) {
-      throw Error('Missing server id from request');
-    }
-
-    const s = await repo.findOne({ uuid: id });
+    const s = await this.getById(id);
 
     if (isNil(s)) {
-      throw Error("Server doesn't exist.");
+      throw new Error("Server doesn't exist.");
     }
 
     const sendGuideUpdates =
@@ -138,51 +153,56 @@ export class MediaSourceDB {
     const sendChannelUpdates =
       server.type === 'plex' ? server.sendChannelUpdates ?? false : false;
 
-    em.assign(s, {
-      name: server.name,
-      uri: server.uri,
-      accessToken: server.accessToken,
-      sendGuideUpdates,
-      sendChannelUpdates,
-      updatedAt: new Date(),
-    });
+    await directDbAccess()
+      .updateTable('mediaSource')
+      .set({
+        name: server.name,
+        uri: trimEnd(server.uri, '/'),
+        accessToken: server.accessToken,
+        sendGuideUpdates: booleanToNumber(sendGuideUpdates),
+        sendChannelUpdates: booleanToNumber(sendChannelUpdates),
+        updatedAt: +dayjs(),
+      })
+      .where('uuid', '=', server.id)
+      .limit(1)
+      .executeTakeFirst();
 
-    this.normalizeServer(s);
-
-    const report = await this.fixupProgramReferences(
-      id,
-      programSourceTypeFromMediaSource(s.type),
-      s,
-    );
-
-    await repo.upsert(s);
-    await em.flush();
+    const report = await this.fixupProgramReferences(id, s.type, s);
 
     return report;
   }
 
   async addMediaSource(server: InsertMediaSourceRequest): Promise<string> {
-    const em = getEm();
-    const repo = em.repo(MediaSource);
     const name = isUndefined(server.name) ? 'plex' : server.name;
     const sendGuideUpdates =
       server.type === 'plex' ? server.sendGuideUpdates ?? false : false;
     const sendChannelUpdates =
       server.type === 'plex' ? server.sendChannelUpdates ?? false : false;
-    const index = await repo.count();
+    const index = await directDbAccess()
+      .selectFrom('mediaSource')
+      .select((eb) => eb.fn.count<number>('uuid').as('count'))
+      .executeTakeFirst()
+      .then((_) => _?.count ?? 0);
 
-    const newServer = em.create(MediaSource, {
-      ...server,
-      name,
-      sendGuideUpdates,
-      sendChannelUpdates,
-      index,
-      type: mediaSourceTypeFromApi(server.type),
-    });
+    const now = +dayjs();
+    const newServer = await directDbAccess()
+      .insertInto('mediaSource')
+      .values({
+        ...server,
+        uuid: v4(),
+        name,
+        uri: trimEnd(server.uri, '/'),
+        sendChannelUpdates: sendChannelUpdates ? 1 : 0,
+        sendGuideUpdates: sendGuideUpdates ? 1 : 0,
+        createdAt: now,
+        updatedAt: now,
+        index,
+        type: mediaSourceTypeFromApi(server.type),
+      })
+      .returning('uuid')
+      .executeTakeFirstOrThrow();
 
-    this.normalizeServer(newServer);
-
-    return await em.insert(MediaSource, newServer);
+    return newServer?.uuid;
   }
 
   // private async removeDanglingPrograms(mediaSource: MediaSource) {
@@ -219,7 +239,7 @@ export class MediaSourceDB {
 
   private async fixupProgramReferences(
     serverName: string,
-    serverType: ProgramSourceType,
+    serverType: MediaSourceType,
     newServer?: MediaSource,
   ) {
     // TODO: We need to update this to:
@@ -227,70 +247,86 @@ export class MediaSourceDB {
     // 2. use program_external_id table
     // 3. not delete programs if they still have another reference via
     //    the external id table (program that exists on 2 servers)
-    const em = getEm();
-    const allPrograms = await em
-      .repo(Program)
-      .find(
-        { sourceType: serverType, externalSourceId: serverName },
-        { populate: ['fillerShows', 'channels', 'customShows'] },
-      );
+    const allPrograms = await directDbAccess()
+      .selectFrom('program')
+      .selectAll()
+      .where('sourceType', '=', serverType)
+      .where('externalSourceId', '=', serverName)
+      .select(withProgramChannels)
+      .select(withProgramFillerShows)
+      .select(withProgramCustomShows)
+      .execute();
 
     const channelById = groupByUniqProp(
-      allPrograms.flatMap((p) => p.channels.toArray()),
+      allPrograms.flatMap((p) => p.channels),
       'uuid',
     );
 
     const customShowById = groupByUniqProp(
-      allPrograms.flatMap((p) => p.customShows.toArray()),
+      allPrograms.flatMap((p) => p.customShows),
       'uuid',
     );
 
     const fillersById = groupByUniqProp(
-      allPrograms.flatMap((p) => p.fillerShows.toArray()),
+      allPrograms.flatMap((p) => p.fillerShows),
       'uuid',
     );
 
     const channelToProgramCount = mapValues(
       channelById,
       ({ uuid }) =>
-        allPrograms.filter((p) => p.channels.exists((f) => f.uuid === uuid))
+        allPrograms.filter((p) => some(p.channels, (f) => f.uuid === uuid))
           .length,
     );
 
     const customShowToProgramCount = mapValues(
       customShowById,
       ({ uuid }) =>
-        allPrograms.filter((p) => p.customShows.exists((f) => f.uuid === uuid))
+        allPrograms.filter((p) => some(p.customShows, (f) => f.uuid === uuid))
           .length,
     );
 
     const fillerToProgramCount = mapValues(
       fillersById,
       ({ uuid }) =>
-        allPrograms.filter((p) => p.fillerShows.exists((f) => f.uuid === uuid))
+        allPrograms.filter((p) => some(p.fillerShows, (f) => f.uuid === uuid))
           .length,
     );
 
     const isUpdate = newServer && newServer.uuid !== serverName;
-    if (isUpdate) {
-      sum(map(allPrograms, (program) => this.fixupProgram(program, newServer)));
-      await em.flush();
-    } else {
-      allPrograms.forEach((program) => {
-        // Remove all associations of this program
-        program.channels.removeAll();
-        program.fillerShows.removeAll();
-        program.customShows.removeAll();
-      });
+    if (!isUpdate) {
+      // Remove all associations of this program
+      // TODO: See if we can just get this automatically with foreign keys...
+      await directDbAccess()
+        .transaction()
+        .execute(async (tx) => {
+          for (const programChunk of chunk(allPrograms, 500)) {
+            const programIds = map(programChunk, 'uuid');
+            await tx
+              .deleteFrom('channelPrograms')
+              .where('channelPrograms.programUuid', 'in', programIds)
+              .execute();
+            await tx
+              .deleteFrom('fillerShowContent')
+              .where('fillerShowContent.programUuid', 'in', programIds)
+              .execute();
+            await tx
+              .deleteFrom('customShowContent')
+              .where('customShowContent.contentUuid', 'in', programIds)
+              .execute();
+            await tx
+              .deleteFrom('program')
+              .where('uuid', 'in', programIds)
+              .execute();
+          }
 
-      for (const channel of keys(channelById)) {
-        await this.#channelDb.removeProgramsFromLineup(
-          channel,
-          map(allPrograms, 'uuid'),
-        );
-      }
-      em.remove(allPrograms);
-      await em.flush();
+          for (const channel of keys(channelById)) {
+            await this.#channelDb.removeProgramsFromLineup(
+              channel,
+              map(allPrograms, 'uuid'),
+            );
+          }
+        });
     }
 
     const channelReports: Report[] = map(
@@ -322,38 +358,5 @@ export class MediaSourceDB {
     }));
 
     return [...channelReports, ...fillerReports, ...customShowReports];
-  }
-
-  private fixupProgram(program: Program, newServer: MediaSource) {
-    let modified = false;
-    const fixIcon = (icon: string | undefined) => {
-      if (
-        !isUndefined(icon) &&
-        icon.includes('/library/metadata') &&
-        icon.includes('X-Plex-Token')
-      ) {
-        const m = icon.match(ICON_REGEX);
-        if (m?.length == 2) {
-          const lib = m[1];
-          const newUri = `${newServer.uri}${lib}?X-Plex-Token=${newServer.accessToken}`;
-          modified = true;
-          return newUri;
-        }
-      }
-      return icon;
-    };
-
-    program.icon = fixIcon(program.icon);
-    program.showIcon = fixIcon(program.showIcon);
-    program.episodeIcon = fixIcon(program.episodeIcon);
-    program.seasonIcon = fixIcon(program.seasonIcon);
-
-    return modified;
-  }
-
-  private normalizeServer(server: MediaSource) {
-    while (server.uri.endsWith('/')) {
-      server.uri = server.uri.slice(0, -1);
-    }
   }
 }

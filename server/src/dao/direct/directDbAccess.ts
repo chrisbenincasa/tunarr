@@ -18,7 +18,9 @@ const logger = once(() => LoggerFactory.child({ className: 'DirectDBAccess' }));
 export const initDirectDbAccess = once((opts: GlobalOptions) => {
   _directDbAccess = new Kysely<DB>({
     dialect: new SqliteDialect({
-      database: new Sqlite(path.join(opts.databaseDirectory, 'db.db')),
+      database: new Sqlite(path.join(opts.databaseDirectory, 'db.db'), {
+        timeout: 5000,
+      }),
     }),
     log: (event) => {
       switch (event.level) {

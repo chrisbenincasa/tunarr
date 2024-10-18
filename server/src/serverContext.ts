@@ -56,6 +56,7 @@ export class ServerContext {
       this.fillerDB,
       this.channelDB,
       this.channelCache,
+      this.programDB,
     );
   }
 }

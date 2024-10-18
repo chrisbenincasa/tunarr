@@ -1,6 +1,5 @@
 import type { Tag } from '@tunarr/types';
 import { isError, isString, round } from 'lodash-es';
-import { withDb } from '../dao/dataSource.js';
 import { Maybe } from '../types/util.js';
 import { isNonEmptyString } from '../util/index.js';
 import {
@@ -46,7 +45,7 @@ export abstract class Task<Data = unknown> {
     );
     const start = performance.now();
     try {
-      this.result = await withDb(() => this.runInternal());
+      this.result = await this.runInternal();
       const duration = round(performance.now() - start, 2);
       this.logger[this._logLevel](
         'Task %s ran in %d ms',

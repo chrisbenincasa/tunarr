@@ -112,11 +112,13 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
           // We need a centralized way to either load ALL of the relevant metadata
           // for channels OR have the frontend request which fields it needs and we
           // service that.
-          const loadedFillers =
-            await channelAndLineup.channel.channelFillers.load();
+          const channelFillters =
+            await req.serverCtx.fillerDB.getFillersFromChannel(req.params.id);
+          // const loadedFillers =
+          //   await channelAndLineup.channel.channelFillers.load();
           const channelWithFillers = {
             ...apiChannel,
-            fillerCollections: loadedFillers.$.map((cf) => ({
+            fillerCollections: channelFillters.map((cf) => ({
               id: cf.fillerShow.uuid,
               cooldownSeconds: cf.cooldown,
               weight: cf.weight,
@@ -177,9 +179,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     },
     async (req, res) => {
       try {
-        const channel = await req.serverCtx.channelDB.getChannelById(
-          req.params.id,
-        );
+        const channel = await req.serverCtx.channelDB.getChannel(req.params.id);
 
         if (!isNil(channel)) {
           const channelUpdate = {
@@ -198,16 +198,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
             'programs',
           );
 
-          return res.send({
-            ...apiChannel,
-            fillerCollections: updatedChannel.channel.channelFillers.$.map(
-              (cf) => ({
-                id: cf.fillerShow.uuid,
-                cooldownSeconds: cf.cooldown,
-                weight: cf.weight,
-              }),
-            ),
-          });
+          return res.send(apiChannel);
         } else {
           return res.status(404).send();
         }
@@ -231,9 +222,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      const channel = await req.serverCtx.channelDB.getChannelById(
-        req.params.id,
-      );
+      const channel = await req.serverCtx.channelDB.getChannel(req.params.id);
 
       if (isNil(channel)) {
         return res.status(404).send();
@@ -360,6 +349,8 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         req.body,
       );
 
+      console.log('hello');
+
       if (isNil(result)) {
         return res.status(500).send();
       }
@@ -386,6 +377,8 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         LoggerFactory.root,
         () => req.serverCtx.channelDB.loadCondensedLineup(req.params.id),
       );
+
+      console.log('hello');
 
       if (isNil(newLineup)) {
         return res.status(500).send();
