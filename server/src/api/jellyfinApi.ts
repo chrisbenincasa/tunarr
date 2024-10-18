@@ -1,16 +1,20 @@
 import { JellyfinLoginRequest } from '@tunarr/types/api';
 import {
+  JellyfinCollectionType,
   JellyfinItemFields,
   JellyfinItemKind,
+  JellyfinItemSortBy,
   JellyfinLibraryItemsResponse,
+  type JellyfinLibraryItemsResponse as JellyfinLibraryItemsResponseTyp,
 } from '@tunarr/types/jellyfin';
 import { FastifyReply } from 'fastify/types/reply.js';
-import { isNull, uniq } from 'lodash-es';
+import { filter, isEmpty, isNull, uniq } from 'lodash-es';
 import { z } from 'zod';
 import { MediaSource, MediaSourceType } from '../dao/entities/MediaSource.js';
 import { isQueryError } from '../external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.js';
 import { JellyfinApiClient } from '../external/jellyfin/JellyfinApiClient.js';
+import { TruthyQueryParam } from '../types/schemas.js';
 import {
   RouterPluginCallback,
   ZodFastifyRequest,
@@ -20,6 +24,23 @@ import { isDefined, nullToUndefined } from '../util/index.js';
 const mediaSourceParams = z.object({
   mediaSourceId: z.string(),
 });
+
+const ValidJellyfinCollectionTypes: JellyfinCollectionType[] = [
+  'movies',
+  'tvshows',
+  'music',
+  'trailers',
+  'musicvideos',
+  'homevideos',
+  'playlists',
+  'boxsets',
+  'folders',
+  'unknown',
+];
+
+function isNonEmptyTyped<T>(f: T[]): f is [T, ...T[]] {
+  return !isEmpty(f);
+}
 
 export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
   fastify.post(
@@ -62,7 +83,20 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
           throw response;
         }
 
-        return res.send(response.data);
+        const sanitizedResponse: JellyfinLibraryItemsResponseTyp = {
+          ...response.data,
+          Items: filter(response.data.Items, (library) => {
+            if (!library.CollectionType) {
+              return false;
+            }
+
+            return ValidJellyfinCollectionTypes.includes(
+              library.CollectionType,
+            );
+          }),
+        };
+
+        return res.send(sanitizedResponse);
       }),
   );
 
@@ -96,6 +130,14 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
           nameStartsWithOrGreater: z.string().min(1).optional(),
           nameStartsWith: z.string().min(1).optional(),
           nameLessThan: z.string().min(1).optional(),
+          sortBy: z
+            .string()
+            .optional()
+            .transform((s) => s?.split(','))
+            .pipe(JellyfinItemSortBy.array().optional())
+            .or(z.array(JellyfinItemSortBy).optional())
+            .default(['SortName', 'ProductionYear']),
+          recursive: TruthyQueryParam.optional().default(false),
         }),
         response: {
           200: JellyfinLibraryItemsResponse,
@@ -104,7 +146,6 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
     },
     (req, res) =>
       withJellyfinMediaSource(req, res, async (mediaSource) => {
-        console.log(req.query.itemTypes);
         const api = await MediaSourceApiFactory().getJellyfinClient({
           ...mediaSource,
           url: mediaSource.uri,
@@ -126,12 +167,16 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
           ]),
           pageParams,
           {
-            filters: 'IsFolder=false',
+            // filters: 'IsFolder=false',
             nameStartsWithOrGreater: req.query.nameStartsWithOrGreater,
             nameStartsWith: req.query.nameStartsWith,
             nameLessThan: req.query.nameLessThan,
             genres: req.query.genres?.join('|'),
+            recursive: req.query.recursive?.toString(),
           },
+          isNonEmptyTyped(req.query.sortBy)
+            ? req.query.sortBy
+            : ['SortName', 'ProductionYear'],
         );
 
         if (isQueryError(response)) {
