@@ -1,8 +1,7 @@
-import { Loaded } from '@mikro-orm/core';
 import { DynamicContentConfigSource } from '@tunarr/types/api';
 import { Mutex, withTimeout } from 'async-mutex';
 import { EntityManager, withDb } from '../../dao/dataSource';
-import { Channel } from '../../dao/entities/Channel';
+import { Channel } from '../../dao/direct/schema/Channel';
 
 const locks: Record<DynamicContentConfigSource['type'], Mutex> = {
   plex: new Mutex(),
@@ -12,10 +11,10 @@ export abstract class ContentSourceUpdater<
   T extends DynamicContentConfigSource,
 > {
   protected initialized: boolean = false;
-  protected channel: Loaded<Channel>;
+  protected channel: Channel;
   protected config: T;
 
-  constructor(channel: Loaded<Channel>, config: T) {
+  constructor(channel: Channel, config: T) {
     this.channel = channel;
     this.config = config;
   }

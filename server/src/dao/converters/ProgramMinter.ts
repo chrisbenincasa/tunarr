@@ -1,9 +1,3 @@
-import {
-  EntityManager,
-  RequiredEntityData,
-  ref,
-} from '@mikro-orm/better-sqlite';
-import { nullToUndefined } from '@tunarr/shared/util';
 import { JellyfinItem } from '@tunarr/types/jellyfin';
 import {
   PlexEpisode,
@@ -16,10 +10,7 @@ import dayjs from 'dayjs';
 import { compact, find, first, isError, isNil, map } from 'lodash-es';
 import { P, match } from 'ts-pattern';
 import { v4 } from 'uuid';
-import {
-  mintExternalIdForPlexGuid,
-  parsePlexGuid,
-} from '../../util/externalIds.js';
+import { parsePlexGuid } from '../../util/externalIds.js';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
 import {
   ProgramExternalIdType,
@@ -28,8 +19,7 @@ import {
 import { ProgramSourceType } from '../custom_types/ProgramSourceType.js';
 import { NewProgram as NewRawProgram } from '../direct/schema/Program.js';
 import { NewProgramExternalId } from '../direct/schema/ProgramExternalId.js';
-import { Program, ProgramType } from '../entities/Program.js';
-import { ProgramExternalId } from '../entities/ProgramExternalId.js';
+import { ProgramType } from '../entities/Program.js';
 
 /**
  * Generates Program DB entities for Plex media
@@ -39,68 +29,24 @@ class ProgramDaoMinter {
     caller: import.meta,
     className: this.constructor.name,
   });
-  #em: EntityManager;
 
-  constructor(em: EntityManager) {
-    this.#em = em;
-  }
-
-  mint(serverName: string, program: ContentProgramOriginalProgram) {
-    const ret = match(program)
-      .with(
-        { sourceType: 'plex', program: { type: 'movie' } },
-        ({ program: movie }) => this.mintMovieProgramForPlex(serverName, movie),
-      )
-      .with(
-        { sourceType: 'plex', program: { type: 'episode' } },
-        ({ program: episode }) =>
-          this.mintEpisodeProgramForPlex(serverName, episode),
-      )
-      .with(
-        { sourceType: 'plex', program: { type: 'track' } },
-        ({ program: track }) => this.mintTrackProgramForPlex(serverName, track),
-      )
-      .with(
-        { sourceType: 'jellyfin', program: { Type: 'Movie' } },
-        ({ program: movie }) =>
-          this.mintMovieProgramForJellyfin(serverName, movie),
-      )
-      .with(
-        { sourceType: 'jellyfin', program: { Type: 'Episode' } },
-        ({ program: episode }) =>
-          this.mintEpisodeProgramForJellyfin(serverName, episode),
-      )
-      .with(
-        { sourceType: 'jellyfin', program: { Type: 'Audio' } },
-        ({ program: track }) =>
-          this.mintTrackProgramForJellyfin(serverName, track),
-      )
-      .otherwise(() => new Error('Unexpected program type'));
-    if (isError(ret)) {
-      throw ret;
-    }
-    return ret;
-  }
-
-  mintRaw(
+  mint(
     serverName: string,
     program: ContentProgramOriginalProgram,
   ): NewRawProgram {
     const ret = match(program)
       .with(
         { sourceType: 'plex', program: { type: 'movie' } },
-        ({ program: movie }) =>
-          this.mintRawProgramForPlexMovie(serverName, movie),
+        ({ program: movie }) => this.mintProgramForPlexMovie(serverName, movie),
       )
       .with(
         { sourceType: 'plex', program: { type: 'episode' } },
         ({ program: episode }) =>
-          this.mintRawProgramForPlexEpisode(serverName, episode),
+          this.mintProgramForPlexEpisode(serverName, episode),
       )
       .with(
         { sourceType: 'plex', program: { type: 'track' } },
-        ({ program: track }) =>
-          this.mintRawProgramForPlexTrack(serverName, track),
+        ({ program: track }) => this.mintProgramForPlexTrack(serverName, track),
       )
       .with(
         {
@@ -116,8 +62,7 @@ class ProgramDaoMinter {
             ),
           },
         },
-        ({ program }) =>
-          this.mintRawProgramForJellyfinItem(serverName, program),
+        ({ program }) => this.mintProgramForJellyfinItem(serverName, program),
       )
       .otherwise(() => new Error('Unexpected program type'));
     if (isError(ret)) {
@@ -126,24 +71,7 @@ class ProgramDaoMinter {
     return ret;
   }
 
-  private mintMovieProgramForPlex(
-    serverName: string,
-    plexMovie: PlexMovie,
-  ): Program {
-    return this.#em.create(
-      Program,
-      {
-        ...this.mintRawProgramForPlexMovie(serverName, plexMovie),
-        sourceType: ProgramSourceType.PLEX,
-        type: ProgramType.Movie,
-        createdAt: dayjs().toDate(),
-        updatedAt: dayjs().toDate(),
-      },
-      { persist: false },
-    );
-  }
-
-  private mintRawProgramForPlexMovie(
+  private mintProgramForPlexMovie(
     serverName: string,
     plexMovie: PlexMovie,
   ): NewRawProgram {
@@ -168,34 +96,7 @@ class ProgramDaoMinter {
     };
   }
 
-  private mintMovieProgramForJellyfin(
-    serverName: string,
-    item: JellyfinItem,
-  ): Program {
-    // const file = first(first(plexMovie.Media)?.Part ?? []);
-    return this.#em.create(
-      Program,
-      {
-        sourceType: ProgramSourceType.JELLYFIN,
-        originalAirDate: nullToUndefined(item.PremiereDate),
-        duration: (item.RunTimeTicks ?? 0) / 10_000,
-        filePath: nullToUndefined(item.Path),
-        externalSourceId: serverName,
-        externalKey: item.Id,
-        plexRatingKey: item.Id,
-        plexFilePath: '',
-        // plexFilePath: file?.key,
-        rating: nullToUndefined(item.OfficialRating),
-        summary: nullToUndefined(item.Overview),
-        title: nullToUndefined(item.Name) ?? '',
-        type: ProgramType.Movie,
-        year: nullToUndefined(item.ProductionYear),
-      } satisfies RequiredEntityData<Program>,
-      { persist: false },
-    );
-  }
-
-  private mintRawProgramForJellyfinItem(
+  private mintProgramForJellyfinItem(
     serverName: string,
     item: Omit<JellyfinItem, 'Type'> & {
       Type: 'Movie' | 'Episode' | 'Audio' | 'Video' | 'MusicVideo' | 'Trailer';
@@ -233,26 +134,7 @@ class ProgramDaoMinter {
     };
   }
 
-  private mintEpisodeProgramForPlex(
-    serverName: string,
-    plexEpisode: PlexEpisode,
-  ): Program {
-    const program = this.#em.create(
-      Program,
-      {
-        ...this.mintRawProgramForPlexEpisode(serverName, plexEpisode),
-        sourceType: ProgramSourceType.PLEX,
-        type: ProgramType.Episode,
-        createdAt: dayjs().toDate(),
-        updatedAt: dayjs().toDate(),
-      },
-      { persist: false },
-    );
-
-    return program;
-  }
-
-  private mintRawProgramForPlexEpisode(
+  private mintProgramForPlexEpisode(
     serverName: string,
     plexEpisode: PlexEpisode,
   ): NewRawProgram {
@@ -283,53 +165,7 @@ class ProgramDaoMinter {
     };
   }
 
-  private mintEpisodeProgramForJellyfin(
-    serverName: string,
-    item: JellyfinItem,
-  ): Program {
-    // const file = first(first(plexEpisode.Media)?.Part ?? []);
-    return this.#em.create(
-      Program,
-      {
-        sourceType: ProgramSourceType.JELLYFIN,
-        originalAirDate: nullToUndefined(item.PremiereDate),
-        duration: (item.RunTimeTicks ?? 0) / 10_000,
-        externalSourceId: serverName,
-        externalKey: item.Id,
-        rating: nullToUndefined(item.OfficialRating),
-        summary: nullToUndefined(item.Overview),
-        title: nullToUndefined(item.Name) ?? '',
-        type: ProgramType.Episode,
-        year: nullToUndefined(item.ProductionYear),
-        showTitle: nullToUndefined(item.SeriesName),
-        showIcon: nullToUndefined(item.SeriesThumbImageTag),
-        seasonNumber: nullToUndefined(item.ParentIndexNumber),
-        episode: nullToUndefined(item.IndexNumber),
-        parentExternalKey: nullToUndefined(item.SeasonId),
-        grandparentExternalKey: nullToUndefined(item.SeriesId),
-      },
-      { persist: false },
-    );
-  }
-
-  private mintTrackProgramForPlex(
-    serverName: string,
-    plexTrack: PlexMusicTrack,
-  ) {
-    return this.#em.create(
-      Program,
-      {
-        ...this.mintRawProgramForPlexTrack(serverName, plexTrack),
-        sourceType: ProgramSourceType.PLEX,
-        type: ProgramType.Track,
-        createdAt: dayjs().toDate(),
-        updatedAt: dayjs().toDate(),
-      },
-      { persist: false },
-    );
-  }
-
-  private mintRawProgramForPlexTrack(
+  private mintProgramForPlexTrack(
     serverName: string,
     plexTrack: PlexMusicTrack,
   ): NewRawProgram {
@@ -360,51 +196,6 @@ class ProgramDaoMinter {
     };
   }
 
-  private mintTrackProgramForJellyfin(serverName: string, item: JellyfinItem) {
-    // const file = first(first(plexTrack.Media)?.Part ?? []);
-    return this.#em.create(
-      Program,
-      {
-        sourceType: ProgramSourceType.JELLYFIN,
-        originalAirDate: nullToUndefined(item.PremiereDate),
-        duration: (item.RunTimeTicks ?? 0) / 10_000,
-        externalSourceId: serverName,
-        externalKey: item.Id,
-        rating: nullToUndefined(item.OfficialRating),
-        summary: nullToUndefined(item.Overview),
-        title: nullToUndefined(item.Name) ?? '',
-        type: ProgramType.Track,
-        year: item.PremiereDate ? dayjs(item.PremiereDate).year() : undefined,
-        parentExternalKey: nullToUndefined(item.AlbumId),
-        grandparentExternalKey: first(item.AlbumArtists)?.Id,
-        albumName: nullToUndefined(item.Album),
-        artistName: nullToUndefined(item.AlbumArtist),
-      },
-      { persist: false },
-    );
-  }
-
-  mintExternalIds(
-    serverName: string,
-    program: Program,
-    { sourceType, program: originalProgram }: ContentProgramOriginalProgram,
-  ) {
-    switch (sourceType) {
-      case 'plex':
-        return this.mintExternalIdsForPlex(
-          serverName,
-          program,
-          originalProgram,
-        );
-      case 'jellyfin':
-        return this.mintExternalIdsForJellyfin(
-          serverName,
-          program,
-          originalProgram,
-        );
-    }
-  }
-
   mintRawExternalIds(
     serverName: string,
     programId: string,
@@ -422,53 +213,6 @@ class ProgramDaoMinter {
         ),
       )
       .exhaustive();
-  }
-
-  mintExternalIdsForPlex(
-    serverName: string,
-    program: Program,
-    media: PlexTerminalMedia,
-  ) {
-    const file = first(first(media.Media)?.Part ?? []);
-
-    const ratingId = this.#em.create(
-      ProgramExternalId,
-      {
-        externalKey: media.ratingKey,
-        sourceType: ProgramExternalIdType.PLEX,
-        program,
-        externalSourceId: serverName,
-        externalFilePath: file?.key,
-        directFilePath: file?.file,
-      },
-      { persist: false },
-    );
-
-    const guidId = this.#em.create(
-      ProgramExternalId,
-      {
-        externalKey: media.guid,
-        sourceType: ProgramExternalIdType.PLEX_GUID,
-        program,
-      },
-      { persist: false },
-    );
-
-    const externalGuids = compact(
-      map(media.Guid, (externalGuid) => {
-        // Plex returns these in a URI form, so we can attempt to parse them
-        const parsed = mintExternalIdForPlexGuid(externalGuid.id);
-        if (!isError(parsed)) {
-          parsed.program = ref(program);
-          return parsed;
-        } else {
-          this.#logger.error(parsed, 'Error while extracting Plex Guids');
-        }
-        return null;
-      }),
-    );
-
-    return [ratingId, guidId, ...externalGuids];
   }
 
   mintRawExternalIdsForPlex(
@@ -520,48 +264,6 @@ class ProgramDaoMinter {
     return [ratingId, guidId, ...externalGuids];
   }
 
-  mintExternalIdsForJellyfin(
-    serverName: string,
-    program: Program,
-    media: JellyfinItem,
-  ) {
-    const ratingId = this.#em.create(
-      ProgramExternalId,
-      {
-        externalKey: media.Id,
-        sourceType: ProgramExternalIdType.JELLYFIN,
-        program,
-        externalSourceId: serverName,
-      },
-      { persist: false },
-    );
-
-    const externalGuids = compact(
-      map(media.ProviderIds, (externalGuid, guidType) => {
-        if (isNil(externalGuid)) {
-          return;
-        }
-
-        const typ = programExternalIdTypeFromJellyfinProvider(guidType);
-        if (typ) {
-          return this.#em.create(
-            ProgramExternalId,
-            {
-              externalKey: externalGuid,
-              sourceType: typ,
-              program,
-            },
-            { persist: false },
-          );
-        }
-
-        return;
-      }),
-    );
-
-    return [ratingId, ...externalGuids];
-  }
-
   mintRawExternalIdsForJellyfin(
     serverName: string,
     programId: string,
@@ -604,7 +306,7 @@ class ProgramDaoMinter {
 }
 
 export class ProgramMinterFactory {
-  static create(em: EntityManager): ProgramDaoMinter {
-    return new ProgramDaoMinter(em);
+  static create(): ProgramDaoMinter {
+    return new ProgramDaoMinter();
   }
 }
