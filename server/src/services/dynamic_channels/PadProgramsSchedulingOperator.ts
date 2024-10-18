@@ -1,19 +1,18 @@
 import { AddPaddingOperation } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import {
-  sortBy,
+  find,
   flatMap,
   forEach,
   isEmpty,
-  find,
-  reject,
   isNull,
+  reject,
+  sortBy,
 } from 'lodash-es';
-import { Channel } from '../../dao/entities/Channel';
+import { LineupItem } from '../../dao/derived_types/Lineup';
+import { Channel } from '../../dao/direct/schema/Channel.js';
 import { ChannelAndLineup } from '../../types/internal.js';
 import { scale } from '../../util';
-import { LineupItem } from '../../dao/derived_types/Lineup';
-import { Loaded } from '@mikro-orm/core';
 import { SchedulingOperator } from './SchedulingOperator';
 
 export class PadProgramsSchedulingOperator extends SchedulingOperator<AddPaddingOperation> {
@@ -41,7 +40,7 @@ export class PadProgramsSchedulingOperator extends SchedulingOperator<AddPadding
   }
 
   // TODO: This is some duplicated code from the frontend
-  private padStartTimes(channel: Loaded<Channel>, programs: LineupItem[]) {
+  private padStartTimes(channel: Channel, programs: LineupItem[]) {
     const modMins = this.config.mod;
     const mod = modMins * 60 * 1000;
     const startTime = dayjs(channel.startTime).unix() * 1000;

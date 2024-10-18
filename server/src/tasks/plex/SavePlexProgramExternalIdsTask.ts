@@ -1,11 +1,10 @@
-import { ref } from '@mikro-orm/core';
 import { PlexTerminalMedia } from '@tunarr/types/plex';
 import { compact, isEmpty, isError, isUndefined, map } from 'lodash-es';
 import { ProgramExternalIdType } from '../../dao/custom_types/ProgramExternalIdType.js';
 import { getEm } from '../../dao/dataSource.js';
 import { Program } from '../../dao/entities/Program.js';
 import { ProgramExternalId } from '../../dao/entities/ProgramExternalId.js';
-import { upsertProgramExternalIds_deprecated } from '../../dao/programExternalIdHelpers.js';
+import { upsertRawProgramExternalIds } from '../../dao/programExternalIdHelpers.js';
 import { isQueryError } from '../../external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.js';
 import { PlexApiClient } from '../../external/plex/PlexApiClient.js';
@@ -69,9 +68,8 @@ export class SavePlexProgramExternalIdsTask extends Task {
 
     const eids = compact(
       map(metadata.Guid, (guid) => {
-        const parsed = mintExternalIdForPlexGuid(guid.id);
+        const parsed = mintExternalIdForPlexGuid(guid.id, program.uuid);
         if (!isError(parsed)) {
-          parsed.program = ref(program);
           parsed.externalSourceId = undefined;
           return parsed;
         } else {
@@ -81,7 +79,7 @@ export class SavePlexProgramExternalIdsTask extends Task {
       }),
     );
 
-    return await upsertProgramExternalIds_deprecated(eids);
+    return await upsertRawProgramExternalIds(eids);
   }
 
   get taskName() {

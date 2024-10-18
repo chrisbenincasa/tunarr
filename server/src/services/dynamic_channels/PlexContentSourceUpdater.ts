@@ -1,4 +1,3 @@
-import { Loaded } from '@mikro-orm/core';
 import { createExternalId } from '@tunarr/shared';
 import { buildPlexFilterKey } from '@tunarr/shared/util';
 import { ContentProgram } from '@tunarr/types';
@@ -8,7 +7,7 @@ import { isNil, map } from 'lodash-es';
 import { ChannelDB } from '../../dao/channelDb.js';
 import { EntityManager } from '../../dao/dataSource.js';
 import { PendingProgram } from '../../dao/derived_types/Lineup.js';
-import { Channel } from '../../dao/entities/Channel.js';
+import { Channel } from '../../dao/direct/schema/Channel.js';
 import { MediaSource } from '../../dao/entities/MediaSource.js';
 import { ProgramDB } from '../../dao/programDB.js';
 import { PlexApiClient } from '../../external/plex/PlexApiClient.js';
@@ -29,10 +28,7 @@ export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicConten
   #channelDB: ChannelDB;
   #programDB: ProgramDB;
 
-  constructor(
-    channel: Loaded<Channel>,
-    config: DynamicContentConfigPlexSource,
-  ) {
+  constructor(channel: Channel, config: DynamicContentConfigPlexSource) {
     super(channel, config);
     this.#channelDB = new ChannelDB();
     this.#programDB = new ProgramDB();

@@ -253,9 +253,8 @@ export class ProgramDB {
   ) {
     const start = performance.now();
     // TODO: Wrap all of this stuff in a class and use its own logger
-    const em = getEm();
     const [, nonPersisted] = partition(programs, (p) => p.persisted);
-    const minter = ProgramMinterFactory.create(em);
+    const minter = ProgramMinterFactory.create();
 
     const contentPrograms = ld
       .chain(nonPersisted)
@@ -368,7 +367,7 @@ export class ProgramDB {
     const programsToPersist: MintedRawProgramInfo[] = ld
       .chain(contentPrograms)
       .map((p) => {
-        const program = minter.mintRaw(p.externalSourceName, p.originalProgram);
+        const program = minter.mint(p.externalSourceName, p.originalProgram);
         const externalIds = minter.mintRawExternalIds(
           p.externalSourceName,
           program.uuid,
