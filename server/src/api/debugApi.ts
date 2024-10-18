@@ -16,6 +16,7 @@ import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { enumValues } from '../util/enumUtil.js';
 import { ifDefined, mapAsyncSeq } from '../util/index.js';
 import { DebugJellyfinApiRouter } from './debug/debugJellyfinApi.js';
+import { debugStreamApiRouter } from './debug/debugStreamApi.js';
 
 const ChannelQuerySchema = {
   querystring: z.object({
@@ -24,9 +25,13 @@ const ChannelQuerySchema = {
 };
 
 export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
-  await fastify.register(DebugJellyfinApiRouter, {
-    prefix: '/debug',
-  });
+  await fastify
+    .register(DebugJellyfinApiRouter, {
+      prefix: '/debug',
+    })
+    .register(debugStreamApiRouter, {
+      prefix: '/debug',
+    });
 
   fastify.get(
     '/debug/helpers/current_program',
