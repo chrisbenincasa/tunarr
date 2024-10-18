@@ -70,7 +70,7 @@ class ChannelTranscodingSettingsType extends SchemaBackedDbType<
   }
 }
 
-const ChannelWatermarkSchema = z.object({
+export const ChannelWatermarkSchema = z.object({
   url: z.string().optional().catch(undefined),
   enabled: z.boolean().catch(false),
   position: z

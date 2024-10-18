@@ -96,6 +96,7 @@ import {
   withTvSeason,
   withTvShow,
 } from './direct/programQueryHelpers.js';
+import { channelToInsertable } from './direct/schema/Channel.js';
 import { programExternalIdString } from './direct/schema/Program.js';
 import { Channel, ChannelTranscodingSettings } from './entities/Channel.js';
 import { ChannelFillerShow } from './entities/ChannelFillerShow.js';
@@ -410,9 +411,16 @@ export class ChannelDB {
 
     const newChannel = cloneDeep(existing);
 
-    directDbAccess()
+    await directDbAccess()
       .insertInto('channel')
-      .values({ ...newChannel, uuid: v4(), number: newChannelNumber });
+      .values(
+        channelToInsertable({
+          ...newChannel,
+          uuid: v4(),
+          number: newChannelNumber,
+        }),
+      )
+      .execute();
   }
 
   async updateChannel(id: string, updateReq: SaveChannelRequest) {
