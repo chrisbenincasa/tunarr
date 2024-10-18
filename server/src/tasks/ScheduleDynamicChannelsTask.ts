@@ -1,12 +1,11 @@
-import { Loaded } from '@mikro-orm/core';
 import { DynamicContentConfigSource } from '@tunarr/types/api';
 import filter from 'lodash-es/filter';
 import { ChannelDB } from '../dao/channelDb';
-import { Channel } from '../dao/entities/Channel';
-import { ScheduledTask } from './ScheduledTask';
+import { Channel } from '../dao/direct/schema/Channel';
 import { ContentSourceUpdaterFactory } from '../services/dynamic_channels/ContentSourceUpdaterFactory';
 import { GlobalScheduler } from '../services/scheduler';
 import { Maybe } from '../types/util';
+import { ScheduledTask } from './ScheduledTask';
 import { Task, TaskId } from './Task';
 
 export class ScheduleDynamicChannelsTask extends Task<void> {
@@ -56,7 +55,7 @@ export class ScheduleDynamicChannelsTask extends Task<void> {
 
 class DynamicChannelUpdaterFactory {
   getTask(
-    channel: Loaded<Channel>,
+    channel: Channel,
     contentSourceDef: DynamicContentConfigSource,
   ): Task<unknown> {
     // This won't always be anonymous

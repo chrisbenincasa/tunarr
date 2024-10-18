@@ -1,7 +1,6 @@
 import {
   Loaded,
   OrderDefinition,
-  QueryOrder,
   RequiredEntityData,
   wrap,
 } from '@mikro-orm/core';
@@ -20,6 +19,7 @@ import {
 import { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
+import { jsonArrayFrom } from 'kysely/helpers/sqlite';
 import ld, {
   chunk,
   compact,
@@ -93,6 +93,7 @@ import {
   withTvSeason,
   withTvShow,
 } from './direct/programQueryHelpers.js';
+import { Channel as RawChannel } from './direct/schema/Channel.js';
 import { programExternalIdString } from './direct/schema/Program.js';
 import { Channel, ChannelTranscodingSettings } from './entities/Channel.js';
 import { ChannelFillerShow } from './entities/ChannelFillerShow.js';
@@ -209,6 +210,11 @@ export type LoadedChannelWithGroupRefs = Loaded<
 const fileDbCache: Record<string | number, Low<Lineup>> = {};
 const fileDbLocks = new MutexMap();
 
+type PageParams = {
+  offset: number;
+  limit: number;
+};
+
 export class ChannelDB {
   private logger = LoggerFactory.child({
     caller: import.meta,
@@ -228,34 +234,28 @@ export class ChannelDB {
     return !isNil(channel);
   }
 
-  getChannelByNumber(channelNumber: number) {
-    return getEm().repo(Channel).findOne({ number: channelNumber });
-  }
-
-  async channelIdForNumber(channelNumber: number) {
-    const result = await directDbAccess()
-      .selectFrom('channel')
-      .where('number', '=', channelNumber)
-      .select('uuid')
-      .executeTakeFirst();
-    return result?.uuid;
-  }
-
-  getChannelById(id: string) {
-    return getEm().repo(Channel).findOne({ uuid: id });
-  }
-
-  getChannelDirect(id: string | number) {
+  getChannelDirect(id: string | number, includeFiller: boolean = false) {
     return directDbAccess()
       .selectFrom('channel')
       .$if(isString(id), (eb) => eb.where('channel.uuid', '=', id as string))
       .$if(isNumber(id), (eb) => eb.where('channel.number', '=', id as number))
+      .$if(includeFiller, (eb) =>
+        eb.select((qb) =>
+          jsonArrayFrom(
+            qb
+              .selectFrom('channelFillerShow')
+              .whereRef('channel.uuid', '=', 'channelFillerShow.channelUuid')
+              .select([
+                'channelFillerShow.channelUuid',
+                'channelFillerShow.fillerShowUuid',
+                'channelFillerShow.cooldown',
+                'channelFillerShow.weight',
+              ]),
+          ).as('fillerShows'),
+        ),
+      )
       .selectAll()
       .executeTakeFirst();
-  }
-
-  getChannel(id: string | number) {
-    return isNumber(id) ? this.getChannelByNumber(id) : this.getChannelById(id);
   }
 
   getChannelAndPrograms(
@@ -329,28 +329,6 @@ export class ChannelDB {
     return result?.programs ?? [];
   }
 
-  /**
-   * The old implementation using the ORM, which is super slow for
-   * huge channels. This WILL be removed, but we're keeping it around
-   * so that we can ship the perf improvements now without changing the
-   * whole world.
-   * @deprecated
-   */
-  getChannelAndProgramsSLOW(uuid: string) {
-    return getEm()
-      .repo(Channel)
-      .findOne(
-        { uuid },
-        { populate: ['programs', 'programs.customShows.uuid'] },
-      );
-  }
-
-  getChannelAndProgramsByNumber(number: number) {
-    return getEm()
-      .repo(Channel)
-      .findOne({ number }, { populate: ['programs'] });
-  }
-
   async saveChannel(createReq: SaveChannelRequest) {
     const em = getEm();
     const existing = await em.findOne(Channel, { number: createReq.number });
@@ -375,14 +353,18 @@ export class ChannelDB {
     }
 
     await em.flush();
-    return { channel, lineup: (await this.getFileDb(channel.uuid)).data };
+    // TODO: convert everything to use kysely
+    return {
+      channel: (await this.getChannelDirect(channel.uuid))!,
+      lineup: (await this.getFileDb(channel.uuid)).data,
+    };
   }
 
   async updateChannel(id: string, updateReq: SaveChannelRequest) {
     const em = getEm();
     const channel = em.getReference(Channel, id);
     const update = updateRequestToChannel(updateReq);
-    const loadedChannel = wrap(channel).assign(update, {
+    wrap(channel).assign(update, {
       merge: true,
       onlyProperties: true,
     });
@@ -451,22 +433,17 @@ export class ChannelDB {
     await em.flush();
 
     return {
-      channel: await loadedChannel.populate(['fillers', 'channelFillers']),
+      channel: (await this.getChannelDirect(id, true))!,
       lineup: await this.loadLineup(id),
     };
   }
 
   async updateChannelStartTime(id: string, newTime: number) {
-    const ts = dayjs(newTime);
-    return getEm().nativeUpdate(
-      Channel,
-      {
-        uuid: id,
-      },
-      {
-        startTime: ts.unix() * 1000,
-      },
-    );
+    return directDbAccess()
+      .updateTable('channel')
+      .where('channel.uuid', '=', id)
+      .set('startTime', newTime)
+      .executeTakeFirst();
   }
 
   async deleteChannel(
@@ -508,17 +485,22 @@ export class ChannelDB {
     }
   }
 
-  async getAllChannelNumbers() {
-    const channels = await getEm().findAll(Channel, {
-      fields: ['number'],
-      orderBy: { number: QueryOrder.DESC },
-    });
-    return channels.map((channel) => channel.number);
-  }
-
   async getAllChannels(orderBy?: OrderDefinition<Channel>) {
     // TODO return all programs
     return getEm().repo(Channel).findAll({ orderBy });
+  }
+
+  getAllChannelsDirect(pageParams?: PageParams) {
+    return directDbAccess()
+      .selectFrom('channel')
+      .selectAll()
+      .orderBy('channel.number asc')
+      .$if(isDefined(pageParams) && pageParams.offset >= 0, (qb) =>
+        qb
+          .offset(pageParams!.offset)
+          .$if(pageParams!.limit >= 0, (qb) => qb.limit(pageParams!.limit)),
+      )
+      .execute();
   }
 
   async getAllChannelsAndPrograms(): Promise<RawChannelWithPrograms[]> {
@@ -719,45 +701,72 @@ export class ChannelDB {
   }
 
   async setChannelPrograms(
-    channel: Loaded<Channel>,
+    channel: RawChannel,
     lineup: readonly LineupItem[],
-  ): Promise<Loaded<Channel> | null>;
+  ): Promise<RawChannel | null>;
   async setChannelPrograms(
-    channel: string | Loaded<Channel>,
+    channel: string | RawChannel,
     lineup: readonly LineupItem[],
     startTime?: number,
-  ): Promise<Loaded<Channel> | null> {
+  ): Promise<RawChannel | null> {
     const loadedChannel = await run(async () => {
       if (isString(channel)) {
-        return await this.getChannelById(channel);
+        return await this.getChannelDirect(channel);
       } else {
         return channel;
       }
     });
 
-    if (isNull(loadedChannel)) {
+    if (isNil(loadedChannel)) {
       return null;
     }
 
-    return await getEm().transactional(async (em) => {
-      if (!isUndefined(startTime)) {
-        loadedChannel.startTime = startTime;
-      }
-      loadedChannel.duration = sumBy(lineup, typedProperty('durationMs'));
+    const allIds = ld
+      .chain(lineup)
+      .filter(isContentItem)
+      .map((p) => p.id)
+      .uniq()
+      .value();
 
-      const allIds = ld
-        .chain(lineup)
-        .filter(isContentItem)
-        .map((p) => p.id)
-        .uniq()
-        .value();
-      loadedChannel.programs.removeAll();
-      await em.persistAndFlush(loadedChannel);
-      const refs = allIds.map((id) => em.getReference(Program, id));
-      loadedChannel.programs.set(refs);
-      await em.persistAndFlush(loadedChannel);
-      return loadedChannel;
-    });
+    return await directDbAccess()
+      .transaction()
+      .execute(async (tx) => {
+        // await tx
+        if (!isUndefined(startTime)) {
+          loadedChannel.startTime = startTime;
+        }
+        loadedChannel.duration = sumBy(lineup, typedProperty('durationMs'));
+        const updatedChannel = await tx
+          .updateTable('channel')
+          .where('channel.uuid', '=', loadedChannel.uuid)
+          .set('duration', sumBy(lineup, typedProperty('durationMs')))
+          .$if(isDefined(startTime), (_) => _.set('startTime', startTime!))
+          .returningAll()
+          .executeTakeFirst();
+
+        for (const idChunk of chunk(allIds, 500)) {
+          await tx
+            .deleteFrom('channelPrograms')
+            .where('channelUuid', '=', loadedChannel.uuid)
+            .where('programUuid', 'not in', idChunk)
+            .execute();
+        }
+
+        for (const idChunk of chunk(allIds, 500)) {
+          await tx
+            .insertInto('channelPrograms')
+            .values(
+              map(idChunk, (id) => ({
+                programUuid: id,
+                channelUuid: loadedChannel.uuid,
+              })),
+            )
+            .onConflict((oc) => oc.doNothing())
+            .executeTakeFirst();
+        }
+
+        return updatedChannel ?? null;
+      });
   }
 
   async addPendingPrograms(
@@ -797,7 +806,7 @@ export class ChannelDB {
 
   async loadAllLineupConfigs(forceRead: boolean = false) {
     return mapReduceAsyncSeq(
-      await this.getAllChannels(),
+      await this.getAllChannelsDirect(),
       async (channel) => {
         return {
           channel,
@@ -808,13 +817,15 @@ export class ChannelDB {
         ...prev,
         [channel.uuid]: { channel, lineup },
       }),
-      {} as Record<string, { channel: Loaded<Channel>; lineup: Lineup }>,
+      {} as Record<string, { channel: RawChannel; lineup: Lineup }>,
     );
   }
 
-  async loadChannelAndLineup(channelId: string) {
-    const channel = await this.getChannelById(channelId);
-    if (isNull(channel)) {
+  async loadChannelAndLineup(
+    channelId: string,
+  ): Promise<{ channel: RawChannel; lineup: Lineup } | null> {
+    const channel = await this.getChannelDirect(channelId);
+    if (isNil(channel)) {
       return null;
     }
 
@@ -890,7 +901,7 @@ export class ChannelDB {
       .value();
 
     const channel = await this.timer.timeAsync('select channel', () =>
-      getEm().repo(Channel).findOne({ uuid: channelId }),
+      this.getChannelDirect(channelId),
     );
 
     if (isNil(channel)) {
@@ -1146,7 +1157,7 @@ export class ChannelDB {
   }
 
   private async buildCondensedLineup(
-    channel: Loaded<Channel>,
+    channel: RawChannel,
     dbProgramIds: Set<string>,
     lineup: LineupItem[],
   ): Promise<{ lineup: CondensedChannelProgram[]; offsets: number[] }> {
@@ -1187,11 +1198,10 @@ export class ChannelDB {
       customShowIndexes[customShowId] = byItemId;
     }
 
-    const allChannels = await getEm()
-      .repo(Channel)
-      .findAll({
-        fields: ['name', 'number'],
-      });
+    const allChannels = await directDbAccess()
+      .selectFrom('channel')
+      .select(['uuid', 'name', 'number'])
+      .execute();
 
     const channelsById = groupByUniqProp(allChannels, 'uuid');
 
@@ -1200,7 +1210,10 @@ export class ChannelDB {
       .map((item) => {
         let p: CondensedChannelProgram | null = null;
         if (isOfflineItem(item)) {
-          p = this.#programConverter.offlineLineupItemToProgram(channel, item);
+          p = this.#programConverter.directOfflineLineupItemToProgram(
+            channel,
+            item,
+          );
         } else if (isRedirectItem(item)) {
           if (channelsById[item.channel]) {
             p = this.#programConverter.redirectLineupItemToProgram(
