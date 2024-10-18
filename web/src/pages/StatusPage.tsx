@@ -1,5 +1,7 @@
 import { RotatingLoopIcon } from '@/components/base/LoadingIcon';
 import PaddedPaper from '@/components/base/PaddedPaper';
+import { ActiveSessionsTable } from '@/components/status/ActiveSessionsTable.tsx';
+import { useChannelsAndSessions } from '@/hooks/useChannelSessions.ts';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { useM3ULink } from '@/hooks/useM3ULink';
 import { useSystemHealthChecks } from '@/hooks/useSystemHealthChecks';
@@ -33,7 +35,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { compact, isEmpty, map, reject } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import { useState } from 'react';
-import { match } from 'ts-pattern';
+import { P, match } from 'ts-pattern';
 
 const MissingSeasonNumbersCheck = 'MissingSeasonNumbers';
 const FfmpegVersionCheck = 'FfmpegVersion';
@@ -88,6 +90,8 @@ export const StatusPage = () => {
   const apiClient = useTunarrApi();
   const queryClient = useQueryClient();
   const snackbar = useSnackbar();
+
+  const [channelsQuery, channelSessions] = useChannelsAndSessions();
 
   const runSystemFixer = useMutation({
     mutationFn: ({ fixerId }: RunFixerArgs) =>
@@ -192,6 +196,48 @@ export const StatusPage = () => {
     );
   };
 
+  const renderActiveSessions = () => {
+    const contents = match([channelsQuery, channelSessions] as const)
+      .with([P._, { isLoading: true }], () => <LinearProgress />)
+      // .with([P._, { data: P.when(isEmpty) }], () => (
+      //   <Typography sx={{ textAlign: 'center' }}>
+      //     There are no active sessions.
+      //   </Typography>
+      // ))
+      .with(
+        [
+          P.select('channels', { data: P.nonNullable }),
+          P.select('sessions', { data: P.nonNullable }),
+        ],
+        ({ channels, sessions }) => {
+          if (isEmpty(sessions.data)) {
+            return (
+              <Typography sx={{ textAlign: 'center' }}>
+                There are no active sessions.
+              </Typography>
+            );
+          } else {
+            return compact(
+              map(channels.data, (channel) => {
+                if (!sessions.data?.[channel.id]) {
+                  return;
+                }
+
+                return <span key={channel.id}>{channel.name}</span>;
+              }),
+            );
+          }
+        },
+      )
+      .otherwise(() => null);
+
+    return (
+      <Table>
+        <TableBody>{contents}</TableBody>
+      </Table>
+    );
+  };
+
   const actualBackendUri = isEmpty(backendUri)
     ? window.location.origin
     : backendUri;
@@ -200,14 +246,14 @@ export const StatusPage = () => {
     <Box>
       <Stack gap={2} useFlexGap>
         <PaddedPaper>
-          <Typography sx={{ mb: 1 }} variant="h5">
+          <Typography sx={{ mb: 1 }} variant="h4">
             System Health
           </Typography>
           {systemHealthQuery.isLoading && <LinearProgress />}
           {renderHealthCheckResults()}
         </PaddedPaper>
         <PaddedPaper>
-          <Typography sx={{ mb: 1 }} variant="h5">
+          <Typography sx={{ mb: 1 }} variant="h4">
             System Info
           </Typography>
           {systemSettings.isLoading && <LinearProgress />}
@@ -291,6 +337,12 @@ export const StatusPage = () => {
               </TableBody>
             </Table>
           )}
+        </PaddedPaper>
+        <PaddedPaper>
+          <Typography sx={{ mb: 1 }} variant="h4">
+            Active Sessions
+          </Typography>
+          <ActiveSessionsTable />
         </PaddedPaper>
       </Stack>
     </Box>

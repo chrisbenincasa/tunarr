@@ -201,7 +201,7 @@ class LoggerFactoryImpl {
       singleLine: true,
       ignore: 'pid,hostname',
       customLevels: {
-        http: 15,
+        http: 25,
       },
       customColors: {
         http: 'blue',

@@ -1,5 +1,5 @@
 import { betterHumanize } from '@/helpers/dayjs.ts';
-import { useApiQuery } from '@/hooks/useApiQuery.ts';
+import { useSuspenseChannelSessions } from '@/hooks/useChannelSessions.ts';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard.ts';
 import { setChannelTableColumnModel } from '@/store/settings/actions.ts';
 import {
@@ -63,13 +63,7 @@ export default function ChannelsPage() {
   const { backendUri } = useSettings();
   const apiClient = useTunarrApi();
   const { data: channels } = useSuspenseChannels();
-  const { data: channelSessions } = useApiQuery({
-    queryKey: ['channels', 'sessions'],
-    queryFn(apiClient) {
-      return apiClient.getAllChannelSessions();
-    },
-    staleTime: 10_000,
-  });
+  const { data: channelSessions } = useSuspenseChannelSessions();
   const theme = useTheme();
   const mediumViewport = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
