@@ -144,7 +144,7 @@ export abstract class BaseHlsSession<
         },
         {
           retries: 10,
-          factor: 1.2,
+          factor: 1.5,
         },
       );
 
