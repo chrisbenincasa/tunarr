@@ -1,6 +1,8 @@
 import { TranscodeResolutionOptions } from '@/helpers/constants.ts';
+import { useSystemSettingsSuspense } from '@/hooks/useSystemSettings.ts';
 import { HelpOutline } from '@mui/icons-material';
 import {
+  Alert,
   Box,
   Button,
   Checkbox,
@@ -174,6 +176,7 @@ export default function FfmpegSettingsPage() {
     queryKey: ['ffmpeg-info'],
     queryFn: (apiClient) => apiClient.getFfmpegInfo(),
   });
+  const systemSettings = useSystemSettingsSuspense();
 
   const {
     reset,
@@ -656,10 +659,18 @@ export default function FfmpegSettingsPage() {
   return (
     <Box component="form" onSubmit={handleSubmit(updateFfmpegSettings)}>
       <Stack spacing={2} useFlexGap>
+        {!systemSettings.data.adminMode && (
+          <Alert severity="info">
+            Tunarr must be run in admin mode in order to update the FFmpeg and
+            FFprobe executable paths. The paths can also be updated from the
+            command line.
+          </Alert>
+        )}
         <FormControl fullWidth>
           <Controller
             control={control}
             name="ffmpegExecutablePath"
+            disabled={!systemSettings.data.adminMode}
             render={({ field }) => (
               <TextField
                 id="ffmpeg-executable-path"
@@ -676,6 +687,7 @@ export default function FfmpegSettingsPage() {
           <Controller
             control={control}
             name="ffprobeExecutablePath"
+            disabled={!systemSettings.data.adminMode}
             render={({ field }) => (
               <TextField
                 id="ffprobe-executable-path"

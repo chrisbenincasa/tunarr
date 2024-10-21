@@ -2,6 +2,7 @@ import { SystemSettingsSchema } from '@tunarr/types';
 import {
   InsertMediaSourceRequestSchema,
   JellyfinLoginRequest,
+  SystemSettingsResponseSchema,
   UpdateMediaSourceRequestSchema,
   UpdateSystemSettingsRequestSchema,
 } from '@tunarr/types/api';
@@ -118,7 +119,7 @@ const updatePlexStreamSettings = makeEndpoint({
 const getSystemSettings = makeEndpoint({
   method: 'get',
   path: '/api/system/settings',
-  response: SystemSettingsSchema,
+  response: SystemSettingsResponseSchema,
   alias: 'getSystemSettings',
 });
 

@@ -7,4 +7,4 @@ export const TruthyQueryParam = z
     z.literal('false'),
     z.coerce.number(),
   ])
-  .transform((value) => value === true || value === 'true');
+  .transform((value) => value === 1 || value === true || value === 'true');

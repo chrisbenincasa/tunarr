@@ -202,6 +202,7 @@ export const SystemSettingsResponseSchema = SystemSettingsSchema.extend({
   logging: LoggingSettingsSchema.extend({
     environmentLogLevel: LogLevelsSchema.optional(),
   }),
+  adminMode: z.boolean(),
 });
 
 export type SystemSettingsResponse = z.infer<

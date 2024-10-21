@@ -1,10 +1,12 @@
-import { FfmpegSettings, defaultFfmpegSettings } from '@tunarr/types';
+import { defaultFfmpegSettings } from '@tunarr/types';
 import { FfmpegSettingsSchema } from '@tunarr/types/schemas';
-import { isError, isUndefined } from 'lodash-es';
+import { isError, merge, omit } from 'lodash-es';
 import { z } from 'zod';
+import { serverOptions } from '../globals.js';
 import { RouterPluginCallback } from '../types/serverType.js';
 import { firstDefined } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
+import { sanitizeForExec } from '../util/strings.js';
 
 export const ffmpegSettingsRouter: RouterPluginCallback = (
   fastify,
@@ -40,12 +42,29 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
     },
     async (req, res) => {
       try {
-        await req.serverCtx.settings.updateSettings('ffmpeg', req.body);
-        const ffmpeg = req.serverCtx.settings.ffmpegSettings();
-        const err = fixupFFMPEGSettings(ffmpeg);
-        if (typeof err !== 'undefined') {
-          return res.status(400).send(err);
+        // Disallow updating ffmpeg/ffprobe executable paths if we are not running
+        // in admin mode.
+        let newSettings = req.body;
+        if (!serverOptions().admin) {
+          newSettings = merge(
+            {},
+            req.serverCtx.settings.ffmpegSettings(),
+            omit(newSettings, [
+              'ffmpegExecutablePath',
+              'ffprobeExecutablePath',
+            ]),
+          );
+        } else {
+          req.body.ffmpegExecutablePath = sanitizeForExec(
+            req.body.ffmpegExecutablePath,
+          );
+          req.body.ffprobeExecutablePath = sanitizeForExec(
+            req.body.ffprobeExecutablePath,
+          );
         }
+
+        await req.serverCtx.settings.updateSettings('ffmpeg', newSettings);
+        const ffmpeg = req.serverCtx.settings.ffmpegSettings();
         req.serverCtx.eventService.push({
           type: 'settings-update',
           message: 'FFMPEG configuration updated.',
@@ -111,12 +130,3 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
 
   done();
 };
-
-function fixupFFMPEGSettings(ffmpeg: FfmpegSettings): string | undefined {
-  if (isUndefined(ffmpeg.maxFPS)) {
-    ffmpeg.maxFPS = 60;
-  } else if (isNaN(ffmpeg.maxFPS)) {
-    return 'maxFPS should be a number';
-  }
-  return void 0;
-}

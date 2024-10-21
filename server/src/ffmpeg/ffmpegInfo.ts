@@ -5,8 +5,10 @@ import NodeCache from 'node-cache';
 import PQueue from 'p-queue';
 import { Nullable } from '../types/util.js';
 import { cacheGetOrSet } from '../util/cache.js';
+import { fileExists } from '../util/fsUtil.js';
 import { attempt, isNonEmptyString, parseIntOrNull } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory';
+import { sanitizeForExec } from '../util/strings.js';
 import { NvidiaHardwareCapabilities } from './NvidiaHardwareCapabilities.js';
 
 const CacheKeys = {
@@ -98,7 +100,7 @@ export class FFMPEGInfo {
       this.logger.warn(
         `${app} -version command output not in the expected format: ${output}`,
       );
-      return { versionString: output };
+      return { versionString: 'unknown' };
     }
     const versionString = m[1];
 
@@ -296,10 +298,15 @@ export class FFMPEGInfo {
     swallowError: boolean = false,
   ): Promise<string> {
     return execQueue.add(
-      async () =>
-        await new Promise((resolve, reject) => {
+      async () => {
+        const sanitizedPath = sanitizeForExec(executable);
+        if (!(await fileExists(sanitizedPath))) {
+          throw new Error(`Path at ${sanitizedPath} does not exist`);
+        }
+
+        return await new Promise((resolve, reject) => {
           exec(
-            `"${executable}" ${args.join(' ')}`,
+            `"${sanitizedPath}" ${args.join(' ')}`,
             function (error, stdout, stderr) {
               if (error !== null && !swallowError) {
                 reject(error);
@@ -307,7 +314,8 @@ export class FFMPEGInfo {
               resolve(isNonEmptyString(stdout) ? stdout : stderr);
             },
           );
-        }),
+        });
+      },
       { throwOnTimeout: true },
     );
   }
