@@ -8,6 +8,7 @@ import dbConfig from '../mikro-orm.config.js';
 export type ServerOptions = GlobalOptions & {
   port: number;
   printRoutes: boolean;
+  admin: boolean;
 };
 
 export type GlobalOptions = {

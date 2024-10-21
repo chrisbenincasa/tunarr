@@ -96,7 +96,7 @@ export const FfmpegSettingsSchema = z.object({
   normalizeAudioCodec: z.boolean().default(true),
   normalizeResolution: z.boolean().default(true),
   normalizeAudio: z.boolean().default(true),
-  maxFPS: z.number().default(60),
+  maxFPS: z.coerce.number().min(1).max(240).default(60),
   scalingAlgorithm: z
     .union([
       z.literal('bicubic'),

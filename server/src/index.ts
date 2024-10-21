@@ -1,5 +1,8 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
+import { dayjsMod } from '@tunarr/shared/util';
 import chalk from 'chalk';
+import dayjs from 'dayjs';
+import duration from 'dayjs/plugin/duration.js';
 import { isArray, isString, keys } from 'lodash-es';
 import { existsSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
@@ -8,6 +11,8 @@ import path from 'path';
 import { ArgumentsCamelCase } from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import yargs from 'yargs/yargs';
+import { commands } from './cli/index.js';
+import { initOrm, withDb } from './dao/dataSource.js';
 import {
   LegacyDbMigrator,
   MigratableEntities,
@@ -19,17 +24,14 @@ import {
   setServerOptions,
 } from './globals.js';
 import { initDbDirectories, initServer } from './server.js';
+import { FixersByName } from './tasks/fixers/index.js';
+import { TruthyQueryParam } from './types/schemas.js';
 import {
   getDefaultDatabaseDirectory,
   getDefaultLogLevel,
   getDefaultServerPort,
 } from './util/defaults.js';
-import { initOrm, withDb } from './dao/dataSource.js';
-import { FixersByName } from './tasks/fixers/index.js';
-import { isNonEmptyString } from './util/index.js';
-import dayjs from 'dayjs';
-import duration from 'dayjs/plugin/duration.js';
-import { dayjsMod } from '@tunarr/shared/util';
+import { isNonEmptyString, isProduction } from './util/index.js';
 import { getTunarrVersion } from './util/version.js';
 
 // Extend this here once so we don't have to worry about
@@ -74,11 +76,25 @@ yargs(hideBin(process.argv))
           alias: 'p',
           type: 'number',
           desc: 'The port to run the Tunarr server on',
-          default: getDefaultServerPort(),
+          default: getDefaultServerPort,
         })
         .option('printRoutes', {
           type: 'boolean',
-          default: Boolean(process.env['TUNARR_SERVER_PRINT_ROUTES']),
+          default: () =>
+            TruthyQueryParam.catch(false).parse(
+              process.env['TUNARR_SERVER_PRINT_ROUTES'],
+            ),
+        })
+        .option('admin', {
+          type: 'boolean',
+          default: () => {
+            if (isNonEmptyString(process.env['TUNARR_SERVER_ADMIN_MODE'])) {
+              return TruthyQueryParam.catch(false).parse(
+                process.env['TUNARR_SERVER_ADMIN_MODE'],
+              );
+            }
+            return !isProduction;
+          },
         });
     },
     async (args: ArgumentsCamelCase<ServerOptions>) => {
@@ -255,5 +271,6 @@ ${chalk.blue('  |_| ')}${chalk.green(' \\___/')}${chalk.yellow(
       }
     },
   )
+  .command(commands)
   .help()
   .parseAsync();
