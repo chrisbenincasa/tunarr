@@ -1,3 +1,4 @@
+import { get, isNil, isObject, merge } from 'lodash-es';
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
@@ -13,12 +14,15 @@ import {
   ProgrammingListingsState,
   createProgrammingListingsState,
 } from './programmingSelector/store.ts';
-import { SettingsState, createSettingsSlice } from './settings/store.ts';
+import {
+  PersistedSettingsState,
+  SettingsState,
+  createSettingsSlice,
+} from './settings/store.ts';
 import {
   ThemeEditorState,
   createThemeEditorState,
 } from './themeEditor/store.ts';
-import { get, isNil, isObject, merge } from 'lodash-es';
 
 export type State = ThemeEditorState &
   SettingsState &
@@ -26,7 +30,7 @@ export type State = ThemeEditorState &
   EditorsState &
   PlexMetadataState;
 
-type PersistedState = SettingsState & ThemeEditorState;
+type PersistedState = PersistedSettingsState & ThemeEditorState;
 
 const useStore = create<State>()(
   immer(
@@ -42,10 +46,19 @@ const useStore = create<State>()(
         {
           name: 'tunarr',
           partialize: (state: State) =>
-            <PersistedState>{
+            ({
               theme: state.theme,
-              settings: state.settings,
-            },
+              settings: {
+                backendUri: state.settings.backendUri,
+                ui: {
+                  channelTablePagination: {
+                    pageSize: state.settings.ui.channelTablePagination.pageSize,
+                  },
+                  channelTableColumnModel:
+                    state.settings.ui.channelTableColumnModel,
+                },
+              },
+            }) satisfies PersistedState,
           merge(persistedState, currentState) {
             if (isNil(persistedState)) {
               return currentState;

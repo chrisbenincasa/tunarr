@@ -1,7 +1,10 @@
 import { betterHumanize } from '@/helpers/dayjs.ts';
 import { useApiQuery } from '@/hooks/useApiQuery.ts';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard.ts';
-import { setChannelTableColumnModel } from '@/store/settings/actions.ts';
+import {
+  setChannelPaginationState,
+  setChannelTableColumnModel,
+} from '@/store/settings/actions.ts';
 import {
   Check,
   Close,
@@ -36,7 +39,7 @@ import {
 import { useTheme } from '@mui/material/styles';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link as RouterLink, useNavigate } from '@tanstack/react-router';
-import { VisibilityState } from '@tanstack/react-table';
+import { PaginationState, VisibilityState } from '@tanstack/react-table';
 import { Channel, ChannelIcon } from '@tunarr/types';
 import { ChannelSessionsResponse } from '@tunarr/types/api';
 import dayjs from 'dayjs';
@@ -86,10 +89,17 @@ export default function ChannelsPage() {
   const initialColumnModel = settings.ui.channelTableColumnModel;
   const [columnVisibility, setColumnVisibility] =
     useState<VisibilityState>(initialColumnModel);
+  const [paginationState, setPaginationState] = useState<PaginationState>(
+    settings.ui.channelTablePagination,
+  );
 
   useEffect(() => {
     setChannelTableColumnModel(columnVisibility);
   }, [columnVisibility]);
+
+  useEffect(() => {
+    setChannelPaginationState(paginationState);
+  }, [paginationState]);
 
   const handleOpenMenu = (
     event: React.MouseEvent<HTMLElement>,
@@ -413,6 +423,10 @@ export default function ChannelsPage() {
     layoutMode: 'grid',
     state: {
       columnVisibility,
+      pagination: paginationState,
+    },
+    initialState: {
+      pagination: paginationState,
     },
     muiTableBodyRowProps: ({ row }) => ({
       sx: {
@@ -435,6 +449,7 @@ export default function ChannelsPage() {
     onColumnVisibilityChange: (updater) => {
       setColumnVisibility(updater);
     },
+    onPaginationChange: (updater) => setPaginationState(updater),
   });
 
   return (

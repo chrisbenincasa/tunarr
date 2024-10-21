@@ -1,8 +1,10 @@
+import { PaginationState } from '@tanstack/react-table';
 import { StateCreator } from 'zustand';
 
 interface SettingsStateInternal {
   backendUri: string;
   ui: {
+    channelTablePagination: PaginationState;
     channelTableColumnModel: Record<string, boolean>;
   };
 }
@@ -10,6 +12,18 @@ interface SettingsStateInternal {
 export interface SettingsState {
   settings: SettingsStateInternal;
 }
+
+export type PersistedSettingsState = {
+  settings: {
+    backendUri: string;
+    ui: {
+      channelTablePagination: {
+        pageSize: number;
+      };
+      channelTableColumnModel: Record<string, boolean>;
+    };
+  };
+};
 
 // By default, the dev environment runs its web server on port
 // 5173. In 'prod' we assume that by default the user wants
@@ -23,6 +37,10 @@ export const createSettingsSlice: StateCreator<SettingsState> = () => ({
   settings: {
     backendUri: DefaultBackendUri,
     ui: {
+      channelTablePagination: {
+        pageIndex: 0,
+        pageSize: 10,
+      },
       channelTableColumnModel: {
         onDemand: false,
       },
