@@ -9,6 +9,9 @@
     "build": {
       "dependsOn": ["@tunarr/types#build"],
       "outputs": ["build/**"]
+    },
+    "build-dev": {
+      "cache": false
     }
   }
 }

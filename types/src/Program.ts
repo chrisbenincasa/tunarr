@@ -9,31 +9,29 @@ import {
   ContentProgramSchema,
   CustomProgramSchema,
   FlexProgramSchema,
+  ProgramSchema,
   ProgramTypeSchema,
   RedirectProgramSchema,
 } from './schemas/programmingSchema.js';
-import { ProgramSchema } from './schemas/programmingSchema.js';
 
 // This helps with VS Code type preview
-type Alias<t> = t & { _?: never };
-
 export type ProgramType = z.infer<typeof ProgramTypeSchema>;
 
-export type Program = Alias<z.infer<typeof ProgramSchema>>;
+export type Program = z.infer<typeof ProgramSchema>;
 
 // Used when we only need access to very minimal set of fields that
 // are shared by all program types, e.g. duration
-export type BaseProgram = Alias<z.infer<typeof BaseProgramSchema>>;
+export type BaseProgram = z.infer<typeof BaseProgramSchema>;
 
-export type ContentProgram = Alias<z.infer<typeof ContentProgramSchema>>;
+export type ContentProgram = z.infer<typeof ContentProgramSchema>;
 
-export type FlexProgram = Alias<z.infer<typeof FlexProgramSchema>>;
+export type FlexProgram = z.infer<typeof FlexProgramSchema>;
 
-export type CustomProgram = Alias<z.infer<typeof CustomProgramSchema>>;
+export type CustomProgram = z.infer<typeof CustomProgramSchema>;
 
-export type RedirectProgram = Alias<z.infer<typeof RedirectProgramSchema>>;
+export type RedirectProgram = z.infer<typeof RedirectProgramSchema>;
 
-export type ChannelProgram = Alias<z.infer<typeof ChannelProgramSchema>>;
+export type ChannelProgram = z.infer<typeof ChannelProgramSchema>;
 
 function isProgramType<T extends BaseProgram>(type: string) {
   return (p: BaseProgram): p is T => {
@@ -63,18 +61,16 @@ export function programUniqueId(program: BaseProgram): string | null {
   return null;
 }
 
-export type ChannelProgramming = Alias<
-  z.infer<typeof ChannelProgrammingSchema>
+export type ChannelProgramming = z.infer<typeof ChannelProgrammingSchema>;
+
+export type CondensedContentProgram = z.infer<
+  typeof CondensedContentProgramSchema
 >;
 
-export type CondensedContentProgram = Alias<
-  z.infer<typeof CondensedContentProgramSchema>
+export type CondensedChannelProgram = z.infer<
+  typeof CondensedChannelProgramSchema
 >;
 
-export type CondensedChannelProgram = Alias<
-  z.infer<typeof CondensedChannelProgramSchema>
->;
-
-export type CondensedChannelProgramming = Alias<
-  z.infer<typeof CondensedChannelProgrammingSchema>
+export type CondensedChannelProgramming = z.infer<
+  typeof CondensedChannelProgrammingSchema
 >;

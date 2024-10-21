@@ -358,6 +358,9 @@ importers:
       random-js:
         specifier: 2.1.0
         version: 2.1.0
+      ts-pattern:
+        specifier: ^5.4.0
+        version: 5.4.0
       tslib:
         specifier: ^2.6.2
         version: 2.6.2

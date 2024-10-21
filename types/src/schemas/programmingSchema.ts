@@ -20,10 +20,7 @@ export const ProgramTypeSchema = z.union([
   z.literal('flex'),
 ]);
 
-export const ExternalSourceTypeSchema = z.union([
-  z.literal('plex'),
-  z.literal('jellyfin'),
-]);
+export const ExternalSourceTypeSchema = z.enum(['plex', 'jellyfin']);
 
 export const ProgramSchema = z.object({
   artistName: z.string().optional(),
@@ -110,11 +107,9 @@ export const CondensedContentProgramSchema = BaseProgramSchema.extend({
   originalProgram: OriginalProgramSchema.optional(),
 });
 
-export const ContentProgramTypeSchema = z.union([
-  z.literal('movie'),
-  z.literal('episode'),
-  z.literal('track'),
-]);
+export const ContentProgramTypeSchema = z.enum(['movie', 'episode', 'track']);
+
+export type ContentProgramType = z.infer<typeof ContentProgramTypeSchema>;
 
 // Unfortunately we can't make this a discrim union, or even a regular union,
 // because it is used in other discriminatedUnions and zod cannot handle this
@@ -127,22 +122,33 @@ export const ContentProgramSchema = CondensedContentProgramSchema.extend({
   summary: z.string().optional(),
   date: z.string().optional(),
   rating: z.string().optional(),
-  // If subtype = episode, this is the show title
+  // The file path as seen from the server
+  serverFilePath: z.string().optional(),
   title: z.string(),
   // Episode specific stuff
+  // DEPRECATED: Use parentId/grandparentId
   showId: z.string().optional(),
   seasonId: z.string().optional(),
-  episodeTitle: z.string().optional(),
   seasonNumber: z.number().optional(),
+  // DEPRECATED: Use index
   episodeNumber: z.number().optional(),
   // Track specific stuff
+  // DEPRECATED: Use parentId/grandparentId
   albumId: z.string().optional(),
   artistId: z.string().optional(),
-  artistName: z.string().optional(),
-  albumName: z.string().optional(),
-  // These will eventually replace season/track specific stuff
+
+  // Index of this item relative to its parent
   index: z.number().nonnegative().optional(),
+  // ID of the program_grouping in Tunarr
+  parentId: z.string().optional(),
+  // Parent title - e.g. album or season
+  parentTitle: z.string().optional(),
+  // Index of this item's parent relative to its grandparent
+  // e.g. season number
   parentIndex: z.number().nonnegative().optional(),
+  // ID of the grandparent (show, artist) program_grouping in Tunarr
+  grandparentId: z.string().optional(),
+  grandparentTitle: z.string().optional(),
   grandparentIndex: z.number().nonnegative().optional(),
   // External source metadata
   externalSourceType: ExternalSourceTypeSchema.optional(),

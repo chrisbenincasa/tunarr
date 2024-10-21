@@ -16,13 +16,16 @@ import {
   slice,
 } from 'lodash-es';
 import { MersenneTwister19937, Random } from 'random-js';
+import {
+  advanceIterator,
+  getNextProgramForSlot,
+} from '../util/ProgramIterator.js';
 import constants from '../util/constants.js';
 import { mod } from '../util/dayjsExtensions.js';
-import { advanceIterator, getNextProgramForSlot } from './ProgramIterator.js';
 import {
   createProgramIterators,
   createProgramMap,
-} from './slotSchedulerUtil.js';
+} from '../util/slotSchedulerUtil.js';
 
 export const random = new Random(MersenneTwister19937.autoSeed());
 

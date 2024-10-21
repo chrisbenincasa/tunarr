@@ -16,13 +16,16 @@ import {
   reject,
   slice,
 } from 'lodash-es';
+import {
+  advanceIterator,
+  getNextProgramForSlot,
+} from '../util/ProgramIterator.js';
 import constants from '../util/constants.js';
 import { mod } from '../util/dayjsExtensions.js';
-import { advanceIterator, getNextProgramForSlot } from './ProgramIterator.js';
 import {
   createProgramIterators,
   createProgramMap,
-} from './slotSchedulerUtil.js';
+} from '../util/slotSchedulerUtil.js';
 
 dayjs.extend(duration);
 dayjs.extend(relativeTime);

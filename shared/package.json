@@ -28,6 +28,7 @@
   "scripts": {
     "bundle": "tsup",
     "build": "tsup --dts",
+    "build-dev": "tsup --dts --watch",
     "clean": "rimraf ./build/",
     "dev": "tsup --watch",
     "test": "vitest"
@@ -47,5 +48,8 @@
     "tsup": "^8.0.2",
     "typescript": "^5.3.3",
     "vitest": "^2.1.0"
+  },
+  "peerDependencies": {
+    "ts-pattern": "^5.4.0"
   }
 }
