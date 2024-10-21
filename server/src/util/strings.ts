@@ -6,8 +6,12 @@
  *  3. Trims repeating whitespace in between args
  */
 export function sanitizeForExec(executable: string): string {
-  return executable
-    .replace(/[|;<>"'`$()&\\\n]/gm, '')
-    .trim()
-    .replace(/\s+/g, ' ');
+  let cleaned = executable.replace(/[|;<>"'`$()&\n]/gm, '');
+
+  // Workaround to keep \ for Windows paths...
+  if (process.platform !== 'win32') {
+    cleaned = cleaned.replace('\\', '');
+  }
+
+  return cleaned.trim().replace(/\s+/g, ' ');
 }
