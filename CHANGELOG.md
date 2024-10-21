@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.14.1](https://github.com/chrisbenincasa/tunarr/compare/v0.14.0...v0.14.1) (2024-10-21)
+
+
+### Bug Fixes
+
+* fix ffmpeg path normalization for Windows ([5adf769](https://github.com/chrisbenincasa/tunarr/commit/5adf76907b4b40d3435b8962921097ffce734c4c))
+* increase exp backoff factor for HLS sessions; theoretical max wait of ~2mins ([d272d21](https://github.com/chrisbenincasa/tunarr/commit/d272d21a9f84ff0dda66067444edc602004824b6))
+* remove uuid format requirement from some Jellyfin types ([1ced59f](https://github.com/chrisbenincasa/tunarr/commit/1ced59f7602bb8d99f8fb44584cebbfcc34d159b))
+
 ## [0.14.0](https://github.com/chrisbenincasa/tunarr/compare/v0.13.2...v0.14.0) (2024-10-21)
 
 
