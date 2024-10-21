@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.14.0](https://github.com/chrisbenincasa/tunarr/compare/v0.13.2...v0.14.0) (2024-10-21)
+
+
+### Features
+
+* introduce health checks and system status page ([#885](https://github.com/chrisbenincasa/tunarr/issues/885)) ([03f57e0](https://github.com/chrisbenincasa/tunarr/commit/03f57e0ed5bf7e402c2f9d77ce88e48cee96780f))
+
+
+### Bug Fixes
+
+* fix channel deletes when channel is associated with fillers ([#889](https://github.com/chrisbenincasa/tunarr/issues/889)) ([83126c8](https://github.com/chrisbenincasa/tunarr/commit/83126c865929d831f094cdd5538d7d89f3774c89))
+* mitigate RCE vulneratbility ([#892](https://github.com/chrisbenincasa/tunarr/issues/892)) ([4570b08](https://github.com/chrisbenincasa/tunarr/commit/4570b08bd35083b8dbaeecfed7e6f9b1e855d7c0))
+
 ## [0.13.2](https://github.com/chrisbenincasa/tunarr/compare/v0.13.1...v0.13.2) (2024-10-16)
 
 
