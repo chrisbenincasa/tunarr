@@ -1,5 +1,5 @@
 import { ChannelProgram, isContentProgram } from '@tunarr/types';
-import { sortBy } from 'lodash-es';
+import { isNil, sortBy } from 'lodash-es';
 import { setCurrentLineup } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
 import { materializedProgramListSelector } from '../../store/selectors.ts';
@@ -37,15 +37,23 @@ export const sortProgramsByReleaseDate = (
       if (isContentProgram(p)) {
         let n = 1;
         if (p.subtype === 'episode') {
-          if (p.seasonNumber) {
-            n *= p.seasonNumber * 1e4;
+          const seasonNumber = p.parent?.index ?? p.seasonNumber;
+          if (!isNil(seasonNumber)) {
+            n *= seasonNumber * 1e4;
           }
 
-          if (p.episodeNumber) {
-            n += p.episodeNumber * 1e2;
+          const episodeNumber = p.index ?? p.episodeNumber;
+          if (!isNil(episodeNumber)) {
+            n += episodeNumber * 1e2;
           }
         } else if (p.subtype === 'track') {
-          // TODO: Plumb through album index
+          if (!isNil(p.parent?.index)) {
+            n *= p.parent?.index * 1e4;
+          }
+
+          if (!isNil(p.index)) {
+            n += p.index * 1e2;
+          }
         }
 
         return sortOrder === 'asc' ? n : -n;

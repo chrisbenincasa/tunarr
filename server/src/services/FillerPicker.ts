@@ -6,7 +6,7 @@ import constants from '@tunarr/shared/constants';
 import { isEmpty, isNil, isUndefined } from 'lodash-es';
 import {
   ChannelFillerShowWithContent,
-  ProgramDaoWithRelations,
+  ProgramWithRelations,
 } from '../db/schema/derivedTypes.js';
 
 const DefaultFillerCooldownMillis = 30 * 60 * 1000;
@@ -26,7 +26,7 @@ export class FillerPicker {
     maxDuration: number,
   ): {
     fillerId: Nullable<string>;
-    filler: Nullable<ProgramDaoWithRelations>;
+    filler: Nullable<ProgramWithRelations>;
     minimumWait: number;
   } {
     if (isEmpty(fillers)) {
@@ -37,7 +37,7 @@ export class FillerPicker {
       };
     }
 
-    let pick1: Maybe<ProgramDaoWithRelations>;
+    let pick1: Maybe<ProgramWithRelations>;
     const t0 = new Date().getTime();
     let minimumWait = 1000000000;
 

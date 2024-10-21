@@ -6,6 +6,7 @@ import {
   CondensedChannelProgramSchema,
   CondensedChannelProgrammingSchema,
   CondensedContentProgramSchema,
+  ContentProgramParentSchema,
   ContentProgramSchema,
   CustomProgramSchema,
   FlexProgramSchema,
@@ -13,6 +14,7 @@ import {
   ProgramTypeSchema,
   RedirectProgramSchema,
 } from './schemas/programmingSchema.js';
+import { ExternalIdSchema } from './schemas/utilSchemas.js';
 
 // This helps with VS Code type preview
 export type ProgramType = z.infer<typeof ProgramTypeSchema>;
@@ -24,6 +26,8 @@ export type Program = z.infer<typeof ProgramSchema>;
 export type BaseProgram = z.infer<typeof BaseProgramSchema>;
 
 export type ContentProgram = z.infer<typeof ContentProgramSchema>;
+
+export type ContentProgramParent = z.infer<typeof ContentProgramParentSchema>;
 
 export type FlexProgram = z.infer<typeof FlexProgramSchema>;
 
@@ -74,3 +78,5 @@ export type CondensedChannelProgram = z.infer<
 export type CondensedChannelProgramming = z.infer<
   typeof CondensedChannelProgrammingSchema
 >;
+
+export type ExternalId = z.infer<typeof ExternalIdSchema>;

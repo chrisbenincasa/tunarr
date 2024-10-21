@@ -1,3 +1,7 @@
+// This must appear first, since other modules might depend on it.
+// Beacuse we schemas as const, initialization order matters.
+export * from './utilSchemas.js';
+
 export * from './channelSchema.js';
 export * from './customShowsSchema.js';
 export * from './eventSchema.js';
@@ -8,4 +12,3 @@ export * from './programmingSchema.js';
 export * from './settingsSchemas.js';
 export * from './tasksSchema.js';
 export * from './transcodeConfigSchemas.js';
-export * from './utilSchemas.js';

@@ -29,6 +29,29 @@ export function collect<T, U>(
   return results;
 }
 
+export function collectMapValues<ValueType, ReturnType>(
+  input: Record<string, ValueType> | null | undefined,
+  f: (
+    value: ValueType,
+    key: string,
+    obj: Record<string, ValueType>,
+  ) => ReturnType | null | undefined,
+): ReturnType[] {
+  if (isNil(input)) {
+    return [];
+  }
+
+  const results: ReturnType[] = [];
+  for (const [key, value] of Object.entries<ValueType>(input)) {
+    const res = f(value, key, input);
+    if (isNil(res)) {
+      continue;
+    }
+    results.push(res);
+  }
+  return results;
+}
+
 export function groupBy<T, Key extends string | number | symbol>(
   arr: T[] | null | undefined,
   f: (t: T) => Key,

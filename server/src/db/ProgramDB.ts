@@ -15,9 +15,6 @@ import {
   ContentProgram,
   isContentProgram,
 } from '@tunarr/types';
-import { JellyfinItem } from '@tunarr/types/jellyfin';
-import { PlexEpisode, PlexMusicTrack } from '@tunarr/types/plex';
-import { ContentProgramOriginalProgram } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import { CaseWhenBuilder } from 'kysely';
 import {
@@ -25,7 +22,6 @@ import {
   concat,
   difference,
   filter,
-  find,
   first,
   flatMap,
   forEach,
@@ -46,7 +42,6 @@ import {
   values,
 } from 'lodash-es';
 import { MarkOptional, MarkRequired } from 'ts-essentials';
-import { P, match } from 'ts-pattern';
 import { v4 } from 'uuid';
 import {
   flatMapAsyncSeq,
@@ -96,13 +91,13 @@ import {
 import { NewProgramGroupingExternalId } from './schema/ProgramGroupingExternalId.ts';
 import { DB } from './schema/db.ts';
 import {
-  ProgramDaoWithRelations,
   ProgramGroupingWithExternalIds,
+  ProgramWithRelations,
 } from './schema/derivedTypes.js';
 
 type ValidatedContentProgram = MarkRequired<
   ContentProgram,
-  'originalProgram' | 'externalSourceName' | 'externalSourceType'
+  'externalSourceName' | 'externalSourceType'
 >;
 
 type MintedRawProgramInfo = {
@@ -111,9 +106,12 @@ type MintedRawProgramInfo = {
   apiProgram: ValidatedContentProgram;
 };
 
-type NonMovieOriginalProgram =
-  | { sourceType: 'plex'; program: PlexEpisode | PlexMusicTrack }
-  | { sourceType: 'jellyfin'; program: JellyfinItem };
+type ContentProgramWithHierarchy = Omit<
+  MarkRequired<ContentProgram, 'grandparent' | 'parent'>,
+  'subtype'
+> & {
+  subtype: 'episode' | 'track';
+};
 
 type ProgramRelationCaseBuilder = CaseWhenBuilder<
   DB,
@@ -173,8 +171,8 @@ export class ProgramDB {
   async getProgramsByIds(
     ids: string[],
     batchSize: number = 500,
-  ): Promise<ProgramDaoWithRelations[]> {
-    const results: ProgramDaoWithRelations[] = [];
+  ): Promise<ProgramWithRelations[]> {
+    const results: ProgramWithRelations[] = [];
     for (const idChunk of chunk(ids, batchSize)) {
       const res = await getDatabase()
         .selectFrom('program')
@@ -244,7 +242,7 @@ export class ProgramDB {
     const converter = new ProgramConverter();
 
     const allIds = [...ids];
-    const programsByExternalIds: ProgramDaoWithRelations[] = [];
+    const programsByExternalIds: ProgramWithRelations[] = [];
     for (const idChunk of chunk(allIds, 200)) {
       programsByExternalIds.push(
         ...(await getDatabase()
@@ -441,9 +439,9 @@ export class ProgramDB {
     const [contentPrograms, invalidPrograms] = partition(
       uniqBy(filter(nonPersisted, isContentProgram), (p) => p.uniqueId),
       (p): p is ValidatedContentProgram =>
-        !isNil(p.externalSourceType) &&
-        !isNil(p.externalSourceName) &&
-        !isNil(p.originalProgram) &&
+        isNonEmptyString(p.externalSourceType) &&
+        isNonEmptyString(p.externalSourceName) &&
+        isNonEmptyString(p.externalKey) &&
         p.duration > 0,
     );
 
@@ -521,44 +519,15 @@ export class ProgramDB {
     //   >,
     // );
 
-    // const existingPrograms = flatten(
-    //   await mapAsyncSeq(chunk(values(pMap), 500), (items) => {
-    //     return directDbAccess()
-    //       .selectFrom('programExternalId')
-    //       .where(({ or, eb }) => {
-    //         const clauses = map(items, (item) =>
-    //           eb('programExternalId.sourceType', '=', item.type).and(
-    //             'programExternalId.externalKey',
-    //             '=',
-    //             item.id,
-    //           ),
-    //         );
-    //         return or(clauses);
-    //       })
-    //       .selectAll('programExternalId')
-    //       .select((eb) =>
-    //         jsonArrayFrom(
-    //           eb
-    //             .selectFrom('program')
-    //             .whereRef('programExternalId.programUuid', '=', 'program.uuid')
-    //             .select(AllProgramFields),
-    //         ).as('program'),
-    //       )
-    //       .groupBy('programExternalId.programUuid')
-    //       .execute();
-    //   }),
-    // );
-    // console.log('results!!!!', existingPrograms);
-
     // TODO: handle custom shows
     const programsToPersist: MintedRawProgramInfo[] = map(
       contentPrograms,
       (p) => {
-        const program = minter.mint(p.externalSourceName, p.originalProgram);
+        const program = minter.contentProgramDtoToDao(p);
         const externalIds = minter.mintExternalIds(
           p.externalSourceName,
           program.uuid,
-          p.originalProgram,
+          p,
         );
         return { program, externalIds, apiProgram: p };
       },
@@ -571,9 +540,6 @@ export class ProgramDB {
 
     this.logger.debug('Upserting %d programs', programsToPersist.length);
 
-    // NOTE: upsert will not handle any relations. That's why we need to do
-    // these manually below. Relations all have IDs generated application side
-    // so we can't get proper diffing on 1:M Program:X, etc.
     // TODO: The way we deal with uniqueness right now makes a Program entity
     // exist 1:1 with its "external" entity, i.e. the same logical movie will
     // have duplicate entries in the DB across different servers and sources.
@@ -660,17 +626,6 @@ export class ProgramDB {
           ),
         ),
       );
-      // DatabaseTaskQueue.addFunc('UpsertExternalIds', () => {
-      //   return this.timer.timeAsync(
-      //     `background external ID upsert (${backgroundExternalIds.length} ids)`,
-      //     () => upsertRawProgramExternalIds(backgroundExternalIds),
-      //   );
-      // }).catch((e) => {
-      //   this.logger.error(
-      //     e,
-      //     'Error saving non-essential external IDs. A fixer will run for these',
-      //   );
-      // });
     });
 
     const end = performance.now();
@@ -725,7 +680,13 @@ export class ProgramDB {
     const grandparentRatingKeyToProgramId: Record<string, Set<string>> = {};
     const parentRatingKeyToProgramId: Record<string, Set<string>> = {};
 
-    const relevantPrograms = seq.collect(upsertedPrograms, (program) => {
+    const relevantPrograms: [
+      RawProgram,
+      ContentProgramWithHierarchy & {
+        grandparentKey: string;
+        parentKey: string;
+      },
+    ][] = seq.collect(upsertedPrograms, (program) => {
       if (program.type === ProgramType.Movie) {
         return;
       }
@@ -735,44 +696,19 @@ export class ProgramDB {
         return;
       }
 
-      const originalProgram = info.apiProgram.originalProgram;
-
-      if (originalProgram.sourceType !== mediaSourceType) {
+      if (info.apiProgram.subtype === 'movie') {
         return;
       }
 
-      if (isMovieMediaItem(originalProgram)) {
-        return;
-      }
-
-      const [grandparentKey, parentKey] = match(originalProgram)
-        .with(
-          {
-            sourceType: 'plex',
-            program: { type: P.union('episode', 'track') },
-          },
-          ({ program: ep }) =>
-            [ep.grandparentRatingKey, ep.parentRatingKey] as const,
-        )
-        .with(
-          { sourceType: 'jellyfin', program: { Type: 'Episode' } },
-          ({ program: ep }) =>
-            [ep.SeriesId, ep.ParentId ?? ep.SeasonId] as const,
-        )
-        .with(
-          { sourceType: 'jellyfin', program: { Type: 'Audio' } },
-          ({ program: ep }) =>
-            [
-              find(ep.AlbumArtists, { Name: ep.AlbumArtist })?.Id,
-              ep.ParentId ?? ep.AlbumId,
-            ] as const,
-        )
-        .otherwise(() => [null, null] as const);
+      const [grandparentKey, parentKey] = [
+        info.apiProgram.grandparent?.externalKey,
+        info.apiProgram.parent?.externalKey,
+      ];
 
       if (!grandparentKey || !parentKey) {
         this.logger.warn(
           'Unexpected null/empty parent keys: %O',
-          originalProgram,
+          info.apiProgram,
         );
         return;
       }
@@ -780,7 +716,7 @@ export class ProgramDB {
       return [
         program,
         {
-          ...(originalProgram as NonMovieOriginalProgram),
+          ...(info.apiProgram as ContentProgramWithHierarchy),
           grandparentKey,
           parentKey,
         },
@@ -1041,10 +977,6 @@ export class ProgramDB {
         getDatabase()
           .transaction()
           .execute(async (tx) => {
-            // const allProgramIds = flatMap(values(updatesByType), (set) => [
-            //   ...set,
-            // ]);
-
             // For each program, we produce 3 SQL variables: when = ?, then = ?, and uuid in [?].
             // We have to chunk by type in order to ensure we don't go over the variable limit
             const tvShowIdUpdates = [
@@ -1213,11 +1145,4 @@ export class ProgramDB {
       );
     });
   }
-}
-
-function isMovieMediaItem(item: ContentProgramOriginalProgram): boolean {
-  return match(item)
-    .with({ sourceType: 'plex', program: { type: 'movie' } }, () => true)
-    .with({ sourceType: 'jellyfin', program: { Type: 'Movie' } }, () => true)
-    .otherwise(() => false);
 }

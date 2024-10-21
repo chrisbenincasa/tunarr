@@ -3,8 +3,8 @@ import { BaseSlot } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import { nth, orderBy, shuffle, slice } from 'lodash-es';
 import { StrictExclude } from 'ts-essentials';
-import { seq } from '../util/index.js';
-import { random } from './randomSlotsService.js';
+import { random } from '../services/RandomSlotsService.js';
+import { seq } from './index.js';
 
 export interface ProgramIterator {
   current(): ChannelProgram | null;
@@ -142,9 +142,9 @@ function programOrdererAlpha(program: ContentProgram) {
     case 'movie':
       return program.title;
     case 'episode':
-      return `${program.title}_${program.episodeTitle ?? ''}`;
+      return `${program.parent?.title ?? ''}_${program.title}`;
     case 'track':
-      return `${program.artistName ?? ''}_${program.title}`;
+      return `${program.parent?.title ?? ''}_${program.title}`;
   }
 }
 

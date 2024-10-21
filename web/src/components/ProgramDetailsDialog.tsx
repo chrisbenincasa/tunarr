@@ -88,8 +88,8 @@ export default function ProgramDetailsDialog({
   const episodeTitle = useMemo(
     () =>
       forProgramType({
-        custom: (p) => p.program?.episodeTitle ?? '',
-        content: (p) => p.episodeTitle,
+        custom: (p) => p.program?.title ?? '',
+        content: (p) => p.title,
         default: '',
       }),
     [],
@@ -222,34 +222,13 @@ export default function ProgramDetailsDialog({
           }
 
           let key = p.uniqueId;
-          if (p.subtype === 'track' && p.originalProgram) {
-            switch (p.originalProgram.sourceType) {
-              case 'plex': {
-                if (
-                  p.originalProgram.program.type === 'track' &&
-                  isNonEmptyString(p.originalProgram.program.parentRatingKey)
-                ) {
-                  key = createExternalId(
-                    p.originalProgram?.sourceType,
-                    p.externalSourceName!,
-                    p.originalProgram.program.parentRatingKey,
-                  );
-                }
-                break;
-              }
-              case 'jellyfin': {
-                if (
-                  p.originalProgram.program.Type === 'Audio' &&
-                  isNonEmptyString(p.originalProgram.program.AlbumId)
-                ) {
-                  key = createExternalId(
-                    p.originalProgram.sourceType,
-                    p.externalSourceName!,
-                    p.originalProgram.program.AlbumId,
-                  );
-                }
-                break;
-              }
+          if (p.subtype === 'track') {
+            if (isNonEmptyString(p.parent?.externalKey)) {
+              key = createExternalId(
+                p.externalSourceType,
+                p.externalSourceName,
+                p.parent?.externalKey,
+              );
             }
           }
 

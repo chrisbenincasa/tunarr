@@ -1,41 +1,21 @@
 import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
 import type { NewProgramGroupingExternalId } from '@/db/schema/ProgramGroupingExternalId.js';
 import { isNonEmptyString } from '@/util/index.js';
+import { ContentProgram } from '@tunarr/types';
 import { JellyfinItem } from '@tunarr/types/jellyfin';
 import { PlexEpisode, PlexMusicTrack } from '@tunarr/types/plex';
-import { ContentProgramOriginalProgram } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
-import { find } from 'lodash-es';
+import { find, first } from 'lodash-es';
+import { MarkRequired } from 'ts-essentials';
 import { P, match } from 'ts-pattern';
 import { v4 } from 'uuid';
+import { Nullable } from '../../types/util.ts';
 import {
   ProgramGroupingType,
   type NewProgramGrouping,
 } from '../schema/ProgramGrouping.ts';
 
-type MintedProgramGrouping = {
-  grouping: NewProgramGrouping;
-  externalIds: NewProgramGroupingExternalId[];
-};
-
-type MintedProgramGroupingResult = {
-  parent: MintedProgramGrouping;
-  grandparent: MintedProgramGrouping;
-};
-
 export class ProgramGroupingMinter {
-  static mintParentGrouping(item: ContentProgramOriginalProgram) {
-    return match(item)
-      .with(
-        { sourceType: 'plex', program: { type: P.union('episode', 'track') } },
-        ({ program }) => this.mintParentProgramGroupingForPlex(program),
-      )
-      .with({ sourceType: 'jellyfin' }, ({ program }) =>
-        this.mintParentProgramGroupingForJellyfin(program),
-      )
-      .otherwise(() => null);
-  }
-
   static mintParentProgramGroupingForPlex(
     plexItem: PlexEpisode | PlexMusicTrack,
   ): NewProgramGrouping {
@@ -85,31 +65,54 @@ export class ProgramGroupingMinter {
   }
 
   static mintGroupingExternalIds(
-    item: ContentProgramOriginalProgram,
+    program: ContentProgram,
     groupingId: string,
     externalSourceId: string,
     relationType: 'parent' | 'grandparent',
-  ) {
-    return match(item)
-      .with(
-        { sourceType: 'plex', program: { type: P.union('episode', 'track') } },
-        ({ program }) =>
-          this.mintGroupingExternalIdsForPlex(
-            program,
-            groupingId,
-            externalSourceId,
-            relationType,
-          ),
-      )
-      .with({ sourceType: 'jellyfin' }, ({ program }) =>
-        this.mintGroupingExternalIdsForJellyfin(
-          program,
-          groupingId,
-          externalSourceId,
-          relationType,
-        ),
-      )
-      .otherwise(() => []);
+  ): NewProgramGroupingExternalId[] {
+    if (program.subtype === 'movie') {
+      return [];
+    }
+
+    const now = +dayjs();
+    const parentExternalIds: NewProgramGroupingExternalId[] = [];
+
+    const ratingKey =
+      relationType === 'grandparent'
+        ? program.grandparent?.externalKey
+        : program.parent?.externalKey;
+    if (isNonEmptyString(ratingKey)) {
+      parentExternalIds.push({
+        uuid: v4(),
+        createdAt: now,
+        updatedAt: now,
+        externalFilePath: null,
+        externalKey: ratingKey,
+        sourceType: ProgramExternalIdType.PLEX,
+        externalSourceId,
+        groupUuid: groupingId,
+      });
+    }
+
+    const guid = first(
+      relationType === 'grandparent'
+        ? program.grandparent?.guids
+        : program.parent?.guids,
+    );
+    if (isNonEmptyString(guid)) {
+      parentExternalIds.push({
+        uuid: v4(),
+        createdAt: now,
+        updatedAt: now,
+        externalFilePath: null,
+        externalKey: guid,
+        sourceType: ProgramExternalIdType.PLEX_GUID,
+        externalSourceId: null,
+        groupUuid: groupingId,
+      });
+    }
+
+    return parentExternalIds;
   }
 
   static mintGroupingExternalIdsForPlex(
@@ -188,42 +191,10 @@ export class ProgramGroupingMinter {
     return parentExternalIds;
   }
 
-  static mintGrandparentGrouping(item: ContentProgramOriginalProgram) {
-    return match(item)
-      .with(
-        { sourceType: 'plex', program: { type: P.union('episode', 'track') } },
-        ({ program }) => this.mintGrandparentGroupingForPlex(program),
-      )
-      .with({ sourceType: 'jellyfin' }, ({ program }) =>
-        this.mintGrandparentGroupingForJellyfin(program),
-      )
-      .otherwise(() => null);
-  }
-
-  static mintGrandparentGroupingForPlex(
-    plexItem: PlexEpisode | PlexMusicTrack,
-  ) {
-    const now = +dayjs();
-    return {
-      uuid: v4(),
-      type:
-        plexItem.type === 'episode'
-          ? ProgramGroupingType.Show
-          : ProgramGroupingType.Artist,
-      createdAt: now,
-      updatedAt: now,
-      index: null,
-      title: plexItem.grandparentTitle ?? '',
-      summary: null,
-      icon: null,
-      artistUuid: null,
-      showUuid: null,
-      year: null,
-    };
-  }
-
-  static mintGrandparentGroupingForJellyfin(jellyfinItem: JellyfinItem) {
-    if (jellyfinItem.Type !== 'Episode' && jellyfinItem.Type !== 'Audio') {
+  static mintGrandparentGrouping(
+    item: MarkRequired<ContentProgram, 'grandparent'>,
+  ): Nullable<NewProgramGrouping> {
+    if (item.subtype === 'movie') {
       return null;
     }
 
@@ -231,51 +202,44 @@ export class ProgramGroupingMinter {
     return {
       uuid: v4(),
       type:
-        jellyfinItem.Type === 'Episode'
+        item.subtype === 'episode'
           ? ProgramGroupingType.Show
           : ProgramGroupingType.Artist,
       createdAt: now,
       updatedAt: now,
       index: null,
-      title: jellyfinItem.SeriesName ?? jellyfinItem.AlbumArtist ?? '',
+      title: item.grandparent.title ?? '',
       summary: null,
       icon: null,
       artistUuid: null,
       showUuid: null,
-      year: null,
+      year: item.grandparent.year,
     };
   }
 
-  static mintRawProgramGroupingForPlex(
-    plexItem: PlexEpisode | PlexMusicTrack,
-    externalSourceId: string,
-  ): MintedProgramGroupingResult {
-    const parentItem = this.mintParentProgramGroupingForPlex(plexItem);
-    const parentExternalIds = this.mintGroupingExternalIdsForPlex(
-      plexItem,
-      parentItem.uuid,
-      externalSourceId,
-      'parent',
-    );
+  static mintParentGrouping(
+    item: MarkRequired<ContentProgram, 'parent'>,
+  ): Nullable<NewProgramGrouping> {
+    if (item.subtype === 'movie') {
+      return null;
+    }
 
-    const grandparentItem = this.mintGrandparentGroupingForPlex(plexItem);
-
-    const grandparentExternalIds = this.mintGroupingExternalIdsForPlex(
-      plexItem,
-      grandparentItem.uuid,
-      externalSourceId,
-      'grandparent',
-    );
-
+    const now = +dayjs();
     return {
-      parent: {
-        grouping: parentItem,
-        externalIds: parentExternalIds,
-      },
-      grandparent: {
-        grouping: grandparentItem,
-        externalIds: grandparentExternalIds,
-      },
+      uuid: v4(),
+      type:
+        item.subtype === 'episode'
+          ? ProgramGroupingType.Show
+          : ProgramGroupingType.Artist,
+      createdAt: now,
+      updatedAt: now,
+      index: item.parent.index,
+      title: item.parent.title ?? '',
+      summary: null,
+      icon: null,
+      artistUuid: null,
+      showUuid: null,
+      year: item.parent.year,
     };
   }
 }

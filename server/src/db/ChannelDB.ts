@@ -81,6 +81,7 @@ import {
   isRedirectItem,
 } from './derived_types/Lineup.ts';
 import {
+  AllProgramGroupingFields,
   MinimalProgramGroupingFields,
   withFallbackPrograms,
   withPrograms,
@@ -1016,10 +1017,10 @@ export class ChannelDB {
         .innerJoin('program', 'channelPrograms.programUuid', 'program.uuid')
         .selectAll('program')
         .select((eb) => [
-          withTvShow(eb),
-          withTvSeason(eb),
-          withTrackAlbum(eb),
-          withTrackArtist(eb),
+          withTvShow(eb, AllProgramGroupingFields, true),
+          withTvSeason(eb, AllProgramGroupingFields, true),
+          withTrackAlbum(eb, AllProgramGroupingFields, true),
+          withTrackArtist(eb, AllProgramGroupingFields, true),
         ])
         .execute(),
     );

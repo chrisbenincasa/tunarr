@@ -48,7 +48,7 @@ export function useCyclicShuffle() {
         if (firstProgram.type === 'content') {
           programs = sortBy(
             programs as UIContentProgram[],
-            (p) => p.parentIndex,
+            (p) => p.parent?.index,
             (p) => p.index,
           );
         } else if (firstProgram.type === 'custom') {

@@ -1,27 +1,35 @@
 import { emptyEntityEditor } from '@/store/entityEditor/util.ts';
-import { ContentProgram, CustomProgram } from '@tunarr/types';
-import { findIndex, forEach, inRange, map, merge } from 'lodash-es';
-import { forAddedMediaType, zipWithIndex } from '../../helpers/util.ts';
-import { AddedMedia } from '../../types/index.ts';
-import {
-  jellyfinItemToContentProgram,
-  plexMediaToContentProgram,
-} from '../channelEditor/actions';
-import useStore from '../index.ts';
-
+import { ApiProgramMinter } from '@tunarr/shared';
 import { CustomShow, CustomShowProgramming } from '@tunarr/types';
+import { findIndex, forEach, inRange, map, merge } from 'lodash-es';
+import { P, match } from 'ts-pattern';
+import { zipWithIndex } from '../../helpers/util.ts';
+import { AddedMedia } from '../../types/index.ts';
+import useStore from '../index.ts';
 
 export const addMediaToCurrentCustomShow = (programs: AddedMedia[]) =>
   useStore.setState(({ customShowEditor }) => {
     if (customShowEditor.currentEntity && programs.length > 0) {
       customShowEditor.dirty.programs = true;
-      const allNewPrograms = map(
-        programs,
-        forAddedMediaType<ContentProgram | CustomProgram>({
-          plex: ({ media }) => plexMediaToContentProgram(media),
-          jellyfin: ({ media }) => jellyfinItemToContentProgram(media),
-          'custom-show': ({ program }) => program,
-        }),
+      const allNewPrograms = map(programs, (item) =>
+        match(item)
+          .with({ type: 'plex', media: P.select() }, (plexItem) =>
+            ApiProgramMinter.mintProgram(
+              { id: plexItem.serverId, name: plexItem.serverName },
+              { program: plexItem, sourceType: 'plex' },
+            ),
+          )
+          .with({ type: 'jellyfin', media: P.select() }, (jfItem) =>
+            ApiProgramMinter.mintProgram(
+              { id: jfItem.serverId, name: jfItem.serverName },
+              { program: jfItem, sourceType: 'jellyfin' },
+            ),
+          )
+          .with(
+            { type: 'custom-show', program: P.select() },
+            (program) => program,
+          )
+          .exhaustive(),
       );
 
       customShowEditor.programList = customShowEditor.programList.concat(
