@@ -14,8 +14,9 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Task } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { map } from 'lodash-es';
-import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
+import { useSnackbar } from 'notistack';
 import { useApiQuery } from '../../hooks/useApiQuery.ts';
+import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 
 const StyledLoopIcon = styled(Loop)({
   animation: 'spin 2s linear infinite',
@@ -100,12 +101,26 @@ function TaskRow({ task }: { task: Task }) {
 }
 
 export default function TaskSettingsPage() {
+  const apiClient = useTunarrApi();
+  const snackbar = useSnackbar();
   const { isPending, data: tasks } = useApiQuery({
     queryKey: ['jobs'],
     queryFn: async (apiClient) => {
       return apiClient.getTasks();
     },
     refetchInterval: 60 * 1000, // Check tasks every minute
+  });
+
+  const clearM3UCacheMutation = useMutation({
+    mutationFn() {
+      return apiClient.clearM3uCache(undefined);
+    },
+    mutationKey: ['m3u', 'cache'],
+    onSuccess: () => {
+      snackbar.enqueueSnackbar('Successfully cleared m3u cache', {
+        variant: 'success',
+      });
+    },
   });
 
   const renderTableRows = () => {
@@ -141,7 +156,36 @@ export default function TaskSettingsPage() {
               <TableCell></TableCell>
             </TableRow>
           </TableHead>
-          <TableBody>{renderTableRows()}</TableBody>
+          <TableBody>
+            {renderTableRows()}
+            <TableRow>
+              <TableCell>Clear M3U Cache</TableCell>
+              <TableCell>-</TableCell>
+              <TableCell>--</TableCell>
+              <TableCell>
+                <Button
+                  onClick={() =>
+                    clearM3UCacheMutation.mutate(void 0, {
+                      onSettled: () => {
+                        clearM3UCacheMutation.reset();
+                      },
+                    })
+                  }
+                  disabled={clearM3UCacheMutation.isPending}
+                  startIcon={
+                    clearM3UCacheMutation.isPending ? (
+                      <StyledLoopIcon />
+                    ) : (
+                      <PlayArrowOutlined />
+                    )
+                  }
+                  variant="contained"
+                >
+                  Run Now
+                </Button>
+              </TableCell>
+            </TableRow>
+          </TableBody>
         </Table>
       </TableContainer>
     </>

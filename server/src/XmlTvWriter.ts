@@ -12,6 +12,7 @@ import { Channel } from './dao/direct/schema/Channel';
 import { SettingsDB, getSettings } from './dao/settings';
 import { ChannelPrograms } from './services/tvGuideService';
 import { isNonEmptyString } from './util';
+import { getChannelId } from './util/channels.js';
 import { LoggerFactory } from './util/logging/LoggerFactory';
 
 const lock = new Mutex();
@@ -165,19 +166,7 @@ export class XmlTvWriter {
       return existing;
     }
 
-    // Generates a short but unique ID for this channel
-    // in addition to the number. This helps differentiate channels
-    // for some players whose guides can get confused.
-    let num = channel.number;
-    let id = 0;
-    while (num !== 0) {
-      id += (num % 10) + 48;
-      num = Math.floor(num / 10);
-    }
-
-    return (channelIdCache[
-      channel.uuid
-    ] = `C${channel.number}.${id}.tunarr.com`);
+    return (channelIdCache[channel.uuid] = getChannelId(channel.number));
   }
 
   private static titleExtractor = forProgramType({

@@ -157,6 +157,7 @@ export async function initServer(opts: ServerOptions) {
 
   const ctx = serverContext();
   registerHealthChecks(ctx);
+  await ctx.m3uService.clearCache();
   await new ChannelLineupMigrator(ctx.channelDB).run();
 
   const legacyDbPath = await legacyDizquetvDirectoryPath();

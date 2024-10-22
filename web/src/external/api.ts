@@ -328,6 +328,13 @@ export const api = makeApi([
     ]),
   },
   {
+    method: 'delete',
+    path: '/api/channels.m3u',
+    alias: 'clearM3uCache',
+    status: 204,
+    response: z.void(),
+  },
+  {
     method: 'get',
     path: '/api/filler-lists/:id',
     alias: 'getFillerList',
