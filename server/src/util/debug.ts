@@ -3,7 +3,10 @@ import { isFunction } from 'lodash-es';
 import { isDev } from '.';
 
 export function devAssert(condition: boolean | (() => boolean)) {
+  const res = isFunction(condition) ? condition() : condition;
   if (isDev) {
-    assert(isFunction(condition) ? condition() : condition);
+    assert(res);
+  } else if (!res) {
+    console.warn(new Error(), 'dev assert failed!');
   }
 }

@@ -1,4 +1,5 @@
-import { createWriteStream, promises as fs } from 'fs';
+import { promises as fs } from 'fs';
+import NodeCache from 'node-cache';
 import path from 'path';
 import { serverOptions } from '../globals';
 import { fileExists } from '../util/fsUtil.js';
@@ -11,41 +12,27 @@ import { LoggerFactory } from '../util/logging/LoggerFactory.js';
  */
 export class FileCacheService {
   #logger = LoggerFactory.child({ className: this.constructor.name });
-  private _cachePath: string;
-  private cache: Record<string, string>;
+
+  private static cache = new NodeCache({
+    stdTTL: 60 * 60,
+  });
 
   constructor(
-    cachePath: string = path.join(serverOptions().databaseDirectory, 'cache'),
-  ) {
-    this._cachePath = cachePath;
-    this.cache = {};
-  }
-
-  get cachePath(): string {
-    return this._cachePath;
-  }
+    public cachePath = path.join(serverOptions().databaseDirectory, 'cache'),
+  ) {}
 
   /**
    * `save` a file on cache folder
    */
   async setCache(fullFilePath: string, data: string): Promise<boolean> {
-    const file = createWriteStream(path.join(this.cachePath, fullFilePath));
-
-    return new Promise((resolve, reject) => {
-      file.write(data, (err) => {
-        if (err) {
-          reject(Error("Can't save file: ", err));
-        } else {
-          this.cache[fullFilePath] = data;
-          resolve(true);
-        }
-      });
-    });
+    FileCacheService.cache.set(fullFilePath, data);
+    await fs.writeFile(path.join(this.cachePath, fullFilePath), data);
+    return true;
   }
 
   async exists(fullFilePath: string) {
     return (
-      fullFilePath in this.cache ||
+      FileCacheService.cache.has(fullFilePath) ||
       (await fileExists(path.join(this.cachePath, fullFilePath)))
     );
   }
@@ -54,19 +41,19 @@ export class FileCacheService {
    * `get` a File from cache folder
    */
   async getCache(fullFilePath: string): Promise<string | undefined> {
+    const fullPath = path.join(this.cachePath, fullFilePath);
     try {
-      if (fullFilePath in this.cache) {
-        return this.cache[fullFilePath];
-      } else {
-        return await fs.readFile(
-          path.join(this.cachePath, fullFilePath),
-          'utf8',
-        );
+      const memValue = FileCacheService.cache.get<string>(fullFilePath);
+      if (memValue) {
+        return memValue;
+      } else if (await fileExists(fullPath)) {
+        return await fs.readFile(fullPath, 'utf8');
       }
     } catch (error) {
       this.#logger.error(error);
       return;
     }
+    return;
   }
 
   /**
@@ -74,16 +61,13 @@ export class FileCacheService {
    */
   async deleteCache(fullFilePath: string): Promise<boolean> {
     const thePath = path.join(this.cachePath, fullFilePath);
-    try {
-      await fs.open(thePath);
-    } catch (err) {
-      if (err == 'ENOENT') {
-        return true;
-      }
+
+    if (!(await fileExists(thePath))) {
+      return false;
     }
 
     await fs.unlink(thePath);
-    delete this.cache[fullFilePath];
+    FileCacheService.cache.del(fullFilePath);
     return true;
   }
 }

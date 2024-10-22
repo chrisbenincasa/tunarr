@@ -140,12 +140,15 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
       const inserted = await attempt(() =>
         req.serverCtx.channelDB.saveChannel(req.body),
       );
-      GlobalScheduler.getScheduledJob(UpdateXmlTvTask.ID)
-        .runNow(true)
-        .catch((err) => logger.error('Error regenerating guide: %O', err));
       if (isError(inserted)) {
         return res.status(500).send(inserted);
       }
+
+      GlobalScheduler.getScheduledJob(UpdateXmlTvTask.ID)
+        .runNow(true)
+        .catch((err) => logger.error('Error regenerating guide: %O', err));
+      await req.serverCtx.m3uService.regenerateCache();
+
       return res.status(201).send(dbChannelToApiChannel(inserted));
     },
   );
@@ -176,7 +179,10 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
             channel.uuid,
             channelUpdate,
           );
+
           await req.serverCtx.guideService.updateCachedChannel(channel.uuid);
+          await req.serverCtx.m3uService.regenerateCache();
+
           const apiChannel = omit(
             dbChannelToApiChannel(updatedChannel),
             'programs',
@@ -224,6 +230,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
       }
 
       await req.serverCtx.channelDB.deleteChannel(channel.uuid);
+      await req.serverCtx.m3uService.regenerateCache();
 
       try {
         GlobalScheduler.getScheduledJob(UpdateXmlTvTask.ID)

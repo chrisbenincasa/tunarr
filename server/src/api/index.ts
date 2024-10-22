@@ -222,6 +222,11 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
     },
   });
 
+  fastify.delete('/channels.m3u', async (req, res) => {
+    await req.serverCtx.m3uService.regenerateCache();
+    return res.send(204);
+  });
+
   fastify.get(
     '/plex',
     {
