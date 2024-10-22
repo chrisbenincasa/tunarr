@@ -298,8 +298,8 @@ export function TvGuide({ channelId, start, end }: Props) {
     })(program);
 
     const episodeTitle = forTvGuideProgram({
-      custom: (p) => p.program?.episodeTitle ?? '',
-      content: (p) => p.episodeTitle,
+      custom: (p) => p.program?.title ?? '',
+      content: (p) => p.title,
       default: '',
     })(program);
 

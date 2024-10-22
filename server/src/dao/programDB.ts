@@ -7,7 +7,6 @@ import {
 } from '@tunarr/types';
 import { JellyfinItem } from '@tunarr/types/jellyfin';
 import { PlexEpisode, PlexMusicTrack } from '@tunarr/types/plex';
-import { ContentProgramOriginalProgram } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import { CaseWhenBuilder } from 'kysely';
 import ld, {
@@ -15,7 +14,6 @@ import ld, {
   concat,
   difference,
   filter,
-  find,
   flatten,
   forEach,
   groupBy,
@@ -33,7 +31,6 @@ import ld, {
   uniq,
 } from 'lodash-es';
 import { MarkRequired } from 'ts-essentials';
-import { P, match } from 'ts-pattern';
 import { GlobalScheduler } from '../services/scheduler.js';
 import { ReconcileProgramDurationsTask } from '../tasks/ReconcileProgramDurationsTask.js';
 import { AnonymousTask } from '../tasks/Task.js';
@@ -94,6 +91,13 @@ type MintedRawProgramInfo = {
 type NonMovieOriginalProgram =
   | { sourceType: 'plex'; program: PlexEpisode | PlexMusicTrack }
   | { sourceType: 'jellyfin'; program: JellyfinItem };
+
+type ContentProgramWithHierarchy = Omit<
+  MarkRequired<ContentProgram, 'grandparent' | 'parent'>,
+  'subtype'
+> & {
+  subtype: 'episode' | 'track';
+};
 
 type ProgramRelationCaseBuilder = CaseWhenBuilder<
   DB,
@@ -543,7 +547,13 @@ export class ProgramDB {
     const grandparentRatingKeyToProgramId: Record<string, Set<string>> = {};
     const parentRatingKeyToProgramId: Record<string, Set<string>> = {};
 
-    const relevantPrograms = seq.collect(upsertedPrograms, (program) => {
+    const relevantPrograms: [
+      RawProgram,
+      ContentProgramWithHierarchy & {
+        grandparentKey: string;
+        parentKey: string;
+      },
+    ][] = seq.collect(upsertedPrograms, (program) => {
       if (program.type === ProgramType.Movie) {
         return;
       }
@@ -553,43 +563,48 @@ export class ProgramDB {
         return;
       }
 
-      const originalProgram = info.apiProgram.originalProgram;
+      // const program = info.apiProgram;
 
-      if (originalProgram.sourceType !== mediaSourceType) {
+      // if (originalProgram.sourceType !== mediaSourceType) {
+      //   return;
+      // }
+
+      if (info.apiProgram.subtype === 'movie') {
         return;
       }
 
-      if (isMovieMediaItem(originalProgram)) {
-        return;
-      }
+      const [grandparentKey, parentKey] = [
+        info.apiProgram.grandparent?.externalKey,
+        info.apiProgram.parent?.externalKey,
+      ];
 
-      const [grandparentKey, parentKey] = match(originalProgram)
-        .with(
-          {
-            sourceType: 'plex',
-            program: { type: P.union('episode', 'track') },
-          },
-          ({ program: ep }) =>
-            [ep.grandparentRatingKey, ep.parentRatingKey] as const,
-        )
-        .with(
-          { sourceType: 'jellyfin', program: { Type: 'Episode' } },
-          ({ program: ep }) => [ep.SeriesId, ep.ParentId] as const,
-        )
-        .with(
-          { sourceType: 'jellyfin', program: { Type: 'Audio' } },
-          ({ program: ep }) =>
-            [
-              find(ep.AlbumArtists, { Name: ep.AlbumArtist })?.Id,
-              ep.ParentId,
-            ] as const,
-        )
-        .otherwise(() => [null, null] as const);
+      // const [grandparentKey, parentKey] = match(info.apiProgram)
+      //   .with(
+      //     {
+      //       externalSourceType: 'plex',
+      //       subtype: P.union('episode', 'track'),
+      //     },
+      //     ({ program: ep }) =>
+      //       [ep.grandparentRatingKey, ep.parentRatingKey] as const,
+      //   )
+      //   .with(
+      //     { sourceType: 'jellyfin', program: { Type: 'Episode' } },
+      //     ({ program: ep }) => [ep.SeriesId, ep.ParentId] as const,
+      //   )
+      //   .with(
+      //     { sourceType: 'jellyfin', program: { Type: 'Audio' } },
+      //     ({ program: ep }) =>
+      //       [
+      //         find(ep.AlbumArtists, { Name: ep.AlbumArtist })?.Id,
+      //         ep.ParentId,
+      //       ] as const,
+      //   )
+      //   .otherwise(() => [null, null] as const);
 
       if (!grandparentKey || !parentKey) {
         this.logger.warn(
           'Unexpected null/empty parent keys: %O',
-          originalProgram,
+          info.apiProgram,
         );
         return;
       }
@@ -597,7 +612,7 @@ export class ProgramDB {
       return [
         program,
         {
-          ...(originalProgram as NonMovieOriginalProgram),
+          ...(info.apiProgram as ContentProgramWithHierarchy),
           grandparentKey,
           parentKey,
         },
@@ -991,11 +1006,4 @@ export class ProgramDB {
       );
     });
   }
-}
-
-function isMovieMediaItem(item: ContentProgramOriginalProgram): boolean {
-  return match(item)
-    .with({ sourceType: 'plex', program: { type: 'movie' } }, () => true)
-    .with({ sourceType: 'jellyfin', program: { Type: 'Movie' } }, () => true)
-    .otherwise(() => false);
 }

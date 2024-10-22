@@ -1,12 +1,15 @@
-import { EnrichedJellyfinItem } from '@/hooks/jellyfin/jellyfinHookUtil.ts';
-import { createExternalId } from '@tunarr/shared';
-import { forProgramType, nullToUndefined } from '@tunarr/shared/util';
+import {
+  forAddedMediaType,
+  programMinter,
+  typedProperty,
+  unwrapNil,
+} from '@/helpers/util.ts';
+import { forProgramType } from '@tunarr/shared/util';
 import {
   Channel,
   ChannelProgram,
   CondensedChannelProgram,
   CondensedChannelProgramming,
-  ContentProgram,
 } from '@tunarr/types';
 import { Draft } from 'immer';
 import {
@@ -23,13 +26,7 @@ import {
   sumBy,
   tail,
 } from 'lodash-es';
-import {
-  forAddedMediaType,
-  isNonEmptyString,
-  typedProperty,
-  unwrapNil,
-} from '../../helpers/util.ts';
-import { EnrichedPlexMedia } from '../../hooks/plex/plexHookUtil.ts';
+import { P, match } from 'ts-pattern';
 import { AddedMedia, UIChannelProgram, UIIndex } from '../../types/index.ts';
 import useStore from '../index.ts';
 import { ChannelEditorState, initialChannelEditorState } from './store.ts';
@@ -234,115 +231,6 @@ export const setChannelStartTime = (startTime: number) =>
     }
   });
 
-/**
- * Creates an non-persisted, ephemeral ContentProgram for the given
- * EnrichedPlexMedia. These are handed off to the server to persist
- * to the database (if they don't already exist). They are also useful
- * in order to deal with a common type for programming throughout other
- * parts of the UI
- */
-export const plexMediaToContentProgram = (
-  media: EnrichedPlexMedia,
-): ContentProgram => {
-  const uniqueId = createExternalId('plex', media.serverName, media.ratingKey);
-  return {
-    id: media.id ?? uniqueId,
-    persisted: !isNil(media.id),
-    originalProgram: { sourceType: 'plex', program: media },
-    duration: media.duration,
-    externalSourceName: media.serverName,
-    externalSourceType: 'plex',
-    externalKey: media.ratingKey,
-    uniqueId,
-    type: 'content',
-    subtype: media.type,
-    summary: media.summary,
-    title:
-      media.type === 'episode'
-        ? media.grandparentTitle ?? media.title
-        : media.title,
-    episodeTitle: media.type === 'episode' ? media.title : undefined,
-    episodeNumber: media.type === 'episode' ? media.index : undefined,
-    seasonNumber: media.type === 'episode' ? media.parentIndex : undefined,
-    artistName: media.type === 'track' ? media.grandparentTitle : undefined,
-    albumName: media.type === 'track' ? media.parentTitle : undefined,
-    showId:
-      media.showId ??
-      (media.type === 'episode' && isNonEmptyString(media.grandparentRatingKey)
-        ? createExternalId('plex', media.serverName, media.grandparentRatingKey)
-        : undefined),
-    seasonId:
-      media.seasonId ??
-      (media.type === 'episode' && isNonEmptyString(media.parentRatingKey)
-        ? createExternalId('plex', media.serverName, media.parentRatingKey)
-        : undefined),
-    externalIds: [
-      {
-        type: 'multi',
-        source: 'plex',
-        sourceId: media.serverName,
-        id: media.ratingKey,
-      },
-    ],
-  };
-};
-
-export const jellyfinItemToContentProgram = (
-  media: EnrichedJellyfinItem,
-): ContentProgram => {
-  const uniqueId = createExternalId('jellyfin', media.serverName, media.Id);
-  return {
-    id: media.id ?? uniqueId,
-    persisted: !isNil(media.id),
-    originalProgram: { sourceType: 'jellyfin', program: media },
-    duration: (media.RunTimeTicks ?? 0) / 10_000,
-    externalSourceName: media.serverName,
-    externalSourceType: 'jellyfin',
-    externalKey: media.Id,
-    uniqueId,
-    type: 'content',
-    subtype:
-      media.Type === 'Movie'
-        ? 'movie'
-        : media.Type === 'Episode'
-        ? 'episode'
-        : 'track',
-    title: (media.Type === 'Episode' ? media.SeriesName : media.Name) ?? '',
-    episodeTitle:
-      media.Type === 'Episode' ? nullToUndefined(media.Name) : undefined,
-    episodeNumber:
-      media.Type === 'Episode'
-        ? nullToUndefined(media.EpisodeCount)
-        : undefined,
-    seasonNumber:
-      media.Type === 'Episode'
-        ? nullToUndefined(media.ParentIndexNumber)
-        : undefined,
-    artistName:
-      media.Type === 'Audio' ? nullToUndefined(media.AlbumArtist) : undefined,
-    albumName:
-      media.Type === 'Audio' ? nullToUndefined(media.Album) : undefined,
-    showId:
-      media.showId ??
-      (media.Type === 'Episode' && isNonEmptyString(media.SeriesId)
-        ? createExternalId('jellyfin', media.serverName, media.SeriesId)
-        : undefined),
-    seasonId:
-      media.seasonId ??
-      (media.Type === 'Episode' && isNonEmptyString(media.SeasonId)
-        ? createExternalId('plex', media.serverName, media.SeasonId)
-        : undefined),
-    externalIds: [
-      {
-        type: 'multi',
-        source: 'jellyfin',
-        sourceId: media.serverName,
-        id: media.Id,
-      },
-    ],
-  };
-};
-
 export const addMediaToCurrentChannel = (programs: AddedMedia[]) =>
   useStore.setState(({ channelEditor }) => {
     if (channelEditor.currentEntity && programs.length > 0) {
@@ -357,13 +245,25 @@ export const addMediaToCurrentChannel = (programs: AddedMedia[]) =>
       );
 
       // Convert any external program types to our internal representation
-      const allNewPrograms = map(
-        programs,
-        forAddedMediaType<ChannelProgram>({
-          plex: ({ media }) => plexMediaToContentProgram(media),
-          jellyfin: ({ media }) => jellyfinItemToContentProgram(media),
-          'custom-show': ({ program }) => program,
-        }),
+      const allNewPrograms = map(programs, (item) =>
+        match(item)
+          .with({ type: 'plex', media: P.select() }, (plexItem) =>
+            programMinter.mintProgram(
+              { id: plexItem.serverId, name: plexItem.serverName },
+              { program: plexItem, sourceType: 'plex' },
+            ),
+          )
+          .with({ type: 'jellyfin', media: P.select() }, (jfItem) =>
+            programMinter.mintProgram(
+              { id: jfItem.serverId, name: jfItem.serverName },
+              { program: jfItem, sourceType: 'jellyfin' },
+            ),
+          )
+          .with(
+            { type: 'custom-show', program: P.select() },
+            (program) => program,
+          )
+          .exhaustive(),
       );
 
       const oldDuration = channelEditor.currentEntity.duration;

@@ -1,30 +1,34 @@
-import { forAddedMediaType, zipWithIndex } from '@/helpers/util.ts';
-import {
-  jellyfinItemToContentProgram,
-  plexMediaToContentProgram,
-} from '@/store/channelEditor/actions';
+import { programMinter, zipWithIndex } from '@/helpers/util.ts';
 import { emptyEntityEditor } from '@/store/entityEditor/util.ts';
 import useStore from '@/store/index.ts';
 import { AddedMedia } from '@/types/index.ts';
-import {
-  ContentProgram,
-  CustomProgram,
-  FillerList,
-  FillerListProgramming,
-} from '@tunarr/types';
+import { FillerList, FillerListProgramming } from '@tunarr/types';
 import { map, merge } from 'lodash-es';
+import { P, match } from 'ts-pattern';
 
 export const addMediaToCurrentFillerList = (programs: AddedMedia[]) =>
   useStore.setState(({ fillerListEditor }) => {
     if (fillerListEditor.currentEntity && programs.length > 0) {
       fillerListEditor.dirty.programs = true;
-      const convertedPrograms = map(
-        programs,
-        forAddedMediaType<ContentProgram | CustomProgram>({
-          plex: ({ media }) => plexMediaToContentProgram(media),
-          jellyfin: ({ media }) => jellyfinItemToContentProgram(media),
-          'custom-show': ({ program }) => program,
-        }),
+      const convertedPrograms = map(programs, (item) =>
+        match(item)
+          .with({ type: 'plex', media: P.select() }, (plexItem) =>
+            programMinter.mintProgram(
+              { id: plexItem.serverId, name: plexItem.serverName },
+              { program: plexItem, sourceType: 'plex' },
+            ),
+          )
+          .with({ type: 'jellyfin', media: P.select() }, (jfItem) =>
+            programMinter.mintProgram(
+              { id: jfItem.serverId, name: jfItem.serverName },
+              { program: jfItem, sourceType: 'jellyfin' },
+            ),
+          )
+          .with(
+            { type: 'custom-show', program: P.select() },
+            (program) => program,
+          )
+          .exhaustive(),
       );
 
       fillerListEditor.programList = fillerListEditor.programList.concat(

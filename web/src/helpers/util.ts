@@ -1,6 +1,7 @@
 import { Nullable } from '@/types/util';
 import { Theme } from '@mui/material';
 import { MakeRequired } from '@mui/x-date-pickers/internals/models/helpers';
+import { ProgramMinter } from '@tunarr/shared';
 import type {
   GenGroupedSubtypeMapping,
   PerTypeCallback,
@@ -36,6 +37,8 @@ import { SelectedMedia } from '../store/programmingSelector/store';
 import { AddedMedia, UIChannelProgram } from '../types';
 
 dayjs.extend(duration);
+
+export const programMinter = new ProgramMinter();
 
 export async function sequentialPromises<T, U>(
   seq: ReadonlyArray<T>,

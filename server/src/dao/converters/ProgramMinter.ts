@@ -4,6 +4,7 @@ import {
   ref,
 } from '@mikro-orm/better-sqlite';
 import { nullToUndefined } from '@tunarr/shared/util';
+import { ContentProgram } from '@tunarr/types';
 import { JellyfinItem } from '@tunarr/types/jellyfin';
 import {
   PlexEpisode,
@@ -80,6 +81,34 @@ class ProgramDaoMinter {
       throw ret;
     }
     return ret;
+  }
+
+  contentProgramDaoToDao(program: ContentProgram): NewRawProgram {
+    const now = +dayjs();
+    return {
+      uuid: v4(),
+      sourceType: program.externalSourceType,
+      externalSourceId: program.externalSourceId ?? program.externalSourceName,
+      externalKey: program.externalKey,
+      originalAirDate: program.date ?? null,
+      duration: program.duration,
+      filePath: program.serverFilePath,
+      plexRatingKey: program.externalKey,
+      plexFilePath: program.serverFileKey,
+      rating: program.rating ?? null,
+      summary: program.summary ?? null,
+      title: program.title,
+      type: program.subtype,
+      year: program.year ?? null,
+      showTitle: program.grandparent?.title,
+      // showIcon: program.grandparentThumb,
+      seasonNumber: program.parent?.index,
+      episode: program.index,
+      parentExternalKey: program.parent?.externalKey,
+      grandparentExternalKey: program.grandparent?.externalKey,
+      createdAt: now,
+      updatedAt: now,
+    };
   }
 
   mintRaw(

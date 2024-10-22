@@ -1,4 +1,4 @@
-import { ContentProgram, MediaSourceSettings } from '@tunarr/types';
+import { ContentProgram } from '@tunarr/types';
 import { JellyfinItem } from '@tunarr/types/jellyfin';
 import { PlexEpisode, PlexMovie, PlexMusicTrack } from '@tunarr/types/plex';
 import {
@@ -6,30 +6,39 @@ import {
   ContentProgramTypeSchema,
   ExternalSourceTypeSchema,
 } from '@tunarr/types/schemas';
-import dayjs from 'dayjs';
-import { first, isError } from 'lodash-es';
+import { find, first, isError } from 'lodash-es';
 import { P, match } from 'ts-pattern';
+import { createExternalId } from '../index.js';
+import { nullToUndefined } from '../util/index.js';
+
+type MediaSourceDetails = { id: string; name: string };
 
 export class ProgramMinter {
+  /**
+   * Creates an non-persisted, ephemeral ContentProgram for the given
+   * EnrichedPlexMedia. These are handed off to the server to persist
+   * to the database (if they don't already exist). They are also useful
+   * in order to deal with a common type for programming throughout other
+   * parts of the UI
+   */
+
   mintProgram(
-    mediaSource: MediaSourceSettings,
+    mediaSource: { id: string; name: string },
     program: ContentProgramOriginalProgram,
   ): ContentProgram {
     const ret = match(program)
       .with(
         { sourceType: 'plex', program: { type: 'movie' } },
-        ({ program: movie }) =>
-          this.mintRawProgramForPlexMovie(mediaSource, movie),
+        ({ program: movie }) => this.mintFromPlexMovie(mediaSource, movie),
       )
       .with(
         { sourceType: 'plex', program: { type: 'episode' } },
         ({ program: episode }) =>
-          this.mintRawProgramForPlexEpisode(mediaSource, episode),
+          this.mintFromPlexEpisode(mediaSource, episode),
       )
       .with(
         { sourceType: 'plex', program: { type: 'track' } },
-        ({ program: track }) =>
-          this.mintRawProgramForPlexTrack(mediaSource, track),
+        ({ program: track }) => this.mintFromPlexMusicTrack(mediaSource, track),
       )
       .with(
         {
@@ -46,8 +55,8 @@ export class ProgramMinter {
     return ret;
   }
 
-  private mintRawProgramForPlexMovie(
-    server: MediaSourceSettings,
+  private mintFromPlexMovie(
+    server: MediaSourceDetails,
     plexMovie: PlexMovie,
   ): ContentProgram {
     const file = first(first(plexMovie.Media)?.Part ?? []);
@@ -57,105 +66,140 @@ export class ProgramMinter {
       externalSourceName: server.name,
       date: plexMovie.originallyAvailableAt,
       duration: plexMovie.duration,
+      serverFileKey: file?.key,
       serverFilePath: file?.file,
       externalKey: plexMovie.ratingKey,
-      // plexFilePath: file?.key,
       rating: plexMovie.contentRating,
       summary: plexMovie.summary,
       title: plexMovie.title,
       subtype: 'movie',
-      year: plexMovie.year,
-      // createdAt: +dayjs(),
-      // updatedAt: +dayjs(),
+      persisted: false,
+      externalIds: [], // mint,
+      externalSourceId: server.name,
+      uniqueId: createExternalId('plex', server.name, plexMovie.ratingKey),
     };
   }
 
-  private mintRawProgramForPlexEpisode(
-    serverName: string,
+  private mintFromPlexEpisode(
+    server: MediaSourceDetails,
     plexEpisode: PlexEpisode,
   ): ContentProgram {
     const file = first(first(plexEpisode.Media)?.Part ?? []);
     return {
-      externalSourceType: ExternalSourceTypeSchema.enum.plex,
-      externalSourceName: serverName,
-      originalAirDate: plexEpisode.originallyAvailableAt,
+      date: plexEpisode.originallyAvailableAt,
       duration: plexEpisode.duration,
-      filePath: file?.file,
-      externalSourceId: serverName,
+      index: plexEpisode.index,
       externalKey: plexEpisode.ratingKey,
-      plexRatingKey: plexEpisode.ratingKey,
-      plexFilePath: file?.key,
+      externalSourceName: server.name,
+      externalSourceId: server.name,
+      externalSourceType: ExternalSourceTypeSchema.enum.plex,
+      parent: {
+        title: plexEpisode.parentTitle,
+        index: plexEpisode.parentIndex,
+        externalKey: plexEpisode.parentRatingKey,
+        guids: plexEpisode.parentGuid ? [plexEpisode.parentGuid] : [],
+      },
+      grandparent: {
+        title: plexEpisode.grandparentTitle,
+        externalKey: plexEpisode.grandparentRatingKey,
+        guids: plexEpisode.grandparentGuid ? [plexEpisode.grandparentGuid] : [],
+      },
       rating: plexEpisode.contentRating,
+      seasonNumber: plexEpisode.parentIndex,
+      serverFilePath: file?.file,
+      subtype: ContentProgramTypeSchema.enum.episode,
       summary: plexEpisode.summary,
       title: plexEpisode.title,
-      subtype: ContentProgramTypeSchema.enum.episode,
-      year: plexEpisode.year,
-      showTitle: plexEpisode.grandparentTitle,
-      showIcon: plexEpisode.grandparentThumb,
-      seasonNumber: plexEpisode.parentIndex,
-      episode: plexEpisode.index,
-      parentExternalKey: plexEpisode.parentRatingKey,
-      grandparentExternalKey: plexEpisode.grandparentRatingKey,
+      type: 'content',
+      externalIds: [], // MINT
+      persisted: false,
+      uniqueId: createExternalId('plex', server.name, plexEpisode.ratingKey),
     };
   }
 
-  private mintRawProgramForPlexTrack(
-    serverName: string,
+  private mintFromPlexMusicTrack(
+    server: MediaSourceDetails,
     plexTrack: PlexMusicTrack,
   ): ContentProgram {
     const file = first(first(plexTrack.Media)?.Part ?? []);
     return {
-      sourceType: ProgramSourceType.PLEX,
       duration: plexTrack.duration,
-      filePath: file?.file,
-      externalSourceId: serverName,
+      index: plexTrack.index,
       externalKey: plexTrack.ratingKey,
-      plexRatingKey: plexTrack.ratingKey,
-      plexFilePath: file?.key,
+      externalSourceName: server.name,
+      externalSourceType: ExternalSourceTypeSchema.enum.plex,
+      parent: {
+        title: plexTrack.parentTitle,
+        index: plexTrack.parentIndex,
+        externalKey: plexTrack.parentRatingKey,
+        guids: plexTrack.parentGuid ? [plexTrack.parentGuid] : [],
+        year: plexTrack.parentYear,
+      },
+      grandparent: {
+        title: plexTrack.grandparentTitle,
+        externalKey: plexTrack.grandparentRatingKey,
+        guids: plexTrack.grandparentGuid ? [plexTrack.grandparentGuid] : [],
+      },
+      // grandparentExternalKey: plexTrack.grandparentRatingKey,
+      // grandparentTitle: plexTrack.grandparentTitle,
+      seasonNumber: plexTrack.parentIndex,
+      serverFilePath: file?.file,
+      subtype: ContentProgramTypeSchema.enum.track,
       summary: plexTrack.summary,
       title: plexTrack.title,
       type: 'content',
-      year: plexTrack.parentYear,
-      showTitle: plexTrack.grandparentTitle,
-      showIcon: plexTrack.grandparentThumb,
-      seasonNumber: plexTrack.parentIndex,
-      episode: plexTrack.index,
-      parentExternalKey: plexTrack.parentRatingKey,
-      grandparentExternalKey: plexTrack.grandparentRatingKey,
-      albumName: plexTrack.parentTitle,
-      artistName: plexTrack.grandparentTitle,
+      externalIds: [], // MINT
+      persisted: false,
+      uniqueId: createExternalId('plex', server.name, plexTrack.ratingKey),
+      externalSourceId: server.name,
     };
   }
 
   private mintRawProgramForJellyfinItem(
-    serverName: string,
+    server: MediaSourceDetails,
     item: Omit<JellyfinItem, 'Type'> & { Type: 'Movie' | 'Episode' | 'Audio' },
   ): ContentProgram {
     return {
-      createdAt: +dayjs(),
-      updatedAt: +dayjs(),
-      sourceType: ProgramSourceType.JELLYFIN,
-      originalAirDate: item.PremiereDate,
+      externalSourceType: ExternalSourceTypeSchema.enum.jellyfin,
+      date: nullToUndefined(item.PremiereDate),
       duration: (item.RunTimeTicks ?? 0) / 10_000,
-      externalSourceId: serverName,
+      externalSourceId: server.name,
       externalKey: item.Id,
-      rating: item.OfficialRating,
-      summary: item.Overview,
+      rating: nullToUndefined(item.OfficialRating),
+      summary: nullToUndefined(item.Overview),
       title: item.Name ?? '',
-      type: match(item.Type)
-        .with('Movie', () => ProgramType.Movie)
-        .with('Episode', () => ProgramType.Episode)
-        .with('Audio', () => ProgramType.Track)
+      type: 'content',
+      subtype: match(item.Type)
+        .with('Movie', () => ContentProgramTypeSchema.enum.movie)
+        .with('Episode', () => ContentProgramTypeSchema.enum.episode)
+        .with('Audio', () => ContentProgramTypeSchema.Enum.track)
         .exhaustive(),
-      year: item.ProductionYear,
-      showTitle: item.SeriesName,
-      showIcon: item.SeriesThumbImageTag,
-      seasonNumber: item.ParentIndexNumber,
-      episode: item.IndexNumber,
-      parentExternalKey: item.ParentId ?? item.SeasonId ?? item.AlbumId,
-      grandparentExternalKey:
-        item.SeriesId ??
-        find(item.AlbumArtists, { Name: item.AlbumArtist })?.Id,
+      year: nullToUndefined(item.ProductionYear),
+      parent: {
+        title: nullToUndefined(item.SeasonName ?? item.Album),
+        index: nullToUndefined(item.ParentIndexNumber),
+        externalKey: nullToUndefined(
+          item.ParentId ?? item.SeasonId ?? item.AlbumId,
+        ),
+      },
+      grandparent: {
+        title: nullToUndefined(item.SeriesName ?? item.AlbumArtist),
+        externalKey:
+          item.SeriesId ??
+          find(item.AlbumArtists, { Name: item.AlbumArtist })?.Id,
+      },
+      seasonNumber: nullToUndefined(item.ParentIndexNumber),
+      episodeNumber: nullToUndefined(item.IndexNumber),
+      index: nullToUndefined(item.IndexNumber),
+      externalIds: [], // MINT
+      uniqueId: createExternalId('jellyfin', server.name, item.Id),
+      externalSourceName: server.name,
+      persisted: false,
     };
   }
+
+  // private mintPlexProgramParentExternalIds(
+  //   server: MediaSourceDetails,
+  //   item: PlexEpisode | PlexMusicTrack,
+  // ) {}
 }
