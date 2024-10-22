@@ -372,7 +372,7 @@ export class ProgramDB {
     const programsToPersist: MintedRawProgramInfo[] = ld
       .chain(contentPrograms)
       .map((p) => {
-        const program = minter.mintRaw(p.externalSourceName, p.originalProgram);
+        const program = minter.contentProgramDaoToDao(p);
         const externalIds = minter.mintRawExternalIds(
           p.externalSourceName,
           program.uuid,
