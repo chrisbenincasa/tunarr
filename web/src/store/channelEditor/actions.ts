@@ -302,9 +302,11 @@ export const jellyfinItemToContentProgram = (
     uniqueId,
     type: 'content',
     subtype:
-      media.Type === 'Movie'
+      media.Type === 'Movie' || media.Type === 'Trailer'
         ? 'movie'
-        : media.Type === 'Episode'
+        : media.Type === 'Episode' ||
+          media.Type === 'Video' ||
+          media.Type === 'MusicVideo'
         ? 'episode'
         : 'track',
     title: (media.Type === 'Episode' ? media.SeriesName : media.Name) ?? '',

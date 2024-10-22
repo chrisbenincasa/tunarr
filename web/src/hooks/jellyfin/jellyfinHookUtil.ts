@@ -1,6 +1,7 @@
 import { ApiClient } from '@/external/api.ts';
+import { JellyfinTerminalTypes } from '@/helpers/jellyfinUtil';
 import { sequentialPromises } from '@/helpers/util.ts';
-import { JellyfinItem, JellyfinItemKind } from '@tunarr/types/jellyfin';
+import { JellyfinItem } from '@tunarr/types/jellyfin';
 import { MediaSourceId } from '@tunarr/types/schemas';
 import { flattenDeep } from 'lodash-es';
 
@@ -15,19 +16,20 @@ export type EnrichedJellyfinItem = JellyfinItem & {
   seasonId?: string;
 };
 
-const TerminalTypes = new Set<JellyfinItemKind>(['Audio', 'Movie', 'Episode']);
-
 export const enumerateJellyfinItem = (
   apiClient: ApiClient,
   serverId: MediaSourceId,
   serverName: string,
   initialItem: JellyfinItem,
 ): (() => Promise<EnrichedJellyfinItem[]>) => {
+  const seen = new Map<string, JellyfinItem[]>();
+
   return async function () {
     async function loopInner(
       item: JellyfinItem,
     ): Promise<EnrichedJellyfinItem[]> {
-      if (TerminalTypes.has(item.Type)) {
+      if (JellyfinTerminalTypes.has(item.Type)) {
+        console.log('adding item ', item.Id);
         // Only reliable way to filter out programs that were deleted
         // from disk but not updated in JF
         if (item.RunTimeTicks && item.RunTimeTicks > 0) {
@@ -36,6 +38,14 @@ export const enumerateJellyfinItem = (
           return [];
         }
       } else {
+        if (seen.has(item.Id)) {
+          return sequentialPromises(seen.get(item.Id) ?? [], loopInner).then(
+            flattenDeep,
+          );
+        }
+
+        console.log('making api call');
+
         return (
           apiClient
             .getJellyfinItems({
@@ -44,7 +54,8 @@ export const enumerateJellyfinItem = (
                 libraryId: item.Id,
               },
               queries: {
-                itemTypes: [...TerminalTypes],
+                itemTypes: [...JellyfinTerminalTypes],
+                recursive: true,
               },
             })
             // TODO: Use p-queue here to parallelize a bit

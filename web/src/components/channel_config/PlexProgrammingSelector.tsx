@@ -1,16 +1,19 @@
 import { usePlexCollectionsInfinite } from '@/hooks/plex/usePlexCollections.ts';
 import { usePlexPlaylistsInfinite } from '@/hooks/plex/usePlexPlaylists.ts';
-import { usePlexSearchInfinite } from '@/hooks/plex/usePlexSearch.ts';
+import { usePlexItemsInfinite } from '@/hooks/plex/usePlexSearch.ts';
 import {
   useCurrentMediaSource,
   useCurrentSourceLibrary,
 } from '@/store/programmingSelector/selectors.ts';
+import { Album, Folder, Home, Mic, Tv } from '@mui/icons-material';
 import FilterAlt from '@mui/icons-material/FilterAlt';
 import {
   Box,
+  Breadcrumbs,
   Collapse,
   Grow,
   LinearProgress,
+  Link,
   Stack,
   Tab,
   Tabs,
@@ -20,20 +23,28 @@ import {
 } from '@mui/material';
 import { tag } from '@tunarr/types';
 import { PlexFilter } from '@tunarr/types/api';
-import { PlexMedia, isPlexParentItem } from '@tunarr/types/plex';
+import {
+  PlexChildListing,
+  PlexMedia,
+  isPlexParentItem,
+} from '@tunarr/types/plex';
 import { MediaSourceId } from '@tunarr/types/schemas';
 import {
   chain,
   filter,
   first,
+  isEmpty,
   isNil,
   isNull,
   isUndefined,
+  last,
   map,
   range,
+  slice,
   sumBy,
 } from 'lodash-es';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { P, match } from 'ts-pattern';
 import { useToggle } from 'usehooks-ts';
 import { isNonEmptyString, toggle } from '../../helpers/util.ts';
 import { usePlexLibraries } from '../../hooks/plex/usePlex.ts';
@@ -80,9 +91,14 @@ export default function PlexProgrammingSelector() {
   const [scrollParams, setScrollParams] = useState({ limit: 0, max: -1 });
   const [searchVisible, toggleSearchVisible] = useToggle();
   const [useAdvancedSearch, setUseAdvancedSearch] = useState(false);
+  const isListView = useStore(
+    (s) => s.theme.programmingSelectorView === 'list',
+  );
+  const [parentContext, setParentContext] = useState<PlexMedia[]>([]);
 
   const handleChange = (_: React.SyntheticEvent, newValue: TabValues) => {
     setTabValue(newValue);
+    clearParentContext();
   };
 
   const { data: directoryChildren } = usePlexLibraries(
@@ -123,6 +139,7 @@ export default function PlexProgrammingSelector() {
     ) {
       setTabValue(TabValues.Library);
     }
+    clearParentContext();
   }, [
     collectionsData,
     isCollectionLoading,
@@ -174,11 +191,18 @@ export default function PlexProgrammingSelector() {
     [selectedLibrary?.library.type],
   );
 
-  const plexSearchQuery = usePlexSearchInfinite(
+  const currentParentContext = last(parentContext);
+  const plexSearchQuery = usePlexItemsInfinite(
     selectedServer,
     selectedLibrary,
     searchKey,
     50,
+    currentParentContext
+      ? {
+          parentId: currentParentContext.ratingKey,
+          type: currentParentContext.type,
+        }
+      : undefined,
   );
 
   const { isLoading: searchLoading, data: searchData } = plexSearchQuery;
@@ -287,10 +311,16 @@ export default function PlexProgrammingSelector() {
             extractItems={(page) => page.Metadata ?? []}
             getItemKey={getPlexItemKey}
             renderGridItem={renderGridItem}
-            renderListItem={(item) => (
-              <PlexListItem key={item.guid} item={item} />
+            renderListItem={({ item }) => (
+              <PlexListItem
+                key={item.guid}
+                item={item}
+                onPushParent={pushParentContext}
+              />
             )}
-            infiniteQuery={plexCollectionsQuery}
+            infiniteQuery={
+              currentParentContext ? plexSearchQuery : plexCollectionsQuery
+            }
           />
         </TabPanel>,
       );
@@ -305,7 +335,7 @@ export default function PlexProgrammingSelector() {
             value={tabValue}
             key="Playlists"
           >
-            <MediaItemGrid
+            <MediaItemGrid<PlexChildListing, PlexMedia>
               getPageDataSize={(page) => ({
                 total: page.totalSize,
                 size: page.size,
@@ -313,10 +343,16 @@ export default function PlexProgrammingSelector() {
               extractItems={(page) => page.Metadata ?? []}
               getItemKey={getPlexItemKey}
               renderGridItem={renderGridItem}
-              renderListItem={(item) => (
-                <PlexListItem key={item.guid} item={item} />
+              renderListItem={({ item }) => (
+                <PlexListItem
+                  key={item.guid}
+                  item={item}
+                  onPushParent={pushParentContext}
+                />
               )}
-              infiniteQuery={plexPlaylistsQuery}
+              infiniteQuery={
+                currentParentContext ? plexSearchQuery : plexPlaylistsQuery
+              }
             />
           </TabPanel>,
         );
@@ -324,6 +360,72 @@ export default function PlexProgrammingSelector() {
     }
 
     return elements;
+  };
+
+  const pushParentContext = useCallback((item: PlexMedia) => {
+    setParentContext((prev) => {
+      if (last(prev)?.guid !== item.guid) {
+        return [...prev, item];
+      } else {
+        return prev;
+      }
+    });
+  }, []);
+
+  const clearParentContext = () => {
+    setParentContext([]);
+  };
+
+  const popParentContextToIndex = (idx: number) => {
+    setParentContext((prev) => slice(prev, 0, idx + 1));
+  };
+
+  const renderContextBreadcrumbs = () => {
+    const contextLinks = map(parentContext, (item, idx) => {
+      const isLast = idx === parentContext.length - 1;
+      const icon = match(item.type)
+        .with('show', () => <Tv sx={{ mr: 0.5 }} fontSize="inherit" />)
+        .with('artist', () => <Mic sx={{ mr: 0.5 }} fontSize="inherit" />)
+        .with('album', () => <Album sx={{ mr: 0.5 }} fontSize="inherit" />)
+        .with(P.union('collection', 'playlist'), () => (
+          <Folder sx={{ mr: 0.5 }} fontSize="inherit" />
+        ))
+        .otherwise(() => null);
+      return (
+        <Link
+          underline={isLast ? 'none' : 'hover'}
+          color={isLast ? 'text.primary' : 'inherit'}
+          sx={{
+            cursor: isLast ? undefined : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+          }}
+          key={item.guid}
+          onClick={() => (isLast ? () => {} : popParentContextToIndex(idx))}
+        >
+          {icon}
+          {item.title}
+        </Link>
+      );
+    });
+    return (
+      <Breadcrumbs maxItems={4}>
+        <Link
+          underline="hover"
+          sx={{
+            cursor: isEmpty(parentContext) ? undefined : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+          }}
+          color={isEmpty(parentContext) ? 'text.primary' : 'inherit'}
+          onClick={clearParentContext}
+        >
+          <Home sx={{ mr: 0.5 }} fontSize="inherit" />
+          Root
+        </Link>
+        {contextLinks}
+      </Breadcrumbs>
+    );
   };
 
   return (
@@ -404,6 +506,7 @@ export default function PlexProgrammingSelector() {
               marginTop: 1,
             }}
           />
+          {isListView && renderContextBreadcrumbs()}
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
             <Tabs
               value={tabValue}
@@ -426,27 +529,32 @@ export default function PlexProgrammingSelector() {
                 }
                 {...a11yProps(TabValues.Collections)}
               />
-              <Tooltip
-                title={
-                  sumBy(playlistData?.pages, 'size') === 0 || isPlaylistLoading
-                    ? 'Selected library has no playlists'
-                    : null
-                }
-                placement="top"
-                arrow
-              >
-                <span>
-                  <Tab
-                    value={TabValues.Playlists}
-                    label="Playlists"
-                    disabled={
+              <Tab
+                value={TabValues.Playlists}
+                label={
+                  <Tooltip
+                    title={
                       sumBy(playlistData?.pages, 'size') === 0 ||
                       isPlaylistLoading
+                        ? 'Selected library has no playlists'
+                        : null
                     }
-                    {...a11yProps(TabValues.Playlists)}
-                  />
-                </span>
-              </Tooltip>
+                    placement="top"
+                    arrow
+                  >
+                    <span>Playlists</span>
+                  </Tooltip>
+                }
+                sx={{
+                  '&.Mui-disabled': {
+                    pointerEvents: 'all',
+                  },
+                }}
+                disabled={
+                  sumBy(playlistData?.pages, 'size') === 0 || isPlaylistLoading
+                }
+                {...a11yProps(TabValues.Playlists)}
+              />
             </Tabs>
           </Box>
           <TabPanel index={TabValues.Library} value={tabValue} key="Library">
@@ -458,8 +566,13 @@ export default function PlexProgrammingSelector() {
               extractItems={(page) => page.Metadata}
               getItemKey={getPlexItemKey}
               renderGridItem={renderGridItem}
-              renderListItem={(item) => (
-                <PlexListItem key={item.guid} item={item} />
+              renderListItem={({ item, style }) => (
+                <PlexListItem
+                  key={item.guid}
+                  item={item}
+                  style={style}
+                  onPushParent={pushParentContext}
+                />
               )}
               infiniteQuery={plexSearchQuery}
               showAlphabetFilter={!searchVisible}

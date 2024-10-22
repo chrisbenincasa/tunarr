@@ -1,17 +1,6 @@
 import { useCurrentMediaSource } from '@/store/programmingSelector/selectors.ts';
-import { ExpandLess, ExpandMore } from '@mui/icons-material';
+import { Button, ListItem, ListItemButton, ListItemText } from '@mui/material';
 import {
-  Button,
-  Collapse,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Skeleton,
-} from '@mui/material';
-import {
-  PlexChildListing,
   PlexMedia,
   isPlexCollection,
   isPlexMusicAlbum,
@@ -20,24 +9,16 @@ import {
   isPlexShow,
   isTerminalItem,
 } from '@tunarr/types/plex';
-import { filter, first, isEmpty, map } from 'lodash-es';
+import { filter, first, map } from 'lodash-es';
 import pluralize from 'pluralize';
-import React, {
-  Fragment,
-  MouseEvent,
-  useCallback,
-  useEffect,
-  useState,
-} from 'react';
+import React, { Fragment, MouseEvent, useCallback } from 'react';
 import {
   forPlexMedia,
   prettyItemDuration,
   typedProperty,
 } from '../../helpers/util.ts';
-import { usePlexTyped } from '../../hooks/plex/usePlex.ts';
 import useStore from '../../store/index.ts';
 import {
-  addKnownMediaForPlexServer,
   addPlexSelectedMedia,
   removePlexSelectedMedia,
 } from '../../store/programmingSelector/actions.ts';
@@ -49,6 +30,7 @@ export interface PlexListItemProps<T extends PlexMedia> {
   index?: number;
   length?: number;
   parent?: string;
+  onPushParent: (item: T) => void;
 }
 
 const plexTypeString = forPlexMedia({
@@ -64,22 +46,8 @@ const plexTypeString = forPlexMedia({
 });
 
 export function PlexListItem<T extends PlexMedia>(props: PlexListItemProps<T>) {
-  const server = useStore((s) => s.currentServer!); // We have to have a server at this point
-  const [open, setOpen] = useState(false);
-  const { item } = props;
+  const { item, style } = props;
   const hasChildren = !isTerminalItem(item);
-  const childPath = isPlexCollection(item) ? 'collections' : 'metadata';
-  const { isPending, data: children } = usePlexTyped<
-    PlexChildListing,
-    PlexMedia[]
-  >(
-    server.id,
-    item.type === 'playlist'
-      ? `/playlists/${props.item.ratingKey}/items`
-      : `/library/${childPath}/${props.item.ratingKey}/children`,
-    hasChildren && open,
-    (c) => c.Metadata ?? [],
-  );
   const selectedServer = useCurrentMediaSource('plex');
   const selectedMedia = useStore((s) =>
     filter(s.selectedMedia, (m): m is PlexSelectedMedia => m.type === 'plex'),
@@ -87,14 +55,10 @@ export function PlexListItem<T extends PlexMedia>(props: PlexListItemProps<T>) {
   const selectedMediaIds = map(selectedMedia, typedProperty('id'));
 
   const handleClick = () => {
-    setOpen(!open);
-  };
-
-  useEffect(() => {
-    if (children && !isEmpty(children)) {
-      addKnownMediaForPlexServer(server.id, children, item.guid);
+    if (hasChildren) {
+      props.onPushParent(item);
     }
-  }, [item.guid, server.id, children]);
+  };
 
   const handleItem = useCallback(
     (e: MouseEvent<HTMLButtonElement>) => {
@@ -108,23 +72,6 @@ export function PlexListItem<T extends PlexMedia>(props: PlexListItemProps<T>) {
     },
     [item, selectedServer, selectedMediaIds],
   );
-
-  const renderChildren = () => {
-    return isPending ? (
-      <Skeleton height={45} />
-    ) : (
-      <List sx={{ pl: 4 }}>
-        {map(children ?? [], (child, idx, arr) => (
-          <PlexListItem
-            key={child.guid}
-            item={child}
-            index={idx}
-            length={arr.length}
-          />
-        ))}
-      </List>
-    );
-  };
 
   const getSecondaryText = () => {
     if (isPlexShow(item)) {
@@ -148,13 +95,15 @@ export function PlexListItem<T extends PlexMedia>(props: PlexListItemProps<T>) {
 
   return (
     <Fragment key={item.guid}>
-      <ListItem divider disablePadding>
-        <ListItemButton onClick={handleClick} dense sx={{ width: '100%' }}>
-          {hasChildren && (
-            <ListItemIcon>
-              {open ? <ExpandLess /> : <ExpandMore />}
-            </ListItemIcon>
-          )}
+      <ListItem divider disablePadding style={style}>
+        <ListItemButton
+          onClick={handleClick}
+          dense
+          sx={{
+            width: '100%',
+            cursor: isTerminalItem(item) ? 'default' : undefined,
+          }}
+        >
           <ListItemText primary={item.title} secondary={getSecondaryText()} />
           <Button onClick={(e) => handleItem(e)} variant="contained">
             {hasChildren
@@ -165,11 +114,6 @@ export function PlexListItem<T extends PlexMedia>(props: PlexListItemProps<T>) {
           </Button>
         </ListItemButton>
       </ListItem>
-      {hasChildren && (
-        <Collapse in={open} timeout="auto" unmountOnExit sx={{ width: '100%' }}>
-          {renderChildren()}
-        </Collapse>
-      )}
     </Fragment>
   );
 }

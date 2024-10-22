@@ -10,7 +10,7 @@ import {
   Button,
   CircularProgress,
   Grid,
-  List,
+  LinearProgress,
   Typography,
 } from '@mui/material';
 import { InfiniteData, UseInfiniteQueryResult } from '@tanstack/react-query';
@@ -34,6 +34,11 @@ import {
   useState,
 } from 'react';
 import {
+  FixedSizeList,
+  ListChildComponentProps,
+  ListOnItemsRenderedProps,
+} from 'react-window';
+import {
   useDebounceCallback,
   useIntersectionObserver,
   useResizeObserver,
@@ -45,6 +50,12 @@ export interface GridItemProps<ItemType> {
   isModalOpen: boolean;
   moveModal: (index: number, item: ItemType) => void;
   ref: ForwardedRef<HTMLDivElement>;
+}
+
+export interface ListItemProps<ItemType> {
+  item: ItemType;
+  index: number;
+  style?: React.CSSProperties;
 }
 
 export interface GridInlineModalProps<ItemType> {
@@ -65,7 +76,7 @@ type Props<PageDataType, ItemType> = {
     gridItemProps: GridItemProps<ItemType>,
     modalProps: GridInlineModalProps<ItemType>,
   ) => JSX.Element;
-  renderListItem: (item: ItemType, index: number) => JSX.Element;
+  renderListItem: (listItemProps: ListItemProps<ItemType>) => JSX.Element;
   getItemKey: (item: ItemType) => string;
   infiniteQuery: UseInfiniteQueryResult<InfiniteData<PageDataType>>;
   showAlphabetFilter?: boolean;
@@ -86,6 +97,7 @@ type ModalState = {
 
 // magic number for top bar padding; TODO: calc it off ref
 const TopBarPadddingPx = 64;
+
 const AlphanumericCharCodes = [
   '#'.charCodeAt(0),
   ...range('a'.charCodeAt(0), 'z'.charCodeAt(0) + 1),
@@ -114,6 +126,7 @@ export function MediaItemGrid<PageDataType, ItemType>({
     modalGuid: null,
     modalIndex: -1,
   });
+  const containerRef = useRef<HTMLDivElement>(null);
   const gridContainerRef = useRef<HTMLDivElement>(null);
   const selectedModalItemRef = useRef<HTMLDivElement>(null);
   const [alphanumericFilter, setAlphanumericFilter] = useState<string | null>(
@@ -129,32 +142,54 @@ export function MediaItemGrid<PageDataType, ItemType>({
 
   const loadedItems = compact(flatMap(data?.pages, extractItems));
 
-  const containerHeight = useMemo(() => {
-    const height = gridItemRef?.current?.getBoundingClientRect()?.height;
-    if (isNil(height)) {
-      return;
+  const containerMinHeight = useMemo(() => {
+    if (viewType === 'grid') {
+      const height = gridItemRef?.current?.getBoundingClientRect()?.height;
+      if (isNil(height)) {
+        return {};
+      }
+
+      const page = first(data?.pages);
+      if (isNil(page)) {
+        return {};
+      }
+
+      const total = getPageDataSize(page)?.total;
+
+      if (isNil(total)) {
+        return {};
+      }
+
+      const maxHeight =
+        Math.ceil(total / rowSize) * height + (hasNextPage ? height : 48);
+
+      const numRows = Math.ceil(loadedItems.length / rowSize);
+
+      // Either set the height of the container to 3 extra rows on top of what is loaded
+      // or the max height
+      return Math.min((numRows + 3) * height, maxHeight);
     }
+  }, [
+    data?.pages,
+    getPageDataSize,
+    hasNextPage,
+    loadedItems.length,
+    rowSize,
+    viewType,
+  ]);
 
-    const page = first(data?.pages);
-    if (isNil(page)) {
-      return;
-    }
-
-    const total = getPageDataSize(page)?.total;
-
-    if (isNil(total)) {
-      return;
-    }
-
-    const maxHeight =
-      Math.ceil(total / rowSize) * height + (hasNextPage ? height : 48);
-
-    const numRows = Math.ceil(loadedItems.length / rowSize);
-
-    // Either set the height of the container to 3 extra rows on top of what is loaded
-    // or the max height
-    return Math.min((numRows + 3) * height, maxHeight);
-  }, [data?.pages, getPageDataSize, hasNextPage, loadedItems.length, rowSize]);
+  let containerHeight: number | undefined;
+  if (viewType === 'list') {
+    const totalHeight = window.innerHeight;
+    const containerOffset =
+      gridContainerRef.current?.getBoundingClientRect().top;
+    containerHeight = containerOffset
+      ? totalHeight - containerOffset - TopBarPadddingPx
+      : undefined;
+  }
+  // const containerHeight = useMemo(() => {
+  //   return;
+  // }, [viewType]);
 
   const handleAlphaFilterChange = useCallback(
     (key: string) => {
@@ -268,7 +303,6 @@ export function MediaItemGrid<PageDataType, ItemType>({
 
   const maybeTriggerFetchNext = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) {
-      console.log('trigger');
       fetchNextPage().catch(console.error);
     }
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
@@ -303,40 +337,85 @@ export function MediaItemGrid<PageDataType, ItemType>({
     [modalIndex, rowSize, data?.pages, getPageDataSize],
   );
 
-  const renderItems = () => {
+  const renderLoadMoreIntersection = () => {
+    return (
+      !isLoading &&
+      hasNextPage && (
+        <div
+          style={{
+            height:
+              gridItemRef?.current?.getBoundingClientRect()?.height ?? 200,
+          }}
+          ref={ref}
+        ></div>
+      )
+    );
+  };
+
+  const renderGridItems = () => {
     return map(loadedItems, (item, index) => {
       const isOpen = index === lastItemIndex;
-      // const shouldAttachRef =
-      //   (modalIndex >= 0 && modalIndex === index) || index === 0;
 
-      return viewType === 'list'
-        ? renderListItem(item, index)
-        : renderGridItem(
-            {
-              item,
-              index,
-              isModalOpen: modalIndex === index,
-              moveModal: handleMoveModal,
-              ref:
-                index === 0
-                  ? gridItemRef
-                  : modalIndex === index
-                  ? selectedModalItemRef
-                  : null,
-            },
-            {
-              open: isOpen,
-              modalItemGuid: modalGuid,
-              modalIndex: modalIndex,
-              rowSize: rowSize,
-              renderChildren: renderGridItem,
-            },
-          );
+      return renderGridItem(
+        {
+          item,
+          index,
+          isModalOpen: modalIndex === index,
+          moveModal: handleMoveModal,
+          ref:
+            index === 0
+              ? gridItemRef
+              : modalIndex === index
+              ? selectedModalItemRef
+              : null,
+        },
+        {
+          open: isOpen,
+          modalItemGuid: modalGuid,
+          modalIndex: modalIndex,
+          rowSize: rowSize,
+          renderChildren: renderGridItem,
+        },
+      );
     });
   };
 
+  const renderListRow = (props: ListChildComponentProps) => {
+    if (props.index === loadedItems.length) {
+      return renderLoadMoreIntersection();
+    }
+
+    const item = loadedItems[props.index];
+    return renderListItem({
+      item,
+      index: props.index,
+      style: props.style,
+    });
+  };
+
+  const pageSize = useMemo(() => {
+    const firstPage = data?.pages?.[0];
+    return firstPage ? getPageDataSize(firstPage)?.size : undefined;
+  }, [data?.pages, getPageDataSize]);
+
+  const onListItemsRendered = (props: ListOnItemsRenderedProps) => {
+    if (props.visibleStopIndex >= loadedItems.length - (pageSize ?? 50)) {
+      if (scrollParams.limit < scrollParams.max) {
+        setScrollParams(({ limit: prevLimit, max }) => ({
+          max,
+          limit: Math.ceil((prevLimit + rowSize * 5) / rowSize) * rowSize,
+        }));
+      }
+
+      maybeTriggerFetchNext();
+    }
+  };
+
   return (
-    <Box sx={{ minHeight: containerHeight }}>
+    <Box
+      ref={containerRef}
+      sx={{ minHeight: containerMinHeight, height: containerHeight }}
+    >
       {showAlphabetFilter && handleAlphaNumFilter && (
         <Box
           sx={{
@@ -368,6 +447,7 @@ export function MediaItemGrid<PageDataType, ItemType>({
           })}
         </Box>
       )}
+      {isFetchingNextPage && <LinearProgress />}
       <Box ref={gridContainerRef} sx={{ width: '100%' }}>
         {viewType === 'grid' ? (
           <Grid
@@ -385,14 +465,23 @@ export function MediaItemGrid<PageDataType, ItemType>({
             }}
             ref={ref}
           >
-            {renderItems()}
+            {renderGridItems()}
           </Grid>
-        ) : (
-          <List>{renderItems()}</List>
-        )}
+        ) : containerHeight ? (
+          <FixedSizeList
+            height={containerHeight}
+            width={'100%'}
+            itemSize={61}
+            itemCount={loadedItems.length}
+            onItemsRendered={onListItemsRendered}
+            overscanCount={10}
+          >
+            {renderListRow}
+          </FixedSizeList>
+        ) : null}
       </Box>
 
-      {!isLoading && hasNextPage && (
+      {viewType === 'grid' && !isLoading && hasNextPage && (
         <div
           style={{
             height:
@@ -401,7 +490,7 @@ export function MediaItemGrid<PageDataType, ItemType>({
           ref={ref}
         ></div>
       )}
-      {isFetchingNextPage && (
+      {viewType === 'grid' && isFetchingNextPage && (
         <CircularProgress
           color="primary"
           sx={{ display: 'block', margin: '2em auto' }}

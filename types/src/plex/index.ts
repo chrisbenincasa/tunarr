@@ -92,12 +92,6 @@ export const PlexLibraryCollectionSchema = z
 
 export type PlexLibraryCollection = z.infer<typeof PlexLibraryCollectionSchema>;
 
-const basePlexMediaContainerSchema = z.object({
-  size: z.number(),
-  totalSize: z.number().optional(), // Present when paging
-  offset: z.number().optional(), // Present when paging
-});
-
 const basePlexCollectionSchema = z.object({
   allowSync: z.boolean(),
   art: z.string(),
@@ -141,7 +135,7 @@ const makePlexLibraryCollectionsSchema = <T extends z.AnyZodObject>(
   metadata: T,
 ) => {
   return basePlexLibrarySchema.extend({
-    Metadata: z.array(metadata).optional(), // There might be no collections
+    Metadata: z.array(metadata).default([]), // There might be no collections
   });
 };
 
@@ -177,7 +171,7 @@ export const PlexPlaylistSchema = z.object({
 
 export type PlexPlaylist = z.infer<typeof PlexPlaylistSchema>;
 
-export const PlexPlaylistsSchema = basePlexMediaContainerSchema.extend({
+export const PlexPlaylistsSchema = basePlexCollectionSchema.extend({
   Metadata: z.array(PlexPlaylistSchema).default([]),
 });
 
@@ -716,6 +710,7 @@ export const PlexMediaSchema = z.discriminatedUnion('type', [
   PlexMusicArtistSchema,
   PlexMusicAlbumSchema,
   PlexMusicTrackSchema,
+  PlexPlaylistSchema,
 ]);
 
 export const PlexChildListingSchema = basePlexCollectionSchema.extend({
