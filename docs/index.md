@@ -8,7 +8,7 @@ Watch your channels by adding the spoofed Tunarr HDHomerun tuner to Plex, Jellyf
 
 ## What is this?
 
-Tunarr is a fork / rewrite / rebrand of [**dizqueTV**](https://github.com/vexorian/dizquetv) (which in itself was a fork of other projects!). This project was born out of both a love for TV and an appreciation for the work put into dizqueTV and its predecessors.
+Tunarr was originally a fork of [**dizqueTV**](https://github.com/vexorian/dizquetv) (which in itself was a fork of other projects!) which evolved into a near-complete rewrite. This project was born out of both a love for TV and an appreciation for the work put into dizqueTV and its predecessors.
 
 Tunarr has the following goals:
 

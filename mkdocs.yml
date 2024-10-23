@@ -39,6 +39,7 @@ nav:
   - Home: index.md
   - Getting Started:
     - Install: getting-started/installation.md
+    - Run: getting-started/run.md
     - Setup: getting-started/setup.md
   - Configure:
     - Channels:
@@ -59,18 +60,24 @@ nav:
       - configure/library/index.md
       - Filler: configure/library/filler.md
       - Custom Shows: configure/library/custom-shows.md
-    - System: configure/system.md
+    - System:
+      - configure/system/index.md
+      - Security: configure/system/security.md
+      - FFmpeg: configure/system/ffmpeg.md
     - Clients:
       - configure/clients/index.md
       - Plex: configure/clients/plex.md
       - Jellyfin: configure/clients/jellyfin.md
   - Misc.:
     - Common Issues: misc/common-issues.md
+    - Troubleshooting: misc/troubleshooting.md
   - Development:
     - Contributing: dev/contributing.md
 
 markdown_extensions:
   - admonition
+  - toc:
+      permalink: true
   - pymdownx.details
   - pymdownx.superfences
   - pymdownx.highlight:
