@@ -523,7 +523,11 @@ export function Root({ children }: { children?: React.ReactNode }) {
           }}
         >
           <Toolbar />
-          <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+          <Container
+            disableGutters
+            maxWidth="xl"
+            sx={{ mt: 4, mb: 4, pl: 5, pr: 5 }}
+          >
             {version?.ffmpeg === 'unknown' ? (
               <Alert
                 variant="filled"
