@@ -82,11 +82,13 @@ export class HlsSlowerSession extends BaseHlsSession<HlsSlowerSessionOptions> {
         this.settingsDB,
       );
 
-      const transcodeSession = await programStream.setup();
+      const transcodeSessionResult = await programStream.setup();
 
-      this.transcodedUntil = this.transcodedUntil.add(
-        transcodeSession.streamDuration,
-      );
+      transcodeSessionResult.forEach((transcodeSession) => {
+        this.transcodedUntil = this.transcodedUntil.add(
+          transcodeSession.streamDuration,
+        );
+      });
 
       return programStream;
     });

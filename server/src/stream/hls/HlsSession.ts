@@ -150,18 +150,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
           realtime,
         );
 
-        const programStream = ProgramStreamFactory.create(
-          context,
-          HlsOutputFormat({
-            streamBasePath: `stream_${this.channel.uuid}`,
-            streamBaseUrl: `/stream/channels/${this.channel.uuid}/${this.sessionType}/`,
-            hlsTime: 4,
-            hlsListSize: 0,
-            deleteThreshold: null,
-            appendSegments: true,
-          }),
-          this.settingsDB,
-        );
+        let programStream = this.getProgramStream(context);
 
         programStream.on('error', () => {
           this.state = 'error';
@@ -171,27 +160,64 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
           this.emit('error', this.error);
         });
 
-        const transcodeSession = await programStream.setup({
+        let transcodeSessionResult = await programStream.setup({
           ptsOffset,
         });
 
-        this.transcodedUntil = this.transcodedUntil.add(
-          transcodeSession.streamDuration,
-        );
+        if (transcodeSessionResult.isFailure()) {
+          this.logger.error(
+            transcodeSessionResult.error,
+            'Error while starting program stream. Attempting to subtitute with error stream',
+          );
+          programStream = this.getProgramStream(
+            PlayerContext.error(
+              result.lineupItem.streamDuration ?? result.lineupItem.duration,
+              transcodeSessionResult.error,
+              result.channelContext,
+              realtime,
+            ),
+          );
+          transcodeSessionResult = await programStream.setup();
+          if (transcodeSessionResult.isFailure()) {
+            this.state = 'error';
+            this.error = transcodeSessionResult.error;
+            this.emit('error', this.error);
+          }
+        }
+
+        transcodeSessionResult.forEach((transcodeSession) => {
+          this.transcodedUntil = this.transcodedUntil.add(
+            transcodeSession.streamDuration,
+          );
+          this.#currentSession = transcodeSession;
+        });
 
         return programStream;
       },
     );
 
-    // TODO: handle failure
     await programStreamResult.mapAsync(async (programStream) => {
       await this.trimPlaylistAndDeleteSegments();
-      this.#currentSession = await programStream.setup();
       await programStream.start();
       return programStream.transcodeSession.wait();
     });
 
     this.logger.debug('Stream ended.');
+  }
+
+  private getProgramStream(context: PlayerContext) {
+    return ProgramStreamFactory.create(
+      context,
+      HlsOutputFormat({
+        streamBasePath: `stream_${this.channel.uuid}`,
+        streamBaseUrl: `/stream/channels/${this.channel.uuid}/${this.sessionType}/`,
+        hlsTime: 4,
+        hlsListSize: 0,
+        deleteThreshold: null,
+        appendSegments: true,
+      }),
+      this.settingsDB,
+    );
   }
 
   private async getPtsOffset() {

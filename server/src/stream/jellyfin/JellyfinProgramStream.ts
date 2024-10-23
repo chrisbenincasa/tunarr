@@ -10,6 +10,7 @@ import { FfmpegTranscodeSession } from '../../ffmpeg/FfmpegTrancodeSession.js';
 import { OutputFormat } from '../../ffmpeg/OutputFormat.js';
 import { FFMPEG } from '../../ffmpeg/ffmpeg.js';
 import { UpdateJellyfinPlayStatusScheduledTask } from '../../tasks/jellyfin/UpdateJellyfinPlayStatusTask.js';
+import { Result } from '../../types/result.js';
 import { Maybe, Nullable } from '../../types/util.js';
 import { ifDefined } from '../../util/index.js';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
@@ -42,11 +43,13 @@ export class JellyfinProgramStream extends ProgramStream {
     });
   }
 
-  async setupInternal(): Promise<FfmpegTranscodeSession> {
+  async setupInternal(): Promise<Result<FfmpegTranscodeSession>> {
     const lineupItem = this.context.lineupItem;
     if (!isContentBackedLineupIteam(lineupItem)) {
-      throw new Error(
-        'Lineup item is not backed by Plex: ' + JSON.stringify(lineupItem),
+      return Result.failure(
+        new Error(
+          'Lineup item is not backed by Plex: ' + JSON.stringify(lineupItem),
+        ),
       );
     }
 
@@ -58,8 +61,10 @@ export class JellyfinProgramStream extends ProgramStream {
     );
 
     if (isNil(server)) {
-      throw new Error(
-        `Unable to find server "${lineupItem.externalSourceId}" specified by program.`,
+      return Result.failure(
+        new Error(
+          `Unable to find server "${lineupItem.externalSourceId}" specified by program.`,
+        ),
       );
     }
 
@@ -75,11 +80,13 @@ export class JellyfinProgramStream extends ProgramStream {
 
     const stream = await jellyfinStreamDetails.getStream(lineupItem);
     if (isNull(stream)) {
-      throw new Error('Unable to retrieve stream details from Jellyfin');
+      return Result.failure(
+        new Error('Unable to retrieve stream details from Jellyfin'),
+      );
     }
 
     if (this.killed) {
-      throw new Error('Stream was killed already, returning');
+      return Result.failure(new Error('Stream was killed already, returning'));
     }
 
     const streamStats = stream.streamDetails;
@@ -106,9 +113,9 @@ export class JellyfinProgramStream extends ProgramStream {
     });
 
     if (isUndefined(ffmpegOutStream)) {
-      throw new Error('Unable to spawn ffmpeg');
+      return Result.failure(new Error('Unable to spawn ffmpeg'));
     }
 
-    return ffmpegOutStream;
+    return Result.success(ffmpegOutStream);
   }
 }
