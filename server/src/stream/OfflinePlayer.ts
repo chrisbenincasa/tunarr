@@ -4,6 +4,7 @@ import { SettingsDB, getSettings } from '../dao/settings.js';
 import { FfmpegTranscodeSession } from '../ffmpeg/FfmpegTrancodeSession.js';
 import { OutputFormat } from '../ffmpeg/OutputFormat.js';
 import { FFMPEG } from '../ffmpeg/ffmpeg.js';
+import { Result } from '../types/result.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '../util/serverUtil.js';
 import { PlayerContext } from './PlayerStreamContext.js';
@@ -40,7 +41,7 @@ export class OfflineProgramStream extends ProgramStream {
 
   protected shutdownInternal() {}
 
-  async setupInternal(): Promise<FfmpegTranscodeSession> {
+  async setupInternal(): Promise<Result<FfmpegTranscodeSession>> {
     try {
       const ffmpeg = new FFMPEG(
         this.settingsDB.ffmpegSettings(),
@@ -67,14 +68,16 @@ export class OfflineProgramStream extends ProgramStream {
         throw new Error('Unable to start ffmpeg transcode session');
       }
 
-      return ff;
+      return Result.success(ff);
     } catch (err) {
       if (isError(err)) {
-        throw err;
+        return Result.failure(err);
       } else {
-        throw new Error(
-          'Error when attempting to play offline screen: ' +
-            JSON.stringify(err),
+        return Result.failure(
+          new Error(
+            'Error when attempting to play offline screen: ' +
+              JSON.stringify(err),
+          ),
         );
       }
     }

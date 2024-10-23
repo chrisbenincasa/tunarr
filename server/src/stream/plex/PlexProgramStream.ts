@@ -10,6 +10,7 @@ import { OutputFormat } from '../../ffmpeg/OutputFormat.js';
 import { FFMPEG, StreamOptions } from '../../ffmpeg/ffmpeg.js';
 import { GlobalScheduler } from '../../services/scheduler.js';
 import { UpdatePlexPlayStatusScheduledTask } from '../../tasks/plex/UpdatePlexPlayStatusTask.js';
+import { Result } from '../../types/result.js';
 import { Maybe } from '../../types/util.js';
 import { ifDefined } from '../../util/index.js';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
@@ -44,11 +45,13 @@ export class PlexProgramStream extends ProgramStream {
 
   protected async setupInternal(
     opts?: Partial<StreamOptions>,
-  ): Promise<FfmpegTranscodeSession> {
+  ): Promise<Result<FfmpegTranscodeSession>> {
     const lineupItem = this.context.lineupItem;
     if (!isContentBackedLineupIteam(lineupItem)) {
-      throw new Error(
-        'Lineup item is not backed by Plex: ' + JSON.stringify(lineupItem),
+      return Result.failure(
+        new Error(
+          'Lineup item is not backed by Plex: ' + JSON.stringify(lineupItem),
+        ),
       );
     }
 
@@ -59,8 +62,10 @@ export class PlexProgramStream extends ProgramStream {
       lineupItem.externalSourceId,
     );
     if (isNil(server)) {
-      throw Error(
-        `Unable to find server "${lineupItem.externalSourceId}" specified by program.`,
+      return Result.failure(
+        new Error(
+          `Unable to find server "${lineupItem.externalSourceId}" specified by program.`,
+        ),
       );
     }
 
@@ -76,12 +81,14 @@ export class PlexProgramStream extends ProgramStream {
 
     const stream = await plexStreamDetails.getStream(lineupItem);
     if (isNull(stream)) {
-      throw new Error('Unable to retrieve stream details from Plex');
+      return Result.failure(
+        new Error('Unable to retrieve stream details from Plex'),
+      );
     }
 
     if (this.killed) {
       this.logger.warn('Plex stream was killed already, returning');
-      throw new Error('Plex stream was killed already');
+      return Result.failure(new Error('Plex stream was killed already'));
     }
 
     const streamStats = stream.streamDetails;
@@ -109,7 +116,7 @@ export class PlexProgramStream extends ProgramStream {
     });
 
     if (isUndefined(transcodeSession)) {
-      throw new Error('Unable to create ffmpeg process');
+      return Result.failure(new Error('Unable to create ffmpeg process'));
     }
 
     if (plexSettings.updatePlayStatus) {
@@ -129,6 +136,6 @@ export class PlexProgramStream extends ProgramStream {
       );
     }
 
-    return transcodeSession;
+    return Result.success(transcodeSession);
   }
 }

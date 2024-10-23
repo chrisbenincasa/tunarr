@@ -12,22 +12,22 @@ type Events = {
 };
 
 export class EventService {
+  private static stream: TypedEventEmitter<Events> =
+    new EventEmitter() as TypedEventEmitter<Events>;
+
   private logger = LoggerFactory.child({
     caller: import.meta,
     className: this.constructor.name,
   });
-  private stream: TypedEventEmitter<Events>;
   private _heartbeat: NodeJS.Timeout;
 
   constructor() {
-    this.stream = new EventEmitter() as TypedEventEmitter<Events>;
     this._heartbeat = setInterval(() => {
       this.push({ type: 'heartbeat', level: 'info' });
     }, 5000).unref();
 
-    this.stream.on('close', () => {
+    EventService.stream.on('close', () => {
       clearInterval(this._heartbeat);
-      this.stream.removeAllListeners();
     });
   }
 
@@ -53,14 +53,14 @@ export class EventService {
           outStream.push(parts + '\n\n');
         };
 
-        this.stream.on('push', listener);
+        EventService.stream.on('push', listener);
 
         request.socket.on('close', () => {
           this.logger.debug({ ip: request.ip }, 'Remove event channel.');
-          this.stream.removeListener('push', listener);
+          EventService.stream.removeListener('push', listener);
         });
 
-        this.stream.on('close', () => {
+        EventService.stream.on('close', () => {
           response.raw.end();
         });
 
@@ -79,10 +79,10 @@ export class EventService {
     if (isString(data['message'])) {
       this.logger.debug('Push event: ' + data['message']); // Why?
     }
-    this.stream.emit('push', { ...data });
+    EventService.stream.emit('push', { ...data });
   }
 
   close() {
-    this.stream.emit('close');
+    EventService.stream.emit('close');
   }
 }

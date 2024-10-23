@@ -272,6 +272,8 @@ function jellyfinItemTypeToProgramType(item: JellyfinItem) {
     case 'Movie':
       return ProgramType.Movie;
     case 'Episode':
+    case 'Video':
+    case 'MusicVideo':
       return ProgramType.Episode;
     case 'Audio':
       return ProgramType.Track;

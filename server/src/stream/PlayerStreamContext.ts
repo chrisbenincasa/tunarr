@@ -10,6 +10,27 @@ export class PlayerContext {
     public isLoading: boolean,
     public realtime: boolean,
   ) {}
+
+  static error(
+    duration: number,
+    error: string | boolean | Error,
+    channel: Channel,
+    realtime: boolean = true,
+  ): PlayerContext {
+    return new PlayerContext(
+      {
+        type: 'error',
+        duration,
+        streamDuration: duration,
+        title: 'Error',
+        error,
+      },
+      channel,
+      false,
+      false,
+      realtime,
+    );
+  }
 }
 
 export type GetPlayerContextRequest = GetCurrentLineupItemRequest & {

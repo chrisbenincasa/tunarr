@@ -18,6 +18,7 @@ import {
   isObject,
   map,
   merge,
+  omitBy,
   uniqWith,
 } from 'lodash-es';
 import { DeepPartial, MarkRequired } from 'ts-essentials';
@@ -274,10 +275,9 @@ export class ProgramConverter {
       duration: program.duration,
       type: 'content',
       id: program.uuid,
-      // TODO: Fix this type!!!
       subtype: program.type,
       externalIds: seq.collect(externalIds, (eid) => this.toExternalId(eid)),
-      ...extraFields,
+      ...omitBy(extraFields, isNil),
     };
   }
 

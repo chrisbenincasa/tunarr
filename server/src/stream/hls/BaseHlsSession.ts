@@ -143,8 +143,8 @@ export abstract class BaseHlsSession<
           }
         },
         {
-          retries: 10,
-          factor: 1.5,
+          retries: 15,
+          factor: 1.25,
         },
       );
 

@@ -76,17 +76,43 @@ export class HlsSlowerSession extends BaseHlsSession<HlsSlowerSessionOptions> {
         this.#realtimeTranscode,
       );
 
-      const programStream = ProgramStreamFactory.create(
+      let programStream = ProgramStreamFactory.create(
         context,
         NutOutputFormat,
         this.settingsDB,
       );
 
-      const transcodeSession = await programStream.setup();
+      let transcodeSessionResult = await programStream.setup();
 
-      this.transcodedUntil = this.transcodedUntil.add(
-        transcodeSession.streamDuration,
-      );
+      if (transcodeSessionResult.isFailure()) {
+        this.logger.error(
+          transcodeSessionResult.error,
+          'Error while starting program stream. Attempting to subtitute with error stream',
+        );
+
+        programStream = ProgramStreamFactory.create(
+          PlayerContext.error(
+            result.lineupItem.streamDuration ?? result.lineupItem.duration,
+            transcodeSessionResult.error,
+            result.channelContext,
+          ),
+          NutOutputFormat,
+        );
+
+        transcodeSessionResult = await programStream.setup();
+
+        if (transcodeSessionResult.isFailure()) {
+          this.state = 'error';
+          this.error = transcodeSessionResult.error;
+          this.emit('error', this.error);
+        }
+      }
+
+      transcodeSessionResult.forEach((transcodeSession) => {
+        this.transcodedUntil = this.transcodedUntil.add(
+          transcodeSession.streamDuration,
+        );
+      });
 
       return programStream;
     });

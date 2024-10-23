@@ -81,7 +81,7 @@ export class MissingSeasonNumbersFixer extends Fixer {
           if (parentId === 'unset') {
             for (const program of programs) {
               if (!program.plexRatingKey) {
-                this.logger.warn(
+                this.logger.debug(
                   `Uh-oh, we're missing a plex rating key for %s`,
                   program.uuid,
                 );

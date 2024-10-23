@@ -9,6 +9,7 @@ import { OutputFormat } from '../ffmpeg/OutputFormat.js';
 import { FFMPEG, StreamOptions } from '../ffmpeg/ffmpeg.js';
 import { serverContext } from '../serverContext.js';
 import { TypedEventEmitter } from '../types/eventEmitter.js';
+import { Result } from '../types/result.js';
 import { Maybe } from '../types/util.js';
 import {
   attempt,
@@ -44,12 +45,20 @@ export abstract class ProgramStream extends (events.EventEmitter as new () => Ty
     super();
   }
 
-  async setup(opts?: Partial<StreamOptions>): Promise<FfmpegTranscodeSession> {
+  async setup(
+    opts?: Partial<StreamOptions>,
+  ): Promise<Result<FfmpegTranscodeSession>> {
     if (this.isInitialized()) {
-      return this._transcodeSession;
+      return Result.success(this._transcodeSession);
     }
 
-    return (this.transcodeSession = await this.setupInternal(opts));
+    const result = await this.setupInternal(opts);
+
+    result.forEach((value) => {
+      this.transcodeSession = value;
+    });
+
+    return result;
   }
 
   isInitialized(): boolean {
@@ -75,7 +84,7 @@ export abstract class ProgramStream extends (events.EventEmitter as new () => Ty
 
   protected abstract setupInternal(
     opts?: Partial<StreamOptions>,
-  ): Promise<FfmpegTranscodeSession>;
+  ): Promise<Result<FfmpegTranscodeSession>>;
 
   get transcodeSession() {
     return this._transcodeSession;
