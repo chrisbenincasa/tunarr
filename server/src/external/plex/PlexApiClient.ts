@@ -22,12 +22,14 @@ import {
   isObject,
   isUndefined,
   map,
+  reject,
 } from 'lodash-es';
 import {
   PlexMediaContainer,
   PlexMediaContainerResponse,
 } from '../../types/plexApiTypes.js';
 import { Maybe, Nilable } from '../../types/util.js';
+import { getChannelId } from '../../util/channels.js';
 import { isSuccess } from '../../util/index.js';
 import {
   BaseApiClient,
@@ -198,17 +200,28 @@ export class PlexApiClient extends BaseApiClient {
     }
   }
 
-  async refreshChannels(channels: { number: number }[], _dvrs?: PlexDvr[]) {
-    const dvrs = !isUndefined(_dvrs) ? _dvrs : await this.getDvrs();
-    if (!dvrs) throw new Error('Could not retrieve Plex DVRs');
+  async refreshChannels(
+    channels: { number: number; stealth: boolean; uuid: string }[],
+    providedDvrs?: PlexDvr[],
+  ) {
+    const liveChannels = reject(channels, { stealth: true });
+    const dvrs = !isEmpty(providedDvrs) ? providedDvrs : await this.getDvrs();
+    if (!dvrs) {
+      throw new Error('Could not retrieve Plex DVRs');
+    }
+
+    if (isEmpty(dvrs)) {
+      return;
+    }
 
     const qs: Record<string, number | string> = {
-      channelsEnabled: map(channels, 'number').join(','),
+      channelsEnabled: map(liveChannels, 'number').join(','),
     };
 
     forEach(channels, ({ number }) => {
-      qs[`channelMapping[${number}]`] = number;
-      qs[`channelMappingByKey[${number}]`] = number;
+      const id = getChannelId(number);
+      qs[`channelMapping[${number}]`] = id;
+      qs[`channelMappingByKey[${number}]`] = id;
     });
 
     const keys = map(
