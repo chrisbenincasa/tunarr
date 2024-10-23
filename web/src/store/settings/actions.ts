@@ -1,3 +1,4 @@
+import { PaginationState } from '@tanstack/react-table';
 import useStore from '..';
 
 export const setBackendUri = (uri: string) =>
@@ -10,3 +11,8 @@ export const setChannelTableColumnModel = (model: Record<string, boolean>) => {
     settings.ui.channelTableColumnModel = { ...model };
   });
 };
+
+export const setChannelPaginationState = (p: PaginationState) =>
+  useStore.setState(({ settings }) => {
+    settings.ui.channelTablePagination = p;
+  });
