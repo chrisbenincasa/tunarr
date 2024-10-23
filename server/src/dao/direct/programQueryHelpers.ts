@@ -328,6 +328,7 @@ export function withFillerPrograms(
   return jsonArrayFrom(
     baseWithProgamsExpressionBuilder(eb, mergedOpts)
       .select(['fillerShowContent.index'])
+      .orderBy('fillerShowContent.index asc')
       .innerJoin('fillerShowContent', (join) =>
         join
           .onRef('fillerShowContent.programUuid', '=', 'program.uuid')
