@@ -169,6 +169,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
             transcodeSessionResult.error,
             'Error while starting program stream. Attempting to subtitute with error stream',
           );
+
           programStream = this.getProgramStream(
             PlayerContext.error(
               result.lineupItem.streamDuration ?? result.lineupItem.duration,
@@ -177,7 +178,9 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
               realtime,
             ),
           );
+
           transcodeSessionResult = await programStream.setup();
+
           if (transcodeSessionResult.isFailure()) {
             this.state = 'error';
             this.error = transcodeSessionResult.error;
