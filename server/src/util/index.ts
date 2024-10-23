@@ -493,3 +493,7 @@ export function parseIntOrNull(s: string): number | null {
   const parsed = parseInt(s);
   return isNaN(parsed) ? null : parsed;
 }
+
+export function isLinux() {
+  return process.platform === 'linux';
+}

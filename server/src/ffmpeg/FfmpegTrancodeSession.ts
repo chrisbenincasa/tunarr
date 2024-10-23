@@ -66,7 +66,6 @@ export class FfmpegTranscodeSession extends (events.EventEmitter as new () => Ty
 
     this.process.on('end', () => {
       this.state = State.Ended;
-      this.kill();
       out.push(null);
     });
 

@@ -137,7 +137,7 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
 
       this.emit('exit', code, signal, expected);
 
-      if (code === 0) {
+      if (expected) {
         this.emit('end');
       } else if (code === 255) {
         if (this.#processHandle) {

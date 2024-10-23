@@ -190,10 +190,11 @@ export default function FfmpegSettingsPage() {
     mode: 'onBlur',
   });
 
-  const [ffmpegConsoleLoggingEnabled, ffmpegFileLoggingEnabled] = watch([
-    'enableLogging',
-    'enableFileLogging',
-  ]);
+  const [
+    ffmpegConsoleLoggingEnabled,
+    ffmpegFileLoggingEnabled,
+    hardwareAccelerationMode,
+  ] = watch(['enableLogging', 'enableFileLogging', 'hardwareAccelerationMode']);
   let logSelectValue: FfmpegLogOptions = 'disable';
   if (ffmpegFileLoggingEnabled) {
     logSelectValue = 'file';
@@ -314,6 +315,28 @@ export default function FfmpegSettingsPage() {
           />
           <FormHelperText></FormHelperText>
         </FormControl>
+
+        {hardwareAccelerationMode === 'vaapi' && (
+          <Controller
+            control={control}
+            name="vaapiDevice"
+            render={({ field }) => (
+              <TextField
+                fullWidth
+                sx={{ mb: 2 }}
+                label="VAAPI Device"
+                helperText={
+                  <span>
+                    Override the default VAAPI device path (defaults to{' '}
+                    <code>/dev/dri/renderD128</code> on Linux and blank
+                    otherwise)
+                  </span>
+                }
+                {...field}
+              />
+            )}
+          />
+        )}
 
         <Grid container columns={{ sm: 8, md: 16 }} columnSpacing={2}>
           <Grid item sm={16} md={8}>
