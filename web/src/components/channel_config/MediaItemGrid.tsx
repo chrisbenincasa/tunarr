@@ -139,25 +139,29 @@ export function MediaItemGrid<PageDataType, ItemType>({
   // If the modal is open, this ref points to the selected dmain grid element,
   // otherwise, it uses the first element in the grid
   const gridItemRef = useRef<HTMLDivElement>(null);
+  const alphaFilterRef = useRef<HTMLDivElement>(null);
 
   const loadedItems = compact(flatMap(data?.pages, extractItems));
 
   const containerMinHeight = useMemo(() => {
     if (viewType === 'grid') {
       const height = gridItemRef?.current?.getBoundingClientRect()?.height;
+      const alphaFilterHeight =
+        alphaFilterRef?.current?.getBoundingClientRect()?.height || 775; // 775 is approx desktop size as backup
+
       if (isNil(height)) {
-        return {};
+        return alphaFilterHeight;
       }
 
       const page = first(data?.pages);
       if (isNil(page)) {
-        return {};
+        return alphaFilterHeight;
       }
 
       const total = getPageDataSize(page)?.total;
 
       if (isNil(total)) {
-        return {};
+        return alphaFilterHeight;
       }
 
       const maxHeight =
@@ -167,7 +171,10 @@ export function MediaItemGrid<PageDataType, ItemType>({
 
       // Either set the height of the container to 3 extra rows on top of what is loaded
       // or the max height
-      return Math.min((numRows + 3) * height, maxHeight);
+      const calculatedMinHeight = Math.min((numRows + 3) * height, maxHeight);
+
+      // If the calculated min height is less than the height of Alphabet Filters, use filter height
+      return Math.max(calculatedMinHeight, alphaFilterHeight);
     }
   }, [
     data?.pages,
@@ -204,7 +211,11 @@ export function MediaItemGrid<PageDataType, ItemType>({
 
       setAlphanumericFilter((prev) => (prev === anum ? null : anum));
 
-      scrollTo();
+      scrollTo({
+        top: 0,
+        left: 0,
+        behavior: 'smooth',
+      });
 
       handleAlphaNumFilter?.(anum === alphanumericFilter ? null : anum);
     },
@@ -414,37 +425,45 @@ export function MediaItemGrid<PageDataType, ItemType>({
   return (
     <Box
       ref={containerRef}
-      sx={{ minHeight: containerMinHeight, height: containerHeight }}
+      sx={{ position: 'relative', minHeight: containerMinHeight }}
     >
       {showAlphabetFilter && handleAlphaNumFilter && (
         <Box
           sx={{
-            position: 'fixed',
+            position: 'absolute',
             display: 'flex',
             flexDirection: 'column',
-            right: [-8, -4],
+            overflow: 'hidden',
+            right: -60,
+            width: 35,
             zIndex: 1000,
-            bottom: {
-              xs: 56 + 8,
-              md: 'auto',
-              // sm: 0,
-            },
           }}
         >
-          {map(AlphanumericCharCodes, (code) => {
-            const str = String.fromCharCode(code);
-            return (
-              <Button
-                disableRipple
-                sx={{ py: 0, px: 1, minWidth: '100%' }}
-                key={code}
-                onClick={() => handleAlphaFilterChange(str)}
-                color={alphanumericFilter === str ? 'info' : undefined}
-              >
-                {str}
-              </Button>
-            );
-          })}
+          <Box sx={{ position: 'sticky' }} ref={alphaFilterRef}>
+            {map(AlphanumericCharCodes, (code) => {
+              const str = String.fromCharCode(code);
+              return (
+                <Button
+                  disableRipple
+                  sx={{
+                    py: 0,
+                    px: 1,
+                    minWidth: '100%',
+                    height: 28,
+                    fontSize: alphanumericFilter === str ? '175%' : '100%',
+                    '&:hover': {
+                      fontSize: '175%',
+                    },
+                  }}
+                  key={code}
+                  onClick={() => handleAlphaFilterChange(str)}
+                  color={alphanumericFilter === str ? undefined : 'info'}
+                >
+                  {str}
+                </Button>
+              );
+            })}
+          </Box>
         </Box>
       )}
       {isFetchingNextPage && <LinearProgress />}
