@@ -17,14 +17,13 @@ import {
   values,
 } from 'lodash-es';
 import { ChannelCache } from '../stream/ChannelCache.js';
-import { isNonEmptyString, mapAsyncSeq } from '../util/index.js';
+import { isNonEmptyString } from '../util/index.js';
 import { ProgramConverter } from './converters/programConverters.js';
 import { getEm } from './dataSource.js';
 import { ChannelFillerShowWithContent } from './direct/derivedTypes.js';
 import { directDbAccess } from './direct/directDbAccess.js';
 import { withFillerPrograms } from './direct/programQueryHelpers.js';
 import { programExternalIdString } from './direct/schema/Program.js';
-import { Channel as ChannelEntity } from './entities/Channel.js';
 import { ChannelFillerShow } from './entities/ChannelFillerShow.js';
 import { FillerListContent } from './entities/FillerListContent.js';
 import { FillerShow, FillerShowId } from './entities/FillerShow.js';
@@ -40,9 +39,13 @@ export class FillerDB {
   ) {}
 
   getFiller(id: FillerShowId) {
-    return getEm()
-      .repo(FillerShow)
-      .findOne(id, { populate: ['content.uuid'] });
+    return directDbAccess()
+      .selectFrom('fillerShow')
+      .where('uuid', '=', id)
+      .selectAll()
+      .select((eb) => withFillerPrograms(eb, { fields: ['program.uuid'] }))
+      .$narrowType<{ uuid: FillerShowId }>()
+      .executeTakeFirst();
   }
 
   async saveFiller(id: FillerShowId, updateRequest: UpdateFillerListRequest) {
@@ -140,15 +143,12 @@ export class FillerDB {
 
   // Returns all channels a given filler list is a part of
   async getFillerChannels(id: string) {
-    const channels = await getEm()
-      .createQueryBuilder(ChannelEntity, 'channel')
-      .select(['number', 'name'], true)
-      .where({ fillers: { uuid: id } })
+    return directDbAccess()
+      .selectFrom('channelFillerShow')
+      .where('channelFillerShow.fillerShowUuid', '=', id)
+      .innerJoin('channel', 'channel.uuid', 'channelFillerShow.channelUuid')
+      .select(['channel.name', 'channel.number'])
       .execute();
-    return channels.map((channel) => ({
-      name: channel.name,
-      number: channel.number,
-    }));
   }
 
   async deleteFiller(id: FillerShowId): Promise<void> {
@@ -225,24 +225,38 @@ export class FillerDB {
   }
 
   async getFillerPrograms(id: FillerShowId) {
-    const programs = await getEm()
-      .repo(FillerListContent)
-      .find(
-        { fillerList: id },
-        {
-          populate: [
-            'content',
-            'content.album',
-            'content.artist',
-            'content.tvShow',
-            'content.season',
-          ],
-          orderBy: { index: 'DESC' },
-        },
-      );
+    const programs = await directDbAccess()
+      .selectFrom('fillerShow')
+      .where('fillerShow.uuid', '=', id)
+      .select((eb) =>
+        withFillerPrograms(eb, {
+          joins: {
+            trackAlbum: true,
+            trackArtist: true,
+            tvShow: true,
+            tvSeason: true,
+          },
+        }),
+      )
+      .executeTakeFirst();
+    // const programs = await getEm()
+    //   .repo(FillerListContent)
+    //   .find(
+    //     { fillerList: id },
+    //     {
+    //       populate: [
+    //         'content',
+    //         'content.album',
+    //         'content.artist',
+    //         'content.tvShow',
+    //         'content.season',
+    //       ],
+    //       orderBy: { index: 'DESC' },
+    //     },
+    //   );
 
-    return await mapAsyncSeq(programs, async (fillerContent) =>
-      this.#programConverter.entityToContentProgram(fillerContent.content),
+    return map(programs?.fillerContent, (program) =>
+      this.#programConverter.directEntityToContentProgramSync(program, []),
     );
   }
 

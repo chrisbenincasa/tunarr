@@ -42,8 +42,8 @@ import {
   ChannelWithPrograms as RawChannelWithPrograms,
   ProgramWithRelations as RawProgram,
 } from '../direct/derivedTypes.js';
+import { directDbAccess } from '../direct/directDbAccess.js';
 import { ProgramExternalId as RawProgramExternalId } from '../direct/schema/ProgramExternalId.js';
-import { Channel } from '../entities/Channel.js';
 import { Program, ProgramType } from '../entities/Program.js';
 import { ProgramExternalId } from '../entities/ProgramExternalId.js';
 
@@ -281,19 +281,6 @@ export class ProgramConverter {
     };
   }
 
-  offlineLineupItemToProgram(
-    channel: Loaded<Channel>,
-    p: OfflineItem,
-    persisted: boolean = true,
-  ): FlexProgram {
-    return {
-      persisted,
-      type: 'flex',
-      icon: channel.icon?.path,
-      duration: p.durationMs,
-    };
-  }
-
   directOfflineLineupItemToProgram(
     channel: RawChannel,
     program: OfflineItem,
@@ -309,14 +296,18 @@ export class ProgramConverter {
 
   redirectLineupItemToProgram(
     item: RedirectItem,
-    channel: Loaded<Channel, never, 'name' | 'number'>,
+    channel: MarkRequired<DeepPartial<RawChannel>, 'name' | 'number'>,
   ): RedirectProgram;
   redirectLineupItemToProgram(
     item: RedirectItem,
-    channel?: Loaded<Channel, never, 'name' | 'number'>,
+    channel?: MarkRequired<DeepPartial<RawChannel>, 'name' | 'number'>,
   ): Promise<RedirectProgram> | RedirectProgram {
     const loadedChannel = isNil(channel)
-      ? getEm().findOneOrFail(Channel, { uuid: item.channel })
+      ? directDbAccess()
+          .selectFrom('channel')
+          .select(['uuid', 'number', 'name'])
+          .where('uuid', '=', item.channel)
+          .executeTakeFirstOrThrow()
       : channel;
     if (isPromise(loadedChannel)) {
       return loadedChannel.then((c) => this.toRedirectChannelInternal(item, c));
@@ -341,7 +332,7 @@ export class ProgramConverter {
 
   private toRedirectChannelInternal(
     item: RedirectItem,
-    channel: Loaded<Channel, never, 'name' | 'number'>,
+    channel: MarkRequired<DeepPartial<RawChannel>, 'name' | 'number'>,
   ): RedirectProgram {
     return {
       persisted: true,

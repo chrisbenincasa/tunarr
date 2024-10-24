@@ -150,7 +150,7 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
       schema: RandomFillerSchema,
     },
     async (req, res) => {
-      const channel = await req.serverCtx.channelDB.getChannelById(
+      const channel = await req.serverCtx.channelDB.getChannelDirect(
         req.query.channelId,
       );
 

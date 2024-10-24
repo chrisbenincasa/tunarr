@@ -48,7 +48,9 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      const channel = await req.serverCtx.channelDB.getChannel(req.params.id);
+      const channel = await req.serverCtx.channelDB.getChannelDirect(
+        req.params.id,
+      );
       if (isNil(channel)) {
         return res.status(404).send('Channel not found.');
       }
@@ -91,7 +93,9 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      const channel = await req.serverCtx.channelDB.getChannel(req.params.id);
+      const channel = await req.serverCtx.channelDB.getChannelDirect(
+        req.params.id,
+      );
       if (isNil(channel)) {
         return res.status(404).send('Channel not found.');
       }

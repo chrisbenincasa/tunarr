@@ -241,6 +241,8 @@ function baseWithProgamsExpressionBuilder(
     | 'channelFallback'
     | 'fillerShowContent'
     | 'fillerShow'
+    | 'customShow'
+    | 'customShowContent'
   >,
   opts: DeepRequired<WithProgramsOptions>,
 ) {
@@ -328,12 +330,30 @@ export function withFillerPrograms(
   return jsonArrayFrom(
     baseWithProgamsExpressionBuilder(eb, mergedOpts)
       .select(['fillerShowContent.index'])
+      .orderBy('fillerShowContent.index asc')
       .innerJoin('fillerShowContent', (join) =>
         join
           .onRef('fillerShowContent.programUuid', '=', 'program.uuid')
           .onRef('fillerShow.uuid', '=', 'fillerShowContent.fillerShowUuid'),
       ),
   ).as('fillerContent');
+}
+
+export function withCustomShowPrograms(
+  eb: ExpressionBuilder<DB, 'customShow' | 'customShowContent'>,
+  options: WithProgramsOptions = defaultWithProgramOptions,
+) {
+  const mergedOpts = merge({}, defaultWithProgramOptions, options);
+  return jsonArrayFrom(
+    baseWithProgamsExpressionBuilder(eb, mergedOpts)
+      .select(['customShowContent.index'])
+      .orderBy('customShowContent.index asc')
+      .innerJoin('customShowContent', (join) =>
+        join
+          .onRef('customShowContent.contentUuid', '=', 'program.uuid')
+          .onRef('customShow.uuid', '=', 'customShowContent.customShowUuid'),
+      ),
+  ).as('customShowContent');
 }
 
 type ProgramRelationCaseBuilder = CaseWhenBuilder<
