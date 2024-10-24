@@ -1,21 +1,32 @@
 import { FfmpegSettings } from '@tunarr/types';
 import { exec } from 'child_process';
-import _, { isEmpty, isError, nth, some, trim } from 'lodash-es';
+import _, { isEmpty, isError, isUndefined, nth, some, trim } from 'lodash-es';
 import NodeCache from 'node-cache';
 import PQueue from 'p-queue';
+import { format } from 'util';
 import { Nullable } from '../types/util.js';
 import { cacheGetOrSet } from '../util/cache.js';
+import dayjs from '../util/dayjs.js';
 import { fileExists } from '../util/fsUtil.js';
-import { attempt, isNonEmptyString, parseIntOrNull } from '../util/index.js';
+import {
+  attempt,
+  isLinux,
+  isNonEmptyString,
+  parseIntOrNull,
+} from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory';
 import { sanitizeForExec } from '../util/strings.js';
-import { NvidiaHardwareCapabilities } from './NvidiaHardwareCapabilities.js';
+import { DefaultHardwareCapabilities } from './builder/capabilities/DefaultHardwareCapabilities.js';
+import { NoHardwareCapabilities } from './builder/capabilities/NoHardwareCapabilities.js';
+import { NvidiaHardwareCapabilities } from './builder/capabilities/NvidiaHardwareCapabilities.js';
+import { HardwareAccelerationMode } from './builder/types.js';
 
 const CacheKeys = {
   ENCODERS: 'encoders',
   HWACCELS: 'hwaccels',
   OPTIONS: 'options',
   NVIDIA: 'nvidia',
+  VAINFO: 'vainfo_%s_%s',
 } as const;
 
 export type FfmpegVersionResult = {
@@ -26,7 +37,7 @@ export type FfmpegVersionResult = {
   versionDetails?: Nullable<string>;
 };
 
-const execQueue = new PQueue({ concurrency: 2 });
+const execQueue = new PQueue({ concurrency: 3 });
 
 const VersionExtractionPattern = /version\s+([^\s]+)\s+.*Copyright/;
 const VersionNumberExtractionPattern = /n?(\d+)\.(\d+)(\.(\d+))?[_\-.]*(.*)/;
@@ -41,19 +52,26 @@ export class FFMPEGInfo {
     className: this.constructor.name,
   });
 
-  private static resultCache: NodeCache = new NodeCache({ stdTTL: 5 * 6000 });
+  private static resultCache: NodeCache = new NodeCache({
+    stdTTL: dayjs.duration({ hours: 1 }).asSeconds(),
+  });
 
   private static makeCacheKey(
     path: string,
     command: keyof typeof CacheKeys,
+    ...args: string[]
   ): string {
-    return `${path}_${CacheKeys[command]}`;
+    return format(`${path}_${CacheKeys[command]}`, ...args);
+  }
+
+  private static vaInfoCacheKey(driver: string, device: string) {
+    return `${CacheKeys.VAINFO}_${driver}_${device}`;
   }
 
   private ffmpegPath: string;
   private ffprobePath: string;
 
-  constructor(opts: FfmpegSettings) {
+  constructor(private opts: FfmpegSettings) {
     this.ffmpegPath = opts.ffmpegExecutablePath;
     this.ffprobePath = opts.ffprobeExecutablePath;
   }
@@ -66,7 +84,9 @@ export class FFMPEGInfo {
         this.getAvailableVideoEncoders(),
         this.getHwAccels(),
         this.getOptions(),
-        this.getNvidiaCapabilities(),
+        ...(this.opts.hardwareAccelerationMode === 'cuda'
+          ? [this.getNvidiaCapabilities()]
+          : []),
       ]);
     } catch (e) {
       this.logger.error(e, 'Unexpected error during ffmpeg info seed');
@@ -192,6 +212,19 @@ export class FFMPEGInfo {
     return isError(res) ? [] : res;
   }
 
+  async getHardwareCapabilities(hwMode: HardwareAccelerationMode) {
+    switch (hwMode) {
+      case 'none':
+        return new NoHardwareCapabilities(this);
+      case 'cuda':
+        return await this.getNvidiaCapabilities();
+      case 'qsv':
+      case 'vaapi':
+      case 'videotoolbox':
+        return new DefaultHardwareCapabilities(this);
+    }
+  }
+
   async getOptions() {
     return attempt(async () => {
       const out = await cacheGetOrSet(
@@ -214,6 +247,18 @@ export class FFMPEGInfo {
         })
         .value();
     });
+  }
+
+  async hasOption(
+    option: string,
+    defaultOnMissing: boolean = false,
+    defaultOnError: boolean = false,
+  ) {
+    const opts = await this.getOptions();
+    if (isError(opts)) {
+      return defaultOnError;
+    }
+    return opts.includes(option) ? true : defaultOnMissing;
   }
 
   async getNvidiaCapabilities() {
@@ -258,7 +303,7 @@ export class FFMPEGInfo {
           this.logger.debug(
             `Detected NVIDIA GPU (model = "${model}", arch = "${archString}")`,
           );
-          return new NvidiaHardwareCapabilities(model, archNum);
+          return new NvidiaHardwareCapabilities(model, archNum, this);
         }
       }
 
@@ -266,16 +311,28 @@ export class FFMPEGInfo {
     });
   }
 
-  async hasOption(
-    option: string,
-    defaultOnMissing: boolean = false,
-    defaultOnError: boolean = false,
-  ) {
-    const opts = await this.getOptions();
-    if (isError(opts)) {
-      return defaultOnError;
+  async getVaapiCapabilities() {
+    const vaapiDevice = isNonEmptyString(this.opts.vaapiDevice)
+      ? this.opts.vaapiDevice
+      : isLinux()
+      ? '/dev/dri/renderD128'
+      : undefined;
+    // : isLinux()
+    // ? '/dev/dri/renderD128'
+    // : undefined;
+
+    if (isUndefined(vaapiDevice) || isEmpty(vaapiDevice)) {
+      this.logger.error('Cannot detect VAAPI capabilities without a device');
+      return new NoHardwareCapabilities();
     }
-    return opts.includes(option) ? true : defaultOnMissing;
+
+    const driver = this.opts.vaapiDriver ?? '';
+
+    await cacheGetOrSet(
+      FFMPEGInfo.resultCache,
+      FFMPEGInfo.vaInfoCacheKey(vaapiDevice, driver),
+      async () => {},
+    );
   }
 
   private getFfmpegStdout(

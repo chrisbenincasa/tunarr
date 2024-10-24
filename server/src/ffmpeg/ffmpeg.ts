@@ -831,8 +831,9 @@ export class FFMPEG {
       // ... it might not be totally true, but we'll make this better.
       let canEncode = false;
       if (isSuccess(gpuCapabilities)) {
-        canEncode = gpuCapabilities.canEncode(
+        canEncode = await gpuCapabilities.canEncode(
           this.opts.videoFormat,
+          streamStats?.videoProfile,
           streamStats?.videoBitDepth
             ? { bitDepth: streamStats.videoBitDepth }
             : undefined,

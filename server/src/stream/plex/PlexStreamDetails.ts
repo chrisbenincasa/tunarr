@@ -265,6 +265,7 @@ export class PlexStreamDetails {
       streamDetails.anamorphic =
         videoStream.anamorphic === '1' || videoStream.anamorphic === true;
       streamDetails.videoCodec = videoStream.codec;
+      streamDetails.videoProfile = videoStream.profile;
       // Keeping old behavior here for now
       streamDetails.videoFramerate = videoStream.frameRate
         ? Math.round(videoStream.frameRate)

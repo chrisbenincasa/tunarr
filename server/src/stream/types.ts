@@ -7,11 +7,13 @@ export type StreamDetails = {
   pixelQ?: number;
 
   videoCodec?: string;
+  videoProfile?: string;
   videoWidth?: number;
   videoHeight?: number;
   videoFramerate?: number;
   videoDecision?: string;
   videoScanType?: string;
+  videoPixelFormat?: string;
   videoBitDepth?: number;
   videoStreamIndex?: string;
 
