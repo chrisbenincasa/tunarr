@@ -8,6 +8,8 @@ import { MarkOptional } from 'ts-essentials';
 import { isNonEmptyString, mapAsyncSeq } from '../util/index.js';
 import { ProgramConverter } from './converters/programConverters.js';
 import { getEm } from './dataSource.js';
+import { directDbAccess } from './direct/directDbAccess.js';
+import { withCustomShowPrograms } from './direct/programQueryHelpers.js';
 import { programExternalIdString } from './direct/schema/Program.js';
 import { CustomShow } from './entities/CustomShow.js';
 import { CustomShowContent } from './entities/CustomShowContent.js';
@@ -27,12 +29,16 @@ export class CustomShowDB {
   constructor(private programDB: ProgramDB = new ProgramDB()) {}
 
   async getShow(id: string) {
-    return getEm()
-      .repo(CustomShow)
-      .findOne(
-        { uuid: id },
-        { populate: ['content.uuid', 'content.duration'] },
-      );
+    return directDbAccess()
+      .selectFrom('customShow')
+      .selectAll()
+      .where('customShow.uuid', '=', id)
+      .select((eb) =>
+        withCustomShowPrograms(eb, {
+          fields: ['program.uuid', 'program.duration'],
+        }),
+      )
+      .executeTakeFirst();
   }
 
   async getShowPrograms(id: string): Promise<CustomProgram[]> {
