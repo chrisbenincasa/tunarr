@@ -1,10 +1,9 @@
-import { FFMPEGInfo } from '../../ffmpegInfo';
 import { BaseFfmpegHardwareCapabilities } from './BaseFfmpegHardwareCapabilities';
 
 export class NoHardwareCapabilities extends BaseFfmpegHardwareCapabilities {
   readonly type = 'none' as const;
-  constructor(ffmpegInfo: FFMPEGInfo) {
-    super(ffmpegInfo);
+  constructor() {
+    super();
   }
 
   canDecode(): Promise<boolean> {

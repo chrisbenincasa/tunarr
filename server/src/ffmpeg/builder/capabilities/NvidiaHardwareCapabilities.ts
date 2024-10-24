@@ -11,6 +11,7 @@ const MaxwellGm206Models = new Set([
   'GTX 965M',
 ]);
 
+// https://developer.nvidia.com/video-encode-and-decode-gpu-support-matrix-new
 export class NvidiaHardwareCapabilities extends BaseFfmpegHardwareCapabilities {
   readonly type = 'nvidia' as const;
 

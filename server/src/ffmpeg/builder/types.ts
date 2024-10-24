@@ -130,3 +130,9 @@ export class WatermarkInputSource extends VideoInputSource<[StillImageStream]> {
     super(path, [imageStream]);
   }
 }
+
+export enum RateControlMode {
+  CBR,
+  CQP,
+  VBR,
+}

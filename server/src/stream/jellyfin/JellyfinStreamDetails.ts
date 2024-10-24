@@ -201,6 +201,7 @@ export class JellyfinStreamDetails {
       // TODO Parse pixel aspect ratio
       streamDetails.anamorphic = !!videoStream.IsAnamorphic;
       streamDetails.videoCodec = nullToUndefined(videoStream.Codec);
+      streamDetails.videoProfile = nullToUndefined(videoStream.Profile);
       // Keeping old behavior here for now
       streamDetails.videoFramerate = videoStream.AverageFrameRate
         ? Math.round(videoStream.AverageFrameRate)

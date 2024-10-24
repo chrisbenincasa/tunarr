@@ -1,11 +1,10 @@
 import { Maybe } from '../../../types/util';
-import { FFMPEGInfo } from '../../ffmpegInfo';
 import { PixelFormat } from '../format/PixelFormat';
 import { NvidiaHardwareCapabilities } from './NvidiaHardwareCapabilities';
 
 export abstract class BaseFfmpegHardwareCapabilities {
   readonly type: string;
-  constructor(protected ffmpegInfo: FFMPEGInfo) {}
+  constructor() {}
 
   abstract canDecode(
     videoFormat: string,
