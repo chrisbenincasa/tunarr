@@ -13,6 +13,7 @@ import { LineupCreator } from '../services/dynamic_channels/LineupCreator.js';
 import { PlexTaskQueue } from '../tasks/TaskQueue.js';
 import { SavePlexProgramExternalIdsTask } from '../tasks/plex/SavePlexProgramExternalIdsTask.js';
 import { DateTimeRange } from '../types/DateTimeRange.js';
+import { OpenDateTimeRange } from '../types/OpenDateTimeRange.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { enumValues } from '../util/enumUtil.js';
 import { ifDefined } from '../util/index.js';
@@ -98,6 +99,53 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
             channel!.uuid,
             startTime.toDate(),
             endTime.toDate(),
+          ),
+        );
+    },
+  );
+
+  fastify.get(
+    '/debug/helpers/channels/:id/build_guide',
+    {
+      schema: {
+        params: z.object({
+          id: z.string(),
+        }),
+        querystring: z.object({
+          from: z.coerce
+            .date()
+            .or(z.coerce.number().transform((n) => new Date(n))),
+          to: z.coerce
+            .date()
+            .or(z.coerce.number().transform((n) => new Date(n))),
+        }),
+      },
+    },
+    async (req, res) => {
+      const channel = await req.serverCtx.channelDB.getChannelAndPrograms(
+        req.params.id,
+      );
+      const startTime = dayjs(req.query.from);
+      const duration =
+        channel!.duration <= 0
+          ? dayjs.duration(1, 'day').asMilliseconds()
+          : channel!.duration;
+      const endTime = req.query.to
+        ? dayjs(req.query.to)
+        : startTime.add(duration, 'milliseconds');
+
+      await req.serverCtx.guideService.refreshGuide(
+        dayjs.duration(endTime.diff(startTime)),
+        true,
+        req.params.id,
+      );
+
+      return res
+        .status(200)
+        .send(
+          await req.serverCtx.guideService.getChannelGuide(
+            channel!.uuid,
+            OpenDateTimeRange.create(startTime, endTime)!,
           ),
         );
     },
