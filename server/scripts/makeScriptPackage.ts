@@ -1,6 +1,7 @@
 // Can't use Nexe because of code signing limitations...
 
 import archiver from 'archiver';
+import retry from 'async-retry';
 import axios from 'axios';
 import { createWriteStream, existsSync } from 'fs';
 import fs from 'fs/promises';
@@ -76,8 +77,10 @@ for (const target of args.target) {
 
     console.log(`Downloading nodejs binary to ${tmp}`, NODE_URL);
 
-    const nodeDlStream = await axios.get<stream.Readable>(NODE_URL, {
-      responseType: 'stream',
+    const nodeDlStream = await retry(() => {
+      return axios.get<stream.Readable>(NODE_URL, {
+        responseType: 'stream',
+      });
     });
 
     await new Promise((resolve, reject) => {
