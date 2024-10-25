@@ -1,4 +1,5 @@
 import { createRequire } from 'module';
+import { isNonEmptyString } from './index.js';
 const require = createRequire(import.meta.url);
 
 const loadPackageVersion = (path: string) => {
@@ -13,6 +14,9 @@ const loadPackageVersion = (path: string) => {
 let tunarrVersion: string;
 export const getTunarrVersion = () => {
   if (!tunarrVersion) {
+    const isEdge = process.env['TUNARR_EDGE_BUILD'] === 'true';
+    const tunarrBuild = process.env['TUNARR_BUILD'];
+
     // Attempt to set for dev. This is relative to the shared package
     tunarrVersion = loadPackageVersion('../../package.json') ?? '';
 
@@ -21,6 +25,10 @@ export const getTunarrVersion = () => {
     // always.
     if (tunarrVersion === '') {
       tunarrVersion = loadPackageVersion('./package.json') ?? '';
+    }
+
+    if (isNonEmptyString(tunarrBuild) && isEdge) {
+      tunarrVersion += `-${tunarrBuild}`;
     }
 
     if (tunarrVersion === '') {

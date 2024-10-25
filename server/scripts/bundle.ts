@@ -1,5 +1,4 @@
 import esbuild from 'esbuild';
-import { copy } from 'esbuild-plugin-copy';
 import esbuildPluginPino from 'esbuild-plugin-pino';
 import fg from 'fast-glob';
 import fs from 'node:fs';
