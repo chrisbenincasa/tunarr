@@ -15,14 +15,24 @@ import {
 } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
-import { compact, groupBy, isError, isNil, map, omit, sortBy } from 'lodash-es';
+import {
+  groupBy,
+  isError,
+  isNil,
+  isNull,
+  isUndefined,
+  map,
+  omit,
+  sortBy,
+} from 'lodash-es';
 import z from 'zod';
 import { dbChannelToApiChannel } from '../dao/converters/channelConverters.js';
 import { ProgramConverter } from '../dao/converters/programConverters.js';
 import { GlobalScheduler } from '../services/scheduler.js';
 import { UpdateXmlTvTask } from '../tasks/UpdateXmlTvTask.js';
+import { OpenDateTimeRange } from '../types/OpenDateTimeRange.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
-import { attempt, mapAsyncSeq } from '../util/index.js';
+import { attempt } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { timeNamedAsync } from '../util/perf.js';
 
@@ -416,28 +426,20 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         tags: ['Channels'],
         response: {
           200: z.array(ChannelLineupSchema),
+          400: z.string(),
         },
       },
     },
     async (req, res) => {
-      const allChannels = await req.serverCtx.channelDB.getAllChannels({
-        number: 'ASC',
-      });
+      const dateRange = OpenDateTimeRange.create(req.query.from, req.query.to);
 
-      const startTime = dayjs(req.query.from);
-      const endTime = dayjs(req.query.to);
-      const lineups = await mapAsyncSeq(allChannels, async (channel) => {
-        const actualEndTime = req.query.to
-          ? endTime
-          : dayjs(startTime.add(channel.guideMinimumDuration, 'seconds'));
-        return req.serverCtx.guideService.getChannelLineup(
-          channel.uuid,
-          startTime.toDate(),
-          actualEndTime.toDate(),
-        );
-      });
+      if (isNull(dateRange)) {
+        return res.status(400).send('Invalid date range');
+      }
 
-      return res.status(200).send(compact(lineups));
+      return res
+        .status(200)
+        .send(await req.serverCtx.guideService.getAllChannelGuides(dateRange));
     },
   );
 
@@ -450,38 +452,28 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         querystring: ChannelLineupQuery,
         response: {
           200: ChannelLineupSchema,
+          400: z.object({ error: z.string() }),
           404: z.object({ error: z.string() }),
         },
       },
     },
     async (req, res) => {
-      const channel = await req.serverCtx.channelDB.getChannelAndPrograms(
+      const dateRange = OpenDateTimeRange.create(req.query.from, req.query.to);
+
+      if (isNull(dateRange)) {
+        return res.status(400).send({ error: 'Invalid date range' });
+      }
+
+      const guide = await req.serverCtx.guideService.getChannelGuide(
         req.params.id,
+        dateRange,
       );
 
-      if (!channel) {
-        return res.status(404).send({ error: 'Channel Not Found' });
+      if (isUndefined(guide)) {
+        return res.status(404).send({ error: 'Guide data not found' });
       }
 
-      const xmltvSettings = req.serverCtx.settings.xmlTvSettings();
-      const startTime = dayjs(req.query.from);
-      const endTime = dayjs(
-        req.query.to ?? startTime.add(xmltvSettings.programmingHours, 'hours'),
-      );
-
-      const lineup = await req.serverCtx.guideService.getChannelLineup(
-        channel.uuid,
-        startTime.toDate(),
-        endTime.toDate(),
-      );
-
-      if (!lineup) {
-        return res
-          .status(404)
-          .send({ error: 'Could not generate lineup for channel' });
-      }
-
-      return res.status(200).send(lineup);
+      return res.send(guide);
     },
   );
 

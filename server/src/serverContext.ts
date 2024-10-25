@@ -75,10 +75,12 @@ export const serverContext: () => ServerContext = once(() => {
   const m3uService = new M3uService(fileCache);
   const eventService = new EventService();
 
+  const programDB = new ProgramDB();
   const guideService = new TVGuideService(
     new XmlTvWriter(),
     eventService,
     channelDB,
+    programDB,
   );
 
   const customShowDB = new CustomShowDB();
@@ -96,7 +98,7 @@ export const serverContext: () => ServerContext = once(() => {
     channelCache,
     new MediaSourceDB(channelDB),
     settings,
-    new ProgramDB(),
+    programDB,
   );
 });
 

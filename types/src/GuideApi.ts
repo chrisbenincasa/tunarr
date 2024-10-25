@@ -8,23 +8,15 @@ import {
   TvGuideProgramSchema,
 } from './schemas/guideApiSchemas.js';
 
-type Alias<t> = t & { _?: never };
+export type ContentGuideProgram = z.infer<typeof ContentGuideProgramSchema>;
 
-export type ContentGuideProgram = Alias<
-  z.infer<typeof ContentGuideProgramSchema>
->;
+export type FlexGuideProgram = z.infer<typeof FlexGuideProgramSchema>;
 
-export type FlexGuideProgram = Alias<z.infer<typeof FlexGuideProgramSchema>>;
+export type CustomGuideProgram = z.infer<typeof CustomGuideProgramSchema>;
 
-export type CustomGuideProgram = Alias<
-  z.infer<typeof CustomGuideProgramSchema>
->;
+export type RedirectGuideProgram = z.infer<typeof RedirectGuideProgramSchema>;
 
-export type RedirectGuideProgram = Alias<
-  z.infer<typeof RedirectGuideProgramSchema>
->;
-
-export type TvGuideProgram = Alias<z.infer<typeof TvGuideProgramSchema>>;
+export type TvGuideProgram = z.infer<typeof TvGuideProgramSchema>;
 
 function isGuideProgramType<T extends TvGuideProgram>(
   types: ReadonlyArray<T['type']>,
@@ -42,4 +34,4 @@ export const isFlexGuideProgram = isGuideProgramType<FlexGuideProgram>([
   'flex',
 ]);
 
-export type ChannelLineup = Alias<z.infer<typeof ChannelLineupSchema>>;
+export type ChannelLineup = z.infer<typeof ChannelLineupSchema>;

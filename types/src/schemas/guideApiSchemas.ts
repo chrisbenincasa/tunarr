@@ -17,15 +17,21 @@ const BaseGuideProgramSchema = z.object({
 export const ContentGuideProgramSchema = ContentProgramSchema.merge(
   BaseGuideProgramSchema,
 );
+
 export const CustomGuideProgramSchema = CustomProgramSchema.merge(
   BaseGuideProgramSchema,
 );
+
 export const RedirectGuideProgramSchema = RedirectProgramSchema.merge(
   BaseGuideProgramSchema,
 );
+
+// Flex programs in guide can have a title
 export const FlexGuideProgramSchema = FlexProgramSchema.merge(
   BaseGuideProgramSchema,
-);
+).extend({
+  title: z.string(),
+});
 
 export const TvGuideProgramSchema = z.discriminatedUnion('type', [
   ContentGuideProgramSchema,

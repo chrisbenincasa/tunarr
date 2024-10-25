@@ -454,6 +454,9 @@ export function TvGuide({ channelId, start, end }: Props) {
         duration: fillerLength,
         start: startUnix,
         stop: lineup.programs[0].start,
+        // TODO: We should use the configured guideFlexPlaceholder title
+        // here if it is configured for this channel
+        title: 'Flex',
       });
     }
     return (

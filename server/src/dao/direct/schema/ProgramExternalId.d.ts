@@ -1,4 +1,5 @@
 import { Insertable, Selectable } from 'kysely';
+import { MarkRequired } from 'ts-essentials';
 import {
   ProgramExternalIdSourceType,
   WithCreatedAt,
@@ -20,3 +21,8 @@ export interface ProgramExternalIdTable
 
 export type ProgramExternalId = Selectable<ProgramExternalIdTable>;
 export type NewProgramExternalId = Insertable<ProgramExternalIdTable>;
+
+export type MinimalProgramExternalId = MarkRequired<
+  Partial<ProgramExternalId>,
+  'sourceType' | 'externalKey' | 'externalSourceId'
+>;

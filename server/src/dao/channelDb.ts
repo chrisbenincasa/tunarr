@@ -524,6 +524,14 @@ export class ChannelDB {
     return getEm().repo(Channel).findAll({ orderBy });
   }
 
+  async getAllChannelsDirect() {
+    return directDbAccess()
+      .selectFrom('channel')
+      .selectAll()
+      .orderBy('number asc')
+      .execute();
+  }
+
   async getAllChannelsAndPrograms(): Promise<RawChannelWithPrograms[]> {
     return await directDbAccess()
       .selectFrom('channel')

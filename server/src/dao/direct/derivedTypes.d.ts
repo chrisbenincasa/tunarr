@@ -9,7 +9,8 @@ export type ProgramWithRelations = RawType.Program & {
   tvSeason?: DeepNullable<Partial<RawType.ProgramGrouping>> | null;
   trackArtist?: DeepNullable<Partial<RawType.ProgramGrouping>> | null;
   trackAlbum?: DeepNullable<Partial<RawType.ProgramGrouping>> | null;
-  externalIds?: RawType.ProgramExternalId[] | null; // Always require that we select the full external ID details
+  // Require minimum data from externalId
+  externalIds?: RawType.MinimalProgramExternalId[];
 };
 
 // export type Channel = Omit<
@@ -50,6 +51,10 @@ export type ChannelFillerShowWithContent = MarkRequired<
 
 export type MediaSource = Omit<Selectable<RawType.MediaSource>, 'type'> & {
   type: MediaSourceType;
+};
+
+export type ProgramWithExternalIds = RawType.Program & {
+  externalIds: RawType.MinimalProgramExternalId[];
 };
 
 // export type DB = Omit<RawType.DB, 'channel' | 'mediaSource'> & {

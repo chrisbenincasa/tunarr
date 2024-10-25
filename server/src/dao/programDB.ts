@@ -64,8 +64,16 @@ import {
   programSourceTypeFromString,
 } from './custom_types/ProgramSourceType.js';
 import { getEm } from './dataSource';
+import { ProgramWithRelations } from './direct/derivedTypes.js';
 import { directDbAccess } from './direct/directDbAccess.js';
-import { ProgramUpsertFields } from './direct/programQueryHelpers.js';
+import {
+  ProgramUpsertFields,
+  withProgramExternalIds,
+  withTrackAlbum,
+  withTrackArtist,
+  withTvSeason,
+  withTvShow,
+} from './direct/programQueryHelpers.js';
 import {
   NewProgram as NewRawProgram,
   Program as RawProgram,
@@ -121,15 +129,30 @@ export class ProgramDB {
     return matchedGrouping?.uuid;
   }
 
-  async getProgramsByIds(ids: string[], batchSize: number = 50) {
-    const em = getEm();
-    return mapReduceAsyncSeq(
-      chunk(uniq(ids), batchSize),
-      (ids) =>
-        em.find(Program, { uuid: { $in: ids } }, { populate: ['externalIds'] }),
-      (acc, curr) => [...acc, ...curr],
-      [] as Loaded<Program, 'externalIds', '*', never>[],
-    );
+  async getProgramsByIds(ids: string[], batchSize: number = 500) {
+    const results: ProgramWithRelations[] = [];
+    for (const idChunk of chunk(ids, batchSize)) {
+      const res = await directDbAccess()
+        .selectFrom('program')
+        .selectAll()
+        .select(withTrackAlbum)
+        .select(withTrackArtist)
+        .select(withTvSeason)
+        .select(withTvShow)
+        .select(withProgramExternalIds)
+        .where('program.uuid', 'in', idChunk)
+        .execute();
+      results.push(...res);
+    }
+    return results;
+    // const em = getEm();
+    // return mapReduceAsyncSeq(
+    //   chunk(uniq(ids), batchSize),
+    //   (ids) =>
+    //     em.find(Program, { uuid: { $in: ids } }, { populate: ['externalIds'] }),
+    //   (acc, curr) => [...acc, ...curr],
+    //   [] as Loaded<Program, 'externalIds', '*', never>[],
+    // );
   }
 
   async lookupByExternalIds(
