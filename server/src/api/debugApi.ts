@@ -122,6 +122,7 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
 
       await req.serverCtx.guideService.refreshGuide(
         dayjs.duration(endTime.diff(startTime)),
+        startTime,
       );
 
       const lineups = compact(

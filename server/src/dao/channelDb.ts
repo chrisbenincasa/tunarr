@@ -524,6 +524,13 @@ export class ChannelDB {
     return getEm().repo(Channel).findAll({ orderBy });
   }
 
+  async getChannelsMinimal() {
+    return directDbAccess()
+      .selectFrom('channel')
+      .select(['uuid', 'name', 'number'])
+      .execute();
+  }
+
   async getAllChannelsAndPrograms(): Promise<RawChannelWithPrograms[]> {
     return await directDbAccess()
       .selectFrom('channel')
@@ -828,7 +835,7 @@ export class ChannelDB {
   }
 
   async loadDirectChannelAndLineup(channelId: string) {
-    const channel = await this.getChannelDirect(channelId);
+    const channel = await this.getChannelAndPrograms(channelId);
     if (isNil(channel)) {
       return null;
     }

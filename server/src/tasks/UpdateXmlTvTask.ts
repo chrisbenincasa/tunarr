@@ -7,14 +7,14 @@ import { MediaSource } from '../dao/entities/MediaSource.js';
 import { SettingsDB, defaultXmlTvSettings } from '../dao/settings.js';
 import { PlexApiClient } from '../external/plex/PlexApiClient.js';
 import { globalOptions } from '../globals.js';
-import { ServerContext } from '../serverContext.js';
+import { ServerContext, serverContext } from '../serverContext.js';
+import { LineupCreator } from '../services/dynamic_channels/LineupCreator.js';
 import { TVGuideService } from '../services/tvGuideService.js';
 import { Maybe } from '../types/util.js';
 import { fileExists } from '../util/fsUtil.js';
 import { mapAsyncSeq } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { Task } from './Task.js';
-import { LineupCreator } from '../services/dynamic_channels/LineupCreator.js';
 
 export class UpdateXmlTvTask extends Task<void> {
   public static ID = 'update-xmltv' as Tag<'update-xmltv', void>;
@@ -76,8 +76,10 @@ export class UpdateXmlTvTask extends Task<void> {
 
       await new LineupCreator().promoteAllPendingLineups();
 
-      await this.#guideService.refreshGuide(
+      await serverContext().guideService.refreshGuide(
         dayjs.duration({ hours: xmltvSettings.programmingHours }),
+        dayjs().startOf('hour'),
+        true,
       );
 
       this.logger.info('XMLTV Updated at ' + new Date().toLocaleString());

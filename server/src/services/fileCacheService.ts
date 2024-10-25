@@ -19,21 +19,25 @@ export class FileCacheService {
 
   constructor(
     public cachePath = path.join(serverOptions().databaseDirectory, 'cache'),
+    private enableInMemoryCache: boolean = true,
   ) {}
 
   /**
    * `save` a file on cache folder
    */
   async setCache(fullFilePath: string, data: string): Promise<boolean> {
-    FileCacheService.cache.set(fullFilePath, data);
+    if (this.enableInMemoryCache) {
+      FileCacheService.cache.set(fullFilePath, data);
+    }
     await fs.writeFile(path.join(this.cachePath, fullFilePath), data);
     return true;
   }
 
   async exists(fullFilePath: string) {
     return (
-      FileCacheService.cache.has(fullFilePath) ||
-      (await fileExists(path.join(this.cachePath, fullFilePath)))
+      (this.enableInMemoryCache
+        ? FileCacheService.cache.has(fullFilePath)
+        : false) || (await fileExists(path.join(this.cachePath, fullFilePath)))
     );
   }
 
@@ -43,7 +47,9 @@ export class FileCacheService {
   async getCache(fullFilePath: string): Promise<string | undefined> {
     const fullPath = path.join(this.cachePath, fullFilePath);
     try {
-      const memValue = FileCacheService.cache.get<string>(fullFilePath);
+      const memValue = this.enableInMemoryCache
+        ? FileCacheService.cache.get<string>(fullFilePath)
+        : null;
       if (memValue) {
         return memValue;
       } else if (await fileExists(fullPath)) {
@@ -67,7 +73,9 @@ export class FileCacheService {
     }
 
     await fs.unlink(thePath);
-    FileCacheService.cache.del(fullFilePath);
+    if (this.enableInMemoryCache) {
+      FileCacheService.cache.del(fullFilePath);
+    }
     return true;
   }
 }

@@ -13,11 +13,11 @@ import { serverOptions } from './globals.js';
 import { HdhrService } from './hdhr.js';
 import { HealthCheckService } from './services/HealthCheckService.js';
 import { OnDemandChannelService } from './services/OnDemandChannelService.js';
+import { TVGuideService2 } from './services/TvGuideService2.js';
 import { CacheImageService } from './services/cacheImageService.js';
 import { EventService } from './services/eventService.js';
 import { FileCacheService } from './services/fileCacheService.js';
 import { M3uService } from './services/m3uService.js';
-import { TVGuideService } from './services/tvGuideService.js';
 import { ChannelCache } from './stream/ChannelCache.js';
 import { SessionManager } from './stream/SessionManager.js';
 import { StreamProgramCalculator } from './stream/StreamProgramCalculator.js';
@@ -35,7 +35,7 @@ export class ServerContext {
     public cacheImageService: CacheImageService,
     public m3uService: M3uService,
     public eventService: EventService,
-    public guideService: TVGuideService,
+    public guideService: TVGuideService2,
     public hdhrService: HdhrService,
     public customShowDB: CustomShowDB,
     public channelCache: ChannelCache,
@@ -75,7 +75,7 @@ export const serverContext: () => ServerContext = once(() => {
   const m3uService = new M3uService(fileCache);
   const eventService = new EventService();
 
-  const guideService = new TVGuideService(
+  const guideService = new TVGuideService2(
     new XmlTvWriter(),
     eventService,
     channelDB,

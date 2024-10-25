@@ -22,7 +22,7 @@ import { ProgramConverter } from '../dao/converters/programConverters.js';
 import { GlobalScheduler } from '../services/scheduler.js';
 import { UpdateXmlTvTask } from '../tasks/UpdateXmlTvTask.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
-import { attempt, mapAsyncSeq } from '../util/index.js';
+import { attempt } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { timeNamedAsync } from '../util/perf.js';
 
@@ -426,16 +426,18 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
 
       const startTime = dayjs(req.query.from);
       const endTime = dayjs(req.query.to);
-      const lineups = await mapAsyncSeq(allChannels, async (channel) => {
-        const actualEndTime = req.query.to
-          ? endTime
-          : dayjs(startTime.add(channel.guideMinimumDuration, 'seconds'));
-        return req.serverCtx.guideService.getChannelLineup(
-          channel.uuid,
-          startTime.toDate(),
-          actualEndTime.toDate(),
-        );
-      });
+      const lineups = await Promise.all(
+        map(allChannels, async (channel) => {
+          const actualEndTime = req.query.to
+            ? endTime
+            : dayjs(startTime.add(channel.guideMinimumDuration, 'seconds'));
+          return req.serverCtx.guideService.getChannelLineup(
+            channel.uuid,
+            startTime.toDate(),
+            actualEndTime.toDate(),
+          );
+        }),
+      );
 
       return res.status(200).send(compact(lineups));
     },
