@@ -1,8 +1,9 @@
-import { ChannelLineup } from '@tunarr/types';
 import { ChannelLineupSchema } from '@tunarr/types/schemas';
-import { map } from 'lodash-es';
+import { isNull } from 'lodash-es';
 import { z } from 'zod';
+import { DateTimeRange } from '../types/DateTimeRange.js';
 import { RouterPluginCallback } from '../types/serverType.js';
+import { groupByUniq } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 
 export const guideRouter: RouterPluginCallback = (fastify, _opts, done) => {
@@ -41,32 +42,22 @@ export const guideRouter: RouterPluginCallback = (fastify, _opts, done) => {
         }),
         response: {
           200: z.record(ChannelLineupSchema),
+          400: z.string(),
         },
       },
     },
     async (req, res) => {
-      const allChannelIds = map(
-        await req.serverCtx.channelDB.getAllChannels({ number: 'ASC' }),
-        'uuid',
+      const range = DateTimeRange.create(req.query.dateFrom, req.query.dateTo);
+      if (isNull(range)) {
+        return res.status(400).send('Invalid date range');
+      }
+
+      const guideByChannel = groupByUniq(
+        await req.serverCtx.guideService.getAllChannelGuides(range),
+        (guide) => guide.id,
       );
 
-      const allLineups = await allChannelIds.reduce(
-        async (prev, curr) => {
-          const res = await req.serverCtx.guideService.getChannelLineup(
-            curr,
-            req.query.dateFrom,
-            req.query.dateTo,
-          );
-          if (res) {
-            return { ...(await prev), [curr]: res };
-          } else {
-            return prev;
-          }
-        },
-        Promise.resolve({} as Record<string, ChannelLineup>),
-      );
-
-      return res.send(allLineups);
+      return res.send(guideByChannel);
     },
   );
 

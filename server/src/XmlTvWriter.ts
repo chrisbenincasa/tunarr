@@ -3,14 +3,13 @@ import {
   type XmltvChannel,
   type XmltvProgramme,
 } from '@iptv/xmltv';
-import { forProgramType } from '@tunarr/shared/util';
 import { TvGuideProgram, isContentProgram } from '@tunarr/types';
 import { Mutex } from 'async-mutex';
 import { writeFile } from 'fs/promises';
 import { escape, flatMap, isNil, map, round } from 'lodash-es';
+import { match } from 'ts-pattern';
 import { Channel } from './dao/direct/schema/Channel';
 import { SettingsDB, getSettings } from './dao/settings';
-import { ChannelPrograms } from './services/tvGuideService';
 import { isNonEmptyString } from './util';
 import { getChannelId } from './util/channels.js';
 import { LoggerFactory } from './util/logging/LoggerFactory';
@@ -18,6 +17,11 @@ import { LoggerFactory } from './util/logging/LoggerFactory';
 const lock = new Mutex();
 
 const channelIdCache: Record<string, string> = {};
+
+type MaterializedChannelPrograms = {
+  channel: Channel;
+  programs: TvGuideProgram[];
+};
 
 export class XmlTvWriter {
   private logger = LoggerFactory.child({
@@ -27,7 +31,7 @@ export class XmlTvWriter {
 
   constructor(private settingsDB: SettingsDB = getSettings()) {}
 
-  async write(channels: ChannelPrograms[]) {
+  async write(channels: MaterializedChannelPrograms[]) {
     const start = performance.now();
     return await lock.runExclusive(async () => {
       return await this.writeInternal(channels).finally(() => {
@@ -39,7 +43,7 @@ export class XmlTvWriter {
     });
   }
 
-  private async writeInternal(channels: ChannelPrograms[]) {
+  private async writeInternal(channels: MaterializedChannelPrograms[]) {
     const content = writeXmltv({
       generatorInfoName: 'tunarr',
       date: new Date(),
@@ -81,10 +85,17 @@ export class XmlTvWriter {
     program: TvGuideProgram,
     channel: Channel,
   ): XmltvProgramme {
+    const title = match(program)
+      .with({ type: 'content' }, (c) => c.title)
+      .with({ type: 'custom' }, (c) => c.program?.title ?? 'Custom Program')
+      .with({ type: 'flex' }, (c) => c.title)
+      .with({ type: 'redirect' }, (c) => `Redirect to Channel ${c.channel}`)
+      .exhaustive();
+
     const partial: XmltvProgramme = {
       start: new Date(program.start),
       stop: new Date(program.stop),
-      title: [{ _value: escape(XmlTvWriter.titleExtractor(program)) }],
+      title: [{ _value: escape(title) }],
       previouslyShown: {},
       channel: this.getChannelId(channel),
     };
@@ -173,12 +184,12 @@ export class XmlTvWriter {
     return (channelIdCache[channel.uuid] = getChannelId(channel.number));
   }
 
-  private static titleExtractor = forProgramType({
-    custom: (program) => program.program?.title ?? 'Custom Program',
-    content: (program) => program.title,
-    redirect: (program) => `Redirect to Channel ${program.channel}`,
-    flex: 'Flex',
-  });
+  // private static titleExtractor = forProgramType({
+  //   custom: (program) => program.program?.title ?? 'Custom Program',
+  //   content: (program) => program.title,
+  //   redirect: (program) => `Redirect to Channel ${program.channel}`,
+  //   flex: program => ,
+  // });
 
   isWriting() {
     return lock.isLocked();

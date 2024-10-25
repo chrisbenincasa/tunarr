@@ -1,6 +1,7 @@
 import { Loaded } from '@mikro-orm/core';
 import { seq } from '@tunarr/shared/util';
 import {
+  ChannelProgram,
   ContentProgram,
   ExternalId,
   FlexProgram,
@@ -38,11 +39,13 @@ import {
   isRedirectItem,
 } from '../derived_types/Lineup.js';
 import {
+  ChannelWithRelations,
+  ProgramWithRelations,
   ChannelWithRelations as RawChannel,
   ChannelWithPrograms as RawChannelWithPrograms,
   ProgramWithRelations as RawProgram,
 } from '../direct/derivedTypes.js';
-import { ProgramExternalId as RawProgramExternalId } from '../direct/schema/ProgramExternalId.js';
+import { MinimalProgramExternalId } from '../direct/schema/ProgramExternalId.js';
 import { Channel } from '../entities/Channel.js';
 import { Program, ProgramType } from '../entities/Program.js';
 import { ProgramExternalId } from '../entities/ProgramExternalId.js';
@@ -68,13 +71,23 @@ export class ProgramConverter {
   });
 
   directLineupItemToChannelProgram(
+    channel: ChannelWithRelations,
+    item: LineupItem,
+    channelReferences: MarkRequired<
+      DeepPartial<RawChannel>,
+      'uuid' | 'number' | 'name'
+    >[], // TODO fix this up...
+    preMaterializedProgram?: ProgramWithRelations,
+  ): ChannelProgram | null;
+  directLineupItemToChannelProgram(
     channel: RawChannelWithPrograms,
     item: LineupItem,
     channelReferences: MarkRequired<
       DeepPartial<RawChannel>,
       'uuid' | 'number' | 'name'
     >[], // TODO fix this up...
-  ) {
+    preMaterializedProgram?: ProgramWithRelations,
+  ): ChannelProgram | null {
     if (isOfflineItem(item)) {
       return this.directOfflineLineupItemToProgram(channel, item);
     } else if (isRedirectItem(item)) {
@@ -92,7 +105,10 @@ export class ProgramConverter {
       }
       return this.directRedirectLineupItemToProgram(item, redirectChannel);
     } else {
-      const program = channel.programs.find((p) => p.uuid === item.id);
+      const program =
+        preMaterializedProgram && preMaterializedProgram.uuid === item.id
+          ? preMaterializedProgram
+          : channel.programs.find((p) => p.uuid === item.id);
       if (isNil(program)) {
         return null;
       }
@@ -223,7 +239,7 @@ export class ProgramConverter {
 
   directEntityToContentProgramSync(
     program: RawProgram,
-    externalIds: RawProgramExternalId[],
+    externalIds: MinimalProgramExternalId[],
   ): ContentProgram {
     let extraFields: Partial<ContentProgram> = {};
     if (program.type === ProgramType.Episode.toString()) {
@@ -353,7 +369,7 @@ export class ProgramConverter {
     };
   }
 
-  private toExternalId(rawExternalId: RawProgramExternalId) {
+  private toExternalId(rawExternalId: MinimalProgramExternalId) {
     if (
       isNonEmptyString(rawExternalId.externalSourceId) &&
       isValidMultiExternalIdType(rawExternalId.sourceType)

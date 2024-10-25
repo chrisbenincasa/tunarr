@@ -3,7 +3,7 @@ import { ChannelLineupQuery } from '@tunarr/types/api';
 import { ChannelLineupSchema } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import { jsonArrayFrom } from 'kysely/helpers/sqlite';
-import { compact, map, reject, some } from 'lodash-es';
+import { map, reject, some } from 'lodash-es';
 import os from 'node:os';
 import z from 'zod';
 import { ArchiveDatabaseBackup } from '../dao/backup/ArchiveDatabaseBackup.js';
@@ -12,9 +12,10 @@ import { MediaSourceType } from '../dao/entities/MediaSource.js';
 import { LineupCreator } from '../services/dynamic_channels/LineupCreator.js';
 import { PlexTaskQueue } from '../tasks/TaskQueue.js';
 import { SavePlexProgramExternalIdsTask } from '../tasks/plex/SavePlexProgramExternalIdsTask.js';
+import { DateTimeRange } from '../types/DateTimeRange.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { enumValues } from '../util/enumUtil.js';
-import { ifDefined, mapAsyncSeq } from '../util/index.js';
+import { ifDefined } from '../util/index.js';
 import { DebugJellyfinApiRouter } from './debug/debugJellyfinApi.js';
 import { debugStreamApiRouter } from './debug/debugStreamApi.js';
 
@@ -114,9 +115,6 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      const allChannels =
-        await req.serverCtx.channelDB.getAllChannelsAndPrograms();
-
       const startTime = dayjs(req.query.from);
       const endTime = dayjs(req.query.to);
 
@@ -124,17 +122,11 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
         dayjs.duration(endTime.diff(startTime)),
       );
 
-      const lineups = compact(
-        await mapAsyncSeq(allChannels, async (channel) => {
-          return await req.serverCtx.guideService.getChannelLineup(
-            channel.uuid,
-            startTime.toDate(),
-            endTime.toDate(),
-          );
-        }),
+      const guide = await req.serverCtx.guideService.getAllChannelGuides(
+        DateTimeRange.create(startTime, endTime)!,
       );
 
-      return res.send(lineups);
+      return res.send(guide);
     },
   );
 
