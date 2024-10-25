@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.14.2](https://github.com/chrisbenincasa/tunarr/compare/v0.14.1...v0.14.2) (2024-10-24)
+
+
+### Bug Fixes
+
+* fix playing Video-type Jellyfin streams ([#902](https://github.com/chrisbenincasa/tunarr/issues/902)) ([68670f8](https://github.com/chrisbenincasa/tunarr/commit/68670f814adf77192f309278628fc1333dc0152c))
+* fix plex auto-channel mapping update ([70ecd00](https://github.com/chrisbenincasa/tunarr/commit/70ecd0035bc322f9b700dc8f3f7076a0cac533a7))
+* fix VAAPI rendering ([#884](https://github.com/chrisbenincasa/tunarr/issues/884)) ([e8a5656](https://github.com/chrisbenincasa/tunarr/commit/e8a565641a9a7fbfc18e3eafab03bddda1d3c64d))
+* handle more Jellyfin item types in program selector ([#883](https://github.com/chrisbenincasa/tunarr/issues/883)) ([1f2d963](https://github.com/chrisbenincasa/tunarr/commit/1f2d9634686a6e9c4ee3902a7933534eb6aad168))
+* persist channel table page state across nav ([#894](https://github.com/chrisbenincasa/tunarr/issues/894)) ([3e5e42a](https://github.com/chrisbenincasa/tunarr/commit/3e5e42a7df75f501db4aaad44c7fbb76f18d0565)), closes [#888](https://github.com/chrisbenincasa/tunarr/issues/888)
+* properly clear m3u cache when channels change ([#895](https://github.com/chrisbenincasa/tunarr/issues/895)) ([5bdc92b](https://github.com/chrisbenincasa/tunarr/commit/5bdc92b75ee6458acade18e74c102a6b4593cc91))
+
 ## [0.14.1](https://github.com/chrisbenincasa/tunarr/compare/v0.14.0...v0.14.1) (2024-10-21)
 
 
