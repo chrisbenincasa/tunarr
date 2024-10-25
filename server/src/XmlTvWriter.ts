@@ -122,13 +122,17 @@ export class XmlTvWriter {
             system: 'onscreen',
             _value: `S${program.seasonNumber}E${program.episodeNumber}`,
           },
-          {
+        ];
+        // Simply drop the xmltv notation system for specials (seasonn == 0)
+        // or for any epipsode number that would lead to invalid syntax
+        if (program.seasonNumber > 0 && program.episodeNumber > 0) {
+          partial.episodeNum.push({
             system: 'xmltv_ns',
             _value: `${program.seasonNumber - 1}.${
               program.episodeNumber - 1
             }.0/1`,
-          },
-        ];
+          });
+        }
       }
 
       if (isNonEmptyString(program.id)) {
