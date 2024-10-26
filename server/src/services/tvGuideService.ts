@@ -24,6 +24,7 @@ import {
   map,
   mapValues,
   nth,
+  pickBy,
   reduce,
   uniq,
   values,
@@ -150,7 +151,11 @@ export class TVGuideService {
     });
   }
 
-  async refreshGuide(guideDuration: Duration, force: boolean = false) {
+  async refreshGuide(
+    guideDuration: Duration,
+    force: boolean = false,
+    channelId?: string,
+  ) {
     try {
       const now = new Date().getTime();
       if (
@@ -161,7 +166,7 @@ export class TVGuideService {
         this.currentEndTime = now + guideDuration.asMilliseconds();
 
         this.channelsById = await this.channelDB.loadAllLineups();
-        await this.buildGuideWithRetries();
+        await this.buildGuideWithRetries(channelId);
       }
       return await this.get();
     } finally {
@@ -701,10 +706,13 @@ export class TVGuideService {
     return result;
   }
 
-  private async buildGuideInternal(): Promise<
-    Record<ChannelId, ChannelPrograms>
-  > {
+  private async buildGuideInternal(
+    channelId?: string,
+  ): Promise<Record<ChannelId, ChannelPrograms>> {
     const currentUpdateTimeMs = this.currentUpdateTime;
+    const channelsToUpdate = isNonEmptyString(channelId)
+      ? pickBy(this.channelsById, (_, k) => k === channelId)
+      : this.channelsById;
     this.accumulateTable = mapValues(this.channelsById, (channel) => {
       // We have these precalculated!!
       // Fallback just in case...
@@ -776,7 +784,7 @@ export class TVGuideService {
         ],
       };
     } else {
-      for (const { channel, lineup } of values(this.channelsById)) {
+      for (const { channel, lineup } of values(channelsToUpdate)) {
         if (!channel.stealth) {
           const programs = await this.getChannelPrograms(
             currentUpdateTimeMs,
@@ -790,7 +798,7 @@ export class TVGuideService {
     return result;
   }
 
-  private async buildGuideWithRetries() {
+  private async buildGuideWithRetries(channelId?: string) {
     await retry(
       async () => {
         try {
@@ -798,7 +806,14 @@ export class TVGuideService {
           await this.timer.timeAsync(
             `Build TV Guide for ${dayjs.duration(thisGuideLength).humanize()}`,
             async () => {
-              this.cachedGuide = await this.buildGuideInternal();
+              if (isNonEmptyString(channelId)) {
+                this.cachedGuide = {
+                  ...this.cachedGuide,
+                  ...(await this.buildGuideInternal(channelId)),
+                };
+              } else {
+                this.cachedGuide = await this.buildGuideInternal();
+              }
               // This was moved from a finally block, make sure that is right...
               this.lastUpdateTime = this.currentUpdateTime;
               this.lastEndTime = this.currentEndTime;
