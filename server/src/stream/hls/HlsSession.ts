@@ -1,24 +1,25 @@
+import { seq } from '@tunarr/shared/util';
 import dayjs, { Dayjs } from 'dayjs';
-import ld, { isEmpty } from 'lodash-es';
+import { filter, isEmpty, last, sortBy } from 'lodash-es';
 import fs from 'node:fs/promises';
 import path, { extname } from 'node:path';
-import { ChannelDB } from '../../dao/channelDb';
-import { Channel } from '../../dao/direct/schema/Channel';
-import { getSettings } from '../../dao/settings';
-import { FfmpegTranscodeSession } from '../../ffmpeg/FfmpegTrancodeSession';
-import { GetLastPtsDurationTask } from '../../ffmpeg/GetLastPtsDuration';
-import { HlsOutputFormat } from '../../ffmpeg/OutputFormat';
-import { serverContext } from '../../serverContext';
-import { OnDemandChannelService } from '../../services/OnDemandChannelService';
-import { Result } from '../../types/result';
-import { Maybe } from '../../types/util';
-import { wait } from '../../util';
-import { fileExists } from '../../util/fsUtil';
-import { PlayerContext } from '../PlayerStreamContext';
-import { ProgramStreamFactory } from '../ProgramStreamFactory';
-import { StreamProgramCalculator } from '../StreamProgramCalculator';
-import { BaseHlsSession, BaseHlsSessionOptions } from './BaseHlsSession';
-import { HlsPlaylistMutator } from './HlsPlaylistMutator';
+import { ChannelDB } from '../../dao/channelDb.ts';
+import { Channel } from '../../dao/direct/schema/Channel.ts';
+import { getSettings } from '../../dao/settings.ts';
+import { FfmpegTranscodeSession } from '../../ffmpeg/FfmpegTrancodeSession.ts';
+import { GetLastPtsDurationTask } from '../../ffmpeg/GetLastPtsDuration.ts';
+import { HlsOutputFormat } from '../../ffmpeg/OutputFormat.ts';
+import { serverContext } from '../../serverContext.ts';
+import { OnDemandChannelService } from '../../services/OnDemandChannelService.ts';
+import { Result } from '../../types/result.ts';
+import { Maybe } from '../../types/util.ts';
+import { fileExists } from '../../util/fsUtil.ts';
+import { wait } from '../../util/index.ts';
+import { PlayerContext } from '../PlayerStreamContext.ts';
+import { ProgramStreamFactory } from '../ProgramStreamFactory.ts';
+import { StreamProgramCalculator } from '../StreamProgramCalculator.ts';
+import { BaseHlsSession, BaseHlsSessionOptions } from './BaseHlsSession.ts';
+import { HlsPlaylistMutator } from './HlsPlaylistMutator.ts';
 
 /**
  * Initializes an ffmpeg process that concatenates via the /playlist
@@ -259,12 +260,14 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
       return;
     }
 
-    const p = ld
-      .chain(workingDirectoryFiles.get())
-      .filter((f) => extname(f) === '.ts' || extname(f) === '.mp4')
-      .sort()
-      .last()
-      .value();
+    const p = last(
+      sortBy(
+        filter(
+          workingDirectoryFiles.get(),
+          (f) => extname(f) === '.ts' || extname(f) === '.mp4',
+        ),
+      ),
+    );
 
     if (p) {
       return path.join(this._workingDirectory, p);
@@ -328,25 +331,25 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
 
   private async deleteOldSegments(sequenceNum: number) {
     const workingDirectoryFiles = await fs.readdir(this._workingDirectory);
-    const segments = ld
-      .chain(workingDirectoryFiles)
-      .filter((f) => {
-        const ext = extname(f);
-        return ext === '.ts' || ext === '.mp4';
-      })
-      .map((file) => {
-        const matches = file.match(/[A-z/]+(\d+)\.[ts|mp4]/);
-        if (matches && matches.length > 0) {
-          return {
-            file,
-            seq: parseInt(matches[1]),
-          };
-        }
-        return;
-      })
-      .compact()
-      .filter(({ seq }) => seq < sequenceNum)
-      .value();
+    const segments = filter(
+      seq.collect(
+        filter(workingDirectoryFiles, (f) => {
+          const ext = extname(f);
+          return ext === '.ts' || ext === '.mp4';
+        }),
+        (file) => {
+          const matches = file.match(/[A-z/]+(\d+)\.[ts|mp4]/);
+          if (matches && matches.length > 0) {
+            return {
+              file,
+              seq: parseInt(matches[1]),
+            };
+          }
+          return;
+        },
+      ),
+      ({ seq }) => seq < sequenceNum,
+    );
 
     for (const { file } of segments) {
       try {

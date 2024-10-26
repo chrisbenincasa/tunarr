@@ -1,8 +1,8 @@
 import { Loaded } from '@mikro-orm/core';
 import { DynamicContentConfigSource } from '@tunarr/types/api';
-import { Channel } from '../../dao/entities/Channel';
-import { ContentSourceUpdater } from './ContentSourceUpdater';
-import { PlexContentSourceUpdater } from './PlexContentSourceUpdater';
+import { Channel } from '../../dao/entities/Channel.ts';
+import { ContentSourceUpdater } from './ContentSourceUpdater.ts';
+import { PlexContentSourceUpdater } from './PlexContentSourceUpdater.ts';
 
 export class ContentSourceUpdaterFactory {
   static getUpdater(

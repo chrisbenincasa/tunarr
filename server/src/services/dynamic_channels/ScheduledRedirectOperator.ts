@@ -1,10 +1,10 @@
 import { ScheduledRedirectOperation } from '@tunarr/types/api';
-import { SchedulingOperator } from './SchedulingOperator';
-import { ChannelAndLineup } from '../../types/internal.js';
 import dayjs from 'dayjs';
-import { LineupItem } from '../../dao/derived_types/Lineup';
-import { binarySearchRange } from '../../util/binarySearch';
 import { isNull } from 'lodash-es';
+import { LineupItem } from '../../dao/derived_types/Lineup.ts';
+import { ChannelAndLineup } from '../../types/internal.js';
+import { binarySearchRange } from '../../util/binarySearch.ts';
+import { SchedulingOperator } from './SchedulingOperator.ts';
 
 export class ScheduledRedirectOperator extends SchedulingOperator<ScheduledRedirectOperation> {
   public apply(channelAndLineup: ChannelAndLineup): Promise<ChannelAndLineup> {

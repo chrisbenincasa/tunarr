@@ -2,9 +2,9 @@ import {
   ShowProgrammingRandomSlot,
   ShowProgrammingTimeSlot,
 } from '@tunarr/types/api';
-import { LoggerFactory } from '../../../util/logging/LoggerFactory';
-import { Lineup } from '../../derived_types/Lineup';
-import { ChannelLineupMigration } from './ChannelLineupMigration';
+import { LoggerFactory } from '../../../util/logging/LoggerFactory.ts';
+import { Lineup } from '../../derived_types/Lineup.ts';
+import { ChannelLineupMigration } from './ChannelLineupMigration.ts';
 
 export class SlotShowIdMigration extends ChannelLineupMigration<0, 1> {
   #logger = LoggerFactory.child({ className: this.constructor.name });

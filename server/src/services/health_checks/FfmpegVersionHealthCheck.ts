@@ -1,14 +1,14 @@
 import { every, isNil, some } from 'lodash-es';
 import { P, match } from 'ts-pattern';
-import { SettingsDB, getSettings } from '../../dao/settings';
-import { FFMPEGInfo, FfmpegVersionResult } from '../../ffmpeg/ffmpegInfo';
-import { fileExists } from '../../util/fsUtil';
+import { SettingsDB, getSettings } from '../../dao/settings.ts';
+import { FFMPEGInfo, FfmpegVersionResult } from '../../ffmpeg/ffmpegInfo.ts';
+import { fileExists } from '../../util/fsUtil.ts';
 import {
   HealthCheck,
   HealthCheckResult,
   HealthyHealthCheckResult,
   healthCheckResult,
-} from './HealthCheck';
+} from './HealthCheck.ts';
 
 export class FfmpegVersionHealthCheck implements HealthCheck {
   readonly id: string = 'FfmpegVersion';

@@ -1,5 +1,5 @@
 import { Mutex, MutexInterface, withTimeout } from 'async-mutex';
-import { isDefined } from '.';
+import { isDefined } from './index.ts';
 
 /**
  * A class that handles creating/distributing mutexes associated with

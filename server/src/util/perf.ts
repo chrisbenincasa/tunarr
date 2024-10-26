@@ -1,6 +1,6 @@
 import { isError, round } from 'lodash-es';
-import { attempt, attemptSync } from '.';
-import { LogLevels, Logger } from './logging/LoggerFactory';
+import { attempt, attemptSync } from './index.ts';
+import { LogLevels, Logger } from './logging/LoggerFactory.ts';
 
 export function time<T>(f: () => T): [T, number] {
   const start = performance.now();

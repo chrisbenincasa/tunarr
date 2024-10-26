@@ -265,7 +265,9 @@ export class TVGuideService {
     id: string,
     dateRange: OpenDateTimeRange,
   ): Promise<Maybe<Required<ChannelLineup>>> {
-    return this.getChannelGuides(dateRange, [id]).then(first);
+    return this.getChannelGuides(dateRange, [id]).then((guides) =>
+      first(guides),
+    );
   }
 
   /**

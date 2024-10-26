@@ -1,8 +1,8 @@
 import { directDbAccess } from '../../dao/direct/directDbAccess.js';
-import { ProgramType } from '../../dao/entities/Program';
-import { ProgramGroupingType } from '../../dao/entities/ProgramGrouping';
-import { LoggerFactory } from '../../util/logging/LoggerFactory';
-import Fixer from './fixer';
+import { ProgramType } from '../../dao/entities/Program.ts';
+import { ProgramGroupingType } from '../../dao/entities/ProgramGrouping.ts';
+import { LoggerFactory } from '../../util/logging/LoggerFactory.ts';
+import Fixer from './fixer.ts';
 
 // TODO: Handle Jellyfin items
 // Generalize and reuse the calculator

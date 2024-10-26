@@ -1,7 +1,7 @@
 import { BaseErrorSchema } from '@tunarr/types/api';
 import { TaskSchema } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
-import ld, { isEmpty, isNil } from 'lodash-es';
+import { compact, isEmpty, isNil, map } from 'lodash-es';
 import { z } from 'zod';
 import { GlobalScheduler } from '../services/scheduler.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
@@ -24,9 +24,8 @@ export const tasksApiRouter: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (_, res) => {
-      const result = ld
-        .chain(GlobalScheduler.scheduledJobsById)
-        .map((tasks, id) => {
+      const result = compact(
+        map(GlobalScheduler.scheduledJobsById, (tasks, id) => {
           if (isNil(tasks) || isEmpty(tasks)) {
             return;
           }
@@ -51,9 +50,8 @@ export const tasksApiRouter: RouterPluginAsyncCallback = async (fastify) => {
             nextExecution: nextExecution?.format(),
             nextExecutionEpoch: nextExecution?.unix(),
           };
-        })
-        .compact()
-        .value();
+        }),
+      );
 
       return res.send(result);
     },

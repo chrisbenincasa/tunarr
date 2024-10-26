@@ -1,4 +1,4 @@
-import { Maybe } from '../types/util';
+import { Maybe } from '../types/util.ts';
 
 const MaxwellGm206Models = new Set([
   'GTX 750',

@@ -1,6 +1,6 @@
 import { createExternalId } from '@tunarr/shared';
 import { Insertable, Selectable, Updateable } from 'kysely';
-import { WithCreatedAt, WithUpdatedAt, WithUuid } from './base';
+import { WithCreatedAt, WithUpdatedAt, WithUuid } from './base.ts';
 
 export interface ProgramTable extends WithCreatedAt, WithUpdatedAt, WithUuid {
   albumName: string | null;

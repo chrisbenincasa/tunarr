@@ -1,11 +1,11 @@
-import { directDbAccess } from '../../dao/direct/directDbAccess';
-import { ProgramType } from '../../dao/entities/Program';
-import { ProgramGroupingType } from '../../dao/entities/ProgramGrouping';
+import { directDbAccess } from '../../dao/direct/directDbAccess.ts';
+import { ProgramType } from '../../dao/entities/Program.ts';
+import { ProgramGroupingType } from '../../dao/entities/ProgramGrouping.ts';
 import {
   HealthCheck,
   HealthCheckResult,
   HealthyHealthCheckResult,
-} from './HealthCheck';
+} from './HealthCheck.ts';
 
 export class MissingSeasonNumbersHealthCheck implements HealthCheck {
   readonly id = 'MissingSeasonNumbers';

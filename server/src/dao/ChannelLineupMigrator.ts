@@ -1,11 +1,11 @@
 import { findIndex, map } from 'lodash-es';
-import { LoggerFactory } from '../util/logging/LoggerFactory';
-import { ChannelDB } from './channelDb';
-import { withDb } from './dataSource';
-import { CurrentLineupSchemaVersion, Lineup } from './derived_types/Lineup';
-import { ChannelLineupMigration } from './migrations/lineups/ChannelLineupMigration';
-import { SlotShowIdMigration } from './migrations/lineups/SlotShowIdMigration';
-import { ProgramDB } from './programDB';
+import { LoggerFactory } from '../util/logging/LoggerFactory.ts';
+import { ChannelDB } from './channelDb.ts';
+import { withDb } from './dataSource.ts';
+import { CurrentLineupSchemaVersion, Lineup } from './derived_types/Lineup.ts';
+import { ChannelLineupMigration } from './migrations/lineups/ChannelLineupMigration.ts';
+import { SlotShowIdMigration } from './migrations/lineups/SlotShowIdMigration.ts';
+import { ProgramDB } from './programDB.ts';
 
 type MigrationFactory = (
   channelDB: ChannelDB,

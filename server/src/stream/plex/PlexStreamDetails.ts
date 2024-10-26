@@ -18,20 +18,20 @@ import {
   replace,
   trimEnd,
 } from 'lodash-es';
-import { ProgramExternalIdType } from '../../dao/custom_types/ProgramExternalIdType';
+import { ProgramExternalIdType } from '../../dao/custom_types/ProgramExternalIdType.ts';
 import { ContentBackedStreamLineupItem } from '../../dao/derived_types/StreamLineup.js';
-import { MediaSourceTable } from '../../dao/direct/schema/MediaSource';
-import { ProgramDB } from '../../dao/programDB';
+import type { MediaSourceTable } from '../../dao/direct/schema/MediaSource.d.ts';
+import { ProgramDB } from '../../dao/programDB.ts';
 import { SettingsDB, getSettings } from '../../dao/settings.js';
 import { isQueryError, isQuerySuccess } from '../../external/BaseApiClient.js';
-import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory';
-import { PlexApiClient } from '../../external/plex/PlexApiClient';
-import { Nullable } from '../../types/util';
-import { attempt, isNonEmptyString } from '../../util';
-import { fileExists } from '../../util/fsUtil';
-import { Logger, LoggerFactory } from '../../util/logging/LoggerFactory';
+import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.ts';
+import { PlexApiClient } from '../../external/plex/PlexApiClient.ts';
+import { Nullable } from '../../types/util.ts';
+import { fileExists } from '../../util/fsUtil.ts';
+import { attempt, isNonEmptyString } from '../../util/index.ts';
+import { Logger, LoggerFactory } from '../../util/logging/LoggerFactory.ts';
 import { makeLocalUrl } from '../../util/serverUtil.js';
-import { ProgramStream, StreamDetails, StreamSource } from '../types';
+import { ProgramStream, StreamDetails, StreamSource } from '../types.ts';
 
 // The minimum fields we need to get stream details about an item
 type PlexItemStreamDetailsQuery = Pick<

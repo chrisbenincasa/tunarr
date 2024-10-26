@@ -1,6 +1,6 @@
 import dayjs, { Dayjs } from 'dayjs';
 import { isUndefined } from 'lodash-es';
-import { Nullable } from './util';
+import { Nullable } from './util.ts';
 
 export class OpenDateTimeRange {
   private constructor(

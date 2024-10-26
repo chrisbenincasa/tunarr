@@ -7,15 +7,14 @@ import {
   isPlexDirectory,
   isTerminalItem,
 } from '@tunarr/types/plex';
-import { flatten, isNil, uniqBy } from 'lodash-es';
-import map from 'lodash-es/map';
-import { ProgramDB } from '../dao/programDB';
-import { PlexApiClient } from '../external/plex/PlexApiClient';
-import { typedProperty } from '../types/path';
+import { flatten, isNil, map, uniqBy } from 'lodash-es';
+import { ProgramDB } from '../dao/programDB.ts';
+import { PlexApiClient } from '../external/plex/PlexApiClient.ts';
+import { typedProperty } from '../types/path.ts';
+import { asyncPool, unfurlPool } from '../util/asyncPool.ts';
 import { flatMapAsyncSeq, wait } from '../util/index.js';
-import { Logger, LoggerFactory } from '../util/logging/LoggerFactory';
-import { Timer } from '../util/perf';
-import { asyncPool, unfurlPool } from '../util/asyncPool';
+import { Logger, LoggerFactory } from '../util/logging/LoggerFactory.ts';
+import { Timer } from '../util/perf.ts';
 
 export type EnrichedPlexTerminalMedia = PlexTerminalMedia & {
   id?: string;

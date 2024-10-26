@@ -1,20 +1,20 @@
+import { Loaded } from '@mikro-orm/core';
 import { AddPaddingOperation } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import {
-  sortBy,
+  find,
   flatMap,
   forEach,
   isEmpty,
-  find,
-  reject,
   isNull,
+  reject,
+  sortBy,
 } from 'lodash-es';
-import { Channel } from '../../dao/entities/Channel';
+import { LineupItem } from '../../dao/derived_types/Lineup.ts';
+import { Channel } from '../../dao/entities/Channel.ts';
 import { ChannelAndLineup } from '../../types/internal.js';
-import { scale } from '../../util';
-import { LineupItem } from '../../dao/derived_types/Lineup';
-import { Loaded } from '@mikro-orm/core';
-import { SchedulingOperator } from './SchedulingOperator';
+import { scale } from '../../util/index.ts';
+import { SchedulingOperator } from './SchedulingOperator.ts';
 
 export class PadProgramsSchedulingOperator extends SchedulingOperator<AddPaddingOperation> {
   // eslint-disable-next-line @typescript-eslint/require-await

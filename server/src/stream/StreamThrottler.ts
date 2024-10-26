@@ -1,8 +1,8 @@
 import constants from '@tunarr/shared/constants';
 import { isUndefined } from 'lodash-es';
 import util from 'node:util';
-import { StreamLineupItem } from '../dao/derived_types/StreamLineup';
-import { Maybe } from '../types/util';
+import { StreamLineupItem } from '../dao/derived_types/StreamLineup.ts';
+import { Maybe } from '../types/util.ts';
 
 type CacheEntry = {
   t0: number;

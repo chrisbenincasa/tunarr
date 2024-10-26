@@ -7,9 +7,9 @@ import {
   RouteGenericInterface,
 } from 'fastify';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
-import { FastifyRequest } from 'fastify/types/request';
-import { FastifySchema } from 'fastify/types/schema';
-import { ResolveFastifyRequestType } from 'fastify/types/type-provider';
+import type { FastifyRequest } from 'fastify/types/request.d.ts';
+import type { FastifySchema } from 'fastify/types/schema.d.ts';
+import type { ResolveFastifyRequestType } from 'fastify/types/type-provider.d.ts';
 import { IncomingMessage, ServerResponse } from 'http';
 import { z } from 'zod';
 

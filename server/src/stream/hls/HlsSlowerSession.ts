@@ -1,18 +1,21 @@
 import dayjs from 'dayjs';
 import { StrictOmit } from 'ts-essentials';
-import { Channel } from '../../dao/direct/schema/Channel';
-import { getSettings } from '../../dao/settings';
-import { FfmpegTranscodeSession } from '../../ffmpeg/FfmpegTrancodeSession';
-import { HlsOutputFormat, NutOutputFormat } from '../../ffmpeg/OutputFormat';
-import { FFMPEG } from '../../ffmpeg/ffmpeg';
-import { serverContext } from '../../serverContext';
-import { Result } from '../../types/result';
-import { makeFfmpegPlaylistUrl } from '../../util/serverUtil';
-import { GetPlayerContextRequest, PlayerContext } from '../PlayerStreamContext';
-import { ProgramStream } from '../ProgramStream';
-import { ProgramStreamFactory } from '../ProgramStreamFactory';
-import { StreamProgramCalculator } from '../StreamProgramCalculator';
-import { BaseHlsSession, BaseHlsSessionOptions } from './BaseHlsSession';
+import { Channel } from '../../dao/direct/schema/Channel.ts';
+import { getSettings } from '../../dao/settings.ts';
+import { FfmpegTranscodeSession } from '../../ffmpeg/FfmpegTrancodeSession.ts';
+import { HlsOutputFormat, NutOutputFormat } from '../../ffmpeg/OutputFormat.ts';
+import { FFMPEG } from '../../ffmpeg/ffmpeg.ts';
+import { serverContext } from '../../serverContext.ts';
+import { Result } from '../../types/result.ts';
+import { makeFfmpegPlaylistUrl } from '../../util/serverUtil.ts';
+import {
+  GetPlayerContextRequest,
+  PlayerContext,
+} from '../PlayerStreamContext.ts';
+import { ProgramStream } from '../ProgramStream.ts';
+import { ProgramStreamFactory } from '../ProgramStreamFactory.ts';
+import { StreamProgramCalculator } from '../StreamProgramCalculator.ts';
+import { BaseHlsSession, BaseHlsSessionOptions } from './BaseHlsSession.ts';
 
 export type HlsSlowerSessionOptions = BaseHlsSessionOptions & {
   sessionType: 'hls_slower';

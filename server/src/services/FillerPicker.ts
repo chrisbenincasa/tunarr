@@ -3,11 +3,11 @@ import { isEmpty, isNil, isUndefined } from 'lodash-es';
 import {
   ChannelFillerShowWithContent,
   ProgramWithRelations,
-} from '../dao/direct/derivedTypes';
-import { Channel } from '../dao/direct/schema/Channel';
-import { ChannelCache } from '../stream/ChannelCache';
-import { Maybe, Nullable } from '../types/util';
-import { random } from '../util/random';
+} from '../dao/direct/derivedTypes.ts';
+import { Channel } from '../dao/direct/schema/Channel.ts';
+import { ChannelCache } from '../stream/ChannelCache.ts';
+import { Maybe, Nullable } from '../types/util.ts';
+import { random } from '../util/random.ts';
 
 const DefaultFillerCooldownMillis = 30 * 60 * 1000;
 const OneDayMillis = 7 * 24 * 60 * 60 * 1000;

@@ -1,27 +1,33 @@
-import { CachedImageTable } from './CachedImage';
+import type { CachedImageTable } from './CachedImage.d.ts';
 import {
   ChannelCustomShowsTable,
   ChannelFallbackTable,
   ChannelFillerShowTable,
   ChannelProgramsTable,
   ChannelTable,
-} from './Channel';
-import { CustomShowContentTable, CustomShowTable } from './CustomShow';
-import { FillerShowContentTable, FillerShowTable } from './FillerShow';
-import { MediaSourceTable } from './MediaSource';
-import { ProgramTable } from './Program';
-import { ProgramExternalIdTable } from './ProgramExternalId';
-import { ProgramGroupingTable } from './ProgramGrouping';
-import { ProgramGroupingExternalIdTable } from './ProgramGroupingExternalId';
+} from './Channel.ts';
+import type {
+  CustomShowContentTable,
+  CustomShowTable,
+} from './CustomShow.d.ts';
+import type {
+  FillerShowContentTable,
+  FillerShowTable,
+} from './FillerShow.d.ts';
+import type { MediaSourceTable } from './MediaSource.d.ts';
+import { ProgramTable } from './Program.ts';
+import type { ProgramExternalIdTable } from './ProgramExternalId.d.ts';
+import type { ProgramGroupingTable } from './ProgramGrouping.d.ts';
+import type { ProgramGroupingExternalIdTable } from './ProgramGroupingExternalId.d.ts';
 
-export * from './CachedImage';
-export * from './Channel';
-export * from './FillerShow';
-export * from './MediaSource';
-export * from './Program';
-export * from './ProgramExternalId';
-export * from './ProgramGrouping';
-export * from './ProgramGroupingExternalId';
+export type * from './CachedImage.d.ts';
+export type * from './Channel.d.ts';
+export type * from './FillerShow.d.ts';
+export type * from './MediaSource.d.ts';
+export type * from './Program.d.ts';
+export type * from './ProgramExternalId.d.ts';
+export type * from './ProgramGrouping.d.ts';
+export type * from './ProgramGroupingExternalId.d.ts';
 
 export interface DB {
   cachedImage: CachedImageTable;

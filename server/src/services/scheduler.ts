@@ -1,7 +1,15 @@
 import type { Tag } from '@tunarr/types';
 import { BackupSettings } from '@tunarr/types/schemas';
 import dayjs, { type Dayjs } from 'dayjs';
-import ld, { filter, forEach, isString, once, reject, values } from 'lodash-es';
+import {
+  filter,
+  flatten,
+  forEach,
+  isString,
+  once,
+  reject,
+  values,
+} from 'lodash-es';
 import { DeepReadonly } from 'ts-essentials';
 import { v4 } from 'uuid';
 import { ServerContext } from '../serverContext.js';
@@ -166,10 +174,12 @@ export const scheduleJobs = once((serverContext: ServerContext) => {
 
   scheduleBackupJobs(serverContext.settings.backup);
 
-  ld.chain(values(GlobalScheduler.scheduledJobsById))
-    .flatten()
-    .filter((job) => job.runAtStartup)
-    .forEach((job) => {
+  forEach(
+    filter(
+      flatten(values(GlobalScheduler.scheduledJobsById)),
+      (job) => job.runAtStartup,
+    ),
+    (job) => {
       job
         .runNow(true)
         .catch((e) =>
@@ -179,7 +189,8 @@ export const scheduleJobs = once((serverContext: ServerContext) => {
             e,
           ),
         );
-    });
+    },
+  );
 });
 
 export function scheduleBackupJobs(

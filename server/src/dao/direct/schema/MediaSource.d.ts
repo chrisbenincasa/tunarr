@@ -1,6 +1,5 @@
-import { Selectable } from 'kysely';
-import { Generated } from '../types.gen';
-import { WithCreatedAt, WithUpdatedAt, WithUuid } from './base';
+import { Generated, Selectable } from 'kysely';
+import { WithCreatedAt, WithUpdatedAt, WithUuid } from './base.ts';
 
 export interface MediaSourceTable
   extends WithUpdatedAt,

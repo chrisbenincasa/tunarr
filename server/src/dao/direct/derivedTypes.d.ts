@@ -1,8 +1,8 @@
 import { Selectable } from 'kysely';
-import { DeepNullable, MarkRequired } from 'ts-essentials';
-import { MarkNonNullable } from '../../types/util';
-import { MediaSourceType } from '../entities/MediaSource';
-import * as RawType from './schema/db';
+import type { DeepNullable, MarkRequired } from 'ts-essentials';
+import { MarkNonNullable } from '../../types/util.ts';
+import { MediaSourceType } from '../entities/MediaSource.ts';
+import * as RawType from './schema/db.ts';
 
 export type ProgramWithRelations = RawType.Program & {
   tvShow?: DeepNullable<Partial<RawType.ProgramGrouping>> | null;

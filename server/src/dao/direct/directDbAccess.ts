@@ -7,9 +7,9 @@ import {
 } from 'kysely';
 import { once } from 'lodash-es';
 import path from 'path';
-import { GlobalOptions } from '../../globals';
-import { LoggerFactory } from '../../util/logging/LoggerFactory';
-import { DB } from './schema/db';
+import { GlobalOptions } from '../../globals.ts';
+import { LoggerFactory } from '../../util/logging/LoggerFactory.ts';
+import { DB } from './schema/db.ts';
 
 let _directDbAccess: Kysely<DB>;
 

@@ -1,9 +1,9 @@
 import { ChannelStreamMode, FfmpegSettings } from '@tunarr/types';
 import { initial } from 'lodash-es';
-import { Channel } from '../dao/direct/schema/Channel';
-import { SettingsDB, getSettings } from '../dao/settings';
-import { FfmpegTranscodeSession } from '../ffmpeg/FfmpegTrancodeSession';
-import { ConcatOptions, FFMPEG } from '../ffmpeg/ffmpeg';
+import { Channel } from '../dao/direct/schema/Channel.ts';
+import { SettingsDB, getSettings } from '../dao/settings.ts';
+import { FfmpegTranscodeSession } from '../ffmpeg/FfmpegTrancodeSession.ts';
+import { ConcatOptions, FFMPEG } from '../ffmpeg/ffmpeg.ts';
 import { makeFfmpegPlaylistUrl, makeLocalUrl } from '../util/serverUtil.js';
 
 type ConcatStreamOptions = {

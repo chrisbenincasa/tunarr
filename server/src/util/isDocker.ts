@@ -1,8 +1,8 @@
 import { Mutex } from 'async-mutex';
-import fs from 'node:fs/promises';
-import { existsSync, readFileSync } from 'node:fs';
-import { fileExists } from './fsUtil';
 import { attempt, isError, isUndefined } from 'lodash-es';
+import { existsSync, readFileSync } from 'node:fs';
+import fs from 'node:fs/promises';
+import { fileExists } from './fsUtil.ts';
 
 const checkerMutex = new Mutex();
 

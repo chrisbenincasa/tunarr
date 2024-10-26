@@ -8,12 +8,12 @@ import {
   map,
   uniqBy,
 } from 'lodash-es';
-import { ChannelDB } from '../dao/channelDb';
-import { getEm } from '../dao/dataSource';
-import { isContentItem } from '../dao/derived_types/Lineup';
-import { Program } from '../dao/entities/Program';
-import { flatMapAsyncSeq, isNonEmptyString } from '../util';
-import { Task } from './Task';
+import { ChannelDB } from '../dao/channelDb.ts';
+import { getEm } from '../dao/dataSource.ts';
+import { isContentItem } from '../dao/derived_types/Lineup.ts';
+import { Program } from '../dao/entities/Program.ts';
+import { flatMapAsyncSeq, isNonEmptyString } from '../util/index.ts';
+import { Task } from './Task.ts';
 
 // This task is fired off whenever programs are updated. It goes through
 // all channel lineups that contain the program and ensure that their

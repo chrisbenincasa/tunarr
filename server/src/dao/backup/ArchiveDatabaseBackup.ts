@@ -1,19 +1,19 @@
 import { FileBackupOutput } from '@tunarr/types/schemas';
 import archiver from 'archiver';
 import dayjs from 'dayjs';
+import { compact, isEmpty, isNull, map, sortBy, take } from 'lodash-es';
 import { createWriteStream } from 'node:fs';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { LoggerFactory } from '../../util/logging/LoggerFactory';
-import { SettingsDB } from '../settings';
-import { BackupResult, DatabaseBackup } from './DatabaseBackup';
-import { SqliteDatabaseBackup } from './SqliteDatabaseBackup';
-import { compact, isEmpty, isNull, map, sortBy, take } from 'lodash-es';
-import { asyncPool } from '../../util/asyncPool';
+import { asyncPool } from '../../util/asyncPool.ts';
 import { fileExists } from '../../util/fsUtil.js';
 import { isDocker } from '../../util/isDocker.js';
-import { getDatabasePath } from '../databaseDirectoryUtil';
+import { LoggerFactory } from '../../util/logging/LoggerFactory.ts';
+import { getDatabasePath } from '../databaseDirectoryUtil.ts';
+import { SettingsDB } from '../settings.ts';
+import { BackupResult, DatabaseBackup } from './DatabaseBackup.ts';
+import { SqliteDatabaseBackup } from './SqliteDatabaseBackup.ts';
 
 export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
   #logger = LoggerFactory.child({ className: ArchiveDatabaseBackup.name });

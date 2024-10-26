@@ -1,8 +1,8 @@
 import { Loaded } from '@mikro-orm/core';
 import { DynamicContentConfigSource } from '@tunarr/types/api';
 import { Mutex, withTimeout } from 'async-mutex';
-import { EntityManager, withDb } from '../../dao/dataSource';
-import { Channel } from '../../dao/entities/Channel';
+import { EntityManager, withDb } from '../../dao/dataSource.ts';
+import { Channel } from '../../dao/entities/Channel.ts';
 
 const locks: Record<DynamicContentConfigSource['type'], Mutex> = {
   plex: new Mutex(),

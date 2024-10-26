@@ -1,11 +1,11 @@
 import { difference, keys, map, reduce, values } from 'lodash-es';
-import { mapToObj } from '../util';
-import { LoggerFactory } from '../util/logging/LoggerFactory';
+import { mapToObj } from '../util/index.ts';
+import { LoggerFactory } from '../util/logging/LoggerFactory.ts';
 import {
   HealthCheck,
   HealthCheckResult,
   healthCheckResult,
-} from './health_checks/HealthCheck';
+} from './health_checks/HealthCheck.ts';
 
 export class HealthCheckService {
   #logger = LoggerFactory.child({ className: this.constructor.name });

@@ -1,6 +1,6 @@
 import { CommandModule } from 'yargs';
-import { SettingsUpdateCommand } from './settingsUpdateCommand';
-import { SettingsViewCommand } from './settingsViewCommand';
+import { SettingsUpdateCommand } from './settingsUpdateCommand.ts';
+import { SettingsViewCommand } from './settingsViewCommand.ts';
 
 export const settingsCommands: CommandModule = {
   command: 'settings <command>',

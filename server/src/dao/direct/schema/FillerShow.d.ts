@@ -1,5 +1,5 @@
 import { Selectable } from 'kysely';
-import { WithCreatedAt, WithUpdatedAt, WithUuid } from './base';
+import { WithCreatedAt, WithUpdatedAt, WithUuid } from './base.ts';
 
 export interface FillerShowTable
   extends WithUuid,

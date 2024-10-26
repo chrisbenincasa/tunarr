@@ -1,11 +1,11 @@
 import { FfmpegNumericLogLevels } from '@tunarr/types/schemas';
-import { SettingsDB, getSettings } from '../../dao/settings';
+import { SettingsDB, getSettings } from '../../dao/settings.ts';
 import {
   HealthCheck,
   HealthCheckResult,
   HealthyHealthCheckResult,
   healthCheckResult,
-} from './HealthCheck';
+} from './HealthCheck.ts';
 
 export class FfmpegDebugLoggingHealthCheck implements HealthCheck {
   readonly id: string = 'FfmpegDebugLogging';

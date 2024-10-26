@@ -1,7 +1,7 @@
 import axios, { AxiosHeaders } from 'axios';
 import { createHash } from 'crypto';
 import dayjs from 'dayjs';
-import { HttpHeader } from 'fastify/types/utils';
+import type { HttpHeader } from 'fastify/types/utils.d.ts';
 import { isNil, isNull, isString, isUndefined, omitBy } from 'lodash-es';
 import NodeCache from 'node-cache';
 import stream from 'stream';
@@ -9,10 +9,10 @@ import { z } from 'zod';
 import {
   ProgramSourceType,
   programSourceTypeFromString,
-} from '../dao/custom_types/ProgramSourceType';
-import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory';
-import { TruthyQueryParam } from '../types/schemas';
-import { RouterPluginAsyncCallback } from '../types/serverType';
+} from '../dao/custom_types/ProgramSourceType.ts';
+import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.ts';
+import { TruthyQueryParam } from '../types/schemas.ts';
+import { RouterPluginAsyncCallback } from '../types/serverType.ts';
 
 const externalIdSchema = z
   .string()

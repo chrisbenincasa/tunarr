@@ -1,17 +1,22 @@
-import { ColumnType, Insertable, JSONColumnType, Selectable } from 'kysely';
+import {
+  ColumnType,
+  Generated,
+  Insertable,
+  JSONColumnType,
+  Selectable,
+} from 'kysely';
 import {
   ChannelOfflineSettings,
   ChannelTranscodingSettings,
   ChannelWatermark,
-} from '../../entities/Channel';
-import { Generated } from '../types.gen';
+} from '../../entities/Channel.ts';
 import {
   ChannelIcon,
   ChannelStreamMode,
   WithCreatedAt,
   WithUpdatedAt,
   WithUuid,
-} from './base';
+} from './base.ts';
 
 export interface ChannelTable extends WithUuid, WithCreatedAt, WithUpdatedAt {
   disableFillerOverlay: Generated<number>;

@@ -1,13 +1,13 @@
 import { Loaded } from '@mikro-orm/core';
 import { DynamicContentConfigSource } from '@tunarr/types/api';
-import filter from 'lodash-es/filter';
-import { ChannelDB } from '../dao/channelDb';
-import { Channel } from '../dao/entities/Channel';
-import { ScheduledTask } from './ScheduledTask';
-import { ContentSourceUpdaterFactory } from '../services/dynamic_channels/ContentSourceUpdaterFactory';
-import { GlobalScheduler } from '../services/scheduler';
-import { Maybe } from '../types/util';
-import { Task, TaskId } from './Task';
+import { filter } from 'lodash-es';
+import { ChannelDB } from '../dao/channelDb.ts';
+import { Channel } from '../dao/entities/Channel.ts';
+import { ContentSourceUpdaterFactory } from '../services/dynamic_channels/ContentSourceUpdaterFactory.ts';
+import { GlobalScheduler } from '../services/scheduler.ts';
+import { Maybe } from '../types/util.ts';
+import { ScheduledTask } from './ScheduledTask.ts';
+import { Task, TaskId } from './Task.ts';
 
 export class ScheduleDynamicChannelsTask extends Task<void> {
   public static ID: TaskId = 'schedule-dynamic-channels';

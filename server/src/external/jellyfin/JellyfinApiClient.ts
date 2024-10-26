@@ -25,9 +25,9 @@ import {
 } from 'lodash-es';
 import { v4 } from 'uuid';
 import { z } from 'zod';
-import { Maybe, Nilable } from '../../types/util';
+import { Maybe, Nilable } from '../../types/util.ts';
 import { isNonEmptyString } from '../../util/index.js';
-import { LoggerFactory } from '../../util/logging/LoggerFactory';
+import { LoggerFactory } from '../../util/logging/LoggerFactory.ts';
 import { getTunarrVersion } from '../../util/version.js';
 import {
   BaseApiClient,

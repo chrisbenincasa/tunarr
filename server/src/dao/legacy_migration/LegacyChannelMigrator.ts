@@ -1,3 +1,4 @@
+import { seq } from '@tunarr/shared/util';
 import {
   Channel,
   ChannelStreamModes,
@@ -5,15 +6,18 @@ import {
   TupleToUnion,
 } from '@tunarr/types';
 import dayjs from 'dayjs';
-import ld, {
+import {
   compact,
   difference,
+  filter,
   get,
   isBoolean,
   isUndefined,
   keys,
   map,
   reduce,
+  uniq,
+  uniqBy,
   values,
 } from 'lodash-es';
 import fs from 'node:fs/promises';
@@ -93,39 +97,35 @@ export class LegacyChannelMigrator {
       (c) => c.uuid,
     );
 
-    const lineupItems: LineupItem[] = ld
-      .chain(rawPrograms)
-      .map((program) => {
-        if (
-          program.type &&
-          ['movie', 'episode', 'track'].includes(program.type)
-        ) {
-          const dbProgram = dbProgramById[uniqueProgramId(program)];
-          if (!isUndefined(dbProgram)) {
-            // Content type
-            return {
-              type: 'content',
-              id: dbProgram.uuid,
-              durationMs: program.duration,
-            } as ContentItem;
-          }
-        } else if (program.type === 'redirect') {
+    const lineupItems: LineupItem[] = seq.collect(rawPrograms, (program) => {
+      if (
+        program.type &&
+        ['movie', 'episode', 'track'].includes(program.type)
+      ) {
+        const dbProgram = dbProgramById[uniqueProgramId(program)];
+        if (!isUndefined(dbProgram)) {
+          // Content type
           return {
-            type: 'redirect',
-            channel: channelIdsByNumber[program.channel],
+            type: 'content',
+            id: dbProgram.uuid,
             durationMs: program.duration,
-          } as RedirectItem;
-        } else if (program.isOffline) {
-          return {
-            type: 'offline',
-            durationMs: program.duration,
-          } as OfflineItem;
+          } as ContentItem;
         }
+      } else if (program.type === 'redirect') {
+        return {
+          type: 'redirect',
+          channel: channelIdsByNumber[program.channel],
+          durationMs: program.duration,
+        } as RedirectItem;
+      } else if (program.isOffline) {
+        return {
+          type: 'offline',
+          durationMs: program.duration,
+        } as OfflineItem;
+      }
 
-        return;
-      })
-      .compact()
-      .value();
+      return;
+    });
 
     return {
       lastUpdated: dayjs().valueOf(),
@@ -160,23 +160,18 @@ export class LegacyChannelMigrator {
 
     // We don't filter out uniques yet because we will use this
     // array to create the 'raw' lineup, which can contain dupes
-    const programs = ld
-      .chain((parsed['programs'] as JSONArray) ?? [])
-      .map(convertRawProgram)
-      .filter(
-        (p) =>
-          isNonEmptyString(p.serverKey) &&
-          isNonEmptyString(p.ratingKey) &&
-          isNonEmptyString(p.key),
-      )
-      .value();
+    const programs = filter(
+      map((parsed['programs'] as JSONArray) ?? [], convertRawProgram),
+      (p) =>
+        isNonEmptyString(p.serverKey) &&
+        isNonEmptyString(p.ratingKey) &&
+        isNonEmptyString(p.key),
+    );
 
-    const programEntities = ld
-      .chain(programs)
-      .uniqBy(uniqueProgramId)
-      .map(createProgramEntity)
-      .compact()
-      .value();
+    const programEntities = seq.collect(
+      uniqBy(programs, uniqueProgramId),
+      createProgramEntity,
+    );
 
     this.logger.debug(
       'Upserting %d programs from legacy DB',
@@ -206,12 +201,7 @@ export class LegacyChannelMigrator {
       .repo(CustomShowEntity)
       .findAll({ populate: ['uuid'] });
 
-    const customShowRefs = ld
-      .chain(programs)
-      .flatMap((p) => p.customShowId)
-      .compact()
-      .uniq()
-      .value();
+    const customShowRefs = uniq(seq.collect(programs, (p) => p.customShowId));
 
     const missingIds = difference(
       customShowRefs,

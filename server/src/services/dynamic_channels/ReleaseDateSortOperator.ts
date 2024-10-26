@@ -1,9 +1,9 @@
 import { ReleaseDateSortOrderOperation } from '@tunarr/types/api';
 import { filter, isNull, sortBy } from 'lodash-es';
+import { isContentItem } from '../../dao/derived_types/Lineup.ts';
 import { ChannelAndLineup } from '../../types/internal.js';
-import { LineupCreatorContext } from './LineupCreatorContext';
-import { SchedulingOperator } from './SchedulingOperator';
-import { isContentItem } from '../../dao/derived_types/Lineup';
+import { LineupCreatorContext } from './LineupCreatorContext.ts';
+import { SchedulingOperator } from './SchedulingOperator.ts';
 
 export class ReleaseDateSortOperator extends SchedulingOperator<ReleaseDateSortOrderOperation> {
   public async apply({
