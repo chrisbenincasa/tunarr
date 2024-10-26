@@ -249,7 +249,7 @@ export const plexMediaToContentProgram = (
     id: media.id ?? uniqueId,
     persisted: !isNil(media.id),
     originalProgram: { sourceType: 'plex', program: media },
-    duration: media.duration,
+    duration: media.duration ?? 0,
     externalSourceName: media.serverName,
     externalSourceType: 'plex',
     externalKey: media.ratingKey,
@@ -352,9 +352,9 @@ export const addMediaToCurrentChannel = (programs: AddedMedia[]) =>
       const addedDuration = sumBy(
         programs,
         forAddedMediaType({
-          plex: ({ media }) => media.duration,
+          plex: ({ media }) => media.duration ?? 0,
           jellyfin: ({ media }) => (media.RunTimeTicks ?? 0) / 10_000,
-          'custom-show': ({ program }) => program.duration,
+          'custom-show': ({ program }) => program.duration ?? 0,
         }),
       );
 

@@ -280,17 +280,26 @@ export class ProgramDB {
     const [, nonPersisted] = partition(programs, (p) => p.persisted);
     const minter = ProgramMinterFactory.create(em);
 
-    const contentPrograms = ld
+    const [contentPrograms, invalidPrograms] = ld
       .chain(nonPersisted)
       .filter(isContentProgram)
       .uniqBy((p) => p.uniqueId)
-      .filter(
+      .partition(
         (p): p is ValidatedContentProgram =>
           !isNil(p.externalSourceType) &&
           !isNil(p.externalSourceName) &&
-          !isNil(p.originalProgram),
+          !isNil(p.originalProgram) &&
+          p.duration > 0,
       )
       .value();
+
+    if (!isEmpty(invalidPrograms)) {
+      this.logger.warn(
+        'Found %d invalid programs when saving:\n%O',
+        invalidPrograms.length,
+        invalidPrograms,
+      );
+    }
 
     // This code dedupes incoming programs using their external (IMDB, TMDB, etc) IDs.
     // Eventually, it could be used to save source-agnostic programs, but it's unclear

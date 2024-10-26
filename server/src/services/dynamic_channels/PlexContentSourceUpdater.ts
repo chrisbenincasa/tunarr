@@ -101,7 +101,7 @@ const plexMediaToContentProgram = (
     id: media.id ?? uniqueId,
     persisted: !isNil(media.id),
     originalProgram: { sourceType: 'plex', program: media },
-    duration: media.duration,
+    duration: media.duration ?? 0,
     externalSourceName: serverName,
     externalSourceType: 'plex',
     externalKey: media.ratingKey,

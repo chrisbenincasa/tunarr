@@ -29,7 +29,6 @@ export const enumerateJellyfinItem = (
       item: JellyfinItem,
     ): Promise<EnrichedJellyfinItem[]> {
       if (JellyfinTerminalTypes.has(item.Type)) {
-        console.log('adding item ', item.Id);
         // Only reliable way to filter out programs that were deleted
         // from disk but not updated in JF
         if (item.RunTimeTicks && item.RunTimeTicks > 0) {

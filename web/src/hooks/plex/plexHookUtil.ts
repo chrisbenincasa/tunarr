@@ -1,3 +1,5 @@
+import { createExternalId } from '@tunarr/shared';
+import { tag } from '@tunarr/types';
 import {
   PlexEpisodeView,
   PlexLibraryListing,
@@ -9,13 +11,11 @@ import {
   isPlexDirectory,
   isTerminalItem,
 } from '@tunarr/types/plex';
+import { MediaSourceId } from '@tunarr/types/schemas';
 import { flattenDeep, map } from 'lodash-es';
 import { ApiClient } from '../../external/api.ts';
-import { sequentialPromises } from '../../helpers/util.ts';
-import { createExternalId } from '@tunarr/shared';
 import { fetchPlexPath } from '../../helpers/plexUtil.ts';
-import { MediaSourceId } from '@tunarr/types/schemas';
-import { tag } from '@tunarr/types';
+import { sequentialPromises } from '../../helpers/util.ts';
 
 export const emptyMediaSourceId = tag<MediaSourceId>('');
 
@@ -59,7 +59,7 @@ export const enumeratePlexItem = (
     item: PlexMedia | PlexLibrarySection,
   ): Promise<EnrichedPlexMedia[]> {
     if (isTerminalItem(item)) {
-      if (item.duration <= 0) {
+      if ((item.duration ?? 0) <= 0) {
         return [];
       }
       return [{ ...item, serverName, serverId }];
