@@ -75,9 +75,9 @@ export function PlexListItem<T extends PlexMedia>(props: PlexListItemProps<T>) {
 
   const getSecondaryText = () => {
     if (isPlexShow(item)) {
-      return `${prettyItemDuration(item.duration)} each`;
+      return `${prettyItemDuration(item.duration ?? 0)} each`;
     } else if (isTerminalItem(item)) {
-      return prettyItemDuration(item.duration);
+      return prettyItemDuration(item.duration ?? 0);
     } else if (isPlexCollection(item)) {
       const childCount = parseInt(item.childCount);
       const count = isNaN(childCount) ? 0 : childCount;

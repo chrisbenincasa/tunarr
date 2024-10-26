@@ -62,7 +62,7 @@ const childItemType = forPlexMedia({
 });
 
 const subtitle = forPlexMedia({
-  movie: (item) => <span>{prettyItemDuration(item.duration)}</span>,
+  movie: (item) => <span>{prettyItemDuration(item.duration ?? 0)}</span>,
   default: (item) => {
     const childCount = extractChildCount(item);
     if (isNil(childCount)) {
