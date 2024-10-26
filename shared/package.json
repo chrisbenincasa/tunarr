@@ -40,7 +40,7 @@
     "tslib": "^2.6.2"
   },
   "devDependencies": {
-    "@types/lodash-es": "^4.17.10",
+    "@types/lodash-es": "4.17.9",
     "@types/node": "18.18.0",
     "rimraf": "^5.0.5",
     "ts-essentials": "^9.4.1",

@@ -1,13 +1,25 @@
+import { seq } from '@tunarr/shared/util';
 import { FfmpegSettings } from '@tunarr/types';
 import { exec } from 'child_process';
-import _, { isEmpty, isError, nth, some, trim } from 'lodash-es';
+import {
+  drop,
+  filter,
+  isEmpty,
+  isError,
+  map,
+  nth,
+  reject,
+  some,
+  split,
+  trim,
+} from 'lodash-es';
 import NodeCache from 'node-cache';
 import PQueue from 'p-queue';
 import { Nullable } from '../types/util.js';
 import { cacheGetOrSet } from '../util/cache.js';
 import { fileExists } from '../util/fsUtil.js';
 import { attempt, isNonEmptyString, parseIntOrNull } from '../util/index.js';
-import { LoggerFactory } from '../util/logging/LoggerFactory';
+import { LoggerFactory } from '../util/logging/LoggerFactory.ts';
 import { sanitizeForExec } from '../util/strings.js';
 import { NvidiaHardwareCapabilities } from './NvidiaHardwareCapabilities.js';
 
@@ -141,14 +153,14 @@ export class FFMPEGInfo {
         () => this.getFfmpegStdout(['-hide_banner', '-encoders']),
       );
 
-      return _.chain(out)
-        .split('\n')
-        .filter((line) => /^\s*A/.test(line))
-        .map((line) => line.trim().match(CoderExtractionPattern))
-        .compact()
-        .reject((arr) => arr.length < 3)
-        .map((arr) => ({ ffmpegName: arr[1], name: arr[2] }))
-        .value();
+      const matchingLines = seq.collect(
+        filter(split(out, '\n'), (line) => /^\s*A/.test(line)),
+        (line) => line.trim().match(CoderExtractionPattern),
+      );
+      return map(
+        reject(matchingLines, (arr) => arr.length < 3),
+        (arr) => ({ ffmpegName: arr[1], name: arr[2] }),
+      );
     });
   }
 
@@ -160,14 +172,15 @@ export class FFMPEGInfo {
         () => this.getFfmpegStdout(['-hide_banner', '-encoders']),
       );
 
-      return _.chain(out)
-        .split('\n')
-        .filter((line) => /^\s*V/.test(line))
-        .map((line) => line.trim().match(CoderExtractionPattern))
-        .compact()
-        .reject((arr) => arr.length < 3)
-        .map((arr) => ({ ffmpegName: arr[1], name: arr[2] }))
-        .value();
+      const matchingLines = seq.collect(
+        filter(split(out, '\n'), (line) => /^\s*V/.test(line)),
+        (line) => line.trim().match(CoderExtractionPattern),
+      );
+
+      return map(
+        reject(matchingLines, (arr) => arr.length < 3),
+        (arr) => ({ ffmpegName: arr[1], name: arr[2] }),
+      );
     });
   }
 
@@ -187,8 +200,10 @@ export class FFMPEGInfo {
         this.cacheKey('HWACCELS'),
         () => this.getFfmpegStdout(['-hide_banner', '-hwaccels']),
       );
-      return _.chain(out).split('\n').drop(1).map(trim).reject(isEmpty).value();
+
+      return reject(map(drop(split(out, '\n'), 1), trim), (s) => isEmpty(s));
     });
+
     return isError(res) ? [] : res;
   }
 
@@ -200,19 +215,13 @@ export class FFMPEGInfo {
         () => this.getFfmpegStdout(['-hide_banner', '-help', 'long']),
       );
 
-      return _.chain(out)
-        .split('\n')
-        .drop(1)
-        .map(trim)
-        .reject(isEmpty)
-        .map((line) => {
-          return line.match(OptionsExtractionPattern);
-        })
-        .compact()
-        .map((match) => {
-          return match[1];
-        })
-        .value();
+      const nonEmptyLines = reject(map(drop(split(out, '\n'), 1), trim), (s) =>
+        isEmpty(s),
+      );
+
+      return seq.collect(nonEmptyLines, (line) => {
+        return line.match(OptionsExtractionPattern)?.[1];
+      });
     });
   }
 
@@ -241,12 +250,9 @@ export class FFMPEGInfo {
           ),
       );
 
-      const lines = _.chain(out)
-        .split('\n')
-        .drop(1)
-        .map(trim)
-        .reject(isEmpty)
-        .value();
+      const lines = reject(map(drop(split(out, '\n'), 1), trim), (s) =>
+        isEmpty(s),
+      );
 
       for (const line of lines) {
         const archMatch = line.match(NvidiaGpuArchPattern);

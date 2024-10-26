@@ -2,7 +2,7 @@ import {
   InsertMediaSourceRequest,
   UpdateMediaSourceRequest,
 } from '@tunarr/types/api';
-import ld, { isNil, isUndefined, keys, map, mapValues } from 'lodash-es';
+import { isNil, isUndefined, keys, map, mapValues, sum } from 'lodash-es';
 import { groupByUniqProp, isNonEmptyString } from '../util/index.js';
 import { ChannelDB } from './channelDb.js';
 import {
@@ -273,10 +273,7 @@ export class MediaSourceDB {
 
     const isUpdate = newServer && newServer.uuid !== serverName;
     if (isUpdate) {
-      ld.chain(allPrograms)
-        .map((program) => this.fixupProgram(program, newServer))
-        .sum()
-        .value();
+      sum(map(allPrograms, (program) => this.fixupProgram(program, newServer)));
       await em.flush();
     } else {
       allPrograms.forEach((program) => {

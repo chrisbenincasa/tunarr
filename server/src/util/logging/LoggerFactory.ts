@@ -1,20 +1,21 @@
 import { forEach, isEmpty, isUndefined, nth, toLower, trim } from 'lodash-es';
 import path, { join } from 'node:path';
-import pino, {
+import {
   Bindings,
   MultiStreamRes,
   StreamEntry,
   levels,
+  pino,
   symbols,
   type LevelWithSilent,
   type Logger as PinoLogger,
 } from 'pino';
 import pretty, { PrettyOptions } from 'pino-pretty';
 import type ThreadStream from 'thread-stream';
-import { isNonEmptyString, isProduction } from '..';
-import { SettingsDB, getSettings } from '../../dao/settings';
-import { Maybe, TupleToUnion } from '../../types/util';
-import { getDefaultLogLevel } from '../defaults';
+import { SettingsDB, getSettings } from '../../dao/settings.ts';
+import { Maybe, TupleToUnion } from '../../types/util.ts';
+import { getDefaultLogLevel } from '../defaults.ts';
+import { isNonEmptyString, isProduction } from '../index.ts';
 
 export const LogConfigEnvVars = {
   level: 'LOG_LEVEL',

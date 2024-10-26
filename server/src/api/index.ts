@@ -1,6 +1,11 @@
 import { VersionApiResponseSchema } from '@tunarr/types/api';
-import { createWriteStream, promises as fsPromises } from 'fs';
-import { isError, isNil } from 'lodash-es';
+import { fileTypeFromStream } from 'file-type';
+import {
+  createReadStream,
+  createWriteStream,
+  promises as fsPromises,
+} from 'fs';
+import { isEmpty, isError, isNil } from 'lodash-es';
 import path from 'path';
 import { pipeline } from 'stream/promises';
 import { z } from 'zod';
@@ -122,13 +127,20 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
 
   fastify.post('/upload/image', async (req, res) => {
     try {
-      const data = await req.file();
+      const allSavedFiles = await req.saveRequestFiles();
 
-      if (isNil(data)) {
+      if (isEmpty(allSavedFiles)) {
         return res.status(400).send();
       }
 
-      if (!data.mimetype.startsWith('image/')) {
+      // We disregard any other files that were part of the upload
+      const data = allSavedFiles[0];
+
+      const fileType = await fileTypeFromStream(
+        createReadStream(data.filepath),
+      );
+
+      if (!fileType?.mime.startsWith('image/')) {
         return res.status(400).send();
       }
 

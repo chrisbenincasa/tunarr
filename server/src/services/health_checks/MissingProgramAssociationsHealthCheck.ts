@@ -1,12 +1,12 @@
 import { find } from 'lodash-es';
 import { P, match } from 'ts-pattern';
-import { directDbAccess } from '../../dao/direct/directDbAccess';
+import { directDbAccess } from '../../dao/direct/directDbAccess.ts';
 import {
   HealthCheck,
   HealthCheckResult,
   HealthyHealthCheckResult,
   healthCheckResult,
-} from './HealthCheck';
+} from './HealthCheck.ts';
 
 export class MissingProgramAssociationsHealthCheck implements HealthCheck {
   readonly id: string = this.constructor.name;

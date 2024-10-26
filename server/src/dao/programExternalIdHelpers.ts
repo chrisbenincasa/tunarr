@@ -9,12 +9,12 @@ import {
   partition,
 } from 'lodash-es';
 import { v4 } from 'uuid';
-import { groupByUniq, mapAsyncSeq } from '../util';
-import { LoggerFactory } from '../util/logging/LoggerFactory';
-import { getEm } from './dataSource';
-import { directDbAccess } from './direct/directDbAccess';
-import { NewProgramExternalId as NewRawProgramExternalId } from './direct/schema/ProgramExternalId';
-import { ProgramExternalId } from './entities/ProgramExternalId';
+import { groupByUniq, mapAsyncSeq } from '../util/index.ts';
+import { LoggerFactory } from '../util/logging/LoggerFactory.ts';
+import { getEm } from './dataSource.ts';
+import { directDbAccess } from './direct/directDbAccess.ts';
+import { NewProgramExternalId as NewRawProgramExternalId } from './direct/schema/ProgramExternalId.ts';
+import { ProgramExternalId } from './entities/ProgramExternalId.ts';
 
 // Leaving this around for now to document using the indexes for insert
 export const upsertProgramExternalIds_deprecated = async (

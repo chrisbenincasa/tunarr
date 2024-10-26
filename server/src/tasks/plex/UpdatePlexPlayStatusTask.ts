@@ -1,12 +1,12 @@
 import dayjs from 'dayjs';
 import { RecurrenceRule } from 'node-schedule';
 import { v4 } from 'uuid';
-import { MediaSource } from '../../dao/direct/schema/MediaSource';
-import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory';
-import { GlobalScheduler } from '../../services/scheduler';
-import { run } from '../../util';
-import { ScheduledTask } from '../ScheduledTask';
-import { Task } from '../Task';
+import type { MediaSource } from '../../dao/direct/schema/MediaSource.d.ts';
+import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.ts';
+import { GlobalScheduler } from '../../services/scheduler.ts';
+import { run } from '../../util/index.ts';
+import { ScheduledTask } from '../ScheduledTask.ts';
+import { Task } from '../Task.ts';
 
 type UpdatePlexPlayStatusScheduleRequest = {
   ratingKey: string;

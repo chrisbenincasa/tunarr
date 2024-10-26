@@ -61,7 +61,7 @@ export default function SelectedProgrammingList({
   }, [isOpen]);
 
   const customShowById = mapValues(
-    mapValues(groupBy(customShows, 'id'), first),
+    mapValues(groupBy(customShows, 'id'), (x) => first(x)),
     unwrapNil,
   );
 

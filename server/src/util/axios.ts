@@ -1,6 +1,6 @@
 import { AxiosInstance, InternalAxiosRequestConfig, isAxiosError } from 'axios';
-import { Logger } from './logging/LoggerFactory';
 import querystring from 'node:querystring';
+import { Logger } from './logging/LoggerFactory.ts';
 
 type AxiosConfigWithMetadata = InternalAxiosRequestConfig & {
   metadata: {

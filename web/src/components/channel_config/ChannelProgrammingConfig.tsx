@@ -25,7 +25,7 @@ import { DateTimePicker } from '@mui/x-date-pickers';
 import { Link as RouterLink } from '@tanstack/react-router';
 import { ZodiosError } from '@zodios/core';
 import dayjs, { Dayjs } from 'dayjs';
-import { chain, findIndex, first, isUndefined, map, reject } from 'lodash-es';
+import { chain, findIndex, head, isUndefined, map, reject } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import { useState } from 'react';
 import { ZodError } from 'zod';
@@ -111,7 +111,7 @@ export function ChannelProgrammingConfig() {
     const uniquePrograms = chain(newLineup)
       .groupBy((lineupItem) => channelProgramUniqueId(lineupItem))
       .values()
-      .map(first)
+      .map((l) => head(l))
       .compact()
       .value();
 

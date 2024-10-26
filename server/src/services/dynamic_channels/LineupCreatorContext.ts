@@ -1,6 +1,6 @@
 import { isUndefined } from 'lodash-es';
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { Program } from '../../dao/direct/schema/Program';
+import { Program } from '../../dao/direct/schema/Program.ts';
 
 export interface LineupBuilderContext {
   channelId: string;

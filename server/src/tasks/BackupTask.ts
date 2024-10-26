@@ -1,10 +1,10 @@
 import { Tag } from '@tunarr/types';
-import { Task, TaskId } from './Task';
 import { BackupConfiguration } from '@tunarr/types/schemas';
-import { DeepReadonly } from 'ts-essentials';
 import { partition } from 'lodash-es';
-import { ArchiveDatabaseBackup } from '../dao/backup/ArchiveDatabaseBackup';
-import { getSettings } from '../dao/settings';
+import { DeepReadonly } from 'ts-essentials';
+import { ArchiveDatabaseBackup } from '../dao/backup/ArchiveDatabaseBackup.ts';
+import { getSettings } from '../dao/settings.ts';
+import { Task, TaskId } from './Task.ts';
 
 export class BackupTask extends Task {
   public ID: string | Tag<TaskId, unknown> = BackupTask.name;

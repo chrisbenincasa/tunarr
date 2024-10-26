@@ -1,5 +1,17 @@
+import { seq } from '@tunarr/shared/util';
 import fs from 'fs/promises';
-import ld, { isNil, maxBy, partition, reduce } from 'lodash-es';
+import {
+  concat,
+  filter,
+  flatMap,
+  isNil,
+  map,
+  maxBy,
+  partition,
+  reduce,
+  sortBy,
+  uniqBy,
+} from 'lodash-es';
 import path from 'path';
 import {
   groupByUniqProp,
@@ -73,23 +85,18 @@ export class LegacyLibraryMigrator {
 
     const em = getEm();
 
-    const uniquePrograms = ld
-      .chain(newCustomShows)
-      .flatMap((cs) => cs.content)
-      .filter(
+    const uniquePrograms = uniqBy(
+      filter(
+        flatMap(newCustomShows, (cs) => cs.content),
         (p) =>
           isNonEmptyString(p.serverKey) &&
           isNonEmptyString(p.ratingKey) &&
           isNonEmptyString(p.key),
-      )
-      .uniqBy(uniqueProgramId)
-      .value();
+      ),
+      uniqueProgramId,
+    );
 
-    const programEntities = ld
-      .chain(uniquePrograms)
-      .map(createProgramEntity)
-      .compact()
-      .value();
+    const programEntities = seq.collect(uniquePrograms, createProgramEntity);
 
     this.logger.debug(
       'Upserting %d programs from legacy DB',
@@ -158,30 +165,29 @@ export class LegacyLibraryMigrator {
           ...c,
           customOrder: maxOrder + idx + 1,
         }));
-        const csContent = ld
-          .chain(hasOrder)
-          .sortBy((c) => c.customOrder)
-          .concat(newOrder)
-          .map((c) =>
+        const csContent = map(
+          concat(
+            sortBy(hasOrder, (c) => c.customOrder),
+            newOrder,
+          ),
+          (c) =>
             em.create(CustomShowContent, {
               index: c.customOrder!,
               customShow: entity.uuid,
               content: persistedPrograms[uniqueProgramId(c)],
             }),
-          )
-          .value();
+        );
 
         await em.upsertMany(CustomShowContent, csContent, { batchSize: 25 });
       } else {
         // Handle filler shows
         // These are selected randomly by the scheduler so we'll just zip them with
         // their index here.
-        const programs = ld
-          .chain(content)
-          .map((c) => persistedPrograms[uniqueProgramId(c)])
-          .compact()
-          .value();
-        const entities = ld.map(programs, (program, index) =>
+        const programs = seq.collect(
+          content,
+          (c) => persistedPrograms[uniqueProgramId(c)],
+        );
+        const entities = map(programs, (program, index) =>
           em.create(FillerListContent, {
             index,
             content: em.getReference(Program, program.uuid),

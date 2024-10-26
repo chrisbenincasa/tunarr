@@ -1,13 +1,13 @@
 import { SupportedHardwareAccels } from '@tunarr/types/schemas';
 import { intersection, isEmpty, reject } from 'lodash-es';
-import { SettingsDB, getSettings } from '../../dao/settings';
-import { FFMPEGInfo } from '../../ffmpeg/ffmpegInfo';
+import { SettingsDB, getSettings } from '../../dao/settings.ts';
+import { FFMPEGInfo } from '../../ffmpeg/ffmpegInfo.ts';
 import {
   HealthCheck,
   HealthCheckResult,
   HealthyHealthCheckResult,
   healthCheckResult,
-} from './HealthCheck';
+} from './HealthCheck.ts';
 
 export class HardwareAccelerationHealthCheck implements HealthCheck {
   readonly id: string = 'HardwareAcceleration';

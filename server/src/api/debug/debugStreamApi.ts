@@ -1,17 +1,17 @@
 import { jsonObjectFrom } from 'kysely/helpers/sqlite';
 import { PassThrough } from 'stream';
 import { z } from 'zod';
-import { createOfflineStreamLineupItem } from '../../dao/derived_types/StreamLineup';
-import { directDbAccess } from '../../dao/direct/directDbAccess';
-import { AllChannelTableKeys } from '../../dao/direct/schema/Channel';
-import { ProgramType } from '../../dao/entities/Program';
-import { MpegTsOutputFormat } from '../../ffmpeg/OutputFormat';
-import { OfflineProgramStream } from '../../stream/OfflinePlayer';
-import { PlayerContext } from '../../stream/PlayerStreamContext';
-import { ProgramStream } from '../../stream/ProgramStream';
-import { JellyfinProgramStream } from '../../stream/jellyfin/JellyfinProgramStream';
-import { PlexProgramStream } from '../../stream/plex/PlexProgramStream';
-import { RouterPluginAsyncCallback } from '../../types/serverType';
+import { createOfflineStreamLineupItem } from '../../dao/derived_types/StreamLineup.ts';
+import { directDbAccess } from '../../dao/direct/directDbAccess.ts';
+import { AllChannelTableKeys } from '../../dao/direct/schema/Channel.ts';
+import { ProgramType } from '../../dao/entities/Program.ts';
+import { MpegTsOutputFormat } from '../../ffmpeg/OutputFormat.ts';
+import { OfflineProgramStream } from '../../stream/OfflinePlayer.ts';
+import { PlayerContext } from '../../stream/PlayerStreamContext.ts';
+import { ProgramStream } from '../../stream/ProgramStream.ts';
+import { JellyfinProgramStream } from '../../stream/jellyfin/JellyfinProgramStream.ts';
+import { PlexProgramStream } from '../../stream/plex/PlexProgramStream.ts';
+import { RouterPluginAsyncCallback } from '../../types/serverType.ts';
 
 export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
   fastify,

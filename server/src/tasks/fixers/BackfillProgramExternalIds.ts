@@ -8,15 +8,15 @@ import {
   keys,
   trimEnd,
 } from 'lodash-es';
-import { ProgramExternalIdType } from '../../dao/custom_types/ProgramExternalIdType';
+import { ProgramExternalIdType } from '../../dao/custom_types/ProgramExternalIdType.ts';
 import { ProgramSourceType } from '../../dao/custom_types/ProgramSourceType.js';
-import { getEm } from '../../dao/dataSource';
+import { getEm } from '../../dao/dataSource.ts';
 import { MediaSource } from '../../dao/entities/MediaSource.js';
-import { Program } from '../../dao/entities/Program';
+import { Program } from '../../dao/entities/Program.ts';
 import { ProgramExternalId } from '../../dao/entities/ProgramExternalId.js';
-import { upsertProgramExternalIds_deprecated } from '../../dao/programExternalIdHelpers';
+import { upsertProgramExternalIds_deprecated } from '../../dao/programExternalIdHelpers.ts';
 import { isQueryError } from '../../external/BaseApiClient.js';
-import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory';
+import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.ts';
 import { PlexApiClient } from '../../external/plex/PlexApiClient.js';
 import { Maybe } from '../../types/util.js';
 import { asyncPool } from '../../util/asyncPool.js';
@@ -27,7 +27,7 @@ import {
   wait,
 } from '../../util/index.js';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
-import Fixer from './fixer';
+import Fixer from './fixer.ts';
 
 export class BackfillProgramExternalIds extends Fixer {
   #logger = LoggerFactory.child({

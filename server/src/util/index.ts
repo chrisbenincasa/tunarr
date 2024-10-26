@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
 import duration, { Duration } from 'dayjs/plugin/duration.js';
-import _, {
+import {
   chunk,
   compact,
   concat,
@@ -15,9 +15,11 @@ import _, {
   isPlainObject,
   isString,
   isUndefined,
+  keys,
   map,
   once,
   range,
+  reduce,
   reject,
   zipWith,
 } from 'lodash-es';
@@ -25,8 +27,8 @@ import fs from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { format } from 'node:util';
 import { isPromise } from 'node:util/types';
-import { Func } from '../types/func';
-import { Try } from '../types/util';
+import { Func } from '../types/func.ts';
+import { Try } from '../types/util.ts';
 
 dayjs.extend(duration);
 
@@ -306,9 +308,9 @@ export function deepCopy<T>(value: T): T {
     return value;
   }
 
-  return _.chain(value)
-    .keys()
-    .reduce((prev, key) => {
+  return reduce(
+    keys(value),
+    (prev, key) => {
       return {
         ...prev,
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -317,8 +319,9 @@ export function deepCopy<T>(value: T): T {
             deepCopyArray(value[key] as any[])
           : deepCopy(value[key]),
       };
-    }, {} as T)
-    .value() as T;
+    },
+    {} as T,
+  );
 }
 
 export function isNodeError(error: unknown): error is NodeJS.ErrnoException {

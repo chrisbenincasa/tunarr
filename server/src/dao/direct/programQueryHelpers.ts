@@ -7,12 +7,12 @@ import {
 import { jsonArrayFrom, jsonObjectFrom } from 'kysely/helpers/sqlite';
 import { isBoolean, isEmpty, keys, merge, reduce } from 'lodash-es';
 import { DeepPartial, DeepRequired, StrictExclude } from 'ts-essentials';
-import { ProgramType } from '../entities/Program';
+import { ProgramType } from '../entities/Program.ts';
 import { directDbAccess } from './directDbAccess.js';
-import { FillerShowTable as RawFillerShow } from './schema/FillerShow';
-import { ProgramTable as RawProgram } from './schema/Program';
-import { ProgramGroupingTable as RawProgramGrouping } from './schema/ProgramGrouping';
-import { DB } from './types.gen';
+import type { FillerShowTable as RawFillerShow } from './schema/FillerShow.d.ts';
+import { ProgramTable as RawProgram } from './schema/Program.ts';
+import type { ProgramGroupingTable as RawProgramGrouping } from './schema/ProgramGrouping.d.ts';
+import type { DB } from './schema/db.ts';
 
 type ProgramGroupingFields<Alias extends string = 'programGrouping'> =
   readonly `${Alias}.${keyof RawProgramGrouping}`[];

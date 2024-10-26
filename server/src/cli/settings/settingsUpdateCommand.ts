@@ -1,6 +1,6 @@
 import { merge } from 'lodash-es';
 import { CommandModule } from 'yargs';
-import { SettingsSchema, getSettings } from '../../dao/settings';
+import { SettingsSchema, getSettings } from '../../dao/settings.ts';
 
 type SettingsUpdateCommandArgs = {
   pretty: boolean;

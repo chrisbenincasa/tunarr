@@ -8,11 +8,11 @@ import { Mutex } from 'async-mutex';
 import { writeFile } from 'fs/promises';
 import { escape, flatMap, isNil, map, round } from 'lodash-es';
 import { match } from 'ts-pattern';
-import { Channel } from './dao/direct/schema/Channel';
-import { SettingsDB, getSettings } from './dao/settings';
-import { isNonEmptyString } from './util';
+import { Channel } from './dao/direct/schema/Channel.ts';
+import { SettingsDB, getSettings } from './dao/settings.ts';
 import { getChannelId } from './util/channels.js';
-import { LoggerFactory } from './util/logging/LoggerFactory';
+import { isNonEmptyString } from './util/index.ts';
+import { LoggerFactory } from './util/logging/LoggerFactory.ts';
 
 const lock = new Mutex();
 

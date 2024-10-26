@@ -1,4 +1,4 @@
-import { SettingsDB } from '../settings';
+import { SettingsDB } from '../settings.ts';
 
 export type SuccessfulBackupResult<T> = {
   type: 'success';

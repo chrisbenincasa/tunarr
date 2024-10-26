@@ -12,21 +12,21 @@ import {
   PlexTvShow,
 } from '@tunarr/types/plex';
 import { first, groupBy, isNil, isNull, isUndefined, keys } from 'lodash-es';
-import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory';
-import { PlexApiClient } from '../../external/plex/PlexApiClient';
-import { isNonEmptyString, wait } from '../../util';
-import { LoggerFactory } from '../../util/logging/LoggerFactory';
-import { ChannelDB } from '../channelDb';
-import { ProgramExternalIdType } from '../custom_types/ProgramExternalIdType';
-import { ProgramSourceType } from '../custom_types/ProgramSourceType';
-import { getEm } from '../dataSource';
-import { Program, ProgramType } from '../entities/Program';
+import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.ts';
+import { PlexApiClient } from '../../external/plex/PlexApiClient.ts';
+import { isNonEmptyString, wait } from '../../util/index.ts';
+import { LoggerFactory } from '../../util/logging/LoggerFactory.ts';
+import { ChannelDB } from '../channelDb.ts';
+import { ProgramExternalIdType } from '../custom_types/ProgramExternalIdType.ts';
+import { ProgramSourceType } from '../custom_types/ProgramSourceType.ts';
+import { getEm } from '../dataSource.ts';
+import { Program, ProgramType } from '../entities/Program.ts';
 import {
   ProgramGrouping,
   ProgramGroupingType,
-} from '../entities/ProgramGrouping';
-import { ProgramGroupingExternalId } from '../entities/ProgramGroupingExternalId';
-import { MediaSourceDB } from '../mediaSourceDB';
+} from '../entities/ProgramGrouping.ts';
+import { ProgramGroupingExternalId } from '../entities/ProgramGroupingExternalId.ts';
+import { MediaSourceDB } from '../mediaSourceDB.ts';
 
 export class LegacyMetadataBackfiller {
   private logger = LoggerFactory.child({

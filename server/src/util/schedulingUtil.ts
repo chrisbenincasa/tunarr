@@ -1,17 +1,16 @@
 import { EverySchedule } from '@tunarr/types/schemas';
-import {
+import parser, {
   CronFields,
   DayOfTheMonthRange,
   HourRange,
   SixtyRange,
 } from 'cron-parser';
-import dayjs from 'dayjs';
-import duration from 'dayjs/plugin/duration';
-import { range, reduce } from 'lodash-es';
-import { run } from '.';
 import CronExpression from 'cron-parser/lib/expression';
-import parser from 'cron-parser';
-import { TupleToUnion } from '../types/util';
+import dayjs from 'dayjs';
+import duration from 'dayjs/plugin/duration.js';
+import { range, reduce } from 'lodash-es';
+import { TupleToUnion } from '../types/util.ts';
+import { run } from './index.ts';
 
 dayjs.extend(duration);
 

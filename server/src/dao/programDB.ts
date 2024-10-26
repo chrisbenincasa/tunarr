@@ -10,12 +10,13 @@ import { PlexEpisode, PlexMusicTrack } from '@tunarr/types/plex';
 import { ContentProgramOriginalProgram } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import { CaseWhenBuilder } from 'kysely';
-import ld, {
+import {
   chunk,
   concat,
   difference,
   filter,
   find,
+  flatMap,
   flatten,
   forEach,
   groupBy,
@@ -31,6 +32,7 @@ import ld, {
   round,
   union,
   uniq,
+  uniqBy,
 } from 'lodash-es';
 import { MarkRequired } from 'ts-essentials';
 import { P, match } from 'ts-pattern';
@@ -63,7 +65,7 @@ import {
   ProgramSourceType,
   programSourceTypeFromString,
 } from './custom_types/ProgramSourceType.js';
-import { getEm } from './dataSource';
+import { getEm } from './dataSource.ts';
 import { ProgramWithRelations } from './direct/derivedTypes.js';
 import { directDbAccess } from './direct/directDbAccess.js';
 import {
@@ -83,7 +85,7 @@ import { NewProgramExternalId as NewRawProgramExternalId } from './direct/schema
 import { NewProgramGrouping } from './direct/schema/ProgramGrouping.js';
 import { NewProgramGroupingExternalId } from './direct/schema/ProgramGroupingExternalId.js';
 import { DB } from './direct/schema/db.js';
-import { Program, ProgramType } from './entities/Program';
+import { Program, ProgramType } from './entities/Program.ts';
 import { ProgramExternalId } from './entities/ProgramExternalId.js';
 import { ProgramGroupingType } from './entities/ProgramGrouping.js';
 import { upsertRawProgramExternalIds } from './programExternalIdHelpers.js';
@@ -280,18 +282,14 @@ export class ProgramDB {
     const [, nonPersisted] = partition(programs, (p) => p.persisted);
     const minter = ProgramMinterFactory.create(em);
 
-    const [contentPrograms, invalidPrograms] = ld
-      .chain(nonPersisted)
-      .filter(isContentProgram)
-      .uniqBy((p) => p.uniqueId)
-      .partition(
-        (p): p is ValidatedContentProgram =>
-          !isNil(p.externalSourceType) &&
-          !isNil(p.externalSourceName) &&
-          !isNil(p.originalProgram) &&
-          p.duration > 0,
-      )
-      .value();
+    const [contentPrograms, invalidPrograms] = partition(
+      uniqBy(filter(nonPersisted, isContentProgram), (p) => p.uniqueId),
+      (p): p is ValidatedContentProgram =>
+        !isNil(p.externalSourceType) &&
+        !isNil(p.externalSourceName) &&
+        !isNil(p.originalProgram) &&
+        p.duration > 0,
+    );
 
     if (!isEmpty(invalidPrograms)) {
       this.logger.warn(
@@ -397,9 +395,9 @@ export class ProgramDB {
     // console.log('results!!!!', existingPrograms);
 
     // TODO: handle custom shows
-    const programsToPersist: MintedRawProgramInfo[] = ld
-      .chain(contentPrograms)
-      .map((p) => {
+    const programsToPersist: MintedRawProgramInfo[] = map(
+      contentPrograms,
+      (p) => {
         const program = minter.mintRaw(p.externalSourceName, p.originalProgram);
         const externalIds = minter.mintRawExternalIds(
           p.externalSourceName,
@@ -407,8 +405,8 @@ export class ProgramDB {
           p.originalProgram,
         );
         return { program, externalIds, apiProgram: p };
-      })
-      .value();
+      },
+    );
 
     const programInfoByUniqueId = groupByUniq(
       programsToPersist,
@@ -449,18 +447,15 @@ export class ProgramDB {
       }
     });
 
-    const programExternalIds = ld
-      .chain(upsertedPrograms)
-      .flatMap((program) => {
-        const eids =
-          programInfoByUniqueId[programExternalIdString(program)]
-            ?.externalIds ?? [];
-        forEach(eids, (eid) => {
-          eid.programUuid = program.uuid;
-        });
-        return eids;
-      })
-      .value();
+    const programExternalIds = flatMap(upsertedPrograms, (program) => {
+      const eids =
+        programInfoByUniqueId[programExternalIdString(program)]?.externalIds ??
+        [];
+      forEach(eids, (eid) => {
+        eid.programUuid = program.uuid;
+      });
+      return eids;
+    });
 
     await this.timer.timeAsync('programGroupings', () =>
       this.handleProgramGroupings(upsertedPrograms, programInfoByUniqueId),
@@ -536,11 +531,10 @@ export class ProgramDB {
     upsertedPrograms: RawProgram[],
     programInfos: Record<string, MintedRawProgramInfo>,
   ) {
-    const programsBySourceAndServer = ld
-      .chain(upsertedPrograms)
-      .groupBy('sourceType')
-      .mapValues((ps) => groupBy(ps, 'externalSourceId'))
-      .value();
+    const programsBySourceAndServer = mapValues(
+      groupBy(upsertedPrograms, 'sourceType'),
+      (ps) => groupBy(ps, 'externalSourceId'),
+    );
 
     for (const [sourceType, byServerName] of Object.entries(
       programsBySourceAndServer,

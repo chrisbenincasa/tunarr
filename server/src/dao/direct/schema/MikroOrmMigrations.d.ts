@@ -1,4 +1,4 @@
-import { Generated } from '../types.gen';
+import { Generated } from 'kysely';
 
 export interface MikroOrmMigrations {
   executedAt: Generated<number | null>;

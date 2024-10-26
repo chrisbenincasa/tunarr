@@ -1,12 +1,14 @@
 {
     "compilerOptions": {
         "target": "ESNext",
-        "module": "ESNext",
+        "module": "NodeNext",
+        "allowImportingTsExtensions": true,
         "lib": [
             "ESNext",
             "DOM" // We have to declare this so vitest doesn't explode
         ],
-        "moduleResolution": "Bundler",
+        "moduleResolution": "NodeNext",
+        "resolveJsonModule": true,
         "rootDir": ".",
         "outDir": "build",
         "allowSyntheticDefaultImports": true,
@@ -28,6 +30,7 @@
         ],
         "declaration": true,
         "experimentalDecorators": true,
+        "noEmit": true,
         "emitDecoratorMetadata": true,
         "esModuleInterop": true,
         "noErrorTruncation": true

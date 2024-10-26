@@ -3,9 +3,9 @@ import { SyncAdapter } from 'lowdb';
 import { TextFileSync } from 'lowdb/node';
 import { PathLike } from 'node:fs';
 import { z } from 'zod';
-import { Nullable } from '../types/util';
-import { isProduction } from '../util';
-import { LoggerFactory } from '../util/logging/LoggerFactory';
+import { Nullable } from '../types/util.ts';
+import { isProduction } from '../util/index.ts';
+import { LoggerFactory } from '../util/logging/LoggerFactory.ts';
 
 export class SyncSchemaBackedDbAdapter<T extends z.ZodTypeAny, Out = z.infer<T>>
   implements SyncAdapter<Out>

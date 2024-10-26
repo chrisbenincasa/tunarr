@@ -1,6 +1,6 @@
 import { Insertable, Selectable, Updateable } from 'kysely';
-import { ProgramGroupingType } from '../../entities/ProgramGrouping';
-import { WithCreatedAt, WithUpdatedAt, WithUuid } from './base';
+import { ProgramGroupingType } from '../../entities/ProgramGrouping.ts';
+import { WithCreatedAt, WithUpdatedAt, WithUuid } from './base.ts';
 
 export interface ProgramGroupingTable
   extends WithUuid,

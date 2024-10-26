@@ -2,16 +2,16 @@ import { ChannelStreamMode } from '@tunarr/types';
 import { StreamConnectionDetails } from '@tunarr/types/api';
 import { Mutex } from 'async-mutex';
 import dayjs from 'dayjs';
-import ld, { forEach, isEmpty, keys } from 'lodash-es';
+import { forEach, isEmpty, keys, partition } from 'lodash-es';
 import events from 'node:events';
 import { StrictExtract } from 'ts-essentials';
 import { v4 } from 'uuid';
-import { Channel } from '../dao/direct/schema/Channel';
-import { TypedEventEmitter } from '../types/eventEmitter';
+import { Channel } from '../dao/direct/schema/Channel.ts';
+import { TypedEventEmitter } from '../types/eventEmitter.ts';
 import { Result } from '../types/result.js';
 import { Maybe } from '../types/util.js';
-import { Logger, LoggerFactory } from '../util/logging/LoggerFactory';
-import { ConnectionTracker } from './ConnectionTracker';
+import { Logger, LoggerFactory } from '../util/logging/LoggerFactory.ts';
+import { ConnectionTracker } from './ConnectionTracker.ts';
 
 const ConcatSessionSuffix = '_concat';
 
@@ -267,14 +267,12 @@ export abstract class Session<
    */
   removeStaleConnections() {
     const now = dayjs().valueOf();
-    const [aliveConnections, staleConnections] = ld
-      .chain(keys(this.connections()))
-      .partition(
-        (token) =>
-          now - this.lastHeartbeat(token) <
-          (this.sessionOptions.stalenessMs ?? 30_000),
-      )
-      .value();
+    const [aliveConnections, staleConnections] = partition(
+      keys(this.connections()),
+      (token) =>
+        now - this.lastHeartbeat(token) <
+        (this.sessionOptions.stalenessMs ?? 30_000),
+    );
 
     // Cleanup stale connections
     forEach(staleConnections, (conn) => this.removeConnection(conn));

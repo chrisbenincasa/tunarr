@@ -5,7 +5,7 @@ import {
   WithCreatedAt,
   WithUpdatedAt,
   WithUuid,
-} from './base';
+} from './base.ts';
 
 export interface ProgramExternalIdTable
   extends WithUuid,

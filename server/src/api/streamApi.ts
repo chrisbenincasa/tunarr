@@ -9,15 +9,15 @@ import { join } from 'node:path';
 import { PassThrough } from 'stream';
 import { v4 } from 'uuid';
 import z from 'zod';
-import { Channel } from '../dao/direct/schema/Channel';
-import { defaultConcatOptions } from '../ffmpeg/ffmpeg';
-import { BaseHlsSession } from '../stream/hls/BaseHlsSession';
-import { Result } from '../types/result';
-import { TruthyQueryParam } from '../types/schemas';
-import { RouterPluginAsyncCallback } from '../types/serverType';
-import { Maybe } from '../types/util';
-import { LoggerFactory } from '../util/logging/LoggerFactory';
-import { makeLocalUrl } from '../util/serverUtil';
+import { Channel } from '../dao/direct/schema/Channel.ts';
+import { defaultConcatOptions } from '../ffmpeg/ffmpeg.ts';
+import { BaseHlsSession } from '../stream/hls/BaseHlsSession.ts';
+import { Result } from '../types/result.ts';
+import { TruthyQueryParam } from '../types/schemas.ts';
+import { RouterPluginAsyncCallback } from '../types/serverType.ts';
+import { Maybe } from '../types/util.ts';
+import { LoggerFactory } from '../util/logging/LoggerFactory.ts';
+import { makeLocalUrl } from '../util/serverUtil.ts';
 
 // eslint-disable-next-line @typescript-eslint/require-await
 export const streamApi: RouterPluginAsyncCallback = async (fastify) => {

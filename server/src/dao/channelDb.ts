@@ -20,9 +20,10 @@ import {
 import { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
-import ld, {
+import {
   chunk,
   compact,
+  drop,
   entries,
   filter,
   forEach,
@@ -42,6 +43,7 @@ import ld, {
   reject,
   sumBy,
   take,
+  uniq,
   uniqBy,
 } from 'lodash-es';
 import { Low } from 'lowdb';
@@ -576,12 +578,7 @@ export class ChannelDB {
         channel.duration = sumBy(lineup, typedProperty('durationMs'));
 
         const allNewIds = new Set([
-          ...ld
-            .chain(lineup)
-            .filter(isContentItem)
-            .map((p) => p.id)
-            .uniq()
-            .value(),
+          ...uniq(map(filter(lineup, isContentItem), (p) => p.id)),
         ]);
 
         const existingIds = new Set([
@@ -589,24 +586,22 @@ export class ChannelDB {
         ]);
 
         // Create our remove operations
-        const removeOperations: ProgramRelationOperation[] = ld
-          .chain([...existingIds])
-          .reject((existingId) => allNewIds.has(existingId))
-          .map((removalId) => ({
+        const removeOperations: ProgramRelationOperation[] = map(
+          reject([...existingIds], (existingId) => allNewIds.has(existingId)),
+          (removalId) => ({
             operation: 'remove' as const,
             id: em.getReference(Program, removalId),
-          }))
-          .value();
+          }),
+        );
 
         // Create addition operations
-        const addOperations: ProgramRelationOperation[] = ld
-          .chain([...allNewIds])
-          .reject((newId) => existingIds.has(newId))
-          .map((addId) => ({
+        const addOperations: ProgramRelationOperation[] = map(
+          reject([...allNewIds], (newId) => existingIds.has(newId)),
+          (addId) => ({
             operation: 'add' as const,
             id: em.getReference(Program, addId),
-          }))
-          .value();
+          }),
+        );
 
         await mapAsyncSeq(
           chunk(
@@ -756,12 +751,7 @@ export class ChannelDB {
       }
       loadedChannel.duration = sumBy(lineup, typedProperty('durationMs'));
 
-      const allIds = ld
-        .chain(lineup)
-        .filter(isContentItem)
-        .map((p) => p.id)
-        .uniq()
-        .value();
+      const allIds = uniq(map(filter(lineup, isContentItem), 'id'));
       loadedChannel.programs.removeAll();
       await em.persistAndFlush(loadedChannel);
       const refs = allIds.map((id) => em.getReference(Program, id));
@@ -869,7 +859,7 @@ export class ChannelDB {
 
     const { lineup: apiLineup, offsets } = await this.buildApiLineup(
       channel,
-      ld.chain(lineup.items).drop(cleanOffset).take(cleanLimit).value(),
+      take(drop(lineup.items, cleanOffset), cleanLimit),
     );
 
     return {
@@ -894,11 +884,7 @@ export class ChannelDB {
     const len = lineup.items.length;
     const cleanOffset = offset < 0 ? 0 : offset;
     const cleanLimit = limit < 0 ? len : limit;
-    const pagedLineup = ld
-      .chain(lineup.items)
-      .drop(cleanOffset)
-      .take(cleanLimit)
-      .value();
+    const pagedLineup = take(drop(lineup.items, cleanOffset), cleanLimit);
 
     const channel = await this.timer.timeAsync('select channel', () =>
       getEm().repo(Channel).findOne({ uuid: channelId }),
@@ -968,11 +954,7 @@ export class ChannelDB {
 
     let apiOffsets: number[];
     if (lineup.startTimeOffsets) {
-      apiOffsets = ld
-        .chain(lineup.startTimeOffsets)
-        .drop(cleanOffset)
-        .take(cleanLimit)
-        .value();
+      apiOffsets = take(drop(lineup.startTimeOffsets, cleanOffset), cleanLimit);
     } else {
       const scale = sumBy(
         take(lineup.items, cleanOffset - 1),
@@ -1206,58 +1188,54 @@ export class ChannelDB {
 
     const channelsById = groupByUniqProp(allChannels, 'uuid');
 
-    const programs = ld
-      .chain(lineup)
-      .map((item) => {
-        let p: CondensedChannelProgram | null = null;
-        if (isOfflineItem(item)) {
-          p = this.#programConverter.offlineLineupItemToProgram(channel, item);
-        } else if (isRedirectItem(item)) {
-          if (channelsById[item.channel]) {
-            p = this.#programConverter.redirectLineupItemToProgram(
-              item,
-              channelsById[item.channel],
-            );
-          } else {
-            this.logger.warn(
-              'Found dangling redirect program. Bad ID = %s',
-              item.channel,
-            );
-            p = {
-              persisted: true,
-              type: 'flex',
-              duration: item.durationMs,
-            };
-          }
-        } else if (item.customShowId) {
+    const programs = seq.collect(lineup, (item) => {
+      let p: CondensedChannelProgram | null = null;
+      if (isOfflineItem(item)) {
+        p = this.#programConverter.offlineLineupItemToProgram(channel, item);
+      } else if (isRedirectItem(item)) {
+        if (channelsById[item.channel]) {
+          p = this.#programConverter.redirectLineupItemToProgram(
+            item,
+            channelsById[item.channel],
+          );
+        } else {
+          this.logger.warn(
+            'Found dangling redirect program. Bad ID = %s',
+            item.channel,
+          );
           p = {
             persisted: true,
-            type: 'custom',
-            customShowId: item.customShowId,
+            type: 'flex',
             duration: item.durationMs,
-            index: customShowIndexes[item.customShowId][item.id] ?? -1,
-            id: item.id,
           };
-        } else {
-          if (dbProgramIds.has(item.id)) {
-            p = {
-              persisted: true,
-              type: 'content',
-              id: item.id,
-              duration: item.durationMs,
-            };
-          }
         }
-
-        if (p) {
-          offsets.push(lastOffset);
-          lastOffset += item.durationMs;
+      } else if (item.customShowId) {
+        p = {
+          persisted: true,
+          type: 'custom',
+          customShowId: item.customShowId,
+          duration: item.durationMs,
+          index: customShowIndexes[item.customShowId][item.id] ?? -1,
+          id: item.id,
+        };
+      } else {
+        if (dbProgramIds.has(item.id)) {
+          p = {
+            persisted: true,
+            type: 'content',
+            id: item.id,
+            duration: item.durationMs,
+          };
         }
+      }
 
-        return p;
-      })
-      .compact()
-      .value();
+      if (p) {
+        offsets.push(lastOffset);
+        lastOffset += item.durationMs;
+      }
+
+      return p;
+    });
     return { lineup: programs, offsets };
   }
 
