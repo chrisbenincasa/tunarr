@@ -7,14 +7,15 @@ import relativeTime from 'dayjs/plugin/relativeTime.js';
 import tz from 'dayjs/plugin/timezone.js';
 import utc from 'dayjs/plugin/utc.js';
 import {
-  chain,
   first,
   forEach,
   isNull,
   last,
+  map,
   nth,
   reject,
   slice,
+  sortBy,
 } from 'lodash-es';
 import constants from '../util/constants.js';
 import { mod } from '../util/dayjsExtensions.js';
@@ -97,10 +98,10 @@ export function distributeFlex(
 
   // Padded programs sorted by least amount of existing padding
   // along with their original index in the programs array
-  const sortedPads = chain(programs)
-    .map(({ padMs }, index) => ({ padMs, index }))
-    .sortBy(({ padMs }) => padMs)
-    .value();
+  const sortedPads = sortBy(
+    map(programs, ({ padMs }, index) => ({ padMs, index })),
+    ({ padMs }) => padMs,
+  );
 
   forEach(programs, (_, i) => {
     let q = Math.floor(div / programs.length);
@@ -130,15 +131,13 @@ export async function scheduleTimeSlots(
   const periodMs = dayjs.duration(1, schedule.period).asMilliseconds();
   // TODO validate
 
-  const sortedSlots = chain(schedule.slots)
-    .sortBy((slot) => slot.startTime)
-    .map((slot) => ({
+  const sortedSlots = map(
+    sortBy(schedule.slots, (slot) => slot.startTime),
+    (slot) => ({
       ...slot,
       startTime: slot.startTime,
-      //  -
-      // dayjs.duration(schedule.timeZoneOffset, 'minutes').asMilliseconds(),
-    }))
-    .value();
+    }),
+  );
 
   const now = dayjs.tz();
   const startOfCurrentPeriod = now.startOf(schedule.period);

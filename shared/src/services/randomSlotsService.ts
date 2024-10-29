@@ -6,14 +6,15 @@ import duration, { Duration } from 'dayjs/plugin/duration.js';
 import relativeTime from 'dayjs/plugin/relativeTime.js';
 import utc from 'dayjs/plugin/utc.js';
 import {
-  chain,
   first,
   forEach,
   isNil,
   isNull,
   last,
+  map,
   reject,
   slice,
+  sortBy,
 } from 'lodash-es';
 import { MersenneTwister19937, Random } from 'random-js';
 import constants from '../util/constants.js';
@@ -98,10 +99,10 @@ export function distributeFlex(
 
   // Padded programs sorted by least amount of existing padding
   // along with their original index in the programs array
-  const sortedPads = chain(programs)
-    .map(({ padMs }, index) => ({ padMs, index }))
-    .sortBy(({ padMs }) => padMs)
-    .value();
+  const sortedPads = sortBy(
+    map(programs, ({ padMs }, index) => ({ padMs, index })),
+    ({ padMs }) => padMs,
+  );
 
   forEach(programs, (_, i) => {
     let q = Math.floor(div / programs.length);
@@ -127,20 +128,6 @@ export async function scheduleRandomSlots(
     schedule.slots,
     programBySlotType,
   );
-
-  // const periodDuration = dayjs.duration(1, schedule.period);
-  // const periodMs = dayjs.duration(1, schedule.period).asMilliseconds();
-  // TODO validate
-
-  // const sortedSlots = chain(schedule.slots)
-  //   .sortBy((slot) => slot.startTime)
-  //   .map((slot) => ({
-  //     ...slot,
-  //     startTime:
-  //       slot.startTime +
-  //       dayjs.duration(schedule.timeZoneOffset, 'minutes').asMilliseconds(),
-  //   }))
-  //   .value();
 
   const now = dayjs.tz();
   const t0 = now;
