@@ -4,7 +4,6 @@ import fg from 'fast-glob';
 import fs from 'node:fs';
 import { basename } from 'node:path';
 import { rimraf } from 'rimraf';
-import { mikroOrmProdPlugin } from '../esbuild/mikro-orm-prod-plugin.js';
 import { nativeNodeModulesPlugin } from '../esbuild/native-node-module.js';
 import { nodeProtocolPlugin } from '../esbuild/node-protocol.js';
 
@@ -54,7 +53,6 @@ const result = await esbuild.build({
   plugins: [
     nativeNodeModulesPlugin(),
     nodeProtocolPlugin(),
-    mikroOrmProdPlugin(),
     // copy({
     //   resolveFrom: 'cwd',
     //   assets: {
@@ -90,21 +88,21 @@ for (const binding of nativeBindings) {
   fs.cpSync(binding, 'build/build/' + basename(binding));
 }
 
-console.log('Bundling DB migrations...');
-await esbuild.build({
-  entryPoints: await fg('src/migrations/*'),
-  outdir: 'build/migrations',
-  logLevel: 'debug',
-  bundle: false,
-  packages: 'external',
-  tsconfig: './tsconfig.build.json',
-});
+// console.log('Bundling DB migrations...');
+// await esbuild.build({
+//   entryPoints: await fg('src/migrations/*'),
+//   outdir: 'build/migrations',
+//   logLevel: 'debug',
+//   bundle: false,
+//   packages: 'external',
+//   tsconfig: './tsconfig.build.json',
+// });
 
-console.log('Copying DB snapshot JSON');
-fs.cpSync(
-  'src/migrations/.snapshot-db.db.json',
-  'build/migrations/.snapshot-db.db.json',
-);
+// console.log('Copying DB snapshot JSON');
+// fs.cpSync(
+//   'src/migrations/.snapshot-db.db.json',
+//   'build/migrations/.snapshot-db.db.json',
+// );
 
 console.log('Done bundling!');
 process.exit(0);

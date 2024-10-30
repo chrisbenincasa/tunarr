@@ -3,14 +3,14 @@
   "extends": ["//"],
   "tasks": {
     "typecheck": {
-      "dependsOn": ["^build", "generate-db-cache"]
+      "dependsOn": ["^build"]
     },
     "generate-db-cache": {
       "dependsOn": ["^bundle"],
       "outputs": ["temp/metadata.json"]
     },
     "bundle": {
-      "dependsOn": ["generate-db-cache", "^bundle"]
+      "dependsOn": ["^bundle"]
     },
     "build-dev": {
       "dependsOn": ["^build"]

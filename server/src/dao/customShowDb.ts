@@ -230,19 +230,26 @@ export class CustomShowDB {
         'customShowContent.customShowUuid',
       )
       .groupBy('customShow.uuid')
-      .select((eb) =>
+      .select((eb) => [
         eb.fn
           .count<number>('customShowContent.contentUuid')
           .distinct()
-          .as('content_count'),
-      )
+          .as('contentCount'),
+        eb.fn
+          .sum<number>(
+            eb
+              .selectFrom('program')
+              .whereRef('program.uuid', '=', 'customShowContent.contentUuid')
+              .select('duration'),
+          )
+          .as('totalDuration'),
+      ])
       .execute();
-    return showsAndContentCount.map((f) => {
-      return {
-        id: f.uuid,
-        name: f.name,
-        count: f.content_count,
-      };
-    });
+    return showsAndContentCount.map((f) => ({
+      id: f.uuid,
+      name: f.name,
+      count: f.contentCount,
+      totalDuration: f.totalDuration,
+    }));
   }
 }

@@ -1,7 +1,9 @@
-import { Generated } from 'kysely';
+import { Generated, Selectable } from 'kysely';
 
-export interface MikroOrmMigrations {
-  executedAt: Generated<number | null>;
+export interface MikroOrmMigrationsTable {
+  executedAt: Generated<number>; // Timestamp
   id: Generated<number>;
-  name: string | null;
+  name: string;
 }
+
+export type MikroOrmMigrations = Selectable<MikroOrmMigrationsTable>;

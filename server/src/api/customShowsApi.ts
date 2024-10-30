@@ -6,7 +6,6 @@ import {
 import { CustomProgramSchema, CustomShowSchema } from '@tunarr/types/schemas';
 import { isNil, isNull, map, sumBy } from 'lodash-es';
 import { z } from 'zod';
-import { CustomShow } from '../dao/entities/CustomShow.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 
@@ -32,16 +31,14 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      const customShows = await req.entityManager
-        .repo(CustomShow)
-        .findAll({ populate: ['content.uuid', 'content.duration'] });
+      const customShows = await req.serverCtx.customShowDB.getAllShowsInfo();
 
       return res.send(
         map(customShows, (cs) => ({
-          id: cs.uuid,
+          id: cs.id,
           name: cs.name,
-          contentCount: cs.content.length,
-          totalDuration: sumBy(cs.content, (c) => c.duration),
+          contentCount: cs.count,
+          totalDuration: cs.totalDuration,
         })),
       );
     },
