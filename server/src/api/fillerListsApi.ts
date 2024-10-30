@@ -9,8 +9,8 @@ import {
 } from '@tunarr/types/schemas';
 import { isNil, map } from 'lodash-es';
 import { z } from 'zod';
-import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { FillerShowId } from '../dao/entities/FillerShow.js';
+import { RouterPluginAsyncCallback } from '../types/serverType.js';
 
 // We can't use the built-in zod brand because we have our own custom
 // tagged type.
@@ -63,7 +63,7 @@ export const fillerListsApi: RouterPluginAsyncCallback = async (fastify) => {
       return res.send({
         id: filler.uuid,
         name: filler.name,
-        contentCount: filler.content.length,
+        contentCount: filler.fillerContent.length,
       });
     },
   );
@@ -133,7 +133,7 @@ export const fillerListsApi: RouterPluginAsyncCallback = async (fastify) => {
       return res.send({
         id: result.uuid,
         name: result.name,
-        contentCount: result.content.length,
+        contentCount: result.fillerContent.length,
       });
     },
   );

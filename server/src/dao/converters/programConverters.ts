@@ -1,36 +1,19 @@
-import { Loaded } from '@mikro-orm/core';
 import { seq } from '@tunarr/shared/util';
 import {
   ChannelProgram,
   ContentProgram,
-  ExternalId,
   FlexProgram,
   RedirectProgram,
-  externalIdEquals,
 } from '@tunarr/types';
 import {
   isValidMultiExternalIdType,
   isValidSingleExternalIdType,
 } from '@tunarr/types/schemas';
-import {
-  compact,
-  find,
-  isNil,
-  isObject,
-  map,
-  merge,
-  omitBy,
-  uniqWith,
-} from 'lodash-es';
+import { find, isNil, omitBy } from 'lodash-es';
 import { DeepPartial, MarkRequired } from 'ts-essentials';
 import { isPromise } from 'util/types';
-import {
-  isDefined,
-  isNonEmptyString,
-  nullToUndefined,
-} from '../../util/index.js';
+import { isNonEmptyString, nullToUndefined } from '../../util/index.js';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
-import { getEm } from '../dataSource.js';
 import {
   LineupItem,
   OfflineItem,
@@ -45,21 +28,9 @@ import {
   ChannelWithPrograms as RawChannelWithPrograms,
   ProgramWithRelations as RawProgram,
 } from '../direct/derivedTypes.js';
+import { directDbAccess } from '../direct/directDbAccess.js';
 import { MinimalProgramExternalId } from '../direct/schema/ProgramExternalId.js';
-import { Channel } from '../entities/Channel.js';
-import { Program, ProgramType } from '../entities/Program.js';
-import { ProgramExternalId } from '../entities/ProgramExternalId.js';
-
-type ContentProgramConversionOptions = {
-  skipPopulate: boolean | Partial<Record<'externalIds' | 'grouping', boolean>>;
-  forcePopulate: boolean;
-};
-
-const defaultContentProgramConversionOptions: ContentProgramConversionOptions =
-  {
-    skipPopulate: false,
-    forcePopulate: false,
-  };
+import { ProgramType } from '../entities/Program.js';
 
 /**
  * Converts DB types to API types
@@ -118,123 +89,6 @@ export class ProgramConverter {
         program.externalIds ?? [], // TODO fill in external IDs here
       );
     }
-  }
-
-  /**
-   * Given a Program entity, convert to a ContentProgram for use in Lineup APIs
-   * Takes care of loading missing relations
-   */
-  async entityToContentProgram(
-    program: Loaded<Program>,
-    externalIds: Loaded<ProgramExternalId>[] | undefined = undefined,
-    opts: Partial<ContentProgramConversionOptions> = defaultContentProgramConversionOptions,
-  ): Promise<ContentProgram> {
-    return this.partialEntityToContentProgram(program, externalIds, opts);
-  }
-
-  /**
-   * Convert a Program entity to a ContentProgram, disregarding which fields
-   * were loaded on the Program. Prefer {@link entityToContentProgram} for more
-   * strict checks.
-   *
-   * NOTE: This method is not really suitable for converting large amounts of items,
-   * even if we disable all fetching/population, simply because it will create a promise.
-   * TODO: Put type guards on the loaded program so we can force callers to pre-populate
-   * the necessary fields.
-   */
-  async partialEntityToContentProgram(
-    program: Loaded<Program>,
-    externalIds: Loaded<ProgramExternalId>[] | undefined = undefined,
-    opts: Partial<ContentProgramConversionOptions> = defaultContentProgramConversionOptions,
-  ): Promise<ContentProgram> {
-    const mergedOpts = merge({}, defaultContentProgramConversionOptions, opts);
-    let extraFields: Partial<ContentProgram> = {};
-
-    // This will ensure extra fields are populated for join types
-    // It won't reissue queries if the loaded program already has these popualted
-    const skipGroupings = isObject(mergedOpts.skipPopulate)
-      ? mergedOpts.skipPopulate.grouping
-      : !!mergedOpts.skipPopulate;
-    const skipExternalIds = isObject(mergedOpts.skipPopulate)
-      ? mergedOpts.skipPopulate.externalIds
-      : !!mergedOpts.skipPopulate;
-
-    if (program.type === ProgramType.Episode) {
-      extraFields = {
-        ...extraFields,
-        icon: program.episodeIcon ?? program.showIcon,
-        showId: program.tvShow?.uuid,
-        seasonId: program.season?.uuid,
-        seasonNumber: program.season?.isInitialized()
-          ? program.season.unwrap().index
-          : undefined,
-        episodeNumber: program.episode,
-        episodeTitle: program.title,
-        title: program.showTitle ?? program.title,
-      };
-
-      if (
-        mergedOpts.forcePopulate ||
-        (!program.season?.isInitialized() && !skipGroupings)
-      ) {
-        const season = await program.season?.load();
-        extraFields = {
-          ...extraFields,
-          seasonNumber: season?.index,
-        };
-      } else if (program.season?.isInitialized()) {
-        extraFields = {
-          ...extraFields,
-          seasonNumber: program.season?.getEntity().index,
-        };
-      }
-    } else if (program.type === ProgramType.Track) {
-      const shouldFetch =
-        mergedOpts.forcePopulate ||
-        ((isNil(program.album) || isNil(program.artist)) && !skipGroupings);
-      const populatedProgram = shouldFetch
-        ? await getEm().populate(program, ['artist', 'album'])
-        : program;
-      extraFields = {
-        // TODO: Use the join fields
-        albumName: populatedProgram.albumName,
-        artistName: populatedProgram.artistName,
-        albumId: populatedProgram.album?.uuid,
-        artistId: populatedProgram.artist?.uuid,
-      };
-    }
-
-    const eids: ExternalId[] = [];
-    if (isDefined(externalIds)) {
-      eids.push(...compact(map(externalIds, (eid) => eid.toExternalId())));
-    }
-
-    if (!program.externalIds.isInitialized() && !skipExternalIds) {
-      await program.externalIds.init();
-    }
-
-    eids.push(
-      ...compact(map(program.externalIds, (eid) => eid.toExternalId())),
-    );
-
-    return {
-      persisted: true, // Explicit since we're dealing with db loaded entities
-      uniqueId: program.uuid,
-      summary: program.summary,
-      date: program.originalAirDate,
-      rating: program.rating,
-      icon: program.icon,
-      title: program.title,
-      // program.type === ProgramType.Episode
-      // ? program.showTitle ?? program.title
-      // : program.title,
-      duration: program.duration,
-      type: 'content',
-      id: program.uuid,
-      subtype: program.type,
-      externalIds: uniqWith(eids, externalIdEquals),
-      ...extraFields,
-    };
   }
 
   directEntityToContentProgramSync(
@@ -297,19 +151,6 @@ export class ProgramConverter {
     };
   }
 
-  offlineLineupItemToProgram(
-    channel: Loaded<Channel>,
-    p: OfflineItem,
-    persisted: boolean = true,
-  ): FlexProgram {
-    return {
-      persisted,
-      type: 'flex',
-      icon: channel.icon?.path,
-      duration: p.durationMs,
-    };
-  }
-
   directOfflineLineupItemToProgram(
     channel: RawChannel,
     program: OfflineItem,
@@ -325,14 +166,18 @@ export class ProgramConverter {
 
   redirectLineupItemToProgram(
     item: RedirectItem,
-    channel: Loaded<Channel, never, 'name' | 'number'>,
+    channel: MarkRequired<DeepPartial<RawChannel>, 'name' | 'number'>,
   ): RedirectProgram;
   redirectLineupItemToProgram(
     item: RedirectItem,
-    channel?: Loaded<Channel, never, 'name' | 'number'>,
+    channel?: MarkRequired<DeepPartial<RawChannel>, 'name' | 'number'>,
   ): Promise<RedirectProgram> | RedirectProgram {
     const loadedChannel = isNil(channel)
-      ? getEm().findOneOrFail(Channel, { uuid: item.channel })
+      ? directDbAccess()
+          .selectFrom('channel')
+          .select(['uuid', 'number', 'name'])
+          .where('uuid', '=', item.channel)
+          .executeTakeFirstOrThrow()
       : channel;
     if (isPromise(loadedChannel)) {
       return loadedChannel.then((c) => this.toRedirectChannelInternal(item, c));
@@ -357,7 +202,7 @@ export class ProgramConverter {
 
   private toRedirectChannelInternal(
     item: RedirectItem,
-    channel: Loaded<Channel, never, 'name' | 'number'>,
+    channel: MarkRequired<DeepPartial<RawChannel>, 'name' | 'number'>,
   ): RedirectProgram {
     return {
       persisted: true,

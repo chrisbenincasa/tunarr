@@ -1,5 +1,6 @@
 import dayjs, { Dayjs } from 'dayjs';
 import {
+  dropWhile,
   filter,
   first,
   indexOf,
@@ -36,6 +37,32 @@ export class HlsPlaylistMutator {
     maxSegments: number = 10,
     endWithDiscontinuity: boolean = false,
   ): TrimPlaylistResult {
+    const { items, discontinuitySeq } = this.parsePlaylist(
+      start,
+      playlistLines,
+      endWithDiscontinuity,
+    );
+
+    const generateResult = this.generatePlaylist(
+      items,
+      filterBefore,
+      discontinuitySeq,
+      maxSegments,
+    );
+
+    return {
+      playlistStart: generateResult.nextPlaylistStart,
+      sequence: generateResult.startSequence,
+      playlist: generateResult.playlist,
+      segmentCount: generateResult.count,
+    };
+  }
+
+  parsePlaylist(
+    start: Dayjs,
+    playlistLines: string[],
+    endWithDiscontinuity: boolean,
+  ) {
     const items: PlaylistLine[] = [];
 
     // Find discontinuity items leading up the first segments
@@ -74,7 +101,7 @@ export class HlsPlaylistMutator {
       }
 
       // EXTINF
-      const duration = parseFloat(trimEnd(line, ',').split(':')[1]);
+      const duration = parseFloat(trimEnd(line.trim(), ',').split(':')[1]);
       items.push(new PlaylistSegment(currentTime, line, playlistLines[i + 2]));
 
       currentTime = currentTime.add(duration, 'seconds');
@@ -85,18 +112,9 @@ export class HlsPlaylistMutator {
       items.push(PlaylistDiscontinuity());
     }
 
-    const generateResult = this.generatePlaylist(
-      items,
-      filterBefore,
-      discontinuitySeq,
-      maxSegments,
-    );
-
     return {
-      playlistStart: generateResult.nextPlaylistStart,
-      sequence: generateResult.startSequence,
-      playlist: generateResult.playlist,
-      segmentCount: generateResult.count,
+      items,
+      discontinuitySeq,
     };
   }
 
@@ -110,9 +128,10 @@ export class HlsPlaylistMutator {
       discontinuitySequence++;
     }
 
-    while (first(items)?.type === 'discontinuity') {
-      items.shift();
-    }
+    items = dropWhile(items, (item) => item.type === 'discontinuity');
+    // while (first(items)?.type === 'discontinuity') {
+    //   items.shift();
+    // }
 
     let allSegments = filter(
       items,

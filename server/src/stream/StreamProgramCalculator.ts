@@ -5,7 +5,6 @@ import { StrictExclude } from 'ts-essentials';
 import { z } from 'zod';
 import { ChannelDB } from '../dao/channelDb.js';
 import { ProgramExternalIdType } from '../dao/custom_types/ProgramExternalIdType.js';
-import { getEm } from '../dao/dataSource.js';
 import {
   Lineup,
   isContentItem,
@@ -22,14 +21,17 @@ import type { ProgramWithRelations as RawProgramEntity } from '../dao/direct/der
 import { Channel } from '../dao/direct/schema/Channel.js';
 import { Program as RawProgram } from '../dao/direct/schema/Program.js';
 import { MediaSourceType } from '../dao/entities/MediaSource.js';
-import { Program as ProgramEntity } from '../dao/entities/Program.js';
-import { ProgramExternalId } from '../dao/entities/ProgramExternalId.js';
 import { FillerDB } from '../dao/fillerDB.js';
+import { ProgramDB } from '../dao/programDB.js';
 import { FillerPicker } from '../services/FillerPicker.js';
 import { Result } from '../types/result.js';
 import { Maybe, Nullable } from '../types/util.js';
 import { binarySearchRange } from '../util/binarySearch.js';
-import { isNonEmptyString, zipWithIndex } from '../util/index.js';
+import {
+  isNonEmptyString,
+  nullToUndefined,
+  zipWithIndex,
+} from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { ChannelCache } from './ChannelCache.js';
 import { wereThereTooManyAttempts } from './StreamThrottler.js';
@@ -76,6 +78,7 @@ export class StreamProgramCalculator {
     private fillerDB: FillerDB,
     private channelDB: ChannelDB,
     private channelCache: ChannelCache,
+    private programDB: ProgramDB,
   ) {}
 
   async getCurrentLineupItem(
@@ -83,7 +86,7 @@ export class StreamProgramCalculator {
   ): Promise<
     Result<{ lineupItem: StreamLineupItem; channelContext: Channel }>
   > {
-    const channel = await this.channelDB.getChannelDirect(req.channelId);
+    const channel = await this.channelDB.getChannel(req.channelId);
 
     if (isNil(channel)) {
       return Result.failure(
@@ -367,26 +370,8 @@ export class StreamProgramCalculator {
     let program: EnrichedLineupItem;
     if (isContentItem(lineupItem)) {
       // Defer program lookup
-      const backingItem = await getEm().findOne(
-        ProgramEntity,
-        {
-          uuid: lineupItem.id,
-        },
-        {
-          populate: ['externalIds'],
-          populateWhere: {
-            externalIds: {
-              sourceType: {
-                $in: [
-                  ProgramExternalIdType.PLEX,
-                  ProgramExternalIdType.JELLYFIN,
-                ],
-              },
-            },
-          },
-        },
-      );
 
+      const backingItem = await this.programDB.getProgramById(lineupItem.id);
       program = {
         duration: lineupItem.durationMs,
         type: 'offline',
@@ -411,9 +396,9 @@ export class StreamProgramCalculator {
               externalInfo.sourceType === ProgramExternalIdType.JELLYFIN
                 ? MediaSourceType.Jellyfin
                 : MediaSourceType.Plex,
-            plexFilePath: externalInfo.externalFilePath,
+            plexFilePath: nullToUndefined(externalInfo.externalFilePath),
             externalKey: externalInfo.externalKey,
-            filePath: externalInfo.directFilePath,
+            filePath: nullToUndefined(externalInfo.directFilePath),
             externalSourceId: externalInfo.externalSourceId,
             duration: backingItem.duration,
             programId: backingItem.uuid,
@@ -522,12 +507,10 @@ export class StreamProgramCalculator {
           }
         }
 
-        const externalInfos = await getEm().find(ProgramExternalId, {
-          program: { uuid: filler.uuid },
-          sourceType: {
-            $in: [ProgramExternalIdType.PLEX, ProgramExternalIdType.JELLYFIN],
-          },
-        });
+        const externalInfos = await this.programDB.getProgramExternalIds(
+          filler.uuid,
+          [ProgramExternalIdType.PLEX, ProgramExternalIdType.JELLYFIN],
+        );
 
         if (!isEmpty(externalInfos)) {
           const externalInfo = first(externalInfos)!;
@@ -535,7 +518,7 @@ export class StreamProgramCalculator {
             // just add the video, starting at 0, playing the entire duration
             type: 'commercial',
             title: filler.title,
-            filePath: externalInfo.directFilePath,
+            filePath: nullToUndefined(externalInfo.directFilePath),
             externalKey: externalInfo.externalKey,
             externalSource:
               externalInfo.sourceType === ProgramExternalIdType.JELLYFIN
@@ -550,7 +533,7 @@ export class StreamProgramCalculator {
             programId: filler.uuid,
             beginningOffset: beginningOffset,
             externalSourceId: externalInfo.externalSourceId!,
-            plexFilePath: externalInfo.externalFilePath,
+            plexFilePath: nullToUndefined(externalInfo.externalFilePath),
             programType: filler.type,
           };
         }

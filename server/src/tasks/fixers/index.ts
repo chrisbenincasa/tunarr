@@ -1,5 +1,4 @@
 import { round, values } from 'lodash-es';
-import { withDb } from '../../dao/dataSource.js';
 import { groupByUniq } from '../../util/index.js';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
 import { BackfillProgramExternalIds } from './BackfillProgramExternalIds.js';
@@ -31,34 +30,32 @@ export const FixersByName: Record<string, Fixer> = groupByUniq(
 const allFixers: Fixer[] = values(FixersByName);
 
 export const runFixers = async () => {
-  return withDb(async () => {
-    for (const fixer of allFixers) {
-      const name = fixer.constructor.name;
-      const start = performance.now();
-      try {
-        LoggerFactory.root.debug(
-          { background: fixer.canRunInBackground },
-          'Running fixer %s',
-          name,
-        );
-        const fixerPromise = fixer.run();
-        if (!fixer.canRunInBackground) {
-          await fixerPromise;
-          logFixerSuccess(name, performance.now() - start);
-        } else {
-          fixerPromise
-            .then(() => {
-              logFixerSuccess(name, performance.now() - start);
-            })
-            .catch((e) => {
-              logFixerError(name, e, performance.now() - start);
-            });
-        }
-      } catch (e) {
-        logFixerError(name, e, performance.now() - start);
+  for (const fixer of allFixers) {
+    const name = fixer.constructor.name;
+    const start = performance.now();
+    try {
+      LoggerFactory.root.debug(
+        { background: fixer.canRunInBackground },
+        'Running fixer %s',
+        name,
+      );
+      const fixerPromise = fixer.run();
+      if (!fixer.canRunInBackground) {
+        await fixerPromise;
+        logFixerSuccess(name, performance.now() - start);
+      } else {
+        fixerPromise
+          .then(() => {
+            logFixerSuccess(name, performance.now() - start);
+          })
+          .catch((e) => {
+            logFixerError(name, e, performance.now() - start);
+          });
       }
+    } catch (e) {
+      logFixerError(name, e, performance.now() - start);
     }
-  });
+  }
 };
 
 function logFixerSuccess(fixer: string, duration: number) {

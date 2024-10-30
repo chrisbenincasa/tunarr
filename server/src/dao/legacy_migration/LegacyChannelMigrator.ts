@@ -1,12 +1,13 @@
 import { seq } from '@tunarr/shared/util';
 import {
-  Channel,
+  Channel as ApiChannel,
+  Program as ApiProgram,
   ChannelStreamModes,
-  Program,
   TupleToUnion,
 } from '@tunarr/types';
 import dayjs from 'dayjs';
 import {
+  chunk,
   compact,
   difference,
   filter,
@@ -15,7 +16,6 @@ import {
   isUndefined,
   keys,
   map,
-  reduce,
   uniq,
   uniqBy,
   values,
@@ -23,17 +23,20 @@ import {
 import fs from 'node:fs/promises';
 import path from 'path';
 import { v4 } from 'uuid';
+import { ChannelNotFoundError } from '../../types/errors.js';
 import { Maybe } from '../../types/util.js';
 import {
   emptyStringToUndefined,
+  groupByUniq,
   groupByUniqPropAndMap,
   isNonEmptyString,
   mapAsyncSeq,
+  mapToObj,
   run,
 } from '../../util/index.js';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
 import { ChannelDB } from '../channelDb.js';
-import { getEm } from '../dataSource.js';
+import { CustomShowDB } from '../customShowDb.js';
 import {
   ContentItem,
   CurrentLineupSchemaVersion,
@@ -42,11 +45,19 @@ import {
   OfflineItem,
   RedirectItem,
 } from '../derived_types/Lineup.js';
-import { Channel as ChannelEntity } from '../entities/Channel.js';
-import { ChannelFillerShow } from '../entities/ChannelFillerShow.js';
-import { CustomShow as CustomShowEntity } from '../entities/CustomShow.js';
+import { directDbAccess } from '../direct/directDbAccess.js';
+import { ProgramUpsertFields } from '../direct/programQueryHelpers.js';
+import { Channel, NewChannelFillerShow } from '../direct/schema/Channel.js';
+import { Program } from '../direct/schema/Program.js';
+import { ChannelIcon } from '../direct/schema/base.js';
+import {
+  ChannelOfflineSettings,
+  ChannelTranscodingSettings,
+  ChannelWatermark,
+} from '../entities/Channel.js';
 import { FillerShowId } from '../entities/FillerShow.js';
-import { Program as ProgramEntity } from '../entities/Program.js';
+import { ProgramDB } from '../programDB.js';
+import { booleanToNumber } from '../sqliteUtil.js';
 import {
   JSONArray,
   JSONObject,
@@ -72,7 +83,7 @@ function isValidPosition(s: string): s is TupleToUnion<typeof validPositions> {
   return false;
 }
 
-export type LegacyProgram = Omit<Program, 'channel'> & {
+export type LegacyProgram = Omit<ApiProgram, 'channel'> & {
   isOffline: boolean;
   channel: number;
   ratingKey?: string;
@@ -84,13 +95,16 @@ export class LegacyChannelMigrator {
     className: this.constructor.name,
   });
 
+  constructor(
+    private channelDB: ChannelDB = new ChannelDB(),
+    private customShowDB: CustomShowDB = new CustomShowDB(new ProgramDB()),
+  ) {}
+
   async createLineup(
     rawPrograms: LegacyProgram[],
-    dbProgramById: Record<string, ProgramEntity>,
+    dbProgramById: Record<string, Program>,
   ): Promise<Lineup> {
-    const channels = await getEm()
-      .repo(ChannelEntity)
-      .findAll({ populate: ['uuid', 'number'] });
+    const channels = await this.channelDB.getAllChannels();
     const channelIdsByNumber = groupByUniqPropAndMap(
       channels,
       'number',
@@ -148,11 +162,10 @@ export class LegacyChannelMigrator {
       return isBoolean(rawValue) ? rawValue : false;
     });
 
-    const em = getEm();
-
-    const channelEntity = await em
-      .repo(ChannelEntity)
-      .findOneOrFail({ number: channelNumber });
+    const channelEntity = await this.channelDB.getChannel(channelNumber);
+    if (!channelEntity) {
+      throw new ChannelNotFoundError(channelNumber);
+    }
 
     const fallbackPrograms = (
       (parsed['fallback'] as Maybe<JSONArray>) ?? []
@@ -178,18 +191,33 @@ export class LegacyChannelMigrator {
       programEntities.length,
     );
 
-    const dbProgramById = reduce(
-      await em.upsertMany(ProgramEntity, programEntities, {
-        batchSize: 25,
-        onConflictFields: ['sourceType', 'externalSourceId', 'externalKey'],
-        onConflictAction: 'merge',
-        onConflictExcludeFields: ['uuid'],
-      }),
-      (prev, curr) => ({
-        ...prev,
-        [`${curr.externalSourceId}|${curr.externalKey}`]: curr,
-      }),
-      {} as Record<string, ProgramEntity>,
+    const upsertedPrograms: Program[] = [];
+    for (const c of chunk(programEntities, 100)) {
+      upsertedPrograms.push(
+        ...(await directDbAccess()
+          .transaction()
+          .execute((tx) =>
+            tx
+              .insertInto('program')
+              .values(map(c, 'program'))
+              .onConflict((oc) =>
+                oc
+                  .columns(['sourceType', 'externalSourceId', 'externalKey'])
+                  .doUpdateSet((eb) =>
+                    mapToObj(ProgramUpsertFields, (f) => ({
+                      [f.replace('excluded.', '')]: eb.ref(f),
+                    })),
+                  ),
+              )
+              .returningAll()
+              .execute(),
+          )),
+      );
+    }
+
+    const dbProgramById = groupByUniq(
+      upsertedPrograms,
+      (program) => `${program.externalSourceId}|${program.externalKey}`,
     );
 
     this.logger.debug(
@@ -197,16 +225,12 @@ export class LegacyChannelMigrator {
       keys(dbProgramById).length,
     );
 
-    const customShowIds = await em
-      .repo(CustomShowEntity)
-      .findAll({ populate: ['uuid'] });
+    const customShowIds = await this.customShowDB.getAllShowIds();
 
     const customShowRefs = uniq(seq.collect(programs, (p) => p.customShowId));
 
-    const missingIds = difference(
-      customShowRefs,
-      map(customShowIds, (cs) => cs.uuid),
-    );
+    const missingIds = difference(customShowRefs, customShowIds);
+
     if (missingIds.length > 0) {
       this.logger.warn(
         'There are custom show IDs that are not found in the DB: %O',
@@ -214,24 +238,39 @@ export class LegacyChannelMigrator {
       );
     }
 
-    // Associate the programs with the channel
-    channelEntity.programs.removeAll();
-    channelEntity.customShows.removeAll();
-
-    // Update associations from custom show <-> channel
-    channelEntity.customShows.add(
-      customShowRefs.map((id) => em.getReference(CustomShowEntity, id)),
-    );
-
-    // Update associations from program <-> channel
-    channelEntity.programs.set(
-      values(dbProgramById).map((id) =>
-        em.getReference(ProgramEntity, id.uuid),
-      ),
-    );
-
     this.logger.debug('Saving channel %s', channelEntity.uuid);
-    await em.persistAndFlush(channelEntity);
+    await directDbAccess()
+      .transaction()
+      .execute(async (tx) => {
+        await tx
+          .deleteFrom('channelPrograms')
+          .where('channelPrograms.channelUuid', '=', channelEntity.uuid)
+          .execute();
+        await tx
+          .deleteFrom('channelCustomShows')
+          .where('channelCustomShows.channelUuid', '=', channelEntity.uuid)
+          .execute();
+        // Update associations from custom show <-> channel
+        await tx
+          .insertInto('channelCustomShows')
+          .values(
+            map(customShowRefs, (cs) => ({
+              customShowUuid: cs,
+              channelUuid: channelEntity.uuid,
+            })),
+          )
+          .execute();
+        // Associate the programs with the channel
+        await tx
+          .insertInto('channelPrograms')
+          .values(
+            map(values(dbProgramById), (id) => ({
+              programUuid: id.uuid,
+              channelUuid: channelEntity.uuid,
+            })),
+          )
+          .execute();
+      });
 
     this.logger.debug('Saving channel lineup %s', channelEntity.uuid);
     const channelDB = new ChannelDB();
@@ -254,8 +293,8 @@ export class LegacyChannelMigrator {
   }
 
   async migrateChannel(fullPath: string): Promise<{
-    raw: Omit<Channel, 'programs' | 'fallback'>;
-    entity: ChannelEntity;
+    raw: Omit<ApiChannel, 'programs' | 'fallback'>;
+    entity: Channel;
   }> {
     this.logger.info('Migrating channel file: ' + fullPath);
     const channelFileContents = await fs.readFile(fullPath);
@@ -279,7 +318,7 @@ export class LegacyChannelMigrator {
       return isBoolean(rawValue) ? rawValue : false;
     });
 
-    const channel: Channel = {
+    const channel: ApiChannel = {
       id: v4(),
       disableFillerOverlay: parsed['disableFillerOverlay'] as boolean,
       duration: parsed['duration'] as number,
@@ -354,75 +393,98 @@ export class LegacyChannelMigrator {
       streamMode: ChannelStreamModes.Hls,
     };
 
-    const em = getEm();
-
-    let channelEntity: ChannelEntity;
-    const existingEntity = await em.findOne(
-      ChannelEntity,
-      {
-        number: channel.number,
-      },
-      { populate: ['programs', 'customShows'] },
-    );
+    let channelEntity: Channel;
+    const existingEntity = await this.channelDB.getChannel(channel.number);
 
     if (existingEntity) {
       channelEntity = existingEntity;
-      em.assign(channelEntity, {
-        disableFillerOverlay: channel.disableFillerOverlay,
-        groupTitle: channel.groupTitle,
-        icon: {
-          ...channel.icon,
-          position: !isValidPosition(channel.icon.position)
-            ? ('bottom-right' as const)
-            : channel.icon.position,
-        },
-        name: channel.name,
-        number: channel.number,
-        startTime: channel.startTime,
-        stealth: channel.stealth,
-        transcoding: channel.transcoding,
-        watermark: channel.watermark,
-        offline: { mode: 'clip' },
-        guideMinimumDuration: channel.guideMinimumDuration,
-      });
+      directDbAccess()
+        .updateTable('channel')
+        .where('channel.uuid', '=', existingEntity.uuid)
+        .limit(1)
+        .set({
+          disableFillerOverlay: booleanToNumber(channel.disableFillerOverlay),
+          groupTitle: channel.groupTitle,
+          icon: JSON.stringify({
+            ...channel.icon,
+            position: !isValidPosition(channel.icon.position)
+              ? ('bottom-right' as const)
+              : channel.icon.position,
+          } satisfies ChannelIcon),
+          name: channel.name,
+          number: channel.number,
+          startTime: channel.startTime,
+          stealth: booleanToNumber(channel.stealth),
+          transcoding: channel.transcoding
+            ? JSON.stringify(
+                channel.transcoding satisfies ChannelTranscodingSettings,
+              )
+            : undefined,
+          watermark: channel.watermark
+            ? JSON.stringify(channel.watermark satisfies ChannelWatermark)
+            : undefined,
+          offline: JSON.stringify({
+            mode: 'pic',
+          } satisfies ChannelOfflineSettings),
+          guideMinimumDuration: channel.guideMinimumDuration,
+        });
     } else {
-      channelEntity = em.create(ChannelEntity, {
-        duration: channel.duration,
-        disableFillerOverlay: channel.disableFillerOverlay,
-        groupTitle: channel.groupTitle,
-        icon: {
-          ...channel.icon,
-          position: !isValidPosition(channel.icon.position)
-            ? ('bottom-right' as const)
-            : channel.icon.position,
-        },
-        name: channel.name,
-        number: channel.number,
-        startTime: channel.startTime,
-        stealth: channel.stealth,
-        transcoding: channel.transcoding,
-        watermark: channel.watermark,
-        offline: { mode: 'clip' },
-        guideMinimumDuration: channel.guideMinimumDuration,
-        streamMode: 'hls',
-      });
+      const now = +dayjs();
+      channelEntity = await directDbAccess()
+        .insertInto('channel')
+        .values({
+          uuid: v4(),
+          createdAt: now,
+          updatedAt: now,
+          duration: channel.duration,
+          disableFillerOverlay: booleanToNumber(channel.disableFillerOverlay),
+          groupTitle: channel.groupTitle,
+          icon: JSON.stringify({
+            ...channel.icon,
+            position: !isValidPosition(channel.icon.position)
+              ? ('bottom-right' as const)
+              : channel.icon.position,
+          } satisfies ChannelIcon),
+          name: channel.name,
+          number: channel.number,
+          startTime: channel.startTime,
+          stealth: booleanToNumber(channel.stealth),
+          transcoding: channel.transcoding
+            ? JSON.stringify(
+                channel.transcoding satisfies ChannelTranscodingSettings,
+              )
+            : undefined,
+          watermark: channel.watermark
+            ? JSON.stringify(channel.watermark satisfies ChannelWatermark)
+            : undefined,
+          offline: JSON.stringify({
+            mode: 'pic',
+          } satisfies ChannelOfflineSettings),
+          guideMinimumDuration: channel.guideMinimumDuration,
+          streamMode: 'hls',
+        })
+        .returningAll()
+        .executeTakeFirstOrThrow();
     }
 
-    const entity = await em.upsert(ChannelEntity, channelEntity, {
-      onConflictFields: ['number'],
-      onConflictAction: 'ignore',
-    });
+    // const entity = await em.upsert(ChannelEntity, channelEntity, {
+    //   onConflictFields: ['number'],
+    //   onConflictAction: 'ignore',
+    // });
 
     // Init programs, we may have already inserted some
-    entity.programs.removeAll();
-    entity.customShows.removeAll();
-
-    this.logger.info('Saving channel');
-    await em.persistAndFlush(entity);
+    await directDbAccess()
+      .deleteFrom('channelPrograms')
+      .where('channelUuid', '=', channelEntity.uuid)
+      .execute();
+    await directDbAccess()
+      .deleteFrom('channelCustomShows')
+      .where('channelUuid', '=', channelEntity.uuid)
+      .execute();
 
     await this.migratePrograms(fullPath);
 
-    return { raw: channel, entity };
+    return { raw: channel, entity: channelEntity };
   }
 
   async migrateChannels(dbPath: string) {
@@ -447,24 +509,22 @@ export class LegacyChannelMigrator {
     );
 
     // Create filler associations
-    const em = getEm();
     await mapAsyncSeq(migratedChannels, async ({ raw: channel, entity }) => {
       const fillers = channel.fillerCollections ?? [];
       const relations = map(fillers, (filler) => {
-        const cfs = em.create(ChannelFillerShow, {
-          channel: entity.uuid,
-          fillerShow: filler.id as FillerShowId,
+        return {
+          channelUuid: entity.uuid,
+          fillerShowUuid: filler.id as FillerShowId,
           weight: filler.weight,
           cooldown: filler.cooldownSeconds,
-        });
-        return cfs;
+        } satisfies NewChannelFillerShow;
       });
 
-      await em.upsertMany(ChannelFillerShow, relations, {
-        onConflictAction: 'ignore',
-      });
-
-      return em.flush();
+      await directDbAccess()
+        .insertInto('channelFillerShow')
+        .values(relations)
+        .onConflict((oc) => oc.doNothing())
+        .execute();
     });
 
     return migratedChannels;

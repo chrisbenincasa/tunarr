@@ -12,7 +12,7 @@ import { ArgumentsCamelCase } from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import yargs from 'yargs/yargs';
 import { commands } from './cli/index.js';
-import { initOrm, withDb } from './dao/dataSource.js';
+import { initOrm } from './dao/dataSource.js';
 import {
   LegacyDbMigrator,
   MigratableEntities,
@@ -257,9 +257,7 @@ ${chalk.blue('  |_| ')}${chalk.green(' \\___/')}${chalk.yellow(
       setServerOptions(args);
       if (isNonEmptyString(args.sub)) {
         try {
-          await withDb(async () => {
-            await FixersByName[args.sub].run();
-          });
+          await FixersByName[args.sub].run();
           process.exit(0);
         } catch (e) {
           console.error('Fixer failed', e);

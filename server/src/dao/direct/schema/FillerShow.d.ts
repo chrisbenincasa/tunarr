@@ -1,4 +1,4 @@
-import { Selectable } from 'kysely';
+import { Insertable, Selectable } from 'kysely';
 import { WithCreatedAt, WithUpdatedAt, WithUuid } from './base.ts';
 
 export interface FillerShowTable
@@ -9,13 +9,12 @@ export interface FillerShowTable
 }
 
 export type FillerShow = Selectable<FillerShowTable>;
-export interface FillerShowContentTable
-  extends WithUuid,
-    WithCreatedAt,
-    WithUpdatedAt {
+export type NewFillerShow = Insertable<FillerShowTable>;
+export interface FillerShowContentTable {
   fillerShowUuid: string;
   index: number;
   programUuid: string;
 }
 
 export type FillerShowContent = Selectable<FillerShowContentTable>;
+export type NewFillerShowContent = Insertable<FillerShowContentTable>;

@@ -1,7 +1,6 @@
 import { findIndex, map } from 'lodash-es';
 import { LoggerFactory } from '../util/logging/LoggerFactory.ts';
 import { ChannelDB } from './channelDb.ts';
-import { withDb } from './dataSource.ts';
 import { CurrentLineupSchemaVersion, Lineup } from './derived_types/Lineup.ts';
 import { ChannelLineupMigration } from './migrations/lineups/ChannelLineupMigration.ts';
 import { SlotShowIdMigration } from './migrations/lineups/SlotShowIdMigration.ts';
@@ -47,12 +46,10 @@ export class ChannelLineupMigrator {
   }
 
   async run() {
-    return withDb(async () => {
-      const lineups = await this.channelDB.loadAllLineupConfigs(true);
-      for (const [channelId, { lineup }] of Object.entries(lineups)) {
-        await this.runSingle(channelId, lineup);
-      }
-    });
+    const lineups = await this.channelDB.loadAllLineupConfigs(true);
+    for (const [channelId, { lineup }] of Object.entries(lineups)) {
+      await this.runSingle(channelId, lineup);
+    }
   }
 
   private async runSingle(channelId: string, lineup: Lineup): Promise<void> {

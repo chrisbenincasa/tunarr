@@ -1,23 +1,29 @@
-import { Cursor } from '@mikro-orm/core';
 import { PlexEpisodeView, PlexSeasonView } from '@tunarr/types/plex';
+import { CaseWhenBuilder } from 'kysely';
 import {
+  chunk,
   find,
   first,
   forEach,
   groupBy,
   isNil,
+  isNull,
   isUndefined,
+  keys,
+  last,
   mapValues,
+  omitBy,
   pickBy,
+  reduce,
 } from 'lodash-es';
 import { ProgramExternalIdType } from '../../dao/custom_types/ProgramExternalIdType.js';
-import { getEm } from '../../dao/dataSource.js';
-import { MediaSource } from '../../dao/entities/MediaSource.js';
-import { Program, ProgramType } from '../../dao/entities/Program.js';
-import {
-  ProgramGrouping,
-  ProgramGroupingType,
-} from '../../dao/entities/ProgramGrouping.js';
+import { directDbAccess } from '../../dao/direct/directDbAccess.js';
+import { withProgramGroupingExternalIds } from '../../dao/direct/programQueryHelpers.js';
+import { Program as RawProgram } from '../../dao/direct/schema/Program.js';
+import { DB } from '../../dao/direct/schema/db.js';
+import { MediaSourceType } from '../../dao/entities/MediaSource.js';
+import { ProgramType } from '../../dao/entities/Program.js';
+import { ProgramGroupingType } from '../../dao/entities/ProgramGrouping.js';
 import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.js';
 import { PlexApiClient } from '../../external/plex/PlexApiClient.js';
 import { Maybe } from '../../types/util.js';
@@ -34,8 +40,11 @@ export class MissingSeasonNumbersFixer extends Fixer {
   canRunInBackground: boolean = true;
 
   async runInternal(): Promise<void> {
-    const em = getEm();
-    const allPlexServers = await em.findAll(MediaSource);
+    const allPlexServers = await directDbAccess()
+      .selectFrom('mediaSource')
+      .where('mediaSource.type', '=', MediaSourceType.Plex)
+      .selectAll()
+      .execute();
 
     if (allPlexServers.length === 0) {
       return;
@@ -47,18 +56,22 @@ export class MissingSeasonNumbersFixer extends Fixer {
       (server) => new PlexApiClient(server),
     );
 
-    let cursor: Maybe<Cursor<Program>> = undefined;
+    const updatedPrograms: RawProgram[] = [];
+    let lastId: Maybe<string> = undefined;
     do {
-      cursor = await em.findByCursor(
-        Program,
-        { seasonNumber: null, type: ProgramType.Episode },
-        {
-          first: 25,
-          orderBy: { uuid: 'desc' },
-          after: cursor,
-        },
-      );
-      const programsByPlexServer = groupBy(cursor.items, 'externalSourceId');
+      const items: RawProgram[] = await directDbAccess()
+        .selectFrom('program')
+        .selectAll()
+        .$if(!isNull(lastId), (eb) => eb.where('uuid', '>', lastId!))
+        .where('seasonNumber', 'is', null)
+        .where('type', '=', ProgramType.Episode)
+        .orderBy('uuid asc')
+        .limit(100)
+        .execute();
+
+      lastId = last(items)?.uuid;
+
+      const programsByPlexServer = groupBy(items, 'externalSourceId');
       const goodProgramsByServer = pickBy(programsByPlexServer, (_, key) => {
         const hasKey = !!plexByName[key];
         if (!hasKey) {
@@ -69,7 +82,7 @@ export class MissingSeasonNumbersFixer extends Fixer {
 
       const programsByServerAndParent: Record<
         string,
-        Record<string, Program[]>
+        Record<string, RawProgram[]>
       > = mapValues(goodProgramsByServer, (programs) => {
         return groupBy(programs, (p) => p.parentExternalKey ?? 'unset');
       });
@@ -97,7 +110,7 @@ export class MissingSeasonNumbersFixer extends Fixer {
 
               if (seasonNum) {
                 program.seasonNumber = seasonNum;
-                em.persist(program);
+                updatedPrograms.push(program);
               }
             }
           } else {
@@ -105,12 +118,13 @@ export class MissingSeasonNumbersFixer extends Fixer {
               parentId,
               plexByName[server],
             );
+
             await wait(100);
 
             if (seasonNum) {
               forEach(programs, (program) => {
                 program.seasonNumber = seasonNum;
-                em.persist(program);
+                updatedPrograms.push(program);
               });
             } else {
               for (const program of programs) {
@@ -131,35 +145,53 @@ export class MissingSeasonNumbersFixer extends Fixer {
 
                 if (seasonNum) {
                   program.seasonNumber = seasonNum;
-                  em.persist(program);
+                  updatedPrograms.push(program);
                 }
               }
             }
           }
         }
       }
+    } while (lastId);
 
-      await em.flush();
-    } while (cursor.hasNextPage);
+    for (const updateChunk of chunk(updatedPrograms, 50)) {
+      const seasonNumberById: Record<string, number> = omitBy(
+        groupByUniqPropAndMap(updateChunk, 'uuid', (p) => p.seasonNumber),
+        isNull,
+      );
+      await directDbAccess()
+        .updateTable('program')
+        .set((eb) => ({
+          seasonNumber: reduce(
+            keys(seasonNumberById),
+            (acc, curr) =>
+              acc
+                .when('program.uuid', '=', curr)
+                .then(seasonNumberById[curr] ?? eb.ref('program.seasonNumber')),
+            eb.case() as unknown as CaseWhenBuilder<
+              DB,
+              'program',
+              unknown,
+              number | null
+            >,
+          )
+            .else(eb.ref('program.seasonNumber'))
+            .end(),
+        }))
+        .executeTakeFirst();
+    }
 
-    const plexServers = await getEm().findAll(MediaSource);
-
-    const seasonsMissingIndexes = await em.find(
-      ProgramGrouping,
-      { type: ProgramGroupingType.TvShowSeason, index: null },
-      {
-        populateWhere: {
-          externalRefs: {
-            sourceType: ProgramExternalIdType.PLEX,
-          },
-        },
-        populate: ['externalRefs'],
-      },
-    );
+    const seasonsMissingIndexes = await directDbAccess()
+      .selectFrom('programGrouping')
+      .select('programGrouping.uuid')
+      .where('programGrouping.type', '=', ProgramGroupingType.TvShowSeason)
+      .where('programGrouping.index', 'is', null)
+      .select(withProgramGroupingExternalIds)
+      .execute();
 
     // Backfill missing season numbers
     for (const season of seasonsMissingIndexes) {
-      const ref = season.externalRefs.$.find(
+      const ref = season.externalIds.find(
         (ref) => ref.sourceType === ProgramExternalIdType.PLEX,
       );
       if (isUndefined(ref)) {
@@ -167,7 +199,7 @@ export class MissingSeasonNumbersFixer extends Fixer {
       }
 
       const server = find(
-        plexServers,
+        allPlexServers,
         (ps) => ps.name === ref.externalSourceId,
       );
       if (isNil(server)) {
@@ -193,11 +225,13 @@ export class MissingSeasonNumbersFixer extends Fixer {
       }
 
       const plexSeason = first(plexResult.Metadata)!;
-      season.index = plexSeason.index;
-      em.persist(season);
+      await directDbAccess()
+        .updateTable('programGrouping')
+        .set({ index: plexSeason.index })
+        .where('uuid', '=', season.uuid)
+        .limit(1)
+        .execute();
     }
-
-    await em.flush();
   }
 
   private async findSeasonNumberUsingEpisode(

@@ -16,29 +16,20 @@ import {
 } from 'lodash-es';
 import stream from 'stream';
 import z from 'zod';
-import {
-  ProgramExternalIdType,
-  programExternalIdTypeFromSourceType,
-  programExternalIdTypeToMediaSourceType,
-} from '../dao/custom_types/ProgramExternalIdType.js';
+import { ProgramExternalIdType } from '../dao/custom_types/ProgramExternalIdType.js';
 import {
   ProgramSourceType,
   programSourceTypeFromString,
-  programSourceTypeToMediaSource,
 } from '../dao/custom_types/ProgramSourceType.js';
-import { getEm } from '../dao/dataSource.js';
 import { directDbAccess } from '../dao/direct/directDbAccess.js';
 import {
   AllProgramFields,
   AllProgramGroupingFields,
   selectProgramsBuilder,
 } from '../dao/direct/programQueryHelpers.js';
-import { MediaSource } from '../dao/entities/MediaSource.js';
-import { Program, ProgramType } from '../dao/entities/Program.js';
-import {
-  ProgramGrouping,
-  ProgramGroupingType,
-} from '../dao/entities/ProgramGrouping.js';
+import { MediaSource } from '../dao/direct/schema/MediaSource.js';
+import { ProgramType } from '../dao/entities/Program.js';
+import { ProgramGroupingType } from '../dao/entities/ProgramGrouping.js';
 import { JellyfinApiClient } from '../external/jellyfin/JellyfinApiClient.js';
 import { PlexApiClient } from '../external/plex/PlexApiClient.js';
 import { TruthyQueryParam } from '../types/schemas.js';
@@ -123,20 +114,22 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
     },
     async (req, res) => {
       const xmltvSettings = req.serverCtx.settings.xmlTvSettings();
-      const em = getEm();
       // Unfortunately these don't have unique ID spaces, since we have separate tables
       // so we'll just prefer program matches over group matches and hope all works out
       // Alternatively, we could introduce a query param to narrow this down...
+
       const [program, grouping] = await Promise.all([
-        em
-          .repo(Program)
-          .findOne(
-            { uuid: req.params.id },
-            { populate: ['album.externalRefs', 'tvShow.externalRefs'] },
-          ),
-        em
-          .repo(ProgramGrouping)
-          .findOne({ uuid: req.params.id }, { populate: ['externalRefs'] }),
+        // em
+        //   .repo(Program)
+        //   .findOne(
+        //     { uuid: req.params.id },
+        //     { populate: ['album.externalRefs', 'tvShow.externalRefs'] },
+        //   ),
+        req.serverCtx.programDB.getProgramById(req.params.id),
+        req.serverCtx.programDB.getProgramGrouping(req.params.id),
+        // em
+        //   .repo(ProgramGrouping)
+        //   .findOne({ uuid: req.params.id }, { populate: ['externalRefs'] }),
       ]);
       // const program = await em.repo(Program).findOne({ uuid: req.params.id });
       if (isNil(program) && isNil(grouping)) {
@@ -182,7 +175,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
 
       if (!isNil(program)) {
         const mediaSource = await req.serverCtx.mediaSourceDB.getByExternalId(
-          programSourceTypeToMediaSource(program.sourceType),
+          program.sourceType,
           program.externalSourceId,
         );
 
@@ -191,13 +184,15 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         }
 
         let keyToUse = program.externalKey;
-        if (program.type === ProgramType.Track && !isNil(program.album)) {
+        if (program.type === ProgramType.Track && !isNil(program.albumUuid)) {
+          const albumExternalIds = await req.serverCtx.programDB
+            .getProgramGrouping(program.albumUuid)
+            .then((album) => album?.externalIds);
           ifDefined(
             find(
-              program.album.$.externalRefs,
+              albumExternalIds,
               (ref) =>
-                ref.sourceType ===
-                  programExternalIdTypeFromSourceType(program.sourceType) &&
+                ref.sourceType === program.sourceType &&
                 ref.externalSourceId === program.externalSourceId,
             ),
             (ref) => {
@@ -206,14 +201,17 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
           );
         } else if (
           (req.query.useShowPoster || xmltvSettings.useShowPoster) &&
-          program.type === ProgramType.Episode
+          program.type === ProgramType.Episode &&
+          !isNil(program.tvShowUuid)
         ) {
+          const showExternalIds = await req.serverCtx.programDB
+            .getProgramGrouping(program.tvShowUuid)
+            .then((show) => show?.externalIds);
           ifDefined(
             find(
-              program.tvShow?.$.externalRefs,
+              showExternalIds,
               (ref) =>
-                ref.sourceType ===
-                  programExternalIdTypeFromSourceType(program.sourceType) &&
+                ref.sourceType === program.sourceType &&
                 ref.externalSourceId === program.externalSourceId,
             ),
             (ref) => {
@@ -259,7 +257,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         // We can assume that we have a grouping here...
         // We only support Plex now
         const source = find(
-          grouping!.externalRefs,
+          grouping!.externalIds,
           (ref) =>
             ref.sourceType === ProgramExternalIdType.PLEX ||
             ref.sourceType === ProgramExternalIdType.JELLYFIN,
@@ -272,7 +270,8 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         }
 
         const mediaSource = await req.serverCtx.mediaSourceDB.getByExternalId(
-          programExternalIdTypeToMediaSourceType(source.sourceType)!,
+          // This was asserted above
+          source.sourceType as 'plex' | 'jellyfin',
           source.externalSourceId,
         );
 
@@ -329,17 +328,16 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      const em = getEm();
-      const program = await em
-        .repo(Program)
-        .findOne({ uuid: req.params.id }, { populate: ['externalIds'] });
+      const program = await req.serverCtx.programDB.getProgramById(
+        req.params.id,
+      );
       if (isNil(program)) {
         return res.status(404).send();
       }
 
       const mediaSources = await req.serverCtx.mediaSourceDB.getAll();
 
-      const externalId = program.externalIds.$.find(
+      const externalId = program.externalIds.find(
         (eid) =>
           eid.sourceType === ProgramExternalIdType.JELLYFIN ||
           eid.sourceType === ProgramExternalIdType.PLEX,

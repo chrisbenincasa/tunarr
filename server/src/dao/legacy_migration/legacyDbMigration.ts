@@ -31,6 +31,7 @@ import {
   sortBy,
 } from 'lodash-es';
 import path, { dirname, join } from 'path';
+import { v4 } from 'uuid';
 import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.js';
 import { globalOptions } from '../../globals.js';
 import { serverContext } from '../../serverContext.js';
@@ -39,10 +40,14 @@ import { AnonymousTask } from '../../tasks/Task.js';
 import { Maybe } from '../../types/util.js';
 import { attempt } from '../../util/index.js';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
-import { EntityManager, withDb } from '../dataSource.js';
+import { directDbAccess } from '../direct/directDbAccess.js';
+import {
+  MediaSourceType,
+  NewMediaSource,
+} from '../direct/schema/MediaSource.js';
 import { CachedImage } from '../entities/CachedImage.js';
-import { MediaSource as PlexServerSettingsEntity } from '../entities/MediaSource.js';
 import { Settings, SettingsDB, defaultXmlTvSettings } from '../settings.js';
+import { booleanToNumber } from '../sqliteUtil.js';
 import {
   LegacyChannelMigrator,
   LegacyProgram,
@@ -107,13 +112,10 @@ export class LegacyDbMigrator {
   ) {}
 
   migrateFromLegacyDb(entities?: string[]) {
-    return withDb((em) => this.migrateFromLegacyDbInner(em, entities));
+    return this.migrateFromLegacyDbInner(entities);
   }
 
-  private async migrateFromLegacyDbInner(
-    em: EntityManager,
-    entities?: string[],
-  ) {
+  private async migrateFromLegacyDbInner(entities?: string[]) {
     const entitiesToMigrate = entities ?? MigratableEntities;
     // First initialize the default schema:
     // db.data = { ...defaultSchema(globalOptions().databaseDirectory) };
@@ -311,15 +313,20 @@ export class LegacyDbMigrator {
             'index',
           );
 
-          const entities = migratedServers.map((server) => {
-            const pss = new PlexServerSettingsEntity();
-            pss.name = server.name;
-            pss.accessToken = server.accessToken;
-            pss.uri = server.uri;
-            pss.sendChannelUpdates = server.sendChannelUpdates;
-            pss.sendGuideUpdates = server.sendGuideUpdates;
-            pss.index = server.index;
-            return pss;
+          const now = +dayjs();
+          const entities: NewMediaSource[] = migratedServers.map((server) => {
+            return {
+              uuid: v4(),
+              type: MediaSourceType.PLEX,
+              createdAt: now,
+              updatedAt: now,
+              name: server.name,
+              accessToken: server.accessToken,
+              uri: server.uri,
+              sendChannelUpdates: booleanToNumber(server.sendChannelUpdates),
+              sendGuideUpdates: booleanToNumber(server.sendGuideUpdates),
+              index: server.index,
+            } satisfies NewMediaSource;
           });
 
           // Don't bother filling in the client_identifier here, the Fixer
@@ -348,11 +355,16 @@ export class LegacyDbMigrator {
             }
           }
 
-          await em.upsertMany(PlexServerSettingsEntity, entities, {
-            onConflictFields: ['name', 'uri'],
-            onConflictAction: 'ignore',
-          });
-          await em.persistAndFlush(entities);
+          await directDbAccess()
+            .insertInto('mediaSource')
+            .values(entities)
+            .onConflict((oc) => oc.columns(['name', 'uri']).doNothing())
+            .execute();
+          // await em.upsertMany(PlexServerSettingsEntity, entities, {
+          //   onConflictFields: ['name', 'uri'],
+          //   onConflictAction: 'ignore',
+          // });
+          // await em.persistAndFlush(entities);
         }
       } catch (e) {
         this.logger.error(e, 'Unable to migrate Plex server settings');
@@ -582,22 +594,29 @@ export class LegacyDbMigrator {
   }
 
   private async migrateCachedImages() {
-    return withDb(async (em) => {
-      const repo = em.getRepository(CachedImage);
-      const cacheImages = (await this.readAllOldDbFile(
-        'cache-images',
-      )) as JSONObject[];
-      const newCacheImages: CachedImage[] = [];
-      for (const cacheImage of cacheImages) {
-        // Extract the original URL
-        const url = Buffer.from(cacheImage['url'] as string, 'base64').toString(
-          'utf-8',
-        );
-        const hash = cacheImage['url'] as string;
-        const mimeType = cacheImage['mimeType'] as Maybe<string>;
-        newCacheImages.push({ url, hash, mimeType });
-      }
-      return repo.upsertMany(newCacheImages);
-    });
+    const cacheImages = (await this.readAllOldDbFile(
+      'cache-images',
+    )) as JSONObject[];
+    const newCacheImages: CachedImage[] = [];
+    for (const cacheImage of cacheImages) {
+      // Extract the original URL
+      const url = Buffer.from(cacheImage['url'] as string, 'base64').toString(
+        'utf-8',
+      );
+      const hash = cacheImage['url'] as string;
+      const mimeType = cacheImage['mimeType'] as Maybe<string>;
+      newCacheImages.push({ url, hash, mimeType });
+    }
+
+    return directDbAccess()
+      .insertInto('cachedImage')
+      .values(newCacheImages)
+      .onConflict((oc) =>
+        oc.doUpdateSet((eb) => ({
+          mimeType: eb.ref('excluded.mimeType'),
+          url: eb.ref('excluded.url'),
+        })),
+      )
+      .execute();
   }
 }

@@ -228,7 +228,7 @@ export class SessionManager {
         ) as Maybe<TSession>;
 
         if (isNil(session)) {
-          const channel = await this.channelDB.getChannelDirect(channelId);
+          const channel = await this.channelDB.getChannel(channelId);
           if (isNil(channel)) {
             throw new ChannelNotFoundError(channelId);
           }

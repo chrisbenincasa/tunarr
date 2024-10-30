@@ -1,4 +1,4 @@
-import { Selectable } from 'kysely';
+import { Insertable, Selectable } from 'kysely';
 import { WithCreatedAt, WithUpdatedAt, WithUuid } from './base.ts';
 
 export interface CustomShowTable
@@ -9,6 +9,7 @@ export interface CustomShowTable
 }
 
 export type CustomShow = Selectable<CustomShowTable>;
+export type NewCustomShow = Insertable<CustomShowTable>;
 
 export interface CustomShowContentTable {
   contentUuid: string;
@@ -17,3 +18,4 @@ export interface CustomShowContentTable {
 }
 
 export type CustomShowContent = Selectable<CustomShowContentTable>;
+export type NewCustomShowContent = Insertable<CustomShowContentTable>;

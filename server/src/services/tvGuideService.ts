@@ -232,7 +232,7 @@ export class TVGuideService {
   // and rewrite xmltv. This should be very fast since we're not altering
   // programming details or the schedule
   async updateCachedChannel(updatedChannelId: string) {
-    const channel = await this.channelDB.getChannelDirect(updatedChannelId);
+    const channel = await this.channelDB.getChannel(updatedChannelId);
     if (isNil(channel)) {
       this.logger.warn(
         'Could not find channel with id %s when attempting to update cached XMLTV channels',
@@ -265,9 +265,7 @@ export class TVGuideService {
     id: string,
     dateRange: OpenDateTimeRange,
   ): Promise<Maybe<Required<ChannelLineup>>> {
-    return this.getChannelGuides(dateRange, [id]).then((guides) =>
-      first(guides),
-    );
+    return this.getChannelGuides(dateRange, [id]).then((guide) => first(guide));
   }
 
   /**
@@ -865,7 +863,7 @@ export class TVGuideService {
     dateRange: OpenDateTimeRange,
     channelIdFilter?: string[],
   ) {
-    const allChannels = await this.channelDB.getAllChannelsDirect();
+    const allChannels = await this.channelDB.getAllChannels();
     const startTime = dateRange.from ?? dayjs();
     const endTime = dateRange.to;
     const lineups = await Promise.all(

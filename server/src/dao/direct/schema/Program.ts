@@ -1,5 +1,6 @@
 import { createExternalId } from '@tunarr/shared';
 import { Insertable, Selectable, Updateable } from 'kysely';
+import { MediaSourceType } from './MediaSource.ts';
 import { WithCreatedAt, WithUpdatedAt, WithUuid } from './base.ts';
 
 export interface ProgramTable extends WithCreatedAt, WithUpdatedAt, WithUuid {
@@ -25,7 +26,7 @@ export interface ProgramTable extends WithCreatedAt, WithUpdatedAt, WithUuid {
   seasonUuid: string | null;
   showIcon: string | null;
   showTitle: string | null;
-  sourceType: 'plex' | 'jellyfin';
+  sourceType: MediaSourceType;
   summary: string | null;
   title: string;
   tvShowUuid: string | null;

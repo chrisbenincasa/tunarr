@@ -3,9 +3,8 @@ import type {
   Options,
 } from '@mikro-orm/better-sqlite'; // or any other driver package
 import { MikroORM } from '@mikro-orm/better-sqlite';
-import { CreateContextOptions, RequestContext } from '@mikro-orm/core';
 import fs from 'fs';
-import { isUndefined, once } from 'lodash-es';
+import { once } from 'lodash-es';
 import 'reflect-metadata';
 import { dbOptions } from '../globals.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
@@ -35,28 +34,3 @@ export const initOrm = once(async (mikroOrmOptions?: Options) => {
 
   return orm;
 });
-
-export async function withDb<T>(
-  f: (db: EntityManager) => Promise<T>,
-  options?: CreateContextOptions,
-  fork?: boolean,
-): Promise<T> {
-  const scopedEm = RequestContext.getEntityManager();
-  if (!isUndefined(scopedEm)) {
-    const manager = scopedEm as EntityManager;
-    return f(fork ? manager.fork() : manager);
-  } else {
-    const orm = await initOrm();
-    return await RequestContext.create(
-      orm.em.fork(),
-      () => f(RequestContext.currentRequestContext()!.em as EntityManager),
-      options,
-    );
-  }
-}
-
-export function getEm() {
-  const em = RequestContext.getEntityManager();
-  if (!em) throw new Error('EntityManager was not bound in this context');
-  return em as EntityManager;
-}

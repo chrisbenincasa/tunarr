@@ -1,3 +1,4 @@
+import { MediaSourceSettings, tag } from '@tunarr/types';
 import {
   BaseErrorSchema,
   BasicIdParamSchema,
@@ -5,17 +6,18 @@ import {
   UpdateMediaSourceRequestSchema,
 } from '@tunarr/types/api';
 import { MediaSourceSettingsSchema } from '@tunarr/types/schemas';
-import { isError, isNil, isObject } from 'lodash-es';
+import { isError, isNil, isObject, map } from 'lodash-es';
 import { match } from 'ts-pattern';
 import z from 'zod';
 import { MediaSourceType } from '../dao/entities/MediaSource.js';
+import { numberToBoolean } from '../dao/sqliteUtil.js';
 import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.js';
 import { JellyfinApiClient } from '../external/jellyfin/JellyfinApiClient.js';
 import { PlexApiClient } from '../external/plex/PlexApiClient.js';
 import { GlobalScheduler } from '../services/scheduler.js';
 import { UpdateXmlTvTask } from '../tasks/UpdateXmlTvTask.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
-import { firstDefined, wait } from '../util/index.js';
+import { firstDefined, nullToUndefined, wait } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 
 export const mediaSourceRouter: RouterPluginAsyncCallback = async (
@@ -40,8 +42,24 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
     async (req, res) => {
       try {
         const servers = await req.serverCtx.mediaSourceDB.getAll();
-        const dtos = servers.map((server) => server.toDTO());
-        return res.send(dtos);
+        return res.send(
+          map(
+            servers,
+            (dao) =>
+              ({
+                // ...dao,
+                id: tag(dao.uuid),
+                index: dao.index,
+                uri: dao.uri,
+                type: dao.type,
+                name: dao.name,
+                accessToken: dao.accessToken,
+                clientIdentifier: nullToUndefined(dao.clientIdentifier),
+                sendChannelUpdates: numberToBoolean(dao.sendChannelUpdates),
+                sendGuideUpdates: numberToBoolean(dao.sendGuideUpdates),
+              }) satisfies MediaSourceSettings,
+          ),
+        );
       } catch (err) {
         logger.error(err);
         return res.status(500).send('error');
@@ -65,9 +83,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
     },
     async (req, res) => {
       try {
-        const server = await req.serverCtx.mediaSourceDB.getByIdDirect(
-          req.params.id,
-        );
+        const server = await req.serverCtx.mediaSourceDB.getById(req.params.id);
 
         if (isNil(server)) {
           return res.status(404).send();

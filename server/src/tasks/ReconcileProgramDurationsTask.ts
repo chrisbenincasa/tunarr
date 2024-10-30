@@ -9,9 +9,8 @@ import {
   uniqBy,
 } from 'lodash-es';
 import { ChannelDB } from '../dao/channelDb.ts';
-import { getEm } from '../dao/dataSource.ts';
 import { isContentItem } from '../dao/derived_types/Lineup.ts';
-import { Program } from '../dao/entities/Program.ts';
+import { directDbAccess } from '../dao/direct/directDbAccess.js';
 import { flatMapAsyncSeq, isNonEmptyString } from '../util/index.ts';
 import { Task } from './Task.ts';
 
@@ -28,26 +27,25 @@ export class ReconcileProgramDurationsTask extends Task {
 
   // Optionally provide the channel ID that was updated on the triggering
   // operation, since theoretically we don't have to check it.
-  constructor(private channelId?: string) {
+  constructor(
+    private channelId?: string,
+    private channelDB: ChannelDB = new ChannelDB(),
+  ) {
     super();
     this.logger.setBindings({ task: this.ID });
   }
 
   protected async runInternal(): Promise<unknown> {
-    const em = getEm();
-    // TODO put this in the constructor
-    const channelDB = new ChannelDB();
-
     // Programs previously loaded from the DB, keyed by ID, value
     // is the source-of-truth duration.
     const cachedPrograms: Record<string, number> = {};
 
-    for (const channel of await channelDB.getAllChannels()) {
+    for (const channel of await this.channelDB.getAllChannels()) {
       if (isNonEmptyString(this.channelId) && channel.uuid === this.channelId) {
         continue;
       }
 
-      const lineup = await channelDB.loadLineup(channel.uuid);
+      const lineup = await this.channelDB.loadLineup(channel.uuid);
       const uniqueProgramIds = uniqBy(
         filter(lineup.items, isContentItem),
         (item) => item.id,
@@ -59,14 +57,13 @@ export class ReconcileProgramDurationsTask extends Task {
       );
 
       const missingPrograms = await flatMapAsyncSeq(
-        chunk(missingKeys, 25),
-        async (items) => {
-          return await em.repo(Program).find({
-            uuid: {
-              $in: map(items, 'id'),
-            },
-          });
-        },
+        chunk(missingKeys, 200),
+        (items) =>
+          directDbAccess()
+            .selectFrom('program')
+            .select(['uuid', 'duration'])
+            .where('uuid', 'in', map(items, 'id'))
+            .execute(),
       );
 
       forEach(missingPrograms, (program) => {
@@ -100,7 +97,7 @@ export class ReconcileProgramDurationsTask extends Task {
           'Channel %s had a program duration discrepancy, updating lineup!',
           channel.uuid,
         );
-        await channelDB.saveLineup(channel.uuid, {
+        await this.channelDB.saveLineup(channel.uuid, {
           ...lineup,
           items: newLineupItems,
         });

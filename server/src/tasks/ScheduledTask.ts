@@ -1,9 +1,8 @@
-import schedule, { RecurrenceRule } from 'node-schedule';
-import { withDb } from '../dao/dataSource.js';
-import { Maybe } from '../types/util.js';
-import { Task } from './Task.js';
 import { isDate } from 'lodash-es';
+import schedule, { RecurrenceRule } from 'node-schedule';
+import { Maybe } from '../types/util.js';
 import { Logger, LoggerFactory } from '../util/logging/LoggerFactory.js';
+import { Task } from './Task.js';
 
 type ScheduleRule = RecurrenceRule | Date | string | number;
 
@@ -91,7 +90,7 @@ export class ScheduledTask<OutType = unknown> {
     this.running = true;
     const instance = this.factory();
     try {
-      return withDb(async () => await instance.run());
+      return await instance.run();
     } catch (e) {
       this.logger.error(e, 'Error while running job: %s', instance.taskName);
       if (rethrow) throw e;

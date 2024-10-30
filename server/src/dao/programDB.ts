@@ -1,4 +1,4 @@
-import { Loaded } from '@mikro-orm/better-sqlite';
+import { createExternalId } from '@tunarr/shared';
 import { seq } from '@tunarr/shared/util';
 import {
   ChannelProgram,
@@ -17,7 +17,6 @@ import {
   filter,
   find,
   flatMap,
-  flatten,
   forEach,
   groupBy,
   isEmpty,
@@ -30,26 +29,24 @@ import {
   reduce,
   reject,
   round,
-  union,
   uniq,
   uniqBy,
 } from 'lodash-es';
 import { MarkRequired } from 'ts-essentials';
 import { P, match } from 'ts-pattern';
+import { v4 } from 'uuid';
 import { GlobalScheduler } from '../services/scheduler.js';
 import { ReconcileProgramDurationsTask } from '../tasks/ReconcileProgramDurationsTask.js';
 import { AnonymousTask } from '../tasks/Task.js';
 import { JellyfinTaskQueue, PlexTaskQueue } from '../tasks/TaskQueue.js';
 import { SaveJellyfinProgramExternalIdsTask } from '../tasks/jellyfin/SaveJellyfinProgramExternalIdsTask.js';
 import { SavePlexProgramExternalIdsTask } from '../tasks/plex/SavePlexProgramExternalIdsTask.js';
-import { asyncPool, unfurlPool } from '../util/asyncPool.js';
 import { devAssert } from '../util/debug.js';
 import {
-  groupByAndMapAsync,
+  flatMapAsyncSeq,
   groupByUniq,
   groupByUniqProp,
   isNonEmptyString,
-  mapReduceAsyncSeq,
   mapToObj,
 } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
@@ -57,20 +54,19 @@ import { Timer } from '../util/perf.js';
 import { ProgramGroupingMinter } from './converters/ProgramGroupingMinter.js';
 import { ProgramMinterFactory } from './converters/ProgramMinter.js';
 import { ProgramConverter } from './converters/programConverters.js';
-import {
-  ProgramExternalIdType,
-  programExternalIdTypeFromString,
-} from './custom_types/ProgramExternalIdType.js';
+import { ProgramExternalIdType } from './custom_types/ProgramExternalIdType.js';
 import {
   ProgramSourceType,
   programSourceTypeFromString,
 } from './custom_types/ProgramSourceType.js';
-import { getEm } from './dataSource.ts';
 import { ProgramWithRelations } from './direct/derivedTypes.js';
 import { directDbAccess } from './direct/directDbAccess.js';
 import {
+  AllProgramJoins,
   ProgramUpsertFields,
+  withProgramByExternalId,
   withProgramExternalIds,
+  withProgramGroupingExternalIds,
   withTrackAlbum,
   withTrackArtist,
   withTvSeason,
@@ -81,11 +77,14 @@ import {
   Program as RawProgram,
   programExternalIdString,
 } from './direct/schema/Program.js';
-import { NewProgramExternalId as NewRawProgramExternalId } from './direct/schema/ProgramExternalId.js';
+import {
+  NewProgramExternalId as NewRawProgramExternalId,
+  ProgramExternalIdKeys,
+} from './direct/schema/ProgramExternalId.js';
 import { NewProgramGrouping } from './direct/schema/ProgramGrouping.js';
 import { NewProgramGroupingExternalId } from './direct/schema/ProgramGroupingExternalId.js';
 import { DB } from './direct/schema/db.js';
-import { Program, ProgramType } from './entities/Program.ts';
+import { ProgramType } from './entities/Program.ts';
 import { ProgramExternalId } from './entities/ProgramExternalId.js';
 import { ProgramGroupingType } from './entities/ProgramGrouping.js';
 import { upsertRawProgramExternalIds } from './programExternalIdHelpers.js';
@@ -117,7 +116,26 @@ export class ProgramDB {
   private timer = new Timer(this.logger);
 
   async getProgramById(id: string) {
-    return getEm().findOne(Program, id, { populate: ['externalIds'] });
+    return directDbAccess()
+      .selectFrom('program')
+      .selectAll()
+      .select((eb) => withProgramExternalIds(eb, ProgramExternalIdKeys))
+      .where('program.uuid', '=', id)
+      .executeTakeFirst();
+  }
+
+  async getProgramExternalIds(
+    id: string,
+    externalIdTypes?: ProgramExternalIdType[],
+  ) {
+    return await directDbAccess()
+      .selectFrom('programExternalId')
+      .selectAll()
+      .where('programExternalId.programUuid', '=', id)
+      .$if(!isEmpty(externalIdTypes), (qb) =>
+        qb.where('programExternalId.sourceType', 'in', externalIdTypes!),
+      )
+      .execute();
   }
 
   async getShowIdFromTitle(title: string) {
@@ -131,7 +149,10 @@ export class ProgramDB {
     return matchedGrouping?.uuid;
   }
 
-  async getProgramsByIds(ids: string[], batchSize: number = 500) {
+  async getProgramsByIds(
+    ids: string[],
+    batchSize: number = 500,
+  ): Promise<ProgramWithRelations[]> {
     const results: ProgramWithRelations[] = [];
     for (const idChunk of chunk(ids, batchSize)) {
       const res = await directDbAccess()
@@ -147,59 +168,57 @@ export class ProgramDB {
       results.push(...res);
     }
     return results;
-    // const em = getEm();
-    // return mapReduceAsyncSeq(
-    //   chunk(uniq(ids), batchSize),
-    //   (ids) =>
-    //     em.find(Program, { uuid: { $in: ids } }, { populate: ['externalIds'] }),
-    //   (acc, curr) => [...acc, ...curr],
-    //   [] as Loaded<Program, 'externalIds', '*', never>[],
-    // );
   }
 
-  async lookupByExternalIds(
-    ids: Set<[string, string, string]>,
-    chunkSize: number = 25,
-  ) {
-    const em = getEm();
+  async getProgramGrouping(id: string) {
+    return directDbAccess()
+      .selectFrom('programGrouping')
+      .selectAll()
+      .select(withProgramGroupingExternalIds)
+      .where('uuid', '=', id)
+      .executeTakeFirst();
+  }
+
+  async lookupByExternalIds(ids: Set<[string, string, string]>) {
     const converter = new ProgramConverter();
 
-    const tasks = asyncPool(
-      chunk([...ids], chunkSize),
-      async (idChunk) => {
-        return await em.find(ProgramExternalId, {
-          $or: map(idChunk, ([ps, es, ek]) => ({
-            sourceType: programExternalIdTypeFromString(ps)!,
-            externalSourceId: es,
-            externalKey: ek,
-          })),
-        });
-      },
-      { concurrency: 2 },
-    );
+    const allIds = [...ids];
+    const programsByExternalIds: ProgramWithRelations[] = [];
+    for (const idChunk of chunk(allIds, 200)) {
+      programsByExternalIds.push(
+        ...(await directDbAccess()
+          .selectFrom('programExternalId')
+          .select((eb) =>
+            withProgramByExternalId(eb, { joins: AllProgramJoins }),
+          )
+          .where((eb) =>
+            eb.or(
+              map(idChunk, ([ps, es, ek]) =>
+                eb.and([
+                  eb('programExternalId.externalKey', '=', ek),
+                  eb('programExternalId.externalSourceId', '=', es),
+                  eb(
+                    'programExternalId.sourceType',
+                    '=',
+                    programSourceTypeFromString(ps)!,
+                  ),
+                ]),
+              ),
+            ),
+          )
+          .execute()
+          .then((_) => seq.collect(_, (eid) => eid.program))),
+      );
+    }
 
-    const externalIdsdByProgram = groupBy(
-      flatten(await unfurlPool(tasks)),
-      (x) => x.program.uuid,
-    );
-
-    const programs = await mapReduceAsyncSeq(
-      chunk(keys(externalIdsdByProgram), 50),
-      async (programIdChunk) => await em.find(Program, programIdChunk),
-      (acc, curr) => ({ ...acc, ...groupByUniqProp(curr, 'uuid') }),
-      {} as Record<string, Loaded<Program>>,
-    );
-
-    return groupByAndMapAsync(
-      // Silently drop programs we can't find.
-      union(keys(externalIdsdByProgram), keys(programs)),
-      (programId) => programId,
-      (programId) => {
-        const eids = externalIdsdByProgram[programId];
-        return converter.entityToContentProgram(programs[programId], eids, {
-          skipPopulate: { externalIds: false },
-        });
-      },
+    return groupByUniq(
+      map(programsByExternalIds, (program) =>
+        converter.directEntityToContentProgramSync(
+          program,
+          program.externalIds ?? [],
+        ),
+      ),
+      (item) => item.id!,
     );
   }
 
@@ -207,34 +226,45 @@ export class ProgramDB {
     ids: Set<[string, string, string]>,
     chunkSize: number = 50,
   ) {
-    const em = getEm();
-    const tasks = asyncPool(
+    if (ids.size === 0) {
+      return [];
+    }
+
+    const externalIds = await flatMapAsyncSeq(
       chunk([...ids], chunkSize),
-      async (idChunk) => {
-        return await em.find(ProgramExternalId, {
-          $or: map(idChunk, ([ps, es, ek]) => ({
-            sourceType: programExternalIdTypeFromString(ps)!,
-            externalSourceId: es,
-            externalKey: ek,
-          })),
-        });
+      (idChunk) => {
+        return directDbAccess()
+          .selectFrom('programExternalId')
+          .selectAll()
+          .where((eb) =>
+            eb.or(
+              map(idChunk, ([ps, es, ek]) => {
+                return eb.and([
+                  eb('programExternalId.externalKey', '=', ek),
+                  eb('programExternalId.externalSourceId', '=', es),
+                  eb(
+                    'programExternalId.sourceType',
+                    '=',
+                    programSourceTypeFromString(ps)!,
+                  ),
+                ]);
+              }),
+            ),
+          )
+          .execute();
       },
-      { concurrency: 2 },
     );
 
     return mapValues(
-      groupByUniq(flatten(await unfurlPool(tasks)), (eid) =>
-        eid.toExternalIdString(),
+      groupByUniq(externalIds, (eid) =>
+        createExternalId(
+          eid.sourceType,
+          eid.externalSourceId!,
+          eid.externalKey,
+        ),
       ),
-      (eid) => eid.program.uuid,
+      (eid) => eid.programUuid,
     );
-  }
-
-  async getProgramExternalIds(programId: string) {
-    const em = getEm();
-    return await em.find(ProgramExternalId, {
-      program: programId,
-    });
   }
 
   async updateProgramPlexRatingKey(
@@ -245,31 +275,56 @@ export class ProgramDB {
       'externalKey' | 'directFilePath' | 'externalFilePath'
     >,
   ) {
-    const em = getEm();
-    const existingRatingKey = await em.findOne(ProgramExternalId, {
-      program: programId,
-      externalSourceId: plexServerName,
-      sourceType: ProgramExternalIdType.PLEX,
-    });
+    const existingRatingKey = await directDbAccess()
+      .selectFrom('programExternalId')
+      .selectAll()
+      .where((eb) =>
+        eb.and({
+          programUuid: programId,
+          externalSourceId: plexServerName,
+          sourceType: ProgramExternalIdType.PLEX,
+        }),
+      )
+      .executeTakeFirst();
 
     if (isNil(existingRatingKey)) {
-      const newEid = em.create(ProgramExternalId, {
-        program: em.getReference(Program, programId),
-        sourceType: ProgramExternalIdType.PLEX,
-        externalSourceId: plexServerName,
-        ...details,
-      });
-      em.persist(newEid);
+      const now = +dayjs();
+      return await directDbAccess()
+        .insertInto('programExternalId')
+        .values({
+          uuid: v4(),
+          createdAt: now,
+          updatedAt: now,
+          programUuid: programId,
+          sourceType: ProgramExternalIdType.PLEX,
+          externalSourceId: plexServerName,
+          ...details,
+        })
+        .returningAll()
+        .executeTakeFirstOrThrow();
     } else {
-      existingRatingKey.externalKey = details.externalKey;
-      if (isNonEmptyString(details.externalFilePath)) {
-        existingRatingKey.externalFilePath = details.externalFilePath;
-      }
-      if (isNonEmptyString(details.directFilePath)) {
-        existingRatingKey.directFilePath = details.directFilePath;
-      }
+      await directDbAccess()
+        .updateTable('programExternalId')
+        .set({
+          externalKey: details.externalKey,
+        })
+        .$if(isNonEmptyString(details.externalFilePath), (_) =>
+          _.set({
+            externalFilePath: details.externalFilePath!,
+          }),
+        )
+        .$if(isNonEmptyString(details.directFilePath), (_) =>
+          _.set({
+            directFilePath: details.directFilePath!,
+          }),
+        )
+        .where('uuid', '=', existingRatingKey.uuid)
+        .executeTakeFirst();
+      return await directDbAccess()
+        .selectFrom('programExternalId')
+        .where('uuid', '=', existingRatingKey.uuid)
+        .executeTakeFirstOrThrow();
     }
-    await em.flush();
   }
 
   async upsertContentPrograms(
@@ -278,9 +333,8 @@ export class ProgramDB {
   ) {
     const start = performance.now();
     // TODO: Wrap all of this stuff in a class and use its own logger
-    const em = getEm();
     const [, nonPersisted] = partition(programs, (p) => p.persisted);
-    const minter = ProgramMinterFactory.create(em);
+    const minter = ProgramMinterFactory.create();
 
     const [contentPrograms, invalidPrograms] = partition(
       uniqBy(filter(nonPersisted, isContentProgram), (p) => p.uniqueId),
@@ -398,7 +452,7 @@ export class ProgramDB {
     const programsToPersist: MintedRawProgramInfo[] = map(
       contentPrograms,
       (p) => {
-        const program = minter.mintRaw(p.externalSourceName, p.originalProgram);
+        const program = minter.mint(p.externalSourceName, p.originalProgram);
         const externalIds = minter.mintRawExternalIds(
           p.externalSourceName,
           program.uuid,
@@ -600,14 +654,15 @@ export class ProgramDB {
         )
         .with(
           { sourceType: 'jellyfin', program: { Type: 'Episode' } },
-          ({ program: ep }) => [ep.SeriesId, ep.ParentId] as const,
+          ({ program: ep }) =>
+            [ep.SeriesId, ep.ParentId ?? ep.SeasonId] as const,
         )
         .with(
           { sourceType: 'jellyfin', program: { Type: 'Audio' } },
           ({ program: ep }) =>
             [
               find(ep.AlbumArtists, { Name: ep.AlbumArtist })?.Id,
-              ep.ParentId,
+              ep.ParentId ?? ep.AlbumId,
             ] as const,
         )
         .otherwise(() => [null, null] as const);
@@ -966,7 +1021,7 @@ export class ProgramDB {
         filter(upsertedPrograms, { sourceType: ProgramSourceType.PLEX }),
         (program) => {
           try {
-            const task = new SavePlexProgramExternalIdsTask(program.uuid);
+            const task = new SavePlexProgramExternalIdsTask(program.uuid, this);
             task.logLevel = 'trace';
             PlexTaskQueue.add(task).catch((e) => {
               this.logger.error(

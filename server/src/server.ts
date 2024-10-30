@@ -31,7 +31,7 @@ import { apiRouter } from './api/index.js';
 import { streamApi } from './api/streamApi.js';
 import { videoApiRouter } from './api/videoApi.js';
 import { ChannelLineupMigrator } from './dao/ChannelLineupMigrator.js';
-import { EntityManager, initOrm, withDb } from './dao/dataSource.js';
+import { EntityManager, initOrm } from './dao/dataSource.js';
 import { initDirectDbAccess } from './dao/direct/directDbAccess.js';
 import { LegacyDbMigrator } from './dao/legacy_migration/legacyDbMigration.js';
 import { getSettings } from './dao/settings.js';
@@ -171,6 +171,10 @@ export async function initServer(opts: ServerOptions) {
       .catch((e) => {
         logger.error('Failed to migrate from legacy DB: %O', e);
       });
+  } else {
+    logger.info(
+      'Found legacy dizquetv database folder, but not migrating because an existing Tunarr database was also found',
+    );
   }
 
   if (await fileExists(settingsDb.ffmpegSettings().ffmpegExecutablePath)) {
@@ -439,51 +443,47 @@ export async function initServer(opts: ServerOptions) {
         logger.debug(e, 'Error sending shutdown signal to frontend');
       }
 
-      await withDb(async () => {
+      try {
+        logger.debug('Pausing all on-demand channels');
+        await ctx.onDemandChannelService.pauseAllChannels();
+      } catch (e) {
+        logger.error(e, 'Error pausing on-demand channels');
+      }
+
+      logger.debug('Shutting down all sessions');
+      for (const session of values(ctx.sessionManager.allSessions())) {
         try {
-          logger.debug('Pausing all on-demand channels');
-          await ctx.onDemandChannelService.pauseAllChannels();
+          await session.stop();
         } catch (e) {
-          logger.error(e, 'Error pausing on-demand channels');
+          logger.error(
+            e,
+            'Error shutting down session (id=%s, type%s)',
+            session.id,
+            session.sessionType,
+          );
         }
+      }
 
-        logger.debug('Shutting down all sessions');
-        for (const session of values(ctx.sessionManager.allSessions())) {
-          try {
-            await session.stop();
-          } catch (e) {
-            logger.error(
-              e,
-              'Error shutting down session (id=%s, type%s)',
-              session.id,
-              session.sessionType,
-            );
-          }
-        }
+      ctx.eventService.close();
 
-        ctx.eventService.close();
+      try {
+        logger.debug('Waiting for pending jobs to complete!');
+        await Promise.race([
+          schedule.gracefulShutdown(),
+          new Promise<boolean>((resolve) => {
+            setTimeout(() => {
+              console.log('here!');
+              resolve(false);
+            }, 1000);
+          }).then(() => {
+            throw new Error('Scheduled job graceful shutdown timeout reached.');
+          }),
+        ]);
+      } catch (e) {
+        logger.error(e, 'Scheduled job graceful shutdown failed.');
+      }
 
-        try {
-          logger.debug('Waiting for pending jobs to complete!');
-          await Promise.race([
-            schedule.gracefulShutdown(),
-            new Promise<boolean>((resolve) => {
-              setTimeout(() => {
-                console.log('here!');
-                resolve(false);
-              }, 1000);
-            }).then(() => {
-              throw new Error(
-                'Scheduled job graceful shutdown timeout reached.',
-              );
-            }),
-          ]);
-        } catch (e) {
-          logger.error(e, 'Scheduled job graceful shutdown failed.');
-        }
-
-        logger.debug('All done, shutting down!');
-      });
+      logger.debug('All done, shutting down!');
     });
   });
 

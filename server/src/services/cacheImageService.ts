@@ -4,10 +4,8 @@ import { FastifyReply, FastifyRequest } from 'fastify';
 import { createWriteStream, promises as fs } from 'fs';
 import { isString, isUndefined } from 'lodash-es';
 import stream from 'stream';
-// import { CachedImage, DbAccess } from '../dao/db.js';
-import { EntityRepository } from '@mikro-orm/core';
-import { getEm, withDb } from '../dao/dataSource.js';
-import { CachedImage } from '../dao/entities/CachedImage.js';
+import { directDbAccess } from '../dao/direct/directDbAccess.js';
+import { CachedImage } from '../dao/direct/schema/CachedImage.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { FileCacheService } from './fileCacheService.js';
 
@@ -43,13 +41,15 @@ export class CacheImageService {
     res: FastifyReply,
   ) {
     try {
-      const hash = req.params.hash;
-      const repo = req.entityManager.repo(CachedImage);
-      const imgItem = await repo.findOne({ hash });
+      const imgItem = await directDbAccess()
+        .selectFrom('cachedImage')
+        .where('hash', '=', req.params.hash)
+        .selectAll()
+        .executeTakeFirst();
       if (imgItem) {
         const file = await this.getImageFromCache(imgItem.hash);
         if (isUndefined(file) || !file.length) {
-          const fileMimeType = await this.requestImageAndStore(imgItem, repo);
+          const fileMimeType = await this.requestImageAndStore(imgItem);
           void res.header('content-type', fileMimeType);
         } else {
           void res.header('content-type', imgItem.mimeType);
@@ -67,33 +67,30 @@ export class CacheImageService {
   }
 
   async getOrDownloadImage(hash: string) {
-    const em = getEm();
-    try {
-      const repo = em.repo(CachedImage);
-      const imgItem = await repo.findOne({ hash });
-      if (imgItem) {
-        if (
-          !(await this.cacheService.exists(
-            `${this.imageCacheFolder}/${imgItem.hash}`,
-          ))
-        ) {
-          return await this.requestImageAndStore(imgItem, repo);
-        } else {
-          return {
-            path: `${this.cacheService.cachePath}/${this.imageCacheFolder}/${imgItem.hash}`,
-            mimeType: imgItem.mimeType,
-          };
-        }
+    const imgItem = await directDbAccess()
+      .selectFrom('cachedImage')
+      .where('hash', '=', hash)
+      .selectAll()
+      .executeTakeFirst();
+    if (imgItem) {
+      if (
+        !(await this.cacheService.exists(
+          `${this.imageCacheFolder}/${imgItem.hash}`,
+        ))
+      ) {
+        return await this.requestImageAndStore(imgItem);
+      } else {
+        return {
+          path: `${this.cacheService.cachePath}/${this.imageCacheFolder}/${imgItem.hash}`,
+          mimeType: imgItem.mimeType,
+        };
       }
-      return;
-    } finally {
-      await em.flush();
     }
+    return;
   }
 
   private async requestImageAndStore(
     cachedImage: CachedImage,
-    repo: EntityRepository<CachedImage>,
   ): Promise<{ path: string; mimeType?: string }> {
     const requestConfiguration: AxiosRequestConfig = {
       method: 'get',
@@ -108,7 +105,16 @@ export class CacheImageService {
     const mimeType = (response.headers as AxiosHeaders).get('content-type');
     if (!isUndefined(mimeType) && isString(mimeType)) {
       this.logger.debug('Got image file with mimeType ' + mimeType);
-      await repo.upsert({ ...cachedImage, mimeType });
+      await directDbAccess()
+        .insertInto('cachedImage')
+        .values({
+          ...cachedImage,
+          mimeType,
+        })
+        .onConflict((oc) =>
+          oc.column('hash').doUpdateSet({ ...cachedImage, mimeType }),
+        )
+        .executeTakeFirst();
     }
 
     const path = `${this.cacheService.cachePath}/${this.imageCacheFolder}/${cachedImage.hash}`;
@@ -150,10 +156,14 @@ export class CacheImageService {
       .createHash('md5')
       .update(imageUrl)
       .digest('base64');
-    await withDb(async (em) => {
-      await em.repo(CachedImage).upsert({ hash: encodedUrl, url: imageUrl });
-      await em.flush();
-    });
+    await directDbAccess()
+      .insertInto('cachedImage')
+      .values({
+        hash: encodedUrl,
+        url: imageUrl,
+      })
+      .onConflict((oc) => oc.column('hash').doUpdateSet({ url: imageUrl }))
+      .executeTakeFirst();
     return encodedUrl;
   }
 }

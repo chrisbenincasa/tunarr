@@ -1,7 +1,11 @@
 import { Channel } from '@tunarr/types';
 import { filter } from 'lodash-es';
 import { ChannelAndLineup } from '../../types/internal.js';
-import { isDefined, nilToUndefined } from '../../util/index.js';
+import {
+  isDefined,
+  nilToUndefined,
+  nullToUndefined,
+} from '../../util/index.js';
 import { DefaultChannelIcon } from '../entities/Channel.js';
 
 export const dbChannelToApiChannel = ({
@@ -12,26 +16,23 @@ export const dbChannelToApiChannel = ({
     id: channel.uuid,
     number: channel.number,
     watermark: nilToUndefined(channel.watermark),
-    fillerCollections: channel.channelFillers.isInitialized()
-      ? channel.channelFillers.map((filler) => ({
-          id: filler.fillerShow.uuid,
-          cooldownSeconds: filler.cooldown,
-          weight: filler.weight,
-        }))
-      : undefined,
-    // fallback
-    guideFlexTitle: channel.guideFlexTitle,
+    fillerCollections: channel.fillerShows?.map((filler) => ({
+      id: filler.fillerShowUuid,
+      cooldownSeconds: filler.cooldown,
+      weight: filler.weight,
+    })),
+    guideFlexTitle: nullToUndefined(channel.guideFlexTitle),
     icon: channel.icon ?? DefaultChannelIcon,
     guideMinimumDuration: channel.guideMinimumDuration,
     groupTitle: channel.groupTitle || '',
-    disableFillerOverlay: channel.disableFillerOverlay,
-    fillerRepeatCooldown: channel.fillerRepeatCooldown,
+    disableFillerOverlay: channel.disableFillerOverlay === 1,
+    fillerRepeatCooldown: nullToUndefined(channel.fillerRepeatCooldown),
     startTime: channel.startTime,
     offline: channel.offline,
     name: channel.name,
     transcoding: nilToUndefined(channel.transcoding),
     duration: channel.duration,
-    stealth: channel.stealth,
+    stealth: channel.stealth === 1,
     onDemand: {
       enabled: isDefined(lineup.onDemandConfig),
     },

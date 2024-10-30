@@ -201,10 +201,10 @@ export class PlexApiClient extends BaseApiClient {
   }
 
   async refreshChannels(
-    channels: { number: number; stealth: boolean; uuid: string }[],
+    channels: { number: number; stealth: number; uuid: string }[],
     providedDvrs?: PlexDvr[],
   ) {
-    const liveChannels = reject(channels, { stealth: true });
+    const liveChannels = reject(channels, { stealth: 1 });
     const dvrs = !isEmpty(providedDvrs) ? providedDvrs : await this.getDvrs();
     if (!dvrs) {
       throw new Error('Could not retrieve Plex DVRs');
