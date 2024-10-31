@@ -628,7 +628,7 @@ export default {
             sql`(\`source_type\` in ('plex', 'plex-guid', 'tmdb', 'imdb', 'tvdb', 'jellyfin'))`,
           ),
       )
-      .addColumn('external_source_id', 'text', (col) => col.notNull())
+      .addColumn('external_source_id', 'text')
       .addColumn('external_key', 'text', (col) => col.notNull())
       .addColumn('group_uuid', 'text', (col) => col.notNull())
       .addColumn('external_file_path', 'text')

@@ -90,7 +90,7 @@ export default {
       .addColumn('source_type', 'text', (col) =>
         col.notNull().check(sql`(\`source_type\` in ('plex'))`),
       )
-      .addColumn('external_source_id', 'text', (col) => col.notNull())
+      .addColumn('external_source_id', 'text')
       .addColumn('external_key', 'text', (col) => col.notNull())
       .addColumn('group_uuid', 'text', (col) => col.notNull())
       .addColumn('external_file_path', 'text')
