@@ -17,9 +17,9 @@ export class ConnectionTracker<
   #connections: Record<string, ConnectionDetails> = {};
   #heartbeats: Record<string, number> = {};
 
-  constructor(id: string) {
+  constructor(id: string, name: string) {
     super();
-    this.#logger.setBindings({ id });
+    this.#logger.setBindings({ id, name });
   }
 
   addConnection(token: string, connection: ConnectionDetails) {
@@ -27,6 +27,7 @@ export class ConnectionTracker<
     this.#heartbeats[token] = new Date().getTime();
     if (this.#cleanupFunc) {
       clearTimeout(this.#cleanupFunc);
+      this.#cleanupFunc = null;
     }
   }
 
@@ -64,7 +65,10 @@ export class ConnectionTracker<
       // We already scheduled shutdown
       return false;
     }
+
     this.#logger.debug('Scheduling session shutdown');
+
+    // TODO: Use the scheduler to do this
     this.#cleanupFunc = setTimeout(() => {
       this.#logger.debug('Shutting down connection tracker');
       if (isEmpty(this.#connections)) {
@@ -75,11 +79,15 @@ export class ConnectionTracker<
           this.#connections,
         );
       }
+
       if (this.#cleanupFunc) {
         clearTimeout(this.#cleanupFunc);
         this.#cleanupFunc = null;
       }
-    }, delay);
+      // unref() so this timeout doesn't stop the process from exiting
+      // exiting the process will kill all subprocesses anyway
+    }, delay).unref();
+
     return true;
   }
 }

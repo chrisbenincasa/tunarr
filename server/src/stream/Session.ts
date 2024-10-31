@@ -79,7 +79,10 @@ export abstract class Session<
     });
     this.sessionOptions = opts;
     this.channel = channel;
-    this.connectionTracker = new ConnectionTracker(this.channel.uuid);
+    this.connectionTracker = new ConnectionTracker(
+      this.channel.uuid,
+      `channel_${this.channel.uuid}_${this.constructor.name}`,
+    );
     this.connectionTracker.on('cleanup', () => {
       this.stop()
         .catch(console.error)
@@ -255,10 +258,17 @@ export abstract class Session<
       this.stop().catch((e) => {
         this.logger.error(e);
       });
-      return;
+      return true;
     } else {
-      this.emit('cleanupScheduled', delay);
-      return this.connectionTracker.scheduleCleanup(delay);
+      const cleanupScheduled = this.connectionTracker.scheduleCleanup(delay);
+      if (cleanupScheduled) {
+        this.logger.debug(
+          'Session in state "%s" got cleanup command.',
+          this.state,
+        );
+        this.emit('cleanupScheduled', delay);
+      }
+      return cleanupScheduled;
     }
   }
 
