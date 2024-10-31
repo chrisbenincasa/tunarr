@@ -12,7 +12,6 @@ import { ArgumentsCamelCase } from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import yargs from 'yargs/yargs';
 import { commands } from './cli/index.js';
-import { initOrm } from './dao/dataSource.js';
 import {
   LegacyDbMigrator,
   MigratableEntities,
@@ -224,18 +223,18 @@ ${chalk.blue('  |_| ')}${chalk.green(' \\___/')}${chalk.yellow(
           await initDbDirectories();
           break;
         }
-        case 'generate-migration': {
-          const orm = await initOrm();
+        // case 'generate-migration': {
+        //   const orm = await initOrm();
 
-          const result = await orm.migrator.createMigration(
-            undefined,
-            args.blank,
-          );
+        //   const result = await orm.migrator.createMigration(
+        //     undefined,
+        //     args.blank,
+        //   );
 
-          console.log(result.code);
+        //   console.log(result.code);
 
-          break;
-        }
+        //   break;
+        // }
         default: {
           console.error('Invalid subcommand: %s', args.sub);
           process.exit(1);

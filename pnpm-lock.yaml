@@ -282,7 +282,7 @@ importers:
         version: 2.2.0(esbuild@0.21.5)
       eslint-plugin-unused-imports:
         specifier: ^3.1.0
-        version: 3.1.0(@typescript-eslint/eslint-plugin@7.5.0)(eslint@8.56.0)
+        version: 3.1.0(eslint@8.56.0)
       fast-check:
         specifier: ^3.17.1
         version: 3.17.1
@@ -2116,7 +2116,7 @@ packages:
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
     dependencies:
       ajv: 6.12.6
-      debug: 4.3.5
+      debug: 4.3.7
       espree: 9.6.1
       globals: 13.24.0
       ignore: 5.3.1
@@ -2287,7 +2287,7 @@ packages:
     deprecated: Use @eslint/config-array instead
     dependencies:
       '@humanwhocodes/object-schema': 2.0.3
-      debug: 4.3.5
+      debug: 4.3.7
       minimatch: 3.1.2
     transitivePeerDependencies:
       - supports-color
@@ -3925,7 +3925,7 @@ packages:
       '@typescript-eslint/type-utils': 7.5.0(eslint@8.56.0)(typescript@5.4.3)
       '@typescript-eslint/utils': 7.5.0(eslint@8.56.0)(typescript@5.4.3)
       '@typescript-eslint/visitor-keys': 7.5.0
-      debug: 4.3.4(supports-color@5.5.0)
+      debug: 4.3.4
       eslint: 8.56.0
       graphemer: 1.4.0
       ignore: 5.2.4
@@ -3972,7 +3972,7 @@ packages:
       '@typescript-eslint/types': 7.5.0
       '@typescript-eslint/typescript-estree': 7.5.0(typescript@5.4.3)
       '@typescript-eslint/visitor-keys': 7.5.0
-      debug: 4.3.4(supports-color@5.5.0)
+      debug: 4.3.4
       eslint: 8.56.0
       typescript: 5.4.3
     transitivePeerDependencies:
@@ -4027,7 +4027,7 @@ packages:
     dependencies:
       '@typescript-eslint/typescript-estree': 7.5.0(typescript@5.4.3)
       '@typescript-eslint/utils': 7.5.0(eslint@8.56.0)(typescript@5.4.3)
-      debug: 4.3.4(supports-color@5.5.0)
+      debug: 4.3.4
       eslint: 8.56.0
       ts-api-utils: 1.0.3(typescript@5.4.3)
       typescript: 5.4.3
@@ -4077,7 +4077,7 @@ packages:
     dependencies:
       '@typescript-eslint/types': 7.5.0
       '@typescript-eslint/visitor-keys': 7.5.0
-      debug: 4.3.4(supports-color@5.5.0)
+      debug: 4.3.4
       globby: 11.1.0
       is-glob: 4.0.3
       minimatch: 9.0.3
@@ -5664,6 +5664,17 @@ packages:
       ms: 2.1.2
     dev: false
 
+  /debug@4.3.4:
+    resolution: {integrity: sha512-PRWFHuSU3eDtQJPvnNY7Jcket1j0t5OuOsFzPPzsekD52Zl8qUfFIPEiswXqIvHWGVHOgX+7G/vCNNhehwxfkQ==}
+    engines: {node: '>=6.0'}
+    peerDependencies:
+      supports-color: '*'
+    peerDependenciesMeta:
+      supports-color:
+        optional: true
+    dependencies:
+      ms: 2.1.2
+
   /debug@4.3.4(supports-color@5.5.0):
     resolution: {integrity: sha512-PRWFHuSU3eDtQJPvnNY7Jcket1j0t5OuOsFzPPzsekD52Zl8qUfFIPEiswXqIvHWGVHOgX+7G/vCNNhehwxfkQ==}
     engines: {node: '>=6.0'}
@@ -5675,6 +5686,7 @@ packages:
     dependencies:
       ms: 2.1.2
       supports-color: 5.5.0
+    dev: true
 
   /debug@4.3.5:
     resolution: {integrity: sha512-pt0bNEmneDIvdL1Xsd9oDQ/wrQRkXDT4AUWlNZNPKvW5x/jyO9VFXkJUP07vQ2upmw5PlaITaPKc31jK13V+jg==}
@@ -6283,6 +6295,20 @@ packages:
       eslint-rule-composer: 0.3.0
     dev: true
 
+  /eslint-plugin-unused-imports@3.1.0(eslint@8.56.0):
+    resolution: {integrity: sha512-9l1YFCzXKkw1qtAru1RWUtG2EVDZY0a0eChKXcL+EZ5jitG7qxdctu4RnvhOJHv4xfmUf7h+JJPINlVpGhZMrw==}
+    engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
+    peerDependencies:
+      '@typescript-eslint/eslint-plugin': 6 - 7
+      eslint: 8.56.0
+    peerDependenciesMeta:
+      '@typescript-eslint/eslint-plugin':
+        optional: true
+    dependencies:
+      eslint: 8.56.0
+      eslint-rule-composer: 0.3.0
+    dev: true
+
   /eslint-rule-composer@0.3.0:
     resolution: {integrity: sha512-bt+Sh8CtDmn2OajxvNO+BX7Wn4CIWMpTRm3MaiKPCQcnnlm0CS2mhui6QaoeQugs+3Kj2ESKEEGJUdVafwhiCg==}
     engines: {node: '>=4.0.0'}
@@ -6330,7 +6356,7 @@ packages:
       ajv: 6.12.6
       chalk: 4.1.2
       cross-spawn: 7.0.3
-      debug: 4.3.5
+      debug: 4.3.7
       doctrine: 3.0.0
       escape-string-regexp: 4.0.0
       eslint-scope: 7.2.2
@@ -7828,7 +7854,7 @@ packages:
       better-sqlite3: 9.4.5
       colorette: 2.0.19
       commander: 10.0.1
-      debug: 4.3.4(supports-color@5.5.0)
+      debug: 4.3.4
       escalade: 3.1.1
       esm: 3.2.25
       get-package-type: 0.1.0
@@ -10884,7 +10910,7 @@ packages:
       bundle-require: 4.0.2(esbuild@0.19.12)
       cac: 6.7.14
       chokidar: 3.5.3
-      debug: 4.3.4(supports-color@5.5.0)
+      debug: 4.3.4
       esbuild: 0.19.12
       execa: 5.1.1
       globby: 11.1.0

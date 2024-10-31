@@ -3,7 +3,6 @@ import { findKey, forEach, merge } from 'lodash-es';
 import isUndefined from 'lodash-es/isUndefined.js';
 import once from 'lodash-es/once.js';
 import path, { resolve } from 'node:path';
-import dbConfig from '../mikro-orm.config.js';
 
 export type ServerOptions = GlobalOptions & {
   port: number;
@@ -79,7 +78,6 @@ export const dbOptions = (): Options => {
   }
 
   return {
-    ...dbConfig,
     dbName: path.join(_globalOptions.databaseDirectory, 'db.db'),
   };
 };

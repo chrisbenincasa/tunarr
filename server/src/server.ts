@@ -2,7 +2,6 @@ import cors from '@fastify/cors';
 import fastifyMultipart from '@fastify/multipart';
 import fpStatic from '@fastify/static';
 import fastifySwagger from '@fastify/swagger';
-import { RequestContext } from '@mikro-orm/core';
 import constants from '@tunarr/shared/constants';
 import fastify, { FastifySchema } from 'fastify';
 import fastifyGracefulShutdown from 'fastify-graceful-shutdown';
@@ -31,8 +30,10 @@ import { apiRouter } from './api/index.js';
 import { streamApi } from './api/streamApi.js';
 import { videoApiRouter } from './api/videoApi.js';
 import { ChannelLineupMigrator } from './dao/ChannelLineupMigrator.js';
-import { EntityManager, initOrm } from './dao/dataSource.js';
-import { initDirectDbAccess } from './dao/direct/directDbAccess.js';
+import {
+  initDirectDbAccess,
+  syncMigrationTablesIfNecessary,
+} from './dao/direct/directDbAccess.js';
 import { LegacyDbMigrator } from './dao/legacy_migration/legacyDbMigration.js';
 import { getSettings } from './dao/settings.js';
 import { FFMPEGInfo } from './ffmpeg/ffmpegInfo.js';
@@ -151,8 +152,8 @@ export async function initServer(opts: ServerOptions) {
     className: 'TunarrServer',
   });
 
-  const orm = await initOrm();
   initDirectDbAccess(opts);
+  await syncMigrationTablesIfNecessary();
   initializeSingletons();
 
   const ctx = serverContext();
@@ -251,20 +252,18 @@ export async function initServer(opts: ServerOptions) {
       origin: '*', // Testing
     })
     .register(fastifyMultipart)
-    .addHook('onRequest', (_req, _rep, done) =>
-      RequestContext.create(orm.em, done),
-    )
+    // .addHook('onRequest', (_req, _rep, done) =>
+    //   RequestContext.create(orm.em, done),
+    // )
     .addHook('onRequest', (_req, _res, done) => {
       ServerRequestContext.create(serverContext(), done);
     })
-    .addHook('onClose', async () => await orm.close())
+    // .addHook('onClose', async () => await orm.close())
     .register(
       fp((f, _, done) => {
         f.decorateRequest('serverCtx');
         f.addHook('onRequest', (req, _res, done) => {
           req.serverCtx = ServerRequestContext.currentServerContext()!;
-          req.entityManager =
-            RequestContext.getEntityManager()! as EntityManager;
           done();
         });
         done();

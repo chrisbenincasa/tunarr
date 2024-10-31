@@ -15,6 +15,7 @@ import type {
   FillerShowTable,
 } from './FillerShow.d.ts';
 import type { MediaSourceTable } from './MediaSource.d.ts';
+import { MikroOrmMigrationsTable } from './MikroOrmMigrations.js';
 import { ProgramTable } from './Program.ts';
 import type { ProgramExternalIdTable } from './ProgramExternalId.d.ts';
 import type { ProgramGroupingTable } from './ProgramGrouping.d.ts';
@@ -45,4 +46,7 @@ export interface DB {
   programExternalId: ProgramExternalIdTable;
   programGrouping: ProgramGroupingTable;
   programGroupingExternalId: ProgramGroupingExternalIdTable;
+
+  // Legacy migration table
+  mikroOrmMigrations: MikroOrmMigrationsTable;
 }
