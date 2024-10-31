@@ -32,7 +32,7 @@ import {
   uniq,
   uniqBy,
 } from 'lodash-es';
-import { MarkRequired } from 'ts-essentials';
+import { MarkOptional, MarkRequired } from 'ts-essentials';
 import { P, match } from 'ts-pattern';
 import { v4 } from 'uuid';
 import { GlobalScheduler } from '../services/scheduler.js';
@@ -77,16 +77,16 @@ import {
   Program as RawProgram,
   programExternalIdString,
 } from './direct/schema/Program.js';
+import { ProgramType } from './direct/schema/Program.ts';
 import {
   NewProgramExternalId as NewRawProgramExternalId,
   ProgramExternalIdKeys,
 } from './direct/schema/ProgramExternalId.js';
+import { ProgramExternalId } from './direct/schema/ProgramExternalId.ts';
 import { NewProgramGrouping } from './direct/schema/ProgramGrouping.js';
+import { ProgramGroupingType } from './direct/schema/ProgramGrouping.ts';
 import { NewProgramGroupingExternalId } from './direct/schema/ProgramGroupingExternalId.js';
 import { DB } from './direct/schema/db.js';
-import { ProgramType } from './entities/Program.ts';
-import { ProgramExternalId } from './entities/ProgramExternalId.js';
-import { ProgramGroupingType } from './entities/ProgramGrouping.js';
 import { upsertRawProgramExternalIds } from './programExternalIdHelpers.js';
 
 type ValidatedContentProgram = MarkRequired<
@@ -270,9 +270,12 @@ export class ProgramDB {
   async updateProgramPlexRatingKey(
     programId: string,
     plexServerName: string,
-    details: Pick<
-      ProgramExternalId,
-      'externalKey' | 'directFilePath' | 'externalFilePath'
+    details: MarkOptional<
+      Pick<
+        ProgramExternalId,
+        'externalKey' | 'directFilePath' | 'externalFilePath'
+      >,
+      'directFilePath' | 'externalFilePath'
     >,
   ) {
     const existingRatingKey = await directDbAccess()

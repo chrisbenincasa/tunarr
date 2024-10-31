@@ -9,7 +9,7 @@ import { MediaSourceSettingsSchema } from '@tunarr/types/schemas';
 import { isError, isNil, isObject, map } from 'lodash-es';
 import { match } from 'ts-pattern';
 import z from 'zod';
-import { MediaSourceType } from '../dao/entities/MediaSource.js';
+import { MediaSourceType } from '../dao/direct/schema/MediaSource.ts';
 import { numberToBoolean } from '../dao/sqliteUtil.js';
 import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.js';
 import { JellyfinApiClient } from '../external/jellyfin/JellyfinApiClient.js';

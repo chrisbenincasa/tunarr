@@ -3,12 +3,17 @@ import { Generated, Insertable, Selectable } from 'kysely';
 import { WithCreatedAt, WithUpdatedAt, WithUuid } from './base.ts';
 
 export const MediaSourceTypes = ['plex', 'jellyfin'] as const;
-export const MediaSourceType: Record<string, MediaSourceType> = {
-  PLEX: 'plex',
-  JELLYFIN: 'jellyfin',
-} as const;
+
 export type MediaSourceType = TupleToUnion<typeof MediaSourceTypes>;
 
+type MediaSourceMap = {
+  [k in Capitalize<(typeof MediaSourceTypes)[number]>]: Uncapitalize<k>;
+};
+
+export const MediaSourceType: MediaSourceMap = {
+  Plex: 'plex',
+  Jellyfin: 'jellyfin',
+} as const;
 export interface MediaSourceTable
   extends WithUpdatedAt,
     WithUuid,

@@ -6,7 +6,7 @@ import {
   nilToUndefined,
   nullToUndefined,
 } from '../../util/index.js';
-import { DefaultChannelIcon } from '../entities/Channel.js';
+import { DefaultChannelIcon } from '../direct/schema/base.ts';
 
 export const dbChannelToApiChannel = ({
   channel,

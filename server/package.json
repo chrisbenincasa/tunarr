@@ -38,9 +38,6 @@
     "@fastify/static": "^8.0.1",
     "@fastify/swagger": "^9.0.1",
     "@iptv/xmltv": "^1.0.1",
-    "@mikro-orm/better-sqlite": "^6.3.3",
-    "@mikro-orm/core": "^6.3.3",
-    "@mikro-orm/migrations": "6.3.3",
     "@scalar/fastify-api-reference": "^1.25.33",
     "@tunarr/playlist": "^1.1.0",
     "@tunarr/shared": "workspace:*",
@@ -80,8 +77,6 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@mikro-orm/cli": "^6.3.3",
-    "@mikro-orm/reflection": "^6.3.3",
     "@types/archiver": "^6.0.2",
     "@types/async-retry": "^1.4.8",
     "@types/better-sqlite3": "^7.6.8",

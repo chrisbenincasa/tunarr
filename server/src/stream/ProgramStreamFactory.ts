@@ -1,4 +1,4 @@
-import { MediaSourceType } from '../dao/entities/MediaSource.js';
+import { MediaSourceType } from '../dao/direct/schema/MediaSource.ts';
 import { SettingsDB, getSettings } from '../dao/settings.js';
 import { NutOutputFormat, OutputFormat } from '../ffmpeg/OutputFormat.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';

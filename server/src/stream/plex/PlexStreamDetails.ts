@@ -175,7 +175,7 @@ export class PlexStreamDetails {
         .updateProgramPlexRatingKey(item.programId, this.server.name, {
           externalKey: item.externalKey,
           externalFilePath: details.serverPath,
-          directFilePath: details.directFilePath,
+          directFilePath: details.directFilePath ?? null,
         })
         .catch((err) => {
           this.logger.error(

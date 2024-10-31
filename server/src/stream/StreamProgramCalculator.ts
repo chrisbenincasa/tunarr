@@ -19,8 +19,8 @@ import {
 } from '../dao/derived_types/StreamLineup.js';
 import type { ProgramWithRelations as RawProgramEntity } from '../dao/direct/derivedTypes.d.ts';
 import { Channel } from '../dao/direct/schema/Channel.js';
+import { MediaSourceType } from '../dao/direct/schema/MediaSource.ts';
 import { Program as RawProgram } from '../dao/direct/schema/Program.js';
-import { MediaSourceType } from '../dao/entities/MediaSource.js';
 import { FillerDB } from '../dao/fillerDB.js';
 import { ProgramDB } from '../dao/programDB.js';
 import { FillerPicker } from '../services/FillerPicker.js';

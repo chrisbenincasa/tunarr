@@ -19,11 +19,13 @@ import {
 import { ProgramExternalIdType } from '../../dao/custom_types/ProgramExternalIdType.js';
 import { directDbAccess } from '../../dao/direct/directDbAccess.js';
 import { withProgramGroupingExternalIds } from '../../dao/direct/programQueryHelpers.js';
-import { Program as RawProgram } from '../../dao/direct/schema/Program.js';
+import { MediaSourceType } from '../../dao/direct/schema/MediaSource.ts';
+import {
+  ProgramType,
+  Program as RawProgram,
+} from '../../dao/direct/schema/Program.js';
+import { ProgramGroupingType } from '../../dao/direct/schema/ProgramGrouping.ts';
 import { DB } from '../../dao/direct/schema/db.js';
-import { MediaSourceType } from '../../dao/entities/MediaSource.js';
-import { ProgramType } from '../../dao/entities/Program.js';
-import { ProgramGroupingType } from '../../dao/entities/ProgramGrouping.js';
 import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.js';
 import { PlexApiClient } from '../../external/plex/PlexApiClient.js';
 import { Maybe } from '../../types/util.js';

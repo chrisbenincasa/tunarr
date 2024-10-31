@@ -9,7 +9,7 @@ import { isEmpty, isError, isNil } from 'lodash-es';
 import path from 'path';
 import { pipeline } from 'stream/promises';
 import { z } from 'zod';
-import { MediaSourceType } from '../dao/entities/MediaSource.js';
+import { MediaSourceType } from '../dao/direct/schema/MediaSource.ts';
 import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.js';
 import { FFMPEGInfo } from '../ffmpeg/ffmpegInfo.js';
 import { serverOptions } from '../globals.js';

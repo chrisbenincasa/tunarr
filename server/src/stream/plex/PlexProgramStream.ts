@@ -2,7 +2,7 @@ import dayjs from 'dayjs';
 import { isNil, isNull, isUndefined } from 'lodash-es';
 import { ChannelDB } from '../../dao/channelDb.js';
 import { isContentBackedLineupIteam } from '../../dao/derived_types/StreamLineup.js';
-import { MediaSourceType } from '../../dao/entities/MediaSource.js';
+import { MediaSourceType } from '../../dao/direct/schema/MediaSource.ts';
 import { MediaSourceDB } from '../../dao/mediaSourceDB.js';
 import { SettingsDB, getSettings } from '../../dao/settings.js';
 import { FfmpegTranscodeSession } from '../../ffmpeg/FfmpegTrancodeSession.js';

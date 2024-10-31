@@ -41,11 +41,11 @@ import { Maybe } from '../../types/util.js';
 import { attempt } from '../../util/index.js';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
 import { directDbAccess } from '../direct/directDbAccess.js';
+import { NewCachedImage } from '../direct/schema/CachedImage.js';
 import {
   MediaSourceType,
   NewMediaSource,
 } from '../direct/schema/MediaSource.js';
-import { CachedImage } from '../entities/CachedImage.js';
 import { Settings, SettingsDB, defaultXmlTvSettings } from '../settings.js';
 import { booleanToNumber } from '../sqliteUtil.js';
 import {
@@ -317,7 +317,7 @@ export class LegacyDbMigrator {
           const entities: NewMediaSource[] = migratedServers.map((server) => {
             return {
               uuid: v4(),
-              type: MediaSourceType.PLEX,
+              type: MediaSourceType.Plex,
               createdAt: now,
               updatedAt: now,
               name: server.name,
@@ -597,7 +597,7 @@ export class LegacyDbMigrator {
     const cacheImages = (await this.readAllOldDbFile(
       'cache-images',
     )) as JSONObject[];
-    const newCacheImages: CachedImage[] = [];
+    const newCacheImages: NewCachedImage[] = [];
     for (const cacheImage of cacheImages) {
       // Extract the original URL
       const url = Buffer.from(cacheImage['url'] as string, 'base64').toString(

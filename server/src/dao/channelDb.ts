@@ -1,4 +1,3 @@
-import { Loaded } from '@mikro-orm/core';
 import { scheduleRandomSlots, scheduleTimeSlots } from '@tunarr/shared';
 import { forProgramType, seq } from '@tunarr/shared/util';
 import {
@@ -96,7 +95,7 @@ import {
   Channel as RawChannel,
 } from './direct/schema/Channel.js';
 import { programExternalIdString } from './direct/schema/Program.js';
-import { Channel, ChannelTranscodingSettings } from './entities/Channel.js';
+import { ChannelTranscodingSettings } from './direct/schema/base.ts';
 import { ProgramDB } from './programDB.js';
 import { booleanToNumber } from './sqliteUtil.js';
 
@@ -222,15 +221,6 @@ function createRequestToChannel(saveReq: SaveChannelRequest): NewChannel {
     streamMode: 'hls', // TODO: Let users choose
   } satisfies NewChannel;
 }
-
-export type LoadedChannelWithGroupRefs = Loaded<
-  Channel,
-  | 'programs'
-  | 'programs.artist'
-  | 'programs.album'
-  | 'programs.tvShow'
-  | 'programs.season'
->;
 
 // Let's see if this works... in so we can have many ChannelDb objects flying around.
 const fileDbCache: Record<string | number, Low<Lineup>> = {};

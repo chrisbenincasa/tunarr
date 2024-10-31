@@ -7,10 +7,9 @@ import {
 import { jsonArrayFrom, jsonObjectFrom } from 'kysely/helpers/sqlite';
 import { isBoolean, isEmpty, keys, merge, reduce } from 'lodash-es';
 import { DeepPartial, DeepRequired, StrictExclude } from 'ts-essentials';
-import { ProgramType } from '../entities/Program.ts';
 import { directDbAccess } from './directDbAccess.js';
 import type { FillerShowTable as RawFillerShow } from './schema/FillerShow.d.ts';
-import { ProgramTable as RawProgram } from './schema/Program.ts';
+import { ProgramType, ProgramTable as RawProgram } from './schema/Program.ts';
 import {
   ProgramExternalId,
   ProgramExternalIdFieldsWithAlias,

@@ -21,15 +21,6 @@ import type { ProgramExternalIdTable } from './ProgramExternalId.d.ts';
 import type { ProgramGroupingTable } from './ProgramGrouping.d.ts';
 import type { ProgramGroupingExternalIdTable } from './ProgramGroupingExternalId.d.ts';
 
-export type * from './CachedImage.d.ts';
-export type * from './Channel.d.ts';
-export type * from './FillerShow.d.ts';
-export type * from './MediaSource.d.ts';
-export type * from './Program.d.ts';
-export type * from './ProgramExternalId.d.ts';
-export type * from './ProgramGrouping.d.ts';
-export type * from './ProgramGroupingExternalId.d.ts';
-
 export interface DB {
   cachedImage: CachedImageTable;
   channel: ChannelTable;

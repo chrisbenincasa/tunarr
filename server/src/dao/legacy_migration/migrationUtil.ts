@@ -1,11 +1,15 @@
 import { ProgramType, Resolution } from '@tunarr/types';
+import dayjs from 'dayjs';
 import { every, isNaN, isUndefined, parseInt } from 'lodash-es';
-import { LegacyProgram } from './LegacyChannelMigrator.js';
 import { v4 } from 'uuid';
 import { Maybe } from '../../types/util.js';
 import { isNonEmptyString } from '../../util/index.js';
 import { ProgramSourceType } from '../custom_types/ProgramSourceType.js';
-import { Program, programTypeFromString } from '../entities/Program.js';
+import {
+  ProgramType as DBProgramType,
+  NewProgram,
+} from '../direct/schema/Program.ts';
+import { LegacyProgram } from './LegacyChannelMigrator.js';
 
 // JSON representation for easier parsing of legacy db files
 export interface JSONArray extends Array<JSONValue> {}
@@ -97,34 +101,39 @@ export function convertRawProgram(program: JSONObject): LegacyProgram {
   return outProgram;
 }
 
-export function createProgramEntity(program: LegacyProgram) {
+export function createProgramEntity(
+  program: LegacyProgram,
+): NewProgram | undefined {
+  const now = +dayjs();
   if (
     ['movie', 'episode', 'track'].includes(program.type ?? '') &&
     every([program.ratingKey, program.serverKey, program.key], isNonEmptyString)
   ) {
-    const dbProgram = new Program();
-    dbProgram.duration = program.duration;
-    dbProgram.sourceType = ProgramSourceType.PLEX;
-    dbProgram.episode = program.episode;
-    dbProgram.filePath = program.file;
-    dbProgram.icon = program.icon;
-    dbProgram.externalKey = program.ratingKey!;
-    dbProgram.plexRatingKey = program.key!;
-    dbProgram.plexFilePath = program.plexFile;
-    dbProgram.externalSourceId = program.serverKey!;
-    dbProgram.showTitle = program.showTitle;
-    dbProgram.summary = program.summary;
-    dbProgram.title = program.title!;
-    // This is checked above
-    dbProgram.type = programTypeFromString(program.type)!;
-    dbProgram.episode = program.episode;
-    dbProgram.seasonNumber = program.season;
-    dbProgram.seasonIcon = program.seasonIcon;
-    dbProgram.showIcon = program.showIcon;
-    dbProgram.originalAirDate = program.date;
-    dbProgram.rating = program.rating;
-    dbProgram.year = program.year;
-    return dbProgram;
+    return {
+      uuid: v4(),
+      createdAt: now,
+      updatedAt: now,
+      duration: program.duration,
+      sourceType: ProgramSourceType.PLEX,
+      episode: program.episode,
+      filePath: program.file,
+      icon: program.icon,
+      externalKey: program.ratingKey!,
+      plexRatingKey: program.key!,
+      plexFilePath: program.plexFile,
+      externalSourceId: program.serverKey!,
+      showTitle: program.showTitle,
+      summary: program.summary,
+      title: program.title!,
+      // This is checked above
+      type: program.type as DBProgramType,
+      seasonNumber: program.season,
+      seasonIcon: program.seasonIcon,
+      showIcon: program.showIcon,
+      originalAirDate: program.date,
+      rating: program.rating,
+      year: program.year,
+    } satisfies NewProgram;
   }
 
   return;

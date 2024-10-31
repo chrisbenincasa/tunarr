@@ -26,7 +26,6 @@ import {
   withProgramFillerShows,
 } from './direct/programQueryHelpers.js';
 import { MediaSource, MediaSourceType } from './direct/schema/MediaSource.js';
-import { mediaSourceTypeFromApi } from './entities/MediaSource.js';
 import { booleanToNumber } from './sqliteUtil.js';
 
 type Report = {
@@ -197,7 +196,7 @@ export class MediaSourceDB {
         createdAt: now,
         updatedAt: now,
         index,
-        type: mediaSourceTypeFromApi(server.type),
+        type: server.type,
       })
       .returning('uuid')
       .executeTakeFirstOrThrow();

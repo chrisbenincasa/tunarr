@@ -1,6 +1,13 @@
 import { Insertable, Selectable, Updateable } from 'kysely';
-import { ProgramGroupingType } from '../../entities/ProgramGrouping.ts';
 import { WithCreatedAt, WithUpdatedAt, WithUuid } from './base.ts';
+
+export const ProgramGroupingType: Record<string, ProgramGroupingType> = {
+  TvShow: 'show',
+  TvShowSeason: 'season',
+  Artist: 'artist',
+  Album: 'album',
+} as const;
+export type ProgramGroupingType = 'show' | 'season' | 'artist' | 'album';
 
 export interface ProgramGroupingTable
   extends WithUuid,
@@ -12,7 +19,7 @@ export interface ProgramGroupingTable
   showUuid: string | null;
   summary: string | null;
   title: string;
-  type: `${ProgramGroupingType}`;
+  type: ProgramGroupingType;
   year: number | null;
 }
 

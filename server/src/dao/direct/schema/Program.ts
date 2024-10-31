@@ -1,7 +1,16 @@
 import { createExternalId } from '@tunarr/shared';
+import { TupleToUnion } from '@tunarr/types';
 import { Insertable, Selectable, Updateable } from 'kysely';
 import { MediaSourceType } from './MediaSource.ts';
 import { WithCreatedAt, WithUpdatedAt, WithUuid } from './base.ts';
+
+export const ProgramTypes = ['movie', 'episode', 'track'] as const;
+export const ProgramType: Record<string, ProgramType> = {
+  Movie: 'movie',
+  Episode: 'episode',
+  Track: 'track',
+} as const;
+export type ProgramType = TupleToUnion<typeof ProgramTypes>;
 
 export interface ProgramTable extends WithCreatedAt, WithUpdatedAt, WithUuid {
   albumName: string | null;
@@ -30,7 +39,7 @@ export interface ProgramTable extends WithCreatedAt, WithUpdatedAt, WithUuid {
   summary: string | null;
   title: string;
   tvShowUuid: string | null;
-  type: 'movie' | 'episode' | 'track';
+  type: ProgramType;
   year: number | null;
 }
 

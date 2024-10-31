@@ -1,4 +1,3 @@
-import { Options } from '@mikro-orm/better-sqlite';
 import { findKey, forEach, merge } from 'lodash-es';
 import isUndefined from 'lodash-es/isUndefined.js';
 import once from 'lodash-es/once.js';
@@ -72,7 +71,7 @@ export const serverOptions = () => {
   return merge(globalOptions(), _serverOptions);
 };
 
-export const dbOptions = (): Options => {
+export const dbOptions = () => {
   if (isUndefined(_globalOptions)) {
     throw new Error('Accessing global options before they were set!');
   }

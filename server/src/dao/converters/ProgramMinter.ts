@@ -17,9 +17,11 @@ import {
   programExternalIdTypeFromJellyfinProvider,
 } from '../custom_types/ProgramExternalIdType.js';
 import { ProgramSourceType } from '../custom_types/ProgramSourceType.js';
-import { NewProgram as NewRawProgram } from '../direct/schema/Program.js';
+import {
+  NewProgram as NewRawProgram,
+  ProgramType,
+} from '../direct/schema/Program.js';
 import { NewProgramExternalId } from '../direct/schema/ProgramExternalId.js';
-import { ProgramType } from '../entities/Program.js';
 
 /**
  * Generates Program DB entities for Plex media
