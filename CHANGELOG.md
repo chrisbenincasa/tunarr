@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.15.0](https://github.com/chrisbenincasa/tunarr/compare/v0.14.2...v0.15.0) (2024-10-31)
+
+
+### Bug Fixes
+
+* can't use chain in shared lib either because it gets bundled into server ([59c2ead](https://github.com/chrisbenincasa/tunarr/commit/59c2ead7aef276de198e8ab88cd5709d5d64e121))
+* fix "specials" creating wrong XMLTV ([ce6b3d9](https://github.com/chrisbenincasa/tunarr/commit/ce6b3d9ccbe361f04952971661bc8e97894dc87a)), closes [#666](https://github.com/chrisbenincasa/tunarr/issues/666)
+* handle undefined durations from Plex ([#912](https://github.com/chrisbenincasa/tunarr/issues/912)) ([ea163ee](https://github.com/chrisbenincasa/tunarr/commit/ea163ee32f6cb622f4ab8b28fdc2aecfdd3cfb16))
+* show edge commit in tunarr version for edge builds ([c3f04cd](https://github.com/chrisbenincasa/tunarr/commit/c3f04cd50c64c29d2f1717634c255f09d3eebc0a))
+
+
+### Miscellaneous Chores
+
+* release 0.15.0 ([1555d38](https://github.com/chrisbenincasa/tunarr/commit/1555d389e586ce07551434e1dba081ad967755e3))
+
 ## [0.14.2](https://github.com/chrisbenincasa/tunarr/compare/v0.14.1...v0.14.2) (2024-10-24)
 
 
