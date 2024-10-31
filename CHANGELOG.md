@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.1](https://github.com/chrisbenincasa/tunarr/compare/v0.15.0...v0.15.1) (2024-10-31)
+
+
+### Bug Fixes
+
+* program_grouping_external_id.external_source_id is nullable ([e31f5c3](https://github.com/chrisbenincasa/tunarr/commit/e31f5c308b481ee143fb4c36e35d60385c761202))
+
 ## [0.15.0](https://github.com/chrisbenincasa/tunarr/compare/v0.14.2...v0.15.0) (2024-10-31)
 
 
