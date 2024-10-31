@@ -8,8 +8,7 @@ import {
   AllChannelTableKeys,
   Channel,
 } from '../../dao/direct/schema/Channel.ts';
-import { Program } from '../../dao/direct/schema/Program.ts';
-import { ProgramType } from '../../dao/entities/Program.ts';
+import { Program, ProgramType } from '../../dao/direct/schema/Program.ts';
 import { MpegTsOutputFormat } from '../../ffmpeg/OutputFormat.ts';
 import { serverContext } from '../../serverContext.ts';
 import { OfflineProgramStream } from '../../stream/OfflinePlayer.ts';

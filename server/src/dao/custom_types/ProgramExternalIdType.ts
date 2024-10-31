@@ -1,7 +1,7 @@
 import { ExternalIdType } from '@tunarr/types/schemas';
 import { enumKeys } from '../../util/enumUtil.js';
+import { MediaSourceType } from '../direct/schema/MediaSource.ts';
 import { ProgramSourceType } from './ProgramSourceType.js';
-import { MediaSourceType } from '../entities/MediaSource.js';
 
 export enum ProgramExternalIdType {
   PLEX = 'plex',

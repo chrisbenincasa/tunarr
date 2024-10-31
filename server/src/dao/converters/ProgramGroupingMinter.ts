@@ -7,9 +7,11 @@ import { P, match } from 'ts-pattern';
 import { v4 } from 'uuid';
 import { isNonEmptyString } from '../../util/index.ts';
 import { ProgramExternalIdType } from '../custom_types/ProgramExternalIdType.ts';
-import type { NewProgramGrouping } from '../direct/schema/ProgramGrouping.d.ts';
+import {
+  ProgramGroupingType,
+  type NewProgramGrouping,
+} from '../direct/schema/ProgramGrouping.ts';
 import type { NewProgramGroupingExternalId } from '../direct/schema/ProgramGroupingExternalId.d.ts';
-import { ProgramGroupingType } from '../entities/ProgramGrouping.ts';
 
 type MintedProgramGrouping = {
   grouping: NewProgramGrouping;

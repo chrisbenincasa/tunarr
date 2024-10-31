@@ -7,13 +7,11 @@ import {
   Updateable,
 } from 'kysely';
 import {
+  ChannelIcon,
   ChannelOfflineSettings,
+  ChannelStreamMode,
   ChannelTranscodingSettings,
   ChannelWatermark,
-} from '../../entities/Channel.ts';
-import {
-  ChannelIcon,
-  ChannelStreamMode,
   WithCreatedAt,
   WithUpdatedAt,
   WithUuid,

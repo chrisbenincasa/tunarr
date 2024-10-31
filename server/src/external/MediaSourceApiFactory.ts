@@ -2,7 +2,7 @@ import { FindChild } from '@tunarr/types';
 import { forEach, isBoolean, isEmpty, isNil, isUndefined } from 'lodash-es';
 import NodeCache from 'node-cache';
 import { ChannelDB } from '../dao/channelDb.js';
-import { MediaSourceType } from '../dao/entities/MediaSource.js';
+import { MediaSourceType } from '../dao/direct/schema/MediaSource.ts';
 import { MediaSourceDB } from '../dao/mediaSourceDB.js';
 import { SettingsDB, getSettings } from '../dao/settings.js';
 import { Maybe } from '../types/util.js';
@@ -16,8 +16,8 @@ import {
 import { PlexApiClient, PlexApiOptions } from './plex/PlexApiClient.js';
 
 type TypeToClient = [
-  [MediaSourceType.Plex, PlexApiClient],
-  [MediaSourceType.Jellyfin, JellyfinApiClient],
+  [typeof MediaSourceType.Plex, PlexApiClient],
+  [typeof MediaSourceType.Jellyfin, JellyfinApiClient],
 ];
 
 let instance: MediaSourceApiFactoryImpl;

@@ -1,6 +1,6 @@
 import { find, isNil } from 'lodash-es';
 import { directDbAccess } from '../../dao/direct/directDbAccess.js';
-import { MediaSourceType } from '../../dao/entities/MediaSource.js';
+import { MediaSourceType } from '../../dao/direct/schema/MediaSource.ts';
 import { PlexApiClient } from '../../external/plex/PlexApiClient.js';
 import Fixer from './fixer.js';
 

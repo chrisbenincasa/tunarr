@@ -23,10 +23,12 @@ import { ProgramExternalIdType } from '../custom_types/ProgramExternalIdType.ts'
 import { ProgramSourceType } from '../custom_types/ProgramSourceType.ts';
 import { directDbAccess } from '../direct/directDbAccess.js';
 import { Program } from '../direct/schema/Program.js';
-import { NewProgramGrouping } from '../direct/schema/ProgramGrouping.ts';
+import { ProgramType } from '../direct/schema/Program.ts';
+import {
+  NewProgramGrouping,
+  ProgramGroupingType,
+} from '../direct/schema/ProgramGrouping.ts';
 import { NewProgramGroupingExternalId } from '../direct/schema/ProgramGroupingExternalId.ts';
-import { ProgramType } from '../entities/Program.js';
-import { ProgramGroupingType } from '../entities/ProgramGrouping.ts';
 import { MediaSourceDB } from '../mediaSourceDB.ts';
 import { ProgramDB } from '../programDB.js';
 

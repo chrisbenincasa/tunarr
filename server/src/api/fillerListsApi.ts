@@ -9,15 +9,11 @@ import {
 } from '@tunarr/types/schemas';
 import { isNil, map } from 'lodash-es';
 import { z } from 'zod';
-import { FillerShowId } from '../dao/entities/FillerShow.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
 
 // We can't use the built-in zod brand because we have our own custom
 // tagged type.
-const fillerShowIdSchema = z
-  .string()
-  .uuid()
-  .transform((str) => str as FillerShowId);
+const fillerShowIdSchema = z.string().uuid();
 
 // eslint-disable-next-line @typescript-eslint/require-await
 export const fillerListsApi: RouterPluginAsyncCallback = async (fastify) => {

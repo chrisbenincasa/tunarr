@@ -28,8 +28,8 @@ import {
   selectProgramsBuilder,
 } from '../dao/direct/programQueryHelpers.js';
 import { MediaSource } from '../dao/direct/schema/MediaSource.js';
-import { ProgramType } from '../dao/entities/Program.js';
-import { ProgramGroupingType } from '../dao/entities/ProgramGrouping.js';
+import { ProgramType } from '../dao/direct/schema/Program.ts';
+import { ProgramGroupingType } from '../dao/direct/schema/ProgramGrouping.ts';
 import { JellyfinApiClient } from '../external/jellyfin/JellyfinApiClient.js';
 import { PlexApiClient } from '../external/plex/PlexApiClient.js';
 import { TruthyQueryParam } from '../types/schemas.js';

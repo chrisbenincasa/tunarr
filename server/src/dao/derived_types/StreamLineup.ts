@@ -3,7 +3,7 @@
 // active streaming session
 
 import { z } from 'zod';
-import { MediaSourceType } from '../entities/MediaSource.js';
+import { MediaSourceType } from '../direct/schema/MediaSource.ts';
 
 const baseStreamLineupItemSchema = z.object({
   originalTimestamp: z.number().nonnegative().optional(),

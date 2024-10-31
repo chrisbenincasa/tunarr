@@ -15,7 +15,7 @@ import {
 } from 'lodash-es';
 import { ContentBackedStreamLineupItem } from '../../dao/derived_types/StreamLineup.js';
 import { MediaSourceTable } from '../../dao/direct/schema/MediaSource.js';
-import { ProgramType } from '../../dao/entities/Program.js';
+import { ProgramType } from '../../dao/direct/schema/Program.ts';
 import { ProgramDB } from '../../dao/programDB.js';
 import { SettingsDB } from '../../dao/settings.js';
 import { isQueryError } from '../../external/BaseApiClient.js';

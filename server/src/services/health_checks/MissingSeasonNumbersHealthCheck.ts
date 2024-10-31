@@ -1,6 +1,6 @@
 import { directDbAccess } from '../../dao/direct/directDbAccess.ts';
-import { ProgramType } from '../../dao/entities/Program.ts';
-import { ProgramGroupingType } from '../../dao/entities/ProgramGrouping.ts';
+import { ProgramType } from '../../dao/direct/schema/Program.ts';
+import { ProgramGroupingType } from '../../dao/direct/schema/ProgramGrouping.ts';
 import {
   HealthCheck,
   HealthCheckResult,

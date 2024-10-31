@@ -29,8 +29,8 @@ import {
   ProgramWithRelations as RawProgram,
 } from '../direct/derivedTypes.js';
 import { directDbAccess } from '../direct/directDbAccess.js';
+import { ProgramType } from '../direct/schema/Program.ts';
 import { MinimalProgramExternalId } from '../direct/schema/ProgramExternalId.js';
-import { ProgramType } from '../entities/Program.js';
 
 /**
  * Converts DB types to API types
@@ -96,7 +96,7 @@ export class ProgramConverter {
     externalIds: MinimalProgramExternalId[],
   ): ContentProgram {
     let extraFields: Partial<ContentProgram> = {};
-    if (program.type === ProgramType.Episode.toString()) {
+    if (program.type === ProgramType.Episode) {
       extraFields = {
         ...extraFields,
         icon: nullToUndefined(program.episodeIcon ?? program.showIcon),

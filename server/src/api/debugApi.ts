@@ -8,7 +8,7 @@ import os from 'node:os';
 import z from 'zod';
 import { ArchiveDatabaseBackup } from '../dao/backup/ArchiveDatabaseBackup.js';
 import { directDbAccess } from '../dao/direct/directDbAccess.js';
-import { MediaSourceType } from '../dao/entities/MediaSource.js';
+import { MediaSourceType } from '../dao/direct/schema/MediaSource.ts';
 import { LineupCreator } from '../services/dynamic_channels/LineupCreator.js';
 import { PlexTaskQueue } from '../tasks/TaskQueue.js';
 import { SavePlexProgramExternalIdsTask } from '../tasks/plex/SavePlexProgramExternalIdsTask.js';

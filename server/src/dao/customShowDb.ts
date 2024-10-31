@@ -5,7 +5,6 @@ import {
 } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import { filter, isNil, map } from 'lodash-es';
-import { MarkOptional } from 'ts-essentials';
 import { v4 } from 'uuid';
 import { isNonEmptyString } from '../util/index.js';
 import { ProgramConverter } from './converters/programConverters.js';
@@ -19,16 +18,8 @@ import {
   NewCustomShowContent,
 } from './direct/schema/CustomShow.js';
 import { programExternalIdString } from './direct/schema/Program.js';
-import { CustomShow } from './entities/CustomShow.js';
 import { ProgramDB } from './programDB.js';
 import { createPendingProgramIndexMap } from './programHelpers.js';
-
-export type CustomShowUpdate = MarkOptional<CustomShow, 'content'>;
-export type CustomShowInsert = {
-  uuid?: string;
-  name: string;
-  content?: string[];
-};
 
 export class CustomShowDB {
   #programConverter: ProgramConverter = new ProgramConverter();

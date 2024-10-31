@@ -54,8 +54,7 @@ import {
   ChannelOfflineSettings,
   ChannelTranscodingSettings,
   ChannelWatermark,
-} from '../entities/Channel.js';
-import { FillerShowId } from '../entities/FillerShow.js';
+} from '../direct/schema/base.ts';
 import { ProgramDB } from '../programDB.js';
 import { booleanToNumber } from '../sqliteUtil.js';
 import {
@@ -514,7 +513,7 @@ export class LegacyChannelMigrator {
       const relations = map(fillers, (filler) => {
         return {
           channelUuid: entity.uuid,
-          fillerShowUuid: filler.id as FillerShowId,
+          fillerShowUuid: filler.id,
           weight: filler.weight,
           cooldown: filler.cooldownSeconds,
         } satisfies NewChannelFillerShow;

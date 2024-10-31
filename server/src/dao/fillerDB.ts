@@ -33,7 +33,6 @@ import {
 } from './direct/schema/FillerShow.js';
 import { programExternalIdString } from './direct/schema/Program.js';
 import { DB } from './direct/schema/db.js';
-import { FillerShowId } from './entities/FillerShow.js';
 import { ProgramDB } from './programDB.js';
 import { createPendingProgramIndexMap } from './programHelpers.js';
 
@@ -45,17 +44,16 @@ export class FillerDB {
     private programDB: ProgramDB = new ProgramDB(),
   ) {}
 
-  getFiller(id: FillerShowId) {
+  getFiller(id: string) {
     return directDbAccess()
       .selectFrom('fillerShow')
       .where('uuid', '=', id)
       .selectAll()
       .select((eb) => withFillerPrograms(eb, { fields: ['program.uuid'] }))
-      .$narrowType<{ uuid: FillerShowId }>()
       .executeTakeFirst();
   }
 
-  async saveFiller(id: FillerShowId, updateRequest: UpdateFillerListRequest) {
+  async saveFiller(id: string, updateRequest: UpdateFillerListRequest) {
     const filler = await this.getFiller(id);
 
     if (isNil(filler)) {
@@ -178,7 +176,7 @@ export class FillerDB {
       .execute();
   }
 
-  async deleteFiller(id: FillerShowId): Promise<void> {
+  async deleteFiller(id: string): Promise<void> {
     await directDbAccess()
       .transaction()
       .execute(async (tx) => {
@@ -304,7 +302,7 @@ export class FillerDB {
       .execute();
   }
 
-  async getFillerPrograms(id: FillerShowId) {
+  async getFillerPrograms(id: string) {
     const programs = await directDbAccess()
       .selectFrom('fillerShow')
       .where('fillerShow.uuid', '=', id)

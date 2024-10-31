@@ -1,5 +1,5 @@
 import { enumKeys } from '../../util/enumUtil.js';
-import { MediaSourceType } from '../entities/MediaSource.js';
+import { MediaSourceType } from '../direct/schema/MediaSource.ts';
 
 export enum ProgramSourceType {
   PLEX = 'plex',

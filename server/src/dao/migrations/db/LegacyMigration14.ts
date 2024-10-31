@@ -1,12 +1,12 @@
 import { CompiledQuery, Kysely, sql } from 'kysely';
 import { MediaSourceType } from '../../direct/schema/MediaSource.ts';
+import { ProgramGroupingType } from '../../direct/schema/ProgramGrouping.ts';
 import {
   ProgramExternalIdSourceType,
   WithCreatedAt,
   WithUpdatedAt,
   WithUuid,
 } from '../../direct/schema/base.ts';
-import { ProgramGroupingType } from '../../entities/ProgramGrouping.ts';
 
 interface ProgramGroupingInMigration
   extends WithUuid,
