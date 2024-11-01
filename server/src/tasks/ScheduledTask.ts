@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { isDate } from 'lodash-es';
 import schedule, { RecurrenceRule } from 'node-schedule';
 import { Maybe } from '../types/util.js';
@@ -46,7 +47,9 @@ export class ScheduledTask<OutType = unknown> {
     this.visible = options?.visible ?? true;
 
     if (options?.runOnSchedule) {
-      this.runNow(true).catch(console.error);
+      schedule.scheduleJob(jobName, dayjs().add(5, 'seconds').toDate(), () =>
+        this.jobInternal(),
+      );
     }
 
     if (options?.runAtStartup) {
@@ -78,8 +81,12 @@ export class ScheduledTask<OutType = unknown> {
     }
   }
 
-  cancel() {
-    this.scheduledJob.cancel();
+  cancel(reschedule: boolean = false) {
+    this.scheduledJob.cancel(reschedule);
+  }
+
+  removeFromSchedule() {
+    this.cancel(false);
   }
 
   nextExecution() {

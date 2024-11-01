@@ -67,7 +67,7 @@ class Scheduler {
   clearTasks(id: string) {
     if (this.#scheduledJobsById[id]) {
       forEach(this.#scheduledJobsById[id], (task) => {
-        task.cancel();
+        task.removeFromSchedule();
       });
 
       this.#scheduledJobsById[id] = [];
@@ -197,6 +197,7 @@ export function scheduleBackupJobs(
   backupConfig: BackupSettings | DeepReadonly<BackupSettings>,
 ) {
   GlobalScheduler.clearTasks(BackupTask.name);
+
   const backupConfigs = backupConfig.configurations;
   forEach(
     filter(
@@ -222,6 +223,7 @@ export function scheduleBackupJobs(
           BackupTask.name,
           cronSchedule,
           () => new BackupTask(config),
+          { runOnSchedule: true },
         ),
       );
     },

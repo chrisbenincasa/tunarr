@@ -84,7 +84,6 @@ export const systemApiRouter: RouterPluginAsyncCallback = async (
       },
     },
     async (req, res) => {
-      let backupSettingsPotentiallyChanged = false;
       await req.serverCtx.settings.directUpdate((file) => {
         const { system } = file;
         system.logging.useEnvVarLevel =
@@ -97,8 +96,8 @@ export const systemApiRouter: RouterPluginAsyncCallback = async (
         }
 
         if (!isUndefined(req.body.backup)) {
-          backupSettingsPotentiallyChanged = true;
           system.backup = req.body.backup;
+          scheduleBackupJobs(req.body.backup);
         }
 
         ifDefined(req.body.cache, (cache) => {
@@ -109,10 +108,6 @@ export const systemApiRouter: RouterPluginAsyncCallback = async (
       });
 
       const refreshedSettings = req.serverCtx.settings.systemSettings();
-
-      if (backupSettingsPotentiallyChanged) {
-        scheduleBackupJobs(refreshedSettings.backup);
-      }
 
       return res.send(getSystemSettingsResponse(refreshedSettings));
     },
