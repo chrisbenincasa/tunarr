@@ -39,7 +39,10 @@ export function getEnvironmentLogLevel(): Maybe<LogLevels> {
 
 const ExtraLogLevels = ['http'] as const;
 
-const ValidLogLevels = [...Object.keys(levels.values), ...ExtraLogLevels];
+export const ValidLogLevels = [
+  ...Object.keys(levels.values),
+  ...ExtraLogLevels,
+];
 
 export type ExtraLogLevels = TupleToUnion<typeof ExtraLogLevels>;
 

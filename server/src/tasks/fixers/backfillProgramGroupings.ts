@@ -335,9 +335,11 @@ export class BackfillProgramGroupings extends Fixer {
       )
       .executeTakeFirst();
 
-    this.logger.debug(
-      'There are still %d programs with missing associations',
-      stillMissing?.count,
-    );
+    if (stillMissing && stillMissing.count > 0) {
+      this.logger.debug(
+        'There are still %d programs with missing associations',
+        stillMissing?.count,
+      );
+    }
   }
 }

@@ -2,38 +2,38 @@ import { findKey, forEach, merge } from 'lodash-es';
 import isUndefined from 'lodash-es/isUndefined.js';
 import once from 'lodash-es/once.js';
 import path, { resolve } from 'node:path';
+import { ServerArgsType } from './cli/RunServerCommand.ts';
+import { GlobalArgsType } from './cli/types.ts';
+import { LogLevels } from './util/logging/LoggerFactory.ts';
 
-export type ServerOptions = GlobalOptions & {
-  port: number;
-  printRoutes: boolean;
-  admin: boolean;
-};
-
-export type GlobalOptions = {
+export type GlobalOptions = GlobalArgsType & {
   databaseDirectory: string;
-  force_migration: boolean;
-  log_level: string;
-  verbose?: number;
 };
 
-const logLevels = {
+export type ServerOptions = GlobalOptions & ServerArgsType;
+
+const logLevels: Record<LogLevels, number> = {
+  silent: -2,
+  fatal: -1,
   error: 0,
   warn: 1,
   info: 2,
-  http: 3,
-  verbose: 4,
-  debug: 5,
-  silly: 6,
+  debug: 3,
+  http: 4,
+  trace: 5,
 } as const;
 
 let _globalOptions: GlobalOptions | undefined;
 let _serverOptions: ServerOptions | undefined;
 
-export const setGlobalOptions = once((runtimeOptions: GlobalOptions) => {
-  let logLevel: string = runtimeOptions.log_level.toLowerCase();
+export const setGlobalOptions = once((runtimeOptions: GlobalArgsType) => {
+  let logLevel: LogLevels = runtimeOptions.log_level;
   if (!isUndefined(runtimeOptions.verbose) && runtimeOptions.verbose > 0) {
     const level = Math.max(runtimeOptions.verbose, 4);
-    const levelKey = findKey(logLevels, (value) => value === level);
+    const levelKey = findKey(
+      logLevels,
+      (value) => value === level,
+    ) as LogLevels;
     if (!isUndefined(levelKey)) {
       logLevel = levelKey;
     }
@@ -41,7 +41,7 @@ export const setGlobalOptions = once((runtimeOptions: GlobalOptions) => {
 
   _globalOptions = {
     ...runtimeOptions,
-    databaseDirectory: resolve(process.cwd(), runtimeOptions.databaseDirectory),
+    databaseDirectory: resolve(process.cwd(), runtimeOptions.database),
     log_level: logLevel,
   };
 });
@@ -54,7 +54,7 @@ export const globalOptions = () => {
   return _globalOptions;
 };
 
-export const setServerOptions = once((runtimeOptions: ServerOptions) => {
+export const setServerOptions = once((runtimeOptions: ServerArgsType) => {
   setGlobalOptions(runtimeOptions);
   _serverOptions = {
     ...globalOptions(),
