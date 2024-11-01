@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.2](https://github.com/chrisbenincasa/tunarr/compare/v0.15.1...v0.15.2) (2024-11-01)
+
+
+### Bug Fixes
+
+* fix conditional index conditions in new migrations ([cb939ca](https://github.com/chrisbenincasa/tunarr/commit/cb939cac491e014b0ec1a98a1c47e803ef5ddd48))
+
 ## [0.15.1](https://github.com/chrisbenincasa/tunarr/compare/v0.15.0...v0.15.1) (2024-10-31)
 
 
