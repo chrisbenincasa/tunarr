@@ -119,7 +119,7 @@ export default {
       .ifNotExists()
       .on('program_external_id')
       .columns(['program_uuid', 'source_type'])
-      .where(sql`\`external_source_id\``, 'is not', 'null')
+      .where(sql`\`external_source_id\``, 'is not', null)
       .execute();
     // this.addSql(
     //   'create unique index if not exists `unique_program_multiple_external_id` on `program_external_id` (`program_uuid`, `source_type`) WHERE `external_source_id` IS NOT NULL;',
@@ -132,7 +132,7 @@ export default {
       .ifNotExists()
       .on('program_external_id')
       .columns(['program_uuid', 'source_type'])
-      .where(sql`\`external_source_id\``, 'is', 'null')
+      .where(sql`\`external_source_id\``, 'is', null)
       .execute();
   },
 };

@@ -8,7 +8,7 @@ export default {
       .ifNotExists()
       .on('program_external_id')
       .columns(['program_uuid', 'source_type'])
-      .where(sql`\`external_source_id\``, 'is not', 'null')
+      .where(sql`\`external_source_id\``, 'is not', null)
       .execute();
 
     // This was bugged in the legacy migration, just dupe it here because we're keepingn everything the same...
@@ -18,7 +18,7 @@ export default {
       .ifNotExists()
       .on('program_external_id')
       .columns(['program_uuid', 'source_type'])
-      .where(sql`\`external_source_id\``, 'is', 'null')
+      .where(sql`\`external_source_id\``, 'is', null)
       .execute();
   },
 };

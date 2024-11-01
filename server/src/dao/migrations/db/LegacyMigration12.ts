@@ -133,7 +133,7 @@ export default {
       .on('program_external_id')
       .columns(['program_uuid', 'source_type', 'external_source_id'])
       .unique()
-      .where(sql`\`external_source_id\``, 'is not', 'null')
+      .where(sql`\`external_source_id\``, 'is not', null)
       .execute();
     await db.schema
       .createIndex('unique_program_single_external_id')
@@ -141,7 +141,7 @@ export default {
       .on('program_external_id')
       .columns(['program_uuid', 'source_type'])
       .unique()
-      .where(sql`\`external_source_id\``, 'is', 'null')
+      .where(sql`\`external_source_id\``, 'is', null)
       .execute();
   },
 };
