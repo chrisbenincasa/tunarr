@@ -194,6 +194,9 @@ function GeneralSettingsForm({ systemSettings }: GeneralSetingsFormProps) {
               }
               label="Enable Backups"
             />
+            <FormHelperText>
+              When enabling, Tunarr will generate an initial backup immediately
+            </FormHelperText>
           </FormControl>
         </Grid2>
         {backupsEnabled && (
