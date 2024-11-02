@@ -446,7 +446,7 @@ export class ChannelDB {
           .set(update)
           .executeTakeFirstOrThrow();
 
-        if (isDefined(updateReq.fillerCollections)) {
+        if (!isEmpty(updateReq.fillerCollections)) {
           const channelFillerShows = map(
             updateReq.fillerCollections,
             (filler) =>
