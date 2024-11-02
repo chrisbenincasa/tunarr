@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.15.4](https://github.com/chrisbenincasa/tunarr/compare/v0.15.3...v0.15.4) (2024-11-02)
+
+
+### Bug Fixes
+
+* do not attempt to upgrade plex rating key for jellyfin items ([a406bde](https://github.com/chrisbenincasa/tunarr/commit/a406bde5002b4a41ed3b1b27d5c6b433ad248ac9))
+* fix for updateProgramPlexRatingKey return query ([40c73c2](https://github.com/chrisbenincasa/tunarr/commit/40c73c2fff14fcdd9987b20e3e3f16cee7394af1))
+* fix the build ([6eab3fb](https://github.com/chrisbenincasa/tunarr/commit/6eab3fb0d751c2c320d6ce3a4ca1336afac1eae8))
+
 ## [0.15.3](https://github.com/chrisbenincasa/tunarr/compare/v0.15.2...v0.15.3) (2024-11-02)
 
 
