@@ -325,6 +325,7 @@ export class ProgramDB {
         .executeTakeFirst();
       return await directDbAccess()
         .selectFrom('programExternalId')
+        .selectAll()
         .where('uuid', '=', existingRatingKey.uuid)
         .executeTakeFirstOrThrow();
     }
