@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.15.3](https://github.com/chrisbenincasa/tunarr/compare/v0.15.2...v0.15.3) (2024-11-02)
+
+
+### Bug Fixes
+
+* fix updating channels ([01fb70d](https://github.com/chrisbenincasa/tunarr/commit/01fb70df392d8955c9462e90985a52836d01809a))
+* run enabled backup jobs once immediately when enabled ([#926](https://github.com/chrisbenincasa/tunarr/issues/926)) ([2ffa2cc](https://github.com/chrisbenincasa/tunarr/commit/2ffa2ccbd5ea9dba7ec1554292eed1ff7756aa40)), closes [#923](https://github.com/chrisbenincasa/tunarr/issues/923)
+
 ## [0.15.2](https://github.com/chrisbenincasa/tunarr/compare/v0.15.1...v0.15.2) (2024-11-01)
 
 
