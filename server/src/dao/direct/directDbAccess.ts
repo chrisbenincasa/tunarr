@@ -39,7 +39,7 @@ export const initDirectDbAccess = once((opts: GlobalOptions) => {
             process.env['DATABASE_DEBUG_LOGGING'] ||
             process.env['DIRECT_DATABASE_DEBUG_LOGGING']
           ) {
-            console.debug(
+            logger().debug(
               'Query: %O (%d ms)',
               event.query.sql,
               event.queryDurationMillis,

@@ -34,11 +34,6 @@ export const runFixers = async () => {
     const name = fixer.constructor.name;
     const start = performance.now();
     try {
-      LoggerFactory.root.debug(
-        { background: fixer.canRunInBackground },
-        'Running fixer %s',
-        name,
-      );
       const fixerPromise = fixer.run();
       if (!fixer.canRunInBackground) {
         await fixerPromise;

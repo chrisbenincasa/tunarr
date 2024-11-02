@@ -6,6 +6,7 @@ export default abstract class Fixer {
 
   async run() {
     try {
+      RootLogger.debug('Running fixer %s', this.constructor.name);
       return this.runInternal();
     } catch (e) {
       RootLogger.debug(e, 'Error when running fixer %s', this.constructor.name);
