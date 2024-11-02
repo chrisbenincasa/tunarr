@@ -1,5 +1,5 @@
 import { jsonObjectFrom } from 'kysely/helpers/sqlite';
-import { first } from 'lodash-es';
+import { first, isNumber, isUndefined, random } from 'lodash-es';
 import { PassThrough } from 'stream';
 import { z } from 'zod';
 import { createOfflineStreamLineupItem } from '../../dao/derived_types/StreamLineup.ts';
@@ -124,6 +124,9 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
         params: z.object({
           id: z.string(),
         }),
+        querystring: z.object({
+          start: z.literal('random').or(z.coerce.number()).optional(),
+        }),
       },
     },
     async (req, res) => {
@@ -133,6 +136,14 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
       if (!program) {
         return res.status(404).send();
       }
+
+      const startTime =
+        isUndefined(req.query.start) ||
+        (isNumber(req.query.start) && req.query.start <= 0)
+          ? 0
+          : req.query.start === 'random'
+          ? random(program.duration / 1000, true)
+          : req.query.start;
 
       const channels = await directDbAccess()
         .selectFrom('channelPrograms')
@@ -158,15 +169,24 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
         }
       }
 
-      const outStream = await initStream(program, firstChannel);
+      const outStream = await initStream(
+        program,
+        firstChannel,
+        startTime * 1000,
+      );
       return res.header('Content-Type', 'video/mp2t').send(outStream);
     },
   );
 
-  async function initStream(program: Program, channel: Channel) {
+  async function initStream(
+    program: Program,
+    channel: Channel,
+    startTime: number = 0,
+  ) {
     const lineupItem = serverContext()
       .streamProgramCalculator()
       .createStreamItemFromProgram(program);
+    lineupItem.start = startTime;
     const ctx = new PlayerContext(lineupItem, channel, false, false, true);
 
     let stream: ProgramStream;

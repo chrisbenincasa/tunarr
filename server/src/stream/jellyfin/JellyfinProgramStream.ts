@@ -4,7 +4,6 @@ import { ChannelDB } from '../../dao/channelDb.js';
 import { isContentBackedLineupIteam } from '../../dao/derived_types/StreamLineup.js';
 import { MediaSourceType } from '../../dao/direct/schema/MediaSource.ts';
 import { MediaSourceDB } from '../../dao/mediaSourceDB.js';
-import { ProgramDB } from '../../dao/programDB.js';
 import { SettingsDB, getSettings } from '../../dao/settings.js';
 import { FfmpegTranscodeSession } from '../../ffmpeg/FfmpegTrancodeSession.js';
 import { OutputFormat } from '../../ffmpeg/OutputFormat.js';
@@ -72,7 +71,7 @@ export class JellyfinProgramStream extends ProgramStream {
     const jellyfinStreamDetails = new JellyfinStreamDetails(
       server,
       this.settingsDB,
-      new ProgramDB(),
+      // new ProgramDB(),
     );
 
     const watermark = await this.getWatermark();
