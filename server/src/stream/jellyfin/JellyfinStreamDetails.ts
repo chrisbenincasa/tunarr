@@ -105,24 +105,24 @@ export class JellyfinStreamDetails {
       return null;
     }
 
-    if (
-      isNonEmptyString(details.serverPath) &&
-      details.serverPath !== item.plexFilePath
-    ) {
-      this.programDB
-        .updateProgramPlexRatingKey(item.programId, this.server.name, {
-          externalKey: item.externalKey,
-          externalFilePath: details.serverPath,
-          directFilePath: details.directFilePath,
-        })
-        .catch((err) => {
-          this.logger.error(
-            err,
-            'Error while updating Jellyfin file path for program %s',
-            item.programId,
-          );
-        });
-    }
+    // if (
+    //   isNonEmptyString(details.serverPath) &&
+    //   details.serverPath !== item.plexFilePath
+    // ) {
+    //   this.programDB
+    //     .updateProgramPlexRatingKey(item.programId, this.server.name, {
+    //       externalKey: item.externalKey,
+    //       externalFilePath: details.serverPath,
+    //       directFilePath: details.directFilePath,
+    //     })
+    //     .catch((err) => {
+    //       this.logger.error(
+    //         err,
+    //         'Error while updating Jellyfin file path for program %s',
+    //         item.programId,
+    //       );
+    //     });
+    // }
 
     const streamSettings = this.settings.plexSettings();
 
