@@ -1,4 +1,4 @@
-import { DeepNonNullable } from 'ts-essentials';
+import { DeepNonNullable, StrictExclude } from 'ts-essentials';
 
 export type Maybe<T> = T | undefined;
 
@@ -17,3 +17,9 @@ export type Try<T> = T | Error;
 export type MarkNonNullable<Type, Keys extends keyof Type> = Type extends Type
   ? Omit<Type, Keys> & DeepNonNullable<Pick<Type, Keys>>
   : never;
+
+export type MarkNullable<Type, Keys extends keyof Type = keyof Type> = {
+  [Key in keyof Pick<Type, Keys>]: Pick<Type, Keys>[Key] | null;
+} & {
+  [Key in StrictExclude<keyof Type, Keys>]: Type[Key];
+};

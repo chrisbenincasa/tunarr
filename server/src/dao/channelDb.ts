@@ -23,6 +23,7 @@ import {
   groupBy,
   isEmpty,
   isNil,
+  isNull,
   isNumber,
   isString,
   isUndefined,
@@ -50,7 +51,7 @@ import { serverContext } from '../serverContext.js';
 import { ChannelNotFoundError } from '../types/errors.js';
 import { typedProperty } from '../types/path.js';
 import { Result } from '../types/result.js';
-import { Maybe } from '../types/util.js';
+import { MarkNullable, Maybe } from '../types/util.js';
 import { asyncPool } from '../util/asyncPool.js';
 import { fileExists } from '../util/fsUtil.js';
 import {
@@ -231,6 +232,16 @@ type PageParams = {
   limit: number;
 };
 
+type UpdateChannelLineupRequest = MarkOptional<
+  MarkNullable<
+    Omit<Lineup, 'lastUpdated'>,
+    | 'dynamicContentConfig'
+    | 'schedule'
+    | 'schedulingOperations'
+    | 'pendingPrograms'
+  >,
+  'version' | 'onDemandConfig' | 'items' | 'startTimeOffsets'
+>;
 export class ChannelDB {
   private logger = LoggerFactory.child({
     caller: import.meta,
@@ -1075,27 +1086,54 @@ export class ChannelDB {
     };
   }
 
-  async saveLineup(
-    channelId: string,
-    newLineup: MarkOptional<Omit<Lineup, 'lastUpdated'>, 'version'>,
-  ) {
+  /**
+   * Updates the lineup config for a channel
+   * Some values accept 'null', which will clear their value
+   * Other values can be left undefined, which will leave them untouched
+   */
+  async saveLineup(channelId: string, newLineup: UpdateChannelLineupRequest) {
     const db = await this.getFileDb(channelId);
-    newLineup.startTimeOffsets = reduce(
-      newLineup.items,
-      (acc, item, index) => [...acc, acc[index] + item.durationMs],
-      [0],
-    );
-    db.data = {
-      ...db.data,
-      version: newLineup?.version ?? db.data.version,
-      items: newLineup.items,
-      startTimeOffsets: newLineup.startTimeOffsets,
-      schedule: newLineup.schedule,
-      pendingPrograms: newLineup.pendingPrograms,
-      onDemandConfig: newLineup.onDemandConfig,
-      lastUpdated: dayjs().valueOf(),
-    };
-    await db.write();
+    await db.update((data) => {
+      if (isDefined(newLineup.items)) {
+        data.items = newLineup.items;
+        data.startTimeOffsets =
+          newLineup.startTimeOffsets ??
+          reduce(
+            newLineup.items,
+            (acc, item, index) => {
+              acc.push(acc[index] + item.durationMs);
+              return acc;
+            },
+            [0],
+          );
+      }
+
+      if (isDefined(newLineup.schedule)) {
+        if (isNull(newLineup.schedule)) {
+          data.schedule = undefined;
+        } else {
+          data.schedule = newLineup.schedule;
+        }
+      }
+
+      if (isDefined(newLineup.pendingPrograms)) {
+        data.pendingPrograms =
+          newLineup.pendingPrograms === null
+            ? undefined
+            : newLineup.pendingPrograms;
+      }
+
+      if (isDefined(newLineup.onDemandConfig)) {
+        data.onDemandConfig =
+          newLineup.onDemandConfig === null
+            ? undefined
+            : newLineup.onDemandConfig;
+      }
+
+      data.version = newLineup?.version ?? data.version;
+
+      data.lastUpdated = dayjs().valueOf();
+    });
     return db.data;
   }
 
