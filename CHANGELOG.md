@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.15.5](https://github.com/chrisbenincasa/tunarr/compare/v0.15.4...v0.15.5) (2024-11-05)
+
+
+### Bug Fixes
+
+* do not remove scheduling configurations when adding new programs ([#936](https://github.com/chrisbenincasa/tunarr/issues/936)) ([d18e99d](https://github.com/chrisbenincasa/tunarr/commit/d18e99d5769762388b859c4fd22ae7044f7b74cc)), closes [#934](https://github.com/chrisbenincasa/tunarr/issues/934)
+* fix deleting filler shows using new db code ([95bf2b3](https://github.com/chrisbenincasa/tunarr/commit/95bf2b380adcb5ff3e0ade7e04c7a10ca0cdbbb0))
+* fix passing arguments to standalone script files ([#939](https://github.com/chrisbenincasa/tunarr/issues/939)) ([82b2a2c](https://github.com/chrisbenincasa/tunarr/commit/82b2a2c363bf01c77c9f7325b62feb70f1d64650))
+* reference correct table in channel_filler_show filler_show_uuid foreign key ([a3539ed](https://github.com/chrisbenincasa/tunarr/commit/a3539ed540601bb6669b27bb34c7b227ab7c7058)), closes [#931](https://github.com/chrisbenincasa/tunarr/issues/931)
+* uploads can just be renamed from saved temp path ([af14be1](https://github.com/chrisbenincasa/tunarr/commit/af14be130d4e50d2a4b8aa82bc4fb35b7bdc2598)), closes [#932](https://github.com/chrisbenincasa/tunarr/issues/932)
+
 ## [0.15.4](https://github.com/chrisbenincasa/tunarr/compare/v0.15.3...v0.15.4) (2024-11-02)
 
 
