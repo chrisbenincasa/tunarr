@@ -6,6 +6,7 @@ import { FillerShow } from './schema/FillerShow.js';
 import { Program } from './schema/Program.ts';
 import { MinimalProgramExternalId } from './schema/ProgramExternalId.ts';
 import { ProgramGrouping } from './schema/ProgramGrouping.ts';
+import { ProgramGroupingExternalId } from './schema/ProgramGroupingExternalId.ts';
 
 export type ProgramWithRelations = Program & {
   tvShow?: DeepNullable<Partial<ProgramGrouping>> | null;
@@ -55,6 +56,10 @@ export type ChannelFillerShowWithContent = MarkRequired<
 
 export type ProgramWithExternalIds = Program & {
   externalIds: MinimalProgramExternalId[];
+};
+
+export type ProgramGroupingWithExternalIds = ProgramGrouping & {
+  externalIds: ProgramGroupingExternalId[];
 };
 
 // export type DB = Omit<RawType.DB, 'channel' | 'mediaSource'> & {

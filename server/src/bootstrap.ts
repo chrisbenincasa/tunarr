@@ -60,7 +60,7 @@ export async function initDbDirectories() {
 
 export async function bootstrapTunarr() {
   await initDbDirectories();
-  initDirectDbAccess(globalOptions());
+  initDirectDbAccess(path.join(globalOptions().databaseDirectory, 'db.db'));
   await syncMigrationTablesIfNecessary();
   const settingsDb = getSettings();
   LoggerFactory.initialize(settingsDb);

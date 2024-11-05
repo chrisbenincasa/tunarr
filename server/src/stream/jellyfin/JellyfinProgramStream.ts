@@ -47,7 +47,8 @@ export class JellyfinProgramStream extends ProgramStream {
     if (!isContentBackedLineupIteam(lineupItem)) {
       return Result.failure(
         new Error(
-          'Lineup item is not backed by Plex: ' + JSON.stringify(lineupItem),
+          'Lineup item is not backed by a media source: ' +
+            JSON.stringify(lineupItem),
         ),
       );
     }
@@ -71,7 +72,6 @@ export class JellyfinProgramStream extends ProgramStream {
     const jellyfinStreamDetails = new JellyfinStreamDetails(
       server,
       this.settingsDB,
-      // new ProgramDB(),
     );
 
     const watermark = await this.getWatermark();

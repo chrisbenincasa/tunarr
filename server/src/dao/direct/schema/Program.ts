@@ -5,7 +5,7 @@ import { MediaSourceType } from './MediaSource.ts';
 import { WithCreatedAt, WithUpdatedAt, WithUuid } from './base.ts';
 
 export const ProgramTypes = ['movie', 'episode', 'track'] as const;
-export const ProgramType: Record<string, ProgramType> = {
+export const ProgramType = {
   Movie: 'movie',
   Episode: 'episode',
   Track: 'track',

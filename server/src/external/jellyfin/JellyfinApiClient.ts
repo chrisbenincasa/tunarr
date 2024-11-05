@@ -16,10 +16,11 @@ import axios, {
 } from 'axios';
 import {
   find,
-  first,
+  isBoolean,
   isEmpty,
   isNil,
   isObject,
+  mapValues,
   omitBy,
   union,
 } from 'lodash-es';
@@ -76,6 +77,19 @@ export type JellyfinApiClientOptions = Omit<
   'type'
 > & {
   userId?: string;
+};
+
+export type JellyfinGetItemsQuery = {
+  recursive?: boolean;
+  searchTerm?: string;
+  nameStartsWith?: string;
+  nameStartsWithOrGreater?: string;
+  nameLessThan?: string;
+  genres?: string[];
+  ids?: string[];
+  hasImdbId?: boolean;
+  hasTmdbId?: boolean;
+  hasTvdbId?: boolean;
 };
 
 export class JellyfinApiClient extends BaseApiClient<JellyfinApiClientOptions> {
@@ -194,9 +208,9 @@ export class JellyfinApiClient extends BaseApiClient<JellyfinApiClientOptions> {
       null,
       null,
       ['MediaStreams', 'MediaSources', ...extraFields],
-      null,
+      { offset: 0, limit: 1 },
       {
-        ids: itemId,
+        ids: [itemId],
       },
     );
 
@@ -204,7 +218,9 @@ export class JellyfinApiClient extends BaseApiClient<JellyfinApiClientOptions> {
       return result;
     }
 
-    return this.makeSuccessResult(first(result.data.Items));
+    return this.makeSuccessResult(
+      find(result.data.Items, (item) => item.Id === itemId),
+    );
   }
 
   async getItems(
@@ -213,7 +229,7 @@ export class JellyfinApiClient extends BaseApiClient<JellyfinApiClientOptions> {
     itemTypes: Nilable<JellyfinItemKind[]> = null,
     extraFields: JellyfinItemFields[] = [],
     pageParams: Nilable<{ offset: number; limit: number }> = null,
-    extraParams: object = {},
+    extraParams: JellyfinGetItemsQuery = {},
     sortBy: [JellyfinItemSortBy, ...JellyfinItemSortBy[]] = [
       'SortName',
       'ProductionYear',
@@ -230,9 +246,13 @@ export class JellyfinApiClient extends BaseApiClient<JellyfinApiClientOptions> {
           // These will be configurable eventually
           sortOrder: 'Ascending',
           sortBy: sortBy.join(','),
-          recursive: true,
+          recursive: extraParams.recursive?.toString() ?? 'true',
           includeItemTypes: itemTypes ? itemTypes.join(',') : undefined,
-          ...extraParams,
+          ...{
+            ...mapValues(extraParams, (v) => (isBoolean(v) ? v.toString() : v)),
+            ids: extraParams.ids?.join(','),
+            genres: extraParams.genres?.join('|'),
+          },
         },
         (v) => isNil(v) || isEmpty(v),
       ),

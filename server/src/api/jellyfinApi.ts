@@ -172,8 +172,8 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
             nameStartsWithOrGreater: req.query.nameStartsWithOrGreater,
             nameStartsWith: req.query.nameStartsWith,
             nameLessThan: req.query.nameLessThan,
-            genres: req.query.genres?.join('|'),
-            recursive: req.query.recursive?.toString(),
+            genres: req.query.genres,
+            recursive: req.query.recursive,
           },
           isNonEmptyTyped(req.query.sortBy)
             ? req.query.sortBy

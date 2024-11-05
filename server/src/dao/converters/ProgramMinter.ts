@@ -198,26 +198,22 @@ class ProgramDaoMinter {
     };
   }
 
-  mintRawExternalIds(
+  mintExternalIds(
     serverName: string,
     programId: string,
     originalProgram: ContentProgramOriginalProgram,
   ) {
     return match(originalProgram)
       .with({ sourceType: 'plex' }, ({ program: originalProgram }) =>
-        this.mintRawExternalIdsForPlex(serverName, programId, originalProgram),
+        this.mintExternalIdsForPlex(serverName, programId, originalProgram),
       )
       .with({ sourceType: 'jellyfin' }, ({ program: originalProgram }) =>
-        this.mintRawExternalIdsForJellyfin(
-          serverName,
-          programId,
-          originalProgram,
-        ),
+        this.mintExternalIdsForJellyfin(serverName, programId, originalProgram),
       )
       .exhaustive();
   }
 
-  mintRawExternalIdsForPlex(
+  mintExternalIdsForPlex(
     serverName: string,
     programId: string,
     media: PlexTerminalMedia,
@@ -266,12 +262,12 @@ class ProgramDaoMinter {
     return [ratingId, guidId, ...externalGuids];
   }
 
-  mintRawExternalIdsForJellyfin(
+  mintJellyfinExternalId(
     serverName: string,
     programId: string,
     media: JellyfinItem,
   ) {
-    const ratingId = {
+    return {
       uuid: v4(),
       createdAt: +dayjs(),
       updatedAt: +dayjs(),
@@ -280,6 +276,14 @@ class ProgramDaoMinter {
       programUuid: programId,
       externalSourceId: serverName,
     } satisfies NewProgramExternalId;
+  }
+
+  mintExternalIdsForJellyfin(
+    serverName: string,
+    programId: string,
+    media: JellyfinItem,
+  ) {
+    const ratingId = this.mintJellyfinExternalId(serverName, programId, media);
 
     const externalGuids = compact(
       map(media.ProviderIds, (externalGuid, guidType) => {
