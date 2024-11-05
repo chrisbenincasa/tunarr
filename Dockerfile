@@ -32,8 +32,8 @@ RUN corepack enable
 EXPOSE 8000
 RUN ln -s /usr/local/bin/ffmpeg /usr/bin/ffmpeg
 RUN ln -s /usr/local/bin/ffprobe /usr/bin/ffprobe
-ENTRYPOINT [ "node" ]
-CMD [ "/tunarr/bundle.js" ]
+ENTRYPOINT [ "node", "/tunarr/bundle.js" ]
+CMD [ "server" ]
 
 # Add Tunarr sources
 FROM ffmpeg-base as sources
