@@ -10,10 +10,12 @@ import {
   find,
   forEach,
   groupBy,
+  isEmpty,
   isNil,
   isUndefined,
   map,
   mapValues,
+  omitBy,
   reduce,
   reject,
   round,
@@ -27,6 +29,7 @@ import { ProgramConverter } from './converters/programConverters.js';
 import { ChannelFillerShowWithContent } from './direct/derivedTypes.js';
 import { directDbAccess } from './direct/directDbAccess.js';
 import { withFillerPrograms } from './direct/programQueryHelpers.js';
+import { ChannelFillerShow } from './direct/schema/Channel.ts';
 import {
   NewFillerShow,
   NewFillerShowContent,
@@ -100,7 +103,7 @@ export class FillerDB {
             .deleteFrom('fillerShowContent')
             .where('fillerShowContent.fillerShowUuid', '=', filler.uuid)
             .execute();
-          await directDbAccess()
+          await tx
             .insertInto('fillerShowContent')
             .values([...persistedFillerShowContent, ...newFillerShowContent])
             .execute();
@@ -225,47 +228,60 @@ export class FillerDB {
           .where('channelFillerShow.fillerShowUuid', '=', id)
           .execute();
 
+        const reminaingChannelFillers = omitBy<ChannelFillerShow[]>(
+          mapValues(fillersByChannel, (cfs) =>
+            reject(cfs, (cf) => cf.fillerShowUuid === id),
+          ),
+          isEmpty,
+        );
+
+        if (!isEmpty(fillersByChannel) && !isEmpty(reminaingChannelFillers)) {
+          await tx
+            .updateTable('channelFillerShow')
+            .set(({ eb }) => {
+              const weight = reduce(
+                reminaingChannelFillers,
+                (builder, channelFillers) => {
+                  return reduce(
+                    channelFillers,
+                    (caseBuilder, channelFiller) =>
+                      caseBuilder
+                        .when(
+                          eb.and([
+                            eb(
+                              'channelFillerShow.fillerShowUuid',
+                              '=',
+                              channelFiller.fillerShowUuid,
+                            ),
+                            eb(
+                              'channelFillerShow.channelUuid',
+                              '=',
+                              channelFiller.channelUuid,
+                            ),
+                          ]),
+                        )
+                        .then(channelFiller.weight),
+                    builder,
+                  );
+                },
+                eb.case() as unknown as CaseWhenBuilder<
+                  DB,
+                  'channelFillerShow',
+                  unknown,
+                  number
+                >,
+              )
+                .else(eb.ref('channelFillerShow.weight'))
+                .end();
+              return { weight };
+            })
+            .execute();
+        }
+
         await tx
-          .updateTable('channelFillerShow')
-          .set(({ eb }) => {
-            const weight = reduce(
-              mapValues(fillersByChannel, (cfs) =>
-                reject(cfs, (cf) => cf.fillerShowUuid === id),
-              ),
-              (builder, v) => {
-                return reduce(
-                  v,
-                  (b, cf) =>
-                    b
-                      .when(
-                        eb.and([
-                          eb(
-                            'channelFillerShow.fillerShowUuid',
-                            '=',
-                            cf.fillerShowUuid,
-                          ),
-                          eb(
-                            'channelFillerShow.channelUuid',
-                            '=',
-                            cf.channelUuid,
-                          ),
-                        ]),
-                      )
-                      .then(cf.weight),
-                  builder,
-                );
-              },
-              eb.case() as unknown as CaseWhenBuilder<
-                DB,
-                'channelFillerShow',
-                unknown,
-                number
-              >,
-            )
-              .else(eb.ref('channelFillerShow.weight'))
-              .end();
-            return { weight };
-          })
+          .deleteFrom('fillerShow')
+          .where('uuid', '=', id)
+          .limit(1)
           .execute();
       });
 
