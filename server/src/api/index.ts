@@ -1,13 +1,8 @@
 import { VersionApiResponseSchema } from '@tunarr/types/api';
 import { fileTypeFromStream } from 'file-type';
-import {
-  createReadStream,
-  createWriteStream,
-  promises as fsPromises,
-} from 'fs';
+import { createReadStream, promises as fsPromises } from 'fs';
 import { isEmpty, isError, isNil } from 'lodash-es';
 import path from 'path';
-import { pipeline } from 'stream/promises';
 import { z } from 'zod';
 import { MediaSourceType } from '../dao/direct/schema/MediaSource.ts';
 import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.js';
@@ -154,10 +149,12 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
         await fsPromises.mkdir(baseDir, { recursive: true });
       }
 
-      await pipeline(
-        data.file,
-        createWriteStream(path.join(baseDir, data.filename)),
-      );
+      // await pipeline(
+      //   createReadStream(data.filepath),
+      //   createWriteStream(path.join(baseDir, data.filename)),
+      // );
+
+      await fsPromises.rename(data.filepath, path.join(baseDir, data.filename));
 
       return res.send({
         status: true,
