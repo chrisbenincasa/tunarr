@@ -132,3 +132,7 @@ services:
       # that restarting the container will not delete your settings or DB.
       - /path/to/tunarr/data:/config/tunarr
 ```
+
+## Standalone
+
+If using the standalone Tunarr scripts, you must simply extract the archive and run the packaged script file. On Unix, this is `tunarr.sh` and on Windows this is `tunarr.bat`.

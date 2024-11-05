@@ -16,10 +16,30 @@ Pass the `--admin` flag when running the script, e.g.:
  ./tunarr.sh --admin
 ```
 
-or use an environment variable:
+or on Windows:
+
+```powershell
+.\tunarr.bat --admin
+```
+
+You can also use an environment variable:
 
 ```bash
 TUNARR_SERVER_ADMIN_MODE=true ./tunarr.sh
+```
+
+and again on Windows (Powershell):
+
+```powershell
+$Env:TUNARR_SERVER_ADMIN_MODE='true'
+.\tunarr.bat
+```
+
+or Command Prompt:
+
+```
+set TUNARR_SERVER_ADMIN_MODE=true
+.\tunarr.bat
 ```
 
 ### Docker
