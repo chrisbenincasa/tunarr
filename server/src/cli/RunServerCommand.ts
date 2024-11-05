@@ -68,8 +68,9 @@ ${chalk.blue('  |_| ')}${chalk.green(' \\___/')}${chalk.yellow(
       )}${chalk.magentaBright('_/ \\_\\')}${chalk.red('_|_\\')}${chalk.cyan(
         '_|_\\',
       )}
-\n\t\t${getTunarrVersion()}
+\n\t  ${getTunarrVersion()}
 `,
+      serverOpts.admin ? chalk.yellow('\n  ****** ADMIN MODE *******\n') : '\n',
       /* eslint-enable max-len */
     );
     await initServer(serverOpts);
