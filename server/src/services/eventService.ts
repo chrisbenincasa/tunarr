@@ -3,6 +3,7 @@ import EventEmitter from 'events';
 import { FastifyInstance } from 'fastify';
 import { isString } from 'lodash-es';
 import { Readable } from 'stream';
+import { v4 } from 'uuid';
 import { TypedEventEmitter } from '../types/eventEmitter.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 
@@ -14,6 +15,9 @@ type Events = {
 export class EventService {
   private static stream: TypedEventEmitter<Events> =
     new EventEmitter() as TypedEventEmitter<Events>;
+  // Everything we need to close if the underlying EventService
+  // closes.
+  private static rawConnections: Record<string, NodeJS.WritableStream> = {};
 
   private logger = LoggerFactory.child({
     caller: import.meta,
@@ -28,6 +32,7 @@ export class EventService {
 
     EventService.stream.on('close', () => {
       clearInterval(this._heartbeat);
+      Object.values(EventService.rawConnections).forEach((conn) => conn.end());
     });
   }
 
@@ -43,6 +48,7 @@ export class EventService {
         this.logger.debug({ ip: request.ip }, 'Open event channel');
         const outStream = new Readable();
         outStream._read = () => {};
+        const id = v4();
 
         const listener = (data: TunarrEvent) => {
           const parts = [
@@ -58,11 +64,10 @@ export class EventService {
         request.socket.on('close', () => {
           this.logger.debug({ ip: request.ip }, 'Remove event channel.');
           EventService.stream.removeListener('push', listener);
+          delete EventService.rawConnections[id];
         });
 
-        EventService.stream.on('close', () => {
-          response.raw.end();
-        });
+        EventService.rawConnections[id] = response.raw;
 
         return response
           .headers({
