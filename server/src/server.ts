@@ -95,6 +95,8 @@ export async function initServer(opts: ServerOptions) {
     className: 'TunarrServer',
   });
 
+  logger.info('Using Tunarr database directory: %s', opts.databaseDirectory);
+
   initializeSingletons();
 
   const ctx = serverContext();

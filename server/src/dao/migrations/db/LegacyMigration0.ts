@@ -161,7 +161,7 @@ export default {
       .addForeignKeyConstraint(
         'channel_filler_show_filler_show_uuid_foreign',
         ['filler_show_uuid'],
-        'custom_show',
+        'filler_show',
         ['uuid'],
         (cb) => cb.onDelete('cascade').onUpdate('cascade'),
       )
