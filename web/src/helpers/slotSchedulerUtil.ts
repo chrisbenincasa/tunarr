@@ -1,6 +1,6 @@
 import { ChannelProgram } from '@tunarr/types';
 import { BaseSlot } from '@tunarr/types/api';
-import { some } from 'lodash';
+import { some } from 'lodash-es';
 
 export type DropdownOption<T extends string | number> = {
   value: T;
