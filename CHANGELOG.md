@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.15.6](https://github.com/chrisbenincasa/tunarr/compare/v0.15.5...v0.15.6) (2024-11-07)
+
+
+### Bug Fixes
+
+* improve image caching logic ([859f679](https://github.com/chrisbenincasa/tunarr/commit/859f679b9f457bf07e0c8c43f4b3077a1179e192))
+* never clear, and always update, program relations on upsert ([86c5330](https://github.com/chrisbenincasa/tunarr/commit/86c533027addacd6e2fddc43dbf1a23a6541a2af))
+
 ## [0.15.5](https://github.com/chrisbenincasa/tunarr/compare/v0.15.4...v0.15.5) (2024-11-05)
 
 
