@@ -2,7 +2,15 @@ import axios, { AxiosHeaders } from 'axios';
 import { createHash } from 'crypto';
 import dayjs from 'dayjs';
 import type { HttpHeader } from 'fastify/types/utils.d.ts';
-import { isNil, isNull, isString, isUndefined, omitBy } from 'lodash-es';
+import {
+  head,
+  isArray,
+  isNil,
+  isNull,
+  isString,
+  isUndefined,
+  omitBy,
+} from 'lodash-es';
 import NodeCache from 'node-cache';
 import stream from 'stream';
 import { z } from 'zod';
@@ -13,6 +21,7 @@ import {
 import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.ts';
 import { TruthyQueryParam } from '../types/schemas.ts';
 import { RouterPluginAsyncCallback } from '../types/serverType.ts';
+import { isNonEmptyString } from '../util/index.ts';
 
 const externalIdSchema = z
   .string()
@@ -108,8 +117,21 @@ export const metadataApiRouter: RouterPluginAsyncCallback = async (fastify) => {
           }
 
           const key = createHash('md5').update(result).digest('base64');
-          if (req.query.cache && ExternalUrlCache.has(key)) {
-            return res.status(304).send();
+          const incomingCacheKey = req.headers['if-none-match'];
+          if (
+            req.query.cache &&
+            isNonEmptyString(incomingCacheKey) &&
+            ExternalUrlCache.has(incomingCacheKey)
+          ) {
+            return res
+              .status(304)
+              .headers({
+                'cache-control': `max-age=${dayjs
+                  .duration({ hours: 1 })
+                  .asSeconds()}, must-revalidate`,
+                etag: incomingCacheKey,
+              })
+              .send();
           }
 
           const proxyRes = await axios.request<stream.Readable>({
@@ -126,11 +148,27 @@ export const metadataApiRouter: RouterPluginAsyncCallback = async (fastify) => {
             headers = { ...omitBy(proxyRes.headers, isNull) };
           }
 
+          // Attempt to not return 0 byte streams, nor cache them.
+          if (headers['content-length']) {
+            const header = isArray(headers['content-length'])
+              ? head(headers['content-length'])
+              : headers['content-length'];
+            if (isNonEmptyString(header)) {
+              const len = parseInt(header);
+              if (!isNaN(len) && len <= 0) {
+                return res.status(400).send();
+              }
+            }
+          }
+
           if (req.query.cache) {
-            ExternalUrlCache.set(key, result);
+            const genTime = +dayjs();
+            const cacheKey = `${key}_${genTime}`;
+            ExternalUrlCache.set(cacheKey, result);
             headers['cache-control'] = `max-age=${dayjs
               .duration({ hours: 1 })
-              .asSeconds()}`;
+              .asSeconds()}, must-revalidate`;
+            headers['etag'] = cacheKey;
           }
 
           return res
