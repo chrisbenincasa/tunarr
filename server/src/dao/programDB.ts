@@ -695,17 +695,6 @@ export class ProgramDB {
     );
 
     for (const [program, { grandparentKey, parentKey }] of relevantPrograms) {
-      // const [grandparentKey, parentKey] = match(originalProgram)
-      //   .with({sourceType: 'plex', program: {type: P.union('episode', 'track')}}, ({program: ep}) => [ep.grandparentRatingKey, ep.parentRatingKey] as const)
-      //   .with({sourceType: 'jellyfin', program: {Type: 'Episode'}}, ({program: ep}) => [ep.SeriesId, ep.ParentId] as const)
-      //   .with({sourceType: 'jellyfin', program: {Type: 'Audio'}}, ({program: ep}) => [ep.AlbumArtist, ep.ParentId] as const)
-      //   .otherwise(() => [null, null] as const);
-
-      // if (!grandparentKey || !parentKey) {
-      //   console.warn('Unexpected null/empty parent keys: %O', originalProgram);
-      //   continue;
-      // }
-
       if (isNonEmptyString(grandparentKey)) {
         (grandparentRatingKeyToProgramId[grandparentKey] ??= new Set()).add(
           program.uuid,
@@ -912,20 +901,18 @@ export class ProgramDB {
       );
     }
 
-    if (isEmpty(groupings)) {
-      return;
+    if (!isEmpty(groupings)) {
+      await this.timer.timeAsync('upsert program_groupings', () =>
+        directDbAccess()
+          .transaction()
+          .execute((tx) =>
+            tx
+              .insertInto('programGrouping')
+              .values(groupings)
+              .executeTakeFirstOrThrow(),
+          ),
+      );
     }
-
-    await this.timer.timeAsync('upsert program_groupings', () =>
-      directDbAccess()
-        .transaction()
-        .execute((tx) =>
-          tx
-            .insertInto('programGrouping')
-            .values(groupings)
-            .executeTakeFirstOrThrow(),
-        ),
-    );
 
     if (!isEmpty(externalIds)) {
       await this.timer.timeAsync('upsert program_grouping external ids', () =>

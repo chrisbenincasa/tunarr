@@ -256,10 +256,19 @@ type ProgramUpsertFields = StrictExclude<
   'excluded.uuid' | 'excluded.createdAt'
 >;
 
+const ProgramUpsertIgnoreFields: ProgramField[] = [
+  'program.uuid',
+  'program.createdAt',
+  'program.tvShowUuid',
+  'program.albumUuid',
+  'program.artistUuid',
+  'program.seasonUuid',
+];
+
 export const ProgramUpsertFields: ProgramUpsertFields[] =
-  AllProgramFields.filter(
-    (f) => f !== 'program.uuid' && f !== 'program.createdAt',
-  ).map((v) => v.replace('program.', 'excluded.')) as ProgramUpsertFields[];
+  AllProgramFields.filter((f) => !ProgramUpsertIgnoreFields.includes(f)).map(
+    (v) => v.replace('program.', 'excluded.'),
+  ) as ProgramUpsertFields[];
 
 export type WithProgramsOptions = {
   joins?: Partial<ProgramJoins>;
