@@ -189,7 +189,7 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
           );
           return;
         }
-        exec(`taskkill /pid' ${this.#processHandle.pid} /t /f`, (err) => {
+        exec(`taskkill /pid ${this.#processHandle.pid} /t /f`, (err) => {
           if (!isNull(err)) {
             this.#processKilled = false;
             this.#logger.warn(err, 'Unable to kill process on Windows');
