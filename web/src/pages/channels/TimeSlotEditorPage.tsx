@@ -7,6 +7,7 @@ import { useChannelEditor } from '@/store/selectors.ts';
 import {
   ArrowBack,
   Autorenew,
+  ClearAll,
   ExpandLess,
   ExpandMore,
 } from '@mui/icons-material';
@@ -392,6 +393,15 @@ export default function TimeSlotEditorPage() {
               Time Slots
             </Typography>
             <AddTimeSlotButton control={control} setValue={setValue} />
+            {!isEmpty(currentSlots) && (
+              <Button
+                onClick={() => setValue('slots', [], { shouldDirty: true })}
+                sx={{ ml: 1 }}
+                startIcon={<ClearAll />}
+              >
+                Clear All
+              </Button>
+            )}
           </Stack>
           <Divider sx={{ my: 2 }} />
           {renderTimeSlots()}
