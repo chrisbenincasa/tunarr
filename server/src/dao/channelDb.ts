@@ -630,7 +630,6 @@ export class ChannelDB {
       return await directDbAccess()
         .transaction()
         .execute(async (tx) => {
-          console.log('in here');
           await tx
             .updateTable('channel')
             .where('channel.uuid', '=', id)
@@ -677,7 +676,7 @@ export class ChannelDB {
               ops,
               ({ operation }) => operation === 'add',
             );
-            console.log(adds, removes);
+
             if (!isEmpty(removes)) {
               await tx
                 .deleteFrom('channelPrograms')

@@ -22,7 +22,7 @@ export class SlotShowIdMigration extends ChannelLineupMigration<0, 1> {
       switch (slot.programming.type) {
         case 'show':
           await this.handleSlot(slot.programming);
-          console.log(slot.programming);
+
           break;
         default:
           continue;

@@ -414,7 +414,6 @@ export async function initServer(opts: ServerOptions) {
           schedule.gracefulShutdown(),
           new Promise<boolean>((resolve) => {
             setTimeout(() => {
-              console.log('here!');
               resolve(false);
             }, 1000);
           }).then(() => {

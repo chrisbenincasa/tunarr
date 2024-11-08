@@ -23,8 +23,6 @@ export class FfmpegVersionHealthCheck implements HealthCheck {
     const ffmpegExists = await fileExists(settings.ffmpegExecutablePath);
     const ffprobeExists = await fileExists(settings.ffprobeExecutablePath);
 
-    console.log(ffmpegExists, ffprobeExists);
-
     const warningResult = match([ffmpegExists, ffprobeExists] as const)
       .with([false, true], () =>
         healthCheckResult({
@@ -71,7 +69,6 @@ export class FfmpegVersionHealthCheck implements HealthCheck {
   private isVersionValid(version: FfmpegVersionResult, app: string) {
     const versionString = version.versionString;
 
-    console.log(version);
     // Try to use the parsed major/minor versions first
     if (!isNil(version.majorVersion) && !isNil(version.minorVersion)) {
       const result = match([version.majorVersion, version.minorVersion])

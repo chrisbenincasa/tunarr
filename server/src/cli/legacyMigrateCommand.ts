@@ -22,40 +22,41 @@ const MigratableEntities = [
   'cached-images',
 ];
 
-export const LegacyMigrateCommand: CommandModule<{}, LegacyMigrateCommandArgs> =
-  {
-    command: 'legacy-migrate',
-    describe: 'Migrate from the legacy .dizquetv database',
-    builder: {
-      legacy_path: {
-        type: 'string',
-        default: path.join(process.cwd(), '.dizquetv'),
-        coerce(arg: string) {
-          if (!existsSync(arg)) {
-            throw new Error(`No directory found at ${arg}`);
-          }
-          return arg;
-        },
-      },
-      entities: {
-        type: 'array',
-        choices: MigratableEntities,
-        coerce(arg) {
-          if (isArray(arg)) {
-            return arg as string[];
-          } else if (isString(arg)) {
-            return arg.split(',');
-          } else {
-            throw new Error('Bad arg');
-          }
-        },
+export const LegacyMigrateCommand: CommandModule<
+  object,
+  LegacyMigrateCommandArgs
+> = {
+  command: 'legacy-migrate',
+  describe: 'Migrate from the legacy .dizquetv database',
+  builder: {
+    legacy_path: {
+      type: 'string',
+      default: path.join(process.cwd(), '.dizquetv'),
+      coerce(arg: string) {
+        if (!existsSync(arg)) {
+          throw new Error(`No directory found at ${arg}`);
+        }
+        return arg;
       },
     },
-    handler: async (argv) => {
-      console.log('Migrating DB from legacy schema...');
-      return await new LegacyDbMigrator(
-        getSettings(),
-        argv.legacy_path,
-      ).migrateFromLegacyDb(argv.entities);
+    entities: {
+      type: 'array',
+      choices: MigratableEntities,
+      coerce(arg) {
+        if (isArray(arg)) {
+          return arg as string[];
+        } else if (isString(arg)) {
+          return arg.split(',');
+        } else {
+          throw new Error('Bad arg');
+        }
+      },
     },
-  };
+  },
+  handler: async (argv) => {
+    return await new LegacyDbMigrator(
+      getSettings(),
+      argv.legacy_path,
+    ).migrateFromLegacyDb(argv.entities);
+  },
+};

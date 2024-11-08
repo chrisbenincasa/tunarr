@@ -349,8 +349,6 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         req.body,
       );
 
-      console.log('hello');
-
       if (isNil(result)) {
         return res.status(500).send();
       }
@@ -377,8 +375,6 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         LoggerFactory.root,
         () => req.serverCtx.channelDB.loadCondensedLineup(req.params.id),
       );
-
-      console.log('hello');
 
       if (isNil(newLineup)) {
         return res.status(500).send();

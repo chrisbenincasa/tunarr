@@ -16,7 +16,6 @@ import { DateTimeRange } from '../types/DateTimeRange.js';
 import { OpenDateTimeRange } from '../types/OpenDateTimeRange.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { enumValues } from '../util/enumUtil.js';
-import { ifDefined } from '../util/index.js';
 import { DebugJellyfinApiRouter } from './debug/debugJellyfinApi.js';
 import { debugStreamApiRouter } from './debug/debugStreamApi.js';
 
@@ -255,9 +254,6 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
       const result = await new LineupCreator().resolveLineup(
         req.query.channelId,
       );
-      ifDefined(result, (r) => {
-        console.log(r.lineup.items.length);
-      });
       return res.send(result);
     },
   );

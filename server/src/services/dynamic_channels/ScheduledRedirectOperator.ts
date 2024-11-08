@@ -32,7 +32,7 @@ export class ScheduledRedirectOperator extends SchedulingOperator<ScheduledRedir
 
     let t0 = channelStart;
     while (t0 < end) {
-      // console.log(newItems, newOffsets);
+      //
       // Find out how far into the channel we are. This is measured in days essentially
       const since = dayjs.duration(t0.diff(channelStart));
       // Then find how far into the day the redirect would start
@@ -47,7 +47,7 @@ export class ScheduledRedirectOperator extends SchedulingOperator<ScheduledRedir
       );
 
       if (!isNull(idx)) {
-        // console.log(idx);
+        //
         const programStart = channelStart.add(newOffsets[idx]);
         const untilRedirect = dayjs.duration(redirectStart.diff(programStart));
 
@@ -93,14 +93,6 @@ export class ScheduledRedirectOperator extends SchedulingOperator<ScheduledRedir
           ? t0.add(redirectDuration)
           : t0.add(1, 'day');
     }
-
-    // initial(newOffsets)?.forEach((offset, i) =>
-    //   console.log(
-    //     newItems[i].type,
-    //     dayjs(channel.startTime).add(offset).format(),
-    //     i,
-    //   ),
-    // );
 
     return Promise.resolve({
       channel,

@@ -39,10 +39,6 @@ export const SettingsUpdateCommand: CommandModule<
       await getSettings().directUpdate((prev) => {
         prev.settings = validSettings;
       });
-
-      console.log(
-        JSON.stringify(validSettings, undefined, args.pretty ? 4 : undefined),
-      );
     } catch (e) {
       console.error(e);
     }

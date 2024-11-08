@@ -37,9 +37,5 @@ export const SettingsViewCommand: CommandModule<
     if (isArray(viewSettings) && !isEmpty(viewSettings)) {
       viewSettings = viewSettings[0];
     }
-
-    console.log(
-      JSON.stringify(viewSettings, null, args.pretty ? 4 : undefined),
-    );
   },
 };

@@ -12,7 +12,6 @@ export function runWorker<T>(
 ): Promise<T> {
   return queue.add<T>(
     async () => {
-      console.log(filenameWithoutExtension);
       const worker =
         process.env.NODE_ENV !== 'production'
           ? new Worker(new URL(import.meta.resolve('tsx/cli')), {

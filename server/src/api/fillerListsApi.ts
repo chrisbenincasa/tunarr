@@ -124,8 +124,6 @@ export const fillerListsApi: RouterPluginAsyncCallback = async (fastify) => {
         return res.status(404).send();
       }
 
-      console.log('sending response');
-
       return res.send({
         id: result.uuid,
         name: result.name,
