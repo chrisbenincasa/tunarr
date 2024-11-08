@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.15.7](https://github.com/chrisbenincasa/tunarr/compare/v0.15.6...v0.15.7) (2024-11-08)
+
+
+### Bug Fixes
+
+* remove errant quote in windows process kill cmd ([88e640b](https://github.com/chrisbenincasa/tunarr/commit/88e640ba28edb9774e3d8fb8b50b2a0334a9e814))
+* resolve Jellyfin items when underlying file changes ([#933](https://github.com/chrisbenincasa/tunarr/issues/933)) ([d8b8e09](https://github.com/chrisbenincasa/tunarr/commit/d8b8e09d00d35b9639d477c669aaa1bba795aa6a))
+* use Windows-specific task kill command as .kill() doesnt seem to work ([0f5b437](https://github.com/chrisbenincasa/tunarr/commit/0f5b43797bc60b4844573123b182527fbc8c1231))
+
+
+### Performance Improvements
+
+* do not re-render entire time slot page when slot changes ([#949](https://github.com/chrisbenincasa/tunarr/issues/949)) ([db78856](https://github.com/chrisbenincasa/tunarr/commit/db7885652f63a0b2607fc488969e9f573a782b9e))
+
+
+### UI Changes
+
+* add clear all button to timeslots page ([0bae6e6](https://github.com/chrisbenincasa/tunarr/commit/0bae6e63c561cadae2c47b81fdf7ec278980d3ed))
+* flush load items ([#948](https://github.com/chrisbenincasa/tunarr/issues/948)) ([c86dd6a](https://github.com/chrisbenincasa/tunarr/commit/c86dd6a9dc3141e5d015e24e88da13848fb129e4))
+* simplify time slot page title ([d59df21](https://github.com/chrisbenincasa/tunarr/commit/d59df21fb435a8fa34effe1c140cb3e2bad040fb))
+
 ## [0.15.6](https://github.com/chrisbenincasa/tunarr/compare/v0.15.5...v0.15.6) (2024-11-07)
 
 
