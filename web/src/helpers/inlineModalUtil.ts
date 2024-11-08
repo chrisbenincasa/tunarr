@@ -1,4 +1,5 @@
 import { range } from 'lodash-es';
+import { estimateNumberOfColumns } from './util';
 
 // Magic Numbers
 // TODO: eventually grab this data via refs just in case it changes in the future
@@ -13,7 +14,7 @@ export function getImagesPerRow(
   imageWidth: number,
 ): number {
   if (imageWidth <= 0 || containerWidth <= 0) {
-    return 9; // some default value
+    return containerWidth > 0 ? estimateNumberOfColumns(containerWidth) : 8; // some default value
   }
 
   const roundedImageWidth = Math.round(imageWidth * 100) / 100;

@@ -29,6 +29,7 @@ import {
   isPlexParentItem,
 } from '@tunarr/types/plex';
 import { MediaSourceId } from '@tunarr/types/schemas';
+import { usePrevious } from '@uidotdev/usehooks';
 import {
   chain,
   filter,
@@ -43,10 +44,20 @@ import {
   slice,
   sumBy,
 } from 'lodash-es';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { P, match } from 'ts-pattern';
-import { useToggle } from 'usehooks-ts';
-import { isNonEmptyString, toggle } from '../../helpers/util.ts';
+import { useDebounceCallback, useResizeObserver, useToggle } from 'usehooks-ts';
+import {
+  estimateNumberOfColumns,
+  isNonEmptyString,
+  toggle,
+} from '../../helpers/util.ts';
 import { usePlexLibraries } from '../../hooks/plex/usePlex.ts';
 import { useMediaSources } from '../../hooks/settingsHooks.ts';
 import useStore from '../../store/index.ts';
@@ -82,6 +93,11 @@ enum TabValues {
   Playlists = 2,
 }
 
+type Size = {
+  width?: number;
+  height?: number;
+};
+
 export default function PlexProgrammingSelector() {
   const { data: mediaSources } = useMediaSources();
   const plexServers = filter(mediaSources, { type: 'plex' });
@@ -101,53 +117,52 @@ export default function PlexProgrammingSelector() {
     clearParentContext();
   };
 
+  const itemContainer = useRef<HTMLDivElement>(null);
+  const [columns, setColumns] = useState(8);
+  const [bufferSize, setBufferSize] = useState(0);
+
+  const [{ width }, setSize] = useState<Size>({
+    width: undefined,
+    height: undefined,
+  });
+
   const { data: directoryChildren } = usePlexLibraries(
     selectedServer?.id ?? tag<MediaSourceId>(''),
     selectedServer?.type === 'plex',
   );
 
-  const plexCollectionsQuery = usePlexCollectionsInfinite(
-    selectedServer,
-    selectedLibrary,
-    24,
-  );
+  const onResize = useDebounceCallback(setSize, 200);
 
-  const { isLoading: isCollectionLoading, data: collectionsData } =
-    plexCollectionsQuery;
-
-  const plexPlaylistsQuery = usePlexPlaylistsInfinite(
-    selectedServer,
-    selectedLibrary,
-    24,
-  );
-
-  const { isLoading: isPlaylistLoading, data: playlistData } =
-    plexPlaylistsQuery;
+  useResizeObserver({
+    ref: itemContainer,
+    onResize,
+  });
 
   useEffect(() => {
-    // When switching between Libraries, if a collection doesn't exist switch back to 'Library' tab
-    if (
-      tabValue === TabValues.Playlists &&
-      isUndefined(playlistData) &&
-      !isPlaylistLoading
-    ) {
-      setTabValue(TabValues.Library);
-    } else if (
-      tabValue === TabValues.Collections &&
-      isUndefined(collectionsData) &&
-      !isCollectionLoading
-    ) {
-      setTabValue(TabValues.Library);
+    const containerWidth =
+      itemContainer?.current?.getBoundingClientRect().width || 0;
+    const padding = 16; // to do: don't hardcode this
+    // We have to estimate the number of columns because the items aren't loaded yet to use their width to calculate it
+    const numberOfColumns = estimateNumberOfColumns(containerWidth + padding);
+    const prevNumberOfColumns =
+      searchData?.pages[searchData?.pages.length - 1].size;
+
+    // Calculate total number of fetched items so far
+    const currentTotalSize =
+      searchData?.pages.reduce((acc, page) => acc + page.size, 0) || 0;
+
+    // Calculate total items that don't fill an entire row
+    const leftOvers = currentTotalSize % numberOfColumns;
+
+    // Calculate total items that are needed to fill the remainder of the row
+    const bufferSize = numberOfColumns - leftOvers;
+
+    if (prevNumberOfColumns !== numberOfColumns && prevNumberOfColumns) {
+      setBufferSize(bufferSize);
     }
-    clearParentContext();
-  }, [
-    collectionsData,
-    isCollectionLoading,
-    isPlaylistLoading,
-    playlistData,
-    selectedLibrary?.library.type,
-    tabValue,
-  ]);
+
+    setColumns(numberOfColumns);
+  }, [itemContainer, width]);
 
   const { urlFilter: searchKey } = useStore(({ plexSearch }) => plexSearch);
 
@@ -191,12 +206,36 @@ export default function PlexProgrammingSelector() {
     [selectedLibrary?.library.type],
   );
 
+  const plexCollectionsQuery = usePlexCollectionsInfinite(
+    selectedServer,
+    selectedLibrary,
+    columns * 5 + bufferSize,
+  );
+
+  const {
+    isLoading: isCollectionLoading,
+    data: collectionsData,
+    isFetchingNextPage: isFetchingNextCollectionPage,
+  } = plexCollectionsQuery;
+
+  const plexPlaylistsQuery = usePlexPlaylistsInfinite(
+    selectedServer,
+    selectedLibrary,
+    columns * 5 + bufferSize,
+  );
+
+  const {
+    isLoading: isPlaylistLoading,
+    data: playlistData,
+    isFetchingNextPage: isFetchingNextPlaylistPage,
+  } = plexPlaylistsQuery;
+
   const currentParentContext = last(parentContext);
   const plexSearchQuery = usePlexItemsInfinite(
     selectedServer,
     selectedLibrary,
     searchKey,
-    50,
+    columns * 5 + bufferSize,
     currentParentContext
       ? {
           parentId: currentParentContext.ratingKey,
@@ -205,7 +244,64 @@ export default function PlexProgrammingSelector() {
       : undefined,
   );
 
-  const { isLoading: searchLoading, data: searchData } = plexSearchQuery;
+  const {
+    isLoading: searchLoading,
+    data: searchData,
+    isFetchingNextPage: isFetchingNextLibraryPage,
+  } = plexSearchQuery;
+
+  const previousIsFetchingNextLibraryPage = usePrevious(
+    isFetchingNextLibraryPage,
+  );
+
+  const previousIsFetchingNextCollectionPage = usePrevious(
+    isFetchingNextCollectionPage,
+  );
+
+  const previousIsFetchingNextPlaylistPage = usePrevious(
+    isFetchingNextPlaylistPage,
+  );
+
+  // reset bufferSize after each fetch
+  // we only need a buffer size to fill the gap between two fetches
+  useEffect(() => {
+    if (
+      (previousIsFetchingNextLibraryPage && !isFetchingNextLibraryPage) ||
+      (previousIsFetchingNextCollectionPage && !isFetchingNextCollectionPage) ||
+      (previousIsFetchingNextPlaylistPage && !isFetchingNextPlaylistPage)
+    ) {
+      setBufferSize(0);
+    }
+  }, [
+    previousIsFetchingNextLibraryPage,
+    previousIsFetchingNextCollectionPage,
+    previousIsFetchingNextPlaylistPage,
+  ]);
+
+  useEffect(() => {
+    // When switching between Libraries, if a collection doesn't exist switch back to 'Library' tab
+    if (
+      tabValue === TabValues.Playlists &&
+      isUndefined(playlistData) &&
+      !isPlaylistLoading
+    ) {
+      setTabValue(TabValues.Library);
+    } else if (
+      tabValue === TabValues.Collections &&
+      isUndefined(collectionsData) &&
+      !isCollectionLoading
+    ) {
+      setTabValue(TabValues.Library);
+    }
+    clearParentContext();
+  }, [
+    collectionsData,
+    isCollectionLoading,
+    isPlaylistLoading,
+    playlistData,
+    selectedLibrary?.library.type,
+    tabValue,
+  ]);
 
   useEffect(() => {
     if (searchData?.pages.length === 1) {
@@ -507,7 +603,13 @@ export default function PlexProgrammingSelector() {
             }}
           />
           {isListView && renderContextBreadcrumbs()}
-          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+          <Box
+            sx={{
+              borderBottom: 1,
+              borderColor: 'divider',
+            }}
+            ref={itemContainer}
+          >
             <Tabs
               value={tabValue}
               onChange={handleChange}

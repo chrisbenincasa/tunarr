@@ -497,3 +497,25 @@ export const ifProd = <T>(f: () => T): T | null => {
   }
   return null;
 };
+
+// Hardcoded values for our grid
+// This allows us to calculate estimated columns before images load
+export function estimateNumberOfColumns(containerWidth: number) {
+  if (containerWidth <= 319) {
+    return 1;
+  } else if (containerWidth <= 479) {
+    return 2;
+  } else if (containerWidth <= 639) {
+    return 3;
+  } else if (containerWidth <= 799) {
+    return 4;
+  } else if (containerWidth <= 959) {
+    return 5;
+  } else if (containerWidth <= 1119) {
+    return 6;
+  } else if (containerWidth <= 1279) {
+    return 7;
+  } else {
+    return 8;
+  }
+}
