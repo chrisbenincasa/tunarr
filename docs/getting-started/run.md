@@ -6,6 +6,7 @@
 docker run \
     -v "$(pwd)"/tunarr:/config/tunarr \
     -v "$(pwd)"/.dizquetv:/.dizquetv \
+    -e "TZ=America/New_York" \
     -p 8000:8000 \
     chrisbenincasa/tunarr
 ```
@@ -26,8 +27,11 @@ services:
     # runtime: nvidia
     environment:
       - LOG_LEVEL=${TUNARR_LOG_LEVEL:-INFO}
-    # Uncomment if you'd like to adjust default config path
-    # - TUNARR_DATABASE_PATH=/your/path/tunarr
+      # Replace this with your timezone to ensure accurate guide
+      # data and scheduling.
+      - TZ=America/New_York
+      # Uncomment if you'd like to adjust default config path
+      # - TUNARR_DATABASE_PATH=/your/path/tunarr
     volumes:
       # Choose a path on your host to map to /config/tunarr. This ensures
       # that restarting the container will not delete your settings or DB.
@@ -72,6 +76,7 @@ There are many ways to enable usage of an Nvidia GPU in a Docker container. The 
 docker run \
     --runtime nvidia
     -v "$(pwd)"/tunarr:/config/tunarr \
+    -e "TZ=America/New_York" \
     -p 8000:8000 \
     chrisbenincasa/tunarr
 ```
@@ -90,6 +95,7 @@ services:
     environment:
       - LOG_LEVEL=${TUNARR_LOG_LEVEL:-INFO}
       - NVIDIA_VISIBLE_DEVICES=all
+      - TZ=America/New_York
     # Uncomment if you'd like to adjust default config path
     # - TUNARR_DATABASE_PATH=/your/path/tunarr
     volumes:
@@ -106,10 +112,11 @@ For QSV compatability in Docker, you must mount `/dev/dri` the container:
 
 ```
 docker run \
- -v "$(pwd)"/tunarr:/config/tunarr \
- --device /dev/dri:/dev/dri
--p 8000:8000 \
- chrisbenincasa/tunarr:latest-vaapi
+  -v "$(pwd)"/tunarr:/config/tunarr \
+  --device /dev/dri:/dev/dri \
+  -e "TZ=America/New_York" \
+  -p 8000:8000 \
+  chrisbenincasa/tunarr:latest-vaapi
 ```
 
 #### Docker Compose Example
@@ -124,6 +131,7 @@ services:
       - ${TUNARR_SERVER_PORT:-8000}:8000
     environment:
       - LOG_LEVEL=${TUNARR_LOG_LEVEL:-INFO}
+      - TZ=America/New_York
     # Pass all render devices to container
     devices:
       - /dev/dri:/dev/dri
