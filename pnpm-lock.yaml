@@ -523,9 +523,6 @@ importers:
       '@tanstack/router-vite-plugin':
         specifier: ^1.35.4
         version: 1.35.4(vite@5.4.1)
-      '@types/lodash':
-        specifier: 4.17.10
-        version: 4.17.10
       '@types/lodash-es':
         specifier: 4.17.9
         version: 4.17.9

@@ -1,5 +1,6 @@
 import { CondensedChannelProgram, ContentProgram } from '@tunarr/types';
 import { chain, isNil, isUndefined } from 'lodash-es';
+import { useCallback, useMemo } from 'react';
 import { UIChannelProgram, UIIndex } from '../types/index.ts';
 import useStore, { State } from './index.ts';
 
@@ -69,6 +70,30 @@ export const useChannelEditor = () => {
       ),
     };
   });
+};
+
+export const useChannelEditorLazy = () => {
+  const channelEditor = useStore((s) => s.channelEditor);
+  const materializeLineup = useCallback(
+    (
+      lineup: (CondensedChannelProgram & UIIndex)[],
+      programLookup: Record<string, ContentProgram>,
+    ) => {
+      return materializeProgramList(lineup, programLookup);
+    },
+    [],
+  );
+  const materializeNewLineup = useCallback(
+    () =>
+      materializeLineup(channelEditor.programList, channelEditor.programLookup),
+    [channelEditor.programList, channelEditor.programLookup, materializeLineup],
+  );
+  return useMemo(() => {
+    return {
+      channelEditor,
+      getMaterializedProgramList: materializeNewLineup,
+    };
+  }, [channelEditor, materializeNewLineup]);
 };
 
 export const useCustomShowEditor = () => {

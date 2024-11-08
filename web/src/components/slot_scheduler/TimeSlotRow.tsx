@@ -10,14 +10,9 @@ import {
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import { TimeSlot, TimeSlotProgramming } from '@tunarr/types/api';
 import dayjs from 'dayjs';
-import { map, reject } from 'lodash-es';
+import { isNil, map, uniqBy } from 'lodash-es';
 import { Fragment, useCallback } from 'react';
-import {
-  Control,
-  Controller,
-  UseFormSetValue,
-  useWatch,
-} from 'react-hook-form';
+import { Control, Controller, useWatch } from 'react-hook-form';
 import { ProgramOption } from '../../helpers/slotSchedulerUtil.ts';
 import {
   OneDayMillis,
@@ -46,61 +41,42 @@ const showOrderOptions = [
 ];
 
 type TimeSlotProps = {
-  slot: TimeSlot;
   index: number;
   control: Control<TimeSlotForm>;
-  setValue: UseFormSetValue<TimeSlotForm>;
+  removeSlot: () => void;
   programOptions: ProgramOption[];
 };
 
 export const TimeSlotRow = ({
-  slot,
   index,
   control,
-  setValue,
+  removeSlot,
   programOptions,
 }: TimeSlotProps) => {
-  const start = dayjs.tz().startOf('day');
   const currentSlots = useWatch({ control, name: 'slots' });
+  const slot = currentSlots[index];
   const currentPeriod = useWatch({ control, name: 'period' });
 
-  const updateSlotTime = useCallback(
-    (idx: number, time: dayjs.Dayjs) => {
-      setValue(
-        `slots.${idx}.startTime`,
-        time
-          .mod(dayjs.duration(1, 'day'))
-          .subtract({ minutes: new Date().getTimezoneOffset() })
-          .asMilliseconds(),
-        { shouldDirty: true },
-      );
-    },
-    [setValue],
-  );
-
-  const removeSlot = useCallback(
-    (idx: number) => {
-      setValue(
-        'slots',
-        reject(currentSlots, (_, i) => idx === i),
-        { shouldDirty: true },
-      );
-    },
-    [currentSlots, setValue],
-  );
-
   const updateSlotDay = useCallback(
-    (idx: number, currentDay: number, dayOfWeek: number) => {
-      const slot = currentSlots[idx];
+    (
+      currentDay: number,
+      dayOfWeek: number,
+      originalOnChange: (...args: unknown[]) => void,
+    ) => {
+      const slot = currentSlots[index];
       const daylessStartTime = slot.startTime - currentDay * OneDayMillis;
       const newStartTime = daylessStartTime + dayOfWeek * OneDayMillis;
-      setValue(`slots.${idx}.startTime`, newStartTime, { shouldDirty: true });
+      originalOnChange(newStartTime);
     },
-    [currentSlots, setValue],
+    [currentSlots, index],
   );
 
   const updateSlotType = useCallback(
-    (idx: number, slotId: string) => {
+    (
+      idx: number,
+      slotId: string,
+      originalOnChange: (...args: unknown[]) => void,
+    ) => {
       let slotProgram: TimeSlotProgramming;
 
       if (slotId.startsWith('show')) {
@@ -136,37 +112,27 @@ export const TimeSlotRow = ({
       };
 
       const curr = currentSlots[idx];
-
-      setValue(
-        `slots.${idx}`,
-        { ...slot, startTime: curr.startTime },
-        { shouldDirty: true },
-      );
+      originalOnChange({ ...slot, startTime: curr.startTime });
     },
-    [currentSlots, setValue],
+    [currentSlots],
   );
 
-  const startTime = start.add(slot.startTime);
-  // .subtract(new Date().getTimezoneOffset(), 'minutes');
-  let selectValue: string;
-  switch (slot.programming.type) {
-    case 'show': {
-      selectValue = `show.${slot.programming.showId}`;
-      break;
+  const getProgramDropdownValue = (programming: TimeSlotProgramming) => {
+    switch (programming.type) {
+      case 'show': {
+        return `show.${programming.showId}`;
+      }
+      case 'redirect': {
+        return `redirect.${programming.channelId}`;
+      }
+      case 'custom-show': {
+        return `${programming.type}.${programming.customShowId}`;
+      }
+      default: {
+        return programming.type;
+      }
     }
-    case 'redirect': {
-      selectValue = `redirect.${slot.programming.channelId}`;
-      break;
-    }
-    case 'custom-show': {
-      selectValue = `${slot.programming.type}.${slot.programming.customShowId}`;
-      break;
-    }
-    default: {
-      selectValue = slot.programming.type;
-      break;
-    }
-  }
+  };
 
   const isShowType = slot.programming.type === 'show';
   let showInputSize = currentPeriod === 'week' ? 7 : 9;
@@ -177,45 +143,100 @@ export const TimeSlotRow = ({
   const dayOfTheWeek = Math.floor(slot.startTime / OneDayMillis);
 
   return (
-    <Fragment key={`${slot.startTime}_${index}`}>
+    <Fragment>
       {currentPeriod === 'week' ? (
         <Grid item xs={2}>
-          <Select
-            fullWidth
-            value={dayOfTheWeek}
-            onChange={(e) =>
-              updateSlotDay(index, dayOfTheWeek, e.target.value as number)
-            }
-          >
-            {map(DaysOfWeekMenuItems, ({ value, name }) => (
-              <MenuItem key={value} value={value}>
-                {name}
-              </MenuItem>
-            ))}
-          </Select>
+          <Controller
+            control={control}
+            name={`slots.${index}.startTime`}
+            rules={{
+              validate: {
+                unique: (_, { slots }) => {
+                  if (uniqBy(slots, 'startTime').length !== slots.length) {
+                    return 'BAD';
+                  }
+                },
+              },
+            }}
+            render={({ field }) => (
+              <Select
+                fullWidth
+                {...field}
+                value={dayOfTheWeek}
+                onChange={(e) =>
+                  updateSlotDay(
+                    dayOfTheWeek,
+                    e.target.value as number,
+                    field.onChange,
+                  )
+                }
+              >
+                {map(DaysOfWeekMenuItems, ({ value, name }) => (
+                  <MenuItem key={value} value={value}>
+                    {name}
+                  </MenuItem>
+                ))}
+              </Select>
+            )}
+          />
         </Grid>
       ) : null}
       <Grid item xs={2}>
-        <TimePicker
-          onChange={(value) => value && updateSlotTime(index, value)}
-          value={startTime}
-          label="Start Time"
+        <Controller
+          control={control}
+          name={`slots.${index}.startTime`}
+          render={({ field, fieldState: { error } }) => (
+            <TimePicker
+              {...field}
+              // TODO: Jank fest
+              value={dayjs(field.value).add(
+                new Date().getTimezoneOffset(),
+                'minutes',
+              )}
+              onChange={(value) => {
+                value
+                  ? field.onChange(
+                      value
+                        .mod(dayjs.duration(1, currentPeriod))
+                        .subtract({ minutes: new Date().getTimezoneOffset() })
+                        .asMilliseconds(),
+                    )
+                  : void 0;
+              }}
+              label="Start Time"
+              closeOnSelect={false}
+              slotProps={{
+                textField: {
+                  error: !isNil(error),
+                },
+              }}
+            />
+          )}
         />
       </Grid>
       <Grid item xs={showInputSize}>
         <FormControl fullWidth>
           <InputLabel>Program</InputLabel>
-          <Select
-            label="Program"
-            value={selectValue}
-            onChange={(e) => updateSlotType(index, e.target.value)}
-          >
-            {map(programOptions, ({ description, value }) => (
-              <MenuItem key={value} value={value}>
-                {description}
-              </MenuItem>
-            ))}
-          </Select>
+          <Controller
+            control={control}
+            name={`slots.${index}`}
+            render={({ field }) => (
+              <Select
+                label="Program"
+                {...field}
+                value={getProgramDropdownValue(field.value.programming)}
+                onChange={(e) =>
+                  updateSlotType(index, e.target.value, field.onChange)
+                }
+              >
+                {map(programOptions, ({ description, value }) => (
+                  <MenuItem key={value} value={value}>
+                    {description}
+                  </MenuItem>
+                ))}
+              </Select>
+            )}
+          />
         </FormControl>
       </Grid>
       {isShowType && (
@@ -239,7 +260,7 @@ export const TimeSlotRow = ({
         </Grid>
       )}
       <Grid item xs={1}>
-        <IconButton onClick={() => removeSlot(index)} color="error">
+        <IconButton onClick={removeSlot} color="error">
           <Delete />
         </IconButton>
       </Grid>

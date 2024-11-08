@@ -1,29 +1,19 @@
-import {
-  lineupItemAppearsInSchedule,
-  slotOptionIsScheduled,
-} from '@/helpers/slotSchedulerUtil.ts';
+import { ClearSlotsButton } from '@/components/slot_scheduler/ClearSlotsButton.tsx';
+import { MissingProgramsAlert } from '@/components/slot_scheduler/MissingProgramsAlert.tsx';
+import { lineupItemAppearsInSchedule } from '@/helpers/slotSchedulerUtil.ts';
 import { useSlotProgramOptions } from '@/hooks/programming_controls/useSlotProgramOptions.ts';
-import { useChannelEditor } from '@/store/selectors.ts';
-import {
-  ArrowBack,
-  Autorenew,
-  ClearAll,
-  ExpandLess,
-  ExpandMore,
-} from '@mui/icons-material';
+import { useChannelEditorLazy } from '@/store/selectors.ts';
+import { ArrowBack, Autorenew } from '@mui/icons-material';
 import {
   Alert,
   Box,
   Button,
-  Collapse,
   Divider,
   FormControl,
   FormGroup,
   FormHelperText,
   Grid,
-  IconButton,
   InputLabel,
-  ListItem,
   MenuItem,
   Select,
   SelectChangeEvent,
@@ -35,6 +25,7 @@ import {
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { Link as RouterLink } from '@tanstack/react-router';
 import { dayjsMod, scheduleTimeSlots } from '@tunarr/shared';
+import { seq } from '@tunarr/shared/util';
 import { TimeSlot, TimeSlotSchedule } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
@@ -43,17 +34,17 @@ import {
   chain,
   filter,
   first,
-  isEmpty,
+  groupBy,
   isUndefined,
   map,
   range,
-  reject,
+  some,
+  values,
 } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import pluralize from 'pluralize';
-import { useCallback, useMemo, useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
-import { useToggle } from 'usehooks-ts';
+import { useCallback, useEffect, useState } from 'react';
+import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import ChannelProgrammingList from '../../components/channel_config/ChannelProgrammingList.tsx';
@@ -135,10 +126,13 @@ export default function TimeSlotEditorPage() {
   // Requires that the channel was already loaded... not the case if
   // we navigated directly, so we need to handle that
   const {
-    currentEntity: channel,
-    programList: newLineup,
-    schedule: loadedSchedule,
-  } = useChannelEditor();
+    channelEditor: {
+      currentEntity: channel,
+      // programList: newLineup,
+      schedule: loadedSchedule,
+    },
+    getMaterializedProgramList,
+  } = useChannelEditorLazy();
 
   const [startTime, setStartTime] = useState(
     channel?.startTime ? dayjs(channel?.startTime) : dayjs(),
@@ -148,20 +142,69 @@ export default function TimeSlotEditorPage() {
   const theme = useTheme();
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
   const programOptions = useSlotProgramOptions();
-  const [unscheduledOpen, toggleUnscheduledOpen] = useToggle(false);
 
   const {
     control,
     getValues,
     setValue,
     watch,
-    formState: { isValid, isDirty },
+    formState: { isValid, isDirty, errors },
+    setError,
+    clearErrors,
     reset,
   } = useForm<TimeSlotForm>({
     defaultValues:
       !isUndefined(loadedSchedule) && loadedSchedule.type === 'time'
         ? loadedSchedule
         : defaultTimeSlotSchedule,
+    mode: 'all',
+  });
+
+  useEffect(() => {
+    const sub = watch(({ slots }, { name }) => {
+      if (name?.startsWith('slots') && slots) {
+        const grouped = groupBy(slots, 'startTime');
+        const isError = some(values(grouped), (group) => group.length > 1);
+        if (isError) {
+          const badIndexes = seq.collect(slots, (slot, index) => {
+            if (
+              !isUndefined(slot?.startTime) &&
+              grouped[slot.startTime]?.length > 1
+            ) {
+              return index;
+            }
+          });
+
+          setError('slots', {
+            message: 'All slot start times must be unique',
+            type: 'unique',
+          });
+
+          badIndexes.forEach((index) => {
+            setError(`slots.${index}.startTime`, {
+              message: 'All slot start times must be unique',
+              type: 'unique',
+            });
+          });
+        } else {
+          const keys = range(0, slots.length).map(
+            (i) => `slots.${i}.startTime` as const,
+          );
+          clearErrors(['slots', ...keys]);
+        }
+      }
+    });
+    return () => {
+      sub.unsubscribe();
+    };
+  }, [setError, watch, clearErrors]);
+
+  const slotArray = useFieldArray({
+    control,
+    name: 'slots',
+    rules: {
+      required: true,
+    },
   });
 
   const updateLineupMutation = useUpdateLineup({
@@ -175,15 +218,6 @@ export default function TimeSlotEditorPage() {
 
   // Have to use a watch here because rendering depends on this value
   const currentPeriod = watch('period');
-  const currentSlots = watch('slots');
-
-  const unscheduledOptions = useMemo(
-    () =>
-      reject(programOptions, (item) =>
-        slotOptionIsScheduled(currentSlots, item),
-      ),
-    [currentSlots, programOptions],
-  );
 
   const [generatedList, setGeneratedList] = useState<
     UIChannelProgram[] | undefined
@@ -203,7 +237,7 @@ export default function TimeSlotEditorPage() {
     };
 
     // Find programs that have active slots
-    const filteredLineup = filter(newLineup, (item) =>
+    const filteredLineup = filter(getMaterializedProgramList(), (item) =>
       lineupItemAppearsInSchedule(getValues('slots'), item),
     );
 
@@ -222,6 +256,7 @@ export default function TimeSlotEditorPage() {
       const value = e.target.value as TimeSlotSchedule['period'];
       setValue('period', value, { shouldDirty: true });
       let newSlots: TimeSlot[] = [];
+      const currentSlots = getValues('slots');
       if (value === 'day') {
         // Remove slots
         // This is (sort of) what the original behavior was... keep
@@ -262,21 +297,20 @@ export default function TimeSlotEditorPage() {
       }
 
       // Add slots
-      setValue('slots', newSlots, { shouldDirty: true });
+      slotArray.replace(newSlots);
     },
-    [setValue, currentSlots],
+    [setValue, getValues, slotArray],
   );
 
   const renderTimeSlots = () => {
-    const slots = map(currentSlots, (slot, idx) => {
+    const slots = map(slotArray.fields, (slot, idx) => {
       return (
         <TimeSlotRow
-          key={`${slot.startTime}_${idx}`}
+          key={slot.id}
           control={control}
           index={idx}
           programOptions={programOptions}
-          setValue={setValue}
-          slot={slot}
+          removeSlot={() => slotArray.remove(idx)}
         />
       );
     });
@@ -314,7 +348,7 @@ export default function TimeSlotEditorPage() {
         timeZoneOffset: new Date().getTimezoneOffset(),
         type: 'time',
       },
-      newLineup,
+      getMaterializedProgramList(),
     )
       .then((res) => {
         performance.mark('guide-end');
@@ -353,55 +387,23 @@ export default function TimeSlotEditorPage() {
       <Breadcrumbs />
       <Stack gap={2} useFlexGap>
         <Typography variant="h4">{channel.name}</Typography>
-        {!isEmpty(unscheduledOptions) && (
-          <Alert
-            severity="warning"
-            action={
-              <IconButton
-                aria-label="close"
-                color="inherit"
-                size="small"
-                onClick={() => {
-                  toggleUnscheduledOpen();
-                }}
-              >
-                {!unscheduledOpen ? (
-                  <ExpandMore fontSize="inherit" />
-                ) : (
-                  <ExpandLess fontSize="inherit" />
-                )}
-              </IconButton>
-            }
-          >
-            There are {unscheduledOptions.length} unscheduled{' '}
-            {pluralize('program', unscheduledOptions.length)}. Unscheduled items
-            will be removed from the channel when saving.
-            <Collapse in={unscheduledOpen}>
-              <>
-                {map(unscheduledOptions, (option) => (
-                  <ListItem key={option.value}>
-                    {option.description} ({option.type})
-                  </ListItem>
-                ))}
-              </>
-            </Collapse>
-          </Alert>
+        <MissingProgramsAlert control={control} />
+        {errors.slots?.message && (
+          <Alert severity="error">{errors.slots.message}</Alert>
         )}
         <PaddedPaper>
           <Stack direction="row" alignItems="center">
             <Typography sx={{ flexGrow: 1, fontWeight: 600 }}>
               Time Slots
             </Typography>
-            <AddTimeSlotButton control={control} setValue={setValue} />
-            {!isEmpty(currentSlots) && (
-              <Button
-                onClick={() => setValue('slots', [], { shouldDirty: true })}
-                sx={{ ml: 1 }}
-                startIcon={<ClearAll />}
-              >
-                Clear All
-              </Button>
-            )}
+            <ClearSlotsButton
+              fields={slotArray.fields}
+              remove={slotArray.remove}
+            />
+            <AddTimeSlotButton
+              slots={slotArray.fields}
+              append={slotArray.append}
+            />
           </Stack>
           <Divider sx={{ my: 2 }} />
           {renderTimeSlots()}
