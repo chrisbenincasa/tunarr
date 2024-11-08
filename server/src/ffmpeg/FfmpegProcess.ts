@@ -1,6 +1,7 @@
 import { FfmpegSettings } from '@tunarr/types';
 import { FfmpegNumericLogLevels } from '@tunarr/types/schemas';
-import { ChildProcessByStdio, spawn } from 'node:child_process';
+import { isNull, isUndefined } from 'lodash-es';
+import { ChildProcessByStdio, exec, spawn } from 'node:child_process';
 import events from 'node:events';
 import os from 'node:os';
 import path from 'node:path';
@@ -8,7 +9,7 @@ import stream from 'node:stream';
 import { SettingsDB, getSettings } from '../dao/settings.js';
 import { TypedEventEmitter } from '../types/eventEmitter.js';
 import { Maybe, Nullable } from '../types/util.js';
-import { isDefined } from '../util/index.js';
+import { isDefined, isWindows } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 
 export type FfmpegEvents = {
@@ -181,15 +182,30 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
 
     if (isDefined(this.#processHandle)) {
       this.#logger.debug(`${this.ffmpegName} sending SIGTERM`);
-      this.#processHandle?.kill();
-      setTimeout(() => {
-        if (this.#running) {
-          this.#logger.info(
-            `${this.ffmpegName} still running after SIGTERM. Sending SIGKILL`,
+      if (isWindows()) {
+        if (isUndefined(this.#processHandle.pid)) {
+          this.#logger.warn(
+            'Underlying process had no PID. This implies it was never properly started...',
           );
-          this.#processHandle?.kill('SIGKILL');
+          return;
         }
-      }, 15_000);
+        exec(`taskkill /pid' ${this.#processHandle.pid} /t /f`, (err) => {
+          if (!isNull(err)) {
+            this.#processKilled = false;
+            this.#logger.warn(err, 'Unable to kill process on Windows');
+          }
+        });
+      } else {
+        this.#processHandle.kill();
+        setTimeout(() => {
+          if (this.#running) {
+            this.#logger.info(
+              `${this.ffmpegName} still running after SIGTERM. Sending SIGKILL`,
+            );
+            this.#processHandle?.kill('SIGKILL');
+          }
+        }, 15_000);
+      }
     }
   }
 
