@@ -1,25 +1,37 @@
 import { ProgramOption } from '@/helpers/slotSchedulerUtil';
-import { useChannelEditor } from '@/store/selectors';
-import { isUICustomProgram, isUIRedirectProgram } from '@/types';
-import { CustomShow, isContentProgram } from '@tunarr/types';
-import { chain, filter, isEmpty, isUndefined, some } from 'lodash-es';
+import { isNonEmptyString } from '@/helpers/util';
+import useStore from '@/store';
+import {
+  isUICondensedCustomProgram,
+  isUICondensedRedirectProgram,
+} from '@/types';
+import { seq } from '@tunarr/shared/util';
+import { CustomShow } from '@tunarr/types';
+import { chain, isEmpty, isUndefined, some } from 'lodash-es';
 import { useMemo } from 'react';
-import { useCustomShows } from '../useCustomShows';
 
 export const useSlotProgramOptions = () => {
-  const { programList: newLineup } = useChannelEditor();
-  const { data: customShows } = useCustomShows();
+  // const { programList: newLineup } = useChannelEditor();
+  const { programList: newLineup, programLookup } = useStore(
+    (s) => s.channelEditor,
+  );
+  // const { data: customShows } = useCustomShows();
 
   const customShowsById = useMemo(() => {
     const byId: Record<string, CustomShow> = {};
-    for (const show of customShows) {
-      byId[show.id] = show;
-    }
+    // for (const show of customShows) {
+    //   byId[show.id] = show;
+    // }
     return byId;
-  }, [customShows]);
+  }, []);
 
   return useMemo<ProgramOption[]>(() => {
-    const contentPrograms = filter(newLineup, isContentProgram);
+    const contentPrograms = seq.collect(newLineup, (program) => {
+      if (program.type === 'content' && isNonEmptyString(program.id)) {
+        return programLookup[program.id];
+      }
+    });
+    // const contentPrograms = filter(newLineup, isUICondensedContentProgram);
     const opts: ProgramOption[] = [
       { value: 'flex', description: 'Flex', type: 'flex' },
     ];
@@ -48,7 +60,7 @@ export const useSlotProgramOptions = () => {
 
     opts.push(
       ...chain(newLineup)
-        .filter(isUICustomProgram)
+        .filter(isUICondensedCustomProgram)
         .reject((p) => isUndefined(customShowsById[p.customShowId]))
         .uniqBy((p) => p.customShowId)
         .map(
@@ -65,7 +77,7 @@ export const useSlotProgramOptions = () => {
 
     opts.push(
       ...chain(newLineup)
-        .filter(isUIRedirectProgram)
+        .filter(isUICondensedRedirectProgram)
         .uniqBy((p) => p.channel)
         .map(
           (p) =>
@@ -80,5 +92,5 @@ export const useSlotProgramOptions = () => {
     );
 
     return opts;
-  }, [newLineup, customShowsById]);
+  }, [newLineup, programLookup, customShowsById]);
 };

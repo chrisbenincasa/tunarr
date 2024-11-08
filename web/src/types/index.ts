@@ -73,8 +73,8 @@ export const isUICondensedCustomProgram = (
 ): p is UICondensedCustomProgram => p.type === 'custom';
 
 export const isUICondensedRedirectProgram = (
-  p: UIRedirectProgram,
-): p is UIRedirectProgram => p.type === 'redirect';
+  p: UICondensedChannelProgram,
+): p is UICondensedRedirectProgram => p.type === 'redirect';
 
 // A UIChannelProgram is a ChannelProgram with some other UI-specific fields
 // The default type is any ChannelProgram (e.g. content, flex, etc) with the

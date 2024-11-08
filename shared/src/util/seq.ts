@@ -9,7 +9,7 @@ export function intersperse<T>(arr: T[], v: T, makeLast: boolean = false): T[] {
  */
 export function collect<T, U>(
   arr: T[] | null | undefined,
-  f: (t: T) => U | null | undefined,
+  f: (t: T, index: number, arr: T[]) => U | null | undefined,
 ): U[] {
   if (isNil(arr)) {
     return [];
@@ -18,8 +18,9 @@ export function collect<T, U>(
   const func = isFunction(f) ? f : (t: T) => t[f];
 
   const results: U[] = [];
+  let i = 0;
   for (const el of arr) {
-    const res = func(el);
+    const res = func(el, i++, arr);
     if (!isNil(res)) {
       results.push(res);
     }
