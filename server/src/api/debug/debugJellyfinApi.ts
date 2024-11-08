@@ -1,6 +1,7 @@
 import { isNil } from 'lodash-es';
 import { z } from 'zod';
 import { JellyfinApiClient } from '../../external/jellyfin/JellyfinApiClient.ts';
+import { JellyfinItemFinder } from '../../external/jellyfin/JellyfinItemFinder.ts';
 import { RouterPluginAsyncCallback } from '../../types/serverType.ts';
 import { Nilable } from '../../types/util.ts';
 
@@ -60,6 +61,22 @@ export const DebugJellyfinApiRouter: RouterPluginAsyncCallback = async (
       await res.send(
         await client.getItems(null, req.query.parentId, [], [], pageParams),
       );
+    },
+  );
+
+  fastify.get(
+    '/jellyfin/match_program/:id',
+    {
+      schema: {
+        params: z.object({
+          id: z.string(),
+        }),
+      },
+    },
+    async (req, res) => {
+      const finder = new JellyfinItemFinder(req.serverCtx.programDB);
+      const match = await finder.findForProgramId(req.params.id);
+      return res.status(match ? 200 : 404).send(match);
     },
   );
 };

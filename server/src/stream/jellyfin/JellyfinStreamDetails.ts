@@ -16,10 +16,12 @@ import {
 import { ContentBackedStreamLineupItem } from '../../dao/derived_types/StreamLineup.js';
 import { MediaSourceTable } from '../../dao/direct/schema/MediaSource.js';
 import { ProgramType } from '../../dao/direct/schema/Program.ts';
+import { ProgramDB } from '../../dao/programDB.ts';
 import { SettingsDB } from '../../dao/settings.js';
 import { isQueryError } from '../../external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.js';
 import { JellyfinApiClient } from '../../external/jellyfin/JellyfinApiClient.js';
+import { JellyfinItemFinder } from '../../external/jellyfin/JellyfinItemFinder.ts';
 import { Nullable } from '../../types/util.js';
 import { fileExists } from '../../util/fsUtil.js';
 import {
@@ -45,8 +47,10 @@ export class JellyfinStreamDetails {
   constructor(
     private server: Selectable<MediaSourceTable>,
     private settings: SettingsDB,
-  ) // private programDB: ProgramDB,
-  {
+    private jellyfinItemFinder: JellyfinItemFinder = new JellyfinItemFinder(
+      new ProgramDB(),
+    ),
+  ) {
     this.logger = LoggerFactory.child({
       jellyfinServer: server.name,
       caller: import.meta,
@@ -80,9 +84,22 @@ export class JellyfinStreamDetails {
       return null;
     } else if (isUndefined(itemMetadataResult.data)) {
       this.logger.error(
-        'Jellyfin item with ID %s does not exist',
+        'Jellyfin item with ID %s does not exist. Underlying file might have change. Attempting to locate it.',
         item.externalKey,
       );
+      const newExternalId =
+        await this.jellyfinItemFinder.findForProgramAndUpdate(item.programId);
+
+      if (newExternalId) {
+        return this.getStreamInternal(
+          {
+            ...item,
+            ...newExternalId,
+          },
+          depth + 1,
+        );
+      }
+
       return null;
     }
 

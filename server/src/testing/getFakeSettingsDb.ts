@@ -22,9 +22,10 @@ export async function setTestGlobalOptions(
 ) {
   const tmpName = await createTmpDir({ unsafeCleanup: true });
   setGlobalOptions({
-    databaseDirectory: tmpName,
+    database: tmpName,
     force_migration: false,
     log_level: 'debug',
+    verbose: 0,
     ...(opts ?? {}),
   });
   return globalOptions();

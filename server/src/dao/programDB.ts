@@ -41,6 +41,7 @@ import { AnonymousTask } from '../tasks/Task.js';
 import { JellyfinTaskQueue, PlexTaskQueue } from '../tasks/TaskQueue.js';
 import { SaveJellyfinProgramExternalIdsTask } from '../tasks/jellyfin/SaveJellyfinProgramExternalIdsTask.js';
 import { SavePlexProgramExternalIdsTask } from '../tasks/plex/SavePlexProgramExternalIdsTask.js';
+import { Maybe } from '../types/util.ts';
 import { devAssert } from '../util/debug.js';
 import {
   flatMapAsyncSeq,
@@ -59,11 +60,15 @@ import {
   ProgramSourceType,
   programSourceTypeFromString,
 } from './custom_types/ProgramSourceType.js';
-import { ProgramWithRelations } from './direct/derivedTypes.js';
+import {
+  ProgramGroupingWithExternalIds,
+  ProgramWithRelations,
+} from './direct/derivedTypes.js';
 import { directDbAccess } from './direct/directDbAccess.js';
 import {
   AllProgramJoins,
   ProgramUpsertFields,
+  selectProgramsBuilder,
   withProgramByExternalId,
   withProgramExternalIds,
   withProgramGroupingExternalIds,
@@ -79,6 +84,7 @@ import {
 } from './direct/schema/Program.js';
 import { ProgramType } from './direct/schema/Program.ts';
 import {
+  NewProgramExternalId,
   NewProgramExternalId as NewRawProgramExternalId,
   ProgramExternalIdKeys,
 } from './direct/schema/ProgramExternalId.js';
@@ -149,6 +155,16 @@ export class ProgramDB {
     return matchedGrouping?.uuid;
   }
 
+  async updateProgramDuration(programId: string, duration: number) {
+    return await directDbAccess()
+      .updateTable('program')
+      .where('uuid', '=', programId)
+      .set({
+        duration,
+      })
+      .executeTakeFirst();
+  }
+
   async getProgramsByIds(
     ids: string[],
     batchSize: number = 500,
@@ -177,6 +193,32 @@ export class ProgramDB {
       .select(withProgramGroupingExternalIds)
       .where('uuid', '=', id)
       .executeTakeFirst();
+  }
+
+  async getProgramParent(
+    programId: string,
+  ): Promise<Maybe<ProgramGroupingWithExternalIds>> {
+    const p = await selectProgramsBuilder({
+      joins: { tvSeason: true, trackAlbum: true },
+    })
+      .where('program.uuid', '=', programId)
+      .executeTakeFirst()
+      .then((program) => program?.tvSeason ?? program?.trackAlbum);
+
+    // It would be better if we didn'thave to do this in two queries...
+    if (p) {
+      const eids = await directDbAccess()
+        .selectFrom('programGroupingExternalId')
+        .where('groupUuid', '=', p.uuid)
+        .selectAll()
+        .execute();
+      return {
+        ...p,
+        externalIds: eids,
+      };
+    }
+
+    return;
   }
 
   async lookupByExternalIds(ids: Set<[string, string, string]>) {
@@ -331,6 +373,43 @@ export class ProgramDB {
     }
   }
 
+  async replaceProgramExternalId(
+    programId: string,
+    newExternalId: NewProgramExternalId,
+    oldExternalId?: ProgramExternalId,
+  ) {
+    await directDbAccess()
+      .transaction()
+      .execute(async (tx) => {
+        if (oldExternalId) {
+          await tx
+            .deleteFrom('programExternalId')
+            .where('programExternalId.programUuid', '=', programId)
+            .where(
+              'programExternalId.externalKey',
+              '=',
+              oldExternalId.externalKey,
+            )
+            .where(
+              'programExternalId.externalSourceId',
+              '=',
+              oldExternalId.externalSourceId,
+            )
+            .where(
+              'programExternalId.sourceType',
+              '=',
+              oldExternalId.sourceType,
+            )
+            .limit(1)
+            .execute();
+        }
+        await tx
+          .insertInto('programExternalId')
+          .values(newExternalId)
+          .execute();
+      });
+  }
+
   async upsertContentPrograms(
     programs: ChannelProgram[],
     programUpsertBatchSize: number = 100,
@@ -457,7 +536,7 @@ export class ProgramDB {
       contentPrograms,
       (p) => {
         const program = minter.mint(p.externalSourceName, p.originalProgram);
-        const externalIds = minter.mintRawExternalIds(
+        const externalIds = minter.mintExternalIds(
           p.externalSourceName,
           program.uuid,
           p.originalProgram,

@@ -8,8 +8,6 @@ import {
   SqliteDialect,
 } from 'kysely';
 import { findIndex, isError, last, map, once, slice } from 'lodash-es';
-import path from 'path';
-import { GlobalOptions } from '../../globals.ts';
 import { attempt } from '../../util/index.ts';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.ts';
 import {
@@ -25,10 +23,10 @@ let _directDbAccess: Kysely<DB>;
 
 const logger = once(() => LoggerFactory.child({ className: 'DirectDBAccess' }));
 
-export const initDirectDbAccess = once((opts: GlobalOptions) => {
+export const initDirectDbAccess = once((dbName: string) => {
   _directDbAccess = new Kysely<DB>({
     dialect: new SqliteDialect({
-      database: new Sqlite(path.join(opts.databaseDirectory, 'db.db'), {
+      database: new Sqlite(dbName, {
         timeout: 5000,
       }),
     }),
