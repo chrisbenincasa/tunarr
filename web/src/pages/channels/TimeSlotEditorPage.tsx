@@ -351,9 +351,7 @@ export default function TimeSlotEditorPage() {
     <div>
       <Breadcrumbs />
       <Stack gap={2} useFlexGap>
-        <Typography variant="h4">
-          Edit Time Slots (Channel {channel?.number})
-        </Typography>
+        <Typography variant="h4">{channel.name}</Typography>
         {!isEmpty(unscheduledOptions) && (
           <Alert
             severity="warning"
