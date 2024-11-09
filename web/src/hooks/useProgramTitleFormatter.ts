@@ -16,6 +16,7 @@ export const useProgramTitleFormatter = () => {
       }
       return byId;
     },
+    staleTime: 30_000,
   });
 
   const baseItemTitleFormatter = useMemo(

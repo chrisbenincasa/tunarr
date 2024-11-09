@@ -25,25 +25,14 @@ import {
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { Link as RouterLink } from '@tanstack/react-router';
 import { dayjsMod, scheduleTimeSlots } from '@tunarr/shared';
-import { seq } from '@tunarr/shared/util';
 import { TimeSlot, TimeSlotSchedule } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
-import {
-  chain,
-  filter,
-  first,
-  groupBy,
-  isUndefined,
-  map,
-  range,
-  some,
-  values,
-} from 'lodash-es';
+import { chain, filter, first, isUndefined, map, range } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import pluralize from 'pluralize';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
@@ -149,8 +138,6 @@ export default function TimeSlotEditorPage() {
     setValue,
     watch,
     formState: { isValid, isDirty, errors },
-    setError,
-    clearErrors,
     reset,
   } = useForm<TimeSlotForm>({
     defaultValues:
@@ -160,6 +147,7 @@ export default function TimeSlotEditorPage() {
     mode: 'all',
   });
 
+  /* Uncomment when we can make this work better and be more performant....
   useEffect(() => {
     const sub = watch(({ slots }, { name }) => {
       if (name?.startsWith('slots') && slots) {
@@ -186,11 +174,13 @@ export default function TimeSlotEditorPage() {
               type: 'unique',
             });
           });
-        } else {
+          hadSlotError(true)
+        } else if (hadSlotError) {
           const keys = range(0, slots.length).map(
             (i) => `slots.${i}.startTime` as const,
           );
           clearErrors(['slots', ...keys]);
+          setHadSlotError(false)
         }
       }
     });
@@ -198,6 +188,7 @@ export default function TimeSlotEditorPage() {
       sub.unsubscribe();
     };
   }, [setError, watch, clearErrors]);
+  */
 
   const slotArray = useFieldArray({
     control,

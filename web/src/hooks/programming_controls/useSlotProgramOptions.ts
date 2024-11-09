@@ -9,21 +9,21 @@ import { seq } from '@tunarr/shared/util';
 import { CustomShow } from '@tunarr/types';
 import { chain, isEmpty, isUndefined, some } from 'lodash-es';
 import { useMemo } from 'react';
+import { useCustomShows } from '../useCustomShows.ts';
 
 export const useSlotProgramOptions = () => {
-  // const { programList: newLineup } = useChannelEditor();
   const { programList: newLineup, programLookup } = useStore(
     (s) => s.channelEditor,
   );
-  // const { data: customShows } = useCustomShows();
+  const { data: customShows } = useCustomShows();
 
   const customShowsById = useMemo(() => {
     const byId: Record<string, CustomShow> = {};
-    // for (const show of customShows) {
-    //   byId[show.id] = show;
-    // }
+    for (const show of customShows) {
+      byId[show.id] = show;
+    }
     return byId;
-  }, []);
+  }, [customShows]);
 
   return useMemo<ProgramOption[]>(() => {
     const contentPrograms = seq.collect(newLineup, (program) => {
