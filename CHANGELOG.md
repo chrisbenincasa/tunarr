@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.15.9](https://github.com/chrisbenincasa/tunarr/compare/v0.15.8...v0.15.9) (2024-11-09)
+
+
+### Bug Fixes
+
+* account for windows taskkill exits in FfmpegProcess ([75e2a91](https://github.com/chrisbenincasa/tunarr/commit/75e2a910bbef5afcd2d01fe013a24860eda7ad73))
+
+
+### UI Changes
+
+* add discord icon to top nav bar ([ffcc4b2](https://github.com/chrisbenincasa/tunarr/commit/ffcc4b21113dd872a29241e5f270e28db4094ba8)), closes [#947](https://github.com/chrisbenincasa/tunarr/issues/947)
+
 ## [0.15.8](https://github.com/chrisbenincasa/tunarr/compare/v0.15.7...v0.15.8) (2024-11-09)
 
 
