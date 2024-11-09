@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.8](https://github.com/chrisbenincasa/tunarr/compare/v0.15.7...v0.15.8) (2024-11-09)
+
+
+### Bug Fixes
+
+* re-enable custom shows in time slot editor ([deae3de](https://github.com/chrisbenincasa/tunarr/commit/deae3de6fda593e8c489600b9606b3e2b5af874a))
+
 ## [0.15.7](https://github.com/chrisbenincasa/tunarr/compare/v0.15.6...v0.15.7) (2024-11-08)
 
 
