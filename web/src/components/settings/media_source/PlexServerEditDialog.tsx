@@ -155,14 +155,14 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
   // TODO: Block creation if an existing server with the same URL/name
   // already exist
   return (
-    <Dialog
-      open={open}
-      fullWidth
-      component="form"
-      onSubmit={onSubmit}
-      keepMounted={false}
-      onClose={() => onClose()}
-    >
+    (<Dialog
+            open={open}
+            fullWidth
+            component="form"
+            onSubmit={onSubmit}
+            keepMounted={false}
+            onClose={() => onClose()}
+          >
       <DialogTitle>{title}</DialogTitle>
       <DialogContent sx={{ p: 2 }}>
         <Box>
@@ -337,6 +337,6 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
           {server?.id ? 'Update' : 'Add'}
         </Button>
       </DialogActions>
-    </Dialog>
+    </Dialog>)
   );
 }

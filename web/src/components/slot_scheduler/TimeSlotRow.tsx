@@ -66,7 +66,6 @@ export const TimeSlotRow = ({
       const slot = currentSlots[index];
       const daylessStartTime = slot.startTime - currentDay * OneDayMillis;
       const newStartTime = daylessStartTime + dayOfWeek * OneDayMillis;
-      console.log(daylessStartTime, newStartTime);
       originalOnChange(newStartTime);
     },
     [currentSlots, index],
@@ -191,8 +190,11 @@ export const TimeSlotRow = ({
               {...field}
               value={dayjs().startOf(currentPeriod).add(field.value)}
               onChange={(value) => {
+                console.log(+value - +dayjs().startOf(currentPeriod));
                 value
-                  ? field.onChange(+value - +dayjs().startOf(currentPeriod))
+                  ? field.onChange(
+                      Math.max(0, +value - +dayjs().startOf(currentPeriod)),
+                    )
                   : void 0;
               }}
               label="Start Time"

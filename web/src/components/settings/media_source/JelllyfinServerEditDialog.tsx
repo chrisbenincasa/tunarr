@@ -242,7 +242,7 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
   // TODO: Block creation if an existing server with the same URL/name
   // already exist
   return (
-    <Dialog open={open} fullWidth keepMounted={false} onClose={() => onClose()}>
+    (<Dialog open={open} fullWidth keepMounted={false} onClose={() => onClose()}>
       <DialogTitle>{title}</DialogTitle>
       <DialogContent sx={{ p: 2 }}>
         <Box component="form">
@@ -489,6 +489,6 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
           {server?.id ? 'Update' : 'Add'}
         </Button>
       </DialogActions>
-    </Dialog>
+    </Dialog>)
   );
 }

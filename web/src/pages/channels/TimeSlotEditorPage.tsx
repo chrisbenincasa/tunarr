@@ -1,5 +1,7 @@
 import { ClearSlotsButton } from '@/components/slot_scheduler/ClearSlotsButton.tsx';
 import { MissingProgramsAlert } from '@/components/slot_scheduler/MissingProgramsAlert.tsx';
+import { TimeSlotFormProvider } from '@/components/slot_scheduler/TimeSlotFormProvider.tsx';
+import { TimeSlotTools } from '@/components/slot_scheduler/TimeSlotTools.tsx';
 import { lineupItemAppearsInSchedule } from '@/helpers/slotSchedulerUtil.ts';
 import { useSlotProgramOptions } from '@/hooks/programming_controls/useSlotProgramOptions.ts';
 import { useChannelEditorLazy } from '@/store/selectors.ts';
@@ -59,6 +61,16 @@ dayjs.extend(timezone);
 dayjs.extend(dayjsMod);
 
 export const OneDayMillis = dayjs.duration(1, 'day').asMilliseconds();
+
+const DaysOfWeekMenuItems = [
+  { value: 0, name: 'Sunday' },
+  { value: 1, name: 'Monday' },
+  { value: 2, name: 'Tuesday' },
+  { value: 3, name: 'Wednesday' },
+  { value: 4, name: 'Thursday' },
+  { value: 5, name: 'Friday' },
+  { value: 6, name: 'Saturday' },
+];
 
 // mutates array
 function rotateArrayRight<T>(arr: T[], times: number): T[] {
@@ -132,6 +144,20 @@ export default function TimeSlotEditorPage() {
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
   const programOptions = useSlotProgramOptions();
 
+  const formMethods = useForm<TimeSlotForm>({
+    defaultValues:
+      !isUndefined(loadedSchedule) && loadedSchedule.type === 'time'
+        ? loadedSchedule
+        : defaultTimeSlotSchedule,
+    mode: 'all',
+  });
+
+  // const [tabValue, setTableValue] = useState(0);
+
+  // const handleChange = (event: React.SyntheticEvent, newValue: number) => {
+  //   setTableValue(newValue);
+  // };
+
   const {
     control,
     getValues,
@@ -139,13 +165,7 @@ export default function TimeSlotEditorPage() {
     watch,
     formState: { isValid, isDirty, errors },
     reset,
-  } = useForm<TimeSlotForm>({
-    defaultValues:
-      !isUndefined(loadedSchedule) && loadedSchedule.type === 'time'
-        ? loadedSchedule
-        : defaultTimeSlotSchedule,
-    mode: 'all',
-  });
+  } = formMethods;
 
   /* Uncomment when we can make this work better and be more performant....
   useEffect(() => {
@@ -295,6 +315,7 @@ export default function TimeSlotEditorPage() {
 
   const renderTimeSlots = () => {
     const slots = map(slotArray.fields, (slot, idx) => {
+      console.log(slot.startTime);
       return (
         <TimeSlotRow
           key={slot.id}
@@ -383,7 +404,7 @@ export default function TimeSlotEditorPage() {
           <Alert severity="error">{errors.slots.message}</Alert>
         )}
         <PaddedPaper>
-          <Stack direction="row" alignItems="center">
+          <Stack direction="row" alignItems="center" gap={2} useFlexGap>
             <Typography sx={{ flexGrow: 1, fontWeight: 600 }}>
               Time Slots
             </Typography>
@@ -395,8 +416,16 @@ export default function TimeSlotEditorPage() {
               slots={slotArray.fields}
               append={slotArray.append}
             />
+            <TimeSlotFormProvider {...formMethods} slotArray={slotArray}>
+              <TimeSlotTools />
+            </TimeSlotFormProvider>
           </Stack>
           <Divider sx={{ my: 2 }} />
+          {/* <Tabs sx={{ my: 2 }} value={tabValue} onChange={handleChange}>
+            {range(0, 7).map((i) => {
+              return <Tab key={i} label={DaysOfWeekMenuItems[i].name} />;
+            })}
+          </Tabs> */}
           {renderTimeSlots()}
           <Divider sx={{ my: 2 }} />
           <Typography sx={{ flexGrow: 1, fontWeight: '600' }}>
