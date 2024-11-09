@@ -124,9 +124,10 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
       this.#running = false;
 
       const expected =
+        code === 0 ||
         (this.#processKilled &&
           (code === null || signal === 'SIGTERM' || signal === 'SIGKILL')) ||
-        code === 0;
+        (this.#processKilled && isWindows() && code === 1);
 
       this.#logger.info(
         { args: argsWithTokenRedacted },
