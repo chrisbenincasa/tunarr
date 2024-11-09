@@ -1,6 +1,6 @@
 {
   "name": "tunarr",
-  "version": "0.15.8",
+  "version": "0.15.9",
   "description": "Create LiveTV channels from your Plex media",
   "type": "module",
   "author": "chrisbenincasa",
