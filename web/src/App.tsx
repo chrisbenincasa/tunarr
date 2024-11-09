@@ -1,3 +1,4 @@
+import DiscordIcon from '@/assets/icon_clyde_black_RGB.svg?react';
 import { ExpandLess, ExpandMore, GitHub, Home } from '@mui/icons-material';
 import ComputerIcon from '@mui/icons-material/Computer';
 import LinkIcon from '@mui/icons-material/Link';
@@ -27,6 +28,7 @@ import {
   Menu,
   MenuItem,
   MenuProps,
+  SvgIcon,
   Toolbar,
   Tooltip,
   Typography,
@@ -276,6 +278,16 @@ export function Root({ children }: { children?: React.ReactNode }) {
         path: 'https://github.com/chrisbenincasa/tunarr',
         visible: true,
         icon: <GitHub />,
+      },
+      {
+        name: 'Discord',
+        path: 'https://discord.gg/svgSBYkEK5',
+        visible: true,
+        icon: (
+          <SvgIcon>
+            <DiscordIcon />
+          </SvgIcon>
+        ),
       },
       {
         name: 'Documentation',
