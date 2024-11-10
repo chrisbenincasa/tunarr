@@ -188,11 +188,7 @@ export const TimeSlotRow = ({
           render={({ field, fieldState: { error } }) => (
             <TimePicker
               {...field}
-              // TODO: Jank fest
-              value={dayjs(field.value).add(
-                new Date().getTimezoneOffset(),
-                'minutes',
-              )}
+              value={dayjs().startOf(currentPeriod).add(field.value)}
               onChange={(value) => {
                 value
                   ? field.onChange(
