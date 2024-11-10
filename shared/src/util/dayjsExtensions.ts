@@ -37,9 +37,7 @@ export const mod: PluginFunc = (_opts, dayjsClass, dayjsFactory) => {
 
     const djs = this as Dayjs;
 
-    const outDur = dayjsFactory.duration(
-      (djs.unix() * 1000) % dur.asMilliseconds(),
-    );
+    const outDur = dayjsFactory.duration(+djs % dur.asMilliseconds());
 
     if (tzAware) {
       return outDur.add(djs.utcOffset(), 'minutes');
