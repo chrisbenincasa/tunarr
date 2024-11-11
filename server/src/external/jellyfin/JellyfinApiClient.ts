@@ -19,6 +19,7 @@ import {
   isBoolean,
   isEmpty,
   isNil,
+  isNumber,
   isObject,
   mapValues,
   omitBy,
@@ -254,7 +255,7 @@ export class JellyfinApiClient extends BaseApiClient<JellyfinApiClientOptions> {
             genres: extraParams.genres?.join('|'),
           },
         },
-        (v) => isNil(v) || isEmpty(v),
+        (v) => isNil(v) || (!isNumber(v) && isEmpty(v)),
       ),
     });
   }
