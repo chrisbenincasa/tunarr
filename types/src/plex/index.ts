@@ -440,7 +440,7 @@ export const PlexMusicTrackSchema = BasePlexMediaSchema.extend({
   grandparentTitle: z.string(),
   parentTitle: z.string().optional(),
   summary: z.string().optional(),
-  index: z.number(),
+  index: z.number().optional(),
   parentIndex: z.number().optional(),
   ratingCount: z.number().optional(),
   viewCount: z.number().optional(),

@@ -21,6 +21,7 @@ import {
   flatMap,
   isEmpty,
   isError,
+  isNil,
   isNumber,
   isString,
   isUndefined,
@@ -42,22 +43,18 @@ export async function sequentialPromises<T, U>(
   itemFn: (item: T) => Promise<U>,
   opts?: { ms?: number },
 ): Promise<U[]> {
-  const all = await seq.reduce(
-    async (prev, item) => {
-      const last = await prev;
+  const results: U[] = [];
+  if (isNil(seq)) {
+    return results;
+  }
 
-      const result = await itemFn(item);
-
-      if (opts?.ms) {
-        await wait(opts?.ms);
-      }
-
-      return [...last, result];
-    },
-    Promise.resolve([] as U[]),
-  );
-
-  return Promise.all(all);
+  for (const item of seq) {
+    results.push(await itemFn(item));
+    if (opts?.ms) {
+      await wait(opts.ms);
+    }
+  }
+  return results;
 }
 
 export const wait: (ms: number) => Promise<void> = (ms: number) => {

@@ -458,7 +458,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         .selectFrom('programGrouping')
         .selectAll()
         .where('programGrouping.uuid', '=', req.params.id)
-        .where('programGrouping.type', '=', ProgramGroupingType.TvShow)
+        .where('programGrouping.type', '=', ProgramGroupingType.Show)
         .select((eb) => {
           return jsonArrayFrom(
             eb
@@ -474,7 +474,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
               )
               // .select(eb => eb.fn('concat', ['/programming/seasons/:id/', '']))
               .whereRef('seasons.showUuid', '=', 'programGrouping.uuid')
-              .where('seasons.type', '=', ProgramGroupingType.TvShowSeason)
+              .where('seasons.type', '=', ProgramGroupingType.Season)
               .orderBy('seasons.index asc'),
           ).as('seasons');
         })
@@ -514,7 +514,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         .selectFrom('programGrouping')
         .selectAll()
         .where('programGrouping.uuid', '=', req.params.id)
-        .where('programGrouping.type', '=', ProgramGroupingType.TvShowSeason)
+        .where('programGrouping.type', '=', ProgramGroupingType.Season)
         .select((eb) => {
           return jsonArrayFrom(
             eb
@@ -522,7 +522,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
               .select(AllProgramGroupingFields)
               // .select(eb => eb.fn('concat', ['/programming/seasons/:id/', '']))
               .whereRef('seasons.showUuid', '=', 'programGrouping.uuid')
-              .where('seasons.type', '=', ProgramGroupingType.TvShowSeason)
+              .where('seasons.type', '=', ProgramGroupingType.Season)
               .orderBy('seasons.index asc'),
           ).as('seasons');
         })
@@ -546,7 +546,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         .selectFrom('programGrouping')
         .selectAll()
         .where('programGrouping.showUuid', '=', req.params.id)
-        .where('programGrouping.type', '=', ProgramGroupingType.TvShowSeason)
+        .where('programGrouping.type', '=', ProgramGroupingType.Season)
         .orderBy('programGrouping.index asc')
         .execute();
       return res.send(result);

@@ -45,8 +45,8 @@ export class ProgramGroupingMinter {
       uuid: v4(),
       type:
         plexItem.type === 'episode'
-          ? ProgramGroupingType.TvShowSeason
-          : ProgramGroupingType.MusicAlbum,
+          ? ProgramGroupingType.Show
+          : ProgramGroupingType.Album,
       createdAt: now,
       updatedAt: now,
       index: plexItem.parentIndex ?? null,
@@ -70,8 +70,8 @@ export class ProgramGroupingMinter {
       uuid: v4(),
       type:
         jellyfinItem.Type === 'Episode'
-          ? ProgramGroupingType.TvShowSeason
-          : ProgramGroupingType.MusicAlbum,
+          ? ProgramGroupingType.Show
+          : ProgramGroupingType.Album,
       createdAt: now,
       updatedAt: now,
       index: jellyfinItem.ParentIndexNumber ?? null,
@@ -208,8 +208,8 @@ export class ProgramGroupingMinter {
       uuid: v4(),
       type:
         plexItem.type === 'episode'
-          ? ProgramGroupingType.TvShow
-          : ProgramGroupingType.MusicArtist,
+          ? ProgramGroupingType.Show
+          : ProgramGroupingType.Artist,
       createdAt: now,
       updatedAt: now,
       index: null,
@@ -232,8 +232,8 @@ export class ProgramGroupingMinter {
       uuid: v4(),
       type:
         jellyfinItem.Type === 'Episode'
-          ? ProgramGroupingType.TvShow
-          : ProgramGroupingType.MusicArtist,
+          ? ProgramGroupingType.Show
+          : ProgramGroupingType.Artist,
       createdAt: now,
       updatedAt: now,
       index: null,

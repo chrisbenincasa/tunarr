@@ -27,11 +27,7 @@ export class BackfillProgramGroupings extends Fixer {
               .when(
                 selectFrom('programGrouping')
                   .whereRef('programGrouping.uuid', '=', 'program.seasonUuid')
-                  .where(
-                    'programGrouping.type',
-                    '=',
-                    ProgramGroupingType.TvShow,
-                  )
+                  .where('programGrouping.type', '=', ProgramGroupingType.Show)
                   .select((eb) => eb.lit(1).as('true'))
                   .limit(1),
               )
@@ -220,7 +216,7 @@ export class BackfillProgramGroupings extends Fixer {
               .select('programGrouping.uuid')
               .limit(1),
           }))
-          .where('programGrouping.type', '=', ProgramGroupingType.TvShowSeason)
+          .where('programGrouping.type', '=', ProgramGroupingType.Season)
           .where('programGrouping.showUuid', 'is', null)
           .executeTakeFirst();
 
@@ -308,7 +304,7 @@ export class BackfillProgramGroupings extends Fixer {
               .select('programGrouping.uuid')
               .limit(1),
           }))
-          .where('programGrouping.type', '=', ProgramGroupingType.MusicAlbum)
+          .where('programGrouping.type', '=', ProgramGroupingType.Album)
           .where('programGrouping.artistUuid', 'is', null)
           .executeTakeFirst();
 

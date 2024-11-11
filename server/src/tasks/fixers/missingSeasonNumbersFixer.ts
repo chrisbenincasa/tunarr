@@ -186,7 +186,7 @@ export class MissingSeasonNumbersFixer extends Fixer {
     const seasonsMissingIndexes = await directDbAccess()
       .selectFrom('programGrouping')
       .select('programGrouping.uuid')
-      .where('programGrouping.type', '=', ProgramGroupingType.TvShowSeason)
+      .where('programGrouping.type', '=', ProgramGroupingType.Show)
       .where('programGrouping.index', 'is', null)
       .select(withProgramGroupingExternalIds)
       .execute();

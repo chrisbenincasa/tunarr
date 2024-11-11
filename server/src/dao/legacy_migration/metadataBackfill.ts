@@ -249,7 +249,7 @@ export class LegacyMetadataBackfiller {
           const existingSeason = await this.findExistingGroupingOfType(
             server.name,
             parentRatingKey,
-            ProgramGroupingType.TvShowSeason,
+            ProgramGroupingType.Season,
           );
 
           if (isNil(existingSeason)) {
@@ -264,7 +264,7 @@ export class LegacyMetadataBackfiller {
                     createdAt: now,
                     updatedAt: now,
                     title: season.title,
-                    type: ProgramGroupingType.TvShowSeason,
+                    type: ProgramGroupingType.Season,
                     icon: season.thumb,
                     summary: season.summary,
                     index: season.index,
@@ -316,7 +316,7 @@ export class LegacyMetadataBackfiller {
           const existingShow = await this.findExistingGroupingOfType(
             server.name,
             grandparentExternalKey,
-            ProgramGroupingType.TvShow,
+            ProgramGroupingType.Show,
           );
 
           if (isNil(existingShow)) {
@@ -331,7 +331,7 @@ export class LegacyMetadataBackfiller {
                     createdAt: now,
                     updatedAt: now,
                     title: show.title,
-                    type: ProgramGroupingType.TvShow,
+                    type: ProgramGroupingType.Show,
                     icon: show.thumb,
                     summary: show.summary,
                     index: show.index,
@@ -428,7 +428,7 @@ export class LegacyMetadataBackfiller {
           const existingAlbum = await this.findExistingGroupingOfType(
             server.name,
             track.parentRatingKey,
-            ProgramGroupingType.MusicAlbum,
+            ProgramGroupingType.Album,
           );
 
           if (isNil(existingAlbum)) {
@@ -443,7 +443,7 @@ export class LegacyMetadataBackfiller {
                     createdAt: now,
                     updatedAt: now,
                     title: album.title,
-                    type: ProgramGroupingType.MusicAlbum,
+                    type: ProgramGroupingType.Album,
                     icon: album.thumb,
                     summary: album.summary,
                     index: album.index,
@@ -494,7 +494,7 @@ export class LegacyMetadataBackfiller {
           const existingArtist = await this.findExistingGroupingOfType(
             server.name,
             track.grandparentRatingKey,
-            ProgramGroupingType.MusicArtist,
+            ProgramGroupingType.Artist,
           );
 
           if (isNil(existingArtist)) {
@@ -509,7 +509,7 @@ export class LegacyMetadataBackfiller {
                     createdAt: now,
                     updatedAt: now,
                     title: artist.title,
-                    type: ProgramGroupingType.MusicArtist,
+                    type: ProgramGroupingType.Artist,
                     icon: artist.thumb,
                     summary: artist.summary,
                     index: artist.index,

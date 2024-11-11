@@ -29,8 +29,10 @@ import {
   reduce,
   reject,
   round,
+  some,
   uniq,
   uniqBy,
+  values,
 } from 'lodash-es';
 import { MarkOptional, MarkRequired } from 'ts-essentials';
 import { P, match } from 'ts-pattern';
@@ -149,7 +151,7 @@ export class ProgramDB {
       .selectFrom('programGrouping')
       .select('uuid')
       .where('title', '=', title)
-      .where('type', '=', ProgramGroupingType.TvShow)
+      .where('type', '=', ProgramGroupingType.Show)
       .executeTakeFirst();
 
     return matchedGrouping?.uuid;
@@ -839,10 +841,12 @@ export class ProgramDB {
       grandparentKeys.has(s),
     );
 
-    const tvShowIdUpdates = new Set<string>();
-    const artistIdUpdates = new Set<string>();
-    const seasonIdUpdates = new Set<string>();
-    const albumIdUpdates = new Set<string>();
+    const updatesByType: Record<ProgramGroupingType, Set<string>> = {
+      album: new Set(),
+      artist: new Set(),
+      season: new Set(),
+      show: new Set(),
+    } as const;
 
     for (const group of existingGroupings) {
       for (const [
@@ -853,22 +857,28 @@ export class ProgramDB {
           switch (upsertedProgram.type) {
             case ProgramType.Episode:
               upsertedProgram.tvShowUuid = group.groupUuid;
-              tvShowIdUpdates.add(upsertedProgram.uuid);
+              updatesByType[ProgramGroupingType.Show].add(upsertedProgram.uuid);
               break;
             case ProgramType.Track:
               upsertedProgram.artistUuid = group.groupUuid;
-              artistIdUpdates.add(upsertedProgram.uuid);
+              updatesByType[ProgramGroupingType.Artist].add(
+                upsertedProgram.uuid,
+              );
               break;
           }
         } else if (group.externalKey === parentKey) {
           switch (upsertedProgram.type) {
             case ProgramType.Episode:
               upsertedProgram.seasonUuid = group.groupUuid;
-              seasonIdUpdates.add(upsertedProgram.uuid);
+              updatesByType[ProgramGroupingType.Season].add(
+                upsertedProgram.uuid,
+              );
               break;
             case ProgramType.Track:
               upsertedProgram.albumUuid = group.groupUuid;
-              albumIdUpdates.add(upsertedProgram.uuid);
+              updatesByType[ProgramGroupingType.Album].add(
+                upsertedProgram.uuid,
+              );
               break;
           }
         }
@@ -898,12 +908,12 @@ export class ProgramDB {
       }
 
       matchingPrograms.forEach(([program]) => {
-        if (grandparentGrouping.type === ProgramGroupingType.MusicArtist) {
+        if (grandparentGrouping.type === ProgramGroupingType.Artist) {
           program.artistUuid = grandparentGrouping.uuid;
-          artistIdUpdates.add(program.uuid);
-        } else if (grandparentGrouping.type === ProgramGroupingType.TvShow) {
+          updatesByType[ProgramGroupingType.Artist].add(program.uuid);
+        } else if (grandparentGrouping.type === ProgramGroupingType.Show) {
           program.tvShowUuid = grandparentGrouping.uuid;
-          tvShowIdUpdates.add(program.uuid);
+          updatesByType[ProgramGroupingType.Show].add(program.uuid);
         }
       });
 
@@ -945,16 +955,16 @@ export class ProgramDB {
         programs.forEach(([program]) => {
           if (program.type === ProgramType.Episode) {
             program.seasonUuid = parentGrouping.uuid;
-            seasonIdUpdates.add(program.uuid);
+            updatesByType[ProgramGroupingType.Season].add(program.uuid);
           } else {
             program.albumUuid = parentGrouping.uuid;
-            albumIdUpdates.add(program.uuid);
+            updatesByType[ProgramGroupingType.Album].add(program.uuid);
           }
         });
 
-        if (parentGrouping.type === ProgramGroupingType.TvShowSeason) {
+        if (parentGrouping.type === ProgramGroupingType.Show) {
           parentGrouping.showUuid = grandparentGrouping.uuid;
-        } else if (parentGrouping.type === ProgramGroupingType.MusicAlbum) {
+        } else if (parentGrouping.type === ProgramGroupingType.Album) {
           parentGrouping.artistUuid = grandparentGrouping.uuid;
         }
 
@@ -1006,80 +1016,95 @@ export class ProgramDB {
       );
     }
 
-    const allProgramIds = [
-      ...tvShowIdUpdates,
-      ...albumIdUpdates,
-      ...artistIdUpdates,
-      ...seasonIdUpdates,
-    ];
+    const hasUpdates = some(updatesByType, (updates) => updates.size > 0);
 
-    if (!isEmpty(allProgramIds)) {
+    if (hasUpdates) {
       // Surprisingly it's faster to do these all at once...
       await this.timer.timeAsync('update program relations', () =>
         directDbAccess()
           .transaction()
-          .execute((tx) =>
-            tx
-              .updateTable('program')
-              .$if(!isEmpty(tvShowIdUpdates), (_) =>
-                _.set((eb) => ({
-                  tvShowUuid: reduce(
-                    [...tvShowIdUpdates],
-                    (acc, curr) =>
-                      acc
-                        .when('program.uuid', '=', curr)
-                        .then(upsertedProgramById[curr].tvShowUuid),
-                    eb.case() as unknown as ProgramRelationCaseBuilder,
-                  )
-                    .else(eb.ref('program.tvShowUuid'))
-                    .end(),
-                })),
-              )
-              .$if(!isEmpty(albumIdUpdates), (_) =>
-                _.set((eb) => ({
-                  albumUuid: reduce(
-                    [...albumIdUpdates],
-                    (acc, curr) =>
-                      acc
-                        .when('program.uuid', '=', curr)
-                        .then(upsertedProgramById[curr].albumUuid),
-                    eb.case() as unknown as ProgramRelationCaseBuilder,
-                  )
-                    .else(eb.ref('program.albumUuid'))
-                    .end(),
-                })),
-              )
-              .$if(!isEmpty(seasonIdUpdates), (_) =>
-                _.set((eb) => ({
-                  seasonUuid: reduce(
-                    [...seasonIdUpdates],
-                    (acc, curr) =>
-                      acc
-                        .when('program.uuid', '=', curr)
-                        .then(upsertedProgramById[curr].seasonUuid),
-                    eb.case() as unknown as ProgramRelationCaseBuilder,
-                  )
-                    .else(eb.ref('program.seasonUuid'))
-                    .end(),
-                })),
-              )
-              .$if(!isEmpty(artistIdUpdates), (_) =>
-                _.set((eb) => ({
-                  artistUuid: reduce(
-                    [...artistIdUpdates],
-                    (acc, curr) =>
-                      acc
-                        .when('program.uuid', '=', curr)
-                        .then(upsertedProgramById[curr].artistUuid),
-                    eb.case() as unknown as ProgramRelationCaseBuilder,
-                  )
-                    .else(eb.ref('program.artistUuid'))
-                    .end(),
-                })),
-              )
-              .where('program.uuid', 'in', [...allProgramIds])
-              .executeTakeFirst(),
-          ),
+          .execute(async (tx) => {
+            const allProgramIds = flatMap(values(updatesByType), (set) => [
+              ...set,
+            ]);
+            // This is pretty big batch size...but supposedly sqlite can handle
+            // 32766 variables starting in 3.32.0
+            for (const idChunk of chunk(allProgramIds, 10_000)) {
+              const tvShowIdUpdates = filter(idChunk, (id) =>
+                updatesByType[ProgramGroupingType.Show].has(id),
+              );
+              const albumIdUpdates = filter(idChunk, (id) =>
+                updatesByType[ProgramGroupingType.Album].has(id),
+              );
+              const seasonIdUpdates = filter(idChunk, (id) =>
+                updatesByType[ProgramGroupingType.Season].has(id),
+              );
+              const artistIdUpdates = filter(idChunk, (id) =>
+                updatesByType[ProgramGroupingType.Artist].has(id),
+              );
+
+              await tx
+                .updateTable('program')
+                .$if(!isEmpty(tvShowIdUpdates), (_) =>
+                  _.set((eb) => ({
+                    tvShowUuid: reduce(
+                      [...tvShowIdUpdates],
+                      (acc, curr) =>
+                        acc
+                          .when('program.uuid', '=', curr)
+                          .then(upsertedProgramById[curr].tvShowUuid),
+                      eb.case() as unknown as ProgramRelationCaseBuilder,
+                    )
+                      .else(eb.ref('program.tvShowUuid'))
+                      .end(),
+                  })),
+                )
+                .$if(!isEmpty(albumIdUpdates), (_) =>
+                  _.set((eb) => ({
+                    albumUuid: reduce(
+                      [...albumIdUpdates],
+                      (acc, curr) =>
+                        acc
+                          .when('program.uuid', '=', curr)
+                          .then(upsertedProgramById[curr].albumUuid),
+                      eb.case() as unknown as ProgramRelationCaseBuilder,
+                    )
+                      .else(eb.ref('program.albumUuid'))
+                      .end(),
+                  })),
+                )
+                .$if(!isEmpty(seasonIdUpdates), (_) =>
+                  _.set((eb) => ({
+                    seasonUuid: reduce(
+                      [...seasonIdUpdates],
+                      (acc, curr) =>
+                        acc
+                          .when('program.uuid', '=', curr)
+                          .then(upsertedProgramById[curr].seasonUuid),
+                      eb.case() as unknown as ProgramRelationCaseBuilder,
+                    )
+                      .else(eb.ref('program.seasonUuid'))
+                      .end(),
+                  })),
+                )
+                .$if(!isEmpty(artistIdUpdates), (_) =>
+                  _.set((eb) => ({
+                    artistUuid: reduce(
+                      [...artistIdUpdates],
+                      (acc, curr) =>
+                        acc
+                          .when('program.uuid', '=', curr)
+                          .then(upsertedProgramById[curr].artistUuid),
+                      eb.case() as unknown as ProgramRelationCaseBuilder,
+                    )
+                      .else(eb.ref('program.artistUuid'))
+                      .end(),
+                  })),
+                )
+                .where('program.uuid', 'in', idChunk)
+                .executeTakeFirst();
+            }
+          }),
       );
     }
   }

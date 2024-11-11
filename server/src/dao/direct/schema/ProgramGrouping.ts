@@ -1,9 +1,11 @@
 import { Insertable, Selectable, Updateable } from 'kysely';
 import { WithCreatedAt, WithUpdatedAt, WithUuid } from './base.ts';
 
-export const ProgramGroupingType: Record<string, ProgramGroupingType> = {
-  TvShow: 'show',
-  TvShowSeason: 'season',
+export const ProgramGroupingType: Readonly<
+  Record<Capitalize<ProgramGroupingType>, ProgramGroupingType>
+> = {
+  Show: 'show',
+  Season: 'season',
   Artist: 'artist',
   Album: 'album',
 } as const;

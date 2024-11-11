@@ -21,7 +21,7 @@ export class MissingSeasonNumbersHealthCheck implements HealthCheck {
     const missingFromGroupingTable = await directDbAccess()
       .selectFrom('programGrouping')
       .select((eb) => eb.fn.count<number>('uuid').as('count'))
-      .where('type', '=', ProgramGroupingType.TvShowSeason)
+      .where('type', '=', ProgramGroupingType.Season)
       .where('index', 'is', null)
       .executeTakeFirst();
 
