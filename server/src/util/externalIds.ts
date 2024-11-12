@@ -5,8 +5,9 @@ import { isError, trimEnd, trimStart } from 'lodash-es';
 import { v4 } from 'uuid';
 import { programExternalIdTypeFromExternalIdType } from '../dao/custom_types/ProgramExternalIdType.js';
 import { NewProgramExternalId } from '../dao/direct/schema/ProgramExternalId.js';
-import { Try } from '../types/util.js';
+import { Nullable } from '../types/util.js';
 import { attemptSync } from './index.js';
+import { LoggerFactory } from './logging/LoggerFactory.ts';
 
 export const createPlexExternalId = (
   serverName: string,
@@ -28,9 +29,9 @@ export const createPlexExternalId = (
 export const mintExternalIdForPlexGuid = (
   guid: string,
   programId: string,
-): Try<NewProgramExternalId> => {
+): Nullable<NewProgramExternalId> => {
   const parsed = parsePlexGuid(guid);
-  if (!isError(parsed)) {
+  if (parsed) {
     return {
       uuid: v4(),
       createdAt: +dayjs(),
@@ -39,9 +40,9 @@ export const mintExternalIdForPlexGuid = (
       externalKey: parsed.externalKey,
       programUuid: programId,
     };
-  } else {
-    return parsed;
   }
+
+  return null;
 };
 
 export const parsePlexGuid = (guid: string) => {
@@ -55,9 +56,13 @@ export const parsePlexGuid = (guid: string) => {
       };
     }
 
-    return new Error(`Parsed ID type is invalid: ${idType}`);
-  }
-  {
-    return parsed;
+    LoggerFactory.root.debug(
+      'Parsed Plex GUID ID type is unrecognized: %s',
+      idType,
+    );
+    return null;
+  } else {
+    LoggerFactory.root.warn(parsed, 'Error while parsing Plex GUID');
+    return null;
   }
 };

@@ -11,7 +11,6 @@ import { compact, find, first, isError, isNil, map } from 'lodash-es';
 import { P, match } from 'ts-pattern';
 import { v4 } from 'uuid';
 import { parsePlexGuid } from '../../util/externalIds.js';
-import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
 import {
   ProgramExternalIdType,
   programExternalIdTypeFromJellyfinProvider,
@@ -27,11 +26,6 @@ import { NewProgramExternalId } from '../direct/schema/ProgramExternalId.js';
  * Generates Program DB entities for Plex media
  */
 class ProgramDaoMinter {
-  #logger = LoggerFactory.child({
-    caller: import.meta,
-    className: this.constructor.name,
-  });
-
   mint(
     serverName: string,
     program: ContentProgramOriginalProgram,
@@ -244,7 +238,7 @@ class ProgramDaoMinter {
       map(media.Guid, (externalGuid) => {
         // Plex returns these in a URI form, so we can attempt to parse them
         const parsed = parsePlexGuid(externalGuid.id);
-        if (!isError(parsed)) {
+        if (parsed) {
           return {
             ...parsed,
             uuid: v4(),
@@ -252,9 +246,8 @@ class ProgramDaoMinter {
             updatedAt: +dayjs(),
             programUuid: programId,
           } satisfies NewProgramExternalId;
-        } else {
-          this.#logger.error(parsed, 'Error while extracting Plex Guids');
         }
+
         return null;
       }),
     );
