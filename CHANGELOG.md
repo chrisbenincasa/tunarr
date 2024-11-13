@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.15.10](https://github.com/chrisbenincasa/tunarr/compare/v0.15.9...v0.15.10) (2024-11-13)
+
+
+### Bug Fixes
+
+* account for weekly schedules when setting slot start time ([5797001](https://github.com/chrisbenincasa/tunarr/commit/57970018a75a2910076f6f6bc005b585d303db6a))
+* chunk program grouping updates to avoid "too many sql variables" db error ([98e7ade](https://github.com/chrisbenincasa/tunarr/commit/98e7ade9c488f761e77d7f07b2c2949d16a70a7e))
+* ensure program grouping upserts stay within sql variable limits ([#961](https://github.com/chrisbenincasa/tunarr/issues/961)) ([57009a2](https://github.com/chrisbenincasa/tunarr/commit/57009a24c1c334e006092f088481c8a577253bd7))
+* fix improper offsets for time slots ([167f5e0](https://github.com/chrisbenincasa/tunarr/commit/167f5e0256c798f4da4c63ce8963e72da58d2e88))
+* fix pagination for jellyfin ([a8d7d33](https://github.com/chrisbenincasa/tunarr/commit/a8d7d33237317317a8755d7989cea56abd1e9f2e))
+
 ## [0.15.9](https://github.com/chrisbenincasa/tunarr/compare/v0.15.8...v0.15.9) (2024-11-09)
 
 
