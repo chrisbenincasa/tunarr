@@ -1,5 +1,5 @@
 import { PlexTerminalMedia } from '@tunarr/types/plex';
-import { compact, isEmpty, isError, isNil, isUndefined, map } from 'lodash-es';
+import { compact, isEmpty, isNil, isUndefined, map } from 'lodash-es';
 import { ProgramExternalIdType } from '../../dao/custom_types/ProgramExternalIdType.js';
 import { ProgramExternalId } from '../../dao/direct/schema/ProgramExternalId.js';
 import { ProgramDB } from '../../dao/programDB.js';
@@ -73,12 +73,11 @@ export class SavePlexProgramExternalIdsTask extends Task {
     const eids = compact(
       map(metadata.Guid, (guid) => {
         const parsed = mintExternalIdForPlexGuid(guid.id, program.uuid);
-        if (!isError(parsed)) {
+        if (parsed) {
           parsed.externalSourceId = undefined;
           return parsed;
-        } else {
-          this.logger.error(parsed);
         }
+
         return;
       }),
     );

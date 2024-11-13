@@ -677,7 +677,7 @@ export class ChannelDB {
               ops,
               ({ operation }) => operation === 'add',
             );
-            console.log(adds, removes);
+
             if (!isEmpty(removes)) {
               await tx
                 .deleteFrom('channelPrograms')

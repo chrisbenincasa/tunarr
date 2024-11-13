@@ -24,7 +24,6 @@ export const upsertRawProgramExternalIds = async (
 
   let singleIdPromise: Promise<{ uuid: string }[]>;
   if (!isEmpty(singles)) {
-    logger.debug('Upserting %d single external IDs', singles.length);
     singleIdPromise = mapAsyncSeq(chunk(singles, chunkSize), (singleChunk) => {
       return directDbAccess()
         .transaction()
@@ -87,12 +86,12 @@ export const upsertRawProgramExternalIds = async (
   if (singleResult.status === 'rejected') {
     logger.error(singleResult.reason, 'Error saving external IDs');
   } else {
-    logger.debug('Upserted %d external IDs', singleResult.value.length);
+    logger.trace('Upserted %d external IDs', singleResult.value.length);
   }
 
   if (multiResult.status === 'rejected') {
     logger.error(multiResult.reason, 'Error saving external IDs');
   } else {
-    logger.debug('Upserted %d external IDs', multiResult.value.length);
+    logger.trace('Upserted %d external IDs', multiResult.value.length);
   }
 };
