@@ -36,10 +36,6 @@ Image tags are in the form `TAG(-HWACCEL)?`. For example, with the `latest` tag:
 - `ghcr.io/chrisbenincasa/tunarr:latest-nvidia`
 - `ghcr.io/chrisbenincasa/tunarr:latest-vaapi`
 
-!!! info
-
-    We are still working on a proper build workflow for ARM images. See [chrisbenincasa/tunarr#648](https://github.com/chrisbenincasa/tunarr/issues/648) for details.
-
 ### Unraid
 
 Tunarr is available in the [Community Apps](https://unraid.net/community/apps) store on Unraid. After [installing the Community Apps plugin](https://forums.unraid.net/topic/38582-plug-in-community-applications/) on your Unraid machine, simply search for "tunarr" and select the resulting app (provided by grtgbln's repository).
