@@ -47,10 +47,10 @@ export abstract class DirectStreamSession<
 
   protected abstract stopStream(): Promise<void>;
 
-  protected startInternal() {
+  protected async startInternal() {
     const start = performance.now();
 
-    const streamInitResult = this.initializeStream();
+    const streamInitResult = await this.initializeStream();
 
     this.#stream = streamInitResult.start();
 
@@ -67,7 +67,7 @@ export abstract class DirectStreamSession<
     return Promise.resolve(void 0);
   }
 
-  protected abstract initializeStream(): FfmpegTranscodeSession;
+  protected abstract initializeStream(): Promise<FfmpegTranscodeSession>;
 }
 
 type StreamReadyErrorResult = {

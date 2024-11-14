@@ -1,11 +1,13 @@
 import { seq } from '@tunarr/shared/util';
 import { FfmpegSettings } from '@tunarr/types';
-import { exec } from 'child_process';
+import { ExecOptions, exec } from 'child_process';
 import {
   drop,
   filter,
   isEmpty,
   isError,
+  isNull,
+  isUndefined,
   map,
   nth,
   reject,
@@ -15,19 +17,34 @@ import {
 } from 'lodash-es';
 import NodeCache from 'node-cache';
 import PQueue from 'p-queue';
+import { format } from 'util';
+import { Result } from '../types/result.ts';
 import { Nullable } from '../types/util.js';
 import { cacheGetOrSet } from '../util/cache.js';
+import dayjs from '../util/dayjs.js';
 import { fileExists } from '../util/fsUtil.js';
-import { attempt, isNonEmptyString, parseIntOrNull } from '../util/index.js';
+import {
+  attempt,
+  isLinux,
+  isNonEmptyString,
+  parseIntOrNull,
+} from '../util/index.ts';
 import { LoggerFactory } from '../util/logging/LoggerFactory.ts';
 import { sanitizeForExec } from '../util/strings.js';
-import { NvidiaHardwareCapabilities } from './NvidiaHardwareCapabilities.js';
+import { BaseFfmpegHardwareCapabilities } from './builder/capabilities/BaseFfmpegHardwareCapabilities.ts';
+import { DefaultHardwareCapabilities } from './builder/capabilities/DefaultHardwareCapabilities.js';
+import { FfmpegCapabilities } from './builder/capabilities/FfmpegCapabilities.ts';
+import { NoHardwareCapabilities } from './builder/capabilities/NoHardwareCapabilities.js';
+import { NvidiaHardwareCapabilities } from './builder/capabilities/NvidiaHardwareCapabilities.js';
+import { VaapiHardwareCapabilitiesFactory } from './builder/capabilities/VaapiHardwareCapabilities.ts';
+import { HardwareAccelerationMode } from './builder/types.js';
 
 const CacheKeys = {
   ENCODERS: 'encoders',
   HWACCELS: 'hwaccels',
   OPTIONS: 'options',
   NVIDIA: 'nvidia',
+  VAINFO: 'vainfo_%s_%s',
 } as const;
 
 export type FfmpegVersionResult = {
@@ -36,9 +53,15 @@ export type FfmpegVersionResult = {
   minorVersion?: Nullable<number>;
   patchVersion?: Nullable<number>;
   versionDetails?: Nullable<string>;
+  isUnknown: boolean;
 };
 
-const execQueue = new PQueue({ concurrency: 2 });
+export type FfmpegEncoder = {
+  ffmpegName: string;
+  name: string;
+};
+
+const execQueue = new PQueue({ concurrency: 3 });
 
 const VersionExtractionPattern = /version\s+([^\s]+)\s+.*Copyright/;
 const VersionNumberExtractionPattern = /n?(\d+)\.(\d+)(\.(\d+))?[_\-.]*(.*)/;
@@ -53,19 +76,26 @@ export class FFMPEGInfo {
     className: this.constructor.name,
   });
 
-  private static resultCache: NodeCache = new NodeCache({ stdTTL: 5 * 6000 });
+  private static resultCache: NodeCache = new NodeCache({
+    stdTTL: dayjs.duration({ hours: 1 }).asSeconds(),
+  });
 
   private static makeCacheKey(
     path: string,
     command: keyof typeof CacheKeys,
+    ...args: string[]
   ): string {
-    return `${path}_${CacheKeys[command]}`;
+    return format(`${path}_${CacheKeys[command]}`, ...args);
+  }
+
+  private static vaInfoCacheKey(driver: string, device: string) {
+    return `${CacheKeys.VAINFO}_${driver}_${device}`;
   }
 
   private ffmpegPath: string;
   private ffprobePath: string;
 
-  constructor(opts: FfmpegSettings) {
+  constructor(private opts: FfmpegSettings) {
     this.ffmpegPath = opts.ffmpegExecutablePath;
     this.ffprobePath = opts.ffprobeExecutablePath;
   }
@@ -78,7 +108,9 @@ export class FFMPEGInfo {
         this.getAvailableVideoEncoders(),
         this.getHwAccels(),
         this.getOptions(),
-        this.getNvidiaCapabilities(),
+        ...(this.opts.hardwareAccelerationMode === 'cuda'
+          ? [this.getNvidiaCapabilities()]
+          : []),
       ]);
     } catch (e) {
       this.logger.error(e, 'Unexpected error during ffmpeg info seed');
@@ -89,37 +121,40 @@ export class FFMPEGInfo {
   async getVersion(): Promise<FfmpegVersionResult> {
     try {
       const s = await this.getFfmpegStdout(['-version']);
-      return this.parseVersion(s, 'ffmpeg');
+      return this.parseFfmpegVersion(s, 'ffmpeg');
     } catch (err) {
       this.logger.error(err);
-      return { versionString: 'unknown' };
+      return { versionString: 'unknown', isUnknown: true };
     }
   }
 
   async getFfprobeVersion(): Promise<FfmpegVersionResult> {
     try {
       const s = await this.getFfprobeStdout(['-version']);
-      return this.parseVersion(s, 'ffprobe');
+      return this.parseFfmpegVersion(s, 'ffprobe');
     } catch (err) {
       this.logger.error(err);
-      return { versionString: 'unknown' };
+      return { versionString: 'unknown', isUnknown: true };
     }
   }
 
-  private parseVersion(output: string, app: string) {
+  parseFfmpegVersion(
+    output: string,
+    app: string = 'ffmpeg',
+  ): FfmpegVersionResult {
     const m = output.match(VersionExtractionPattern);
     if (!m) {
       this.logger.warn(
         `${app} -version command output not in the expected format: ${output}`,
       );
-      return { versionString: 'unknown' };
+      return { versionString: 'unknown', isUnknown: true };
     }
     const versionString = m[1];
 
     const extractedNums = versionString.match(VersionNumberExtractionPattern);
 
     if (!extractedNums) {
-      return { versionString };
+      return { versionString, isUnknown: true };
     }
 
     const majorString = nth(extractedNums, 1);
@@ -142,11 +177,12 @@ export class FFMPEGInfo {
       minorVersion: minorNum,
       patchVersion: patchNum,
       versionDetails: rest,
+      isUnknown: false,
     };
   }
 
-  async getAvailableAudioEncoders() {
-    return attempt(async () => {
+  async getAvailableAudioEncoders(): Promise<Result<FfmpegEncoder[]>> {
+    return Result.attemptAsync(async () => {
       const out = await cacheGetOrSet(
         FFMPEGInfo.resultCache,
         this.cacheKey('ENCODERS'),
@@ -164,8 +200,8 @@ export class FFMPEGInfo {
     });
   }
 
-  async getAvailableVideoEncoders() {
-    return attempt(async () => {
+  async getAvailableVideoEncoders(): Promise<Result<FfmpegEncoder[]>> {
+    return Result.attemptAsync(async () => {
       const out = await cacheGetOrSet(
         FFMPEGInfo.resultCache,
         this.cacheKey('ENCODERS'),
@@ -207,8 +243,29 @@ export class FFMPEGInfo {
     return isError(res) ? [] : res;
   }
 
+  async getHardwareCapabilities(
+    hwMode: HardwareAccelerationMode,
+  ): Promise<BaseFfmpegHardwareCapabilities> {
+    // TODO Check for hw availability
+    // if (isEmpty(await this.getHwAccels())) {
+
+    // }
+
+    switch (hwMode) {
+      case 'none':
+        return new NoHardwareCapabilities();
+      case 'cuda':
+        return await this.getNvidiaCapabilities();
+      case 'qsv':
+      case 'vaapi':
+        return await this.getVaapiCapabilities();
+      case 'videotoolbox':
+        return new DefaultHardwareCapabilities();
+    }
+  }
+
   async getOptions() {
-    return attempt(async () => {
+    return Result.attemptAsync(async () => {
       const out = await cacheGetOrSet(
         FFMPEGInfo.resultCache,
         this.cacheKey('OPTIONS'),
@@ -225,8 +282,20 @@ export class FFMPEGInfo {
     });
   }
 
+  async hasOption(
+    option: string,
+    defaultOnMissing: boolean = false,
+    defaultOnError: boolean = false,
+  ) {
+    const opts = await this.getOptions();
+    if (opts.isFailure()) {
+      return defaultOnError;
+    }
+    return opts.get().includes(option) ? true : defaultOnMissing;
+  }
+
   async getNvidiaCapabilities() {
-    return attempt(async () => {
+    const result = await attempt(async () => {
       const out = await cacheGetOrSet(
         FFMPEGInfo.resultCache,
         this.cacheKey('NVIDIA'),
@@ -268,20 +337,97 @@ export class FFMPEGInfo {
         }
       }
 
-      throw new Error('Could not parse ffmepg output for Nvidia capabilities');
+      this.logger.warn('Could not parse ffmepg output for Nvidia capabilities');
+      return new NoHardwareCapabilities();
     });
+
+    if (isError(result)) {
+      this.logger.warn(
+        result,
+        'Error while attempting to determine Nvidia hardware capabilities',
+      );
+      return new NoHardwareCapabilities();
+    }
+
+    return result;
   }
 
-  async hasOption(
-    option: string,
-    defaultOnMissing: boolean = false,
-    defaultOnError: boolean = false,
-  ) {
-    const opts = await this.getOptions();
-    if (isError(opts)) {
-      return defaultOnError;
+  async getVaapiCapabilities() {
+    const vaapiDevice = isNonEmptyString(this.opts.vaapiDevice)
+      ? this.opts.vaapiDevice
+      : isLinux()
+      ? '/dev/dri/renderD128'
+      : undefined;
+
+    if (isUndefined(vaapiDevice) || isEmpty(vaapiDevice)) {
+      this.logger.error('Cannot detect VAAPI capabilities without a device');
+      return new NoHardwareCapabilities();
     }
-    return opts.includes(option) ? true : defaultOnMissing;
+
+    // windows check bail!
+    if (process.platform === 'win32') {
+      return new DefaultHardwareCapabilities();
+    }
+
+    const driver = this.opts.vaapiDriver ?? '';
+
+    return await cacheGetOrSet(
+      FFMPEGInfo.resultCache,
+      FFMPEGInfo.vaInfoCacheKey(vaapiDevice, driver),
+      async () => {
+        const result = await this.getStdout(
+          'vainfo',
+          ['--display', 'drm', '--device', vaapiDevice, '-a'],
+          false,
+          isNonEmptyString(driver) ? { LIBVA_DRIVER_NAME: driver } : undefined,
+          false,
+        );
+
+        if (!isNonEmptyString(result)) {
+          this.logger.warn(
+            'Unable to find VAAPI capabilities via vainfo. Please make sure it is installed.',
+          );
+          return new DefaultHardwareCapabilities();
+        }
+
+        try {
+          const capabilities =
+            VaapiHardwareCapabilitiesFactory.extractAllFromVaInfo(result);
+          if (isNull(capabilities)) {
+            return new NoHardwareCapabilities();
+          }
+          return capabilities;
+        } catch (e) {
+          this.logger.error(e, 'Error while detecting VAAPI capabilities.');
+          return new NoHardwareCapabilities();
+        }
+      },
+    );
+  }
+
+  async getCapabilities() {
+    const [optionsResult, encodersResult] = await Promise.allSettled([
+      this.getOptions(),
+      this.getAvailableVideoEncoders(),
+    ]);
+
+    return new FfmpegCapabilities(
+      optionsResult.status === 'rejected'
+        ? new Set()
+        : optionsResult.value
+            .map((arr) => new Set(arr))
+            .getOrElse(() => new Set()),
+      encodersResult.status === 'rejected'
+        ? new Map<string, FfmpegEncoder>()
+        : encodersResult.value
+            .map(
+              (arr) =>
+                new Map(
+                  arr.map((encoder) => [encoder.ffmpegName, encoder] as const),
+                ),
+            )
+            .getOrElse(() => new Map<string, FfmpegEncoder>()),
+    );
   }
 
   private getFfmpegStdout(
@@ -302,17 +448,25 @@ export class FFMPEGInfo {
     executable: string,
     args: string[],
     swallowError: boolean = false,
+    env?: NodeJS.ProcessEnv,
+    isPath: boolean = true,
   ): Promise<string> {
     return execQueue.add(
       async () => {
         const sanitizedPath = sanitizeForExec(executable);
-        if (!(await fileExists(sanitizedPath))) {
+        if (isPath && !(await fileExists(sanitizedPath))) {
           throw new Error(`Path at ${sanitizedPath} does not exist`);
+        }
+
+        const opts: ExecOptions = {};
+        if (!isEmpty(env)) {
+          opts.env = env;
         }
 
         return await new Promise((resolve, reject) => {
           exec(
             `"${sanitizedPath}" ${args.join(' ')}`,
+            opts,
             function (error, stdout, stderr) {
               if (error !== null && !swallowError) {
                 reject(error);

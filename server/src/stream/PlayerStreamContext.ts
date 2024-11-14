@@ -9,6 +9,7 @@ export class PlayerContext {
     public audioOnly: boolean,
     public isLoading: boolean,
     public realtime: boolean,
+    public useNewPipeline: boolean = false,
   ) {}
 
   static error(
@@ -16,6 +17,7 @@ export class PlayerContext {
     error: string | boolean | Error,
     channel: Channel,
     realtime: boolean = true,
+    useNewPipeline: boolean = false,
   ): PlayerContext {
     return new PlayerContext(
       {
@@ -29,6 +31,7 @@ export class PlayerContext {
       false,
       false,
       realtime,
+      useNewPipeline,
     );
   }
 }

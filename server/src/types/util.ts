@@ -18,8 +18,14 @@ export type MarkNonNullable<Type, Keys extends keyof Type> = Type extends Type
   ? Omit<Type, Keys> & DeepNonNullable<Pick<Type, Keys>>
   : never;
 
+export type ExcludeByValueType<T, U> = {
+  [K in keyof T as T[K] extends U ? never : K]: T[K];
+};
+
 export type MarkNullable<Type, Keys extends keyof Type = keyof Type> = {
   [Key in keyof Pick<Type, Keys>]: Pick<Type, Keys>[Key] | null;
 } & {
   [Key in StrictExclude<keyof Type, Keys>]: Type[Key];
 };
+
+export type NonEmptyArray<T> = [T, ...T[]];

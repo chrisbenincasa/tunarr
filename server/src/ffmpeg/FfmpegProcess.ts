@@ -41,6 +41,7 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
     private ffmpegSettings: FfmpegSettings,
     private ffmpegName: string,
     private ffmpegArgs: string[],
+    private environmentVariables: NodeJS.ProcessEnv = {},
     private settingsDB: SettingsDB = getSettings(),
   ) {
     super();
@@ -77,6 +78,7 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
 
     const env = {
       ...process.env,
+      ...this.environmentVariables,
     };
 
     if (this.ffmpegSettings.enableFileLogging) {

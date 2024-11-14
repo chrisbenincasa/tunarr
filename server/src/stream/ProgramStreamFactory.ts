@@ -1,6 +1,6 @@
 import { MediaSourceType } from '../dao/direct/schema/MediaSource.ts';
 import { SettingsDB, getSettings } from '../dao/settings.js';
-import { NutOutputFormat, OutputFormat } from '../ffmpeg/OutputFormat.js';
+import { NutOutputFormat, OutputFormat } from '../ffmpeg/builder/constants.ts';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { OfflineProgramStream } from './OfflinePlayer.js';
 import { PlayerContext } from './PlayerStreamContext.js';

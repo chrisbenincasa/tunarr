@@ -32,8 +32,8 @@ export class ConcatSession extends DirectStreamSession<ConcatSessionOptions> {
     return this.sessionOptions.sessionType;
   }
 
-  protected initializeStream(): FfmpegTranscodeSession {
-    this.#transcodeSession = new ConcatStream(this.channel, {
+  protected async initializeStream(): Promise<FfmpegTranscodeSession> {
+    this.#transcodeSession = await new ConcatStream(this.channel, {
       ...this.sessionOptions.concatOptions,
       mode: this.sessionOptions.sessionType,
       logOutput: true,
@@ -42,7 +42,7 @@ export class ConcatSession extends DirectStreamSession<ConcatSessionOptions> {
     this.#transcodeSession.on('error', (e) => this.emit('error', e));
     this.#transcodeSession.on('exit', () => this.emit('end'));
 
-    return this.#transcodeSession;
+    return Promise.resolve(this.#transcodeSession);
   }
 
   protected stopStream(): Promise<void> {

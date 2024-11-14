@@ -9,15 +9,20 @@ import {
 } from '@tunarr/types/plex';
 import { Selectable } from 'kysely';
 import {
+  filter,
   find,
   first,
   isEmpty,
   isError,
   isNull,
   isUndefined,
+  map,
+  maxBy,
   replace,
+  round,
   trimEnd,
 } from 'lodash-es';
+import { NonEmptyArray } from 'ts-essentials';
 import { ProgramExternalIdType } from '../../dao/custom_types/ProgramExternalIdType.ts';
 import { ContentBackedStreamLineupItem } from '../../dao/derived_types/StreamLineup.js';
 import type { MediaSourceTable } from '../../dao/direct/schema/MediaSource.d.ts';
@@ -26,12 +31,19 @@ import { SettingsDB, getSettings } from '../../dao/settings.js';
 import { isQueryError, isQuerySuccess } from '../../external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.ts';
 import { PlexApiClient } from '../../external/plex/PlexApiClient.ts';
-import { Nullable } from '../../types/util.ts';
+import { Maybe, Nullable } from '../../types/util.ts';
 import { fileExists } from '../../util/fsUtil.ts';
 import { attempt, isNonEmptyString } from '../../util/index.ts';
 import { Logger, LoggerFactory } from '../../util/logging/LoggerFactory.ts';
 import { makeLocalUrl } from '../../util/serverUtil.js';
-import { ProgramStream, StreamDetails, StreamSource } from '../types.ts';
+import {
+  AudioStreamDetails,
+  HttpStreamSource,
+  ProgramStream,
+  StreamDetails,
+  StreamSource,
+  VideoStreamDetails,
+} from '../types.ts';
 
 // The minimum fields we need to get stream details about an item
 type PlexItemStreamDetailsQuery = Pick<
@@ -210,12 +222,12 @@ export class PlexStreamDetails {
 
       if (isNonEmptyString(path)) {
         path = path.startsWith('/') ? path : `/${path}`;
-        streamSource = {
-          type: 'http',
-          streamUrl: `${trimEnd(this.server.uri, '/')}${path}?X-Plex-Token=${
+
+        streamSource = new HttpStreamSource(
+          `${trimEnd(this.server.uri, '/')}${path}?X-Plex-Token=${
             this.server.accessToken
           }`,
-        };
+        );
         // streamUrl = this.getPlexTranscodeStreamUrl(
         //   `/library/metadata/${item.externalKey}`,
         // );
@@ -234,13 +246,14 @@ export class PlexStreamDetails {
     item: PlexItemStreamDetailsQuery,
     media: PlexMovie | PlexEpisode | PlexMusicTrack,
   ): Promise<Nullable<StreamDetails>> {
-    const streamDetails: StreamDetails = {};
-    const firstPart = first(first(media.Media)?.Part);
-    streamDetails.serverPath = firstPart?.key;
-    streamDetails.directFilePath = firstPart?.file;
+    const relevantMedia = maxBy(
+      filter(media.Media, (m) => (m.Part?.length ?? 0) > 0) ?? [],
+      (m) => m.id,
+    );
+    const relevantPart = first(relevantMedia?.Part);
+    const mediaStreams = relevantPart?.Stream;
 
-    const firstStream = firstPart?.Stream;
-    if (isUndefined(firstStream)) {
+    if (isUndefined(mediaStreams)) {
       this.logger.error(
         'Could not extract a stream for Plex item ID = %s',
         item.externalKey,
@@ -248,42 +261,78 @@ export class PlexStreamDetails {
     }
 
     const videoStream = find(
-      firstStream,
+      mediaStreams,
       (stream): stream is PlexMediaVideoStream => stream.streamType === 1,
     );
 
     const audioStream = find(
-      firstStream,
+      mediaStreams,
       (stream): stream is PlexMediaAudioStream =>
         stream.streamType === 2 && !!stream.selected,
     );
+
     const audioOnly = isUndefined(videoStream) && !isUndefined(audioStream);
 
-    // Video
-    if (!isUndefined(videoStream)) {
-      // TODO Parse pixel aspect ratio
-      streamDetails.anamorphic =
-        videoStream.anamorphic === '1' || videoStream.anamorphic === true;
-      streamDetails.videoCodec = videoStream.codec;
-      // Keeping old behavior here for now
-      streamDetails.videoFramerate = videoStream.frameRate
-        ? Math.round(videoStream.frameRate)
-        : undefined;
-      streamDetails.videoHeight = videoStream.height;
-      streamDetails.videoWidth = videoStream.width;
-      streamDetails.videoBitDepth = videoStream.bitDepth;
-      streamDetails.videoStreamIndex = videoStream.index?.toString() ?? '0';
-      streamDetails.pixelP = 1;
-      streamDetails.pixelQ = 1;
+    let videoDetails: Maybe<VideoStreamDetails>;
+    if (videoStream) {
+      videoDetails = {
+        sampleAspectRatio: isNonEmptyString(videoStream?.pixelAspectRatio)
+          ? videoStream.pixelAspectRatio
+          : '1:1',
+        scanType:
+          videoStream.scanType === 'interlaced'
+            ? 'interlaced'
+            : videoStream.scanType === 'progressive'
+            ? 'progressive'
+            : 'unknown',
+        width: videoStream.width,
+        height: videoStream.height,
+        framerate: videoStream.frameRate,
+        displayAspectRatio:
+          (relevantMedia?.aspectRatio ?? 0) === 0
+            ? ''
+            : round(relevantMedia?.aspectRatio ?? 0.0, 2).toFixed(),
+        // chapters
+        anamorphic:
+          videoStream.anamorphic === '1' || videoStream.anamorphic === true,
+        bitDepth: videoStream.bitDepth,
+        bitrate: videoStream.bitrate,
+        codec: videoStream.codec,
+        profile: videoStream.profile?.toLowerCase(),
+        streamIndex: videoStream.index?.toString() ?? '0',
+      } satisfies VideoStreamDetails;
     }
 
-    if (!isUndefined(audioStream)) {
-      streamDetails.audioChannels = audioStream.channels;
-      streamDetails.audioCodec = audioStream.codec;
-      streamDetails.audioIndex = audioStream?.index.toString() ?? 'a';
-    }
+    const audioStreamDetails = map(
+      filter(mediaStreams, (stream): stream is PlexMediaAudioStream => {
+        return stream.streamType === 2;
+      }),
+      (audioStream) => {
+        return {
+          bitrate: audioStream.bitrate,
+          channels: audioStream.channels,
+          codec: audioStream.codec,
+          index: audioStream.index?.toString() ?? 'a', // Fallback for legacy pipeline
+          default: audioStream.default,
+          language: audioStream.languageCode,
+          title: audioStream.displayTitle,
+        } satisfies AudioStreamDetails;
+      },
+    );
 
-    if (isUndefined(videoStream) && isUndefined(audioStream)) {
+    const streamDetails: StreamDetails = {
+      serverPath: relevantPart?.key,
+      directFilePath: relevantPart?.file,
+      videoDetails: videoDetails ? [videoDetails] : undefined,
+      audioDetails: isEmpty(audioStreamDetails)
+        ? undefined
+        : (audioStreamDetails as NonEmptyArray<AudioStreamDetails>),
+    };
+
+    if (
+      isUndefined(streamDetails.videoDetails) &&
+      isUndefined(streamDetails.audioDetails)
+    ) {
       this.logger.warn(
         'Could not find a video nor audio stream for Plex item %s',
         item.externalKey,

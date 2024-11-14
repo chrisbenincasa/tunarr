@@ -42,6 +42,8 @@ export const FfmpegLogLevels = [
   'trace',
 ] as const;
 
+export type FfmpegLogLevel = TupleToUnion<typeof FfmpegLogLevels>;
+
 export const FfmpegNumericLogLevels: Record<
   TupleToUnion<typeof FfmpegLogLevels>,
   number
@@ -90,8 +92,10 @@ export const FfmpegSettingsSchema = z.object({
   audioBufferSize: z.number().default(50),
   audioSampleRate: z.number().default(48),
   audioChannels: z.number().default(2),
-  errorScreen: z.string().default('pic'),
-  errorAudio: z.string().default('silent'),
+  errorScreen: z
+    .enum(['static', 'pic', 'blank', 'testsrc', 'text', 'kill'])
+    .default('pic'),
+  errorAudio: z.enum(['silent', 'sine', 'whitenoise']).default('silent'),
   normalizeVideoCodec: z.boolean().default(true),
   normalizeAudioCodec: z.boolean().default(true),
   normalizeResolution: z.boolean().default(true),
@@ -119,6 +123,7 @@ export const FfmpegSettingsSchema = z.object({
   disableChannelPrelude: z.boolean().default(false),
   vaapiDevice: z.string().optional(),
   vaapiDriver: z.string().optional(),
+  useNewFfmpegPipeline: z.boolean().default(false),
 });
 
 const mediaSourceId = z.custom<MediaSourceId>((val) => {

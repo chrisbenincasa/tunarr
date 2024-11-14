@@ -2,6 +2,7 @@ import { ChannelStreamMode, FfmpegSettings } from '@tunarr/types';
 import { StrictExtract } from 'ts-essentials';
 import { Channel } from '../dao/direct/schema/Channel.ts';
 import { SettingsDB, getSettings } from '../dao/settings.js';
+import { FfmpegStreamFactory } from '../ffmpeg/FfmpegStreamFactory.ts';
 import { FfmpegTranscodeSession } from '../ffmpeg/FfmpegTrancodeSession.js';
 import { ConcatOptions, FFMPEG } from '../ffmpeg/ffmpeg.js';
 import { makeLocalUrl } from '../util/serverUtil.js';
@@ -21,8 +22,7 @@ export class ConcatWrapperStream {
     this.#ffmpegSettings = settings.ffmpegSettings();
   }
 
-  createSession(): FfmpegTranscodeSession {
-    // const mode = this.concatOptions?.mode ?? 'mpegts_concat';
+  createSession(): Promise<FfmpegTranscodeSession> {
     const concatUrl = makeLocalUrl(
       `/stream/channels/${this.channel.uuid}.m3u8`,
       {
@@ -30,9 +30,13 @@ export class ConcatWrapperStream {
       },
     );
 
-    return new FFMPEG(
-      this.#ffmpegSettings,
-      this.channel,
-    ).createWrapperConcatSession(concatUrl, this.concatOptions.childStreamMode);
+    const ffmpeg = this.#ffmpegSettings.useNewFfmpegPipeline
+      ? new FfmpegStreamFactory(this.#ffmpegSettings, this.channel)
+      : new FFMPEG(this.#ffmpegSettings, this.channel);
+
+    return ffmpeg.createWrapperConcatSession(
+      concatUrl,
+      this.concatOptions.childStreamMode,
+    );
   }
 }

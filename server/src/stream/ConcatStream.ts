@@ -2,6 +2,7 @@ import { ChannelStreamMode, FfmpegSettings } from '@tunarr/types';
 import { initial } from 'lodash-es';
 import { Channel } from '../dao/direct/schema/Channel.ts';
 import { SettingsDB, getSettings } from '../dao/settings.ts';
+import { FfmpegStreamFactory } from '../ffmpeg/FfmpegStreamFactory.ts';
 import { FfmpegTranscodeSession } from '../ffmpeg/FfmpegTrancodeSession.ts';
 import { ConcatOptions, FFMPEG } from '../ffmpeg/ffmpeg.ts';
 import { makeFfmpegPlaylistUrl, makeLocalUrl } from '../util/serverUtil.js';
@@ -22,7 +23,7 @@ export class ConcatStream {
     this.#ffmpegSettings = settings.ffmpegSettings();
   }
 
-  createSession(): FfmpegTranscodeSession {
+  createSession(): Promise<FfmpegTranscodeSession> {
     const mode = this.concatOptions?.mode ?? 'mpegts_concat';
     // TODO... this is SO hacky
     const childStreamMode = initial(mode.split('_')).join(
@@ -47,7 +48,9 @@ export class ConcatStream {
         break;
     }
 
-    const ffmpeg = new FFMPEG(this.#ffmpegSettings, this.channel);
+    const ffmpeg = this.#ffmpegSettings.useNewFfmpegPipeline
+      ? new FfmpegStreamFactory(this.#ffmpegSettings, this.channel)
+      : new FFMPEG(this.#ffmpegSettings, this.channel);
     return ffmpeg.createWrapperConcatSession(concatUrl, childStreamMode);
   }
 }

@@ -3,8 +3,11 @@ import { StrictOmit } from 'ts-essentials';
 import { Channel } from '../../dao/direct/schema/Channel.ts';
 import { getSettings } from '../../dao/settings.ts';
 import { FfmpegTranscodeSession } from '../../ffmpeg/FfmpegTrancodeSession.ts';
-import { HlsOutputFormat, NutOutputFormat } from '../../ffmpeg/OutputFormat.ts';
-import { FFMPEG } from '../../ffmpeg/ffmpeg.ts';
+import {
+  HlsOutputFormat,
+  NutOutputFormat,
+} from '../../ffmpeg/builder/constants.ts';
+import { FFMPEG, defaultHlsOptions } from '../../ffmpeg/ffmpeg.ts';
 import { serverContext } from '../../serverContext.ts';
 import { Result } from '../../types/result.ts';
 import { makeFfmpegPlaylistUrl } from '../../util/serverUtil.ts';
@@ -137,8 +140,9 @@ export class HlsSlowerSession extends BaseHlsSession<HlsSlowerSessionOptions> {
 
     const ffmpeg = new FFMPEG(this.settingsDB.ffmpegSettings(), this.channel);
 
-    this.#concatSession = ffmpeg.createConcatSession(streamUrl, {
+    this.#concatSession = await ffmpeg.createConcatSession(streamUrl, {
       outputFormat: HlsOutputFormat({
+        ...defaultHlsOptions,
         streamBasePath: `stream_${this.channel.uuid}`,
         streamBaseUrl: `/stream/channels/${this.channel.uuid}/${this.sessionType}/`,
         hlsTime: 4,

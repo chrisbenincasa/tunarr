@@ -8,7 +8,7 @@ import { Channel } from '../../dao/direct/schema/Channel.ts';
 import { getSettings } from '../../dao/settings.ts';
 import { FfmpegTranscodeSession } from '../../ffmpeg/FfmpegTrancodeSession.ts';
 import { GetLastPtsDurationTask } from '../../ffmpeg/GetLastPtsDuration.ts';
-import { HlsOutputFormat } from '../../ffmpeg/OutputFormat.ts';
+import { HlsOutputFormat } from '../../ffmpeg/builder/constants.ts';
 import { serverContext } from '../../serverContext.ts';
 import { OnDemandChannelService } from '../../services/OnDemandChannelService.ts';
 import { Result } from '../../types/result.ts';
@@ -143,12 +143,17 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
 
     const programStreamResult = await lineupItemResult.mapAsync(
       async (result) => {
+        this.logger.debug(
+          'About to play item: %s',
+          JSON.stringify(lineupItemResult, undefined, 4),
+        );
         const context = new PlayerContext(
           result.lineupItem,
           result.channelContext,
           false,
           result.lineupItem.type === 'loading',
           realtime,
+          this.sessionOptions.useNewPipeline,
         );
 
         let programStream = this.getProgramStream(context);
@@ -213,6 +218,9 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
     return ProgramStreamFactory.create(
       context,
       HlsOutputFormat({
+        hlsDeleteThreshold: 3,
+        streamNameFormat: 'stream.m3u8',
+        segmentNameFormat: 'data%06d.ts',
         streamBasePath: `stream_${this.channel.uuid}`,
         streamBaseUrl: `/stream/channels/${this.channel.uuid}/${this.sessionType}/`,
         hlsTime: 4,

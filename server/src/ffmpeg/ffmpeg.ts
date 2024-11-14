@@ -16,7 +16,13 @@ import { DeepReadonly, DeepRequired } from 'ts-essentials';
 import { Channel } from '../dao/direct/schema/Channel.ts';
 import { serverOptions } from '../globals.js';
 import { ConcatSessionType } from '../stream/Session.js';
-import { StreamDetails, StreamSource } from '../stream/types.js';
+import {
+  ErrorStreamSource,
+  OfflineStreamSource,
+  StreamDetails,
+  StreamSource,
+  getPixelFormatForStream,
+} from '../stream/types.js';
 import { Maybe, Nullable } from '../types/util.js';
 import {
   isDefined,
@@ -24,6 +30,7 @@ import {
   isNonEmptyString,
   isSuccess,
 } from '../util/index.js';
+import { gcd } from '../util/index.ts';
 import { Logger, LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '../util/serverUtil.js';
 import { getTunarrVersion } from '../util/version.js';
@@ -33,7 +40,8 @@ import {
   MpegTsOutputFormat,
   NutOutputFormat,
   OutputFormat,
-} from './OutputFormat.js';
+} from './builder/constants.ts';
+import { IFFMPEG } from './ffmpegBase.ts';
 import { FFMPEGInfo } from './ffmpegInfo.js';
 
 const MAXIMUM_ERROR_DURATION_MS = 60000;
@@ -136,16 +144,16 @@ export type StreamOptions = {
   watermark?: Watermark;
   realtime?: boolean; // = true,
   extraInputHeaders?: Record<string, string>;
-  outputFormat?: OutputFormat;
+  outputFormat: OutputFormat;
   ptsOffset?: number;
 };
 
 export type StreamSessionOptions = StreamOptions & {
   streamSource: StreamSource;
-  streamDetails?: Maybe<StreamDetails>;
+  streamDetails: StreamDetails;
 };
 
-export class FFMPEG {
+export class FFMPEG implements IFFMPEG {
   private logger: Logger;
   private errorPicturePath: string;
   private ffmpegName: string;
@@ -211,7 +219,7 @@ export class FFMPEG {
   createConcatSession(
     streamUrl: string,
     opts: DeepReadonly<Partial<ConcatOptions>> = defaultConcatOptions,
-  ) {
+  ): Promise<FfmpegTranscodeSession> {
     this.ffmpegName = 'Concat FFMPEG';
     const ffmpegArgs: string[] = [
       '-hide_banner',
@@ -305,7 +313,7 @@ export class FFMPEG {
         );
     }
 
-    return this.createProcess(ffmpegArgs);
+    return Promise.resolve(this.createProcess(ffmpegArgs));
   }
 
   createWrapperConcatSession(streamUrl: string, streamMode: ChannelStreamMode) {
@@ -352,7 +360,7 @@ export class FFMPEG {
     ];
 
     // Stream is potentially infinite
-    return this.createProcess(ffmpegArgs);
+    return Promise.resolve(this.createProcess(ffmpegArgs));
   }
 
   createStreamSession({
@@ -362,7 +370,7 @@ export class FFMPEG {
     duration,
     watermark: enableIcon,
     realtime = true,
-    outputFormat = NutOutputFormat,
+    outputFormat,
     ptsOffset,
   }: StreamSessionOptions) {
     this.ffmpegName = 'Raw Stream FFMPEG';
@@ -398,13 +406,20 @@ export class FFMPEG {
     //   Math.min(MAXIMUM_ERROR_DURATION_MS, duration.asMilliseconds()),
     // );
     const streamStats: StreamDetails = {
-      videoWidth: this.wantedW,
-      videoHeight: this.wantedH,
+      videoDetails: [
+        {
+          // TODO:
+          sampleAspectRatio: '1:1',
+          displayAspectRatio: '1:1',
+          width: this.wantedW,
+          height: this.wantedH,
+        },
+      ],
       duration,
     };
 
     return this.createSession(
-      { type: 'error', title: title, subtitle: subtitle },
+      new ErrorStreamSource(title, subtitle),
       streamStats,
       undefined,
       streamStats.duration!,
@@ -426,7 +441,7 @@ export class FFMPEG {
     };
 
     return this.createSession(
-      { type: 'offline' },
+      OfflineStreamSource.instance(),
       streamStats,
       undefined,
       duration,
@@ -456,6 +471,9 @@ export class FFMPEG {
       this.opts.logLevel,
     ];
 
+    const videoStream = first(streamStats?.videoDetails);
+    const audioStream = first(streamStats?.audioDetails);
+
     // Initialize like this because we're not checking whether or not
     // the input is hardware decodeable, yet.
     if (this.opts.hardwareAccelerationMode === 'vaapi') {
@@ -466,7 +484,7 @@ export class FFMPEG {
         : undefined;
       ffmpegArgs.push(
         // Crude workaround for no av1 decoding support
-        ...(streamStats?.videoCodec === 'av1' ? [] : ['-hwaccel', 'vaapi']),
+        ...(videoStream?.codec === 'av1' ? [] : ['-hwaccel', 'vaapi']),
         ...(isNonEmptyString(vaapiDevice)
           ? ['-vaapi_device', vaapiDevice]
           : []),
@@ -518,9 +536,9 @@ export class FFMPEG {
     }
 
     // Map correct audio index. '?' so doesn't fail if no stream available.
-    const audioIndex = isUndefined(streamStats)
+    const audioIndex = isUndefined(audioStream)
       ? 'a'
-      : `${streamStats.audioIndex ?? 'a'}`;
+      : `${audioStream.index ?? 'a'}`;
 
     //TODO: Do something about missing audio stream
     let inputFiles = 0;
@@ -529,7 +547,7 @@ export class FFMPEG {
     let overlayFile = -1;
     if (streamSrc.type === 'http' || streamSrc.type === 'file') {
       if (streamSrc.type === 'http') {
-        ffmpegArgs.push(`-i`, streamSrc.streamUrl);
+        ffmpegArgs.push(`-i`, streamSrc.path);
         if (!isEmpty(streamSrc.extraHeaders)) {
           for (const [key, value] of Object.entries(streamSrc.extraHeaders)) {
             ffmpegArgs.push('-headers', `'${key}: ${value}'`);
@@ -547,8 +565,8 @@ export class FFMPEG {
     // filters to apply.
     //
     let doOverlay = !isNil(watermark);
-    let iW = streamStats!.videoWidth;
-    let iH = streamStats!.videoHeight;
+    let iW = videoStream?.width;
+    let iH = videoStream?.height;
 
     // (explanation is the same for the video and audio streams)
     // The initial stream is called '[video]'
@@ -556,8 +574,8 @@ export class FFMPEG {
     let currentAudio = '[audio]';
     // Initially, videoComplex does nothing besides assigning the label
     // to the input stream
-    const videoIndex = isNonEmptyString(streamStats?.videoStreamIndex)
-      ? streamStats.videoStreamIndex
+    const videoIndex = isNonEmptyString(videoStream?.streamIndex)
+      ? videoStream?.streamIndex
       : 'v';
     let audioComplex = `;[${audioFile}:${audioIndex}]anull[audio]`;
     let videoComplex = `;[${videoFile}:${videoIndex}]null[video]`;
@@ -578,14 +596,14 @@ export class FFMPEG {
     // When adding filters, make sure that
     // videoComplex always begins wiht ; and doesn't end with ;
 
-    if ((streamStats?.videoFramerate ?? 0) >= this.opts.maxFPS + 0.000001) {
+    if ((videoStream?.framerate ?? 0) >= this.opts.maxFPS + 0.000001) {
       videoComplex += `;${currentVideo}fps=${this.opts.maxFPS}[fpchange]`;
       currentVideo = '[fpchange]';
     }
 
     // deinterlace if desired
     if (
-      streamStats?.videoScanType === 'interlaced' &&
+      videoStream?.scanType === 'interlaced' &&
       this.opts.deinterlaceFilter !== 'none'
     ) {
       if (framesOnHardware && this.opts.hardwareAccelerationMode === 'vaapi') {
@@ -747,7 +765,7 @@ export class FFMPEG {
     if (
       !streamStats?.audioOnly &&
       ((this.ensureResolution &&
-        (streamStats?.anamorphic ||
+        (videoStream?.anamorphic ||
           iW !== this.wantedW ||
           iH !== this.wantedH)) ||
         isLargerResolution(
@@ -757,8 +775,12 @@ export class FFMPEG {
     ) {
       // scaler stuff, need to change the size of the video and also add bars
       // calculate wanted aspect ratio
-      let p = iW * streamStats!.pixelP!;
-      let q = iH * streamStats!.pixelQ!;
+      const [width, height] = videoStream!.sampleAspectRatio
+        .split(':')
+        .map((i) => parseInt(i));
+      const sarSize: Resolution = { widthPx: width, heightPx: height };
+      let p = iW * sarSize.widthPx;
+      let q = iH * sarSize.heightPx;
       const g = gcd(q, p); // and people kept telling me programming contests knowledge had no use real programming!
       p = Math.floor(p / g);
       q = Math.floor(q / g);
@@ -830,9 +852,8 @@ export class FFMPEG {
       if (isSuccess(gpuCapabilities)) {
         canEncode = gpuCapabilities.canEncode(
           this.opts.videoFormat,
-          streamStats?.videoBitDepth
-            ? { bitDepth: streamStats.videoBitDepth }
-            : undefined,
+          first(streamStats?.videoDetails)?.profile,
+          getPixelFormatForStream(streamStats!),
         );
       }
 
@@ -1148,7 +1169,7 @@ export class FFMPEG {
       hlsFlags.push('append_list');
     }
 
-    const frameRate = streamStats?.videoFramerate ?? 24;
+    const frameRate = first(streamStats?.videoDetails)?.framerate ?? 24;
 
     return [
       '-g',
@@ -1274,15 +1295,6 @@ function isLargerResolution(left: Resolution, right: Resolution) {
     left.widthPx % 2 === 1 ||
     left.heightPx % 2 === 1
   );
-}
-
-function gcd(a: number, b: number) {
-  while (b != 0) {
-    const c = b;
-    b = a % b;
-    a = c;
-  }
-  return a;
 }
 
 function sanitizeFilterName(name: string) {
