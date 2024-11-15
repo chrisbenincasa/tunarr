@@ -61,14 +61,15 @@ export function betterHumanize(
   }
 
   if (mins >= 1) {
+    const minsN = Math.round(mins);
     const d =
-      mergedOpts.style === 'full' ? ' ' + pluralize(minStr, mins) : minStr;
+      mergedOpts.style === 'full' ? ' ' + pluralize(minStr, minsN) : minStr;
     if (builder.length > 0 && mergedOpts.style === 'full') {
       builder += ' ';
     }
     if (hrs < 1) {
       const prefix = seconds > 0 && !mergedOpts.exact ? 'about ' : '';
-      builder += `${prefix}${padStart(mins.toString(), 2, '0')}${d}`;
+      builder += `${prefix}${padStart(minsN.toString(), 2, '0')}${d}`;
     } else {
       builder += `${hrs}${d}`;
     }

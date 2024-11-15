@@ -1,4 +1,4 @@
-import { round, values } from 'lodash-es';
+import { round } from 'lodash-es';
 import { groupByUniq } from '../../util/index.js';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
 import { BackfillProgramExternalIds } from './BackfillProgramExternalIds.js';
@@ -27,7 +27,7 @@ export const FixersByName: Record<string, Fixer> = groupByUniq(
   (f) => f.constructor.name,
 );
 
-const allFixers: Fixer[] = values(FixersByName);
+const allFixers: Fixer[] = []; //values(FixersByName);
 
 export const runFixers = async () => {
   for (const fixer of allFixers) {

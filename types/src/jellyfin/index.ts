@@ -744,7 +744,7 @@ export const JellyfinItem = z.object({
       Profile: z.record(z.string()),
     })
     .partial()
-    .passthrough()
+    // .passthrough()
     .nullable()
     .optional(),
   SeriesStudio: z.string().nullable().optional(),

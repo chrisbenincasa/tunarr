@@ -112,9 +112,13 @@ export const safeSetCurrentChannel = (
 
 export const setCurrentChannelProgramming = (
   programming: CondensedChannelProgramming,
+  setDirty?: boolean,
 ) =>
   useStore.setState(({ channelEditor }) => {
     updateProgramList(channelEditor, programming);
+    if (!isUndefined(setDirty)) {
+      channelEditor.dirty.programs = setDirty;
+    }
   });
 
 export const setCurrentLineup = (

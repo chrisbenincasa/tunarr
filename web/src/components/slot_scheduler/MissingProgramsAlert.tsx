@@ -1,5 +1,7 @@
-import { slotOptionIsScheduled } from '@/helpers/slotSchedulerUtil';
-import { useSlotProgramOptions } from '@/hooks/programming_controls/useSlotProgramOptions';
+import {
+  ProgramOption,
+  slotOptionIsScheduled,
+} from '@/helpers/slotSchedulerUtil';
 import { TimeSlotForm } from '@/pages/channels/TimeSlotEditorPage';
 import { ExpandLess, ExpandMore } from '@mui/icons-material';
 import { Alert, Collapse, IconButton, ListItem } from '@mui/material';
@@ -11,10 +13,10 @@ import { useToggle } from 'usehooks-ts';
 
 type Props = {
   control: Control<TimeSlotForm>;
+  programOptions: ProgramOption[];
 };
 
-export const MissingProgramsAlert = ({ control }: Props) => {
-  const programOptions = useSlotProgramOptions();
+export const MissingProgramsAlert = ({ control, programOptions }: Props) => {
   const currentSlots = useWatch({ control, name: 'slots' });
   const [unscheduledOpen, toggleUnscheduledOpen] = useToggle(false);
 

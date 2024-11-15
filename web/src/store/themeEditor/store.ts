@@ -1,7 +1,9 @@
 import dayjs from 'dayjs';
+import duration from 'dayjs/plugin/duration';
 import { StateCreator } from 'zustand';
 import { ProgramSelectorViewType } from '../../types';
 
+dayjs.extend(duration);
 export interface ThemeEditorStateInner {
   darkMode?: boolean | undefined;
   showWelcome: boolean;

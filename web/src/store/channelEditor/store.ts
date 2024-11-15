@@ -2,6 +2,7 @@ import { emptyEntityEditor } from '@/store/entityEditor/util.ts';
 import { UICondensedChannelProgram, UIIndex } from '@/types/index.ts';
 import {
   Channel,
+  CondensedChannelProgram,
   ContentProgram,
   CustomProgram,
   CustomShow,
@@ -13,7 +14,10 @@ import { StateCreator } from 'zustand';
 export type HasId = { id: string };
 
 // Represents a program listing in the editor
-export interface ProgrammingEditorState<EntityType extends HasId, ProgramType> {
+export interface ProgrammingEditorState<
+  EntityType extends HasId,
+  ProgramType extends CondensedChannelProgram,
+> {
   // Original state of the working entity. Used to reset state
   originalEntity?: EntityType;
   // The working entity - edits should be made directly here

@@ -1,5 +1,6 @@
 import { ChannelProgram } from '@tunarr/types';
 import { BaseSlot } from '@tunarr/types/api';
+import dayjs from 'dayjs';
 import { some } from 'lodash-es';
 
 export type DropdownOption<T extends string | number> = {
@@ -7,17 +8,17 @@ export type DropdownOption<T extends string | number> = {
   description: string;
 };
 
-type CustomShowProgramOption = DropdownOption<string> & {
+export type CustomShowProgramOption = DropdownOption<string> & {
   type: 'custom-show';
-  id: string;
+  customShowId: string;
 };
 
-type RedirectProgramOption = DropdownOption<string> & {
+export type RedirectProgramOption = DropdownOption<string> & {
   type: 'redirect';
   channelId: string;
 };
 
-type ShowProgramOption = DropdownOption<string> & {
+export type ShowProgramOption = DropdownOption<string> & {
   type: 'show';
   showId: string;
 };
@@ -29,6 +30,13 @@ export type ProgramOption =
   | CustomShowProgramOption
   | RedirectProgramOption
   | ShowProgramOption;
+
+export type TimeSlotId =
+  | 'movie'
+  | `show.${string}`
+  | `custom-show.${string}`
+  | `redirect.${string}`
+  | `flex`;
 
 export const padOptions: DropdownOption<number>[] = [
   { value: 1, description: 'Do not pad' },
@@ -90,7 +98,7 @@ export const slotOptionIsScheduled = (
         slots,
         (slot) =>
           slot.programming.type === 'custom-show' &&
-          slot.programming.customShowId === option.id,
+          slot.programming.customShowId === option.customShowId,
       );
     case 'redirect':
       return some(
@@ -108,3 +116,37 @@ export const slotOptionIsScheduled = (
       );
   }
 };
+export const OneDayMillis = dayjs.duration(1, 'day').asMilliseconds();
+export const showOrderOptions = [
+  {
+    value: 'next',
+    description: 'Next Episode',
+  },
+  {
+    value: 'shuffle',
+    description: 'Shuffle',
+  },
+];
+
+export const ProgramOptionTypes: DropdownOption<ProgramOption['type']>[] = [
+  {
+    value: 'flex',
+    description: 'Flex',
+  },
+  {
+    value: 'custom-show',
+    description: 'Custom Show',
+  },
+  {
+    value: 'movie',
+    description: 'Movies',
+  },
+  {
+    value: 'redirect',
+    description: 'Channel Redirect',
+  },
+  {
+    value: 'show',
+    description: 'Show',
+  },
+];

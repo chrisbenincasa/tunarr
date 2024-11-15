@@ -1,17 +1,15 @@
+import { useTimeSlotFormContext } from '@/hooks/useTimeSlotFormContext.ts';
 import AddIcon from '@mui/icons-material/Add';
 import { Button } from '@mui/material';
 import { TimeSlot } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import { maxBy } from 'lodash-es';
 import { useCallback } from 'react';
-import { UseFieldArrayAppend } from 'react-hook-form';
-import { TimeSlotForm } from '../../pages/channels/TimeSlotEditorPage.tsx';
 
-export const AddTimeSlotButton = ({
-  slots,
-  append,
-}: AddTimeSlotButtonProps) => {
-  // const currentSlots = useWatch({ control, name: 'slots' });
+export const AddTimeSlotButton = ({ onAdd }: AddTimeSlotButtonProps) => {
+  const {
+    slotArray: { fields: slots, append },
+  } = useTimeSlotFormContext();
 
   const addSlot = useCallback(() => {
     const maxSlot = maxBy(slots, (p) => p.startTime);
@@ -19,12 +17,15 @@ export const AddTimeSlotButton = ({
       ? dayjs.duration(maxSlot.startTime).add(1, 'hour')
       : dayjs.duration(0);
 
-    append({
+    const newSlot = {
       programming: { type: 'flex' },
       startTime: newStartTime.asMilliseconds(),
       order: 'next',
-    });
-  }, [append, slots]);
+    } satisfies TimeSlot;
+    append(newSlot);
+
+    onAdd(newSlot);
+  }, [append, onAdd, slots]);
 
   return (
     <Button
@@ -38,6 +39,5 @@ export const AddTimeSlotButton = ({
 };
 
 type AddTimeSlotButtonProps = {
-  slots: TimeSlot[];
-  append: UseFieldArrayAppend<TimeSlotForm, 'slots'>;
+  onAdd: (slot: TimeSlot) => void;
 };

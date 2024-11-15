@@ -1,9 +1,11 @@
+import { CondensedChannelProgram } from '@tunarr/types';
 import { Draft } from 'immer';
+import { isSet, reject } from 'lodash-es';
 import { HasId, ProgrammingEditorState } from '../channelEditor/store';
 import useStore from '../index.ts';
 
 export function deleteProgramAtIndex<T extends HasId>(
-  state: Draft<ProgrammingEditorState<T, unknown>>,
+  state: Draft<ProgrammingEditorState<T, CondensedChannelProgram>>,
   idx: number,
 ) {
   if (
@@ -15,9 +17,35 @@ export function deleteProgramAtIndex<T extends HasId>(
     state.dirty.programs = true;
   }
 }
+
+export function deleteProgramById<
+  T extends HasId,
+  P extends CondensedChannelProgram,
+>(state: Draft<ProgrammingEditorState<T, P>>, ids: Set<string>) {
+  let changed = false;
+  state.programList = reject(state.programList, (program) => {
+    if (program.type === 'content' || program.type === 'custom') {
+      if (program.id && ids.has(program.id)) {
+        changed = true;
+        return true;
+      }
+    }
+
+    return false;
+  });
+  if (changed) {
+    state.dirty.programs = true;
+  }
+}
+
 export const deleteProgram = (idx: number) =>
   useStore.setState(({ channelEditor }) => {
     deleteProgramAtIndex(channelEditor, idx);
+  });
+
+export const removeChannelProgramsById = (ids: string | Set<string>) =>
+  useStore.setState(({ channelEditor }) => {
+    deleteProgramById(channelEditor, isSet(ids) ? ids : new Set([ids]));
   });
 
 export const removeCustomShowProgram = (idx: number) =>

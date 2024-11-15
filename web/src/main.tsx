@@ -1,21 +1,21 @@
+import { routeTree } from '@/routeTree.gen';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { QueryClientProvider } from '@tanstack/react-query';
+import { RouterProvider, createRouter } from '@tanstack/react-router';
+import { SnackbarProvider } from 'notistack';
 import React from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import ReactDOM from 'react-dom/client';
-import './helpers/dayjs.ts';
-import './index.css';
-import { queryClient } from './queryClient.ts';
-import { routeTree } from '@/routeTree.gen';
-import { RouterProvider, createRouter } from '@tanstack/react-router';
 import {
   TunarrApiProvider,
   getApiClient,
 } from './components/TunarrApiContext.tsx';
-import { SnackbarProvider } from 'notistack';
 import { ServerEventsProvider } from './components/server_events/ServerEventsProvider.tsx';
+import './helpers/dayjs.ts';
+import './index.css';
+import { queryClient } from './queryClient.ts';
 
 // Create a new router instance
 const router = createRouter({
@@ -45,5 +45,6 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         </DndProvider>
       </LocalizationProvider>
     </TunarrApiProvider>
+    ,
   </React.StrictMode>,
 );
