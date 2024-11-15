@@ -104,7 +104,7 @@ const defaultTimeSlotSchedule: TimeSlotSchedule = {
   type: 'time',
   flexPreference: 'distribute',
   latenessMs: 0,
-  maxDays: 10,
+  maxDays: 365,
   padMs: 1,
   slots: [],
   period: 'day',

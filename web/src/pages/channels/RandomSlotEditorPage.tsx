@@ -65,7 +65,7 @@ const defaultRandomSlotSchedule: RandomSlotSchedule = {
   padStyle: 'episode',
   randomDistribution: 'uniform',
   flexPreference: 'distribute',
-  maxDays: 10,
+  maxDays: 365,
   padMs: 1,
   slots: [],
   timeZoneOffset: new Date().getTimezoneOffset(),
