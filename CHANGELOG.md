@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.16.0](https://github.com/chrisbenincasa/tunarr/compare/v0.15.10...v0.16.0) (2024-11-18)
+
+
+### Features
+
+* ffmpeg pipeline builder overhaul ([#829](https://github.com/chrisbenincasa/tunarr/issues/829)) ([16220cc](https://github.com/chrisbenincasa/tunarr/commit/16220cc98d20361c87caf75ac747b159812928ce))
+* time slot UI overhaul ([#964](https://github.com/chrisbenincasa/tunarr/issues/964)) ([bbae17d](https://github.com/chrisbenincasa/tunarr/commit/bbae17d116135ef0b5ff41a809f7619bb0a6a17a))
+
+
+### Bug Fixes
+
+* revert default "max days" to 365 for slots ([ba8a19b](https://github.com/chrisbenincasa/tunarr/commit/ba8a19b65affd7b4ab3e6b749b588651124b6fa7))
+
 ## [0.15.10](https://github.com/chrisbenincasa/tunarr/compare/v0.15.9...v0.15.10) (2024-11-13)
 
 
