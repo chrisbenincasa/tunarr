@@ -6,9 +6,9 @@ import { jsonArrayFrom } from 'kysely/helpers/sqlite';
 import { map, reject, some } from 'lodash-es';
 import os from 'node:os';
 import z from 'zod';
-import { ArchiveDatabaseBackup } from '../dao/backup/ArchiveDatabaseBackup.js';
-import { directDbAccess } from '../dao/direct/directDbAccess.js';
-import { MediaSourceType } from '../dao/direct/schema/MediaSource.ts';
+import { getDatabase } from '../db/DBAccess.ts';
+import { ArchiveDatabaseBackup } from '../db/backup/ArchiveDatabaseBackup.ts';
+import { MediaSourceType } from '../db/schema/MediaSource.ts';
 
 import { LineupCreator } from '../services/dynamic_channels/LineupCreator.js';
 import { PlexTaskQueue } from '../tasks/TaskQueue.js';
@@ -282,7 +282,7 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
         _req.query.id,
       ))!;
 
-      const knownProgramIds = await directDbAccess()
+      const knownProgramIds = await getDatabase()
         .selectFrom('programExternalId as p1')
         .where(({ eb, and }) =>
           and([

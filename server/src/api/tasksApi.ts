@@ -3,7 +3,7 @@ import { TaskSchema } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import { compact, isEmpty, isNil, map } from 'lodash-es';
 import { z } from 'zod';
-import { GlobalScheduler } from '../services/scheduler.js';
+import { GlobalScheduler } from '../services/Scheduler.ts';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 

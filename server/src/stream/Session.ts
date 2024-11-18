@@ -6,7 +6,7 @@ import { forEach, isEmpty, keys, partition } from 'lodash-es';
 import events from 'node:events';
 import { StrictExtract } from 'ts-essentials';
 import { v4 } from 'uuid';
-import { Channel } from '../dao/direct/schema/Channel.ts';
+import { Channel } from '../db/schema/Channel.ts';
 import { TypedEventEmitter } from '../types/eventEmitter.ts';
 import { Result } from '../types/result.js';
 import { Maybe } from '../types/util.js';

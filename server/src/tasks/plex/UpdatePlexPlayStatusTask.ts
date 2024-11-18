@@ -1,9 +1,9 @@
 import dayjs from 'dayjs';
 import { RecurrenceRule } from 'node-schedule';
 import { v4 } from 'uuid';
-import type { MediaSource } from '../../dao/direct/schema/MediaSource.d.ts';
+import type { MediaSource } from '../../db/schema/MediaSource.ts';
 import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.ts';
-import { GlobalScheduler } from '../../services/scheduler.ts';
+import { GlobalScheduler } from '../../services/Scheduler.ts';
 import { run } from '../../util/index.ts';
 import { ScheduledTask } from '../ScheduledTask.ts';
 import { Task } from '../Task.ts';

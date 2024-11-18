@@ -2,15 +2,15 @@ import { JellyfinItem, JellyfinItemKind } from '@tunarr/types/jellyfin';
 import dayjs from 'dayjs';
 import { find, isUndefined, some } from 'lodash-es';
 import { match } from 'ts-pattern';
-import { ProgramMinterFactory } from '../../dao/converters/ProgramMinter.ts';
+import { ProgramDB } from '../../db/ProgramDB.ts';
+import { ProgramMinterFactory } from '../../db/converters/ProgramMinter.ts';
 import {
   ProgramExternalIdType,
   programExternalIdTypeFromJellyfinProvider,
-} from '../../dao/custom_types/ProgramExternalIdType.ts';
-import { ProgramWithExternalIds } from '../../dao/direct/derivedTypes.js';
-import { ProgramType } from '../../dao/direct/schema/Program.ts';
-import { ProgramDB } from '../../dao/programDB.ts';
-import { GlobalScheduler } from '../../services/scheduler.ts';
+} from '../../db/custom_types/ProgramExternalIdType.ts';
+import { ProgramType } from '../../db/schema/Program.ts';
+import { ProgramWithExternalIds } from '../../db/schema/derivedTypes.js';
+import { GlobalScheduler } from '../../services/Scheduler.ts';
 import { ReconcileProgramDurationsTask } from '../../tasks/ReconcileProgramDurationsTask.ts';
 import { Maybe } from '../../types/util.ts';
 import { groupByUniq, isDefined } from '../../util/index.ts';

@@ -8,7 +8,7 @@ import {
   isTerminalItem,
 } from '@tunarr/types/plex';
 import { flatten, isNil, map, uniqBy } from 'lodash-es';
-import { ProgramDB } from '../dao/programDB.ts';
+import { ProgramDB } from '../db/ProgramDB.ts';
 import { PlexApiClient } from '../external/plex/PlexApiClient.ts';
 import { typedProperty } from '../types/path.ts';
 import { asyncPool, unfurlPool } from '../util/asyncPool.ts';

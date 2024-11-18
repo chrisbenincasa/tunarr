@@ -6,7 +6,7 @@ import events from 'node:events';
 import os from 'node:os';
 import path from 'node:path';
 import stream from 'node:stream';
-import { SettingsDB, getSettings } from '../dao/settings.js';
+import { SettingsDB, getSettings } from '../db/SettingsDB.ts';
 import { TypedEventEmitter } from '../types/eventEmitter.js';
 import { Maybe, Nullable } from '../types/util.js';
 import { isDefined, isWindows } from '../util/index.js';

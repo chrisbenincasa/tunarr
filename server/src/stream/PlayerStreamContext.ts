@@ -1,5 +1,5 @@
-import { StreamLineupItem } from '../dao/derived_types/StreamLineup.ts';
-import { Channel } from '../dao/direct/schema/Channel.ts';
+import { StreamLineupItem } from '../db/derived_types/StreamLineup.ts';
+import { Channel } from '../db/schema/Channel.ts';
 import { GetCurrentLineupItemRequest } from './StreamProgramCalculator.ts';
 
 export class PlayerContext {

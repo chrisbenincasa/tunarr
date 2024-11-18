@@ -1,6 +1,6 @@
-import { directDbAccess } from '../../dao/direct/directDbAccess.ts';
-import { ProgramType } from '../../dao/direct/schema/Program.ts';
-import { ProgramGroupingType } from '../../dao/direct/schema/ProgramGrouping.ts';
+import { getDatabase } from '../../db/DBAccess.ts';
+import { ProgramType } from '../../db/schema/Program.ts';
+import { ProgramGroupingType } from '../../db/schema/ProgramGrouping.ts';
 import {
   HealthCheck,
   HealthCheckResult,
@@ -11,14 +11,14 @@ export class MissingSeasonNumbersHealthCheck implements HealthCheck {
   readonly id = 'MissingSeasonNumbers';
 
   async getStatus(): Promise<HealthCheckResult> {
-    const missingFromProgramTable = await directDbAccess()
+    const missingFromProgramTable = await getDatabase()
       .selectFrom('program')
       .select((eb) => eb.fn.count<number>('uuid').as('count'))
       .where('type', '=', ProgramType.Episode)
       .where((eb) => eb.or([eb('seasonNumber', 'is', null)]))
       .executeTakeFirst();
 
-    const missingFromGroupingTable = await directDbAccess()
+    const missingFromGroupingTable = await getDatabase()
       .selectFrom('programGrouping')
       .select((eb) => eb.fn.count<number>('uuid').as('count'))
       .where('type', '=', ProgramGroupingType.Season)

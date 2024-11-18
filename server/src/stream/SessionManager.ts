@@ -7,8 +7,8 @@ import {
   maxBy,
   values,
 } from 'lodash-es';
-import { ChannelDB } from '../dao/channelDb.js';
-import { Channel } from '../dao/direct/schema/Channel.js';
+import { ChannelDB } from '../db/ChannelDB.ts';
+import { Channel } from '../db/schema/Channel.ts';
 import {
   ChannelNotFoundError,
   GenericError,

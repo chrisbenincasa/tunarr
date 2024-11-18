@@ -1,6 +1,6 @@
 import { every, isNil, some } from 'lodash-es';
 import { P, match } from 'ts-pattern';
-import { SettingsDB, getSettings } from '../../dao/settings.ts';
+import { SettingsDB, getSettings } from '../../db/SettingsDB.ts';
 import { FFMPEGInfo, FfmpegVersionResult } from '../../ffmpeg/ffmpegInfo.ts';
 import { fileExists } from '../../util/fsUtil.ts';
 import {

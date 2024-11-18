@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import { StrictOmit } from 'ts-essentials';
-import { Channel } from '../../dao/direct/schema/Channel.ts';
-import { getSettings } from '../../dao/settings.ts';
+import { getSettings } from '../../db/SettingsDB.ts';
+import { Channel } from '../../db/schema/Channel.ts';
 import { FfmpegTranscodeSession } from '../../ffmpeg/FfmpegTrancodeSession.ts';
 import {
   HlsOutputFormat,

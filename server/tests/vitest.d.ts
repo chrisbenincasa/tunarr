@@ -1,4 +1,4 @@
-import { Channel } from '../src/dao/entities/Channel.js';
+import { Channel } from '../src/db/entities/Channel.ts';
 
 interface CustomMatchers<R = unknown> {
   toMatchChannel: (channel: Channel) => R;

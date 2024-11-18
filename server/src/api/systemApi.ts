@@ -10,7 +10,7 @@ import { isUndefined } from 'lodash-es';
 import { DeepReadonly, Writable } from 'ts-essentials';
 import { z } from 'zod';
 import { serverOptions } from '../globals.js';
-import { scheduleBackupJobs } from '../services/scheduler.js';
+import { scheduleBackupJobs } from '../services/Scheduler.ts';
 import { FixersByName } from '../tasks/fixers/index.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { getDefaultLogLevel } from '../util/defaults.js';

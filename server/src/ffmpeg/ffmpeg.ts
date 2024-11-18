@@ -13,7 +13,7 @@ import { Duration } from 'dayjs/plugin/duration.js';
 import { first, isEmpty, isNil, isUndefined, merge, round } from 'lodash-es';
 import path from 'path';
 import { DeepReadonly, DeepRequired } from 'ts-essentials';
-import { Channel } from '../dao/direct/schema/Channel.ts';
+import { Channel } from '../db/schema/Channel.ts';
 import { serverOptions } from '../globals.js';
 import { ConcatSessionType } from '../stream/Session.js';
 import {

@@ -16,11 +16,11 @@ import {
   trimStart,
 } from 'lodash-es';
 import { NonEmptyArray } from 'ts-essentials';
-import { ContentBackedStreamLineupItem } from '../../dao/derived_types/StreamLineup.js';
-import { MediaSourceTable } from '../../dao/direct/schema/MediaSource.js';
-import { ProgramType } from '../../dao/direct/schema/Program.ts';
-import { ProgramDB } from '../../dao/programDB.ts';
-import { SettingsDB } from '../../dao/settings.js';
+import { ProgramDB } from '../../db/ProgramDB.ts';
+import { SettingsDB } from '../../db/SettingsDB.ts';
+import { ContentBackedStreamLineupItem } from '../../db/derived_types/StreamLineup.ts';
+import { MediaSourceTable } from '../../db/schema/MediaSource.ts';
+import { ProgramType } from '../../db/schema/Program.ts';
 import { isQueryError } from '../../external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.js';
 import { JellyfinApiClient } from '../../external/jellyfin/JellyfinApiClient.js';

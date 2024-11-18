@@ -8,9 +8,9 @@ import {
   reject,
   sortBy,
 } from 'lodash-es';
-import { ChannelDB } from '../../dao/channelDb.js';
-import { Lineup, isContentItem } from '../../dao/derived_types/Lineup.js';
-import { directDbAccess } from '../../dao/direct/directDbAccess.js';
+import { ChannelDB } from '../../db/ChannelDB.ts';
+import { getDatabase } from '../../db/DBAccess.ts';
+import { Lineup, isContentItem } from '../../db/derived_types/Lineup.ts';
 import { Func } from '../../types/func.js';
 import { ChannelAndLineup } from '../../types/internal.js';
 import { asyncPool } from '../../util/asyncPool.js';
@@ -162,7 +162,7 @@ export class LineupCreator {
     );
 
     return async ({ channel, lineup }) => {
-      const db = directDbAccess();
+      const db = getDatabase();
       const programs = await db
         .selectFrom('program')
         .where(

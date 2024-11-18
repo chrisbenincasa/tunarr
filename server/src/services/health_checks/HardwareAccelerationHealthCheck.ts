@@ -1,6 +1,6 @@
 import { SupportedHardwareAccels } from '@tunarr/types/schemas';
 import { intersection, isEmpty, reject } from 'lodash-es';
-import { SettingsDB, getSettings } from '../../dao/settings.ts';
+import { SettingsDB, getSettings } from '../../db/SettingsDB.ts';
 import { FFMPEGInfo } from '../../ffmpeg/ffmpegInfo.ts';
 import {
   HealthCheck,

@@ -3,7 +3,7 @@ import dayjs from 'dayjs';
 import { Duration } from 'dayjs/plugin/duration.js';
 import { isUndefined } from 'lodash-es';
 import { DeepReadonly } from 'ts-essentials';
-import { Channel } from '../dao/direct/schema/Channel.ts';
+import { Channel } from '../db/schema/Channel.ts';
 import { HttpStreamSource } from '../stream/types.ts';
 import { Maybe, Nullable } from '../types/util.ts';
 import { isDefined, isLinux, isNonEmptyString } from '../util/index.ts';

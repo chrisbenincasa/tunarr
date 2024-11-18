@@ -1,5 +1,5 @@
 import { FfmpegNumericLogLevels } from '@tunarr/types/schemas';
-import { SettingsDB, getSettings } from '../../dao/settings.ts';
+import { SettingsDB, getSettings } from '../../db/SettingsDB.ts';
 import {
   HealthCheck,
   HealthCheckResult,

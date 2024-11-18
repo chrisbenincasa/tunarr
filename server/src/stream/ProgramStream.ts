@@ -3,7 +3,7 @@ import dayjs from 'dayjs';
 import events from 'events';
 import { isUndefined } from 'lodash-es';
 import { PassThrough } from 'stream';
-import { SettingsDB, getSettings } from '../dao/settings.js';
+import { SettingsDB, getSettings } from '../db/SettingsDB.ts';
 import { FfmpegTranscodeSession } from '../ffmpeg/FfmpegTrancodeSession.js';
 import { OutputFormat } from '../ffmpeg/builder/constants.ts';
 import { FFMPEG, StreamOptions } from '../ffmpeg/ffmpeg.js';

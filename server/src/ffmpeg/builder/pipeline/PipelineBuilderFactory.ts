@@ -1,7 +1,7 @@
 import { FfmpegSettings } from '@tunarr/types';
 import { isNull, isUndefined } from 'lodash-es';
 import { DeepReadonly } from 'ts-essentials';
-import { SettingsDB, getSettings } from '../../../dao/settings.ts';
+import { SettingsDB, getSettings } from '../../../db/SettingsDB.ts';
 import { Nullable } from '../../../types/util.ts';
 import { FFMPEGInfo } from '../../ffmpegInfo.ts';
 import { AudioInputSource } from '../input/AudioInputSource.ts';

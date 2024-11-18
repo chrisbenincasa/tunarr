@@ -1,7 +1,7 @@
 import { Tag } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { every, values } from 'lodash-es';
-import { ChannelDB } from '../dao/channelDb.ts';
+import { ChannelDB } from '../db/ChannelDB.ts';
 import { serverContext } from '../serverContext.ts';
 import { OnDemandChannelService } from '../services/OnDemandChannelService.ts';
 import { Task, TaskId } from './Task.ts';

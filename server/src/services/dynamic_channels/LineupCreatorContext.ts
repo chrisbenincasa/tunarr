@@ -1,10 +1,10 @@
 import { isUndefined } from 'lodash-es';
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { Program } from '../../dao/direct/schema/Program.ts';
+import { ProgramDao } from '../../db/schema/Program.ts';
 
 export interface LineupBuilderContext {
   channelId: string;
-  programById: Record<string, Program>;
+  programById: Record<string, ProgramDao>;
 }
 
 export class LineupCreatorContext {

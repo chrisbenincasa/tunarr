@@ -12,13 +12,13 @@ import {
   trimEnd,
 } from 'lodash-es';
 import { v4 } from 'uuid';
-import { ProgramExternalIdType } from '../../dao/custom_types/ProgramExternalIdType.ts';
-import { ProgramSourceType } from '../../dao/custom_types/ProgramSourceType.js';
-import { directDbAccess } from '../../dao/direct/directDbAccess.ts';
-import { withProgramExternalIds } from '../../dao/direct/programQueryHelpers.ts';
-import { Program } from '../../dao/direct/schema/Program.ts';
-import { NewProgramExternalId } from '../../dao/direct/schema/ProgramExternalId.ts';
-import { upsertRawProgramExternalIds } from '../../dao/programExternalIdHelpers.ts';
+import { getDatabase } from '../../db/DBAccess.ts';
+import { ProgramExternalIdType } from '../../db/custom_types/ProgramExternalIdType.ts';
+import { ProgramSourceType } from '../../db/custom_types/ProgramSourceType.ts';
+import { upsertRawProgramExternalIds } from '../../db/programExternalIdHelpers.ts';
+import { withProgramExternalIds } from '../../db/programQueryHelpers.ts';
+import { ProgramDao } from '../../db/schema/Program.ts';
+import { NewProgramExternalId } from '../../db/schema/ProgramExternalId.ts';
 import { isQueryError } from '../../external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.ts';
 import { PlexApiClient } from '../../external/plex/PlexApiClient.js';
@@ -44,7 +44,7 @@ export class BackfillProgramExternalIds extends Fixer {
 
   async runInternal(): Promise<void> {
     const getNextPage = (offset?: string) => {
-      return directDbAccess()
+      return getDatabase()
         .selectFrom('program')
         .selectAll()
         .select(withProgramExternalIds)
@@ -85,7 +85,7 @@ export class BackfillProgramExternalIds extends Fixer {
         keys(plexConnections),
       );
 
-      const serverSettings = await directDbAccess()
+      const serverSettings = await getDatabase()
         .selectFrom('mediaSource')
         .selectAll()
         .where('name', 'in', missingServers)
@@ -133,7 +133,7 @@ export class BackfillProgramExternalIds extends Fixer {
     }
   }
 
-  private async handleProgram(program: Program, plex: Maybe<PlexApiClient>) {
+  private async handleProgram(program: ProgramDao, plex: Maybe<PlexApiClient>) {
     if (isUndefined(plex)) {
       throw new Error(
         'No Plex server connection found for server ' +

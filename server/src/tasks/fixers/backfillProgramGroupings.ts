@@ -1,6 +1,6 @@
-import { directDbAccess } from '../../dao/direct/directDbAccess.js';
-import { ProgramType } from '../../dao/direct/schema/Program.ts';
-import { ProgramGroupingType } from '../../dao/direct/schema/ProgramGrouping.ts';
+import { getDatabase } from '../../db/DBAccess.ts';
+import { ProgramType } from '../../db/schema/Program.ts';
+import { ProgramGroupingType } from '../../db/schema/ProgramGrouping.ts';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.ts';
 import Fixer from './fixer.ts';
 
@@ -16,7 +16,7 @@ export class BackfillProgramGroupings extends Fixer {
     // This clears out mismatches that might have happened on bugged earlier versions
     // There was a bug where we were setting the season ID to the show ID.
     // This should only affect seasons since the music album stuff had the fix
-    const clearedSeasons = await directDbAccess()
+    const clearedSeasons = await getDatabase()
       .transaction()
       .execute((tx) =>
         tx
@@ -44,7 +44,7 @@ export class BackfillProgramGroupings extends Fixer {
     );
 
     // Update program -> show mappings with existing information
-    const updatedShows = await directDbAccess()
+    const updatedShows = await getDatabase()
       .transaction()
       .execute((tx) =>
         tx
@@ -91,7 +91,7 @@ export class BackfillProgramGroupings extends Fixer {
     );
 
     // Update track -> artist mappings with existing information
-    const updatedTrackArtists = await directDbAccess()
+    const updatedTrackArtists = await getDatabase()
       .transaction()
       .execute((tx) =>
         tx
@@ -138,7 +138,7 @@ export class BackfillProgramGroupings extends Fixer {
     );
 
     // Update show -> season mappings with existing information
-    await directDbAccess()
+    await getDatabase()
       .transaction()
       .execute(async (tx) => {
         const updatedSeasons = await tx
@@ -227,7 +227,7 @@ export class BackfillProgramGroupings extends Fixer {
       });
 
     // Update track -> album mappings with existing information
-    await directDbAccess()
+    await getDatabase()
       .transaction()
       .execute(async (tx) => {
         const updatedTracks = await tx
@@ -314,7 +314,7 @@ export class BackfillProgramGroupings extends Fixer {
         );
       });
 
-    const stillMissing = await directDbAccess()
+    const stillMissing = await getDatabase()
       .selectFrom('program')
       .select(({ fn }) => fn.count<number>('program.uuid').as('count'))
       .where((eb) =>

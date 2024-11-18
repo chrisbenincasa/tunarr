@@ -1,10 +1,10 @@
 import dayjs from 'dayjs';
 import { isNil, isNull, isUndefined } from 'lodash-es';
-import { ChannelDB } from '../../dao/channelDb.js';
-import { isContentBackedLineupIteam } from '../../dao/derived_types/StreamLineup.js';
-import { MediaSourceType } from '../../dao/direct/schema/MediaSource.ts';
-import { MediaSourceDB } from '../../dao/mediaSourceDB.js';
-import { SettingsDB, getSettings } from '../../dao/settings.js';
+import { ChannelDB } from '../../db/ChannelDB.ts';
+import { SettingsDB, getSettings } from '../../db/SettingsDB.ts';
+import { isContentBackedLineupIteam } from '../../db/derived_types/StreamLineup.ts';
+import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
+import { MediaSourceType } from '../../db/schema/MediaSource.ts';
 import { FfmpegTranscodeSession } from '../../ffmpeg/FfmpegTrancodeSession.js';
 import { OutputFormat } from '../../ffmpeg/builder/constants.ts';
 import { FFMPEG } from '../../ffmpeg/ffmpeg.js';

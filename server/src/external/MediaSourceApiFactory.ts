@@ -1,10 +1,10 @@
 import { FindChild } from '@tunarr/types';
 import { forEach, isBoolean, isEmpty, isNil, isUndefined } from 'lodash-es';
 import NodeCache from 'node-cache';
-import { ChannelDB } from '../dao/channelDb.js';
-import { MediaSourceType } from '../dao/direct/schema/MediaSource.ts';
-import { MediaSourceDB } from '../dao/mediaSourceDB.js';
-import { SettingsDB, getSettings } from '../dao/settings.js';
+import { ChannelDB } from '../db/ChannelDB.ts';
+import { SettingsDB, getSettings } from '../db/SettingsDB.ts';
+import { MediaSourceDB } from '../db/mediaSourceDB.ts';
+import { MediaSourceType } from '../db/schema/MediaSource.ts';
 import { Maybe } from '../types/util.js';
 import { isDefined } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';

@@ -3,26 +3,26 @@ import dayjs from 'dayjs';
 import { first, isEmpty, isNil, isNull, isUndefined, nth } from 'lodash-es';
 import { StrictExclude } from 'ts-essentials';
 import { z } from 'zod';
-import { ChannelDB } from '../dao/channelDb.js';
-import { ProgramExternalIdType } from '../dao/custom_types/ProgramExternalIdType.js';
+import { ChannelDB } from '../db/ChannelDB.ts';
+import { FillerDB } from '../db/FillerListDB.ts';
+import { ProgramDB } from '../db/ProgramDB.ts';
+import { ProgramExternalIdType } from '../db/custom_types/ProgramExternalIdType.ts';
 import {
   Lineup,
   isContentItem,
   isOfflineItem,
-} from '../dao/derived_types/Lineup.js';
+} from '../db/derived_types/Lineup.ts';
 import {
   EnrichedLineupItem,
   ProgramStreamLineupItem,
   RedirectStreamLineupItem,
   StreamLineupItem,
   createOfflineStreamLineupItem,
-} from '../dao/derived_types/StreamLineup.js';
-import type { ProgramWithRelations as RawProgramEntity } from '../dao/direct/derivedTypes.d.ts';
-import { Channel } from '../dao/direct/schema/Channel.js';
-import { MediaSourceType } from '../dao/direct/schema/MediaSource.ts';
-import { Program as RawProgram } from '../dao/direct/schema/Program.js';
-import { FillerDB } from '../dao/fillerDB.js';
-import { ProgramDB } from '../dao/programDB.js';
+} from '../db/derived_types/StreamLineup.ts';
+import { Channel } from '../db/schema/Channel.ts';
+import { MediaSourceType } from '../db/schema/MediaSource.ts';
+import { ProgramDao as RawProgram } from '../db/schema/Program.ts';
+import type { ProgramDaoWithRelations as RawProgramEntity } from '../db/schema/derivedTypes.js';
 import { FillerPicker } from '../services/FillerPicker.js';
 import { Result } from '../types/result.js';
 import { Maybe, Nullable } from '../types/util.js';

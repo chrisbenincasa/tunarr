@@ -1,16 +1,16 @@
 import dayjs from 'dayjs';
 import { compact, isEmpty, isUndefined, map } from 'lodash-es';
 import { v4 } from 'uuid';
+import { ProgramDB } from '../../db/ProgramDB.ts';
 import {
   ProgramExternalIdType,
   programExternalIdTypeFromJellyfinProvider,
-} from '../../dao/custom_types/ProgramExternalIdType.js';
+} from '../../db/custom_types/ProgramExternalIdType.ts';
+import { upsertRawProgramExternalIds } from '../../db/programExternalIdHelpers.ts';
 import {
   NewProgramExternalId,
   ProgramExternalId,
-} from '../../dao/direct/schema/ProgramExternalId.js';
-import { ProgramDB } from '../../dao/programDB.js';
-import { upsertRawProgramExternalIds } from '../../dao/programExternalIdHelpers.js';
+} from '../../db/schema/ProgramExternalId.ts';
 import { isQueryError } from '../../external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.js';
 import { JellyfinApiClient } from '../../external/jellyfin/JellyfinApiClient.js';

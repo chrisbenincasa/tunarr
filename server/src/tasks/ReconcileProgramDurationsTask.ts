@@ -8,9 +8,9 @@ import {
   map,
   uniqBy,
 } from 'lodash-es';
-import { ChannelDB } from '../dao/channelDb.ts';
-import { isContentItem } from '../dao/derived_types/Lineup.ts';
-import { directDbAccess } from '../dao/direct/directDbAccess.js';
+import { ChannelDB } from '../db/ChannelDB.ts';
+import { getDatabase } from '../db/DBAccess.ts';
+import { isContentItem } from '../db/derived_types/Lineup.ts';
 import { flatMapAsyncSeq, isNonEmptyString } from '../util/index.ts';
 import { Task } from './Task.ts';
 
@@ -59,7 +59,7 @@ export class ReconcileProgramDurationsTask extends Task {
       const missingPrograms = await flatMapAsyncSeq(
         chunk(missingKeys, 200),
         (items) =>
-          directDbAccess()
+          getDatabase()
             .selectFrom('program')
             .select(['uuid', 'duration'])
             .where('uuid', 'in', map(items, 'id'))

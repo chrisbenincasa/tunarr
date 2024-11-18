@@ -9,8 +9,8 @@ import {
   reject,
   sortBy,
 } from 'lodash-es';
-import { LineupItem } from '../../dao/derived_types/Lineup.ts';
-import { Channel } from '../../dao/direct/schema/Channel.ts';
+import { LineupItem } from '../../db/derived_types/Lineup.ts';
+import { Channel } from '../../db/schema/Channel.ts';
 import { ChannelAndLineup } from '../../types/internal.js';
 import { scale } from '../../util/index.ts';
 import { SchedulingOperator } from './SchedulingOperator.ts';

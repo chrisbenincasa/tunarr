@@ -16,16 +16,16 @@ import {
   pickBy,
   reduce,
 } from 'lodash-es';
-import { ProgramExternalIdType } from '../../dao/custom_types/ProgramExternalIdType.js';
-import { directDbAccess } from '../../dao/direct/directDbAccess.js';
-import { withProgramGroupingExternalIds } from '../../dao/direct/programQueryHelpers.js';
-import { MediaSourceType } from '../../dao/direct/schema/MediaSource.ts';
+import { getDatabase } from '../../db/DBAccess.ts';
+import { ProgramExternalIdType } from '../../db/custom_types/ProgramExternalIdType.ts';
+import { withProgramGroupingExternalIds } from '../../db/programQueryHelpers.ts';
+import { MediaSourceType } from '../../db/schema/MediaSource.ts';
 import {
   ProgramType,
-  Program as RawProgram,
-} from '../../dao/direct/schema/Program.js';
-import { ProgramGroupingType } from '../../dao/direct/schema/ProgramGrouping.ts';
-import { DB } from '../../dao/direct/schema/db.js';
+  ProgramDao as RawProgram,
+} from '../../db/schema/Program.ts';
+import { ProgramGroupingType } from '../../db/schema/ProgramGrouping.ts';
+import { DB } from '../../db/schema/db.ts';
 import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.js';
 import { PlexApiClient } from '../../external/plex/PlexApiClient.js';
 import { Maybe } from '../../types/util.js';
@@ -42,7 +42,7 @@ export class MissingSeasonNumbersFixer extends Fixer {
   canRunInBackground: boolean = true;
 
   async runInternal(): Promise<void> {
-    const allPlexServers = await directDbAccess()
+    const allPlexServers = await getDatabase()
       .selectFrom('mediaSource')
       .where('mediaSource.type', '=', MediaSourceType.Plex)
       .selectAll()
@@ -61,7 +61,7 @@ export class MissingSeasonNumbersFixer extends Fixer {
     const updatedPrograms: RawProgram[] = [];
     let lastId: Maybe<string> = undefined;
     do {
-      const items: RawProgram[] = await directDbAccess()
+      const items: RawProgram[] = await getDatabase()
         .selectFrom('program')
         .selectAll()
         .$if(!isNull(lastId), (eb) => eb.where('uuid', '>', lastId!))
@@ -161,7 +161,7 @@ export class MissingSeasonNumbersFixer extends Fixer {
         groupByUniqPropAndMap(updateChunk, 'uuid', (p) => p.seasonNumber),
         isNull,
       );
-      await directDbAccess()
+      await getDatabase()
         .updateTable('program')
         .set((eb) => ({
           seasonNumber: reduce(
@@ -183,7 +183,7 @@ export class MissingSeasonNumbersFixer extends Fixer {
         .executeTakeFirst();
     }
 
-    const seasonsMissingIndexes = await directDbAccess()
+    const seasonsMissingIndexes = await getDatabase()
       .selectFrom('programGrouping')
       .select('programGrouping.uuid')
       .where('programGrouping.type', '=', ProgramGroupingType.Show)
@@ -227,7 +227,7 @@ export class MissingSeasonNumbersFixer extends Fixer {
       }
 
       const plexSeason = first(plexResult.Metadata)!;
-      await directDbAccess()
+      await getDatabase()
         .updateTable('programGrouping')
         .set({ index: plexSeason.index })
         .where('uuid', '=', season.uuid)

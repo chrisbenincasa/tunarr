@@ -9,16 +9,16 @@ import { MediaSourceSettingsSchema } from '@tunarr/types/schemas';
 import { isError, isNil, isObject, map } from 'lodash-es';
 import { match } from 'ts-pattern';
 import z from 'zod';
-import { MediaSourceType } from '../dao/direct/schema/MediaSource.ts';
-import { numberToBoolean } from '../dao/sqliteUtil.js';
+import { MediaSourceType } from '../db/schema/MediaSource.ts';
 import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.js';
 import { JellyfinApiClient } from '../external/jellyfin/JellyfinApiClient.js';
 import { PlexApiClient } from '../external/plex/PlexApiClient.js';
-import { GlobalScheduler } from '../services/scheduler.js';
+import { GlobalScheduler } from '../services/Scheduler.ts';
 import { UpdateXmlTvTask } from '../tasks/UpdateXmlTvTask.js';
 import { RouterPluginAsyncCallback } from '../types/serverType.js';
 import { firstDefined, nullToUndefined, wait } from '../util/index.js';
 import { LoggerFactory } from '../util/logging/LoggerFactory.js';
+import { numberToBoolean } from '../util/sqliteUtil.ts';
 
 export const mediaSourceRouter: RouterPluginAsyncCallback = async (
   fastify,

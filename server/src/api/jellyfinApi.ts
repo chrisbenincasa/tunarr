@@ -10,8 +10,7 @@ import {
 import { FastifyReply } from 'fastify/types/reply.js';
 import { filter, isEmpty, isNil, uniq } from 'lodash-es';
 import { z } from 'zod';
-import { MediaSource } from '../dao/direct/schema/MediaSource.js';
-import { MediaSourceType } from '../dao/direct/schema/MediaSource.ts';
+import { MediaSource, MediaSourceType } from '../db/schema/MediaSource.ts';
 import { isQueryError } from '../external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.js';
 import { JellyfinApiClient } from '../external/jellyfin/JellyfinApiClient.js';

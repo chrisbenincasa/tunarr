@@ -2,13 +2,10 @@ import { jsonObjectFrom } from 'kysely/helpers/sqlite';
 import { first, isNumber, isUndefined, nth, random } from 'lodash-es';
 import { PassThrough } from 'stream';
 import { z } from 'zod';
-import { createOfflineStreamLineupItem } from '../../dao/derived_types/StreamLineup.ts';
-import { directDbAccess } from '../../dao/direct/directDbAccess.ts';
-import {
-  AllChannelTableKeys,
-  Channel,
-} from '../../dao/direct/schema/Channel.ts';
-import { Program, ProgramType } from '../../dao/direct/schema/Program.ts';
+import { getDatabase } from '../../db/DBAccess.ts';
+import { createOfflineStreamLineupItem } from '../../db/derived_types/StreamLineup.ts';
+import { AllChannelTableKeys, Channel } from '../../db/schema/Channel.ts';
+import { ProgramDao, ProgramType } from '../../db/schema/Program.ts';
 import { MpegTsOutputFormat } from '../../ffmpeg/builder/constants.ts';
 import { serverContext } from '../../serverContext.ts';
 import { OfflineProgramStream } from '../../stream/OfflinePlayer.ts';
@@ -34,7 +31,7 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
       },
     },
     async (req, res) => {
-      const channel = await directDbAccess()
+      const channel = await getDatabase()
         .selectFrom('channel')
         .selectAll()
         .executeTakeFirstOrThrow();
@@ -72,7 +69,7 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
       },
     },
     async (req, res) => {
-      const channel = await directDbAccess()
+      const channel = await getDatabase()
         .selectFrom('channel')
         .selectAll()
         .executeTakeFirstOrThrow();
@@ -96,7 +93,7 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
   );
 
   fastify.get('/streams/random', async (_, res) => {
-    const program = await directDbAccess()
+    const program = await getDatabase()
       .selectFrom('program')
       .orderBy((ob) => ob.fn('random'))
       .where('type', '=', ProgramType.Episode)
@@ -104,7 +101,7 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
       .selectAll()
       .executeTakeFirstOrThrow();
 
-    const channels = await directDbAccess()
+    const channels = await getDatabase()
       .selectFrom('channelPrograms')
       .where('programUuid', '=', program.uuid)
       .select((eb) =>
@@ -156,7 +153,7 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
           ? random(program.duration / 1000, true)
           : req.query.start;
 
-      const channels = await directDbAccess()
+      const channels = await getDatabase()
         .selectFrom('channelPrograms')
         .where('programUuid', '=', program.uuid)
         .select((eb) =>
@@ -191,7 +188,7 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
   );
 
   async function initStream(
-    program: Program,
+    program: ProgramDao,
     channel: Channel,
     startTime: number = 0,
     useNewPipeline: boolean = false,

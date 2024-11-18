@@ -1,6 +1,6 @@
 import { spawn } from 'child_process';
 import { Writable } from 'stream';
-import { SettingsDB, getSettings } from '../dao/settings.js';
+import { SettingsDB, getSettings } from '../db/SettingsDB.ts';
 import { Result } from '../types/result.js';
 import { isNonEmptyString } from '../util/index.js';
 import { NewLineTransformStream } from '../util/streams.js';

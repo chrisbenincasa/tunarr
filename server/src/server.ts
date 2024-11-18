@@ -27,26 +27,26 @@ import { HdhrApiRouter } from './api/hdhrApi.js';
 import { apiRouter } from './api/index.js';
 import { streamApi } from './api/streamApi.js';
 import { videoApiRouter } from './api/videoApi.js';
-import { ChannelLineupMigrator } from './dao/ChannelLineupMigrator.js';
-import { LegacyDbMigrator } from './dao/legacy_migration/legacyDbMigration.js';
-import { getSettings } from './dao/settings.js';
+import { getSettings } from './db/SettingsDB.ts';
 import { FFMPEGInfo } from './ffmpeg/ffmpegInfo.js';
 import {
   ServerOptions,
   initializeSingletons,
   serverOptions,
 } from './globals.js';
+import { LegacyDbMigrator } from './migration/legacy_migration/legacyDbMigration.ts';
+import { ChannelLineupMigrator } from './migration/lineups/ChannelLineupMigrator.ts';
 import {
   ServerContext,
   ServerRequestContext,
   serverContext,
 } from './serverContext.js';
+import { GlobalScheduler, scheduleJobs } from './services/Scheduler.ts';
 import { FfmpegDebugLoggingHealthCheck } from './services/health_checks/FfmpegDebugLoggingHealthCheck.js';
 import { FfmpegVersionHealthCheck } from './services/health_checks/FfmpegVersionHealthCheck.js';
 import { HardwareAccelerationHealthCheck } from './services/health_checks/HardwareAccelerationHealthCheck.js';
 import { MissingProgramAssociationsHealthCheck } from './services/health_checks/MissingProgramAssociationsHealthCheck.js';
 import { MissingSeasonNumbersHealthCheck } from './services/health_checks/MissingSeasonNumbersHealthCheck.js';
-import { GlobalScheduler, scheduleJobs } from './services/scheduler.js';
 import { initPersistentStreamCache } from './stream/ChannelCache.js';
 import { UpdateXmlTvTask } from './tasks/UpdateXmlTvTask.js';
 import { runFixers } from './tasks/fixers/index.js';

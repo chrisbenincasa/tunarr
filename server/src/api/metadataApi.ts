@@ -17,7 +17,7 @@ import { z } from 'zod';
 import {
   ProgramSourceType,
   programSourceTypeFromString,
-} from '../dao/custom_types/ProgramSourceType.ts';
+} from '../db/custom_types/ProgramSourceType.ts';
 import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.ts';
 import { TruthyQueryParam } from '../types/schemas.ts';
 import { RouterPluginAsyncCallback } from '../types/serverType.ts';

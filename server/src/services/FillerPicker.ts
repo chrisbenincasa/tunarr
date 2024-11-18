@@ -1,10 +1,10 @@
 import constants from '@tunarr/shared/constants';
 import { isEmpty, isNil, isUndefined } from 'lodash-es';
+import { Channel } from '../db/schema/Channel.ts';
 import {
   ChannelFillerShowWithContent,
-  ProgramWithRelations,
-} from '../dao/direct/derivedTypes.ts';
-import { Channel } from '../dao/direct/schema/Channel.ts';
+  ProgramDaoWithRelations,
+} from '../db/schema/derivedTypes.js';
 import { ChannelCache } from '../stream/ChannelCache.ts';
 import { Maybe, Nullable } from '../types/util.ts';
 import { random } from '../util/random.ts';
@@ -26,7 +26,7 @@ export class FillerPicker {
     maxDuration: number,
   ): {
     fillerId: Nullable<string>;
-    filler: Nullable<ProgramWithRelations>;
+    filler: Nullable<ProgramDaoWithRelations>;
     minimumWait: number;
   } {
     if (isEmpty(fillers)) {
@@ -37,7 +37,7 @@ export class FillerPicker {
       };
     }
 
-    let pick1: Maybe<ProgramWithRelations>;
+    let pick1: Maybe<ProgramDaoWithRelations>;
     const t0 = new Date().getTime();
     let minimumWait = 1000000000;
 

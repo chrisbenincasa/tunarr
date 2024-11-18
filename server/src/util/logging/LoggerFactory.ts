@@ -20,7 +20,7 @@ import {
 } from 'pino';
 import pretty, { PrettyOptions } from 'pino-pretty';
 import type ThreadStream from 'thread-stream';
-import { SettingsDB, getSettings } from '../../dao/settings.ts';
+import { SettingsDB, getSettings } from '../../db/SettingsDB.ts';
 import { Maybe, TupleToUnion } from '../../types/util.ts';
 import { getDefaultLogLevel } from '../defaults.ts';
 import { isNonEmptyString, isProduction } from '../index.ts';
