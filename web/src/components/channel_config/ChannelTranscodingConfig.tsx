@@ -18,8 +18,8 @@ import {
   TextField,
 } from '@mui/material';
 import Box from '@mui/material/Box';
+import Grid from '@mui/material/Grid2';
 import Typography from '@mui/material/Typography';
-import Grid2 from '@mui/material/Unstable_Grid2/Grid2';
 import {
   ChannelStreamMode,
   SaveChannelRequest,
@@ -395,14 +395,14 @@ export default function ChannelTranscodingConfig() {
                   />
                 </Box>
               </Box>
-              <Grid2
+              <Grid
                 container
                 rowSpacing={1}
                 columnSpacing={2}
                 rowGap={1}
                 sx={{ flexGrow: 1, height: 'fit-content' }}
               >
-                <Grid2 xs={12}>
+                <Grid size={{ xs: 12 }}>
                   <Controller
                     name="watermark.url"
                     control={control}
@@ -422,8 +422,8 @@ export default function ChannelTranscodingConfig() {
                       </ImageUploadInput>
                     )}
                   />
-                </Grid2>
-                <Grid2 xs={12}>
+                </Grid>
+                <Grid size={{ xs: 12 }}>
                   <FormControl fullWidth>
                     <InputLabel>Position</InputLabel>
                     <Controller
@@ -440,8 +440,8 @@ export default function ChannelTranscodingConfig() {
                       )}
                     />
                   </FormControl>
-                </Grid2>
-                <Grid2 xs={12} sm={4}>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 4 }}>
                   <NumericFormControllerText
                     control={control}
                     name="watermark.width"
@@ -452,8 +452,8 @@ export default function ChannelTranscodingConfig() {
                     }}
                     TextFieldProps={{ label: 'Width %', fullWidth: true }}
                   />
-                </Grid2>
-                <Grid2 xs={12} sm={4}>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 4 }}>
                   <NumericFormControllerText
                     control={control}
                     name="watermark.horizontalMargin"
@@ -464,8 +464,8 @@ export default function ChannelTranscodingConfig() {
                       fullWidth: true,
                     }}
                   />
-                </Grid2>
-                <Grid2 xs={12} sm={4}>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 4 }}>
                   <NumericFormControllerText
                     control={control}
                     name="watermark.verticalMargin"
@@ -476,8 +476,8 @@ export default function ChannelTranscodingConfig() {
                       fullWidth: true,
                     }}
                   />
-                </Grid2>
-                <Grid2 xs={12}>
+                </Grid>
+                <Grid size={{ xs: 12 }}>
                   <FormControl fullWidth>
                     <Typography gutterBottom>Opacity</Typography>
                     <Box sx={{ px: 2 }}>
@@ -500,11 +500,11 @@ export default function ChannelTranscodingConfig() {
                       />
                     </Box>
                   </FormControl>
-                </Grid2>
-                <Grid2 xs={12}>
+                </Grid>
+                <Grid size={{ xs: 12 }}>
                   <Divider />
-                </Grid2>
-                <Grid2 xs={12} lg={6}>
+                </Grid>
+                <Grid size={{ xs: 12, lg: 6 }}>
                   <FormControl fullWidth>
                     <FormControlLabel
                       control={
@@ -520,8 +520,8 @@ export default function ChannelTranscodingConfig() {
                       scaling applied.
                     </FormHelperText>
                   </FormControl>
-                </Grid2>
-                <Grid2 xs={12} lg={6}>
+                </Grid>
+                <Grid size={{ xs: 12, lg: 6 }}>
                   <FormControl fullWidth>
                     <FormControlLabel
                       control={
@@ -539,9 +539,9 @@ export default function ChannelTranscodingConfig() {
                       not animated, there will be playback errors.
                     </FormHelperText>
                   </FormControl>
-                </Grid2>
+                </Grid>
 
-                <Grid2 xs={12} lg={6}>
+                <Grid size={{ xs: 12, lg: 6 }}>
                   <NumericFormControllerText
                     control={control}
                     name="watermark.fadeConfig.0.periodMins"
@@ -553,8 +553,8 @@ export default function ChannelTranscodingConfig() {
                         'Display/hide the watermark via a fade animation every N minutes. Set to 0 to disable.',
                     }}
                   />
-                </Grid2>
-                <Grid2 xs={12} lg={6}>
+                </Grid>
+                <Grid size={{ xs: 12, lg: 6 }}>
                   <FormControl fullWidth>
                     <FormControlLabel
                       control={
@@ -571,8 +571,8 @@ export default function ChannelTranscodingConfig() {
                       watermark fade-in occurs after a full period.
                     </FormHelperText>
                   </FormControl>
-                </Grid2>
-                <Grid2 xs={12} lg={6}>
+                </Grid>
+                <Grid size={{ xs: 12, lg: 6 }}>
                   <NumericFormControllerText
                     control={control}
                     name="watermark.duration"
@@ -584,8 +584,8 @@ export default function ChannelTranscodingConfig() {
                         "Sets the absolute duration of the watermark on the channel's stream. Set to 0 to make the overlay permantently visible.",
                     }}
                   />
-                </Grid2>
-              </Grid2>
+                </Grid>
+              </Grid>
             </Stack>
           )}
         </Box>

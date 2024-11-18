@@ -54,6 +54,7 @@ export const useSlotProgramOptions = () => {
               showId: show.showId!,
             }) satisfies ProgramOption,
         )
+        .sortBy((opt) => opt.description)
         .value();
       opts.push(...showOptions);
     }
@@ -68,7 +69,7 @@ export const useSlotProgramOptions = () => {
             ({
               description: customShowsById[p.customShowId].name,
               value: `custom-show.${p.customShowId}`,
-              id: p.customShowId,
+              customShowId: p.customShowId,
               type: 'custom-show',
             }) satisfies ProgramOption,
         )

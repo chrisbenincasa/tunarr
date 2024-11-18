@@ -62,6 +62,14 @@ export type FlexProgrammingTimeSlot = z.infer<
   typeof FlexProgrammingTimeSlotSchema
 >;
 
+export type CustomShowProgrammingTimeSlot = z.infer<
+  typeof CustomShowProgrammingRandomSchema
+>;
+
+export type RedirectProgrammingTimeSlot = z.infer<
+  typeof RedirectProgrammingRandomSlotSchema
+>;
+
 export const TimeSlotProgrammingSchema = z.discriminatedUnion('type', [
   MovieProgrammingTimeSlotSchema,
   ShowProgrammingTimeSlotSchema,

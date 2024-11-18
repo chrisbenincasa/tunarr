@@ -107,6 +107,7 @@ type ListItemProps = {
   onEditClicked: (
     program: (UIFlexProgram | UIRedirectProgram) & { index: number },
   ) => void;
+  titleFormatter: (program: ChannelProgram) => string;
 };
 
 type ListDragItem = {
@@ -128,6 +129,7 @@ const ProgramListItem = ({
   onEditClicked,
   enableEdit,
   enableDelete,
+  titleFormatter,
 }: ListItemProps) => {
   const [{ isDragging }, drag] = useDrag(
     () => ({
@@ -156,8 +158,6 @@ const ProgramListItem = ({
       }
     },
   }));
-
-  const titleFormatter = useProgramTitleFormatter();
 
   const theme = useTheme();
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
@@ -357,6 +357,8 @@ export default function ChannelProgrammingList(props: Props) {
     [programList],
   );
 
+  const titleFormatter = useProgramTitleFormatter();
+
   const openDetailsDialog = useCallback(
     (program: ChannelProgram, startTimeDate?: Date) => {
       setFocusedProgramDetails(program);
@@ -397,6 +399,7 @@ export default function ChannelProgrammingList(props: Props) {
         enableEdit={props.enableRowEdit ?? true}
         onInfoClicked={() => openDetailsDialog(program, startTimeDate)}
         onEditClicked={openEditDialog}
+        titleFormatter={titleFormatter}
       />
     );
   };

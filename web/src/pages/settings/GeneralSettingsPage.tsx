@@ -18,8 +18,8 @@ import {
   useTheme,
 } from '@mui/material';
 import Button from '@mui/material/Button';
+import Grid from '@mui/material/Grid2';
 import Stack from '@mui/material/Stack';
-import Grid2 from '@mui/material/Unstable_Grid2/Grid2';
 import { TimePicker } from '@mui/x-date-pickers';
 import {
   CacheSettings,
@@ -182,8 +182,8 @@ function GeneralSettingsForm({ systemSettings }: GeneralSetingsFormProps) {
 
   function renderBackupsForm() {
     return (
-      <Grid2 container spacing={2}>
-        <Grid2 xs={12}>
+      <Grid container spacing={2}>
+        <Grid size={{ xs: 12 }}>
           <FormControl fullWidth>
             <FormControlLabel
               control={
@@ -198,10 +198,10 @@ function GeneralSettingsForm({ systemSettings }: GeneralSetingsFormProps) {
               When enabling, Tunarr will generate an initial backup immediately
             </FormHelperText>
           </FormControl>
-        </Grid2>
+        </Grid>
         {backupsEnabled && (
           <>
-            <Grid2 xs={6}>
+            <Grid size={{ xs: 6 }}>
               <Controller
                 control={control}
                 name="backup.configurations.0.outputs.0.outputPath"
@@ -214,8 +214,8 @@ function GeneralSettingsForm({ systemSettings }: GeneralSetingsFormProps) {
                   />
                 )}
               />
-            </Grid2>
-            <Grid2 xs={3}>
+            </Grid>
+            <Grid size={{ xs: 3 }}>
               <NumericFormControllerText
                 control={control}
                 name="backup.configurations.0.outputs.0.maxBackups"
@@ -226,8 +226,8 @@ function GeneralSettingsForm({ systemSettings }: GeneralSetingsFormProps) {
                   helperText: 'Set to 0 to never delete backups',
                 }}
               />
-            </Grid2>
-            <Grid2 xs={3}>
+            </Grid>
+            <Grid size={{ xs: 3 }}>
               <FormControl fullWidth>
                 <InputLabel>Archive Format</InputLabel>
                 <Controller
@@ -252,8 +252,8 @@ function GeneralSettingsForm({ systemSettings }: GeneralSetingsFormProps) {
                   )}
                 />
               </FormControl>
-            </Grid2>
-            <Grid2 xs={6}>
+            </Grid>
+            <Grid size={{ xs: 6 }}>
               <Stack direction="row" alignItems="center" spacing={2}>
                 <Typography>Every</Typography>
                 <NumericFormControllerText
@@ -307,10 +307,10 @@ function GeneralSettingsForm({ systemSettings }: GeneralSetingsFormProps) {
                   />
                 )}
               </Stack>
-            </Grid2>
+            </Grid>
           </>
         )}
-      </Grid2>
+      </Grid>
     );
   }
 

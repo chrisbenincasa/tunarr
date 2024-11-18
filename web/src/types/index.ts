@@ -4,6 +4,7 @@ import { EnrichedJellyfinItem } from '@/hooks/jellyfin/jellyfinHookUtil.ts';
 import {
   ChannelProgram,
   CondensedChannelProgram,
+  CondensedContentProgram,
   ContentProgram,
   CustomProgram,
   FlexProgram,
@@ -52,8 +53,9 @@ export type UICondensedChannelProgram<
   T extends CondensedChannelProgram = CondensedChannelProgram,
 > = T & UIIndex & Required<MaybeHasStartTimeOffset>;
 
-export type UICondensedContentProgram =
-  UICondensedChannelProgram<CondensedChannelProgram>;
+export type UICondensedContentProgram = CondensedContentProgram &
+  UIIndex &
+  Required<MaybeHasStartTimeOffset>;
 export type UICondensedFlexProgram = UICondensedChannelProgram<FlexProgram>;
 export type UICondensedCustomProgram = UICondensedChannelProgram<CustomProgram>;
 export type UICondensedRedirectProgram =
@@ -75,6 +77,11 @@ export const isUICondensedCustomProgram = (
 export const isUICondensedRedirectProgram = (
   p: UICondensedChannelProgram,
 ): p is UICondensedRedirectProgram => p.type === 'redirect';
+
+export const isUICondensedContentBackedProgram = (
+  p: UICondensedChannelProgram,
+): p is UICondensedContentProgram | UICondensedCustomProgram =>
+  isUICondensedContentProgram(p) || isUICondensedCustomProgram(p);
 
 // A UIChannelProgram is a ChannelProgram with some other UI-specific fields
 // The default type is any ChannelProgram (e.g. content, flex, etc) with the
