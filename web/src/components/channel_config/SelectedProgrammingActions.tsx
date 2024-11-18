@@ -86,7 +86,7 @@ export default function SelectedProgrammingActions({
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
   const snackbar = useSnackbar();
-  const { addSelectedItems, isLoading } = useAddSelectedItems(
+  const { addSelectedItems } = useAddSelectedItems(
     onAddSelectedMedia,
     onAddMediaSuccess,
   );
@@ -177,7 +177,6 @@ export default function SelectedProgrammingActions({
             key={'add-selected-media'}
             icon={smallViewport ? null : <AddCircle />}
             tooltipTitle={<Typography noWrap>Add Media</Typography>}
-            disableInteractive={isLoading}
             tooltipOpen
             delay={250}
             onClick={(e) => addSelectedItems(e)}
@@ -208,7 +207,6 @@ export default function SelectedProgrammingActions({
             tooltipTitle={<Typography noWrap>Select All</Typography>}
             tooltipOpen
             delay={500}
-            disableInteractive={selectAllLoading}
             onClick={() => selectAllItems()}
           />
         )}
@@ -220,7 +218,6 @@ export default function SelectedProgrammingActions({
             tooltipTitle={<Typography noWrap>Unselect All</Typography>}
             tooltipOpen
             delay={1000}
-            arrow={true}
             onClick={() => removeAllItems()}
           />
         )}
