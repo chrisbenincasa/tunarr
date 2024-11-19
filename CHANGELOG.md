@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.16.1](https://github.com/chrisbenincasa/tunarr/compare/v0.16.0...v0.16.1) (2024-11-19)
+
+
+### Bug Fixes
+
+* fix typo in kyseley-ported custom_show_content migration code ([49d8b4c](https://github.com/chrisbenincasa/tunarr/commit/49d8b4cff796d6e9e2f471d229d3e5d3705841ce))
+* fix weekly time slot editing and display ([#970](https://github.com/chrisbenincasa/tunarr/issues/970)) ([9280a7c](https://github.com/chrisbenincasa/tunarr/commit/9280a7c978e35513532dc798d2ff53babac05d1d))
+
+
+### UI Changes
+
+* support perfect grid fetches in jellyfin ([#966](https://github.com/chrisbenincasa/tunarr/issues/966)) ([cf149bc](https://github.com/chrisbenincasa/tunarr/commit/cf149bc9032a7b181ea27017bd51900e13a82480))
+
 ## [0.16.0](https://github.com/chrisbenincasa/tunarr/compare/v0.15.10...v0.16.0) (2024-11-18)
 
 
