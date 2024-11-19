@@ -110,6 +110,7 @@ export const TimeSlotTable = () => {
   const [currentPeriod, latenessMs] = watch(['period', 'latenessMs']);
   const programOptions = useSlotProgramOptions();
   const startOfPeriod = dayjs().startOf(currentPeriod);
+  console.log(startOfPeriod.format());
   const {
     channelEditor: { programLookup, originalProgramList },
   } = useChannelEditorLazy();
@@ -290,6 +291,7 @@ export const TimeSlotTable = () => {
         Cell: ({ cell }) => {
           const value = cell.getValue<number>();
           const dateTime = startOfPeriod.add(value);
+          console.log(dateTime.format(), value);
           return currentPeriod === 'day'
             ? dateTime.format('hh:mm A')
             : dateTime.format('dddd hh:mm A');
