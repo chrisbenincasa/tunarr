@@ -1,8 +1,8 @@
-import { Maybe, Nilable } from '../../../types/util.ts';
-import { VideoStream } from '../MediaStream.ts';
-import { PixelFormat } from '../format/PixelFormat.ts';
-import { FrameState } from '../state/FrameState.ts';
-import { RateControlMode } from '../types.ts';
+import { VideoStream } from '@/ffmpeg/builder/MediaStream.ts';
+import { PixelFormat } from '@/ffmpeg/builder/format/PixelFormat.ts';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
+import { RateControlMode } from '@/ffmpeg/builder/types.ts';
+import { Maybe, Nilable } from '@/types/util.ts';
 import { NvidiaHardwareCapabilities } from './NvidiaHardwareCapabilities.ts';
 
 export abstract class BaseFfmpegHardwareCapabilities {

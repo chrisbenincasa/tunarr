@@ -1,26 +1,61 @@
+import { AudioStream, VideoStream } from '@/ffmpeg/builder/MediaStream.ts';
+import { FfmpegCapabilities } from '@/ffmpeg/builder/capabilities/FfmpegCapabilities.ts';
+import { Decoder } from '@/ffmpeg/builder/decoder/Decoder.ts';
+import { DecoderFactory } from '@/ffmpeg/builder/decoder/DecoderFactory.ts';
+import {
+  AudioEncoder,
+  VideoEncoder,
+} from '@/ffmpeg/builder/encoder/BaseEncoder.ts';
+import { Encoder } from '@/ffmpeg/builder/encoder/Encoder.ts';
+import { AudioPadFilter } from '@/ffmpeg/builder/filter/AudioPadFilter.ts';
+import { AudioFirstPtsFilter } from '@/ffmpeg/builder/filter/AudioResampleFilter.ts';
+import { ComplexFilter } from '@/ffmpeg/builder/filter/ComplexFilter.ts';
+import { FilterChain } from '@/ffmpeg/builder/filter/FilterChain.ts';
+import { LoopFilter } from '@/ffmpeg/builder/filter/LoopFilter.ts';
+import { RealtimeFilter } from '@/ffmpeg/builder/filter/RealtimeFilter.ts';
+import { AudioInputSource } from '@/ffmpeg/builder/input/AudioInputSource.ts';
+import { ConcatInputSource } from '@/ffmpeg/builder/input/ConcatInputSource.ts';
+import { VideoInputSource } from '@/ffmpeg/builder/input/VideoInputSource.ts';
+import { WatermarkInputSource } from '@/ffmpeg/builder/input/WatermarkInputSource.ts';
+import { HlsConcatOutputFormat } from '@/ffmpeg/builder/options/HlsConcatOutputFormat.ts';
+import { HlsOutputFormat } from '@/ffmpeg/builder/options/HlsOutputFormat.ts';
+import { LogLevelOption } from '@/ffmpeg/builder/options/LogLevelOption.ts';
+import { NoStatsOption } from '@/ffmpeg/builder/options/NoStatsOption.ts';
+import { ConcatHttpReconnectOptions } from '@/ffmpeg/builder/options/input/ConcatHttpReconnectOptions.ts';
+import { ConcatInputFormatOption } from '@/ffmpeg/builder/options/input/ConcatInputFormatOption.ts';
+import { HttpReconnectOptions } from '@/ffmpeg/builder/options/input/HttpReconnectOptions.ts';
+import { InfiniteLoopInputOption } from '@/ffmpeg/builder/options/input/InfiniteLoopInputOption.ts';
+import { ReadrateInputOption } from '@/ffmpeg/builder/options/input/ReadrateInputOption.ts';
+import { StreamSeekInputOption } from '@/ffmpeg/builder/options/input/StreamSeekInputOption.ts';
+import { UserAgentInputOption } from '@/ffmpeg/builder/options/input/UserAgentInputOption.ts';
+import { AudioState } from '@/ffmpeg/builder/state/AudioState.ts';
+import { FfmpegState } from '@/ffmpeg/builder/state/FfmpegState.ts';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
+import {
+  FrameDataLocation,
+  HardwareAccelerationMode,
+} from '@/ffmpeg/builder/types.ts';
+import {
+  IPipelineStep,
+  PipelineStep,
+} from '@/ffmpeg/builder/types/PipelineStep.ts';
+import { Nilable, Nullable } from '@/types/util.ts';
+import { ifDefined, isNonEmptyString } from '@/util/index.ts';
+import { Logger, LoggerFactory } from '@/util/logging/LoggerFactory.ts';
+import { getTunarrVersion } from '@/util/version.ts';
 import { find, first, isNil, isNull, isUndefined } from 'lodash-es';
 import { MarkRequired } from 'ts-essentials';
 import { P, match } from 'ts-pattern';
-import { Nilable, Nullable } from '../../../types/util.ts';
-import { ifDefined, isNonEmptyString } from '../../../util/index.ts';
-import { Logger, LoggerFactory } from '../../../util/logging/LoggerFactory.ts';
-import { getTunarrVersion } from '../../../util/version.ts';
-import { AudioStream, VideoStream } from '../MediaStream.ts';
-import { FfmpegCapabilities } from '../capabilities/FfmpegCapabilities.ts';
 import {
   OutputFormatTypes,
   OutputLocation,
   VideoFormats,
 } from '../constants.ts';
-import { Decoder } from '../decoder/Decoder.ts';
-import { DecoderFactory } from '../decoder/DecoderFactory.ts';
-import { AudioEncoder, VideoEncoder } from '../encoder/BaseEncoder.ts';
 import {
   CopyAllEncoder,
   CopyAudioEncoder,
   CopyVideoEncoder,
 } from '../encoder/CopyEncoders.ts';
-import { Encoder } from '../encoder/Encoder.ts';
 import {
   ImplicitVideoEncoder,
   LibKvazaarEncoder,
@@ -29,16 +64,6 @@ import {
   Libx265Encoder,
   RawVideoEncoder,
 } from '../encoder/SoftwareVideoEncoders.ts';
-import { AudioPadFilter } from '../filter/AudioPadFilter.ts';
-import { AudioFirstPtsFilter } from '../filter/AudioResampleFilter.ts';
-import { ComplexFilter } from '../filter/ComplexFilter.ts';
-import { FilterChain } from '../filter/FilterChain.ts';
-import { LoopFilter } from '../filter/LoopFilter.ts';
-import { RealtimeFilter } from '../filter/RealtimeFilter.ts';
-import { AudioInputSource } from '../input/AudioInputSource.ts';
-import { ConcatInputSource } from '../input/ConcatInputSource.ts';
-import { VideoInputSource } from '../input/VideoInputSource.ts';
-import { WatermarkInputSource } from '../input/WatermarkInputSource.ts';
 import {
   AudioBitrateOutputOption,
   AudioBufferSizeOutputOption,
@@ -51,10 +76,6 @@ import {
   StandardFormatFlags,
   ThreadCountOption,
 } from '../options/GlobalOption.ts';
-import { HlsConcatOutputFormat } from '../options/HlsConcatOutputFormat.ts';
-import { HlsOutputFormat } from '../options/HlsOutputFormat.ts';
-import { LogLevelOption } from '../options/LogLevelOption.ts';
-import { NoStatsOption } from '../options/NoStatsOption.ts';
 import {
   ClosedGopOutputOption,
   DoNotMapMetadataOutputOption,
@@ -77,18 +98,6 @@ import {
   VideoBufferSizeOutputOption,
   VideoTrackTimescaleOutputOption,
 } from '../options/OutputOption.ts';
-import { ConcatHttpReconnectOptions } from '../options/input/ConcatHttpReconnectOptions.ts';
-import { ConcatInputFormatOption } from '../options/input/ConcatInputFormatOption.ts';
-import { HttpReconnectOptions } from '../options/input/HttpReconnectOptions.ts';
-import { InfiniteLoopInputOption } from '../options/input/InfiniteLoopInputOption.ts';
-import { ReadrateInputOption } from '../options/input/ReadrateInputOption.ts';
-import { StreamSeekInputOption } from '../options/input/StreamSeekInputOption.ts';
-import { UserAgentInputOption } from '../options/input/UserAgentInputOption.ts';
-import { AudioState } from '../state/AudioState.ts';
-import { FfmpegState } from '../state/FfmpegState.ts';
-import { FrameState } from '../state/FrameState.ts';
-import { FrameDataLocation, HardwareAccelerationMode } from '../types.ts';
-import { IPipelineStep, PipelineStep } from '../types/PipelineStep.ts';
 import { Pipeline } from './Pipeline.ts';
 import { PipelineBuilder } from './PipelineBuilder.ts';
 

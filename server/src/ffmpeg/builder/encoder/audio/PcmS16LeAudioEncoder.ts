@@ -1,4 +1,4 @@
-import { AudioEncoder } from '../BaseEncoder.ts';
+import { AudioEncoder } from '@/ffmpeg/builder/encoder/BaseEncoder.ts';
 
 export class PcmS16LeAudioEncoder extends AudioEncoder {
   constructor() {

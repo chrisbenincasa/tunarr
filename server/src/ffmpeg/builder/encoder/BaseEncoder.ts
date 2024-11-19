@@ -1,7 +1,7 @@
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
+import { StreamKinds } from '@/ffmpeg/builder/types.ts';
 import { TupleToUnion } from '@tunarr/types';
 import { isEmpty } from 'lodash-es';
-import { FrameState } from '../state/FrameState.ts';
-import { StreamKinds } from '../types.ts';
 import { Encoder } from './Encoder.ts';
 
 export abstract class BaseEncoder implements Encoder {

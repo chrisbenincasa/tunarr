@@ -1,12 +1,12 @@
+import { getDatabase } from '@/db/DBAccess.ts';
+import { MediaSourceType } from '@/db/schema/MediaSource.ts';
+import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
 import { find, isNil } from 'lodash-es';
-import { directDbAccess } from '../../dao/direct/directDbAccess.js';
-import { MediaSourceType } from '../../dao/direct/schema/MediaSource.ts';
-import { PlexApiClient } from '../../external/plex/PlexApiClient.js';
 import Fixer from './fixer.js';
 
 export class AddPlexServerIdsFixer extends Fixer {
   async runInternal(): Promise<void> {
-    const plexServers = await directDbAccess()
+    const plexServers = await getDatabase()
       .selectFrom('mediaSource')
       .selectAll()
       .where('clientIdentifier', 'is', null)
@@ -21,7 +21,7 @@ export class AddPlexServerIdsFixer extends Fixer {
           (d) => d.provides.includes('server') && d.name === server.name,
         );
         if (matchingServer) {
-          await directDbAccess()
+          await getDatabase()
             .updateTable('mediaSource')
             .set({
               clientIdentifier: matchingServer.clientIdentifier,

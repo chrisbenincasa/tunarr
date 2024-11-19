@@ -1,8 +1,8 @@
+import { StreamDetails, VideoStreamDetails } from '@/stream/types.ts';
+import { gcd } from '@/util/index.ts';
 import { FfmpegSettings, Resolution } from '@tunarr/types';
 import { isNil, round } from 'lodash-es';
 import { DeepReadonly } from 'ts-essentials';
-import { StreamDetails, VideoStreamDetails } from '../stream/types.ts';
-import { gcd } from '../util/index.ts';
 import { OutputFormat } from './builder/constants.ts';
 import {
   PixelFormat,

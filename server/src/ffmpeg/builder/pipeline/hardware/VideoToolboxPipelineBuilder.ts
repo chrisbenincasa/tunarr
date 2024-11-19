@@ -1,25 +1,25 @@
+import { BaseFfmpegHardwareCapabilities } from '@/ffmpeg/builder/capabilities/BaseFfmpegHardwareCapabilities.ts';
+import { FfmpegCapabilities } from '@/ffmpeg/builder/capabilities/FfmpegCapabilities.ts';
+import { VideoFormats } from '@/ffmpeg/builder/constants.ts';
+import { Decoder } from '@/ffmpeg/builder/decoder/Decoder.ts';
+import { VideoToolboxDecoder } from '@/ffmpeg/builder/decoder/videotoolbox/VideoToolboxDecoder.ts';
+import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.ts';
+import { VideoToolboxHardwareAccelerationOption } from '@/ffmpeg/builder/filter/videotoolbox/VideoToolboxHardwareAccelerationOption.ts';
+import { AudioInputSource } from '@/ffmpeg/builder/input/AudioInputSource.ts';
+import { ConcatInputSource } from '@/ffmpeg/builder/input/ConcatInputSource.ts';
+import { VideoInputSource } from '@/ffmpeg/builder/input/VideoInputSource.ts';
+import { WatermarkInputSource } from '@/ffmpeg/builder/input/WatermarkInputSource.ts';
+import { PixelFormatOutputOption } from '@/ffmpeg/builder/options/OutputOption.ts';
+import { isVideoPipelineContext } from '@/ffmpeg/builder/pipeline/BasePipelineBuilder.ts';
+import { SoftwarePipelineBuilder } from '@/ffmpeg/builder/pipeline/software/SoftwarePipelineBuilder.ts';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
+import { HardwareAccelerationMode } from '@/ffmpeg/builder/types.ts';
+import { Nullable } from '@/types/util.ts';
 import { match } from 'ts-pattern';
-import { Nullable } from '../../../../types/util.ts';
-import { BaseFfmpegHardwareCapabilities } from '../../capabilities/BaseFfmpegHardwareCapabilities.ts';
-import { FfmpegCapabilities } from '../../capabilities/FfmpegCapabilities.ts';
-import { VideoFormats } from '../../constants.ts';
-import { Decoder } from '../../decoder/Decoder.ts';
-import { VideoToolboxDecoder } from '../../decoder/videotoolbox/VideoToolboxDecoder.ts';
 import {
   VideoToolboxH264Encoder,
   VideoToolboxHevcEncoder,
 } from '../../encoder/videotoolbox/VideoToolboxEncoders.ts';
-import { FilterOption } from '../../filter/FilterOption.ts';
-import { VideoToolboxHardwareAccelerationOption } from '../../filter/videotoolbox/VideoToolboxHardwareAccelerationOption.ts';
-import { AudioInputSource } from '../../input/AudioInputSource.ts';
-import { ConcatInputSource } from '../../input/ConcatInputSource.ts';
-import { VideoInputSource } from '../../input/VideoInputSource.ts';
-import { WatermarkInputSource } from '../../input/WatermarkInputSource.ts';
-import { PixelFormatOutputOption } from '../../options/OutputOption.ts';
-import { FrameState } from '../../state/FrameState.ts';
-import { HardwareAccelerationMode } from '../../types.ts';
-import { isVideoPipelineContext } from '../BasePipelineBuilder.ts';
-import { SoftwarePipelineBuilder } from '../software/SoftwarePipelineBuilder.ts';
 
 export class VideoToolboxPipelineBuilder extends SoftwarePipelineBuilder {
   constructor(

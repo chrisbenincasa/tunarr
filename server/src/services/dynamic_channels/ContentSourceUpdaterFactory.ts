@@ -1,5 +1,5 @@
+import { Channel } from '@/db/schema/Channel.ts';
 import { DynamicContentConfigSource } from '@tunarr/types/api';
-import { Channel } from '../../dao/direct/schema/Channel.ts';
 import { ContentSourceUpdater } from './ContentSourceUpdater.ts';
 import { PlexContentSourceUpdater } from './PlexContentSourceUpdater.ts';
 

@@ -1,6 +1,9 @@
-import { PixelFormatNv12, PixelFormatVaapi } from '../../format/PixelFormat.ts';
-import { FrameState } from '../../state/FrameState.ts';
-import { BaseDecoder } from '../BaseDecoder.ts';
+import { BaseDecoder } from '@/ffmpeg/builder/decoder/BaseDecoder.ts';
+import {
+  PixelFormatNv12,
+  PixelFormatVaapi,
+} from '@/ffmpeg/builder/format/PixelFormat.ts';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
 
 export class VaapiDecoder extends BaseDecoder {
   readonly name: string = 'implicit_vaapi';

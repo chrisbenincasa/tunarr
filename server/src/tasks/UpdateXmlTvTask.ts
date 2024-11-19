@@ -1,18 +1,18 @@
+import { ChannelDB } from '@/db/ChannelDB.ts';
+import { SettingsDB, defaultXmlTvSettings } from '@/db/SettingsDB.ts';
+import { MediaSourceDB } from '@/db/mediaSourceDB.ts';
+import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
+import { globalOptions } from '@/globals.js';
+import { ServerContext } from '@/serverContext.js';
+import { TVGuideService } from '@/services/TvGuideService.ts';
+import { LineupCreator } from '@/services/dynamic_channels/LineupCreator.js';
+import { Maybe } from '@/types/util.js';
+import { fileExists } from '@/util/fsUtil.js';
+import { mapAsyncSeq } from '@/util/index.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import type { Tag } from '@tunarr/types';
 import { PlexDvr } from '@tunarr/types/plex';
 import dayjs from 'dayjs';
-import { ChannelDB } from '../dao/channelDb.js';
-import { MediaSourceDB } from '../dao/mediaSourceDB.js';
-import { SettingsDB, defaultXmlTvSettings } from '../dao/settings.js';
-import { PlexApiClient } from '../external/plex/PlexApiClient.js';
-import { globalOptions } from '../globals.js';
-import { ServerContext } from '../serverContext.js';
-import { LineupCreator } from '../services/dynamic_channels/LineupCreator.js';
-import { TVGuideService } from '../services/tvGuideService.js';
-import { Maybe } from '../types/util.js';
-import { fileExists } from '../util/fsUtil.js';
-import { mapAsyncSeq } from '../util/index.js';
-import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 import { Task } from './Task.js';
 
 export class UpdateXmlTvTask extends Task<void> {

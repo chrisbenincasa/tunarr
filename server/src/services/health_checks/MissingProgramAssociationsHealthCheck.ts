@@ -1,6 +1,6 @@
+import { getDatabase } from '@/db/DBAccess.ts';
 import { find } from 'lodash-es';
 import { P, match } from 'ts-pattern';
-import { directDbAccess } from '../../dao/direct/directDbAccess.ts';
 import {
   HealthCheck,
   HealthCheckResult,
@@ -12,7 +12,7 @@ export class MissingProgramAssociationsHealthCheck implements HealthCheck {
   readonly id: string = this.constructor.name;
 
   async getStatus(): Promise<HealthCheckResult> {
-    const missingParents = await directDbAccess()
+    const missingParents = await getDatabase()
       .selectFrom('program')
       .select((eb) => ['type', eb.fn.count<number>('uuid').as('count')])
       .where((eb) =>

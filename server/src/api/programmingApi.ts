@@ -1,3 +1,14 @@
+import { getDatabase } from '@/db/DBAccess.ts';
+import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.ts';
+import { MediaSource } from '@/db/schema/MediaSource.ts';
+import { ProgramType } from '@/db/schema/Program.ts';
+import { ProgramGroupingType } from '@/db/schema/ProgramGrouping.ts';
+import { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';
+import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
+import { TruthyQueryParam } from '@/types/schemas.js';
+import { RouterPluginAsyncCallback } from '@/types/serverType.js';
+import { ifDefined, isNonEmptyString } from '@/util/index.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { BasicIdParamSchema } from '@tunarr/types/api';
 import { ContentProgramSchema } from '@tunarr/types/schemas';
 import axios, { AxiosHeaders, isAxiosError } from 'axios';
@@ -16,26 +27,15 @@ import {
 } from 'lodash-es';
 import stream from 'stream';
 import z from 'zod';
-import { ProgramExternalIdType } from '../dao/custom_types/ProgramExternalIdType.js';
 import {
   ProgramSourceType,
   programSourceTypeFromString,
-} from '../dao/custom_types/ProgramSourceType.js';
-import { directDbAccess } from '../dao/direct/directDbAccess.js';
+} from '../db/custom_types/ProgramSourceType.ts';
 import {
   AllProgramFields,
   AllProgramGroupingFields,
   selectProgramsBuilder,
-} from '../dao/direct/programQueryHelpers.js';
-import { MediaSource } from '../dao/direct/schema/MediaSource.js';
-import { ProgramType } from '../dao/direct/schema/Program.ts';
-import { ProgramGroupingType } from '../dao/direct/schema/ProgramGrouping.ts';
-import { JellyfinApiClient } from '../external/jellyfin/JellyfinApiClient.js';
-import { PlexApiClient } from '../external/plex/PlexApiClient.js';
-import { TruthyQueryParam } from '../types/schemas.js';
-import { RouterPluginAsyncCallback } from '../types/serverType.js';
-import { ifDefined, isNonEmptyString } from '../util/index.js';
-import { LoggerFactory } from '../util/logging/LoggerFactory.js';
+} from '../db/programQueryHelpers.ts';
 
 const LookupExternalProgrammingSchema = z.object({
   externalId: z
@@ -76,7 +76,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
     },
     async (req, res) => {
       return res.send(
-        req.serverCtx.programConverter.directEntityToContentProgramSync(
+        req.serverCtx.programConverter.programDaoToContentProgram(
           await selectProgramsBuilder({
             joins: {
               tvSeason: true,
@@ -454,7 +454,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      const result = await directDbAccess()
+      const result = await getDatabase()
         .selectFrom('programGrouping')
         .selectAll()
         .where('programGrouping.uuid', '=', req.params.id)
@@ -510,7 +510,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      const result = await directDbAccess()
+      const result = await getDatabase()
         .selectFrom('programGrouping')
         .selectAll()
         .where('programGrouping.uuid', '=', req.params.id)
@@ -542,7 +542,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      const result = await directDbAccess()
+      const result = await getDatabase()
         .selectFrom('programGrouping')
         .selectAll()
         .where('programGrouping.showUuid', '=', req.params.id)

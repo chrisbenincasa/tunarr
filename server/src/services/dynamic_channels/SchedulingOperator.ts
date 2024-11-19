@@ -1,5 +1,5 @@
+import { ChannelAndLineup } from '@/types/internal.js';
 import { SchedulingOperation } from '@tunarr/types/api';
-import { ChannelAndLineup } from '../../types/internal.js';
 
 // A SchedulingOperator takes a set of lineup items
 // and returns a set of lineup items. The operator

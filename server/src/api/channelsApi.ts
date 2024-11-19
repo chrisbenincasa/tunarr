@@ -1,3 +1,12 @@
+import { ProgramConverter } from '@/db/converters/ProgramConverter.ts';
+import { dbChannelToApiChannel } from '@/db/converters/channelConverters.ts';
+import { GlobalScheduler } from '@/services/Scheduler.ts';
+import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
+import { OpenDateTimeRange } from '@/types/OpenDateTimeRange.js';
+import { RouterPluginAsyncCallback } from '@/types/serverType.js';
+import { attempt } from '@/util/index.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { timeNamedAsync } from '@/util/perf.js';
 import { scheduleTimeSlots } from '@tunarr/shared';
 import {
   BasicIdParamSchema,
@@ -26,15 +35,6 @@ import {
   sortBy,
 } from 'lodash-es';
 import z from 'zod';
-import { dbChannelToApiChannel } from '../dao/converters/channelConverters.js';
-import { ProgramConverter } from '../dao/converters/programConverters.js';
-import { GlobalScheduler } from '../services/scheduler.js';
-import { UpdateXmlTvTask } from '../tasks/UpdateXmlTvTask.js';
-import { OpenDateTimeRange } from '../types/OpenDateTimeRange.js';
-import { RouterPluginAsyncCallback } from '../types/serverType.js';
-import { attempt } from '../util/index.js';
-import { LoggerFactory } from '../util/logging/LoggerFactory.js';
-import { timeNamedAsync } from '../util/perf.js';
 
 dayjs.extend(duration);
 
@@ -270,7 +270,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
           const externalIdsByProgramId = groupBy(externalIds, 'programUuid');
           return res.send(
             map(channel.programs, (program) =>
-              converter.directEntityToContentProgramSync(
+              converter.programDaoToContentProgram(
                 program,
                 externalIdsByProgramId[program.uuid] ?? [],
               ),
@@ -405,7 +405,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
       const fallbacks =
         await req.serverCtx.channelDB.getChannelFallbackPrograms(req.params.id);
       const converted = map(fallbacks, (p) =>
-        req.serverCtx.programConverter.directEntityToContentProgramSync(p, []),
+        req.serverCtx.programConverter.programDaoToContentProgram(p, []),
       );
       return res.send(converted);
     },

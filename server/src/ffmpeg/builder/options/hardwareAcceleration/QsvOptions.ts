@@ -1,7 +1,7 @@
+import { GlobalOption } from '@/ffmpeg/builder/options/GlobalOption.ts';
+import { Nullable } from '@/types/util.ts';
+import { isNonEmptyString } from '@/util/index.ts';
 import os from 'node:os';
-import { Nullable } from '../../../../types/util.ts';
-import { isNonEmptyString } from '../../../../util/index.ts';
-import { GlobalOption } from '../GlobalOption.ts';
 
 export class QsvHardwareAccelerationOption extends GlobalOption {
   constructor(private qsvDevice: Nullable<string>) {

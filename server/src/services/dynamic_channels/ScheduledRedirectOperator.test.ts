@@ -1,10 +1,10 @@
+import { initOrm } from '@/dao/dataSource';
+import { Lineup, LineupItem } from '@/dao/derived_types/Lineup';
+import { Channel } from '@/dao/entities/Channel';
+import { initTestDb } from '@/tests/testDb';
+import { asyncFlow } from '@/util';
 import dayjs from 'dayjs';
 import { initial, last, map, range, reduce } from 'lodash-es';
-import { initTestDb } from '../../../tests/testDb';
-import { initOrm } from '../../dao/dataSource';
-import { Lineup, LineupItem } from '../../dao/derived_types/Lineup';
-import { Channel } from '../../dao/entities/Channel';
-import { asyncFlow } from '../../util';
 import { IntermediateOperator } from './IntermediateOperator';
 import { ScheduledRedirectOperator } from './ScheduledRedirectOperator';
 

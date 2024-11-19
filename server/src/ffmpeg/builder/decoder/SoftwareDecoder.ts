@@ -1,5 +1,5 @@
-import { InputSource } from '../input/InputSource.ts';
-import { FrameDataLocation } from '../types.ts';
+import { InputSource } from '@/ffmpeg/builder/input/InputSource.ts';
+import { FrameDataLocation } from '@/ffmpeg/builder/types.ts';
 import { BaseDecoder } from './BaseDecoder.ts';
 
 abstract class SoftwareDecoder extends BaseDecoder {

@@ -1,6 +1,6 @@
+import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.ts';
 import { Watermark } from '@tunarr/types';
 import { round } from 'lodash-es';
-import { FilterOption } from '../FilterOption.ts';
 
 export class WatermarkOpacityFilter extends FilterOption {
   constructor(private watermark: Watermark) {

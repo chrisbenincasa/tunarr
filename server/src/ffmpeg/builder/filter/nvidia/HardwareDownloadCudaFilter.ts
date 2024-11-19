@@ -1,9 +1,12 @@
+import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.ts';
+import {
+  FfmpegPixelFormats,
+  PixelFormat,
+} from '@/ffmpeg/builder/format/PixelFormat.ts';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
+import { Nullable } from '@/types/util.ts';
+import { isNonEmptyString } from '@/util/index.ts';
 import { isNull } from 'lodash-es';
-import { Nullable } from '../../../../types/util.ts';
-import { isNonEmptyString } from '../../../../util/index.ts';
-import { FfmpegPixelFormats, PixelFormat } from '../../format/PixelFormat.ts';
-import { FrameState } from '../../state/FrameState.ts';
-import { FilterOption } from '../FilterOption.ts';
 
 export class HardwareDownloadCudaFilter extends FilterOption {
   public affectsFrameState: boolean = true;

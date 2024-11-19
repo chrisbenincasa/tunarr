@@ -3,10 +3,10 @@ import fs from 'node:fs/promises';
 import path from 'path';
 import { DeepPartial } from 'ts-essentials';
 import {
-  initDirectDbAccess,
+  initDatabaseAccess,
   syncMigrationTablesIfNecessary,
-} from './dao/direct/directDbAccess.ts';
-import { SettingsFile, getSettings } from './dao/settings.js';
+} from './db/DBAccess.ts';
+import { SettingsFile, getSettings } from './db/SettingsDB.ts';
 import { globalOptions } from './globals.js';
 import { copyDirectoryContents, fileExists } from './util/fsUtil.js';
 import { LoggerFactory, RootLogger } from './util/logging/LoggerFactory.js';
@@ -63,7 +63,7 @@ export async function bootstrapTunarr(
   initialSettings?: DeepPartial<SettingsFile>,
 ) {
   await initDbDirectories();
-  initDirectDbAccess(path.join(globalOptions().databaseDirectory, 'db.db'));
+  initDatabaseAccess(path.join(globalOptions().databaseDirectory, 'db.db'));
   await syncMigrationTablesIfNecessary();
   const settingsDb = getSettings(undefined, initialSettings);
   LoggerFactory.initialize(settingsDb);

@@ -1,3 +1,5 @@
+import { RouterPluginAsyncCallback } from '@/types/serverType.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import {
   CreateCustomShowRequestSchema,
   IdPathParamSchema,
@@ -6,8 +8,6 @@ import {
 import { CustomProgramSchema, CustomShowSchema } from '@tunarr/types/schemas';
 import { isNil, isNull, map, sumBy } from 'lodash-es';
 import { z } from 'zod';
-import { RouterPluginAsyncCallback } from '../types/serverType.js';
-import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 
 // eslint-disable-next-line @typescript-eslint/require-await
 export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {

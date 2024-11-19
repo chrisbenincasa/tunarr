@@ -1,4 +1,4 @@
-import { FfmpegEncoder } from '../../ffmpegInfo.ts';
+import { FfmpegEncoder } from '@/ffmpeg/ffmpegInfo.ts';
 
 export class FfmpegCapabilities {
   constructor(

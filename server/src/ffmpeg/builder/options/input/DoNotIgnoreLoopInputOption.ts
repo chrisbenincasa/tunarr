@@ -1,5 +1,5 @@
+import { InputSource } from '@/ffmpeg/builder/input/InputSource.ts';
 import { every } from 'lodash-es';
-import { InputSource } from '../../input/InputSource.ts';
 import { InputOption } from './InputOption.ts';
 
 export class DoNotIgnoreLoopInputOption extends InputOption {

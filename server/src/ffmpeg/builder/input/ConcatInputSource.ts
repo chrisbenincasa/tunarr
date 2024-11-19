@@ -1,5 +1,5 @@
-import { VideoStream } from '../MediaStream.ts';
-import { FrameSize } from '../types.ts';
+import { VideoStream } from '@/ffmpeg/builder/MediaStream.ts';
+import { FrameSize } from '@/ffmpeg/builder/types.ts';
 import {
   InputSource,
   InputSourceContinuity,

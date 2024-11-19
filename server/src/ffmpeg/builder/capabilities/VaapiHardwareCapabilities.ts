@@ -1,10 +1,10 @@
+import { VideoFormats } from '@/ffmpeg/builder/constants.ts';
+import { PixelFormat } from '@/ffmpeg/builder/format/PixelFormat.ts';
+import { RateControlMode } from '@/ffmpeg/builder/types.ts';
+import { Maybe } from '@/types/util.ts';
+import { isDefined } from '@/util/index.ts';
 import { find, isEmpty, some, split } from 'lodash-es';
 import { P, match } from 'ts-pattern';
-import { Maybe } from '../../../types/util.ts';
-import { isDefined } from '../../../util/index.ts';
-import { VideoFormats } from '../constants.ts';
-import { PixelFormat } from '../format/PixelFormat.ts';
-import { RateControlMode } from '../types.ts';
 import { BaseFfmpegHardwareCapabilities } from './BaseFfmpegHardwareCapabilities.ts';
 
 export const VaapiEntrypoint = {

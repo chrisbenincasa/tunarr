@@ -1,13 +1,13 @@
+import { MediaStream } from '@/ffmpeg/builder/MediaStream.ts';
+import { HttpHeadersInputOption } from '@/ffmpeg/builder/options/input/HttpHeadersInputOption.ts';
+import { InputOption } from '@/ffmpeg/builder/options/input/InputOption.ts';
+import { HasFilterOption } from '@/ffmpeg/builder/types/PipelineStep.ts';
 import { flatMap } from 'lodash-es';
 import {
   FileStreamSource,
   FilterStreamSource,
   HttpStreamSource,
 } from '../../../stream/types.ts';
-import { MediaStream } from '../MediaStream.ts';
-import { HttpHeadersInputOption } from '../options/input/HttpHeadersInputOption.ts';
-import { InputOption } from '../options/input/InputOption.ts';
-import { HasFilterOption } from '../types/PipelineStep.ts';
 import { VideoInputSource } from './VideoInputSource.ts';
 
 export type InputSourceType = 'video' | 'audio';

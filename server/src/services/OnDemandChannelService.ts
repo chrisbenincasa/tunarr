@@ -1,8 +1,8 @@
+import { ChannelDB } from '@/db/ChannelDB.ts';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { MutexMap } from '@/util/mutexMap.js';
 import dayjs from 'dayjs';
 import { isNull, isUndefined } from 'lodash-es';
-import { ChannelDB } from '../dao/channelDb.js';
-import { LoggerFactory } from '../util/logging/LoggerFactory.js';
-import { MutexMap } from '../util/mutexMap.js';
 
 export class OnDemandChannelService {
   #logger = LoggerFactory.child({ className: this.constructor.name });

@@ -1,3 +1,4 @@
+import { TupleToUnion } from '@/types/util.ts';
 import { EverySchedule } from '@tunarr/types/schemas';
 import parser, {
   CronFields,
@@ -9,7 +10,6 @@ import CronExpression from 'cron-parser/lib/expression';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
 import { range, reduce } from 'lodash-es';
-import { TupleToUnion } from '../types/util.ts';
 import { run } from './index.ts';
 
 dayjs.extend(duration);

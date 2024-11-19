@@ -1,16 +1,16 @@
+import { ProgramDB } from '@/db/ProgramDB.ts';
+import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.ts';
+import { upsertRawProgramExternalIds } from '@/db/programExternalIdHelpers.ts';
+import { ProgramExternalId } from '@/db/schema/ProgramExternalId.ts';
+import { isQueryError } from '@/external/BaseApiClient.js';
+import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
+import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
+import { Task } from '@/tasks/Task.ts';
+import { Maybe } from '@/types/util.js';
+import { mintExternalIdForPlexGuid } from '@/util/externalIds.js';
+import { isDefined, isNonEmptyString } from '@/util/index.js';
 import { PlexTerminalMedia } from '@tunarr/types/plex';
 import { compact, isEmpty, isNil, isUndefined, map } from 'lodash-es';
-import { ProgramExternalIdType } from '../../dao/custom_types/ProgramExternalIdType.js';
-import { ProgramExternalId } from '../../dao/direct/schema/ProgramExternalId.js';
-import { ProgramDB } from '../../dao/programDB.js';
-import { upsertRawProgramExternalIds } from '../../dao/programExternalIdHelpers.js';
-import { isQueryError } from '../../external/BaseApiClient.js';
-import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.js';
-import { PlexApiClient } from '../../external/plex/PlexApiClient.js';
-import { Maybe } from '../../types/util.js';
-import { mintExternalIdForPlexGuid } from '../../util/externalIds.js';
-import { isDefined, isNonEmptyString } from '../../util/index.js';
-import { Task } from '../Task.js';
 
 export class SavePlexProgramExternalIdsTask extends Task {
   ID = SavePlexProgramExternalIdsTask.name;

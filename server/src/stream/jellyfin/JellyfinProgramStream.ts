@@ -1,20 +1,20 @@
+import { ChannelDB } from '@/db/ChannelDB.ts';
+import { SettingsDB, getSettings } from '@/db/SettingsDB.ts';
+import { isContentBackedLineupIteam } from '@/db/derived_types/StreamLineup.ts';
+import { MediaSourceDB } from '@/db/mediaSourceDB.ts';
+import { MediaSourceType } from '@/db/schema/MediaSource.ts';
+import { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
+import { OutputFormat } from '@/ffmpeg/builder/constants.ts';
+import { FFMPEG } from '@/ffmpeg/ffmpeg.js';
+import { PlayerContext } from '@/stream/PlayerStreamContext.js';
+import { ProgramStream } from '@/stream/ProgramStream.js';
+import { UpdateJellyfinPlayStatusScheduledTask } from '@/tasks/jellyfin/UpdateJellyfinPlayStatusTask.js';
+import { Result } from '@/types/result.js';
+import { Maybe, Nullable } from '@/types/util.js';
+import { ifDefined } from '@/util/index.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import dayjs from 'dayjs';
 import { isNil, isNull, isUndefined } from 'lodash-es';
-import { ChannelDB } from '../../dao/channelDb.js';
-import { isContentBackedLineupIteam } from '../../dao/derived_types/StreamLineup.js';
-import { MediaSourceType } from '../../dao/direct/schema/MediaSource.ts';
-import { MediaSourceDB } from '../../dao/mediaSourceDB.js';
-import { SettingsDB, getSettings } from '../../dao/settings.js';
-import { FfmpegTranscodeSession } from '../../ffmpeg/FfmpegTrancodeSession.js';
-import { OutputFormat } from '../../ffmpeg/builder/constants.ts';
-import { FFMPEG } from '../../ffmpeg/ffmpeg.js';
-import { UpdateJellyfinPlayStatusScheduledTask } from '../../tasks/jellyfin/UpdateJellyfinPlayStatusTask.js';
-import { Result } from '../../types/result.js';
-import { Maybe, Nullable } from '../../types/util.js';
-import { ifDefined } from '../../util/index.js';
-import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
-import { PlayerContext } from '../PlayerStreamContext.js';
-import { ProgramStream } from '../ProgramStream.js';
 import { JellyfinStreamDetails } from './JellyfinStreamDetails.js';
 
 export class JellyfinProgramStream extends ProgramStream {

@@ -1,9 +1,9 @@
-import { Maybe } from '../../../../types/util.ts';
-import { isNonEmptyString } from '../../../../util/index.ts';
-import { VideoFormats } from '../../constants.ts';
-import { FrameState } from '../../state/FrameState.ts';
-import { RateControlMode } from '../../types.ts';
-import { VideoEncoder } from '../BaseEncoder.ts';
+import { VideoFormats } from '@/ffmpeg/builder/constants.ts';
+import { VideoEncoder } from '@/ffmpeg/builder/encoder/BaseEncoder.ts';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
+import { RateControlMode } from '@/ffmpeg/builder/types.ts';
+import { Maybe } from '@/types/util.ts';
+import { isNonEmptyString } from '@/util/index.ts';
 
 abstract class VaapiEncoder extends VideoEncoder {
   protected constructor(

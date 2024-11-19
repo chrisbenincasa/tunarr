@@ -1,11 +1,11 @@
+import { MediaStream } from '@/ffmpeg/builder/MediaStream.ts';
+import { FfmpegCapabilities } from '@/ffmpeg/builder/capabilities/FfmpegCapabilities.ts';
+import { NullAudioInputSource } from '@/ffmpeg/builder/input/AudioInputSource.ts';
+import { ConcatInputSource } from '@/ffmpeg/builder/input/ConcatInputSource.ts';
+import { InputSource } from '@/ffmpeg/builder/input/InputSource.ts';
+import { KnownFfmpegOptions } from '@/ffmpeg/builder/options/KnownFfmpegOptions.ts';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
 import { every } from 'lodash-es';
-import { MediaStream } from '../../MediaStream.ts';
-import { FfmpegCapabilities } from '../../capabilities/FfmpegCapabilities.ts';
-import { NullAudioInputSource } from '../../input/AudioInputSource.ts';
-import { ConcatInputSource } from '../../input/ConcatInputSource.ts';
-import { InputSource } from '../../input/InputSource.ts';
-import { FrameState } from '../../state/FrameState.ts';
-import { KnownFfmpegOptions } from '../KnownFfmpegOptions.ts';
 import { InputOption } from './InputOption.ts';
 
 export class ReadrateInputOption extends InputOption {

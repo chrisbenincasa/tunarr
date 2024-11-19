@@ -1,9 +1,9 @@
+import { getSettings } from '@/db/SettingsDB.ts';
+import { ArchiveDatabaseBackup } from '@/db/backup/ArchiveDatabaseBackup.ts';
 import { Tag } from '@tunarr/types';
 import { BackupConfiguration } from '@tunarr/types/schemas';
 import { partition } from 'lodash-es';
 import { DeepReadonly } from 'ts-essentials';
-import { ArchiveDatabaseBackup } from '../dao/backup/ArchiveDatabaseBackup.ts';
-import { getSettings } from '../dao/settings.ts';
 import { Task, TaskId } from './Task.ts';
 
 export class BackupTask extends Task {

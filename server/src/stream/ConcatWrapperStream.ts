@@ -1,11 +1,11 @@
+import { SettingsDB, getSettings } from '@/db/SettingsDB.ts';
+import { Channel } from '@/db/schema/Channel.ts';
+import { FfmpegStreamFactory } from '@/ffmpeg/FfmpegStreamFactory.ts';
+import { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
+import { ConcatOptions, FFMPEG } from '@/ffmpeg/ffmpeg.js';
+import { makeLocalUrl } from '@/util/serverUtil.js';
 import { ChannelStreamMode, FfmpegSettings } from '@tunarr/types';
 import { StrictExtract } from 'ts-essentials';
-import { Channel } from '../dao/direct/schema/Channel.ts';
-import { SettingsDB, getSettings } from '../dao/settings.js';
-import { FfmpegStreamFactory } from '../ffmpeg/FfmpegStreamFactory.ts';
-import { FfmpegTranscodeSession } from '../ffmpeg/FfmpegTrancodeSession.js';
-import { ConcatOptions, FFMPEG } from '../ffmpeg/ffmpeg.js';
-import { makeLocalUrl } from '../util/serverUtil.js';
 
 type ConcatStreamOptions = {
   childStreamMode: StrictExtract<ChannelStreamMode, 'hls' | 'hls_slower'>;

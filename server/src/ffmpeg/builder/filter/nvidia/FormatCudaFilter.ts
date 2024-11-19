@@ -1,6 +1,6 @@
-import { PixelFormat } from '../../format/PixelFormat.ts';
-import { FrameState } from '../../state/FrameState.ts';
-import { FilterOption } from '../FilterOption.ts';
+import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.ts';
+import { PixelFormat } from '@/ffmpeg/builder/format/PixelFormat.ts';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
 
 export class FormatCudaFilter extends FilterOption {
   public affectsFrameState: boolean = true;

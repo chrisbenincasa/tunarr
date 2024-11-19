@@ -1,3 +1,5 @@
+import { Func } from '@/types/func.ts';
+import { Try } from '@/types/util.ts';
 import dayjs from 'dayjs';
 import duration, { Duration } from 'dayjs/plugin/duration.js';
 import {
@@ -28,8 +30,6 @@ import fs from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { format } from 'node:util';
 import { isPromise } from 'node:util/types';
-import { Func } from '../types/func.ts';
-import { Try } from '../types/util.ts';
 
 dayjs.extend(duration);
 

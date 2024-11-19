@@ -1,3 +1,7 @@
+import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.ts';
+import { TruthyQueryParam } from '@/types/schemas.ts';
+import { RouterPluginAsyncCallback } from '@/types/serverType.ts';
+import { isNonEmptyString } from '@/util/index.ts';
 import axios, { AxiosHeaders } from 'axios';
 import { createHash } from 'crypto';
 import dayjs from 'dayjs';
@@ -17,11 +21,7 @@ import { z } from 'zod';
 import {
   ProgramSourceType,
   programSourceTypeFromString,
-} from '../dao/custom_types/ProgramSourceType.ts';
-import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.ts';
-import { TruthyQueryParam } from '../types/schemas.ts';
-import { RouterPluginAsyncCallback } from '../types/serverType.ts';
-import { isNonEmptyString } from '../util/index.ts';
+} from '../db/custom_types/ProgramSourceType.ts';
 
 const externalIdSchema = z
   .string()

@@ -1,8 +1,8 @@
+import { OverlayWatermarkFilter } from '@/ffmpeg/builder/filter/watermark/OverlayWatermarkFilter.ts';
+import { PixelFormatUnknown } from '@/ffmpeg/builder/format/PixelFormat.ts';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
+import { FrameSize } from '@/ffmpeg/builder/types.ts';
 import { Watermark } from '@tunarr/types';
-import { PixelFormatUnknown } from '../../format/PixelFormat.ts';
-import { FrameState } from '../../state/FrameState.ts';
-import { FrameSize } from '../../types.ts';
-import { OverlayWatermarkFilter } from '../watermark/OverlayWatermarkFilter.ts';
 
 export class OverlayWatermarkCudaFilter extends OverlayWatermarkFilter {
   public affectsFrameState: boolean = true;

@@ -1,7 +1,7 @@
+import { InputSource } from '@/ffmpeg/builder/input/InputSource.ts';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
+import { FrameDataLocation } from '@/ffmpeg/builder/types.ts';
 import { first, isNil } from 'lodash-es';
-import { InputSource } from '../input/InputSource.ts';
-import { FrameState } from '../state/FrameState.ts';
-import { FrameDataLocation } from '../types.ts';
 import { Decoder } from './Decoder.ts';
 
 export abstract class BaseDecoder extends Decoder {

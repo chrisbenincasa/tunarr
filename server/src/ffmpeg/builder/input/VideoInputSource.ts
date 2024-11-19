@@ -1,4 +1,4 @@
-import { VideoStream } from '../MediaStream.ts';
+import { VideoStream } from '@/ffmpeg/builder/MediaStream.ts';
 import {
   InputSource,
   InputSourceContinuity,

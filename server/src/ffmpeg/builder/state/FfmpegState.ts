@@ -1,16 +1,16 @@
+import { DataProps, HardwareAccelerationMode } from '@/ffmpeg/builder/types.ts';
+import { FfmpegVersionResult } from '@/ffmpeg/ffmpegInfo.ts';
+import { Maybe, Nullable } from '@/types/util.ts';
 import { FfmpegLogLevel } from '@tunarr/types/schemas';
 import { isNil, merge } from 'lodash-es';
 import path from 'path';
 import { MarkRequired } from 'ts-essentials';
-import { Maybe, Nullable } from '../../../types/util.ts';
-import { FfmpegVersionResult } from '../../ffmpegInfo.ts';
 import {
   MpegTsOutputFormat,
   OutputFormat,
   OutputFormatTypes,
   OutputLocation,
 } from '../constants.ts';
-import { DataProps, HardwareAccelerationMode } from '../types.ts';
 
 export const DefaultFfmpegState: Partial<DataProps<FfmpegState>> = {
   threadCount: null,

@@ -1,7 +1,7 @@
+import { FixersByName } from '@/tasks/fixers/index.ts';
+import { isNonEmptyString } from '@/util/index.ts';
 import { keys } from 'lodash-es';
 import { CommandModule } from 'yargs';
-import { FixersByName } from '../tasks/fixers/index.ts';
-import { isNonEmptyString } from '../util/index.ts';
 import { GlobalArgsType } from './types.ts';
 
 type RunFixerCommandArgs = {

@@ -1,4 +1,4 @@
-import { RootLogger } from '../../util/logging/LoggerFactory.js';
+import { RootLogger } from '@/util/logging/LoggerFactory.js';
 
 export default abstract class Fixer {
   // False if the fixed data isn't required for proper server functioning

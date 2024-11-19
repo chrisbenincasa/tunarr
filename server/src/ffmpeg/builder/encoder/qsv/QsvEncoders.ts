@@ -1,7 +1,7 @@
-import { Nullable } from '../../../../types/util.ts';
-import { isNonEmptyString } from '../../../../util/index.ts';
-import { VideoFormats } from '../../constants.ts';
-import { VideoEncoder } from '../BaseEncoder.ts';
+import { VideoFormats } from '@/ffmpeg/builder/constants.ts';
+import { VideoEncoder } from '@/ffmpeg/builder/encoder/BaseEncoder.ts';
+import { Nullable } from '@/types/util.ts';
+import { isNonEmptyString } from '@/util/index.ts';
 
 abstract class QsvEncoder extends VideoEncoder {
   protected constructor(name: string) {

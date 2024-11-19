@@ -1,4 +1,4 @@
-import { HasFilterOption } from '../types/PipelineStep.ts';
+import { HasFilterOption } from '@/ffmpeg/builder/types/PipelineStep.ts';
 import { FilterOption } from './FilterOption.ts';
 
 export class FilterChain {

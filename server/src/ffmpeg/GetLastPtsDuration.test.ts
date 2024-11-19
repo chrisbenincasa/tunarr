@@ -1,4 +1,4 @@
-import { SettingsDB } from '../dao/settings.js';
+import { SettingsDB } from '@/db/SettingsDB.ts';
 import {
   getFakeSettingsDb,
   setTestGlobalOptions,

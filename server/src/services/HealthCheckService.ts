@@ -1,6 +1,6 @@
+import { mapToObj } from '@/util/index.ts';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
 import { difference, keys, map, reduce, values } from 'lodash-es';
-import { mapToObj } from '../util/index.ts';
-import { LoggerFactory } from '../util/logging/LoggerFactory.ts';
 import {
   HealthCheck,
   HealthCheckResult,

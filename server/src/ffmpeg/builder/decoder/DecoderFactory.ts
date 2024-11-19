@@ -1,6 +1,6 @@
-import { VideoStream } from '../MediaStream.ts';
-import { VideoFormats } from '../constants.ts';
-import { HardwareAccelerationMode } from '../types.ts';
+import { VideoStream } from '@/ffmpeg/builder/MediaStream.ts';
+import { VideoFormats } from '@/ffmpeg/builder/constants.ts';
+import { HardwareAccelerationMode } from '@/ffmpeg/builder/types.ts';
 import { H264Decoder, ImplicitDecoder } from './SoftwareDecoder.ts';
 import {
   NvidiaH264Decoder,

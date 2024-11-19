@@ -1,12 +1,12 @@
+import { ProgramDB } from '@/db/ProgramDB.ts';
 import {
-  initDirectDbAccess,
+  initDatabaseAccess,
   syncMigrationTablesIfNecessary,
-} from '../../dao/direct/directDbAccess.ts';
-import { ProgramDB } from '../../dao/programDB.ts';
+} from '../../db/DBAccess.ts';
 import { JellyfinItemFinder } from './JellyfinItemFinder.ts';
 
 beforeAll(async () => {
-  initDirectDbAccess(':memory:');
+  initDatabaseAccess(':memory:');
   await syncMigrationTablesIfNecessary();
 });
 

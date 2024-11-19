@@ -1,3 +1,10 @@
+import { serverOptions } from '@/globals.js';
+import { scheduleBackupJobs } from '@/services/Scheduler.ts';
+import { FixersByName } from '@/tasks/fixers/index.js';
+import { RouterPluginAsyncCallback } from '@/types/serverType.js';
+import { getDefaultLogLevel } from '@/util/defaults.js';
+import { ifDefined } from '@/util/index.js';
+import { getEnvironmentLogLevel } from '@/util/logging/LoggerFactory.js';
 import { LoggingSettings, SystemSettings } from '@tunarr/types';
 import {
   SystemSettingsResponse,
@@ -9,13 +16,6 @@ import { BackupSettings, BackupSettingsSchema } from '@tunarr/types/schemas';
 import { isUndefined } from 'lodash-es';
 import { DeepReadonly, Writable } from 'ts-essentials';
 import { z } from 'zod';
-import { serverOptions } from '../globals.js';
-import { scheduleBackupJobs } from '../services/scheduler.js';
-import { FixersByName } from '../tasks/fixers/index.js';
-import { RouterPluginAsyncCallback } from '../types/serverType.js';
-import { getDefaultLogLevel } from '../util/defaults.js';
-import { ifDefined } from '../util/index.js';
-import { getEnvironmentLogLevel } from '../util/logging/LoggerFactory.js';
 
 export const systemApiRouter: RouterPluginAsyncCallback = async (
   fastify,

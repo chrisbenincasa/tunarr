@@ -1,7 +1,10 @@
-import { FfmpegPixelFormats } from '../../format/PixelFormat.ts';
-import { InputSource } from '../../input/InputSource.ts';
-import { FrameDataLocation, HardwareAccelerationMode } from '../../types.ts';
-import { BaseDecoder } from '../BaseDecoder.ts';
+import { BaseDecoder } from '@/ffmpeg/builder/decoder/BaseDecoder.ts';
+import { FfmpegPixelFormats } from '@/ffmpeg/builder/format/PixelFormat.ts';
+import { InputSource } from '@/ffmpeg/builder/input/InputSource.ts';
+import {
+  FrameDataLocation,
+  HardwareAccelerationMode,
+} from '@/ffmpeg/builder/types.ts';
 
 export abstract class NvidiaDecoder extends BaseDecoder {
   protected outputFrameDataLocation: FrameDataLocation;

@@ -1,7 +1,7 @@
+import { SettingsFile, getSettings } from '@/db/SettingsDB.ts';
+import { GlobalOptions, globalOptions, setGlobalOptions } from '@/globals.js';
 import tmp from 'tmp';
 import { DeepPartial } from 'ts-essentials';
-import { SettingsFile, getSettings } from '../dao/settings.js';
-import { GlobalOptions, globalOptions, setGlobalOptions } from '../globals.js';
 
 function createTmpDir(tmpOpts?: tmp.DirOptions) {
   return new Promise<string>((resolve, reject) => {

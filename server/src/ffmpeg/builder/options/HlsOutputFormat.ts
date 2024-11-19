@@ -1,7 +1,7 @@
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
+import { Maybe } from '@/types/util.ts';
+import { isNonEmptyString } from '@/util/index.ts';
 import { nth } from 'lodash-es';
-import { Maybe } from '../../../types/util.ts';
-import { isNonEmptyString } from '../../../util/index.ts';
-import { FrameState } from '../state/FrameState.ts';
 import { OutputOption } from './OutputOption.ts';
 
 export class HlsOutputFormat extends OutputOption {

@@ -1,7 +1,7 @@
+import { PixelFormat } from '@/ffmpeg/builder/format/PixelFormat.ts';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
+import { OutputOptionPipelineStep } from '@/ffmpeg/builder/types/PipelineStep.ts';
 import { isString } from 'lodash-es';
-import { PixelFormat } from '../format/PixelFormat.ts';
-import { FrameState } from '../state/FrameState.ts';
-import { OutputOptionPipelineStep } from '../types/PipelineStep.ts';
 
 export abstract class OutputOption implements OutputOptionPipelineStep {
   readonly type = 'output';
