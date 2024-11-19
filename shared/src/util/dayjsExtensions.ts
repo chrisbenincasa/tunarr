@@ -35,15 +35,22 @@ export const mod: PluginFunc = (_opts, dayjsClass, dayjsFactory) => {
       dur = dayjsFactory.duration(value);
     }
 
-    const djs = this as Dayjs;
-
-    const outDur = dayjsFactory.duration(+djs % dur.asMilliseconds());
-
+    let djs = this as Dayjs;
+    // If we want to auto-adjust the modded duration for the curren TZ
+    // we need to synthetically adjust the current date back to utc.
+    // Apparently .utc() doesn't do this for us. And when we get .valueOf
+    // we lose some context.
+    // We can't just add the utcOffset to the resultant duration. Example:
+    // 7PM ET % OneDay == expected to be 68400000 (i.e. 19 * 60 * 60 * 1000)
+    // However, 7PM ET == 12AM UTC, the following day. dayjs(7PM ET) % OneDayMs == 0
+    // without TZ info. Because ET is a negative offset of 5 hours, we would need to
+    // calculate 24h in ms - utcOffset in ms to get the correct answer.
+    // Alternatively - we artificially adjust here before doing the mod at all.
     if (tzAware) {
-      return outDur.add(djs.utcOffset(), 'minutes');
+      djs = djs.add(djs.utcOffset(), 'minutes');
     }
 
-    return outDur;
+    return dayjsFactory.duration(+djs % dur.asMilliseconds());
   };
 };
 
