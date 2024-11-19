@@ -34,7 +34,8 @@ export const EditSlotProgrammingForm = ({
   programOptions,
 }: EditSlotProgramProps) => {
   const { setValue, watch, control } = useFormContext<TimeSlot>();
-  const type = watch('programming.type');
+  const { type } = watch('programming');
+  console.log(type);
   const availableTypes = useMemo(() => {
     return map(
       uniqBy(programOptions, ({ type }) => type),
@@ -43,6 +44,10 @@ export const EditSlotProgrammingForm = ({
   }, [programOptions]);
 
   const handleTypeChange = (value: ProgramOption['type']) => {
+    if (value === type) {
+      return;
+    }
+
     let newSlot: TimeSlotProgramming;
     switch (value) {
       case 'movie':
@@ -82,7 +87,7 @@ export const EditSlotProgrammingForm = ({
           )!.showId,
         } satisfies ShowProgrammingTimeSlot;
     }
-    setValue(`programming`, newSlot, { shouldDirty: true });
+    setValue(`programming`, newSlot, { shouldDirty: true, shouldTouch: true });
   };
 
   const showAutoCompleteOpts = useMemo(
