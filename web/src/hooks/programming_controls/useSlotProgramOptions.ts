@@ -12,7 +12,7 @@ import { useMemo } from 'react';
 import { useCustomShows } from '../useCustomShows.ts';
 
 export const useSlotProgramOptions = () => {
-  const { programList: newLineup, programLookup } = useStore(
+  const { originalProgramList: newLineup, programLookup } = useStore(
     (s) => s.channelEditor,
   );
   const { data: customShows } = useCustomShows();
