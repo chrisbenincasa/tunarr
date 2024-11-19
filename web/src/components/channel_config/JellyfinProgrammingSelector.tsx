@@ -1,5 +1,9 @@
 import { jellyfinChildType } from '@/helpers/jellyfinUtil.ts';
-import { forJellyfinItem, typedProperty } from '@/helpers/util.ts';
+import {
+  estimateNumberOfColumns,
+  forJellyfinItem,
+  typedProperty,
+} from '@/helpers/util.ts';
 import { useInfiniteJellyfinLibraryItems } from '@/hooks/jellyfin/useJellyfinApi';
 import useStore from '@/store/index.ts';
 import {
@@ -17,8 +21,15 @@ import {
 import { MediaSourceId } from '@tunarr/types/schemas';
 import { usePrevious } from '@uidotdev/usehooks';
 import { first, isEmpty, last, map, slice } from 'lodash-es';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { match } from 'ts-pattern';
+import { useDebounceCallback, useResizeObserver } from 'usehooks-ts';
 import { InlineModal } from '../InlineModal.tsx';
 import { ProgramViewToggleButton } from '../base/ProgramViewToggleButton.tsx';
 import { JellyfinGridItem } from './JellyfinGridItem.tsx';
@@ -58,6 +69,11 @@ const childJellyfinType = forJellyfinItem<JellyfinItemKind>({
   Series: 'Season',
   default: 'Video',
 });
+
+type Size = {
+  width?: number;
+  height?: number;
+};
 
 export function JellyfinProgrammingSelector() {
   const selectedServer = useCurrentMediaSource('jellyfin');
@@ -99,6 +115,22 @@ export function JellyfinProgrammingSelector() {
         .otherwise(() => null);
     }, [selectedLibrary?.library.CollectionType]);
 
+  const itemContainer = useRef<HTMLDivElement>(null);
+  const [columns, setColumns] = useState(8);
+  const [bufferSize, setBufferSize] = useState(0);
+
+  const [{ width }, setSize] = useState<Size>({
+    width: undefined,
+    height: undefined,
+  });
+
+  const onResize = useDebounceCallback(setSize, 200);
+
+  useResizeObserver({
+    ref: itemContainer,
+    onResize,
+  });
+
   const jellyfinItemsQuery = useInfiniteJellyfinLibraryItems(
     selectedServer?.id ?? tag<MediaSourceId>(''),
     isEmpty(parentContext)
@@ -106,7 +138,8 @@ export function JellyfinProgrammingSelector() {
       : last(parentContext)!.Id,
     itemTypes,
     true,
-    64,
+    columns * 4, // grab 4 rows
+    bufferSize,
     {
       nameLessThan: alphanumericFilter === '#' ? 'A' : undefined,
       nameStartsWith:
@@ -116,6 +149,52 @@ export function JellyfinProgrammingSelector() {
       sortBy,
     },
   );
+
+  useEffect(() => {
+    const containerWidth =
+      itemContainer?.current?.getBoundingClientRect().width || 0;
+    const padding = 16; // to do: don't hardcode this
+    // We have to estimate the number of columns because the items aren't loaded yet to use their width to calculate it
+    const numberOfColumns = estimateNumberOfColumns(containerWidth + padding);
+
+    if (jellyfinItemsQuery.data) {
+      const numberOfFetches = jellyfinItemsQuery.data?.pages.length || 1;
+      const previousFetch = jellyfinItemsQuery.data?.pages[numberOfFetches - 1];
+      const prevNumberOfColumns =
+        jellyfinItemsQuery.data?.pages[numberOfFetches - 1].TotalRecordCount;
+
+      // Calculate total number of fetched items so far
+      // Take total records, subtract current offset and last fetch #
+      //jellyfinItemsQuery.data?.pages[numberOfFetches-1].TotalRecordCount - (
+      const currentTotalSize =
+        previousFetch.Items.length + (previousFetch.StartIndex || 0);
+
+      // Calculate total items that don't fill an entire row
+      const leftOvers = currentTotalSize % numberOfColumns;
+
+      // Calculate total items that are needed to fill the remainder of the row
+      const bufferSize = numberOfColumns - leftOvers;
+
+      if (prevNumberOfColumns !== numberOfColumns && prevNumberOfColumns) {
+        setBufferSize(bufferSize);
+      }
+    }
+    setColumns(numberOfColumns);
+  }, [itemContainer, width, jellyfinItemsQuery.data]);
+
+  const { isFetchingNextPage: isFetchingNextLibraryPage } = jellyfinItemsQuery;
+
+  const previousIsFetchingNextLibraryPage = usePrevious(
+    isFetchingNextLibraryPage,
+  );
+
+  // reset bufferSize after each fetch
+  // we only need a buffer size to fill the gap between two fetches
+  useEffect(() => {
+    if (previousIsFetchingNextLibraryPage && !isFetchingNextLibraryPage) {
+      setBufferSize(0);
+    }
+  }, [previousIsFetchingNextLibraryPage, isFetchingNextLibraryPage]);
 
   useEffect(() => {
     if (selectedLibrary?.library.Id !== prevSelectedLibrary) {
@@ -213,7 +292,7 @@ export function JellyfinProgrammingSelector() {
 
   return (
     <>
-      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+      <Box sx={{ borderBottom: 1, borderColor: 'divider' }} ref={itemContainer}>
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
           sx={{

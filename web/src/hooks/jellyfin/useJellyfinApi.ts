@@ -70,13 +70,17 @@ export const useJellyfinLibraryItems = (
   return { ...result, queryKey: key };
 };
 
-function getChunkSize(librarySize: number): number {
+function getChunkSize(
+  librarySize: number,
+  previousFetchSize: number,
+  bufferSize: number,
+): number {
   if (librarySize <= 200) {
-    return 20;
+    return previousFetchSize + bufferSize;
   } else if (librarySize <= 1000) {
-    return 50;
+    return previousFetchSize * 2 + bufferSize;
   } else {
-    return 100;
+    return previousFetchSize * 3 + bufferSize;
   }
 }
 
@@ -86,6 +90,7 @@ export const useInfiniteJellyfinLibraryItems = (
   itemTypes: JellyfinItemKind[],
   enabled: boolean = true,
   initialChunkSize: number = 20,
+  bufferSize: number = 0,
   additionalFilters: Partial<
     Omit<
       QueryParamTypeForAlias<'getJellyfinItems'>,
@@ -103,6 +108,8 @@ export const useInfiniteJellyfinLibraryItems = (
     { itemTypes, additionalFilters },
   ];
 
+  const lastFetchSize = initialChunkSize + bufferSize;
+
   const result = useInfiniteQuery({
     queryKey: key,
     queryFn: ({ pageParam: { offset, pageSize } }) =>
@@ -116,7 +123,7 @@ export const useInfiniteJellyfinLibraryItems = (
         },
       }),
     enabled: enabled && every([mediaSourceId, parentId], isNonEmptyString),
-    initialPageParam: { offset: 0, pageSize: initialChunkSize },
+    initialPageParam: { offset: 0, pageSize: lastFetchSize },
     getNextPageParam: (res, all, { offset: lastOffset }) => {
       const total = sumBy(all, (page) => page.Items.length);
       if (total >= (res.TotalRecordCount ?? res.Items.length)) {
@@ -126,7 +133,11 @@ export const useInfiniteJellyfinLibraryItems = (
       // Next offset is the last + how many items we got back.
       return {
         offset: (lastOffset + res.Items.length) % res.TotalRecordCount,
-        pageSize: getChunkSize(res.TotalRecordCount),
+        pageSize: getChunkSize(
+          res.TotalRecordCount,
+          initialChunkSize,
+          bufferSize,
+        ),
       };
     },
     refetchOnWindowFocus: false,
