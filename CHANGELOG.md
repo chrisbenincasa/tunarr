@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.16.2](https://github.com/chrisbenincasa/tunarr/compare/v0.16.1...v0.16.2) (2024-11-19)
+
+
+### chore
+
+* release 0.16.2 ([66552b6](https://github.com/chrisbenincasa/tunarr/commit/66552b63ef87b55172826210b35843e5c6c32661))
+
 ## [0.16.1](https://github.com/chrisbenincasa/tunarr/compare/v0.16.0...v0.16.1) (2024-11-19)
 
 
