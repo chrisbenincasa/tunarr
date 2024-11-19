@@ -1,6 +1,6 @@
-import { FfmpegState } from '../state/FfmpegState.ts';
-import { FrameState } from '../state/FrameState.ts';
-import { FrameSize } from '../types.ts';
+import { FfmpegState } from '@/ffmpeg/builder/state/FfmpegState.ts';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
+import { FrameSize } from '@/ffmpeg/builder/types.ts';
 import { FilterOption } from './FilterOption.ts';
 
 export class ScaleFilter extends FilterOption {

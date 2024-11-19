@@ -1,8 +1,8 @@
-import { Nullable } from '../../../types/util.ts';
-import { isNonEmptyString } from '../../../util/index.ts';
-import { VideoFormats } from '../constants.js';
-import { HardwareDownloadFilter } from '../filter/HardwareDownloadFilter.ts';
-import { FrameState } from '../state/FrameState.js';
+import { VideoFormats } from '@/ffmpeg/builder/constants.js';
+import { HardwareDownloadFilter } from '@/ffmpeg/builder/filter/HardwareDownloadFilter.ts';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
+import { Nullable } from '@/types/util.ts';
+import { isNonEmptyString } from '@/util/index.ts';
 import { VideoEncoder } from './BaseEncoder.js';
 
 export class Libx265Encoder extends VideoEncoder {

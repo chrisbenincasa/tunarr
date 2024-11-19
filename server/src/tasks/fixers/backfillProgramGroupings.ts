@@ -1,7 +1,7 @@
-import { getDatabase } from '../../db/DBAccess.ts';
-import { ProgramType } from '../../db/schema/Program.ts';
-import { ProgramGroupingType } from '../../db/schema/ProgramGrouping.ts';
-import { LoggerFactory } from '../../util/logging/LoggerFactory.ts';
+import { getDatabase } from '@/db/DBAccess.ts';
+import { ProgramType } from '@/db/schema/Program.ts';
+import { ProgramGroupingType } from '@/db/schema/ProgramGrouping.ts';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
 import Fixer from './fixer.ts';
 
 // TODO: Handle Jellyfin items

@@ -1,14 +1,14 @@
+import { ProgramSourceType } from '@/db/custom_types/ProgramSourceType.ts';
+import { Maybe } from '@/types/util.ts';
+import { isNonEmptyString } from '@/util/index.ts';
 import { ProgramType, Resolution } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { every, isNaN, isUndefined, parseInt } from 'lodash-es';
 import { v4 } from 'uuid';
-import { ProgramSourceType } from '../../db/custom_types/ProgramSourceType.ts';
 import {
   ProgramType as DBProgramType,
   NewProgramDao,
 } from '../../db/schema/Program.ts';
-import { Maybe } from '../../types/util.ts';
-import { isNonEmptyString } from '../../util/index.ts';
 import { LegacyProgram } from './LegacyChannelMigrator.ts';
 
 // JSON representation for easier parsing of legacy db files

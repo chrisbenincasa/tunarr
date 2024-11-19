@@ -1,9 +1,9 @@
+import { LineupItem } from '@/db/derived_types/Lineup.ts';
+import { ChannelAndLineup } from '@/types/internal.js';
+import { binarySearchRange } from '@/util/binarySearch.ts';
 import { ScheduledRedirectOperation } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import { isNull } from 'lodash-es';
-import { LineupItem } from '../../db/derived_types/Lineup.ts';
-import { ChannelAndLineup } from '../../types/internal.js';
-import { binarySearchRange } from '../../util/binarySearch.ts';
 import { SchedulingOperator } from './SchedulingOperator.ts';
 
 export class ScheduledRedirectOperator extends SchedulingOperator<ScheduledRedirectOperation> {

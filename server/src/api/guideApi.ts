@@ -1,10 +1,10 @@
+import { DateTimeRange } from '@/types/DateTimeRange.js';
+import { RouterPluginCallback } from '@/types/serverType.js';
+import { groupByUniq } from '@/util/index.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { ChannelLineupSchema } from '@tunarr/types/schemas';
 import { isNull } from 'lodash-es';
 import { z } from 'zod';
-import { DateTimeRange } from '../types/DateTimeRange.js';
-import { RouterPluginCallback } from '../types/serverType.js';
-import { groupByUniq } from '../util/index.js';
-import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 
 export const guideRouter: RouterPluginCallback = (fastify, _opts, done) => {
   const logger = LoggerFactory.child({

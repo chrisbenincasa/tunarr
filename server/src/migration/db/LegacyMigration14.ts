@@ -1,6 +1,6 @@
+import { MediaSourceType } from '@/db/schema/MediaSource.ts';
+import { ProgramGroupingType } from '@/db/schema/ProgramGrouping.ts';
 import { CompiledQuery, Kysely, sql } from 'kysely';
-import { MediaSourceType } from '../../db/schema/MediaSource.ts';
-import { ProgramGroupingType } from '../../db/schema/ProgramGrouping.ts';
 import {
   ProgramExternalIdSourceType,
   WithCreatedAt,

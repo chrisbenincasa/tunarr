@@ -1,3 +1,14 @@
+import { getDatabase } from '@/db/DBAccess.ts';
+import { NewCachedImage } from '@/db/schema/CachedImage.ts';
+import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.ts';
+import { globalOptions } from '@/globals.ts';
+import { serverContext } from '@/serverContext.ts';
+import { GlobalScheduler } from '@/services/Scheduler.ts';
+import { AnonymousTask } from '@/tasks/Task.ts';
+import { Maybe } from '@/types/util.ts';
+import { attempt } from '@/util/index.ts';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
+import { booleanToNumber } from '@/util/sqliteUtil.ts';
 import {
   FfmpegSettings,
   PlexServerSettings,
@@ -34,26 +45,15 @@ import {
 import path, { dirname, join } from 'path';
 import { v4 } from 'uuid';
 import { z } from 'zod';
-import { getDatabase } from '../../db/DBAccess.ts';
 import {
   Settings,
   SettingsDB,
   defaultXmlTvSettings,
 } from '../../db/SettingsDB.ts';
-import { NewCachedImage } from '../../db/schema/CachedImage.ts';
 import {
   MediaSourceType,
   NewMediaSource,
 } from '../../db/schema/MediaSource.ts';
-import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.ts';
-import { globalOptions } from '../../globals.ts';
-import { serverContext } from '../../serverContext.ts';
-import { GlobalScheduler } from '../../services/Scheduler.ts';
-import { AnonymousTask } from '../../tasks/Task.ts';
-import { Maybe } from '../../types/util.ts';
-import { attempt } from '../../util/index.ts';
-import { LoggerFactory } from '../../util/logging/LoggerFactory.ts';
-import { booleanToNumber } from '../../util/sqliteUtil.ts';
 import {
   LegacyChannelMigrator,
   LegacyProgram,

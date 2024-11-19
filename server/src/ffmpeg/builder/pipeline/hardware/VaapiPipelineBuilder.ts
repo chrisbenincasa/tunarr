@@ -1,31 +1,42 @@
+import { BaseFfmpegHardwareCapabilities } from '@/ffmpeg/builder/capabilities/BaseFfmpegHardwareCapabilities.ts';
+import { FfmpegCapabilities } from '@/ffmpeg/builder/capabilities/FfmpegCapabilities.ts';
+import { OutputFormatTypes, VideoFormats } from '@/ffmpeg/builder/constants.ts';
+import { Decoder } from '@/ffmpeg/builder/decoder/Decoder.ts';
+import { VaapiDecoder } from '@/ffmpeg/builder/decoder/vaapi/VaapiDecoder.ts';
+import { Encoder } from '@/ffmpeg/builder/encoder/Encoder.ts';
+import { DeinterlaceFilter } from '@/ffmpeg/builder/filter/DeinterlaceFilter.ts';
+import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.ts';
+import { HardwareDownloadFilter } from '@/ffmpeg/builder/filter/HardwareDownloadFilter.ts';
+import { PadFilter } from '@/ffmpeg/builder/filter/PadFilter.ts';
+import { PixelFormatFilter } from '@/ffmpeg/builder/filter/PixelFormatFilter.ts';
+import { ScaleFilter } from '@/ffmpeg/builder/filter/ScaleFilter.ts';
+import { DeinterlaceVaapiFilter } from '@/ffmpeg/builder/filter/vaapi/DeinterlaceVaapiFilter.ts';
+import { HardwareUploadVaapiFilter } from '@/ffmpeg/builder/filter/vaapi/HardwareUploadVaapiFilter.ts';
+import { ScaleVaapiFilter } from '@/ffmpeg/builder/filter/vaapi/ScaleVaapiFilter.ts';
+import { VaapiFormatFilter } from '@/ffmpeg/builder/filter/vaapi/VaapiFormatFilter.ts';
+import { OverlayWatermarkFilter } from '@/ffmpeg/builder/filter/watermark/OverlayWatermarkFilter.ts';
+import { WatermarkOpacityFilter } from '@/ffmpeg/builder/filter/watermark/WatermarkOpacityFilter.ts';
+import { WatermarkScaleFilter } from '@/ffmpeg/builder/filter/watermark/WatermarkScaleFilter.ts';
+import { AudioInputSource } from '@/ffmpeg/builder/input/AudioInputSource.ts';
+import { ConcatInputSource } from '@/ffmpeg/builder/input/ConcatInputSource.ts';
+import { VideoInputSource } from '@/ffmpeg/builder/input/VideoInputSource.ts';
+import { WatermarkInputSource } from '@/ffmpeg/builder/input/WatermarkInputSource.ts';
+import { VaapiDriverEnvironmentVariable } from '@/ffmpeg/builder/options/EnvironmentVariables.ts';
+import { VaapiHardwareAccelerationOption } from '@/ffmpeg/builder/options/hardwareAcceleration/VaapiOptions.ts';
+import { DoNotIgnoreLoopInputOption } from '@/ffmpeg/builder/options/input/DoNotIgnoreLoopInputOption.ts';
+import { InfiniteLoopInputOption } from '@/ffmpeg/builder/options/input/InfiniteLoopInputOption.ts';
+import { isVideoPipelineContext } from '@/ffmpeg/builder/pipeline/BasePipelineBuilder.ts';
+import { SoftwarePipelineBuilder } from '@/ffmpeg/builder/pipeline/software/SoftwarePipelineBuilder.ts';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
+import { Nullable } from '@/types/util.ts';
+import { isDefined, isNonEmptyString } from '@/util/index.ts';
 import { every, filter, head, inRange, isUndefined } from 'lodash-es';
 import { P, match } from 'ts-pattern';
-import { Nullable } from '../../../../types/util.ts';
-import { isDefined, isNonEmptyString } from '../../../../util/index.ts';
-import { BaseFfmpegHardwareCapabilities } from '../../capabilities/BaseFfmpegHardwareCapabilities.ts';
-import { FfmpegCapabilities } from '../../capabilities/FfmpegCapabilities.ts';
-import { OutputFormatTypes, VideoFormats } from '../../constants.ts';
-import { Decoder } from '../../decoder/Decoder.ts';
-import { VaapiDecoder } from '../../decoder/vaapi/VaapiDecoder.ts';
-import { Encoder } from '../../encoder/Encoder.ts';
 import {
   H264VaapiEncoder,
   HevcVaapiEncoder,
   Mpeg2VaapiEncoder,
 } from '../../encoder/vaapi/VaapiEncoders.ts';
-import { DeinterlaceFilter } from '../../filter/DeinterlaceFilter.ts';
-import { FilterOption } from '../../filter/FilterOption.ts';
-import { HardwareDownloadFilter } from '../../filter/HardwareDownloadFilter.ts';
-import { PadFilter } from '../../filter/PadFilter.ts';
-import { PixelFormatFilter } from '../../filter/PixelFormatFilter.ts';
-import { ScaleFilter } from '../../filter/ScaleFilter.ts';
-import { DeinterlaceVaapiFilter } from '../../filter/vaapi/DeinterlaceVaapiFilter.ts';
-import { HardwareUploadVaapiFilter } from '../../filter/vaapi/HardwareUploadVaapiFilter.ts';
-import { ScaleVaapiFilter } from '../../filter/vaapi/ScaleVaapiFilter.ts';
-import { VaapiFormatFilter } from '../../filter/vaapi/VaapiFormatFilter.ts';
-import { OverlayWatermarkFilter } from '../../filter/watermark/OverlayWatermarkFilter.ts';
-import { WatermarkOpacityFilter } from '../../filter/watermark/WatermarkOpacityFilter.ts';
-import { WatermarkScaleFilter } from '../../filter/watermark/WatermarkScaleFilter.ts';
 import {
   FfmpegPixelFormats,
   KnownPixelFormats,
@@ -33,26 +44,15 @@ import {
   PixelFormatYuva420P,
   PixelFormats,
 } from '../../format/PixelFormat.ts';
-import { AudioInputSource } from '../../input/AudioInputSource.ts';
-import { ConcatInputSource } from '../../input/ConcatInputSource.ts';
-import { VideoInputSource } from '../../input/VideoInputSource.ts';
-import { WatermarkInputSource } from '../../input/WatermarkInputSource.ts';
-import { VaapiDriverEnvironmentVariable } from '../../options/EnvironmentVariables.ts';
 import {
   NoAutoScaleOutputOption,
   PixelFormatOutputOption,
 } from '../../options/OutputOption.ts';
-import { VaapiHardwareAccelerationOption } from '../../options/hardwareAcceleration/VaapiOptions.ts';
-import { DoNotIgnoreLoopInputOption } from '../../options/input/DoNotIgnoreLoopInputOption.ts';
-import { InfiniteLoopInputOption } from '../../options/input/InfiniteLoopInputOption.ts';
-import { FrameState } from '../../state/FrameState.ts';
 import {
   FrameDataLocation,
   HardwareAccelerationMode,
   RateControlMode,
 } from '../../types.ts';
-import { isVideoPipelineContext } from '../BasePipelineBuilder.ts';
-import { SoftwarePipelineBuilder } from '../software/SoftwarePipelineBuilder.ts';
 
 export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
   constructor(

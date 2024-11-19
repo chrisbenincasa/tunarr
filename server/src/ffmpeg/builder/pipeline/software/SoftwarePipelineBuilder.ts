@@ -1,14 +1,14 @@
+import { VideoFormats } from '@/ffmpeg/builder/constants.ts';
+import { Encoder } from '@/ffmpeg/builder/encoder/Encoder.ts';
+import { DeinterlaceFilter } from '@/ffmpeg/builder/filter/DeinterlaceFilter.ts';
+import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.ts';
+import { PadFilter } from '@/ffmpeg/builder/filter/PadFilter.ts';
+import { ScaleFilter } from '@/ffmpeg/builder/filter/ScaleFilter.ts';
+import { OverlayWatermarkFilter } from '@/ffmpeg/builder/filter/watermark/OverlayWatermarkFilter.ts';
+import { PixelFormatYuv420P } from '@/ffmpeg/builder/format/PixelFormat.ts';
+import { PixelFormatOutputOption } from '@/ffmpeg/builder/options/OutputOption.ts';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
 import { filter, isNull, some } from 'lodash-es';
-import { VideoFormats } from '../../constants.ts';
-import { Encoder } from '../../encoder/Encoder.ts';
-import { DeinterlaceFilter } from '../../filter/DeinterlaceFilter.ts';
-import { FilterOption } from '../../filter/FilterOption.ts';
-import { PadFilter } from '../../filter/PadFilter.ts';
-import { ScaleFilter } from '../../filter/ScaleFilter.ts';
-import { OverlayWatermarkFilter } from '../../filter/watermark/OverlayWatermarkFilter.ts';
-import { PixelFormatYuv420P } from '../../format/PixelFormat.ts';
-import { PixelFormatOutputOption } from '../../options/OutputOption.ts';
-import { FrameState } from '../../state/FrameState.ts';
 import {
   BasePipelineBuilder,
   isVideoPipelineContext,

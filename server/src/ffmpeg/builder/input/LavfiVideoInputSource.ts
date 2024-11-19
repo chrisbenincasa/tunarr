@@ -1,11 +1,11 @@
-import { FilterStreamSource } from '../../../stream/types.ts';
-import { VideoStream } from '../MediaStream.ts';
-import { StaticFilter } from '../filter/StaticFilter.ts';
-import { TitleTextFilter } from '../filter/TitleTextFilter.ts';
-import { PixelFormatUnknown } from '../format/PixelFormat.ts';
-import { LavfiInputOption } from '../options/input/LavfiInputOption.ts';
-import { FrameSize } from '../types.ts';
-import { HasFilterOption } from '../types/PipelineStep.ts';
+import { VideoStream } from '@/ffmpeg/builder/MediaStream.ts';
+import { StaticFilter } from '@/ffmpeg/builder/filter/StaticFilter.ts';
+import { TitleTextFilter } from '@/ffmpeg/builder/filter/TitleTextFilter.ts';
+import { PixelFormatUnknown } from '@/ffmpeg/builder/format/PixelFormat.ts';
+import { LavfiInputOption } from '@/ffmpeg/builder/options/input/LavfiInputOption.ts';
+import { FrameSize } from '@/ffmpeg/builder/types.ts';
+import { HasFilterOption } from '@/ffmpeg/builder/types/PipelineStep.ts';
+import { FilterStreamSource } from '@/stream/types.ts';
 import { VideoInputSource } from './VideoInputSource.ts';
 
 export class LavfiVideoInputSource extends VideoInputSource {

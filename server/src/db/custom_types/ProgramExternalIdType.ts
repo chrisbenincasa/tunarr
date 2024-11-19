@@ -1,6 +1,6 @@
+import { MediaSourceType } from '@/db/schema/MediaSource.ts';
+import { enumKeys } from '@/util/enumUtil.ts';
 import { ExternalIdType } from '@tunarr/types/schemas';
-import { enumKeys } from '../../util/enumUtil.ts';
-import { MediaSourceType } from '../schema/MediaSource.ts';
 import { ProgramSourceType } from './ProgramSourceType.ts';
 
 export enum ProgramExternalIdType {

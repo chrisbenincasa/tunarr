@@ -1,7 +1,7 @@
+import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.ts';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
+import { FrameDataLocation, FrameSize } from '@/ffmpeg/builder/types.ts';
 import { isEmpty, isNil } from 'lodash-es';
-import { FrameState } from '../../state/FrameState.ts';
-import { FrameDataLocation, FrameSize } from '../../types.ts';
-import { FilterOption } from '../FilterOption.ts';
 
 export class ScaleCudaFilter extends FilterOption {
   readonly filter: string;

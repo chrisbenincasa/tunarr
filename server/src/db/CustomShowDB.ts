@@ -1,3 +1,4 @@
+import { isNonEmptyString } from '@/util/index.ts';
 import { CustomProgram } from '@tunarr/types';
 import {
   CreateCustomShowRequest,
@@ -6,7 +7,6 @@ import {
 import dayjs from 'dayjs';
 import { filter, isNil, map } from 'lodash-es';
 import { v4 } from 'uuid';
-import { isNonEmptyString } from '../util/index.ts';
 import { getDatabase } from './DBAccess.ts';
 import { ProgramDB } from './ProgramDB.ts';
 import { ProgramConverter } from './converters/ProgramConverter.ts';

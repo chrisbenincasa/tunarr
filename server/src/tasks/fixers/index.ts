@@ -1,6 +1,6 @@
+import { groupByUniq } from '@/util/index.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { round } from 'lodash-es';
-import { groupByUniq } from '../../util/index.js';
-import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
 import { BackfillProgramExternalIds } from './BackfillProgramExternalIds.js';
 import { AddPlexServerIdsFixer } from './addPlexServerIds.js';
 import { BackfillProgramGroupings } from './backfillProgramGroupings.js';

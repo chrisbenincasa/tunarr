@@ -1,3 +1,6 @@
+import { Channel } from '@/entities/Channel.ts';
+import { CustomShow } from '@/entities/CustomShow.ts';
+import dbConfig from '@/mikro-orm.prod.config.js';
 import { MikroORM, RequestContext } from '@mikro-orm/better-sqlite';
 import fs from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
@@ -5,9 +8,6 @@ import { fileURLToPath } from 'node:url';
 import { inspect } from 'node:util';
 import tmp from 'tmp-promise';
 import { afterAll, beforeAll, describe, test } from 'vitest';
-import dbConfig from '../../../mikro-orm.prod.config.js';
-import { Channel } from '../entities/Channel.ts';
-import { CustomShow } from '../entities/CustomShow.ts';
 import { migrateChannel, migratePrograms } from './LegacyChannelMigrator.ts';
 import { migrateCustomShows } from './libraryMigrator.ts';
 

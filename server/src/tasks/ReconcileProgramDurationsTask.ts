@@ -1,3 +1,7 @@
+import { ChannelDB } from '@/db/ChannelDB.ts';
+import { getDatabase } from '@/db/DBAccess.ts';
+import { isContentItem } from '@/db/derived_types/Lineup.ts';
+import { flatMapAsyncSeq, isNonEmptyString } from '@/util/index.ts';
 import {
   chunk,
   differenceWith,
@@ -8,10 +12,6 @@ import {
   map,
   uniqBy,
 } from 'lodash-es';
-import { ChannelDB } from '../db/ChannelDB.ts';
-import { getDatabase } from '../db/DBAccess.ts';
-import { isContentItem } from '../db/derived_types/Lineup.ts';
-import { flatMapAsyncSeq, isNonEmptyString } from '../util/index.ts';
 import { Task } from './Task.ts';
 
 // This task is fired off whenever programs are updated. It goes through

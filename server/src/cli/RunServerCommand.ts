@@ -1,11 +1,11 @@
+import { setServerOptions } from '@/globals.ts';
+import { initServer } from '@/server.ts';
+import { TruthyQueryParam } from '@/types/schemas.ts';
+import { getDefaultServerPort } from '@/util/defaults.ts';
+import { isNonEmptyString, isProduction } from '@/util/index.ts';
+import { getTunarrVersion } from '@/util/version.ts';
 import chalk from 'chalk';
 import { ArgumentsCamelCase, CommandModule } from 'yargs';
-import { setServerOptions } from '../globals.ts';
-import { initServer } from '../server.ts';
-import { TruthyQueryParam } from '../types/schemas.ts';
-import { getDefaultServerPort } from '../util/defaults.ts';
-import { isNonEmptyString, isProduction } from '../util/index.ts';
-import { getTunarrVersion } from '../util/version.ts';
 import { GlobalArgsType } from './types.ts';
 
 export type ServerArgsType = GlobalArgsType & {

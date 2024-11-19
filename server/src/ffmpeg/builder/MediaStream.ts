@@ -1,6 +1,6 @@
+import { ExcludeByValueType, Nullable } from '@/types/util.ts';
 import { isNull, merge } from 'lodash-es';
 import { AnyFunction, MarkOptional } from 'ts-essentials';
-import { ExcludeByValueType, Nullable } from '../../types/util.ts';
 import { PixelFormat } from './format/PixelFormat.ts';
 import { DataProps, FrameSize, StreamKind } from './types.ts';
 

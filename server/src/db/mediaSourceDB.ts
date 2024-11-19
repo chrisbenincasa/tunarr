@@ -1,3 +1,5 @@
+import { Maybe } from '@/types/util.ts';
+import { groupByUniqProp, isNonEmptyString } from '@/util/index.ts';
 import {
   InsertMediaSourceRequest,
   UpdateMediaSourceRequest,
@@ -15,11 +17,9 @@ import {
   trimEnd,
 } from 'lodash-es';
 import { v4 } from 'uuid';
-import { Maybe } from '../types/util.ts';
-import { groupByUniqProp, isNonEmptyString } from '../util/index.ts';
 import { ChannelDB } from './ChannelDB.ts';
 
-import { booleanToNumber } from '../util/sqliteUtil.ts';
+import { booleanToNumber } from '@/util/sqliteUtil.ts';
 import { getDatabase } from './DBAccess.ts';
 import {
   withProgramChannels,

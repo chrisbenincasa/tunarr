@@ -1,3 +1,5 @@
+import { attempt } from '@/util/index.ts';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
 import Sqlite from 'better-sqlite3';
 import dayjs from 'dayjs';
 import {
@@ -12,8 +14,6 @@ import {
   DirectMigrationProvider,
   LegacyMigrationNameToNewMigrationName,
 } from '../migration/DirectMigrationProvider.ts';
-import { attempt } from '../util/index.ts';
-import { LoggerFactory } from '../util/logging/LoggerFactory.ts';
 import { DB } from './schema/db.ts';
 
 const MigrationTableName = 'migrations';

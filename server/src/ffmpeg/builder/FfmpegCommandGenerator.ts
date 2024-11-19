@@ -1,7 +1,7 @@
+import { Nullable } from '@/types/util.ts';
+import { ifDefined } from '@/util/index.ts';
 import { filter, findIndex, first, flatMap, partition } from 'lodash-es';
 import { Dictionary } from 'ts-essentials';
-import { Nullable } from '../../types/util.ts';
-import { ifDefined } from '../../util/index.ts';
 import { BaseEncoder } from './encoder/BaseEncoder.ts';
 import { ComplexFilter } from './filter/ComplexFilter.ts';
 import { AudioInputSource } from './input/AudioInputSource.ts';

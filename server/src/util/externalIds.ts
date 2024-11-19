@@ -1,11 +1,11 @@
+import { programExternalIdTypeFromExternalIdType } from '@/db/custom_types/ProgramExternalIdType.ts';
+import { NewProgramExternalId } from '@/db/schema/ProgramExternalId.ts';
+import { Nullable } from '@/types/util.js';
 import { MultiExternalId } from '@tunarr/types';
 import { isValidSingleExternalIdType } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import { isError, trimEnd, trimStart } from 'lodash-es';
 import { v4 } from 'uuid';
-import { programExternalIdTypeFromExternalIdType } from '../db/custom_types/ProgramExternalIdType.ts';
-import { NewProgramExternalId } from '../db/schema/ProgramExternalId.ts';
-import { Nullable } from '../types/util.js';
 import { attemptSync } from './index.js';
 import { LoggerFactory } from './logging/LoggerFactory.ts';
 

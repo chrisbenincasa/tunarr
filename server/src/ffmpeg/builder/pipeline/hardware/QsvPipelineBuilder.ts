@@ -1,25 +1,25 @@
+import { VideoFormats } from '@/ffmpeg/builder/constants.ts';
+import { Decoder } from '@/ffmpeg/builder/decoder/Decoder.ts';
+import { DecoderFactory } from '@/ffmpeg/builder/decoder/DecoderFactory.ts';
+import { Encoder } from '@/ffmpeg/builder/encoder/Encoder.ts';
+import { DeinterlaceFilter } from '@/ffmpeg/builder/filter/DeinterlaceFilter.ts';
+import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.ts';
+import { ScaleFilter } from '@/ffmpeg/builder/filter/ScaleFilter.ts';
+import { DeinterlaceQsvFilter } from '@/ffmpeg/builder/filter/qsv/DeinterlaceQsvFilter.ts';
+import { ScaleQsvFilter } from '@/ffmpeg/builder/filter/qsv/ScaleQsvFilter.ts';
+import { QsvHardwareAccelerationOption } from '@/ffmpeg/builder/options/hardwareAcceleration/QsvOptions.ts';
+import { isVideoPipelineContext } from '@/ffmpeg/builder/pipeline/BasePipelineBuilder.ts';
+import { SoftwarePipelineBuilder } from '@/ffmpeg/builder/pipeline/software/SoftwarePipelineBuilder.ts';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
+import { HardwareAccelerationMode } from '@/ffmpeg/builder/types.ts';
+import { Nullable } from '@/types/util.ts';
+import { isNonEmptyString } from '@/util/index.ts';
 import { isNull } from 'lodash-es';
-import { Nullable } from '../../../../types/util.ts';
-import { isNonEmptyString } from '../../../../util/index.ts';
-import { VideoFormats } from '../../constants.ts';
-import { Decoder } from '../../decoder/Decoder.ts';
-import { DecoderFactory } from '../../decoder/DecoderFactory.ts';
-import { Encoder } from '../../encoder/Encoder.ts';
 import {
   H264QsvEncoder,
   HevcQsvEncoder,
   Mpeg2QsvEncoder,
 } from '../../encoder/qsv/QsvEncoders.ts';
-import { DeinterlaceFilter } from '../../filter/DeinterlaceFilter.ts';
-import { FilterOption } from '../../filter/FilterOption.ts';
-import { ScaleFilter } from '../../filter/ScaleFilter.ts';
-import { DeinterlaceQsvFilter } from '../../filter/qsv/DeinterlaceQsvFilter.ts';
-import { ScaleQsvFilter } from '../../filter/qsv/ScaleQsvFilter.ts';
-import { QsvHardwareAccelerationOption } from '../../options/hardwareAcceleration/QsvOptions.ts';
-import { FrameState } from '../../state/FrameState.ts';
-import { HardwareAccelerationMode } from '../../types.ts';
-import { isVideoPipelineContext } from '../BasePipelineBuilder.ts';
-import { SoftwarePipelineBuilder } from '../software/SoftwarePipelineBuilder.ts';
 
 export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
   protected setHardwareAccelState(): void {

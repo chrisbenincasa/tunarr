@@ -1,9 +1,9 @@
-import { isNonEmptyString } from '../../../util/index.ts';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
+import { isNonEmptyString } from '@/util/index.ts';
 import {
   FfmpegPixelFormats,
   KnownPixelFormats,
 } from '../format/PixelFormat.ts';
-import { FrameState } from '../state/FrameState.ts';
 import { FilterOption } from './FilterOption.ts';
 
 export class HardwareDownloadFilter extends FilterOption {

@@ -1,6 +1,10 @@
+import {
+  QueryResult,
+  isQueryError,
+  isQuerySuccess,
+} from '@/external/BaseApiClient.js';
+import { isDefined } from '@/util/index.js';
 import NodeCache from 'node-cache';
-import { isDefined } from '../../util/index.js';
-import { QueryResult, isQueryError, isQuerySuccess } from '../BaseApiClient.js';
 
 export class PlexQueryCache {
   #cache: NodeCache;

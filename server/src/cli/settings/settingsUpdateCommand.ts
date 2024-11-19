@@ -1,6 +1,6 @@
+import { SettingsSchema, getSettings } from '@/db/SettingsDB.ts';
 import { merge } from 'lodash-es';
 import { CommandModule } from 'yargs';
-import { SettingsSchema, getSettings } from '../../db/SettingsDB.ts';
 
 type SettingsUpdateCommandArgs = {
   pretty: boolean;

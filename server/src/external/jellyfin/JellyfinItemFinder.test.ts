@@ -1,8 +1,8 @@
+import { ProgramDB } from '@/db/ProgramDB.ts';
 import {
   initDatabaseAccess,
   syncMigrationTablesIfNecessary,
 } from '../../db/DBAccess.ts';
-import { ProgramDB } from '../../db/ProgramDB.ts';
 import { JellyfinItemFinder } from './JellyfinItemFinder.ts';
 
 beforeAll(async () => {

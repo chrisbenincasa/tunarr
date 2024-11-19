@@ -1,9 +1,9 @@
+import { getSettings } from '@/db/SettingsDB.ts';
+import { LegacyDbMigrator } from '@/migration/legacy_migration/legacyDbMigration.ts';
 import { isArray, isString } from 'lodash-es';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { CommandModule } from 'yargs';
-import { getSettings } from '../db/SettingsDB.ts';
-import { LegacyDbMigrator } from '../migration/legacy_migration/legacyDbMigration.ts';
 import { GlobalArgsType } from './types.ts';
 
 type LegacyMigrateCommandArgs = {

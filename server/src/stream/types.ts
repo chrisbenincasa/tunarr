@@ -1,3 +1,5 @@
+import { Nullable } from '@/types/util.ts';
+import { isNonEmptyString } from '@/util/index.ts';
 import { Duration } from 'dayjs/plugin/duration.js';
 import { first, isNull, isUndefined } from 'lodash-es';
 import { Dictionary } from 'ts-essentials';
@@ -8,8 +10,6 @@ import {
   PixelFormatYuv420P,
   PixelFormatYuv420P10Le,
 } from '../ffmpeg/builder/format/PixelFormat.ts';
-import { Nullable } from '../types/util.ts';
-import { isNonEmptyString } from '../util/index.ts';
 
 export type StreamDetails = {
   duration?: Duration;

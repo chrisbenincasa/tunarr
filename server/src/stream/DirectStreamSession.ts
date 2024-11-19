@@ -1,7 +1,7 @@
+import { Channel } from '@/db/schema/Channel.ts';
+import { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
 import { once, round } from 'lodash-es';
 import { Readable } from 'node:stream';
-import { Channel } from '../db/schema/Channel.ts';
-import { FfmpegTranscodeSession } from '../ffmpeg/FfmpegTrancodeSession.js';
 import { Session, SessionOptions } from './Session.js';
 
 /**

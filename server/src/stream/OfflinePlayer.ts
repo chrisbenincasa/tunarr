@@ -1,13 +1,13 @@
+import { SettingsDB, getSettings } from '@/db/SettingsDB.ts';
+import { FfmpegStreamFactory } from '@/ffmpeg/FfmpegStreamFactory.ts';
+import { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
+import { OutputFormat } from '@/ffmpeg/builder/constants.ts';
+import { FFMPEG, StreamOptions } from '@/ffmpeg/ffmpeg.js';
+import { Result } from '@/types/result.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { makeLocalUrl } from '@/util/serverUtil.js';
 import dayjs from 'dayjs';
 import { isError, isUndefined } from 'lodash-es';
-import { SettingsDB, getSettings } from '../db/SettingsDB.ts';
-import { FfmpegStreamFactory } from '../ffmpeg/FfmpegStreamFactory.ts';
-import { FfmpegTranscodeSession } from '../ffmpeg/FfmpegTrancodeSession.js';
-import { OutputFormat } from '../ffmpeg/builder/constants.ts';
-import { FFMPEG, StreamOptions } from '../ffmpeg/ffmpeg.js';
-import { Result } from '../types/result.js';
-import { LoggerFactory } from '../util/logging/LoggerFactory.js';
-import { makeLocalUrl } from '../util/serverUtil.js';
 import { PlayerContext } from './PlayerStreamContext.js';
 import { ProgramStream } from './ProgramStream.js';
 

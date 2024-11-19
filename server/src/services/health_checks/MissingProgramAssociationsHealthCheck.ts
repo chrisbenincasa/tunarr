@@ -1,6 +1,6 @@
+import { getDatabase } from '@/db/DBAccess.ts';
 import { find } from 'lodash-es';
 import { P, match } from 'ts-pattern';
-import { getDatabase } from '../../db/DBAccess.ts';
 import {
   HealthCheck,
   HealthCheckResult,

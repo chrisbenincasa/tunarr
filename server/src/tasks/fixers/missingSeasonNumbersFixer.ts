@@ -1,3 +1,14 @@
+import { getDatabase } from '@/db/DBAccess.ts';
+import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.ts';
+import { withProgramGroupingExternalIds } from '@/db/programQueryHelpers.ts';
+import { MediaSourceType } from '@/db/schema/MediaSource.ts';
+import { ProgramGroupingType } from '@/db/schema/ProgramGrouping.ts';
+import { DB } from '@/db/schema/db.ts';
+import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
+import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
+import { Maybe } from '@/types/util.js';
+import { groupByUniqPropAndMap, wait } from '@/util/index.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { PlexEpisodeView, PlexSeasonView } from '@tunarr/types/plex';
 import { CaseWhenBuilder } from 'kysely';
 import {
@@ -16,21 +27,10 @@ import {
   pickBy,
   reduce,
 } from 'lodash-es';
-import { getDatabase } from '../../db/DBAccess.ts';
-import { ProgramExternalIdType } from '../../db/custom_types/ProgramExternalIdType.ts';
-import { withProgramGroupingExternalIds } from '../../db/programQueryHelpers.ts';
-import { MediaSourceType } from '../../db/schema/MediaSource.ts';
 import {
   ProgramType,
   ProgramDao as RawProgram,
 } from '../../db/schema/Program.ts';
-import { ProgramGroupingType } from '../../db/schema/ProgramGrouping.ts';
-import { DB } from '../../db/schema/db.ts';
-import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.js';
-import { PlexApiClient } from '../../external/plex/PlexApiClient.js';
-import { Maybe } from '../../types/util.js';
-import { groupByUniqPropAndMap, wait } from '../../util/index.js';
-import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
 import Fixer from './fixer.js';
 
 export class MissingSeasonNumbersFixer extends Fixer {

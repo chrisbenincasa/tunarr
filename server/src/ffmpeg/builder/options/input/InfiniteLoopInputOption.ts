@@ -1,6 +1,6 @@
+import { InputSource } from '@/ffmpeg/builder/input/InputSource.ts';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
 import { some } from 'lodash-es';
-import { InputSource } from '../../input/InputSource.ts';
-import { FrameState } from '../../state/FrameState.ts';
 import { InputOption } from './InputOption.ts';
 
 // TODO: Figure out how to model output options here ... this option

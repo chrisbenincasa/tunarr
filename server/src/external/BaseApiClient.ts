@@ -1,3 +1,7 @@
+import { Maybe, Try } from '@/types/util.js';
+import { configureAxiosLogging } from '@/util/axios.js';
+import { isDefined } from '@/util/index.js';
+import { Logger, LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import axios, {
   AxiosHeaderValue,
   AxiosInstance,
@@ -7,10 +11,6 @@ import axios, {
 } from 'axios';
 import { isError, isString } from 'lodash-es';
 import { z } from 'zod';
-import { Maybe, Try } from '../types/util.js';
-import { configureAxiosLogging } from '../util/axios.js';
-import { isDefined } from '../util/index.js';
-import { Logger, LoggerFactory } from '../util/logging/LoggerFactory.js';
 
 export type ApiClientOptions = {
   name?: string;

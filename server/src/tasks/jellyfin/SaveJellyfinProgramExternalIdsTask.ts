@@ -1,22 +1,22 @@
+import { ProgramDB } from '@/db/ProgramDB.ts';
+import { upsertRawProgramExternalIds } from '@/db/programExternalIdHelpers.ts';
+import { isQueryError } from '@/external/BaseApiClient.js';
+import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
+import { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';
+import { Task } from '@/tasks/Task.js';
+import { Maybe } from '@/types/util.js';
+import { isDefined, isNonEmptyString } from '@/util/index.js';
 import dayjs from 'dayjs';
 import { compact, isEmpty, isUndefined, map } from 'lodash-es';
 import { v4 } from 'uuid';
-import { ProgramDB } from '../../db/ProgramDB.ts';
 import {
   ProgramExternalIdType,
   programExternalIdTypeFromJellyfinProvider,
 } from '../../db/custom_types/ProgramExternalIdType.ts';
-import { upsertRawProgramExternalIds } from '../../db/programExternalIdHelpers.ts';
 import {
   NewProgramExternalId,
   ProgramExternalId,
 } from '../../db/schema/ProgramExternalId.ts';
-import { isQueryError } from '../../external/BaseApiClient.js';
-import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.js';
-import { JellyfinApiClient } from '../../external/jellyfin/JellyfinApiClient.js';
-import { Maybe } from '../../types/util.js';
-import { isDefined, isNonEmptyString } from '../../util/index.js';
-import { Task } from '../Task.js';
 
 export class SaveJellyfinProgramExternalIdsTask extends Task {
   ID = SaveJellyfinProgramExternalIdsTask.name;

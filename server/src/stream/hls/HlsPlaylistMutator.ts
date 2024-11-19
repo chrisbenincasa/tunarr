@@ -1,3 +1,4 @@
+import { isNonEmptyString } from '@/util/index.ts';
 import dayjs, { Dayjs } from 'dayjs';
 import {
   dropWhile,
@@ -12,7 +13,6 @@ import {
   takeRight,
   trimEnd,
 } from 'lodash-es';
-import { isNonEmptyString } from '../../util/index.ts';
 
 export class HlsPlaylistMutator {
   trimPlaylistWithDiscontinuity(

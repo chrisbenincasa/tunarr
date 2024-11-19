@@ -1,6 +1,6 @@
-import { MediaStream } from '../../MediaStream.ts';
-import { ConcatInputSource } from '../../input/ConcatInputSource.ts';
-import { InputSource } from '../../input/InputSource.ts';
+import { MediaStream } from '@/ffmpeg/builder/MediaStream.ts';
+import { ConcatInputSource } from '@/ffmpeg/builder/input/ConcatInputSource.ts';
+import { InputSource } from '@/ffmpeg/builder/input/InputSource.ts';
 import { InputOption } from './InputOption.ts';
 
 export class ConcatInputFormatOption extends InputOption {

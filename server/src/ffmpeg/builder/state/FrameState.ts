@@ -1,8 +1,12 @@
+import { PixelFormat } from '@/ffmpeg/builder/format/PixelFormat.ts';
+import {
+  DataProps,
+  FrameDataLocation,
+  FrameSize,
+} from '@/ffmpeg/builder/types.ts';
+import { Nullable } from '@/types/util.ts';
 import { merge } from 'lodash-es';
 import { MarkOptional } from 'ts-essentials';
-import { Nullable } from '../../../types/util.ts';
-import { PixelFormat } from '../format/PixelFormat.ts';
-import { DataProps, FrameDataLocation, FrameSize } from '../types.ts';
 
 type FrameStateFields = DataProps<FrameState>;
 

@@ -1,6 +1,6 @@
+import { InputSource } from '@/ffmpeg/builder/input/InputSource.ts';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
 import { Dictionary } from 'ts-essentials';
-import { InputSource } from '../input/InputSource.ts';
-import { FrameState } from '../state/FrameState.ts';
 
 export type PipelineStepType =
   | 'global'

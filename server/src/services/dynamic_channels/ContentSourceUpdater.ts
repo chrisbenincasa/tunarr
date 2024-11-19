@@ -1,6 +1,6 @@
+import { Channel } from '@/db/schema/Channel.ts';
 import { DynamicContentConfigSource } from '@tunarr/types/api';
 import { Mutex, withTimeout } from 'async-mutex';
-import { Channel } from '../../db/schema/Channel.ts';
 
 const locks: Record<DynamicContentConfigSource['type'], Mutex> = {
   plex: new Mutex(),

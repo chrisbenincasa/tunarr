@@ -1,5 +1,5 @@
+import { DB } from '@/db/schema/db.ts';
 import { Kysely, Migration } from 'kysely';
-import { DB } from '../../db/schema/db.ts';
 
 export default {
   async up(db: Kysely<DB>): Promise<void> {

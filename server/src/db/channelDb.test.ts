@@ -1,7 +1,7 @@
+import { setGlobalOptions } from '@/globals.ts';
 import fs from 'fs/promises';
 import { join } from 'path';
 import temp from 'temp';
-import { setGlobalOptions } from '../globals.ts';
 
 beforeAll(async () => {
   temp.track();

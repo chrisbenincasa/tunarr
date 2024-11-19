@@ -1,5 +1,5 @@
+import { LineupItem } from '@/db/derived_types/Lineup.ts';
 import { map, random, range, sumBy } from 'lodash-es';
-import { LineupItem } from '../../db/derived_types/Lineup.ts';
 import { collapseOfflineTime } from './CollapseOfflineTimeOperator.js';
 
 describe('CollapseOfflineTimeOperator', () => {

@@ -1,11 +1,11 @@
+import { ChannelDB } from '@/db/ChannelDB.ts';
+import { ProgramDB } from '@/db/ProgramDB.ts';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
 import { findIndex, map } from 'lodash-es';
-import { ChannelDB } from '../../db/ChannelDB.ts';
-import { ProgramDB } from '../../db/ProgramDB.ts';
 import {
   CurrentLineupSchemaVersion,
   Lineup,
 } from '../../db/derived_types/Lineup.ts';
-import { LoggerFactory } from '../../util/logging/LoggerFactory.ts';
 import { ChannelLineupMigration } from './ChannelLineupMigration.ts';
 import { SlotShowIdMigration } from './SlotShowIdMigration.ts';
 

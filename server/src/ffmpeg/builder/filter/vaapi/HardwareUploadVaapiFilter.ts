@@ -1,6 +1,6 @@
-import { FrameState } from '../../state/FrameState.ts';
-import { FrameDataLocation } from '../../types.ts';
-import { FilterOption } from '../FilterOption.ts';
+import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.ts';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
+import { FrameDataLocation } from '@/ffmpeg/builder/types.ts';
 
 export class HardwareUploadVaapiFilter extends FilterOption {
   constructor(

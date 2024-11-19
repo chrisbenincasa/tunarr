@@ -1,5 +1,5 @@
+import { MarkNonNullable } from '@/types/util.ts';
 import type { DeepNullable, MarkRequired } from 'ts-essentials';
-import { MarkNonNullable } from '../../types/util.ts';
 import { Channel, ChannelFillerShow } from './Channel.ts';
 import { FillerShow } from './FillerShow.ts';
 import { ProgramDao } from './Program.ts';

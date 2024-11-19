@@ -1,3 +1,14 @@
+import { ChannelDB } from '@/db/ChannelDB.ts';
+import { CustomShowDB } from '@/db/CustomShowDB.ts';
+import { getDatabase } from '@/db/DBAccess.ts';
+import { ProgramDB } from '@/db/ProgramDB.ts';
+import { ProgramUpsertFields } from '@/db/programQueryHelpers.ts';
+import { Channel, NewChannelFillerShow } from '@/db/schema/Channel.ts';
+import { ProgramDao } from '@/db/schema/Program.ts';
+import { ChannelNotFoundError } from '@/types/errors.ts';
+import { Maybe } from '@/types/util.ts';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
+import { booleanToNumber } from '@/util/sqliteUtil.ts';
 import { seq } from '@tunarr/shared/util';
 import {
   Channel as ApiChannel,
@@ -23,10 +34,6 @@ import {
 import fs from 'node:fs/promises';
 import path from 'path';
 import { v4 } from 'uuid';
-import { ChannelDB } from '../../db/ChannelDB.ts';
-import { CustomShowDB } from '../../db/CustomShowDB.ts';
-import { getDatabase } from '../../db/DBAccess.ts';
-import { ProgramDB } from '../../db/ProgramDB.ts';
 import {
   ContentItem,
   CurrentLineupSchemaVersion,
@@ -35,17 +42,12 @@ import {
   OfflineItem,
   RedirectItem,
 } from '../../db/derived_types/Lineup.ts';
-import { ProgramUpsertFields } from '../../db/programQueryHelpers.ts';
-import { Channel, NewChannelFillerShow } from '../../db/schema/Channel.ts';
-import { ProgramDao } from '../../db/schema/Program.ts';
 import {
   ChannelIcon,
   ChannelOfflineSettings,
   ChannelTranscodingSettings,
   ChannelWatermark,
 } from '../../db/schema/base.ts';
-import { ChannelNotFoundError } from '../../types/errors.ts';
-import { Maybe } from '../../types/util.ts';
 import {
   emptyStringToUndefined,
   groupByUniq,
@@ -55,8 +57,6 @@ import {
   mapToObj,
   run,
 } from '../../util/index.ts';
-import { LoggerFactory } from '../../util/logging/LoggerFactory.ts';
-import { booleanToNumber } from '../../util/sqliteUtil.ts';
 import {
   JSONArray,
   JSONObject,

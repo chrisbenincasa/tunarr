@@ -1,6 +1,6 @@
+import { getSettings } from '@/db/SettingsDB.ts';
 import { at, isArray, isEmpty } from 'lodash-es';
 import { CommandModule } from 'yargs';
-import { getSettings } from '../../db/SettingsDB.ts';
 
 type SettingsViewCommandArgs = {
   pretty: boolean;

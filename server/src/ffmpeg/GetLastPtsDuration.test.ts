@@ -1,4 +1,4 @@
-import { SettingsDB } from '../db/SettingsDB.ts';
+import { SettingsDB } from '@/db/SettingsDB.ts';
 import {
   getFakeSettingsDb,
   setTestGlobalOptions,

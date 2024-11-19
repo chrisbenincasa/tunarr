@@ -1,3 +1,10 @@
+import { ChannelDB } from '@/db/ChannelDB.ts';
+import { getDatabase } from '@/db/DBAccess.ts';
+import { Lineup, isContentItem } from '@/db/derived_types/Lineup.ts';
+import { Func } from '@/types/func.js';
+import { ChannelAndLineup } from '@/types/internal.js';
+import { asyncPool } from '@/util/asyncPool.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { SchedulingOperation } from '@tunarr/types/api';
 import {
   compact,
@@ -8,19 +15,12 @@ import {
   reject,
   sortBy,
 } from 'lodash-es';
-import { ChannelDB } from '../../db/ChannelDB.ts';
-import { getDatabase } from '../../db/DBAccess.ts';
-import { Lineup, isContentItem } from '../../db/derived_types/Lineup.ts';
-import { Func } from '../../types/func.js';
-import { ChannelAndLineup } from '../../types/internal.js';
-import { asyncPool } from '../../util/asyncPool.js';
 import {
   asyncFlow,
   groupByUniqProp,
   intersperse,
   isDefined,
 } from '../../util/index.js';
-import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
 import { CollapseOfflineTimeOperator } from './CollapseOfflineTimeOperator.js';
 import { IntermediateOperator } from './IntermediateOperator.js';
 import {

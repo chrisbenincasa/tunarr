@@ -1,7 +1,7 @@
+import { getDatabase } from '@/db/DBAccess.ts';
+import { MediaSourceType } from '@/db/schema/MediaSource.ts';
+import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
 import { find, isNil } from 'lodash-es';
-import { getDatabase } from '../../db/DBAccess.ts';
-import { MediaSourceType } from '../../db/schema/MediaSource.ts';
-import { PlexApiClient } from '../../external/plex/PlexApiClient.js';
 import Fixer from './fixer.js';
 
 export class AddPlexServerIdsFixer extends Fixer {

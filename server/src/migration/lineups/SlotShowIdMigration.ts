@@ -1,9 +1,9 @@
+import { Lineup } from '@/db/derived_types/Lineup.ts';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
 import {
   ShowProgrammingRandomSlot,
   ShowProgrammingTimeSlot,
 } from '@tunarr/types/api';
-import { Lineup } from '../../db/derived_types/Lineup.ts';
-import { LoggerFactory } from '../../util/logging/LoggerFactory.ts';
 import { ChannelLineupMigration } from './ChannelLineupMigration.ts';
 
 export class SlotShowIdMigration extends ChannelLineupMigration<0, 1> {

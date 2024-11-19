@@ -33,7 +33,12 @@
         "noEmit": true,
         "emitDecoratorMetadata": true,
         "esModuleInterop": true,
-        "noErrorTruncation": true
+        "noErrorTruncation": true,
+        "paths": {
+            "@/*": [
+                "./src/*"
+            ]
+        }
     },
     "include": [
         "./src/**/*.ts",

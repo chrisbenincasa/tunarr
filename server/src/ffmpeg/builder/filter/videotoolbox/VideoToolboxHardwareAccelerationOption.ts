@@ -1,4 +1,4 @@
-import { GlobalOption } from '../../options/GlobalOption.ts';
+import { GlobalOption } from '@/ffmpeg/builder/options/GlobalOption.ts';
 
 export class VideoToolboxHardwareAccelerationOption extends GlobalOption {
   options(): string[] {

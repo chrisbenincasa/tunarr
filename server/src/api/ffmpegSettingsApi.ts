@@ -1,12 +1,12 @@
+import { serverOptions } from '@/globals.js';
+import { RouterPluginCallback } from '@/types/serverType.js';
+import { firstDefined } from '@/util/index.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { sanitizeForExec } from '@/util/strings.js';
 import { defaultFfmpegSettings } from '@tunarr/types';
 import { FfmpegSettingsSchema } from '@tunarr/types/schemas';
 import { isError, merge, omit } from 'lodash-es';
 import { z } from 'zod';
-import { serverOptions } from '../globals.js';
-import { RouterPluginCallback } from '../types/serverType.js';
-import { firstDefined } from '../util/index.js';
-import { LoggerFactory } from '../util/logging/LoggerFactory.js';
-import { sanitizeForExec } from '../util/strings.js';
 
 export const ffmpegSettingsRouter: RouterPluginCallback = (
   fastify,

@@ -1,5 +1,5 @@
-import { FrameDataLocation } from '../../types.ts';
-import { BaseDecoder } from '../BaseDecoder.ts';
+import { BaseDecoder } from '@/ffmpeg/builder/decoder/BaseDecoder.ts';
+import { FrameDataLocation } from '@/ffmpeg/builder/types.ts';
 
 abstract class QsvDecoder extends BaseDecoder {
   protected outputFrameDataLocation: FrameDataLocation = 'hardware';

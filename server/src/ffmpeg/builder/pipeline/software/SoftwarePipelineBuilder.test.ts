@@ -1,10 +1,10 @@
-import { AudioStream, VideoStream } from '../../MediaStream.ts';
-import { VideoFormats } from '../../constants.ts';
-import { PixelFormat } from '../../format/PixelFormat.ts';
-import { AudioInputSource } from '../../input/AudioInputSource.ts';
-import { AudioState } from '../../state/AudioState.ts';
-import { FrameState } from '../../state/FrameState.ts';
-import { FrameSize } from '../../types.ts';
+import { AudioStream, VideoStream } from '@/ffmpeg/builder/MediaStream.ts';
+import { VideoFormats } from '@/ffmpeg/builder/constants.ts';
+import { PixelFormat } from '@/ffmpeg/builder/format/PixelFormat.ts';
+import { AudioInputSource } from '@/ffmpeg/builder/input/AudioInputSource.ts';
+import { AudioState } from '@/ffmpeg/builder/state/AudioState.ts';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
+import { FrameSize } from '@/ffmpeg/builder/types.ts';
 
 describe('SoftwarePipelineBuilder', () => {
   test('build args', () => {

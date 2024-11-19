@@ -1,6 +1,6 @@
+import { SettingsDB } from '@/db/SettingsDB.ts';
+import { serverOptions } from '@/globals.js';
 import { Server as SSDP } from 'node-ssdp';
-import { SettingsDB } from '../db/SettingsDB.ts';
-import { serverOptions } from '../globals.js';
 
 export class HdhrService {
   private db: SettingsDB;

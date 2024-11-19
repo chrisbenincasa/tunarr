@@ -1,7 +1,7 @@
+import { Maybe } from '@/types/util.ts';
 import { ChannelStreamMode } from '@tunarr/types';
 import { Duration } from 'dayjs/plugin/duration.js';
 import { DeepReadonly } from 'ts-essentials';
-import { Maybe } from '../types/util.ts';
 import { FfmpegTranscodeSession } from './FfmpegTrancodeSession.ts';
 import { OutputFormat } from './builder/constants.ts';
 import { ConcatOptions, StreamSessionOptions } from './ffmpeg.ts';

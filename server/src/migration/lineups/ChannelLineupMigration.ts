@@ -1,7 +1,7 @@
-import { ChannelDB } from '../../db/ChannelDB.ts';
-import { Lineup } from '../../db/derived_types/Lineup.ts';
-import { ProgramDB } from '../../db/ProgramDB.ts';
-import { Migration } from '../Migration.ts';
+import { ChannelDB } from '@/db/ChannelDB.ts';
+import { Lineup } from '@/db/derived_types/Lineup.ts';
+import { ProgramDB } from '@/db/ProgramDB.ts';
+import { Migration } from '@/migration/Migration.ts';
 
 export abstract class ChannelLineupMigration<
   From extends number,

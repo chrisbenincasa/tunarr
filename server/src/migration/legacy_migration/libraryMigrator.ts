@@ -1,3 +1,7 @@
+import { getDatabase } from '@/db/DBAccess.ts';
+import { NewCustomShowContent } from '@/db/schema/CustomShow.ts';
+import { NewFillerShowContent } from '@/db/schema/FillerShow.ts';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
 import { seq } from '@tunarr/shared/util';
 import dayjs from 'dayjs';
 import fs from 'fs/promises';
@@ -15,14 +19,11 @@ import {
   uniqBy,
 } from 'lodash-es';
 import path from 'path';
-import { getDatabase } from '../../db/DBAccess.ts';
 import {
   ProgramUpsertFields,
   withCustomShowPrograms,
   withFillerPrograms,
 } from '../../db/programQueryHelpers.ts';
-import { NewCustomShowContent } from '../../db/schema/CustomShow.ts';
-import { NewFillerShowContent } from '../../db/schema/FillerShow.ts';
 import {
   groupByUniq,
   groupByUniqProp,
@@ -30,7 +31,6 @@ import {
   mapAsyncSeq,
   mapToObj,
 } from '../../util/index.ts';
-import { LoggerFactory } from '../../util/logging/LoggerFactory.ts';
 import { CustomShow } from './legacyDbMigration.ts';
 import {
   JSONArray,

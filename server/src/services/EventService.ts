@@ -1,11 +1,11 @@
+import { TypedEventEmitter } from '@/types/eventEmitter.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { TunarrEvent } from '@tunarr/types';
 import EventEmitter from 'events';
 import { FastifyInstance } from 'fastify';
 import { isString } from 'lodash-es';
 import { Readable } from 'stream';
 import { v4 } from 'uuid';
-import { TypedEventEmitter } from '../types/eventEmitter.js';
-import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 
 type Events = {
   close: () => void;

@@ -1,7 +1,7 @@
-import { isNonEmptyString } from '../../../../util/index.ts';
-import { FrameState } from '../../state/FrameState.ts';
-import { FrameSize } from '../../types.ts';
-import { FilterOption } from '../FilterOption.ts';
+import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.ts';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
+import { FrameSize } from '@/ffmpeg/builder/types.ts';
+import { isNonEmptyString } from '@/util/index.ts';
 
 export class ScaleVaapiFilter extends FilterOption {
   constructor(

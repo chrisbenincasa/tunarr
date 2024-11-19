@@ -1,15 +1,15 @@
+import { defaultXmlTvSettings } from '@/db/SettingsDB.ts';
+import { serverOptions } from '@/globals.js';
+import { GlobalScheduler } from '@/services/Scheduler.ts';
+import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
+import { RouterPluginCallback } from '@/types/serverType.js';
+import { firstDefined } from '@/util/index.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { XmlTvSettings } from '@tunarr/types';
 import { BaseErrorSchema } from '@tunarr/types/api';
 import { XmlTvSettingsSchema } from '@tunarr/types/schemas';
 import { isError } from 'lodash-es';
 import { z } from 'zod';
-import { defaultXmlTvSettings } from '../db/SettingsDB.ts';
-import { serverOptions } from '../globals.js';
-import { GlobalScheduler } from '../services/Scheduler.ts';
-import { UpdateXmlTvTask } from '../tasks/UpdateXmlTvTask.js';
-import { RouterPluginCallback } from '../types/serverType.js';
-import { firstDefined } from '../util/index.js';
-import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 
 export const xmlTvSettingsRouter: RouterPluginCallback = (
   fastify,

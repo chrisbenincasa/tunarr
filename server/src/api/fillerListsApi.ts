@@ -1,3 +1,4 @@
+import { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import {
   CreateFillerListRequestSchema,
   IdPathParamSchema,
@@ -9,7 +10,6 @@ import {
 } from '@tunarr/types/schemas';
 import { isNil, map } from 'lodash-es';
 import { z } from 'zod';
-import { RouterPluginAsyncCallback } from '../types/serverType.js';
 
 // We can't use the built-in zod brand because we have our own custom
 // tagged type.

@@ -1,7 +1,7 @@
+import { FfmpegPlaylistQuery } from '@/api/videoApi.js';
+import { serverOptions } from '@/globals.js';
 import { isEmpty, isNil, omitBy } from 'lodash-es';
 import querystring, { ParsedUrlQueryInput } from 'node:querystring';
-import { FfmpegPlaylistQuery } from '../api/videoApi.js';
-import { serverOptions } from '../globals.js';
 
 export function makeLocalUrl(
   path: string,

@@ -1,3 +1,8 @@
+import { getDatabase } from '@/db/DBAccess.ts';
+import { ProgramType } from '@/db/schema/Program.ts';
+import { MinimalProgramExternalId } from '@/db/schema/ProgramExternalId.ts';
+import { isNonEmptyString, nullToUndefined } from '@/util/index.ts';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
 import { seq } from '@tunarr/shared/util';
 import {
   ChannelProgram,
@@ -12,9 +17,6 @@ import {
 import { find, isNil, omitBy } from 'lodash-es';
 import { DeepPartial, MarkRequired } from 'ts-essentials';
 import { isPromise } from 'util/types';
-import { isNonEmptyString, nullToUndefined } from '../../util/index.ts';
-import { LoggerFactory } from '../../util/logging/LoggerFactory.ts';
-import { getDatabase } from '../DBAccess.ts';
 import {
   LineupItem,
   OfflineItem,
@@ -22,8 +24,6 @@ import {
   isOfflineItem,
   isRedirectItem,
 } from '../derived_types/Lineup.ts';
-import { ProgramType } from '../schema/Program.ts';
-import { MinimalProgramExternalId } from '../schema/ProgramExternalId.ts';
 import {
   ChannelWithPrograms,
   ChannelWithRelations,

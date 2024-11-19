@@ -1,9 +1,9 @@
+import { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.ts';
+import { JellyfinItemFinder } from '@/external/jellyfin/JellyfinItemFinder.ts';
+import { RouterPluginAsyncCallback } from '@/types/serverType.ts';
+import { Nilable } from '@/types/util.ts';
 import { isNil } from 'lodash-es';
 import { z } from 'zod';
-import { JellyfinApiClient } from '../../external/jellyfin/JellyfinApiClient.ts';
-import { JellyfinItemFinder } from '../../external/jellyfin/JellyfinItemFinder.ts';
-import { RouterPluginAsyncCallback } from '../../types/serverType.ts';
-import { Nilable } from '../../types/util.ts';
 
 export const DebugJellyfinApiRouter: RouterPluginAsyncCallback = async (
   fastify,

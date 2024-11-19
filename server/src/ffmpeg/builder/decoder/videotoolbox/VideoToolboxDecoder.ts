@@ -1,4 +1,4 @@
-import { BaseDecoder } from '../BaseDecoder.ts';
+import { BaseDecoder } from '@/ffmpeg/builder/decoder/BaseDecoder.ts';
 
 export class VideoToolboxDecoder extends BaseDecoder {
   readonly name: string = 'implicit_videotoolbox';

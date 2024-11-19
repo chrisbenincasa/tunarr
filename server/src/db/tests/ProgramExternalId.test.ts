@@ -1,5 +1,5 @@
-import { ProgramExternalIdType } from '../custom_types/ProgramExternalIdType.ts';
-import { ProgramExternalId } from '../entities/ProgramExternalId.ts';
+import { ProgramExternalIdType } from '@/custom_types/ProgramExternalIdType.ts';
+import { ProgramExternalId } from '@/entities/ProgramExternalId.ts';
 
 test('should convert single IDs', () => {
   const eid = new ProgramExternalId();

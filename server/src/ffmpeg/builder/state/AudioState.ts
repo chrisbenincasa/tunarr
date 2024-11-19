@@ -1,5 +1,5 @@
+import { ExcludeByValueType, Nullable } from '@/types/util.ts';
 import { AnyFunction } from 'ts-essentials';
-import { ExcludeByValueType, Nullable } from '../../../types/util.ts';
 
 export type AudioStateFields = ExcludeByValueType<AudioState, AnyFunction>;
 

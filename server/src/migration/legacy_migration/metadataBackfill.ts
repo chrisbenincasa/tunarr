@@ -1,5 +1,17 @@
 // This should be run after all regular entities have been migrated
 
+import { ChannelDB } from '@/db/ChannelDB.ts';
+import { getDatabase } from '@/db/DBAccess.ts';
+import { ProgramDB } from '@/db/ProgramDB.ts';
+import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.ts';
+import { ProgramSourceType } from '@/db/custom_types/ProgramSourceType.ts';
+import { MediaSourceDB } from '@/db/mediaSourceDB.ts';
+import { ProgramDao, ProgramType } from '@/db/schema/Program.ts';
+import { NewProgramGroupingExternalId } from '@/db/schema/ProgramGroupingExternalId.ts';
+import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.ts';
+import { PlexApiClient } from '@/external/plex/PlexApiClient.ts';
+import { isNonEmptyString, wait } from '@/util/index.ts';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
 import {
   PlexEpisodeView,
   PlexLibraryMusic,
@@ -14,22 +26,10 @@ import {
 import dayjs from 'dayjs';
 import { first, groupBy, isNil, isUndefined, keys } from 'lodash-es';
 import { v4 } from 'uuid';
-import { ChannelDB } from '../../db/ChannelDB.ts';
-import { getDatabase } from '../../db/DBAccess.ts';
-import { ProgramDB } from '../../db/ProgramDB.ts';
-import { ProgramExternalIdType } from '../../db/custom_types/ProgramExternalIdType.ts';
-import { ProgramSourceType } from '../../db/custom_types/ProgramSourceType.ts';
-import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
-import { ProgramDao, ProgramType } from '../../db/schema/Program.ts';
 import {
   NewProgramGrouping,
   ProgramGroupingType,
 } from '../../db/schema/ProgramGrouping.ts';
-import { NewProgramGroupingExternalId } from '../../db/schema/ProgramGroupingExternalId.ts';
-import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.ts';
-import { PlexApiClient } from '../../external/plex/PlexApiClient.ts';
-import { isNonEmptyString, wait } from '../../util/index.ts';
-import { LoggerFactory } from '../../util/logging/LoggerFactory.ts';
 
 export class LegacyMetadataBackfiller {
   private logger = LoggerFactory.child({

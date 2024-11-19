@@ -1,3 +1,12 @@
+import { ProgramConverter } from '@/db/converters/ProgramConverter.ts';
+import { dbChannelToApiChannel } from '@/db/converters/channelConverters.ts';
+import { GlobalScheduler } from '@/services/Scheduler.ts';
+import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
+import { OpenDateTimeRange } from '@/types/OpenDateTimeRange.js';
+import { RouterPluginAsyncCallback } from '@/types/serverType.js';
+import { attempt } from '@/util/index.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { timeNamedAsync } from '@/util/perf.js';
 import { scheduleTimeSlots } from '@tunarr/shared';
 import {
   BasicIdParamSchema,
@@ -26,15 +35,6 @@ import {
   sortBy,
 } from 'lodash-es';
 import z from 'zod';
-import { ProgramConverter } from '../db/converters/ProgramConverter.ts';
-import { dbChannelToApiChannel } from '../db/converters/channelConverters.ts';
-import { GlobalScheduler } from '../services/Scheduler.ts';
-import { UpdateXmlTvTask } from '../tasks/UpdateXmlTvTask.js';
-import { OpenDateTimeRange } from '../types/OpenDateTimeRange.js';
-import { RouterPluginAsyncCallback } from '../types/serverType.js';
-import { attempt } from '../util/index.js';
-import { LoggerFactory } from '../util/logging/LoggerFactory.js';
-import { timeNamedAsync } from '../util/perf.js';
 
 dayjs.extend(duration);
 

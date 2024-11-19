@@ -1,3 +1,8 @@
+import { SettingsDB, getSettings } from '@/db/SettingsDB.ts';
+import { Channel } from '@/db/schema/Channel.ts';
+import { getChannelId } from '@/util/channels.js';
+import { isNonEmptyString } from '@/util/index.ts';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
 import {
   writeXmltv,
   type XmltvChannel,
@@ -8,11 +13,6 @@ import { Mutex } from 'async-mutex';
 import { writeFile } from 'fs/promises';
 import { escape, flatMap, isNil, map, round } from 'lodash-es';
 import { match } from 'ts-pattern';
-import { SettingsDB, getSettings } from '../db/SettingsDB.ts';
-import { Channel } from '../db/schema/Channel.ts';
-import { getChannelId } from '../util/channels.js';
-import { isNonEmptyString } from '../util/index.ts';
-import { LoggerFactory } from '../util/logging/LoggerFactory.ts';
 
 const lock = new Mutex();
 

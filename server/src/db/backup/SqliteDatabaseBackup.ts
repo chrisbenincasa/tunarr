@@ -1,6 +1,6 @@
+import { dbOptions } from '@/globals.ts';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
 import BetterSqlite3 from 'better-sqlite3';
-import { dbOptions } from '../../globals.ts';
-import { LoggerFactory } from '../../util/logging/LoggerFactory.ts';
 
 export class SqliteDatabaseBackup {
   #logger = LoggerFactory.child({ className: SqliteDatabaseBackup.name });

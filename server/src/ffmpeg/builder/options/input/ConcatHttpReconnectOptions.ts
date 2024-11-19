@@ -1,6 +1,6 @@
-import { MediaStream } from '../../MediaStream.ts';
-import { InputSource } from '../../input/InputSource.ts';
-import { InputOption } from './InputOption.ts';
+import { MediaStream } from '@/ffmpeg/builder/MediaStream.ts';
+import { InputSource } from '@/ffmpeg/builder/input/InputSource.ts';
+import { InputOption } from '@/ffmpeg/builder/options/input/InputOption.ts';
 
 export class ConcatHttpReconnectOptions extends InputOption {
   appliesToInput(input: InputSource<MediaStream>): boolean {

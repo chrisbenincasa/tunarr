@@ -1,12 +1,12 @@
+import { DefaultChannelIcon } from '@/db/schema/base.ts';
+import { ChannelAndLineup } from '@/types/internal.ts';
 import { Channel } from '@tunarr/types';
 import { filter } from 'lodash-es';
-import { ChannelAndLineup } from '../../types/internal.ts';
 import {
   isDefined,
   nilToUndefined,
   nullToUndefined,
 } from '../../util/index.ts';
-import { DefaultChannelIcon } from '../schema/base.ts';
 
 export const dbChannelToApiChannel = ({
   channel,

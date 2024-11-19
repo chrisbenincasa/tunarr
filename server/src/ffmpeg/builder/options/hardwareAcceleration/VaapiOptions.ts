@@ -1,5 +1,5 @@
-import { FrameState } from '../../state/FrameState.ts';
-import { GlobalOption } from '../GlobalOption.ts';
+import { GlobalOption } from '@/ffmpeg/builder/options/GlobalOption.ts';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
 
 export class VaapiHardwareAccelerationOption extends GlobalOption {
   constructor(

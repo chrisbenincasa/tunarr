@@ -1,3 +1,7 @@
+import { globalOptions } from '@/globals.ts';
+import { TypedEventEmitter } from '@/types/eventEmitter.ts';
+import { isProduction } from '@/util/index.ts';
+import { Logger, LoggerFactory } from '@/util/logging/LoggerFactory.ts';
 import {
   FfmpegSettings,
   HdhrSettings,
@@ -26,14 +30,10 @@ import path from 'path';
 import { DeepPartial, DeepReadonly } from 'ts-essentials';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
-import { globalOptions } from '../globals.ts';
-import { TypedEventEmitter } from '../types/eventEmitter.ts';
 import {
   getDefaultLogDirectory,
   getDefaultLogLevel,
 } from '../util/defaults.ts';
-import { isProduction } from '../util/index.ts';
-import { Logger, LoggerFactory } from '../util/logging/LoggerFactory.ts';
 import { SchemaBackedDbAdapter } from './SchemaBackedJsonDBAdapter.ts';
 import { SyncSchemaBackedDbAdapter } from './SyncSchemaBackedJSONDBAdapter.ts';
 

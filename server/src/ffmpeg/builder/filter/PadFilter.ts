@@ -1,6 +1,6 @@
-import { PixelFormatVaapi } from '../format/PixelFormat.ts';
-import { FrameState } from '../state/FrameState.ts';
-import { FrameDataLocation, FrameSize } from '../types.ts';
+import { PixelFormatVaapi } from '@/ffmpeg/builder/format/PixelFormat.ts';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
+import { FrameDataLocation, FrameSize } from '@/ffmpeg/builder/types.ts';
 import { FilterOption } from './FilterOption.ts';
 
 export class PadFilter extends FilterOption {

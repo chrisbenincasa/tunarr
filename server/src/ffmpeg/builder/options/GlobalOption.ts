@@ -1,6 +1,6 @@
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
+import { GlobalOptionPipelineStep } from '@/ffmpeg/builder/types/PipelineStep.ts';
 import { isString } from 'lodash-es';
-import { FrameState } from '../state/FrameState.js';
-import { GlobalOptionPipelineStep } from '../types/PipelineStep.ts';
 
 export abstract class GlobalOption implements GlobalOptionPipelineStep {
   readonly type = 'global';

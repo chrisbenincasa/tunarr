@@ -1,5 +1,5 @@
-import { enumKeys } from '../../util/enumUtil.ts';
-import { MediaSourceType } from '../schema/MediaSource.ts';
+import { MediaSourceType } from '@/db/schema/MediaSource.ts';
+import { enumKeys } from '@/util/enumUtil.ts';
 
 export enum ProgramSourceType {
   PLEX = 'plex',

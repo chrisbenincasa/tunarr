@@ -1,3 +1,6 @@
+import { ProgramSourceType } from '@/db/custom_types/ProgramSourceType.ts';
+import { NewProgramExternalId } from '@/db/schema/ProgramExternalId.ts';
+import { parsePlexGuid } from '@/util/externalIds.ts';
 import { JellyfinItem } from '@tunarr/types/jellyfin';
 import {
   PlexEpisode,
@@ -10,17 +13,14 @@ import dayjs from 'dayjs';
 import { compact, find, first, isError, isNil, map } from 'lodash-es';
 import { P, match } from 'ts-pattern';
 import { v4 } from 'uuid';
-import { parsePlexGuid } from '../../util/externalIds.ts';
 import {
   ProgramExternalIdType,
   programExternalIdTypeFromJellyfinProvider,
 } from '../custom_types/ProgramExternalIdType.ts';
-import { ProgramSourceType } from '../custom_types/ProgramSourceType.ts';
 import {
   NewProgramDao as NewRawProgram,
   ProgramType,
 } from '../schema/Program.ts';
-import { NewProgramExternalId } from '../schema/ProgramExternalId.ts';
 
 /**
  * Generates Program DB entities for Plex media

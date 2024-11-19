@@ -1,3 +1,16 @@
+import { getDatabase } from '@/db/DBAccess.ts';
+import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.ts';
+import { ProgramSourceType } from '@/db/custom_types/ProgramSourceType.ts';
+import { upsertRawProgramExternalIds } from '@/db/programExternalIdHelpers.ts';
+import { withProgramExternalIds } from '@/db/programQueryHelpers.ts';
+import { ProgramDao } from '@/db/schema/Program.ts';
+import { NewProgramExternalId } from '@/db/schema/ProgramExternalId.ts';
+import { isQueryError } from '@/external/BaseApiClient.js';
+import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.ts';
+import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
+import { Maybe } from '@/types/util.js';
+import { asyncPool } from '@/util/asyncPool.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { PlexTerminalMedia } from '@tunarr/types/plex';
 import dayjs from 'dayjs';
 import {
@@ -12,18 +25,6 @@ import {
   trimEnd,
 } from 'lodash-es';
 import { v4 } from 'uuid';
-import { getDatabase } from '../../db/DBAccess.ts';
-import { ProgramExternalIdType } from '../../db/custom_types/ProgramExternalIdType.ts';
-import { ProgramSourceType } from '../../db/custom_types/ProgramSourceType.ts';
-import { upsertRawProgramExternalIds } from '../../db/programExternalIdHelpers.ts';
-import { withProgramExternalIds } from '../../db/programQueryHelpers.ts';
-import { ProgramDao } from '../../db/schema/Program.ts';
-import { NewProgramExternalId } from '../../db/schema/ProgramExternalId.ts';
-import { isQueryError } from '../../external/BaseApiClient.js';
-import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.ts';
-import { PlexApiClient } from '../../external/plex/PlexApiClient.js';
-import { Maybe } from '../../types/util.js';
-import { asyncPool } from '../../util/asyncPool.js';
 import {
   attempt,
   attemptSync,
@@ -31,7 +32,6 @@ import {
   isNonEmptyString,
   wait,
 } from '../../util/index.js';
-import { LoggerFactory } from '../../util/logging/LoggerFactory.js';
 import Fixer from './fixer.ts';
 
 export class BackfillProgramExternalIds extends Fixer {
