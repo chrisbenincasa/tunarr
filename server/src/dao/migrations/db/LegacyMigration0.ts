@@ -367,7 +367,7 @@ export default {
       .addForeignKeyConstraint(
         'custom_show_content_custom_show_uuid_foreign',
         ['custom_show_uuid'],
-        'filler_show',
+        'custom_show',
         ['uuid'],
         (b) => b.onDelete('cascade').onUpdate('cascade'),
       )

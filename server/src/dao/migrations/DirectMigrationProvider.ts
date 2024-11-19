@@ -18,6 +18,7 @@ import LegacyMigration7 from './db/LegacyMigration7.ts';
 import LegacyMigration8 from './db/LegacyMigration8.ts';
 import LegacyMigration9 from './db/LegacyMigration9.ts';
 import Migration1730806741 from './db/Migration1730806741.ts';
+import Migration1731982492 from './db/Migration1731982492.ts';
 
 export const LegacyMigrationNameToNewMigrationName = [
   ['Migration20240124115044', '_Legacy_Migration00'],
@@ -81,6 +82,7 @@ export class DirectMigrationProvider implements MigrationProvider {
           _Legacy_Migration15: LegacyMigration15,
           _Legacy_Migration16: LegacyMigration16,
           migration1730806741: Migration1730806741,
+          migration1731982492: Migration1731982492,
         },
         wrapWithTransaction,
       ),
