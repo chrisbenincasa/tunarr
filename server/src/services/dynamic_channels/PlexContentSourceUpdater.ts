@@ -3,6 +3,7 @@ import { ProgramDB } from '@/db/ProgramDB.ts';
 import { PendingProgram } from '@/db/derived_types/Lineup.ts';
 import { MediaSourceDB } from '@/db/mediaSourceDB.ts';
 import { Channel } from '@/db/schema/Channel.ts';
+import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.ts';
 import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
 import { Logger, LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { Timer } from '@/util/perf.js';
@@ -44,7 +45,7 @@ export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicConten
       throw new Error('media source not found');
     }
 
-    this.#plex = new PlexApiClient(server);
+    this.#plex = MediaSourceApiFactory().get(server);
   }
 
   protected async run() {

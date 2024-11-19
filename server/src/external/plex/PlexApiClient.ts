@@ -1,6 +1,8 @@
 import { Maybe, Nilable } from '@/types/util.js';
 import { getChannelId } from '@/util/channels.js';
 import { isSuccess } from '@/util/index.js';
+import { getTunarrVersion } from '@/util/version.ts';
+import { PlexClientIdentifier } from '@tunarr/shared/constants';
 import {
   PlexDvr,
   PlexDvrsResponse,
@@ -50,6 +52,11 @@ export type PlexApiOptions = {
 
 const PlexCache = new PlexQueryCache();
 
+const PlexHeaders = {
+  'X-Plex-Product': 'Tunarr',
+  'X-Plex-Client-Identifier': PlexClientIdentifier,
+};
+
 export class PlexApiClient extends BaseApiClient {
   private opts: PlexApiOptions;
   private accessToken: string;
@@ -59,6 +66,8 @@ export class PlexApiClient extends BaseApiClient {
       url: opts.uri,
       name: opts.name,
       extraHeaders: {
+        ...PlexHeaders,
+        'X-Plex-Version': getTunarrVersion(),
         'X-Plex-Token': opts.accessToken,
       },
     });

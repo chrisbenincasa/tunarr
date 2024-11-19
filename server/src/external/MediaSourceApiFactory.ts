@@ -1,7 +1,7 @@
-import { ChannelDB } from '@/db/ChannelDB.ts';
 import { SettingsDB, getSettings } from '@/db/SettingsDB.ts';
 import { MediaSourceDB } from '@/db/mediaSourceDB.ts';
 import { MediaSourceType } from '@/db/schema/MediaSource.ts';
+import { registerSingletonInitializer } from '@/globals.ts';
 import { Maybe } from '@/types/util.js';
 import { isDefined } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
@@ -165,11 +165,11 @@ export class MediaSourceApiFactoryImpl {
   }
 }
 
-export const MediaSourceApiFactory = (
-  mediaSourceDB: MediaSourceDB = new MediaSourceDB(new ChannelDB()),
-) => {
+registerSingletonInitializer((ctx) => {
   if (!instance) {
-    instance = new MediaSourceApiFactoryImpl(mediaSourceDB);
+    instance = new MediaSourceApiFactoryImpl(ctx.mediaSourceDB);
   }
   return instance;
-};
+});
+
+export const MediaSourceApiFactory = () => instance;

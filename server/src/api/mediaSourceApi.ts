@@ -1,7 +1,6 @@
 import { MediaSourceType } from '@/db/schema/MediaSource.ts';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';
-import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
 import { GlobalScheduler } from '@/services/Scheduler.ts';
 import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
 import { RouterPluginAsyncCallback } from '@/types/serverType.js';
@@ -91,14 +90,16 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
 
         const healthyPromise = match(server)
           .with({ type: 'plex' }, (server) => {
-            return new PlexApiClient(server).checkServerStatus();
+            return MediaSourceApiFactory().get(server).checkServerStatus();
           })
-          .with({ type: 'jellyfin' }, (server) => {
-            return new JellyfinApiClient({
-              url: server.uri,
-              apiKey: server.accessToken,
-              name: server.name,
-            })
+          .with({ type: 'jellyfin' }, async (server) => {
+            return (
+              await MediaSourceApiFactory().getJellyfinClient({
+                url: server.uri,
+                apiKey: server.accessToken,
+                name: server.name,
+              })
+            )
               .getSystemInfo()
               .then(() => true)
               .catch(() => false);
@@ -148,7 +149,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
       let healthyPromise: Promise<boolean>;
       switch (req.body.type) {
         case 'plex': {
-          const plex = new PlexApiClient({
+          const plex = MediaSourceApiFactory().get({
             ...req.body,
             name: req.body.name ?? 'unknown',
             clientIdentifier: null,
