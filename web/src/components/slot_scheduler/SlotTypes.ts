@@ -15,4 +15,5 @@ export type SlotTableRowType = TimeSlotTableDataType & {
   duration: Duration;
   warnings: SlotWarning[];
   programCount: number;
+  originalIndex: number;
 };

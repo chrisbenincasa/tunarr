@@ -110,7 +110,6 @@ export const TimeSlotTable = () => {
   const [currentPeriod, latenessMs] = watch(['period', 'latenessMs']);
   const programOptions = useSlotProgramOptions();
   const startOfPeriod = dayjs().startOf(currentPeriod);
-  console.log(startOfPeriod.format());
   const {
     channelEditor: { programLookup, originalProgramList },
   } = useChannelEditorLazy();
@@ -211,7 +210,13 @@ export const TimeSlotTable = () => {
 
   const rows = useMemo(() => {
     return map(
-      sortBy(slotArray.fields, (slot) => slot.startTime),
+      sortBy(
+        map(slotArray.fields, (slot, index) => ({
+          ...slot,
+          originalIndex: index,
+        })),
+        (slot) => slot.startTime,
+      ),
       (slot, i, slots) => {
         const next = slots[(i + 1) % slots.length];
         const scale = i === slots.length - 1 ? OneDayMillis : 0;
@@ -371,30 +376,23 @@ export const TimeSlotTable = () => {
     row: MRT_Row<SlotTableRowType>;
     table: MRT_TableInstance<SlotTableRowType>;
   }) => {
-    // const {original: slot} = row;
     return (
       <>
-        {/* {renderChannelMenu(channel)}
-        {!mediumViewport && (
-        )} */}
         <Tooltip title="Edit Slot" placement="top">
           <IconButton
             onClick={() =>
-              setCurrentEditingSlot({ slot: row.original, index: row.index })
+              setCurrentEditingSlot({
+                slot: row.original,
+                index: row.original.originalIndex,
+              })
             }
-            // to={`/channels/${channel.id}/edit`}
-            // component={RouterLink}
-            // onClick={(e) => e.stopPropagation()}
           >
             <Edit />
           </IconButton>
         </Tooltip>
         <Tooltip title="Delete Slot" placement="top">
           <IconButton
-            onClick={() => slotArray.remove(row.index)}
-            // to={`/channels/${channel.id}/edit`}
-            // component={RouterLink}
-            // onClick={(e) => e.stopPropagation()}
+            onClick={() => slotArray.remove(row.original.originalIndex)}
           >
             <Delete />
           </IconButton>
