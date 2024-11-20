@@ -55,21 +55,22 @@ export const EditSlotDialogContent = ({
   const isShowType = slotType === 'custom-show' || slotType === 'show';
   const updateSlotDay = useCallback(
     (newDayOfWeek: number, originalOnChange: (...args: unknown[]) => void) => {
-      const startTimeOfDay = slot.startTime % OneDayMillis;
+      const startTimeOfDay = getValues('startTime') % OneDayMillis;
       const newStartTime = startTimeOfDay + newDayOfWeek * OneDayMillis;
       originalOnChange(newStartTime);
     },
-    [slot.startTime],
+    [getValues],
   );
 
   const updateSlotTime = useCallback(
     (fieldValue: Dayjs, originalOnChange: (...args: unknown[]) => void) => {
       const h = fieldValue.hour();
       const m = fieldValue.minute();
+      const multiplier = Math.floor(getValues('startTime') / OneDayMillis);
       const millis = dayjs.duration({ hours: h, minutes: m }).asMilliseconds();
-      originalOnChange(millis);
+      originalOnChange(millis + multiplier * OneDayMillis);
     },
-    [],
+    [getValues],
   );
 
   const commit = () => {
