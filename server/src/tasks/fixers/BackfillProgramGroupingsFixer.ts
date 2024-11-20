@@ -1,16 +1,23 @@
 import { getDatabase } from '@/db/DBAccess.ts';
+import { ProgramDB } from '@/db/ProgramDB.ts';
 import { ProgramType } from '@/db/schema/Program.ts';
 import { ProgramGroupingType } from '@/db/schema/ProgramGrouping.ts';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
+import { groupBy } from 'lodash-es';
+import { ProgramApiSync } from './ProgramApiSync.ts';
 import Fixer from './fixer.ts';
 
 // TODO: Handle Jellyfin items
 // Generalize and reuse the calculator
-export class BackfillProgramGroupings extends Fixer {
+export class BackfillProgramGroupingsFixer extends Fixer {
   private logger = LoggerFactory.child({
     caller: import.meta,
-    className: BackfillProgramGroupings.name,
+    className: BackfillProgramGroupingsFixer.name,
   });
+
+  constructor(private programDB: ProgramDB = new ProgramDB()) {
+    super();
+  }
 
   protected async runInternal(): Promise<void> {
     // This clears out mismatches that might have happened on bugged earlier versions
@@ -314,28 +321,16 @@ export class BackfillProgramGroupings extends Fixer {
         );
       });
 
-    const stillMissing = await getDatabase()
-      .selectFrom('program')
-      .select(({ fn }) => fn.count<number>('program.uuid').as('count'))
-      .where((eb) =>
-        eb.or([
-          eb.and([
-            eb('type', '=', ProgramType.Episode),
-            eb.or([eb('tvShowUuid', 'is', null), eb('seasonUuid', 'is', null)]),
-          ]),
-          eb.and([
-            eb('type', '=', ProgramType.Track),
-            eb.or([eb('albumUuid', 'is', null), eb('artistUuid', 'is', null)]),
-          ]),
-        ]),
-      )
-      .executeTakeFirst();
+    const stillMissing = await this.programDB.getMissingAssociations(true);
 
-    if (stillMissing && stillMissing.count > 0) {
+    if (stillMissing > 0) {
       this.logger.debug(
         'There are still %d programs with missing associations',
-        stillMissing?.count,
+        stillMissing.length,
       );
+
+      new ProgramApiSync();
+      const missingByType = groupBy(stillMissing, 'type');
     }
   }
 }

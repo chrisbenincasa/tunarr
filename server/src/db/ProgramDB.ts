@@ -4,7 +4,7 @@ import { AnonymousTask } from '@/tasks/Task.ts';
 import { JellyfinTaskQueue, PlexTaskQueue } from '@/tasks/TaskQueue.ts';
 import { SaveJellyfinProgramExternalIdsTask } from '@/tasks/jellyfin/SaveJellyfinProgramExternalIdsTask.ts';
 import { SavePlexProgramExternalIdsTask } from '@/tasks/plex/SavePlexProgramExternalIdsTask.ts';
-import { Maybe } from '@/types/util.ts';
+import { Maybe, Nullable } from '@/types/util.ts';
 import { devAssert } from '@/util/debug.ts';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
 import { Timer } from '@/util/perf.ts';
@@ -32,6 +32,7 @@ import {
   isEmpty,
   isNil,
   isNull,
+  isUndefined,
   keys,
   map,
   mapValues,
@@ -50,6 +51,7 @@ import {
   flatMapAsyncSeq,
   groupByUniq,
   groupByUniqProp,
+  isDefined,
   isNonEmptyString,
   mapToObj,
 } from '../util/index.ts';
@@ -119,6 +121,18 @@ type ProgramRelationCaseBuilder = CaseWhenBuilder<
   unknown,
   string | null
 >;
+
+type MissingAssociationResult = {
+  uuid: string;
+  type: ProgramType;
+  sourceType: ProgramSourceType;
+  parentExternalKey: Nullable<string>;
+  grandparentExternalKey: Nullable<string>;
+  tvShowUuid: Nullable<string>;
+  seasonUuid: Nullable<string>;
+  albumUuid: Nullable<string>;
+  artistUuid: Nullable<string>;
+};
 
 export class ProgramDB {
   private logger = LoggerFactory.child({ className: this.constructor.name });
@@ -665,6 +679,53 @@ export class ProgramDB {
     );
 
     return upsertedPrograms;
+  }
+
+  async getMissingAssociations(count: true): Promise<number>;
+  async getMissingAssociations(
+    count: false,
+  ): Promise<MissingAssociationResult[]>;
+  async getMissingAssociations(
+    count: boolean,
+  ): Promise<number | MissingAssociationResult[]> {
+    const query = getDatabase()
+      .selectFrom('program')
+      .$if(count, (eb) =>
+        eb.select(({ fn }) => fn.count<number>('program.uuid').as('count')),
+      )
+      .$if(!count, (eb) =>
+        eb.select([
+          'uuid',
+          'type',
+          'tvShowUuid',
+          'seasonUuid',
+          'albumUuid',
+          'artistUuid',
+        ]),
+      )
+      .where((eb) =>
+        eb.or([
+          eb.and([
+            eb('type', '=', ProgramType.Episode),
+            eb.or([eb('tvShowUuid', 'is', null), eb('seasonUuid', 'is', null)]),
+          ]),
+          eb.and([
+            eb('type', '=', ProgramType.Track),
+            eb.or([eb('albumUuid', 'is', null), eb('artistUuid', 'is', null)]),
+          ]),
+        ]),
+      );
+    if (count) {
+      return (await query.executeTakeFirst())?.count ?? 0;
+    } else {
+      return seq.collect(await query.execute(), (result) =>
+        isUndefined(result.count) &&
+        isDefined(result.uuid) &&
+        isDefined(result.type)
+          ? (result as MissingAssociationResult)
+          : null,
+      );
+    }
   }
 
   private async handleProgramGroupings(

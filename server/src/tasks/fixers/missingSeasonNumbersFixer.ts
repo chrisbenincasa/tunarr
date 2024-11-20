@@ -1,5 +1,6 @@
 import { getDatabase } from '@/db/DBAccess.ts';
 import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.ts';
+import { ProgramSourceType } from '@/db/custom_types/ProgramSourceType.ts';
 import { withProgramGroupingExternalIds } from '@/db/programQueryHelpers.ts';
 import { MediaSourceType } from '@/db/schema/MediaSource.ts';
 import { ProgramGroupingType } from '@/db/schema/ProgramGrouping.ts';
@@ -67,6 +68,8 @@ export class MissingSeasonNumbersFixer extends Fixer {
         .$if(!isNull(lastId), (eb) => eb.where('uuid', '>', lastId!))
         .where('seasonNumber', 'is', null)
         .where('type', '=', ProgramType.Episode)
+        // This fixer only supports Plex at the moment...
+        .where('sourceType', '=', ProgramSourceType.PLEX)
         .orderBy('uuid asc')
         .limit(100)
         .execute();

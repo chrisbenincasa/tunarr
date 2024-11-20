@@ -2,7 +2,7 @@ import { getDatabase } from '@/db/DBAccess.ts';
 import { MediaSourceType } from '@/db/schema/MediaSource.ts';
 import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
 import { find, isNil } from 'lodash-es';
-import Fixer from './fixer.js';
+import Fixer from './fixer.ts';
 
 export class AddPlexServerIdsFixer extends Fixer {
   async runInternal(): Promise<void> {

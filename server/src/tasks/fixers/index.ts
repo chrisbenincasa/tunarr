@@ -1,9 +1,9 @@
 import { groupByUniq } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { round } from 'lodash-es';
+import { AddPlexServerIdsFixer } from './AddPlexServerIdsFixer.ts';
 import { BackfillProgramExternalIds } from './BackfillProgramExternalIds.js';
-import { AddPlexServerIdsFixer } from './addPlexServerIds.js';
-import { BackfillProgramGroupings } from './backfillProgramGroupings.js';
+import { BackfillProgramGroupingsFixer } from './BackfillProgramGroupingsFixer.ts';
 import Fixer from './fixer.js';
 import { MissingSeasonNumbersFixer } from './missingSeasonNumbersFixer.js';
 
@@ -21,7 +21,7 @@ export const FixersByName: Record<string, Fixer> = groupByUniq(
   [
     new MissingSeasonNumbersFixer(),
     new AddPlexServerIdsFixer(),
-    new BackfillProgramGroupings(),
+    new BackfillProgramGroupingsFixer(),
     new BackfillProgramExternalIds(),
   ],
   (f) => f.constructor.name,
