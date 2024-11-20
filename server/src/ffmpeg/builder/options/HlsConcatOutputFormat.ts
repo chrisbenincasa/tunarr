@@ -5,6 +5,7 @@ export class HlsConcatOutputFormat extends OutputOption {
   constructor(
     private segmentTemplate: string,
     private playlistPath: string,
+    private baseUrl: string,
   ) {
     super();
   }
@@ -30,6 +31,8 @@ export class HlsConcatOutputFormat extends OutputOption {
       '+live',
       '-hls_segment_filename',
       this.segmentTemplate,
+      '-hls_base_url',
+      this.baseUrl,
       '-hls_flags',
       'delete_segments+program_date_time+omit_endlist+discont_start+independent_segments',
       '-master_pl_name',

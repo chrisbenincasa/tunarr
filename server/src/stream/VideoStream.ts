@@ -1,3 +1,4 @@
+import { MpegTsOutputFormat } from '@/ffmpeg/builder/constants.ts';
 import { getServerContext, serverContext } from '@/serverContext.ts';
 import { Result } from '@/types/result.ts';
 import { fileExists } from '@/util/fsUtil.js';
@@ -114,6 +115,7 @@ export class VideoStream {
           startTime: startTimestamp,
           sessionToken,
         });
+
         programStreamResult = lineupItemResult.map((result) => {
           const playerContext = new PlayerContext(
             result.lineupItem,
@@ -122,7 +124,16 @@ export class VideoStream {
             result.lineupItem.type === 'loading',
             true,
           );
-          return ProgramStreamFactory.create(playerContext);
+          const programStream = ProgramStreamFactory.create(
+            playerContext,
+            MpegTsOutputFormat,
+          );
+          programStream.on('error', () => {
+            this.logger.error(
+              `Unrecoverable error in underlying FFMPEG process`,
+            );
+          });
+          return programStream;
         });
         break;
       }

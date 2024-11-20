@@ -58,7 +58,7 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
   constructor(
     private hardwareCapabilities: BaseFfmpegHardwareCapabilities,
     binaryCapabilities: FfmpegCapabilities,
-    videoInputFile: VideoInputSource,
+    videoInputFile: Nullable<VideoInputSource>,
     audioInputFile: Nullable<AudioInputSource>,
     watermarkInputSource: Nullable<WatermarkInputSource>,
     concatInputSource: Nullable<ConcatInputSource>,
@@ -73,7 +73,6 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
   }
 
   protected override setHardwareAccelState(): void {
-    this.logger.info('here');
     if (!isVideoPipelineContext(this.context)) {
       return;
     }
@@ -107,8 +106,12 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
       this.pipelineSteps.push(NoAutoScaleOutputOption());
     }
 
-    ffmpegState.decoderHwAccelMode = canDecode ? 'vaapi' : 'none';
-    ffmpegState.encoderHwAccelMode = canEncode ? 'vaapi' : 'none';
+    ffmpegState.decoderHwAccelMode = canDecode
+      ? HardwareAccelerationMode.Vaapi
+      : HardwareAccelerationMode.None;
+    ffmpegState.encoderHwAccelMode = canEncode
+      ? HardwareAccelerationMode.Vaapi
+      : HardwareAccelerationMode.None;
 
     this.logger.debug(ffmpegState);
   }
@@ -284,8 +287,9 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
       }
 
       if (
-        this.ffmpegState.encoderHwAccelMode === 'vaapi' &&
-        currentState.frameDataLocation === 'software'
+        this.ffmpegState.encoderHwAccelMode ===
+          HardwareAccelerationMode.Vaapi &&
+        currentState.frameDataLocation === FrameDataLocation.Software
       ) {
         // Figure this out... it consistently sets false and doesn't work
         // const setFormat = every(

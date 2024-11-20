@@ -1,7 +1,8 @@
 import { SettingsDB, getSettings } from '@/db/SettingsDB.ts';
+import { FFmpegFactory } from '@/ffmpeg/FFmpegFactory.ts';
 import { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
 import { OutputFormat } from '@/ffmpeg/builder/constants.ts';
-import { FFMPEG, StreamOptions } from '@/ffmpeg/ffmpeg.js';
+import { StreamOptions } from '@/ffmpeg/ffmpeg.js';
 import { serverContext } from '@/serverContext.js';
 import { TypedEventEmitter } from '@/types/eventEmitter.js';
 import { Result } from '@/types/result.js';
@@ -133,10 +134,9 @@ export abstract class ProgramStream extends (events.EventEmitter as new () => Ty
   }
 
   private getErrorStream(context: PlayerContext) {
-    const ffmpeg = new FFMPEG(
+    const ffmpeg = FFmpegFactory.getFFmpegPipelineBuilder(
       this.settingsDB.ffmpegSettings(),
       context.channel,
-      context.audioOnly,
     );
 
     const duration = dayjs.duration(
@@ -148,6 +148,7 @@ export abstract class ProgramStream extends (events.EventEmitter as new () => Ty
       'Check server logs for details',
       duration,
       this.outputFormat,
+      true,
     );
   }
 

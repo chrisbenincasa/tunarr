@@ -3,9 +3,10 @@ import { SettingsDB, getSettings } from '@/db/SettingsDB.ts';
 import { isContentBackedLineupIteam } from '@/db/derived_types/StreamLineup.ts';
 import { MediaSourceDB } from '@/db/mediaSourceDB.ts';
 import { MediaSourceType } from '@/db/schema/MediaSource.ts';
+import { FFmpegFactory } from '@/ffmpeg/FFmpegFactory.ts';
 import { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
 import { OutputFormat } from '@/ffmpeg/builder/constants.ts';
-import { FFMPEG } from '@/ffmpeg/ffmpeg.js';
+import { IFFMPEG } from '@/ffmpeg/ffmpegBase.ts';
 import { PlayerContext } from '@/stream/PlayerStreamContext.js';
 import { ProgramStream } from '@/stream/ProgramStream.js';
 import { UpdateJellyfinPlayStatusScheduledTask } from '@/tasks/jellyfin/UpdateJellyfinPlayStatusTask.js';
@@ -22,7 +23,7 @@ export class JellyfinProgramStream extends ProgramStream {
     caller: import.meta,
     className: JellyfinProgramStream.name,
   });
-  private ffmpeg: Nullable<FFMPEG> = null;
+  private ffmpeg: Nullable<IFFMPEG> = null;
   private killed: boolean = false;
   private updatePlayStatusTask: Maybe<UpdateJellyfinPlayStatusScheduledTask>;
 
@@ -75,7 +76,10 @@ export class JellyfinProgramStream extends ProgramStream {
     );
 
     const watermark = await this.getWatermark();
-    this.ffmpeg = new FFMPEG(ffmpegSettings, channel, this.context.audioOnly); // Set the transcoder options
+    this.ffmpeg = FFmpegFactory.getFFmpegPipelineBuilder(
+      ffmpegSettings,
+      channel,
+    );
 
     const stream = await jellyfinStreamDetails.getStream(lineupItem);
     if (isNull(stream)) {

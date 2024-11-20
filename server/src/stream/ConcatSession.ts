@@ -1,6 +1,5 @@
 import { Channel } from '@/db/schema/Channel.ts';
 import { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
-import { ConcatOptions } from '@/ffmpeg/ffmpeg.js';
 import { isEmpty } from 'lodash-es';
 import { ConcatStream } from './ConcatStream.ts';
 import { DirectStreamSession } from './DirectStreamSession.js';
@@ -9,7 +8,7 @@ import { ConcatSessionType, SessionOptions } from './Session.js';
 export type ConcatSessionOptions = SessionOptions & {
   sessionType: ConcatSessionType;
   audioOnly: boolean;
-  concatOptions: ConcatOptions;
+  // concatOptions: ConcatOptions;
 };
 
 export class ConcatSession extends DirectStreamSession<ConcatSessionOptions> {
@@ -33,11 +32,21 @@ export class ConcatSession extends DirectStreamSession<ConcatSessionOptions> {
   }
 
   protected async initializeStream(): Promise<FfmpegTranscodeSession> {
-    this.#transcodeSession = await new ConcatStream(this.channel, {
-      ...this.sessionOptions.concatOptions,
-      mode: this.sessionOptions.sessionType,
-      logOutput: true,
-    }).createSession();
+    // let concatOptions: ConcatOptions;
+    // switch (this.sessionOptions.sessionType) {
+    //   case 'hls_concat':
+    //     concatOptions = {
+    //       outputFormat: MpegTsOutputFormat,
+    //       mode: ConcatStreamModeToChildMode[this.sessionOptions.sessionType]
+    //     }
+    //   case 'hls_slower_concat':
+    //   case 'mpegts_concat':
+    // }
+
+    this.#transcodeSession = await new ConcatStream(
+      this.channel,
+      this.sessionOptions.sessionType,
+    ).createSession();
 
     this.#transcodeSession.on('error', (e) => this.emit('error', e));
     this.#transcodeSession.on('exit', () => this.emit('end'));

@@ -3,10 +3,10 @@ import { SettingsDB, getSettings } from '@/db/SettingsDB.ts';
 import { isContentBackedLineupIteam } from '@/db/derived_types/StreamLineup.ts';
 import { MediaSourceDB } from '@/db/mediaSourceDB.ts';
 import { MediaSourceType } from '@/db/schema/MediaSource.ts';
-import { FfmpegStreamFactory } from '@/ffmpeg/FfmpegStreamFactory.ts';
+import { FFmpegFactory } from '@/ffmpeg/FFmpegFactory.ts';
 import { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
 import { OutputFormat } from '@/ffmpeg/builder/constants.ts';
-import { FFMPEG, StreamOptions } from '@/ffmpeg/ffmpeg.js';
+import { StreamOptions } from '@/ffmpeg/ffmpeg.js';
 import { GlobalScheduler } from '@/services/Scheduler.ts';
 import { PlayerContext } from '@/stream/PlayerStreamContext.js';
 import { ProgramStream } from '@/stream/ProgramStream.js';
@@ -78,9 +78,10 @@ export class PlexProgramStream extends ProgramStream {
     const plexStreamDetails = new PlexStreamDetails(server);
 
     const watermark = await this.getWatermark();
-    const ffmpeg = this.context.useNewPipeline
-      ? new FfmpegStreamFactory(ffmpegSettings, channel)
-      : new FFMPEG(ffmpegSettings, channel, this.context.audioOnly); // Set the transcoder options
+    const ffmpeg = FFmpegFactory.getFFmpegPipelineBuilder(
+      ffmpegSettings,
+      channel,
+    );
 
     const stream = await plexStreamDetails.getStream(lineupItem);
     if (isNull(stream)) {

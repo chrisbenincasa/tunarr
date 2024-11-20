@@ -25,7 +25,7 @@ export class VideoToolboxPipelineBuilder extends SoftwarePipelineBuilder {
   constructor(
     private hardwareCapabilities: BaseFfmpegHardwareCapabilities,
     binaryCapabilities: FfmpegCapabilities,
-    videoInputFile: VideoInputSource,
+    videoInputFile: Nullable<VideoInputSource>,
     audioInputFile: Nullable<AudioInputSource>,
     concatInputSource: Nullable<ConcatInputSource>,
     watermarkInputSource: Nullable<WatermarkInputSource>,

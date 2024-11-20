@@ -6,7 +6,6 @@ export const AudioChannelsOutputOption = (
   desiredChannels: number,
 ) => {
   const opts: string[] = [];
-  // TODO Audio format constants
   if (
     sourceChannels !== desiredChannels ||
     (audioFormat === 'aac' && desiredChannels > 2)

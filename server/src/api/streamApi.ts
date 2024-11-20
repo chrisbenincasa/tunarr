@@ -1,5 +1,4 @@
 import { Channel } from '@/db/schema/Channel.ts';
-import { defaultConcatOptions } from '@/ffmpeg/ffmpeg.ts';
 import { BaseHlsSession } from '@/stream/hls/BaseHlsSession.ts';
 import { Result } from '@/types/result.ts';
 import { TruthyQueryParam } from '@/types/schemas.ts';
@@ -60,11 +59,11 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
         case 'hls':
         case 'hls_slower':
           return res.redirect(
-            `/stream/channels/${channel.uuid}.m3u8?streamMode=${mode}&useNewPipeline=${req.query.useNewPipeline}`,
+            `/stream/channels/${channel.uuid}.m3u8?mode=${mode}&useNewPipeline=${req.query.useNewPipeline}`,
           );
         case 'mpegts':
           return res.redirect(
-            `/stream/channels/${channel.uuid}.ts?streamMode=${mode}&useNewPipeline=${req.query.useNewPipeline}`,
+            `/stream/channels/${channel.uuid}.ts?mode=${mode}&useNewPipeline=${req.query.useNewPipeline}`,
           );
       }
     },
@@ -111,7 +110,6 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
             userAgent: req.headers['user-agent'],
           },
           {
-            concatOptions: { ...defaultConcatOptions },
             audioOnly: req.query.audioOnly,
             sessionType: `${mode}_concat` as const,
           },

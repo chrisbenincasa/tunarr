@@ -1,6 +1,6 @@
 import { SettingsDB, getSettings } from '@/db/SettingsDB.ts';
 import { MediaSourceType } from '@/db/schema/MediaSource.ts';
-import { NutOutputFormat, OutputFormat } from '@/ffmpeg/builder/constants.ts';
+import { OutputFormat } from '@/ffmpeg/builder/constants.ts';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { OfflineProgramStream } from './OfflinePlayer.js';
 import { PlayerContext } from './PlayerStreamContext.js';
@@ -18,7 +18,7 @@ export class ProgramStreamFactory {
 
   static create(
     context: PlayerContext,
-    outputFormat: OutputFormat = NutOutputFormat,
+    outputFormat: OutputFormat,
     settingsDB: SettingsDB = getSettings(),
   ): ProgramStream {
     let streamType: string;

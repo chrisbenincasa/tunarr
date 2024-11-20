@@ -90,13 +90,17 @@ export class FfmpegState {
     return new FfmpegState(fields);
   }
 
-  static forConcat(version: FfmpegVersionResult, channelName: string) {
+  static forConcat(
+    version: FfmpegVersionResult,
+    channelName: string,
+    outputFormat: OutputFormat = MpegTsOutputFormat,
+  ) {
     return this.create({
       version,
       doNotMapMetadata: true,
       metadataServiceProvider: 'Tunarr',
       metadataServiceName: channelName,
-      outputFormat: MpegTsOutputFormat,
+      outputFormat,
       ptsOffset: 0,
     });
   }
