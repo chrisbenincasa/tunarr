@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.16.3](https://github.com/chrisbenincasa/tunarr/compare/v0.16.2...v0.16.3) (2024-11-21)
+
+
+### Bug Fixes
+
+* allow backdating channel start times ([#979](https://github.com/chrisbenincasa/tunarr/issues/979)) ([4d85e08](https://github.com/chrisbenincasa/tunarr/commit/4d85e08c4a8cb968824c308af41801b179aa4710))
+* fix HLS concat on new FFmpeg pipeline ([#976](https://github.com/chrisbenincasa/tunarr/issues/976)) ([e2c9b51](https://github.com/chrisbenincasa/tunarr/commit/e2c9b51ee3a7f2c9e53e07a0fdb0f98978d92377)), closes [#974](https://github.com/chrisbenincasa/tunarr/issues/974)
+* slot time no longer resets day of week for weekly schedules ([f2000fb](https://github.com/chrisbenincasa/tunarr/commit/f2000fb6e7c268d0953f8069d7a149eaaeb0ece5))
+* use form field array index and not table index for slot editing ([dfaab86](https://github.com/chrisbenincasa/tunarr/commit/dfaab86769a983369813f0aaa063d869cf5b8cf9))
+
 ## [0.16.2](https://github.com/chrisbenincasa/tunarr/compare/v0.16.1...v0.16.2) (2024-11-19)
 
 
