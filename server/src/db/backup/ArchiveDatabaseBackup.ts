@@ -84,7 +84,7 @@ export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
       archive.on('end', () => resolve(void 0));
       archive.on('error', reject);
       archive.on('entry', (entry) => {
-        this.logger.debug('Added entry to backup: %s', entry.name);
+        this.logger.trace('Added entry to backup: %s', entry.name);
       });
     });
 

@@ -644,6 +644,7 @@ export class ProgramDB implements IProgramDB {
       GlobalScheduler.scheduleOneOffTask(
         ReconcileProgramDurationsTask.KEY,
         dayjs().add(500, 'ms'),
+        [],
       );
 
       PlexTaskQueue.resume();
@@ -654,6 +655,7 @@ export class ProgramDB implements IProgramDB {
       GlobalScheduler.scheduleOneOffTask(
         'UpsertExternalIds',
         dayjs().add(100),
+        [],
         AnonymousTask('UpsertExternalIds', () =>
           this.timer.timeAsync(
             `background external ID upsert (${backgroundExternalIds.length} ids)`,

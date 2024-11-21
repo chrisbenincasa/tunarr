@@ -8,7 +8,7 @@ export class RandomSortOperator extends SchedulingOperator<RandomSortOrderOperat
     channel,
     lineup,
   }: ChannelAndLineup): Promise<ChannelAndLineup> {
-    const newLineup = random.shuffle(lineup.items);
+    const newLineup = random.shuffle([...lineup.items]);
     return Promise.resolve({
       channel,
       lineup: { ...lineup, items: newLineup },

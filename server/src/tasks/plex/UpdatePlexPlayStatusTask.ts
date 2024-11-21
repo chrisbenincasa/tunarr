@@ -50,6 +50,7 @@ export class UpdatePlexPlayStatusScheduledTask extends ScheduledTask {
         return rule;
       }),
       () => this.getNextTask(),
+      [],
       { visible: false },
     );
 
@@ -57,6 +58,7 @@ export class UpdatePlexPlayStatusScheduledTask extends ScheduledTask {
     GlobalScheduler.scheduleOneOffTask(
       UpdatePlexPlayStatusTask.name,
       dayjs().add(1, 'second'),
+      [],
       this.getNextTask(),
     );
   }
@@ -71,6 +73,7 @@ export class UpdatePlexPlayStatusScheduledTask extends ScheduledTask {
     GlobalScheduler.scheduleOneOffTask(
       UpdatePlexPlayStatusTask.name,
       dayjs().add(5, 'seconds').toDate(),
+      [],
       this.getNextTask(),
     );
   }

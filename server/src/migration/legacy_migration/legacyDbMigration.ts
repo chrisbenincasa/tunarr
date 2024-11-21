@@ -492,6 +492,7 @@ export class LegacyDbMigrator {
         GlobalScheduler.scheduleOneOffTask(
           'BackfillParentMetadata',
           dayjs().add(10, 'seconds').toDate(),
+          [],
           AnonymousTask('BackfillParentMetadata', async () => {
             this.eventService.push({
               type: 'lifecycle',

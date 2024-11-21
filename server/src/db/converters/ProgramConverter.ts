@@ -79,7 +79,7 @@ export class ProgramConverter {
         });
       }
       return this.redirectLineupItemToProgram(item, redirectChannel);
-    } else {
+    } else if (item.type === 'content') {
       const program =
         preMaterializedProgram && preMaterializedProgram.uuid === item.id
           ? preMaterializedProgram
@@ -93,6 +93,8 @@ export class ProgramConverter {
         program.externalIds ?? [], // TODO fill in external IDs here
       );
     }
+
+    return null;
   }
 
   programDaoToContentProgram(

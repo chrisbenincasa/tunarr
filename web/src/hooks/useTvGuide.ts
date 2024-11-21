@@ -1,13 +1,9 @@
-import {
-  UseQueryOptions,
-  UseQueryResult,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query';
-import { ChannelLineup } from '@tunarr/types';
-import { Dayjs } from 'dayjs';
+import type { UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import type { ChannelLineup } from '@tunarr/types';
+import type { Dayjs } from 'dayjs';
 import { identity, isUndefined } from 'lodash-es';
-import { ApiClient } from '../external/api.ts';
+import type { ApiClient } from '../external/api.ts';
 import { useTunarrApi } from './useTunarrApi.ts';
 
 const dateRangeQueryKey = (range: { from: Dayjs; to: Dayjs }) =>

@@ -17,11 +17,7 @@ import { inject, injectable } from 'inversify';
 import { first, isEmpty, isNil, isNull, isUndefined, nth } from 'lodash-es';
 import { StrictExclude } from 'ts-essentials';
 import { match } from 'ts-pattern';
-import {
-  Lineup,
-  isContentItem,
-  isOfflineItem,
-} from '../db/derived_types/Lineup.ts';
+import { Lineup } from '../db/derived_types/Lineup.ts';
 import {
   EnrichedLineupItem,
   RedirectStreamLineupItem,
@@ -89,6 +85,7 @@ export class StreamProgramCalculator {
   async getCurrentLineupItem(
     req: GetCurrentLineupItemRequest,
   ): Promise<Result<CurrentLineupItemResult>> {
+    const startTime = req.startTime;
     const channel = await this.channelDB.getChannel(req.channelId);
 
     if (isNil(channel)) {
@@ -102,13 +99,21 @@ export class StreamProgramCalculator {
 
     const lineup = await this.channelDB.loadLineup(channel.uuid);
 
+    // if (lineup.onDemandConfig) {
+    //   startTime = this.onDemandService.getLiveTimestampForConfig(
+    //     lineup.onDemandConfig,
+    //     channel.startTime,
+    //     startTime,
+    //   );
+    // }
+
     let lineupItem: Maybe<StreamLineupItem>;
     let channelContext: Channel = channel;
     const redirectChannels: string[] = [];
     const upperBounds: number[] = [];
 
     let currentProgram = await this.getCurrentProgramAndTimeElapsed(
-      req.startTime,
+      startTime,
       channel,
       lineup,
     );
@@ -120,21 +125,16 @@ export class StreamProgramCalculator {
       );
 
       if (redirectChannels.includes(currentProgram.program.channel)) {
-        await this.channelCache.recordPlayback(
-          channelContext.uuid,
-          req.startTime,
-          {
-            type: 'error',
-            title: 'Error',
-            error:
-              'Recursive channel redirect found: ' +
-              redirectChannels.join(', '),
-            duration: 60_000,
-            streamDuration: 60_000,
-            startOffset: 0,
-            programBeginMs: req.startTime,
-          },
-        );
+        await this.channelCache.recordPlayback(channelContext.uuid, startTime, {
+          type: 'error',
+          title: 'Error',
+          error:
+            'Recursive channel redirect found: ' + redirectChannels.join(', '),
+          duration: 60_000,
+          streamDuration: 60_000,
+          startOffset: 0,
+          programBeginMs: req.startTime,
+        });
       }
 
       const nextChannelId = currentProgram.program.channel;
@@ -377,71 +377,78 @@ export class StreamProgramCalculator {
 
     const lineupItem = channelLineup.items[currentProgramIndex];
     let program: EnrichedLineupItem;
-    if (isContentItem(lineupItem)) {
-      // Defer program lookup
+    switch (lineupItem.type) {
+      case 'content': {
+        // Defer program lookup
+        const backingItem = await this.programDB.getProgramById(lineupItem.id);
+        program = {
+          duration: lineupItem.durationMs,
+          type: 'offline',
+          programBeginMs: timestamp - timeElapsed,
+        };
 
-      const backingItem = await this.programDB.getProgramById(lineupItem.id);
-      program = {
-        duration: lineupItem.durationMs,
-        type: 'offline',
-        programBeginMs: timestamp - timeElapsed,
-      };
-
-      if (backingItem) {
-        // Will play this item on the first found server... unsure if that is
-        // what we want
-        const externalInfo = backingItem.externalIds.find(
-          (eid) =>
-            eid.sourceType === ProgramExternalIdType.PLEX ||
-            eid.sourceType === ProgramExternalIdType.JELLYFIN ||
-            eid.sourceType === ProgramExternalIdType.EMBY,
-        );
-
-        if (externalInfo && isNonEmptyString(externalInfo.externalSourceId)) {
-          const mediaSourceType = match(externalInfo.sourceType)
-            .with(ProgramExternalIdType.PLEX, () => MediaSourceType.Plex)
-            .with(
-              ProgramExternalIdType.JELLYFIN,
-              () => MediaSourceType.Jellyfin,
-            )
-            .with(ProgramExternalIdType.EMBY, () => MediaSourceType.Emby)
-            .otherwise(() => null);
-          if (!mediaSourceType) {
-            throw new Error('Impossible');
-          }
-          program = {
-            type: 'program',
-            externalSource: mediaSourceType,
-            plexFilePath: nullToUndefined(externalInfo.externalFilePath),
-            externalKey: externalInfo.externalKey,
-            filePath: nullToUndefined(externalInfo.directFilePath),
-            externalSourceId: externalInfo.externalSourceId,
-            duration: backingItem.duration,
-            programId: backingItem.uuid,
-            title: backingItem.title,
-            id: backingItem.uuid,
-            programType: backingItem.type,
-            programBeginMs: timestamp - timeElapsed,
-          };
-        } else {
-          this.logger.warn(
-            'Found a backing item, but could not find external ID info!! %O',
-            backingItem,
+        if (backingItem) {
+          // Will play this item on the first found server... unsure if that is
+          // what we want
+          const externalInfo = backingItem.externalIds.find(
+            (eid) =>
+              eid.sourceType === ProgramExternalIdType.PLEX ||
+              eid.sourceType === ProgramExternalIdType.JELLYFIN ||
+              eid.sourceType === ProgramExternalIdType.EMBY,
           );
+
+          if (externalInfo && isNonEmptyString(externalInfo.externalSourceId)) {
+            const mediaSourceType = match(externalInfo.sourceType)
+              .with(ProgramExternalIdType.PLEX, () => MediaSourceType.Plex)
+              .with(
+                ProgramExternalIdType.JELLYFIN,
+                () => MediaSourceType.Jellyfin,
+              )
+              .with(ProgramExternalIdType.EMBY, () => MediaSourceType.Emby)
+              .otherwise(() => null);
+            if (!mediaSourceType) {
+              throw new Error('Impossible');
+            }
+            program = {
+              type: 'program',
+              externalSource: mediaSourceType,
+              plexFilePath: nullToUndefined(externalInfo.externalFilePath),
+              externalKey: externalInfo.externalKey,
+              filePath: nullToUndefined(externalInfo.directFilePath),
+              externalSourceId: externalInfo.externalSourceId,
+              duration: backingItem.duration,
+              programId: backingItem.uuid,
+              title: backingItem.title,
+              id: backingItem.uuid,
+              programType: backingItem.type,
+              programBeginMs: timestamp - timeElapsed,
+            };
+          } else {
+            this.logger.warn(
+              'Found a backing item, but could not find external ID info!! %O',
+              backingItem,
+            );
+          }
         }
+        break;
       }
-    } else if (isOfflineItem(lineupItem)) {
-      program = {
-        ...createOfflineStreamLineupItem(lineupItem.durationMs, timestamp),
-        programBeginMs: timestamp - timeElapsed,
-      };
-    } else {
-      program = {
-        duration: lineupItem.durationMs,
-        channel: lineupItem.channel,
-        type: 'redirect',
-        programBeginMs: timestamp - timeElapsed,
-      };
+      case 'offline': {
+        program = {
+          ...createOfflineStreamLineupItem(lineupItem.durationMs, timestamp),
+          programBeginMs: timestamp - timeElapsed,
+        };
+        break;
+      }
+
+      case 'redirect': {
+        program = {
+          duration: lineupItem.durationMs,
+          channel: lineupItem.channel,
+          type: 'redirect',
+          programBeginMs: timestamp - timeElapsed,
+        };
+        break;
+      }
     }
 
     return {

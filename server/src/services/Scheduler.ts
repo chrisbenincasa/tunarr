@@ -8,14 +8,13 @@ import { OneOffTask } from '@/tasks/OneOffTask.js';
 import { ReconcileProgramDurationsTask } from '@/tasks/ReconcileProgramDurationsTask.js';
 import { ScheduledTask } from '@/tasks/ScheduledTask.js';
 import { ScheduleDynamicChannelsTask } from '@/tasks/ScheduleDynamicChannelsTask.js';
-import type { Task, TaskId } from '@/tasks/Task.js';
+import type { Task, TaskId, TaskOutputType } from '@/tasks/Task.js';
 import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
 import { KEYS } from '@/types/inject.js';
 import { typedProperty } from '@/types/path.js';
 import type { Maybe } from '@/types/util.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { parseEveryScheduleRule } from '@/util/schedulingUtil.js';
-import type { Tag } from '@tunarr/types';
 import type { BackupSettings } from '@tunarr/types/schemas';
 import dayjs, { type Dayjs } from 'dayjs';
 import type { interfaces } from 'inversify';
@@ -38,18 +37,19 @@ class Scheduler {
   #scheduledJobsById: Record<string, ScheduledTask[]> = {};
 
   // TaskId values always have an associated task (after server startup)
-  getScheduledJobs<
-    Id extends TaskId,
-    OutType = Id extends Tag<TaskId, infer Out> ? Out : unknown,
-  >(id: TaskId): ScheduledTask<OutType>[];
-  getScheduledJobs<OutType = unknown>(
+  getScheduledJobs<Id extends TaskId, TaskOutputTypeT = TaskOutputType<Id>>(
+    id: Id,
+  ): ScheduledTask<unknown[], TaskOutputTypeT>[];
+  getScheduledJobs<OutType = void>(
     id: string,
-  ): Maybe<ScheduledTask<OutType>[]>;
-  getScheduledJobs<OutType = unknown>(
-    id: Task<OutType> | string,
-  ): Maybe<ScheduledTask<OutType>[]> {
+  ): Maybe<ScheduledTask<unknown[], OutType>[]>;
+  getScheduledJobs<OutType = void>(
+    id: Task<[], OutType> | string,
+  ): Maybe<ScheduledTask<unknown[], OutType>[]> {
     if (isString(id)) {
-      return this.#scheduledJobsById[id] as Maybe<ScheduledTask<OutType>[]>;
+      return this.#scheduledJobsById[id] as Maybe<
+        ScheduledTask<unknown[], OutType>[]
+      >;
     } else {
       return this.getScheduledJobs(id.ID);
     }
@@ -61,17 +61,16 @@ class Scheduler {
   // TODO: There is probably a better way to handle the jobs that always
   // exists with a single instance vs. one-off jobs that are triggered
   // around the codebase (dynamic jobs)
-  getScheduledJob<
-    Id extends TaskId,
-    OutType = Id extends Tag<TaskId, infer Out> ? Out : unknown,
-  >(id: TaskId): ScheduledTask<OutType> {
-    return this.getScheduledJobs<Id, OutType>(id)?.[0];
+  getScheduledJob<Id extends TaskId, TaskOutputTypeT = TaskOutputType<Id>>(
+    id: Id,
+  ): ScheduledTask<unknown[], TaskOutputTypeT> {
+    return this.getScheduledJobs<Id, TaskOutputTypeT>(id)?.[0];
   }
 
-  runScheduledJobNow<
-    Id extends TaskId,
-    OutType = Id extends Tag<TaskId, infer Out> ? Out : unknown,
-  >(id: TaskId, background?: boolean): Promise<OutType | undefined> {
+  runScheduledJobNow<Id extends TaskId, OutType = TaskOutputType<Id>>(
+    id: Id,
+    background?: boolean,
+  ): Promise<OutType | undefined> {
     return this.getScheduledJob<Id, OutType>(id)?.runNow(background);
   }
 
@@ -92,16 +91,22 @@ class Scheduler {
     return true;
   }
 
-  scheduleOneOffTask<OutType = unknown>(
+  scheduleOneOffTask<
+    TaskT extends Task,
+    Args extends unknown[] = TaskT extends Task<infer Args, unknown>
+      ? Args
+      : unknown[],
+  >(
     name: interfaces.ServiceIdentifier,
     when: Dayjs | Date | number,
-    taskInstance?: Task<OutType>,
+    args: Args,
+    taskInstance?: TaskT,
   ): void {
-    let task: Task<OutType>;
+    let task: TaskT;
     if (taskInstance) {
       task = taskInstance;
     } else {
-      const taskFactory = container.tryGet<() => Task<OutType>>(name);
+      const taskFactory = container.tryGet<interfaces.AutoFactory<TaskT>>(name);
       if (!taskFactory) {
         this.logger.error('Unable to schedule unknown task: %s', name);
         return;
@@ -118,7 +123,10 @@ class Scheduler {
       );
     });
     const ts = isDayjs(when) ? when.toDate() : when;
-    this.insertTask(id, new OneOffTask(scheduledTaskName, ts, () => task));
+    this.insertTask(
+      id,
+      new OneOffTask<Args, unknown>(scheduledTaskName, ts, () => task, args),
+    );
   }
 
   private insertTask(id: string, task: ScheduledTask) {
@@ -150,7 +158,10 @@ export const scheduleJobs = once((serverContext: ServerContext) => {
     new ScheduledTask(
       UpdateXmlTvTask.name,
       hoursCrontab(xmlTvSettings.refreshHours),
-      container.get(KEYS.UpdateXmlTvTaskFactory),
+      container.get<interfaces.AutoFactory<UpdateXmlTvTask>>(
+        KEYS.UpdateXmlTvTaskFactory,
+      ),
+      [],
     ),
   );
 
@@ -159,7 +170,10 @@ export const scheduleJobs = once((serverContext: ServerContext) => {
     new ScheduledTask(
       CleanupSessionsTask.name,
       minutesCrontab(1),
-      container.get(CleanupSessionsTask.KEY),
+      container.get<interfaces.AutoFactory<CleanupSessionsTask>>(
+        CleanupSessionsTask.KEY,
+      ),
+      [],
     ),
   );
 
@@ -168,7 +182,10 @@ export const scheduleJobs = once((serverContext: ServerContext) => {
     new ScheduledTask(
       OnDemandChannelStateTask.name,
       minutesCrontab(1),
-      container.get(OnDemandChannelStateTask.KEY),
+      container.get<interfaces.AutoFactory<OnDemandChannelStateTask>>(
+        OnDemandChannelStateTask.KEY,
+      ),
+      [],
       { runAtStartup: true },
     ),
   );
@@ -179,7 +196,10 @@ export const scheduleJobs = once((serverContext: ServerContext) => {
       ScheduleDynamicChannelsTask.name,
       // Temporary
       hoursCrontab(1),
-      container.get(ScheduleDynamicChannelsTask.KEY),
+      container.get<interfaces.AutoFactory<ScheduleDynamicChannelsTask>>(
+        ScheduleDynamicChannelsTask.KEY,
+      ),
+      [],
       {
         runAtStartup: true,
         runOnSchedule: true,
@@ -193,7 +213,10 @@ export const scheduleJobs = once((serverContext: ServerContext) => {
       ReconcileProgramDurationsTask.name,
       // temporary
       hoursCrontab(1),
-      container.get(ReconcileProgramDurationsTask.KEY),
+      container.get<interfaces.AutoFactory<ReconcileProgramDurationsTask>>(
+        ReconcileProgramDurationsTask.KEY,
+      ),
+      [],
     ),
   );
 
@@ -248,6 +271,7 @@ export function scheduleBackupJobs(
           BackupTask.name,
           cronSchedule,
           container.get<BackupTaskFactory>(BackupTask.KEY)(config),
+          [],
           { runOnSchedule: true },
         ),
       );

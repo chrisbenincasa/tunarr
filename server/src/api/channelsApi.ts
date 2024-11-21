@@ -3,7 +3,7 @@ import { GlobalScheduler } from '@/services/Scheduler.js';
 import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
 import { OpenDateTimeRange } from '@/types/OpenDateTimeRange.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
-import { attempt } from '@/util/index.js';
+import { attempt, isDefined } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { timeNamedAsync } from '@/util/perf.js';
 import { scheduleTimeSlots } from '@tunarr/shared';
@@ -222,7 +222,8 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
 
           const needsGuideRegen =
             channel.guideMinimumDuration !==
-            updatedChannel.channel.guideMinimumDuration;
+              updatedChannel.channel.guideMinimumDuration ||
+            isDefined(req.body.onDemand);
 
           await req.serverCtx.guideService.updateCachedChannel(
             channel.uuid,

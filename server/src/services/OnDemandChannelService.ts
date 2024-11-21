@@ -1,3 +1,4 @@
+import { OnDemandChannelConfig } from '@/db/derived_types/Lineup.js';
 import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
 import { KEYS } from '@/types/inject.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
@@ -5,6 +6,7 @@ import { MutexMap } from '@/util/mutexMap.js';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
 import { isNull, isUndefined } from 'lodash-es';
+import { GlobalScheduler } from './Scheduler.ts';
 
 @injectable()
 export class OnDemandChannelService {
@@ -18,8 +20,6 @@ export class OnDemandChannelService {
     this.#locks = mutexMap;
   }
 
-  // constructor(private channelDB: ChannelDB) {}
-
   async isChannelPlaying(id: string) {
     const channelAndLineup = await this.channelDB.loadChannelAndLineup(id);
     if (isNull(channelAndLineup)) {
@@ -32,28 +32,21 @@ export class OnDemandChannelService {
   }
 
   async pauseAllChannels() {
-    const allConfigs = await this.channelDB.loadAllLineupConfigs();
-    const now = dayjs().unix() * 1000;
-    for (const [channelId, { lineup }] of Object.entries(allConfigs)) {
-      if (isUndefined(lineup.onDemandConfig)) {
-        continue;
-      }
+    const channels = await this.channelDB.getAllChannels();
+    const now = +dayjs();
 
-      if (lineup.onDemandConfig.state === 'paused') {
-        continue;
-      }
-
-      await this.channelDB.updateLineupConfig(channelId, 'onDemandConfig', {
-        ...lineup.onDemandConfig,
-        state: 'paused',
-        lastPaused: now,
-      });
+    for (const channel of channels) {
+      await this.pauseChannel(channel.uuid, now);
     }
   }
 
-  async pauseChannel(id: string, stopTime?: number, rewindMs: number = 0) {
-    return this.#locks.runWithLockId(id, async () => {
-      const channelAndLineup = await this.loadOnDemandChannelLineup(id);
+  async pauseChannel(
+    channelId: string,
+    stopTime?: number,
+    rewindMs: number = 0,
+  ) {
+    return this.#locks.runWithLockId(channelId, async () => {
+      const channelAndLineup = await this.loadOnDemandChannelLineup(channelId);
 
       if (isUndefined(channelAndLineup)) {
         return;
@@ -83,26 +76,33 @@ export class OnDemandChannelService {
           : (lineup.onDemandConfig.cursor + elapsed - rewindMs) %
             channel.duration;
 
-      return await this.channelDB
-        .updateLineupConfig(id, 'onDemandConfig', {
+      await this.channelDB
+        .updateLineupConfig(channelId, 'onDemandConfig', {
           ...(lineup.onDemandConfig ?? {}),
           state: 'paused',
           lastPaused: pauseTime,
           cursor: nextCursor,
         })
+        .then(() => {
+          GlobalScheduler.scheduleOneOffTask(
+            KEYS.UpdateXmlTvTaskFactory,
+            dayjs().add(1000),
+            [channelId],
+          );
+        })
         .finally(() => {
           this.logger.debug(
             'Paused on-demand channel %s (at = %s)',
-            id,
+            channelId,
             dayjs(pauseTime).format(),
           );
         });
     });
   }
 
-  async resumeChannel(id: string) {
-    return this.#locks.runWithLockId(id, async () => {
-      const channelAndLineup = await this.loadOnDemandChannelLineup(id);
+  async resumeChannel(channelId: string) {
+    return this.#locks.runWithLockId(channelId, async () => {
+      const channelAndLineup = await this.loadOnDemandChannelLineup(channelId);
 
       if (isUndefined(channelAndLineup)) {
         return;
@@ -122,8 +122,8 @@ export class OnDemandChannelService {
       // and skip it if it's a commercial.
 
       const now = dayjs();
-      return await this.channelDB
-        .updateLineupConfig(id, 'onDemandConfig', {
+      await this.channelDB
+        .updateLineupConfig(channelId, 'onDemandConfig', {
           ...(lineup.onDemandConfig ?? {}),
           state: 'playing',
           lastResumed: +now,
@@ -131,14 +131,38 @@ export class OnDemandChannelService {
         .finally(() => {
           this.logger.debug(
             'Resumed on-demand channel %s (at = %s)',
-            id,
+            channelId,
             now.format(),
           );
         });
+
+      GlobalScheduler.scheduleOneOffTask(
+        KEYS.UpdateXmlTvTaskFactory,
+        dayjs().add(1000),
+        [channelId],
+      );
     });
   }
 
-  async getLiveTimestamp(channelId: string, requestTime: number) {
+  getLiveTimestampForConfig(
+    onDemandConfig: OnDemandChannelConfig,
+    channelStartTime: number,
+    requestTime: number,
+  ): number {
+    const lastResumed = onDemandConfig.lastResumed ?? 0;
+    // Don't skip milliseconds
+    let sinceResume = requestTime > lastResumed ? requestTime - lastResumed : 0;
+    if (sinceResume < 1000) {
+      sinceResume = 0;
+    }
+
+    return channelStartTime + onDemandConfig.cursor + sinceResume;
+  }
+
+  async getLiveTimestamp(
+    channelId: string,
+    requestTime: number,
+  ): Promise<number> {
     const channelAndLineup = await this.loadOnDemandChannelLineup(channelId);
 
     if (isUndefined(channelAndLineup)) {
@@ -151,16 +175,11 @@ export class OnDemandChannelService {
       return requestTime;
     }
 
-    let sinceResume = dayjs(requestTime).diff(
-      dayjs(lineup.onDemandConfig.lastResumed),
+    return this.getLiveTimestampForConfig(
+      lineup.onDemandConfig,
+      channel.startTime,
+      requestTime,
     );
-
-    // Don't skip milliseconds
-    if (sinceResume < 1_000) {
-      sinceResume = 0;
-    }
-
-    return channel.startTime + lineup.onDemandConfig.cursor + sinceResume;
   }
 
   private async loadOnDemandChannelLineup(id: string) {
