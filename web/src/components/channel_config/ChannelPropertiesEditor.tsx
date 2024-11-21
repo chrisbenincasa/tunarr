@@ -186,10 +186,9 @@ export function ChannelPropertiesEditor({ isNew }: Props) {
                           onBlur: field.onBlur,
                         },
                       }}
-                      disablePast
                       value={dayjs(field.value)}
                       onChange={(newDateTime) =>
-                        field.onChange((newDateTime ?? dayjs()).unix() * 1000)
+                        field.onChange(+(newDateTime ?? dayjs()))
                       }
                     />
                   )}
