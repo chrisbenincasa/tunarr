@@ -1,7 +1,15 @@
 import { VideoStream } from '@/ffmpeg/builder/MediaStream.ts';
 import { VideoFormats } from '@/ffmpeg/builder/constants.ts';
 import { HardwareAccelerationMode } from '@/ffmpeg/builder/types.ts';
-import { H264Decoder, ImplicitDecoder } from './SoftwareDecoder.ts';
+import {
+  H264Decoder,
+  HevcDecoder,
+  ImplicitDecoder,
+  Mpeg2Decoder,
+  Mpeg4Decoder,
+  RawVideoDecoder,
+  Vc1Decoder,
+} from './SoftwareDecoder.ts';
 import {
   NvidiaH264Decoder,
   NvidiaHevcDecoder,
@@ -22,6 +30,16 @@ export class DecoderFactory {
     switch (videoStream.codec) {
       case VideoFormats.H264:
         return new H264Decoder();
+      case VideoFormats.Hevc:
+        return new HevcDecoder();
+      case VideoFormats.Vc1:
+        return new Vc1Decoder();
+      case VideoFormats.Mpeg2Video:
+        return new Mpeg2Decoder();
+      case VideoFormats.Mpeg4:
+        return new Mpeg4Decoder();
+      case VideoFormats.Raw:
+        return new RawVideoDecoder();
       default:
         return new ImplicitDecoder();
     }

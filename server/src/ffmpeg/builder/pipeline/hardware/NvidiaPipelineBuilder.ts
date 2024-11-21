@@ -49,7 +49,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
   constructor(
     private hardwareCapabilities: BaseFfmpegHardwareCapabilities,
     binaryCapabilities: FfmpegCapabilities,
-    videoInputFile: VideoInputSource,
+    videoInputFile: Nullable<VideoInputSource>,
     audioInputFile: Nullable<AudioInputSource>,
     concatInputSource: Nullable<ConcatInputSource>,
     watermarkInputSource: Nullable<WatermarkInputSource>,
@@ -358,7 +358,6 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
         this.watermarkInputSource &&
         currentState.frameDataLocation === FrameDataLocation.Hardware
       ) {
-        this.logger.debug('Using software encoder');
         const hwDownloadFilter = new HardwareDownloadCudaFilter(
           currentState.pixelFormat,
           null,
@@ -367,7 +366,6 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
         steps.push(hwDownloadFilter);
       }
 
-      console.debug('pixelFormat', currentState, this.ffmpegState);
       if (
         currentState.frameDataLocation === FrameDataLocation.Hardware &&
         this.ffmpegState.encoderHwAccelMode === HardwareAccelerationMode.None

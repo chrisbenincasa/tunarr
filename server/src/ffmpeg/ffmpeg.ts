@@ -6,12 +6,7 @@ import { gcd } from '@/util/index.ts';
 import { Logger, LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
 import { getTunarrVersion } from '@/util/version.js';
-import {
-  ChannelStreamMode,
-  FfmpegSettings,
-  Resolution,
-  Watermark,
-} from '@tunarr/types';
+import { FfmpegSettings, Resolution, Watermark } from '@tunarr/types';
 import {
   SupportedHardwareAccels,
   SupportedVideoFormats,
@@ -41,7 +36,7 @@ import {
   NutOutputFormat,
   OutputFormat,
 } from './builder/constants.ts';
-import { IFFMPEG } from './ffmpegBase.ts';
+import { HlsWrapperOptions, IFFMPEG } from './ffmpegBase.ts';
 import { FFMPEGInfo } from './ffmpegInfo.js';
 
 const MAXIMUM_ERROR_DURATION_MS = 60000;
@@ -75,10 +70,10 @@ export type ConcatOptions = {
   // enableHls: boolean;
   // enableDash: boolean;
   outputFormat: OutputFormat;
-  numThreads: number;
+  // numThreads: number;
   // hlsOptions?: Partial<HlsOptions>;
   // dashOptions?: Partial<MpegDashOptions>;
-  logOutput: boolean;
+  // logOutput: boolean;
 };
 
 export const defaultHlsOptions: DeepRequired<HlsOptions> = {
@@ -102,9 +97,7 @@ export const defaultMpegDashOptions: DeepRequired<MpegDashOptions> = {
 
 export const defaultConcatOptions: DeepRequired<ConcatOptions> = {
   mode: 'hls_concat',
-  numThreads: 2,
   outputFormat: MpegTsOutputFormat,
-  logOutput: false,
 };
 
 const hardwareAccelToEncoder: Record<
@@ -218,7 +211,7 @@ export class FFMPEG implements IFFMPEG {
 
   createConcatSession(
     streamUrl: string,
-    opts: DeepReadonly<Partial<ConcatOptions>> = defaultConcatOptions,
+    opts: DeepReadonly<ConcatOptions>,
   ): Promise<FfmpegTranscodeSession> {
     this.ffmpegName = 'Concat FFMPEG';
     const ffmpegArgs: string[] = [
@@ -316,7 +309,11 @@ export class FFMPEG implements IFFMPEG {
     return Promise.resolve(this.createProcess(ffmpegArgs));
   }
 
-  createWrapperConcatSession(streamUrl: string, streamMode: ChannelStreamMode) {
+  createHlsWrapperSession(streamUrl: string, opts: HlsWrapperOptions) {
+    if (opts.mode === 'hls_slower_concat') {
+      return this.createConcatSession(streamUrl, opts);
+    }
+
     this.ffmpegName = 'Concat Wrapper FFMPEG';
     const ffmpegArgs = [
       '-nostdin',
@@ -336,18 +333,18 @@ export class FFMPEG implements IFFMPEG {
       '1',
       '-readrate',
       '1',
-      ...(streamMode === 'mpegts'
-        ? [
-            '-safe',
-            '0',
-            '-stream_loop',
-            '-1',
-            `-protocol_whitelist`,
-            `file,http,tcp,https,tcp,tls`,
-            `-probesize`,
-            '32',
-          ]
-        : []),
+      // ...(streamMode === 'mpegts'
+      //   ? [
+      //       '-safe',
+      //       '0',
+      //       '-stream_loop',
+      //       '-1',
+      //       `-protocol_whitelist`,
+      //       `file,http,tcp,https,tcp,tls`,
+      //       `-probesize`,
+      //       '32',
+      //     ]
+      //   : []),
       '-i',
       streamUrl,
       '-map',
@@ -382,7 +379,7 @@ export class FFMPEG implements IFFMPEG {
       realtime,
       enableIcon,
       outputFormat,
-      ptsOffset,
+      ptsOffset ?? null,
     );
   }
 
@@ -426,6 +423,7 @@ export class FFMPEG implements IFFMPEG {
       true,
       /*watermark=*/ undefined,
       outputFormat,
+      null,
     );
   }
 
@@ -448,6 +446,7 @@ export class FFMPEG implements IFFMPEG {
       true,
       undefined,
       outputFormat,
+      null,
     );
   }
 
@@ -458,8 +457,8 @@ export class FFMPEG implements IFFMPEG {
     duration: Duration,
     realtime: boolean,
     watermark: Maybe<Watermark>,
-    outputFormat: OutputFormat = NutOutputFormat,
-    ptsOffset: Nullable<number> = null,
+    outputFormat: OutputFormat,
+    ptsOffset: Nullable<number>,
   ): Promise<Maybe<FfmpegTranscodeSession>> {
     const ffmpegArgs: string[] = [
       '-hide_banner',

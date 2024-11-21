@@ -10,9 +10,12 @@ export class ScaleVaapiFilter extends FilterOption {
     private paddedSize: FrameSize,
   ) {
     super();
+    this.filter = this.genFilter();
   }
 
-  public get filter(): string {
+  public readonly filter: string;
+
+  private genFilter(): string {
     let scale = '';
 
     if (this.currentState.scaledSize.equals(this.scaledSize)) {
@@ -23,6 +26,7 @@ export class ScaleVaapiFilter extends FilterOption {
       let aspectRatio = '';
       if (!this.scaledSize.equals(this.paddedSize)) {
         // Set cropped size
+        aspectRatio = ':force_original_aspect_ratio=decrease';
       }
 
       let squareScale = '';

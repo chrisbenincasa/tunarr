@@ -57,6 +57,9 @@ export const MetadataServiceNameOutputOption = (serviceName: string) =>
 export const DoNotMapMetadataOutputOption = () =>
   makeConstantOutputOption(['-map_metadata', '-1']);
 
+export const MapAllStreamsOutputOption = () =>
+  makeConstantOutputOption(['-map', '0']);
+
 export const NoSceneDetectOutputOption = (
   value: number,
 ): ConstantOutputOption =>
@@ -90,12 +93,13 @@ export const FrameRateOutputOption = (
 export const VideoTrackTimescaleOutputOption = (scale: number) =>
   makeConstantOutputOption(['-video_track_timescale', scale.toString()]);
 
-export const MpegTsOutputFormatOption = () =>
+export const MpegTsOutputFormatOption = (initialDiscontinuity?: boolean) =>
   makeConstantOutputOption([
     '-f',
     'mpegts',
-    '-mpegts_flags',
-    '+initial_discontinuity',
+    ...(initialDiscontinuity
+      ? ['-mpegts_flags', '+initial_discontinuity']
+      : []),
   ]);
 
 export const Mp4OutputFormatOption = () =>

@@ -1,7 +1,8 @@
 import { getSettings } from '@/db/SettingsDB.ts';
 import { Channel } from '@/db/schema/Channel.ts';
+import { FFmpegFactory } from '@/ffmpeg/FFmpegFactory.ts';
 import { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.ts';
-import { FFMPEG, defaultHlsOptions } from '@/ffmpeg/ffmpeg.ts';
+import { defaultHlsOptions } from '@/ffmpeg/ffmpeg.ts';
 import { serverContext } from '@/serverContext.ts';
 import { ProgramStream } from '@/stream/ProgramStream.ts';
 import { ProgramStreamFactory } from '@/stream/ProgramStreamFactory.ts';
@@ -114,6 +115,14 @@ export class HlsSlowerSession extends BaseHlsSession<HlsSlowerSessionOptions> {
         }
       }
 
+      programStream.on('error', () => {
+        this.state = 'error';
+        this.error = new Error(
+          `Unrecoverable error in underlying FFMPEG process`,
+        );
+        this.emit('error', this.error);
+      });
+
       transcodeSessionResult.forEach((transcodeSession) => {
         this.transcodedUntil = this.transcodedUntil.add(
           transcodeSession.streamDuration,
@@ -138,9 +147,13 @@ export class HlsSlowerSession extends BaseHlsSession<HlsSlowerSessionOptions> {
       mode: this.sessionType,
     });
 
-    const ffmpeg = new FFMPEG(this.settingsDB.ffmpegSettings(), this.channel);
+    const ffmpeg = FFmpegFactory.getFFmpegPipelineBuilder(
+      this.settingsDB.ffmpegSettings(),
+      this.channel,
+    );
 
     this.#concatSession = await ffmpeg.createConcatSession(streamUrl, {
+      mode: 'hls_slower_concat',
       outputFormat: HlsOutputFormat({
         ...defaultHlsOptions,
         streamBasePath: `stream_${this.channel.uuid}`,

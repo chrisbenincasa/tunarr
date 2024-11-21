@@ -114,7 +114,7 @@ export class FfmpegPlaybackParamsCalculator {
       videoBufferSize: this.ffmpegOptions.videoBufferSize,
       videoTrackTimeScale: 90_000,
       frameRate: 24,
-      realtime: true,
+      realtime: false,
     };
   }
 }

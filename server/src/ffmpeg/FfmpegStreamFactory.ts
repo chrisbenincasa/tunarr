@@ -16,7 +16,11 @@ import {
   StillImageStream,
   VideoStream,
 } from './builder/MediaStream.ts';
-import { MpegTsOutputFormat, OutputFormat } from './builder/constants.ts';
+import {
+  MpegTsOutputFormat,
+  OutputFormat,
+  VideoFormats,
+} from './builder/constants.ts';
 import {
   KnownPixelFormats,
   PixelFormat,
@@ -39,7 +43,7 @@ import { FfmpegState } from './builder/state/FfmpegState.ts';
 import { FrameState } from './builder/state/FrameState.ts';
 import { FrameSize } from './builder/types.ts';
 import { ConcatOptions, StreamSessionOptions } from './ffmpeg.ts';
-import { IFFMPEG } from './ffmpegBase.ts';
+import { HlsWrapperOptions, IFFMPEG } from './ffmpegBase.ts';
 import { FFMPEGInfo } from './ffmpegInfo.ts';
 
 export class FfmpegStreamFactory extends IFFMPEG {
@@ -57,8 +61,15 @@ export class FfmpegStreamFactory extends IFFMPEG {
 
   async createConcatSession(
     streamUrl: string,
-    opts: DeepReadonly<Partial<ConcatOptions>>,
+    opts: DeepReadonly<ConcatOptions>,
   ): Promise<FfmpegTranscodeSession> {
+    if (opts.mode === 'hls_concat') {
+      return this.createHlsWrapperSession(streamUrl, {
+        mode: 'hls_concat',
+        outputFormat: opts.outputFormat,
+      });
+    }
+
     const concatInput = new ConcatInputSource(
       new HttpStreamSource(streamUrl),
       FrameSize.create({
@@ -66,31 +77,25 @@ export class FfmpegStreamFactory extends IFFMPEG {
         width: this.ffmpegSettings.targetResolution.widthPx,
       }),
     );
+
+    if (opts.mode === 'hls_slower_concat') {
+      return this.createHlsSlowerConcatSession(concatInput, {
+        outputFormat: opts.outputFormat,
+        mode: 'hls_slower_concat',
+      });
+    }
+
     const pipelineBuilder = await this.pipelineBuilderFactory
       .builder(this.ffmpegSettings)
       .setConcatInputSource(concatInput)
       .build();
 
-    const calculator = new FfmpegPlaybackParamsCalculator(this.ffmpegSettings);
-
-    const pipeline = pipelineBuilder.build(
-      FfmpegState.create({
-        version: await this.ffmpegInfo.getVersion(),
-        outputFormat: opts.outputFormat ?? MpegTsOutputFormat,
-        metadataServiceProvider: 'Tunarr',
-        metadataServiceName: this.channel.name,
-        ptsOffset: 0,
-      }),
-      new FrameState({
-        ...calculator.calculateForHlsConcat(),
-        scaledSize: FrameSize.fromResolution(
-          this.ffmpegSettings.targetResolution,
-        ),
-        paddedSize: FrameSize.fromResolution(
-          this.ffmpegSettings.targetResolution,
-        ),
-        isAnamorphic: false,
-      }),
+    const pipeline = pipelineBuilder.concat(
+      concatInput,
+      FfmpegState.forConcat(
+        await this.ffmpegInfo.getVersion(),
+        this.channel.name,
+      ),
     );
 
     return new FfmpegTranscodeSession(
@@ -105,8 +110,9 @@ export class FfmpegStreamFactory extends IFFMPEG {
     );
   }
 
-  async createWrapperConcatSession(
+  async createHlsWrapperSession(
     streamUrl: string,
+    opts: HlsWrapperOptions,
   ): Promise<FfmpegTranscodeSession> {
     const concatInput = new ConcatInputSource(
       new HttpStreamSource(streamUrl),
@@ -121,13 +127,118 @@ export class FfmpegStreamFactory extends IFFMPEG {
       .setConcatInputSource(concatInput)
       .build();
 
-    const pipeline = pipelineBuilder.hlsConcat(
+    const pipeline = pipelineBuilder.hlsWrap(
       concatInput,
       FfmpegState.forConcat(
         await this.ffmpegInfo.getVersion(),
         this.channel.name,
+        opts.outputFormat,
       ),
     );
+
+    return new FfmpegTranscodeSession(
+      new FfmpegProcess(
+        this.ffmpegSettings,
+        'Concat Wrapper v2 FFmpeg',
+        pipeline.getCommandArgs(),
+        pipeline.getCommandEnvironment(),
+      ),
+      dayjs.duration(-1),
+      dayjs(-1),
+    );
+  }
+
+  private async createHlsSlowerConcatSession(
+    concatInput: ConcatInputSource,
+    opts: HlsWrapperOptions,
+  ): Promise<FfmpegTranscodeSession> {
+    const calculator = new FfmpegPlaybackParamsCalculator(this.ffmpegSettings);
+    const playbackParams = calculator.calculateForHlsConcat();
+
+    const videoStream = VideoStream.create({
+      index: 0,
+      codec: VideoFormats.Raw,
+      pixelFormat: new PixelFormatYuv420P(), // Hard-coded right now
+      frameSize: FrameSize.fromResolution(this.ffmpegSettings.targetResolution),
+      pixelAspectRatio: '1:1',
+      inputKind: 'video',
+      isAnamorphic: false,
+    });
+
+    const videoInputSource = VideoInputSource.withStream(
+      concatInput.source,
+      videoStream,
+    );
+
+    const audioStream = AudioStream.create({
+      index: 1,
+      codec: '', // Unknown
+      channels: this.ffmpegSettings.audioChannels,
+    });
+
+    const audioInputSource = new AudioInputSource(
+      concatInput.source,
+      [audioStream],
+      AudioState.create({
+        audioBitrate: playbackParams.audioBitrate,
+        audioBufferSize: playbackParams.audioBufferSize,
+        audioChannels: playbackParams.audioChannels,
+        audioDuration: null,
+        audioEncoder: playbackParams.audioFormat,
+        audioSampleRate: playbackParams.audioSampleRate,
+        audioVolume: this.ffmpegSettings.audioVolumePercent,
+      }),
+    );
+
+    const pipelineBuilder = await this.pipelineBuilderFactory
+      .builder(this.ffmpegSettings)
+      .setHardwareAccelerationMode(this.ffmpegSettings.hardwareAccelerationMode)
+      .setVideoInputSource(videoInputSource)
+      .setAudioInputSource(audioInputSource)
+      .setConcatInputSource(concatInput)
+      .build();
+
+    const pipeline = pipelineBuilder.build(
+      FfmpegState.create({
+        version: await this.ffmpegInfo.getVersion(),
+        outputFormat: opts.outputFormat ?? MpegTsOutputFormat,
+        metadataServiceProvider: 'Tunarr',
+        metadataServiceName: this.channel.name,
+        ptsOffset: 0,
+        vaapiDevice: this.getVaapiDevice(),
+        vaapiDriver: this.ffmpegSettings.vaapiDriver,
+        mapMetadata: true,
+        threadCount: this.ffmpegSettings.numThreads,
+      }),
+      new FrameState({
+        realtime: playbackParams.realtime,
+        scaledSize: FrameSize.fromResolution(
+          this.ffmpegSettings.targetResolution,
+        ),
+        paddedSize: FrameSize.fromResolution(
+          this.ffmpegSettings.targetResolution,
+        ),
+        isAnamorphic: false,
+        deinterlaced: false,
+        pixelFormat: new PixelFormatYuv420P(),
+        frameRate: playbackParams.frameRate,
+        videoBitrate: playbackParams.videoBitrate,
+        videoBufferSize: playbackParams.videoBufferSize,
+        videoTrackTimescale: playbackParams.videoTrackTimeScale,
+        videoFormat: playbackParams.videoFormat,
+        // videoPreset: playbackParams.vid
+      }),
+    );
+
+    pipeline.inputs.concatInput?.addOptions(
+      ...(pipeline.inputs.videoInput?.inputOptions ?? []),
+    );
+
+    pipeline.setInputs({
+      ...pipeline.inputs,
+      videoInput: null,
+      audioInput: null,
+    });
 
     return new FfmpegTranscodeSession(
       new FfmpegProcess(
@@ -234,7 +345,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
           AudioStream.create({
             index: isNaN(audioStreamIndex) ? 1 : audioStreamIndex,
             codec: audioStream.codec ?? 'unknown',
-            channels: playbackParams.audioChannels ?? -2,
+            channels: audioStream.channels ?? -2,
           }),
         ],
         audioState,

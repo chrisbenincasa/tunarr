@@ -24,6 +24,10 @@ export class Pipeline {
     );
   }
 
+  setInputs(inputs: PipelineInputs) {
+    this.inputs = inputs;
+  }
+
   getCommandEnvironment(): Dictionary<string> {
     return this.#commandGenerator.generateEnvrionmentVariables(this.steps);
   }

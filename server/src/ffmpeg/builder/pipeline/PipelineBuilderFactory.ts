@@ -7,7 +7,7 @@ import { HardwareAccelerationMode } from '@/ffmpeg/builder/types.ts';
 import { FFMPEGInfo } from '@/ffmpeg/ffmpegInfo.ts';
 import { Nullable } from '@/types/util.ts';
 import { FfmpegSettings } from '@tunarr/types';
-import { isNull, isUndefined } from 'lodash-es';
+import { isUndefined } from 'lodash-es';
 import { DeepReadonly } from 'ts-essentials';
 import { PipelineBuilder } from './PipelineBuilder.js';
 import { NvidiaPipelineBuilder } from './hardware/NvidiaPipelineBuilder.ts';
@@ -77,12 +77,6 @@ class PipelineBuilderFactory$Builder {
       this.hardwareAccelerationMode,
     );
     const binaryCapabilities = await info.getCapabilities();
-
-    if (isNull(this.videoInputSource)) {
-      // Audio-only pipeline builder??
-      throw new Error('Not yet implemented');
-      // return new SoftwarePipelineBuilder()
-    }
 
     switch (this.hardwareAccelerationMode) {
       case 'cuda':

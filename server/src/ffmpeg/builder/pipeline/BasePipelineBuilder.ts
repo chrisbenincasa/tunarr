@@ -81,6 +81,7 @@ import {
   DoNotMapMetadataOutputOption,
   FastStartOutputOption,
   FrameRateOutputOption,
+  MapAllStreamsOutputOption,
   MatroskaOutputFormatOption,
   MetadataServiceNameOutputOption,
   MetadataServiceProviderOutputOption,
@@ -169,18 +170,23 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
   protected context: PipelineBuilderContext;
 
   constructor(
-    protected videoInputSource: VideoInputSource,
+    protected nullableVideoInputSource: Nullable<VideoInputSource>,
     private audioInputSource: Nullable<AudioInputSource>,
     protected watermarkInputSource: Nullable<WatermarkInputSource>,
     protected concatInputSource: Nullable<ConcatInputSource>,
     protected ffmpegCapabilities: FfmpegCapabilities,
   ) {}
 
+  get videoInputSource(): VideoInputSource {
+    // Only use this on video pipelines!!!
+    return this.nullableVideoInputSource!;
+  }
+
   validate(): Nullable<Error> {
     return null;
   }
 
-  hlsConcat(input: ConcatInputSource, state: FfmpegState) {
+  concat(input: ConcatInputSource, state: FfmpegState) {
     const pipelineSteps: PipelineStep[] = [
       new NoStdInOption(),
       new HideBannerOption(),
@@ -203,10 +209,8 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       input.addOption(new ConcatHttpReconnectOptions());
     }
 
-    if (this.ffmpegState.threadCount) {
-      pipelineSteps.unshift(
-        new ThreadCountOption(this.ffmpegState.threadCount),
-      );
+    if (state.threadCount) {
+      pipelineSteps.unshift(new ThreadCountOption(state.threadCount));
     }
 
     pipelineSteps.push(NoSceneDetectOutputOption(0), new CopyAllEncoder());
@@ -222,6 +226,46 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     }
     pipelineSteps.push(MpegTsOutputFormatOption(), PipeProtocolOutputOption());
     // TODO: save report
+
+    return new Pipeline(pipelineSteps, {
+      videoInput: null,
+      audioInput: null,
+      concatInput: input,
+      watermarkInput: null,
+    });
+  }
+
+  hlsWrap(input: ConcatInputSource, state: FfmpegState) {
+    const pipelineSteps: PipelineStep[] = [
+      new NoStdInOption(),
+      new HideBannerOption(),
+      new ThreadCountOption(1),
+      new LogLevelOption(state.logLevel),
+      new NoStatsOption(),
+      new StandardFormatFlags(),
+      MapAllStreamsOutputOption(),
+      new CopyAllEncoder(),
+    ];
+
+    if (input.protocol === 'http') {
+      input.addOption(new ConcatHttpReconnectOptions());
+    }
+
+    input.addOption(new ReadrateInputOption(this.ffmpegCapabilities, 0));
+    if (state.metadataServiceName) {
+      pipelineSteps.push(
+        MetadataServiceNameOutputOption(state.metadataServiceName),
+      );
+    }
+    if (state.metadataServiceProvider) {
+      pipelineSteps.push(
+        MetadataServiceProviderOutputOption(state.metadataServiceProvider),
+      );
+    }
+    pipelineSteps.push(
+      MpegTsOutputFormatOption(false),
+      PipeProtocolOutputOption(),
+    );
 
     return new Pipeline(pipelineSteps, {
       videoInput: null,
@@ -282,6 +326,10 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
 
     if (this.ffmpegState.duration && this.ffmpegState.duration > 0) {
       this.pipelineSteps.push(TimeLimitOutputOption(this.ffmpegState.duration));
+    }
+
+    if (isNull(this.nullableVideoInputSource)) {
+      throw new Error('FFmpeg pipeline currently requires a video input');
     }
 
     if (
@@ -349,12 +397,14 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     if (
       !isNull(this.concatInputSource) &&
       isNonEmptyString(this.ffmpegState.hlsSegmentTemplate) &&
-      isNonEmptyString(this.ffmpegState.hlsPlaylistPath)
+      isNonEmptyString(this.ffmpegState.hlsPlaylistPath) &&
+      isNonEmptyString(this.ffmpegState.hlsBaseStreamUrl)
     ) {
       this.pipelineSteps.push(
         new HlsConcatOutputFormat(
           this.ffmpegState.hlsSegmentTemplate,
           this.ffmpegState.hlsPlaylistPath,
+          this.ffmpegState.hlsBaseStreamUrl,
         ),
       );
     } else {
@@ -403,6 +453,9 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     if (isVideoPipelineContext(this.context)) {
       this.decoder = this.setupDecoder();
     }
+
+    this.setRealtime();
+
     if (
       this.desiredState.videoFormat !== VideoFormats.Copy &&
       this.desiredState.frameRate
@@ -415,12 +468,16 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     ifDefined(this.desiredState.videoTrackTimescale, (ts) =>
       this.pipelineSteps.push(VideoTrackTimescaleOutputOption(ts)),
     );
-    ifDefined(this.desiredState.videoBitrate, (br) =>
-      this.pipelineSteps.push(VideoBitrateOutputOption(br)),
-    );
-    ifDefined(this.desiredState.videoBufferSize, (bs) =>
-      this.pipelineSteps.push(VideoBufferSizeOutputOption(bs)),
-    );
+
+    if (this.ffmpegState.outputFormat.type !== OutputFormatTypes.Nut) {
+      ifDefined(this.desiredState.videoBitrate, (br) =>
+        this.pipelineSteps.push(VideoBitrateOutputOption(br)),
+      );
+
+      ifDefined(this.desiredState.videoBufferSize, (bs) =>
+        this.pipelineSteps.push(VideoBufferSizeOutputOption(bs)),
+      );
+    }
 
     this.setupVideoFilters();
   }
@@ -443,18 +500,22 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       ),
     );
 
-    this.pushSettingIfDefined(
-      this.context.desiredAudioState.audioBitrate,
-      AudioBitrateOutputOption,
-    );
-    this.pushSettingIfDefined(
-      this.context.desiredAudioState.audioBufferSize,
-      AudioBufferSizeOutputOption,
-    );
-    this.pushSettingIfDefined(
-      this.context.desiredAudioState.audioSampleRate,
-      AudioSampleRateOutputOption,
-    );
+    if (this.ffmpegState.outputFormat.type !== OutputFormatTypes.Nut) {
+      this.pushSettingIfDefined(
+        this.context.desiredAudioState.audioBitrate,
+        AudioBitrateOutputOption,
+      );
+
+      this.pushSettingIfDefined(
+        this.context.desiredAudioState.audioBufferSize,
+        AudioBufferSizeOutputOption,
+      );
+
+      this.pushSettingIfDefined(
+        this.context.desiredAudioState.audioSampleRate,
+        AudioSampleRateOutputOption,
+      );
+    }
 
     // TODO Audio volumne
     if (encoder.name !== 'copy') {
@@ -585,7 +646,6 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
           isNonEmptyString(this.ffmpegState.hlsSegmentTemplate) &&
           isNonEmptyString(this.ffmpegState.hlsBaseStreamUrl)
         ) {
-          console.log(this.ffmpegState);
           this.pipelineSteps.push(
             new HlsOutputFormat(
               this.desiredState,

@@ -1,8 +1,8 @@
 import { SettingsDB, getSettings } from '@/db/SettingsDB.ts';
-import { FfmpegStreamFactory } from '@/ffmpeg/FfmpegStreamFactory.ts';
+import { FFmpegFactory } from '@/ffmpeg/FFmpegFactory.ts';
 import { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
 import { OutputFormat } from '@/ffmpeg/builder/constants.ts';
-import { FFMPEG, StreamOptions } from '@/ffmpeg/ffmpeg.js';
+import { StreamOptions } from '@/ffmpeg/ffmpeg.js';
 import { Result } from '@/types/result.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
@@ -46,16 +46,10 @@ export class OfflineProgramStream extends ProgramStream {
     opts?: Partial<StreamOptions>,
   ): Promise<Result<FfmpegTranscodeSession>> {
     try {
-      const ffmpeg = this.context.useNewPipeline
-        ? new FfmpegStreamFactory(
-            this.settingsDB.ffmpegSettings(),
-            this.context.channel,
-          )
-        : new FFMPEG(
-            this.settingsDB.ffmpegSettings(),
-            this.context.channel,
-            this.context.audioOnly,
-          );
+      const ffmpeg = FFmpegFactory.getFFmpegPipelineBuilder(
+        this.settingsDB.ffmpegSettings(),
+        this.context.channel,
+      );
       const lineupItem = this.context.lineupItem;
       let duration = dayjs.duration(lineupItem.streamDuration ?? 0);
       const start = dayjs.duration(lineupItem.start ?? 0);

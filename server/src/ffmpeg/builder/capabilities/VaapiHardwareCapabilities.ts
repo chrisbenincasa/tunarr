@@ -34,19 +34,19 @@ export const VaapiProfiles = {
 } as const;
 
 export class VaapiProfileEntrypoint {
-  #rateControlModes: Set<RateControlMode> = new Set();
+  private rateControlModes: Set<RateControlMode> = new Set();
 
   constructor(
     public readonly profile: string,
     public readonly entrypoint: string,
   ) {}
 
-  get rateControlModes(): Set<RateControlMode> {
-    return this.#rateControlModes;
+  hasRateControlMode(mode: RateControlMode) {
+    return this.rateControlModes.has(mode);
   }
 
   addRateControlMode(mode: RateControlMode) {
-    this.#rateControlModes.add(mode);
+    this.rateControlModes.add(mode);
   }
 }
 
@@ -234,13 +234,13 @@ export class VaapiHardwareCapabilities extends BaseFfmpegHardwareCapabilities {
 
     if (entrypoint) {
       if (
-        entrypoint.rateControlModes.has(RateControlMode.VBR) ||
-        entrypoint.rateControlModes.has(RateControlMode.CBR)
+        entrypoint.hasRateControlMode(RateControlMode.VBR) ||
+        entrypoint.hasRateControlMode(RateControlMode.CBR)
       ) {
         return;
       }
 
-      if (entrypoint.rateControlModes.has(RateControlMode.CQP)) {
+      if (entrypoint.hasRateControlMode(RateControlMode.CQP)) {
         return RateControlMode.CQP;
       }
     }
