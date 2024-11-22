@@ -39,7 +39,7 @@ import { NonEmptyArray } from 'ts-essentials';
 import {
   AudioStreamDetails,
   HttpStreamSource,
-  ProgramStream,
+  ProgramStreamResult,
   StreamDetails,
   StreamSource,
   VideoStreamDetails,
@@ -82,7 +82,7 @@ export class PlexStreamDetails {
   private async getStreamInternal(
     item: PlexItemStreamDetailsQuery,
     depth: number = 0,
-  ): Promise<Nullable<ProgramStream>> {
+  ): Promise<Nullable<ProgramStreamResult>> {
     if (depth > 1) {
       return null;
     }

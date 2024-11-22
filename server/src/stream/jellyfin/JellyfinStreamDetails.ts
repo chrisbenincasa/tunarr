@@ -38,7 +38,7 @@ import {
 import {
   AudioStreamDetails,
   HttpStreamSource,
-  ProgramStream,
+  ProgramStreamResult,
   StreamDetails,
   StreamSource,
   VideoStreamDetails,
@@ -76,7 +76,7 @@ export class JellyfinStreamDetails {
   private async getStreamInternal(
     item: JellyfinItemStreamDetailsQuery,
     depth: number = 0,
-  ): Promise<Nullable<ProgramStream>> {
+  ): Promise<Nullable<ProgramStreamResult>> {
     if (depth > 1) {
       return null;
     }
