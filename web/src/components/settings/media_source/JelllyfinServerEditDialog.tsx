@@ -324,7 +324,7 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
                   helperText={
                     error && isNonEmptyString(error.message)
                       ? error.message
-                      : 'Optional. If left blank, the name will be derived from the server'
+                      : 'Enter a name for your Jellyfin Server'
                   }
                 />
               )}
