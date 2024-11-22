@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.16.4](https://github.com/chrisbenincasa/tunarr/compare/v0.16.3...v0.16.4) (2024-11-22)
+
+
+### Bug Fixes
+
+* copy image uploads instead of rename, because we cant be sure of fs layout ([8af83e7](https://github.com/chrisbenincasa/tunarr/commit/8af83e7ae6f210f950cca4ca1e5fc64de1093d9b))
+* pass correct pix_fmt to scale_cuda filter ([#980](https://github.com/chrisbenincasa/tunarr/issues/980)) ([d6448e2](https://github.com/chrisbenincasa/tunarr/commit/d6448e24a948ddf95a484c6ae8d0bdb4b05a8606))
+
 ## [0.16.3](https://github.com/chrisbenincasa/tunarr/compare/v0.16.2...v0.16.3) (2024-11-21)
 
 
