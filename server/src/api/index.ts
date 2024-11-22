@@ -154,7 +154,10 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
       //   createWriteStream(path.join(baseDir, data.filename)),
       // );
 
-      await fsPromises.rename(data.filepath, path.join(baseDir, data.filename));
+      await fsPromises.copyFile(
+        data.filepath,
+        path.join(baseDir, data.filename),
+      );
 
       return res.send({
         status: true,
