@@ -86,7 +86,7 @@ export default function SelectedProgrammingActions({
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
   const snackbar = useSnackbar();
-  const { addSelectedItems } = useAddSelectedItems(
+  const { addSelectedItems, isLoading } = useAddSelectedItems(
     onAddSelectedMedia,
     onAddMediaSuccess,
   );
@@ -171,6 +171,7 @@ export default function SelectedProgrammingActions({
         onClose={handleClose}
         onOpen={handleOpen}
         open={open}
+        FabProps={{ disabled: isLoading || selectAllLoading }}
       >
         {selectedMedia.length > 0 && (
           <SpeedDialAction
