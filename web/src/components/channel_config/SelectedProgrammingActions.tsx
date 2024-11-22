@@ -103,6 +103,7 @@ export default function SelectedProgrammingActions({
 
   const selectAllItems = () => {
     if (!isNil(selectedServer) && !isNil(selectedLibrary)) {
+      removeAllItems();
       setSelectAllLoading(true);
       let prom: Promise<void>;
       switch (selectedServer.type) {
