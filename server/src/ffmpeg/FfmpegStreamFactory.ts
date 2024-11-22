@@ -358,9 +358,10 @@ export class FfmpegStreamFactory extends IFFMPEG {
     }
 
     let watermarkSource: Nullable<WatermarkInputSource> = null;
-    if (watermark && isNonEmptyString(watermark.url)) {
+    if (watermark?.enabled) {
+      const watermarkUrl = watermark.url ?? makeLocalUrl('/images/tunarr.png');
       watermarkSource = new WatermarkInputSource(
-        new HttpStreamSource(watermark.url),
+        new HttpStreamSource(watermarkUrl),
         StillImageStream.create({
           frameSize: FrameSize.fromResolution({
             widthPx: watermark.width,
@@ -368,7 +369,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
           }),
           index: 0,
         }),
-        watermark,
+        { ...watermark, url: watermarkUrl },
       );
     }
 

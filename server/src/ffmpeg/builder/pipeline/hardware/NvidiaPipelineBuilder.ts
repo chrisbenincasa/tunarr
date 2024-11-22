@@ -40,6 +40,7 @@ import {
   NvidiaHevcEncoder,
 } from '../../encoder/nvidia/NvidiaEncoders.ts';
 import {
+  FfmpegPixelFormats,
   PixelFormatNv12,
   PixelFormatYuv420P,
   PixelFormatYuva420P,
@@ -272,22 +273,21 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
         desiredState.paddedSize,
       );
     } else {
+      const hasOverlay =
+        this.context.hasWatermark || this.context.hasSubtitleOverlay;
+      const isHardwareDecodeAndSoftwareEncode =
+        this.ffmpegState.decoderHwAccelMode === HardwareAccelerationMode.Cuda &&
+        this.ffmpegState.encoderHwAccelMode === HardwareAccelerationMode.None;
+      const outPixelFormat =
+        !this.context.is10BitOutput &&
+        (hasOverlay ||
+          !desiredState.scaledSize.equals(desiredState.paddedSize) ||
+          isHardwareDecodeAndSoftwareEncode)
+          ? desiredState.pixelFormat?.wrap(FfmpegPixelFormats.NV12)
+          : null;
       scaleStep = new ScaleCudaFilter(
         currentState.update({
-          pixelFormat:
-            this.context.is10BitOutput &&
-            (this.context.hasWatermark ||
-              this.context.hasSubtitleOverlay ||
-              this.context.shouldDeinterlace ||
-              !desiredState.scaledSize.equals(desiredState.paddedSize) ||
-              (ffmpegState.decoderHwAccelMode ===
-                HardwareAccelerationMode.Cuda &&
-                ffmpegState.encoderHwAccelMode ===
-                  HardwareAccelerationMode.None))
-              ? desiredState.pixelFormat
-                ? new PixelFormatNv12(desiredState.pixelFormat.name)
-                : null
-              : null,
+          pixelFormat: outPixelFormat,
         }),
         desiredState.scaledSize,
         desiredState.paddedSize,

@@ -1,3 +1,4 @@
+import { FfprobeMediaInfoSchema } from '@/types/ffmpeg.ts';
 import { Result } from '@/types/result.ts';
 import { Nullable } from '@/types/util.js';
 import { cacheGetOrSet } from '@/util/cache.js';
@@ -428,6 +429,36 @@ export class FFMPEGInfo {
             )
             .getOrElse(() => new Map<string, FfmpegEncoder>()),
     );
+  }
+
+  async probeFile(path: string) {
+    const output = await this.getFfprobeStdout([
+      '-hide_banner',
+      '-print_format',
+      'json',
+      '-show_format',
+      '-show_chapters',
+      '-show_streams',
+      '-analyzeduration',
+      '30',
+      path,
+    ]);
+
+    const result = await FfprobeMediaInfoSchema.safeParseAsync(
+      JSON.parse(output),
+    );
+
+    if (!result.success) {
+      this.logger.warn(
+        result.error,
+        'Unable to parse ffprobe output for file %s. Raw output: %s',
+        path,
+        output,
+      );
+      return;
+    }
+
+    return result.data;
   }
 
   private getFfmpegStdout(

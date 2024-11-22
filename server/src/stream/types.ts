@@ -142,7 +142,7 @@ export type StreamSource =
   | OfflineStreamSource
   | ErrorStreamSource;
 
-export type ProgramStream = {
+export type ProgramStreamResult = {
   streamSource: StreamSource;
   streamDetails: StreamDetails;
 };

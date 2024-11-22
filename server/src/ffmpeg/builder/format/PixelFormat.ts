@@ -22,9 +22,16 @@ export const FfmpegPixelFormats = {
   P010LE: 'p010le',
 } as const;
 
+export const ValidWrapperPixelFormats = {
+  // TODO: Should we support others?
+  NV12: 'nv12',
+} as const;
+
 type ValidPixelFormatName = (typeof PixelFormats)[keyof typeof PixelFormats];
 type ValidFfmpegPixelFormat =
   (typeof FfmpegPixelFormats)[keyof typeof FfmpegPixelFormats];
+type ValidWrapperPixelFormat =
+  (typeof ValidWrapperPixelFormats)[keyof typeof ValidWrapperPixelFormats];
 
 interface PixelFormatEquals extends Equatable<PixelFormat> {}
 
@@ -34,6 +41,7 @@ export interface PixelFormat extends PixelFormatEquals {
   ffmpegName: ValidFfmpegPixelFormat;
   bitDepth: number;
   unwrap(): Maybe<PixelFormat>;
+  wrap(wrapperFmt: ValidWrapperPixelFormat): HardwarePixelFormat;
 }
 
 export abstract class BasePixelFormat implements PixelFormat {
@@ -45,6 +53,16 @@ export abstract class BasePixelFormat implements PixelFormat {
   // available
   unwrap(): Maybe<PixelFormat> {
     return this;
+  }
+
+  wrap(wrapperFmt: ValidWrapperPixelFormat): HardwarePixelFormat {
+    if (this instanceof HardwarePixelFormat) {
+      return this;
+    }
+    switch (wrapperFmt) {
+      case ValidWrapperPixelFormats.NV12:
+        return new PixelFormatNv12(this.name);
+    }
   }
 
   equals(other: PixelFormat): boolean {

@@ -18,6 +18,7 @@ import { OpenDateTimeRange } from '@/types/OpenDateTimeRange.js';
 import { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { enumValues } from '@/util/enumUtil.js';
 import { ifDefined } from '@/util/index.js';
+import { debugFfmpegApiRouter } from './debug/debugFfmpegApi.ts';
 import { DebugJellyfinApiRouter } from './debug/debugJellyfinApi.js';
 import { debugStreamApiRouter } from './debug/debugStreamApi.js';
 
@@ -33,6 +34,9 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
       prefix: '/debug',
     })
     .register(debugStreamApiRouter, {
+      prefix: '/debug',
+    })
+    .register(debugFfmpegApiRouter, {
       prefix: '/debug',
     });
 
