@@ -24,6 +24,8 @@ import {
 import { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
+import tz from 'dayjs/plugin/timezone.js';
+import utc from 'dayjs/plugin/utc.js';
 import { jsonArrayFrom } from 'kysely/helpers/sqlite';
 import {
   chunk,
@@ -101,6 +103,8 @@ import { ChannelTranscodingSettings } from './schema/base.ts';
 import { ChannelWithPrograms as RawChannelWithPrograms } from './schema/derivedTypes.js';
 
 dayjs.extend(duration);
+dayjs.extend(tz);
+dayjs.extend(utc);
 
 // We use this to chunk super huge channel / program relation updates because
 // of the way that mikro-orm generates these (e.g. "delete from XYZ where () or () ...").
@@ -625,18 +629,17 @@ export class ChannelDB {
 
     const updateChannel = async (
       lineup: readonly LineupItem[],
-      startTime: number,
+      startTime?: number,
     ) => {
       return await getDatabase()
         .transaction()
         .execute(async (tx) => {
-          console.log('in here');
           await tx
             .updateTable('channel')
             .where('channel.uuid', '=', id)
             .limit(1)
+            .$if(isDefined(startTime), (_) => _.set('startTime', startTime!))
             .set({
-              startTime,
               duration: sumBy(lineup, typedProperty('durationMs')),
             })
             .executeTakeFirstOrThrow();
@@ -738,7 +741,10 @@ export class ChannelDB {
         createNewLineup(programs, lineupItems),
       );
       const updatedChannel = await this.timer.timeAsync('updateChannel', () =>
-        updateChannel(newLineupItems, dayjs().unix() * 1000),
+        updateChannel(
+          newLineupItems,
+          req.alterChannelStart ? +dayjs() : undefined,
+        ),
       );
 
       await this.timer.timeAsync('saveLineup', () =>
@@ -769,9 +775,17 @@ export class ChannelDB {
       //     programs: req.body.programs,
       //   },
       // ),
+
+      const scheduleStartTime = req.keepChannelStartDay
+        ? dayjs.tz(channel.startTime)
+        : dayjs.tz();
       const { programs, startTime } =
         req.type === 'time'
-          ? await scheduleTimeSlots(req.schedule, req.programs)
+          ? await scheduleTimeSlots(
+              req.schedule,
+              req.programs,
+              +scheduleStartTime,
+            )
           : await scheduleRandomSlots(req.schedule, req.programs);
 
       const newLineup = await createNewLineup(programs);

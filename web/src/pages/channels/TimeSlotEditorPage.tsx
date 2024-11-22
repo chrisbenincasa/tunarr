@@ -16,6 +16,7 @@ import {
   Button,
   Divider,
   FormControl,
+  FormControlLabel,
   FormGroup,
   FormHelperText,
   Grid,
@@ -44,7 +45,10 @@ import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert.tsx';
-import { NumericFormControllerText } from '../../components/util/TypedController.tsx';
+import {
+  CheckboxFormController,
+  NumericFormControllerText,
+} from '../../components/util/TypedController.tsx';
 import {
   DropdownOption,
   flexOptions,
@@ -61,7 +65,10 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.extend(dayjsMod);
 
-export type TimeSlotForm = Omit<TimeSlotSchedule, 'timeZoneOffset' | 'type'>;
+export type TimeSlotForm = TimeSlotSchedule & {
+  keepStartDay: boolean;
+  startTomorrow: boolean;
+};
 
 const latenessOptions: DropdownOption<number>[] = [
   dayjs.duration(5, 'minutes'),
@@ -82,7 +89,7 @@ const latenessOptions: DropdownOption<number>[] = [
     },
   ]);
 
-const defaultTimeSlotSchedule: TimeSlotSchedule = {
+const defaultTimeSlotSchedule: TimeSlotForm = {
   type: 'time',
   flexPreference: 'distribute',
   latenessMs: 0,
@@ -91,6 +98,8 @@ const defaultTimeSlotSchedule: TimeSlotSchedule = {
   slots: [],
   period: 'day',
   timeZoneOffset: new Date().getTimezoneOffset(),
+  keepStartDay: true,
+  startTomorrow: false,
 };
 
 function sanitizeStartTimes(schedule: TimeSlotSchedule) {
@@ -121,10 +130,13 @@ export default function TimeSlotEditorPage() {
   const [isCalculatingSlots, toggleIsCalculatingSlots] = useToggle(false);
 
   const formMethods = useForm<TimeSlotForm>({
-    defaultValues:
-      !isUndefined(loadedSchedule) && loadedSchedule.type === 'time'
+    defaultValues: {
+      ...(!isUndefined(loadedSchedule) && loadedSchedule.type === 'time'
         ? sanitizeStartTimes(loadedSchedule)
-        : defaultTimeSlotSchedule,
+        : defaultTimeSlotSchedule),
+      keepStartDay: true,
+      startTomorrow: false,
+    },
     // mode: 'all',
   });
 
@@ -202,8 +214,9 @@ export default function TimeSlotEditorPage() {
   }, [reset]);
 
   const onSave = () => {
+    const scheduleFormValues = getValues();
     const schedule: TimeSlotSchedule = {
-      ...getValues(),
+      ...scheduleFormValues,
       timeZoneOffset: new Date().getTimezoneOffset(),
       type: 'time',
     };
@@ -219,6 +232,7 @@ export default function TimeSlotEditorPage() {
         type: 'time',
         schedule,
         programs: filteredLineup,
+        keepChannelStartDay: scheduleFormValues.keepStartDay,
       },
     });
   };
@@ -290,6 +304,7 @@ export default function TimeSlotEditorPage() {
           type: 'time',
         },
         getMaterializedProgramList(),
+        getValues('keepStartDay') ? channel?.startTime : undefined,
       )
         .then((res) => {
           performance.mark('guide-end');
@@ -476,6 +491,23 @@ export default function TimeSlotEditorPage() {
                   </FormHelperText>
                 </FormGroup>
               </Grid>
+              <Grid item sm={16} md={5}>
+                <FormControl fullWidth>
+                  <FormControlLabel
+                    control={
+                      <CheckboxFormController
+                        control={control}
+                        name="keepStartDay"
+                      />
+                    }
+                    label="Keep Existing Channel Start"
+                  />
+                  <FormHelperText>
+                    Renders a channel icon (also known as bug or Digital
+                    On-screen Graphic) on top of the channel's stream.
+                  </FormHelperText>
+                </FormControl>
+              </Grid>
             </Grid>
           </Box>
           <Divider sx={{ my: 4 }} />
@@ -495,7 +527,7 @@ export default function TimeSlotEditorPage() {
         </PaddedPaper>
         <PaddedPaper>
           <Typography sx={{ mb: 1 }}>Programming Preview</Typography>
-          <Divider sx={{ mb: 1 }} />
+          <Divider sx={{ mb: 2 }} />
           <DateTimePicker
             label="Programming Start"
             value={startTime}
@@ -531,7 +563,10 @@ export default function TimeSlotEditorPage() {
           )} */}
         </PaddedPaper>
       </Stack>
-      <UnsavedNavigationAlert isDirty={isDirty} />
+      <UnsavedNavigationAlert
+        onProceed={() => resetLineup()}
+        isDirty={isDirty}
+      />
       <Box sx={{ display: 'flex', justifyContent: 'end', pt: 1, columnGap: 1 }}>
         <Box flexGrow={1}>
           <Button

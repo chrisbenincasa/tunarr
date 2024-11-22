@@ -9,27 +9,35 @@ import { useBlocker } from '@tanstack/react-router';
 type Props = {
   isDirty: boolean;
   onProceed?: CallableFunction;
+  onCancel?: CallableFunction;
 };
 
 // Exempt paths are used in situations where the form spans multiple tabs or pages.
 // This ensures the Alert is not activated in the middle of a form navigation.
 
-export default function UnsavedNavigationAlert({ isDirty, onProceed }: Props) {
+export default function UnsavedNavigationAlert({
+  isDirty,
+  onProceed,
+  onCancel,
+}: Props) {
   const { proceed, status, reset } = useBlocker({
     condition: isDirty,
   });
 
   const handleProceed = () => {
     proceed();
-    if (onProceed) {
-      onProceed();
-    }
+    onProceed?.();
+  };
+
+  const handleCancel = () => {
+    onCancel?.();
+    reset();
   };
 
   return status === 'blocked' ? (
     <Dialog
       open={status === 'blocked'}
-      onClose={reset}
+      onClose={handleCancel}
       aria-labelledby="alert-dialog-title"
       aria-describedby="alert-dialog-description"
     >
@@ -43,7 +51,7 @@ export default function UnsavedNavigationAlert({ isDirty, onProceed }: Props) {
         </DialogContentText>
       </DialogContent>
       <DialogActions>
-        <Button onClick={reset}>Cancel</Button>
+        <Button onClick={handleCancel}>Cancel</Button>
         <Button onClick={handleProceed} autoFocus variant="contained">
           Proceed
         </Button>

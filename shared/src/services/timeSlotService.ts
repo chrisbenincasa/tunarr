@@ -118,6 +118,7 @@ export function distributeFlex(
 export async function scheduleTimeSlots(
   schedule: TimeSlotSchedule,
   channelProgramming: ChannelProgram[],
+  startTime?: number,
 ) {
   // Load programs
   // TODO include redirects and custom programs!
@@ -139,7 +140,7 @@ export async function scheduleTimeSlots(
     }),
   );
 
-  const now = dayjs.tz();
+  const now = dayjs.tz(startTime);
   const startOfCurrentPeriod = now.startOf(schedule.period);
   let t0 = startOfCurrentPeriod.add(
     first(sortedSlots)!.startTime,

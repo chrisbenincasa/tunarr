@@ -102,6 +102,7 @@ export const ManualProgramLineupSchema = z.object({
   type: z.literal('manual'),
   programs: z.array(ChannelProgramSchema),
   lineup: z.array(UpdateLineupItemSchema), // Array of indexes into the programming array
+  alterChannelStart: z.boolean().optional().default(false),
 });
 
 export const TimeBasedProgramLineupSchema = z.object({
@@ -112,12 +113,14 @@ export const TimeBasedProgramLineupSchema = z.object({
   // programs included in at least one time slot...
   programs: z.array(ChannelProgramSchema),
   schedule: TimeSlotScheduleSchema,
+  keepChannelStartDay: z.boolean().optional().default(true),
 });
 
 export const RandomSlotProgramLineupSchema = z.object({
   type: z.literal('random'),
   programs: z.array(ChannelProgramSchema),
   schedule: RandomSlotScheduleSchema,
+  keepChannelStartDay: z.boolean().optional().default(true),
 });
 
 export const UpdateChannelProgrammingRequestSchema: z.ZodDiscriminatedUnion<
