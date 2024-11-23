@@ -1,4 +1,4 @@
-import { VideoFormats } from '@/ffmpeg/builder/constants.ts';
+import { OutputFormatTypes, VideoFormats } from '@/ffmpeg/builder/constants.ts';
 import { Decoder } from '@/ffmpeg/builder/decoder/Decoder.ts';
 import { DecoderFactory } from '@/ffmpeg/builder/decoder/DecoderFactory.ts';
 import { Encoder } from '@/ffmpeg/builder/encoder/Encoder.ts';
@@ -11,32 +11,68 @@ import { QsvHardwareAccelerationOption } from '@/ffmpeg/builder/options/hardware
 import { isVideoPipelineContext } from '@/ffmpeg/builder/pipeline/BasePipelineBuilder.ts';
 import { SoftwarePipelineBuilder } from '@/ffmpeg/builder/pipeline/software/SoftwarePipelineBuilder.ts';
 import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
-import { HardwareAccelerationMode } from '@/ffmpeg/builder/types.ts';
+import {
+  FrameDataLocation,
+  HardwareAccelerationMode,
+} from '@/ffmpeg/builder/types.ts';
 import { Nullable } from '@/types/util.ts';
 import { isNonEmptyString } from '@/util/index.ts';
-import { isNull } from 'lodash-es';
+import { isNull, some } from 'lodash-es';
+import { BaseFfmpegHardwareCapabilities } from '../../capabilities/BaseFfmpegHardwareCapabilities.ts';
+import { FfmpegCapabilities } from '../../capabilities/FfmpegCapabilities.ts';
+import { BaseEncoder } from '../../encoder/BaseEncoder.ts';
 import {
   H264QsvEncoder,
   HevcQsvEncoder,
   Mpeg2QsvEncoder,
 } from '../../encoder/qsv/QsvEncoders.ts';
+import { HardwareDownloadFilter } from '../../filter/HardwareDownloadFilter.ts';
+import {
+  FfmpegPixelFormats,
+  PixelFormatYuv420P,
+  PixelFormatYuv420P10Le,
+} from '../../format/PixelFormat.ts';
+import { AudioInputSource } from '../../input/AudioInputSource.ts';
+import { ConcatInputSource } from '../../input/ConcatInputSource.ts';
+import { VideoInputSource } from '../../input/VideoInputSource.ts';
+import { WatermarkInputSource } from '../../input/WatermarkInputSource.ts';
 
 export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
+  constructor(
+    private hardwareCapabilities: BaseFfmpegHardwareCapabilities,
+    binaryCapabilities: FfmpegCapabilities,
+    videoInputFile: Nullable<VideoInputSource>,
+    audioInputFile: Nullable<AudioInputSource>,
+    concatInputSource: Nullable<ConcatInputSource>,
+    watermarkInputSource: Nullable<WatermarkInputSource>,
+  ) {
+    super(
+      videoInputFile,
+      audioInputFile,
+      watermarkInputSource,
+      concatInputSource,
+      binaryCapabilities,
+    );
+  }
+
   protected setHardwareAccelState(): void {
     if (!isVideoPipelineContext(this.context)) {
       return;
     }
 
-    let canDecode = true;
-    const canEncode = true;
+    let canDecode = this.hardwareCapabilities.canDecodeVideoStream(
+      this.context.videoStream,
+    );
+    let canEncode = this.hardwareCapabilities.canEncodeState(this.desiredState);
 
-    // TODO: vaapi device
+    if (this.ffmpegState.outputFormat.type === OutputFormatTypes.Nut) {
+      canEncode = false;
+    }
+
     this.pipelineSteps.push(
       new QsvHardwareAccelerationOption(this.ffmpegState.vaapiDevice),
     );
 
-    // TODO: check whether can decode and can encode based on capabilities
-    // minimal check for now, h264/hevc have issues with 10-bit
     if (
       (this.context.videoStream.codec === VideoFormats.H264 ||
         this.context.videoStream.codec === VideoFormats.Hevc) &&
@@ -45,8 +81,12 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
       canDecode = false;
     }
 
-    this.ffmpegState.decoderHwAccelMode = canDecode ? 'qsv' : 'none';
-    this.ffmpegState.encoderHwAccelMode = canEncode ? 'qsv' : 'none';
+    this.ffmpegState.decoderHwAccelMode = canDecode
+      ? HardwareAccelerationMode.Qsv
+      : HardwareAccelerationMode.None;
+    this.ffmpegState.encoderHwAccelMode = canEncode
+      ? HardwareAccelerationMode.Qsv
+      : HardwareAccelerationMode.None;
   }
 
   protected setupDecoder(): Nullable<Decoder> {
@@ -57,7 +97,7 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
     const { ffmpegState, videoStream } = this.context;
     let decoder: Nullable<Decoder> = null;
 
-    if (ffmpegState.decoderHwAccelMode === 'qsv') {
+    if (ffmpegState.decoderHwAccelMode === HardwareAccelerationMode.Qsv) {
       decoder = DecoderFactory.getQsvDecoder(videoStream);
       if (!isNull(decoder)) {
         this.videoInputSource.addOption(decoder);
@@ -87,16 +127,44 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
       isAnamorphic: videoStream.isAnamorphic,
       scaledSize: videoStream.frameSize,
       paddedSize: videoStream.frameSize,
+      pixelFormat:
+        this.ffmpegState.decoderHwAccelMode === HardwareAccelerationMode.Qsv
+          ? videoStream.pixelFormat?.bitDepth === 8
+            ? videoStream.pixelFormat.wrap(FfmpegPixelFormats.NV12)
+            : videoStream.pixelFormat
+          : videoStream.pixelFormat,
     });
 
     if (decoder?.affectsFrameState) {
       currentState = decoder.nextState(currentState);
     }
 
+    if (this.context.hasWatermark || this.context.hasSubtitleOverlay) {
+      const newPixelFormat =
+        this.desiredState.pixelFormat ??
+        (this.context.is10BitOutput
+          ? new PixelFormatYuv420P10Le()
+          : new PixelFormatYuv420P());
+      desiredState.pixelFormat = this.context.is10BitOutput
+        ? newPixelFormat
+        : newPixelFormat.wrap(FfmpegPixelFormats.NV12);
+    }
+
     currentState = this.setDeinterlace(currentState);
     currentState = this.setScale(currentState);
     currentState = this.setPad(currentState);
     this.setStillImageLoop();
+
+    if (
+      currentState.frameDataLocation === FrameDataLocation.Hardware &&
+      (this.context.hasWatermark || this.context.hasSubtitleOverlay)
+    ) {
+      const hwDownload = new HardwareDownloadFilter(currentState);
+      currentState = hwDownload.nextState(currentState);
+      this.videoInputSource.filterSteps.push(hwDownload);
+    }
+
+    currentState = this.setWatermark(currentState);
 
     let encoder: Nullable<Encoder> = null;
     if (ffmpegState.encoderHwAccelMode === HardwareAccelerationMode.Qsv) {
@@ -123,6 +191,8 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
       pipelineSteps.push(encoder);
       this.videoInputSource.filterSteps.push(encoder);
     }
+
+    this.setPixelFormat(currentState);
 
     filterChain.videoFilterSteps.push(...this.videoInputSource.filterSteps);
   }
@@ -208,6 +278,51 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
       return currentState;
     } else {
       return currentState;
+    }
+  }
+
+  protected setPixelFormat(currentState: FrameState): FrameState {
+    const steps = [];
+
+    if (!this.desiredState.pixelFormat) {
+      return currentState;
+    }
+
+    const pixelFormat = this.desiredState.pixelFormat.unwrap();
+
+    // VPP
+
+    const hasFilters = some(
+      this.videoInputSource.filterSteps,
+      (step) => !(step instanceof BaseEncoder),
+    );
+
+    if (hasFilters && currentState.pixelFormat) {
+      let needsConversion = false;
+      if (currentState.pixelFormat.ffmpegName === FfmpegPixelFormats.NV12) {
+        const unwrapped = currentState.pixelFormat.unwrap();
+        if (unwrapped) {
+          needsConversion =
+            currentState.pixelFormat.ffmpegName !== unwrapped.ffmpegName;
+          if (!needsConversion) {
+            currentState = currentState.update({
+              pixelFormat: currentState.pixelFormat,
+            });
+          }
+        }
+      } else {
+        needsConversion =
+          currentState.pixelFormat.ffmpegName !== pixelFormat?.ffmpegName;
+      }
+
+      if (
+        needsConversion &&
+        currentState.frameDataLocation === FrameDataLocation.Hardware
+      ) {
+        const filter = new QsvFormatFilter();
+        steps.push(filter);
+        currentState = filter.nextState(currentState);
+      }
     }
   }
 }
