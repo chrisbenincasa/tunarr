@@ -2,6 +2,7 @@ import { DataProps, HardwareAccelerationMode } from '@/ffmpeg/builder/types.ts';
 import { FfmpegVersionResult } from '@/ffmpeg/ffmpegInfo.ts';
 import { Maybe, Nullable } from '@/types/util.ts';
 import { FfmpegLogLevel } from '@tunarr/types/schemas';
+import { Duration } from 'dayjs/plugin/duration.js';
 import { isNil, merge } from 'lodash-es';
 import path from 'path';
 import { MarkRequired } from 'ts-essentials';
@@ -32,8 +33,8 @@ type FfmpegStateFields = MarkRequired<
 export class FfmpegState {
   version: FfmpegVersionResult;
   threadCount: Nullable<number> = null;
-  start: Nullable<string | number> = null;
-  duration: Nullable<number> = null;
+  start: Nullable<Duration> = null;
+  duration: Nullable<Duration> = null;
   logLevel: FfmpegLogLevel = 'error';
   // metadata
   mapMetadata: boolean = false;

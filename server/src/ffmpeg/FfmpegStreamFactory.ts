@@ -392,8 +392,8 @@ export class FfmpegStreamFactory extends IFFMPEG {
     const pipeline = builder.build(
       FfmpegState.create({
         version: await this.ffmpegInfo.getVersion(),
-        start: startTime.asSeconds(),
-        duration: duration.asMilliseconds(),
+        start: startTime,
+        duration,
         ptsOffset,
         threadCount: this.ffmpegSettings.numThreads,
         outputFormat,
@@ -521,7 +521,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
     const pipeline = builder.build(
       FfmpegState.create({
         version: await this.ffmpegInfo.getVersion(),
-        duration: duration.asMilliseconds(),
+        duration,
         ptsOffset,
         threadCount: this.ffmpegSettings.numThreads,
         outputFormat,
@@ -625,7 +625,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
     const pipeline = builder.build(
       FfmpegState.create({
         version: await this.ffmpegInfo.getVersion(),
-        duration: duration.asMilliseconds(),
+        duration,
         ptsOffset,
         threadCount: this.ffmpegSettings.numThreads,
         outputFormat,

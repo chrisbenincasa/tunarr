@@ -13,6 +13,7 @@ import { PipelineBuilder } from './PipelineBuilder.js';
 import { NvidiaPipelineBuilder } from './hardware/NvidiaPipelineBuilder.ts';
 import { QsvPipelineBuilder } from './hardware/QsvPipelineBuilder.ts';
 import { VaapiPipelineBuilder } from './hardware/VaapiPipelineBuilder.ts';
+import { VideoToolboxPipelineBuilder } from './hardware/VideoToolboxPipelineBuilder.ts';
 import { SoftwarePipelineBuilder } from './software/SoftwarePipelineBuilder.ts';
 
 export class PipelineBuilderFactory {
@@ -104,6 +105,15 @@ class PipelineBuilderFactory$Builder {
           this.audioInputSource,
           this.watermarkInputSource,
           this.concatInputSource,
+        );
+      case 'videotoolbox':
+        return new VideoToolboxPipelineBuilder(
+          hardwareCapabilities,
+          binaryCapabilities,
+          this.videoInputSource,
+          this.audioInputSource,
+          this.concatInputSource,
+          this.watermarkInputSource,
         );
       default:
         return new SoftwarePipelineBuilder(

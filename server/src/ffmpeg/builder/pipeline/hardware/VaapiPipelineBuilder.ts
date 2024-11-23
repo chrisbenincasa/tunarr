@@ -409,7 +409,7 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
     if (inRange(watermarkInput.watermark.opacity, 0, 100)) {
       // opacity
       watermarkInput.filterSteps.push(
-        new WatermarkOpacityFilter(watermarkInput.watermark),
+        new WatermarkOpacityFilter(watermarkInput.watermark.opacity),
       );
     }
 

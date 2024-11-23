@@ -5,10 +5,15 @@ import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.ts';
 import { PadFilter } from '@/ffmpeg/builder/filter/PadFilter.ts';
 import { ScaleFilter } from '@/ffmpeg/builder/filter/ScaleFilter.ts';
 import { OverlayWatermarkFilter } from '@/ffmpeg/builder/filter/watermark/OverlayWatermarkFilter.ts';
-import { PixelFormatYuv420P } from '@/ffmpeg/builder/format/PixelFormat.ts';
 import { PixelFormatOutputOption } from '@/ffmpeg/builder/options/OutputOption.ts';
 import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
-import { filter, isNull, some } from 'lodash-es';
+import dayjs from '@/util/dayjs.ts';
+import { Watermark } from '@tunarr/types';
+import { filter, first, isEmpty, isNull, some } from 'lodash-es';
+import { WatermarkFadeFilter } from '../../filter/watermark/WatermarkFadeFilter.ts';
+import { WatermarkOpacityFilter } from '../../filter/watermark/WatermarkOpacityFilter.ts';
+import { WatermarkScaleFilter } from '../../filter/watermark/WatermarkScaleFilter.ts';
+import { HasFilterOption } from '../../types/PipelineStep.ts';
 import {
   BasePipelineBuilder,
   isVideoPipelineContext,
@@ -108,12 +113,38 @@ export class SoftwarePipelineBuilder extends BasePipelineBuilder {
       return currentState;
     }
 
-    if (this.context.hasWatermark) {
-      const watermarkInputSource = this.watermarkInputSource!;
-      // pixel format
-      // this.watermarkInoutSource.filterSteps.add()
-      // this.watermarkInoutSource.filterSteps.push()
+    if (!this.context.hasWatermark) {
+      return currentState;
+    }
 
+    const watermarkInputSource = this.watermarkInputSource!;
+    const watermark = watermarkInputSource.watermark;
+
+    if (!watermarkInputSource.watermark.fixedSize) {
+      watermarkInputSource.filterSteps.push(
+        new WatermarkScaleFilter(
+          currentState.paddedSize,
+          watermarkInputSource.watermark,
+        ),
+      );
+    }
+
+    if (watermarkInputSource.watermark.opacity !== 100) {
+      watermarkInputSource.filterSteps.push(
+        new WatermarkOpacityFilter(
+          watermarkInputSource.watermark.opacity / 100.0,
+        ),
+      );
+    }
+
+    watermarkInputSource.filterSteps.push(
+      ...this.getWatermarkFadeFilters(watermark),
+    );
+
+    // pixel format
+    const desiredPixelState = this.desiredState.pixelFormat?.unwrap();
+
+    if (desiredPixelState) {
       this.context.filterChain.watermarkOverlayFilterSteps.push(
         new OverlayWatermarkFilter(
           watermarkInputSource.watermark,
@@ -121,9 +152,7 @@ export class SoftwarePipelineBuilder extends BasePipelineBuilder {
           this.context.videoStream.squarePixelFrameSize(
             this.desiredState.paddedSize,
           ),
-          // this.context.videoStream
-          // Hardcode for testing
-          new PixelFormatYuv420P(),
+          desiredPixelState,
         ),
       );
     }
@@ -157,5 +186,54 @@ export class SoftwarePipelineBuilder extends BasePipelineBuilder {
     );
   }
 
-  protected isVideoContext() {}
+  protected getWatermarkFadeFilters(watermark: Watermark) {
+    if (isEmpty(watermark?.fadeConfig)) {
+      return [];
+    }
+
+    if (!this.ffmpegState.duration) {
+      return [];
+    }
+
+    const filters: HasFilterOption[] = [];
+    // Pick the first for now
+    const fadeConfig = first(watermark.fadeConfig)!;
+    const periodMins = fadeConfig.periodMins;
+    if (periodMins > 0) {
+      const start = this.ffmpegState.start ?? dayjs.duration(0);
+      const streamDur =
+        +this.ffmpegState.duration > +start
+          ? this.ffmpegState.duration.subtract(start)
+          : this.ffmpegState.duration;
+
+      const periodSeconds = periodMins * 60;
+      const cycles = streamDur.asMilliseconds() / (periodSeconds * 1000);
+
+      // If leading edge, fade in the watermark after the first second of programming
+      // otherwise, wait a full period
+      const fadeStartTime = fadeConfig.leadingEdge ? 1 : periodSeconds;
+      // Make the watermark transparent before the first fade in
+      filters.push(
+        new WatermarkOpacityFilter(0, {
+          startSeconds: 0,
+          endSeconds: fadeStartTime,
+        }),
+      );
+
+      for (let cycle = 0, t = fadeStartTime; cycle < cycles; cycle++) {
+        filters.push(
+          new WatermarkFadeFilter(true, t, t, t + (periodSeconds - 1)),
+          new WatermarkFadeFilter(
+            false,
+            t + periodSeconds,
+            t + periodSeconds,
+            t + periodSeconds * 2,
+          ),
+        );
+        t += periodSeconds * 2;
+      }
+    }
+
+    return filters;
+  }
 }
