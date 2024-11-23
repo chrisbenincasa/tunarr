@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.16.5](https://github.com/chrisbenincasa/tunarr/compare/v0.16.4...v0.16.5) (2024-11-23)
+
+
+### Bug Fixes
+
+* fix displaying weekly slot start times after save ([67593ef](https://github.com/chrisbenincasa/tunarr/commit/67593ef6b5c3629fdf9c17b02ef7ace86b16f1cb))
+* prevent multiple select alls duplicating selections ([#986](https://github.com/chrisbenincasa/tunarr/issues/986)) ([f3e0f2d](https://github.com/chrisbenincasa/tunarr/commit/f3e0f2d59d214b14f3a486f388e8e503e2f84b68))
+* support more watermark options on new ffmpeg pipeline ([#989](https://github.com/chrisbenincasa/tunarr/issues/989)) ([12270ba](https://github.com/chrisbenincasa/tunarr/commit/12270bab3196c47e3d15963889af147c1edc9f5e))
+* update language to make Name required when adding jellyfin server ([#985](https://github.com/chrisbenincasa/tunarr/issues/985)) ([433c6e3](https://github.com/chrisbenincasa/tunarr/commit/433c6e373ec8314bca32f229ee420575dec938eb))
+
 ## [0.16.4](https://github.com/chrisbenincasa/tunarr/compare/v0.16.3...v0.16.4) (2024-11-22)
 
 
