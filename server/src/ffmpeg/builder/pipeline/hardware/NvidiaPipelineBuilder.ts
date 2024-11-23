@@ -39,6 +39,8 @@ import {
   NvidiaH264Encoder,
   NvidiaHevcEncoder,
 } from '../../encoder/nvidia/NvidiaEncoders.ts';
+import { WatermarkOpacityFilter } from '../../filter/watermark/WatermarkOpacityFilter.ts';
+import { WatermarkScaleFilter } from '../../filter/watermark/WatermarkScaleFilter.ts';
 import {
   FfmpegPixelFormats,
   PixelFormatNv12,
@@ -438,42 +440,60 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
   }
 
   protected setWatermark(currentState: FrameState): FrameState {
-    if (this.watermarkInputSource) {
+    if (!this.watermarkInputSource) {
+      return currentState;
+    }
+
+    if (!this.watermarkInputSource.watermark.fixedSize) {
       this.watermarkInputSource.filterSteps.push(
-        new PixelFormatFilter(new PixelFormatYuva420P()),
-      );
-
-      // This is not compatible with ffmpeg < 5.0
-      if (this.context.ffmpegState.isAtLeastVersion({ major: 5 })) {
-        this.watermarkInputSource.filterSteps.push(
-          new HardwareUploadCudaFilter(
-            currentState.updateFrameLocation(FrameDataLocation.Software),
-          ),
-        );
-
-        const overlayFilter = new OverlayWatermarkCudaFilter(
+        new WatermarkScaleFilter(
+          currentState.paddedSize,
           this.watermarkInputSource.watermark,
-          this.context.desiredState.paddedSize,
-        );
+        ),
+      );
+    }
 
-        this.context.filterChain.watermarkOverlayFilterSteps.push(
-          overlayFilter,
-        );
-        currentState = overlayFilter.nextState(currentState);
-      } else {
+    if (this.watermarkInputSource.watermark.opacity !== 100) {
+      this.watermarkInputSource.filterSteps.push(
+        new WatermarkOpacityFilter(this.watermarkInputSource.watermark.opacity),
+      );
+    }
+
+    this.watermarkInputSource.filterSteps.push(
+      new PixelFormatFilter(new PixelFormatYuva420P()),
+    );
+
+    // This is not compatible with ffmpeg < 5.0
+    if (currentState.frameDataLocation === FrameDataLocation.Software) {
+      const desiredPixelFormat = this.desiredState.pixelFormat?.unwrap();
+      if (desiredPixelFormat) {
         const overlayFilter = new OverlayWatermarkFilter(
           this.watermarkInputSource.watermark,
           this.context.desiredState.paddedSize,
           this.context.videoStream!.squarePixelFrameSize(
             this.desiredState.paddedSize,
           ),
-          new PixelFormatYuv420P(),
+          desiredPixelFormat,
         );
         this.context.filterChain.watermarkOverlayFilterSteps.push(
           overlayFilter,
         );
         currentState = overlayFilter.nextState(currentState);
       }
+    } else {
+      this.watermarkInputSource.filterSteps.push(
+        new HardwareUploadCudaFilter(
+          currentState.updateFrameLocation(FrameDataLocation.Software),
+        ),
+      );
+
+      const overlayFilter = new OverlayWatermarkCudaFilter(
+        this.watermarkInputSource.watermark,
+        this.context.desiredState.paddedSize,
+      );
+
+      this.context.filterChain.watermarkOverlayFilterSteps.push(overlayFilter);
+      currentState = overlayFilter.nextState(currentState);
     }
 
     return currentState;

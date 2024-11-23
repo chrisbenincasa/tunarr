@@ -324,7 +324,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
 
     this.setStreamSeek();
 
-    if (this.ffmpegState.duration && this.ffmpegState.duration > 0) {
+    if (this.ffmpegState.duration && +this.ffmpegState.duration > 0) {
       this.pipelineSteps.push(TimeLimitOutputOption(this.ffmpegState.duration));
     }
 
@@ -543,7 +543,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     return match(this.desiredState.videoFormat)
       .with(
         VideoFormats.Hevc,
-        P.when(() => this.ffmpegCapabilities.hasVideoEncoder('libx265')),
+        () => this.ffmpegCapabilities.hasVideoEncoder('libx265'),
         () =>
           new Libx265Encoder(
             currentState.updateFrameLocation(FrameDataLocation.Software),
@@ -552,7 +552,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       )
       .with(
         VideoFormats.Hevc,
-        P.when(() => this.ffmpegCapabilities.hasVideoEncoder('libkvazaar')),
+        () => this.ffmpegCapabilities.hasVideoEncoder('libkvazaar'),
         () =>
           new LibKvazaarEncoder(
             currentState.updateFrameLocation(FrameDataLocation.Software),
@@ -561,7 +561,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       )
       .with(
         VideoFormats.H264,
-        P.when(() => this.ffmpegCapabilities.hasVideoEncoder('libx264')),
+        () => this.ffmpegCapabilities.hasVideoEncoder('libx264'),
         () =>
           new Libx264Encoder(
             this.desiredState.videoProfile,
@@ -570,7 +570,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       )
       .with(
         VideoFormats.H264,
-        P.when(() => this.ffmpegCapabilities.hasVideoEncoder('libopenh264')),
+        () => this.ffmpegCapabilities.hasVideoEncoder('libopenh264'),
         () => new LibOpenH264Encoder(this.desiredState.videoProfile),
       )
       .with(VideoFormats.Copy, () => new CopyVideoEncoder())
@@ -594,12 +594,8 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
   }
 
   protected setStreamSeek() {
-    if (
-      (!isNull(this.context.ffmpegState.start) &&
-        isNonEmptyString(this.context.ffmpegState.start)) ||
-      (this.context.ffmpegState.start ?? 0) > 0
-    ) {
-      const option = new StreamSeekInputOption(this.context.ffmpegState.start!);
+    if (this.ffmpegState.start && +this.ffmpegState.start > 0) {
+      const option = new StreamSeekInputOption(this.ffmpegState.start);
       this.audioInputSource?.addOption(option);
       this.videoInputSource.addOption(option);
     }

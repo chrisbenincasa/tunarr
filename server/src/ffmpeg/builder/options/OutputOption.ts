@@ -1,7 +1,7 @@
 import { PixelFormat } from '@/ffmpeg/builder/format/PixelFormat.ts';
 import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
 import { OutputOptionPipelineStep } from '@/ffmpeg/builder/types/PipelineStep.ts';
-import { isString } from 'lodash-es';
+import { Duration } from 'dayjs/plugin/duration.js';
 
 export abstract class OutputOption implements OutputOptionPipelineStep {
   readonly type = 'output';
@@ -65,10 +65,8 @@ export const NoSceneDetectOutputOption = (
 ): ConstantOutputOption =>
   makeConstantOutputOption(['-sc_threshold', value.toString(10)]);
 
-export const TimeLimitOutputOption = (
-  finish: string | number,
-): ConstantOutputOption =>
-  makeConstantOutputOption(['-t', isString(finish) ? finish : `${finish}ms`]);
+export const TimeLimitOutputOption = (finish: Duration): ConstantOutputOption =>
+  makeConstantOutputOption(['-t', `${finish.asMilliseconds()}ms`]);
 
 export const VideoBitrateOutputOption = (
   bitrate: number,
