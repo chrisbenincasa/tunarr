@@ -117,6 +117,7 @@ export const slotOptionIsScheduled = (
   }
 };
 export const OneDayMillis = dayjs.duration(1, 'day').asMilliseconds();
+export const OneWeekMillis = dayjs.duration(1, 'week').asMilliseconds();
 export const showOrderOptions = [
   {
     value: 'next',

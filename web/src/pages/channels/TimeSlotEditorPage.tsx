@@ -5,6 +5,7 @@ import { TimeSlotFormProvider } from '@/components/slot_scheduler/TimeSlotFormPr
 import { TimeSlotTable } from '@/components/slot_scheduler/TimeSlotTable.tsx';
 import {
   OneDayMillis,
+  OneWeekMillis,
   lineupItemAppearsInSchedule,
 } from '@/helpers/slotSchedulerUtil.ts';
 import { useSlotProgramOptions } from '@/hooks/programming_controls/useSlotProgramOptions.ts';
@@ -98,7 +99,9 @@ function sanitizeStartTimes(schedule: TimeSlotSchedule) {
     ...schedule,
     slots: map(schedule.slots, (slot) => ({
       ...slot,
-      startTime: slot.startTime % OneDayMillis,
+      startTime:
+        slot.startTime %
+        (schedule.period === 'week' ? OneWeekMillis : OneDayMillis),
     })),
   };
 }
