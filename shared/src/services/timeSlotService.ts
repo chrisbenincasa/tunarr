@@ -162,13 +162,13 @@ export async function scheduleTimeSlots(
   };
 
   while (timeCursor.isBefore(upperLimit)) {
-    let dayTime = timeCursor.mod(periodDuration, true).asMilliseconds();
+    let currOffset = timeCursor.diff(startOfCurrentPeriod) % periodMs;
 
     let currSlot: TimeSlot | null = null;
-    let remaining: number = 0;
     let lateMillis: number | null = null;
+    let remaining = 0;
 
-    const m = timeCursor.mod(schedule.padMs).asMilliseconds();
+    const m = +timeCursor.mod(schedule.padMs);
     if (m > constants.SLACK && schedule.padMs - m > constants.SLACK) {
       pushFlex(dayjs.duration(schedule.padMs - m));
       continue;
@@ -183,22 +183,23 @@ export async function scheduleTimeSlots(
         endTime = nth(sortedSlots, i + 1)!.startTime;
       }
 
-      if (slot.startTime <= dayTime && dayTime < endTime) {
+      if (slot.startTime <= currOffset && currOffset < endTime) {
         currSlot = slot;
-        remaining = endTime - dayTime;
-        lateMillis = dayTime - slot.startTime;
+        remaining = endTime - currOffset;
+        lateMillis = currOffset - slot.startTime;
         break;
       }
 
-      const dayTimeNextPeriod = dayjs
-        .duration(dayTime)
+      const nextPeriodOffset = dayjs
+        .duration(currOffset)
         .add(periodDuration)
         .asMilliseconds();
-      if (slot.startTime <= dayTimeNextPeriod && dayTimeNextPeriod < endTime) {
+      if (slot.startTime <= nextPeriodOffset && nextPeriodOffset < endTime) {
         currSlot = slot;
-        dayTime = dayTimeNextPeriod;
-        remaining = endTime - dayTime;
-        lateMillis = dayTime + periodDuration.asMilliseconds() - slot.startTime;
+        currOffset = nextPeriodOffset;
+        remaining = endTime - currOffset;
+        lateMillis =
+          currOffset + periodDuration.asMilliseconds() - slot.startTime;
         break;
       }
     }
@@ -279,6 +280,6 @@ export async function scheduleTimeSlots(
 
   return {
     programs: channelPrograms,
-    startTime: t0.valueOf(),
+    startTime: +t0, // +startOfCurrentPeriod, //t0.valueOf(),
   };
 }

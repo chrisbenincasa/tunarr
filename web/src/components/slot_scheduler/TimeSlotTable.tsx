@@ -113,7 +113,6 @@ export const TimeSlotTable = () => {
   const {
     channelEditor: { programLookup, originalProgramList },
   } = useChannelEditorLazy();
-
   const slotIds = useMemo(
     () => uniq(map(slotArray.fields, (slot) => getSlotId(slot.programming))),
     [slotArray.fields],
@@ -145,16 +144,7 @@ export const TimeSlotTable = () => {
       }
     });
 
-    const details: Record<TimeSlotId, SlotProgrammingDetails> = {
-      movie: {
-        programCount: 0,
-        programDurations: [],
-      },
-      flex: {
-        programCount: 0,
-        programDurations: [],
-      },
-    };
+    const details: Partial<Record<TimeSlotId, SlotProgrammingDetails>> = {};
 
     for (const scheduledSlotId of slotIds) {
       if (!programsBySlot.has(scheduledSlotId) || details[scheduledSlotId]) {
@@ -230,9 +220,9 @@ export const TimeSlotTable = () => {
         if (slotDetails) {
           const overDuration = filter(
             slotDetails.programDurations,
-            ({ duration }) =>
-              duration > slotDuration.asMilliseconds() + latenessMs,
+            ({ duration }) => duration > +slotDuration + latenessMs,
           );
+
           if (overDuration.length > 0) {
             warnings.push({
               type: 'program_too_long',

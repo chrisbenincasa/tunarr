@@ -166,7 +166,8 @@ export async function scheduleRandomSlots(
     // Pad time
     const m = timeCursor.mod(schedule.padMs).asMilliseconds();
     if (m > constants.SLACK && schedule.padMs - m > constants.SLACK) {
-      console.log('we need to pad the TS');
+      pushFlex(dayjs.duration(schedule.padMs - m));
+      continue;
     }
 
     let n = 0; // What is this?
