@@ -415,6 +415,7 @@ export const TimeSlotTable = () => {
             onAdd={(slot) =>
               setCurrentEditingSlot({ slot, index: slotArray.fields.length })
             }
+            programOptions={programOptions}
           />
           <ClearSlotsButton
             fields={slotArray.fields}
