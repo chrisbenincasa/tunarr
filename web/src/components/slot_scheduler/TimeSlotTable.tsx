@@ -1,5 +1,5 @@
 import { OneDayMillis } from '@/helpers/constants.ts';
-import { TimeSlotId } from '@/helpers/slotSchedulerUtil.ts';
+import { OneWeekMillis, TimeSlotId } from '@/helpers/slotSchedulerUtil.ts';
 import { isNonEmptyString } from '@/helpers/util.ts';
 import { useSlotProgramOptions } from '@/hooks/programming_controls/useSlotProgramOptions';
 import { useChannelEditorLazy } from '@/store/selectors.ts';
@@ -209,7 +209,12 @@ export const TimeSlotTable = () => {
       ),
       (slot, i, slots) => {
         const next = slots[(i + 1) % slots.length];
-        const scale = i === slots.length - 1 ? OneDayMillis : 0;
+        const scale =
+          i === slots.length - 1
+            ? currentPeriod === 'week'
+              ? OneWeekMillis
+              : OneDayMillis
+            : 0;
         const slotDuration = dayjs.duration(
           next.startTime + scale - slot.startTime,
         );
@@ -241,7 +246,7 @@ export const TimeSlotTable = () => {
         } satisfies SlotTableRowType;
       },
     );
-  }, [detailsBySlotId, latenessMs, slotArray.fields]);
+  }, [currentPeriod, detailsBySlotId, latenessMs, slotArray.fields]);
 
   const columns = useMemo<MRT_ColumnDef<SlotTableRowType>[]>(() => {
     return [
