@@ -97,9 +97,8 @@ export async function initServer(opts: ServerOptions) {
 
   logger.info('Using Tunarr database directory: %s', opts.databaseDirectory);
 
-  initializeSingletons();
-
   const ctx = serverContext();
+  initializeSingletons(ctx);
   registerHealthChecks(ctx);
   await ctx.m3uService.clearCache();
   await new ChannelLineupMigrator(ctx.channelDB).run();

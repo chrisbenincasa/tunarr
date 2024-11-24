@@ -1,6 +1,6 @@
 import { getDatabase } from '@/db/DBAccess.ts';
 import { MediaSourceType } from '@/db/schema/MediaSource.ts';
-import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
+import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.ts';
 import { find, isNil } from 'lodash-es';
 import Fixer from './fixer.js';
 
@@ -13,7 +13,7 @@ export class AddPlexServerIdsFixer extends Fixer {
       .where('type', '=', MediaSourceType.Plex)
       .execute();
     for (const server of plexServers) {
-      const api = new PlexApiClient(server);
+      const api = MediaSourceApiFactory().get(server);
       const devices = await api.getDevices();
       if (!isNil(devices) && devices.MediaContainer.Device) {
         const matchingServer = find(

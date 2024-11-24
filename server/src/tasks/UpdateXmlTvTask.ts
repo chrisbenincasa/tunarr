@@ -1,7 +1,7 @@
 import { ChannelDB } from '@/db/ChannelDB.ts';
 import { SettingsDB, defaultXmlTvSettings } from '@/db/SettingsDB.ts';
 import { MediaSourceDB } from '@/db/mediaSourceDB.ts';
-import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
+import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.ts';
 import { globalOptions } from '@/globals.js';
 import { ServerContext } from '@/serverContext.js';
 import { TVGuideService } from '@/services/TvGuideService.ts';
@@ -92,7 +92,7 @@ export class UpdateXmlTvTask extends Task<void> {
     const allMediaSources = await this.mediaSourceDB.findByType('plex');
 
     await mapAsyncSeq(allMediaSources, async (plexServer) => {
-      const plex = new PlexApiClient(plexServer);
+      const plex = MediaSourceApiFactory().get(plexServer);
       let dvrs: PlexDvr[] = [];
 
       if (!plexServer.sendGuideUpdates && !plexServer.sendChannelUpdates) {

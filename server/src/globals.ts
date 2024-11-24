@@ -4,6 +4,7 @@ import once from 'lodash-es/once.js';
 import path, { resolve } from 'node:path';
 import { ServerArgsType } from './cli/RunServerCommand.ts';
 import { GlobalArgsType } from './cli/types.ts';
+import { ServerContext } from './serverContext.ts';
 import { LogLevels } from './util/logging/LoggerFactory.ts';
 
 export type GlobalOptions = GlobalArgsType & {
@@ -81,11 +82,11 @@ export const dbOptions = () => {
   };
 };
 
-type Initializer = () => unknown;
+type Initializer<T> = (ctx: ServerContext) => T;
 let initalized = false;
-const initializers: Initializer[] = [];
+const initializers: Initializer<unknown>[] = [];
 
-export const registerSingletonInitializer = <T>(f: () => T) => {
+export const registerSingletonInitializer = <T>(f: Initializer<T>) => {
   if (initalized) {
     throw new Error(
       'Attempted to register singleton after intialization. This singleton will never be initialized!!',
@@ -95,7 +96,7 @@ export const registerSingletonInitializer = <T>(f: () => T) => {
   initializers.push(f);
 };
 
-export const initializeSingletons = once(() => {
-  forEach(initializers, (f) => f());
+export const initializeSingletons = once((ctx: ServerContext) => {
+  forEach(initializers, (f) => f(ctx));
   initalized = true;
 });

@@ -4,6 +4,8 @@ import { GlobalScheduler } from '@/services/Scheduler.ts';
 import { ScheduledTask } from '@/tasks/ScheduledTask.ts';
 import { Task } from '@/tasks/Task.ts';
 import { run } from '@/util/index.ts';
+import { getTunarrVersion } from '@/util/version.ts';
+import { PlexClientIdentifier } from '@tunarr/shared/constants';
 import dayjs from 'dayjs';
 import { RecurrenceRule } from 'node-schedule';
 import { v4 } from 'uuid';
@@ -13,6 +15,7 @@ type UpdatePlexPlayStatusScheduleRequest = {
   startTime: number;
   duration: number;
   channelNumber: number;
+  updateIntervalSeconds?: number;
 };
 
 type UpdatePlexPlayStatusInvocation = UpdatePlexPlayStatusScheduleRequest & {
@@ -41,7 +44,7 @@ export class UpdatePlexPlayStatusScheduledTask extends ScheduledTask {
       UpdatePlexPlayStatusScheduledTask.name,
       run(() => {
         const rule = new RecurrenceRule();
-        rule.second = 30;
+        rule.second = request.updateIntervalSeconds ?? 10;
         return rule;
       }),
       () => this.getNextTask(),
@@ -64,7 +67,7 @@ export class UpdatePlexPlayStatusScheduledTask extends ScheduledTask {
     this.playState = 'stopped';
     GlobalScheduler.scheduleOneOffTask(
       UpdatePlexPlayStatusTask.name,
-      dayjs().add(30, 'seconds').toDate(),
+      dayjs().add(5, 'seconds').toDate(),
       this.getNextTask(),
     );
   }
@@ -79,7 +82,8 @@ export class UpdatePlexPlayStatusScheduledTask extends ScheduledTask {
     this.request = {
       ...this.request,
       startTime: Math.min(
-        this.request.startTime + 30000,
+        this.request.startTime +
+          (this.request.updateIntervalSeconds ?? 10) * 1000,
         this.request.duration,
       ),
     };
@@ -113,9 +117,11 @@ class UpdatePlexPlayStatusTask extends Task {
       key: `/library/metadata/${this.request.ratingKey}`,
       time: this.request.startTime,
       duration: this.request.duration,
+      'X-Plex-Product': 'Tunarr',
+      'X-Plex-Version': getTunarrVersion(),
       'X-Plex-Device-Name': deviceName,
       'X-Plex-Device': deviceName,
-      'X-Plex-Client-Identifier': this.request.sessionId,
+      'X-Plex-Client-Identifier': PlexClientIdentifier,
     };
 
     try {

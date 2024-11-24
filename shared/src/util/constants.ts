@@ -7,7 +7,7 @@ const constants = {
   DEFAULT_DATA_DIR: '.tunarr',
 };
 
-const PlexClientIdentifier = 'p86cy1w47clco3ro8t92nfy1';
+export const PlexClientIdentifier = 'p86cy1w47clco3ro8t92nfy1';
 
 export const DefaultPlexHeaders = {
   Accept: 'application/json',
@@ -17,7 +17,7 @@ export const DefaultPlexHeaders = {
   'X-Plex-Version': '0.1',
   'X-Plex-Client-Identifier': PlexClientIdentifier,
   'X-Plex-Platform': 'Chrome',
-  'X-Plex-Platform-Version': '80.0',
+  'X-Plex-Platform-Version': '130.0',
 };
 
 export default constants;

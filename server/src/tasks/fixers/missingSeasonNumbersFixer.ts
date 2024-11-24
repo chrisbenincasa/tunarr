@@ -52,10 +52,8 @@ export class MissingSeasonNumbersFixer extends Fixer {
       return;
     }
 
-    const plexByName = groupByUniqPropAndMap(
-      allPlexServers,
-      'name',
-      (server) => new PlexApiClient(server),
+    const plexByName = groupByUniqPropAndMap(allPlexServers, 'name', (server) =>
+      MediaSourceApiFactory().get(server),
     );
 
     const updatedPrograms: RawProgram[] = [];

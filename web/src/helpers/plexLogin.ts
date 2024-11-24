@@ -4,7 +4,10 @@ import { ApiClient } from '../external/api.ts';
 import { AsyncInterval } from './AsyncInterval.ts';
 import { sequentialPromises } from './util.ts';
 
-// From Plex: The Client Identifier identifies the specific instance of your app. A random string or UUID is sufficient here. There are no hard requirements for Client Identifier length or format, but once one is generated the client should store and re-use this identifier for subsequent requests.
+// From Plex: The Client Identifier identifies the specific instance of your app.
+// A random string or UUID is sufficient here. There are no hard requirements for
+// Client Identifier length or format, but once one is generated the client should store
+// and re-use this identifier for subsequent requests.
 const ClientIdentifier = 'p86cy1w47clco3ro8t92nfy1';
 
 const PlexLoginHeaders = {
