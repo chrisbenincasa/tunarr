@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.16.6](https://github.com/chrisbenincasa/tunarr/compare/v0.16.5...v0.16.6) (2024-11-24)
+
+
+### Bug Fixes
+
+* disable speed-dial when loading ([#984](https://github.com/chrisbenincasa/tunarr/issues/984)) ([b10925d](https://github.com/chrisbenincasa/tunarr/commit/b10925dd93ccb479e057fcf6b9be435fa6d7130b))
+* fix weekly timeslot scheduling ([#992](https://github.com/chrisbenincasa/tunarr/issues/992)) ([3597546](https://github.com/chrisbenincasa/tunarr/commit/35975467377ad20d1521873bd40bd48b82da756f))
+* use stable ID when reporting Plex playback session status ([#993](https://github.com/chrisbenincasa/tunarr/issues/993)) ([b89dde9](https://github.com/chrisbenincasa/tunarr/commit/b89dde98c55e8d854aa42d3be9170c7d9e74a26b)), closes [#960](https://github.com/chrisbenincasa/tunarr/issues/960)
+
 ## [0.16.5](https://github.com/chrisbenincasa/tunarr/compare/v0.16.4...v0.16.5) (2024-11-23)
 
 
