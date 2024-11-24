@@ -9,8 +9,15 @@ import {
   UICondensedCustomProgram,
 } from '@/types/index.ts';
 import { Maybe } from '@/types/util.ts';
-import { Delete, Edit, Warning } from '@mui/icons-material';
-import { Dialog, DialogTitle, IconButton, Stack, Tooltip } from '@mui/material';
+import { Delete, Edit, Preview, Warning } from '@mui/icons-material';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  IconButton,
+  Stack,
+  Tooltip,
+} from '@mui/material';
 import { seq } from '@tunarr/shared/util';
 import { CondensedChannelProgram, ContentProgram } from '@tunarr/types';
 import { TimeSlot, TimeSlotProgramming } from '@tunarr/types/api';
@@ -198,6 +205,10 @@ export const TimeSlotTable = () => {
     number | null
   >(null);
 
+  const [slotProgrammingListIndex, setSlotProgrammingListIndex] = useState<
+    number | null
+  >(null);
+
   const rows = useMemo(() => {
     return map(
       sortBy(
@@ -332,7 +343,21 @@ export const TimeSlotTable = () => {
             case 'movie':
             case 'show':
             case 'custom-show':
-              return row.original.programCount;
+              return (
+                <span>
+                  {row.original.programCount}
+                  <IconButton
+                    onClick={() =>
+                      setSlotProgrammingListIndex(row.original.originalIndex)
+                    }
+                    size="small"
+                    sx={{ fontSize: '1rem', py: 0 }}
+                    disableRipple
+                  >
+                    <Preview sx={{ fontSize: 'inherit' }} />
+                  </IconButton>
+                </span>
+              );
             case 'flex':
             case 'redirect':
               return '-';
@@ -472,6 +497,16 @@ export const TimeSlotTable = () => {
         }
         onClose={() => setCurrentSlotWarningsIndex(null)}
       />
+      <Dialog
+        open={
+          !isNil(slotProgrammingListIndex) &&
+          !!nth(rows, slotProgrammingListIndex)
+        }
+        onClose={() => setSlotProgrammingListIndex(null)}
+      >
+        <DialogTitle>Programming</DialogTitle>
+        <DialogContent></DialogContent>
+      </Dialog>
     </>
   );
 };
