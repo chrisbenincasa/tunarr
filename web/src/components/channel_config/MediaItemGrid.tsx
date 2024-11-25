@@ -425,7 +425,10 @@ export function MediaItemGrid<PageDataType, ItemType>({
   return (
     <Box
       ref={containerRef}
-      sx={{ position: 'relative', minHeight: containerMinHeight }}
+      sx={{
+        position: 'relative',
+        minHeight: viewType === 'grid' ? containerMinHeight : 'auto',
+      }}
     >
       {showAlphabetFilter && handleAlphaNumFilter && (
         <Box
@@ -524,7 +527,7 @@ export function MediaItemGrid<PageDataType, ItemType>({
           No results
         </Typography>
       )}
-      {data && scrollParams.max !== 0 && !hasNextPage && (
+      {data && scrollParams.max !== 0 && viewType != 'list' && !hasNextPage && (
         <Typography
           variant="h6"
           fontStyle={'italic'}
