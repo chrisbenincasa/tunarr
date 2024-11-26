@@ -208,7 +208,7 @@ export async function scheduleTimeSlots(
       throw new Error('Could not find a suitable slot');
     }
 
-    const program = getNextProgramForSlot(
+    let program = getNextProgramForSlot(
       currSlot,
       contentProgramIteratorsById,
       remaining,
@@ -225,6 +225,10 @@ export async function scheduleTimeSlots(
     if (isNull(program) || isFlexProgram(program)) {
       pushFlex(dayjs.duration(remaining));
       continue;
+    }
+
+    if (program.type === 'redirect') {
+      program = { ...program, duration: remaining };
     }
 
     // Program longer than we have left? Add it and move on...
