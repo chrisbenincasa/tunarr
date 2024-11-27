@@ -131,9 +131,6 @@ export async function scheduleRandomSlots(
 
   const now = dayjs.tz();
   const t0 = now;
-  // if (schedule.startTomorrow) {
-  // t0 = t0.add(1, 'day');
-  // }
   const upperLimit = t0.add(schedule.maxDays + 1, 'day');
 
   let timeCursor = t0;
@@ -145,22 +142,10 @@ export async function scheduleRandomSlots(
     channelPrograms = newPrograms;
   };
 
-  // if (t0.isAfter(startOfCurrentPeriod)) {
-  //   const d = dayjs.duration(t0.diff(startOfCurrentPeriod));
-  //   pushFlex(d);
-  // }
-
-  // const dayTime = timeCursor.subtract(
-  //   (timeCursor.unix() * 1000) % schedule.padMs,
-  // );
-
   const slotsLastPlayedMap: Record<number, number> = {};
 
   while (timeCursor.isBefore(upperLimit)) {
-    // let dayTime = timeCursor.mod(periodDuration).asMilliseconds();
-
     let currSlot: RandomSlot | null = null;
-    // let slotIndex: number | null = null;
     let remaining: number = 0;
 
     // Pad time
@@ -179,14 +164,14 @@ export async function scheduleRandomSlots(
         const nextPlay = dayjs.tz(slotLastPlayed + slot.cooldownMs);
         minNextTime = minNextTime.isBefore(nextPlay) ? minNextTime : nextPlay;
         if (
-          dayjs.duration(timeCursor.diff(slotLastPlayed)).asMilliseconds() <
+          +dayjs.duration(timeCursor.diff(slotLastPlayed)) <
           slot.cooldownMs - constants.SLACK
         ) {
           continue;
         }
       }
 
-      n += slot.weight; // why
+      n += slot.weight;
 
       if (random.bool(slot.weight, n)) {
         currSlot = slot;
@@ -211,24 +196,8 @@ export async function scheduleRandomSlots(
       remaining,
     );
 
-    // if (isNull(program)) {
-    // pushFlex()
-    // continue;
-    // }
-
-    // TODO Late?
-    // if (
-    //   !isNull(lateMillis) &&
-    //   lateMillis >= schedule.latenessMs + constants.SLACK
-    // ) {
-    //   console.log('we got a runner', dayjs.duration(lateMillis).format());
-    //   pushFlex(dayjs.duration(remaining));
-    //   continue;
-    // }
-
     if (isNull(program) || isFlexProgram(program)) {
       pushFlex(dayjs.duration(remaining));
-      timeCursor = timeCursor.add(remaining);
       continue;
     }
 
@@ -306,10 +275,6 @@ export async function scheduleRandomSlots(
 
   return {
     programs: channelPrograms,
-    startTime: t0.unix() * 1000,
+    startTime: +t0,
   };
-
-  // while (timeCursor.isBefore(upperLimit)) {
-
-  // }
 }
