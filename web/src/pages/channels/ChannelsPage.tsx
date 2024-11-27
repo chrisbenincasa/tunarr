@@ -54,7 +54,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import TunarrLogo from '../../components/TunarrLogo.tsx';
 import NoChannelsCreated from '../../components/channel_config/NoChannelsCreated.tsx';
 import { isNonEmptyString } from '../../helpers/util.ts';
-import { useSuspenseChannels } from '../../hooks/useChannels.ts';
+import { useChannelsSuspense } from '../../hooks/useChannels.ts';
 import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 import { useSettings } from '../../store/settings/selectors.ts';
 
@@ -65,7 +65,7 @@ type ChannelRow = Channel & {
 export default function ChannelsPage() {
   const { backendUri } = useSettings();
   const apiClient = useTunarrApi();
-  const { data: channels } = useSuspenseChannels();
+  const { data: channels } = useChannelsSuspense();
   const { data: channelSessions } = useApiQuery({
     queryKey: ['channels', 'sessions'],
     queryFn(apiClient) {

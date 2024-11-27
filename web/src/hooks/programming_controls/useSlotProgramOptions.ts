@@ -1,21 +1,23 @@
 import { ProgramOption } from '@/helpers/slotSchedulerUtil';
 import { isNonEmptyString } from '@/helpers/util';
 import useStore from '@/store';
-import {
-  isUICondensedCustomProgram,
-  isUICondensedRedirectProgram,
-} from '@/types';
+import { isUICondensedCustomProgram } from '@/types';
 import { seq } from '@tunarr/shared/util';
 import { CustomShow } from '@tunarr/types';
-import { chain, isEmpty, isUndefined, some } from 'lodash-es';
+import { chain, isEmpty, isUndefined, reject, some } from 'lodash-es';
 import { useMemo } from 'react';
+import { useChannelsSuspense } from '../useChannels.ts';
 import { useCustomShows } from '../useCustomShows.ts';
 
-export const useSlotProgramOptions = () => {
+export const useSlotProgramOptions = (channelId?: string) => {
   const { originalProgramList: newLineup, programLookup } = useStore(
     (s) => s.channelEditor,
   );
   const { data: customShows } = useCustomShows();
+  const { data: channels } = useChannelsSuspense({
+    select: (channels) =>
+      reject(channels, (channel) => channel.id === channelId),
+  });
 
   const customShowsById = useMemo(() => {
     const byId: Record<string, CustomShow> = {};
@@ -31,7 +33,7 @@ export const useSlotProgramOptions = () => {
         return programLookup[program.id];
       }
     });
-    // const contentPrograms = filter(newLineup, isUICondensedContentProgram);
+
     const opts: ProgramOption[] = [
       { value: 'flex', description: 'Flex', type: 'flex' },
     ];
@@ -77,21 +79,22 @@ export const useSlotProgramOptions = () => {
     );
 
     opts.push(
-      ...chain(newLineup)
-        .filter(isUICondensedRedirectProgram)
-        .uniqBy((p) => p.channel)
+      ...chain(channels)
+        // .filter(isUICondensedRedirectProgram)
+        // .uniqBy((p) => p.channel)
         .map(
           (p) =>
             ({
-              description: `Redirect to "${p.channelName}"`,
-              value: `redirect.${p.channel}`,
+              description: `Redirect to "${p.name}"`,
+              value: `redirect.${p.id}`,
               type: 'redirect',
-              channelId: p.channel,
+              channelId: p.id,
+              channelName: p.name,
             }) satisfies ProgramOption,
         )
         .value(),
     );
 
     return opts;
-  }, [newLineup, programLookup, customShowsById]);
+  }, [newLineup, channels, programLookup, customShowsById]);
 };

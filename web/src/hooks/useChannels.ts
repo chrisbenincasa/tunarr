@@ -1,4 +1,9 @@
-import { DataTag, useQuery, useSuspenseQuery } from '@tanstack/react-query';
+import {
+  DataTag,
+  queryOptions,
+  useQuery,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
 import { Channel } from '@tunarr/types';
 import { ApiClient } from '../external/api';
 import { useTunarrApi } from './useTunarrApi';
@@ -6,20 +11,23 @@ import { useTunarrApi } from './useTunarrApi';
 export const channelsQuery = (
   apiClient: ApiClient,
   initialData: Channel[] = [],
-) => ({
-  queryKey: ['channels'] as DataTag<['channels'], Channel[]>,
-  queryFn: () => apiClient.get('/api/channels'),
-  initialData,
-});
+) =>
+  queryOptions({
+    queryKey: ['channels'] as DataTag<['channels'], Channel[]>,
+    queryFn: () => apiClient.get('/api/channels'),
+    initialData,
+  });
 
 export const useChannels = (initialData: Channel[] = []) => {
   const apiClient = useTunarrApi();
   return useQuery(channelsQuery(apiClient, initialData));
 };
 
-export const useSuspenseChannels = () => {
+export const useChannelsSuspense = (
+  params?: Partial<ReturnType<typeof channelsQuery>>,
+) => {
   const apiClient = useTunarrApi();
-  return useSuspenseQuery(channelsQuery(apiClient));
+  return useSuspenseQuery({ ...channelsQuery(apiClient), ...(params ?? {}) });
 };
 
 export const channelQuery = (

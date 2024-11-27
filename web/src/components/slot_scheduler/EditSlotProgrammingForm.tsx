@@ -35,7 +35,6 @@ export const EditSlotProgrammingForm = ({
 }: EditSlotProgramProps) => {
   const { setValue, watch, control } = useFormContext<TimeSlot>();
   const { type } = watch('programming');
-  console.log(type);
   const availableTypes = useMemo(() => {
     return map(
       uniqBy(programOptions, ({ type }) => type),
@@ -125,6 +124,23 @@ export const EditSlotProgrammingForm = ({
     [programOptions, type],
   );
 
+  const redirectShowAutoCompleteOpts = useMemo(
+    () =>
+      type === 'redirect'
+        ? map(
+            filter(
+              programOptions,
+              (opt): opt is RedirectProgramOption => opt.type === 'redirect',
+            ),
+            (opt) => ({
+              ...opt,
+              label: opt.channelName,
+            }),
+          )
+        : [],
+    [programOptions, type],
+  );
+
   return (
     <>
       <FormControl fullWidth>
@@ -191,6 +207,29 @@ export const EditSlotProgrammingForm = ({
               options={showAutoCompleteOpts}
               onChange={(_, value) =>
                 value ? field.onChange(value.showId) : void 0
+              }
+              renderInput={(params) => (
+                <TextField {...params} label="Program" />
+              )}
+            />
+          )}
+        />
+      )}
+      {type === 'redirect' && (
+        <Controller
+          control={control}
+          name="programming.channelId"
+          render={({ field }) => (
+            <Autocomplete<RedirectProgramOption & { label: string }>
+              value={
+                find(
+                  redirectShowAutoCompleteOpts,
+                  (opt) => opt.channelId === field.value,
+                ) ?? first(redirectShowAutoCompleteOpts)
+              }
+              options={redirectShowAutoCompleteOpts}
+              onChange={(_, value) =>
+                value ? field.onChange(value.channelId) : void 0
               }
               renderInput={(params) => (
                 <TextField {...params} label="Program" />

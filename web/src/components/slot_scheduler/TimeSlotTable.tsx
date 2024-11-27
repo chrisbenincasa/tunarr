@@ -313,7 +313,8 @@ export const TimeSlotTable = () => {
             case 'flex':
               return 'Flex';
             case 'redirect':
-              return 'Redirect';
+              return find(programOptions, { channelId: value.channelId })
+                ?.description;
             case 'custom-show':
               return find(programOptions, { customShowId: value.customShowId })
                 ?.description;

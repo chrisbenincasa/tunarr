@@ -16,6 +16,7 @@ export type CustomShowProgramOption = DropdownOption<string> & {
 export type RedirectProgramOption = DropdownOption<string> & {
   type: 'redirect';
   channelId: string;
+  channelName: string;
 };
 
 export type ShowProgramOption = DropdownOption<string> & {
