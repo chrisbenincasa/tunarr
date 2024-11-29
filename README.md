@@ -1,8 +1,8 @@
 # Tunarr
 
-Create live TV channels from media on your Plex servers, and more!
+![GitHub Repo stars](https://img.shields.io/github/stars/chrisbenincasa/tunarr?style=flat&logo=github&color=lightseagreen) ![Docker Pulls](https://img.shields.io/docker/pulls/chrisbenincasa/tunarr?style=flat&logo=docker&color=lightseagreen) ![Docker Image Version](https://img.shields.io/docker/v/chrisbenincasa/tunarr?sort=semver&arch=amd64&style=flat&logo=docker&color=lightseagreen)
 
-Configure your channels, programs, commercials, and settings using the Tunarr web UI.
+Create and configure live TV channels from media on your Plex & Jellyfin servers.
 
 Access your channels by adding the spoofed Tunarr HDHomerun tuner to Plex, Jellyfin, or Emby. Or utilize the m3u Url with any 3rd party IPTV player app.
 
@@ -15,12 +15,10 @@ Access your channels by adding the spoofed Tunarr HDHomerun tuner to Plex, Jelly
 
 - ⚠️ Tunarr is under **very active** development.
 - ⚠️ Expect bugs and breaking changes!
-- ⚠️ We are certain there are bugs, given the scale of this rewrite.
-- ⚠️ If you would like to try Tunarr, make sure to use a copy of your `.dizquetv` database folder!
 
 ## What is this?
 
-Tunarr is a fork / rewrite / rebrand of [**dizqueTV**](https://github.com/vexorian/dizquetv) (which in itself was a fork of other projects!). This project was born out of both a love for TV and an appreciation for the work put into dizqueTV and its predecessors.
+Tunarr is a rewrite / rebrand of [**dizqueTV**](https://github.com/vexorian/dizquetv) (which in itself was a fork of [other projects](https://github.com/DEFENDORe/pseudotv)!). This project was born out of both a love for TV and an appreciation for the work put into dizqueTV and its predecessors.
 
 Tunarr has the following goals:
 
@@ -33,23 +31,20 @@ Tunarr has the following goals:
 ## Features
 
 - **NEW** Jellyfin library support!
-- **NEW** Stream your channels directly in the [browser using HLS](https://github.com/chrisbenincasa/tunarr/pull/116) (and soon [MPEG-DASH](https://github.com/chrisbenincasa/tunarr/issues/129))
+- **NEW** Stream your channels directly in the [browser using HLS](https://github.com/chrisbenincasa/tunarr/pull/116)
 - **NEW** Improvements to stream stability
 - **NEW** [Dark mode!](https://github.com/chrisbenincasa/tunarr/pull/34)
-- **NEW** Quickly find content you want for your channels with [advanced filtering and sorting](https://github.com/chrisbenincasa/tunarr/pull/210)
+- **NEW** Quickly find content you want for your channels with [advanced filtering and sorting](https://github.com/chrisbenincasa/tunarr/pull/210) (Jellyfin filtering [coming soon](https://github.com/chrisbenincasa/tunarr/issues/752))
 - **NEW** Scheduled, configurable backups - never lose your channels and configuration!
-- Spoofed [HDHR](https://www.silicondust.com/hdhomerun/) tuner and a IPTV channel list, providing a large amount of flexibility and easing integration with [xTeVe](https://github.com/xteve-project/xTeVe) and Plex
+- Spoofed [HDHR](https://www.silicondust.com/hdhomerun/) tuner and a IPTV channel list, providing a large amount of flexibility and easing integration with [xTeVe](https://github.com/xteve-project/xTeVe) or [Threadfin](https://github.com/Threadfin/Threadfin) and Plex, or the IPTV client of your choice.
 - Customize channels with a logo, filler content ("commercials", music videos, prerolls, channel branding videos) between programming, and more!
-- Docker image and prepackaged binaries for Windows, Linux, and Mac OS
-- Use Nvidia for hardware encoding, including in Docker.
-- Source content from multiple Plex servers
-- Includes a WEB TV Guide where you can even play channels in your desktop by using your local media player.
+- View channel lineups on the web-based TV Guide
+- Support for hardware accelerated transcoding, including Nvidia, VAAPI, QuickSync, and macOS VideoToolbox.
 - ~~Subtitle support~~ Subtitle support is currently in flux; it was removed to simplify the backend and stabilize the stream. Bringing this functionality back is tracked in [#462](https://github.com/chrisbenincasa/tunarr/issues/462).
-- Auto-deinterlace content
 
 ## Limitations
 
-- If you want to play the TV channels in Plex using the spoofed HDHR, Plex pass is required.
+- If you want to play the TV channels in Plex using the spoofed HDHR, Plex Pass is required.
 - Like dizqueTV, Tunarr does not currently watch your Plex server for media updates/changes. You must manually remove and re-add your programs for any changes to take effect. Same goes for Plex server changes (changing IP, port, etc).. You&apos;ll have to update the server settings manually in that case. **NOTE** This feature is actively under development! (https://github.com/chrisbenincasa/tunarr/issues/15)
 
 ## Releases
