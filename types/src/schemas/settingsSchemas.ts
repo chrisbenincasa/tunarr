@@ -31,6 +31,21 @@ export type SupportedHardwareAccels = TupleToUnion<
 
 export const DefaultHardwareAccel = 'none';
 
+export const SupportedErrorScreens = [
+  'static',
+  'pic',
+  'blank',
+  'testsrc',
+  'text',
+  'kill',
+] as const;
+
+export const SupportedErrorAudioTypes = [
+  'silent',
+  'sine',
+  'whitenoise',
+] as const;
+
 export const FfmpegLogLevels = [
   'panic',
   'fatal',
@@ -73,13 +88,7 @@ export const FfmpegSettingsSchema = z.object({
   // DEPRECATED
   videoEncoder: z.string().default('libx264').describe('DEPRECATED'),
   hardwareAccelerationMode: z
-    .union([
-      z.literal('none'),
-      z.literal('cuda'),
-      z.literal('vaapi'),
-      z.literal('qsv'),
-      z.literal('videotoolbox'),
-    ])
+    .enum(SupportedHardwareAccels)
     .default(DefaultHardwareAccel),
   videoFormat: z
     .union([z.literal('h264'), z.literal('hevc'), z.literal('mpeg2')])
@@ -92,10 +101,8 @@ export const FfmpegSettingsSchema = z.object({
   audioBufferSize: z.number().default(50),
   audioSampleRate: z.number().default(48),
   audioChannels: z.number().default(2),
-  errorScreen: z
-    .enum(['static', 'pic', 'blank', 'testsrc', 'text', 'kill'])
-    .default('pic'),
-  errorAudio: z.enum(['silent', 'sine', 'whitenoise']).default('silent'),
+  errorScreen: z.enum(SupportedErrorScreens).default('pic'),
+  errorAudio: z.enum(SupportedErrorAudioTypes).default('silent'),
   normalizeVideoCodec: z.boolean().default(true),
   normalizeAudioCodec: z.boolean().default(true),
   normalizeResolution: z.boolean().default(true),

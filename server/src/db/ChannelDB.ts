@@ -156,6 +156,7 @@ function updateRequestToChannel(updateReq: SaveChannelRequest): ChannelUpdate {
     stealth: booleanToNumber(updateReq.stealth),
     fillerRepeatCooldown: updateReq.fillerRepeatCooldown,
     guideFlexTitle: updateReq.guideFlexTitle,
+    transcodeConfigId: updateReq.transcodeConfigId,
   } satisfies ChannelUpdate;
   // return omitBy<ChannelUpdate>(
   //   {
@@ -217,6 +218,7 @@ function createRequestToChannel(saveReq: SaveChannelRequest): NewChannel {
     fillerRepeatCooldown: saveReq.fillerRepeatCooldown,
     guideFlexTitle: saveReq.guideFlexTitle,
     streamMode: 'hls', // TODO: Let users choose
+    transcodeConfigId: saveReq.transcodeConfigId,
   } satisfies NewChannel;
 }
 

@@ -1,8 +1,5 @@
-import {
-  DropdownOption,
-  flexOptions,
-  padOptions,
-} from '@/helpers/slotSchedulerUtil';
+import { DropdownOption } from '@/helpers/DropdownOption.js';
+import { flexOptions, padOptions } from '@/helpers/slotSchedulerUtil';
 import { RandomSlotForm } from '@/pages/channels/RandomSlotEditorPage';
 import {
   appendToCurrentLineup,

@@ -32,6 +32,7 @@ export interface ChannelTable extends WithUuid, WithCreatedAt, WithUpdatedAt {
   stealth: ColumnType<number, number | undefined>;
   streamMode: ColumnType<ChannelStreamMode, ChannelStreamMode | undefined>;
   transcoding: JSONColumnType<ChannelTranscodingSettings | null, string | null>;
+  transcodeConfigId: string;
   watermark: JSONColumnType<ChannelWatermark | null, string | null>;
 }
 
@@ -54,6 +55,7 @@ const ChannelTableKeys: (keyof ChannelTable)[] = [
   'stealth',
   'streamMode',
   'transcoding',
+  'transcodeConfigId',
   'updatedAt',
   'uuid',
   'watermark',

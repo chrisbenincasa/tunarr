@@ -14,6 +14,7 @@ import { ProgramTable } from './Program.ts';
 import type { ProgramExternalIdTable } from './ProgramExternalId.ts';
 import type { ProgramGroupingTable } from './ProgramGrouping.ts';
 import type { ProgramGroupingExternalIdTable } from './ProgramGroupingExternalId.ts';
+import { TrannscodeConfigTable } from './TranscodeConfig.ts';
 
 export interface DB {
   cachedImage: CachedImageTable;
@@ -31,6 +32,7 @@ export interface DB {
   programExternalId: ProgramExternalIdTable;
   programGrouping: ProgramGroupingTable;
   programGroupingExternalId: ProgramGroupingExternalIdTable;
+  transcodeConfig: TrannscodeConfigTable;
 
   // Legacy migration table
   mikroOrmMigrations: MikroOrmMigrationsTable;

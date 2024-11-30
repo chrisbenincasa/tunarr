@@ -2,11 +2,7 @@ import { ChannelProgram } from '@tunarr/types';
 import { BaseSlot } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import { some } from 'lodash-es';
-
-export type DropdownOption<T extends string | number> = {
-  value: T;
-  description: string;
-};
+import { DropdownOption } from './DropdownOption';
 
 export type CustomShowProgramOption = DropdownOption<string> & {
   type: 'custom-show';

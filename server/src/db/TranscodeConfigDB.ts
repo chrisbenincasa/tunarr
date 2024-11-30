@@ -1,0 +1,187 @@
+import { booleanToNumber } from '@/util/sqliteUtil.ts';
+import { Resolution, TranscodeConfig } from '@tunarr/types';
+import { Kysely } from 'kysely';
+import { omit } from 'lodash-es';
+import { v4 } from 'uuid';
+import { getDatabase } from './DBAccess.ts';
+import {
+  NewTranscodeConfig,
+  TranscodeConfigUpdate,
+} from './schema/TranscodeConfig.ts';
+import { DB } from './schema/db.ts';
+
+export class TranscodeConfigDB {
+  getAll() {
+    return getDatabase().selectFrom('transcodeConfig').selectAll().execute();
+  }
+
+  getById(id: string) {
+    return getDatabase()
+      .selectFrom('transcodeConfig')
+      .where('uuid', '=', id)
+      .selectAll()
+      .executeTakeFirst();
+  }
+
+  getDefaultConfig() {
+    return getDatabase()
+      .selectFrom('transcodeConfig')
+      .where('isDefault', '=', 1)
+      .limit(1)
+      .selectAll()
+      .executeTakeFirst();
+  }
+
+  insertConfig(config: Omit<TranscodeConfig, 'id'>) {
+    const id = v4();
+    const newConfig: NewTranscodeConfig = {
+      ...omit(config, 'id'),
+      uuid: id,
+      resolution: JSON.stringify(config.resolution),
+      normalizeFrameRate: booleanToNumber(config.normalizeFrameRate),
+      deinterlaceVideo: booleanToNumber(config.deinterlaceVideo),
+      disableChannelOverlay: booleanToNumber(config.disableChannelOverlay),
+      isDefault: booleanToNumber(config.disableChannelOverlay),
+    };
+
+    return getDatabase()
+      .insertInto('transcodeConfig')
+      .values(newConfig)
+      .returningAll()
+      .executeTakeFirstOrThrow();
+  }
+
+  updateConfig(id: string, updatedConfig: TranscodeConfig) {
+    const update: TranscodeConfigUpdate = {
+      ...omit(updatedConfig, 'id'),
+      resolution: JSON.stringify(updatedConfig.resolution),
+      normalizeFrameRate: booleanToNumber(updatedConfig.normalizeFrameRate),
+      deinterlaceVideo: booleanToNumber(updatedConfig.deinterlaceVideo),
+      disableChannelOverlay: booleanToNumber(
+        updatedConfig.disableChannelOverlay,
+      ),
+      isDefault: booleanToNumber(updatedConfig.disableChannelOverlay),
+    };
+
+    return getDatabase()
+      .updateTable('transcodeConfig')
+      .where('uuid', '=', id)
+      .set(update)
+      .execute();
+  }
+
+  deleteConfig(id: string) {
+    // A few cases to handle:
+    // 1. if we are deleting the default configuration, we have to pick a new one.
+    // 2. If we are deleting the last configuration, we have to create a default configuration
+    // 3. We have to update all related channels.
+    return getDatabase()
+      .transaction()
+      .execute(async (tx) => {
+        const numConfigs = await tx
+          .selectFrom('transcodeConfig')
+          .select((eb) => eb.fn.count<number>('uuid').as('count'))
+          .executeTakeFirst()
+          .then((res) => res?.count ?? 0);
+
+        // If there are no configs (should be impossible) create a default, assign it to all channels
+        // and move on.
+        if (numConfigs === 0) {
+          const { uuid: newDefaultConfigId } =
+            await this.insertDefaultConfiguration(tx);
+          await tx
+            .updateTable('channel')
+            .set('transcodeConfigId', newDefaultConfigId)
+            .execute();
+          return;
+        }
+
+        const configToDelete = await tx
+          .selectFrom('transcodeConfig')
+          .where('uuid', '=', id)
+          .selectAll()
+          .limit(1)
+          .executeTakeFirst();
+
+        if (!configToDelete) {
+          return;
+        }
+
+        // If this is the last config, we'll need a new one and will have to assign it
+        if (numConfigs === 1) {
+          const { uuid: newDefaultConfigId } =
+            await this.insertDefaultConfiguration(tx);
+          await tx
+            .updateTable('channel')
+            .set('transcodeConfigId', newDefaultConfigId)
+            .execute();
+          await tx
+            .deleteFrom('transcodeConfig')
+            .where('uuid', '=', id)
+            .limit(1)
+            .execute();
+          return;
+        }
+
+        // We're deleting the default config. Pick a random one to make the new default. Not great!
+        if (configToDelete.isDefault) {
+          const newDefaultConfig = await tx
+            .selectFrom('transcodeConfig')
+            .where('uuid', '!=', id)
+            .where('isDefault', '=', 0)
+            .select('uuid')
+            .limit(1)
+            .executeTakeFirstOrThrow();
+          await tx
+            .updateTable('transcodeConfig')
+            .set('isDefault', 1)
+            .where('uuid', '=', newDefaultConfig.uuid)
+            .limit(1)
+            .execute();
+          await tx
+            .updateTable('channel')
+            .set('transcodeConfigId', newDefaultConfig.uuid)
+            .execute();
+        }
+
+        await tx
+          .deleteFrom('transcodeConfig')
+          .where('uuid', '=', id)
+          .limit(1)
+          .execute();
+      });
+  }
+
+  private async insertDefaultConfiguration(db: Kysely<DB> = getDatabase()) {
+    return db
+      .insertInto('transcodeConfig')
+      .values(TranscodeConfigDB.createDefaultConfiguration())
+      .returning('uuid as uuid')
+      .executeTakeFirstOrThrow();
+  }
+
+  private static createDefaultConfiguration(): NewTranscodeConfig {
+    const id = v4();
+    return {
+      uuid: id,
+      name: 'Default Config',
+      threadCount: 0,
+      resolution: JSON.stringify({
+        widthPx: 1920,
+        heightPx: 1080,
+      } satisfies Resolution),
+      audioBitRate: 192,
+      audioBufferSize: 192 * 3,
+      audioChannels: 2,
+      audioSampleRate: 48,
+      audioFormat: 'aac',
+      hardwareAccelerationMode: 'none',
+      normalizeFrameRate: booleanToNumber(false),
+      deinterlaceVideo: booleanToNumber(true),
+      videoBitRate: 3500,
+      videoBufferSize: 3500 * 2,
+      videoFormat: 'h264',
+      isDefault: booleanToNumber(true),
+    };
+  }
+}

@@ -8,7 +8,6 @@ import { ProgramDao } from '@/db/schema/Program.ts';
 import { ChannelNotFoundError } from '@/types/errors.ts';
 import { Maybe } from '@/types/util.ts';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
-import { booleanToNumber } from '@/util/sqliteUtil.ts';
 import { seq } from '@tunarr/shared/util';
 import {
   Channel as ApiChannel,
@@ -42,12 +41,8 @@ import {
   OfflineItem,
   RedirectItem,
 } from '../../db/derived_types/Lineup.ts';
-import {
-  ChannelIcon,
-  ChannelOfflineSettings,
-  ChannelTranscodingSettings,
-  ChannelWatermark,
-} from '../../db/schema/base.ts';
+
+import { TranscodeConfigDB } from '@/db/TranscodeConfigDB.ts';
 import {
   emptyStringToUndefined,
   groupByUniq,
@@ -97,6 +92,7 @@ export class LegacyChannelMigrator {
   constructor(
     private channelDB: ChannelDB = new ChannelDB(),
     private customShowDB: CustomShowDB = new CustomShowDB(new ProgramDB()),
+    private transcodeConfigDB = new TranscodeConfigDB(),
   ) {}
 
   async createLineup(
@@ -296,6 +292,14 @@ export class LegacyChannelMigrator {
     entity: Channel;
   }> {
     this.logger.info('Migrating channel file: ' + fullPath);
+
+    const defaultConfig = await this.transcodeConfigDB.getDefaultConfig();
+    if (!defaultConfig) {
+      throw new Error(
+        'No default transcode config found. FFmpeg settings must be migrated before migrating channels!',
+      );
+    }
+
     const channelFileContents = await fs.readFile(fullPath);
 
     const parsed = JSON.parse(
@@ -333,7 +337,7 @@ export class LegacyChannelMigrator {
         position: isValidPosition(iconPosition) ? iconPosition : 'bottom-right',
         width: parsed['iconWidth'] as number,
       },
-      startTime: dayjs(parsed['startTime'] as string).unix() * 1000,
+      startTime: +dayjs(parsed['startTime'] as string),
       name: parsed['name'] as string,
       offline: {
         picture: parsed['offlinePicture'] as string,
@@ -390,86 +394,74 @@ export class LegacyChannelMigrator {
       },
       programCount: 0, // Not really needed here
       streamMode: ChannelStreamModes.Hls,
+      transcodeConfigId: defaultConfig.uuid,
     };
 
     let channelEntity: Channel;
     const existingEntity = await this.channelDB.getChannel(channel.number);
 
     if (existingEntity) {
-      channelEntity = existingEntity;
-      getDatabase()
-        .updateTable('channel')
-        .where('channel.uuid', '=', existingEntity.uuid)
-        .limit(1)
-        .set({
-          disableFillerOverlay: booleanToNumber(channel.disableFillerOverlay),
-          groupTitle: channel.groupTitle,
-          icon: JSON.stringify({
-            ...channel.icon,
-            position: !isValidPosition(channel.icon.position)
-              ? ('bottom-right' as const)
-              : channel.icon.position,
-          } satisfies ChannelIcon),
-          name: channel.name,
-          number: channel.number,
-          startTime: channel.startTime,
-          stealth: booleanToNumber(channel.stealth),
-          transcoding: channel.transcoding
-            ? JSON.stringify(
-                channel.transcoding satisfies ChannelTranscodingSettings,
-              )
-            : undefined,
-          watermark: channel.watermark
-            ? JSON.stringify(channel.watermark satisfies ChannelWatermark)
-            : undefined,
-          offline: JSON.stringify({
-            mode: 'pic',
-          } satisfies ChannelOfflineSettings),
-          guideMinimumDuration: channel.guideMinimumDuration,
-        });
-    } else {
-      const now = +dayjs();
-      channelEntity = await getDatabase()
-        .insertInto('channel')
-        .values({
-          uuid: v4(),
-          createdAt: now,
-          updatedAt: now,
+      const { channel: updatedChannel } = await this.channelDB.updateChannel(
+        existingEntity.uuid,
+        {
+          id: existingEntity.uuid,
           duration: channel.duration,
-          disableFillerOverlay: booleanToNumber(channel.disableFillerOverlay),
+          disableFillerOverlay: channel.disableFillerOverlay,
           groupTitle: channel.groupTitle,
-          icon: JSON.stringify({
+          icon: {
             ...channel.icon,
             position: !isValidPosition(channel.icon.position)
               ? ('bottom-right' as const)
               : channel.icon.position,
-          } satisfies ChannelIcon),
+          },
           name: channel.name,
           number: channel.number,
           startTime: channel.startTime,
-          stealth: booleanToNumber(channel.stealth),
-          transcoding: channel.transcoding
-            ? JSON.stringify(
-                channel.transcoding satisfies ChannelTranscodingSettings,
-              )
-            : undefined,
-          watermark: channel.watermark
-            ? JSON.stringify(channel.watermark satisfies ChannelWatermark)
-            : undefined,
-          offline: JSON.stringify({
-            mode: 'pic',
-          } satisfies ChannelOfflineSettings),
+          stealth: channel.stealth,
+          transcoding: channel.transcoding ?? {
+            targetResolution: 'global',
+            videoBitrate: 'global',
+            videoBufferSize: 'global',
+          },
+          watermark: channel.watermark,
+          offline: channel.offline,
           guideMinimumDuration: channel.guideMinimumDuration,
-          streamMode: 'hls',
-        })
-        .returningAll()
-        .executeTakeFirstOrThrow();
-    }
+          streamMode: ChannelStreamModes.Hls,
+          transcodeConfigId: channel.transcodeConfigId,
+        },
+      );
+      channelEntity = updatedChannel;
+    } else {
+      const id = v4();
+      const { channel: newChannel } = await this.channelDB.saveChannel({
+        id: id,
+        duration: channel.duration,
+        disableFillerOverlay: channel.disableFillerOverlay,
+        groupTitle: channel.groupTitle,
+        icon: {
+          ...channel.icon,
+          position: !isValidPosition(channel.icon.position)
+            ? ('bottom-right' as const)
+            : channel.icon.position,
+        },
+        name: channel.name,
+        number: channel.number,
+        startTime: channel.startTime,
+        stealth: channel.stealth,
+        transcoding: channel.transcoding ?? {
+          targetResolution: 'global',
+          videoBitrate: 'global',
+          videoBufferSize: 'global',
+        },
+        watermark: channel.watermark,
+        offline: channel.offline,
+        guideMinimumDuration: channel.guideMinimumDuration,
+        streamMode: ChannelStreamModes.Hls,
+        transcodeConfigId: channel.transcodeConfigId,
+      });
 
-    // const entity = await em.upsert(ChannelEntity, channelEntity, {
-    //   onConflictFields: ['number'],
-    //   onConflictAction: 'ignore',
-    // });
+      channelEntity = newChannel;
+    }
 
     // Init programs, we may have already inserted some
     await getDatabase()
