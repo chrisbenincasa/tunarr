@@ -3,7 +3,6 @@ import { FfmpegCapabilities } from '@/ffmpeg/builder/capabilities/FfmpegCapabili
 import { OutputFormatTypes, VideoFormats } from '@/ffmpeg/builder/constants.ts';
 import { Decoder } from '@/ffmpeg/builder/decoder/Decoder.ts';
 import { VaapiDecoder } from '@/ffmpeg/builder/decoder/vaapi/VaapiDecoder.ts';
-import { Encoder } from '@/ffmpeg/builder/encoder/Encoder.ts';
 import { DeinterlaceFilter } from '@/ffmpeg/builder/filter/DeinterlaceFilter.ts';
 import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.ts';
 import { HardwareDownloadFilter } from '@/ffmpeg/builder/filter/HardwareDownloadFilter.ts';
@@ -30,7 +29,7 @@ import { SoftwarePipelineBuilder } from '@/ffmpeg/builder/pipeline/software/Soft
 import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
 import { Nullable } from '@/types/util.ts';
 import { isDefined, isNonEmptyString } from '@/util/index.ts';
-import { every, filter, head, inRange, isUndefined } from 'lodash-es';
+import { every, head, inRange, isUndefined } from 'lodash-es';
 import { P, match } from 'ts-pattern';
 import {
   H264VaapiEncoder,
@@ -160,6 +159,7 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
     const forceSoftwareOverlay =
       (this.context.hasWatermark && this.context.hasSubtitleOverlay) ||
       ffmpegState.vaapiDriver === 'radeonsi';
+
     if (
       currentState.frameDataLocation === FrameDataLocation.Software &&
       this.context.hasSubtitleOverlay &&
@@ -183,10 +183,7 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
     this.setWatermark(currentState);
 
     const noEncoderSteps = every(
-      filter(
-        this.pipelineSteps,
-        (step): step is Encoder => step instanceof Encoder,
-      ),
+      this.getEncoderSteps(),
       (encoder) => encoder.kind !== 'video',
     );
 
@@ -248,9 +245,11 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
 
       // Color params
 
-      if (this.ffmpegState.encoderHwAccelMode === 'none') {
+      if (
+        this.ffmpegState.encoderHwAccelMode === HardwareAccelerationMode.None
+      ) {
         // Software encoder
-        if (currentState.frameDataLocation === 'hardware') {
+        if (currentState.frameDataLocation === FrameDataLocation.Hardware) {
           // Download
           const desiredBitDepth = this.desiredState.pixelFormat?.bitDepth;
           const hwDownloaFilter =
@@ -267,7 +266,6 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
 
       if (currentState.pixelFormat?.ffmpegName !== pixelFormat.ffmpegName) {
         // Pixel formats
-
         if (
           pixelFormat.name === PixelFormats.YUV420P &&
           this.ffmpegState.outputFormat.type !== OutputFormatTypes.Nut
@@ -275,10 +273,13 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
           pixelFormat = new PixelFormatNv12(pixelFormat.name);
         }
 
-        if (currentState.frameDataLocation === 'hardware') {
+        if (currentState.frameDataLocation === FrameDataLocation.Hardware) {
           steps.push(new VaapiFormatFilter(pixelFormat));
         } else {
-          if (this.ffmpegState.encoderHwAccelMode === 'vaapi') {
+          if (
+            this.ffmpegState.encoderHwAccelMode ===
+            HardwareAccelerationMode.Vaapi
+          ) {
             steps.push(new PixelFormatFilter(pixelFormat));
           } else {
             this.pipelineSteps.push(new PixelFormatOutputOption(pixelFormat));

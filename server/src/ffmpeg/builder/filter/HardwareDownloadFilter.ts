@@ -4,6 +4,7 @@ import {
   FfmpegPixelFormats,
   KnownPixelFormats,
 } from '../format/PixelFormat.ts';
+import { FrameDataLocation } from '../types.ts';
 import { FilterOption } from './FilterOption.ts';
 
 export class HardwareDownloadFilter extends FilterOption {
@@ -13,7 +14,7 @@ export class HardwareDownloadFilter extends FilterOption {
 
   get filter() {
     let hwdownload = '';
-    if (this.currentState.frameDataLocation === 'hardware') {
+    if (this.currentState.frameDataLocation === FrameDataLocation.Hardware) {
       hwdownload = 'hwdownload';
       if (this.currentState.pixelFormat) {
         if (
@@ -33,5 +34,11 @@ export class HardwareDownloadFilter extends FilterOption {
       }
     }
     return hwdownload;
+  }
+
+  nextState(currentState: FrameState): FrameState {
+    return currentState.update({
+      frameDataLocation: FrameDataLocation.Software,
+    });
   }
 }

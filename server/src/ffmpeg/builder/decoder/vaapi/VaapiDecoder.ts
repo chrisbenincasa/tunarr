@@ -4,11 +4,12 @@ import {
   PixelFormatVaapi,
 } from '@/ffmpeg/builder/format/PixelFormat.ts';
 import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
+import { FrameDataLocation } from '../../types.ts';
 
 export class VaapiDecoder extends BaseDecoder {
   readonly name: string = 'implicit_vaapi';
 
-  protected outputFrameDataLocation = 'hardware' as const;
+  protected outputFrameDataLocation = FrameDataLocation.Hardware;
 
   options(): string[] {
     return ['-hwaccel_output_format', 'vaapi'];

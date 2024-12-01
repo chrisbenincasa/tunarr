@@ -46,6 +46,7 @@ export class CacheImageService {
         .where('hash', '=', req.params.hash)
         .selectAll()
         .executeTakeFirst();
+
       if (imgItem) {
         const file = await this.getImageFromCache(imgItem.hash);
         if (isUndefined(file) || !file.length) {
@@ -70,6 +71,7 @@ export class CacheImageService {
       .where('hash', '=', hash)
       .selectAll()
       .executeTakeFirst();
+
     if (imgItem) {
       if (
         !(await this.cacheService.exists(
@@ -79,11 +81,12 @@ export class CacheImageService {
         return await this.requestImageAndStore(imgItem);
       } else {
         return {
-          path: `${this.cacheService.cachePath}/${this.imageCacheFolder}/${imgItem.hash}`,
+          path: this.getCacheFilePath(imgItem),
           mimeType: imgItem.mimeType,
         };
       }
     }
+
     return;
   }
 
@@ -102,7 +105,7 @@ export class CacheImageService {
 
     const mimeType = (response.headers as AxiosHeaders).get('content-type');
     if (!isUndefined(mimeType) && isString(mimeType)) {
-      this.logger.debug('Got image file with mimeType ' + mimeType);
+      this.logger.debug('Got image file with mimeType %s', mimeType);
       await getDatabase()
         .insertInto('cachedImage')
         .values({
@@ -154,6 +157,7 @@ export class CacheImageService {
       .createHash('md5')
       .update(imageUrl)
       .digest('base64');
+
     await getDatabase()
       .insertInto('cachedImage')
       .values({
@@ -162,6 +166,11 @@ export class CacheImageService {
       })
       .onConflict((oc) => oc.column('hash').doUpdateSet({ url: imageUrl }))
       .executeTakeFirst();
+
     return encodedUrl;
+  }
+
+  private getCacheFilePath(cachedImage: CachedImage) {
+    return `${this.cacheService.cachePath}/${this.imageCacheFolder}/${cachedImage.hash}`;
   }
 }

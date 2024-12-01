@@ -43,7 +43,7 @@ import { Nilable, Nullable } from '@/types/util.ts';
 import { ifDefined, isNonEmptyString } from '@/util/index.ts';
 import { Logger, LoggerFactory } from '@/util/logging/LoggerFactory.ts';
 import { getTunarrVersion } from '@/util/version.ts';
-import { find, first, isNil, isNull, isUndefined } from 'lodash-es';
+import { filter, first, isNil, isNull, isUndefined } from 'lodash-es';
 import { MarkRequired } from 'ts-essentials';
 import { P, match } from 'ts-pattern';
 import {
@@ -715,8 +715,8 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     ifDefined(setting, (v) => this.pipelineSteps.push(factory(v)));
   }
 
-  protected getEncoderStep() {
-    return find(
+  protected getEncoderSteps() {
+    return filter(
       this.pipelineSteps,
       (step): step is Encoder => step instanceof Encoder,
     );
