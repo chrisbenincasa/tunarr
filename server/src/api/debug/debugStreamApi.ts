@@ -26,7 +26,7 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
       schema: {
         querystring: z.object({
           duration: z.coerce.number().default(30_000),
-          useNewPipeline: TruthyQueryParam.default(false),
+          useNewPipeline: TruthyQueryParam.optional(),
         }),
       },
     },
@@ -64,7 +64,7 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
     {
       schema: {
         querystring: z.object({
-          useNewPipeline: TruthyQueryParam.default(false),
+          useNewPipeline: TruthyQueryParam.optional(),
         }),
       },
     },
@@ -133,7 +133,7 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
         }),
         querystring: z.object({
           start: z.literal('random').or(z.coerce.number()).optional(),
-          useNewPipeline: TruthyQueryParam.default(false),
+          useNewPipeline: TruthyQueryParam.optional(),
         }),
       },
     },

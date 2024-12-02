@@ -43,7 +43,7 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
           streamMode: ChannelStreamModeSchema.optional(),
           token: z.string().uuid().optional(),
           audioOnly: TruthyQueryParam.optional().default(false),
-          useNewPipeline: TruthyQueryParam.optional().default(false),
+          useNewPipeline: TruthyQueryParam.optional(),
         }),
       },
     },
@@ -55,15 +55,21 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
 
       const mode = req.query.streamMode ?? channel.streamMode;
 
+      const params = new URLSearchParams();
+      params.set('mode', mode);
+      if (!isUndefined(req.query.useNewPipeline)) {
+        params.set('useNewPipeline', `${req.query.useNewPipeline}`);
+      }
+
       switch (mode) {
         case 'hls':
         case 'hls_slower':
           return res.redirect(
-            `/stream/channels/${channel.uuid}.m3u8?mode=${mode}&useNewPipeline=${req.query.useNewPipeline}`,
+            `/stream/channels/${channel.uuid}.m3u8?${params.toString()}`,
           );
         case 'mpegts':
           return res.redirect(
-            `/stream/channels/${channel.uuid}.ts?mode=${mode}&useNewPipeline=${req.query.useNewPipeline}`,
+            `/stream/channels/${channel.uuid}.ts?${params.toString()}`,
           );
       }
     },
@@ -259,7 +265,7 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
         }),
         querystring: z.object({
           mode: ChannelStreamModeSchema.optional(),
-          useNewPipeline: TruthyQueryParam.optional().default(false),
+          useNewPipeline: TruthyQueryParam.optional(),
         }),
       },
     },
