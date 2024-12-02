@@ -89,6 +89,7 @@
     "@types/unzip-stream": "^0.3.4",
     "@types/uuid": "^9.0.6",
     "@types/yargs": "^17.0.29",
+    "@vitest/coverage-v8": "^2.1.8",
     "copyfiles": "^2.2.0",
     "del-cli": "^3.0.0",
     "dotenv": "^16.4.5",
@@ -119,7 +120,7 @@
     "typescript": "5.4.3",
     "typescript-eslint": "^7.5.0",
     "unzip-stream": "^0.3.4",
-    "vitest": "^2.0.5"
+    "vitest": "^2.1.8"
   },
   "mikro-orm": {
     "configPaths": [

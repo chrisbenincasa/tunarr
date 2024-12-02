@@ -7,6 +7,7 @@ import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
 import { Nullable } from '@/types/util.ts';
 import { isNonEmptyString } from '@/util/index.ts';
 import { isNull } from 'lodash-es';
+import { FrameDataLocation } from '../../types.ts';
 
 export class HardwareDownloadCudaFilter extends FilterOption {
   public affectsFrameState: boolean = true;
@@ -41,14 +42,19 @@ export class HardwareDownloadCudaFilter extends FilterOption {
   }
 
   nextState(currentState: FrameState): FrameState {
-    let nextState = currentState.updateFrameLocation('software');
+    let nextState = currentState.updateFrameLocation(
+      FrameDataLocation.Software,
+    );
+
     if (!isNull(this.targetPixelFormat)) {
       return nextState.update({ pixelFormat: this.targetPixelFormat });
     }
 
     if (!isNull(this.currentPixelFormat)) {
       if (this.currentPixelFormat.ffmpegName === FfmpegPixelFormats.NV12) {
-        nextState = nextState.update({ pixelFormat: null });
+        nextState = nextState.update({
+          pixelFormat: this.currentPixelFormat.unwrap(),
+        });
       } else {
         nextState = nextState.update({ pixelFormat: this.currentPixelFormat });
       }

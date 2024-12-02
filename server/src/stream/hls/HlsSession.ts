@@ -145,7 +145,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
       async (result) => {
         this.logger.debug(
           'About to play item: %s',
-          JSON.stringify(lineupItemResult, undefined, 4),
+          JSON.stringify(result, undefined, 4),
         );
         const context = new PlayerContext(
           result.lineupItem,

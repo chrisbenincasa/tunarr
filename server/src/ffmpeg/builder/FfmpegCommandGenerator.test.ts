@@ -1,4 +1,4 @@
-import { bootstrapTunarr } from '@/ffmpeg/builder/bootstrap.ts';
+import { bootstrapTunarr } from '@/bootstrap.ts';
 import { setGlobalOptions } from '@/globals.ts';
 import tmp from 'tmp';
 import { FfmpegCommandGenerator } from './FfmpegCommandGenerator.ts';
