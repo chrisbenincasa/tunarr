@@ -39,7 +39,7 @@ export class ScaleVaapiFilter extends FilterOption {
       // anamorphic edge case? what is this?
 
       if (this.currentState.isAnamorphic) {
-        squareScale = `scale_vaapi=iw*sar:ih${format},setsar=1`;
+        squareScale = `scale_vaapi=iw*sar:ih${format},setsar=1,`;
       } else {
         aspectRatio += ',setsar=1';
       }
