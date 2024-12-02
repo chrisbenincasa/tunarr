@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.16.7](https://github.com/chrisbenincasa/tunarr/compare/v0.16.6...v0.16.7) (2024-12-02)
+
+
+### Bug Fixes
+
+* add missing comma after setsar in ScaleVaapiFilter ([3df4300](https://github.com/chrisbenincasa/tunarr/commit/3df43005bc78e5a9745a6241648748073d1e2754))
+* allow choosing channel redirects in time slots, regardless of current lineup ([f6a127a](https://github.com/chrisbenincasa/tunarr/commit/f6a127a3c1d1d5d8e69b9dcbc896dd4f73f0dd02))
+* do not use default value for useNewPipeline query param in APIs ([e086ef4](https://github.com/chrisbenincasa/tunarr/commit/e086ef47edeae72f0b1c01b32915fdd24e06b088))
+* fix start time / pad precision for random slots ([d4fa0af](https://github.com/chrisbenincasa/tunarr/commit/d4fa0af117974e41bd0aa07ec74bfe070582cdd6))
+* implement intermittent watermarks in nvidia/vaapi ffmpeg pipelines ([97123b9](https://github.com/chrisbenincasa/tunarr/commit/97123b96bf8a0d6a865f4be9f88cef40f5d67a9d))
+* infinite scroll on list view ([#994](https://github.com/chrisbenincasa/tunarr/issues/994)) ([85666c6](https://github.com/chrisbenincasa/tunarr/commit/85666c6263f15cb0fd786f2afaa1dbd75dccb442))
+* properly parse .env file in bundle script for edge builds ([39e9d68](https://github.com/chrisbenincasa/tunarr/commit/39e9d6881d0c7dc8afe661848be9148d14bcfe7c))
+* redirect time slots now take up the whole slot duration ([38c03fc](https://github.com/chrisbenincasa/tunarr/commit/38c03fc7cdf6746c42cb4912e74c1335a823c86c))
+* set correct frame data location in HardwareDownloadFilter nextState ([05fb6f2](https://github.com/chrisbenincasa/tunarr/commit/05fb6f287345e62abfa09e8a69f092a6790af267))
+
 ## [0.16.6](https://github.com/chrisbenincasa/tunarr/compare/v0.16.5...v0.16.6) (2024-11-24)
 
 
