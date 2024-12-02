@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import esbuild from 'esbuild';
 import esbuildPluginPino from 'esbuild-plugin-pino';
 import fg from 'fast-glob';
