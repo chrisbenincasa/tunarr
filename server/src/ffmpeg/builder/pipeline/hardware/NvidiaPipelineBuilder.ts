@@ -455,9 +455,15 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
 
     if (this.watermarkInputSource.watermark.opacity !== 100) {
       this.watermarkInputSource.filterSteps.push(
-        new WatermarkOpacityFilter(this.watermarkInputSource.watermark.opacity),
+        new WatermarkOpacityFilter(
+          this.watermarkInputSource.watermark.opacity / 100.0,
+        ),
       );
     }
+
+    this.watermarkInputSource.filterSteps.push(
+      ...this.getWatermarkFadeFilters(this.watermarkInputSource.watermark),
+    );
 
     this.watermarkInputSource.filterSteps.push(
       new PixelFormatFilter(new PixelFormatYuva420P()),

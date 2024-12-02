@@ -415,6 +415,10 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
     }
 
     watermarkInput.filterSteps.push(
+      ...this.getWatermarkFadeFilters(watermarkInput.watermark),
+    );
+
+    watermarkInput.filterSteps.push(
       new PixelFormatFilter(new PixelFormatYuva420P()),
     );
 
