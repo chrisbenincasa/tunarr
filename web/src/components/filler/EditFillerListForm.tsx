@@ -1,32 +1,20 @@
-import { isNonEmptyString } from '@/helpers/util.ts';
 import { removeFillerListProgram } from '@/store/entityEditor/util.ts';
 import {
   clearCurrentFillerList,
   updateCurrentFillerList,
 } from '@/store/fillerListEditor/action.ts';
 import { Tv } from '@mui/icons-material';
-import DeleteIcon from '@mui/icons-material/Delete';
-import {
-  Button,
-  Divider,
-  IconButton,
-  List,
-  ListItem,
-  ListItemText,
-  Stack,
-  TextField,
-  Tooltip,
-} from '@mui/material';
+import { Button, Divider, Stack, TextField, Tooltip } from '@mui/material';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { createExternalId } from '@tunarr/shared';
 import { FillerList } from '@tunarr/types';
 import { useCallback, useEffect } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 import { UIFillerListProgram } from '../../types/index.ts';
+import ChannelProgrammingList from '../channel_config/ChannelProgrammingList.tsx';
 
 export type FillerListMutationArgs = {
   id?: string;
@@ -57,7 +45,6 @@ export function EditFillerListForm({
     handleSubmit,
     getValues,
     formState: { isValid },
-    register,
   } = useForm<FillerListFormType>({
     mode: 'onChange',
     defaultValues: {
@@ -82,8 +69,10 @@ export function EditFillerListForm({
         queryKey: ['fillers'],
         exact: false,
       });
-      clearCurrentFillerList();
-      navigate({ to: '/library/fillers' }).catch(console.warn);
+      if (isNew) {
+        clearCurrentFillerList();
+        navigate({ to: '/library/fillers' }).catch(console.warn);
+      }
     },
     onError: (e) => console.error(e),
   });
@@ -120,69 +109,6 @@ export function EditFillerListForm({
     }).catch(console.warn);
   };
 
-  const renderPrograms = () => {
-    return fillerListPrograms.length > 0 ? (
-      fillerListPrograms.map((p, idx) => {
-        let id: string;
-        let title: string;
-        switch (p.type) {
-          case 'custom':
-            id = p.id;
-            title = 'Custom';
-            break;
-          case 'content':
-            if (p.episodeTitle) {
-              title = `${p.title} - ${p.episodeTitle}`;
-            } else {
-              title = p.title;
-            }
-
-            if (p.persisted) {
-              id = p.id!;
-            } else if (
-              isNonEmptyString(p.externalSourceType) &&
-              isNonEmptyString(p.externalSourceName) &&
-              isNonEmptyString(p.externalKey)
-            ) {
-              id = createExternalId(
-                p.externalSourceType,
-                p.externalSourceName,
-                p.externalKey,
-              );
-            } else {
-              id = 'unknown';
-            }
-
-            break;
-        }
-
-        const key = `${p.type}|${id}`;
-
-        return (
-          <ListItem
-            key={key}
-            secondaryAction={
-              <IconButton
-                onClick={() => deleteProgramAtIndex(idx)}
-                edge="end"
-                aria-label="delete"
-              >
-                <DeleteIcon />
-              </IconButton>
-            }
-          >
-            <ListItemText
-              primary={title}
-              sx={{ fontStyle: p.persisted ? 'normal' : 'italic' }}
-            />
-          </ListItem>
-        );
-      })
-    ) : (
-      <Typography align="center">No media added yet.</Typography>
-    );
-  };
-
   return (
     <Box component="form" onSubmit={handleSubmit(saveFiller, console.error)}>
       <Stack gap={2}>
@@ -196,7 +122,7 @@ export function EditFillerListForm({
         <Divider />
 
         <Box>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
             <Typography variant="h6" sx={{ flex: 1 }}>
               Programming
             </Typography>
@@ -212,13 +138,19 @@ export function EditFillerListForm({
               </Button>
             </Tooltip>
           </Box>
-          <Box display="flex">
-            <Box sx={{ flex: 1, maxHeight: 400, overflowY: 'auto' }}>
-              <List {...register('programs', { minLength: 1 })} dense>
-                {renderPrograms()}
-              </List>
-            </Box>
-          </Box>
+          <ChannelProgrammingList
+            type="selector"
+            programListSelector={(s) => s.fillerListEditor.programList}
+            enableDnd={false}
+            enableRowEdit={false}
+            showProgramCount
+            deleteProgram={deleteProgramAtIndex}
+            virtualListProps={{
+              width: '100%',
+              height: 600,
+              itemSize: 35,
+            }}
+          />
         </Box>
         <Stack
           spacing={2}

@@ -17,7 +17,7 @@ import Paper from '@mui/material/Paper';
 import TableContainer from '@mui/material/TableContainer';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { FillerList } from '@tunarr/types';
 import { find } from 'lodash-es';
 import {
@@ -67,6 +67,17 @@ export default function FillerListsPage() {
   });
 
   const { data: fillerLists } = useFillerLists();
+  const navigate = useNavigate();
+
+  const handleFillterNavigation = (
+    _: React.MouseEvent<HTMLTableRowElement, MouseEvent>,
+    id: string,
+  ) => {
+    navigate({
+      to: `/library/fillers/$fillerId/edit`,
+      params: { fillerId: id },
+    }).catch(console.error);
+  };
 
   const renderConfirmationDialog = () => {
     return (
@@ -109,7 +120,6 @@ export default function FillerListsPage() {
         <Box sx={{ display: 'flex', justifyContent: 'end', width: '100%' }}>
           <Tooltip title="Edit" placement="top">
             <IconButton
-              color="primary"
               to={`/library/fillers/${filler.id}/edit`}
               component={Link}
             >
@@ -117,17 +127,14 @@ export default function FillerListsPage() {
             </IconButton>
           </Tooltip>
           <Tooltip title="Delete" placement="top">
-            <IconButton
-              color="error"
-              onClick={() => setDeleteConfirmationId(filler.id)}
-            >
+            <IconButton onClick={() => setDeleteConfirmationId(filler.id)}>
               <Delete />
             </IconButton>
           </Tooltip>
         </Box>
       );
     },
-    [deleteFillerList],
+    [],
   );
 
   const columns = useMemo<MRT_ColumnDef<FillerList>[]>(
@@ -151,10 +158,11 @@ export default function FillerListsPage() {
     enableRowActions: true,
     layoutMode: 'grid',
     renderRowActions: renderActionCell,
-    muiTableBodyRowProps: () => ({
+    muiTableBodyRowProps: ({ row }) => ({
       sx: {
         cursor: 'pointer',
       },
+      onClick: (event) => handleFillterNavigation(event, row.original.id),
     }),
     displayColumnDefOptions: {
       'mrt-row-actions': {
