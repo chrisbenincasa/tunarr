@@ -61,8 +61,13 @@ export class XmlTvWriter {
       id: this.getChannelId(channel),
       displayName: [
         {
+          _value: `${channel.number} ${escape(channel.name)}`,
+        },
+        {
+          _value: `${channel.number}`,
+        },
+        {
           _value: escape(channel.name),
-          lang: 'en',
         },
       ],
     };
