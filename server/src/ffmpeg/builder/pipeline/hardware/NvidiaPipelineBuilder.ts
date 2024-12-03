@@ -33,8 +33,8 @@ import {
   HardwareAccelerationMode,
 } from '@/ffmpeg/builder/types.ts';
 import { Nullable } from '@/types/util.ts';
-import { isNonEmptyString } from '@/util/index.ts';
-import { isNil, isNull, reject, some } from 'lodash-es';
+import { isDefined, isNonEmptyString } from '@/util/index.ts';
+import { isEmpty, isNil, isNull, reject, some } from 'lodash-es';
 import {
   NvidiaH264Encoder,
   NvidiaHevcEncoder,
@@ -179,6 +179,12 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       }
     }
 
+    const needsSoftwareWatermarkOverlay =
+      (this.context.hasWatermark &&
+        !isEmpty(this.watermarkInputSource?.watermark.fadeConfig)) ||
+      (isDefined(this.watermarkInputSource?.watermark.duration) &&
+        this.watermarkInputSource.watermark.duration > 0);
+
     if (
       currentState.frameDataLocation === FrameDataLocation.Software &&
       currentState.bitDepth === 8 &&
@@ -186,11 +192,25 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       // filter unless we're on >=5.0.0 because overlay_cuda does
       // not support the W/w/H/h params on earlier versions
       this.ffmpegState.isAtLeastVersion({ major: 5 }) &&
-      this.watermarkInputSource
+      !needsSoftwareWatermarkOverlay
     ) {
       const filter = new HardwareUploadCudaFilter(currentState);
       currentState = filter.nextState(currentState);
       this.videoInputSource.filterSteps.push(filter);
+    }
+
+    // Overlay watermark in software if we have any timeline-enabled features
+    // (e.g. intermittent watermarks or absolute duration)
+    if (
+      currentState.frameDataLocation === FrameDataLocation.Hardware &&
+      needsSoftwareWatermarkOverlay
+    ) {
+      const hwDownloadFilter = new HardwareDownloadCudaFilter(
+        currentState.pixelFormat,
+        null,
+      );
+      currentState = hwDownloadFilter.nextState(currentState);
+      this.videoInputSource.filterSteps.push(hwDownloadFilter);
     }
 
     currentState = this.setWatermark(currentState);
@@ -221,12 +241,6 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
     }
 
     currentState = this.setPixelFormat(currentState);
-
-    if (currentState.frameDataLocation === FrameDataLocation.Software) {
-      this.videoInputSource.filterSteps.push(
-        new HardwareUploadCudaFilter(currentState),
-      );
-    }
 
     this.context.filterChain.videoFilterSteps =
       this.videoInputSource.filterSteps;
@@ -420,9 +434,9 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
         ) {
           // We are in software with possibly hardware formatted pixels... if the underlying
           // pixel format type is the same as our desired type, we shouldn't need to do anything!
-          this.pipelineSteps.push(new PixelFormatFilter(desiredFormat));
+          // this.pipelineSteps.push(new PixelFormatFilter(desiredFormat));
           // Using the output option seems to break with NVENC...
-          // this.pipelineSteps.push(new PixelFormatOutputOption(desiredFormat));
+          this.pipelineSteps.push(new PixelFormatOutputOption(desiredFormat));
         }
       }
 
@@ -485,6 +499,11 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
           overlayFilter,
         );
         currentState = overlayFilter.nextState(currentState);
+      } else {
+        this.logger.warn(
+          'Cannot overlay watermark without a known pixel format target! Desired state was: %s',
+          this.desiredState.pixelFormat?.name,
+        );
       }
     } else {
       this.watermarkInputSource.filterSteps.push(

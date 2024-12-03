@@ -1,7 +1,7 @@
 import { OverlayWatermarkFilter } from '@/ffmpeg/builder/filter/watermark/OverlayWatermarkFilter.ts';
 import { PixelFormatUnknown } from '@/ffmpeg/builder/format/PixelFormat.ts';
 import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
-import { FrameSize } from '@/ffmpeg/builder/types.ts';
+import { FrameDataLocation, FrameSize } from '@/ffmpeg/builder/types.ts';
 import { Watermark } from '@tunarr/types';
 
 export class OverlayWatermarkCudaFilter extends OverlayWatermarkFilter {
@@ -13,6 +13,6 @@ export class OverlayWatermarkCudaFilter extends OverlayWatermarkFilter {
   }
 
   nextState(currentState: FrameState): FrameState {
-    return currentState.updateFrameLocation('hardware');
+    return currentState.updateFrameLocation(FrameDataLocation.Hardware);
   }
 }

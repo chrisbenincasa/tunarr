@@ -1,5 +1,6 @@
 import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.ts';
 import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
+import { FrameDataLocation } from '../../types.ts';
 
 export class HardwareUploadCudaFilter extends FilterOption {
   public affectsFrameState: boolean = true;
@@ -9,7 +10,7 @@ export class HardwareUploadCudaFilter extends FilterOption {
   }
 
   get filter() {
-    if (this.currentState.frameDataLocation === 'hardware') {
+    if (this.currentState.frameDataLocation === FrameDataLocation.Hardware) {
       return '';
     } else {
       return 'hwupload_cuda';
@@ -17,8 +18,6 @@ export class HardwareUploadCudaFilter extends FilterOption {
   }
 
   nextState(currentState: FrameState): FrameState {
-    return currentState.update({
-      frameDataLocation: 'hardware',
-    });
+    return currentState.updateFrameLocation(FrameDataLocation.Hardware);
   }
 }

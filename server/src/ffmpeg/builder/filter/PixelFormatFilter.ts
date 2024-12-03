@@ -11,7 +11,6 @@ export class PixelFormatFilter extends FilterOption {
     this.filter = `format=${pixelFormat.ffmpegName}`;
   }
 
-  // TOOD: update pixel format in state
   nextState(currentState: FrameState): FrameState {
     return currentState.update({
       pixelFormat: this.pixelFormat,

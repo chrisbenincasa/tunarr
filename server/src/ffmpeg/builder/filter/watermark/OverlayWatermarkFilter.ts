@@ -9,7 +9,7 @@ export class OverlayWatermarkFilter extends FilterOption {
   public filter: string;
 
   constructor(
-    private watermark: Watermark,
+    protected watermark: Watermark,
     private resolution: FrameSize,
     // @ts-expect-error - We're going to use this soon
     private squarePixelResolution: FrameSize,
@@ -52,8 +52,11 @@ export class OverlayWatermarkFilter extends FilterOption {
   }
 
   private generateFilter() {
-    return `overlay=${this.getPosition()}:format=${
-      this.outputPixelFormat.bitDepth === 10 ? 1 : 0
-    }`;
+    const enablePart =
+      this.watermark.duration > 0
+        ? `:enable='between(t,0,${this.watermark.duration})'`
+        : '';
+    const format = this.outputPixelFormat.bitDepth === 10 ? 1 : 0;
+    return `overlay=${this.getPosition()}:format=${format}${enablePart}`;
   }
 }

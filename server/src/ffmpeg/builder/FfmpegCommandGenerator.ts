@@ -36,16 +36,6 @@ export class FfmpegCommandGenerator {
     concatInputSource: Nullable<ConcatInputSource>,
     steps: PipelineStep[],
   ): string[] {
-    // const stepsByType = reduce(
-    //   steps,
-    //   (acc, curr) => {
-    //     acc[curr.type].push(curr);
-    //     return acc;
-    //   },
-    //   emptyStepMap(),
-    // );
-
-    // const args: string[] = [...flatMap(steps, (step) => step.globalOptions())];
     const args = [
       ...flatMap(filter(steps, isGlobalOption), (step) => step.options()),
     ];
