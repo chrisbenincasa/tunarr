@@ -12,6 +12,7 @@ export const SettingsViewCommand: CommandModule<
   SettingsViewCommandArgs
 > = {
   command: 'view',
+  describe: 'View tunarr settings.',
   builder: (yargs) =>
     yargs
       .option('pretty', {
