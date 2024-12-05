@@ -6,7 +6,7 @@ import { makeLocalUrl } from '@/util/serverUtil.ts';
 import { FfmpegSettings } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { Duration } from 'dayjs/plugin/duration.js';
-import { isUndefined } from 'lodash-es';
+import { find, first, isUndefined } from 'lodash-es';
 import { DeepReadonly } from 'ts-essentials';
 import { FfmpegPlaybackParamsCalculator } from './FfmpegPlaybackParamsCalculator.ts';
 import { FfmpegProcess } from './FfmpegProcess.ts';
@@ -334,7 +334,12 @@ export class FfmpegStreamFactory extends IFFMPEG {
     let audioInput: AudioInputSource;
     if (isDefined(streamDetails.audioDetails)) {
       // Just pick the first one for now..
-      const [audioStream] = streamDetails.audioDetails;
+      const defaultAudioStream = find(
+        streamDetails.audioDetails,
+        (stream) => !!stream.default,
+      );
+      const audioStream =
+        defaultAudioStream ?? first(streamDetails.audioDetails);
       const audioStreamIndex = isNonEmptyString(audioStream.index)
         ? parseInt(audioStream.index)
         : 1;
