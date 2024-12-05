@@ -29,7 +29,7 @@
     "bundle": "tsup",
     "build": "tsup --dts",
     "clean": "rimraf ./build/",
-    "dev": "tsup --watch",
+    "dev": "tsup --watch --dts",
     "test": "vitest"
   },
   "dependencies": {

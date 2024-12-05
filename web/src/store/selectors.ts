@@ -90,9 +90,23 @@ export const useChannelEditorLazy = () => {
     [channelEditor.programList, channelEditor.programLookup, materializeLineup],
   );
 
+  const materializeOriginalLineup = useCallback(
+    () =>
+      materializeLineup(
+        channelEditor.originalProgramList,
+        channelEditor.programLookup,
+      ),
+    [
+      channelEditor.originalProgramList,
+      channelEditor.programLookup,
+      materializeLineup,
+    ],
+  );
+
   return {
     channelEditor,
-    getMaterializedProgramList: materializeNewLineup,
+    materializeNewProgramList: materializeNewLineup,
+    materializeOriginalProgramList: materializeOriginalLineup,
   };
 };
 

@@ -22,8 +22,8 @@ import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import { ChannelProgram } from '@tunarr/types';
 import dayjs, { Dayjs } from 'dayjs';
-import { findIndex, isUndefined, map, sumBy } from 'lodash-es';
-import { CSSProperties, useCallback, useState } from 'react';
+import { findIndex, isString, isUndefined, map, sumBy } from 'lodash-es';
+import React, { CSSProperties, useCallback, useState } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
 import {
   FixedSizeList,
@@ -63,6 +63,7 @@ type CommonProps = {
   enableRowEdit?: boolean;
   enableRowDelete?: boolean;
   showProgramCount?: boolean;
+  listEmptyMessage?: React.ReactNode;
 };
 
 type DirectPassedProgramProps = {
@@ -90,6 +91,7 @@ const defaultProps: MarkRequired<
   deleteProgram: deleteProgram,
   enableDnd: true,
   showProgramCount: true,
+  listEmptyMessage: 'No ',
 };
 
 type ListItemProps = {
@@ -430,11 +432,20 @@ export default function ChannelProgrammingList(props: Props) {
     }
 
     if (programList.length === 0) {
+      const msg = isString(props.listEmptyMessage) ? (
+        <Typography align="center" sx={{ my: 4, fontStyle: 'italic' }}>
+          {props.listEmptyMessage}
+        </Typography>
+      ) : (
+        props.listEmptyMessage
+      );
       return (
         <Box width={'100%'}>
-          <Typography align="center" sx={{ my: 4, fontStyle: 'italic' }}>
-            No programming added yet
-          </Typography>
+          {msg ?? (
+            <Typography align="center" sx={{ my: 4, fontStyle: 'italic' }}>
+              No programming added yet
+            </Typography>
+          )}
         </Box>
       );
     }

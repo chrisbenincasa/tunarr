@@ -135,6 +135,15 @@ export function createProgramIterators(
           const program = first(programBySlotType.redirect[slotId] ?? []);
           if (program) {
             acc[id] = new StaticProgramIterator(program);
+          } else {
+            acc[id] = new StaticProgramIterator({
+              type: 'redirect',
+              channel: slot.programming.channelId,
+              channelName: slot.programming.channelName ?? '',
+              channelNumber: -1,
+              duration: 1,
+              persisted: false,
+            });
           }
         } else if (slot.programming.type === 'custom-show') {
           acc[id] =

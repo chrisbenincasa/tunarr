@@ -8,11 +8,19 @@ import {
   Select,
   Tooltip,
 } from '@mui/material';
-import { RandomSlot, RandomSlotProgramming } from '@tunarr/types/api';
+import {
+  RandomSlot,
+  RandomSlotProgramming,
+  RedirectProgrammingRandomSlot,
+} from '@tunarr/types/api';
 import { map, range } from 'lodash-es';
 import React, { useCallback } from 'react';
 import { Control, UseFormSetValue, useWatch } from 'react-hook-form';
-import { DropdownOption, ProgramOption } from '../../helpers/slotSchedulerUtil';
+import {
+  DropdownOption,
+  ProgramOption,
+  RedirectProgramOption,
+} from '../../helpers/slotSchedulerUtil';
 import { handleNumericFormValue } from '../../helpers/util';
 import { RandomSlotForm } from '../../pages/channels/RandomSlotEditorPage';
 
@@ -80,10 +88,15 @@ export const RandomSlotRow = React.memo(
             type: 'flex',
           };
         } else if (slotId.startsWith('redirect')) {
+          const channelId = slotId.split('.')[1];
           slotProgram = {
             type: 'redirect',
-            channelId: slotId.split('.')[1],
-          };
+            channelId,
+            channelName: programOptions.find(
+              (opt): opt is RedirectProgramOption =>
+                opt.type === 'redirect' && opt.channelId === channelId,
+            )?.channelName,
+          } satisfies RedirectProgrammingRandomSlot;
         } else if (slotId.startsWith('custom-show')) {
           slotProgram = {
             type: 'custom-show',

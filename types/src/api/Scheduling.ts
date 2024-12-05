@@ -20,6 +20,7 @@ const FlexProgrammingSlotSchema = z.object({
 const RedirectProgrammingSlotSchema = z.object({
   type: z.literal('redirect'),
   channelId: z.string(),
+  channelName: z.string().optional(),
 });
 
 const CustomShowProgrammingSlotSchema = z.object({

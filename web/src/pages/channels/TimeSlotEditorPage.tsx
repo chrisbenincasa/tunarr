@@ -109,7 +109,7 @@ function sanitizeStartTimes(schedule: TimeSlotSchedule) {
 export default function TimeSlotEditorPage() {
   const {
     channelEditor: { currentEntity: channel, schedule: loadedSchedule },
-    getMaterializedProgramList,
+    materializeNewProgramList: getMaterializedProgramList,
   } = useChannelEditorLazy();
 
   const [startTime, setStartTime] = useState(
