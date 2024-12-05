@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.16.8](https://github.com/chrisbenincasa/tunarr/compare/v0.16.7...v0.16.8) (2024-12-05)
+
+
+### Bug Fixes
+
+* attempt to use default audio stream before others ([aeee37b](https://github.com/chrisbenincasa/tunarr/commit/aeee37b488df99a953afbd7df632fa79cedd0aff))
+* fix display names in some clients ([518d280](https://github.com/chrisbenincasa/tunarr/commit/518d2800e0f89a7e1f7cd02257eed66e2da86b99))
+* fixes for CUDA pipeline state management ([#998](https://github.com/chrisbenincasa/tunarr/issues/998)) ([bbb9f76](https://github.com/chrisbenincasa/tunarr/commit/bbb9f76f99964d908bc2d3ef56b862935750aadf))
+* implement "slot pad" mode in random slots ([#1000](https://github.com/chrisbenincasa/tunarr/issues/1000)) ([ec8b943](https://github.com/chrisbenincasa/tunarr/commit/ec8b9433a4a692da46d26440987ddc396e75d178))
+
 ## [0.16.7](https://github.com/chrisbenincasa/tunarr/compare/v0.16.6...v0.16.7) (2024-12-02)
 
 
