@@ -13,7 +13,6 @@ import {
   last,
   map,
   reject,
-  slice,
   sortBy,
 } from 'lodash-es';
 import { MersenneTwister19937, Random } from 'random-js';
@@ -40,35 +39,37 @@ export type PaddedProgram = {
 
 // Adds flex time to the end of a programs array.
 // If the final program is flex itself, just extends it
-// Returns a new array and amount to increment the cursor
-function pushOrExtendFlex(
-  lineup: ChannelProgram[],
-  flexDuration: Duration,
-): [number, ChannelProgram[]] {
-  const durationMs = flexDuration.asMilliseconds();
-  if (durationMs <= 0) {
-    return [0, lineup];
-  }
+// Mutates the lineup array
+// function pushOrExtendFlex(
+//   lineup: ChannelProgram[],
+//   flexDuration: Duration,
+// ): [number, ChannelProgram[]] {
+//   const durationMs = flexDuration.asMilliseconds();
+//   if (durationMs <= 0) {
+//     return [0, lineup];
+//   }
 
-  const lastLineupItem = last(lineup);
-  if (lastLineupItem && isFlexProgram(lastLineupItem)) {
-    const newDuration = lastLineupItem.duration + durationMs;
-    const newItem: FlexProgram = {
-      type: 'flex',
-      duration: newDuration,
-      persisted: false,
-    };
-    return [durationMs, [...slice(lineup, 0, lineup.length - 1), newItem]];
-  }
+//   const lastLineupItem = last(lineup);
+//   if (lastLineupItem && isFlexProgram(lastLineupItem)) {
+//     const newDuration = lastLineupItem.duration + durationMs;
+//     const newItem: FlexProgram = {
+//       type: 'flex',
+//       duration: newDuration,
+//       persisted: false,
+//     };
+//     lineup[lineup.length - 1] = newItem;
+//     return [durationMs, lineup];
+//   }
 
-  const newItem: FlexProgram = {
-    type: 'flex',
-    persisted: false,
-    duration: durationMs,
-  };
+//   const newItem: FlexProgram = {
+//     type: 'flex',
+//     persisted: false,
+//     duration: durationMs,
+//   };
 
-  return [durationMs, [...lineup, newItem]];
-}
+//   lineup.push(newItem);
+//   return [durationMs, lineup];
+// }
 
 function createPaddedProgram(program: ChannelProgram, padMs: number) {
   const rem = program.duration % padMs;
@@ -115,11 +116,20 @@ export function distributeFlex(
   });
 }
 
+const createFlex = function (flexDuration: Duration) {
+  return {
+    type: 'flex',
+    persisted: false,
+    duration: +flexDuration,
+  } satisfies FlexProgram;
+};
+
 // eslint-disable-next-line @typescript-eslint/require-await
-export async function scheduleRandomSlots(
+export async function* scheduleRandomSlots(
   schedule: RandomSlotSchedule,
   channelProgramming: ChannelProgram[],
-) {
+  startTime: dayjs.Dayjs = dayjs.tz(),
+): AsyncGenerator<ChannelProgram> {
   // Load programs
   // TODO include custom programs!
   const allPrograms = reject(channelProgramming, (p) => isFlexProgram(p));
@@ -129,29 +139,28 @@ export async function scheduleRandomSlots(
     programBySlotType,
   );
 
-  const now = dayjs.tz();
-  const t0 = now;
+  const t0 = startTime;
   const upperLimit = t0.add(schedule.maxDays + 1, 'day');
 
   let timeCursor = t0;
-  let channelPrograms: ChannelProgram[] = [];
 
-  const pushFlex = (flexDuration: Duration) => {
-    const [inc, newPrograms] = pushOrExtendFlex(channelPrograms, flexDuration);
-    timeCursor = timeCursor.add(inc);
-    channelPrograms = newPrograms;
+  const advanceTime = (by: number | Duration) => {
+    timeCursor = dayjs.isDuration(by) ? timeCursor.add(by) : timeCursor.add(by);
   };
 
   const slotsLastPlayedMap: Record<number, number> = {};
 
   while (timeCursor.isBefore(upperLimit)) {
+    // await flushEventLoop();
     let currSlot: RandomSlot | null = null;
     let remaining: number = 0;
 
     // Pad time
-    const m = timeCursor.mod(schedule.padMs).asMilliseconds();
+    const m = +timeCursor.mod(schedule.padMs);
     if (m > constants.SLACK && schedule.padMs - m > constants.SLACK) {
-      pushFlex(dayjs.duration(schedule.padMs - m));
+      const duration = dayjs.duration(schedule.padMs - m);
+      yield createFlex(duration);
+      advanceTime(duration);
       continue;
     }
 
@@ -175,41 +184,46 @@ export async function scheduleRandomSlots(
 
       if (random.bool(slot.weight, n)) {
         currSlot = slot;
-        // slotIndex = i;
         remaining = slot.durationMs;
       }
     }
 
     if (isNull(currSlot)) {
       const duration = dayjs.duration(+minNextTime.subtract(+timeCursor));
-      pushFlex(
-        // Weird
-        duration,
-      );
-      timeCursor = timeCursor.add(duration);
+      yield createFlex(duration);
+      advanceTime(duration);
       continue;
     }
 
-    const program = getNextProgramForSlot(
+    let program = getNextProgramForSlot(
       currSlot,
       programmingIteratorsById,
       remaining,
     );
 
     if (isNull(program) || isFlexProgram(program)) {
-      pushFlex(dayjs.duration(remaining));
+      yield createFlex(dayjs.duration(remaining));
+      advanceTime(remaining);
       continue;
+    }
+
+    // HACK
+    if (program.type === 'redirect') {
+      program = { ...program, duration: remaining };
     }
 
     // Program longer than we have left? Add it and move on...
     if (program && program.duration > remaining) {
-      channelPrograms.push(program);
+      yield program;
       advanceIterator(currSlot, programmingIteratorsById);
-      timeCursor = timeCursor.add(program.duration);
+      advanceTime(program.duration);
       continue;
     }
 
-    const paddedProgram = createPaddedProgram(program, schedule.padMs);
+    const paddedProgram = createPaddedProgram(
+      program,
+      schedule.padStyle === 'slot' ? 1 : schedule.padMs,
+    );
     let totalDuration = paddedProgram.totalDuration;
     advanceIterator(currSlot, programmingIteratorsById);
     const paddedPrograms: PaddedProgram[] = [paddedProgram];
@@ -224,21 +238,25 @@ export async function scheduleRandomSlots(
       if (totalDuration + nextProgram.duration > remaining) {
         break;
       }
-      const nextPadded = createPaddedProgram(nextProgram, schedule.padMs);
+      const nextPadded = createPaddedProgram(
+        nextProgram,
+        schedule.padStyle === 'slot' ? 1 : schedule.padMs,
+      );
       paddedPrograms.push(nextPadded);
       advanceIterator(currSlot, programmingIteratorsById);
       totalDuration += nextPadded.totalDuration;
     }
 
     let remainingTimeInSlot = 0;
-
-    // Decipher this...
-    const temt = timeCursor
-      .add(totalDuration)
-      .mod(schedule.padMs)
-      .asMilliseconds();
-    if (temt >= constants.SLACK && temt < schedule.padMs - constants.SLACK) {
-      remainingTimeInSlot = schedule.padMs - temt;
+    const startOfNextBlock = +timeCursor.add(totalDuration);
+    // .mod(schedule.padMs)
+    // .asMilliseconds();
+    if (
+      startOfNextBlock % schedule.padMs >= constants.SLACK &&
+      startOfNextBlock % schedule.padMs < schedule.padMs - constants.SLACK
+    ) {
+      remainingTimeInSlot =
+        schedule.padMs - (startOfNextBlock % schedule.padMs);
     }
 
     // We have two options here if there is remaining time in the slot
@@ -266,15 +284,34 @@ export async function scheduleRandomSlots(
       lastProgram.totalDuration += remainingTimeInSlot;
     }
 
-    forEach(paddedPrograms, ({ program, padMs }) => {
-      channelPrograms.push(program);
-      timeCursor = timeCursor.add(program.duration);
-      pushFlex(dayjs.duration(padMs));
-    });
+    let done = false;
+    for (const { program, padMs } of paddedPrograms) {
+      if (+timeCursor + program.duration > +upperLimit) {
+        done = true;
+        break;
+      }
+      yield program;
+      advanceTime(program.duration);
+      if (+timeCursor + padMs > +upperLimit) {
+        done = true;
+        break;
+      }
+      yield createFlex(dayjs.duration(padMs));
+      advanceTime(padMs);
+    }
+
+    if (done) {
+      break;
+    }
+    // forEach(paddedPrograms, ({ program, padMs }) => {
+    //   channelPrograms.push(program);
+    //   timeCursor = timeCursor.add(program.duration);
+    //   yield* pushFlex(dayjs.duration(padMs));
+    // });
   }
 
-  return {
-    programs: channelPrograms,
-    startTime: +t0,
-  };
+  // return {
+  //   programs: channelPrograms,
+  //   startTime: +t0,
+  // };
 }

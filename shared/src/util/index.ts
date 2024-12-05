@@ -1,12 +1,12 @@
+export { mod as dayjsMod } from './dayjsExtensions.js';
 export * from './plexSearchUtil.js';
+export * as seq from './seq.js';
 import { ChannelProgram } from '@tunarr/types';
 import { PlexMedia } from '@tunarr/types/plex';
+import { isNull } from 'lodash-es';
 import isFunction from 'lodash-es/isFunction.js';
 import { MarkRequired } from 'ts-essentials';
 import type { PerTypeCallback } from '../types/index.js';
-import { isNull } from 'lodash-es';
-export { mod as dayjsMod } from './dayjsExtensions.js';
-export * as seq from './seq.js';
 
 export function applyOrValueNoRest<Super, X extends Super, T>(
   f: ((m: X) => T) | T,
@@ -119,3 +119,9 @@ export function nullToUndefined<T>(x: T | null | undefined): T | undefined {
   }
   return x;
 }
+
+export const flushEventLoop = async () => {
+  return new Promise((resolve) => {
+    setTimeout(resolve, 0);
+  });
+};

@@ -132,6 +132,30 @@ export const setCurrentLineup = (
     }
   });
 
+export const appendToCurrentLineup = (
+  newItems: CondensedChannelProgram[],
+  dirty?: boolean,
+) =>
+  useStore.setState((state) => {
+    if (state.channelEditor.programList.length === 0) {
+      state.channelEditor.programList = addIndexesAndCalculateOffsets(newItems);
+    } else {
+      const lastItem = last(state.channelEditor.programList)!;
+      const nextOffset = lastItem.startTimeOffset + lastItem.duration;
+      state.channelEditor.programList.push(
+        ...addIndexesAndCalculateOffsets(
+          newItems,
+          nextOffset,
+          state.channelEditor.programList.length,
+        ),
+      );
+    }
+    state.channelEditor.programsLoaded = true;
+    if (!isUndefined(dirty)) {
+      state.channelEditor.dirty.programs = dirty;
+    }
+  });
+
 export const resetCurrentLineup = (programming: CondensedChannelProgramming) =>
   useStore.setState((state) => {
     const zippedLineup = addIndexesAndCalculateOffsets(programming.lineup);

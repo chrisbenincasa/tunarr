@@ -5,6 +5,7 @@ import { typedProperty } from '@/types/path.ts';
 import { Result } from '@/types/result.ts';
 import { MarkNullable, Maybe } from '@/types/util.ts';
 import { asyncPool } from '@/util/asyncPool.ts';
+import dayjs from '@/util/dayjs.ts';
 import { fileExists } from '@/util/fsUtil.ts';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
 import { MutexMap } from '@/util/mutexMap.ts';
@@ -22,8 +23,6 @@ import {
   Watermark,
 } from '@tunarr/types';
 import { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
-import dayjs from 'dayjs';
-import duration from 'dayjs/plugin/duration.js';
 import { jsonArrayFrom } from 'kysely/helpers/sqlite';
 import {
   chunk,
@@ -99,8 +98,6 @@ import {
 import { programExternalIdString } from './schema/Program.ts';
 import { ChannelTranscodingSettings } from './schema/base.ts';
 import { ChannelWithPrograms as RawChannelWithPrograms } from './schema/derivedTypes.js';
-
-dayjs.extend(duration);
 
 // We use this to chunk super huge channel / program relation updates because
 // of the way that mikro-orm generates these (e.g. "delete from XYZ where () or () ...").
@@ -769,10 +766,25 @@ export class ChannelDB {
       //     programs: req.body.programs,
       //   },
       // ),
-      const { programs, startTime } =
-        req.type === 'time'
-          ? await scheduleTimeSlots(req.schedule, req.programs)
-          : await scheduleRandomSlots(req.schedule, req.programs);
+      let programs: ChannelProgram[];
+      let startTime: number;
+      if (req.type === 'time') {
+        ({ programs, startTime } = await scheduleTimeSlots(
+          req.schedule,
+          req.programs,
+        ));
+      } else {
+        const start = dayjs.tz();
+        startTime = +start;
+        programs = [];
+        for await (const p of scheduleRandomSlots(
+          req.schedule,
+          req.programs,
+          start,
+        )) {
+          programs.push(p);
+        }
+      }
 
       const newLineup = await createNewLineup(programs);
 
