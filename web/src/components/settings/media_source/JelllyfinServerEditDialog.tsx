@@ -80,7 +80,6 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
   const title = server ? `Editing "${server.name}"` : 'New Media Source';
 
   const handleClose = () => {
-    reset(emptyDefaults);
     setShowAccessToken(false);
     onClose();
   };
@@ -98,6 +97,12 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
     mode: 'onChange',
     defaultValues: server ?? emptyDefaults,
   });
+
+  useEffect(() => {
+    if (open) {
+      reset();
+    }
+  }, [reset, open]);
 
   // These are updated in a watch callback, so we debounce them
   // along with the details we use to check server status. Otherwise

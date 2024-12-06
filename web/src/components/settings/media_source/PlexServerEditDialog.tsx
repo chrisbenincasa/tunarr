@@ -65,7 +65,6 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
   const title = server ? `Editing "${server.name}"` : 'New Plex Server';
 
   const handleClose = () => {
-    reset(emptyDefaults);
     setShowAccessToken(false);
     onClose();
   };
@@ -80,6 +79,12 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
     mode: 'onChange',
     defaultValues: server ?? emptyDefaults,
   });
+
+  useEffect(() => {
+    if (open) {
+      reset();
+    }
+  }, [open, reset]);
 
   const updatePlexServerMutation = useMutation({
     mutationFn: async (newOrUpdatedServer: PlexServerSettingsForm) => {
@@ -98,6 +103,7 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: ['settings', 'media-sources'],
+        exact: false,
       });
       handleClose();
     },
@@ -160,7 +166,6 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
       fullWidth
       component="form"
       onSubmit={onSubmit}
-      keepMounted={false}
       onClose={() => onClose()}
     >
       <DialogTitle>{title}</DialogTitle>

@@ -1,8 +1,6 @@
 import UnsavedNavigationAlert from '@/components/settings/UnsavedNavigationAlert.tsx';
 import { AddMediaSourceButton } from '@/components/settings/media_source/AddMediaSourceButton.tsx';
-import { JellyfinServerEditDialog } from '@/components/settings/media_source/JelllyfinServerEditDialog.tsx';
 import { MediaSourceTableRow } from '@/components/settings/media_source/MediaSourceTableRow';
-import { PlexServerEditDialog } from '@/components/settings/media_source/PlexServerEditDialog';
 import {
   CheckboxFormController,
   TypedController,
@@ -51,8 +49,6 @@ const supportedPaths = [
 export default function MediaSourceSettingsPage() {
   const apiClient = useTunarrApi();
   const [restoreTunarrDefaults, setRestoreTunarrDefaults] = useState(false);
-  const [plexEditDialogOpen, setPlexEditDialogOpen] = useState(false);
-  const [jellyfinEditDialogOpen, setJellyfinEditDialogOpen] = useState(false);
 
   const {
     data: servers,
@@ -375,14 +371,6 @@ export default function MediaSourceSettingsPage() {
           </Stack>
         </Stack>
       </Box>
-      <PlexServerEditDialog
-        open={plexEditDialogOpen}
-        onClose={() => setPlexEditDialogOpen(false)}
-      />
-      <JellyfinServerEditDialog
-        open={jellyfinEditDialogOpen}
-        onClose={() => setJellyfinEditDialogOpen(false)}
-      />
     </Box>
   );
 }

@@ -6,9 +6,9 @@ import { MediaSourceSettings } from '@tunarr/types';
 import { capitalize, isNull, isUndefined } from 'lodash-es';
 import { useState } from 'react';
 import { RotatingLoopIcon } from '../../base/LoadingIcon.tsx';
+import { JellyfinServerEditDialog } from './JelllyfinServerEditDialog.tsx';
 import { MediaSourceDeleteDialog } from './MediaSourceDeleteDialog.tsx';
 import { PlexServerEditDialog } from './PlexServerEditDialog.tsx';
-import { JellyfinServerEditDialog } from './JelllyfinServerEditDialog.tsx';
 
 export function MediaSourceTableRow({ server }: MediaSourceTableRowProps) {
   const apiClient = useTunarrApi();
@@ -19,7 +19,7 @@ export function MediaSourceTableRow({ server }: MediaSourceTableRowProps) {
     isLoading: backendStatusLoading,
     error: backendStatusError,
   } = useQuery({
-    queryKey: ['plex-servers', server.id, 'status'],
+    queryKey: ['settings', 'media-sources', server.id, 'status'],
     queryFn: () =>
       apiClient.getMediaSourceStatus({ params: { id: server.id } }),
     staleTime: 1000 * 60 * 5,
