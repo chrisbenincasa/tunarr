@@ -229,7 +229,7 @@ export class PlexApiClient extends BaseApiClient {
 
     forEach(channels, ({ number }) => {
       const id = getChannelId(number);
-      qs[`channelMapping[${number}]`] = id;
+      qs[`channelMapping[${number}]`] = number;
       qs[`channelMappingByKey[${number}]`] = id;
     });
 
