@@ -1,6 +1,6 @@
 import { FfmpegStreamFactory } from '@/ffmpeg/FfmpegStreamFactory.ts';
 import { NutOutputFormat } from '@/ffmpeg/builder/constants.ts';
-import { LocalFileStreamDetails } from '@/stream/local/LocalFileStreamDetails.ts';
+import { StreamMetadataProber } from '@/stream/local/StreamMetadataProber.ts';
 import { RouterPluginAsyncCallback } from '@/types/serverType.ts';
 import dayjs from 'dayjs';
 import { z } from 'zod';
@@ -19,7 +19,7 @@ export const debugFfmpegApiRouter: RouterPluginAsyncCallback = async (
       },
     },
     async (req, res) => {
-      const details = new LocalFileStreamDetails(req.query.path);
+      const details = new StreamMetadataProber(req.query.path);
       return res.send(await details.getStream());
     },
   );
@@ -41,7 +41,7 @@ export const debugFfmpegApiRouter: RouterPluginAsyncCallback = async (
       if (!channel) {
         return res.status(404).send();
       }
-      const details = new LocalFileStreamDetails(req.query.path);
+      const details = new StreamMetadataProber(req.query.path);
       const streamDetails = await details.getStream();
 
       if (!streamDetails) {

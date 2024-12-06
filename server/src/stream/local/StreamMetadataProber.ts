@@ -6,7 +6,7 @@ import dayjs from '@/util/dayjs.ts';
 import { fileExists } from '@/util/fsUtil.ts';
 import { isNonEmptyString } from '@/util/index.ts';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
-import { filter, find, isEmpty, map } from 'lodash-es';
+import { filter, find, isEmpty, map, sortBy } from 'lodash-es';
 import { NonEmptyArray } from 'ts-essentials';
 import {
   AudioStreamDetails,
@@ -16,7 +16,7 @@ import {
   VideoStreamDetails,
 } from '../types.ts';
 
-export class LocalFileStreamDetails {
+export class StreamMetadataProber {
   private logger = LoggerFactory.child({ className: this.constructor.name });
 
   constructor(
@@ -70,13 +70,19 @@ export class LocalFileStreamDetails {
         codec: videoStream.codec_name,
         profile: videoStream.profile?.toLowerCase(),
         streamIndex: videoStream.index?.toString() ?? '0',
+        pixelFormat: videoStream.pix_fmt,
+        isAttachedPic: videoStream.disposition?.still_image === 1,
       } satisfies VideoStreamDetails;
     }
 
     const audioStreamDetails = map(
-      filter(
-        probeResult.streams,
-        (stream): stream is FfprobeAudioStream => stream.codec_type === 'audio',
+      sortBy(
+        filter(
+          probeResult.streams,
+          (stream): stream is FfprobeAudioStream =>
+            stream.codec_type === 'audio',
+        ),
+        (stream) => [-(stream.disposition?.default ?? 0), stream.index],
       ),
       (audioStream) => {
         return {
@@ -86,6 +92,7 @@ export class LocalFileStreamDetails {
           index: audioStream.index.toFixed(),
           language: audioStream.tags?.['language'],
           profile: audioStream.profile,
+          default: audioStream?.disposition?.default === 1,
         } satisfies AudioStreamDetails;
       },
     );

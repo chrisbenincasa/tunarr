@@ -10,6 +10,27 @@ const BaseFfprobeMediaStreamSchema = z.object({
   tags: z.record(z.string()).optional(),
 });
 
+const FfprobeVideoStreamDisposition = z.object({
+  default: z.number().optional(),
+  dub: z.number().optional(),
+  original: z.number().optional(),
+  comment: z.number().optional(),
+  lyrics: z.number().optional(),
+  karaoke: z.number().optional(),
+  forced: z.number().optional(),
+  hearing_impaired: z.number().optional(),
+  visual_impaired: z.number().optional(),
+  clean_effects: z.number().optional(),
+  attached_pic: z.number().optional(),
+  timed_thumbnails: z.number().optional(),
+  non_diegetic: z.number().optional(),
+  captions: z.number().optional(),
+  descriptions: z.number().optional(),
+  metadata: z.number().optional(),
+  dependent: z.number().optional(),
+  still_image: z.number().optional(),
+});
+
 export const FfprobeVideoStreamSchema = BaseFfprobeMediaStreamSchema.extend({
   codec_type: z.literal('video'),
   // codec_type: z.enum(['video', 'audio', 'subtitle']).catch('video'),
@@ -40,6 +61,7 @@ export const FfprobeVideoStreamSchema = BaseFfprobeMediaStreamSchema.extend({
   duration_ts: z.number(), // millis
   bit_rate: z.coerce.number(),
   bits_per_raw_sample: z.coerce.number().optional(),
+  disposition: FfprobeVideoStreamDisposition.optional(),
 });
 
 export type FfprobeVideoStream = z.infer<typeof FfprobeVideoStreamSchema>;
@@ -54,6 +76,7 @@ export const FfprobeAudioStreamSchema = BaseFfprobeMediaStreamSchema.extend({
   initial_padding: z.number().optional(),
   time_base: z.string().optional(),
   bit_rate: z.string().transform((s) => parsePossibleFractionToFloat(s)),
+  disposition: FfprobeVideoStreamDisposition.optional(),
 });
 
 export type FfprobeAudioStream = z.infer<typeof FfprobeAudioStreamSchema>;
