@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.16.9](https://github.com/chrisbenincasa/tunarr/compare/v0.16.8...v0.16.9) (2024-12-06)
+
+
+### Bug Fixes
+
+* fix for plex channel auto-mapping update ([3e48d6f](https://github.com/chrisbenincasa/tunarr/commit/3e48d6ffa8b36174b6f26f383174f6e5eafcd898))
+* fix form state resetting in media source edit modals ([236d819](https://github.com/chrisbenincasa/tunarr/commit/236d819d0b5148bcab97e1925d7d15116c9ce4a3))
+* properly treat yuv420p10le as 10-bit ([f266fab](https://github.com/chrisbenincasa/tunarr/commit/f266fab2a43feb0e91fd43166cc9524e6a9c4b38)), closes [#1003](https://github.com/chrisbenincasa/tunarr/issues/1003)
+
 ## [0.16.8](https://github.com/chrisbenincasa/tunarr/compare/v0.16.7...v0.16.8) (2024-12-05)
 
 
