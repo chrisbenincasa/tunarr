@@ -103,7 +103,7 @@ export class PixelFormatYuva420P extends BasePixelFormat {
 export class PixelFormatYuv420P10Le extends BasePixelFormat {
   readonly name = PixelFormats.YUV420P10LE;
   readonly ffmpegName = FfmpegPixelFormats.YUV420P10LE;
-  readonly bitDepth: number = 8;
+  readonly bitDepth: number = 10;
 }
 
 abstract class HardwarePixelFormat extends BasePixelFormat {
