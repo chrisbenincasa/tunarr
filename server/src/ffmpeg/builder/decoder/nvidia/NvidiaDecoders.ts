@@ -1,5 +1,5 @@
 import { BaseDecoder } from '@/ffmpeg/builder/decoder/BaseDecoder.ts';
-import { FfmpegPixelFormats } from '@/ffmpeg/builder/format/PixelFormat.ts';
+import { PixelFormats } from '@/ffmpeg/builder/format/PixelFormat.ts';
 import { InputSource } from '@/ffmpeg/builder/input/InputSource.ts';
 import {
   FrameDataLocation,
@@ -23,9 +23,10 @@ export abstract class NvidiaDecoder extends BaseDecoder {
       result.push('-hwaccel_output_format', 'cuda');
     } else {
       result.push(
+        '-hwaccel_output_format',
         super.inputBitDepth(inputFile) === 10
-          ? FfmpegPixelFormats.P010LE
-          : FfmpegPixelFormats.NV12,
+          ? PixelFormats.P010
+          : PixelFormats.NV12,
       );
     }
 

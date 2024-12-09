@@ -81,6 +81,9 @@ export class FrameSize {
     this.height = this.height + (this.height % 2);
     return this;
   }
+
+  public static FHD = FrameSize.withDimensions(1920, 1080);
+  public static FourK = FrameSize.withDimensions(3840, 2160);
 }
 
 export enum RateControlMode {

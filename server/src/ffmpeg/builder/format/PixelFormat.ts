@@ -11,137 +11,171 @@ export const PixelFormats = {
   YUV420P10LE: 'yuv420p10le',
   YUV444P: 'yuv444p',
   YUV444P10LE: 'yuv444p10le',
+  YUV444P16LE: 'yuv444p16le',
   Unknown: 'unknown',
-} as const;
-
-export const FfmpegPixelFormats = {
-  ...PixelFormats,
   // Hardware types
   NV12: 'nv12',
   VAAPI: 'vaapi',
-  P010LE: 'p010le',
+  P010: 'p010',
 } as const;
 
-export const ValidWrapperPixelFormats = {
+export const ValidHardwarePixelFormats = {
   // TODO: Should we support others?
   NV12: 'nv12',
+  P010LE: 'p010',
+  P016LE: 'p016',
 } as const;
 
-type ValidPixelFormatName = (typeof PixelFormats)[keyof typeof PixelFormats];
-type ValidFfmpegPixelFormat =
-  (typeof FfmpegPixelFormats)[keyof typeof FfmpegPixelFormats];
-type ValidWrapperPixelFormat =
-  (typeof ValidWrapperPixelFormats)[keyof typeof ValidWrapperPixelFormats];
+export type ValidPixelFormatName =
+  (typeof PixelFormats)[keyof typeof PixelFormats];
 
 interface PixelFormatEquals extends Equatable<PixelFormat> {}
 
 export interface PixelFormat extends PixelFormatEquals {
-  name: ValidPixelFormatName;
   // Name used in the generated ffmpeg command
-  ffmpegName: ValidFfmpegPixelFormat;
+  name: ValidPixelFormatName;
   bitDepth: number;
-  unwrap(): Maybe<PixelFormat>;
-  wrap(wrapperFmt: ValidWrapperPixelFormat): HardwarePixelFormat;
+  // Some formats have corresponding representations that are
+  // used on hardware. For instance, yuv420p === nv12
+  // In some scenarios, we need to use the "hardware" version
+  // of a format, like when downloading frames from hardware.
+  toHardwareFormat(): Maybe<PixelFormat>;
+  toSoftwareFormat(): Maybe<PixelFormat>;
+  // If the pixel format is "wrapping" another (i.e. nv12 used in the context
+  // of another format) then this method will return the underlying format
+  // Otherwise, it should return "this"
+  unwrap(): PixelFormat;
+
+  prettyPrint(): string;
 }
 
 export abstract class BasePixelFormat implements PixelFormat {
   name: ValidPixelFormatName;
-  ffmpegName: ValidFfmpegPixelFormat;
   bitDepth: number;
 
-  // If a hardware format, returns the underlying pixel format, if
-  // available
-  unwrap(): Maybe<PixelFormat> {
+  abstract toHardwareFormat(): Maybe<PixelFormat>;
+  abstract toSoftwareFormat(): Maybe<PixelFormat>;
+
+  equals(other: PixelFormat): boolean {
+    return this.name === other.name && this.bitDepth === other.bitDepth;
+  }
+
+  unwrap(): PixelFormat {
     return this;
   }
 
-  wrap(wrapperFmt: ValidWrapperPixelFormat): HardwarePixelFormat {
-    if (this instanceof HardwarePixelFormat) {
-      return this;
-    }
-    switch (wrapperFmt) {
-      case ValidWrapperPixelFormats.NV12:
-        return new PixelFormatNv12(this.name);
-    }
+  prettyPrint() {
+    return `${this.constructor.name}(name=${this.name}, bitDepth=${this.bitDepth})`;
+  }
+}
+
+abstract class HardwarePixelFormat extends BasePixelFormat {
+  toHardwareFormat(): Maybe<PixelFormat> {
+    return this;
+  }
+}
+
+abstract class SoftwarePixelFormat extends BasePixelFormat {
+  toSoftwareFormat(): Maybe<PixelFormat> {
+    return this;
   }
 
-  equals(other: PixelFormat): boolean {
-    return (
-      this.name === other.name &&
-      this.ffmpegName === other.ffmpegName &&
-      this.bitDepth === other.bitDepth
-    );
+  toHardwareFormat(): Maybe<PixelFormat> {
+    return;
   }
 }
 
 export function PixelFormatUnknown(bitDepth: number = 8): BasePixelFormat {
-  return new (class extends BasePixelFormat {
+  return new (class extends SoftwarePixelFormat {
     name = 'unknown' as const;
-    ffmpegName = 'unknown' as const;
     bitDepth: number = bitDepth;
+    toHardwareFormat(): Maybe<PixelFormat> {
+      return;
+    }
   })();
 }
 
-export class PixelFormatYuv420P extends BasePixelFormat {
+export class PixelFormatYuv420P extends SoftwarePixelFormat {
   readonly name = PixelFormats.YUV420P;
-  readonly ffmpegName = FfmpegPixelFormats.YUV420P;
   readonly bitDepth: number = 8;
-}
 
-export class PixelFormatYuv444P extends BasePixelFormat {
-  readonly name = PixelFormats.YUV444P;
-  readonly ffmpegName = FfmpegPixelFormats.YUV444P;
-  readonly bitDepth: number = 8;
-}
-
-export class PixelFormatYuva420P extends BasePixelFormat {
-  readonly name = PixelFormats.YUVA420P;
-  readonly ffmpegName = FfmpegPixelFormats.YUVA420P;
-  readonly bitDepth: number = 8;
-}
-
-export class PixelFormatYuv420P10Le extends BasePixelFormat {
-  readonly name = PixelFormats.YUV420P10LE;
-  readonly ffmpegName = FfmpegPixelFormats.YUV420P10LE;
-  readonly bitDepth: number = 10;
-}
-
-abstract class HardwarePixelFormat extends BasePixelFormat {
-  unwrap(): Maybe<PixelFormat> {
-    return KnownPixelFormats.forPixelFormat(this.name);
+  toHardwareFormat(): Maybe<PixelFormat> {
+    return new PixelFormatNv12(this);
   }
+}
+
+export class PixelFormatYuv444P extends SoftwarePixelFormat {
+  readonly name = PixelFormats.YUV444P;
+  readonly bitDepth: number = 8;
+}
+
+export class PixelFormatYuva420P extends SoftwarePixelFormat {
+  readonly name = PixelFormats.YUVA420P;
+  readonly bitDepth: number = 8;
+}
+
+export class PixelFormatYuv420P10Le extends SoftwarePixelFormat {
+  readonly name = PixelFormats.YUV420P10LE;
+  readonly bitDepth: number = 10;
+
+  toHardwareFormat(): Maybe<PixelFormat> {
+    return new PixelFormatP010();
+  }
+}
+
+export class PixelFormatYuv444P16Le extends SoftwarePixelFormat {
+  readonly name = PixelFormats.YUV444P16LE;
+  readonly bitDepth: number = 10;
 }
 
 // HW decoders output this (in general) when decoding 8-bit inputs
 export class PixelFormatNv12 extends HardwarePixelFormat {
-  constructor(public readonly name: ValidPixelFormatName) {
+  constructor(private readonly underlying: PixelFormat) {
     super();
   }
 
-  readonly ffmpegName = FfmpegPixelFormats.NV12;
+  readonly name = PixelFormats.NV12;
+
   readonly bitDepth: number = 8;
+
+  toSoftwareFormat(): Maybe<PixelFormat> {
+    return this.underlying;
+  }
+
+  unwrap(): PixelFormat {
+    return this.underlying;
+  }
+
+  equals(other: PixelFormat): boolean {
+    return super.equals(other) && this.unwrap().equals(other.unwrap());
+  }
 }
 
 // Special-case frames for VA-API
 export class PixelFormatVaapi extends HardwarePixelFormat {
-  readonly ffmpegName = FfmpegPixelFormats.VAAPI;
-
-  constructor(
-    public readonly name: ValidPixelFormatName,
-    public readonly bitDepth: number,
-  ) {
+  constructor(private readonly underlying: PixelFormat) {
     super();
+    this.name = this.underlying.name;
+    this.bitDepth = this.underlying.bitDepth;
+  }
+
+  toSoftwareFormat(): Maybe<PixelFormat> {
+    return this.underlying;
+  }
+
+  unwrap(): PixelFormat {
+    return this.underlying;
   }
 }
 
 // HW decoders output this (in general) when decoding 10-bit inputs
-export class PixelFormatP010Le extends HardwarePixelFormat {
-  constructor(public readonly name: ValidPixelFormatName) {
-    super();
-  }
-
-  readonly ffmpegName = FfmpegPixelFormats.P010LE;
+export class PixelFormatP010 extends HardwarePixelFormat {
+  readonly name = PixelFormats.P010;
   readonly bitDepth: number = 10;
+
+  toSoftwareFormat(): Maybe<PixelFormat> {
+    return new PixelFormatYuv420P10Le();
+  }
 }
 
 export class KnownPixelFormats {
@@ -153,6 +187,10 @@ export class KnownPixelFormats {
         return new PixelFormatYuv420P10Le();
       case PixelFormats.YUVA420P:
         return new PixelFormatYuva420P();
+      case PixelFormats.YUV444P:
+        return new PixelFormatYuv444P();
+      case PixelFormats.YUV444P16LE:
+        return new PixelFormatYuv444P16Le();
       default:
         return;
     }

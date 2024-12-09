@@ -1,11 +1,23 @@
 import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.ts';
 import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
 import { FrameDataLocation, FrameSize } from '@/ffmpeg/builder/types.ts';
-import { isEmpty, isNil } from 'lodash-es';
+import { isEmpty } from 'lodash-es';
+import {
+  PixelFormats,
+  ValidPixelFormatName,
+} from '../../format/PixelFormat.ts';
 
 export class ScaleCudaFilter extends FilterOption {
   readonly filter: string;
   readonly affectsFrameState: boolean = true;
+
+  static supportedPixelFormats: ValidPixelFormatName[] = [
+    PixelFormats.YUV420P,
+    PixelFormats.NV12,
+    PixelFormats.YUV444P,
+    PixelFormats.P010,
+    PixelFormats.YUV444P16LE,
+  ] as const;
 
   constructor(
     private currentState: FrameState,
@@ -25,9 +37,10 @@ export class ScaleCudaFilter extends FilterOption {
       isAnamorphic: false,
     });
 
-    if (this.currentState.pixelFormat) {
+    const targetPixelFormat = this.supportedPixelFormat;
+    if (targetPixelFormat) {
       nextState = nextState.update({
-        pixelFormat: this.currentState.pixelFormat,
+        pixelFormat: targetPixelFormat,
       });
     }
 
@@ -38,8 +51,9 @@ export class ScaleCudaFilter extends FilterOption {
     let scale: string = '';
 
     if (this.currentState.scaledSize.equals(this.scaledSize)) {
-      if (!isNil(this.currentState.pixelFormat)) {
-        scale = `scale_cuda=format=${this.currentState.pixelFormat.ffmpegName}`;
+      const targetPixelFormat = this.supportedPixelFormat;
+      if (targetPixelFormat) {
+        scale = `scale_cuda=format=${targetPixelFormat.name}`;
       }
     } else {
       let aspectRatio = '';
@@ -50,8 +64,9 @@ export class ScaleCudaFilter extends FilterOption {
       let squareScale = '';
       const targetSize = `${this.paddedSize.width}:${this.paddedSize.height}`;
       let format = '';
-      if (!isNil(this.currentState.pixelFormat)) {
-        format = `:format=${this.currentState.pixelFormat.ffmpegName}`;
+      const targetPixelFormat = this.supportedPixelFormat;
+      if (targetPixelFormat) {
+        format = `:format=${targetPixelFormat.name}`;
       }
 
       if (this.currentState.isAnamorphic) {
@@ -70,5 +85,16 @@ export class ScaleCudaFilter extends FilterOption {
     return this.currentState.frameDataLocation === FrameDataLocation.Hardware
       ? scale
       : `hwupload_cuda,${scale}`;
+  }
+
+  private get supportedPixelFormat() {
+    if (!this.currentState.pixelFormat) {
+      return;
+    }
+    return ScaleCudaFilter.supportedPixelFormats.includes(
+      this.currentState.pixelFormat.name,
+    )
+      ? this.currentState.pixelFormat
+      : this.currentState.pixelFormat.toHardwareFormat();
   }
 }

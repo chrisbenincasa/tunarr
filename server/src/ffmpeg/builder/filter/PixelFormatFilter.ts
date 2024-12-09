@@ -8,7 +8,7 @@ export class PixelFormatFilter extends FilterOption {
 
   constructor(private pixelFormat: PixelFormat) {
     super();
-    this.filter = `format=${pixelFormat.ffmpegName}`;
+    this.filter = `format=${pixelFormat.name}`;
   }
 
   nextState(currentState: FrameState): FrameState {

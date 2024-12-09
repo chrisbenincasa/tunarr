@@ -30,7 +30,8 @@
     "preinstall": "npx only-allow pnpm",
     "run-fixer": "dotenv -e .env.development -- tsx src/index.ts fixer",
     "tunarr": "dotenv -e .env.development -- tsx src/index.ts",
-    "test": "vitest"
+    "test": "vitest",
+    "test:watch": "vitest --watch"
   },
   "dependencies": {
     "@fastify/cors": "^10.0.1",

@@ -1,9 +1,5 @@
 import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
-import { isNonEmptyString } from '@/util/index.ts';
-import {
-  FfmpegPixelFormats,
-  KnownPixelFormats,
-} from '../format/PixelFormat.ts';
+import { PixelFormatVaapi } from '../format/PixelFormat.ts';
 import { FrameDataLocation } from '../types.ts';
 import { FilterOption } from './FilterOption.ts';
 
@@ -17,19 +13,21 @@ export class HardwareDownloadFilter extends FilterOption {
     if (this.currentState.frameDataLocation === FrameDataLocation.Hardware) {
       hwdownload = 'hwdownload';
       if (this.currentState.pixelFormat) {
-        if (
-          this.currentState.pixelFormat.ffmpegName === FfmpegPixelFormats.VAAPI
-        ) {
-          const softwarePixelFormat = KnownPixelFormats.forPixelFormat(
-            this.currentState.pixelFormat.name,
-          );
-          if (softwarePixelFormat) {
-            return `hwdownload,format=vaapi|${softwarePixelFormat.ffmpegName}`;
+        if (this.currentState.pixelFormat instanceof PixelFormatVaapi) {
+          // Use the hardware format of the underlying pixel format
+          const underlyingFormat = this.currentState.pixelFormat
+            .unwrap()
+            ?.toHardwareFormat();
+          if (underlyingFormat) {
+            return `hwdownload,format=vaapi|${underlyingFormat.name}`;
           }
         }
 
-        if (isNonEmptyString(this.currentState.pixelFormat.ffmpegName)) {
-          return `hwdownload,format=${this.currentState.pixelFormat.ffmpegName}`;
+        const hardwareFmt =
+          this.currentState.pixelFormat.unwrap().toHardwareFormat() ??
+          this.currentState.pixelFormat.unwrap();
+        if (hardwareFmt) {
+          return `hwdownload,format=${hardwareFmt.name}`;
         }
       }
     }

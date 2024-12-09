@@ -24,8 +24,8 @@ export class VaapiDecoder extends BaseDecoder {
     return nextState.update({
       pixelFormat:
         currentState.pixelFormat.bitDepth === 8
-          ? new PixelFormatNv12(currentState.pixelFormat.name)
-          : new PixelFormatVaapi(currentState.pixelFormat.name, 10),
+          ? new PixelFormatNv12(currentState.pixelFormat)
+          : new PixelFormatVaapi(currentState.pixelFormat),
     });
   }
 }

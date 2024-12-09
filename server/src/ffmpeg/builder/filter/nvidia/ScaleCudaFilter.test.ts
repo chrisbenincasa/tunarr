@@ -1,0 +1,54 @@
+import { ScaleCudaFilter } from '@/ffmpeg/builder/filter/nvidia/ScaleCudaFilter.ts';
+import {
+  PixelFormatP010,
+  PixelFormatYuv420P,
+  PixelFormatYuv420P10Le,
+} from '@/ffmpeg/builder/format/PixelFormat.ts';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
+import { FrameDataLocation, FrameSize } from '@/ffmpeg/builder/types.ts';
+
+describe('ScaleCudaFilter', () => {
+  test('format only, 8-bit, on hardware', () => {
+    const currentState = new FrameState({
+      isAnamorphic: false,
+      paddedSize: FrameSize.withDimensions(1920, 1080),
+      scaledSize: FrameSize.withDimensions(1920, 1080),
+      frameDataLocation: FrameDataLocation.Hardware,
+      pixelFormat: new PixelFormatYuv420P(),
+    });
+
+    // sizes are equal
+    const filter = new ScaleCudaFilter(
+      currentState,
+      currentState.scaledSize,
+      currentState.paddedSize,
+    );
+
+    expect(filter.filter).to.eq('scale_cuda=format=yuv420p');
+    expect(filter.nextState(currentState).pixelFormat).toMatchPixelFormat(
+      new PixelFormatYuv420P(),
+    );
+  });
+
+  test('format only, 10-bit, on hardware', () => {
+    const currentState = new FrameState({
+      isAnamorphic: false,
+      paddedSize: FrameSize.withDimensions(1920, 1080),
+      scaledSize: FrameSize.withDimensions(1920, 1080),
+      frameDataLocation: FrameDataLocation.Hardware,
+      pixelFormat: new PixelFormatYuv420P10Le(),
+    });
+
+    // sizes are equal
+    const filter = new ScaleCudaFilter(
+      currentState,
+      currentState.scaledSize,
+      currentState.paddedSize,
+    );
+
+    expect(filter.filter).to.eq('scale_cuda=format=p010');
+    expect(filter.nextState(currentState).pixelFormat).toMatchPixelFormat(
+      new PixelFormatP010(),
+    );
+  });
+});

@@ -1,11 +1,11 @@
 import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.ts';
 import {
-  FfmpegPixelFormats,
   PixelFormat,
+  PixelFormatNv12,
+  PixelFormats,
 } from '@/ffmpeg/builder/format/PixelFormat.ts';
 import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
 import { Nullable } from '@/types/util.ts';
-import { isNonEmptyString } from '@/util/index.ts';
 import { isNull } from 'lodash-es';
 import { FrameDataLocation } from '../../types.ts';
 
@@ -21,19 +21,18 @@ export class HardwareDownloadCudaFilter extends FilterOption {
 
   get filter() {
     let f = 'hwdownload';
-    if (
-      this.currentPixelFormat &&
-      isNonEmptyString(this.currentPixelFormat.ffmpegName)
-    ) {
-      f += `,format=${this.currentPixelFormat.ffmpegName}`;
-      if (this.currentPixelFormat.ffmpegName === FfmpegPixelFormats.NV12) {
+    if (this.currentPixelFormat) {
+      const fmt =
+        this.currentPixelFormat.toHardwareFormat() ?? this.currentPixelFormat;
+      f += `,format=${fmt.name}`;
+      if (fmt instanceof PixelFormatNv12) {
         if (!this.targetPixelFormat) {
           const target = this.currentPixelFormat.unwrap();
           if (target) {
-            f += `,format=${target.ffmpegName}`;
+            f += `,format=${target.name}`;
           }
         } else {
-          f += `,format=${this.targetPixelFormat.ffmpegName}`;
+          f += `,format=${this.targetPixelFormat.name}`;
         }
       }
     }
@@ -51,7 +50,7 @@ export class HardwareDownloadCudaFilter extends FilterOption {
     }
 
     if (!isNull(this.currentPixelFormat)) {
-      if (this.currentPixelFormat.ffmpegName === FfmpegPixelFormats.NV12) {
+      if (this.currentPixelFormat.name === PixelFormats.NV12) {
         nextState = nextState.update({
           pixelFormat: this.currentPixelFormat.unwrap(),
         });

@@ -42,7 +42,6 @@ import {
 import { WatermarkOpacityFilter } from '../../filter/watermark/WatermarkOpacityFilter.ts';
 import { WatermarkScaleFilter } from '../../filter/watermark/WatermarkScaleFilter.ts';
 import {
-  FfmpegPixelFormats,
   PixelFormatNv12,
   PixelFormatYuv420P,
   PixelFormatYuva420P,
@@ -102,8 +101,12 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       pipelineSteps.push(new CudaHardwareAccelerationOption());
     }
 
-    ffmpegState.decoderHwAccelMode = canDecode ? 'cuda' : 'none';
-    ffmpegState.encoderHwAccelMode = canEncode ? 'cuda' : 'none';
+    ffmpegState.decoderHwAccelMode = canDecode
+      ? HardwareAccelerationMode.Cuda
+      : HardwareAccelerationMode.None;
+    ffmpegState.encoderHwAccelMode = canEncode
+      ? HardwareAccelerationMode.Cuda
+      : HardwareAccelerationMode.None;
   }
 
   protected setupDecoder(): Nullable<Decoder> {
@@ -144,7 +147,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
         ffmpegState.decoderHwAccelMode === HardwareAccelerationMode.Cuda &&
         videoStream.bitDepth() === 8
           ? videoStream.pixelFormat
-            ? new PixelFormatNv12(videoStream.pixelFormat?.name)
+            ? new PixelFormatNv12(videoStream.pixelFormat)
             : null
           : desiredState.pixelFormat,
     });
@@ -299,7 +302,9 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
         (hasOverlay ||
           !desiredState.scaledSize.equals(desiredState.paddedSize) ||
           isHardwareDecodeAndSoftwareEncode)
-          ? desiredState.pixelFormat?.wrap(FfmpegPixelFormats.NV12)
+          ? desiredState.pixelFormat
+            ? new PixelFormatNv12(desiredState.pixelFormat)
+            : null
           : null;
       scaleStep = new ScaleCudaFilter(
         currentState.update({
@@ -353,99 +358,95 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
     }
 
     const steps: FilterOption[] = [];
-    if (this.desiredState.pixelFormat) {
-      const desiredFormat =
-        this.desiredState.pixelFormat.unwrap() ?? this.desiredState.pixelFormat;
-      this.logger.debug(
-        'Desired pixel format: %s %s',
-        desiredFormat.ffmpegName,
-        desiredFormat.name,
+
+    if (!this.desiredState.pixelFormat) {
+      return currentState;
+    }
+
+    const desiredFormat =
+      this.desiredState.pixelFormat.toSoftwareFormat() ??
+      this.desiredState.pixelFormat;
+
+    this.logger.debug('Desired pixel format: %s', desiredFormat.name);
+
+    // TODO vp9
+    if (this.context.videoStream.codec === VideoFormats.Vp9) {
+      // this.context.videoStream.colorParams
+    }
+
+    // TODO color params -- wow there's a lot of stuff to account for!!!
+
+    if (
+      this.ffmpegState.encoderHwAccelMode === HardwareAccelerationMode.None &&
+      this.watermarkInputSource &&
+      currentState.frameDataLocation === FrameDataLocation.Hardware
+    ) {
+      const hwDownloadFilter = new HardwareDownloadCudaFilter(
+        currentState.pixelFormat,
+        null,
       );
+      currentState = hwDownloadFilter.nextState(currentState);
+      steps.push(hwDownloadFilter);
+    }
 
-      // TODO vp9
-      if (this.context.videoStream.codec === VideoFormats.Vp9) {
-        // this.context.videoStream.colorParams
-      }
-
-      // TODO color params -- wow there's a lot of stuff to account for!!!
-
-      if (
-        this.ffmpegState.encoderHwAccelMode === HardwareAccelerationMode.None &&
-        this.watermarkInputSource &&
-        currentState.frameDataLocation === FrameDataLocation.Hardware
-      ) {
-        const hwDownloadFilter = new HardwareDownloadCudaFilter(
-          currentState.pixelFormat,
-          null,
+    if (
+      currentState.frameDataLocation === FrameDataLocation.Hardware &&
+      this.ffmpegState.encoderHwAccelMode === HardwareAccelerationMode.None
+    ) {
+      if (!currentState.pixelFormat?.equals(desiredFormat)) {
+        this.logger.debug(
+          "Pixel format %s doesn't equal format %s",
+          currentState.pixelFormat?.prettyPrint(),
+          desiredFormat.prettyPrint(),
         );
-        currentState = hwDownloadFilter.nextState(currentState);
-        steps.push(hwDownloadFilter);
+        const formatFilter = new FormatCudaFilter(desiredFormat);
+        currentState = formatFilter.nextState(currentState);
+        steps.push(formatFilter);
       }
 
-      if (
-        currentState.frameDataLocation === FrameDataLocation.Hardware &&
-        this.ffmpegState.encoderHwAccelMode === HardwareAccelerationMode.None
-      ) {
+      const hwDownloadFilter = new HardwareDownloadCudaFilter(
+        currentState.pixelFormat,
+        desiredFormat,
+      );
+      currentState = hwDownloadFilter.nextState(currentState);
+      steps.push(hwDownloadFilter);
+    }
+
+    if (!currentState.pixelFormat?.equals(desiredFormat)) {
+      if (currentState.frameDataLocation === FrameDataLocation.Hardware) {
+        const noPipelineFilters = !some(
+          reject(this.pipelineSteps, (step) => step instanceof BaseEncoder),
+          (step) => step instanceof FilterOption,
+        );
+        const isSoftwareDecoder =
+          this.ffmpegState.decoderHwAccelMode === HardwareAccelerationMode.None;
+        const isHardwareDecoder = !isSoftwareDecoder;
         if (
-          currentState.pixelFormat?.ffmpegName !== desiredFormat?.ffmpegName
+          isSoftwareDecoder ||
+          noPipelineFilters ||
+          (isHardwareDecoder &&
+            this.ffmpegState.encoderHwAccelMode ===
+              HardwareAccelerationMode.Cuda &&
+            noPipelineFilters)
         ) {
-          this.logger.debug(
-            "Pixel format %s doesn't equal format %s",
-            currentState.pixelFormat?.ffmpegName,
-            desiredFormat?.ffmpegName,
-          );
-          const formatFilter = new FormatCudaFilter(desiredFormat);
-          currentState = formatFilter.nextState(currentState);
-          steps.push(formatFilter);
-        }
-
-        const hwDownloadFilter = new HardwareDownloadCudaFilter(
-          currentState.pixelFormat,
-          desiredFormat,
-        );
-        currentState = hwDownloadFilter.nextState(currentState);
-        steps.push(hwDownloadFilter);
-      }
-
-      if (currentState.pixelFormat?.ffmpegName !== desiredFormat?.ffmpegName) {
-        if (currentState.frameDataLocation === FrameDataLocation.Hardware) {
-          const noPipelineFilters = !some(
-            reject(this.pipelineSteps, (step) => step instanceof BaseEncoder),
-            (step) => step instanceof FilterOption,
-          );
-          const isSoftwareDecoder =
-            this.ffmpegState.decoderHwAccelMode ===
-            HardwareAccelerationMode.None;
-          const isHardwareDecoder = !isSoftwareDecoder;
-          if (
-            isSoftwareDecoder ||
-            noPipelineFilters ||
-            (isHardwareDecoder &&
-              this.ffmpegState.encoderHwAccelMode ===
-                HardwareAccelerationMode.Cuda &&
-              noPipelineFilters)
-          ) {
-            steps.push(new FormatCudaFilter(desiredFormat));
-          } else {
-            this.pipelineSteps.push(new PixelFormatOutputOption(desiredFormat));
-          }
-        } else if (
-          currentState.pixelFormat?.unwrap()?.name !== desiredFormat?.ffmpegName
-        ) {
-          // We are in software with possibly hardware formatted pixels... if the underlying
-          // pixel format type is the same as our desired type, we shouldn't need to do anything!
-          // this.pipelineSteps.push(new PixelFormatFilter(desiredFormat));
-          // Using the output option seems to break with NVENC...
+          steps.push(new FormatCudaFilter(desiredFormat));
+        } else {
           this.pipelineSteps.push(new PixelFormatOutputOption(desiredFormat));
         }
-      }
-
-      if (
-        this.ffmpegState.outputFormat.type === OutputFormatTypes.Nut &&
-        desiredFormat.bitDepth === 10
-      ) {
+      } else if (!currentState.pixelFormat?.unwrap()?.equals(desiredFormat)) {
+        // We are in software with possibly hardware formatted pixels... if the underlying
+        // pixel format type is the same as our desired type, we shouldn't need to do anything!
+        // this.pipelineSteps.push(new PixelFormatFilter(desiredFormat));
+        // Using the output option seems to break with NVENC...
         this.pipelineSteps.push(new PixelFormatOutputOption(desiredFormat));
       }
+    }
+
+    if (
+      this.ffmpegState.outputFormat.type === OutputFormatTypes.Nut &&
+      desiredFormat.bitDepth === 10
+    ) {
+      this.pipelineSteps.push(new PixelFormatOutputOption(desiredFormat));
     }
 
     this.context.filterChain.pixelFormatFilterSteps.push(...steps);

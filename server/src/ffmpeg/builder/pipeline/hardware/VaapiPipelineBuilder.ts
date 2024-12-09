@@ -21,6 +21,7 @@ import { ConcatInputSource } from '@/ffmpeg/builder/input/ConcatInputSource.ts';
 import { VideoInputSource } from '@/ffmpeg/builder/input/VideoInputSource.ts';
 import { WatermarkInputSource } from '@/ffmpeg/builder/input/WatermarkInputSource.ts';
 import { VaapiDriverEnvironmentVariable } from '@/ffmpeg/builder/options/EnvironmentVariables.ts';
+import { ExtraHardwareFramesOption } from '@/ffmpeg/builder/options/hardwareAcceleration/ExtraHardwareFramesOption.ts';
 import { VaapiHardwareAccelerationOption } from '@/ffmpeg/builder/options/hardwareAcceleration/VaapiOptions.ts';
 import { DoNotIgnoreLoopInputOption } from '@/ffmpeg/builder/options/input/DoNotIgnoreLoopInputOption.ts';
 import { InfiniteLoopInputOption } from '@/ffmpeg/builder/options/input/InfiniteLoopInputOption.ts';
@@ -37,7 +38,6 @@ import {
   Mpeg2VaapiEncoder,
 } from '../../encoder/vaapi/VaapiEncoders.ts';
 import {
-  FfmpegPixelFormats,
   KnownPixelFormats,
   PixelFormatNv12,
   PixelFormatYuva420P,
@@ -100,6 +100,10 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
 
     // ETV turns off hw decoding if there are subtitles and watermarks
     // determine why
+
+    if (canDecode) {
+      this.pipelineSteps.push(new ExtraHardwareFramesOption());
+    }
 
     if (canEncode) {
       this.pipelineSteps.push(NoAutoScaleOutputOption());
@@ -235,9 +239,10 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
 
     if (this.desiredState.pixelFormat) {
       let pixelFormat = this.desiredState.pixelFormat;
-      const format = this.desiredState.pixelFormat;
-      if (format.ffmpegName === FfmpegPixelFormats.NV12) {
-        const mappedFormat = KnownPixelFormats.forPixelFormat(format.name);
+      if (this.desiredState.pixelFormat instanceof PixelFormatNv12) {
+        const mappedFormat = KnownPixelFormats.forPixelFormat(
+          this.desiredState.pixelFormat.name,
+        );
         if (mappedFormat) {
           pixelFormat = mappedFormat;
         }
@@ -264,13 +269,13 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
         }
       }
 
-      if (currentState.pixelFormat?.ffmpegName !== pixelFormat.ffmpegName) {
+      if (currentState.pixelFormat?.name !== pixelFormat.name) {
         // Pixel formats
         if (
           pixelFormat.name === PixelFormats.YUV420P &&
           this.ffmpegState.outputFormat.type !== OutputFormatTypes.Nut
         ) {
-          pixelFormat = new PixelFormatNv12(pixelFormat.name);
+          pixelFormat = new PixelFormatNv12(pixelFormat);
         }
 
         if (currentState.frameDataLocation === FrameDataLocation.Hardware) {
@@ -328,10 +333,10 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
     let scaleOption: FilterOption;
     if (
       !currentState.scaledSize.equals(desiredState.scaledSize) &&
-      ((ffmpegState.decoderHwAccelMode === 'none' &&
-        ffmpegState.encoderHwAccelMode === 'none' &&
+      ((ffmpegState.decoderHwAccelMode === HardwareAccelerationMode.None &&
+        ffmpegState.encoderHwAccelMode === HardwareAccelerationMode.None &&
         !shouldDeinterlace) ||
-        ffmpegState.decoderHwAccelMode !== 'vaapi')
+        ffmpegState.decoderHwAccelMode !== HardwareAccelerationMode.Vaapi)
     ) {
       scaleOption = ScaleFilter.create(
         currentState,
@@ -344,10 +349,10 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
       scaleOption = new ScaleVaapiFilter(
         currentState.update({
           pixelFormat:
-            ffmpegState.decoderHwAccelMode === 'cuda' &&
-            ffmpegState.encoderHwAccelMode === 'none'
+            ffmpegState.decoderHwAccelMode === HardwareAccelerationMode.Cuda &&
+            ffmpegState.encoderHwAccelMode === HardwareAccelerationMode.None
               ? desiredState.pixelFormat
-                ? new PixelFormatNv12(desiredState.pixelFormat.name)
+                ? new PixelFormatNv12(desiredState.pixelFormat)
                 : null
               : null,
         }),
@@ -428,13 +433,7 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
     }
 
     if (this.desiredState.pixelFormat) {
-      let pf = this.desiredState.pixelFormat;
-      if (pf.ffmpegName === FfmpegPixelFormats.NV12) {
-        const availableFmt = KnownPixelFormats.forPixelFormat(pf.name);
-        if (availableFmt) {
-          pf = availableFmt;
-        }
-      }
+      const pf = this.desiredState.pixelFormat.unwrap();
 
       // Overlay
       this.context.filterChain.watermarkOverlayFilterSteps.push(
@@ -452,5 +451,3 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
     return currentState;
   }
 }
-
-type P = ConstructorParameters<typeof HardwareDownloadFilter>;

@@ -1,5 +1,6 @@
 import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.ts';
 import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
+import { FrameDataLocation } from '@/ffmpeg/builder/types.ts';
 
 export class YadifCudaFilter extends FilterOption {
   readonly filter: string;
@@ -13,13 +14,13 @@ export class YadifCudaFilter extends FilterOption {
   nextState(currentState: FrameState): FrameState {
     return currentState.update({
       deinterlaced: false,
-      frameDataLocation: 'hardware',
+      frameDataLocation: FrameDataLocation.Hardware,
     });
   }
 
   private generateFilter(currentState: FrameState) {
     let filter = 'yadif_cuda';
-    if (currentState.frameDataLocation !== 'hardware') {
+    if (currentState.frameDataLocation !== FrameDataLocation.Hardware) {
       filter = `hwupload,${filter}`;
     }
     return filter;

@@ -1,6 +1,6 @@
 import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.ts';
 import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
-import { FrameSize } from '@/ffmpeg/builder/types.ts';
+import { FrameDataLocation, FrameSize } from '@/ffmpeg/builder/types.ts';
 import { isNonEmptyString } from '@/util/index.ts';
 
 export class ScaleVaapiFilter extends FilterOption {
@@ -20,7 +20,11 @@ export class ScaleVaapiFilter extends FilterOption {
 
     if (this.currentState.scaledSize.equals(this.scaledSize)) {
       if (this.currentState.pixelFormat) {
-        scale = `scale_vaapi=format=${this.currentState.pixelFormat.ffmpegName}`;
+        const pixelFormat =
+          this.currentState.pixelFormat.toHardwareFormat()?.name ??
+          this.currentState.pixelFormat.name;
+        // Hardcode the extra frames for now...
+        scale = `scale_vaapi=format=${pixelFormat}:extra_hw_frames=64`;
       }
     } else {
       let aspectRatio = '';
@@ -33,28 +37,49 @@ export class ScaleVaapiFilter extends FilterOption {
       const targetSize = `${this.paddedSize.width}:${this.paddedSize.height}`;
       let format = '';
       if (this.currentState.pixelFormat) {
-        format = `:format=${this.currentState.pixelFormat.ffmpegName}`;
+        const pixelFormat =
+          this.currentState.pixelFormat.toHardwareFormat()?.name ??
+          this.currentState.pixelFormat.name;
+        format = `:format=${pixelFormat}`;
       }
 
       // anamorphic edge case? what is this?
 
       if (this.currentState.isAnamorphic) {
-        squareScale = `scale_vaapi=iw*sar:ih${format},setsar=1,`;
+        squareScale = `scale_vaapi=iw*sar:ih${format}:extra_hw_frames=64,setsar=1,`;
       } else {
         aspectRatio += ',setsar=1';
       }
 
-      scale = `${squareScale}scale_vaapi=${targetSize}:force_divisible_by=2${format}${aspectRatio}`;
+      scale = `${squareScale}scale_vaapi=${targetSize}:extra_hw_frames=64:force_divisible_by=2${format}${aspectRatio}`;
     }
 
-    if (this.currentState.frameDataLocation === 'hardware') {
+    if (this.currentState.frameDataLocation === FrameDataLocation.Hardware) {
       return scale;
     }
 
     if (isNonEmptyString(scale)) {
-      return `format=nv12|p010le|vaapi,hwupload,${scale}`;
+      return `format=nv12|p010|vaapi,hwupload=extra_hw_frames=64,${scale}`;
     }
 
     return '';
+  }
+
+  nextState(currentState: FrameState): FrameState {
+    const nextState = currentState.update({
+      scaledSize: this.scaledSize,
+      paddedSize: this.scaledSize,
+      frameDataLocation: FrameDataLocation.Hardware,
+    });
+
+    if (this.currentState.pixelFormat) {
+      return nextState.update({
+        pixelFormat:
+          this.currentState.pixelFormat.toHardwareFormat() ??
+          this.currentState.pixelFormat,
+      });
+    }
+
+    return nextState;
   }
 }
