@@ -433,11 +433,11 @@ export function MediaItemGrid<PageDataType, ItemType>({
       {showAlphabetFilter && handleAlphaNumFilter && (
         <Box
           sx={{
-            position: 'absolute',
+            position: 'fixed',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
-            right: -60,
+            right: 0,
             width: 35,
             zIndex: 1000,
           }}
