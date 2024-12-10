@@ -103,10 +103,7 @@ export class VideoToolboxPipelineBuilder extends SoftwarePipelineBuilder {
   protected setPixelFormat(currentState: FrameState) {
     const steps: FilterOption[] = [];
     if (this.desiredState.pixelFormat) {
-      if (
-        currentState.pixelFormat?.ffmpegName !==
-        this.desiredState.pixelFormat.ffmpegName
-      ) {
+      if (!currentState.pixelFormat?.equals(this.desiredState.pixelFormat)) {
         // This is commented out in ETV code...
       }
 

@@ -17,6 +17,14 @@
       "dependsOn": ["@tunarr/types#build", "@tunarr/shared#bundle"],
       "cache": false,
       "persistent": true
+    },
+    "test": {
+      "cache": false,
+      "persistent": true
+    },
+    "test:watch": {
+      "cache": false,
+      "persistent": true
     }
   }
 }

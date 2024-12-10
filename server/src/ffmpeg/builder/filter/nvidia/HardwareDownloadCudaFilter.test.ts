@@ -35,7 +35,7 @@ describe('HardwareDownloadCudaFilter', () => {
       paddedSize: FrameSize.withDimensions(1920, 1080),
       scaledSize: FrameSize.withDimensions(1920, 1080),
       frameDataLocation: FrameDataLocation.Hardware,
-      pixelFormat: new PixelFormatNv12(underlyingPixelFormat.name),
+      pixelFormat: new PixelFormatNv12(underlyingPixelFormat),
     });
 
     const filter = new HardwareDownloadCudaFilter(
@@ -63,7 +63,7 @@ describe('HardwareDownloadCudaFilter', () => {
       paddedSize: FrameSize.withDimensions(1920, 1080),
       scaledSize: FrameSize.withDimensions(1920, 1080),
       frameDataLocation: FrameDataLocation.Hardware,
-      pixelFormat: new PixelFormatNv12(underlyingPixelFormat.name),
+      pixelFormat: new PixelFormatNv12(underlyingPixelFormat),
     });
 
     const filter = new HardwareDownloadCudaFilter(

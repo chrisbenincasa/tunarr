@@ -44,7 +44,6 @@
         "./src/**/*.ts",
         "./scripts/**/*.ts",
         "./tests/**/*.ts",
-        "mikro-orm.prod.config.ts",
     ],
     "exclude": [
         "./build/**/*",

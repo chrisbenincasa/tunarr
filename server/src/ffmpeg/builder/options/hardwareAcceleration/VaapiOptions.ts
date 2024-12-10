@@ -1,5 +1,6 @@
 import { GlobalOption } from '@/ffmpeg/builder/options/GlobalOption.ts';
 import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
+import { FrameDataLocation } from '@/ffmpeg/builder/types.ts';
 
 export class VaapiHardwareAccelerationOption extends GlobalOption {
   constructor(
@@ -16,6 +17,6 @@ export class VaapiHardwareAccelerationOption extends GlobalOption {
   }
 
   nextState(currentState: FrameState): FrameState {
-    return currentState.updateFrameLocation('hardware');
+    return currentState.updateFrameLocation(FrameDataLocation.Hardware);
   }
 }

@@ -163,10 +163,7 @@ export class SoftwarePipelineBuilder extends BasePipelineBuilder {
   protected setPixelFormat(currentState: FrameState): FrameState {
     const steps: FilterOption[] = [];
     if (this.desiredState.pixelFormat) {
-      if (
-        currentState.pixelFormat?.ffmpegName !==
-        this.desiredState.pixelFormat.ffmpegName
-      ) {
+      if (!currentState.pixelFormat?.equals(this.desiredState.pixelFormat)) {
         const opt = new PixelFormatOutputOption(this.desiredState.pixelFormat);
         currentState = opt.nextState(currentState);
         this.pipelineSteps.push(opt);
