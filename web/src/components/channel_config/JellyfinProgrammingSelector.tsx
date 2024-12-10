@@ -1,3 +1,5 @@
+import StandaloneToggleButton from '@/components/base/StandaloneToggleButton.tsx';
+import { PlexSortField } from '@/components/channel_config/PlexSortField.tsx';
 import { jellyfinChildType } from '@/helpers/jellyfinUtil.ts';
 import {
   estimateNumberOfColumns,
@@ -10,8 +12,16 @@ import {
   useCurrentMediaSource,
   useCurrentSourceLibrary,
 } from '@/store/programmingSelector/selectors';
-import { Album, Folder, Home, Mic, Tv } from '@mui/icons-material';
-import { Box, Breadcrumbs, Link, Stack, Tab, Tabs } from '@mui/material';
+import { Album, FilterAlt, Folder, Home, Mic, Tv } from '@mui/icons-material';
+import {
+  Box,
+  Breadcrumbs,
+  Collapse,
+  Link,
+  Stack,
+  Tab,
+  Tabs,
+} from '@mui/material';
 import { tag } from '@tunarr/types';
 import {
   JellyfinItem,
@@ -29,7 +39,7 @@ import React, {
   useState,
 } from 'react';
 import { match } from 'ts-pattern';
-import { useDebounceCallback, useResizeObserver } from 'usehooks-ts';
+import { useDebounceCallback, useResizeObserver, useToggle } from 'usehooks-ts';
 import { InlineModal } from '../InlineModal.tsx';
 import { ProgramViewToggleButton } from '../base/ProgramViewToggleButton.tsx';
 import { JellyfinGridItem } from './JellyfinGridItem.tsx';
@@ -87,6 +97,7 @@ export function JellyfinProgrammingSelector() {
   const isListView = useStore(
     (s) => s.theme.programmingSelectorView === 'list',
   );
+  const [searchVisible, toggleSearchVisible] = useToggle();
 
   const itemTypes: JellyfinItemKind[] = useMemo(() => {
     if (!isEmpty(parentContext)) {
@@ -292,6 +303,45 @@ export function JellyfinProgrammingSelector() {
 
   return (
     <>
+      <Box sx={{ mt: 1 }}>
+        <Stack direction="row" gap={1} sx={{ mt: 2 }}>
+          <StandaloneToggleButton
+            selected={searchVisible}
+            onToggle={() => {
+              toggleSearchVisible();
+              // setPlexFilter(undefined);
+            }}
+            toggleButtonProps={{
+              size: 'small',
+              sx: { mr: 1 },
+              color: 'primary',
+            }}
+          >
+            <FilterAlt />
+          </StandaloneToggleButton>
+          {/* {searchVisible && (
+                <Grow in={searchVisible}>
+                  <ToggleButtonGroup
+                    size="small"
+                    color="primary"
+                    exclusive
+                    value={useAdvancedSearch ? 'advanced' : 'basic'}
+                    onChange={() => setUseAdvancedSearch(toggle)}
+                  >
+                    <ToggleButton value="basic">Basic</ToggleButton>
+                    <ToggleButton value="advanced">Advanced</ToggleButton>
+                  </ToggleButtonGroup>
+                </Grow>
+              )} */}
+
+          <PlexSortField />
+        </Stack>
+        <Collapse in={searchVisible} mountOnEnter>
+          <Box sx={{ py: 1 }}>
+            {/* <PlexFilterBuilder advanced={useAdvancedSearch} /> */}
+          </Box>
+        </Collapse>
+      </Box>
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }} ref={itemContainer}>
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
