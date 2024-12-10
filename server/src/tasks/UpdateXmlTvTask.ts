@@ -77,7 +77,7 @@ export class UpdateXmlTvTask extends Task<void> {
 
       await new LineupCreator().promoteAllPendingLineups();
 
-      await this.#guideService.refreshGuide(
+      await this.#guideService.buildAllChannels(
         dayjs.duration({ hours: xmltvSettings.programmingHours }),
       );
 
