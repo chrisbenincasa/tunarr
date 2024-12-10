@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.16.10](https://github.com/chrisbenincasa/tunarr/compare/v0.16.9...v0.16.10) (2024-12-10)
+
+
+### Bug Fixes
+
+* alphanumeric title filter should scroll with you ([e5d10d0](https://github.com/chrisbenincasa/tunarr/commit/e5d10d07758b31614a4de056505ec9a30f3f10d4))
+* properly handle redirects in scheduler ([#1011](https://github.com/chrisbenincasa/tunarr/issues/1011)) ([e5d10d0](https://github.com/chrisbenincasa/tunarr/commit/e5d10d07758b31614a4de056505ec9a30f3f10d4)), closes [#1010](https://github.com/chrisbenincasa/tunarr/issues/1010)
+* use correct pixel formats when downloading from hardware ([#1008](https://github.com/chrisbenincasa/tunarr/issues/1008)) ([828367c](https://github.com/chrisbenincasa/tunarr/commit/828367c08a0e8bfe6b9d62452123d1f4e1d0a22d))
+
 ## [0.16.9](https://github.com/chrisbenincasa/tunarr/compare/v0.16.8...v0.16.9) (2024-12-06)
 
 
