@@ -93,7 +93,7 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
         ? dayjs(req.query.endTime)
         : startTime.add(duration, 'milliseconds');
 
-      await req.serverCtx.guideService.refreshGuide(
+      await req.serverCtx.guideService.buildAllChannels(
         dayjs.duration(endTime.diff(startTime)),
       );
 
@@ -130,26 +130,30 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
       const channel = await req.serverCtx.channelDB.getChannelAndPrograms(
         req.params.id,
       );
+      if (!channel) {
+        return res.status(404).send();
+      }
       const startTime = dayjs(req.query.from);
       const duration =
-        channel!.duration <= 0
+        channel.duration <= 0
           ? dayjs.duration(1, 'day').asMilliseconds()
-          : channel!.duration;
+          : channel.duration;
       const endTime = req.query.to
         ? dayjs(req.query.to)
         : startTime.add(duration, 'milliseconds');
 
       await req.serverCtx.guideService.refreshGuide(
         dayjs.duration(endTime.diff(startTime)),
-        true,
         req.params.id,
+        true,
+        true,
       );
 
       return res
         .status(200)
         .send(
           await req.serverCtx.guideService.getChannelGuide(
-            channel!.uuid,
+            channel.uuid,
             OpenDateTimeRange.create(startTime, endTime)!,
           ),
         );
@@ -171,7 +175,7 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
       const startTime = dayjs(req.query.from);
       const endTime = dayjs(req.query.to);
 
-      await req.serverCtx.guideService.refreshGuide(
+      await req.serverCtx.guideService.buildAllChannels(
         dayjs.duration(endTime.diff(startTime)),
       );
 
