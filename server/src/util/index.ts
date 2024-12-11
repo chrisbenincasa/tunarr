@@ -235,13 +235,11 @@ export async function flatMapAsyncSeq<T, U>(
   );
 }
 
-export const wait: (ms?: number | Duration) => Promise<void> = (ms: number) => {
-  if (isUndefined(ms)) {
-    return new Promise((resolve) => setImmediate(resolve));
-  } else if (dayjs.isDuration(ms)) {
+export const wait = (ms?: number | Duration) => {
+  if (dayjs.isDuration(ms)) {
     return new Promise((resolve) => setTimeout(resolve, ms.asMilliseconds()));
   }
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms ?? 0));
 };
 
 export function firstDefined(obj: object, ...args: string[]): string {

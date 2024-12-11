@@ -5,9 +5,12 @@ import { Lineup, LineupItem } from '@/db/derived_types/Lineup.ts';
 import { OpenDateTimeRange } from '@/types/OpenDateTimeRange.ts';
 import { Maybe } from '@/types/util.ts';
 import { binarySearchRange } from '@/util/binarySearch.ts';
+import { devAssert } from '@/util/debug.ts';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
+import { MutexMap } from '@/util/mutexMap.ts';
 import { Timer } from '@/util/perf.ts';
 import { makeLocalUrl } from '@/util/serverUtil.ts';
+import throttle from '@/util/throttle.ts';
 import constants from '@tunarr/shared/constants';
 import { seq } from '@tunarr/shared/util';
 import {
@@ -93,7 +96,9 @@ export class TVGuideService {
     caller: import.meta,
     className: this.constructor.name,
   });
+
   private timer = new Timer(this.logger);
+  private locks = new MutexMap();
   private xmltv: XmlTvWriter;
   private eventService: EventService;
   private programConverter: ProgramConverter;
@@ -128,7 +133,6 @@ export class TVGuideService {
   }
 
   /**
-   *
    * @returns The current cached guide
    */
   get() {
@@ -153,19 +157,20 @@ export class TVGuideService {
   }
 
   async buildAllChannels(guideDuration: Duration, force: boolean = false) {
-    this.channelsById = await this.channelDB.loadAllLineups();
+    return this.withGuideContext(async () => {
+      if (isEmpty(this.channelsById)) {
+        const placeholderChannel = this.makePlaceholderChannel();
+        this.cachedGuide[placeholderChannel.channel.uuid] = placeholderChannel;
+      } else {
+        await Promise.all(
+          keys(this.channelsById).map((channelId) =>
+            this.buildChannelGuide(guideDuration, channelId, false, force),
+          ),
+        );
+      }
 
-    for (const channelId of keys(this.channelsById)) {
-      // Wait for all channels to be done before writing xmltv...
-      await this.refreshGuide(
-        guideDuration,
-        channelId,
-        /* writeXmlTv=*/ false,
-        force,
-      );
-    }
-
-    await this.writeXmlTv();
+      await this.writeXmlTv();
+    });
   }
 
   async refreshGuide(
@@ -174,29 +179,19 @@ export class TVGuideService {
     writeXmlTv: boolean = true,
     force: boolean = false,
   ) {
-    try {
-      const now = new Date().getTime();
-      if (isEmpty(this.channelsById)) {
-        this.channelsById = await this.channelDB.loadAllLineups();
-      }
-
-      const lastUpdateTime = this.lastUpdateTime[channelId] ?? 0;
-      const currentUpdateTime = this.currentUpdateTime[channelId] ?? -1;
-
-      if (force || (lastUpdateTime < now && currentUpdateTime === -1)) {
-        this.currentUpdateTime[channelId] = now;
-        this.currentEndTime[channelId] = now + guideDuration.asMilliseconds();
-
-        await this.buildChannelGuideWithRetries(channelId, writeXmlTv);
-      }
-
-      return await this.get();
-    } finally {
-      this.accumulateTable = {};
-      this.channelsById = {};
-    }
+    return this.withGuideContext(async () => {
+      return this.buildChannelGuide(
+        guideDuration,
+        channelId,
+        writeXmlTv,
+        force,
+      );
+    });
   }
 
+  /**
+   * Gets guide building status by channel
+   */
   async getStatus() {
     await this.get();
 
@@ -301,6 +296,58 @@ export class TVGuideService {
     dateRange: OpenDateTimeRange,
   ): Promise<Required<ChannelLineup>[]> {
     return this.getChannelGuides(dateRange);
+  }
+
+  // Initializes per-build context and then clears it
+  private async withGuideContext<T>(builder: () => Promise<T>) {
+    try {
+      this.channelsById = await this.channelDB.loadAllLineups();
+      this.accumulateTable = mapValues(this.channelsById, (channel) => {
+        const {
+          lineup: { items, startTimeOffsets },
+        } = channel;
+        // We have these precalculated!! Fallback just in case...
+        // The offsets should also strictly have one additional item in
+        // the array
+        if (
+          startTimeOffsets &&
+          (startTimeOffsets.length === items.length + 1 ||
+            startTimeOffsets.length === items.length)
+        ) {
+          return startTimeOffsets;
+        }
+
+        return this.makeAccumulated(channel);
+      });
+
+      return await builder();
+    } finally {
+      this.accumulateTable = {};
+      this.channelsById = {};
+    }
+  }
+
+  private async buildChannelGuide(
+    guideDuration: Duration,
+    channelId: string,
+    writeXmlTv: boolean = true,
+    force: boolean = false,
+  ) {
+    return this.locks.getOrCreateLock(channelId).then((lock) =>
+      lock.runExclusive(async () => {
+        devAssert(!isEmpty(this.channelsById));
+        const now = +dayjs();
+        const lastUpdateTime = this.lastUpdateTime[channelId] ?? 0;
+        const currentUpdateTime = this.currentUpdateTime[channelId] ?? -1;
+
+        if (force || (lastUpdateTime < now && currentUpdateTime === -1)) {
+          this.currentUpdateTime[channelId] = now;
+          this.currentEndTime[channelId] = now + guideDuration.asMilliseconds();
+
+          await this.buildChannelGuideWithRetries(channelId, writeXmlTv);
+        }
+      }),
+    );
   }
 
   // Returns duration offsets for programs on a channel in an array
@@ -416,6 +463,7 @@ export class TVGuideService {
 
       return (previousProgram.index + 1) % lineup.items.length;
     });
+
     if (isDefined(nextProgramIndex)) {
       // If we already have the previous program info, we can derive the following
       // This generally happens after we've figured out the first program in
@@ -472,7 +520,7 @@ export class TVGuideService {
             channelRedirectStack,
           );
         } else {
-          const redirectChannelProgram = await this.getChannelPlaying(
+          const targetChannelProgram = await this.getChannelPlaying(
             channel2,
             undefined,
             currentUpdateTimeMs,
@@ -481,16 +529,16 @@ export class TVGuideService {
 
           const start = Math.max(
             playing.startTimeMs,
-            redirectChannelProgram.startTimeMs,
+            targetChannelProgram.startTimeMs,
           );
 
-          const program2 = deepCopy(redirectChannelProgram.lineupItem);
+          const program2 = deepCopy(targetChannelProgram.lineupItem);
           // Cap the program at the lowest duration
           // Either the redirect slot will cut off before the program is
           // finished, or the program itself will end.
           program2.durationMs = Math.min(
             playing.lineupItem.durationMs,
-            redirectChannelProgram.lineupItem.durationMs,
+            targetChannelProgram.lineupItem.durationMs,
           );
           playing = {
             index: playing.index,
@@ -507,6 +555,7 @@ export class TVGuideService {
     currentUpdateTimeMs: number,
     currentEndTimeMs: number,
     channelWithLineup: ChannelWithLineup,
+    redirectStack: string[] = [],
   ): Promise<ChannelPrograms> {
     const result: ChannelPrograms = {
       channel: channelWithLineup.channel,
@@ -517,9 +566,7 @@ export class TVGuideService {
 
     let melded = 0;
 
-    const push = async (program: GuideItem) => {
-      await wait();
-
+    const push = (program: GuideItem) => {
       const currentProgram = program.lineupItem;
       const previousProgramIndex =
         !isUndefined(program.index) &&
@@ -595,6 +642,7 @@ export class TVGuideService {
       channelWithLineup,
       undefined,
       currentUpdateTimeMs,
+      redirectStack,
     );
 
     if (currentProgram.lineupItem.durationMs <= 0) {
@@ -610,7 +658,9 @@ export class TVGuideService {
     let nextOffsetTime =
       currentProgram.startTimeMs + currentProgram.lineupItem.durationMs;
     while (currentProgram.startTimeMs < currentEndTimeMs) {
-      await push(currentProgram);
+      push(currentProgram);
+      await throttle();
+
       const lastProgram = currentProgram;
       currentProgram = await this.getChannelPlaying(
         channelWithLineup,
@@ -642,14 +692,15 @@ export class TVGuideService {
           )!.durationMs;
           const difference =
             lineupDuration - currentProgram.lineupItem.durationMs;
-          await push({
-            // programIndex: currentProgram.programIndex,
+
+          push({
             lineupItem: {
               type: 'offline',
               durationMs: difference,
             },
             startTimeMs: currentProgram.startTimeMs,
           });
+
           nextOffsetTime += difference;
           currentProgram.startTimeMs += difference;
         } else {
@@ -708,10 +759,7 @@ export class TVGuideService {
           duration -= d;
           start += d;
 
-          result.programs.push(
-            offlineItem,
-            // programToTvGuideProgram(channelWithLineup.channel, offlineItem),
-          );
+          result.programs.push(offlineItem);
         }
       } else {
         result.programs.push(programs[i]);
@@ -724,101 +772,29 @@ export class TVGuideService {
   private async buildGuideInternal(
     channelId: string,
   ): Promise<ChannelPrograms> {
+    devAssert(!isEmpty(this.accumulateTable));
     const currentUpdateTimeMs = this.currentUpdateTime[channelId];
     const channelToUpdate = this.channelsById[channelId];
-    this.accumulateTable = mapValues(this.channelsById, (channel) => {
-      const {
-        lineup: { items, startTimeOffsets },
-      } = channel;
-      // We have these precalculated!!
-      // Fallback just in case...
-      // The offsets should also strictly have one additional item in
-      // the array
-      if (
-        startTimeOffsets &&
-        (startTimeOffsets.length === items.length + 1 ||
-          startTimeOffsets.length === items.length)
-      ) {
-        return startTimeOffsets;
-      }
-
-      return this.makeAccumulated(channel);
-    });
-
-    // const result: Record<string, ChannelPrograms> = {};
-    if (isEmpty(this.channelsById)) {
-      const fakeChannelId = v4();
-      const channel: ChannelWithPrograms = {
-        uuid: fakeChannelId,
-        name: 'Tunarr',
-        icon: {
-          path: makeLocalUrl('/images/tunarr.png'),
-          width: 0,
-          duration: 0,
-          position: 'bottom-right',
-        },
-        disableFillerOverlay: 0, //false, cast?
-        number: 0,
-        guideMinimumDuration: 0,
-        duration: 0,
-        stealth: 0, //false, cast?
-        startTime: 0,
-        offline: {
-          picture: undefined,
-          soundtrack: undefined,
-          mode: 'pic',
-        },
-        guideFlexTitle: null,
-        createdAt: +dayjs(),
-        updatedAt: +dayjs(),
-        fillerRepeatCooldown: null,
-        groupTitle: null,
-        watermark: null,
-        transcoding: null,
-        programs: [],
-        streamMode: 'hls',
-      };
-
-      // Placeholder channel with random ID.
-      return {
-        channel: channel,
-        programs: [
-          {
-            startTimeMs:
-              currentUpdateTimeMs - (currentUpdateTimeMs % (30 * 60 * 1000)),
-            lineupItem: {
-              durationMs: 24 * 60 * 60 * 1000,
-              // icon: FALLBACK_ICON,
-              // showTitle: 'No channels configured',
-              // date: dayjs().format('YYYY-MM-DD'),
-              // summary: 'Use the tunarr web UI to configure channels.',
-              type: 'offline',
-            },
-          },
-        ],
-      };
-    } else {
-      return this.getChannelPrograms(
-        currentUpdateTimeMs,
-        this.currentEndTime[channelToUpdate.channel.uuid],
-        channelToUpdate,
-      );
-    }
+    return this.getChannelPrograms(
+      currentUpdateTimeMs,
+      this.currentEndTime[channelToUpdate.channel.uuid],
+      channelToUpdate,
+    );
   }
 
   private async buildChannelGuideWithRetries(
     channelId: string,
     writeXmlTv: boolean,
   ) {
+    const thisGuideLength =
+      this.currentEndTime[channelId] - this.currentUpdateTime[channelId];
+    const dur = dayjs.duration(thisGuideLength).humanize();
+    this.logger.debug('Building Channel %s for %s', channelId, dur);
     await retry(
       async () => {
         try {
-          const thisGuideLength =
-            this.currentEndTime[channelId] - this.currentUpdateTime[channelId];
           await this.timer.timeAsync(
-            `Build Channel ${channelId} TV Guide for ${dayjs
-              .duration(thisGuideLength)
-              .humanize()}`,
+            `Built Channel ${channelId} TV Guide for ${dur}`,
             async () => {
               this.cachedGuide[channelId] =
                 await this.buildGuideInternal(channelId);
@@ -843,44 +819,8 @@ export class TVGuideService {
     );
   }
 
-  // private async buildGuideWithRetries(channelId?: string) {
-  //   await retry(
-  //     async () => {
-  //       try {
-  //         const thisGuideLength = this.currentEndTime - this.currentUpdateTime;
-  //         await this.timer.timeAsync(
-  //           `Build TV Guide for ${dayjs.duration(thisGuideLength).humanize()}`,
-  //           async () => {
-  //             if (isNonEmptyString(channelId)) {
-  //               this.cachedGuide = {
-  //                 ...this.cachedGuide,
-  //                 ...(await this.buildGuideInternal(channelId)),
-  //               };
-  //             } else {
-  //               this.cachedGuide = await this.buildGuideInternal();
-  //             }
-  //             // This was moved from a finally block, make sure that is right...
-  //             this.lastUpdateTime = this.currentUpdateTime;
-  //             this.lastEndTime = this.currentEndTime;
-  //             this.currentUpdateTime[channelId] = -1;
-  //             await this.writeXmlTv();
-  //           },
-  //         );
-  //       } catch (err) {
-  //         this.logger.error(err, 'Unable to update internal guide data');
-  //       }
-  //     },
-  //     {
-  //       retries: 15,
-  //       factor: 2,
-  //       maxRetryTime: 30000,
-  //     },
-  //   );
-  // }
-
   private async writeXmlTv() {
     // Materialize the guide to write out the XML.
-
     const allChannels = map(values(this.channelsById), 'channel');
     await this.xmltv.write(
       map(values(this.cachedGuide), ({ channel, programs }) => {
@@ -893,12 +833,13 @@ export class TVGuideService {
       }),
     );
 
+    const now = dayjs();
     this.eventService.push({
       type: 'xmltv',
-      message: `XMLTV updated at server time = ${dayjs().format()}`,
+      message: `XMLTV updated at server time = ${now.format()}`,
       module: 'xmltv',
       detail: {
-        time: new Date().getTime(),
+        time: +now,
       },
       level: 'info',
     });
@@ -1049,6 +990,56 @@ export class TVGuideService {
         allChannels,
       ),
     );
+  }
+
+  private makePlaceholderChannel(): ChannelPrograms {
+    const currentUpdateTimeMs = +dayjs();
+    const fakeChannelId = v4();
+    const channel: ChannelWithPrograms = {
+      uuid: fakeChannelId,
+      name: 'Tunarr',
+      icon: {
+        path: makeLocalUrl('/images/tunarr.png'),
+        width: 0,
+        duration: 0,
+        position: 'bottom-right',
+      },
+      disableFillerOverlay: 0, //false, cast?
+      number: 0,
+      guideMinimumDuration: 0,
+      duration: 0,
+      stealth: 0, //false, cast?
+      startTime: 0,
+      offline: {
+        picture: undefined,
+        soundtrack: undefined,
+        mode: 'pic',
+      },
+      guideFlexTitle: null,
+      createdAt: +dayjs(),
+      updatedAt: +dayjs(),
+      fillerRepeatCooldown: null,
+      groupTitle: null,
+      watermark: null,
+      transcoding: null,
+      programs: [],
+      streamMode: 'hls',
+    };
+
+    // Placeholder channel with random ID.
+    return {
+      channel: channel,
+      programs: [
+        {
+          startTimeMs:
+            currentUpdateTimeMs - (currentUpdateTimeMs % (30 * 60 * 1000)),
+          lineupItem: {
+            durationMs: 24 * 60 * 60 * 1000,
+            type: 'offline',
+          },
+        },
+      ],
+    };
   }
 }
 
