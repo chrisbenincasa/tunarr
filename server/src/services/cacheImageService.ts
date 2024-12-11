@@ -1,10 +1,11 @@
-import { getDatabase } from '@/db/DBAccess.ts';
 import { CachedImage } from '@/db/schema/CachedImage.ts';
+import { DB } from '@/db/schema/db.ts';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import axios, { AxiosHeaders, AxiosRequestConfig } from 'axios';
 import crypto from 'crypto';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { createWriteStream, promises as fs } from 'fs';
+import { Kysely } from 'kysely';
 import { isString, isUndefined } from 'lodash-es';
 import stream from 'stream';
 import { FileCacheService } from './FileCacheService.ts';
@@ -22,7 +23,10 @@ export class CacheImageService {
   private cacheService: FileCacheService;
   private imageCacheFolder: string;
 
-  constructor(fileCacheService: FileCacheService) {
+  constructor(
+    private db: Kysely<DB>,
+    fileCacheService: FileCacheService,
+  ) {
     this.cacheService = fileCacheService;
     this.imageCacheFolder = 'images';
   }
@@ -41,7 +45,7 @@ export class CacheImageService {
     res: FastifyReply,
   ) {
     try {
-      const imgItem = await getDatabase()
+      const imgItem = await this.db
         .selectFrom('cachedImage')
         .where('hash', '=', req.params.hash)
         .selectAll()
@@ -66,7 +70,7 @@ export class CacheImageService {
   }
 
   async getOrDownloadImage(hash: string) {
-    const imgItem = await getDatabase()
+    const imgItem = await this.db
       .selectFrom('cachedImage')
       .where('hash', '=', hash)
       .selectAll()
@@ -106,7 +110,7 @@ export class CacheImageService {
     const mimeType = (response.headers as AxiosHeaders).get('content-type');
     if (!isUndefined(mimeType) && isString(mimeType)) {
       this.logger.debug('Got image file with mimeType %s', mimeType);
-      await getDatabase()
+      await this.db
         .insertInto('cachedImage')
         .values({
           ...cachedImage,
@@ -158,7 +162,7 @@ export class CacheImageService {
       .update(imageUrl)
       .digest('base64');
 
-    await getDatabase()
+    await this.db
       .insertInto('cachedImage')
       .values({
         hash: encodedUrl,

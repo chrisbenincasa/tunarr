@@ -1,13 +1,13 @@
 import {
   CaseWhenBuilder,
   ExpressionBuilder,
+  Kysely,
   UpdateQueryBuilder,
   UpdateResult,
 } from 'kysely';
 import { jsonArrayFrom, jsonObjectFrom } from 'kysely/helpers/sqlite';
 import { isBoolean, isEmpty, keys, merge, reduce } from 'lodash-es';
 import { DeepPartial, DeepRequired, StrictExclude } from 'ts-essentials';
-import { getDatabase } from './DBAccess.ts';
 import type { FillerShowTable as RawFillerShow } from './schema/FillerShow.js';
 import { ProgramType, ProgramTable as RawProgram } from './schema/Program.ts';
 import {
@@ -315,6 +315,7 @@ function baseWithProgramsExpressionBuilder(
 
 // TODO: See if there is a way to share the impls here and above
 export function selectProgramsBuilder(
+  db: Kysely<DB>,
   optOverides: DeepPartial<WithProgramsOptions> = defaultWithProgramOptions,
 ) {
   const opts: DeepRequired<WithProgramsOptions> = merge(
@@ -322,7 +323,7 @@ export function selectProgramsBuilder(
     defaultWithProgramOptions,
     optOverides,
   );
-  return getDatabase()
+  return db
     .selectFrom('program')
     .select(opts.fields)
     .$if(!!opts.joins.trackAlbum, (qb) =>

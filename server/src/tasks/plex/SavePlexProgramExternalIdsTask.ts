@@ -1,6 +1,5 @@
 import { ProgramDB } from '@/db/ProgramDB.ts';
 import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.ts';
-import { upsertRawProgramExternalIds } from '@/db/programExternalIdHelpers.ts';
 import { ProgramExternalId } from '@/db/schema/ProgramExternalId.ts';
 import { isQueryError } from '@/external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
@@ -82,7 +81,7 @@ export class SavePlexProgramExternalIdsTask extends Task {
       }),
     );
 
-    return await upsertRawProgramExternalIds(eids);
+    return await this.programDB.upsertRawProgramExternalIds(eids);
   }
 
   get taskName() {

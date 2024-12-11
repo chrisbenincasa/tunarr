@@ -1,8 +1,8 @@
-import { ChannelDB } from '@/db/ChannelDB.ts';
-import { SettingsDB, getSettings } from '@/db/SettingsDB.ts';
+import { SettingsDB } from '@/db/SettingsDB.ts';
 import { isContentBackedLineupIteam } from '@/db/derived_types/StreamLineup.ts';
 import { MediaSourceDB } from '@/db/mediaSourceDB.ts';
 import { MediaSourceType } from '@/db/schema/MediaSource.ts';
+import { JellyfinItemFinder } from '@/external/jellyfin/JellyfinItemFinder.ts';
 import { FFmpegFactory } from '@/ffmpeg/FFmpegFactory.ts';
 import { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
 import { OutputFormat } from '@/ffmpeg/builder/constants.ts';
@@ -12,11 +12,31 @@ import { ProgramStream } from '@/stream/ProgramStream.js';
 import { UpdateJellyfinPlayStatusScheduledTask } from '@/tasks/jellyfin/UpdateJellyfinPlayStatusTask.js';
 import { Result } from '@/types/result.js';
 import { Maybe, Nullable } from '@/types/util.js';
+import { Provider } from '@/util/Provider.ts';
 import { ifDefined } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import dayjs from 'dayjs';
 import { isNil, isNull, isUndefined } from 'lodash-es';
+import { ProgramStreamFactory } from '../ProgramStreamFactory.ts';
 import { JellyfinStreamDetails } from './JellyfinStreamDetails.js';
+
+export class JellyfinProgramStreamFactory implements ProgramStreamFactory {
+  constructor(
+    private settingsDB: SettingsDB,
+    private mediaSourceDB: MediaSourceDB,
+    private jellyfinItemFinderProvider: Provider<JellyfinItemFinder>,
+  ) {}
+
+  build(context: PlayerContext, outputFormat: OutputFormat): ProgramStream {
+    return new JellyfinProgramStream(
+      this.settingsDB,
+      this.mediaSourceDB,
+      this.jellyfinItemFinderProvider,
+      context,
+      outputFormat,
+    );
+  }
+}
 
 export class JellyfinProgramStream extends ProgramStream {
   protected logger = LoggerFactory.child({
@@ -28,10 +48,11 @@ export class JellyfinProgramStream extends ProgramStream {
   private updatePlayStatusTask: Maybe<UpdateJellyfinPlayStatusScheduledTask>;
 
   constructor(
+    settingsDB: SettingsDB,
+    private mediaSourceDB: MediaSourceDB,
+    private jellyfinItemFinderProvider: Provider<JellyfinItemFinder>,
     context: PlayerContext,
     outputFormat: OutputFormat,
-    settingsDB: SettingsDB = getSettings(),
-    private mediaSourceDB: MediaSourceDB = new MediaSourceDB(new ChannelDB()),
   ) {
     super(context, outputFormat, settingsDB);
   }
@@ -69,10 +90,9 @@ export class JellyfinProgramStream extends ProgramStream {
       );
     }
 
-    // const plexSettings = this.context.settings.plexSettings();
     const jellyfinStreamDetails = new JellyfinStreamDetails(
-      server,
       this.settingsDB,
+      this.jellyfinItemFinderProvider.get(),
     );
 
     const watermark = await this.getWatermark();
@@ -81,7 +101,10 @@ export class JellyfinProgramStream extends ProgramStream {
       channel,
     );
 
-    const stream = await jellyfinStreamDetails.getStream(lineupItem);
+    const stream = await jellyfinStreamDetails.getStream({
+      server,
+      item: lineupItem,
+    });
     if (isNull(stream)) {
       return Result.failure(
         new Error('Unable to retrieve stream details from Jellyfin'),

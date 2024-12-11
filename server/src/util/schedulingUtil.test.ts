@@ -1,6 +1,7 @@
+import dayjs from '@/util/dayjs.ts';
+import { parseEveryScheduleRule } from '@/util/schedulingUtil.ts';
 import { EverySchedule } from '@tunarr/types/schemas';
-import dayjs from './dayjs';
-import { parseEveryScheduleRule } from './schedulingUtil';
+
 test('should parse every schedules', () => {
   const schedule: EverySchedule = {
     type: 'every',

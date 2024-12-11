@@ -1,16 +1,22 @@
-import { Channel } from '@/db/schema/Channel.ts';
+import { Provider } from '@/util/Provider.ts';
 import { DynamicContentConfigSource } from '@tunarr/types/api';
 import { ContentSourceUpdater } from './ContentSourceUpdater.ts';
-import { PlexContentSourceUpdater } from './PlexContentSourceUpdater.ts';
 
 export class ContentSourceUpdaterFactory {
-  static getUpdater(
-    channel: Channel,
-    config: DynamicContentConfigSource,
+  constructor(
+    private updaterProviderByType: Map<
+      DynamicContentConfigSource['type'],
+      Provider<ContentSourceUpdater<DynamicContentConfigSource>>
+    >,
+  ) {}
+
+  getUpdater(
+    type: DynamicContentConfigSource['type'],
   ): ContentSourceUpdater<DynamicContentConfigSource> {
-    switch (config.type) {
-      case 'plex':
-        return new PlexContentSourceUpdater(channel, config);
+    const updater = this.updaterProviderByType.get(type);
+    if (!updater) {
+      throw new Error('No updater bound for type: ' + type);
     }
+    return updater.get();
   }
 }

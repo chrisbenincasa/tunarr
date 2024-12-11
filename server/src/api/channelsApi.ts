@@ -1,4 +1,3 @@
-import { ProgramConverter } from '@/db/converters/ProgramConverter.ts';
 import { dbChannelToApiChannel } from '@/db/converters/channelConverters.ts';
 import { GlobalScheduler } from '@/services/Scheduler.ts';
 import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
@@ -262,7 +261,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         );
 
         if (!isNil(channel)) {
-          const converter = new ProgramConverter();
+          const converter = req.serverCtx.programConverter;
           const externalIds =
             await req.serverCtx.channelDB.getChannelProgramExternalIds(
               channel.uuid,

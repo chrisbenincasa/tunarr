@@ -1,11 +1,12 @@
 import { ChannelDB } from '@/db/ChannelDB.ts';
-import { getDatabase } from '@/db/DBAccess.ts';
 import { Lineup, isContentItem } from '@/db/derived_types/Lineup.ts';
+import { DB } from '@/db/schema/db.ts';
 import { Func } from '@/types/func.js';
 import { ChannelAndLineup } from '@/types/internal.js';
 import { asyncPool } from '@/util/asyncPool.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { SchedulingOperation } from '@tunarr/types/api';
+import { Kysely } from 'kysely';
 import {
   compact,
   filter,
@@ -36,7 +37,11 @@ const OperatorToWeight: Record<SchedulingOperation['type'], number> = {
 
 export class LineupCreator {
   #logger = LoggerFactory.child({ className: LineupCreator.name });
-  private channelDB = new ChannelDB();
+
+  constructor(
+    private db: Kysely<DB>,
+    private channelDB: ChannelDB,
+  ) {}
 
   // Right now this is very basic -- we just set the pending items
   // to be he lineup items. Eventually, this will apply lineup
@@ -162,8 +167,7 @@ export class LineupCreator {
     );
 
     return async ({ channel, lineup }) => {
-      const db = getDatabase();
-      const programs = await db
+      const programs = await this.db
         .selectFrom('program')
         .where(
           'uuid',

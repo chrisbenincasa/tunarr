@@ -1,3 +1,4 @@
+import { DB } from '@/db/schema/db.ts';
 import { isNonEmptyString } from '@/util/index.ts';
 import { CustomProgram } from '@tunarr/types';
 import {
@@ -5,9 +6,9 @@ import {
   UpdateCustomShowRequest,
 } from '@tunarr/types/api';
 import dayjs from 'dayjs';
+import { Kysely } from 'kysely';
 import { filter, isNil, map } from 'lodash-es';
 import { v4 } from 'uuid';
-import { getDatabase } from './DBAccess.ts';
 import { ProgramDB } from './ProgramDB.ts';
 import { ProgramConverter } from './converters/ProgramConverter.ts';
 import { createPendingProgramIndexMap } from './programHelpers.ts';
@@ -19,12 +20,17 @@ import { NewCustomShow, NewCustomShowContent } from './schema/CustomShow.ts';
 import { programExternalIdString } from './schema/Program.ts';
 
 export class CustomShowDB {
-  #programConverter: ProgramConverter = new ProgramConverter();
+  #programConverter: ProgramConverter;
 
-  constructor(private programDB: ProgramDB = new ProgramDB()) {}
+  constructor(
+    private db: Kysely<DB>,
+    private programDB: ProgramDB,
+  ) {
+    this.#programConverter = new ProgramConverter(db);
+  }
 
   async getShow(id: string) {
-    return getDatabase()
+    return this.db
       .selectFrom('customShow')
       .selectAll()
       .where('customShow.uuid', '=', id)
@@ -37,7 +43,7 @@ export class CustomShowDB {
   }
 
   async getShowPrograms(id: string): Promise<CustomProgram[]> {
-    const programs = await getDatabase()
+    const programs = await this.db
       .selectFrom('customShow')
       .where('customShow.uuid', '=', id)
       .select((eb) => withCustomShowPrograms(eb, { joins: AllProgramJoins }))
@@ -95,22 +101,20 @@ export class CustomShowDB {
           }) satisfies NewCustomShowContent,
       );
 
-      await getDatabase()
-        .transaction()
-        .execute(async (tx) => {
-          await tx
-            .deleteFrom('customShowContent')
-            .where('customShowContent.customShowUuid', '=', show.uuid)
-            .execute();
-          await tx
-            .insertInto('customShowContent')
-            .values([...persistedCustomShowContent, ...newCustomShowContent])
-            .execute();
-        });
+      await this.db.transaction().execute(async (tx) => {
+        await tx
+          .deleteFrom('customShowContent')
+          .where('customShowContent.customShowUuid', '=', show.uuid)
+          .execute();
+        await tx
+          .insertInto('customShowContent')
+          .values([...persistedCustomShowContent, ...newCustomShowContent])
+          .execute();
+      });
     }
 
     if (updateRequest.name) {
-      await getDatabase()
+      await this.db
         .updateTable('customShow')
         .where('uuid', '=', show.uuid)
         .limit(1)
@@ -140,7 +144,7 @@ export class CustomShowDB {
       createRequest.programs,
     );
 
-    await getDatabase().insertInto('customShow').values(show).execute();
+    await this.db.insertInto('customShow').values(show).execute();
 
     const persistedCustomShowContent = map(
       persisted,
@@ -161,7 +165,7 @@ export class CustomShowDB {
         }) satisfies NewCustomShowContent,
     );
 
-    await getDatabase()
+    await this.db
       .insertInto('customShowContent')
       .values([...persistedCustomShowContent, ...newCustomShowContent])
       .execute();
@@ -175,29 +179,24 @@ export class CustomShowDB {
       return false;
     }
 
-    await getDatabase()
-      .transaction()
-      .execute(async (tx) => {
-        // TODO: Do this deletion in the DB with foreign keys.
-        await tx
-          .deleteFrom('channelCustomShows')
-          .where('customShowUuid', '=', show.uuid)
-          .execute();
-        await tx
-          .deleteFrom('customShowContent')
-          .where('customShowContent.customShowUuid', '=', show.uuid)
-          .execute();
-        await tx
-          .deleteFrom('customShow')
-          .where('uuid', '=', show.uuid)
-          .execute();
-      });
+    await this.db.transaction().execute(async (tx) => {
+      // TODO: Do this deletion in the DB with foreign keys.
+      await tx
+        .deleteFrom('channelCustomShows')
+        .where('customShowUuid', '=', show.uuid)
+        .execute();
+      await tx
+        .deleteFrom('customShowContent')
+        .where('customShowContent.customShowUuid', '=', show.uuid)
+        .execute();
+      await tx.deleteFrom('customShow').where('uuid', '=', show.uuid).execute();
+    });
 
     return true;
   }
 
   async getAllShowIds() {
-    return getDatabase()
+    return this.db
       .selectFrom('customShow')
       .select('uuid')
       .execute()
@@ -205,11 +204,11 @@ export class CustomShowDB {
   }
 
   getAllShows() {
-    return getDatabase().selectFrom('customShow').selectAll().execute();
+    return this.db.selectFrom('customShow').selectAll().execute();
   }
 
   async getAllShowsInfo() {
-    const showsAndContentCount = await getDatabase()
+    const showsAndContentCount = await this.db
       .selectFrom('customShow')
       .selectAll('customShow')
       .innerJoin(

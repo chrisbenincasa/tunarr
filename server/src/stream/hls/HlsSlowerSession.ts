@@ -1,11 +1,10 @@
-import { getSettings } from '@/db/SettingsDB.ts';
+import { SettingsDB } from '@/db/SettingsDB.ts';
 import { Channel } from '@/db/schema/Channel.ts';
 import { FFmpegFactory } from '@/ffmpeg/FFmpegFactory.ts';
 import { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.ts';
 import { defaultHlsOptions } from '@/ffmpeg/ffmpeg.ts';
-import { serverContext } from '@/serverContext.ts';
 import { ProgramStream } from '@/stream/ProgramStream.ts';
-import { ProgramStreamFactory } from '@/stream/ProgramStreamFactory.ts';
+import { ProgramStreamProvider } from '@/stream/ProgramStreamProvider.ts';
 import { StreamProgramCalculator } from '@/stream/StreamProgramCalculator.ts';
 import { Result } from '@/types/result.ts';
 import { makeFfmpegPlaylistUrl } from '@/util/serverUtil.ts';
@@ -42,8 +41,9 @@ export class HlsSlowerSession extends BaseHlsSession<HlsSlowerSessionOptions> {
   constructor(
     channel: Channel,
     options: HlsSlowerSessionOptions,
-    programCalculator: StreamProgramCalculator = serverContext().streamProgramCalculator(),
-    private settingsDB = getSettings(),
+    programCalculator: StreamProgramCalculator,
+    private programStreamFactory: ProgramStreamProvider,
+    private settingsDB: SettingsDB,
   ) {
     super(channel, options);
     this.#programCalculator = programCalculator;
@@ -83,10 +83,9 @@ export class HlsSlowerSession extends BaseHlsSession<HlsSlowerSessionOptions> {
         this.#realtimeTranscode,
       );
 
-      let programStream = ProgramStreamFactory.create(
+      let programStream = this.programStreamFactory.create(
         context,
         NutOutputFormat,
-        this.settingsDB,
       );
 
       let transcodeSessionResult = await programStream.setup();
@@ -97,7 +96,7 @@ export class HlsSlowerSession extends BaseHlsSession<HlsSlowerSessionOptions> {
           'Error while starting program stream. Attempting to subtitute with error stream',
         );
 
-        programStream = ProgramStreamFactory.create(
+        programStream = this.programStreamFactory.create(
           PlayerContext.error(
             result.lineupItem.streamDuration ?? result.lineupItem.duration,
             transcodeSessionResult.error,

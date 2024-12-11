@@ -2,9 +2,7 @@ import { ChannelDB } from '@/db/ChannelDB.ts';
 import { ProgramDB } from '@/db/ProgramDB.ts';
 import { PendingProgram } from '@/db/derived_types/Lineup.ts';
 import { MediaSourceDB } from '@/db/mediaSourceDB.ts';
-import { Channel } from '@/db/schema/Channel.ts';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.ts';
-import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
 import { Logger, LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { Timer } from '@/util/perf.js';
 import { createExternalId } from '@tunarr/shared';
@@ -17,61 +15,72 @@ import {
   EnrichedPlexTerminalMedia,
   PlexItemEnumerator,
 } from '../PlexItemEnumerator.js';
-import { ContentSourceUpdater } from './ContentSourceUpdater.js';
+import {
+  ContentSourceUpdater,
+  ContentSourceUpdaterContext,
+} from './ContentSourceUpdater.js';
 
 export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicContentConfigPlexSource> {
   #logger: Logger = LoggerFactory.child({
     className: PlexContentSourceUpdater.name,
   });
   #timer = new Timer(this.#logger);
-  #plex: PlexApiClient;
-  #channelDB: ChannelDB;
-  #programDB: ProgramDB;
-  #mediaSourceDB: MediaSourceDB;
 
-  constructor(channel: Channel, config: DynamicContentConfigPlexSource) {
-    super(channel, config);
-    this.#channelDB = new ChannelDB();
-    this.#programDB = new ProgramDB();
-    this.#mediaSourceDB = new MediaSourceDB(this.#channelDB);
+  constructor(
+    private channelDB: ChannelDB,
+    private mediaSourceDB: MediaSourceDB,
+    private programDB: ProgramDB,
+  ) {
+    super();
   }
 
   protected async prepare() {
-    const server = await this.#mediaSourceDB.findByType(
+    // const {config} = context;
+    // const server = await this.#mediaSourceDB.findByType(
+    //   'plex',
+    //   config.plexServerId,
+    // );
+    // if (!server) {
+    //   throw new Error('media source not found');
+    // }
+    // this.#plex = MediaSourceApiFactory().get(server);
+  }
+
+  protected async run(
+    context: ContentSourceUpdaterContext<DynamicContentConfigPlexSource>,
+  ) {
+    const { channel, config } = context;
+    const server = await this.mediaSourceDB.findByType(
       'plex',
-      this.config.plexServerId,
+      config.plexServerId,
     );
     if (!server) {
       throw new Error('media source not found');
     }
 
-    this.#plex = MediaSourceApiFactory().get(server);
-  }
+    const plex = MediaSourceApiFactory().get(server);
 
-  protected async run() {
-    const filter = buildPlexFilterKey(this.config.search?.filter);
+    const filter = buildPlexFilterKey(config.search?.filter);
 
     // TODO page through the results
     const plexResult = await this.#timer.timeAsync('plex search', () =>
-      this.#plex.doGetPath<PlexLibraryListing>(
-        `/library/sections/${this.config.plexLibraryKey}/all?${filter.join(
-          '&',
-        )}`,
+      plex.doGetPath<PlexLibraryListing>(
+        `/library/sections/${config.plexLibraryKey}/all?${filter.join('&')}`,
       ),
     );
 
-    const enumerator = new PlexItemEnumerator(this.#plex, new ProgramDB());
+    const enumerator = new PlexItemEnumerator(plex, this.programDB);
 
     const enumeratedItems = await this.#timer.timeAsync('enumerate items', () =>
       enumerator.enumerateItems(plexResult?.Metadata ?? []),
     );
 
     const channelPrograms: ContentProgram[] = map(enumeratedItems, (media) => {
-      return plexMediaToContentProgram(this.#plex.serverName, media);
+      return plexMediaToContentProgram(plex.serverName, media);
     });
 
     const dbPrograms =
-      await this.#programDB.upsertContentPrograms(channelPrograms);
+      await this.programDB.upsertContentPrograms(channelPrograms);
 
     const now = new Date().getTime();
 
@@ -79,14 +88,11 @@ export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicConten
       type: 'content' as const,
       id: program.uuid,
       durationMs: program.duration,
-      updaterId: this.config.updater._id,
+      updaterId: config.updater._id,
       addedAt: now,
     }));
 
-    await this.#channelDB.addPendingPrograms(
-      this.channel.uuid,
-      pendingPrograms,
-    );
+    await this.channelDB.addPendingPrograms(channel.uuid, pendingPrograms);
   }
 }
 

@@ -1,6 +1,8 @@
-import { SettingsDB, getSettings } from '@/db/SettingsDB.ts';
+import { SettingsDB } from '@/db/SettingsDB.ts';
+import { DB } from '@/db/schema/db.ts';
 import { FFMPEGInfo, FfmpegVersionResult } from '@/ffmpeg/ffmpegInfo.ts';
 import { fileExists } from '@/util/fsUtil.ts';
+import { Kysely } from 'kysely';
 import { every, isNil, some } from 'lodash-es';
 import { P, match } from 'ts-pattern';
 import {
@@ -15,7 +17,10 @@ export class FfmpegVersionHealthCheck implements HealthCheck {
 
   private static minVersion = '6.1';
 
-  constructor(private settingsDB: SettingsDB = getSettings()) {}
+  constructor(
+    _db: Kysely<DB>,
+    private settingsDB: SettingsDB,
+  ) {}
 
   async getStatus(): Promise<HealthCheckResult> {
     const settings = this.settingsDB.ffmpegSettings();

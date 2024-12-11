@@ -6,25 +6,28 @@ import { isDefined } from './index.ts';
  * a particular keyspace. Useful for initializing global cache objects
  * in an async environment
  */
-export class MutexMap {
+export class MutexMap<Key extends string = string> {
   #mu = new Mutex();
-  #keyedLocks: Record<string, MutexInterface> = {};
+  #keyedLocks: Map<Key, MutexInterface> = new Map();
 
   constructor(private timeout?: number) {}
 
-  async getOrCreateLock(id: string) {
+  async getOrCreateLock(id: Key) {
     return await this.#mu.runExclusive(() => {
-      let lock = this.#keyedLocks[id];
+      let lock = this.#keyedLocks.get(id);
       if (!lock) {
-        this.#keyedLocks[id] = lock = isDefined(this.timeout)
-          ? withTimeout(new Mutex(), this.timeout)
-          : new Mutex();
+        this.#keyedLocks.set(
+          id,
+          (lock = isDefined(this.timeout)
+            ? withTimeout(new Mutex(), this.timeout)
+            : new Mutex()),
+        );
       }
       return lock;
     });
   }
 
-  async runWithLockId<T>(id: string, cb: () => Promise<T>): Promise<T> {
+  async runWithLockId<T>(id: Key, cb: () => Promise<T>): Promise<T> {
     return (await this.getOrCreateLock(id)).runExclusive(cb);
   }
 }

@@ -99,7 +99,10 @@ export const videoApiRouter: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      const videoStream = new VideoStream();
+      const videoStream = new VideoStream(
+        req.serverCtx.streamProgramCalculator(),
+        req.serverCtx.programStreamProvider,
+      );
 
       const channelId = isNumber(req.query.channel)
         ? await req.serverCtx.channelDB

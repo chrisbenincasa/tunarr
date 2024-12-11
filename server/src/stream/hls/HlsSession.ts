@@ -1,13 +1,11 @@
-import { ChannelDB } from '@/db/ChannelDB.ts';
-import { getSettings } from '@/db/SettingsDB.ts';
+import { SettingsDB } from '@/db/SettingsDB.ts';
 import { Channel } from '@/db/schema/Channel.ts';
 import { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.ts';
 import { GetLastPtsDurationTask } from '@/ffmpeg/GetLastPtsDuration.ts';
 import { HlsOutputFormat } from '@/ffmpeg/builder/constants.ts';
-import { serverContext } from '@/serverContext.ts';
 import { OnDemandChannelService } from '@/services/OnDemandChannelService.ts';
 import { PlayerContext } from '@/stream/PlayerStreamContext.ts';
-import { ProgramStreamFactory } from '@/stream/ProgramStreamFactory.ts';
+import { ProgramStreamProvider } from '@/stream/ProgramStreamProvider.ts';
 import { StreamProgramCalculator } from '@/stream/StreamProgramCalculator.ts';
 import { Result } from '@/types/result.ts';
 import { Maybe } from '@/types/util.ts';
@@ -36,11 +34,10 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
   constructor(
     channel: Channel,
     options: HlsSessionOptions,
-    programCalculator: StreamProgramCalculator = serverContext().streamProgramCalculator(),
-    private settingsDB = getSettings(),
-    private onDemandService: OnDemandChannelService = new OnDemandChannelService(
-      new ChannelDB(),
-    ),
+    programCalculator: StreamProgramCalculator,
+    private programStreamFactory: ProgramStreamProvider,
+    private settingsDB: SettingsDB,
+    private onDemandService: OnDemandChannelService,
   ) {
     super(channel, options);
     this.#programCalculator = programCalculator;
@@ -215,7 +212,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
   }
 
   private getProgramStream(context: PlayerContext) {
-    return ProgramStreamFactory.create(
+    return this.programStreamFactory.create(
       context,
       HlsOutputFormat({
         hlsDeleteThreshold: 3,
@@ -228,7 +225,6 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
         deleteThreshold: null,
         appendSegments: true,
       }),
-      this.settingsDB,
     );
   }
 

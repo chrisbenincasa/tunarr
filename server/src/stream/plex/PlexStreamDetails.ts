@@ -1,15 +1,15 @@
 import { ProgramDB } from '@/db/ProgramDB.ts';
-import { SettingsDB, getSettings } from '@/db/SettingsDB.ts';
+import { SettingsDB } from '@/db/SettingsDB.ts';
 import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.ts';
 import { ContentBackedStreamLineupItem } from '@/db/derived_types/StreamLineup.ts';
-import type { MediaSourceTable } from '@/db/schema/MediaSource.ts';
+import { MediaSource } from '@/db/schema/MediaSource.ts';
 import { isQueryError, isQuerySuccess } from '@/external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.ts';
 import { PlexApiClient } from '@/external/plex/PlexApiClient.ts';
 import { Maybe, Nullable } from '@/types/util.ts';
 import { fileExists } from '@/util/fsUtil.ts';
 import { attempt, isNonEmptyString } from '@/util/index.ts';
-import { Logger, LoggerFactory } from '@/util/logging/LoggerFactory.ts';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
 import { makeLocalUrl } from '@/util/serverUtil.js';
 import {
   PlexEpisode,
@@ -20,7 +20,6 @@ import {
   PlexMusicTrack,
   isPlexMusicTrack,
 } from '@tunarr/types/plex';
-import { Selectable } from 'kysely';
 import {
   filter,
   find,
@@ -45,11 +44,16 @@ import {
   VideoStreamDetails,
 } from '../types.ts';
 
-// The minimum fields we need to get stream details about an item
-type PlexItemStreamDetailsQuery = Pick<
+type PlexStreamDetailsItem = Pick<
   ContentBackedStreamLineupItem,
   'programType' | 'externalKey' | 'plexFilePath' | 'filePath' | 'programId'
 >;
+
+// The minimum fields we need to get stream details about an item
+type PlexItemStreamDetailsQuery = {
+  server: MediaSource;
+  item: PlexStreamDetailsItem;
+};
 
 /**
  * A 'new' version of the PlexTranscoder class that does not
@@ -58,39 +62,32 @@ type PlexItemStreamDetailsQuery = Pick<
  * leaving normalization up to the Tunarr FFMPEG pipeline.
  */
 export class PlexStreamDetails {
-  private logger: Logger;
-  private plex: PlexApiClient;
+  private logger = LoggerFactory.child({
+    caller: import.meta,
+    className: this.constructor.name,
+  });
 
   constructor(
-    private server: Selectable<MediaSourceTable>,
-    private settings: SettingsDB = getSettings(),
-    private programDB: ProgramDB = new ProgramDB(),
-  ) {
-    this.logger = LoggerFactory.child({
-      plexServer: server.name,
-      caller: import.meta,
-      className: this.constructor.name,
-    });
-
-    this.plex = MediaSourceApiFactory().get(this.server);
-  }
+    private settings: SettingsDB,
+    private programDB: ProgramDB,
+  ) {}
 
   async getStream(item: PlexItemStreamDetailsQuery) {
     return this.getStreamInternal(item);
   }
 
   private async getStreamInternal(
-    item: PlexItemStreamDetailsQuery,
+    { server, item }: PlexItemStreamDetailsQuery,
     depth: number = 0,
   ): Promise<Nullable<ProgramStreamResult>> {
     if (depth > 1) {
       return null;
     }
 
+    const plex = MediaSourceApiFactory().get(server);
+
     const expectedItemType = item.programType;
-    const itemMetadataResult = await this.plex.getItemMetadata(
-      item.externalKey,
-    );
+    const itemMetadataResult = await plex.getItemMetadata(item.externalKey);
 
     if (isQueryError(itemMetadataResult)) {
       if (itemMetadataResult.code === 'not_found') {
@@ -106,7 +103,7 @@ export class PlexStreamDetails {
           (eid) => eid.sourceType === ProgramExternalIdType.PLEX_GUID,
         )?.externalKey;
         if (isNonEmptyString(plexGuid)) {
-          const byGuidResult = await this.plex.doTypeCheckedGet(
+          const byGuidResult = await plex.doTypeCheckedGet(
             '/library/all',
             PlexMediaContainerResponseSchema,
             {
@@ -133,13 +130,16 @@ export class PlexStreamDetails {
               );
               await this.programDB.updateProgramPlexRatingKey(
                 item.programId,
-                this.server.name,
+                server.name,
                 { externalKey: newRatingKey },
               );
               return this.getStreamInternal(
                 {
-                  ...item,
-                  externalKey: newRatingKey,
+                  server,
+                  item: {
+                    ...item,
+                    externalKey: newRatingKey,
+                  },
                 },
                 depth + 1,
               );
@@ -173,7 +173,7 @@ export class PlexStreamDetails {
       return null;
     }
 
-    const details = await this.getItemStreamDetails(item, itemMetadata);
+    const details = await this.getItemStreamDetails(item, plex, itemMetadata);
 
     if (isNull(details)) {
       return null;
@@ -184,7 +184,7 @@ export class PlexStreamDetails {
       details.serverPath !== item.plexFilePath
     ) {
       this.programDB
-        .updateProgramPlexRatingKey(item.programId, this.server.name, {
+        .updateProgramPlexRatingKey(item.programId, server.name, {
           externalKey: item.externalKey,
           externalFilePath: details.serverPath,
           directFilePath: details.directFilePath ?? null,
@@ -224,8 +224,8 @@ export class PlexStreamDetails {
         path = path.startsWith('/') ? path : `/${path}`;
 
         streamSource = new HttpStreamSource(
-          `${trimEnd(this.server.uri, '/')}${path}?X-Plex-Token=${
-            this.server.accessToken
+          `${trimEnd(server.uri, '/')}${path}?X-Plex-Token=${
+            server.accessToken
           }`,
         );
         // streamUrl = this.getPlexTranscodeStreamUrl(
@@ -243,7 +243,8 @@ export class PlexStreamDetails {
   }
 
   private async getItemStreamDetails(
-    item: PlexItemStreamDetailsQuery,
+    item: PlexStreamDetailsItem,
+    plex: PlexApiClient,
     media: PlexMovie | PlexEpisode | PlexMusicTrack,
   ): Promise<Nullable<StreamDetails>> {
     const relevantMedia = maxBy(
@@ -351,11 +352,11 @@ export class PlexStreamDetails {
       // We have to check that we can hit this URL or the stream will not work
       if (isNonEmptyString(placeholderThumbPath)) {
         const result = await attempt(() =>
-          this.plex.doHead({ url: placeholderThumbPath }),
+          plex.doHead({ url: placeholderThumbPath }),
         );
         if (!isError(result)) {
           streamDetails.placeholderImage =
-            this.plex.getFullUrl(placeholderThumbPath);
+            plex.getFullUrl(placeholderThumbPath);
         }
       }
 

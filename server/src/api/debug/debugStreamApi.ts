@@ -1,4 +1,3 @@
-import { getDatabase } from '@/db/DBAccess.ts';
 import { createOfflineStreamLineupItem } from '@/db/derived_types/StreamLineup.ts';
 import { AllChannelTableKeys, Channel } from '@/db/schema/Channel.ts';
 import { ProgramDao, ProgramType } from '@/db/schema/Program.ts';
@@ -6,9 +5,6 @@ import { MpegTsOutputFormat } from '@/ffmpeg/builder/constants.ts';
 import { serverContext } from '@/serverContext.ts';
 import { OfflineProgramStream } from '@/stream/OfflinePlayer.ts';
 import { PlayerContext } from '@/stream/PlayerStreamContext.ts';
-import { ProgramStream } from '@/stream/ProgramStream.ts';
-import { JellyfinProgramStream } from '@/stream/jellyfin/JellyfinProgramStream.ts';
-import { PlexProgramStream } from '@/stream/plex/PlexProgramStream.ts';
 import { TruthyQueryParam } from '@/types/schemas.ts';
 import { RouterPluginAsyncCallback } from '@/types/serverType.ts';
 import { jsonObjectFrom } from 'kysely/helpers/sqlite';
@@ -31,7 +27,7 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
       },
     },
     async (req, res) => {
-      const channel = await getDatabase()
+      const channel = await req.serverCtx.dbAccess
         .selectFrom('channel')
         .selectAll()
         .executeTakeFirstOrThrow();
@@ -69,7 +65,7 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
       },
     },
     async (req, res) => {
-      const channel = await getDatabase()
+      const channel = await req.serverCtx.dbAccess
         .selectFrom('channel')
         .selectAll()
         .executeTakeFirstOrThrow();
@@ -92,8 +88,8 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
     },
   );
 
-  fastify.get('/streams/random', async (_, res) => {
-    const program = await getDatabase()
+  fastify.get('/streams/random', async (req, res) => {
+    const program = await req.serverCtx.dbAccess
       .selectFrom('program')
       .orderBy((ob) => ob.fn('random'))
       .where('type', '=', ProgramType.Episode)
@@ -101,7 +97,7 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
       .selectAll()
       .executeTakeFirstOrThrow();
 
-    const channels = await getDatabase()
+    const channels = await req.serverCtx.dbAccess
       .selectFrom('channelPrograms')
       .where('programUuid', '=', program.uuid)
       .select((eb) =>
@@ -153,7 +149,7 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
           ? random(program.duration / 1000, true)
           : req.query.start;
 
-      const channels = await getDatabase()
+      const channels = await req.serverCtx.dbAccess
         .selectFrom('channelPrograms')
         .where('programUuid', '=', program.uuid)
         .select((eb) =>
@@ -206,16 +202,10 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
       useNewPipeline,
     );
 
-    let stream: ProgramStream;
-    switch (program.sourceType) {
-      case 'jellyfin':
-        stream = new JellyfinProgramStream(ctx, MpegTsOutputFormat);
-        break;
-      case 'plex':
-        stream = new PlexProgramStream(ctx, MpegTsOutputFormat);
-        break;
-    }
-
+    const stream = serverContext().contentBackedProgramStreamFactory.build(
+      ctx,
+      MpegTsOutputFormat,
+    );
     const out = new PassThrough();
     stream.on('error', () => out.end());
     out.on('close', () => stream.shutdown());

@@ -1,5 +1,4 @@
 import { ProgramDB } from '@/db/ProgramDB.ts';
-import { upsertRawProgramExternalIds } from '@/db/programExternalIdHelpers.ts';
 import { isQueryError } from '@/external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';
@@ -23,7 +22,7 @@ export class SaveJellyfinProgramExternalIdsTask extends Task {
 
   constructor(
     private programId: string,
-    private programDB: ProgramDB = new ProgramDB(),
+    private programDB: ProgramDB,
   ) {
     super();
   }
@@ -100,7 +99,7 @@ export class SaveJellyfinProgramExternalIdsTask extends Task {
       }),
     );
 
-    return await upsertRawProgramExternalIds(eids);
+    return await this.programDB.upsertRawProgramExternalIds(eids);
   }
 
   get taskName() {

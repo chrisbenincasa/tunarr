@@ -26,7 +26,11 @@ import {
   HlsSlowerSessionOptions,
 } from './hls/HlsSlowerSession.js';
 
+import { SettingsDB } from '@/db/SettingsDB.ts';
+import { ServerContext } from '@/serverContext.ts';
 import { OnDemandChannelService } from '@/services/OnDemandChannelService.js';
+import { ProgramStreamProvider } from '@/stream/ProgramStreamProvider.ts';
+import { StreamProgramCalculator } from '@/stream/StreamProgramCalculator.ts';
 import { ifDefined } from '@/util/index.js';
 import { ChannelStreamMode } from '@tunarr/types';
 import { StreamConnectionDetails } from '@tunarr/types/api';
@@ -40,16 +44,22 @@ export class SessionManager {
   #sessionLocker = new MutexMap();
   #sessions: Record<SessionKey, Session> = {};
 
-  private constructor(
+  constructor(
     private channelDB: ChannelDB,
     private onDemandChannelService: OnDemandChannelService,
+    private programStreamFactory: ProgramStreamProvider,
+    private streamProgramCalculator: StreamProgramCalculator,
+    private settingsDB: SettingsDB,
   ) {}
 
-  static create(
-    channelDB: ChannelDB,
-    onDemandChannelService: OnDemandChannelService,
-  ) {
-    return new SessionManager(channelDB, onDemandChannelService);
+  static create(serverContext: ServerContext) {
+    return new SessionManager(
+      serverContext.channelDB,
+      serverContext.onDemandChannelService,
+      serverContext.programStreamProvider,
+      serverContext.streamProgramCalculator(),
+      serverContext.settings,
+    );
   }
 
   allSessions(): Record<SessionKey, Session> {
@@ -184,11 +194,17 @@ export class SessionManager {
       connection,
       'hls_slower',
       (channel) =>
-        new HlsSlowerSession(channel, {
-          ...options,
-          initialSegmentCount: 2, // 8 seconds of content
-          sessionType: 'hls_slower',
-        }),
+        new HlsSlowerSession(
+          channel,
+          {
+            ...options,
+            initialSegmentCount: 2, // 8 seconds of content
+            sessionType: 'hls_slower',
+          },
+          this.streamProgramCalculator,
+          this.programStreamFactory,
+          this.settingsDB,
+        ),
     );
   }
 
@@ -204,11 +220,18 @@ export class SessionManager {
       connection,
       'hls',
       (channel) =>
-        new HlsSession(channel, {
-          ...options,
-          initialSegmentCount: 2, // 8 seconds of content
-          sessionType: 'hls',
-        }),
+        new HlsSession(
+          channel,
+          {
+            ...options,
+            initialSegmentCount: 2, // 8 seconds of content
+            sessionType: 'hls',
+          },
+          this.streamProgramCalculator,
+          this.programStreamFactory,
+          this.settingsDB,
+          this.onDemandChannelService,
+        ),
     );
   }
 

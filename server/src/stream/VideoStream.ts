@@ -8,7 +8,7 @@ import { isNil, once } from 'lodash-es';
 import { PassThrough, Readable } from 'node:stream';
 import { PlayerContext } from './PlayerStreamContext.ts';
 import { ProgramStream } from './ProgramStream.js';
-import { ProgramStreamFactory } from './ProgramStreamFactory.js';
+import { ProgramStreamProvider } from './ProgramStreamProvider.ts';
 import {
   StreamProgramCalculator,
   StreamProgramCalculatorError,
@@ -47,7 +47,8 @@ export class VideoStream {
   });
 
   constructor(
-    private calculator: StreamProgramCalculator = getServerContext().streamProgramCalculator(),
+    private calculator: StreamProgramCalculator,
+    private programStreamProvider: ProgramStreamProvider,
   ) {}
 
   async startStream(
@@ -124,7 +125,7 @@ export class VideoStream {
             result.lineupItem.type === 'loading',
             true,
           );
-          const programStream = ProgramStreamFactory.create(
+          const programStream = this.programStreamProvider.create(
             playerContext,
             MpegTsOutputFormat,
           );

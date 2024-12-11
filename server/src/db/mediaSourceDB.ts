@@ -19,8 +19,9 @@ import {
 import { v4 } from 'uuid';
 import { ChannelDB } from './ChannelDB.ts';
 
+import { DB } from '@/db/schema/db.ts';
 import { booleanToNumber } from '@/util/sqliteUtil.ts';
-import { getDatabase } from './DBAccess.ts';
+import { Kysely } from 'kysely';
 import {
   withProgramChannels,
   withProgramCustomShows,
@@ -40,16 +41,19 @@ type Report = {
 export class MediaSourceDB {
   #channelDb: ChannelDB;
 
-  constructor(channelDb: ChannelDB) {
+  constructor(
+    private db: Kysely<DB>,
+    channelDb: ChannelDB,
+  ) {
     this.#channelDb = channelDb;
   }
 
   async getAll(): Promise<MediaSource[]> {
-    return getDatabase().selectFrom('mediaSource').selectAll().execute();
+    return this.db.selectFrom('mediaSource').selectAll().execute();
   }
 
   async getById(id: string) {
-    return getDatabase()
+    return this.db
       .selectFrom('mediaSource')
       .selectAll()
       .where('mediaSource.uuid', '=', id)
@@ -57,7 +61,7 @@ export class MediaSourceDB {
   }
 
   async getByName(name: string) {
-    return getDatabase()
+    return this.db
       .selectFrom('mediaSource')
       .selectAll()
       .where('mediaSource.name', '=', name)
@@ -73,7 +77,7 @@ export class MediaSourceDB {
     type: MediaSourceType,
     nameOrId?: string,
   ): Promise<MediaSource[] | Maybe<MediaSource>> {
-    const found = await getDatabase()
+    const found = await this.db
       .selectFrom('mediaSource')
       .selectAll()
       .where('mediaSource.type', '=', type)
@@ -98,7 +102,7 @@ export class MediaSourceDB {
     sourceType: MediaSourceType,
     nameOrClientId: string,
   ): Promise<Maybe<MediaSource>> {
-    return getDatabase()
+    return this.db
       .selectFrom('mediaSource')
       .selectAll()
       .where((eb) =>
@@ -119,7 +123,7 @@ export class MediaSourceDB {
       throw new Error(`MediaSource not found: ${id}`);
     }
 
-    await getDatabase()
+    await this.db
       .deleteFrom('mediaSource')
       .where('uuid', '=', id)
       .limit(1)
@@ -152,7 +156,7 @@ export class MediaSourceDB {
     const sendChannelUpdates =
       server.type === 'plex' ? server.sendChannelUpdates ?? false : false;
 
-    await getDatabase()
+    await this.db
       .updateTable('mediaSource')
       .set({
         name: server.name,
@@ -177,14 +181,14 @@ export class MediaSourceDB {
       server.type === 'plex' ? server.sendGuideUpdates ?? false : false;
     const sendChannelUpdates =
       server.type === 'plex' ? server.sendChannelUpdates ?? false : false;
-    const index = await getDatabase()
+    const index = await this.db
       .selectFrom('mediaSource')
       .select((eb) => eb.fn.count<number>('uuid').as('count'))
       .executeTakeFirst()
       .then((_) => _?.count ?? 0);
 
     const now = +dayjs();
-    const newServer = await getDatabase()
+    const newServer = await this.db
       .insertInto('mediaSource')
       .values({
         ...server,
@@ -246,7 +250,7 @@ export class MediaSourceDB {
     // 2. use program_external_id table
     // 3. not delete programs if they still have another reference via
     //    the external id table (program that exists on 2 servers)
-    const allPrograms = await getDatabase()
+    const allPrograms = await this.db
       .selectFrom('program')
       .selectAll()
       .where('sourceType', '=', serverType)
@@ -296,36 +300,34 @@ export class MediaSourceDB {
     if (!isUpdate) {
       // Remove all associations of this program
       // TODO: See if we can just get this automatically with foreign keys...
-      await getDatabase()
-        .transaction()
-        .execute(async (tx) => {
-          for (const programChunk of chunk(allPrograms, 500)) {
-            const programIds = map(programChunk, 'uuid');
-            await tx
-              .deleteFrom('channelPrograms')
-              .where('channelPrograms.programUuid', 'in', programIds)
-              .execute();
-            await tx
-              .deleteFrom('fillerShowContent')
-              .where('fillerShowContent.programUuid', 'in', programIds)
-              .execute();
-            await tx
-              .deleteFrom('customShowContent')
-              .where('customShowContent.contentUuid', 'in', programIds)
-              .execute();
-            await tx
-              .deleteFrom('program')
-              .where('uuid', 'in', programIds)
-              .execute();
-          }
+      await this.db.transaction().execute(async (tx) => {
+        for (const programChunk of chunk(allPrograms, 500)) {
+          const programIds = map(programChunk, 'uuid');
+          await tx
+            .deleteFrom('channelPrograms')
+            .where('channelPrograms.programUuid', 'in', programIds)
+            .execute();
+          await tx
+            .deleteFrom('fillerShowContent')
+            .where('fillerShowContent.programUuid', 'in', programIds)
+            .execute();
+          await tx
+            .deleteFrom('customShowContent')
+            .where('customShowContent.contentUuid', 'in', programIds)
+            .execute();
+          await tx
+            .deleteFrom('program')
+            .where('uuid', 'in', programIds)
+            .execute();
+        }
 
-          for (const channel of keys(channelById)) {
-            await this.#channelDb.removeProgramsFromLineup(
-              channel,
-              map(allPrograms, 'uuid'),
-            );
-          }
-        });
+        for (const channel of keys(channelById)) {
+          await this.#channelDb.removeProgramsFromLineup(
+            channel,
+            map(allPrograms, 'uuid'),
+          );
+        }
+      });
     }
 
     const channelReports: Report[] = map(

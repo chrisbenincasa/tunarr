@@ -1,4 +1,4 @@
-import { sanitizeForExec } from './strings';
+import { sanitizeForExec } from '@/util/strings.ts';
 
 test('sanitizeForExec should remove bash metachars', () => {
   expect(sanitizeForExec('&|;<>"\'  $()\n ')).toBe('');

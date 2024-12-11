@@ -1,6 +1,8 @@
-import { SettingsDB, getSettings } from '@/db/SettingsDB.ts';
+import { SettingsDB } from '@/db/SettingsDB.ts';
+import { DB } from '@/db/schema/db.ts';
 import { FFMPEGInfo } from '@/ffmpeg/ffmpegInfo.ts';
 import { SupportedHardwareAccels } from '@tunarr/types/schemas';
+import { Kysely } from 'kysely';
 import { intersection, isEmpty, reject } from 'lodash-es';
 import {
   HealthCheck,
@@ -12,11 +14,14 @@ import {
 export class HardwareAccelerationHealthCheck implements HealthCheck {
   readonly id: string = 'HardwareAcceleration';
 
-  constructor(private settings: SettingsDB = getSettings()) {}
+  constructor(
+    _db: Kysely<DB>,
+    private settingsDB: SettingsDB,
+  ) {}
 
   async getStatus(): Promise<HealthCheckResult> {
     const supported = reject(SupportedHardwareAccels, (hw) => hw === 'none');
-    const info = new FFMPEGInfo(this.settings.ffmpegSettings());
+    const info = new FFMPEGInfo(this.settingsDB.ffmpegSettings());
     const hwAccels = await info.getHwAccels();
 
     if (intersection(supported, hwAccels).length === 0) {

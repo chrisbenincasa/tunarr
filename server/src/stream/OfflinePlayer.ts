@@ -11,6 +11,32 @@ import { isError, isUndefined } from 'lodash-es';
 import { PlayerContext } from './PlayerStreamContext.js';
 import { ProgramStream } from './ProgramStream.js';
 
+export class OfflineProgramStreamFactory {
+  constructor(private settingsDB: SettingsDB) {}
+
+  build(context: PlayerContext, outputFormat: OutputFormat) {
+    return new OfflineProgramStream(
+      false,
+      context,
+      outputFormat,
+      this.settingsDB,
+    );
+  }
+}
+
+export class ErrorProgramStreamFactory {
+  constructor(private settingsDB: SettingsDB) {}
+
+  build(context: PlayerContext, outputFormat: OutputFormat) {
+    return new OfflineProgramStream(
+      true,
+      context,
+      outputFormat,
+      this.settingsDB,
+    );
+  }
+}
+
 /**
  * Player for flex, error, and other misc non-content streams.
  */

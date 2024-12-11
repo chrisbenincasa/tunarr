@@ -1,3 +1,7 @@
+import { SettingsDB } from '@/db/SettingsDB.ts';
+import { DB } from '@/db/schema/db.ts';
+import { Kysely } from 'kysely';
+
 export type HealthyCheckResult = {
   type: 'healthy';
 };
@@ -18,4 +22,8 @@ export function healthCheckResult(result: HealthCheckResult): typeof result {
 export interface HealthCheck {
   id: string;
   getStatus(): Promise<HealthCheckResult>;
+}
+
+export interface HealthCheckConstructable {
+  new (db: Kysely<DB>, settings: SettingsDB): HealthCheck;
 }

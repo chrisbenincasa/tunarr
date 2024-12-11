@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { getDatabase } from '@/db/DBAccess.ts';
 import { ArchiveDatabaseBackup } from '@/db/backup/ArchiveDatabaseBackup.ts';
 import { MediaSourceType } from '@/db/schema/MediaSource.ts';
 import { ChannelLineupQuery } from '@tunarr/types/api';
@@ -10,7 +9,6 @@ import { map, reject, some } from 'lodash-es';
 import os from 'node:os';
 import z from 'zod';
 
-import { LineupCreator } from '@/services/dynamic_channels/LineupCreator.js';
 import { PlexTaskQueue } from '@/tasks/TaskQueue.js';
 import { SavePlexProgramExternalIdsTask } from '@/tasks/plex/SavePlexProgramExternalIdsTask.js';
 import { DateTimeRange } from '@/types/DateTimeRange.js';
@@ -261,7 +259,7 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      const result = await new LineupCreator().resolveLineup(
+      const result = await req.serverCtx.lineupCreator.resolveLineup(
         req.query.channelId,
       );
       ifDefined(result, (r) => {
@@ -285,12 +283,12 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
         }),
       },
     },
-    async (_req, res) => {
-      const mediaSource = (await _req.serverCtx.mediaSourceDB.getById(
-        _req.query.id,
+    async (req, res) => {
+      const mediaSource = (await req.serverCtx.mediaSourceDB.getById(
+        req.query.id,
       ))!;
 
-      const knownProgramIds = await getDatabase()
+      const knownProgramIds = await req.serverCtx.dbAccess
         .selectFrom('programExternalId as p1')
         .where(({ eb, and }) =>
           and([

@@ -115,7 +115,7 @@ class Scheduler {
   }
 }
 
-export const GlobalScheduler = new Scheduler();
+export const GlobalScheduler: Scheduler = new Scheduler();
 
 export const scheduleJobs = once((serverContext: ServerContext) => {
   const xmlTvSettings = serverContext.settings.xmlTvSettings();
@@ -143,7 +143,7 @@ export const scheduleJobs = once((serverContext: ServerContext) => {
     new ScheduledTask(
       OnDemandChannelStateTask.name,
       minutesCrontab(1),
-      () => new OnDemandChannelStateTask(),
+      () => new OnDemandChannelStateTask(serverContext.channelDB),
       { runAtStartup: true },
     ),
   );
@@ -168,7 +168,12 @@ export const scheduleJobs = once((serverContext: ServerContext) => {
       ReconcileProgramDurationsTask.name,
       // temporary
       hoursCrontab(1),
-      () => new ReconcileProgramDurationsTask(),
+      () =>
+        new ReconcileProgramDurationsTask(
+          serverContext.dbAccess,
+          null,
+          serverContext.channelDB,
+        ),
     ),
   );
 

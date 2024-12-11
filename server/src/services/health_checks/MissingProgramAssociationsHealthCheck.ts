@@ -1,4 +1,5 @@
-import { getDatabase } from '@/db/DBAccess.ts';
+import { DB } from '@/db/schema/db.ts';
+import { Kysely } from 'kysely';
 import { find } from 'lodash-es';
 import { P, match } from 'ts-pattern';
 import {
@@ -11,8 +12,10 @@ import {
 export class MissingProgramAssociationsHealthCheck implements HealthCheck {
   readonly id: string = this.constructor.name;
 
+  constructor(private db: Kysely<DB>) {}
+
   async getStatus(): Promise<HealthCheckResult> {
-    const missingParents = await getDatabase()
+    const missingParents = await this.db
       .selectFrom('program')
       .select((eb) => ['type', eb.fn.count<number>('uuid').as('count')])
       .where((eb) =>

@@ -101,7 +101,6 @@ export class TVGuideService {
   private locks = new MutexMap();
   private xmltv: XmlTvWriter;
   private eventService: EventService;
-  private programConverter: ProgramConverter;
   private cachedGuide: Record<ChannelId, ChannelPrograms>;
 
   private lastUpdateTime: Record<string, number>;
@@ -121,6 +120,7 @@ export class TVGuideService {
     eventService: EventService,
     private channelDB: ChannelDB,
     private programDB: ProgramDB,
+    private programConverter: ProgramConverter,
   ) {
     this.cachedGuide = {};
     this.lastUpdateTime = {};
@@ -129,7 +129,6 @@ export class TVGuideService {
     this.currentEndTime = {};
     this.xmltv = xmltv;
     this.eventService = eventService;
-    this.programConverter = new ProgramConverter();
   }
 
   /**

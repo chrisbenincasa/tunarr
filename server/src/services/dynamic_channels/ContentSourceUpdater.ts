@@ -1,4 +1,5 @@
 import { Channel } from '@/db/schema/Channel.ts';
+import { MutexMap } from '@/util/mutexMap.ts';
 import { DynamicContentConfigSource } from '@tunarr/types/api';
 import { Mutex, withTimeout } from 'async-mutex';
 
@@ -6,26 +7,29 @@ const locks: Record<DynamicContentConfigSource['type'], Mutex> = {
   plex: new Mutex(),
 };
 
+export type ContentSourceUpdaterContext<T extends DynamicContentConfigSource> =
+  {
+    channel: Channel;
+    config: T;
+  };
+
 export abstract class ContentSourceUpdater<
   T extends DynamicContentConfigSource,
 > {
+  protected static locks = new MutexMap();
+
   protected initialized: boolean = false;
-  protected channel: Channel;
-  protected config: T;
 
-  constructor(channel: Channel, config: T) {
-    this.channel = channel;
-    this.config = config;
+  public update(channel: Channel, config: T): Promise<void> {
+    return this.runInternal({ channel, config });
   }
 
-  public update(): Promise<void> {
-    return this.runInternal();
-  }
-
-  private async runInternal() {
-    return withTimeout(locks[this.config.type], 60 * 1000).runExclusive(() =>
-      this.run(),
-    );
+  private async runInternal(context: ContentSourceUpdaterContext<T>) {
+    const { config } = context;
+    return withTimeout(locks[config.type], 60 * 1000).runExclusive(async () => {
+      await this.prepare(context);
+      await this.run(context);
+    });
   }
 
   /**
@@ -34,11 +38,15 @@ export abstract class ContentSourceUpdater<
    * This is run in a DB request context and an entity manager is
    * provided.
    */
-  protected abstract prepare(): Promise<void>;
+  protected abstract prepare(
+    context: ContentSourceUpdaterContext<T>,
+  ): Promise<void>;
 
   /**
    * Update the content...
    * TODO figure out if we can generalize enough to just return programs here
    */
-  protected abstract run(): Promise<void>;
+  protected abstract run(
+    context: ContentSourceUpdaterContext<T>,
+  ): Promise<void>;
 }

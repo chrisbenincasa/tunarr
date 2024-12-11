@@ -1,6 +1,7 @@
 import { ChannelDB } from '@/db/ChannelDB.ts';
 import { SettingsDB, defaultXmlTvSettings } from '@/db/SettingsDB.ts';
 import { MediaSourceDB } from '@/db/mediaSourceDB.ts';
+import { DB } from '@/db/schema/db.ts';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.ts';
 import { globalOptions } from '@/globals.js';
 import { ServerContext } from '@/serverContext.js';
@@ -13,6 +14,7 @@ import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import type { Tag } from '@tunarr/types';
 import { PlexDvr } from '@tunarr/types/plex';
 import dayjs from 'dayjs';
+import { Kysely } from 'kysely';
 import { Task } from './Task.js';
 
 export class UpdateXmlTvTask extends Task<void> {
@@ -23,6 +25,7 @@ export class UpdateXmlTvTask extends Task<void> {
     task: UpdateXmlTvTask.ID as string,
     className: this.constructor.name,
   });
+
   #channelDB: ChannelDB;
   #settingsDB: SettingsDB;
   #guideService: TVGuideService;
@@ -31,6 +34,7 @@ export class UpdateXmlTvTask extends Task<void> {
 
   static create(serverContext: ServerContext): UpdateXmlTvTask {
     return new UpdateXmlTvTask(
+      serverContext.dbAccess,
       serverContext.channelDB,
       serverContext.settings,
       serverContext.guideService,
@@ -39,6 +43,7 @@ export class UpdateXmlTvTask extends Task<void> {
   }
 
   private constructor(
+    private db: Kysely<DB>,
     channelDB: ChannelDB,
     dbAccess: SettingsDB,
     guideService: TVGuideService,
@@ -75,7 +80,10 @@ export class UpdateXmlTvTask extends Task<void> {
         xmltvSettings = this.#settingsDB.xmlTvSettings();
       }
 
-      await new LineupCreator().promoteAllPendingLineups();
+      await new LineupCreator(
+        this.db,
+        this.#channelDB,
+      ).promoteAllPendingLineups();
 
       await this.#guideService.buildAllChannels(
         dayjs.duration({ hours: xmltvSettings.programmingHours }),
@@ -83,7 +91,7 @@ export class UpdateXmlTvTask extends Task<void> {
 
       this.logger.info('XMLTV Updated at ' + new Date().toLocaleString());
     } catch (err) {
-      this.logger.error('Unable to update TV guide', err);
+      this.logger.error(err, 'Unable to update TV guide');
       return;
     }
 

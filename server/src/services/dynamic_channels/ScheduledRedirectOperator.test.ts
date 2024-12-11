@@ -1,20 +1,21 @@
-import { initOrm } from '@/dao/dataSource';
 import { Lineup, LineupItem } from '@/dao/derived_types/Lineup';
 import { Channel } from '@/dao/entities/Channel';
-import { initTestDb } from '@/tests/testDb';
+import { createDatabase } from '@/db/DBAccess.ts';
+import { DB } from '@/db/schema/db.ts';
 import { asyncFlow } from '@/util';
 import dayjs from 'dayjs';
+import { Kysely } from 'kysely';
 import { initial, last, map, range, reduce } from 'lodash-es';
 import { IntermediateOperator } from './IntermediateOperator';
 import { ScheduledRedirectOperator } from './ScheduledRedirectOperator';
 
+let db: Kysely<DB>;
 beforeAll(async () => {
-  await initTestDb();
+  db = createDatabase(':memory:');
 });
 
 describe('ScheduledRedirectOperator', () => {
   test('test', async () => {
-    const em = await initOrm().then(({ em }) => em.fork());
     const start = dayjs().startOf('d').add(2, 'h');
     const channel = em.create(Channel, {
       number: 1,

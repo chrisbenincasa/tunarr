@@ -23,8 +23,8 @@ let _directDbAccess: Kysely<DB>;
 
 const logger = once(() => LoggerFactory.child({ className: 'DirectDBAccess' }));
 
-export const initDatabaseAccess = once((dbName: string) => {
-  _directDbAccess = new Kysely<DB>({
+export const createDatabase = (dbName: string) => {
+  return new Kysely<DB>({
     dialect: new SqliteDialect({
       database: new Sqlite(dbName, {
         timeout: 5000,
@@ -56,6 +56,10 @@ export const initDatabaseAccess = once((dbName: string) => {
     },
     plugins: [new ParseJSONResultsPlugin(), new CamelCasePlugin()],
   });
+};
+
+export const initDatabaseAccess = once((dbName: string) => {
+  _directDbAccess = createDatabase(dbName);
 });
 
 export const getDatabase = () => _directDbAccess;

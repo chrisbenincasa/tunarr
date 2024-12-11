@@ -71,19 +71,11 @@ async function legacyDizquetvDirectoryPath() {
 }
 
 function registerHealthChecks(ctx: ServerContext) {
-  ctx.healthCheckService.registerCheck(new MissingSeasonNumbersHealthCheck());
-  ctx.healthCheckService.registerCheck(
-    new FfmpegVersionHealthCheck(ctx.settings),
-  );
-  ctx.healthCheckService.registerCheck(
-    new HardwareAccelerationHealthCheck(ctx.settings),
-  );
-  ctx.healthCheckService.registerCheck(
-    new FfmpegDebugLoggingHealthCheck(ctx.settings),
-  );
-  ctx.healthCheckService.registerCheck(
-    new MissingProgramAssociationsHealthCheck(),
-  );
+  ctx.healthCheckService.registerCheck(MissingSeasonNumbersHealthCheck);
+  ctx.healthCheckService.registerCheck(FfmpegVersionHealthCheck);
+  ctx.healthCheckService.registerCheck(HardwareAccelerationHealthCheck);
+  ctx.healthCheckService.registerCheck(FfmpegDebugLoggingHealthCheck);
+  ctx.healthCheckService.registerCheck(MissingProgramAssociationsHealthCheck);
 }
 
 export async function initServer(opts: ServerOptions) {
@@ -101,7 +93,7 @@ export async function initServer(opts: ServerOptions) {
   initializeSingletons(ctx);
   registerHealthChecks(ctx);
   await ctx.m3uService.clearCache();
-  await new ChannelLineupMigrator(ctx.channelDB).run();
+  await new ChannelLineupMigrator(ctx.channelDB, ctx.programDB).run();
 
   const legacyDbPath = await legacyDizquetvDirectoryPath();
   if (

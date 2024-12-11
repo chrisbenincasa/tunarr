@@ -1,13 +1,13 @@
 // This should be run after all regular entities have been migrated
 
 import { ChannelDB } from '@/db/ChannelDB.ts';
-import { getDatabase } from '@/db/DBAccess.ts';
 import { ProgramDB } from '@/db/ProgramDB.ts';
 import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.ts';
 import { ProgramSourceType } from '@/db/custom_types/ProgramSourceType.ts';
 import { MediaSourceDB } from '@/db/mediaSourceDB.ts';
 import { ProgramDao, ProgramType } from '@/db/schema/Program.ts';
 import { NewProgramGroupingExternalId } from '@/db/schema/ProgramGroupingExternalId.ts';
+import { DB } from '@/db/schema/db.ts';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.ts';
 import { PlexApiClient } from '@/external/plex/PlexApiClient.ts';
 import { isNonEmptyString, wait } from '@/util/index.ts';
@@ -24,6 +24,7 @@ import {
   PlexTvShow,
 } from '@tunarr/types/plex';
 import dayjs from 'dayjs';
+import { Kysely } from 'kysely';
 import { first, groupBy, isNil, isUndefined, keys } from 'lodash-es';
 import { v4 } from 'uuid';
 import {
@@ -38,13 +39,17 @@ export class LegacyMetadataBackfiller {
   });
 
   constructor(
-    private mediaSourceDB: MediaSourceDB = new MediaSourceDB(new ChannelDB()),
-    private programDB: ProgramDB = new ProgramDB(),
+    private db: Kysely<DB>,
+    private mediaSourceDB: MediaSourceDB = new MediaSourceDB(
+      db,
+      new ChannelDB(db),
+    ),
+    private programDB: ProgramDB = new ProgramDB(db),
   ) {}
 
   // It requires valid PlexServerSettings, program metadata, etc
   async backfillParentMetadata() {
-    const missingProgramAncestors = await getDatabase()
+    const missingProgramAncestors = await this.db
       .selectFrom('program')
       .selectAll()
       .where((eb) => {
@@ -135,7 +140,7 @@ export class LegacyMetadataBackfiller {
           if (existingGrandparent) {
             this.logger.trace('Using existing grandparent grouping!');
             updatedGrandparent = true;
-            await getDatabase()
+            await this.db
               .updateTable('program')
               .set({
                 tvShowUuid:
@@ -165,7 +170,7 @@ export class LegacyMetadataBackfiller {
         if (existingParent) {
           this.logger.trace('Using existing parent!');
           updatedParent = true;
-          await getDatabase()
+          await this.db
             .updateTable('program')
             .set({
               seasonUuid:
@@ -274,29 +279,27 @@ export class LegacyMetadataBackfiller {
             if (seasonAndRef) {
               const [season, externalId] = seasonAndRef;
               parentRatingKeyToUUID[episode.parentRatingKey] = season.uuid;
-              await getDatabase()
-                .transaction()
-                .execute(async (tx) => {
-                  const groupingId = await tx
-                    .insertInto('programGrouping')
-                    .values(season)
-                    .returning('uuid')
-                    .executeTakeFirst();
-                  await tx
-                    .insertInto('programGroupingExternalId')
-                    .values(externalId)
-                    .executeTakeFirst();
-                  if (groupingId) {
-                    await getDatabase()
-                      .updateTable('program')
-                      .where('uuid', '=', uuid)
-                      .set({ seasonUuid: groupingId?.uuid })
-                      .execute();
-                  }
-                });
+              await this.db.transaction().execute(async (tx) => {
+                const groupingId = await tx
+                  .insertInto('programGrouping')
+                  .values(season)
+                  .returning('uuid')
+                  .executeTakeFirst();
+                await tx
+                  .insertInto('programGroupingExternalId')
+                  .values(externalId)
+                  .executeTakeFirst();
+                if (groupingId) {
+                  await this.db
+                    .updateTable('program')
+                    .where('uuid', '=', uuid)
+                    .set({ seasonUuid: groupingId?.uuid })
+                    .execute();
+                }
+              });
             }
           } else {
-            await getDatabase()
+            await this.db
               .updateTable('program')
               .where('uuid', '=', uuid)
               .set({
@@ -341,29 +344,27 @@ export class LegacyMetadataBackfiller {
               const [show, externalId] = showAndRef;
               grandparentRatingKeyToUUID[episode.grandparentRatingKey] =
                 show.uuid;
-              await getDatabase()
-                .transaction()
-                .execute(async (tx) => {
-                  const groupingId = await tx
-                    .insertInto('programGrouping')
-                    .values(show)
-                    .returning('uuid')
-                    .executeTakeFirst();
-                  await tx
-                    .insertInto('programGroupingExternalId')
-                    .values(externalId)
-                    .executeTakeFirst();
-                  if (groupingId) {
-                    await getDatabase()
-                      .updateTable('program')
-                      .where('uuid', '=', uuid)
-                      .set({ tvShowUuid: groupingId?.uuid })
-                      .execute();
-                  }
-                });
+              await this.db.transaction().execute(async (tx) => {
+                const groupingId = await tx
+                  .insertInto('programGrouping')
+                  .values(show)
+                  .returning('uuid')
+                  .executeTakeFirst();
+                await tx
+                  .insertInto('programGroupingExternalId')
+                  .values(externalId)
+                  .executeTakeFirst();
+                if (groupingId) {
+                  await this.db
+                    .updateTable('program')
+                    .where('uuid', '=', uuid)
+                    .set({ tvShowUuid: groupingId?.uuid })
+                    .execute();
+                }
+              });
             }
           } else {
-            await getDatabase()
+            await this.db
               .updateTable('program')
               .where('uuid', '=', uuid)
               .set({
@@ -454,30 +455,28 @@ export class LegacyMetadataBackfiller {
             if (albumAndref) {
               const [album, externalId] = albumAndref;
               parentRatingKeyToUUID[track.parentRatingKey] = album.uuid;
-              await getDatabase()
-                .transaction()
-                .execute(async (tx) => {
-                  const groupingId = await tx
-                    .insertInto('programGrouping')
-                    .values(album)
-                    .returning('uuid')
-                    .executeTakeFirst();
-                  await tx
-                    .insertInto('programGroupingExternalId')
-                    .values(externalId)
-                    .executeTakeFirst();
+              await this.db.transaction().execute(async (tx) => {
+                const groupingId = await tx
+                  .insertInto('programGrouping')
+                  .values(album)
+                  .returning('uuid')
+                  .executeTakeFirst();
+                await tx
+                  .insertInto('programGroupingExternalId')
+                  .values(externalId)
+                  .executeTakeFirst();
 
-                  if (groupingId) {
-                    await getDatabase()
-                      .updateTable('program')
-                      .where('uuid', '=', uuid)
-                      .set({ albumUuid: groupingId?.uuid })
-                      .execute();
-                  }
-                });
+                if (groupingId) {
+                  await this.db
+                    .updateTable('program')
+                    .where('uuid', '=', uuid)
+                    .set({ albumUuid: groupingId?.uuid })
+                    .execute();
+                }
+              });
             }
           } else {
-            await getDatabase()
+            await this.db
               .updateTable('program')
               .where('uuid', '=', uuid)
               .set({
@@ -520,29 +519,27 @@ export class LegacyMetadataBackfiller {
               grandparentRatingKeyToUUID[track.grandparentRatingKey] =
                 artist.uuid;
 
-              await getDatabase()
-                .transaction()
-                .execute(async (tx) => {
-                  const groupingId = await tx
-                    .insertInto('programGrouping')
-                    .values(artist)
-                    .returning('uuid')
-                    .executeTakeFirst();
-                  await tx
-                    .insertInto('programGroupingExternalId')
-                    .values(externalId)
-                    .executeTakeFirst();
-                  if (groupingId) {
-                    await getDatabase()
-                      .updateTable('program')
-                      .where('uuid', '=', uuid)
-                      .set({ artistUuid: groupingId?.uuid })
-                      .execute();
-                  }
-                });
+              await this.db.transaction().execute(async (tx) => {
+                const groupingId = await tx
+                  .insertInto('programGrouping')
+                  .values(artist)
+                  .returning('uuid')
+                  .executeTakeFirst();
+                await tx
+                  .insertInto('programGroupingExternalId')
+                  .values(externalId)
+                  .executeTakeFirst();
+                if (groupingId) {
+                  await this.db
+                    .updateTable('program')
+                    .where('uuid', '=', uuid)
+                    .set({ artistUuid: groupingId?.uuid })
+                    .execute();
+                }
+              });
             }
           } else {
-            await getDatabase()
+            await this.db
               .updateTable('program')
               .where('uuid', '=', uuid)
               .set({
@@ -636,7 +633,7 @@ export class LegacyMetadataBackfiller {
     externalKey: string,
     type: ProgramGroupingType,
   ) {
-    return getDatabase()
+    return this.db
       .selectFrom('programGroupingExternalId')
       .selectAll()
       .where((eb) =>

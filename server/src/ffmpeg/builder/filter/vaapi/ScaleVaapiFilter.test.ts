@@ -24,7 +24,7 @@ describe('ScaleVaapiFilter', () => {
       FrameSize.FHD,
     );
 
-    expect(filter.filter).to.eq('scale_vaapi=format=nv12');
+    expect(filter.filter).to.eq('scale_vaapi=format=nv12:extra_hw_frames=64');
     expect(filter.nextState(currentState).pixelFormat).toMatchPixelFormat(
       new PixelFormatNv12(new PixelFormatYuv420P()),
     );
@@ -46,7 +46,7 @@ describe('ScaleVaapiFilter', () => {
     );
 
     expect(filter.filter).to.eq(
-      'format=nv12|p010|vaapi,hwupload,scale_vaapi=format=nv12',
+      'format=nv12|p010|vaapi,hwupload=extra_hw_frames=64,scale_vaapi=format=nv12:extra_hw_frames=64',
     );
     expect(filter.nextState(currentState).pixelFormat).toMatchPixelFormat(
       new PixelFormatNv12(new PixelFormatYuv420P()),
@@ -71,7 +71,7 @@ describe('ScaleVaapiFilter', () => {
       FrameSize.FHD,
     );
 
-    expect(filter.filter).to.eq('scale_vaapi=format=p010');
+    expect(filter.filter).to.eq('scale_vaapi=format=p010:extra_hw_frames=64');
     expect(filter.nextState(currentState).pixelFormat).toMatchPixelFormat(
       new PixelFormatP010(),
     );

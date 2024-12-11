@@ -1,5 +1,7 @@
-import { SettingsDB, getSettings } from '@/db/SettingsDB.ts';
+import { SettingsDB } from '@/db/SettingsDB.ts';
+import { DB } from '@/db/schema/db.ts';
 import { FfmpegNumericLogLevels } from '@tunarr/types/schemas';
+import { Kysely } from 'kysely';
 import {
   HealthCheck,
   HealthCheckResult,
@@ -10,7 +12,10 @@ import {
 export class FfmpegDebugLoggingHealthCheck implements HealthCheck {
   readonly id: string = 'FfmpegDebugLogging';
 
-  constructor(private settingsDB: SettingsDB = getSettings()) {}
+  constructor(
+    _db: Kysely<DB>,
+    private settingsDB: SettingsDB,
+  ) {}
 
   getStatus(): Promise<HealthCheckResult> {
     const settings = this.settingsDB.ffmpegSettings();

@@ -16,14 +16,25 @@ export class ScheduleDynamicChannelsTask extends Task<void> {
 
   public ID = ScheduleDynamicChannelsTask.ID;
 
-  static create(channelsDb: ChannelDB) {
-    return new ScheduleDynamicChannelsTask(channelsDb);
+  static create(
+    channelsDb: ChannelDB,
+    contentSourceUpdaterFactory: ContentSourceUpdaterFactory,
+  ) {
+    return new ScheduleDynamicChannelsTask(
+      channelsDb,
+      contentSourceUpdaterFactory,
+    );
   }
 
-  private constructor(channelsDb: ChannelDB) {
+  private constructor(
+    channelsDb: ChannelDB,
+    contentSourceUpdaterFactory: ContentSourceUpdaterFactory,
+  ) {
     super();
     this.#channelsDb = channelsDb;
-    this.#taskFactory = new DynamicChannelUpdaterFactory();
+    this.#taskFactory = new DynamicChannelUpdaterFactory(
+      contentSourceUpdaterFactory,
+    );
   }
 
   // eslint-disable-next-line @typescript-eslint/require-await
@@ -54,19 +65,23 @@ export class ScheduleDynamicChannelsTask extends Task<void> {
 }
 
 class DynamicChannelUpdaterFactory {
+  constructor(
+    private contentSourceUpdaterFactory: ContentSourceUpdaterFactory,
+  ) {}
+
   getTask(
     channel: Channel,
     contentSourceDef: DynamicContentConfigSource,
   ): Task<unknown> {
+    const factory = this.contentSourceUpdaterFactory;
     // This won't always be anonymous
     return new (class extends Task<unknown> {
       public ID = contentSourceDef.updater._id;
       // eslint-disable-next-line @typescript-eslint/require-await
       protected async runInternal() {
-        return ContentSourceUpdaterFactory.getUpdater(
-          channel,
-          contentSourceDef,
-        ).update();
+        return factory
+          .getUpdater(contentSourceDef.type)
+          .update(channel, contentSourceDef);
       }
     })();
   }

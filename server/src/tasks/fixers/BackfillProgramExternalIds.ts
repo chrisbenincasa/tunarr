@@ -1,10 +1,11 @@
 import { getDatabase } from '@/db/DBAccess.ts';
+import { ProgramDB } from '@/db/ProgramDB.ts';
 import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.ts';
 import { ProgramSourceType } from '@/db/custom_types/ProgramSourceType.ts';
-import { upsertRawProgramExternalIds } from '@/db/programExternalIdHelpers.ts';
 import { withProgramExternalIds } from '@/db/programQueryHelpers.ts';
 import { ProgramDao } from '@/db/schema/Program.ts';
 import { NewProgramExternalId } from '@/db/schema/ProgramExternalId.ts';
+import { DB } from '@/db/schema/db.ts';
 import { isQueryError } from '@/external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.ts';
 import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
@@ -13,6 +14,7 @@ import { asyncPool } from '@/util/asyncPool.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { PlexTerminalMedia } from '@tunarr/types/plex';
 import dayjs from 'dayjs';
+import { Kysely } from 'kysely';
 import {
   difference,
   first,
@@ -39,12 +41,21 @@ export class BackfillProgramExternalIds extends Fixer {
     caller: import.meta,
     className: this.constructor.name,
   });
+  #db: Kysely<DB>;
+  #programDB: ProgramDB;
+
+  constructor() {
+    super();
+    // TODO: Inject this
+    this.#db = getDatabase();
+    this.#programDB = new ProgramDB(this.#db);
+  }
 
   canRunInBackground: boolean = false;
 
   async runInternal(): Promise<void> {
     const getNextPage = (offset?: string) => {
-      return getDatabase()
+      return this.#db
         .selectFrom('program')
         .selectAll()
         .select(withProgramExternalIds)
@@ -85,7 +96,7 @@ export class BackfillProgramExternalIds extends Fixer {
         keys(plexConnections),
       );
 
-      const serverSettings = await getDatabase()
+      const serverSettings = await this.#db
         .selectFrom('mediaSource')
         .selectAll()
         .where('name', 'in', missingServers)
@@ -112,7 +123,7 @@ export class BackfillProgramExternalIds extends Fixer {
           );
         } else {
           const upsertResult = await attempt(() =>
-            upsertRawProgramExternalIds(result.result),
+            this.#programDB.upsertRawProgramExternalIds(result.result),
           );
           if (isError(upsertResult)) {
             this.#logger.warn(

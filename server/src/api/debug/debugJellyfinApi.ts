@@ -1,5 +1,4 @@
 import { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.ts';
-import { JellyfinItemFinder } from '@/external/jellyfin/JellyfinItemFinder.ts';
 import { RouterPluginAsyncCallback } from '@/types/serverType.ts';
 import { Nilable } from '@/types/util.ts';
 import { isNil } from 'lodash-es';
@@ -74,8 +73,9 @@ export const DebugJellyfinApiRouter: RouterPluginAsyncCallback = async (
       },
     },
     async (req, res) => {
-      const finder = new JellyfinItemFinder(req.serverCtx.programDB);
-      const match = await finder.findForProgramId(req.params.id);
+      const match = await req.serverCtx.jellyfinItemFinderProvider
+        .get()
+        .findForProgramId(req.params.id);
       return res.status(match ? 200 : 404).send(match);
     },
   );

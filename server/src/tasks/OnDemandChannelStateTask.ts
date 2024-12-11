@@ -17,7 +17,7 @@ export class OnDemandChannelStateTask extends Task {
   public ID: string | Tag<TaskId, unknown> = 'on-demand-channel-state';
   static ID: TaskId = 'on-demand-channel-state';
 
-  constructor(channelDB: ChannelDB = new ChannelDB()) {
+  constructor(channelDB: ChannelDB) {
     super();
     this.#channelDB = channelDB;
     this.#onDemandService = new OnDemandChannelService(this.#channelDB);

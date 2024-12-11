@@ -1,7 +1,6 @@
-import { ProgramDB } from '@/db/ProgramDB.ts';
 import { SettingsDB } from '@/db/SettingsDB.ts';
 import { ContentBackedStreamLineupItem } from '@/db/derived_types/StreamLineup.ts';
-import { MediaSourceTable } from '@/db/schema/MediaSource.ts';
+import { MediaSource } from '@/db/schema/MediaSource.ts';
 import { ProgramType } from '@/db/schema/Program.ts';
 import { isQueryError } from '@/external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
@@ -12,7 +11,6 @@ import { fileExists } from '@/util/fsUtil.js';
 import { Logger, LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
 import { JellyfinItem } from '@tunarr/types/jellyfin';
-import { Selectable } from 'kysely';
 import {
   attempt,
   filter,
@@ -44,37 +42,38 @@ import {
   VideoStreamDetails,
 } from '../types.js';
 
-// The minimum fields we need to get stream details about an item
-// TODO: See if we need separate types for JF and Plex and what is really necessary here
-type JellyfinItemStreamDetailsQuery = Pick<
+type JellyfinStreamItem = Pick<
   ContentBackedStreamLineupItem,
   'programType' | 'externalKey' | 'plexFilePath' | 'filePath' | 'programId'
 >;
+
+// The minimum fields we need to get stream details about an item
+// TODO: See if we need separate types for JF and Plex and what is really necessary here
+type JellyfinItemStreamDetailsQuery = {
+  server: MediaSource;
+  item: JellyfinStreamItem;
+};
 
 export class JellyfinStreamDetails {
   private logger: Logger;
   private jellyfin: JellyfinApiClient;
 
   constructor(
-    private server: Selectable<MediaSourceTable>,
     private settings: SettingsDB,
-    private jellyfinItemFinder: JellyfinItemFinder = new JellyfinItemFinder(
-      new ProgramDB(),
-    ),
+    private jellyfinItemFinder: JellyfinItemFinder,
   ) {
     this.logger = LoggerFactory.child({
-      jellyfinServer: server.name,
       caller: import.meta,
       className: this.constructor.name,
     });
   }
 
-  async getStream(item: JellyfinItemStreamDetailsQuery) {
-    return this.getStreamInternal(item);
+  async getStream(query: JellyfinItemStreamDetailsQuery) {
+    return this.getStreamInternal(query);
   }
 
   private async getStreamInternal(
-    item: JellyfinItemStreamDetailsQuery,
+    { server, item }: JellyfinItemStreamDetailsQuery,
     depth: number = 0,
   ): Promise<Nullable<ProgramStreamResult>> {
     if (depth > 1) {
@@ -82,9 +81,9 @@ export class JellyfinStreamDetails {
     }
 
     this.jellyfin = await MediaSourceApiFactory().getJellyfinClient({
-      apiKey: this.server.accessToken,
-      url: this.server.uri,
-      name: this.server.name,
+      apiKey: server.accessToken,
+      url: server.uri,
+      name: server.name,
     });
 
     const expectedItemType = item.programType;
@@ -104,9 +103,13 @@ export class JellyfinStreamDetails {
       if (newExternalId) {
         return this.getStreamInternal(
           {
-            ...item,
-            ...newExternalId,
+            server,
+            item: {
+              ...item,
+              ...newExternalId,
+            },
           },
+
           depth + 1,
         );
       }
@@ -137,7 +140,7 @@ export class JellyfinStreamDetails {
     //   details.serverPath !== item.plexFilePath
     // ) {
     //   this.programDB
-    //     .updateProgramPlexRatingKey(item.programId, this.server.name, {
+    //     .updateProgramPlexRatingKey(item.programId, server.name, {
     //       externalKey: item.externalKey,
     //       externalFilePath: details.serverPath,
     //       directFilePath: details.directFilePath,
@@ -174,13 +177,13 @@ export class JellyfinStreamDetails {
       const path = details.serverPath ?? item.plexFilePath;
       if (isNonEmptyString(path)) {
         streamSource = new HttpStreamSource(
-          `${trimEnd(this.server.uri, '/')}/Videos/${trimStart(
+          `${trimEnd(server.uri, '/')}/Videos/${trimStart(
             path,
             '/',
           )}/stream?static=true`,
           {
             // TODO: Use the real authorization string
-            'X-Emby-Token': this.server.accessToken,
+            'X-Emby-Token': server.accessToken,
           },
         );
       } else {
@@ -195,7 +198,7 @@ export class JellyfinStreamDetails {
   }
 
   private async getItemStreamDetails(
-    item: JellyfinItemStreamDetailsQuery,
+    item: JellyfinStreamItem,
     media: JellyfinItem,
   ): Promise<Nullable<StreamDetails>> {
     const firstMediaSource = first(media.MediaSources);

@@ -21,10 +21,7 @@ export class M3uService {
   #fileCacheService: FileCacheService;
 
   // TODO figure out a better way to manage interdependencies of 'services'
-  constructor(
-    fileCacheService: FileCacheService = new FileCacheService(),
-    channelDB: ChannelDB = new ChannelDB(),
-  ) {
+  constructor(fileCacheService: FileCacheService, channelDB: ChannelDB) {
     this.#channelDB = channelDB;
     this.#fileCacheService = fileCacheService;
   }

@@ -1,6 +1,8 @@
+import { ChannelDB } from '@/db/ChannelDB.ts';
 import { ProgramDB } from '@/db/ProgramDB.ts';
 import { ProgramMinterFactory } from '@/db/converters/ProgramMinter.ts';
 import { ProgramType } from '@/db/schema/Program.ts';
+import { DB } from '@/db/schema/db.ts';
 import { ProgramWithExternalIds } from '@/db/schema/derivedTypes.js';
 import { isQueryError } from '@/external/BaseApiClient.ts';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.ts';
@@ -11,6 +13,7 @@ import { groupByUniq, isDefined } from '@/util/index.ts';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
 import { JellyfinItem, JellyfinItemKind } from '@tunarr/types/jellyfin';
 import dayjs from 'dayjs';
+import { Kysely } from 'kysely';
 import { find, isUndefined, some } from 'lodash-es';
 import { match } from 'ts-pattern';
 import {
@@ -22,7 +25,11 @@ import { JellyfinGetItemsQuery } from './JellyfinApiClient.ts';
 export class JellyfinItemFinder {
   #logger = LoggerFactory.child({ className: this.constructor.name });
 
-  constructor(private programDB: ProgramDB) {}
+  constructor(
+    private programDB: ProgramDB,
+    private db: Kysely<DB>,
+    private channelDB: ChannelDB,
+  ) {}
 
   async findForProgramAndUpdate(programId: string) {
     const program = await this.programDB.getProgramById(programId);
@@ -69,10 +76,11 @@ export class JellyfinItemFinder {
         program.uuid,
         updatedProgram.duration,
       );
+
       GlobalScheduler.scheduleOneOffTask(
         ReconcileProgramDurationsTask.name,
         dayjs().add(500, 'ms'),
-        new ReconcileProgramDurationsTask(),
+        new ReconcileProgramDurationsTask(this.db, null, this.channelDB),
       );
     }
 

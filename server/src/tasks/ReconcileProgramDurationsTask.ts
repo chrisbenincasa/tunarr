@@ -1,7 +1,9 @@
 import { ChannelDB } from '@/db/ChannelDB.ts';
-import { getDatabase } from '@/db/DBAccess.ts';
 import { isContentItem } from '@/db/derived_types/Lineup.ts';
+import { DB } from '@/db/schema/db.ts';
+import { Nullable } from '@/types/util.ts';
 import { flatMapAsyncSeq, isNonEmptyString } from '@/util/index.ts';
+import { Kysely } from 'kysely';
 import {
   chunk,
   differenceWith,
@@ -28,8 +30,9 @@ export class ReconcileProgramDurationsTask extends Task {
   // Optionally provide the channel ID that was updated on the triggering
   // operation, since theoretically we don't have to check it.
   constructor(
-    private channelId?: string,
-    private channelDB: ChannelDB = new ChannelDB(),
+    private db: Kysely<DB>,
+    private channelId: Nullable<string>,
+    private channelDB: ChannelDB,
   ) {
     super();
     this.logger.setBindings({ task: this.ID });
@@ -59,7 +62,7 @@ export class ReconcileProgramDurationsTask extends Task {
       const missingPrograms = await flatMapAsyncSeq(
         chunk(missingKeys, 200),
         (items) =>
-          getDatabase()
+          this.db
             .selectFrom('program')
             .select(['uuid', 'duration'])
             .where('uuid', 'in', map(items, 'id'))

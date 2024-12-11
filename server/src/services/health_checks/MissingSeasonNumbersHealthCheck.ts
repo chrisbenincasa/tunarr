@@ -1,6 +1,7 @@
-import { getDatabase } from '@/db/DBAccess.ts';
 import { ProgramType } from '@/db/schema/Program.ts';
 import { ProgramGroupingType } from '@/db/schema/ProgramGrouping.ts';
+import { DB } from '@/db/schema/db.ts';
+import { Kysely } from 'kysely';
 import {
   HealthCheck,
   HealthCheckResult,
@@ -10,15 +11,17 @@ import {
 export class MissingSeasonNumbersHealthCheck implements HealthCheck {
   readonly id = 'MissingSeasonNumbers';
 
+  constructor(private db: Kysely<DB>) {}
+
   async getStatus(): Promise<HealthCheckResult> {
-    const missingFromProgramTable = await getDatabase()
+    const missingFromProgramTable = await this.db
       .selectFrom('program')
       .select((eb) => eb.fn.count<number>('uuid').as('count'))
       .where('type', '=', ProgramType.Episode)
       .where((eb) => eb.or([eb('seasonNumber', 'is', null)]))
       .executeTakeFirst();
 
-    const missingFromGroupingTable = await getDatabase()
+    const missingFromGroupingTable = await this.db
       .selectFrom('programGrouping')
       .select((eb) => eb.fn.count<number>('uuid').as('count'))
       .where('type', '=', ProgramGroupingType.Season)

@@ -38,8 +38,8 @@ export class ChannelLineupMigrator {
   #migrationPipeline: MigrationPipeline;
 
   constructor(
-    private channelDB: ChannelDB = new ChannelDB(),
-    programDB: ProgramDB = new ProgramDB(),
+    private channelDB: ChannelDB,
+    programDB: ProgramDB,
   ) {
     this.#migrationPipeline = map(MigrationSteps, ([from, to, factory]) => [
       from,

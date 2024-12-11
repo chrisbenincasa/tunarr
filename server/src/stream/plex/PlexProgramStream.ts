@@ -1,5 +1,4 @@
-import { ChannelDB } from '@/db/ChannelDB.ts';
-import { SettingsDB, getSettings } from '@/db/SettingsDB.ts';
+import { SettingsDB } from '@/db/SettingsDB.ts';
 import { isContentBackedLineupIteam } from '@/db/derived_types/StreamLineup.ts';
 import { MediaSourceDB } from '@/db/mediaSourceDB.ts';
 import { MediaSourceType } from '@/db/schema/MediaSource.ts';
@@ -13,11 +12,31 @@ import { ProgramStream } from '@/stream/ProgramStream.js';
 import { UpdatePlexPlayStatusScheduledTask } from '@/tasks/plex/UpdatePlexPlayStatusTask.js';
 import { Result } from '@/types/result.js';
 import { Maybe } from '@/types/util.js';
+import { Provider } from '@/util/Provider.ts';
 import { ifDefined } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import dayjs from 'dayjs';
 import { isNil, isNull, isUndefined } from 'lodash-es';
+import { ProgramStreamFactory } from '../ProgramStreamFactory.ts';
 import { PlexStreamDetails } from './PlexStreamDetails.js';
+
+export class PlexProgramStreamFactory implements ProgramStreamFactory {
+  constructor(
+    private settingsDB: SettingsDB,
+    private mediaSourceDB: MediaSourceDB,
+    private plexStreamDetailsProvider: Provider<PlexStreamDetails>,
+  ) {}
+
+  build(context: PlayerContext, outputFormat: OutputFormat): PlexProgramStream {
+    return new PlexProgramStream(
+      context,
+      outputFormat,
+      this.settingsDB,
+      this.mediaSourceDB,
+      this.plexStreamDetailsProvider,
+    );
+  }
+}
 
 export class PlexProgramStream extends ProgramStream {
   protected logger = LoggerFactory.child({
@@ -31,8 +50,9 @@ export class PlexProgramStream extends ProgramStream {
   constructor(
     context: PlayerContext,
     outputFormat: OutputFormat,
-    settingsDB: SettingsDB = getSettings(),
-    private mediaSourceDB: MediaSourceDB = new MediaSourceDB(new ChannelDB()),
+    settingsDB: SettingsDB,
+    private mediaSourceDB: MediaSourceDB,
+    private plexStreamDetailsProvider: Provider<PlexStreamDetails>,
   ) {
     super(context, outputFormat, settingsDB);
   }
@@ -75,7 +95,7 @@ export class PlexProgramStream extends ProgramStream {
     }
 
     const plexSettings = this.settingsDB.plexSettings();
-    const plexStreamDetails = new PlexStreamDetails(server);
+    const plexStreamDetails = this.plexStreamDetailsProvider.get();
 
     const watermark = await this.getWatermark();
     const ffmpeg = FFmpegFactory.getFFmpegPipelineBuilder(
@@ -83,7 +103,10 @@ export class PlexProgramStream extends ProgramStream {
       channel,
     );
 
-    const stream = await plexStreamDetails.getStream(lineupItem);
+    const stream = await plexStreamDetails.getStream({
+      server,
+      item: lineupItem,
+    });
     if (isNull(stream)) {
       return Result.failure(
         new Error('Unable to retrieve stream details from Plex'),

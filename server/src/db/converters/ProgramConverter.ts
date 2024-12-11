@@ -1,6 +1,6 @@
-import { getDatabase } from '@/db/DBAccess.ts';
 import { ProgramType } from '@/db/schema/Program.ts';
 import { MinimalProgramExternalId } from '@/db/schema/ProgramExternalId.ts';
+import { DB } from '@/db/schema/db.ts';
 import { isNonEmptyString, nullToUndefined } from '@/util/index.ts';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
 import { seq } from '@tunarr/shared/util';
@@ -14,6 +14,7 @@ import {
   isValidMultiExternalIdType,
   isValidSingleExternalIdType,
 } from '@tunarr/types/schemas';
+import { Kysely } from 'kysely';
 import { find, isNil, omitBy } from 'lodash-es';
 import { DeepPartial, MarkRequired } from 'ts-essentials';
 import { isPromise } from 'util/types';
@@ -38,6 +39,8 @@ export class ProgramConverter {
     caller: import.meta,
     className: ProgramConverter.name,
   });
+
+  constructor(private db: Kysely<DB>) {}
 
   lineupItemToChannelProgram(
     channel: ChannelWithRelations,
@@ -174,7 +177,7 @@ export class ProgramConverter {
     >,
   ): Promise<RedirectProgram> | RedirectProgram {
     const loadedChannel = isNil(channel)
-      ? getDatabase()
+      ? this.db
           .selectFrom('channel')
           .select(['uuid', 'number', 'name'])
           .where('uuid', '=', item.channel)
