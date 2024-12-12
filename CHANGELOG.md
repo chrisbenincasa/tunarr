@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.16.11](https://github.com/chrisbenincasa/tunarr/compare/v0.16.10...v0.16.11) (2024-12-11)
+
+
+### Bug Fixes
+
+* more fixes for per-channel guide generation + redirect calculation ([#1013](https://github.com/chrisbenincasa/tunarr/issues/1013)) ([1eff0dd](https://github.com/chrisbenincasa/tunarr/commit/1eff0ddfa54afabb95b2363a77d217b2794163d1))
+
 ## [0.16.10](https://github.com/chrisbenincasa/tunarr/compare/v0.16.9...v0.16.10) (2024-12-10)
 
 
