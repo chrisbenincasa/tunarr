@@ -195,7 +195,17 @@ export class JellyfinApiClient extends BaseApiClient<JellyfinApiClientOptions> {
       params: {
         userId: userId ?? this.options.userId,
         includeExternalContent: false,
-        presetViews: ['movies', 'tvshows', 'music', 'playlists', 'folders'],
+        presetViews: [
+          'movies',
+          'tvshows',
+          'music',
+          'playlists',
+          'folders',
+          'homevideos',
+          'boxsets',
+          'trailers',
+          'musicvideos',
+        ],
       },
     });
   }
