@@ -56,6 +56,7 @@ const useStore = create<State>()(
                 },
                 channelTableColumnModel:
                   state.settings.ui.channelTableColumnModel,
+                i18n: state.settings.ui.i18n,
               },
             },
           }) satisfies PersistedState,

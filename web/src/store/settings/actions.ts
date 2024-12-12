@@ -1,4 +1,6 @@
+import { SupportedLocales } from '@/store/settings/store.ts';
 import { PaginationState } from '@tanstack/react-table';
+import dayjs from 'dayjs';
 import useStore from '..';
 
 export const setBackendUri = (uri: string) =>
@@ -15,4 +17,10 @@ export const setChannelTableColumnModel = (model: Record<string, boolean>) => {
 export const setChannelPaginationState = (p: PaginationState) =>
   useStore.setState(({ settings }) => {
     settings.ui.channelTablePagination = p;
+  });
+
+export const setUiLocale = (locale: SupportedLocales) =>
+  useStore.setState(({ settings }) => {
+    dayjs.locale(locale); // Changes the default dayjs locale globally
+    settings.ui.i18n.locale = locale;
   });

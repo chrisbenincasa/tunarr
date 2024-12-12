@@ -292,8 +292,8 @@ export const TimeSlotTable = () => {
           const value = cell.getValue<number>();
           const dateTime = startOfPeriod.add(value);
           return currentPeriod === 'day'
-            ? dateTime.format('hh:mm A')
-            : dateTime.format('dddd hh:mm A');
+            ? dateTime.format('LT')
+            : dateTime.format('dddd LT');
         },
         size: 100,
         grow: false,

@@ -199,6 +199,10 @@ export class TVGuideService {
       lastUpdate: mapValues(this.lastUpdateTime, (time) =>
         dayjs(time).format(),
       ),
+      guideTimes: mapValues(this.cachedGuide, ({ channel, programs }) => ({
+        start: dayjs(first(programs)?.startTimeMs).format(),
+        end: dayjs(this.lastEndTime[channel.uuid]).format(),
+      })),
       channelIds: keys(this.cachedGuide),
     };
   }
