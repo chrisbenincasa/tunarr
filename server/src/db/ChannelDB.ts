@@ -627,7 +627,6 @@ export class ChannelDB {
       return await getDatabase()
         .transaction()
         .execute(async (tx) => {
-          console.log('in here');
           await tx
             .updateTable('channel')
             .where('channel.uuid', '=', id)
@@ -679,6 +678,7 @@ export class ChannelDB {
               await tx
                 .deleteFrom('channelPrograms')
                 .where('channelPrograms.programUuid', 'in', map(removes, 'id'))
+                .where('channelPrograms.channelUuid', '=', id)
                 .execute();
             }
 
