@@ -20,7 +20,7 @@ import { addJellyfinSelectedMedia } from '@/store/programmingSelector/actions.ts
 import { useCurrentMediaSource } from '@/store/programmingSelector/selectors.ts';
 import { SelectedMedia } from '@/store/programmingSelector/store.ts';
 import { JellyfinItem, JellyfinItemKind } from '@tunarr/types/jellyfin';
-import { MediaGridItem } from './MediaGridItem.tsx';
+import { GridItemMetadata, MediaGridItem } from './MediaGridItem.tsx';
 import { GridItemProps } from './MediaItemGrid.tsx';
 
 export interface JellyfinGridItemProps extends GridItemProps<JellyfinItem> {}
@@ -129,18 +129,22 @@ export const JellyfinGridItem = memo(
       );
 
       const metadata = useMemo(
-        () => ({
-          itemId: item.Id,
-          isPlaylist: item.Type === 'Playlist',
-          hasThumbnail: isNonEmptyString((item.ImageTags ?? {})['Primary']),
-          childCount: extractChildCount(item),
-          isMusicItem: isMusicItem(item),
-          isEpisode: isEpisode(item),
-          title: item.Name ?? '',
-          subtitle: subtitle(item),
-          thumbnailUrl: thumbnailUrlFunc(item),
-          selectedMedia: selectedMediaFunc(item),
-        }),
+        () =>
+          ({
+            itemId: item.Id,
+            isPlaylist: item.Type === 'Playlist',
+            hasThumbnail: isNonEmptyString((item.ImageTags ?? {})['Primary']),
+            childCount: extractChildCount(item),
+            title: item.Name ?? '',
+            aspectRatio: isMusicItem(item)
+              ? 'square'
+              : isEpisode(item)
+              ? 'landscape'
+              : 'portrait',
+            subtitle: subtitle(item),
+            thumbnailUrl: thumbnailUrlFunc(item),
+            selectedMedia: selectedMediaFunc(item),
+          }) satisfies GridItemMetadata,
         [isEpisode, isMusicItem, item, selectedMediaFunc, thumbnailUrlFunc],
       );
 

@@ -194,9 +194,6 @@ export function MediaItemGrid<PageDataType, ItemType>({
       ? totalHeight - containerOffset - TopBarPadddingPx
       : undefined;
   }
-  // const containerHeight = useMemo(() => {
-  //   return;
-  // }, [viewType]);
 
   const handleAlphaFilterChange = useCallback(
     (key: string) => {

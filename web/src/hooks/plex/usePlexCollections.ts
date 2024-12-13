@@ -1,4 +1,4 @@
-import { PlexLibrary } from '@/store/programmingSelector/store.ts';
+import { PlexMediaSourceLibraryView } from '@/store/programmingSelector/store.ts';
 import { Maybe, Nilable } from '@/types/util.ts';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { PlexServerSettings } from '@tunarr/types';
@@ -9,7 +9,7 @@ import { useTunarrApi } from '../useTunarrApi.ts';
 
 export const usePlexCollectionsInfinite = (
   plexServer: Maybe<PlexServerSettings>,
-  currentLibrary: Nilable<PlexLibrary>,
+  currentLibrary: Nilable<PlexMediaSourceLibraryView>,
   pageSize: number,
   enabled: boolean = true,
 ) => {

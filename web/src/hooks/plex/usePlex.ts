@@ -1,5 +1,5 @@
 import { useQueries, useQuery } from '@tanstack/react-query';
-import { PlexLibrarySections } from '@tunarr/types/plex';
+import { PlexLibrarySections, PlexPlaylists } from '@tunarr/types/plex';
 import { MediaSourceId } from '@tunarr/types/schemas';
 import { identity, reject } from 'lodash-es';
 import { fetchPlexPath } from '../../helpers/plexUtil.ts';
@@ -11,6 +11,7 @@ import { plexQueryOptions } from './plexHookUtil.ts';
 export type PlexPathMappings = [
   ['/library/sections', PlexLibrarySections],
   [`/library/sections/${string}/all`, unknown],
+  ['/playlists', PlexPlaylists],
 ];
 
 declare const plexQueryArgsSymbol: unique symbol;
@@ -40,6 +41,7 @@ export const usePlex = <
     select,
   });
 };
+
 export const usePlexTyped = <T, OutType = T>(
   serverId: MediaSourceId,
   path: string,
@@ -51,11 +53,12 @@ export const usePlexTyped = <T, OutType = T>(
     ...plexQueryOptions<T>(apiClient, serverId, path, enabled),
     select,
   });
-}; /**
+};
+
+/**
  * Like {@link usePlexTyped} but accepts two queries that each return
  * a typed Plex object. NOTE - uses casting and not schema validation!!
  */
-
 export const usePlexTyped2 = <T = unknown, U = unknown>(
   args: [PlexQueryArgs<T>, PlexQueryArgs<U>],
 ) => {
@@ -80,6 +83,7 @@ export const usePlexTyped2 = <T = unknown, U = unknown>(
     },
   });
 };
+
 export const usePlexLibraries = (
   serverId: MediaSourceId,
   enabled: boolean = true,
@@ -93,3 +97,8 @@ export const usePlexLibraries = (
       Directory: reject(response.Directory, { type: 'photo' }),
     }),
   );
+
+export const usePlexPlaylists = (
+  serverId: MediaSourceId,
+  enabled: boolean = true,
+) => usePlexTyped<PlexPlaylists>(serverId, '/playlists', enabled);

@@ -5,6 +5,7 @@ import {
   isPlexCollection,
   isPlexMusicAlbum,
   isPlexMusicArtist,
+  isPlexPlaylist,
   isPlexSeason,
   isPlexShow,
   isTerminalItem,
@@ -47,7 +48,8 @@ const plexTypeString = forPlexMedia({
 
 export function PlexListItem<T extends PlexMedia>(props: PlexListItemProps<T>) {
   const { item, style } = props;
-  const hasChildren = !isTerminalItem(item);
+  // We don't want to expand playlists
+  const hasChildren = !isTerminalItem(item) && !isPlexPlaylist(item);
   const selectedServer = useCurrentMediaSource('plex');
   const selectedMedia = useStore((s) =>
     filter(s.selectedMedia, (m): m is PlexSelectedMedia => m.type === 'plex'),

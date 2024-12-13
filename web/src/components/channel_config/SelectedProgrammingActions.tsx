@@ -1,11 +1,8 @@
 import { useDirectPlexSearch } from '@/hooks/plex/usePlexSearch.ts';
 import { useAddSelectedItems } from '@/hooks/programming_controls/useAddProgramming.ts';
 import { useTunarrApi } from '@/hooks/useTunarrApi.ts';
-import { useCurrentMediaSourceAndLibrary } from '@/store/programmingSelector/selectors.ts';
-import {
-  JellyfinLibrary,
-  PlexLibrary,
-} from '@/store/programmingSelector/store.ts';
+import { useCurrentMediaSourceAndView } from '@/store/programmingSelector/selectors.ts';
+import { JellyfinMediaSourceView } from '@/store/programmingSelector/store.ts';
 import {
   AddCircle,
   CheckBoxOutlineBlank,
@@ -73,7 +70,7 @@ export default function SelectedProgrammingActions({
   toggleOrSetSelectedProgramsDrawer, // onSelectionModalClose,
 }: Props) {
   const apiClient = useTunarrApi();
-  const [selectedServer, selectedLibrary] = useCurrentMediaSourceAndLibrary();
+  const [selectedServer, selectedLibrary] = useCurrentMediaSourceAndView();
   const { urlFilter: plexSearch } = useStore(
     ({ plexSearch: plexQuery }) => plexQuery,
   );
@@ -96,7 +93,9 @@ export default function SelectedProgrammingActions({
 
   const directPlexSearchFn = useDirectPlexSearch(
     selectedServer,
-    selectedServer?.type === 'plex' ? (selectedLibrary as PlexLibrary) : null,
+    selectedLibrary?.type === 'plex' && selectedLibrary?.view.type === 'library'
+      ? selectedLibrary.view
+      : null,
     plexSearch,
     true,
   );
@@ -117,7 +116,7 @@ export default function SelectedProgrammingActions({
           });
           break;
         case 'jellyfin': {
-          const library = selectedLibrary as JellyfinLibrary;
+          const library = selectedLibrary as JellyfinMediaSourceView;
 
           prom = apiClient
             .getJellyfinItems({

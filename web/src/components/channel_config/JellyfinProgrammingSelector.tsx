@@ -8,7 +8,7 @@ import { useInfiniteJellyfinLibraryItems } from '@/hooks/jellyfin/useJellyfinApi
 import useStore from '@/store/index.ts';
 import {
   useCurrentMediaSource,
-  useCurrentSourceLibrary,
+  useCurrentMediaSourceView,
 } from '@/store/programmingSelector/selectors';
 import { Album, Folder, Home, Mic, Tv } from '@mui/icons-material';
 import { Box, Breadcrumbs, Link, Stack, Tab, Tabs } from '@mui/material';
@@ -77,7 +77,7 @@ type Size = {
 
 export function JellyfinProgrammingSelector() {
   const selectedServer = useCurrentMediaSource('jellyfin');
-  const selectedLibrary = useCurrentSourceLibrary('jellyfin');
+  const selectedLibrary = useCurrentMediaSourceView('jellyfin');
   const prevSelectedLibrary = usePrevious(selectedLibrary?.library?.Id);
   const [alphanumericFilter, setAlphanumericFilter] = useState<string | null>(
     null,

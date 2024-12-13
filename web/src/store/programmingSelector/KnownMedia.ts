@@ -1,6 +1,6 @@
 import { MediaSourceId } from '@tunarr/types/schemas';
-import { ContentHierarchyMap, KnownMediaMap, MediaItems } from './store';
 import { chain } from 'lodash-es';
+import { ContentHierarchyMap, KnownMediaMap, MediaItems } from './store';
 
 /**
  * Thin wrapper around raw store state. This exposes friendly
@@ -42,6 +42,14 @@ export class KnownMedia {
     }
 
     return media.item as OutType;
+  }
+
+  getPlexMedia(sourceId: MediaSourceId, itemId: string) {
+    return this.getMediaOfType(sourceId, itemId, 'plex');
+  }
+
+  getJellyfinMedia(sourceId: MediaSourceId, itemId: string) {
+    return this.getMediaOfType(sourceId, itemId, 'jellyfin');
   }
 
   getChildren(sourceId: MediaSourceId, parentId: string) {

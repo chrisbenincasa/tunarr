@@ -31,26 +31,12 @@ import {
   SelectedMedia,
 } from '../../store/programmingSelector/store.ts';
 
-export type GridItemMetadataExtractors<T> = {
-  id: (item: T) => string;
-  isPlaylist: (item: T) => boolean;
-  hasThumbnail: (item: T) => boolean;
-  childCount: (item: T) => number | null;
-  isMusicItem: (item: T) => boolean;
-  isEpisode: (item: T) => boolean;
-  title: (item: T) => string;
-  subtitle: (item: T) => JSX.Element | string | null;
-  thumbnailUrl: (item: T) => string;
-  selectedMedia: (item: T) => SelectedMedia;
-};
-
 export type GridItemMetadata = {
   itemId: string;
   isPlaylist: boolean;
   hasThumbnail: boolean;
   childCount: number | null;
-  isMusicItem: boolean;
-  isEpisode: boolean;
+  aspectRatio: 'portrait' | 'landscape' | 'square';
   title: string;
   subtitle: JSX.Element | string | null;
   thumbnailUrl: string;
@@ -87,8 +73,7 @@ const MediaGridItemInner = <T,>(
       thumbnailUrl,
       itemId,
       selectedMedia: selectedMediaItem,
-      isMusicItem,
-      isEpisode: isEpisodeItem,
+      aspectRatio,
       title,
       subtitle,
       childCount,
@@ -97,7 +82,9 @@ const MediaGridItemInner = <T,>(
     isModalOpen,
     onClick,
   } = props;
-  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState<
+    'loading' | 'success' | 'error'
+  >('loading');
 
   const selectedMedia = useStore((s) =>
     filter(
@@ -139,7 +126,13 @@ const MediaGridItemInner = <T,>(
 
   return (
     <Fade
-      in={isInViewport && !isUndefined(item) && hasThumbnail === imageLoaded}
+      in={
+        isInViewport &&
+        !isUndefined(item) &&
+        ((hasThumbnail &&
+          (imageLoaded === 'success' || imageLoaded === 'error')) ||
+          !hasThumbnail)
+      }
       timeout={400}
       ref={imageContainerRef}
     >
@@ -174,7 +167,12 @@ const MediaGridItemInner = <T,>(
               <Box
                 sx={{
                   position: 'relative',
-                  minHeight: isMusicItem ? 100 : isEpisodeItem ? 84 : 225, // 84 accomodates episode img height
+                  minHeight:
+                    aspectRatio === 'square'
+                      ? 100
+                      : aspectRatio === 'landscape'
+                      ? 84
+                      : 225, // 84 accomodates episode img height
                   maxHeight: '100%',
                 }}
               >
@@ -184,31 +182,41 @@ const MediaGridItemInner = <T,>(
                     borderRadius: '5%',
                     height: 'auto',
                     width: '100%',
-                    visibility: imageLoaded ? 'visible' : 'hidden',
+                    visibility:
+                      imageLoaded === 'success' ? 'visible' : 'hidden',
                     zIndex: 2,
+                    display: imageLoaded === 'error' ? 'none' : undefined,
                   }}
-                  onLoad={() => setImageLoaded(true)}
-                  onError={() => setImageLoaded(true)}
+                  onLoad={() => setImageLoaded('success')}
+                  onError={() => setImageLoaded('error')}
                 />
                 <Box
                   component="div"
                   sx={{
                     background: skeletonBgColor,
                     borderRadius: '5%',
-                    position: 'absolute',
+                    position:
+                      imageLoaded === 'success' ? 'absolute' : 'relative',
                     top: 0,
                     left: 0,
-                    aspectRatio: isMusicItem
-                      ? '1/1'
-                      : isEpisodeItem
-                      ? '1.77/1'
-                      : '2/3',
+                    aspectRatio:
+                      aspectRatio === 'square'
+                        ? '1/1'
+                        : aspectRatio === 'landscape'
+                        ? '1.77/1'
+                        : '2/3',
                     width: '100%',
                     height: 'auto',
                     zIndex: 1,
-                    opacity: imageLoaded ? 0 : 1,
-                    visibility: imageLoaded ? 'hidden' : 'visible',
-                    minHeight: isMusicItem ? 100 : isEpisodeItem ? 84 : 225,
+                    opacity: imageLoaded === 'success' ? 0 : 1,
+                    visibility:
+                      imageLoaded === 'success' ? 'hidden' : 'visible',
+                    minHeight:
+                      aspectRatio === 'square'
+                        ? 100
+                        : aspectRatio === 'landscape'
+                        ? 84
+                        : 225,
                   }}
                 ></Box>
               </Box>
@@ -217,7 +225,13 @@ const MediaGridItemInner = <T,>(
                 animation={false}
                 variant="rounded"
                 sx={{ borderRadius: '5%' }}
-                height={isMusicItem ? 144 : isEpisodeItem ? 84 : 250}
+                height={
+                  aspectRatio === 'square'
+                    ? 144
+                    : aspectRatio === 'landscape'
+                    ? 84
+                    : 250
+                }
               />
             ))}
           <ImageListItemBar
