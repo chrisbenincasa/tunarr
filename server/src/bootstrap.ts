@@ -61,9 +61,12 @@ export async function initDbDirectories() {
 
 export async function bootstrapTunarr(
   initialSettings?: DeepPartial<SettingsFile>,
+  dbPath?: string,
 ) {
   await initDbDirectories();
-  initDatabaseAccess(path.join(globalOptions().databaseDirectory, 'db.db'));
+  initDatabaseAccess(
+    dbPath ?? path.join(globalOptions().databaseDirectory, 'db.db'),
+  );
   await syncMigrationTablesIfNecessary();
   const settingsDb = getSettings(undefined, initialSettings);
   LoggerFactory.initialize(settingsDb);

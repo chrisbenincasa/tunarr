@@ -198,6 +198,15 @@ export class ProgramDB {
       .executeTakeFirst();
   }
 
+  async getShowPrograms(showId: string) {
+    return getDatabase()
+      .selectFrom('program')
+      .selectAll()
+      .select(withProgramExternalIds)
+      .where('tvShowUuid', '=', showId)
+      .execute();
+  }
+
   async getProgramParent(
     programId: string,
   ): Promise<Maybe<ProgramGroupingWithExternalIds>> {
