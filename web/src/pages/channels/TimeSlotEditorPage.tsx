@@ -109,7 +109,7 @@ function sanitizeStartTimes(schedule: TimeSlotSchedule) {
 export default function TimeSlotEditorPage() {
   const {
     channelEditor: { currentEntity: channel, schedule: loadedSchedule },
-    materializeNewProgramList: getMaterializedProgramList,
+    materializeOriginalProgramList,
   } = useChannelEditorLazy();
 
   const [startTime, setStartTime] = useState(
@@ -212,7 +212,7 @@ export default function TimeSlotEditorPage() {
     };
 
     // Find programs that have active slots
-    const filteredLineup = filter(getMaterializedProgramList(), (item) =>
+    const filteredLineup = filter(materializeOriginalProgramList(), (item) =>
       lineupItemAppearsInSchedule(getValues('slots'), item),
     );
 
@@ -292,7 +292,7 @@ export default function TimeSlotEditorPage() {
           timeZoneOffset: new Date().getTimezoneOffset(),
           type: 'time',
         },
-        getMaterializedProgramList(),
+        materializeOriginalProgramList(),
       )
         .then((res) => {
           performance.mark('guide-end');
