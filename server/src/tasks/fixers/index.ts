@@ -1,6 +1,6 @@
 import { groupByUniq } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
-import { round } from 'lodash-es';
+import { round, values } from 'lodash-es';
 import { BackfillProgramExternalIds } from './BackfillProgramExternalIds.js';
 import { AddPlexServerIdsFixer } from './addPlexServerIds.js';
 import { BackfillProgramGroupings } from './backfillProgramGroupings.js';
@@ -27,7 +27,7 @@ export const FixersByName: Record<string, Fixer> = groupByUniq(
   (f) => f.constructor.name,
 );
 
-const allFixers: Fixer[] = []; //values(FixersByName);
+const allFixers: Fixer[] = values(FixersByName);
 
 export const runFixers = async () => {
   for (const fixer of allFixers) {
