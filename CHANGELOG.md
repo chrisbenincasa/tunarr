@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.16.12](https://github.com/chrisbenincasa/tunarr/compare/v0.16.11...v0.16.12) (2024-12-13)
+
+
+### Bug Fixes
+
+* fix channel_programs update query in updateLineup ([ea73a5d](https://github.com/chrisbenincasa/tunarr/commit/ea73a5d95c2cdbeeb687444dab145228dc238252))
+* fix ProgramGroupingMinter to correctly assign type season for seasons instead of show ([0b92fa3](https://github.com/chrisbenincasa/tunarr/commit/0b92fa3de704d6fe34636f8db3d62c0bb35bd8ae))
+* re-enable fixers ([3fab90f](https://github.com/chrisbenincasa/tunarr/commit/3fab90fb9a7682d9654cbc049abd5017db1c58b6))
+* request additional jellyfin user view types by default ([a4cb229](https://github.com/chrisbenincasa/tunarr/commit/a4cb2299a9725c8a191f7dcfcaae69ad83828197))
+* time slots - always use the currently saved lineup state for slot generation ([04e58b6](https://github.com/chrisbenincasa/tunarr/commit/04e58b6d2cd369a8f7eb261d0b92d7e02341be9c))
+
 ## [0.16.11](https://github.com/chrisbenincasa/tunarr/compare/v0.16.10...v0.16.11) (2024-12-11)
 
 
