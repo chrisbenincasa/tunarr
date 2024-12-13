@@ -45,7 +45,7 @@ export class ProgramGroupingMinter {
       uuid: v4(),
       type:
         plexItem.type === 'episode'
-          ? ProgramGroupingType.Show
+          ? ProgramGroupingType.Season
           : ProgramGroupingType.Album,
       createdAt: now,
       updatedAt: now,
