@@ -249,8 +249,6 @@ export async function* scheduleRandomSlots(
 
     let remainingTimeInSlot = 0;
     const startOfNextBlock = +timeCursor.add(totalDuration);
-    // .mod(schedule.padMs)
-    // .asMilliseconds();
     if (
       startOfNextBlock % schedule.padMs >= constants.SLACK &&
       startOfNextBlock % schedule.padMs < schedule.padMs - constants.SLACK
@@ -296,22 +294,14 @@ export async function* scheduleRandomSlots(
         done = true;
         break;
       }
-      yield createFlex(dayjs.duration(padMs));
-      advanceTime(padMs);
+      if (padMs > 0) {
+        yield createFlex(dayjs.duration(padMs));
+        advanceTime(padMs);
+      }
     }
 
     if (done) {
       break;
     }
-    // forEach(paddedPrograms, ({ program, padMs }) => {
-    //   channelPrograms.push(program);
-    //   timeCursor = timeCursor.add(program.duration);
-    //   yield* pushFlex(dayjs.duration(padMs));
-    // });
   }
-
-  // return {
-  //   programs: channelPrograms,
-  //   startTime: +t0,
-  // };
 }
