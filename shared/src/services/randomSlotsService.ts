@@ -294,7 +294,7 @@ export async function* scheduleRandomSlots(
         done = true;
         break;
       }
-      if (padMs > 0) {
+      if (padMs > constants.SLACK) {
         yield createFlex(dayjs.duration(padMs));
         advanceTime(padMs);
       }
