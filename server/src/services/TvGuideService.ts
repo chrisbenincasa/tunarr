@@ -455,8 +455,9 @@ export class TVGuideService {
       // lineup. We may not be at the right offset if we're in the middle of a
       // long redirect block.
       if (
+        previousProgram.lineupItem.durationMs > constants.SLACK &&
         previousProgram.lineupItem.durationMs <
-        lineup.items[previousProgram.index].durationMs
+          lineup.items[previousProgram.index].durationMs
       ) {
         return;
       }
@@ -536,9 +537,13 @@ export class TVGuideService {
           // Cap the program at the lowest duration
           // Either the redirect slot will cut off before the program is
           // finished, or the program itself will end.
-          program2.durationMs = Math.min(
-            playing.lineupItem.durationMs,
-            targetChannelProgram.lineupItem.durationMs,
+          // Rounding is not a perfect solution here, we should normalize
+          // fractional durations in channels
+          program2.durationMs = Math.round(
+            Math.min(
+              playing.lineupItem.durationMs,
+              targetChannelProgram.lineupItem.durationMs,
+            ),
           );
           playing = {
             index: playing.index,
@@ -658,8 +663,10 @@ export class TVGuideService {
     let nextOffsetTime =
       currentProgram.startTimeMs + currentProgram.lineupItem.durationMs;
     while (currentProgram.startTimeMs < currentEndTimeMs) {
-      push(currentProgram);
-      await throttle();
+      if (currentProgram.lineupItem.durationMs > 0) {
+        push(currentProgram);
+        await throttle();
+      }
 
       const lastProgram = currentProgram;
       currentProgram = await this.getChannelPlaying(
@@ -1054,4 +1061,8 @@ function isProgramOffline(
         (channel.guideMinimumDuration ??
           constants.DEFAULT_GUIDE_STEALTH_DURATION))
   );
+}
+
+function isDecimal(num) {
+  return num % 1 !== 0;
 }
