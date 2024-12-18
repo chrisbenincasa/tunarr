@@ -1062,7 +1062,3 @@ function isProgramOffline(
           constants.DEFAULT_GUIDE_STEALTH_DURATION))
   );
 }
-
-function isDecimal(num) {
-  return num % 1 !== 0;
-}
