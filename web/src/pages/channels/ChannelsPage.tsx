@@ -1,10 +1,12 @@
 import { betterHumanize } from '@/helpers/dayjs.ts';
+import { useTranscodeConfigs } from '@/hooks/settingsHooks.ts';
 import { useApiQuery } from '@/hooks/useApiQuery.ts';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard.ts';
 import {
   setChannelPaginationState,
   setChannelTableColumnModel,
 } from '@/store/settings/actions.ts';
+import { Maybe } from '@/types/util.ts';
 import {
   Check,
   Close,
@@ -26,6 +28,7 @@ import {
   DialogContentText,
   DialogTitle,
   IconButton,
+  Link,
   ListItemIcon,
   ListItemText,
   Menu,
@@ -40,10 +43,10 @@ import { useTheme } from '@mui/material/styles';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link as RouterLink, useNavigate } from '@tanstack/react-router';
 import { PaginationState, VisibilityState } from '@tanstack/react-table';
-import { Channel, ChannelIcon } from '@tunarr/types';
+import { Channel, ChannelIcon, TranscodeConfig } from '@tunarr/types';
 import { ChannelSessionsResponse } from '@tunarr/types/api';
 import dayjs from 'dayjs';
-import { isEmpty, map, trimEnd } from 'lodash-es';
+import { find, isEmpty, map, trimEnd } from 'lodash-es';
 import {
   MRT_Row,
   MaterialReactTable,
@@ -73,6 +76,7 @@ export default function ChannelsPage() {
     },
     staleTime: 10_000,
   });
+  const { data: transcodeConfigs } = useTranscodeConfigs();
   const theme = useTheme();
   const mediumViewport = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
@@ -403,8 +407,31 @@ export default function ChannelsPage() {
         enableSorting: false,
         id: 'onDemand',
       },
+      {
+        header: 'Transcode Config',
+        accessorFn: (row) =>
+          find(transcodeConfigs, { id: row.transcodeConfigId }),
+        id: 'transcodeConfigId',
+        Cell: ({ cell }) => {
+          const conf = cell.getValue<Maybe<TranscodeConfig>>();
+          if (!conf) {
+            return '-';
+          }
+
+          return (
+            <Link
+              to={`/settings/ffmpeg/${conf.id}`}
+              onClick={(e) => e.stopPropagation()}
+              component={RouterLink}
+            >
+              {conf.name}
+            </Link>
+          );
+        },
+        enableSorting: false,
+      },
     ],
-    [],
+    [transcodeConfigs],
   );
 
   const channelTableData = useMemo(() => {

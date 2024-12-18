@@ -3,6 +3,7 @@ import ChannelProgrammingList from '@/components/channel_config/ChannelProgrammi
 import { MissingProgramsAlert } from '@/components/slot_scheduler/MissingProgramsAlert.tsx';
 import { TimeSlotFormProvider } from '@/components/slot_scheduler/TimeSlotFormProvider.tsx';
 import { TimeSlotTable } from '@/components/slot_scheduler/TimeSlotTable.tsx';
+import { DropdownOption } from '@/helpers/DropdownOption.ts';
 import {
   OneDayMillis,
   OneWeekMillis,
@@ -46,11 +47,7 @@ import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert.tsx';
 import { NumericFormControllerText } from '../../components/util/TypedController.tsx';
-import {
-  DropdownOption,
-  flexOptions,
-  padOptions,
-} from '../../helpers/slotSchedulerUtil.ts';
+import { flexOptions, padOptions } from '../../helpers/slotSchedulerUtil.ts';
 import { useUpdateLineup } from '../../hooks/useUpdateLineup.ts';
 import {
   resetLineup,

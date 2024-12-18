@@ -1,0 +1,194 @@
+import { getSettings } from '@/db/SettingsDB.ts';
+import {
+  NewTranscodeConfig,
+  TranscodeAudioOutputFormats,
+  TranscodeVideoOutputFormats,
+} from '@/db/schema/TranscodeConfig.ts';
+import { DB } from '@/db/schema/db.ts';
+import { booleanToNumber } from '@/util/sqliteUtil.ts';
+import { Resolution } from '@tunarr/types';
+import { Kysely, sql } from 'kysely';
+import { isEmpty } from 'lodash-es';
+import { v4 } from 'uuid';
+
+export default {
+  async up(db: Kysely<DB>) {
+    await db.schema
+      .createTable('transcode_config')
+      .ifNotExists()
+      .addColumn('uuid', 'text', (col) => col.primaryKey().notNull())
+      .addColumn('name', 'text', (col) => col.notNull())
+      .addColumn('thread_count', 'integer', (col) => col.notNull())
+      .addColumn('hardware_acceleration_mode', 'text', (col) =>
+        col
+          .notNull()
+          .check(
+            sql`\`hardware_acceleration_mode\` in ('none', 'cuda', 'vaapi', 'qsv', 'videotoolbox')`,
+          ),
+      )
+      .addColumn('vaapi_driver', 'text', (col) =>
+        col
+          .defaultTo('system')
+          .check(
+            sql`\`vaapi_driver\` in ('system', 'ihd', 'i965', 'radeonsi', 'nouveau')`,
+          ),
+      )
+      .addColumn('vaapi_device', 'text')
+      .addColumn('resolution', 'json', (col) => col.notNull())
+      .addColumn('video_format', 'text', (col) =>
+        col
+          .notNull()
+          .check(sql`\`video_format\` in ('h264', 'hevc', 'mpeg2video')`),
+      )
+      .addColumn('video_profile', 'text')
+      .addColumn('video_preset', 'text')
+      .addColumn('video_bit_depth', 'integer')
+      .addColumn('video_bit_rate', 'integer', (col) => col.notNull())
+      .addColumn('video_buffer_size', 'integer', (col) => col.notNull())
+      .addColumn('audio_channels', 'integer', (col) => col.notNull())
+      .addColumn('audio_format', 'text', (col) =>
+        col
+          .notNull()
+          .check(sql`\`audio_format\` in ('aac', 'ac3', 'copy', 'mp3')`),
+      )
+      .addColumn('audio_bit_rate', 'integer', (col) => col.notNull())
+      .addColumn('audio_buffer_size', 'integer', (col) => col.notNull())
+      .addColumn('audio_sample_rate', 'integer', (col) => col.notNull())
+      .addColumn('audio_volume_percent', 'integer', (col) =>
+        col.notNull().defaultTo(100),
+      )
+      .addColumn('normalize_frame_rate', 'boolean', (col) =>
+        col.notNull().defaultTo(false),
+      )
+      .addColumn('deinterlace_video', 'boolean', (col) =>
+        col.notNull().defaultTo(true),
+      )
+      .addColumn('disable_channel_overlay', 'boolean', (col) =>
+        col.notNull().defaultTo(false),
+      )
+      .addColumn('error_screen', 'text', (col) =>
+        col
+          .notNull()
+          .defaultTo('pic')
+          .check(
+            sql`\`error_screen\` in ('static', 'pic', 'blank', 'testsrc', 'text', 'kill')`,
+          ),
+      )
+      .addColumn('error_screen_audio', 'text', (col) =>
+        col
+          .notNull()
+          .defaultTo('silent')
+          .check(
+            sql`(\`error_screen_audio\` in ('silent', 'sine', 'whitenoise'))`,
+          ),
+      )
+      .addColumn('is_default', 'boolean', (col) =>
+        col.notNull().defaultTo(false),
+      )
+      .execute();
+
+    await db.schema
+      .alterTable('channel')
+      .addColumn('transcode_config_id', 'text', (col) =>
+        col.references('transcode_config.uuid'),
+      )
+      .execute();
+
+    // Insert the initial config, this is the default that is based off of the users current
+    // settings file.
+    // Then we will need to associate the config with channels, creating new configs
+    // with channel-specific overrides wherever necessary.
+    // This process should happen exactly once, which is why we are putting it here.
+    const existingFfmpegSettings = getSettings().ffmpegSettings();
+    const audioSetting = TranscodeAudioOutputFormats.find(
+      (fmt) => existingFfmpegSettings.audioEncoder === fmt,
+    );
+    const videoSetting = TranscodeVideoOutputFormats.find(
+      (fmt) => existingFfmpegSettings.videoFormat === fmt,
+    );
+    const defaultTranscodeConfig: NewTranscodeConfig = {
+      audioBitRate: existingFfmpegSettings.audioBitrate,
+      audioBufferSize: existingFfmpegSettings.audioBufferSize,
+      audioChannels: existingFfmpegSettings.audioChannels,
+      audioFormat: audioSetting ?? 'aac',
+      audioSampleRate: existingFfmpegSettings.audioSampleRate,
+      hardwareAccelerationMode: existingFfmpegSettings.hardwareAccelerationMode,
+      name: 'Default',
+      resolution: JSON.stringify(
+        existingFfmpegSettings.targetResolution satisfies Resolution,
+      ),
+      threadCount: existingFfmpegSettings.numThreads,
+      uuid: v4(),
+      videoBitRate: existingFfmpegSettings.videoBitrate,
+      videoBufferSize: existingFfmpegSettings.videoBufferSize,
+      videoFormat: videoSetting ?? 'h264',
+      audioVolumePercent: existingFfmpegSettings.audioVolumePercent,
+      deinterlaceVideo: booleanToNumber(
+        existingFfmpegSettings.deinterlaceFilter !== 'none',
+      ),
+      disableChannelOverlay: booleanToNumber(
+        existingFfmpegSettings.disableChannelOverlay,
+      ),
+      errorScreen: existingFfmpegSettings.errorScreen,
+      errorScreenAudio: existingFfmpegSettings.errorAudio,
+      normalizeFrameRate: booleanToNumber(false),
+      vaapiDevice: existingFfmpegSettings.vaapiDevice,
+      videoBitDepth: 8,
+      isDefault: booleanToNumber(true),
+    };
+
+    const transcodeConfigId = (
+      await db
+        .insertInto('transcodeConfig')
+        .values(defaultTranscodeConfig)
+        .returning('uuid')
+        .executeTakeFirstOrThrow()
+    ).uuid;
+
+    const allChannels = await db.selectFrom('channel').selectAll().execute();
+
+    for (const channel of allChannels) {
+      let configIdToUse = transcodeConfigId;
+      if (channel.transcoding && !isEmpty(channel.transcoding)) {
+        // Needs an override config
+        configIdToUse = v4();
+        const newConfig: NewTranscodeConfig = {
+          ...defaultTranscodeConfig,
+          uuid: configIdToUse,
+          name: `Default + Channel ${channel.number} override`,
+          isDefault: booleanToNumber(false),
+        };
+
+        if (channel.transcoding.targetResolution) {
+          newConfig.resolution = JSON.stringify(
+            channel.transcoding.targetResolution satisfies Resolution,
+          );
+        }
+        if (channel.transcoding.videoBitrate) {
+          newConfig.videoBitRate = channel.transcoding.videoBitrate;
+        }
+        if (channel.transcoding.videoBufferSize) {
+          newConfig.videoBufferSize = channel.transcoding.videoBufferSize;
+        }
+        await db
+          .insertInto('transcodeConfig')
+          .values(newConfig)
+          .executeTakeFirstOrThrow();
+      }
+
+      await db
+        .updateTable('channel')
+        .set('transcodeConfigId', configIdToUse)
+        .where('channel.uuid', '=', channel.uuid)
+        .executeTakeFirstOrThrow();
+    }
+  },
+
+  async down(db: Kysely<unknown>) {
+    await db.schema
+      .alterTable('channel')
+      .dropColumn('transcode_config_id')
+      .execute();
+    await db.schema.dropTable('transcode_config').ifExists().execute();
+  },
+};

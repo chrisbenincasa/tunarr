@@ -20,6 +20,7 @@ import {
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid2';
 import Typography from '@mui/material/Typography';
+import { Link as RouterLink } from '@tanstack/react-router';
 import {
   ChannelStreamMode,
   SaveChannelRequest,
@@ -33,7 +34,10 @@ import {
   resolutionToString,
   typedProperty,
 } from '../../helpers/util.ts';
-import { useFfmpegSettings } from '../../hooks/settingsHooks.ts';
+import {
+  useFfmpegSettings,
+  useTranscodeConfigs,
+} from '../../hooks/settingsHooks.ts';
 import useStore from '../../store/index.ts';
 import { ImageUploadInput } from '../settings/ImageUploadInput.tsx';
 import {
@@ -85,6 +89,7 @@ export default function ChannelTranscodingConfig() {
   const { data: ffmpegSettings, isPending: ffmpegSettingsLoading } =
     useFfmpegSettings();
   const channel = useStore((s) => s.channelEditor.currentEntity);
+  const transcodeConfigs = useTranscodeConfigs();
 
   const { control, watch, setValue, getValues } =
     useFormContext<SaveChannelRequest>();
@@ -205,8 +210,8 @@ export default function ChannelTranscodingConfig() {
             Use these settings to override global ffmpeg settings for this
             channel.
           </Typography>
-          <Box>
-            <FormControl margin="normal" sx={{ width: '33%' }}>
+          <Stack direction={{ sm: 'column', md: 'row' }} useFlexGap spacing={2}>
+            <FormControl margin="normal">
               <InputLabel>Channel Stream Mode</InputLabel>
               <Controller
                 control={control}
@@ -235,7 +240,31 @@ export default function ChannelTranscodingConfig() {
                 !
               </FormHelperText>
             </FormControl>
-          </Box>
+            <FormControl margin="normal">
+              <InputLabel>Channel Transcode Config</InputLabel>
+              <Controller
+                control={control}
+                name="transcodeConfigId"
+                render={({ field }) => (
+                  <Select<string> label="Channel Transcode Config" {...field}>
+                    {transcodeConfigs.data.map((opt) => (
+                      <MenuItem key={opt.id} value={opt.id}>
+                        {opt.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                )}
+              />
+              <FormHelperText>
+                Choose the transcode configuration to use for this channel.
+                Configure transcode configurations on the{' '}
+                <Link component={RouterLink} to="/settings/ffmpeg">
+                  FFmpeg settings page
+                </Link>
+                .
+              </FormHelperText>
+            </FormControl>
+          </Stack>
           <Stack direction="row" gap={2} justifyContent={'space-between'}>
             <FormControl margin="normal" sx={{ flex: 1 }}>
               <InputLabel>Channel Resolution</InputLabel>

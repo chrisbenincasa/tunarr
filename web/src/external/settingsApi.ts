@@ -11,6 +11,7 @@ import {
   HdhrSettingsSchema,
   MediaSourceSettingsSchema,
   PlexStreamSettingsSchema,
+  TranscodeConfigSchema,
   XmlTvSettingsSchema,
 } from '@tunarr/types/schemas';
 import { makeEndpoint, parametersBuilder } from '@zodios/core';
@@ -179,6 +180,50 @@ const systemMigrationState = makeEndpoint({
   }),
 });
 
+const transcodeConfigs = makeEndpoint({
+  method: 'get',
+  alias: 'getTranscodeConfigs',
+  path: '/api/transcode_configs',
+  response: z.array(TranscodeConfigSchema),
+});
+
+const getTranscodeConfig = makeEndpoint({
+  method: 'get',
+  alias: 'getTranscodeConfig',
+  path: '/api/transcode_configs/:id',
+  parameters: parametersBuilder()
+    .addParameter('id', 'Path', z.string().uuid())
+    .build(),
+  response: TranscodeConfigSchema,
+});
+
+const createTranscodeConfig = makeEndpoint({
+  method: 'post',
+  alias: 'createTranscodeConfig',
+  path: '/api/transcode_configs',
+  parameters: parametersBuilder().addBody(TranscodeConfigSchema).build(),
+  response: TranscodeConfigSchema,
+});
+
+const updateTranscodeConfig = makeEndpoint({
+  method: 'put',
+  alias: 'updateTranscodeConfig',
+  path: '/api/transcode_configs/:id',
+  parameters: parametersBuilder()
+    .addPath('id', z.string().uuid())
+    .addBody(TranscodeConfigSchema)
+    .build(),
+  response: TranscodeConfigSchema,
+});
+
+const deleteTranscodeConfig = makeEndpoint({
+  method: 'delete',
+  alias: 'deleteTranscodeConfig',
+  path: '/api/transcode_configs/:id',
+  parameters: parametersBuilder().addPath('id', z.string().uuid()).build(),
+  response: z.void(),
+});
+
 export const endpoints = [
   getMediaSourcesEndpoint,
   createMediaSourceEndpoint,
@@ -198,4 +243,9 @@ export const endpoints = [
   systemHealthChecks,
   runSystemFixer,
   systemMigrationState,
+  transcodeConfigs,
+  getTranscodeConfig,
+  createTranscodeConfig,
+  updateTranscodeConfig,
+  deleteTranscodeConfig,
 ] as const;

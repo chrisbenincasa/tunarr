@@ -1,11 +1,17 @@
+import { TrannscodeConfig as TrannscodeConfigDao } from '@/db/schema/TranscodeConfig.ts';
 import { serverOptions } from '@/globals.js';
 import { RouterPluginCallback } from '@/types/serverType.js';
 import { firstDefined } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { numberToBoolean } from '@/util/sqliteUtil.ts';
 import { sanitizeForExec } from '@/util/strings.js';
-import { defaultFfmpegSettings } from '@tunarr/types';
-import { FfmpegSettingsSchema } from '@tunarr/types/schemas';
-import { isError, merge, omit } from 'lodash-es';
+import { TranscodeConfig, defaultFfmpegSettings } from '@tunarr/types';
+import { IdPathParamSchema } from '@tunarr/types/api';
+import {
+  FfmpegSettingsSchema,
+  TranscodeConfigSchema,
+} from '@tunarr/types/schemas';
+import { isError, map, merge, omit } from 'lodash-es';
 import { z } from 'zod';
 
 export const ffmpegSettingsRouter: RouterPluginCallback = (
@@ -128,5 +134,121 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
     },
   );
 
+  fastify.get(
+    '/transcode_configs',
+    {
+      schema: {
+        response: {
+          200: z.array(TranscodeConfigSchema),
+        },
+      },
+    },
+    async (req, res) => {
+      const configs = await req.serverCtx.transcodeConfigDB.getAll();
+      const apiConfigs = map(configs, dbTranscodeConfigToApiSchema);
+      return res.send(apiConfigs);
+    },
+  );
+
+  fastify.get(
+    '/transcode_configs/:id',
+    {
+      schema: {
+        params: z.object({
+          id: z.string().uuid(),
+        }),
+        response: {
+          200: TranscodeConfigSchema,
+          404: z.void(),
+        },
+      },
+    },
+    async (req, res) => {
+      const config = await req.serverCtx.transcodeConfigDB.getById(
+        req.params.id,
+      );
+      if (!config) {
+        return res.status(404).send();
+      }
+
+      return res.send(dbTranscodeConfigToApiSchema(config));
+    },
+  );
+
+  fastify.post(
+    '/transcode_configs',
+    {
+      schema: {
+        body: TranscodeConfigSchema.omit({
+          id: true,
+        }),
+        response: {
+          201: TranscodeConfigSchema,
+        },
+      },
+    },
+    async (req, res) => {
+      const newConfig = await req.serverCtx.transcodeConfigDB.insertConfig(
+        req.body,
+      );
+      return res.status(201).send(dbTranscodeConfigToApiSchema(newConfig));
+    },
+  );
+
+  fastify.put(
+    '/transcode_configs/:id',
+    {
+      schema: {
+        body: TranscodeConfigSchema,
+        params: IdPathParamSchema,
+        response: {
+          200: TranscodeConfigSchema,
+        },
+      },
+    },
+    async (req, res) => {
+      await req.serverCtx.transcodeConfigDB.updateConfig(
+        req.params.id,
+        req.body,
+      );
+      return res.send(req.body);
+    },
+  );
+
+  fastify.delete(
+    '/transcode_configs/:id',
+    {
+      schema: {
+        params: IdPathParamSchema,
+        response: {
+          200: z.void(),
+        },
+      },
+    },
+    async (req, res) => {
+      const config = await req.serverCtx.transcodeConfigDB.getById(
+        req.params.id,
+      );
+      if (!config) {
+        return res.status(404).send();
+      }
+      await req.serverCtx.transcodeConfigDB.deleteConfig(req.params.id);
+      return res.send();
+    },
+  );
+
   done();
 };
+
+function dbTranscodeConfigToApiSchema(
+  config: TrannscodeConfigDao,
+): TranscodeConfig {
+  return {
+    ...config,
+    id: config.uuid,
+    disableChannelOverlay: numberToBoolean(config.disableChannelOverlay),
+    normalizeFrameRate: numberToBoolean(config.normalizeFrameRate),
+    deinterlaceVideo: numberToBoolean(config.deinterlaceVideo),
+    isDefault: numberToBoolean(config.isDefault),
+  } satisfies TranscodeConfig;
+}

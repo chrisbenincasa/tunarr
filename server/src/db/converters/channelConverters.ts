@@ -38,5 +38,6 @@ export const dbChannelToApiChannel = ({
     },
     programCount: filter(lineup.items, { type: 'content' }).length,
     streamMode: channel.streamMode,
+    transcodeConfigId: channel.transcodeConfigId,
   };
 };

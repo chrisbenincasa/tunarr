@@ -1,4 +1,5 @@
 import { ChannelDB } from '@/db/ChannelDB.ts';
+import { getDatabase } from '@/db/DBAccess.ts';
 import { ProgramDB } from '@/db/ProgramDB.ts';
 import { ProgramConverter } from '@/db/converters/ProgramConverter.ts';
 import { Lineup, LineupItem } from '@/db/derived_types/Lineup.ts';
@@ -159,7 +160,7 @@ export class TVGuideService {
   async buildAllChannels(guideDuration: Duration, force: boolean = false) {
     return this.withGuideContext(async () => {
       if (isEmpty(this.channelsById)) {
-        const placeholderChannel = this.makePlaceholderChannel();
+        const placeholderChannel = await this.makePlaceholderChannel();
         this.cachedGuide[placeholderChannel.channel.uuid] = placeholderChannel;
       } else {
         await Promise.all(
@@ -1003,7 +1004,7 @@ export class TVGuideService {
     );
   }
 
-  private makePlaceholderChannel(): ChannelPrograms {
+  private async makePlaceholderChannel(): Promise<ChannelPrograms> {
     const currentUpdateTimeMs = +dayjs();
     const fakeChannelId = v4();
     const channel: ChannelWithPrograms = {
@@ -1035,6 +1036,12 @@ export class TVGuideService {
       transcoding: null,
       programs: [],
       streamMode: 'hls',
+      transcodeConfigId: (
+        await getDatabase()
+          .selectFrom('transcodeConfig')
+          .select('uuid')
+          .executeTakeFirstOrThrow()
+      ).uuid,
     };
 
     // Placeholder channel with random ID.

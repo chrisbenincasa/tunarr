@@ -28,6 +28,8 @@ import { Route as LibraryCustomShowsImport } from './routes/library/custom-shows
 import { Route as ChannelsTestImport } from './routes/channels/test';
 import { Route as ChannelsNewImport } from './routes/channels/new';
 import { Route as ChannelsChannelIdImport } from './routes/channels/$channelId';
+import { Route as SettingsFfmpegNewImport } from './routes/settings/ffmpeg_/new';
+import { Route as SettingsFfmpegConfigIdImport } from './routes/settings/ffmpeg_/$configId';
 import { Route as LibraryFillersNewImport } from './routes/library/fillers_.new';
 import { Route as LibraryCustomShowsNewImport } from './routes/library/custom-shows_.new';
 import { Route as ChannelsChannelIdWatchImport } from './routes/channels_/$channelId/watch';
@@ -128,6 +130,16 @@ const ChannelsNewRoute = ChannelsNewImport.update({
 const ChannelsChannelIdRoute = ChannelsChannelIdImport.update({
   path: '/channels/$channelId',
   getParentRoute: () => rootRoute,
+} as any);
+
+const SettingsFfmpegNewRoute = SettingsFfmpegNewImport.update({
+  path: '/ffmpeg/new',
+  getParentRoute: () => SettingsRoute,
+} as any);
+
+const SettingsFfmpegConfigIdRoute = SettingsFfmpegConfigIdImport.update({
+  path: '/ffmpeg/$configId',
+  getParentRoute: () => SettingsRoute,
 } as any);
 
 const LibraryFillersNewRoute = LibraryFillersNewImport.update({
@@ -357,6 +369,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LibraryFillersNewImport;
       parentRoute: typeof rootRoute;
     };
+    '/settings/ffmpeg/$configId': {
+      id: '/settings/ffmpeg/$configId';
+      path: '/ffmpeg/$configId';
+      fullPath: '/settings/ffmpeg/$configId';
+      preLoaderRoute: typeof SettingsFfmpegConfigIdImport;
+      parentRoute: typeof SettingsImport;
+    };
+    '/settings/ffmpeg/new': {
+      id: '/settings/ffmpeg/new';
+      path: '/ffmpeg/new';
+      fullPath: '/settings/ffmpeg/new';
+      preLoaderRoute: typeof SettingsFfmpegNewImport;
+      parentRoute: typeof SettingsImport;
+    };
     '/channels/$channelId/programming/add': {
       id: '/channels/$channelId/programming/add';
       path: '/channels/$channelId/programming/add';
@@ -449,6 +475,8 @@ export const routeTree = rootRoute.addChildren({
     SettingsSourcesRoute,
     SettingsTasksRoute,
     SettingsXmltvRoute,
+    SettingsFfmpegConfigIdRoute,
+    SettingsFfmpegNewRoute,
   }),
   WelcomeRoute,
   ChannelsChannelIdRoute,
@@ -523,7 +551,9 @@ export const routeTree = rootRoute.addChildren({
         "/settings/hdhr",
         "/settings/sources",
         "/settings/tasks",
-        "/settings/xmltv"
+        "/settings/xmltv",
+        "/settings/ffmpeg/$configId",
+        "/settings/ffmpeg/new"
       ]
     },
     "/welcome": {
@@ -582,6 +612,14 @@ export const routeTree = rootRoute.addChildren({
     },
     "/library/fillers/new": {
       "filePath": "library/fillers_.new.tsx"
+    },
+    "/settings/ffmpeg/$configId": {
+      "filePath": "settings/ffmpeg_/$configId.tsx",
+      "parent": "/settings"
+    },
+    "/settings/ffmpeg/new": {
+      "filePath": "settings/ffmpeg_/new.tsx",
+      "parent": "/settings"
     },
     "/channels/$channelId/programming/add": {
       "filePath": "channels_/$channelId/programming/add.tsx"

@@ -12,11 +12,16 @@ import { Suspense } from 'react';
 
 export default function SettingsLayout() {
   const match = useMatches();
-  const currentTab = last(match)?.routeId;
+  const currentRoute = last(match)?.routeId;
+  let currentTab = '/settings/general';
+
+  if (currentRoute) {
+    currentTab = currentRoute.split('/', 3).join('/');
+  }
 
   return (
     <Box>
-      <Typography variant="h3" mb={2}>
+      <Typography variant="h4" mb={2}>
         Settings
       </Typography>
       <Paper sx={{ p: 2 }}>

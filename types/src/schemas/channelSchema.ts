@@ -100,6 +100,7 @@ export const ChannelSchema = z.object({
   }),
   programCount: z.number(),
   streamMode: ChannelStreamModeSchema,
+  transcodeConfigId: z.string(),
 });
 
 function addOrTransform<T extends ZodTypeAny>(x: T) {

@@ -1,7 +1,11 @@
-import { queryOptions, useQueries } from '@tanstack/react-query';
+import { ApiClient } from '@/external/api.ts';
+import {
+  queryOptions,
+  useQueries,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
 import { apiQueryOptions, useApiSuspenseQuery } from './useApiQuery.ts';
 import { useTunarrApi } from './useTunarrApi.ts';
-import { ApiClient } from '@/external/api.ts';
 
 export const useXmlTvSettings = () =>
   useApiSuspenseQuery({
@@ -73,4 +77,33 @@ export const useHdhrSettings = () =>
   useApiSuspenseQuery({
     queryKey: ['settings', 'hdhr'],
     queryFn: (apiClient) => apiClient.getHdhrSettings(),
+  });
+
+export const transcodeConfigsQueryOptions = (apiClient: ApiClient) =>
+  queryOptions({
+    queryKey: ['settings', 'transcode_configs'],
+    queryFn: () => apiClient.getTranscodeConfigs(),
+  });
+
+export const useTranscodeConfigs = () => {
+  const apiClient = useTunarrApi();
+  return useSuspenseQuery(transcodeConfigsQueryOptions(apiClient));
+};
+
+function fetchTranscodeConfigFunc(apiClient: ApiClient) {
+  return (id: string) => {
+    return apiClient.getTranscodeConfig({ params: { id } });
+  };
+}
+
+export const transcodeConfigQueryOptions = (api: ApiClient, id: string) =>
+  queryOptions({
+    queryKey: ['settings', 'transcode_configs', id],
+    queryFn: () => fetchTranscodeConfigFunc(api)(id),
+  });
+
+export const useTranscodeConfig = (id: string) =>
+  useApiSuspenseQuery({
+    queryKey: ['settings', 'transcode_configs', id],
+    queryFn: (apiClient) => fetchTranscodeConfigFunc(apiClient)(id),
   });

@@ -6,6 +6,7 @@ import { CustomShowDB } from './db/CustomShowDB.ts';
 import { FillerDB } from './db/FillerListDB.ts';
 import { ProgramDB } from './db/ProgramDB.ts';
 import { SettingsDB, getSettings } from './db/SettingsDB.ts';
+import { TranscodeConfigDB } from './db/TranscodeConfigDB.ts';
 import { ProgramConverter } from './db/converters/ProgramConverter.ts';
 import { MediaSourceDB } from './db/mediaSourceDB.ts';
 import { serverOptions } from './globals.js';
@@ -42,6 +43,7 @@ export class ServerContext {
     public mediaSourceDB: MediaSourceDB,
     public settings: SettingsDB,
     public programDB: ProgramDB,
+    public transcodeConfigDB: TranscodeConfigDB,
   ) {
     this.onDemandChannelService = new OnDemandChannelService(this.channelDB);
     this.sessionManager = SessionManager.create(
@@ -100,6 +102,7 @@ export const serverContext: () => ServerContext = once(() => {
     new MediaSourceDB(channelDB),
     settings,
     programDB,
+    new TranscodeConfigDB(),
   );
 });
 

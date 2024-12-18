@@ -1,3 +1,4 @@
+import { DropdownOption } from '@/helpers/DropdownOption';
 import { Delete } from '@mui/icons-material';
 import {
   FormControl,
@@ -17,7 +18,6 @@ import { map, range } from 'lodash-es';
 import React, { useCallback } from 'react';
 import { Control, UseFormSetValue, useWatch } from 'react-hook-form';
 import {
-  DropdownOption,
   ProgramOption,
   RedirectProgramOption,
 } from '../../helpers/slotSchedulerUtil';

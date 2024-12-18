@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
 import { bootstrapTunarr } from '@/bootstrap.ts';
-import { commands } from '@/cli/index.ts';
 import { setGlobalOptions } from '@/globals.ts';
 import {
   getDefaultDatabaseDirectory,
@@ -14,6 +13,7 @@ import duration from 'dayjs/plugin/duration.js';
 import { fileURLToPath } from 'node:url';
 import { hideBin } from 'yargs/helpers';
 import yargs from 'yargs/yargs';
+import { commands } from './cli/commands.ts';
 
 // Extend this here once so we don't have to worry about
 // it elsewhere in the app.

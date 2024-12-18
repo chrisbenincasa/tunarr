@@ -60,7 +60,7 @@ export const initDatabaseAccess = once((dbName: string) => {
 
 export const getDatabase = () => _directDbAccess;
 
-function getMigrator() {
+export function getMigrator() {
   return new Migrator({
     db: getDatabase(),
     provider: new DirectMigrationProvider(),

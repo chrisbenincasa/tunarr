@@ -1,21 +1,23 @@
 import { DefaultChannel } from '@/helpers/constants';
+import { transcodeConfigsQueryOptions } from '@/hooks/settingsHooks';
 import { channelsQuery } from '@/hooks/useChannels';
 import { NewChannelPage } from '@/pages/channels/NewChannelPage';
 import { safeSetCurrentChannel } from '@/store/channelEditor/actions';
 import { createFileRoute } from '@tanstack/react-router';
 import { Channel } from '@tunarr/types';
-import { maxBy } from 'lodash-es';
+import dayjs from 'dayjs';
+import { find, first, maxBy } from 'lodash-es';
 import { v4 } from 'uuid';
 import { z } from 'zod';
-import dayjs from 'dayjs';
 
-function defaultNewChannel(num: number): Channel {
+function defaultNewChannel(num: number, transcodeConfigId: string): Channel {
   return {
+    ...DefaultChannel,
     id: v4(),
     name: `Channel ${num}`,
     number: num,
     startTime: dayjs().add(1, 'h').startOf('h').unix() * 1000,
-    ...DefaultChannel,
+    transcodeConfigId,
   };
 }
 
@@ -30,11 +32,19 @@ const editChannelParamsSchema = z.object({
 export const Route = createFileRoute('/channels/new')({
   validateSearch: (search) => editChannelParamsSchema.parse(search),
   loader: async ({ context }) => {
+    const transcodeConfigs = await context.queryClient.ensureQueryData(
+      transcodeConfigsQueryOptions(context.tunarrApiClientProvider()),
+    );
+
     const channels = await context.queryClient.ensureQueryData(
       channelsQuery(context.tunarrApiClientProvider()),
     );
     const newChannel = defaultNewChannel(
       (maxBy(channels, (c) => c.number)?.number ?? 0) + 1,
+      (
+        find(transcodeConfigs, (conf) => conf.isDefault) ??
+        first(transcodeConfigs)!
+      ).id,
     );
 
     safeSetCurrentChannel(newChannel);

@@ -12,7 +12,7 @@ export const DefaultFallbackPicturePath = '/images/generic-offline-screen.png';
 // Default channel values that aren't dynamic
 export const DefaultChannel: MarkOptional<
   Channel,
-  'id' | 'name' | 'number' | 'startTime'
+  'id' | 'name' | 'number' | 'startTime' | 'transcodeConfigId'
 > = {
   duration: 0,
   icon: {
