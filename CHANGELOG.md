@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.16.13](https://github.com/chrisbenincasa/tunarr/compare/v0.16.12...v0.16.13) (2024-12-18)
+
+
+### Bug Fixes
+
+* display Plex playlists as its own library ([#1018](https://github.com/chrisbenincasa/tunarr/issues/1018)) ([22849e9](https://github.com/chrisbenincasa/tunarr/commit/22849e972bb8d6a97ba5714112f98da152c30812))
+* fix issue where random slot do-not-pad could generate 0-duration flex programs ([8abd3c8](https://github.com/chrisbenincasa/tunarr/commit/8abd3c83d9efbb1d4ceef47a3a7ee4195ba4c8d1))
+* improvements in handling fractional durations in scheduler ([9f46d11](https://github.com/chrisbenincasa/tunarr/commit/9f46d115fc12d45519f96d9becc7e99d029970e6))
+
 ## [0.16.12](https://github.com/chrisbenincasa/tunarr/compare/v0.16.11...v0.16.12) (2024-12-13)
 
 
