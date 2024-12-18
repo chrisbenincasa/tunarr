@@ -20,24 +20,24 @@ import {
   buildPlexSortKey,
 } from '../../helpers/plexSearchUtil.ts';
 import { forSelectedMediaType, groupSelectedMedia } from '../../helpers/util';
-import { MediaItems, SelectedLibrary, SelectedMedia } from './store';
+import { MediaItems, MediaSourceView, SelectedMedia } from './store';
 
 export const setProgrammingListingServer = (
   server: Maybe<MediaSourceSettings>,
 ) =>
   useStore.setState((state) => {
-    state.currentServer = server;
-    state.currentLibrary = undefined;
+    state.currentMediaSource = server;
+    state.currentMediaSourceView = undefined;
   });
 
-export const setProgrammingListLibrary = (library: SelectedLibrary) =>
+export const setProgrammingListLibrary = (library: MediaSourceView) =>
   useStore.setState((state) => {
-    state.currentLibrary = library;
+    state.currentMediaSourceView = library;
   });
 
 export const clearProgrammingListLibrary = () =>
   useStore.setState((state) => {
-    state.currentLibrary = undefined;
+    state.currentMediaSourceView = undefined;
   });
 
 function uniqueId(item: PlexLibrarySection | PlexMedia): string {

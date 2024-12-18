@@ -1,17 +1,17 @@
-import { useQuery } from '@tanstack/react-query';
-import { PlexFiltersResponse } from '@tunarr/types/plex';
-import { useEffect } from 'react';
-import { setPlexMetadataFilters } from '@/store/plexMetadata/actions.ts';
-import useStore from '@/store/index.ts';
-import { useTunarrApi } from '@/hooks/useTunarrApi.ts';
+import { isNonEmptyString } from '@/helpers/util.ts';
 import {
   emptyMediaSourceId,
   plexQueryOptions,
 } from '@/hooks/plex/plexHookUtil.ts';
-import { useCurrentMediaSourceAndLibrary } from '@/store/programmingSelector/selectors.ts';
-import { MediaSourceId } from '@tunarr/types/schemas';
+import { useTunarrApi } from '@/hooks/useTunarrApi.ts';
+import useStore from '@/store/index.ts';
+import { setPlexMetadataFilters } from '@/store/plexMetadata/actions.ts';
+import { useCurrentMediaSourceAndView } from '@/store/programmingSelector/selectors.ts';
 import { Maybe } from '@/types/util.ts';
-import { isNonEmptyString } from '@/helpers/util.ts';
+import { useQuery } from '@tanstack/react-query';
+import { PlexFiltersResponse } from '@tunarr/types/plex';
+import { MediaSourceId } from '@tunarr/types/schemas';
+import { useEffect } from 'react';
 
 export const usePlexFilters = (
   serverId: Maybe<MediaSourceId>,
@@ -51,6 +51,11 @@ export const usePlexFilters = (
 // local state.
 export const useSelectedLibraryPlexFilters = () => {
   const [selectedServer, selectedLibrary] =
-    useCurrentMediaSourceAndLibrary('plex');
-  return usePlexFilters(selectedServer?.id, selectedLibrary?.library.key ?? '');
+    useCurrentMediaSourceAndView('plex');
+  return usePlexFilters(
+    selectedServer?.id,
+    selectedLibrary?.view.type === 'library'
+      ? selectedLibrary?.view.library.key
+      : '',
+  );
 };

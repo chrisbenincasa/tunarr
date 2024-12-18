@@ -1,7 +1,11 @@
 import { CustomProgram, MediaSourceSettings } from '@tunarr/types';
 import { PlexSearch } from '@tunarr/types/api';
 import { JellyfinItem } from '@tunarr/types/jellyfin';
-import { PlexLibrarySection, PlexMedia } from '@tunarr/types/plex';
+import {
+  PlexLibrarySection,
+  PlexMedia,
+  PlexPlaylists,
+} from '@tunarr/types/plex';
 import { MediaSourceId } from '@tunarr/types/schemas';
 import { StateCreator } from 'zustand';
 
@@ -36,21 +40,39 @@ export type SelectedMedia =
   | JellyfinSelectedMedia
   | CustomShowSelectedMedia;
 
-export type PlexLibrary = {
-  type: 'plex';
+export const PlexMediaSourceLibraryViewType = {
+  Library: 'library' as const,
+  Playlists: 'playlists' as const,
+} as const;
+
+export type PlexMediaSourceLibraryView = {
+  type: 'library';
   library: PlexLibrarySection;
 };
 
-export type JellyfinLibrary = {
+export type PlexMediaSourcePlaylistsView = {
+  type: 'playlists';
+  playlists: PlexPlaylists;
+};
+
+export type PlexMediaSourceView = {
+  type: 'plex';
+  view: PlexMediaSourceLibraryView | PlexMediaSourcePlaylistsView;
+};
+
+export type JellyfinMediaSourceView = {
   type: 'jellyfin';
   library: JellyfinItem;
 };
 
-export type CustomShowLibrary = {
+export type CustomShowView = {
   type: 'custom-show';
 };
 
-export type SelectedLibrary = PlexLibrary | JellyfinLibrary | CustomShowLibrary;
+export type MediaSourceView =
+  | PlexMediaSourceView
+  | JellyfinMediaSourceView
+  | CustomShowView;
 
 export type PlexMediaItems = {
   type: 'plex';
@@ -72,8 +94,8 @@ export type ContentHierarchyMap = Record<
 >;
 
 export interface ProgrammingListingsState {
-  currentServer?: MediaSourceSettings;
-  currentLibrary?: SelectedLibrary;
+  currentMediaSource?: MediaSourceSettings;
+  currentMediaSourceView?: MediaSourceView;
   // Tracks the parent-child mappings of library items
   contentHierarchyByServer: ContentHierarchyMap;
   // Holds the actual metadata for items, including directories (i.e. Plex libraries)

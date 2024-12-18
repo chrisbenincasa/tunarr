@@ -1,3 +1,4 @@
+import { useCurrentPlexMediaSourceLibraryView } from '@/store/programmingSelector/selectors.ts';
 import Add from '@mui/icons-material/Add';
 import Delete from '@mui/icons-material/Delete';
 import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
@@ -42,7 +43,6 @@ import {
 } from 'react-hook-form';
 import { useSelectedLibraryPlexFilters } from '../../hooks/plex/usePlexFilters.ts';
 import { usePlexTags } from '../../hooks/plex/usePlexTags.ts';
-import useStore from '../../store/index.ts';
 import { setPlexFilter } from '../../store/programmingSelector/actions.ts';
 
 type FilterMetadataContextType = {
@@ -437,13 +437,11 @@ export function PlexFilterBuilder(
   const rootNodeType = formMethods.watch('type');
 
   const { data: plexFilterMetadata } = useSelectedLibraryPlexFilters();
-  const selectedLibrary = useStore((s) =>
-    s.currentLibrary?.type === 'plex' ? s.currentLibrary : null,
-  );
+  const mediaSourceView = useCurrentPlexMediaSourceLibraryView();
 
   const libraryFilterMetadata = find(
     plexFilterMetadata?.Type,
-    (t) => t.type === selectedLibrary?.library.type,
+    (t) => t.type === mediaSourceView?.library.type,
   );
 
   const handleSearch: SubmitHandler<PlexFilter> = (data) => {
@@ -463,11 +461,11 @@ export function PlexFilterBuilder(
         type: 'value',
         op: '=',
         field:
-          selectedLibrary?.library.type === 'show' ? 'show.title' : 'title',
+          mediaSourceView?.library.type === 'show' ? 'show.title' : 'title',
         value: '',
       });
     }
-  }, [advanced, formMethods, formMethods.reset, selectedLibrary?.library.type]);
+  }, [advanced, formMethods, formMethods.reset, mediaSourceView?.library.type]);
 
   return (
     <FilterMetadataContext.Provider

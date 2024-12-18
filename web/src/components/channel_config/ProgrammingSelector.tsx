@@ -24,7 +24,10 @@ import {
   sortBy,
 } from 'lodash-es';
 import React, { useCallback, useEffect, useState } from 'react';
-import { usePlexLibraries } from '../../hooks/plex/usePlex.ts';
+import {
+  usePlexLibraries,
+  usePlexPlaylists,
+} from '../../hooks/plex/usePlex.ts';
 import { useMediaSources } from '../../hooks/settingsHooks.ts';
 import { useCustomShows } from '../../hooks/useCustomShows.ts';
 import useStore from '../../store/index.ts';
@@ -81,14 +84,14 @@ type Props = {
 export default function ProgrammingSelector(_: Props) {
   const { data: mediaSources, isLoading: mediaSourcesLoading } =
     useMediaSources();
-  const selectedServer = useStore((s) => s.currentServer);
-  const selectedLibrary = useStore((s) => s.currentLibrary);
+  const selectedServer = useStore((s) => s.currentMediaSource);
+  const selectedLibrary = useStore((s) => s.currentMediaSourceView);
   const knownMedia = useKnownMedia();
   const [mediaSource, setMediaSource] = useState(selectedServer?.name);
 
   // Convenience sub-selectors for specific library types
   const selectedPlexLibrary =
-    selectedLibrary?.type === 'plex' ? selectedLibrary.library : undefined;
+    selectedLibrary?.type === 'plex' ? selectedLibrary.view : undefined;
   const selectedJellyfinLibrary =
     selectedLibrary?.type === 'jellyfin' ? selectedLibrary.library : undefined;
 
@@ -98,6 +101,12 @@ export default function ProgrammingSelector(_: Props) {
     selectedServer?.id ?? tag(''),
     selectedServer?.type === 'plex',
   );
+
+  const { data: plexPlaylists, isLoading: plexPlaylistsLoading } =
+    usePlexPlaylists(
+      selectedServer?.id ?? tag(''),
+      selectedServer?.type === 'plex',
+    );
 
   const { data: jellyfinLibraries } = useJellyfinUserLibraries(
     selectedServer?.id ?? '',
@@ -121,7 +130,10 @@ export default function ProgrammingSelector(_: Props) {
       ) {
         setProgrammingListLibrary({
           type: 'plex',
-          library: plexLibraryChildren.Directory[0],
+          view: {
+            type: 'library',
+            library: plexLibraryChildren.Directory[0],
+          },
         });
       }
       addKnownMediaForPlexServer(selectedServer.id, [
@@ -172,13 +184,21 @@ export default function ProgrammingSelector(_: Props) {
   const onLibraryChange = useCallback(
     (libraryUuid: string) => {
       if (selectedServer?.type === 'plex') {
-        const library = knownMedia.getMediaOfType(
-          selectedServer.id,
-          libraryUuid,
-          'plex',
-        );
+        if (libraryUuid === 'playlists' && plexPlaylists) {
+          setProgrammingListLibrary({
+            type: 'plex',
+            view: { type: 'playlists', playlists: plexPlaylists },
+          });
+          return;
+        }
+
+        const library = knownMedia.getPlexMedia(selectedServer.id, libraryUuid);
+
         if (library && isPlexDirectory(library)) {
-          setProgrammingListLibrary({ type: 'plex', library });
+          setProgrammingListLibrary({
+            type: 'plex',
+            view: { type: 'library', library },
+          });
         }
       } else if (selectedServer?.type === 'jellyfin') {
         const library = knownMedia.getMediaOfType(
@@ -191,7 +211,7 @@ export default function ProgrammingSelector(_: Props) {
         }
       }
     },
-    [knownMedia, selectedServer],
+    [knownMedia, plexPlaylists, selectedServer?.id, selectedServer?.type],
   );
 
   const renderMediaSourcePrograms = () => {
@@ -238,22 +258,42 @@ export default function ProgrammingSelector(_: Props) {
 
     switch (selectedServer.type) {
       case 'plex': {
-        return (
+        const hasLibraries =
           !isNil(plexLibraryChildren) &&
           plexLibraryChildren.size > 0 &&
-          selectedPlexLibrary && (
+          selectedPlexLibrary;
+
+        const libraryMenuItems = map(plexLibraryChildren?.Directory, (dir) => (
+          <MenuItem key={dir.key} value={dir.uuid}>
+            {dir.title}
+          </MenuItem>
+        ));
+
+        const playlistMenuItem = (
+          <MenuItem
+            key="playlists"
+            value="playlists"
+            disabled={plexPlaylistsLoading}
+          >
+            Playlists
+          </MenuItem>
+        );
+
+        return (
+          hasLibraries && (
             <FormControl size="small" sx={{ minWidth: { sm: 200 } }}>
               <InputLabel>Library</InputLabel>
               <Select
                 label="Library"
-                value={selectedPlexLibrary.uuid}
+                value={
+                  selectedPlexLibrary.type === 'library'
+                    ? selectedPlexLibrary.library.uuid
+                    : 'playlists'
+                }
                 onChange={(e) => onLibraryChange(e.target.value)}
               >
-                {plexLibraryChildren.Directory.map((dir) => (
-                  <MenuItem key={dir.key} value={dir.uuid}>
-                    {dir.title}
-                  </MenuItem>
-                ))}
+                {libraryMenuItems}
+                {playlistMenuItem}
               </Select>
             </FormControl>
           )

@@ -52,3 +52,5 @@ export const TranscodeResolutionOptions = [
   { value: '1920x1080', label: '1920x1080 (FHD 16:9)' },
   { value: '3840x2160', label: '3840x2160 (4K 16:9)' },
 ] as const;
+
+export const Plex = 'plex';

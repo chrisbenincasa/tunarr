@@ -22,6 +22,7 @@ import {
   toggle,
 } from '../../helpers/util.ts';
 
+import { getPlexMediaChildType } from '@/helpers/plexUtil.ts';
 import { usePlexTyped } from '@/hooks/plex/usePlex.ts';
 import {
   addKnownMediaForPlexServer,
@@ -31,7 +32,7 @@ import { useCurrentMediaSource } from '@/store/programmingSelector/selectors.ts'
 import { SelectedMedia } from '@/store/programmingSelector/store.ts';
 import { useSettings } from '@/store/settings/selectors.ts';
 import { createExternalId } from '@tunarr/shared';
-import { MediaGridItem } from './MediaGridItem.tsx';
+import { GridItemMetadata, MediaGridItem } from './MediaGridItem.tsx';
 import { GridItemProps } from './MediaItemGrid.tsx';
 
 export interface PlexGridItemProps<T extends PlexMedia>
@@ -52,15 +53,6 @@ const extractChildCount = forPlexMedia({
   default: 0,
 });
 
-const childItemType = forPlexMedia({
-  season: 'episode',
-  show: 'season',
-  collection: (coll) => (coll.subtype === 'movie' ? 'movie' : 'show'),
-  playlist: (pl) => (pl.playlistType === 'audio' ? 'track' : 'video'),
-  artist: 'album',
-  album: 'track',
-});
-
 const subtitle = forPlexMedia({
   movie: (item) => <span>{prettyItemDuration(item.duration ?? 0)}</span>,
   default: (item) => {
@@ -71,7 +63,7 @@ const subtitle = forPlexMedia({
 
     return (
       <span>{`${childCount} ${pluralize(
-        childItemType(item) ?? 'item',
+        getPlexMediaChildType(item) ?? 'item',
         childCount,
       )}`}</span>
     );
@@ -91,8 +83,7 @@ export const PlexGridItem = memo(
       const currentServer = useCurrentMediaSource('plex');
 
       const isMusicItem = useCallback(
-        (item: PlexMedia) =>
-          ['MusicArtist', 'MusicAlbum', 'Audio'].includes(item.type),
+        (item: PlexMedia) => ['artist', 'album', 'track'].includes(item.type),
         [],
       );
 
@@ -145,7 +136,15 @@ export const PlexGridItem = memo(
             const query = new URLSearchParams({
               mode: 'proxy',
               asset: 'thumb',
-              id: createExternalId('plex', server.name, item.ratingKey),
+              id: createExternalId(
+                'plex',
+                server.name,
+                item.type === 'track'
+                  ? item.parentRatingKey ??
+                      item.grandparentRatingKey ??
+                      item.ratingKey
+                  : item.ratingKey,
+              ),
               // Commenting this out for now as temporary solution for image loading issue
               // thumbOptions: JSON.stringify({ width: 480, height: 720 }),
               cache: import.meta.env.PROD ? 'true' : 'false',
@@ -173,20 +172,29 @@ export const PlexGridItem = memo(
       );
 
       const metadata = useMemo(
-        () => ({
-          itemId: item.guid,
-          hasThumbnail: isNonEmptyString(
-            isPlexPlaylist(item) ? item.composite : item.thumb,
-          ),
-          childCount: extractChildCount(item),
-          title: item.title,
-          subtitle: subtitle(item),
-          thumbnailUrl: thumbnailUrlFunc(item),
-          selectedMedia: selectedMediaFunc(item),
-          isMusicItem: isMusicItem(item),
-          isEpisode: isEpisode(item),
-          isPlaylist: isPlexPlaylist(item),
-        }),
+        () =>
+          ({
+            itemId: item.guid,
+            hasThumbnail: isNonEmptyString(
+              isPlexPlaylist(item)
+                ? item.composite
+                : item.type === 'track'
+                ? item.parentThumb ?? item.grandparentThumb ?? item.thumb
+                : item.thumb,
+            ),
+            childCount: extractChildCount(item),
+            title: item.title,
+            subtitle: subtitle(item),
+            thumbnailUrl: thumbnailUrlFunc(item),
+            selectedMedia: selectedMediaFunc(item),
+            aspectRatio:
+              isMusicItem(item) || isPlexPlaylist(item)
+                ? 'square'
+                : isEpisode(item)
+                ? 'landscape'
+                : 'portrait',
+            isPlaylist: isPlexPlaylist(item),
+          }) satisfies GridItemMetadata,
         [isEpisode, isMusicItem, item, selectedMediaFunc, thumbnailUrlFunc],
       );
 

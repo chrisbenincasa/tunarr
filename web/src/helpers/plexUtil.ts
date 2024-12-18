@@ -1,3 +1,4 @@
+import { forPlexMedia } from '@tunarr/shared/util';
 import { MediaSourceId } from '@tunarr/types/schemas';
 import { ApiClient } from '../external/api.ts';
 
@@ -17,3 +18,12 @@ export const fetchPlexPath = <T>(
       .then((r) => r as T);
   };
 };
+
+export const getPlexMediaChildType = forPlexMedia({
+  season: 'episode',
+  show: 'season',
+  collection: (coll) => (coll.subtype === 'movie' ? 'movie' : 'show'),
+  playlist: (pl) => (pl.playlistType === 'audio' ? 'track' : 'video'),
+  artist: 'album',
+  album: 'track',
+});

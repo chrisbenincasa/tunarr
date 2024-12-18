@@ -1,4 +1,4 @@
-import { PlexLibrary } from '@/store/programmingSelector/store.ts';
+import { PlexMediaSourceLibraryView } from '@/store/programmingSelector/store.ts';
 import { Maybe, Nilable } from '@/types/util.ts';
 import {
   DataTag,
@@ -27,7 +27,7 @@ const usePlexSearchQueryFn = () => {
 
   return (
     plexServer: PlexServerSettings,
-    plexLibrary: PlexLibrary,
+    plexLibrary: PlexMediaSourceLibraryView,
     searchParam: Maybe<string>,
     parent?: Maybe<{ parentId: string; type: PlexMedia['type'] }>,
     pageParams?: { start: number; size: number },
@@ -69,7 +69,7 @@ const usePlexSearchQueryFn = () => {
 
 const usePlexSearchQueryOptions = (
   plexServer: Maybe<MediaSourceSettings>,
-  currentLibrary: Nilable<PlexLibrary>,
+  currentLibrary: Nilable<PlexMediaSourceLibraryView>,
   searchParam: Maybe<string>,
   enabled: boolean = true,
 ) => {
@@ -101,7 +101,7 @@ const usePlexSearchQueryOptions = (
 
 export const useDirectPlexSearch = (
   server: Maybe<MediaSourceSettings>,
-  currentLibrary: Nilable<PlexLibrary>,
+  currentLibrary: Nilable<PlexMediaSourceLibraryView>,
   searchParam: Maybe<string>,
   enabled: boolean = true,
 ) => {
@@ -120,7 +120,7 @@ export const useDirectPlexSearch = (
 
 export const usePlexSearch = (
   plexServer: Maybe<PlexServerSettings>,
-  currentLibrary: Nilable<PlexLibrary>,
+  currentLibrary: Nilable<PlexMediaSourceLibraryView>,
   searchParam: Maybe<string>,
   enabled: boolean = true,
 ) => {
@@ -136,7 +136,7 @@ export const usePlexSearch = (
 
 const usePlexItemsInfiniteQueryOptions = (
   plexServer: Maybe<PlexServerSettings>,
-  currentLibrary: Nilable<PlexLibrary>,
+  currentLibrary: Nilable<PlexMediaSourceLibraryView>,
   searchParam: Maybe<string>,
   pageSize: number,
   parent: Maybe<{ parentId: string; type: PlexMedia['type'] }>,
@@ -183,7 +183,7 @@ const usePlexItemsInfiniteQueryOptions = (
 
 export const usePlexItemsInfinite = (
   plexServer: Maybe<PlexServerSettings>,
-  currentLibrary: Nilable<PlexLibrary>,
+  currentLibrary: Nilable<PlexMediaSourceLibraryView>,
   searchParam: Maybe<string>,
   pageSize: number,
   parent: Maybe<{ parentId: string; type: PlexMedia['type'] }>,

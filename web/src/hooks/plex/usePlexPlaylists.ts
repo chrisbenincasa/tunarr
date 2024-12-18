@@ -1,14 +1,14 @@
-import { PlexLibrary } from '@/store/programmingSelector/store.ts';
+import { isNonEmptyString } from '@/helpers/util.ts';
+import { addKnownMediaForPlexServer } from '@/store/programmingSelector/actions.ts';
+import { PlexMediaSourceLibraryView } from '@/store/programmingSelector/store.ts';
 import { Maybe, Nilable } from '@/types/util.ts';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { PlexServerSettings } from '@tunarr/types';
+import { PlexPlaylists } from '@tunarr/types/plex';
 import { chain, isNil, isUndefined, sumBy } from 'lodash-es';
+import { useEffect } from 'react';
 import { fetchPlexPath } from '../../helpers/plexUtil.ts';
 import { useTunarrApi } from '../useTunarrApi.ts';
-import { PlexPlaylists } from '@tunarr/types/plex';
-import { useEffect } from 'react';
-import { isNonEmptyString } from '@/helpers/util.ts';
-import { addKnownMediaForPlexServer } from '@/store/programmingSelector/actions.ts';
 
 /**
  * Currently makes the assumption that are operating on an a music library
@@ -16,7 +16,7 @@ import { addKnownMediaForPlexServer } from '@/store/programmingSelector/actions.
  */
 export const usePlexPlaylistsInfinite = (
   plexServer: Maybe<PlexServerSettings>,
-  currentLibrary: Nilable<PlexLibrary>,
+  currentLibrary: Nilable<PlexMediaSourceLibraryView>,
   pageSize: number,
   enabled: boolean = true,
 ) => {
@@ -26,17 +26,21 @@ export const usePlexPlaylistsInfinite = (
     queryKey: [
       'plex',
       plexServer?.id,
-      currentLibrary?.library.key,
+      currentLibrary?.library.key ?? 'all',
       'playlists',
       'infinite',
     ],
     queryFn: ({ pageParam }) => {
       const plexQuery = new URLSearchParams({
         type: '15',
-        sectionID: currentLibrary!.library.key,
+
         'X-Plex-Container-Start': pageParam.toString(),
         'X-Plex-Container-Size': pageSize.toString(),
       });
+
+      if (isNonEmptyString(currentLibrary?.library.key)) {
+        plexQuery.set('sectionID', currentLibrary.library.key);
+      }
 
       return fetchPlexPath<PlexPlaylists>(
         apiClient,
@@ -44,7 +48,7 @@ export const usePlexPlaylistsInfinite = (
         `/playlists?${plexQuery.toString()}`,
       )();
     },
-    enabled: !isNil(plexServer) && !isNil(currentLibrary) && enabled,
+    enabled: !isNil(plexServer) && enabled,
     initialPageParam: 0,
     getNextPageParam: (res, all, last) => {
       const total = sumBy(all, (page) => page.size);

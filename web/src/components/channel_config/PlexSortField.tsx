@@ -1,3 +1,4 @@
+import { useCurrentMediaSourceView } from '@/store/programmingSelector/selectors.ts';
 import ArrowDownward from '@mui/icons-material/ArrowDownward';
 import ArrowUpward from '@mui/icons-material/ArrowUpward';
 import { FormControl, FormGroup, IconButton, InputLabel } from '@mui/material';
@@ -10,7 +11,6 @@ import map from 'lodash-es/map';
 import { useCallback, useEffect, useState } from 'react';
 import { useSelectedLibraryPlexFilters } from '../../hooks/plex/usePlexFilters';
 import { setPlexSort } from '../../store/programmingSelector/actions';
-import { useCurrentSourceLibrary } from '@/store/programmingSelector/selectors.ts';
 
 type PlexSort = {
   key: string;
@@ -19,7 +19,7 @@ type PlexSort = {
 };
 
 export function PlexSortField() {
-  const selectedLibrary = useCurrentSourceLibrary('plex');
+  const selectedLibrary = useCurrentMediaSourceView('plex');
 
   const [sort, setSort] = useState<PlexSort>({
     key: '',
@@ -32,7 +32,9 @@ export function PlexSortField() {
 
   const libraryFilterMetadata = find(
     plexFilterMetadata?.Type,
-    (t) => t.type === selectedLibrary?.library.type,
+    (t) =>
+      selectedLibrary?.view.type === 'library' &&
+      t.type === selectedLibrary?.view.library.type,
   );
 
   useEffect(() => {
