@@ -14,13 +14,9 @@ Since Tunarr is currently pre-release. There are a few tags to choose from which
 
 - `x.x.x` (versioned): These are release cuts. Because we are pre-1.0.0, breaking changes cause major version bumps and bug fixes are patch version bumps. Once we achieve 1.0.0, we will use proper semver.
 - `latest`: The latest tag points at the most recent release version.
-- `edge`: Pushed every 2 hours off of the "dev" branch. This build can be very unstable.
+- `edge`: Pushed every 2 hours off of the "dev" branch. This build can be unstable. **NOTE**: If switching from a versioned/latest build to an edge build, it's recommended to take a backup of your entire Tunarr data directory. Downgrading from "edge" to a previous version is not supported; edge builds can contain non-backwards compatible changes, like database schema changes.
 
 Each tag can also use specialized image builds which include support for hardware-accelerated encoding with Nvidia, QSV, and VAAPI.
-
-!!! info
-
-    Tunarr has experimental support for QSV / VAAPI. This issue is tracked here: [chrisbenincasa/tunarr#23](https://github.com/chrisbenincasa/tunarr/issues/23)
 
 Image tags are in the form `TAG(-HWACCEL)?`. For example, with the `latest` tag:
 
