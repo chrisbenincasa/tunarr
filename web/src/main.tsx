@@ -1,24 +1,18 @@
 import { routeTree } from '@/routeTree.gen';
-import { LocalizationProvider } from '@mui/x-date-pickers';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { RouterProvider, createRouter } from '@tanstack/react-router';
-import { SnackbarProvider } from 'notistack';
+import { createRouter } from '@tanstack/react-router';
+import dayjs from 'dayjs';
+import 'dayjs/locale/en-gb';
+import localizedFormat from 'dayjs/plugin/localizedFormat';
 import React from 'react';
-import { DndProvider } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
 import ReactDOM from 'react-dom/client';
-import {
-  TunarrApiProvider,
-  getApiClient,
-} from './components/TunarrApiContext.tsx';
-import { ServerEventsProvider } from './components/server_events/ServerEventsProvider.tsx';
+import { Tunarr } from './Tunarr.tsx';
+import { getApiClient } from './components/TunarrApiContext.tsx';
 import './helpers/dayjs.ts';
 import './index.css';
 import { queryClient } from './queryClient.ts';
 
 // Create a new router instance
-const router = createRouter({
+export const router = createRouter({
   routeTree,
   context: { queryClient, tunarrApiClientProvider: getApiClient },
 });
@@ -30,21 +24,11 @@ declare module '@tanstack/react-router' {
   }
 }
 
+dayjs.extend(localizedFormat);
+dayjs.locale('en-gb');
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <TunarrApiProvider queryClient={queryClient}>
-      <LocalizationProvider dateAdapter={AdapterDayjs}>
-        <DndProvider backend={HTML5Backend}>
-          <ServerEventsProvider>
-            <QueryClientProvider client={queryClient}>
-              <SnackbarProvider maxSnack={2} autoHideDuration={5000}>
-                <RouterProvider basepath="/web" router={router} />
-              </SnackbarProvider>
-            </QueryClientProvider>
-          </ServerEventsProvider>
-        </DndProvider>
-      </LocalizationProvider>
-    </TunarrApiProvider>
-    ,
+    <Tunarr />
   </React.StrictMode>,
 );

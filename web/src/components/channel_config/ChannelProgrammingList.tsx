@@ -20,7 +20,7 @@ import IconButton from '@mui/material/IconButton';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
-import { ChannelProgram } from '@tunarr/types';
+import { Channel, ChannelProgram } from '@tunarr/types';
 import dayjs, { Dayjs } from 'dayjs';
 import { findIndex, isString, isUndefined, map, sumBy } from 'lodash-es';
 import React, { CSSProperties, useCallback, useState } from 'react';
@@ -43,16 +43,6 @@ import {
 import ProgramDetailsDialog from '../ProgramDetailsDialog.tsx';
 import AddFlexModal from '../programming_controls/AddFlexModal.tsx';
 import AddRedirectModal from '../programming_controls/AddRedirectModal.tsx';
-
-const ListItemTimeFormatter = new Intl.DateTimeFormat(undefined, {
-  dateStyle: 'medium',
-  timeStyle: 'short',
-});
-
-const MobileListItemTimeFormatter = new Intl.DateTimeFormat(undefined, {
-  dateStyle: 'short',
-  timeStyle: 'short',
-});
 
 type CommonProps = {
   moveProgram?: (originalIndex: number, toIndex: number) => void;
@@ -110,6 +100,7 @@ type ListItemProps = {
     program: (UIFlexProgram | UIRedirectProgram) & { index: number },
   ) => void;
   titleFormatter: (program: ChannelProgram) => string;
+  channel: Channel;
 };
 
 type ListDragItem = {
@@ -122,7 +113,6 @@ const ProgramListItem = ({
   style,
   program,
   index,
-  startTimeDate,
   moveProgram,
   deleteProgram,
   findProgram,
@@ -132,6 +122,7 @@ const ProgramListItem = ({
   enableEdit,
   enableDelete,
   titleFormatter,
+  channel,
 }: ListItemProps) => {
   const [{ isDragging }, drag] = useDrag(
     () => ({
@@ -164,18 +155,16 @@ const ProgramListItem = ({
   const theme = useTheme();
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const startTime = startTimeDate
-    ? smallViewport
-      ? MobileListItemTimeFormatter.format(startTimeDate)
-      : ListItemTimeFormatter.format(startTimeDate)
-    : null;
+  const startTimeDate = !isUndefined(program.startTimeOffset)
+    ? dayjs(channel.startTime + program.startTimeOffset)
+    : undefined;
+
+  const startTime = startTimeDate?.format(smallViewport ? 'L LT' : 'lll');
 
   const handleInfoButtonClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onInfoClicked(program);
   };
-
-  // const dayBoundary = startTimes[idx + 1].isAfter(startTimes[idx], 'day');
 
   let title = `${titleFormatter(program)}`;
   if (!smallViewport && startTime) {
@@ -384,22 +373,19 @@ export default function ChannelProgrammingList(props: Props) {
 
   const renderProgram = (idx: number, style?: CSSProperties) => {
     const program = programList[idx];
-    const startTimeDate = !isUndefined(program.startTimeOffset)
-      ? dayjs(channel!.startTime + program.startTimeOffset).toDate()
-      : undefined;
     return (
       <ProgramListItem
         index={idx}
         program={program}
         style={style}
-        startTimeDate={startTimeDate}
+        channel={channel!}
         moveProgram={moveProgram}
         findProgram={findProgram}
         deleteProgram={deleteProgram}
         enableDrag={!!enableDnd}
         enableDelete={props.enableRowDelete ?? true}
         enableEdit={props.enableRowEdit ?? true}
-        onInfoClicked={() => openDetailsDialog(program, startTimeDate)}
+        onInfoClicked={() => openDetailsDialog(program)}
         onEditClicked={openEditDialog}
         titleFormatter={titleFormatter}
       />

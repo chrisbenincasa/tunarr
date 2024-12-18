@@ -4,6 +4,7 @@ import { StateCreator } from 'zustand';
 import { ProgramSelectorViewType } from '../../types';
 
 dayjs.extend(duration);
+
 export interface ThemeEditorStateInner {
   darkMode?: boolean | undefined;
   showWelcome: boolean;

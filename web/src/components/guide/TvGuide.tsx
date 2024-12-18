@@ -147,7 +147,7 @@ export function TvGuide({ channelId, start, end }: Props) {
   const [channelMenu, setChannelMenu] = useState<ChannelLineup>();
 
   const [progress, setProgress] = useState(calcProgress(start, end));
-  const [currentTime, setCurrentTime] = useState(dayjs().format('h:mm'));
+  const [currentTime, setCurrentTime] = useState(dayjs().format('LT'));
 
   const [modalProgram, setModalProgram] = useState<
     TvGuideProgram | undefined
@@ -191,7 +191,7 @@ export function TvGuide({ channelId, start, end }: Props) {
 
   useEffect(() => {
     setProgress(calcProgress(start, end));
-    setCurrentTime(dayjs().format('h:mm'));
+    setCurrentTime(dayjs().format('LT'));
     if (ref.current) {
       setMinHeight(ref.current.offsetHeight);
     }
@@ -199,7 +199,7 @@ export function TvGuide({ channelId, start, end }: Props) {
 
   useInterval(() => {
     setProgress(calcProgress(start, end));
-    setCurrentTime(dayjs().format('h:mm'));
+    setCurrentTime(dayjs().format('LT'));
   }, 60000);
 
   useTvGuidesPrefetch(
@@ -384,9 +384,7 @@ export function TvGuide({ channelId, start, end }: Props) {
           {((smallViewport && pct > 20) || (!smallViewport && pct > 8)) && (
             <>
               <Box sx={{ fontSize: '12px' }}>
-                {`${programStart.format('h:mm')} - ${programEnd.format(
-                  'h:mma',
-                )}`}
+                {`${programStart.format('LT')} - ${programEnd.format('LT')}`}
               </Box>
               <Box sx={{ fontSize: '12px' }}>
                 {isPlaying ? ` (${remainingTime}m left)` : null}
@@ -560,12 +558,17 @@ export function TvGuide({ channelId, start, end }: Props) {
                 width={100 / intervalArray.length}
                 sx={{
                   height: '2rem',
+                  borderLeft: '1px solid white',
+                  textAlign: 'center',
+                  '&:last-child': {
+                    borderRight: '1px solid white',
+                  },
                 }}
                 key={slot}
               >
                 {start
                   .add(slot * increments, 'minutes')
-                  .format(`${smallViewport ? 'h:mm' : 'h:mm A'}`)}
+                  .format(`${smallViewport ? 'h:mm' : 'LT'}`)}
               </GridChild>
             ))}
           </GridParent>

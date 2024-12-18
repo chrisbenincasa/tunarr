@@ -212,7 +212,7 @@ export function PlexValueNode({
                 },
               }}
               value={dayjs(field.value)}
-              onChange={(e) => field.onChange(e?.format('YYYY-MM-DD'))}
+              onChange={(e) => field.onChange(e?.format('L'))}
             />
           )}
         />

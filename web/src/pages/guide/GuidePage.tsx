@@ -13,7 +13,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { DateTimePicker } from '@mui/x-date-pickers';
 import dayjs, { Dayjs, duration } from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 import { useCallback, useState } from 'react';
@@ -117,8 +117,9 @@ export default function GuidePage({ channelId }: Props = { channelId: 'all' }) {
           sx={{ my: 1 }}
         >
           <FormControl sx={{ m: 1, minWidth: 120 }}>
-            <DatePicker
-              disablePast
+            <DateTimePicker
+              // TODO: Replace with the earliest time the XMLTV was generated
+              minDateTime={roundCurrentTime(15)}
               value={start}
               onChange={(v) => handleDayChange(v)}
               label="Guide Start Time"

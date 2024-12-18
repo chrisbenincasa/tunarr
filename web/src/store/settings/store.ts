@@ -1,11 +1,17 @@
 import { PaginationState } from '@tanstack/react-table';
 import { StateCreator } from 'zustand';
 
+// Only these 2 are supported currently
+export type SupportedLocales = 'en' | 'en-gb';
+
 interface SettingsStateInternal {
   backendUri: string;
   ui: {
     channelTablePagination: PaginationState;
     channelTableColumnModel: Record<string, boolean>;
+    i18n: {
+      locale: SupportedLocales;
+    };
   };
 }
 
@@ -21,6 +27,9 @@ export type PersistedSettingsState = {
         pageSize: number;
       };
       channelTableColumnModel: Record<string, boolean>;
+      i18n: {
+        locale: SupportedLocales;
+      };
     };
   };
 };
@@ -43,6 +52,9 @@ export const createSettingsSlice: StateCreator<SettingsState> = () => ({
       },
       channelTableColumnModel: {
         onDemand: false,
+      },
+      i18n: {
+        locale: 'en',
       },
     },
   },

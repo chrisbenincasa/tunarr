@@ -34,6 +34,7 @@
     "vitest.config.ts",
     "./src/components/slot_scheduler/EditSlotDialogContent.tsx",
     "src/components/slot_scheduler/EditSlotProgrammingForm.tsx",
+    "./src/Tunarr.tsx",
   ],
   "include": [
     "./src/**/*.ts",

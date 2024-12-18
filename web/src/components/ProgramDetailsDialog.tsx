@@ -169,9 +169,7 @@ export default function ProgramDetailsDialog({
       return (
         <Chip
           key="time"
-          label={`${dayjs(start).format('h:mm')} - ${dayjs(stop).format(
-            'h:mma',
-          )}`}
+          label={`${dayjs(start).format('LT')} - ${dayjs(stop).format('LT')}`}
           sx={{ mt: 1, mr: 1 }}
           color="primary"
         />
