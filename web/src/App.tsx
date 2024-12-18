@@ -1,4 +1,5 @@
 import DiscordIcon from '@/assets/icon_clyde_black_RGB.svg?react';
+import { useCopyToClipboard } from '@/hooks/useCopyToClipboard.ts';
 import { ExpandLess, ExpandMore, GitHub, Home } from '@mui/icons-material';
 import ComputerIcon from '@mui/icons-material/Computer';
 import LinkIcon from '@mui/icons-material/Link';
@@ -61,6 +62,7 @@ interface NavItem {
   visible: boolean;
   children?: NavItem[];
   icon?: ReactNode;
+  copyToClipboard?: boolean;
 }
 
 const StyledMenu = styled((props: MenuProps) => (
@@ -115,6 +117,7 @@ export function Root({ children }: { children?: React.ReactNode }) {
   );
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const mobileLinksOpen = !isNull(anchorEl);
+  const copyToClipboard = useCopyToClipboard();
 
   const toggleDrawerOpen = () => {
     setOpen(true);
@@ -259,19 +262,34 @@ export function Root({ children }: { children?: React.ReactNode }) {
     [open, showWelcome],
   );
 
-  const Links: NavItem[] = useMemo(
+  const handleNavItemLinkClick = useCallback(
+    (e: React.SyntheticEvent, navItem: NavItem) => {
+      if (navItem.copyToClipboard) {
+        e.preventDefault();
+        copyToClipboard(
+          `${settings.backendUri}${navItem.path}`,
+          `Copied ${navItem.name} URL to clipboard`,
+        ).catch(console.error);
+      }
+    },
+    [copyToClipboard, settings.backendUri],
+  );
+
+  const TopBarLinks: NavItem[] = useMemo(
     () => [
       {
         name: 'XMLTV',
         path: `${settings.backendUri}/api/xmltv.xml`,
         visible: true,
         icon: <LinkIcon />,
+        copyToClipboard: true,
       },
       {
         name: 'M3U',
         path: `${settings.backendUri}/api/channels.m3u`,
         visible: true,
         icon: <LinkIcon />,
+        copyToClipboard: true,
       },
       {
         name: 'GitHub',
@@ -360,7 +378,7 @@ export function Root({ children }: { children?: React.ReactNode }) {
                   open={mobileLinksOpen}
                   onClose={handleClose}
                 >
-                  {Links.map((link) => (
+                  {TopBarLinks.map((link) => (
                     <MenuItem
                       disableRipple
                       component={Link}
@@ -370,6 +388,7 @@ export function Root({ children }: { children?: React.ReactNode }) {
                       sx={{ px: 1, ml: 0.5 }}
                       key={`mobile-${link.name}`}
                       divider={link.name === 'M3U'}
+                      onClick={(e) => handleNavItemLinkClick(e, link)}
                     >
                       {link.icon} {link.name}
                     </MenuItem>
@@ -377,7 +396,7 @@ export function Root({ children }: { children?: React.ReactNode }) {
                 </StyledMenu>
               </>
             ) : (
-              Links.map((link) => {
+              TopBarLinks.map((link) => {
                 return link.name === 'XMLTV' || link.name === 'M3U' ? (
                   <Button
                     href={link.path}
@@ -386,6 +405,7 @@ export function Root({ children }: { children?: React.ReactNode }) {
                     startIcon={link.icon}
                     sx={{ px: 1, ml: 0.5 }}
                     key={link.name}
+                    onClick={(e) => handleNavItemLinkClick(e, link)}
                   >
                     {link.name}
                   </Button>
