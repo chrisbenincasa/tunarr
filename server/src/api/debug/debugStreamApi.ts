@@ -2,6 +2,10 @@ import { getDatabase } from '@/db/DBAccess.ts';
 import { createOfflineStreamLineupItem } from '@/db/derived_types/StreamLineup.ts';
 import { AllChannelTableKeys, Channel } from '@/db/schema/Channel.ts';
 import { ProgramDao, ProgramType } from '@/db/schema/Program.ts';
+import {
+  AllTranscodeConfigColumns,
+  TranscodeConfig,
+} from '@/db/schema/TranscodeConfig.ts';
 import { MpegTsOutputFormat } from '@/ffmpeg/builder/constants.ts';
 import { serverContext } from '@/serverContext.ts';
 import { OfflineProgramStream } from '@/stream/OfflinePlayer.ts';
@@ -12,7 +16,7 @@ import { PlexProgramStream } from '@/stream/plex/PlexProgramStream.ts';
 import { TruthyQueryParam } from '@/types/schemas.ts';
 import { RouterPluginAsyncCallback } from '@/types/serverType.ts';
 import { jsonObjectFrom } from 'kysely/helpers/sqlite';
-import { first, isNumber, isUndefined, nth, random } from 'lodash-es';
+import { isNumber, isUndefined, nth, random } from 'lodash-es';
 import { PassThrough } from 'stream';
 import { z } from 'zod';
 
@@ -34,6 +38,19 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
       const channel = await getDatabase()
         .selectFrom('channel')
         .selectAll()
+        .select((eb) =>
+          jsonObjectFrom(
+            eb
+              .selectFrom('transcodeConfig')
+              .whereRef(
+                'transcodeConfig.uuid',
+                '=',
+                'channel.transcodeConfigId',
+              )
+              .select(AllTranscodeConfigColumns),
+          ).as('transcodeConfig'),
+        )
+        .$narrowType<{ transcodeConfig: TranscodeConfig }>()
         .executeTakeFirstOrThrow();
 
       const stream = new OfflineProgramStream(
@@ -47,7 +64,8 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
           false,
           false,
           true,
-          req.query.useNewPipeline,
+          req.query.useNewPipeline ?? false,
+          channel.transcodeConfig,
         ),
         MpegTsOutputFormat,
       );
@@ -72,7 +90,21 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
       const channel = await getDatabase()
         .selectFrom('channel')
         .selectAll()
+        .select((eb) =>
+          jsonObjectFrom(
+            eb
+              .selectFrom('transcodeConfig')
+              .whereRef(
+                'transcodeConfig.uuid',
+                '=',
+                'channel.transcodeConfigId',
+              )
+              .select(AllTranscodeConfigColumns),
+          ).as('transcodeConfig'),
+        )
+        .$narrowType<{ transcodeConfig: TranscodeConfig }>()
         .executeTakeFirstOrThrow();
+
       const stream = new OfflineProgramStream(
         true,
         PlayerContext.error(
@@ -80,7 +112,8 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
           '',
           channel,
           true,
-          req.query.useNewPipeline,
+          req.query.useNewPipeline ?? false,
+          channel.transcodeConfig,
         ),
         MpegTsOutputFormat,
       );
@@ -109,6 +142,18 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
           eb
             .selectFrom('channel')
             .whereRef('channel.uuid', '=', 'channelPrograms.channelUuid')
+            .select((eb) =>
+              jsonObjectFrom(
+                eb
+                  .selectFrom('transcodeConfig')
+                  .whereRef(
+                    'transcodeConfig.uuid',
+                    '=',
+                    'channel.transcodeConfigId',
+                  )
+                  .select(AllTranscodeConfigColumns),
+              ).as('transcodeConfig'),
+            )
             .select(AllChannelTableKeys),
         ).as('channel'),
       )
@@ -120,7 +165,11 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
       return res.status(404);
     }
 
-    const out = await initStream(program, firstChannel);
+    const out = await initStream(
+      program,
+      firstChannel,
+      firstChannel.transcodeConfig!,
+    );
     return res.header('Content-Type', 'video/mp2t').send(out);
   });
 
@@ -161,6 +210,18 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
             eb
               .selectFrom('channel')
               .whereRef('channel.uuid', '=', 'channelPrograms.channelUuid')
+              .select((eb) =>
+                jsonObjectFrom(
+                  eb
+                    .selectFrom('transcodeConfig')
+                    .whereRef(
+                      'transcodeConfig.uuid',
+                      '=',
+                      'channel.transcodeConfigId',
+                    )
+                    .select(AllTranscodeConfigColumns),
+                ).as('transcodeConfig'),
+              )
               .select(AllChannelTableKeys),
           ).as('channel'),
         )
@@ -169,17 +230,29 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
       let firstChannel = nth(channels, 0)?.channel;
 
       if (!firstChannel) {
-        firstChannel = await req.serverCtx.channelDB
-          .getAllChannels()
-          .then((channels) => first(channels) ?? null);
-        if (!firstChannel) {
-          return res.status(404);
-        }
+        firstChannel = await getDatabase()
+          .selectFrom('channel')
+          .selectAll()
+          .select((eb) =>
+            jsonObjectFrom(
+              eb
+                .selectFrom('transcodeConfig')
+                .whereRef(
+                  'transcodeConfig.uuid',
+                  '=',
+                  'channel.transcodeConfigId',
+                )
+                .select(AllTranscodeConfigColumns),
+            ).as('transcodeConfig'),
+          )
+          .$narrowType<{ transcodeConfig: TranscodeConfig }>()
+          .executeTakeFirstOrThrow();
       }
 
       const outStream = await initStream(
         program,
         firstChannel,
+        firstChannel.transcodeConfig!,
         startTime * 1000,
         req.query.useNewPipeline,
       );
@@ -190,6 +263,7 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
   async function initStream(
     program: ProgramDao,
     channel: Channel,
+    transcodeConfig: TranscodeConfig,
     startTime: number = 0,
     useNewPipeline: boolean = false,
   ) {
@@ -204,6 +278,7 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
       false,
       true,
       useNewPipeline,
+      transcodeConfig,
     );
 
     let stream: ProgramStream;

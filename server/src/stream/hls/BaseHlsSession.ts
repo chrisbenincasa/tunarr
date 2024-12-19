@@ -1,4 +1,4 @@
-import { Channel } from '@/db/schema/Channel.ts';
+import { ChannelWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
 import { Session, SessionOptions } from '@/stream/Session.ts';
 import { Result } from '@/types/result.ts';
 import { isNodeError } from '@/util/index.ts';
@@ -20,7 +20,7 @@ export abstract class BaseHlsSession<
 
   protected transcodedUntil: Dayjs;
 
-  constructor(channel: Channel, options: HlsSessionOptsT) {
+  constructor(channel: ChannelWithTranscodeConfig, options: HlsSessionOptsT) {
     super(channel, options);
 
     this._workingDirectory = path.resolve(

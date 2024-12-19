@@ -1,5 +1,5 @@
 import { getSettings } from '@/db/SettingsDB.ts';
-import { Channel } from '@/db/schema/Channel.ts';
+import { ChannelWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
 import { FFmpegFactory } from '@/ffmpeg/FFmpegFactory.ts';
 import { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.ts';
 import { defaultHlsOptions } from '@/ffmpeg/ffmpeg.ts';
@@ -35,12 +35,10 @@ export class HlsSlowerSession extends BaseHlsSession<HlsSlowerSessionOptions> {
   // Start in lookahead mode
   #realtimeTranscode: boolean = false;
   #programCalculator: StreamProgramCalculator;
-  // #stream: VideoStreamResult;
-
   #concatSession: FfmpegTranscodeSession;
 
   constructor(
-    channel: Channel,
+    channel: ChannelWithTranscodeConfig,
     options: HlsSlowerSessionOptions,
     programCalculator: StreamProgramCalculator = serverContext().streamProgramCalculator(),
     private settingsDB = getSettings(),
@@ -81,6 +79,9 @@ export class HlsSlowerSession extends BaseHlsSession<HlsSlowerSessionOptions> {
         request.audioOnly,
         lineupItem.type === 'loading',
         this.#realtimeTranscode,
+        this.sessionOptions.useNewPipeline ??
+          this.settingsDB.ffmpegSettings().useNewFfmpegPipeline,
+        this.channel.transcodeConfig,
       );
 
       let programStream = ProgramStreamFactory.create(
@@ -102,6 +103,10 @@ export class HlsSlowerSession extends BaseHlsSession<HlsSlowerSessionOptions> {
             result.lineupItem.streamDuration ?? result.lineupItem.duration,
             transcodeSessionResult.error,
             result.channelContext,
+            /*realtime=*/ true,
+            this.sessionOptions.useNewPipeline ??
+              this.settingsDB.ffmpegSettings().useNewFfmpegPipeline,
+            this.channel.transcodeConfig,
           ),
           NutOutputFormat,
         );
@@ -149,6 +154,7 @@ export class HlsSlowerSession extends BaseHlsSession<HlsSlowerSessionOptions> {
 
     const ffmpeg = FFmpegFactory.getFFmpegPipelineBuilder(
       this.settingsDB.ffmpegSettings(),
+      this.channel.transcodeConfig,
       this.channel,
     );
 

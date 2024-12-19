@@ -32,6 +32,31 @@ export class TranscodeConfigDB {
       .executeTakeFirst();
   }
 
+  async getChannelConfig(channelId: string) {
+    const channelConfig = await getDatabase()
+      .selectFrom('channel')
+      .where('channel.uuid', '=', channelId)
+      .innerJoin(
+        'transcodeConfig',
+        'channel.transcodeConfigId',
+        'transcodeConfig.uuid',
+      )
+      .selectAll('transcodeConfig')
+      .limit(1)
+      .executeTakeFirst();
+
+    if (channelConfig) {
+      return channelConfig;
+    }
+
+    return getDatabase()
+      .selectFrom('transcodeConfig')
+      .where('isDefault', '=', 1)
+      .selectAll()
+      .limit(1)
+      .executeTakeFirstOrThrow();
+  }
+
   insertConfig(config: Omit<TranscodeConfig, 'id'>) {
     const id = v4();
     const newConfig: NewTranscodeConfig = {

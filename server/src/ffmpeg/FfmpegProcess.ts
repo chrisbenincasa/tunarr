@@ -95,7 +95,6 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
       }`;
     }
 
-    // const test = createWriteStream('./test.log', { flags: 'a' });
     this.#processHandle = spawn(this.ffmpegPath, this.ffmpegArgs, {
       stdio: ['ignore', 'pipe', 'pipe'],
       env,

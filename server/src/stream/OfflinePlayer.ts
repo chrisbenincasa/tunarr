@@ -48,6 +48,7 @@ export class OfflineProgramStream extends ProgramStream {
     try {
       const ffmpeg = FFmpegFactory.getFFmpegPipelineBuilder(
         this.settingsDB.ffmpegSettings(),
+        this.context.transcodeConfig,
         this.context.channel,
       );
       const lineupItem = this.context.lineupItem;

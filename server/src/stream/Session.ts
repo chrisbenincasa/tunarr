@@ -1,4 +1,4 @@
-import { Channel } from '@/db/schema/Channel.ts';
+import { ChannelWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
 import { TypedEventEmitter } from '@/types/eventEmitter.ts';
 import { Result } from '@/types/result.js';
 import { Maybe } from '@/types/util.js';
@@ -61,7 +61,7 @@ export abstract class Session<
   protected lock = new Mutex();
   protected logger: Logger;
   protected sessionOptions: TOpts;
-  protected channel: Channel;
+  protected channel: ChannelWithTranscodeConfig;
   protected connectionTracker: ConnectionTracker<StreamConnectionDetails>;
 
   #state: SessionState = 'init';
@@ -69,7 +69,7 @@ export abstract class Session<
 
   error: Maybe<Error>;
 
-  constructor(channel: Channel, opts: TOpts) {
+  constructor(channel: ChannelWithTranscodeConfig, opts: TOpts) {
     super();
     this.#uniqueId = v4();
     this.logger = LoggerFactory.child({

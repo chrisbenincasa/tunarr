@@ -1,4 +1,4 @@
-import { Channel } from '@/db/schema/Channel.ts';
+import { ChannelWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
 import { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
 import { once, round } from 'lodash-es';
 import { Readable } from 'node:stream';
@@ -13,7 +13,7 @@ export abstract class DirectStreamSession<
 > extends Session<TOpts> {
   #stream: Readable;
 
-  protected constructor(channel: Channel, opts: TOpts) {
+  protected constructor(channel: ChannelWithTranscodeConfig, opts: TOpts) {
     super(channel, opts);
   }
 

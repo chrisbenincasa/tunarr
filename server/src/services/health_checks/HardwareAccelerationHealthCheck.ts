@@ -1,5 +1,5 @@
 import { SettingsDB, getSettings } from '@/db/SettingsDB.ts';
-import { FFMPEGInfo } from '@/ffmpeg/ffmpegInfo.ts';
+import { FfmpegInfo } from '@/ffmpeg/ffmpegInfo.ts';
 import { SupportedHardwareAccels } from '@tunarr/types/schemas';
 import { intersection, isEmpty, reject } from 'lodash-es';
 import {
@@ -16,7 +16,7 @@ export class HardwareAccelerationHealthCheck implements HealthCheck {
 
   async getStatus(): Promise<HealthCheckResult> {
     const supported = reject(SupportedHardwareAccels, (hw) => hw === 'none');
-    const info = new FFMPEGInfo(this.settings.ffmpegSettings());
+    const info = new FfmpegInfo(this.settings.ffmpegSettings());
     const hwAccels = await info.getHwAccels();
 
     if (intersection(supported, hwAccels).length === 0) {

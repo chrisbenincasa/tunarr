@@ -1,6 +1,6 @@
 import { ChannelDB } from '@/db/ChannelDB.ts';
 import { getSettings } from '@/db/SettingsDB.ts';
-import { Channel } from '@/db/schema/Channel.ts';
+import { ChannelWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
 import { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.ts';
 import { GetLastPtsDurationTask } from '@/ffmpeg/GetLastPtsDuration.ts';
 import { HlsOutputFormat } from '@/ffmpeg/builder/constants.ts';
@@ -34,7 +34,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
   #lastDelete: Dayjs = dayjs().subtract(1, 'year');
 
   constructor(
-    channel: Channel,
+    channel: ChannelWithTranscodeConfig,
     options: HlsSessionOptions,
     programCalculator: StreamProgramCalculator = serverContext().streamProgramCalculator(),
     private settingsDB = getSettings(),
@@ -153,7 +153,9 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
           false,
           result.lineupItem.type === 'loading',
           realtime,
-          this.sessionOptions.useNewPipeline,
+          this.sessionOptions.useNewPipeline ??
+            this.settingsDB.ffmpegSettings().useNewFfmpegPipeline,
+          this.channel.transcodeConfig,
         );
 
         let programStream = this.getProgramStream(context);
@@ -182,6 +184,9 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
               transcodeSessionResult.error,
               result.channelContext,
               realtime,
+              this.sessionOptions.useNewPipeline ??
+                this.settingsDB.ffmpegSettings().useNewFfmpegPipeline,
+              this.channel.transcodeConfig,
             ),
           );
 

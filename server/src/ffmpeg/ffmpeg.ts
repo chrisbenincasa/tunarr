@@ -1,4 +1,9 @@
 import { Channel } from '@/db/schema/Channel.ts';
+import {
+  HardwareAccelerationMode,
+  TranscodeConfig,
+  TranscodeVideoOutputFormat,
+} from '@/db/schema/TranscodeConfig.ts';
 import { serverOptions } from '@/globals.js';
 import { ConcatSessionType } from '@/stream/Session.js';
 import { Maybe, Nullable } from '@/types/util.js';
@@ -7,10 +12,8 @@ import { Logger, LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
 import { getTunarrVersion } from '@/util/version.js';
 import { FfmpegSettings, Resolution, Watermark } from '@tunarr/types';
-import {
-  SupportedHardwareAccels,
-  SupportedVideoFormats,
-} from '@tunarr/types/schemas';
+
+import { NvidiaHardwareCapabilitiesFactory } from '@/ffmpeg/builder/capabilities/NvidiaHardwareCapabilitiesFactory.ts';
 import dayjs from 'dayjs';
 import { Duration } from 'dayjs/plugin/duration.js';
 import { first, isEmpty, isNil, isUndefined, merge, round } from 'lodash-es';
@@ -37,7 +40,7 @@ import {
   OutputFormat,
 } from './builder/constants.ts';
 import { HlsWrapperOptions, IFFMPEG } from './ffmpegBase.ts';
-import { FFMPEGInfo } from './ffmpegInfo.js';
+import { FfmpegInfo } from './ffmpegInfo.js';
 
 const MAXIMUM_ERROR_DURATION_MS = 60000;
 
@@ -101,33 +104,33 @@ export const defaultConcatOptions: DeepRequired<ConcatOptions> = {
 };
 
 const hardwareAccelToEncoder: Record<
-  SupportedHardwareAccels,
-  Record<SupportedVideoFormats, string>
+  HardwareAccelerationMode,
+  Record<TranscodeVideoOutputFormat, string>
 > = {
   none: {
     h264: 'libx264',
     hevc: 'libx265',
-    mpeg2: 'mpeg2video',
+    mpeg2video: 'mpeg2video',
   },
   cuda: {
     h264: 'h264_nvenc',
     hevc: 'hevc_nvenc',
-    mpeg2: 'h264_nvenc', // No mpeg2 video encoder
+    mpeg2video: 'h264_nvenc', // No mpeg2 video encoder
   },
   qsv: {
     h264: 'h264_qsv',
     hevc: 'hevc_qsv',
-    mpeg2: 'mpeg2_qsv',
+    mpeg2video: 'mpeg2_qsv',
   },
   vaapi: {
     h264: 'h264_vaapi',
     hevc: 'hevc_vaapi',
-    mpeg2: 'mpeg2_vaapi',
+    mpeg2video: 'mpeg2_vaapi',
   },
   videotoolbox: {
     h264: 'h264_videotoolbox',
     hevc: 'hevc_videotoolbox',
-    mpeg2: 'h264_videotoolbox',
+    mpeg2video: 'h264_videotoolbox',
   },
 };
 
@@ -158,10 +161,12 @@ export class FFMPEG implements IFFMPEG {
   private volumePercent: number;
   private hasBeenKilled: boolean = false;
   private alignAudio: boolean;
-  private capabilities: FFMPEGInfo;
+  private ffmpegInfo: FfmpegInfo;
+  private nvidiaCapabilities: NvidiaHardwareCapabilitiesFactory;
 
   constructor(
     private opts: DeepReadonly<FfmpegSettings>,
+    private transcodeConfig: TranscodeConfig,
     private channel: Channel,
     private audioOnly: boolean = false,
   ) {
@@ -170,43 +175,16 @@ export class FFMPEG implements IFFMPEG {
       className: FFMPEG.name,
       channel: channel.uuid,
     });
-    this.opts = opts;
     this.errorPicturePath = makeLocalUrl('/images/generic-error-screen.png');
     this.ffmpegName = 'unnamed ffmpeg';
     this.channel = channel;
-    this.capabilities = new FFMPEGInfo(this.opts);
-
-    let targetResolution = opts.targetResolution;
-    if (!isUndefined(channel.transcoding?.targetResolution)) {
-      targetResolution = channel.transcoding.targetResolution;
-    }
-
-    if (
-      !isUndefined(channel.transcoding?.videoBitrate) &&
-      channel.transcoding.videoBitrate !== 0
-    ) {
-      this.opts = {
-        ...this.opts,
-        videoBitrate: channel.transcoding.videoBitrate,
-      };
-    }
-
-    if (
-      !isUndefined(channel.transcoding?.videoBufferSize) &&
-      channel.transcoding.videoBufferSize !== 0
-    ) {
-      this.opts = {
-        ...this.opts,
-        videoBufferSize: channel.transcoding.videoBufferSize,
-      };
-    }
-
-    this.wantedW = targetResolution.widthPx;
-    this.wantedH = targetResolution.heightPx;
-
-    this.apad = this.opts.normalizeAudio;
+    this.ffmpegInfo = new FfmpegInfo(this.opts);
+    this.nvidiaCapabilities = new NvidiaHardwareCapabilitiesFactory(this.opts);
+    this.wantedW = transcodeConfig.resolution.widthPx;
+    this.wantedH = transcodeConfig.resolution.heightPx;
+    this.apad = true;
     this.ensureResolution = this.opts.normalizeResolution;
-    this.volumePercent = this.opts.audioVolumePercent;
+    this.volumePercent = this.transcodeConfig.audioVolumePercent;
   }
 
   createConcatSession(
@@ -240,7 +218,7 @@ export class FFMPEG implements IFFMPEG {
     ];
 
     // Workaround until new pipeline is in place...
-    const scThreshold = this.opts.videoEncoder.includes('mpeg2')
+    const scThreshold = this.transcodeConfig.videoFormat.includes('mpeg2')
       ? '1000000000'
       : '0';
 
@@ -264,16 +242,16 @@ export class FFMPEG implements IFFMPEG {
       `0:a`,
       ...this.getVideoOutputOptions(),
       '-c:a',
-      this.opts.audioEncoder,
+      this.transcodeConfig.audioFormat,
       ...this.getAudioOutputOptions(),
       // This _seems_ to quell issues with non-monotonous DTS coming
       // from the input audio stream
       '-af',
       'aselect=concatdec_select,aresample=async=1',
-      `-muxdelay`,
-      this.opts.concatMuxDelay.toString(),
-      `-muxpreload`,
-      this.opts.concatMuxDelay.toString(),
+      // `-muxdelay`,
+      // this.opts.concatMuxDelay.toString(),
+      // `-muxpreload`,
+      // this.opts.concatMuxDelay.toString(),
       `-metadata`,
       `service_provider="tunarr"`,
       `-metadata`,
@@ -333,18 +311,6 @@ export class FFMPEG implements IFFMPEG {
       '1',
       '-readrate',
       '1',
-      // ...(streamMode === 'mpegts'
-      //   ? [
-      //       '-safe',
-      //       '0',
-      //       '-stream_loop',
-      //       '-1',
-      //       `-protocol_whitelist`,
-      //       `file,http,tcp,https,tcp,tls`,
-      //       `-probesize`,
-      //       '32',
-      //     ]
-      //   : []),
       '-i',
       streamUrl,
       '-map',
@@ -390,7 +356,7 @@ export class FFMPEG implements IFFMPEG {
     outputFormat: OutputFormat = NutOutputFormat,
   ) {
     this.ffmpegName = 'Error Stream FFMPEG';
-    if (this.opts.errorScreen === 'kill') {
+    if (this.transcodeConfig.errorScreen === 'kill') {
       throw new Error('Error screen configured to end stream. Ending now.');
     }
 
@@ -463,7 +429,7 @@ export class FFMPEG implements IFFMPEG {
     const ffmpegArgs: string[] = [
       '-hide_banner',
       `-threads`,
-      this.opts.numThreads.toString(),
+      this.transcodeConfig.threadCount.toString(),
       `-fflags`,
       `+genpts+discardcorrupt+igndts`,
       '-loglevel',
@@ -475,9 +441,9 @@ export class FFMPEG implements IFFMPEG {
 
     // Initialize like this because we're not checking whether or not
     // the input is hardware decodeable, yet.
-    if (this.opts.hardwareAccelerationMode === 'vaapi') {
-      const vaapiDevice = isNonEmptyString(this.opts.vaapiDevice)
-        ? this.opts.vaapiDevice
+    if (this.transcodeConfig.hardwareAccelerationMode === 'vaapi') {
+      const vaapiDevice = isNonEmptyString(this.transcodeConfig.vaapiDevice)
+        ? this.transcodeConfig.vaapiDevice
         : isLinux()
         ? '/dev/dri/renderD128'
         : undefined;
@@ -506,7 +472,7 @@ export class FFMPEG implements IFFMPEG {
     let artificialBurst = false;
 
     if (!this.audioOnly || isNonEmptyString(streamSrc)) {
-      const supportsBurst = await this.capabilities.hasOption(
+      const supportsBurst = await this.ffmpegInfo.hasOption(
         'readrate_initial_burst',
       );
 
@@ -581,7 +547,7 @@ export class FFMPEG implements IFFMPEG {
 
     // This is only tracked for the vaapi path at the moment
     let framesOnHardware = false;
-    if (this.opts.hardwareAccelerationMode === 'vaapi') {
+    if (this.transcodeConfig.hardwareAccelerationMode === 'vaapi') {
       videoComplex += `;${currentVideo}format=nv12|vaapi,hwupload=extra_hw_frames=64[hwupload]`;
       currentVideo = '[hwupload]';
       framesOnHardware = true;
@@ -595,20 +561,23 @@ export class FFMPEG implements IFFMPEG {
     // When adding filters, make sure that
     // videoComplex always begins wiht ; and doesn't end with ;
 
-    if ((videoStream?.framerate ?? 0) >= this.opts.maxFPS + 0.000001) {
-      videoComplex += `;${currentVideo}fps=${this.opts.maxFPS}[fpchange]`;
+    if (this.transcodeConfig.normalizeFrameRate && videoStream?.framerate) {
+      videoComplex += `;${currentVideo}fps=${videoStream?.framerate}[fpchange]`;
       currentVideo = '[fpchange]';
     }
 
     // deinterlace if desired
     if (
       videoStream?.scanType === 'interlaced' &&
-      this.opts.deinterlaceFilter !== 'none'
+      this.transcodeConfig.deinterlaceVideo
     ) {
-      if (framesOnHardware && this.opts.hardwareAccelerationMode === 'vaapi') {
+      if (
+        framesOnHardware &&
+        this.transcodeConfig.hardwareAccelerationMode === 'vaapi'
+      ) {
         videoComplex += `;${currentVideo}deinterlace_vaapi=rate=field:auto=1[deinterlaced]`;
       } else {
-        videoComplex += `;${currentVideo}${this.opts.deinterlaceFilter}[deinterlaced]`;
+        videoComplex += `;${currentVideo}yadif=1[deinterlaced]`;
       }
       currentVideo = '[deinterlaced]';
     }
@@ -647,7 +616,7 @@ export class FFMPEG implements IFFMPEG {
           pic = isEmpty(this.channel.offline?.picture)
             ? defaultOfflinePic
             : this.channel.offline?.picture;
-        } else if (this.opts.errorScreen === 'pic') {
+        } else if (this.transcodeConfig.errorScreen === 'pic') {
           pic = this.errorPicturePath;
         }
 
@@ -665,11 +634,11 @@ export class FFMPEG implements IFFMPEG {
           if (realtime) {
             filters.push('realtime');
           }
-          if (this.opts.hardwareAccelerationMode === 'vaapi') {
+          if (this.transcodeConfig.hardwareAccelerationMode === 'vaapi') {
             filters.push('format=nv12', 'hwupload=extra_hw_frames=64');
           }
           videoComplex = `;[${inputFiles++}:0]${filters.join(',')}[videox]`;
-        } else if (this.opts.errorScreen == 'static') {
+        } else if (this.transcodeConfig.errorScreen == 'static') {
           ffmpegArgs.push('-f', 'lavfi', '-i', `nullsrc=s=64x36`);
           let realtimePart = '[videox]';
           if (realtime) {
@@ -677,13 +646,13 @@ export class FFMPEG implements IFFMPEG {
           }
           videoComplex = `;geq=random(1)*255:128:128[videoz];[videoz]scale=${iW}:${iH}${realtimePart}`;
           inputFiles++;
-        } else if (this.opts.errorScreen == 'testsrc') {
+        } else if (this.transcodeConfig.errorScreen == 'testsrc') {
           ffmpegArgs.push('-f', 'lavfi', '-i', `testsrc=size=${iW}x${iH}`);
 
           videoComplex = `${realtime ? ';realtime' : ''}[videox]`;
           inputFiles++;
         } else if (
-          this.opts.errorScreen == 'text' &&
+          this.transcodeConfig.errorScreen == 'text' &&
           streamSrc.type === 'error'
         ) {
           const sz2 = Math.ceil(iH / 33.0);
@@ -713,7 +682,7 @@ export class FFMPEG implements IFFMPEG {
       if (streamSrc.type === 'offline' || streamSrc.type === 'error') {
         // silent
         audioComplex = `;aevalsrc=0:${durstr}:s=${
-          this.opts.audioSampleRate * 1000
+          this.transcodeConfig.audioSampleRate * 1000
         },aresample=async=1:first_pts=0[audioy]`;
         if (streamSrc.type === 'offline') {
           if (isNonEmptyString(this.channel.offline?.soundtrack)) {
@@ -723,12 +692,13 @@ export class FFMPEG implements IFFMPEG {
             audioComplex = `;[${inputFiles++}:a]aloop=loop=-1:size=2147483647[audioy]`;
           }
         } else if (
-          this.opts.errorAudio === 'whitenoise' ||
-          (!(this.opts.errorAudio === 'sine') && this.audioOnly) //when it's in audio-only mode, silent stream is confusing for errors.
+          this.transcodeConfig.errorScreenAudio === 'whitenoise' ||
+          (!(this.transcodeConfig.errorScreenAudio === 'sine') &&
+            this.audioOnly) //when it's in audio-only mode, silent stream is confusing for errors.
         ) {
           audioComplex = `;aevalsrc=random(0):${durstr}[audioy]`;
           this.volumePercent = Math.min(70, this.volumePercent);
-        } else if (this.opts.errorAudio === 'sine') {
+        } else if (this.transcodeConfig.errorScreenAudio === 'sine') {
           audioComplex = `;sine=f=440[audioy]`;
           this.volumePercent = Math.min(70, this.volumePercent);
         }
@@ -759,7 +729,7 @@ export class FFMPEG implements IFFMPEG {
 
     // Resolution fix: Add scale filter, current stream becomes [siz]
     const beforeSizeChange = currentVideo;
-    const algo = this.opts.scalingAlgorithm;
+    const algo = 'bicubic'; // Scaling up - hardcode bicubic.
     let resizeMsg = '';
     if (
       !streamStats?.audioOnly &&
@@ -797,7 +767,7 @@ export class FFMPEG implements IFFMPEG {
       }
 
       let scaleFilter = `scale=${cw}:${ch}:flags=${algo},format=yuv420p`;
-      if (this.opts.hardwareAccelerationMode === 'vaapi') {
+      if (this.transcodeConfig.hardwareAccelerationMode === 'vaapi') {
         scaleFilter = `scale_vaapi=w=${cw}:h=${ch}:mode=fast:extra_hw_frames=64`;
       }
 
@@ -843,14 +813,14 @@ export class FFMPEG implements IFFMPEG {
       currentVideo = `[${name}]`;
       iW = this.wantedW;
       iH = this.wantedH;
-    } else if (this.opts.hardwareAccelerationMode === 'cuda') {
-      const gpuCapabilities = await this.capabilities.getNvidiaCapabilities();
+    } else if (this.transcodeConfig.hardwareAccelerationMode === 'cuda') {
+      const gpuCapabilities = await this.nvidiaCapabilities.getCapabilities();
       // Use this as an analogue for detecting an attempt to encode 10-bit content
       // ... it might not be totally true, but we'll make this better.
       let canEncode = false;
       if (isSuccess(gpuCapabilities)) {
         canEncode = gpuCapabilities.canEncode(
-          this.opts.videoFormat,
+          this.transcodeConfig.videoFormat,
           first(streamStats?.videoDetails)?.profile,
           getPixelFormatForStream(streamStats!),
         );
@@ -957,7 +927,7 @@ export class FFMPEG implements IFFMPEG {
           : '';
       const overlayShortest = watermark.animated ? 'shortest=1:' : '';
       const overlayFilters = [`overlay=${overlayShortest}${position}${icnDur}`];
-      if (this.opts.hardwareAccelerationMode === 'vaapi') {
+      if (this.transcodeConfig.hardwareAccelerationMode === 'vaapi') {
         overlayFilters.push('format=nv12', 'hwupload=extra_hw_frames=64');
       }
       videoComplex += `;${currentVideo}${waterVideo}${overlayFilters.join(
@@ -965,7 +935,7 @@ export class FFMPEG implements IFFMPEG {
       )}[comb]`;
       currentVideo = '[comb]';
     } else {
-      if (this.opts.hardwareAccelerationMode === 'vaapi') {
+      if (this.transcodeConfig.hardwareAccelerationMode === 'vaapi') {
         if (!framesOnHardware) {
           videoComplex += `;${currentVideo}format=nv12,hwupload=extra_hw_frames=64[hwuploaded]`;
           currentVideo = '[hwuploaded]';
@@ -1025,7 +995,7 @@ export class FFMPEG implements IFFMPEG {
 
     //If there is a filter complex, add it.
     if (isNonEmptyString(filterComplex)) {
-      if (this.opts.hardwareAccelerationMode === 'vaapi') {
+      if (this.transcodeConfig.hardwareAccelerationMode === 'vaapi') {
         // ffmpegArgs.push('-filter_hw_device', 'hw');
       }
       ffmpegArgs.push(`-filter_complex`, filterComplex.slice(1));
@@ -1172,7 +1142,7 @@ export class FFMPEG implements IFFMPEG {
 
     return [
       '-g',
-      this.opts.hardwareAccelerationMode === 'qsv'
+      this.transcodeConfig.hardwareAccelerationMode === 'qsv'
         ? `${frameRate}`
         : `${frameRate * hlsOpts.hlsTime}`,
       '-keyint_min',
@@ -1236,46 +1206,44 @@ export class FFMPEG implements IFFMPEG {
     ];
   }
 
-  private getVideoOutputOptions() {
+  private getVideoOutputOptions(): string[] {
     // Right now we're just going to use a simple combo of videoFormat + hwAccel
     // to specify an encoder. There's a lot more we can do with these settings,
     // but we're going to hold off for the new ffmpeg pipeline implementation
     // and just keep existing behavior here.
     const videoEncoder =
-      hardwareAccelToEncoder[this.opts.hardwareAccelerationMode][
-        this.opts.videoFormat
+      hardwareAccelToEncoder[this.transcodeConfig.hardwareAccelerationMode][
+        this.transcodeConfig.videoFormat
       ];
 
     return [
       '-c:v',
       videoEncoder,
       `-b:v`,
-      `${this.opts.videoBitrate}k`,
+      `${this.transcodeConfig.videoBitRate}k`,
       `-maxrate:v`,
-      `${this.opts.videoBitrate}k`,
+      `${this.transcodeConfig.videoBitRate}k`,
       `-bufsize:v`,
-      `${this.opts.videoBufferSize}k`,
+      `${this.transcodeConfig.videoBufferSize}k`,
     ];
   }
 
   private getAudioOutputOptions() {
     const audioOutputOpts = [
       '-b:a',
-      `${this.opts.audioBitrate}k`,
+      `${this.transcodeConfig.audioBitRate}k`,
       '-maxrate:a',
-      `${this.opts.audioBitrate}k`,
+      `${this.transcodeConfig.audioBitRate}k`,
       '-bufsize:a',
-      `${this.opts.audioBufferSize}k`,
+      `${this.transcodeConfig.audioBufferSize}k`,
     ];
 
-    if (this.opts.normalizeAudio) {
-      audioOutputOpts.push(
-        '-ac',
-        `${this.opts.audioChannels}`,
-        '-ar',
-        `${this.opts.audioSampleRate}k`,
-      );
-    }
+    audioOutputOpts.push(
+      '-ac',
+      `${this.transcodeConfig.audioChannels}`,
+      '-ar',
+      `${this.transcodeConfig.audioSampleRate}k`,
+    );
 
     return audioOutputOpts;
   }

@@ -1,3 +1,4 @@
+import { ChannelQueryBuilder } from '@/db/ChannelQueryBuilder.ts';
 import { globalOptions } from '@/globals.ts';
 import { serverContext } from '@/serverContext.ts';
 import { ChannelNotFoundError } from '@/types/errors.ts';
@@ -97,7 +98,10 @@ import {
 } from './schema/Channel.ts';
 import { programExternalIdString } from './schema/Program.ts';
 import { ChannelTranscodingSettings } from './schema/base.ts';
-import { ChannelWithPrograms as RawChannelWithPrograms } from './schema/derivedTypes.js';
+import {
+  ChannelWithRelations,
+  ChannelWithPrograms as RawChannelWithPrograms,
+} from './schema/derivedTypes.js';
 
 // We use this to chunk super huge channel / program relation updates because
 // of the way that mikro-orm generates these (e.g. "delete from XYZ where () or () ...").
@@ -158,31 +162,6 @@ function updateRequestToChannel(updateReq: SaveChannelRequest): ChannelUpdate {
     guideFlexTitle: updateReq.guideFlexTitle,
     transcodeConfigId: updateReq.transcodeConfigId,
   } satisfies ChannelUpdate;
-  // return omitBy<ChannelUpdate>(
-  //   {
-  //     number: updateReq.number,
-  //     watermark: sanitizeChannelWatermark(updateReq.watermark),
-  //     icon: updateReq.icon,
-  //     guideMinimumDuration: updateReq.guideMinimumDuration,
-  //     groupTitle: updateReq.groupTitle,
-  //     disableFillerOverlay: updateReq.disableFillerOverlay,
-  //     startTime: updateReq.startTime,
-  //     offline: updateReq.offline,
-  //     name: updateReq.name,
-  //     transcoding: isEmpty(transcoding)
-  //       ? undefined
-  //       : {
-  //           targetResolution: transcoding?.targetResolution,
-  //           videoBitrate: transcoding?.videoBitrate,
-  //           videoBufferSize: transcoding?.videoBufferSize,
-  //         },
-  //     duration: updateReq.duration,
-  //     stealth: updateReq.stealth,
-  //     fillerRepeatCooldown: updateReq.fillerRepeatCooldown,
-  //     guideFlexTitle: updateReq.guideFlexTitle,
-  //   },
-  //   isNil,
-  // );
 }
 
 function createRequestToChannel(saveReq: SaveChannelRequest): NewChannel {
@@ -260,7 +239,15 @@ export class ChannelDB {
     return !isNil(channel);
   }
 
-  getChannel(id: string | number, includeFiller: boolean = false) {
+  getChannel(id: string | number): Promise<Maybe<ChannelWithRelations>>;
+  getChannel(
+    id: string | number,
+    includeFiller: true,
+  ): Promise<Maybe<MarkRequired<ChannelWithRelations, 'fillerShows'>>>;
+  getChannel(
+    id: string | number,
+    includeFiller: boolean = false,
+  ): Promise<Maybe<ChannelWithRelations>> {
     return getDatabase()
       .selectFrom('channel')
       .$if(isString(id), (eb) => eb.where('channel.uuid', '=', id as string))
@@ -282,6 +269,10 @@ export class ChannelDB {
       )
       .selectAll()
       .executeTakeFirst();
+  }
+
+  getChannelBuilder(id: string | number) {
+    return ChannelQueryBuilder.createForIdOrNumber(getDatabase(), id);
   }
 
   getChannelAndPrograms(

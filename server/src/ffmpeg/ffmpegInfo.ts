@@ -1,21 +1,17 @@
 import { FfprobeMediaInfoSchema } from '@/types/ffmpeg.ts';
 import { Result } from '@/types/result.ts';
 import { Nullable } from '@/types/util.js';
+import { ChildProcessHelper } from '@/util/ChildProcessHelper.ts';
 import { cacheGetOrSet } from '@/util/cache.js';
 import dayjs from '@/util/dayjs.js';
-import { fileExists } from '@/util/fsUtil.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
-import { sanitizeForExec } from '@/util/strings.js';
 import { seq } from '@tunarr/shared/util';
 import { FfmpegSettings } from '@tunarr/types';
-import { ExecOptions, exec } from 'child_process';
 import {
   drop,
   filter,
   isEmpty,
   isError,
-  isNull,
-  isUndefined,
   map,
   nth,
   reject,
@@ -24,21 +20,9 @@ import {
   trim,
 } from 'lodash-es';
 import NodeCache from 'node-cache';
-import PQueue from 'p-queue';
 import { format } from 'util';
-import {
-  attempt,
-  isLinux,
-  isNonEmptyString,
-  parseIntOrNull,
-} from '../util/index.ts';
-import { BaseFfmpegHardwareCapabilities } from './builder/capabilities/BaseFfmpegHardwareCapabilities.ts';
-import { DefaultHardwareCapabilities } from './builder/capabilities/DefaultHardwareCapabilities.js';
+import { attempt, isNonEmptyString, parseIntOrNull } from '../util/index.ts';
 import { FfmpegCapabilities } from './builder/capabilities/FfmpegCapabilities.ts';
-import { NoHardwareCapabilities } from './builder/capabilities/NoHardwareCapabilities.js';
-import { NvidiaHardwareCapabilities } from './builder/capabilities/NvidiaHardwareCapabilities.js';
-import { VaapiHardwareCapabilitiesFactory } from './builder/capabilities/VaapiHardwareCapabilities.ts';
-import { HardwareAccelerationMode } from './builder/types.js';
 
 const CacheKeys = {
   ENCODERS: 'encoders',
@@ -62,16 +46,12 @@ export type FfmpegEncoder = {
   name: string;
 };
 
-const execQueue = new PQueue({ concurrency: 3 });
-
 const VersionExtractionPattern = /version\s+([^\s]+)\s+.*Copyright/;
 const VersionNumberExtractionPattern = /n?(\d+)\.(\d+)(\.(\d+))?[_\-.]*(.*)/;
 const CoderExtractionPattern = /[A-Z.]+\s([a-z0-9_-]+)\s*(.*)$/;
 const OptionsExtractionPattern = /^-([a-z_]+)\s+.*/;
-const NvidiaGpuArchPattern = /SM\s+(\d\.\d)/;
-const NvidiaGpuModelPattern = /(GTX\s+[0-9a-zA-Z]+[\sTtIi]+)/;
 
-export class FFMPEGInfo {
+export class FfmpegInfo {
   private logger = LoggerFactory.child({
     caller: import.meta,
     className: this.constructor.name,
@@ -89,14 +69,10 @@ export class FFMPEGInfo {
     return format(`${path}_${CacheKeys[command]}`, ...args);
   }
 
-  private static vaInfoCacheKey(driver: string, device: string) {
-    return `${CacheKeys.VAINFO}_${driver}_${device}`;
-  }
-
   private ffmpegPath: string;
   private ffprobePath: string;
 
-  constructor(private opts: FfmpegSettings) {
+  constructor(opts: FfmpegSettings) {
     this.ffmpegPath = opts.ffmpegExecutablePath;
     this.ffprobePath = opts.ffprobeExecutablePath;
   }
@@ -109,9 +85,6 @@ export class FFMPEGInfo {
         this.getAvailableVideoEncoders(),
         this.getHwAccels(),
         this.getOptions(),
-        ...(this.opts.hardwareAccelerationMode === 'cuda'
-          ? [this.getNvidiaCapabilities()]
-          : []),
       ]);
     } catch (e) {
       this.logger.error(e, 'Unexpected error during ffmpeg info seed');
@@ -185,7 +158,7 @@ export class FFMPEGInfo {
   async getAvailableAudioEncoders(): Promise<Result<FfmpegEncoder[]>> {
     return Result.attemptAsync(async () => {
       const out = await cacheGetOrSet(
-        FFMPEGInfo.resultCache,
+        FfmpegInfo.resultCache,
         this.cacheKey('ENCODERS'),
         () => this.getFfmpegStdout(['-hide_banner', '-encoders']),
       );
@@ -204,7 +177,7 @@ export class FFMPEGInfo {
   async getAvailableVideoEncoders(): Promise<Result<FfmpegEncoder[]>> {
     return Result.attemptAsync(async () => {
       const out = await cacheGetOrSet(
-        FFMPEGInfo.resultCache,
+        FfmpegInfo.resultCache,
         this.cacheKey('ENCODERS'),
         () => this.getFfmpegStdout(['-hide_banner', '-encoders']),
       );
@@ -233,7 +206,7 @@ export class FFMPEGInfo {
   async getHwAccels() {
     const res = await attempt(async () => {
       const out = await cacheGetOrSet(
-        FFMPEGInfo.resultCache,
+        FfmpegInfo.resultCache,
         this.cacheKey('HWACCELS'),
         () => this.getFfmpegStdout(['-hide_banner', '-hwaccels']),
       );
@@ -244,31 +217,10 @@ export class FFMPEGInfo {
     return isError(res) ? [] : res;
   }
 
-  async getHardwareCapabilities(
-    hwMode: HardwareAccelerationMode,
-  ): Promise<BaseFfmpegHardwareCapabilities> {
-    // TODO Check for hw availability
-    // if (isEmpty(await this.getHwAccels())) {
-
-    // }
-
-    switch (hwMode) {
-      case 'none':
-        return new NoHardwareCapabilities();
-      case 'cuda':
-        return await this.getNvidiaCapabilities();
-      case 'qsv':
-      case 'vaapi':
-        return await this.getVaapiCapabilities();
-      case 'videotoolbox':
-        return new DefaultHardwareCapabilities();
-    }
-  }
-
   async getOptions() {
     return Result.attemptAsync(async () => {
       const out = await cacheGetOrSet(
-        FFMPEGInfo.resultCache,
+        FfmpegInfo.resultCache,
         this.cacheKey('OPTIONS'),
         () => this.getFfmpegStdout(['-hide_banner', '-help', 'long']),
       );
@@ -293,117 +245,6 @@ export class FFMPEGInfo {
       return defaultOnError;
     }
     return opts.get().includes(option) ? true : defaultOnMissing;
-  }
-
-  async getNvidiaCapabilities() {
-    const result = await attempt(async () => {
-      const out = await cacheGetOrSet(
-        FFMPEGInfo.resultCache,
-        this.cacheKey('NVIDIA'),
-        () =>
-          this.getFfmpegStdout(
-            [
-              '-hide_banner',
-              '-f',
-              'lavfi',
-              '-i',
-              'nullsrc',
-              '-c:v',
-              'h264_nvenc',
-              '-gpu',
-              'list',
-              '-f',
-              'null',
-              '-',
-            ],
-            true,
-          ),
-      );
-
-      const lines = reject(map(drop(split(out, '\n'), 1), trim), (s) =>
-        isEmpty(s),
-      );
-
-      for (const line of lines) {
-        const archMatch = line.match(NvidiaGpuArchPattern);
-        if (archMatch) {
-          const archString = archMatch[1];
-          const archNum = parseInt(archString.replaceAll('.', ''));
-          const model =
-            nth(line.match(NvidiaGpuModelPattern), 1)?.trim() ?? 'unknown';
-          this.logger.debug(
-            `Detected NVIDIA GPU (model = "${model}", arch = "${archString}")`,
-          );
-          return new NvidiaHardwareCapabilities(model, archNum);
-        }
-      }
-
-      this.logger.warn('Could not parse ffmepg output for Nvidia capabilities');
-      return new NoHardwareCapabilities();
-    });
-
-    if (isError(result)) {
-      this.logger.warn(
-        result,
-        'Error while attempting to determine Nvidia hardware capabilities',
-      );
-      return new NoHardwareCapabilities();
-    }
-
-    return result;
-  }
-
-  async getVaapiCapabilities() {
-    const vaapiDevice = isNonEmptyString(this.opts.vaapiDevice)
-      ? this.opts.vaapiDevice
-      : isLinux()
-      ? '/dev/dri/renderD128'
-      : undefined;
-
-    if (isUndefined(vaapiDevice) || isEmpty(vaapiDevice)) {
-      this.logger.error('Cannot detect VAAPI capabilities without a device');
-      return new NoHardwareCapabilities();
-    }
-
-    // windows check bail!
-    if (process.platform === 'win32') {
-      return new DefaultHardwareCapabilities();
-    }
-
-    const driver = this.opts.vaapiDriver ?? '';
-
-    return await cacheGetOrSet(
-      FFMPEGInfo.resultCache,
-      FFMPEGInfo.vaInfoCacheKey(vaapiDevice, driver),
-      async () => {
-        const result = await this.getStdout(
-          'vainfo',
-          ['--display', 'drm', '--device', vaapiDevice, '-a'],
-          false,
-          isNonEmptyString(driver) ? { LIBVA_DRIVER_NAME: driver } : undefined,
-          false,
-        );
-
-        if (!isNonEmptyString(result)) {
-          this.logger.warn(
-            'Unable to find VAAPI capabilities via vainfo. Please make sure it is installed.',
-          );
-          return new DefaultHardwareCapabilities();
-        }
-
-        try {
-          const capabilities =
-            VaapiHardwareCapabilitiesFactory.extractAllFromVaInfo(result);
-          if (isNull(capabilities)) {
-            return new NoHardwareCapabilities();
-          }
-          return capabilities;
-        } catch (e) {
-          this.logger.error(e, 'Error while detecting VAAPI capabilities.');
-          return new NoHardwareCapabilities();
-        }
-      },
-    );
   }
 
   async getCapabilities() {
@@ -482,36 +323,16 @@ export class FFMPEGInfo {
     env?: NodeJS.ProcessEnv,
     isPath: boolean = true,
   ): Promise<string> {
-    return execQueue.add(
-      async () => {
-        const sanitizedPath = sanitizeForExec(executable);
-        if (isPath && !(await fileExists(sanitizedPath))) {
-          throw new Error(`Path at ${sanitizedPath} does not exist`);
-        }
-
-        const opts: ExecOptions = {};
-        if (!isEmpty(env)) {
-          opts.env = env;
-        }
-
-        return await new Promise((resolve, reject) => {
-          exec(
-            `"${sanitizedPath}" ${args.join(' ')}`,
-            opts,
-            function (error, stdout, stderr) {
-              if (error !== null && !swallowError) {
-                reject(error);
-              }
-              resolve(isNonEmptyString(stdout) ? stdout : stderr);
-            },
-          );
-        });
-      },
-      { throwOnTimeout: true },
+    return new ChildProcessHelper().getStdout(
+      executable,
+      args,
+      swallowError,
+      env,
+      isPath,
     );
   }
 
   private cacheKey(key: keyof typeof CacheKeys): string {
-    return FFMPEGInfo.makeCacheKey(this.ffmpegPath, key);
+    return FfmpegInfo.makeCacheKey(this.ffmpegPath, key);
   }
 }

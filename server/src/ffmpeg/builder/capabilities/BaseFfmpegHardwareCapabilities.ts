@@ -5,6 +5,9 @@ import { RateControlMode } from '@/ffmpeg/builder/types.ts';
 import { Maybe, Nilable } from '@/types/util.ts';
 import { NvidiaHardwareCapabilities } from './NvidiaHardwareCapabilities.ts';
 
+export interface FfmpegHardwareCapabilitiesFactory {
+  getCapabilities(): Promise<BaseFfmpegHardwareCapabilities>;
+}
 export abstract class BaseFfmpegHardwareCapabilities {
   readonly type: string;
   constructor() {}

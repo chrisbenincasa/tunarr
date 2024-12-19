@@ -1,5 +1,6 @@
 import { StreamLineupItem } from '@/db/derived_types/StreamLineup.ts';
 import { Channel } from '@/db/schema/Channel.ts';
+import { TranscodeConfig } from '@/db/schema/TranscodeConfig.ts';
 import { GetCurrentLineupItemRequest } from './StreamProgramCalculator.ts';
 
 export class PlayerContext {
@@ -9,15 +10,17 @@ export class PlayerContext {
     public audioOnly: boolean,
     public isLoading: boolean,
     public realtime: boolean,
-    public useNewPipeline: boolean = false,
+    public useNewPipeline: boolean,
+    public transcodeConfig: TranscodeConfig,
   ) {}
 
   static error(
     duration: number,
     error: string | boolean | Error,
     channel: Channel,
-    realtime: boolean = true,
-    useNewPipeline: boolean = false,
+    realtime: boolean,
+    useNewPipeline: boolean,
+    transcodeConfig: TranscodeConfig,
   ): PlayerContext {
     return new PlayerContext(
       {
@@ -32,6 +35,7 @@ export class PlayerContext {
       false,
       realtime,
       useNewPipeline,
+      transcodeConfig,
     );
   }
 }
