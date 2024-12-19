@@ -62,6 +62,15 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --prod --frozen-l
 FROM sources AS build-server
 # Install deps
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+ARG is_edge_build
+ARG tunarr_build
+# Build common modules
+RUN <<EOF
+touch server/.env
+echo TUNARR_BUILD=${tunarr_build} >> server/.env
+echo TUNARR_EDGE_BUILD=${is_edge_build} >> server/.env
+cat server/.env
+EOF
 # Build and bundle
 RUN pnpm turbo --filter=@tunarr/server bundle
 ### End server build ###
@@ -76,15 +85,6 @@ RUN pnpm turbo --filter=@tunarr/web bundle
 FROM sources as build-full-stack
 # Install deps
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
-ARG is_edge_build
-ARG tunarr_build
-# Build common modules
-RUN <<EOF
-touch server/.env
-echo TUNARR_BUILD=${tunarr_build} >> server/.env
-echo TUNARR_EDGE_BUILD=${is_edge_build} >> server/.env
-cat server/.env
-EOF
 RUN NODE_OPTIONS=--max-old-space-size=32768 pnpm turbo bundle --filter=@tunarr/server
 RUN NODE_OPTIONS=--max-old-space-size=32768 pnpm turbo bundle --filter=@tunarr/web
 
